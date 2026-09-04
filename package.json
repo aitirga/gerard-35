@@ -1,0 +1,20 @@
+{
+  "name": "gerard-35",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A browser game for Gerard's 35th birthday",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "playcanvas": "^2.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  }
+}
