@@ -1,0 +1,21 @@
+# Reference material is local by default: these are personal photos, and the
+# repository (and the deployed site) is public. Delete these lines if you do
+# want to track a particular kind of source asset in git.
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.heic
+*.mp4
+*.mov
+*.glb
+*.gltf
+*.fbx
+*.obj
+*.blend
+*.blend1
+*.psd
+
+# Approved generated game artwork (not the personal reference photos).
+!characters/gerard/portrait-approved.png
+!characters/gerard/portrait-transparent.png

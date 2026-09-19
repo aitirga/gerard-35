@@ -25,3 +25,14 @@ npm-debug.log*
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Python and local persistent state
+.venv/
+__pycache__/
+data/
+
+# Local browser verification artifacts
+.playwright-cli/
+
+# Scratch/generated outputs (approved artwork is copied into assets/ and public/)
+output/
