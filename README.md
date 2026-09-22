@@ -181,6 +181,13 @@ hold contact, trigger HP/recoil together, and retreat before the next action.
 scene resolves presentation promises so background tabs cannot run turns ahead
 of the animation. Reduced-motion mode skips travel, shake, and the entry sweep.
 
+Contact feedback is layered: a per-fighter flash and squash, spark/dust bursts
+from the pooled particles in `src/effects.ts`, floating damage/heal numbers and
+HP bars with a lagging trail. Knocked-out fighters tip over and leave in a puff;
+the party celebrates a victory. Outside combat, Gerard breathes, blinks and
+glances around, footsteps raise dust, dogs sniff and look about, trees sway and
+the pools shimmer (`scenery.update`). All of it stops under reduced motion.
+
 ### Adventure panels
 
 Press **C** for Gerard's character sheet or **M** for the current local map;

@@ -25,3 +25,10 @@ export class WalkAnimation {
     return { stride: this.stride, lift: this.lift, sway: this.sway, weight: this.weight };
   }
 }
+
+/** Breathing (0–1), eyelid scale and a slow glance (−1–1); seeds keep groups out of unison. */
+export function idlePose(time: number, seed = 0) {
+  const t = time + seed * 2.39;
+  const blink = (t % 3.7) / 3.7 > .96 ? .12 : 1;
+  return { breathe: Math.sin(t * 2.1) * .5 + .5, blink, look: Math.sin(t * .47) * Math.sin(t * .21 + 1) };
+}

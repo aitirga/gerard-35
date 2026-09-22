@@ -150,10 +150,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .round-badge { position: absolute; top: 28px; right: 34px; display: grid; gap: 0; text-align: center; border-top: 3px solid var(--battle-gold); padding: 9px 14px 0; transform: rotate(3deg); }
 .round-badge span { font-size: 9px; letter-spacing: .2em; }
 .round-badge strong { font-size: 42px; line-height: 1.1; font-weight: 900; letter-spacing: -.06em; color: var(--battle-gold); }
-.enemy-roster { position: absolute; top: 158px; right: 36px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; max-width: 62%; max-height: 22%; overflow: auto; }
-.enemy-card { display: flex; gap: 12px; align-items: center; width: 235px; padding: 12px 15px; background: #192b29e8; border-left: 3px solid #e7a489; transform: skewX(-5deg); }
-.enemy-card > * { transform: skewX(5deg); }
-.enemy-index { font-size: 7px; letter-spacing: .13em; color: #e7a489; writing-mode: vertical-rl; }
 .unit-info { flex: 1; min-width: 0; }
 .unit-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .unit-heading > strong { font-size: 13px; }
@@ -163,10 +159,11 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .meter-caption strong { font-size: 11px; font-variant-numeric: tabular-nums; }
 .meter-caption small { font-size: 8px; color: #a6b4a8; font-weight: 400; }
 .battle-meter { height: 5px; background: #ffffff1a; overflow: hidden; transform: skewX(-15deg); }
-.battle-meter i { display: block; height: 100%; background: #b9dba1; transition: width .5s cubic-bezier(.2,.8,.2,1); }
+.battle-meter { position: relative; }
+.battle-meter i, .battle-meter b { position: absolute; inset: 0 auto 0 0; background: #b9dba1; transition: width .5s cubic-bezier(.2,.8,.2,1); }
+.battle-meter b, .enemy-health b { background: #f6efd6; opacity: .75; transition: width .6s .45s cubic-bezier(.4,0,.2,1); }
 .battle-meter.secondary { height: 3px; }
 .battle-meter.secondary i { background: #e7c476; }
-.enemy-card .battle-meter i { background: #e7a489; }
 .is-down { opacity: .38; }
 .battle-bottom { position: absolute; left: 36px; right: 36px; bottom: 28px; display: flex; justify-content: space-between; align-items: end; gap: 24px; }
 .command-panel { width: 340px; max-width: 52%; flex-shrink: 0; }
@@ -214,8 +211,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .battle-kicker { font-size: 7px; }
   .round-badge { top: 23px; right: 18px; padding: 8px 5px 0; }
   .round-badge strong { font-size: 32px; }
-  .enemy-roster { top: 133px; right: 20px; max-width: 75%; max-height: 120px; }
-  .enemy-card { width: 196px; padding: 9px 12px; }
   .battle-bottom { left: 22px; right: 20px; bottom: max(18px, env(safe-area-inset-bottom)); gap: 16px; flex-wrap: wrap-reverse; }
   .command-panel { width: 100%; max-width: 100%; }
   .command-trigger { min-height: 41px; padding: 8px 14px; }
@@ -238,7 +233,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 @media (max-height: 700px) {
   .battle-heading { top: 15px; }
   .battle-heading h1 { font-size: 26px; }
-  .enemy-roster { top: 105px; }
   .battle-bottom { bottom: 15px; }
   .command-trigger { min-height: 35px; padding: 6px 14px; }
   .command-trigger strong { font-size: 20px; }
@@ -249,7 +243,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 }
 @media (max-height: 480px) and (min-width: 601px) {
   .battle-heading h1 { font-size: 22px; }
-  .enemy-roster { top: 100px; }
   .command-panel { width: 280px; }
   .party-card { min-height: 85px; padding-top: 9px; padding-bottom: 9px; }
   .party-portrait img { height: 104px; }
@@ -258,10 +251,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   #battle, #battle * { animation: none !important; transition: none !important; }
 }
 @media (max-width: 600px) {
-  .enemy-roster { gap: 5px; max-height: 174px; scrollbar-width: thin; }
-  .enemy-card { padding: 7px 12px; }
-  .enemy-card .unit-heading { margin-bottom: 3px; }
-  .enemy-card .meter-caption { margin: 2px 0; }
   .command-choices { scrollbar-width: thin; scrollbar-color: #526a4f #e6bf69; }
 }
 @media (max-height: 480px) and (min-width: 601px) {
@@ -272,7 +261,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .command-trigger strong { font-size: 18px; }
   .command-choices { max-height: 86px; scrollbar-width: thin; }
   .command-content > p { margin-bottom: 5px; }
-  .enemy-roster { top: 90px; max-width: 40%; max-height: 65px; }
   .party-card { min-height: 80px; }
 }
 
@@ -281,7 +269,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #battle::after { content: ''; position: absolute; z-index: 5; pointer-events: none; inset: -15% auto -15% -65%; width: 58%; background: linear-gradient(90deg, transparent, #102c256b 48%, #f3cf7838 94%, transparent); transform: skewX(-18deg); animation: encounter-sweep 1.05s cubic-bezier(.2,.65,.25,1) both; }
 #battle[data-entering] .battle-heading { animation: encounter-title .65s .28s cubic-bezier(.16,1,.3,1) both; }
 #battle[data-entering] .round-badge { animation: encounter-right .55s .4s both; }
-#battle[data-entering] .enemy-roster { animation: encounter-right .6s .5s both; }
 #battle[data-entering] .party-roster { animation: encounter-right .6s .7s both; }
 #battle[data-entering] .turn-heading, #battle[data-entering] .command-help { animation: encounter-left .55s .75s both; }
 #battle[data-entering] .command { animation: encounter-left .52s cubic-bezier(.16,1,.3,1) both; animation-delay: .65s; }
@@ -386,21 +373,22 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 @media (max-height: 550px) { #exploration-panel { inset-block: 10px; padding: 14px 20px; } .journal-heading h1 { font-size: 28px; margin: 7px 0 12px; } .journal-tabs { margin-bottom: 10px; } }
 @media (prefers-reduced-motion: reduce) { #hud *, #hud *::after { animation: none !important; transition: none !important; } }
 
-/* Desktop pack encounters: every opponent stays visible, with matching model labels. */
-.enemy-roster { top: 142px; left: max(390px, 30%); right: 36px; max-width: none; max-height: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; gap: 8px; }
-.enemy-card { width: auto; min-width: 0; gap: 8px; padding: 10px; transform: none; transition: opacity .25s, border-color .2s, background .2s; }
-.enemy-card > * { transform: none; }
-.enemy-index { writing-mode: horizontal-tb; display: grid; place-content: center; width: 22px; height: 25px; flex-shrink: 0; background: var(--dog-color); color: #172c25; font-size: 14px; font-weight: 900; }
-.enemy-card .unit-heading { margin-bottom: 5px; flex-wrap: wrap; gap: 3px; }
-.enemy-card .unit-heading > strong { font-size: 12px; }
-.enemy-card.is-targeted { border-left-color: var(--battle-gold); background: #455138f5; box-shadow: 0 0 0 1px var(--battle-gold); }
-.enemy-card.is-acting { border-left-color: var(--battle-gold); background: #455138f5; }
+/* Compact nameplates stay anchored to each fighter. */
 .battle-targets { position: absolute; inset: 0; pointer-events: none; }
-.battle-target { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 7px; padding: 4px 8px 4px 4px; border: 1px solid var(--dog-color); background: #172c25ed; color: var(--battle-paper); font-size: 10px; box-shadow: 2px 3px 0 #10201955; }
-.battle-target b { display: grid; place-content: center; background: var(--dog-color); color: #172c25; width: 20px; height: 20px; }
+.battle-target { position: absolute; left: 0; top: 0; display: grid; gap: 5px; min-width: 80px; padding: 7px; border: 0; background: transparent; color: var(--battle-paper); font-size: 11px; text-align: center; }
+.target-name { font-weight: 600; line-height: 1.2; text-shadow: 0 1px 2px #102019, 0 0 5px #102019cc; transition: color .2s; }
+.enemy-health { position: relative; display: block; height: 3px; overflow: hidden; border-radius: 2px; background: #172c2566; box-shadow: 0 1px 3px #10201966; }
+.enemy-health i, .enemy-health b { position: absolute; inset: 0 auto 0 0; }
+.enemy-health i { background: var(--dog-color); transition: width .5s cubic-bezier(.2,.8,.2,1); }
+.battle-target.is-acting .target-name { color: var(--dog-color); }
+.battle-target.is-down { opacity: .4; }
 .battle-target:disabled { cursor: default; }
 #battle[data-targeting] .battle-target:not(:disabled) { pointer-events: auto; cursor: pointer; }
-.battle-target.is-targeted { outline: 2px solid var(--battle-gold); outline-offset: 3px; }
+.battle-target.is-eligible, .battle-target.is-targeted, .battle-target:focus-visible { outline: none; }
+.battle-target.is-targeted .target-name, .battle-target:focus-visible .target-name { color: var(--battle-gold); text-decoration: underline; text-underline-offset: 3px; }
+.battle-target.is-targeted .enemy-health, .battle-target:focus-visible .enemy-health { box-shadow: 0 0 0 1px var(--battle-gold), 0 0 7px #f3cf7870; }
+.battle-target.contact-hit { animation: nameplate-contact .35s ease-out; }
+@keyframes nameplate-contact { 50% { filter: brightness(1.5) drop-shadow(0 0 4px #f3cf78); } }
 .battle-message { position: absolute; left: 36px; top: 150px; margin: 0; width: 330px; font-size: 12px; line-height: 1.5; color: #d6decd; }
 .command-choices:has([data-target]) { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 170px; }
 .command-choices:has([data-target]) button { display: grid; gap: 4px; margin: 0; padding: 10px; }
@@ -409,19 +397,17 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .battle-heading { top: 20px; }
   .battle-heading h1 { font-size: 30px; }
   .battle-message { top: 110px; font-size: 11px; }
-  .enemy-roster { top: 134px; }
   .battle-bottom { bottom: 20px; }
   .party-card { min-height: 94px; }
 }
 
-/* Ability → target: hand focus to the actual roster, with a reversible second step. */
-.enemy-card { position: relative; }
+/* Ability → target: focus the nameplate or ally card, with a reversible second step. */
 .roster-target { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; background: transparent; color: transparent; z-index: 2; }
 .roster-target:focus-visible { outline: 3px solid var(--battle-gold); outline-offset: 4px; }
 .is-eligible { outline: 1px solid #f3cf7880; cursor: pointer; }
+#battle[data-targeting="foes"] .party-roster { opacity: .4; }
+#battle[data-targeting] .party-card:not(.is-eligible) { opacity: .45; }
 .party-card.is-targeted { background: #455138f5; border-color: var(--battle-gold); }
-#battle[data-targeting="foes"] .party-roster, #battle[data-targeting="allies"] .enemy-roster { opacity: .4; }
-#battle[data-targeting] .enemy-card:not(.is-eligible), #battle[data-targeting] .party-card:not(.is-eligible) { opacity: .45; }
 .battle-target[data-side="allies"] { visibility: hidden; }
 #battle[data-targeting="allies"] .battle-target[data-side="allies"] { visibility: visible; }
 #battle[data-targeting="allies"] .battle-target[data-side="foes"] { visibility: hidden; }
@@ -433,3 +419,39 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .command-choices [data-skill] > span { display: grid; gap: 5px; }
 .command-choices [data-skill] > span > small { color: #c5d0bf; font-size: 9px; }
 .command-choices:has([data-skill]) { max-height: 180px; }
+
+/* Juice: numbers that fly off the fighters, prompts that land softly, labels that breathe. */
+.battle-pops { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.damage-pop { position: absolute; left: 0; top: 0; display: grid; justify-items: center; gap: 1px; white-space: nowrap; }
+.damage-pop > * { animation: pop-rise 1s cubic-bezier(.2,.9,.3,1) both; }
+.damage-pop strong { font-size: 30px; font-weight: 900; font-style: italic; letter-spacing: -.05em; line-height: 1; color: #fff4d6; -webkit-text-stroke: 5px #162823; paint-order: stroke fill; text-shadow: 3px 3px 0 #16282399; }
+.damage-pop small { font-size: 9px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--battle-gold); text-shadow: 0 1px 2px #102019, 0 0 5px #102019; animation-delay: .06s; }
+.damage-pop[data-kind="heal"] strong { color: #c9eaa8; }
+.damage-pop[data-kind="guard"] strong { font-size: 18px; color: var(--battle-gold); -webkit-text-stroke-width: 4px; }
+@keyframes pop-rise {
+  0% { opacity: 0; translate: 0 10px; scale: .4; }
+  18% { opacity: 1; translate: 0 -8px; scale: 1.18; }
+  32% { scale: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; translate: 0 -46px; }
+}
+.turn-dot { animation: turn-pulse 1.6s ease-in-out infinite; }
+#battle[data-resolving] .turn-dot { animation-duration: .5s; }
+@keyframes turn-pulse { 50% { scale: .55; opacity: .55; } }
+.party-card.is-active { box-shadow: inset 0 0 0 1px #f3cf7822, 0 0 24px #f3cf7814; }
+.party-card.contact-hit .party-portrait img, .party-card.contact-hit .party-portrait > span { animation: portrait-shake .38s ease-out; }
+@keyframes portrait-shake { 20% { translate: -4px 0; } 40% { translate: 3px 0; } 60% { translate: -2px 0; } 80% { translate: 1px 0; } }
+.battle-result:not([hidden]) { animation: result-in .55s cubic-bezier(.16,1,.3,1) both; }
+.battle-result:not([hidden]) h2 { animation: result-stamp .5s .18s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes result-in { from { opacity: 0; translate: 0 26px; rotate: -5deg; } }
+@keyframes result-stamp { from { opacity: 0; scale: 1.6; } }
+#interact:not([hidden]) { animation: prompt-in .32s cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes prompt-in { from { opacity: 0; translate: 0 10px; scale: .92; } }
+#interact kbd { animation: key-nudge 1.8s 1s ease-in-out infinite; }
+@keyframes key-nudge { 0%, 80%, 100% { translate: 0 0; } 88% { translate: 0 2px; } }
+.world-label { animation: label-bob 3.4s ease-in-out infinite; }
+#label-bernat { animation-delay: -1.7s; }
+@keyframes label-bob { 50% { translate: 0 -4px; } }
+#dog-encounter:enabled { animation: pack-call 2s ease-in-out infinite; }
+@keyframes pack-call { 50% { box-shadow: 4px 4px 0 #17272366, 0 0 0 4px #ffe29d22; } }
+@media (prefers-reduced-motion: reduce) { .damage-pop > * { animation: none !important; } }

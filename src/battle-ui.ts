@@ -17,8 +17,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   root.innerHTML = `
     <header class="battle-heading"><span class="battle-kicker">ENCUENTRO / PASSATGE MARESME</span><h1>Un pequeño <em>contratiempo.</em></h1></header>
     <div class="round-badge"><span>RONDA</span><strong>01</strong></div>
-    <div class="enemy-roster" aria-label="Rivales"></div>
     <div class="battle-targets" aria-label="Objetivos en la calle"></div>
+    <div class="battle-pops" aria-hidden="true"></div>
     <p class="battle-message" role="status" aria-live="polite"></p>
     <div class="battle-bottom">
       <section class="command-panel" aria-label="Acciones de combate">
@@ -48,8 +48,24 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function meter(c: Combatant, secondary = false) {
     const value = secondary ? c.secondary : c.hp, max = secondary ? c.maxSecondary : c.maxHp;
     const label = secondary ? 'Secundaria' : 'HP';
-    return `<div class="meter-caption"><span>${label}</span><strong>${value}<small> / ${max}</small></strong></div><div class="battle-meter ${secondary ? 'secondary' : ''}" role="progressbar" aria-label="${c.name}: ${label}" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="${max}"><i style="width:${value / max * 100}%"></i></div>`;
+    return `<div class="meter-caption"><span>${label}</span><strong>${value}<small> / ${max}</small></strong></div><div class="battle-meter ${secondary ? 'secondary' : ''}" role="progressbar" aria-label="${c.name}: ${label}" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="${max}"><b style="width:${value / max * 100}%"></b><i style="width:${value / max * 100}%"></i></div>`;
   }
+  // The dark trail lags behind the fill, so each hit shows how much it took.
+  function fill(bar: Element, ratio: number) { bar.querySelectorAll<HTMLElement>('b, i').forEach(el => { el.style.width = `${ratio * 100}%`; }); }
+  const positions = new Map<string, { x: number; y: number }>();
+  function pop(id: string, text: string, kind: 'damage' | 'heal' | 'guard', detail = '') {
+    const at = positions.get(id);
+    if (!at) return;
+    const el = document.createElement('span');
+    el.className = 'damage-pop'; el.dataset.kind = kind;
+    el.innerHTML = `<strong></strong>${detail ? '<small></small>' : ''}`;
+    el.querySelector('strong')!.textContent = text;
+    if (detail) el.querySelector('small')!.textContent = detail;
+    el.style.transform = `translate(${at.x + (Math.random() - .5) * 26}px, ${at.y - 18}px) translate(-50%, -100%)`;
+    get('.battle-pops').append(el);
+    setTimeout(() => el.remove(), 1100);
+  }
+  const targetButtons = () => [...root.querySelectorAll<HTMLButtonElement>('.roster-target:not(:disabled), .battle-target[data-side="foes"]:not(:disabled)')].filter(button => !button.hidden);
   function render() {
     if (!state) return;
     const ended = !busy && ['won', 'lost', 'escaped'].includes(state.phase);
@@ -60,29 +76,36 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.turn-label').textContent = state.allies[state.active].name;
     get('.turn-meta').textContent = busy || state.phase === 'enemy' ? 'EN ACCIÓN' : 'TU TURNO';
     // Preserve meter nodes so health changes interpolate instead of snapping.
-    for (const [selector, members, party] of [['.party-roster', state.allies, true], ['.enemy-roster', state.foes, false]] as const) {
-      const roster = get(selector);
-      if (!roster.children.length) roster.innerHTML = members.map((c, i) => `<article class="${party ? 'party-card' : 'enemy-card'}" data-unit="${c.id}">
-        ${party ? `<div class="party-portrait">${i === 0 ? `<img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt=""/>` : '<span>B</span>'}</div>` : `<span class="enemy-index" style="--dog-color:${DOG_PROFILES[i].collar}">${i + 1}</span>`}
-        <div class="unit-info"><div class="unit-heading"><strong>${c.name}</strong><span class="unit-status"></span></div>${meter(c)}${party ? meter(c, true) : ''}</div><button class="roster-target" type="button" data-target="${c.id}" aria-label="Elegir a ${c.name}" hidden></button></article>`).join('');
-      for (const c of members) {
-        const card = roster.querySelector<HTMLElement>(`[data-unit="${c.id}"]`)!;
-        card.classList.toggle('is-active', party && state.phase === 'player' && state.allies[state.active].id === c.id);
-        card.classList.toggle('is-down', c.hp === 0);
-        card.classList.toggle('is-acting', root.dataset.actor === c.id);
-        card.querySelector('.unit-status')!.textContent = c.hp === 0 ? 'FUERA' : c.guarding ? 'EN GUARDIA' : party && state.allies[state.active].id === c.id && state.phase === 'player' ? 'ACTIVO' : '';
-        card.querySelectorAll<HTMLElement>('.battle-meter').forEach((bar, i) => {
-          const value = i === 0 ? c.hp : c.secondary, max = i === 0 ? c.maxHp : c.maxSecondary;
-          bar.setAttribute('aria-valuenow', String(value));
-          bar.querySelector<HTMLElement>('i')!.style.width = `${value / max * 100}%`;
-          bar.previousElementSibling!.querySelector('strong')!.innerHTML = `${value}<small> / ${max}</small>`;
-        });
-      }
+    const roster = get('.party-roster');
+    if (!roster.children.length) roster.innerHTML = state.allies.map((c, i) => `<article class="party-card" data-unit="${c.id}">
+      <div class="party-portrait">${i === 0 ? `<img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt=""/>` : '<span>B</span>'}</div>
+      <div class="unit-info"><div class="unit-heading"><strong>${c.name}</strong><span class="unit-status"></span></div>${meter(c)}${meter(c, true)}</div><button class="roster-target" type="button" data-target="${c.id}" aria-label="Elegir a ${c.name}" hidden></button></article>`).join('');
+    for (const c of state.allies) {
+      const card = roster.querySelector<HTMLElement>(`[data-unit="${c.id}"]`)!;
+      card.classList.toggle('is-active', state.phase === 'player' && state.allies[state.active].id === c.id);
+      card.classList.toggle('is-down', c.hp === 0);
+      card.classList.toggle('is-acting', root.dataset.actor === c.id);
+      card.querySelector('.unit-status')!.textContent = c.hp === 0 ? 'FUERA' : c.guarding ? 'EN GUARDIA' : state.allies[state.active].id === c.id && state.phase === 'player' ? 'ACTIVO' : '';
+      card.querySelectorAll<HTMLElement>('.battle-meter').forEach((bar, i) => {
+        const value = i === 0 ? c.hp : c.secondary, max = i === 0 ? c.maxHp : c.maxSecondary;
+        bar.setAttribute('aria-valuenow', String(value));
+        fill(bar, value / max);
+        bar.previousElementSibling!.querySelector('strong')!.innerHTML = `${value}<small> / ${max}</small>`;
+      });
+    }
+    for (const foe of state.foes) {
+      const plate = get<HTMLButtonElement>(`.battle-target[data-target="${foe.id}"]`);
+      fill(plate.querySelector('.enemy-health')!, foe.hp / foe.maxHp);
+      const health = foe.hp === 0 ? 'fuera de combate' : foe.hp === foe.maxHp ? 'salud completa' : foe.hp / foe.maxHp <= .3 ? 'salud baja' : 'herido';
+      plate.setAttribute('aria-label', `Elegir a ${foe.name}, ${health}`);
+      plate.classList.toggle('is-down', foe.hp === 0);
+      plate.classList.toggle('is-acting', root.dataset.actor === foe.id);
     }
     articles.forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = busy || state!.phase !== 'player'; });
     const eligible = targeting && !busy && state.phase === 'player' ? validTargets(state, selected!, selectedSkill).map(c => c.id) : [];
     root.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
       button.disabled = !eligible.includes(button.dataset.target!);
+      if (button.classList.contains('battle-target')) button.tabIndex = button.disabled ? -1 : 0;
       if (button.classList.contains('roster-target')) button.hidden = !targeting;
       button.closest('[data-unit]')?.classList.toggle('is-eligible', !button.disabled);
     });
@@ -100,7 +123,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function collapse(restoreFocus = false) {
     const old = selected; selected = undefined; selectedSkill = undefined; targeting = false;
     highlight(); delete root.dataset.targeting;
-    root.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => { button.disabled = true; });
+    root.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
+      button.disabled = true;
+      button.closest('[data-unit]')?.classList.remove('is-eligible');
+    });
     get('.commands').hidden = false; get('.target-picker').hidden = true;
     root.querySelectorAll<HTMLElement>('.roster-target').forEach(button => { button.hidden = true; button.closest('[data-unit]')?.classList.remove('is-eligible'); });
     articles.forEach(article => {
@@ -142,9 +168,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     selectedSkill = skill; targeting = true;
     root.dataset.targeting = skill === 'encourage' ? 'allies' : 'foes';
     get('.target-picker h2').textContent = skill ? SKILLS.find(s => s.id === skill)!.name : 'Atacar';
-    get('.target-picker p').textContent = skill === 'encourage' ? 'Elige un aliado herido en tu equipo o en la calle.' : 'Elige un perro en las tarjetas o en la calle.';
+    get('.target-picker p').textContent = skill === 'encourage' ? 'Elige un aliado herido en tu equipo o en la calle.' : 'Elige un perro en la calle.';
     render();
-    root.querySelector<HTMLButtonElement>('.roster-target:not(:disabled)')?.focus({ preventScroll: true });
+    targetButtons()[0]?.focus({ preventScroll: true });
   }
   function back() {
     if (busy) return;
@@ -168,6 +194,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       card?.classList.remove('contact-hit');
       // Restart the local accent on each contact, including repeated targets.
       if (card) { void card.offsetWidth; card.classList.add('contact-hit'); }
+      const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
+      if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard');
+      else if (effect.skill === 'encourage' && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', 'HP');
+      else if (effect.target && target) pop(effect.target, `−${effect.amount ?? 0}`, 'damage', target.hp === 0 ? '¡Fuera!' : target.guarding ? 'Protegido' : effect.skill ? 'Impulso' : '');
     });
     if (token === generation) { delete root.dataset.resolving; delete root.dataset.actor; }
   }
@@ -224,13 +254,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     else if (/^[1-4]$/.test(event.key) && !event.repeat) {
       event.preventDefault();
       const index = Number(event.key) - 1;
-      if (targeting) root.querySelectorAll<HTMLButtonElement>('.roster-target:not(:disabled)')[index]?.focus();
+      if (targeting) targetButtons()[index]?.focus();
       else if (selected === 'skill') root.querySelectorAll<HTMLButtonElement>('[data-skill]')[index]?.click();
       else expand(COMMANDS[index].id);
     }
     else if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
       event.preventDefault();
-      const buttons = [...root.querySelectorAll<HTMLButtonElement>(targeting ? '.roster-target:not(:disabled)' : 'button:not(:disabled)')].filter(b => b.tabIndex >= 0 && !b.closest('[inert], [hidden]'));
+      const buttons = (targeting ? targetButtons() : [...root.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')]).filter(b => b.tabIndex >= 0 && !b.closest('[inert], [hidden]'));
       const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
       buttons[(index + (event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length]?.focus();
     }
@@ -240,6 +270,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   return {
     positionTargets(targets: { id: string; x: number; y: number; visible: boolean }[]) {
       for (const target of targets) {
+        positions.set(target.id, target);
         const button = root.querySelector<HTMLElement>(`.battle-target[data-target="${target.id}"]`);
         if (!button) continue;
         button.hidden = !target.visible;
@@ -251,9 +282,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
       state = createBattle(allyCount, foeCount); busy = true;
-      get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${DOG_PROFILES[i]?.collar ?? '#b9dba1'}" aria-label="Elegir a ${f.name}" hidden disabled><b>${i < foeCount ? i + 1 : f.name[0]}</b><span>${f.name}</span></button>`).join('');
+      get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${i < foeCount ? `data-unit="${f.id}"` : ''} data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${DOG_PROFILES[i]?.collar ?? '#b9dba1'}" aria-label="Elegir a ${f.name}" hidden disabled><span class="target-name">${f.name}</span>${i < foeCount ? '<span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>' : ''}</button>`).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;
-      get('.party-roster').replaceChildren(); get('.enemy-roster').replaceChildren();
+      get('.party-roster').replaceChildren(); get('.battle-pops').replaceChildren(); positions.clear();
       hud.dataset.battle = 'open'; outside().forEach(el => { el.inert = true; });
       root.hidden = false; render(); root.focus({ preventScroll: true });
       get('.turn-meta').textContent = 'ENCUENTRO';

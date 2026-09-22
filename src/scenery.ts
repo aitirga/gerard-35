@@ -9,6 +9,9 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const textures: pc.Texture[] = [];
   const meshes: pc.Mesh[] = [];
   const surfaces: { x: number; z: number; w: number; d: number; y: number }[] = [];
+  const swaying: { pivot: pc.Entity; phase: number }[] = [];
+  const flowing: pc.StandardMaterial[] = [];
+  let time = 0;
   const cx = (environment.grid[0].length - 1) / 2;
   const cz = (environment.grid.length - 1) / 2;
   const x = (v: number) => v - cx;
@@ -44,6 +47,12 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     const e = mesh(text, 'plane', m, px, y, pz, width, 1, width / 4);
     return e;
   }
+  function texture(c: HTMLCanvasElement) {
+    const t = new pc.Texture(app.graphicsDevice, { mipmaps: true, anisotropy: 8, addressU: pc.ADDRESS_REPEAT, addressV: pc.ADDRESS_REPEAT });
+    t.setSource(c); textures.push(t); return t;
+  }
+  // Deterministic jitter keeps procedural surfaces identical between reloads.
+  const jitter = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
   // Procedural surface pattern: keeps the gameplay grid readable without map imagery.
   function tiled(name: string, color: string, line: string, scale: number) {
     const c = document.createElement('canvas'); c.width = c.height = 128;
@@ -52,9 +61,42 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     ctx.fillStyle = '#ffffff08';
     for (let i = 0; i < 180; i++) ctx.fillRect((i * 47) % 128, (i * 73) % 128, 2, 2);
     ctx.strokeStyle = line; ctx.lineWidth = 1.4; ctx.strokeRect(0, 0, 128, 128);
-    const t = new pc.Texture(app.graphicsDevice, { mipmaps: true, addressU: pc.ADDRESS_REPEAT, addressV: pc.ADDRESS_REPEAT });
-    t.setSource(c); textures.push(t);
-    const m = mat(name, '#ffffff'); m.diffuseMap = t; m.diffuseMapTiling.set(scale, scale); m.update(); return m;
+    const m = mat(name, '#ffffff'); m.diffuseMap = texture(c); m.diffuseMapTiling.set(scale, scale); m.update(); return m;
+  }
+  /** One cell of running-bond pavers; the faint outer seam still marks the movement grid. */
+  function paving(name: string, base: [number, number, number], rows: number, cols: number) {
+    const size = 256, c = document.createElement('canvas'); c.width = c.height = size;
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = `rgb(${base.map(v => v * .82).join()})`; ctx.fillRect(0, 0, size, size);
+    const h = size / rows, w = size / cols;
+    for (let r = 0; r < rows; r++) for (let k = -1; k < cols; k++) {
+      const offset = r % 2 ? w / 2 : 0, shade = .94 + jitter(r * 17 + k) * .1;
+      ctx.fillStyle = `rgb(${base.map(v => Math.min(255, v * shade)).join()})`;
+      ctx.beginPath(); ctx.roundRect(k * w + offset + 2, r * h + 2, w - 4, h - 4, 5); ctx.fill();
+      ctx.fillStyle = '#ffffff0d'; ctx.fillRect(k * w + offset + 5, r * h + 4, w - 10, 3);
+    }
+    ctx.fillStyle = '#00000010';
+    for (let i = 0; i < 260; i++) ctx.fillRect(jitter(i) * size, jitter(i + 999) * size, 2, 2);
+    ctx.strokeStyle = '#6e654f30'; ctx.lineWidth = 3; ctx.strokeRect(0, 0, size, size);
+    const m = mat(name, '#ffffff'); m.diffuseMap = texture(c); m.update(); return m;
+  }
+  /** Soft caustic ribbons; two layers drift against each other so the pools shimmer. */
+  function waterMaterial() {
+    const size = 128, c = document.createElement('canvas'); c.width = c.height = size;
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = '#52b3ba'; ctx.fillRect(0, 0, size, size);
+    ctx.strokeStyle = '#aeeae440'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+    for (let i = 0; i < 12; i++) {
+      const y = jitter(i) * size, a = jitter(i + 40) * 8 + 3;
+      ctx.beginPath();
+      for (let px = -8; px <= size + 8; px += 8) ctx.lineTo(px, y + Math.sin(px / size * Math.PI * 2 * 2 + i) * a);
+      ctx.stroke();
+    }
+    const t = texture(c);
+    const m = mat('Agua', '#ffffff', 0.9);
+    m.diffuseMap = t; m.diffuseMapTiling.set(2.4, 1.8);
+    m.emissive.fromString('#9fe7e4'); m.emissiveMap = t; m.emissiveIntensity = .12; m.emissiveMapTiling.set(1.7, 2.6);
+    m.update(); flowing.push(m); return m;
   }
   const cream = mat('Revoco marfil', '#ddd3b5');
   const white = mat('Piedra clara', '#e3dec8');
@@ -68,10 +110,13 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const grass = mat('Jardín', '#697f4e');
   const leaf = [mat('Olivo', '#78925b'), mat('Copa clara', '#98a86e'), mat('Copa oscura', '#597a54')];
   const trunk = mat('Troncos', '#817058');
-  const asphalt = tiled('Pavimento de la calle', '#b0a48d', '#978d783e', 43);
+  const blooms = [mat('Flor coral', '#e98a6d', .3), mat('Flor crema', '#f3e6c0', .3), mat('Flor lila', '#b89ad0', .3), mat('Flor amarilla', '#efc75a', .3)];
+  const asphalt = paving('Pavimento de la calle', [176, 164, 141], 4, 2);
   asphalt.diffuseMapTiling.set(12, 41); asphalt.update();
+  const sidewalk = paving('Baldosa de acera', [195, 130, 102], 2, 2);
+  sidewalk.diffuseMapTiling.set(1.4, 41); sidewalk.update();
   const concrete = mat('Base', '#817e6d');
-  const water = mat('Agua', '#59b8bd', 0.9, 0.08);
+  const water = waterMaterial();
   const solar = mat('Panel solar', '#334b57', 0.65);
   const glow = mat('Farolas', '#ffdb9c', 0.2, 2);
   const w = environment.grid[0].length, d = environment.grid.length;
@@ -96,10 +141,26 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     const s = small ? 0.65 : 1;
     box('Alcorque', white, px, 0.04, pz, 0.9, 0.12, 0.9);
     box('Tierra', trunk, px, 0.11, pz, 0.73, 0.05, 0.73);
-    mesh('Tronco', 'cylinder', trunk, px, 0.7 * s, pz, 0.17, 1.4 * s, 0.17);
+    // Trunk and crowns hang from a base pivot, so the whole tree leans in the breeze.
+    const pivot = new pc.Entity('Árbol'); pivot.setPosition(x(px), 0, z(pz)); root.addChild(pivot);
+    const attach = (e: pc.Entity) => { const p = e.getPosition().clone(); pivot.addChild(e); e.setPosition(p); };
+    attach(mesh('Tronco', 'cylinder', trunk, px, 0.7 * s, pz, 0.17, 1.4 * s, 0.17));
     for (let i = 0; i < 3; i++) {
       const crown = mesh('Copa de árbol', 'sphere', leaf[i], px + (i - 1) * 0.31 * s, (1.7 + (i % 2) * 0.28) * s, pz + (i % 2) * 0.18, 1.4 * s, 1.5 * s, 1.35 * s);
-      crown.setEulerAngles(i * 20, i * 45, 15);
+      crown.setEulerAngles(i * 20, i * 45, 15); attach(crown);
+    }
+    swaying.push({ pivot, phase: px * .7 + pz * .31 });
+  }
+  function planter(px: number, pz: number, length: number, along: 'x' | 'z') {
+    const [w, d] = along === 'x' ? [length, 0.42] : [0.42, length];
+    box('Jardinera', trim, px, 0.2, pz, w, 0.28, d);
+    box('Tierra de jardinera', trunk, px, 0.345, pz, w - 0.08, 0.03, d - 0.08);
+    const count = Math.round(length * 2.4);
+    for (let i = 0; i < count; i++) {
+      const t = (i + .5) / count - .5, fx = along === 'x' ? px + t * length : px, fz = along === 'z' ? pz + t * length : pz;
+      const r = .14 + jitter(px * 13 + pz * 7 + i) * .08;
+      mesh('Mata', 'sphere', leaf[i % 3], fx, 0.43, fz, r * 1.6, r * 1.3, r * 1.6);
+      if (i % 2 === 0) mesh('Flor', 'sphere', blooms[(i / 2 + Math.round(px)) % blooms.length], fx + .05, 0.56, fz + .04, 0.09, 0.08, 0.09);
     }
   }
   function car(px: number, pz: number, color: string) {
@@ -142,7 +203,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     const bulb = floor('Fondo ensanchado de la calle', 'box', mat('Pavimento del fondo', '#b0a48d'), 16, 0.015, 4, 17, 0.04, 5);
     bulb.render!.castShadows = false;
     for (const sx of [9.5, 21]) {
-      floor('Acera terracota', 'box', terracotta, sx, 0.045, 21, 1.4, 0.12, 41);
+      floor('Acera terracota', 'box', sidewalk, sx, 0.045, 21, 1.4, 0.12, 41);
       floor('Bordillo', 'box', white, sx + (sx < 16 ? 0.78 : -0.78), 0.065, 21, 0.12, 0.15, 41);
     }
     for (const house of environment.houses) {
@@ -197,6 +258,19 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       box('Farola', metal, 20.8, 1.65, pz, 0.075, 3.3, 0.075);
       box('Luminaria', glow, 20.8, 3.28, pz, 0.38, 0.16, 0.45);
     }
+    // Flat street furniture only: nothing here may suggest a collision the grid lacks.
+    const iron = mat('Hierro de alcantarilla', '#6d6a5e', 0.45), rim = mat('Marco de alcantarilla', '#8f8a78', 0.3);
+    for (const [px, pz] of [[14, 13], [17, 30], [15, 38]]) {
+      mesh('Marco de alcantarilla', 'cylinder', rim, px, 0.04, pz, 0.68, 0.012, 0.68);
+      mesh('Tapa de alcantarilla', 'cylinder', iron, px, 0.046, pz, 0.56, 0.012, 0.56);
+      for (const dz of [-0.14, 0, 0.14]) box('Estría', rim, px, 0.054, pz + dz, 0.42, 0.008, 0.035);
+    }
+    for (const house of environment.houses) {
+      const hz = house.z + 2;
+      if (house.side === 'west') for (const dz of [-1.2, 1.2]) planter(8, hz + dz, 1.2, 'z');
+      else if (house.id === 'gerard') for (const dz of [-2.1, 2.1]) planter(26, hz + dz, 5, 'x');
+      else planter(22.35, hz, 3.6, 'z');
+    }
     label('PASSATGE MARESME', 15.6, 0.06, 33, 5.4);
     label('SANT QUIRZE', 15.6, 0.06, 6, 3.8);
     // Boundary hedges close the playable slice without pretending it is the whole town.
@@ -243,6 +317,12 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       return height;
     },
     toWorld(px: number, pz: number) { return new pc.Vec3(x(px), 0, z(pz)); },
+    update(dt: number, animate: boolean) {
+      if (!animate) return;
+      time += dt;
+      for (const { pivot, phase } of swaying) pivot.setLocalEulerAngles(Math.sin(time * 1.1 + phase) * 1.1, 0, Math.sin(time * .83 + phase * 1.3) * 1.4);
+      for (const m of flowing) { m.diffuseMapOffset.set(time * .03, time * .05); m.emissiveMapOffset.set(-time * .04, time * .025); m.update(); }
+    },
     destroy() { root.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }

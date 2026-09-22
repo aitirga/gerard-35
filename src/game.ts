@@ -6,7 +6,8 @@ import { type Dialogue } from './dialogue';
 import { createBattleScene } from './battle-scene';
 import { type BattleEffect, type BattleState } from './battle';
 import { STREET_ENCOUNTER, WanderingPack } from './encounters';
-import { WalkAnimation } from './walk-animation';
+import { WalkAnimation, idlePose } from './walk-animation';
+import { createEffects } from './effects';
 import { createGroundContact } from './ground-contact';
 
 export interface GameCallbacks {
@@ -105,6 +106,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
     part.setLocalPosition(position.x, position.y - 0.94, position.z);
   }
   head.setLocalScale(1.08, 0.92, 1.06);
+  const eyes = head.children.filter(part => part.name === 'Ojo') as pc.Entity[];
   const limbs: pc.Entity[] = [];
   const feet: pc.Entity[] = [];
   for (const side of [-1, 1]) {
@@ -136,7 +138,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
 
 
   const plantFeet = createGroundContact(player, feet);
-  const battleScene = createBattleScene(app, player, (x, z) => scenery.groundHeight(x, z));
+  const effects = createEffects(app);
+  const battleScene = createBattleScene(app, player, (x, z) => scenery.groundHeight(x, z), effects);
   const pack = new WanderingPack(ENVIRONMENTS.maresme.grid);
   let battle: BattleState | undefined;
   let paused = false;
@@ -179,6 +182,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
   let facing = 0;
   let visualFacing = 0;
   const walk = new WalkAnimation();
+  let clock = 0;
+  let lastStride = 0;
   let overview = false;
   let bernatCalled = false;
   let lastPrompt = '';
@@ -287,13 +292,26 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
       }
     } else clearInput();
     const walking = movement.moving && !movement.bouncing && !paused && !battle && !document.querySelector('#hud[data-dialogue]');
-    const pose = walk.update(delta, !!walking, !reducedMotion.matches);
+    const animate = !reducedMotion.matches;
+    const pose = walk.update(delta, !!walking, animate);
+    clock += delta;
+    // Each footfall kicks up a small puff under the planted shoe.
+    if (walking && animate && Math.sign(pose.stride) !== Math.sign(lastStride) && Math.abs(pose.stride) > 1) {
+      const foot = feet[pose.stride > 0 ? 1 : 0].getPosition();
+      effects.emit('dust', new pc.Vec3(foot.x, scenery.groundHeight(foot.x, foot.z) + .05, foot.z), 2, .08);
+    }
+    lastStride = pose.stride;
+    const idle = idlePose(clock);
+    const resting = animate && !walking && !battle ? 1 - pose.weight : 0;
     const turn = ((facing - visualFacing + 540) % 360) - 180;
     visualFacing += turn * (reducedMotion.matches ? 1 : 1 - Math.exp(-delta / .065));
     visualFacing = ((visualFacing + 180) % 360 + 360) % 360 - 180;
     body.setLocalEulerAngles(0, visualFacing, pose.sway);
     limbs.forEach((limb, i) => limb.setLocalEulerAngles(pose.stride * (i === 0 || i === 3 ? 1 : -1) * (i % 2 ? .8 : 1), 0, 0));
     body.setLocalPosition(0, 0, 0);
+    body.setLocalScale(1, 1 + idle.breathe * .016 * resting, 1);
+    head.setLocalEulerAngles(-idle.breathe * 2 * resting, idle.look * 16 * resting, 0);
+    eyes.forEach(eye => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, .027 * (animate ? idle.blink : 1), s.z); });
     const separationHop = movement.bouncing && !reducedMotion.matches ? Math.sin(movement.progress * Math.PI) * .18 : 0;
     plantFeet(scenery.groundHeight, separationHop);
     battleScene.dogs.forEach((model, i) => {
@@ -305,7 +323,9 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
       model.setEulerAngles(0, dog.yaw, 0);
       battleScene.wander(i, delta, dog.progress < 1 && !paused && !battle && !document.querySelector('#hud[data-dialogue]'), !reducedMotion.matches);
     });
-    battleScene.update(delta, !reducedMotion.matches);
+    battleScene.update(delta, animate);
+    scenery.update(delta, animate);
+    effects.update(delta);
     const aspect = canvas.clientWidth / canvas.clientHeight;
     const isNeighborhood = environment.id === 'maresme';
     const target = battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1, 0)).add(battleScene.focus) : isNeighborhood && !overview ? player.getPosition().clone() : new pc.Vec3();
@@ -344,7 +364,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
     window.removeEventListener('blur', clearInput); document.removeEventListener('visibilitychange', clearInput);
     window.removeEventListener('resize', resize);
     canvas.removeEventListener('pointerup', touchDog);
-    battleScene.destroy();
+    battleScene.destroy(); effects.destroy();
     scenery.destroy(); playerMaterials.forEach(m => m.destroy());
   });
   app.start();
