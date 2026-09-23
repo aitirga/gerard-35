@@ -69,7 +69,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
     model: pc.Entity; base: pc.Vec3; start: pc.Vec3; hp: number; party: boolean;
     downAt?: number; poofed?: boolean; hitAt?: number; flashColor: pc.Color; flash: number; materials: pc.StandardMaterial[];
     body: pc.Entity | null; head: pc.Entity | null; tail: pc.Entity | null; ears: pc.Entity[]; eyes: pc.Entity[]; eyeScale: number; seed: number;
-    arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; scale: pc.Vec3;
+    arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
     plantFeet: ReturnType<typeof createGroundContact>;
   }
@@ -164,7 +164,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
           const head = model.findByName(party ? 'Cabeza infantil' : 'Cabeza de perro') as pc.Entity | null;
           const eyes = model.find(node => node.name === 'Ojo') as pc.Entity[];
           fighters.set(unit.id, {
-            model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null,
+            model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null,
             ears: model.find(node => node.name === 'Oreja') as pc.Entity[], eyeScale: eyes[0]?.getLocalScale().y ?? 1, seed: party ? i * 3.1 + .4 : i,
             flash: 0, flashColor: white, materials: ownMaterials(model),
             scale: source.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
@@ -201,21 +201,30 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
       marker.enabled = !!selected && selected.hp > 0 && !effect && entryTime >= ENTRY_SECONDS;
       if (selected) marker.setPosition(selected.base.x, groundHeight(selected.base.x, selected.base.z) + .025, selected.base.z);
       for (const [id, f] of fighters) {
-        const opponent = [...fighters.values()].find(other => other.party !== f.party && other.hp > 0);
-        const lookAt = id === effect?.actor && target ? target.base : id === effect?.target && actor ? actor.base : opponent?.base;
+        const opponents = [...fighters.values()].filter(other => other.party !== f.party && other.hp > 0);
+        const opponent = opponents[0];
+        // At rest everyone squares up to the middle of the other side; the active ally turns toward whatever is being picked.
+        const center = opponents.length ? opponents.reduce((sum, o) => sum.add(o.base), new pc.Vec3()).mulScalar(1 / opponents.length) : undefined;
+        const aiming = !effect && f.party && !!selected && selected !== f && selected.hp > 0 && state?.phase === 'player' && state.allies[state.active]?.id === id;
+        const lookAt = id === effect?.actor && target ? target.base : id === effect?.target && actor ? actor.base : aiming ? selected!.base : center;
         const yaw = lookAt ? face(f.base, lookAt) : (f.party ? 80 : -85);
         const noticedYaw = opponent ? face(f.start, opponent.start) : f.yaw;
         const noticeDelta = ((noticedYaw - f.yaw + 540) % 360) - 180;
         const firstLook = f.yaw + noticeDelta * smooth(entryTime / .22);
         const formationTurn = ((yaw - firstLook + 540) % 360) - 180;
         const facing = firstLook + formationTurn * smooth((entryTime - .25) / .7);
+        const turnLeft = ((facing - f.turn + 540) % 360) - 180;
+        const settled = animate && entryTime >= ENTRY_SECONDS;
+        f.turn = settled ? f.turn + turnLeft * (1 - Math.exp(-dt * 9)) : facing;
+        // Big pivots get a quick shuffle of the feet instead of spinning on the spot.
+        const pivoting = settled && Math.abs(turnLeft) > 8;
         const notice = animate && entryTime < .42 ? Math.sin(entryTime / .42 * Math.PI) : 0;
         const position = new pc.Vec3().lerp(f.start, f.base, entryMove);
         if (f.party) position.z += Math.sin(entryMove * Math.PI) * 1.8;
         let lean = -notice * 6, roll = 0, strike = 0;
         const movingIn = animate && entryMove > 0 && entryMove < 1;
         const attacking = !!motion && id === effect?.actor;
-        const stepping = attacking ? (t > .12 && t < CONTACT_SECONDS) || (t > .62 && t < 1.06) : movingIn;
+        const stepping = attacking ? (t > .12 && t < CONTACT_SECONDS) || (t > .62 && t < 1.06) : movingIn || pivoting;
         const gait = f.walk.update(dt, stepping, animate, attacking ? .3 : .38);
         const stride = gait.stride;
         let hop = 0;
@@ -262,7 +271,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
         const breathe = animate && down < 0 ? idle.breathe * .018 : 0;
         const size = Math.max(.001, shrink);
         f.model.setLocalScale(f.scale.x * size * (1 + squash * .09), f.scale.y * size * (1 - squash * .16 + breathe), f.scale.z * size * (1 + squash * .09));
-        f.model.setLocalEulerAngles(lean, facing, roll);
+        f.model.setLocalEulerAngles(lean, f.turn, roll);
         if (fall) f.model.setPosition(position.x, groundHeight(position.x, position.z) + hop + fall * .22, position.z);
         else { f.model.setPosition(position); f.plantFeet(groundHeight, hop); }
         f.model.enabled = shrink > .01;

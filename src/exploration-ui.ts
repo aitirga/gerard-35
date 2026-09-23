@@ -1,3 +1,5 @@
+import { clickControllerButton, focusControllerButton } from './controller-ui';
+import type { ControlAction } from './controller';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
 import type { Cell } from './movement';
 import { renderWorldMap } from './world-map';
@@ -72,6 +74,7 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
   dock.addEventListener('click', click); root.addEventListener('click', click);
   root.querySelector('.journal-close')!.addEventListener('click', close);
   function keydown(event: KeyboardEvent) {
+    if (document.querySelector('dialog[open]')) return;
     if (event.altKey || event.ctrlKey || event.metaKey || (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable="true"]'))) return;
     const panel = PANELS.find(p => p.key === event.code);
     if (panel || (active && event.key === 'Escape')) {
@@ -87,7 +90,14 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
   }
   window.addEventListener('keydown', keydown, { capture: true });
   return {
-    close,
+    close, toggle,
+    get active() { return active; },
+    control(action: ControlAction) {
+      if (!active) return;
+      if (action === 'cancel') close();
+      else if (action === 'confirm') clickControllerButton(root);
+      else if (action !== 'menu') focusControllerButton(root, action);
+    },
     update(id: EnvironmentId, position: Cell, count = steps) { location = id; cell = { ...position }; steps = count; render(); },
     setCompanion() { companion = true; render(); },
     destroy() { close(); window.removeEventListener('keydown', keydown, { capture: true }); dock.remove(); root.remove(); },

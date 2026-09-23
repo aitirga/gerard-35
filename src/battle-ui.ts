@@ -1,3 +1,5 @@
+import { clickControllerButton, focusControllerButton } from './controller-ui';
+import type { ControlAction } from './controller';
 import { act, createBattle, enemyAct, nextRound, SKILLS, validTargets, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
 import { DOG_PROFILES } from './encounters';
 
@@ -19,7 +21,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     <div class="round-badge"><span>RONDA</span><strong>01</strong></div>
     <div class="battle-targets" aria-label="Objetivos en la calle"></div>
     <div class="battle-pops" aria-hidden="true"></div>
-    <p class="battle-message" role="status" aria-live="polite"></p>
     <div class="battle-bottom">
       <section class="command-panel" aria-label="Acciones de combate">
         <div class="turn-heading"><span class="turn-dot"></span><span class="turn-label"></span><span class="turn-meta">TU TURNO</span></div>
@@ -70,7 +71,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!state) return;
     const ended = !busy && ['won', 'lost', 'escaped'].includes(state.phase);
     root.dataset.phase = state.phase;
-    get('.battle-message').textContent = targeting ? `Selecciona ${selectedSkill === 'encourage' ? 'un aliado herido' : 'un enemigo'} para ${selectedSkill ? SKILLS.find(s => s.id === selectedSkill)!.name : 'Atacar'}.` : state.message;
     get('.battle-heading .battle-kicker').textContent = `ENCUENTRO / ${state.foes.filter(f => f.hp > 0).length} DE ${state.foes.length} PERROS`;
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
     get('.turn-label').textContent = state.allies[state.active].name;
@@ -268,6 +268,20 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   root.addEventListener('keydown', keydown);
   return {
+    get controllerContext() { return !state ? 'world' : `battle:${busy ? 'busy' : state.phase}:${selected ?? ''}:${selectedSkill ?? ''}:${targeting}`; },
+    control(action: ControlAction) {
+      if (!state || busy) return;
+      if (action === 'cancel') { if (['won', 'lost', 'escaped'].includes(state.phase)) close(); else back(); }
+      else if (action === 'confirm') clickControllerButton(root);
+      else if (action !== 'menu') {
+        if (targeting) {
+          const buttons = targetButtons();
+          const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+          const step = action === 'up' || action === 'left' ? -1 : 1;
+          buttons[index < 0 ? 0 : (index + step + buttons.length) % buttons.length]?.focus();
+        } else focusControllerButton(root, action);
+      }
+    },
     positionTargets(targets: { id: string; x: number; y: number; visible: boolean }[]) {
       for (const target of targets) {
         positions.set(target.id, target);
@@ -282,7 +296,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
       state = createBattle(allyCount, foeCount); busy = true;
-      get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${i < foeCount ? `data-unit="${f.id}"` : ''} data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${DOG_PROFILES[i]?.collar ?? '#b9dba1'}" aria-label="Elegir a ${f.name}" hidden disabled><span class="target-name">${f.name}</span>${i < foeCount ? '<span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>' : ''}</button>`).join('');
+      get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${i < foeCount ? `data-unit="${f.id}"` : ''} data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${DOG_PROFILES[i]?.collar ?? '#b9dba1'}" aria-label="Elegir a ${f.name}" hidden disabled>${i < foeCount ? '<span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>' : ''}</button>`).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;
       get('.party-roster').replaceChildren(); get('.battle-pops').replaceChildren(); positions.clear();
       hud.dataset.battle = 'open'; outside().forEach(el => { el.inert = true; });

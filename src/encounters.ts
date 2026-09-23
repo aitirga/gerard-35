@@ -34,6 +34,10 @@ export class WanderingPack {
     return { x: dog.from.x + (dog.cell.x - dog.from.x) * t, z: dog.from.z + (dog.cell.z - dog.from.z) * t };
   }
   near(cell: Cell, radius = 1) { return this.occupied.some(other => distance(cell, other) <= radius); }
+  /** Whether a free-moving player is close enough to any dog to start a fight. */
+  touching(position: Cell, radius = 1.05) {
+    return this.dogs.some(dog => { const p = this.position(dog); return Math.hypot(p.x - position.x, p.z - position.z) <= radius; });
+  }
   finish(won: boolean) {
     this.armed = false;
     this.cooldown = won ? 14 : 6;

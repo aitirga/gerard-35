@@ -126,11 +126,12 @@ export function createDialogueBanner(hud: HTMLElement) {
   next.addEventListener('click', advance);
   // Runs before the game's own key handler, so E / Enter / Space advance instead of re-ringing the bell.
   window.addEventListener('keydown', event => {
+    if (document.querySelector('dialog[open]')) return;
     if (!current || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.code === 'KeyE' || event.code === 'Enter' || event.code === 'Space') {
       event.preventDefault(); event.stopImmediatePropagation();
       if (!event.repeat) advance();
-    } else if (event.code === 'Escape') close();
+    } else if (event.code === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); if (!event.repeat) close(); }
   }, { capture: true });
 
   return { show, advance, close, get open() { return !!current; } };

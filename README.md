@@ -15,7 +15,7 @@ just backend # in one terminal
 just dev     # in another terminal
 ```
 
-Open the URL Vite prints (usually http://localhost:5173). The Maresme neighborhood opens immediately. Select the courtyard from the environment menu to return to the movement test scene. Move Gerard with W, A, S and D, a controller’s left stick or D-pad. On touch screens, use the on-screen arrows. Tap for one cell or hold to keep walking; walls block movement. Keyboard directions follow the isometric grid: W northeast, D southeast, S southwest, A northwest.
+Open the URL Vite prints (usually http://localhost:5173). The Maresme neighborhood opens immediately. Select the courtyard from the environment menu to return to the movement test scene. Move Gerard with W, A, S and D (or the arrow keys), a controller’s left stick or D-pad. On touch screens, use the on-screen arrows. Movement is free and follows the screen: W is up, D is right, and two keys together walk diagonally. The stick walks in any direction, slower with a light tilt. Gerard slides along walls and stops wherever you let go.
 
 Run `just` at any time for a grouped, color-coded command menu. The most common
 commands are:
@@ -45,7 +45,7 @@ The underlying npm scripts remain available when `just` is not installed:
 index.html          Welcome screen, canvas and HUD
 src/main.ts         Bootstraps the game and wires the HUD
 src/game.ts         Isometric courtyard, Gerard model, lights, shadows and input
-src/movement.ts     Shared grid, collisions and cell-to-cell movement
+src/movement.ts     Collision grid and free movement with a round collider
 src/style.css       Fullscreen canvas and HUD styling
 vite.config.ts      Vite config (relative base so it works on GitHub Pages)
 .github/workflows   Runs build and API tests on pushes and pull requests
@@ -108,8 +108,8 @@ Three.js (lower level, more boilerplate for a game loop), Babylon.js (heavier bu
 The default environment is an approximate reconstruction of Passatge Maresme,
 Sant Quirze del Vallès, based on the supplied map references. Gerard lives at
 number 20; Bernat is placed directly opposite as requested. Walk through Gerard’s
-gate, approach the door and press **E** (or controller **A**) to enter the provisional
-interior. Use the exit interaction to return. Bernat’s door triggers a demo quest
+gate, approach the door and press **E** (or the controller’s configured confirm button) to enter his
+house (see below). Use the street door to return. Bernat’s door triggers a demo quest
 and dialogue; his house cannot be entered. The quest and current location reset
 on reload; the step counter still uses the existing backend.
 
@@ -119,8 +119,10 @@ resumes the following camera. The environment selector also retains the original
 
 `src/environments.ts` defines the maps, building footprints, props and interaction
 anchors. `src/scenery.ts` builds their visual meshes separately from gameplay.
-`src/movement.ts` accepts any scene’s collision grid, with 190 ms cell transitions,
-a one-direction input buffer and a 0.3 joystick dead zone. All movement is cardinal.
+`src/movement.ts` moves Gerard freely over any scene’s collision grid at 5.2 tiles per
+second. A round collider slides along walls and is nudged around corners it clips.
+Input is read in screen space and rotated onto the isometric grid, and the stick has
+a 0.3 dead zone. Entering a new tile counts as a step. Interactions reach 1.25 tiles.
 
 - `just check`: TypeScript, movement/environment/battle tests and Python API tests.
 - `just build`: production assets.
@@ -129,6 +131,40 @@ a one-direction input buffer and a 0.3 joystick dead zone. All movement is cardi
 
 See [the environment pipeline](docs/environment-pipeline.md) for the reconstruction
 approach, limitations, and future paths using images, Blender/GLB or photogrammetry.
+
+### Gerard's house
+
+From the street, number 20 is a white wall with the front door and the garage. Behind it
+are the open-air entrance and a flat-roofed two-storey house; there is no separate front
+yard. The house follows the family's hand-drawn plan, with north up as on the sketch. It has three
+scenes linked by doors and stairs:
+
+- **Entrada**: an open-air entrance with no roof. The street door leads into a paved corridor.
+  The garage (car, shelves, bikes) and a gravel patio are off it, and stone steps climb to the
+  raised deck of Patio 2. From there, the house door opens into the hall and the glass door
+  into the living room.
+- **Planta 1**: the hall, the living room (cream sofa facing the TV, arc lamp, oval dining
+  table), floating oak stairs lined with paintings, the bathroom behind the stairs, the study,
+  the new kitchen with an island, and the garden through the sliding door.
+- **Planta 2**: the stairwell with a glass balustrade and more paintings, the hallway, the
+  parents' room, Jan's room, the other bedroom, a bathroom and **Gerard's room**. His room has
+  the bed on the west wall, the wardrobe on the south wall and the door on the east. A wall of
+  shelves along the north side holds Egyptian gods, minerals, Magic cards and everything
+  else. Press **E** at each bay to hear Gerard talk about it.
+
+The floors are white porcelain tiles and the walls are white, with oak and black-steel
+details. The camera looks from the south-east, so walls and tall furniture fold down while
+they stand between Gerard and the camera. Inside, the camera follows Gerard closer;
+**R** shows the whole floor. **M** labels every room.
+
+Each floor is an ASCII plan in `src/environments.ts`, and `PLAN_GLYPHS` explains each glyph.
+The collision grid is derived from the plan, so walls, furniture and doorways stay in sync
+with the visuals. `rooms` give floor materials and map labels, `stairs` give walkable steps,
+and each door or stair is an interaction with a `to` destination; `lines` make Gerard
+comment. Stairs also have a `step` area: walking onto the steps changes floor, no key
+needed. They re-arm once Gerard lets go of the controls or walks away, so arriving never
+sends him straight back. `src/home-scenery.ts` builds the walls, floors, steps and furniture. Edit a plan
+row and the matching furniture block together.
 
 ## Battle prototype
 
@@ -208,3 +244,32 @@ language through exploration, dialogue and the journal: translucent forest-green
 surfaces, warm paper/gold commands, crisp borders and restrained diagonal motion.
 Keep the world visible behind panels, retain the shell when changing sections,
 and respect reduced-motion preferences when adding UI.
+
+
+### Desktop controllers
+
+Press **Esc** (or **+ / Start** on a controller), then choose **Mando** to see connected controllers, test raw buttons and axes, or
+assign controls. Recognized standard Nintendo Switch / Switch 2 controllers use
+**A** to confirm/interact, **B** to go back, and **+** to open the menu. Other
+standard controllers use the bottom face button, right face button, and Start.
+The left stick or D-pad moves Gerard and navigates menus. Hold **B** while moving
+to run at twice walking speed; release it to walk again. With custom mappings, hold
+the assigned cancel/back control to run. B still goes back in menus and battles. Battles support command,
+skill and target selection, confirmation, cancellation, and returning to the
+street. Dialogue supports confirm to reveal/advance and cancel to close.
+The adventure menu offers Continue, Controller settings, and How to play. Esc goes back from settings and closes the main menu. Keyboard and mouse remain available.
+
+Controllers without browser standard mapping stay inactive until configured.
+Choose the active device, then **Asignar controles** and assign four directions,
+confirm, cancel, and menu; use either buttons or centered stick axes. Release each
+control between steps. Mappings save locally per controller identifier only after
+all seven steps; **Restablecer** removes the custom mapping. If browser storage is
+unavailable, the mapping remains active for the session. Custom mappings use the
+assigned directions only; standard profiles support both stick and D-pad.
+
+The browser must expose the controller through `navigator.getGamepads()` first.
+Connect it to the computer, focus the game and press a button. Switch 2 and Joy-Con
+support depends on the operating system/browser and connection mode; these changes
+do not supply device drivers or combine separate Joy-Cons. Use the device selector
+when multiple controllers are connected. Tests simulate browser input; physical
+Switch 1 / Switch 2 hardware compatibility still requires a real-device check.

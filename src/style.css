@@ -11,17 +11,13 @@ button:focus-visible { outline: 2px solid #dfbd7e; outline-offset: 5px; }
 #hud { position: fixed; inset: 0; pointer-events: none; user-select: none; }
 .eyebrow { font-size: 9px; font-weight: 500; letter-spacing: .19em; color: #aab9b3; }
 .bottom-bar { position: absolute; bottom: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; }
-.controls, .stats { padding: 12px 14px; border: 1px solid #a6c0b426; border-radius: 9px; background: #102329b8; backdrop-filter: blur(12px); }
+.controls { padding: 12px 14px; border: 1px solid #a6c0b426; border-radius: 9px; background: #102329b8; backdrop-filter: blur(12px); }
 .controls { display: flex; align-items: center; gap: 14px; }
 .controls strong { display: block; font-size: 11px; font-weight: 500; color: #dddcd0; }
 .controls span { display: block; margin-top: 5px; font-size: 9px; color: #94a9a4; }
 .move-keys { text-align: center; }
 .move-keys > div { display: flex; gap: 3px; margin-top: 3px; }
 kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b43b; border-radius: 3px; font-family: inherit; font-size: 12px; line-height: 18px; color: #bdc9bd; background: #a6c0b406; }
-.stats { display: grid; grid-template-columns: auto auto; column-gap: 28px; row-gap: 6px; text-align: right; }
-.stats .eyebrow { font-size: 7px; display: block; margin-bottom: 5px; }
-.stats strong { font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 400; font-variant-numeric: tabular-nums; color: #d9dacb; }
-#saved { grid-column: 1 / -1; padding: 0; border: none; background: none; color: #8da79c; font-size: 8px; text-align: right; pointer-events: auto; }
 .touch-controls { display: none; }
 #error { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); background: #172b30; border: 1px solid #c5b28d; border-radius: 12px; padding: 30px; max-width: 90vw; }
 #error button { padding: 10px 20px; border: 0; border-radius: 5px; background: #e5bd7b; color: #172b30; }
@@ -32,7 +28,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .bottom-bar { left: 14px; right: 14px; bottom: 14px; }
   .controls { gap: 10px; }
   .controls span { display: none; }
-  .stats { column-gap: 16px; }
 }
 @media (pointer: coarse) {
   .controls { display: none; }
@@ -47,31 +42,20 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .touch-controls { bottom: 90px; }
 }
 
-.place-panel, .quest { position: absolute; top: 22px; padding: 14px 17px; border: 1px solid #d4d9bd30; border-radius: 9px; background: #18322bcc; backdrop-filter: blur(12px); }
+.place-panel { position: absolute; top: 22px; padding: 14px 17px; border: 1px solid #d4d9bd30; border-radius: 9px; background: #18322bcc; backdrop-filter: blur(12px); }
 .place-panel { left: 22px; pointer-events: auto; display: grid; gap: 7px; }
-.place-panel .eyebrow, .quest .eyebrow { font-size: 8px; color: #c4c9a7; }
+.place-panel .eyebrow { font-size: 8px; color: #c4c9a7; }
 #environment { padding: 2px 18px 2px 0; color: #f4ebd1; background: transparent; border: none; font: 500 16px 'DM Sans', sans-serif; cursor: pointer; max-width: 265px; }
 #environment option { color: #f4ebd1; background: #18322b; }
 #location-detail { font-size: 9px; color: #c3c7ac; }
 #overview { justify-self: start; padding: 5px 0 0; border: none; background: none; color: #e8cc92; font-size: 10px; }
 #overview kbd { margin-left: 8px; width: 17px; height: 17px; font-size: 9px; line-height: 15px; }
-.quest { right: 22px; display: grid; gap: 7px; }
-.quest strong { font-weight: 500; font-size: 13px; color: #ece2c7; }
-.quest > span:last-child { color: #b8c6b3; font-size: 10px; }
-.world-label { position: absolute; top: 0; left: 0; padding: 7px 11px; color: #f8ebc5; border: 1px solid #d9c78b60; background: #1b3c31de; border-radius: 6px; font-size: 11px; box-shadow: 0 5px 20px #0002; will-change: transform; }
-.world-label::after { content: ''; position: absolute; left: calc(50% - 4px); bottom: -5px; width: 8px; height: 8px; transform: rotate(45deg); background: #1b3c31; }
-.world-label b { display: inline-block; margin-left: 9px; color: #e5c684; font-weight: 500; }
 #interact { position: absolute; pointer-events: auto; bottom: 142px; left: 50%; transform: translateX(-50%); border: 1px solid #d6bd7c; color: #f3e8cc; background: #1b3c31ee; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; white-space: nowrap; box-shadow: 0 4px 20px #15251b44; }
 #interact small { color: #bacaad; font-size: 10px; }
 @media (max-width: 760px) {
   .place-panel { left: 12px; top: 12px; padding: 10px 12px; max-width: calc(100vw - 24px); }
   #environment { font-size: 13px; }
-  .quest { top: 135px; right: 12px; padding: 10px 12px; }
-  .quest .eyebrow { display: none; }
-  .quest strong { font-size: 11px; }
-  .quest > span:last-child { font-size: 9px; }
   #interact { bottom: 145px; font-size: 11px; }
-  .world-label { font-size: 10px; padding: 5px 8px; }
 }
 
 /* Conversation banner — tweak the variables, the layout follows. */
@@ -139,8 +123,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 
 /* Battle: the same warm street, with a sharper, graphic rhythm. */
 #hud[data-battle] > :not(#battle) { visibility: hidden; }
-#dog-encounter { position: absolute; left: 0; top: 0; pointer-events: auto; padding: 8px 14px; border: 1px solid #ffe29d; border-radius: 3px; background: #26362fed; color: #ffe3a6; font-size: 11px; box-shadow: 4px 4px 0 #17272366; white-space: nowrap; }
-#dog-encounter small { display: block; margin-top: 3px; font-size: 8px; letter-spacing: .16em; color: #c7cbb5; }
 #battle { --battle-ink: #162823; --battle-gold: #f3cf78; --battle-paper: #f3efdc; position: absolute; inset: 0; pointer-events: auto; color: var(--battle-paper); background: linear-gradient(180deg, #10271f9c, transparent 29%, transparent 48%, #10201bde); overflow: hidden; animation: battle-in .55s ease both; }
 #battle::before { content: ''; position: absolute; inset: 0; pointer-events: none; border: 8px solid #e8c57718; }
 .battle-heading { position: absolute; top: 30px; left: 36px; transform: rotate(-2deg); }
@@ -304,15 +286,13 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   --battle-paper: var(--ui-paper);
 }
 #battle { --battle-ink: var(--ui-ink); --battle-gold: var(--ui-gold); --battle-paper: var(--ui-paper); }
-.place-panel, .quest, .controls, .stats, .world-label, #interact, #dog-encounter, #error {
+.place-panel, .controls, #interact, #error {
   border-radius: 2px; background: var(--ui-surface); color: var(--ui-paper);
   border-color: var(--ui-line); box-shadow: var(--ui-shadow);
 }
-.place-panel, .quest { border-top: 2px solid var(--ui-gold); }
-.quest { border-top-color: #b9dba1; }
-.eyebrow, .place-panel .eyebrow, .quest .eyebrow { color: var(--ui-gold); }
+.place-panel { border-top: 2px solid var(--ui-gold); }
+.eyebrow, .place-panel .eyebrow { color: var(--ui-gold); }
 #environment { font-weight: 600; }
-.world-label { border-left: 2px solid var(--ui-gold); }
 #interact { background: var(--ui-paper); color: var(--ui-ink); border: none; font-weight: 600; }
 #interact small, #interact kbd { color: var(--ui-ink); }
 #dialogue { --dlg-bg: var(--ui-surface); --dlg-border: var(--ui-line); --dlg-text: var(--ui-paper); --dlg-muted: var(--ui-muted); --dlg-radius: 2px; border-top: 2px solid var(--ui-gold); box-shadow: var(--ui-shadow); }
@@ -350,6 +330,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .map-point { fill: var(--ui-gold); stroke: #162823; stroke-width: .15; }
 .map-number { fill: #162823; font-size: 1.1px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
 .map-player { fill: var(--ui-paper); stroke: #162823; stroke-width: .25; }
+.map-room { fill: #e7eddc; font-weight: 600; letter-spacing: .02em; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #33503f; stroke-width: .18px; }
 .map-legend { display: grid; gap: 10px; font-size: 11px; padding: 20px 0; border-block: 1px solid var(--ui-line); }
 .map-legend span:first-child { color: var(--ui-paper); }
 .map-landmarks { padding-left: 22px; color: var(--ui-gold); font-size: 12px; line-height: 1.6; }
@@ -376,27 +357,21 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 /* Compact nameplates stay anchored to each fighter. */
 .battle-targets { position: absolute; inset: 0; pointer-events: none; }
 .battle-target { position: absolute; left: 0; top: 0; display: grid; gap: 5px; min-width: 80px; padding: 7px; border: 0; background: transparent; color: var(--battle-paper); font-size: 11px; text-align: center; }
-.target-name { font-weight: 600; line-height: 1.2; text-shadow: 0 1px 2px #102019, 0 0 5px #102019cc; transition: color .2s; }
 .enemy-health { position: relative; display: block; height: 3px; overflow: hidden; border-radius: 2px; background: #172c2566; box-shadow: 0 1px 3px #10201966; }
 .enemy-health i, .enemy-health b { position: absolute; inset: 0 auto 0 0; }
 .enemy-health i { background: var(--dog-color); transition: width .5s cubic-bezier(.2,.8,.2,1); }
-.battle-target.is-acting .target-name { color: var(--dog-color); }
 .battle-target.is-down { opacity: .4; }
 .battle-target:disabled { cursor: default; }
 #battle[data-targeting] .battle-target:not(:disabled) { pointer-events: auto; cursor: pointer; }
 .battle-target.is-eligible, .battle-target.is-targeted, .battle-target:focus-visible { outline: none; }
-.battle-target.is-targeted .target-name, .battle-target:focus-visible .target-name { color: var(--battle-gold); text-decoration: underline; text-underline-offset: 3px; }
 .battle-target.is-targeted .enemy-health, .battle-target:focus-visible .enemy-health { box-shadow: 0 0 0 1px var(--battle-gold), 0 0 7px #f3cf7870; }
 .battle-target.contact-hit { animation: nameplate-contact .35s ease-out; }
 @keyframes nameplate-contact { 50% { filter: brightness(1.5) drop-shadow(0 0 4px #f3cf78); } }
-.battle-message { position: absolute; left: 36px; top: 150px; margin: 0; width: 330px; font-size: 12px; line-height: 1.5; color: #d6decd; }
 .command-choices:has([data-target]) { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 170px; }
 .command-choices:has([data-target]) button { display: grid; gap: 4px; margin: 0; padding: 10px; }
-#dog-encounter:disabled { opacity: .7; cursor: default; }
 @media (min-width: 900px) and (max-height: 760px) {
   .battle-heading { top: 20px; }
   .battle-heading h1 { font-size: 30px; }
-  .battle-message { top: 110px; font-size: 11px; }
   .battle-bottom { bottom: 20px; }
   .party-card { min-height: 94px; }
 }
@@ -449,9 +424,35 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 @keyframes prompt-in { from { opacity: 0; translate: 0 10px; scale: .92; } }
 #interact kbd { animation: key-nudge 1.8s 1s ease-in-out infinite; }
 @keyframes key-nudge { 0%, 80%, 100% { translate: 0 0; } 88% { translate: 0 2px; } }
-.world-label { animation: label-bob 3.4s ease-in-out infinite; }
-#label-bernat { animation-delay: -1.7s; }
-@keyframes label-bob { 50% { translate: 0 -4px; } }
-#dog-encounter:enabled { animation: pack-call 2s ease-in-out infinite; }
-@keyframes pack-call { 50% { box-shadow: 4px 4px 0 #17272366, 0 0 0 4px #ffe29d22; } }
 @media (prefers-reduced-motion: reduce) { .damage-pop > * { animation: none !important; } }
+
+/* Adventure menu uses the same paper commands, gold accents and ink as the journal. */
+#controller-menu { width: min(620px, calc(100vw - 80px)); max-height: calc(100vh - 64px); overflow: auto; padding: 30px 34px; color: var(--ui-paper); background: linear-gradient(145deg, #172c25fa, #10231bf5); border: 1px solid var(--ui-line); border-top: 3px solid var(--ui-gold); border-radius: 2px; box-shadow: 12px 12px 0 #071e2266; font: inherit; }
+#controller-menu::backdrop { background: #07191d99; backdrop-filter: blur(5px); }
+#controller-menu .journal-heading h1 { font-size: 42px; margin-bottom: 10px; }
+#controller-menu .journal-close { white-space: nowrap; }
+.menu-intro { margin: 0 0 22px; color: var(--ui-muted); font-size: 13px; line-height: 1.6; }
+.adventure-options { display: grid; gap: 9px; padding-right: 5px; }
+.adventure-options button { display: grid; grid-template-columns: 28px 1fr; align-items: center; column-gap: 12px; padding: 12px 16px; border: 0; background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); text-align: left; transition: background .18s, translate .18s; }
+.adventure-options button > span { grid-row: span 2; font-size: 10px; opacity: .6; }
+.adventure-options strong { font-size: 16px; }
+.adventure-options small { margin-top: 3px; font-size: 10px; opacity: .7; }
+.adventure-options button:first-child { background: var(--ui-gold); }
+.adventure-options button:enabled:hover, .adventure-options button:focus { background: var(--ui-gold); translate: 4px 0; }
+#controller-menu button:disabled { opacity: .4; cursor: default; }
+#controller-menu button:focus-visible, #battle button:not(.battle-target):focus, #exploration-panel button:focus { outline: 2px solid var(--ui-gold); outline-offset: 3px; }
+#controller-menu [data-page="controller"] { font-size: 13px; line-height: 1.6; }
+#controller-menu select { display: block; width: 100%; margin-top: 8px; font: inherit; padding: 10px; border: 1px solid var(--ui-line); border-radius: 2px; color: var(--ui-paper); background: var(--ui-ink); }
+.controller-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
+.controller-actions button { padding: 11px 14px; border: 0; background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); font-size: 12px; }
+.controller-actions button:hover { background: var(--ui-gold); }
+.controller-test { padding: 16px; border-left: 3px solid var(--ui-gold); background: #ffffff06; }
+.controller-test output { display: block; margin-top: 10px; font: 12px/1.8 monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.controller-note, .menu-footer { color: var(--ui-muted); font-size: 11px; line-height: 1.7; }
+.menu-footer { margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--ui-line); }
+#controller-menu [data-status] { overflow-wrap: anywhere; }
+.menu-controls { margin: 12px 0 24px; }
+.menu-controls > div { padding: 13px 0; border-bottom: 1px solid var(--ui-line); }
+.menu-controls dt { color: var(--ui-gold); font-size: 12px; font-weight: 600; }
+.menu-controls dd { margin: 5px 0 0; color: var(--ui-paper); font-size: 13px; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { .adventure-options button { transition: none; } }

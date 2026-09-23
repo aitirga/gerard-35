@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import { GridMovement, VECTORS, isOccupied, stickDirection, type Cell, type Direction } from './movement';
+import { FreeMovement, SCREEN_VECTORS, facingToward, screenToGrid, type Cell, type Direction, type Stick } from './movement';
 import { ENVIRONMENTS, nearbyInteraction, type EnvironmentId, type Interaction } from './environments';
 import { buildScenery } from './scenery';
 import { type Dialogue } from './dialogue';
@@ -12,14 +12,12 @@ import { createGroundContact } from './ground-contact';
 
 export interface GameCallbacks {
   onEncounter: (allies: 1 | 2, foes: number) => void;
-  onDog: (x: number, y: number, visible: boolean, count: number, ready: boolean) => void;
   onBattleTargets: (targets: { id: string; x: number; y: number; visible: boolean }[]) => void;
   onStep: (steps: number, cell: Cell) => void;
   onLocation: (id: EnvironmentId, cell: Cell) => void;
   onInteraction: (interaction: Interaction | undefined) => void;
   onDialogue: (dialogue: Dialogue) => void;
   onQuest: () => void;
-  onLabels: (labels: { id: string; x: number; y: number; visible: boolean }[]) => void;
 }
 
 export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) {
@@ -28,7 +26,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
   app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
   let environment = ENVIRONMENTS.maresme;
-  const movement = new GridMovement(environment.grid, environment.spawn);
+  const movement = new FreeMovement(environment.grid, environment.spawn);
   let scenery = buildScenery(app, environment);
   const playerMaterials: pc.StandardMaterial[] = [];
   function material(name: string, hex: string, gloss = 20, glow = 0) {
@@ -174,11 +172,14 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
   }
   canvas.addEventListener('pointerup', touchDog);
 
-  const keyMap: Record<string, Direction> = { KeyW: 'up', KeyD: 'right', KeyS: 'down', KeyA: 'left' };
+  const keyMap: Record<string, Direction> = {
+    KeyW: 'up', KeyD: 'right', KeyS: 'down', KeyA: 'left',
+    ArrowUp: 'up', ArrowRight: 'right', ArrowDown: 'down', ArrowLeft: 'left',
+  };
   const held = new Map<string, Direction>();
-  let queued: Direction | null = null;
-  let padPrevious: Direction | null = null;
-  let padActionHeld = false;
+  let controllerDirection: Direction | null = null;
+  let controllerStick: Stick | null = null;
+  let controllerRunning = false;
   let facing = 0;
   let visualFacing = 0;
   const walk = new WalkAnimation();
@@ -187,12 +188,15 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
   let overview = false;
   let bernatCalled = false;
   let lastPrompt = '';
+  // Walk-on stairs wait until Gerard lets go or walks away, so arriving never bounces him back.
+  let stairsArmed = false;
+  let arrival: Cell = { ...movement.cell };
   const cameraTarget = scenery.toWorld(movement.cell.x, movement.cell.z);
   const screen = new pc.Vec3();
-  function clearInput() { held.clear(); queued = null; padPrevious = null; }
+  function clearInput() { held.clear(); }
   function updatePrompt() {
     if (battle) return;
-    const interaction = movement.moving ? undefined : nearbyInteraction(environment, movement.cell);
+    const interaction = movement.bouncing ? undefined : nearbyInteraction(environment, movement.cell);
     const id = interaction?.id ?? '';
     if (id !== lastPrompt) { lastPrompt = id; callbacks.onInteraction(interaction); }
   }
@@ -208,6 +212,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
     environment = ENVIRONMENTS[id];
     scenery = buildScenery(app, environment);
     movement.teleport(environment.grid, destination ?? environment.spawn);
+    stairsArmed = false; arrival = movement.cell;
     movement.resolveOverlap(occupiedCells(), !reducedMotion.matches);
     overview = false;
     lastPrompt = '';
@@ -217,15 +222,15 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
     positionPlayer(); updatePrompt();
   }
   function interact() {
-    if (paused || battle || movement.moving) return;
-    if (environment.id === 'maresme' && pack.near(movement.cell)) { encounter(); return; }
-    const target = nearbyInteraction(environment, movement.cell);
+    if (paused || battle || movement.bouncing) return;
+    if (environment.id === 'maresme' && pack.touching(movement.position, 1.5)) { encounter(); return; }
+    const target = nearbyInteraction(environment, movement.position);
     if (!target) return;
-    if (target.id === 'enter-home') {
-      setEnvironment('home');
-      callbacks.onDialogue({ left: 'gerard', lines: [{ speaker: 'gerard', text: 'Mi casa. Todavía por amueblar, pero ya se siente como hogar.' }] });
-    } else if (target.id === 'leave-home') {
-      setEnvironment('maresme', { x: 28, z: 24 });
+    // Doors and stairs travel; anything with lines is something Gerard comments on.
+    if (target.to || target.lines) {
+      clearInput();
+      if (target.to) setEnvironment(target.to.environment, target.to.cell);
+      else if (target.lines) callbacks.onDialogue({ left: 'gerard', lines: target.lines.map(text => ({ speaker: 'gerard' as const, text })) });
     } else {
       clearInput();
       callbacks.onDialogue({ left: 'gerard', right: 'bernat', lines: bernatCalled
@@ -245,7 +250,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
     const direction = keyMap[event.code];
     if (!direction) return;
     event.preventDefault();
-    if (!held.has(event.code)) { held.set(event.code, direction); queued = direction; }
+    held.set(event.code, direction);
   }
   function keyup(event: KeyboardEvent) { held.delete(event.code); }
   function resize() { app.resizeCanvas(); }
@@ -260,40 +265,37 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
   app.on('update', (dt: number) => {
     const delta = Math.min(dt, 0.05);
     if (!paused && !battle && !document.querySelector('#hud[data-dialogue]')) {
-      const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter((p): p is Gamepad => p !== null && p.connected) : [];
-      let padDirection: Direction | null = null;
-      let action = false;
-      if (document.hasFocus() && !document.hidden) for (const pad of pads) {
-        action ||= pad.buttons[0]?.pressed ?? false;
-        padDirection ??= pad.buttons[12]?.pressed ? 'up' : pad.buttons[13]?.pressed ? 'down'
-          : pad.buttons[14]?.pressed ? 'left' : pad.buttons[15]?.pressed ? 'right'
-          : stickDirection(pad.axes[0] ?? 0, pad.axes[1] ?? 0);
+      movement.update(dt);
+      // Everything steers in screen space: held keys add up, otherwise the stick or D-pad.
+      const keys = [...new Set(held.values())].reduce((sum, d) => ({ x: sum.x + SCREEN_VECTORS[d].x, y: sum.y + SCREEN_VECTORS[d].y }), { x: 0, y: 0 });
+      const keyLength = Math.hypot(keys.x, keys.y);
+      let input: Stick | null = keyLength ? { x: keys.x / keyLength, y: keys.y / keyLength } : null;
+      if (!input && controllerStick) {
+        // Analog tilt walks slower, but never so slow that it looks stuck.
+        const length = Math.hypot(controllerStick.x, controllerStick.y);
+        const tilt = Math.min(1, Math.max(0.35, (length - 0.2) / 0.7));
+        input = { x: controllerStick.x / length * tilt, y: controllerStick.y / length * tilt };
       }
-      if (action && !padActionHeld) interact();
-      padActionHeld = action;
-      if (padDirection && padDirection !== padPrevious) queued = padDirection;
-      padPrevious = padDirection;
-      if (movement.update(dt)) callbacks.onStep(movement.steps, { ...movement.cell });
-      if (!movement.moving) {
-        const direction = queued ?? [...held.values()].at(-1) ?? padDirection;
-        queued = null;
-        if (direction) {
-          facing = { up: 180, right: 90, down: 0, left: -90 }[direction];
-          const vector = VECTORS[direction];
-          const next = { x: movement.cell.x + vector.x, z: movement.cell.z + vector.z };
-          if (movement.tryStep(direction, occupiedCells())) overview = false;
-          else if (pack.armed && isOccupied(next, occupiedCells())) encounter();
-        }
-      }
+      if (!input && controllerDirection) input = SCREEN_VECTORS[controllerDirection];
+      if (input) {
+        const grid = screenToGrid(input.x, input.y);
+        facing = facingToward(grid.x, grid.z);
+        if (movement.drive(grid.x, grid.z, dt, occupiedCells(), controllerRunning)) callbacks.onStep(movement.steps, movement.cell);
+        if (movement.walking) overview = false;
+      } else movement.walking = false;
+      const here = movement.cell;
+      if (!input || Math.hypot(here.x - arrival.x, here.z - arrival.z) > 2.5) stairsArmed = true;
+      const stairs = environment.interactions.find(({ step: r }) => r && here.x >= r.x && here.x < r.x + r.w && here.z >= r.z && here.z < r.z + r.d);
+      if (stairs?.to && stairsArmed && input) setEnvironment(stairs.to.environment, stairs.to.cell);
       positionPlayer(); updatePrompt();
       if (environment.id === 'maresme' && !battle) {
-        pack.update(delta, movement.moving ? [movement.cell, movement.from] : [movement.cell]);
-        if (!movement.moving && pack.armed && pack.near(movement.cell)) encounter();
+        pack.update(delta, movement.footprint);
+        if (!movement.bouncing && pack.armed && pack.touching(movement.position)) encounter();
       }
-    } else clearInput();
-    const walking = movement.moving && !movement.bouncing && !paused && !battle && !document.querySelector('#hud[data-dialogue]');
+    } else { clearInput(); movement.walking = false; }
+    const walking = movement.walking && !paused && !battle && !document.querySelector('#hud[data-dialogue]');
     const animate = !reducedMotion.matches;
-    const pose = walk.update(delta, !!walking, animate);
+    const pose = walk.update(delta * (controllerRunning && walking ? 2 : 1), !!walking, animate);
     clock += delta;
     // Each footfall kicks up a small puff under the planted shoe.
     if (walking && animate && Math.sign(pose.stride) !== Math.sign(lastStride) && Math.abs(pose.stride) > 1) {
@@ -324,11 +326,11 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
       battleScene.wander(i, delta, dog.progress < 1 && !paused && !battle && !document.querySelector('#hud[data-dialogue]'), !reducedMotion.matches);
     });
     battleScene.update(delta, animate);
-    scenery.update(delta, animate);
+    scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1));
     effects.update(delta);
     const aspect = canvas.clientWidth / canvas.clientHeight;
-    const isNeighborhood = environment.id === 'maresme';
-    const target = battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1, 0)).add(battleScene.focus) : isNeighborhood && !overview ? player.getPosition().clone() : new pc.Vec3();
+    const follow = environment.zoom;
+    const target = battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1, 0)).add(battleScene.focus) : follow && !overview ? player.getPosition().clone() : new pc.Vec3();
     cameraTarget.lerp(cameraTarget, target, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 7));
     const cameraOffset = battle ? new pc.Vec3(5, 9, 15) : new pc.Vec3(40, 52, 40);
     if (battleScene.entering && !reducedMotion.matches) {
@@ -341,23 +343,13 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
     camera.lookAt(cameraTarget);
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
-    const height = battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2) : isNeighborhood && !overview ? Math.max(10.5, 9 / aspect) : Math.max(fullHeight, halfWidth / aspect);
+    const height = battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2) : follow && !overview ? Math.max(follow, follow * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
     camera.camera!.orthoHeight = pc.math.lerp(camera.camera!.orthoHeight, height, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
-    const dogLabel = battleScene.dogs[0].getPosition().clone(); dogLabel.y = 1.55;
-    camera.camera!.worldToScreen(dogLabel, screen);
-    callbacks.onDog(screen.x, screen.y, isNeighborhood && !battle && pack.dogs.length > 0 && screen.x > 40 && screen.x < canvas.clientWidth - 40 && screen.y > 100 && screen.y < canvas.clientHeight - 150, pack.dogs.length, pack.ready);
     callbacks.onBattleTargets(battleScene.targets().map(({ id, position, visible }) => {
       camera.camera!.worldToScreen(position, screen);
       return { id, x: screen.x, y: screen.y, visible };
     }));
-    const labels = isNeighborhood && !battle ? [
-      { id: 'gerard', point: scenery.toWorld(28, 24) },
-      { id: 'bernat', point: scenery.toWorld(8, 24) },
-    ].map(({ id, point }) => {
-      point.y = 2.2; camera.camera!.worldToScreen(point, screen);
-      return { id, x: screen.x, y: screen.y, visible: screen.x > 30 && screen.x < canvas.clientWidth - 30 && screen.y > 65 && screen.y < canvas.clientHeight - 100 };
-    }) : [];
-    callbacks.onLabels(labels);
+
   });
   app.on('destroy', () => {
     window.removeEventListener('keydown', keydown); window.removeEventListener('keyup', keyup);
@@ -370,10 +362,11 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks) 
   app.start();
   return {
     app, setEnvironment, interact, encounter, setBattle,
+    setControllerInput(direction: Direction | null, stick: Stick | null, running = false) { controllerDirection = direction; controllerStick = stick; controllerRunning = running; },
     selectTarget: battleScene.selectTarget,
-    setPaused(value: boolean) { paused = value; clearInput(); padActionHeld = true; },
+    setPaused(value: boolean) { paused = value; clearInput(); controllerDirection = null; controllerStick = null; controllerRunning = false; },
     toggleOverview() { if (paused || battle) return; overview = !overview; canvas.focus({ preventScroll: true }); },
-    press(direction: Direction) { if (paused || battle) return; held.set('touch', direction); queued = direction; },
+    press(direction: Direction) { if (paused || battle) return; held.set('touch', direction); },
     release() { held.delete('touch'); },
   };
 }
