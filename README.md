@@ -53,6 +53,15 @@ milestone. `just dev-chapter <flag>` opens the game with every flag up to that o
 `just dev-chapter got-backpack` to start on the street; `just dev-chapter new` starts over
 (development only; it neither reads nor saves the stored flags).
 
+## Screenshots
+
+`just screenshots <scenario>` plays a scripted scenario in Chromium and saves numbered
+screenshots and a gallery page to `output/screenshots/<scenario>/index.html`. Scenarios are small
+JSON files in `scripts/screenshots/` (`just screenshots-list`): `chapter-1` walks the whole
+opening block, `scenes` tours every environment. Write a new one for each feature you want to
+show; the step format is in [scripts/screenshots/README.md](scripts/screenshots/README.md).
+Run `just screenshots-browser` once on a new machine to download Chromium.
+
 ## Battle AI
 
 When a dog attacks, the backend asks [Jev](https://docs.typesafe.ai) (TypeSafe's decision model) which hero it should push. The prompt uses each dog's personality and each hero's condition. The API key stays on the server. If there is no key, or the call fails or takes longer than 2.5 s, the game uses its built-in rule instead.
@@ -92,6 +101,7 @@ server.py           Python API and production static file server
 ai.py               AI providers (Jev) and the battle decision prompt
 src/characters/     Character models as primitives (built by src/character-model.ts)
 tools/              Local asset generators run through just (not deployed)
+scripts/screenshots Screenshot scenarios for `just screenshots` (see its README)
 fly.toml            On-demand machine and persistent volume
 ```
 

@@ -77,6 +77,21 @@ build:
 clean:
     rm -rf dist
 
+# Play a scripted scenario and save screenshots + gallery: just screenshots chapter-1 (scripts/screenshots/)
+[group('Screenshots')]
+screenshots scenario="chapter-1" *options:
+    node scripts/screenshots.mjs {{ scenario }} {{ options }}
+
+# List the screenshot scenarios
+[group('Screenshots')]
+screenshots-list:
+    @ls scripts/screenshots/*.json | xargs -n1 basename | sed 's/\.json$//'
+
+# Download the Chromium build Playwright uses (once per machine)
+[group('Screenshots')]
+screenshots-browser:
+    npx playwright install chromium
+
 # Check, build and deploy a single machine to Fly, then verify health
 [group('Deployment')]
 deploy: check
