@@ -5,3 +5,4 @@
 - Use uv for Python package and project management.
 - Format commit messages as `type: verb in infinitive + description` (for example, `feat: add character panel`).
 - Maintain the existing justfile with clearly named, grouped commands for setup, dev, build, run, checks, and applicable data/database/export workflows. Follow project and sibling justfile conventions; terminal colors must respect NO_COLOR and non-interactive output.
+- Name git branches with a type prefix matching the change: `feat/`, `bugfix/`, `hotfix/`, `docs/`, `refactor/`, `chore/`, `test/` (for example, `feat/character-panel`). Never create branches starting with `claude/`.
