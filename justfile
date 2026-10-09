@@ -1,6 +1,8 @@
 # Gerard 35 developer commands. Run `just` to see the menu.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
+# Local secrets such as TYPESAFE_API_KEY live in .env (see .env.example).
+set dotenv-load := true
 
 site_url := "https://gerard-35-aitirga.fly.dev/"
 
@@ -27,6 +29,12 @@ dev:
 dev-battle foes="4" allies="1":
     @[[ "{{ foes }}" =~ ^[234]$ && "{{ allies }}" =~ ^[12]$ ]] || { printf 'Use 2–4 foes and 1–2 allies.\n'; exit 1; }
     npm run dev -- --open '/?battle={{ foes }}&allies={{ allies }}'
+
+# Play as a generated character: just dev-character bernat (file in src/characters/)
+[group('Development')]
+dev-character name="gerard-child":
+    @[[ -f "src/characters/{{ name }}.json" ]] || { printf 'No src/characters/%s.json; run just character first.\n' "{{ name }}"; exit 1; }
+    npm run dev -- --open '/?character={{ name }}'
 
 # Start the persistent API on port 8080, proxied by `just dev` under /api
 [group('Development')]
@@ -76,6 +84,12 @@ deploy-status:
     fly status
     fly checks list
 
+# Store the battle AI key from .env as a Fly secret (restarts the machine)
+[group('Deployment')]
+deploy-ai-key:
+    @[[ -n "${TYPESAFE_API_KEY:-}" ]] || { printf 'Set TYPESAFE_API_KEY in .env first.\n'; exit 1; }
+    printf 'TYPESAFE_API_KEY=%s\n' "$TYPESAFE_API_KEY" | fly secrets import
+
 # Tail logs from the deployed app
 [group('Deployment')]
 deploy-logs:
@@ -85,3 +99,9 @@ deploy-logs:
 [group('Data')]
 export-environments:
     node --experimental-strip-types scripts/export-environments.mjs
+
+# Generate portrait, expressions, full-body art and 3D model: just character bernat --description '…' (--help)
+[group('Tools')]
+[positional-arguments]
+character *args:
+    uv run --locked python tools/character.py "$@"

@@ -49,3 +49,7 @@ for the journal, dialogue, and battle interfaces. The adult portrait remains at
 `public/portraits/gerard.png` for later scenarios. Keep each source cutout and
 served copy in sync when replacing a portrait. The original reference photos
 remain local.
+
+New portraits and their expressions, full-body references (`characters/<id>/fullbody*.png`) and
+3D characters (`src/characters/<name>.json`) come from `just character <id>`;
+see [tools/README.md](../tools/README.md).

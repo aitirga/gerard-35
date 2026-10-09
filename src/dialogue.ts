@@ -1,8 +1,10 @@
 // Conversation banner: who is talking, to whom, and what they say.
 // Tweak looks in style.css (#dialogue custom properties) and voices here.
+import PORTRAIT_EXPRESSIONS from './portraits.json';
 
 export interface Speaker {
   name: string;
+  /** Portrait in public/portraits/ without .png; `just character` creates it and its expressions. */
   portrait?: string;
   skin: string;
   hair: string;
@@ -11,12 +13,13 @@ export interface Speaker {
 }
 
 export const SPEAKERS = {
-  gerard: { name: 'Gerard', portrait: `${import.meta.env.BASE_URL}portraits/gerard-child.png`, skin: '#e6b58b', hair: '#342a28', top: '#e9ad48', accent: '#f0c46a' },
+  gerard: { name: 'Gerard', portrait: 'gerard-child', skin: '#e6b58b', hair: '#342a28', top: '#e9ad48', accent: '#f0c46a' },
   bernat: { name: 'Bernat', skin: '#dcb08a', hair: '#5b4636', top: '#6f8fa8', accent: '#9fc3d9' },
 } satisfies Record<string, Speaker>;
 
 export type SpeakerId = keyof typeof SPEAKERS;
-export interface DialogueLine { speaker: SpeakerId; text: string }
+/** `expression` picks e.g. portraits/gerard-child-sorprendido.png; lines without one, or with one not generated yet, use the plain portrait. */
+export interface DialogueLine { speaker: SpeakerId; text: string; expression?: string }
 export interface Dialogue {
   left: SpeakerId;      // Gerard, normally
   right?: SpeakerId;    // whoever he is talking to, if anyone
@@ -26,9 +29,17 @@ export interface Dialogue {
 const TYPE_SPEED_MS = 16;      // per character; 0 disables the typewriter
 const AUTO_ADVANCE_MS = 4200;  // after a line finishes typing; 0 waits for input
 
+const EXPRESSIONS: Record<string, string[] | undefined> = PORTRAIT_EXPRESSIONS;
+
+function portraitUrl(portrait: string, expression?: string) {
+  const available = !expression || EXPRESSIONS[portrait]?.includes(expression);
+  if (!available && import.meta.env.DEV) console.warn(`No "${expression}" expression for ${portrait}; run just character to create it.`);
+  return `${import.meta.env.BASE_URL}portraits/${portrait}${available && expression ? `-${expression}` : ''}.png`;
+}
+
 // Blocky bust that echoes the in-game character: shoulders, neck, head, hair cap.
 function portrait(s: Speaker) {
-  if (s.portrait) return `<img class="portrait" src="${s.portrait}" alt="" aria-hidden="true" width="160" height="160" />`;
+  if (s.portrait) return `<img class="portrait" src="${portraitUrl(s.portrait)}" alt="" aria-hidden="true" width="160" height="160" />`;
   return `<svg viewBox="0 0 48 48" aria-hidden="true">
     <circle cx="24" cy="24" r="23" fill="${s.top}" opacity=".18"/>
     <rect x="11" y="31" width="26" height="17" rx="4" fill="${s.top}"/>
@@ -86,6 +97,10 @@ export function createDialogueBanner(hud: HTMLElement) {
     const line = current.lines[index];
     const side = line.speaker === current.right ? 'right' : 'left';
     root.dataset.speaking = side;
+    // The speaker's face follows each line; the listener keeps the last one.
+    const face = sides[side].querySelector('img');
+    const speaker: Speaker = SPEAKERS[line.speaker];
+    if (face && speaker.portrait) face.src = portraitUrl(speaker.portrait, line.expression);
     who.textContent = SPEAKERS[line.speaker].name;
     dots.innerHTML = current.lines.map((_, i) => `<i${i === index ? ' class="on"' : ''}></i>`).join('');
     next.querySelector('span')!.textContent = index === current.lines.length - 1 ? 'Cerrar' : 'Continuar';
@@ -105,6 +120,12 @@ export function createDialogueBanner(hud: HTMLElement) {
     if (!dialogue.lines.length) return;
     current = dialogue;
     index = 0;
+    for (const line of dialogue.lines) {  // warm the cache so faces change without a blank frame
+      const speaker: Speaker = SPEAKERS[line.speaker];
+      if (line.expression && speaker.portrait && EXPRESSIONS[speaker.portrait]?.includes(line.expression)) {
+        new Image().src = portraitUrl(speaker.portrait, line.expression);
+      }
+    }
     renderSide('left', dialogue.left);
     renderSide('right', dialogue.right);
     root.hidden = false;

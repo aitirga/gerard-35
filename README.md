@@ -39,6 +39,26 @@ The underlying npm scripts remain available when `just` is not installed:
 | `npm run preview`   | Serve the production bundle locally           |
 | `npm run typecheck` | Run the TypeScript compiler without emitting  |
 
+## Battle AI
+
+When a dog attacks, the backend asks [Jev](https://docs.typesafe.ai) (TypeSafe's decision model) which hero it should push. The prompt uses each dog's personality and each hero's condition. The API key stays on the server. If there is no key, or the call fails or takes longer than 2.5 s, the game uses its built-in rule instead.
+
+1. Create a key at https://console.typesafe.ai/keys.
+2. `cp .env.example .env` and set `TYPESAFE_API_KEY`. `just backend` loads it.
+3. In production, run `just deploy-ai-key` to store the key as a Fly secret.
+
+Set `AI_BATTLE_PROVIDER=rules` to turn the AI off. New providers are registered in `ai.py`.
+
+## Asset tools
+
+`tools/` holds local helpers that generate assets with AI APIs; they are run with
+`just` and never deployed. `just character <id>` turns photos, previous artwork and a
+description into a portrait with conversation expressions (OpenAI) and a 3D model that
+Claude designs from primitives,
+like the hand-built Gerard. They are installed in `public/portraits/` and
+`src/characters/`; `just dev-character <name>` plays as one. Set `OPENAI_API_KEY` and
+`ANTHROPIC_API_KEY` in `.env`, and see [tools/README.md](tools/README.md).
+
 ## Project layout
 
 ```
@@ -50,6 +70,9 @@ src/style.css       Fullscreen canvas and HUD styling
 vite.config.ts      Vite config (relative base so it works on GitHub Pages)
 .github/workflows   Runs build and API tests on pushes and pull requests
 server.py           Python API and production static file server
+ai.py               AI providers (Jev) and the battle decision prompt
+src/characters/     Character models as primitives (built by src/character-model.ts)
+tools/              Local asset generators run through just (not deployed)
 fly.toml            On-demand machine and persistent volume
 ```
 
