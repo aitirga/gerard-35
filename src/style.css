@@ -492,15 +492,15 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 
 /* Journal: party equipment under the character sheet, and the two item columns. */
 .party-equipment { margin-top: 24px; }
-.party-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; }
-.party-card { padding: 14px 16px; border: 1px solid var(--ui-line); border-left: 3px solid var(--ui-gold); background: #ffffff06; }
-.party-card[data-member="bernat"] { border-left-color: #9fc3d9; }
-.party-card h3 { margin: 0 0 8px; font-size: 16px; }
-.party-card ul, .item-column ul { margin: 0; padding: 0; list-style: none; }
-.party-card li { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--ui-line); font-size: 13px; }
-.party-card li span { min-width: 58px; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ui-gold); padding-top: 2px; }
-.party-card li.empty { color: var(--ui-muted); }
-.party-card p { margin: 8px 0 0; font-size: 11px; }
+.equipment-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; }
+.equipment-card { padding: 14px 16px; border: 1px solid var(--ui-line); border-left: 3px solid var(--ui-gold); background: #ffffff06; }
+.equipment-card[data-member="bernat"] { border-left-color: #9fc3d9; }
+.equipment-card h3 { margin: 0 0 8px; font-size: 16px; }
+.equipment-card ul, .item-column ul { margin: 0; padding: 0; list-style: none; }
+.equipment-card li { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--ui-line); font-size: 13px; }
+.equipment-card li span { min-width: 58px; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ui-gold); padding-top: 2px; }
+.equipment-card li.empty { color: var(--ui-muted); }
+.equipment-card p { margin: 8px 0 0; font-size: 11px; }
 .item-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .item-column { padding: 16px; border: 1px solid var(--ui-line); border-top: 3px solid var(--ui-gold); background: #ffffff06; }
 .item-column[data-kind="common"] { border-top-color: #a5cf8f; }
