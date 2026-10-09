@@ -42,6 +42,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const width = plan[0].length, depth = plan.length;
   const glyph = (px: number, pz: number) => plan[pz]?.[px] ?? ' ';
   const outdoors = environment.id === 'home-entrance';
+  const apartment = environment.id === 'meridiana';
   const wallHeight = outdoors ? 2.3 : WALL_HEIGHT;
   const doorTop = outdoors ? 2.05 : 2.2;
   const folds: Fold[] = [];
@@ -147,6 +148,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const soil = mat('Tierra', '#5e4d3c');
   const glass = mat('Vidrio', '#d6ecf0', 0.95);
   glass.opacity = 0.22; glass.blendType = pc.BLEND_NORMAL; glass.depthWrite = false; glass.update();
+  // The flat keeps its old cream-painted timber windows; the house has black steel.
+  const profile = apartment ? mat('Carpintería crema', '#efe8da', 0.3) : black;
 
   // ——— Floors: one texture cell per grid cell, aligned with the movement grid ———
   const surfaceTextures = new Map<FloorKind, pc.Texture>();
@@ -185,6 +188,33 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     } else if (kind === 'gravel') {
       ctx.fillStyle = '#cfc8b9'; ctx.fillRect(0, 0, size, size);
       speckle('#a39b8b', 900, 4, 5); speckle('#ebe6dc', 700, 3, 9); speckle('#8a8375', 250, 3, 13);
+    } else if (kind === 'laminate') {
+      // Honey-oak planks, four to a cell, with staggered end joints and a hint of grain.
+      ctx.fillStyle = '#8e5f36'; ctx.fillRect(0, 0, size, size);
+      for (let i = 0; i < 4; i++) {
+        const y = i * size / 4, joint = jitter(i + 31) * size;
+        for (const [x0, x1, k] of [[joint - size, joint, 0], [joint, joint + size, 1]] as const) {
+          const shade = 0.92 + jitter(i * 3 + k + 40) * 0.14;
+          ctx.fillStyle = `rgb(${[178, 128, 84].map(v => Math.min(255, v * shade)).join()})`;
+          ctx.fillRect(x0 + 1, y + 1, x1 - x0 - 2, size / 4 - 2);
+        }
+        ctx.strokeStyle = '#7d522c26'; ctx.lineWidth = 1.5;
+        for (let g = 0; g < 4; g++) {
+          const gy = y + 8 + jitter(i * 7 + g) * (size / 4 - 16);
+          ctx.beginPath(); ctx.moveTo(0, gy);
+          for (let px = 0; px <= size; px += 16) ctx.lineTo(px, gy + Math.sin(px / 40 + g + i) * 2.5);
+          ctx.stroke();
+        }
+      }
+    } else if (kind === 'terracotta') {
+      // Small red clay tiles in a running bond, as in the gallery and on the balcony.
+      ctx.fillStyle = '#c9b6a2'; ctx.fillRect(0, 0, size, size);
+      for (let r = 0; r < 4; r++) for (let k = -1; k < 2; k++) {
+        const ox = r % 2 ? size / 4 : 0, shade = 0.88 + jitter(r * 9 + k + 60) * 0.2;
+        ctx.fillStyle = `rgb(${[168, 72, 44].map(v => Math.min(255, v * shade)).join()})`;
+        ctx.fillRect(k * size / 2 + ox + 3, r * size / 4 + 3, size / 2 - 6, size / 4 - 6);
+      }
+      speckle('#00000014', 260, 2, 6); speckle('#ffffff10', 160, 2, 12);
     } else if (kind === 'grass') {
       ctx.fillStyle = '#7c9a5b'; ctx.fillRect(0, 0, size, size);
       speckle('#6a8a4c', 1200, 3, 2); speckle('#93b06b', 800, 2, 7);
@@ -195,7 +225,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     }
     const t = kit.texture(c); surfaceTextures.set(kind, t); return t;
   }
-  const GLOSS: Record<FloorKind, number> = { tile: 0.62, stone: 0.25, deck: 0.2, gravel: 0.05, grass: 0.05, concrete: 0.3 };
+  const GLOSS: Record<FloorKind, number> = { tile: 0.62, stone: 0.25, deck: 0.2, gravel: 0.05, grass: 0.05, concrete: 0.3, laminate: 0.45, terracotta: 0.15 };
   function surface(kind: FloorKind, w: number, d: number, offset: number) {
     const m = mat(`Suelo: ${kind}`, '#ffffff', GLOSS[kind]);
     m.diffuseMap = surfaceTexture(kind); m.diffuseMapTiling.set(w, d); m.diffuseMapOffset.set(offset, offset); m.update();
@@ -211,14 +241,14 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     }
     piece(root, `Suelo: ${room.name}`, 'plane', surface(room.floor, w, d, 0.5), px, level + 0.02, pz, w, 1, d, false);
   }
-  // Outside the walls: gravel roofs upstairs, a planted verge by the entrance.
+  // Outside the walls: gravel roofs upstairs, a planted verge by the entrance, a flat's landing and light well.
   for (let pz = 0; pz < depth; pz++) {
     for (let px = 0; px < width; px++) {
       if (glyph(px, pz) !== ' ') continue;
       let end = px;
       while (glyph(end + 1, pz) === ' ' && end + 1 < width) end++;
       const w = end - px + 1;
-      piece(root, 'Exterior', 'plane', surface(outdoors ? 'grass' : 'gravel', w, 1, 0), px + (w - 1) / 2, 0.01, pz, w, 1, 1, false);
+      piece(root, 'Exterior', 'plane', surface(outdoors ? 'grass' : apartment ? 'concrete' : 'gravel', w, 1, 0), px + (w - 1) / 2, 0.01, pz, w, 1, 1, false);
       px = end;
     }
   }
@@ -236,7 +266,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     if (x1 > x0 && z1 > z0) box('Maqueta', plinthMat, (x0 + x1) / 2, (z0 + z1) / 2, bottom, x1 - x0, top - bottom, z1 - z0);
   };
   const [px0, px1, pz0, pz1] = [-0.6, width - 0.4, -0.6, depth - 0.4];
-  const backdrop = mat('Fondo', '#67746b');
+  const backdrop = mat('Fondo', apartment ? '#6b6964' : '#67746b');
   const ground = (x0: number, x1: number, z0: number, z1: number) => {
     if (x1 > x0 && z1 > z0) box('Fondo', backdrop, (x0 + x1) / 2, (z0 + z1) / 2, -1.15, x1 - x0, 0.2, z1 - z0);
   };
@@ -270,10 +300,10 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   function glazing(along: Along, line: number, a0: number, a1: number, pivot: pc.Entity | null, prev: boolean, next: boolean) {
     const top = doorTop + 0.05;
     slab(root, 'Vidrio', glass, along, line, a0, a1, 0.04, top, 0.03).render!.castShadows = false;
-    slab(root, 'Perfil inferior', black, along, line, a0, a1, 0, 0.05, 0.08);
-    slab(root, 'Perfil superior', black, along, line, a0, a1, top, top + 0.06, 0.08);
-    if (!prev) slab(root, 'Montante', black, along, line, a0, a0 + 0.05, 0, top, 0.08);
-    slab(root, 'Montante', black, along, line, a1 - (next ? 0.025 : 0.05), a1 + (next ? 0.025 : 0), 0, top, 0.08);
+    slab(root, 'Perfil inferior', profile, along, line, a0, a1, 0, 0.05, 0.08);
+    slab(root, 'Perfil superior', profile, along, line, a0, a1, top, top + 0.06, 0.08);
+    if (!prev) slab(root, 'Montante', profile, along, line, a0, a0 + 0.05, 0, top, 0.08);
+    slab(root, 'Montante', profile, along, line, a1 - (next ? 0.025 : 0.05), a1 + (next ? 0.025 : 0), 0, top, 0.08);
     if (pivot && top + 0.06 < wallHeight) slab(pivot, 'Muro', wall, along, line, a0, a1, top + 0.06, wallHeight);
   }
   function windowPane(along: Along, line: number, a0: number, a1: number, pivot: pc.Entity, prev: boolean, next: boolean) {
@@ -283,11 +313,11 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     slab(pivot, 'Muro', wall, along, line, a0, a1, head, wallHeight);
     if (!prev) slab(pivot, 'Muro', wall, along, line, a0, a0 + i0, sill, head);
     if (!next) slab(pivot, 'Muro', wall, along, line, a1 - i1, a1, sill, head);
-    slab(pivot, 'Marco de ventana', black, along, line, a0 + i0, a1 - i1, sill, head, 0.1);
+    slab(pivot, 'Marco de ventana', profile, along, line, a0 + i0, a1 - i1, sill, head, 0.1);
     slab(pivot, 'Ventana', sky, along, line, a0 + i0 + (prev ? 0.02 : 0.05), a1 - i1 - (next ? 0.02 : 0.05), sill + 0.05, head - 0.05, 0.12);
     slab(pivot, 'Alféizar', lacquer, along, line, a0 + i0, a1 - i1, sill - 0.04, sill, THICKNESS + 0.1);
   }
-  const frontDoor = mat('Puerta de entrada', '#3a3531', 0.35);
+  const frontDoor = mat('Puerta de entrada', apartment ? '#f1efe9' : '#3a3531', 0.35);
   const garageDoor = mat('Puerta seccional', '#d2d3cf', 0.4);
   for (let pz = 0; pz < depth; pz++) for (let px = 0; px < width; px++) {
     const g = glyph(px, pz);
@@ -327,12 +357,16 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   // ——— Steps: stone blocks outdoors, white risers with oak treads indoors ———
   const riserMat = mat('Peldaño', '#efece6', 0.2);
   const nosing = mat('Canto del peldaño', '#5c554b', 0.3);
-  /** One indoor step from `base` to `top`; `drop` is the side it steps down towards. */
-  function step(px: number, pz: number, w: number, d: number, base: number, top: number, drop: 'north' | 'south', walkable = true) {
+  /** One indoor step from `base` to `top`; `drop` is the side it steps down towards.
+   * A folding step keeps a skirting and folds the rest like the walls, so it never hides Gerard. */
+  function step(px: number, pz: number, w: number, d: number, base: number, top: number, drop: 'north' | 'south', walkable = true, fold = false) {
     const lip = 0.04, dz = drop === 'south' ? lip / 2 : -lip / 2;
-    box('Peldaño', riserMat, px, pz, base, w, top - 0.045 - base, d);
-    box('Huella de roble', oak, px, pz + dz, top - 0.045, w, 0.045, d + lip);
-    box('Sombra del canto', nosing, px, pz + (drop === 'south' ? d / 2 + lip - 0.01 : -d / 2 - lip + 0.01), top - 0.06, w, 0.015, 0.02);
+    const split = fold ? base + CUT_HEIGHT : base;
+    const upper = fold ? foldaway(px - w / 2, pz - d / 2 - lip, px + w / 2, pz + d / 2 + lip, split, top) : root;
+    if (fold) box('Peldaño', riserMat, px, pz, base, w, CUT_HEIGHT, d);
+    box('Peldaño', riserMat, px, pz, split, w, top - 0.045 - split, d, upper);
+    box('Huella de roble', oak, px, pz + dz, top - 0.045, w, 0.045, d + lip, upper);
+    box('Sombra del canto', nosing, px, pz + (drop === 'south' ? d / 2 + lip - 0.01 : -d / 2 - lip + 0.01), top - 0.06, w, 0.015, 0.02, upper);
     if (walkable) kit.surface(px, pz, w, d, top);
   }
   function steps(s: Stairs) {
@@ -445,6 +479,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   if (environment.id === 'home-entrance') entrance();
   else if (environment.id === 'home-floor-1') floorOne();
   else if (environment.id === 'home-floor-2') floorTwo();
+  else if (apartment) meridiana();
 
   function entrance() {
     const west = FACE, north = FACE;
@@ -552,8 +587,13 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     hang(2, 'south', 2.5, 3 + FACE, 1.6, 1.7, 0.95);
     for (const pz of [4.5, 6.5]) box('Visillo', mat('Visillo', '#f4efe4', 0.05), west + 0.06, pz, 0.05, 0.05, 2.35, 0.36);
     plant(8.45, 11.45, 1.6);
-    // Stairwell: floating oak treads, a black handrail and paintings climbing with the steps.
-    const rail = box('Pasamanos', black, 11.78, 4.1, 1.55, 0.04, 0.04, 5.3); rail.setEulerAngles(-14, 0, 0);
+    // Stairwell: a U-shaped stair, as seen going down from floor 2. The lower flight climbs
+    // north to the landing, the upper one turns back south; it folds away so Gerard stays in view.
+    const rise = 1.32 / 6, spine = 10.5;
+    for (let k = 1; k <= 5; k++) {
+      step((9 + FACE + spine - 0.005) / 2, 7 - k, spine - 0.005 - 9 - FACE, 1, 0, rise * k, 'south');
+      step((spine + 0.005 + 12 - FACE) / 2, 1 + k, 12 - FACE - spine - 0.005, 1, 0, 1.32 + rise * k, 'north', k <= 2, true);
+    }
     hang(5, 'east', 9 + FACE, 5.4, 1.25, 0.62, 0.82);
     hang(6, 'east', 9 + FACE, 3.9, 1.7, 0.78, 0.56);
     hang(7, 'east', 9 + FACE, 2.4, 2.05, 0.56, 0.72, oak);
@@ -723,6 +763,470 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     hang(15, 'east', 14 + FACE, 10.2, 1.5, 0.6, 0.6);
     rug(18, 12.3, 2.8, 2, '#c7cfc4', '#8d9a88');
     light(17.8, 2.2, 11.5);
+  }
+
+  /**
+   * Gerard and Aitor's flat on the Meridiana, furnished after the photos of every room.
+   * The plan is the croquis turned a quarter left: study west, kitchen wall north, balcony east.
+   */
+  function meridiana() {
+    const north = FACE;
+    const bodbyn = mat('Cocina crema', '#ece4d1', 0.35);
+    const bodbynPanel = mat('Moldura crema', '#ddd2ba', 0.35);
+    const butcher = mat('Encimera de roble', '#b7773f', 0.35);
+    const ceramic = mat('Cerámica blanca', '#f7f6f2', 0.8);
+    const pull = mat('Tirador negro', '#1f1f21', 0.5);
+    const paleOak = mat('Roble claro', '#d2ae7c', 0.3);
+    const white = mat('Blanco mate', '#f1f0ec', 0.25);
+    const graphite = mat('Grafito', '#4a4a4c', 0.3);
+    const cork = mat('Corcho', '#c9a26b', 0.1);
+    const wallPivot = (px: number, pz: number, along: Along) => pivots.get(`${px},${pz},${along}`) ?? root;
+    /** A thin bar from one point to another, for stands, rails and lamp arms. */
+    function rod(name: string, m: pc.Material, [x0, y0, z0]: number[], [x1, y1, z1]: number[], t = 0.035, parent = root) {
+      const e = piece(parent, name, 'box', m, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, t, t, Math.hypot(x1 - x0, y1 - y0, z1 - z0));
+      e.lookAt(x(x1), y1, z(z1));
+      return e;
+    }
+    /** Wall tiles one unit wide, repeated along the wall; `bond` staggers rows like subway tiles. */
+    function tiles(name: string, height: number, tw: number, th: number, fill: string, grout: string, bond: boolean) {
+      const [c, ctx] = canvas(256, Math.round(256 * height));
+      ctx.fillStyle = grout; ctx.fillRect(0, 0, c.width, c.height);
+      const W = 256 * tw, H = 256 * th;
+      for (let r = 0; r * H < c.height; r++) for (let k = -1; k * W < 256; k++) {
+        const x0 = k * W + (bond && r % 2 ? W / 2 : 0), y0 = c.height - (r + 1) * H;
+        ctx.fillStyle = fill; ctx.fillRect(x0 + 2, y0 + 2, W - 4, H - 4);
+        ctx.fillStyle = '#ffffff66'; ctx.fillRect(x0 + 4, y0 + 4, W - 8, 3);
+        ctx.fillStyle = '#00000012'; ctx.fillRect(x0 + 4, y0 + H - 7, W - 8, 3);
+      }
+      const t = kit.texture(c);
+      return (a: number, b: number) => {
+        const m = mat(name, '#ffffff', 0.6);
+        m.diffuseMap = t; m.diffuseMapTiling.set(b - a, 1); m.diffuseMapOffset.set(a - Math.floor(a), 0); m.update();
+        return m;
+      };
+    }
+    /** Tiles a wall face cell by cell, so each piece folds with the wall behind it. */
+    function clad(material: (a: number, b: number) => pc.StandardMaterial, face: Face, line: number, a0: number, a1: number, y0: number, y1: number) {
+      for (let a = a0; a < a1 - 0.01;) {
+        const b = Math.min(a1, Math.floor(a + 0.5) + 0.5), c = (a + b) / 2, m = material(a, b);
+        if (face === 'south') box('Alicatado', m, c, line + FACE + 0.01, y0, b - a, y1 - y0, 0.02, onWall('south', c, line + FACE));
+        else box('Alicatado', m, line + FACE + 0.01, c, y0, 0.02, y1 - y0, b - a, onWall('east', line + FACE, c));
+        a = b;
+      }
+    }
+    /** A swivel chair on a five-star base; `facing` is where the sitter looks. */
+    function swivel(px: number, pz: number, facing: 'north' | 'south', seat: pc.Material, back = 0.6, trim?: pc.Material) {
+      const dir = facing === 'south' ? 1 : -1;
+      for (let i = 0; i < 5; i++) {
+        const a = i * 72 + 18, r = a * Math.PI / 180;
+        const spoke = box('Pata de la base', black, px + Math.sin(r) * 0.15, pz + Math.cos(r) * 0.15, 0.05, 0.04, 0.04, 0.3); spoke.setEulerAngles(0, a, 0);
+        ball('Rueda', black, px + Math.sin(r) * 0.29, pz + Math.cos(r) * 0.29, 0, 0.06, 0.06, 0.06);
+      }
+      cyl('Pistón', black, px, pz, 0.08, 0.05, 0.36, 0.05);
+      box('Asiento', seat, px, pz, 0.44, 0.52, 0.1, 0.5);
+      box('Respaldo', seat, px, pz - dir * 0.24, 0.54, 0.48, back, 0.08);
+      for (const side of [-1, 1]) box('Reposabrazos', black, px + side * 0.27, pz, 0.62, 0.05, 0.04, 0.32);
+      if (trim) {
+        for (const side of [-1, 1]) box('Oreja del respaldo', seat, px + side * 0.22, pz - dir * 0.21, 0.54 + back * 0.55, 0.08, back * 0.4, 0.1);
+        box('Etiqueta', trim, px + 0.12, pz - dir * 0.285, 0.54 + back * 0.8, 0.07, 0.07, 0.01);
+      }
+    }
+    /** Upright blades in a white pot, like the snake plant by the TV. */
+    function snakePlant(px: number, pz: number, size = 1) {
+      cyl('Maceta', pot, px, pz, 0, 0.34 * size, 0.36 * size, 0.34 * size);
+      const blade = [mat('Sansevieria', '#3f6b3a', 0.3), mat('Sansevieria clara', '#8fa04d', 0.3)];
+      for (let i = 0; i < 7; i++) {
+        const a = i * 2.3, r = 0.07 * size;
+        const leaf = cone('Hoja', blade[i % 2], px + Math.cos(a) * r, pz + Math.sin(a) * r, 0.36 * size, 0.09 * size, (0.55 + jitter(i + px) * 0.4) * size, 0.03);
+        leaf.setEulerAngles(Math.sin(a) * 8, a * 40, Math.cos(a) * 8);
+      }
+    }
+    /** Broad paddle leaves on long stems: the bird of paradise by the sofa. */
+    function birdOfParadise(px: number, pz: number) {
+      cyl('Maceta', pot, px, pz, 0, 0.5, 0.45, 0.5);
+      cyl('Tierra', soil, px, pz, 0.44, 0.44, 0.02, 0.44);
+      const stem = mat('Tallo', '#5f7f45', 0.3);
+      for (let i = 0; i < 8; i++) {
+        const a = i * 2.4, lean = 0.12 + (i % 3) * 0.1, h = 0.9 + jitter(i + 7) * 0.7;
+        const tip = [px + Math.cos(a) * lean * 2, 0.45 + h, pz + Math.sin(a) * lean * 2];
+        rod('Tallo', stem, [px, 0.45, pz], tip, 0.03);
+        const leaf = ball('Hoja', leaves[i % 3], tip[0], tip[2], tip[1] - 0.05, 0.26, 0.62, 0.05);
+        leaf.setEulerAngles(0, a * 57 + 90, Math.cos(a) * 25);
+      }
+    }
+
+    // ——— Hall: a small entrance between two short walls that open onto the kitchen. The shoe
+    // cabinet, meter, Basque hand and thistle sit against the right-hand wall; coats hang on the
+    // back of the left-hand one, with the shoe bench beside it. ———
+    box('Telefonillo', white, 5 + FACE + 0.03, 2.05, 1.25, 0.05, 0.24, 0.11, onWall('east', 5 + FACE, 2.05));
+    const hallSide = 8 - FACE;
+    /** A flat piece hung on the hall side of the short walls, facing into the entrance. */
+    function hallArt(m: pc.Material, pz: number, yc: number, w: number, h: number, frame: pc.Material) {
+      box('Marco', frame, hallSide - 0.02, pz, yc - h / 2 - 0.03, 0.04, h + 0.06, w + 0.06);
+      picture(root, m, 'east', hallSide - 0.045, pz, yc, w, h).setEulerAngles(0, -90, 0);
+    }
+    box('Zapatero', white, hallSide - 0.17, 1.55, 0.06, 0.33, 0.96, 0.86);
+    for (const dz of [-0.38, 0.38]) box('Pata del zapatero', white, hallSide - 0.17, 1.55 + dz, 0, 0.28, 0.06, 0.05);
+    box('Junta del zapatero', mat('Junta', '#d9d7d0', 0.3), hallSide - 0.34, 1.55, 0.06, 0.01, 0.96, 0.012);
+    for (const dz of [-0.21, 0.21]) for (const y of [0.9, 0.44]) box('Asa', black, hallSide - 0.34, 1.55 + dz, y, 0.01, 0.03, 0.12);
+    cyl('Jarra de flores secas', glass, hallSide - 0.2, 1.3, 1.02, 0.1, 0.18, 0.1);
+    for (let i = 0; i < 6; i++) ball('Flor seca', mat('Flor seca', ['#c79a3e', '#9a7a52', '#b7b2a0'][i % 3], 0.1), hallSide - 0.18 - (i >> 1) * 0.03, 1.24 + (i % 3) * 0.06, 1.2 + (i % 2) * 0.08, 0.13, 0.12, 0.13);
+    box('Bandeja de llaves', mat('Cerámica', '#d9cbb5', 0.4), hallSide - 0.2, 1.68, 1.02, 0.14, 0.02, 0.26);
+    box('Contador de la luz', mat('Caja del contador', '#c9ccce', 0.6), hallSide - 0.07, 0.95, 1.62, 0.14, 0.4, 0.34);
+    box('Cuadro eléctrico', white, hallSide - 0.03, 0.95, 1.02, 0.06, 0.54, 0.34);
+    const [plate, plateCtx] = canvas(256, 60);
+    plateCtx.fillStyle = '#1d1d1f'; plateCtx.fillRect(0, 0, 256, 60);
+    plateCtx.fillStyle = '#f1efe9'; plateCtx.font = '700 40px sans-serif'; plateCtx.textAlign = 'center'; plateCtx.textBaseline = 'middle';
+    plateCtx.fillText('SORIONEKU', 128, 32, 236);
+    hallArt(painted('SORIONEKU', plate, 0.3), 1.5, 1.47, 0.34, 0.08, black);
+    box('Mano', black, hallSide - 0.02, 1.5, 1.2, 0.02, 0.18, 0.18);
+    for (let i = 0; i < 4; i++) box('Dedo', black, hallSide - 0.02, 1.43 + i * 0.047, 1.08, 0.02, 0.12, 0.03);
+    hallArt(thistle(), 1.93, 1.68, 0.34, 0.34, oak);
+    const hooks = wallPivot(8, 5, 'z');
+    box('Colgador', black, hallSide - 0.03, 5.35, 1.72, 0.04, 0.06, 0.8, hooks);
+    for (const pz of [5.05, 5.35, 5.65]) box('Gancho', black, hallSide - 0.1, pz, 1.66, 0.12, 0.16, 0.03, hooks);
+    box('Calzador rojo', mat('Calzador', '#d63b2f', 0.4), hallSide - 0.08, 5.05, 1.18, 0.03, 0.4, 0.07, hooks);
+    box('Bolsa azul', mat('Bolsa azul', '#2f58b8', 0.1), hallSide - 0.08, 5.35, 1.02, 0.06, 0.55, 0.3, hooks);
+    box('Mochila', mat('Mochila azul petróleo', '#1f6f78', 0.1), hallSide - 0.14, 5.65, 1.18, 0.2, 0.45, 0.26, hooks);
+    box('Bolsillo de mochila', black, hallSide - 0.25, 5.65, 1.2, 0.04, 0.26, 0.2, hooks);
+    box('Banco negro', black, 7.05, 5.58, 0.4, 0.8, 0.05, 0.4);
+    for (const dx of [-0.36, 0.36]) for (const dz of [-0.16, 0.16]) box('Pata del banco', black, 7.05 + dx, 5.58 + dz, 0, 0.03, 0.4, 0.03);
+    box('Balda del banco', black, 7.05, 5.58, 0.12, 0.76, 0.02, 0.36);
+    for (const [i, c] of ['#6b3b2c', '#d8d4ca', '#2e2f33'].entries()) box('Zapato', mat('Zapato', c, 0.2), 6.8 + i * 0.25, 5.58, 0.14, 0.12, 0.08, 0.28);
+    for (const dx of [0, 0.16]) box('Chancla', mat('Chancla', '#9fd0d6', 0.2), 6.25 + dx, 4.75 + dx, 0.02, 0.1, 0.02, 0.26);
+    light(6.8, 2.3, 3, '#ffe4bd', 0.9, 4);
+
+    // ——— Kitchen: cream framed doors with black cup handles, oak butcher-block top, subway tiles ———
+    const k0 = 8 + FACE, k1 = 12.52, kd = 0.68, kFront = north + kd + 0.005;
+    box('Zócalo', bodbyn, (k0 + k1) / 2, north + kd / 2 - 0.03, 0, k1 - k0, 0.1, kd - 0.06);
+    box('Muebles bajos', bodbyn, (k0 + k1) / 2, north + kd / 2, 0.1, k1 - k0, 0.76, kd);
+    box('Encimera de roble', butcher, (k0 + k1) / 2, north + kd / 2 + 0.02, 0.86, k1 - k0 + 0.02, 0.05, kd + 0.04);
+    function front(cx: number, w: number, y0: number, h: number, handle: 'cup' | 'knob', z0 = kFront) {
+      box('Frente', bodbynPanel, cx, z0, y0 + 0.02, w - 0.05, h - 0.04, 0.012);
+      box('Plafón', bodbyn, cx, z0 + 0.008, y0 + 0.08, w - 0.17, h - 0.16, 0.012);
+      if (handle === 'cup') box('Tirador de concha', pull, cx, z0 + 0.025, y0 + h - 0.1, 0.13, 0.035, 0.03);
+      else box('Tirador', pull, cx + w / 2 - 0.09, z0 + 0.025, y0 + h - 0.32, 0.025, 0.13, 0.03);
+    }
+    front(9.0, 1.0, 0.1, 0.5, 'knob');
+    front(10.0, 1.0, 0.1, 0.76, 'cup');
+    front(11.0, 1.0, 0.36, 0.5, 'knob'); front(11.0, 1.0, 0.1, 0.26, 'cup');
+    for (const [y, h] of [[0.7, 0.16], [0.52, 0.18], [0.1, 0.42]]) front(12.0, 1.0, y, h, 'cup');
+    // Farmhouse sink, a gooseneck tap and a few things on the counter.
+    box('Fregadero cerámico', ceramic, 9.0, north + 0.46, 0.6, 0.82, 0.32, 0.72);
+    box('Seno', mat('Seno del fregadero', '#d9dcdc', 0.7), 9.0, north + 0.44, 0.915, 0.7, 0.01, 0.52);
+    cyl('Grifo', steel, 9.0, north + 0.12, 0.91, 0.04, 0.34, 0.04);
+    box('Caño', steel, 9.0, north + 0.2, 1.23, 0.03, 0.03, 0.2);
+    box('Escurridor', black, 8.3, north + 0.3, 0.91, 0.36, 0.14, 0.26);
+    box('Estropajo', mat('Estropajo', '#b9d24a', 0.1), 8.25, north + 0.3, 1.05, 0.1, 0.05, 0.14);
+    cyl('Olla negra', black, 9.72, north + 0.34, 0.91, 0.24, 0.26, 0.24);
+    cyl('Botella de cristal', glass, 9.98, north + 0.44, 0.91, 0.09, 0.3, 0.09);
+    box('Bandeja de aceites', oak, 10.25, north + 0.25, 0.91, 0.32, 0.02, 0.14);
+    cyl('Aceite', mat('Aceite', '#c6a432', 0.6), 10.16, north + 0.25, 0.93, 0.06, 0.28, 0.06);
+    cyl('Vinagre', mat('Vinagre', '#6b4a2a', 0.6), 10.32, north + 0.25, 0.93, 0.05, 0.2, 0.05);
+    box('Placa de inducción', black, 11.0, north + 0.36, 0.912, 0.78, 0.008, 0.52);
+    box('Robot de cocina', black, 12.1, north + 0.38, 0.91, 0.5, 0.18, 0.36);
+    cyl('Tapa del robot', mat('Tapa verde', '#2f4e3f', 0.5), 12.2, north + 0.4, 1.09, 0.2, 0.03, 0.2);
+    cyl('Portarrollos', oak, 11.72, north + 0.2, 0.91, 0.14, 0.02, 0.14);
+    cyl('Papel de cocina', white, 11.72, north + 0.2, 0.93, 0.13, 0.28, 0.13);
+    const subway = tiles('Azulejo metro', 0.62, 0.2, 0.1, '#f2f1ee', '#d9d7d2', true);
+    box('Azulejo metro', subway(k0, k1), (k0 + k1) / 2, north + 0.01, 0.91, k1 - k0, 0.62, 0.02);
+    // Wall units either side of the black chimney hood.
+    box('Armarios altos', bodbyn, 9.29, north + 0.18, 1.55, 2.22, 0.74, 0.36);
+    for (const [cx, side] of [[8.55, 1], [9.29, 1], [10.03, -1]] as const) {
+      box('Frente alto', bodbynPanel, cx, north + 0.365, 1.57, 0.7, 0.7, 0.012);
+      box('Plafón alto', bodbyn, cx, north + 0.373, 1.63, 0.56, 0.58, 0.012);
+      box('Tirador', pull, cx + side * 0.34, north + 0.39, 1.62, 0.025, 0.13, 0.03);
+    }
+    box('Campana', black, 11.0, north + 0.25, 1.56, 1.0, 0.1, 0.5);
+    solid('Campana', pyramidMesh, black, 11.0, north + 0.25, 1.66, 1.0, 0.3, 0.5);
+    box('Chimenea', black, 11.0, north + 0.14, 1.9, 0.3, 0.7, 0.26);
+    box('Armario alto', bodbyn, 12.05, north + 0.18, 1.4, 0.92, 0.9, 0.36);
+    box('Frente alto', bodbynPanel, 12.05, north + 0.365, 1.42, 0.86, 0.86, 0.012);
+    box('Plafón alto', bodbyn, 12.05, north + 0.373, 1.48, 0.72, 0.74, 0.012);
+    box('Tirador', pull, 11.72, north + 0.39, 1.48, 0.025, 0.13, 0.03);
+    light(10.2, 2.3, 2.2, '#ffe6c4', 1.1, 5);
+    // Tall units across the kitchen: the fridge with a pine wine rack on top, and the oven column.
+    const fridge = standing('Frigorífico', white, 9.02, 5.52, 0.9, 0.7, 1.85);
+    const pine = mat('Pino', '#d8b98a', 0.2);
+    for (const dx of [-0.34, 0.34]) box('Botellero', pine, 9.02 + dx, 5.52, 1.85, 0.04, 0.38, 0.4, fridge);
+    for (const y of [1.87, 2.0, 2.13]) box('Balda del botellero', pine, 9.02, 5.52, y, 0.68, 0.02, 0.4, fridge);
+    for (let i = 0; i < 5; i++) {
+      const bottle = cyl('Botella', mat('Botella', ['#2f4a2a', '#6b1f2b', '#3a3f25'][i % 3], 0.7), 8.8 + (i % 3) * 0.2, 5.52, 1.94 + (i >> 1) * 0.12, 0.08, 0.36, 0.08, fridge);
+      bottle.setEulerAngles(90, 0, 0);
+    }
+    const column = standing('Columna del horno', bodbyn, 10.02, 5.52, 0.92, 0.7, 2.25);
+    box('Cajas sobre la columna', mat('Caja de cartón', '#b8905f', 0.1), 10.0, 5.5, 2.25, 0.6, 0.18, 0.4, column);
+    // Rolling standing desk, white frame and light oak top.
+    box('Mesa con ruedas', paleOak, 12.0, 5.42, 0.74, 0.95, 0.04, 0.6);
+    for (const dx of [-0.4, 0.4]) {
+      box('Columna de la mesa', white, 12 + dx, 5.42, 0.08, 0.05, 0.66, 0.05);
+      box('Pie de la mesa', white, 12 + dx, 5.42, 0.05, 0.06, 0.04, 0.56);
+      for (const dz of [-0.25, 0.25]) ball('Rueda', black, 12 + dx, 5.42 + dz, 0, 0.06, 0.06, 0.06);
+    }
+
+    // ——— Study: fold-down bed under grey and white wall units, the piano, desk and gaming chair ———
+    const back = 2 + FACE;
+    box('Cama abatible', mat('Cama abatible', '#eeebe4', 0.3), 2.5, back + 0.3, 0, 3.3, 1.12, 0.6);
+    box('Tapa de roble', paleOak, 2.5, back + 0.31, 1.12, 3.36, 0.04, 0.64);
+    for (const px of [0.83, 4.17]) box('Costado', graphite, px, back + 0.31, 0, 0.04, 1.14, 0.62);
+    box('Junta', mat('Junta', '#d9d7d0', 0.3), 2.5, back + 0.605, 0.06, 0.012, 1.02, 0.01);
+    box('Tirador largo', pull, 1.95, back + 0.63, 0.98, 0.9, 0.025, 0.03);
+    // Wall units centred over the bed: a big grey box either side of the white double doors.
+    for (const px of [1.2, 3.8]) box('Módulo gris', graphite, px, back + 0.2, 1.6, 0.95, 0.85, 0.4);
+    box('Módulo blanco', white, 2.5, back + 0.2, 1.81, 1.66, 0.42, 0.4);
+    box('Junta', mat('Junta', '#d9d7d0', 0.3), 2.5, back + 0.405, 1.83, 0.012, 0.38, 0.01);
+    // Digital piano on an X stand against the west wall, keys facing the room.
+    for (const pz of [4.35, 5.65]) for (const s of [-1, 1]) rod('Soporte en X', black, [0.48 + s * 0.2, 0, pz], [0.48 - s * 0.2, 0.66, pz], 0.035);
+    const pianoWhite = mat('Piano blanco', '#f4f3ef', 0.5);
+    box('Piano', pianoWhite, 0.47, 5.0, 0.66, 0.44, 0.13, 1.72);
+    box('Teclado', ceramic, 0.6, 5.0, 0.79, 0.16, 0.012, 1.6);
+    for (let i = 0; i < 36; i++) {
+      const octave = Math.floor(i / 5), key = [0.5, 1.5, 3.5, 4.5, 5.5][i % 5];
+      const pz = 4.22 + (octave * 7 + key) * 0.0305;
+      if (pz < 5.78) box('Tecla negra', black, 0.56, pz, 0.8, 0.09, 0.012, 0.016);
+    }
+    box('Pedal', black, 0.95, 5.3, 0, 0.14, 0.03, 0.08);
+    // Desk under the little window: black top edge, cork mat, monitor, printer on a drawer unit.
+    box('Escritorio', mat('Escritorio', '#2b2a2c', 0.3), 1.25, 8.52, 0.72, 2.2, 0.04, 0.68);
+    for (const px of [0.25, 2.3]) box('Pata del escritorio', black, px, 8.52, 0, 0.05, 0.72, 0.6);
+    box('Alfombrilla de corcho', cork, 1.3, 8.4, 0.76, 0.8, 0.005, 0.3);
+    box('Monitor', black, 1.2, 8.72, 0.95, 0.9, 0.5, 0.04);
+    box('Pie del monitor', black, 1.2, 8.76, 0.76, 0.2, 0.2, 0.12);
+    box('Teclado del PC', black, 1.2, 8.44, 0.765, 0.46, 0.02, 0.14);
+    box('Altavoz', black, 1.85, 8.68, 0.76, 0.14, 0.24, 0.16);
+    box('Impresora', mat('Impresora', '#3a3b3e', 0.4), 0.45, 8.55, 0.76, 0.46, 0.2, 0.38);
+    box('Papel', white, 0.45, 8.45, 0.96, 0.3, 0.01, 0.2);
+    box('Torre del PC', black, 2.05, 8.5, 0, 0.22, 0.46, 0.46);
+    swivel(1.3, 7.3, 'south', mat('Silla gamer', '#26262a', 0.2), 0.85, mat('Etiqueta amarilla', '#f2d23a', 0.4));
+    light(2.6, 2.3, 5.5, '#ffe4bd', 1, 5);
+
+    // ——— Gallery: red clay floor, washer, boiler, outdoor AC unit, drying rack and a railing ———
+    for (let pz = 9.2; pz < 12.85; pz += 0.12) box('Barrote', black, 5, pz, 0, 0.025, 1.0, 0.025).render!.castShadows = false;
+    for (const y of [0.08, 0.98]) box('Pasamanos', black, 5, 11.0, y, 0.05, 0.04, 3.74);
+    rod('Tendedero', mat('Cuerda', '#cfcac0', 0.2), [4.35, 1.95, 9.3], [4.35, 1.95, 12.8], 0.012);
+    for (const [pz, c] of [[9.9, '#3b5a86'], [10.6, '#e8e2d5'], [11.5, '#6f8a5a']] as const) box('Ropa tendida', mat('Ropa', c, 0.05), 4.35, pz, 1.35, 0.03, 0.58, 0.45);
+    box('Lavadora', white, 6.02, 12.55, 0, 0.6, 0.85, 0.6);
+    box('Mandos de la lavadora', mat('Panel gris', '#c9cccf', 0.5), 6.02, 12.28, 0.72, 0.56, 0.1, 0.04);
+    for (const [i, c] of ['#f4f4f0', '#2f63b5', '#e9e5da'].entries()) cyl('Detergente', mat('Detergente', c, 0.5), 5.85 + i * 0.16, 12.6, 0.85, 0.1, 0.22, 0.1);
+    const boiler = wallPivot(8, 12, 'z');
+    box('Caldera', white, 7.7, 11.95, 1.4, 0.32, 0.7, 0.44, boiler);
+    for (const dz of [-0.12, 0, 0.12]) box('Tubería', steel, 7.75, 11.95 + dz, 1.1, 0.04, 0.3, 0.04, boiler);
+    box('Aire acondicionado portátil', white, 7.1, 12.5, 0, 0.6, 0.78, 0.5);
+    cyl('Cubo de fregar', mat('Cubo', '#3c4046', 0.3), 7.1, 11.88, 0, 0.3, 0.26, 0.3);
+    for (let i = 0; i < 7; i++) cone('Fregona', mat('Fregona', '#e7cf3a', 0.1), 7.02 + (i % 3) * 0.08, 11.82 + (i >> 1) * 0.04, 0.2, 0.08, 0.2, 0.08).setEulerAngles(180, 0, (i - 3) * 12);
+    box('Unidad exterior', white, 7.25, 6.68, 0.08, 1.0, 0.68, 0.36);
+    for (const dx of [-0.4, 0.4]) box('Pie de la unidad', black, 7.25 + dx, 6.68, 0, 0.06, 0.08, 0.34);
+    cyl('Rejilla del ventilador', mat('Rejilla', '#b7bbbd', 0.3), 7.05, 6.865, 0.42, 0.52, 0.02, 0.52).setEulerAngles(90, 0, 0);
+    box('Logo', mat('Logo azul', '#1f5fae', 0.4), 7.6, 6.865, 0.5, 0.2, 0.24, 0.01);
+    const lantern = onWall('south', 7.3, 6 + FACE);
+    box('Farol de pared', black, 7.3, 6 + FACE + 0.1, 1.85, 0.16, 0.24, 0.16, lantern);
+    box('Luz del farol', glow, 7.3, 6 + FACE + 0.1, 1.9, 0.1, 0.12, 0.17, lantern);
+    const rack = mat('Tendedero', '#9aa0a4', 0.5);
+    for (const [px, pz] of [[6.85, 8.65], [7.7, 8.65], [6.85, 9.4], [7.7, 9.4]]) box('Montante del tendedero', rack, px, pz, 0, 0.025, 1.3, 0.025);
+    for (const y of [0.45, 0.85, 1.25]) box('Varillas', rack, 7.27, 9.02, y, 0.86, 0.02, 0.76);
+    for (const [i, c] of ['#1f2a3d', '#6b4a3a', '#c9503f', '#8a8f94', '#2f2f33'].entries()) box('Ropa', mat('Ropa', c, 0.05), 6.95 + (i % 3) * 0.33, 8.75 + (i >> 1) * 0.28, 0.75 + (i % 2) * 0.4, 0.26, 0.5, 0.02);
+    box('Baúl', mat('Baúl', '#2b2b2d', 0.2), 7.35, 10.5, 0, 0.84, 0.6, 1.6);
+    box('Tapa del baúl', mat('Baúl', '#353538', 0.2), 7.35, 10.5, 0.6, 0.88, 0.04, 1.64);
+    light(6.4, 2.2, 10, '#fff0dc', 0.8, 4);
+
+    // ——— Bedroom: bed with drawers, headboard with shelves, open oak wardrobe, AC over the windows ———
+    const pax = mat('Armario roble', '#c9a36e', 0.25), wireBasket = mat('Cesta blanca', '#ecebe8', 0.4);
+    const wz0 = 6 + FACE, wz1 = wz0 + 0.62, wx0 = 8.2, wx1 = 12.8, bays = [8.2, 9.73, 11.27, 12.8];
+    const tall = foldaway(wx0, wz0, wx1, wz1, 0.9, 2.62);
+    box('Trasera', pax, (wx0 + wx1) / 2, wz0 + 0.02, 0, wx1 - wx0, 0.9, 0.02);
+    box('Trasera', pax, (wx0 + wx1) / 2, wz0 + 0.02, 0.9, wx1 - wx0, 1.45, 0.02, tall);
+    for (const px of bays) {
+      box('Costado', pax, px, (wz0 + wz1) / 2, 0, 0.04, 0.9, wz1 - wz0);
+      box('Costado', pax, px, (wz0 + wz1) / 2, 0.9, 0.04, 1.45, wz1 - wz0, tall);
+    }
+    box('Techo del armario', pax, (wx0 + wx1) / 2, (wz0 + wz1) / 2, 2.33, wx1 - wx0, 0.03, wz1 - wz0, tall);
+    const colours = ['#1f2a3d', '#b8503a', '#2f67b0', '#6b4a3a', '#8a8f94', '#e0a646', '#3f5a48', '#d8d2c5', '#a0522d'];
+    bays.slice(0, 3).forEach((b0, i) => {
+      const b1 = bays[i + 1], cx = (b0 + b1) / 2, w = b1 - b0 - 0.08;
+      box('Balda superior', pax, cx, (wz0 + wz1) / 2, 2.0, w, 0.025, wz1 - wz0, tall);
+      box('Caja de tela', white, cx, (wz0 + wz1) / 2, 2.03, w - 0.1, 0.28, 0.5, tall);
+      box('Barra', steel, cx, (wz0 + wz1) / 2, 1.9, w, 0.025, 0.025, tall);
+      const low = i === 1 ? 0.8 : 1.05;
+      for (let k = 0, px = b0 + 0.1; px < b1 - 0.1; k++, px += 0.07) {
+        const h = 1.88 - low - jitter(k + i * 20) * 0.25;
+        box('Prenda', mat('Prenda', colours[(k * 7 + i * 3) % colours.length], 0.05), px, (wz0 + wz1) / 2 + 0.02, 1.88 - h, 0.05, h, 0.44, tall);
+      }
+      if (i === 2) for (const y of [0.1, 0.4, 0.7]) {
+        box('Cajón de roble', pax, cx, wz1 - 0.02, y, w - 0.02, 0.27, 0.04);
+        box('Tirador del cajón', black, cx, wz1 + 0.005, y + 0.2, 0.3, 0.02, 0.02);
+      } else for (const y of i === 1 ? [0.1, 0.36] : [0.1, 0.36, 0.62]) {
+        box('Cesta de rejilla', wireBasket, cx, (wz0 + wz1) / 2 + 0.03, y, w - 0.06, 0.2, 0.5);
+        box('Ropa doblada', mat('Ropa doblada', colours[(i * 4 + Math.round(y * 10)) % colours.length], 0.05), cx, (wz0 + wz1) / 2 + 0.03, y + 0.06, w - 0.3, 0.18, 0.36);
+      }
+    });
+    const bedWhite = mat('Canapé blanco', '#f2f1ee', 0.3);
+    box('Canapé', bedWhite, 9.5, 11.27, 0, 1.9, 0.42, 2.84);
+    for (const pz of [10.4, 11.3, 12.2]) box('Cajón del canapé', mat('Junta', '#d9d7d0', 0.3), 10.455, pz, 0.1, 0.01, 0.24, 0.8);
+    box('Colchón', ceramic, 9.5, 11.27, 0.42, 1.82, 0.18, 2.76);
+    box('Sábana', mat('Sábana beige', '#d9c7a7', 0.05), 9.5, 11.27, 0.6, 1.84, 0.02, 2.78);
+    const duvet = mat('Nórdico de rayas', '#eadcc6', 0.05);
+    box('Nórdico', duvet, 9.55, 10.75, 0.6, 1.9, 0.14, 1.7).setEulerAngles(0, 4, 0);
+    box('Nórdico arrugado', duvet, 9.3, 11.6, 0.66, 0.9, 0.16, 0.8).setEulerAngles(0, -18, 4);
+    for (const px of [9.05, 9.95]) box('Almohada', mat('Almohada', '#f1ebe0', 0.05), px, 12.35, 0.62, 0.7, 0.13, 0.4);
+    for (const [i, c] of ['#8a5a8c', '#2c3a5c', '#6f9a8a'].entries()) box('Ropa sobre la cama', mat('Ropa', c, 0.05), 9.6 + i * 0.18, 10.8 - i * 0.12, 0.74 + i * 0.02, 0.4, 0.06, 0.34).setEulerAngles(0, i * 35, 0);
+    box('Cabecero', bedWhite, 9.5, 12.8, 0.3, 2.6, 0.9, 0.08);
+    for (const y of [0.62, 0.9]) box('Ranura del cabecero', mat('Junta', '#d9d7d0', 0.3), 9.5, 12.755, y, 2.5, 0.015, 0.01);
+    for (const px of [8.35, 10.65]) {
+      box('Estante del cabecero', mat('Estante gris', '#8d8f90', 0.3), px, 12.62, 0.5, 0.36, 0.03, 0.34);
+      rod('Flexo', black, [px, 0.95, 12.74], [px + (px < 9.5 ? 0.15 : -0.15), 1.1, 12.55], 0.02);
+    }
+    cyl('Botella de agua', glass, 10.65, 12.6, 0.53, 0.08, 0.24, 0.08);
+    box('Móvil', black, 10.7, 12.55, 0.53, 0.08, 0.01, 0.15);
+    box('Cesto de la ropa', black, 12.5, 12.5, 0, 0.36, 0.55, 0.36);
+    const ac = onWall('east', 8 + FACE, 9);
+    box('Split', white, 8 + FACE + 0.12, 9, 2.12, 0.24, 0.3, 1.0, ac);
+    box('Rejilla del split', mat('Rejilla', '#c9cccf', 0.3), 8 + FACE + 0.245, 9, 2.14, 0.01, 0.06, 0.9, ac);
+    light(10.6, 2.3, 10, '#ffe4bd', 0.9, 4.5);
+
+    // ——— Bathroom: tub with a pale blue curtain, beige square tiles, oak vanity, towel rail ———
+    const beige = tiles('Azulejo beige', 1.6, 0.2, 0.2, '#ddd6ca', '#f0ece5', false);
+    clad(beige, 'south', 8, 15 + FACE, 18 - FACE, 0, 1.6);
+    clad(beige, 'east', 15, 8 + FACE, 10.5, 0, 1.6);
+    clad(beige, 'east', 15, 11.5, 13 - FACE, 0, 1.6);
+    box('Bañera', ceramic, 16.5, 8.55, 0, 2.68, 0.56, 0.8);
+    box('Interior de la bañera', mat('Seno', '#e4e8e8', 0.8), 16.5, 8.5, 0.56, 2.5, 0.005, 0.62);
+    cyl('Rociador', steel, 15.55, north + 8.15, 1.9, 0.28, 0.02, 0.28);
+    rod('Barra de cortina', steel, [15.13, 2.05, 8.98], [17.87, 2.05, 8.98], 0.025);
+    const curtain = mat('Cortina azul', '#a8c4c9', 0.1);
+    for (let i = 0; i < 5; i++) box('Cortina', curtain, 16.0 + i * 0.13, 8.98 + (i % 2) * 0.05, 0.4, 0.14, 1.62, 0.04);
+    box('Mueble de lavabo', oak, 17.52, 10.05, 0.25, 0.68, 0.55, 0.9);
+    box('Lavabo', ceramic, 17.52, 10.05, 0.8, 0.72, 0.08, 0.92);
+    box('Grifo', steel, 17.72, 10.05, 0.88, 0.05, 0.16, 0.05);
+    for (const dz of [-0.3, 0.3]) cyl('Dosificador', mat('Dosificador', '#e9e4d8', 0.4), 17.75, 10.05 + dz, 0.88, 0.07, 0.16, 0.07);
+    box('Inodoro', ceramic, 16.0, 12.55, 0, 0.4, 0.42, 0.6);
+    box('Tapa', ceramic, 16.0, 12.72, 0.42, 0.4, 0.44, 0.06).setEulerAngles(-8, 0, 0);
+    box('Bidé', ceramic, 17.05, 12.6, 0, 0.38, 0.4, 0.5);
+    cyl('Papelera', steel, 16.55, 12.7, 0, 0.26, 0.36, 0.26);
+    cyl('Tapa de bambú', mat('Bambú', '#c89a5c', 0.3), 16.55, 12.7, 0.36, 0.28, 0.03, 0.28);
+    const rail = onWall('east', 15 + FACE, 9.6);
+    for (const pz of [9.3, 9.9]) box('Radiador toallero', ceramic, 15 + FACE + 0.06, pz, 0.6, 0.03, 1.3, 0.03, rail);
+    for (let y = 0.65; y < 1.9; y += 0.1) box('Barra del toallero', ceramic, 15 + FACE + 0.06, 9.6, y, 0.025, 0.02, 0.6, rail);
+    box('Toalla verde', mat('Toalla verde', '#1f5a3e', 0.05), 15 + FACE + 0.1, 9.45, 0.9, 0.05, 1.0, 0.36, rail);
+    box('Toalla granate', mat('Toalla granate', '#5a2438', 0.05), 15 + FACE + 0.1, 9.8, 1.05, 0.05, 0.8, 0.3, rail);
+    box('Alfombrilla', mat('Alfombrilla', '#58595b', 0.02), 16.5, 9.35, 0.01, 0.9, 0.02, 0.5);
+    box('Báscula', black, 16.3, 11.2, 0.01, 0.3, 0.03, 0.3);
+    light(16.7, 2.2, 10.6, '#fff0dc', 0.8, 3.5);
+
+    // ——— Living room: OLED on a floating unit, cream chaise sofa, the desk behind it ———
+    box('Mueble de TV', white, 16.75, north + 0.22, 0.3, 2.4, 0.45, 0.44);
+    for (const px of [16.0, 16.8, 17.6]) box('Puerta de roble', paleOak, px, north + 0.445, 0.33, 0.76, 0.34, 0.01);
+    box('Televisor', mat('Marco del televisor', '#b8bcbf', 0.7), 16.75, north + 0.03, 0.98, 1.84, 1.04, 0.03);
+    box('Pantalla apagada', mat('Pantalla apagada', '#15181c', 0.95), 16.75, north + 0.05, 1.0, 1.8, 1.0, 0.01);
+    box('Marco de fotos', white, 15.85, north + 0.3, 0.75, 0.2, 0.24, 0.04).setEulerAngles(-10, 0, 0);
+    for (const px of [16.3, 17.7]) ball('Altavoz', black, px, north + 0.3, 0.75, 0.16, 0.16, 0.16);
+    for (const px of [16.7, 16.9]) cyl('Vela', mat('Vela', '#f5eedc', 0.2), px, north + 0.28, 0.75, 0.08, 0.1, 0.08);
+    box('Mando', black, 17.2, north + 0.34, 0.75, 0.16, 0.04, 0.1);
+    box('Gatillos', mat('Gatillos amarillos', '#f2c230', 0.4), 17.2, north + 0.3, 0.77, 0.14, 0.02, 0.03);
+    snakePlant(18.05, north + 0.4, 1.3);
+    box('Radiador', ceramic, 18.95, north + 0.07, 0.15, 0.7, 0.62, 0.1);
+    // Sofa facing the TV: two wide seat blocks between low arms, tall headrests, rust and sand cushions.
+    const sofa = mat('Sofá crema', '#d9c7a6', 0.05), sofaShade = mat('Sofá crema sombra', '#c6b291', 0.05);
+    box('Base del sofá', sofaShade, 16.5, 4.35, 0.06, 3.9, 0.28, 1.12);
+    for (const px of [15.6, 17.4]) box('Asiento', sofa, px, 4.3, 0.34, 1.78, 0.16, 1.0);
+    for (const px of [15.15, 16.05, 16.95, 17.85]) box('Cabezal', sofa, px, 4.78, 0.5, 0.88, 0.55, 0.26).setEulerAngles(-6, 0, 0);
+    for (const px of [14.6, 18.4]) box('Brazo', sofa, px, 4.35, 0.3, 0.26, 0.3, 1.12);
+    for (const px of [14.6, 18.4]) for (const pz of [3.85, 4.85]) box('Pata del sofá', black, px, pz, 0, 0.05, 0.06, 0.05);
+    box('Cojín teja', mat('Cojín teja', '#b35a2c', 0.05), 16.3, 4.45, 0.5, 0.62, 0.42, 0.14).setEulerAngles(-20, 20, 8);
+    box('Cojín arena', mat('Cojín arena', '#d9c29a', 0.05), 16.7, 4.35, 0.5, 0.56, 0.4, 0.14).setEulerAngles(-24, -12, -6);
+    box('Móvil', black, 18.4, 4.1, 0.6, 0.16, 0.02, 0.3).setEulerAngles(0, 20, 0);
+    for (const dx of [0, 0.12]) box('Mando a distancia', black, 17.6 + dx, 4.0, 0.5, 0.05, 0.02, 0.2);
+    // Desk behind the sofa: monitor, laptop and two black office chairs.
+    box('Escritorio', paleOak, 16.0, 5.45, 0.72, 2.8, 0.04, 0.68);
+    for (const px of [14.68, 17.32]) box('Pata del escritorio', black, px, 5.45, 0, 0.05, 0.72, 0.6);
+    box('Portátil', steel, 15.3, 5.45, 0.76, 0.42, 0.02, 0.3);
+    box('Pantalla del portátil', black, 15.3, 5.29, 0.77, 0.42, 0.28, 0.02).setEulerAngles(-12, 0, 0);
+    box('Monitor', black, 16.6, 5.2, 0.98, 0.9, 0.52, 0.04);
+    box('Pantalla del monitor', mat('Pantalla del monitor', '#1b2027', 0.9), 16.6, 5.225, 1.0, 0.84, 0.46, 0.01);
+    box('Pie del monitor', black, 16.6, 5.15, 0.76, 0.22, 0.24, 0.12);
+    box('Webcam', black, 16.6, 5.2, 1.5, 0.12, 0.05, 0.05);
+    for (const px of [15.2, 17.0]) swivel(px, 6.2, 'north', mat('Malla negra', '#2a2b2e', 0.2), 0.62);
+    birdOfParadise(18.1, 6.05);
+    light(16.6, 2.3, 3.2, '#ffe4bd', 1.1, 5.5);
+    // French windows onto the balcony: both leaves open into the room, a header and transom above.
+    const header = foldaway(21 - FACE, 2.5, 21 + FACE, 4.5, CUT_HEIGHT, wallHeight);
+    box('Travesaño', profile, 21, 3.5, doorTop, THICKNESS, 0.08, 2.0, header);
+    box('Montante de vidrio', glass, 21, 3.5, doorTop + 0.08, 0.03, wallHeight - doorTop - 0.12, 1.9, header).render!.castShadows = false;
+    box('Marco del montante', profile, 21, 3.5, wallHeight - 0.04, THICKNESS, 0.04, 2.0, header);
+    for (const [hinge, dz] of [[2.5, 0.06], [4.5, -0.06]] as const) {
+      const leaf = foldaway(20.05, hinge + Math.min(0, dz) - 0.03, 21, hinge + Math.max(0, dz) + 0.03, CUT_HEIGHT, doorTop);
+      box('Hoja abierta', glass, 20.52, hinge + dz, 0.04, 0.9, doorTop - 0.08, 0.02, leaf).render!.castShadows = false;
+      for (const px of [20.08, 20.96]) box('Larguero', profile, px, hinge + dz, 0.02, 0.06, doorTop - 0.04, 0.05, leaf);
+      for (const y of [0.02, doorTop - 0.08]) box('Travesaño de la hoja', profile, 20.52, hinge + dz, y, 0.9, 0.06, 0.05, leaf);
+    }
+
+    // ——— Dining corner: round oak table, white folding chairs, open shelving, arc lamp, Barcelona at night ———
+    framed(barcelonaNight(), 'east', 18 + FACE, 10.4, 1.55, 1.9, 1.2, steel);
+    cyl('Mesa redonda', paleOak, 19.55, 9.5, 0.72, 1.35, 0.04, 1.35);
+    for (const dz of [-0.36, 0.36]) {
+      box('Pata de la mesa', black, 19.55, 9.5 + dz, 0.02, 0.05, 0.7, 0.05);
+      box('Travesaño', black, 19.55, 9.5 + dz * 0.5, 0.68, 0.05, 0.04, 0.75);
+    }
+    box('Pie de la mesa', black, 19.55, 9.5, 0, 0.6, 0.04, 0.9);
+    cyl('Botella decorada', mat('Botella decorada', '#c8b6e2', 0.7), 19.5, 9.4, 0.76, 0.09, 0.3, 0.09);
+    const folding = mat('Silla plegable', '#f4f3ef', 0.4), quilted = mat('Cojín acolchado', '#efe9dc', 0.05);
+    chair(19.55, 8.52, 'south', quilted, folding);
+    chair(20.52, 9.6, 'west', quilted, folding);
+    chair(19.7, 10.5, 'north', quilted, folding);
+    chair(18.62, 9.45, 'east', quilted, folding);
+    // Open shelving (no back, so the books show from both sides) with plants and treasures on top.
+    const kallax = mat('Estantería de roble', '#cfae7e', 0.25), ky = 1.8, kz = 12.6;
+    for (const [i, y] of [0, 0.44, 0.88, 1.32, 1.76].entries()) box(i % 4 ? 'Balda' : 'Tablero', kallax, 19.48, kz, y, 1.86, 0.04, 0.4);
+    for (const px of [18.55, 19.0, 19.48, 19.95, 20.41]) box('Divisor', kallax, px, kz, 0, 0.04, ky, 0.4);
+    for (let col = 0; col < 4; col++) {
+      const cx = 18.78 + col * 0.47;
+      box('Caja blanca', white, cx, kz, 0.04, 0.4, 0.38, 0.38);
+      books(cx, kz, 0.48 + (col % 2) * 0.44, 0.38, 'x', col * 7);
+      box('Juego de mesa', mat('Juego de mesa', ['#c9423a', '#2f5a8a', '#e3b341', '#3d7a4f'][col], 0.3), cx, kz, 1.36 - (col % 2) * 0.44, 0.38, 0.3, 0.36);
+    }
+    picture(root, moonArt(), 'south', 19.1, kz + 0.12, ky + 0.2, 0.44, 0.36).setEulerAngles(-8, 0, 0);
+    ball('Geoda', mat('Amatista', '#5a3f7a', 0.6), 19.6, kz, ky + 0.04, 0.2, 0.3, 0.16);
+    for (const [px, n] of [[18.7, 5], [20.25, 4]] as const) {
+      cyl('Maceta', pot, px, kz, ky + 0.04, 0.2, 0.18, 0.2);
+      for (let i = 0; i < n; i++) ball('Potus', leaves[i % 3], px + (i % 2 ? 0.12 : -0.1), kz - 0.05 - i * 0.02, ky + 0.2 - i * 0.28, 0.16, 0.14, 0.12);
+    }
+    box('Pie de la lámpara de arco', black, 21.2, 12.45, 0.06, 0.035, 1.69, 0.035);
+    rod('Arco', black, [21.2, 1.75, 12.45], [20.9, 2.15, 11.9]);
+    rod('Arco', black, [20.9, 2.15, 11.9], [20.4, 2.0, 11.15]);
+    box('Base de mármol', mat('Mármol', '#e8e4dc', 0.6), 21.2, 12.45, 0, 0.34, 0.06, 0.34);
+    cone('Pantalla', mat('Pantalla crema', '#d9d2c6', 0.3), 20.4, 11.15, 1.72, 0.5, 0.32, 0.5);
+    ball('Bombilla', glow, 20.4, 11.15, 1.68, 0.14, 0.1, 0.14);
+    light(20.3, 1.6, 10.6, '#ffd49a', 1.1, 4.5);
+    cyl('Esterilla', mat('Esterilla', '#2aa6a0', 0.3), 21.72, 12.25, 0, 0.14, 0.62, 0.14);
+    for (let pz = 7.25; pz < 8.3; pz += 0.1) box('Radiador', ceramic, 21.78, pz, 0.12, 0.1, 0.6, 0.07);
+
+    // ——— Balcony: red clay floor, grey folding table and chairs, a lantern and the railing ———
+    for (let pz = north + 0.08; pz < 6 - FACE; pz += 0.12) box('Barrote', black, 24, pz, 0, 0.025, 1.05, 0.025).render!.castShadows = false;
+    for (const y of [0.06, 1.03]) box('Pasamanos', black, 24, 3, y, 0.05, 0.04, 6 - 2 * FACE);
+    const outdoor = mat('Aluminio gris', '#4f5559', 0.4);
+    box('Mesa plegable', outdoor, 23.25, 3.5, 0.7, 0.8, 0.03, 1.5);
+    for (const s of [-1, 1]) rod('Pata plegable', outdoor, [23.25, 0, 3.5 + s * 0.6], [23.25, 0.7, 3.5 - s * 0.6], 0.03);
+    chair(23.2, 2.3, 'south', outdoor, outdoor);
+    chair(23.2, 4.7, 'north', outdoor, outdoor);
+    box('Farol de pared', black, 22.4, north + 0.1, 1.85, 0.16, 0.26, 0.16);
+    box('Luz del farol', glow, 22.4, north + 0.1, 1.9, 0.1, 0.14, 0.17);
+    box('Toldo recogido', mat('Toldo crema', '#efe6cf', 0.1), 22.5, north + 0.12, 2.42, 3.0, 0.14, 0.2);
+
+    // ——— Across the Meridiana: peach blocks with green awnings, clear of the camera's view of the flat ———
+    const facades = [mat('Fachada salmón', '#e3b192', 0.1), mat('Fachada crema', '#e9dcc4', 0.1)];
+    const awning = mat('Toldo verde', '#2f7d73', 0.2), windowDark = mat('Ventana de enfrente', '#3b4449', 0.5);
+    for (const [i, [z0, z1, top]] of ([[-8, 5, 4.6], [-19, -8.4, 5.4]] as const).entries()) {
+      const x0 = 28.5, x1 = 34;
+      box('Edificio de enfrente', facades[i], (x0 + x1) / 2, (z0 + z1) / 2, -1.15, x1 - x0, top + 1.15, z1 - z0);
+      box('Azotea', mat('Azotea', '#bdb6a7', 0.05), (x0 + x1) / 2, (z0 + z1) / 2, top, x1 - x0 - 0.3, 0.04, z1 - z0 - 0.3);
+      for (let y = -0.4; y < top - 1; y += 1.55) {
+        for (let pz = z0 + 0.9; pz < z1 - 0.8; pz += 2.1) {
+          box('Balcón de enfrente', facades[i], x0 - 0.3, pz, y, 0.6, 0.08, 1.5);
+          for (let k = 0; k < 6; k++) box('Barrote', black, x0 - 0.58, pz - 0.7 + k * 0.28, y + 0.08, 0.02, 0.6, 0.02);
+          const blind = box('Toldo', awning, x0 - 0.42, pz, y + 1.2, 0.85, 0.04, 1.5); blind.setEulerAngles(0, 0, 28);
+        }
+        for (let px = x0 + 0.6; px < x1 - 0.4; px += 1.1) box('Ventana', windowDark, px, z1 + 0.01, y + 0.4, 0.55, 0.8, 0.02);
+      }
+    }
   }
 
   /** A bed centred on `px` (x, or z when it runs east), headboard on the wall at `head`. */
@@ -965,6 +1469,57 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     ctx.fillStyle = '#00000055'; ctx.beginPath(); ctx.moveTo(30, 104); ctx.lineTo(64, 50); ctx.lineTo(98, 104); ctx.fill();
     ctx.fillStyle = '#8a8272'; for (let i = 0; i < 4; i++) ctx.fillRect(18, 118 + i * 10, 70 + (i % 2) * 20, 3);
     return painted('Carta', c, 0.3);
+  }
+
+  /** Barcelona from above at night: the sea, the lit Eixample grid, the Diagonal and a glowing tower. */
+  function barcelonaNight() {
+    const [c, ctx] = canvas(512, 324);
+    const sky = ctx.createLinearGradient(0, 0, 0, 324);
+    sky.addColorStop(0, '#1d3358'); sky.addColorStop(0.25, '#2c4670'); sky.addColorStop(0.32, '#1c2a44'); sky.addColorStop(1, '#10151f');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, 512, 324);
+    ctx.fillStyle = '#18263d'; ctx.fillRect(0, 84, 512, 20);
+    for (let r = 0; r < 34; r++) {
+      const t = r / 34, y = 106 + 218 * t ** 1.5, gap = 5 + t * 16;
+      for (let k = 0, px = jitter(r) * gap; px < 512; k++, px += gap) {
+        ctx.fillStyle = jitter(r * 97 + k) > 0.8 ? '#fff0c4' : jitter(r * 31 + k) > 0.45 ? '#ffb85c' : '#d9793a';
+        ctx.globalAlpha = 0.55 + jitter(r + k * 13) * 0.45;
+        ctx.fillRect(px, y, 1.5 + t * 2.5, 1.2 + t * 1.8);
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#ffd38a'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(0, 300); ctx.lineTo(512, 118); ctx.stroke();
+    ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(60, 324); ctx.lineTo(300, 104); ctx.stroke();
+    const tower = ctx.createLinearGradient(0, 60, 0, 112);
+    tower.addColorStop(0, '#6fb4ff'); tower.addColorStop(0.6, '#3d6fd8'); tower.addColorStop(1, '#e0473c');
+    ctx.fillStyle = tower; ctx.beginPath(); ctx.ellipse(118, 94, 8, 34, 0, Math.PI, 0); ctx.lineTo(126, 118); ctx.lineTo(110, 118); ctx.fill();
+    ctx.fillStyle = '#2a2622';
+    for (const [px, h] of [[398, 46], [410, 58], [422, 50], [434, 40]]) { ctx.beginPath(); ctx.moveTo(px - 5, 132); ctx.lineTo(px, 132 - h); ctx.lineTo(px + 5, 132); ctx.fill(); }
+    ctx.fillStyle = '#ffd89a'; for (const px of [398, 410, 422, 434]) ctx.fillRect(px - 1, 118, 2, 10);
+    return painted('Barcelona de noche', c, 0.35);
+  }
+  function moonArt() {
+    const [c, ctx] = canvas(128, 104);
+    ctx.fillStyle = '#1c1633'; ctx.fillRect(0, 0, 128, 104);
+    const moon = ctx.createRadialGradient(60, 50, 4, 64, 52, 40);
+    moon.addColorStop(0, '#f6d1e6'); moon.addColorStop(0.6, '#c78bd6'); moon.addColorStop(1, '#6a4fb0');
+    ctx.fillStyle = moon; ctx.beginPath(); ctx.arc(64, 52, 38, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#120d20'; ctx.lineWidth = 2;
+    for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(i * 30, 104); ctx.lineTo(i * 30 + 12, 70 - i * 3); ctx.lineTo(i * 30 + 24, 58); ctx.stroke(); }
+    return painted('Luna', c, 0.2);
+  }
+  /** A pressed thistle, star-shaped and dry, on cream paper. */
+  function thistle() {
+    const [c, ctx] = canvas(128);
+    ctx.fillStyle = '#f2ede2'; ctx.fillRect(0, 0, 128, 128);
+    ctx.strokeStyle = '#6e5a3e'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    for (let i = 0; i < 18; i++) {
+      const a = i * Math.PI / 9, r = 28 + (i % 2) * 14;
+      ctx.beginPath(); ctx.moveTo(64 + Math.cos(a) * 12, 64 + Math.sin(a) * 12); ctx.lineTo(64 + Math.cos(a) * r, 64 + Math.sin(a) * r); ctx.stroke();
+    }
+    ctx.fillStyle = '#a58a5e'; ctx.beginPath(); ctx.arc(64, 64, 13, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7d6644'; for (let i = 0; i < 30; i++) ctx.fillRect(56 + jitter(i) * 16, 56 + jitter(i + 5) * 16, 2, 2);
+    return painted('Cardo', c, 0.15);
   }
 
   const origin = new pc.Vec3();

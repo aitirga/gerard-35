@@ -1,10 +1,10 @@
 import type { Cell } from './movement';
 
-export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2';
+export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
-/** Tree shapes shared by every scene: street plane trees, garden olives and slim cypresses. */
-export type TreeSpecies = 'plane' | 'olive' | 'cypress';
+/** Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses and a potted yucca. */
+export type TreeSpecies = 'plane' | 'olive' | 'cypress' | 'yucca';
 /** What the trunk stands in: a paved street pit (default), an indoor pot, or bare ground. */
 export type TreeBase = 'pit' | 'pot' | 'ground';
 /** Reusable scene pieces, anchored on a cell. `src/props.ts` draws them in any environment. */
@@ -44,7 +44,7 @@ export interface Interaction {
   /** Stairs: walking into these cells uses the interaction, no key needed. */
   step?: Rect;
 }
-export type FloorKind = 'tile' | 'stone' | 'deck' | 'gravel' | 'grass' | 'concrete';
+export type FloorKind = 'tile' | 'stone' | 'deck' | 'gravel' | 'grass' | 'concrete' | 'laminate' | 'terracotta';
 /** A named area of a floor plan; `level` raises its floor, e.g. a deck or a stair landing. */
 export interface Room extends Rect { name: string; floor: FloorKind; level?: number }
 /** A flight of steps over a rectangle, climbing `from` → `to` towards `up`. */
@@ -137,7 +137,7 @@ export const NEIGHBORHOOD = createNeighborhood();
 export const PLAN_GLYPHS = {
   '.': 'suelo', '+': 'paso o puerta abierta', '^': 'escalones',
   '#': 'muro', 'W': 'muro con ventana', 'D': 'puerta cerrada', 'G': 'cristalera',
-  'o': 'mueble', '_': 'hueco de la escalera', '=': 'barandilla de cristal', ' ': 'exterior',
+  'o': 'mueble', '/': 'bajo el tramo superior', '_': 'hueco de la escalera', '=': 'barandilla', ' ': 'exterior',
 } as const;
 const WALKABLE_GLYPHS = new Set(['.', '+', '^']);
 export function planGrid(plan: readonly string[]): string[] {
@@ -190,10 +190,10 @@ export const HOME_FLOOR_1 = house({
     'D........#..#oo#.ooo.#....#',
     '#........#^^#..#.....W....#',
     '######...#^^#..#.....W....#',
-    '#o...#...#^^#..#.....#....#',
-    'W........#^^#.o#....o#....#',
-    'Woooo....#^^#..#.....#....#',
-    '#........#++#+###+####..oo#',
+    '#o...#...#^/#..#.....#....#',
+    'W........#^/#.o#....o#....#',
+    'Woooo....#^/#..#.....#....#',
+    '#........#+##+###+####..oo#',
     '#.oo..oo.+...........G..oo#',
     'G.....oo.+...oooo....+....#',
     'G.....oo.#...oooo....+....#',
@@ -210,7 +210,6 @@ export const HOME_FLOOR_1 = house({
     { name: 'Cocina', x: 10, z: 8, w: 11, d: 4, floor: 'tile' },
     { name: 'Jardín', x: 22, z: 1, w: 4, d: 11, floor: 'grass' },
   ],
-  stairs: [{ x: 10, z: 2, w: 2, d: 5, up: 'north', from: 0, to: 1.32 }],
   props: [
     { kind: 'tree', x: 23, z: 3, species: 'olive', scale: 0.9, base: 'ground' },
     { kind: 'tree', x: 25, z: 1, species: 'cypress', base: 'ground' },
@@ -219,7 +218,7 @@ export const HOME_FLOOR_1 = house({
   interactions: [
     { id: 'leave-hall', cell: { x: 1, z: 1 }, label: 'Salir al patio', to: { environment: 'home-entrance', cell: { x: 17, z: 2 } } },
     { id: 'leave-living', cell: { x: 1, z: 9 }, label: 'Volver al patio 2', to: { environment: 'home-entrance', cell: { x: 18, z: 6 } } },
-    { id: 'stairs-up', cell: { x: 10, z: 1 }, label: 'Subir a la planta 2', step: { x: 10, z: 1, w: 2, d: 1 }, to: { environment: 'home-floor-2', cell: { x: 12, z: 6 } } },
+    { id: 'stairs-up', cell: { x: 10, z: 1 }, label: 'Subir a la planta 2', step: { x: 11, z: 2, w: 1, d: 2 }, to: { environment: 'home-floor-2', cell: { x: 12, z: 6 } } },
   ],
 });
 /** Gerard's shelves: four bays along the north wall of his room, each one a thing to look at. */
@@ -260,13 +259,61 @@ export const HOME_FLOOR_2 = house({
   ],
   props: [{ kind: 'tree', x: 20, z: 7, species: 'olive', scale: 0.55, base: 'pot' }],
   interactions: [
-    { id: 'stairs-down', cell: { x: 11, z: 5 }, label: 'Bajar a la planta 1', step: { x: 11, z: 4, w: 2, d: 1 }, to: { environment: 'home-floor-1', cell: { x: 11, z: 2 } } },
+    { id: 'stairs-down', cell: { x: 11, z: 5 }, label: 'Bajar a la planta 1', step: { x: 11, z: 4, w: 2, d: 1 }, to: { environment: 'home-floor-1', cell: { x: 10, z: 1 } } },
     ...SHELF_LINES.map(([id, label, lines], i) => ({ id, label, lines, cell: { x: 1 + i * 2, z: 2 } })),
+  ],
+});
+/**
+ * Gerard and Aitor's flat on the Meridiana, the home of chapters 2 and 3, drawn from their croquis.
+ * The croquis is turned a quarter to the left, so the kitchen and TV walls stand tall for the
+ * camera: its top (study) is west here, the kitchen wall north and the balcony east.
+ * One cell is roughly 0.8 m. `src/home-scenery.ts` furnishes it after the photos.
+ */
+export const MERIDIANA = house({
+  id: 'meridiana', name: 'Meridiana · Casa de Gerard y Aitor', spawn: { x: 7, z: 3 }, zoom: HOME_ZOOM,
+  plan: [
+    '     ####################',
+    '     D.o#oooo..oooo..G..=',
+    '######..#............G.o=',
+    '#oooo#...............+.o=',
+    '#o...+.........oooo..+.o=',
+    '#o...#.o#oo.o..ooo...G.o=',
+    '#o...#W#######.o.oo..####',
+    '#o...+.o#oooo#........W  ',
+    '#oo..#..W....+.####...W  ',
+    '#W####.o#....#.#oo#oo.#  ',
+    '     =.oWoo..#.#.o#oo.#  ',
+    '     =.o#oo..#.+..#...#  ',
+    '     =oo#oo..###oo#ooo#  ',
+    '     ##################  ',
+  ],
+  rooms: [
+    { name: 'Estudio', x: 1, z: 3, w: 4, d: 6, floor: 'laminate' },
+    { name: 'Recibidor', x: 6, z: 1, w: 2, d: 5, floor: 'laminate' },
+    { name: 'Galería', x: 6, z: 7, w: 2, d: 6, floor: 'terracotta' },
+    { name: 'Cocina', x: 9, z: 1, w: 5, d: 5, floor: 'laminate' },
+    { name: 'Dormitorio', x: 9, z: 7, w: 4, d: 6, floor: 'laminate' },
+    { name: 'Pasillo', x: 14, z: 7, w: 1, d: 5, floor: 'laminate' },
+    { name: 'Baño', x: 16, z: 9, w: 2, d: 4, floor: 'laminate' },
+    { name: 'Salón', x: 14, z: 1, w: 7, d: 6, floor: 'laminate' },
+    { name: 'Comedor', x: 19, z: 7, w: 3, d: 6, floor: 'laminate' },
+    { name: 'Balcón', x: 22, z: 1, w: 2, d: 5, floor: 'terracotta' },
+  ],
+  // The yucca beside the TV; every other plant is furniture.
+  props: [{ kind: 'tree', x: 15, z: 1, species: 'yucca', scale: 0.9, base: 'pot' }],
+  interactions: [
+    { id: 'meridiana-door', cell: { x: 6, z: 1 }, label: 'Mirar la puerta de casa', lines: ['Nuestra puerta. Las llaves, siempre en el mismo sitio… casi siempre.'] },
+    { id: 'meridiana-piano', cell: { x: 2, z: 5 }, label: 'Tocar el piano', lines: ['Do, re, mi… El piano eléctrico siempre está listo para una pieza más.'] },
+    { id: 'meridiana-kitchen', cell: { x: 10, z: 2 }, label: 'Mirar la cocina', lines: ['Encimera de madera, azulejos blancos… y alguien tiene que fregar.'] },
+    { id: 'meridiana-tv', cell: { x: 16, z: 2 }, label: 'Mirar la tele', lines: ['La tele grande. Aquí caen series, partidas y alguna siesta en el sofá.'] },
+    { id: 'meridiana-painting', cell: { x: 19, z: 11 }, label: 'Mirar el cuadro', lines: ['Barcelona de noche, con la torre encendida. Nuestra ciudad, en la pared.'] },
+    { id: 'meridiana-balcony', cell: { x: 22, z: 3 }, label: 'Asomarse al balcón', lines: ['Toldos verdes, ropa tendida y mucha luz. Buenos días, vecinos.'] },
   ],
 });
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
+  meridiana: MERIDIANA,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

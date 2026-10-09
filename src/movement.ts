@@ -101,7 +101,7 @@ export class FreeMovement {
     this.walking = false;
     const length = Math.hypot(vx, vz);
     if (this.bouncing || !Number.isFinite(length) || length < 1e-6) return false;
-    const distance = WALK_SPEED * (running ? 2 : 1) * clamp(dt, 0, 0.05) * Math.min(1, length);
+    const distance = WALK_SPEED * (running ? 1.5 : 1) * clamp(dt, 0, 0.05) * Math.min(1, length);
     // Substeps keep a long frame from tunnelling through a wall.
     const substeps = Math.max(1, Math.ceil(distance / (RADIUS / 2)));
     const start = { ...this.at };

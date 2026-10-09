@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ENVIRONMENTS, NEIGHBORHOOD, HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2, PLAN_GLYPHS, PROP_FOOTPRINTS, blockProps, nearbyInteraction, planGrid, propCells } from '../src/environments.ts';
+import { ENVIRONMENTS, NEIGHBORHOOD, HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2, MERIDIANA, PLAN_GLYPHS, PROP_FOOTPRINTS, blockProps, nearbyInteraction, planGrid, propCells } from '../src/environments.ts';
 import { FreeMovement, canWalk } from '../src/movement.ts';
 
 function reachable(environment) {
@@ -82,7 +82,7 @@ test('cars span two cells, flat props stay walkable and props are reusable in ha
   assert.throws(() => blockProps(['..'], [{ kind:'car', x:0, z:0 }]), /outside/);
 });
 
-const HOUSE = [HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2];
+const HOUSE = [HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2, MERIDIANA];
 test('the house plans only use known glyphs and their grids block everything but floor, doorways and steps', () => {
   for (const floor of HOUSE) {
     for (const glyph of floor.plan.join('')) assert.ok(glyph in PLAN_GLYPHS, `${floor.id}: ${JSON.stringify(glyph)}`);
@@ -125,4 +125,19 @@ test('stairs switch floors by walking onto them, and never land Gerard back on a
       for (const back of ENVIRONMENTS[to.environment].interactions.filter(i => i.step)) assert.equal(inside(back.step, to.cell), false);
     }
   }
+});
+test('Meridiana follows the croquis: every room, with kitchen and TV on the tall north wall', () => {
+  assert.deepEqual(MERIDIANA.rooms.map(r => r.name), ['Estudio', 'Recibidor', 'Galería', 'Cocina', 'Dormitorio', 'Pasillo', 'Baño', 'Salón', 'Comedor', 'Balcón']);
+  for (const room of MERIDIANA.rooms) {
+    for (let z = room.z; z < room.z + room.d; z++) for (let x = room.x; x < room.x + room.w; x++) {
+      assert.ok('.+o'.includes(MERIDIANA.plan[z][x]), `${room.name} ${x},${z} is inside the walls`);
+    }
+  }
+  // The camera looks from the south-east, so only north and west walls stand tall.
+  for (let x = 9; x <= 12; x++) assert.equal(MERIDIANA.plan[1][x], 'o', `kitchen unit at ${x}`);
+  // Two short walls frame the entrance, with the kitchen open between them.
+  assert.deepEqual([1, 2, 3, 4, 5].map(z => MERIDIANA.plan[z][8]).join(''), '##..#');
+  for (let x = 15; x <= 18; x++) assert.equal(MERIDIANA.plan[1][x], 'o', `TV wall piece at ${x}`);
+  assert.ok(MERIDIANA.plan.every(row => row[0] === ' ' || '#W'.includes(row[0])));
+  assert.equal(nearbyInteraction(MERIDIANA, { x: 16, z: 2 })?.id, 'meridiana-tv');
 });

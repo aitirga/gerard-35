@@ -301,7 +301,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .journal-dock button, .journal-tabs button { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border: none; background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); font-size: 12px; font-weight: 600; transition: background .2s, translate .2s; }
 .journal-dock button { transform: skewX(-5deg); }
 .journal-dock button:hover, .journal-tabs button:hover, .journal-tabs button[aria-pressed="true"] { background: var(--ui-gold); translate: 3px 0; }
-.journal-dock kbd, .journal-tabs kbd { color: inherit; border-color: #16282340; text-align: center; font-size: 10px; }
+.journal-dock kbd { width: auto; min-width: 22px; padding: 0 5px; color: inherit; border-color: #16282340; text-align: center; font-size: 10px; }
 #exploration-panel { position: absolute; inset: 24px 24px 24px auto; width: min(800px, calc(100% - 48px)); display: flex; flex-direction: column; padding: 28px; background: linear-gradient(145deg, #172c25f5, #10231bf0); backdrop-filter: blur(12px); border: 1px solid var(--ui-line); border-top: 3px solid var(--ui-gold); box-shadow: 12px 12px 0 #071e2266; color: var(--ui-paper); pointer-events: auto; animation: encounter-right .35s ease both; }
 .journal-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .journal-heading h1 { margin: 12px 0 22px; font-size: clamp(30px, 4vw, 48px); font-weight: 900; letter-spacing: -.055em; font-style: italic; }
@@ -360,6 +360,9 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .enemy-health { position: relative; display: block; height: 3px; overflow: hidden; border-radius: 2px; background: #172c2566; box-shadow: 0 1px 3px #10201966; }
 .enemy-health i, .enemy-health b { position: absolute; inset: 0 auto 0 0; }
 .enemy-health i { background: var(--dog-color); transition: width .5s cubic-bezier(.2,.8,.2,1); }
+.battle-target[data-side="allies"] .enemy-health i { background: #9fd49a; }
+.battle-target[data-side="allies"] .enemy-health.secondary { height: 2px; margin-top: -2px; }
+.battle-target[data-side="allies"] .enemy-health.secondary i { background: #e7c476; }
 .battle-target.is-down { opacity: .4; }
 .battle-target:disabled { cursor: default; }
 #battle[data-targeting] .battle-target:not(:disabled) { pointer-events: auto; cursor: pointer; }
@@ -383,8 +386,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #battle[data-targeting="foes"] .party-roster { opacity: .4; }
 #battle[data-targeting] .party-card:not(.is-eligible) { opacity: .45; }
 .party-card.is-targeted { background: #455138f5; border-color: var(--battle-gold); }
-.battle-target[data-side="allies"] { visibility: hidden; }
-#battle[data-targeting="allies"] .battle-target[data-side="allies"] { visibility: visible; }
 #battle[data-targeting="allies"] .battle-target[data-side="foes"] { visibility: hidden; }
 .target-picker { padding: 20px; border-left: 3px solid var(--battle-gold); background: #172c25f5; box-shadow: 5px 5px 0 #071e2266; }
 .target-picker h2 { margin: 10px 0; font-size: 30px; letter-spacing: -.04em; color: var(--battle-gold); }

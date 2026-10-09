@@ -47,6 +47,7 @@ export function createPropKit() {
     plane: leaf,
     olive: [mat('Olivo plateado', '#8d9b6f'), mat('Olivo claro', '#a6ae86'), mat('Olivo sombra', '#6f8060')],
     cypress: [mat('Ciprés', '#4c6947'), mat('Ciprés claro', '#5d7a52')],
+    yucca: [mat('Yuca', '#3f7a45'), mat('Yuca clara', '#5e9a55'), mat('Yuca sombra', '#2f5c38')],
   };
   const bark = mat('Troncos', '#817058');
   const oliveBark = mat('Tronco de olivo', '#8a8173');
@@ -99,6 +100,20 @@ export function createPropKit() {
       crowns.push(part(pivot, 'Copa de ciprés', 'sphere', palette[0], [0, 1.35 * s, 0], [0.7 * s, 2.3 * s, 0.7 * s]));
       crowns.push(part(pivot, 'Punta de ciprés', 'sphere', palette[1], [0.04 * s, 2.35 * s, 0.03 * s], [0.44 * s, 1.1 * s, 0.44 * s]));
       [low, high, radius, sway] = [0.6 * s, 2.5 * s, 0.38 * s, 0.5];
+    } else if (species === 'yucca') {
+      // A thick, scaly cane topped by a rosette of long, stiff blades.
+      part(pivot, 'Tronco de yuca', 'cylinder', oliveBark, [0, 0.5 * s, 0], [0.16, 1 * s, 0.16]);
+      for (let i = 0; i < 14; i++) {
+        const a = i * 137.5, tilt = 35 + (i % 3) * 22 + n(i + 4) * 10;
+        // Turn first, then lean: each blade fans out in its own direction.
+        const turn = new pc.Entity('Roseta'); pivot.addChild(turn);
+        turn.setLocalPosition(0, 1.02 * s, 0); turn.setLocalEulerAngles(0, a, 0);
+        const blade = part(turn, 'Hoja de yuca', 'cone', palette[i % 3], [0, 0, 0], [0.07, 0.8 * s, 0.03], [0, 0, tilt]);
+        // Cones grow from their centre, so push each blade out along its own length.
+        blade.translateLocal(0, 0.38 * s, 0);
+        crowns.push(blade);
+      }
+      [low, high, radius, sway] = [0.9 * s, 1.5 * s, 0.55 * s, 0.6];
     } else if (species === 'olive') {
       // A short, split trunk under a round, silvery crown.
       part(pivot, 'Tronco', 'cylinder', oliveBark, [0, 0.32 * s, 0], [0.22, 0.66 * s, 0.22], [0, 0, 8]);

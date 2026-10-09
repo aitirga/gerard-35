@@ -89,3 +89,15 @@ test('hold B to run on Xbox and Nintendo, releasing or losing focus stops runnin
     assert.equal(edge.update(readController(p), 'disconnected', 8).running, false);
   }
 });
+
+test('the top face button opens the character panel and Select toggles the overview on recognised pads only', () => {
+  for (const id of ['Xbox', 'Nintendo Switch Pro Controller']) {
+    const p = pad(id); p.buttons[3].pressed = true; p.buttons[8].pressed = true;
+    assert.equal(readController(p).character, true); assert.equal(readController(p).menu, false); assert.equal(readController(p).overview, true);
+    const edge = new ControllerEdges(); edge.update(idleController(), 'world', 0);
+    assert.deepEqual(edge.update(readController(p), 'world', 1).events, ['character', 'overview']);
+  }
+  const p = pad(); p.buttons[3].pressed = true; p.buttons[8].pressed = true;
+  const custom = defaultProfile(pad());
+  assert.equal(readController(p, custom).character, false); assert.equal(readController(p, custom).overview, false);
+});

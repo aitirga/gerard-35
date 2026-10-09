@@ -169,12 +169,12 @@ test('teleport cancels a separation hop', () => {
   assert.deepEqual(m.position, SPAWN);
 });
 
-test('running doubles speed, preserves analog tilt, and returns to walking on release', () => {
+test('running boosts speed by 50%, preserves analog tilt, and returns to walking on release', () => {
   const lane = ['####################', '#..................#', '####################'];
   for (const fps of [30, 60, 144]) for (const tilt of [.5, 1]) {
     const m = new FreeMovement(lane, { x: 1, z: 1 });
     for (let i = 0; i < fps; i++) m.drive(tilt, 0, 1 / fps, [], true);
-    assert.ok(near(m.position.x, 1 + WALK_SPEED * 2 * tilt));
+    assert.ok(near(m.position.x, 1 + WALK_SPEED * 1.5 * tilt));
     const before = m.position.x;
     m.drive(tilt, 0, 1 / fps);
     assert.ok(near(m.position.x - before, WALK_SPEED * tilt / fps));

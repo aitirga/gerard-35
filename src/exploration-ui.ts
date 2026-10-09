@@ -7,11 +7,11 @@ import { renderWorldMap } from './world-map';
 type PanelId = 'character' | 'map';
 // Register another panel here, then supply its content in render().
 const PANELS = [
-  { id: 'character', key: 'KeyC', label: 'Personaje', shortcut: 'C' },
-  { id: 'map', key: 'KeyM', label: 'Mapa', shortcut: 'M' },
+  { id: 'character', key: 'KeyC', label: 'Personaje' },
+  { id: 'map', key: 'KeyM', label: 'Mapa' },
 ] as const;
 
-export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) => void) {
+export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) => void, openMenu: () => void) {
   let location: EnvironmentId = 'maresme';
   let cell: Cell = { ...ENVIRONMENTS[location].spawn };
   let steps = 0;
@@ -20,20 +20,19 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
   let previousFocus: HTMLElement | null = null;
   const inertBefore = new Map<HTMLElement, boolean>();
   const dock = document.createElement('nav');
-  dock.className = 'journal-dock'; dock.setAttribute('aria-label', 'Diario de aventura');
-  dock.innerHTML = PANELS.map(p => `<button type="button" data-panel="${p.id}" aria-expanded="false" aria-controls="exploration-panel"><kbd>${p.shortcut}</kbd> ${p.label}</button>`).join('');
+  dock.className = 'journal-dock'; dock.setAttribute('aria-label', 'Menú de aventura');
+  // Character and map live in the menu; C / M stay as keyboard shortcuts.
+  dock.innerHTML = `<button type="button" aria-haspopup="dialog"><kbd>Esc</kbd> Menú</button>`;
   const root = document.createElement('section');
   root.id = 'exploration-panel'; root.hidden = true; root.tabIndex = -1;
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-labelledby', 'journal-title');
-  root.innerHTML = `<header class="journal-heading"><div><span class="battle-kicker">DIARIO / GERARD 35</span><h1 id="journal-title"></h1></div><button class="journal-close" type="button" aria-label="Cerrar panel">Cerrar <kbd>Esc</kbd></button></header><nav class="journal-tabs" aria-label="Secciones del diario">${PANELS.map(p => `<button type="button" data-panel="${p.id}" aria-pressed="false"><kbd>${p.shortcut}</kbd> ${p.label}</button>`).join('')}</nav><div class="journal-content"></div><p class="journal-help">C · Personaje &nbsp; M · Mapa &nbsp; Esc · Volver a la aventura</p>`;
+  root.innerHTML = `<header class="journal-heading"><div><span class="battle-kicker">DIARIO / GERARD 35</span><h1 id="journal-title"></h1></div><button class="journal-close" type="button" aria-label="Cerrar panel">Cerrar <kbd>Esc</kbd></button></header><nav class="journal-tabs" aria-label="Secciones del diario">${PANELS.map(p => `<button type="button" data-panel="${p.id}" aria-pressed="false">${p.label}</button>`).join('')}</nav><div class="journal-content"></div><p class="journal-help">Esc · Volver a la aventura</p>`;
   hud.append(dock, root);
   const content = root.querySelector<HTMLElement>('.journal-content')!;
   function render() {
     if (!active) return;
     root.querySelector('h1')!.textContent = active === 'character' ? 'Tu aventura.' : 'Por aquí.';
-    for (const el of [...dock.querySelectorAll('button'), ...root.querySelectorAll('[data-panel]')]) {
-      el.setAttribute(el.closest('.journal-dock') ? 'aria-expanded' : 'aria-pressed', String(el.getAttribute('data-panel') === active));
-    }
+    root.querySelectorAll('[data-panel]').forEach(el => el.setAttribute('aria-pressed', String(el.getAttribute('data-panel') === active)));
     content.dataset.page = active;
     if (active === 'character') {
       content.innerHTML = `<article class="character-sheet"><div class="character-portrait"><img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt="Retrato de Gerard de niño con gafas"/></div><div><span class="battle-kicker">EL PROTAGONISTA</span><h2>Gerard</h2><p>Una infancia llena de aventuras.</p><dl><div><dt>Ubicación</dt><dd></dd></div><div><dt>Pasos de esta sesión</dt><dd>${steps}</dd></div><div><dt>Compañía</dt><dd>${companion ? 'Bernat · Avisado' : 'Por tu cuenta'}</dd></div></dl></div></article><section class="journal-note"><span class="battle-kicker">POR DESCUBRIR</span><p>Equipo y habilidades llegarán más adelante.</p></section>`;
@@ -50,7 +49,6 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
     if (!active) return;
     active = undefined; root.hidden = true; delete hud.dataset.panel;
     inertBefore.forEach((value, el) => { el.inert = value; }); inertBefore.clear();
-    dock.querySelectorAll('button').forEach(b => b.setAttribute('aria-expanded', 'false'));
     pause(false);
     (previousFocus?.isConnected ? previousFocus : document.querySelector<HTMLElement>('#game'))?.focus({ preventScroll: true });
   }
@@ -71,7 +69,8 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
     const button = (event.target as HTMLElement).closest<HTMLElement>('[data-panel]');
     if (button) toggle(button.dataset.panel as PanelId);
   }
-  dock.addEventListener('click', click); root.addEventListener('click', click);
+  // Return focus to the world, not the dock button, once the menu closes.
+  dock.addEventListener('click', () => { document.querySelector<HTMLElement>('#game')?.focus({ preventScroll: true }); openMenu(); }); root.addEventListener('click', click);
   root.querySelector('.journal-close')!.addEventListener('click', close);
   function keydown(event: KeyboardEvent) {
     if (document.querySelector('dialog[open]')) return;
@@ -91,6 +90,7 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
   window.addEventListener('keydown', keydown, { capture: true });
   return {
     close, toggle,
+    show(id: PanelId) { if (active !== id) toggle(id); },
     get active() { return active; },
     control(action: ControlAction) {
       if (!active) return;

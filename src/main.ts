@@ -62,7 +62,7 @@ try {
     change: (state, effect, onImpact) => game.setBattle(state, effect, onImpact),
     target: id => game.selectTarget(id),
   });
-  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused));
+  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused), () => controller.open());
   let currentLocation: EnvironmentId = 'maresme';
   const game = createGame(canvas, {
     onEncounter: (allies, foes) => { exploration.close(); dialogue.close(); battleUI.open(allies, foes); },
@@ -78,9 +78,9 @@ try {
       currentLocation = id;
       exploration.update(id, cell);
       environmentSelect.value = id;
-      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : 'SANT QUIRZE DEL VALLÈS';
-      document.querySelector('#location-detail')!.textContent = ENVIRONMENTS[id].plan
-        ? 'Passatge Maresme, 20 · Según el plano de la familia'
+      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : 'SANT QUIRZE DEL VALLÈS';
+      document.querySelector('#location-detail')!.textContent = id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
+        : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
         : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : 'Escena de prueba de movimiento';
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
       document.title = `${ENVIRONMENTS[id].name} · Gerard 35`;
@@ -101,8 +101,11 @@ try {
     context: controllerContext,
     direction: (direction, stick, running) => controllerContext() === 'world' ? game.setControllerInput(direction, stick, running) : game.setControllerInput(null, null),
     pause: value => game.setPaused(value || !!exploration.active),
+    panel: id => id ? exploration.show(id) : exploration.close(),
     action: action => {
-      if (battleUI.controllerContext !== 'world') battleUI.control(action);
+      if (action === 'overview') { if (controllerContext() === 'world') game.toggleOverview(); }
+      else if (action === 'character') { if (/^(world|journal:)/.test(controllerContext())) exploration.toggle('character'); }
+      else if (battleUI.controllerContext !== 'world') battleUI.control(action);
       else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); else if (action === 'cancel') dialogue.close(); }
       else if (exploration.active) exploration.control(action);
       else if (action === 'confirm') game.interact();

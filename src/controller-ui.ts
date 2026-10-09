@@ -1,4 +1,4 @@
-import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isNintendo, readController, validProfile, type Binding, type ControlAction, type ControllerProfile, type PadSnapshot } from './controller';
+import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isNintendo, readController, validProfile, type Binding, type ControlAction, type ControllerEvent, type ControllerProfile, type PadSnapshot } from './controller';
 import type { Direction, Stick } from './movement';
 
 const labels: Record<ControlAction, string> = { up: 'Arriba', down: 'Abajo', left: 'Izquierda', right: 'Derecha', confirm: 'Confirmar / interactuar', cancel: 'Volver / correr (mantener)', menu: 'Menú' };
@@ -16,8 +16,10 @@ export function clickControllerButton(root: HTMLElement) {
 export function createControllerUI(callbacks: {
   context: () => string;
   direction: (direction: Direction | null, stick: Stick | null, running: boolean) => void;
-  action: (action: ControlAction) => void;
+  action: (action: ControllerEvent) => void;
   pause: (value: boolean) => void;
+  /** Opens a journal panel, or closes it with `null`. */
+  panel: (id: 'character' | 'map' | null) => void;
 }) {
   const profiles: Record<string, ControllerProfile> = Object.create(null);
   try { const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '{}'); if (saved && typeof saved === 'object') for (const [id, profile] of Object.entries(saved)) if (validProfile(profile)) profiles[id] = profile; } catch { /* Storage is optional. */ }
@@ -28,8 +30,10 @@ export function createControllerUI(callbacks: {
       <p class="menu-intro">La aventura sigue aquí.</p>
       <nav class="adventure-options" aria-label="Menú de aventura">
         <button data-close><span>01</span><strong>Continuar</strong><small>Volver a la aventura →</small></button>
-        <button data-open="controller"><span>02</span><strong>Mando</strong><small>Conectar, probar y asignar</small></button>
-        <button data-open="help"><span>03</span><strong>Cómo jugar</strong><small>Controles y primeros pasos</small></button>
+        <button data-panel="character"><span>02</span><strong>Personaje</strong><small>Gerard y tu progreso</small></button>
+        <button data-panel="map"><span>03</span><strong>Mapa</strong><small>Dónde estás y qué hay cerca</small></button>
+        <button data-open="controller"><span>04</span><strong>Mando</strong><small>Conectar, probar y asignar</small></button>
+        <button data-open="help"><span>05</span><strong>Cómo jugar</strong><small>Controles y primeros pasos</small></button>
       </nav>
     </section>
     <section data-page="controller" hidden>
@@ -41,7 +45,7 @@ export function createControllerUI(callbacks: {
     </section>
     <section data-page="help" hidden>
       <p class="menu-intro">Explora el barrio. Llama a Bernat. Sigue tu aventura.</p>
-      <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Mantener B (Volver) mientras te mueves</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / mapa</dt><dd>C / M</dd></div><div><dt>Vista general</dt><dd>R</dd></div><div><dt>Combate</dt><dd>1–4 o flechas · Enter para confirmar · Esc para volver</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
+      <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Mantener B (Volver) mientras te mueves</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / mapa</dt><dd>Desde el menú · C / M en el teclado · Personaje con el botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox)</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–4 o flechas · Enter para confirmar · Esc para volver</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
       <p class="controller-note">En mandos Nintendo reconocidos: A confirma y B vuelve. Mantén B mientras te mueves para correr. Puedes cambiar los controles en Mando.</p>
     </section>
     <footer class="menu-footer">↑ ↓ Elegir &nbsp; · &nbsp; Enter Confirmar &nbsp; · &nbsp; Esc Volver</footer>`;
@@ -60,8 +64,13 @@ export function createControllerUI(callbacks: {
   function abort() { mapping = undefined; get('[data-abort]').hidden = true; get('[data-calibration]').textContent = 'La asignación solo se guarda al completar todos los pasos.'; }
   function open() {
     if (root.open) return;
+    // The menu replaces an open journal panel instead of stacking over it.
+    if (callbacks.context().startsWith('journal:')) callbacks.panel(null);
     previousFocus = document.activeElement as HTMLElement;
     callbacks.direction(null, null, false); callbacks.pause(true);
+    // Character and map only make sense while exploring.
+    const explorable = callbacks.context() === 'world';
+    root.querySelectorAll<HTMLButtonElement>('[data-panel]').forEach(button => { button.disabled = !explorable; });
     root.showModal(); showPage('home');
   }
   function close() { if (!root.open) return; abort(); root.close(); callbacks.pause(false); previousFocus?.focus({ preventScroll: true }); }
@@ -75,6 +84,7 @@ export function createControllerUI(callbacks: {
   function back() { if (mapping) abort(); else if (page !== 'home') showPage('home'); else close(); }
   get('[data-back]').onclick = back;
   root.querySelectorAll<HTMLButtonElement>('[data-open]').forEach(button => { button.onclick = () => showPage(button.dataset.open as typeof page); });
+  root.querySelectorAll<HTMLButtonElement>('[data-panel]').forEach(button => { button.onclick = () => { close(); callbacks.panel(button.dataset.panel as 'character' | 'map'); }; });
   function keydown(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.code === 'Escape') {
@@ -116,7 +126,8 @@ export function createControllerUI(callbacks: {
     const custom = latest ? profiles[latest.id] : undefined;
     const confirm = custom ? bindingLabel(custom.confirm) : latest && isNintendo(latest.id) ? 'A' : 'botón inferior';
     const cancel = custom ? bindingLabel(custom.cancel) : latest && isNintendo(latest.id) ? 'B' : 'botón derecho';
-    const menu = custom ? bindingLabel(custom.menu) : latest && isNintendo(latest.id) ? '+' : 'Start / Menú';
+    const menu = custom ? bindingLabel(custom.menu) : latest && isNintendo(latest.id) ? '+' : 'Start';
+    const overview = custom ? '' : latest && isNintendo(latest.id) ? '−' : 'Select';
     const help = `${confirm} · Confirmar   /   ${cancel} · Volver / mantener para correr   /   ${menu} · Menú`;
     get('[data-status]').textContent = !latest ? 'Sin mando. Conéctalo y pulsa un botón.' : profile ? `${latest.id} · ${custom ? 'Asignación personal' : 'Controles estándar'}` : `${latest.id} · Sin asignar: usa «Asignar controles».`;
     get('[data-help]').textContent = profile ? help : 'Teclado y ratón disponibles mientras configuras el mando.';
@@ -151,6 +162,7 @@ export function createControllerUI(callbacks: {
     for (const action of input.events) {
       if (root.open) {
         if (action === 'menu') close();
+        else if (action === 'character' || action === 'overview') continue;
         else if (action === 'cancel') back();
         else if (action === 'confirm') clickControllerButton(root);
         else focusControllerButton(root, action);
@@ -161,6 +173,9 @@ export function createControllerUI(callbacks: {
     }
     const visibleHelp = latest && profile ? help : 'WASD · Mover / E · Interactuar / Esc · Menú';
     document.querySelector('.controls span')!.textContent = visibleHelp;
+    const pad = !!(latest && profile);
+    document.querySelector('.journal-dock kbd')!.textContent = pad ? menu : 'Esc';
+    document.querySelector('#overview kbd')!.textContent = pad && overview ? `R / ${overview}` : 'R';
     document.querySelector('#interact small')!.textContent = latest && profile ? ` / ${confirm}` : '';
     const dialogueKey = document.querySelector('#dialogue kbd'); if (dialogueKey) dialogueKey.textContent = latest && profile ? `E / ${confirm}` : 'E';
     document.querySelectorAll<HTMLElement>('.command-help, .journal-help').forEach(el => {
@@ -171,6 +186,6 @@ export function createControllerUI(callbacks: {
     frame = requestAnimationFrame(poll);
   }
   frame = requestAnimationFrame(poll);
-  return { destroy() { cancelAnimationFrame(frame); close(); window.removeEventListener('keydown', keydown, { capture: true }); root.remove(); } };
+  return { open, destroy() { cancelAnimationFrame(frame); close(); window.removeEventListener('keydown', keydown, { capture: true }); root.remove(); } };
 }
 function bindingLabel(binding: Binding) { return 'button' in binding ? `Botón ${binding.button}` : `Eje ${binding.axis} ${binding.sign > 0 ? '+' : '−'}`; }
