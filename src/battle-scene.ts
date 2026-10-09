@@ -128,7 +128,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
     selectTarget(id?: string) { selectedTarget = id; },
     targets() {
       return [...fighters].map(([id, f]) => ({
-        id, position: f.model.getPosition().clone().add(new pc.Vec3(0, 1.45, 0)), visible: f.hp > 0 && entryTime >= ENTRY_SECONDS,
+        id, position: f.model.getPosition().clone().add(new pc.Vec3(0, f.party ? 1.65 : 1.45, 0)), visible: f.hp > 0 && entryTime >= ENTRY_SECONDS,
       }));
     },
     wander(i: number, dt: number, moving: boolean, animate: boolean) {
@@ -161,7 +161,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
           if (body) body.setLocalEulerAngles(0, 0, 0);
           model.setLocalEulerAngles(0, yaw, 0);
           const feet = party ? legs.map(leg => leg.findByName('Zapatilla') as pc.Entity) : legs;
-          const head = model.findByName(party ? 'Cabeza infantil' : 'Cabeza de perro') as pc.Entity | null;
+          const head = model.findByName(party ? 'Pivote de cabeza' : 'Cabeza de perro') as pc.Entity | null;
           const eyes = model.find(node => node.name === 'Ojo') as pc.Entity[];
           fighters.set(unit.id, {
             model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null,

@@ -11,3 +11,4 @@
 !pyproject.toml
 !uv.lock
 !server.py
+!ai.py

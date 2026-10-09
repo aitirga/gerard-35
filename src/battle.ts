@@ -73,11 +73,12 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   }
   return effect;
 }
-export function enemyAct(state: BattleState, id: string): BattleEffect | undefined {
+/** `targetId` is an AI suggestion; without a valid one the dogs take turns picking heroes. */
+export function enemyAct(state: BattleState, id: string, targetId?: string): BattleEffect | undefined {
   if (state.phase !== 'enemy' || state.enemyActions.includes(id)) return;
   const actor = state.foes.find(f => f.id === id && f.hp > 0);
   const alive = state.allies.filter(a => a.hp > 0);
-  const target = alive[(state.round + state.foes.findIndex(f => f.id === id) - 1) % alive.length];
+  const target = alive.find(a => a.id === targetId) ?? alive[(state.round + state.foes.findIndex(f => f.id === id) - 1) % alive.length];
   if (!actor || !target) return;
   state.enemyActions.push(id);
   const strength = state.allies.length === 1 && state.foes.length > 1 ? 5 : 9;

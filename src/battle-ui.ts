@@ -2,6 +2,7 @@ import { clickControllerButton, focusControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { act, createBattle, enemyAct, nextRound, SKILLS, validTargets, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
 import { DOG_PROFILES } from './encounters';
+import { planEnemyTurn } from './battle-ai';
 
 const COMMANDS: { id: BattleAction; name: string; hint: string; number: string }[] = [
   { id: 'attack', name: 'Atacar', hint: 'Elige un objetivo', number: '01' },
@@ -92,6 +93,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         fill(bar, value / max);
         bar.previousElementSibling!.querySelector('strong')!.innerHTML = `${value}<small> / ${max}</small>`;
       });
+      const plate = root.querySelector(`.battle-target[data-target="${c.id}"]`);
+      if (plate) plate.querySelectorAll('.enemy-health').forEach((bar, i) => fill(bar, i === 0 ? c.hp / c.maxHp : c.secondary / c.maxSecondary));
     }
     for (const foe of state.foes) {
       const plate = get<HTMLButtonElement>(`.battle-target[data-target="${foe.id}"]`);
@@ -211,8 +214,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     await present(effect, token);
     if (token !== generation || !state) return;
     if (state.phase === 'enemy') {
+      const plan = await planEnemyTurn(state);
+      if (token !== generation || !state) return;
       for (const foe of state.foes.filter(f => f.hp > 0)) {
-        const response = enemyAct(state, foe.id);
+        const response = enemyAct(state, foe.id, plan[foe.id]);
         if (response) await present(response, token);
         if (token !== generation || !state) return;
       }
@@ -296,7 +301,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
       state = createBattle(allyCount, foeCount); busy = true;
-      get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${i < foeCount ? `data-unit="${f.id}"` : ''} data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${DOG_PROFILES[i]?.collar ?? '#b9dba1'}" aria-label="Elegir a ${f.name}" hidden disabled>${i < foeCount ? '<span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>' : ''}</button>`).join('');
+      get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${i < foeCount ? `data-unit="${f.id}"` : ''} data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${DOG_PROFILES[i]?.collar ?? '#b9dba1'}" aria-label="Elegir a ${f.name}" hidden disabled><span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>${i < foeCount ? '' : '<span class="enemy-health secondary" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>'}</button>`).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;
       get('.party-roster').replaceChildren(); get('.battle-pops').replaceChildren(); positions.clear();
       hud.dataset.battle = 'open'; outside().forEach(el => { el.inert = true; });

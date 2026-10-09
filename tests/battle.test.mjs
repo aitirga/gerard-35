@@ -140,3 +140,8 @@ test('healing cannot revive defeated allies or bypass insufficient energy', () =
   assert.equal(act(s, 'skill', 'gerard', 'encourage'), undefined);
   assert.equal(s.allies[0].hp, 10); assert.equal(s.phase, 'player');
 });
+test('enemies follow a valid AI target and ignore invalid ones', () => {
+  const s = createBattle(2, 2); act(s, 'defend'); act(s, 'defend');
+  assert.equal(enemyAct(s, 'dog-0', 'bernat').target, 'bernat');
+  assert.equal(enemyAct(s, 'dog-1', 'nobody').target, 'bernat'); // Built-in rotation.
+});

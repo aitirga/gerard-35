@@ -1,15 +1,21 @@
 """Serve the game and persist each browser's progress on the mounted volume."""
+import logging
 import os
 from contextlib import contextmanager
 import sqlite3
 from pathlib import Path
+from typing import Literal
 from uuid import UUID, uuid4
 
+import httpx
 from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from ai import decision_provider, plan_enemy_turn
+
 app = FastAPI()
+logger = logging.getLogger("uvicorn.error")
 
 
 @contextmanager
@@ -70,4 +76,38 @@ def save_state(state: State, request: Request, response: Response):
     return {"score": score}
 
 
-app.mount("/", StaticFiles(directory="dist", html=True, check_dir=False), name="game")
+class Ally(BaseModel):
+    id: Literal["gerard", "bernat"]
+    hp: int = Field(ge=0, le=999)
+    max_hp: int = Field(ge=1, le=999)
+    guarding: bool = False
+
+
+class Foe(BaseModel):
+    id: Literal["dog-0", "dog-1", "dog-2", "dog-3"]
+    hp: int = Field(ge=0, le=999)
+    max_hp: int = Field(ge=1, le=999)
+
+
+class EnemyTurn(BaseModel):
+    allies: list[Ally] = Field(min_length=1, max_length=2)
+    foes: list[Foe] = Field(min_length=1, max_length=4)
+
+
+@app.post("/api/battle/enemy-turn")
+def enemy_turn(turn: EnemyTurn, request: Request):
+    """AI target choices for the dogs; the browser falls back to its own rule on any error."""
+    if request.headers.get("sec-fetch-site") == "cross-site":
+        raise HTTPException(403, "Cross-site requests are not allowed")
+    provider = decision_provider("battle")
+    if not provider:
+        raise HTTPException(503, "Battle AI is not configured")
+    try:
+        targets = plan_enemy_turn(provider, turn.allies, turn.foes)
+    except (httpx.HTTPError, KeyError, TypeError, ValueError) as error:
+        logger.warning("Battle AI failed: %r", error)
+        raise HTTPException(502, "Battle AI is unavailable")
+    return {"provider": provider.name, "targets": targets}
+
+
+app.mount("/",StaticFiles(directory="dist", html=True, check_dir=False), name="game")
