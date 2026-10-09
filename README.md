@@ -15,7 +15,7 @@ just backend # in one terminal
 just dev     # in another terminal
 ```
 
-Open the URL Vite prints (usually http://localhost:5173). The Maresme neighborhood opens immediately. Select the courtyard from the environment menu to return to the movement test scene. Move Gerard with W, A, S and D (or the arrow keys), a controller’s left stick or D-pad. On touch screens, use the on-screen arrows. Movement is free and follows the screen: W is up, D is right, and two keys together walk diagonally. The stick walks in any direction, slower with a light tilt. Gerard slides along walls and stops wherever you let go.
+Open the URL Vite prints (usually http://localhost:5173). Chapter 1 starts in Gerard's bedroom on his birthday morning (see [Chapter 1](#chapter-1)); the environment menu still jumps to any scene. Select the courtyard from the environment menu to return to the movement test scene. Move Gerard with W, A, S and D (or the arrow keys), a controller’s left stick or D-pad. On touch screens, use the on-screen arrows. Movement is free and follows the screen: W is up, D is right, and two keys together walk diagonally. The stick walks in any direction, slower with a light tilt. Gerard slides along walls and stops wherever you let go.
 
 Run `just` at any time for a grouped, color-coded command menu. The most common
 commands are:
@@ -38,6 +38,20 @@ The underlying npm scripts remain available when `just` is not installed:
 | `npm run build`     | Type-check and build a production bundle      |
 | `npm run preview`   | Serve the production bundle locally           |
 | `npm run typecheck` | Run the TypeScript compiler without emitting  |
+
+## Chapter 1
+
+The game opens with the first block of chapter 1: Gerard's birthday morning in Sant Quirze.
+He wakes up, gets running shoes from Mum (which unlock running with Shift), finds a potion in
+Jan's room and his backpack in the hall, rings Bernat, and walks down the street with him until
+Bernat stalls and the déjà-vu begins. The block doubles as the tutorial: moving, talking, running,
+items (I), and the party's equipment (C). The design and the full 30-minute outline are in
+[docs/chapter-1.md](docs/chapter-1.md).
+
+Story progress is a list of flags saved with the score, so a reload resumes after the last
+milestone. `just dev-chapter <flag>` opens the game with every flag up to that one, e.g.
+`just dev-chapter got-backpack` to start on the street; `just dev-chapter new` starts over
+(development only; it neither reads nor saves the stored flags).
 
 ## Battle AI
 
@@ -63,7 +77,12 @@ like the hand-built Gerard. They are installed in `public/portraits/` and
 
 ```
 index.html          Welcome screen, canvas and HUD
-src/main.ts         Bootstraps the game and wires the HUD
+src/main.ts         Bootstraps the game, wires the HUD and plays story beats
+src/story.ts        Story flags and the rules that turn game events into beats (pure)
+src/chapter-1.ts    Chapter 1 lines, places, tutorials and objectives
+src/story-ui.ts     Objective line, chapter cards, item and tutorial notes
+src/items.ts        Item catalogue: common items and key items
+src/follower.ts     A companion who walks Gerard's path behind him
 src/game.ts         Isometric courtyard, Gerard model, lights, shadows and input
 src/movement.ts     Collision grid and free movement with a round collider
 src/style.css       Fullscreen canvas and HUD styling
@@ -104,8 +123,8 @@ See [Fly autostop/autostart](https://fly.io/docs/launch/autostop-autostart/).
 
 Progress is stored in `/data/game.sqlite3`, surviving stops, restarts and deploys.
 A one-year HttpOnly cookie identifies each browser; clearing cookies or switching
-devices starts a separate game. The existing score field now records completed steps (including any score from the earlier prototype). Only this counter is persisted; Gerard returns to the neighborhood starting cell on reload. The courtyard remains playable when the API is unavailable; use the connection button to retry syncing steps from the current session.
-Writes preserve the highest score, including concurrent or late requests.
+devices starts a separate game. The existing score field now records completed steps (including any score from the earlier prototype). Story flags are saved alongside it; on reload Gerard resumes at the start of the last story milestone (his bedroom before the backpack, the street after it). The courtyard remains playable when the API is unavailable; use the connection button to retry syncing steps from the current session.
+Writes preserve the highest score and every story flag ever saved, including concurrent or late requests.
 Failed saves are shown in the HUD with a retry action. Unsaved progress can be
 lost if the browser is closed while offline. There is no login or anti-cheat.
 Volume snapshots are enabled with 14-day retention; a single machine can have

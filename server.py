@@ -1,4 +1,5 @@
 """Serve the game and persist each browser's progress on the mounted volume."""
+import json
 import logging
 import os
 from contextlib import contextmanager
@@ -16,6 +17,8 @@ from ai import decision_provider, plan_enemy_turn
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn.error")
+# Story progress flags, in story order. Keep in sync with STORY_FLAGS in src/story.ts (a test checks it).
+STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu")
 
 
 @contextmanager
@@ -26,6 +29,9 @@ def connect():
     try:
         with db:
             db.execute("CREATE TABLE IF NOT EXISTS players (id TEXT PRIMARY KEY, score INTEGER NOT NULL)")
+            # Databases from before chapter 1 gain the story column in place.
+            if "story" not in {row[1] for row in db.execute("PRAGMA table_info(players)")}:
+                db.execute("ALTER TABLE players ADD COLUMN story TEXT NOT NULL DEFAULT '[]'")
             yield db
     finally:
         db.close()
@@ -54,12 +60,17 @@ def get_state(request: Request, response: Response):
     token = player(request, response)
     response.headers["Cache-Control"] = "no-store"
     with connect() as db:
-        row = db.execute("SELECT score FROM players WHERE id = ?", (token,)).fetchone()
-    return {"score": row[0] if row else 0}
+        row = db.execute("SELECT score, story FROM players WHERE id = ?", (token,)).fetchone()
+    return {"score": row[0], "story": known_flags(json.loads(row[1]))} if row else {"score": 0, "story": []}
+
+
+def known_flags(flags):
+    return [flag for flag in STORY_FLAGS if flag in flags]
 
 
 class State(BaseModel):
     score: int = Field(strict=True, ge=0, le=2147483647)
+    story: list[Literal[STORY_FLAGS]] = Field(default_factory=list, max_length=len(STORY_FLAGS))
 
 
 @app.put("/api/state")
@@ -68,12 +79,15 @@ def save_state(state: State, request: Request, response: Response):
         raise HTTPException(403, "Cross-site writes are not allowed")
     token = player(request, response)
     with connect() as db:
-        # Late requests or another tab must never erase already saved progress.
-        db.execute("INSERT INTO players VALUES (?, ?) ON CONFLICT(id) DO UPDATE "
+        # Late requests or another tab must never erase already saved progress: the score only
+        # grows and story flags only accumulate. The first write locks the row for the merge.
+        db.execute("INSERT INTO players (id, score) VALUES (?, ?) ON CONFLICT(id) DO UPDATE "
                    "SET score = MAX(players.score, excluded.score)", (token, state.score))
-        score = db.execute("SELECT score FROM players WHERE id = ?", (token,)).fetchone()[0]
+        score, saved = db.execute("SELECT score, story FROM players WHERE id = ?", (token,)).fetchone()
+        story = known_flags({*json.loads(saved), *state.story})
+        db.execute("UPDATE players SET story = ? WHERE id = ?", (json.dumps(story), token))
     response.headers["Cache-Control"] = "no-store"
-    return {"score": score}
+    return {"score": score, "story": story}
 
 
 class Ally(BaseModel):

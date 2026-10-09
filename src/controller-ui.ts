@@ -1,5 +1,6 @@
 import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isNintendo, readController, validProfile, type Binding, type ControlAction, type ControllerEvent, type ControllerProfile, type PadSnapshot } from './controller';
 import type { Direction, Stick } from './movement';
+import type { PanelId } from './exploration-ui';
 
 const labels: Record<ControlAction, string> = { up: 'Arriba', down: 'Abajo', left: 'Izquierda', right: 'Derecha', confirm: 'Confirmar / interactuar', cancel: 'Volver / correr (mantener)', menu: 'Menú' };
 const storageKey = 'gerard35.controllers.v1';
@@ -19,7 +20,7 @@ export function createControllerUI(callbacks: {
   action: (action: ControllerEvent) => void;
   pause: (value: boolean) => void;
   /** Opens a journal panel, or closes it with `null`. */
-  panel: (id: 'character' | 'map' | null) => void;
+  panel: (id: PanelId | null) => void;
 }) {
   const profiles: Record<string, ControllerProfile> = Object.create(null);
   try { const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '{}'); if (saved && typeof saved === 'object') for (const [id, profile] of Object.entries(saved)) if (validProfile(profile)) profiles[id] = profile; } catch { /* Storage is optional. */ }
@@ -31,9 +32,10 @@ export function createControllerUI(callbacks: {
       <nav class="adventure-options" aria-label="Menú de aventura">
         <button data-close><span>01</span><strong>Continuar</strong><small>Volver a la aventura →</small></button>
         <button data-panel="character"><span>02</span><strong>Personaje</strong><small>Gerard y tu progreso</small></button>
-        <button data-panel="map"><span>03</span><strong>Mapa</strong><small>Dónde estás y qué hay cerca</small></button>
-        <button data-open="controller"><span>04</span><strong>Mando</strong><small>Conectar, probar y asignar</small></button>
-        <button data-open="help"><span>05</span><strong>Cómo jugar</strong><small>Controles y primeros pasos</small></button>
+        <button data-panel="items"><span>03</span><strong>Objetos</strong><small>Comunes y objetos clave</small></button>
+        <button data-panel="map"><span>04</span><strong>Mapa</strong><small>Dónde estás y qué hay cerca</small></button>
+        <button data-open="controller"><span>05</span><strong>Mando</strong><small>Conectar, probar y asignar</small></button>
+        <button data-open="help"><span>06</span><strong>Cómo jugar</strong><small>Controles y primeros pasos</small></button>
       </nav>
     </section>
     <section data-page="controller" hidden>
@@ -44,8 +46,8 @@ export function createControllerUI(callbacks: {
       <p class="controller-note">Conecta el mando al ordenador y pulsa un botón. Si no aparece, comprueba la conexión y la compatibilidad de tu navegador. Usa Esc para cancelar una asignación.</p>
     </section>
     <section data-page="help" hidden>
-      <p class="menu-intro">Explora el barrio. Llama a Bernat. Sigue tu aventura.</p>
-      <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Mantener B (Volver) mientras te mueves</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / mapa</dt><dd>Desde el menú · C / M en el teclado · Personaje con el botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox)</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–4 o flechas · Enter para confirmar · Esc para volver</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
+      <p class="menu-intro">Sigue el objetivo de arriba a la derecha. Habla con todo el mundo. Sigue tu aventura.</p>
+      <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Con las zapatillas: mantén Shift · Mantén B (Volver) en el mando</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / objetos / mapa</dt><dd>Desde el menú · C / I / M en el teclado · Personaje con el botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox)</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–4 o flechas · Enter para confirmar · Esc para volver</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
       <p class="controller-note">En mandos Nintendo reconocidos: A confirma y B vuelve. Mantén B mientras te mueves para correr. Puedes cambiar los controles en Mando.</p>
     </section>
     <footer class="menu-footer">↑ ↓ Elegir &nbsp; · &nbsp; Enter Confirmar &nbsp; · &nbsp; Esc Volver</footer>`;
@@ -84,7 +86,7 @@ export function createControllerUI(callbacks: {
   function back() { if (mapping) abort(); else if (page !== 'home') showPage('home'); else close(); }
   get('[data-back]').onclick = back;
   root.querySelectorAll<HTMLButtonElement>('[data-open]').forEach(button => { button.onclick = () => showPage(button.dataset.open as typeof page); });
-  root.querySelectorAll<HTMLButtonElement>('[data-panel]').forEach(button => { button.onclick = () => { close(); callbacks.panel(button.dataset.panel as 'character' | 'map'); }; });
+  root.querySelectorAll<HTMLButtonElement>('[data-panel]').forEach(button => { button.onclick = () => { close(); callbacks.panel(button.dataset.panel as PanelId); }; });
   function keydown(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.code === 'Escape') {

@@ -3,19 +3,24 @@ import type { ControlAction } from './controller';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
 import type { Cell } from './movement';
 import { renderWorldMap } from './world-map';
+import { ITEMS, ITEM_KIND_LABELS, itemsOfKind, type ItemKind } from './items';
+import type { Story } from './story';
 
-type PanelId = 'character' | 'map';
+export type PanelId = 'character' | 'items' | 'map';
 // Register another panel here, then supply its content in render().
 const PANELS = [
   { id: 'character', key: 'KeyC', label: 'Personaje' },
+  { id: 'items', key: 'KeyI', label: 'Objetos' },
   { id: 'map', key: 'KeyM', label: 'Mapa' },
 ] as const;
+const TITLES: Record<PanelId, string> = { character: 'Tu aventura.', items: 'Lo que llevas.', map: 'Por aquí.' };
+const COMPANION: Record<Story['companion'], string> = { none: 'Por tu cuenta', follow: 'Bernat', stalled: 'Bernat · Se ha quedado atrás' };
+const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 
-export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) => void, openMenu: () => void) {
+export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) => void, openMenu: () => void, story: Story) {
   let location: EnvironmentId = 'maresme';
   let cell: Cell = { ...ENVIRONMENTS[location].spawn };
   let steps = 0;
-  let companion = false;
   let active: PanelId | undefined;
   let previousFocus: HTMLElement | null = null;
   const inertBefore = new Map<HTMLElement, boolean>();
@@ -31,12 +36,22 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
   const content = root.querySelector<HTMLElement>('.journal-content')!;
   function render() {
     if (!active) return;
-    root.querySelector('h1')!.textContent = active === 'character' ? 'Tu aventura.' : 'Por aquí.';
+    root.querySelector('h1')!.textContent = TITLES[active];
     root.querySelectorAll('[data-panel]').forEach(el => el.setAttribute('aria-pressed', String(el.getAttribute('data-panel') === active)));
     content.dataset.page = active;
     if (active === 'character') {
-      content.innerHTML = `<article class="character-sheet"><div class="character-portrait"><img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt="Retrato de Gerard de niño con gafas"/></div><div><span class="battle-kicker">EL PROTAGONISTA</span><h2>Gerard</h2><p>Una infancia llena de aventuras.</p><dl><div><dt>Ubicación</dt><dd></dd></div><div><dt>Pasos de esta sesión</dt><dd>${steps}</dd></div><div><dt>Compañía</dt><dd>${companion ? 'Bernat · Avisado' : 'Por tu cuenta'}</dd></div></dl></div></article><section class="journal-note"><span class="battle-kicker">POR DESCUBRIR</span><p>Equipo y habilidades llegarán más adelante.</p></section>`;
+      content.innerHTML = `<article class="character-sheet"><div class="character-portrait"><img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt="Retrato de Gerard de niño con gafas"/></div><div><span class="battle-kicker">EL PROTAGONISTA</span><h2>Gerard</h2><p>Una infancia llena de aventuras.</p><dl><div><dt>Ubicación</dt><dd></dd></div><div><dt>Pasos de esta sesión</dt><dd>${steps}</dd></div><div><dt>Compañía</dt><dd>${COMPANION[story.companion]}</dd></div></dl></div></article><section class="party-equipment" aria-label="Equipo"><span class="battle-kicker">EQUIPO</span><div class="party-cards">${story.party.map(member => `<article class="party-card" data-member="${member.id}"><h3>${member.name}</h3>${member.equipment.length
+        ? `<ul>${member.equipment.map(id => `<li><span>${ITEMS[id].equip === 'feet' ? 'Pies' : 'Espalda'}</span>${escape(ITEMS[id].name)}</li>`).join('')}</ul>`
+        : '<ul><li class="empty"><span>—</span>Nada equipado</li></ul>'}<p>${escape(member.note)}</p></article>`).join('')}</div></section>`;
       content.querySelector('dd')!.textContent = ENVIRONMENTS[location].name;
+    } else if (active === 'items') {
+      const column = (kind: ItemKind) => {
+        const items = itemsOfKind(story.items, kind);
+        return `<section class="item-column" data-kind="${kind}"><span class="battle-kicker">${ITEM_KIND_LABELS[kind].toUpperCase()}</span><p class="journal-muted">${kind === 'common' ? 'Se gastan al usarlos.' : 'Para la historia. No se pierden.'}</p><ul>${items.length
+          ? items.map(item => `<li><strong>${escape(item.name)}</strong><span>${escape(item.description)}</span></li>`).join('')
+          : '<li class="empty">Nada por aquí todavía.</li>'}</ul></section>`;
+      };
+      content.innerHTML = `<div class="item-columns">${column('common')}${column('key')}</div>`;
     } else {
       content.innerHTML = `<div class="map-layout"><div class="map-frame">${renderWorldMap(ENVIRONMENTS[location], cell)}</div><aside class="map-details"><span class="battle-kicker">MAPA LOCAL</span><h2></h2><p>Tu posición · ${cell.x} / ${cell.z}</p><div class="map-legend"><span>● Gerard</span><span>▧ Camino transitable</span><span>■ Edificios / obstáculos</span></div><ol class="map-landmarks"></ol><p class="journal-muted">Vista esquemática del entorno actual.</p></aside></div>`;
       content.querySelector('h2')!.textContent = ENVIRONMENTS[location].name;
@@ -99,7 +114,8 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
       else if (action !== 'menu') focusControllerButton(root, action);
     },
     update(id: EnvironmentId, position: Cell, count = steps) { location = id; cell = { ...position }; steps = count; render(); },
-    setCompanion() { companion = true; render(); },
+    /** Redraws the open panel after the story changes. */
+    refresh() { render(); },
     destroy() { close(); window.removeEventListener('keydown', keydown, { capture: true }); dock.remove(); root.remove(); },
   };
 }

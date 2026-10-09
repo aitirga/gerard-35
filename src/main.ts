@@ -5,6 +5,8 @@ import { type Direction } from './movement';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
 import { createDialogueBanner } from './dialogue';
 import { createBattleUI } from './battle-ui';
+import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent } from './story';
+import { createStoryUI } from './story-ui';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
@@ -17,6 +19,17 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 const environmentSelect = document.querySelector<HTMLSelectElement>('#environment')!;
 const interactButton = document.querySelector<HTMLButtonElement>('#interact')!;
 const dialogue = createDialogueBanner(document.querySelector<HTMLElement>('#hud')!);
+const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
+// Development: ?story=<flag> starts with every flag up to that one (just dev-chapter), ?story=new from scratch.
+const devStory = (() => {
+  if (!import.meta.env.DEV) return undefined;
+  const at = new URLSearchParams(location.search).get('story');
+  if (at === null) return undefined;
+  return STORY_FLAGS.slice(0, (STORY_FLAGS as readonly string[]).indexOf(at) + 1);
+})();
+const story = new Story(devStory ?? []);
+let savedStory = JSON.stringify(story.saved);
+let startStory: (() => void) | undefined;
 async function load() {
   if (loading || loaded) return;
   loading = true;
@@ -26,6 +39,8 @@ async function load() {
     const state = await response.json();
     if (!Number.isInteger(state.score) || state.score < 0) throw new Error('state');
     previousScore = state.score;
+    // A development jump keeps its own flags instead of the saved progress.
+    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); savedStory = JSON.stringify(story.saved); }
     loaded = true;
     if (dirty) void save();
   } catch {
@@ -40,7 +55,7 @@ async function save() {
   try {
     const response = await fetch('/api/state', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score: previousScore + sessionSteps }), keepalive: true,
+      body: JSON.stringify({ score: previousScore + sessionSteps, story: devStory ? [] : story.saved }), keepalive: true,
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) throw new Error('save');
@@ -62,8 +77,36 @@ try {
     change: (state, effect, onImpact) => game.setBattle(state, effect, onImpact),
     target: id => game.selectTarget(id),
   });
-  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused), () => controller.open());
-  let currentLocation: EnvironmentId = 'maresme';
+  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused), () => controller.open(), story);
+  let currentLocation: EnvironmentId = story.resume.environment;
+  // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
+  let beats = Promise.resolve();
+  const learned: Partial<Record<string, () => boolean>> = {
+    run: () => game.running,
+    items: () => exploration.active === 'items',
+    party: () => exploration.active === 'character',
+  };
+  async function play(effect: StoryEffect) {
+    if (effect.kind === 'dialogue') await new Promise<void>(resolve => dialogue.show(effect.dialogue, resolve));
+    else if (effect.kind === 'item') storyUI.item(effect.item);
+    else if (effect.kind === 'tutorial') storyUI.tutorial(effect.id, learned[effect.id]);
+    else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
+  }
+  const showObjective = () => storyUI.setObjective(story.objective.text, story.objective.glitch);
+  function storyChanged(objective = true) {
+    game.refreshStory();
+    exploration.refresh();
+    if (objective) showObjective();
+    const saved = JSON.stringify(story.saved);
+    if (saved !== savedStory) { savedStory = saved; dirty = true; clearTimeout(saveTimer); void save(); }
+  }
+  function storyEvent(event: StoryEvent) {
+    const effects = story.handle(event);
+    // A new objective waits until the conversation that gives it is over.
+    const talks = effects.some(effect => effect.kind === 'dialogue');
+    storyChanged(!talks);
+    beats = beats.then(async () => { for (const effect of effects) await play(effect); if (talks) showObjective(); });
+  }
   const game = createGame(canvas, {
     onEncounter: (allies, foes) => { exploration.close(); dialogue.close(); battleUI.open(allies, foes); },
     onBattleTargets: targets => battleUI.positionTargets(targets),
@@ -90,11 +133,8 @@ try {
       interactButton.querySelector('span')!.textContent = interaction?.label ?? '';
     },
     onDialogue: dialogue.show,
-    onQuest: () => {
-      exploration.setCompanion();
-    },
-
-  });
+    onStory: storyEvent,
+  }, story);
   const controllerContext = () => battleUI.controllerContext !== 'world' ? battleUI.controllerContext
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   const controller = createControllerUI({
@@ -134,15 +174,24 @@ try {
     });
   });
   canvas.focus({ preventScroll: true });
+  startStory = () => {
+    const { environment, cell } = story.resume;
+    if (story.started && environment !== currentLocation) game.setEnvironment(environment, cell);
+    storyChanged();
+    storyEvent({ type: 'start' });
+  };
   // Repeatable desktop battle checks without affecting production or saved progress.
   if (import.meta.env.DEV) {
     const params = new URLSearchParams(location.search);
     const foes = Number(params.get('battle'));
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => battleUI.open(params.get('allies') === '2' ? 2 : 1, foes));
+    // Handle for scripted browser checks, e.g. teleporting to a story beat.
+    Object.assign(window, { gerard: { game, story } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { controller.destroy(); exploration.destroy(); battleUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;
 }
-void load();
+// Wait briefly for saved progress, so a returning player resumes where they left off.
+void load().then(() => startStory?.());

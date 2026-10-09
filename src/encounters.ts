@@ -6,8 +6,17 @@ export const DOG_PROFILES = [
   { name: 'Trufa', fur: '#655048', collar: '#bcacd9' },
   { name: 'Chispa', fur: '#a87943', collar: '#c5d789' },
 ] as const;
-export const STREET_ENCOUNTER = { stage: { x: 16, z: 24 } };
-const SPAWNS: Cell[] = [{ x: 18, z: 24 }, { x: 16, z: 22 }, { x: 15, z: 25 }, { x: 17, z: 26 }];
+/** Where a pack lives: its spawn cells, the box the dogs wander in, and where battles are staged. */
+export interface PackArea { spawns: readonly Cell[]; min: Cell; max: Cell; stage: Cell }
+export const STREET_AREA: PackArea = {
+  spawns: [{ x: 18, z: 24 }, { x: 16, z: 22 }, { x: 15, z: 25 }, { x: 17, z: 26 }],
+  min: { x: 14, z: 21 }, max: { x: 18, z: 27 }, stage: { x: 16, z: 24 },
+};
+/** Chapter 1: the dogs at the bottom of the street, around the scarecrow. */
+export const SCARECROW_AREA: PackArea = {
+  spawns: [{ x: 14, z: 35 }, { x: 18, z: 36 }, { x: 15, z: 39 }, { x: 17, z: 34 }],
+  min: { x: 13, z: 34 }, max: { x: 19, z: 39 }, stage: { x: 15, z: 33 },
+};
 const distance = (a: Cell, b: Cell) => Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
 export interface WanderingDog {
   cell: Cell; from: Cell; progress: number; wait: number; yaw: number;
@@ -21,9 +30,10 @@ export class WanderingPack {
   private respawning = false;
   private grid: readonly string[];
   private random: () => number;
-  constructor(grid: readonly string[], random = Math.random) { this.grid = grid; this.random = random; this.spawn(); }
+  readonly area: PackArea;
+  constructor(grid: readonly string[], random = Math.random, area = STREET_AREA) { this.grid = grid; this.random = random; this.area = area; this.spawn(); }
   private spawn() {
-    this.dogs = SPAWNS.slice(0, 2 + Math.floor(this.random() * 3)).map(cell => ({
+    this.dogs = this.area.spawns.slice(0, 2 + Math.floor(this.random() * 3)).map(cell => ({
       cell: { ...cell }, from: { ...cell }, progress: 1, wait: .8 + this.random() * 2, yaw: 75,
     }));
   }
@@ -49,7 +59,7 @@ export class WanderingPack {
     this.cooldown = Math.max(0, this.cooldown - dt);
     if (this.respawning && this.cooldown === 0) {
       // Do not materialize a fresh pack under Gerard's feet.
-      if (SPAWNS.some(cell => playerCells.some(player => distance(cell, player) <= 2))) return;
+      if (this.area.spawns.some(cell => playerCells.some(player => distance(cell, player) <= 2))) return;
       this.spawn(); this.respawning = false;
     }
     if (this.ready && playerCells.every(cell => !this.near(cell, 2))) this.armed = true;
@@ -60,7 +70,7 @@ export class WanderingPack {
       dog.wait = .6 + this.random() * 2;
       const blocked = [...playerCells, ...this.occupied];
       const options = Object.values(VECTORS).map(delta => ({ x: dog.cell.x + delta.x, z: dog.cell.z + delta.z }))
-        .filter(cell => cell.x >= 14 && cell.x <= 18 && cell.z >= 21 && cell.z <= 27
+        .filter(cell => cell.x >= this.area.min.x && cell.x <= this.area.max.x && cell.z >= this.area.min.z && cell.z <= this.area.max.z
           && canWalk(cell, this.grid) && !isOccupied(cell, blocked));
       if (!options.length) continue;
       const next = options[Math.floor(this.random() * options.length)];

@@ -457,3 +457,56 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .menu-controls dt { color: var(--ui-gold); font-size: 12px; font-weight: 600; }
 .menu-controls dd { margin: 5px 0 0; color: var(--ui-paper); font-size: 13px; line-height: 1.5; }
 @media (prefers-reduced-motion: reduce) { .adventure-options button { transition: none; } }
+
+/* Chapter story HUD: objective (top right), notes under it, full-screen chapter cards. */
+#objective { position: absolute; top: 22px; right: 22px; max-width: 320px; padding: 12px 16px; border: 1px solid var(--ui-line); border-left: 3px solid var(--ui-gold); border-radius: 2px; background: var(--ui-surface); color: var(--ui-paper); box-shadow: var(--ui-shadow); backdrop-filter: blur(12px); }
+#objective .eyebrow { display: block; font-size: 8px; letter-spacing: .22em; color: var(--ui-gold); }
+#objective strong { display: block; margin-top: 5px; font-size: 14px; font-weight: 600; }
+/* Bernat's game leaks into the HUD: wrong colours, a monospace shout and a jittery frame. */
+#objective[data-glitch] { border-left-color: #ff5f8a; background: #2a1030ee; animation: objective-glitch 2.4s steps(1) infinite; }
+#objective[data-glitch] .eyebrow { color: #7ff5e0; }
+#objective[data-glitch] strong { font-family: ui-monospace, 'Courier New', monospace; letter-spacing: .08em; text-shadow: 2px 0 #ff5f8a99, -2px 0 #7ff5e099; }
+@keyframes objective-glitch {
+  0%, 100% { translate: 0 0; clip-path: none; }
+  12% { translate: -3px 1px; clip-path: inset(0 0 45% 0); }
+  14% { translate: 2px -1px; clip-path: none; }
+  57% { translate: 0 0; filter: hue-rotate(80deg); }
+  59% { translate: 4px 0; filter: none; clip-path: inset(40% 0 0 0); }
+  61% { translate: 0 0; clip-path: none; }
+}
+.story-notes { position: absolute; top: 112px; right: 22px; width: 320px; display: grid; gap: 10px; }
+.story-note { padding: 14px 16px; border: 1px solid var(--ui-line); border-top: 2px solid var(--ui-gold); background: var(--ui-surface); color: var(--ui-paper); box-shadow: var(--ui-shadow); backdrop-filter: blur(12px); animation: encounter-right .35s ease both; transition: opacity .3s, translate .3s; }
+.story-note[data-kind="item"] { border-top-color: #a5cf8f; }
+.story-note[data-kind="item"] .battle-kicker { color: #a5cf8f; }
+.story-note strong { display: block; margin-top: 6px; font-size: 15px; }
+.story-note p { margin: 6px 0 0; font-size: 12px; line-height: 1.55; color: var(--ui-muted); }
+.story-note[data-learned] { border-top-color: #a5cf8f; }
+.story-note[data-learned] strong::after { content: ' ✓'; color: #a5cf8f; }
+.story-note[data-leaving] { opacity: 0; translate: 20px 0; }
+#story-card { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 4px; text-align: center; background: radial-gradient(ellipse at center, #10231bee, #071513f8); color: var(--ui-paper); animation: story-card-in .6s ease both; transition: opacity .6s; }
+#story-card[data-state="out"] { opacity: 0; }
+#story-card h1 { margin: 14px 0 8px; font-size: clamp(40px, 6vw, 76px); font-weight: 900; font-style: italic; letter-spacing: -.055em; }
+#story-card p { margin: 0; font-family: 'Manrope', sans-serif; font-size: 16px; color: var(--ui-muted); }
+@keyframes story-card-in { from { opacity: 0; } to { opacity: 1; } }
+#hud[data-battle] #objective, #hud[data-battle] .story-notes, #hud[data-panel] .story-notes { visibility: hidden; }
+
+/* Journal: party equipment under the character sheet, and the two item columns. */
+.party-equipment { margin-top: 24px; }
+.party-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; }
+.party-card { padding: 14px 16px; border: 1px solid var(--ui-line); border-left: 3px solid var(--ui-gold); background: #ffffff06; }
+.party-card[data-member="bernat"] { border-left-color: #9fc3d9; }
+.party-card h3 { margin: 0 0 8px; font-size: 16px; }
+.party-card ul, .item-column ul { margin: 0; padding: 0; list-style: none; }
+.party-card li { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--ui-line); font-size: 13px; }
+.party-card li span { min-width: 58px; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ui-gold); padding-top: 2px; }
+.party-card li.empty { color: var(--ui-muted); }
+.party-card p { margin: 8px 0 0; font-size: 11px; }
+.item-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.item-column { padding: 16px; border: 1px solid var(--ui-line); border-top: 3px solid var(--ui-gold); background: #ffffff06; }
+.item-column[data-kind="common"] { border-top-color: #a5cf8f; }
+.item-column[data-kind="common"] .battle-kicker { color: #a5cf8f; }
+.item-column li { padding: 12px 0; border-top: 1px solid var(--ui-line); }
+.item-column li strong { display: block; font-size: 15px; }
+.item-column li span { display: block; margin-top: 4px; font-size: 12px; line-height: 1.5; color: var(--ui-muted); }
+.item-column li.empty { color: var(--ui-muted); font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { #objective[data-glitch] { animation: none; } .story-note, #story-card { animation: none; transition: none; } }

@@ -28,11 +28,11 @@ class PersistenceTests(unittest.TestCase):
         self.temp.cleanup()
 
     def test_reload_and_separate_players(self):
-        self.assertEqual(self.client.put('/api/state', json={'score': 35}).json(), {'score': 35})
+        self.assertEqual(self.client.put('/api/state', json={'score': 35}).json(), {'score': 35, 'story': []})
         with TestClient(app, cookies=self.client.cookies) as reopened:
-            self.assertEqual(reopened.get('/api/state').json(), {'score': 35})
+            self.assertEqual(reopened.get('/api/state').json(), {'score': 35, 'story': []})
         with TestClient(app) as visitor:
-            self.assertEqual(visitor.get('/api/state').json(), {'score': 0})
+            self.assertEqual(visitor.get('/api/state').json(), {'score': 0, 'story': []})
 
     def test_concurrent_and_out_of_order_saves(self):
         cookie = self.client.cookies.get('gerard_player')
@@ -41,7 +41,24 @@ class PersistenceTests(unittest.TestCase):
                 self.assertEqual(client.put('/api/state', json={'score': score}).status_code, 200)
         with ThreadPoolExecutor(max_workers=4) as executor:
             list(executor.map(save, [10, 35, 5, 20]))
-        self.assertEqual(self.client.get('/api/state').json(), {'score': 35})
+        self.assertEqual(self.client.get('/api/state').json(), {'score': 35, 'story': []})
+
+    def test_story_flags_accumulate_in_story_order(self):
+        self.client.put('/api/state', json={'score': 3, 'story': ['got-shoes', 'intro']})
+        # An older tab that only knows the intro must not undo the shoes.
+        response = self.client.put('/api/state', json={'score': 1, 'story': ['intro', 'met-jan']})
+        self.assertEqual(response.json(), {'score': 3, 'story': ['intro', 'met-jan', 'got-shoes']})
+        self.assertEqual(self.client.get('/api/state').json()['story'], ['intro', 'met-jan', 'got-shoes'])
+        for story in [['flying'], 'intro', ['intro'] * 9]:
+            self.assertEqual(self.client.put('/api/state', json={'score': 1, 'story': story}).status_code, 422)
+
+    def test_databases_from_before_the_story_gain_the_column(self):
+        import sqlite3
+        path = self.temp.name + '/old.sqlite3'
+        with sqlite3.connect(path) as db:
+            db.execute('CREATE TABLE players (id TEXT PRIMARY KEY, score INTEGER NOT NULL)')
+        with mock.patch.dict(os.environ, {'DATABASE_PATH': path}), TestClient(app) as client:
+            self.assertEqual(client.put('/api/state', json={'score': 7, 'story': ['intro']}).json(), {'score': 7, 'story': ['intro']})
 
     def test_validation_and_health(self):
         for score in [-1, 2.5, True, '3', 2147483648]:

@@ -12,7 +12,8 @@ export type WorldProp =
   | { kind: 'tree'; x: number; z: number; species?: TreeSpecies; scale?: number; base?: TreeBase }
   | { kind: 'car'; x: number; z: number; color: string }
   | { kind: 'lamp'; x: number; z: number }
-  | { kind: 'manhole'; x: number; z: number };
+  | { kind: 'manhole'; x: number; z: number }
+  | { kind: 'scarecrow'; x: number; z: number };
 export type PropKind = WorldProp['kind'];
 /** Cells each kind blocks, relative to its anchor; visuals are built on the same footprint. */
 export const PROP_FOOTPRINTS: Record<PropKind, readonly Cell[]> = {
@@ -20,6 +21,7 @@ export const PROP_FOOTPRINTS: Record<PropKind, readonly Cell[]> = {
   car: [{ x: 0, z: 0 }, { x: 0, z: 1 }],
   lamp: [{ x: 0, z: 0 }],
   manhole: [],
+  scarecrow: [{ x: 0, z: 0 }],
 };
 export function propCells(prop: WorldProp): Cell[] {
   return PROP_FOOTPRINTS[prop.kind].map(offset => ({ x: prop.x + offset.x, z: prop.z + offset.z }));
@@ -119,6 +121,8 @@ function createNeighborhood(): Environment {
   props.push({ kind: 'tree', x: 25, z: 23, species: 'olive', scale: 0.7, base: 'pot' });
   for (const z of [11, 27, 36]) props.push({ kind: 'lamp', x: 21, z });
   for (const [x, z] of [[14, 13], [17, 30], [15, 38]]) props.push({ kind: 'manhole', x, z });
+  // Chapter 1: the scarecrow beside the dogs at the bottom of the street, straight out of Bernat's game.
+  props.push({ kind: 'scarecrow', x: 16, z: 37 });
   return {
     id: 'maresme', name: 'Passatge Maresme', grid: blockProps(cells.map(row => row.join('')), props),
     spawn: { x: 20, z: 24 }, houses, props, zoom: 10.5,

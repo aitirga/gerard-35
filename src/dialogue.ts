@@ -15,6 +15,8 @@ export interface Speaker {
 export const SPEAKERS = {
   gerard: { name: 'Gerard', portrait: 'gerard-child', skin: '#e6b58b', hair: '#342a28', top: '#e9ad48', accent: '#f0c46a' },
   bernat: { name: 'Bernat', skin: '#dcb08a', hair: '#5b4636', top: '#6f8fa8', accent: '#9fc3d9' },
+  mama: { name: 'Mamá', skin: '#e8bc96', hair: '#6b4a32', top: '#b5645a', accent: '#e9a294' },
+  jan: { name: 'Jan', skin: '#e6b58b', hair: '#2b2220', top: '#5e8a5a', accent: '#a5cf8f' },
 } satisfies Record<string, Speaker>;
 
 export type SpeakerId = keyof typeof SPEAKERS;
@@ -74,6 +76,7 @@ export function createDialogueBanner(hud: HTMLElement) {
   let typing: ReturnType<typeof setInterval> | undefined;
   let advanceTimer: ReturnType<typeof setTimeout> | undefined;
   let fullText = '';
+  let done: (() => void) | undefined;
 
   function renderSide(slot: 'left' | 'right', id: SpeakerId | undefined) {
     const el = sides[slot];
@@ -116,8 +119,12 @@ export function createDialogueBanner(hud: HTMLElement) {
       if (shown >= fullText.length) finishLine();
     }, TYPE_SPEED_MS);
   }
-  function show(dialogue: Dialogue) {
-    if (!dialogue.lines.length) return;
+  /** `onDone` runs once the conversation closes, however it closes (or another one replaces it). */
+  function show(dialogue: Dialogue, onDone?: () => void) {
+    if (!dialogue.lines.length) { onDone?.(); return; }
+    const previous = done;
+    done = onDone;
+    previous?.();
     current = dialogue;
     index = 0;
     for (const line of dialogue.lines) {  // warm the cache so faces change without a blank frame
@@ -142,6 +149,9 @@ export function createDialogueBanner(hud: HTMLElement) {
     current = undefined;
     root.hidden = true;
     delete hud.dataset.dialogue;
+    const finished = done;
+    done = undefined;
+    finished?.();
   }
 
   next.addEventListener('click', advance);

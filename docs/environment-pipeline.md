@@ -44,8 +44,9 @@ Walk through number 20's front gate, approach the door and press E/Enter/Space
 or controller A (standard mapping) to enter the open-air entrance of the house.
 Its layout follows the family's hand-drawn plan: entrance, floor 1 and floor 2,
 joined by doors and stairs. Use the street door to return to the front garden.
-Cross the street to Bernat and ring the bell to complete the demo quest. Calling
-Bernat is an in-game dialogue only, with no real-world communication. Bernat's
+Cross the street to Bernat and ring the bell: in chapter 1 he joins Gerard once the
+backpack is picked up (see `docs/chapter-1.md`). Calling Bernat is an in-game dialogue
+only, with no real-world communication. Bernat's
 house cannot be entered. Touch users can tap the interaction button.
 
 The existing backend still saves only the step counter. Scene position and
