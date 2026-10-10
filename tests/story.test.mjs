@@ -11,35 +11,34 @@ const kinds = effects => effects.map(e => e.kind === 'dialogue' ? 'dialogue' : `
 test('block 1 plays from waking up to the déjà-vu in order', () => {
   const story = new Story();
   assert.equal(story.started, false);
-  assert.deepEqual(kinds(story.handle({ type: 'start' })), ['card:intro', 'dialogue', 'tutorial:move']);
+  assert.deepEqual(kinds(story.handle({ type: 'start' })), ['card:intro', 'dialogue', 'hint:move']);
   assert.deepEqual(story.handle({ type: 'start' }), [], 'the intro plays once');
-  assert.equal(story.objective.text, 'Baja a la cocina');
   assert.equal(story.canRun, false);
 
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'talk-jan' })), ['dialogue']);
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-pocion' })), ['dialogue', 'item:pocion']);
-  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'talk-mama' })), ['dialogue', 'item:zapatillas', 'tutorial:run']);
+  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'talk-mama' })), ['dialogue', 'item:zapatillas', 'hint:run']);
   assert.equal(story.canRun, true);
-  assert.equal(story.objective.text, 'Coge la mochila del recibidor');
 
-  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-mochila' })), ['dialogue', 'item:mochila', 'tutorial:items']);
+  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-mochila' })), ['dialogue', 'item:mochila', 'hint:items']);
   assert.deepEqual(story.items, ['zapatillas', 'mochila', 'pocion']);
   assert.equal(story.gate('leave-hall'), undefined);
 
   assert.equal(story.companion, 'none');
-  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'call-bernat' })), ['dialogue', 'tutorial:party']);
+  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'call-bernat' })), ['dialogue', 'hint:party']);
   assert.equal(story.companion, 'follow');
   assert.deepEqual(story.party.map(m => [m.id, m.equipment]), [['gerard', ['zapatillas', 'mochila']], ['bernat', []]]);
 
+  assert.equal(story.bubble, undefined, 'Bernat only talks over his head when he stalls');
   story.handle({ type: 'south' });
   assert.equal(story.companion, 'stalled');
-  const seen = [story.objective];
-  for (let i = 0; i < 3; i++) { story.handle({ type: 'leash' }); seen.push(story.objective); }
-  assert.ok(seen.every(o => o.glitch));
-  assert.deepEqual([...new Set(seen.map(o => o.text))], ['DEBÉIS IR JUNTOS', 'ESPERA A BERNAT', 'PREGÚNTALE QUÉ PASA']);
+  const seen = [story.bubble];
+  for (let i = 0; i < 3; i++) { story.handle({ type: 'leash' }); seen.push(story.bubble); }
+  assert.deepEqual([...new Set(seen)], ['¿Gerard…?', 'Espera.', 'Esto… ya lo he visto.']);
 
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'talk-bernat' })), ['dialogue', 'card:end']);
   assert.equal(story.companion, 'follow');
+  assert.equal(story.bubble, undefined);
   assert.equal(story.battles, true);
   assert.deepEqual(story.saved, [...STORY_FLAGS]);
 });

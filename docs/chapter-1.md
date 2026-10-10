@@ -14,17 +14,18 @@ his power: **changing class by changing mood**, fast.
 
 ## Design principles
 
-- **One verb per beat, taught right before it is needed.** Running arrives with the shoes, just
-  before the long street; items arrive with the backpack, just before they matter; the party
-  window arrives when Bernat joins. A tutorial note never explains something the player cannot
-  try right away, and each note closes itself (✓) once the player has done it.
+- **No objective panel.** Nothing on screen says what to do or where to go (see the game
+  philosophy in `AGENTS.md`). Gerard learns where to go the way a kid would: the smell of toast,
+  Jan's teasing about a shoebox, Mum telling him the backpack is in the hall and to fetch Bernat.
+- **One verb per beat, learned by trying.** Each control shows up once, as a key and a verb
+  ("Shift · Correr"), right when it becomes possible, and fades as soon as it is used: walking at
+  the start, running with the shoes, items (I) with the backpack, equipment (C) with Bernat.
 - **Gates are diegetic.** Nothing stops Gerard without a person saying why: before breakfast he
   thinks "primero, a la cocina"; without the backpack Mum calls him back; while Bernat stalls the
   street itself won't let him leave his friend (a leash of four cells).
-- **The HUD is part of the story.** When Bernat stalls, the objective line glitches: wrong colours,
-  a monospace shout, jitter, and wording that sounds like a game talking to its players ("DEBÉIS IR
-  JUNTOS" → "ESPERA A BERNAT" → "PREGÚNTALE QUÉ PASA"). It escalates each time Gerard pulls
-  against the leash. The interface foreshadows "a game inside the game" before anyone says it.
+- **The world tells you something is wrong.** When Bernat stalls, he mutters over his head, one
+  more line each time Gerard pulls away: "¿Gerard…?" → "Espera." → "Esto… ya lo he visto." The
+  player turns back because a friend sounds off, not because a panel says so.
 - **Seeds pay off within the chapter.** The potion from Jan's desk is the first common item and
   is meant to be used in block 2's tutorial fight; the scarecrow and the dogs are on screen from the
   moment Bernat joins, so the boss of block 3 has been in plain sight for twenty minutes.
@@ -37,13 +38,13 @@ his power: **changing class by changing mood**, fast.
 
 | # | Beat | Teaches | Budget |
 | --- | --- | --- | --- |
-| 1 | Title card "Una mañana de otoño · Hoy es tu cumpleaños", Gerard wakes by his bed | Move, look (E) at the shelves | 1:30 |
+| 1 | Title card "Una mañana de otoño · Hoy es tu cumpleaños", Gerard wakes by his bed | Walking (W A S D), looking (E) at the shelves | 1:30 |
 | 2 | Jan in his room: "¡Felicidades, enano!", a hint about a shoebox and a "frasco experimental" | Talking | 0:45 |
 | 3 | Mum in the kitchen: "Bon dia, campeón! Per molts anys!" → **Zapatillas de correr** | First item; running (Shift / hold B) | 2:00 |
 | 4 | Optional: the **Poción** on Jan's desk | Common items | 1:30 |
 | 5 | The **Mochila** in the hall; the doors out stay shut until then | Key items vs common (I) | 1:00 |
 | 6 | Bernat's doorbell: he congratulates Gerard and joins as a non-playable companion | Party and equipment (C): "modo escuela" | 1:45 |
-| 7 | Down the street: dogs and a scarecrow below; Bernat slows, stops; the HUD glitches | Reading the objective | 1:00 |
+| 7 | Down the street: dogs and a scarecrow below; Bernat slows, stops and mutters | Noticing a friend | 1:00 |
 | 8 | "¿Un déjà-vu?" "Peor. Es igual… creo que la he cagado." → "Continuará…" | — | 0:30 |
 
 Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpack`,
@@ -53,17 +54,17 @@ Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpac
 
 - `src/story.ts` is the whole state machine and has no DOM or engine code: game events
   (`interact`, `south`, `leash`, `start`) go in, ordered effects (`dialogue`, `item`,
-  `tutorial`, `card`) come out. Everything else is derived from the flags: objective, items,
+  `hint`, `card`) come out. Everything else is derived from the flags: Bernat's bubble, items,
   party, NPCs and pickups per scene, gates, where to resume. `tests/story.test.mjs` plays the
   block from start to end.
 - `src/chapter-1.ts` holds the content: lines, places (checked to be walkable by the tests),
-  tutorials, cards, objectives, and the leash length.
+  key hints, cards, Bernat's bubbles, and the leash length.
 - `src/game.ts` draws the cast from the story (Mum, Jan, floating pickups, Bernat), hides
   Gerard's backpack until he has it, blocks NPC cells, turns cells beyond the leash into walls,
   and reports the south row and leash tugs.
 - `src/follower.ts` makes Bernat walk Gerard's own breadcrumb trail, so he never cuts corners
   through walls (`tests/follower.test.mjs`).
-- `src/story-ui.ts` shows the objective, title cards and notes; `src/exploration-ui.ts` adds the
+- `src/story-ui.ts` shows title cards, item notes, key hints and Bernat's speech bubble; `src/exploration-ui.ts` adds the
   Objetos panel (Comunes / Objetos clave) and the Equipo cards in Personaje.
 - The server stores the flags next to the score and only ever adds to them.
 - Mum, Jan and Bernat use placeholder models recoloured from young Gerard
@@ -74,7 +75,7 @@ Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpac
 
 1. **The switch.** Right after the déjà-vu, the street "loads" Bernat's game: palette shift and
    light fog, a grid flash over the cobbles, and the HUD restyles itself in the glitch colours for
-   good. The dogs turn to face the pair; the objective reads like a quest log.
+   good. The dogs turn to face the pair; Bernat starts explaining the rules of his game.
 2. **Tutorial fight 1 (one dog).** Attack and defend only; Bernat narrates the rules of "his" game
    ("¡En mi juego, si te defiendes, el siguiente golpe duele la mitad!").
 3. **Tutorial fight 2 (two dogs).** Skills, and the **Poción** from Jan's desk as the first use

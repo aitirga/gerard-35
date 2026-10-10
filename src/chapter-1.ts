@@ -77,13 +77,17 @@ export const LINES = {
   bernatAfter: withBernat(bernat('No me mires así. Esos perros no estaban ayer en la calle… estaban en mi libreta.')),
 } satisfies Record<string, Dialogue>;
 
-export const TUTORIALS = {
-  move: { title: 'Moverte', body: 'Usa W A S D o las flechas para caminar. Acércate a las cosas y pulsa E para mirarlas o hablar.' },
-  run: { title: 'Correr', body: 'Mantén Shift mientras te mueves para correr con tus zapatillas nuevas (en el mando, mantén B).' },
-  items: { title: 'Objetos', body: 'Pulsa I para abrir tus objetos. Los Comunes se gastan, como la poción; los Objetos clave son para la historia y no se pierden.' },
-  party: { title: 'Equipo', body: 'Bernat te acompaña. Pulsa C para ver qué lleva equipado cada uno: hoy, poca cosa. Modo escuela.' },
+/**
+ * Key hints: a key and a verb, shown the first time the action makes sense and gone once used.
+ * They never say what to do or where to go; that comes from exploring and from people.
+ */
+export const HINTS = {
+  move: { keys: 'W A S D', verb: 'Caminar' },
+  run: { keys: 'Shift', verb: 'Correr' },
+  items: { keys: 'I', verb: 'Objetos' },
+  party: { keys: 'C', verb: 'Equipo' },
 } as const;
-export type TutorialId = keyof typeof TUTORIALS;
+export type HintId = keyof typeof HINTS;
 
 export const CARDS = {
   intro: { kicker: 'CAPÍTULO 1 · SANT QUIRZE DEL VALLÈS', title: 'Una mañana de otoño', text: 'Hoy es tu cumpleaños.' },
@@ -91,12 +95,7 @@ export const CARDS = {
 } as const;
 export type CardId = keyof typeof CARDS;
 
-/** The objective line under the place panel. While Bernat stalls, it glitches and escalates. */
-export const OBJECTIVES = {
-  breakfast: 'Baja a la cocina',
-  backpack: 'Coge la mochila del recibidor',
-  bernat: 'Llama al timbre de Bernat',
-  school: 'Id juntos al cole, calle abajo',
-  stalled: ['DEBÉIS IR JUNTOS', 'ESPERA A BERNAT', 'PREGÚNTALE QUÉ PASA'],
-  done: 'Continuará…',
+/** What Bernat mutters over his head while he stalls, one more line each time Gerard pulls away. */
+export const BUBBLES = {
+  stalled: ['¿Gerard…?', 'Espera.', 'Esto… ya lo he visto.'],
 } as const;

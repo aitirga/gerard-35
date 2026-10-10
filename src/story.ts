@@ -7,7 +7,7 @@ import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { Cell } from './movement';
 import type { ItemId } from './items';
-import { CARDS, LEASH, LINES, OBJECTIVES, PLACES, TUTORIALS, type CardId, type TutorialId } from './chapter-1.ts';
+import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
 export const STORY_FLAGS = [
@@ -26,7 +26,7 @@ export type StoryEvent =
 export type StoryEffect =
   | { kind: 'dialogue'; dialogue: Dialogue }
   | { kind: 'item'; item: ItemId }
-  | { kind: 'tutorial'; id: TutorialId }
+  | { kind: 'hint'; id: HintId }
   | { kind: 'card'; id: CardId };
 
 export interface StoryNpc { id: 'mama' | 'jan'; character: string; environment: EnvironmentId; cell: Cell; scale: number }
@@ -44,11 +44,11 @@ const STORY_INTERACTIONS = {
 const HOUSE_EXITS = new Set(['leave-hall', 'leave-living']);
 
 export const STORY_CARDS = CARDS;
-export const STORY_TUTORIALS = TUTORIALS;
+export const STORY_HINTS = HINTS;
 
 export class Story {
   readonly flags: Set<StoryFlag>;
-  /** How many times Gerard tugged at the leash: escalates the glitching objective. Not saved. */
+  /** How many times Gerard tugged at the leash: Bernat's bubble escalates. Not saved. */
   private tugs = 0;
   constructor(flags: Iterable<string> = []) {
     this.flags = new Set([...flags].filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
@@ -85,13 +85,10 @@ export class Story {
     if (this.has('got-backpack')) return { environment: 'maresme', cell: this.has('bernat-joined') ? { x: 10, z: 25 } : { x: 20, z: 23 } };
     return { environment: PLACES.wake.environment, cell: { ...PLACES.wake.cell } };
   }
-  get objective(): { text: string; glitch: boolean } {
-    if (this.has('dejavu')) return { text: OBJECTIVES.done, glitch: false };
-    if (this.has('bernat-stalled')) return { text: OBJECTIVES.stalled[Math.min(this.tugs, OBJECTIVES.stalled.length - 1)], glitch: true };
-    if (this.has('bernat-joined')) return { text: OBJECTIVES.school, glitch: false };
-    if (this.has('got-backpack')) return { text: OBJECTIVES.bernat, glitch: false };
-    if (this.has('got-shoes')) return { text: OBJECTIVES.backpack, glitch: false };
-    return { text: OBJECTIVES.breakfast, glitch: false };
+  /** What Bernat says over his head right now, if anything. */
+  get bubble(): string | undefined {
+    if (this.companion !== 'stalled') return undefined;
+    return BUBBLES.stalled[Math.min(this.tugs, BUBBLES.stalled.length - 1)];
   }
   npcs(environment: EnvironmentId): StoryNpc[] {
     const all: StoryNpc[] = [
@@ -139,7 +136,7 @@ export class Story {
     switch (event.type) {
       case 'start':
         if (!this.set('intro')) return [];
-        return [{ kind: 'card', id: 'intro' }, say(LINES.wake), { kind: 'tutorial', id: 'move' }];
+        return [{ kind: 'card', id: 'intro' }, say(LINES.wake), { kind: 'hint', id: 'move' }];
       case 'south':
         if (this.companion !== 'follow' || this.has('dejavu') || !this.set('bernat-stalled')) return [];
         this.tugs = 0;
@@ -157,15 +154,15 @@ export class Story {
         if (!this.set('got-potion')) return [];
         return [say(LINES.pocion), { kind: 'item', item: 'pocion' }];
       case 'talk-mama':
-        if (this.set('got-shoes')) return [say(LINES.mama), { kind: 'item', item: 'zapatillas' }, { kind: 'tutorial', id: 'run' }];
+        if (this.set('got-shoes')) return [say(LINES.mama), { kind: 'item', item: 'zapatillas' }, { kind: 'hint', id: 'run' }];
         return [say(this.has('got-backpack') ? LINES.mamaBye : LINES.mamaWaiting)];
       case 'take-mochila':
         if (!this.set('got-backpack')) return [];
-        return [say(LINES.mochila), { kind: 'item', item: 'mochila' }, { kind: 'tutorial', id: 'items' }];
+        return [say(LINES.mochila), { kind: 'item', item: 'mochila' }, { kind: 'hint', id: 'items' }];
       case 'call-bernat':
         if (!this.has('got-backpack')) return [say(LINES.bernatNotYet)];
         if (!this.set('bernat-joined')) return [say(LINES.bernatHere)];
-        return [say(LINES.bernatJoins), { kind: 'tutorial', id: 'party' }];
+        return [say(LINES.bernatJoins), { kind: 'hint', id: 'party' }];
       case 'talk-bernat':
         if (this.companion === 'stalled') { this.set('dejavu'); return [say(LINES.dejavu), { kind: 'card', id: 'end' }]; }
         if (this.has('dejavu')) return [say(LINES.bernatAfter)];

@@ -25,6 +25,8 @@ function playerCharacter() {
 export interface GameCallbacks {
   onEncounter: (allies: 1 | 2, foes: number) => void;
   onBattleTargets: (targets: { id: string; x: number; y: number; visible: boolean }[]) => void;
+  /** Where the companion's head is on screen, for speech bubbles; undefined when he is not shown. */
+  onCompanionScreen: (at: { x: number; y: number } | undefined) => void;
   onStep: (steps: number, cell: Cell) => void;
   onLocation: (id: EnvironmentId, cell: Cell) => void;
   onInteraction: (interaction: Interaction | undefined) => void;
@@ -394,6 +396,10 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       camera.camera!.worldToScreen(position, screen);
       return { id, x: screen.x, y: screen.y, visible };
     }));
+    if (companion.enabled) {
+      camera.camera!.worldToScreen(companion.getPosition().clone().add(new pc.Vec3(0, 1.75, 0)), screen);
+      callbacks.onCompanionScreen({ x: screen.x, y: screen.y });
+    } else callbacks.onCompanionScreen(undefined);
 
   });
   app.on('destroy', () => {
@@ -414,7 +420,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     setPaused(value: boolean) { paused = value; clearInput(); controllerDirection = null; controllerStick = null; controllerRunning = false; },
     get position() { return movement.position; },
     get companionPosition() { return follower.position; },
-    /** Whether Gerard is moving fast enough to count as running; the run tutorial waits for it. */
+    /** Whether Gerard is moving fast enough to count as running; the run hint waits for it. */
     get running() { return running() && movement.walking; },
     toggleOverview() { if (paused || battle) return; overview = !overview; canvas.focus({ preventScroll: true }); },
     press(direction: Direction) { if (paused || battle) return; held.set('touch', direction); },

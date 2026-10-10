@@ -2,63 +2,234 @@
   "title": "Chapter 1 · Block 1",
   "description": "Gerard's birthday morning: home, Mum's shoes, the backpack, Bernat, the stall and the déjà-vu.",
   "steps": [
-    { "open": "/?story=new" },
-    { "until": "!document.querySelector('#story-card').hidden" },
-    { "shot": "intro-card", "delay": 800, "caption": "Chapter card on the birthday morning" },
-    { "until": "!!document.querySelector('#hud[data-dialogue]')", "timeout": 10000 },
-    { "shot": "wake-up", "delay": 1500, "caption": "Gerard wakes up in his bedroom" },
-    { "skipDialogue": true },
-    { "shot": "bedroom", "caption": "First objective and the movement tutorial" },
-
-    { "teleport": "home-floor-2", "cell": [16, 12] },
-    { "press": "KeyE" },
-    { "shot": "jan", "delay": 1500, "caption": "Jan wishes him happy birthday" },
-    { "skipDialogue": true },
-    { "teleport": "home-floor-2", "cell": [17, 11] },
-    { "shot": "potion-on-desk", "caption": "The potion floating over Jan's desk" },
-    { "press": "KeyE" },
-    { "skipDialogue": true },
-    { "shot": "potion-taken", "caption": "First common item" },
-
-    { "teleport": "home-floor-1", "cell": [2, 1] },
-    { "press": "KeyE" },
-    { "shot": "door-before-breakfast", "delay": 1200, "caption": "The front door waits for breakfast" },
-    { "skipDialogue": true },
-    { "teleport": "home-floor-1", "cell": [17, 10] },
-    { "press": "KeyE" },
-    { "shot": "mum", "delay": 1500, "caption": "Mum: Per molts anys!" },
-    { "skipDialogue": true },
-    { "shot": "shoes", "caption": "Running shoes and the running tutorial" },
-
-    { "teleport": "home-floor-1", "cell": [4, 1] },
-    { "shot": "backpack-in-hall", "caption": "The backpack by the front door" },
-    { "press": "KeyE" },
-    { "skipDialogue": true },
-    { "shot": "backpack-taken", "caption": "Key item and the inventory tutorial" },
-    { "press": "KeyI" },
-    { "shot": "items-panel", "delay": 1500, "caption": "Objetos: common and key items" },
-    { "press": "Escape" },
-
-    { "teleport": "maresme", "cell": [9, 24] },
-    { "press": "KeyE" },
-    { "shot": "bernat-door", "delay": 1500, "caption": "Ringing Bernat's bell" },
-    { "skipDialogue": true },
-    { "shot": "bernat-joins", "caption": "Bernat joins and the party tutorial" },
-    { "press": "KeyC" },
-    { "shot": "equipment", "delay": 1500, "caption": "Equipment per party member (modo escuela)" },
-    { "press": "Escape" },
-
-    { "teleport": "maresme", "cell": [15, 28] },
-    { "hold": ["KeyS", "KeyA"], "until": "window.gerard.story.companion === 'stalled'", "timeout": 90000 },
-    { "shot": "bernat-stalls", "caption": "Bernat stops; the objective glitches" },
-    { "hold": ["KeyS", "KeyA"], "until": "window.gerard.story.objective.text === 'PREGÚNTALE QUÉ PASA'", "timeout": 180000 },
-    { "shot": "leash", "caption": "Pulling away escalates the glitching objective" },
-    { "eval": "(() => { const b = window.gerard.game.companionPosition; window.gerard.game.setEnvironment('maresme', { x: Math.round(b.x), z: Math.round(b.z) + 1 }); })()" },
-    { "until": "document.querySelector('#interact span').textContent.startsWith('Preguntarle')", "timeout": 20000 },
-    { "press": "KeyE" },
-    { "shot": "dejavu", "delay": 1500, "caption": "Déjà-vu: this is Bernat's game" },
-    { "skipDialogue": true },
-    { "until": "!document.querySelector('#story-card').hidden", "timeout": 20000 },
-    { "shot": "to-be-continued", "delay": 800, "caption": "End of block 1" }
+    {
+      "open": "/?story=new"
+    },
+    {
+      "until": "!document.querySelector('#story-card').hidden"
+    },
+    {
+      "shot": "intro-card",
+      "delay": 800,
+      "caption": "Chapter card on the birthday morning"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]') || !document.querySelector('.key-hint').hidden",
+      "timeout": 30000
+    },
+    {
+      "shot": "wake-up",
+      "delay": 500,
+      "caption": "Gerard wakes up in his bedroom"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "bedroom",
+      "caption": "Exploring the bedroom; the only help is a key hint"
+    },
+    {
+      "teleport": "home-floor-2",
+      "cell": [
+        16,
+        12
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "jan",
+      "delay": 1500,
+      "caption": "Jan wishes him happy birthday"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "home-floor-2",
+      "cell": [
+        17,
+        11
+      ]
+    },
+    {
+      "shot": "potion-on-desk",
+      "caption": "The potion floating over Jan's desk"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "potion-taken",
+      "caption": "First common item"
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        2,
+        1
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "door-before-breakfast",
+      "delay": 1200,
+      "caption": "The front door waits for breakfast"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        17,
+        10
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "mum",
+      "delay": 1500,
+      "caption": "Mum: Per molts anys!"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "shoes",
+      "caption": "Running shoes, and the Shift hint"
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        4,
+        1
+      ]
+    },
+    {
+      "shot": "backpack-in-hall",
+      "caption": "The backpack by the front door"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "backpack-taken",
+      "caption": "Key item, and the I hint"
+    },
+    {
+      "press": "KeyI"
+    },
+    {
+      "shot": "items-panel",
+      "delay": 1500,
+      "caption": "Objetos: common and key items"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        9,
+        24
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "bernat-door",
+      "delay": 1500,
+      "caption": "Ringing Bernat's bell"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "bernat-joins",
+      "caption": "Bernat joins, and the C hint"
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "shot": "equipment",
+      "delay": 1500,
+      "caption": "Equipment per party member (modo escuela)"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        15,
+        28
+      ]
+    },
+    {
+      "hold": [
+        "KeyS",
+        "KeyA"
+      ],
+      "until": "window.gerard.story.companion === 'stalled'",
+      "timeout": 90000
+    },
+    {
+      "shot": "bernat-stalls",
+      "caption": "Bernat stops and mutters over his head"
+    },
+    {
+      "hold": [
+        "KeyS",
+        "KeyA"
+      ],
+      "until": "window.gerard.story.bubble === 'Esto… ya lo he visto.'",
+      "timeout": 180000
+    },
+    {
+      "shot": "leash",
+      "caption": "Pulling away: his words escalate"
+    },
+    {
+      "eval": "(() => { const b = window.gerard.game.companionPosition; window.gerard.game.setEnvironment('maresme', { x: Math.round(b.x), z: Math.round(b.z) + 1 }); })()"
+    },
+    {
+      "until": "document.querySelector('#interact span').textContent.startsWith('Preguntarle')",
+      "timeout": 20000
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "dejavu",
+      "delay": 1500,
+      "caption": "Déjà-vu: this is Bernat's game"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!document.querySelector('#story-card').hidden",
+      "timeout": 20000
+    },
+    {
+      "shot": "to-be-continued",
+      "delay": 800,
+      "caption": "End of block 1"
+    }
   ]
 }

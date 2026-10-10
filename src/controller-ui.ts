@@ -46,7 +46,7 @@ export function createControllerUI(callbacks: {
       <p class="controller-note">Conecta el mando al ordenador y pulsa un botón. Si no aparece, comprueba la conexión y la compatibilidad de tu navegador. Usa Esc para cancelar una asignación.</p>
     </section>
     <section data-page="help" hidden>
-      <p class="menu-intro">Sigue el objetivo de arriba a la derecha. Habla con todo el mundo. Sigue tu aventura.</p>
+      <p class="menu-intro">Explora. Habla con todo el mundo. Prueba.</p>
       <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Con las zapatillas: mantén Shift · Mantén B (Volver) en el mando</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / objetos / mapa</dt><dd>Desde el menú · C / I / M en el teclado · Personaje con el botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox)</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–4 o flechas · Enter para confirmar · Esc para volver</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
       <p class="controller-note">En mandos Nintendo reconocidos: A confirma y B vuelve. Mantén B mientras te mueves para correr. Puedes cambiar los controles en Mando.</p>
     </section>

@@ -44,8 +44,8 @@ The underlying npm scripts remain available when `just` is not installed:
 The game opens with the first block of chapter 1: Gerard's birthday morning in Sant Quirze.
 He wakes up, gets running shoes from Mum (which unlock running with Shift), finds a potion in
 Jan's room and his backpack in the hall, rings Bernat, and walks down the street with him until
-Bernat stalls and the déjà-vu begins. The block doubles as the tutorial: moving, talking, running,
-items (I), and the party's equipment (C). The design and the full 30-minute outline are in
+Bernat stalls and the déjà-vu begins. There is no objective panel: where to go comes from exploring and from what people say,
+and each control appears once as a key hint (walking, running, items with I, equipment with C). The design and the full 30-minute outline are in
 [docs/chapter-1.md](docs/chapter-1.md).
 
 Story progress is a list of flags saved with the score, so a reload resumes after the last
@@ -88,8 +88,8 @@ like the hand-built Gerard. They are installed in `public/portraits/` and
 index.html          Welcome screen, canvas and HUD
 src/main.ts         Bootstraps the game, wires the HUD and plays story beats
 src/story.ts        Story flags and the rules that turn game events into beats (pure)
-src/chapter-1.ts    Chapter 1 lines, places, tutorials and objectives
-src/story-ui.ts     Objective line, chapter cards, item and tutorial notes
+src/chapter-1.ts    Chapter 1 lines, places, key hints and Bernat's bubbles
+src/story-ui.ts     Chapter cards, item notes, key hints, speech bubble
 src/items.ts        Item catalogue: common items and key items
 src/follower.ts     A companion who walks Gerard's path behind him
 src/game.ts         Isometric courtyard, Gerard model, lights, shadows and input

@@ -82,6 +82,7 @@ try {
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
   let beats = Promise.resolve();
   const learned: Partial<Record<string, () => boolean>> = {
+    move: () => sessionSteps > 0,
     run: () => game.running,
     items: () => exploration.active === 'items',
     party: () => exploration.active === 'character',
@@ -89,27 +90,24 @@ try {
   async function play(effect: StoryEffect) {
     if (effect.kind === 'dialogue') await new Promise<void>(resolve => dialogue.show(effect.dialogue, resolve));
     else if (effect.kind === 'item') storyUI.item(effect.item);
-    else if (effect.kind === 'tutorial') storyUI.tutorial(effect.id, learned[effect.id]);
+    else if (effect.kind === 'hint') storyUI.hint(effect.id, learned[effect.id]);
     else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
   }
-  const showObjective = () => storyUI.setObjective(story.objective.text, story.objective.glitch);
-  function storyChanged(objective = true) {
+  function storyChanged() {
     game.refreshStory();
     exploration.refresh();
-    if (objective) showObjective();
     const saved = JSON.stringify(story.saved);
     if (saved !== savedStory) { savedStory = saved; dirty = true; clearTimeout(saveTimer); void save(); }
   }
   function storyEvent(event: StoryEvent) {
     const effects = story.handle(event);
-    // A new objective waits until the conversation that gives it is over.
-    const talks = effects.some(effect => effect.kind === 'dialogue');
-    storyChanged(!talks);
-    beats = beats.then(async () => { for (const effect of effects) await play(effect); if (talks) showObjective(); });
+    storyChanged();
+    beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
   const game = createGame(canvas, {
     onEncounter: (allies, foes) => { exploration.close(); dialogue.close(); battleUI.open(allies, foes); },
     onBattleTargets: targets => battleUI.positionTargets(targets),
+    onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble, at),
     onStep: (steps, cell) => {
       sessionSteps = steps;
       exploration.update(currentLocation, cell, steps);

@@ -105,7 +105,7 @@ try {
   // A short game summary makes timeouts easier to read.
   failed.state = await page.evaluate(() => window.gerard && JSON.stringify({
     location: document.title, position: window.gerard.game.position, flags: window.gerard.story.saved,
-    companion: window.gerard.story.companion, objective: window.gerard.story.objective.text,
+    companion: window.gerard.story.companion, bubble: window.gerard.story.bubble,
   })).catch(() => undefined);
   await page.screenshot({ path: resolve(out, 'failure.png') }).catch(() => {});
   shots.push({ file: 'failure.png', caption: `Failed: ${error.message.split('\n')[0]}` });
