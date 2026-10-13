@@ -1059,29 +1059,36 @@ export function buildHome(kit: HomeKit, environment: Environment) {
         box('Ropa doblada', mat('Ropa doblada', colours[(i * 4 + Math.round(y * 10)) % colours.length], 0.05), cx, (wz0 + wz1) / 2 + 0.03, y + 0.06, w - 0.3, 0.18, 0.36);
       }
     });
-    const bedWhite = mat('Canapé blanco', '#f2f1ee', 0.3);
-    box('Canapé', bedWhite, 9.5, 11.27, 0, 1.9, 0.42, 2.84);
-    for (const pz of [10.4, 11.3, 12.2]) box('Cajón del canapé', mat('Junta', '#d9d7d0', 0.3), 10.455, pz, 0.1, 0.01, 0.24, 0.8);
-    box('Colchón', ceramic, 9.5, 11.27, 0.42, 1.82, 0.18, 2.76);
-    box('Sábana', mat('Sábana beige', '#d9c7a7', 0.05), 9.5, 11.27, 0.6, 1.84, 0.02, 2.78);
+    // A double bed centred on the west wall, a nightstand with a lamp each side, a rug under it.
+    const bedWhite = mat('Canapé blanco', '#f2f1ee', 0.3), seam = mat('Junta', '#d9d7d0', 0.3);
+    const bl = 2.5, bw = 2.0, bx0 = 8 + FACE + 0.1, bcx = bx0 + bl / 2, bcz = 11.5;
+    box('Alfombra', mat('Alfombra de lana', '#c9b9a0', 0.05), bcx + 0.35, bcz, 0, 3.3, 0.015, 3.4);
+    box('Canapé', bedWhite, bcx, bcz, 0, bl, 0.42, bw);
+    for (const dx of [-0.75, 0, 0.75]) for (const side of [-1, 1]) box('Cajón del canapé', seam, bcx + dx, bcz + side * (bw / 2 + 0.005), 0.1, 0.65, 0.24, 0.01);
+    box('Colchón', ceramic, bcx, bcz, 0.42, bl - 0.06, 0.18, bw - 0.08);
+    box('Sábana', mat('Sábana beige', '#d9c7a7', 0.05), bcx, bcz, 0.6, bl - 0.04, 0.02, bw - 0.06);
     const duvet = mat('Nórdico de rayas', '#eadcc6', 0.05);
-    box('Nórdico', duvet, 9.55, 10.75, 0.6, 1.9, 0.14, 1.7).setEulerAngles(0, 4, 0);
-    box('Nórdico arrugado', duvet, 9.3, 11.6, 0.66, 0.9, 0.16, 0.8).setEulerAngles(0, -18, 4);
-    for (const px of [9.05, 9.95]) box('Almohada', mat('Almohada', '#f1ebe0', 0.05), px, 12.35, 0.62, 0.7, 0.13, 0.4);
-    for (const [i, c] of ['#8a5a8c', '#2c3a5c', '#6f9a8a'].entries()) box('Ropa sobre la cama', mat('Ropa', c, 0.05), 9.6 + i * 0.18, 10.8 - i * 0.12, 0.74 + i * 0.02, 0.4, 0.06, 0.34).setEulerAngles(0, i * 35, 0);
-    box('Cabecero', bedWhite, 9.5, 12.8, 0.3, 2.6, 0.9, 0.08);
-    for (const y of [0.62, 0.9]) box('Ranura del cabecero', mat('Junta', '#d9d7d0', 0.3), 9.5, 12.755, y, 2.5, 0.015, 0.01);
-    for (const px of [8.35, 10.65]) {
-      box('Estante del cabecero', mat('Estante gris', '#8d8f90', 0.3), px, 12.62, 0.5, 0.36, 0.03, 0.34);
-      rod('Flexo', black, [px, 0.95, 12.74], [px + (px < 9.5 ? 0.15 : -0.15), 1.1, 12.55], 0.02);
+    box('Nórdico', duvet, bcx + 0.4, bcz, 0.6, 1.7, 0.14, bw + 0.04).setEulerAngles(0, 2, 0);
+    box('Nórdico arrugado', duvet, bcx + 0.2, bcz + 0.5, 0.66, 0.8, 0.16, 0.9).setEulerAngles(0, -14, 4);
+    for (const dz of [-0.5, 0.5]) box('Almohada', mat('Almohada', '#f1ebe0', 0.05), bx0 + 0.3, bcz + dz, 0.62, 0.4, 0.13, 0.78);
+    for (const [i, c] of ['#8a5a8c', '#2c3a5c', '#6f9a8a'].entries()) box('Ropa sobre la cama', mat('Ropa', c, 0.05), bcx + 0.8 + i * 0.12, bcz - 0.6 + i * 0.18, 0.74 + i * 0.02, 0.34, 0.06, 0.4).setEulerAngles(0, i * 35, 0);
+    box('Cabecero', bedWhite, 8 + FACE + 0.04, bcz, 0.3, 0.08, 0.95, bw + 0.9);
+    for (const y of [0.62, 0.9]) box('Ranura del cabecero', seam, 8 + FACE + 0.085, bcz, y, 0.01, 0.015, bw + 0.8);
+    const nightOak = mat('Mesilla de roble', '#c9a36e', 0.3), shade = mat('Pantalla de lino', '#f3ead8', 0.1, 0.25);
+    for (const side of [-1, 1]) {
+      const nz = bcz + side * (bw / 2 + 0.36), nx = 8 + FACE + 0.3;
+      box('Mesilla', nightOak, nx, nz, 0, 0.5, 0.5, 0.5);
+      box('Cajón de la mesilla', seam, nx + 0.255, nz, 0.22, 0.01, 0.14, 0.38);
+      cyl('Pie de la lámpara', black, nx - 0.05, nz - side * 0.08, 0.5, 0.05, 0.3, 0.05);
+      cyl('Pantalla de la lámpara', shade, nx - 0.05, nz - side * 0.08, 0.76, 0.28, 0.22, 0.28);
     }
-    cyl('Botella de agua', glass, 10.65, 12.6, 0.53, 0.08, 0.24, 0.08);
-    box('Móvil', black, 10.7, 12.55, 0.53, 0.08, 0.01, 0.15);
-    box('Cesto de la ropa', black, 12.5, 12.5, 0, 0.36, 0.55, 0.36);
+    cyl('Botella de agua', glass, 8 + FACE + 0.42, bcz - bw / 2 - 0.26, 0.5, 0.08, 0.24, 0.08);
+    box('Móvil', black, 8 + FACE + 0.22, bcz - bw / 2 - 0.3, 0.5, 0.08, 0.01, 0.15);
+    box('Cesto de la ropa', black, 12.5, 15.3, 0, 0.36, 0.55, 0.36);
     const ac = onWall('east', 8 + FACE, 9);
     box('Split', white, 8 + FACE + 0.12, 9, 2.12, 0.24, 0.3, 1.0, ac);
     box('Rejilla del split', mat('Rejilla', '#c9cccf', 0.3), 8 + FACE + 0.245, 9, 2.14, 0.01, 0.06, 0.9, ac);
-    light(10.6, 2.3, 10, '#ffe4bd', 0.9, 4.5);
+    light(10.6, 2.3, 11.5, '#ffe4bd', 0.9, 5.5);
 
     // ——— Bathroom: tub with a pale blue curtain, beige square tiles, oak vanity, towel rail ———
     const beige = tiles('Azulejo beige', 1.6, 0.2, 0.2, '#ddd6ca', '#f0ece5', false);

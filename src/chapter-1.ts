@@ -42,14 +42,15 @@ export const PLACES = {
   palaceEntry: { environment: 'palacio', cell: { x: 16, z: 18 } },
   chicle: { environment: 'palacio', cell: { x: 5, z: 9 } },
   /**
-   * Chapter 2 opens in the Meridiana flat: Gerard wakes in bed with a start (`bed` is where he
-   * lies, in floor cells), steps out to `wake`, and Aitor is beside the bed. The Bubbaloo wrapper
-   * he finds is on the headboard shelf (`spot`), picked up from the cell next to it.
+   * Chapter 2 opens in the Meridiana flat: Gerard wakes with a start on his side of the double bed
+   * (`bed` is where his feet rest as he lies with his head on the pillows, west), gets up on the
+   * south side (`wakeUp`), and Aitor stands on the other side of the bed. The Bubbaloo wrapper
+   * lies on his nightstand (`spot`), picked up from the cell beside it.
    */
-  bed: { x: 9.5, z: 11.4 },
-  wakeUp: { environment: 'meridiana', cell: { x: 11, z: 11 } },
+  bed: { x: 10.1, z: 12 },
+  wakeUp: { environment: 'meridiana', cell: { x: 11, z: 14 } },
   aitor: { environment: 'meridiana', cell: { x: 11, z: 9 } },
-  envoltorio: { environment: 'meridiana', cell: { x: 11, z: 12 }, spot: { x: 10.7, z: 12.5, y: .58 } },
+  envoltorio: { environment: 'meridiana', cell: { x: 10, z: 13 }, spot: { x: 8.55, z: 12.98, y: .53 } },
   /** The drain in the wrapper room the second minion rises from. */
   drain: { x: 5, z: 16 },
   /** Past this row, on the way back south, Bernat reminds Gerard where the palace is. */
