@@ -18,6 +18,12 @@ story is about. Update it whenever a decision changes the story.
 - **Who she really is: Nuria Mendoza.** This is a secret the player does not learn in chapter 1.
   In-game, nobody says her real name until a later chapter decides how to reveal it.
   - Open question: who Nuria Mendoza is in Gerard's life, and when and how the reveal happens.
+- **Her look (invented, as Bernat imagined her; nothing to do with Nuria Mendoza's real looks):**
+  tall and theatrical; hair piled up in a huge pink beehive shaped like a half-blown gum bubble;
+  a crown of five gum balls in different flavours (strawberry, mint, grape, lemon, liquorice);
+  a gown made of wrapper paper with twisted ends as puffed sleeves; long sticky gloves; a sceptre
+  that is a gum ball with a glowing liquid centre on a stick; a heart-shaped beauty mark and a smug,
+  half-closed look. She is nearly always blowing a bubble or about to.
 - Her colour is **bubble-gum pink**; her mood is sweet on the surface and sticky underneath.
 - Her power reaches the real world through **her minions** and through **colour**: when someone
   beats her minions, she tints the place in her pink, darker and stranger, to show she is watching.
@@ -31,20 +37,23 @@ story is about. Update it whenever a decision changes the story.
   rising through a manhole lid now and then. When they act, a head pokes out for a moment and
   sinks back. Keep them barely on screen; the player should hardly notice them.
 - **What they touch obeys the Queen.** Animals they possess get **dark pink eyes** and attack.
-- They never talk and never stay to fight: they send what they possess instead.
+- They never talk. Out in the world they never stay to fight: they send what they possess
+  instead. Only inside the Queen's palace does one rise from a drain and fight in person.
 - Built procedurally in `src/minion.ts`.
 
 ### Her palace
 
 - **El Palacio de la Reina Bubbaloo** rises at the north end of Passatge Maresme, growing out of
   the neighbours' houses: gum ramparts, wrapper-twist towers, bubble domes and a crown tower with
-  a balcony over the street. It is chapter 1's mini dungeon and the game's final dungeon.
-  Design: `docs/bubbaloo-palace.md`.
+  a balcony over the street. It is chapter 1's mini dungeon and the game's final dungeon. It
+  leaves Sant Quirze when the boys return to reality, and in **phase two it reappears in
+  Barcelona, on top of Gerard's school**. Design: `docs/bubbaloo-palace.md`.
 
 ## Gerard's classes
 
-- Gerard's power is changing class. **Noísta** is the first: born when he shouts "¡No!" to save
-  Bernat. Its skill **No-ta** breaks what the Queen's gum holds. Her minions make things obey;
+- Gerard's power is changing class. **Noísta** is the first. It comes from who he is: he always
+  contradicts, always says the opposite. It is unlocked when he shouts "¡No!" to save Bernat.
+  How the class system grows from here is still open. Its skill **No-ta** breaks what the Queen's gum holds. Her minions make things obey;
   Gerard refuses, which is why he is the one who can face her.
 
 ## People

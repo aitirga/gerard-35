@@ -1,10 +1,12 @@
 # El Palacio de la Reina Bubbaloo · plan
 
 The first mini dungeon of the game, and the place the game comes back to for its final dungeon.
-It rises at the **north end of Passatge Maresme**, the opposite end of the street from the first
-fight. In chapter 1 the party only sees its front, its hall and one wing. The rest is designed now
-so that later chapters open new doors in the same building instead of moving the palace somewhere
-else. Story context lives in `docs/lore.md`; this file says how the palace looks and plays.
+In chapter 1 it rises at the **north end of Passatge Maresme**, the opposite end of the street from
+the first fight, and it is gone again when the boys return to reality at the end of the chapter.
+In **phase two it reappears in Barcelona, on top of Gerard's school**. It is the same building in
+both places: in chapter 1 the party only sees its front, its hall and one wing, and the rest is
+designed now so that later visits open new doors in it. Story context lives in `docs/lore.md`;
+this file says how the palace looks and plays.
 
 Status: **plan**, nothing built yet.
 
@@ -29,7 +31,7 @@ he gains **No-ta**, the one skill that hurts the minion. It kills it.
 | 3 | Walk up the street. The usual street, now pink; the dogs gone; the palace grows on screen as they approach. Bernat's bubble if Gerard dawdles south: *"Es por el otro lado."* | Walking with purpose | 1:00 |
 | 4 | **The forecourt and the gate**: the pink runner, the twist towers, the bubble over the gate. *"Atravesar la pompa"* pops it. | — | 0:45 |
 | 5 | **Vestíbulo de las Burbujas**: look around, the fountain, the sealed stair and the sealed east door each explain themselves | Exploring, looking (E) | 2:00 |
-| 6 | **Galería de los Retratos**: portraits of the Queen with her face hidden behind a bubble; an optional *Chicle de fresa* | Looking; a common item | 1:30 |
+| 6 | **Galería de los Retratos**: portraits of the Queen as Bernat imagined her; an optional *Chicle de fresa* | Looking; a common item | 1:30 |
 | 7 | **Sala de los Envoltorios**: the drain gurgles, the minion rises, the fight starts | — | 0:20 |
 | 8 | **The unwinnable fight**: every hit is swallowed by the gum; the minion goes after Bernat | Trying everything | 2:00 |
 | 9 | *"¡Gerard, me va a matar!"* *"¡No!"* → Noísta: new look, new interface style, **No-ta** | A new class and a skill, by using them | 0:45 |
@@ -172,12 +174,19 @@ north–south axis, a strong centre.
 
 - A long west-wing corridor (about 13 × 3 cells) with a runner down the middle and liquid-centre
   sconces between frames.
-- **Five portraits of La Reina Bubbaloo**, each with her face hidden behind a pink bubble, in
-  different poses (on a throne, with a crown, blowing a bubble, waving from the balcony, the last
-  one half-torn). Looking at them gives Gerard and Bernat lines; Bernat recognises them from his
-  sleep and is uneasy. **Seed for the reveal** (see `docs/lore.md`): the torn portrait shows only
-  something tiny that could later point to Nuria Mendoza. What it shows is still to be decided,
-  and nobody names her.
+- **Five portraits of La Reina Bubbaloo** as Bernat invented her (her look is in `docs/lore.md`;
+  it is invented and has nothing of Nuria Mendoza, and no portrait hints at her):
+  1. **La coronación**: she lowers the crown of gum balls onto her own head. Gerard: *"Se corona
+     ella sola."*
+  2. **En el trono**: sitting on a giant gum ball, legs crossed, sceptre resting on her shoulder.
+  3. **La gran pompa**: blowing a bubble bigger than herself; the frame is dented where it pressed.
+     Bernat: *"Esa la dibujé yo. Igualita."*
+  4. **Desde el balcón**: waving from the palace balcony over a city at night that is not Sant
+     Quirze: a tall tower lit up in colours, a long straight avenue. A quiet nod to Barcelona,
+     where the palace appears in phase two. Nobody comments on it.
+  5. **El dibujo**: a child's drawing in felt-tip pens, in a gold frame, signed *Bernat*. Bernat
+     goes quiet: *"…Esto estaba en mi libreta."*
+- Looking at each gives a short line from Gerard or Bernat.
 - A sweet bowl on a side table: **Chicle de fresa** (common item, heals 20), optional.
 - At the north end, an arch into the wrapper room.
 
@@ -249,11 +258,11 @@ The battle interface stays up; the scene plays over it:
 
 ### How classes fit the game
 
-Gerard's power (`docs/chapter-1.md`) is changing class. **Noísta is the first class**, born from a
-refusal. Later classes come from other attitudes, each unlocked in a moment like this one. With
-more than one class, switching costs no turn (the old mood-swap idea). The three moods planned in
-`docs/chapter-1.md` (Alegre, Enfadado, Tranquilo) become candidates for those later classes; see
-the open questions.
+**Noísta is the first class.** It comes from Gerard himself: he always contradicts, always says the
+opposite. Here that habit becomes a power at the moment it matters most. How classes work beyond
+this one (how many, where they come from, how switching works, and how it relates to the moods
+in `docs/chapter-1.md`) is **left open on purpose**, to be thought through later. Build Noísta so
+that it does not decide that: one class, its look, its theme and its skill.
 
 ## Build plan
 
@@ -261,10 +270,11 @@ Four steps, each playable and tested on its own, each with a screenshot scenario
 
 1. **The palace exterior and the transformation**
    - `src/palace.ts`: builds and animates the exterior (rampart, gate and bubble, twist towers,
-     bubble domes, crown tower with balcony, the gum coating on the north houses, the forecourt
-     runner and lanterns). A `grow(progress)` drives the transformation and `set(state)` places it
-     for reloads. Kept independent of the street builder so later chapters can reuse it (the final
-     dungeon's approach).
+     bubble domes, crown tower with balcony). A `grow(progress)` drives the transformation and
+     `set(state)` places it for reloads. It takes a base (position, footprint, height) so the same
+     palace can stand at the end of the street now and **on top of Gerard's school in Barcelona**
+     in phase two. The street-only parts (the gum coating on the north houses, the forecourt runner
+     and lanterns) live beside it, not inside it.
    - `src/game.ts`: shows it on `maresme` when `story.has('palace')`, runs the cut-scene with the
      overview camera, adds the gate interaction (*Atravesar la pompa* → `palacio`), and extends
      the overview framing to include the palace.
@@ -295,13 +305,18 @@ Four steps, each playable and tested on its own, each with a screenshot scenario
      from the first swallowed hit to the stamp.
    - Docs: `docs/lore.md` (palace, Noísta, why it counters the Queen), `docs/chapter-1.md`.
 
+## Decisions
+
+- **Noísta** comes from Gerard always contradicting. The wider class system stays open (see
+  *How classes fit the game*).
+- **The palace leaves Sant Quirze** when the boys return to reality at the end of chapter 1. In
+  phase two it reappears in **Barcelona, on top of Gerard's school**. So `src/palace.ts` must sit on
+  any base, a street end or a school roof, and its growth animation must work in both places.
+- **No portrait hints at Nuria Mendoza** for now; the Queen's portraits show an invented look.
+
 ## Open questions
 
-1. **Moods vs classes.** Should Noísta replace the three moods planned earlier (Alegre, Enfadado,
-   Tranquilo) as the shape of Gerard's power ("classes born from attitudes"), or are moods a
-   separate system?
-2. **Sueño or libreta.** Until now Bernat *designed* the game in his notebook; here he *dreamed* it.
-   Proposal: he dreamed it and drew it in the notebook the next morning (both lines stay true).
-3. **After the block.** Does the palace stay up over Sant Quirze until the end of chapter 1
-   (proposal: yes, until the "back to reality" beat in block 3), and does block 3 start inside it?
-4. **The torn portrait.** What small detail of Nuria Mendoza should it show, if any?
+1. **Sueño or libreta.** Until now Bernat *designed* the game in his notebook; here he *dreamed* it.
+   Undecided. The lines can carry both for now: the palace is "como en mi sueño", and the fifth
+   portrait is a drawing "de mi libreta".
+2. Does block 3 (the conjuro, back to reality) start inside the palace or back on the street?
