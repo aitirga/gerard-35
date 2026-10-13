@@ -3,6 +3,18 @@ import type { Environment } from './environments';
 import { createPropKit } from './props';
 import { buildHome } from './home-scenery';
 
+/** La Reina Bubbaloo's light, once she has noticed Gerard and Bernat. */
+export const BUBBALOO = {
+  ambient: new pc.Color(0.2, 0.13, 0.22),
+  sun: new pc.Color(0.86, 0.42, 0.66),
+  sunIntensity: 0.85,
+  backdrop: new pc.Color(0.12, 0.06, 0.12),
+  fog: new pc.Color(0.24, 0.09, 0.22),
+  fogStart: 58,
+  fogEnd: 118,
+  clear: new pc.Color(0.09, 0.05, 0.09),
+} as const;
+
 /** Visual-only builder. Gameplay uses Environment.grid and interactions. */
 export function buildScenery(app: pc.Application, environment: Environment) {
   const root = new pc.Entity(`Entorno: ${environment.id}`);
@@ -112,16 +124,22 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const glow = mat('Farolas', '#ffdb9c', 0.2, 2);
   const w = environment.grid[0].length, d = environment.grid.length;
   const night = environment.id === 'patio';
-  app.scene.ambientLight = night ? new pc.Color(0.19, 0.24, 0.3) : new pc.Color(0.48, 0.48, 0.43);
+  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : new pc.Color(0.48, 0.48, 0.43);
+  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : new pc.Color(1, 0.87, 0.68);
+  const sunIntensity = night ? 1.15 : 1.65;
+  app.scene.ambientLight = ambient.clone();
+  app.scene.fog.type = pc.FOG_NONE;
   const sun = new pc.Entity('Sol de la tarde');
   sun.addComponent('light', {
-    type: 'directional', color: night ? new pc.Color(0.66, 0.81, 1) : new pc.Color(1, 0.87, 0.68),
-    intensity: night ? 1.15 : 1.65, castShadows: true, shadowResolution: 2048,
+    type: 'directional', color: sunColor.clone(),
+    intensity: sunIntensity, castShadows: true, shadowResolution: 2048,
     shadowDistance: 95, shadowBias: 0.2, normalOffsetBias: 0.04, shadowType: pc.SHADOW_PCF3_32F,
   });
   sun.setEulerAngles(48, -35, 0); root.addChild(sun);
   // Floor plans lay their own backdrop, open under a stairwell.
-  if (!environment.plan) box('Fondo', mat('Fondo', night ? '#172a30' : '#67746b'), cx, -1.05, cz, 200, 0.2, 200);
+  const backdrop = mat('Fondo', night ? '#172a30' : '#67746b');
+  const backdropColor = backdrop.diffuse.clone();
+  if (!environment.plan) box('Fondo', backdrop, cx, -1.05, cz, 200, 0.2, 200);
   // Floor plans build their own plinth, with room for a stairwell going down.
   if (!environment.plan) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
 
@@ -356,6 +374,21 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       return Number.isFinite(height) ? height : .025;
     },
     toWorld(px: number, pz: number) { return new pc.Vec3(x(px), 0, z(pz)); },
+    /**
+     * Blends the light from this scene's own (0) to La Reina Bubbaloo's (1): a low magenta sun,
+     * a dim violet ambient and a pink haze that thickens with distance (docs/lore.md).
+     */
+    setTone(k: number) {
+      app.scene.ambientLight.lerp(ambient, BUBBALOO.ambient, k);
+      sun.light!.color = new pc.Color().lerp(sunColor, BUBBALOO.sun, k);
+      sun.light!.intensity = pc.math.lerp(sunIntensity, BUBBALOO.sunIntensity, k);
+      backdrop.diffuse.lerp(backdropColor, BUBBALOO.backdrop, k); backdrop.update();
+      const fog = app.scene.fog;
+      fog.type = k > 0.001 ? pc.FOG_LINEAR : pc.FOG_NONE;
+      fog.color.copy(BUBBALOO.fog);
+      fog.start = pc.math.lerp(400, BUBBALOO.fogStart, k);
+      fog.end = pc.math.lerp(520, BUBBALOO.fogEnd, k);
+    },
     /** `focus` is what must stay visible (the player); crowns in front of it turn see-through. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       props.update(dt, animate, focus, toCamera);

@@ -2,7 +2,7 @@
   "title": "Every scene",
   "description": "A quick tour of each environment, for checking art and layout changes.",
   "steps": [
-    { "open": "/?story=dejavu" },
+    { "open": "/?story=bernat-joined" },
     { "teleport": "home-floor-2", "cell": [3, 4] },
     { "shot": "home-floor-2", "delay": 1500, "caption": "Casa de Gerard · Planta 2" },
     { "teleport": "home-floor-1", "cell": [5, 6] },

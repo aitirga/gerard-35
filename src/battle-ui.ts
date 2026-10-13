@@ -72,7 +72,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!state) return;
     const ended = !busy && ['won', 'lost', 'escaped'].includes(state.phase);
     root.dataset.phase = state.phase;
-    get('.battle-heading .battle-kicker').textContent = `ENCUENTRO / ${state.foes.filter(f => f.hp > 0).length} DE ${state.foes.length} PERROS`;
+    get('.battle-heading .battle-kicker').textContent = `ENCUENTRO / ${state.foes.filter(f => f.hp > 0).length} DE ${state.foes.length} PERROS${state.possessed ? ' POSEÍDOS' : ''}`;
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
     get('.turn-label').textContent = state.allies[state.active].name;
     get('.turn-meta').textContent = busy || state.phase === 'enemy' ? 'EN ACCIÓN' : 'TU TURNO';
@@ -104,7 +104,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       plate.classList.toggle('is-down', foe.hp === 0);
       plate.classList.toggle('is-acting', root.dataset.actor === foe.id);
     }
-    articles.forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = busy || state!.phase !== 'player'; });
+    // Possessed dogs surround the party: Escapar stays greyed out.
+    articles.forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = busy || state!.phase !== 'player' || (state!.possessed && article.dataset.command === 'escape'); });
     const eligible = targeting && !busy && state.phase === 'player' ? validTargets(state, selected!, selectedSkill).map(c => c.id) : [];
     root.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
       button.disabled = !eligible.includes(button.dataset.target!);
@@ -146,7 +147,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     });
   }
   function expand(action: BattleAction) {
-    if (!state || busy || state.phase !== 'player') return;
+    if (!state || busy || state.phase !== 'player' || (state.possessed && action === 'escape')) return;
     if (selected === action) { collapse(true); return; }
     collapse(); selected = action;
     const article = get(`[data-command="${action}"]`);
@@ -296,11 +297,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         button.style.transform = `translate(${target.x}px, ${target.y}px) translate(-50%, -100%)`;
       }
     },
-    open(allyCount: 1 | 2, foeCount = 1) {
+    open(allyCount: 1 | 2, foeCount = 1, possessed = false) {
       if (state) return;
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
-      state = createBattle(allyCount, foeCount); busy = true;
+      state = createBattle(allyCount, foeCount, possessed); busy = true;
+      root.toggleAttribute('data-possessed', possessed);
+      get('.battle-heading h1').innerHTML = possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>';
       get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${i < foeCount ? `data-unit="${f.id}"` : ''} data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${DOG_PROFILES[i]?.collar ?? '#b9dba1'}" aria-label="Elegir a ${f.name}" hidden disabled><span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>${i < foeCount ? '' : '<span class="enemy-health secondary" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>'}</button>`).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;
       get('.party-roster').replaceChildren(); get('.battle-pops').replaceChildren(); positions.clear();

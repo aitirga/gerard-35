@@ -91,6 +91,8 @@ try {
     if (effect.kind === 'dialogue') await new Promise<void>(resolve => dialogue.show(effect.dialogue, resolve));
     else if (effect.kind === 'item') storyUI.item(effect.item);
     else if (effect.kind === 'hint') storyUI.hint(effect.id, learned[effect.id]);
+    else if (effect.kind === 'minion') { await game.summonMinion(); storyEvent({ type: 'minion' }); }
+    else if (effect.kind === 'battle') game.encounter(true);
     else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
   }
   function storyChanged() {
@@ -105,7 +107,8 @@ try {
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
   const game = createGame(canvas, {
-    onEncounter: (allies, foes) => { exploration.close(); dialogue.close(); battleUI.open(allies, foes); },
+    onEncounter: (allies, foes, possessed) => { exploration.close(); dialogue.close(); battleUI.open(allies, foes, possessed); },
+    onBattleEnd: phase => storyEvent({ type: 'battle', won: phase === 'won' }),
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble, at),
     onStep: (steps, cell) => {

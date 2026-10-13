@@ -56,14 +56,16 @@ test('victory removes the pack; respawn waits until spawn area is clear', () => 
   assert.equal(pack.ready, true);
 });
 
-test('the chapter 1 pack spawns and wanders around the scarecrow, below Bernat’s leash', async () => {
-  const { SCARECROW_AREA } = await import('../src/encounters.ts');
+test('the chapter 1 pack spawns and wanders at the end of the street, below Bernat’s leash and clear of the minion', async () => {
+  const { STREET_END_AREA } = await import('../src/encounters.ts');
   const { PLACES, LEASH } = await import('../src/chapter-1.ts');
-  for (const cell of SCARECROW_AREA.spawns) assert.ok(canWalk(cell, NEIGHBORHOOD.grid), key(cell));
-  assert.ok(SCARECROW_AREA.min.z > PLACES.southRow - 1.2 + LEASH, 'Gerard cannot walk into the pack while Bernat stalls');
-  const pack = new WanderingPack(NEIGHBORHOOD.grid, seeded(35), SCARECROW_AREA);
+  for (const cell of STREET_END_AREA.spawns) assert.ok(canWalk(cell, NEIGHBORHOOD.grid), key(cell));
+  const minion = { x: Math.round(PLACES.minion.out.x), z: Math.round(PLACES.minion.out.z) };
+  assert.ok(minion.x > STREET_END_AREA.max.x || minion.z < STREET_END_AREA.min.z, 'the dogs never wander into the minion');
+  assert.ok(STREET_END_AREA.min.z > PLACES.southRow - 1.2 + LEASH, 'Gerard cannot walk into the pack while Bernat stalls');
+  const pack = new WanderingPack(NEIGHBORHOOD.grid, seeded(35), STREET_END_AREA);
   for (let frame = 0; frame < 900; frame++) pack.update(1 / 30, [{ x: 15, z: 30 }]);
   for (const dog of pack.dogs) {
-    assert.ok(dog.cell.x >= SCARECROW_AREA.min.x && dog.cell.x <= SCARECROW_AREA.max.x && dog.cell.z >= SCARECROW_AREA.min.z && dog.cell.z <= SCARECROW_AREA.max.z);
+    assert.ok(dog.cell.x >= STREET_END_AREA.min.x && dog.cell.x <= STREET_END_AREA.max.x && dog.cell.z >= STREET_END_AREA.min.z && dog.cell.z <= STREET_END_AREA.max.z);
   }
 });

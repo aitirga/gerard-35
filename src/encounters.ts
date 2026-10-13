@@ -12,10 +12,10 @@ export const STREET_AREA: PackArea = {
   spawns: [{ x: 18, z: 24 }, { x: 16, z: 22 }, { x: 15, z: 25 }, { x: 17, z: 26 }],
   min: { x: 14, z: 21 }, max: { x: 18, z: 27 }, stage: { x: 16, z: 24 },
 };
-/** Chapter 1: the dogs at the bottom of the street, around the scarecrow. */
-export const SCARECROW_AREA: PackArea = {
-  spawns: [{ x: 14, z: 35 }, { x: 18, z: 36 }, { x: 15, z: 39 }, { x: 17, z: 34 }],
-  min: { x: 13, z: 34 }, max: { x: 19, z: 39 }, stage: { x: 15, z: 33 },
+/** Chapter 1: the dogs at the bottom of the street, clear of the minion's hiding place behind the car. */
+export const STREET_END_AREA: PackArea = {
+  spawns: [{ x: 14, z: 35 }, { x: 16, z: 37 }, { x: 15, z: 39 }, { x: 17, z: 34 }],
+  min: { x: 13, z: 34 }, max: { x: 17, z: 39 }, stage: { x: 15, z: 33 },
 };
 const distance = (a: Cell, b: Cell) => Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
 export interface WanderingDog {

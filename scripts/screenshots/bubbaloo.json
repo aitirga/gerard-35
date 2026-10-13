@@ -1,0 +1,166 @@
+{
+  "title": "Chapter 1 · La Reina Bubbaloo",
+  "description": "From Bernat stalling to the first fight: the gum minion peeks from behind the car, steps out, pops its bubble, the dogs' eyes turn pink, they attack, and after the win the light turns.",
+  "steps": [
+    {
+      "open": "/?story=bernat-joined"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        16,
+        29
+      ]
+    },
+    {
+      "wait": 6000
+    },
+    {
+      "shot": "minion-peeking",
+      "caption": "Something pink peeks from behind the parked car"
+    },
+    {
+      "hold": [
+        "KeyS"
+      ],
+      "until": "window.gerard.story.companion === 'stalled'",
+      "timeout": 60000
+    },
+    {
+      "eval": "(() => { const b = window.gerard.game.companionPosition; window.gerard.game.setEnvironment('maresme', { x: Math.round(b.x), z: Math.round(b.z) + 1 }); })()"
+    },
+    {
+      "until": "document.querySelector('#interact span').textContent.startsWith('Preguntarle')",
+      "timeout": 20000
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "dejavu",
+      "delay": 1500,
+      "caption": "Bernat: «esa cosa rosa que asoma detrás del coche»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "minion-steps-out",
+      "caption": "The minion oozes out into the street"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "minion-bubble",
+      "caption": "…and blows a gum bubble"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "minion-blub",
+      "delay": 1500,
+      "caption": "¡Blub! The dogs' eyes are dark pink now"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.querySelector('#dialogue .who').textContent === 'Bernat' || document.querySelector('#dialogue .who').textContent === 'Gerard'",
+      "timeout": 10000
+    },
+    {
+      "shot": "bernat-explains",
+      "delay": 1500,
+      "caption": "Bernat: a minion of La Reina Bubbaloo"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!document.querySelector('#battle').hidden",
+      "timeout": 30000
+    },
+    {
+      "shot": "first-fight",
+      "delay": 4000,
+      "caption": "First fight, straight away: possessed dogs, no escape"
+    },
+    {
+      "eval": "(async () => { const sleep = ms => new Promise(r => setTimeout(r, ms)); const b = document.querySelector('#battle'); for (let i = 0; i < 2000 && !b.hidden; i++) { if (!b.querySelector('.battle-result').hidden) return; const attack = b.querySelector('[data-command=\"attack\"] .command-trigger'); const target = b.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)'); if (target) target.click(); else if (!attack.disabled) attack.click(); await sleep(400); } })()"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result').hidden",
+      "timeout": 900000
+    },
+    {
+      "shot": "fight-won",
+      "delay": 1000,
+      "caption": "The pink leaves their eyes"
+    },
+    {
+      "eval": "document.querySelector('#battle .battle-result button').click()"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "light-turns",
+      "caption": "The minion slips down the manhole; the light starts to turn"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "shot": "after-fight",
+      "caption": "«¿Se ha puesto todo… rosa? Y oscuro.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!document.querySelector('#story-card').hidden",
+      "timeout": 20000
+    },
+    {
+      "shot": "to-be-continued",
+      "delay": 800,
+      "caption": "End of block 1"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "street-overview",
+      "delay": 3000,
+      "caption": "Passatge Maresme in La Reina Bubbaloo's light"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        5,
+        6
+      ]
+    },
+    {
+      "shot": "home-pink",
+      "delay": 1500,
+      "caption": "Even home looks different now"
+    }
+  ]
+}

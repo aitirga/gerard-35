@@ -6,9 +6,9 @@ import { PLACES, LEASH } from '../src/chapter-1.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { canWalk } from '../src/movement.ts';
 
-const kinds = effects => effects.map(e => e.kind === 'dialogue' ? 'dialogue' : `${e.kind}:${e.id ?? e.item}`);
+const kinds = effects => effects.map(e => e.id ?? e.item ? `${e.kind}:${e.id ?? e.item}` : e.kind);
 
-test('block 1 plays from waking up to the déjà-vu in order', () => {
+test('block 1 plays from waking up to the first fight in order', () => {
   const story = new Story();
   assert.equal(story.started, false);
   assert.deepEqual(kinds(story.handle({ type: 'start' })), ['card:intro', 'dialogue', 'hint:move']);
@@ -36,10 +36,25 @@ test('block 1 plays from waking up to the déjà-vu in order', () => {
   for (let i = 0; i < 3; i++) { story.handle({ type: 'leash' }); seen.push(story.bubble); }
   assert.deepEqual([...new Set(seen)], ['¿Gerard…?', 'Espera.', 'Esto… ya lo he visto.']);
 
-  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'talk-bernat' })), ['dialogue', 'card:end']);
+  assert.equal(story.minion, 'hiding');
+  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'talk-bernat' })), ['dialogue', 'minion']);
   assert.equal(story.companion, 'follow');
   assert.equal(story.bubble, undefined);
   assert.equal(story.battles, true);
+  assert.equal(story.possessed, false, 'the dogs turn when the bubble pops, not before');
+
+  assert.deepEqual(kinds(story.handle({ type: 'minion' })), ['dialogue', 'dialogue', 'battle']);
+  assert.deepEqual(story.handle({ type: 'minion' }), [], 'the minion steps out once');
+  assert.equal(story.possessed, true);
+  assert.equal(story.minion, 'out');
+  assert.equal(story.tone, 'day');
+
+  assert.deepEqual(story.handle({ type: 'battle', won: false }), [], 'losing lets them try again');
+  assert.equal(story.tone, 'day');
+  assert.deepEqual(kinds(story.handle({ type: 'battle', won: true })), ['dialogue', 'card:end']);
+  assert.deepEqual(story.handle({ type: 'battle', won: true }), [], 'later fights are just fights');
+  assert.equal(story.minion, 'gone');
+  assert.equal(story.tone, 'bubbaloo');
   assert.deepEqual(story.saved, [...STORY_FLAGS]);
 });
 
@@ -79,11 +94,19 @@ test('story places stand on walkable cells of their scenes', () => {
     if (!place || typeof place !== 'object' || !('environment' in place)) continue;
     assert.ok(canWalk(place.cell, ENVIRONMENTS[place.environment].grid), `${name} at ${place.cell.x},${place.cell.z}`);
   }
-  assert.equal(canWalk(PLACES.scarecrow, ENVIRONMENTS.maresme.grid), false, 'the scarecrow blocks its cell');
+  for (const [name, cell] of Object.entries(PLACES.minion)) assert.ok(canWalk({ x: Math.round(cell.x), z: Math.round(cell.z) }, ENVIRONMENTS.maresme.grid), `minion ${name}`);
 });
 
 test('the server accepts exactly the story flags', () => {
   const server = readFileSync(new URL('../server.py', import.meta.url), 'utf8');
   const listed = server.match(/STORY_FLAGS = \(([^)]*)\)/)[1].match(/"([^"]+)"/g).map(s => s.slice(1, -1));
   assert.deepEqual(listed, [...STORY_FLAGS]);
+});
+
+test('a reload between the déjà-vu and the minion plays its entrance again', () => {
+  const story = new Story(['intro', 'got-shoes', 'got-backpack', 'bernat-joined', 'bernat-stalled', 'dejavu']);
+  assert.deepEqual(kinds(story.handle({ type: 'start' })), ['minion']);
+  story.handle({ type: 'minion' });
+  assert.deepEqual(story.handle({ type: 'start' }), []);
+  assert.equal(story.handle({ type: 'interact', id: 'talk-bernat' })[0].dialogue.lines[0].text.includes('rosa'), true);
 });

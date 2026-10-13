@@ -6,6 +6,9 @@ const KINDS = {
   poof: { color: '#efe6cf', glow: .15, size: .3, life: .75, speed: 1.3, rise: .8, gravity: 0 },
   spark: { color: '#ffe2a0', glow: 1.4, size: .07, life: .38, speed: 3.6, rise: 1.6, gravity: 7 },
   heal: { color: '#c9eaa8', glow: 1.1, size: .08, life: 1, speed: .45, rise: 1.5, gravity: -.4 },
+  // La Reina Bubbaloo: sticky gum splats that fall back down, and glowing pink motes that drift.
+  goo: { color: '#ff5fa2', glow: .35, size: .15, life: .85, speed: 2.1, rise: 2.6, gravity: 7 },
+  spore: { color: '#ff7fbf', glow: 1.3, size: .07, life: 1.3, speed: .35, rise: .8, gravity: -.25 },
 } as const;
 export type EffectKind = keyof typeof KINDS;
 

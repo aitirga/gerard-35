@@ -1,11 +1,12 @@
 import * as pc from 'playcanvas';
 import { FreeMovement, SCREEN_VECTORS, facingToward, screenToGrid, type Cell, type Direction, type Stick } from './movement';
 import { ENVIRONMENTS, INTERACTION_REACH, type EnvironmentId, type Interaction } from './environments';
-import { buildScenery } from './scenery';
+import { BUBBALOO, buildScenery } from './scenery';
 import { type Dialogue } from './dialogue';
 import { createBattleScene } from './battle-scene';
-import { type BattleEffect, type BattleState } from './battle';
-import { SCARECROW_AREA, WanderingPack } from './encounters';
+import { type BattleEffect, type BattlePhase, type BattleState } from './battle';
+import { STREET_END_AREA, WanderingPack } from './encounters';
+import { createMinion } from './minion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createEffects } from './effects';
 import { createGroundContact } from './ground-contact';
@@ -23,7 +24,9 @@ function playerCharacter() {
 }
 
 export interface GameCallbacks {
-  onEncounter: (allies: 1 | 2, foes: number) => void;
+  onEncounter: (allies: 1 | 2, foes: number, possessed: boolean) => void;
+  /** A fight closed, however it ended. */
+  onBattleEnd: (phase: BattlePhase) => void;
   onBattleTargets: (targets: { id: string; x: number; y: number; visible: boolean }[]) => void;
   /** Where the companion's head is on screen, for speech bubbles; undefined when he is not shown. */
   onCompanionScreen: (at: { x: number; y: number } | undefined) => void;
@@ -62,9 +65,20 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   const plantFeet = createGroundContact(player, feet);
   const effects = createEffects(app);
   const battleScene = createBattleScene(app, player, (x, z) => scenery.groundHeight(x, z), effects);
-  const pack = new WanderingPack(ENVIRONMENTS.maresme.grid, Math.random, SCARECROW_AREA);
+  const pack = new WanderingPack(ENVIRONMENTS.maresme.grid, Math.random, STREET_END_AREA);
   let battle: BattleState | undefined;
   let paused = false;
+  // La Reina Bubbaloo's minion: peeking from behind the car until its entrance holds the street still.
+  const minion = createMinion(app, effects);
+  let cutscene = false;
+  let possessed = false;
+  const minionCell = { x: Math.round(PLACES.minion.out.x), z: Math.round(PLACES.minion.out.z) };
+  /** 0 is the scene's own light, 1 is La Reina Bubbaloo's; `toneTarget` fades in over a few seconds. */
+  let tone = 0, toneTarget = 0;
+  /** Seconds until a possessed dog gives off its next mote. */
+  let spores = 0, sporeDog = 0;
+  const dayClear = new pc.Color(0.2, 0.26, 0.24), clear = new pc.Color();
+  const stopped = () => paused || cutscene;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const backpack = body.find(node => BACKPACK_PARTS.has(node.name)) as pc.Entity[];
 
@@ -94,7 +108,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     return cells;
   }
   function occupiedCells(): readonly Cell[] {
-    return [...npcs.map(n => n.cell), ...(environment.id === 'maresme' ? [...pack.occupied, ...leashCells()] : [])];
+    return [...npcs.map(n => n.cell), ...(environment.id === 'maresme' ? [...pack.occupied, ...leashCells(), ...(minion.solid ? [minionCell] : [])] : [])];
   }
   function interactions(): Interaction[] {
     return [...environment.interactions, ...story.interactions(environment.id, bernatHere() ? follower.position : undefined)];
@@ -145,6 +159,9 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       return { entity, cell: p.cell, materials: pickupModel(p.id, entity) };
     });
     backpack.forEach(part => { part.enabled = story.has('got-backpack'); });
+    if (!cutscene) { possessed = story.possessed; minion.set(story.minion); }
+    battleScene.possess(possessed);
+    toneTarget = SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo' ? 1 : 0;
     // Bernat first steps out of his own front door; scene changes place him beside Gerard instead.
     if (bernatHere() && !companionShown) follower.reset(PLACES.bernat.cell);
     companionShown = bernatHere();
@@ -157,15 +174,32 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const around = [{ x: 0, z: 1 }, { x: 1, z: 0 }, { x: -1, z: 0 }, { x: 0, z: -1 }].map(d => ({ x: cell.x + d.x, z: cell.z + d.z }));
     return around.find(c => environment.grid[c.z]?.[c.x] === '.' && !npcs.some(n => n.cell.x === c.x && n.cell.z === c.z)) ?? cell;
   }
-  function encounter() {
-    if (paused || battle || !story.battles || !pack.ready || environment.id !== 'maresme' || document.querySelector('#hud[data-dialogue]')) return;
+  /** `forced` is the story's fight: it starts even though the pack has not wandered into Gerard. */
+  function encounter(forced = false) {
+    if (stopped() || battle || !story.battles || !pack.dogs.length || environment.id !== 'maresme' || document.querySelector('#hud[data-dialogue]')) return;
+    if (!forced && !pack.ready) return;
     clearInput();
     movement.teleport(environment.grid, movement.cell);
     pack.armed = false;
-    callbacks.onEncounter(bernatHere() ? 2 : 1, pack.dogs.length);
+    callbacks.onEncounter(bernatHere() ? 2 : 1, pack.dogs.length, possessed);
+  }
+  /** The minion steps out, blows a bubble and pops it: the dogs' eyes turn pink and they face the boys. */
+  async function summonMinion() {
+    if (environment.id !== 'maresme') { possessed = true; battleScene.possess(true); return; }
+    cutscene = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined);
+    await minion.emerge(() => {
+      possessed = true; battleScene.possess(true);
+      for (const dog of pack.dogs) {
+        const p = pack.position(dog), at = scenery.toWorld(p.x, p.z);
+        effects.emit('spore', new pc.Vec3(at.x, .9, at.z), 8, .3);
+        dog.yaw = Math.atan2(movement.position.x - p.x, movement.position.z - p.z) * 180 / Math.PI;
+        dog.wait = 4;
+      }
+    });
+    cutscene = false; lastPrompt = ''; updatePrompt();
   }
   function setBattle(next: BattleState | undefined, effect?: BattleEffect, onImpact?: () => void) {
-    if (!next && battle) pack.finish(battle.phase === 'won');
+    if (!next && battle) { pack.finish(battle.phase === 'won'); callbacks.onBattleEnd(battle.phase); }
     const settled = battleScene.set(next, scenery.toWorld(pack.area.stage.x, pack.area.stage.z), effect, onImpact); battle = next; clearInput();
     if (!next) {
       movement.resolveOverlap(occupiedCells(), !reducedMotion.matches);
@@ -175,7 +209,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     return settled;
   }
   function touchDog(event: PointerEvent) {
-    if (paused || battle || environment.id !== 'maresme') return;
+    if (stopped() || battle || environment.id !== 'maresme') return;
     const rect = canvas.getBoundingClientRect();
     for (const dog of pack.dogs) {
       const position = pack.position(dog);
@@ -230,6 +264,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     movement.teleport(environment.grid, destination ?? environment.spawn);
     stairsArmed = false; arrival = movement.cell;
     refreshStory();
+    // A new scene opens in its final light; only the story's turn fades.
+    tone = toneTarget; scenery.setTone(tone);
     if (bernatHere()) follower.reset(beside(movement.cell));
     overview = false;
     lastPrompt = '';
@@ -239,7 +275,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     positionPlayer(); updatePrompt();
   }
   function interact() {
-    if (paused || battle || movement.bouncing) return;
+    if (stopped() || battle || movement.bouncing) return;
     if (story.battles && environment.id === 'maresme' && pack.touching(movement.position, 1.5)) { encounter(); return; }
     const target = nearby(movement.position);
     if (!target) return;
@@ -252,7 +288,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     else callbacks.onStory({ type: 'interact', id: target.id });
   }
   function keydown(event: KeyboardEvent) {
-    if (paused || battle || document.querySelector('#hud[data-dialogue]')) return;
+    if (stopped() || battle || document.querySelector('#hud[data-dialogue]')) return;
     if (event.target instanceof HTMLElement && event.target.closest('select, input, textarea, button')) return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.code === 'KeyE' || event.code === 'Space' || event.code === 'Enter') {
@@ -280,7 +316,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   callbacks.onLocation(environment.id, movement.cell);
   app.on('update', (dt: number) => {
     const delta = Math.min(dt, 0.05);
-    if (!paused && !battle && !document.querySelector('#hud[data-dialogue]')) {
+    if (!stopped() && !battle && !document.querySelector('#hud[data-dialogue]')) {
       movement.update(dt);
       // Everything steers in screen space: held keys add up, otherwise the stick or D-pad.
       const keys = [...new Set(held.values())].reduce((sum, d) => ({ x: sum.x + SCREEN_VECTORS[d].x, y: sum.y + SCREEN_VECTORS[d].y }), { x: 0, y: 0 });
@@ -363,15 +399,34 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       if (animate) p.entity.setLocalEulerAngles(0, clock * 60 + i * 90, 0);
       placeOnGround(p.entity, p.cell, .75 + (animate ? Math.sin(clock * 2.4 + i) * .06 : 0));
     });
+    spores = Math.max(0, spores - delta);
     battleScene.dogs.forEach((model, i) => {
       const dog = pack.dogs[i];
       model.enabled = environment.id === 'maresme' && !battle && !!dog;
       if (!dog) return;
+      // Possessed dogs give off pink motes, so their state reads from the street camera.
+      if (possessed && animate && spores === 0 && i === sporeDog % pack.dogs.length) {
+        effects.emit('spore', model.getPosition().clone().add(new pc.Vec3(0, .9, 0)), 1, .15);
+        spores = .3; sporeDog++;
+      }
       const p = pack.position(dog);
       model.setPosition(scenery.toWorld(p.x, p.z));
       model.setEulerAngles(0, dog.yaw, 0);
       battleScene.wander(i, delta, dog.progress < 1 && !paused && !battle && !document.querySelector('#hud[data-dialogue]'), !reducedMotion.matches);
     });
+    minion.root.enabled = environment.id === 'maresme';
+    if (environment.id === 'maresme') {
+      const mark = (cell: Cell) => scenery.toWorld(cell.x, cell.z);
+      minion.update(delta, animate, {
+        hide: mark(PLACES.minion.hide), out: mark(PLACES.minion.out), manhole: mark(PLACES.minion.manhole),
+        look: player.getPosition(), groundHeight: scenery.groundHeight,
+      });
+    }
+    if (tone !== toneTarget) {
+      tone = animate ? tone + Math.sign(toneTarget - tone) * Math.min(Math.abs(toneTarget - tone), delta / 3.5) : toneTarget;
+      scenery.setTone(tone);
+    }
+    camera.camera!.clearColor = clear.lerp(dayClear, BUBBALOO.clear, tone);
     battleScene.update(delta, animate);
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1));
     effects.update(delta);
@@ -407,14 +462,15 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     window.removeEventListener('blur', clearInput); document.removeEventListener('visibilitychange', clearInput);
     window.removeEventListener('resize', resize);
     canvas.removeEventListener('pointerup', touchDog);
-    battleScene.destroy(); effects.destroy();
+    battleScene.destroy(); minion.destroy(); effects.destroy();
     scenery.destroy(); playerMaterials.forEach(m => m.destroy()); bernatRig.materials.forEach(m => m.destroy());
     for (const list of [npcs, pickups]) for (const item of list) item.materials.forEach(m => m.destroy());
   });
   refreshStory();
+  tone = toneTarget; scenery.setTone(tone);
   app.start();
   return {
-    app, setEnvironment, interact, encounter, setBattle, refreshStory,
+    app, setEnvironment, interact, encounter, setBattle, refreshStory, summonMinion,
     setControllerInput(direction: Direction | null, stick: Stick | null, running = false) { controllerDirection = direction; controllerStick = stick; controllerRunning = running; },
     selectTarget: battleScene.selectTarget,
     setPaused(value: boolean) { paused = value; clearInput(); controllerDirection = null; controllerStick = null; controllerRunning = false; },
@@ -422,7 +478,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     get companionPosition() { return follower.position; },
     /** Whether Gerard is moving fast enough to count as running; the run hint waits for it. */
     get running() { return running() && movement.walking; },
-    toggleOverview() { if (paused || battle) return; overview = !overview; canvas.focus({ preventScroll: true }); },
+    toggleOverview() { if (stopped() || battle) return; overview = !overview; canvas.focus({ preventScroll: true }); },
     press(direction: Direction) { if (paused || battle) return; held.set('touch', direction); },
     release() { held.delete('touch'); },
   };

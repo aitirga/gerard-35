@@ -14,6 +14,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
   }
   const allyJacket = mat('#6f8fa8');
   const fur = mat('#c49464'), cream = mat('#f1dfb8'), dark = mat('#3c302a'), collar = mat('#a64d43');
+  // Eyes have their own materials so La Reina Bubbaloo's minion can turn them dark pink and glowing.
+  const eyeDark = mat('#3c302a'), eyePink = mat('#7a1240');
+  eyePink.emissive.fromString('#ff2d86'); eyePink.emissiveIntensity = 1.6; eyePink.gloss = .8; eyePink.update();
   function part(parent: pc.Entity, name: string, type: string, material: pc.StandardMaterial, p: number[], s: number[]) {
     const e = new pc.Entity(name); e.addComponent('render', { type, material, castShadows: true });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); parent.addChild(e); return e;
@@ -28,7 +31,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
   part(head, 'Nariz', 'box', dark, [0, .09, .42], [.15, .1, .05]);
   part(dog, 'Collar rojo', 'box', collar, [0, .65, .3], [.44, .08, .31]);
   for (const side of [-1, 1]) {
-    part(head, 'Ojo', 'sphere', dark, [side * .12, .18, .258], [.055, .055, .03]);
+    part(head, 'Ojo', 'sphere', eyeDark, [side * .12, .18, .258], [.055, .055, .03]);
     const ear = part(head, 'Oreja', 'box', dark, [side * .23, .21, -.04], [.12, .36, .24]);
     ear.setLocalEulerAngles(0, 0, side * 16);
     for (const z of [-.27, .27]) part(dog, 'Pata', 'box', cream, [side * .15, .18, z], [.12, .36, .15]);
@@ -60,14 +63,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
     const trot = moving && animate ? Math.sin(time * 16 + seed) * 5 : 0;
     head.setLocalEulerAngles(animate ? sniff + trot + idle.breathe * 3 - lunge * 24 : 0, animate && !moving ? idle.look * 18 : 0, 0);
     ears.forEach((ear, i) => ear.setLocalEulerAngles(animate ? -lunge * 25 : 0, 0, (i ? 1 : -1) * (16 + (animate ? (moving ? Math.sin(time * 16 + seed) * 8 : idle.breathe * 4) : 0))));
-    eyes.forEach(eye => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, .055 * (animate ? idle.blink : 1), s.z); });
+    // Possessed eyes are wider (see possess) and a little taller too.
+    eyes.forEach(eye => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, (s.x > .06 ? .075 : .055) * (animate ? idle.blink : 1), s.z); });
   }
   const plantDogs = dogs.map((model, i) => createGroundContact(model, dogLegs[i]));
   const dogWalks = dogs.map(() => new WalkAnimation());
   const battleRoot = new pc.Entity('Escenario de combate'); app.root.addChild(battleRoot);
   interface Fighter {
     model: pc.Entity; base: pc.Vec3; start: pc.Vec3; hp: number; party: boolean;
-    downAt?: number; poofed?: boolean; hitAt?: number; flashColor: pc.Color; flash: number; materials: pc.StandardMaterial[];
+    downAt?: number; poofed?: boolean; hitAt?: number; flashColor: pc.Color; flash: number; materials: pc.StandardMaterial[]; glow: pc.Color[];
     body: pc.Entity | null; head: pc.Entity | null; tail: pc.Entity | null; ears: pc.Entity[]; eyes: pc.Entity[]; eyeScale: number; seed: number;
     arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
@@ -108,7 +112,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
       if (!copy) { copy = (mesh.material as pc.StandardMaterial).clone(); copies.set(mesh.material, copy); }
       mesh.material = copy;
     }));
-    return [...copies.values()];
+    const materials = [...copies.values()];
+    // What each copy glows with at rest (the possessed eyes), so a flash fades back to it.
+    return { materials, glow: materials.map(m => m.emissive.clone().mulScalar(m.emissiveIntensity)) };
   }
   function settle() { const done = complete; complete = undefined; done?.(); }
   /** One-shot contact feedback: sparks where the blow lands, dust at the feet, a flash on whoever is affected. */
@@ -125,6 +131,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
   }
   return {
     dogs, anchor, cameraKick, focus,
+    /** Dark pink, glowing eyes for the street dogs: they obey La Reina Bubbaloo's minion. */
+    possess(on: boolean) {
+      for (const eyes of dogEyes) for (const eye of eyes) {
+        eye.render!.meshInstances[0].material = on ? eyePink : eyeDark;
+        // Wider, glowing eyes read from the street camera; blinking only touches the height.
+        const size = eye.getLocalScale();
+        eye.setLocalScale(on ? .085 : .055, size.y, on ? .04 : .03);
+      }
+    },
     selectTarget(id?: string) { selectedTarget = id; },
     targets() {
       return [...fighters].map(([id, f]) => ({
@@ -166,7 +181,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
           fighters.set(unit.id, {
             model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null,
             ears: model.find(node => node.name === 'Oreja') as pc.Entity[], eyeScale: eyes[0]?.getLocalScale().y ?? 1, seed: party ? i * 3.1 + .4 : i,
-            flash: 0, flashColor: white, materials: ownMaterials(model),
+            flash: 0, flashColor: white, ...ownMaterials(model),
             scale: source.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
           });
         });
@@ -278,7 +293,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
         if (f.flash > 0) {
           f.flash = Math.max(0, f.flash - dt * 4.5);
           const k = f.flash * f.flash;
-          for (const m of f.materials) { m.emissive.set(f.flashColor.r * k, f.flashColor.g * k, f.flashColor.b * k); m.update(); }
+          f.materials.forEach((m, i) => {
+            const rest = f.glow[i];
+            m.emissiveIntensity = 1;
+            m.emissive.set(rest.r + f.flashColor.r * k, rest.g + f.flashColor.g * k, rest.b + f.flashColor.b * k);
+            m.update();
+          });
         }
       }
       sparks.enabled = !!motion && animate && t >= CONTACT_SECONDS && t < CONTACT_SECONDS + .22;

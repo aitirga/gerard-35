@@ -6,6 +6,8 @@ export interface Speaker {
   name: string;
   /** Portrait in public/portraits/ without .png; `just character` creates it and its expressions. */
   portrait?: string;
+  /** Inline SVG for speakers that are not people; overrides the blocky bust. */
+  art?: string;
   skin: string;
   hair: string;
   top: string;     // jacket / sweater colour, also used as the avatar tint
@@ -17,6 +19,19 @@ export const SPEAKERS = {
   bernat: { name: 'Bernat', skin: '#dcb08a', hair: '#5b4636', top: '#6f8fa8', accent: '#9fc3d9' },
   mama: { name: 'Mamá', skin: '#e8bc96', hair: '#6b4a32', top: '#b5645a', accent: '#e9a294' },
   jan: { name: 'Jan', skin: '#e6b58b', hair: '#2b2220', top: '#5e8a5a', accent: '#a5cf8f' },
+  /** La Reina Bubbaloo's gum minion: it only gurgles. */
+  esbirro: {
+    name: 'Esbirro', skin: '#ff7fb5', hair: '#c9356f', top: '#e85a9c', accent: '#ff8cc6',
+    art: `<svg viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="23" fill="#e85a9c" opacity=".18"/>
+      <path d="M9 48c0-9 5-14 15-14s15 5 15 14Z" fill="#d6447f"/>
+      <circle cx="24" cy="22" r="13" fill="#ff7fb5"/><circle cx="17" cy="15" r="4" fill="#ffc2dc" opacity=".8"/>
+      <path d="M14 30c0 5 3 5 3 9 0 2-3 2-3 0Zm16 2c0 4 3 4 3 7 0 2-3 2-3 0Z" fill="#c9356f"/>
+      <circle cx="19.5" cy="23" r="2.6" fill="#2a0a1c"/><circle cx="28.5" cy="23" r="2.6" fill="#2a0a1c"/>
+      <circle cx="20.2" cy="22.3" r=".9" fill="#ff4d9a"/><circle cx="29.2" cy="22.3" r=".9" fill="#ff4d9a"/>
+      <circle cx="24" cy="31" r="3.4" fill="#ffb0d2" opacity=".9"/>
+    </svg>`,
+  },
 } satisfies Record<string, Speaker>;
 
 export type SpeakerId = keyof typeof SPEAKERS;
@@ -41,6 +56,7 @@ function portraitUrl(portrait: string, expression?: string) {
 
 // Blocky bust that echoes the in-game character: shoulders, neck, head, hair cap.
 function portrait(s: Speaker) {
+  if (s.art) return s.art;
   if (s.portrait) return `<img class="portrait" src="${portraitUrl(s.portrait)}" alt="" aria-hidden="true" width="160" height="160" />`;
   return `<svg viewBox="0 0 48 48" aria-hidden="true">
     <circle cx="24" cy="24" r="23" fill="${s.top}" opacity=".18"/>

@@ -33,7 +33,7 @@ dev-battle foes="4" allies="1":
 # Jump into chapter 1 after a story beat: just dev-chapter got-backpack (new = from the start)
 [group('Development')]
 dev-chapter beat="new":
-    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack).\n'; exit 1; }
+    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
 
 # Play as a generated character: just dev-character bernat (file in src/characters/)

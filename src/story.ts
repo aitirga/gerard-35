@@ -12,6 +12,7 @@ import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId }
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
 export const STORY_FLAGS = [
   'intro', 'met-jan', 'got-shoes', 'got-potion', 'got-backpack', 'bernat-joined', 'bernat-stalled', 'dejavu',
+  'minion', 'first-fight',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 
@@ -21,16 +22,28 @@ export type StoryEvent =
   /** Gerard walked past PLACES.southRow on the street. */
   | { type: 'south' }
   /** Gerard pulled against the leash while Bernat stalls. */
-  | { type: 'leash' };
+  | { type: 'leash' }
+  /** La Reina Bubbaloo's minion has stepped out and popped its bubble: the dogs obey it now. */
+  | { type: 'minion' }
+  /** A fight on the street ended. */
+  | { type: 'battle'; won: boolean };
 
 export type StoryEffect =
   | { kind: 'dialogue'; dialogue: Dialogue }
   | { kind: 'item'; item: ItemId }
   | { kind: 'hint'; id: HintId }
-  | { kind: 'card'; id: CardId };
+  | { kind: 'card'; id: CardId }
+  /** The minion steps out from behind the car and pops its bubble over the dogs. */
+  | { kind: 'minion' }
+  /** The possessed dogs attack: a fight starts right away. */
+  | { kind: 'battle' };
 
 export interface StoryNpc { id: 'mama' | 'jan'; character: string; environment: EnvironmentId; cell: Cell; scale: number }
 export type Companion = 'none' | 'follow' | 'stalled';
+/** Where La Reina Bubbaloo's minion is: peeking from behind the car, out in the street, or gone down the manhole. */
+export type MinionState = 'hiding' | 'out' | 'gone';
+/** The light over Sant Quirze: an ordinary autumn morning, or La Reina Bubbaloo's pink gloom. */
+export type Tone = 'day' | 'bubbaloo';
 export interface PartyMember { id: 'gerard' | 'bernat'; name: string; equipment: ItemId[]; note: string }
 
 /** Interactions only the story adds; the game merges them with the scene's own. */
@@ -65,6 +78,10 @@ export class Story {
   get started() { return this.has('intro'); }
   get canRun() { return this.has('got-shoes'); }
   get battles() { return this.has('dejavu'); }
+  /** The street dogs have the minion's dark pink eyes. */
+  get possessed() { return this.has('minion'); }
+  get minion(): MinionState { return this.has('first-fight') ? 'gone' : this.has('minion') ? 'out' : 'hiding'; }
+  get tone(): Tone { return this.has('first-fight') ? 'bubbaloo' : 'day'; }
   get items(): ItemId[] {
     const items: ItemId[] = [];
     if (this.has('got-shoes')) items.push('zapatillas');
@@ -135,8 +152,16 @@ export class Story {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     switch (event.type) {
       case 'start':
+        // A reload between the déjà-vu and the minion's entrance plays the entrance again.
+        if (this.has('dejavu') && !this.has('minion')) return [{ kind: 'minion' }];
         if (!this.set('intro')) return [];
         return [{ kind: 'card', id: 'intro' }, say(LINES.wake), { kind: 'hint', id: 'move' }];
+      case 'minion':
+        if (!this.has('dejavu') || !this.set('minion')) return [];
+        return [say(LINES.minionBlub), say(LINES.minion), { kind: 'battle' }];
+      case 'battle':
+        if (!event.won || !this.has('minion') || !this.set('first-fight')) return [];
+        return [say(LINES.afterFight), { kind: 'card', id: 'end' }];
       case 'south':
         if (this.companion !== 'follow' || this.has('dejavu') || !this.set('bernat-stalled')) return [];
         this.tugs = 0;
@@ -164,7 +189,9 @@ export class Story {
         if (!this.set('bernat-joined')) return [say(LINES.bernatHere)];
         return [say(LINES.bernatJoins), { kind: 'hint', id: 'party' }];
       case 'talk-bernat':
-        if (this.companion === 'stalled') { this.set('dejavu'); return [say(LINES.dejavu), { kind: 'card', id: 'end' }]; }
+        if (this.companion === 'stalled') { this.set('dejavu'); return [say(LINES.dejavu), { kind: 'minion' }]; }
+        if (this.has('first-fight')) return [say(LINES.bernatAfterFight)];
+        if (this.has('minion')) return [say(LINES.bernatFight)];
         if (this.has('dejavu')) return [say(LINES.bernatAfter)];
         return this.companion === 'follow' ? [say(LINES.bernatHere)] : [];
     }

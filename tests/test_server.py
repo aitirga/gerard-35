@@ -8,7 +8,7 @@ from unittest import mock
 import httpx
 from fastapi.testclient import TestClient
 from ai import JevProvider
-from server import app
+from server import STORY_FLAGS, app
 
 
 class PersistenceTests(unittest.TestCase):
@@ -49,7 +49,7 @@ class PersistenceTests(unittest.TestCase):
         response = self.client.put('/api/state', json={'score': 1, 'story': ['intro', 'met-jan']})
         self.assertEqual(response.json(), {'score': 3, 'story': ['intro', 'met-jan', 'got-shoes']})
         self.assertEqual(self.client.get('/api/state').json()['story'], ['intro', 'met-jan', 'got-shoes'])
-        for story in [['flying'], 'intro', ['intro'] * 9]:
+        for story in [['flying'], 'intro', ['intro'] * (len(STORY_FLAGS) + 1)]:
             self.assertEqual(self.client.put('/api/state', json={'score': 1, 'story': story}).status_code, 422)
 
     def test_databases_from_before_the_story_gain_the_column(self):

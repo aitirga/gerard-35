@@ -59,11 +59,6 @@ export function createPropKit() {
   const glow = mat('Farolas', '#ffdb9c', 0.2, 2);
   const rim = mat('Marco de alcantarilla', '#8f8a78', 0.3);
   const iron = mat('Hierro de alcantarilla', '#6d6a5e', 0.45);
-  const straw = mat('Paja', '#d9b45f');
-  const sack = mat('Saco', '#b49a73');
-  const plaid = mat('Camisa de cuadros', '#a5473d');
-  const hatFelt = mat('Sombrero', '#4b3a2c');
-  const button = mat('Ojos de botón', '#1d1a18', 0.6);
   const paint = new Map<string, pc.StandardMaterial>();
 
   /**
@@ -173,21 +168,6 @@ export function createPropKit() {
     part(holder, 'Tapa de alcantarilla', 'cylinder', iron, [0, 0.046, 0], [0.56, 0.012, 0.56]);
     for (const dz of [-0.14, 0, 0.14]) part(holder, 'Estría', 'box', rim, [0, 0.054, dz], [0.42, 0.008, 0.035]);
   }
-  function scarecrow(holder: pc.Entity) {
-    // A pole and crossbar, a sack head with button eyes, a plaid shirt and straw at the cuffs.
-    part(holder, 'Poste', 'cylinder', bark, [0, 0.85, 0], [0.09, 1.7, 0.09]);
-    part(holder, 'Travesaño', 'cylinder', bark, [0, 1.25, 0], [0.07, 1.25, 0.07], [0, 0, 90]);
-    part(holder, 'Camisa', 'box', plaid, [0, 1.12, 0], [0.5, 0.5, 0.26]);
-    for (const side of [-1, 1]) {
-      part(holder, 'Manga', 'box', plaid, [side * 0.42, 1.25, 0], [0.36, 0.16, 0.18]);
-      part(holder, 'Paja de la manga', 'cone', straw, [side * 0.66, 1.25, 0], [0.16, 0.16, 0.16], [0, 0, side * 90]);
-    }
-    part(holder, 'Paja', 'cone', straw, [0, 0.8, 0], [0.4, 0.22, 0.3], [180, 0, 0]);
-    part(holder, 'Cabeza de saco', 'sphere', sack, [0, 1.58, 0], [0.38, 0.4, 0.36]);
-    for (const side of [-1, 1]) part(holder, 'Ojo de botón', 'cylinder', button, [side * 0.08, 1.62, 0.17], [0.06, 0.02, 0.06], [90, 0, 0]);
-    part(holder, 'Ala del sombrero', 'cylinder', hatFelt, [0, 1.76, 0], [0.62, 0.03, 0.62]);
-    part(holder, 'Copa del sombrero', 'cone', hatFelt, [0, 1.92, 0], [0.32, 0.3, 0.32]);
-  }
   function setOpacity(t: Tree, opacity: number) {
     t.opacity = opacity;
     const opaque = opacity >= 0.999;
@@ -216,7 +196,6 @@ export function createPropKit() {
       if (prop.kind === 'tree') tree(holder, prop.x, prop.z, prop.species ?? 'plane', prop.scale ?? 1, prop.base ?? 'pit');
       else if (prop.kind === 'car') car(holder, prop.color);
       else if (prop.kind === 'lamp') lamp(holder);
-      else if (prop.kind === 'scarecrow') scarecrow(holder);
       else manhole(holder);
       return holder;
     },

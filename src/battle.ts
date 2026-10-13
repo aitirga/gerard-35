@@ -15,18 +15,22 @@ export interface BattleState {
   allies: Combatant[]; foes: Combatant[]; active: number; round: number;
   phase: BattlePhase; message: string;
   enemyActions: string[];
+  /** Dogs under La Reina Bubbaloo's spell: they surround the party, so nobody can escape. */
+  possessed: boolean;
 }
 export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId }
 const unit = (id: string, name: string, hp: number, secondary = 0): Combatant =>
   ({ id, name, hp, maxHp: hp, secondary, maxSecondary: secondary, guarding: false });
-export function createBattle(allyCount: 1 | 2 = 1, foeCount = 1): BattleState {
+export function createBattle(allyCount: 1 | 2 = 1, foeCount = 1, possessed = false): BattleState {
   if (!Number.isInteger(foeCount) || foeCount < 1 || foeCount > 4) throw new Error('An encounter needs 1–4 foes');
   // Solo Gerard can clear a pack with focused attacks; a companion keeps full-strength foes.
   const foeHp = allyCount === 1 && foeCount > 1 ? 36 : 54;
   return {
     allies: [unit('gerard', 'Gerard', 100, 30), ...(allyCount === 2 ? [unit('bernat', 'Bernat', 85, 24)] : [])],
     foes: Array.from({ length: foeCount }, (_, i) => unit(`dog-${i}`, DOG_PROFILES[i].name, foeHp)),
-    active: 0, round: 1, phase: 'player', enemyActions: [], message: `${foeCount === 1 ? 'Un perro curioso te corta' : `${foeCount} perros curiosos te cortan`} el paso. Elige tu movimiento.`,
+    active: 0, round: 1, phase: 'player', enemyActions: [], possessed,
+    message: possessed ? `${foeCount === 1 ? 'Un perro con los ojos rosados se lanza' : `${foeCount} perros con los ojos rosados se lanzan`} a por vosotros. ¡No hay escapatoria!`
+      : `${foeCount === 1 ? 'Un perro curioso te corta' : `${foeCount} perros curiosos te cortan`} el paso. Elige tu movimiento.`,
   };
 }
 export function validTargets(state: BattleState, action: BattleAction, skill: SkillId = 'impulse'): Combatant[] {
@@ -45,6 +49,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if ((action === 'attack' || action === 'skill') && !target) return;
   if (action === 'skill' && (!ability || actor.secondary < ability.cost)) return;
   const effect: BattleEffect = { actor: actor.id, kind: action };
+  if (action === 'escape' && state.possessed) return;
   if (action === 'escape') {
     state.phase = 'escaped'; state.message = 'Te alejas con calma. La aventura sigue.'; return effect;
   }
@@ -65,7 +70,9 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     }
   }
   if (state.foes.every(f => f.hp === 0)) {
-    state.phase = 'won'; state.message = `${state.foes.length === 1 ? 'El perro se tranquiliza' : 'Los perros se tranquilizan'}. ¡Camino despejado!`;
+    state.phase = 'won';
+    state.message = state.possessed ? `El rosa se les va de los ojos. ${state.foes.length === 1 ? 'El perro sale corriendo' : 'Los perros salen corriendo'}, con el rabo entre las patas.`
+      : `${state.foes.length === 1 ? 'El perro se tranquiliza' : 'Los perros se tranquilizan'}. ¡Camino despejado!`;
   } else {
     const next = state.allies.findIndex((a, i) => i > state.active && a.hp > 0);
     if (next >= 0) state.active = next;

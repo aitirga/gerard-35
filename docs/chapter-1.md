@@ -2,15 +2,16 @@
 
 A 30-minute opening chapter that doubles as the tutorial. It starts on an autumn morning in the
 past: it is Gerard's birthday (his age is never stated). He leaves home with Bernat for school,
-they walk straight into one of Bernat's games, it turns real, and they must conjure their way
+they walk straight into one of Bernat's games, it turns real (with its villain, La Reina Bubbaloo:
+see `docs/lore.md`), and they must conjure their way
 out, planting something (**M1**) that pays off later in the story. Along the way Gerard discovers
 his power: **changing class by changing mood**, fast.
 
 | Block | Minutes | Status | Where |
 | --- | --- | --- | --- |
-| 1 · Casa y calle | 0–10 | Playable | Bedroom → kitchen → hall → street → Bernat's door → down the street |
-| 2 · El juego se hace real | 10–20 | Planned | The bottom of Passatge Maresme, now inside Bernat's game |
-| 3 · Mini boss y salida | 20–30 | Planned | The scarecrow, the conjuro, back to reality |
+| 1 · Casa y calle | 0–10 | Playable | Bedroom → kitchen → hall → street → Bernat's door → down the street → first fight |
+| 2 · El juego se hace real | 10–20 | Planned | The bottom of Passatge Maresme, now in La Reina Bubbaloo's light |
+| 3 · Mini boss y salida | 20–30 | Planned | A bigger Bubbaloo minion, the conjuro, back to reality |
 
 ## Design principles
 
@@ -27,8 +28,9 @@ his power: **changing class by changing mood**, fast.
   more line each time Gerard pulls away: "¿Gerard…?" → "Espera." → "Esto… ya lo he visto." The
   player turns back because a friend sounds off, not because a panel says so.
 - **Seeds pay off within the chapter.** The potion from Jan's desk is the first common item and
-  is meant to be used in block 2's tutorial fight; the scarecrow and the dogs are on screen from the
-  moment Bernat joins, so the boss of block 3 has been in plain sight for twenty minutes.
+  is meant to be used in block 2's fights; the dogs are on screen from the moment Gerard steps
+  into the street, and something pink peeks from behind the parked car at the bottom long before
+  Bernat names it.
 - **Catalan at home, Spanish on screen.** Dialogue is in Spanish, with the family's Catalan where
   it is natural: "Per molts anys", "Bon dia", "POCIÓ".
 - **Desktop first.** Keyboard prompts (Shift, I, C, E) are written into the notes; the controller
@@ -44,17 +46,22 @@ his power: **changing class by changing mood**, fast.
 | 4 | Optional: the **Poción** on Jan's desk | Common items | 1:30 |
 | 5 | The **Mochila** in the hall; the doors out stay shut until then | Key items vs common (I) | 1:00 |
 | 6 | Bernat's doorbell: he congratulates Gerard and joins as a non-playable companion | Party and equipment (C): "modo escuela" | 1:45 |
-| 7 | Down the street: dogs and a scarecrow below; Bernat slows, stops and mutters | Noticing a friend | 1:00 |
-| 8 | "¿Un déjà-vu?" "Peor. Es igual… creo que la he cagado." → "Continuará…" | — | 0:30 |
+| 7 | Down the street: dogs below, a pink blob peeking from behind a car; Bernat slows, stops and mutters | Noticing a friend | 1:00 |
+| 8 | "¿Un déjà-vu?" "Peor. Es igual… creo que la he cagado." | — | 0:30 |
+| 9 | La Reina Bubbaloo's minion oozes out, blows a gum bubble and pops it over the dogs: their eyes turn dark pink. "¡Blub!" Bernat: "Un esbirro de la Reina Bubbaloo." | — | 0:45 |
+| 10 | The dogs attack: **first fight**, straight away and with no tutorial. Escapar is greyed out (the dogs surround them); losing lets them try again | Fighting | 2:00 |
+| 11 | Won: the minion slips down a manhole and the light over Sant Quirze turns dark, pink and strange while they are inside Bernat's game → "Continuará…" | — | 0:45 |
 
 Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpack`,
-`bernat-joined`, `bernat-stalled`, `dejavu`. Battles with the dogs stay off until `dejavu`.
+`bernat-joined`, `bernat-stalled`, `dejavu`, `minion`, `first-fight`. Battles with the dogs stay
+off until `dejavu`; from `minion` on the dogs are possessed, and `first-fight` keeps Sant Quirze
+in La Reina Bubbaloo's light.
 
 ### How it is built
 
 - `src/story.ts` is the whole state machine and has no DOM or engine code: game events
-  (`interact`, `south`, `leash`, `start`) go in, ordered effects (`dialogue`, `item`,
-  `hint`, `card`) come out. Everything else is derived from the flags: Bernat's bubble, items,
+  (`interact`, `south`, `leash`, `start`, `minion`, `battle`) go in, ordered effects (`dialogue`,
+  `item`, `hint`, `card`, `minion`, `battle`) come out. Everything else is derived from the flags: Bernat's bubble, items,
   party, NPCs and pickups per scene, gates, where to resume. `tests/story.test.mjs` plays the
   block from start to end.
 - `src/chapter-1.ts` holds the content: lines, places (checked to be walkable by the tests),
@@ -62,6 +69,9 @@ Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpac
 - `src/game.ts` draws the cast from the story (Mum, Jan, floating pickups, Bernat), hides
   Gerard's backpack until he has it, blocks NPC cells, turns cells beyond the leash into walls,
   and reports the south row and leash tugs.
+- `src/minion.ts` builds and animates La Reina Bubbaloo's minion (peeking, entrance with the
+  bubble, fleeing down the manhole). `src/battle-scene.ts` swaps the dogs' eyes to the possessed
+  pink, and `src/scenery.ts` blends any scene towards La Reina Bubbaloo's light (`setTone`).
 - `src/follower.ts` makes Bernat walk Gerard's own breadcrumb trail, so he never cuts corners
   through walls (`tests/follower.test.mjs`).
 - `src/story-ui.ts` shows title cards, item notes, key hints and Bernat's speech bubble; `src/exploration-ui.ts` adds the
@@ -73,9 +83,9 @@ Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpac
 
 ## Block 2 · El juego se hace real (10–20 min) — plan
 
-1. **The switch.** Right after the déjà-vu, the street "loads" Bernat's game: palette shift and
-   light fog, a grid flash over the cobbles, and the HUD restyles itself in the glitch colours for
-   good. The dogs turn to face the pair; Bernat starts explaining the rules of his game.
+1. **The switch** (now in block 1). The minion possesses the dogs, the first fight happens, and the
+   light turns pink and gloomy. Still open: whether the HUD should also take La Reina Bubbaloo's
+   colours.
 2. **Tutorial fight 1 (one dog).** Attack and defend only; Bernat narrates the rules of "his" game
    ("¡En mi juego, si te defiendes, el siguiente golpe duele la mitad!").
 3. **Tutorial fight 2 (two dogs).** Skills, and the **Poción** from Jan's desk as the first use
@@ -94,14 +104,14 @@ a swap action), tested like the existing battle tests; the world switch is a sce
 
 ## Block 3 · Mini boss y salida (20–30 min) — plan
 
-1. **L'Espantaocells.** The scarecrow wakes up as the mini boss, with phases that each favour a
-   different mood (a straw shield → Enfadado; a crow swarm that spreads damage → Alegre; a big
+1. **A bigger Bubbaloo minion** as the mini boss (to be designed), with phases that each favour a
+   different mood (a gum shield → Enfadado; a swarm of little bubbles that spreads damage → Alegre; a big
    charged swipe → Tranquilo). The dogs from block 2 can return as adds in the last phase.
 2. **The way out (M1).** Beaten, the game does not end. Bernat remembers how his notebook game
    ended: the heroes conjure something to leave. The player chooses the conjuro (a short list),
    and the choice is saved as a story flag so later chapters can read it.
-3. **Back to reality.** A white-out, the street as it was, the dogs just dogs, the scarecrow back
-   in a garden. They run (Shift) to school and arrive late; the teacher's line closes the chapter.
+3. **Back to reality.** A white-out, the street as it was, the dogs just dogs, the morning light
+   back. They run (Shift) to school and arrive late; the teacher's line closes the chapter.
 4. End card and a transition towards chapter 2 (Meridiana), keeping the mood power unlocked.
 
 ## Risks and choices
