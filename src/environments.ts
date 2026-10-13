@@ -287,8 +287,9 @@ export const MERIDIANA = house({
     '     =.o#....#.#.o#oo.#  ',
     '     =.o#....#.+..#...#  ',
     '     =oo#....###oo#ooo#  ',
-    '     ####.oo.##########  ',
+    '     ####....##########  ',
     '        W.oo.#           ',
+    '        #.oo.#           ',
     '        #oooo#           ',
     '        ######           ',
   ],
@@ -297,8 +298,8 @@ export const MERIDIANA = house({
     { name: 'Recibidor', x: 6, z: 1, w: 2, d: 5, floor: 'laminate' },
     { name: 'Galería', x: 6, z: 7, w: 2, d: 6, floor: 'terracotta' },
     { name: 'Cocina', x: 9, z: 1, w: 5, d: 5, floor: 'laminate' },
-    // Three rows longer than the croquis: room for a double bed against the south wall, a nightstand each side.
-    { name: 'Dormitorio', x: 9, z: 7, w: 4, d: 9, floor: 'laminate' },
+    // Four rows longer than the croquis: room for a double bed against the south wall, a nightstand each side.
+    { name: 'Dormitorio', x: 9, z: 7, w: 4, d: 10, floor: 'laminate' },
     { name: 'Pasillo', x: 14, z: 7, w: 1, d: 5, floor: 'laminate' },
     { name: 'Baño', x: 16, z: 9, w: 2, d: 4, floor: 'laminate' },
     { name: 'Salón', x: 14, z: 1, w: 7, d: 6, floor: 'laminate' },

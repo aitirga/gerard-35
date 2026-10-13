@@ -1062,19 +1062,19 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     // A double bed with its headboard on the south wall, centred across the room so there is a
     // nightstand with a lamp on each side; a rug under it.
     const bedWhite = mat('Canapé blanco', '#f2f1ee', 0.3), seam = mat('Junta', '#d9d7d0', 0.3);
-    const bl = 2.5, bw = 2.0, hz = 16 - FACE - 0.1, bcx = 10.5, bcz = hz - bl / 2;
-    box('Alfombra', mat('Alfombra de lana', '#c9b9a0', 0.05), bcx, bcz - 0.35, 0, 3.4, 0.015, 3.3);
+    const bl = 3.0, bw = 2.0, hz = 17 - FACE - 0.1, bcx = 10.5, bcz = hz - bl / 2;
+    box('Alfombra', mat('Alfombra de lana', '#c9b9a0', 0.05), bcx, bcz - 0.35, 0, 3.4, 0.015, 3.8);
     box('Canapé', bedWhite, bcx, bcz, 0, bw, 0.42, bl);
     for (const dz of [-0.75, 0, 0.75]) for (const side of [-1, 1]) box('Cajón del canapé', seam, bcx + side * (bw / 2 + 0.005), bcz + dz, 0.1, 0.01, 0.24, 0.65);
     box('Colchón', ceramic, bcx, bcz, 0.42, bw - 0.08, 0.18, bl - 0.06);
     box('Sábana', mat('Sábana beige', '#d9c7a7', 0.05), bcx, bcz, 0.6, bw - 0.06, 0.02, bl - 0.04);
     const duvet = mat('Nórdico de rayas', '#eadcc6', 0.05);
-    box('Nórdico', duvet, bcx, bcz - 0.4, 0.6, bw + 0.04, 0.14, 1.7).setEulerAngles(0, 2, 0);
+    box('Nórdico', duvet, bcx, bcz - 0.45, 0.6, bw + 0.04, 0.14, 2.1).setEulerAngles(0, 2, 0);
     box('Nórdico arrugado', duvet, bcx - 0.5, bcz - 0.2, 0.66, 0.9, 0.16, 0.8).setEulerAngles(0, -14, 4);
     for (const dx of [-0.5, 0.5]) box('Almohada', mat('Almohada', '#f1ebe0', 0.05), bcx + dx, hz - 0.3, 0.62, 0.78, 0.13, 0.4);
     for (const [i, c] of ['#8a5a8c', '#2c3a5c', '#6f9a8a'].entries()) box('Ropa sobre la cama', mat('Ropa', c, 0.05), bcx - 0.6 + i * 0.18, bcz - 0.8 - i * 0.12, 0.74 + i * 0.02, 0.4, 0.06, 0.34).setEulerAngles(0, i * 35, 0);
-    box('Cabecero', bedWhite, bcx, 16 - FACE - 0.04, 0.3, bw + 0.9, 0.95, 0.08);
-    for (const y of [0.62, 0.9]) box('Ranura del cabecero', seam, bcx, 16 - FACE - 0.085, y, bw + 0.8, 0.015, 0.01);
+    box('Cabecero', bedWhite, bcx, 17 - FACE - 0.04, 0.3, bw + 0.9, 0.95, 0.08);
+    for (const y of [0.62, 0.9]) box('Ranura del cabecero', seam, bcx, 17 - FACE - 0.085, y, bw + 0.8, 0.015, 0.01);
     const nightOak = mat('Mesilla de roble', '#c9a36e', 0.3), shade = mat('Pantalla de lino', '#f3ead8', 0.1, 0.25);
     for (const side of [-1, 1]) {
       const nx = bcx + side * (bw / 2 + 0.38), nz = hz - 0.25;
@@ -1090,7 +1090,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     const ac = onWall('east', 8 + FACE, 9);
     box('Split', white, 8 + FACE + 0.12, 9, 2.12, 0.24, 0.3, 1.0, ac);
     box('Rejilla del split', mat('Rejilla', '#c9cccf', 0.3), 8 + FACE + 0.245, 9, 2.14, 0.01, 0.06, 0.9, ac);
-    light(10.5, 2.3, 13, '#ffe4bd', 0.9, 5.5);
+    light(10.5, 2.3, 14, '#ffe4bd', 0.9, 6);
 
     // ——— Bathroom: tub with a pale blue curtain, beige square tiles, oak vanity, towel rail ———
     const beige = tiles('Azulejo beige', 1.6, 0.2, 0.2, '#ddd6ca', '#f0ece5', false);

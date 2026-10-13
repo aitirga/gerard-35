@@ -47,10 +47,10 @@ export const PLACES = {
    * gets up beside it (`wakeUp`); Aitor stands on the other side. The Bubbaloo wrapper lies on
    * Gerard's nightstand (`spot`), picked up from the cell in front of it.
    */
-  bed: { x: 11, z: 13.7 },
-  wakeUp: { environment: 'meridiana', cell: { x: 12, z: 12 } },
-  aitor: { environment: 'meridiana', cell: { x: 9, z: 13 } },
-  envoltorio: { environment: 'meridiana', cell: { x: 12, z: 14 }, spot: { x: 11.78, z: 15.45, y: .53 } },
+  bed: { x: 11, z: 15 },
+  wakeUp: { environment: 'meridiana', cell: { x: 12, z: 13 } },
+  aitor: { environment: 'meridiana', cell: { x: 9, z: 14 } },
+  envoltorio: { environment: 'meridiana', cell: { x: 12, z: 15 }, spot: { x: 11.78, z: 16.45, y: .53 } },
   /** The drain in the wrapper room the second minion rises from. */
   drain: { x: 5, z: 16 },
   /** Past this row, on the way back south, Bernat reminds Gerard where the palace is. */
