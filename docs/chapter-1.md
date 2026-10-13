@@ -10,7 +10,7 @@ his power: **changing class by changing mood**, fast.
 | Block | Minutes | Status | Where |
 | --- | --- | --- | --- |
 | 1 · Casa y calle | 0–10 | Playable | Bedroom → kitchen → hall → street → Bernat's door → down the street → first fight |
-| 2 · El juego se hace real | 10–20 | Planned | The bottom of Passatge Maresme, now in La Reina Bubbaloo's light |
+| 2 · El juego se hace real | 10–20 | Planned | The street turns into La Reina Bubbaloo's palace: the first mini dungeon and Noísta, Gerard's first class ([plan](bubbaloo-palace.md)) |
 | 3 · Mini boss y salida | 20–30 | Planned | A bigger Bubbaloo minion, the conjuro, back to reality |
 
 ## Design principles
@@ -82,6 +82,10 @@ in La Reina Bubbaloo's light.
   `just character <id>` when there are photos, and add their portraits for the dialogue banner.
 
 ## Block 2 · El juego se hace real (10–20 min) — plan
+
+> Superseded by [the palace plan](bubbaloo-palace.md): the houses at the north end turn into La
+> Reina Bubbaloo's palace, a first mini dungeon where Gerard unlocks the Noísta class. The notes
+> below are the earlier idea, kept until the palace is built.
 
 1. **The switch** (now in block 1). The minion possesses the dogs, the first fight happens, and the
    light turns pink and gloomy. Still open: whether the HUD should also take La Reina Bubbaloo's

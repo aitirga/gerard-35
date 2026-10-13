@@ -34,6 +34,19 @@ story is about. Update it whenever a decision changes the story.
 - They never talk and never stay to fight: they send what they possess instead.
 - Built procedurally in `src/minion.ts`.
 
+### Her palace
+
+- **El Palacio de la Reina Bubbaloo** rises at the north end of Passatge Maresme, growing out of
+  the neighbours' houses: gum ramparts, wrapper-twist towers, bubble domes and a crown tower with
+  a balcony over the street. It is chapter 1's mini dungeon and the game's final dungeon.
+  Design: `docs/bubbaloo-palace.md`.
+
+## Gerard's classes
+
+- Gerard's power is changing class. **Noísta** is the first: born when he shouts "¡No!" to save
+  Bernat. Its skill **No-ta** breaks what the Queen's gum holds. Her minions make things obey;
+  Gerard refuses, which is why he is the one who can face her.
+
 ## People
 
 | Who | Role |
