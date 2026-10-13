@@ -145,3 +145,37 @@ test('enemies follow a valid AI target and ignore invalid ones', () => {
   assert.equal(enemyAct(s, 'dog-0', 'bernat').target, 'bernat');
   assert.equal(enemyAct(s, 'dog-1', 'nobody').target, 'bernat'); // Built-in rotation.
 });
+
+test('the palace minion swallows every hit, and whatever the party does the beat comes by round 6', async () => {
+  const { createMinionBattle, enemyAct, nextRound, act, awaken, skillsFor, cornered, BEAT_HP } = await import('../src/battle.ts');
+  const strategies = {
+    attack: s => act(s, 'attack', 'minion-0'),
+    guard: s => act(s, 'defend'),
+    heal: s => act(s, 'skill', 'bernat', 'encourage') ?? act(s, 'defend'),
+  };
+  for (const [name, move] of Object.entries(strategies)) {
+    const state = createMinionBattle();
+    assert.equal(cornered(state), true, 'nobody escapes the palace minion');
+    assert.equal(act(state, 'escape'), undefined);
+    assert.deepEqual(skillsFor(state, state.allies[0]).map(s => s.id), ['impulse', 'encourage'], 'No-ta waits for Noísta');
+    while (state.phase !== 'beat') {
+      assert.ok(state.round <= 6, `${name}: the beat came by round 6`);
+      const gerard = act(state, 'attack', 'minion-0');
+      assert.equal(gerard.amount, 0); assert.equal(gerard.swallowed, true);
+      move(state);
+      enemyAct(state, 'minion-0');
+      assert.ok(state.allies.every(a => a.hp > 0), `${name}: nobody falls before the beat`);
+      nextRound(state);
+    }
+    assert.equal(state.allies[1].hp, Math.min(state.allies[1].hp, BEAT_HP));
+    assert.equal(state.foes[0].hp, 40, `${name}: not a scratch`);
+    awaken(state, 'noista');
+    assert.equal(state.phase, 'player');
+    assert.equal(state.allies[state.active].id, 'gerard');
+    assert.ok(skillsFor(state, state.allies[0]).some(s => s.id === 'nota'));
+    assert.ok(!skillsFor(state, state.allies[1]).some(s => s.id === 'nota'), 'No-ta is Gerard\'s');
+    const nota = act(state, 'skill', 'minion-0', 'nota');
+    assert.equal(nota.amount, 40);
+    assert.equal(state.phase, 'won');
+  }
+});

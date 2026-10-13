@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
-import type { BattleEffect, BattleState } from './battle';
+import type { BattleEffect, BattleState, ClassId } from './battle';
+import { wearClass } from './classes';
 import { ACTION_SECONDS, CONTACT_SECONDS, ENTRY_SECONDS, clamp01, contactMotion, smooth } from './battle-motion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
@@ -73,11 +74,36 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
     model: pc.Entity; base: pc.Vec3; start: pc.Vec3; hp: number; party: boolean;
     downAt?: number; poofed?: boolean; hitAt?: number; flashColor: pc.Color; flash: number; materials: pc.StandardMaterial[]; glow: pc.Color[];
     body: pc.Entity | null; head: pc.Entity | null; tail: pc.Entity | null; ears: pc.Entity[]; eyes: pc.Entity[]; eyeScale: number; seed: number;
+    /** Foes that are not dogs (the palace minion) wobble instead of sniffing. */
+    minion: boolean;
     arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
     plantFeet: ReturnType<typeof createGroundContact>;
   }
   const fighters = new Map<string, Fighter>();
+  /** Models for foes that are not dogs, cloned when a fight starts (the game passes the minion). */
+  let minionTemplate: pc.Entity | undefined;
+  // No-ta: a giant red rubber stamp that slams NO onto the target, and the word left on the ground.
+  function lettering(fill: string, background?: string) {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+    const ctx = c.getContext('2d')!;
+    if (background) { ctx.fillStyle = background; ctx.fillRect(0, 0, 256, 128); }
+    ctx.fillStyle = fill; ctx.font = '900 108px Inter, Arial Black, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('NO', 128, 70);
+    if (!background) { ctx.strokeStyle = fill; ctx.lineWidth = 8; ctx.strokeRect(6, 6, 244, 116); }
+    const t = new pc.Texture(app.graphicsDevice, { mipmaps: true }); t.setSource(c); return t;
+  }
+  const stampTexture = lettering('#fff4ec', '#e2483d'), inkTexture = lettering('#e2483d');
+  const stampRed = mat('#c8323c');
+  const stampFace = mat('#ffffff'); stampFace.diffuseMap = stampTexture; stampFace.emissiveMap = stampTexture; stampFace.emissive.set(.35, .35, .35); stampFace.update();
+  const ink = mat('#ffffff'); ink.diffuseMap = inkTexture; ink.opacityMap = inkTexture; ink.opacityMapChannel = 'a'; ink.blendType = pc.BLEND_NORMAL; ink.depthWrite = false; ink.emissive.set(.5, .1, .1); ink.update();
+  const stamp = new pc.Entity('Sello No-ta'); battleRoot.addChild(stamp); stamp.enabled = false;
+  part(stamp, 'Mango del sello', 'cylinder', mat('#6e2453'), [0, .95, 0], [.32, .9, .32]);
+  part(stamp, 'Pomo del sello', 'sphere', stampRed, [0, 1.5, 0], [.55, .45, .55]);
+  part(stamp, 'Taco del sello', 'box', stampRed, [0, .3, 0], [1.5, .6, .8]);
+  part(stamp, 'Cara del sello', 'plane', stampFace, [0, .3, .41], [1.4, 1, .55]).setLocalEulerAngles(90, 0, 0);
+  const inkMark = part(battleRoot, 'Marca de tinta', 'plane', ink, [0, .04, 0], [2.4, 1, 1.2]); inkMark.enabled = false;
+  let inkAt = -Infinity, shake = 0;
   let state: BattleState | undefined;
   let effect: BattleEffect | undefined;
   let effectTime = 0;
@@ -131,6 +157,21 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
   }
   return {
     dogs, anchor, cameraKick, focus,
+    /** The model cloned for minion foes. */
+    setMinionTemplate(model: pc.Entity) { minionTemplate = model; },
+    /**
+     * Gerard said no: a white flash and a shockwave that rocks the foes, and when it fades he
+     * wears his class. The story records the class; this is only what the fight shows.
+     */
+    awaken(id: ClassId) {
+      const gerard = fighters.get('gerard');
+      if (!gerard) return;
+      hit(gerard, white, 2.2); shake = .8;
+      effects.emit('poof', new pc.Vec3(gerard.base.x, .5, gerard.base.z), 18, .4);
+      effects.emit('spark', new pc.Vec3(gerard.base.x, 1.1, gerard.base.z), 24, .3);
+      for (const f of fighters.values()) if (!f.party) hit(f, white, .9);
+      setTimeout(() => wearClass(gerard.model, id), 260);
+    },
     /** Dark pink, glowing eyes for the street dogs: they obey La Reina Bubbaloo's minion. */
     possess(on: boolean) {
       for (const eyes of dogEyes) for (const eye of eyes) {
@@ -159,7 +200,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
       if (entering) {
         anchor.copy(center); entryTime = 0;
         for (const [party, units] of [[true, next.allies], [false, next.foes]] as const) units.forEach((unit, i) => {
-          const source = party ? player : dogs[i];
+          const minion = !party && unit.kind === 'minion' && !!minionTemplate;
+          const source = party ? player : minion ? minionTemplate! : dogs[i];
           const model = source.clone(); model.enabled = true;
           if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
             (component as pc.RenderComponent).meshInstances.forEach(mesh => {
@@ -171,18 +213,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
           battleRoot.addChild(model); model.setPosition(start);
           const body = party ? model.findByName('Cuerpo') as pc.Entity : null;
           const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
-          const legs = (body?.children.filter(c => c.name === 'Pierna') ?? model.children.filter(c => c.name === 'Pata')) as pc.Entity[];
+          if (minion) model.setLocalScale(1.5, 1.5, 1.5);
+          const legs = (body?.children.filter(c => c.name === 'Pierna') ?? (minion ? [] : model.children.filter(c => c.name === 'Pata'))) as pc.Entity[];
           const yaw = party ? player.findByName('Cuerpo')!.getLocalEulerAngles().y : source.getEulerAngles().y;
           if (body) body.setLocalEulerAngles(0, 0, 0);
           model.setLocalEulerAngles(0, yaw, 0);
-          const feet = party ? legs.map(leg => leg.findByName('Zapatilla') as pc.Entity) : legs;
-          const head = model.findByName(party ? 'Pivote de cabeza' : 'Cabeza de perro') as pc.Entity | null;
+          const feet = party ? legs.map(leg => leg.findByName('Zapatilla') as pc.Entity) : minion ? [model.findByName('Charco pringoso') as pc.Entity] : legs;
+          const head = model.findByName(party ? 'Pivote de cabeza' : minion ? 'Cabeza de chicle' : 'Cabeza de perro') as pc.Entity | null;
           const eyes = model.find(node => node.name === 'Ojo') as pc.Entity[];
           fighters.set(unit.id, {
-            model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null,
+            model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null, minion,
             ears: model.find(node => node.name === 'Oreja') as pc.Entity[], eyeScale: eyes[0]?.getLocalScale().y ?? 1, seed: party ? i * 3.1 + .4 : i,
             flash: 0, flashColor: white, ...ownMaterials(model),
-            scale: source.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
+            scale: model.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
           });
         });
       }
@@ -274,7 +317,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
         f.arms.forEach((arm, i) => arm.setLocalEulerAngles(celebrating ? -165 + Math.sin(time * 11 + i * Math.PI) * 12 : guarding ? -60 : -notice * 25 - strike * (i === 0 ? 85 : 35) - stride * (i === 0 ? 1 : -1), 0, guarding ? (i === 0 ? -20 : 20) : 0));
         f.legs.forEach((leg, i) => leg.setLocalEulerAngles(stride * (i % 2 ? -1 : 1), 0, 0));
         f.tail?.setLocalEulerAngles(38 + strike * 20, animate ? Math.sin(time * (attacking ? 16 : 7) + f.seed) * 22 : 0, 0);
-        if (!f.party && f.head) animateDogHead(f.head, f.ears, f.eyes, f.seed, stepping, animate, strike);
+        if (f.minion && f.head) f.head.setLocalEulerAngles(animate ? Math.sin(time * 2.2 + f.seed) * 6 - strike * 20 : 0, animate ? idle.look * 10 : 0, animate ? Math.sin(time * 1.7) * 5 : 0);
+        else if (!f.party && f.head) animateDogHead(f.head, f.ears, f.eyes, f.seed, stepping, animate, strike);
         else {
           f.head?.setLocalEulerAngles(animate ? -idle.breathe * 2 : 0, animate && id !== effect?.actor ? idle.look * 12 : 0, 0);
           f.eyes.forEach(eye => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, f.eyeScale * (animate ? idle.blink : 1), s.z); });
@@ -283,7 +327,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
         // The camera supplies the battle zoom; keep fighters proportional to the street.
         const since = f.hitAt === undefined ? Infinity : time - f.hitAt;
         const squash = animate && since < 1 ? Math.exp(-since * 7) * Math.cos(since * 30) : 0;
-        const breathe = animate && down < 0 ? idle.breathe * .018 : 0;
+        const breathe = animate && down < 0 ? idle.breathe * .018 + (f.minion ? Math.sin(time * 3.1 + f.seed) * .04 : 0) : 0;
         const size = Math.max(.001, shrink);
         f.model.setLocalScale(f.scale.x * size * (1 + squash * .09), f.scale.y * size * (1 - squash * .16 + breathe), f.scale.z * size * (1 + squash * .09));
         f.model.setLocalEulerAngles(lean, f.turn, roll);
@@ -301,6 +345,25 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
           });
         }
       }
+      // No-ta: the stamp falls on the target, slams, and lifts; the NO stays printed on the ground a moment.
+      const stamping = effect?.skill === 'nota' && !!target;
+      stamp.enabled = stamping && animate && t < ACTION_SECONDS;
+      if (stamping && target && stamp.enabled) {
+        const fall = smooth(t / CONTACT_SECONDS), lift = smooth((t - CONTACT_SECONDS - .25) / .4);
+        const y = (target.minion ? 1.9 : 1.3) + (1 - fall) * 2.2 + lift * 3;
+        const squash = t > CONTACT_SECONDS && t < CONTACT_SECONDS + .2 ? .8 : 1;
+        stamp.setPosition(target.base.x, y, target.base.z); stamp.setLocalScale(1.2, 1.2 * squash, 1.2);
+        if (t >= CONTACT_SECONDS && inkAt < time - 2) {
+          inkAt = time; shake = .5;
+          inkMark.setPosition(target.base.x, groundHeight(target.base.x, target.base.z) + .04, target.base.z);
+          effects.emit('spark', new pc.Vec3(target.base.x, 1, target.base.z), 22, .6);
+        }
+      }
+      const inkAge = time - inkAt;
+      inkMark.enabled = inkAge < 1.8;
+      if (inkMark.enabled) { ink.opacity = 1 - smooth((inkAge - 1) / .8); ink.update(); }
+      shake = Math.max(0, shake - dt);
+      if (shake > 0 && animate) cameraKick.add(new pc.Vec3(Math.sin(time * 70) * shake * .25, Math.cos(time * 63) * shake * .15, 0));
       sparks.enabled = !!motion && animate && t >= CONTACT_SECONDS && t < CONTACT_SECONDS + .22;
       if (healing && target && animate && t >= .2 && t < .8) {
         sparks.enabled = true;
@@ -329,6 +392,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
         settle(); effect = undefined; impact = undefined;
       }
     },
-    destroy() { settle(); battleRoot.destroy(); dogs.forEach(model => model.destroy()); materials.forEach(m => m.destroy()); },
+    destroy() { settle(); stampTexture.destroy(); inkTexture.destroy(); battleRoot.destroy(); dogs.forEach(model => model.destroy()); materials.forEach(m => m.destroy()); },
   };
 }

@@ -83,9 +83,15 @@ story is about. Update it whenever a decision changes the story.
 4. After the win (the minion is still down there, Bernat says) **the whole place's light turns
    gloomy**: darker, pink and strange. It stays that way while they are inside Bernat's game:
    La Reina Bubbaloo is watching.
+5. The houses at the north end of the street start to change, and La Reina Bubbaloo's palace
+   inflates behind them. Bernat: it is just like his dream, and it is becoming real.
+6. Inside, past the hall and the portrait gallery, a minion rises from a drain in the wrapper room.
+   Nothing hurts it; when it is about to finish Bernat, Gerard shouts "¡NO!" and becomes a
+   **Noísta**. His **No-ta** stamps a giant NO on it and it bursts.
 
 ## Running threads
 
 - **M1**: the conjuro chosen at the end of chapter 1 pays off later (see `docs/chapter-1.md`).
-- **The mood power** (Alegre, Enfadado, Tranquilo) is planned for chapter 1's later blocks.
+- **Gerard's classes**: Noísta is the first. How the system grows (and what becomes of the moods
+  once planned in `docs/chapter-1.md`) is still open, on purpose.
 - **The pink light**: a story flag (`first-fight`) keeps Sant Quirze in La Reina Bubbaloo's tint.

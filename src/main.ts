@@ -20,6 +20,7 @@ const environmentSelect = document.querySelector<HTMLSelectElement>('#environmen
 const interactButton = document.querySelector<HTMLButtonElement>('#interact')!;
 const dialogue = createDialogueBanner(document.querySelector<HTMLElement>('#hud')!);
 const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
+const hud = document.querySelector<HTMLElement>('#hud')!;
 // Development: ?story=<flag> starts with every flag up to that one (just dev-chapter), ?story=new from scratch.
 const devStory = (() => {
   if (!import.meta.env.DEV) return undefined;
@@ -76,6 +77,7 @@ try {
   const battleUI = createBattleUI(document.querySelector<HTMLElement>('#hud')!, {
     change: (state, effect, onImpact) => game.setBattle(state, effect, onImpact),
     target: id => game.selectTarget(id),
+    awaken: id => { game.awaken(id); storyEvent({ type: 'class', id }); },
   });
   const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused), () => controller.open(), story);
   let currentLocation: EnvironmentId = story.resume.environment;
@@ -92,11 +94,17 @@ try {
     else if (effect.kind === 'item') storyUI.item(effect.item);
     else if (effect.kind === 'hint') storyUI.hint(effect.id, learned[effect.id]);
     else if (effect.kind === 'minion') { await game.summonMinion(); storyEvent({ type: 'minion' }); }
-    else if (effect.kind === 'battle') game.encounter(true);
+    else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(); }
+    else if (effect.kind === 'palace') { await game.raisePalace(); storyEvent({ type: 'palace' }); }
+    else if (effect.kind === 'gate') await game.popGate();
+    else if (effect.kind === 'travel') game.setEnvironment(effect.environment, effect.cell);
+    else if (effect.kind === 'drain') await game.riseFromDrain();
     else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
   }
   function storyChanged() {
     game.refreshStory();
+    // The active class dresses the whole interface (style.css: #hud[data-class]).
+    if (story.gerardClass) hud.dataset.class = story.gerardClass; else delete hud.dataset.class;
     exploration.refresh();
     const saved = JSON.stringify(story.saved);
     if (saved !== savedStory) { savedStory = saved; dirty = true; clearTimeout(saveTimer); void save(); }
@@ -107,8 +115,8 @@ try {
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
   const game = createGame(canvas, {
-    onEncounter: (allies, foes, possessed) => { exploration.close(); dialogue.close(); battleUI.open(allies, foes, possessed); },
-    onBattleEnd: phase => storyEvent({ type: 'battle', won: phase === 'won' }),
+    onEncounter: (allies, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(allies, foes, { ...options, gerardClass: story.gerardClass }); },
+    onBattleEnd: (phase, encounter) => storyEvent({ type: 'battle', won: phase === 'won', encounter }),
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble, at),
     onStep: (steps, cell) => {
@@ -125,7 +133,7 @@ try {
       document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : 'SANT QUIRZE DEL VALLÈS';
       document.querySelector('#location-detail')!.textContent = id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
-        : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : 'Escena de prueba de movimiento';
+        : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
       document.title = `${ENVIRONMENTS[id].name} · Gerard 35`;
     },
@@ -187,7 +195,7 @@ try {
     const foes = Number(params.get('battle'));
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => battleUI.open(params.get('allies') === '2' ? 2 : 1, foes));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story } });
+    Object.assign(window, { gerard: { game, story, battleUI } });
   }
   if (import.meta.hot) import.meta.hot.dispose(() => { controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {

@@ -10,7 +10,7 @@ his power: **changing class by changing mood**, fast.
 | Block | Minutes | Status | Where |
 | --- | --- | --- | --- |
 | 1 · Casa y calle | 0–10 | Playable | Bedroom → kitchen → hall → street → Bernat's door → down the street → first fight |
-| 2 · El juego se hace real | 10–20 | Planned | The street turns into La Reina Bubbaloo's palace: the first mini dungeon and Noísta, Gerard's first class ([plan](bubbaloo-palace.md)) |
+| 2 · El juego se hace real | 10–20 | Playable | The street turns into La Reina Bubbaloo's palace: the first mini dungeon and Noísta, Gerard's first class ([design](bubbaloo-palace.md)) |
 | 3 · Mini boss y salida | 20–30 | Planned | A bigger Bubbaloo minion, the conjuro, back to reality |
 
 ## Design principles
@@ -50,12 +50,13 @@ his power: **changing class by changing mood**, fast.
 | 8 | "¿Un déjà-vu?" "Peor. Es igual… creo que la he cagado." | — | 0:30 |
 | 9 | A gum head pokes out of the manhole for a moment, pops a bubble over the dogs and sinks back: their eyes turn dark pink. "¡Ha salido algo rosa de la alcantarilla!" Bernat: "Un esbirro de la Reina Bubbaloo." | — | 0:45 |
 | 10 | The dogs attack: **first fight**, straight away and with no tutorial. Escapar is greyed out (the dogs surround them); losing lets them try again | Fighting | 2:00 |
-| 11 | Won: the light over Sant Quirze turns dark, pink and strange while they are inside Bernat's game → "Continuará…" | — | 0:45 |
+| 11 | Won: the light over Sant Quirze turns dark, pink and strange while they are inside Bernat's game; the houses at the north end start to change → block 2 | — | 0:45 |
 
 Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpack`,
 `bernat-joined`, `bernat-stalled`, `dejavu`, `minion`, `first-fight`. Battles with the dogs stay
 off until `dejavu`; from `minion` on the dogs are possessed, and `first-fight` keeps Sant Quirze
-in La Reina Bubbaloo's light.
+in La Reina Bubbaloo's light. The palace block adds `palace`, `in-palace`, `got-chicle`, `noista`
+and `wrapper-room` (see the [palace design](bubbaloo-palace.md)).
 
 ### How it is built
 
@@ -83,9 +84,9 @@ in La Reina Bubbaloo's light.
 
 ## Block 2 · El juego se hace real (10–20 min) — plan
 
-> Superseded by [the palace plan](bubbaloo-palace.md): the houses at the north end turn into La
-> Reina Bubbaloo's palace, a first mini dungeon where Gerard unlocks the Noísta class. The notes
-> below are the earlier idea, kept until the palace is built.
+> Built as [La Reina Bubbaloo's palace](bubbaloo-palace.md): the houses at the north end turn into
+> her palace, a first mini dungeon where Gerard unlocks the Noísta class. The notes below are the
+> earlier idea, kept for reference.
 
 1. **The switch** (now in block 1). The minion possesses the dogs, the first fight happens, and the
    light turns pink and gloomy. Still open: whether the HUD should also take La Reina Bubbaloo's

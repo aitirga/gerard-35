@@ -2,7 +2,8 @@
 import type { BattleState } from './battle';
 
 export async function planEnemyTurn(state: BattleState, timeoutMs = 2500): Promise<Record<string, string>> {
-  if (state.allies.filter(a => a.hp > 0).length < 2) return {};
+  // Scripted fights (the palace minion) follow their own rule in battle.ts.
+  if (state.encounter !== 'dogs' || state.allies.filter(a => a.hp > 0).length < 2) return {};
   try {
     const response = await fetch('/api/battle/enemy-turn', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(timeoutMs),

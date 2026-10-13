@@ -1,6 +1,6 @@
 import type { Cell } from './movement';
 
-export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana';
+export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /** Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses and a potted yucca. */
@@ -63,6 +63,8 @@ export interface Environment {
   plan?: string[];
   rooms?: Room[];
   stairs?: Stairs[];
+  /** La Reina Bubbaloo's palace: a plan in PALACE_GLYPHS, built by `src/palace-scenery.ts`. */
+  palace?: { plan: string[]; rooms: Room[] };
 }
 
 export const COURTYARD_ROWS = [
@@ -310,10 +312,66 @@ export const MERIDIANA = house({
     { id: 'meridiana-balcony', cell: { x: 22, z: 3 }, label: 'Asomarse al balcón', lines: ['Toldos verdes, ropa tendida y mucha luz. Buenos días, vecinos.'] },
   ],
 });
+/** What each character of the palace plan stands for (docs/bubbaloo-palace.md). */
+export const PALACE_GLYPHS = {
+  '.': 'suelo', '+': 'arco o paso', 'R': 'sumidero', '#': 'muro de chicle', 'P': 'muro con retrato',
+  'C': 'cortina de chicle', 'S': 'escalera al trono', 'D': 'puerta sellada', 'F': 'fuente del Corazón Líquido',
+  'O': 'columna de envoltorio', 'w': 'montón de envoltorios', 'T': 'mesita del bol de chicles', ' ': 'fuera',
+} as const;
+const PALACE_WALKABLE = new Set(['.', '+', 'R']);
+/**
+ * Inside La Reina Bubbaloo's palace (docs/bubbaloo-palace.md). North is up and the camera looks
+ * from the south-east, so north and west walls stand tall and south and east ones are cut low.
+ * Chapter 1 opens the hall, the portrait gallery and the wrapper room; the stair north (behind
+ * the gum curtain) and the east door wait for the final dungeon.
+ */
+const PALACE_PLAN = [
+  '                       ', // 0
+  '             #######   ', // 1
+  '             #SSSSS#   ', // 2
+  '             #SSSSS#   ', // 3
+  '             #SSSSS#   ', // 4
+  '             #SSSSS#   ', // 5
+  '             #SSSSS#   ', // 6
+  '#P#P#P#P#P####CCCCC####', // 7
+  '#.........#...........#', // 8
+  '#.........+...........#', // 9
+  '#....T....+..O.....O..#', // 10
+  '#++########...........#', // 11
+  '#.........#....FFF....#', // 12
+  '#.w.....w.#....FFF....D', // 13
+  '#.......w.#....FFF....#', // 14
+  '#.........#...........#', // 15
+  '#....R....+...........#', // 16
+  '#.........#..O.....O..#', // 17
+  '#.ww....w.#...........#', // 18
+  '#.........#...........#', // 19
+  '################+######', // 20
+];
+export const PALACIO: Environment = {
+  id: 'palacio', name: 'Palacio de la Reina Bubbaloo', spawn: { x: 16, z: 18 }, zoom: 7.2,
+  grid: PALACE_PLAN.map(row => [...row].map(glyph => PALACE_WALKABLE.has(glyph) ? '.' : '#').join('')),
+  houses: [], props: [],
+  palace: {
+    plan: PALACE_PLAN,
+    rooms: [
+      { name: 'Vestíbulo de las Burbujas', x: 11, z: 8, w: 11, d: 12, floor: 'tile' },
+      { name: 'Galería de los Retratos', x: 1, z: 8, w: 9, d: 3, floor: 'tile' },
+      { name: 'Sala de los Envoltorios', x: 1, z: 12, w: 9, d: 8, floor: 'tile' },
+    ],
+  },
+  interactions: [
+    { id: 'leave-palace', cell: { x: 16, z: 20 }, label: 'Salir por la pompa', to: { environment: 'maresme', cell: { x: 16, z: 3 } } },
+    { id: 'palace-fountain', cell: { x: 16, z: 15 }, label: 'Mirar la fuente', lines: ['El Corazón Líquido. Burbujea, rosa y espeso.', 'Huele a fresa. Y a algo que no es fresa.'] },
+    { id: 'palace-east-door', cell: { x: 21, z: 13 }, label: 'Mirar la puerta', lines: ['Sale chicle por debajo de la puerta. Detrás suena como si algo hirviera.', 'Mejor no.'] },
+    { id: 'palace-column', cell: { x: 12, z: 17 }, label: 'Tocar la columna', lines: ['Una columna de envoltorio retorcido. Cruje como el papel de un caramelo.'] },
+    { id: 'palace-wrappers', cell: { x: 8, z: 15 }, label: 'Mirar los envoltorios', lines: ['Envoltorios gigantes, arrugados. Alguien se ha comido muchísimos chicles aquí.'] },
+  ],
+};
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
-  meridiana: MERIDIANA,
+  meridiana: MERIDIANA, palacio: PALACIO,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

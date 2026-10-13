@@ -4,7 +4,9 @@ import { ENVIRONMENTS, INTERACTION_REACH, type EnvironmentId, type Interaction }
 import { BUBBALOO, buildScenery } from './scenery';
 import { type Dialogue } from './dialogue';
 import { createBattleScene } from './battle-scene';
-import { type BattleEffect, type BattlePhase, type BattleState } from './battle';
+import { type BattleEffect, type BattlePhase, type BattleState, type ClassId, type Encounter } from './battle';
+import { createPalace, createPalaceApproach, type PalaceApproach } from './palace';
+import { wearClass } from './classes';
 import { STREET_END_AREA, WanderingPack } from './encounters';
 import { createMinion } from './minion';
 import { WalkAnimation, idlePose } from './walk-animation';
@@ -24,9 +26,9 @@ function playerCharacter() {
 }
 
 export interface GameCallbacks {
-  onEncounter: (allies: 1 | 2, foes: number, possessed: boolean) => void;
+  onEncounter: (allies: 1 | 2, foes: number, options: { possessed: boolean; encounter: Encounter }) => void;
   /** A fight closed, however it ended. */
-  onBattleEnd: (phase: BattlePhase) => void;
+  onBattleEnd: (phase: BattlePhase, encounter: Encounter) => void;
   onBattleTargets: (targets: { id: string; x: number; y: number; visible: boolean }[]) => void;
   /** Where the companion's head is on screen, for speech bubbles; undefined when he is not shown. */
   onCompanionScreen: (at: { x: number; y: number } | undefined) => void;
@@ -40,7 +42,11 @@ export interface GameCallbacks {
 /** Parts of Gerard's model that only show once he picks up his backpack. */
 const BACKPACK_PARTS = new Set(['Mochila', 'Bolsillo de mochila', 'Correa frontal', 'Correa de hombro', 'Hebilla de mochila']);
 const SANT_QUIRZE = new Set<EnvironmentId>(['maresme', 'home-entrance', 'home-floor-1', 'home-floor-2']);
-const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'] };
+/** Where Bernat walks with Gerard: Sant Quirze, and La Reina Bubbaloo's palace at the end of it. */
+const WITH_BERNAT = new Set<EnvironmentId>([...SANT_QUIRZE, 'palacio']);
+/** Where the palace fight is staged: the middle of the wrapper room. */
+const PALACE_STAGE: Cell = { x: 5, z: 15.5 };
+const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'] };
 
 export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, story: Story) {
   const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
@@ -78,6 +84,18 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   let spores = 0, sporeDog = 0;
   const dayClear = new pc.Color(0.2, 0.26, 0.24), clear = new pc.Color();
   const stopped = () => paused || cutscene;
+  // La Reina Bubbaloo's palace past the north end of the street, and the street's own changes.
+  const palace = createPalace(app, effects);
+  let approach: PalaceApproach | undefined;
+  /** A cut-scene camera: what to look at and how much to frame, instead of following Gerard. */
+  let cinematic: { target: pc.Vec3; height: number } | undefined;
+  const cameraWobble = new pc.Vec3();
+  /** The palace minion has climbed out of its drain (not saved: on reload it waits below again). */
+  let drainRisen = false;
+  let encounterId: Encounter = 'dogs';
+  let room: string | undefined;
+  let away = false;
+  battleScene.setMinionTemplate(minion.root);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const backpack = body.find(node => BACKPACK_PARTS.has(node.name)) as pc.Entity[];
 
@@ -95,7 +113,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   let companionShown = false;
   let tug = 0;
   /** Bernat walks with Gerard around Sant Quirze, not into other chapters' scenes. */
-  function bernatHere() { return story.companion !== 'none' && SANT_QUIRZE.has(environment.id); }
+  function bernatHere() { return story.companion !== 'none' && WITH_BERNAT.has(environment.id); }
   /** While Bernat stalls, cells just beyond the leash are walls, so Gerard cannot leave him. */
   function leashCells(): Cell[] {
     if (story.companion !== 'stalled') return [];
@@ -107,7 +125,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     return cells;
   }
   function occupiedCells(): readonly Cell[] {
-    return [...npcs.map(n => n.cell), ...(environment.id === 'maresme' ? [...pack.occupied, ...leashCells()] : [])];
+    const drain = environment.id === 'palacio' && drainRisen && !story.has('wrapper-room') ? [{ x: PLACES.drain.x, z: PLACES.drain.z }] : [];
+    return [...npcs.map(n => n.cell), ...story.blocked(environment.id), ...drain, ...(environment.id === 'maresme' ? [...pack.occupied, ...leashCells()] : [])];
   }
   function interactions(): Interaction[] {
     return [...environment.interactions, ...story.interactions(environment.id, bernatHere() ? follower.position : undefined)];
@@ -158,9 +177,18 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       return { entity, cell: p.cell, materials: pickupModel(p.id, entity) };
     });
     backpack.forEach(part => { part.enabled = story.has('got-backpack'); });
-    if (!cutscene) { possessed = story.possessed; minion.set(story.minion); }
+    if (!cutscene) {
+      possessed = story.possessed;
+      if (environment.id === 'palacio') minion.set(story.has('wrapper-room') ? 'gone' : drainRisen ? 'standing' : 'lurking');
+      else minion.set(story.minion);
+      if (environment.id === 'maresme') {
+        if (story.palace && !approach) approach = buildApproach();
+        palace.grow(story.palace ? 1 : 0); approach?.grow(story.palace ? 1 : 0);
+      }
+    }
     battleScene.possess(possessed);
-    toneTarget = SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo' ? 1 : 0;
+    if (story.gerardClass) wearClass(player, story.gerardClass);
+    toneTarget = environment.id === 'palacio' || (SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo') ? 1 : 0;
     // Bernat first steps out of his own front door; scene changes place him beside Gerard instead.
     if (bernatHere() && !companionShown) follower.reset(PLACES.bernat.cell);
     companionShown = bernatHere();
@@ -180,7 +208,73 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     clearInput();
     movement.teleport(environment.grid, movement.cell);
     pack.armed = false;
-    callbacks.onEncounter(bernatHere() ? 2 : 1, pack.dogs.length, possessed);
+    encounterId = 'dogs';
+    callbacks.onEncounter(bernatHere() ? 2 : 1, pack.dogs.length, { possessed, encounter: 'dogs' });
+  }
+  /** The street dressing depends on this scene's houses, so it is rebuilt with the street. */
+  function buildApproach() {
+    const north = ['west-0', 'east-0', 'west-1', 'east-1'].map(id => scenery.houses.find(h => h.id === id)).filter(h => !!h);
+    const { x, z } = PLACES.palace.door;
+    return createPalaceApproach(app, north, { from: scenery.toWorld(x, 6.7), to: scenery.toWorld(x, z - .6) }, [scenery.toWorld(x - 3.4, 1.3), scenery.toWorld(x + 3.4, 1.3)]);
+  }
+  function placePalace() {
+    const gate = scenery.toWorld(PLACES.palace.gate.x, PLACES.palace.gate.z);
+    gate.y = scenery.groundHeight(gate.x, gate.z);
+    palace.place(gate);
+  }
+  /** Waits for `seconds` of game time while `step(t)` runs each frame with t from 0 to 1. */
+  let timeline: { seconds: number; elapsed: number; step: (t: number) => void; done: () => void } | undefined;
+  function play(seconds: number, step: (t: number) => void) {
+    return new Promise<void>(done => { timeline = { seconds, elapsed: 0, step, done }; });
+  }
+  function holdStill() { cutscene = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined); }
+  function release() { cutscene = false; cinematic = undefined; lastPrompt = ''; updatePrompt(); }
+  /**
+   * The houses at the north end change and the palace inflates behind them
+   * (docs/bubbaloo-palace.md): the camera pulls back to watch, then returns to Gerard.
+   */
+  async function raisePalace() {
+    if (environment.id !== 'maresme') return;
+    holdStill();
+    approach ??= buildApproach();
+    const gate = scenery.toWorld(PLACES.palace.gate.x, PLACES.palace.gate.z);
+    cinematic = { target: gate.clone().add(new pc.Vec3(0, 3, 4)), height: 13.5 };
+    await play(1.4, () => {});
+    await play(7.5, t => {
+      approach!.grow(Math.min(1, t * 1.6));
+      palace.grow(Math.max(0, (t - .22) / .78));
+      // A low rumble while the gum climbs the walls.
+      if (t < .3 && !reducedMotion.matches) cameraWobble.set(Math.sin(t * 160) * .12, Math.sin(t * 130) * .06, 0); else cameraWobble.set(0, 0, 0);
+    });
+    effects.emit('spore', gate.clone().add(new pc.Vec3(0, 1.5, 1.5)), 26, 3);
+    await play(1.2, () => {});
+    release();
+  }
+  /** La Pompa bursts as they walk through; the story then moves them inside. */
+  async function popGate() {
+    holdStill();
+    palace.popGate();
+    await play(.5, () => {});
+    release();
+  }
+  /** The palace minion climbs out of the drain in the wrapper room, and stays to fight. */
+  async function riseFromDrain() {
+    if (environment.id !== 'palacio') return;
+    holdStill();
+    const drain = scenery.toWorld(PLACES.drain.x, PLACES.drain.z);
+    cinematic = { target: drain.clone().add(new pc.Vec3(0, 1, 0)), height: 5.5 };
+    drainRisen = true;
+    await minion.rise();
+    await play(.6, () => {});
+    release();
+    movement.resolveOverlap(occupiedCells(), !reducedMotion.matches);
+  }
+  function startPalaceFight() {
+    if (battle || environment.id !== 'palacio') return;
+    clearInput();
+    movement.teleport(environment.grid, movement.cell);
+    encounterId = 'palace-minion';
+    callbacks.onEncounter(2, 1, { possessed: false, encounter: 'palace-minion' });
   }
   /** The minion's head rises out of the manhole and pops a bubble: the dogs' eyes turn pink and they face the boys. */
   async function summonMinion() {
@@ -198,8 +292,12 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     cutscene = false; lastPrompt = ''; updatePrompt();
   }
   function setBattle(next: BattleState | undefined, effect?: BattleEffect, onImpact?: () => void) {
-    if (!next && battle) { pack.finish(battle.phase === 'won'); callbacks.onBattleEnd(battle.phase); }
-    const settled = battleScene.set(next, scenery.toWorld(pack.area.stage.x, pack.area.stage.z), effect, onImpact); battle = next; clearInput();
+    if (!next && battle) {
+      if (battle.encounter === 'dogs') pack.finish(battle.phase === 'won');
+      callbacks.onBattleEnd(battle.phase, battle.encounter);
+    }
+    const stage = next?.encounter === 'palace-minion' || (!next && encounterId === 'palace-minion') ? PALACE_STAGE : pack.area.stage;
+    const settled = battleScene.set(next, scenery.toWorld(stage.x, stage.z), effect, onImpact); battle = next; clearInput();
     if (!next) {
       movement.resolveOverlap(occupiedCells(), !reducedMotion.matches);
       lastPrompt = ''; positionPlayer(); updatePrompt();
@@ -262,6 +360,11 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     scenery = buildScenery(app, environment);
     movement.teleport(environment.grid, destination ?? environment.spawn);
     stairsArmed = false; arrival = movement.cell;
+    approach?.destroy(); approach = undefined;
+    palace.root.enabled = false;
+    if (id !== 'palacio') drainRisen = false;
+    room = undefined;
+    if (id === 'maresme') placePalace();
     refreshStory();
     // A new scene opens in its final light; only the story's turn fades.
     tone = toneTarget; scenery.setTone(tone);
@@ -349,6 +452,17 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
         tug = story.companion === 'stalled' && input && far ? tug + Math.min(dt, .25) : 0;
         if (tug > 0.9) { tug = 0; callbacks.onStory({ type: 'leash' }); }
       }
+      // Rooms tell the story when Gerard steps into them (the wrapper room's minion).
+      if (environment.palace) {
+        const c = movement.cell;
+        const here = environment.palace.rooms.find(r => c.x >= r.x && c.x < r.x + r.w && c.z >= r.z && c.z < r.z + r.d)?.name;
+        if (here !== room) { room = here; if (here) callbacks.onStory({ type: 'room', id: here }); }
+      }
+      // Heading back south once the palace stands: Bernat says it is the other way.
+      if (environment.id === 'maresme' && story.palace && !story.has('in-palace')) {
+        const south = movement.position.z > PLACES.awayRow;
+        if (south !== away) { away = south; callbacks.onStory({ type: 'away', away }); }
+      }
       positionPlayer(); updatePrompt();
       if (environment.id === 'maresme' && !battle) {
         pack.update(delta, movement.footprint);
@@ -413,10 +527,18 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       model.setEulerAngles(0, dog.yaw, 0);
       battleScene.wander(i, delta, dog.progress < 1 && !paused && !battle && !document.querySelector('#hud[data-dialogue]'), !reducedMotion.matches);
     });
-    const manhole = PLACES.minion.manhole;
+    if (timeline) {
+      timeline.elapsed += reducedMotion.matches ? timeline.seconds : delta;
+      const t = Math.min(1, timeline.elapsed / timeline.seconds);
+      timeline.step(t);
+      if (t >= 1) { const { done } = timeline; timeline = undefined; done(); }
+    }
+    palace.update(delta, animate);
+    // The minion lives under the street's manhole, and in the palace under the wrapper room's drain.
+    const lair = environment.id === 'palacio' ? PLACES.drain : PLACES.minion.manhole;
     minion.update(delta, animate, {
-      manhole: scenery.toWorld(manhole.x, manhole.z), look: player.getPosition(), groundHeight: scenery.groundHeight,
-    }, environment.id === 'maresme' && !battle);
+      manhole: scenery.toWorld(lair.x, lair.z), look: player.getPosition(), groundHeight: scenery.groundHeight,
+    }, (environment.id === 'maresme' || environment.id === 'palacio') && !battle);
     if (tone !== toneTarget) {
       tone = animate ? tone + Math.sign(toneTarget - tone) * Math.min(Math.abs(toneTarget - tone), delta / 3.5) : toneTarget;
       scenery.setTone(tone);
@@ -427,7 +549,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     effects.update(delta);
     const aspect = canvas.clientWidth / canvas.clientHeight;
     const follow = environment.zoom;
-    const target = battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1, 0)).add(battleScene.focus) : follow && !overview ? player.getPosition().clone() : new pc.Vec3();
+    const target = battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1, 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? player.getPosition().clone() : new pc.Vec3();
     cameraTarget.lerp(cameraTarget, target, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 7));
     const cameraOffset = battle ? new pc.Vec3(5, 9, 15) : new pc.Vec3(40, 52, 40);
     if (battleScene.entering && !reducedMotion.matches) {
@@ -437,10 +559,11 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const desiredCamera = cameraTarget.clone().add(cameraOffset);
     camera.setPosition(reducedMotion.matches ? desiredCamera : camera.getPosition().clone().lerp(camera.getPosition(), desiredCamera, 1 - Math.exp(-delta * 6)));
     if (battle) camera.setPosition(camera.getPosition().clone().add(battleScene.cameraKick));
+    else if (cinematic) camera.setPosition(camera.getPosition().clone().add(cameraWobble));
     camera.lookAt(cameraTarget);
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
-    const height = battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2) : follow && !overview ? Math.max(follow, follow * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
+    const height = battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow, follow * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
     camera.camera!.orthoHeight = pc.math.lerp(camera.camera!.orthoHeight, height, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
     callbacks.onBattleTargets(battleScene.targets().map(({ id, position, visible }) => {
       camera.camera!.worldToScreen(position, screen);
@@ -457,7 +580,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     window.removeEventListener('blur', clearInput); document.removeEventListener('visibilitychange', clearInput);
     window.removeEventListener('resize', resize);
     canvas.removeEventListener('pointerup', touchDog);
-    battleScene.destroy(); minion.destroy(); effects.destroy();
+    battleScene.destroy(); minion.destroy(); palace.destroy(); approach?.destroy(); effects.destroy();
     scenery.destroy(); playerMaterials.forEach(m => m.destroy()); bernatRig.materials.forEach(m => m.destroy());
     for (const list of [npcs, pickups]) for (const item of list) item.materials.forEach(m => m.destroy());
   });
@@ -466,6 +589,9 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   app.start();
   return {
     app, setEnvironment, interact, encounter, setBattle, refreshStory, summonMinion,
+    raisePalace, popGate, riseFromDrain, startPalaceFight,
+    /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
+    awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },
     setControllerInput(direction: Direction | null, stick: Stick | null, running = false) { controllerDirection = direction; controllerStick = stick; controllerRunning = running; },
     selectTarget: battleScene.selectTarget,
     setPaused(value: boolean) { paused = value; clearInput(); controllerDirection = null; controllerStick = null; controllerRunning = false; },

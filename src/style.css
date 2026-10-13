@@ -500,3 +500,54 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .item-column li span { display: block; margin-top: 4px; font-size: 12px; line-height: 1.5; color: var(--ui-muted); }
 .item-column li.empty { color: var(--ui-muted); font-size: 12px; }
 @media (prefers-reduced-motion: reduce) { .story-note, .key-hint, #story-card { animation: none; transition: none; } }
+
+/* Inside a fight: lines said over the fighters' heads, the class banner and the screen shake. */
+.battle-speech { position: absolute; inset: 0; pointer-events: none; }
+.battle-speech-line { position: absolute; left: 0; top: 0; margin: 0; max-width: 300px; padding: 9px 14px; background: var(--battle-paper); color: var(--battle-ink); border-left: 4px solid var(--accent, var(--battle-gold)); box-shadow: 4px 4px 0 #071e2266; font: italic 700 17px 'Manrope', sans-serif; white-space: nowrap; animation: speech-in .25s cubic-bezier(.2,.9,.3,1.4) both; }
+.battle-speech-line::after { content: ''; position: absolute; left: 50%; bottom: -8px; translate: -50% 0; border: 8px solid transparent; border-bottom: 0; border-top-color: var(--battle-paper); }
+.battle-speech-line[data-shout] { padding: 10px 24px; font: italic 900 64px/1 'Manrope', sans-serif; letter-spacing: -.06em; background: #e2483d; color: #fff4ec; border: 0; box-shadow: 8px 8px 0 #1b1216; transform-origin: bottom center; animation: shout-in .32s cubic-bezier(.2,1.6,.3,1) both; }
+.battle-speech-line[data-shout]::after { border-top-color: #e2483d; }
+.battle-speech-line[data-leaving] { opacity: 0; transition: opacity .25s; }
+#battle[data-shaking] { animation: battle-shake .5s linear 3; }
+#battle[data-beat] .battle-bottom { opacity: .35; transition: opacity .4s; }
+.class-banner { position: absolute; left: 50%; top: 42%; translate: -50% -50%; rotate: -3deg; min-width: min(520px, calc(100% - 48px)); padding: 26px 34px 30px; background: var(--battle-ink); border-top: 6px solid var(--battle-gold); box-shadow: 14px 14px 0 #00000066; text-align: center; animation: banner-in .6s cubic-bezier(.16,1,.3,1) both; }
+.class-banner h2 { margin: 10px 0 6px; font: italic 900 clamp(48px, 7vw, 92px)/.9 'Manrope', sans-serif; letter-spacing: -.07em; color: var(--battle-gold); text-transform: uppercase; }
+.class-banner p { margin: 0; font-size: 15px; font-style: italic; color: var(--battle-paper); }
+.command.is-new { animation: command-new 1.1s ease-in-out infinite; }
+.command-choices button[data-class] { border-color: var(--battle-gold); }
+.command-choices button[data-class] strong::after { content: ' · NUEVA'; color: var(--battle-gold); font-size: 8px; letter-spacing: .14em; }
+@keyframes speech-in { from { opacity: 0; translate: 0 10px; } }
+@keyframes shout-in { from { opacity: 0; scale: .3; } }
+@keyframes battle-shake { 0%, 100% { translate: 0 0; } 25% { translate: -7px 4px; } 50% { translate: 6px -5px; } 75% { translate: -4px -3px; } }
+@keyframes banner-in { from { opacity: 0; translate: -50% -30%; scale: 1.3; } }
+@keyframes command-new { 50% { box-shadow: 5px 5px 0 #071e2266, 0 0 0 4px var(--battle-gold); transform: translateX(8px); } }
+
+/* Noísta (docs/bubbaloo-palace.md): Gerard always says no. The whole interface turns into a
+   protest poster: bone paper, near-black ink, crimson instead of gold, slanted stamped cards. */
+#hud[data-class="noista"] {
+  --ui-ink: #1b1216;
+  --ui-surface: #1d1418ee;
+  --ui-gold: #e2483d;
+  --ui-paper: #f4ece2;
+  --ui-muted: #c9b3ad;
+  --ui-line: #e2483d40;
+  --ui-shadow: 5px 5px 0 #e2483d66;
+}
+#hud[data-class="noista"] #battle { background: linear-gradient(180deg, #1b1216b0, transparent 29%, transparent 48%, #1b1216e6); }
+#hud[data-class="noista"] #battle::before { border-color: #e2483d22; }
+#hud[data-class="noista"] #battle::after { content: 'NO'; inset: auto -2% 4% auto; width: auto; z-index: 0; background: none; transform: rotate(-12deg); animation: none; font: italic 900 34vw/1 'Manrope', sans-serif; letter-spacing: -.08em; color: #e2483d; opacity: .07; }
+#hud[data-class="noista"] .battle-heading h1 { text-transform: uppercase; font-style: italic; text-shadow: 4px 4px 0 #e2483d88; }
+#hud[data-class="noista"] .commands { transform: skewX(-9deg) rotate(-1deg); }
+#hud[data-class="noista"] .command { background: var(--ui-paper); box-shadow: 6px 6px 0 #e2483daa; }
+#hud[data-class="noista"] .command:has(.command-trigger:hover), #hud[data-class="noista"] .command:has(.command-trigger:focus-visible) { background: #ffd9cf; }
+#hud[data-class="noista"] .command.expanded { background: var(--ui-gold); color: #fff4ec; }
+#hud[data-class="noista"] .command-trigger strong { text-transform: uppercase; font-style: italic; letter-spacing: -.07em; }
+#hud[data-class="noista"] .command-choices button:hover { background: #3a1f26; }
+#hud[data-class="noista"] .command-back { color: var(--ui-ink); }
+#hud[data-class="noista"] .party-card { background: var(--ui-surface); border-color: var(--ui-line); }
+#hud[data-class="noista"] .party-card.is-active { background: #2b1a1fee; }
+#hud[data-class="noista"] .battle-meter.secondary i { background: #e2483d; }
+#hud[data-class="noista"] .battle-result { box-shadow: 12px 12px 0 #e2483d55; }
+#hud[data-class="noista"] .party-portrait img { filter: drop-shadow(3px 0 0 #e2483d99); }
+#hud[data-class="noista"] .party-card[data-unit="gerard"] .unit-heading > strong::after { content: ' · NOÍSTA'; color: var(--ui-gold); font-size: 8px; letter-spacing: .16em; }
+#hud[data-class="noista"] #battle { transition: background .6s; }

@@ -2,6 +2,8 @@ import * as pc from 'playcanvas';
 import type { Environment } from './environments';
 import { createPropKit } from './props';
 import { buildHome } from './home-scenery';
+import type { HouseVolume } from './palace';
+import { buildPalaceInterior } from './palace-scenery';
 
 /** La Reina Bubbaloo's light, once she has noticed Gerard and Bernat. */
 export const BUBBALOO = {
@@ -25,6 +27,9 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const surfaces: { x: number; z: number; w: number; d: number; y: number }[] = [];
   const props = createPropKit();
   let home: ReturnType<typeof buildHome> | undefined;
+  let palace: ReturnType<typeof buildPalaceInterior> | undefined;
+  /** Street houses' main volumes, for things that grow over them (the palace's gum). */
+  const houseVolumes: HouseVolume[] = [];
   const flowing: pc.StandardMaterial[] = [];
   let time = 0;
   const cx = (environment.grid[0].length - 1) / 2;
@@ -141,7 +146,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const backdropColor = backdrop.diffuse.clone();
   if (!environment.plan) box('Fondo', backdrop, cx, -1.05, cz, 200, 0.2, 200);
   // Floor plans build their own plinth, with room for a stairwell going down.
-  if (!environment.plan) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
+  if (!environment.plan && !environment.palace) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
 
   function pointLight(px: number, y: number, pz: number) {
     const light = new pc.Entity('Luz cálida');
@@ -296,6 +301,10 @@ export function buildScenery(app: pc.Application, environment: Environment) {
         bx('Cubierta', gravel, u0 + 0.15, u1 - 0.15, y, 0.02, v0 + 0.15, v1 - 0.15);
         for (const [a0, a1, w0, w1] of [[u0, u1, v0, v0 + 0.18], [u0, u1, v1 - 0.18, v1], [u0, u0 + 0.18, v0, v1], [u1 - 0.18, u1, v0, v1]]) bx('Peto', render, a0, a1, y, 0.28, w0, w1);
       }
+      houseVolumes.push({
+        id: house.id, x0: x(Math.min(at(yard), at(back))), x1: x(Math.max(at(yard), at(back))), z0: z(north), z1: z(south),
+        top: Math.max(...tops.map(t => t[2])) + .28, streetSide: east ? -1 : 1,
+      });
       if (house.solar) {
         const [u0, u1, y] = tops[tops.length - 1];
         for (let r = 0; r < 2; r++) {
@@ -342,6 +351,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     label('SANT QUIRZE', 15.6, 0.06, 6, 3.8);
     // Boundary hedges close the playable slice without pretending it is the whole town.
     for (const pz of [0.7, 41.6]) box('Límite del barrio', leaf[2], 16, 0.38, pz, 17, 0.65, 0.7);
+  } else if (environment.palace) {
+    palace = buildPalaceInterior({ app, root, x, z, texture }, environment);
   } else if (environment.plan) {
     home = buildHome({
       app, root, props, mat, texture, x, z,
@@ -365,6 +376,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   for (const prop of environment.props) props.place(prop, root, new pc.Vec3(x(prop.x), 0, z(prop.z)));
   return {
     root,
+    houses: houseVolumes as readonly HouseVolume[],
     groundHeight(px: number, pz: number) {
       // The highest surface underfoot, which may be below the floor (steps going down).
       let height = -Infinity;
@@ -393,10 +405,11 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       props.update(dt, animate, focus, toCamera);
       home?.update(dt, animate, focus, toCamera);
+      palace?.update(dt, animate);
       if (!animate) return;
       time += dt;
       for (const m of flowing) { m.diffuseMapOffset.set(time * .03, time * .05); m.emissiveMapOffset.set(-time * .04, time * .025); m.update(); }
     },
-    destroy() { app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
+    destroy() { app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }

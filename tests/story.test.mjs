@@ -51,10 +51,54 @@ test('block 1 plays from waking up to the first fight in order', () => {
 
   assert.deepEqual(story.handle({ type: 'battle', won: false }), [], 'losing lets them try again');
   assert.equal(story.tone, 'day');
-  assert.deepEqual(kinds(story.handle({ type: 'battle', won: true })), ['dialogue', 'card:end']);
+  assert.deepEqual(kinds(story.handle({ type: 'battle', won: true })), ['dialogue', 'palace']);
   assert.deepEqual(story.handle({ type: 'battle', won: true }), [], 'later fights are just fights');
   assert.equal(story.minion, 'gone');
   assert.equal(story.tone, 'bubbaloo');
+  assert.equal(story.palace, false, 'the palace stands once its cut-scene has played');
+  assert.deepEqual(story.saved, STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('first-fight') + 1));
+});
+
+test('the palace rises, they go in, and Noísta wakes up in the wrapper room', () => {
+  const story = new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('first-fight') + 1));
+  assert.deepEqual(kinds(story.handle({ type: 'start' })), ['palace'], 'a reload replays the transformation');
+  assert.deepEqual(kinds(story.handle({ type: 'palace' })), ['dialogue']);
+  assert.equal(story.palace, true);
+  assert.deepEqual(story.handle({ type: 'palace' }), []);
+  assert.deepEqual(story.resume, { environment: 'maresme', cell: { x: 16, z: 8 } });
+
+  // Heading south, Bernat says it is the other way; back north, he is quiet.
+  story.handle({ type: 'away', away: true });
+  assert.equal(story.bubble, 'Es por el otro lado.');
+  story.handle({ type: 'away', away: false });
+  assert.equal(story.bubble, undefined);
+
+  const gate = story.interactions('maresme').find(i => i.id === 'enter-palace');
+  assert.ok(gate, 'La Pompa can be crossed once the palace stands');
+  const inside = story.handle({ type: 'interact', id: 'enter-palace' });
+  assert.deepEqual(kinds(inside), ['gate', 'travel', 'dialogue']);
+  assert.deepEqual(inside[1], { kind: 'travel', environment: 'palacio', cell: PLACES.palaceEntry.cell });
+  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'enter-palace' })), ['gate', 'travel'], 'the welcome plays once');
+
+  // Diegetic gates: the bubble will not let them out, the back door is stuck, the curtain explains itself.
+  assert.match(story.gate('leave-palace').lines[0].text, /pompa/);
+  assert.deepEqual(story.blocked('palacio'), [{ x: 10, z: 16 }]);
+  assert.match(story.handle({ type: 'interact', id: 'push-back-door' })[0].dialogue.lines[0].text, /pegada/);
+  assert.equal(story.handle({ type: 'interact', id: 'look-curtain' })[0].dialogue.right, 'bernat');
+  for (let i = 1; i <= 5; i++) assert.equal(kinds(story.handle({ type: 'interact', id: `portrait-${i}` }))[0], 'dialogue');
+  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-chicle' })), ['dialogue', 'item:chicle']);
+  assert.ok(story.items.includes('chicle'));
+
+  assert.deepEqual(story.handle({ type: 'room', id: 'Galería de los Retratos' }), []);
+  assert.deepEqual(kinds(story.handle({ type: 'room', id: 'Sala de los Envoltorios' })), ['dialogue', 'drain', 'dialogue', 'battle']);
+  assert.equal(story.gerardClass, undefined);
+  story.handle({ type: 'class', id: 'noista' });
+  assert.equal(story.gerardClass, 'noista');
+  assert.match(story.party[0].note, /Noísta/);
+  assert.deepEqual(story.handle({ type: 'battle', won: true, encounter: 'palace-minion' }).map(e => e.kind), ['dialogue', 'card']);
+  assert.deepEqual(story.blocked('palacio'), [], 'the back door peels open');
+  assert.equal(story.gate('leave-palace'), undefined);
+  assert.deepEqual(story.handle({ type: 'room', id: 'Sala de los Envoltorios' }), [], 'the room is quiet now');
   assert.deepEqual(story.saved, [...STORY_FLAGS]);
 });
 

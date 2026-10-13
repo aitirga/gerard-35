@@ -1,6 +1,9 @@
 import { clickControllerButton, focusControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { act, createBattle, enemyAct, nextRound, SKILLS, validTargets, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
+import { act, awaken, cornered, createBattle, createMinionBattle, enemyAct, nextRound, skillsFor, SKILLS, validTargets, type ClassId, type Encounter, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
+import { CLASSES } from './classes';
+import { BATTLE_LINES } from './chapter-1';
+import { SPEAKERS } from './dialogue';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
 
@@ -13,6 +16,8 @@ const COMMANDS: { id: BattleAction; name: string; hint: string; number: string }
 export function createBattleUI(hud: HTMLElement, callbacks: {
   change: (state: BattleState | undefined, effect?: BattleEffect, onImpact?: () => void) => Promise<void>;
   target: (id?: string) => void;
+  /** A class woke up in Gerard mid-fight (the palace minion's beat). */
+  awaken: (id: ClassId) => void;
 }) {
   const root = document.createElement('section');
   root.id = 'battle'; root.hidden = true; root.tabIndex = -1;
@@ -22,6 +27,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     <div class="round-badge"><span>RONDA</span><strong>01</strong></div>
     <div class="battle-targets" aria-label="Objetivos en la calle"></div>
     <div class="battle-pops" aria-hidden="true"></div>
+    <div class="battle-speech" aria-live="assertive"></div>
+    <section class="class-banner" hidden><span class="battle-kicker">CLASE DESBLOQUEADA</span><h2></h2><p></p></section>
     <div class="battle-bottom">
       <section class="command-panel" aria-label="Acciones de combate">
         <div class="turn-heading"><span class="turn-dot"></span><span class="turn-label"></span><span class="turn-meta">TU TURNO</span></div>
@@ -67,12 +74,57 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.battle-pops').append(el);
     setTimeout(() => el.remove(), 1100);
   }
+  const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+  /** A line said over a fighter's head, inside the fight (the rest of the HUD is shut). */
+  async function speak(line: { speaker: keyof typeof SPEAKERS; text: string }, ms: number, shout = false) {
+    const at = positions.get(line.speaker);
+    const el = document.createElement('p');
+    el.className = 'battle-speech-line'; if (shout) el.dataset.shout = 'true';
+    el.innerHTML = '<span></span>';
+    el.querySelector('span')!.textContent = line.text;
+    el.style.setProperty('--accent', SPEAKERS[line.speaker].accent);
+    if (at) el.style.transform = `translate(${at.x}px, ${at.y - 40}px) translate(-50%, -100%)`;
+    get('.battle-speech').append(el);
+    await wait(ms);
+    el.dataset.leaving = 'true';
+    setTimeout(() => el.remove(), 300);
+  }
+  /**
+   * The palace minion is about to finish Bernat: he cries out, Gerard shouts NO, his class wakes
+   * up (the fight shows it, the story records it) and the interface takes on its colours.
+   */
+  async function playBeat(token: number) {
+    if (!state) return;
+    root.dataset.beat = 'true';
+    render();
+    await wait(500);
+    await speak(BATTLE_LINES.aboutToDie, 1900);
+    if (token !== generation || !state) return;
+    root.dataset.shaking = 'true';
+    const shout = speak(BATTLE_LINES.no, 1700, true);
+    await wait(350);
+    callbacks.awaken('noista');
+    awaken(state, 'noista');
+    await shout;
+    delete root.dataset.shaking;
+    if (token !== generation || !state) return;
+    const banner = get('.class-banner');
+    banner.querySelector('h2')!.textContent = CLASSES.noista.name;
+    banner.querySelector('p')!.textContent = CLASSES.noista.motto;
+    banner.hidden = false;
+    await wait(2600);
+    banner.hidden = true;
+    delete root.dataset.beat;
+    // The one new thing on screen: Habilidades pulses until it is opened.
+    get('[data-command="skill"]').classList.add('is-new');
+  }
   const targetButtons = () => [...root.querySelectorAll<HTMLButtonElement>('.roster-target:not(:disabled), .battle-target[data-side="foes"]:not(:disabled)')].filter(button => !button.hidden);
   function render() {
     if (!state) return;
     const ended = !busy && ['won', 'lost', 'escaped'].includes(state.phase);
     root.dataset.phase = state.phase;
-    get('.battle-heading .battle-kicker').textContent = `ENCUENTRO / ${state.foes.filter(f => f.hp > 0).length} DE ${state.foes.length} PERROS${state.possessed ? ' POSEÍDOS' : ''}`;
+    get('.battle-heading .battle-kicker').textContent = state.encounter === 'palace-minion' ? 'ENCUENTRO / ESBIRRO DE LA REINA'
+      : `ENCUENTRO / ${state.foes.filter(f => f.hp > 0).length} DE ${state.foes.length} PERROS${state.possessed ? ' POSEÍDOS' : ''}`;
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
     get('.turn-label').textContent = state.allies[state.active].name;
     get('.turn-meta').textContent = busy || state.phase === 'enemy' ? 'EN ACCIÓN' : 'TU TURNO';
@@ -105,7 +157,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       plate.classList.toggle('is-acting', root.dataset.actor === foe.id);
     }
     // Possessed dogs surround the party: Escapar stays greyed out.
-    articles.forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = busy || state!.phase !== 'player' || (state!.possessed && article.dataset.command === 'escape'); });
+    articles.forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = busy || state!.phase !== 'player' || (cornered(state!) && article.dataset.command === 'escape'); });
     const eligible = targeting && !busy && state.phase === 'player' ? validTargets(state, selected!, selectedSkill).map(c => c.id) : [];
     root.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
       button.disabled = !eligible.includes(button.dataset.target!);
@@ -147,7 +199,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     });
   }
   function expand(action: BattleAction) {
-    if (!state || busy || state.phase !== 'player' || (state.possessed && action === 'escape')) return;
+    if (!state || busy || state.phase !== 'player' || (cornered(state) && action === 'escape')) return;
+    if (action === 'skill') get('[data-command="skill"]').classList.remove('is-new');
     if (selected === action) { collapse(true); return; }
     collapse(); selected = action;
     const article = get(`[data-command="${action}"]`);
@@ -157,10 +210,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const choices = article.querySelector('.command-choices')!;
     if (action === 'attack') { beginTargeting(); return; }
     if (action === 'skill') {
-      choices.innerHTML = SKILLS.map((skill, i) => {
+      choices.innerHTML = skillsFor(state!, state!.allies[state!.active]).map((skill, i) => {
         const affordable = state!.allies[state!.active].secondary >= skill.cost;
         const available = validTargets(state!, 'skill', skill.id).length > 0;
-        return `<button type="button" data-skill="${skill.id}" ${!affordable || !available ? 'disabled' : ''}><span><strong>${i + 1} · ${skill.name}</strong><small>${skill.description}</small></span><small>${!affordable ? 'Sin energía' : !available ? 'Equipo al máximo' : `${skill.cost} SEC`}</small></button>`;
+        return `<button type="button" data-skill="${skill.id}" ${'class' in skill ? `data-class="${skill.class}"` : ''} ${!affordable || !available ? 'disabled' : ''}><span><strong>${i + 1} · ${skill.name}</strong><small>${skill.description}</small></span><small>${!affordable ? 'Sin energía' : !available ? 'Equipo al máximo' : `${skill.cost} SEC`}</small></button>`;
       }).join('');
     } else choices.innerHTML = `<button type="button" data-confirm><span>${action === 'defend' ? 'Adoptar guardia' : 'Salir del encuentro'}</span><small>CONFIRMAR</small></button>`;
     render();
@@ -172,7 +225,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     selectedSkill = skill; targeting = true;
     root.dataset.targeting = skill === 'encourage' ? 'allies' : 'foes';
     get('.target-picker h2').textContent = skill ? SKILLS.find(s => s.id === skill)!.name : 'Atacar';
-    get('.target-picker p').textContent = skill === 'encourage' ? 'Elige un aliado herido en tu equipo o en la calle.' : 'Elige un perro en la calle.';
+    get('.target-picker p').textContent = skill === 'encourage' ? 'Elige un aliado herido de tu equipo.' : state.encounter === 'palace-minion' ? 'Elige al esbirro.' : 'Elige un perro en la calle.';
     render();
     targetButtons()[0]?.focus({ preventScroll: true });
   }
@@ -201,7 +254,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard');
       else if (effect.skill === 'encourage' && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', 'HP');
-      else if (effect.target && target) pop(effect.target, `−${effect.amount ?? 0}`, 'damage', target.hp === 0 ? '¡Fuera!' : target.guarding ? 'Protegido' : effect.skill ? 'Impulso' : '');
+      else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
+      else if (effect.target && target) pop(effect.target, `−${effect.amount ?? 0}`, 'damage', target.hp === 0 ? '¡Fuera!' : target.guarding ? 'Protegido' : effect.skill ? SKILLS.find(s => s.id === effect.skill)!.name : '');
     });
     if (token === generation) { delete root.dataset.resolving; delete root.dataset.actor; }
   }
@@ -222,6 +276,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         if (response) await present(response, token);
         if (token !== generation || !state) return;
       }
+      // enemyAct may have stopped the fight for the palace beat (TypeScript still thinks it is 'enemy').
+      if ((state.phase as BattleState['phase']) === 'beat') await playBeat(token);
+      if (token !== generation || !state) return;
       nextRound(state); void callbacks.change(state);
     }
     busy = false; render();
@@ -297,14 +354,20 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         button.style.transform = `translate(${target.x}px, ${target.y}px) translate(-50%, -100%)`;
       }
     },
-    open(allyCount: 1 | 2, foeCount = 1, possessed = false) {
+    open(allyCount: 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; gerardClass?: ClassId } = {}) {
       if (state) return;
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
-      state = createBattle(allyCount, foeCount, possessed); busy = true;
+      const { possessed = false, encounter = 'dogs', gerardClass } = options;
+      state = encounter === 'palace-minion' ? createMinionBattle(gerardClass) : createBattle(allyCount, foeCount, possessed, gerardClass); busy = true;
+      foeCount = state.foes.length;
       root.toggleAttribute('data-possessed', possessed);
-      get('.battle-heading h1').innerHTML = possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>';
-      get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${i < foeCount ? `data-unit="${f.id}"` : ''} data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${DOG_PROFILES[i]?.collar ?? '#b9dba1'}" aria-label="Elegir a ${f.name}" hidden disabled><span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>${i < foeCount ? '' : '<span class="enemy-health secondary" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>'}</button>`).join('');
+      root.dataset.encounter = encounter;
+      get('[data-command="skill"]').classList.remove('is-new');
+      get('.class-banner').hidden = true; get('.battle-speech').replaceChildren();
+      get('.battle-heading h1').innerHTML = encounter === 'palace-minion' ? 'Un esbirro <em>de verdad.</em>' : possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>';
+      const colour = (f: Combatant, i: number) => f.kind === 'minion' ? '#ff6fae' : DOG_PROFILES[i]?.collar ?? '#b9dba1';
+      get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${i < foeCount ? `data-unit="${f.id}"` : ''} data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${colour(f, i)}" aria-label="Elegir a ${f.name}" hidden disabled><span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>${i < foeCount ? '' : '<span class="enemy-health secondary" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>'}</button>`).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;
       get('.party-roster').replaceChildren(); get('.battle-pops').replaceChildren(); positions.clear();
       hud.dataset.battle = 'open'; outside().forEach(el => { el.inert = true; });

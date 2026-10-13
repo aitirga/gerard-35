@@ -1,6 +1,6 @@
 {
   "title": "Chapter 1 · Block 1",
-  "description": "Gerard's birthday morning: home, Mum's shoes, the backpack, Bernat, the stall, the déjà-vu, La Reina Bubbaloo's minion and the first fight.",
+  "description": "Gerard's birthday morning: home, Mum's shoes, the backpack, Bernat, the stall, the déjà-vu, La Reina Bubbaloo's minion the first fight and the palace rising at the end of the street.",
   "steps": [
     {
       "open": "/?story=new"
@@ -294,13 +294,24 @@
       "skipDialogue": true
     },
     {
-      "until": "!document.querySelector('#story-card').hidden",
-      "timeout": 20000
+      "until": "!!window.gerard.game.app.root.findByName('Palacio de la Reina Bubbaloo')?.enabled",
+      "timeout": 60000
     },
     {
-      "shot": "to-be-continued",
-      "delay": 800,
-      "caption": "End of block 1"
+      "wait": 3000
+    },
+    {
+      "shot": "houses-change",
+      "caption": "The houses at the north end start to change"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 240000
+    },
+    {
+      "shot": "palace-rises",
+      "delay": 1500,
+      "caption": "«Es justo como en mi sueño… se está volviendo real.»"
     }
   ]
 }

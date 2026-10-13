@@ -7,6 +7,11 @@ import type { MinionState } from './story';
 const RISE = .8, BLOW = 2.4, POP = 2.5, SINK = 2.8, DONE = 3.6;
 /** How deep the root sits: out of sight, and with just the head and eyes above the lid. */
 const HIDDEN = -2.4, PEEK = -.95;
+/** Seconds the palace minion takes to climb all the way out of its drain. */
+const RISE_ALL = 1.8;
+/** Out of the drain with a gummy overshoot. */
+function stretchOut(k: number) { const t = Math.min(1, Math.max(0, k)), c = 1.6; return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2; }
+const marks0 = new pc.Vec3();
 /** Seconds between the faint bubbles that rise through the manhole before the entrance. */
 const HINT_EVERY = 11;
 const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
@@ -84,7 +89,8 @@ export function createMinion(app: pc.Application, effects: Effects) {
   const hint = new pc.Entity('Burbuja en la alcantarilla'); app.root.addChild(hint);
   const hintSkin = part(hint, 'Burbuja', 'sphere', bubbleSkin, [0, 0, 0], [0, 0, 0]);
 
-  let state: MinionState | 'emerging' = 'lurking';
+  /** `rising`/`standing`: in the palace it climbs all the way out of the drain and stays to fight. */
+  let state: MinionState | 'emerging' | 'rising' | 'standing' = 'lurking';
   let timer = 0, time = 0, popped = false;
   let onPop: (() => void) | undefined;
   let finished: (() => void) | undefined;
@@ -93,10 +99,16 @@ export function createMinion(app: pc.Application, effects: Effects) {
   return {
     root,
     /** Where the story says it is: lurking (hint bubbles) before its entrance, gone below for good after. */
-    set(next: MinionState) { if (state !== 'emerging') state = next; },
+    set(next: MinionState | 'standing') { if (state !== 'emerging' && state !== 'rising') state = next; },
     /** Plays the entrance; `pop` runs when the bubble bursts over the dogs. Resolves once it has sunk back. */
     emerge(pop: () => void): Promise<void> {
       state = 'emerging'; timer = 0; popped = false; onPop = pop;
+      return new Promise(resolve => { finished = resolve; });
+    },
+    /** Climbs all the way out of the drain, oozing and stretching, and stays there. */
+    rise(): Promise<void> {
+      state = 'rising'; timer = 0;
+      effects.emit('goo', marks0, 12, .3);
       return new Promise(resolve => { finished = resolve; });
     },
     /** `shown` is false outside the street scene or during a fight. */
@@ -114,7 +126,18 @@ export function createMinion(app: pc.Application, effects: Effects) {
         hintSkin.setLocalScale(r, r * .9, r);
         if (swell > .97) effects.emit('spore', hint.getPosition(), 2, .05);
       }
+      marks0.copy(marks.manhole); marks0.y = ground + .1;
       let depth = HIDDEN, blow = 0, squash = animate ? Math.sin(time * 3.1) * .05 : 0;
+      if (state === 'rising') {
+        const t = animate ? timer : RISE_ALL;
+        depth = HIDDEN * (1 - stretchOut(t / RISE_ALL));
+        squash += animate ? Math.sin(t * 13) * .12 * (1 - Math.min(1, t / RISE_ALL)) : 0;
+        if (t >= RISE_ALL) { state = 'standing'; const done = finished; finished = undefined; done?.(); }
+      } else if (state === 'standing') {
+        depth = 0;
+        const cycle = time % 5;
+        blow = animate && cycle > 3.4 ? Math.sin((cycle - 3.4) / 1.6 * Math.PI) * .6 : 0;
+      }
       if (state === 'emerging') {
         const t = animate ? timer : DONE;
         depth = pc.math.lerp(HIDDEN, PEEK, smooth(t / RISE)) - (PEEK - HIDDEN) * smooth((t - SINK) / (DONE - SINK));
@@ -130,7 +153,7 @@ export function createMinion(app: pc.Application, effects: Effects) {
         }
         if (t >= DONE) { state = 'gone'; const done = finished; finished = undefined; done?.(); }
       }
-      root.enabled = shown && state === 'emerging' && depth > HIDDEN + .05;
+      root.enabled = shown && (state === 'emerging' || state === 'rising' || state === 'standing') && depth > HIDDEN + .05;
       if (!root.enabled) return;
       root.setPosition(marks.manhole.x, ground + depth, marks.manhole.z);
       // Mostly towards the camera (which looks from the south-east), glancing towards Gerard, so its face shows.

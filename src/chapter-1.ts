@@ -29,6 +29,18 @@ export const PLACES = {
   southRow: 30,
   /** La Reina Bubbaloo's minion lives in the manhole at the bottom of the street, among the dogs. */
   minion: { manhole: { x: 15, z: 38 } },
+  /**
+   * La Reina Bubbaloo's palace rises past the north end of the street (docs/bubbaloo-palace.md):
+   * `gate` is the middle of La Pompa in street cells, `door` the cell in front of it.
+   */
+  palace: { gate: { x: 16, z: 0.6 }, door: { x: 16, z: 2 } },
+  /** Inside the palace: where La Pompa lets them in, and the strawberry gum bowl in the gallery. */
+  palaceEntry: { environment: 'palacio', cell: { x: 16, z: 18 } },
+  chicle: { environment: 'palacio', cell: { x: 5, z: 9 } },
+  /** The drain in the wrapper room the second minion rises from. */
+  drain: { x: 5, z: 16 },
+  /** Past this row, on the way back south, Bernat reminds Gerard where the palace is. */
+  awayRow: 24,
 } as const satisfies Record<string, unknown>;
 
 /** How far Gerard may wander from Bernat once he stops, in cells. */
@@ -91,11 +103,57 @@ export const LINES = {
     g('¿Soy yo, o se ha puesto todo… rosa? Y oscuro.'),
     bernat('No eres tú. En mi libreta, cuando alguien le gana a un esbirro, la Reina Bubbaloo se entera…'),
     bernat('…y tiñe el cielo de su color. Para que sepas que te está mirando.'),
+    bernat('Gerard… mira las casas del fondo de la calle.'),
   ),
+  /** The palace has risen at the north end of the street. */
+  palaceRises: withBernat(
+    g('¿Qué… qué es eso?'),
+    bernat('Es justo como en mi sueño. El palacio de la Reina Bubbaloo.'),
+    bernat('Se está volviendo real, Gerard. Todo.'),
+    g('¿Y qué hacemos? ¿Ir al cole como si nada?'),
+    bernat('En mi sueño entrábamos. Por la pompa de la puerta.'),
+  ),
+  bernatPalace: withBernat(bernat('La pompa de la puerta… En mi sueño se atravesaba sin más. Pegajosa, pero se atravesaba.')),
+  /** Through La Pompa for the first time. */
+  inPalace: withBernat(
+    bernat('¡Puaj! Se me ha pegado chicle hasta en las orejas.'),
+    g('Bernat… estamos dentro.'),
+    bernat('Huele a fresa. Como en el sueño.'),
+  ),
+  leaveLocked: solo(g('La pompa se ha cerrado detrás de nosotros. Está dura como una pared.')),
+  curtain: withBernat(
+    g('Una cortina de chicle. Está pegajosa: no hay manera de pasar.'),
+    bernat('En mi sueño la reina estaba arriba. Pero aún no… aún no.'),
+  ),
+  backDoorStuck: solo(g('Esta puerta está pegada con chicle. No se mueve ni un milímetro.')),
+  portrait1: withBernat(g('«La coronación». Se pone la corona ella sola.'), bernat('Es que nadie más se atrevía.')),
+  portrait2: solo(g('«En el trono». Sentada en una bola de chicle gigante… con cara de aburrirse muchísimo.')),
+  portrait3: withBernat(g('«La gran pompa». El marco está abollado por la pompa.'), bernat('Esa la dibujé yo. Igualita.')),
+  portrait4: solo(g('«Desde el balcón». Saluda a una ciudad de noche: una torre de colores, una avenida larguísima…'), g('No es Sant Quirze.')),
+  portrait5: withBernat(g('Este es… un dibujo con rotuladores. Firmado: «Bernat».'), bernat('…Esto estaba en mi libreta.')),
+  chicle: solo(g('Un bol de chicles de fresa. …Uno para el camino.')),
+  /** Stepping into the wrapper room: the drain gurgles, then the minion rises. */
+  drainGurgle: withBernat(g('¿Oyes eso? Viene del sumidero.')),
+  drainRises: withBernat(bernat('Ese no se va a esconder.'), g('¡Bernat, atrás!')),
+  /** No-ta has burst the minion. */
+  afterNoista: withBernat(
+    bernat('¿Qué… qué ha sido eso? ¿Le has dicho que no y ha reventado?'),
+    g('No lo sé. Me ha salido solo.'),
+    bernat('Siempre llevas la contraria. Siempre. Y hoy… hoy nos ha salvado.'),
+    g('¡Mira, la puerta se ha despegado!'),
+  ),
+  bernatInPalace: withBernat(bernat('No te separes. En mi sueño, este sitio no acababa nunca.')),
+  bernatAfterNoista: withBernat(bernat('Noísta. Así te voy a llamar. El que siempre dice que no.')),
   bernatFight: withBernat(bernat('¡Gerard, los perros! ¡Hay que quitarles ese rosa de los ojos!')),
   bernatAfter: withBernat(bernat('No me mires así. Esos perros no estaban ayer en la calle… estaban en mi libreta.')),
   bernatAfterFight: withBernat(bernat('La Reina Bubbaloo era solo un dibujo. Un dibujo, Gerard. Con corona de chicle.')),
 } satisfies Record<string, Dialogue>;
+
+/** Said inside the palace fight, as speech over their heads (the rest of the HUD is shut during fights). */
+export const BATTLE_LINES = {
+  aboutToDie: { speaker: 'bernat', text: '¡Gerard, me va a matar!' },
+  no: { speaker: 'gerard', text: '¡NO!' },
+} as const satisfies Record<string, DialogueLine>;
 
 /**
  * Key hints: a key and a verb, shown the first time the action makes sense and gone once used.
@@ -111,11 +169,13 @@ export type HintId = keyof typeof HINTS;
 
 export const CARDS = {
   intro: { kicker: 'CAPÍTULO 1 · SANT QUIRZE DEL VALLÈS', title: 'Una mañana de otoño', text: 'Hoy es tu cumpleaños.' },
-  end: { kicker: 'FIN DEL PRIMER BLOQUE', title: 'Continuará…', text: 'La Reina Bubbaloo ya sabe cómo os llamáis.' },
+  end: { kicker: 'CAPÍTULO 1 · EL PALACIO DE LA REINA BUBBALOO', title: 'Continuará…', text: 'Gerard ha dicho que no. La Reina Bubbaloo lo ha oído.' },
 } as const;
 export type CardId = keyof typeof CARDS;
 
 /** What Bernat mutters over his head while he stalls, one more line each time Gerard pulls away. */
 export const BUBBLES = {
   stalled: ['¿Gerard…?', 'Espera.', 'Esto… ya lo he visto.'],
+  /** Heading back south once the palace has risen. */
+  away: ['Es por el otro lado.'],
 } as const;

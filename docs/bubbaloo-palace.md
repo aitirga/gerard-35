@@ -8,7 +8,8 @@ both places: in chapter 1 the party only sees its front, its hall and one wing, 
 designed now so that later visits open new doors in it. Story context lives in `docs/lore.md`;
 this file says how the palace looks and plays.
 
-Status: **plan**, nothing built yet.
+Status: **built** (chapter 1's part). Play it with `just dev-chapter first-fight` (the transformation)
+or `just dev-chapter in-palace` (inside), and see it with `just screenshots palace`.
 
 ## The beat in one paragraph
 
@@ -264,9 +265,13 @@ this one (how many, where they come from, how switching works, and how it relate
 in `docs/chapter-1.md`) is **left open on purpose**, to be thought through later. Build Noísta so
 that it does not decide that: one class, its look, its theme and its skill.
 
-## Build plan
+## How it is built
 
-Four steps, each playable and tested on its own, each with a screenshot scenario.
+Built in the four steps below. Files: `src/palace.ts` (exterior and the street's approach),
+`src/palace-scenery.ts` (interior), `palacio` in `src/environments.ts` (plan, rooms, things to
+look at), `src/classes.ts` (Noísta's look), and the beats in `src/story.ts` and `src/chapter-1.ts`.
+Tests: `tests/story.test.mjs` (the whole palace beat), `tests/battle.test.mjs` (the unwinnable
+fight under three strategies, the beat and No-ta), `tests/environments.test.mjs` (the plan).
 
 1. **The palace exterior and the transformation**
    - `src/palace.ts`: builds and animates the exterior (rampart, gate and bubble, twist towers,

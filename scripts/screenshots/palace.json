@@ -1,0 +1,313 @@
+{
+  "title": "Chapter 1 · El Palacio de la Reina Bubbaloo",
+  "description": "After the first fight: the north end of the street turns into the palace, La Pompa, the hall, the portraits, the wrapper room, the unwinnable fight, ¡NO! and Noísta, and No-ta.",
+  "steps": [
+    {
+      "open": "/?story=first-fight"
+    },
+    {
+      "until": "!!window.gerard.game.app.root.findByName('Palacio de la Reina Bubbaloo')?.enabled",
+      "timeout": 60000
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "shot": "palace-inflating",
+      "caption": "Gum climbs the north houses and the palace inflates behind them"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 180000
+    },
+    {
+      "shot": "palace-risen",
+      "delay": 1500,
+      "caption": "Bernat: «Es justo como en mi sueño… se está volviendo real.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        16,
+        12
+      ]
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "walking-up",
+      "caption": "Walking up the street towards the palace"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "street-overview",
+      "delay": 3500,
+      "caption": "Passatge Maresme with the palace at its north end"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        16,
+        2
+      ]
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "la-pompa",
+      "caption": "La Pompa: the gate sealed by a bubble"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.title.startsWith('Palacio')",
+      "timeout": 60000
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "inside",
+      "delay": 1500,
+      "caption": "«Huele a fresa. Como en el sueño.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        16,
+        16
+      ]
+    },
+    {
+      "wait": 3000
+    },
+    {
+      "shot": "hall",
+      "caption": "Vestíbulo de las Burbujas: El Corazón Líquido and wrapper columns"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "palace-overview",
+      "delay": 3500,
+      "caption": "The palace floor plan from above"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        16,
+        8
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "curtain",
+      "delay": 1500,
+      "caption": "The gum curtain over the stair to the throne"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        5,
+        8
+      ]
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "gallery",
+      "caption": "Galería de los Retratos"
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        9,
+        8
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "bernat-drawing",
+      "delay": 1500,
+      "caption": "«…Esto estaba en mi libreta.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        2,
+        12
+      ]
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "drain",
+      "caption": "The minion climbs out of the drain"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!document.querySelector('#battle').hidden",
+      "timeout": 30000
+    },
+    {
+      "shot": "fight",
+      "delay": 4000,
+      "caption": "Un esbirro de verdad: every hit is swallowed"
+    },
+    {
+      "eval": "(async () => { const sleep = ms => new Promise(r => setTimeout(r, ms)); const b = document.querySelector('#battle'); for (let i = 0; i < 2000 && !b.dataset.beat; i++) { const attack = b.querySelector('[data-command=\"attack\"] .command-trigger'); const target = b.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)'); if (target) target.click(); else if (!attack.disabled) attack.click(); await sleep(400); } })()"
+    },
+    {
+      "until": "!!document.querySelector('.battle-speech-line')",
+      "timeout": 60000
+    },
+    {
+      "shot": "me-va-a-matar",
+      "delay": 300,
+      "caption": "«¡Gerard, me va a matar!»"
+    },
+    {
+      "until": "!!document.querySelector('.battle-speech-line[data-shout]')",
+      "timeout": 60000
+    },
+    {
+      "shot": "no",
+      "delay": 200,
+      "caption": "«¡NO!»"
+    },
+    {
+      "until": "!document.querySelector('.class-banner').hidden",
+      "timeout": 60000
+    },
+    {
+      "shot": "noista",
+      "delay": 600,
+      "caption": "Clase desbloqueada: Noísta"
+    },
+    {
+      "until": "!document.querySelector('#battle').dataset.beat && !document.querySelector('[data-command=\"skill\"] .command-trigger').disabled",
+      "timeout": 120000
+    },
+    {
+      "shot": "noista-ui",
+      "delay": 1500,
+      "caption": "The interface turns Noísta; Habilidades pulses"
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"skill\"] .command-trigger').click()"
+    },
+    {
+      "shot": "nota-skill",
+      "delay": 1200,
+      "caption": "No-ta, the new skill"
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"nota\"]').click()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "stamp",
+      "caption": "No-ta: a giant NO stamped on the minion"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result').hidden",
+      "timeout": 120000
+    },
+    {
+      "shot": "won",
+      "delay": 800,
+      "caption": "It cracks like old gum and pops"
+    },
+    {
+      "eval": "document.querySelector('#battle .battle-result button').click()"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "after",
+      "delay": 1500,
+      "caption": "«Siempre llevas la contraria. Y hoy nos ha salvado.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!document.querySelector('#story-card').hidden",
+      "timeout": 30000
+    },
+    {
+      "shot": "to-be-continued",
+      "delay": 800,
+      "caption": "End of the palace block"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        9,
+        16
+      ]
+    },
+    {
+      "shot": "gerard-noista",
+      "delay": 2500,
+      "caption": "Gerard in his Noísta colours, by the open back door"
+    }
+  ]
+}

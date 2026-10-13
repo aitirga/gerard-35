@@ -6,6 +6,7 @@ const CATALOGUE = {
   zapatillas: { id: 'zapatillas', name: 'Zapatillas de correr', kind: 'key', equip: 'feet', description: 'El regalo de mamá. Con ellas puedes correr.' },
   mochila: { id: 'mochila', name: 'Mochila del cole', kind: 'key', equip: 'back', description: 'Libros, estuche y un bocadillo de fuet.' },
   pocion: { id: 'pocion', name: 'Poción', kind: 'common', description: 'Un brebaje de color sospechoso. Recupera algo de vida.' },
+  chicle: { id: 'chicle', name: 'Chicle de fresa', kind: 'common', description: 'Del palacio de la Reina Bubbaloo. Sabe a fresa… casi.' },
 } as const satisfies Record<string, Omit<Item, 'id'> & { id: string }>;
 export type ItemId = keyof typeof CATALOGUE;
 export const ITEMS: Record<ItemId, Item> = CATALOGUE;
