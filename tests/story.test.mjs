@@ -95,10 +95,41 @@ test('the palace rises, they go in, and Noísta wakes up in the wrapper room', (
   story.handle({ type: 'class', id: 'noista' });
   assert.equal(story.gerardClass, 'noista');
   assert.match(story.party[0].note, /Noísta/);
-  assert.deepEqual(story.handle({ type: 'battle', won: true, encounter: 'palace-minion' }).map(e => e.kind), ['dialogue', 'card']);
+  const won = story.handle({ type: 'battle', won: true, encounter: 'palace-minion' });
+  assert.deepEqual(won.map(e => e.kind), ['dialogue', 'ambush']);
+  assert.match(won[0].dialogue.lines.at(-1).text, /Quiere…$/, 'Bernat is cut off mid-sentence');
   assert.deepEqual(story.blocked('palacio'), [], 'the back door peels open');
   assert.equal(story.gate('leave-palace'), undefined);
   assert.deepEqual(story.handle({ type: 'room', id: 'Sala de los Envoltorios' }), [], 'the room is quiet now');
+  assert.deepEqual(kinds(new Story(story.saved).handle({ type: 'start' })), ['ambush'], 'a reload replays the ambush');
+});
+
+test('caught by the Queen, Gerard wakes up at 35 in Barcelona with Aitor and a Bubbaloo wrapper', () => {
+  const story = new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('wrapper-room') + 1));
+  assert.equal(story.adult, false);
+  const caught = story.handle({ type: 'caught' });
+  assert.deepEqual(kinds(caught), ['travel', 'wake', 'dialogue']);
+  assert.deepEqual(caught[0], { kind: 'travel', environment: 'meridiana', cell: PLACES.wakeUp.cell });
+  assert.equal(caught[2].dialogue.right, 'aitor');
+  assert.deepEqual(story.handle({ type: 'caught' }), [], 'it happens once');
+  assert.deepEqual(story.handle({ type: 'start' }), [], 'and no cut-scene replays after waking');
+
+  assert.equal(story.adult, true);
+  assert.equal(story.gerardClass, 'noista', 'he keeps the class');
+  assert.equal(story.companion, 'none', 'Bernat stays in the dream');
+  assert.deepEqual(story.items, [], 'the dream\'s things stay in the dream');
+  assert.equal(story.canRun, true);
+  assert.deepEqual(story.resume, { environment: 'meridiana', cell: PLACES.wakeUp.cell });
+  assert.deepEqual(story.npcs('meridiana').map(n => n.id), ['aitor']);
+  assert.deepEqual(story.npcs('home-floor-1'), [], 'home in Sant Quirze is empty now');
+  assert.match(story.party[0].note, /Noísta/);
+
+  assert.deepEqual(story.pickups('meridiana').map(p => p.id), ['envoltorio']);
+  assert.ok(story.pickups('meridiana')[0].spot, 'the wrapper lies on the bedside shelf');
+  assert.ok(story.interactions('meridiana').some(i => i.id === 'talk-aitor'));
+  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-envoltorio' })), ['dialogue', 'item:envoltorio']);
+  assert.deepEqual(story.items, ['envoltorio']);
+  assert.match(story.handle({ type: 'interact', id: 'talk-aitor' })[0].dialogue.lines[1].text, /Bubbaloo/);
   assert.deepEqual(story.saved, [...STORY_FLAGS]);
 });
 

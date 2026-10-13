@@ -18,7 +18,10 @@ export function createStoryUI(hud: HTMLElement) {
   const card = document.createElement('section');
   card.id = 'story-card'; card.hidden = true; card.setAttribute('role', 'status');
   card.innerHTML = `<span class="battle-kicker"></span><h1></h1><p></p>`;
-  hud.append(notes, hint, bubble, card);
+  // A full-screen black for the end of a dream: everything fades out, then back in elsewhere.
+  const black = document.createElement('div');
+  black.id = 'blackout'; black.setAttribute('aria-hidden', 'true');
+  hud.append(notes, hint, bubble, card, black);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let hintGeneration = 0;
 
@@ -53,6 +56,12 @@ export function createStoryUI(hud: HTMLElement) {
       if (!text || !at) return;
       if (bubble.textContent !== text) bubble.textContent = text;
       bubble.style.transform = `translate(${at.x}px, ${at.y}px) translate(-50%, -100%)`;
+    },
+    /** Fades the whole screen to black (`on`) or back; resolves when the fade ends. */
+    blackout(on: boolean, ms = 900) {
+      black.style.transitionDuration = `${reducedMotion.matches ? 0 : ms}ms`;
+      black.dataset.on = String(on);
+      return new Promise<void>(resolve => setTimeout(resolve, reducedMotion.matches ? 0 : ms));
     },
     /** A full-screen title, e.g. the chapter opening; resolves once it has faded. */
     card(id: keyof typeof STORY_CARDS) {

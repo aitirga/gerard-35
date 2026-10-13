@@ -99,6 +99,8 @@ try {
     else if (effect.kind === 'gate') await game.popGate();
     else if (effect.kind === 'travel') game.setEnvironment(effect.environment, effect.cell);
     else if (effect.kind === 'drain') await game.riseFromDrain();
+    else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }
+    else if (effect.kind === 'wake') await game.wake(() => storyUI.blackout(false, 2000));
     else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
   }
   function storyChanged() {

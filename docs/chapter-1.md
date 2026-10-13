@@ -11,7 +11,7 @@ his power: **changing class by changing mood**, fast.
 | --- | --- | --- | --- |
 | 1 · Casa y calle | 0–10 | Playable | Bedroom → kitchen → hall → street → Bernat's door → down the street → first fight |
 | 2 · El juego se hace real | 10–20 | Playable | The street turns into La Reina Bubbaloo's palace: the first mini dungeon and Noísta, Gerard's first class ([design](bubbaloo-palace.md)) |
-| 3 · Mini boss y salida | 20–30 | Planned | A bigger Bubbaloo minion, the conjuro, back to reality |
+| 3 · Final | — | Playable | Replaced: the palace ends in the Queen's hands, black, and Gerard waking up at 35 (chapter 2) |
 
 ## Design principles
 
@@ -108,6 +108,10 @@ a swap action), tested like the existing battle tests; the world switch is a sce
 (`scenery.ts` materials and fog) plus a CSS class on `#hud`.
 
 ## Block 3 · Mini boss y salida (20–30 min) — plan
+
+> Dropped. Chapter 1 now ends inside the palace: La Reina Bubbaloo's hands catch Gerard and Bernat,
+> everything goes black and Gerard wakes up at 35 in Barcelona (see the [palace design](bubbaloo-palace.md)).
+> Kept for reference.
 
 1. **A bigger Bubbaloo minion** as the mini boss (to be designed), with phases that each favour a
    different mood (a gum shield → Enfadado; a swarm of little bubbles that spreads damage → Alegre; a big

@@ -64,6 +64,7 @@ story is about. Update it whenever a decision changes the story.
 | **Bernat** | Gerard's best friend and neighbour on Passatge Maresme. Designs games in a notebook, including La Reina Bubbaloo. Joins as a companion. |
 | **Jan** | Gerard's older brother. Teases him; brews a "POCIÓ" on his desk. |
 | **Mamá** | Gives Gerard running shoes for his birthday and sends him to fetch Bernat. |
+| **Aitor** | Gerard's partner; they live in the Meridiana flat. A man a little taller than Gerard, with a short beard and glasses (provisional model and portrait until there are photos). |
 | **Nuria Mendoza** | The real person behind La Reina Bubbaloo. Secret for now. |
 
 ## Places
@@ -88,6 +89,19 @@ story is about. Update it whenever a decision changes the story.
 6. Inside, past the hall and the portrait gallery, a minion rises from a drain in the wrapper room.
    Nothing hurts it; when it is about to finish Bernat, Gerard shouts "¡NO!" and becomes a
    **Noísta**. His **No-ta** stamps a giant NO on it and it bursts.
+
+7. Bernat starts to explain (they are in the Queen's castle; she is real; she wants…) and is cut
+   off: minions burst out everywhere and **La Reina Bubbaloo's hands** (pink gelatine, so huge
+   only her hands and forearms fit on screen) catch them both. Black.
+
+## Chapter 2 so far
+
+- **Gerard wakes up at 35** in the Meridiana flat, shouting "¡NO!", and **Aitor** is beside him.
+  Chapter 1 was a dream of his childhood. It is his 35th birthday.
+- He **keeps the Noísta class**.
+- A **Bubbaloo wrapper** lies on his bedside shelf: something came back from the dream.
+- Coming later: the TV will show what happened (the palace appears in Barcelona, on top of
+  Gerard's school).
 
 ## Running threads
 

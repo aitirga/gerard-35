@@ -6,6 +6,8 @@ export interface Speaker {
   name: string;
   /** Portrait in public/portraits/ without .png; `just character` creates it and its expressions. */
   portrait?: string;
+  /** Inline SVG for a provisional portrait, until `just character` makes a real one. */
+  art?: string;
   skin: string;
   hair: string;
   top: string;     // jacket / sweater colour, also used as the avatar tint
@@ -17,6 +19,33 @@ export const SPEAKERS = {
   bernat: { name: 'Bernat', skin: '#dcb08a', hair: '#5b4636', top: '#6f8fa8', accent: '#9fc3d9' },
   mama: { name: 'Mamá', skin: '#e8bc96', hair: '#6b4a32', top: '#b5645a', accent: '#e9a294' },
   jan: { name: 'Jan', skin: '#e6b58b', hair: '#2b2220', top: '#5e8a5a', accent: '#a5cf8f' },
+  /** Chapter 2: Gerard at 35 (provisional portrait: round glasses, pyjama). */
+  gerard35: {
+    name: 'Gerard', skin: '#e6b58b', hair: '#342a28', top: '#6d8db0', accent: '#f0c46a',
+    art: `<svg viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="23" fill="#6d8db0" opacity=".18"/>
+      <path d="M9 48c0-9 6-13 15-13s15 4 15 13Z" fill="#6d8db0"/><rect x="21" y="29" width="6" height="7" fill="#e6b58b"/>
+      <rect x="15" y="11" width="18" height="20" rx="4" fill="#e6b58b"/>
+      <path d="M14 18v-5a5 5 0 0 1 5-5h10a5 5 0 0 1 5 5v5h-2l-1-4c-4 2-9 2-14 0l-1 4Z" fill="#342a28"/>
+      <circle cx="19.5" cy="21" r="3.2" fill="none" stroke="#302520" stroke-width="1.2"/><circle cx="28.5" cy="21" r="3.2" fill="none" stroke="#302520" stroke-width="1.2"/>
+      <path d="M22.7 21h2.6" stroke="#302520" stroke-width="1"/><circle cx="19.5" cy="21" r=".9" fill="#342a28"/><circle cx="28.5" cy="21" r=".9" fill="#342a28"/>
+      <path d="M21 27c2 1.4 4 1.4 6 0" stroke="#8b5140" stroke-width="1.1" fill="none"/>
+    </svg>`,
+  },
+  /** Gerard's partner (provisional: a man a little taller than Gerard, short beard, glasses). */
+  aitor: {
+    name: 'Aitor', skin: '#dcae8a', hair: '#3a2a20', top: '#c9b49a', accent: '#e7c9a1',
+    art: `<svg viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="23" fill="#c9b49a" opacity=".2"/>
+      <path d="M8 48c0-9 6-14 16-14s16 5 16 14Z" fill="#c9b49a"/><rect x="21" y="28" width="6" height="7" fill="#dcae8a"/>
+      <rect x="15" y="9" width="18" height="21" rx="4" fill="#dcae8a"/>
+      <path d="M15 15v-3a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v3h-1l-1-2H18l-2 2Z" fill="#3a2a20"/>
+      <path d="M15 21v4c0 5 4 8 9 8s9-3 9-8v-4l-2 3c-1 2-3 2-4 1h-6c-1 1-3 1-4-1Z" fill="#4a3426"/>
+      <path d="M20 26c2 1 6 1 8 0" stroke="#7a4636" stroke-width="1.2" fill="none"/>
+      <rect x="16" y="17.5" width="7" height="5" rx="1" fill="none" stroke="#1f1c1c" stroke-width="1.2"/><rect x="25" y="17.5" width="7" height="5" rx="1" fill="none" stroke="#1f1c1c" stroke-width="1.2"/>
+      <path d="M23 19.5h2" stroke="#1f1c1c" stroke-width="1"/><circle cx="19.5" cy="20" r=".9" fill="#2a1d16"/><circle cx="28.5" cy="20" r=".9" fill="#2a1d16"/>
+    </svg>`,
+  },
 } satisfies Record<string, Speaker>;
 
 export type SpeakerId = keyof typeof SPEAKERS;
@@ -41,6 +70,7 @@ function portraitUrl(portrait: string, expression?: string) {
 
 // Blocky bust that echoes the in-game character: shoulders, neck, head, hair cap.
 function portrait(s: Speaker) {
+  if (s.art) return s.art;
   if (s.portrait) return `<img class="portrait" src="${portraitUrl(s.portrait)}" alt="" aria-hidden="true" width="160" height="160" />`;
   return `<svg viewBox="0 0 48 48" aria-hidden="true">
     <circle cx="24" cy="24" r="23" fill="${s.top}" opacity=".18"/>

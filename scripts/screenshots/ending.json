@@ -1,0 +1,31 @@
+{
+  "title": "End of chapter 1 · Start of chapter 2",
+  "description": "In the palace after No-ta: minions burst out of everywhere, La Reina Bubbaloo's gelatine hands catch Gerard and Bernat, black, and Gerard wakes up at 35 in the Meridiana flat beside Aitor, with a Bubbaloo wrapper on the bedside shelf.",
+  "steps": [
+    { "open": "/?story=wrapper-room" },
+    { "until": "!!window.gerard.game.app.root.findByName('Mano izquierda')", "timeout": 60000 },
+    { "wait": 2500 },
+    { "shot": "minions-everywhere", "caption": "¡BAM! Minions come out of everywhere" },
+    { "until": "window.gerard.game.app.root.findByName('Mano izquierda')?.getPosition().y < 9", "timeout": 120000 },
+    { "shot": "hands-coming", "delay": 300, "caption": "La Reina Bubbaloo's hands: too big for the frame" },
+    { "until": "document.querySelector('#blackout')?.dataset.on === 'true'", "timeout": 120000 },
+    { "shot": "caught", "delay": 200, "caption": "They close round Gerard and Bernat…" },
+    { "until": "document.title.startsWith('Meridiana')", "timeout": 120000 },
+    { "shot": "black", "delay": 300, "caption": "Black" },
+    { "until": "document.querySelector('#blackout')?.dataset.on === 'false'", "timeout": 60000 },
+    { "shot": "in-bed", "delay": 1600, "caption": "Gerard, 35, in bed in the Meridiana flat" },
+    { "until": "!!document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },
+    { "shot": "awake", "delay": 1500, "caption": "«¡NO!» He wakes with a start; Aitor is beside him" },
+    { "press": "KeyE" },
+    { "press": "KeyE", "gap": 400 },
+    { "shot": "aitor", "delay": 1500, "caption": "Aitor: «Estabas gritando ¡no! en sueños»" },
+    { "skipDialogue": true },
+    { "wait": 1500 },
+    { "shot": "bedroom", "caption": "The bedroom: Aitor, and a pink wrapper on the bedside shelf" },
+    { "teleport": "meridiana", "cell": [11, 12] },
+    { "press": "KeyE" },
+    { "shot": "wrapper", "delay": 1500, "caption": "«Un envoltorio de chicle. Bubbaloo, de fresa.»" },
+    { "skipDialogue": true },
+    { "shot": "wrapper-item", "delay": 500, "caption": "Key item: Envoltorio de Bubbaloo" }
+  ]
+}

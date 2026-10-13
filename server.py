@@ -18,7 +18,7 @@ from ai import decision_provider, plan_enemy_turn
 app = FastAPI()
 logger = logging.getLogger("uvicorn.error")
 # Story progress flags, in story order. Keep in sync with STORY_FLAGS in src/story.ts (a test checks it).
-STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "noista", "wrapper-room")
+STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "noista", "wrapper-room", "caught", "got-wrapper")
 
 
 @contextmanager

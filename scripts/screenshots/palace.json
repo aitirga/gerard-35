@@ -1,6 +1,6 @@
 {
   "title": "Chapter 1 · El Palacio de la Reina Bubbaloo",
-  "description": "After the first fight: the north end of the street turns into the palace, La Pompa, the hall, the portraits, the wrapper room, the unwinnable fight, ¡NO! and Noísta, and No-ta.",
+  "description": "After the first fight: the north end of the street turns into the palace, La Pompa, the hall, the portraits, the wrapper room, the unwinnable fight, ¡NO! and Noísta, No-ta, and the ambush that ends the chapter.",
   "steps": [
     {
       "open": "/?story=first-fight"
@@ -280,34 +280,21 @@
     {
       "shot": "after",
       "delay": 1500,
-      "caption": "«Siempre llevas la contraria. Y hoy nos ha salvado.»"
+      "caption": "«Creo que estamos en el castillo de la Reina…»"
     },
     {
       "skipDialogue": true
     },
     {
-      "until": "!document.querySelector('#story-card').hidden",
-      "timeout": 30000
-    },
-    {
-      "shot": "to-be-continued",
-      "delay": 800,
-      "caption": "End of the palace block"
+      "until": "!!window.gerard.game.app.root.findByName('Mano izquierda')",
+      "timeout": 60000
     },
     {
       "wait": 2500
     },
     {
-      "teleport": "palacio",
-      "cell": [
-        9,
-        16
-      ]
-    },
-    {
-      "shot": "gerard-noista",
-      "delay": 2500,
-      "caption": "Gerard in his Noísta colours, by the open back door"
+      "shot": "bam",
+      "caption": "¡BAM! Minions everywhere (the rest: just screenshots ending)"
     }
   ]
 }

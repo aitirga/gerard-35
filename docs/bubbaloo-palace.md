@@ -36,13 +36,16 @@ he gains **No-ta**, the one skill that hurts the minion. It kills it.
 | 7 | **Sala de los Envoltorios**: the drain gurgles, the minion rises, the fight starts | — | 0:20 |
 | 8 | **The unwinnable fight**: every hit is swallowed by the gum; the minion goes after Bernat | Trying everything | 2:00 |
 | 9 | *"¡Gerard, me va a matar!"* *"¡No!"* → Noísta: new look, new interface style, **No-ta** | A new class and a skill, by using them | 0:45 |
-| 10 | No-ta kills the minion. The wrapper room's sealed door unsticks: a way back to the hall. End card. | — | 0:45 |
+| 10 | No-ta kills the minion. The back door unsticks. Gerard asks what is going on; Bernat: *"Creo que estamos en el castillo de la Reina… Ella es real… Quiere…"* | — | 0:40 |
+| 11 | **¡BAM!** Minions burst out of the floor all round them; La Reina Bubbaloo's hands (gelatine, far too big for the frame: only hands and forearms) come down and close round both boys; black. No end card. | — | 0:15 |
+| 12 | **Chapter 2 begins**: Gerard, now 35, bolts upright in bed in the Meridiana flat shouting *"¡NO!"*; Aitor is beside him. A Bubbaloo wrapper lies on the bedside shelf. | Exploring | — |
 
 About 10 minutes, matching the 10–20 min block that `docs/chapter-1.md` keeps for "El juego se hace
-real". The **Continuará…** card moves from after the first fight to the end of beat 10.
+real". There is no end card: the chapter ends in black and chapter 2 opens on Gerard waking up.
 
-Story flags to add, in order: `palace` (the street has changed), `in-palace` (went through the gate),
-`noista` (class unlocked), `wrapper-room` (minion beaten). The server's `STORY_FLAGS` follows, as today.
+Story flags, in order: `palace` (the street has changed), `in-palace` (went through the gate),
+`got-chicle`, `noista` (class unlocked), `wrapper-room` (minion beaten), `caught` (the Queen's
+hands; chapter 2 from here) and `got-wrapper`. The server's `STORY_FLAGS` follows, as today.
 
 Diegetic gates (nothing on screen says where to go):
 

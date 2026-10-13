@@ -551,3 +551,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #hud[data-class="noista"] .party-portrait img { filter: drop-shadow(3px 0 0 #e2483d99); }
 #hud[data-class="noista"] .party-card[data-unit="gerard"] .unit-heading > strong::after { content: ' · NOÍSTA'; color: var(--ui-gold); font-size: 8px; letter-spacing: .16em; }
 #hud[data-class="noista"] #battle { transition: background .6s; }
+
+/* The end of a dream: everything goes black, even the HUD, then comes back elsewhere. */
+#blackout { position: absolute; inset: 0; z-index: 50; background: #000; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
+#blackout[data-on="true"] { opacity: 1; pointer-events: auto; }

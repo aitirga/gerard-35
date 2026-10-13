@@ -101,7 +101,7 @@ test('every door and stair lands on a walkable cell, and there is always a way b
       const destination = ENVIRONMENTS[to.environment];
       assert.equal(canWalk(to.cell, destination.grid), true, `${environment.id}/${id}`);
       // The palace is entered through La Pompa, which only the story opens (src/story.ts, 'enter-palace').
-      const storyWay = to.environment === 'maresme' && environment.id === 'palacio' && new Story(STORY_FLAGS).interactions('maresme').some(i => i.id === 'enter-palace');
+      const storyWay = to.environment === 'maresme' && environment.id === 'palacio' && new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('palace') + 1)).interactions('maresme').some(i => i.id === 'enter-palace');
       assert.ok(storyWay || destination.interactions.some(i => i.to?.environment === environment.id), `${to.environment} leads back to ${environment.id}`);
     }
   }

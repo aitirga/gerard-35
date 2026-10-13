@@ -8,6 +8,10 @@ const g = (text: string, expression?: string): DialogueLine => ({ speaker: 'gera
 const mama = (text: string): DialogueLine => ({ speaker: 'mama', text });
 const jan = (text: string): DialogueLine => ({ speaker: 'jan', text });
 const bernat = (text: string): DialogueLine => ({ speaker: 'bernat', text });
+/** Chapter 2: Gerard at 35, and Aitor. */
+const gerard35 = (text: string): DialogueLine => ({ speaker: 'gerard35', text });
+const aitor = (text: string): DialogueLine => ({ speaker: 'aitor', text });
+const withAitor = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard35', right: 'aitor', lines });
 const solo = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard', lines });
 const withMama = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard', right: 'mama', lines });
 const withJan = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard', right: 'jan', lines });
@@ -37,6 +41,15 @@ export const PLACES = {
   /** Inside the palace: where La Pompa lets them in, and the strawberry gum bowl in the gallery. */
   palaceEntry: { environment: 'palacio', cell: { x: 16, z: 18 } },
   chicle: { environment: 'palacio', cell: { x: 5, z: 9 } },
+  /**
+   * Chapter 2 opens in the Meridiana flat: Gerard wakes in bed with a start (`bed` is where he
+   * lies, in floor cells), steps out to `wake`, and Aitor is beside the bed. The Bubbaloo wrapper
+   * he finds is on the headboard shelf (`spot`), picked up from the cell next to it.
+   */
+  bed: { x: 9.5, z: 11.4 },
+  wakeUp: { environment: 'meridiana', cell: { x: 11, z: 11 } },
+  aitor: { environment: 'meridiana', cell: { x: 11, z: 9 } },
+  envoltorio: { environment: 'meridiana', cell: { x: 11, z: 12 }, spot: { x: 10.7, z: 12.5, y: .58 } },
   /** The drain in the wrapper room the second minion rises from. */
   drain: { x: 5, z: 16 },
   /** Past this row, on the way back south, Bernat reminds Gerard where the palace is. */
@@ -140,7 +153,25 @@ export const LINES = {
     bernat('¿Qué… qué ha sido eso? ¿Le has dicho que no y ha reventado?'),
     g('No lo sé. Me ha salido solo.'),
     bernat('Siempre llevas la contraria. Siempre. Y hoy… hoy nos ha salvado.'),
-    g('¡Mira, la puerta se ha despegado!'),
+    g('Bernat… ¿qué está pasando aquí? De verdad.'),
+    bernat('Creo… creo que estamos en el castillo de la Reina. Mi sueño no era un sueño, Gerard.'),
+    bernat('Ella es real. Y si nos ha traído hasta aquí, es porque quiere algo de nosotros. Quiere…'),
+  ),
+  /** Chapter 2: Gerard wakes up with a start in the Meridiana flat, and Aitor is there. */
+  waking: withAitor(
+    gerard35('¡NO!'),
+    aitor('Ey, ey… tranquilo. Estás en casa. Soy yo.'),
+    aitor('Estabas gritando «¡no!» en sueños. Llevándome la contraria hasta dormido.'),
+    gerard35('He soñado con Bernat. Con la calle de mis padres… y unas manos de chicle enormes.'),
+    aitor('¿Manos de chicle? Eso te pasa por cenar pizza a las once.'),
+    aitor('Venga, despierta del todo. Que hoy es tu cumpleaños: treinta y cinco, ¿eh?'),
+    gerard35('…Treinta y cinco. Sí.'),
+  ),
+  aitorAgain: withAitor(aitor('Feliz cumpleaños, dormilón. El café está en la cocina… si te lo haces tú.')),
+  aitorWrapper: withAitor(gerard35('Aitor… ¿esto es tuyo?'), aitor('¿Un chicle Bubbaloo? Yo no como de eso desde que tenía diez años.')),
+  envoltorio: withAitor(
+    gerard35('Un envoltorio de chicle. Bubbaloo, de fresa.'),
+    gerard35('…Estaba en mi mesilla. Y huele igual que en el sueño.'),
   ),
   bernatInPalace: withBernat(bernat('No te separes. En mi sueño, este sitio no acababa nunca.')),
   bernatAfterNoista: withBernat(bernat('Noísta. Así te voy a llamar. El que siempre dice que no.')),
@@ -169,7 +200,6 @@ export type HintId = keyof typeof HINTS;
 
 export const CARDS = {
   intro: { kicker: 'CAPÍTULO 1 · SANT QUIRZE DEL VALLÈS', title: 'Una mañana de otoño', text: 'Hoy es tu cumpleaños.' },
-  end: { kicker: 'CAPÍTULO 1 · EL PALACIO DE LA REINA BUBBALOO', title: 'Continuará…', text: 'Gerard ha dicho que no. La Reina Bubbaloo lo ha oído.' },
 } as const;
 export type CardId = keyof typeof CARDS;
 
