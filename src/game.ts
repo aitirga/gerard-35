@@ -589,14 +589,14 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const separationHop = movement.bouncing && !reducedMotion.matches ? Math.sin(movement.progress * Math.PI) * .18 : 0;
     plantFeet(scenery.groundHeight, separationHop);
     if (lying !== undefined) {
-      // On his back on the mattress, head on the pillows against the west wall; sitting up swings him onto his feet.
+      // On his back on the mattress, head on the pillows against the south wall; sitting up swings him onto his feet.
       const k = lying, rest = scenery.toWorld(PLACES.bed.x, PLACES.bed.z), stand = player.getPosition();
       const hop = Math.sin((1 - k) * Math.PI) * .25;
       player.setPosition(pc.math.lerp(stand.x, rest.x, k), pc.math.lerp(stand.y, .93, k) + hop, pc.math.lerp(stand.z, rest.z, k));
-      player.setLocalEulerAngles(0, 0, 90 * k);
-      facing = visualFacing = 90;
-      rig.body.setLocalEulerAngles(0, 90, 0);
-    } else if (player.getLocalEulerAngles().z !== 0) player.setLocalEulerAngles(0, 0, 0);
+      player.setLocalEulerAngles(90 * k, 0, 0);
+      facing = visualFacing = 180;
+      rig.body.setLocalEulerAngles(0, 180, 0);
+    } else if (player.getLocalEulerAngles().x !== 0) player.setLocalEulerAngles(0, 0, 0);
     // Story cast: Bernat walks his own gait; people at home turn to face Gerard when he is near.
     companion.enabled = companionShown && !battle;
     if (companion.enabled) {

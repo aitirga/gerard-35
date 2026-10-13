@@ -81,13 +81,13 @@
     },
     {
       "shot": "bedroom",
-      "caption": "The bigger bedroom: a double bed centred on the wall, Aitor on the other side, a pink wrapper on the nightstand"
+      "caption": "The bigger bedroom: a double bed against the south wall, a nightstand each side, Aitor across it and a pink wrapper on Gerard's nightstand"
     },
     {
       "teleport": "meridiana",
       "cell": [
-        10,
-        14
+        12,
+        13
       ]
     },
     {
