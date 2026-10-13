@@ -79,7 +79,7 @@ clean:
 
 # Play a scripted scenario and save screenshots + gallery: just screenshots chapter-1 (scripts/screenshots/)
 [group('Screenshots')]
-screenshots scenario="chapter-1" *options:
+screenshots scenario="chapter-1" *options="":
     node scripts/screenshots.mjs {{ scenario }} {{ options }}
 
 # List the screenshot scenarios
