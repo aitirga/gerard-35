@@ -68,11 +68,10 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   const pack = new WanderingPack(ENVIRONMENTS.maresme.grid, Math.random, STREET_END_AREA);
   let battle: BattleState | undefined;
   let paused = false;
-  // La Reina Bubbaloo's minion: peeking from behind the car until its entrance holds the street still.
+  // La Reina Bubbaloo's minion: hidden in the manhole; its entrance holds the street still.
   const minion = createMinion(app, effects);
   let cutscene = false;
   let possessed = false;
-  const minionCell = { x: Math.round(PLACES.minion.out.x), z: Math.round(PLACES.minion.out.z) };
   /** 0 is the scene's own light, 1 is La Reina Bubbaloo's; `toneTarget` fades in over a few seconds. */
   let tone = 0, toneTarget = 0;
   /** Seconds until a possessed dog gives off its next mote. */
@@ -108,7 +107,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     return cells;
   }
   function occupiedCells(): readonly Cell[] {
-    return [...npcs.map(n => n.cell), ...(environment.id === 'maresme' ? [...pack.occupied, ...leashCells(), ...(minion.solid ? [minionCell] : [])] : [])];
+    return [...npcs.map(n => n.cell), ...(environment.id === 'maresme' ? [...pack.occupied, ...leashCells()] : [])];
   }
   function interactions(): Interaction[] {
     return [...environment.interactions, ...story.interactions(environment.id, bernatHere() ? follower.position : undefined)];
@@ -183,7 +182,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     pack.armed = false;
     callbacks.onEncounter(bernatHere() ? 2 : 1, pack.dogs.length, possessed);
   }
-  /** The minion steps out, blows a bubble and pops it: the dogs' eyes turn pink and they face the boys. */
+  /** The minion's head rises out of the manhole and pops a bubble: the dogs' eyes turn pink and they face the boys. */
   async function summonMinion() {
     if (environment.id !== 'maresme') { possessed = true; battleScene.possess(true); return; }
     cutscene = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined);
@@ -414,14 +413,10 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       model.setEulerAngles(0, dog.yaw, 0);
       battleScene.wander(i, delta, dog.progress < 1 && !paused && !battle && !document.querySelector('#hud[data-dialogue]'), !reducedMotion.matches);
     });
-    minion.root.enabled = environment.id === 'maresme';
-    if (environment.id === 'maresme') {
-      const mark = (cell: Cell) => scenery.toWorld(cell.x, cell.z);
-      minion.update(delta, animate, {
-        hide: mark(PLACES.minion.hide), out: mark(PLACES.minion.out), manhole: mark(PLACES.minion.manhole),
-        look: player.getPosition(), groundHeight: scenery.groundHeight,
-      });
-    }
+    const manhole = PLACES.minion.manhole;
+    minion.update(delta, animate, {
+      manhole: scenery.toWorld(manhole.x, manhole.z), look: player.getPosition(), groundHeight: scenery.groundHeight,
+    }, environment.id === 'maresme' && !battle);
     if (tone !== toneTarget) {
       tone = animate ? tone + Math.sign(toneTarget - tone) * Math.min(Math.abs(toneTarget - tone), delta / 3.5) : toneTarget;
       scenery.setTone(tone);

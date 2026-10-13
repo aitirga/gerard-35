@@ -8,12 +8,10 @@ const g = (text: string, expression?: string): DialogueLine => ({ speaker: 'gera
 const mama = (text: string): DialogueLine => ({ speaker: 'mama', text });
 const jan = (text: string): DialogueLine => ({ speaker: 'jan', text });
 const bernat = (text: string): DialogueLine => ({ speaker: 'bernat', text });
-const esbirro = (text: string): DialogueLine => ({ speaker: 'esbirro', text });
 const solo = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard', lines });
 const withMama = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard', right: 'mama', lines });
 const withJan = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard', right: 'jan', lines });
 const withBernat = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard', right: 'bernat', lines });
-const withEsbirro = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard', right: 'esbirro', lines });
 
 /** Where the people and loose things of block 1 stand. Cells must be walkable (see tests). */
 export const PLACES = {
@@ -29,12 +27,8 @@ export const PLACES = {
   bernat: { environment: 'maresme', cell: { x: 9, z: 24 } },
   /** Walking past this row with Bernat makes him stop: the dogs are just below. */
   southRow: 30,
-  /**
-   * La Reina Bubbaloo's minion crouches behind the parked car (the car hides it from the camera)
-   * and peeks out; when Bernat recognises his game it steps out into the street, and once
-   * beaten it slips away down the manhole.
-   */
-  minion: { hide: { x: 18, z: 35.2 }, out: { x: 18, z: 33 }, manhole: { x: 15, z: 38 } },
+  /** La Reina Bubbaloo's minion lives in the manhole at the bottom of the street, among the dogs. */
+  minion: { manhole: { x: 15, z: 38 } },
 } as const satisfies Record<string, unknown>;
 
 /** How far Gerard may wander from Bernat once he stops, in cells. */
@@ -75,25 +69,25 @@ export const LINES = {
   bernatHere: withBernat(bernat('Que ya estoy aquí, hombre. ¡Calle abajo!')),
   dejavu: withBernat(
     g('¿Bernat? ¿Qué te pasa? Vamos, que llegamos tarde.'),
-    bernat('Espera. Esos perros de ahí abajo… y esa cosa rosa que asoma detrás del coche.'),
+    bernat('Espera. Esos perros de ahí abajo… y esa alcantarilla, que no para de hacer burbujas.'),
     bernat('Ayer estuve diseñando un juego. Empezaba así: un cumpleaños, unas zapatillas nuevas, dos amigos bajando la calle…'),
     g('¿Un déjà-vu?'),
     bernat('Peor. Es igual. Igualito. Hasta el último detalle.'),
     bernat('Gerard… creo que la he cagado.'),
   ),
-  /** After the minion pops its bubble and the dogs' eyes turn pink; the fight starts right after. */
-  minionBlub: withEsbirro(esbirro('¡Blub! ¡Blub-blub-blub!')),
+  /** After the minion's head pops its bubble and sinks; the dogs' eyes are pink and the fight starts right after. */
   minion: withBernat(
-    g('¿Qué es eso? ¿Un chicle… con patas?'),
+    g('¿Has visto eso? ¡Ha salido algo rosa de la alcantarilla!'),
+    g('Parecía… un chicle. Con ojos.'),
     bernat('Un esbirro de la Reina Bubbaloo. La mala de mi juego. Me la inventé yo.'),
-    bernat('Sus esbirros lo pringan todo… y lo que pringan, le obedece.'),
+    bernat('Sus esbirros viven en las alcantarillas. Lo pringan todo… y lo que pringan, le obedece.'),
     g('Bernat… los perros. Mírales los ojos.'),
     bernat('¡Rosas! ¡Cuidado, Gerard, que vienen a por nosotros!'),
   ),
-  /** The first fight is won: the minion is gone and the light has turned. */
+  /** The first fight is won: the light has turned. */
   afterFight: withBernat(
     g('Se han ido corriendo… ¿Y el chicle ese?'),
-    bernat('Se ha escurrido por la alcantarilla. Lo he visto. Plop.'),
+    bernat('Sigue ahí abajo, seguro. Escuchando.'),
     g('¿Soy yo, o se ha puesto todo… rosa? Y oscuro.'),
     bernat('No eres tú. En mi libreta, cuando alguien le gana a un esbirro, la Reina Bubbaloo se entera…'),
     bernat('…y tiñe el cielo de su color. Para que sepas que te está mirando.'),

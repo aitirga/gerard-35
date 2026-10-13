@@ -3,18 +3,22 @@ import { idlePose } from './walk-animation';
 import type { Effects } from './effects';
 import type { MinionState } from './story';
 
-/** Seconds of the entrance: oozing out, blowing the bubble, the pop, and settling. */
-const OUT = 1.1, BLOW = 2.5, POP = 2.6, SETTLE = 3.3;
-const FLEE = 1.9;
+/** Seconds of the entrance: the head rises out of the manhole, blows, pops, and sinks back. */
+const RISE = .8, BLOW = 2.4, POP = 2.5, SINK = 2.8, DONE = 3.6;
+/** How deep the root sits: out of sight, and with just the head and eyes above the lid. */
+const HIDDEN = -2.4, PEEK = -.95;
+/** Seconds between the faint bubbles that rise through the manhole before the entrance. */
+const HINT_EVERY = 11;
 const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
 
 /** Where the minion lives this frame, in world space; the game converts story cells for it. */
-export interface MinionMarks { hide: pc.Vec3; out: pc.Vec3; manhole: pc.Vec3; look: pc.Vec3; groundHeight: (x: number, z: number) => number }
+export interface MinionMarks { manhole: pc.Vec3; look: pc.Vec3; groundHeight: (x: number, z: number) => number }
 
 /**
  * La Reina Bubbaloo's minion (docs/lore.md): a sticky body under a glossy, lumpy bubble-gum head,
- * dripping and standing in its own pink puddle. It hides flattened beside the parked car and
- * peeks out; its entrance blows a gum bubble that pops over the dogs.
+ * dripping and standing in its own pink puddle. It lives in the manhole at the bottom of the
+ * street and is barely ever seen: a faint pink bubble now and then, and, once, its head rising
+ * through the lid to pop a gum bubble over the dogs before it sinks back.
  */
 export function createMinion(app: pc.Application, effects: Effects) {
   const materials: pc.StandardMaterial[] = [];
@@ -36,7 +40,7 @@ export function createMinion(app: pc.Application, effects: Effects) {
 
   const root = new pc.Entity('Esbirro de la Reina Bubbaloo'); app.root.addChild(root);
   root.setLocalScale(1.15, 1.15, 1.15);
-  const puddle = part(root, 'Charco pringoso', 'cylinder', puddleSkin, [0, .015, 0], [1, .02, .85]);
+  part(root, 'Charco pringoso', 'cylinder', puddleSkin, [0, .015, 0], [1, .02, .85]);
   // Everything above the puddle squashes and stretches from the ground up.
   const body = new pc.Entity('Cuerpo'); root.addChild(body);
   part(body, 'Tronco de chicle', 'sphere', gumDeep, [0, .3, 0], [.6, .58, .54]);
@@ -76,78 +80,63 @@ export function createMinion(app: pc.Application, effects: Effects) {
   part(head, 'Boca', 'sphere', mouth, [0, .16, .4], [.16, .08, .06]);
   const bubble = part(head, 'Pompa de chicle', 'sphere', bubbleSkin, [0, .16, .46], [0, 0, 0]);
 
-  let state: MinionState | 'emerging' | 'fleeing' = 'hiding';
-  let timer = 0, time = 0, peek = 0, popped = false;
+  // A faint bubble that rises through the lid now and then, the only sign of it before the entrance.
+  const hint = new pc.Entity('Burbuja en la alcantarilla'); app.root.addChild(hint);
+  const hintSkin = part(hint, 'Burbuja', 'sphere', bubbleSkin, [0, 0, 0], [0, 0, 0]);
+
+  let state: MinionState | 'emerging' = 'lurking';
+  let timer = 0, time = 0, popped = false;
   let onPop: (() => void) | undefined;
   let finished: (() => void) | undefined;
-  const at = new pc.Vec3();
   const towards = (from: pc.Vec3, to: pc.Vec3) => Math.atan2(to.x - from.x, to.z - from.z) * 180 / Math.PI;
 
   return {
     root,
-    /** Places the minion where the story says it is, without animation. */
-    set(next: MinionState) {
-      if (state === 'emerging' || state === 'fleeing') return;
-      if (next === 'gone' && state === 'out') { state = 'fleeing'; timer = 0; return; }
-      state = next;
-    },
-    /** Plays the entrance; `pop` runs when the bubble bursts over the dogs. Resolves once it has settled. */
+    /** Where the story says it is: lurking (hint bubbles) before its entrance, gone below for good after. */
+    set(next: MinionState) { if (state !== 'emerging') state = next; },
+    /** Plays the entrance; `pop` runs when the bubble bursts over the dogs. Resolves once it has sunk back. */
     emerge(pop: () => void): Promise<void> {
       state = 'emerging'; timer = 0; popped = false; onPop = pop;
       return new Promise(resolve => { finished = resolve; });
     },
-    /** Whether the minion stands on the street now (so Gerard walks around it). */
-    get solid() { return state === 'out' || state === 'emerging'; },
-    update(dt: number, animate: boolean, marks: MinionMarks) {
+    /** `shown` is false outside the street scene or during a fight. */
+    update(dt: number, animate: boolean, marks: MinionMarks, shown = true) {
       time += dt; timer += dt;
       const idle = idlePose(time, 7);
-      let position = marks.out, rise = 1, squash = animate ? Math.sin(time * 3.1) * .05 : 0, blow = 0;
-      let face = towards(marks.out, marks.look);
-      root.enabled = state !== 'gone';
-      if (state === 'hiding') {
-        // Flat as a puddle beside the car; every few seconds the head pops up to peek, unless Gerard is close.
-        const near = Math.hypot(marks.look.x - marks.hide.x, marks.look.z - marks.hide.z) < 3.2;
-        const want = animate && !near && (time % 5.2) > 3.4 ? 1 : 0;
-        peek += (want - peek) * (1 - Math.exp(-dt * (want ? 5 : 9)));
-        position = at.lerp(marks.hide, marks.out, peek * .12);
-        rise = .18 + peek * .62;
-        face = towards(marks.hide, marks.look);
-      } else if (state === 'emerging') {
-        const t = animate ? timer : SETTLE;
-        const out = smooth(t / OUT);
-        position = at.lerp(marks.hide, marks.out, out);
-        rise = .18 + .82 * smooth((t - .15) / .6);
-        // Oozing along: a wobble that dies down once it stands.
-        squash += animate ? Math.sin(t * 15) * .12 * (1 - out) : 0;
-        blow = t < POP ? smooth((t - OUT) / (BLOW - OUT)) * 1.6 : 0;
-        if (blow > 1.3 && animate) squash += Math.sin(t * 40) * .03;
+      const ground = marks.groundHeight(marks.manhole.x, marks.manhole.z);
+      // The faint hint: a small bubble swells over the lid and bursts.
+      const cycle = time % HINT_EVERY;
+      const swell = shown && animate && state === 'lurking' && cycle > HINT_EVERY - 1.4 ? (cycle - (HINT_EVERY - 1.4)) / 1.4 : 0;
+      hint.enabled = swell > 0;
+      if (swell) {
+        const r = .05 + swell * .13;
+        hint.setPosition(marks.manhole.x + .12, ground + .04 + r * .8, marks.manhole.z - .1);
+        hintSkin.setLocalScale(r, r * .9, r);
+        if (swell > .97) effects.emit('spore', hint.getPosition(), 2, .05);
+      }
+      let depth = HIDDEN, blow = 0, squash = animate ? Math.sin(time * 3.1) * .05 : 0;
+      if (state === 'emerging') {
+        const t = animate ? timer : DONE;
+        depth = pc.math.lerp(HIDDEN, PEEK, smooth(t / RISE)) - (PEEK - HIDDEN) * smooth((t - SINK) / (DONE - SINK));
+        // Squeezing through the lid: a wobble while it rises and sinks.
+        squash += animate ? Math.sin(t * 15) * .1 * (1 - smooth((t - RISE) / .3) + smooth((t - SINK) / .3)) : 0;
+        blow = t < POP ? smooth((t - RISE - .3) / (BLOW - RISE - .3)) * 1.6 : 0;
         if (!popped && t >= POP) {
           popped = true;
           const mouth = bubble.getPosition();
-          effects.emit('goo', mouth, 16, .35);
+          effects.emit('goo', mouth, 14, .35);
           effects.emit('spore', mouth, 18, .6);
           onPop?.(); onPop = undefined;
         }
-        if (t >= SETTLE) { state = 'out'; const done = finished; finished = undefined; done?.(); }
-      } else if (state === 'out') {
-        // A small bubble now and then, gloating.
-        const cycle = time % 6.5;
-        blow = animate && cycle > 4.4 ? Math.sin((cycle - 4.4) / 2.1 * Math.PI) * .55 : 0;
-      } else if (state === 'fleeing') {
-        const t = animate ? timer : FLEE;
-        position = at.lerp(marks.out, marks.manhole, smooth(t / 1.1));
-        face = towards(marks.out, marks.manhole);
-        rise = 1 - .85 * smooth((t - 1.05) / .7);
-        squash += animate ? Math.sin(t * 18) * .1 : 0;
-        if (t >= FLEE) { state = 'gone'; root.enabled = false; }
+        if (t >= DONE) { state = 'gone'; const done = finished; finished = undefined; done?.(); }
       }
-      root.setPosition(position.x, marks.groundHeight(position.x, position.z) + .02, position.z);
+      root.enabled = shown && state === 'emerging' && depth > HIDDEN + .05;
+      if (!root.enabled) return;
+      root.setPosition(marks.manhole.x, ground + depth, marks.manhole.z);
       // Mostly towards the camera (which looks from the south-east), glancing towards Gerard, so its face shows.
-      const glance = ((face - 45 + 540) % 360) - 180;
+      const glance = ((towards(marks.manhole, marks.look) - 45 + 540) % 360) - 180;
       root.setLocalEulerAngles(0, 45 + Math.max(-40, Math.min(40, glance)), 0);
-      const stretch = rise * (1 + squash);
-      body.setLocalScale(1 + (1 - rise) * .7 - squash * .5, Math.max(.05, stretch), 1 + (1 - rise) * .7 - squash * .5);
-      puddle.setLocalScale(1 + (1 - rise) * .5, .02, .85 + (1 - rise) * .5);
+      body.setLocalScale(1 - squash * .5, 1 + squash, 1 - squash * .5);
       head.setLocalEulerAngles(animate ? idle.breathe * 4 : 0, animate ? idle.look * 14 : 0, animate ? Math.sin(time * 2.3) * 4 : 0);
       arms.forEach((arm, i) => arm.setLocalEulerAngles(0, 0, animate ? (i ? 1 : -1) * Math.sin(time * 2.6 + i) * 12 : 0));
       // Drips stretch and snap back at their own pace: the whole thing looks wet.
@@ -162,7 +151,7 @@ export function createMinion(app: pc.Application, effects: Effects) {
       bubble.setLocalScale(b, b * .95, b);
       bubble.setLocalPosition(0, .16, .42 + b * .5);
     },
-    destroy() { root.destroy(); materials.forEach(m => m.destroy()); },
+    destroy() { root.destroy(); hint.destroy(); materials.forEach(m => m.destroy()); },
   };
 }
 export type Minion = ReturnType<typeof createMinion>;

@@ -33,15 +33,15 @@ export type StoryEffect =
   | { kind: 'item'; item: ItemId }
   | { kind: 'hint'; id: HintId }
   | { kind: 'card'; id: CardId }
-  /** The minion steps out from behind the car and pops its bubble over the dogs. */
+  /** The minion's head rises out of the manhole and pops a gum bubble over the dogs. */
   | { kind: 'minion' }
   /** The possessed dogs attack: a fight starts right away. */
   | { kind: 'battle' };
 
 export interface StoryNpc { id: 'mama' | 'jan'; character: string; environment: EnvironmentId; cell: Cell; scale: number }
 export type Companion = 'none' | 'follow' | 'stalled';
-/** Where La Reina Bubbaloo's minion is: peeking from behind the car, out in the street, or gone down the manhole. */
-export type MinionState = 'hiding' | 'out' | 'gone';
+/** La Reina Bubbaloo's minion in the manhole: lurking (a faint bubble now and then) until its entrance, then gone below. */
+export type MinionState = 'lurking' | 'gone';
 /** The light over Sant Quirze: an ordinary autumn morning, or La Reina Bubbaloo's pink gloom. */
 export type Tone = 'day' | 'bubbaloo';
 export interface PartyMember { id: 'gerard' | 'bernat'; name: string; equipment: ItemId[]; note: string }
@@ -80,7 +80,7 @@ export class Story {
   get battles() { return this.has('dejavu'); }
   /** The street dogs have the minion's dark pink eyes. */
   get possessed() { return this.has('minion'); }
-  get minion(): MinionState { return this.has('first-fight') ? 'gone' : this.has('minion') ? 'out' : 'hiding'; }
+  get minion(): MinionState { return this.has('minion') ? 'gone' : 'lurking'; }
   get tone(): Tone { return this.has('first-fight') ? 'bubbaloo' : 'day'; }
   get items(): ItemId[] {
     const items: ItemId[] = [];
@@ -158,7 +158,7 @@ export class Story {
         return [{ kind: 'card', id: 'intro' }, say(LINES.wake), { kind: 'hint', id: 'move' }];
       case 'minion':
         if (!this.has('dejavu') || !this.set('minion')) return [];
-        return [say(LINES.minionBlub), say(LINES.minion), { kind: 'battle' }];
+        return [say(LINES.minion), { kind: 'battle' }];
       case 'battle':
         if (!event.won || !this.has('minion') || !this.set('first-fight')) return [];
         return [say(LINES.afterFight), { kind: 'card', id: 'end' }];

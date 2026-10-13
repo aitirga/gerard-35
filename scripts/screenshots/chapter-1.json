@@ -223,39 +223,27 @@
       "skipDialogue": true
     },
     {
-      "wait": 1500
+      "wait": 1200
     },
     {
-      "shot": "minion-steps-out",
-      "caption": "The minion oozes out into the street"
+      "shot": "minion-rises",
+      "caption": "A gum head rises through the manhole lid…"
     },
     {
       "wait": 1200
     },
     {
       "shot": "minion-bubble",
-      "caption": "…and blows a gum bubble"
+      "caption": "…blows a bubble and pops it over the dogs"
     },
     {
       "until": "!!document.querySelector('#hud[data-dialogue]')",
       "timeout": 30000
     },
     {
-      "shot": "minion-blub",
+      "shot": "what-was-that",
       "delay": 1500,
-      "caption": "¡Blub! The dogs' eyes are dark pink now"
-    },
-    {
-      "press": "KeyE"
-    },
-    {
-      "until": "document.querySelector('#dialogue .who').textContent === 'Bernat' || document.querySelector('#dialogue .who').textContent === 'Gerard'",
-      "timeout": 10000
-    },
-    {
-      "shot": "bernat-explains",
-      "delay": 1500,
-      "caption": "Bernat: a minion of La Reina Bubbaloo"
+      "caption": "«¡Ha salido algo rosa de la alcantarilla!» The dogs' eyes are pink"
     },
     {
       "skipDialogue": true
@@ -289,7 +277,7 @@
     },
     {
       "shot": "light-turns",
-      "caption": "The minion slips down the manhole; the light starts to turn"
+      "caption": "Back on the street: the light starts to turn"
     },
     {
       "until": "!!document.querySelector('#hud[data-dialogue]')",

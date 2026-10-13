@@ -27,10 +27,11 @@ story is about. Update it whenever a decision changes the story.
 - Small, sticky creatures with a **head made of a Bubbaloo-style gum ball**: glossy pink, lumpy,
   dripping. Their bodies are gooey and leave a pink puddle where they stand. They blow a gum
   bubble from the mouth and pop it.
-- They **hide in corners** (behind a parked car, at the corner of a house) and peek out.
+- They **live in the sewers** and are almost never seen: the only sign is a small pink bubble
+  rising through a manhole lid now and then. When they act, a head pokes out for a moment and
+  sinks back. Keep them barely on screen; the player should hardly notice them.
 - **What they touch obeys the Queen.** Animals they possess get **dark pink eyes** and attack.
-- They gurgle rather than talk ("¡Blub!"). When beaten they slip away (in chapter 1, down a
-  manhole) rather than die.
+- They never talk and never stay to fight: they send what they possess instead.
 - Built procedurally in `src/minion.ts`.
 
 ## People
@@ -54,9 +55,10 @@ story is about. Update it whenever a decision changes the story.
 1. Birthday morning at home: Jan, the potion, Mum's running shoes, the backpack.
 2. Gerard fetches Bernat; walking down the street, Bernat stalls: this is the start of the game he
    designed yesterday.
-3. A Bubbaloo minion slips out from behind a parked car, pops a gum bubble, and the street dogs'
-   eyes turn dark pink. They attack: **the first fight** (no tutorial).
-4. After the win, the minion has fled down the manhole and **the whole place's light turns
+3. Bubbles have been rising from the manhole by the dogs. A gum head pokes out of it, pops a gum
+   bubble over the dogs and sinks back; their eyes turn dark pink and they attack: **the first
+   fight** (no tutorial).
+4. After the win (the minion is still down there, Bernat says) **the whole place's light turns
    gloomy**: darker, pink and strange. It stays that way while they are inside Bernat's game:
    La Reina Bubbaloo is watching.
 

@@ -29,8 +29,8 @@ his power: **changing class by changing mood**, fast.
   player turns back because a friend sounds off, not because a panel says so.
 - **Seeds pay off within the chapter.** The potion from Jan's desk is the first common item and
   is meant to be used in block 2's fights; the dogs are on screen from the moment Gerard steps
-  into the street, and something pink peeks from behind the parked car at the bottom long before
-  Bernat names it.
+  into the street, and every so often a small pink bubble rises through the manhole beside them,
+  easy to miss, long before Bernat mentions it.
 - **Catalan at home, Spanish on screen.** Dialogue is in Spanish, with the family's Catalan where
   it is natural: "Per molts anys", "Bon dia", "POCIÓ".
 - **Desktop first.** Keyboard prompts (Shift, I, C, E) are written into the notes; the controller
@@ -46,11 +46,11 @@ his power: **changing class by changing mood**, fast.
 | 4 | Optional: the **Poción** on Jan's desk | Common items | 1:30 |
 | 5 | The **Mochila** in the hall; the doors out stay shut until then | Key items vs common (I) | 1:00 |
 | 6 | Bernat's doorbell: he congratulates Gerard and joins as a non-playable companion | Party and equipment (C): "modo escuela" | 1:45 |
-| 7 | Down the street: dogs below, a pink blob peeking from behind a car; Bernat slows, stops and mutters | Noticing a friend | 1:00 |
+| 7 | Down the street: dogs below, a faint pink bubble in their manhole; Bernat slows, stops and mutters | Noticing a friend | 1:00 |
 | 8 | "¿Un déjà-vu?" "Peor. Es igual… creo que la he cagado." | — | 0:30 |
-| 9 | La Reina Bubbaloo's minion oozes out, blows a gum bubble and pops it over the dogs: their eyes turn dark pink. "¡Blub!" Bernat: "Un esbirro de la Reina Bubbaloo." | — | 0:45 |
+| 9 | A gum head pokes out of the manhole for a moment, pops a bubble over the dogs and sinks back: their eyes turn dark pink. "¡Ha salido algo rosa de la alcantarilla!" Bernat: "Un esbirro de la Reina Bubbaloo." | — | 0:45 |
 | 10 | The dogs attack: **first fight**, straight away and with no tutorial. Escapar is greyed out (the dogs surround them); losing lets them try again | Fighting | 2:00 |
-| 11 | Won: the minion slips down a manhole and the light over Sant Quirze turns dark, pink and strange while they are inside Bernat's game → "Continuará…" | — | 0:45 |
+| 11 | Won: the light over Sant Quirze turns dark, pink and strange while they are inside Bernat's game → "Continuará…" | — | 0:45 |
 
 Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpack`,
 `bernat-joined`, `bernat-stalled`, `dejavu`, `minion`, `first-fight`. Battles with the dogs stay
@@ -69,8 +69,8 @@ in La Reina Bubbaloo's light.
 - `src/game.ts` draws the cast from the story (Mum, Jan, floating pickups, Bernat), hides
   Gerard's backpack until he has it, blocks NPC cells, turns cells beyond the leash into walls,
   and reports the south row and leash tugs.
-- `src/minion.ts` builds and animates La Reina Bubbaloo's minion (peeking, entrance with the
-  bubble, fleeing down the manhole). `src/battle-scene.ts` swaps the dogs' eyes to the possessed
+- `src/minion.ts` builds and animates La Reina Bubbaloo's minion under the manhole (the faint
+  hint bubbles, and its one brief appearance with the gum bubble). `src/battle-scene.ts` swaps the dogs' eyes to the possessed
   pink, and `src/scenery.ts` blends any scene towards La Reina Bubbaloo's light (`setTone`).
 - `src/follower.ts` makes Bernat walk Gerard's own breadcrumb trail, so he never cuts corners
   through walls (`tests/follower.test.mjs`).

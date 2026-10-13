@@ -36,17 +36,17 @@ test('block 1 plays from waking up to the first fight in order', () => {
   for (let i = 0; i < 3; i++) { story.handle({ type: 'leash' }); seen.push(story.bubble); }
   assert.deepEqual([...new Set(seen)], ['¿Gerard…?', 'Espera.', 'Esto… ya lo he visto.']);
 
-  assert.equal(story.minion, 'hiding');
+  assert.equal(story.minion, 'lurking');
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'talk-bernat' })), ['dialogue', 'minion']);
   assert.equal(story.companion, 'follow');
   assert.equal(story.bubble, undefined);
   assert.equal(story.battles, true);
   assert.equal(story.possessed, false, 'the dogs turn when the bubble pops, not before');
 
-  assert.deepEqual(kinds(story.handle({ type: 'minion' })), ['dialogue', 'dialogue', 'battle']);
-  assert.deepEqual(story.handle({ type: 'minion' }), [], 'the minion steps out once');
+  assert.deepEqual(kinds(story.handle({ type: 'minion' })), ['dialogue', 'battle']);
+  assert.deepEqual(story.handle({ type: 'minion' }), [], 'the minion shows itself once');
   assert.equal(story.possessed, true);
-  assert.equal(story.minion, 'out');
+  assert.equal(story.minion, 'gone', 'back down the manhole');
   assert.equal(story.tone, 'day');
 
   assert.deepEqual(story.handle({ type: 'battle', won: false }), [], 'losing lets them try again');
@@ -94,7 +94,7 @@ test('story places stand on walkable cells of their scenes', () => {
     if (!place || typeof place !== 'object' || !('environment' in place)) continue;
     assert.ok(canWalk(place.cell, ENVIRONMENTS[place.environment].grid), `${name} at ${place.cell.x},${place.cell.z}`);
   }
-  for (const [name, cell] of Object.entries(PLACES.minion)) assert.ok(canWalk({ x: Math.round(cell.x), z: Math.round(cell.z) }, ENVIRONMENTS.maresme.grid), `minion ${name}`);
+  assert.ok(ENVIRONMENTS.maresme.props.some(p => p.kind === 'manhole' && p.x === PLACES.minion.manhole.x && p.z === PLACES.minion.manhole.z), 'the minion lives under a real manhole');
 });
 
 test('the server accepts exactly the story flags', () => {
