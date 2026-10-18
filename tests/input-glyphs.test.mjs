@@ -19,6 +19,6 @@ test('every action has a key for every device, and templates use the device in u
   setInputDevice('playstation'); setInputDevice('playstation');
   assert.deepEqual(seen, ['playstation'], 'only real changes are announced');
   assert.equal(glyphText('{confirm} Confirmar · {details} detalles · {unknown}'), '✕ Confirmar · △ detalles · {unknown}');
-  assert.equal(glyph('animaPrev', 'nintendo'), 'L'); assert.equal(glyph('party', 'nintendo'), 'X', 'the top face button is X on Nintendo');
+  assert.equal(glyph('prev', 'nintendo'), 'L'); assert.equal(glyph('party', 'nintendo'), 'X', 'the top face button is X on Nintendo');
   setInputDevice('keyboard'); stop();
 });

@@ -260,6 +260,20 @@ function minionAct(state: BattleState, actor: Combatant): BattleEffect | undefin
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Toca recuperar el aliento. Puedes volver a intentarlo.'; }
   return { actor: actor.id, kind: 'enemy', target: target.id, amount };
 }
+/**
+ * A fighter changes ánima (class) on their own turn, or takes it off with `null`. It does not
+ * spend the turn: it only changes their stats and skills. PV and Secundaria keep what is left,
+ * within the new maximums. Returns whether it changed.
+ */
+export function changeAnima(state: BattleState, allyId: string, classId: ClassId | null) {
+  const ally = state.allies.find(a => a.id === allyId);
+  if (state.phase !== 'player' || !ally || ally.hp <= 0 || state.allies[state.active] !== ally || (ally.classId ?? null) === classId) return false;
+  const { hp, secondary } = ally;
+  Object.assign(ally, fighter({ id: ally.id, name: ally.name, profile: ally.profile, classId: classId ?? undefined }));
+  ally.hp = Math.min(hp, ally.maxHp); ally.secondary = Math.min(secondary, ally.maxSecondary);
+  state.message = classId ? `${ally.name} cambia de ánima.` : `${ally.name} se quita el ánima.`;
+  return true;
+}
 /** The beat is over: Gerard said no. His class wakes up and it is his turn again, with No-ta. */
 export function awaken(state: BattleState, classId: ClassId) {
   if (state.phase !== 'beat') return;

@@ -282,17 +282,36 @@ the party celebrates a victory. Outside combat, Gerard breathes, blinks and
 glances around, footsteps raise dust, dogs sniff and look about, trees sway and
 the pools shimmer (`scenery.update`). All of it stops under reduced motion.
 
-### Adventure panels
+### Status screen
 
-Press **C** for Gerard's character sheet or **M** for the current local map;
-press the same key again or **Escape** to return. Both are also available from
-on-screen buttons. Exploration pauses while a panel is open; dialogue and combat
-keep control of their own inputs. The character sheet is deliberately minimal:
-portrait, location, session steps and companion status, with equipment and skills
-reserved for later.
+Press **C** (or the controller's top face button: Y on Xbox, X on Nintendo, △ on
+PlayStation) to open Gerard's status screen; press it again, **Escape** or B to go
+back. Everything fits on one screen, without scrolling. **Q / E** on the keyboard
+or **L / R** on the controller turn the pages:
 
-`src/exploration-ui.ts` owns the shared panel shell, shortcuts, focus handling and
-panel registry. `src/world-map.ts` draws any `Environment` from its collision grid,
+| Page | Shows |
+| --- | --- |
+| Estado (first) | Portrait, the vitals plate (face, PV and Secundaria as two waves) with the ánima switch right under it, stats and skills, a vague line about the day ("Entender qué está pasando."), place, company and the time on Gerard's phone |
+| Ánimas | Each member's vitals with their own ánima chips (two can differ), and what the ánima in view changes and grants; colours and looks come with the ánima. Hidden until the first one wakes |
+| Objetos | Common and key items, one bag shared with Aitor |
+| Mapa | The local map with Gerard and Aitor on it |
+| Diario | A thought Gerard cannot shake, cryptic and never an instruction, and what he remembers of each chapter |
+
+**I** and **M** jump straight to Objetos and Mapa. Exploration pauses while the
+screen is open; dialogue and combat keep control of their own inputs. The time
+moves with the story, not with real seconds (`src/journal.ts`).
+
+**Two players.** When a second player plays Aitor (chapter 2, second controller),
+each player opens their own half with their own top face button: Gerard on the
+left, Aitor on the right. Each half turns its own pages and has its own cursor,
+and each dresses only their own character; each half takes the colours of its
+player's ánima, and a face lights up when its ánima changes. Alone, player 1 sees
+one wide sheet and dresses the whole party (in the development `solo` mode with a
+badge saying so). Fights split the same way: see docs/party.md.
+
+`src/exploration-ui.ts` owns the status screen: its pages, shortcuts, the two
+halves and their cursors. `src/journal.ts` writes the clock, the mission line and
+the diary from the story flags. `src/world-map.ts` draws any `Environment` from its collision grid,
 house footprints and numbered interactions, with no location-specific map layout.
 Add locations in `src/environments.ts` to reuse the renderer. The map is an
 informational local overview, not a travel menu.

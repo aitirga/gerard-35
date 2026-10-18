@@ -4,6 +4,7 @@
  * mark an element with `data-glyph="confirm"` to show one key, `data-glyph-template` to fill
  * "{confirm} Confirmar · {cancel} Volver", or `data-device="keyboard|gamepad"` for content that
  * only one of them needs. `watchGlyphs` keeps all of it in step, including elements added later.
+ * Inside `data-glyph-player="2"` (player 2's half of the screen) keys follow player 2's pad instead.
  */
 import { isNintendo } from './controller.ts';
 
@@ -35,8 +36,9 @@ export const GLYPHS = {
   items: { keyboard: 'I', ...pad('☰', 'Options', '+', 'Start') },
   /** A skill's details in battle: the top face button. */
   details: { keyboard: 'I', ...pad('Y', '△', 'X', 'Botón superior') },
-  animaPrev: { keyboard: 'Q', ...pad('LB', 'L1', 'L', 'LB') },
-  animaNext: { keyboard: 'E', ...pad('RB', 'R1', 'R', 'RB') },
+  /** The shoulder buttons: the previous / next ánima in a fight, or page in the status screen. */
+  prev: { keyboard: 'Q', ...pad('LB', 'L1', 'L', 'LB') },
+  next: { keyboard: 'E', ...pad('RB', 'R1', 'R', 'RB') },
   /** Walk a list up and down. */
   updown: { keyboard: '↑ ↓', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
   /** Pick among targets in any direction. */
@@ -47,6 +49,8 @@ export const GLYPHS = {
 export type Glyph = keyof typeof GLYPHS;
 
 let device: InputDevice = 'keyboard';
+/** Player 2 only ever plays on a pad. */
+let device2: InputDevice = 'gamepad';
 const listeners = new Set<(device: InputDevice) => void>();
 export const inputDevice = () => device;
 export const usingPad = () => device !== 'keyboard';
@@ -61,10 +65,17 @@ export function setInputDevice(next: InputDevice) {
   device = next;
   listeners.forEach(listener => listener(device));
 }
+/** Player 2's pad, for their half of the screen. */
+export function setPlayer2Device(next: InputDevice) {
+  if (next === device2) return;
+  device2 = next;
+  listeners.forEach(listener => listener(device));
+}
 export function onInputDevice(listener: (device: InputDevice) => void) { listeners.add(listener); return () => listeners.delete(listener); }
 
 function fill(el: HTMLElement) {
-  const text = el.dataset.glyph ? glyph(el.dataset.glyph as Glyph) : el.dataset.glyphTemplate !== undefined ? glyphText(el.dataset.glyphTemplate) : undefined;
+  const on = el.closest('[data-glyph-player="2"]') ? device2 : device;
+  const text = el.dataset.glyph ? glyph(el.dataset.glyph as Glyph, on) : el.dataset.glyphTemplate !== undefined ? glyphText(el.dataset.glyphTemplate, on) : undefined;
   if (text !== undefined && el.textContent !== text) el.textContent = text;
 }
 function fillAll(root: ParentNode) {
@@ -89,11 +100,11 @@ export function watchGlyphs(doc: Document = document) {
   // New HUD pieces (battle menus, hints, dialogue) get the right keys as they appear.
   const observer = new MutationObserver(records => {
     for (const record of records) {
-      if (record.type === 'attributes') fill(record.target as HTMLElement);
+      if (record.type === 'attributes') fillAll(record.target as HTMLElement);
       else record.addedNodes.forEach(node => { if (node instanceof HTMLElement) fillAll(node); });
     }
   });
-  observer.observe(doc.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-glyph', 'data-glyph-template'] });
+  observer.observe(doc.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-glyph', 'data-glyph-template', 'data-glyph-player'] });
   apply();
   return () => { stop(); observer.disconnect(); doc.removeEventListener('keydown', toKeyboard, { capture: true }); doc.removeEventListener('pointerdown', toKeyboard, { capture: true }); };
 }

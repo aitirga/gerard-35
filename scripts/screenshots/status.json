@@ -1,0 +1,183 @@
+{
+  "title": "Status screen",
+  "description": "The status screen (C / top face button) fits on one screen: Estado with portrait, stats, ánima, a vague line about the day and the time; L / R (Q / E) turn to Ánimas (each member wears their own), Objetos (shared with Aitor), Mapa and Diario (a cryptic thought, never an instruction). With a second player on Aitor each opens their own half: Gerard left, Aitor right. Two standard gamepads are faked in the page.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=0"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "localStorage.removeItem('gerard35.loadout.v1'); window.gerard.story.loadout = {};"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "shot": "estado",
+      "delay": 1500,
+      "caption": "Estado (C): portrait, the vitals plate with its two waves, the ánima switch, stats and skills, a vague line about the day and the time"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "animas",
+      "delay": 1200,
+      "caption": "E (or R on a controller) turns the page: Ánimas, each member's vitals with their own ánima chips, and what the ánima changes"
+    },
+    {
+      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click();"
+    },
+    {
+      "shot": "animas-personalised",
+      "delay": 350,
+      "caption": "Aitor puts Noísta on too: his face lights up in the ánima's colours"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "objetos",
+      "delay": 1200,
+      "caption": "Objetos: one bag, shared with Aitor"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "mapa",
+      "delay": 1200,
+      "caption": "Mapa: the flat with Gerard and Aitor on it"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "diario",
+      "delay": 1200,
+      "caption": "Diario: a thought he can't shake and what he remembers, chapter 1 folded into one line"
+    },
+    {
+      "press": "KeyQ",
+      "times": 4,
+      "gap": 250
+    },
+    {
+      "shot": "back-to-estado",
+      "delay": 1200,
+      "caption": "Q goes back to Estado"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.frames = n => new Promise(done => { const tick = () => n-- > 0 ? requestAnimationFrame(tick) : done(); tick(); }); window.tap = async (pad, button) => { window.fakePads[pad].buttons[button].pressed = true; await frames(4); window.fakePads[pad].buttons[button].pressed = false; await frames(4); };"
+    },
+    {
+      "until": "window.gerard.control.secondPad",
+      "timeout": 20000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "tap(1, 3)"
+    },
+    {
+      "until": "!document.querySelector('.status-sheet[data-player=\"2\"]').hidden",
+      "timeout": 20000
+    },
+    {
+      "shot": "duo-aitor-only",
+      "delay": 1500,
+      "caption": "Two players: Aitor's Y opens his half on the right; Gerard's side stays the world"
+    },
+    {
+      "eval": "tap(0, 3)"
+    },
+    {
+      "until": "!document.querySelector('.status-sheet[data-player=\"1\"]').hidden",
+      "timeout": 20000
+    },
+    {
+      "shot": "duo-both",
+      "delay": 1500,
+      "caption": "Gerard's Y opens his half on the left: each sees their own Estado"
+    },
+    {
+      "eval": "tap(1, 5)"
+    },
+    {
+      "eval": "tap(1, 5)"
+    },
+    {
+      "eval": "tap(0, 4)"
+    },
+    {
+      "until": "document.querySelector('.status-sheet[data-player=\"1\"] [data-panel=\"diary\"][aria-pressed=\"true\"]') && document.querySelector('.status-sheet[data-player=\"2\"] [data-panel=\"items\"][aria-pressed=\"true\"]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "duo-pages",
+      "delay": 1200,
+      "caption": "Each turns their own pages: Gerard's L to Diario, Aitor's R twice to Objetos"
+    },
+    {
+      "eval": "tap(1, 4)"
+    },
+    {
+      "eval": "window.before = JSON.stringify(window.gerard.story.loadout); tap(1, 13)"
+    },
+    {
+      "eval": "tap(1, 0)"
+    },
+    {
+      "until": "JSON.stringify(window.gerard.story.loadout) !== window.before",
+      "timeout": 20000
+    },
+    {
+      "shot": "duo-aitor-animas",
+      "delay": 1200,
+      "caption": "Aitor's own Ánimas page, driven by his controller: his vitals and his ánima only"
+    },
+    {
+      "eval": "Promise.all([tap(0, 1), tap(1, 1)])"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').hidden",
+      "timeout": 20000
+    },
+    {
+      "open": "/?story=bernat-joined"
+    },
+    {
+      "until": "document.title.length > 0 && !document.querySelector('#hud[data-dialogue]') && !document.querySelector('#story-card:not([hidden])')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "shot": "chapter-1-estado",
+      "delay": 1500,
+      "caption": "Chapter 1: Gerard as a boy with his shoes and backpack, Bernat at a glance; no ánimas yet, so no Ánimas page"
+    },
+    {
+      "press": "KeyQ"
+    },
+    {
+      "shot": "chapter-1-diario",
+      "delay": 1200,
+      "caption": "Chapter 1 Diario: what happened this morning and a thought about it"
+    }
+  ]
+}

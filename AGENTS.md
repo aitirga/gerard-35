@@ -28,3 +28,4 @@
   - Targets: `a un enemigo`, `a todos los enemigos`, `a un aliado herido`, `a todo el equipo`.
   - Exception: a skill may skip this nomenclature on purpose and be more abstract or less defined (a mysterious, strange or story-driven skill whose effect the player should discover by using it). Mark it `abstract: true` in `SKILLS` (`src/battle.ts`); its description can then be evocative instead of exact, but still short, clear Spanish. Keep these rare: the default is the fixed shape.
   - `tests/battle.test.mjs` checks every skill description against this shape, skipping those marked `abstract: true`.
+- The status screen's Diario is Gerard's memory and a thought he cannot shake, written cryptically; its mission line stays vague ("Entender qué está pasando."). Neither ever names a place to go, a person to talk to or an action to take.

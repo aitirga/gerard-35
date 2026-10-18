@@ -2,7 +2,7 @@ import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isNin
 import type { Direction, Stick } from './movement';
 import type { PanelId } from './exploration-ui';
 import type { ControlMode, PlayerId } from './party';
-import { padFamily, setInputDevice } from './input-glyphs';
+import { padFamily, setInputDevice, setPlayer2Device } from './input-glyphs';
 
 const labels: Record<ControlAction, string> = { up: 'Arriba', down: 'Abajo', left: 'Izquierda', right: 'Derecha', confirm: 'Confirmar / interactuar', cancel: 'Volver / correr (mantener)', menu: 'Menú' };
 const storageKey = 'gerard35.controllers.v1';
@@ -40,7 +40,7 @@ export function createControllerUI(callbacks: {
       <p class="menu-intro">La aventura sigue aquí.</p>
       <nav class="adventure-options" aria-label="Menú de aventura">
         <button data-close><span>01</span><strong>Continuar</strong><small>Volver a la aventura →</small></button>
-        <button data-panel="character"><span>02</span><strong>Personaje</strong><small>Gerard y tu progreso</small></button>
+        <button data-panel="character"><span>02</span><strong>Estado</strong><small>Gerard, ánimas y diario</small></button>
         <button data-panel="items"><span>03</span><strong>Objetos</strong><small>Comunes y objetos clave</small></button>
         <button data-panel="map"><span>04</span><strong>Mapa</strong><small>Dónde estás y qué hay cerca</small></button>
         <button data-open="controller"><span>05</span><strong>Mando</strong><small>Conectar, probar y asignar</small></button>
@@ -62,9 +62,10 @@ export function createControllerUI(callbacks: {
         <div><dt>Moverte</dt><dd data-device="keyboard">W A S D o flechas</dd><dd data-device="gamepad">Stick izquierdo o cruceta</dd></div>
         <div><dt>Correr</dt><dd data-glyph-template="Con las zapatillas: {run}"></dd></div>
         <div><dt>Interactuar / avanzar</dt><dd data-device="keyboard">E · Enter · Espacio</dd><dd data-device="gamepad" data-glyph-template="{interact}"></dd></div>
-        <div><dt>Personaje / objetos / mapa</dt><dd data-device="keyboard">Desde el menú · C / I / M</dd><dd data-device="gamepad" data-glyph-template="Desde el menú ({menu}) · Personaje con {party}"></dd></div>
+        <div><dt>Estado</dt><dd data-device="keyboard">C (I / M abren Objetos y Mapa) · Q / E pasan de página</dd><dd data-device="gamepad" data-glyph-template="{party} · {prev} / {next} pasan de página"></dd></div>
+        <div><dt>Dos jugadores</dt><dd>Con Aitor en el mando 2, cada uno abre su estado en su mitad de la pantalla</dd></div>
         <div><dt>Vista general</dt><dd data-glyph-template="{overview}"></dd></div>
-        <div><dt>Combate</dt><dd data-glyph-template="{pick} elegir · {confirm} confirmar · {cancel} volver · {details} detalles de una habilidad · {animaPrev} / {animaNext} cambiar de ánima"></dd></div>
+        <div><dt>Combate</dt><dd data-glyph-template="{pick} elegir · {confirm} confirmar · {cancel} volver · {details} detalles de una habilidad · {prev} / {next} cambiar de ánima"></dd></div>
         <div><dt>Menú / volver</dt><dd data-glyph-template="{menu} menú · {cancel} volver"></dd></div>
       </dl>
       <p class="controller-note" data-device="gamepad">Puedes cambiar los controles en Mando.</p>
@@ -191,10 +192,10 @@ export function createControllerUI(callbacks: {
     const state2 = second ? readController(second, profiles[second.id], previousDirection2) : idleController();
     previousDirection2 = focused ? state2.direction : null;
     const input2 = edges2.update(state2, `${secondIdentity}:${root.open ? 'menu' : callbacks.context()}`, now, focused && !mapping && !root.open);
-    // Whoever touches a pad last decides which buttons the HUD shows.
-    if (second && (input2.events.length || input2.direction)) setInputDevice(padFamily(second.id, !!profiles[second.id]));
+    // Player 2's half of the screen (their status sheet, their fight dock) shows their own pad.
+    if (second) setPlayer2Device(padFamily(second.id, !!profiles[second.id]));
     callbacks.partnerDirection(input2.direction, input2.stick, input2.running);
-    // Player 2 plays and talks; the menu, panels and camera stay with player 1.
+    // Player 2 plays, talks and has their own half of the status screen; the menu and camera stay with player 1.
     for (const action of input2.events) if (action !== 'menu' && action !== 'overview') callbacks.action(action, 2);
     const state = latest ? readController(latest, custom, previousDirection) : idleController();
     previousDirection = focused ? state.direction : null;
@@ -205,7 +206,7 @@ export function createControllerUI(callbacks: {
     for (const action of input.events) {
       if (root.open) {
         if (action === 'menu') close();
-        else if (action === 'character' || action === 'overview' || action === 'shoulderLeft' || action === 'shoulderRight') continue;
+        else if (action === 'character' || action === 'overview' || action === 'prev' || action === 'next') continue;
         else if (action === 'cancel') back();
         else if (action === 'confirm') clickControllerButton(root);
         else focusControllerButton(root, action);

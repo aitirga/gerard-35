@@ -5,18 +5,18 @@ export type ControlAction = typeof CONTROL_ACTIONS[number];
 export type Binding = { button: number } | { axis: number; sign: -1 | 1 };
 export type ControllerProfile = Record<ControlAction, Binding>;
 /**
- * Fixed extras on recognised pads: the top face button opens the character panel, Select/− toggles
- * the overview, and the shoulder buttons (L / R) swap ánimas in a fight.
+ * Fixed extras on recognised pads: the top face button opens the status screen, L / R (the shoulder
+ * buttons) turn its pages, Select/− toggles the overview.
  */
-export type ControllerEvent = ControlAction | 'character' | 'overview' | 'shoulderLeft' | 'shoulderRight';
+export type ControllerEvent = ControlAction | 'character' | 'overview' | 'prev' | 'next';
 export interface PadSnapshot {
   id: string; index: number; connected: boolean; mapping: string;
   buttons: readonly { pressed: boolean; value: number }[];
   axes: readonly number[];
 }
 /** `stick` is the analog vector (screen space, y down) when the stick, not the D-pad, drives `direction`. */
-export interface ControllerState { direction: Direction | null; stick: Stick | null; confirm: boolean; cancel: boolean; menu: boolean; character: boolean; overview: boolean; shoulderLeft: boolean; shoulderRight: boolean }
-export const idleController = (): ControllerState => ({ direction: null, stick: null, confirm: false, cancel: false, menu: false, character: false, overview: false, shoulderLeft: false, shoulderRight: false });
+export interface ControllerState { direction: Direction | null; stick: Stick | null; confirm: boolean; cancel: boolean; menu: boolean; character: boolean; overview: boolean; prev: boolean; next: boolean }
+export const idleController = (): ControllerState => ({ direction: null, stick: null, confirm: false, cancel: false, menu: false, character: false, overview: false, prev: false, next: false });
 export function isNintendo(id: string) { return /nintendo|joy-con|switch|057e|pro controller/i.test(id); }
 /** macOS' GameController layer already reports Nintendo pads by label (A = button 0), so only other platforms need the swap. */
 export const osLabelsNintendoFaceButtons = typeof document !== 'undefined' && /Mac/.test(navigator.userAgent);
@@ -54,7 +54,7 @@ export function readController(pad: PadSnapshot, custom?: ControllerProfile, pre
   const stick = !digital && direction ? { x, y } : null;
   const extra = (button: number) => !custom && !!pad.buttons[button]?.pressed;
   return { direction, stick, confirm: bindingPressed(pad, profile.confirm), cancel: bindingPressed(pad, profile.cancel),
-    menu: bindingPressed(pad, profile.menu), character: extra(3), overview: extra(8), shoulderLeft: extra(4), shoulderRight: extra(5) };
+    menu: bindingPressed(pad, profile.menu), character: extra(3), overview: extra(8), prev: extra(4), next: extra(5) };
 }
 /** One physical press cannot leak into the next screen or trigger after focus returns. */
 export class ControllerEdges {
@@ -66,11 +66,11 @@ export class ControllerEdges {
     const events: ControllerEvent[] = [];
     if (!enabled || context !== this.context) { this.blocked = true; this.context = context; }
     if (this.blocked) {
-      if (enabled && !state.direction && !state.confirm && !state.cancel && !state.menu && !state.character && !state.overview && !state.shoulderLeft && !state.shoulderRight) this.blocked = false;
+      if (enabled && !state.direction && !state.confirm && !state.cancel && !state.menu && !state.character && !state.overview && !state.prev && !state.next) this.blocked = false;
       this.previous = state;
       return { direction: null, stick: null, running: false, events };
     }
-    for (const action of ['menu', 'character', 'overview', 'shoulderLeft', 'shoulderRight', 'cancel', 'confirm'] as const) if (state[action] && !this.previous[action]) events.push(action);
+    for (const action of ['menu', 'character', 'overview', 'prev', 'next', 'cancel', 'confirm'] as const) if (state[action] && !this.previous[action]) events.push(action);
     if (state.direction) {
       if (state.direction !== this.previous.direction) { events.push(state.direction); this.repeatAt = now + 350; }
       else if (now >= this.repeatAt) { events.push(state.direction); this.repeatAt = now + 130; }

@@ -198,7 +198,7 @@ export const HINTS = {
   // `glyph` names the key in input-glyphs.ts, shown for whichever device is in use.
   run: { glyph: 'run', verb: 'Correr' },
   items: { glyph: 'items', verb: 'Objetos' },
-  party: { glyph: 'party', verb: 'Equipo' },
+  party: { glyph: 'party', verb: 'Estado' },
   /** Chapter 2: Aitor walks with Gerard, and a second controller can take him. */
   duo: { keys: 'Mando 2', verb: 'Jugar como Aitor' },
 } as const;

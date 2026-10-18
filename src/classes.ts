@@ -5,19 +5,22 @@ import { ANIMA_NAMES, type ClassId } from './battle';
  * Ánimas, called classes in the code (docs/party.md). Matemágico is Gerard's from the start;
  * Noísta wakes up in the palace (docs/bubbaloo-palace.md): Gerard always contradicts, and there
  * that habit becomes a power. Once unlocked an ánima is the party's, so Aitor can wear it too.
- * An ánima is a look (material recolours by name and, optionally, a scarf), an interface theme
+ * An ánima is a look (material recolours by name and, optionally, a scarf), a colour (its pills,
+ * plates and flashes in the status screen and fights), an interface theme
  * (`#hud[data-class]` in style.css), and its stats and skills (CLASS_STATS and SKILLS in battle.ts).
  */
-export const CLASSES: Record<ClassId, { name: string; motto: string; look: Record<string, string>; scarf?: string }> = {
+export const CLASSES: Record<ClassId, { name: string; motto: string; look: Record<string, string>; colour: string; scarf?: string }> = {
   // Gerard's everyday self: his own clothes, his own interface.
   matemagico: {
     name: ANIMA_NAMES.matemagico,
     motto: 'Lo calcula todo. Hasta lo que no hace falta.',
+    colour: '#f3cf78',
     look: {},
   },
   noista: {
     name: ANIMA_NAMES.noista,
     motto: 'Dice que no. Y el mundo le hace caso.',
+    colour: '#e2483d',
     look: {
       'Camiseta mostaza': '#c8323c',
       'Rayas azul marino': '#23202a',
@@ -68,3 +71,4 @@ export function wearClass(model: pc.Entity, id: ClassId | undefined) {
   part('Punta del pañuelo', [-.05, .8, -.18], [.1, .22, .03], [12, 0, 8]);
   part('Punta del pañuelo', [.06, .78, -.18], [.09, .2, .03], [16, 0, -10]);
 }
+

@@ -9,6 +9,9 @@ import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent } from './story';
 import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
 import { watchGlyphs } from './input-glyphs';
+import type { MemberId } from './story';
+
+const isMember = (id: string): id is MemberId => id === 'gerard' || id === 'bernat' || id === 'aitor';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
@@ -100,24 +103,27 @@ try {
     change: (state, effect, onImpact) => game.setBattle(state, effect, onImpact),
     target: id => game.selectTarget(id),
     awaken: id => { game.awaken(id); storyEvent({ type: 'class', id }); },
-    // L / R in a fight: the ánima stays on afterwards, and Gerard's dresses the interface.
-    changeAnima: (member, id) => {
-      game.changeAnima(member, id);
-      if ((member === 'gerard' || member === 'aitor') && story.wear(member, id)) {
-        keepLoadout(); exploration.refresh();
-        if (member === 'gerard') hud.dataset.class = id;
-      }
-    },
     driver: id => battleDriver(control, id),
     waiting: id => waitingForPlayer2(control, id),
+    // Each fighter's pick in the fight is their pick for the adventure too.
+    anima: (id, classId) => { game.changeAnima(id, classId); if (isMember(id) && story.wear(id, classId)) { keepLoadout(); storyChanged(); } },
+    solo: () => control.mode === 'solo',
   });
   /** Re-applies who drives Aitor after the mode or the second controller changes. */
   function controlChanged() {
     game.setPartnerDriven(partnerDriven(control, story.partner));
     battleUI.refresh();
+    exploration.relayout();
   }
-  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused), () => controller.open(), story,
-    (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } });
+  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, story, {
+    pause: paused => game.setPaused(paused),
+    openMenu: () => controller.open(),
+    wear: (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } },
+    // With a second player on Aitor, each player gets their own half of the status screen.
+    split: () => partnerDriven(control, story.partner),
+    partner: () => game.partnerPosition,
+    solo: () => control.mode === 'solo',
+  });
   let currentLocation: EnvironmentId = story.resume.environment;
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
   let beats = Promise.resolve();
@@ -164,7 +170,7 @@ try {
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onStep: (steps, cell) => {
       sessionSteps = steps;
-      exploration.update(currentLocation, cell, steps);
+      exploration.update(currentLocation, cell);
       dirty = true;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => { void save(); }, 700);
@@ -209,22 +215,23 @@ try {
     panel: id => id ? exploration.show(id) : exploration.close(),
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
+      // Each player opens their own half of the status screen with the top face button.
+      // In a fight the same button shows a skill's details.
+      if (action === 'character') { if (battleUI.controllerContext !== 'world') battleUI.details(player); else if (/^(world|journal:)/.test(controllerContext())) exploration.control(action, player); return; }
       if (player === 2) {
-        if (action === 'character') { if (battleUI.controllerContext !== 'world') battleUI.details(2); return; }
-        if (action === 'shoulderLeft' || action === 'shoulderRight') { if (battleUI.controllerContext !== 'world') battleUI.switchAnima(action === 'shoulderLeft' ? -1 : 1, 2); return; }
-        if (action === 'overview') return;
-        if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
+        if (exploration.isOpen(2)) exploration.control(action, 2);
+        else if (action === 'overview') return;
+        else if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
+        else if (action === 'prev' || action === 'next') return;
         else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); }
         else if (!exploration.active && action === 'confirm') game.interact(true);
         return;
       }
-      if (action === 'shoulderLeft' || action === 'shoulderRight') { if (battleUI.controllerContext !== 'world') battleUI.switchAnima(action === 'shoulderLeft' ? -1 : 1, 1); }
-      else if (action === 'overview') { if (controllerContext() === 'world') game.toggleOverview(); }
-      // The top face button (△ / Y): the character panel, or a skill's details in battle.
-      else if (action === 'character') { if (battleUI.controllerContext !== 'world') battleUI.details(1); else if (/^(world|journal:)/.test(controllerContext())) exploration.toggle('character'); }
+      if (action === 'overview') { if (controllerContext() === 'world') game.toggleOverview(); }
       else if (battleUI.controllerContext !== 'world') battleUI.control(action, 1);
+      else if (action === 'prev' || action === 'next') exploration.control(action, 1);
       else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); else if (action === 'cancel') dialogue.close(); }
-      else if (exploration.active) exploration.control(action);
+      else if (exploration.active) exploration.control(action, 1);
       else if (action === 'confirm') game.interact();
     },
 
@@ -266,7 +273,7 @@ try {
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => params.get('party') === 'adult' ? battleUI.open(adult.battleParty(true), foes, { animas: adult.classes })
       : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas: ['matemagico', ...(params.has('noista') ? ['noista' as const] : [])] }));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged } });
+    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged } });
   }
   if (import.meta.hot) import.meta.hot.dispose(() => { stopGlyphs(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {

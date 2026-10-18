@@ -10,7 +10,7 @@ character stats, and how ánimas (classes in the code) are shared. Numbers are p
 | --- | --- | --- |
 | Plays | Gerard | Aitor (chapter 2 on) |
 | Input | Keyboard, mouse and the first controller | The second controller |
-| Exploring | Walks, runs, uses things, menu, panels, camera | Walks, runs (hold B), uses what is in reach, advances dialogue |
+| Exploring | Walks, runs, uses things, menu, their half of the status screen, camera | Walks, runs (hold B), uses what is in reach, advances dialogue, their half of the status screen (Y) |
 | Battle | Gerard's turns (and Bernat's in chapter 1) | Aitor's turns |
 
 - **Without a second controller Aitor follows Gerard** like Bernat did, walking Gerard's own
@@ -19,9 +19,11 @@ character stats, and how ánimas (classes in the code) are shared. Numbers are p
 - **Both stay on screen.** The camera looks between them and pulls back as they part. Past
   `TETHER` (7 cells) the one ahead is held back by an invisible ring, and Aitor says so in a
   bubble ("¡Eh, espérame!"), so it reads as a person, not a wall.
-- **In battle each player picks their own fighter's moves.** On Aitor's turn the keyboard and
-  the first controller do nothing; the turn line says *MANDO 2*. If no second controller is
-  connected, the turn waits and says *CONECTA EL MANDO 2*.
+- **In battle the screen splits too.** Gerard's dock sits bottom left and Aitor's bottom right,
+  each with the fighter's face, PV and Secundaria (two waves), their ánima switch and, on their
+  turn, the commands, in the colours of their own ánima. Each player picks their own fighter's
+  moves: on Aitor's turn the keyboard and the first controller do nothing and the turn line says
+  *MANDO 2*. If no second controller is connected, the turn waits and says *CONECTA EL MANDO 2*.
 - When Aitor joins, the key hint "Mando 2 · Jugar como Aitor" appears once and goes as soon as a
   second controller is there.
 - The Mando page of the menu shows both controllers ("Mando 1 · Gerard", "Mando 2 · Aitor").
@@ -29,7 +31,9 @@ character stats, and how ánimas (classes in the code) are shared. Numbers are p
 ### Debug: one player
 
 For development only, `solo` mode lets player 1 play both: Aitor follows Gerard and player 1
-picks Aitor's moves in battle too. Turn it on with `just dev-solo` (or `?solo=1`, off with
+picks Aitor's moves in battle too. The interface says so: fights keep a single dock that follows
+whoever's turn it is (the other fighter waits on the right) under a *DEPURACIÓN · UN JUGADOR LLEVA
+A LOS DOS* badge, and the status screen is one wide sheet with the same badge. Turn it on with `just dev-solo` (or `?solo=1`, off with
 `just dev-solo off` / `?solo=0`) or the switch on the Mando page, which only exists in the dev
 build. The choice is remembered in the browser. Release builds are always two-player.
 
@@ -73,18 +77,24 @@ attacks (Habilidad is greyed out on his turn); Aitor has skills only while he we
 Impulso and Abrazo are out for now.
 
 - **Ánimas belong to the party** (the code calls them classes: `ClassId`, `CLASSES`). Gerard has
-  **Matemágico** from the start (Magia +1, Espíritu +1; his own look and interface); **Noísta**
-  wakes up in chapter 1's palace (Magia +2, Espíritu +2, Defensa −1; the scarf and the red
-  protest-poster interface). Anyone in the party but Bernat can wear any unlocked ánima, both at
-  once if they like. Wearing one adds its stats and its skills.
-- **In a fight**, the strip above the menu (L · Matemágico · Noísta · R) shows the active
-  fighter's ánima. L / R on a controller, Q / E on the keyboard, or a click swaps it: free, the
-  turn stays theirs. The menu sweeps, the fighter flashes and changes clothes, the interface
-  theme follows Gerard's, and the skills (also an open skill sheet) change at once. The choice
-  stays on after the fight. The strip greys out on Bernat's turn.
-- Pick who wears what outside fights in **Personaje** (C): each member's card shows their stats
-  with the ánima bonus and the ánima buttons. Gerard wears the newest unlocked ánima until told
-  otherwise.
+  **Matemágico** from the start (Magia +1, Espíritu +1; his own look and the gold interface);
+  **Noísta** wakes up in chapter 1's palace (Magia +2, Espíritu +2, Defensa −1; the red scarf and
+  the protest-poster interface). Anyone in the party but Bernat can wear any unlocked ánima, both
+  at once if they like. Wearing one adds its stats and its skills. An ánima's colour and look come
+  with it (`colour` and `scarf` in `CLASSES`).
+- Pick who wears what in the status screen (C): the **Estado** page and the **Ánimas** page (Q / E
+  or L / R turn the pages) show each member's vitals plate (round face, PV and Secundaria as two
+  waves) and a pill per ánima, and what the ánima changes and grants. Gerard wears the newest
+  unlocked ánima until told otherwise. With a second player each player opens their own half of
+  the status screen (Gerard left, Aitor right), dresses only their own character, and sees the
+  keys of their own device.
+- **In a fight**, each fighter's dock has their vitals plate and the ánima pills, flanked by the
+  L and R keys (Q / E on the keyboard). On your own turn L / R or a click on a pill swaps the
+  ánima: free, the turn stays theirs, PV and Secundaria keep what is left. The menu sweeps, the
+  face on the plate and the 3D fighter light up in the ánima's colour, the dock takes its theme,
+  and the skills (also an open skill sheet) change at once. The choice stays on after the fight.
+  Bernat's dock has no pills. With a second player on Aitor the fight splits: Gerard's dock bottom
+  left, Aitor's bottom right, each in their own ánima's colours and their own device's keys.
 - Who wears what is a choice that changes back and forth, so it is kept in the browser, not in
   the saved story flags.
 
@@ -100,9 +110,13 @@ Impulso and Abrazo are out for now.
 - `src/controller-ui.ts`: reads the second controller as player 2.
 - `src/game.ts`: a partner per chapter (Bernat, Aitor) who follows or, for Aitor, walks on his
   own collider; the tether ring; the shared camera; Aitor's battle model.
-- `src/battle-ui.ts`: whose turn it is, and only that player's input counts.
-- `src/exploration-ui.ts`: stats and the class picker in Personaje.
-- Tests: `tests/party.test.mjs`. Screenshots: `just screenshots duo` (fakes two controllers).
+- `src/battle-ui.ts`: whose turn it is, and only that player's input counts; the docks (one
+  alone, two split) and the ánima switch. `changeAnima` in `src/battle.ts` is the rule.
+- `src/vitals.ts`: the face and the PV / Secundaria waves shared by fights and the status screen,
+  and the light when an ánima changes.
+- `src/exploration-ui.ts`: the status screen, split in two halves when player 2 is there.
+- Tests: `tests/party.test.mjs`, `tests/battle.test.mjs`. Screenshots: `just screenshots duo` (fakes
+  two controllers) and `just screenshots battle-solo` (the debug mode).
 
 ## Open questions
 

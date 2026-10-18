@@ -1,0 +1,73 @@
+{
+  "title": "Development · One player plays both",
+  "description": "Development solo mode (just dev-solo): one player drives Gerard and Aitor. The status screen stays one wide sheet with both members, and the fight keeps a single dock that follows whoever's turn it is, with a badge saying it is the debug mode.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "localStorage.removeItem('gerard35.loadout.v1')"
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "press": "KeyE",
+      "gap": 600
+    },
+    {
+      "eval": "document.querySelector('[data-wear=\"gerard\"][data-class-id=\"\"]').click(); document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click();"
+    },
+    {
+      "shot": "status-solo",
+      "delay": 1200,
+      "caption": "Solo debug: one wide sheet, the badge, and both members' ánimas (Gerard without, Aitor with Noísta)"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "window.gerard.battleUI.open(window.gerard.story.battleParty(true), 3, { animas: window.gerard.story.classes })"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "battle-solo-gerard",
+      "delay": 800,
+      "caption": "One dock follows the turn: Gerard's vitals, his ánima pills between Q and E, and his commands; Aitor waits on the right"
+    },
+    {
+      "press": "Digit4"
+    },
+    {
+      "press": "Enter",
+      "gap": 300
+    },
+    {
+      "until": "document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === 'aitor' && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "battle-solo-aitor",
+      "delay": 800,
+      "caption": "Aitor's turn on the same keyboard: his card moves into the dock, in Noísta's colours"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "shot": "battle-solo-skills",
+      "delay": 2200,
+      "caption": "Aitor's skills with Noísta: No-ta slides out of Habilidad"
+    }
+  ]
+}

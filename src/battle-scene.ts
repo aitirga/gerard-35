@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import type { BattleEffect, BattleState, ClassId } from './battle';
-import { inheritColour, wearClass } from './classes';
+import { CLASSES, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CONTACT_SECONDS, ENTRY_SECONDS, clamp01, contactMotion, smooth } from './battle-motion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
@@ -178,14 +178,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       for (const f of fighters.values()) if (!f.party) hit(f, white, .9);
       setTimeout(() => wearClass(gerard.model, id), 260);
     },
-    /** L / R in a fight: a quick swirl and the fighter comes out of it wearing the other ánima. */
+    /**
+     * L / R in a fight: a burst of light in the ánima's colour, sparks rising round them, and the
+     * fighter comes out of it wearing the other ánima.
+     */
     changeAnima(id: string, classId: ClassId) {
       const f = fighters.get(id);
       if (!f) return;
-      hit(f, gold, 1.3);
-      effects.emit('poof', new pc.Vec3(f.base.x, .4, f.base.z), 10, .3);
-      effects.emit('spark', new pc.Vec3(f.base.x, 1.2, f.base.z), 14, .35);
-      setTimeout(() => wearClass(f.model, classId), 140);
+      hit(f, new pc.Color().fromString(CLASSES[classId].colour), 1.8);
+      effects.emit('spark', new pc.Vec3(f.base.x, 1.2, f.base.z), 20, .35);
+      effects.emit('poof', new pc.Vec3(f.base.x, .3, f.base.z), 10, .45);
+      setTimeout(() => wearClass(f.model, classId), 180);
     },
     /** Dark pink, glowing eyes for the street dogs: they obey La Reina Bubbaloo's minion. */
     possess(on: boolean) {
