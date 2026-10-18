@@ -17,6 +17,8 @@ export const BUBBALOO = {
   fogEnd: 118,
   clear: new pc.Color(0.09, 0.05, 0.09),
 } as const;
+/** A cloudy morning with the lights off: a bright, white, even sky light and a soft sun. */
+const DAWN = { ambient: new pc.Color(0.52, 0.54, 0.57), sun: new pc.Color(0.94, 0.96, 1), sunIntensity: 0.8 } as const;
 
 /** Visual-only builder. Gameplay uses Environment.grid and interactions. */
 export function buildScenery(app: pc.Application, environment: Environment) {
@@ -135,6 +137,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const sunColor = night ? new pc.Color(0.66, 0.81, 1) : new pc.Color(1, 0.87, 0.68);
   const sunIntensity = night ? 1.15 : 1.65;
   app.scene.ambientLight = ambient.clone();
+  let tone = 0, dark = 0;
   app.scene.fog.type = pc.FOG_NONE;
   const sun = new pc.Entity('Sol de la tarde');
   sun.addComponent('light', {
@@ -395,15 +398,21 @@ export function buildScenery(app: pc.Application, environment: Environment) {
      * a dim violet ambient and a pink haze that thickens with distance (docs/lore.md).
      */
     setTone(k: number) {
-      app.scene.ambientLight.lerp(ambient, BUBBALOO.ambient, k);
-      sun.light!.color = new pc.Color().lerp(sunColor, BUBBALOO.sun, k);
-      sun.light!.intensity = pc.math.lerp(sunIntensity, BUBBALOO.sunIntensity, k);
+      tone = k;
+      app.scene.ambientLight.lerp(ambient, BUBBALOO.ambient, k).lerp(app.scene.ambientLight, DAWN.ambient, dark);
+      const color = new pc.Color().lerp(sunColor, BUBBALOO.sun, k);
+      sun.light!.color = color.lerp(color, DAWN.sun, dark);
+      sun.light!.intensity = pc.math.lerp(pc.math.lerp(sunIntensity, BUBBALOO.sunIntensity, k), DAWN.sunIntensity, dark);
       backdrop.diffuse.lerp(backdropColor, BUBBALOO.backdrop, k); backdrop.update();
       const fog = app.scene.fog;
       fog.type = k > 0.001 ? pc.FOG_LINEAR : pc.FOG_NONE;
       fog.color.copy(BUBBALOO.fog);
       fog.start = pc.math.lerp(400, BUBBALOO.fogStart, k);
       fog.end = pc.math.lerp(520, BUBBALOO.fogEnd, k);
+    },
+    /** Before anyone is up (1): the lamps are off and only a little daylight comes in; 0 is the scene's normal light. */
+    setDark(k: number) {
+      dark = k; home?.setLamps(1 - k); this.setTone(tone);
     },
     /** `focus` is what must stay visible (the player); crowns in front of it turn see-through. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {

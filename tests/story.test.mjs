@@ -108,7 +108,7 @@ test('caught by the Queen, Gerard wakes up at 35 in Barcelona with Aitor and a B
   const story = new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('wrapper-room') + 1));
   assert.equal(story.adult, false);
   const caught = story.handle({ type: 'caught' });
-  assert.deepEqual(kinds(caught), ['travel', 'wake', 'dialogue', 'hint:duo'], 'a second player can take Aitor from here');
+  assert.deepEqual(kinds(caught), ['travel', 'wake', 'dialogue', 'rise', 'hint:duo'], 'a second player can take Aitor from here');
   assert.deepEqual(caught[0], { kind: 'travel', environment: 'meridiana', cell: PLACES.wakeUp.cell });
   assert.equal(caught[2].dialogue.right, 'aitor');
   assert.deepEqual(story.handle({ type: 'caught' }), [], 'it happens once');
