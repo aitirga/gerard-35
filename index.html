@@ -26,11 +26,11 @@
           <option value="palacio" disabled>Palacio de la Reina Bubbaloo</option>
         </select>
         <span id="location-detail">Reconstrucción aproximada · Nº 20</span>
-        <button id="overview">Vista general <kbd>R</kbd></button>
+        <button id="overview">Vista general <kbd data-glyph="overview">R</kbd></button>
       </section>
-      <button id="interact" hidden><kbd>E</kbd><span></span><small></small></button>
+      <button id="interact" hidden><kbd data-glyph="interact">E</kbd><span></span></button>
       <footer class="bottom-bar">
-        <div class="controls"><div class="move-keys" aria-hidden="true"><kbd>W</kbd><div><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div></div><div><strong>Mover</strong><span>WASD · Joystick &nbsp; / &nbsp; E para interactuar</span></div></div>
+        <div class="controls"><div class="move-keys" data-device="keyboard" aria-hidden="true"><kbd>W</kbd><div><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div></div><kbd class="move-stick" data-device="gamepad" data-glyph="move" aria-hidden="true"></kbd><div><strong>Mover</strong><span data-glyph-template="{interact} · Interactuar  /  {menu} · Menú">E · Interactuar  /  Esc · Menú</span></div></div>
       </footer>
       <nav class="touch-controls" aria-label="Controles de movimiento">
         <button data-direction="up" aria-label="Mover arriba">↑</button>

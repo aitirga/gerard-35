@@ -15,6 +15,7 @@
 - The HUD only shows what the player has, can press or is next to: a key hint (key + verb, e.g. "Shift · Correr") the first time an action becomes possible, which disappears once used; a note when an item is gained; and the prompt for whatever is within reach.
 - Teach by doing: each new control or system appears right before it is needed, so trying it is how it is learned.
 - Gates are diegetic: anything that blocks the player is a person or thing in the world saying why.
+- Show only the input device in use. Never hard-code a key or button in the HUD: use `data-glyph="<action>"`, `data-glyph-template="{confirm} Confirmar"` or `data-device="keyboard|gamepad"` (`src/input-glyphs.ts`), adding the action to `GLYPHS` with a label for the keyboard and every pad family if it is new.
 
 ## Game vocabulary and descriptions
 

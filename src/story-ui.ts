@@ -40,7 +40,9 @@ export function createStoryUI(hud: HTMLElement) {
     /** A key and a verb that stays until the player has used it (or a newer hint replaces it). */
     hint(id: keyof typeof STORY_HINTS, learned?: () => boolean) {
       const generation = ++hintGeneration;
-      hint.querySelector('kbd')!.textContent = STORY_HINTS[id].keys;
+      const spec = STORY_HINTS[id], key = hint.querySelector('kbd')!;
+      // Most hints name an action, so the key follows the device in use (input-glyphs.ts).
+      if ('glyph' in spec) key.dataset.glyph = spec.glyph; else { delete key.dataset.glyph; key.textContent = spec.keys; }
       hint.querySelector('span')!.textContent = STORY_HINTS[id].verb;
       hint.hidden = false; delete hint.dataset.learned;
       const hide = () => { if (generation === hintGeneration) hint.hidden = true; };

@@ -45,7 +45,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     <section class="class-banner" hidden><span class="battle-kicker">ÁNIMA DESBLOQUEADA</span><h2></h2><p></p></section>
     <div class="battle-bottom">
       <section class="command-panel" aria-label="Acciones de combate">
-        <div class="anima-bar" role="group" aria-label="Ánimas"><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior">L<small>Q</small></button><div class="anima-track"><span class="anima-indicator" aria-hidden="true"></span></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente">R<small>E</small></button></div>
+        <div class="anima-bar" role="group" aria-label="Ánimas"><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><span data-glyph="animaPrev"></span></button><div class="anima-track"><span class="anima-indicator" aria-hidden="true"></span></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><span data-glyph="animaNext"></span></button></div>
         <div class="turn-heading"><span class="turn-dot"></span><span class="turn-label"></span><span class="turn-meta">TU TURNO</span></div>
         <div class="command-deck">
           <div class="commands">${COMMANDS.map((c, i) => `<article class="command" data-command="${c.id}">
@@ -54,10 +54,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
           <section class="skill-flyout" id="skill-flyout" aria-label="Habilidades" inert><div class="skill-sheet">
             <span class="battle-kicker"></span>
             <div class="skill-list"></div>
-            <footer><button class="command-back" type="button">Volver <span>ESC</span></button><p class="flyout-hint"><kbd>△</kbd><kbd>I</kbd> Detalles</p></footer>
+            <footer><button class="command-back" type="button">Volver <span data-glyph="cancel"></span></button><p class="flyout-hint"><kbd data-glyph="details"></kbd> Detalles</p></footer>
           </div></section>
         </div>
-        <div class="target-picker" hidden><span class="battle-kicker">ELIGE UN OBJETIVO</span><h2></h2><p></p><button class="target-back" type="button">Volver <span>ESC</span></button></div>
+        <div class="target-picker" hidden><span class="battle-kicker">ELIGE UN OBJETIVO</span><h2></h2><p></p><button class="target-back" type="button">Volver <span data-glyph="cancel"></span></button></div>
         <p class="command-help"></p>
       </section>
       <div class="party-roster" aria-label="Tu equipo"></div>
@@ -240,10 +240,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     });
     get('.command-deck').hidden = targeting;
     get('.target-picker').hidden = !targeting;
-    // The controller UI swaps this line for the pad's while one is in use, and back from keyboardHelp.
-    const help = get('.command-help');
-    help.textContent = help.dataset.keyboardHelp = targeting ? '← ↑ ↓ → elegir · Enter aplicar · Esc volver'
-      : selected === 'skill' ? '↑ ↓ elegir · Enter usar · I detalles · ← o Esc volver' : '1–5 elegir · Enter confirmar · Esc volver';
+    // Keys for the device in use (input-glyphs.ts fills the template).
+    get('.command-help').dataset.glyphTemplate = targeting ? '{arrows} elegir · {confirm} aplicar · {cancel} volver'
+      : selected === 'skill' ? '{updown} elegir · {confirm} usar · {details} detalles · {cancel} volver'
+      : '{pick} elegir · {confirm} confirmar · {animaPrev} {animaNext} ánima · {cancel} volver';
     get('.flyout-hint').toggleAttribute('hidden', detailsLearned);
     get('.battle-bottom').hidden = ended;
     get('.battle-result').hidden = !ended;
@@ -338,7 +338,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     }
     const off = !wearsAnimas(actor) || !state.animas.length;
     bar.toggleAttribute('data-off', off);
-    bar.title = off ? `${actor.name} no lleva ánima` : 'Cambiar de ánima: L / R en el mando, Q / E en el teclado';
+    bar.title = off ? `${actor.name} no lleva ánima` : 'Cambiar de ánima';
     let worn: HTMLElement | undefined;
     track.querySelectorAll<HTMLButtonElement>('.anima-chip').forEach(chip => {
       const on = !off && chip.dataset.anima === actor.classId;

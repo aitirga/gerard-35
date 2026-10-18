@@ -92,7 +92,7 @@ export function createDialogueBanner(hud: HTMLElement) {
     <figure class="side left"><figcaption></figcaption></figure>
     <div class="speech"><span class="who"></span><p class="text"></p><span class="dots"></span></div>
     <figure class="side right"><figcaption></figcaption></figure>
-    <button class="next" type="button"><span>Continuar</span><kbd>E</kbd></button>`;
+    <button class="next" type="button"><span>Continuar</span><kbd data-glyph="interact">E</kbd></button>`;
   hud.append(root);
   const sides = { left: root.querySelector<HTMLElement>('.left')!, right: root.querySelector<HTMLElement>('.right')! };
   const who = root.querySelector<HTMLElement>('.who')!;

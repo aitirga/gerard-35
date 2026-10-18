@@ -15,9 +15,12 @@ button:focus-visible { outline: 2px solid #dfbd7e; outline-offset: 5px; }
 .controls { display: flex; align-items: center; gap: 14px; }
 .controls strong { display: block; font-size: 11px; font-weight: 500; color: #dddcd0; }
 .controls span { display: block; margin-top: 5px; font-size: 9px; color: #94a9a4; }
+/* Only the device in use shows its keys (input-glyphs.ts sets html[data-input]). */
+html[data-input="keyboard"] [data-device="gamepad"], html[data-input="gamepad"] [data-device="keyboard"] { display: none !important; }
+.move-stick { height: auto; padding: 4px 7px; line-height: 1.2; }
 .move-keys { text-align: center; }
 .move-keys > div { display: flex; gap: 3px; margin-top: 3px; }
-kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b43b; border-radius: 3px; font-family: inherit; font-size: 12px; line-height: 18px; color: #bdc9bd; background: #a6c0b406; }
+kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0 4px; white-space: nowrap; text-align: center; height: 20px; border: 1px solid #a6c0b43b; border-radius: 3px; font-family: inherit; font-size: 12px; line-height: 18px; color: #bdc9bd; background: #a6c0b406; }
 .touch-controls { display: none; }
 #error { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); background: #172b30; border: 1px solid #c5b28d; border-radius: 12px; padding: 30px; max-width: 90vw; }
 #error button { padding: 10px 20px; border: 0; border-radius: 5px; background: #e5bd7b; color: #172b30; }
@@ -49,9 +52,8 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #environment option { color: #f4ebd1; background: #18322b; }
 #location-detail { font-size: 9px; color: #c3c7ac; }
 #overview { justify-self: start; padding: 5px 0 0; border: none; background: none; color: #e8cc92; font-size: 10px; }
-#overview kbd { margin-left: 8px; width: 17px; height: 17px; font-size: 9px; line-height: 15px; }
+#overview kbd { margin-left: 8px; min-width: 17px; height: 17px; font-size: 9px; line-height: 15px; }
 #interact { position: absolute; pointer-events: auto; bottom: 142px; left: 50%; transform: translateX(-50%); border: 1px solid #d6bd7c; color: #f3e8cc; background: #1b3c31ee; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; white-space: nowrap; box-shadow: 0 4px 20px #15251b44; }
-#interact small { color: #bacaad; font-size: 10px; }
 @media (max-width: 760px) {
   .place-panel { left: 12px; top: 12px; padding: 10px 12px; max-width: calc(100vw - 24px); }
   #environment { font-size: 13px; }
@@ -94,7 +96,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #dialogue .dots i { width: 5px; height: 5px; border-radius: 50%; background: #ffffff2a; transition: background .3s; }
 #dialogue .dots i.on { background: var(--dlg-text); }
 #dialogue .next { grid-column: 1 / -1; justify-self: end; margin-top: 10px; padding: 0; border: none; background: none; color: #e8cc92; font-size: 10px; display: flex; gap: 8px; align-items: center; }
-#dialogue .next kbd { width: 17px; height: 17px; font-size: 9px; line-height: 15px; }
+#dialogue .next kbd { min-width: 17px; height: 17px; font-size: 9px; line-height: 15px; }
 #hud[data-dialogue] #interact, #hud[data-dialogue] .touch-controls { visibility: hidden; }
 @media (max-width: 760px) {
   #dialogue { --dlg-bottom: 92px; --dlg-avatar: 42px; padding: 12px 14px 10px; column-gap: 12px; }
@@ -209,7 +211,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .anima-bar[data-off] { opacity: .45; filter: saturate(0); }
 .anima-bar[data-off] .anima-indicator { opacity: 0; }
 .anima-key { display: grid; place-items: center; min-width: 30px; height: 26px; padding: 0 6px; border: 1px solid #f3cf7866; background: transparent; color: var(--battle-gold); font-size: 12px; font-weight: 900; line-height: 1; transition: background .15s, transform .15s; }
-.anima-key small { font-size: 7px; font-weight: 600; color: #b9c8b9; letter-spacing: .1em; }
 .anima-key:hover { background: #f3cf7822; }
 .anima-key:active { transform: scale(.92); }
 .anima-track { position: relative; display: flex; flex: 1; justify-content: center; gap: 4px; }
@@ -344,7 +345,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .eyebrow, .place-panel .eyebrow { color: var(--ui-gold); }
 #environment { font-weight: 600; }
 #interact { background: var(--ui-paper); color: var(--ui-ink); border: none; font-weight: 600; }
-#interact small, #interact kbd { color: var(--ui-ink); }
+#interact kbd { color: var(--ui-ink); }
 #dialogue { --dlg-bg: var(--ui-surface); --dlg-border: var(--ui-line); --dlg-text: var(--ui-paper); --dlg-muted: var(--ui-muted); --dlg-radius: 2px; border-top: 2px solid var(--ui-gold); box-shadow: var(--ui-shadow); }
 .touch-controls button, #error button { border-radius: 2px; background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); }
 .journal-dock { position: absolute; left: 24px; top: 166px; display: flex; gap: 8px; pointer-events: auto; }

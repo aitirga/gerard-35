@@ -33,11 +33,11 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
   const dock = document.createElement('nav');
   dock.className = 'journal-dock'; dock.setAttribute('aria-label', 'Menú de aventura');
   // Character and map live in the menu; C / M stay as keyboard shortcuts.
-  dock.innerHTML = `<button type="button" aria-haspopup="dialog"><kbd>Esc</kbd> Menú</button>`;
+  dock.innerHTML = `<button type="button" aria-haspopup="dialog"><kbd data-glyph="menu">Esc</kbd> Menú</button>`;
   const root = document.createElement('section');
   root.id = 'exploration-panel'; root.hidden = true; root.tabIndex = -1;
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-labelledby', 'journal-title');
-  root.innerHTML = `<header class="journal-heading"><div><span class="battle-kicker">DIARIO / GERARD 35</span><h1 id="journal-title"></h1></div><button class="journal-close" type="button" aria-label="Cerrar panel">Cerrar <kbd>Esc</kbd></button></header><nav class="journal-tabs" aria-label="Secciones del diario">${PANELS.map(p => `<button type="button" data-panel="${p.id}" aria-pressed="false">${p.label}</button>`).join('')}</nav><div class="journal-content"></div><p class="journal-help">Esc · Volver a la aventura</p>`;
+  root.innerHTML = `<header class="journal-heading"><div><span class="battle-kicker">DIARIO / GERARD 35</span><h1 id="journal-title"></h1></div><button class="journal-close" type="button" aria-label="Cerrar panel">Cerrar <kbd data-glyph="cancel">Esc</kbd></button></header><nav class="journal-tabs" aria-label="Secciones del diario">${PANELS.map(p => `<button type="button" data-panel="${p.id}" aria-pressed="false">${p.label}</button>`).join('')}</nav><div class="journal-content"></div><p class="journal-help" data-glyph-template="{cancel} · Volver a la aventura"></p>`;
   hud.append(dock, root);
   const content = root.querySelector<HTMLElement>('.journal-content')!;
   /** A member's stats with their ánima on, and the ánima picker: ánimas belong to the whole party. */

@@ -8,6 +8,7 @@ import { createBattleUI } from './battle-ui';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent } from './story';
 import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
+import { watchGlyphs } from './input-glyphs';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
@@ -22,6 +23,8 @@ const interactButton = document.querySelector<HTMLButtonElement>('#interact')!;
 const dialogue = createDialogueBanner(document.querySelector<HTMLElement>('#hud')!);
 const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
 const hud = document.querySelector<HTMLElement>('#hud')!;
+// Every key shown in the HUD follows the device in use: keyboard and mouse, or the last pad touched.
+const stopGlyphs = watchGlyphs();
 // Development: ?story=<flag> starts with every flag up to that one (just dev-chapter), ?story=new from scratch.
 const devStory = (() => {
   if (!import.meta.env.DEV) return undefined;
@@ -259,7 +262,7 @@ try {
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
     Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { stopGlyphs(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

@@ -193,10 +193,11 @@ export const BATTLE_LINES = {
  * They never say what to do or where to go; that comes from exploring and from people.
  */
 export const HINTS = {
-  move: { keys: 'W A S D', verb: 'Caminar' },
-  run: { keys: 'Shift', verb: 'Correr' },
-  items: { keys: 'I', verb: 'Objetos' },
-  party: { keys: 'C', verb: 'Equipo' },
+  // `glyph` names the key in input-glyphs.ts, shown for whichever device is in use.
+  move: { glyph: 'move', verb: 'Caminar' },
+  run: { glyph: 'run', verb: 'Correr' },
+  items: { glyph: 'items', verb: 'Objetos' },
+  party: { glyph: 'party', verb: 'Equipo' },
   /** Chapter 2: Aitor walks with Gerard, and a second controller can take him. */
   duo: { keys: 'Mando 2', verb: 'Jugar como Aitor' },
 } as const;
