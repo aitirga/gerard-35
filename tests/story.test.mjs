@@ -91,7 +91,8 @@ test('the palace rises, they go in, and Noísta wakes up in the wrapper room', (
 
   assert.deepEqual(story.handle({ type: 'room', id: 'Galería de los Retratos' }), []);
   assert.deepEqual(kinds(story.handle({ type: 'room', id: 'Sala de los Envoltorios' })), ['dialogue', 'drain', 'dialogue', 'battle']);
-  assert.equal(story.gerardClass, undefined);
+  assert.equal(story.gerardClass, 'matemagico');
+  story.wear('gerard', null);
   story.handle({ type: 'class', id: 'noista' });
   assert.equal(story.gerardClass, 'noista');
   assert.match(story.party[0].note, /Noísta/);

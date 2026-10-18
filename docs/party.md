@@ -2,7 +2,7 @@
 
 From chapter 2 Gerard is never alone: **Aitor** walks with him from the moment he wakes up, and a
 second player can take him on a second controller. This page covers who controls whom, the
-character stats, and how classes are shared. Numbers are provisional and meant to be tuned.
+character stats, and how ánimas (classes in the code) are shared. Numbers are provisional and meant to be tuned.
 
 ## Two players
 
@@ -39,8 +39,8 @@ build. The choice is remembered in the browser. Release builds are always two-pl
 | --- | --- |
 | **PV** | Puntos de vida. |
 | **Secundaria** | What skills spend. |
-| **Fuerza** | Adds to physical hits (Atacar, Impulso, the dogs' pushes). |
-| **Magia** | Adds to magic hits (No-ta) and to healing (Ánimo, Abrazo). |
+| **Fuerza** | Adds to physical hits (Atacar, the dogs' pushes). |
+| **Magia** | Adds to magic hits (No-ta) and to healing (Cardioide). |
 | **Defensa** | Takes away from physical hits. |
 | **Espíritu** | Takes away from magic hits. |
 | **Velocidad** | Who acts first in the party's half of the round. |
@@ -60,21 +60,31 @@ dogs (all 10s) fight exactly as before the stats existed.
 Gerard at 35 thinks and talks his way through (Magia, Espíritu); Aitor is the solid one (PV,
 Fuerza, Defensa).
 
-## Skills and classes
+## Skills and ánimas
 
 | Skill | Who | Cost | Base | Does |
 | --- | --- | --- | --- | --- |
-| Impulso | Everyone | 8 | 28 physical | Hits one foe |
-| Ánimo | Everyone | 8 | 24 heal | Heals one hurt ally |
+| Análisis Parálisis | Whoever wears **Matemágico** | 10 | +3 | Fuerza and Magia +3 for the whole party for 3 rounds (the one it is used in included); cannot be stacked while it runs |
+| Cardioide | Whoever wears **Matemágico** | 8 | 24 heal | Heals one hurt ally |
 | No-ta | Whoever wears **Noísta** | 10 | 40 magic | Breaks the Queen's gum (pringue) |
-| Abrazo | **Aitor's own** | 12 | 14 heal | Heals the whole party at once, no target to pick |
 
-- **Classes belong to the party.** Once the story unlocks one (Noísta, in chapter 1's palace),
-  anyone in the party can wear it, both at once if they like. Wearing it adds its stats
-  (Noísta: Magia +2, Espíritu +2, Defensa −1) and its skills, and its look shows in fights
-  (the scarf).
-- Pick who wears what in **Personaje** (C): each member's card shows their stats with the class
-  bonus and the class buttons. Gerard wears Noísta until told otherwise.
+Every skill comes with an ánima: whoever wears none has none. Bernat never wears one and only
+attacks (Habilidad is greyed out on his turn); Aitor has skills only while he wears an ánima.
+Impulso and Abrazo are out for now.
+
+- **Ánimas belong to the party** (the code calls them classes: `ClassId`, `CLASSES`). Gerard has
+  **Matemágico** from the start (Magia +1, Espíritu +1; his own look and interface); **Noísta**
+  wakes up in chapter 1's palace (Magia +2, Espíritu +2, Defensa −1; the scarf and the red
+  protest-poster interface). Anyone in the party but Bernat can wear any unlocked ánima, both at
+  once if they like. Wearing one adds its stats and its skills.
+- **In a fight**, the strip above the menu (L · Matemágico · Noísta · R) shows the active
+  fighter's ánima. L / R on a controller, Q / E on the keyboard, or a click swaps it: free, the
+  turn stays theirs. The menu sweeps, the fighter flashes and changes clothes, the interface
+  theme follows Gerard's, and the skills (also an open skill sheet) change at once. The choice
+  stays on after the fight. The strip greys out on Bernat's turn.
+- Pick who wears what outside fights in **Personaje** (C): each member's card shows their stats
+  with the ánima bonus and the ánima buttons. Gerard wears the newest unlocked ánima until told
+  otherwise.
 - Who wears what is a choice that changes back and forth, so it is kept in the browser, not in
   the saved story flags.
 
@@ -83,7 +93,7 @@ Fuerza, Defensa).
 - `src/stats.ts`: stats, profiles and the three formulas. Pure.
 - `src/battle.ts`: fighters carry stats, a profile and a class; `createBattle` takes the party
   (`story.battleParty`) and lines it up by Velocidad; `CLASS_STATS` and `SKILLS` (with `class`
-  and `owner` skills, and the party-wide Abrazo).
+  skills, and the party boost Análisis Parálisis, `state.boost`).
 - `src/party.ts`: who drives whom (`partnerDriven`, `battleDriver`, `waitingForPlayer2`). Pure.
 - `src/story.ts`: `partner` (Bernat or Aitor), `party` with profiles and classes, `classes`,
   `wear` and `loadout`.
@@ -96,7 +106,7 @@ Fuerza, Defensa).
 
 ## Open questions
 
-- Should Aitor get a class of his own later (one that Gerard can then borrow)?
+- Should Aitor get an ánima of his own later (one that Gerard can then borrow)?
 - Bernat is still on autopilot-by-player-1 in chapter 1's fights; if chapter 1 is ever played by
   two, he could be player 2's.
 - In release, a single player with no second controller cannot finish Aitor's turn. That is

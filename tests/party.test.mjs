@@ -19,36 +19,24 @@ test('average stats leave every base amount as it is; stats above or below move 
   assert.deepEqual(withBonus(kid, { magia: 2, defensa: -20 }).defensa, 1, 'no stat drops below 1');
 });
 
-test('chapter 2 fights Gerard at 35 and Aitor, fastest first, with their own skills', () => {
+test('chapter 2 fights Gerard at 35 and Aitor, fastest first, with their ánimas\' skills', () => {
   const story = chapter2();
-  const s = createBattle(story.battleParty(true), 2);
+  const s = createBattle(story.battleParty(true), 2, false, undefined, story.classes);
   assert.deepEqual(s.allies.map(a => a.id), ['gerard', 'aitor'], 'Gerard (Velocidad 11) acts before Aitor (10)');
   assert.deepEqual(s.allies.map(a => a.maxHp), [120, 135]);
   const [gerard, aitor] = s.allies;
   assert.ok(skillsFor(s, gerard).some(k => k.id === 'nota'), 'Gerard keeps Noísta');
-  assert.ok(!skillsFor(s, gerard).some(k => k.id === 'abrazo'), 'Abrazo is Aitor\'s own');
-  assert.deepEqual(skillsFor(s, aitor).map(k => k.id), ['impulse', 'encourage', 'abrazo']);
+  assert.ok(!skillsFor(s, gerard).some(k => k.id === 'analisis'), 'Análisis Parálisis is Matemágico\'s');
+  assert.deepEqual(s.animas, ['matemagico', 'noista']);
+  assert.deepEqual(skillsFor(s, aitor), [], 'without an ánima Aitor has no skills');
   assert.equal(createBattle(story.battleParty(false), 2).allies.length, 1, 'without his partner Gerard fights alone');
 });
 
-test('Abrazo heals the whole party at once and needs nobody picked', () => {
-  const s = createBattle(chapter2().battleParty(true), 2);
-  act(s, 'defend');
-  const aitor = s.allies[1];
-  assert.equal(act(s, 'skill', undefined, 'abrazo'), undefined, 'nobody is hurt yet');
-  s.allies[0].hp = 100; aitor.hp = 130;
-  assert.equal(validTargets(s, 'skill', 'abrazo').length, 2);
-  const hug = act(s, 'skill', undefined, 'abrazo');
-  assert.deepEqual(hug.healed, [{ id: 'gerard', amount: 14 }, { id: 'aitor', amount: 5 }]);
-  assert.equal(aitor.secondary, 18);
-  assert.equal(s.phase, 'enemy');
-  s.foes.forEach(f => enemyAct(s, f.id)); nextRound(s);
-  assert.equal(s.phase, 'player');
-});
-
-test('classes belong to the party: Aitor can wear Noísta and use No-ta', () => {
+test('ánimas belong to the party: Aitor can wear Noísta and use No-ta, Bernat wears none', () => {
   const story = chapter2();
-  assert.deepEqual(story.classes, ['noista']);
+  assert.deepEqual(story.classes, ['matemagico', 'noista']);
+  assert.equal(new Story(['intro']).classOf('gerard'), 'matemagico', 'Matemágico is Gerard\'s from the start');
+  assert.equal(new Story(['bernat-joined']).wear('bernat', 'matemagico'), false, 'Bernat only attacks');
   assert.equal(story.wear('aitor', 'noista'), true);
   assert.equal(story.classOf('aitor'), 'noista');
   assert.equal(story.classOf('gerard'), 'noista', 'both can wear it at once');
@@ -58,7 +46,7 @@ test('classes belong to the party: Aitor can wear Noísta and use No-ta', () => 
   assert.equal(aitor.stats.magia, PROFILES.aitor.magia + 2, 'and he gets its stats');
   story.wear('gerard', null);
   assert.equal(story.gerardClass, undefined, 'Gerard can take it off');
-  assert.equal(new Story(['intro']).wear('gerard', 'noista'), false, 'locked classes cannot be worn');
+  assert.equal(new Story(['intro']).wear('gerard', 'noista'), false, 'locked ánimas cannot be worn');
   const reloaded = chapter2(); reloaded.loadout = { ...story.loadout, aitor: 'nonsense', jan: 'noista' };
   assert.deepEqual(reloaded.loadout, { gerard: null }, 'invalid saved choices are dropped');
 });

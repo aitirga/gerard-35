@@ -209,8 +209,8 @@ north–south axis, a strong centre.
 ### The unwinnable part
 
 - **Foe:** *Esbirro de la Reina*, 40 HP, with **Pringue**: a gum shell that swallows every hit
-  (damage 0, and a pop over the target: *"¡El chicle se lo traga!"*). Attacks and Impulso do
-  nothing; Defender and Ánimo still work, so trying things is never pointless, only not enough.
+  (damage 0, and a pop over the target: *"¡El chicle se lo traga!"*). Attacks do
+  nothing; Defender and Análisis Parálisis still work, so trying things is never pointless, only not enough.
 - **No escape**, as in the first fight (the door has sealed behind them).
 - **It goes for Bernat.** Its spit (*Escupitajo pegajoso*) targets Bernat, and its damage grows
   each round (*"el pringue crece"*), so healing and guarding buy time but cannot stall forever.
@@ -229,9 +229,9 @@ The battle interface stays up; the scene plays over it:
 3. Gerard, in a bigger bubble that shakes the screen: *"¡NO!"*
 4. A shockwave from Gerard throws the minion back a step. A white flash on Gerard, and when it
    fades he wears the **Noísta** look. The battle interface switches theme with a short wipe.
-5. A banner inside the battle: **CLASE DESBLOQUEADA · NOÍSTA**, *"Dice que no. Y el mundo le hace
+5. A banner inside the battle: **ÁNIMA DESBLOQUEADA · NOÍSTA**, *"Dice que no. Y el mundo le hace
    caso."*
-6. Gerard's turn. **Habilidades** pulses once; inside it, **No-ta** is new. No key hint and no
+6. Gerard's turn. **Habilidad** pulses once; inside it, **No-ta** is new. No key hint and no
    instructions: it is the only new thing on screen, and the only one that has not failed yet.
 
 ### No-ta

@@ -1,0 +1,88 @@
+{
+  "title": "Input · Only the device in use",
+  "description": "Every key in the HUD follows the device the player touched last: keyboard and mouse, or a pad by family (Xbox, PlayStation, Nintendo, generic). Faked pads in the page switch it; a key press switches it back. The interact key floats beside whatever is within reach.",
+  "steps": [
+    {
+      "open": "/?story=got-backpack"
+    },
+    {
+      "until": "!!window.gerard && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "world-keyboard",
+      "caption": "Keyboard: the E floats over the front door; WASD, E · Interactuar, Esc · Menú, R"
+    },
+    {
+      "teleport": "home-floor-2",
+      "cell": [
+        16,
+        12
+      ],
+      "settle": 2500
+    },
+    {
+      "shot": "person-keyboard",
+      "delay": 1500,
+      "caption": "Next to Jan: the E floats over his head"
+    },
+    {
+      "eval": "window.fakePad = id => ({ id, index: 0, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad('Xbox Wireless Controller (Vendor: 045e)')]; navigator.getGamepads = () => window.fakePads;"
+    },
+    {
+      "wait": 3000
+    },
+    {
+      "eval": "window.fakePads[0].axes[0] = 1"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.fakePads[0].axes[0] = 0"
+    },
+    {
+      "shot": "world-xbox",
+      "delay": 1200,
+      "caption": "Xbox pad: the A floats instead; stick, ☰ · Menú, View"
+    },
+    {
+      "open": "/?story=noista&battle=3&allies=2&noista=1"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.fakePad = id => ({ id, index: 0, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad('DualSense Wireless Controller (Vendor: 054c)')]; navigator.getGamepads = () => window.fakePads;"
+    },
+    {
+      "wait": 3000
+    },
+    {
+      "eval": "window.fakePads[0].buttons[5].pressed = true"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.fakePads[0].buttons[5].pressed = false"
+    },
+    {
+      "shot": "battle-playstation",
+      "delay": 3000,
+      "caption": "PlayStation pad in battle: R1 swapped to Matemágico; L1 / R1 on the strip, Cruceta · ✕ · ○ in the help line"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "shot": "battle-keyboard",
+      "delay": 3000,
+      "caption": "One key press and it is the keyboard again: Q / E on the strip, I Detalles, ↑ ↓ · Enter · Esc"
+    }
+  ]
+}

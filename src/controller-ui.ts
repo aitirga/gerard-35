@@ -2,6 +2,7 @@ import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isNin
 import type { Direction, Stick } from './movement';
 import type { PanelId } from './exploration-ui';
 import type { ControlMode, PlayerId } from './party';
+import { padFamily, setInputDevice } from './input-glyphs';
 
 const labels: Record<ControlAction, string> = { up: 'Arriba', down: 'Abajo', left: 'Izquierda', right: 'Derecha', confirm: 'Confirmar / interactuar', cancel: 'Volver / correr (mantener)', menu: 'Menú' };
 const storageKey = 'gerard35.controllers.v1';
@@ -34,7 +35,7 @@ export function createControllerUI(callbacks: {
   try { const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '{}'); if (saved && typeof saved === 'object') for (const [id, profile] of Object.entries(saved)) if (validProfile(profile)) profiles[id] = profile; } catch { /* Storage is optional. */ }
   const root = document.createElement('dialog'); root.id = 'controller-menu';
   root.setAttribute('aria-labelledby', 'controller-title');
-  root.innerHTML = `<header class="journal-heading"><div><span class="battle-kicker">GERARD 35 / MENÚ</span><h1 id="controller-title">Un respiro.</h1></div><button class="journal-close" data-back>Volver <kbd>Esc</kbd></button></header>
+  root.innerHTML = `<header class="journal-heading"><div><span class="battle-kicker">GERARD 35 / MENÚ</span><h1 id="controller-title">Un respiro.</h1></div><button class="journal-close" data-back>Volver <kbd data-glyph="cancel"></kbd></button></header>
     <section data-page="home">
       <p class="menu-intro">La aventura sigue aquí.</p>
       <nav class="adventure-options" aria-label="Menú de aventura">
@@ -57,10 +58,18 @@ export function createControllerUI(callbacks: {
     </section>
     <section data-page="help" hidden>
       <p class="menu-intro">Explora. Habla con todo el mundo. Prueba.</p>
-      <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Con las zapatillas: mantén Shift · Mantén B (Volver) en el mando</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / objetos / mapa</dt><dd>Desde el menú · C / I / M en el teclado · Personaje con el botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox)</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–4 o flechas · Enter para confirmar · Esc para volver</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
-      <p class="controller-note">En mandos Nintendo reconocidos: A confirma y B vuelve. Mantén B mientras te mueves para correr. Puedes cambiar los controles en Mando.</p>
+      <dl class="menu-controls">
+        <div><dt>Moverte</dt><dd data-device="keyboard">W A S D o flechas</dd><dd data-device="gamepad">Stick izquierdo o cruceta</dd></div>
+        <div><dt>Correr</dt><dd data-glyph-template="Con las zapatillas: {run}"></dd></div>
+        <div><dt>Interactuar / avanzar</dt><dd data-device="keyboard">E · Enter · Espacio</dd><dd data-device="gamepad" data-glyph-template="{interact}"></dd></div>
+        <div><dt>Personaje / objetos / mapa</dt><dd data-device="keyboard">Desde el menú · C / I / M</dd><dd data-device="gamepad" data-glyph-template="Desde el menú ({menu}) · Personaje con {party}"></dd></div>
+        <div><dt>Vista general</dt><dd data-glyph-template="{overview}"></dd></div>
+        <div><dt>Combate</dt><dd data-glyph-template="{pick} elegir · {confirm} confirmar · {cancel} volver · {details} detalles de una habilidad · {animaPrev} / {animaNext} cambiar de ánima"></dd></div>
+        <div><dt>Menú / volver</dt><dd data-glyph-template="{menu} menú · {cancel} volver"></dd></div>
+      </dl>
+      <p class="controller-note" data-device="gamepad">Puedes cambiar los controles en Mando.</p>
     </section>
-    <footer class="menu-footer">↑ ↓ Elegir &nbsp; · &nbsp; Enter Confirmar &nbsp; · &nbsp; Esc Volver</footer>`;
+    <footer class="menu-footer" data-glyph-template="{updown} Elegir  ·  {confirm} Confirmar  ·  {cancel} Volver"></footer>`;
   document.body.append(root);
   const get = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
   const select = get<HTMLSelectElement>('select');
@@ -149,7 +158,6 @@ export function createControllerUI(callbacks: {
     const confirm = custom ? bindingLabel(custom.confirm) : latest && isNintendo(latest.id) ? 'A' : 'botón inferior';
     const cancel = custom ? bindingLabel(custom.cancel) : latest && isNintendo(latest.id) ? 'B' : 'botón derecho';
     const menu = custom ? bindingLabel(custom.menu) : latest && isNintendo(latest.id) ? '+' : 'Start';
-    const overview = custom ? '' : latest && isNintendo(latest.id) ? '−' : 'Select';
     const help = `${confirm} · Confirmar   /   ${cancel} · Volver / mantener para correr   /   ${menu} · Menú`;
     get('[data-status]').textContent = !latest ? 'Sin mando. Conéctalo y pulsa un botón.' : profile ? `${latest.id} · ${custom ? 'Asignación personal' : 'Controles estándar'}` : `${latest.id} · Sin asignar: usa «Asignar controles».`;
     get('[data-help]').textContent = profile ? help : 'Teclado y ratón disponibles mientras configuras el mando.';
@@ -183,18 +191,21 @@ export function createControllerUI(callbacks: {
     const state2 = second ? readController(second, profiles[second.id], previousDirection2) : idleController();
     previousDirection2 = focused ? state2.direction : null;
     const input2 = edges2.update(state2, `${secondIdentity}:${root.open ? 'menu' : callbacks.context()}`, now, focused && !mapping && !root.open);
+    // Whoever touches a pad last decides which buttons the HUD shows.
+    if (second && (input2.events.length || input2.direction)) setInputDevice(padFamily(second.id, !!profiles[second.id]));
     callbacks.partnerDirection(input2.direction, input2.stick, input2.running);
     // Player 2 plays and talks; the menu, panels and camera stay with player 1.
-    for (const action of input2.events) if (action !== 'menu' && action !== 'character' && action !== 'overview') callbacks.action(action, 2);
+    for (const action of input2.events) if (action !== 'menu' && action !== 'overview') callbacks.action(action, 2);
     const state = latest ? readController(latest, custom, previousDirection) : idleController();
     previousDirection = focused ? state.direction : null;
     const context = `${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}`;
     const input = edges.update(state, context, now, focused && !mapping);
+    if (latest && profile && (input.events.length || input.direction)) setInputDevice(padFamily(latest.id, !!custom));
     callbacks.direction(root.open ? null : input.direction, root.open ? null : input.stick, !root.open && input.running);
     for (const action of input.events) {
       if (root.open) {
         if (action === 'menu') close();
-        else if (action === 'character' || action === 'overview') continue;
+        else if (action === 'character' || action === 'overview' || action === 'shoulderLeft' || action === 'shoulderRight') continue;
         else if (action === 'cancel') back();
         else if (action === 'confirm') clickControllerButton(root);
         else focusControllerButton(root, action);
@@ -203,16 +214,6 @@ export function createControllerUI(callbacks: {
       // A screen transition must not receive another event from the same frame.
       if (`${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}` !== context) break;
     }
-    const pad = !!(latest && profile);
-    document.querySelector('.journal-dock kbd')!.textContent = pad ? menu : 'Esc';
-    document.querySelector('#overview kbd')!.textContent = pad && overview ? `R / ${overview}` : 'R';
-    document.querySelector('#interact small')!.textContent = latest && profile ? ` / ${confirm}` : '';
-    const dialogueKey = document.querySelector('#dialogue kbd'); if (dialogueKey) dialogueKey.textContent = latest && profile ? `E / ${confirm}` : 'E';
-    document.querySelectorAll<HTMLElement>('.command-help, .journal-help').forEach(el => {
-      if (!el.dataset.keyboardHelp) el.dataset.keyboardHelp = el.textContent ?? '';
-      if (latest && profile) el.textContent = `Stick / Cruceta · Elegir / ${help}`;
-      else el.textContent = el.dataset.keyboardHelp;
-    });
     frame = requestAnimationFrame(poll);
   }
   frame = requestAnimationFrame(poll);

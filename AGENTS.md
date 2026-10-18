@@ -15,3 +15,16 @@
 - The HUD only shows what the player has, can press or is next to: a key hint (key + verb, e.g. "Shift · Correr") the first time an action becomes possible, which disappears once used; a note when an item is gained; and the prompt for whatever is within reach.
 - Teach by doing: each new control or system appears right before it is needed, so trying it is how it is learned.
 - Gates are diegetic: anything that blocks the player is a person or thing in the world saying why.
+- Show only the input device in use. Never hard-code a key or button in the HUD: use `data-glyph="<action>"`, `data-glyph-template="{confirm} Confirmar"` or `data-device="keyboard|gamepad"` (`src/input-glyphs.ts`), adding the action to `GLYPHS` with a label for the keyboard and every pad family if it is new.
+
+## Game vocabulary and descriptions
+
+- Classes are **ánimas** in the game. All player-facing text (UI, dialogue, banners, journal) and new docs say "ánima" (e.g. "ÁNIMA DESBLOQUEADA", "Sin ánima"); the code may keep `ClassId`/`CLASSES` as internal names.
+- Skill and effect descriptions use plain, clear Spanish with a fixed shape: what it does, how strong, its kind, and to whom; then one short sentence per extra effect. No flavour text, no jokes, no exact formulas.
+  - Damage: `Daño <intensidad> <físico|mágico>[ de tipo <X>] a <objetivo>. <Efecto extra>.`, e.g. `Daño alto mágico a un enemigo. Rompe el pringue.`
+  - Healing: `Cura <intensidad> a <objetivo>.`, e.g. `Cura leve a todo el equipo.`
+  - Buffs and debuffs: `Sube|Baja <stats> de <objetivo> durante <N> rondas.`, e.g. `Sube Fuerza y Magia de todo el equipo durante 3 rondas.`
+  - Intensity from the skill's base power, against Atacar's 18: `leve` up to 20, `media` / `medio` 21–34, `alta` / `alto` 35–49, `muy alta` / `muy alto` 50 or more.
+  - Targets: `a un enemigo`, `a todos los enemigos`, `a un aliado herido`, `a todo el equipo`.
+  - Exception: a skill may skip this nomenclature on purpose and be more abstract or less defined (a mysterious, strange or story-driven skill whose effect the player should discover by using it). Mark it `abstract: true` in `SKILLS` (`src/battle.ts`); its description can then be evocative instead of exact, but still short, clear Spanish. Keep these rare: the default is the fixed shape.
+  - `tests/battle.test.mjs` checks every skill description against this shape, skipping those marked `abstract: true`.

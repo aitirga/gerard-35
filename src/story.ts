@@ -7,7 +7,7 @@ import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { Cell } from './movement';
 import type { ItemId } from './items';
-import type { ClassId, PartySlot } from './battle';
+import { ANIMA_NAMES, type ClassId, type PartySlot } from './battle.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 
@@ -36,8 +36,8 @@ export type StoryEvent =
   | { type: 'away'; away: boolean }
   /** Gerard stepped into a named room of the scene. */
   | { type: 'room'; id: string }
-  /** A class woke up in Gerard, mid-fight. */
-  | { type: 'class'; id: GerardClass }
+  /** An ánima woke up in Gerard, mid-fight (Matemágico he has from the start). */
+  | { type: 'class'; id: Exclude<GerardClass, 'matemagico'> }
   /** The Queen's hands have caught Gerard and Bernat: the screen is black. */
   | { type: 'caught' };
 
@@ -149,19 +149,22 @@ export class Story {
   get palace() { return this.has('palace'); }
   /** Chapter 2: Gerard is 35 and wakes up in Barcelona; chapter 1 was his dream. */
   get adult() { return this.has('caught'); }
-  /** Classes the party has unlocked; anyone in the party can wear any of them. */
-  get classes(): ClassId[] { return this.has('noista') ? ['noista'] : []; }
-  /** Gerard's active class, which also dresses the interface. */
+  /**
+   * Ánimas (classes in the code) the party has unlocked; anyone in the party but Bernat can wear
+   * any of them. Matemágico is Gerard's from the start; Noísta wakes up in the palace.
+   */
+  get classes(): ClassId[] { return this.has('noista') ? ['matemagico', 'noista'] : ['matemagico']; }
+  /** Gerard's active ánima, which also dresses the interface. */
   get gerardClass(): GerardClass | undefined { return this.classOf('gerard'); }
-  /** The class `member` wears: their choice if it is unlocked, otherwise Gerard keeps Noísta on. */
+  /** The ánima `member` wears: their choice if it is unlocked, otherwise Gerard wears the newest. */
   classOf(member: MemberId): ClassId | undefined {
     const choice = this.worn[member];
     if (choice !== undefined) return choice && this.classes.includes(choice) ? choice : undefined;
-    return member === 'gerard' ? this.classes[0] : undefined;
+    return member === 'gerard' ? this.classes.at(-1) : undefined;
   }
-  /** Puts a class on a party member (or takes it off with `null`). Locked classes are refused. */
+  /** Puts an ánima on a party member (or takes it off with `null`). Locked ánimas, and Bernat, are refused. */
   wear(member: MemberId, classId: ClassId | null) {
-    if (classId && !this.classes.includes(classId)) return false;
+    if (member === 'bernat' || (classId && !this.classes.includes(classId))) return false;
     this.worn[member] = classId;
     return true;
   }
@@ -169,7 +172,7 @@ export class Story {
   set loadout(value: Loadout) {
     this.worn = {};
     for (const [member, classId] of Object.entries(value ?? {})) {
-      if (['gerard', 'bernat', 'aitor'].includes(member) && (classId === null || this.classes.includes(classId as ClassId))) this.worn[member as MemberId] = classId as ClassId | null;
+      if (['gerard', 'aitor'].includes(member) && (classId === null || this.classes.includes(classId as ClassId))) this.worn[member as MemberId] = classId as ClassId | null;
     }
   }
   /** Who walks beside Gerard here and now, if anyone. */
@@ -194,14 +197,14 @@ export class Story {
   }
   get party(): PartyMember[] {
     const classId = this.classOf('gerard');
-    const note = classId ? 'Clase: Noísta. Siempre dice que no.' : this.has('got-shoes') ? 'Listo para el cole.' : 'Aún en pijama.';
+    const note = classId === 'noista' ? 'Ánima: Noísta. Siempre dice que no.' : this.has('got-shoes') ? 'Listo para el cole.' : 'Aún en pijama.';
     // Chapter 2: Gerard at 35, and Aitor beside him from the moment he wakes up.
     if (this.adult) return [
-      { id: 'gerard', name: 'Gerard', profile: 'gerard35', classId, equipment: [], note: classId ? 'Treinta y cinco años. Clase: Noísta.' : 'Treinta y cinco años.' },
-      { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: this.classOf('aitor'), equipment: [], note: this.classOf('aitor') ? 'Lleva la clase de Gerard. Y le queda bien.' : 'Pies en el suelo. Y un abrazo para todos.' },
+      { id: 'gerard', name: 'Gerard', profile: 'gerard35', classId, equipment: [], note: classId ? `Treinta y cinco años. Ánima: ${ANIMA_NAMES[classId]}.` : 'Treinta y cinco años.' },
+      { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: this.classOf('aitor'), equipment: [], note: this.classOf('aitor') ? 'Lleva un ánima de Gerard. Y le queda bien.' : 'Pies en el suelo. Y un abrazo para todos.' },
     ];
     const gerard: PartyMember = { id: 'gerard', name: 'Gerard', profile: 'gerard', classId, equipment: this.items.filter(i => i !== 'pocion' && i !== 'chicle'), note };
-    return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', profile: 'bernat', classId: this.classOf('bernat'), equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
+    return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', profile: 'bernat', equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
   }
   /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). */
   battleParty(withPartner: boolean): PartySlot[] {
@@ -308,7 +311,8 @@ export class Story {
         if (event.id !== WRAPPER_ROOM || !this.has('in-palace') || this.has('wrapper-room')) return [];
         return [say(LINES.drainGurgle), { kind: 'drain' }, say(LINES.drainRises), { kind: 'battle', encounter: 'palace-minion' }];
       case 'class':
-        this.set(event.id);
+        // The ánima that just woke up is the one he wears.
+        this.set(event.id); this.worn.gerard = event.id;
         return [];
       case 'caught': {
         if (!this.has('wrapper-room') || !this.set('caught')) return [];

@@ -1,0 +1,21 @@
+{
+  "title": "Combat · Command menu and ánimas",
+  "description": "The battle menu: Atacar, Habilidad, ?????, Defender and Huir, under the ánima strip (L · Matemágico · Noísta · R). Q / E (L / R on a controller) swap the active fighter's ánima: the menu sweeps, the theme and the skills change. Habilidad opens its skills sideways; △ / Y (I on the keyboard) shows a skill's cost and description beside it. Bernat wears no ánima and has no skills.",
+  "steps": [
+    { "open": "/?story=noista&battle=3&allies=2&noista=1" },
+    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
+    { "shot": "noista", "delay": 1500, "caption": "Gerard wears Noísta: L · Matemágico · NOÍSTA · R above the menu" },
+    { "press": "KeyQ" },
+    { "shot": "swapping", "delay": 150, "caption": "Q / L: the menu sweeps while the ánima changes" },
+    { "shot": "matematico", "delay": 2500, "caption": "Matemágico on: Gerard's own colours and interface" },
+    { "press": "Digit2" },
+    { "press": "KeyI" },
+    { "shot": "details", "delay": 3000, "caption": "Matemágico's skill, Análisis Parálisis, with only its description and cost" },
+    { "press": "KeyE" },
+    { "shot": "noista-skills", "delay": 3000, "caption": "E / R with the skills open: Noísta's No-ta slides in instead" },
+    { "press": "Escape" },
+    { "press": "Digit4" },
+    { "until": "document.querySelector('.turn-label')?.textContent === 'Bernat' && !document.querySelector('#battle[data-resolving]')", "timeout": 60000 },
+    { "shot": "bernat", "delay": 1500, "caption": "Bernat wears no ánima: the strip greys out and Habilidad is off" }
+  ]
+}

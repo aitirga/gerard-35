@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import type { BattleEffect, BattleState, ClassId } from './battle';
-import { wearClass } from './classes';
+import { inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CONTACT_SECONDS, ENTRY_SECONDS, clamp01, contactMotion, smooth } from './battle-motion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
@@ -139,7 +139,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const copies = new Map<pc.Material, pc.StandardMaterial>();
     model.findComponents('render').forEach(component => (component as pc.RenderComponent).meshInstances.forEach(mesh => {
       let copy = copies.get(mesh.material);
-      if (!copy) { copy = (mesh.material as pc.StandardMaterial).clone(); copies.set(mesh.material, copy); }
+      if (!copy) { copy = (mesh.material as pc.StandardMaterial).clone(); copies.set(mesh.material, copy); inheritColour(mesh.material, copy); }
       mesh.material = copy;
     }));
     const materials = [...copies.values()];
@@ -151,9 +151,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
     if (!target) { hit(actor, gold, .55); effects.emit('spark', new pc.Vec3(actor.base.x, 1.1, actor.base.z), 6, .3); return; }
-    // Abrazo reaches the whole party at once.
-    if (action.skill === 'abrazo') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, green, .85); effects.emit('heal', new pc.Vec3(f.base.x, .35, f.base.z), 12, .5); } return; }
-    if (action.skill === 'encourage') { hit(target, green, .85); effects.emit('heal', new pc.Vec3(target.base.x, .35, target.base.z), 16, .5); return; }
+    // Análisis Parálisis: a gold flicker of ideas over everyone still standing.
+    if (action.skill === 'analisis') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, gold, .7); effects.emit('spark', new pc.Vec3(f.base.x, 1.6, f.base.z), 10, .4); } return; }
+    if (action.skill === 'cardioide') { hit(target, green, .85); effects.emit('heal', new pc.Vec3(target.base.x, .35, target.base.z), 16, .5); return; }
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
     const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
     const reach = target.party ? .25 : .6;
@@ -177,6 +177,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       effects.emit('spark', new pc.Vec3(gerard.base.x, 1.1, gerard.base.z), 24, .3);
       for (const f of fighters.values()) if (!f.party) hit(f, white, .9);
       setTimeout(() => wearClass(gerard.model, id), 260);
+    },
+    /** L / R in a fight: a quick swirl and the fighter comes out of it wearing the other ánima. */
+    changeAnima(id: string, classId: ClassId) {
+      const f = fighters.get(id);
+      if (!f) return;
+      hit(f, gold, 1.3);
+      effects.emit('poof', new pc.Vec3(f.base.x, .4, f.base.z), 10, .3);
+      effects.emit('spark', new pc.Vec3(f.base.x, 1.2, f.base.z), 14, .35);
+      setTimeout(() => wearClass(f.model, classId), 140);
     },
     /** Dark pink, glowing eyes for the street dogs: they obey La Reina Bubbaloo's minion. */
     possess(on: boolean) {
@@ -209,8 +218,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const minion = !party && unit.kind === 'minion' && !!minionTemplate;
           const source = party ? partyModel(unit.id) : minion ? minionTemplate! : dogs[i];
           const model = source.clone(); model.enabled = true;
-          // Whoever wears a class shows it in the fight, even when the street model does not (Gerard at 35, Aitor).
-          if (party && unit.classId) wearClass(model, unit.classId);
           if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
             (component as pc.RenderComponent).meshInstances.forEach(mesh => {
               if (mesh.material.name === 'Camiseta mostaza') mesh.material = allyJacket;
@@ -235,6 +242,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
             flash: 0, flashColor: white, ...ownMaterials(model),
             scale: model.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
           });
+          // Whoever wears an ánima shows it in the fight, even when the street model does not (Gerard at 35, Aitor).
+          // Dressed after ownMaterials, so the street model keeps its own look.
+          if (party) wearClass(model, unit.classId);
         });
       }
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false;
@@ -254,10 +264,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       });
       const actor = effect ? fighters.get(effect.actor) : undefined;
       const target = effect?.target ? fighters.get(effect.target) : undefined;
-      const healing = effect?.skill === 'encourage' || effect?.skill === 'abrazo';
+      // Heals and boosts stay put: no run-up to anyone.
+      const support = effect?.skill === 'cardioide' || effect?.skill === 'analisis';
       const t = animate ? effectTime : ACTION_SECONDS;
-      const motion = actor && target && !healing ? contactMotion(actor.base, target.base, t) : undefined;
-      const contact = effect?.target && !healing ? CONTACT_SECONDS : .2;
+      const motion = actor && target && !support ? contactMotion(actor.base, target.base, t) : undefined;
+      const contact = effect?.target && !support ? CONTACT_SECONDS : .2;
       if (effect && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.();
         if (animate && effect) contactBurst(effect, actor, target);
@@ -300,7 +311,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           lean = strike * 13;
           hop = f.party || !animate ? 0 : Math.sin(clamp01((t - .16) / .46) * Math.PI) * .3;
         }
-        if (healing && id === effect?.actor) strike = animate ? Math.sin(clamp01(t / .8) * Math.PI) * .65 : 0;
+        if (support && id === effect?.actor) strike = animate ? Math.sin(clamp01(t / .8) * Math.PI) * .65 : 0;
         const guarding = state?.allies.find(a => a.id === id)?.guarding ?? false;
         if (motion && id === effect?.target && animate) {
           const recoil = motion.recoil * (guarding ? .12 : .34);
@@ -373,7 +384,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       shake = Math.max(0, shake - dt);
       if (shake > 0 && animate) cameraKick.add(new pc.Vec3(Math.sin(time * 70) * shake * .25, Math.cos(time * 63) * shake * .15, 0));
       sparks.enabled = !!motion && animate && t >= CONTACT_SECONDS && t < CONTACT_SECONDS + .22;
-      if (healing && target && animate && t >= .2 && t < .8) {
+      if (support && target && animate && t >= .2 && t < .8) {
         sparks.enabled = true;
         const burst = (t - .2) / .6;
         sparks.setPosition(target.base.x, 1 + burst * .8, target.base.z);
@@ -396,7 +407,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const emphasis = animate ? Math.sin(clamp01(t / ACTION_SECONDS) * Math.PI) * .12 : 0;
         focus.set((target.base.x - anchor.x) * emphasis, 0, (target.base.z - anchor.z) * emphasis);
       }
-      if (complete && (effect ? t >= (healing ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS)) {
+      if (complete && (effect ? t >= (support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS)) {
         settle(); effect = undefined; impact = undefined;
       }
     },

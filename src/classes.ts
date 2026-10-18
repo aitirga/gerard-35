@@ -1,15 +1,22 @@
 import * as pc from 'playcanvas';
-import type { ClassId } from './battle';
+import { ANIMA_NAMES, type ClassId } from './battle';
 
 /**
- * Classes (docs/bubbaloo-palace.md, docs/party.md). Only Noísta exists: Gerard always contradicts,
- * and in the palace that habit becomes a power. Once unlocked a class is the party's, so Aitor can
- * wear it too. A class is a look (material recolours by name and a scarf), an interface theme
+ * Ánimas, called classes in the code (docs/party.md). Matemágico is Gerard's from the start;
+ * Noísta wakes up in the palace (docs/bubbaloo-palace.md): Gerard always contradicts, and there
+ * that habit becomes a power. Once unlocked an ánima is the party's, so Aitor can wear it too.
+ * An ánima is a look (material recolours by name and, optionally, a scarf), an interface theme
  * (`#hud[data-class]` in style.css), and its stats and skills (CLASS_STATS and SKILLS in battle.ts).
  */
-export const CLASSES: Record<ClassId, { name: string; motto: string; look: Record<string, string>; scarf: string }> = {
+export const CLASSES: Record<ClassId, { name: string; motto: string; look: Record<string, string>; scarf?: string }> = {
+  // Gerard's everyday self: his own clothes, his own interface.
+  matemagico: {
+    name: ANIMA_NAMES.matemagico,
+    motto: 'Lo calcula todo. Hasta lo que no hace falta.',
+    look: {},
+  },
   noista: {
-    name: 'Noísta',
+    name: ANIMA_NAMES.noista,
     motto: 'Dice que no. Y el mundo le hace caso.',
     look: {
       'Camiseta mostaza': '#c8323c',
@@ -20,23 +27,34 @@ export const CLASSES: Record<ClassId, { name: string; motto: string; look: Recor
     scarf: '#e2483d',
   },
 };
+/** Each material's own colour, so taking an ánima off (or swapping it) puts it back. */
+const ownColours = new WeakMap<pc.Material, pc.Color>();
+/** A material copy (a fighter's own) remembers the colour its source had before any ánima. */
+export function inheritColour(source: pc.Material, copy: pc.Material) {
+  const colour = ownColours.get(source);
+  if (colour) ownColours.set(copy, colour.clone());
+}
 
 /**
- * Dresses a character model in a class: recolours its materials by name (the model must own
- * them) and ties a scarf at the neck, once. Works on Gerard in the street and on his battle copy.
+ * Dresses a character model in an ánima (or in none): recolours its materials by name, putting
+ * back the ones the ánima leaves alone, and swaps the scarf at the neck. Works on Gerard in the
+ * street and on his battle copy, as many times as he changes.
  */
-export function wearClass(model: pc.Entity, id: ClassId) {
-  const spec = CLASSES[id];
+export function wearClass(model: pc.Entity, id: ClassId | undefined) {
+  const spec = id ? CLASSES[id] : undefined;
+  const body = model.findByName('Cuerpo') as pc.Entity | null;
+  body?.findByName('Pañuelo')?.destroy();
   const seen = new Set<pc.Material>();
   model.findComponents('render').forEach(component => (component as pc.RenderComponent).meshInstances.forEach(mesh => {
     const m = mesh.material as pc.StandardMaterial;
     if (seen.has(m)) return;
     seen.add(m);
-    const colour = spec.look[m.name];
-    if (colour) { m.diffuse.fromString(colour); m.update(); }
+    if (!ownColours.has(m)) ownColours.set(m, m.diffuse.clone());
+    const colour = spec?.look[m.name];
+    if (colour) m.diffuse.fromString(colour); else m.diffuse.copy(ownColours.get(m)!);
+    m.update();
   }));
-  const body = model.findByName('Cuerpo') as pc.Entity | null;
-  if (!body || body.findByName('Pañuelo')) return;
+  if (!body || !spec?.scarf) return;
   const cloth = new pc.StandardMaterial(); cloth.name = 'Pañuelo'; cloth.diffuse.fromString(spec.scarf); cloth.gloss = .35; cloth.update();
   const scarf = new pc.Entity('Pañuelo'); body.addChild(scarf);
   const part = (name: string, p: number[], s: number[], r: number[] = [0, 0, 0]) => {

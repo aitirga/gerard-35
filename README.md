@@ -228,14 +228,20 @@ a battle view using the current neighborhood.
 Gerard fights alone initially; calling Bernat at his door adds a second ally to
 subsequent encounters, using Gerard’s model with a blue jacket as a stand-in.
 
-Choose **Atacar**, **Defender**, **Habilidades**, or **Escapar**. Habilidades first
-opens the ability list with costs and effects. Select **Impulso** (28 damage,
-8 Secundaria) to move focus to the enemies, or **Ánimo** (recover up to 24 HP,
-8 Secundaria) to move focus to injured allies. Then select a roster card or its
-matching label in the street to apply the ability. Arrows move among valid
-targets; **Escape** returns to the ability list without spending a turn or energy.
-Full-health and defeated allies cannot be healed. Color, name, and a ground
-marker identify the selected target. Mouse, **1–4**, **Tab/arrows**,
+Choose **Atacar**, **Habilidad**, **?????** (not available yet), **Defender**, or
+**Huir**. Defender and Huir act at once. Habilidad slides a skill sheet out to its
+right (→ opens it, ← or **Esc** closes it). △ / Y on a controller, or **I** on the
+keyboard, floats a window beside the focused skill with its description and cost.
+Skills come from **ánimas**: the strip above the menu (L · Matemágico · Noísta · R)
+swaps the active fighter's ánima with L / R on a controller or Q / E on the keyboard,
+for free. **Matemágico** (from the start) has **Análisis Parálisis** (10 Secundaria:
+Fuerza and Magia +3 for the party for three rounds) and **Cardioide** (8 Secundaria:
+heals one hurt ally); **Noísta** (unlocked in the palace) has **No-ta**. Bernat
+wears no ánima and only attacks. A skill aimed at someone moves focus to the enemies or
+to injured allies; select a roster card or its matching label in the street to
+apply it. Arrows move among valid targets; **Esc** returns to the skill sheet
+without spending a turn or energy. Full-health and defeated allies cannot be
+healed. Color, name, and a ground marker identify the selected target. Mouse, **1–5**, **Tab/arrows**,
 **Enter/Space**, and **Esc** work in combat. Walking input is paused until the
 result’s **Volver a la calle** button is used. All outcomes restore the street
 position. Escape and defeat grant six seconds of recovery; automatic contact

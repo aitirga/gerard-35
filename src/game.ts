@@ -44,6 +44,8 @@ export interface GameCallbacks {
   onBattleTargets: (targets: { id: string; x: number; y: number; visible: boolean }[]) => void;
   /** Where the companion's head is on screen, for speech bubbles; undefined when he is not shown. */
   onCompanionScreen: (at: { x: number; y: number } | undefined) => void;
+  /** Where the floating interact key goes on screen: beside what is within reach. */
+  onPromptScreen: (at: { x: number; y: number; person: boolean } | undefined) => void;
   onStep: (steps: number, cell: Cell) => void;
   onLocation: (id: EnvironmentId, cell: Cell) => void;
   onInteraction: (interaction: Interaction | undefined) => void;
@@ -248,8 +250,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       }
     }
     battleScene.possess(possessed);
-    // The class look is the boy's outfit; at 35 he wakes in his pyjamas (the class stays in fights).
-    if (story.gerardClass && !story.adult) wearClass(player, story.gerardClass);
+    // The ánima look is the boy's outfit; at 35 he wakes in his pyjamas (the ánima stays in fights).
+    if (!story.adult) wearClass(player, story.gerardClass);
     toneTarget = environment.id === 'palacio' || (SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo') ? 1 : 0;
     // Bernat first steps out of his own front door; scene changes place a partner beside Gerard instead.
     const mate = mateHere();
@@ -320,7 +322,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   function play(seconds: number, step: (t: number) => void) {
     return new Promise<void>(done => { timeline = { seconds, elapsed: 0, step, done }; });
   }
-  function holdStill() { cutscene = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined); }
+  function holdStill() { cutscene = true; clearInput(); movement.walking = false; showPrompt(undefined); }
   function release() { cutscene = false; cinematic = undefined; lastPrompt = ''; updatePrompt(); }
   /**
    * The houses at the north end change and the palace inflates behind them
@@ -553,7 +555,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   /** The minion's head rises out of the manhole and pops a bubble: the dogs' eyes turn pink and they face the boys. */
   async function summonMinion() {
     if (environment.id !== 'maresme') { possessed = true; battleScene.possess(true); return; }
-    cutscene = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined);
+    cutscene = true; clearInput(); movement.walking = false; showPrompt(undefined);
     await minion.emerge(() => {
       possessed = true; battleScene.possess(true);
       for (const dog of pack.dogs) {
@@ -576,7 +578,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       movement.resolveOverlap(occupiedCells(), !reducedMotion.matches);
       lastPrompt = ''; positionPlayer(); updatePrompt();
     }
-    else callbacks.onInteraction(undefined);
+    else showPrompt(undefined);
     return settled;
   }
   function touchDog(event: PointerEvent) {
@@ -634,11 +636,14 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   const cameraTarget = scenery.toWorld(movement.cell.x, movement.cell.z);
   const screen = new pc.Vec3();
   function clearInput() { held.clear(); shiftHeld = false; }
+  /** What the floating key points at, if anything (Gerard's reach only; player 2 just presses). */
+  let prompted: Interaction | undefined;
+  function showPrompt(interaction: Interaction | undefined) { prompted = interaction; callbacks.onInteraction(interaction); }
   function updatePrompt() {
     if (battle) return;
     const interaction = movement.bouncing ? undefined : nearby(movement.cell);
     const id = interaction?.id ?? '';
-    if (id !== lastPrompt) { lastPrompt = id; callbacks.onInteraction(interaction); }
+    if (id !== lastPrompt) { lastPrompt = id; showPrompt(interaction); }
   }
   function positionPlayer() {
     const p = scenery.toWorld(movement.position.x, movement.position.z);
@@ -665,7 +670,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     if (mate) placeMate(mate);
     overview = false;
     lastPrompt = '';
-    callbacks.onInteraction(undefined);
+    showPrompt(undefined);
     callbacks.onLocation(id, movement.cell);
     cameraTarget.copy(scenery.toWorld(movement.cell.x, movement.cell.z));
     positionPlayer(); updatePrompt();
@@ -905,6 +910,16 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       camera.camera!.worldToScreen(mate.entity.getPosition().clone().add(new pc.Vec3(0, mate.id === 'aitor' ? 2.4 : 1.75, 0)), screen);
       callbacks.onCompanionScreen({ x: screen.x, y: screen.y });
     } else callbacks.onCompanionScreen(undefined);
+    // The interact key floats over the thing itself: above a person's head, or just over an object or door.
+    if (prompted && !battle) {
+      const person = prompted.id.startsWith('talk-');
+      const follows = mate?.entity.enabled && prompted.id === `talk-${mate.id}`;
+      const at = follows ? mate!.entity.getPosition().clone() : scenery.toWorld(prompted.cell.x, prompted.cell.z);
+      if (!follows) at.y = scenery.groundHeight(at.x, at.z);
+      at.y += person ? (mate?.id === 'aitor' && follows ? 2.5 : 2.05) : 1.15;
+      camera.camera!.worldToScreen(at, screen);
+      callbacks.onPromptScreen({ x: screen.x, y: screen.y, person });
+    } else callbacks.onPromptScreen(undefined);
 
   });
   app.on('destroy', () => {
@@ -924,6 +939,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },
+    /** Someone swapped ánima in a fight (L / R): the fight shows it, and the boy's street outfit follows. */
+    changeAnima(member: string, id: ClassId) { battleScene.changeAnima(member, id); if (member === 'gerard' && !story.adult) wearClass(player, id); },
     setControllerInput(direction: Direction | null, stick: Stick | null, running = false) { controllerDirection = direction; controllerStick = stick; controllerRunning = running; },
     /** Player 2's controller, for Aitor. */
     setPartnerInput(direction: Direction | null, stick: Stick | null, running = false) { partnerDirection = direction; partnerStick = stick; partnerRunning = running; },
