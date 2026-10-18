@@ -128,13 +128,16 @@ doors and named `anchors` (where the palace stands).
 
 ## The TV news set
 
-The news is filmed, not drawn (`src/news-set.ts`, `game.startBroadcast`). For the broadcast the
-flat steps aside and `rec-comtal` is built as a set: the castle on the school at its current
-threat, a police cordon and two patrol cars with their lights going, neighbours filming with their
-phones, a reporter and her cameraman, the TV van with its dish, a helicopter circling and the
-pupils' backpacks by the gate. A perspective camera films it in shots that loop (`NEWS_SHOTS`):
-from the helicopter, the reporter with the castle behind her, a neighbour's shaky phone, the street
-behind the patrol car. `src/news-ui.ts` lays the broadcast's graphics over it.
+The news is filmed, not drawn, and it plays **on the TV in the flat** (`src/news-tv.ts`). While the
+party is at home, `rec-comtal` is built as a news set on its own render layer, lit by its own sun so
+nothing of it touches the flat: the castle on the school at its current threat and size, a police
+cordon and two patrol cars with their lights going, neighbours filming with their phones, a reporter
+and her cameraman, the TV van with its dish, a helicopter circling and the pupils' backpacks by the
+gate (`src/news-set.ts`). A news camera films it into a texture shown on the TV's screen, in shots
+that loop (`NEWS_SHOTS`): from the helicopter, the reporter with the castle behind her, a
+neighbour's shaky phone, the street behind the patrol car. The broadcast's graphics (EN DIRECTO,
+the shot's caption, ÚLTIMA HORA with the day's headline, the ticker) are drawn on a canvas over the
+picture. Watching it is the game's camera coming close to the TV.
 
 ## Architecture: generic pieces, unique content
 
@@ -146,7 +149,8 @@ reimplements movement, dialogue or battle.
 | --- | --- | --- | --- |
 | Place | Grid, buildings, roads, props, places to look at, station entrances | `assets/geo/<zone>/`, `src/environments.ts` | Its own props or a landmark model; its story triggers |
 | Station / line | Network graph, travel, the map | `src/transit.ts`, `src/travel-ui.ts` | Closures and clue posters per station |
-| Map marker | An icon on the network map, from data | `src/map-markers.ts` | Its drawing (the castle's towers follow its threat) |
+| Map marker | An icon on the network map, from data | `src/map-markers.ts` | Its drawing (the castle's towers follow its threat; her pink stain, the spread) |
+| Day and hour | What an activity costs, when the day ends, how far she has spread | `src/days.ts`, `story.spend` | How each place shows the spread |
 | Castle threat | One number from the ánimas; the palace and its marker read it | `castleThreat` in `src/animas.ts`, `palace.setThreat` | Which tower falls when |
 | Trigger | A cell and a radius that fires `near` once | `story.triggers(environment)` | What the story does with it |
 | Door redirect | A door can lead elsewhere by story state | `story.redirect(id)` | The palace's exit, home's door |

@@ -40,6 +40,8 @@ export const ICONS: Record<string, (level: number) => string> = {
   dome: () => `<path fill="#e98f5a" d="M-.85,1V.1H.85V1Z"/><path fill="#5fa6a0" d="M-.85,.1A.85,.9,0,0,1,.85,.1Z"/><path fill="${INK}" d="M-.2,1V.5H.2V1Z"/>`,
   home: () => `<path fill="#f7d26a" d="M-.75,1V-.05H.75V1Z"/><path fill="#d9473f" d="M-.95,0L0,-.9L.95,0Z"/><path fill="#ff7aa8" d="M0,.75C-.45,.4-.35,.05,0,.25C.35,.05,.45,.4,0,.75Z"/>`,
   school: () => `<path fill="#f2efe6" d="M-.95,1V-.2H.95V1Z"/><path fill="#e8742c" d="M-.95,-.2L0,-.75L.95,-.2Z"/><path fill="none" stroke="${INK}" stroke-width=".1" d="M0,-.75V-1.4"/><path fill="#e8742c" d="M0,-1.4H.45L.3,-1.25L.45,-1.1H0Z"/>`,
+  /** Her power spreading over the city: a gooey pink stain with drips, as big as the marker's size. */
+  spread: () => `<path class="map-spread" fill="#ff6fae" fill-opacity=".38" stroke-opacity=".5" d="M-1,0C-1,-.6-.6,-1,0,-1C.6,-1,1,-.55,1,0C1,.3,.85,.45,.75,.7C.7,.95,.55,.95,.5,.7C.4,.5,.25,.6,.2,.85C.15,1.05,0,1.05,-.05,.8C-.1,.55,-.3,.55,-.4,.75C-.5,.9,-.65,.9,-.7,.65C-.75,.4,-1,.35,-1,0Z"/>`,
   /**
    * La Reina Bubbaloo's castle: more and taller towers the stronger she is (`level`), a dark
    * storm over it at its worst. It loses towers as Gerard and Aitor help people.
@@ -68,8 +70,11 @@ export function renderMarker(m: MapMarker, unit: number): string {
 }
 const escapeXml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
-/** What the story tells the map: whether the castle has appeared, and how threatening it is. */
-export interface MarkerState { castle: boolean; threat: number }
+/**
+ * What the story tells the map: whether the castle has appeared, how threatening it is, and how
+ * far her power has spread over the city (0 to 1, docs/chapter-2.md § The Queen's advance).
+ */
+export interface MarkerState { castle: boolean; threat: number; spread?: number }
 /** Every marker for the city as the story stands: the landmarks, home, and the school or its castle. */
 export function cityMarkers(state: MarkerState): MapMarker[] {
   const place = (id: string) => CITY_MAP.places.find(p => p.id === id)!;
@@ -77,8 +82,10 @@ export function cityMarkers(state: MarkerState): MapMarker[] {
   return [
     ...CITY_MAP.landmarks.map(l => ({ id: l.id, icon: l.icon, name: l.name, x: l.x, y: l.y, label: true })),
     { id: 'home', icon: 'home', name: home.name, x: home.x, y: home.y, size: .9 },
+    // Her pink spreads from the school towards home, day after day.
+    ...(state.castle && state.spread ? [{ id: 'spread', icon: 'spread', name: 'El rosa de la Reina', x: school.x + (home.x - school.x) * state.spread * .35, y: school.y + (home.y - school.y) * state.spread * .35, size: 1.5 + state.spread * 6 }] : []),
     state.castle
-      ? { id: 'castle', icon: 'bubbaloo', name: 'El castillo de la Reina Bubbaloo', x: school.x, y: school.y, size: 1.1 + state.threat * .6, level: state.threat }
+      ? { id: 'castle', icon: 'bubbaloo', name: 'El castillo de la Reina Bubbaloo', x: school.x, y: school.y, size: 1.1 + state.threat * .6 + (state.spread ?? 0) * .8, level: state.threat }
       : { id: 'rec-comtal', icon: 'school', name: school.name, x: school.x, y: school.y, label: true },
   ];
 }

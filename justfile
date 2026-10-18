@@ -36,6 +36,12 @@ dev-chapter beat="new":
     @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|noista|wrapper-room|caught|got-wrapper|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|anima-uri)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
 
+# Wake up on a later day of chapter 2 to see the Queen's spread: just dev-day 6 (7 is the end)
+[group('Development')]
+dev-day day="4":
+    @[[ "{{ day }}" =~ ^[0-9]+$ && "{{ day }}" -ge 2 ]] || { printf 'Use a day from 2 on (7 is the end without ánimas).\n'; exit 1; }
+    npm run dev -- --open '/?story=castle&day={{ day }}'
+
 # Debug chapter 2 with one player: Gerard's controls also drive Aitor in battle (just dev-solo off to undo)
 [group('Development')]
 dev-solo state="on":

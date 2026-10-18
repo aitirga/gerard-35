@@ -28,6 +28,14 @@ export const NEWS = {
   kicker: 'ÚLTIMA HORA',
   headline: 'Aparece un castillo rosa encima de la escuela Rec Comtal',
   sub: 'Todos los alumnos estaban dentro · Trinitat Vella, Barcelona',
+  /** The headline each morning, by how far her power has spread (days.ts `stage`). */
+  stages: [
+    { headline: 'Aparece un castillo rosa encima de la escuela Rec Comtal', sub: 'Todos los alumnos estaban dentro · Trinitat Vella, Barcelona' },
+    { headline: 'El castillo de la escuela Rec Comtal no deja de crecer', sub: 'Ya ocupa media Trinitat Vella · Los vecinos, desalojados' },
+    { headline: 'El rosa llega a Sant Andreu', sub: 'Calles enteras amanecen cubiertas de chicle · Cortada la Ronda' },
+    { headline: 'El castillo avanza por la Meridiana', sub: 'Se pide a los vecinos de Fabra i Puig que no salgan de casa' },
+    { headline: 'Última hora: el chicle llega a la Meridiana', sub: 'Los expertos no saben cuánto tiempo queda' },
+  ],
   live: 'EN DIRECTO · TRINITAT VELLA',
   /** What the screen says over each shot of the filmed set (src/news-set.ts). */
   shots: {
@@ -105,12 +113,6 @@ export const LINES_2 = {
     gerard('Son demasiado fuertes. Así no podemos.'),
     aitor('Pues no vayamos así. Busquemos ayuda. Tú tienes amigos para dar y regalar.'),
   ),
-  /** Waking up after falling again: Aitor's line changes. */
-  wakeAgain: [
-    both(gerard('¡NO!'), aitor('Lo sé, lo sé. Los guardianes. Yo también estaba.')),
-    both(gerard('¡NO!'), aitor('Tercera vez que me despiertas así. Empiezo a acostumbrarme.'), aitor('Igual no es cuestión de insistir, sino de ir con más gente.')),
-    both(gerard('¡NO!'), aitor('Buenos días otra vez, cabezota. Ni un rasguño, ¿eh? Solo el orgullo.')),
-  ],
   /** Talking to Aitor in chapter 2, by how far they have got. */
   aitor: {
     beforeNews: both(aitor('Feliz cumpleaños, dormilón. ¿Qué es ese pitido? Viene del salón.')),
@@ -122,6 +124,42 @@ export const LINES_2 = {
   clueR4Marquesina: alone(
     gerard('Un cartel de Rodalies en la marquesina: «R4 · Nuevo: ahora de La Sagrera a Cardedeu».'),
     gerard('Cardedeu… Hace siglos que no subo.'),
+  ),
+  /**
+   * Every morning after the first: Aitor wakes up beside Gerard, and how worried he is says how far
+   * the Queen has spread (days.ts `stage`).
+   */
+  morning: [
+    both(gerard('¡NO!'), aitor('Buenos días… Otra vez gritando. ¿Mismo sueño?'), aitor('La tele lleva toda la mañana encendida. Sigue ahí, el castillo.')),
+    both(gerard('¡NO!'), aitor('Ey. Despierta.'), aitor('Dicen en la tele que ha crecido esta noche. Ya ocupa media Trinitat Vella.')),
+    both(gerard('¡NO!'), aitor('Gerard… mira por la ventana. El cielo tiene otro color.'), aitor('Ya ha llegado a Sant Andreu. No podemos seguir así.')),
+    both(gerard('¡NO!'), aitor('No he dormido. Se oía crujir la Meridiana, como un envoltorio.'), aitor('Está casi aquí. Hoy tiene que servir para algo.')),
+    both(gerard('¡NO!'), aitor('Gerard. La escalera huele a fresa.'), aitor('Si hoy no la paramos, mañana no habrá casa a la que volver.')),
+  ],
+  /** As the day goes, Aitor notices it. */
+  evening: both(aitor('Se está haciendo tarde. Mira qué luz… cada vez más rosa.')),
+  late: both(aitor('Gerard, deberíamos ir volviendo. De noche no me fío de nada.')),
+  /** At 22:00, wherever they are, the day is over. */
+  night: both(aitor('Ya está. Es de noche y no puedo más.'), gerard('Mañana. Mañana seguimos.')),
+  /** Going to bed early. */
+  sleep: both(gerard('Me voy a dormir. A ver si mañana…'), aitor('Mañana. Descansa.')),
+  sleepNotYet: both(aitor('¿A dormir? Si acabamos de levantarnos. Primero, la tele: no para de pitar.')),
+  /** Things to do that take time (the countdown is why they matter). */
+  piano: both(gerard('Una pieza. Solo una.'), aitor('Suena bonita. Aunque se nos va la mañana…')),
+  cafe: both(gerard('Un café en el balcón. Desde aquí se ve el rosa, al fondo.'), aitor('Cada día está un poco más cerca.')),
+  /** The end: she has covered everything. */
+  doom: both(
+    gerard('¡NO!'),
+    aitor('Gerard… no toques nada.'),
+    aitor('Las paredes. El suelo. Todo es chicle. Esto ya no es nuestra casa.'),
+    gerard('Es su castillo. Ha llegado hasta aquí.'),
+    aitor('Hemos llegado tarde.'),
+  ),
+  /** After going back one day. */
+  rewound: both(
+    gerard('¡NO!'),
+    aitor('Ey… ¿Gerard? Tienes cara de haber visto un fantasma.'),
+    gerard('He visto mañana. Y no hay mañana, si no hacemos algo hoy.'),
   ),
   /** The palace's things, seen at 35 (chapter 1's looks speak with Bernat's voice). */
   curtain: both(gerard('La cortina de chicle. Detrás está la escalera del trono.'), aitor('Y delante, ellos.')),

@@ -322,12 +322,13 @@ export const MERIDIANA = house({
   props: [{ kind: 'tree', x: 15, z: 1, species: 'yucca', scale: 0.9, base: 'pot' }],
   interactions: [
     { id: 'meridiana-door', cell: { x: 6, z: 1 }, label: 'Salir a la Meridiana', to: { environment: 'meridiana-calle', cell: { x: 45, z: 23 } } },
-    { id: 'meridiana-piano', cell: { x: 2, z: 5 }, label: 'Tocar el piano', lines: ['Do, re, mi… El piano eléctrico siempre está listo para una pieza más.'] },
+    // The piano and the balcony take time in chapter 2 (the story answers them, src/days.ts).
+    { id: 'meridiana-piano', cell: { x: 2, z: 5 }, label: 'Tocar el piano' },
     { id: 'meridiana-kitchen', cell: { x: 10, z: 2 }, label: 'Mirar la cocina', lines: ['Encimera de madera, azulejos blancos… y alguien tiene que fregar.'] },
     // The story turns the TV on (chapter 2's news); before that it is just the TV.
     { id: 'meridiana-tv', cell: { x: 16, z: 2 }, label: 'Mirar la tele' },
     { id: 'meridiana-painting', cell: { x: 19, z: 11 }, label: 'Mirar el cuadro', lines: ['Barcelona de noche, con la torre encendida. Nuestra ciudad, en la pared.'] },
-    { id: 'meridiana-balcony', cell: { x: 22, z: 3 }, label: 'Asomarse al balcón', lines: ['Toldos verdes, ropa tendida y mucha luz. Buenos días, vecinos.'] },
+    { id: 'meridiana-balcony', cell: { x: 22, z: 3 }, label: 'Tomar un café en el balcón' },
   ],
 });
 /** What each character of the palace plan stands for (docs/bubbaloo-palace.md). */

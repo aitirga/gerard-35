@@ -9,7 +9,6 @@ import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent } from './story';
 import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
 import { createTravelUI } from './travel-ui';
-import { createNewsUI } from './news-ui';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
 import { palaceGuards } from './battle';
@@ -28,7 +27,6 @@ const dialogue = createDialogueBanner(document.querySelector<HTMLElement>('#hud'
 const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
 // Chapter 2: the station map (metro and Rodalies) and the TV news.
 const travelUI = createTravelUI(document.querySelector<HTMLElement>('#hud')!);
-const newsUI = createNewsUI(document.querySelector<HTMLElement>('#hud')!);
 const hud = document.querySelector<HTMLElement>('#hud')!;
 // Development: ?story=<flag> starts with every flag up to that one (just dev-chapter), ?story=new from scratch.
 const devStory = (() => {
@@ -38,6 +36,11 @@ const devStory = (() => {
   return STORY_FLAGS.slice(0, (STORY_FLAGS as readonly string[]).indexOf(at) + 1);
 })();
 const story = new Story(devStory ?? []);
+// Development: ?day=<n> starts chapter 2 on that day, to see the Queen's spread (just dev-day).
+if (import.meta.env.DEV) {
+  const day = Number(new URLSearchParams(location.search).get('day'));
+  if (Number.isInteger(day) && day > 1) story.days.clock.day = day;
+}
 // Who wears which class is a choice that comes and goes, so it lives in this browser, not in the story flags.
 const loadoutKey = 'gerard35.loadout.v1';
 function restoreLoadout() { try { story.loadout = JSON.parse(localStorage.getItem(loadoutKey) ?? '{}'); } catch { /* Storage is optional. */ } }
@@ -56,7 +59,9 @@ if (import.meta.env.DEV) {
     control.mode = localStorage.getItem(soloKey) === 'solo' ? 'solo' : 'duo';
   } catch { control.mode = requested !== null && requested !== '0' ? 'solo' : 'duo'; }
 }
-let savedStory = JSON.stringify(story.saved);
+/** What was last sent: the flags and the days (a new hour is worth saving too). */
+const progress = () => JSON.stringify([story.saved, story.days]);
+let savedStory = progress();
 let startStory: (() => void) | undefined;
 async function load() {
   if (loading || loaded) return;
@@ -68,7 +73,7 @@ async function load() {
     if (!Number.isInteger(state.score) || state.score < 0) throw new Error('state');
     previousScore = state.score;
     // A development jump keeps its own flags instead of the saved progress.
-    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); savedStory = JSON.stringify(story.saved); restoreLoadout(); }
+    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); story.loadDays(state.days, state.story); savedStory = progress(); restoreLoadout(); }
     loaded = true;
     if (dirty) void save();
   } catch {
@@ -83,7 +88,7 @@ async function save() {
   try {
     const response = await fetch('/api/state', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score: previousScore + sessionSteps, story: devStory ? [] : story.saved }), keepalive: true,
+      body: JSON.stringify({ score: previousScore + sessionSteps, story: devStory ? [] : story.saved, ...(devStory ? {} : { days: story.days }) }), keepalive: true,
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) throw new Error('save');
@@ -142,25 +147,47 @@ try {
     else if (effect.kind === 'news') await watchNews();
     else if (effect.kind === 'metro') await ride(effect.station);
     else if (effect.kind === 'look') await game.look(effect.anchor);
+    else if (effect.kind === 'doom') await theEnd();
     else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
   }
-  /** The TV news: a cut to the filmed set in Trinitat Vella under the broadcast's graphics, and back. */
+  /**
+   * Watching the TV in the flat: the camera comes close to its screen, where the news loops
+   * (src/news-tv.ts), until a key, a click or a button looks away. It never covers the game.
+   */
+  let lookAway: (() => void) | undefined;
   async function watchNews() {
-    exploration.close(); game.setPaused(true);
-    await storyUI.blackout(true, 350);
-    const watching = newsUI.show();
-    game.startBroadcast(id => newsUI.shot(id));
-    await storyUI.blackout(false, 500);
-    await watching;
-    await storyUI.blackout(true, 350);
-    game.endBroadcast();
-    await storyUI.blackout(false, 500);
+    exploration.close();
+    game.watchTV(true); hud.dataset.watching = 'true';
+    interactButton.hidden = false; interactButton.querySelector('span')!.textContent = 'Dejar de mirar';
+    const shown = performance.now();
+    await new Promise<void>(resolve => {
+      const done = () => { if (performance.now() - shown < 1200) return; window.removeEventListener('keydown', key, { capture: true }); canvas.removeEventListener('click', done); lookAway = undefined; resolve(); };
+      const key = (event: KeyboardEvent) => {
+        if (!['KeyE', 'Space', 'Enter', 'Escape'].includes(event.code)) return;
+        event.preventDefault(); event.stopImmediatePropagation(); if (!event.repeat) done();
+      };
+      window.addEventListener('keydown', key, { capture: true }); canvas.addEventListener('click', done);
+      lookAway = done;
+    });
+    delete hud.dataset.watching; interactButton.hidden = true;
+    game.watchTV(false);
+  }
+  /**
+   * The end: she has covered everything. The only way on is back to the morning before; that
+   * day's progress is lost (docs/chapter-2.md § The Queen's advance).
+   */
+  async function theEnd() {
+    game.setPaused(true);
+    await storyUI.doom();
+    const effects = story.rewind();
+    storyChanged();
+    for (const effect of effects) await play(effect);
     game.setPaused(!!exploration.active);
   }
   /** Down into a station: pick a destination on the network map, ride, and come up its entrance. */
   async function ride(from: string) {
     exploration.close(); game.setPaused(true);
-    const to = await travelUI.show(from, {}, cityMarkers({ castle: story.has('tv-news'), threat: story.castleThreat }));
+    const to = await travelUI.show(from, {}, cityMarkers({ castle: story.has('tv-news'), threat: story.castleThreat, spread: Math.min(1, story.spread) }));
     const place = to ? STATION_PLACES[to] : undefined;
     const entrance = place && ENVIRONMENTS[place.environment].interactions.find(i => i.id === entranceId(to!));
     if (place && entrance) {
@@ -177,7 +204,7 @@ try {
     // The active class dresses the whole interface (style.css: #hud[data-class]).
     if (story.gerardClass) hud.dataset.class = story.gerardClass; else delete hud.dataset.class;
     exploration.refresh();
-    const saved = JSON.stringify(story.saved);
+    const saved = progress();
     if (saved !== savedStory) { savedStory = saved; dirty = true; clearTimeout(saveTimer); void save(); }
   }
   function storyEvent(event: StoryEvent) {
@@ -220,7 +247,7 @@ try {
     onStory: storyEvent,
   }, story);
   const controllerContext = () => battleUI.controllerContext !== 'world' ? battleUI.controllerContext
-    : travelUI.open ? 'travel' : newsUI.open ? 'news'
+    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   const controller = createControllerUI({
     context: controllerContext,
@@ -235,10 +262,9 @@ try {
     panel: id => id ? exploration.show(id) : exploration.close(),
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
-      if (travelUI.open || newsUI.open) {
-        if (action !== 'overview' && action !== 'character') (travelUI.open ? travelUI : newsUI).control(action);
-        return;
-      }
+      if (travelUI.open) { if (action !== 'overview' && action !== 'character') travelUI.control(action); return; }
+      if (lookAway) { if (action === 'confirm' || action === 'cancel') lookAway(); return; }
+      if (storyUI.doomOpen) { if (action === 'confirm') storyUI.confirmDoom(); return; }
       if (player === 2) {
         if (action === 'overview' || action === 'character') return;
         if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
@@ -290,9 +316,9 @@ try {
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => battleUI.open(params.get('party') === 'adult' ? new Story(['caught', 'noista']).battleParty(true) : params.get('allies') === '2' ? 2 : 1, foes));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged, storyEvent, travelUI, newsUI } });
+    Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged, storyEvent, travelUI } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { travelUI.destroy(); newsUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

@@ -1,0 +1,148 @@
+{
+  "title": "Chapter 2 · The Queen's advance",
+  "description": "The unspoken countdown: the news loops on the flat's TV while the party is at home; day after day her power spreads (a bigger castle, pinker streets, worse headlines, a pink stain creeping towards home on the network map); without ánimas, on the seventh morning the flat itself is part of her castle and the game ends, with the way back to the morning before. Days are jumped with ?day (development only).",
+  "steps": [
+    {
+      "open": "/?story=castle&day=1&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        13,
+        4
+      ]
+    },
+    {
+      "shot": "tv-in-the-room",
+      "delay": 4000,
+      "caption": "Day 1 at home: the news loops on the TV in the living room while they get on with things"
+    },
+    {
+      "open": "/?story=castle&day=5&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        16,
+        3
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-watching]')",
+      "timeout": 60000
+    },
+    {
+      "shot": "tv-day-5",
+      "delay": 9000,
+      "caption": "Day 5: the castle on TV has grown, and the headline says the pink has reached the Meridiana"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        86,
+        74
+      ]
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "school-day-5",
+      "delay": 3500,
+      "caption": "Day 5 at Trinitat Vella: a bigger castle, pinker light"
+    },
+    {
+      "eval": "import('/src/map-markers.ts').then(m => { void window.gerard.travelUI.show('trinitat-vella', {}, m.cityMarkers({ castle: true, threat: window.gerard.story.castleThreat, spread: Math.min(1, window.gerard.story.spread) })) }) && undefined"
+    },
+    {
+      "until": "window.gerard.travelUI.open",
+      "timeout": 20000
+    },
+    {
+      "shot": "map-day-5",
+      "delay": 1500,
+      "caption": "On the network map her pink creeps from the school towards home"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "open": "/?story=castle&day=6&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        10,
+        13
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]') && document.querySelector('#blackout')?.dataset.on === 'false'",
+      "timeout": 120000
+    },
+    {
+      "shot": "doomed-flat",
+      "delay": 2500,
+      "caption": "Day 6 ends with no ánima: on the seventh morning the flat is part of her castle"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!document.querySelector('#doom')?.hidden",
+      "timeout": 60000
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "shot": "the-end",
+      "delay": 2500,
+      "caption": "The end: the only way on is back to the morning before (that day's progress is lost)"
+    },
+    {
+      "press": "Enter",
+      "gap": 400
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]') && document.querySelector('#blackout')?.dataset.on === 'false'",
+      "timeout": 120000
+    },
+    {
+      "shot": "rewound",
+      "delay": 2200,
+      "caption": "Back on the morning of day 6: 'He visto mañana. Y no hay mañana, si no hacemos algo hoy.'"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId }
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
+import { COSTS, DAY_END, DAY_START, EVENING, LATE, dusk, freshDays, readDays, spread, stage, type Activity, type Days } from './days.ts';
 import { ENVIRONMENTS } from './environments.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
@@ -79,7 +80,9 @@ export type StoryEffect =
   /** The party fell: pink, then black (chapter 2 wakes Gerard at home with everything kept). */
   | { kind: 'fall' }
   /** The camera turns to a named anchor of the scene (the palace), or back to Gerard without one. */
-  | { kind: 'look'; anchor?: string };
+  | { kind: 'look'; anchor?: string }
+  /** The Queen has covered everything: the end, with the way back to the morning before. */
+  | { kind: 'doom' };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Noísta, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards';
@@ -113,6 +116,7 @@ const STORY_INTERACTIONS = {
   'take-mochila': { place: PLACES.mochila, label: 'Coger la mochila' },
   'take-chicle': { place: PLACES.chicle, label: 'Mirar el bol de chicles' },
   'take-envoltorio': { place: PLACES.envoltorio, label: 'Mirar la mesilla' },
+  'meridiana-bed': { place: { environment: 'meridiana', cell: { x: 10, z: 13 } }, label: 'Dormir' },
 } as const;
 /** Looking at things inside the palace that answer with Bernat's voice too. */
 const PALACE_LOOKS: { id: string; cell: Cell; label: string; dialogue: Dialogue }[] = [
@@ -147,8 +151,11 @@ export class Story {
   private away = false;
   /** Who wears which class; members missing here wear their default (see `classOf`). */
   private worn: Loadout = {};
-  /** How many times the party has fallen this session: Aitor's line on waking changes. Not saved. */
-  private falls = 0;
+  /**
+   * The days in Barcelona (src/days.ts): what day and hour it is, and the last mornings to come
+   * back to. Saved next to the flags.
+   */
+  days: Days = freshDays();
   constructor(flags: Iterable<string> = []) {
     this.flags = new Set([...flags].filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
   }
@@ -174,6 +181,21 @@ export class Story {
   get adult() { return this.has('caught'); }
   /** Ánimas the party has gathered from friends (chapter 2). */
   get animas(): AnimaId[] { return ANIMA_IDS.filter(id => this.flags.has(`anima-${id}` as StoryFlag)); }
+  get clock() { return { ...this.days.clock }; }
+  /** How far La Reina Bubbaloo's power has spread this morning: 0 at first, 1 is the end. */
+  get spread() { return this.adult ? spread(this.days.clock.day, this.animas.length) : 0; }
+  /** The flat has become part of her castle: the game is over until they go back a day. */
+  get doomed() { return this.spread >= 1; }
+  /** How far into the evening it is (0 by day, 1 at night): the light turns pinker. */
+  get dusk() { return this.adult ? dusk(this.days.clock.hour) : 0; }
+  /** Days loaded from the server: a newer epoch (a rewind elsewhere) replaces the flags too. */
+  loadDays(value: unknown, story?: Iterable<string>) {
+    const days = readDays(value);
+    if (!days || days.epoch < this.days.epoch) return;
+    if (days.epoch > this.days.epoch && story) { this.flags.clear(); this.merge(story); }
+    const later = days.clock.day * 24 + days.clock.hour >= this.days.clock.day * 24 + this.days.clock.hour;
+    if (days.epoch > this.days.epoch || later) this.days = days;
+  }
   /** How threatening the castle on the school is (1 at first; ánimas bring it down). */
   get castleThreat() { return castleThreat(this.animas.length); }
   /** Classes the party has unlocked; anyone in the party can wear any of them. */
@@ -236,6 +258,45 @@ export class Story {
     return this.party.filter(m => m.id === 'gerard' || withPartner)
       .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, ...(bonus ? { bonus } : {}) }));
   }
+  /** The morning of the current day, kept to come back to (taken the first time anything happens that day). */
+  private remember() {
+    if (!this.adult || this.days.mornings.some(m => m.day === this.days.clock.day)) return;
+    this.days.mornings = [...this.days.mornings, { day: this.days.clock.day, story: this.saved }].slice(-2);
+  }
+  /** Hours go by: Aitor notices the evening, and at DAY_END the day is over wherever they are. */
+  private spend(activity: Activity): StoryEffect[] {
+    const before = this.days.clock.hour, after = Math.min(DAY_END, before + COSTS[activity]);
+    this.days.clock = { ...this.days.clock, hour: after };
+    if (after >= DAY_END) return this.endDay('night');
+    if (before < LATE && after >= LATE) return [{ kind: 'dialogue', dialogue: LINES_2.late }];
+    if (before < EVENING && after >= EVENING) return [{ kind: 'dialogue', dialogue: LINES_2.evening }];
+    return [];
+  }
+  /**
+   * The day is over (night came, they went to bed, or they fell): black, home, and the next
+   * morning, when her power has spread a little more. If it has spread all the way, the flat
+   * they wake up in is hers and the game is over.
+   */
+  private endDay(why: 'night' | 'sleep' | 'fall'): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    const firstFall = why === 'fall' && this.set('palace-tried');
+    this.days.clock = { day: this.days.clock.day + 1, hour: DAY_START };
+    this.remember();
+    const home: StoryEffect = { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } };
+    const before: StoryEffect[] = why === 'night' ? [say(LINES_2.night)] : why === 'sleep' ? [say(LINES_2.sleep)] : [];
+    if (this.doomed) return [...before, { kind: 'fall' }, home, { kind: 'wake' }, say(LINES_2.doom), { kind: 'doom' }];
+    const morning = firstFall ? LINES_2.wakeFirst : LINES_2.morning[stage(this.spread)];
+    return [...before, { kind: 'fall' }, home, { kind: 'wake' }, say(morning)];
+  }
+  /** Back to the morning before the end: that day's progress is lost, everything before it kept. */
+  rewind(): StoryEffect[] {
+    const target = this.days.mornings.find(m => m.day === this.days.clock.day - 1);
+    if (!target) return [];
+    this.flags.clear(); this.merge(target.story);
+    this.days = { epoch: this.days.epoch + 1, clock: { day: target.day, hour: DAY_START }, mornings: this.days.mornings.filter(m => m.day <= target.day) };
+    const home: StoryEffect = { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } };
+    return [home, { kind: 'wake' }, { kind: 'dialogue', dialogue: LINES_2.rewound }];
+  }
   /** Places the story watches in this scene (the TV that turned itself on). */
   triggers(environment: EnvironmentId): Trigger[] {
     const { tv } = PLACES_2;
@@ -297,6 +358,7 @@ export class Story {
       if (id === 'take-mochila' && this.has('got-backpack')) continue;
       if (id === 'take-chicle' && this.has('got-chicle')) continue;
       if (id === 'take-envoltorio' && (this.has('got-wrapper') || !this.adult)) continue;
+      if (id === 'meridiana-bed' && !this.adult) continue;
       list.push({ id, label, cell: { ...place.cell } });
     }
     if (partner && this.partner === 'aitor') list.push({ id: 'talk-aitor', label: 'Hablar con Aitor', cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
@@ -328,6 +390,7 @@ export class Story {
 
   /** Applies one event; returns what the player should see, in order. Unknown events do nothing. */
   handle(event: StoryEvent): StoryEffect[] {
+    this.remember();
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     switch (event.type) {
       case 'start':
@@ -343,13 +406,10 @@ export class Story {
       case 'battle':
         if (!event.won) {
           if (!this.adult) return [];
-          // Chapter 2: falling is waking up at home, with everything done kept.
-          const first = this.set('palace-tried');
-          const lines = first ? LINES_2.wakeFirst : LINES_2.wakeAgain[this.falls % LINES_2.wakeAgain.length];
-          this.falls++;
-          return [{ kind: 'fall' }, { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } }, { kind: 'wake' }, say(lines)];
+          // Chapter 2: falling is waking up at home the next morning, with everything done kept.
+          return this.endDay('fall');
         }
-        if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten)];
+        if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten), ...this.spend('fight')];
         if (event.encounter === 'palace-minion') {
           if (!this.set('wrapper-room')) return [];
           return [say(LINES.afterNoista), { kind: 'ambush' }];
@@ -380,8 +440,9 @@ export class Story {
         this.set('clue-r4');
         return [{ kind: 'news' }, say(LINES_2.news)];
       case 'arrive':
-        if (event.station === 'trinitat-vella' && this.set('rec-comtal')) return [{ kind: 'look', anchor: 'palace' }, say(LINES_2.recComtalFirst), { kind: 'look' }];
-        return [];
+        // Every trip takes its hour.
+        if (event.station === 'trinitat-vella' && this.set('rec-comtal')) return [{ kind: 'look', anchor: 'palace' }, say(LINES_2.recComtalFirst), { kind: 'look' }, ...this.spend('metro')];
+        return this.spend('metro');
       case 'south':
         if (this.companion !== 'follow' || this.has('dejavu') || !this.set('bernat-stalled')) return [];
         this.tugs = 0;
@@ -439,6 +500,16 @@ export class Story {
       case 'challenge-guards':
         if (!this.adult) return [];
         return [say(LINES_2.guards), { kind: 'battle', encounter: 'palace-guards' }];
+      case 'meridiana-bed':
+        if (!this.adult) return [];
+        if (!this.has('tv-news')) return [say(LINES_2.sleepNotYet)];
+        return this.endDay('sleep');
+      case 'meridiana-piano':
+        if (!this.adult) return [];
+        return [say(LINES_2.piano), ...this.spend('piano')];
+      case 'meridiana-balcony':
+        if (!this.adult) return [];
+        return [say(LINES_2.cafe), ...this.spend('cafe')];
       case 'clue-r4-marquesina':
         this.set('clue-r4');
         return [say(LINES_2.clueR4Marquesina)];

@@ -1,6 +1,6 @@
 {
   "title": "Chapter 2 · The news, the metro and the castle",
-  "description": "Gerard at 35 walks up to the TV that switched itself on: ÚLTIMA HORA, and the broadcast is filmed in 3D at Trinitat Vella (helicopter, reporter, a neighbour's phone, the street), with the R4 clue in the ticker. Out on the Meridiana, down into the L1 at Fabra i Puig: the cartoon network map of Barcelona with its icons, the train to Trinitat Vella, the threatening castle on the school, the guards before the curtain, far too strong; falling wakes Gerard at home with everything kept. Solo mode lets player 1 play Aitor's turns.",
+  "description": "Gerard at 35 walks up to the TV that switched itself on: ÚLTIMA HORA, and the news, filmed in 3D at Trinitat Vella, plays on the TV in the room, looping all day. Out on the Meridiana, down into the L1 at Fabra i Puig: the cartoon network map of Barcelona with its icons, the train to Trinitat Vella, the threatening castle on the school, the guards before the curtain, far too strong; falling wakes Gerard at home with everything kept. Solo mode lets player 1 play Aitor's turns.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1"
@@ -31,40 +31,21 @@
       ]
     },
     {
-      "until": "window.gerard.newsUI.open",
-      "timeout": 60000
+      "until": "!!document.querySelector('#hud[data-watching]')",
+      "timeout": 90000
     },
     {
-      "shot": "news-aerial",
-      "delay": 2500,
-      "caption": "Walking up to the TV: the news, filmed. From the helicopter: the castle on the Rec Comtal school, at its most threatening"
+      "shot": "tv-aerial",
+      "delay": 9000,
+      "caption": "Walking up to the TV: the camera comes close and the news plays on its screen, filmed in 3D: the castle from the helicopter, ÚLTIMA HORA, the R4 clue in the ticker"
     },
     {
-      "until": "document.querySelector('#news')?.dataset.shot === 'reporter'",
-      "timeout": 120000
+      "wait": 6000
     },
     {
-      "shot": "news-reporter",
-      "delay": 1500,
-      "caption": "The reporter in front of the cordon, the castle looming behind her"
-    },
-    {
-      "until": "document.querySelector('#news')?.dataset.shot === 'phone'",
-      "timeout": 120000
-    },
-    {
-      "shot": "news-phone",
-      "delay": 1500,
-      "caption": "A neighbour's shaky phone, zooming in on the towers"
-    },
-    {
-      "until": "document.querySelector('#news')?.dataset.shot === 'street'",
-      "timeout": 120000
-    },
-    {
-      "shot": "news-street",
-      "delay": 1500,
-      "caption": "Street level behind the patrol car: neighbours filming, the R4 clue in the ticker"
+      "shot": "tv-reporter",
+      "delay": 500,
+      "caption": "Still on the TV: the reporter in front of the cordon, the castle behind her"
     },
     {
       "press": "KeyE"

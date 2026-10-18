@@ -148,8 +148,11 @@ friends' stories and the second round carry it.
   lines go, including the castle, which is far too strong for them at first.
 - **The castle is her power, made visible**: at first huge and bristling with towers under a
   storm; it loses towers as Gerard and Aitor give people back what they had lost.
-- **Falling is waking up.** When they lose, Gerard wakes in bed shouting "¡NO!" with everything
-  he has done kept (no time loop: that earlier idea is dropped).
+- **Falling is waking up.** When they lose, Gerard wakes in bed shouting "¡NO!" the next morning,
+  with everything he has done kept (no time loop: that earlier idea is dropped).
+- **Her power spreads every day** they do not push it back: the castle grows, the pink reaches Sant
+  Andreu, the Meridiana, the flat. If it gets there, the flat is her castle and the only way on is
+  back to the day before (the countdown of `docs/chapter-2.md`). Time matters; routine wastes it.
 - **Friends and ánimas**: each friend he helps gives him their ánima. Hidden clues in the world
   point to them (the R4 now reaches Cardedeu, where Nuria and Uri live).
   Design: `docs/chapter-2.md`.

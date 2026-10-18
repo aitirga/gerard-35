@@ -609,9 +609,9 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .city-train { fill: #fffaf0; stroke: #3b2a20; stroke-width: 60px; }
 @keyframes city-glow { 50% { transform: scale(1.25); opacity: .55; } }
 
-#travel, #news { position: absolute; inset: 0; z-index: 6; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; color: var(--ui-paper); pointer-events: auto; }
+#travel { position: absolute; inset: 0; z-index: 6; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; color: var(--ui-paper); pointer-events: auto; }
 #travel { display: grid; grid-template-rows: auto 1fr auto; gap: 14px; padding: 26px 32px 20px; background: radial-gradient(ellipse at 50% 30%, #1b3a31f2, #0a1714fa); }
-#travel:not([open]), #news:not([open]) { display: none; }
+#travel:not([open]) { display: none; }
 .travel-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; border-bottom: 2px solid var(--ui-gold); padding-bottom: 10px; }
 .travel-heading h1 { margin: 2px 0 6px; font-size: 30px; letter-spacing: -.01em; }
 .travel-lines, .travel-status { margin: 0; display: flex; gap: 6px; align-items: center; font-size: 15px; }
@@ -623,33 +623,16 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .travel-help { margin: 0; display: flex; gap: 22px; justify-content: center; font-size: 13px; color: var(--ui-muted); }
 .travel-help kbd { width: auto; min-width: 21px; padding: 0 4px; margin-right: 4px; }
 
-/* The news: the whole screen is the broadcast; the filmed 3D set shows through, the game's HUD steps aside. */
-#hud:has(#news[open]) > :not(#news):not(#blackout) { visibility: hidden; }
-#news { background: none; font-family: 'Manrope', 'DM Sans', sans-serif; color: #fff; }
-.news-scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(#0000 0 2px, #0000000c 2px 4px), radial-gradient(ellipse at center, #0000 60%, #0006); }
-.news-channel, .news-live, .news-caption { position: absolute; margin: 0; font-weight: 800; letter-spacing: .08em; text-shadow: 0 1px 3px #000a; }
-.news-channel { top: 4%; right: 3.5%; padding: 8px 14px; border: 3px solid #fff; background: #13305cdd; font-size: 18px; letter-spacing: .16em; }
-.news-live { top: 4%; left: 3.5%; display: flex; gap: 9px; align-items: center; padding: 6px 12px; background: #c4141c; font-size: 15px; }
-.news-live i { width: 10px; height: 10px; border-radius: 50%; background: #fff; animation: news-blink 1s steps(2) infinite; }
-.news-caption { top: calc(4% + 40px); left: 3.5%; padding: 4px 10px; background: #000a; font-size: 13px; font-weight: 700; }
-@keyframes news-blink { 50% { opacity: 0; } }
-.news-reporter { position: absolute; left: 3.5%; bottom: calc(10% + 118px); display: none; padding: 8px 16px; border-left: 6px solid #c4141c; background: #13305cee; }
-#news[data-shot="reporter"] .news-reporter { display: grid; animation: news-in .4s ease both; }
-.news-reporter strong { font-size: 20px; }
-.news-reporter span { font-size: 13px; color: #cfe0ff; letter-spacing: .06em; }
-#news[data-shot="phone"]::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #000 0 26%, #0000 26% 74%, #000 74%); opacity: .85; }
-@keyframes news-in { from { transform: translateX(-30px); opacity: 0; } }
-.news-band { position: absolute; left: 0; right: 0; bottom: 6.5%; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 18px; align-items: center; padding: 14px 3.5%; background: linear-gradient(90deg, #f7f4ec, #ffffffee); color: #13202a; }
-.news-kicker { grid-row: span 2; padding: 10px 16px; background: #d0101b; color: #fff; font-weight: 900; letter-spacing: .06em; font-size: 22px; }
-.news-band h1 { margin: 0; font-size: clamp(22px, 2.6vw, 38px); line-height: 1.1; letter-spacing: -.01em; }
-.news-band p { margin: 3px 0 0; font-size: 16px; color: #445; font-weight: 600; }
-.news-ticker { position: absolute; left: 0; right: 0; bottom: 0; height: 6.5%; display: flex; align-items: center; overflow: hidden; background: #13305c; font-weight: 600; font-size: 17px; }
-.news-ticker div { display: flex; gap: 3em; padding-left: 100%; white-space: nowrap; animation: news-ticker 42s linear infinite; }
-.news-ticker span::before { content: '●'; margin-right: .8em; color: #f3cf78; }
-@keyframes news-ticker { to { transform: translateX(-100%); } }
-.news-help { position: absolute; right: 3.5%; top: calc(4% + 52px); margin: 0; font-size: 13px; color: #fffc; text-shadow: 0 1px 3px #000; }
-.news-help kbd { color: #fff; border-color: #fff8; }
-@media (prefers-reduced-motion: reduce) { .news-ticker div, .city-station-glow, .map-marker .map-halo, .map-marker .map-storm, .news-live i { animation: none; } .news-ticker div { padding-left: 2em; } }
+/* The end of chapter 2's countdown (story-ui.ts): her pink over everything, one way back. */
+#doom { position: absolute; inset: 0; z-index: 40; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; pointer-events: auto; background: radial-gradient(ellipse at center, #5c1238e6, #1d0614f8); color: #ffe6f2; animation: story-card-in .9s ease both; }
+#doom[hidden] { display: none; }
+#doom .battle-kicker { color: #ff9cc8; }
+#doom h1 { margin: 0; font-size: clamp(34px, 5vw, 64px); font-style: italic; letter-spacing: -.02em; }
+#doom p { margin: 0 0 14px; font-family: 'Manrope', sans-serif; font-size: 18px; color: #f3c6dc; }
+#doom button { padding: 12px 22px; border: 0; border-radius: 2px; background: #ffe6f2; color: #5c1238; font: inherit; font-size: 18px; font-weight: 700; box-shadow: 5px 5px 0 #ff6fae88; cursor: pointer; }
+#doom button:focus-visible { outline: 3px solid #ff6fae; outline-offset: 3px; }
+#doom small { color: #d79ab8; font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .city-station-glow, .map-marker .map-halo, .map-marker .map-storm { animation: none; } #doom { animation: none; } }
 
 .party-animas { margin-top: 14px; }
 .party-animas ul { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 6px; padding: 0; list-style: none; }

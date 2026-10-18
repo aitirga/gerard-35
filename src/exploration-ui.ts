@@ -126,7 +126,7 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
     if (event.altKey || event.ctrlKey || event.metaKey || (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable="true"]'))) return;
     const panel = PANELS.find(p => p.key === event.code);
     if (panel || (active && event.key === 'Escape')) {
-      if (hud.hasAttribute('data-battle') || hud.hasAttribute('data-dialogue')) return;
+      if (hud.hasAttribute('data-battle') || hud.hasAttribute('data-dialogue') || hud.hasAttribute('data-watching')) return;
       event.preventDefault(); event.stopImmediatePropagation();
       if (!event.repeat) { if (panel) toggle(panel.id); else close(); }
     } else if (active && event.key === 'Tab') {

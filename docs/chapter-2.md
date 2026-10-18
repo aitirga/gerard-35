@@ -31,8 +31,8 @@ replaced by **open progression**, as decided on 2026-10-18:
   goes pink and black and Gerard sits up in bed at home, "¡NO!", with Aitor beside him. It keeps the
   dreamlike opening of the old loop as the game's way of forgiving, and it is diegetic: Gerard
   literally wakes up from it. Aitor's line changes with how many times it has happened.
-- **No clock.** Time of day is not a resource. If a friend's story needs a time ("a las once me
-  voy"), it is part of that friend's mission, not a global timer.
+- **But the days count** (decided on 2026-10-18, see *The Queen's advance* below): an unspoken
+  countdown gives time a meaning and keeps side activities from eating the game.
 
 ## The morning (block 0 and 1)
 
@@ -41,8 +41,10 @@ replaced by **open progression**, as decided on 2026-10-18:
 2. **The TV calls him.** Leaving the bedroom, the living room flickers: the TV has switched itself
    on. If Gerard heads for the front door first, Aitor stops him: *"Espera. ¿Oyes eso? La tele se ha
    encendido sola."* (a diegetic gate, the only one in the flat).
-3. **Approaching the TV** (no key: just walking up to it), the screen fills the view as a news
-   broadcast:
+3. **The TV in the living room plays the news all day, looping, while they are at home**: it is a
+   real TV in the room, filmed in 3D (`src/news-tv.ts`), never a full screen over the game.
+   **Approaching it** (no key: just walking up to it) the camera comes close to the screen to watch
+   it; *"Mirar la tele"* does the same later, and any key looks away. On the screen:
    - a red **ÚLTIMA HORA** band and the headline *"Aparece un castillo rosa encima de la escuela
      Rec Comtal"*, with the subtitle *"Todos los alumnos estaban dentro"*;
    - **filmed images in a loop**: the screen cuts to Trinitat Vella in 3D, the castle on the
@@ -52,13 +54,58 @@ replaced by **open progression**, as decided on 2026-10-18:
    - a **ticker** along the bottom with the day's other news. This is where the first
      **hidden clues** live (see below): *"Rodalies: la R4 se amplía desde La Sagrera hasta
      Cardedeu"*, among ordinary items.
-   - Any key or button closes it; *"Mirar la tele"* shows it again.
+   - The headline changes each morning with the Queen's advance (below).
 4. After it, Gerard and Aitor talk: the castle is *the* castle from his dream. Aitor still
    half-believes it is a dream; he comes anyway (*"Donde vayas tú, voy yo"*).
 5. **The front door** now opens onto the **Meridiana**: the avenue, its trees and benches, the
    flats, and the **metro entrance** with its red sign. Walking up to it marks the moment the city
    opens (`metro` flag): from here every line Gerard knows is a way to anywhere, including the
    castle.
+
+## The Queen's advance (the unspoken countdown)
+
+If Gerard and Aitor do nothing to stop her, La Reina Bubbaloo's power keeps spreading, and one day
+they wake up and there is no flat any more. Nothing on screen counts it; the world shows it.
+
+**Days and hours.** Each day runs from 08:00 to 22:00 (`src/days.ts`). Looking, talking and walking
+are free; doing things takes hours:
+
+| Activity | Hours |
+| --- | --- |
+| A metro trip | 1 |
+| A fight (the palace guards) | 2 |
+| Playing the piano at home | 2 |
+| A coffee on the balcony | 1 |
+| A friend's mission (to come) | 2–4 |
+
+The day ends at 22:00 wherever they are (Aitor: *"Ya está. Es de noche"*), when they go to bed
+(*"Dormir"* at the bed, once the news has been seen), or when they fall in a fight. Black, and they
+wake up the next morning in bed, "¡NO!", with everything done kept.
+
+**How it is told, never counted:**
+- The light: from 18:00 the evening turns pinker, and Aitor says so (at 18:00 and at 20:00).
+- The TV at home: the headline gets worse each morning (`NEWS.stages`): it grows over Trinitat
+  Vella, reaches Sant Andreu, the Meridiana…
+- Aitor every morning: more worried each day (`LINES_2.morning`).
+- The castle: bigger each day on the school (up to 1.6 times), the streets pinker (Trinitat Vella,
+  then the Meridiana outside the flat, then the flat).
+- The network map: a pink stain creeps from the school towards home.
+
+**Her spread** is `(day − 1 − 3 × ánimas) / 6`: six days without any help and on the seventh
+morning it reaches the end; **each ánima wins three days back**. So a day spent on the piano and
+coffees is a day closer to the end, and a day spent helping a friend pushes her back. Each friend's
+mission should fit in a day.
+
+**The end.** On that morning the flat is already part of her castle: gum over the walls and floors,
+thorns, everything pink (`story.doomed`). Aitor: *"Hemos llegado tarde."* A screen says she has
+covered everything, with one button: **Volver al día anterior**. It takes them back to the morning
+before, with that day's progress lost and everything before it kept (`story.rewind`): Gerard wakes
+up "having seen tomorrow". To get out of the loop they must do something that day that pushes her
+back.
+
+**Saving.** The day, the hour and the last two mornings are saved with the story. Going back a day
+is the only thing that takes flags away, so the save carries an `epoch` that grows with each
+rewind: the server lets a newer epoch replace the flags, and ignores tabs still on an older one.
 
 ## Getting around
 
@@ -177,18 +224,20 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
   `party`, `battleParty` and `palaceGuards` read the ánimas from them.
 - `src/chapter-2.ts`: chapter 2's lines, places, triggers, the news broadcast and the clues.
 - `src/animas.ts`: the ánimas: who they come from, colour, stat bonus.
-- `src/news-ui.ts`: the news broadcast overlay (headline, looping aerial map, ticker).
+- `src/days.ts`: days, hours, the Queen's spread, saved mornings.
+- `src/news-tv.ts`: the news on the flat's TV (the set on its own layer, filmed into the screen).
 - `src/transit.ts`, `src/city-map.ts`, `src/travel-ui.ts`: lines, stations, the network map and the
   trip (`docs/barcelona.md`).
 - Scenes: `meridiana-calle` (the avenue and the metro) and `rec-comtal` (the school under the
   palace), designed by hand and built with `just geo-build` from `assets/geo/<zone>/`.
-- `src/news-set.ts`: the filmed news set; `src/map-markers.ts`: icons on the network map.
+- `src/news-set.ts`: the news set and its shots; `src/map-markers.ts`: icons on the network map.
 - `src/game.ts`: proximity triggers (`story.triggers`), story redirects of doors
   (`story.redirect`), the palace standing on the school, the guards' fight.
 - Story events: `near` (walked up to a trigger), `arrive` (came out of a station), `battle` with
-  `won: false` in chapter 2 (falls and wakes up). New effects: `news`, `metro` (the station map),
-  `fall`, and `look` (the camera turns to a scene anchor, e.g. the castle on arrival).
-- Screenshots: `just screenshots chapter-2-city`.
+  `won: false` in chapter 2 (falls and wakes up). New effects: `news` (watch the TV), `metro`
+  (the station map), `fall`, `look` (the camera turns to a scene anchor) and `doom` (the end).
+- Screenshots: `just screenshots chapter-2-city`, `castle-threat`, `countdown`; `just dev-day 6` wakes
+  up on a later day.
 
 ## Implementation list
 
@@ -199,7 +248,8 @@ Done in the first slice (2026-10-18):
 2. Aitor's diegetic gate at the front door until the news has been seen.
 3. `meridiana-calle`: the avenue outside the flat, the metro entrance, home's street door.
 4. The network map (cartoon Barcelona, L1 and L5, markers), travel along a line, arrival.
-8. The news filmed in 3D on a set in Trinitat Vella, and the castle's threat (towers, thorns, storm, eyes).
+8. The news filmed in 3D on a set in Trinitat Vella, playing on the flat's TV, and the castle's threat (towers, thorns, storm, eyes).
+9. The days: hours, evening, night, sleep; the Queen's spread (castle, light, headlines, map, Aitor); the end and going back a day; saved with an epoch.
 5. `rec-comtal`: the school under the palace at Trinitat Vella, with the L1 entrance.
 6. The palace interior reused in chapter 2 with Aitor; the guardians' fight scaled by ánimas;
    escape allowed; falling wakes Gerard at home with everything kept.

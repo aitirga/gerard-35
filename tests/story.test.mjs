@@ -252,3 +252,75 @@ test('ánimas strengthen the party and thin out the palace guards', () => {
   assert.ok(canWalk({ x: 16, z: 10 }, ENVIRONMENTS.palacio.grid));
   assert.deepEqual(new Story(upTo('wrapper-room')).guarded, [], 'no guards in the dream');
 });
+
+test('days: things take hours, the evening is noticed, and at night the day is over', () => {
+  const story = new Story(upTo('tv-news'));
+  assert.deepEqual(story.clock, { day: 1, hour: 8 });
+  story.handle({ type: 'interact', id: 'meridiana-piano' });
+  assert.equal(story.clock.hour, 10, 'a piece on the piano takes two hours');
+  story.handle({ type: 'arrive', station: 'fabra-i-puig' });
+  assert.equal(story.clock.hour, 11, 'a trip takes one');
+  for (let i = 0; i < 3; i++) story.handle({ type: 'interact', id: 'meridiana-piano' });
+  assert.equal(story.clock.hour, 17);
+  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-balcony' })), ['dialogue', 'dialogue'], 'Aitor notices the evening');
+  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-piano' })), ['dialogue', 'dialogue'], 'and wants to go home late');
+  assert.ok(story.dusk > 0 && story.dusk < 1, 'the light turns with the evening');
+  story.handle({ type: 'interact', id: 'meridiana-balcony' });
+  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-balcony' })), ['dialogue', 'dialogue', 'fall', 'travel', 'wake', 'dialogue'], 'at 22:00 night falls wherever they are');
+  assert.deepEqual(story.clock, { day: 2, hour: 8 });
+  assert.equal(story.dusk, 0);
+});
+
+test('days: going to bed ends the day, and Aitor will not sleep before the news', () => {
+  const early = new Story(upTo('got-wrapper'));
+  assert.deepEqual(beats(early.handle({ type: 'interact', id: 'meridiana-bed' })), ['dialogue']);
+  assert.equal(early.clock.day, 1);
+  const story = new Story(upTo('tv-news'));
+  assert.ok(story.interactions('meridiana').some(i => i.id === 'meridiana-bed'));
+  assert.ok(canWalk(story.interactions('meridiana').find(i => i.id === 'meridiana-bed').cell, ENVIRONMENTS.meridiana.grid));
+  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-bed' })), ['dialogue', 'fall', 'travel', 'wake', 'dialogue']);
+  assert.equal(story.clock.day, 2);
+  assert.deepEqual(new Story(upTo('wrapper-room')).interactions('meridiana').filter(i => i.id === 'meridiana-bed'), [], 'not in chapter 1');
+});
+
+test("the Queen's advance: without help she covers everything on the seventh morning, and the way out is back a day", () => {
+  const story = new Story(upTo('castle'));
+  const sleep = () => story.handle({ type: 'interact', id: 'meridiana-bed' });
+  const spreads = [];
+  for (let day = 1; day < 6; day++) { spreads.push(story.spread); sleep(); }
+  assert.ok(spreads.every((s, i) => i === 0 || s > spreads[i - 1]), 'it spreads every morning');
+  assert.equal(story.clock.day, 6);
+  assert.equal(story.doomed, false);
+  // On the sixth day they get the shoes back from nowhere, say: anything done that day.
+  story.handle({ type: 'interact', id: 'meridiana-piano' });
+  story.flags.add('palace-tried');
+  const end = sleep();
+  assert.deepEqual(beats(end), ['dialogue', 'fall', 'travel', 'wake', 'dialogue', 'doom']);
+  assert.equal(story.doomed, true);
+  const back = story.rewind();
+  assert.deepEqual(beats(back), ['travel', 'wake', 'dialogue']);
+  assert.deepEqual(story.clock, { day: 6, hour: 8 });
+  assert.equal(story.has('palace-tried'), false, "the last day's progress is lost");
+  assert.equal(story.has('castle'), true, 'everything before it is kept');
+  assert.equal(story.days.epoch, 1);
+  assert.equal(story.doomed, false);
+  // Each ánima pushes her back three days.
+  const helped = new Story([...upTo('castle'), 'anima-nuria']);
+  helped.days.clock.day = 7;
+  assert.equal(helped.doomed, false);
+  helped.days.clock.day = 10;
+  assert.equal(helped.doomed, true);
+});
+
+test('days saved elsewhere: later clocks win, and a rewind (newer epoch) replaces the flags', () => {
+  const story = new Story(upTo('castle'));
+  story.loadDays({ epoch: 0, clock: { day: 3, hour: 12 }, mornings: [] });
+  assert.deepEqual(story.clock, { day: 3, hour: 12 });
+  story.loadDays({ epoch: 0, clock: { day: 2, hour: 9 }, mornings: [] });
+  assert.deepEqual(story.clock, { day: 3, hour: 12 }, 'an older save does not turn the clock back');
+  story.loadDays({ epoch: 2, clock: { day: 2, hour: 8 }, mornings: [] }, upTo('tv-news'));
+  assert.equal(story.has('castle'), false);
+  assert.deepEqual(story.clock, { day: 2, hour: 8 });
+  story.loadDays({ nonsense: true });
+  assert.deepEqual(story.clock, { day: 2, hour: 8 });
+});
