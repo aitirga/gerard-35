@@ -1,0 +1,425 @@
+{
+ "note": "Sketch of Trinitat Vella around the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare de Déu de Lorda 25): the two streets, the school's two buildings and playground, and blocks of flats. Drawn with Via de Bàrcino on the camera side so the school's front faces it. Only the street names and the school's buildings are real; the layout is drawn by hand while OpenStreetMap was out of reach. Replace with `just geo rec-comtal`.",
+ "drawn": "2026-10-18",
+ "features": [
+  {
+   "id": "via-de-barcino",
+   "highway": "secondary",
+   "name": "Via de Bàrcino",
+   "line": [
+    [
+     -140,
+     22
+    ],
+    [
+     140,
+     22
+    ]
+   ]
+  },
+  {
+   "id": "mare-de-deu-de-lorda",
+   "highway": "residential",
+   "name": "Carrer de la Mare de Déu de Lorda",
+   "line": [
+    [
+     -140,
+     -52
+    ],
+    [
+     140,
+     -52
+    ]
+   ]
+  },
+  {
+   "id": "voravia-barcino",
+   "highway": "footway",
+   "line": [
+    [
+     -140,
+     15
+    ],
+    [
+     140,
+     15
+    ]
+   ]
+  },
+  {
+   "id": "carrer-0",
+   "highway": "residential",
+   "line": [
+    [
+     -98,
+     90
+    ],
+    [
+     -98,
+     -90
+    ]
+   ]
+  },
+  {
+   "id": "carrer-1",
+   "highway": "residential",
+   "line": [
+    [
+     -42,
+     90
+    ],
+    [
+     -42,
+     -90
+    ]
+   ]
+  },
+  {
+   "id": "carrer-2",
+   "highway": "residential",
+   "line": [
+    [
+     66,
+     90
+    ],
+    [
+     66,
+     -90
+    ]
+   ]
+  },
+  {
+   "id": "carrer-3",
+   "highway": "residential",
+   "line": [
+    [
+     112,
+     90
+    ],
+    [
+     112,
+     -90
+    ]
+   ]
+  },
+  {
+   "id": "escola",
+   "building": "school",
+   "name": "Institut Escola Rec Comtal",
+   "number": "90",
+   "rect": [
+    -30,
+    -4,
+    60,
+    16
+   ],
+   "levels": 3
+  },
+  {
+   "id": "escola-infantil",
+   "building": "school",
+   "name": "Escola Rec Comtal · Infantil",
+   "number": "25",
+   "rect": [
+    24,
+    -43,
+    30,
+    15
+   ],
+   "levels": 2
+  },
+  {
+   "id": "pati",
+   "area": "square",
+   "rect": [
+    -30,
+    -26,
+    84,
+    20
+   ]
+  },
+  {
+   "id": "jardi-escola",
+   "area": "grass",
+   "rect": [
+    -30,
+    -44,
+    50,
+    16
+   ]
+  },
+  {
+   "id": "placeta",
+   "area": "square",
+   "rect": [
+    -38,
+    4,
+    6,
+    10
+   ]
+  },
+  {
+   "id": "bloc-0-0",
+   "building": "apartments",
+   "rect": [
+    -134,
+    68,
+    30,
+    18
+   ],
+   "levels": 5
+  },
+  {
+   "id": "bloc-0-1",
+   "building": "apartments",
+   "rect": [
+    -92,
+    68,
+    44,
+    18
+   ],
+   "levels": 5
+  },
+  {
+   "id": "bloc-0-2",
+   "building": "apartments",
+   "rect": [
+    -36,
+    68,
+    96,
+    18
+   ],
+   "levels": 5
+  },
+  {
+   "id": "bloc-0-3",
+   "building": "apartments",
+   "rect": [
+    72,
+    68,
+    34,
+    18
+   ],
+   "levels": 5
+  },
+  {
+   "id": "bloc-0-4",
+   "building": "apartments",
+   "rect": [
+    118,
+    68,
+    16,
+    18
+   ],
+   "levels": 5
+  },
+  {
+   "id": "bloc-1-0",
+   "building": "apartments",
+   "rect": [
+    -134,
+    30,
+    30,
+    30
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-1-1",
+   "building": "apartments",
+   "rect": [
+    -92,
+    30,
+    44,
+    30
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-1-3",
+   "building": "apartments",
+   "rect": [
+    72,
+    30,
+    34,
+    30
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-1-4",
+   "building": "apartments",
+   "rect": [
+    118,
+    30,
+    16,
+    30
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-2-0",
+   "building": "apartments",
+   "rect": [
+    -134,
+    -72,
+    30,
+    12
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-2-1",
+   "building": "apartments",
+   "rect": [
+    -92,
+    -72,
+    44,
+    12
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-2-2",
+   "building": "apartments",
+   "rect": [
+    -36,
+    -72,
+    96,
+    12
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-2-3",
+   "building": "apartments",
+   "rect": [
+    72,
+    -72,
+    34,
+    12
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-2-4",
+   "building": "apartments",
+   "rect": [
+    118,
+    -72,
+    16,
+    12
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-3-0",
+   "building": "apartments",
+   "rect": [
+    -134,
+    -90,
+    30,
+    14
+   ],
+   "levels": 5
+  },
+  {
+   "id": "bloc-3-1",
+   "building": "apartments",
+   "rect": [
+    -92,
+    -90,
+    44,
+    14
+   ],
+   "levels": 5
+  },
+  {
+   "id": "bloc-3-2",
+   "building": "apartments",
+   "rect": [
+    -36,
+    -90,
+    96,
+    14
+   ],
+   "levels": 5
+  },
+  {
+   "id": "bloc-3-3",
+   "building": "apartments",
+   "rect": [
+    72,
+    -90,
+    34,
+    14
+   ],
+   "levels": 5
+  },
+  {
+   "id": "bloc-3-4",
+   "building": "apartments",
+   "rect": [
+    118,
+    -90,
+    16,
+    14
+   ],
+   "levels": 5
+  },
+  {
+   "id": "placa-nord",
+   "area": "square",
+   "rect": [
+    -36,
+    30,
+    96,
+    30
+   ]
+  },
+  {
+   "id": "bloc-mig-0",
+   "building": "apartments",
+   "rect": [
+    -134,
+    -40,
+    30,
+    32
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-mig-1",
+   "building": "apartments",
+   "rect": [
+    -92,
+    -40,
+    44,
+    32
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-mig-3",
+   "building": "apartments",
+   "rect": [
+    72,
+    -40,
+    34,
+    32
+   ],
+   "levels": 4
+  },
+  {
+   "id": "bloc-mig-4",
+   "building": "apartments",
+   "rect": [
+    118,
+    -40,
+    16,
+    32
+   ],
+   "levels": 4
+  }
+ ]
+}

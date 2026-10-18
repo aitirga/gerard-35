@@ -8,6 +8,10 @@ import { createBattleUI } from './battle-ui';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent } from './story';
 import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
+import { createTravelUI } from './travel-ui';
+import { createNewsUI } from './news-ui';
+import { STATION_PLACES, entranceId } from './transit';
+import { palaceGuards } from './battle';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
@@ -21,6 +25,9 @@ const environmentSelect = document.querySelector<HTMLSelectElement>('#environmen
 const interactButton = document.querySelector<HTMLButtonElement>('#interact')!;
 const dialogue = createDialogueBanner(document.querySelector<HTMLElement>('#hud')!);
 const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
+// Chapter 2: the station map (metro and Rodalies) and the TV news.
+const travelUI = createTravelUI(document.querySelector<HTMLElement>('#hud')!);
+const newsUI = createNewsUI(document.querySelector<HTMLElement>('#hud')!);
 const hud = document.querySelector<HTMLElement>('#hud')!;
 // Development: ?story=<flag> starts with every flag up to that one (just dev-chapter), ?story=new from scratch.
 const devStory = (() => {
@@ -123,14 +130,32 @@ try {
     else if (effect.kind === 'item') storyUI.item(effect.item);
     else if (effect.kind === 'hint') storyUI.hint(effect.id, learned[effect.id]);
     else if (effect.kind === 'minion') { await game.summonMinion(); storyEvent({ type: 'minion' }); }
-    else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(); }
+    else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(effect.encounter); }
     else if (effect.kind === 'palace') { await game.raisePalace(); storyEvent({ type: 'palace' }); }
     else if (effect.kind === 'gate') await game.popGate();
     else if (effect.kind === 'travel') game.setEnvironment(effect.environment, effect.cell);
     else if (effect.kind === 'drain') await game.riseFromDrain();
     else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }
     else if (effect.kind === 'wake') await game.wake(() => storyUI.blackout(false, 2000));
+    else if (effect.kind === 'fall') await storyUI.blackout(true, 1600);
+    else if (effect.kind === 'news') { game.setPaused(true); await newsUI.show(); game.setPaused(!!exploration.active); }
+    else if (effect.kind === 'metro') await ride(effect.station);
+    else if (effect.kind === 'look') await game.look(effect.anchor);
     else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
+  }
+  /** Down into a station: pick a destination on the network map, ride, and come up its entrance. */
+  async function ride(from: string) {
+    exploration.close(); game.setPaused(true);
+    const to = await travelUI.show(from, {}, story.has('tv-news'));
+    const place = to ? STATION_PLACES[to] : undefined;
+    const entrance = place && ENVIRONMENTS[place.environment].interactions.find(i => i.id === entranceId(to!));
+    if (place && entrance) {
+      await storyUI.blackout(true, 450);
+      game.setEnvironment(place.environment, entrance.cell);
+      await storyUI.blackout(false, 650);
+    }
+    game.setPaused(!!exploration.active);
+    if (to) storyEvent({ type: 'arrive', station: to });
   }
   function storyChanged() {
     game.refreshStory();
@@ -147,8 +172,9 @@ try {
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
   const game = createGame(canvas, {
-    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, options); },
-    onBattleEnd: (phase, encounter) => storyEvent({ type: 'battle', won: phase === 'won', encounter }),
+    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, guards: palaceGuards(story.animas.length) }); },
+    // Backing off is neither a win nor a fall.
+    onBattleEnd: (phase, encounter) => { if (phase !== 'escaped') storyEvent({ type: 'battle', won: phase === 'won', encounter }); },
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onStep: (steps, cell) => {
@@ -163,10 +189,12 @@ try {
       exploration.update(id, cell);
       environmentSelect.value = id;
       const geo = ENVIRONMENTS[id].geo;
-      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
+      // Chapter 2's palace stands on the Rec Comtal school, not at the end of Passatge Maresme.
+      const school = id === 'palacio' && story.adult;
+      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
       document.querySelector('#location-detail')!.textContent = geo ? `Según el mapa · ${geo.attribution}` : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
-        : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
+        : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
       document.title = `${ENVIRONMENTS[id].name} · Gerard 35`;
     },
@@ -178,6 +206,7 @@ try {
     onStory: storyEvent,
   }, story);
   const controllerContext = () => battleUI.controllerContext !== 'world' ? battleUI.controllerContext
+    : travelUI.open ? 'travel' : newsUI.open ? 'news'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   const controller = createControllerUI({
     context: controllerContext,
@@ -192,6 +221,10 @@ try {
     panel: id => id ? exploration.show(id) : exploration.close(),
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
+      if (travelUI.open || newsUI.open) {
+        if (action !== 'overview' && action !== 'character') (travelUI.open ? travelUI : newsUI).control(action);
+        return;
+      }
       if (player === 2) {
         if (action === 'overview' || action === 'character') return;
         if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
@@ -243,9 +276,9 @@ try {
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => battleUI.open(params.get('party') === 'adult' ? new Story(['caught', 'noista']).battleParty(true) : params.get('allies') === '2' ? 2 : 1, foes));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged } });
+    Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged, storyEvent, travelUI, newsUI } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { travelUI.destroy(); newsUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

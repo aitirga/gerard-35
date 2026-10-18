@@ -18,6 +18,11 @@ src/environments.ts  geoEnvironment() ─► Environment (grid, spawn, props, in
 src/geo-scenery.ts   buildGeo()       ─► PlayCanvas meshes: ground, roads, river, buildings, hills
 ```
 
+Without network access to OpenStreetMap a zone can be **sketched** by hand in
+`assets/geo/<zone>/sketch.json` (see [barcelona.md](barcelona.md#sketched-zones-when-openstreetmap-cannot-be-reached)):
+`build` uses it when there is no `osm.json`. Places may also be doors (`to`) or left to the story
+(no `lines`), and `anchors` name points for the game's own pieces (the palace on the school).
+
 `just geo <zone>` runs fetch and build together; `just geo-build <zone>` rebuilds offline from
 the saved data, so tweaking styles never needs the network.
 
@@ -118,10 +123,11 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `reference` | `checked` date, `streetview_capture`, `notes` (one line per observation) and `viewpoints` (`name`, `lat`, `lon`, `heading`, `pitch`) for `fetch` |
 | `styles` | Named looks; `default` is merged under every other one (see below) |
 | `buildings` | Overrides by `way/<id>` (wins) or `tag:building=<value>`: `style`, `levels`, `roof_kind`, `label`, and per house `walls` (one colour), `facade`, `ground` |
-| `props` | Extra props in metres: `tree` (`species`, `scale`), `car` (`color`), `lamp`, `manhole`. Cars park along x when the rotation is 0 or 180 |
+| `props` | Extra props in metres: `tree` (`species`, `scale`), `car` (`color`), `lamp`, `manhole`, `metro` (a station sign and stair; `network`: `metro` or `rodalies`). Cars park along x when the rotation is 0 or 180 |
 | `trees` | Generated trees: `forest_every_m`, `riverbank_every_m`, `species` list |
-| `places` | Things to look at: `id`, `label`, `lines`, and either `osm` (any feature id) or `east_m`/`south_m` |
+| `places` | Things to look at: `id`, `label`, `lines`, and either `osm` (any feature id) or `east_m`/`south_m`. With `to` (`environment`, `cell`) instead of `lines` it is a door; with neither, the story answers it (station entrances `station-<id>`, clues) |
 | `labels` | Ground text: `text`, `east_m`, `south_m`, `width` in cells |
+| `anchors` | Named points for the game's own pieces: `east_m`, `south_m`, optional `y_m` (height) |
 
 ### Styles
 
@@ -130,8 +136,8 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `walls` | List of render colours; each building gets one |
 | `base`, `trim`, `roof` | Stone plinth, frames/bands/timber, roof tiles |
 | `roof_kind` | `hip`, `gable`, `pyramid`, `flat`. Footprints that fill less than 85 % of their oriented box (an L, a courtyard) get a flat roof on the real outline with a parapet |
-| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (framing, brown shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows) |
-| `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade` |
+| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (framing, brown shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks: roller blinds half down, small iron balconies), `school` (a band of glazing with coloured frames) |
+| `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade`, `shops` (shop windows under striped awnings, some shutters down), `lobby` (glass doors under a coloured band) |
 | `levels` | Default storeys (OSM `building:levels` or `height` win when present) |
 
 A new facade or ground kind is one more branch in `facade()` in `src/geo-scenery.ts`: it paints a

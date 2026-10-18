@@ -7,6 +7,7 @@ import { ITEMS, ITEM_KIND_LABELS, itemsOfKind, type ItemKind } from './items';
 import type { MemberId, PartyMember, Story } from './story';
 import { CLASS_STATS, type ClassId } from './battle';
 import { CLASSES } from './classes';
+import { ANIMAS, animaBonus } from './animas';
 import { SPEAKERS } from './dialogue';
 import { PROFILES, STAT_LABELS, withBonus, type Stats } from './stats';
 
@@ -40,6 +41,15 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
   root.innerHTML = `<header class="journal-heading"><div><span class="battle-kicker">DIARIO / GERARD 35</span><h1 id="journal-title"></h1></div><button class="journal-close" type="button" aria-label="Cerrar panel">Cerrar <kbd>Esc</kbd></button></header><nav class="journal-tabs" aria-label="Secciones del diario">${PANELS.map(p => `<button type="button" data-panel="${p.id}" aria-pressed="false">${p.label}</button>`).join('')}</nav><div class="journal-content"></div><p class="journal-help">Esc · Volver a la aventura</p>`;
   hud.append(dock, root);
   const content = root.querySelector<HTMLElement>('.journal-content')!;
+  /** Chapter 2: the friends' ánimas the party carries, each a light of its own colour. */
+  function animaSection() {
+    const owned = story.animas.map(id => ANIMAS[id]);
+    const bonus = animaBonus(story.animas);
+    const total = (Object.entries(bonus) as [keyof Stats, number][]).map(([key, value]) => `${STAT_LABELS[key]} +${value}`).join(' · ');
+    return `<section class="party-animas" aria-label="Ánimas"><span class="battle-kicker">ÁNIMAS</span>${owned.length
+      ? `<ul>${owned.map(a => `<li style="--anima:${a.colour}"><i aria-hidden="true"></i><strong>${escape(a.name)}</strong><span>${escape(a.friend)}</span></li>`).join('')}</ul><p class="journal-muted">Todo el equipo: ${total}</p>`
+      : '<p class="journal-muted">Ninguna todavía.</p>'}</section>`;
+  }
   /** A member's stats with their class on, and the class picker: classes belong to the whole party. */
   function memberStats(member: PartyMember) {
     const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
@@ -59,7 +69,7 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
     if (active === 'character') {
       content.innerHTML = `<article class="character-sheet"><div class="character-portrait">${story.adult ? `<span class="character-art" role="img" aria-label="Retrato provisional de Gerard a los treinta y cinco">${SPEAKERS.gerard35.art}</span>` : `<img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt="Retrato de Gerard de niño con gafas"/>`}</div><div><span class="battle-kicker">EL PROTAGONISTA</span><h2>Gerard</h2><p>${story.adult ? 'Treinta y cinco años. Y el día no ha hecho más que empezar.' : 'Una infancia llena de aventuras.'}</p><dl><div><dt>Ubicación</dt><dd></dd></div><div><dt>Pasos de esta sesión</dt><dd>${steps}</dd></div><div><dt>Compañía</dt><dd>${story.partner === 'aitor' ? 'Aitor' : COMPANION[story.companion]}</dd></div></dl></div></article><section class="party-equipment" aria-label="Equipo"><span class="battle-kicker">EQUIPO</span><div class="equipment-cards">${story.party.map(member => `<article class="equipment-card" data-member="${member.id}"><h3>${member.name}</h3>${member.equipment.length
         ? `<ul>${member.equipment.map(id => `<li><span>${ITEMS[id].equip === 'feet' ? 'Pies' : 'Espalda'}</span>${escape(ITEMS[id].name)}</li>`).join('')}</ul>`
-        : '<ul><li class="empty"><span>—</span>Nada equipado</li></ul>'}<p>${escape(member.note)}</p>${memberStats(member)}</article>`).join('')}</div></section>`;
+        : '<ul><li class="empty"><span>—</span>Nada equipado</li></ul>'}<p>${escape(member.note)}</p>${memberStats(member)}</article>`).join('')}</div></section>${story.adult ? animaSection() : ''}`;
       content.querySelector('dd')!.textContent = ENVIRONMENTS[location].name;
     } else if (active === 'items') {
       const column = (kind: ItemKind) => {

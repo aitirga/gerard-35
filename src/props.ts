@@ -163,6 +163,35 @@ export function createPropKit() {
     part(holder, 'Farola', 'box', metal, [0, 1.65, 0], [0.075, 3.3, 0.075]);
     part(holder, 'Luminaria', 'box', glow, [0, 3.28, 0], [0.38, 0.16, 0.45]);
   }
+  const signRed = mat('Rombo del metro', '#d6252f', 0.35, 0.35);
+  const signOrange = mat('Rombo de Rodalies', '#e57d1e', 0.35, 0.35);
+  const signWhite = mat('Letra del rótulo', '#ffffff', 0.3, 0.5);
+  const stairs = mat('Escalera del metro', '#3b3f42', 0.2);
+  const railing = mat('Barandilla del metro', '#5c6366', 0.6);
+  /**
+   * A station entrance: the red diamond with its white M on a pole (Rodalies: orange with an R),
+   * beside a railed stair going down. Only the pole stands on the anchor cell.
+   */
+  function station(holder: pc.Entity, network: 'metro' | 'rodalies') {
+    part(holder, 'Poste del rótulo', 'cylinder', railing, [0, 1.2, 0], [0.09, 2.4, 0.09]);
+    const sign = new pc.Entity('Rótulo'); sign.setLocalPosition(0, 2.55, 0.05); holder.addChild(sign);
+    part(sign, 'Rombo', 'box', network === 'metro' ? signRed : signOrange, [0, 0, 0], [0.52, 0.52, 0.06], [0, 0, 45]);
+    const letter = (p: number[], s: number[], r = 0) => part(sign, 'Trazo', 'box', signWhite, p, s, [0, 0, r]);
+    if (network === 'metro') {
+      letter([-0.13, 0, 0.04], [0.06, 0.32, 0.02]); letter([0.13, 0, 0.04], [0.06, 0.32, 0.02]);
+      letter([-0.065, 0.06, 0.04], [0.05, 0.2, 0.02], 28); letter([0.065, 0.06, 0.04], [0.05, 0.2, 0.02], -28);
+    } else {
+      letter([-0.08, 0, 0.04], [0.06, 0.32, 0.02]); letter([0.02, 0.1, 0.04], [0.18, 0.06, 0.02]);
+      letter([0.02, 0, 0.04], [0.18, 0.05, 0.02]); letter([0.06, -0.09, 0.04], [0.05, 0.17, 0.02], 30);
+    }
+    // The stair down, in the next cell towards the camera: dark steps between two rails.
+    for (let i = 0; i < 4; i++) part(holder, 'Escalón', 'box', stairs, [0.95, 0.03 - i * 0.002, -0.3 + i * 0.25], [0.9, 0.03, 0.22]);
+    for (const dx of [0.45, 1.45]) {
+      part(holder, 'Barandilla', 'box', railing, [dx, 0.9, 0.1], [0.05, 0.05, 1.2]);
+      for (const dz of [-0.45, 0.65]) part(holder, 'Montante', 'box', railing, [dx, 0.45, dz], [0.05, 0.9, 0.05]);
+    }
+    part(holder, 'Barandilla trasera', 'box', railing, [0.95, 0.9, -0.48], [1.0, 0.05, 0.05]);
+  }
   function manhole(holder: pc.Entity) {
     // Flat street furniture: nothing here may suggest a collision the grid lacks.
     part(holder, 'Marco de alcantarilla', 'cylinder', rim, [0, 0.04, 0], [0.68, 0.012, 0.68]);
@@ -201,6 +230,7 @@ export function createPropKit() {
         if (prop.along === 'x') holder.children.forEach(c => { const p = c.getLocalPosition(); c.setLocalPosition(p.z, p.y, -p.x); c.setLocalRotation(QUARTER_TURN.clone().mul(c.getLocalRotation())); });
       }
       else if (prop.kind === 'lamp') lamp(holder);
+      else if (prop.kind === 'metro') station(holder, prop.network ?? 'metro');
       else manhole(holder);
       return holder;
     },

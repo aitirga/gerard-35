@@ -1,0 +1,198 @@
+{
+ "note": "Sketch of the Avinguda Meridiana by Fabra i Puig, outside Gerard and Aitor's flat: the side roads, the two carriageways with the planted median, two cross streets and the blocks of flats. Drawn by hand while OpenStreetMap was out of reach; replace with `just geo meridiana-calle`.",
+ "drawn": "2026-10-18",
+ "features": [
+  {
+   "id": "lateral-nord",
+   "highway": "residential",
+   "name": "Lateral de la Meridiana",
+   "line": [
+    [
+     -80,
+     -5
+    ],
+    [
+     80,
+     -5
+    ]
+   ]
+  },
+  {
+   "id": "calcada-nord",
+   "highway": "primary",
+   "name": "Avinguda Meridiana",
+   "line": [
+    [
+     -80,
+     4
+    ],
+    [
+     80,
+     4
+    ]
+   ]
+  },
+  {
+   "id": "calcada-sud",
+   "highway": "primary",
+   "name": "Avinguda Meridiana",
+   "line": [
+    [
+     -80,
+     17
+    ],
+    [
+     80,
+     17
+    ]
+   ]
+  },
+  {
+   "id": "lateral-sud",
+   "highway": "residential",
+   "name": "Lateral de la Meridiana",
+   "line": [
+    [
+     -80,
+     26
+    ],
+    [
+     80,
+     26
+    ]
+   ]
+  },
+  {
+   "id": "passeig-central",
+   "area": "grass",
+   "rect": [
+    -80,
+    8.5,
+    160,
+    4
+   ]
+  },
+  {
+   "id": "carrer-oest",
+   "highway": "residential",
+   "line": [
+    [
+     -34,
+     -50
+    ],
+    [
+     -34,
+     50
+    ]
+   ]
+  },
+  {
+   "id": "carrer-est",
+   "highway": "residential",
+   "line": [
+    [
+     22,
+     -50
+    ],
+    [
+     22,
+     50
+    ]
+   ]
+  },
+  {
+   "id": "voravia-nord",
+   "highway": "footway",
+   "line": [
+    [
+     -80,
+     -11
+    ],
+    [
+     80,
+     -11
+    ]
+   ]
+  },
+  {
+   "id": "voravia-sud",
+   "highway": "footway",
+   "line": [
+    [
+     -80,
+     31
+    ],
+    [
+     80,
+     31
+    ]
+   ]
+  },
+  {
+   "id": "bloc-nord-0",
+   "building": "apartments",
+   "rect": [
+    -80,
+    -46,
+    41,
+    32
+   ],
+   "levels": 8
+  },
+  {
+   "id": "bloc-sud-0",
+   "building": "apartments",
+   "rect": [
+    -80,
+    34,
+    41,
+    18
+   ],
+   "levels": 7
+  },
+  {
+   "id": "casa",
+   "building": "apartments",
+   "rect": [
+    -29,
+    -46,
+    46,
+    32
+   ],
+   "levels": 8
+  },
+  {
+   "id": "bloc-sud-1",
+   "building": "apartments",
+   "rect": [
+    -29,
+    34,
+    46,
+    18
+   ],
+   "levels": 7
+  },
+  {
+   "id": "bloc-nord-2",
+   "building": "apartments",
+   "rect": [
+    27,
+    -46,
+    53,
+    32
+   ],
+   "levels": 8
+  },
+  {
+   "id": "bloc-sud-2",
+   "building": "apartments",
+   "rect": [
+    27,
+    34,
+    53,
+    18
+   ],
+   "levels": 7
+  }
+ ]
+}

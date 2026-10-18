@@ -50,6 +50,9 @@ export interface GeoScene {
   roads: GeoRoad[];
   buildings: GeoBuilding[];
   props: ({ kind: string; x: number; z: number } & Record<string, unknown>)[];
-  places: { id: string; label: string; lines: string[]; cell: { x: number; z: number } }[];
+  /** Things to look at (`lines`), doors to another scene (`to`), or, with neither, the story's own. */
+  places: { id: string; label: string; lines: string[]; cell: { x: number; z: number }; to?: { environment: string; cell: { x: number; z: number } } }[];
   labels: { text: string; x: number; z: number; width: number }[];
+  /** Named points for pieces the game adds itself, e.g. where the palace stands (`y` in cells). */
+  anchors?: Record<string, { x: number; z: number; y?: number }>;
 }

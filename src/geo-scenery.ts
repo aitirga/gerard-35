@@ -225,9 +225,11 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const key = `${kind}|${wall}|${trim}|${base}`;
     let m = textures.get(key);
     if (m) return m;
-    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade'].includes(kind);
+    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby'].includes(kind);
     const w = ground ? 256 : 128, h = 192;
     const glass = '#2c3a42', wood = '#5b3d2a';
+    // Varies blinds, shutters and awnings between walls of different colours.
+    const seed = [...wall].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
     const c = canvas(w, h, ctx => {
       const stones = (fill: string, rows: number) => {
         ctx.fillStyle = fill; ctx.fillRect(0, 0, w, h);
@@ -271,6 +273,38 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         for (let i = 0; i < 14; i++) {
           ctx.fillStyle = ['#d23a4a', '#e8607a', '#c22f3a', '#4f7a3a'][i % 4];
           ctx.beginPath(); ctx.arc(22 + i * 6.3, 104 + jitter(i) * 6, 4 + jitter(i + 3) * 2, 0, Math.PI * 2); ctx.fill();
+        }
+      } else if (kind === 'flats' || kind === 'school') {
+        // Barcelona blocks of flats: a window with its roller blind half down and a small iron
+        // balcony; a school: one wide band of glazing per storey with coloured frames.
+        ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = 'rgba(0,0,0,.05)'; ctx.fillRect(0, h - 10, w, 10);
+        if (kind === 'school') {
+          ctx.fillStyle = trim; ctx.fillRect(0, 44, w, 104);
+          ctx.fillStyle = glass; ctx.fillRect(0, 52, w, 88);
+          ctx.fillStyle = 'rgba(190,220,235,.25)'; ctx.fillRect(6, 56, 40, 80);
+          ctx.fillStyle = trim; for (const x0 of [0, 64]) ctx.fillRect(x0, 44, 6, 104);
+        } else {
+          window(36, 40, 56, 100, trim);
+          ctx.fillStyle = '#d9cfbf'; ctx.fillRect(31, 35, 66, 16 + jitter(seed) * 30);
+          ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let y = 38; y < 50 + jitter(seed) * 30; y += 4) ctx.fillRect(31, y, 66, 1);
+          ctx.fillStyle = '#9d988d'; ctx.fillRect(22, 146, 84, 8);
+          ctx.fillStyle = '#2b2e30'; ctx.fillRect(22, 112, 84, 4);
+          for (let i = 0; i < 11; i++) ctx.fillRect(24 + i * 8, 112, 2.5, 34);
+        }
+      } else if (kind === 'shops' || kind === 'lobby') {
+        // Ground floors on a Barcelona avenue: shop windows under striped awnings, metal shutters;
+        // `lobby`: a school or block entrance, glass doors under a coloured band.
+        ctx.fillStyle = base; ctx.fillRect(0, 0, w, h);
+        for (const [i, x0] of [14, 142].entries()) {
+          const shut = kind === 'shops' && jitter(seed + i) > 0.7;
+          ctx.fillStyle = '#3a3f42'; ctx.fillRect(x0, 50, 100, h - 50);
+          ctx.fillStyle = shut ? '#8f9396' : 'rgba(255,214,150,.55)'; ctx.fillRect(x0 + 6, 56, 88, h - 62);
+          if (shut) { ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 58; y < h; y += 6) ctx.fillRect(x0 + 6, y, 88, 1.5); }
+          if (kind === 'shops') {
+            const stripe = ['#3f6b4a', '#a8423a', '#2f5d8a', '#c88b2c'][(seed + i) % 4];
+            for (let k = 0; k < 10; k++) { ctx.fillStyle = k % 2 ? '#f3eee2' : stripe; ctx.fillRect(x0 + k * 10, 30, 10, 20); }
+          } else { ctx.fillStyle = trim; ctx.fillRect(x0, 34, 100, 16); ctx.fillStyle = '#2c3a42'; ctx.fillRect(x0 + 30, 70, 40, h - 70); }
         }
       } else if (kind === 'ashlar' || kind === 'ashlar-windows') {
         stones(wall, 8);

@@ -38,6 +38,8 @@ export const PROFILES = {
   aitor: base(135, 30, 13, 10, 12, 11, 10),
   dog: base(54, 0),
   minion: base(40, 0),
+  /** The palace guards of chapter 2: the stats of a wall. Their PV and hit depend on the party's ánimas (battle.ts). */
+  guardian: base(220, 0, 14, 10, 14, 12, 8),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;
 

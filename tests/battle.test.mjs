@@ -179,3 +179,31 @@ test('the palace minion swallows every hit, and whatever the party does the beat
     assert.equal(state.phase, 'won');
   }
 });
+
+test('the palace guards cannot be beaten without ánimas, and can be backed off from', async () => {
+  const { palaceGuards, createGuardBattle, act, enemyAct, nextRound } = await import('../src/battle.ts');
+  const { Story, STORY_FLAGS } = await import('../src/story.ts');
+  const party = new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('castle') + 1)).battleParty(true);
+  assert.deepEqual(palaceGuards(0), { count: 3, hp: 220, power: 30 });
+  assert.ok(palaceGuards(6).count === 1 && palaceGuards(6).hp === 40);
+  // Without ánimas, attacking every turn loses.
+  const state = createGuardBattle(party, palaceGuards(0));
+  for (let round = 0; round < 30 && state.phase !== 'lost' && state.phase !== 'won'; round++) {
+    while (state.phase === 'player') act(state, 'attack', state.foes.find(f => f.hp > 0).id);
+    for (const foe of state.foes) if (state.phase === 'enemy') enemyAct(state, foe.id);
+    nextRound(state);
+  }
+  assert.equal(state.phase, 'lost');
+  // Backing off is allowed.
+  const retreat = createGuardBattle(party, palaceGuards(0));
+  assert.ok(act(retreat, 'escape'));
+  assert.equal(retreat.phase, 'escaped');
+  // With every ánima, the fight is fair.
+  const strong = createGuardBattle(party, palaceGuards(6));
+  for (let round = 0; round < 30 && strong.phase !== 'lost' && strong.phase !== 'won'; round++) {
+    while (strong.phase === 'player') act(strong, 'attack', strong.foes.find(f => f.hp > 0).id);
+    for (const foe of strong.foes) if (strong.phase === 'enemy') enemyAct(strong, foe.id);
+    nextRound(strong);
+  }
+  assert.equal(strong.phase, 'won');
+});

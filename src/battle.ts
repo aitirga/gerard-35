@@ -25,7 +25,7 @@ export const SKILLS = [
 ] as const;
 export type SkillId = typeof SKILLS[number]['id'];
 type Skill = typeof SKILLS[number];
-export type FoeKind = 'dog' | 'minion';
+export type FoeKind = 'dog' | 'minion' | 'guardian';
 export interface Combatant {
   id: string; name: string; hp: number; maxHp: number;
   secondary: number; maxSecondary: number; guarding: boolean;
@@ -38,9 +38,11 @@ export interface Combatant {
   kind?: FoeKind;
   /** Pringue: a gum shell that swallows every hit except No-ta. */
   shell?: boolean;
+  /** A foe's own hit at average stats, when it has one (the palace guards). */
+  power?: number;
 }
-/** Which fight this is: the street dogs, or the palace minion that wakes Noísta. */
-export type Encounter = 'dogs' | 'palace-minion';
+/** Which fight this is: the street dogs, the palace minion that wakes Noísta, or the palace guards of chapter 2. */
+export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards';
 /** Bernat's HP floor in the palace fight: the hit that would cross it stops there and starts the beat. */
 export const BEAT_HP = 20;
 export interface BattleState {
@@ -51,14 +53,17 @@ export interface BattleState {
   possessed: boolean;
   encounter: Encounter;
 }
-/** Someone who fights on the party's side: `id` names them in the fight, `profile` gives their stats. */
-export interface PartySlot { id: string; name: string; profile: ProfileId; classId?: ClassId }
+/**
+ * Someone who fights on the party's side: `id` names them in the fight, `profile` gives their
+ * stats, `bonus` adds what the party has gathered (chapter 2's ánimas).
+ */
+export interface PartySlot { id: string; name: string; profile: ProfileId; classId?: ClassId; bonus?: StatBonus }
 /** Chapter 1's party: Gerard, and Bernat once he walks with him. */
 export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[] {
   return [{ id: 'gerard', name: 'Gerard', profile: 'gerard', classId: gerardClass }, ...(allyCount === 2 ? [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }] : [])];
 }
-/** Nobody runs from possessed dogs or from the palace minion. */
-export const cornered = (state: BattleState) => state.possessed || state.encounter !== 'dogs';
+/** Nobody runs from possessed dogs or from the palace minion; the palace guards let them back off. */
+export const cornered = (state: BattleState) => state.possessed || state.encounter === 'palace-minion';
 /** Gerard's class in this fight; the palace minion stops escalating once he has one. */
 export const gerardClass = (state: BattleState) => state.allies.find(a => a.id === 'gerard')?.classId;
 /** The skills `actor` can use: everyone's, their own, and their class's. */
@@ -67,7 +72,7 @@ export function skillsFor(_state: BattleState, actor: Combatant) {
 }
 export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; healed?: { id: string; amount: number }[] }
 function fighter(slot: PartySlot): Combatant {
-  const stats = withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined);
+  const stats = withBonus(withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined), slot.bonus);
   return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, hp: stats.pv, maxHp: stats.pv, secondary: stats.sec, maxSecondary: stats.sec, guarding: false };
 }
 function foe(id: string, name: string, kind: FoeKind, hp?: number): Combatant {
@@ -102,6 +107,23 @@ export function createMinionBattle(gerardClassId?: ClassId): BattleState {
     message: 'Un esbirro de la Reina Bubbaloo sale del sumidero, brillante de pringue.',
   };
 }
+/**
+ * The Guardianes de Chicle before the throne stair (docs/chapter-2.md): far too strong without
+ * ánimas, one fewer every two ánimas, and softer and weaker with each one.
+ */
+export function palaceGuards(animas: number) {
+  return { count: Math.max(1, 3 - Math.floor(animas / 2)), hp: Math.max(40, 220 - 30 * animas), power: Math.max(8, 30 - 3 * animas) };
+}
+export type GuardStrength = ReturnType<typeof palaceGuards>;
+/** Chapter 2: the party against the palace guards, as strong as the party's ánimas leave them. */
+export function createGuardBattle(party: PartySlot[], guards: GuardStrength): BattleState {
+  return {
+    allies: lineUp(party),
+    foes: Array.from({ length: guards.count }, (_, i) => ({ ...foe(`guard-${i}`, guards.count > 1 ? `Guardián de chicle ${i + 1}` : 'Guardián de chicle', 'guardian', guards.hp), power: guards.power })),
+    active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter: 'palace-guards',
+    message: guards.count > 1 ? `${guards.count} guardianes de chicle se despegan de la cortina. Son enormes.` : 'Un guardián de chicle se despega de la cortina.',
+  };
+}
 /** Who an action can be aimed at. A party skill is not aimed: these are who it would heal. */
 export function validTargets(state: BattleState, action: BattleAction, skill: SkillId = 'impulse'): Combatant[] {
   if (action === 'attack') return state.foes.filter(f => f.hp > 0);
@@ -130,7 +152,9 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   const effect: BattleEffect = { actor: actor.id, kind: action };
   if (action === 'escape' && cornered(state)) return;
   if (action === 'escape') {
-    state.phase = 'escaped'; state.message = 'Te alejas con calma. La aventura sigue.'; return effect;
+    state.phase = 'escaped';
+    state.message = state.encounter === 'palace-guards' ? 'Retrocedéis hasta el vestíbulo. Los guardianes vuelven a pegarse a la cortina.' : 'Te alejas con calma. La aventura sigue.';
+    return effect;
   }
   if (action === 'defend') {
     actor.guarding = true; state.message = `${actor.name} se prepara para el siguiente golpe.`;
@@ -163,6 +187,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (state.foes.every(f => f.hp === 0)) {
     state.phase = 'won';
     state.message = state.encounter === 'palace-minion' ? 'El esbirro se queda tieso, se agrieta como chicle viejo… y revienta.'
+      : state.encounter === 'palace-guards' ? 'Los guardianes se deshacen en charcos rosas. La cortina tiembla.'
       : state.possessed ? `El rosa se les va de los ojos. ${state.foes.length === 1 ? 'El perro sale corriendo' : 'Los perros salen corriendo'}, con el rabo entre las patas.`
       : `${state.foes.length === 1 ? 'El perro se tranquiliza' : 'Los perros se tranquilizan'}. ¡Camino despejado!`;
   } else {
@@ -181,6 +206,15 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   if (!actor || !target) return;
   if (state.encounter === 'palace-minion') return minionAct(state, actor);
   state.enemyActions.push(id);
+  if (actor.power !== undefined) {
+    // The palace guards: one heavy fist each, guarding takes two thirds off.
+    const hit = physical(actor.power, actor.stats, target.stats);
+    const amount = Math.min(target.guarding ? Math.ceil(hit / 3) : hit, target.hp);
+    target.hp -= amount;
+    state.message = `${actor.name} aplasta a ${target.name} con un puño de chicle. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
+    if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; }
+    return { actor: actor.id, kind: 'enemy', target: target.id, amount };
+  }
   const strength = physical(state.allies.length === 1 && state.foes.length > 1 ? 5 : 9, actor.stats, target.stats);
   const damage = target.guarding ? Math.ceil(strength / 3) : strength;
   const amount = Math.min(damage, target.hp);

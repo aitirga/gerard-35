@@ -30,10 +30,10 @@ dev-battle foes="4" allies="1":
     @[[ "{{ foes }}" =~ ^[234]$ && "{{ allies }}" =~ ^[12]$ ]] || { printf 'Use 2–4 foes and 1–2 allies.\n'; exit 1; }
     npm run dev -- --open '/?battle={{ foes }}&allies={{ allies }}'
 
-# Jump into chapter 1 after a story beat: just dev-chapter got-backpack (new = from the start)
+# Jump in after a story beat: just dev-chapter got-backpack, or metro for chapter 2's open city (new = from the start)
 [group('Development')]
 dev-chapter beat="new":
-    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|noista|wrapper-room|caught|got-wrapper)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack).\n'; exit 1; }
+    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|noista|wrapper-room|caught|got-wrapper|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|anima-uri)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
 
 # Debug chapter 2 with one player: Gerard's controls also drive Aitor in battle (just dev-solo off to undo)
@@ -137,16 +137,31 @@ geo-fetch zone="alegia":
     @[[ -f "assets/geo/{{ zone }}/zone.json" ]] || { printf 'No assets/geo/%s/zone.json; copy assets/geo/alegia/zone.json first.\n' "{{ zone }}"; exit 1; }
     uv run --locked python tools/geo.py fetch {{ zone }}
 
-# Rebuild src/geo/<zone>.json and its preview from the saved map data (offline)
+# Rebuild src/geo/<zone>.json and its preview from the saved map data or its sketch (offline)
 [group('Data')]
 geo-build zone="alegia":
-    @[[ -f "assets/geo/{{ zone }}/osm.json" ]] || { printf 'No map data for %s; run just geo-fetch %s first.\n' "{{ zone }}" "{{ zone }}"; exit 1; }
+    @[[ -f "assets/geo/{{ zone }}/osm.json" || -f "assets/geo/{{ zone }}/sketch.json" ]] || { printf 'No map data for %s; run just geo-fetch %s first (or sketch it).\n' "{{ zone }}" "{{ zone }}"; exit 1; }
     uv run --locked python tools/geo.py build {{ zone }}
 
 # List the real places that can be built
 [group('Data')]
 geo-zones:
-    @ls -d assets/geo/*/ | xargs -n1 basename
+    @ls assets/geo/*/zone.json | xargs -n1 dirname | xargs -n1 basename
+
+# Download Barcelona's districts and rebuild the schematic city map: just city (docs/barcelona.md)
+[group('Data')]
+city: city-fetch city-build
+
+# Download CartoBCN districts and neighbourhoods (bcn-geodata) into assets/geo/barcelona/
+[group('Data')]
+city-fetch:
+    uv run --locked python tools/city.py fetch
+
+# Rebuild src/geo/barcelona.json and its preview from the saved city layers (offline)
+[group('Data')]
+city-build:
+    @[[ -f "assets/geo/barcelona/cartobcn.json" ]] || { printf 'No district data; run just city-fetch first.\n'; exit 1; }
+    uv run --locked python tools/city.py build
 
 # Generate portrait, expressions, full-body art and 3D model: just character bernat --description '…' (--help)
 [group('Tools')]

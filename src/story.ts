@@ -7,15 +7,21 @@ import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { Cell } from './movement';
 import type { ItemId } from './items';
-import type { ClassId, PartySlot } from './battle';
+import { palaceGuards, type ClassId, type PartySlot } from './battle.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
+import { LINES_2, PLACES_2 } from './chapter-2.ts';
+import { ANIMA_IDS, animaBonus, type AnimaId } from './animas.ts';
+import { stationOf } from './transit.ts';
+import { ENVIRONMENTS } from './environments.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
 export const STORY_FLAGS = [
   'intro', 'met-jan', 'got-shoes', 'got-potion', 'got-backpack', 'bernat-joined', 'bernat-stalled', 'dejavu',
   'minion', 'first-fight', 'palace', 'in-palace', 'got-chicle', 'noista', 'wrapper-room',
   'caught', 'got-wrapper',
+  // Chapter 2 (docs/chapter-2.md): open progression, so these are never cleared.
+  'tv-news', 'metro', 'rec-comtal', 'castle', 'palace-tried', 'clue-r4', 'anima-nuria', 'anima-uri',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 
@@ -39,7 +45,11 @@ export type StoryEvent =
   /** A class woke up in Gerard, mid-fight. */
   | { type: 'class'; id: GerardClass }
   /** The Queen's hands have caught Gerard and Bernat: the screen is black. */
-  | { type: 'caught' };
+  | { type: 'caught' }
+  /** Gerard walked up to one of the story's triggers (`story.triggers`). */
+  | { type: 'near'; id: string }
+  /** The party came up out of a station after a trip. */
+  | { type: 'arrive'; station: string };
 
 export type StoryEffect =
   | { kind: 'dialogue'; dialogue: Dialogue }
@@ -61,10 +71,18 @@ export type StoryEffect =
   /** Minions everywhere, the Queen's gelatine hands catch them both, and all goes black. */
   | { kind: 'ambush' }
   /** Chapter 2: out of the black, Gerard (35) wakes in bed with a start. */
-  | { kind: 'wake' };
+  | { kind: 'wake' }
+  /** The TV news broadcast (chapter 2). */
+  | { kind: 'news' }
+  /** Down into a station: the network map, to travel from `station`. */
+  | { kind: 'metro'; station: string }
+  /** The party fell: pink, then black (chapter 2 wakes Gerard at home with everything kept). */
+  | { kind: 'fall' }
+  /** The camera turns to a named anchor of the scene (the palace), or back to Gerard without one. */
+  | { kind: 'look'; anchor?: string };
 
-/** Scripted fights: the possessed street dogs, and the palace minion that wakes Noísta. */
-export type EncounterId = 'dogs' | 'palace-minion';
+/** Scripted fights: the possessed street dogs, the palace minion that wakes Noísta, and chapter 2's palace guards. */
+export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards';
 /** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
 export type GerardClass = ClassId;
 
@@ -109,6 +127,10 @@ const PALACE_LOOKS: { id: string; cell: Cell; label: string; dialogue: Dialogue 
 const BACK_DOOR: Cell = { x: 10, z: 16 };
 /** The room where the second minion waits. */
 export const WRAPPER_ROOM = 'Sala de los Envoltorios';
+/** A place the story watches: walking within `radius` of `cell` sends a `near` event. */
+export interface Trigger { id: string; cell: Cell; radius: number }
+/** Where the school door is in Trinitat Vella: the palace lets them out there. */
+const SCHOOL_DOOR = ENVIRONMENTS[PLACES_2.school.environment].interactions.find(i => i.id === PLACES_2.school.door)!.cell;
 /** Doors out of the house: closed by the story until Gerard is ready for school. */
 const HOUSE_EXITS = new Set(['leave-hall', 'leave-living']);
 /** La Pompa from the inside: it will not let them out until the wrapper room is cleared. */
@@ -125,6 +147,8 @@ export class Story {
   private away = false;
   /** Who wears which class; members missing here wear their default (see `classOf`). */
   private worn: Loadout = {};
+  /** How many times the party has fallen this session: Aitor's line on waking changes. Not saved. */
+  private falls = 0;
   constructor(flags: Iterable<string> = []) {
     this.flags = new Set([...flags].filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
   }
@@ -148,6 +172,8 @@ export class Story {
   get palace() { return this.has('palace'); }
   /** Chapter 2: Gerard is 35 and wakes up in Barcelona; chapter 1 was his dream. */
   get adult() { return this.has('caught'); }
+  /** Ánimas the party has gathered from friends (chapter 2). */
+  get animas(): AnimaId[] { return ANIMA_IDS.filter(id => this.flags.has(`anima-${id}` as StoryFlag)); }
   /** Classes the party has unlocked; anyone in the party can wear any of them. */
   get classes(): ClassId[] { return this.has('noista') ? ['noista'] : []; }
   /** Gerard's active class, which also dresses the interface. */
@@ -202,10 +228,29 @@ export class Story {
     const gerard: PartyMember = { id: 'gerard', name: 'Gerard', profile: 'gerard', classId, equipment: this.items.filter(i => i !== 'pocion' && i !== 'chicle'), note };
     return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', profile: 'bernat', classId: this.classOf('bernat'), equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
   }
-  /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). */
+  /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). Ánimas strengthen everyone. */
   battleParty(withPartner: boolean): PartySlot[] {
+    const bonus = this.animas.length ? animaBonus(this.animas) : undefined;
     return this.party.filter(m => m.id === 'gerard' || withPartner)
-      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId }));
+      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, ...(bonus ? { bonus } : {}) }));
+  }
+  /** Places the story watches in this scene (the TV that turned itself on). */
+  triggers(environment: EnvironmentId): Trigger[] {
+    const { tv } = PLACES_2;
+    return this.adult && !this.has('tv-news') && environment === tv.environment ? [{ id: 'tv', cell: { ...tv.cell }, radius: tv.radius }] : [];
+  }
+  /** Where a door leads instead of its own destination, by story: the palace opens onto the school in chapter 2. */
+  redirect(interactionId: string): { environment: EnvironmentId; cell: Cell } | undefined {
+    if (interactionId === PALACE_EXIT && this.adult) return { environment: PLACES_2.school.environment, cell: { x: SCHOOL_DOOR.x, z: SCHOOL_DOOR.z + 1 } };
+    return undefined;
+  }
+  /** Cells the guards stand on in the palace hall (chapter 2): fewer as the party gathers ánimas. */
+  get guarded(): Cell[] {
+    if (!this.adult) return [];
+    const { count } = palaceGuards(this.animas.length);
+    const cells = PLACES_2.guards.cells;
+    // The middle one stays; the sides go first.
+    return (count >= cells.length ? cells : count === 2 ? [cells[0], cells[2]] : [cells[1]]).map(c => ({ ...c }));
   }
   /** Where a new or reloaded game puts Gerard, if the story decides it. */
   get resume(): { environment: EnvironmentId; cell: Cell } {
@@ -255,8 +300,10 @@ export class Story {
     if (partner && this.partner === 'aitor') list.push({ id: 'talk-aitor', label: 'Hablar con Aitor', cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
     if (environment === 'maresme' && this.has('palace') && !this.adult) list.push({ id: 'enter-palace', label: 'Atravesar la pompa', cell: { x: PLACES.palace.door.x, z: PLACES.palace.door.z - 1 } });
     if (environment === 'palacio') {
-      for (const look of PALACE_LOOKS) list.push({ id: look.id, label: look.label, cell: { ...look.cell } });
+      // Chapter 1's looks answer with Bernat's voice; at 35 only the curtain is worth a word.
+      for (const look of PALACE_LOOKS) if (!this.adult || look.id === 'look-curtain') list.push({ id: look.id, label: look.label, cell: { ...look.cell } });
       if (!this.has('wrapper-room')) list.push({ id: 'push-back-door', label: 'Empujar la puerta', cell: { ...BACK_DOOR } });
+      if (this.adult) list.push({ id: 'challenge-guards', label: 'Cruzar la cortina', cell: { ...PLACES_2.guards.challenge } });
     }
     if (partner && this.partner === 'bernat') list.push({ id: 'talk-bernat', label: this.companion === 'stalled' ? 'Preguntarle a Bernat qué pasa' : 'Hablar con Bernat', cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
     return list;
@@ -264,6 +311,8 @@ export class Story {
   /** A dialogue that stops a door from working, if the story is not ready for it. */
   gate(interactionId: string): Dialogue | undefined {
     if (interactionId === PALACE_EXIT) return this.has('wrapper-room') ? undefined : LINES.leaveLocked;
+    // The TV switched itself on when Gerard woke: Aitor will not go out before seeing it.
+    if (interactionId === 'meridiana-door' && this.adult && !this.has('tv-news')) return LINES_2.doorBeforeNews;
     if (!HOUSE_EXITS.has(interactionId)) return undefined;
     if (!this.has('got-shoes')) return LINES.leaveBeforeBreakfast;
     if (!this.has('got-backpack')) return LINES.leaveWithoutBackpack;
@@ -290,7 +339,15 @@ export class Story {
         if (!this.has('dejavu') || !this.set('minion')) return [];
         return [say(LINES.minion), { kind: 'battle', encounter: 'dogs' }];
       case 'battle':
-        if (!event.won) return [];
+        if (!event.won) {
+          if (!this.adult) return [];
+          // Chapter 2: falling is waking up at home, with everything done kept.
+          const first = this.set('palace-tried');
+          const lines = first ? LINES_2.wakeFirst : LINES_2.wakeAgain[this.falls % LINES_2.wakeAgain.length];
+          this.falls++;
+          return [{ kind: 'fall' }, { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } }, { kind: 'wake' }, say(lines)];
+        }
+        if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten)];
         if (event.encounter === 'palace-minion') {
           if (!this.set('wrapper-room')) return [];
           return [say(LINES.afterNoista), { kind: 'ambush' }];
@@ -315,6 +372,14 @@ export class Story {
         // Aitor is in the party from here on: a second player can take him (the hint shows only when that is new).
         return [home, { kind: 'wake' }, say(LINES.waking), { kind: 'hint', id: 'duo' }];
       }
+      case 'near':
+        if (event.id !== 'tv' || !this.adult || !this.set('tv-news')) return [];
+        // The ticker carries the R4 clue: seen on the TV, it is known.
+        this.set('clue-r4');
+        return [{ kind: 'news' }, say(LINES_2.news)];
+      case 'arrive':
+        if (event.station === 'trinitat-vella' && this.set('rec-comtal')) return [{ kind: 'look', anchor: 'palace' }, say(LINES_2.recComtalFirst), { kind: 'look' }];
+        return [];
       case 'south':
         if (this.companion !== 'follow' || this.has('dejavu') || !this.set('bernat-stalled')) return [];
         this.tugs = 0;
@@ -353,9 +418,28 @@ export class Story {
       case 'take-envoltorio':
         if (!this.adult || !this.set('got-wrapper')) return [];
         return [say(LINES.envoltorio), { kind: 'item', item: 'envoltorio' }];
-      case 'talk-aitor':
+      case 'talk-aitor': {
         if (!this.adult) return [];
-        return [say(this.has('got-wrapper') ? LINES.aitorWrapper : LINES.aitorAgain)];
+        const a = LINES_2.aitor;
+        if (this.has('palace-tried')) return [say(this.has('clue-r4') ? a.clue : a.afterFall)];
+        if (this.has('tv-news')) return [say(a.afterNews)];
+        return [say(this.has('got-wrapper') ? LINES.aitorWrapper : a.beforeNews)];
+      }
+      case 'meridiana-tv':
+        if (!this.adult) return [];
+        if (this.set('tv-news')) { this.set('clue-r4'); return [{ kind: 'news' }, say(LINES_2.news)]; }
+        return [{ kind: 'news' }, say(LINES_2.newsAgain)];
+      case 'enter-school': {
+        if (!this.adult) return [];
+        const inside: StoryEffect = { kind: 'travel', environment: PLACES.palaceEntry.environment, cell: { ...PLACES.palaceEntry.cell } };
+        return [{ kind: 'gate' }, inside, ...(this.set('castle') ? [say(LINES_2.castleFirst)] : [])];
+      }
+      case 'challenge-guards':
+        if (!this.adult) return [];
+        return [say(LINES_2.guards), { kind: 'battle', encounter: 'palace-guards' }];
+      case 'clue-r4-marquesina':
+        this.set('clue-r4');
+        return [say(LINES_2.clueR4Marquesina)];
       case 'push-back-door':
         return this.has('wrapper-room') ? [] : [say(LINES.backDoorStuck)];
       case 'talk-bernat':
@@ -368,6 +452,10 @@ export class Story {
         if (this.has('dejavu')) return [say(LINES.bernatAfter)];
         return this.companion === 'follow' ? [say(LINES.bernatHere)] : [];
     }
+    // Down into a station: the first time, the city opens (the `metro` flag).
+    const station = stationOf(event.id);
+    if (station && this.adult) return [...(this.set('metro') ? [say(LINES_2.metroFirst)] : []), { kind: 'metro', station }];
+    if (event.id === 'look-curtain' && this.adult) return [say(LINES_2.curtain)];
     const look = PALACE_LOOKS.find(l => l.id === event.id);
     return look ? [say(look.dialogue)] : [];
   }

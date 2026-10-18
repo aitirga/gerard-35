@@ -1,8 +1,11 @@
 import type { Cell } from './movement';
 import type { GeoScene } from './geo';
 import ALEGIA_SCENE from './geo/alegia.json' with { type: 'json' };
+import MERIDIANA_CALLE_SCENE from './geo/meridiana-calle.json' with { type: 'json' };
+import REC_COMTAL_SCENE from './geo/rec-comtal.json' with { type: 'json' };
 
-export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia';
+export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
+  | 'meridiana-calle' | 'rec-comtal';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /** Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses and a potted yucca. */
@@ -15,7 +18,9 @@ export type WorldProp =
   /** A car spans its anchor and the next cell along +z, or along +x with `along: 'x'`. */
   | { kind: 'car'; x: number; z: number; color: string; along?: 'x' | 'z' }
   | { kind: 'lamp'; x: number; z: number }
-  | { kind: 'manhole'; x: number; z: number };
+  | { kind: 'manhole'; x: number; z: number }
+  /** A station entrance: the metro's red M (or Rodalies' orange R) on a pole beside a railed stair. */
+  | { kind: 'metro'; x: number; z: number; network?: 'metro' | 'rodalies' };
 export type PropKind = WorldProp['kind'];
 /** Cells each kind blocks, relative to its anchor; visuals are built on the same footprint. */
 export const PROP_FOOTPRINTS: Record<PropKind, readonly Cell[]> = {
@@ -23,6 +28,7 @@ export const PROP_FOOTPRINTS: Record<PropKind, readonly Cell[]> = {
   car: [{ x: 0, z: 0 }, { x: 0, z: 1 }],
   lamp: [{ x: 0, z: 0 }],
   manhole: [],
+  metro: [{ x: 0, z: 0 }],
 };
 export function propCells(prop: WorldProp): Cell[] {
   const turned = prop.kind === 'car' && prop.along === 'x';
@@ -315,10 +321,11 @@ export const MERIDIANA = house({
   // The yucca beside the TV; every other plant is furniture.
   props: [{ kind: 'tree', x: 15, z: 1, species: 'yucca', scale: 0.9, base: 'pot' }],
   interactions: [
-    { id: 'meridiana-door', cell: { x: 6, z: 1 }, label: 'Mirar la puerta de casa', lines: ['Nuestra puerta. Las llaves, siempre en el mismo sitio… casi siempre.'] },
+    { id: 'meridiana-door', cell: { x: 6, z: 1 }, label: 'Salir a la Meridiana', to: { environment: 'meridiana-calle', cell: { x: 45, z: 23 } } },
     { id: 'meridiana-piano', cell: { x: 2, z: 5 }, label: 'Tocar el piano', lines: ['Do, re, mi… El piano eléctrico siempre está listo para una pieza más.'] },
     { id: 'meridiana-kitchen', cell: { x: 10, z: 2 }, label: 'Mirar la cocina', lines: ['Encimera de madera, azulejos blancos… y alguien tiene que fregar.'] },
-    { id: 'meridiana-tv', cell: { x: 16, z: 2 }, label: 'Mirar la tele', lines: ['La tele grande. Aquí caen series, partidas y alguna siesta en el sofá.'] },
+    // The story turns the TV on (chapter 2's news); before that it is just the TV.
+    { id: 'meridiana-tv', cell: { x: 16, z: 2 }, label: 'Mirar la tele' },
     { id: 'meridiana-painting', cell: { x: 19, z: 11 }, label: 'Mirar el cuadro', lines: ['Barcelona de noche, con la torre encendida. Nuestra ciudad, en la pared.'] },
     { id: 'meridiana-balcony', cell: { x: 22, z: 3 }, label: 'Asomarse al balcón', lines: ['Toldos verdes, ropa tendida y mucha luz. Buenos días, vecinos.'] },
   ],
@@ -389,15 +396,20 @@ export function geoEnvironment(id: EnvironmentId, scene: GeoScene): Environment 
   return {
     id, name: scene.name, grid: blockProps(scene.grid, props), spawn: scene.spawn, zoom: scene.zoom,
     houses: [], props, geo: scene,
-    interactions: scene.places.map(({ id, label, lines, cell }) => ({ id, label, lines, cell })),
+    // A place with lines is looked at, one with `to` is a door; with neither, the story answers it.
+    interactions: scene.places.map(({ id, label, lines, cell, to }) => ({ id, label, cell, ...(lines.length ? { lines } : {}), ...(to ? { to: to as Interaction['to'] } : {}) })),
   };
 }
 /** San Juan kalea in Alegia (Gipuzkoa), around number 95. */
 export const ALEGIA = geoEnvironment('alegia', ALEGIA_SCENE as GeoScene);
+/** Chapter 2 (docs/barcelona.md): the Meridiana outside the flat, and Trinitat Vella round the Rec Comtal school. Sketched for now. */
+export const MERIDIANA_CALLE = geoEnvironment('meridiana-calle', MERIDIANA_CALLE_SCENE as GeoScene);
+export const REC_COMTAL = geoEnvironment('rec-comtal', REC_COMTAL_SCENE as GeoScene);
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
   meridiana: MERIDIANA, palacio: PALACIO, alegia: ALEGIA,
+  'meridiana-calle': MERIDIANA_CALLE, 'rec-comtal': REC_COMTAL,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

@@ -9,6 +9,10 @@
                                                    trees and places for src/geo-scenery.ts,
                                                    plus output/geo/<zone>/preview.svg (and .png)
 
+A zone without osm.json can be sketched by hand in assets/geo/<zone>/sketch.json (features in
+metres from the anchor); with both, sketch features marked "keep" are added on top of the map
+data. docs/barcelona.md § Sketched zones.
+
 Zone files live in assets/geo/<zone>/zone.json; docs/environment-styling.md explains every field.
 Coordinates in a zone file are metres from the anchor: east_m (+ east) and south_m (+ south).
 """
@@ -352,6 +356,61 @@ def pick(seed: str, options: list):
     return options[int(hashlib.sha1(seed.encode()).hexdigest(), 16) % len(options)]
 
 
+# ---------------------------------------------------------------- sketch
+
+SKETCH_ATTRIBUTION = "Esquema provisional dibujado a mano (sin datos de OpenStreetMap)"
+SKETCH_AREAS = {"square": {"place": "square"}, "grass": {"leisure": "park"}, "water": {"natural": "water"},
+                "forest": {"landuse": "forest"}, "parking": {"amenity": "parking"}}
+
+
+def sketch_elements(sketch: dict, frame: "Frame", keep_only: bool = False) -> list[dict]:
+    """Hand-drawn features (metres from the anchor) as the same elements osm.json holds."""
+    out = []
+    to_geom = lambda points: [list(frame.latlon(e, s)) for e, s in points]
+    for f in sketch.get("features", []):
+        if keep_only and not f.get("keep"):
+            continue
+        if "rect" in f:
+            e, s, w, d = f["rect"]
+            ring = [[e, s], [e + w, s], [e + w, s + d], [e, s + d], [e, s]]
+        elif "poly" in f:
+            ring = f["poly"] + f["poly"][:1]
+        else:
+            ring = None
+        if "building" in f:
+            tags = {"building": f["building"]}
+            if "levels" in f: tags["building:levels"] = str(f["levels"])
+            if "number" in f: tags["addr:housenumber"] = str(f["number"])
+        elif "area" in f:
+            tags = dict(SKETCH_AREAS[f["area"]])
+        elif "highway" in f:
+            tags = {"highway": f["highway"]}
+        elif "railway" in f:
+            tags = {"railway": f["railway"]}
+        else:
+            sys.exit(f"Sketch feature {f.get('id')} is not a building, area, highway or railway.")
+        if f.get("name"): tags["name"] = f["name"]
+        geom = to_geom(f["line"]) if "line" in f else to_geom(ring) if ring else None
+        if not geom:
+            sys.exit(f"Sketch feature {f.get('id')} needs rect, poly or line.")
+        out.append({"id": f"sketch/{f['id']}", "tags": tags, "geom": geom})
+    return out
+
+
+def map_data(zone_id: str, zone: dict, frame: "Frame") -> dict:
+    """osm.json, with any kept sketch features on top; or the sketch alone."""
+    osm_path, sketch_path = zone_dir(zone_id) / "osm.json", zone_dir(zone_id) / "sketch.json"
+    sketch = json.loads(sketch_path.read_text()) if sketch_path.exists() else None
+    if osm_path.exists():
+        osm = json.loads(osm_path.read_text())
+        if sketch: osm["elements"] += sketch_elements(sketch, frame, keep_only=True)
+        return osm
+    if not sketch:
+        sys.exit(f"No {osm_path.relative_to(ROOT)}; run `just geo-fetch {zone_id}` first (or sketch the zone in sketch.json).")
+    print(f"No osm.json: building {zone_id} from its sketch ({sketch_path.relative_to(ROOT)}).")
+    return {"attribution": SKETCH_ATTRIBUTION, "fetched": sketch.get("drawn", ""), "elements": sketch_elements(sketch, frame)}
+
+
 # ---------------------------------------------------------------- build
 
 def classify(element: dict) -> str | None:
@@ -369,11 +428,8 @@ def classify(element: dict) -> str | None:
 
 def build(zone_id: str) -> None:
     zone = load_zone(zone_id)
-    osm_path = zone_dir(zone_id) / "osm.json"
-    if not osm_path.exists():
-        sys.exit(f"No {osm_path.relative_to(ROOT)}; run `just geo-fetch {zone_id}` first.")
-    osm = json.loads(osm_path.read_text())
     frame = Frame(zone)
+    osm = map_data(zone_id, zone, frame)
     W, D, cell = frame.width, frame.depth, frame.cell
     to_cells = lambda geom: [list(frame.cells(lat, lon)) for lat, lon in geom]
     from_m = lambda item: frame.from_metres(item["east_m"], item["south_m"])
@@ -459,7 +515,9 @@ def build(zone_id: str) -> None:
     for place in zone.get("places", []):
         target = centroids[place["osm"]] if "osm" in place else from_m(place)
         x, z = nearest(*target, reachable)
-        places.append({"id": place["id"], "label": place["label"], "lines": place["lines"], "cell": {"x": x, "z": z}})
+        # Lines are looked at; `to` is a door to another scene; neither: the story answers it.
+        places.append({"id": place["id"], "label": place["label"], "lines": place.get("lines", []), "cell": {"x": x, "z": z}}
+                      | ({"to": place["to"]} if "to" in place else {}))
     keep_clear = {spawn} | {(p["cell"]["x"], p["cell"]["z"]) for p in places}
 
     props = scatter_trees(zone, raster, W, D, cell)
@@ -484,6 +542,9 @@ def build(zone_id: str) -> None:
         "roads": [{**r, "line": rounded(piece)} for r in roads if r["kind"] != "waterway" for piece in clip_line(r["line"], *lo, *hi)],
         "buildings": buildings, "props": props, "places": places,
         "labels": [{"text": l["text"], "x": round(from_m(l)[0], 2), "z": round(from_m(l)[1], 2), "width": l.get("width", 4)} for l in zone.get("labels", [])],
+        # Named points for the game's own pieces (e.g. where the palace stands), in cells.
+        "anchors": {name: {"x": round(from_m(a)[0], 2), "z": round(from_m(a)[1], 2), **({"y": a["y_m"] / cell} if "y_m" in a else {})}
+                    for name, a in zone.get("anchors", {}).items()},
     }
     out = ROOT / "src" / "geo" / f"{zone_id}.json"
     out.parent.mkdir(parents=True, exist_ok=True)

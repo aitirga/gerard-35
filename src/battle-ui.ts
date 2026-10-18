@@ -1,6 +1,6 @@
 import { clickControllerButton, focusControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { act, aimed, awaken, childParty, cornered, createBattle, createMinionBattle, enemyAct, nextRound, skillsFor, SKILLS, validTargets, type ClassId, type Encounter, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
+import { act, aimed, awaken, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, palaceGuards, type GuardStrength, enemyAct, nextRound, skillsFor, SKILLS, validTargets, type ClassId, type Encounter, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
 import { CLASSES } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -12,7 +12,7 @@ const COMMANDS: { id: BattleAction; name: string; hint: string; number: string }
   { id: 'attack', name: 'Atacar', hint: 'Elige un objetivo', number: '01' },
   { id: 'defend', name: 'Defender', hint: 'Prepárate para el golpe', number: '02' },
   { id: 'skill', name: 'Habilidades', hint: 'Primero elige una habilidad', number: '03' },
-  { id: 'escape', name: 'Escapar', hint: 'Vuelve a la calle', number: '04' },
+  { id: 'escape', name: 'Escapar', hint: 'Sal del encuentro', number: '04' },
 ];
 export function createBattleUI(hud: HTMLElement, callbacks: {
   change: (state: BattleState | undefined, effect?: BattleEffect, onImpact?: () => void) => Promise<void>;
@@ -138,6 +138,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const ended = !busy && ['won', 'lost', 'escaped'].includes(state.phase);
     root.dataset.phase = state.phase;
     get('.battle-heading .battle-kicker').textContent = state.encounter === 'palace-minion' ? 'ENCUENTRO / ESBIRRO DE LA REINA'
+      : state.encounter === 'palace-guards' ? `ENCUENTRO / ${state.foes.filter(f => f.hp > 0).length} DE ${state.foes.length} ${state.foes.length === 1 ? 'GUARDIÁN' : 'GUARDIANES'} DE CHICLE`
       : `ENCUENTRO / ${state.foes.filter(f => f.hp > 0).length} DE ${state.foes.length} PERROS${state.possessed ? ' POSEÍDOS' : ''}`;
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
     const actor = state.allies[state.active];
@@ -189,7 +190,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.battle-bottom').hidden = ended;
     get('.battle-result').hidden = !ended;
     if (ended) {
-      get('.battle-result h2').textContent = state.phase === 'won' ? '¡Camino libre!' : state.phase === 'escaped' ? 'Seguimos.' : 'Un respiro.';
+      get('.battle-result h2').textContent = state.phase === 'won' ? '¡Camino libre!' : state.phase === 'escaped' ? 'Seguimos.' : state.encounter === 'palace-guards' ? 'Demasiado fuertes.' : 'Un respiro.';
+      // Chapter 2: losing in the palace wakes Gerard up at home.
+      get('.battle-result button').textContent = state.phase === 'lost' && state.encounter === 'palace-guards' ? 'Despertar' : state.encounter === 'dogs' ? 'Volver a la calle' : 'Seguir';
       get('.battle-result p').textContent = state.message;
       get<HTMLButtonElement>('.battle-result button').focus({ preventScroll: true });
     }
@@ -246,7 +249,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const onAllies = !!skill && SKILLS.find(s => s.id === skill)!.side === 'allies';
     root.dataset.targeting = onAllies ? 'allies' : 'foes';
     get('.target-picker h2').textContent = skill ? SKILLS.find(s => s.id === skill)!.name : 'Atacar';
-    get('.target-picker p').textContent = onAllies ? 'Elige un aliado herido de tu equipo.' : state.encounter === 'palace-minion' ? 'Elige al esbirro.' : 'Elige un perro en la calle.';
+    get('.target-picker p').textContent = onAllies ? 'Elige un aliado herido de tu equipo.' : state.encounter === 'palace-minion' ? 'Elige al esbirro.' : state.encounter === 'palace-guards' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
     render();
     targetButtons()[0]?.focus({ preventScroll: true });
   }
@@ -385,20 +388,22 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       }
     },
     /** `party` is who fights on Gerard's side (story.battleParty), or a size for chapter 1's boys. */
-    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter } = {}) {
+    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; guards?: GuardStrength } = {}) {
       if (state) return;
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
       const { possessed = false, encounter = 'dogs' } = options;
       const slots = typeof party === 'number' ? childParty(party) : party;
-      state = encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId) : createBattle(slots, foeCount, possessed); busy = true;
+      state = encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId)
+        : encounter === 'palace-guards' ? createGuardBattle(slots, options.guards ?? palaceGuards(0))
+        : createBattle(slots, foeCount, possessed); busy = true;
       foeCount = state.foes.length;
       root.toggleAttribute('data-possessed', possessed);
       root.dataset.encounter = encounter;
       get('[data-command="skill"]').classList.remove('is-new');
       get('.class-banner').hidden = true; get('.battle-speech').replaceChildren();
-      get('.battle-heading h1').innerHTML = encounter === 'palace-minion' ? 'Un esbirro <em>de verdad.</em>' : possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>';
-      const colour = (f: Combatant, i: number) => f.kind === 'minion' ? '#ff6fae' : DOG_PROFILES[i]?.collar ?? '#b9dba1';
+      get('.battle-heading h1').innerHTML = encounter === 'palace-minion' ? 'Un esbirro <em>de verdad.</em>' : encounter === 'palace-guards' ? 'Los guardianes <em>de la cortina.</em>' : possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>';
+      const colour = (f: Combatant, i: number) => f.kind === 'minion' || f.kind === 'guardian' ? '#ff6fae' : DOG_PROFILES[i]?.collar ?? '#b9dba1';
       get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${i < foeCount ? `data-unit="${f.id}"` : ''} data-side="${i < foeCount ? 'foes' : 'allies'}" style="--dog-color:${colour(f, i)}" aria-label="Elegir a ${f.name}" hidden disabled><span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>${i < foeCount ? '' : '<span class="enemy-health secondary" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>'}</button>`).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;
       get('.party-roster').replaceChildren(); get('.battle-pops').replaceChildren(); positions.clear();

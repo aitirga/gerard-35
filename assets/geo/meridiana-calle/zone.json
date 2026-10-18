@@ -1,0 +1,500 @@
+{
+  "id": "meridiana-calle",
+  "name": "Avinguda Meridiana",
+  "region": "Sant Andreu, Barcelona",
+  "anchor": {
+    "address": "Avinguda Meridiana, Fabra i Puig, Barcelona",
+    "lat": 41.4297,
+    "lon": 2.1838
+  },
+  "bounds_m": {
+    "west": -75,
+    "east": 75,
+    "north": -45,
+    "south": 45
+  },
+  "cell_m": 1.5,
+  "rotation_deg": 0,
+  "zoom": 11.5,
+  "spawn": {
+    "east_m": -6,
+    "south_m": -12
+  },
+  "storey_m": 3.0,
+  "reference": {
+    "checked": "2026-10-18",
+    "streetview_capture": "",
+    "notes": [
+      "SKETCH: drawn by hand (OpenStreetMap and Google could not be reached from the build machine). The flat's exact block is not known: open question in docs/chapter-2.md.",
+      "Avinguda Meridiana by Fabra i Puig: a very wide avenue, two carriageways with a planted median, side roads, plane trees, blocks of flats of seven to ten storeys with shops on the ground floor.",
+      "When fetching real data, set rotation_deg so the avenue runs left to right (about 70) and redraw places and props."
+    ],
+    "viewpoints": [
+      {
+        "name": "fabra-i-puig",
+        "lat": 41.4297,
+        "lon": 2.1838,
+        "heading": 20,
+        "pitch": 5
+      }
+    ]
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#e9dcc6",
+        "#d8c3a5",
+        "#efe4d0",
+        "#cdb89a",
+        "#e2d2bb"
+      ],
+      "base": "#8d8577",
+      "trim": "#f4efe6",
+      "roof": "#b0a597",
+      "roof_kind": "flat",
+      "facade": "flats",
+      "ground": "shops",
+      "levels": 8
+    },
+    "home": {
+      "walls": [
+        "#e6d3b3"
+      ],
+      "base": "#7f776a",
+      "trim": "#fbf6ec",
+      "roof": "#a89c8c",
+      "roof_kind": "flat",
+      "facade": "flats",
+      "ground": "lobby",
+      "levels": 8
+    }
+  },
+  "buildings": {
+    "sketch/casa": {
+      "style": "home",
+      "label": "Casa"
+    }
+  },
+  "props": [
+    {
+      "kind": "tree",
+      "east_m": -70,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -60,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -50,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -40,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -30,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -20,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -10,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 0,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 10,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 20,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 30,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 40,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 50,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 60,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 70,
+      "south_m": -9.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -72,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": -60,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": -48,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": -36,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": -24,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": -12,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": 0,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": 12,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": 24,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": 36,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": 48,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": 60,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": 72,
+      "south_m": 10.5,
+      "species": "plane",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "east_m": -68,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -58,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -48,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -38,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -28,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -18,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -8,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 2,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 12,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 22,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 32,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 42,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 52,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 62,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 72,
+      "south_m": 29.5,
+      "species": "plane"
+    },
+    {
+      "kind": "lamp",
+      "east_m": -60,
+      "south_m": -8.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": -20,
+      "south_m": -8.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": 34,
+      "south_m": -8.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": 66,
+      "south_m": -8.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": -50,
+      "south_m": 28.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": 0,
+      "south_m": 28.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": 50,
+      "south_m": 28.5
+    },
+    {
+      "kind": "car",
+      "east_m": -62,
+      "south_m": -4,
+      "color": "#d8d6c7"
+    },
+    {
+      "kind": "car",
+      "east_m": -48,
+      "south_m": -4,
+      "color": "#66808c"
+    },
+    {
+      "kind": "car",
+      "east_m": 34,
+      "south_m": -4,
+      "color": "#b95641"
+    },
+    {
+      "kind": "car",
+      "east_m": 52,
+      "south_m": -4,
+      "color": "#353f44"
+    },
+    {
+      "kind": "car",
+      "east_m": 66,
+      "south_m": -4,
+      "color": "#e4dfd2"
+    },
+    {
+      "kind": "car",
+      "east_m": -40,
+      "south_m": 26,
+      "color": "#2f4f8a"
+    },
+    {
+      "kind": "car",
+      "east_m": 10,
+      "south_m": 26,
+      "color": "#9aa4a8"
+    },
+    {
+      "kind": "metro",
+      "east_m": 15,
+      "south_m": -12,
+      "line": "l1"
+    },
+    {
+      "kind": "manhole",
+      "east_m": -20,
+      "south_m": -5
+    },
+    {
+      "kind": "manhole",
+      "east_m": 44,
+      "south_m": -5
+    }
+  ],
+  "trees": {
+    "species": [
+      "plane"
+    ]
+  },
+  "places": [
+    {
+      "id": "meridiana-portal",
+      "label": "Entrar en casa",
+      "east_m": -6,
+      "south_m": -13,
+      "to": {
+        "environment": "meridiana",
+        "cell": {
+          "x": 7,
+          "z": 2
+        }
+      }
+    },
+    {
+      "id": "station-fabra-i-puig",
+      "label": "Bajar al metro",
+      "east_m": 12,
+      "south_m": -12
+    },
+    {
+      "id": "meridiana-avinguda",
+      "label": "Mirar la avenida",
+      "east_m": -24,
+      "south_m": 10,
+      "lines": [
+        "La Meridiana. Seis carriles, y hoy apenas pasa un coche.",
+        "La gente está parada en las aceras, mirando todos hacia el norte. Hacia Trinitat Vella."
+      ]
+    },
+    {
+      "id": "clue-r4-marquesina",
+      "label": "Mirar la marquesina",
+      "east_m": 46,
+      "south_m": -9
+    }
+  ],
+  "labels": [
+    {
+      "text": "AVINGUDA MERIDIANA",
+      "east_m": -40,
+      "south_m": 4,
+      "width": 10
+    },
+    {
+      "text": "FABRA I PUIG",
+      "east_m": 16,
+      "south_m": -9.5,
+      "width": 5
+    }
+  ]
+}
