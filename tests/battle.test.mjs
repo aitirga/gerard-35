@@ -179,3 +179,23 @@ test('the palace minion swallows every hit, and whatever the party does the beat
     assert.equal(state.phase, 'won');
   }
 });
+
+test('a fighter changes ánima on their own turn without spending it', async () => {
+  const { changeAnima, skillsFor } = await import('../src/battle.ts');
+  const s = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35' }, { id: 'aitor', name: 'Aitor', profile: 'aitor' }], 2);
+  assert.equal(s.allies[s.active].id, 'gerard', 'Gerard is faster');
+  assert.equal(changeAnima(s, 'aitor', 'noista'), false, 'only on your own turn');
+  s.allies[0].hp = 50; s.allies[0].secondary = 20;
+  assert.equal(changeAnima(s, 'gerard', 'noista', '#3d5a8a'), true);
+  const gerard = s.allies[0];
+  assert.deepEqual([gerard.classId, gerard.scarf, gerard.stats.magia, gerard.hp, gerard.secondary], ['noista', '#3d5a8a', 15, 50, 20]);
+  assert.ok(skillsFor(s, gerard).some(skill => skill.id === 'nota'));
+  assert.equal(s.allies[s.active].id, 'gerard', 'still his turn');
+  assert.equal(changeAnima(s, 'gerard', 'noista'), false, 'already wearing it');
+  assert.equal(changeAnima(s, 'gerard', null), true);
+  assert.equal(gerard.classId, undefined); assert.equal(gerard.stats.magia, 13);
+  act(s, 'defend');
+  assert.equal(changeAnima(s, 'aitor', 'noista'), true, "now it is Aitor's turn");
+  s.phase = 'enemy';
+  assert.equal(changeAnima(s, 'aitor', null), false, 'not while the foes act');
+});

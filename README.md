@@ -285,8 +285,8 @@ or **L / R** on the controller turn the pages:
 
 | Page | Shows |
 | --- | --- |
-| Estado (first) | Portrait, stats and skills, the ánima worn, a vague line about the day ("Entender qué está pasando."), place, company and the time on Gerard's phone |
-| Ánimas | The ánimas (classes) the party has woken: what they change, their skills, who wears them and the colour of their scarf. Hidden until the first one wakes |
+| Estado (first) | Portrait, the vitals plate (face, PV and Secundaria as two waves) with the ánima switch right under it, stats and skills, a vague line about the day ("Entender qué está pasando."), place, company and the time on Gerard's phone |
+| Ánimas | Each member's vitals with their own ánima chips (two can differ) and the colour of its scarf, and what the ánima in view changes and grants. Hidden until the first one wakes |
 | Objetos | Common and key items, one bag shared with Aitor |
 | Mapa | The local map with Gerard and Aitor on it |
 | Diario | A thought Gerard cannot shake, cryptic and never an instruction, and what he remembers of each chapter |
@@ -298,8 +298,10 @@ moves with the story, not with real seconds (`src/journal.ts`).
 **Two players.** When a second player plays Aitor (chapter 2, second controller),
 each player opens their own half with their own top face button: Gerard on the
 left, Aitor on the right. Each half turns its own pages and has its own cursor,
-and each dresses only their own character. Alone, player 1 sees one wide sheet
-and dresses the whole party.
+and each dresses only their own character; each half takes the colours of its
+player's ánima, and a face lights up when its ánima changes. Alone, player 1 sees
+one wide sheet and dresses the whole party (in the development `solo` mode with a
+badge saying so). Fights split the same way: see docs/party.md.
 
 `src/exploration-ui.ts` owns the status screen: its pages, shortcuts, the two
 halves and their cursors. `src/journal.ts` writes the clock, the mission line and

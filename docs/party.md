@@ -19,9 +19,11 @@ character stats, and how classes are shared. Numbers are provisional and meant t
 - **Both stay on screen.** The camera looks between them and pulls back as they part. Past
   `TETHER` (7 cells) the one ahead is held back by an invisible ring, and Aitor says so in a
   bubble ("¡Eh, espérame!"), so it reads as a person, not a wall.
-- **In battle each player picks their own fighter's moves.** On Aitor's turn the keyboard and
-  the first controller do nothing; the turn line says *MANDO 2*. If no second controller is
-  connected, the turn waits and says *CONECTA EL MANDO 2*.
+- **In battle the screen splits too.** Gerard's dock sits bottom left and Aitor's bottom right,
+  each with the fighter's face, PV and Secundaria (two waves), their ánima switch and, on their
+  turn, the commands, in the colours of their own ánima. Each player picks their own fighter's
+  moves: on Aitor's turn the keyboard and the first controller do nothing and the turn line says
+  *MANDO 2*. If no second controller is connected, the turn waits and says *CONECTA EL MANDO 2*.
 - When Aitor joins, the key hint "Mando 2 · Jugar como Aitor" appears once and goes as soon as a
   second controller is there.
 - The Mando page of the menu shows both controllers ("Mando 1 · Gerard", "Mando 2 · Aitor").
@@ -29,7 +31,9 @@ character stats, and how classes are shared. Numbers are provisional and meant t
 ### Debug: one player
 
 For development only, `solo` mode lets player 1 play both: Aitor follows Gerard and player 1
-picks Aitor's moves in battle too. Turn it on with `just dev-solo` (or `?solo=1`, off with
+picks Aitor's moves in battle too. The interface says so: fights keep a single dock that follows
+whoever's turn it is (the other fighter waits on the right) under a *DEPURACIÓN · UN JUGADOR LLEVA
+A LOS DOS* badge, and the status screen is one wide sheet with the same badge. Turn it on with `just dev-solo` (or `?solo=1`, off with
 `just dev-solo off` / `?solo=0`) or the switch on the Mando page, which only exists in the dev
 build. The choice is remembered in the browser. Release builds are always two-player.
 
@@ -79,6 +83,10 @@ Fuerza, Defensa).
   portrait). Gerard wears Noísta until told otherwise. With a second player each player opens
   their own half of the status screen (Gerard left, Aitor right) and dresses only their own
   character.
+- **Changing ánima in a fight** happens on your own turn and does not spend it: the chips under
+  your card, or L / R on the controller (Q / E on the keyboard). PV and Secundaria keep what is
+  left; stats and skills change at once, and the face on the card and the fighter in the 3D fight
+  light up in the ánima's colour. The pick is kept for the adventure too.
 - Who wears what, and the scarf colours, are choices that change back and forth, so they are kept
   in the browser, not in the saved story flags.
 
@@ -94,10 +102,14 @@ Fuerza, Defensa).
 - `src/controller-ui.ts`: reads the second controller as player 2.
 - `src/game.ts`: a partner per chapter (Bernat, Aitor) who follows or, for Aitor, walks on his
   own collider; the tether ring; the shared camera; Aitor's battle model.
-- `src/battle-ui.ts`: whose turn it is, and only that player's input counts.
+- `src/battle-ui.ts`: whose turn it is, and only that player's input counts; the docks (one
+  alone, two split) and the ánima switch. `changeAnima` in `src/battle.ts` is the rule.
+- `src/vitals.ts`: the face and the PV / Secundaria waves shared by fights and the status screen,
+  and the light when an ánima changes.
 - `src/exploration-ui.ts`: the status screen, split in two halves when player 2 is there.
 - `src/animas.ts`: the scarf palette; `story.tie` / `story.scarves` keep each member's pick.
-- Tests: `tests/party.test.mjs`. Screenshots: `just screenshots duo` (fakes two controllers).
+- Tests: `tests/party.test.mjs`, `tests/battle.test.mjs`. Screenshots: `just screenshots duo` (fakes
+  two controllers) and `just screenshots battle-solo` (the debug mode).
 
 ## Open questions
 

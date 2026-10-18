@@ -1,6 +1,6 @@
 {
   "title": "Chapter 2 · Two players",
-  "description": "Gerard (player 1) and Aitor (player 2, second controller) in the Meridiana flat: Aitor follows until a second controller connects, then walks on his own with the camera framing both; the status screen splits in two, Gerard's half on the left and Aitor's on the right, and the Noísta ánima is shared; in a fight each player picks their own fighter's moves, and Aitor's turn waits while there is no second controller. Two standard gamepads are faked in the page.",
+  "description": "Gerard (player 1) and Aitor (player 2, second controller) in the Meridiana flat: Aitor follows until a second controller connects, then walks on his own with the camera framing both; the status screen splits in two, Gerard's half on the left and Aitor's on the right, and the Noísta ánima is shared; in a fight the screen splits too, Gerard's dock left and Aitor's right, each player picks their own fighter's moves and ánima, and Aitor's turn waits while there is no second controller. Two standard gamepads are faked in the page.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=0"
@@ -92,7 +92,18 @@
     {
       "shot": "gerard-turn",
       "delay": 800,
-      "caption": "A fight: Gerard (faster) goes first, on player 1's keyboard"
+      "caption": "A split fight: Gerard's dock on the left (his vitals, his ánima, his commands), Aitor's on the right; Gerard (faster) goes first"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "gerard-anima",
+      "delay": 300,
+      "caption": "E (R on a controller) changes Gerard's ánima on his turn without spending it: his face and model light up and his dock takes its colours"
+    },
+    {
+      "wait": 1500
     },
     {
       "press": "Digit2"
@@ -108,7 +119,24 @@
     {
       "shot": "aitor-turn",
       "delay": 600,
-      "caption": "Aitor's turn belongs to player 2's controller; the keyboard is ignored"
+      "caption": "Aitor's turn: the commands move to his dock on the right and belong to player 2's controller"
+    },
+    {
+      "eval": "window.fakePads[1].buttons[5].pressed = true"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.fakePads[1].buttons[5].pressed = false"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "aitor-anima",
+      "delay": 200,
+      "caption": "Player 2's R puts Noísta on Aitor: two players, two ánimas, each half in its own colours"
     },
     {
       "eval": "window.fakePads[1].buttons[13].pressed = true"

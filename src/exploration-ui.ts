@@ -6,11 +6,11 @@ import { ITEMS, ITEM_KIND_LABELS, itemsOfKind, type ItemKind } from './items';
 import type { MemberId, PartyMember, Story } from './story';
 import { CLASS_STATS, SKILLS, type ClassId } from './battle';
 import { CLASSES } from './classes';
-import { SPEAKERS } from './dialogue';
 import { PROFILES, STAT_LABELS, withBonus, type Stats } from './stats';
 import { SCARF_IDS, SCARVES, type ScarfId } from './animas';
 import { currentThought, diary, storyClock } from './journal';
 import type { PlayerId } from './party';
+import { flashAnima, portrait as face, vitalsPlate } from './vitals';
 
 /**
  * The status screen (C on the keyboard, the top face button on a controller). Everything fits on
@@ -28,13 +28,11 @@ const PAGES: { id: PanelId; label: string; key?: string }[] = [
 ];
 const TITLES: Record<PanelId, string> = { character: 'Así estás.', animas: 'Lo que despierta en ti.', items: 'Lo que lleváis.', map: 'Por aquí.', diary: 'Lo que recuerdas.' };
 const COMPANION: Record<Story['companion'], string> = { none: 'Por tu cuenta', follow: 'Bernat', stalled: 'Bernat · Se ha quedado atrás' };
-const STAT_ORDER: (keyof Stats)[] = ['pv', 'sec', 'fuerza', 'magia', 'defensa', 'espiritu', 'velocidad'];
-/** Where each stat's bar is full: PV and Secundaria are pools, the rest sit around 10. */
-const STAT_SCALE: Record<keyof Stats, number> = { pv: 150, sec: 50, fuerza: 20, magia: 20, defensa: 20, espiritu: 20, velocidad: 20 };
+/** PV and Secundaria run as waves on the vitals plate; these are the rest, which sit around 10. */
+const STAT_ORDER: (keyof Stats)[] = ['fuerza', 'magia', 'defensa', 'espiritu', 'velocidad'];
+const STAT_SCALE = 20;
 const SLOT_LABELS = { feet: 'Pies', back: 'Espalda' } as const;
 const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
-/** A scarf over the provisional SVG portraits (same 48×48 box), in the colour the member picked. */
-const scarfArt = (colour: string) => `<svg class="portrait-scarf" viewBox="0 0 48 48" aria-hidden="true" style="--scarf:${colour}"><path d="M16.5 32.5Q24 37 31.5 32.5l.6 3.4Q24 41 15.9 35.9Z"/><circle cx="28.6" cy="36.4" r="1.7"/><path d="M27.6 37.2l2.6 6.2-2.2.5-1.7-5.9Z"/></svg>`;
 
 export interface StatusCallbacks {
   pause: (paused: boolean) => void;
@@ -47,8 +45,11 @@ export interface StatusCallbacks {
   split: () => boolean;
   /** Where the partner (Aitor, Bernat) stands, for the map. */
   partner: () => Cell | undefined;
+  /** Development only: one player plays both Gerard and Aitor (docs/party.md). */
+  solo: () => boolean;
 }
 interface Sheet { player: PlayerId; el: HTMLElement; page?: PanelId; cursor?: string; viewing?: ClassId }
+type Seen = Map<MemberId, ClassId | undefined>;
 
 export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: StatusCallbacks) {
   let location: EnvironmentId = 'maresme';
@@ -80,12 +81,16 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   const wardsOf = (sheet: Sheet) => story.party.filter(m => !callbacks.split() || m.id === ownerOf(sheet));
   const scarfColour = (member: PartyMember) => member.classId ? SCARVES[story.scarfOf(member.id, member.classId)].colour : undefined;
 
-  function portrait(member: PartyMember) {
-    if (member.profile === 'gerard') return `<img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt="Retrato de Gerard de niño con gafas"/>`;
-    const art = member.profile === 'gerard35' ? SPEAKERS.gerard35.art : member.profile === 'aitor' ? SPEAKERS.aitor.art : undefined;
-    if (!art) return `<span class="portrait-initial" aria-hidden="true">${escape(member.name[0])}</span>`;
-    const scarf = scarfColour(member);
-    return `<span class="portrait-art" role="img" aria-label="Retrato de ${escape(member.name)}">${art}${scarf ? scarfArt(scarf) : ''}</span>`;
+  const portrait = (member: PartyMember) => face(member.profile, member.name, scarfColour(member));
+  /** Out of a fight everyone is rested: full PV and Secundaria, with the ánima's colours. */
+  function plate(member: PartyMember) {
+    const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
+    return vitalsPlate({ id: member.id, name: member.name, profile: member.profile, hp: stats.pv, maxHp: stats.pv, sec: stats.sec, maxSec: stats.sec, anima: member.classId && CLASSES[member.classId].name, scarf: scarfColour(member) });
+  }
+  /** One chip per woken ánima (and none): each member wears their own, and two can differ. */
+  function animaSwitch(member: PartyMember) {
+    if (!story.classes.length) return '';
+    return `<div class="anima-switch" role="group" aria-label="Ánima de ${escape(member.name)}"><span class="battle-kicker">ÁNIMA</span><div class="anima-chips">${[null, ...story.classes].map(id => `<button type="button" data-key="wear:${member.id}:${id ?? ''}" data-wear="${member.id}" data-class-id="${id ?? ''}" aria-pressed="${(member.classId ?? null) === id}" style="--chip:${id ? SCARVES[story.scarfOf(member.id, id)].colour : 'var(--ui-paper)'}">${id ? CLASSES[id].name : 'Sin ánima'}</button>`).join('')}</div></div>`;
   }
   const bonusChips = (classId: ClassId) => (Object.entries(CLASS_STATS[classId]) as [keyof Stats, number][])
     .map(([key, value]) => `<li data-sign="${value > 0 ? 'up' : 'down'}">${STAT_LABELS[key]} ${value > 0 ? '+' : '−'}${Math.abs(value)}</li>`).join('');
@@ -94,14 +99,14 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
     return `<dl class="status-bars">${STAT_ORDER.map(key => {
       const bonus = member.classId ? CLASS_STATS[member.classId][key] ?? 0 : 0;
-      return `<div data-stat="${key}"><dt>${STAT_LABELS[key]}</dt><dd><i style="--fill:${Math.min(100, stats[key] / STAT_SCALE[key] * 100).toFixed(1)}%"></i><b>${stats[key]}</b>${bonus ? `<small data-sign="${bonus > 0 ? 'up' : 'down'}">${bonus > 0 ? '+' : '−'}${Math.abs(bonus)}</small>` : ''}</dd></div>`;
+      return `<div data-stat="${key}"><dt>${STAT_LABELS[key]}</dt><dd><i style="--fill:${Math.min(100, stats[key] / STAT_SCALE * 100).toFixed(1)}%"></i><b>${stats[key]}</b>${bonus ? `<small data-sign="${bonus > 0 ? 'up' : 'down'}">${bonus > 0 ? '+' : '−'}${Math.abs(bonus)}</small>` : ''}</dd></div>`;
     }).join('')}</dl>`;
   }
-  function wornCard(member: PartyMember) {
-    if (!story.classes.length) return '';
-    if (!member.classId) return `<article class="anima-worn" data-empty><span class="battle-kicker">ÁNIMA</span><strong>Sin ánima</strong></article>`;
+  /** What the worn ánima is about, in one line under the switch. */
+  function animaLine(member: PartyMember) {
+    if (!story.classes.length || !member.classId) return '';
     const spec = CLASSES[member.classId];
-    return `<article class="anima-worn" style="--scarf:${scarfColour(member)}"><span class="battle-kicker">ÁNIMA</span><strong>${spec.name}</strong><p>${spec.motto}</p><ul class="anima-bonus">${bonusChips(member.classId)}</ul><p class="anima-grants">${skillsOf(member.classId).map(s => s.name).join(' · ')}</p></article>`;
+    return `<p class="anima-line">${spec.motto} <b>${skillsOf(member.classId).map(s => s.name).join(' · ')}</b></p>`;
   }
   function equipment(member: PartyMember) {
     if (!member.equipment.length) return '';
@@ -115,40 +120,37 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const company = own === 'aitor' ? 'Gerard' : story.partner === 'aitor' ? 'Aitor' : COMPANION[story.companion];
     return `<div class="status-page">
       <section class="status-hero">
-        <div class="status-portrait" data-member="${member.id}">${portrait(member)}</div>
+        <div class="status-portrait" data-member="${member.id}" style="--anima:${scarfColour(member) ?? 'var(--sheet-accent)'}">${portrait(member)}<i class="vitals-burst" aria-hidden="true"></i></div>
         <div class="status-name"><span class="battle-kicker">${own === 'aitor' ? 'EL COMPAÑERO' : 'EL PROTAGONISTA'}</span><h2>${escape(member.name)}</h2><p>${escape(member.note)}</p>${equipment(member)}</div>
       </section>
       <section class="status-stats"><span class="battle-kicker">ESTADÍSTICAS</span>${statRows(member)}${story.battles ? `<span class="battle-kicker">HABILIDADES</span><ul class="status-skills">${SKILLS.filter(s => 'class' in s ? member.classId === s.class : 'owner' in s ? member.profile === s.owner : true).map(s => `<li><strong>${s.name}</strong><small>${s.cost} SEC</small><span>${s.description}</span></li>`).join('')}</ul>` : ''}</section>
       <section class="status-side">
-        ${wornCard(member)}
+        <div class="status-vitals">${plate(member)}${animaSwitch(member)}${animaLine(member)}</div>
         <article class="status-mission"><span class="battle-kicker">AHORA</span><p>${currentThought(story, own).mission}</p></article>
         <dl class="status-facts"><div><dt>Lugar</dt><dd>${escape(ENVIRONMENTS[location].name)}</dd></div><div><dt>Compañía</dt><dd>${company}</dd></div></dl>
-        ${others.map(m => `<article class="status-mate" data-member="${m.id}"><div class="mate-portrait">${portrait(m)}</div><div><strong>${escape(m.name)}</strong><span>PV ${withBonus(PROFILES[m.profile], m.classId ? CLASS_STATS[m.classId] : undefined).pv}${story.classes.length ? ` · ${m.classId ? CLASSES[m.classId].name : 'Sin ánima'}` : ''}</span></div></article>`).join('')}
+        ${others.map(m => `<article class="status-mate" data-member="${m.id}">${plate(m)}</article>`).join('')}
       </section>
     </div>`;
   }
   function animasPage(sheet: Sheet) {
-    const classes = story.classes;
-    const viewing = sheet.viewing && classes.includes(sheet.viewing) ? sheet.viewing : classes[0];
+    const classes = story.classes, wards = wardsOf(sheet);
+    const own = wards.find(m => m.id === ownerOf(sheet)) ?? wards[0];
+    const viewing = sheet.viewing && classes.includes(sheet.viewing) ? sheet.viewing : own?.classId ?? classes[0];
     const spec = CLASSES[viewing];
-    const wearers = wardsOf(sheet).map(m => {
-      const worn = m.classId === viewing;
+    // Each member: their vitals, their ánima and, for the one in view, the colour of its scarf.
+    const wearers = wards.map(m => {
       const picked = story.scarfOf(m.id, viewing);
-      return `<div class="anima-wearer" data-member="${m.id}">
-        <div class="mate-portrait">${portrait(m)}</div><strong>${escape(m.name)}</strong>
-        <button type="button" class="wear-toggle" data-key="wear:${m.id}" data-wear="${m.id}" data-class-id="${worn ? '' : viewing}" aria-pressed="${worn}">${worn ? 'La lleva · Quitar' : 'Ponérsela'}</button>
-        <div class="scarf-picker" role="group" aria-label="Pañuelo de ${escape(m.name)}"><span>Pañuelo</span>${SCARF_IDS.map(id => `<button type="button" data-key="tie:${m.id}:${id}" data-tie="${m.id}" data-class-id="${viewing}" data-scarf="${id}" aria-pressed="${picked === id}" title="${SCARVES[id].name}" aria-label="${SCARVES[id].name}" style="--swatch:${SCARVES[id].colour}"></button>`).join('')}</div>
-      </div>`;
+      return `<article class="anima-wearer" data-member="${m.id}">${plate(m)}${animaSwitch(m)}
+        <div class="scarf-picker" role="group" aria-label="Pañuelo de ${escape(m.name)} con ${spec.name}"><span>Pañuelo · ${spec.name}</span>${SCARF_IDS.map(id => `<button type="button" data-key="tie:${m.id}:${id}" data-tie="${m.id}" data-class-id="${viewing}" data-scarf="${id}" aria-pressed="${picked === id}" title="${SCARVES[id].name}" aria-label="${SCARVES[id].name}" style="--swatch:${SCARVES[id].colour}"></button>`).join('')}</div>
+      </article>`;
     }).join('');
     return `<div class="animas-page">
-      <nav class="anima-list" aria-label="Ánimas despiertas">${classes.map(id => `<button type="button" data-key="view:${id}" data-view="${id}" aria-pressed="${id === viewing}"><strong>${CLASSES[id].name}</strong><small>${CLASSES[id].motto}</small></button>`).join('')}</nav>
-      <article class="anima-detail">
-        <span class="battle-kicker">ÁNIMA</span><h2>${spec.name}</h2><p class="anima-motto">${spec.motto}</p>
-        <div class="anima-columns">
-          <section><span class="battle-kicker">CAMBIA</span><ul class="anima-bonus">${bonusChips(viewing)}</ul></section>
-          <section><span class="battle-kicker">HABILIDADES</span><ul class="anima-skills">${skillsOf(viewing).map(s => `<li><strong>${s.name}</strong><small>${s.cost} SEC</small><span>${s.description}</span></li>`).join('')}</ul></section>
-        </div>
-        <section class="anima-wearers"><span class="battle-kicker">QUIÉN LA LLEVA</span>${wearers}</section>
+      <section class="anima-wearers" data-count="${wards.length}">${wearers}</section>
+      <article class="anima-detail" style="--scarf:${own ? SCARVES[story.scarfOf(own.id, viewing)].colour : spec.scarf}">
+        <div><span class="battle-kicker">ÁNIMA</span><h2>${spec.name}</h2><p class="anima-motto">${spec.motto}</p></div>
+        <section><span class="battle-kicker">CAMBIA</span><ul class="anima-bonus">${bonusChips(viewing)}</ul></section>
+        <section><span class="battle-kicker">HABILIDADES</span><ul class="anima-skills">${skillsOf(viewing).map(s => `<li><strong>${s.name}</strong><small>${s.cost} SEC</small><span>${s.description}</span></li>`).join('')}</ul></section>
+        <p class="anima-rule">Cada uno lleva la suya. En combate se cambia en tu turno y no lo gasta.</p>
       </article>
     </div>`;
   }
@@ -188,8 +190,11 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const { time, day } = storyClock(story);
     const pad = sheet.player === 2;
     sheet.el.dataset.member = own.id;
+    // Each half wears the colours of its own player's ánima.
+    sheet.el.dataset.anima = own.classId ?? 'none';
+    const dev = sheet.player === 1 && callbacks.solo() && story.partner === 'aitor' ? '<span class="sheet-dev">DEPURACIÓN · UN JUGADOR LLEVA A LOS DOS</span>' : '';
     sheet.el.innerHTML = `<header class="sheet-head">
-        <div><span class="battle-kicker">ESTADO · ${escape(own.name.toUpperCase())}</span><h1 id="status-title-${sheet.player}">${page === 'items' && story.partner !== 'aitor' ? 'Lo que llevas.' : TITLES[page]}</h1></div>
+        <div><span class="battle-kicker">ESTADO · ${escape(own.name.toUpperCase())}${dev}</span><h1 id="status-title-${sheet.player}">${page === 'items' && story.partner !== 'aitor' ? 'Lo que llevas.' : TITLES[page]}</h1></div>
         <div class="sheet-clock" role="img" aria-label="Son las ${time}"><strong>${time}</strong><span>${day}</span></div>
         <button class="journal-close" type="button" data-key="close" data-close>Cerrar <kbd>${pad ? 'B' : 'Esc'}</kbd></button>
       </header>
@@ -198,7 +203,15 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
       <p class="sheet-help">${pad ? 'L / R · Página &nbsp;·&nbsp; Cruceta · Elegir &nbsp;·&nbsp; A · Usar &nbsp;·&nbsp; B · Cerrar' : 'Q / E · Página &nbsp;·&nbsp; Flechas · Elegir &nbsp;·&nbsp; Enter · Usar &nbsp;·&nbsp; Esc · Cerrar'}</p>`;
     point(sheet, sheet.el.querySelector<HTMLButtonElement>(`[data-key="${sheet.cursor}"]`) ?? sheet.el.querySelector<HTMLButtonElement>(`[data-panel="${page}"]`)!);
   }
-  function render() { sheets.forEach(renderSheet); }
+  /** Who wore what at the last redraw, so a change of ánima lights up that member's face. */
+  let seen: Seen = new Map();
+  const remember = () => { seen = new Map(story.party.map(m => [m.id, m.classId])); };
+  function render() {
+    const changed = story.party.filter(m => seen.has(m.id) && seen.get(m.id) !== m.classId);
+    sheets.forEach(renderSheet);
+    for (const m of changed) root.querySelectorAll(`.status-portrait[data-member="${m.id}"], .vitals[data-member="${m.id}"] .vitals-avatar`).forEach(el => flashAnima(el, scarfColour(m)));
+    remember();
+  }
   function layout() {
     const open = anyOpen();
     root.hidden = !open; root.dataset.split = String(callbacks.split());
@@ -250,7 +263,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
       callbacks.pause(true);
     }
     sheet.page = pages().some(p => p.id === id) ? id : 'character'; sheet.cursor = `panel:${sheet.page}`;
-    layout(); renderSheet(sheet);
+    layout(); renderSheet(sheet); remember();
   }
   /** Closes one player's half, or the whole screen without `player`. */
   function close(player?: PlayerId) {
@@ -272,6 +285,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     if (!button || !sheet) return;
     sheet.cursor = button.dataset.key;
     const { wear, classId, tie, scarf, view, panel } = button.dataset;
+    if (wear && classId) sheet.viewing = classId as ClassId;
     if (wear) callbacks.wear(wear as MemberId, (classId || null) as ClassId | null);
     else if (tie) callbacks.tie(tie as MemberId, classId as ClassId, scarf as ScarfId);
     else if (view) { sheet.viewing = view as ClassId; renderSheet(sheet); }

@@ -21,7 +21,7 @@
     {
       "shot": "estado",
       "delay": 1500,
-      "caption": "Estado (C): portrait, stats, the ánima Gerard wears, a vague line about the day, the time; Aitor at a glance"
+      "caption": "Estado (C): portrait, the vitals plate with its two waves, the ánima switch, stats and skills, a vague line about the day and the time"
     },
     {
       "press": "KeyE"
@@ -29,15 +29,15 @@
     {
       "shot": "animas",
       "delay": 1200,
-      "caption": "E (or R on a controller) turns the page: Ánimas, with who wears Noísta and the colour of its scarf"
+      "caption": "E (or R on a controller) turns the page: Ánimas, each member's vitals with their own ánima chips and scarf, and what the ánima changes"
     },
     {
       "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click(); document.querySelector('[data-tie=\"aitor\"][data-scarf=\"noche\"]').click(); document.querySelector('[data-tie=\"gerard\"][data-scarf=\"mostaza\"]').click();"
     },
     {
       "shot": "animas-personalised",
-      "delay": 900,
-      "caption": "Aitor puts Noísta on with a navy scarf; Gerard switches his to mustard"
+      "delay": 350,
+      "caption": "Aitor puts Noísta on with a navy scarf (his face lights up); Gerard switches his to mustard"
     },
     {
       "press": "KeyE"
@@ -132,19 +132,19 @@
       "eval": "tap(1, 4)"
     },
     {
-      "eval": "tap(1, 13)"
+      "eval": "window.before = JSON.stringify([window.gerard.story.loadout, window.gerard.story.scarves]); tap(1, 13)"
     },
     {
       "eval": "tap(1, 0)"
     },
     {
-      "until": "window.gerard.story.scarfOf('aitor', 'noista') !== 'noche'",
+      "until": "JSON.stringify([window.gerard.story.loadout, window.gerard.story.scarves]) !== window.before",
       "timeout": 20000
     },
     {
       "shot": "duo-aitor-animas",
       "delay": 1200,
-      "caption": "Aitor's own Ánimas page, picked with his controller: only his ánima and scarf"
+      "caption": "Aitor's own Ánimas page, driven by his controller: his vitals, his ánima chips and his scarf only"
     },
     {
       "eval": "Promise.all([tap(0, 1), tap(1, 1)])"

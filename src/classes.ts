@@ -21,6 +21,8 @@ export const CLASSES: Record<ClassId, { name: string; motto: string; look: Recor
   },
 };
 
+/** The colours a class painted over, so taking it off gives the outfit back. */
+const ownColours = new WeakMap<pc.StandardMaterial, pc.Color>();
 /**
  * Dresses a character model in a class: recolours its materials by name (the model must own
  * them) and ties a scarf at the neck, once. Works on Gerard in the street and on his battle copy.
@@ -34,7 +36,7 @@ export function wearClass(model: pc.Entity, id: ClassId, scarfColour = CLASSES[i
     if (seen.has(m)) return;
     seen.add(m);
     const colour = spec.look[m.name];
-    if (colour) { m.diffuse.fromString(colour); m.update(); }
+    if (colour) { if (!ownColours.has(m)) ownColours.set(m, m.diffuse.clone()); m.diffuse.fromString(colour); m.update(); }
   }));
   const body = model.findByName('Cuerpo') as pc.Entity | null;
   if (!body) return;
@@ -53,4 +55,13 @@ export function wearClass(model: pc.Entity, id: ClassId, scarfColour = CLASSES[i
   part('Nudo del pañuelo', [.15, .91, .1], [.1, .1, .1], [0, 0, 45]);
   part('Punta del pañuelo', [-.05, .8, -.18], [.1, .22, .03], [12, 0, 8]);
   part('Punta del pañuelo', [.06, .78, -.18], [.09, .2, .03], [16, 0, -10]);
+}
+
+/** Takes a class off a model: its own colours come back and the scarf goes. */
+export function unwearClass(model: pc.Entity) {
+  model.findComponents('render').forEach(component => (component as pc.RenderComponent).meshInstances.forEach(mesh => {
+    const m = mesh.material as pc.StandardMaterial, own = ownColours.get(m);
+    if (own) { m.diffuse.copy(own); m.update(); ownColours.delete(m); }
+  }));
+  (model.findByName('Cuerpo') as pc.Entity | null)?.findByName('Pañuelo')?.destroy();
 }

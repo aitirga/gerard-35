@@ -8,6 +8,10 @@ import { createBattleUI } from './battle-ui';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent } from './story';
 import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
+import { SCARVES } from './animas';
+import type { MemberId } from './story';
+
+const isMember = (id: string): id is MemberId => id === 'gerard' || id === 'bernat' || id === 'aitor';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
@@ -104,6 +108,11 @@ try {
     awaken: id => { game.awaken(id); storyEvent({ type: 'class', id }); },
     driver: id => battleDriver(control, id),
     waiting: id => waitingForPlayer2(control, id),
+    classes: () => story.classes,
+    scarf: (id, classId) => isMember(id) ? SCARVES[story.scarfOf(id, classId)].colour : undefined,
+    // Each fighter's pick in the fight is their pick for the adventure too.
+    anima: (id, classId, scarf) => { game.changeAnima(id, classId, scarf); if (isMember(id) && story.wear(id, classId)) { keepLoadout(); storyChanged(); } },
+    solo: () => control.mode === 'solo',
   });
   /** Re-applies who drives Aitor after the mode or the second controller changes. */
   function controlChanged() {
@@ -119,6 +128,7 @@ try {
     // With a second player on Aitor, each player gets their own half of the status screen.
     split: () => partnerDriven(control, story.partner),
     partner: () => game.partnerPosition,
+    solo: () => control.mode === 'solo',
   });
   let currentLocation: EnvironmentId = story.resume.environment;
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
@@ -209,15 +219,16 @@ try {
       if (action === 'character') { if (/^(world|journal:)/.test(controllerContext())) exploration.control(action, player); return; }
       if (player === 2) {
         if (exploration.isOpen(2)) exploration.control(action, 2);
-        else if (action === 'overview' || action === 'prev' || action === 'next') return;
+        else if (action === 'overview') return;
         else if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
+        else if (action === 'prev' || action === 'next') return;
         else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); }
         else if (!exploration.active && action === 'confirm') game.interact(true);
         return;
       }
       if (action === 'overview') { if (controllerContext() === 'world') game.toggleOverview(); }
-      else if (action === 'prev' || action === 'next') exploration.control(action, 1);
       else if (battleUI.controllerContext !== 'world') battleUI.control(action, 1);
+      else if (action === 'prev' || action === 'next') exploration.control(action, 1);
       else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); else if (action === 'cancel') dialogue.close(); }
       else if (exploration.active) exploration.control(action, 1);
       else if (action === 'confirm') game.interact();

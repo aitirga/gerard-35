@@ -132,20 +132,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .round-badge { position: absolute; top: 28px; right: 34px; display: grid; gap: 0; text-align: center; border-top: 3px solid var(--battle-gold); padding: 9px 14px 0; transform: rotate(3deg); }
 .round-badge span { font-size: 9px; letter-spacing: .2em; }
 .round-badge strong { font-size: 42px; line-height: 1.1; font-weight: 900; letter-spacing: -.06em; color: var(--battle-gold); }
-.unit-info { flex: 1; min-width: 0; }
-.unit-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.unit-heading > strong { font-size: 13px; }
-.unit-status { color: var(--battle-gold); letter-spacing: .12em; font-size: 7px; }
-.meter-caption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 5px 0 4px; font-size: 8px; }
-.meter-caption > span { letter-spacing: .1em; color: #b9c8b9; }
-.meter-caption strong { font-size: 11px; font-variant-numeric: tabular-nums; }
-.meter-caption small { font-size: 8px; color: #a6b4a8; font-weight: 400; }
-.battle-meter { height: 5px; background: #ffffff1a; overflow: hidden; transform: skewX(-15deg); }
-.battle-meter { position: relative; }
-.battle-meter i, .battle-meter b { position: absolute; inset: 0 auto 0 0; background: #b9dba1; transition: width .5s cubic-bezier(.2,.8,.2,1); }
-.battle-meter b, .enemy-health b { background: #f6efd6; opacity: .75; transition: width .6s .45s cubic-bezier(.4,0,.2,1); }
-.battle-meter.secondary { height: 3px; }
-.battle-meter.secondary i { background: #e7c476; }
+.enemy-health b { background: #f6efd6; opacity: .75; transition: width .6s .45s cubic-bezier(.4,0,.2,1); }
 .is-down { opacity: .38; }
 .battle-bottom { position: absolute; left: 36px; right: 36px; bottom: 28px; display: flex; justify-content: space-between; align-items: end; gap: 24px; }
 .command-panel { width: 340px; max-width: 52%; flex-shrink: 0; }
@@ -176,11 +163,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .command-help { margin: 12px 0 0; color: #b1bdab; font-size: 8px; letter-spacing: .05em; }
 .command-help span { margin: 0 5px; color: var(--battle-gold); }
 .party-roster { display: grid; gap: 12px; width: 290px; max-width: 44%; }
-.party-card { display: flex; align-items: center; min-height: 115px; gap: 10px; padding: 14px 16px 14px 0; background: #172c25ed; border: 1px solid #c6d6ad33; border-right: 3px solid #b9cba244; position: relative; }
-.party-card.is-active { border-right-color: var(--battle-gold); background: #263a2ded; }
-.party-portrait { width: 76px; flex-shrink: 0; align-self: stretch; position: relative; overflow: visible; }
-.party-portrait img { position: absolute; width: 90px; height: 133px; bottom: -14px; left: -5px; object-fit: contain; object-position: bottom; filter: drop-shadow(3px 0 0 #d3b46688); }
-.party-portrait > span { display: grid; place-content: center; height: 100%; font-size: 55px; font-style: italic; font-weight: 900; color: #a9c8d6; }
 .battle-result { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%) rotate(-2deg); width: min(440px, calc(100% - 48px)); padding: 30px; background: var(--battle-ink); border-top: 5px solid var(--battle-gold); box-shadow: 12px 12px 0 #0b1b2080; }
 .battle-result h2 { font-size: 46px; font-style: italic; letter-spacing: -.07em; margin: 15px 0; color: var(--battle-gold); }
 .battle-result p { font-size: 13px; line-height: 1.6; }
@@ -197,16 +179,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .command-panel { width: 100%; max-width: 100%; }
   .command-trigger { min-height: 41px; padding: 8px 14px; }
   .command-trigger strong { font-size: 22px; }
-  .party-roster { width: 100%; max-width: 100%; display: flex; gap: 7px; }
-  .party-card { min-height: 75px; padding: 9px; flex: 1; gap: 4px; }
-  .party-portrait { width: 42px; }
-  .party-portrait img { width: 53px; height: 79px; bottom: -9px; }
-  .party-portrait > span { font-size: 30px; }
-  .party-card .unit-heading { margin-bottom: 4px; gap: 4px; }
-  .party-card .unit-heading > strong { font-size: 11px; }
-  .party-card .unit-status { font-size: 6px; }
-  .meter-caption { margin: 3px 0; font-size: 7px; }
-  .meter-caption strong { font-size: 9px; }
   .command-help { display: none; }
   .turn-heading { padding-bottom: 7px; }
   .commands { gap: 4px; }
@@ -226,8 +198,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 @media (max-height: 480px) and (min-width: 601px) {
   .battle-heading h1 { font-size: 22px; }
   .command-panel { width: 280px; }
-  .party-card { min-height: 85px; padding-top: 9px; padding-bottom: 9px; }
-  .party-portrait img { height: 104px; }
 }
 @media (prefers-reduced-motion: reduce) {
   #battle, #battle * { animation: none !important; transition: none !important; }
@@ -243,7 +213,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .command-trigger strong { font-size: 18px; }
   .command-choices { max-height: 86px; scrollbar-width: thin; }
   .command-content > p { margin-bottom: 5px; }
-  .party-card { min-height: 80px; }
 }
 
 /* The street stays visible through a soft diagonal sweep; the HUD arrives in beats. */
@@ -346,7 +315,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .battle-heading { top: 20px; }
   .battle-heading h1 { font-size: 30px; }
   .battle-bottom { bottom: 20px; }
-  .party-card { min-height: 94px; }
 }
 
 /* Ability → target: focus the nameplate or ally card, with a reversible second step. */
@@ -384,8 +352,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .turn-dot { animation: turn-pulse 1.6s ease-in-out infinite; }
 #battle[data-resolving] .turn-dot { animation-duration: .5s; }
 @keyframes turn-pulse { 50% { scale: .55; opacity: .55; } }
-.party-card.is-active { box-shadow: inset 0 0 0 1px #f3cf7822, 0 0 24px #f3cf7814; }
-.party-card.contact-hit .party-portrait img, .party-card.contact-hit .party-portrait > span { animation: portrait-shake .38s ease-out; }
 @keyframes portrait-shake { 20% { translate: -4px 0; } 40% { translate: 3px 0; } 60% { translate: -2px 0; } 80% { translate: 1px 0; } }
 .battle-result:not([hidden]) { animation: result-in .55s cubic-bezier(.16,1,.3,1) both; }
 .battle-result:not([hidden]) h2 { animation: result-stamp .5s .18s cubic-bezier(.2,1.6,.4,1) both; }
@@ -498,19 +464,14 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #hud[data-class="noista"] #battle::before { border-color: #e2483d22; }
 #hud[data-class="noista"] #battle::after { content: 'NO'; inset: auto -2% 4% auto; width: auto; z-index: 0; background: none; transform: rotate(-12deg); animation: none; font: italic 900 34vw/1 'Manrope', sans-serif; letter-spacing: -.08em; color: #e2483d; opacity: .07; }
 #hud[data-class="noista"] .battle-heading h1 { text-transform: uppercase; font-style: italic; text-shadow: 4px 4px 0 #e2483d88; }
-#hud[data-class="noista"] .commands { transform: skewX(-9deg) rotate(-1deg); }
-#hud[data-class="noista"] .command { background: var(--ui-paper); box-shadow: 6px 6px 0 #e2483daa; }
-#hud[data-class="noista"] .command:has(.command-trigger:hover), #hud[data-class="noista"] .command:has(.command-trigger:focus-visible) { background: #ffd9cf; }
-#hud[data-class="noista"] .command.expanded { background: var(--ui-gold); color: #fff4ec; }
-#hud[data-class="noista"] .command-trigger strong { text-transform: uppercase; font-style: italic; letter-spacing: -.07em; }
-#hud[data-class="noista"] .command-choices button:hover { background: #3a1f26; }
-#hud[data-class="noista"] .command-back { color: var(--ui-ink); }
-#hud[data-class="noista"] .party-card { background: var(--ui-surface); border-color: var(--ui-line); }
-#hud[data-class="noista"] .party-card.is-active { background: #2b1a1fee; }
-#hud[data-class="noista"] .battle-meter.secondary i { background: #e2483d; }
+.battle-dock[data-anima="noista"] .commands { transform: skewX(-9deg) rotate(-1deg); }
+.battle-dock[data-anima="noista"] .command { background: var(--ui-paper); box-shadow: 6px 6px 0 #e2483daa; }
+.battle-dock[data-anima="noista"] .command:has(.command-trigger:hover), .battle-dock[data-anima="noista"] .command:has(.command-trigger:focus-visible) { background: #ffd9cf; }
+.battle-dock[data-anima="noista"] .command.expanded { background: var(--ui-gold); color: #fff4ec; }
+.battle-dock[data-anima="noista"] .command-trigger strong { text-transform: uppercase; font-style: italic; letter-spacing: -.07em; }
+.battle-dock[data-anima="noista"] .command-choices button:hover { background: #3a1f26; }
+.battle-dock[data-anima="noista"] .command-back { color: var(--ui-ink); }
 #hud[data-class="noista"] .battle-result { box-shadow: 12px 12px 0 #e2483d55; }
-#hud[data-class="noista"] .party-portrait img { filter: drop-shadow(3px 0 0 #e2483d99); }
-#hud[data-class="noista"] .party-card[data-unit="gerard"] .unit-heading > strong::after { content: ' · NOÍSTA'; color: var(--ui-gold); font-size: 8px; letter-spacing: .16em; }
 #hud[data-class="noista"] #battle { transition: background .6s; }
 
 /* The end of a dream: everything goes black, even the HUD, then comes back elsewhere. */
@@ -518,10 +479,9 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #blackout[data-on="true"] { opacity: 1; pointer-events: auto; }
 
 /* Two players (docs/party.md): Aitor's portrait and player 2's turns. */
-.party-portrait > svg { position: absolute; width: 70px; height: 70px; bottom: 6px; left: 3px; }
 #battle[data-player="2"] .turn-meta, #battle[data-player="2"] .turn-dot { color: #e7c9a1; background-color: transparent; }
 #battle[data-player="2"] .turn-dot { background: #e7c9a1; }
-#battle[data-waiting] .turn-meta { font-size: 11px; color: #ff8fbf; animation: turn-pulse 1.2s ease-in-out infinite; }
+#battle[data-waiting] .turn-meta { font-size: 11px; white-space: nowrap; color: #ff8fbf; animation: turn-pulse 1.2s ease-in-out infinite; }
 
 /* Status screen (exploration-ui.ts): everything on one screen, no scrolling. Alone it is one wide
    sheet; with a second player each gets half, Gerard on the left and Aitor on the right. */
@@ -530,7 +490,27 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #exploration-panel[data-split="true"] .status-sheet[data-player="2"] { grid-column: 2; }
 #exploration-panel:not([data-split="true"]) .status-sheet { justify-self: center; width: min(1280px, 100%); }
 .status-sheet { --sheet-accent: var(--ui-gold); container-type: inline-size; min-height: 0; display: flex; flex-direction: column; padding: 22px 28px 16px; overflow: hidden; background: linear-gradient(145deg, #172c25f7, #10231bf2); backdrop-filter: blur(12px); border: 1px solid var(--ui-line); border-top: 3px solid var(--sheet-accent); box-shadow: 12px 12px 0 #071e2266; color: var(--ui-paper); pointer-events: auto; animation: encounter-right .35s ease both; }
-.status-sheet[data-player="2"] { --sheet-accent: #e7c9a1; }
+/* Each half wears its own player's ánima: Noísta's protest poster, or the member's own colours. */
+.status-sheet[data-anima="none"] { --ui-gold: #f3cf78; --ui-paper: #f3efdc; --ui-ink: #162823; --ui-muted: #b9c8b9; --ui-line: #c6d6ad33; --ui-shadow: 5px 5px 0 #071e2266; }
+.status-sheet[data-anima="none"][data-player="2"] { --sheet-accent: #e7c9a1; }
+.status-sheet[data-anima="noista"] { --ui-gold: #e2483d; --ui-paper: #f4ece2; --ui-ink: #1b1216; --ui-muted: #c9b3ad; --ui-line: #e2483d40; --ui-shadow: 5px 5px 0 #e2483d66; background: linear-gradient(145deg, #21151af7, #170f12f2); }
+.status-sheet[data-anima="noista"]::after { content: 'NO'; position: absolute; inset: 30% 0 0 30%; z-index: -1; display: flex; align-items: flex-end; justify-content: flex-end; overflow: hidden; font: italic 900 30cqi/.78 'Manrope', sans-serif; letter-spacing: -.08em; color: #e2483d; opacity: .05; pointer-events: none; }
+.journal-content .anima-line { font-size: 12px; font-style: italic; }
+.anima-line b { margin-left: 6px; font-style: normal; color: var(--ui-paper); }
+.status-sheet { position: relative; isolation: isolate; --battle-gold: var(--sheet-accent); --battle-paper: var(--ui-paper); --battle-ink: var(--ui-ink); }
+.sheet-dev { margin-left: 12px; padding: 2px 8px; border: 1px dashed #ff8fbf; color: #ff8fbf; letter-spacing: .14em; }
+.status-vitals { display: grid; gap: 12px; padding: 14px 18px 14px 14px; border: 1px solid var(--ui-line); border-radius: 46px 16px 16px 46px; background: linear-gradient(100deg, #ffffff0d, #ffffff04); }
+.status-mate { padding: 10px 16px 10px 10px; border: 1px solid var(--ui-line); border-radius: 40px 14px 14px 40px; background: #ffffff06; }
+.status-mate .vitals { grid-template-columns: 46px minmax(0, 1fr); gap: 10px; }
+.status-mate .vitals-avatar { width: 46px; height: 46px; }
+.status-mate .vitals-waves { height: 24px; }
+.status-portrait > .vitals-burst { inset: 10%; }
+.status-portrait.anima-flash { animation: portrait-light 1.3s ease-out; }
+.status-portrait.anima-flash > .vitals-burst { animation: anima-burst 1.3s ease-out; }
+.status-portrait.anima-flash > .vitals-burst::after { animation: anima-rays 1.3s ease-out; }
+@keyframes portrait-light { 0% { filter: none; } 15% { filter: brightness(1.9) saturate(1.4) drop-shadow(0 0 30px var(--flash)); } 100% { filter: none; } }
+.status-portrait { border-bottom-color: var(--anima, var(--sheet-accent)); transition: border-color .4s; }
+.status-portrait::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--anima, transparent) 26%, transparent), transparent 62%); pointer-events: none; }
 .status-sheet .battle-kicker { color: var(--sheet-accent); }
 .status-sheet .is-cursor { outline: 2px solid var(--sheet-accent); outline-offset: 3px; }
 .status-sheet button:focus-visible { outline: 2px solid var(--sheet-accent); outline-offset: 3px; }
@@ -580,7 +560,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .status-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .anima-worn { padding: 12px 14px; border: 1px solid var(--ui-line); border-left: 4px solid var(--scarf, var(--ui-line)); background: #ffffff06; }
 .anima-worn strong { display: block; margin-top: 4px; font: italic 900 24px/1 'Manrope', sans-serif; letter-spacing: -.05em; text-transform: uppercase; }
-.anima-worn[data-empty] strong { color: var(--ui-muted); text-transform: none; font-size: 18px; }
 .journal-content .anima-worn p { margin-top: 5px; font-size: 12px; }
 .journal-content .anima-worn .anima-grants { color: var(--ui-paper); font-weight: 600; }
 .anima-bonus { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
@@ -591,40 +570,27 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .status-facts { margin: 0; }
 .status-facts div { display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--ui-line); font-size: 13px; }
 .status-facts dd { margin: 0; }
-.status-mate { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid var(--ui-line); background: #ffffff06; }
-.status-mate strong { display: block; font-size: 14px; }
-.status-mate span { font-size: 11px; color: var(--ui-muted); }
-.mate-portrait { position: relative; flex: none; width: 44px; height: 44px; overflow: hidden; border-radius: 50%; background: #ffffff0d; }
-.mate-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.mate-portrait .portrait-initial { font-size: 20px; }
 
-/* Ánimas: which ones have woken, what they change, who wears them and in which colour. */
-.animas-page { display: grid; grid-template-columns: minmax(170px, .5fr) minmax(0, 2fr); gap: 24px; }
-.anima-list { display: flex; flex-direction: column; gap: 8px; }
-.anima-list button { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--ui-line); background: transparent; color: inherit; text-align: left; }
-.anima-list button strong { font: italic 900 18px 'Manrope', sans-serif; text-transform: uppercase; letter-spacing: -.04em; }
-.anima-list button small { font-size: 11px; color: var(--ui-muted); }
-.anima-list button[aria-pressed="true"] { background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); }
-.anima-list button[aria-pressed="true"] small { color: #16282399; }
-.anima-detail { display: flex; flex-direction: column; min-height: 0; }
-.anima-detail h2 { font: italic 900 clamp(34px, 5cqi, 56px)/1 'Manrope', sans-serif; text-transform: uppercase; letter-spacing: -.07em; }
-.journal-content .anima-motto { font-size: 15px; font-style: italic; color: var(--ui-paper); }
-.anima-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 22px; margin: 16px 0; }
+/* Ánimas: each member's vitals and ánima on top (each picks their own, two can differ), the
+   colour of its scarf, and what the ánima in view changes. */
+.animas-page { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 18px; }
+.anima-wearers { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.anima-wearer { display: grid; gap: 12px; padding: 14px 18px 14px 14px; border: 1px solid var(--ui-line); border-radius: 46px 16px 16px 46px; background: linear-gradient(100deg, #ffffff0d, #ffffff04); }
+.anima-wearer .anima-switch, .status-vitals .anima-switch { padding: 0; }
+.scarf-picker { display: flex; align-items: center; gap: 9px; }
+.scarf-picker span { margin-right: 4px; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ui-muted); }
+.scarf-picker button { width: 24px; height: 24px; padding: 0; border: 2px solid #ffffff30; border-radius: 50%; background: var(--swatch); }
+.scarf-picker button[aria-pressed="true"] { border-color: var(--ui-paper); box-shadow: 0 0 0 2px var(--sheet-accent), 0 0 12px var(--swatch); }
+.scarf-picker button.is-cursor { outline-offset: 4px; }
+.anima-detail { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .8fr) minmax(0, 1.3fr); align-content: start; gap: 8px 28px; padding-top: 16px; border-top: 1px solid var(--ui-line); }
+.anima-detail h2 { font: italic 900 clamp(34px, 5cqi, 56px)/1 'Manrope', sans-serif; text-transform: uppercase; letter-spacing: -.07em; color: color-mix(in srgb, var(--scarf) 75%, white); text-shadow: 3px 3px 0 #0006; }
+.journal-content .anima-motto { margin-top: 6px; font-size: 15px; font-style: italic; color: var(--ui-paper); }
+.journal-content .anima-rule { grid-column: 1 / -1; margin-top: 8px; font-size: 11px; color: var(--ui-muted); }
 .anima-skills { margin: 8px 0 0; padding: 0; list-style: none; }
 .anima-skills li { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--ui-line); }
 .anima-skills strong { font-size: 15px; }
 .anima-skills small { align-self: center; font-size: 9px; letter-spacing: .12em; color: var(--sheet-accent); }
 .anima-skills span { grid-column: 1 / -1; font-size: 12px; color: var(--ui-muted); }
-.anima-wearers { padding-top: 12px; border-top: 1px solid var(--ui-line); }
-.anima-wearer { display: grid; grid-template-columns: 44px minmax(60px, auto) auto 1fr; align-items: center; gap: 14px; padding: 10px 0; }
-.anima-wearer strong { font-size: 15px; }
-.wear-toggle { padding: 8px 12px; border: 1px solid var(--ui-line); background: transparent; color: inherit; font-size: 12px; white-space: nowrap; }
-.wear-toggle[aria-pressed="true"] { border-color: var(--sheet-accent); background: #d3b46622; color: var(--sheet-accent); }
-.scarf-picker { display: flex; align-items: center; gap: 9px; justify-self: end; }
-.scarf-picker span { margin-right: 4px; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ui-muted); }
-.scarf-picker button { width: 26px; height: 26px; padding: 0; border: 2px solid #ffffff30; border-radius: 50%; background: var(--swatch); }
-.scarf-picker button[aria-pressed="true"] { border-color: var(--ui-paper); box-shadow: 0 0 0 2px var(--sheet-accent); }
-.scarf-picker button.is-cursor { outline-offset: 4px; }
 
 /* Objetos: one bag for the whole party. */
 .items-page { display: flex; flex-direction: column; gap: 14px; }
@@ -671,11 +637,9 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .status-skills li { padding: 4px 8px; border: 1px solid var(--ui-line); }
   .status-skills span { display: none; }
   .status-bars + .battle-kicker { margin-top: 12px; }
-  .animas-page { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 14px; }
-  .anima-list { flex-direction: row; }
-  .anima-columns { margin: 10px 0; gap: 16px; }
-  .anima-wearer { grid-template-columns: 44px minmax(0, 1fr) auto; row-gap: 8px; }
-  .scarf-picker { grid-column: 2 / -1; justify-self: start; }
+  .animas-page { gap: 14px; }
+  .anima-detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 6px 20px; padding-top: 12px; }
+  .anima-detail > div { grid-column: 1 / -1; }
   .map-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 12px; }
   .map-landmarks { columns: 2; column-gap: 20px; margin-top: 8px; }
   .map-landmarks li { margin: 4px 0; break-inside: avoid; }
@@ -698,5 +662,121 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .status-bars div { padding: 5px 0; }
   .item-column { padding: 12px; }
   .item-column li { padding: 8px 0; }
-  .anima-wearer { padding: 6px 0; }
+  .anima-wearer { padding: 10px 14px 10px 10px; gap: 8px; }
+}
+
+/* Vitals (vitals.ts): a round face and two waves, PV over Secundaria, shared by fights and the
+   status screen. --anima is the colour of the ánima's scarf; without one, each member's own. */
+.vitals { --member: #f3cf78; --anima: var(--member); display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: center; gap: 12px; }
+.vitals[data-member="aitor"] { --member: #e7c9a1; }
+.vitals[data-member="bernat"] { --member: #9fc3d9; }
+.vitals-avatar { position: relative; width: 62px; height: 62px; border-radius: 50%; background: radial-gradient(circle at 50% 30%, #ffffff22, transparent 70%), #0f201a; box-shadow: 0 0 0 2px var(--anima), 0 0 0 5px #00000055, 0 0 18px color-mix(in srgb, var(--anima) 40%, transparent); transition: box-shadow .4s; }
+.vitals-avatar > img, .vitals-avatar > .portrait-art, .vitals-avatar > .portrait-initial { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; }
+.vitals-avatar > img { object-fit: cover; object-position: 50% 12%; }
+.vitals-avatar .portrait-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.vitals-avatar .portrait-initial { font-size: 26px; }
+.vitals-burst { position: absolute; inset: -18px; border-radius: 50%; pointer-events: none; opacity: 0; background: radial-gradient(circle, var(--flash, #fff) 0 18%, color-mix(in srgb, var(--flash, #fff) 45%, transparent) 34%, transparent 66%); }
+.vitals-burst::after { content: ''; position: absolute; inset: -12px; border-radius: 50%; background: repeating-conic-gradient(var(--flash, #fff) 0 5deg, transparent 5deg 24deg); -webkit-mask: radial-gradient(circle, transparent 38%, #000 44%, transparent 72%); mask: radial-gradient(circle, transparent 38%, #000 44%, transparent 72%); }
+.anima-flash.vitals-avatar, .anima-flash .vitals-avatar { animation: anima-glow 1.2s ease-out; }
+.anima-flash .vitals-burst { animation: anima-burst 1.2s ease-out; }
+.anima-flash .vitals-burst::after { animation: anima-rays 1.2s ease-out; }
+@keyframes anima-glow { 0% { filter: none; } 16% { filter: brightness(2.1) saturate(1.5); box-shadow: 0 0 0 3px var(--flash), 0 0 0 7px #0005, 0 0 46px 14px var(--flash); } 100% { filter: none; } }
+@keyframes anima-burst { 0% { opacity: 0; transform: scale(.3); } 16% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.9); } }
+@keyframes anima-rays { from { transform: rotate(0); } to { transform: rotate(140deg); } }
+.vitals-body { min-width: 0; }
+.vitals-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.vitals-head strong { font-size: 15px; font-weight: 700; }
+.vitals-tag { font: italic 900 11px 'Manrope', sans-serif; letter-spacing: .06em; color: color-mix(in srgb, var(--anima) 70%, white); text-shadow: 0 0 10px color-mix(in srgb, var(--anima) 60%, transparent); }
+.vitals-waves { display: block; width: 100%; height: 30px; margin: 2px 0 1px; overflow: visible; }
+.vitals-waves path { fill: none; stroke-linecap: round; }
+.vitals-waves .wave-track { stroke: #ffffff1d; stroke-width: 6; }
+.vitals-waves .wave-trail { stroke: #f6efd6; stroke-opacity: .55; stroke-width: 6; transition: stroke-dasharray .7s .45s cubic-bezier(.4, 0, .2, 1); }
+.vitals-waves .wave-fill { stroke-width: 6; transition: stroke-dasharray .5s cubic-bezier(.2, .8, .2, 1), stroke .4s; }
+.vitals-waves path:nth-child(n+4) { stroke-width: 3.5; }
+.wave-fill[data-bar="hp"] { stroke: #b9dba1; filter: drop-shadow(0 0 3px #b9dba177); }
+.wave-fill[data-bar="sec"] { stroke: color-mix(in srgb, var(--anima) 78%, white); filter: drop-shadow(0 0 3px color-mix(in srgb, var(--anima) 60%, transparent)); }
+.vitals.is-low-hp .wave-fill[data-bar="hp"] { stroke: #ff8f7a; animation: low-pulse 1s ease-in-out infinite; }
+@keyframes low-pulse { 50% { stroke-opacity: .45; } }
+.vitals-numbers { display: flex; justify-content: space-between; gap: 10px; font-size: 8px; font-weight: 600; letter-spacing: .14em; color: #b9c8b9; }
+.vitals-numbers b { margin-left: 5px; font-size: 14px; letter-spacing: 0; color: var(--battle-paper, #f3efdc); font-variant-numeric: tabular-nums; }
+.vitals-numbers small { margin-left: 3px; font-size: 9px; letter-spacing: 0; font-weight: 400; }
+
+/* Fights: one dock per player. Alone it follows whoever's turn it is; with a second player on
+   Aitor the bottom of the screen splits, Gerard's dock left and Aitor's right, each in the colours
+   of their own ánima. */
+.battle-dock { display: flex; flex-direction: column; gap: 10px; width: 370px; max-width: 46%; flex-shrink: 0; position: relative; }
+.battle-dock[data-dock="2"] { order: 3; }
+#battle[data-split] .party-roster { display: none; }
+.battle-dock::before { content: ''; position: absolute; inset: -60px -40px -30px; z-index: -1; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at 30% 70%, var(--flash, #fff), transparent 65%); }
+.battle-dock[data-dock="2"]::before { background: radial-gradient(ellipse at 70% 70%, var(--flash, #fff), transparent 65%); }
+.battle-dock.anima-flash::before { animation: dock-flash 1.2s ease-out; }
+@keyframes dock-flash { 15% { opacity: .35; } 100% { opacity: 0; } }
+.battle-dock[data-anima="none"] { --ui-gold: #f3cf78; --battle-gold: #f3cf78; --ui-paper: #f3efdc; --battle-paper: #f3efdc; --ui-ink: #162823; --battle-ink: #162823; }
+.battle-dock[data-anima="none"][data-member="aitor"] { --ui-gold: #e7c9a1; --battle-gold: #e7c9a1; }
+.battle-dock[data-anima="noista"] { --ui-gold: #e2483d; --battle-gold: #e2483d; --ui-paper: #f4ece2; --battle-paper: #f4ece2; --ui-ink: #1b1216; --battle-ink: #1b1216; }
+/* The card: a pill rounded round the face, with a wave of the ánima's colour along its edge. */
+.party-card { position: relative; padding: 12px 18px 12px 12px; background: linear-gradient(100deg, #12241ef5, #172c25d9 60%, #172c25b0); border: 1px solid #c6d6ad2e; border-radius: 46px 18px 18px 46px; box-shadow: 5px 5px 0 #071e2255; transition: box-shadow .3s, background .3s, opacity .3s; }
+.party-card::after { content: ''; position: absolute; left: 74px; right: 16px; bottom: -1px; height: 6px; background: var(--battle-gold); opacity: .6; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 6'%3E%3Cpath d='M0 3Q10 0 20 3T40 3' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x 0 0 / 40px 6px; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 6'%3E%3Cpath d='M0 3Q10 0 20 3T40 3' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x 0 0 / 40px 6px; }
+.party-card[data-anima="noista"] { background: linear-gradient(100deg, #1b1216f5, #2a161cd9 60%, #2a161cb0); border-color: #e2483d44; }
+.party-card[data-anima="noista"]::after { background: #e2483d; }
+.battle-dock.is-turn .party-card { box-shadow: 5px 5px 0 #071e2255, 0 0 0 1px var(--battle-gold), 0 0 28px color-mix(in srgb, var(--battle-gold) 22%, transparent); }
+.party-card .unit-status { position: absolute; right: 18px; bottom: -9px; padding: 2px 7px; background: var(--battle-ink); color: var(--battle-gold); font-size: 7px; font-weight: 600; letter-spacing: .16em; }
+.party-card .unit-status:empty { display: none; }
+.party-card.contact-hit .vitals-avatar { animation: portrait-shake .38s ease-out; }
+.party-roster { display: grid; gap: 14px; width: 300px; max-width: 40%; }
+.party-roster .party-card { opacity: .9; }
+.battle-dock[data-dock="2"] .party-card { padding: 12px 12px 12px 18px; border-radius: 18px 46px 46px 18px; background: linear-gradient(260deg, #12241ef5, #172c25d9 60%, #172c25b0); }
+.battle-dock[data-dock="2"] .party-card[data-anima="noista"] { background: linear-gradient(260deg, #1b1216f5, #2a161cd9 60%, #2a161cb0); }
+.battle-dock[data-dock="2"] .party-card::after { left: 16px; right: 74px; }
+.battle-dock[data-dock="2"] .party-card .unit-status { right: auto; left: 18px; }
+.battle-dock[data-dock="2"] .vitals { grid-template-columns: minmax(0, 1fr) 62px; }
+.battle-dock[data-dock="2"] .vitals-avatar { order: 2; }
+.battle-dock[data-dock="2"] .vitals-head, .battle-dock[data-dock="2"] .vitals-numbers { flex-direction: row-reverse; }
+.battle-dock[data-dock="2"] .vitals-waves { transform: scaleX(-1); }
+/* The ánima switch, right under the card: one chip per ánima, the worn one lit. */
+.anima-switch { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+.battle-dock[data-dock="2"] .anima-switch { flex-direction: row-reverse; }
+.anima-switch .battle-kicker { color: var(--battle-gold); }
+.anima-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.battle-dock[data-dock="2"] .anima-chips { justify-content: flex-end; }
+.anima-chips button { position: relative; padding: 7px 14px 7px 27px; border: 1px solid #ffffff2e; border-radius: 999px; background: #10201bd9; color: var(--battle-paper); font-size: 11px; font-weight: 600; transition: background .2s, color .2s, box-shadow .2s; }
+.anima-chips button::before { content: ''; position: absolute; left: 10px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--chip); box-shadow: 0 0 7px var(--chip); }
+.anima-chips button[data-anima=""]::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--chip); }
+.anima-chips button[aria-pressed="true"] { background: var(--battle-paper); color: var(--battle-ink); border-color: transparent; box-shadow: 0 0 0 2px var(--battle-gold), 0 0 16px color-mix(in srgb, var(--battle-gold) 40%, transparent); }
+.anima-chips button:enabled:hover, .anima-chips button:focus-visible { border-color: var(--battle-gold); outline: none; box-shadow: 0 0 0 2px var(--battle-gold); }
+.anima-chips button:disabled { cursor: default; opacity: .5; }
+.anima-chips button[aria-pressed="true"]:disabled { opacity: .8; }
+.anima-switch kbd { width: auto; padding: 0 6px; font-size: 9px; color: var(--battle-gold); border-color: #ffffff2e; }
+.battle-dock:not(.is-turn) .anima-switch kbd { visibility: hidden; }
+.dock-wait { margin: 0; padding: 12px 16px; border-left: 3px solid var(--battle-gold); background: #10201bc4; font-size: 12px; letter-spacing: .04em; color: #c9d3c5; }
+.battle-dock[data-dock="2"] .dock-wait { border-left: 0; border-right: 3px solid var(--battle-gold); text-align: right; }
+.battle-dock[data-dock="2"] .turn-heading { flex-direction: row-reverse; }
+.battle-dock[data-dock="2"] .turn-meta { margin-left: 0; margin-right: auto; }
+.battle-dock[data-dock="2"] .commands { transform: skewX(5deg); }
+.battle-dock[data-dock="2"][data-anima="noista"] .commands { transform: skewX(9deg) rotate(1deg); }
+.battle-dock[data-dock="2"] .command-trigger > * { transform: skewX(-5deg); }
+.battle-dock[data-dock="2"] .command:has(.command-trigger:hover), .battle-dock[data-dock="2"] .command:has(.command-trigger:focus-visible) { transform: translateX(-6px); }
+.battle-dock[data-dock="2"] .command.expanded { transform: translateX(-9px); }
+.battle-dock[data-dock="2"] .command-help { text-align: right; }
+/* Each half of a split fight carries its own player's ánima: Noísta's NO stamps only that side. */
+.battle-side { position: absolute; top: 0; bottom: 0; width: 50%; display: none; overflow: hidden; pointer-events: none; }
+#battle[data-split] .battle-side { display: block; }
+.battle-side[data-side="1"] { left: 0; }
+.battle-side[data-side="2"] { right: 0; background: linear-gradient(to top, #ffffff1c, transparent 40%) 0 0 / 1px 100% no-repeat; }
+.battle-side[data-anima="noista"] { background-color: #1b121633; }
+.battle-side[data-anima="noista"]::after { content: 'NO'; position: absolute; right: -4%; bottom: 3%; transform: rotate(-12deg); font: italic 900 24vw/1 'Manrope', sans-serif; letter-spacing: -.08em; color: #e2483d; opacity: .08; }
+#hud[data-class="noista"] #battle[data-split]::after { display: none; }
+.dev-badge { position: absolute; top: 30px; left: 50%; margin: 0; padding: 6px 12px; transform: translateX(-50%); border: 1px dashed #ff8fbf; background: #1b1216b3; color: #ff8fbf; font-size: 9px; font-weight: 600; letter-spacing: .18em; }
+#battle[data-entering] .battle-dock .party-card, #battle[data-entering] .anima-switch { animation: encounter-left .55s .7s both; }
+#battle[data-entering] .battle-dock[data-dock="2"] .party-card, #battle[data-entering] .battle-dock[data-dock="2"] .anima-switch { animation-name: encounter-right; }
+/* Short screens: while a command is open, the dock folds its card so the list fits under the title. */
+@media (max-height: 820px) {
+  .battle-dock .command-trigger { min-height: 40px; padding-block: 7px; }
+  .battle-dock:has(.command.expanded) .anima-switch, .battle-dock:has(.command.expanded) .turn-heading { display: none; }
+  .battle-dock:has(.command.expanded) .party-card { padding-block: 6px; }
+  .battle-dock:has(.command.expanded) .vitals { grid-template-columns: 44px minmax(0, 1fr); }
+  .battle-dock[data-dock="2"]:has(.command.expanded) .vitals { grid-template-columns: minmax(0, 1fr) 44px; }
+  .battle-dock:has(.command.expanded) .vitals-avatar { width: 44px; height: 44px; }
+  .battle-dock:has(.command.expanded) .vitals-waves { height: 18px; }
+  .battle-dock .command-choices { max-height: 118px; }
 }

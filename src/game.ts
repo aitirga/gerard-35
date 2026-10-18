@@ -6,7 +6,7 @@ import { type Dialogue } from './dialogue';
 import { createBattleScene } from './battle-scene';
 import { type BattleEffect, type BattlePhase, type BattleState, type ClassId, type Encounter } from './battle';
 import { createPalace, createPalaceApproach, type PalaceApproach } from './palace';
-import { wearClass } from './classes';
+import { unwearClass, wearClass } from './classes';
 import { SCARVES } from './animas';
 import { createQueenHands } from './queen-hands';
 import { STREET_END_AREA, WanderingPack } from './encounters';
@@ -247,6 +247,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     battleScene.possess(possessed);
     // The class look is the boy's outfit; at 35 he wakes in his pyjamas (the class stays in fights).
     if (story.gerardClass && !story.adult) wearClass(player, story.gerardClass, SCARVES[story.scarfOf('gerard', story.gerardClass)].colour);
+    else if (!story.adult) unwearClass(player);
     toneTarget = environment.id === 'palacio' || (SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo') ? 1 : 0;
     // Bernat first steps out of his own front door; scene changes place a partner beside Gerard instead.
     const mate = mateHere();
@@ -811,6 +812,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },
+    /** A fighter changed ánima mid-fight (the street look follows from the story on the next refresh). */
+    changeAnima(id: string, classId: ClassId | null, scarf?: string) { battleScene.changeAnima(id, classId, scarf); },
     setControllerInput(direction: Direction | null, stick: Stick | null, running = false) { controllerDirection = direction; controllerStick = stick; controllerRunning = running; },
     /** Player 2's controller, for Aitor. */
     setPartnerInput(direction: Direction | null, stick: Stick | null, running = false) { partnerDirection = direction; partnerStick = stick; partnerRunning = running; },
