@@ -89,7 +89,7 @@ wake up the next morning in bed, "¡NO!", with everything done kept.
 - Aitor every morning: more worried each day (`LINES_2.morning`).
 - The castle: bigger each day on the school (up to 1.6 times), the streets pinker (Trinitat Vella,
   then the Meridiana outside the flat, then the flat).
-- The network map: a pink stain creeps from the school towards home.
+- The network map: the pink halo round the castle widens over the city.
 
 **Her spread** is `(day − 1 − 3 × ánimas) / 6`: six days without any help and on the seventh
 morning it reaches the end; **each ánima wins three days back**. So a day spent on the piano and
@@ -112,7 +112,7 @@ rewind: the server lets a newer epoch replace the flags, and ignores tabs still 
 - **On foot** inside each place (a playable scene: a street, a square, a friend's house).
 - **By metro and train** between places: each station entrance is an interaction (*"Bajar al
   metro"*). It opens the **network map** (`docs/barcelona.md`): a cartoon Barcelona with its sea,
-  hills, districts, avenues and famous places as icons, and for now only the L1 (red) and L5
+  hills, streets and blocks in 3D, avenues and famous places as icons, and for now only the L1 (red) and L5
   (blue); the train to Cardedeu comes with Cardedeu. Gerard picks a station; the train runs along
   the line on the map; they come up out of the destination's entrance.
 - The map shows **where Gerard is**, the lines and their stations; only stations that lead to a
