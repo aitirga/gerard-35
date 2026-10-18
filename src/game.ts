@@ -468,13 +468,13 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const door = PLACES.bedroomDoor, root = new pc.Entity('Luz del día por la puerta'); app.root.addChild(root);
     const shaft = new pc.Entity('Rayo de luz'); root.addChild(shaft);
     shaft.addComponent('light', {
-      type: 'spot', color: new pc.Color().fromString('#fff1d6'), intensity: 2.2, range: 11, innerConeAngle: 20, outerConeAngle: 42,
+      type: 'spot', color: new pc.Color().fromString('#f6f7f9'), intensity: 1.8, range: 11, innerConeAngle: 20, outerConeAngle: 42,
       castShadows: true, shadowResolution: 1024, shadowBias: .2, normalOffsetBias: .05,
     });
     shaft.setPosition(scenery.toWorld(door.x - .2, door.z).add(new pc.Vec3(0, 2.1, 0)));
     shaft.lookAt(scenery.toWorld(10.5, 13.6)); shaft.rotateLocal(90, 0, 0);
     const glow = new pc.Entity('Claridad en la puerta'); root.addChild(glow);
-    glow.addComponent('light', { type: 'omni', color: new pc.Color().fromString('#f3eadb'), intensity: .7, range: 3.5, castShadows: false });
+    glow.addComponent('light', { type: 'omni', color: new pc.Color().fromString('#f4f5f7'), intensity: .7, range: 3.5, castShadows: false });
     glow.setPosition(scenery.toWorld(door.x - .5, door.z).add(new pc.Vec3(0, 1.3, 0)));
     return root;
   }
