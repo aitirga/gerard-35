@@ -77,11 +77,12 @@ play him on a second controller: stats, shared classes and who controls whom are
 
 ## The morning, every morning
 
-1. Black. "¡NO!" Gerard sits up in bed. The first seconds are **dreamlike**: a soft pink blur at
+1. Black, then Gerard and Aitor asleep in the same bed, Aitor slowly stroking the back of
+   Gerard's hand. "¡NO!" Gerard bolts upright. The first seconds are **dreamlike**: a soft pink blur at
    the edges, a slight echo on sounds, and something from the last loop still on screen for a
    moment (the last place he was, the friend he was with, the Queen's hands). It clears as he gets
    up.
-2. **Aitor** is beside the bed with the same first line. From the second loop on, Gerard can
+2. **Aitor** sits up beside him with the same first line, and they get out of bed on either side. From the second loop on, Gerard can
    answer differently, and Aitor notices: "Hablas como si ya hubieras vivido esto." Aitor is
    the anchor of the loop: the one person Gerard tells, the one who believes him a little more
    each morning (a running thread: by loop 3–4 he is convinced, and he starts helping, e.g.

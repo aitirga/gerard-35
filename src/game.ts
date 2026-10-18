@@ -29,6 +29,10 @@ function playerCharacter(adult = false) {
 const ADULT_SCALE = 1.26;
 /** Aitor is a little taller than Gerard. */
 const AITOR_SCALE = 1.38;
+/** Hip height in the character rigs (`rig.leg`): lying down and sitting up pivot on it. */
+const LEG_PIVOT = .48;
+/** How far Aitor's hand sits above Gerard's when it rests on the back of it. */
+const HAND_STACK = .17;
 /** How far apart two players may walk before the one ahead is held back, so both stay on screen. */
 export const TETHER = 7;
 
@@ -415,25 +419,99 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     crowd.forEach(c => c.model.destroy());
     cutscene = false; cinematic = undefined;
   }
-  /** Gerard lying in bed; 1 = flat on his back, 0 = up on his feet beside it. */
-  let lying: number | undefined;
-  /** Chapter 2 opens: out of the black, Gerard bolts upright in bed and steps out of it. */
+  /**
+   * Gerard and Aitor in bed at the start of chapter 2. `stage` runs 0 (asleep on their back)
+   * → 1 (sitting up, legs under the duvet) → 2 (standing at `out`, beside the bed on their side,
+   * having turned to `exit`). Poses are set outright every frame, never from last frame's.
+   */
+  interface Sleeper { hip: Cell; out: Cell; exit: number; stage: number; duvet: pc.Entity }
+  let sleepers: { gerard: Sleeper; aitor: Sleeper; material: pc.StandardMaterial } | undefined;
+  /** The duvet over the mattress (top of the scenery's flat duvet) and how high it stands over sleeping legs. */
+  const DUVET_TOP = .74, DUVET_RAISED = .4;
+  /** Hip height above the duvet: lying on the back, and sitting up with the legs out flat. */
+  const LYING_HIP = .15, SITTING_HIP = .095;
+  const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
+  /** Half the duvet, pulled up to the sleeper's waist: from the bed's edge on their side to the middle. */
+  function sleeperDuvet(material: pc.StandardMaterial, hip: Cell, edge: number) {
+    const half = new pc.Entity('Nórdico sobre el durmiente'); app.root.addChild(half);
+    half.addComponent('render', { type: 'box', material, castShadows: true, receiveShadows: true });
+    const foot = 13.86, top = hip.z - .02, at = scenery.toWorld((edge + 10.5) / 2, (foot + top) / 2);
+    half.setPosition(at.x, DUVET_TOP, at.z); half.setLocalScale(Math.abs(edge - 10.5) + .02, 1, top - foot);
+    return half;
+  }
+  function poseInBed(root: pc.Entity, body: typeof rig, scale: number, s: Sleeper) {
+    const sit = smooth(s.stage), up = Math.max(0, s.stage - 1);
+    const step = smooth((up - .3) / .7), pitch = 90 * (1 - sit), r = pitch * Math.PI / 180;
+    const bed = scenery.toWorld(s.hip.x, s.hip.z), stand = scenery.toWorld(s.out.x, s.out.z);
+    const hipY = DUVET_TOP + pc.math.lerp(LYING_HIP, SITTING_HIP, sit) * scale;
+    // Pivot on the hips: lying flat, the body runs from them to the pillows; sitting, it stands on them.
+    const hip = new pc.Vec3(pc.math.lerp(bed.x, stand.x, step), pc.math.lerp(hipY, .09 + LEG_PIVOT * scale, step) + Math.sin(step * Math.PI) * .12, pc.math.lerp(bed.z, stand.z, step));
+    root.setPosition(hip.x, hip.y - LEG_PIVOT * scale * Math.cos(r), hip.z - LEG_PIVOT * scale * Math.sin(r));
+    root.setLocalEulerAngles(pitch, 0, 0);
+    // Face the foot of the bed, then turn to the side to swing the legs out.
+    const turn = smooth(up * 2.5), toward = ((s.exit - 180 + 540) % 360) - 180;
+    body.body.setLocalEulerAngles(0, 180 + toward * turn, 0);
+    const legs = -90 * sit * (1 - step);
+    body.limbs.forEach((limb, i) => limb.setLocalEulerAngles(i % 2 ? 0 : legs, 0, 0));
+    body.head.setLocalEulerAngles(0, 0, 0);
+    const raised = DUVET_RAISED * (1 - step);
+    s.duvet.setLocalScale(s.duvet.getLocalScale().x, .02 + raised, s.duvet.getLocalScale().z);
+    s.duvet.setPosition(s.duvet.getPosition().x, DUVET_TOP + raised / 2 - .01, s.duvet.getPosition().z);
+  }
+  const down = new pc.Vec3(0, -1, 0);
+  /**
+   * Asleep, Gerard's hand lies on the mattress between them and Aitor's rests on the back of it,
+   * stroking it slowly; his arm lets go as Gerard bolts upright.
+   */
+  function strokeHand(s: NonNullable<typeof sleepers>) {
+    const aitor = mates.aitor.rig, arm = aitor.limbs[1];
+    const reach = 1 - smooth(s.gerard.stage * 2.5);
+    if (reach <= 0) return;
+    const gerardArm = rig.limbs[3], hand = (gerardArm.findByName('Mano') as pc.Entity).getPosition();
+    const along = hand.clone().sub(gerardArm.getPosition()).normalize();
+    const target = hand.clone().add(new pc.Vec3(0, HAND_STACK, 0)).add(along.mulScalar(Math.sin(clock * 1.3) * .07));
+    const local = aitor.body.getRotation().clone().invert().transformVector(target.sub(arm.getPosition()).normalize());
+    const axis = new pc.Vec3().cross(down, local), angle = Math.acos(Math.min(1, Math.max(-1, down.dot(local)))) * 180 / Math.PI;
+    if (axis.length() < 1e-5) return;
+    arm.setLocalRotation(new pc.Quat().slerp(pc.Quat.IDENTITY, new pc.Quat().setFromAxisAngle(axis.normalize(), angle), reach));
+  }
+  /** Chapter 2 opens: out of the black, Gerard and Aitor asleep together; Gerard bolts upright, Aitor sits up beside him. */
   async function wake(fadeIn: () => Promise<void>) {
     holdStill();
-    lying = 1;
-    const bed = scenery.toWorld(PLACES.bed.x, PLACES.bed.z);
-    cinematic = { target: bed.clone().add(new pc.Vec3(.6, .7, 0)), height: 3.4 };
+    const material = new pc.StandardMaterial(); material.diffuse.fromString('#eadcc6'); material.gloss = .05; material.update();
+    const { gerard, aitor } = PLACES.bed;
+    sleepers = {
+      material,
+      gerard: { hip: gerard, out: movement.cell, exit: 90, stage: 0, duvet: sleeperDuvet(material, gerard, 11.52) },
+      aitor: { hip: aitor, out: { ...PLACES.aitor.cell }, exit: -90, stage: 0, duvet: sleeperDuvet(material, aitor, 9.48) },
+    };
+    const bed = scenery.toWorld(10.5, 15.4);
+    cinematic = { target: bed.add(new pc.Vec3(0, .9, 0)), height: 3 };
     cameraTarget.copy(cinematic.target);
     await fadeIn();
-    await play(.9, () => {});
-    await play(.6, t => {
-      lying = 1 - t * t * (3 - 2 * t);
-      cameraWobble.set(t < .5 && !reducedMotion.matches ? Math.sin(t * 120) * .08 : 0, 0, 0);
+    await play(3, () => {});
+    const s = sleepers;
+    await play(.45, t => {
+      s.gerard.stage = t;
+      cameraWobble.set(t < .6 && !reducedMotion.matches ? Math.sin(t * 120) * .08 : 0, 0, 0);
     });
-    lying = undefined; cameraWobble.set(0, 0, 0);
+    cameraWobble.set(0, 0, 0);
+    await play(.9, t => { s.aitor.stage = t; });
+  }
+  /** After the first words, each gets out of bed on their own side; Gerard turns to Aitor across it. */
+  async function rise() {
+    const s = sleepers;
+    if (!s) return;
+    await play(.9, t => { s.gerard.stage = 1 + t; });
+    await play(.9, t => { s.aitor.stage = 1 + t; });
+    sleepers = undefined;
+    s.gerard.duvet.destroy(); s.aitor.duvet.destroy(); s.material.destroy();
+    player.setLocalEulerAngles(0, 0, 0); mates.aitor.entity.setLocalEulerAngles(0, 0, 0);
+    mates.aitor.rig.head.setLocalEulerAngles(0, 0, 0);
+    mates.aitor.rig.eyes.forEach((eye, i) => { const e = eye.getLocalScale(); eye.setLocalScale(e.x, mates.aitor.rig.eyeHeights[i], e.z); });
     const aitor = mateHere()?.id === 'aitor' ? matePosition(mates.aitor) : undefined;
     if (aitor) facing = visualFacing = facingToward(aitor.x - movement.position.x, aitor.z - movement.position.z);
-    await play(.4, () => {});
+    positionPlayer();
     cutscene = false; cinematic = undefined; lastPrompt = ''; updatePrompt();
   }
   function startPalaceFight() {
@@ -689,14 +767,13 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     rig.eyes.forEach((eye, i) => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, rig.eyeHeights[i] * (animate ? idle.blink : 1), s.z); });
     const separationHop = movement.bouncing && !reducedMotion.matches ? Math.sin(movement.progress * Math.PI) * .18 : 0;
     plantFeet(scenery.groundHeight, separationHop);
-    if (lying !== undefined) {
-      // On his back on the mattress, head on the pillows against the south wall; sitting up swings him onto his feet.
-      const k = lying, rest = scenery.toWorld(PLACES.bed.x, PLACES.bed.z), stand = player.getPosition();
-      const hop = Math.sin((1 - k) * Math.PI) * .25;
-      player.setPosition(pc.math.lerp(stand.x, rest.x, k), pc.math.lerp(stand.y, .93, k) + hop, pc.math.lerp(stand.z, rest.z, k));
-      player.setLocalEulerAngles(90 * k, 0, 0);
-      facing = visualFacing = 180;
-      rig.body.setLocalEulerAngles(0, 180, 0);
+    if (sleepers) {
+      // In bed: asleep with his eyes shut, his hand out towards Aitor, a bad dream turning his head.
+      const asleep = 1 - smooth(sleepers.gerard.stage);
+      poseInBed(player, rig, ADULT_SCALE, sleepers.gerard);
+      rig.limbs[3].setLocalEulerAngles(0, 0, 25 * asleep);
+      rig.head.setLocalEulerAngles(0, animate ? Math.sin(clock * .8) * 8 * asleep : 0, 0);
+      if (sleepers.gerard.stage === 0) rig.eyes.forEach((eye, i) => { const e = eye.getLocalScale(); eye.setLocalScale(e.x, rig.eyeHeights[i] * .12, e.z); });
     } else if (player.getLocalEulerAngles().x !== 0) player.setLocalEulerAngles(0, 0, 0);
     // Story cast: the partner walks their own gait; people at home turn to face Gerard when he is near.
     const mate = mateHere();
@@ -715,6 +792,14 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       mate.rig.body.setLocalEulerAngles(0, yaw, matePose.sway);
       mate.rig.limbs.forEach((limb, i) => limb.setLocalEulerAngles(matePose.stride * (i === 0 || i === 3 ? 1 : -1) * (i % 2 ? .8 : 1), 0, 0));
       mate.plant(scenery.groundHeight, hop);
+      if (sleepers && mate.id === 'aitor') {
+        // Asleep beside Gerard, head turned to him, until Gerard's shout wakes him.
+        poseInBed(mate.entity, mate.rig, AITOR_SCALE, sleepers.aitor);
+        mate.rig.head.setLocalEulerAngles(0, -18 * (1 - smooth(sleepers.aitor.stage)), 0);
+        const shut = sleepers.gerard.stage === 0 ? .12 : 1;
+        mate.rig.eyes.forEach((eye, i) => { const e = eye.getLocalScale(); eye.setLocalScale(e.x, mate.rig.eyeHeights[i] * shut, e.z); });
+        strokeHand(sleepers);
+      }
     }
     for (const npc of npcs) {
       const dx = movement.position.x - npc.cell.x, dz = movement.position.z - npc.cell.z;
@@ -807,7 +892,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   app.start();
   return {
     app, setEnvironment, interact, encounter, setBattle, refreshStory, summonMinion,
-    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake,
+    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },
     setControllerInput(direction: Direction | null, stick: Stick | null, running = false) { controllerDirection = direction; controllerStick = stick; controllerRunning = running; },

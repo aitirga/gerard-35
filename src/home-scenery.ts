@@ -1060,7 +1060,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       }
     });
     // A double bed with its headboard on the south wall, centred across the room so there is a
-    // nightstand with a lamp on each side; a rug under it.
+    // nightstand with a lamp on each side; a rug under it. Nothing lies on it: Gerard and Aitor
+    // sleep in it at the start of chapter 2.
     const bedWhite = mat('Canapé blanco', '#f2f1ee', 0.3), seam = mat('Junta', '#d9d7d0', 0.3);
     const bl = 3.0, bw = 2.0, hz = 17 - FACE - 0.1, bcx = 10.5, bcz = hz - bl / 2;
     box('Alfombra', mat('Alfombra de lana', '#c9b9a0', 0.05), bcx, bcz - 0.35, 0, 3.4, 0.015, 3.8);
@@ -1070,9 +1071,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     box('Sábana', mat('Sábana beige', '#d9c7a7', 0.05), bcx, bcz, 0.6, bw - 0.06, 0.02, bl - 0.04);
     const duvet = mat('Nórdico de rayas', '#eadcc6', 0.05);
     box('Nórdico', duvet, bcx, bcz - 0.45, 0.6, bw + 0.04, 0.14, 2.1).setEulerAngles(0, 2, 0);
-    box('Nórdico arrugado', duvet, bcx - 0.5, bcz - 0.2, 0.66, 0.9, 0.16, 0.8).setEulerAngles(0, -14, 4);
     for (const dx of [-0.5, 0.5]) box('Almohada', mat('Almohada', '#f1ebe0', 0.05), bcx + dx, hz - 0.3, 0.62, 0.78, 0.13, 0.4);
-    for (const [i, c] of ['#8a5a8c', '#2c3a5c', '#6f9a8a'].entries()) box('Ropa sobre la cama', mat('Ropa', c, 0.05), bcx - 0.6 + i * 0.18, bcz - 0.8 - i * 0.12, 0.74 + i * 0.02, 0.4, 0.06, 0.34).setEulerAngles(0, i * 35, 0);
     box('Cabecero', bedWhite, bcx, 17 - FACE - 0.04, 0.3, bw + 0.9, 0.95, 0.08);
     for (const y of [0.62, 0.9]) box('Ranura del cabecero', seam, bcx, 17 - FACE - 0.085, y, bw + 0.8, 0.015, 0.01);
     const nightOak = mat('Mesilla de roble', '#c9a36e', 0.3), shade = mat('Pantalla de lino', '#f3ead8', 0.1, 0.25);

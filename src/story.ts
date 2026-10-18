@@ -60,8 +60,9 @@ export type StoryEffect =
   | { kind: 'drain' }
   /** Minions everywhere, the Queen's gelatine hands catch them both, and all goes black. */
   | { kind: 'ambush' }
-  /** Chapter 2: out of the black, Gerard (35) wakes in bed with a start. */
-  | { kind: 'wake' };
+  /** Chapter 2: out of the black, Gerard (35) wakes in bed beside Aitor with a start; `rise` gets them both up. */
+  | { kind: 'wake' }
+  | { kind: 'rise' };
 
 /** Scripted fights: the possessed street dogs, and the palace minion that wakes Noísta. */
 export type EncounterId = 'dogs' | 'palace-minion';
@@ -313,7 +314,7 @@ export class Story {
         if (!this.has('wrapper-room') || !this.set('caught')) return [];
         const home: StoryEffect = { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } };
         // Aitor is in the party from here on: a second player can take him (the hint shows only when that is new).
-        return [home, { kind: 'wake' }, say(LINES.waking), { kind: 'hint', id: 'duo' }];
+        return [home, { kind: 'wake' }, say(LINES.waking), { kind: 'rise' }, { kind: 'hint', id: 'duo' }];
       }
       case 'south':
         if (this.companion !== 'follow' || this.has('dejavu') || !this.set('bernat-stalled')) return [];
