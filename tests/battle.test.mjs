@@ -118,13 +118,12 @@ test('hundreds of seeded random battles terminate with legal resources and no de
   for (const count of [0, -1, 1.5, 5, NaN]) assert.throws(() => createBattle(1, count));
 });
 
-test('Matemágico gives Gerard Análisis Parálisis alone, and Bernat has nothing', () => {
+test('Matemágico gives Gerard Análisis Parálisis and Cardioide, and Bernat has nothing', () => {
   const s = createBattle(2, 4, false, 'matemagico');
-  assert.deepEqual(skillsFor(s, s.allies[0]).map(k => k.id), ['analisis']);
+  assert.deepEqual(skillsFor(s, s.allies[0]).map(k => k.id), ['analisis', 'cardioide']);
   assert.deepEqual(skillsFor(s, s.allies[1]), []);
   const before = structuredClone(s);
-  assert.equal(act(s, 'skill', 'dog-0', 'impulse'), undefined, 'Impulso is not his');
-  assert.equal(act(s, 'skill', 'dog-0', 'encourage'), undefined, 'nor is Ánimo');
+  assert.equal(act(s, 'skill', 'dog-0', 'nota'), undefined, 'No-ta is Noísta\'s');
   assert.deepEqual(s, before);
 });
 test('Análisis Parálisis raises the party\'s Fuerza and Magia for three rounds and cannot stack', () => {
@@ -143,6 +142,21 @@ test('Análisis Parálisis raises the party\'s Fuerza and Magia for three rounds
   act(s, 'defend'); act(s, 'defend'); s.foes.forEach(f => enemyAct(s, f.id)); nextRound(s);
   assert.equal(boostRounds(s), 0, 'it wears off after round 3');
   assert.equal(act(s, 'attack', 'dog-2').amount, 18);
+});
+test('Cardioide heals one hurt ally, never the dead or the unhurt, and only with energy', () => {
+  const s = createBattle(2, 2, false, 'matemagico');
+  assert.equal(act(s, 'skill', 'bernat', 'cardioide'), undefined, 'nobody is hurt');
+  assert.equal(act(s, 'skill', 'dog-0', 'cardioide'), undefined, 'not on a foe');
+  s.allies[1].hp = 80;
+  const effect = act(s, 'skill', 'bernat', 'cardioide');
+  assert.equal(effect.amount, 5); assert.equal(s.allies[1].hp, 85); assert.equal(s.allies[0].secondary, 22);
+  act(s, 'defend'); s.foes.forEach(f => enemyAct(s, f.id)); nextRound(s);
+  s.allies[1].hp = 20;
+  assert.equal(act(s, 'skill', 'bernat', 'cardioide').amount, 25, '24 base, Magia 11 with Matemágico');
+  const dead = createBattle(2, 2, false, 'matemagico'); dead.allies[1].hp = 0;
+  assert.equal(act(dead, 'skill', 'bernat', 'cardioide'), undefined);
+  dead.allies[0].hp = 10; dead.allies[0].secondary = 7;
+  assert.equal(act(dead, 'skill', 'gerard', 'cardioide'), undefined, 'not enough Secundaria');
 });
 test('L and R swap the active fighter\'s ánima for free, with its skills and stats; Bernat wears none', () => {
   const s = createBattle(2, 2, false, 'matemagico', ['matemagico', 'noista']);
@@ -176,15 +190,18 @@ test('the palace minion swallows every hit, and whatever the party does the beat
     attack: s => act(s, 'attack', 'minion-0'),
     guard: s => act(s, 'defend'),
     boost: s => act(s, 'defend'),
+    heal: s => act(s, 'defend'),
   };
   for (const [name, move] of Object.entries(strategies)) {
     const state = createMinionBattle('matemagico');
     assert.equal(cornered(state), true, 'nobody escapes the palace minion');
     assert.equal(act(state, 'escape'), undefined);
-    assert.deepEqual(skillsFor(state, state.allies[0]).map(s => s.id), ['analisis'], 'No-ta waits for Noísta');
+    assert.deepEqual(skillsFor(state, state.allies[0]).map(s => s.id), ['analisis', 'cardioide'], 'No-ta waits for Noísta');
     while (state.phase !== 'beat') {
       assert.ok(state.round <= 6, `${name}: the beat came by round 6`);
-      const gerard = name === 'boost' && state.round === 1 ? act(state, 'skill', undefined, 'analisis') : act(state, 'attack', 'minion-0');
+      const bernat = state.allies.find(a => a.id === 'bernat');
+      const gerard = name === 'boost' && state.round === 1 ? act(state, 'skill', undefined, 'analisis')
+        : name === 'heal' && bernat.hp < bernat.maxHp ? act(state, 'skill', 'bernat', 'cardioide') ?? act(state, 'attack', 'minion-0') : act(state, 'attack', 'minion-0');
       if (gerard.kind === 'attack') { assert.equal(gerard.amount, 0); assert.equal(gerard.swallowed, true); }
       move(state);
       enemyAct(state, 'minion-0');
@@ -208,7 +225,7 @@ test('the palace minion swallows every hit, and whatever the party does the beat
 test('skill descriptions follow the plain shape in AGENTS.md, with the intensity their power gives', () => {
   const intensity = power => power <= 20 ? 'leve' : power <= 34 ? 'medi[oa]' : power <= 49 ? 'alt[oa]' : 'muy alt[oa]';
   const targets = { foes: 'a un enemigo', allies: 'a un aliado herido', party: 'a todo el equipo' };
-  for (const skill of SKILLS) {
+  for (const skill of SKILLS.filter(s => !('abstract' in s && s.abstract))) {
     const extra = '( [A-ZÁÉÍÓÚ][^.]*\\.)*';
     const shape = skill.kind === 'boost' ? `^(Sube|Baja) [^.]+ de ${targets[skill.side].slice(2)} durante ${BOOST_ROUNDS} rondas\\.${extra}$`
       : skill.kind === 'heal' ? `^Cura ${intensity(skill.power)} ${targets[skill.side]}\\.${extra}$`

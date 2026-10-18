@@ -301,7 +301,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const affordable = actor.secondary >= skill.cost;
       const available = validTargets(state!, 'skill', skill.id).length > 0;
       const reason = !affordable ? 'Sin energía' : available ? `${skill.cost} SEC` : skill.kind === 'boost' ? 'En marcha' : skill.side === 'foes' ? 'Sin objetivo' : 'Equipo al máximo';
-      return `<button type="button" data-skill="${skill.id}" ${'class' in skill ? `data-class="${skill.class}"` : ''} ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
+      return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
     }).join('') || '<p class="skill-empty">Sin habilidades con esta ánima.</p>';
   }
   /**
@@ -389,7 +389,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard');
       else if (effect.boosted) effect.boosted.forEach(id => pop(id, 'Análisis', 'guard', `Fuerza y Magia +${state!.boost?.amount ?? 0}`));
-      else if (effect.healed) effect.healed.forEach(h => pop(h.id, `+${h.amount}`, 'heal', 'PV'));
       else if (effect.skill && SKILLS.find(s => s.id === effect.skill)!.kind === 'heal' && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', 'PV');
       else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
       else if (effect.target && target) pop(effect.target, `−${effect.amount ?? 0}`, 'damage', target.hp === 0 ? '¡Fuera!' : target.guarding ? 'Protegido' : effect.skill ? SKILLS.find(s => s.id === effect.skill)!.name : '');

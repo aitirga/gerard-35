@@ -235,9 +235,9 @@ keyboard, floats a window beside the focused skill with its description and cost
 Skills come from **ánimas**: the strip above the menu (L · Matemágico · Noísta · R)
 swaps the active fighter's ánima with L / R on a controller or Q / E on the keyboard,
 for free. **Matemágico** (from the start) has **Análisis Parálisis** (10 Secundaria:
-Fuerza and Magia +3 for the party for three rounds); **Noísta** (unlocked in the
-palace) has **No-ta**. Bernat wears no ánima and only attacks; Aitor also has his
-own Impulso, Ánimo and Abrazo. A skill aimed at someone moves focus to the enemies or
+Fuerza and Magia +3 for the party for three rounds) and **Cardioide** (8 Secundaria:
+heals one hurt ally); **Noísta** (unlocked in the palace) has **No-ta**. Bernat
+wears no ánima and only attacks. A skill aimed at someone moves focus to the enemies or
 to injured allies; select a roster card or its matching label in the street to
 apply it. Arrows move among valid targets; **Esc** returns to the skill sheet
 without spending a turn or energy. Full-health and defeated allies cannot be

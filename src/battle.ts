@@ -18,17 +18,16 @@ export const CLASS_STATS: Record<ClassId, StatBonus> = {
   noista: { magia: 2, espiritu: 2, defensa: -1 },
 };
 /**
- * Descriptions follow the shape in AGENTS.md ("Daño alto mágico a un enemigo. Rompe el pringue.").
+ * Descriptions follow the shape in AGENTS.md ("Daño alto mágico a un enemigo. Rompe el pringue."),
+ * unless the skill is marked `abstract: true`, which lets its description stay vague on purpose.
  * `power` is the amount at average stats (see stats.ts); for a `boost` it is what it adds to
- * Fuerza and Magia. `class` skills come with an ánima; `owners` skills are those people's own.
- * Bernat has none: he only attacks.
+ * Fuerza and Magia. Every skill comes with an ánima (`class`), so whoever wears none has none:
+ * Bernat only attacks.
  */
 export const SKILLS = [
   { id: 'analisis', name: 'Análisis Parálisis', cost: 10, side: 'party', power: 3, kind: 'boost', description: 'Sube Fuerza y Magia de todo el equipo durante 3 rondas.', class: 'matemagico' },
-  { id: 'impulse', name: 'Impulso', cost: 8, side: 'foes', power: 28, kind: 'physical', description: 'Daño medio físico a un enemigo.', owners: ['aitor'] },
-  { id: 'encourage', name: 'Ánimo', cost: 8, side: 'allies', power: 24, kind: 'heal', description: 'Cura media a un aliado herido.', owners: ['aitor'] },
+  { id: 'cardioide', name: 'Cardioide', cost: 8, side: 'allies', power: 24, kind: 'heal', description: 'Cura media a un aliado herido.', class: 'matemagico' },
   { id: 'nota', name: 'No-ta', cost: 10, side: 'foes', power: 40, kind: 'magic', description: 'Daño alto mágico a un enemigo. Rompe el pringue.', class: 'noista' },
-  { id: 'abrazo', name: 'Abrazo', cost: 12, side: 'party', power: 14, kind: 'heal', description: 'Cura leve a todo el equipo.', owners: ['aitor'] },
 ] as const;
 /** How many rounds a boost lasts, counting the one it is used in. */
 export const BOOST_ROUNDS = 3;
@@ -99,9 +98,9 @@ export function switchAnima(state: BattleState, step: -1 | 1): ClassId | undefin
 }
 /** Unlocked ánimas, starting from whatever the party already wears. */
 const wornAnimas = (slots: PartySlot[]) => [...new Set(slots.flatMap(s => s.classId ? [s.classId] : []))];
-/** The skills `actor` can use: their own and their class's. */
+/** The skills `actor` can use: their ánima's. */
 export function skillsFor(_state: BattleState, actor: Combatant) {
-  return SKILLS.filter(skill => 'class' in skill ? actor.classId === skill.class : (skill.owners as readonly ProfileId[]).includes(actor.profile));
+  return SKILLS.filter(skill => actor.classId === skill.class);
 }
 /** Rounds the party boost has left, this one included (0 when there is none). */
 export const boostRounds = (state: BattleState) => state.boost ? Math.max(0, state.boost.until - state.round + 1) : 0;
@@ -110,7 +109,7 @@ function current(state: BattleState, c: Combatant): Stats {
   const boost = boostRounds(state) && state.allies.includes(c) ? state.boost!.amount : 0;
   return boost ? withBonus(c.stats, { fuerza: boost, magia: boost }) : c.stats;
 }
-export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; healed?: { id: string; amount: number }[]; boosted?: string[] }
+export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; boosted?: string[] }
 function fighter(slot: PartySlot): Combatant {
   const stats = withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined);
   return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, hp: stats.pv, maxHp: stats.pv, secondary: stats.sec, maxSecondary: stats.sec, guarding: false };
@@ -152,7 +151,7 @@ export function createMinionBattle(gerardClassId?: ClassId, animas?: ClassId[]):
   };
 }
 /** Who an action can be aimed at. A party skill is not aimed: these are who it would heal. */
-export function validTargets(state: BattleState, action: BattleAction, skill: SkillId = 'impulse'): Combatant[] {
+export function validTargets(state: BattleState, action: BattleAction, skill: SkillId = 'nota'): Combatant[] {
   if (action === 'attack') return state.foes.filter(f => f.hp > 0);
   if (action !== 'skill') return [];
   const ability = SKILLS.find(s => s.id === skill);
@@ -161,7 +160,7 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   if (ability.kind === 'boost') return boostRounds(state) ? [] : state.allies.filter(a => a.hp > 0);
   return ability.side === 'foes' ? state.foes.filter(f => f.hp > 0) : state.allies.filter(a => a.hp > 0 && a.hp < a.maxHp);
 }
-/** Whether a skill needs a target picked, or simply happens (Abrazo and Análisis reach everyone). */
+/** Whether a skill needs a target picked, or simply happens (Análisis Parálisis reaches everyone). */
 export const aimed = (skill: SkillId) => SKILLS.find(s => s.id === skill)?.side !== 'party';
 /** What `skill` (or a plain attack) does to `target` before it is clamped to what is left. */
 function strike(state: BattleState, actor: Combatant, target: Combatant, skill?: Skill) {
@@ -169,7 +168,7 @@ function strike(state: BattleState, actor: Combatant, target: Combatant, skill?:
   if (!skill) return physical(18, stats, target.stats);
   return skill.kind === 'magic' ? magical(skill.power, stats, target.stats) : physical(skill.power, stats, target.stats);
 }
-export function act(state: BattleState, action: BattleAction, targetId?: string, skill: SkillId = 'impulse'): BattleEffect | undefined {
+export function act(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId): BattleEffect | undefined {
   if (state.phase !== 'player') return;
   const actor = state.allies[state.active];
   if (!actor || actor.hp <= 0) return;
@@ -186,17 +185,11 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   }
   if (action === 'defend') {
     actor.guarding = true; state.message = `${actor.name} se prepara para el siguiente golpe.`;
-  } else if (party && ability!.kind === 'boost') {
+  } else if (party) {
     actor.secondary -= ability!.cost; effect.skill = skill; effect.target = actor.id;
     state.boost = { amount: ability!.power, until: state.round + BOOST_ROUNDS - 1 };
     effect.boosted = targets.map(ally => ally.id);
     state.message = `${actor.name} usa ${ability!.name}. Fuerza y Magia +${ability!.power} para el equipo durante ${BOOST_ROUNDS} rondas.`;
-  } else if (party) {
-    actor.secondary -= ability!.cost; effect.skill = skill; effect.target = actor.id;
-    const power = healing(ability!.power, current(state, actor));
-    effect.healed = targets.map(ally => { const amount = Math.min(power, ally.maxHp - ally.hp); ally.hp += amount; return { id: ally.id, amount }; });
-    effect.amount = effect.healed.reduce((sum, h) => sum + h.amount, 0);
-    state.message = `${actor.name} usa ${ability!.name}. El equipo recupera ${effect.amount} PV.`;
   } else if (target) {
     if (action === 'skill') { actor.secondary -= ability!.cost; effect.skill = skill; }
     effect.target = target.id;

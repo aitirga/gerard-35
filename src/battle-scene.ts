@@ -151,11 +151,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
     if (!target) { hit(actor, gold, .55); effects.emit('spark', new pc.Vec3(actor.base.x, 1.1, actor.base.z), 6, .3); return; }
-    // Abrazo reaches the whole party at once.
-    if (action.skill === 'abrazo') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, green, .85); effects.emit('heal', new pc.Vec3(f.base.x, .35, f.base.z), 12, .5); } return; }
     // Análisis Parálisis: a gold flicker of ideas over everyone still standing.
     if (action.skill === 'analisis') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, gold, .7); effects.emit('spark', new pc.Vec3(f.base.x, 1.6, f.base.z), 10, .4); } return; }
-    if (action.skill === 'encourage') { hit(target, green, .85); effects.emit('heal', new pc.Vec3(target.base.x, .35, target.base.z), 16, .5); return; }
+    if (action.skill === 'cardioide') { hit(target, green, .85); effects.emit('heal', new pc.Vec3(target.base.x, .35, target.base.z), 16, .5); return; }
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
     const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
     const reach = target.party ? .25 : .6;
@@ -267,7 +265,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const actor = effect ? fighters.get(effect.actor) : undefined;
       const target = effect?.target ? fighters.get(effect.target) : undefined;
       // Heals and boosts stay put: no run-up to anyone.
-      const support = effect?.skill === 'encourage' || effect?.skill === 'abrazo' || effect?.skill === 'analisis';
+      const support = effect?.skill === 'cardioide' || effect?.skill === 'analisis';
       const t = animate ? effectTime : ACTION_SECONDS;
       const motion = actor && target && !support ? contactMotion(actor.base, target.base, t) : undefined;
       const contact = effect?.target && !support ? CONTACT_SECONDS : .2;

@@ -9,9 +9,9 @@ export interface Stats {
   pv: number;
   /** Secundaria: what skills spend. */
   sec: number;
-  /** Physical hits: Atacar, Impulso, and the dogs' pushes. */
+  /** Physical hits: Atacar and the dogs' pushes. */
   fuerza: number;
-  /** Magic hits and healing: No-ta, Ánimo, Abrazo. */
+  /** Magic hits and healing: No-ta, Cardioide. */
   magia: number;
   /** Takes away from physical hits. */
   defensa: number;

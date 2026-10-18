@@ -64,7 +64,7 @@ story is about. Update it whenever a decision changes the story.
 | **Bernat** | Gerard's best friend and neighbour on Passatge Maresme. Designs games in a notebook, including La Reina Bubbaloo. Joins as a companion. |
 | **Jan** | Gerard's older brother. Teases him; brews a "POCIÓ" on his desk. |
 | **Mamá** | Gives Gerard running shoes for his birthday and sends him to fetch Bernat. |
-| **Aitor** | Gerard's partner; they live in the Meridiana flat. A man a little taller than Gerard, with a short beard and glasses (provisional model and portrait until there are photos). From chapter 2 he is in the party, played by a second player; his own skill is **Abrazo** (heals everyone). |
+| **Aitor** | Gerard's partner; they live in the Meridiana flat. A man a little taller than Gerard, with a short beard and glasses (provisional model and portrait until there are photos). From chapter 2 he is in the party, played by a second player; he fights with the party's ánimas. |
 | **Nuria Mendoza** | The real person behind La Reina Bubbaloo. Secret for now. |
 
 ## Places

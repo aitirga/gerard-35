@@ -39,8 +39,8 @@ build. The choice is remembered in the browser. Release builds are always two-pl
 | --- | --- |
 | **PV** | Puntos de vida. |
 | **Secundaria** | What skills spend. |
-| **Fuerza** | Adds to physical hits (Atacar, Impulso, the dogs' pushes). |
-| **Magia** | Adds to magic hits (No-ta) and to healing (Ánimo, Abrazo). |
+| **Fuerza** | Adds to physical hits (Atacar, the dogs' pushes). |
+| **Magia** | Adds to magic hits (No-ta) and to healing (Cardioide). |
 | **Defensa** | Takes away from physical hits. |
 | **Espíritu** | Takes away from magic hits. |
 | **Velocidad** | Who acts first in the party's half of the round. |
@@ -65,12 +65,12 @@ Fuerza, Defensa).
 | Skill | Who | Cost | Base | Does |
 | --- | --- | --- | --- | --- |
 | Análisis Parálisis | Whoever wears **Matemágico** | 10 | +3 | Fuerza and Magia +3 for the whole party for 3 rounds (the one it is used in included); cannot be stacked while it runs |
-| Impulso | **Aitor's own** | 8 | 28 physical | Hits one foe |
-| Ánimo | **Aitor's own** | 8 | 24 heal | Heals one hurt ally |
+| Cardioide | Whoever wears **Matemágico** | 8 | 24 heal | Heals one hurt ally |
 | No-ta | Whoever wears **Noísta** | 10 | 40 magic | Breaks the Queen's gum (pringue) |
-| Abrazo | **Aitor's own** | 12 | 14 heal | Heals the whole party at once, no target to pick |
 
-Bernat has no skills: he only attacks (Habilidad is greyed out on his turn).
+Every skill comes with an ánima: whoever wears none has none. Bernat never wears one and only
+attacks (Habilidad is greyed out on his turn); Aitor has skills only while he wears an ánima.
+Impulso and Abrazo are out for now.
 
 - **Ánimas belong to the party** (the code calls them classes: `ClassId`, `CLASSES`). Gerard has
   **Matemágico** from the start (Magia +1, Espíritu +1; his own look and interface); **Noísta**
@@ -93,7 +93,7 @@ Bernat has no skills: he only attacks (Habilidad is greyed out on his turn).
 - `src/stats.ts`: stats, profiles and the three formulas. Pure.
 - `src/battle.ts`: fighters carry stats, a profile and a class; `createBattle` takes the party
   (`story.battleParty`) and lines it up by Velocidad; `CLASS_STATS` and `SKILLS` (with `class`
-  and `owners` skills, the party-wide Abrazo and the party boost Análisis Parálisis, `state.boost`).
+  skills, and the party boost Análisis Parálisis, `state.boost`).
 - `src/party.ts`: who drives whom (`partnerDriven`, `battleDriver`, `waitingForPlayer2`). Pure.
 - `src/story.ts`: `partner` (Bernat or Aitor), `party` with profiles and classes, `classes`,
   `wear` and `loadout`.
