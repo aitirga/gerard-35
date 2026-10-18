@@ -1,6 +1,6 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { act, aimed, awaken, boostRounds, BOOST_ROUNDS, childParty, cornered, createBattle, createMinionBattle, enemyAct, nextRound, skillsFor, SKILLS, validTargets, type ClassId, type Encounter, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
+import { act, aimed, ANIMA_NAMES, awaken, boostRounds, childParty, cornered, createBattle, createMinionBattle, enemyAct, nextRound, skillsFor, SKILLS, switchAnima, validTargets, wearAnima, wearsAnimas, type ClassId, type Encounter, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
 import { CLASSES } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -19,19 +19,15 @@ const COMMANDS: { id: Command; name: string }[] = [
   { id: 'escape', name: 'Huir' },
 ];
 const TARGETS = { foes: 'Un enemigo', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
-/** What the details window says a skill does, from its numbers. */
-function skillEffect(skill: typeof SKILLS[number]) {
-  if (skill.kind === 'boost') return `Fuerza +${skill.power} y Magia +${skill.power} durante ${BOOST_ROUNDS} rondas`;
-  if (skill.kind === 'heal') return `Cura unos ${skill.power} PV${skill.side === 'party' ? ' a cada uno' : ''}`;
-  return `Daño ${skill.kind === 'magic' ? 'mágico' : 'físico'} · ${skill.power} de base${skill.id === 'nota' ? ' · rompe el pringue' : ''}`;
-}
 /** The details hint goes once it has been used (AGENTS.md: key hints disappear once used). */
 let detailsLearned = false;
 export function createBattleUI(hud: HTMLElement, callbacks: {
   change: (state: BattleState | undefined, effect?: BattleEffect, onImpact?: () => void) => Promise<void>;
   target: (id?: string) => void;
-  /** A class woke up in Gerard mid-fight (the palace minion's beat). */
-  awaken: (id: ClassId) => void;
+  /** An ánima woke up in Gerard mid-fight (the palace minion's beat). */
+  awaken: (id: 'noista') => void;
+  /** Someone swapped ánima with L / R; it stays on after the fight. */
+  changeAnima: (allyId: string, id: ClassId) => void;
   /** Which player picks this fighter's moves (docs/party.md). Keyboard and mouse are player 1. */
   driver: (allyId: string) => PlayerId;
   /** Whether that player has nothing to play with yet (player 2 without a controller). */
@@ -46,9 +42,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     <div class="battle-targets" aria-label="Objetivos en la calle"></div>
     <div class="battle-pops" aria-hidden="true"></div>
     <div class="battle-speech" aria-live="assertive"></div>
-    <section class="class-banner" hidden><span class="battle-kicker">CLASE DESBLOQUEADA</span><h2></h2><p></p></section>
+    <section class="class-banner" hidden><span class="battle-kicker">ÁNIMA DESBLOQUEADA</span><h2></h2><p></p></section>
     <div class="battle-bottom">
       <section class="command-panel" aria-label="Acciones de combate">
+        <div class="anima-bar" role="group" aria-label="Ánimas"><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior">L<small>Q</small></button><div class="anima-track"><span class="anima-indicator" aria-hidden="true"></span></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente">R<small>E</small></button></div>
         <div class="turn-heading"><span class="turn-dot"></span><span class="turn-label"></span><span class="turn-meta">TU TURNO</span></div>
         <div class="command-deck">
           <div class="commands">${COMMANDS.map((c, i) => `<article class="command" data-command="${c.id}">
@@ -65,7 +62,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       </section>
       <div class="party-roster" aria-label="Tu equipo"></div>
     </div>
-    <aside class="skill-info" role="tooltip" id="skill-info" hidden><span class="battle-kicker"></span><h3></h3><p></p><dl></dl></aside>
+    <aside class="skill-info" role="tooltip" id="skill-info" hidden><h3></h3><p></p><strong class="skill-info-cost"></strong></aside>
     <section class="battle-result" hidden><span class="battle-kicker">FIN DEL ENCUENTRO</span><h2></h2><p></p><button type="button">Volver a la calle</button></section>`;
   hud.append(root);
   const get = <T extends HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
@@ -175,15 +172,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     box.hidden = !details || !skill || !state;
     if (box.hidden || !skill || !state) { button?.removeAttribute('aria-describedby'); return; }
     button!.setAttribute('aria-describedby', 'skill-info');
-    const actor = state.allies[state.active];
-    const running = skill.kind === 'boost' ? boostRounds(state) : 0;
-    box.querySelector('.battle-kicker')!.textContent = 'class' in skill ? `HABILIDAD DE CLASE · ${skill.class === 'noista' ? 'NOÍSTA' : ''}` : `HABILIDAD DE ${actor.name.toUpperCase()}`;
     box.querySelector('h3')!.textContent = skill.name;
     box.querySelector('p')!.textContent = skill.description + '.';
-    const rows: [string, string][] = [['Coste', `${skill.cost} SEC · tienes ${actor.secondary}`], ['Objetivo', TARGETS[skill.side]], ['Efecto', skillEffect(skill)]];
-    if (running) rows.push(['Ahora', `En marcha: ${running === 1 ? 'queda 1 ronda' : `quedan ${running} rondas`}`]);
-    box.querySelector('dl')!.innerHTML = rows.map(() => '<div><dt></dt><dd></dd></div>').join('');
-    box.querySelectorAll('dl > div').forEach((row, i) => { row.querySelector('dt')!.textContent = rows[i][0]; row.querySelector('dd')!.textContent = rows[i][1]; });
+    box.querySelector('.skill-info-cost')!.textContent = `${skill.cost} SEC`;
     // Beside the skill, out past the flyout, vertically centred on it.
     const base = root.getBoundingClientRect(), at = button!.getBoundingClientRect(), sheet = get('.skill-flyout').getBoundingClientRect();
     box.style.left = `${Math.max(at.right, sheet.right) - base.left + 18}px`;
@@ -201,6 +192,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
     const actor = state.allies[state.active];
     get('.turn-label').textContent = actor.name;
+    renderAnimas(actor);
     const waiting = !busy && state.phase === 'player' && callbacks.waiting(actor.id);
     get('.turn-meta').textContent = busy || state.phase === 'enemy' ? 'EN ACCIÓN' : waiting ? 'CONECTA EL MANDO 2' : callbacks.driver(actor.id) === 2 ? 'MANDO 2' : 'TU TURNO';
     root.dataset.player = String(turnDriver());
@@ -291,21 +283,71 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get(`[data-command="${command}"]`).classList.add('expanded');
     if (command === 'attack') { beginTargeting(); return; }
     if (command !== 'skill') { void execute(); return; }
-    const actor = state.allies[state.active];
     get('[data-command="skill"] .command-trigger').setAttribute('aria-expanded', 'true');
     panel.dataset.flyout = 'open'; get('.skill-flyout').inert = false;
     // The sheet starts level with Habilidad, as if it slid out of it.
     panel.style.setProperty('--flyout-top', `${get('[data-command="skill"]').offsetTop}px`);
-    get('.skill-flyout .battle-kicker').textContent = `HABILIDADES · ${actor.name.toUpperCase()}`;
+    fillSkills();
+    render();
+    (skillButtons().find(b => !b.hasAttribute('aria-disabled')) ?? skillButtons()[0] ?? get<HTMLButtonElement>('.skill-flyout .command-back')).focus({ preventScroll: true });
+  }
+  /** The flyout's sheet: the active fighter's skills right now (an ánima swap refills it). */
+  function fillSkills() {
+    if (!state) return;
+    const actor = state.allies[state.active];
+    get('.skill-flyout .battle-kicker').textContent = `HABILIDADES · ${actor.name.toUpperCase()}${actor.classId ? ` · ${ANIMA_NAMES[actor.classId].toUpperCase()}` : ''}`;
     // Unaffordable skills stay focusable so their details can still be read.
     get('.skill-list').innerHTML = skillsFor(state, actor).map((skill, i) => {
       const affordable = actor.secondary >= skill.cost;
       const available = validTargets(state!, 'skill', skill.id).length > 0;
       const reason = !affordable ? 'Sin energía' : available ? `${skill.cost} SEC` : skill.kind === 'boost' ? 'En marcha' : skill.side === 'foes' ? 'Sin objetivo' : 'Equipo al máximo';
       return `<button type="button" data-skill="${skill.id}" ${'class' in skill ? `data-class="${skill.class}"` : ''} ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
-    }).join('');
+    }).join('') || '<p class="skill-empty">Sin habilidades con esta ánima.</p>';
+  }
+  /**
+   * L / R (Q / E on the keyboard), or a click on an ánima: the active fighter swaps ánima. The
+   * menu sweeps, the skills slide back in, and the fighter flashes in the street.
+   */
+  function changeAnima(choice: -1 | 1 | ClassId) {
+    if (!state || busy || targeting || state.phase !== 'player' || callbacks.waiting(state.allies[state.active].id)) return;
+    const actor = state.allies[state.active];
+    const next = typeof choice === 'number' ? switchAnima(state, choice) : wearAnima(state, choice) ? choice : undefined;
+    const bar = get('.anima-bar');
+    bar.classList.remove('is-stuck', 'is-swapping'); void bar.offsetWidth;
+    if (!next) { bar.classList.add('is-stuck'); return; }
+    callbacks.changeAnima(actor.id, next);
+    panel.classList.remove('is-swapping'); void panel.offsetWidth; panel.classList.add('is-swapping');
+    bar.classList.add('is-swapping');
+    pop(actor.id, ANIMA_NAMES[next], 'guard', 'Ánima');
+    showDetails(false);
+    if (selected === 'skill') {
+      fillSkills();
+      (skillButtons().find(b => !b.hasAttribute('aria-disabled')) ?? skillButtons()[0] ?? get<HTMLButtonElement>('.skill-flyout .command-back')).focus({ preventScroll: true });
+    }
     render();
-    (skillButtons().find(b => !b.hasAttribute('aria-disabled')) ?? skillButtons()[0] ?? get<HTMLButtonElement>('.skill-flyout .command-back')).focus({ preventScroll: true });
+  }
+  /** The ánima strip above the menu: who can wear what, and what the active fighter wears. */
+  function renderAnimas(actor: Combatant) {
+    if (!state) return;
+    const bar = get('.anima-bar'), track = get('.anima-track');
+    const key = state.animas.join(',');
+    if (track.dataset.key !== key) {
+      track.dataset.key = key;
+      track.querySelectorAll('.anima-chip').forEach(chip => chip.remove());
+      track.insertAdjacentHTML('beforeend', state.animas.map(id => `<button class="anima-chip" type="button" tabindex="-1" data-anima="${id}" aria-pressed="false">${ANIMA_NAMES[id]}</button>`).join(''));
+    }
+    const off = !wearsAnimas(actor) || !state.animas.length;
+    bar.toggleAttribute('data-off', off);
+    bar.title = off ? `${actor.name} no lleva ánima` : 'Cambiar de ánima: L / R en el mando, Q / E en el teclado';
+    let worn: HTMLElement | undefined;
+    track.querySelectorAll<HTMLButtonElement>('.anima-chip').forEach(chip => {
+      const on = !off && chip.dataset.anima === actor.classId;
+      chip.setAttribute('aria-pressed', String(on));
+      if (on) worn = chip;
+    });
+    const indicator = get('.anima-indicator');
+    indicator.hidden = !worn;
+    if (worn) { indicator.style.left = `${worn.offsetLeft}px`; indicator.style.width = `${worn.offsetWidth}px`; }
   }
   function beginTargeting(skill?: SkillId) {
     if (!state || busy || !selected) return;
@@ -392,6 +434,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // Mouse and keyboard belong to player 1: on player 2's turn only their controller counts (`control`).
     if (turnDriver() !== pointerPlayer) return;
     if (target.matches('.command-back, .target-back')) { back(); return; }
+    if (target.matches('.anima-key')) { changeAnima(Number(target.dataset.step) as -1 | 1); return; }
+    if (target.dataset.anima) { changeAnima(target.dataset.anima as ClassId); return; }
     if (target.dataset.skill) { beginTargeting(target.dataset.skill as SkillId); return; }
     if (target.matches('.command-trigger')) choose(target.closest<HTMLElement>('[data-command]')!.dataset.command as Command);
     else if (target.matches('[data-target], [data-confirm]')) void execute(target.dataset.target);
@@ -423,6 +467,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else if (COMMANDS[index]) choose(COMMANDS[index].id);
     }
     else if (event.key.toLowerCase() === 'i' && !event.repeat) { event.preventDefault(); showDetails(!details); }
+    else if (['q', 'e'].includes(event.key.toLowerCase()) && !event.repeat) { event.preventDefault(); changeAnima(event.key.toLowerCase() === 'q' ? -1 : 1); }
     else if (event.key.startsWith('Arrow')) { event.preventDefault(); navigate(event.key.slice(5).toLowerCase() as Direction); }
     event.stopPropagation();
   }
@@ -448,6 +493,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   return {
     get controllerContext() { return !state ? 'world' : `battle:${busy ? 'busy' : state.phase}:${selected ?? ''}:${selectedSkill ?? ''}:${targeting}`; },
+    /** L / R: the active fighter's previous or next ánima. */
+    switchAnima(step: -1 | 1, player: PlayerId = 1) {
+      if (!state || busy || player !== turnDriver()) return;
+      changeAnima(step);
+    },
     /** △ / Y: the details window beside the focused skill. */
     details(player: PlayerId = 1) {
       if (!state || busy || player !== turnDriver()) return;
@@ -472,13 +522,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       }
     },
     /** `party` is who fights on Gerard's side (story.battleParty), or a size for chapter 1's boys. */
-    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter } = {}) {
+    /** `animas` are the party's unlocked ánimas (story.classes); L and R walk through them. */
+    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; animas?: ClassId[] } = {}) {
       if (state) return;
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
       const { possessed = false, encounter = 'dogs' } = options;
-      const slots = typeof party === 'number' ? childParty(party) : party;
-      state = encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId) : createBattle(slots, foeCount, possessed); busy = true;
+      const slots = typeof party === 'number' ? childParty(party, options.animas?.at(-1)) : party;
+      state = encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId, options.animas) : createBattle(slots, foeCount, possessed, undefined, options.animas); busy = true;
       foeCount = state.foes.length;
       root.toggleAttribute('data-possessed', possessed);
       root.dataset.encounter = encounter;

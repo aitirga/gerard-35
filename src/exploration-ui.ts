@@ -40,7 +40,7 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
   root.innerHTML = `<header class="journal-heading"><div><span class="battle-kicker">DIARIO / GERARD 35</span><h1 id="journal-title"></h1></div><button class="journal-close" type="button" aria-label="Cerrar panel">Cerrar <kbd>Esc</kbd></button></header><nav class="journal-tabs" aria-label="Secciones del diario">${PANELS.map(p => `<button type="button" data-panel="${p.id}" aria-pressed="false">${p.label}</button>`).join('')}</nav><div class="journal-content"></div><p class="journal-help">Esc · Volver a la aventura</p>`;
   hud.append(dock, root);
   const content = root.querySelector<HTMLElement>('.journal-content')!;
-  /** A member's stats with their class on, and the class picker: classes belong to the whole party. */
+  /** A member's stats with their ánima on, and the ánima picker: ánimas belong to the whole party. */
   function memberStats(member: PartyMember) {
     const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
     const rows = STAT_ORDER.map(key => {
@@ -48,7 +48,8 @@ export function createExplorationUI(hud: HTMLElement, pause: (paused: boolean) =
       return `<div><dt>${STAT_LABELS[key]}</dt><dd>${stats[key]}${bonus ? `<small data-sign="${bonus > 0 ? 'up' : 'down'}">${bonus > 0 ? '+' : '−'}${Math.abs(bonus)}</small>` : ''}</dd></div>`;
     }).join('');
     const classes = story.classes;
-    const picker = classes.length ? `<div class="class-picker" role="group" aria-label="Clase de ${escape(member.name)}">${[null, ...classes].map(id => `<button type="button" data-wear="${member.id}" data-class-id="${id ?? ''}" aria-pressed="${(member.classId ?? null) === id}">${id ? CLASSES[id].name : 'Sin clase'}</button>`).join('')}</div>` : '';
+    // Bernat wears no ánima: he only attacks.
+    const picker = classes.length && member.id !== 'bernat' ? `<div class="class-picker" role="group" aria-label="Ánima de ${escape(member.name)}">${[null, ...classes].map(id => `<button type="button" data-wear="${member.id}" data-class-id="${id ?? ''}" aria-pressed="${(member.classId ?? null) === id}">${id ? CLASSES[id].name : 'Sin ánima'}</button>`).join('')}</div>` : '';
     return `<dl class="member-stats">${rows}</dl>${picker}`;
   }
   function render() {

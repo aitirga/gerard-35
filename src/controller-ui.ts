@@ -57,7 +57,7 @@ export function createControllerUI(callbacks: {
     </section>
     <section data-page="help" hidden>
       <p class="menu-intro">Explora. Habla con todo el mundo. Prueba.</p>
-      <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Con las zapatillas: mantén Shift · Mantén B (Volver) en el mando</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / objetos / mapa</dt><dd>Desde el menú · C / I / M en el teclado · Personaje con el botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox)</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–5 o flechas · Enter para confirmar · Esc para volver · I o el botón superior del mando para los detalles de una habilidad</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
+      <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Con las zapatillas: mantén Shift · Mantén B (Volver) en el mando</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / objetos / mapa</dt><dd>Desde el menú · C / I / M en el teclado · Personaje con el botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox)</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–5 o flechas · Enter para confirmar · Esc para volver · I o el botón superior del mando para los detalles de una habilidad · Q / E o L / R en el mando para cambiar de ánima</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
       <p class="controller-note">En mandos Nintendo reconocidos: A confirma y B vuelve. Mantén B mientras te mueves para correr. Puedes cambiar los controles en Mando.</p>
     </section>
     <footer class="menu-footer">↑ ↓ Elegir &nbsp; · &nbsp; Enter Confirmar &nbsp; · &nbsp; Esc Volver</footer>`;
@@ -185,7 +185,7 @@ export function createControllerUI(callbacks: {
     const input2 = edges2.update(state2, `${secondIdentity}:${root.open ? 'menu' : callbacks.context()}`, now, focused && !mapping && !root.open);
     callbacks.partnerDirection(input2.direction, input2.stick, input2.running);
     // Player 2 plays and talks; the menu, panels and camera stay with player 1.
-    for (const action of input2.events) if (action !== 'menu' && action !== 'character' && action !== 'overview') callbacks.action(action, 2);
+    for (const action of input2.events) if (action !== 'menu' && action !== 'overview') callbacks.action(action, 2);
     const state = latest ? readController(latest, custom, previousDirection) : idleController();
     previousDirection = focused ? state.direction : null;
     const context = `${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}`;
@@ -194,7 +194,7 @@ export function createControllerUI(callbacks: {
     for (const action of input.events) {
       if (root.open) {
         if (action === 'menu') close();
-        else if (action === 'character' || action === 'overview') continue;
+        else if (action === 'character' || action === 'overview' || action === 'shoulderLeft' || action === 'shoulderRight') continue;
         else if (action === 'cancel') back();
         else if (action === 'confirm') clickControllerButton(root);
         else focusControllerButton(root, action);

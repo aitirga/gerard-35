@@ -97,6 +97,14 @@ try {
     change: (state, effect, onImpact) => game.setBattle(state, effect, onImpact),
     target: id => game.selectTarget(id),
     awaken: id => { game.awaken(id); storyEvent({ type: 'class', id }); },
+    // L / R in a fight: the ánima stays on afterwards, and Gerard's dresses the interface.
+    changeAnima: (member, id) => {
+      game.changeAnima(member, id);
+      if ((member === 'gerard' || member === 'aitor') && story.wear(member, id)) {
+        keepLoadout(); exploration.refresh();
+        if (member === 'gerard') hud.dataset.class = id;
+      }
+    },
     driver: id => battleDriver(control, id),
     waiting: id => waitingForPlayer2(control, id),
   });
@@ -147,7 +155,7 @@ try {
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
   const game = createGame(canvas, {
-    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, options); },
+    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes }); },
     onBattleEnd: (phase, encounter) => storyEvent({ type: 'battle', won: phase === 'won', encounter }),
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
@@ -194,13 +202,15 @@ try {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (player === 2) {
         if (action === 'character') { if (battleUI.controllerContext !== 'world') battleUI.details(2); return; }
+        if (action === 'shoulderLeft' || action === 'shoulderRight') { if (battleUI.controllerContext !== 'world') battleUI.switchAnima(action === 'shoulderLeft' ? -1 : 1, 2); return; }
         if (action === 'overview') return;
         if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
         else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); }
         else if (!exploration.active && action === 'confirm') game.interact(true);
         return;
       }
-      if (action === 'overview') { if (controllerContext() === 'world') game.toggleOverview(); }
+      if (action === 'shoulderLeft' || action === 'shoulderRight') { if (battleUI.controllerContext !== 'world') battleUI.switchAnima(action === 'shoulderLeft' ? -1 : 1, 1); }
+      else if (action === 'overview') { if (controllerContext() === 'world') game.toggleOverview(); }
       // The top face button (△ / Y): the character panel, or a skill's details in battle.
       else if (action === 'character') { if (battleUI.controllerContext !== 'world') battleUI.details(1); else if (/^(world|journal:)/.test(controllerContext())) exploration.toggle('character'); }
       else if (battleUI.controllerContext !== 'world') battleUI.control(action, 1);
@@ -243,7 +253,9 @@ try {
     const params = new URLSearchParams(location.search);
     const foes = Number(params.get('battle'));
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
-    if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => battleUI.open(params.get('party') === 'adult' ? new Story(['caught', 'noista']).battleParty(true) : params.get('allies') === '2' ? 2 : 1, foes));
+    const adult = new Story(['caught', 'noista']);
+    if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => params.get('party') === 'adult' ? battleUI.open(adult.battleParty(true), foes, { animas: adult.classes })
+      : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas: ['matemagico', ...(params.has('noista') ? ['noista' as const] : [])] }));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
     Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged } });
   }

@@ -244,8 +244,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       }
     }
     battleScene.possess(possessed);
-    // The class look is the boy's outfit; at 35 he wakes in his pyjamas (the class stays in fights).
-    if (story.gerardClass && !story.adult) wearClass(player, story.gerardClass);
+    // The ánima look is the boy's outfit; at 35 he wakes in his pyjamas (the ánima stays in fights).
+    if (!story.adult) wearClass(player, story.gerardClass);
     toneTarget = environment.id === 'palacio' || (SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo') ? 1 : 0;
     // Bernat first steps out of his own front door; scene changes place a partner beside Gerard instead.
     const mate = mateHere();
@@ -810,6 +810,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },
+    /** Someone swapped ánima in a fight (L / R): the fight shows it, and the boy's street outfit follows. */
+    changeAnima(member: string, id: ClassId) { battleScene.changeAnima(member, id); if (member === 'gerard' && !story.adult) wearClass(player, id); },
     setControllerInput(direction: Direction | null, stick: Stick | null, running = false) { controllerDirection = direction; controllerStick = stick; controllerRunning = running; },
     /** Player 2's controller, for Aitor. */
     setPartnerInput(direction: Direction | null, stick: Stick | null, running = false) { partnerDirection = direction; partnerStick = stick; partnerRunning = running; },

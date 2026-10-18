@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS } from '../src/battle.ts';
+import { createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima } from '../src/battle.ts';
 
 test('single ally completes a round and takes damage only during enemy turn', () => {
   const s = createBattle();
@@ -26,7 +26,7 @@ test('two allies act before variable-size enemy parties, guarding expires next r
   nextRound(s); assert.equal(s.active, 0); assert.equal(s.allies[0].guarding, false);
 });
 test('invalid or defeated targets and insufficient resource never consume a turn', () => {
-  const s = createBattle(1, 2);
+  const s = createBattle(1, 2, false, 'matemagico');
   s.foes[0].hp = 0;
   assert.equal(act(s, 'attack', 'dog-0'), undefined);
   assert.equal(act(s, 'attack', 'missing'), undefined);
@@ -91,7 +91,7 @@ test('hundreds of seeded random battles terminate with legal resources and no de
   const random = () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 2 ** 32);
   const outcomes = new Set();
   for (let i = 0; i < 240; i++) {
-    const s = createBattle(i % 2 + 1, i % 3 + 2);
+    const s = createBattle(i % 2 + 1, i % 3 + 2, false, 'matemagico');
     for (let turn = 0; turn < 200 && s.phase === 'player'; turn++) {
       const targets = s.foes.filter(f => f.hp > 0);
       const target = targets[Math.floor(random() * targets.length)];
@@ -118,8 +118,8 @@ test('hundreds of seeded random battles terminate with legal resources and no de
   for (const count of [0, -1, 1.5, 5, NaN]) assert.throws(() => createBattle(1, count));
 });
 
-test('Gerard starts with Análisis Parálisis alone, and Bernat with nothing', () => {
-  const s = createBattle(2, 4);
+test('Matemágico gives Gerard Análisis Parálisis alone, and Bernat has nothing', () => {
+  const s = createBattle(2, 4, false, 'matemagico');
   assert.deepEqual(skillsFor(s, s.allies[0]).map(k => k.id), ['analisis']);
   assert.deepEqual(skillsFor(s, s.allies[1]), []);
   const before = structuredClone(s);
@@ -128,7 +128,7 @@ test('Gerard starts with Análisis Parálisis alone, and Bernat with nothing', (
   assert.deepEqual(s, before);
 });
 test('Análisis Parálisis raises the party\'s Fuerza and Magia for three rounds and cannot stack', () => {
-  const s = createBattle(2, 4);
+  const s = createBattle(2, 4, false, 'matemagico');
   const effect = act(s, 'skill', undefined, 'analisis');
   assert.deepEqual(effect.boosted, ['gerard', 'bernat']); assert.equal(effect.skill, 'analisis');
   assert.equal(s.allies[0].secondary, 20); assert.equal(boostRounds(s), BOOST_ROUNDS);
@@ -144,6 +144,26 @@ test('Análisis Parálisis raises the party\'s Fuerza and Magia for three rounds
   assert.equal(boostRounds(s), 0, 'it wears off after round 3');
   assert.equal(act(s, 'attack', 'dog-2').amount, 18);
 });
+test('L and R swap the active fighter\'s ánima for free, with its skills and stats; Bernat wears none', () => {
+  const s = createBattle(2, 2, false, 'matemagico', ['matemagico', 'noista']);
+  const [gerard, bernat] = s.allies;
+  assert.equal(gerard.stats.magia, 11);
+  assert.equal(switchAnima(s, 1), 'noista');
+  assert.equal(gerard.classId, 'noista'); assert.equal(gerard.stats.magia, 12); assert.equal(gerard.stats.defensa, 9);
+  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['nota']);
+  assert.equal(s.active, 0, 'the turn is still his');
+  assert.equal(switchAnima(s, 1), 'matemagico', 'round the list');
+  assert.equal(switchAnima(s, -1), 'noista');
+  assert.equal(wearAnima(s, 'noista'), false, 'already on');
+  gerard.hp = 50; gerard.secondary = 3; switchAnima(s, 1);
+  assert.equal(gerard.hp, 50); assert.equal(gerard.secondary, 3, 'PV and Secundaria stay');
+  act(s, 'defend');
+  assert.equal(switchAnima(s, 1), undefined, 'Bernat only attacks');
+  assert.equal(bernat.classId, undefined);
+  const locked = createBattle(1, 2, false, 'matemagico', ['matemagico']);
+  assert.equal(switchAnima(locked, 1), undefined, 'nothing else unlocked');
+  act(locked, 'defend'); assert.equal(wearAnima(locked, 'matemagico'), false, 'not outside your turn');
+});
 test('enemies follow a valid AI target and ignore invalid ones', () => {
   const s = createBattle(2, 2); act(s, 'defend'); act(s, 'defend');
   assert.equal(enemyAct(s, 'dog-0', 'bernat').target, 'bernat');
@@ -158,7 +178,7 @@ test('the palace minion swallows every hit, and whatever the party does the beat
     boost: s => act(s, 'defend'),
   };
   for (const [name, move] of Object.entries(strategies)) {
-    const state = createMinionBattle();
+    const state = createMinionBattle('matemagico');
     assert.equal(cornered(state), true, 'nobody escapes the palace minion');
     assert.equal(act(state, 'escape'), undefined);
     assert.deepEqual(skillsFor(state, state.allies[0]).map(s => s.id), ['analisis'], 'No-ta waits for Noísta');
@@ -177,6 +197,7 @@ test('the palace minion swallows every hit, and whatever the party does the beat
     assert.equal(state.phase, 'player');
     assert.equal(state.allies[state.active].id, 'gerard');
     assert.ok(skillsFor(state, state.allies[0]).some(s => s.id === 'nota'));
+    assert.deepEqual(state.animas, ['matemagico', 'noista'], 'Noísta joins the ánimas L and R walk through');
     assert.ok(!skillsFor(state, state.allies[1]).some(s => s.id === 'nota'), 'No-ta is Gerard\'s');
     const nota = act(state, 'skill', 'minion-0', 'nota');
     assert.equal(nota.amount, 40);

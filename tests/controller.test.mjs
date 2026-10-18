@@ -101,3 +101,12 @@ test('the top face button opens the character panel and Select toggles the overv
   const custom = defaultProfile(pad());
   assert.equal(readController(p, custom).character, false); assert.equal(readController(p, custom).overview, false);
 });
+test('the shoulder buttons (L / R) swap ánimas on recognised pads, once per press', () => {
+  const p = pad('Xbox'); p.buttons[4].pressed = true;
+  const edge = new ControllerEdges(); edge.update(idleController(), 'battle', 0);
+  assert.deepEqual(edge.update(readController(p), 'battle', 1).events, ['shoulderLeft']);
+  assert.deepEqual(edge.update(readController(p), 'battle', 500).events, [], 'holding it does not repeat');
+  p.buttons[4].pressed = false; p.buttons[5].pressed = true;
+  assert.deepEqual(edge.update(readController(p), 'battle', 600).events, ['shoulderRight']);
+  assert.equal(readController(p, defaultProfile(pad())).shoulderRight, false, 'custom mappings leave them out');
+});

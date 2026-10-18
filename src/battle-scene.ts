@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import type { BattleEffect, BattleState, ClassId } from './battle';
-import { wearClass } from './classes';
+import { inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CONTACT_SECONDS, ENTRY_SECONDS, clamp01, contactMotion, smooth } from './battle-motion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
@@ -139,7 +139,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const copies = new Map<pc.Material, pc.StandardMaterial>();
     model.findComponents('render').forEach(component => (component as pc.RenderComponent).meshInstances.forEach(mesh => {
       let copy = copies.get(mesh.material);
-      if (!copy) { copy = (mesh.material as pc.StandardMaterial).clone(); copies.set(mesh.material, copy); }
+      if (!copy) { copy = (mesh.material as pc.StandardMaterial).clone(); copies.set(mesh.material, copy); inheritColour(mesh.material, copy); }
       mesh.material = copy;
     }));
     const materials = [...copies.values()];
@@ -180,6 +180,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       for (const f of fighters.values()) if (!f.party) hit(f, white, .9);
       setTimeout(() => wearClass(gerard.model, id), 260);
     },
+    /** L / R in a fight: a quick swirl and the fighter comes out of it wearing the other ánima. */
+    changeAnima(id: string, classId: ClassId) {
+      const f = fighters.get(id);
+      if (!f) return;
+      hit(f, gold, 1.3);
+      effects.emit('poof', new pc.Vec3(f.base.x, .4, f.base.z), 10, .3);
+      effects.emit('spark', new pc.Vec3(f.base.x, 1.2, f.base.z), 14, .35);
+      setTimeout(() => wearClass(f.model, classId), 140);
+    },
     /** Dark pink, glowing eyes for the street dogs: they obey La Reina Bubbaloo's minion. */
     possess(on: boolean) {
       for (const eyes of dogEyes) for (const eye of eyes) {
@@ -211,8 +220,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const minion = !party && unit.kind === 'minion' && !!minionTemplate;
           const source = party ? partyModel(unit.id) : minion ? minionTemplate! : dogs[i];
           const model = source.clone(); model.enabled = true;
-          // Whoever wears a class shows it in the fight, even when the street model does not (Gerard at 35, Aitor).
-          if (party && unit.classId) wearClass(model, unit.classId);
           if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
             (component as pc.RenderComponent).meshInstances.forEach(mesh => {
               if (mesh.material.name === 'Camiseta mostaza') mesh.material = allyJacket;
@@ -237,6 +244,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
             flash: 0, flashColor: white, ...ownMaterials(model),
             scale: model.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
           });
+          // Whoever wears an ánima shows it in the fight, even when the street model does not (Gerard at 35, Aitor).
+          // Dressed after ownMaterials, so the street model keeps its own look.
+          if (party) wearClass(model, unit.classId);
         });
       }
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false;

@@ -5,25 +5,29 @@ export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
 export type BattlePhase = 'player' | 'enemy' | 'beat' | 'won' | 'lost' | 'escaped';
 /**
- * Classes (docs/party.md). They belong to the party, not to one person: once unlocked, anyone in
- * the party can wear one, and it adds its stats and its skills to whoever wears it.
+ * Ánimas (the code calls them classes; docs/party.md). They belong to the party, not to one
+ * person: once unlocked, anyone in the party but Bernat can wear one, and it adds its stats and
+ * its skills to whoever wears it. In a fight the active fighter swaps them with L and R.
  */
-export type ClassId = 'noista';
+export type ClassId = 'matemagico' | 'noista';
+export const ANIMA_NAMES: Record<ClassId, string> = { matemagico: 'Matemágico', noista: 'Noísta' };
 export const CLASS_STATS: Record<ClassId, StatBonus> = {
+  // Counting everything twice sharpens the mind a little.
+  matemagico: { magia: 1, espiritu: 1 },
   // Saying no is a matter of conviction, not muscle.
   noista: { magia: 2, espiritu: 2, defensa: -1 },
 };
 /**
  * `power` is the amount at average stats (see stats.ts); for a `boost` it is what it adds to
- * Fuerza and Magia. `class` skills come with a class; `owners` skills are those people's own.
+ * Fuerza and Magia. `class` skills come with an ánima; `owners` skills are those people's own.
  * Bernat has none: he only attacks.
  */
 export const SKILLS = [
-  { id: 'analisis', name: 'Análisis Parálisis', cost: 10, side: 'party', power: 3, kind: 'boost', description: 'Gerard lo piensa todo dos veces y el equipo pega con más cabeza', owners: ['gerard', 'gerard35'] },
-  { id: 'impulse', name: 'Impulso', cost: 8, side: 'foes', power: 28, kind: 'physical', description: 'Un golpe con carrerilla a un enemigo', owners: ['aitor'] },
-  { id: 'encourage', name: 'Ánimo', cost: 8, side: 'allies', power: 24, kind: 'heal', description: 'Recupera PV de un aliado', owners: ['aitor'] },
-  { id: 'nota', name: 'No-ta', cost: 10, side: 'foes', power: 40, kind: 'magic', description: 'Un NO rotundo: rompe el pringue y hace mucho daño', class: 'noista' },
-  { id: 'abrazo', name: 'Abrazo', cost: 12, side: 'party', power: 14, kind: 'heal', description: 'Aitor abraza a todo el equipo: PV para todos', owners: ['aitor'] },
+  { id: 'analisis', name: 'Análisis Parálisis', cost: 10, side: 'party', power: 3, kind: 'boost', description: 'Lo piensa todo dos veces y el equipo pega con más cabeza: Fuerza y Magia +3 a todos durante 3 rondas', class: 'matemagico' },
+  { id: 'impulse', name: 'Impulso', cost: 8, side: 'foes', power: 28, kind: 'physical', description: 'Un golpe físico con carrerilla a un enemigo', owners: ['aitor'] },
+  { id: 'encourage', name: 'Ánimo', cost: 8, side: 'allies', power: 24, kind: 'heal', description: 'Recupera unos 24 PV de un aliado herido', owners: ['aitor'] },
+  { id: 'nota', name: 'No-ta', cost: 10, side: 'foes', power: 40, kind: 'magic', description: 'Un NO rotundo a un enemigo: rompe el pringue y hace mucho daño mágico', class: 'noista' },
+  { id: 'abrazo', name: 'Abrazo', cost: 12, side: 'party', power: 14, kind: 'heal', description: 'Aitor abraza a todo el equipo: unos 14 PV para cada uno', owners: ['aitor'] },
 ] as const;
 /** How many rounds a boost lasts, counting the one it is used in. */
 export const BOOST_ROUNDS = 3;
@@ -56,6 +60,10 @@ export interface BattleState {
   encounter: Encounter;
   /** Análisis Parálisis: the party's Fuerza and Magia are up by `amount` until the end of round `until`. */
   boost?: { amount: number; until: number };
+  /** The ánimas the party has unlocked, in the order L and R walk through them. */
+  animas: ClassId[];
+  /** Gerard has said no (Noísta is awake): the palace minion stops escalating. */
+  awakened: boolean;
 }
 /** Someone who fights on the party's side: `id` names them in the fight, `profile` gives their stats. */
 export interface PartySlot { id: string; name: string; profile: ProfileId; classId?: ClassId }
@@ -65,8 +73,31 @@ export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[
 }
 /** Nobody runs from possessed dogs or from the palace minion. */
 export const cornered = (state: BattleState) => state.possessed || state.encounter !== 'dogs';
-/** Gerard's class in this fight; the palace minion stops escalating once he has one. */
+/** Gerard's ánima in this fight. */
 export const gerardClass = (state: BattleState) => state.allies.find(a => a.id === 'gerard')?.classId;
+/** Bernat wears no ánima: he only attacks. */
+export const wearsAnimas = (c: Combatant) => c.profile !== 'bernat';
+/**
+ * The active fighter puts on `id`, one of the unlocked ánimas. It is free, the turn stays theirs,
+ * and their skills and stats change with it. Returns whether anything changed.
+ */
+export function wearAnima(state: BattleState, id: ClassId) {
+  const actor = state.allies[state.active];
+  if (state.phase !== 'player' || !actor || !wearsAnimas(actor) || !state.animas.includes(id) || actor.classId === id) return false;
+  // Ánimas never touch PV or Secundaria, so only the stats and the skills change.
+  actor.classId = id; actor.stats = withBonus(PROFILES[actor.profile], CLASS_STATS[id]);
+  return true;
+}
+/** L (-1) and R (+1): the previous or next unlocked ánima, round the list. Returns the new one. */
+export function switchAnima(state: BattleState, step: -1 | 1): ClassId | undefined {
+  const actor = state.allies[state.active];
+  if (!actor || !state.animas.length) return;
+  const index = state.animas.indexOf(actor.classId!);
+  const next = state.animas[index < 0 ? (step > 0 ? 0 : state.animas.length - 1) : (index + step + state.animas.length) % state.animas.length];
+  return wearAnima(state, next) ? next : undefined;
+}
+/** Unlocked ánimas, starting from whatever the party already wears. */
+const wornAnimas = (slots: PartySlot[]) => [...new Set(slots.flatMap(s => s.classId ? [s.classId] : []))];
 /** The skills `actor` can use: their own and their class's. */
 export function skillsFor(_state: BattleState, actor: Combatant) {
   return SKILLS.filter(skill => 'class' in skill ? actor.classId === skill.class : (skill.owners as readonly ProfileId[]).includes(actor.profile));
@@ -91,8 +122,8 @@ function foe(id: string, name: string, kind: FoeKind, hp?: number): Combatant {
 function lineUp(party: PartySlot[]) {
   return party.map(fighter).sort((a, b) => b.stats.velocidad - a.stats.velocidad);
 }
-/** `party` is a size for chapter 1's boys (1 or 2), or the actual party. */
-export function createBattle(party: number | PartySlot[] = 1, foeCount = 1, possessed = false, gerardClassId?: ClassId): BattleState {
+/** `party` is a size for chapter 1's boys (1 or 2), or the actual party. `animas` defaults to what they wear. */
+export function createBattle(party: number | PartySlot[] = 1, foeCount = 1, possessed = false, gerardClassId?: ClassId, animas?: ClassId[]): BattleState {
   if (!Number.isInteger(foeCount) || foeCount < 1 || foeCount > 4) throw new Error('An encounter needs 1–4 foes');
   const slots = typeof party === 'number' ? childParty(party, gerardClassId) : party;
   if (!slots.length) throw new Error('A battle needs someone on the party\'s side');
@@ -102,16 +133,20 @@ export function createBattle(party: number | PartySlot[] = 1, foeCount = 1, poss
     allies: lineUp(slots),
     foes: Array.from({ length: foeCount }, (_, i) => foe(`dog-${i}`, DOG_PROFILES[i].name, 'dog', foeHp)),
     active: 0, round: 1, phase: 'player', enemyActions: [], possessed, encounter: 'dogs',
+    animas: animas ?? wornAnimas(slots), awakened: false,
     message: possessed ? `${foeCount === 1 ? 'Un perro con los ojos rosados se lanza' : `${foeCount} perros con los ojos rosados se lanzan`} a por vosotros. ¡No hay escapatoria!`
       : `${foeCount === 1 ? 'Un perro curioso te corta' : `${foeCount} perros curiosos te cortan`} el paso. Elige tu movimiento.`,
   };
 }
 /** The palace fight: Gerard and Bernat against one minion in a shell of gum. */
-export function createMinionBattle(gerardClassId?: ClassId): BattleState {
+export function createMinionBattle(gerardClassId?: ClassId, animas?: ClassId[]): BattleState {
+  const slots = childParty(2, gerardClassId);
+  const unlocked = animas ?? wornAnimas(slots);
   return {
-    allies: lineUp(childParty(2, gerardClassId)),
+    allies: lineUp(slots),
     foes: [{ ...foe('minion-0', 'Esbirro de la Reina', 'minion'), shell: true }],
     active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter: 'palace-minion',
+    animas: unlocked, awakened: unlocked.includes('noista'),
     message: 'Un esbirro de la Reina Bubbaloo sale del sumidero, brillante de pringue.',
   };
 }
@@ -220,10 +255,10 @@ function minionAct(state: BattleState, actor: Combatant): BattleEffect | undefin
   const target = bernat ?? state.allies.find(a => a.hp > 0);
   if (!target) return;
   state.enemyActions.push(actor.id);
-  // Once Gerard has his class the minion is shaken: plain spits, no more escalation.
-  const raw = gerardClass(state) ? 12 : state.round >= 6 ? 999 : Math.round(10 * 1.5 ** (state.round - 1));
+  // Once Gerard has said no the minion is shaken: plain spits, no more escalation.
+  const raw = state.awakened ? 12 : state.round >= 6 ? 999 : Math.round(10 * 1.5 ** (state.round - 1));
   let amount = Math.min(target.guarding ? Math.ceil(raw / 3) : raw, target.hp);
-  const awakening = !gerardClass(state) && target.id === 'bernat' && target.hp - amount <= BEAT_HP;
+  const awakening = !state.awakened && target.id === 'bernat' && target.hp - amount <= BEAT_HP;
   if (awakening) amount = Math.max(0, target.hp - BEAT_HP);
   target.hp -= amount;
   state.message = `${actor.name} escupe chicle a ${target.name}. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
@@ -238,6 +273,8 @@ export function awaken(state: BattleState, classId: ClassId) {
   const hurt = gerard.maxHp - gerard.hp;
   Object.assign(gerard, fighter({ id: gerard.id, name: gerard.name, profile: gerard.profile, classId }));
   gerard.hp = Math.max(1, gerard.maxHp - hurt);
+  if (!state.animas.includes(classId)) state.animas.push(classId);
+  state.awakened = true;
   state.allies.forEach(a => { a.guarding = false; });
   state.enemyActions = []; state.round++;
   state.active = state.allies.indexOf(gerard); state.phase = 'player';

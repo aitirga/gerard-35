@@ -231,10 +231,13 @@ subsequent encounters, using Gerard’s model with a blue jacket as a stand-in.
 Choose **Atacar**, **Habilidad**, **?????** (not available yet), **Defender**, or
 **Huir**. Defender and Huir act at once. Habilidad slides a skill sheet out to its
 right (→ opens it, ← or **Esc** closes it). △ / Y on a controller, or **I** on the
-keyboard, floats a details window beside the focused skill: cost, target and effect.
-Gerard starts with **Análisis Parálisis** alone (10 Secundaria: Fuerza and Magia +3
-for the party for three rounds); Bernat has no skills and only attacks; Aitor has
-Impulso, Ánimo and Abrazo. A skill aimed at someone moves focus to the enemies or
+keyboard, floats a window beside the focused skill with its description and cost.
+Skills come from **ánimas**: the strip above the menu (L · Matemágico · Noísta · R)
+swaps the active fighter's ánima with L / R on a controller or Q / E on the keyboard,
+for free. **Matemágico** (from the start) has **Análisis Parálisis** (10 Secundaria:
+Fuerza and Magia +3 for the party for three rounds); **Noísta** (unlocked in the
+palace) has **No-ta**. Bernat wears no ánima and only attacks; Aitor also has his
+own Impulso, Ánimo and Abrazo. A skill aimed at someone moves focus to the enemies or
 to injured allies; select a roster card or its matching label in the street to
 apply it. Arrows move among valid targets; **Esc** returns to the skill sheet
 without spending a turn or energy. Full-health and defeated allies cannot be

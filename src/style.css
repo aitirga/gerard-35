@@ -199,14 +199,34 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 /* △ / I: what the focused skill does, floating beside it. */
 .skill-info { position: absolute; z-index: 6; width: 260px; padding: 14px 16px 12px; background: var(--battle-paper); color: var(--battle-ink); border-top: 4px solid var(--battle-gold); box-shadow: 7px 7px 0 #071e2288; translate: 0 -50%; animation: info-in .22s cubic-bezier(.2,.9,.3,1.3) both; }
 .skill-info::before { content: ''; position: absolute; left: -10px; top: 50%; translate: 0 -50%; border: 10px solid transparent; border-left: 0; border-right-color: var(--battle-paper); }
-.skill-info .battle-kicker { color: #8a6a1f; font-size: 8px; }
-.skill-info h3 { margin: 6px 0 6px; font-size: 22px; font-weight: 900; font-style: italic; letter-spacing: -.05em; line-height: 1; }
+.skill-info h3 { margin: 0 0 6px; font-size: 22px; font-weight: 900; font-style: italic; letter-spacing: -.05em; line-height: 1; }
 .skill-info p { margin: 0 0 10px; font-size: 12px; line-height: 1.45; }
-.skill-info dl { display: grid; gap: 5px; margin: 0; padding-top: 9px; border-top: 1px solid #16282322; font-size: 11px; }
-.skill-info dl div { display: grid; grid-template-columns: 62px 1fr; gap: 8px; }
-.skill-info dt { font-size: 8px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; opacity: .6; padding-top: 2px; }
-.skill-info dd { margin: 0; font-weight: 600; }
+.skill-info-cost { display: inline-block; padding: 3px 7px; background: var(--battle-ink); color: var(--battle-gold); font-size: 10px; letter-spacing: .1em; }
+.skill-empty { margin: 6px 4px; font-size: 11px; color: #b9c8b9; transform: skewX(5deg); }
 .skill-info[hidden] { display: none; }
+/* The ánima strip (L · Matemágico · Noísta · R) sits on the menu; a swap sweeps the commands. */
+.anima-bar { display: flex; align-items: center; gap: 6px; width: 340px; margin: 0 0 10px; padding: 5px; background: #102019e6; border-top: 2px solid var(--battle-gold); box-shadow: 4px 4px 0 #071e2266; transform: skewX(-5deg); transition: opacity .3s, filter .3s; }
+.anima-bar[data-off] { opacity: .45; filter: saturate(0); }
+.anima-bar[data-off] .anima-indicator { opacity: 0; }
+.anima-key { display: grid; place-items: center; min-width: 30px; height: 26px; padding: 0 6px; border: 1px solid #f3cf7866; background: transparent; color: var(--battle-gold); font-size: 12px; font-weight: 900; line-height: 1; transition: background .15s, transform .15s; }
+.anima-key small { font-size: 7px; font-weight: 600; color: #b9c8b9; letter-spacing: .1em; }
+.anima-key:hover { background: #f3cf7822; }
+.anima-key:active { transform: scale(.92); }
+.anima-track { position: relative; display: flex; flex: 1; justify-content: center; gap: 4px; }
+.anima-chip { position: relative; z-index: 1; padding: 6px 12px; border: 0; background: transparent; color: #b9c8b9; font-size: 12px; font-style: italic; font-weight: 700; letter-spacing: -.01em; transition: color .3s; }
+.anima-chip[aria-pressed="true"] { color: var(--battle-ink); }
+.anima-chip:hover:not([aria-pressed="true"]) { color: var(--battle-paper); }
+.anima-indicator { position: absolute; top: 0; bottom: 0; left: 0; width: 0; background: var(--battle-gold); box-shadow: 3px 3px 0 #071e2288; transition: left .38s cubic-bezier(.3,1.4,.4,1), width .38s cubic-bezier(.3,1.4,.4,1), background .4s; }
+.anima-indicator[hidden] { display: none; }
+.anima-bar.is-swapping .anima-key { animation: anima-key .3s ease-out; }
+.anima-bar.is-stuck { animation: anima-stuck .3s linear; }
+.command-panel.is-swapping .command-deck { animation: anima-sweep .5s cubic-bezier(.16,1,.3,1); }
+.command-panel.is-swapping .command-deck::after { content: ''; position: absolute; inset: -6px -10px; pointer-events: none; background: linear-gradient(100deg, transparent 30%, #fff8e0cc 50%, transparent 70%); background-size: 260% 100%; animation: anima-shine .5s ease-out both; }
+.command-deck { position: relative; }
+@keyframes anima-sweep { 0% { translate: -18px 0; filter: brightness(1.7) saturate(.3); } 100% { translate: 0 0; filter: none; } }
+@keyframes anima-shine { from { background-position: 100% 0; } to { background-position: -60% 0; } }
+@keyframes anima-key { 50% { background: var(--battle-gold); color: var(--battle-ink); } }
+@keyframes anima-stuck { 25% { translate: -4px 0; } 75% { translate: 4px 0; } }
 @keyframes info-in { from { opacity: 0; transform: translateX(-10px) scale(.96); } }
 .unit-boost { margin-left: auto; padding: 1px 5px; background: var(--battle-gold); color: var(--battle-ink); font-size: 8px; font-weight: 900; letter-spacing: .08em; }
 .unit-boost[hidden] { display: none; }
@@ -259,7 +279,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 }
 @media (max-height: 480px) and (min-width: 601px) {
   .battle-heading h1 { font-size: 22px; }
-  .commands { width: 280px; }
+  .commands, .anima-bar { width: 280px; }
   .party-card { min-height: 85px; padding-top: 9px; padding-bottom: 9px; }
   .party-portrait img { height: 104px; }
 }
@@ -281,7 +301,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #battle[data-entering] .battle-heading { animation: encounter-title .65s .28s cubic-bezier(.16,1,.3,1) both; }
 #battle[data-entering] .round-badge { animation: encounter-right .55s .4s both; }
 #battle[data-entering] .party-roster { animation: encounter-right .6s .7s both; }
-#battle[data-entering] .turn-heading, #battle[data-entering] .command-help { animation: encounter-left .55s .75s both; }
+#battle[data-entering] .turn-heading, #battle[data-entering] .command-help, #battle[data-entering] .anima-bar { animation: encounter-left .55s .75s both; }
 #battle[data-entering] .command { animation: encounter-left .52s cubic-bezier(.16,1,.3,1) both; animation-delay: .65s; }
 #battle[data-entering] .command:nth-child(2) { animation-delay: .73s; }
 #battle[data-entering] .command:nth-child(3) { animation-delay: .81s; }
@@ -540,7 +560,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .class-banner p { margin: 0; font-size: 15px; font-style: italic; color: var(--battle-paper); }
 .command.is-new { animation: command-new 1.1s ease-in-out infinite; }
 .skill-list button[data-class] { border-color: var(--battle-gold); }
-.skill-list button[data-class] strong::after { content: ' · NUEVA'; color: var(--battle-gold); font-size: 8px; letter-spacing: .14em; }
 @keyframes speech-in { from { opacity: 0; translate: 0 10px; } }
 @keyframes shout-in { from { opacity: 0; scale: .3; } }
 @keyframes battle-shake { 0%, 100% { translate: 0 0; } 25% { translate: -7px 4px; } 50% { translate: 6px -5px; } 75% { translate: -4px -3px; } }
@@ -571,6 +590,10 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 #hud[data-class="noista"] .skill-sheet { background: var(--ui-ink); border-left-color: var(--ui-gold); box-shadow: 6px 6px 0 #e2483daa; }
 #hud[data-class="noista"] .skill-list button { background: #2b1a1f; }
 #hud[data-class="noista"] .skill-list button:hover, #hud[data-class="noista"] .skill-list button:focus-visible { background: #3a1f26; border-color: var(--ui-gold); }
+#hud[data-class="noista"] .anima-bar { background: #1b1216e6; border-top-color: var(--ui-gold); box-shadow: 4px 4px 0 #e2483d66; transform: skewX(-9deg) rotate(-1deg); }
+#hud[data-class="noista"] .anima-indicator { background: var(--ui-gold); }
+#hud[data-class="noista"] .anima-chip[aria-pressed="true"] { color: #fff4ec; text-transform: uppercase; }
+#hud[data-class="noista"] .anima-key { color: var(--ui-gold); border-color: #e2483d88; }
 #hud[data-class="noista"] .skill-info { border-top-color: var(--ui-gold); box-shadow: 7px 7px 0 #e2483daa; }
 #hud[data-class="noista"] .party-card { background: var(--ui-surface); border-color: var(--ui-line); }
 #hud[data-class="noista"] .party-card.is-active { background: #2b1a1fee; }
