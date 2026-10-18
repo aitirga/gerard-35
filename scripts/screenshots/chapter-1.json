@@ -30,6 +30,15 @@
       "caption": "Exploring the bedroom; the only help is a key hint"
     },
     {
+      "hold": ["KeyS"],
+      "until": "document.querySelector('.key-hint').hidden",
+      "timeout": 20000
+    },
+    {
+      "shot": "bedroom-walking",
+      "caption": "Once Gerard walks, the movement hint is gone and nothing stays on screen"
+    },
+    {
       "teleport": "home-floor-2",
       "cell": [
         16,

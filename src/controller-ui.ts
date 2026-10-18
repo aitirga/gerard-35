@@ -203,8 +203,6 @@ export function createControllerUI(callbacks: {
       // A screen transition must not receive another event from the same frame.
       if (`${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}` !== context) break;
     }
-    const visibleHelp = latest && profile ? help : 'WASD · Mover / E · Interactuar / Esc · Menú';
-    document.querySelector('.controls span')!.textContent = visibleHelp;
     const pad = !!(latest && profile);
     document.querySelector('.journal-dock kbd')!.textContent = pad ? menu : 'Esc';
     document.querySelector('#overview kbd')!.textContent = pad && overview ? `R / ${overview}` : 'R';
