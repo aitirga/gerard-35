@@ -49,6 +49,8 @@ export const PLACES = {
    */
   bed: { gerard: { x: 11.02, z: 15.6 }, aitor: { x: 9.92, z: 15.36 } },
   wakeUp: { environment: 'meridiana', cell: { x: 12, z: 14 } },
+  /** The bedroom's door onto the hallway (east wall): the morning light comes in through it. */
+  bedroomDoor: { x: 13, z: 8 },
   aitor: { environment: 'meridiana', cell: { x: 9, z: 14 } },
   envoltorio: { environment: 'meridiana', cell: { x: 12, z: 15 }, spot: { x: 11.78, z: 16.45, y: .53 } },
   /** The drain in the wrapper room the second minion rises from. */

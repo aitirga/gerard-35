@@ -425,7 +425,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
    * having turned to `exit`). Poses are set outright every frame, never from last frame's.
    */
   interface Sleeper { hip: Cell; out: Cell; exit: number; stage: number; duvet: pc.Entity }
-  let sleepers: { gerard: Sleeper; aitor: Sleeper; material: pc.StandardMaterial } | undefined;
+  let sleepers: { gerard: Sleeper; aitor: Sleeper; material: pc.StandardMaterial; daylight: pc.Entity } | undefined;
   /** The duvet over the mattress (top of the scenery's flat duvet) and how high it stands over sleeping legs. */
   const DUVET_TOP = .74, DUVET_RAISED = .4;
   /** Hip height above the duvet: lying on the back, and sitting up with the legs out flat. */
@@ -458,6 +458,30 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     s.duvet.setLocalScale(s.duvet.getLocalScale().x, .02 + raised, s.duvet.getLocalScale().z);
     s.duvet.setPosition(s.duvet.getPosition().x, DUVET_TOP + raised / 2 - .01, s.duvet.getPosition().z);
   }
+  /**
+   * Morning light from the hallway through the bedroom door (`PLACES.bedroomDoor`), while the
+   * lamps are still off: a shaft of daylight across the floor, and a soft glow in the doorway.
+   */
+  function doorDaylight() {
+    const door = PLACES.bedroomDoor, root = new pc.Entity('Luz del día por la puerta'); app.root.addChild(root);
+    const shaft = new pc.Entity('Rayo de luz'); root.addChild(shaft);
+    shaft.addComponent('light', {
+      type: 'spot', color: new pc.Color().fromString('#fff1d6'), intensity: 2.6, range: 10, innerConeAngle: 18, outerConeAngle: 38,
+      castShadows: true, shadowResolution: 1024, shadowBias: .2, normalOffsetBias: .05,
+    });
+    shaft.setPosition(scenery.toWorld(door.x + 1.4, door.z).add(new pc.Vec3(0, 2.1, 0)));
+    shaft.lookAt(scenery.toWorld(10.5, 14.2)); shaft.rotateLocal(90, 0, 0);
+    const glow = new pc.Entity('Claridad en la puerta'); root.addChild(glow);
+    glow.addComponent('light', { type: 'omni', color: new pc.Color().fromString('#f3eadb'), intensity: .7, range: 3.5, castShadows: false });
+    glow.setPosition(scenery.toWorld(door.x - .5, door.z).add(new pc.Vec3(0, 1.3, 0)));
+    return root;
+  }
+  /** The flat's lamps come on by themselves (`on` 0 → 1), with a flicker first; the daylight fades under them. */
+  function lightsOn(s: NonNullable<typeof sleepers>, on: number) {
+    const flicker = on < .12 ? 0 : on < .2 ? .7 : on < .3 ? .1 : smooth((on - .3) / .7);
+    scenery.setDark(1 - flicker);
+    s.daylight.findComponents('light').forEach(light => { (light as pc.LightComponent).enabled = flicker < .99; });
+  }
   const down = new pc.Vec3(0, -1, 0);
   /**
    * Asleep, Gerard's hand lies on the mattress between them and Aitor's rests on the back of it,
@@ -480,8 +504,9 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     holdStill();
     const material = new pc.StandardMaterial(); material.diffuse.fromString('#eadcc6'); material.gloss = .05; material.update();
     const { gerard, aitor } = PLACES.bed;
+    scenery.setDark(1);
     sleepers = {
-      material,
+      material, daylight: doorDaylight(),
       gerard: { hip: gerard, out: movement.cell, exit: 90, stage: 0, duvet: sleeperDuvet(material, gerard, 11.52) },
       aitor: { hip: aitor, out: { ...PLACES.aitor.cell }, exit: -90, stage: 0, duvet: sleeperDuvet(material, aitor, 9.48) },
     };
@@ -498,14 +523,15 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     cameraWobble.set(0, 0, 0);
     await play(.9, t => { s.aitor.stage = t; });
   }
-  /** After the first words, each gets out of bed on their own side; Gerard turns to Aitor across it. */
+  /** After the first words, each gets out of bed on their own side, and the lights come on by themselves. */
   async function rise() {
     const s = sleepers;
     if (!s) return;
     await play(.9, t => { s.gerard.stage = 1 + t; });
+    await play(.8, t => lightsOn(s, t));
     await play(.9, t => { s.aitor.stage = 1 + t; });
     sleepers = undefined;
-    s.gerard.duvet.destroy(); s.aitor.duvet.destroy(); s.material.destroy();
+    s.gerard.duvet.destroy(); s.aitor.duvet.destroy(); s.material.destroy(); s.daylight.destroy();
     player.setLocalEulerAngles(0, 0, 0); mates.aitor.entity.setLocalEulerAngles(0, 0, 0);
     mates.aitor.rig.head.setLocalEulerAngles(0, 0, 0);
     mates.aitor.rig.eyes.forEach((eye, i) => { const e = eye.getLocalScale(); eye.setLocalScale(e.x, mates.aitor.rig.eyeHeights[i], e.z); });

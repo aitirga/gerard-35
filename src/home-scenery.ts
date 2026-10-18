@@ -60,10 +60,13 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const cyl = (name: string, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent = root) => piece(parent, name, 'cylinder', m, px, y0 + h / 2, pz, w, h, d);
   const ball = (name: string, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent = root) => piece(parent, name, 'sphere', m, px, y0 + h / 2, pz, w, h, d);
   const cone = (name: string, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent = root) => piece(parent, name, 'cone', m, px, y0 + h / 2, pz, w, h, d);
+  /** The house's own lamps, with the intensity each has when switched on. */
+  const lamps: { light: pc.LightComponent; on: number }[] = [];
   function light(px: number, y: number, pz: number, color = '#ffd9a8', intensity = 1.1, range = 5.5) {
     const e = new pc.Entity('Luz de casa');
     e.addComponent('light', { type: 'omni', color: new pc.Color().fromString(color), intensity, range, castShadows: false });
     root.addChild(e); e.setPosition(x(px), y, z(pz));
+    lamps.push({ light: e.light!, on: intensity });
   }
   /** A pivot at `base`: everything added to it folds down there while it hides Gerard. */
   function foldaway(x0: number, z0: number, x1: number, z1: number, base: number, top: number) {
@@ -1550,6 +1553,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     return false;
   }
   return {
+    /** Dims every lamp in the house: 1 is on, 0 off. */
+    setLamps(k: number) { for (const lamp of lamps) { lamp.light.intensity = lamp.on * k; lamp.light.enabled = k > 0.01; } },
     /** Folds walls and tall furniture that stand between `focus` and the camera. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       for (const fold of folds) {
