@@ -1,0 +1,24 @@
+{
+  "title": "Combat · Command menu",
+  "description": "The battle menu: Atacar, Habilidad, ?????, Defender and Huir. Habilidad opens its skills sideways; △ / Y (I on the keyboard) floats a details window beside the focused skill. Gerard starts with Análisis Parálisis alone and Bernat has no skills; at 35 with Noísta Gerard also has No-ta.",
+  "steps": [
+    { "open": "/?story=bernat-joined&battle=3&allies=2" },
+    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
+    { "shot": "menu", "delay": 800, "caption": "Gerard's turn: Atacar, Habilidad, ?????, Defender, Huir" },
+    { "press": "Digit2" },
+    { "shot": "flyout-opening", "delay": 120, "caption": "Habilidad opens to the right while the other commands step back" },
+    { "shot": "flyout", "delay": 1200, "caption": "Gerard's only skill: Análisis Parálisis, with the △ / I details hint" },
+    { "press": "KeyI" },
+    { "shot": "details", "delay": 3000, "caption": "△ / Y (I on the keyboard): what the skill does, beside it" },
+    { "press": "Enter" },
+    { "until": "document.querySelector('.turn-label')?.textContent === 'Bernat' && !document.querySelector('#battle[data-resolving]')", "timeout": 60000 },
+    { "shot": "bernat", "delay": 800, "caption": "The party is boosted (▲ 3); Bernat has no skills, so Habilidad is greyed out" },
+    { "open": "/?story=caught&battle=2&party=adult" },
+    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
+    { "press": "ArrowDown" },
+    { "press": "ArrowRight" },
+    { "press": "ArrowDown", "gap": 200 },
+    { "press": "KeyI" },
+    { "shot": "noista-details", "delay": 1200, "caption": "Gerard at 35 wearing Noísta: Análisis Parálisis and No-ta, details on No-ta" }
+  ]
+}

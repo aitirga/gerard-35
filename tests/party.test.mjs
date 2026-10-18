@@ -26,6 +26,7 @@ test('chapter 2 fights Gerard at 35 and Aitor, fastest first, with their own ski
   assert.deepEqual(s.allies.map(a => a.maxHp), [120, 135]);
   const [gerard, aitor] = s.allies;
   assert.ok(skillsFor(s, gerard).some(k => k.id === 'nota'), 'Gerard keeps Noísta');
+  assert.ok(skillsFor(s, gerard).some(k => k.id === 'analisis'), 'and Análisis Parálisis at 35');
   assert.ok(!skillsFor(s, gerard).some(k => k.id === 'abrazo'), 'Abrazo is Aitor\'s own');
   assert.deepEqual(skillsFor(s, aitor).map(k => k.id), ['impulse', 'encourage', 'abrazo']);
   assert.equal(createBattle(story.battleParty(false), 2).allies.length, 1, 'without his partner Gerard fights alone');

@@ -64,10 +64,13 @@ Fuerza, Defensa).
 
 | Skill | Who | Cost | Base | Does |
 | --- | --- | --- | --- | --- |
-| Impulso | Everyone | 8 | 28 physical | Hits one foe |
-| Ánimo | Everyone | 8 | 24 heal | Heals one hurt ally |
+| Análisis Parálisis | **Gerard's own** (boy and 35) | 10 | +3 | Fuerza and Magia +3 for the whole party for 3 rounds (the one it is used in included); cannot be stacked while it runs |
+| Impulso | **Aitor's own** | 8 | 28 physical | Hits one foe |
+| Ánimo | **Aitor's own** | 8 | 24 heal | Heals one hurt ally |
 | No-ta | Whoever wears **Noísta** | 10 | 40 magic | Breaks the Queen's gum (pringue) |
 | Abrazo | **Aitor's own** | 12 | 14 heal | Heals the whole party at once, no target to pick |
+
+Bernat has no skills: he only attacks (Habilidad is greyed out on his turn).
 
 - **Classes belong to the party.** Once the story unlocks one (Noísta, in chapter 1's palace),
   anyone in the party can wear it, both at once if they like. Wearing it adds its stats
@@ -83,7 +86,7 @@ Fuerza, Defensa).
 - `src/stats.ts`: stats, profiles and the three formulas. Pure.
 - `src/battle.ts`: fighters carry stats, a profile and a class; `createBattle` takes the party
   (`story.battleParty`) and lines it up by Velocidad; `CLASS_STATS` and `SKILLS` (with `class`
-  and `owner` skills, and the party-wide Abrazo).
+  and `owners` skills, the party-wide Abrazo and the party boost Análisis Parálisis, `state.boost`).
 - `src/party.ts`: who drives whom (`partnerDriven`, `battleDriver`, `waitingForPlayer2`). Pure.
 - `src/story.ts`: `partner` (Bernat or Aitor), `party` with profiles and classes, `classes`,
   `wear` and `loadout`.

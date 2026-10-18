@@ -1,19 +1,32 @@
-import { clickControllerButton, focusControllerButton } from './controller-ui';
+import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { act, aimed, awaken, childParty, cornered, createBattle, createMinionBattle, enemyAct, nextRound, skillsFor, SKILLS, validTargets, type ClassId, type Encounter, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
+import { act, aimed, awaken, boostRounds, BOOST_ROUNDS, childParty, cornered, createBattle, createMinionBattle, enemyAct, nextRound, skillsFor, SKILLS, validTargets, type ClassId, type Encounter, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
 import { CLASSES } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
+import type { Direction } from './movement';
 import type { PlayerId } from './party';
 
-const COMMANDS: { id: BattleAction; name: string; hint: string; number: string }[] = [
-  { id: 'attack', name: 'Atacar', hint: 'Elige un objetivo', number: '01' },
-  { id: 'defend', name: 'Defender', hint: 'Prepárate para el golpe', number: '02' },
-  { id: 'skill', name: 'Habilidades', hint: 'Primero elige una habilidad', number: '03' },
-  { id: 'escape', name: 'Escapar', hint: 'Vuelve a la calle', number: '04' },
+/** `mystery` is a command nobody can use yet: the menu keeps its place. */
+type Command = BattleAction | 'mystery';
+const COMMANDS: { id: Command; name: string }[] = [
+  { id: 'attack', name: 'Atacar' },
+  { id: 'skill', name: 'Habilidad' },
+  { id: 'mystery', name: '?????' },
+  { id: 'defend', name: 'Defender' },
+  { id: 'escape', name: 'Huir' },
 ];
+const TARGETS = { foes: 'Un enemigo', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
+/** What the details window says a skill does, from its numbers. */
+function skillEffect(skill: typeof SKILLS[number]) {
+  if (skill.kind === 'boost') return `Fuerza +${skill.power} y Magia +${skill.power} durante ${BOOST_ROUNDS} rondas`;
+  if (skill.kind === 'heal') return `Cura unos ${skill.power} PV${skill.side === 'party' ? ' a cada uno' : ''}`;
+  return `Daño ${skill.kind === 'magic' ? 'mágico' : 'físico'} · ${skill.power} de base${skill.id === 'nota' ? ' · rompe el pringue' : ''}`;
+}
+/** The details hint goes once it has been used (AGENTS.md: key hints disappear once used). */
+let detailsLearned = false;
 export function createBattleUI(hud: HTMLElement, callbacks: {
   change: (state: BattleState | undefined, effect?: BattleEffect, onImpact?: () => void) => Promise<void>;
   target: (id?: string) => void;
@@ -37,15 +50,22 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     <div class="battle-bottom">
       <section class="command-panel" aria-label="Acciones de combate">
         <div class="turn-heading"><span class="turn-dot"></span><span class="turn-label"></span><span class="turn-meta">TU TURNO</span></div>
-        <div class="commands">${COMMANDS.map(c => `<article class="command" data-command="${c.id}">
-          <button class="command-trigger" type="button" aria-expanded="false" aria-controls="detail-${c.id}"><span class="command-number">${c.number}</span><strong>${c.name}</strong></button>
-          <div class="command-expansion" id="detail-${c.id}" inert><div class="command-content"><p>${c.hint}</p><div class="command-choices"></div><button class="command-back" type="button">Volver <span>ESC</span></button></div></div>
-        </article>`).join('')}</div>
+        <div class="command-deck">
+          <div class="commands">${COMMANDS.map((c, i) => `<article class="command" data-command="${c.id}">
+            <button class="command-trigger" type="button" ${c.id === 'skill' ? 'aria-expanded="false" aria-controls="skill-flyout"' : ''} ${c.id === 'mystery' ? 'aria-label="Opción aún desconocida" disabled' : ''}><span class="command-number">0${i + 1}</span><strong>${c.name}</strong>${c.id === 'skill' ? '<span class="command-arrow" aria-hidden="true">›</span>' : ''}</button>
+          </article>`).join('')}</div>
+          <section class="skill-flyout" id="skill-flyout" aria-label="Habilidades" inert><div class="skill-sheet">
+            <span class="battle-kicker"></span>
+            <div class="skill-list"></div>
+            <footer><button class="command-back" type="button">Volver <span>ESC</span></button><p class="flyout-hint"><kbd>△</kbd><kbd>I</kbd> Detalles</p></footer>
+          </div></section>
+        </div>
         <div class="target-picker" hidden><span class="battle-kicker">ELIGE UN OBJETIVO</span><h2></h2><p></p><button class="target-back" type="button">Volver <span>ESC</span></button></div>
-        <p class="command-help">1–4 elegir <span>·</span> Enter confirmar <span>·</span> Esc volver</p>
+        <p class="command-help"></p>
       </section>
       <div class="party-roster" aria-label="Tu equipo"></div>
     </div>
+    <aside class="skill-info" role="tooltip" id="skill-info" hidden><span class="battle-kicker"></span><h3></h3><p></p><dl></dl></aside>
     <section class="battle-result" hidden><span class="battle-kicker">FIN DEL ENCUENTRO</span><h2></h2><p></p><button type="button">Volver a la calle</button></section>`;
   hud.append(root);
   const get = <T extends HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
@@ -53,12 +73,24 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   let selected: BattleAction | undefined;
   let selectedSkill: SkillId | undefined;
   let targeting = false;
+  /** The details window beside the focused skill (△ / Y on a controller, I on the keyboard). */
+  let details = false;
   let busy = false;
   let generation = 0;
   let previousFocus: HTMLElement | null = null;
   const outside = () => [...hud.children].filter((el): el is HTMLElement => el instanceof HTMLElement && el !== root);
   const articles = [...root.querySelectorAll<HTMLElement>('.command')];
   function focusFirst() { get<HTMLButtonElement>('.command-trigger').focus({ preventScroll: true }); }
+  const panel = get('.command-panel');
+  const skillButtons = () => [...root.querySelectorAll<HTMLButtonElement>('[data-skill]')];
+  /** Why a command can't be used now, if it can't. Bernat has no skills: he only attacks. */
+  function blocked(command: Command) {
+    if (!state || busy || state.phase !== 'player' || callbacks.waiting(state.allies[state.active].id)) return true;
+    if (command === 'mystery') return true;
+    if (command === 'escape') return cornered(state);
+    if (command === 'skill') return !skillsFor(state, state.allies[state.active]).length;
+    return false;
+  }
   function meter(c: Combatant, secondary = false) {
     const value = secondary ? c.secondary : c.hp, max = secondary ? c.maxSecondary : c.maxHp;
     const label = secondary ? 'Secundaria' : 'PV';
@@ -130,6 +162,33 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (c.profile === 'aitor') return SPEAKERS.aitor.art;
     return `<span>${c.name[0]}</span>`;
   }
+  /** Opens or closes the details window; it follows focus through the skills while open. */
+  function showDetails(open: boolean) {
+    details = open && selected === 'skill' && !targeting;
+    if (details && !detailsLearned) { detailsLearned = true; get('.flyout-hint').dataset.learned = 'true'; }
+    placeDetails();
+  }
+  function placeDetails() {
+    const box = get('.skill-info');
+    const button = document.activeElement instanceof HTMLButtonElement && document.activeElement.dataset.skill ? document.activeElement : undefined;
+    const skill = button && SKILLS.find(s => s.id === button.dataset.skill);
+    box.hidden = !details || !skill || !state;
+    if (box.hidden || !skill || !state) { button?.removeAttribute('aria-describedby'); return; }
+    button!.setAttribute('aria-describedby', 'skill-info');
+    const actor = state.allies[state.active];
+    const running = skill.kind === 'boost' ? boostRounds(state) : 0;
+    box.querySelector('.battle-kicker')!.textContent = 'class' in skill ? `HABILIDAD DE CLASE · ${skill.class === 'noista' ? 'NOÍSTA' : ''}` : `HABILIDAD DE ${actor.name.toUpperCase()}`;
+    box.querySelector('h3')!.textContent = skill.name;
+    box.querySelector('p')!.textContent = skill.description + '.';
+    const rows: [string, string][] = [['Coste', `${skill.cost} SEC · tienes ${actor.secondary}`], ['Objetivo', TARGETS[skill.side]], ['Efecto', skillEffect(skill)]];
+    if (running) rows.push(['Ahora', `En marcha: ${running === 1 ? 'queda 1 ronda' : `quedan ${running} rondas`}`]);
+    box.querySelector('dl')!.innerHTML = rows.map(() => '<div><dt></dt><dd></dd></div>').join('');
+    box.querySelectorAll('dl > div').forEach((row, i) => { row.querySelector('dt')!.textContent = rows[i][0]; row.querySelector('dd')!.textContent = rows[i][1]; });
+    // Beside the skill, out past the flyout, vertically centred on it.
+    const base = root.getBoundingClientRect(), at = button!.getBoundingClientRect(), sheet = get('.skill-flyout').getBoundingClientRect();
+    box.style.left = `${Math.max(at.right, sheet.right) - base.left + 18}px`;
+    box.style.top = `${at.top + at.height / 2 - base.top}px`;
+  }
   /** Whose hands the current turn is in; nobody else's input counts. */
   const turnDriver = (): PlayerId => state && state.phase === 'player' ? callbacks.driver(state.allies[state.active].id) : 1;
   const targetButtons = () => [...root.querySelectorAll<HTMLButtonElement>('.roster-target:not(:disabled), .battle-target[data-side="foes"]:not(:disabled)')].filter(button => !button.hidden);
@@ -150,12 +209,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const roster = get('.party-roster');
     if (!roster.children.length) roster.innerHTML = state.allies.map(c => `<article class="party-card" data-unit="${c.id}">
       <div class="party-portrait">${portrait(c)}</div>
-      <div class="unit-info"><div class="unit-heading"><strong>${c.name}</strong><span class="unit-status"></span></div>${meter(c)}${meter(c, true)}</div><button class="roster-target" type="button" data-target="${c.id}" aria-label="Elegir a ${c.name}" hidden></button></article>`).join('');
+      <div class="unit-info"><div class="unit-heading"><strong>${c.name}</strong><span class="unit-boost" hidden></span><span class="unit-status"></span></div>${meter(c)}${meter(c, true)}</div><button class="roster-target" type="button" data-target="${c.id}" aria-label="Elegir a ${c.name}" hidden></button></article>`).join('');
     for (const c of state.allies) {
       const card = roster.querySelector<HTMLElement>(`[data-unit="${c.id}"]`)!;
       card.classList.toggle('is-active', state.phase === 'player' && state.allies[state.active].id === c.id);
       card.classList.toggle('is-down', c.hp === 0);
       card.classList.toggle('is-acting', root.dataset.actor === c.id);
+      const boost = card.querySelector<HTMLElement>('.unit-boost')!;
+      boost.hidden = !boostRounds(state) || c.hp === 0;
+      boost.textContent = `▲ ${boostRounds(state)}`;
+      boost.title = `Análisis Parálisis: Fuerza y Magia +${state.boost?.amount ?? 0}`;
       card.querySelector('.unit-status')!.textContent = c.hp === 0 ? 'FUERA' : c.guarding ? 'EN GUARDIA' : state.allies[state.active].id === c.id && state.phase === 'player' ? 'ACTIVO' : '';
       card.querySelectorAll<HTMLElement>('.battle-meter').forEach((bar, i) => {
         const value = i === 0 ? c.hp : c.secondary, max = i === 0 ? c.maxHp : c.maxSecondary;
@@ -174,8 +237,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       plate.classList.toggle('is-down', foe.hp === 0);
       plate.classList.toggle('is-acting', root.dataset.actor === foe.id);
     }
-    // Possessed dogs surround the party: Escapar stays greyed out. A turn waiting for player 2 locks every command.
-    articles.forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = busy || waiting || state!.phase !== 'player' || (cornered(state!) && article.dataset.command === 'escape'); });
+    // Possessed dogs surround the party: Huir stays greyed out. A turn waiting for player 2 locks every command.
+    articles.forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = blocked(article.dataset.command as Command); });
     const eligible = targeting && !busy && state.phase === 'player' ? validTargets(state, selected!, selectedSkill).map(c => c.id) : [];
     root.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
       button.disabled = !eligible.includes(button.dataset.target!);
@@ -183,9 +246,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (button.classList.contains('roster-target')) button.hidden = !targeting;
       button.closest('[data-unit]')?.classList.toggle('is-eligible', !button.disabled);
     });
-    get('.commands').hidden = targeting;
+    get('.command-deck').hidden = targeting;
     get('.target-picker').hidden = !targeting;
-    get('.command-help').textContent = targeting ? '← ↑ ↓ → elegir · Enter aplicar · Esc volver' : '1–4 elegir · Enter confirmar · Esc volver';
+    // The controller UI swaps this line for the pad's while one is in use, and back from keyboardHelp.
+    const help = get('.command-help');
+    help.textContent = help.dataset.keyboardHelp = targeting ? '← ↑ ↓ → elegir · Enter aplicar · Esc volver'
+      : selected === 'skill' ? '↑ ↓ elegir · Enter usar · I detalles · ← o Esc volver' : '1–5 elegir · Enter confirmar · Esc volver';
+    get('.flyout-hint').toggleAttribute('hidden', detailsLearned);
     get('.battle-bottom').hidden = ended;
     get('.battle-result').hidden = !ended;
     if (ended) {
@@ -201,13 +268,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       button.disabled = true;
       button.closest('[data-unit]')?.classList.remove('is-eligible');
     });
-    get('.commands').hidden = false; get('.target-picker').hidden = true;
+    get('.command-deck').hidden = false; get('.target-picker').hidden = true;
     root.querySelectorAll<HTMLElement>('.roster-target').forEach(button => { button.hidden = true; button.closest('[data-unit]')?.classList.remove('is-eligible'); });
-    articles.forEach(article => {
-      article.classList.remove('expanded');
-      article.querySelector('.command-trigger')!.setAttribute('aria-expanded', 'false');
-      article.querySelector<HTMLElement>('.command-expansion')!.inert = true;
-    });
+    articles.forEach(article => article.classList.remove('expanded'));
+    get('[data-command="skill"] .command-trigger').setAttribute('aria-expanded', 'false');
+    delete panel.dataset.flyout; get('.skill-flyout').inert = true;
+    showDetails(false);
     if (restoreFocus && old) get<HTMLButtonElement>(`[data-command="${old}"] .command-trigger`).focus();
   }
   function highlight(id?: string) {
@@ -216,30 +282,35 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       el.classList.toggle('is-targeted', !!id && (el.dataset.unit === id || el.dataset.target === id));
     });
   }
-  function expand(action: BattleAction) {
-    if (!state || busy || state.phase !== 'player' || (cornered(state) && action === 'escape')) return;
-    if (action === 'skill') get('[data-command="skill"]').classList.remove('is-new');
-    if (selected === action) { collapse(true); return; }
-    collapse(); selected = action;
-    const article = get(`[data-command="${action}"]`);
-    article.classList.add('expanded');
-    article.querySelector('.command-trigger')!.setAttribute('aria-expanded', 'true');
-    article.querySelector<HTMLElement>('.command-expansion')!.inert = false;
-    const choices = article.querySelector('.command-choices')!;
-    if (action === 'attack') { beginTargeting(); return; }
-    if (action === 'skill') {
-      choices.innerHTML = skillsFor(state!, state!.allies[state!.active]).map((skill, i) => {
-        const affordable = state!.allies[state!.active].secondary >= skill.cost;
-        const available = validTargets(state!, 'skill', skill.id).length > 0;
-        return `<button type="button" data-skill="${skill.id}" ${'class' in skill ? `data-class="${skill.class}"` : ''} ${!affordable || !available ? 'disabled' : ''}><span><strong>${i + 1} · ${skill.name}</strong><small>${skill.description}</small></span><small>${!affordable ? 'Sin energía' : !available ? (skill.side === 'foes' ? 'Sin objetivo' : 'Equipo al máximo') : `${skill.cost} SEC`}</small></button>`;
-      }).join('');
-    } else choices.innerHTML = `<button type="button" data-confirm><span>${action === 'defend' ? 'Adoptar guardia' : 'Salir del encuentro'}</span><small>CONFIRMAR</small></button>`;
+  /** Atacar asks for a target, Habilidad opens its flyout to the right, Defender and Huir happen at once. */
+  function choose(command: Command) {
+    if (!state || blocked(command) || command === 'mystery') return;
+    if (command === 'skill') get('[data-command="skill"]').classList.remove('is-new');
+    if (selected === command) { collapse(true); render(); return; }
+    collapse(); selected = command;
+    get(`[data-command="${command}"]`).classList.add('expanded');
+    if (command === 'attack') { beginTargeting(); return; }
+    if (command !== 'skill') { void execute(); return; }
+    const actor = state.allies[state.active];
+    get('[data-command="skill"] .command-trigger').setAttribute('aria-expanded', 'true');
+    panel.dataset.flyout = 'open'; get('.skill-flyout').inert = false;
+    // The sheet starts level with Habilidad, as if it slid out of it.
+    panel.style.setProperty('--flyout-top', `${get('[data-command="skill"]').offsetTop}px`);
+    get('.skill-flyout .battle-kicker').textContent = `HABILIDADES · ${actor.name.toUpperCase()}`;
+    // Unaffordable skills stay focusable so their details can still be read.
+    get('.skill-list').innerHTML = skillsFor(state, actor).map((skill, i) => {
+      const affordable = actor.secondary >= skill.cost;
+      const available = validTargets(state!, 'skill', skill.id).length > 0;
+      const reason = !affordable ? 'Sin energía' : available ? `${skill.cost} SEC` : skill.kind === 'boost' ? 'En marcha' : skill.side === 'foes' ? 'Sin objetivo' : 'Equipo al máximo';
+      return `<button type="button" data-skill="${skill.id}" ${'class' in skill ? `data-class="${skill.class}"` : ''} ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
+    }).join('');
     render();
-    article.querySelector<HTMLButtonElement>('.command-choices button:not(:disabled), .command-back')!.focus({ preventScroll: true });
+    (skillButtons().find(b => !b.hasAttribute('aria-disabled')) ?? skillButtons()[0] ?? get<HTMLButtonElement>('.skill-flyout .command-back')).focus({ preventScroll: true });
   }
   function beginTargeting(skill?: SkillId) {
     if (!state || busy || !selected) return;
     if (skill && (state.allies[state.active].secondary < SKILLS.find(s => s.id === skill)!.cost || !validTargets(state, 'skill', skill).length)) return;
+    showDetails(false);
     // A skill that reaches the whole party has nobody to pick: it happens at once.
     if (skill && !aimed(skill)) { selectedSkill = skill; void execute(); return; }
     selectedSkill = skill; targeting = true;
@@ -252,9 +323,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   function back() {
     if (busy) return;
+    if (details) { showDetails(false); return; }
     if (targeting && selected === 'skill') {
       const oldSkill = selectedSkill;
-      collapse(); expand('skill');
+      collapse(); choose('skill');
       root.querySelector<HTMLButtonElement>(`[data-skill="${oldSkill}"]`)?.focus({ preventScroll: true });
     } else { collapse(true); render(); }
   }
@@ -274,6 +346,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (card) { void card.offsetWidth; card.classList.add('contact-hit'); }
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard');
+      else if (effect.boosted) effect.boosted.forEach(id => pop(id, 'Análisis', 'guard', `Fuerza y Magia +${state!.boost?.amount ?? 0}`));
       else if (effect.healed) effect.healed.forEach(h => pop(h.id, `+${h.amount}`, 'heal', 'PV'));
       else if (effect.skill && SKILLS.find(s => s.id === effect.skill)!.kind === 'heal' && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', 'PV');
       else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
@@ -320,9 +393,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (turnDriver() !== pointerPlayer) return;
     if (target.matches('.command-back, .target-back')) { back(); return; }
     if (target.dataset.skill) { beginTargeting(target.dataset.skill as SkillId); return; }
-    if (target.matches('.command-trigger')) expand(target.closest<HTMLElement>('[data-command]')!.dataset.command as BattleAction);
+    if (target.matches('.command-trigger')) choose(target.closest<HTMLElement>('[data-command]')!.dataset.command as Command);
     else if (target.matches('[data-target], [data-confirm]')) void execute(target.dataset.target);
   });
+  root.addEventListener('focusin', () => { if (details) placeDetails(); });
   for (const eventName of ['pointerover', 'focusin']) root.addEventListener(eventName, event => {
     if (!targeting || busy) return;
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-target]');
@@ -341,24 +415,44 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
       event.preventDefault(); buttons[(index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length]?.focus();
     } else if (event.key === 'Escape') { event.preventDefault(); back(); }
-    else if (/^[1-4]$/.test(event.key) && !event.repeat) {
+    else if (/^[1-9]$/.test(event.key) && !event.repeat) {
       event.preventDefault();
       const index = Number(event.key) - 1;
       if (targeting) targetButtons()[index]?.focus();
-      else if (selected === 'skill') root.querySelectorAll<HTMLButtonElement>('[data-skill]')[index]?.click();
-      else expand(COMMANDS[index].id);
+      else if (selected === 'skill') skillButtons()[index]?.click();
+      else if (COMMANDS[index]) choose(COMMANDS[index].id);
     }
-    else if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-      event.preventDefault();
-      const buttons = (targeting ? targetButtons() : [...root.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')]).filter(b => b.tabIndex >= 0 && !b.closest('[inert], [hidden]'));
-      const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
-      buttons[(index + (event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length]?.focus();
-    }
+    else if (event.key.toLowerCase() === 'i' && !event.repeat) { event.preventDefault(); showDetails(!details); }
+    else if (event.key.startsWith('Arrow')) { event.preventDefault(); navigate(event.key.slice(5).toLowerCase() as Direction); }
     event.stopPropagation();
   }
   root.addEventListener('keydown', keydown);
+  /**
+   * Arrows and the D-pad: up and down walk the column in front of you; right on Habilidad opens
+   * its flyout and left closes it again. Picking a target walks every eligible fighter.
+   */
+  function navigate(direction: Direction) {
+    const step = direction === 'up' || direction === 'left' ? -1 : 1;
+    const walk = (buttons: HTMLButtonElement[]) => {
+      const visible = buttons.filter(b => !b.disabled && b.tabIndex >= 0 && !b.closest('[inert], [hidden]') && b.getClientRects().length);
+      const index = visible.indexOf(document.activeElement as HTMLButtonElement);
+      visible[index < 0 ? 0 : (index + step + visible.length) % visible.length]?.focus();
+    };
+    if (targeting) walk(targetButtons());
+    else if (selected === 'skill') {
+      if (direction === 'left') back();
+      else if (direction !== 'right') walk([...root.querySelectorAll<HTMLButtonElement>('.skill-flyout button')]);
+    } else if (direction === 'right') { if (document.activeElement === get('[data-command="skill"] .command-trigger')) choose('skill'); }
+    else if (direction === 'left') return;
+    else walk([...root.querySelectorAll<HTMLButtonElement>('.command-trigger, .battle-result button')]);
+  }
   return {
     get controllerContext() { return !state ? 'world' : `battle:${busy ? 'busy' : state.phase}:${selected ?? ''}:${selectedSkill ?? ''}:${targeting}`; },
+    /** △ / Y: the details window beside the focused skill. */
+    details(player: PlayerId = 1) {
+      if (!state || busy || player !== turnDriver()) return;
+      showDetails(!details);
+    },
     /** A controller press; `player` is whose controller it is. Only the turn's own player is heard. */
     control(action: ControlAction, player: PlayerId = 1) {
       if (!state || busy) return;
@@ -366,14 +460,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (!ended && player !== turnDriver()) return;
       if (action === 'cancel') { if (ended) close(); else back(); }
       else if (action === 'confirm') { pointerPlayer = player; try { clickControllerButton(root); } finally { pointerPlayer = 1; } }
-      else if (action !== 'menu') {
-        if (targeting) {
-          const buttons = targetButtons();
-          const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
-          const step = action === 'up' || action === 'left' ? -1 : 1;
-          buttons[index < 0 ? 0 : (index + step + buttons.length) % buttons.length]?.focus();
-        } else focusControllerButton(root, action);
-      }
+      else if (action !== 'menu') navigate(action);
     },
     positionTargets(targets: { id: string; x: number; y: number; visible: boolean }[]) {
       for (const target of targets) {

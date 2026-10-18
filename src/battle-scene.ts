@@ -153,6 +153,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (!target) { hit(actor, gold, .55); effects.emit('spark', new pc.Vec3(actor.base.x, 1.1, actor.base.z), 6, .3); return; }
     // Abrazo reaches the whole party at once.
     if (action.skill === 'abrazo') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, green, .85); effects.emit('heal', new pc.Vec3(f.base.x, .35, f.base.z), 12, .5); } return; }
+    // Análisis Parálisis: a gold flicker of ideas over everyone still standing.
+    if (action.skill === 'analisis') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, gold, .7); effects.emit('spark', new pc.Vec3(f.base.x, 1.6, f.base.z), 10, .4); } return; }
     if (action.skill === 'encourage') { hit(target, green, .85); effects.emit('heal', new pc.Vec3(target.base.x, .35, target.base.z), 16, .5); return; }
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
     const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
@@ -254,10 +256,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       });
       const actor = effect ? fighters.get(effect.actor) : undefined;
       const target = effect?.target ? fighters.get(effect.target) : undefined;
-      const healing = effect?.skill === 'encourage' || effect?.skill === 'abrazo';
+      // Heals and boosts stay put: no run-up to anyone.
+      const support = effect?.skill === 'encourage' || effect?.skill === 'abrazo' || effect?.skill === 'analisis';
       const t = animate ? effectTime : ACTION_SECONDS;
-      const motion = actor && target && !healing ? contactMotion(actor.base, target.base, t) : undefined;
-      const contact = effect?.target && !healing ? CONTACT_SECONDS : .2;
+      const motion = actor && target && !support ? contactMotion(actor.base, target.base, t) : undefined;
+      const contact = effect?.target && !support ? CONTACT_SECONDS : .2;
       if (effect && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.();
         if (animate && effect) contactBurst(effect, actor, target);
@@ -300,7 +303,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           lean = strike * 13;
           hop = f.party || !animate ? 0 : Math.sin(clamp01((t - .16) / .46) * Math.PI) * .3;
         }
-        if (healing && id === effect?.actor) strike = animate ? Math.sin(clamp01(t / .8) * Math.PI) * .65 : 0;
+        if (support && id === effect?.actor) strike = animate ? Math.sin(clamp01(t / .8) * Math.PI) * .65 : 0;
         const guarding = state?.allies.find(a => a.id === id)?.guarding ?? false;
         if (motion && id === effect?.target && animate) {
           const recoil = motion.recoil * (guarding ? .12 : .34);
@@ -373,7 +376,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       shake = Math.max(0, shake - dt);
       if (shake > 0 && animate) cameraKick.add(new pc.Vec3(Math.sin(time * 70) * shake * .25, Math.cos(time * 63) * shake * .15, 0));
       sparks.enabled = !!motion && animate && t >= CONTACT_SECONDS && t < CONTACT_SECONDS + .22;
-      if (healing && target && animate && t >= .2 && t < .8) {
+      if (support && target && animate && t >= .2 && t < .8) {
         sparks.enabled = true;
         const burst = (t - .2) / .6;
         sparks.setPosition(target.base.x, 1 + burst * .8, target.base.z);
@@ -396,7 +399,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const emphasis = animate ? Math.sin(clamp01(t / ACTION_SECONDS) * Math.PI) * .12 : 0;
         focus.set((target.base.x - anchor.x) * emphasis, 0, (target.base.z - anchor.z) * emphasis);
       }
-      if (complete && (effect ? t >= (healing ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS)) {
+      if (complete && (effect ? t >= (support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS)) {
         settle(); effect = undefined; impact = undefined;
       }
     },

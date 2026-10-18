@@ -193,14 +193,16 @@ try {
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (player === 2) {
-        if (action === 'overview' || action === 'character') return;
+        if (action === 'character') { if (battleUI.controllerContext !== 'world') battleUI.details(2); return; }
+        if (action === 'overview') return;
         if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
         else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); }
         else if (!exploration.active && action === 'confirm') game.interact(true);
         return;
       }
       if (action === 'overview') { if (controllerContext() === 'world') game.toggleOverview(); }
-      else if (action === 'character') { if (/^(world|journal:)/.test(controllerContext())) exploration.toggle('character'); }
+      // The top face button (△ / Y): the character panel, or a skill's details in battle.
+      else if (action === 'character') { if (battleUI.controllerContext !== 'world') battleUI.details(1); else if (/^(world|journal:)/.test(controllerContext())) exploration.toggle('character'); }
       else if (battleUI.controllerContext !== 'world') battleUI.control(action, 1);
       else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); else if (action === 'cancel') dialogue.close(); }
       else if (exploration.active) exploration.control(action);

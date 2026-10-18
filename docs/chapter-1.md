@@ -49,7 +49,7 @@ his power: **changing class by changing mood**, fast.
 | 7 | Down the street: dogs below, a faint pink bubble in their manhole; Bernat slows, stops and mutters | Noticing a friend | 1:00 |
 | 8 | "¿Un déjà-vu?" "Peor. Es igual… creo que la he cagado." | — | 0:30 |
 | 9 | A gum head pokes out of the manhole for a moment, pops a bubble over the dogs and sinks back: their eyes turn dark pink. "¡Ha salido algo rosa de la alcantarilla!" Bernat: "Un esbirro de la Reina Bubbaloo." | — | 0:45 |
-| 10 | The dogs attack: **first fight**, straight away and with no tutorial. Escapar is greyed out (the dogs surround them); losing lets them try again | Fighting | 2:00 |
+| 10 | The dogs attack: **first fight**, straight away and with no tutorial. Huir is greyed out (the dogs surround them); losing lets them try again | Fighting | 2:00 |
 | 11 | Won: the light over Sant Quirze turns dark, pink and strange while they are inside Bernat's game; the houses at the north end start to change → block 2 | — | 0:45 |
 
 Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpack`,
