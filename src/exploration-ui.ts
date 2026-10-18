@@ -284,11 +284,10 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const sheet = sheets.find(s => button && s.el.contains(button));
     if (!button || !sheet) return;
     sheet.cursor = button.dataset.key;
-    const { wear, classId, tie, scarf, view, panel } = button.dataset;
+    const { wear, classId, tie, scarf, panel } = button.dataset;
     if (wear && classId) sheet.viewing = classId as ClassId;
     if (wear) callbacks.wear(wear as MemberId, (classId || null) as ClassId | null);
     else if (tie) callbacks.tie(tie as MemberId, classId as ClassId, scarf as ScarfId);
-    else if (view) { sheet.viewing = view as ClassId; renderSheet(sheet); }
     else if (panel) show(panel as PanelId, sheet.player);
     else if (button.hasAttribute('data-close')) close(sheet.player);
   }

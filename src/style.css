@@ -558,10 +558,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .status-skills small { align-self: center; font-size: 9px; letter-spacing: .12em; color: var(--sheet-accent); }
 .status-skills span { grid-column: 1 / -1; font-size: 11px; line-height: 1.35; color: var(--ui-muted); }
 .status-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-.anima-worn { padding: 12px 14px; border: 1px solid var(--ui-line); border-left: 4px solid var(--scarf, var(--ui-line)); background: #ffffff06; }
-.anima-worn strong { display: block; margin-top: 4px; font: italic 900 24px/1 'Manrope', sans-serif; letter-spacing: -.05em; text-transform: uppercase; }
-.journal-content .anima-worn p { margin-top: 5px; font-size: 12px; }
-.journal-content .anima-worn .anima-grants { color: var(--ui-paper); font-weight: 600; }
 .anima-bonus { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 .anima-bonus li { padding: 3px 7px; border: 1px solid #8fd19e66; }
 .status-mission { padding: 12px 16px; background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); transform: rotate(-.6deg); }
