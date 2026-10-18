@@ -7,6 +7,8 @@ import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { Cell } from './movement';
 import type { ItemId } from './items';
+import type { ClassId, PartySlot } from './battle';
+import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
@@ -63,16 +65,27 @@ export type StoryEffect =
 
 /** Scripted fights: the possessed street dogs, and the palace minion that wakes Noísta. */
 export type EncounterId = 'dogs' | 'palace-minion';
-/** Gerard's classes (docs/bubbaloo-palace.md). Only one so far; how the system grows is still open. */
-export type GerardClass = 'noista';
+/** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
+export type GerardClass = ClassId;
 
-export interface StoryNpc { id: 'mama' | 'jan' | 'aitor'; character: string; environment: EnvironmentId; cell: Cell; scale: number }
+export interface StoryNpc { id: 'mama' | 'jan'; character: string; environment: EnvironmentId; cell: Cell; scale: number }
 export type Companion = 'none' | 'follow' | 'stalled';
 /** La Reina Bubbaloo's minion in the manhole: lurking (a faint bubble now and then) until its entrance, then gone below. */
 export type MinionState = 'lurking' | 'gone';
 /** The light over Sant Quirze: an ordinary autumn morning, or La Reina Bubbaloo's pink gloom. */
 export type Tone = 'day' | 'bubbaloo';
-export interface PartyMember { id: 'gerard' | 'bernat'; name: string; equipment: ItemId[]; note: string }
+export type MemberId = 'gerard' | 'bernat' | 'aitor';
+export interface PartyMember {
+  id: MemberId; name: string; equipment: ItemId[]; note: string;
+  /** Whose stats they fight with (stats.ts): Gerard is a boy in chapter 1 and 35 in chapter 2. */
+  profile: ProfileId;
+  /** The class they wear, from the party's unlocked ones. */
+  classId?: ClassId;
+}
+/** Who wears which class. Not a story flag: it changes back and forth, so `main.ts` keeps it in the browser. */
+export type Loadout = Partial<Record<MemberId, ClassId | null>>;
+/** Who walks beside Gerard: Bernat in chapter 1, Aitor from chapter 2 on. */
+export type Partner = 'bernat' | 'aitor';
 
 /** Interactions only the story adds; the game merges them with the scene's own. */
 const STORY_INTERACTIONS = {
@@ -110,6 +123,8 @@ export class Story {
   private tugs = 0;
   /** Whether Gerard is heading back south once the palace stands. Not saved. */
   private away = false;
+  /** Who wears which class; members missing here wear their default (see `classOf`). */
+  private worn: Loadout = {};
   constructor(flags: Iterable<string> = []) {
     this.flags = new Set([...flags].filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
   }
@@ -133,8 +148,31 @@ export class Story {
   get palace() { return this.has('palace'); }
   /** Chapter 2: Gerard is 35 and wakes up in Barcelona; chapter 1 was his dream. */
   get adult() { return this.has('caught'); }
-  /** Gerard's active class, if one has woken up. */
-  get gerardClass(): GerardClass | undefined { return this.has('noista') ? 'noista' : undefined; }
+  /** Classes the party has unlocked; anyone in the party can wear any of them. */
+  get classes(): ClassId[] { return this.has('noista') ? ['noista'] : []; }
+  /** Gerard's active class, which also dresses the interface. */
+  get gerardClass(): GerardClass | undefined { return this.classOf('gerard'); }
+  /** The class `member` wears: their choice if it is unlocked, otherwise Gerard keeps Noísta on. */
+  classOf(member: MemberId): ClassId | undefined {
+    const choice = this.worn[member];
+    if (choice !== undefined) return choice && this.classes.includes(choice) ? choice : undefined;
+    return member === 'gerard' ? this.classes[0] : undefined;
+  }
+  /** Puts a class on a party member (or takes it off with `null`). Locked classes are refused. */
+  wear(member: MemberId, classId: ClassId | null) {
+    if (classId && !this.classes.includes(classId)) return false;
+    this.worn[member] = classId;
+    return true;
+  }
+  get loadout(): Loadout { return { ...this.worn }; }
+  set loadout(value: Loadout) {
+    this.worn = {};
+    for (const [member, classId] of Object.entries(value ?? {})) {
+      if (['gerard', 'bernat', 'aitor'].includes(member) && (classId === null || this.classes.includes(classId as ClassId))) this.worn[member as MemberId] = classId as ClassId | null;
+    }
+  }
+  /** Who walks beside Gerard here and now, if anyone. */
+  get partner(): Partner | undefined { return this.adult ? 'aitor' : this.companion !== 'none' ? 'bernat' : undefined; }
   /** Cells the story keeps shut in a scene (the stuck back door of the wrapper room). */
   blocked(environment: EnvironmentId): Cell[] {
     return environment === 'palacio' && !this.has('wrapper-room') ? [{ ...BACK_DOOR }] : [];
@@ -154,10 +192,20 @@ export class Story {
     return this.has('bernat-stalled') && !this.has('dejavu') ? 'stalled' : 'follow';
   }
   get party(): PartyMember[] {
-    const note = this.has('noista') ? 'Clase: Noísta. Siempre dice que no.' : this.has('got-shoes') ? 'Listo para el cole.' : 'Aún en pijama.';
-    if (this.adult) return [{ id: 'gerard', name: 'Gerard', equipment: [], note: this.has('noista') ? 'Treinta y cinco años. Clase: Noísta.' : 'Treinta y cinco años.' }];
-    const gerard: PartyMember = { id: 'gerard', name: 'Gerard', equipment: this.items.filter(i => i !== 'pocion' && i !== 'chicle'), note };
-    return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
+    const classId = this.classOf('gerard');
+    const note = classId ? 'Clase: Noísta. Siempre dice que no.' : this.has('got-shoes') ? 'Listo para el cole.' : 'Aún en pijama.';
+    // Chapter 2: Gerard at 35, and Aitor beside him from the moment he wakes up.
+    if (this.adult) return [
+      { id: 'gerard', name: 'Gerard', profile: 'gerard35', classId, equipment: [], note: classId ? 'Treinta y cinco años. Clase: Noísta.' : 'Treinta y cinco años.' },
+      { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: this.classOf('aitor'), equipment: [], note: this.classOf('aitor') ? 'Lleva la clase de Gerard. Y le queda bien.' : 'Pies en el suelo. Y un abrazo para todos.' },
+    ];
+    const gerard: PartyMember = { id: 'gerard', name: 'Gerard', profile: 'gerard', classId, equipment: this.items.filter(i => i !== 'pocion' && i !== 'chicle'), note };
+    return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', profile: 'bernat', classId: this.classOf('bernat'), equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
+  }
+  /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). */
+  battleParty(withPartner: boolean): PartySlot[] {
+    return this.party.filter(m => m.id === 'gerard' || withPartner)
+      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId }));
   }
   /** Where a new or reloaded game puts Gerard, if the story decides it. */
   get resume(): { environment: EnvironmentId; cell: Cell } {
@@ -178,8 +226,8 @@ export class Story {
       { id: 'mama', character: 'mama', environment: PLACES.mama.environment, cell: PLACES.mama.cell, scale: 1.3 },
       { id: 'jan', character: 'jan-child', environment: PLACES.jan.environment, cell: PLACES.jan.cell, scale: 1.12 },
     ];
-    // Chapter 1 is a dream: once Gerard wakes, home in Sant Quirze is empty and Aitor is in Barcelona.
-    if (this.adult) return environment === PLACES.aitor.environment ? [{ id: 'aitor', character: 'aitor', environment, cell: PLACES.aitor.cell, scale: 1.38 }] : [];
+    // Chapter 1 is a dream: once Gerard wakes, home in Sant Quirze is empty, and Aitor walks with him (the partner, not an NPC).
+    if (this.adult) return [];
     return all.filter(npc => npc.environment === environment);
   }
   /** Loose things still lying around, drawn as pickups. */
@@ -193,8 +241,8 @@ export class Story {
     return all.filter(p => !p.taken && p.place.environment === environment)
       .map(p => ({ id: p.id, cell: p.place.cell, spot: 'spot' in p.place ? p.place.spot : undefined }));
   }
-  /** Story interactions in this scene; `bernat` is the companion's current cell on the street. */
-  interactions(environment: EnvironmentId, bernat?: Cell): Interaction[] {
+  /** Story interactions in this scene; `partner` is the cell of whoever walks with Gerard. */
+  interactions(environment: EnvironmentId, partner?: Cell): Interaction[] {
     const list: Interaction[] = [];
     for (const [id, { place, label }] of Object.entries(STORY_INTERACTIONS)) {
       if (place.environment !== environment) continue;
@@ -204,13 +252,13 @@ export class Story {
       if (id === 'take-envoltorio' && (this.has('got-wrapper') || !this.adult)) continue;
       list.push({ id, label, cell: { ...place.cell } });
     }
-    if (this.adult && environment === PLACES.aitor.environment) list.push({ id: 'talk-aitor', label: 'Hablar con Aitor', cell: { ...PLACES.aitor.cell } });
+    if (partner && this.partner === 'aitor') list.push({ id: 'talk-aitor', label: 'Hablar con Aitor', cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
     if (environment === 'maresme' && this.has('palace') && !this.adult) list.push({ id: 'enter-palace', label: 'Atravesar la pompa', cell: { x: PLACES.palace.door.x, z: PLACES.palace.door.z - 1 } });
     if (environment === 'palacio') {
       for (const look of PALACE_LOOKS) list.push({ id: look.id, label: look.label, cell: { ...look.cell } });
       if (!this.has('wrapper-room')) list.push({ id: 'push-back-door', label: 'Empujar la puerta', cell: { ...BACK_DOOR } });
     }
-    if (bernat && this.companion !== 'none') list.push({ id: 'talk-bernat', label: this.companion === 'stalled' ? 'Preguntarle a Bernat qué pasa' : 'Hablar con Bernat', cell: { x: Math.round(bernat.x), z: Math.round(bernat.z) } });
+    if (partner && this.partner === 'bernat') list.push({ id: 'talk-bernat', label: this.companion === 'stalled' ? 'Preguntarle a Bernat qué pasa' : 'Hablar con Bernat', cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
     return list;
   }
   /** A dialogue that stops a door from working, if the story is not ready for it. */
@@ -264,7 +312,8 @@ export class Story {
       case 'caught': {
         if (!this.has('wrapper-room') || !this.set('caught')) return [];
         const home: StoryEffect = { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } };
-        return [home, { kind: 'wake' }, say(LINES.waking)];
+        // Aitor is in the party from here on: a second player can take him (the hint shows only when that is new).
+        return [home, { kind: 'wake' }, say(LINES.waking), { kind: 'hint', id: 'duo' }];
       }
       case 'south':
         if (this.companion !== 'follow' || this.has('dejavu') || !this.set('bernat-stalled')) return [];

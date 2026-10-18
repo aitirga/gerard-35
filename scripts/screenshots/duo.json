@@ -1,0 +1,155 @@
+{
+  "title": "Chapter 2 · Two players",
+  "description": "Gerard (player 1) and Aitor (player 2, second controller) in the Meridiana flat: Aitor follows until a second controller connects, then walks on his own with the camera framing both; the party panel shows stats and the shared Noísta class; in a fight each player picks their own fighter's moves, and Aitor's turn waits while there is no second controller. Two standard gamepads are faked in the page.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=0"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0)]; navigator.getGamepads = () => window.fakePads;"
+    },
+    {
+      "hold": [
+        "KeyS"
+      ],
+      "ms": 2500
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "follows",
+      "caption": "One controller: Aitor walks round the bed and follows Gerard"
+    },
+    {
+      "eval": "window.fakePads.push(fakePad(1))"
+    },
+    {
+      "until": "window.gerard.game.partnerFree",
+      "timeout": 20000
+    },
+    {
+      "eval": "window.fakePads[1].axes[1] = -1"
+    },
+    {
+      "wait": 6000
+    },
+    {
+      "eval": "window.fakePads[1].axes[1] = 0"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "player-2",
+      "caption": "A second controller connects: Aitor walks on his own and the camera frames both"
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "shot": "party",
+      "delay": 1500,
+      "caption": "Personaje: Gerard at 35 and Aitor with their stats, and the party's classes to wear"
+    },
+    {
+      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click()"
+    },
+    {
+      "shot": "aitor-noista",
+      "delay": 800,
+      "caption": "Classes are shared: Aitor puts on Noísta (Magia +2, Espíritu +2, Defensa −1)"
+    },
+    {
+      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"\"]').click()"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "window.gerard.battleUI.open(window.gerard.story.battleParty(true), 2)"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "gerard-turn",
+      "delay": 800,
+      "caption": "A fight: Gerard (faster) goes first, on player 1's keyboard"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "press": "Enter",
+      "gap": 300
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'MANDO 2'",
+      "timeout": 60000
+    },
+    {
+      "shot": "aitor-turn",
+      "delay": 600,
+      "caption": "Aitor's turn belongs to player 2's controller; the keyboard is ignored"
+    },
+    {
+      "eval": "window.fakePads[1].buttons[13].pressed = true"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.fakePads[1].buttons[13].pressed = false"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.fakePads[1].buttons[13].pressed = true"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.fakePads[1].buttons[13].pressed = false"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.fakePads[1].buttons[0].pressed = true"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.fakePads[1].buttons[0].pressed = false"
+    },
+    {
+      "shot": "aitor-skills",
+      "delay": 900,
+      "caption": "Player 2's controller picks Aitor's move"
+    },
+    {
+      "eval": "window.fakePads.pop()"
+    },
+    {
+      "until": "!window.gerard.control.secondPad",
+      "timeout": 20000
+    },
+    {
+      "shot": "waiting",
+      "delay": 900,
+      "caption": "Without a second controller Aitor's turn waits for player 2"
+    }
+  ]
+}

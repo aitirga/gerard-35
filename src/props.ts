@@ -6,6 +6,7 @@ const GHOST_OPACITY = 0.3;
 const FADE_RATE = 9;
 /** Rough radius of the player's silhouette, in world units, for the occlusion test. */
 const FOCUS_RADIUS = 0.35;
+const QUARTER_TURN = new pc.Quat().setFromEulerAngles(0, 90, 0);
 
 interface Tree {
   pivot: pc.Entity; yaw: number; phase: number; sway: number;
@@ -194,7 +195,11 @@ export function createPropKit() {
       const holder = new pc.Entity(`Prop: ${prop.kind}`);
       holder.setLocalPosition(position); parent.addChild(holder);
       if (prop.kind === 'tree') tree(holder, prop.x, prop.z, prop.species ?? 'plane', prop.scale ?? 1, prop.base ?? 'pit');
-      else if (prop.kind === 'car') car(holder, prop.color);
+      else if (prop.kind === 'car') {
+        car(holder, prop.color);
+        // Turned a quarter so the body runs along +x over its footprint; the anchor stays on its cell.
+        if (prop.along === 'x') holder.children.forEach(c => { const p = c.getLocalPosition(); c.setLocalPosition(p.z, p.y, -p.x); c.setLocalRotation(QUARTER_TURN.clone().mul(c.getLocalRotation())); });
+      }
       else if (prop.kind === 'lamp') lamp(holder);
       else manhole(holder);
       return holder;

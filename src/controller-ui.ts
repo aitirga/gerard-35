@@ -1,6 +1,7 @@
 import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isNintendo, readController, validProfile, type Binding, type ControlAction, type ControllerEvent, type ControllerProfile, type PadSnapshot } from './controller';
 import type { Direction, Stick } from './movement';
 import type { PanelId } from './exploration-ui';
+import type { ControlMode, PlayerId } from './party';
 
 const labels: Record<ControlAction, string> = { up: 'Arriba', down: 'Abajo', left: 'Izquierda', right: 'Derecha', confirm: 'Confirmar / interactuar', cancel: 'Volver / correr (mantener)', menu: 'Menú' };
 const storageKey = 'gerard35.controllers.v1';
@@ -17,7 +18,14 @@ export function clickControllerButton(root: HTMLElement) {
 export function createControllerUI(callbacks: {
   context: () => string;
   direction: (direction: Direction | null, stick: Stick | null, running: boolean) => void;
-  action: (action: ControllerEvent) => void;
+  /** Player 2's stick or D-pad (Aitor, docs/party.md). */
+  partnerDirection: (direction: Direction | null, stick: Stick | null, running: boolean) => void;
+  /** A press; `player` is 1 for the first controller and 2 for the second. */
+  action: (action: ControllerEvent, player: PlayerId) => void;
+  /** The second controller connected (its name) or left (undefined). */
+  secondPad: (id: string | undefined) => void;
+  /** Development only: whether player 1 also drives Aitor (`solo`) or player 2 does (`duo`). */
+  mode?: { get: () => ControlMode; set: (mode: ControlMode) => void };
   pause: (value: boolean) => void;
   /** Opens a journal panel, or closes it with `null`. */
   panel: (id: PanelId | null) => void;
@@ -39,7 +47,9 @@ export function createControllerUI(callbacks: {
       </nav>
     </section>
     <section data-page="controller" hidden>
-      <label>Mando activo <select aria-label="Mando activo"></select></label><p data-status role="status"></p><p data-help></p>
+      <label>Mando 1 · Gerard <select aria-label="Mando de Gerard"></select></label><p data-status role="status"></p><p data-help></p>
+      <p data-second role="status"></p>
+      <button data-solo hidden></button>
       <div class="controller-test"><span class="battle-kicker">PRUEBA EN DIRECTO</span><output></output></div>
       <p data-calibration role="status">Para un mando sin reconocer, asigna primero los controles.</p>
       <div class="controller-actions"><button data-remap>Asignar controles</button><button data-reset>Restablecer</button><button data-abort hidden>Cancelar asignación</button></div>
@@ -62,6 +72,16 @@ export function createControllerUI(callbacks: {
   let frame = 0, previousFocus: HTMLElement | null = null;
   let page: 'home' | 'controller' | 'help' = 'home';
   const edges = new ControllerEdges();
+  // Player 2: whichever other connected controller the game can read.
+  const edges2 = new ControllerEdges();
+  let secondIdentity = '', previousDirection2: Direction | null = null;
+  const solo = get<HTMLButtonElement>('[data-solo]');
+  if (callbacks.mode) {
+    solo.hidden = false;
+    const label = () => { solo.textContent = callbacks.mode!.get() === 'solo' ? 'Depuración: Gerard controla también a Aitor · Cambiar' : 'Aitor lo controla el mando 2 · Cambiar a depuración'; };
+    solo.onclick = () => { callbacks.mode!.set(callbacks.mode!.get() === 'solo' ? 'duo' : 'solo'); label(); };
+    label();
+  }
   function save() { try { localStorage.setItem(storageKey, JSON.stringify(profiles)); return true; } catch { return false; } }
   function abort() { mapping = undefined; get('[data-abort]').hidden = true; get('[data-calibration]').textContent = 'La asignación solo se guarda al completar todos los pasos.'; }
   function open() {
@@ -156,6 +176,16 @@ export function createControllerUI(callbacks: {
       }
       previousButtons = latest.buttons.map(b => b.pressed);
     }
+    const second = pads.find(p => p !== latest && (profiles[p.id] ?? defaultProfile(p)));
+    const nextSecond = second ? `${second.index}:${second.id}` : '';
+    if (nextSecond !== secondIdentity) { secondIdentity = nextSecond; previousDirection2 = null; callbacks.secondPad(second?.id); }
+    get('[data-second]').textContent = second ? `Mando 2 · Aitor: ${second.id}` : 'Mando 2 · Aitor: sin conectar. Conecta otro mando y pulsa un botón.';
+    const state2 = second ? readController(second, profiles[second.id], previousDirection2) : idleController();
+    previousDirection2 = focused ? state2.direction : null;
+    const input2 = edges2.update(state2, `${secondIdentity}:${root.open ? 'menu' : callbacks.context()}`, now, focused && !mapping && !root.open);
+    callbacks.partnerDirection(input2.direction, input2.stick, input2.running);
+    // Player 2 plays and talks; the menu, panels and camera stay with player 1.
+    for (const action of input2.events) if (action !== 'menu' && action !== 'character' && action !== 'overview') callbacks.action(action, 2);
     const state = latest ? readController(latest, custom, previousDirection) : idleController();
     previousDirection = focused ? state.direction : null;
     const context = `${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}`;
@@ -169,7 +199,7 @@ export function createControllerUI(callbacks: {
         else if (action === 'confirm') clickControllerButton(root);
         else focusControllerButton(root, action);
       } else if (action === 'menu') open();
-      else callbacks.action(action);
+      else callbacks.action(action, 1);
       // A screen transition must not receive another event from the same frame.
       if (`${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}` !== context) break;
     }

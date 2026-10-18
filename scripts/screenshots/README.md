@@ -8,7 +8,7 @@ to use a running `just dev`, with or without `just backend`). Other options: `--
 `--headed` to watch it play, `--out <dir>`.
 
 The page errors it sees make the run fail, and a failed step saves `failure.png` and prints the
-game state (scene, position, story flags, companion, Bernat's bubble). Set `SCREENSHOT_DEBUG=1` to echo the
+game state (scene, position, story flags, companion, Bernat's bubble). Set `SCREENSHOT_DEBUG=1` to echo the Vite server log and the
 browser console.
 
 ## Writing a scenario

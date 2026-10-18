@@ -555,3 +555,22 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 /* The end of a dream: everything goes black, even the HUD, then comes back elsewhere. */
 #blackout { position: absolute; inset: 0; z-index: 50; background: #000; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
 #blackout[data-on="true"] { opacity: 1; pointer-events: auto; }
+
+/* Two players (docs/party.md): stats and the shared class picker, Aitor's portrait and player 2's turns. */
+.equipment-card[data-member="aitor"] { border-left-color: #e7c9a1; }
+.member-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 14px; margin: 10px 0 0; }
+.member-stats div { display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid var(--ui-line); font-size: 12px; }
+.member-stats dt { font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ui-muted); padding-top: 2px; }
+.member-stats dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.member-stats small { margin-left: 4px; font-size: 10px; color: #8fd19e; }
+.member-stats small[data-sign="down"] { color: #e9897f; }
+.class-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.class-picker button { padding: 5px 10px; border: 1px solid var(--ui-line); background: transparent; color: inherit; font: inherit; font-size: 11px; cursor: pointer; }
+.class-picker button[aria-pressed="true"] { border-color: var(--ui-gold); background: #d3b46622; color: var(--ui-gold); }
+.class-picker button:focus-visible { outline: 2px solid var(--ui-gold); outline-offset: 2px; }
+.party-portrait > svg { position: absolute; width: 70px; height: 70px; bottom: 6px; left: 3px; }
+#battle[data-player="2"] .turn-meta, #battle[data-player="2"] .turn-dot { color: #e7c9a1; background-color: transparent; }
+#battle[data-player="2"] .turn-dot { background: #e7c9a1; }
+#battle[data-waiting] .turn-meta { font-size: 11px; color: #ff8fbf; animation: turn-pulse 1.2s ease-in-out infinite; }
+.character-art { display: grid; place-content: center; height: 100%; background: #ffffff08; }
+.character-art svg { width: 190px; height: 190px; }

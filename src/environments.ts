@@ -1,6 +1,8 @@
 import type { Cell } from './movement';
+import type { GeoScene } from './geo';
+import ALEGIA_SCENE from './geo/alegia.json' with { type: 'json' };
 
-export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio';
+export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /** Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses and a potted yucca. */
@@ -10,7 +12,8 @@ export type TreeBase = 'pit' | 'pot' | 'ground';
 /** Reusable scene pieces, anchored on a cell. `src/props.ts` draws them in any environment. */
 export type WorldProp =
   | { kind: 'tree'; x: number; z: number; species?: TreeSpecies; scale?: number; base?: TreeBase }
-  | { kind: 'car'; x: number; z: number; color: string }
+  /** A car spans its anchor and the next cell along +z, or along +x with `along: 'x'`. */
+  | { kind: 'car'; x: number; z: number; color: string; along?: 'x' | 'z' }
   | { kind: 'lamp'; x: number; z: number }
   | { kind: 'manhole'; x: number; z: number };
 export type PropKind = WorldProp['kind'];
@@ -22,7 +25,8 @@ export const PROP_FOOTPRINTS: Record<PropKind, readonly Cell[]> = {
   manhole: [],
 };
 export function propCells(prop: WorldProp): Cell[] {
-  return PROP_FOOTPRINTS[prop.kind].map(offset => ({ x: prop.x + offset.x, z: prop.z + offset.z }));
+  const turned = prop.kind === 'car' && prop.along === 'x';
+  return PROP_FOOTPRINTS[prop.kind].map(offset => turned ? { x: prop.x + offset.z, z: prop.z + offset.x } : { x: prop.x + offset.x, z: prop.z + offset.z });
 }
 /** Marks every prop footprint as solid, so hand-drawn and generated maps place props alike. */
 export function blockProps(grid: readonly string[], props: readonly WorldProp[]): string[] {
@@ -65,6 +69,8 @@ export interface Environment {
   stairs?: Stairs[];
   /** La Reina Bubbaloo's palace: a plan in PALACE_GLYPHS, built by `src/palace-scenery.ts`. */
   palace?: { plan: string[]; rooms: Room[] };
+  /** A real place generated from map data (tools/geo.py), drawn by `src/geo-scenery.ts`. */
+  geo?: GeoScene;
 }
 
 export const COURTYARD_ROWS = [
@@ -373,10 +379,25 @@ export const PALACIO: Environment = {
     { id: 'palace-wrappers', cell: { x: 8, z: 15 }, label: 'Mirar los envoltorios', lines: ['Envoltorios gigantes, arrugados. Alguien se ha comido muchísimos chicles aquí.'] },
   ],
 };
+/**
+ * A real place from map data: `just geo <zone>` writes src/geo/<zone>.json from OpenStreetMap
+ * and assets/geo/<zone>/zone.json (docs/environment-styling.md). Its grid, props and places come
+ * straight from that file; only the look lives in `src/geo-scenery.ts`.
+ */
+export function geoEnvironment(id: EnvironmentId, scene: GeoScene): Environment {
+  const props = scene.props as WorldProp[];
+  return {
+    id, name: scene.name, grid: blockProps(scene.grid, props), spawn: scene.spawn, zoom: scene.zoom,
+    houses: [], props, geo: scene,
+    interactions: scene.places.map(({ id, label, lines, cell }) => ({ id, label, lines, cell })),
+  };
+}
+/** San Juan kalea in Alegia (Gipuzkoa), around number 95. */
+export const ALEGIA = geoEnvironment('alegia', ALEGIA_SCENE as GeoScene);
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
-  meridiana: MERIDIANA, palacio: PALACIO,
+  meridiana: MERIDIANA, palacio: PALACIO, alegia: ALEGIA,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

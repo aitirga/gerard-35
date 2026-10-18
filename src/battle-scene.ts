@@ -7,8 +7,12 @@ import { createGroundContact, type GroundHeight } from './ground-contact';
 import { DOG_PROFILES } from './encounters';
 import type { Effects } from './effects';
 
-/** Replace these stand-ins with imported models without changing combat or UI. */
-export function createBattleScene(app: pc.Application, player: pc.Entity, groundHeight: GroundHeight, effects: Effects) {
+/**
+ * Replace these stand-ins with imported models without changing combat or UI. `partyModel` gives
+ * the street model each party fighter is cloned from (Gerard's own for himself and Bernat, Aitor's
+ * for Aitor); `player` is Gerard's, hidden while the fight is on.
+ */
+export function createBattleScene(app: pc.Application, player: pc.Entity, partyModel: (id: string) => pc.Entity, groundHeight: GroundHeight, effects: Effects) {
   const materials: pc.StandardMaterial[] = [];
   function mat(hex: string) {
     const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.update(); materials.push(m); return m;
@@ -147,6 +151,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
     if (!target) { hit(actor, gold, .55); effects.emit('spark', new pc.Vec3(actor.base.x, 1.1, actor.base.z), 6, .3); return; }
+    // Abrazo reaches the whole party at once.
+    if (action.skill === 'abrazo') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, green, .85); effects.emit('heal', new pc.Vec3(f.base.x, .35, f.base.z), 12, .5); } return; }
     if (action.skill === 'encourage') { hit(target, green, .85); effects.emit('heal', new pc.Vec3(target.base.x, .35, target.base.z), 16, .5); return; }
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
     const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
@@ -201,8 +207,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
         anchor.copy(center); entryTime = 0;
         for (const [party, units] of [[true, next.allies], [false, next.foes]] as const) units.forEach((unit, i) => {
           const minion = !party && unit.kind === 'minion' && !!minionTemplate;
-          const source = party ? player : minion ? minionTemplate! : dogs[i];
+          const source = party ? partyModel(unit.id) : minion ? minionTemplate! : dogs[i];
           const model = source.clone(); model.enabled = true;
+          // Whoever wears a class shows it in the fight, even when the street model does not (Gerard at 35, Aitor).
+          if (party && unit.classId) wearClass(model, unit.classId);
           if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
             (component as pc.RenderComponent).meshInstances.forEach(mesh => {
               if (mesh.material.name === 'Camiseta mostaza') mesh.material = allyJacket;
@@ -215,7 +223,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
           const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
           if (minion) model.setLocalScale(1.5, 1.5, 1.5);
           const legs = (body?.children.filter(c => c.name === 'Pierna') ?? (minion ? [] : model.children.filter(c => c.name === 'Pata'))) as pc.Entity[];
-          const yaw = party ? player.findByName('Cuerpo')!.getLocalEulerAngles().y : source.getEulerAngles().y;
+          const yaw = party ? (source.findByName('Cuerpo') as pc.Entity).getLocalEulerAngles().y : source.getEulerAngles().y;
           if (body) body.setLocalEulerAngles(0, 0, 0);
           model.setLocalEulerAngles(0, yaw, 0);
           const feet = party ? legs.map(leg => leg.findByName('Zapatilla') as pc.Entity) : minion ? [model.findByName('Charco pringoso') as pc.Entity] : legs;
@@ -246,7 +254,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, ground
       });
       const actor = effect ? fighters.get(effect.actor) : undefined;
       const target = effect?.target ? fighters.get(effect.target) : undefined;
-      const healing = effect?.skill === 'encourage';
+      const healing = effect?.skill === 'encourage' || effect?.skill === 'abrazo';
       const t = animate ? effectTime : ACTION_SECONDS;
       const motion = actor && target && !healing ? contactMotion(actor.base, target.base, t) : undefined;
       const contact = effect?.target && !healing ? CONTACT_SECONDS : .2;

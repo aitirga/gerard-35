@@ -4,6 +4,7 @@ import { createPropKit } from './props';
 import { buildHome } from './home-scenery';
 import type { HouseVolume } from './palace';
 import { buildPalaceInterior } from './palace-scenery';
+import { buildGeo } from './geo-scenery';
 
 /** La Reina Bubbaloo's light, once she has noticed Gerard and Bernat. */
 export const BUBBALOO = {
@@ -28,6 +29,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const props = createPropKit();
   let home: ReturnType<typeof buildHome> | undefined;
   let palace: ReturnType<typeof buildPalaceInterior> | undefined;
+  let geo: ReturnType<typeof buildGeo> | undefined;
   /** Street houses' main volumes, for things that grow over them (the palace's gum). */
   const houseVolumes: HouseVolume[] = [];
   const flowing: pc.StandardMaterial[] = [];
@@ -351,6 +353,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     label('SANT QUIRZE', 15.6, 0.06, 6, 3.8);
     // Boundary hedges close the playable slice without pretending it is the whole town.
     for (const pz of [0.7, 41.6]) box('Límite del barrio', leaf[2], 16, 0.38, pz, 17, 0.65, 0.7);
+  } else if (environment.geo) {
+    geo = buildGeo({ app, root, batch: batch.id, mat, texture, label, water, x, z }, environment.geo);
   } else if (environment.palace) {
     palace = buildPalaceInterior({ app, root, x, z, texture }, environment);
   } else if (environment.plan) {
@@ -406,10 +410,11 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       props.update(dt, animate, focus, toCamera);
       home?.update(dt, animate, focus, toCamera);
       palace?.update(dt, animate);
+      geo?.update(dt, animate, focus, toCamera);
       if (!animate) return;
       time += dt;
       for (const m of flowing) { m.diffuseMapOffset.set(time * .03, time * .05); m.emissiveMapOffset.set(-time * .04, time * .025); m.update(); }
     },
-    destroy() { app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
+    destroy() { app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }

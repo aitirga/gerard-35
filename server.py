@@ -91,7 +91,7 @@ def save_state(state: State, request: Request, response: Response):
 
 
 class Ally(BaseModel):
-    id: Literal["gerard", "bernat"]
+    id: Literal["gerard", "bernat", "aitor"]
     hp: int = Field(ge=0, le=999)
     max_hp: int = Field(ge=1, le=999)
     guarding: bool = False

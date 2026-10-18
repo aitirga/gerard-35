@@ -28,7 +28,7 @@ let vite;
 let base = options.url;
 if (!base) {
   const { createServer } = await import('vite');
-  vite = await createServer({ logLevel: 'silent', server: { port: 5199, strictPort: false, open: false } });
+  vite = await createServer({ logLevel: process.env.SCREENSHOT_DEBUG ? 'info' : 'silent', server: { port: 5199, strictPort: false, open: false } });
   await vite.listen();
   base = vite.resolvedUrls.local[0];
 }

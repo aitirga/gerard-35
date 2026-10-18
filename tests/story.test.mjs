@@ -108,7 +108,7 @@ test('caught by the Queen, Gerard wakes up at 35 in Barcelona with Aitor and a B
   const story = new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('wrapper-room') + 1));
   assert.equal(story.adult, false);
   const caught = story.handle({ type: 'caught' });
-  assert.deepEqual(kinds(caught), ['travel', 'wake', 'dialogue']);
+  assert.deepEqual(kinds(caught), ['travel', 'wake', 'dialogue', 'hint:duo'], 'a second player can take Aitor from here');
   assert.deepEqual(caught[0], { kind: 'travel', environment: 'meridiana', cell: PLACES.wakeUp.cell });
   assert.equal(caught[2].dialogue.right, 'aitor');
   assert.deepEqual(story.handle({ type: 'caught' }), [], 'it happens once');
@@ -120,13 +120,16 @@ test('caught by the Queen, Gerard wakes up at 35 in Barcelona with Aitor and a B
   assert.deepEqual(story.items, [], 'the dream\'s things stay in the dream');
   assert.equal(story.canRun, true);
   assert.deepEqual(story.resume, { environment: 'meridiana', cell: PLACES.wakeUp.cell });
-  assert.deepEqual(story.npcs('meridiana').map(n => n.id), ['aitor']);
+  assert.deepEqual(story.npcs('meridiana'), [], 'Aitor is no NPC: he walks with Gerard');
+  assert.equal(story.partner, 'aitor');
+  assert.deepEqual(story.party.map(m => [m.id, m.profile, m.classId]), [['gerard', 'gerard35', 'noista'], ['aitor', 'aitor', undefined]]);
   assert.deepEqual(story.npcs('home-floor-1'), [], 'home in Sant Quirze is empty now');
   assert.match(story.party[0].note, /Noísta/);
 
   assert.deepEqual(story.pickups('meridiana').map(p => p.id), ['envoltorio']);
   assert.ok(story.pickups('meridiana')[0].spot, 'the wrapper lies on the bedside shelf');
-  assert.ok(story.interactions('meridiana').some(i => i.id === 'talk-aitor'));
+  assert.ok(!story.interactions('meridiana').some(i => i.id === 'talk-aitor'), 'talking to Aitor needs to know where he is');
+  assert.deepEqual(story.interactions('meridiana', { x: 9.4, z: 13.6 }).find(i => i.id === 'talk-aitor').cell, { x: 9, z: 14 });
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-envoltorio' })), ['dialogue', 'item:envoltorio']);
   assert.deepEqual(story.items, ['envoltorio']);
   assert.match(story.handle({ type: 'interact', id: 'talk-aitor' })[0].dialogue.lines[1].text, /Bubbaloo/);

@@ -7,6 +7,7 @@ import { createDialogueBanner } from './dialogue';
 import { createBattleUI } from './battle-ui';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent } from './story';
 import { createStoryUI } from './story-ui';
+import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
@@ -29,6 +30,24 @@ const devStory = (() => {
   return STORY_FLAGS.slice(0, (STORY_FLAGS as readonly string[]).indexOf(at) + 1);
 })();
 const story = new Story(devStory ?? []);
+// Who wears which class is a choice that comes and goes, so it lives in this browser, not in the story flags.
+const loadoutKey = 'gerard35.loadout.v1';
+function restoreLoadout() { try { story.loadout = JSON.parse(localStorage.getItem(loadoutKey) ?? '{}'); } catch { /* Storage is optional. */ } }
+function keepLoadout() { try { localStorage.setItem(loadoutKey, JSON.stringify(story.loadout)); } catch { /* Storage is optional. */ } }
+restoreLoadout();
+/**
+ * Two players from chapter 2 (docs/party.md). `solo` is for development only: player 1 also plays
+ * Aitor. It comes from ?solo (just dev-solo) or the switch on the Mando page, and is remembered.
+ */
+const soloKey = 'gerard35.solo';
+const control: Control = { mode: 'duo', secondPad: false };
+if (import.meta.env.DEV) {
+  const requested = new URLSearchParams(location.search).get('solo');
+  try {
+    if (requested !== null) localStorage.setItem(soloKey, requested === '0' ? 'duo' : 'solo');
+    control.mode = localStorage.getItem(soloKey) === 'solo' ? 'solo' : 'duo';
+  } catch { control.mode = requested !== null && requested !== '0' ? 'solo' : 'duo'; }
+}
 let savedStory = JSON.stringify(story.saved);
 let startStory: (() => void) | undefined;
 async function load() {
@@ -41,7 +60,7 @@ async function load() {
     if (!Number.isInteger(state.score) || state.score < 0) throw new Error('state');
     previousScore = state.score;
     // A development jump keeps its own flags instead of the saved progress.
-    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); savedStory = JSON.stringify(story.saved); }
+    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); savedStory = JSON.stringify(story.saved); restoreLoadout(); }
     loaded = true;
     if (dirty) void save();
   } catch {
@@ -78,8 +97,16 @@ try {
     change: (state, effect, onImpact) => game.setBattle(state, effect, onImpact),
     target: id => game.selectTarget(id),
     awaken: id => { game.awaken(id); storyEvent({ type: 'class', id }); },
+    driver: id => battleDriver(control, id),
+    waiting: id => waitingForPlayer2(control, id),
   });
-  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused), () => controller.open(), story);
+  /** Re-applies who drives Aitor after the mode or the second controller changes. */
+  function controlChanged() {
+    game.setPartnerDriven(partnerDriven(control, story.partner));
+    battleUI.refresh();
+  }
+  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused), () => controller.open(), story,
+    (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } });
   let currentLocation: EnvironmentId = story.resume.environment;
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
   let beats = Promise.resolve();
@@ -88,6 +115,8 @@ try {
     run: () => game.running,
     items: () => exploration.active === 'items',
     party: () => exploration.active === 'character',
+    // Shown when Aitor joins; it goes once a second controller is there to play him.
+    duo: () => control.secondPad || control.mode === 'solo',
   };
   async function play(effect: StoryEffect) {
     if (effect.kind === 'dialogue') await new Promise<void>(resolve => dialogue.show(effect.dialogue, resolve));
@@ -105,6 +134,7 @@ try {
   }
   function storyChanged() {
     game.refreshStory();
+    game.setPartnerDriven(partnerDriven(control, story.partner));
     // The active class dresses the whole interface (style.css: #hud[data-class]).
     if (story.gerardClass) hud.dataset.class = story.gerardClass; else delete hud.dataset.class;
     exploration.refresh();
@@ -117,10 +147,10 @@ try {
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
   const game = createGame(canvas, {
-    onEncounter: (allies, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(allies, foes, { ...options, gerardClass: story.gerardClass }); },
+    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, options); },
     onBattleEnd: (phase, encounter) => storyEvent({ type: 'battle', won: phase === 'won', encounter }),
     onBattleTargets: targets => battleUI.positionTargets(targets),
-    onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble, at),
+    onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onStep: (steps, cell) => {
       sessionSteps = steps;
       exploration.update(currentLocation, cell, steps);
@@ -132,8 +162,9 @@ try {
       currentLocation = id;
       exploration.update(id, cell);
       environmentSelect.value = id;
-      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : 'SANT QUIRZE DEL VALLÈS';
-      document.querySelector('#location-detail')!.textContent = id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
+      const geo = ENVIRONMENTS[id].geo;
+      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
+      document.querySelector('#location-detail')!.textContent = geo ? `Según el mapa · ${geo.attribution}` : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
         : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
@@ -151,12 +182,26 @@ try {
   const controller = createControllerUI({
     context: controllerContext,
     direction: (direction, stick, running) => controllerContext() === 'world' ? game.setControllerInput(direction, stick, running) : game.setControllerInput(null, null),
+    partnerDirection: (direction, stick, running) => controllerContext() === 'world' ? game.setPartnerInput(direction, stick, running) : game.setPartnerInput(null, null),
+    secondPad: id => { control.secondPad = !!id; controlChanged(); },
+    mode: import.meta.env.DEV ? {
+      get: () => control.mode,
+      set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
+    } : undefined,
     pause: value => game.setPaused(value || !!exploration.active),
     panel: id => id ? exploration.show(id) : exploration.close(),
-    action: action => {
+    action: (action, player) => {
+      // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
+      if (player === 2) {
+        if (action === 'overview' || action === 'character') return;
+        if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
+        else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); }
+        else if (!exploration.active && action === 'confirm') game.interact(true);
+        return;
+      }
       if (action === 'overview') { if (controllerContext() === 'world') game.toggleOverview(); }
       else if (action === 'character') { if (/^(world|journal:)/.test(controllerContext())) exploration.toggle('character'); }
-      else if (battleUI.controllerContext !== 'world') battleUI.control(action);
+      else if (battleUI.controllerContext !== 'world') battleUI.control(action, 1);
       else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); else if (action === 'cancel') dialogue.close(); }
       else if (exploration.active) exploration.control(action);
       else if (action === 'confirm') game.interact();
@@ -195,9 +240,10 @@ try {
   if (import.meta.env.DEV) {
     const params = new URLSearchParams(location.search);
     const foes = Number(params.get('battle'));
-    if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => battleUI.open(params.get('allies') === '2' ? 2 : 1, foes));
+    // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
+    if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => battleUI.open(params.get('party') === 'adult' ? new Story(['caught', 'noista']).battleParty(true) : params.get('allies') === '2' ? 2 : 1, foes));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI } });
+    Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged } });
   }
   if (import.meta.hot) import.meta.hot.dispose(() => { controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {

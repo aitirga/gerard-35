@@ -36,6 +36,12 @@ dev-chapter beat="new":
     @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|noista|wrapper-room|caught|got-wrapper)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
 
+# Debug chapter 2 with one player: Gerard's controls also drive Aitor in battle (just dev-solo off to undo)
+[group('Development')]
+dev-solo state="on":
+    @[[ "{{ state }}" =~ ^(on|off)$ ]] || { printf 'Use on or off.\n'; exit 1; }
+    npm run dev -- --open '/?story=got-wrapper&solo={{ if state == "on" { "1" } else { "0" } }}'
+
 # Play as a generated character: just dev-character bernat (file in src/characters/)
 [group('Development')]
 dev-character name="gerard-child":
@@ -120,6 +126,27 @@ deploy-logs:
 [group('Data')]
 export-environments:
     node --experimental-strip-types scripts/export-environments.mjs
+
+# Download map data for a real place, then build it: just geo alegia (zones in assets/geo/)
+[group('Data')]
+geo zone="alegia": (geo-fetch zone) (geo-build zone)
+
+# Download OpenStreetMap features (+ Google references with GOOGLE_MAPS_API_KEY) for a zone
+[group('Data')]
+geo-fetch zone="alegia":
+    @[[ -f "assets/geo/{{ zone }}/zone.json" ]] || { printf 'No assets/geo/%s/zone.json; copy assets/geo/alegia/zone.json first.\n' "{{ zone }}"; exit 1; }
+    uv run --locked python tools/geo.py fetch {{ zone }}
+
+# Rebuild src/geo/<zone>.json and its preview from the saved map data (offline)
+[group('Data')]
+geo-build zone="alegia":
+    @[[ -f "assets/geo/{{ zone }}/osm.json" ]] || { printf 'No map data for %s; run just geo-fetch %s first.\n' "{{ zone }}" "{{ zone }}"; exit 1; }
+    uv run --locked python tools/geo.py build {{ zone }}
+
+# List the real places that can be built
+[group('Data')]
+geo-zones:
+    @ls -d assets/geo/*/ | xargs -n1 basename
 
 # Generate portrait, expressions, full-body art and 3D model: just character bernat --description '…' (--help)
 [group('Tools')]

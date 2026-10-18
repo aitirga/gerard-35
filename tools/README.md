@@ -8,6 +8,7 @@ juego y la API) y pueden usar APIs de IA de pago con las claves de `.env`.
 | --- | --- | --- |
 | `just character <id> …` | Retrato, expresiones para conversaciones, cuerpo entero y modelo 3D de un personaje | OpenAI Images, Claude (o Meshy) |
 | `just dev-character <nombre>` | Abre el juego jugando con ese personaje | — |
+| `just geo <zona>` | Descarga un lugar real (OpenStreetMap + referencias de Google Maps) y lo construye como escenario jugable; ver [docs/environment-styling.md](../docs/environment-styling.md) | OpenStreetMap, Google Maps (opcional) |
 
 ## `just character`
 

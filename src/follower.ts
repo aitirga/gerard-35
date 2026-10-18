@@ -1,4 +1,26 @@
-import { WALK_SPEED, facingToward, type Cell } from './movement.ts';
+import { VECTORS, WALK_SPEED, canWalk, facingToward, isOccupied, type Cell } from './movement.ts';
+
+/** The shortest 4-way walk from `from` to `to` over the grid's centres, or nothing if there is none. */
+export function pathTo(grid: readonly string[], from: Cell, to: Cell, blocked: readonly Cell[] = []): Cell[] {
+  const key = (c: Cell) => `${c.x},${c.z}`;
+  const start = { x: Math.round(from.x), z: Math.round(from.z) }, goal = { x: Math.round(to.x), z: Math.round(to.z) };
+  const previous = new Map<string, Cell | null>([[key(start), null]]);
+  const queue = [start];
+  for (let i = 0; i < queue.length; i++) {
+    const cell = queue[i];
+    if (cell.x === goal.x && cell.z === goal.z) {
+      const path: Cell[] = [];
+      for (let at: Cell | null = cell; at; at = previous.get(key(at)) ?? null) path.unshift(at);
+      return path.slice(1);
+    }
+    for (const delta of Object.values(VECTORS)) {
+      const next = { x: cell.x + delta.x, z: cell.z + delta.z };
+      if (previous.has(key(next)) || !canWalk(next, grid) || (isOccupied(next, blocked) && key(next) !== key(goal))) continue;
+      previous.set(key(next), cell); queue.push(next);
+    }
+  }
+  return [];
+}
 
 /** How far behind Gerard a companion walks, in cells. */
 export const FOLLOW_GAP = 1.2;
@@ -18,6 +40,8 @@ export class Follower {
   constructor(start: Cell) { this.position = { ...start }; }
   /** Jump next to `at`, e.g. after a scene change, forgetting the old path. */
   reset(at: Cell) { this.position = { ...at }; this.trail = []; this.walking = false; }
+  /** Starts the trail with a walkable path, for a companion who starts away from Gerard (Aitor across the bed). */
+  seed(path: readonly Cell[]) { this.trail = path.map(cell => ({ ...cell })); }
   update(dt: number, leader: Cell, stopped = false, running = false) {
     const last = this.trail[this.trail.length - 1];
     if (!last || dist(last, leader) >= CRUMB) {

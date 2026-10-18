@@ -1,0 +1,24 @@
+{
+  "title": "Alegia · San Juan kalea",
+  "description": "The place generated from map data (just geo alegia): number 95, the old street, the church, the town hall and the bridge over the Oria.",
+  "steps": [
+    { "open": "/?story=got-wrapper" },
+    { "teleport": "alegia", "cell": [155, 51] },
+    { "shot": "san-juan-95", "delay": 1500, "caption": "San Juan kalea, 95 · Soportales y balcones de hierro" },
+    { "press": "KeyR" },
+    { "shot": "overview", "delay": 2500, "caption": "Vista general · El Oria, la iglesia y la calle vieja" },
+    { "press": "KeyR" },
+    { "teleport": "alegia", "cell": [153, 60] },
+    { "shot": "plaza", "delay": 1500, "caption": "Plaza Don Pio Montoya · El plátano podado" },
+    { "teleport": "alegia", "cell": [85, 56] },
+    { "shot": "old-street", "delay": 1500, "caption": "La calle vieja · Casas con entramado de madera" },
+    { "teleport": "alegia", "cell": [91, 74] },
+    { "press": "KeyE" },
+    { "shot": "church", "delay": 1500, "caption": "La iglesia de San Juan" },
+    { "skipDialogue": true },
+    { "teleport": "alegia", "cell": [24, 46] },
+    { "shot": "town-hall", "delay": 1500, "caption": "El ayuntamiento y Zubi Zaharra" },
+    { "teleport": "alegia", "cell": [21, 30] },
+    { "shot": "bridge", "delay": 1500, "caption": "Zubi Zaharra sobre el Oria" }
+  ]
+}

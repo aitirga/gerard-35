@@ -1,11 +1,12 @@
 import { clickControllerButton, focusControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { act, awaken, cornered, createBattle, createMinionBattle, enemyAct, nextRound, skillsFor, SKILLS, validTargets, type ClassId, type Encounter, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
+import { act, aimed, awaken, childParty, cornered, createBattle, createMinionBattle, enemyAct, nextRound, skillsFor, SKILLS, validTargets, type ClassId, type Encounter, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
 import { CLASSES } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
+import type { PlayerId } from './party';
 
 const COMMANDS: { id: BattleAction; name: string; hint: string; number: string }[] = [
   { id: 'attack', name: 'Atacar', hint: 'Elige un objetivo', number: '01' },
@@ -18,6 +19,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   target: (id?: string) => void;
   /** A class woke up in Gerard mid-fight (the palace minion's beat). */
   awaken: (id: ClassId) => void;
+  /** Which player picks this fighter's moves (docs/party.md). Keyboard and mouse are player 1. */
+  driver: (allyId: string) => PlayerId;
+  /** Whether that player has nothing to play with yet (player 2 without a controller). */
+  waiting: (allyId: string) => boolean;
 }) {
   const root = document.createElement('section');
   root.id = 'battle'; root.hidden = true; root.tabIndex = -1;
@@ -56,7 +61,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function focusFirst() { get<HTMLButtonElement>('.command-trigger').focus({ preventScroll: true }); }
   function meter(c: Combatant, secondary = false) {
     const value = secondary ? c.secondary : c.hp, max = secondary ? c.maxSecondary : c.maxHp;
-    const label = secondary ? 'Secundaria' : 'HP';
+    const label = secondary ? 'Secundaria' : 'PV';
     return `<div class="meter-caption"><span>${label}</span><strong>${value}<small> / ${max}</small></strong></div><div class="battle-meter ${secondary ? 'secondary' : ''}" role="progressbar" aria-label="${c.name}: ${label}" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="${max}"><b style="width:${value / max * 100}%"></b><i style="width:${value / max * 100}%"></i></div>`;
   }
   // The dark trail lags behind the fill, so each hit shows how much it took.
@@ -118,6 +123,15 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // The one new thing on screen: Habilidades pulses until it is opened.
     get('[data-command="skill"]').classList.add('is-new');
   }
+  /** Gerard as a boy has a painted portrait; the rest use their provisional dialogue art. */
+  function portrait(c: Combatant) {
+    if (c.profile === 'gerard') return `<img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt=""/>`;
+    if (c.profile === 'gerard35') return SPEAKERS.gerard35.art;
+    if (c.profile === 'aitor') return SPEAKERS.aitor.art;
+    return `<span>${c.name[0]}</span>`;
+  }
+  /** Whose hands the current turn is in; nobody else's input counts. */
+  const turnDriver = (): PlayerId => state && state.phase === 'player' ? callbacks.driver(state.allies[state.active].id) : 1;
   const targetButtons = () => [...root.querySelectorAll<HTMLButtonElement>('.roster-target:not(:disabled), .battle-target[data-side="foes"]:not(:disabled)')].filter(button => !button.hidden);
   function render() {
     if (!state) return;
@@ -126,12 +140,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.battle-heading .battle-kicker').textContent = state.encounter === 'palace-minion' ? 'ENCUENTRO / ESBIRRO DE LA REINA'
       : `ENCUENTRO / ${state.foes.filter(f => f.hp > 0).length} DE ${state.foes.length} PERROS${state.possessed ? ' POSEÍDOS' : ''}`;
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
-    get('.turn-label').textContent = state.allies[state.active].name;
-    get('.turn-meta').textContent = busy || state.phase === 'enemy' ? 'EN ACCIÓN' : 'TU TURNO';
+    const actor = state.allies[state.active];
+    get('.turn-label').textContent = actor.name;
+    const waiting = !busy && state.phase === 'player' && callbacks.waiting(actor.id);
+    get('.turn-meta').textContent = busy || state.phase === 'enemy' ? 'EN ACCIÓN' : waiting ? 'CONECTA EL MANDO 2' : callbacks.driver(actor.id) === 2 ? 'MANDO 2' : 'TU TURNO';
+    root.dataset.player = String(turnDriver());
+    root.toggleAttribute('data-waiting', waiting);
     // Preserve meter nodes so health changes interpolate instead of snapping.
     const roster = get('.party-roster');
-    if (!roster.children.length) roster.innerHTML = state.allies.map((c, i) => `<article class="party-card" data-unit="${c.id}">
-      <div class="party-portrait">${i === 0 ? `<img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt=""/>` : '<span>B</span>'}</div>
+    if (!roster.children.length) roster.innerHTML = state.allies.map(c => `<article class="party-card" data-unit="${c.id}">
+      <div class="party-portrait">${portrait(c)}</div>
       <div class="unit-info"><div class="unit-heading"><strong>${c.name}</strong><span class="unit-status"></span></div>${meter(c)}${meter(c, true)}</div><button class="roster-target" type="button" data-target="${c.id}" aria-label="Elegir a ${c.name}" hidden></button></article>`).join('');
     for (const c of state.allies) {
       const card = roster.querySelector<HTMLElement>(`[data-unit="${c.id}"]`)!;
@@ -156,8 +174,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       plate.classList.toggle('is-down', foe.hp === 0);
       plate.classList.toggle('is-acting', root.dataset.actor === foe.id);
     }
-    // Possessed dogs surround the party: Escapar stays greyed out.
-    articles.forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = busy || state!.phase !== 'player' || (cornered(state!) && article.dataset.command === 'escape'); });
+    // Possessed dogs surround the party: Escapar stays greyed out. A turn waiting for player 2 locks every command.
+    articles.forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = busy || waiting || state!.phase !== 'player' || (cornered(state!) && article.dataset.command === 'escape'); });
     const eligible = targeting && !busy && state.phase === 'player' ? validTargets(state, selected!, selectedSkill).map(c => c.id) : [];
     root.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
       button.disabled = !eligible.includes(button.dataset.target!);
@@ -213,7 +231,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       choices.innerHTML = skillsFor(state!, state!.allies[state!.active]).map((skill, i) => {
         const affordable = state!.allies[state!.active].secondary >= skill.cost;
         const available = validTargets(state!, 'skill', skill.id).length > 0;
-        return `<button type="button" data-skill="${skill.id}" ${'class' in skill ? `data-class="${skill.class}"` : ''} ${!affordable || !available ? 'disabled' : ''}><span><strong>${i + 1} · ${skill.name}</strong><small>${skill.description}</small></span><small>${!affordable ? 'Sin energía' : !available ? 'Equipo al máximo' : `${skill.cost} SEC`}</small></button>`;
+        return `<button type="button" data-skill="${skill.id}" ${'class' in skill ? `data-class="${skill.class}"` : ''} ${!affordable || !available ? 'disabled' : ''}><span><strong>${i + 1} · ${skill.name}</strong><small>${skill.description}</small></span><small>${!affordable ? 'Sin energía' : !available ? (skill.side === 'foes' ? 'Sin objetivo' : 'Equipo al máximo') : `${skill.cost} SEC`}</small></button>`;
       }).join('');
     } else choices.innerHTML = `<button type="button" data-confirm><span>${action === 'defend' ? 'Adoptar guardia' : 'Salir del encuentro'}</span><small>CONFIRMAR</small></button>`;
     render();
@@ -222,10 +240,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function beginTargeting(skill?: SkillId) {
     if (!state || busy || !selected) return;
     if (skill && (state.allies[state.active].secondary < SKILLS.find(s => s.id === skill)!.cost || !validTargets(state, 'skill', skill).length)) return;
+    // A skill that reaches the whole party has nobody to pick: it happens at once.
+    if (skill && !aimed(skill)) { selectedSkill = skill; void execute(); return; }
     selectedSkill = skill; targeting = true;
-    root.dataset.targeting = skill === 'encourage' ? 'allies' : 'foes';
+    const onAllies = !!skill && SKILLS.find(s => s.id === skill)!.side === 'allies';
+    root.dataset.targeting = onAllies ? 'allies' : 'foes';
     get('.target-picker h2').textContent = skill ? SKILLS.find(s => s.id === skill)!.name : 'Atacar';
-    get('.target-picker p').textContent = skill === 'encourage' ? 'Elige un aliado herido de tu equipo.' : state.encounter === 'palace-minion' ? 'Elige al esbirro.' : 'Elige un perro en la calle.';
+    get('.target-picker p').textContent = onAllies ? 'Elige un aliado herido de tu equipo.' : state.encounter === 'palace-minion' ? 'Elige al esbirro.' : 'Elige un perro en la calle.';
     render();
     targetButtons()[0]?.focus({ preventScroll: true });
   }
@@ -253,7 +274,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (card) { void card.offsetWidth; card.classList.add('contact-hit'); }
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard');
-      else if (effect.skill === 'encourage' && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', 'HP');
+      else if (effect.healed) effect.healed.forEach(h => pop(h.id, `+${h.amount}`, 'heal', 'PV'));
+      else if (effect.skill && SKILLS.find(s => s.id === effect.skill)!.kind === 'heal' && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', 'PV');
       else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
       else if (effect.target && target) pop(effect.target, `−${effect.amount ?? 0}`, 'damage', target.hp === 0 ? '¡Fuera!' : target.guarding ? 'Protegido' : effect.skill ? SKILLS.find(s => s.id === effect.skill)!.name : '');
     });
@@ -261,7 +283,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   async function execute(target?: string) {
     if (!state || !selected || busy) return;
-    if ((selected === 'attack' || selected === 'skill') && !targeting) return;
+    if ((selected === 'attack' || (selected === 'skill' && (!selectedSkill || aimed(selectedSkill)))) && !targeting) return;
     const effect = act(state, selected, target, selectedSkill);
     if (!effect) return;
     const token = generation;
@@ -294,6 +316,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const target = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!target) return;
     if (target.closest('.battle-result')) { close(); return; }
+    // Mouse and keyboard belong to player 1: on player 2's turn only their controller counts (`control`).
+    if (turnDriver() !== pointerPlayer) return;
     if (target.matches('.command-back, .target-back')) { back(); return; }
     if (target.dataset.skill) { beginTargeting(target.dataset.skill as SkillId); return; }
     if (target.matches('.command-trigger')) expand(target.closest<HTMLElement>('[data-command]')!.dataset.command as BattleAction);
@@ -304,8 +328,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-target]');
     if (button && !button.disabled) highlight(button.dataset.target);
   });
+  /** Who the click being handled comes from: the mouse and keyboard, unless `control` is pressing for a controller. */
+  let pointerPlayer: PlayerId = 1;
   function keydown(event: KeyboardEvent) {
     if (!state || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (turnDriver() !== 1 && !['won', 'lost', 'escaped'].includes(state.phase)) { event.preventDefault(); event.stopPropagation(); return; }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       if (!event.repeat && document.activeElement instanceof HTMLButtonElement) document.activeElement.click();
@@ -332,10 +359,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   root.addEventListener('keydown', keydown);
   return {
     get controllerContext() { return !state ? 'world' : `battle:${busy ? 'busy' : state.phase}:${selected ?? ''}:${selectedSkill ?? ''}:${targeting}`; },
-    control(action: ControlAction) {
+    /** A controller press; `player` is whose controller it is. Only the turn's own player is heard. */
+    control(action: ControlAction, player: PlayerId = 1) {
       if (!state || busy) return;
-      if (action === 'cancel') { if (['won', 'lost', 'escaped'].includes(state.phase)) close(); else back(); }
-      else if (action === 'confirm') clickControllerButton(root);
+      const ended = ['won', 'lost', 'escaped'].includes(state.phase);
+      if (!ended && player !== turnDriver()) return;
+      if (action === 'cancel') { if (ended) close(); else back(); }
+      else if (action === 'confirm') { pointerPlayer = player; try { clickControllerButton(root); } finally { pointerPlayer = 1; } }
       else if (action !== 'menu') {
         if (targeting) {
           const buttons = targetButtons();
@@ -354,12 +384,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         button.style.transform = `translate(${target.x}px, ${target.y}px) translate(-50%, -100%)`;
       }
     },
-    open(allyCount: 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; gerardClass?: ClassId } = {}) {
+    /** `party` is who fights on Gerard's side (story.battleParty), or a size for chapter 1's boys. */
+    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter } = {}) {
       if (state) return;
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
-      const { possessed = false, encounter = 'dogs', gerardClass } = options;
-      state = encounter === 'palace-minion' ? createMinionBattle(gerardClass) : createBattle(allyCount, foeCount, possessed, gerardClass); busy = true;
+      const { possessed = false, encounter = 'dogs' } = options;
+      const slots = typeof party === 'number' ? childParty(party) : party;
+      state = encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId) : createBattle(slots, foeCount, possessed); busy = true;
       foeCount = state.foes.length;
       root.toggleAttribute('data-possessed', possessed);
       root.dataset.encounter = encounter;
@@ -377,6 +409,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         if (token !== generation || !state) return;
         delete root.dataset.entering; busy = false; render(); focusFirst();
       });
+    },
+    /** Redraws the turn line when a controller connects or leaves. */
+    refresh() {
+      if (!state) return;
+      render();
+      if (!busy && state.phase === 'player' && !targeting && !selected && !root.contains(document.activeElement)) focusFirst();
     },
     destroy() { generation++; root.removeEventListener('keydown', keydown); root.remove(); outside().forEach(el => { el.inert = false; }); delete hud.dataset.battle; },
   };

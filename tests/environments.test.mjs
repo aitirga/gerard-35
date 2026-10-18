@@ -145,3 +145,20 @@ test('Meridiana follows the croquis: every room, with kitchen and TV on the tall
   assert.ok(MERIDIANA.plan.every(row => row[0] === ' ' || '#W'.includes(row[0])));
   assert.equal(nearbyInteraction(MERIDIANA, { x: 16, z: 2 })?.id, 'meridiana-tv');
 });
+test('Alegia comes from map data: 95 by the spawn, real buildings are solid and every place is reachable', () => {
+  const alegia = ENVIRONMENTS.alegia;
+  const scene = alegia.geo;
+  assert.equal(alegia.grid.length, scene.depth);
+  assert.equal(alegia.grid[0].length, scene.width);
+  const block95 = scene.buildings.find(b => b.number === '93-95');
+  assert.equal(block95.ground, 'arcade');
+  assert.ok(Math.hypot(block95.box.cx - alegia.spawn.x, block95.box.cz - alegia.spawn.z) < 20);
+  assert.ok(scene.buildings.some(b => b.name === 'San Juan eliza'));
+  assert.equal(nearbyInteraction(alegia, scene.places.find(p => p.id === 'alegia-95').cell)?.id, 'alegia-95');
+  // Building centres are never walkable, whatever their shape.
+  for (const b of scene.buildings) assert.equal(canWalk({ x: Math.round(b.box.cx), z: Math.round(b.box.cz) }, alegia.grid), false, b.id);
+});
+test('a car can park along x and blocks the two cells it covers', () => {
+  assert.deepEqual(propCells({ kind: 'car', x: 4, z: 2, color: '#fff', along: 'x' }), [{ x: 4, z: 2 }, { x: 5, z: 2 }]);
+  assert.deepEqual(propCells({ kind: 'car', x: 4, z: 2, color: '#fff' }), [{ x: 4, z: 2 }, { x: 4, z: 3 }]);
+});

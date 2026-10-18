@@ -1,5 +1,8 @@
 # Reference-driven environments
 
+> Real places built from map data (OpenStreetMap + Google Maps references), such as Alegia,
+> follow [environment-styling.md](environment-styling.md).
+
 This prototype reconstructs the main visual features of the user's Apple Maps
 screenshots and a read-only inspection of **Passatge Maresme, 20, Sant Quirze del
 Vallès** in Apple Maps. The user corrected the original reference pin (24) to

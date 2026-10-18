@@ -167,6 +167,7 @@ export const LINES = {
     aitor('¿Manos de chicle? Eso te pasa por cenar pizza a las once.'),
     aitor('Venga, despierta del todo. Que hoy es tu cumpleaños: treinta y cinco, ¿eh?'),
     gerard35('…Treinta y cinco. Sí.'),
+    aitor('Y hoy no me despego de ti. Donde vayas tú, voy yo.'),
   ),
   aitorAgain: withAitor(aitor('Feliz cumpleaños, dormilón. El café está en la cocina… si te lo haces tú.')),
   aitorWrapper: withAitor(gerard35('Aitor… ¿esto es tuyo?'), aitor('¿Un chicle Bubbaloo? Yo no como de eso desde que tenía diez años.')),
@@ -196,6 +197,8 @@ export const HINTS = {
   run: { keys: 'Shift', verb: 'Correr' },
   items: { keys: 'I', verb: 'Objetos' },
   party: { keys: 'C', verb: 'Equipo' },
+  /** Chapter 2: Aitor walks with Gerard, and a second controller can take him. */
+  duo: { keys: 'Mando 2', verb: 'Jugar como Aitor' },
 } as const;
 export type HintId = keyof typeof HINTS;
 
@@ -209,4 +212,6 @@ export const BUBBLES = {
   stalled: ['¿Gerard…?', 'Espera.', 'Esto… ya lo he visto.'],
   /** Heading back south once the palace has risen. */
   away: ['Es por el otro lado.'],
+  /** Aitor, when two players pull apart further than the camera can follow. */
+  tether: ['¡Eh, espérame!', '¿A dónde vas tan rápido?'],
 } as const;

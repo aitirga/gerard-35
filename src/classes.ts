@@ -2,10 +2,10 @@ import * as pc from 'playcanvas';
 import type { ClassId } from './battle';
 
 /**
- * Gerard's classes (docs/bubbaloo-palace.md). Only Noísta exists: he always contradicts, and in
- * the palace that habit becomes a power. How the class system grows is still open, so a class is
- * just a look (material recolours by name and a scarf), an interface theme (`#hud[data-class]`
- * in style.css) and its skills (in battle.ts).
+ * Classes (docs/bubbaloo-palace.md, docs/party.md). Only Noísta exists: Gerard always contradicts,
+ * and in the palace that habit becomes a power. Once unlocked a class is the party's, so Aitor can
+ * wear it too. A class is a look (material recolours by name and a scarf), an interface theme
+ * (`#hud[data-class]` in style.css), and its stats and skills (CLASS_STATS and SKILLS in battle.ts).
  */
 export const CLASSES: Record<ClassId, { name: string; motto: string; look: Record<string, string>; scarf: string }> = {
   noista: {

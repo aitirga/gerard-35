@@ -1,0 +1,79 @@
+{
+  "id": "alegia",
+  "name": "Alegia · San Juan kalea",
+  "region": "Alegia, Gipuzkoa",
+  "anchor": { "address": "San Juan kalea 95, 20260 Alegia, Gipuzkoa", "lat": 43.1001658, "lon": -2.1003344 },
+  "bounds_m": { "west": -45, "east": 190, "north": -65, "south": 55 },
+  "cell_m": 1.25,
+  "rotation_deg": 180,
+  "zoom": 11,
+  "spawn": { "east_m": -4, "south_m": -9 },
+  "storey_m": 3.0,
+  "reference": {
+    "checked": "2026-10-15",
+    "streetview_capture": "2025-06",
+    "notes": [
+      "93-95: modern four-storey block, cream render, white bands, ground-floor arcade along the street, black iron balconies with geraniums, wall lamps on brackets.",
+      "Across from 95: Don Pio Montoya square, a pollarded plane tree with a round crown, a small wooden hut, red-brown pavement.",
+      "San Juan kalea (old part, 61-91): narrow asphalt street with no pavements; three- and four-storey terraced houses, masonry ground floors, timber-framed or rendered upper floors, wooden balconies and glazed miradors, deep eaves.",
+      "San Juan church: ashlar sandstone, pale grey-cream blocks, small windows, square belfry.",
+      "Roofs (satellite): terracotta tile, mostly hipped; a dense band of riverside trees along the Oria; steep wooded hills all around.",
+      "South bank: road with a dark wooden rail fence along the river."
+    ],
+    "viewpoints": [
+      { "name": "95-east", "lat": 43.10025, "lon": -2.10035, "heading": 90, "pitch": 5 },
+      { "name": "church-west", "lat": 43.10035, "lon": -2.0993, "heading": 250, "pitch": 8 },
+      { "name": "terrace-east", "lat": 43.10035, "lon": -2.0993, "heading": 60, "pitch": 8 },
+      { "name": "south-bank", "lat": 43.0997, "lon": -2.0985, "heading": 290, "pitch": 5 }
+    ]
+  },
+  "styles": {
+    "default": { "walls": ["#ece4d3", "#e8dcc4", "#f1ebde", "#e3d3b8", "#efe6d6"], "base": "#a69a86", "trim": "#f7f3ea", "roof": "#b4643f", "roof_kind": "hip", "facade": "rendered", "ground": "masonry" },
+    "arcade-block": { "walls": ["#efe7d6"], "base": "#d8cfbd", "trim": "#ffffff", "roof": "#b05a38", "roof_kind": "hip", "facade": "iron-balconies", "ground": "arcade", "levels": 4 },
+    "terrace": { "walls": ["#f0e8d8", "#e6d6b8", "#efe1c4", "#e9dfcf", "#dcc7a4"], "base": "#9a8c76", "trim": "#5b3d2a", "roof": "#b4643f", "roof_kind": "hip", "facade": "timber", "ground": "masonry", "levels": 4 },
+    "stone": { "walls": ["#cfc6b3"], "base": "#b9ae98", "trim": "#a99c84", "roof": "#8f6a55", "roof_kind": "hip", "facade": "ashlar", "ground": "ashlar", "levels": 5 },
+    "civic": { "walls": ["#d9cfba"], "base": "#b9ae98", "trim": "#f4efe4", "roof": "#a65a3a", "roof_kind": "hip", "facade": "ashlar-windows", "ground": "ashlar-arcade", "levels": 3 },
+    "small": { "walls": ["#e7dccb"], "base": "#9a8c76", "trim": "#6b4c35", "roof": "#b4643f", "roof_kind": "gable", "facade": "rendered", "ground": "masonry", "levels": 2 }
+  },
+  "buildings": {
+    "way/44888083": { "style": "arcade-block", "label": "93-95" },
+    "way/498097826": { "style": "stone", "levels": 5 },
+    "way/498097825": { "style": "stone", "levels": 4 },
+    "way/1228477394": { "style": "stone", "levels": 8, "roof_kind": "pyramid" },
+    "way/44884436": { "style": "civic" },
+    "way/44887739": { "levels": 3 },
+    "way/1227826052": { "style": "small" },
+    "way/1227832775": { "style": "small" },
+    "tag:building=shed": { "style": "small", "levels": 1 },
+    "tag:building=ruins": { "style": "small", "levels": 1, "roof_kind": "flat" },
+    "tag:building=house": { "style": "terrace" }
+  },
+  "props": [
+    { "kind": "tree", "east_m": -2, "south_m": -24, "species": "plane", "scale": 1.5 },
+    { "kind": "tree", "east_m": 10, "south_m": -27, "species": "plane", "scale": 1.2 },
+    { "kind": "car", "east_m": 6, "south_m": -9, "color": "#f2f2ef" },
+    { "kind": "car", "east_m": 14, "south_m": -9, "color": "#9aa4a8" },
+    { "kind": "car", "east_m": 24, "south_m": -9.5, "color": "#6f8fa8" },
+    { "kind": "car", "east_m": -12, "south_m": -13, "color": "#2f4f8a" },
+    { "kind": "lamp", "east_m": 20, "south_m": -7 },
+    { "kind": "lamp", "east_m": 90, "south_m": -14 },
+    { "kind": "lamp", "east_m": 130, "south_m": -18 }
+  ],
+  "trees": { "riverbank_every_m": 7, "forest_every_m": 6, "species": ["plane", "plane", "cypress"] },
+  "places": [
+    { "id": "alegia-95", "label": "Mirar el portal del 95", "east_m": 0, "south_m": -6,
+      "lines": ["San Juan kalea, 95. Soportales, geranios en los balcones y el río justo detrás.", "Aquí empieza la calle vieja de Alegia."] },
+    { "id": "alegia-plaza", "label": "Mirar el plátano de la plaza", "east_m": -2, "south_m": -21,
+      "lines": ["Un plátano podado en bola. Da sombra a media plaza Don Pio Montoya."] },
+    { "id": "alegia-church", "label": "Mirar la iglesia de San Juan", "osm": "way/498097826",
+      "lines": ["La iglesia de San Juan: piedra arenisca, ventanas pequeñas y una torre que se ve desde todo el valle."] },
+    { "id": "alegia-townhall", "label": "Mirar el ayuntamiento", "osm": "way/44884436",
+      "lines": ["Alegiko udaletxea. El ayuntamiento, con sus arcos de piedra en la planta baja."] },
+    { "id": "alegia-bridge", "label": "Asomarse al Oria", "osm": "way/508788821",
+      "lines": ["Zubi Zaharra, el puente viejo. Abajo, el Oria baja verde y tranquilo."] }
+  ],
+  "labels": [
+    { "text": "SAN JUAN KALEA", "east_m": 60, "south_m": -11, "width": 7 },
+    { "text": "ORIA", "east_m": 60, "south_m": 30, "width": 4 }
+  ]
+}
