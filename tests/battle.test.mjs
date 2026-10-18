@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima } from '../src/battle.ts';
+import { createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima, SKILLS } from '../src/battle.ts';
 
 test('single ally completes a round and takes damage only during enemy turn', () => {
   const s = createBattle();
@@ -202,5 +202,17 @@ test('the palace minion swallows every hit, and whatever the party does the beat
     const nota = act(state, 'skill', 'minion-0', 'nota');
     assert.equal(nota.amount, 40);
     assert.equal(state.phase, 'won');
+  }
+});
+
+test('skill descriptions follow the plain shape in AGENTS.md, with the intensity their power gives', () => {
+  const intensity = power => power <= 20 ? 'leve' : power <= 34 ? 'medi[oa]' : power <= 49 ? 'alt[oa]' : 'muy alt[oa]';
+  const targets = { foes: 'a un enemigo', allies: 'a un aliado herido', party: 'a todo el equipo' };
+  for (const skill of SKILLS) {
+    const extra = '( [A-ZÁÉÍÓÚ][^.]*\\.)*';
+    const shape = skill.kind === 'boost' ? `^(Sube|Baja) [^.]+ de ${targets[skill.side].slice(2)} durante ${BOOST_ROUNDS} rondas\\.${extra}$`
+      : skill.kind === 'heal' ? `^Cura ${intensity(skill.power)} ${targets[skill.side]}\\.${extra}$`
+      : `^Daño ${intensity(skill.power)} ${skill.kind === 'magic' ? 'mágico' : 'físico'}( de tipo [^ ]+)? ${targets[skill.side]}\\.${extra}$`;
+    assert.match(skill.description, new RegExp(shape), skill.name);
   }
 });

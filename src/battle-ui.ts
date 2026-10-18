@@ -173,7 +173,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (box.hidden || !skill || !state) { button?.removeAttribute('aria-describedby'); return; }
     button!.setAttribute('aria-describedby', 'skill-info');
     box.querySelector('h3')!.textContent = skill.name;
-    box.querySelector('p')!.textContent = skill.description + '.';
+    box.querySelector('p')!.textContent = skill.description;
     box.querySelector('.skill-info-cost')!.textContent = `${skill.cost} SEC`;
     // Beside the skill, out past the flyout, vertically centred on it.
     const base = root.getBoundingClientRect(), at = button!.getBoundingClientRect(), sheet = get('.skill-flyout').getBoundingClientRect();

@@ -18,16 +18,17 @@ export const CLASS_STATS: Record<ClassId, StatBonus> = {
   noista: { magia: 2, espiritu: 2, defensa: -1 },
 };
 /**
+ * Descriptions follow the shape in AGENTS.md ("Daño alto mágico a un enemigo. Rompe el pringue.").
  * `power` is the amount at average stats (see stats.ts); for a `boost` it is what it adds to
  * Fuerza and Magia. `class` skills come with an ánima; `owners` skills are those people's own.
  * Bernat has none: he only attacks.
  */
 export const SKILLS = [
-  { id: 'analisis', name: 'Análisis Parálisis', cost: 10, side: 'party', power: 3, kind: 'boost', description: 'Lo piensa todo dos veces y el equipo pega con más cabeza: Fuerza y Magia +3 a todos durante 3 rondas', class: 'matemagico' },
-  { id: 'impulse', name: 'Impulso', cost: 8, side: 'foes', power: 28, kind: 'physical', description: 'Un golpe físico con carrerilla a un enemigo', owners: ['aitor'] },
-  { id: 'encourage', name: 'Ánimo', cost: 8, side: 'allies', power: 24, kind: 'heal', description: 'Recupera unos 24 PV de un aliado herido', owners: ['aitor'] },
-  { id: 'nota', name: 'No-ta', cost: 10, side: 'foes', power: 40, kind: 'magic', description: 'Un NO rotundo a un enemigo: rompe el pringue y hace mucho daño mágico', class: 'noista' },
-  { id: 'abrazo', name: 'Abrazo', cost: 12, side: 'party', power: 14, kind: 'heal', description: 'Aitor abraza a todo el equipo: unos 14 PV para cada uno', owners: ['aitor'] },
+  { id: 'analisis', name: 'Análisis Parálisis', cost: 10, side: 'party', power: 3, kind: 'boost', description: 'Sube Fuerza y Magia de todo el equipo durante 3 rondas.', class: 'matemagico' },
+  { id: 'impulse', name: 'Impulso', cost: 8, side: 'foes', power: 28, kind: 'physical', description: 'Daño medio físico a un enemigo.', owners: ['aitor'] },
+  { id: 'encourage', name: 'Ánimo', cost: 8, side: 'allies', power: 24, kind: 'heal', description: 'Cura media a un aliado herido.', owners: ['aitor'] },
+  { id: 'nota', name: 'No-ta', cost: 10, side: 'foes', power: 40, kind: 'magic', description: 'Daño alto mágico a un enemigo. Rompe el pringue.', class: 'noista' },
+  { id: 'abrazo', name: 'Abrazo', cost: 12, side: 'party', power: 14, kind: 'heal', description: 'Cura leve a todo el equipo.', owners: ['aitor'] },
 ] as const;
 /** How many rounds a boost lasts, counting the one it is used in. */
 export const BOOST_ROUNDS = 3;
