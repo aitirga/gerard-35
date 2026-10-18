@@ -60,10 +60,13 @@ const SANT_QUIRZE = new Set<EnvironmentId>(['maresme', 'home-entrance', 'home-fl
 const WITH_BERNAT = new Set<EnvironmentId>([...SANT_QUIRZE, 'palacio']);
 /** Where the palace fight is staged: the middle of the wrapper room. */
 const PALACE_STAGE: Cell = { x: 5, z: 15.5 };
+/** The longest step cutscenes, fight animations and effects take in one frame (seconds). */
+const SHOW_STEP = 0.25;
 const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'] };
 
 export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, story: Story) {
   const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
+  app.maxDeltaTime = SHOW_STEP;
   app.graphicsDevice.maxPixelRatio = Math.min(window.devicePixelRatio, 2);
   app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
@@ -720,6 +723,9 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   callbacks.onLocation(environment.id, movement.cell);
   app.on('update', (dt: number) => {
     const delta = Math.min(dt, 0.05);
+    // Cutscenes, fight animations and effects keep the clock on slow machines (a frame or two a
+    // second with software rendering); walking stays on `delta`, which keeps collisions safe.
+    const shown = Math.min(dt, SHOW_STEP);
     if (!stopped() && !battle && !document.querySelector('#hud[data-dialogue]')) {
       movement.update(dt);
       // Everything steers in screen space: held keys add up, otherwise the stick or D-pad.
@@ -861,15 +867,15 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       battleScene.wander(i, delta, dog.progress < 1 && !paused && !battle && !document.querySelector('#hud[data-dialogue]'), !reducedMotion.matches);
     });
     if (timeline) {
-      timeline.elapsed += reducedMotion.matches ? timeline.seconds : delta;
+      timeline.elapsed += reducedMotion.matches ? timeline.seconds : shown;
       const t = Math.min(1, timeline.elapsed / timeline.seconds);
       timeline.step(t);
       if (t >= 1) { const { done } = timeline; timeline = undefined; done(); }
     }
-    palace.update(delta, animate);
+    palace.update(shown, animate);
     // The minion lives under the street's manhole, and in the palace under the wrapper room's drain.
     const lair = environment.id === 'palacio' ? PLACES.drain : PLACES.minion.manhole;
-    minion.update(delta, animate, {
+    minion.update(shown, animate, {
       manhole: scenery.toWorld(lair.x, lair.z), look: player.getPosition(), groundHeight: scenery.groundHeight,
     }, (environment.id === 'maresme' || environment.id === 'palacio') && !battle);
     if (tone !== toneTarget) {
@@ -877,9 +883,9 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       scenery.setTone(tone);
     }
     camera.camera!.clearColor = clear.lerp(dayClear, BUBBALOO.clear, tone);
-    battleScene.update(delta, animate);
+    battleScene.update(shown, animate);
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1));
-    effects.update(delta);
+    effects.update(shown);
     const aspect = canvas.clientWidth / canvas.clientHeight;
     const follow = environment.zoom;
     // Two players share the frame: the camera looks between them and pulls back as they part.
