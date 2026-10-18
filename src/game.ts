@@ -454,6 +454,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const legs = -90 * sit * (1 - step);
     body.limbs.forEach((limb, i) => limb.setLocalEulerAngles(i % 2 ? 0 : legs, 0, 0));
     body.head.setLocalEulerAngles(0, 0, 0);
+    // Barefoot in bed: the shoes come back as they step out.
+    body.feet.forEach(foot => { foot.enabled = s.stage > 1.5; });
     const raised = DUVET_RAISED * (1 - step);
     s.duvet.setLocalScale(s.duvet.getLocalScale().x, .02 + raised, s.duvet.getLocalScale().z);
     s.duvet.setPosition(s.duvet.getPosition().x, DUVET_TOP + raised / 2 - .01, s.duvet.getPosition().z);
@@ -466,11 +468,11 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const door = PLACES.bedroomDoor, root = new pc.Entity('Luz del día por la puerta'); app.root.addChild(root);
     const shaft = new pc.Entity('Rayo de luz'); root.addChild(shaft);
     shaft.addComponent('light', {
-      type: 'spot', color: new pc.Color().fromString('#fff1d6'), intensity: 2.6, range: 10, innerConeAngle: 18, outerConeAngle: 38,
+      type: 'spot', color: new pc.Color().fromString('#fff1d6'), intensity: 2.2, range: 11, innerConeAngle: 20, outerConeAngle: 42,
       castShadows: true, shadowResolution: 1024, shadowBias: .2, normalOffsetBias: .05,
     });
-    shaft.setPosition(scenery.toWorld(door.x + 1.4, door.z).add(new pc.Vec3(0, 2.1, 0)));
-    shaft.lookAt(scenery.toWorld(10.5, 14.2)); shaft.rotateLocal(90, 0, 0);
+    shaft.setPosition(scenery.toWorld(door.x - .2, door.z).add(new pc.Vec3(0, 2.1, 0)));
+    shaft.lookAt(scenery.toWorld(10.5, 13.6)); shaft.rotateLocal(90, 0, 0);
     const glow = new pc.Entity('Claridad en la puerta'); root.addChild(glow);
     glow.addComponent('light', { type: 'omni', color: new pc.Color().fromString('#f3eadb'), intensity: .7, range: 3.5, castShadows: false });
     glow.setPosition(scenery.toWorld(door.x - .5, door.z).add(new pc.Vec3(0, 1.3, 0)));
@@ -533,6 +535,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     sleepers = undefined;
     s.gerard.duvet.destroy(); s.aitor.duvet.destroy(); s.material.destroy(); s.daylight.destroy();
     player.setLocalEulerAngles(0, 0, 0); mates.aitor.entity.setLocalEulerAngles(0, 0, 0);
+    for (const foot of [...rig.feet, ...mates.aitor.rig.feet]) foot.enabled = true;
     mates.aitor.rig.head.setLocalEulerAngles(0, 0, 0);
     mates.aitor.rig.eyes.forEach((eye, i) => { const e = eye.getLocalScale(); eye.setLocalScale(e.x, mates.aitor.rig.eyeHeights[i], e.z); });
     const aitor = mateHere()?.id === 'aitor' ? matePosition(mates.aitor) : undefined;

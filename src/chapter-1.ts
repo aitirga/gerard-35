@@ -47,7 +47,7 @@ export const PLACES = {
    * Gerard wakes with a start and gets out on his side (`wakeUp`); Aitor gets out on his (`aitor`).
    * The Bubbaloo wrapper lies on Gerard's nightstand (`spot`), picked up from the cell in front of it.
    */
-  bed: { gerard: { x: 11.02, z: 15.6 }, aitor: { x: 9.92, z: 15.36 } },
+  bed: { gerard: { x: 11.02, z: 15.3 }, aitor: { x: 9.92, z: 15.06 } },
   wakeUp: { environment: 'meridiana', cell: { x: 12, z: 14 } },
   /** The bedroom's door onto the hallway (east wall): the morning light comes in through it. */
   bedroomDoor: { x: 13, z: 8 },

@@ -18,7 +18,7 @@ export const BUBBALOO = {
   clear: new pc.Color(0.09, 0.05, 0.09),
 } as const;
 /** Early morning with the lights off: a dim blue ambient and a low, pale sun. */
-const DAWN = { ambient: new pc.Color(0.09, 0.1, 0.14), sun: new pc.Color(0.7, 0.8, 1), sunIntensity: 0.3 } as const;
+const DAWN = { ambient: new pc.Color(0.17, 0.19, 0.25), sun: new pc.Color(0.7, 0.8, 1), sunIntensity: 0.45 } as const;
 
 /** Visual-only builder. Gameplay uses Environment.grid and interactions. */
 export function buildScenery(app: pc.Application, environment: Environment) {

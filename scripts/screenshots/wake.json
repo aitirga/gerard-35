@@ -1,6 +1,6 @@
 {
   "title": "Chapter 2 · Waking up together",
-  "description": "The start of chapter 2 without the palace before it: Gerard (35) and Aitor asleep in the Meridiana double bed, Aitor slowly stroking the back of Gerard's hand; «¡NO!» Gerard bolts upright and Aitor sits up beside him; then each gets out of bed on his own side. Calls game.wake and game.rise directly (the ending scenario plays the whole story beat).",
+  "description": "The start of chapter 2 without the palace before it: the bedroom in the dark with the lamps off and morning light coming in through the door; Gerard (35) and Aitor asleep in the double bed, Aitor slowly stroking the back of Gerard's hand; «¡NO!» Gerard bolts upright and Aitor sits up beside him; then each gets out of bed on his own side and the lights come on by themselves. Calls game.wake and game.rise directly (the ending scenario plays the whole story beat).",
   "steps": [
     {
       "open": "/?story=caught"
@@ -13,7 +13,7 @@
       "wait": 1500
     },
     {
-      "eval": "window.waking = window.gerard.game.wake(() => new Promise(resolve => { window.fadeIn = resolve; })).then(() => { window.awake = true; })"
+      "eval": "window.waking = window.gerard.game.wake(() => new Promise(resolve => { window.fadeIn = resolve; })).then(() => { window.awake = true; }); undefined"
     },
     {
       "shot": "asleep",
@@ -38,7 +38,7 @@
       "caption": "«¡NO!» Gerard sits bolt upright; Aitor sits up beside him"
     },
     {
-      "eval": "window.gerard.game.rise().then(() => { window.up = true; })"
+      "eval": "window.gerard.game.rise().then(() => { window.up = true; }); undefined"
     },
     {
       "until": "window.up",
@@ -47,7 +47,7 @@
     {
       "shot": "up",
       "delay": 800,
-      "caption": "Each gets out on his own side of the bed"
+      "caption": "Each gets out on his own side of the bed, and the lights come on by themselves"
     }
   ]
 }
