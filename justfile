@@ -154,10 +154,21 @@ geo-build zone="alegia":
 geo-zones:
     @ls assets/geo/*/zone.json | xargs -n1 dirname | xargs -n1 basename
 
-# Rebuild the cartoon Barcelona of the network map from its hand-drawn layers (docs/barcelona.md)
+# Rebuild the network map: hand-drawn stations and landmarks + the real city behind (docs/barcelona.md)
 [group('Data')]
-city:
+city: && city-background
     uv run --locked python tools/city.py build
+
+# Download Barcelona's streets, coast and parks from OpenStreetMap, then rebuild the map
+[group('Data')]
+city-fetch: && city
+    uv run --locked python tools/city.py fetch
+
+# Render the 3D city behind the network map into public/maps/barcelona.webp
+[group('Data')]
+city-background:
+    @[[ -f output/city/background.svg ]] || { printf 'No street data yet; run just city-fetch first.\n'; exit 0; }
+    node scripts/city-background.mjs
 
 # Generate portrait, expressions, full-body art and 3D model: just character bernat --description '…' (--help)
 [group('Tools')]

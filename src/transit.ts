@@ -19,6 +19,8 @@ export interface CityMap {
   rivers: { id: string; name: string; line: Points }[];
   districts: { id: string; name: string; colour: string; pattern?: string; poly: Points }[];
   avenues: { id: string; name: string; size: number; line: Points }[];
+  /** The real city drawn in 3D from OpenStreetMap (`just city-fetch`), an image under the lines. */
+  background?: { x0: number; y0: number; x1: number; y1: number; href: string };
   /** Famous places, drawn as icons (`src/map-markers.ts`). */
   landmarks: { id: string; name: string; icon: string; x: number; y: number }[];
   /** Places the story puts icons on (home, the school). */

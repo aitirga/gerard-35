@@ -1,12 +1,12 @@
 /**
- * Barcelona as a cartoon map (docs/barcelona.md): sea with waves, a sandy coast, wooded hills,
- * the city as little 3D blocks (`city-blocks.ts`) cut by the big avenues, the metro lines and the
- * markers (`src/map-markers.ts`). Every shape is hand-drawn in assets/geo/barcelona/city.json and
- * rounded off here. Used by the station map (`travel-ui.ts`). Looks live in style.css (.city-*).
+ * Barcelona's network map (docs/barcelona.md): the real city in 3D as an image underneath
+ * (`just city-fetch`, from OpenStreetMap), and on top, hand-drawn in
+ * assets/geo/barcelona/city.json, the metro lines, the stations and the markers
+ * (`src/map-markers.ts`). Without the image it falls back to the cartoon sea, hills and avenues.
+ * Used by the station map (`travel-ui.ts`). Looks live in style.css (.city-*).
  */
 import { CITY_MAP, LINES, STATIONS, type Leg } from './transit.ts';
 import { renderMarker, type MapMarker } from './map-markers.ts';
-import { renderCityBlocks } from './city-blocks.ts';
 
 const escape = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 const straight = (points: number[][]) => `M${points.map(([x, y]) => `${x},${y}`).join('L')}`;
@@ -22,9 +22,8 @@ function smooth(points: number[][], closed: boolean) {
   }
   return closed ? `${d}Z` : d;
 }
-/** The blocks never change: drawn once, reused on every render. */
-let blocks: { unit: number; svg: string } | undefined;
-const cityBlocks = (unit: number) => (blocks?.unit === unit ? blocks : blocks = { unit, svg: renderCityBlocks(unit) }).svg;
+/** Where public/ is served (Vite's base); plain './' when rendered outside Vite (tests). */
+const BASE = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? './';
 
 /** A rectangle of the map, in map metres. */
 export interface View { x0: number; y0: number; x1: number; y1: number }
@@ -56,21 +55,25 @@ export function renderCityMap(options: CityMapOptions = {}): string {
   parts.push(`<defs><radialGradient id="queen-halo"><stop offset=".25" stop-color="#ff6fae" stop-opacity="0"/><stop offset=".62" stop-color="#ff6fae" stop-opacity=".5"/><stop offset=".8" stop-color="#ff9fcb" stop-opacity=".22"/><stop offset="1" stop-color="#ff9fcb" stop-opacity="0"/></radialGradient></defs>`);
   // Land well past the frame: a wide screen shows more than the view.
   parts.push(`<rect class="city-land" x="${v.x0 - w}" y="${v.y0 - h}" width="${w * 3}" height="${h * 3}"/>`);
-  parts.push(`<path class="city-sea" d="${straight(CITY_MAP.sea)}Z"/>`);
-  parts.push(`<path class="city-beach" d="${smooth(CITY_MAP.coast, false)}" stroke-width="${unit * 1.6}"/>`);
+  const city = CITY_MAP.background;
+  if (city) {
+    parts.push(`<image class="city-background" href="${BASE}${city.href}" x="${city.x0}" y="${city.y0}" width="${city.x1 - city.x0}" height="${city.y1 - city.y0}" preserveAspectRatio="none"/>`);
+  } else {
+    parts.push(`<path class="city-sea" d="${straight(CITY_MAP.sea)}Z"/>`);
+    parts.push(`<path class="city-beach" d="${smooth(CITY_MAP.coast, false)}" stroke-width="${unit * 1.6}"/>`);
+    for (const hill of CITY_MAP.hills) parts.push(`<path class="city-hill" d="${smooth(hill.poly, true)}" stroke-width="${unit * .5}"/>`);
+    for (const r of CITY_MAP.rivers) parts.push(`<path class="city-river" d="${smooth(r.line, false)}" stroke-width="${unit * 1.3}"/>`);
+    for (const a of CITY_MAP.avenues) {
+      const d = smooth(a.line, false);
+      parts.push(`<path class="city-avenue-edge" d="${d}" stroke-width="${unit * (1.1 + a.size * .3)}"/><path class="city-avenue" d="${d}" stroke-width="${unit * (.7 + a.size * .3)}"><title>${escape(a.name)}</title></path>`);
+    }
+  }
   // Waves: little cartoon arcs scattered over the sea, always in the same places.
   for (let i = 0; i < 26; i++) {
     const [cx, cy] = CITY_MAP.coast[(i * 7) % CITY_MAP.coast.length];
     const x = cx + ((i * 2371) % 9000) - 2500, y = cy + 900 + ((i * 1733) % 3200);
     parts.push(`<path class="city-wave" d="M${x},${y}q${unit},${-unit} ${unit * 2},0q${unit},${unit} ${unit * 2},0" stroke-width="${unit * .4}"/>`);
   }
-  for (const hill of CITY_MAP.hills) parts.push(`<path class="city-hill" d="${smooth(hill.poly, true)}" stroke-width="${unit * .5}"/>`);
-  for (const r of CITY_MAP.rivers) parts.push(`<path class="city-river" d="${smooth(r.line, false)}" stroke-width="${unit * 1.3}"/>`);
-  for (const a of CITY_MAP.avenues) {
-    const d = smooth(a.line, false);
-    parts.push(`<path class="city-avenue-edge" d="${d}" stroke-width="${unit * (1.1 + a.size * .3)}"/><path class="city-avenue" d="${d}" stroke-width="${unit * (.7 + a.size * .3)}"><title>${escape(a.name)}</title></path>`);
-  }
-  parts.push(cityBlocks(unit));
   // Lines: a dark outline under the colour, cartoon style.
   for (const line of LINES) {
     const d = straight(line.stations.map(id => [at(id).x, at(id).y]));
