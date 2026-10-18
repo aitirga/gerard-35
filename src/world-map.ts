@@ -12,8 +12,11 @@ function roomLabel(room: Room) {
   const tspans = lines.map((line, i) => `<tspan x="${room.x + room.w / 2}" dy="${i ? 1.15 : (1 - lines.length) * 0.575}em">${escape(line)}</tspan>`).join('');
   return `<text x="${room.x + room.w / 2}" y="${room.z + room.d / 2}" font-size="${size.toFixed(2)}" class="map-room">${tspans}</text>`;
 }
-/** A local map for any environment: collision, landmarks and player share one coordinate space. */
-export function renderWorldMap(environment: Environment, player: Cell): string {
+/**
+ * A local map for any environment: collision, landmarks and player share one coordinate space.
+ * `partner` marks whoever walks with Gerard (Aitor), in their own colour.
+ */
+export function renderWorldMap(environment: Environment, player: Cell, partner?: { cell: Cell; name: string }): string {
   const width = Math.max(...environment.grid.map(row => row.length));
   const height = environment.grid.length;
   const paths = environment.grid.flatMap((row, z) => [...row].flatMap((cell, x) =>
@@ -24,6 +27,7 @@ export function renderWorldMap(environment: Environment, player: Cell): string {
     ${environment.houses.map(h => `<rect x="${h.x}" y="${h.z}" width="${h.w}" height="${h.d}" class="map-house"/>`).join('')}
     ${(environment.rooms ?? []).filter(r => r.w * r.d > 4).map(roomLabel).join('')}
     ${environment.interactions.map((p, i) => `<g><title>${escape(p.label)}</title><circle cx="${p.cell.x + .5}" cy="${p.cell.z + .5}" r=".9" class="map-point"/><text x="${p.cell.x + .5}" y="${p.cell.z + .5}" class="map-number">${i + 1}</text></g>`).join('')}
+    ${partner ? `<circle cx="${partner.cell.x + .5}" cy="${partner.cell.z + .5}" r=".7" class="map-partner"><title>${escape(partner.name)}</title></circle>` : ''}
     <circle cx="${player.x + .5}" cy="${player.z + .5}" r=".7" class="map-player"/>
   </svg>`;
 }

@@ -196,7 +196,7 @@ export const HINTS = {
   move: { keys: 'W A S D', verb: 'Caminar' },
   run: { keys: 'Shift', verb: 'Correr' },
   items: { keys: 'I', verb: 'Objetos' },
-  party: { keys: 'C', verb: 'Equipo' },
+  party: { keys: 'C', verb: 'Estado' },
   /** Chapter 2: Aitor walks with Gerard, and a second controller can take him. */
   duo: { keys: 'Mando 2', verb: 'Jugar como Aitor' },
 } as const;

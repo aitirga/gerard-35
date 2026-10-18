@@ -1,6 +1,6 @@
 {
   "title": "Chapter 2 · Two players",
-  "description": "Gerard (player 1) and Aitor (player 2, second controller) in the Meridiana flat: Aitor follows until a second controller connects, then walks on his own with the camera framing both; the party panel shows stats and the shared Noísta class; in a fight each player picks their own fighter's moves, and Aitor's turn waits while there is no second controller. Two standard gamepads are faked in the page.",
+  "description": "Gerard (player 1) and Aitor (player 2, second controller) in the Meridiana flat: Aitor follows until a second controller connects, then walks on his own with the camera framing both; the status screen splits in two, Gerard's half on the left and Aitor's on the right, and the Noísta ánima is shared; in a fight each player picks their own fighter's moves, and Aitor's turn waits while there is no second controller. Two standard gamepads are faked in the page.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=0"
@@ -55,23 +55,32 @@
       "press": "KeyC"
     },
     {
-      "shot": "party",
-      "delay": 1500,
-      "caption": "Personaje: Gerard at 35 and Aitor with their stats, and the party's classes to wear"
+      "eval": "window.gerard.exploration.show('character', 2)"
     },
     {
-      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click()"
+      "shot": "party",
+      "delay": 1500,
+      "caption": "Estado with two players: Gerard's half on the left, Aitor's on the right, each with their own stats"
+    },
+    {
+      "eval": "window.gerard.exploration.show('animas', 2)"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "document.querySelector('.status-sheet[data-player=\"2\"] [data-wear=\"aitor\"][data-class-id=\"noista\"]').click()"
     },
     {
       "shot": "aitor-noista",
       "delay": 800,
-      "caption": "Classes are shared: Aitor puts on Noísta (Magia +2, Espíritu +2, Defensa −1)"
+      "caption": "Ánimas in Aitor's half: he puts Noísta on (Magia +2, Espíritu +2, Defensa −1)"
     },
     {
-      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"\"]').click()"
+      "eval": "document.querySelector('.status-sheet[data-player=\"2\"] [data-wear=\"aitor\"][data-class-id=\"\"]').click()"
     },
     {
-      "press": "Escape"
+      "eval": "window.gerard.exploration.close()"
     },
     {
       "eval": "window.gerard.battleUI.open(window.gerard.story.battleParty(true), 2)"

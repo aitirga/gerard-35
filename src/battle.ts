@@ -33,8 +33,9 @@ export interface Combatant {
   stats: Stats;
   /** Who the fighter is underneath (stats.ts), e.g. Gerard as a boy or at 35. */
   profile: ProfileId;
-  /** The class the fighter wears, if any. */
+  /** The class the fighter wears, if any, and the colour of its scarf. */
   classId?: ClassId;
+  scarf?: string;
   kind?: FoeKind;
   /** Pringue: a gum shell that swallows every hit except No-ta. */
   shell?: boolean;
@@ -52,7 +53,8 @@ export interface BattleState {
   encounter: Encounter;
 }
 /** Someone who fights on the party's side: `id` names them in the fight, `profile` gives their stats. */
-export interface PartySlot { id: string; name: string; profile: ProfileId; classId?: ClassId }
+/** `scarf` is the colour of the scarf the class ties at the neck, if the wearer picked one. */
+export interface PartySlot { id: string; name: string; profile: ProfileId; classId?: ClassId; scarf?: string }
 /** Chapter 1's party: Gerard, and Bernat once he walks with him. */
 export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[] {
   return [{ id: 'gerard', name: 'Gerard', profile: 'gerard', classId: gerardClass }, ...(allyCount === 2 ? [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }] : [])];
@@ -68,7 +70,7 @@ export function skillsFor(_state: BattleState, actor: Combatant) {
 export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; healed?: { id: string; amount: number }[] }
 function fighter(slot: PartySlot): Combatant {
   const stats = withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined);
-  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, hp: stats.pv, maxHp: stats.pv, secondary: stats.sec, maxSecondary: stats.sec, guarding: false };
+  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, scarf: slot.scarf, stats, hp: stats.pv, maxHp: stats.pv, secondary: stats.sec, maxSecondary: stats.sec, guarding: false };
 }
 function foe(id: string, name: string, kind: FoeKind, hp?: number): Combatant {
   const stats = { ...PROFILES[kind], ...(hp ? { pv: hp } : {}) };

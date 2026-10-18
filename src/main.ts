@@ -35,6 +35,11 @@ const loadoutKey = 'gerard35.loadout.v1';
 function restoreLoadout() { try { story.loadout = JSON.parse(localStorage.getItem(loadoutKey) ?? '{}'); } catch { /* Storage is optional. */ } }
 function keepLoadout() { try { localStorage.setItem(loadoutKey, JSON.stringify(story.loadout)); } catch { /* Storage is optional. */ } }
 restoreLoadout();
+// Scarf colours picked for each ánima, kept the same way.
+const scarvesKey = 'gerard35.scarves.v1';
+function restoreScarves() { try { story.scarves = JSON.parse(localStorage.getItem(scarvesKey) ?? '{}'); } catch { /* Storage is optional. */ } }
+function keepScarves() { try { localStorage.setItem(scarvesKey, JSON.stringify(story.scarves)); } catch { /* Storage is optional. */ } }
+restoreScarves();
 /**
  * Two players from chapter 2 (docs/party.md). `solo` is for development only: player 1 also plays
  * Aitor. It comes from ?solo (just dev-solo) or the switch on the Mando page, and is remembered.
@@ -60,7 +65,7 @@ async function load() {
     if (!Number.isInteger(state.score) || state.score < 0) throw new Error('state');
     previousScore = state.score;
     // A development jump keeps its own flags instead of the saved progress.
-    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); savedStory = JSON.stringify(story.saved); restoreLoadout(); }
+    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); savedStory = JSON.stringify(story.saved); restoreLoadout(); restoreScarves(); }
     loaded = true;
     if (dirty) void save();
   } catch {
@@ -104,9 +109,17 @@ try {
   function controlChanged() {
     game.setPartnerDriven(partnerDriven(control, story.partner));
     battleUI.refresh();
+    exploration.relayout();
   }
-  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused), () => controller.open(), story,
-    (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } });
+  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, story, {
+    pause: paused => game.setPaused(paused),
+    openMenu: () => controller.open(),
+    wear: (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } },
+    tie: (member, classId, scarf) => { if (story.tie(member, classId, scarf)) { keepScarves(); storyChanged(); } },
+    // With a second player on Aitor, each player gets their own half of the status screen.
+    split: () => partnerDriven(control, story.partner),
+    partner: () => game.partnerPosition,
+  });
   let currentLocation: EnvironmentId = story.resume.environment;
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
   let beats = Promise.resolve();
@@ -153,7 +166,7 @@ try {
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onStep: (steps, cell) => {
       sessionSteps = steps;
-      exploration.update(currentLocation, cell, steps);
+      exploration.update(currentLocation, cell);
       dirty = true;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => { void save(); }, 700);
@@ -192,18 +205,21 @@ try {
     panel: id => id ? exploration.show(id) : exploration.close(),
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
+      // Each player opens their own half of the status screen with the top face button.
+      if (action === 'character') { if (/^(world|journal:)/.test(controllerContext())) exploration.control(action, player); return; }
       if (player === 2) {
-        if (action === 'overview' || action === 'character') return;
-        if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
+        if (exploration.isOpen(2)) exploration.control(action, 2);
+        else if (action === 'overview' || action === 'prev' || action === 'next') return;
+        else if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
         else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); }
         else if (!exploration.active && action === 'confirm') game.interact(true);
         return;
       }
       if (action === 'overview') { if (controllerContext() === 'world') game.toggleOverview(); }
-      else if (action === 'character') { if (/^(world|journal:)/.test(controllerContext())) exploration.toggle('character'); }
+      else if (action === 'prev' || action === 'next') exploration.control(action, 1);
       else if (battleUI.controllerContext !== 'world') battleUI.control(action, 1);
       else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); else if (action === 'cancel') dialogue.close(); }
-      else if (exploration.active) exploration.control(action);
+      else if (exploration.active) exploration.control(action, 1);
       else if (action === 'confirm') game.interact();
     },
 
@@ -243,7 +259,7 @@ try {
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => battleUI.open(params.get('party') === 'adult' ? new Story(['caught', 'noista']).battleParty(true) : params.get('allies') === '2' ? 2 : 1, foes));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged } });
+    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged } });
   }
   if (import.meta.hot) import.meta.hot.dispose(() => { controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {

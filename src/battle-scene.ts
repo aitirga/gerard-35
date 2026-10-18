@@ -210,7 +210,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const source = party ? partyModel(unit.id) : minion ? minionTemplate! : dogs[i];
           const model = source.clone(); model.enabled = true;
           // Whoever wears a class shows it in the fight, even when the street model does not (Gerard at 35, Aitor).
-          if (party && unit.classId) wearClass(model, unit.classId);
+          if (party && unit.classId) wearClass(model, unit.classId, unit.scarf);
           if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
             (component as pc.RenderComponent).meshInstances.forEach(mesh => {
               if (mesh.material.name === 'Camiseta mostaza') mesh.material = allyJacket;

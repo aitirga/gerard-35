@@ -75,8 +75,8 @@ and `wrapper-room` (see the [palace design](bubbaloo-palace.md)).
   pink, and `src/scenery.ts` blends any scene towards La Reina Bubbaloo's light (`setTone`).
 - `src/follower.ts` makes Bernat walk Gerard's own breadcrumb trail, so he never cuts corners
   through walls (`tests/follower.test.mjs`).
-- `src/story-ui.ts` shows title cards, item notes, key hints and Bernat's speech bubble; `src/exploration-ui.ts` adds the
-  Objetos panel (Comunes / Objetos clave) and the Equipo cards in Personaje.
+- `src/story-ui.ts` shows title cards, item notes, key hints and Bernat's speech bubble; `src/exploration-ui.ts` is the
+  status screen: Estado (equipment, stats), Objetos (Comunes / Objetos clave), Mapa and Diario.
 - The server stores the flags next to the score and only ever adds to them.
 - Mum, Jan and Bernat use placeholder models recoloured from young Gerard
   (`src/characters/mama.json`, `jan-child.json`, `bernat-child.json`). Replace them with

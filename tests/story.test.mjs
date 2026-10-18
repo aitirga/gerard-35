@@ -188,3 +188,20 @@ test('a reload between the déjà-vu and the minion plays its entrance again', (
   assert.deepEqual(story.handle({ type: 'start' }), []);
   assert.equal(story.handle({ type: 'interact', id: 'talk-bernat' })[0].dialogue.lines[0].text.includes('rosa'), true);
 });
+
+test('each member picks the scarf of an ánima; it reaches the fight and survives a reload', () => {
+  const story = new Story(['caught', 'noista']);
+  assert.equal(story.scarfOf('gerard', 'noista'), 'rojo', 'an ánima comes with its own scarf');
+  assert.equal(story.tie('aitor', 'noista', 'noche'), true);
+  assert.equal(story.tie('aitor', 'noista', 'purpurina'), false, 'only colours from the palette');
+  assert.equal(new Story(['caught']).tie('gerard', 'noista', 'noche'), false, 'locked ánimas cannot be personalised');
+  story.wear('aitor', 'noista');
+  const aitor = story.battleParty(true).find(m => m.id === 'aitor');
+  assert.equal(aitor.scarf, '#3d5a8a');
+  assert.equal(story.battleParty(true).find(m => m.id === 'gerard').scarf, '#e2483d');
+  const reloaded = new Story(['caught', 'noista']);
+  reloaded.scarves = JSON.parse(JSON.stringify(story.scarves));
+  assert.equal(reloaded.scarfOf('aitor', 'noista'), 'noche');
+  reloaded.scarves = { aitor: { noista: '#fff' }, intruder: { noista: 'rojo' } };
+  assert.deepEqual(reloaded.scarves, {}, 'bad saved data is dropped');
+});

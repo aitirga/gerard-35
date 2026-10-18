@@ -19,3 +19,9 @@ test('a new environment needs no renderer changes and labels remain text', () =>
   assert.ok(svg.includes('&lt;New &amp; place&gt;'));
   assert.ok(svg.includes('&lt;Door&gt;'));
 });
+test('the partner gets a marker of their own', () => {
+  const environment = ENVIRONMENTS.meridiana;
+  assert.ok(!renderWorldMap(environment, environment.spawn).includes('map-partner'));
+  const svg = renderWorldMap(environment, environment.spawn, { cell: { x: 3, z: 4 }, name: 'Aitor' });
+  assert.ok(svg.includes('cx="3.5" cy="4.5" r=".7" class="map-partner"><title>Aitor</title>'));
+});

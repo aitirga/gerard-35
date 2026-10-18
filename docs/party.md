@@ -10,7 +10,7 @@ character stats, and how classes are shared. Numbers are provisional and meant t
 | --- | --- | --- |
 | Plays | Gerard | Aitor (chapter 2 on) |
 | Input | Keyboard, mouse and the first controller | The second controller |
-| Exploring | Walks, runs, uses things, menu, panels, camera | Walks, runs (hold B), uses what is in reach, advances dialogue |
+| Exploring | Walks, runs, uses things, menu, their half of the status screen, camera | Walks, runs (hold B), uses what is in reach, advances dialogue, their half of the status screen (Y) |
 | Battle | Gerard's turns (and Bernat's in chapter 1) | Aitor's turns |
 
 - **Without a second controller Aitor follows Gerard** like Bernat did, walking Gerard's own
@@ -73,10 +73,14 @@ Fuerza, Defensa).
   anyone in the party can wear it, both at once if they like. Wearing it adds its stats
   (Noísta: Magia +2, Espíritu +2, Defensa −1) and its skills, and its look shows in fights
   (the scarf).
-- Pick who wears what in **Personaje** (C): each member's card shows their stats with the class
-  bonus and the class buttons. Gerard wears Noísta until told otherwise.
-- Who wears what is a choice that changes back and forth, so it is kept in the browser, not in
-  the saved story flags.
+- Pick who wears what in the status screen's **Ánimas** page (C, then E / R): the status screen
+  calls classes *ánimas*. It shows what the ánima changes, its skills, who wears it and the
+  colour of its scarf, which each member picks for themselves (it shows in fights and on the
+  portrait). Gerard wears Noísta until told otherwise. With a second player each player opens
+  their own half of the status screen (Gerard left, Aitor right) and dresses only their own
+  character.
+- Who wears what, and the scarf colours, are choices that change back and forth, so they are kept
+  in the browser, not in the saved story flags.
 
 ## How it is built
 
@@ -91,7 +95,8 @@ Fuerza, Defensa).
 - `src/game.ts`: a partner per chapter (Bernat, Aitor) who follows or, for Aitor, walks on his
   own collider; the tether ring; the shared camera; Aitor's battle model.
 - `src/battle-ui.ts`: whose turn it is, and only that player's input counts.
-- `src/exploration-ui.ts`: stats and the class picker in Personaje.
+- `src/exploration-ui.ts`: the status screen, split in two halves when player 2 is there.
+- `src/animas.ts`: the scarf palette; `story.tie` / `story.scarves` keep each member's pick.
 - Tests: `tests/party.test.mjs`. Screenshots: `just screenshots duo` (fakes two controllers).
 
 ## Open questions

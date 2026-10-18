@@ -7,6 +7,7 @@ import { createBattleScene } from './battle-scene';
 import { type BattleEffect, type BattlePhase, type BattleState, type ClassId, type Encounter } from './battle';
 import { createPalace, createPalaceApproach, type PalaceApproach } from './palace';
 import { wearClass } from './classes';
+import { SCARVES } from './animas';
 import { createQueenHands } from './queen-hands';
 import { STREET_END_AREA, WanderingPack } from './encounters';
 import { createMinion } from './minion';
@@ -245,7 +246,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     }
     battleScene.possess(possessed);
     // The class look is the boy's outfit; at 35 he wakes in his pyjamas (the class stays in fights).
-    if (story.gerardClass && !story.adult) wearClass(player, story.gerardClass);
+    if (story.gerardClass && !story.adult) wearClass(player, story.gerardClass, SCARVES[story.scarfOf('gerard', story.gerardClass)].colour);
     toneTarget = environment.id === 'palacio' || (SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo') ? 1 : 0;
     // Bernat first steps out of his own front door; scene changes place a partner beside Gerard instead.
     const mate = mateHere();

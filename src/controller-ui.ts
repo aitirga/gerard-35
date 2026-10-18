@@ -39,7 +39,7 @@ export function createControllerUI(callbacks: {
       <p class="menu-intro">La aventura sigue aquí.</p>
       <nav class="adventure-options" aria-label="Menú de aventura">
         <button data-close><span>01</span><strong>Continuar</strong><small>Volver a la aventura →</small></button>
-        <button data-panel="character"><span>02</span><strong>Personaje</strong><small>Gerard y tu progreso</small></button>
+        <button data-panel="character"><span>02</span><strong>Estado</strong><small>Gerard, ánimas y diario</small></button>
         <button data-panel="items"><span>03</span><strong>Objetos</strong><small>Comunes y objetos clave</small></button>
         <button data-panel="map"><span>04</span><strong>Mapa</strong><small>Dónde estás y qué hay cerca</small></button>
         <button data-open="controller"><span>05</span><strong>Mando</strong><small>Conectar, probar y asignar</small></button>
@@ -57,7 +57,7 @@ export function createControllerUI(callbacks: {
     </section>
     <section data-page="help" hidden>
       <p class="menu-intro">Explora. Habla con todo el mundo. Prueba.</p>
-      <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Con las zapatillas: mantén Shift · Mantén B (Volver) en el mando</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / objetos / mapa</dt><dd>Desde el menú · C / I / M en el teclado · Personaje con el botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox)</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–4 o flechas · Enter para confirmar · Esc para volver</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
+      <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Con las zapatillas: mantén Shift · Mantén B (Volver) en el mando</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Estado</dt><dd>C en el teclado (I / M abren Objetos y Mapa) · Botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox) · Pasa de página con Q / E o L / R</dd></div><div><dt>Dos jugadores</dt><dd>Con Aitor en el mando 2, cada uno abre su estado en su mitad de la pantalla</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–4 o flechas · Enter para confirmar · Esc para volver</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
       <p class="controller-note">En mandos Nintendo reconocidos: A confirma y B vuelve. Mantén B mientras te mueves para correr. Puedes cambiar los controles en Mando.</p>
     </section>
     <footer class="menu-footer">↑ ↓ Elegir &nbsp; · &nbsp; Enter Confirmar &nbsp; · &nbsp; Esc Volver</footer>`;
@@ -184,8 +184,8 @@ export function createControllerUI(callbacks: {
     previousDirection2 = focused ? state2.direction : null;
     const input2 = edges2.update(state2, `${secondIdentity}:${root.open ? 'menu' : callbacks.context()}`, now, focused && !mapping && !root.open);
     callbacks.partnerDirection(input2.direction, input2.stick, input2.running);
-    // Player 2 plays and talks; the menu, panels and camera stay with player 1.
-    for (const action of input2.events) if (action !== 'menu' && action !== 'character' && action !== 'overview') callbacks.action(action, 2);
+    // Player 2 plays, talks and has their own half of the status screen; the menu and camera stay with player 1.
+    for (const action of input2.events) if (action !== 'menu' && action !== 'overview') callbacks.action(action, 2);
     const state = latest ? readController(latest, custom, previousDirection) : idleController();
     previousDirection = focused ? state.direction : null;
     const context = `${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}`;
@@ -194,7 +194,7 @@ export function createControllerUI(callbacks: {
     for (const action of input.events) {
       if (root.open) {
         if (action === 'menu') close();
-        else if (action === 'character' || action === 'overview') continue;
+        else if (action === 'character' || action === 'overview' || action === 'prev' || action === 'next') continue;
         else if (action === 'cancel') back();
         else if (action === 'confirm') clickControllerButton(root);
         else focusControllerButton(root, action);
@@ -215,9 +215,25 @@ export function createControllerUI(callbacks: {
       if (latest && profile) el.textContent = `Stick / Cruceta · Elegir / ${help}`;
       else el.textContent = el.dataset.keyboardHelp;
     });
+    // Each half of the status screen names its own player's buttons; player 1 falls back to the keyboard.
+    for (const [player, source, shown] of [[1, latest, !!(latest && profile && !custom)], [2, second, !!second && !profiles[second.id]]] as const) {
+      const sheet = document.querySelector<HTMLElement>(`.status-sheet[data-player="${player}"]:not([hidden])`);
+      if (!sheet) continue;
+      const labels = shown && source ? padLabels(source.id) : player === 1 ? undefined : padLabels('');
+      const keys = labels ?? { prev: 'Q', next: 'E', confirm: 'Enter', cancel: 'Esc' };
+      const write = (selector: string, text: string) => { const el = sheet.querySelector(selector); if (el && el.textContent !== text) el.textContent = text; };
+      write('[data-tab-key="prev"]', keys.prev); write('[data-tab-key="next"]', keys.next); write('.journal-close kbd', keys.cancel);
+      write('.sheet-help', `${keys.prev} / ${keys.next} · Página   ·   ${labels ? 'Cruceta' : 'Flechas'} · Elegir   ·   ${keys.confirm} · Usar   ·   ${keys.cancel} · Cerrar`);
+    }
     frame = requestAnimationFrame(poll);
   }
   frame = requestAnimationFrame(poll);
   return { open, destroy() { cancelAnimationFrame(frame); close(); window.removeEventListener('keydown', keydown, { capture: true }); root.remove(); } };
+}
+/** What a recognised pad prints on its shoulder and face buttons. */
+function padLabels(id: string) {
+  if (isNintendo(id)) return { prev: 'L', next: 'R', confirm: 'A', cancel: 'B' };
+  if (/playstation|dualshock|dualsense|054c/i.test(id)) return { prev: 'L1', next: 'R1', confirm: '✕', cancel: '○' };
+  return { prev: 'LB', next: 'RB', confirm: 'A', cancel: 'B' };
 }
 function bindingLabel(binding: Binding) { return 'button' in binding ? `Botón ${binding.button}` : `Eje ${binding.axis} ${binding.sign > 0 ? '+' : '−'}`; }

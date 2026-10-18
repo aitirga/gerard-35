@@ -101,3 +101,14 @@ test('the top face button opens the character panel and Select toggles the overv
   const custom = defaultProfile(pad());
   assert.equal(readController(p, custom).character, false); assert.equal(readController(p, custom).overview, false);
 });
+
+test('L and R turn the status screen pages on recognised pads only', () => {
+  const p = pad('Xbox'); p.buttons[4].pressed = true;
+  assert.equal(readController(p).prev, true); assert.equal(readController(p).next, false);
+  const edge = new ControllerEdges(); edge.update(idleController(), 'journal:character', 0);
+  assert.deepEqual(edge.update(readController(p), 'journal:character', 1).events, ['prev']);
+  assert.deepEqual(edge.update(readController(p), 'journal:character', 2).events, [], 'holding L turns one page');
+  p.buttons[4].pressed = false; p.buttons[5].pressed = true;
+  assert.deepEqual(edge.update(readController(p), 'journal:character', 3).events, ['next']);
+  assert.equal(readController(p, defaultProfile(pad())).next, false);
+});

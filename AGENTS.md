@@ -15,3 +15,4 @@
 - The HUD only shows what the player has, can press or is next to: a key hint (key + verb, e.g. "Shift · Correr") the first time an action becomes possible, which disappears once used; a note when an item is gained; and the prompt for whatever is within reach.
 - Teach by doing: each new control or system appears right before it is needed, so trying it is how it is learned.
 - Gates are diegetic: anything that blocks the player is a person or thing in the world saying why.
+- The status screen's Diario is Gerard's memory and a thought he cannot shake, written cryptically; its mission line stays vague ("Entender qué está pasando."). Neither ever names a place to go, a person to talk to or an action to take.
