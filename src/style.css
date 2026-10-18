@@ -10,27 +10,11 @@ button:focus-visible { outline: 2px solid #dfbd7e; outline-offset: 5px; }
 .vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 55% 47%, transparent 26%, #0a19224d 73%, #07141bac 100%); }
 #hud { position: fixed; inset: 0; pointer-events: none; user-select: none; }
 .eyebrow { font-size: 9px; font-weight: 500; letter-spacing: .19em; color: #aab9b3; }
-.bottom-bar { position: absolute; bottom: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; }
-.controls { padding: 12px 14px; border: 1px solid #a6c0b426; border-radius: 9px; background: #102329b8; backdrop-filter: blur(12px); }
-.controls { display: flex; align-items: center; gap: 14px; }
-.controls strong { display: block; font-size: 11px; font-weight: 500; color: #dddcd0; }
-.controls span { display: block; margin-top: 5px; font-size: 9px; color: #94a9a4; }
-.move-keys { text-align: center; }
-.move-keys > div { display: flex; gap: 3px; margin-top: 3px; }
 kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b43b; border-radius: 3px; font-family: inherit; font-size: 12px; line-height: 18px; color: #bdc9bd; background: #a6c0b406; }
 .touch-controls { display: none; }
 #error { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); background: #172b30; border: 1px solid #c5b28d; border-radius: 12px; padding: 30px; max-width: 90vw; }
 #error button { padding: 10px 20px; border: 0; border-radius: 5px; background: #e5bd7b; color: #172b30; }
-@media (max-width: 1100px) {
-  .bottom-bar { bottom: 18px; left: 18px; right: 18px; }
-}
-@media (max-width: 760px) {
-  .bottom-bar { left: 14px; right: 14px; bottom: 14px; }
-  .controls { gap: 10px; }
-  .controls span { display: none; }
-}
 @media (pointer: coarse) {
-  .controls { display: none; }
   .touch-controls { display: grid; position: absolute; left: 18px; bottom: 112px; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 44px); gap: 5px; pointer-events: auto; }
   .touch-controls button { background: #1a343bbc; backdrop-filter: blur(8px); border: 1px solid #a6c0b440; color: #e0d8bb; border-radius: 7px; touch-action: none; font-size: 19px; }
   .touch-controls button:active { background: #476c65; }
@@ -38,7 +22,6 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   .touch-controls button:nth-child(2) { grid-column: 1; }
 }
 @media (max-height: 550px) {
-  .bottom-bar { bottom: 10px; }
   .touch-controls { bottom: 90px; }
 }
 
@@ -286,7 +269,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
   --battle-paper: var(--ui-paper);
 }
 #battle { --battle-ink: var(--ui-ink); --battle-gold: var(--ui-gold); --battle-paper: var(--ui-paper); }
-.place-panel, .controls, #interact, #error {
+.place-panel, #interact, #error {
   border-radius: 2px; background: var(--ui-surface); color: var(--ui-paper);
   border-color: var(--ui-line); box-shadow: var(--ui-shadow);
 }

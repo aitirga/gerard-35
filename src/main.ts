@@ -111,7 +111,6 @@ try {
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
   let beats = Promise.resolve();
   const learned: Partial<Record<string, () => boolean>> = {
-    move: () => sessionSteps > 0,
     run: () => game.running,
     items: () => exploration.active === 'items',
     party: () => exploration.active === 'character',

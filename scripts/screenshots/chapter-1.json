@@ -14,7 +14,7 @@
       "caption": "Chapter card on the birthday morning"
     },
     {
-      "until": "!!document.querySelector('#hud[data-dialogue]') || !document.querySelector('.key-hint').hidden",
+      "until": "document.querySelector('#story-card').hidden",
       "timeout": 30000
     },
     {
@@ -27,7 +27,7 @@
     },
     {
       "shot": "bedroom",
-      "caption": "Exploring the bedroom; the only help is a key hint"
+      "caption": "Exploring the bedroom with no on-screen help"
     },
     {
       "teleport": "home-floor-2",

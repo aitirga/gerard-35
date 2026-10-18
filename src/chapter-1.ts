@@ -195,7 +195,6 @@ export const BATTLE_LINES = {
  * They never say what to do or where to go; that comes from exploring and from people.
  */
 export const HINTS = {
-  move: { keys: 'W A S D', verb: 'Caminar' },
   run: { keys: 'Shift', verb: 'Correr' },
   items: { keys: 'I', verb: 'Objetos' },
   party: { keys: 'C', verb: 'Equipo' },
