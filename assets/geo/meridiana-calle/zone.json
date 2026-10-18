@@ -25,9 +25,8 @@
     "checked": "2026-10-18",
     "streetview_capture": "",
     "notes": [
-      "SKETCH: drawn by hand (OpenStreetMap and Google could not be reached from the build machine). The flat's exact block is not known: open question in docs/chapter-2.md.",
-      "Avinguda Meridiana by Fabra i Puig: a very wide avenue, two carriageways with a planted median, side roads, plane trees, blocks of flats of seven to ten storeys with shops on the ground floor.",
-      "When fetching real data, set rotation_deg so the avenue runs left to right (about 70) and redraw places and props."
+      "DESIGNED: drawn by hand in sketch.json, inspired by the real place; no map data. The flat's exact block is not known: open question in docs/chapter-2.md.",
+      "Avinguda Meridiana by Fabra i Puig: a very wide avenue, two carriageways with a planted median, side roads, plane trees, blocks of flats of seven to ten storeys with shops on the ground floor."
     ],
     "viewpoints": [
       {

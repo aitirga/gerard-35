@@ -1,0 +1,66 @@
+{
+  "title": "Chapter 2 · The castle's threat",
+  "description": "La Reina Bubbaloo's castle on the Rec Comtal school at its most threatening (no ánimas: every spiked tower, thorns, eyes, the storm), then as Gerard and Aitor gather ánimas: the towers fall one by one, and the castle on the network map shrinks with them. Ánimas are added by script (the friends' missions do not exist yet).",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        86,
+        74
+      ]
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "threat-full",
+      "delay": 3500,
+      "caption": "Threat 1: twelve spiked towers, thorns, glowing eyes, a storm over the crown"
+    },
+    {
+      "eval": "window.gerard.story.merge(['anima-nuria', 'anima-uri']); window.gerard.game.refreshStory()"
+    },
+    {
+      "shot": "threat-two-animas",
+      "delay": 2500,
+      "caption": "Two ánimas (threat 0.7): the four small outer towers and the glowing eyes are gone"
+    },
+    {
+      "eval": "for (const flag of ['anima-nuria', 'anima-uri']) window.gerard.story.flags.delete(flag); window.gerard.game.refreshStory(); undefined"
+    },
+    {
+      "eval": "import('/src/map-markers.ts').then(m => { void window.gerard.travelUI.show('trinitat-vella', {}, m.cityMarkers({ castle: true, threat: 1 })) }) && undefined"
+    },
+    {
+      "until": "window.gerard.travelUI.open",
+      "timeout": 20000
+    },
+    {
+      "shot": "map-threat-full",
+      "delay": 1500,
+      "caption": "On the network map: the castle at threat 1"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "import('/src/map-markers.ts').then(m => { void window.gerard.travelUI.show('trinitat-vella', {}, m.cityMarkers({ castle: true, threat: .25 })) }) && undefined"
+    },
+    {
+      "until": "window.gerard.travelUI.open",
+      "timeout": 20000
+    },
+    {
+      "shot": "map-threat-low",
+      "delay": 1500,
+      "caption": "And with most ánimas gathered (threat 0.25): smaller, fewer towers, no storm"
+    }
+  ]
+}

@@ -25,9 +25,8 @@
     "checked": "2026-10-18",
     "streetview_capture": "",
     "notes": [
-      "SKETCH: drawn by hand (OpenStreetMap and Google could not be reached from the build machine). Real: the school (Institut Escola Rec Comtal, 41.4510504, 2.1916797), its two addresses (Via de Bàrcino 90: primary and secondary; Mare de Déu de Lorda 25: infants), the two streets and the underground passage that joins them. Invented: the exact layout, the cross streets and the blocks.",
-      "Trinitat Vella: 1950s-60s blocks of flats of four and five storeys in brick and cream render; Via de Bàrcino is the main street into the neighbourhood.",
-      "When fetching real data, set rotation_deg so Via de Bàrcino runs left to right and the school's front faces the camera, and move places and props."
+      "DESIGNED: drawn by hand in sketch.json, inspired by the real place; no map data. Real: the school (Institut Escola Rec Comtal, 41.4510504, 2.1916797), its two addresses (Via de Bàrcino 90: primary and secondary; Mare de Déu de Lorda 25: infants), the two streets and the underground passage that joins them. Invented: the exact layout, the cross streets and the blocks.",
+      "Trinitat Vella: 1950s-60s blocks of flats of four and five storeys in brick and cream render; Via de Bàrcino is the main street into the neighbourhood."
     ],
     "viewpoints": [
       {

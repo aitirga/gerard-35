@@ -18,8 +18,8 @@ src/environments.ts  geoEnvironment() ─► Environment (grid, spawn, props, in
 src/geo-scenery.ts   buildGeo()       ─► PlayCanvas meshes: ground, roads, river, buildings, hills
 ```
 
-Without network access to OpenStreetMap a zone can be **sketched** by hand in
-`assets/geo/<zone>/sketch.json` (see [barcelona.md](barcelona.md#sketched-zones-when-openstreetmap-cannot-be-reached)):
+A zone can also be **designed by hand** in `assets/geo/<zone>/sketch.json`, inspired by the real
+place and with no map data (Barcelona's zones, see [barcelona.md](barcelona.md#designed-zones)):
 `build` uses it when there is no `osm.json`. Places may also be doors (`to`) or left to the story
 (no `lines`), and `anchors` name points for the game's own pieces (the palace on the school).
 

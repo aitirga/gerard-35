@@ -6,6 +6,7 @@
  */
 import type { ControlAction } from './controller';
 import { renderCityMap } from './city-map';
+import type { MapMarker } from './map-markers';
 import { LINES, STATIONS, destinations, linesAt, route, type Closures, type Leg } from './transit';
 
 const escape = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -17,10 +18,10 @@ export function createTravelUI(hud: HTMLElement) {
   const root = document.createElement('dialog');
   root.id = 'travel';
   root.setAttribute('aria-labelledby', 'travel-title');
-  root.innerHTML = `<header class="travel-heading"><div><span class="battle-kicker">METRO · RODALIES</span><h1 id="travel-title"></h1><p class="travel-lines"></p></div><p class="travel-status" aria-live="polite"></p></header><div class="travel-map"></div><p class="travel-help"><span><kbd>←</kbd><kbd>→</kbd> Elegir</span><span><kbd>Enter</kbd> Viajar</span><span><kbd>Esc</kbd> Volver arriba</span></p>`;
+  root.innerHTML = `<header class="travel-heading"><div><span class="battle-kicker">METRO</span><h1 id="travel-title"></h1><p class="travel-lines"></p></div><p class="travel-status" aria-live="polite"></p></header><div class="travel-map"></div><p class="travel-help"><span><kbd>←</kbd><kbd>→</kbd> Elegir</span><span><kbd>Enter</kbd> Viajar</span><span><kbd>Esc</kbd> Volver arriba</span></p>`;
   hud.append(root);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let from = '', options: Closures = {}, castle = false;
+  let from = '', options: Closures = {}, markers: readonly MapMarker[] = [];
   let choices: string[] = [], selected: string | undefined;
   let finish: ((to: string | undefined) => void) | undefined;
   let travelling = false;
@@ -30,7 +31,7 @@ export function createTravelUI(hud: HTMLElement) {
   function render(trip?: readonly Leg[]) {
     get('#travel-title').textContent = STATIONS[from].name;
     get('.travel-lines').innerHTML = linesAt(from).map(l => badge(l.id)).join('');
-    get('.travel-map').innerHTML = renderCityMap({ current: from, selectable: trip ? [] : choices, selected: trip ? undefined : selected, castle, route: trip, label: `Plano de la red desde ${STATIONS[from].name}` });
+    get('.travel-map').innerHTML = renderCityMap({ current: from, selectable: trip ? [] : choices, selected: trip ? undefined : selected, markers, route: trip, label: `Plano de la red desde ${STATIONS[from].name}` });
     const legs = !trip && selected ? route(from, selected, options) : undefined;
     get('.travel-status').innerHTML = trip ? '' : selected && legs
       ? `${escape(STATIONS[selected].name)} · ${legs.map(l => badge(l.line)).join('<i>›</i>')}`
@@ -108,10 +109,10 @@ export function createTravelUI(hud: HTMLElement) {
 
   return {
     get open() { return root.open; },
-    /** Shows the map from `station`; resolves with the destination, or nothing if they go back up. */
-    show(station: string, closures: Closures = {}, castleShown = false): Promise<string | undefined> {
+    /** Shows the map from `station` with the story's `icons`; resolves with the destination, or nothing if they go back up. */
+    show(station: string, closures: Closures = {}, icons: readonly MapMarker[] = []): Promise<string | undefined> {
       close();
-      from = station; options = closures; castle = castleShown;
+      from = station; options = closures; markers = icons;
       choices = destinations(from, closures); selected = choices[0];
       root.open = true; render();
       window.addEventListener('keydown', keydown, { capture: true });

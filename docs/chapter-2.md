@@ -45,10 +45,10 @@ replaced by **open progression**, as decided on 2026-10-18:
    broadcast:
    - a red **ÚLTIMA HORA** band and the headline *"Aparece un castillo rosa encima de la escuela
      Rec Comtal"*, with the subtitle *"Todos los alumnos estaban dentro"*;
-   - **images in a loop**: an aerial map of Trinitat Vella around the school (the real
-     neighbourhood outline, the Meridiana, the Ronda, the Besòs, the L1 and the rail line), slowly
-     panning like a helicopter shot, with the pink castle pulsing on the school; it cuts between
-     the wide shot and a close one, as a news channel does;
+   - **filmed images in a loop**: the screen cuts to Trinitat Vella in 3D, the castle on the
+     school at its most threatening, filmed like real news: from the helicopter, the reporter
+     in front of the cordon with the castle behind her, a neighbour's shaky phone, the street
+     behind a patrol car with its lights going (`docs/barcelona.md` § The TV news set);
    - a **ticker** along the bottom with the day's other news. This is where the first
      **hidden clues** live (see below): *"Rodalies: la R4 se amplía desde La Sagrera hasta
      Cardedeu"*, among ordinary items.
@@ -64,9 +64,9 @@ replaced by **open progression**, as decided on 2026-10-18:
 
 - **On foot** inside each place (a playable scene: a street, a square, a friend's house).
 - **By metro and train** between places: each station entrance is an interaction (*"Bajar al
-  metro"*, *"Coger el tren"*). It opens the **network map** (the plan on the station wall,
-  `docs/barcelona.md`): Barcelona drawn schematically with its sea, mountains, avenues and
-  landmarks, and the metro and Rodalies lines over it. Gerard picks a station; the train runs along
+  metro"*). It opens the **network map** (`docs/barcelona.md`): a cartoon Barcelona with its sea,
+  hills, districts, avenues and famous places as icons, and for now only the L1 (red) and L5
+  (blue); the train to Cardedeu comes with Cardedeu. Gerard picks a station; the train runs along
   the line on the map; they come up out of the destination's entrance.
 - The map shows **where Gerard is**, the lines and their stations; only stations that lead to a
   place are selectable. It never marks a friend, a mission or "go here": the world tells him that.
@@ -91,6 +91,14 @@ ramparts poured over the playground. La Pompa (the gate) lets anyone in.
   place to probe, not a trap.
 - **Losing** wakes Gerard at home (see above). The palace remembers nothing; the party remembers
   everything.
+
+**The castle itself shows it.** At first it is very, very threatening: twice the size of the
+dream's palace, a ring of twelve spiked towers with lit slits, thorns along the ramparts, glowing
+eyes on the keep and a storm turning over the crown. Its **threat** goes from 1 down as the party
+gathers ánimas (`castleThreat` in `src/animas.ts`, 0.15 per ánima, never below 0.1); every piece
+has a threshold and falls when the threat drops below it: the small outer towers first, then the
+thorns, the storm, the eyes, and last the tall towers guarding the keep. The castle on the
+network map loses towers and shrinks with it.
 
 Guard strength is a pure function of the ánimas the party holds (`palaceGuards` in
 `src/battle.ts`). Provisional numbers: three guardians with 220 PV and 30-point hits with no
@@ -173,7 +181,8 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
 - `src/transit.ts`, `src/city-map.ts`, `src/travel-ui.ts`: lines, stations, the network map and the
   trip (`docs/barcelona.md`).
 - Scenes: `meridiana-calle` (the avenue and the metro) and `rec-comtal` (the school under the
-  palace), built with `just geo-build` from `assets/geo/<zone>/` (`docs/environment-styling.md`).
+  palace), designed by hand and built with `just geo-build` from `assets/geo/<zone>/`.
+- `src/news-set.ts`: the filmed news set; `src/map-markers.ts`: icons on the network map.
 - `src/game.ts`: proximity triggers (`story.triggers`), story redirects of doors
   (`story.redirect`), the palace standing on the school, the guards' fight.
 - Story events: `near` (walked up to a trigger), `arrive` (came out of a station), `battle` with
@@ -189,7 +198,8 @@ Done in the first slice (2026-10-18):
    ticker clue; replay with *"Mirar la tele"*.
 2. Aitor's diegetic gate at the front door until the news has been seen.
 3. `meridiana-calle`: the avenue outside the flat, the metro entrance, home's street door.
-4. The network map (L1–L5, R4 with its Cardedeu extension), travel along a line, arrival.
+4. The network map (cartoon Barcelona, L1 and L5, markers), travel along a line, arrival.
+8. The news filmed in 3D on a set in Trinitat Vella, and the castle's threat (towers, thorns, storm, eyes).
 5. `rec-comtal`: the school under the palace at Trinitat Vella, with the L1 entrance.
 6. The palace interior reused in chapter 2 with Aitor; the guardians' fight scaled by ánimas;
    escape allowed; falling wakes Gerard at home with everything kept.
@@ -197,10 +207,8 @@ Done in the first slice (2026-10-18):
 
 Next:
 
-1. Replace the two sketched scenes with OpenStreetMap data (`just geo meridiana-calle`,
-   `just geo rec-comtal`) on a machine that can reach OpenStreetMap, and style them from Street
-   View.
-2. La Sagrera station scene (R4 platform, the clue poster) and Cardedeu (the first friends).
+1. Polish the two designed scenes with photos of the real places (facades, the school's sign).
+2. La Sagrera station scene (the R4 platform, the clue poster), the R4 on the map, and Cardedeu (the first friends).
 3. Friends: who they are, where, their missions and ánimas (open question 1).
 4. The guards' fight presentation: their own model (now the minion, scaled up).
 5. The throne and the Queen's scene (block 4), then the second round (block 5).

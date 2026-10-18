@@ -29,7 +29,14 @@ export const NEWS = {
   headline: 'Aparece un castillo rosa encima de la escuela Rec Comtal',
   sub: 'Todos los alumnos estaban dentro · Trinitat Vella, Barcelona',
   live: 'EN DIRECTO · TRINITAT VELLA',
-  shots: ['IMÁGENES AÉREAS', 'TRINITAT VELLA · VIA DE BÀRCINO'],
+  /** What the screen says over each shot of the filmed set (src/news-set.ts). */
+  shots: {
+    aerial: 'IMÁGENES DESDE EL HELICÓPTERO',
+    reporter: 'EN DIRECTO · VIA DE BÀRCINO',
+    phone: 'IMÁGENES DE UN VECINO',
+    street: 'TRINITAT VELLA · 08:16',
+  },
+  reporter: { name: 'Laia Prats', role: 'Desde Trinitat Vella' },
   ticker: [
     'Los Mossos piden a los vecinos que no se acerquen a la escuela',
     'Rodalies: la R4 se amplía desde La Sagrera hasta Cardedeu, primer tren esta mañana',

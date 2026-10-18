@@ -1,18 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CITY_MAP, LINES, STATIONS, STATION_PLACES, destinations, entranceId, linesAt, route, stationOf } from '../src/transit.ts';
+import { ICONS, cityMarkers } from '../src/map-markers.ts';
+import { renderCityMap } from '../src/city-map.ts';
+import { castleThreat } from '../src/animas.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { canWalk } from '../src/movement.ts';
 
-test('every line names known stations and the map has its layers', () => {
+test('the cartoon map has its hand-drawn layers and, for now, only the red and blue lines', () => {
+  assert.deepEqual(LINES.map(l => [l.id, l.colour]), [['l1', '#e1393e'], ['l5', '#1f78c0']]);
   for (const line of LINES) {
     assert.ok(line.stations.length > 1, line.id);
     for (const id of line.stations) assert.ok(STATIONS[id], `${line.id}: ${id}`);
-    for (const id of line.extension ?? []) assert.ok(line.stations.includes(id), `${line.id} extends to a station it has`);
   }
-  assert.equal(CITY_MAP.districts.length >= 10, true);
-  assert.ok(CITY_MAP.sea.length > 4 && CITY_MAP.landmarks.some(l => l.id === 'rec-comtal'));
-  assert.match(CITY_MAP.attribution, /CartoBCN/);
+  assert.ok(CITY_MAP.districts.length >= 10 && CITY_MAP.districts.every(d => d.poly.length >= 5 && d.colour), 'districts are soft blobs with a colour');
+  assert.ok(CITY_MAP.sea.length > 4 && CITY_MAP.places.some(p => p.id === 'rec-comtal') && CITY_MAP.places.some(p => p.id === 'home'));
+  for (const l of CITY_MAP.landmarks) assert.ok(ICONS[l.icon], `${l.id} has an icon to draw`);
+});
+
+test('markers: landmarks, home, and the school until the castle appears, as threatening as the story says', () => {
+  const before = cityMarkers({ castle: false, threat: 1 });
+  assert.ok(before.some(m => m.icon === 'school') && !before.some(m => m.icon === 'bubbaloo'));
+  const worst = cityMarkers({ castle: true, threat: 1 }).find(m => m.icon === 'bubbaloo');
+  const tamed = cityMarkers({ castle: true, threat: .1 }).find(m => m.icon === 'bubbaloo');
+  assert.ok(worst.size > tamed.size, 'it shrinks as people are helped');
+  const towers = level => (ICONS.bubbaloo(level).match(/<path/g) ?? []).length;
+  assert.ok(towers(1) > towers(.1), 'and loses towers');
+  assert.match(renderCityMap({ markers: [worst], current: 'fabra-i-puig', selectable: ['trinitat-vella'] }), /data-marker="castle"/);
+  assert.equal(castleThreat(0), 1);
+  assert.ok(castleThreat(2) < castleThreat(1) && castleThreat(20) >= .1);
 });
 
 test('the L1 runs from home to the Rec Comtal without changing', () => {
@@ -23,13 +39,13 @@ test('the L1 runs from home to the Rec Comtal without changing', () => {
 });
 
 test('trips change lines at shared stations and prefer staying on', () => {
-  const legs = route('fabra-i-puig', 'cardedeu');
-  assert.deepEqual(legs.map(l => l.line), ['l1', 'r4'], 'La Sagrera: L1 to the R4');
+  const legs = route('fabra-i-puig', 'sagrada-familia');
+  assert.deepEqual(legs.map(l => l.line), ['l1', 'l5'], 'La Sagrera: from the red line to the blue');
   assert.equal(legs[0].stations.at(-1), 'la-sagrera');
   assert.equal(legs[1].stations[0], 'la-sagrera');
-  assert.ok(linesAt('la-sagrera').map(l => l.id).includes('r4'));
+  assert.deepEqual(linesAt('la-sagrera').map(l => l.id), ['l1', 'l5']);
   // A closed line is avoided, or there is no way at all.
-  assert.equal(route('fabra-i-puig', 'cardedeu', { lines: ['r4'] }), undefined);
+  assert.equal(route('fabra-i-puig', 'sagrada-familia', { lines: ['l5'] }), undefined);
   assert.equal(route('fabra-i-puig', 'trinitat-vella', { stations: ['sant-andreu'] }), undefined, 'only the L1 reaches Trinitat Vella');
 });
 

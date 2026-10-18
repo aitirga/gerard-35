@@ -1,143 +1,1124 @@
 {
-  "id": "barcelona",
-  "name": "Barcelona",
-  "note": "Hand-authored schematic layers in [lat, lon]. Approximate (a drawn map, not a survey): check a station against TMB or Rodalies before building a place on it. The R4 to Cardedeu is the game's own extension.",
-  "frame": { "lat": 41.405, "lon": 2.165, "rotation_deg": -60, "margin_m": 600 },
-  "districts_source": "https://raw.githubusercontent.com/martgnz/bcn-geodata/master",
-  "attribution": "Distritos y barrios: Ajuntament de Barcelona / CartoBCN (CC-BY), vía bcn-geodata",
-  "coast": [
-    [41.288, 2.128], [41.296, 2.142], [41.318, 2.160], [41.338, 2.168], [41.352, 2.176], [41.362, 2.184],
-    [41.3684, 2.1903], [41.378, 2.1935], [41.385, 2.2010], [41.393, 2.2080], [41.399, 2.2150], [41.405, 2.2200],
-    [41.411, 2.2290], [41.419, 2.2350], [41.432, 2.2440], [41.446, 2.2510], [41.462, 2.2640]
+ "id": "barcelona",
+ "name": "Barcelona",
+ "note": "Hand-drawn, cartoon Barcelona for the network map (docs/barcelona.md). Every shape is a few points in [lat, lon], inspired by the real city and simplified on purpose; the renderer rounds them off. No map data is downloaded.",
+ "frame": {
+  "lat": 41.405,
+  "lon": 2.165,
+  "rotation_deg": -60,
+  "margin_m": 900
+ },
+ "coast": [
+  [
+   41.288,
+   2.128
   ],
-  "hills": [
-    { "id": "collserola", "name": "Collserola", "poly": [
-      [41.372, 2.050], [41.392, 2.078], [41.405, 2.095], [41.418, 2.112], [41.428, 2.128], [41.440, 2.146],
-      [41.452, 2.162], [41.462, 2.172], [41.478, 2.168], [41.492, 2.150], [41.480, 2.100], [41.455, 2.060], [41.420, 2.035], [41.385, 2.030]
-    ] },
-    { "id": "montjuic", "name": "Montjuïc", "poly": [
-      [41.3712, 2.1450], [41.3722, 2.1600], [41.3690, 2.1700], [41.3640, 2.1745], [41.3570, 2.1700],
-      [41.3520, 2.1590], [41.3560, 2.1470], [41.3640, 2.1430]
-    ] }
+  [
+   41.3,
+   2.148
   ],
-  "rivers": [
-    { "id": "besos", "name": "Besòs", "line": [[41.500, 2.188], [41.486, 2.191], [41.472, 2.195], [41.461, 2.199], [41.452, 2.204], [41.440, 2.212], [41.429, 2.224], [41.419, 2.235]] },
-    { "id": "llobregat", "name": "Llobregat", "line": [[41.410, 2.030], [41.380, 2.055], [41.355, 2.080], [41.330, 2.105], [41.312, 2.125], [41.296, 2.142]] }
+  [
+   41.33,
+   2.165
   ],
-  "avenues": [
-    { "id": "diagonal", "name": "Diagonal", "size": 3, "line": [[41.3846, 2.1050], [41.3870, 2.1228], [41.3920, 2.1440], [41.3960, 2.1600], [41.3995, 2.1690], [41.4009, 2.1795], [41.4036, 2.1870], [41.4060, 2.2000], [41.4105, 2.2190]] },
-    { "id": "gran-via", "name": "Gran Via", "size": 3, "line": [[41.3700, 2.1300], [41.3750, 2.1490], [41.3858, 2.1638], [41.3893, 2.1677], [41.3947, 2.1750], [41.4036, 2.1870], [41.4120, 2.2010], [41.4200, 2.2150]] },
-    { "id": "meridiana", "name": "Meridiana", "size": 3, "line": [[41.4036, 2.1870], [41.4097, 2.1875], [41.4163, 2.1873], [41.4236, 2.1872], [41.4297, 2.1840], [41.4380, 2.1865], [41.4470, 2.1890], [41.4600, 2.1830], [41.4750, 2.1800]] },
-    { "id": "parallel", "name": "Paral·lel", "size": 2, "line": [[41.3750, 2.1490], [41.3748, 2.1600], [41.3751, 2.1683], [41.3760, 2.1760]] },
-    { "id": "passeig-de-gracia", "name": "Passeig de Gràcia", "size": 2, "line": [[41.3870, 2.1700], [41.3920, 2.1650], [41.3960, 2.1600], [41.4020, 2.1560]] },
-    { "id": "rambla", "name": "La Rambla", "size": 1, "line": [[41.3870, 2.1700], [41.3810, 2.1733], [41.3765, 2.1757]] },
-    { "id": "ronda-de-dalt", "name": "Ronda de Dalt", "size": 2, "line": [[41.3846, 2.1050], [41.4000, 2.1150], [41.4180, 2.1330], [41.4290, 2.1440], [41.4400, 2.1600], [41.4460, 2.1780], [41.4490, 2.1900]] },
-    { "id": "ronda-litoral", "name": "Ronda Litoral", "size": 2, "line": [[41.4490, 2.1900], [41.4450, 2.2020], [41.4330, 2.2160], [41.4220, 2.2270], [41.4120, 2.2240], [41.3990, 2.2100], [41.3880, 2.1960], [41.3780, 2.1840], [41.3700, 2.1760], [41.3550, 2.1600], [41.3400, 2.1420]] }
+  [
+   41.352,
+   2.176
   ],
-  "landmarks": [
-    { "id": "sagrada-familia", "name": "Sagrada Família", "kind": "temple", "at": [41.4036, 2.1744] },
-    { "id": "torre-glories", "name": "Torre Glòries", "kind": "tower", "at": [41.4036, 2.1894] },
-    { "id": "park-guell", "name": "Park Güell", "kind": "park", "at": [41.4145, 2.1527] },
-    { "id": "tibidabo", "name": "Tibidabo", "kind": "wheel", "at": [41.4218, 2.1187] },
-    { "id": "montjuic", "name": "Montjuïc", "kind": "castle", "at": [41.3634, 2.1660] },
-    { "id": "camp-nou", "name": "Camp Nou", "kind": "stadium", "at": [41.3809, 2.1228] },
-    { "id": "barceloneta", "name": "Barceloneta", "kind": "beach", "at": [41.3784, 2.1925] },
-    { "id": "forum", "name": "Fòrum", "kind": "sun", "at": [41.4105, 2.2266] },
-    { "id": "arc-de-triomf", "name": "Arc de Triomf", "kind": "arch", "at": [41.3910, 2.1806] },
-    { "id": "sant-pau", "name": "Sant Pau", "kind": "dome", "at": [41.4114, 2.1749] },
-    { "id": "rec-comtal", "name": "Escola Rec Comtal", "kind": "school", "at": [41.45105, 2.19168] },
-    { "id": "home", "name": "Casa", "kind": "home", "at": [41.4290, 2.1850] }
+  [
+   41.366,
+   2.188
   ],
-  "stations": [
-    { "id": "espanya", "name": "Espanya", "at": [41.3750, 2.1490] },
-    { "id": "rocafort", "name": "Rocafort", "at": [41.3790, 2.1546] },
-    { "id": "urgell", "name": "Urgell", "at": [41.3829, 2.1589] },
-    { "id": "universitat", "name": "Universitat", "at": [41.3858, 2.1638] },
-    { "id": "catalunya", "name": "Catalunya", "at": [41.3870, 2.1700] },
-    { "id": "urquinaona", "name": "Urquinaona", "at": [41.3887, 2.1734] },
-    { "id": "arc-de-triomf", "name": "Arc de Triomf", "at": [41.3911, 2.1806] },
-    { "id": "marina", "name": "Marina", "at": [41.3955, 2.1863] },
-    { "id": "glories", "name": "Glòries", "at": [41.4032, 2.1869] },
-    { "id": "clot", "name": "Clot", "at": [41.4097, 2.1875] },
-    { "id": "navas", "name": "Navas", "at": [41.4163, 2.1873] },
-    { "id": "la-sagrera", "name": "La Sagrera", "at": [41.4236, 2.1866] },
-    { "id": "fabra-i-puig", "name": "Fabra i Puig", "at": [41.4297, 2.1833] },
-    { "id": "sant-andreu", "name": "Sant Andreu", "at": [41.4357, 2.1897] },
-    { "id": "torras-i-bages", "name": "Torras i Bages", "at": [41.4426, 2.1904] },
-    { "id": "trinitat-vella", "name": "Trinitat Vella", "at": [41.4504, 2.1885] },
-    { "id": "baro-de-viver", "name": "Baró de Viver", "at": [41.4498, 2.1995] },
-    { "id": "santa-coloma", "name": "Santa Coloma", "at": [41.4513, 2.2083] },
-    { "id": "fondo", "name": "Fondo", "at": [41.4517, 2.2181] },
-    { "id": "paral-lel", "name": "Paral·lel", "at": [41.3751, 2.1683] },
-    { "id": "sant-antoni", "name": "Sant Antoni", "at": [41.3801, 2.1630] },
-    { "id": "passeig-de-gracia", "name": "Passeig de Gràcia", "at": [41.3920, 2.1650] },
-    { "id": "tetuan", "name": "Tetuan", "at": [41.3947, 2.1750] },
-    { "id": "monumental", "name": "Monumental", "at": [41.3992, 2.1795] },
-    { "id": "sagrada-familia", "name": "Sagrada Família", "at": [41.4036, 2.1745] },
-    { "id": "encants", "name": "Encants", "at": [41.4066, 2.1820] },
-    { "id": "bac-de-roda", "name": "Bac de Roda", "at": [41.4141, 2.1938] },
-    { "id": "sant-marti", "name": "Sant Martí", "at": [41.4175, 2.1990] },
-    { "id": "la-pau", "name": "La Pau", "at": [41.4241, 2.2014] },
-    { "id": "verneda", "name": "Verneda", "at": [41.4275, 2.2033] },
-    { "id": "zona-universitaria", "name": "Zona Universitària", "at": [41.3846, 2.1128] },
-    { "id": "palau-reial", "name": "Palau Reial", "at": [41.3874, 2.1170] },
-    { "id": "maria-cristina", "name": "Maria Cristina", "at": [41.3878, 2.1260] },
-    { "id": "les-corts", "name": "Les Corts", "at": [41.3836, 2.1314] },
-    { "id": "sants-estacio", "name": "Sants Estació", "at": [41.3793, 2.1404] },
-    { "id": "poble-sec", "name": "Poble Sec", "at": [41.3748, 2.1600] },
-    { "id": "drassanes", "name": "Drassanes", "at": [41.3765, 2.1757] },
-    { "id": "liceu", "name": "Liceu", "at": [41.3807, 2.1735] },
-    { "id": "diagonal", "name": "Diagonal", "at": [41.3948, 2.1612] },
-    { "id": "fontana", "name": "Fontana", "at": [41.4025, 2.1527] },
-    { "id": "lesseps", "name": "Lesseps", "at": [41.4065, 2.1490] },
-    { "id": "vallcarca", "name": "Vallcarca", "at": [41.4125, 2.1445] },
-    { "id": "penitents", "name": "Penitents", "at": [41.4200, 2.1422] },
-    { "id": "vall-d-hebron", "name": "Vall d'Hebron", "at": [41.4252, 2.1427] },
-    { "id": "montbau", "name": "Montbau", "at": [41.4302, 2.1449] },
-    { "id": "mundet", "name": "Mundet", "at": [41.4357, 2.1477] },
-    { "id": "valldaura", "name": "Valldaura", "at": [41.4389, 2.1556] },
-    { "id": "canyelles", "name": "Canyelles", "at": [41.4417, 2.1655] },
-    { "id": "roquetes", "name": "Roquetes", "at": [41.4483, 2.1758] },
-    { "id": "trinitat-nova", "name": "Trinitat Nova", "at": [41.4486, 2.1857] },
-    { "id": "via-julia", "name": "Via Júlia", "at": [41.4426, 2.1789] },
-    { "id": "llucmajor", "name": "Llucmajor", "at": [41.4380, 2.1739] },
-    { "id": "maragall", "name": "Maragall", "at": [41.4244, 2.1781] },
-    { "id": "guinardo", "name": "Guinardó", "at": [41.4171, 2.1737] },
-    { "id": "alfons-x", "name": "Alfons X", "at": [41.4123, 2.1653] },
-    { "id": "joanic", "name": "Joanic", "at": [41.4061, 2.1625] },
-    { "id": "verdaguer", "name": "Verdaguer", "at": [41.3995, 2.1673] },
-    { "id": "girona", "name": "Girona", "at": [41.3954, 2.1700] },
-    { "id": "jaume-i", "name": "Jaume I", "at": [41.3840, 2.1780] },
-    { "id": "barceloneta", "name": "Barceloneta", "at": [41.3822, 2.1856] },
-    { "id": "ciutadella", "name": "Ciutadella · Vila Olímpica", "at": [41.3875, 2.1935] },
-    { "id": "bogatell", "name": "Bogatell", "at": [41.3946, 2.1922] },
-    { "id": "llacuna", "name": "Llacuna", "at": [41.3991, 2.1981] },
-    { "id": "poblenou", "name": "Poblenou", "at": [41.4033, 2.2034] },
-    { "id": "selva-de-mar", "name": "Selva de Mar", "at": [41.4073, 2.2095] },
-    { "id": "maresme-forum", "name": "El Maresme · Fòrum", "at": [41.4119, 2.2172] },
-    { "id": "besos-mar", "name": "Besòs Mar", "at": [41.4146, 2.2228] },
-    { "id": "besos", "name": "Besòs", "at": [41.4199, 2.2091] },
-    { "id": "badal", "name": "Badal", "at": [41.3756, 2.1279] },
-    { "id": "placa-de-sants", "name": "Plaça de Sants", "at": [41.3755, 2.1350] },
-    { "id": "hospital-clinic", "name": "Hospital Clínic", "at": [41.3889, 2.1497] },
-    { "id": "sant-pau", "name": "Sant Pau · Dos de Maig", "at": [41.4078, 2.1749] },
-    { "id": "camp-de-l-arpa", "name": "Camp de l'Arpa", "at": [41.4152, 2.1814] },
-    { "id": "congres", "name": "Congrés", "at": [41.4234, 2.1819] },
-    { "id": "virrei-amat", "name": "Virrei Amat", "at": [41.4300, 2.1747] },
-    { "id": "vilapicina", "name": "Vilapicina", "at": [41.4335, 2.1714] },
-    { "id": "horta", "name": "Horta", "at": [41.4296, 2.1600] },
-    { "id": "el-carmel", "name": "El Carmel", "at": [41.4246, 2.1546] },
-    { "id": "el-coll", "name": "El Coll · La Teixonera", "at": [41.4196, 2.1478] },
-    { "id": "torre-del-baro", "name": "Torre del Baró", "at": [41.4505, 2.1835] },
-    { "id": "montcada", "name": "Montcada", "at": [41.4855, 2.1870] },
-    { "id": "cardedeu", "name": "Cardedeu", "at": [41.6403, 2.3584], "offmap": true }
+  [
+   41.38,
+   2.195
   ],
-  "lines": [
-    { "id": "l1", "name": "L1", "kind": "metro", "colour": "#e1393e", "stations": ["espanya", "rocafort", "urgell", "universitat", "catalunya", "urquinaona", "arc-de-triomf", "marina", "glories", "clot", "navas", "la-sagrera", "fabra-i-puig", "sant-andreu", "torras-i-bages", "trinitat-vella", "baro-de-viver", "santa-coloma", "fondo"] },
-    { "id": "l2", "name": "L2", "kind": "metro", "colour": "#9a4a9c", "stations": ["paral-lel", "sant-antoni", "universitat", "passeig-de-gracia", "tetuan", "monumental", "sagrada-familia", "encants", "clot", "bac-de-roda", "sant-marti", "la-pau", "verneda"] },
-    { "id": "l3", "name": "L3", "kind": "metro", "colour": "#3aa64a", "stations": ["zona-universitaria", "palau-reial", "maria-cristina", "les-corts", "sants-estacio", "espanya", "poble-sec", "paral-lel", "drassanes", "liceu", "catalunya", "passeig-de-gracia", "diagonal", "fontana", "lesseps", "vallcarca", "penitents", "vall-d-hebron", "montbau", "mundet", "valldaura", "canyelles", "roquetes", "trinitat-nova"] },
-    { "id": "l4", "name": "L4", "kind": "metro", "colour": "#f4b223", "stations": ["trinitat-nova", "via-julia", "llucmajor", "maragall", "guinardo", "alfons-x", "joanic", "verdaguer", "girona", "passeig-de-gracia", "urquinaona", "jaume-i", "barceloneta", "ciutadella", "bogatell", "llacuna", "poblenou", "selva-de-mar", "maresme-forum", "besos-mar", "besos", "la-pau"] },
-    { "id": "l5", "name": "L5", "kind": "metro", "colour": "#1f78c0", "stations": ["badal", "placa-de-sants", "sants-estacio", "hospital-clinic", "diagonal", "verdaguer", "sagrada-familia", "sant-pau", "camp-de-l-arpa", "la-sagrera", "congres", "maragall", "virrei-amat", "vilapicina", "horta", "el-carmel", "el-coll", "vall-d-hebron"] },
-    { "id": "r4", "name": "R4", "kind": "rodalies", "colour": "#d4911d", "stations": ["sants-estacio", "catalunya", "arc-de-triomf", "clot", "la-sagrera", "torre-del-baro", "montcada", "cardedeu"], "extension": ["cardedeu"] }
+  [
+   41.395,
+   2.209
+  ],
+  [
+   41.408,
+   2.222
+  ],
+  [
+   41.42,
+   2.236
+  ],
+  [
+   41.44,
+   2.25
+  ],
+  [
+   41.462,
+   2.266
   ]
+ ],
+ "hills": [
+  {
+   "id": "collserola",
+   "name": "Collserola",
+   "poly": [
+    [
+     41.372,
+     2.06
+    ],
+    [
+     41.395,
+     2.09
+    ],
+    [
+     41.412,
+     2.108
+    ],
+    [
+     41.425,
+     2.124
+    ],
+    [
+     41.438,
+     2.14
+    ],
+    [
+     41.452,
+     2.16
+    ],
+    [
+     41.466,
+     2.172
+    ],
+    [
+     41.484,
+     2.166
+    ],
+    [
+     41.494,
+     2.14
+    ],
+    [
+     41.474,
+     2.096
+    ],
+    [
+     41.44,
+     2.062
+    ],
+    [
+     41.4,
+     2.04
+    ]
+   ]
+  },
+  {
+   "id": "montjuic",
+   "name": "Montjuïc",
+   "poly": [
+    [
+     41.371,
+     2.146
+    ],
+    [
+     41.372,
+     2.162
+    ],
+    [
+     41.366,
+     2.172
+    ],
+    [
+     41.356,
+     2.168
+    ],
+    [
+     41.353,
+     2.154
+    ],
+    [
+     41.36,
+     2.145
+    ]
+   ]
+  }
+ ],
+ "rivers": [
+  {
+   "id": "besos",
+   "name": "Besòs",
+   "line": [
+    [
+     41.5,
+     2.188
+    ],
+    [
+     41.478,
+     2.192
+    ],
+    [
+     41.462,
+     2.199
+    ],
+    [
+     41.448,
+     2.207
+    ],
+    [
+     41.432,
+     2.222
+    ],
+    [
+     41.42,
+     2.236
+    ]
+   ]
+  },
+  {
+   "id": "llobregat",
+   "name": "Llobregat",
+   "line": [
+    [
+     41.41,
+     2.03
+    ],
+    [
+     41.375,
+     2.06
+    ],
+    [
+     41.34,
+     2.098
+    ],
+    [
+     41.312,
+     2.126
+    ],
+    [
+     41.3,
+     2.146
+    ]
+   ]
+  }
+ ],
+ "districts": [
+  {
+   "id": "ciutat-vella",
+   "name": "Ciutat Vella",
+   "colour": "#f6c9a8",
+   "poly": [
+    [
+     41.39,
+     2.168
+    ],
+    [
+     41.392,
+     2.181
+    ],
+    [
+     41.386,
+     2.19
+    ],
+    [
+     41.378,
+     2.192
+    ],
+    [
+     41.373,
+     2.181
+    ],
+    [
+     41.378,
+     2.17
+    ]
+   ]
+  },
+  {
+   "id": "eixample",
+   "name": "Eixample",
+   "colour": "#f4e2a6",
+   "pattern": "grid",
+   "poly": [
+    [
+     41.379,
+     2.149
+    ],
+    [
+     41.392,
+     2.147
+    ],
+    [
+     41.401,
+     2.16
+    ],
+    [
+     41.405,
+     2.176
+    ],
+    [
+     41.403,
+     2.188
+    ],
+    [
+     41.393,
+     2.186
+    ],
+    [
+     41.387,
+     2.172
+    ],
+    [
+     41.383,
+     2.159
+    ]
+   ]
+  },
+  {
+   "id": "sants-montjuic",
+   "name": "Sants-Montjuïc",
+   "colour": "#d9e7b8",
+   "poly": [
+    [
+     41.383,
+     2.133
+    ],
+    [
+     41.38,
+     2.147
+    ],
+    [
+     41.373,
+     2.169
+    ],
+    [
+     41.357,
+     2.176
+    ],
+    [
+     41.344,
+     2.156
+    ],
+    [
+     41.354,
+     2.131
+    ],
+    [
+     41.371,
+     2.124
+    ]
+   ]
+  },
+  {
+   "id": "les-corts",
+   "name": "Les Corts",
+   "colour": "#cfe3e8",
+   "poly": [
+    [
+     41.396,
+     2.11
+    ],
+    [
+     41.398,
+     2.131
+    ],
+    [
+     41.392,
+     2.146
+    ],
+    [
+     41.381,
+     2.141
+    ],
+    [
+     41.378,
+     2.12
+    ],
+    [
+     41.386,
+     2.106
+    ]
+   ]
+  },
+  {
+   "id": "sarria",
+   "name": "Sarrià",
+   "colour": "#e6d5ef",
+   "poly": [
+    [
+     41.421,
+     2.106
+    ],
+    [
+     41.413,
+     2.131
+    ],
+    [
+     41.405,
+     2.15
+    ],
+    [
+     41.396,
+     2.147
+    ],
+    [
+     41.399,
+     2.12
+    ],
+    [
+     41.406,
+     2.1
+    ]
+   ]
+  },
+  {
+   "id": "gracia",
+   "name": "Gràcia",
+   "colour": "#f7d3d9",
+   "poly": [
+    [
+     41.42,
+     2.141
+    ],
+    [
+     41.418,
+     2.158
+    ],
+    [
+     41.41,
+     2.168
+    ],
+    [
+     41.401,
+     2.163
+    ],
+    [
+     41.403,
+     2.15
+    ],
+    [
+     41.412,
+     2.141
+    ]
+   ]
+  },
+  {
+   "id": "horta",
+   "name": "Horta",
+   "colour": "#d6ecd0",
+   "poly": [
+    [
+     41.441,
+     2.136
+    ],
+    [
+     41.44,
+     2.165
+    ],
+    [
+     41.426,
+     2.18
+    ],
+    [
+     41.411,
+     2.177
+    ],
+    [
+     41.415,
+     2.155
+    ],
+    [
+     41.426,
+     2.14
+    ]
+   ]
+  },
+  {
+   "id": "nou-barris",
+   "name": "Nou Barris",
+   "colour": "#f3dcc2",
+   "poly": [
+    [
+     41.463,
+     2.165
+    ],
+    [
+     41.459,
+     2.183
+    ],
+    [
+     41.446,
+     2.187
+    ],
+    [
+     41.431,
+     2.18
+    ],
+    [
+     41.436,
+     2.16
+    ],
+    [
+     41.449,
+     2.154
+    ]
+   ]
+  },
+  {
+   "id": "sant-andreu",
+   "name": "Sant Andreu",
+   "colour": "#cde0f2",
+   "poly": [
+    [
+     41.462,
+     2.188
+    ],
+    [
+     41.455,
+     2.204
+    ],
+    [
+     41.44,
+     2.206
+    ],
+    [
+     41.425,
+     2.199
+    ],
+    [
+     41.418,
+     2.189
+    ],
+    [
+     41.426,
+     2.18
+    ],
+    [
+     41.441,
+     2.184
+    ],
+    [
+     41.453,
+     2.183
+    ]
+   ]
+  },
+  {
+   "id": "sant-marti",
+   "name": "Sant Martí",
+   "colour": "#e3edc4",
+   "poly": [
+    [
+     41.418,
+     2.191
+    ],
+    [
+     41.426,
+     2.206
+    ],
+    [
+     41.421,
+     2.226
+    ],
+    [
+     41.41,
+     2.229
+    ],
+    [
+     41.395,
+     2.212
+    ],
+    [
+     41.388,
+     2.196
+    ],
+    [
+     41.398,
+     2.188
+    ],
+    [
+     41.408,
+     2.186
+    ]
+   ]
+  }
+ ],
+ "avenues": [
+  {
+   "id": "diagonal",
+   "name": "Diagonal",
+   "size": 3,
+   "line": [
+    [
+     41.3846,
+     2.105
+    ],
+    [
+     41.387,
+     2.1228
+    ],
+    [
+     41.392,
+     2.144
+    ],
+    [
+     41.396,
+     2.16
+    ],
+    [
+     41.3995,
+     2.169
+    ],
+    [
+     41.4009,
+     2.1795
+    ],
+    [
+     41.4036,
+     2.187
+    ],
+    [
+     41.406,
+     2.2
+    ],
+    [
+     41.4105,
+     2.219
+    ]
+   ]
+  },
+  {
+   "id": "gran-via",
+   "name": "Gran Via",
+   "size": 3,
+   "line": [
+    [
+     41.37,
+     2.13
+    ],
+    [
+     41.375,
+     2.149
+    ],
+    [
+     41.3858,
+     2.1638
+    ],
+    [
+     41.3893,
+     2.1677
+    ],
+    [
+     41.3947,
+     2.175
+    ],
+    [
+     41.4036,
+     2.187
+    ],
+    [
+     41.412,
+     2.201
+    ],
+    [
+     41.42,
+     2.215
+    ]
+   ]
+  },
+  {
+   "id": "meridiana",
+   "name": "Meridiana",
+   "size": 3,
+   "line": [
+    [
+     41.4036,
+     2.187
+    ],
+    [
+     41.4097,
+     2.1875
+    ],
+    [
+     41.4163,
+     2.1873
+    ],
+    [
+     41.4236,
+     2.1872
+    ],
+    [
+     41.4297,
+     2.184
+    ],
+    [
+     41.438,
+     2.1865
+    ],
+    [
+     41.447,
+     2.189
+    ],
+    [
+     41.46,
+     2.183
+    ],
+    [
+     41.475,
+     2.18
+    ]
+   ]
+  }
+ ],
+ "landmarks": [
+  {
+   "id": "sagrada-familia",
+   "name": "Sagrada Família",
+   "kind": "temple",
+   "at": [
+    41.4036,
+    2.1744
+   ]
+  },
+  {
+   "id": "torre-glories",
+   "name": "Torre Glòries",
+   "kind": "tower",
+   "at": [
+    41.4036,
+    2.1894
+   ]
+  },
+  {
+   "id": "park-guell",
+   "name": "Park Güell",
+   "kind": "park",
+   "at": [
+    41.4145,
+    2.1527
+   ]
+  },
+  {
+   "id": "tibidabo",
+   "name": "Tibidabo",
+   "kind": "wheel",
+   "at": [
+    41.4218,
+    2.1187
+   ]
+  },
+  {
+   "id": "montjuic",
+   "name": "Montjuïc",
+   "kind": "castle",
+   "at": [
+    41.3634,
+    2.166
+   ]
+  },
+  {
+   "id": "camp-nou",
+   "name": "Camp Nou",
+   "kind": "stadium",
+   "at": [
+    41.3809,
+    2.1228
+   ]
+  },
+  {
+   "id": "barceloneta",
+   "name": "Barceloneta",
+   "kind": "beach",
+   "at": [
+    41.3784,
+    2.1925
+   ]
+  },
+  {
+   "id": "forum",
+   "name": "Fòrum",
+   "kind": "sun",
+   "at": [
+    41.4105,
+    2.2266
+   ]
+  },
+  {
+   "id": "arc-de-triomf",
+   "name": "Arc de Triomf",
+   "kind": "arch",
+   "at": [
+    41.391,
+    2.1806
+   ]
+  },
+  {
+   "id": "sant-pau",
+   "name": "Sant Pau",
+   "kind": "dome",
+   "at": [
+    41.4114,
+    2.1749
+   ]
+  }
+ ],
+ "places": [
+  {
+   "id": "rec-comtal",
+   "name": "Escola Rec Comtal",
+   "at": [
+    41.45105,
+    2.19168
+   ]
+  },
+  {
+   "id": "home",
+   "name": "Casa",
+   "at": [
+    41.429,
+    2.185
+   ]
+  }
+ ],
+ "stations": [
+  {
+   "id": "espanya",
+   "name": "Espanya",
+   "at": [
+    41.375,
+    2.149
+   ]
+  },
+  {
+   "id": "rocafort",
+   "name": "Rocafort",
+   "at": [
+    41.379,
+    2.1546
+   ]
+  },
+  {
+   "id": "urgell",
+   "name": "Urgell",
+   "at": [
+    41.3829,
+    2.1589
+   ]
+  },
+  {
+   "id": "universitat",
+   "name": "Universitat",
+   "at": [
+    41.3858,
+    2.1638
+   ]
+  },
+  {
+   "id": "catalunya",
+   "name": "Catalunya",
+   "at": [
+    41.387,
+    2.17
+   ]
+  },
+  {
+   "id": "urquinaona",
+   "name": "Urquinaona",
+   "at": [
+    41.3887,
+    2.1734
+   ]
+  },
+  {
+   "id": "arc-de-triomf",
+   "name": "Arc de Triomf",
+   "at": [
+    41.3911,
+    2.1806
+   ]
+  },
+  {
+   "id": "marina",
+   "name": "Marina",
+   "at": [
+    41.3955,
+    2.1863
+   ]
+  },
+  {
+   "id": "glories",
+   "name": "Glòries",
+   "at": [
+    41.4032,
+    2.1869
+   ]
+  },
+  {
+   "id": "clot",
+   "name": "Clot",
+   "at": [
+    41.4097,
+    2.1875
+   ]
+  },
+  {
+   "id": "navas",
+   "name": "Navas",
+   "at": [
+    41.4163,
+    2.1873
+   ]
+  },
+  {
+   "id": "la-sagrera",
+   "name": "La Sagrera",
+   "at": [
+    41.4236,
+    2.1866
+   ]
+  },
+  {
+   "id": "fabra-i-puig",
+   "name": "Fabra i Puig",
+   "at": [
+    41.4297,
+    2.1833
+   ]
+  },
+  {
+   "id": "sant-andreu",
+   "name": "Sant Andreu",
+   "at": [
+    41.4357,
+    2.1897
+   ]
+  },
+  {
+   "id": "torras-i-bages",
+   "name": "Torras i Bages",
+   "at": [
+    41.4426,
+    2.1904
+   ]
+  },
+  {
+   "id": "trinitat-vella",
+   "name": "Trinitat Vella",
+   "at": [
+    41.4504,
+    2.1885
+   ]
+  },
+  {
+   "id": "baro-de-viver",
+   "name": "Baró de Viver",
+   "at": [
+    41.4498,
+    2.1995
+   ]
+  },
+  {
+   "id": "santa-coloma",
+   "name": "Santa Coloma",
+   "at": [
+    41.4513,
+    2.2083
+   ]
+  },
+  {
+   "id": "fondo",
+   "name": "Fondo",
+   "at": [
+    41.4517,
+    2.2181
+   ]
+  },
+  {
+   "id": "sagrada-familia",
+   "name": "Sagrada Família",
+   "at": [
+    41.4036,
+    2.1745
+   ]
+  },
+  {
+   "id": "sants-estacio",
+   "name": "Sants Estació",
+   "at": [
+    41.3793,
+    2.1404
+   ]
+  },
+  {
+   "id": "diagonal",
+   "name": "Diagonal",
+   "at": [
+    41.3948,
+    2.1612
+   ]
+  },
+  {
+   "id": "vall-d-hebron",
+   "name": "Vall d'Hebron",
+   "at": [
+    41.4252,
+    2.1427
+   ]
+  },
+  {
+   "id": "maragall",
+   "name": "Maragall",
+   "at": [
+    41.4244,
+    2.1781
+   ]
+  },
+  {
+   "id": "verdaguer",
+   "name": "Verdaguer",
+   "at": [
+    41.3995,
+    2.1673
+   ]
+  },
+  {
+   "id": "badal",
+   "name": "Badal",
+   "at": [
+    41.3756,
+    2.1279
+   ]
+  },
+  {
+   "id": "placa-de-sants",
+   "name": "Plaça de Sants",
+   "at": [
+    41.3755,
+    2.135
+   ]
+  },
+  {
+   "id": "hospital-clinic",
+   "name": "Hospital Clínic",
+   "at": [
+    41.3889,
+    2.1497
+   ]
+  },
+  {
+   "id": "sant-pau",
+   "name": "Sant Pau · Dos de Maig",
+   "at": [
+    41.4078,
+    2.1749
+   ]
+  },
+  {
+   "id": "camp-de-l-arpa",
+   "name": "Camp de l'Arpa",
+   "at": [
+    41.4152,
+    2.1814
+   ]
+  },
+  {
+   "id": "congres",
+   "name": "Congrés",
+   "at": [
+    41.4234,
+    2.1819
+   ]
+  },
+  {
+   "id": "virrei-amat",
+   "name": "Virrei Amat",
+   "at": [
+    41.43,
+    2.1747
+   ]
+  },
+  {
+   "id": "vilapicina",
+   "name": "Vilapicina",
+   "at": [
+    41.4335,
+    2.1714
+   ]
+  },
+  {
+   "id": "horta",
+   "name": "Horta",
+   "at": [
+    41.4296,
+    2.16
+   ]
+  },
+  {
+   "id": "el-carmel",
+   "name": "El Carmel",
+   "at": [
+    41.4246,
+    2.1546
+   ]
+  },
+  {
+   "id": "el-coll",
+   "name": "El Coll · La Teixonera",
+   "at": [
+    41.4196,
+    2.1478
+   ]
+  }
+ ],
+ "lines": [
+  {
+   "id": "l1",
+   "name": "L1",
+   "kind": "metro",
+   "colour": "#e1393e",
+   "stations": [
+    "espanya",
+    "rocafort",
+    "urgell",
+    "universitat",
+    "catalunya",
+    "urquinaona",
+    "arc-de-triomf",
+    "marina",
+    "glories",
+    "clot",
+    "navas",
+    "la-sagrera",
+    "fabra-i-puig",
+    "sant-andreu",
+    "torras-i-bages",
+    "trinitat-vella",
+    "baro-de-viver",
+    "santa-coloma",
+    "fondo"
+   ]
+  },
+  {
+   "id": "l5",
+   "name": "L5",
+   "kind": "metro",
+   "colour": "#1f78c0",
+   "stations": [
+    "badal",
+    "placa-de-sants",
+    "sants-estacio",
+    "hospital-clinic",
+    "diagonal",
+    "verdaguer",
+    "sagrada-familia",
+    "sant-pau",
+    "camp-de-l-arpa",
+    "la-sagrera",
+    "congres",
+    "maragall",
+    "virrei-amat",
+    "vilapicina",
+    "horta",
+    "el-carmel",
+    "el-coll",
+    "vall-d-hebron"
+   ]
+  }
+ ]
 }

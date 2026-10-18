@@ -9,9 +9,9 @@
                                                    trees and places for src/geo-scenery.ts,
                                                    plus output/geo/<zone>/preview.svg (and .png)
 
-A zone without osm.json can be sketched by hand in assets/geo/<zone>/sketch.json (features in
-metres from the anchor); with both, sketch features marked "keep" are added on top of the map
-data. docs/barcelona.md § Sketched zones.
+A zone can be designed by hand in assets/geo/<zone>/sketch.json instead (features in metres from
+the anchor, inspired by the real place): Barcelona's zones are made this way. With both,
+sketch features marked "keep" are added on top of the map data. docs/barcelona.md § Designed zones.
 
 Zone files live in assets/geo/<zone>/zone.json; docs/environment-styling.md explains every field.
 Coordinates in a zone file are metres from the anchor: east_m (+ east) and south_m (+ south).
@@ -358,7 +358,7 @@ def pick(seed: str, options: list):
 
 # ---------------------------------------------------------------- sketch
 
-SKETCH_ATTRIBUTION = "Esquema provisional dibujado a mano (sin datos de OpenStreetMap)"
+SKETCH_ATTRIBUTION = "Diseñado a mano, inspirado en el lugar real"
 SKETCH_AREAS = {"square": {"place": "square"}, "grass": {"leisure": "park"}, "water": {"natural": "water"},
                 "forest": {"landuse": "forest"}, "parking": {"amenity": "parking"}}
 

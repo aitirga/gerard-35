@@ -578,41 +578,35 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 /* ——— Chapter 2: Barcelona's network map (src/city-map.ts), the station map and the TV news ——— */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .city-map { display: block; width: 100%; height: 100%; font-family: 'DM Sans', sans-serif; }
-.city-land { fill: #ece2cb; }
-.city-sea { fill: #8dbfd6; }
-.city-district { fill: #f6efde; stroke: #fffaf0; }
-.city-barri { fill: #efe5cf; stroke: #d9cbb0; }
-.city-barri.is-here { fill: #f7e6e8; stroke: #e4a3b6; }
-.city-hill { fill: #a9c792; opacity: .82; }
-.city-river { fill: none; stroke: #8dbfd6; stroke-linecap: round; stroke-linejoin: round; }
-.city-avenue { fill: none; stroke: #dccfb3; stroke-linecap: round; stroke-linejoin: round; }
-.city-district-name { fill: #b9a98a; font-weight: 600; letter-spacing: .14em; text-anchor: middle; opacity: .8; }
-.city-news-label { fill: #5d5140; font-weight: 800; letter-spacing: .12em; text-anchor: middle; paint-order: stroke; stroke: #f6efdecc; stroke-width: 40px; }
-.city-news-label.is-river { fill: #3f7fa0; font-style: italic; }
-.city-news-label.is-barri { fill: #b2406f; }
-.city-landmark path { fill: #c9b796; stroke: #8b7a5e; stroke-linejoin: round; }
-.city-landmark[data-kind="park"] path, .city-landmark[data-kind="wheel"] path { fill: #9cbf87; }
-.city-landmark[data-kind="home"] path { fill: #f3cf78; stroke: #6d5a2c; }
-.city-landmark-name { fill: #8b7a5e; font-style: italic; text-anchor: middle; }
+/* Cartoon: flat colours, a thick dark outline (#3b2a20) on everything that matters. */
+.city-land { fill: #f3e6c4; }
+.city-sea { fill: #7ec4e0; }
+.city-beach { fill: none; stroke: #f7dd96; stroke-linecap: round; }
+.city-wave { fill: none; stroke: #ffffffaa; stroke-linecap: round; }
+.city-hill { fill: #9fd07a; stroke: #3b2a20; stroke-linejoin: round; }
+.city-district { stroke: #fffaf0; stroke-linejoin: round; filter: drop-shadow(0 18px 0 #3b2a2022); }
+.city-district-name { fill: #3b2a2066; font-weight: 800; letter-spacing: .12em; text-anchor: middle; }
+.city-river { fill: none; stroke: #7ec4e0; stroke-linecap: round; stroke-linejoin: round; }
+.city-avenue-edge { fill: none; stroke: #3b2a2055; stroke-linecap: round; }
+.city-avenue { fill: none; stroke: #fffaf0; stroke-linecap: round; }
+.city-line-edge { fill: none; stroke: #3b2a20; stroke-linecap: round; stroke-linejoin: round; }
 .city-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.city-line.rodalies { opacity: .95; }
-.city-line-core { fill: none; stroke: #fffaf0; stroke-linecap: round; stroke-linejoin: round; }
-.city-route { fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: .55; filter: drop-shadow(0 0 30px #fff); }
-.city-station circle { fill: #fffaf0; stroke: #2c3530; }
-.city-station text { fill: #2c3530; font-weight: 600; paint-order: stroke; stroke: #fffaf0; stroke-width: 60px; stroke-linejoin: round; }
+.city-route { fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: .5; }
+.city-station circle { fill: #fffaf0; stroke: #3b2a20; }
+.city-station text, .map-marker-name { fill: #3b2a20; font-weight: 800; paint-order: stroke; stroke: #fffaf0; stroke-linejoin: round; }
+.city-station text { stroke-width: 70px; }
+.map-marker-name { stroke-width: .25px; text-anchor: middle; font-weight: 700; }
 .city-station.is-pickable { cursor: pointer; }
-.city-station.is-pickable circle:not(.city-station-glow) { stroke: #a8323a; }
-.city-station-glow { fill: #f3cf7866 !important; stroke: none !important; animation: city-glow 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.city-station.is-selected circle:not(.city-station-glow) { fill: #f3cf78; }
-.city-station.is-selected text { fill: #8a1f2a; }
-.city-offmap rect { stroke: #fffaf0; stroke-width: 40px; }
-.city-offmap text { fill: #fffaf0; font-weight: 700; text-anchor: middle; }
-.city-castle path { fill: #ff6fae; stroke: #9d2a62; stroke-width: .12; }
-.city-castle-ball { fill: #ffd0e5; }
-.city-castle-halo { fill: #ff6fae44; animation: city-glow 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.city-pin path { fill: #f3cf78; stroke: #162823; stroke-width: 40px; }
-.city-pin text { fill: #162823; font-weight: 700; text-anchor: middle; }
-.city-train { fill: #fffaf0; stroke: #162823; stroke-width: 60px; filter: drop-shadow(0 0 60px #fff); }
+.city-station.is-pickable circle:not(.city-station-glow) { fill: #f3cf78; }
+.city-station-glow { fill: #f3cf7888 !important; stroke: none !important; animation: city-glow 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.city-station.is-selected circle:not(.city-station-glow) { fill: #ff8f3a; }
+.city-station.is-selected text { fill: #a8323a; }
+.map-marker[data-icon="bubbaloo"] .map-halo { animation: city-glow 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.map-marker[data-icon="bubbaloo"] .map-storm { animation: map-storm 3s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes map-storm { to { transform: scaleX(1.12) translateY(-4%); } }
+.city-pin path { fill: #f3cf78; stroke: #3b2a20; }
+.city-pin text { fill: #3b2a20; font-weight: 800; text-anchor: middle; }
+.city-train { fill: #fffaf0; stroke: #3b2a20; stroke-width: 60px; }
 @keyframes city-glow { 50% { transform: scale(1.25); opacity: .55; } }
 
 #travel, #news { position: absolute; inset: 0; z-index: 6; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; color: var(--ui-paper); pointer-events: auto; }
@@ -625,37 +619,37 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .travel-status i { color: var(--ui-muted); font-style: normal; }
 .line-badge { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 6px; border-radius: 4px; background: var(--line); color: #fff; font-size: 13px; font-weight: 800; }
 .line-badge[data-kind="rodalies"] { border-radius: 12px; box-shadow: inset 0 0 0 2px #fffaf0aa; }
-.travel-map { min-height: 0; border: 1px solid var(--ui-line); background: #ece2cb; box-shadow: var(--ui-shadow); overflow: hidden; }
+.travel-map { min-height: 0; border: 3px solid #3b2a20; border-radius: 14px; background: #f3e6c4; box-shadow: var(--ui-shadow); overflow: hidden; }
 .travel-help { margin: 0; display: flex; gap: 22px; justify-content: center; font-size: 13px; color: var(--ui-muted); }
 .travel-help kbd { width: auto; min-width: 21px; padding: 0 4px; margin-right: 4px; }
 
-#news { display: grid; place-items: center; align-content: center; gap: 12px; background: #050909e8; }
-.news-tv { width: min(88vw, calc(78vh * 16 / 9)); aspect-ratio: 16 / 9; padding: 10px; border-radius: 10px; background: linear-gradient(#2a2d30, #15171a); box-shadow: 0 30px 80px #000c, 0 0 120px #ff6fae33; }
-.news-screen { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 3px; background: #111; font-family: 'Manrope', 'DM Sans', sans-serif; }
-.news-footage, .news-shot { position: absolute; inset: 0; }
-.news-shot { opacity: 0; transition: opacity .25s steps(2); }
-.news-shot[data-on="true"] { opacity: 1; }
-.news-shot .city-map { animation: news-pan 8.4s linear infinite alternate; transform-origin: 55% 45%; filter: saturate(1.1) contrast(1.05); }
-.news-shot[data-shot="1"] .city-map { animation-name: news-shake; animation-duration: 3.1s; }
-@keyframes news-pan { from { transform: scale(1.08) translate(-2%, 1%); } to { transform: scale(1.22) translate(2%, -2%); } }
-@keyframes news-shake { 0%, 100% { transform: scale(1.3) translate(0, 0) rotate(0); } 25% { transform: scale(1.32) translate(-.6%, .4%) rotate(-.4deg); } 50% { transform: scale(1.31) translate(.5%, -.3%) rotate(.3deg); } 75% { transform: scale(1.33) translate(-.3%, -.5%) rotate(-.2deg); } }
-.news-scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(#0000 0 2px, #0000000d 2px 4px), radial-gradient(ellipse at center, #0000 55%, #0007); }
-.news-live, .news-caption, .news-channel { position: absolute; margin: 0; font-size: clamp(10px, 1.2vw, 14px); font-weight: 800; letter-spacing: .08em; color: #fff; text-shadow: 0 1px 3px #000a; }
-.news-live { top: 4%; left: 3%; display: flex; gap: 8px; align-items: center; padding: 4px 9px; background: #c4141ccc; }
-.news-live i { width: 9px; height: 9px; border-radius: 50%; background: #fff; animation: news-blink 1s steps(2) infinite; }
-.news-caption { top: 11%; left: 3%; padding: 3px 8px; background: #0009; font-weight: 600; }
-.news-channel { top: 4%; right: 3%; padding: 6px 10px; border: 2px solid #fff; background: #13305ccc; letter-spacing: .14em; }
+/* The news: the whole screen is the broadcast; the filmed 3D set shows through, the game's HUD steps aside. */
+#hud:has(#news[open]) > :not(#news):not(#blackout) { visibility: hidden; }
+#news { background: none; font-family: 'Manrope', 'DM Sans', sans-serif; color: #fff; }
+.news-scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(#0000 0 2px, #0000000c 2px 4px), radial-gradient(ellipse at center, #0000 60%, #0006); }
+.news-channel, .news-live, .news-caption { position: absolute; margin: 0; font-weight: 800; letter-spacing: .08em; text-shadow: 0 1px 3px #000a; }
+.news-channel { top: 4%; right: 3.5%; padding: 8px 14px; border: 3px solid #fff; background: #13305cdd; font-size: 18px; letter-spacing: .16em; }
+.news-live { top: 4%; left: 3.5%; display: flex; gap: 9px; align-items: center; padding: 6px 12px; background: #c4141c; font-size: 15px; }
+.news-live i { width: 10px; height: 10px; border-radius: 50%; background: #fff; animation: news-blink 1s steps(2) infinite; }
+.news-caption { top: calc(4% + 40px); left: 3.5%; padding: 4px 10px; background: #000a; font-size: 13px; font-weight: 700; }
 @keyframes news-blink { 50% { opacity: 0; } }
-.news-band { position: absolute; left: 0; right: 0; bottom: 9%; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 14px; align-items: center; padding: 1.4% 3%; background: linear-gradient(90deg, #f7f4ec, #ffffffee); color: #13202a; }
-.news-kicker { grid-row: span 2; padding: 8px 12px; background: #d0101b; color: #fff; font-weight: 900; letter-spacing: .06em; font-size: clamp(12px, 1.6vw, 20px); }
-.news-band h1 { margin: 0; font-size: clamp(16px, 2.6vw, 34px); line-height: 1.1; letter-spacing: -.01em; }
-.news-band p { margin: 2px 0 0; font-size: clamp(11px, 1.3vw, 16px); color: #445; font-weight: 600; }
-.news-ticker { position: absolute; left: 0; right: 0; bottom: 0; height: 9%; display: flex; align-items: center; overflow: hidden; background: #13305c; color: #fff; font-weight: 600; font-size: clamp(11px, 1.3vw, 16px); }
+.news-reporter { position: absolute; left: 3.5%; bottom: calc(10% + 118px); display: none; padding: 8px 16px; border-left: 6px solid #c4141c; background: #13305cee; }
+#news[data-shot="reporter"] .news-reporter { display: grid; animation: news-in .4s ease both; }
+.news-reporter strong { font-size: 20px; }
+.news-reporter span { font-size: 13px; color: #cfe0ff; letter-spacing: .06em; }
+#news[data-shot="phone"]::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #000 0 26%, #0000 26% 74%, #000 74%); opacity: .85; }
+@keyframes news-in { from { transform: translateX(-30px); opacity: 0; } }
+.news-band { position: absolute; left: 0; right: 0; bottom: 6.5%; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 18px; align-items: center; padding: 14px 3.5%; background: linear-gradient(90deg, #f7f4ec, #ffffffee); color: #13202a; }
+.news-kicker { grid-row: span 2; padding: 10px 16px; background: #d0101b; color: #fff; font-weight: 900; letter-spacing: .06em; font-size: 22px; }
+.news-band h1 { margin: 0; font-size: clamp(22px, 2.6vw, 38px); line-height: 1.1; letter-spacing: -.01em; }
+.news-band p { margin: 3px 0 0; font-size: 16px; color: #445; font-weight: 600; }
+.news-ticker { position: absolute; left: 0; right: 0; bottom: 0; height: 6.5%; display: flex; align-items: center; overflow: hidden; background: #13305c; font-weight: 600; font-size: 17px; }
 .news-ticker div { display: flex; gap: 3em; padding-left: 100%; white-space: nowrap; animation: news-ticker 42s linear infinite; }
 .news-ticker span::before { content: '●'; margin-right: .8em; color: #f3cf78; }
 @keyframes news-ticker { to { transform: translateX(-100%); } }
-.news-help { margin: 0; font-size: 13px; color: var(--ui-muted); }
-@media (prefers-reduced-motion: reduce) { .news-shot .city-map, .news-ticker div, .city-station-glow, .city-castle-halo, .news-live i { animation: none; } .news-ticker div { padding-left: 2em; } }
+.news-help { position: absolute; right: 3.5%; top: calc(4% + 52px); margin: 0; font-size: 13px; color: #fffc; text-shadow: 0 1px 3px #000; }
+.news-help kbd { color: #fff; border-color: #fff8; }
+@media (prefers-reduced-motion: reduce) { .news-ticker div, .city-station-glow, .map-marker .map-halo, .map-marker .map-storm, .news-live i { animation: none; } .news-ticker div { padding-left: 2em; } }
 
 .party-animas { margin-top: 14px; }
 .party-animas ul { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 6px; padding: 0; list-style: none; }

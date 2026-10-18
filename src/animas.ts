@@ -31,3 +31,10 @@ export function animaBonus(ids: readonly AnimaId[]): StatBonus {
   for (const id of ids) for (const [key, value] of Object.entries(ANIMAS[id].bonus) as [keyof StatBonus, number][]) total[key] = (total[key] ?? 0) + value;
   return total;
 }
+
+/**
+ * How threatening La Reina Bubbaloo's castle is, from 1 (every tower up, a storm over it) down to
+ * a floor it never goes below: each ánima the party gathers takes some of her power away.
+ */
+export const THREAT_PER_ANIMA = .15;
+export function castleThreat(animas: number) { return Math.max(.1, 1 - animas * THREAT_PER_ANIMA); }

@@ -113,7 +113,7 @@ friends' stories and the second round carry it.
   La Reina Bubbaloo's palace appears on top of it in chapter 2, with every pupil inside.
 - **Cardedeu** (Vallès Oriental): Nuria and Uri's town, by train.
 - **Barcelona** as a whole is the chapter 2 world map: sea, Collserola, avenues, landmarks, metro
-  and Rodalies (`docs/barcelona.md`).
+  (`docs/barcelona.md`).
 
 ## Story so far (chapter 1)
 
@@ -146,6 +146,8 @@ friends' stories and the second round carry it.
   school** while all the pupils were inside.
 - **The city is open**: from the metro at the Meridiana, Gerard and Aitor can go anywhere the
   lines go, including the castle, which is far too strong for them at first.
+- **The castle is her power, made visible**: at first huge and bristling with towers under a
+  storm; it loses towers as Gerard and Aitor give people back what they had lost.
 - **Falling is waking up.** When they lose, Gerard wakes in bed shouting "¡NO!" with everything
   he has done kept (no time loop: that earlier idea is dropped).
 - **Friends and ánimas**: each friend he helps gives him their ánima. Hidden clues in the world

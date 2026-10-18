@@ -11,6 +11,7 @@ import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type Cont
 import { createTravelUI } from './travel-ui';
 import { createNewsUI } from './news-ui';
 import { STATION_PLACES, entranceId } from './transit';
+import { cityMarkers } from './map-markers';
 import { palaceGuards } from './battle';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
@@ -138,15 +139,28 @@ try {
     else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }
     else if (effect.kind === 'wake') await game.wake(() => storyUI.blackout(false, 2000));
     else if (effect.kind === 'fall') await storyUI.blackout(true, 1600);
-    else if (effect.kind === 'news') { game.setPaused(true); await newsUI.show(); game.setPaused(!!exploration.active); }
+    else if (effect.kind === 'news') await watchNews();
     else if (effect.kind === 'metro') await ride(effect.station);
     else if (effect.kind === 'look') await game.look(effect.anchor);
     else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
   }
+  /** The TV news: a cut to the filmed set in Trinitat Vella under the broadcast's graphics, and back. */
+  async function watchNews() {
+    exploration.close(); game.setPaused(true);
+    await storyUI.blackout(true, 350);
+    const watching = newsUI.show();
+    game.startBroadcast(id => newsUI.shot(id));
+    await storyUI.blackout(false, 500);
+    await watching;
+    await storyUI.blackout(true, 350);
+    game.endBroadcast();
+    await storyUI.blackout(false, 500);
+    game.setPaused(!!exploration.active);
+  }
   /** Down into a station: pick a destination on the network map, ride, and come up its entrance. */
   async function ride(from: string) {
     exploration.close(); game.setPaused(true);
-    const to = await travelUI.show(from, {}, story.has('tv-news'));
+    const to = await travelUI.show(from, {}, cityMarkers({ castle: story.has('tv-news'), threat: story.castleThreat }));
     const place = to ? STATION_PLACES[to] : undefined;
     const entrance = place && ENVIRONMENTS[place.environment].interactions.find(i => i.id === entranceId(to!));
     if (place && entrance) {

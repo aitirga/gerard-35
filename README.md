@@ -57,7 +57,7 @@ milestone. `just dev-chapter <flag>` opens the game with every flag up to that o
 
 Gerard wakes up at 35 in the Meridiana flat beside Aitor (player 2). The TV switches itself on:
 a pink castle has appeared on top of the Rec Comtal school. From the metro at Fabra i Puig the
-city is open: the network map of Barcelona (metro L1–L5 and Rodalies) takes him anywhere a place
+city is open: a cartoon network map of Barcelona (for now the L1 and L5) takes him anywhere a place
 exists, including the castle, whose guards are far too strong at first. Falling wakes him at home
 with everything kept; friends across the city give their ánimas, which make the party stronger.
 Design: [docs/chapter-2.md](docs/chapter-2.md); the city, metro and train:
@@ -101,8 +101,10 @@ src/main.ts         Bootstraps the game, wires the HUD and plays story beats
 src/story.ts        Story flags and the rules that turn game events into beats (pure)
 src/chapter-1.ts    Chapter 1 lines, places, key hints and Bernat's bubbles
 src/chapter-2.ts    Chapter 2 lines, places, the TV news and its clues
-src/transit.ts      Metro and Rodalies: lines, stations, routes (pure)
-src/city-map.ts     Barcelona's schematic network map as SVG
+src/transit.ts      Metro: lines, stations, routes (pure)
+src/map-markers.ts  Icons on the network map (landmarks, home, the castle)
+src/news-set.ts     The TV news filmed in 3D at Trinitat Vella
+src/city-map.ts     Barcelona's cartoon network map as SVG
 src/travel-ui.ts    The station map and the trip; src/news-ui.ts the TV news
 src/story-ui.ts     Chapter cards, item notes, key hints, speech bubble
 src/items.ts        Item catalogue: common items and key items

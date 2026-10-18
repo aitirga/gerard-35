@@ -1,19 +1,23 @@
 # Barcelona · world map, metro and train
 
-Chapter 2's world is Barcelona (and a little beyond: Cardedeu). It works on two levels:
+Chapter 2's world is Barcelona (and later a little beyond: Cardedeu). It works on two levels:
 
 1. **Places**: playable 3D scenes, one per spot the story needs (the Meridiana outside the flat,
-   the Rec Comtal school, a station, a friend's street). Built like Alegia, from map data
-   (`docs/environment-styling.md`). Only a handful exist; most of the city is never walked.
-2. **The network map**: the whole city drawn schematically, with its sea, mountains, rivers,
-   avenues and landmarks, and the metro and Rodalies lines over it. It is what Gerard sees when he
-   goes down into a station, and how he travels between places. It is never a 3D scene.
+   the Rec Comtal school, later a station or a friend's street). Each is **designed by hand**,
+   inspired by the real place and simplified on purpose. Only a handful exist; most of the city is
+   never walked.
+2. **The network map**: the whole city as a **cartoon**, with its sea, hills, rivers, districts,
+   big avenues and famous places, and the metro lines over it. It is what Gerard sees when he goes
+   down into a station, and how he travels between places. It is never a 3D scene.
+
+No map data is downloaded for Barcelona: neither OpenStreetMap nor anyone's district files. The
+real city is the inspiration; the shapes are our own.
 
 ```
-bcn-geodata (CartoBCN districts + barris) ──┐
-assets/geo/barcelona/city.json ─────────────┼─► just city ─► src/geo/barcelona.json ─► src/city-map.ts (SVG)
- (coast, hills, rivers, avenues, landmarks,  │   tools/city.py      projected, simplified        ├─ travel-ui.ts (station map)
-  lines and stations in lat/lon)            ─┘   + output/city/preview.svg                     └─ news-ui.ts (TV aerial map)
+assets/geo/barcelona/city.json ──► just city ──► src/geo/barcelona.json ──► src/city-map.ts (SVG) ──► travel-ui.ts
+ (hand-drawn: coast, hills, rivers,   tools/city.py      projected                ▲
+  districts, avenues, landmarks,      + output/city/preview.svg                   │
+  places, stations, lines; [lat, lon])                               src/map-markers.ts (icons)
 src/transit.ts  lines, stations, which place each station opens, story rules for lines
 ```
 
@@ -21,98 +25,116 @@ src/transit.ts  lines, stations, which place each station opens, story rules for
 
 ### Look
 
+- **Cartoon.** Flat colours, soft rounded shapes (the hand-drawn points are joined by curves),
+  a thick dark outline on what matters, little waves on the sea, a sandy beach along the coast,
+  round green hills for Collserola and Montjuïc, the Eixample with its grid.
 - **North-west up, sea at the bottom.** The map is turned so the coast runs left to right along
   the bottom edge (Llobregat on the left, Besòs on the right) and Collserola rises along the top:
-  the way people from Barcelona picture their city. The Eixample grid then reads straight.
-- **Layers, back to front**: sea (deep blue with soft waves), land (warm paper), Collserola and
-  Montjuïc (soft green with a hatched ridge), the Besòs and Llobregat (thin blue), the ten
-  districts (pale tiles with white borders, names in small caps), main avenues (Diagonal, Gran
-  Via, Meridiana, Paral·lel, Passeig de Gràcia, Rondes), landmarks (small hand-drawn pictograms:
-  Sagrada Família, Torre Glòries, Park Güell, Tibidabo, Montjuïc, Camp Nou, Barceloneta, Fòrum,
-  Arc de Triomf, Sant Pau), and the lines on top.
-- **Lines**: metro lines in their official colours as thick rounded strokes with white-ringed
-  stations; Rodalies as a thinner double stroke in its own colour with its "R" roundel. Shared
-  stations are drawn as linked rings. A line that leaves the city (the R4 towards Cardedeu)
-  runs to the map's edge and ends in a labelled tab with its destination.
-- **The castle** pulses in pink on the Rec Comtal school once the TV has shown it; the palace
-  is part of the world, not a marker.
-- **Where Gerard is**: a small portrait pin at the current station. Nothing else is marked: no
-  friends, no missions, no "go here".
+  the way people from Barcelona picture their city.
+- **Few lines.** For now only the **L1 (red)** and the **L5 (blue)**, thick and outlined, with
+  chunky white stations. More lines (the R4 to Cardedeu) are added when a place on them exists.
+- **Where Gerard is**: a small pin on the current station. Nothing marks a friend, a mission or a
+  "go here".
+
+### Markers
+
+Everything drawn as an icon on the map is a **marker** (`src/map-markers.ts`): data (`id`, `icon`,
+`name`, position, `size`, `level`, `label`) drawn by one cartoon drawing in `ICONS`. The map takes
+a list of markers; the story decides which (`cityMarkers(state)`):
+
+| Marker | Icon | When |
+| --- | --- | --- |
+| Famous places (Sagrada Família, Torre Glòries, Park Güell, Tibidabo, Montjuïc, Camp Nou, Barceloneta, Fòrum, Arc de Triomf, Sant Pau) | `temple`, `tower`, `park`, `wheel`, `castle`, `stadium`, `beach`, `sun`, `arch`, `dome` | Always |
+| Home | `home` | Always |
+| The Rec Comtal school | `school` | Until the TV news |
+| La Reina Bubbaloo's castle | `bubbaloo` | From the TV news; its size and towers follow the castle's threat (`level`) |
+
+A new kind of marker is one drawing in `ICONS` (a 2 × 2 box, bottom at y = 1, the outline is
+added) and one entry where markers are listed. Markers say what is in the city; they never say
+what to do next (`AGENTS.md`).
 
 ### Travel
 
-1. A station entrance in a place is an interaction (*"Bajar al metro"*, *"Coger el tren"*).
+1. A station entrance in a place is an interaction (*"Bajar al metro"*).
 2. The network map opens on that station. Selectable stations are the ones that lead to a place
-   (bigger rings with a soft glow); the rest are drawn but cannot be picked. Arrows, the stick, the
-   mouse or the D-pad move between selectable stations; Enter/A travels; Esc/B goes back up.
-3. The trip: a small train runs along the line on the map, changing at shared stations, with the
-   line's name shown; then the screen fades and the party comes up the destination's entrance.
-4. Lines can be closed by the story (`transit.ts` rules): the line is drawn dimmed with a person or
-   sign in the world saying why.
+   (bigger, glowing); the rest are drawn but cannot be picked. Arrows, the stick, the mouse or the
+   D-pad move between them; Enter/A travels; Esc/B goes back up.
+3. The trip: a small train runs along the line on the map, changing at shared stations; then the
+   screen fades and the party comes up the destination's entrance.
+4. Lines can be closed by the story (`transit.ts` rules), with a person or sign in the world
+   saying why.
 
 ### Data
 
-`assets/geo/barcelona/city.json` is hand-authored in latitude/longitude:
+`assets/geo/barcelona/city.json`, all hand-drawn in latitude/longitude:
 
 | Field | What |
 | --- | --- |
-| `frame` | Projection centre, rotation (degrees) and the map's extent in metres |
-| `coast`, `hills`, `rivers` | Polylines / polygons for the sea edge, Collserola and Montjuïc, the Besòs and Llobregat |
-| `avenues` | Named polylines with a width class |
-| `landmarks` | `id`, `name`, `kind` (pictogram), `at` |
-| `lines` | `id`, `name`, `kind` (`metro`/`rodalies`), `colour`, ordered `stations` |
-| `stations` | `id`, `name`, `at`, optional `offmap` (drawn at the edge, e.g. Cardedeu) |
+| `frame` | Projection centre, rotation (degrees) and the margin round the city |
+| `coast`, `hills`, `rivers` | The sea edge, Collserola and Montjuïc, the Besòs and Llobregat |
+| `districts` | `id`, `name`, `colour`, optional `pattern` (`grid`), and a few points of a soft blob |
+| `avenues` | Diagonal, Gran Via, Meridiana: named lines with a width class |
+| `landmarks` | `id`, `name`, `kind` (its icon), `at` |
+| `places` | Points the story puts its own markers on (`home`, `rec-comtal`) |
+| `stations`, `lines` | Stations (`id`, `name`, `at`) and lines (`id`, `name`, `kind`, `colour`, ordered `stations`) |
 
-`just city` (`tools/city.py`) projects everything, simplifies the CartoBCN district and
-neighbourhood polygons (downloaded once from [bcn-geodata](https://github.com/martgnz/bcn-geodata),
-CC-BY Ajuntament de Barcelona) and writes `src/geo/barcelona.json` plus a preview in
-`output/city/`. Coordinates of stations, avenues and landmarks are approximate and schematic: good
-for a drawn map, not a survey. Verify a station against TMB's or Rodalies' maps before building a
-place on it.
+`just city` (`tools/city.py`) projects it to `src/geo/barcelona.json` and writes a rough preview
+in `output/city/`.
 
 ## Places and stations
 
 `src/transit.ts` joins the two levels:
 
-- **Station → place**: a station that leads somewhere names the scene and the cell where the
-  party comes up (`place: { environment, cell }`), and the scene has an interaction with the same
-  station id to go back down.
+- **Station → place**: a station that leads somewhere names the scene, and the scene has an
+  interaction with the station's id (`station-<id>`): the party comes up there and goes back down
+  there.
 - **Lines**: a line is an ordered list of station ids. Any two stations on the network are
-  connected (changing lines at shared stations); `route(from, to)` returns the stations the train
-  passes, for the animation.
-- **Rules**: a line or station can be closed by the story (`closed(story)` reads flags) and only
-  stations with a place are destinations. These rules are pure and tested (`tests/transit.test.mjs`).
+  connected (changing lines at shared stations); `route(from, to)` returns the legs the train
+  takes, for the animation.
+- **Rules**: a line or station can be closed by the story and only stations with a place are
+  destinations. Pure and tested (`tests/transit.test.mjs`).
 
 | Station | Lines | Place | Status |
 | --- | --- | --- | --- |
-| Fabra i Puig | L1 | `meridiana-calle` (home's street) | Sketch |
-| Trinitat Vella | L1 | `rec-comtal` (the school under the palace) | Sketch |
-| La Sagrera | L1, L5, R4 | Platform with the R4 poster | Next |
-| Cardedeu | R4 (extension) | Nuria and Uri | Next |
+| Fabra i Puig | L1 | `meridiana-calle` (home's street) | Playable |
+| Trinitat Vella | L1 | `rec-comtal` (the school under the palace) | Playable |
+| La Sagrera | L1, L5 | Platform with the R4 poster | Next |
+| Cardedeu | R4 (to add) | Nuria and Uri | Next |
 
 ### Making a new place reachable
 
-1. Build the scene (`docs/environment-styling.md`): a zone in `assets/geo/<zone>/`, `just geo
+1. Design the scene (below): `assets/geo/<zone>/zone.json` and `sketch.json`, `just geo-build
    <zone>`, three lines in `src/environments.ts`.
-2. Put a station entrance in it: a `places` entry in `zone.json` with the station's id
-   (`station-<id>`) and a metro or train sign prop.
-3. In `src/transit.ts`, give the station its `place`.
+2. Put a station entrance in it: a `places` entry with the station's id (`station-<id>`) and a
+   `metro` prop.
+3. In `src/transit.ts`, give the station its `place`; add the station (and its line) to
+   `city.json` if the map does not have it yet.
 4. Add it to a screenshot scenario.
 
-## Sketched zones (when OpenStreetMap cannot be reached)
+## Designed zones
 
-`just geo-fetch` needs OpenStreetMap (Nominatim, Overpass or the OSM API). When it cannot reach
-them, a zone can be **sketched**: `assets/geo/<zone>/sketch.json` holds hand-drawn features in
-metres from the anchor (buildings as rectangles or polygons, roads and paths as lines with an
-OSM-style `highway`, squares, grass, water, rail). `just geo-build` uses `osm.json` when it exists
-and the sketch otherwise; with both, sketch features marked `"keep": true` are added on top (a
-fictional element on a real street). The attribution of a sketched scene says so, and the zone is
-listed as *Sketch* until `just geo <zone>` replaces it with real data.
+Barcelona's places are **designed by hand**: `assets/geo/<zone>/sketch.json` holds features in
+metres from the zone's anchor (buildings as rectangles or polygons, roads and paths as lines with a
+`highway` kind, squares, grass, water), inspired by how the real place looks and simplified for
+play. `just geo-build <zone>` turns them into the scene with the same builder and looks as the
+other real places (`docs/environment-styling.md`): facades, roofs, trees, props, places to look at,
+doors and named `anchors` (where the palace stands).
 
-`meridiana-calle` and `rec-comtal` are sketched for now (this environment could not reach
-OpenStreetMap). Their anchors are real: the school's is the Institut Escola Rec Comtal at
-41.45105, 2.19168. Run `just geo meridiana-calle` and `just geo rec-comtal` on a machine with
-network access, then check the previews against Google Maps/Street View as the styling guide says.
+- **`meridiana-calle`**: the Avinguda Meridiana by Fabra i Puig: side roads, two carriageways with
+  a planted median, blocks of flats with shops, home's door and the L1 entrance.
+- **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
+  de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
+  the camera, blocks of flats, the L1 entrance and the castle on the roof.
+
+## The TV news set
+
+The news is filmed, not drawn (`src/news-set.ts`, `game.startBroadcast`). For the broadcast the
+flat steps aside and `rec-comtal` is built as a set: the castle on the school at its current
+threat, a police cordon and two patrol cars with their lights going, neighbours filming with their
+phones, a reporter and her cameraman, the TV van with its dish, a helicopter circling and the
+pupils' backpacks by the gate. A perspective camera films it in shots that loop (`NEWS_SHOTS`):
+from the helicopter, the reporter with the castle behind her, a neighbour's shaky phone, the street
+behind the patrol car. `src/news-ui.ts` lays the broadcast's graphics over it.
 
 ## Architecture: generic pieces, unique content
 
@@ -124,6 +146,8 @@ reimplements movement, dialogue or battle.
 | --- | --- | --- | --- |
 | Place | Grid, buildings, roads, props, places to look at, station entrances | `assets/geo/<zone>/`, `src/environments.ts` | Its own props or a landmark model; its story triggers |
 | Station / line | Network graph, travel, the map | `src/transit.ts`, `src/travel-ui.ts` | Closures and clue posters per station |
+| Map marker | An icon on the network map, from data | `src/map-markers.ts` | Its drawing (the castle's towers follow its threat) |
+| Castle threat | One number from the ánimas; the palace and its marker read it | `castleThreat` in `src/animas.ts`, `palace.setThreat` | Which tower falls when |
 | Trigger | A cell and a radius that fires `near` once | `story.triggers(environment)` | What the story does with it |
 | Door redirect | A door can lead elsewhere by story state | `story.redirect(id)` | The palace's exit, home's door |
 | Anchor and look | Named points in a scene (`anchors` in `zone.json`); a `look` effect turns the camera to one while people talk | `game.look(anchor)` | The castle on the school |

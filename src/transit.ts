@@ -7,19 +7,22 @@ import CITY from './geo/barcelona.json' with { type: 'json' };
 import type { EnvironmentId } from './environments';
 
 export type LineKind = 'metro' | 'rodalies';
-export interface Line { id: string; name: string; kind: LineKind; colour: string; stations: string[]; extension?: string[] }
-export interface Station { id: string; name: string; x: number; y: number; offmap?: boolean }
-/** The projected city (tools/city.py): metres on a map with the sea at the bottom. */
+export interface Line { id: string; name: string; kind: LineKind; colour: string; stations: string[] }
+export interface Station { id: string; name: string; x: number; y: number }
+type Points = number[][];
+/** The cartoon city (tools/city.py): hand-drawn layers in metres, on a map with the sea at the bottom. */
 export interface CityMap {
-  attribution: string;
   extent: { x0: number; y0: number; x1: number; y1: number };
-  sea: number[][];
-  hills: { id: string; name: string; poly: number[][] }[];
-  rivers: { id: string; name: string; line: number[][] }[];
-  districts: { name: string; poly: number[][] }[];
-  barris: { name: string; poly: number[][] }[];
-  avenues: { id: string; name: string; size: number; line: number[][] }[];
-  landmarks: { id: string; name: string; kind: string; x: number; y: number }[];
+  coast: Points;
+  sea: Points;
+  hills: { id: string; name: string; poly: Points }[];
+  rivers: { id: string; name: string; line: Points }[];
+  districts: { id: string; name: string; colour: string; pattern?: string; poly: Points }[];
+  avenues: { id: string; name: string; size: number; line: Points }[];
+  /** Famous places, drawn as icons (`src/map-markers.ts`). */
+  landmarks: { id: string; name: string; icon: string; x: number; y: number }[];
+  /** Places the story puts icons on (home, the school). */
+  places: { id: string; name: string; x: number; y: number }[];
   stations: Station[];
   lines: Line[];
 }

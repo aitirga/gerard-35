@@ -11,7 +11,7 @@ import { palaceGuards, type ClassId, type PartySlot } from './battle.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
-import { ANIMA_IDS, animaBonus, type AnimaId } from './animas.ts';
+import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
 import { ENVIRONMENTS } from './environments.ts';
 
@@ -174,6 +174,8 @@ export class Story {
   get adult() { return this.has('caught'); }
   /** Ánimas the party has gathered from friends (chapter 2). */
   get animas(): AnimaId[] { return ANIMA_IDS.filter(id => this.flags.has(`anima-${id}` as StoryFlag)); }
+  /** How threatening the castle on the school is (1 at first; ánimas bring it down). */
+  get castleThreat() { return castleThreat(this.animas.length); }
   /** Classes the party has unlocked; anyone in the party can wear any of them. */
   get classes(): ClassId[] { return this.has('noista') ? ['noista'] : []; }
   /** Gerard's active class, which also dresses the interface. */

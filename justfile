@@ -148,19 +148,9 @@ geo-build zone="alegia":
 geo-zones:
     @ls assets/geo/*/zone.json | xargs -n1 dirname | xargs -n1 basename
 
-# Download Barcelona's districts and rebuild the schematic city map: just city (docs/barcelona.md)
+# Rebuild the cartoon Barcelona of the network map from its hand-drawn layers (docs/barcelona.md)
 [group('Data')]
-city: city-fetch city-build
-
-# Download CartoBCN districts and neighbourhoods (bcn-geodata) into assets/geo/barcelona/
-[group('Data')]
-city-fetch:
-    uv run --locked python tools/city.py fetch
-
-# Rebuild src/geo/barcelona.json and its preview from the saved city layers (offline)
-[group('Data')]
-city-build:
-    @[[ -f "assets/geo/barcelona/cartobcn.json" ]] || { printf 'No district data; run just city-fetch first.\n'; exit 1; }
+city:
     uv run --locked python tools/city.py build
 
 # Generate portrait, expressions, full-body art and 3D model: just character bernat --description '…' (--help)
