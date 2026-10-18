@@ -181,9 +181,15 @@ try {
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
       document.title = `${ENVIRONMENTS[id].name} · Gerard 35`;
     },
+    // Only the key floats beside what is within reach; the label stays for screen readers and the mouse.
     onInteraction: interaction => {
       interactButton.hidden = !interaction;
       interactButton.querySelector('span')!.textContent = interaction?.label ?? '';
+      interactButton.title = interaction?.label ?? '';
+    },
+    onPromptScreen: at => {
+      interactButton.toggleAttribute('data-offscreen', !at);
+      if (at) interactButton.style.transform = `translate(${Math.round(at.x)}px, ${Math.round(at.y)}px) translate(-50%, -100%)`;
     },
     onDialogue: dialogue.show,
     onStory: storyEvent,
