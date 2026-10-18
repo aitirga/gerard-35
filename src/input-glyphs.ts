@@ -27,7 +27,6 @@ export const GLYPHS = {
   /** Use what is within reach, or advance a conversation. */
   interact: { keyboard: 'E', ...pad('A', '✕', 'A', 'Confirmar') },
   menu: { keyboard: 'Esc', ...pad('☰', 'Options', '+', 'Start') },
-  move: { keyboard: 'W A S D', ...pad('Stick izq.', 'Stick izq.', 'Stick izq.', 'Stick') },
   run: { keyboard: 'Shift', ...pad('Mantén B', 'Mantén ○', 'Mantén B', 'Mantén Volver') },
   overview: { keyboard: 'R', ...pad('View', 'Create', '−', 'Select') },
   /** The character panel; on a pad, the top face button. */

@@ -14,7 +14,7 @@
     },
     {
       "shot": "world-keyboard",
-      "caption": "Keyboard: the E floats over the front door; WASD, E · Interactuar, Esc · Menú, R"
+      "caption": "Keyboard: the E floats over the front door, Esc · Menú, R; no movement keys"
     },
     {
       "teleport": "home-floor-2",
