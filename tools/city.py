@@ -14,6 +14,7 @@ import argparse
 import json
 import math
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
@@ -24,7 +25,10 @@ CITY = ROOT / "assets" / "geo" / "barcelona"
 M_PER_DEG_LAT = 110_540
 STREETS = CITY / "streets.json"
 USER_AGENT = "gerard-35-environment-tool/0.1 (personal game prototype)"
-OVERPASS = ("https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter")
+OVERPASS = ("https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
+            "https://overpass.kumi.systems/api/interpreter")
+# The area is asked in TILES × TILES pieces.
+TILES = 5
 ATTRIBUTION = "© OpenStreetMap contributors (ODbL)"
 # How far the background reaches past the map's extent, as a share of its width and in metres
 # down and up: a wide screen shows more than the extent.
@@ -70,9 +74,14 @@ def wide_extent(extent: dict) -> dict:
 
 
 def simplify(points: list[tuple[float, float]], tolerance: float) -> list[tuple[float, float]]:
-    """Douglas-Peucker on points in metres."""
+    """Douglas-Peucker on points in metres. A closed ring is split at its farthest point first."""
     if len(points) < 3:
         return points
+    if points[0] == points[-1]:
+        far = max(range(len(points)), key=lambda i: math.dist(points[0], points[i]))
+        if far in (0, len(points) - 1):
+            return points[:1]
+        return simplify(points[:far + 1], tolerance)[:-1] + simplify(points[far:], tolerance)
     keep = [False] * len(points)
     keep[0] = keep[-1] = True
     stack = [(0, len(points) - 1)]
@@ -116,6 +125,35 @@ def join(lines: list[list]) -> list[list]:
     return lines
 
 
+def overpass_tile(tile: tuple[float, float, float, float]) -> list[dict] | None:
+    """One tile's streets, railways, coast, rivers and green areas, with geometry."""
+    box = ",".join(f"{v:.5f}" for v in tile)
+    roads = "|".join(ROAD_CLASS)
+    query = f"""[out:json][timeout:180];
+(
+  way["highway"~"^({roads})$"]["tunnel"!~"yes|building_passage"]({box});
+  way["railway"~"^(rail|light_rail)$"]["tunnel"!="yes"]({box});
+  way["natural"="coastline"]({box});
+  way["waterway"="river"]({box});
+  way["man_made"~"^(pier|breakwater|groyne)$"]({box});
+  wr["leisure"~"^(park|garden|golf_course|nature_reserve)$"]({box});
+  wr["landuse"~"^(forest|grass|recreation_ground|cemetery|meadow|village_green)$"]({box});
+  wr["natural"~"^(wood|scrub|heath|beach|water)$"]({box});
+);
+out geom qt;"""
+    for attempt in range(3):
+        for url in OVERPASS:
+            try:
+                response = httpx.post(url, data={"data": query}, headers={"User-Agent": USER_AGENT}, timeout=240)
+                if response.status_code == 200:
+                    return response.json()["elements"]
+                print(f"    {url}: HTTP {response.status_code}", file=sys.stderr)
+            except (httpx.HTTPError, ValueError) as error:
+                print(f"    {url}: {error}", file=sys.stderr)
+        time.sleep(15 * (attempt + 1))
+    return None
+
+
 def fetch() -> None:
     city = json.loads((CITY / "city.json").read_text())
     project = Projection(city["frame"])
@@ -125,32 +163,32 @@ def fetch() -> None:
     s, n = min(c[0] for c in corners), max(c[0] for c in corners)
     w, e = min(c[1] for c in corners), max(c[1] for c in corners)
     box = f"{s:.4f},{w:.4f},{n:.4f},{e:.4f}"
-    roads = "|".join(ROAD_CLASS)
-    query = f"""[out:json][timeout:600][maxsize:2000000000];
-(
-  way["highway"~"^({roads})$"]["tunnel"!~"yes|building_passage"]({box});
-  way["railway"~"^(rail|light_rail)$"]["tunnel"!="yes"]({box});
-  way["natural"="coastline"]({box});
-  way["waterway"="river"]({box});
-  way["man_made"~"^(pier|breakwater|groyne)$"]({box});
-  nwr["leisure"~"^(park|garden|golf_course|nature_reserve)$"]({box});
-  nwr["landuse"~"^(forest|grass|recreation_ground|cemetery|meadow|village_green)$"]({box});
-  nwr["natural"~"^(wood|scrub|heath|beach|water)$"]({box});
-);
-out geom qt;"""
-    print(f"Fetching OpenStreetMap for {box} (a minute or two)…")
-    elements = None
-    for url in OVERPASS:
-        try:
-            response = httpx.post(url, data={"data": query}, headers={"User-Agent": USER_AGENT}, timeout=700)
-            if response.status_code == 200:
-                elements = response.json()["elements"]
-                break
-            print(f"  {url}: HTTP {response.status_code}", file=sys.stderr)
-        except (httpx.HTTPError, ValueError) as error:
-            print(f"  {url}: {error}", file=sys.stderr)
-    if elements is None:
-        sys.exit("Could not reach Overpass; nothing written.")
+    # Asked tile by tile: Overpass gives up (504) on the whole area at once. Each tile is kept
+    # in output/city/osm/, so running it again only asks for the tiles still missing.
+    cache = ROOT / "output" / "city" / "osm"
+    cache.mkdir(parents=True, exist_ok=True)
+    print(f"Fetching OpenStreetMap for {box} in {TILES * TILES} tiles…")
+    seen: dict[tuple, dict] = {}
+    missing = 0
+    for i in range(TILES):
+        for j in range(TILES):
+            tile = (s + (n - s) * i / TILES, w + (e - w) * j / TILES, s + (n - s) * (i + 1) / TILES, w + (e - w) * (j + 1) / TILES)
+            path = cache / f"tile-{i}-{j}.json"
+            if path.exists():
+                elements = json.loads(path.read_text())
+            else:
+                elements = overpass_tile(tile)
+                if elements is None:
+                    missing += 1
+                    continue
+                path.write_text(json.dumps(elements, separators=(",", ":")))
+                time.sleep(2)
+            print(f"  tile {i * TILES + j + 1}/{TILES * TILES}: {len(elements)} features")
+            for el in elements:
+                seen[(el["type"], el["id"])] = el
+    if missing:
+        sys.exit(f"{missing} tiles could not be fetched (Overpass busy); run it again to fetch only those. Nothing written yet.")
+    elements = list(seen.values())
 
     # Stored in 1e-5 degrees from the frame's centre (about a metre), simplified in metres.
     lat0, lon0 = city["frame"]["lat"], city["frame"]["lon"]
