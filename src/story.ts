@@ -285,7 +285,7 @@ export class Story {
         if (this.has('first-fight') && !this.has('palace')) return [{ kind: 'palace' }];
         if (this.has('wrapper-room') && !this.has('caught')) return [{ kind: 'ambush' }];
         if (!this.set('intro')) return [];
-        return [{ kind: 'card', id: 'intro' }, say(LINES.wake), { kind: 'hint', id: 'move' }];
+        return [{ kind: 'card', id: 'intro' }, say(LINES.wake)];
       case 'minion':
         if (!this.has('dejavu') || !this.set('minion')) return [];
         return [say(LINES.minion), { kind: 'battle', encounter: 'dogs' }];

@@ -11,7 +11,7 @@ const kinds = effects => effects.map(e => e.id ?? e.item ? `${e.kind}:${e.id ?? 
 test('block 1 plays from waking up to the first fight in order', () => {
   const story = new Story();
   assert.equal(story.started, false);
-  assert.deepEqual(kinds(story.handle({ type: 'start' })), ['card:intro', 'dialogue', 'hint:move']);
+  assert.deepEqual(kinds(story.handle({ type: 'start' })), ['card:intro', 'dialogue']);
   assert.deepEqual(story.handle({ type: 'start' }), [], 'the intro plays once');
   assert.equal(story.canRun, false);
 

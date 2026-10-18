@@ -14,7 +14,7 @@
       "caption": "Chapter card on the birthday morning"
     },
     {
-      "until": "!!document.querySelector('#hud[data-dialogue]') || !document.querySelector('.key-hint').hidden",
+      "until": "document.querySelector('#story-card').hidden",
       "timeout": 30000
     },
     {
@@ -27,16 +27,7 @@
     },
     {
       "shot": "bedroom",
-      "caption": "Exploring the bedroom; the only help is a key hint"
-    },
-    {
-      "hold": ["KeyS"],
-      "until": "document.querySelector('.key-hint').hidden",
-      "timeout": 20000
-    },
-    {
-      "shot": "bedroom-walking",
-      "caption": "Once Gerard walks, the movement hint is gone and nothing stays on screen"
+      "caption": "Exploring the bedroom with no on-screen help"
     },
     {
       "teleport": "home-floor-2",
