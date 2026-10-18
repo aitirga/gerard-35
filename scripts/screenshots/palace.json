@@ -194,6 +194,9 @@
       "timeout": 30000
     },
     {
+      "eval": "new MutationObserver(() => { if (document.querySelector('.battle-speech-line[data-shout]')) window.sawShout = true; if (document.querySelector('.class-banner:not([hidden])')) window.sawBanner = true; }).observe(document.querySelector('#battle'), { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] })"
+    },
+    {
       "shot": "fight",
       "delay": 4000,
       "caption": "Un esbirro de verdad: every hit is swallowed"
@@ -211,7 +214,7 @@
       "caption": "«¡Gerard, me va a matar!»"
     },
     {
-      "until": "!!document.querySelector('.battle-speech-line[data-shout]')",
+      "until": "window.sawShout",
       "timeout": 60000
     },
     {
@@ -220,13 +223,13 @@
       "caption": "«¡NO!»"
     },
     {
-      "until": "!document.querySelector('.class-banner').hidden",
+      "until": "window.sawBanner",
       "timeout": 60000
     },
     {
       "shot": "noista",
       "delay": 600,
-      "caption": "Clase desbloqueada: Noísta"
+      "caption": "Ánima desbloqueada: Noísta"
     },
     {
       "until": "!document.querySelector('#battle').dataset.beat && !document.querySelector('[data-command=\"skill\"] .command-trigger').disabled",
