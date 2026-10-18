@@ -3,7 +3,7 @@
 The first mini dungeon of the game, and the place the game comes back to for its final dungeon.
 In chapter 1 it rises at the **north end of Passatge Maresme**, the opposite end of the street from
 the first fight, and it is gone again when the boys return to reality at the end of the chapter.
-In **phase two it reappears in Barcelona, on top of Gerard's school**. It is the same building in
+In **phase two it reappears in Barcelona, on top of the Rec Comtal school (Trinitat Vella, chapter 2)**. It is the same building in
 both places: in chapter 1 the party only sees its front, its hall and one wing, and the rest is
 designed now so that later visits open new doors in it. Story context lives in `docs/lore.md`;
 this file says how the palace looks and plays.
@@ -280,7 +280,7 @@ fight under three strategies, the beat and No-ta), `tests/environments.test.mjs`
    - `src/palace.ts`: builds and animates the exterior (rampart, gate and bubble, twist towers,
      bubble domes, crown tower with balcony). A `grow(progress)` drives the transformation and
      `set(state)` places it for reloads. It takes a base (position, footprint, height) so the same
-     palace can stand at the end of the street now and **on top of Gerard's school in Barcelona**
+     palace can stand at the end of the street now and **on top of the Rec Comtal school (Trinitat Vella, chapter 2) in Barcelona**
      in phase two. The street-only parts (the gum coating on the north houses, the forecourt runner
      and lanterns) live beside it, not inside it.
    - `src/game.ts`: shows it on `maresme` when `story.has('palace')`, runs the cut-scene with the
@@ -318,7 +318,7 @@ fight under three strategies, the beat and No-ta), `tests/environments.test.mjs`
 - **Noísta** comes from Gerard always contradicting. The wider class system stays open (see
   *How classes fit the game*).
 - **The palace leaves Sant Quirze** when the boys return to reality at the end of chapter 1. In
-  phase two it reappears in **Barcelona, on top of Gerard's school**. So `src/palace.ts` must sit on
+  phase two it reappears in **Barcelona, on top of the Rec Comtal school (Trinitat Vella, chapter 2)**. So `src/palace.ts` must sit on
   any base, a street end or a school roof, and its growth animation must work in both places.
 - **No portrait hints at Nuria Mendoza** for now; the Queen's portraits show an invented look.
 
