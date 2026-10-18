@@ -8,7 +8,6 @@ import { createBattleUI } from './battle-ui';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent } from './story';
 import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
-import { SCARVES } from './animas';
 import type { MemberId } from './story';
 
 const isMember = (id: string): id is MemberId => id === 'gerard' || id === 'bernat' || id === 'aitor';
@@ -39,11 +38,6 @@ const loadoutKey = 'gerard35.loadout.v1';
 function restoreLoadout() { try { story.loadout = JSON.parse(localStorage.getItem(loadoutKey) ?? '{}'); } catch { /* Storage is optional. */ } }
 function keepLoadout() { try { localStorage.setItem(loadoutKey, JSON.stringify(story.loadout)); } catch { /* Storage is optional. */ } }
 restoreLoadout();
-// Scarf colours picked for each ánima, kept the same way.
-const scarvesKey = 'gerard35.scarves.v1';
-function restoreScarves() { try { story.scarves = JSON.parse(localStorage.getItem(scarvesKey) ?? '{}'); } catch { /* Storage is optional. */ } }
-function keepScarves() { try { localStorage.setItem(scarvesKey, JSON.stringify(story.scarves)); } catch { /* Storage is optional. */ } }
-restoreScarves();
 /**
  * Two players from chapter 2 (docs/party.md). `solo` is for development only: player 1 also plays
  * Aitor. It comes from ?solo (just dev-solo) or the switch on the Mando page, and is remembered.
@@ -69,7 +63,7 @@ async function load() {
     if (!Number.isInteger(state.score) || state.score < 0) throw new Error('state');
     previousScore = state.score;
     // A development jump keeps its own flags instead of the saved progress.
-    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); savedStory = JSON.stringify(story.saved); restoreLoadout(); restoreScarves(); }
+    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); savedStory = JSON.stringify(story.saved); restoreLoadout(); }
     loaded = true;
     if (dirty) void save();
   } catch {
@@ -109,9 +103,8 @@ try {
     driver: id => battleDriver(control, id),
     waiting: id => waitingForPlayer2(control, id),
     classes: () => story.classes,
-    scarf: (id, classId) => isMember(id) ? SCARVES[story.scarfOf(id, classId)].colour : undefined,
     // Each fighter's pick in the fight is their pick for the adventure too.
-    anima: (id, classId, scarf) => { game.changeAnima(id, classId, scarf); if (isMember(id) && story.wear(id, classId)) { keepLoadout(); storyChanged(); } },
+    anima: (id, classId) => { game.changeAnima(id, classId); if (isMember(id) && story.wear(id, classId)) { keepLoadout(); storyChanged(); } },
     solo: () => control.mode === 'solo',
   });
   /** Re-applies who drives Aitor after the mode or the second controller changes. */
@@ -124,7 +117,6 @@ try {
     pause: paused => game.setPaused(paused),
     openMenu: () => controller.open(),
     wear: (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } },
-    tie: (member, classId, scarf) => { if (story.tie(member, classId, scarf)) { keepScarves(); storyChanged(); } },
     // With a second player on Aitor, each player gets their own half of the status screen.
     split: () => partnerDriven(control, story.partner),
     partner: () => game.partnerPosition,

@@ -26,9 +26,8 @@ const ownColours = new WeakMap<pc.StandardMaterial, pc.Color>();
 /**
  * Dresses a character model in a class: recolours its materials by name (the model must own
  * them) and ties a scarf at the neck, once. Works on Gerard in the street and on his battle copy.
- * `scarfColour` is the colour the wearer picked in the status screen (animas.ts), if not the class's own.
  */
-export function wearClass(model: pc.Entity, id: ClassId, scarfColour = CLASSES[id].scarf) {
+export function wearClass(model: pc.Entity, id: ClassId) {
   const spec = CLASSES[id];
   const seen = new Set<pc.Material>();
   model.findComponents('render').forEach(component => (component as pc.RenderComponent).meshInstances.forEach(mesh => {
@@ -39,11 +38,8 @@ export function wearClass(model: pc.Entity, id: ClassId, scarfColour = CLASSES[i
     if (colour) { if (!ownColours.has(m)) ownColours.set(m, m.diffuse.clone()); m.diffuse.fromString(colour); m.update(); }
   }));
   const body = model.findByName('Cuerpo') as pc.Entity | null;
-  if (!body) return;
-  // Already tied: only its colour can change.
-  const tied = body.findByName('Banda del pañuelo') as pc.Entity | null;
-  if (tied) { const m = tied.render!.meshInstances[0].material as pc.StandardMaterial; m.diffuse.fromString(scarfColour); m.update(); return; }
-  const cloth = new pc.StandardMaterial(); cloth.name = 'Pañuelo'; cloth.diffuse.fromString(scarfColour); cloth.gloss = .35; cloth.update();
+  if (!body || body.findByName('Pañuelo')) return;
+  const cloth = new pc.StandardMaterial(); cloth.name = 'Pañuelo'; cloth.diffuse.fromString(spec.scarf); cloth.gloss = .35; cloth.update();
   const scarf = new pc.Entity('Pañuelo'); body.addChild(scarf);
   const part = (name: string, p: number[], s: number[], r: number[] = [0, 0, 0]) => {
     const e = new pc.Entity(name); e.addComponent('render', { type: 'box', material: cloth, castShadows: true });

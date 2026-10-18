@@ -1,6 +1,6 @@
 /**
  * The party's faces and vitals, shared by the status screen and the fights: a round avatar (with
- * the ánima's scarf over the provisional portraits) and a plate whose PV and Secundaria run as two
+ * the ánima's scarf, in its colour, over the provisional portraits) and a plate whose PV and Secundaria run as two
  * waves out of the avatar. `setVitals` updates a plate in place so the waves glide; `flashAnima`
  * lights the avatar up when its ánima changes. Looks live in style.css (.vitals).
  */
@@ -8,7 +8,7 @@ import { SPEAKERS } from './dialogue';
 import type { ProfileId } from './stats';
 
 const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
-/** A scarf over the provisional SVG portraits (same 48×48 box), in the colour the member picked. */
+/** A scarf over the provisional SVG portraits (same 48×48 box), in the ánima's colour. */
 const scarfArt = (colour: string) => `<svg class="portrait-scarf" viewBox="0 0 48 48" aria-hidden="true" style="--scarf:${colour}"><path d="M16.5 32.5Q24 37 31.5 32.5l.6 3.4Q24 41 15.9 35.9Z"/><circle cx="28.6" cy="36.4" r="1.7"/><path d="M27.6 37.2l2.6 6.2-2.2.5-1.7-5.9Z"/></svg>`;
 
 /** Gerard as a boy has a painted portrait; the rest use their provisional dialogue art. */
@@ -21,11 +21,12 @@ export function portrait(profile: ProfileId, name: string, scarf?: string) {
 
 /** Two gentle S-curves, one under the other: PV on top, Secundaria below. */
 const WAVES = ['M2 10C40 1 78 19 120 10S200 1 238 10', 'M2 26C40 17 78 35 120 26S200 17 238 26'];
-export interface Vitals { id: string; name: string; profile: ProfileId; hp: number; maxHp: number; sec: number; maxSec: number; anima?: string; scarf?: string }
+/** `anima` is the worn ánima's name and `colour` its colour (classes.ts), if any. */
+export interface Vitals { id: string; name: string; profile: ProfileId; hp: number; maxHp: number; sec: number; maxSec: number; anima?: string; colour?: string }
 export function vitalsPlate(v: Vitals) {
   const wave = (d: string, bar: 'hp' | 'sec', ratio: number) => `<path class="wave-track" d="${d}"/><path class="wave-trail" data-bar="${bar}" d="${d}" pathLength="100" style="stroke-dasharray:${(ratio * 100).toFixed(1)} 1000"/><path class="wave-fill" data-bar="${bar}" d="${d}" pathLength="100" style="stroke-dasharray:${(ratio * 100).toFixed(1)} 1000"/>`;
-  return `<div class="vitals" data-member="${v.id}"${v.scarf ? ` style="--anima:${v.scarf}"` : ''}>
-    <div class="vitals-avatar">${portrait(v.profile, v.name, v.scarf)}<i class="vitals-burst" aria-hidden="true"></i></div>
+  return `<div class="vitals" data-member="${v.id}"${v.colour ? ` style="--anima:${v.colour}"` : ''}>
+    <div class="vitals-avatar">${portrait(v.profile, v.name, v.colour)}<i class="vitals-burst" aria-hidden="true"></i></div>
     <div class="vitals-body">
       <div class="vitals-head"><strong>${escape(v.name)}</strong><span class="vitals-tag">${v.anima ? escape(v.anima.toUpperCase()) : ''}</span></div>
       <svg class="vitals-waves" viewBox="0 0 240 36" preserveAspectRatio="none" aria-hidden="true">${wave(WAVES[0], 'hp', v.hp / v.maxHp)}${wave(WAVES[1], 'sec', v.maxSec ? v.sec / v.maxSec : 0)}</svg>

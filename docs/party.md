@@ -78,17 +78,17 @@ Fuerza, Defensa).
   (Noísta: Magia +2, Espíritu +2, Defensa −1) and its skills, and its look shows in fights
   (the scarf).
 - Pick who wears what in the status screen's **Ánimas** page (C, then E / R): the status screen
-  calls classes *ánimas*. It shows what the ánima changes, its skills, who wears it and the
-  colour of its scarf, which each member picks for themselves (it shows in fights and on the
-  portrait). Gerard wears Noísta until told otherwise. With a second player each player opens
+  calls classes *ánimas*. It shows each member's vitals with their own ánima, and what the ánima
+  changes and grants. An ánima's colours and look come with it: Noísta is always the red scarf
+  and the protest-poster interface. Gerard wears Noísta until told otherwise. With a second player each player opens
   their own half of the status screen (Gerard left, Aitor right) and dresses only their own
   character.
 - **Changing ánima in a fight** happens on your own turn and does not spend it: the chips under
   your card, or L / R on the controller (Q / E on the keyboard). PV and Secundaria keep what is
   left; stats and skills change at once, and the face on the card and the fighter in the 3D fight
   light up in the ánima's colour. The pick is kept for the adventure too.
-- Who wears what, and the scarf colours, are choices that change back and forth, so they are kept
-  in the browser, not in the saved story flags.
+- Who wears what is a choice that changes back and forth, so it is kept in the browser, not in
+  the saved story flags.
 
 ## How it is built
 
@@ -107,7 +107,6 @@ Fuerza, Defensa).
 - `src/vitals.ts`: the face and the PV / Secundaria waves shared by fights and the status screen,
   and the light when an ánima changes.
 - `src/exploration-ui.ts`: the status screen, split in two halves when player 2 is there.
-- `src/animas.ts`: the scarf palette; `story.tie` / `story.scarves` keep each member's pick.
 - Tests: `tests/party.test.mjs`, `tests/battle.test.mjs`. Screenshots: `just screenshots duo` (fakes
   two controllers) and `just screenshots battle-solo` (the debug mode).
 

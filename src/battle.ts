@@ -33,9 +33,8 @@ export interface Combatant {
   stats: Stats;
   /** Who the fighter is underneath (stats.ts), e.g. Gerard as a boy or at 35. */
   profile: ProfileId;
-  /** The class the fighter wears, if any, and the colour of its scarf. */
+  /** The class the fighter wears, if any. */
   classId?: ClassId;
-  scarf?: string;
   kind?: FoeKind;
   /** Pringue: a gum shell that swallows every hit except No-ta. */
   shell?: boolean;
@@ -53,8 +52,7 @@ export interface BattleState {
   encounter: Encounter;
 }
 /** Someone who fights on the party's side: `id` names them in the fight, `profile` gives their stats. */
-/** `scarf` is the colour of the scarf the class ties at the neck, if the wearer picked one. */
-export interface PartySlot { id: string; name: string; profile: ProfileId; classId?: ClassId; scarf?: string }
+export interface PartySlot { id: string; name: string; profile: ProfileId; classId?: ClassId }
 /** Chapter 1's party: Gerard, and Bernat once he walks with him. */
 export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[] {
   return [{ id: 'gerard', name: 'Gerard', profile: 'gerard', classId: gerardClass }, ...(allyCount === 2 ? [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }] : [])];
@@ -70,7 +68,7 @@ export function skillsFor(_state: BattleState, actor: Combatant) {
 export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; healed?: { id: string; amount: number }[] }
 function fighter(slot: PartySlot): Combatant {
   const stats = withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined);
-  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, scarf: slot.scarf, stats, hp: stats.pv, maxHp: stats.pv, secondary: stats.sec, maxSecondary: stats.sec, guarding: false };
+  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, hp: stats.pv, maxHp: stats.pv, secondary: stats.sec, maxSecondary: stats.sec, guarding: false };
 }
 function foe(id: string, name: string, kind: FoeKind, hp?: number): Combatant {
   const stats = { ...PROFILES[kind], ...(hp ? { pv: hp } : {}) };
@@ -217,11 +215,11 @@ function minionAct(state: BattleState, actor: Combatant): BattleEffect | undefin
  * spend the turn: it only changes their stats and skills. PV and Secundaria keep what is left,
  * within the new maximums. Returns whether it changed.
  */
-export function changeAnima(state: BattleState, allyId: string, classId: ClassId | null, scarf?: string) {
+export function changeAnima(state: BattleState, allyId: string, classId: ClassId | null) {
   const ally = state.allies.find(a => a.id === allyId);
   if (state.phase !== 'player' || !ally || ally.hp <= 0 || state.allies[state.active] !== ally || (ally.classId ?? null) === classId) return false;
   const { hp, secondary } = ally;
-  Object.assign(ally, fighter({ id: ally.id, name: ally.name, profile: ally.profile, classId: classId ?? undefined, scarf: classId ? scarf : undefined }));
+  Object.assign(ally, fighter({ id: ally.id, name: ally.name, profile: ally.profile, classId: classId ?? undefined }));
   ally.hp = Math.min(hp, ally.maxHp); ally.secondary = Math.min(secondary, ally.maxSecondary);
   state.message = classId ? `${ally.name} cambia de ánima.` : `${ally.name} se quita el ánima.`;
   return true;

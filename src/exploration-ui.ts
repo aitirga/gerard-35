@@ -7,7 +7,6 @@ import type { MemberId, PartyMember, Story } from './story';
 import { CLASS_STATS, SKILLS, type ClassId } from './battle';
 import { CLASSES } from './classes';
 import { PROFILES, STAT_LABELS, withBonus, type Stats } from './stats';
-import { SCARF_IDS, SCARVES, type ScarfId } from './animas';
 import { currentThought, diary, storyClock } from './journal';
 import type { PlayerId } from './party';
 import { flashAnima, portrait as face, vitalsPlate } from './vitals';
@@ -39,8 +38,6 @@ export interface StatusCallbacks {
   openMenu: () => void;
   /** Puts one of the party's ánimas (classes) on a member, or takes it off with `null`. */
   wear: (member: MemberId, classId: ClassId | null) => void;
-  /** Picks the colour of the scarf an ánima ties on a member. */
-  tie: (member: MemberId, classId: ClassId, scarf: ScarfId) => void;
   /** Whether a second player plays Aitor right now: then each player gets their own half. */
   split: () => boolean;
   /** Where the partner (Aitor, Bernat) stands, for the map. */
@@ -79,18 +76,19 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   const ownerOf = (sheet: Sheet): MemberId => sheet.player === 2 ? 'aitor' : 'gerard';
   /** Who a sheet can dress: alone, player 1 looks after the whole party; split, each their own. */
   const wardsOf = (sheet: Sheet) => story.party.filter(m => !callbacks.split() || m.id === ownerOf(sheet));
-  const scarfColour = (member: PartyMember) => member.classId ? SCARVES[story.scarfOf(member.id, member.classId)].colour : undefined;
+  /** An ánima's colours and look come with it (classes.ts). */
+  const scarfColour = (member: PartyMember) => member.classId ? CLASSES[member.classId].scarf : undefined;
 
   const portrait = (member: PartyMember) => face(member.profile, member.name, scarfColour(member));
   /** Out of a fight everyone is rested: full PV and Secundaria, with the ánima's colours. */
   function plate(member: PartyMember) {
     const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
-    return vitalsPlate({ id: member.id, name: member.name, profile: member.profile, hp: stats.pv, maxHp: stats.pv, sec: stats.sec, maxSec: stats.sec, anima: member.classId && CLASSES[member.classId].name, scarf: scarfColour(member) });
+    return vitalsPlate({ id: member.id, name: member.name, profile: member.profile, hp: stats.pv, maxHp: stats.pv, sec: stats.sec, maxSec: stats.sec, anima: member.classId && CLASSES[member.classId].name, colour: scarfColour(member) });
   }
   /** One chip per woken ánima (and none): each member wears their own, and two can differ. */
   function animaSwitch(member: PartyMember) {
     if (!story.classes.length) return '';
-    return `<div class="anima-switch" role="group" aria-label="Ánima de ${escape(member.name)}"><span class="battle-kicker">ÁNIMA</span><div class="anima-chips">${[null, ...story.classes].map(id => `<button type="button" data-key="wear:${member.id}:${id ?? ''}" data-wear="${member.id}" data-class-id="${id ?? ''}" aria-pressed="${(member.classId ?? null) === id}" style="--chip:${id ? SCARVES[story.scarfOf(member.id, id)].colour : 'var(--ui-paper)'}">${id ? CLASSES[id].name : 'Sin ánima'}</button>`).join('')}</div></div>`;
+    return `<div class="anima-switch" role="group" aria-label="Ánima de ${escape(member.name)}"><span class="battle-kicker">ÁNIMA</span><div class="anima-chips">${[null, ...story.classes].map(id => `<button type="button" data-key="wear:${member.id}:${id ?? ''}" data-wear="${member.id}" data-class-id="${id ?? ''}" aria-pressed="${(member.classId ?? null) === id}" style="--chip:${id ? CLASSES[id].scarf : 'var(--ui-paper)'}">${id ? CLASSES[id].name : 'Sin ánima'}</button>`).join('')}</div></div>`;
   }
   const bonusChips = (classId: ClassId) => (Object.entries(CLASS_STATS[classId]) as [keyof Stats, number][])
     .map(([key, value]) => `<li data-sign="${value > 0 ? 'up' : 'down'}">${STAT_LABELS[key]} ${value > 0 ? '+' : '−'}${Math.abs(value)}</li>`).join('');
@@ -137,16 +135,11 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const own = wards.find(m => m.id === ownerOf(sheet)) ?? wards[0];
     const viewing = sheet.viewing && classes.includes(sheet.viewing) ? sheet.viewing : own?.classId ?? classes[0];
     const spec = CLASSES[viewing];
-    // Each member: their vitals, their ánima and, for the one in view, the colour of its scarf.
-    const wearers = wards.map(m => {
-      const picked = story.scarfOf(m.id, viewing);
-      return `<article class="anima-wearer" data-member="${m.id}">${plate(m)}${animaSwitch(m)}
-        <div class="scarf-picker" role="group" aria-label="Pañuelo de ${escape(m.name)} con ${spec.name}"><span>Pañuelo · ${spec.name}</span>${SCARF_IDS.map(id => `<button type="button" data-key="tie:${m.id}:${id}" data-tie="${m.id}" data-class-id="${viewing}" data-scarf="${id}" aria-pressed="${picked === id}" title="${SCARVES[id].name}" aria-label="${SCARVES[id].name}" style="--swatch:${SCARVES[id].colour}"></button>`).join('')}</div>
-      </article>`;
-    }).join('');
+    // Each member: their vitals and their own ánima.
+    const wearers = wards.map(m => `<article class="anima-wearer" data-member="${m.id}">${plate(m)}${animaSwitch(m)}</article>`).join('');
     return `<div class="animas-page">
       <section class="anima-wearers" data-count="${wards.length}">${wearers}</section>
-      <article class="anima-detail" style="--scarf:${own ? SCARVES[story.scarfOf(own.id, viewing)].colour : spec.scarf}">
+      <article class="anima-detail" style="--scarf:${spec.scarf}">
         <div><span class="battle-kicker">ÁNIMA</span><h2>${spec.name}</h2><p class="anima-motto">${spec.motto}</p></div>
         <section><span class="battle-kicker">CAMBIA</span><ul class="anima-bonus">${bonusChips(viewing)}</ul></section>
         <section><span class="battle-kicker">HABILIDADES</span><ul class="anima-skills">${skillsOf(viewing).map(s => `<li><strong>${s.name}</strong><small>${s.cost} SEC</small><span>${s.description}</span></li>`).join('')}</ul></section>
@@ -284,10 +277,9 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const sheet = sheets.find(s => button && s.el.contains(button));
     if (!button || !sheet) return;
     sheet.cursor = button.dataset.key;
-    const { wear, classId, tie, scarf, panel } = button.dataset;
+    const { wear, classId, panel } = button.dataset;
     if (wear && classId) sheet.viewing = classId as ClassId;
     if (wear) callbacks.wear(wear as MemberId, (classId || null) as ClassId | null);
-    else if (tie) callbacks.tie(tie as MemberId, classId as ClassId, scarf as ScarfId);
     else if (panel) show(panel as PanelId, sheet.player);
     else if (button.hasAttribute('data-close')) close(sheet.player);
   }

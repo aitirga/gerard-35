@@ -186,9 +186,9 @@ test('a fighter changes ánima on their own turn without spending it', async () 
   assert.equal(s.allies[s.active].id, 'gerard', 'Gerard is faster');
   assert.equal(changeAnima(s, 'aitor', 'noista'), false, 'only on your own turn');
   s.allies[0].hp = 50; s.allies[0].secondary = 20;
-  assert.equal(changeAnima(s, 'gerard', 'noista', '#3d5a8a'), true);
+  assert.equal(changeAnima(s, 'gerard', 'noista'), true);
   const gerard = s.allies[0];
-  assert.deepEqual([gerard.classId, gerard.scarf, gerard.stats.magia, gerard.hp, gerard.secondary], ['noista', '#3d5a8a', 15, 50, 20]);
+  assert.deepEqual([gerard.classId, gerard.stats.magia, gerard.hp, gerard.secondary], ['noista', 15, 50, 20]);
   assert.ok(skillsFor(s, gerard).some(skill => skill.id === 'nota'));
   assert.equal(s.allies[s.active].id, 'gerard', 'still his turn');
   assert.equal(changeAnima(s, 'gerard', 'noista'), false, 'already wearing it');

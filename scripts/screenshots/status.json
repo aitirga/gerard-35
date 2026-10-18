@@ -1,6 +1,6 @@
 {
   "title": "Status screen",
-  "description": "The status screen (C / top face button) fits on one screen: Estado with portrait, stats, ánima, a vague line about the day and the time; L / R (Q / E) turn to Ánimas (wear and pick the scarf colour), Objetos (shared with Aitor), Mapa and Diario (a cryptic thought, never an instruction). With a second player on Aitor each opens their own half: Gerard left, Aitor right. Two standard gamepads are faked in the page.",
+  "description": "The status screen (C / top face button) fits on one screen: Estado with portrait, stats, ánima, a vague line about the day and the time; L / R (Q / E) turn to Ánimas (each member wears their own), Objetos (shared with Aitor), Mapa and Diario (a cryptic thought, never an instruction). With a second player on Aitor each opens their own half: Gerard left, Aitor right. Two standard gamepads are faked in the page.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=0"
@@ -10,7 +10,7 @@
       "timeout": 60000
     },
     {
-      "eval": "localStorage.removeItem('gerard35.scarves.v1'); localStorage.removeItem('gerard35.loadout.v1'); window.gerard.story.scarves = {}; window.gerard.story.loadout = {};"
+      "eval": "localStorage.removeItem('gerard35.loadout.v1'); window.gerard.story.loadout = {};"
     },
     {
       "wait": 1500
@@ -29,15 +29,15 @@
     {
       "shot": "animas",
       "delay": 1200,
-      "caption": "E (or R on a controller) turns the page: Ánimas, each member's vitals with their own ánima chips and scarf, and what the ánima changes"
+      "caption": "E (or R on a controller) turns the page: Ánimas, each member's vitals with their own ánima chips, and what the ánima changes"
     },
     {
-      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click(); document.querySelector('[data-tie=\"aitor\"][data-scarf=\"noche\"]').click(); document.querySelector('[data-tie=\"gerard\"][data-scarf=\"mostaza\"]').click();"
+      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click();"
     },
     {
       "shot": "animas-personalised",
       "delay": 350,
-      "caption": "Aitor puts Noísta on with a navy scarf (his face lights up); Gerard switches his to mustard"
+      "caption": "Aitor puts Noísta on too: his face lights up in the ánima's colours"
     },
     {
       "press": "KeyE"
@@ -71,7 +71,7 @@
     {
       "shot": "back-to-estado",
       "delay": 1200,
-      "caption": "Q goes back; Estado now shows the mustard scarf on Gerard's portrait"
+      "caption": "Q goes back to Estado"
     },
     {
       "press": "Escape"
@@ -132,19 +132,19 @@
       "eval": "tap(1, 4)"
     },
     {
-      "eval": "window.before = JSON.stringify([window.gerard.story.loadout, window.gerard.story.scarves]); tap(1, 13)"
+      "eval": "window.before = JSON.stringify(window.gerard.story.loadout); tap(1, 13)"
     },
     {
       "eval": "tap(1, 0)"
     },
     {
-      "until": "JSON.stringify([window.gerard.story.loadout, window.gerard.story.scarves]) !== window.before",
+      "until": "JSON.stringify(window.gerard.story.loadout) !== window.before",
       "timeout": 20000
     },
     {
       "shot": "duo-aitor-animas",
       "delay": 1200,
-      "caption": "Aitor's own Ánimas page, driven by his controller: his vitals, his ánima chips and his scarf only"
+      "caption": "Aitor's own Ánimas page, driven by his controller: his vitals and his ánima only"
     },
     {
       "eval": "Promise.all([tap(0, 1), tap(1, 1)])"

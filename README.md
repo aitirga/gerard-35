@@ -286,7 +286,7 @@ or **L / R** on the controller turn the pages:
 | Page | Shows |
 | --- | --- |
 | Estado (first) | Portrait, the vitals plate (face, PV and Secundaria as two waves) with the ánima switch right under it, stats and skills, a vague line about the day ("Entender qué está pasando."), place, company and the time on Gerard's phone |
-| Ánimas | Each member's vitals with their own ánima chips (two can differ) and the colour of its scarf, and what the ánima in view changes and grants. Hidden until the first one wakes |
+| Ánimas | Each member's vitals with their own ánima chips (two can differ), and what the ánima in view changes and grants; colours and looks come with the ánima. Hidden until the first one wakes |
 | Objetos | Common and key items, one bag shared with Aitor |
 | Mapa | The local map with Gerard and Aitor on it |
 | Diario | A thought Gerard cannot shake, cryptic and never an instruction, and what he remembers of each chapter |
@@ -305,7 +305,7 @@ badge saying so). Fights split the same way: see docs/party.md.
 
 `src/exploration-ui.ts` owns the status screen: its pages, shortcuts, the two
 halves and their cursors. `src/journal.ts` writes the clock, the mission line and
-the diary from the story flags; `src/animas.ts` holds the scarf palette. `src/world-map.ts` draws any `Environment` from its collision grid,
+the diary from the story flags. `src/world-map.ts` draws any `Environment` from its collision grid,
 house footprints and numbered interactions, with no location-specific map layout.
 Add locations in `src/environments.ts` to reuse the renderer. The map is an
 informational local overview, not a travel menu.

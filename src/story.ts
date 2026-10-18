@@ -9,7 +9,6 @@ import type { Cell } from './movement';
 import type { ItemId } from './items';
 import type { ClassId, PartySlot } from './battle';
 import type { ProfileId } from './stats';
-import { DEFAULT_SCARF, SCARVES, isScarf, type ScarfId } from './animas.ts';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
@@ -85,8 +84,6 @@ export interface PartyMember {
 }
 /** Who wears which class. Not a story flag: it changes back and forth, so `main.ts` keeps it in the browser. */
 export type Loadout = Partial<Record<MemberId, ClassId | null>>;
-/** The scarf colour each member picked for each ánima (class). Kept in the browser like the loadout. */
-export type Scarves = Partial<Record<MemberId, Partial<Record<ClassId, ScarfId>>>>;
 /** Who walks beside Gerard: Bernat in chapter 1, Aitor from chapter 2 on. */
 export type Partner = 'bernat' | 'aitor';
 
@@ -128,8 +125,6 @@ export class Story {
   private away = false;
   /** Who wears which class; members missing here wear their default (see `classOf`). */
   private worn: Loadout = {};
-  /** Scarf colours picked per member and ánima; missing ones use the ánima's own. */
-  private tied: Scarves = {};
   constructor(flags: Iterable<string> = []) {
     this.flags = new Set([...flags].filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
   }
@@ -176,22 +171,6 @@ export class Story {
       if (['gerard', 'bernat', 'aitor'].includes(member) && (classId === null || this.classes.includes(classId as ClassId))) this.worn[member as MemberId] = classId as ClassId | null;
     }
   }
-  /** The scarf `member` wears with an ánima. */
-  scarfOf(member: MemberId, classId: ClassId): ScarfId { return this.tied[member]?.[classId] ?? DEFAULT_SCARF[classId]; }
-  /** Personalises an ánima for one member: the colour of its scarf. Locked ánimas are refused. */
-  tie(member: MemberId, classId: ClassId, scarf: ScarfId) {
-    if (!this.classes.includes(classId) || !isScarf(scarf)) return false;
-    this.tied[member] = { ...this.tied[member], [classId]: scarf };
-    return true;
-  }
-  get scarves(): Scarves { return JSON.parse(JSON.stringify(this.tied)); }
-  set scarves(value: Scarves) {
-    this.tied = {};
-    for (const [member, picks] of Object.entries(value ?? {})) {
-      if (!['gerard', 'bernat', 'aitor'].includes(member) || !picks || typeof picks !== 'object') continue;
-      for (const [classId, scarf] of Object.entries(picks)) if (classId in DEFAULT_SCARF && isScarf(scarf)) this.tied[member as MemberId] = { ...this.tied[member as MemberId], [classId]: scarf };
-    }
-  }
   /** Who walks beside Gerard here and now, if anyone. */
   get partner(): Partner | undefined { return this.adult ? 'aitor' : this.companion !== 'none' ? 'bernat' : undefined; }
   /** Cells the story keeps shut in a scene (the stuck back door of the wrapper room). */
@@ -226,7 +205,7 @@ export class Story {
   /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). */
   battleParty(withPartner: boolean): PartySlot[] {
     return this.party.filter(m => m.id === 'gerard' || withPartner)
-      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, scarf: classId ? SCARVES[this.scarfOf(id, classId)].colour : undefined }));
+      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId }));
   }
   /** Where a new or reloaded game puts Gerard, if the story decides it. */
   get resume(): { environment: EnvironmentId; cell: Cell } {

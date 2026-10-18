@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import type { BattleEffect, BattleState, ClassId } from './battle';
-import { unwearClass, wearClass } from './classes';
+import { CLASSES, unwearClass, wearClass } from './classes';
 import { ACTION_SECONDS, CONTACT_SECONDS, ENTRY_SECONDS, clamp01, contactMotion, smooth } from './battle-motion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
@@ -182,14 +182,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
      * A fighter changes ánima: a burst of light in the ánima's colour, sparks rising round them,
      * and the look changes at the brightest moment.
      */
-    changeAnima(id: string, classId: ClassId | null, scarf?: string) {
+    changeAnima(id: string, classId: ClassId | null) {
       const f = fighters.get(id);
       if (!f) return;
-      const glow = new pc.Color().fromString(scarf ?? '#f3efdc');
+      const glow = new pc.Color().fromString(classId ? CLASSES[classId].scarf : '#f3efdc');
       hit(f, glow, 1.8);
       effects.emit('spark', new pc.Vec3(f.base.x, 1.2, f.base.z), 20, .35);
       effects.emit('poof', new pc.Vec3(f.base.x, .3, f.base.z), 10, .45);
-      setTimeout(() => { if (classId) wearClass(f.model, classId, scarf); else unwearClass(f.model); }, 180);
+      setTimeout(() => { if (classId) wearClass(f.model, classId); else unwearClass(f.model); }, 180);
     },
     /** Dark pink, glowing eyes for the street dogs: they obey La Reina Bubbaloo's minion. */
     possess(on: boolean) {
@@ -223,7 +223,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const source = party ? partyModel(unit.id) : minion ? minionTemplate! : dogs[i];
           const model = source.clone(); model.enabled = true;
           // Whoever wears a class shows it in the fight, even when the street model does not (Gerard at 35, Aitor).
-          if (party && unit.classId) wearClass(model, unit.classId, unit.scarf);
+          if (party && unit.classId) wearClass(model, unit.classId);
           if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
             (component as pc.RenderComponent).meshInstances.forEach(mesh => {
               if (mesh.material.name === 'Camiseta mostaza') mesh.material = allyJacket;

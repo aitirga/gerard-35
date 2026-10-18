@@ -567,17 +567,12 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .status-facts div { display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--ui-line); font-size: 13px; }
 .status-facts dd { margin: 0; }
 
-/* Ánimas: each member's vitals and ánima on top (each picks their own, two can differ), the
-   colour of its scarf, and what the ánima in view changes. */
+/* Ánimas: each member's vitals and ánima on top (each picks their own, two can differ), and
+   what the ánima in view changes. Colours and looks come with the ánima. */
 .animas-page { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 18px; }
 .anima-wearers { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
 .anima-wearer { display: grid; gap: 12px; padding: 14px 18px 14px 14px; border: 1px solid var(--ui-line); border-radius: 46px 16px 16px 46px; background: linear-gradient(100deg, #ffffff0d, #ffffff04); }
 .anima-wearer .anima-switch, .status-vitals .anima-switch { padding: 0; }
-.scarf-picker { display: flex; align-items: center; gap: 9px; }
-.scarf-picker span { margin-right: 4px; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ui-muted); }
-.scarf-picker button { width: 24px; height: 24px; padding: 0; border: 2px solid #ffffff30; border-radius: 50%; background: var(--swatch); }
-.scarf-picker button[aria-pressed="true"] { border-color: var(--ui-paper); box-shadow: 0 0 0 2px var(--sheet-accent), 0 0 12px var(--swatch); }
-.scarf-picker button.is-cursor { outline-offset: 4px; }
 .anima-detail { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .8fr) minmax(0, 1.3fr); align-content: start; gap: 8px 28px; padding-top: 16px; border-top: 1px solid var(--ui-line); }
 .anima-detail h2 { font: italic 900 clamp(34px, 5cqi, 56px)/1 'Manrope', sans-serif; text-transform: uppercase; letter-spacing: -.07em; color: color-mix(in srgb, var(--scarf) 75%, white); text-shadow: 3px 3px 0 #0006; }
 .journal-content .anima-motto { margin-top: 6px; font-size: 15px; font-style: italic; color: var(--ui-paper); }
@@ -662,7 +657,7 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 }
 
 /* Vitals (vitals.ts): a round face and two waves, PV over Secundaria, shared by fights and the
-   status screen. --anima is the colour of the ánima's scarf; without one, each member's own. */
+   status screen. --anima is the worn ánima's colour; without one, each member's own. */
 .vitals { --member: #f3cf78; --anima: var(--member); display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: center; gap: 12px; }
 .vitals[data-member="aitor"] { --member: #e7c9a1; }
 .vitals[data-member="bernat"] { --member: #9fc3d9; }

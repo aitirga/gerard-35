@@ -26,10 +26,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   waiting: (allyId: string) => boolean;
   /** The ánimas (classes) the party has woken; each fighter picks their own. */
   classes: () => ClassId[];
-  /** The colour of the scarf `allyId` ties with an ánima. */
-  scarf: (allyId: string, classId: ClassId) => string | undefined;
   /** A fighter changed ánima mid-fight: keep the choice and show it in the 3D fight. */
-  anima: (allyId: string, classId: ClassId | null, scarf?: string) => void;
+  anima: (allyId: string, classId: ClassId | null) => void;
   /** Development only: one player drives the whole party, Aitor included (docs/party.md). */
   solo: () => boolean;
 }) {
@@ -140,7 +138,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // The one new thing on screen: Habilidades pulses until it is opened.
     get('[data-command="skill"]').classList.add('is-new');
   }
-  const plate = (c: Combatant) => vitalsPlate({ id: c.id, name: c.name, profile: c.profile, hp: c.hp, maxHp: c.maxHp, sec: c.secondary, maxSec: c.maxSecondary, anima: c.classId && CLASSES[c.classId].name, scarf: c.classId ? c.scarf ?? CLASSES[c.classId].scarf : undefined });
+  const plate = (c: Combatant) => vitalsPlate({ id: c.id, name: c.name, profile: c.profile, hp: c.hp, maxHp: c.maxHp, sec: c.secondary, maxSec: c.maxSecondary, anima: c.classId && CLASSES[c.classId].name, colour: c.classId && CLASSES[c.classId].scarf });
   /** A card's face and ánima: redrawn when the fighter changes ánima, the bars stay and glide. */
   function dress(card: HTMLElement, c: Combatant) {
     const fresh = document.createElement('div'); fresh.innerHTML = plate(c);
@@ -202,7 +200,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const signature = `${owner.id}:${choices.join(',')}`;
       if (chips.getAttribute('data-for') !== signature) {
         chips.setAttribute('data-for', signature);
-        chips.innerHTML = choices.map(id => `<button type="button" data-anima="${id ?? ''}" style="--chip:${id ? callbacks.scarf(owner.id, id) ?? CLASSES[id].scarf : 'var(--battle-paper)'}">${id ? CLASSES[id].name : 'Sin ánima'}</button>`).join('');
+        chips.innerHTML = choices.map(id => `<button type="button" data-anima="${id ?? ''}" style="--chip:${id ? CLASSES[id].scarf : 'var(--battle-paper)'}">${id ? CLASSES[id].name : 'Sin ánima'}</button>`).join('');
       }
       chips.querySelectorAll<HTMLButtonElement>('button').forEach(chip => {
         chip.setAttribute('aria-pressed', String((owner.classId ?? '') === chip.dataset.anima));
@@ -372,13 +370,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** The fighter whose turn it is changes ánima: free, with a burst of light on their face and in the fight. */
   function switchAnima(allyId: string, classId: ClassId | null) {
     if (!state || busy || targeting || callbacks.waiting(allyId)) return;
-    const scarf = classId ? callbacks.scarf(allyId, classId) ?? CLASSES[classId].scarf : undefined;
-    if (!changeAnima(state, allyId, classId, scarf)) return;
-    callbacks.anima(allyId, classId, scarf);
+    const colour = classId ? CLASSES[classId].scarf : undefined;
+    if (!changeAnima(state, allyId, classId)) return;
+    callbacks.anima(allyId, classId);
     collapse(); render();
-    flashAnima(root.querySelector(`.party-card[data-unit="${allyId}"] .vitals-avatar`), scarf);
+    flashAnima(root.querySelector(`.party-card[data-unit="${allyId}"] .vitals-avatar`), colour);
     const dock = dockOf(allyId);
-    flashAnima(dock, scarf);
+    flashAnima(dock, colour);
     dock.querySelector<HTMLButtonElement>(`[data-anima="${classId ?? ''}"]`)?.focus({ preventScroll: true });
   }
   /** L / R on a controller, Q / E on the keyboard: the next or previous ánima for whoever's turn it is. */
