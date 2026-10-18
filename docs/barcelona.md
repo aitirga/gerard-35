@@ -6,8 +6,8 @@ Chapter 2's world is Barcelona (and later a little beyond: Cardedeu). It works o
    the Rec Comtal school, later a station or a friend's street). Each is **designed by hand**,
    inspired by the real place and simplified on purpose. Only a handful exist; most of the city is
    never walked.
-2. **The network map**: the whole city as a **cartoon**, with its sea, hills, rivers, districts,
-   big avenues and famous places, and the metro lines over it. It is what Gerard sees when he goes
+2. **The network map**: the whole city as a **cartoon**, with its sea, hills, rivers, its
+   streets and blocks in 3D, big avenues and famous places, and the metro lines over it. It is what Gerard sees when he goes
    down into a station, and how he travels between places. It is never a 3D scene.
 
 No map data is downloaded for Barcelona: neither OpenStreetMap nor anyone's district files. The
@@ -27,7 +27,17 @@ src/transit.ts  lines, stations, which place each station opens, story rules for
 
 - **Cartoon.** Flat colours, soft rounded shapes (the hand-drawn points are joined by curves),
   a thick dark outline on what matters, little waves on the sea, a sandy beach along the coast,
-  round green hills for Collserola and Montjuïc, the Eixample with its grid.
+  wooded green hills for Collserola and Montjuïc.
+- **The city in 3D, in the background** (`src/city-blocks.ts`). Thousands of little pale blocks
+  seen from above with their walls in shade: the Eixample's chamfered squares with green
+  courtyards, a warmer tone and the tallest roofs; smaller, looser blocks in the old town and the
+  outer neighbourhoods; parks here and there; lower, faded blocks past the city's edge. The
+  streets are the gaps between blocks, and the big avenues (Diagonal, Gran Via, Meridiana,
+  Paral·lel, Passeig de Gràcia, the Rondes…) cut through them. **Districts are never drawn**: they
+  only decide how their blocks look, so the city reads as one. Landmarks, home and the school
+  stand on a small open square cleared out of the blocks. Drawn once and reused (memoised).
+- **Landmarks are abstract little volumes** lit from the left like the blocks, on a soft
+  shadow: a cluster of spires, a bullet tower dotted with windows, the solar pergola…
 - **North-west up, sea at the bottom.** The map is turned so the coast runs left to right along
   the bottom edge (Llobregat on the left, Besòs on the right) and Collserola rises along the top:
   the way people from Barcelona picture their city.
@@ -44,10 +54,10 @@ a list of markers; the story decides which (`cityMarkers(state)`):
 
 | Marker | Icon | When |
 | --- | --- | --- |
-| Famous places (Sagrada Família, Torre Glòries, Park Güell, Tibidabo, Montjuïc, Camp Nou, Barceloneta, Fòrum, Arc de Triomf, Sant Pau) | `temple`, `tower`, `park`, `wheel`, `castle`, `stadium`, `beach`, `sun`, `arch`, `dome` | Always |
+| Famous places (Sagrada Família, Torre Glòries, Park Güell, Tibidabo, Montjuïc, Camp Nou, Barceloneta, Fòrum, Arc de Triomf, Sant Pau) | `temple`, `tower`, `park`, `wheel`, `castle`, `stadium`, `beach`, `pergola`, `arch`, `dome` | Always |
 | Home | `home` | Always |
 | The Rec Comtal school | `school` | Until the TV news |
-| La Reina Bubbaloo's castle | `bubbaloo` | From the TV news; its size and towers follow the castle's threat (`level`) |
+| La Reina Bubbaloo's castle | `bubbaloo` | From the TV news; its size and towers follow the castle's threat (`level`); a pink halo round it widens as her power spreads (`reach`) |
 
 A new kind of marker is one drawing in `ICONS` (a 2 × 2 box, bottom at y = 1, the outline is
 added) and one entry where markers are listed. Markers say what is in the city; they never say
@@ -72,7 +82,7 @@ what to do next (`AGENTS.md`).
 | --- | --- |
 | `frame` | Projection centre, rotation (degrees) and the margin round the city |
 | `coast`, `hills`, `rivers` | The sea edge, Collserola and Montjuïc, the Besòs and Llobregat |
-| `districts` | `id`, `name`, `colour`, optional `pattern` (`grid`), and a few points of a soft blob |
+| `districts` | `id`, `name`, `colour`, optional `pattern`, and a few points of a soft blob: never drawn, they choose how the blocks inside look (`TEXTURES` in `city-blocks.ts`) |
 | `avenues` | Diagonal, Gran Via, Meridiana: named lines with a width class |
 | `landmarks` | `id`, `name`, `kind` (its icon), `at` |
 | `places` | Points the story puts its own markers on (`home`, `rec-comtal`) |
@@ -149,7 +159,7 @@ reimplements movement, dialogue or battle.
 | --- | --- | --- | --- |
 | Place | Grid, buildings, roads, props, places to look at, station entrances | `assets/geo/<zone>/`, `src/environments.ts` | Its own props or a landmark model; its story triggers |
 | Station / line | Network graph, travel, the map | `src/transit.ts`, `src/travel-ui.ts` | Closures and clue posters per station |
-| Map marker | An icon on the network map, from data | `src/map-markers.ts` | Its drawing (the castle's towers follow its threat; her pink stain, the spread) |
+| Map marker | An icon on the network map, from data | `src/map-markers.ts` | Its drawing (the castle's towers follow its threat; her halo, the spread) |
 | Day and hour | What an activity costs, when the day ends, how far she has spread | `src/days.ts`, `story.spend` | How each place shows the spread |
 | Castle threat | One number from the ánimas; the palace and its marker read it | `castleThreat` in `src/animas.ts`, `palace.setThreat` | Which tower falls when |
 | Trigger | A cell and a radius that fires `near` once | `story.triggers(environment)` | What the story does with it |
