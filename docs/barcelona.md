@@ -10,14 +10,18 @@ Chapter 2's world is Barcelona (and later a little beyond: Cardedeu). It works o
    streets and blocks in 3D, big avenues and famous places, and the metro lines over it. It is what Gerard sees when he goes
    down into a station, and how he travels between places. It is never a 3D scene.
 
-No map data is downloaded for Barcelona: neither OpenStreetMap nor anyone's district files. The
-real city is the inspiration; the shapes are our own.
+The city behind the lines is **real**: Barcelona's streets, coast, rivers and parks from
+OpenStreetMap, drawn in 3D into one image. Stations, lines, landmarks and places on top are drawn
+by hand.
 
 ```
+OpenStreetMap ──► just city-fetch ──► assets/geo/barcelona/streets.json (simplified, committed)
+                                                   │
 assets/geo/barcelona/city.json ──► just city ──► src/geo/barcelona.json ──► src/city-map.ts (SVG) ──► travel-ui.ts
- (hand-drawn: coast, hills, rivers,   tools/city.py      projected                ▲
-  districts, avenues, landmarks,      + output/city/preview.svg                   │
-  places, stations, lines; [lat, lon])                               src/map-markers.ts (icons)
+ (hand-drawn: coast, hills, rivers,   tools/city.py      projected                ▲        ▲
+  districts, avenues, landmarks,         │                                        │        │
+  places, stations, lines; [lat, lon])   └► output/city/background.svg ──► public/maps/barcelona.webp
+                                            (just city-background, Chromium)      src/map-markers.ts (icons)
 src/transit.ts  lines, stations, which place each station opens, story rules for lines
 ```
 
@@ -25,17 +29,15 @@ src/transit.ts  lines, stations, which place each station opens, story rules for
 
 ### Look
 
-- **Cartoon.** Flat colours, soft rounded shapes (the hand-drawn points are joined by curves),
-  a thick dark outline on what matters, little waves on the sea, a sandy beach along the coast,
-  wooded green hills for Collserola and Montjuïc.
-- **The city in 3D, in the background** (`src/city-blocks.ts`). Thousands of little pale blocks
-  seen from above with their walls in shade: the Eixample's chamfered squares with green
-  courtyards, a warmer tone and the tallest roofs; smaller, looser blocks in the old town and the
-  outer neighbourhoods; parks here and there; lower, faded blocks past the city's edge. The
-  streets are the gaps between blocks, and the big avenues (Diagonal, Gran Via, Meridiana,
-  Paral·lel, Passeig de Gràcia, the Rondes…) cut through them. **Districts are never drawn**: they
-  only decide how their blocks look, so the city reads as one. Landmarks, home and the school
-  stand on a small open square cleared out of the blocks. Drawn once and reused (memoised).
+- **The real city in 3D, in the background** (`tools/city.py` `background`). The blocks are
+  whatever lies between the real streets, near enough to them to be built: pale roofs lifted
+  above walls in shade, so the city reads in 3D from above. Big roads are wider and lighter,
+  railways a thin line; parks, woods (Collserola, Montjuïc), beaches, rivers and the sea come from
+  the same data. It is rendered once into `public/maps/barcelona.webp`, an `<image>` under the
+  lines, so thousands of streets cost the game nothing. Districts are never drawn.
+- **Cartoon on top.** Flat colours, a thick dark outline on what matters, little waves on the sea.
+  Without `streets.json` (before the first `just city-fetch`) the map falls back to the
+  hand-drawn sea, hills, rivers and avenues.
 - **Landmarks are abstract little volumes** lit from the left like the blocks, on a soft
   shadow: a cluster of spires, a bullet tower dotted with windows, the solar pergola…
 - **North-west up, sea at the bottom.** The map is turned so the coast runs left to right along
@@ -82,14 +84,17 @@ what to do next (`AGENTS.md`).
 | --- | --- |
 | `frame` | Projection centre, rotation (degrees) and the margin round the city |
 | `coast`, `hills`, `rivers` | The sea edge, Collserola and Montjuïc, the Besòs and Llobregat |
-| `districts` | `id`, `name`, `colour`, optional `pattern`, and a few points of a soft blob: never drawn, they choose how the blocks inside look (`TEXTURES` in `city-blocks.ts`) |
+| `districts` | `id`, `name`, `colour`, optional `pattern`, and a few points of a soft blob: not drawn; they set the map's extent |
 | `avenues` | Diagonal, Gran Via, Meridiana: named lines with a width class |
 | `landmarks` | `id`, `name`, `kind` (its icon), `at` |
 | `places` | Points the story puts its own markers on (`home`, `rec-comtal`) |
 | `stations`, `lines` | Stations (`id`, `name`, `at`) and lines (`id`, `name`, `kind`, `colour`, ordered `stations`) |
 
-`just city` (`tools/city.py`) projects it to `src/geo/barcelona.json` and writes a rough preview
-in `output/city/`.
+`just city` (`tools/city.py`) projects it to `src/geo/barcelona.json`, writes a rough preview
+in `output/city/`, and, when `streets.json` exists, draws the background and renders it
+(`just city-background`, `scripts/city-background.mjs`). `just city-fetch` downloads
+`streets.json` again (Overpass, a minute or two; the area is the map's extent widened so wide
+screens show city too). Data © OpenStreetMap contributors (ODbL).
 
 ## Places and stations
 
