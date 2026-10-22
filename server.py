@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from ai import decision_provider, plan_enemy_turn
+from lights import router as lights_router
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn.error")
@@ -162,4 +163,5 @@ def enemy_turn(turn: EnemyTurn, request: Request):
     return {"provider": provider.name, "targets": targets}
 
 
+app.include_router(lights_router)
 app.mount("/",StaticFiles(directory="dist", html=True, check_dir=False), name="game")

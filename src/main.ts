@@ -12,6 +12,8 @@ import { createTravelUI } from './travel-ui';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
 import { palaceGuards } from './battle';
+import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById, nextLamp } from './home-lights';
+import { mountHomeLightsPage } from './home-lights-ui';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
@@ -28,6 +30,8 @@ const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
 // Chapter 2: the station map (metro and Rodalies) and the TV news.
 const travelUI = createTravelUI(document.querySelector<HTMLElement>('#hud')!);
 const hud = document.querySelector<HTMLElement>('#hud')!;
+// The bulbs at home (docs/home-lights.md): they follow the place and the fights once connected in the menu.
+const homeLights = createHomeLights();
 // Development: ?story=<flag> starts with every flag up to that one (just dev-chapter), ?story=new from scratch.
 const devStory = (() => {
   if (!import.meta.env.DEV) return undefined;
@@ -107,7 +111,12 @@ window.addEventListener('pagehide', () => { void save(); });
 
 try {
   const battleUI = createBattleUI(document.querySelector<HTMLElement>('#hud')!, {
-    change: (state, effect, onImpact) => game.setBattle(state, effect, onImpact),
+    change: async (state, effect, onImpact) => {
+      // With the bulbs connected a hit may wait a moment, so it lands as they flash.
+      const hold = homeLights.battle(state, effect);
+      if (hold) await new Promise(resolve => setTimeout(resolve, hold));
+      return game.setBattle(state, effect, onImpact);
+    },
     target: id => game.selectTarget(id),
     awaken: id => { game.awaken(id); storyEvent({ type: 'class', id }); },
     driver: id => battleDriver(control, id),
@@ -143,11 +152,11 @@ try {
     else if (effect.kind === 'drain') await game.riseFromDrain();
     else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }
     else if (effect.kind === 'wake') await game.wake(() => storyUI.blackout(false, 2000));
-    else if (effect.kind === 'fall') await storyUI.blackout(true, 1600);
+    else if (effect.kind === 'fall') { homeLights.moment('fall'); await storyUI.blackout(true, 1600); }
     else if (effect.kind === 'news') await watchNews();
     else if (effect.kind === 'metro') await ride(effect.station);
     else if (effect.kind === 'look') await game.look(effect.anchor);
-    else if (effect.kind === 'doom') await theEnd();
+    else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
     else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
   }
   /**
@@ -157,7 +166,7 @@ try {
   let lookAway: (() => void) | undefined;
   async function watchNews() {
     exploration.close();
-    game.watchTV(true); hud.dataset.watching = 'true';
+    game.watchTV(true); hud.dataset.watching = 'true'; homeLights.moment('tv');
     interactButton.hidden = false; interactButton.querySelector('span')!.textContent = 'Dejar de mirar';
     const shown = performance.now();
     await new Promise<void>(resolve => {
@@ -170,7 +179,7 @@ try {
       lookAway = done;
     });
     delete hud.dataset.watching; interactButton.hidden = true;
-    game.watchTV(false);
+    game.watchTV(false); homeLights.moment('tv-off');
   }
   /**
    * The end: she has covered everything. The only way on is back to the morning before; that
@@ -227,6 +236,7 @@ try {
     },
     onLocation: (id, cell) => {
       currentLocation = id;
+      homeLights.setPlace(id);
       exploration.update(id, cell);
       environmentSelect.value = id;
       const geo = ENVIRONMENTS[id].geo;
@@ -244,8 +254,22 @@ try {
       interactButton.querySelector('span')!.textContent = interaction?.label ?? '';
     },
     onDialogue: dialogue.show,
-    onStory: storyEvent,
+    // A lamp in the Meridiana flat goes to its next look, in the game and at home.
+    onStory: event => {
+      const lamp = event.type === 'interact' ? lampInteraction(event.id) : undefined;
+      if (lamp) homeLights.setLamp(lamp, nextLamp(homeLights.flat[lamp]).lamp); else storyEvent(event);
+    },
   }, story);
+  for (const light of HOUSE_LIGHTS) game.setLamp(light.id, homeLights.flat[light.id]);
+  homeLights.onFlat((id, lamp) => game.setLamp(id, lamp));
+  game.setLampLabels(id => {
+    const lamp = lampInteraction(id);
+    return lamp ? `${nextLamp(homeLights.flat[lamp]).verb} ${lightById(lamp).name}` : undefined;
+  });
+  // Her light and the evening fade in over seconds; the bulbs follow in steps.
+  const followMood = () => homeLights.setMood({ tone: game.lightTone, dusk: story.dusk });
+  followMood();
+  const moodTimer = setInterval(followMood, 1000);
   const controllerContext = () => battleUI.controllerContext !== 'world' ? battleUI.controllerContext
     : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
@@ -260,6 +284,7 @@ try {
     } : undefined,
     pause: value => game.setPaused(value || !!exploration.active),
     panel: id => id ? exploration.show(id) : exploration.close(),
+    lights: section => mountHomeLightsPage(section, homeLights),
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (travelUI.open) { if (action !== 'overview' && action !== 'character') travelUI.control(action); return; }
@@ -316,9 +341,9 @@ try {
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => battleUI.open(params.get('party') === 'adult' ? new Story(['caught', 'noista']).battleParty(true) : params.get('allies') === '2' ? 2 : 1, foes));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged, storyEvent, travelUI } });
+    Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged, storyEvent, travelUI, homeLights } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { clearInterval(moodTimer); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

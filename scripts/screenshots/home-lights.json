@@ -1,0 +1,24 @@
+{
+  "title": "The lights at home",
+  "description": "The Meridiana flat's lamps are the LIFX bulbs at home (docs/home-lights.md): each lamp in the game can be pressed to turn it on, through a few colours and off, and with the lights connected in the menu the same happens at home (and what is switched at home shows in the game). The menu's Luces de casa page connects them, chooses the rooms and the intensity, and sets the lead that sends the bulbs ahead of a hit. This run leaves the real lights alone: it never connects them.",
+  "steps": [
+    { "open": "/?story=tv-news&solo=1" },
+    { "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },
+    { "teleport": "meridiana", "cell": [21, 10] },
+    { "shot": "table-lamp", "delay": 2500, "caption": "By the round table: the arc lamp is the 'Mesa' bulb at home, and the prompt says what the next press does" },
+    { "press": "KeyE", "times": 2, "gap": 300 },
+    { "shot": "table-sunset", "delay": 1500, "caption": "Warm light first, then sunset orange: on the lamp, its bulb and the floor under it" },
+    { "press": "KeyE" },
+    { "shot": "table-pink", "delay": 1500, "caption": "Another: Bubbaloo pink. After the colours the next press turns it off" },
+    { "teleport": "meridiana", "cell": [11, 5] },
+    { "press": "KeyE", "times": 4, "gap": 300 },
+    { "teleport": "meridiana", "cell": [19, 5] },
+    { "press": "KeyE", "times": 3, "gap": 300 },
+    { "press": "KeyR" },
+    { "shot": "evening-flat", "delay": 2500, "caption": "The kitchen pendant in night blue and the moon lamp in pink: whatever the flat shows, the house shows too" },
+    { "press": "KeyR" },
+    { "press": "Escape" },
+    { "eval": "document.querySelector('[data-open=\"lights\"]').click()" },
+    { "shot": "menu-lights", "delay": 1500, "caption": "Menu · Luces de casa: connect the bulbs, living room or whole house, intensity, and the lead with its test flash" }
+  ]
+}

@@ -12,3 +12,6 @@
 !uv.lock
 !server.py
 !ai.py
+!lights.py
+!vendor/geraitor_domotic_house/geraitor_domotic_house/
+!vendor/geraitor_domotic_house/geraitor_domotic_house/**

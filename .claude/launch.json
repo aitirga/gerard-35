@@ -52,6 +52,24 @@
         "--strictPort"
       ],
       "port": 5199
+    },
+    {
+      "name": "backend-lights",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "set -a; source .env; set +a; exec uv run --locked uvicorn server:app --host 127.0.0.1 --port 8091 --reload"
+      ],
+      "port": 8091
+    },
+    {
+      "name": "dev-lights",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "GERARD_API=http://127.0.0.1:8091 exec npm run dev -- --port 5195 --strictPort"
+      ],
+      "port": 5195
     }
   ]
 }

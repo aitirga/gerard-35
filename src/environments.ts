@@ -291,7 +291,7 @@ export const MERIDIANA = house({
     '######..#............G.o=',
     '#oooo#...............+.o=',
     '#o...+.........oooo..+.o=',
-    '#o...#.o#oo.o..ooo...G.o=',
+    '#o...#.o#oo.o..oooo..G.o=',
     '#o...#W#######.o.oo..####',
     '#o...+.o#oooo#........W  ',
     '#oo..#..W....+.####...W  ',
@@ -329,6 +329,17 @@ export const MERIDIANA = house({
     { id: 'meridiana-tv', cell: { x: 16, z: 2 }, label: 'Mirar la tele' },
     { id: 'meridiana-painting', cell: { x: 19, z: 11 }, label: 'Mirar el cuadro', lines: ['Barcelona de noche, con la torre encendida. Nuestra ciudad, en la pared.'] },
     { id: 'meridiana-balcony', cell: { x: 22, z: 3 }, label: 'Tomar un café en el balcón' },
+    // The lamps are the bulbs at home (src/home-lights.ts): pressing one changes both. The game
+    // writes their labels as what the next press does.
+    { id: 'lamp-cocina', cell: { x: 11, z: 5 }, label: 'Luz de la cocina' },
+    { id: 'lamp-sofa', cell: { x: 14, z: 4 }, label: 'Luz del sofá' },
+    { id: 'lamp-luna', cell: { x: 19, z: 5 }, label: 'Luna' },
+    { id: 'lamp-mesa', cell: { x: 21, z: 10 }, label: 'Lámpara de la mesa' },
+    { id: 'lamp-armario', cell: { x: 10, z: 8 }, label: 'Luz del armario' },
+    { id: 'lamp-cama', cell: { x: 9, z: 15 }, label: 'Luz de la cama' },
+    { id: 'lamp-terraza', cell: { x: 23, z: 1 }, label: 'Farol de la terraza' },
+    { id: 'lamp-estudio', cell: { x: 4, z: 7 }, label: 'Luz del estudio' },
+    { id: 'lamp-galeria', cell: { x: 6, z: 9 }, label: 'Luz de la galería' },
   ],
 });
 /** What each character of the palace plan stands for (docs/bubbaloo-palace.md). */

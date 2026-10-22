@@ -457,6 +457,19 @@ kbd { display: inline-block; width: 21px; height: 20px; border: 1px solid #a6c0b
 .menu-controls dt { color: var(--ui-gold); font-size: 12px; font-weight: 600; }
 .menu-controls dd { margin: 5px 0 0; color: var(--ui-paper); font-size: 13px; line-height: 1.5; }
 @media (prefers-reduced-motion: reduce) { .adventure-options button { transition: none; } }
+/* Luces de casa (src/home-lights-ui.ts): options, the lead and its test flash. */
+#controller-menu [data-page="lights"] { font-size: 13px; line-height: 1.6; }
+.lights-options { display: grid; gap: 9px; margin: 16px 0; }
+.lights-options button, .lights-lead button { padding: 11px 14px; border: 0; background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); font-size: 12px; text-align: left; }
+.lights-options button:first-child { background: var(--ui-gold); }
+.lights-options button:hover, .lights-lead button:hover { background: var(--ui-gold); }
+.lights-lead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 18px; padding: 14px 16px; border-left: 3px solid var(--ui-gold); background: #ffffff06; }
+.lights-lead .battle-kicker { margin-right: auto; }
+.lights-lead button[data-lead] { width: 38px; text-align: center; font-size: 16px; padding: 7px 0; }
+.lights-lead output { min-width: 70px; text-align: center; font: 600 14px/1 monospace; }
+.lights-flash { position: fixed; inset: 0; z-index: 10; pointer-events: none; background: #fffdf4; opacity: 0; }
+.lights-flash.is-on { animation: lights-flash .5s ease-out; }
+@keyframes lights-flash { 0% { opacity: .95; } 100% { opacity: 0; } }
 
 /* Chapter story HUD: no objective panel (see AGENTS.md). Item notes top right, one key hint at
    the bottom, Bernat's speech bubble over his head, full-screen chapter cards. */

@@ -64,6 +64,16 @@ Design: [docs/chapter-2.md](docs/chapter-2.md); the city, metro and train:
 [docs/barcelona.md](docs/barcelona.md). `just dev-chapter metro` opens it with the city unlocked,
 and `just screenshots chapter-2-city` walks it.
 
+## The lights at home
+
+The LIFX bulbs in the Meridiana flat play along: each place tints the living room with its colours,
+fights flash on every hit and turn red with a heartbeat as health runs out, and the flat in the game
+mirrors the real one both ways (a lamp pressed in the game switches at home, a light switched at
+home shows in the game). Put `LIFX_TOKEN` in `.env`, run `just backend` + `just dev` and connect them
+from the menu (Esc · Luces de casa), where the lead that times them to the hits is set too. The house's
+library is a git submodule in `vendor/geraitor_domotic_house` (`just setup` checks it out). Design,
+bulbs and limits: [docs/home-lights.md](docs/home-lights.md).
+
 ## Screenshots
 
 `just screenshots <scenario>` plays a scripted scenario in Chromium and saves numbered
@@ -107,6 +117,7 @@ src/news-set.ts     The TV news filmed in 3D at Trinitat Vella
 src/city-map.ts     Barcelona's cartoon network map as SVG
 src/travel-ui.ts    The station map and the trip; src/news-ui.ts the TV news
 src/story-ui.ts     Chapter cards, item notes, key hints, speech bubble
+src/home-lights.ts  The lights at home: places, fights, the lead and the mirrored flat
 src/items.ts        Item catalogue: common items and key items
 src/follower.ts     A companion who walks Gerard's path behind him
 src/game.ts         Isometric courtyard, Gerard model, lights, shadows and input
@@ -116,6 +127,8 @@ vite.config.ts      Vite config (relative base so it works on GitHub Pages)
 .github/workflows   Runs build and API tests on pushes and pull requests
 server.py           Python API and production static file server
 ai.py               AI providers (Jev) and the battle decision prompt
+lights.py           The bridge to the LIFX bulbs at home (docs/home-lights.md)
+vendor/             The house's lights library, a git submodule
 src/characters/     Character models as primitives (built by src/character-model.ts)
 tools/              Local asset generators run through just (not deployed)
 scripts/screenshots Screenshot scenarios for `just screenshots` (see its README)

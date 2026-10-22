@@ -2,6 +2,7 @@ import * as pc from 'playcanvas';
 import type { Environment } from './environments';
 import { createPropKit } from './props';
 import { buildHome } from './home-scenery';
+import type { Lamp, LightId } from './home-lights';
 import type { HouseVolume } from './palace';
 import { buildPalaceInterior } from './palace-scenery';
 import { buildGeo } from './geo-scenery';
@@ -415,6 +416,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       time += dt;
       for (const m of flowing) { m.diffuseMapOffset.set(time * .03, time * .05); m.emissiveMapOffset.set(-time * .04, time * .025); m.update(); }
     },
+    /** A lamp in the Meridiana flat (src/home-lights.ts); other scenes have none. */
+    setLamp(id: LightId, lamp: Lamp) { home?.setLamp(id, lamp); },
     destroy() { app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }

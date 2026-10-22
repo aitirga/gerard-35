@@ -29,6 +29,8 @@ export function createControllerUI(callbacks: {
   pause: (value: boolean) => void;
   /** Opens a journal panel, or closes it with `null`. */
   panel: (id: PanelId | null) => void;
+  /** Fills the "Luces de casa" page (src/home-lights-ui.ts). */
+  lights: (section: HTMLElement) => void;
 }) {
   const profiles: Record<string, ControllerProfile> = Object.create(null);
   try { const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '{}'); if (saved && typeof saved === 'object') for (const [id, profile] of Object.entries(saved)) if (validProfile(profile)) profiles[id] = profile; } catch { /* Storage is optional. */ }
@@ -44,6 +46,7 @@ export function createControllerUI(callbacks: {
         <button data-panel="map"><span>04</span><strong>Mapa</strong><small>Dónde estás y qué hay cerca</small></button>
         <button data-open="controller"><span>05</span><strong>Mando</strong><small>Conectar, probar y asignar</small></button>
         <button data-open="help"><span>06</span><strong>Cómo jugar</strong><small>Controles y primeros pasos</small></button>
+        <button data-open="lights"><span>07</span><strong>Luces de casa</strong><small>Las bombillas de verdad, en el juego</small></button>
       </nav>
     </section>
     <section data-page="controller" hidden>
@@ -55,6 +58,7 @@ export function createControllerUI(callbacks: {
       <div class="controller-actions"><button data-remap>Asignar controles</button><button data-reset>Restablecer</button><button data-abort hidden>Cancelar asignación</button></div>
       <p class="controller-note">Conecta el mando al ordenador y pulsa un botón. Si no aparece, comprueba la conexión y la compatibilidad de tu navegador. Usa Esc para cancelar una asignación.</p>
     </section>
+    <section data-page="lights" hidden></section>
     <section data-page="help" hidden>
       <p class="menu-intro">Explora. Habla con todo el mundo. Prueba.</p>
       <dl class="menu-controls"><div><dt>Moverte</dt><dd>W A S D o flechas · Stick izquierdo o cruceta</dd></div><div><dt>Correr</dt><dd>Con las zapatillas: mantén Shift · Mantén B (Volver) en el mando</dd></div><div><dt>Interactuar / avanzar</dt><dd>E · Enter · Espacio · Confirmar en el mando</dd></div><div><dt>Personaje / objetos / mapa</dt><dd>Desde el menú · C / I / M en el teclado · Personaje con el botón superior del mando (X en Nintendo, △ en PlayStation, Y en Xbox)</dd></div><div><dt>Vista general</dt><dd>R · − o Select en el mando</dd></div><div><dt>Combate</dt><dd>1–4 o flechas · Enter para confirmar · Esc para volver</dd></div><div><dt>Menú / volver</dt><dd>Esc · + o Start en el mando</dd></div></dl>
@@ -70,7 +74,8 @@ export function createControllerUI(callbacks: {
   let previousButtons: boolean[] = [];
   let previousDirection: Direction | null = null;
   let frame = 0, previousFocus: HTMLElement | null = null;
-  let page: 'home' | 'controller' | 'help' = 'home';
+  let page: 'home' | 'controller' | 'help' | 'lights' = 'home';
+  callbacks.lights(root.querySelector<HTMLElement>('[data-page="lights"]')!);
   const edges = new ControllerEdges();
   // Player 2: whichever other connected controller the game can read.
   const edges2 = new ControllerEdges();
@@ -99,7 +104,7 @@ export function createControllerUI(callbacks: {
   function showPage(value: typeof page) {
     page = value;
     root.querySelectorAll<HTMLElement>('[data-page]').forEach(el => { el.hidden = el.dataset.page !== page; });
-    get('#controller-title').textContent = page === 'home' ? 'Un respiro.' : page === 'controller' ? 'A tu manera.' : 'La aventura empieza aquí.';
+    get('#controller-title').textContent = page === 'home' ? 'Un respiro.' : page === 'controller' ? 'A tu manera.' : page === 'lights' ? 'Como en casa.' : 'La aventura empieza aquí.';
     root.dataset.page = page;
     get<HTMLButtonElement>(page === 'home' ? '[data-close]' : '[data-back]').focus({ preventScroll: true });
   }

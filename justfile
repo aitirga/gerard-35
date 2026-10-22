@@ -13,11 +13,18 @@ default:
     @just --list --color never
     @printf '\nLive development: just backend + just dev (two terminals).\n'
 
-# Install exact dependencies (Node + Python)
+# Install exact dependencies (Node + Python) and the house's lights library (vendor/)
 [group('Setup')]
 setup:
+    git submodule update --init
     npm ci
     uv sync --locked
+
+# Move the house's lights library (vendor/geraitor_domotic_house) to its latest main
+[group('Setup')]
+lights-update:
+    git submodule update --init --remote vendor/geraitor_domotic_house
+    git -C vendor/geraitor_domotic_house log --oneline -1
 
 # Start the Vite dev server with hot reload on http://127.0.0.1:5173
 [group('Development')]
@@ -122,6 +129,13 @@ deploy-status:
 deploy-ai-key:
     @[[ -n "${TYPESAFE_API_KEY:-}" ]] || { printf 'Set TYPESAFE_API_KEY in .env first.\n'; exit 1; }
     printf 'TYPESAFE_API_KEY=%s\n' "$TYPESAFE_API_KEY" | fly secrets import
+
+# Let the deployed game drive the lights at home: LIFX_TOKEN and HOME_LIGHTS_KEY from .env (docs/home-lights.md)
+[group('Deployment')]
+deploy-lights:
+    @[[ -n "${LIFX_TOKEN:-}" && -n "${HOME_LIGHTS_KEY:-}" ]] || { printf 'Set LIFX_TOKEN and HOME_LIGHTS_KEY in .env first.\n'; exit 1; }
+    printf 'LIFX_TOKEN=%s\nHOME_LIGHTS_KEY=%s\n' "$LIFX_TOKEN" "$HOME_LIGHTS_KEY" | fly secrets import
+    @printf 'Open the game once with ?luces=<HOME_LIGHTS_KEY> to connect the lights from that browser.\n'
 
 # Tail logs from the deployed app
 [group('Deployment')]
