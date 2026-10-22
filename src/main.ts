@@ -12,8 +12,9 @@ import { createTravelUI } from './travel-ui';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
 import { palaceGuards } from './battle';
-import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById, nextLamp } from './home-lights';
+import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById } from './home-lights';
 import { mountHomeLightsPage } from './home-lights-ui';
+import { createLampPicker } from './lamp-picker';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
@@ -254,24 +255,25 @@ try {
       interactButton.querySelector('span')!.textContent = interaction?.label ?? '';
     },
     onDialogue: dialogue.show,
-    // A lamp in the Meridiana flat goes to its next look, in the game and at home.
+    // A lamp in the Meridiana flat opens its dial: colour and brightness, in the game and at home.
     onStory: event => {
       const lamp = event.type === 'interact' ? lampInteraction(event.id) : undefined;
-      if (lamp) homeLights.setLamp(lamp, nextLamp(homeLights.flat[lamp]).lamp); else storyEvent(event);
+      if (lamp) lampPicker.open(lamp); else storyEvent(event);
     },
   }, story);
+  const lampPicker = createLampPicker(hud, homeLights, paused => game.setPaused(paused || !!exploration.active));
   for (const light of HOUSE_LIGHTS) game.setLamp(light.id, homeLights.flat[light.id]);
   homeLights.onFlat((id, lamp) => game.setLamp(id, lamp));
   game.setLampLabels(id => {
     const lamp = lampInteraction(id);
-    return lamp ? `${nextLamp(homeLights.flat[lamp]).verb} ${lightById(lamp).name}` : undefined;
+    return lamp ? `${homeLights.flat[lamp].on ? 'Cambiar' : 'Encender'} ${lightById(lamp).name}` : undefined;
   });
   // Her light and the evening fade in over seconds; the bulbs follow in steps.
   const followMood = () => homeLights.setMood({ tone: game.lightTone, dusk: story.dusk });
   followMood();
   const moodTimer = setInterval(followMood, 1000);
   const controllerContext = () => battleUI.controllerContext !== 'world' ? battleUI.controllerContext
-    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom'
+    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   const controller = createControllerUI({
     context: controllerContext,
@@ -288,6 +290,7 @@ try {
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (travelUI.open) { if (action !== 'overview' && action !== 'character') travelUI.control(action); return; }
+      if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
       if (lookAway) { if (action === 'confirm' || action === 'cancel') lookAway(); return; }
       if (storyUI.doomOpen) { if (action === 'confirm') storyUI.confirmDoom(); return; }
       if (player === 2) {
@@ -343,7 +346,7 @@ try {
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
     Object.assign(window, { gerard: { game, story, battleUI, control, controlChanged, storyEvent, travelUI, homeLights } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { clearInterval(moodTimer); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { clearInterval(moodTimer); lampPicker.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

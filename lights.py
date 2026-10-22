@@ -1,6 +1,7 @@
 """The lights at home follow the game (docs/home-lights.md).
 
-The browser decides what each bulb shows; this bridge sends it to the LIFX Cloud API through the
+The browser decides what each bulb shows; this bridge sends it to the bulbs. At home it talks to
+them on the LAN (lifx_lan.py), in milliseconds; elsewhere through the LIFX Cloud API with the
 house's own library, vendor/geraitor_domotic_house (a git submodule), without going over LIFX's 120
 requests a minute. Colour changes are merged while one is on its way, so only the latest state of
 each bulb is ever sent; flashes skip that queue because they are timed to a hit. Giving the house
@@ -17,6 +18,8 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field
+
+from lifx_lan import LanBulbs
 
 LIBRARY = Path(__file__).parent / "vendor" / "geraitor_domotic_house"
 if str(LIBRARY) not in sys.path:
@@ -65,36 +68,59 @@ def lifx_color(shade: dict | None, brightness: float | None = None) -> str | Non
 
 
 class HomeLights:
-    """The bulbs as last read, and the states and flashes waiting to be sent to them."""
+    """The bulbs as last read, and the states and flashes waiting to be sent to them.
+
+    `lan` (lifx_lan.LanBulbs) reaches the bulbs on the home network in milliseconds; the cloud
+    `api` is the fallback, for a bulb the LAN did not find or a game served from elsewhere.
+    """
 
     #: A read of every bulb is reused for this long: the game polls while it mirrors the flat.
-    READ_SECONDS = 1.5
+    READ_SECONDS = {"lan": 0.15, "cloud": 1.5}
+    #: Looking for bulbs that stopped answering on the LAN, at most this often.
+    DISCOVER_SECONDS = 30
 
-    def __init__(self, api, budget: Budget | None = None, clock=time.monotonic, worker: bool = True):
-        self.api, self.clock = api, clock
+    def __init__(self, api=None, lan=None, budget: Budget | None = None, clock=time.monotonic, worker: bool = True):
+        self.api, self.lan, self.clock = api, lan, clock
         self.budget = budget or Budget(clock=clock)
         self.wake = threading.Condition()
         self.pending: dict[str, dict] = {}
         self.effects: list[dict] = []
         self.inventory: list[dict] = []
         self.read_at = -float("inf")
-        #: Seconds a request to LIFX takes, smoothed: the game shows it to set the lead.
+        self.discovered_at = clock() if lan else -float("inf")
+        #: Seconds a change takes to reach the bulbs, smoothed: the game times the flashes with it.
         self.latency: float | None = None
         if worker:
             threading.Thread(target=self._run, name="home-lights", daemon=True).start()
 
-    # ------------------------------------------------------------------ reading
-    def _timed(self, method: str, path: str, **kwargs):
+    @property
+    def transport(self) -> str:
+        return "lan" if self.lan and self.lan.addresses else "cloud"
+
+    def _measure(self, run, *args, **kwargs):
         start = self.clock()
-        result = self.api.request(method, path, **kwargs)
+        result = run(*args, **kwargs)
         took = self.clock() - start
         self.latency = took if self.latency is None else self.latency * 0.8 + took * 0.2
         return result
 
+    def _timed(self, method: str, path: str, **kwargs):
+        if method == "GET":
+            return self.api.request(method, path, **kwargs)
+        return self._measure(self.api.request, method, path, **kwargs)
+
+    # ------------------------------------------------------------------ reading
     def lights(self, fresh: bool = False) -> list[dict]:
         """Every bulb as the game reads it, from a recent read when there is one."""
-        if (fresh or self.clock() - self.read_at > self.READ_SECONDS) and self.budget.take():
-            raw = self._timed("GET", "lights/all")
+        if fresh or self.clock() - self.read_at > self.READ_SECONDS[self.transport]:
+            raw = None
+            if self.transport == "lan":
+                raw = self.lan.read() or None
+                if raw and len(raw) < len(self.lan.addresses) and self.clock() - self.discovered_at > self.DISCOVER_SECONDS:
+                    self.discovered_at = self.clock()
+                    self.lan.discover()
+            if raw is None and self.api and self.budget.take():
+                raw = self._timed("GET", "lights/all")
             if isinstance(raw, list):
                 self.inventory, self.read_at = raw, self.clock()
         return [{
@@ -108,12 +134,25 @@ class HomeLights:
             "brightness": light["brightness"],
         } for light in self.inventory]
 
-    def selector(self, labels: list[str]) -> str:
-        """Bulbs by id, which is stable; a label nobody knows is passed on as a label."""
+    def ids(self, labels: list[str]) -> dict[str, str]:
+        """Bulb ids (their serials) by label, reading again for a label nobody knows."""
         if any(label not in {light["label"] for light in self.inventory} for label in labels):
             self.lights(fresh=True)
-        ids = {light["label"]: light["id"] for light in self.inventory}
+        known = {light["label"]: light["id"] for light in self.inventory}
+        return {label: known[label] for label in labels if label in known}
+
+    def selector(self, labels: list[str]) -> str:
+        """Bulbs by id, which is stable; a label nobody knows is passed on as a label."""
+        ids = self.ids(labels)
         return ",".join(f"id:{ids[label]}" if label in ids else f"label:{label}" for label in labels)
+
+    def on_lan(self, labels: list[str]) -> list[str] | None:
+        """The serials to reach these bulbs on the LAN, or None if one of them is not there."""
+        if self.transport != "lan":
+            return None
+        ids = self.ids(labels)
+        serials = [ids.get(label) for label in labels]
+        return serials if all(serial in self.lan.addresses for serial in serials) else None
 
     # ------------------------------------------------------------------ writing
     def set(self, states: list[dict], duration: float):
@@ -131,16 +170,48 @@ class HomeLights:
 
     def _send(self, kind: str, payload):
         if kind == "effect":
-            target = self.selector(payload["lights"])
-            if payload["kind"] == "off":
-                self._timed("POST", f"lights/{target}/effects/off", json={"power_off": False})
-                return
-            body = {key: payload[key] for key in ("period", "cycles", "persist", "peak") if payload.get(key) is not None}
-            body["color"] = lifx_color(payload.get("color"), payload.get("brightness"))
-            if payload.get("from_color") or payload.get("from_brightness") is not None:
-                body["from_color"] = lifx_color(payload.get("from_color"), payload.get("from_brightness"))
-            body["power_on"] = True
-            self._timed("POST", f"lights/{target}/effects/{payload['kind']}", json=body)
+            self._send_effect(payload)
+            return
+        groups: dict[tuple, list[str]] = {}
+        for label, state in payload.items():
+            shade = state.get("color")
+            look = None if shade is None and state.get("brightness") is None else (
+                *(shade or {}).values(), state.get("brightness"))
+            groups.setdefault((state["power"], look, state["duration"]), []).append(label)
+        cloud: dict[str, dict] = {}
+        for (power, look, duration), labels in groups.items():
+            serials = self.on_lan(labels)
+            if serials is None:
+                cloud.update({label: payload[label] for label in labels})
+                continue
+            state, brightness = payload[labels[0]], payload[labels[0]].get("brightness")
+            color = None if look is None else {**(state.get("color") or {}), "brightness": 1 if brightness is None else brightness}
+            self._measure(self.lan.set, serials, color, power, duration)
+        if cloud:
+            self._send_cloud(cloud)
+
+    def _send_effect(self, payload: dict):
+        serials = self.on_lan(payload["lights"])
+        if serials is not None and payload["kind"] != "off":
+            brightness = payload.get("brightness")
+            color = {**(payload.get("color") or {}), "brightness": 1 if brightness is None else brightness}
+            self._measure(self.lan.waveform, serials, payload["kind"], color, payload["period"], payload["cycles"], payload.get("peak"))
+            return
+        if not self.api:
+            return
+        target = self.selector(payload["lights"])
+        if payload["kind"] == "off":
+            self._timed("POST", f"lights/{target}/effects/off", json={"power_off": False})
+            return
+        body = {key: payload[key] for key in ("period", "cycles", "persist", "peak") if payload.get(key) is not None}
+        body["color"] = lifx_color(payload.get("color"), payload.get("brightness"))
+        if payload.get("from_color") or payload.get("from_brightness") is not None:
+            body["from_color"] = lifx_color(payload.get("from_color"), payload.get("from_brightness"))
+        body["power_on"] = True
+        self._timed("POST", f"lights/{target}/effects/{payload['kind']}", json=body)
+
+    def _send_cloud(self, payload: dict):
+        if not self.api:
             return
         groups: dict[tuple, list[str]] = {}
         for label, state in payload.items():
@@ -182,9 +253,11 @@ class HomeLights:
             with self.wake:
                 while not self.effects and not self.pending:
                     self.wake.wait()
-            time.sleep(self.budget.wait())
-            if not self.budget.take():
-                continue
+            # The LAN has no limit; the cloud's budget only holds back cloud requests.
+            if self.transport == "cloud":
+                time.sleep(self.budget.wait())
+                if not self.budget.take():
+                    continue
             job = self.next_request()
             if job:
                 try:
@@ -194,6 +267,7 @@ class HomeLights:
 
 
 _house: HomeLights | None = None
+_house_tried = -float("inf")
 _house_lock = threading.Lock()
 
 
@@ -202,27 +276,34 @@ def lifx_token() -> str | None:
 
 
 def house() -> HomeLights | None:
-    global _house
-    token = lifx_token()
-    if LifxApiClient is None or not token:
-        return None
+    """The bulbs: on the LAN when this server is at home (HOME_LIGHTS_LAN=0 skips it), through the
+    cloud with LIFX_TOKEN otherwise. Without either it looks again every half minute."""
+    global _house, _house_tried
     with _house_lock:
-        if _house is None:
-            _house = HomeLights(LifxApiClient(token))
+        if _house is None and time.monotonic() - _house_tried > 30:
+            _house_tried = time.monotonic()
+            lan = LanBulbs() if os.environ.get("HOME_LIGHTS_LAN", "1") != "0" else None
+            if lan and not lan.discover():
+                lan = None
+            token = lifx_token()
+            api = LifxApiClient(token) if LifxApiClient is not None and token else None
+            if lan or api:
+                _house = HomeLights(api, lan)
+                logger.info("Home lights through the %s", _house.transport)
         return _house
 
 
 def why_unavailable(request: Request) -> str | None:
     """None when this request may drive the lights. On a server reachable from the internet
     (Fly sets FLY_APP_NAME) the browser must carry HOME_LIGHTS_KEY, set with `just deploy-lights`."""
-    if LifxApiClient is None:
-        return "library"
-    if not lifx_token():
-        return "token"
     key = os.environ.get("HOME_LIGHTS_KEY")
-    if key:
-        return None if secrets.compare_digest(request.headers.get("x-lights-key", ""), key) else "key"
-    return "key" if os.environ.get("FLY_APP_NAME") else None
+    if key and not secrets.compare_digest(request.headers.get("x-lights-key", ""), key):
+        return "key"
+    if not key and os.environ.get("FLY_APP_NAME"):
+        return "key"
+    if house():
+        return None
+    return "library" if LifxApiClient is None else "token"
 
 
 def driving(request: Request) -> HomeLights:
@@ -231,10 +312,9 @@ def driving(request: Request) -> HomeLights:
     reason = why_unavailable(request)
     if reason == "key":
         raise HTTPException(403, "The lights need the house key")
-    lights = house() if not reason else None
-    if not lights:
+    if reason:
         raise HTTPException(503, "The lights at home are not configured")
-    return lights
+    return house()
 
 
 class Shade(BaseModel):
@@ -279,10 +359,10 @@ router = APIRouter()
 def read_lights(request: Request, response: Response):
     response.headers["Cache-Control"] = "no-store"
     reason = why_unavailable(request)
-    lights = house() if not reason else None
-    if not lights:
+    if reason:
         return {"available": False, "reason": reason, "lights": []}
-    return {"available": True, "lights": lights.lights(),
+    lights = house()
+    return {"available": True, "transport": lights.transport, "lights": lights.lights(),
             "latency": round(lights.latency * 1000) if lights.latency is not None else None}
 
 

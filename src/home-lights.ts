@@ -2,29 +2,31 @@
  * The lights at home follow the game (docs/home-lights.md). Each place lends the living room its
  * main colours, fights play on the bulbs (hits flash, low health turns them red and sets a
  * heartbeat going) and the Meridiana flat is the real one: its lamps and the bulbs at home mirror
- * each other both ways. The browser decides; `lights.py` sends it to LIFX under the API's limit.
+ * each other both ways. The browser decides; `lights.py` sends it to the bulbs (on the LAN at home).
  * Everything above `createHomeLights` is pure, for the tests.
  */
 import type { EnvironmentId } from './environments.ts';
 import type { BattleEffect, BattleState } from './battle.ts';
 import { CONTACT_SECONDS } from './battle-motion.ts';
 
-export type LightId = 'cocina' | 'sofa' | 'luna' | 'mesa' | 'armario' | 'cama' | 'terraza' | 'estudio' | 'galeria';
-/** `label` is the bulb's name in the LIFX app; `name` is how Gerard calls it. */
-export interface HouseLight { id: LightId; label: string; room: 'Salón' | 'Dormitorio' | 'Terraza' | 'Estudio' | 'Galería'; name: string }
+export type LightId = 'cocina' | 'sofa' | 'luna' | 'mesa' | 'dormitorio' | 'terraza' | 'estudio' | 'galeria';
+/**
+ * `labels` are the bulbs' names in the LIFX app (the bedroom's two, both over the bed, are one
+ * light); `name` is how Gerard calls it, `short` how the lamp's dial titles it.
+ */
+export interface HouseLight { id: LightId; labels: string[]; room: 'Salón' | 'Dormitorio' | 'Terraza' | 'Estudio' | 'Galería'; name: string; short: string }
 export const HOUSE_LIGHTS: readonly HouseLight[] = [
-  { id: 'cocina', label: 'Cocina', room: 'Salón', name: 'la luz de la cocina' },
-  { id: 'sofa', label: 'Sofá', room: 'Salón', name: 'la luz del sofá' },
-  { id: 'luna', label: 'Luna', room: 'Salón', name: 'la luna' },
-  { id: 'mesa', label: 'Mesa', room: 'Salón', name: 'la lámpara de la mesa' },
-  { id: 'armario', label: 'Armario', room: 'Dormitorio', name: 'la luz del armario' },
-  { id: 'cama', label: 'Cama', room: 'Dormitorio', name: 'la luz de la cama' },
-  { id: 'terraza', label: 'Terraza', room: 'Terraza', name: 'el farol de la terraza' },
-  { id: 'estudio', label: 'Estudio', room: 'Estudio', name: 'la luz del estudio' },
-  { id: 'galeria', label: 'Galeria', room: 'Galería', name: 'la luz de la galería' },
+  { id: 'cocina', labels: ['Cocina'], room: 'Salón', name: 'la luz de la cocina', short: 'Cocina' },
+  { id: 'sofa', labels: ['Sofá'], room: 'Salón', name: 'la luz del sofá', short: 'Sofá' },
+  { id: 'luna', labels: ['Luna'], room: 'Salón', name: 'la luna', short: 'Luna' },
+  { id: 'mesa', labels: ['Mesa'], room: 'Salón', name: 'la lámpara de la mesa', short: 'Mesa' },
+  { id: 'dormitorio', labels: ['Cama', 'Armario'], room: 'Dormitorio', name: 'la luz del dormitorio', short: 'Dormitorio' },
+  { id: 'terraza', labels: ['Terraza'], room: 'Terraza', name: 'el farol de la terraza', short: 'Terraza' },
+  { id: 'estudio', labels: ['Estudio'], room: 'Estudio', name: 'la luz del estudio', short: 'Estudio' },
+  { id: 'galeria', labels: ['Galeria'], room: 'Galería', name: 'la luz de la galería', short: 'Galería' },
 ];
 const SALON: LightId[] = ['cocina', 'sofa', 'luna', 'mesa'];
-const ELSEWHERE: LightId[] = ['armario', 'cama', 'terraza', 'estudio', 'galeria'];
+const ELSEWHERE: LightId[] = ['dormitorio', 'terraza', 'estudio', 'galeria'];
 export const lightById = (id: LightId) => HOUSE_LIGHTS.find(light => light.id === id)!;
 export const lampInteraction = (id: string) => id.startsWith('lamp-') && HOUSE_LIGHTS.some(light => `lamp-${light.id}` === id) ? id.slice(5) as LightId : undefined;
 
@@ -82,7 +84,6 @@ export function lampRgb(lamp: Lamp): [number, number, number] {
  * echo for the other rooms, from the colours that fill it on screen. The Meridiana flat has no
  * look of its own: there the bulbs are the flat's lamps.
  */
-const WARM = white(2700, .75);
 const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, Lamp, Lamp, Lamp]; rest: Lamp }> = {
   // The stone courtyard with its cypresses and olive tree.
   patio: { salon: [white(4000, .7), hex('#6f9a6a', .55, .5), hex('#7d93a6', .5, .45), white(3200, .6)], rest: white(3500, .3) },
@@ -124,22 +125,28 @@ export function placeLook(place: EnvironmentId, mood: Mood, scope: Scope, intens
 /** The flat before the house has said anything: evening lamps in the living room, the rest off. */
 export const DEFAULT_FLAT: Record<LightId, Lamp> = {
   cocina: white(3000, .8), sofa: white(2700, .75), luna: white(2400, .5), mesa: white(2500, .7),
-  armario: OFF, cama: white(2400, .45), terraza: OFF, estudio: OFF, galeria: OFF,
+  dormitorio: white(2400, .45), terraza: OFF, estudio: OFF, galeria: OFF,
 };
-/** What a lamp turns to when Gerard presses it in the flat: on, a few colours, then off. */
-export const LAMP_PRESETS: { name: string; lamp: Lamp }[] = [
-  { name: 'luz cálida', lamp: WARM },
-  { name: 'atardecer', lamp: hex('#ff9a4a', .8, .75) },
-  { name: 'rosa', lamp: hex('#ff6fae', .7, .6) },
-  { name: 'azul noche', lamp: hex('#4a6cff', .55, .75) },
-  { name: 'verde', lamp: hex('#48d07a', .65, .7) },
+/** The lamp dial's quick picks (src/lamp-picker.ts): whites from candle to daylight, then colours. */
+export const SWATCHES: { name: string; lamp: Lamp }[] = [
+  { name: 'Vela', lamp: white(2200, .6) }, { name: 'Cálida', lamp: white(2700, .75) }, { name: 'Neutra', lamp: white(3500, .8) },
+  { name: 'Fría', lamp: white(4500, .85) }, { name: 'Día', lamp: white(6500, .9) },
+  { name: 'Rojo', lamp: hex('#ff3b2f', .75, .9) }, { name: 'Atardecer', lamp: hex('#ff9a4a', .8, .75) }, { name: 'Ámbar', lamp: hex('#ffc24a', .8, .7) },
+  { name: 'Verde', lamp: hex('#48d07a', .7, .7) }, { name: 'Turquesa', lamp: hex('#2fd0c8', .7, .75) }, { name: 'Azul noche', lamp: hex('#4a6cff', .6, .75) },
+  { name: 'Violeta', lamp: hex('#9a5bff', .65, .7) }, { name: 'Rosa', lamp: hex('#ff6fae', .7, .6) },
 ];
-/** The next press on a lamp: off turns on warm, a preset moves to the next one, the last turns off. */
-export function nextLamp(lamp: Lamp): { lamp: Lamp; verb: string } {
-  if (!lamp.on) return { lamp: LAMP_PRESETS[0].lamp, verb: 'Encender' };
-  const index = LAMP_PRESETS.findIndex(p => sameLamp(p.lamp, lamp));
-  const next = LAMP_PRESETS[index + 1];
-  return next ? { lamp: next.lamp, verb: `Poner ${next.name} en` } : index === LAMP_PRESETS.length - 1 ? { lamp: OFF, verb: 'Apagar' } : { lamp: LAMP_PRESETS[0].lamp, verb: 'Poner luz cálida en' };
+/** The swatch a lamp shows (or the closest one), and the one `step` places along. Brightness is kept. */
+export function stepSwatch(lamp: Lamp, step: number): { index: number; lamp: Lamp } {
+  const distance = (a: Lamp, b: Lamp) => a.saturation < .15 || b.saturation < .15
+    ? Math.abs(a.saturation - b.saturation) * 4 + Math.abs(a.kelvin - b.kelvin) / 1500
+    : Math.abs(((a.hue - b.hue + 540) % 360) - 180) / 60 + Math.abs(a.saturation - b.saturation);
+  const here = SWATCHES.reduce((best, swatch, i) => distance(swatch.lamp, lamp) < distance(SWATCHES[best].lamp, lamp) ? i : best, 0);
+  const index = (here + step + SWATCHES.length) % SWATCHES.length;
+  return { index, lamp: { ...SWATCHES[index].lamp, on: true, brightness: step && lamp.on ? lamp.brightness : SWATCHES[index].lamp.brightness } };
+}
+/** A lamp coming on from off: in the colour it had, or warm if it never had one. */
+export function switchedOn(lamp: Lamp): Lamp {
+  return lamp.brightness > 0.02 ? { ...lamp, on: true } : SWATCHES[1].lamp;
 }
 
 // ——— Fights ———
@@ -204,21 +211,33 @@ export const VICTORY: Look = { cocina: hex('#ffd24a', 1, .8), sofa: hex('#48d07a
 export const DEFEAT: Look = { cocina: hex('#ff2a1a', .12, 1), sofa: hex('#ff2a1a', .08, 1), luna: OFF, mesa: hex('#c0306e', .1, .9) };
 
 // ——— The director: settings, the bridge and the timing ———
-export interface LightsSettings { enabled: boolean; scope: Scope; intensity: Intensity; lead: number }
+/** `lead` in ms, or null to follow how long the bulbs take (`autoLead`). */
+export interface LightsSettings { enabled: boolean; scope: Scope; intensity: Intensity; lead: number | null }
+/** `lan`: the bulbs answer on the home network in milliseconds; `cloud`: through LIFX, up to a second. */
+export type Transport = 'lan' | 'cloud';
 export type LightsStatus =
   | { state: 'off' } | { state: 'connecting' }
-  | { state: 'on'; lights: number; latency?: number }
+  | { state: 'on'; lights: number; latency?: number; transport: Transport }
   | { state: 'unavailable'; reason: string };
+/**
+ * The lead that lands a flash with the hit. On the LAN a bulb starts within a few milliseconds of
+ * the message (the measured latency waits for the slowest bulb's answer, so it is not used); through
+ * the cloud it is about half a second.
+ */
+export function autoLead(transport: Transport) {
+  return transport === 'lan' ? 40 : 500;
+}
 interface HouseBulb { label: string; connected: boolean; power: boolean; hue: number; saturation: number; kelvin: number; brightness: number }
-const SETTINGS_KEY = 'gerard35.lights.v1';
+const SETTINGS_KEY = 'gerard35.lights.v2';
 const KEY_KEY = 'gerard35.lights.key';
 /** The flat as the game last gave it back, so a reload does not read bulbs still on their way home. */
 const RETURNED_KEY = 'gerard35.lights.returned';
 const RETURN_MS = 60000;
 /** Lamp changes Gerard makes in the flat stay a moment before the house's own reading counts. */
-const ECHO_MS = 4500;
-const POLL_MS = 3000;
-export const DEFAULT_SETTINGS: LightsSettings = { enabled: false, scope: 'salon', intensity: 'normal', lead: 500 };
+const ECHO_MS: Record<Transport, number> = { lan: 1200, cloud: 4500 };
+/** How often the flat reads the house while Gerard is in it. */
+const POLL_MS: Record<Transport, number> = { lan: 250, cloud: 3000 };
+export const DEFAULT_SETTINGS: LightsSettings = { enabled: false, scope: 'salon', intensity: 'normal', lead: null };
 
 export function createHomeLights() {
   let settings: LightsSettings = { ...DEFAULT_SETTINGS };
@@ -252,6 +271,10 @@ export function createHomeLights() {
   let poll: ReturnType<typeof setInterval> | undefined;
   const timers = new Set<ReturnType<typeof setTimeout>>();
   const active = () => status.state === 'on';
+  const transport = (): Transport => status.state === 'on' ? status.transport : 'cloud';
+  const lead = () => settings.lead ?? autoLead(transport());
+  const labelsOf = (ids: LightId[]) => ids.flatMap(id => lightById(id).labels);
+  const bulbStates = (id: LightId, lamp: Lamp) => lightById(id).labels.map(light => ({ light, ...toBulb(lamp) }));
   const changed = () => listeners.forEach(listener => listener());
   const save = () => { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* Storage is optional. */ } };
   const later = (ms: number, run: () => void) => { const t = setTimeout(() => { timers.delete(t); run(); }, ms); timers.add(t); };
@@ -271,12 +294,12 @@ export function createHomeLights() {
   function show(look: Look, duration: number, force = false) {
     if (!active()) return [];
     const changes = (Object.entries(look) as [LightId, Lamp][]).filter(([id, lamp]) => present.has(id) && (force || !sameLamp(sent[id], lamp)));
-    const states = changes.map(([id, lamp]) => { sent[id] = lamp; told[id] = Date.now(); return { light: lightById(id).label, ...toBulb(lamp) }; });
+    const states = changes.flatMap(([id, lamp]) => { sent[id] = lamp; told[id] = Date.now(); return bulbStates(id, lamp); });
     if (states.length) void call('PUT', '', { states, duration });
     return changes.map(([id]) => id);
   }
   function flash(effect: Flash) {
-    const lights = effect.lights.filter(id => present.has(id) && sent[id]?.on !== false).map(id => lightById(id).label);
+    const lights = labelsOf(effect.lights.filter(id => present.has(id) && sent[id]?.on !== false));
     if (!active() || !lights.length) return;
     effect.lights.forEach(id => { told[id] = Date.now(); });
     void call('POST', '/effect', { lights, kind: effect.kind, color: toBulb(effect.color).color, brightness: effect.color.brightness, period: effect.period, cycles: effect.cycles, peak: effect.peak });
@@ -294,29 +317,43 @@ export function createHomeLights() {
   /** While Gerard is in the flat, a lamp switched at home turns on or off in the game too. */
   async function read(initial = false) {
     const response = await call('GET', '');
-    const reply = await response?.json().catch(() => undefined) as { available: boolean; reason?: string; latency?: number; lights: HouseBulb[] } | undefined;
+    const reply = await response?.json().catch(() => undefined) as { available: boolean; reason?: string; latency?: number; transport?: Transport; lights: HouseBulb[] } | undefined;
     if (!reply) return;
     if (!reply.available) { status = { state: 'unavailable', reason: reply.reason ?? 'token' }; stopPolling(); changed(); return; }
-    present = new Set(HOUSE_LIGHTS.filter(light => reply.lights.some(b => b.label === light.label && b.connected)).map(light => light.id));
+    const bulbsOf = (light: HouseLight) => reply.lights.filter(b => light.labels.includes(b.label) && b.connected);
+    present = new Set(HOUSE_LIGHTS.filter(light => bulbsOf(light).length).map(light => light.id));
     let returned: Partial<Record<LightId, Lamp>> = {};
     try {
       const saved = JSON.parse(localStorage.getItem(RETURNED_KEY) ?? 'null') as { at: number; flat: Record<LightId, Lamp> } | null;
       if (initial && saved && Date.now() - saved.at < RETURN_MS) returned = saved.flat;
     } catch { /* Storage is optional. */ }
     for (const light of HOUSE_LIGHTS) {
-      const bulb = reply.lights.find(b => b.label === light.label);
-      if (!bulb?.connected) continue;
+      // A light of two bulbs is on if either is, in the colour of the one that is.
+      const bulbs = bulbsOf(light), bulb = bulbs.find(b => b.power) ?? bulbs[0];
+      if (!bulb) continue;
       const lamp = returned[light.id] ?? fromBulb(bulb);
-      const quiet = Date.now() - (told[light.id] ?? 0) > ECHO_MS;
+      const quiet = Date.now() - (told[light.id] ?? 0) > ECHO_MS[reply.transport ?? 'cloud'];
       if (initial || (mirroring() && quiet && !sameLamp(lamp, sent[light.id]))) {
         sent[light.id] = lamp;
         if (!sameLamp(lamp, flat[light.id])) { flat[light.id] = lamp; flatListeners.forEach(listener => listener(light.id, lamp)); }
       }
     }
     const now = status as LightsStatus;
-    if (now.state === 'connecting' || now.state === 'on') { status = { state: 'on', lights: present.size, latency: reply.latency }; changed(); }
+    if (now.state === 'connecting' || now.state === 'on') {
+      const moved = now.state === 'on' && now.transport !== reply.transport;
+      status = { state: 'on', lights: present.size, latency: reply.latency, transport: reply.transport ?? 'cloud' };
+      if (moved) startPolling();
+      changed();
+    }
   }
-  function startPolling() { stopPolling(); poll = setInterval(() => { if (mirroring() && !document.hidden) void read(); }, POLL_MS); }
+  let reading = false;
+  function startPolling() {
+    stopPolling();
+    poll = setInterval(() => {
+      if (!mirroring() || document.hidden || reading) return;
+      reading = true; void read().finally(() => { reading = false; });
+    }, POLL_MS[transport()]);
+  }
   function stopPolling() { if (poll) clearInterval(poll); poll = undefined; }
   async function connect() {
     status = { state: 'connecting' }; changed();
@@ -330,7 +367,7 @@ export function createHomeLights() {
   function release() {
     if (!active()) return;
     timers.forEach(clearTimeout); timers.clear(); holding = 0; fallen = false; finished = undefined;
-    const states = HOUSE_LIGHTS.filter(light => present.has(light.id)).map(light => ({ light: light.label, ...toBulb(flat[light.id]) }));
+    const states = HOUSE_LIGHTS.filter(light => present.has(light.id)).flatMap(light => bulbStates(light.id, flat[light.id]));
     if (states.length) void call('PUT', '', { states, duration: 1.5 }, true);
     try { localStorage.setItem(RETURNED_KEY, JSON.stringify({ at: Date.now(), flat })); } catch { /* Storage is optional. */ }
     stopPolling();
@@ -344,6 +381,8 @@ export function createHomeLights() {
   return {
     get settings() { return settings; },
     get status() { return status; },
+    /** The lead in use: the setting, or the automatic one. */
+    get lead() { return lead(); },
     get active() { return active(); },
     get flat() { return flat as Readonly<Record<LightId, Lamp>>; },
     onChange(listener: () => void) { listeners.add(listener); return () => listeners.delete(listener); },
@@ -372,7 +411,7 @@ export function createHomeLights() {
     setLamp(id: LightId, lamp: Lamp) {
       flat[id] = lamp;
       flatListeners.forEach(listener => listener(id, lamp));
-      if (mirroring()) show({ [id]: lamp }, .4);
+      if (mirroring()) show({ [id]: lamp }, transport() === 'lan' ? .15 : .4);
     },
     /**
      * A fight changed. Returns how long the game should hold before playing `effect`, so that its
@@ -389,12 +428,12 @@ export function createHomeLights() {
         if (fallen) { fallen = false; holding--; later(1500, () => settle(2, true)); } else settle(1.5, true);
         return 0;
       }
-      const lead = Math.max(0, settings.lead);
+      const ahead = lead();
       const impact = effect ? impactSeconds(effect) * 1000 : 0;
       const hit = effect && hitFlash(effect, state, settings.intensity);
       // The game holds the hit back when the bulbs need longer than its wind-up.
-      const hold = effect ? Math.max(0, lead - impact) : 0;
-      if (hit) { if (hold || lead >= impact) flash(hit); else later(impact - lead, () => flash(hit)); }
+      const hold = effect ? Math.max(0, ahead - impact) : 0;
+      if (hit) { if (ahead >= impact) flash(hit); else later(impact - ahead, () => flash(hit)); }
       /** When the flash has had its moment and the room can move on. */
       const after = effect ? hold + impact + 700 : 0;
       if (state.phase === 'won' || state.phase === 'lost') {
@@ -440,7 +479,7 @@ export function createHomeLights() {
     test(onScreen: () => void) {
       if (!active()) { onScreen(); return; }
       flash({ lights: [...SALON], kind: 'breathe', color: white(6500, 1), period: .5, cycles: 1, peak: .05 });
-      later(Math.max(0, settings.lead), onScreen);
+      later(lead(), onScreen);
     },
     release,
   };

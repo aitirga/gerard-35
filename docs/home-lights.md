@@ -4,15 +4,20 @@ Gerard plays at home, in the Meridiana flat, and the flat has LIFX bulbs. Once c
 along: every place lends the living room its colours, fights flash and turn red as health runs
 out, and the Meridiana flat in the game *is* the real one, both ways.
 
-The house's own library drives the bulbs: [geraitor_domotic_house](https://github.com/aitirga/geraitor_domotic_house),
-a git submodule in `vendor/geraitor_domotic_house` (`just setup` checks it out, `just lights-update`
-moves it to its latest `main`). The game imports only its LIFX transport and colour handling.
+At home the game talks to the bulbs **on the LAN** (`lifx_lan.py`, LIFX's UDP protocol): a change
+reaches a bulb in about 10 ms and there is no rate limit. Away from home (or for a bulb the LAN does
+not find) it goes through the LIFX Cloud with the house's own library,
+[geraitor_domotic_house](https://github.com/aitirga/geraitor_domotic_house), a git submodule in
+`vendor/geraitor_domotic_house` (`just setup` checks it out, `just lights-update` moves it to its
+latest `main`); the cloud takes up to a second.
 
 ## Turning it on
 
-1. Put the LIFX Cloud token in `.env` as `LIFX_TOKEN` (https://cloud.lifx.com/settings).
+1. At home nothing else is needed: `just backend` finds the bulbs on the network. For the cloud
+   fallback put `LIFX_TOKEN` in `.env` (https://cloud.lifx.com/settings).
 2. `just backend` and `just dev`, open the game, press Esc and pick **07 · Luces de casa**.
-3. **Conectar las luces de casa.** The choice is remembered in this browser.
+3. **Conectar las luces de casa.** The choice is remembered in this browser. The page says whether
+   they go *por la red de casa, al instante* or *por la nube*.
 
 **Soltar las luces** gives the house back the lights of the flat (see below), and closing the tab
 does the same. Nothing changes at home until the lights are connected.
@@ -21,7 +26,7 @@ does the same. Nothing changes at home until the lights are connected.
 | --- | --- |
 | Habitaciones | *Solo el salón* (default): places and fights use the four living-room bulbs. *Toda la casa*: the bedroom, terrace, study and gallery get a dimmer echo too. The flat always mirrors every bulb |
 | Intensidad | *Suave* dims everything and swaps No-ta's strobe for a swell; *Normal*; *Intensa* |
-| Adelanto | How long before a hit the bulbs are told (0–1500 ms, default 500). **Probar** tells the bulbs now and flashes the screen after the lead: adjust until both flash together |
+| Adelanto | How long before a hit the bulbs are told. **Auto** (default) uses 40 ms on the LAN and 500 ms through the cloud; − and + set it by hand (0–1500 ms). **Probar** tells the bulbs now and flashes the screen after the lead: adjust until both flash together |
 
 ## The bulbs
 
@@ -31,23 +36,29 @@ does the same. Nothing changes at home until the lights are connected.
 | Sofá | Living room, over the sofa | Pendant over the sofa |
 | Luna | Living room, little table by the computer desk | Moon lamp on a round table at the end of the desk |
 | Mesa | Living room, the round dining table | The arc lamp, reaching over the round table |
-| Armario | Bedroom, wardrobe | Strip along the open wardrobe |
-| Cama | Bedroom, bed | Both bedside lamps |
+| Cama + Armario | Bedroom, both over the bed | Two pendants over the bed, **one light**: switched together, either one on means on |
 | Terraza | Balcony | The wall lantern |
 | Estudio | Study | Pendant in the study |
 | Galeria | Gallery | Pendant in the gallery |
 
-Bulbs are found by these names (`HOUSE_LIGHTS` in `src/home-lights.ts`); a bulb that LIFX reports
-as disconnected is left out until it comes back.
+Bulbs are found by these names (`HOUSE_LIGHTS` in `src/home-lights.ts`, where a light may have
+several); a bulb that does not answer is left out until it comes back.
 
 ## The Meridiana flat mirrors the house
 
-- Every lamp above is a switch in the game: walking up to it, the prompt says what the next press
-  does — *Encender*, then warm light, sunset, pink, night blue, green, and *Apagar*.
-- **Game → house.** While Gerard is in the flat, pressing a lamp changes the bulb at home.
-- **House → game.** While he is in the flat the game reads the bulbs every 3 s: a lamp switched at
-  home (the LIFX app, a switch, Siri) turns on, off or changes colour in the game. For 4.5 s after
-  the game changes a bulb it ignores its readings, so a bulb still fading is not taken for a person.
+- Every lamp above is a switch in the game. **E opens its dial** (`src/lamp-picker.ts`), turning
+  it on if it was off: a colour wheel (whites in the middle, colours towards the edge), a brightness
+  bar, quick picks from candle to daylight and twelve colours, and the power button. Keys: ← → step
+  through the quick picks, ↑ ↓ brightness, Space on/off, E or Esc closes; the mouse drags the wheel
+  and the bar; a controller uses the D-pad, A and B.
+- **Game → house.** Every change shows on the lamp in the game and goes to the bulb as it happens
+  (at most every 45 ms while dragging, with a 0.15 s fade).
+- **House → game.** While Gerard is in the flat the game reads the bulbs every 250 ms on the LAN
+  (3 s through the cloud): a lamp switched at home (the LIFX app, a switch, Siri) shows in the game
+  within half a second. For a moment after the game changes a bulb (1.2 s on the LAN, 4.5 s through
+  the cloud) its readings are ignored, so a bulb still fading is not taken for a person.
+- **The lamps light the flat.** The window light is kept low there, so a lamp turned off leaves its
+  room in shadow and a coloured one tints the walls and the floor.
 - When the lights connect, the flat starts as the house is right now. Leaving the flat hands the
   bulbs to the place outside; coming back gives them the flat again. Letting go (or closing the
   tab) puts every bulb back as the flat has it.
@@ -85,14 +96,16 @@ a handful of requests.
 
 ### The lead
 
-LIFX is a cloud service: a request takes 0.2–1 s to reach a bulb. The game therefore tells the
-bulbs `lead` ms before a hit lands. A hit lands 0.46 s into its animation (`CONTACT_SECONDS`); when
-the lead is longer, the game holds the action back by the difference (40 ms at the default
-500 ms), so it can be tuned freely without the lights arriving late.
+The game tells the bulbs `lead` ms before a hit lands. A hit lands 0.46 s into its animation
+(`CONTACT_SECONDS`); on the LAN the flash is simply sent 40 ms before that. Through the cloud a
+request takes 0.2–1 s, so with a lead longer than the wind-up the game holds the action back by
+the difference (40 ms at 500 ms) and the lights never arrive late.
 
 ## Requests
 
-LIFX allows 120 requests a minute. `lights.py` stays under 100 with a token bucket:
+On the LAN every state goes straight out as SetColor/SetLightPower and flashes as SetWaveform, each
+acknowledged by the bulb and sent again once if it is not. Through the cloud LIFX allows 120
+requests a minute and `lights.py` stays under 100 with a token bucket:
 
 - States queue per bulb and only the newest is sent; one look for several bulbs goes as one fast
   request.
@@ -112,10 +125,12 @@ carrying the house key: `HOME_LIGHTS_KEY`. `just deploy-lights` stores `LIFX_TOK
 
 | File | What |
 | --- | --- |
-| `lights.py` | The bridge: `/api/lights` (read), `PUT /api/lights` (states), `POST /api/lights/effect` (breathe or pulse) |
+| `lights.py` | The bridge: `/api/lights` (read), `PUT /api/lights` (states), `POST /api/lights/effect` (breathe or pulse); LAN first, cloud for the rest |
+| `lifx_lan.py` | LIFX's LAN protocol: discovery, reading, colour, power and waveforms |
+| `src/lamp-picker.ts` | The lamp dial |
 | `src/home-lights.ts` | The bulbs, places, fights, flashes (pure) and the director: settings, mirroring, timing |
 | `src/home-lights-ui.ts` | The menu page |
-| `src/home-scenery.ts` | The flat's lamps: light, bulb and the patch of light on the floor |
+| `src/home-scenery.ts` | The flat's lamps: light, bulb and the patch of light on the floor (`scenery.ts` keeps the flat's window light low) |
 | `tests/test_lights.py`, `tests/home-lights.test.mjs` | Offline tests; nothing touches the bulbs |
 
 `just screenshots home-lights` shows the lamps and the menu page without connecting the bulbs.

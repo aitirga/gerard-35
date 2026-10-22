@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HOUSE_LIGHTS, LAMP_PRESETS, OFF, battleLook, heartbeat, hex, hitFlash, impactSeconds, lampInteraction, lampRgb, mix, nextLamp, placeLook, sameLamp, tension } from '../src/home-lights.ts';
+import { HOUSE_LIGHTS, OFF, SWATCHES, autoLead, battleLook, heartbeat, hex, hitFlash, impactSeconds, lampInteraction, lampRgb, mix, placeLook, sameLamp, stepSwatch, switchedOn, tension, white } from '../src/home-lights.ts';
 import { CONTACT_SECONDS } from '../src/battle-motion.ts';
 import { createBattle, createGuardBattle, palaceGuards } from '../src/battle.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
@@ -46,14 +46,20 @@ test('colours convert both ways close enough', () => {
   assert.ok(sameLamp(OFF, { ...OFF, brightness: .5 }));
 });
 
-test('a lamp turns on warm, goes through the colours and then off', () => {
-  let lamp = OFF;
-  const verbs = [];
-  for (let i = 0; i <= LAMP_PRESETS.length; i++) { const next = nextLamp(lamp); verbs.push(next.verb); lamp = next.lamp; }
-  assert.equal(verbs[0], 'Encender');
-  assert.equal(verbs.at(-1), 'Apagar');
-  assert.equal(lamp.on, false);
-  assert.equal(nextLamp(hex('#123456', .3)).lamp, LAMP_PRESETS[0].lamp, 'a colour set at home starts the cycle again');
+test('the dial steps through whites and colours, keeping the brightness', () => {
+  const dim = { ...white(2700, .3) };
+  const next = stepSwatch(dim, 1);
+  assert.equal(next.index, 2);
+  assert.equal(next.lamp.brightness, .3);
+  assert.equal(stepSwatch(dim, -2).index, SWATCHES.length - 1, 'round the end');
+  assert.equal(stepSwatch(hex('#ff70ad', .5), 0).lamp.hue, SWATCHES.find(s => s.name === 'Rosa').lamp.hue, 'a colour set at home finds its swatch');
+  assert.equal(switchedOn(OFF).kelvin, 2700, 'warm when it never had a colour');
+  assert.deepEqual(switchedOn({ ...hex('#4a6cff', .6), on: false }).on, true);
+});
+
+test('the lead follows the bulbs: milliseconds on the LAN, half a second through the cloud', () => {
+  assert.equal(autoLead('lan'), 40);
+  assert.equal(autoLead('cloud'), 500);
 });
 
 test('the room turns red and a heartbeat starts as the party runs out of health', () => {

@@ -5,6 +5,7 @@ from unittest import mock
 from fastapi.testclient import TestClient
 
 import lights
+import lifx_lan
 from lights import Budget, HomeLights
 from server import app
 
@@ -117,6 +118,61 @@ class HomeLightsTests(unittest.TestCase):
         self.assertEqual(sum(1 for call in api.calls if call[1] == "lights/all"), 2)
 
 
+class FakeLan:
+    """Bulbs on the LAN: reads answer with BULBS, writes are recorded."""
+
+    def __init__(self, serials=("d073d5000001", "d073d5000002")):
+        self.addresses = {serial: "192.168.1.2" for serial in serials}
+        self.calls = []
+
+    def read(self):
+        return [dict(bulb) for bulb in BULBS if bulb["id"] in self.addresses]
+
+    def discover(self):
+        return self.addresses
+
+    def set(self, serials, color, power, duration):
+        self.calls.append(("set", serials, color, power, duration))
+
+    def waveform(self, serials, kind, color, period, cycles, peak):
+        self.calls.append(("waveform", serials, kind, color, period, cycles, peak))
+
+
+class LanTests(unittest.TestCase):
+    def test_on_the_lan_states_and_flashes_skip_the_cloud(self):
+        api, lan = FakeApi(), FakeLan()
+        house = HomeLights(api, lan, clock=Clock(), worker=False)
+        self.assertEqual(house.transport, "lan")
+        self.assertEqual([b["label"] for b in house.lights()], ["Sofá", "Luna"])
+        house.set([{"light": "Sofá", "power": True, "color": SHADE, "brightness": 0.4},
+                   {"light": "Luna", "power": True, "color": SHADE, "brightness": 0.4}], 0.25)
+        house._send(*house.next_request())
+        self.assertEqual(lan.calls[-1], ("set", ["d073d5000001", "d073d5000002"], {**SHADE, "brightness": 0.4}, True, 0.25))
+        house.flash({"lights": ["Luna"], "kind": "breathe", "color": SHADE, "brightness": 1, "period": 0.5, "cycles": 1, "peak": 0.1})
+        house._send(*house.next_request())
+        self.assertEqual(lan.calls[-1][:3], ("waveform", ["d073d5000002"], "breathe"))
+        self.assertEqual(api.calls, [], "nothing went to the cloud")
+
+    def test_a_bulb_missing_on_the_lan_goes_through_the_cloud(self):
+        api, lan = FakeApi(), FakeLan(serials=("d073d5000001",))
+        house = HomeLights(api, lan, clock=Clock(), worker=False)
+        house.inventory = BULBS
+        house.set([{"light": "Luna", "power": False, "color": None, "brightness": None}], 0.5)
+        house._send(*house.next_request())
+        self.assertEqual(lan.calls, [])
+        self.assertEqual(api.calls[-1][:2], ("PUT", "lights/id:d073d5000002/state"))
+
+    def test_messages_follow_the_lan_protocol(self):
+        message = lifx_lan.packet(lifx_lan.SET_COLOR, b"\0" * 13, target="d073d5000001", source=7, sequence=3, ack=True)
+        self.assertEqual(len(message), 49)
+        self.assertEqual(lifx_lan.parse(message)[:3], (lifx_lan.SET_COLOR, "d073d5000001", 3))
+        state = lifx_lan.struct.pack(lifx_lan.LIGHT_STATE_FORMAT, 21845, 65535, 32768, 2700, 0, 65535, "Sofá".encode(), 0)
+        bulb = lifx_lan.light_state(state)
+        self.assertEqual((bulb["label"], bulb["power"], bulb["color"]["hue"], bulb["color"]["kelvin"]), ("Sofá", "on", 120.0, 2700))
+        self.assertAlmostEqual(bulb["brightness"], 0.5, places=3)
+        self.assertEqual(lifx_lan.hsbk({"hue": 360, "saturation": 1, "brightness": 0.5, "kelvin": 3500}), (0, 65535, 32768, 3500))
+
+
 class LightsApiTests(unittest.TestCase):
     def setUp(self):
         self.house, self.api, _ = bridge()
@@ -150,8 +206,9 @@ class LightsApiTests(unittest.TestCase):
             if lights.Color is not None:
                 self.assertTrue(self.client.get("/api/lights", headers={"X-Lights-Key": "llave"}).json()["available"])
 
-    def test_without_a_token_there_are_no_lights(self):
-        with mock.patch.dict(os.environ, {"LIFX_TOKEN": "", "lifx_token": ""}):
+    def test_without_the_lan_or_a_token_there_are_no_lights(self):
+        with mock.patch.dict(os.environ, {"LIFX_TOKEN": "", "lifx_token": "", "HOME_LIGHTS_LAN": "0"}), \
+                mock.patch.object(lights, "_house", None), mock.patch.object(lights, "_house_tried", -float("inf")):
             reply = self.client.get("/api/lights").json()
         self.assertFalse(reply["available"])
         self.assertIn(reply["reason"], ("token", "library"))

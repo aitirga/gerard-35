@@ -132,9 +132,11 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const glow = mat('Farolas', '#ffdb9c', 0.2, 2);
   const w = environment.grid[0].length, d = environment.grid.length;
   const night = environment.id === 'patio';
-  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : new pc.Color(0.48, 0.48, 0.43);
+  // The Meridiana flat is lit by its lamps, which are the bulbs at home: the window light stays low.
+  const lamplit = environment.id === 'meridiana';
+  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : new pc.Color(0.48, 0.48, 0.43);
   const sunColor = night ? new pc.Color(0.66, 0.81, 1) : new pc.Color(1, 0.87, 0.68);
-  const sunIntensity = night ? 1.15 : 1.65;
+  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : 1.65;
   app.scene.ambientLight = ambient.clone();
   app.scene.fog.type = pc.FOG_NONE;
   const sun = new pc.Entity('Sol de la tarde');

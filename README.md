@@ -68,9 +68,9 @@ and `just screenshots chapter-2-city` walks it.
 
 The LIFX bulbs in the Meridiana flat play along: each place tints the living room with its colours,
 fights flash on every hit and turn red with a heartbeat as health runs out, and the flat in the game
-mirrors the real one both ways (a lamp pressed in the game switches at home, a light switched at
-home shows in the game). Put `LIFX_TOKEN` in `.env`, run `just backend` + `just dev` and connect them
-from the menu (Esc · Luces de casa), where the lead that times them to the hits is set too. The house's
+mirrors the real one both ways: each lamp opens a colour dial, and a light switched at home shows in
+the game. At home `just backend` finds the bulbs on the LAN and changes them in milliseconds
+(`LIFX_TOKEN` in `.env` is the cloud fallback); connect them from the menu (Esc · Luces de casa). The house's
 library is a git submodule in `vendor/geraitor_domotic_house` (`just setup` checks it out). Design,
 bulbs and limits: [docs/home-lights.md](docs/home-lights.md).
 

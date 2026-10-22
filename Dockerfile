@@ -10,7 +10,7 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
-COPY server.py ai.py lights.py ./
+COPY server.py ai.py lights.py lifx_lan.py ./
 # The house's lights library (a git submodule): only the package, not its scripts.
 COPY vendor/geraitor_domotic_house/geraitor_domotic_house ./vendor/geraitor_domotic_house/geraitor_domotic_house
 COPY --from=frontend /app/dist ./dist

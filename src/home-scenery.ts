@@ -87,7 +87,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   function lamp(id: LightId, px: number, y: number, pz: number, intensity = 1.1, range = 5.5, floor = 1.3) {
     const entry = lamps.get(id) ?? { lights: [], glows: [], pools: [] };
     lamps.set(id, entry);
-    entry.lights.push({ light: light(px, y, pz, '#ffe4bd', intensity, range), intensity });
+    // The lamps carry the flat's light, so they reach further and shine harder than a static one.
+    entry.lights.push({ light: light(px, y, pz, '#ffe4bd', intensity, range * 1.3), intensity: intensity * 1.6 });
     if (floor) entry.pools.push(pool(px, pz, floor));
     const glow = mat(`Bombilla: ${id}`, '#ffe3b3', 0.2, 1.6);
     entry.glows.push(glow);
@@ -100,7 +101,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     for (const { light: component, intensity } of entry.lights) {
       component.enabled = look.on;
       component.color = new pc.Color(r, g, b);
-      component.intensity = intensity * (0.35 + 0.85 * look.brightness);
+      component.intensity = intensity * (0.3 + 0.9 * look.brightness);
     }
     for (const glow of entry.glows) {
       glow.emissive.set(r, g, b);
@@ -837,10 +838,10 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       return e;
     }
     /** A pendant on a cord: a black shade with the bulb `id` glowing under it, and its light. */
-    function pendant(id: LightId, px: number, pz: number, intensity = 1.1, range = 5.5) {
+    function pendant(id: LightId, px: number, pz: number, intensity = 1.1, range = 5.5, floor = 1.3) {
       rod('Cable', black, [px, wallHeight, pz], [px, 2.24, pz], 0.015);
       cone('Pantalla', black, px, pz, 2.06, 0.34, 0.2, 0.34).setEulerAngles(180, 0, 0);
-      ball('Bombilla', lamp(id, px, 1.95, pz, intensity, range), px, pz, 1.98, 0.13, 0.1, 0.13);
+      ball('Bombilla', lamp(id, px, 1.95, pz, intensity, range, floor), px, pz, 1.98, 0.13, 0.1, 0.13);
     }
     /** Wall tiles one unit wide, repeated along the wall; `bond` staggers rows like subway tiles. */
     function tiles(name: string, height: number, tw: number, th: number, fill: string, grout: string, bond: boolean) {
@@ -1096,7 +1097,6 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       box('Costado', pax, px, (wz0 + wz1) / 2, 0.9, 0.04, 1.45, wz1 - wz0, tall);
     }
     box('Techo del armario', pax, (wx0 + wx1) / 2, (wz0 + wz1) / 2, 2.33, wx1 - wx0, 0.03, wz1 - wz0, tall);
-    box('Luz del armario', lamp('armario', 10.5, 2.2, 7.9, 0.9, 4.5), (wx0 + wx1) / 2, wz1 - 0.04, 2.28, wx1 - wx0 - 0.2, 0.04, 0.05, tall);
     const colours = ['#1f2a3d', '#b8503a', '#2f67b0', '#6b4a3a', '#8a8f94', '#e0a646', '#3f5a48', '#d8d2c5', '#a0522d'];
     bays.slice(0, 3).forEach((b0, i) => {
       const b1 = bays[i + 1], cx = (b0 + b1) / 2, w = b1 - b0 - 0.08;
@@ -1132,7 +1132,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     for (const [i, c] of ['#8a5a8c', '#2c3a5c', '#6f9a8a'].entries()) box('Ropa sobre la cama', mat('Ropa', c, 0.05), bcx - 0.6 + i * 0.18, bcz - 0.8 - i * 0.12, 0.74 + i * 0.02, 0.4, 0.06, 0.34).setEulerAngles(0, i * 35, 0);
     box('Cabecero', bedWhite, bcx, 17 - FACE - 0.04, 0.3, bw + 0.9, 0.95, 0.08);
     for (const y of [0.62, 0.9]) box('Ranura del cabecero', seam, bcx, 17 - FACE - 0.085, y, bw + 0.8, 0.015, 0.01);
-    const nightOak = mat('Mesilla de roble', '#c9a36e', 0.3), shade = lamp('cama', 10.5, 1.6, 15.6, 0.9, 6);
+    const nightOak = mat('Mesilla de roble', '#c9a36e', 0.3), shade = mat('Pantalla de lino', '#f3ead8', 0.1, 0.25);
     for (const side of [-1, 1]) {
       const nx = bcx + side * (bw / 2 + 0.38), nz = hz - 0.25;
       box('Mesilla', nightOak, nx, nz, 0, 0.5, 0.5, 0.5);
@@ -1140,6 +1140,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       cyl('Pie de la lámpara', black, nx + side * 0.08, nz + 0.05, 0.5, 0.05, 0.3, 0.05);
       cyl('Pantalla de la lámpara', shade, nx + side * 0.08, nz + 0.05, 0.76, 0.28, 0.22, 0.28);
     }
+    // The bedroom's light is two bulbs over the bed (Cama and Armario at home), switched as one.
+    for (const px of [10.05, 10.95]) pendant('dormitorio', px, 14.9, 0.8, 6, 1.9);
     // Aitor's side (west): water and phone. Gerard's side (east) is where the wrapper turns up.
     cyl('Botella de agua', glass, bcx - bw / 2 - 0.5, hz - 0.35, 0.5, 0.08, 0.24, 0.08);
     box('Móvil', black, bcx - bw / 2 - 0.28, hz - 0.4, 0.5, 0.08, 0.01, 0.15);
