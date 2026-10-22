@@ -1,0 +1,4 @@
+[submodule "vendor/geraitor_domotic_house"]
+	path = vendor/geraitor_domotic_house
+	url = https://github.com/aitirga/geraitor_domotic_house.git
+	branch = main
