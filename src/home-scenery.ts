@@ -75,7 +75,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     if (!poolTexture) {
       const [c, ctx] = canvas(128);
       const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-      g.addColorStop(0, '#ffffff'); g.addColorStop(0.45, '#9a9a9a'); g.addColorStop(1, '#000000');
+      // A long, soft fade: the patch should read as light spreading, not as a spot.
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.25, '#d2d2d2'); g.addColorStop(0.6, '#5a5a5a'); g.addColorStop(1, '#000000');
       ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
       poolTexture = kit.texture(c);
     }
@@ -87,9 +88,10 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   function lamp(id: LightId, px: number, y: number, pz: number, intensity = 1.1, range = 5.5, floor = 1.3) {
     const entry = lamps.get(id) ?? { lights: [], glows: [], pools: [] };
     lamps.set(id, entry);
-    // The lamps carry the flat's light, so they reach further and shine harder than a static one.
-    entry.lights.push({ light: light(px, y, pz, '#ffe4bd', intensity, range * 1.3), intensity: intensity * 1.6 });
-    if (floor) entry.pools.push(pool(px, pz, floor));
+    // The lamps carry the flat's light: a wide, gentle reach fills the room instead of a hot spot
+    // around the bulb (the falloff is linear to `range`).
+    entry.lights.push({ light: light(px, y, pz, '#ffe4bd', intensity, range * 2), intensity: intensity * 1.15 });
+    if (floor) entry.pools.push(pool(px, pz, floor * 1.6));
     const glow = mat(`Bombilla: ${id}`, '#ffe3b3', 0.2, 1.6);
     entry.glows.push(glow);
     return glow;
@@ -111,7 +113,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     }
     for (const patch of entry.pools) {
       patch.emissive.set(r, g, b);
-      patch.emissiveIntensity = look.on ? 0.25 + 0.55 * look.brightness : 0;
+      patch.emissiveIntensity = look.on ? 0.15 + 0.35 * look.brightness : 0;
       patch.update();
     }
   }
@@ -841,7 +843,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     function pendant(id: LightId, px: number, pz: number, intensity = 1.1, range = 5.5, floor = 1.3) {
       rod('Cable', black, [px, wallHeight, pz], [px, 2.24, pz], 0.015);
       cone('Pantalla', black, px, pz, 2.06, 0.34, 0.2, 0.34).setEulerAngles(180, 0, 0);
-      ball('Bombilla', lamp(id, px, 1.95, pz, intensity, range, floor), px, pz, 1.98, 0.13, 0.1, 0.13);
+      ball('Bombilla', lamp(id, px, 2.15, pz, intensity, range, floor), px, pz, 1.98, 0.13, 0.1, 0.13);
     }
     /** Wall tiles one unit wide, repeated along the wall; `bond` staggers rows like subway tiles. */
     function tiles(name: string, height: number, tw: number, th: number, fill: string, grout: string, bond: boolean) {
@@ -1203,8 +1205,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     box('Móvil', black, 18.4, 4.1, 0.6, 0.16, 0.02, 0.3).setEulerAngles(0, 20, 0);
     for (const dx of [0, 0.12]) box('Mando a distancia', black, 17.6 + dx, 4.0, 0.5, 0.05, 0.02, 0.2);
     // Desk behind the sofa: monitor, laptop and two black office chairs.
-    box('Escritorio', paleOak, 16.0, 5.45, 0.72, 2.8, 0.04, 0.68);
-    for (const px of [14.68, 17.32]) box('Pata del escritorio', black, px, 5.45, 0, 0.05, 0.72, 0.6);
+    box('Escritorio', paleOak, 16.12, 5.45, 0.72, 2.5, 0.04, 0.68);
+    for (const px of [14.94, 17.3]) box('Pata del escritorio', black, px, 5.45, 0, 0.05, 0.72, 0.6);
     box('Portátil', steel, 15.3, 5.45, 0.76, 0.42, 0.02, 0.3);
     box('Pantalla del portátil', black, 15.3, 5.29, 0.77, 0.42, 0.28, 0.02).setEulerAngles(-12, 0, 0);
     box('Monitor', black, 16.6, 5.2, 0.98, 0.9, 0.52, 0.04);
@@ -1212,14 +1214,22 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     box('Pie del monitor', black, 16.6, 5.15, 0.76, 0.22, 0.24, 0.12);
     box('Webcam', black, 16.6, 5.2, 1.5, 0.12, 0.05, 0.05);
     for (const px of [15.2, 17.0]) swivel(px, 6.2, 'north', mat('Malla negra', '#2a2b2e', 0.2), 0.62);
-    birdOfParadise(18.1, 6.05);
-    pendant('sofa', 16.5, 4.3, 1.1);
-    // Luna: a moon lamp on a little round table at the end of the desk.
-    cyl('Mesita redonda', paleOak, 18.1, 5.2, 0.5, 0.44, 0.03, 0.44);
-    cyl('Pie de la mesita', black, 18.1, 5.2, 0, 0.05, 0.5, 0.05);
-    cyl('Base de la mesita', black, 18.1, 5.2, 0, 0.3, 0.02, 0.3);
-    cyl('Peana de la luna', mat('Peana de madera', '#8a6a48', 0.3), 18.1, 5.2, 0.53, 0.12, 0.03, 0.12);
-    ball('Luna', lamp('luna', 18.1, 0.95, 5.0, 0.7, 3, 0.9), 18.1, 5.2, 0.56, 0.24, 0.24, 0.24);
+    birdOfParadise(18.1, 5.3);
+    // The sofa's bulb is the living room's ceiling light: a big oval flush mount (LIFX Ceiling
+    // 13x26"), its long side along the TV wall, over the space between the sofa and the TV.
+    // The camera sees it from above, so the face it shows glows, inside a white rim.
+    cyl('Marco del plafón', white, 16.6, 2.9, 2.46, 0.9, 0.04, 0.46);
+    cyl('Difusor del plafón', lamp('sofa', 16.6, 2.25, 2.9, 1.5, 7.5, 1.9), 16.6, 2.9, 2.47, 0.82, 0.05, 0.39);
+    // Luna: a linen cylinder lamp on the white drawer unit on wheels at the kitchen end of the desk,
+    // the unit's side flush with the end of the sofa. Its bulb lights the unit from above and in front,
+    // so the white reads white; the glowing shade casts no shadow of its own.
+    const unitX = 14.65;
+    box('Cajonera', white, unitX, 5.4, 0.05, 0.36, 0.6, 0.48);
+    for (const y of [0.1, 0.24, 0.38, 0.52]) box('Cajón', mat('Junta', '#d9d7d0', 0.3), unitX, 5.4 + 0.245, y, 0.32, 0.005, 0.005);
+    for (const [dx, dz] of [[-0.13, -0.18], [0.13, -0.18], [-0.13, 0.18], [0.13, 0.18]]) ball('Rueda', black, unitX + dx, 5.4 + dz, 0, 0.05, 0.05, 0.05).render!.castShadows = false;
+    box('Mando del aire', white, unitX - 0.04, 5.55, 0.65, 0.06, 0.02, 0.16).render!.castShadows = false;
+    for (const [dx, dz] of [[-0.07, -0.05], [0.07, -0.05], [0, 0.08]]) ball('Pata de la lámpara', mat('Latón', '#c9a55a', 0.6), unitX + dx, 5.3 + dz, 0.65, 0.03, 0.03, 0.03).render!.castShadows = false;
+    cyl('Luna', lamp('luna', unitX, 1.2, 5.7, 0.8, 3.2, 0.9), unitX, 5.3, 0.68, 0.2, 0.3, 0.2).render!.castShadows = false;
     // French windows onto the balcony: both leaves open into the room, a header and transom above.
     const header = foldaway(21 - FACE, 2.5, 21 + FACE, 4.5, CUT_HEIGHT, wallHeight);
     box('Travesaño', profile, 21, 3.5, doorTop, THICKNESS, 0.08, 2.0, header);

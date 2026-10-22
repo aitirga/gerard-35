@@ -292,7 +292,7 @@ export const MERIDIANA = house({
     '#oooo#...............+.o=',
     '#o...+.........oooo..+.o=',
     '#o...#.o#oo.o..oooo..G.o=',
-    '#o...#W#######.o.oo..####',
+    '#o...#W#######.o.o...####',
     '#o...+.o#oooo#........W  ',
     '#oo..#..W....+.####...W  ',
     '#W####.o#....#.#oo#oo.#  ',
@@ -333,7 +333,7 @@ export const MERIDIANA = house({
     // writes their labels as what the next press does.
     { id: 'lamp-cocina', cell: { x: 11, z: 5 }, label: 'Luz de la cocina' },
     { id: 'lamp-sofa', cell: { x: 14, z: 4 }, label: 'Luz del sofá' },
-    { id: 'lamp-luna', cell: { x: 19, z: 5 }, label: 'Luna' },
+    { id: 'lamp-luna', cell: { x: 14, z: 6 }, label: 'Luna' },
     { id: 'lamp-mesa', cell: { x: 21, z: 10 }, label: 'Lámpara de la mesa' },
     { id: 'lamp-dormitorio', cell: { x: 12, z: 8 }, label: 'Luz del dormitorio' },
     { id: 'lamp-terraza', cell: { x: 23, z: 1 }, label: 'Farol de la terraza' },

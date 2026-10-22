@@ -33,8 +33,8 @@ does the same. Nothing changes at home until the lights are connected.
 | LIFX name | Room at home | In the game |
 | --- | --- | --- |
 | Cocina | Living room, beside the fridge and pantry block | Pendant beside the fridge and oven column |
-| Sofá | Living room, over the sofa | Pendant over the sofa |
-| Luna | Living room, little table by the computer desk | Moon lamp on a round table at the end of the desk |
+| Sofá | Living room: the oval ceiling light (LIFX Ceiling 13x26") between the sofa and the TV | Oval flush mount, its face glowing in the bulb's colour |
+| Luna | Living room: linen cylinder lamp on the white drawer unit at the kitchen end of the desk | The same, on its drawer unit on wheels (the bird of paradise stands at the other end) |
 | Mesa | Living room, the round dining table | The arc lamp, reaching over the round table |
 | Cama + Armario | Bedroom, both over the bed | Two pendants over the bed, **one light**: switched together, either one on means on |
 | Terraza | Balcony | The wall lantern |
