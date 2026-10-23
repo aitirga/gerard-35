@@ -1,4 +1,5 @@
-/** Deliberately small combat rules. Presentation and 3D models are independent. */
+/** Campaign turn/story adapter. Numeric resolution is shared with the generic combat core. */
+import { adjustResource } from './combat/engine.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
@@ -71,6 +72,16 @@ export function skillsFor(_state: BattleState, actor: Combatant) {
   return SKILLS.filter(skill => 'class' in skill ? actor.classId === skill.class : 'owner' in skill ? actor.profile === skill.owner : true);
 }
 export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; healed?: { id: string; amount: number }[] }
+/** Bridge the campaign's flat resources to the core; positive healing never revives. */
+function changeHealth(target: Combatant, delta: number) {
+  const result = adjustResource({ current: target.hp, max: target.maxHp }, delta, false);
+  target.hp = result.resource.current;
+  return Math.abs(result.amount);
+}
+/** The action is validated before payment, just as it is in the generic command resolver. */
+function spendSecondary(actor: Combatant, cost: number) {
+  actor.secondary = adjustResource({ current: actor.secondary, max: actor.maxSecondary }, -cost).resource.current;
+}
 function fighter(slot: PartySlot): Combatant {
   const stats = withBonus(withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined), slot.bonus);
   return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, hp: stats.pv, maxHp: stats.pv, secondary: stats.sec, maxSecondary: stats.sec, guarding: false };
@@ -159,27 +170,25 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (action === 'defend') {
     actor.guarding = true; state.message = `${actor.name} se prepara para el siguiente golpe.`;
   } else if (party) {
-    actor.secondary -= ability!.cost; effect.skill = skill; effect.target = actor.id;
+    spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = actor.id;
     const power = healing(ability!.power, actor.stats);
-    effect.healed = targets.map(ally => { const amount = Math.min(power, ally.maxHp - ally.hp); ally.hp += amount; return { id: ally.id, amount }; });
+    effect.healed = targets.map(ally => ({ id: ally.id, amount: changeHealth(ally, power) }));
     effect.amount = effect.healed.reduce((sum, h) => sum + h.amount, 0);
     state.message = `${actor.name} usa ${ability!.name}. El equipo recupera ${effect.amount} PV.`;
   } else if (target) {
-    if (action === 'skill') { actor.secondary -= ability!.cost; effect.skill = skill; }
+    if (action === 'skill') { spendSecondary(actor, ability!.cost); effect.skill = skill; }
     effect.target = target.id;
     if (action === 'skill' && ability!.kind === 'heal') {
-      effect.amount = Math.min(healing(ability!.power, actor.stats), target.maxHp - target.hp);
-      target.hp += effect.amount;
+      effect.amount = changeHealth(target, healing(ability!.power, actor.stats));
       state.message = `${actor.name} usa ${ability!.name} con ${target.name}. +${effect.amount} PV.`;
-    } else if (target.shell && skill !== 'nota') {
+    } else if (target.shell && !(action === 'skill' && skill === 'nota')) {
       // The gum swallows the blow whole.
       effect.amount = 0; effect.swallowed = true;
       state.message = `${actor.name} golpea a ${target.name}… y el chicle se lo traga. Ni un rasguño.`;
     } else {
       const damage = strike(actor, target, action === 'skill' ? ability : undefined);
       if (action === 'skill' && skill === 'nota') target.shell = false;
-      effect.amount = Math.min(target.hp, damage);
-      target.hp = Math.max(0, target.hp - damage);
+      effect.amount = changeHealth(target, -damage);
       const name = action !== 'skill' ? 'Atacar' : ability!.name;
       state.message = action === 'skill' && skill === 'nota' ? `${actor.name} dice que NO. El pringue revienta. −${effect.amount} PV.` : `${actor.name} usa ${name} contra ${target.name}. −${effect.amount} PV.`;
     }
@@ -209,16 +218,14 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   if (actor.power !== undefined) {
     // The palace guards: one heavy fist each, guarding takes two thirds off.
     const hit = physical(actor.power, actor.stats, target.stats);
-    const amount = Math.min(target.guarding ? Math.ceil(hit / 3) : hit, target.hp);
-    target.hp -= amount;
+    const amount = changeHealth(target, -(target.guarding ? Math.ceil(hit / 3) : hit));
     state.message = `${actor.name} aplasta a ${target.name} con un puño de chicle. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
     if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; }
     return { actor: actor.id, kind: 'enemy', target: target.id, amount };
   }
   const strength = physical(state.allies.length === 1 && state.foes.length > 1 ? 5 : 9, actor.stats, target.stats);
   const damage = target.guarding ? Math.ceil(strength / 3) : strength;
-  const amount = Math.min(damage, target.hp);
-  target.hp -= amount;
+  const amount = changeHealth(target, -damage);
   state.message = `${actor.name} da un empujón a ${target.name}. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
   if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Toca recuperar el aliento. Puedes volver a intentarlo.'; }
   return { actor: actor.id, kind: 'enemy', target: target.id, amount };
@@ -238,7 +245,7 @@ function minionAct(state: BattleState, actor: Combatant): BattleEffect | undefin
   let amount = Math.min(target.guarding ? Math.ceil(raw / 3) : raw, target.hp);
   const awakening = !gerardClass(state) && target.id === 'bernat' && target.hp - amount <= BEAT_HP;
   if (awakening) amount = Math.max(0, target.hp - BEAT_HP);
-  target.hp -= amount;
+  amount = changeHealth(target, -amount);
   state.message = `${actor.name} escupe chicle a ${target.name}. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
   if (awakening) { state.phase = 'beat'; state.message = `${target.name} cae de rodillas. El esbirro se infla para el último golpe…`; }
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Toca recuperar el aliento. Puedes volver a intentarlo.'; }

@@ -1,0 +1,14 @@
+{
+  "title": "Laboratorio de combate · Dificultad y repetición",
+  "description": "Motor determinista compartido: comparación de tres estrategias, ajustes de presión y repetición por semilla. Contenido de prueba sin tipos ni clases definitivos.",
+  "steps": [
+    { "open": "/combat-lab.html", "ready": "document.querySelector('#combat-lab')?.dataset.ready === 'true'" },
+    { "until": "document.querySelector('#combat-lab')?.dataset.running === 'false'" },
+    { "shot": "comparison", "caption": "Tres estrategias con las mismas semillas: victorias, rondas, desgaste y bajas." },
+    { "eval": "document.querySelector('#scrub').value = Math.min(8, Number(document.querySelector('#scrub').max)); document.querySelector('#scrub').dispatchEvent(new Event('input')); document.querySelector('#replay-title').scrollIntoView({ block: 'start' });" },
+    { "shot": "replay", "caption": "Cada combate se repite acción a acción: iniciativa, recursos, estados y registro de efectos." },
+    { "eval": "document.querySelector('[name=enemyPower]').value = '1.4'; document.querySelector('[name=enemyPower]').dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('#config').requestSubmit(); window.scrollTo(0, 0);" },
+    { "until": "document.querySelector('#combat-lab')?.dataset.running === 'false' && document.querySelector('#status').textContent.includes('1.40')" },
+    { "shot": "pressure", "caption": "Aumento del daño directo rival, conservando las mismas semillas para comparar la presión." }
+  ]
+}
