@@ -28,11 +28,11 @@ class PersistenceTests(unittest.TestCase):
         self.temp.cleanup()
 
     def test_reload_and_separate_players(self):
-        self.assertEqual(self.client.put('/api/state', json={'score': 35}).json(), {'score': 35, 'story': []})
+        self.assertEqual(self.client.put('/api/state', json={'score': 35}).json(), {'score': 35, 'story': [], 'days': None})
         with TestClient(app, cookies=self.client.cookies) as reopened:
-            self.assertEqual(reopened.get('/api/state').json(), {'score': 35, 'story': []})
+            self.assertEqual(reopened.get('/api/state').json(), {'score': 35, 'story': [], 'days': None})
         with TestClient(app) as visitor:
-            self.assertEqual(visitor.get('/api/state').json(), {'score': 0, 'story': []})
+            self.assertEqual(visitor.get('/api/state').json(), {'score': 0, 'story': [], 'days': None})
 
     def test_concurrent_and_out_of_order_saves(self):
         cookie = self.client.cookies.get('gerard_player')
@@ -41,16 +41,33 @@ class PersistenceTests(unittest.TestCase):
                 self.assertEqual(client.put('/api/state', json={'score': score}).status_code, 200)
         with ThreadPoolExecutor(max_workers=4) as executor:
             list(executor.map(save, [10, 35, 5, 20]))
-        self.assertEqual(self.client.get('/api/state').json(), {'score': 35, 'story': []})
+        self.assertEqual(self.client.get('/api/state').json(), {'score': 35, 'story': [], 'days': None})
 
     def test_story_flags_accumulate_in_story_order(self):
         self.client.put('/api/state', json={'score': 3, 'story': ['got-shoes', 'intro']})
         # An older tab that only knows the intro must not undo the shoes.
         response = self.client.put('/api/state', json={'score': 1, 'story': ['intro', 'met-jan']})
-        self.assertEqual(response.json(), {'score': 3, 'story': ['intro', 'met-jan', 'got-shoes']})
+        self.assertEqual(response.json(), {'score': 3, 'story': ['intro', 'met-jan', 'got-shoes'], 'days': None})
         self.assertEqual(self.client.get('/api/state').json()['story'], ['intro', 'met-jan', 'got-shoes'])
         for story in [['flying'], 'intro', ['intro'] * (len(STORY_FLAGS) + 1)]:
             self.assertEqual(self.client.put('/api/state', json={'score': 1, 'story': story}).status_code, 422)
+
+    def test_days_advance_and_going_back_a_day_replaces_the_flags(self):
+        day = lambda epoch, d, h, mornings=(): {'epoch': epoch, 'clock': {'day': d, 'hour': h}, 'mornings': list(mornings)}
+        self.client.put('/api/state', json={'score': 1, 'story': ['intro', 'caught'], 'days': day(0, 2, 10, [{'day': 1, 'story': ['intro']}])})
+        # A late save from earlier in the day keeps the later clock, but its flags still count.
+        late = self.client.put('/api/state', json={'score': 1, 'story': ['intro', 'got-shoes'], 'days': day(0, 1, 20)}).json()
+        self.assertEqual(late['days']['clock'], {'day': 2, 'hour': 10})
+        self.assertEqual(late['story'], ['intro', 'got-shoes', 'caught'])
+        # Going back a day (a newer epoch) may take flags away.
+        back = self.client.put('/api/state', json={'score': 1, 'story': ['intro'], 'days': day(1, 1, 8)}).json()
+        self.assertEqual((back['story'], back['days']['epoch']), (['intro'], 1))
+        # A tab still on the old epoch cannot bring them back.
+        stale = self.client.put('/api/state', json={'score': 1, 'story': ['intro', 'caught'], 'days': day(0, 3, 9)}).json()
+        self.assertEqual((stale['story'], stale['days']['clock']['day']), (['intro'], 1))
+        self.assertEqual(self.client.get('/api/state').json()['days']['epoch'], 1)
+        for bad in [day(-1, 1, 8), day(0, 0, 8), day(0, 1, 25), {'epoch': 0}]:
+            self.assertEqual(self.client.put('/api/state', json={'score': 1, 'days': bad}).status_code, 422)
 
     def test_databases_from_before_the_story_gain_the_column(self):
         import sqlite3
@@ -58,7 +75,7 @@ class PersistenceTests(unittest.TestCase):
         with sqlite3.connect(path) as db:
             db.execute('CREATE TABLE players (id TEXT PRIMARY KEY, score INTEGER NOT NULL)')
         with mock.patch.dict(os.environ, {'DATABASE_PATH': path}), TestClient(app) as client:
-            self.assertEqual(client.put('/api/state', json={'score': 7, 'story': ['intro']}).json(), {'score': 7, 'story': ['intro']})
+            self.assertEqual(client.put('/api/state', json={'score': 7, 'story': ['intro']}).json(), {'score': 7, 'story': ['intro'], 'days': None})
 
     def test_validation_and_health(self):
         for score in [-1, 2.5, True, '3', 2147483648]:

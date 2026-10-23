@@ -1,183 +1,282 @@
-# Chapter 2 · El día que se repite (Barcelona)
+# Chapter 2 · La ciudad abierta (Barcelona)
 
-Gerard wakes up at 35 in the Meridiana flat, on his birthday, and the day starts again. And again.
-La Reina Bubbaloo's palace has risen on top of the **Rec Comptal school**, and from now on Gerard
-lives the same day in a **loop**: he wakes up, the TV gives the same news, and he has until the
-end of the day to do what he can. He can't do everything in one day. Each loop he chooses which
-friends to find, crosses a Barcelona that has become dangerous, and comes home with a little more:
-a new class, something learned, a shortcut. The chapter ends when he is strong enough to climb up
-to the palace (see `docs/lore.md` and the [palace design](bubbaloo-palace.md)).
+Gerard wakes up at 35 in the Meridiana flat, on his birthday, shouting "¡NO!". The TV is showing
+something impossible: **a pink castle has appeared on top of the Rec Comtal school**, with every
+pupil still inside. From here the chapter is **open**: Gerard and Aitor cross Barcelona on foot,
+by metro and by train, find Gerard's friends one by one, help them with what La Reina Bubbaloo has
+done to them, and come home stronger with their **ánimas**. The castle can be tried at any time
+from the moment they reach the metro; it is far too strong at first, and that is the point.
+
+The themes behind it (routine, growing up, being a kid again, deciding who you are) and the twist
+are in `docs/lore.md`; the city map, the metro and the train are in `docs/barcelona.md`; the
+palace's rooms are in `docs/bubbaloo-palace.md`; two players in `docs/party.md`.
 
 | Block | Status | What |
 | --- | --- | --- |
 | 0 · Despertar a los 35 | Playable | Gerard wakes shouting "¡NO!", Aitor joins the party (player 2), the Bubbaloo wrapper |
-| 1 · El primer día | Plan | The TV news, the clock, first steps outside, the first night and the first reset |
-| 2 · El bucle | Plan | The open loop: friends, classes, monsters, fixed events, the city's schedule |
-| 3 · El asalto | Plan | The loop in which Gerard climbs to the palace on the Rec Comptal |
+| 1 · La noticia | Playable | The TV turns itself on: ÚLTIMA HORA, the castle on the Rec Comtal; out to the Meridiana; the metro door |
+| 2 · La primera subida | Playable (first slice) | Metro to Trinitat Vella, the castle on the school, its guards: far too strong. Falling wakes Gerard at home with everything kept |
+| 3 · La ciudad abierta | Plan | Friends across the city and beyond (Cardedeu by train), their missions, their ánimas; hidden clues |
+| 4 · La Reina | Plan | With enough ánimas Gerard reaches the throne: the twist |
+| 5 · La segunda vuelta | Plan | Back to the friends with new eyes; the colour of each ánima; the final choice |
 
-**Two players.** From the moment Gerard wakes up, Aitor walks with him and a second player can
-play him on a second controller: stats, shared classes and who controls whom are in
-[party.md](party.md). Friends in the loop are Gerard and Aitor's friends.
+## What changed from the loop design
 
-## The loop in one picture
+The first plan for this chapter was a time loop (a clock, friends forgetting every morning). It is
+replaced by **open progression**, as decided on 2026-10-18:
 
-```
-08:00  Wake up "¡NO!" · dreamlike haze · Aitor · the wrapper
-08:15  TV: "Un castillo aparece sobre la escuela Rec Comptal"
-  │
-  ├── Morning   the city is still mostly normal; monsters only near the palace
-  ├── Afternoon the pink spreads from the Rec Comptal; more streets are dangerous
-  ├── Evening   most of the outside is hers; friends are home or gone
-  │
-00:00  The palace's bubble bursts over the city → black → 08:00 again
-       (or: Gerard falls in a fight outside → black → 08:00 again)
-```
+- **Nothing resets.** Whatever Gerard has done stays done: friends remember him, ánimas, classes,
+  opened doors, learned clues. Losing a fight is not a game over and costs nothing but the trip.
+- **Falling is waking up.** When the party falls (in the palace or anywhere outside), the screen
+  goes pink and black and Gerard sits up in bed at home, "¡NO!", with Aitor beside him. It keeps the
+  dreamlike opening of the old loop as the game's way of forgiving, and it is diegetic: Gerard
+  literally wakes up from it. Aitor's line changes with how many times it has happened.
+- **But the days count** (decided on 2026-10-18, see *The Queen's advance* below): an unspoken
+  countdown gives time a meaning and keeps side activities from eating the game.
 
-## The clock
-
-- A small **digital clock** in a corner of the HUD, like a cheap LCD watch or a phone's lock
-  screen: `08:15` and the day under it (`JUE · 15 OCT`, the same date every loop). It is
-  Gerard's own phone, which fits the HUD rule: it is something he *has*. It says the time, never
-  what to do with it.
-- The digits take La Reina Bubbaloo's pink as the day goes on, and blink at the last hour.
-- **Time moves with what Gerard does, not with real seconds**, so reading dialogue never costs
-  time (the game has a lot of dialogue and it should never punish a slow reader):
-
-  | Action | Cost |
-  | --- | --- |
-  | Walking inside a place (the flat, a street, a friend's house) | Free |
-  | Going from one place to another (the city map) | 15–45 min, by distance |
-  | A real conversation with a friend (their scene, not a passing line) | 30–60 min |
-  | A fight outside | 15 min |
-  | Optional activities (piano, a coffee on the balcony, a nap) | 30 min–2 h |
-  | Sleeping early | Ends the day |
-
-  The cost is shown only where Gerard is deciding: the city map shows the time of arrival next
-  to each destination (`→ 10:40`). Nothing else shows costs.
-- **Events happen at set times**, and the player learns the city's schedule by living it, the way
-  Majora's Mask does it: a friend is only at the café until 11:00, a shop shuts at 20:00, a
-  monster crosses Plaça de les Glòries at 17:30. Nobody lists these; people mention them ("a las
-  once me voy, que entro a trabajar"), and a second loop is how the player uses them.
-
-## What resets and what stays
-
-| Stays between loops | Resets every morning |
-| --- | --- |
-| **Classes** (Noísta and every class earned from a friend): they are part of Gerard | The time, and where everyone is |
-| **What Gerard knows**: passwords, routines, secrets, where things are | Common items (potions, food, money spent) |
-| **The wrapper** and other things "que vienen del sueño" (key items marked with pink) | Friends' memory of today: they meet Gerard again as if for the first time |
-| Levels and stats | Monsters beaten, doors opened, places cleared |
-
-- **Knowledge as a key.** Because friends forget, the second time Gerard can skip ahead by saying
-  something only they could know ("Ya sé lo de tu hermana. Me lo contaste… mañana"). This is
-  how a friend who took a whole afternoon on loop 1 takes half an hour on loop 4. It is a dialogue
-  choice that only appears once Gerard has learned the thing, never a hint.
-- **Repeated lines go fast.** Lines Gerard has already heard in an earlier loop are shown dimmed
-  and skip with a single key, so the morning routine is quick from the second loop on.
-
-## The morning, every morning
+## The morning (block 0 and 1)
 
 1. Black, then Gerard and Aitor asleep in the same bed, Aitor slowly stroking the back of
-   Gerard's hand. "¡NO!" Gerard bolts upright. The first seconds are **dreamlike**: a soft pink blur at
-   the edges, a slight echo on sounds, and something from the last loop still on screen for a
-   moment (the last place he was, the friend he was with, the Queen's hands). It clears as he gets
-   up.
-2. **Aitor** sits up beside him with the same first line, and they get out of bed on either side. From the second loop on, Gerard can
-   answer differently, and Aitor notices: "Hablas como si ya hubieras vivido esto." Aitor is
-   the anchor of the loop: the one person Gerard tells, the one who believes him a little more
-   each morning (a running thread: by loop 3–4 he is convinced, and he starts helping, e.g.
-   with what he learned at work, or by coming along).
-3. The **wrapper** on the nightstand, every morning. It's the proof it is not a dream.
-4. **The TV** in the living room: the news, always the same: a castle has appeared on top of the
-   Rec Comptal school. The presenter, the shaky mobile footage, the pink on the walls. From
-   loop to loop the news changes only when Gerard changed something that will *also* happen today
-   (for example, after he has been near the palace, a blurred figure on the footage looks like
-   him). It never says where to go; it shows what the world sees.
-5. The flat is safe: the door is the way out to the dangerous city.
+   Gerard's hand, the flat dark but for the daylight through the bedroom door. "¡NO!" Gerard bolts
+   upright and Aitor sits up beside him; after the first words they get out of bed on either side
+   and the lamps come on by themselves. The Bubbaloo wrapper is on the nightstand (all playable
+   already; `src/bed.ts`, `wake`/`rise` in `src/game.ts`).
+2. **The TV calls him.** Leaving the bedroom, the living room flickers: the TV has switched itself
+   on. If Gerard heads for the front door first, Aitor stops him: *"Espera. ¿Oyes eso? La tele se ha
+   encendido sola."* (a diegetic gate, the only one in the flat).
+3. **The TV in the living room plays the news all day, looping, while they are at home**: it is a
+   real TV in the room, filmed in 3D (`src/news-tv.ts`), never a full screen over the game.
+   **Approaching it** (no key: just walking up to it) the camera comes close to the screen to watch
+   it; *"Mirar la tele"* does the same later, and any key looks away. On the screen:
+   - a red **ÚLTIMA HORA** band and the headline *"Aparece un castillo rosa encima de la escuela
+     Rec Comtal"*, with the subtitle *"Todos los alumnos estaban dentro"*;
+   - **filmed images in a loop**: the screen cuts to Trinitat Vella in 3D, the castle on the
+     school at its most threatening, filmed like real news: from the helicopter, the reporter
+     in front of the cordon with the castle behind her, a neighbour's shaky phone, the street
+     behind a patrol car with its lights going (`docs/barcelona.md` § The TV news set);
+   - a **ticker** along the bottom with the day's other news. This is where the first
+     **hidden clues** live (see below): *"Rodalies: la R4 se amplía desde La Sagrera hasta
+     Cardedeu"*, among ordinary items.
+   - The headline changes each morning with the Queen's advance (below).
+4. After it, Gerard and Aitor talk: the castle is *the* castle from his dream. Aitor still
+   half-believes it is a dream; he comes anyway (*"Donde vayas tú, voy yo"*).
+5. **The front door** now opens onto the **Meridiana**: the avenue, its trees and benches, the
+   flats, and the **metro entrance** with its red sign. Walking up to it marks the moment the city
+   opens (`metro` flag): from here every line Gerard knows is a way to anywhere, including the
+   castle.
 
-The first time the clock appears is this morning, when Gerard picks up his phone from the
-nightstand: one key hint for it and nothing else.
+## The Queen's advance (the unspoken countdown)
 
-## Outside is dangerous
+If Gerard and Aitor do nothing to stop her, La Reina Bubbaloo's power keeps spreading, and one day
+they wake up and there is no flat any more. Nothing on screen counts it; the world shows it.
 
-- **The palace pours out pink.** The danger spreads from the Rec Comptal as the day goes on:
-  in the morning only the streets around the school are tinted; by the afternoon the pink reaches
-  Glòries and the Meridiana; by night most of the map is hers. So *when* Gerard goes somewhere
-  decides how dangerous it is. The tint uses the same `setTone` as Sant Quirze.
-- **Monsters are the city, possessed.** As in Sant Quirze, minions stay in the sewers and possess
-  what they touch (dark pink eyes): the Barcelona version of the dogs. Ideas, from tame to strange:
-  pigeons (a flock, many weak), seagulls from the port, rats, a stray cat, electric scooters and
-  Bicing bikes riding themselves, a street sweeper truck, the Glòries tower's lights, a gegant
-  from a festa major (as a mini boss). Each area has its own two or three.
-- **Fights cost time**, and running away costs less than fighting but is not always possible.
-  Losing a fight outside is not a game over: it ends the day (black, "¡NO!", 08:00). The loop is
-  the forgiveness.
-- Safe places: the flat, friends' houses once Gerard is welcome there, maybe a bar or a shop
-  whose owner keeps the door shut to the pink.
+**Days and hours.** Each day runs from 08:00 to 22:00 (`src/days.ts`). Looking, talking and walking
+are free; doing things takes hours:
 
-## Friends and classes
-
-The heart of the chapter. Each friend lives somewhere in Barcelona, has their own routine for the
-day, and is going through something when the palace appears. Spending time with them, solving
-what they need or just being there, wakes up a new **class** in Gerard, born from what that friend
-brings out in him (as Noísta comes from always saying no). It extends the idea from chapter 1:
-Gerard changes class by changing who he is in the moment.
-
-Template per friend (to fill with the real friends):
-
-| Field | Example (placeholder) |
+| Activity | Hours |
 | --- | --- |
-| Who | **Friend A**, an old friend from university |
-| Where and when | At home in Gràcia until 13:00; then at work; at night in a bar in Poblenou |
-| What's wrong today | The pink has reached their street, their cat is possessed |
-| First loop | Gerard arrives as a stranger to the problem: a long scene, a fight |
-| Later loops | A line only Gerard can know makes it shorter |
-| Class it gives | **Class X**: what it says about Gerard, what it does in a fight |
-| What it opens | A skill that solves a problem elsewhere (breaks a gum wall, calms a possessed animal, crosses a flooded street) |
+| A metro trip | 1 |
+| A fight (the palace guards) | 2 |
+| Playing the piano at home | 2 |
+| A coffee on the balcony | 1 |
+| A friend's mission (to come) | 2–4 |
 
-- **Classes open the city.** Each class is also a key in the world: something the others can't
-  get past. This is how the order of friends is free but not random: some friends can only be
-  reached once Gerard has a class from another one. Gates stay diegetic (a gum wall Noísta can say
-  no to, a possessed guard who only listens to someone calm).
-- **Friends as companions.** A friend can come along for the rest of the day, like Bernat in
-  chapter 1. Only one at a time. They forget at the end of the day, but their class stays.
-- **Can't do everything.** A single day has room for about two friends' scenes (or one and
-  a lot of exploring). This is where the choice is: whom to visit first, and whom to leave for
-  tomorrow.
+The day ends at 22:00 wherever they are (Aitor: *"Ya está. Es de noche"*), when they go to bed
+(*"Dormir"* at the bed, once the news has been seen), or when they fall in a fight. Black, and they
+wake up the next morning in bed, "¡NO!", with everything done kept.
 
-## The ending (block 3)
+**How it is told, never counted:**
+- The light: from 18:00 the evening turns pinker, and Aitor says so (at 18:00 and at 20:00).
+- The TV at home: the headline gets worse each morning (`NEWS.stages`): it grows over Trinitat
+  Vella, reaches Sant Andreu, the Meridiana…
+- Aitor every morning: more worried each day (`LINES_2.morning`).
+- The castle: bigger each day on the school (up to 1.6 times), the streets pinker (Trinitat Vella,
+  then the Meridiana outside the flat, then the flat).
+- The network map: the pink halo round the castle widens over the city.
 
-- Gerard needs **enough classes** to climb up to the palace (for example, Noísta plus three).
-  The palace itself says it: its gate only gives way to what Gerard has become, and what's missing
-  shows as a closed lock in the Queen's colours, with a line from a friend or Aitor about it.
-- The final loop is a run: from 08:00 Gerard uses everything he knows to gather the right
-  friends on the way and reach the Rec Comptal before the palace bursts. That is why everything
-  learned in earlier loops matters.
-- What happens inside (the Queen, Bernat, Nuria Mendoza) is left for a later decision.
+**Her spread** is `(day − 1 − 3 × ánimas) / 6`: six days without any help and on the seventh
+morning it reaches the end; **each ánima wins three days back**. So a day spent on the piano and
+coffees is a day closer to the end, and a day spent helping a friend pushes her back. Each friend's
+mission should fit in a day.
 
-## How it is built (first steps)
+**The end.** On that morning the flat is already part of her castle: gum over the walls and floors,
+thorns, everything pink (`story.doomed`). Aitor: *"Hemos llegado tarde."* A screen says she has
+covered everything, with one button: **Volver al día anterior**. It takes them back to the morning
+before, with that day's progress lost and everything before it kept (`story.rewind`): Gerard wakes
+up "having seen tomorrow". To get out of the loop they must do something that day that pushes her
+back.
 
-- `src/day.ts`: the loop as pure rules, tested like `src/story.ts`. Time in minutes since 08:00;
-  `advance(action)`, what happens at each time (`events`), and `reset()` that keeps the persistent
-  flags (classes, knowledge, dream items) and clears the rest. Saved next to the story flags.
-- Story flags split in two: **loop** flags (cleared every morning) and **forever** flags.
-- `src/story-ui.ts`: the clock element in the HUD, and dimmed repeated lines in the dialogue.
-- A city map scene that travels between places and spends time.
-- `scenery.ts` `setTone` driven by the clock and the distance to the Rec Comptal.
-- Screenshot scenarios: `chapter-2-morning` (wake, TV, clock) and `chapter-2-reset`.
+**Saving.** The day, the hour and the last two mornings are saved with the story. Going back a day
+is the only thing that takes flags away, so the save carries an `epoch` that grows with each
+rewind: the server lets a newer epoch replace the flags, and ignores tabs still on an older one.
+
+## Getting around
+
+- **On foot** inside each place (a playable scene: a street, a square, a friend's house).
+- **By metro and train** between places: each station entrance is an interaction (*"Bajar al
+  metro"*). It opens the **network map** (`docs/barcelona.md`): a cartoon Barcelona with its sea,
+  hills, streets and blocks in 3D, avenues and famous places as icons, and for now only the L1 (red) and L5
+  (blue); the train to Cardedeu comes with Cardedeu. Gerard picks a station; the train runs along
+  the line on the map; they come up out of the destination's entrance.
+- The map shows **where Gerard is**, the lines and their stations; only stations that lead to a
+  place are selectable. It never marks a friend, a mission or "go here": the world tells him that.
+- Travel is instant and free (no clock). A line can be closed by the story (a gum-blocked tunnel, a
+  strike), always with a person or a sign saying so.
+
+## The palace, any time (block 2)
+
+From the moment they reach the metro, the L1 takes them to **Trinitat Vella**, a short walk from
+the school. The **Institut Escola Rec Comtal** is buried under La Reina Bubbaloo's palace: the same
+building as in chapter 1 (`docs/bubbaloo-palace.md`), now sitting on the school roof, its gum
+ramparts poured over the playground. La Pompa (the gate) lets anyone in.
+
+- **Inside is the same palace**, as Gerard remembers it from the dream. Aitor sees it for the
+  first time; his lines carry the surprise.
+- **Its guards are far too strong.** The Guardianes de Chicle stand before the gum curtain that
+  hides the throne stair. Crossing it means a fight that, without ánimas, cannot be won. That is
+  the first lesson of the chapter: go and see, lose, wake up, go and find the friends.
+- **Each ánima weakens them** (and strengthens the party), so every return is visibly different:
+  fewer guards, smaller, slower. With enough ánimas the fight is fair, and the curtain parts.
+- **Escape is allowed** from the guards (back to the hall), unlike the dream's fights: it is a
+  place to probe, not a trap.
+- **Losing** wakes Gerard at home (see above). The palace remembers nothing; the party remembers
+  everything.
+
+**The castle itself shows it.** At first it is very, very threatening: twice the size of the
+dream's palace, a ring of twelve spiked towers with lit slits, thorns along the ramparts, glowing
+eyes on the keep and a storm turning over the crown. Its **threat** goes from 1 down as the party
+gathers ánimas (`castleThreat` in `src/animas.ts`, 0.15 per ánima, never below 0.1); every piece
+has a threshold and falls when the threat drops below it: the small outer towers first, then the
+thorns, the storm, the eyes, and last the tall towers guarding the keep. The castle on the
+network map loses towers and shrinks with it.
+
+Guard strength is a pure function of the ánimas the party holds (`palaceGuards` in
+`src/battle.ts`). Provisional numbers: three guardians with 220 PV and 30-point hits with no
+ánimas, losing a guardian every two ánimas and 30 PV and 3 points per ánima.
+
+## Friends and ánimas (block 3)
+
+The heart of the chapter. La Reina Bubbaloo has blown her bubble over the lives of Gerard's
+friends: what held their adult days together has popped (the office is gone, the alarm does not
+ring, the train to work never comes, the to-do list is blank). They are lost and sad: *"si no voy
+a trabajar, ¿qué soy?"*. Gerard finds them, spends time with them, helps with what they need. When
+he does, a small light leaves them and goes with him: their **ánima**, what makes that friend
+who they are. Each ánima:
+
+- **makes the party stronger** (a stat bonus for everyone), and weakens the palace guards;
+- **brings something of that friend into Gerard**: a class (as Noísta came from saying no) or a
+  skill, and often a key for somewhere else in the city (a gum wall, a calm word for a possessed
+  animal, a flooded street);
+- shows as a coloured light in Personaje (the HUD rule: it is something the party *has*).
+
+Friends are visited in any order; some are only reachable once another has given Gerard what is
+needed (a class that opens a gate). Nobody lists them: people mention each other, places point to
+places, clues hide in the world.
+
+Template per friend:
+
+| Field | Example |
+| --- | --- |
+| Who | **Nuria and Uri**, friends who live in **Cardedeu** |
+| How Gerard learns of them | A hidden clue (the R4 extension on the TV ticker and on La Sagrera's platform posters), a photo in the flat, a voice message |
+| How to get there | Rodalies from La Sagrera, the line the clue talks about |
+| What's wrong | The Queen's bubble over their routine (to design with the real people) |
+| Mission | Something only they could need, unique in mechanics and look |
+| Ánima | Name, colour, stat bonus, the class or skill it brings |
+| Second round | What their ánima's colour is, and what being a kid again means for them (block 5) |
+
+Each friend's mission is a small, hand-made piece: its own scene or two, its own lines, often one
+mechanic nobody else uses. The shared parts (scene, travel, dialogue, flags, ánima, battle) are
+generic; what makes it theirs is data and one script hook (`docs/barcelona.md` § Architecture).
+
+## Hidden clues
+
+The game never says where to go next. Clues are scattered **randomly in the world**, in places a
+curious player looks: the TV ticker, posters on a station platform, a neighbour's line, a phone
+notification, graffiti, a menu on a bar's board. A clue:
+
+- reads as an ordinary bit of the world, never highlighted;
+- teaches something true about the city: *"Acaban de extender la R4 de La Sagrera hasta
+  Cardedeu"* tells the player a train goes somewhere new, and Cardedeu is where Nuria and Uri live;
+- is remembered (a `clue-*` flag) when Gerard sees it, so later lines can build on it (Aitor:
+  *"¿No decían en la tele que la R4 ahora llega a Cardedeu?"* only once the clue has been seen);
+- appears in more than one place, so missing one never strands the player.
+
+| Clue | Where | Points to |
+| --- | --- | --- |
+| *"La R4 se amplía desde La Sagrera hasta Cardedeu"* | TV ticker; later La Sagrera's platform | Cardedeu: Nuria and Uri |
+
+## The Queen and the second round (blocks 4 and 5)
+
+A proposal, to be decided with the story (`docs/lore.md` has the theme):
+
+1. With enough ánimas the curtain parts and Gerard climbs to the throne. La Reina Bubbaloo does not
+   fight; she **shows** him: the ánimas he carries are grey. He gave his friends their routine
+   back, and with it the sadness underneath it. She was not stealing their childhood: she was
+   trying to give it back, and doing it badly, by popping their lives.
+2. **La segunda vuelta**: Gerard goes back to each friend, now looking for the kid they were (a
+   game, a passion, an excuse to play). Each ánima takes its colour. The city changes with them.
+3. **The choice**: burst her bubble and let Barcelona go back to normal, or **join her cause** and
+   change it from inside: a world where everyone has more time, plays, respects, has fun outside
+   obligation. Gerard decides what he is, which is what his class power always was.
+
+## How it is built
+
+- `src/story.ts`: the flags and the rules, for both chapters. Chapter 2's flags: `tv-news`,
+  `metro`, `rec-comtal`, `palace-tried`, `clue-r4`, and one `anima-<friend>` per friend.
+  `party`, `battleParty` and `palaceGuards` read the ánimas from them.
+- `src/chapter-2.ts`: chapter 2's lines, places, triggers, the news broadcast and the clues.
+- `src/animas.ts`: the ánimas: who they come from, colour, stat bonus.
+- `src/days.ts`: days, hours, the Queen's spread, saved mornings.
+- `src/news-tv.ts`: the news on the flat's TV (the set on its own layer, filmed into the screen).
+- `src/transit.ts`, `src/city-map.ts`, `src/travel-ui.ts`: lines, stations, the network map and the
+  trip (`docs/barcelona.md`).
+- Scenes: `meridiana-calle` (the avenue and the metro) and `rec-comtal` (the school under the
+  palace), designed by hand and built with `just geo-build` from `assets/geo/<zone>/`.
+- `src/news-set.ts`: the news set and its shots; `src/map-markers.ts`: icons on the network map.
+- `src/game.ts`: proximity triggers (`story.triggers`), story redirects of doors
+  (`story.redirect`), the palace standing on the school, the guards' fight.
+- Story events: `near` (walked up to a trigger), `arrive` (came out of a station), `battle` with
+  `won: false` in chapter 2 (falls and wakes up). New effects: `news` (watch the TV), `metro`
+  (the station map), `fall`, `look` (the camera turns to a scene anchor) and `doom` (the end).
+- Screenshots: `just screenshots chapter-2-city`, `castle-threat`, `countdown`; `just dev-day 6` wakes
+  up on a later day.
+
+## Implementation list
+
+Done in the first slice (2026-10-18):
+
+1. The TV turns on as Gerard walks up to it; news overlay with the looping aerial map and the
+   ticker clue; replay with *"Mirar la tele"*.
+2. Aitor's diegetic gate at the front door until the news has been seen.
+3. `meridiana-calle`: the avenue outside the flat, the metro entrance, home's street door.
+4. The network map (cartoon Barcelona, L1 and L5, markers), travel along a line, arrival.
+8. The news filmed in 3D on a set in Trinitat Vella, playing on the flat's TV, and the castle's threat (towers, thorns, storm, eyes).
+9. The days: hours, evening, night, sleep; the Queen's spread (castle, light, headlines, map, Aitor); the end and going back a day; saved with an epoch.
+5. `rec-comtal`: the school under the palace at Trinitat Vella, with the L1 entrance.
+6. The palace interior reused in chapter 2 with Aitor; the guardians' fight scaled by ánimas;
+   escape allowed; falling wakes Gerard at home with everything kept.
+7. The ánima data model and its bonus to the party and malus to the guards; ánimas in Personaje.
+
+Next:
+
+1. Polish the two designed scenes with photos of the real places (facades, the school's sign).
+2. La Sagrera station scene (the R4 platform, the clue poster), the R4 on the map, and Cardedeu (the first friends).
+3. Friends: who they are, where, their missions and ánimas (open question 1).
+4. The guards' fight presentation: their own model (now the minion, scaled up).
+5. The throne and the Queen's scene (block 4), then the second round (block 5).
+6. A few possessed animals of the city as random encounters between the metro and each place.
 
 ## Open questions
 
-1. **Who are the friends?** Gerard and Aitor's friends. Names, where they live in Barcelona, what they're like, and what class
-   each one could bring out in Gerard. This decides the whole chapter. Bernat could be one of
-   them (now an adult in Barcelona?).
-2. **What is the Rec Comptal to Gerard?** Where he works (a teacher?), where he studied, or
-   somewhere else? It changes why the palace is there and what the TV says.
-3. **Why the loop?** The Queen's doing (she wants something to happen on his birthday), a
-   consequence of the dream, or the wrapper's? Keep it a mystery in chapter 2?
-4. **How long is a loop?** Ending at midnight is a long day; ending earlier (e.g. at sunset, when
-   the palace's bubble bursts) makes each loop shorter and choices tighter.
-5. ~~Aitor's role~~: decided. He is in the party from the first morning, played by player 2
-   (see [party.md](party.md)).
-6. **Real-time option:** the clock moves only with actions (proposed). Ticking slowly in real time
-   outside would add pressure but punish reading; not proposed.
+1. **Who are the friends?** Names, where they live, what the Queen's bubble did to them, what
+   ánima each gives. Nuria and Uri (Cardedeu) are the first. Is this Nuria the Nuria Mendoza behind
+   La Reina Bubbaloo (`docs/lore.md`)? That would put the reveal in Cardedeu.
+2. **Which metro is home?** The flat is on the Meridiana; the scene assumes the L1 at Fabra i Puig,
+   and home is the corner block by its Av. Meridiana entrance (`meridiana-calle`, `Casa`). The real
+   portal is not known yet: moving home is one override in `assets/geo/meridiana-calle/zone.json`.
+3. **What is the Rec Comtal school to Gerard?** Where he works (a teacher?), where a friend
+   teaches, or where a friend's kid goes. It changes what the TV says and why the castle is there.
+4. **How many ánimas** open the throne: all of them, or enough (e.g. four of six)?
+5. **The second round**: does it happen in the same city (colour returning street by street) or
+   after a time jump?

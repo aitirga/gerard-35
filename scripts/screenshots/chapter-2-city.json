@@ -1,0 +1,272 @@
+{
+  "title": "Chapter 2 · The news, the metro and the castle",
+  "description": "Gerard at 35 walks up to the TV that switched itself on: ÚLTIMA HORA, and the news, filmed in 3D at Trinitat Vella, plays on the TV in the room, looping all day. Out on the Meridiana, down into the L1 at Fabra i Puig: the cartoon network map of Barcelona with its icons, the train to Trinitat Vella, the threatening castle on the school, the guards before the curtain, far too strong; falling wakes Gerard at home with everything kept. Solo mode lets player 1 play Aitor's turns.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "door-gate",
+      "delay": 1500,
+      "caption": "Before the news: the front door is a step away, but Aitor hears the TV first (a diegetic gate)"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        14,
+        3
+      ]
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-watching]')",
+      "timeout": 90000
+    },
+    {
+      "shot": "tv-aerial",
+      "delay": 9000,
+      "caption": "Walking up to the TV: the camera comes close and the news plays on its screen, filmed in 3D: the castle from the helicopter, ÚLTIMA HORA, the R4 clue in the ticker"
+    },
+    {
+      "wait": 6000
+    },
+    {
+      "shot": "tv-reporter",
+      "delay": 500,
+      "caption": "Still on the TV: the reporter in front of the cordon, the castle behind her"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "news-talk",
+      "delay": 1800,
+      "caption": "Gerard and Aitor: it is the castle from his dream"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        50,
+        40
+      ]
+    },
+    {
+      "shot": "meridiana",
+      "delay": 2500,
+      "caption": "Out on the Avinguda Meridiana (OpenStreetMap and photos of the renewed avenue): home's corner block, the shops, the L1 entrance at Fabra i Puig"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "meridiana-overview",
+      "delay": 2500,
+      "caption": "The avenue from above: the bus lane, the planted median with the bike lane, the works, Hipercor and its tower"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        37,
+        41
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.travelUI.open",
+      "timeout": 30000
+    },
+    {
+      "shot": "network-map",
+      "delay": 1500,
+      "caption": "Down into the metro: the cartoon network map (hand-drawn Barcelona, its famous places as icons, the castle on the school), only the L1 and L5 for now"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "shot": "riding",
+      "delay": 900,
+      "caption": "The train runs along the L1 on the map"
+    },
+    {
+      "until": "document.title.startsWith('Trinitat')",
+      "timeout": 60000
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "arrival",
+      "delay": 1800,
+      "caption": "Coming up at Trinitat Vella: Aitor sees the castle for the first time"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        86,
+        66
+      ]
+    },
+    {
+      "shot": "school",
+      "delay": 3000,
+      "caption": "The Institut Escola Rec Comtal (sketched), with La Reina Bubbaloo's palace on its roof"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "trinitat-overview",
+      "delay": 3000,
+      "caption": "Trinitat Vella from above: plenty of space around the school"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        86,
+        62
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.title.startsWith('Palacio')",
+      "timeout": 30000
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        16,
+        11
+      ]
+    },
+    {
+      "shot": "guards",
+      "delay": 2500,
+      "caption": "The same palace as in the dream; three gum guards before the curtain"
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        16,
+        10
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 90000
+    },
+    {
+      "shot": "guards-fight",
+      "delay": 1200,
+      "caption": "The guards' fight: 220 PV each, far too strong without ánimas (escape is allowed)"
+    },
+    {
+      "press": "Digit5"
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "document.querySelector('.battle-result') && !document.querySelector('.battle-result').hidden",
+      "timeout": 60000
+    },
+    {
+      "press": "Enter",
+      "gap": 400
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: false, encounter: 'palace-guards' })"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 90000
+    },
+    {
+      "shot": "wake",
+      "delay": 2200,
+      "caption": "Falling is waking up: home, '¡NO!', and everything kept"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.story.merge(['anima-nuria']); window.gerard.game.refreshStory()"
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "eval": "document.querySelector('.party-animas')?.scrollIntoView({ block: 'end' })"
+    },
+    {
+      "shot": "animas",
+      "delay": 1800,
+      "caption": "Personaje: the ánimas the party carries (a placeholder one here, until the friends exist)"
+    }
+  ]
+}

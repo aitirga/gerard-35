@@ -21,7 +21,13 @@ export function createStoryUI(hud: HTMLElement) {
   // A full-screen black for the end of a dream: everything fades out, then back in elsewhere.
   const black = document.createElement('div');
   black.id = 'blackout'; black.setAttribute('aria-hidden', 'true');
-  hud.append(notes, hint, bubble, card, black);
+  // The end of chapter 2's countdown: she has covered everything; the only button goes back a day.
+  const doom = document.createElement('section');
+  doom.id = 'doom'; doom.hidden = true; doom.setAttribute('role', 'alertdialog'); doom.setAttribute('aria-labelledby', 'doom-title');
+  doom.innerHTML = `<span class="battle-kicker">LA REINA BUBBALOO</span><h1 id="doom-title">Lo ha cubierto todo.</h1><p>Barcelona es su castillo. Ya no queda casa a la que volver.</p><button type="button">Volver al día anterior</button><small>Se pierde lo que hicisteis ayer.</small>`;
+  hud.append(notes, hint, bubble, card, black, doom);
+  let endDoom: (() => void) | undefined;
+  doom.querySelector('button')!.addEventListener('click', () => endDoom?.());
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let hintGeneration = 0;
 
@@ -79,6 +85,17 @@ export function createStoryUI(hud: HTMLElement) {
         }, reducedMotion.matches ? CARD_MS / 2 : CARD_MS);
       });
     },
-    destroy() { hintGeneration++; notes.remove(); hint.remove(); bubble.remove(); card.remove(); },
+    /** The end screen; resolves when the player goes back a day. */
+    doom() {
+      doom.hidden = false;
+      doom.querySelector('button')!.focus({ preventScroll: true });
+      // A key still held from the last line of dialogue must not skip it.
+      const shown = performance.now();
+      return new Promise<void>(resolve => { endDoom = () => { if (performance.now() - shown < 1800) return; doom.hidden = true; endDoom = undefined; resolve(); }; });
+    },
+    get doomOpen() { return !doom.hidden; },
+    /** A controller's confirm on the end screen. */
+    confirmDoom() { endDoom?.(); },
+    destroy() { hintGeneration++; notes.remove(); hint.remove(); bubble.remove(); card.remove(); doom.remove(); },
   };
 }

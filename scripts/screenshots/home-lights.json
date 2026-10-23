@@ -1,0 +1,31 @@
+{
+  "title": "The lights at home",
+  "description": "The Meridiana flat's lamps are the LIFX bulbs at home (docs/home-lights.md). E on a lamp opens its dial: colour wheel, brightness, quick picks and power, applied as it changes; with the lights connected the bulb at home follows within milliseconds on the LAN, and a light switched at home shows in the game. The flat is lit by its lamps. This run leaves the real lights alone: it never connects them.",
+  "steps": [
+    { "open": "/?story=tv-news&solo=1" },
+    { "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },
+    { "teleport": "meridiana", "cell": [21, 10] },
+    { "shot": "table-lamp", "delay": 2500, "caption": "By the round table: the arc lamp is the 'Mesa' bulb at home" },
+    { "press": "KeyE" },
+    { "shot": "dial", "delay": 1200, "caption": "E opens the lamp's dial: wheel, brightness, whites and colours, power; every change goes to the bulb as it happens" },
+    { "press": "ArrowLeft", "times": 2, "gap": 150 },
+    { "press": "ArrowUp", "times": 2, "gap": 150 },
+    { "shot": "dial-pink", "delay": 1000, "caption": "← → steps through the quick picks (pink here) and ↑ ↓ sets the brightness; the room takes the colour" },
+    { "press": "KeyE" },
+    { "teleport": "meridiana", "cell": [12, 8] },
+    { "press": "KeyE" },
+    { "press": "ArrowRight", "times": 5, "gap": 150 },
+    { "press": "Escape" },
+    { "teleport": "meridiana", "cell": [11, 5] },
+    { "press": "KeyE" },
+    { "press": "Space" },
+    { "press": "Escape" },
+    { "press": "KeyR" },
+    { "shot": "lamp-lit-flat", "delay": 2500, "caption": "The flat is lit by its lamps: the bedroom's two bulbs over the bed (one light) in red, the kitchen switched off and in shadow" },
+    { "press": "KeyR" },
+    { "press": "Escape" },
+    { "eval": "document.querySelector('[data-open=settings]').click()" },
+    { "eval": "document.querySelector('[data-open=lights]').click()" },
+    { "shot": "menu-lights", "delay": 1500, "caption": "Pause · Configuración · Luces de casa: connect the bulbs (LAN or cloud), living room or whole house, intensity, and the lead (Auto) with its test flash" }
+  ]
+}

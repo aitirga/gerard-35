@@ -35,11 +35,12 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 #location-detail { font-size: 9px; color: #c3c7ac; }
 #overview { justify-self: start; padding: 5px 0 0; border: none; background: none; color: #e8cc92; font-size: 10px; }
 #overview kbd { margin-left: 8px; min-width: 17px; height: 17px; font-size: 9px; line-height: 15px; }
-/* The interact key floats over whatever is within reach (game.ts places it); only the key shows. */
-#interact { position: absolute; left: 0; top: 0; pointer-events: auto; border: 0; padding: 0; background: none; box-shadow: none; display: block; will-change: transform; }
-#interact[data-offscreen] { visibility: hidden; }
-#interact > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-#interact kbd { display: grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; border: 0; border-radius: 15px; background: var(--ui-paper, #f3efdc); color: var(--ui-ink, #162823); font-size: 14px; font-weight: 900; line-height: 1; box-shadow: 0 0 0 2px var(--ui-gold, #f3cf78), 3px 4px 0 #071e2266; }
+/* The key stays on the world anchor; an optional caption sits beside it. */
+#interact { position: absolute; pointer-events: auto; transform: translate(-50%, -50%); width: 28px; height: 28px; padding: 0; display: grid; place-items: center; border: 1px solid #253c3280; border-radius: 50%; background: var(--ui-paper); color: var(--ui-ink); box-shadow: 0 2px 7px #071e2238, 0 0 0 2px #f3efdc66; }
+#interact kbd { display: grid; place-items: center; width: 100%; height: 100%; border: 0; border-radius: inherit; background: none; color: inherit; font-size: 12px; font-weight: 600; line-height: 1; }
+#interact span { position: absolute; left: 35px; top: 50%; transform: translateY(-50%); padding: 4px 7px; border-radius: 4px; background: #f3efdcee; color: var(--ui-ink); box-shadow: 0 2px 6px #071e2226; font-size: 11px; font-weight: 500; line-height: 1.3; white-space: nowrap; }
+#interact[data-side="left"] span { left: auto; right: 35px; }
+#interact:hover { background: #fff9e7; border-color: #253c32; }
 @media (max-width: 760px) {
   .place-panel { left: 12px; top: 12px; padding: 10px 12px; max-width: calc(100vw - 24px); }
   #environment { font-size: 13px; }
@@ -283,7 +284,6 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .place-panel { border-top: 2px solid var(--ui-gold); }
 .eyebrow, .place-panel .eyebrow { color: var(--ui-gold); }
 #environment { font-weight: 600; }
-
 #dialogue { --dlg-bg: var(--ui-surface); --dlg-border: var(--ui-line); --dlg-text: var(--ui-paper); --dlg-muted: var(--ui-muted); --dlg-radius: 2px; border-top: 2px solid var(--ui-gold); box-shadow: var(--ui-shadow); }
 .touch-controls button, #error button { border-radius: 2px; background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); }
 .journal-dock { position: absolute; left: 24px; top: 166px; display: flex; gap: 8px; pointer-events: auto; }
@@ -298,10 +298,12 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .map-blocked { fill: #20382f; }
 .map-walkable { fill: #758a6c; }
 .map-house { fill: #334b3e; stroke: #a9bb8c55; stroke-width: .15; }
-.map-point { fill: var(--ui-gold); stroke: #162823; stroke-width: .15; }
-.map-number { fill: #162823; font-size: 1.1px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
 .map-player { fill: var(--ui-paper); stroke: #162823; stroke-width: .25; }
 .map-room { fill: #e7eddc; font-weight: 600; letter-spacing: .02em; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #33503f; stroke-width: .18px; }
+/* Shift + M: Barcelona in the status screen's map page (src/exploration-world-map.ts). */
+.map-layout[data-level="world"] .map-frame { padding: 0; background: #eadfc2; }
+.exploration-world-map { display: block; width: 100%; height: 100%; }
+.exploration-world-map .city-station.is-minor text { display: none; }
 #hud[data-panel] > :not(#exploration-panel):not(.place-panel) { visibility: hidden; }
 #hud[data-panel] .place-panel { opacity: .5; }
 /* Alone the status sheet covers the middle of the screen: the place panel would only peek out behind it. */
@@ -372,42 +374,113 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-result:not([hidden]) h2 { animation: result-stamp .5s .18s cubic-bezier(.2,1.6,.4,1) both; }
 @keyframes result-in { from { opacity: 0; translate: 0 26px; rotate: -5deg; } }
 @keyframes result-stamp { from { opacity: 0; scale: 1.6; } }
-#interact:not([hidden]) { animation: prompt-in .32s cubic-bezier(.2,1.3,.4,1) both; }
-@keyframes prompt-in { from { opacity: 0; translate: 0 10px; scale: .92; } }
-#interact kbd { animation: key-float 1.6s ease-in-out infinite; }
-@keyframes key-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+#interact:not([hidden]) { animation: prompt-in .18s ease-out both; }
+@keyframes prompt-in { from { opacity: 0; scale: .85; } }
+@media (prefers-reduced-motion: reduce) { #interact { animation: none !important; } }
 @media (prefers-reduced-motion: reduce) { .damage-pop > * { animation: none !important; } }
 
-/* Adventure menu uses the same paper commands, gold accents and ink as the journal. */
-#controller-menu { width: min(620px, calc(100vw - 80px)); max-height: calc(100vh - 64px); overflow: auto; padding: 30px 34px; color: var(--ui-paper); background: linear-gradient(145deg, #172c25fa, #10231bf5); border: 1px solid var(--ui-line); border-top: 3px solid var(--ui-gold); border-radius: 2px; box-shadow: 12px 12px 0 #071e2266; font: inherit; }
-#controller-menu::backdrop { background: #07191d99; backdrop-filter: blur(5px); }
-#controller-menu .journal-heading h1 { font-size: 42px; margin-bottom: 10px; }
-#controller-menu .journal-close { white-space: nowrap; }
-.menu-intro { margin: 0 0 22px; color: var(--ui-muted); font-size: 13px; line-height: 1.6; }
-.adventure-options { display: grid; gap: 9px; padding-right: 5px; }
-.adventure-options button { display: grid; grid-template-columns: 28px 1fr; align-items: center; column-gap: 12px; padding: 12px 16px; border: 0; background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); text-align: left; transition: background .18s, translate .18s; }
-.adventure-options button > span { grid-row: span 2; font-size: 10px; opacity: .6; }
-.adventure-options strong { font-size: 16px; }
-.adventure-options small { margin-top: 3px; font-size: 10px; opacity: .7; }
-.adventure-options button:first-child { background: var(--ui-gold); }
-.adventure-options button:enabled:hover, .adventure-options button:focus { background: var(--ui-gold); translate: 4px 0; }
+/* Pause and configuration belong to the same world as the user menu. */
+#controller-menu { width: min(620px, calc(100vw - 80px)); max-height: calc(100dvh - 64px); overflow: auto; padding: 32px; color: var(--ui-paper); background: radial-gradient(ellipse at 0 0, #52634333, transparent 65%), linear-gradient(145deg, #1b3028fc, #101e19fc); border: 1px solid #c6d6ad3a; border-radius: 20px; box-shadow: 0 30px 120px #0008, inset 0 1px #ffffff0d; font: inherit; scrollbar-width: thin; scrollbar-color: #f3cf7844 transparent; }
+#controller-menu::backdrop { background: radial-gradient(ellipse at center, #07171155, #071711bb); backdrop-filter: blur(7px); }
+#controller-menu[open] { animation: pause-in .22s ease-out both; }
+#controller-menu .journal-heading { margin-bottom: 18px; }
+#controller-menu .journal-heading h1 { font-size: 42px; font-style: normal; letter-spacing: -.055em; margin: 26px 0 0; }
+.pause-brand { display: flex; align-items: center; gap: 16px; }
+.pause-brand .battle-kicker { color: var(--ui-paper); letter-spacing: .18em; }
+.pause-brand b { color: var(--ui-gold); margin-left: 3px; }
+.pause-state { display: inline-flex; gap: 6px; align-items: center; color: #b9ccad; font-size: 8px; letter-spacing: .14em; }
+.pause-state::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: #b9ccad; box-shadow: 0 0 8px #b9ccad66; }
+.menu-intro { margin: 0 0 26px; color: var(--ui-muted); font-size: 13px; line-height: 1.6; }
+.pause-options { display: grid; gap: 10px; }
+.pause-options button { display: flex; align-items: center; gap: 18px; padding: 20px; border: 1px solid #c6d6ad26; border-radius: 12px; background: #ffffff03; color: var(--ui-paper); text-align: left; transition: background .18s, border-color .18s; }
+.menu-option-icon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border: 1px solid #c6d6ad28; border-radius: 10px; color: var(--ui-gold); background: #f3cf7808; }
+.menu-option-icon svg { width: 24px; height: 24px; }
+.menu-option-copy { display: grid; gap: 6px; }
+.pause-options strong { font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
+.pause-options small { font-size: 11px; color: var(--ui-muted); }
+.menu-option-arrow { margin-left: auto; color: var(--ui-muted); font-size: 20px; }
+.pause-options button:enabled:hover, .pause-options button:focus { background: #f3cf7810; border-color: #f3cf7877; outline: none; }
+.pause-options button:focus .menu-option-icon { background: var(--ui-gold); color: var(--ui-ink); border-color: var(--ui-gold); }
+.pause-options [data-exit] .menu-option-icon { color: #c1b6a7; }
+.settings-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.settings-options button { display: flex; flex-direction: column; align-items: start; gap: 10px; padding: 22px; border: 1px solid #c6d6ad30; border-radius: 14px; background: #ffffff03; color: var(--ui-paper); text-align: left; transition: background .18s, border-color .18s; }
+.settings-options .menu-option-icon { margin-bottom: 10px; width: 48px; height: 48px; }
+.settings-options strong { font-size: 19px; letter-spacing: -.02em; }
+.settings-options small { min-height: 36px; font-size: 11px; line-height: 1.6; color: var(--ui-muted); }
+.settings-options button:hover, .settings-options button:focus { background: #f3cf780d; border-color: #f3cf7870; }
+.setting-tag { padding: 5px 8px; border-radius: 5px; background: #b9ccad0c; color: #b9ccad; font-size: 9px; }
 #controller-menu button:disabled { opacity: .4; cursor: default; }
 #controller-menu button:focus-visible, #battle button:not(.battle-target):focus { outline: 2px solid var(--ui-gold); outline-offset: 3px; }
 #controller-menu [data-page="controller"] { font-size: 13px; line-height: 1.6; }
-#controller-menu select { display: block; width: 100%; margin-top: 8px; font: inherit; padding: 10px; border: 1px solid var(--ui-line); border-radius: 2px; color: var(--ui-paper); background: var(--ui-ink); }
+#controller-menu select { display: block; width: 100%; margin-top: 8px; font: inherit; padding: 12px; border: 1px solid var(--ui-line); border-radius: 8px; color: var(--ui-paper); background: #0d1c17; }
 .controller-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
-.controller-actions button { padding: 11px 14px; border: 0; background: var(--ui-paper); color: var(--ui-ink); box-shadow: var(--ui-shadow); font-size: 12px; }
+.controller-actions button { padding: 11px 14px; border: 1px solid #f3cf7833; border-radius: 8px; background: #f3cf7812; color: var(--ui-gold); font-size: 12px; }
 .controller-actions button:hover { background: var(--ui-gold); }
-.controller-test { padding: 16px; border-left: 3px solid var(--ui-gold); background: #ffffff06; }
+.controller-actions button:hover { color: var(--ui-ink); }
+.controller-test { padding: 16px; border: 1px solid #c6d6ad25; border-radius: 10px; background: #07171155; }
 .controller-test output { display: block; margin-top: 10px; font: 12px/1.8 monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 .controller-note, .menu-footer { color: var(--ui-muted); font-size: 11px; line-height: 1.7; }
-.menu-footer { margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--ui-line); }
+.menu-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 28px; padding-top: 18px; border-top: 1px solid #c6d6ad20; font-size: 10px; }
+.menu-footer > span { display: flex; align-items: center; gap: 5px; }
+.menu-footer kbd { width: auto; min-width: 19px; height: 19px; padding: 0 4px; font-size: 9px; line-height: 17px; color: var(--ui-muted); }
 #controller-menu [data-status] { overflow-wrap: anywhere; }
 .menu-controls { margin: 12px 0 24px; }
-.menu-controls > div { padding: 13px 0; border-bottom: 1px solid var(--ui-line); }
+.menu-controls > div { display: grid; grid-template-columns: 145px 1fr; align-items: baseline; gap: 18px; padding: 15px 4px; border-bottom: 1px solid #c6d6ad20; }
 .menu-controls dt { color: var(--ui-gold); font-size: 12px; font-weight: 600; }
 .menu-controls dd { margin: 5px 0 0; color: var(--ui-paper); font-size: 13px; line-height: 1.5; }
-@media (prefers-reduced-motion: reduce) { .adventure-options button { transition: none; } }
+.exit-emblem { display: grid; place-items: center; width: 90px; height: 110px; margin: 20px auto 28px; background: #f3cf7808; color: var(--ui-gold); border: 1px solid #f3cf7833; border-radius: 20px; font-size: 46px; font-weight: 600; letter-spacing: -.06em; }
+#controller-menu[data-page="exited"] { text-align: center; }
+#controller-menu[data-page="exited"] .journal-heading { justify-content: center; }
+#controller-menu[data-page="exited"] .pause-brand { justify-content: center; }
+#controller-menu[data-page="exited"]::backdrop { background: #081510f5; backdrop-filter: blur(16px); }
+.return-to-game { display: flex; align-items: center; justify-content: space-between; gap: 70px; margin: 0 auto 24px; padding: 14px 20px; border: 0; border-radius: 9px; background: var(--ui-gold); color: var(--ui-ink); font-size: 14px; font-weight: 600; }
+@keyframes pause-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { #controller-menu[open] { animation: none; } .pause-options button, .settings-options button, .journal-dock button, .journal-tabs button { transition: none; } }
+/* The lamp dial (src/lamp-picker.ts): opens on a lamp in the Meridiana flat, over its prompt. */
+#lamp-dial { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); width: 340px; padding: 16px 18px 12px; pointer-events: auto;
+  color: var(--ui-paper); background: var(--ui-surface); border: 1px solid var(--ui-line); border-top: 3px solid var(--lamp, var(--ui-gold)); border-radius: 2px;
+  box-shadow: var(--ui-shadow), 0 -18px 60px -20px var(--lamp, transparent); backdrop-filter: blur(12px); animation: encounter-right .25s ease both; outline: none; }
+#lamp-dial[data-on="false"] { --lamp: #50605a; }
+#hud[data-lamp] #interact { visibility: hidden; }
+#lamp-dial header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+#lamp-dial header strong { display: block; margin-top: 3px; font-size: 22px; letter-spacing: -.01em; }
+#lamp-dial [data-power] { min-width: 104px; padding: 8px 12px; border: 0; border-radius: 999px; font: 600 12px/1 inherit; color: var(--ui-ink); background: var(--lamp); box-shadow: 0 0 18px -2px var(--lamp); cursor: pointer; }
+#lamp-dial[data-on="false"] [data-power] { color: var(--ui-paper); background: #ffffff14; box-shadow: none; }
+.lamp-dial-body { display: grid; grid-template-columns: 132px 22px 1fr; align-items: center; gap: 16px; }
+.lamp-wheel { position: relative; width: 132px; aspect-ratio: 1; border-radius: 50%; cursor: crosshair; touch-action: none;
+  background: radial-gradient(circle, #fff7ec 0%, #fff7ec00 70%), conic-gradient(from 90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  box-shadow: inset 0 0 0 1px #ffffff22, 0 0 0 4px #0003; }
+#lamp-dial[data-on="false"] .lamp-wheel, #lamp-dial[data-on="false"] .lamp-brightness { filter: saturate(.25) brightness(.55); }
+.lamp-wheel i { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--lamp); border: 2px solid #fff; box-shadow: 0 1px 6px #0009; pointer-events: none; }
+.lamp-brightness { position: relative; height: 132px; border-radius: 999px; cursor: ns-resize; touch-action: none; background: linear-gradient(to top, #111, var(--lamp, #fff)); box-shadow: inset 0 0 0 1px #ffffff22; }
+.lamp-brightness i { position: absolute; left: 50%; width: 26px; height: 8px; margin: 0 0 -4px -13px; border-radius: 4px; background: #fff; box-shadow: 0 1px 5px #0009; pointer-events: none; }
+.lamp-readout { display: grid; gap: 4px; align-content: center; }
+.lamp-readout span { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 22px var(--lamp), inset 0 0 0 1px #ffffff33; }
+.lamp-readout b { font-size: 15px; }
+.lamp-readout small { color: var(--ui-muted); font-size: 12px; }
+.lamp-swatches { display: grid; grid-template-columns: repeat(13, 1fr); gap: 4px; margin: 14px 0 10px; }
+.lamp-swatches button { aspect-ratio: 1; border: 0; border-radius: 50%; background: var(--swatch); cursor: pointer; box-shadow: inset 0 0 0 1px #0003; transition: transform .12s; }
+.lamp-swatches button:hover { transform: scale(1.15); }
+.lamp-swatches button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ui-surface), 0 0 0 4px #fff; }
+#lamp-dial footer { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--ui-muted); font-size: 10px; }
+#lamp-dial footer kbd { width: auto; min-width: 16px; height: 16px; margin-right: 2px; padding: 0 3px; font-size: 9px; line-height: 14px; }
+#lamp-dial footer em { margin-left: auto; font-style: normal; color: var(--lamp); }
+#lamp-dial[data-on="false"] footer em { color: var(--ui-muted); }
+@media (prefers-reduced-motion: reduce) { #lamp-dial { animation: none; } .lamp-swatches button { transition: none; } }
+/* Luces de casa (src/home-lights-ui.ts): options, the lead and its test flash. */
+#controller-menu [data-page="lights"] { font-size: 13px; line-height: 1.6; }
+.lights-options { display: grid; gap: 9px; margin: 16px 0; }
+.lights-options button, .lights-lead button { padding: 12px 14px; border: 1px solid #c6d6ad28; border-radius: 8px; background: #ffffff05; color: var(--ui-paper); font-size: 12px; text-align: left; }
+.lights-options button:first-child { background: var(--ui-gold); }
+.lights-options button:first-child, .lights-options button:hover, .lights-lead button:hover { color: var(--ui-ink); }
+.lights-options button:hover, .lights-lead button:hover { background: var(--ui-gold); }
+.lights-lead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 18px; padding: 14px 16px; border: 1px solid #c6d6ad25; border-radius: 10px; background: #07171155; }
+.lights-lead .battle-kicker { margin-right: auto; }
+.lights-lead button[data-lead] { width: 38px; text-align: center; font-size: 16px; padding: 7px 0; }
+.lights-lead output { min-width: 70px; text-align: center; font: 600 14px/1 monospace; }
+.lights-flash { position: fixed; inset: 0; z-index: 10; pointer-events: none; background: #fffdf4; opacity: 0; }
+.lights-flash.is-on { animation: lights-flash .5s ease-out; }
+@keyframes lights-flash { 0% { opacity: .95; } 100% { opacity: 0; } }
 
 /* Chapter story HUD: no objective panel (see AGENTS.md). Item notes top right, one key hint at
    the bottom, Bernat's speech bubble over his head, full-screen chapter cards. */
@@ -434,7 +507,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 /* Status screen: the two item columns. */
 .item-column ul { margin: 0; padding: 0; list-style: none; }
 .item-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.item-column { padding: 16px; border: 1px solid var(--ui-line); border-top: 3px solid var(--ui-gold); background: #ffffff06; }
+.item-column { padding: 20px; border: 1px solid #c6d6ad25; border-top: 2px solid var(--ui-gold); border-radius: 12px; background: #ffffff03; }
 .item-column[data-kind="common"] { border-top-color: #a5cf8f; }
 .item-column[data-kind="common"] .battle-kicker { color: #a5cf8f; }
 .item-column li { padding: 12px 0; border-top: 1px solid var(--ui-line); }
@@ -804,3 +877,160 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
   .battle-dock:has(.command.expanded) .vitals-avatar { width: 44px; height: 44px; }
   .battle-dock:has(.command.expanded) .vitals-waves { height: 18px; }
 }
+
+/* ——— Chapter 2: Barcelona's network map (src/city-map.ts), the station map and the TV news ——— */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.city-map { display: block; width: 100%; height: 100%; font-family: 'DM Sans', sans-serif; }
+/* Cartoon: flat colours, a thick dark outline (#3b2a20) on everything that matters. */
+.city-land { fill: #eadfc2; }
+.city-sea { fill: #7ec4e0; }
+.city-beach { fill: none; stroke: #f7dd96; stroke-linecap: round; }
+.city-wave { fill: none; stroke: #ffffffaa; stroke-linecap: round; }
+.city-hill { fill: #9fd07a; stroke: #3b2a2088; stroke-linejoin: round; }
+.city-river { fill: none; stroke: #7ec4e0; stroke-linecap: round; stroke-linejoin: round; }
+.city-avenue-edge { fill: none; stroke: #3b2a2044; stroke-linecap: round; }
+.city-avenue { fill: none; stroke: #fffaf0; stroke-linecap: round; }
+.city-line-edge { fill: none; stroke: #3b2a20; stroke-linecap: round; stroke-linejoin: round; }
+.city-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.city-route { fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: .5; }
+.city-preview { fill: none; stroke: #fffaf0; stroke-linecap: round; stroke-linejoin: round; animation: city-dash 1.2s linear infinite; }
+@keyframes city-dash { to { stroke-dashoffset: -2000; } }
+.city-station.is-minor text { font-weight: 600; opacity: .85; }
+.city-pin-label { fill: #a8323a; font-weight: 800; text-anchor: middle; paint-order: stroke; stroke: #fffaf0; stroke-linejoin: round; }
+.city-station circle { fill: #fffaf0; stroke: #3b2a20; }
+.city-station text, .map-marker-name { fill: #3b2a20; font-weight: 800; paint-order: stroke; stroke: #fffaf0; stroke-linejoin: round; }
+.city-station text { stroke-width: 70px; }
+.map-marker-name { stroke-width: .25px; text-anchor: middle; font-weight: 700; }
+.city-station.is-pickable { cursor: pointer; }
+.city-station.is-pickable circle:not(.city-station-glow) { fill: #f3cf78; }
+.city-station-glow { fill: #f3cf7888 !important; stroke: none !important; animation: city-glow 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.city-station.is-selected circle:not(.city-station-glow) { fill: #ff8f3a; }
+.city-station.is-selected text { fill: #a8323a; }
+.map-marker[data-icon="bubbaloo"] .map-halo { animation: map-halo 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.map-marker[data-icon="bubbaloo"] .map-halo-ring { animation: map-halo-ring 3.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes map-halo { 50% { transform: scale(1.08); } }
+@keyframes map-halo-ring { from { transform: scale(.85); opacity: .9; } to { transform: scale(1.45); opacity: 0; } }
+.city-pin path { fill: #f3cf78; stroke: #3b2a20; }
+.city-pin text { fill: #3b2a20; font-weight: 800; text-anchor: middle; }
+.city-train { fill: #fffaf0; stroke: #3b2a20; stroke-width: 60px; }
+@keyframes city-glow { 50% { transform: scale(1.25); opacity: .55; } }
+
+/* Down the stair: the station wall, white tiles under the hall's light, the name on a dark sign
+   with the line's colour, and the network plan framed on the wall. Opaque, over the whole HUD. */
+#travel { position: absolute; inset: 0; z-index: 35; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; color: var(--ui-paper); pointer-events: auto; }
+#travel { display: grid; grid-template-rows: auto 1fr auto; gap: 14px; padding: 22px 32px 18px;
+  background:
+    radial-gradient(ellipse at 50% 0%, #fff7e600, #00000055 85%),
+    linear-gradient(#0000 calc(100% - 2px), #bdb8ad 0) 0 0 / 56px 28px,
+    linear-gradient(90deg, #0000 calc(100% - 2px), #bdb8ad 0) 0 0 / 56px 28px,
+    #e8e5dd; }
+#travel[open] { animation: travel-down .7s cubic-bezier(.2, .7, .2, 1) both; }
+#travel[open] > * { animation: travel-rise .7s cubic-bezier(.2, .7, .2, 1) both; }
+#travel[open] > .travel-map { animation-delay: .06s; }
+#travel[open] > .travel-foot { animation-delay: .12s; }
+@keyframes travel-down { from { filter: brightness(.15); } }
+@keyframes travel-rise { from { transform: translateY(-38px); opacity: 0; } }
+#travel:not([open]) { display: none; }
+.travel-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 12px 20px 12px 18px; border-radius: 6px; background: #1f2a36; border-bottom: 6px solid var(--line, #d6252f); box-shadow: 0 6px 0 #0000001f; }
+.travel-heading .battle-kicker { color: #c9d3dd; }
+.travel-heading h1 { margin: 2px 0 6px; font-size: 32px; letter-spacing: -.01em; color: #fff; }
+.travel-lines, .travel-status { margin: 0; display: flex; gap: 6px; align-items: center; font-size: 15px; }
+.travel-status { font-weight: 600; color: #fff; }
+.travel-status i { color: #9fb0bf; font-style: normal; }
+.travel-status small { margin-left: 6px; color: #c9d3dd; font-size: 13px; font-weight: 500; }
+.line-badge { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 6px; border-radius: 4px; background: var(--line); color: #fff; font-size: 13px; font-weight: 800; }
+.line-badge[data-kind="rodalies"] { border-radius: 12px; box-shadow: inset 0 0 0 2px #fffaf0aa; }
+.travel-map { min-height: 0; border: 8px solid #8f969b; outline: 3px solid #3b2a20; border-radius: 4px; background: #eadfc2; box-shadow: 0 10px 0 #00000022, inset 0 0 0 2px #fffaf066; overflow: hidden; cursor: grab; touch-action: none; }
+.travel-map:active { cursor: grabbing; }
+/* The city as a 3D model (src/city-3d.ts): the canvas, and the stations and names drawn over it in pixels. */
+#travel.is-3d .travel-map { position: relative; background: #efe7d3; }
+#travel:not(.is-3d) .travel-rotate { display: none; }
+.city-3d, .city-overlay { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.city-overlay { overflow: visible; font-family: 'DM Sans', sans-serif; }
+.city-overlay .city-station text { stroke-width: 4px; }
+.city-overlay.is-far .city-station.is-minor text { display: none; }
+.city-overlay .city-route { stroke-width: 16px; }
+.city-overlay .city-preview { stroke-width: 6px; stroke-dasharray: 10 8; filter: drop-shadow(0 1px 0 #3b2a20); animation-name: city-dash-px; }
+@keyframes city-dash-px { to { stroke-dashoffset: -36; } }
+.city-overlay .city-train { stroke-width: 3px; }
+.travel-foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 8px 14px; border-radius: 6px; background: #1f2a36; }
+.travel-legend { display: flex; gap: 18px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: #e6ecf1; }
+.travel-legend li { display: flex; gap: 6px; align-items: center; }
+.travel-legend i { color: #9fb0bf; font-style: normal; }
+.travel-help { margin: 0; display: flex; gap: 22px; justify-content: center; font-size: 13px; color: #c9d3dd; }
+.travel-help kbd { width: auto; min-width: 21px; padding: 0 4px; margin-right: 4px; }
+
+/* The end of chapter 2's countdown (story-ui.ts): her pink over everything, one way back. */
+#doom { position: absolute; inset: 0; z-index: 40; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; pointer-events: auto; background: radial-gradient(ellipse at center, #5c1238e6, #1d0614f8); color: #ffe6f2; animation: story-card-in .9s ease both; }
+#doom[hidden] { display: none; }
+#doom .battle-kicker { color: #ff9cc8; }
+#doom h1 { margin: 0; font-size: clamp(34px, 5vw, 64px); font-style: italic; letter-spacing: -.02em; }
+#doom p { margin: 0 0 14px; font-family: 'Manrope', sans-serif; font-size: 18px; color: #f3c6dc; }
+#doom button { padding: 12px 22px; border: 0; border-radius: 2px; background: #ffe6f2; color: #5c1238; font: inherit; font-size: 18px; font-weight: 700; box-shadow: 5px 5px 0 #ff6fae88; cursor: pointer; }
+#doom button:focus-visible { outline: 3px solid #ff6fae; outline-offset: 3px; }
+#doom small { color: #d79ab8; font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .city-station-glow, .city-preview, .map-marker .map-halo, .map-marker .map-halo-ring { animation: none; } #doom, #travel[open], #travel[open] > * { animation: none; } }
+
+.party-animas { margin-top: 14px; }
+.party-animas ul { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 6px; padding: 0; list-style: none; }
+.party-animas li { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; padding: 8px 12px; border: 1px solid var(--ui-line); background: #0003; }
+.party-animas li i { grid-row: span 2; width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, var(--anima) 60%); box-shadow: 0 0 12px var(--anima); }
+.party-animas li span { font-size: 12px; color: var(--ui-muted); }
+
+/* ——— User menu (Tab) in the look of the 2026-10-22 redesign: a rounded glass panel, the dock with
+   Gerard's face, icon tabs, and M as a map on its own. Laid over the status sheets above, so each
+   player's half keeps its own ánima colours. ——— */
+.journal-dock { left: 24px; top: 166px; gap: 8px; }
+.journal-dock button { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid #c6d6ad36; border-radius: 12px; background: #14261ff2; color: var(--ui-paper); box-shadow: 0 6px 24px #0003, inset 0 1px #ffffff08; backdrop-filter: blur(16px); font-size: 12px; text-align: left; transform: none; transition: background .2s, border-color .2s; }
+.journal-dock button:hover { background: #284033; border-color: #f3cf7880; translate: none; }
+.user-menu-trigger strong, .user-menu-trigger small { display: block; }
+.user-menu-trigger strong { font-size: 13px; letter-spacing: -.02em; }
+.user-menu-trigger small { margin-top: 3px; color: var(--ui-muted); font-size: 9px; }
+.user-menu-avatar { display: block; width: 34px; height: 38px; overflow: hidden; border-radius: 8px; background: #f3cf781a; }
+.user-menu-avatar img, .user-menu-avatar svg { width: 100%; height: 100%; object-fit: cover; object-position: center 15%; }
+.pause-menu-trigger svg { width: 16px; height: 16px; fill: none; stroke: var(--ui-gold); stroke-width: 2; stroke-linecap: round; }
+.journal-dock kbd { width: auto; min-width: 24px; padding: 0 5px; margin-left: 5px; color: var(--ui-muted); border-color: #c6d6ad40; text-align: center; font-size: 10px; }
+#hud[data-panel]::before { content: ''; position: absolute; inset: 0; background: #07171166; backdrop-filter: blur(3px); }
+.status-sheet { border: 1px solid #c6d6ad36; border-radius: 20px; box-shadow: 0 24px 100px #0008, inset 0 1px #ffffff0a; backdrop-filter: blur(22px); animation: encounter-right .3s ease both; }
+.status-sheet:not([data-anima="noista"]) { background: radial-gradient(ellipse at 0 0, #33443566, transparent 60%), linear-gradient(145deg, #172c25fc, #0e1e19fc); }
+.status-sheet .journal-close { border: 1px solid #c6d6ad25; border-radius: 8px; background: #ffffff04; color: var(--ui-muted); padding: 8px 10px; font-size: 11px; white-space: nowrap; }
+.status-sheet .journal-close:hover { background: #f3cf7810; color: var(--sheet-accent); }
+.status-sheet .journal-close kbd { width: auto; padding: 0 5px; margin-left: 8px; }
+.journal-identity { display: flex; align-items: center; gap: 12px; }
+.journal-identity > svg { flex: none; width: 26px; height: 32px; fill: #f3cf7812; stroke: var(--sheet-accent); stroke-width: 1; }
+.journal-identity h1 { font-style: normal; letter-spacing: -.045em; }
+.journal-context { margin: 4px 0 0 38px; color: var(--ui-muted); font-size: 11px; }
+.status-sheet .journal-tabs { gap: 5px; padding: 5px; border: 1px solid #c6d6ad1a; border-radius: 12px; background: #07171166; }
+.status-sheet .journal-tabs button { flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 10px 8px; border: 1px solid transparent; border-radius: 8px; background: none; box-shadow: none; color: var(--ui-muted); font-size: 12px; font-weight: 600; translate: none; transition: background .18s, color .18s; }
+.status-sheet .journal-tabs button:hover { background: #ffffff08; color: var(--ui-paper); translate: none; }
+.status-sheet .journal-tabs button[aria-pressed="true"] { color: var(--sheet-accent); border-color: color-mix(in srgb, var(--sheet-accent) 30%, transparent); background: color-mix(in srgb, var(--sheet-accent) 9%, transparent); box-shadow: 0 2px 6px #0002; }
+.journal-tab-icon { flex: none; width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.status-sheet .journal-tabs button kbd { min-width: 18px; height: 18px; padding: 0 3px; font-size: 9px; line-height: 16px; color: inherit; border-color: currentColor; opacity: .6; }
+.status-sheet .journal-tabs > kbd { border-radius: 6px; }
+.sheet-help { padding-top: 10px; border-top: 1px solid #c6d6ad1a; }
+/* Cómo jugar: the controls, in the user menu. */
+.help-page { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 16px; }
+.user-help-intro { padding: 16px 20px; border: 1px solid #c6d6ad20; border-radius: 12px; background: #f3cf7808; }
+.user-help-intro h2 { font-size: 24px; }
+.help-page .menu-controls { margin: 0; overflow: hidden; }
+.help-page .menu-controls > div { padding: 9px 4px; }
+/* M: the map on its own, centred (in its own half with two players), at two scales. */
+.status-sheet[data-layout="map"] { padding: 22px 24px 16px; animation: map-open .22s ease-out both; }
+#exploration-panel:not([data-split="true"]) .status-sheet[data-layout="map"] { align-self: center; width: min(1060px, 100%); height: min(780px, 100%); }
+.map-view { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; height: 100%; min-height: 0; }
+.map-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.map-heading h2 { margin: 6px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -.035em; }
+.map-canvas { display: grid; place-items: center; min-height: 0; overflow: hidden; padding: 16px; border: 1px solid #c6d6ad20; border-radius: 12px; background: radial-gradient(ellipse at center, #233c2d55, #0c1b16); }
+.map-canvas .world-map { width: 100%; height: 100%; max-height: none; }
+.map-canvas .map-player { fill: var(--ui-gold); stroke: #10231b; stroke-width: .2; }
+.map-view[data-level="world"] .map-canvas { padding: 0; background: #eadfc2; }
+.map-footer { display: flex; justify-content: space-between; align-items: center; gap: 18px; color: var(--ui-muted); font-size: 11px; }
+.map-keys { display: flex; gap: 16px; }
+.map-player-key, .map-partner-key { display: flex; align-items: center; gap: 8px; }
+.map-player-key i, .map-partner-key i { width: 7px; height: 7px; border-radius: 50%; background: var(--ui-gold); box-shadow: 0 0 10px #f3cf7844; }
+.map-partner-key i { background: #e7c9a1; box-shadow: 0 0 10px #e7c9a144; }
+.map-footer button { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid #f3cf7833; border-radius: 8px; background: #f3cf7808; color: var(--ui-gold); font-size: 11px; }
+.map-footer button:hover { background: #f3cf7815; border-color: #f3cf7870; }
+.map-footer kbd { width: auto; min-width: 19px; padding: 0 4px; font-size: 9px; color: inherit; text-align: center; }
+@keyframes map-open { from { opacity: 0; scale: .98; } }
+@media (prefers-reduced-motion: reduce) { .status-sheet, .status-sheet[data-layout="map"] { animation: none; } }

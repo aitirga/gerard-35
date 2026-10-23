@@ -31,7 +31,7 @@
       "eval": "(() => { const b = window.gerard.game.companionPosition; window.gerard.game.setEnvironment('maresme', { x: Math.round(b.x), z: Math.round(b.z) + 1 }); })()"
     },
     {
-      "until": "document.querySelector('#interact span').textContent.startsWith('Preguntarle')",
+      "until": "document.querySelector('#interact').dataset.interaction === 'talk-bernat' && window.gerard.story.companion === 'stalled'",
       "timeout": 20000
     },
     {

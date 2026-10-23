@@ -18,6 +18,11 @@ src/environments.ts  geoEnvironment() ─► Environment (grid, spawn, props, in
 src/geo-scenery.ts   buildGeo()       ─► PlayCanvas meshes: ground, roads, river, buildings, hills
 ```
 
+A zone can also be **designed by hand** in `assets/geo/<zone>/sketch.json`, inspired by the real
+place and with no map data (Barcelona's zones, see [barcelona.md](barcelona.md#designed-zones)):
+`build` uses it when there is no `osm.json`. Places may also be doors (`to`) or left to the story
+(no `lines`), and `anchors` name points for the game's own pieces (the palace on the school).
+
 `just geo <zone>` runs fetch and build together; `just geo-build <zone>` rebuilds offline from
 the saved data, so tweaking styles never needs the network.
 
@@ -73,8 +78,9 @@ vertical.
 - **Face the camera.** The camera looks from the south-east of the grid, so walls facing grid
   south and east are the ones seen. Choose `rotation_deg` so the signature facades face it
   (Alegia uses 180: the houses on the river side of San Juan kalea show their street fronts).
-- **Nothing hides Gerard.** Buildings between Gerard and the camera fold down to their footprint
-  (`src/geo-scenery.ts`), trees turn see-through (`src/props.ts`). No style may break that.
+- **Nothing hides Gerard.** Buildings between Gerard and the camera keep their height and open a
+  dithered see-through hole round him (`src/geo-scenery.ts`), trees turn see-through
+  (`src/props.ts`). Folding walls down to a skirting is for house interiors only. No style may break that.
 - **Gates are diegetic.** The map edge, the river and the rail are the borders; do not add
   invisible walls in open ground. If an area should be closed, add a fence or a person.
 - **Text in the world.** Street names go on the ground as labels (`labels`), like
@@ -110,18 +116,26 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `id`, `name`, `region` | Scene id, the name in the selector, the eyebrow of the place panel |
 | `anchor` | `address` and `lat`/`lon` of the reference point; all metre offsets start here |
 | `bounds_m` | Playable rectangle in metres from the anchor (`west`, `east`, `north`, `south`) |
+| `bounds_turned` | `true`: `bounds_m` is a rectangle in the turned frame (x along the street, z towards the camera), so a diagonal avenue fills the map. Items can then be placed with `x_m`/`z_m` in that frame instead of `east_m`/`south_m` |
 | `cell_m` | Metres per grid cell |
-| `rotation_deg` | Turns the map around the anchor before gridding (0: north up; 180: south up) |
+| `rotation_deg` | Turns the map around the anchor before gridding (0: north up; 180: south up; the Meridiana uses -62 so it runs left to right) |
+| `lane_m` | Lane width: roads tagged `lanes` get that many lanes' width (or their `width` tag), and keep `lanes`, `oneway` and the bus lane (`bus:lanes`) for the markings |
+| `redraw` | Street names whose map ways are left out, to be drawn by the sketch's `keep` features instead (an avenue whose works the map does not show yet) |
+| `osm_props` | Props from map nodes, by kind, with extra fields for each: `tree` (natural=tree), `lamp` (street_lamp), `bench`, `bin` (waste_basket), `bike-rack` (bicycle_parking). Only on open ground; lamps and racks face the nearest road, benches turn their back to it (they look at the shop fronts) |
+| `shops` | Shops the map lacks: `name`, `kind` (an OSM shop or amenity value) and a position. Every shop, bar, bank and pharmacy of the map gets a sign on the nearest street wall of its building |
+| `zebras_x_m` | Points along the turned frame where a zebra crossing runs across every road; the map's own `highway=crossing` nodes are drawn too |
+| `look` | The street's surfaces: `ground`/`footway` `panot` (grey sidewalk tiles; footways are not drawn over it), `grass` `bed` (soil and shrubs), `asphalt` colour (bike lanes too), `markings` (lanes, edges, zebras, BUS, bikes; a street with markings also gets moving traffic, see below) |
 | `zoom` | Follow-camera zoom (orthographic half-height) |
 | `spawn` | `east_m`/`south_m`; snapped to the nearest walkable cell |
 | `storey_m` | Height of one storey |
 | `reference` | `checked` date, `streetview_capture`, `notes` (one line per observation) and `viewpoints` (`name`, `lat`, `lon`, `heading`, `pitch`) for `fetch` |
 | `styles` | Named looks; `default` is merged under every other one (see below) |
-| `buildings` | Overrides by `way/<id>` (wins) or `tag:building=<value>`: `style`, `levels`, `roof_kind`, `label`, and per house `walls` (one colour), `facade`, `ground` |
-| `props` | Extra props in metres: `tree` (`species`, `scale`), `car` (`color`), `lamp`, `manhole`. Cars park along x when the rotation is 0 or 180 |
+| `buildings` | Overrides by `way/<id>` (wins) or `tag:building=<value>`: `style`, `levels` (wins over the map's), `roof_kind`, `label`, `sign` (big lit letters over the ground floor of the wall facing the camera), and per house `walls` (one colour), `facade`, `ground` |
+| `props` | Extra props in metres: `tree` (`species`, `scale`, `base`, `stakes`, `trunk` colour), `car` (`color`), `lamp` (`style`: `led`), `manhole`, `metro` (a totem and a stair over the next three cells along x; `network`: `metro` or `rodalies`; `name` and `line` for the totem's plate), `bench` (`style`: `chair`), `barrier` (`color` red/white, `style` `jersey`, `panel`, `fence`), `bag`, `bin`, `bike-rack`, `traffic-light` (switched by the traffic), `shelter` (three cells along x), `bus` (`color`, `livery` `tmb`/`sagales`; five cells along x), `hoarding` (`length` cells along x). With `to` (a second position) and `every_m`, one prop every so many metres along the way. Cars park along x when the rotation is 0 or 180 or the bounds are turned |
 | `trees` | Generated trees: `forest_every_m`, `riverbank_every_m`, `species` list |
-| `places` | Things to look at: `id`, `label`, `lines`, and either `osm` (any feature id) or `east_m`/`south_m` |
+| `places` | Things to look at: `id`, `label`, `lines`, and either `osm` (any feature id) or `east_m`/`south_m`. With `to` (`environment`, `cell`) instead of `lines` it is a door; with neither, the story answers it (station entrances `station-<id>`, clues). `step` (a position, `w` and `d` in cells) makes those cells use the place when walked into: a station's stair (the three cells beside its `metro` prop) |
 | `labels` | Ground text: `text`, `east_m`, `south_m`, `width` in cells |
+| `anchors` | Named points for the game's own pieces: `east_m`, `south_m`, optional `y_m` (height) |
 
 ### Styles
 
@@ -129,13 +143,14 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | --- | --- |
 | `walls` | List of render colours; each building gets one |
 | `base`, `trim`, `roof` | Stone plinth, frames/bands/timber, roof tiles |
-| `roof_kind` | `hip`, `gable`, `pyramid`, `flat`. Footprints that fill less than 85 % of their oriented box (an L, a courtyard) get a flat roof on the real outline with a parapet |
-| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (framing, brown shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows) |
-| `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade` |
+| `roof_kind` | `hip`, `gable`, `pyramid`, `flat`. `flat` is a tiled terrace on the real outline with a parapet; footprints that fill less than 85 % of their oriented box (an L, a courtyard) get the same outline with their own roof tiles |
+| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (framing, brown shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks, painted as an atlas of four bays by three storeys that starts at a different bay on every wall: each bay keeps its kind all the way up, a window, twin windows, a balcony with an iron or panel railing, plants, washing and sometimes an awning, or an enclosed aluminium gallery, while blinds, lit flats and air conditioners change from flat to flat), `school` (a band of glazing with coloured frames), `mall` (blank concrete with a thin stripe in the trim colour), `curtain` (an office tower in dark glass, a few windows lit) |
+| `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade`, `shops` (shop windows under striped awnings, some shutters down and tagged), `lobby` (glass doors under a coloured band), `mall-front` (lit glass under a wavy concrete canopy) |
 | `levels` | Default storeys (OSM `building:levels` or `height` win when present) |
 
 A new facade or ground kind is one more branch in `facade()` in `src/geo-scenery.ts`: it paints a
-canvas for one bay and one storey (ground textures are two bays wide).
+canvas for one bay and one storey (ground textures are two bays wide; `FACADE_ATLAS` gives a kind
+several bays × storeys, like `flats`), drawn top-down as the facade is read.
 
 ## What the build does
 
@@ -158,7 +173,7 @@ canvas for one bay and one storey (ground textures are two bays wide).
 by ear clipping), road ribbons, rails with sleepers, motorway barriers, the bridge with parapets,
 a tinted flowing river, and each building as walls extruded from its footprint (ground band +
 upper floors, textured per bay and storey), a lid and a roof on its oriented box. Static ground
-is batched; buildings are separate so they can fold. Low hills ring the far sides.
+is batched; buildings are separate, with materials that open the see-through hole. Low hills ring the far sides.
 
 ## Alegia, worked example
 
@@ -189,3 +204,18 @@ change if OSM changes). Pick it in the environment selector, or `just screenshot
 - Terrain: the town is flat; slopes (Kale Gora) would need ground heights in the grid.
 - GLB: a landmark modelled in Blender could replace one building's procedural mesh; the grid
   and places stay as they are.
+
+## Traffic
+
+A real street with `look.markings` gets cars, yellow taxis and the odd TMB bus (`src/traffic.ts`).
+They drive the lanes of every `road` whose `highway` carries through traffic (not service roads,
+alleys or living streets), keep right on two-way streets, never use the bus lane and turn at random
+where streets meet, entering and leaving at the edges of the map. Where two such streets cross,
+and at zebras with a `traffic-light` prop within 8 cells, junctions take turns: the longest street
+through a junction gets the long green, the cross street and the people on foot the short one,
+with amber and all-red in between, and neighbouring junctions turn green one after another. Each
+traffic light shows the turn of the street it stands beside, its walk signal the opposite. Drivers
+follow whoever is ahead, move over before a lane ends, keep out of a junction they could not clear
+and stop for Gerard or his partner standing in front of them. Do not put parked `car` or moving-bus
+props in a lane: they would block it; a bus at a stop goes in the bus lane.
+

@@ -218,7 +218,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (entering) {
         anchor.copy(center); entryTime = 0;
         for (const [party, units] of [[true, next.allies], [false, next.foes]] as const) units.forEach((unit, i) => {
-          const minion = !party && unit.kind === 'minion' && !!minionTemplate;
+          // The palace guards (chapter 2) are minions grown to the size of a wardrobe.
+          const minion = !party && (unit.kind === 'minion' || unit.kind === 'guardian') && !!minionTemplate;
           const source = party ? partyModel(unit.id) : minion ? minionTemplate! : dogs[i];
           const model = source.clone(); model.enabled = true;
           if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
@@ -231,7 +232,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           battleRoot.addChild(model); model.setPosition(start);
           const body = party ? model.findByName('Cuerpo') as pc.Entity : null;
           const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
-          if (minion) model.setLocalScale(1.5, 1.5, 1.5);
+          if (minion) { const size = unit.kind === 'guardian' ? 2.3 : 1.5; model.setLocalScale(size, size, size); }
           const legs = (body?.children.filter(c => c.name === 'Pierna') ?? (minion ? [] : model.children.filter(c => c.name === 'Pata'))) as pc.Entity[];
           const yaw = party ? (source.findByName('Cuerpo') as pc.Entity).getLocalEulerAngles().y : source.getEulerAngles().y;
           if (body) body.setLocalEulerAngles(0, 0, 0);

@@ -53,6 +53,27 @@ milestone. `just dev-chapter <flag>` opens the game with every flag up to that o
 `just dev-chapter got-backpack` to start on the street; `just dev-chapter new` starts over
 (development only; it neither reads nor saves the stored flags).
 
+## Chapter 2
+
+Gerard wakes up at 35 in the Meridiana flat beside Aitor (player 2). The TV switches itself on:
+a pink castle has appeared on top of the Rec Comtal school. From the metro at Fabra i Puig the
+city is open: a cartoon network map of Barcelona (for now the L1 and L5) takes him anywhere a place
+exists, including the castle, whose guards are far too strong at first. Falling wakes him at home
+with everything kept; friends across the city give their ánimas, which make the party stronger.
+Design: [docs/chapter-2.md](docs/chapter-2.md); the city, metro and train:
+[docs/barcelona.md](docs/barcelona.md). `just dev-chapter metro` opens it with the city unlocked,
+and `just screenshots chapter-2-city` walks it.
+
+## The lights at home
+
+The LIFX bulbs in the Meridiana flat play along: each place tints the living room with its colours,
+fights flash on every hit and turn red with a heartbeat as health runs out, and the flat in the game
+mirrors the real one both ways: each lamp opens a colour dial, and a light switched at home shows in
+the game. At home `just backend` finds the bulbs on the LAN and changes them in milliseconds
+(`LIFX_TOKEN` in `.env` is the cloud fallback); connect them from **Esc → Configuración → Luces de casa**. The house's
+library is a git submodule in `vendor/geraitor_domotic_house` (`just setup` checks it out). Design,
+bulbs and limits: [docs/home-lights.md](docs/home-lights.md).
+
 ## Screenshots
 
 `just screenshots <scenario>` plays a scripted scenario in Chromium and saves numbered
@@ -61,6 +82,21 @@ JSON files in `scripts/screenshots/` (`just screenshots-list`): `chapter-1` walk
 opening block, `scenes` tours every environment. Write a new one for each feature you want to
 show; the step format is in [scripts/screenshots/README.md](scripts/screenshots/README.md).
 Run `just screenshots-browser` once on a new machine to download Chromium.
+
+## Combat foundation and difficulty lab
+
+`just combat-lab` opens the desktop simulator at `/combat-lab.html`: compare three strategies
+on identical seeds, tune enemy health/direct damage, replay a fight action by action, edit the
+encounter JSON, and export a reproducible report. Run the same engine without a browser:
+
+```bash
+just combat-sim --compare --runs 1000 --seed 3517 --out output/combat/report.json
+just combat-check
+```
+
+The lab uses provisional mechanical fixtures. The campaign shares numeric resolution while
+retaining its story-specific turn flow and current tuning. Architecture, extension examples
+and limits: [docs/combat.md](docs/combat.md).
 
 ## Battle AI
 
@@ -89,7 +125,14 @@ index.html          Welcome screen, canvas and HUD
 src/main.ts         Bootstraps the game, wires the HUD and plays story beats
 src/story.ts        Story flags and the rules that turn game events into beats (pure)
 src/chapter-1.ts    Chapter 1 lines, places, key hints and Bernat's bubbles
+src/chapter-2.ts    Chapter 2 lines, places, the TV news and its clues
+src/transit.ts      Metro: lines, stations, routes (pure)
+src/map-markers.ts  Icons on the network map (landmarks, home, the castle)
+src/news-set.ts     The TV news filmed in 3D at Trinitat Vella
+src/city-map.ts     Barcelona's cartoon network map as SVG
+src/travel-ui.ts    The station map and the trip; src/news-ui.ts the TV news
 src/story-ui.ts     Chapter cards, item notes, key hints, speech bubble
+src/home-lights.ts  The lights at home: places, fights, the lead and the mirrored flat
 src/items.ts        Item catalogue: common items and key items
 src/follower.ts     A companion who walks Gerard's path behind him
 src/game.ts         Isometric courtyard, Gerard model, lights, shadows and input
@@ -99,6 +142,8 @@ vite.config.ts      Vite config (relative base so it works on GitHub Pages)
 .github/workflows   Runs build and API tests on pushes and pull requests
 server.py           Python API and production static file server
 ai.py               AI providers (Jev) and the battle decision prompt
+lights.py           The bridge to the LIFX bulbs at home (docs/home-lights.md)
+vendor/             The house's lights library, a git submodule
 src/characters/     Character models as primitives (built by src/character-model.ts)
 tools/              Local asset generators run through just (not deployed)
 scripts/screenshots Screenshot scenarios for `just screenshots` (see its README)
@@ -294,7 +339,7 @@ or **L / R** on the controller turn the pages:
 | Estado (first) | Portrait, the vitals plate (face, PV and Secundaria as two waves) with the ánima switch right under it, stats and skills, a vague line about the day ("Entender qué está pasando."), place, company and the time on Gerard's phone |
 | Ánimas | Each member's vitals with their own ánima chips (two can differ), and what the ánima in view changes and grants; colours and looks come with the ánima. Hidden until the first one wakes |
 | Objetos | Common and key items, one bag shared with Aitor |
-| Mapa | The local map with Gerard and Aitor on it |
+| Mapa | The local map with Gerard and Aitor on it; from chapter 2, **Shift + M** (or its button) switches to the **Mapa del mundo** of Barcelona, and **M** or **Escape** comes back |
 | Diario | A thought Gerard cannot shake, cryptic and never an instruction, and what he remembers of each chapter |
 
 **I** and **M** jump straight to Objetos and Mapa. Exploration pauses while the
@@ -312,9 +357,16 @@ badge saying so). Fights split the same way: see docs/party.md.
 `src/exploration-ui.ts` owns the status screen: its pages, shortcuts, the two
 halves and their cursors. `src/journal.ts` writes the clock, the mission line and
 the diary from the story flags. `src/world-map.ts` draws any `Environment` from its collision grid,
-house footprints and numbered interactions, with no location-specific map layout.
+house footprints, room names and positions, with no location-specific map layout, and
+`src/exploration-world-map.ts` draws Barcelona. Maps show places and positions, never things to do.
+
+The pause menu (**Escape**, or Start / + on a controller) has Continuar, Estado, Objetos, Mapa,
+**Configuración** (Mando and **Luces de casa**, see docs/home-lights.md), Cómo jugar and Salir
+del juego.
 Add locations in `src/environments.ts` to reuse the renderer. The map is an
-informational local overview, not a travel menu.
+informational local overview. `src/exploration-world-map.ts` reuses the Barcelona city drawing
+for the world map, with a location pin only when Gerard is in Barcelona. Neither map lists actions or marks interactions to discover;
+guidance stays general and comes from the world and its characters.
 
 The shared `--ui-*` tokens in `src/style.css` extend the combat panel's visual
 language through exploration, dialogue and the journal: translucent forest-green
@@ -325,7 +377,7 @@ and respect reduced-motion preferences when adding UI.
 
 ### Desktop controllers
 
-Press **Esc** (or **+ / Start** on a controller), then choose **Mando** to see connected controllers, test raw buttons and axes, or
+Press **Esc** (or **+ / Start** on a controller), then choose **Configuración → Mando** to see connected controllers, test raw buttons and axes, or
 assign controls. Recognized standard Nintendo Switch / Switch 2 controllers use
 **A** to confirm/interact, **B** to go back, and **+** to open the menu. Other
 standard controllers use the bottom face button, right face button, and Start.
@@ -334,7 +386,10 @@ to run at twice walking speed; release it to walk again. With custom mappings, h
 the assigned cancel/back control to run. B still goes back in menus and battles. Battles support command,
 skill and target selection, confirmation, cancellation, and returning to the
 street. Dialogue supports confirm to reveal/advance and cancel to close.
-The adventure menu offers Continue, Controller settings, and How to play. Esc goes back from settings and closes the main menu. Keyboard and mouse remain available.
+The pause menu offers **Configuración** (Mando and Luces de casa) and **Salir del juego**.
+Esc goes back one settings page at a time, then returns to the game. The upper face button
+(X on Nintendo, △ on PlayStation, Y on Xbox) opens the separate user menu, including
+**Cómo jugar**. Keyboard and mouse remain available.
 
 Controllers without browser standard mapping stay inactive until configured.
 Choose the active device, then **Asignar controles** and assign four directions,

@@ -1,0 +1,54 @@
+{
+  "title": "City · Glowing cut through buildings",
+  "description": "In the open city buildings keep their height: when one stands between Gerard and the camera, the part in front of him is cut away and the cut is traced by a glowing edge, instead of the whole block folding down. Interiors still fold their walls.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        50,
+        40
+      ]
+    },
+    {
+      "shot": "open-street",
+      "delay": 2500,
+      "caption": "Out on the avenue nothing is in the way, so every building stands whole"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        142,
+        16
+      ],
+      "caption": "Deep in the passage between two blocks: the block in front opens a glowing cut round Gerard and keeps its height"
+    },
+    {
+      "shot": "passage",
+      "delay": 2500,
+      "caption": "Deep in the passage between two blocks: the block in front opens a hole round Gerard and keeps its height"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        148,
+        72
+      ],
+      "caption": "Behind the blocks across the avenue: only the glowing cut round Gerard, the rest of the facade and its roof stay"
+    },
+    {
+      "shot": "south-block",
+      "delay": 2500,
+      "caption": "Behind the blocks across the avenue: only the hole, the rest of the facade and its roof stay"
+    }
+  ]
+}

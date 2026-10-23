@@ -120,13 +120,16 @@
       "eval": "tap(0, 4)"
     },
     {
+      "eval": "tap(0, 4)"
+    },
+    {
       "until": "document.querySelector('.status-sheet[data-player=\"1\"] [data-panel=\"diary\"][aria-pressed=\"true\"]') && document.querySelector('.status-sheet[data-player=\"2\"] [data-panel=\"items\"][aria-pressed=\"true\"]')",
       "timeout": 20000
     },
     {
       "shot": "duo-pages",
       "delay": 1200,
-      "caption": "Each turns their own pages: Gerard's L to Diario, Aitor's R twice to Objetos"
+      "caption": "Each turns their own pages: Gerard's L twice to Diario (past Cómo jugar), Aitor's R twice to Objetos"
     },
     {
       "eval": "tap(1, 4)"

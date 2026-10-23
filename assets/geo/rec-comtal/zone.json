@@ -1,0 +1,516 @@
+{
+  "id": "rec-comtal",
+  "name": "Trinitat Vella · Escola Rec Comtal",
+  "region": "Trinitat Vella, Barcelona",
+  "anchor": {
+    "address": "Via de Bàrcino 90, Barcelona",
+    "lat": 41.4510504,
+    "lon": 2.1916797
+  },
+  "bounds_m": {
+    "west": -130,
+    "east": 130,
+    "north": -80,
+    "south": 80
+  },
+  "cell_m": 1.5,
+  "rotation_deg": 0,
+  "zoom": 12,
+  "spawn": {
+    "east_m": -104,
+    "south_m": 16
+  },
+  "storey_m": 3.0,
+  "reference": {
+    "checked": "2026-10-18",
+    "streetview_capture": "",
+    "notes": [
+      "DESIGNED: drawn by hand in sketch.json, inspired by the real place; no map data. Real: the school (Institut Escola Rec Comtal, 41.4510504, 2.1916797), its two addresses (Via de Bàrcino 90: primary and secondary; Mare de Déu de Lorda 25: infants), the two streets and the underground passage that joins them. Invented: the exact layout, the cross streets and the blocks.",
+      "Trinitat Vella: 1950s-60s blocks of flats of four and five storeys in brick and cream render; Via de Bàrcino is the main street into the neighbourhood."
+    ],
+    "viewpoints": [
+      {
+        "name": "via-de-barcino",
+        "lat": 41.4508,
+        "lon": 2.1912,
+        "heading": 30,
+        "pitch": 5
+      }
+    ]
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#b9785a",
+        "#c98d6a",
+        "#d9b38f",
+        "#a86b52",
+        "#e0c7a5"
+      ],
+      "base": "#7d6a5a",
+      "trim": "#efe6d6",
+      "roof": "#9a8f84",
+      "roof_kind": "flat",
+      "facade": "flats",
+      "ground": "shops",
+      "levels": 4
+    },
+    "school": {
+      "walls": [
+        "#ece6da"
+      ],
+      "base": "#9b9488",
+      "trim": "#e8742c",
+      "roof": "#8f8f8f",
+      "roof_kind": "flat",
+      "facade": "school",
+      "ground": "lobby",
+      "levels": 3
+    }
+  },
+  "buildings": {
+    "tag:building=school": {
+      "style": "school"
+    }
+  },
+  "props": [
+    {
+      "kind": "tree",
+      "east_m": -125,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -115,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -105,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -95,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -85,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -75,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -65,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -55,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -45,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 45,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 55,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 65,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 75,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 85,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 95,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 105,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 115,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 125,
+      "south_m": 17.5,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -125,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -113,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -101,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -89,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -77,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -65,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -53,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -41,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -29,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -17,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -5,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 7,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 19,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 31,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 43,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 55,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 67,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 79,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 91,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 103,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 115,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": 127,
+      "south_m": -48,
+      "species": "plane"
+    },
+    {
+      "kind": "tree",
+      "east_m": -24,
+      "south_m": -36,
+      "species": "olive",
+      "scale": 0.8,
+      "base": "ground"
+    },
+    {
+      "kind": "tree",
+      "east_m": -10,
+      "south_m": -40,
+      "species": "olive",
+      "scale": 0.8,
+      "base": "ground"
+    },
+    {
+      "kind": "tree",
+      "east_m": 6,
+      "south_m": -34,
+      "species": "olive",
+      "scale": 0.8,
+      "base": "ground"
+    },
+    {
+      "kind": "lamp",
+      "east_m": -120,
+      "south_m": 16.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": -80,
+      "south_m": 16.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": -40,
+      "south_m": 16.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": 40,
+      "south_m": 16.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": 80,
+      "south_m": 16.5
+    },
+    {
+      "kind": "lamp",
+      "east_m": 120,
+      "south_m": 16.5
+    },
+    {
+      "kind": "car",
+      "east_m": -120,
+      "south_m": 26,
+      "color": "#d8d6c7"
+    },
+    {
+      "kind": "car",
+      "east_m": -86,
+      "south_m": 26,
+      "color": "#66808c"
+    },
+    {
+      "kind": "car",
+      "east_m": -60,
+      "south_m": 26,
+      "color": "#b95641"
+    },
+    {
+      "kind": "car",
+      "east_m": 44,
+      "south_m": 26,
+      "color": "#e4dfd2"
+    },
+    {
+      "kind": "car",
+      "east_m": 90,
+      "south_m": 26,
+      "color": "#353f44"
+    },
+    {
+      "kind": "metro",
+      "east_m": -100,
+      "south_m": 16,
+      "line": "L1",
+      "name": "Trinitat Vella"
+    },
+    {
+      "kind": "manhole",
+      "east_m": -14,
+      "south_m": 21
+    },
+    {
+      "kind": "manhole",
+      "east_m": 12,
+      "south_m": 21
+    },
+    {
+      "kind": "manhole",
+      "east_m": 70,
+      "south_m": 21
+    }
+  ],
+  "trees": {
+    "species": [
+      "plane"
+    ]
+  },
+  "places": [
+    {
+      "id": "station-trinitat-vella",
+      "label": "Bajar al metro",
+      "east_m": -97.75,
+      "south_m": 18.25,
+      "step": {
+        "east_m": -97.75,
+        "south_m": 16.75,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "enter-school",
+      "label": "Entrar en la escuela",
+      "east_m": 0,
+      "south_m": 14
+    },
+    {
+      "id": "rec-comtal-cartel",
+      "label": "Mirar el cartel",
+      "east_m": -16,
+      "south_m": 14,
+      "lines": [
+        "«Institut Escola Rec Comtal». Las letras están medio tapadas de chicle rosa.",
+        "Dentro se oyen niños. No lloran: cantan."
+      ]
+    },
+    {
+      "id": "rec-comtal-mochilas",
+      "label": "Mirar las mochilas",
+      "east_m": 18,
+      "south_m": 14,
+      "lines": [
+        "Mochilas tiradas junto a la verja. Una tiene un llavero de dinosaurio.",
+        "Nadie ha venido a buscarlas todavía."
+      ]
+    },
+    {
+      "id": "rec-comtal-placa",
+      "label": "Leer la placa",
+      "east_m": -62,
+      "south_m": 16,
+      "lines": [
+        "«Rec Comtal». Una acequia de hace mil años que traía el agua del Besòs hasta Barcelona.",
+        "Por eso se llama así la escuela. El agua todavía pasa por debajo del barrio."
+      ]
+    },
+    {
+      "id": "rec-comtal-pasaje",
+      "label": "Mirar el pasaje",
+      "east_m": 72,
+      "south_m": 16,
+      "lines": [
+        "Un pasaje que baja hasta la calle de la Mare de Déu de Lorda. El barrio tiene dos alturas.",
+        "Del fondo sale un olor dulce. A fresa."
+      ]
+    }
+  ],
+  "labels": [
+    {
+      "text": "VIA DE BÀRCINO",
+      "east_m": -70,
+      "south_m": 22,
+      "width": 7
+    },
+    {
+      "text": "MARE DE DÉU DE LORDA",
+      "east_m": 90,
+      "south_m": -52,
+      "width": 9
+    },
+    {
+      "text": "TRINITAT VELLA",
+      "east_m": -104,
+      "south_m": 11,
+      "width": 6
+    }
+  ],
+  "anchors": {
+    "palace": {
+      "east_m": 0,
+      "south_m": 7,
+      "y_m": 9
+    }
+  }
+}

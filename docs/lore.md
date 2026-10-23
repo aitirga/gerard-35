@@ -11,6 +11,26 @@ story is about. Update it whenever a decision changes the story.
 - Progress comes from exploring and talking to people; there is no quest log (see `AGENTS.md`).
 - Dialogue is in Spanish, with the family's Catalan where it is natural.
 
+## What the game is about
+
+The message under every chapter, to keep in mind when writing any scene, line or mission:
+
+- **A critique of routine.** Adult life as a loop of obligations: the alarm, the commute, the
+  to-do list, the same train every day. The game is not against work or responsibility; it is
+  against living on autopilot.
+- **How to get out of it: be a kid again.** Curiosity, play, *la ilusión*: wanting things,
+  being surprised, doing something just because it is fun. They make life better, and they are
+  never lost, only forgotten.
+- **Against "growing up" as giving up.** Growing up should not mean switching off. Being an adult
+  and keeping the kid alive are not opposites.
+- **You decide what you are.** Gerard's power is changing class: becoming a Noísta by saying no,
+  becoming something else with each friend. Nobody is their job or their routine; everyone can
+  choose again. This is the idea behind the final choice.
+
+How it shows in play: the world itself breaks routines (the Queen's bubble pops them), people are
+lost without them, and Gerard helps them find what was under the routine. Nothing preaches; the
+friends' stories and the second round carry it.
+
 ## The central villain: La Reina Bubbaloo
 
 - **The whole game revolves around La Reina Bubbaloo**, a villain **Bernat invented** for the game
@@ -27,6 +47,12 @@ story is about. Update it whenever a decision changes the story.
 - Her colour is **bubble-gum pink**; her mood is sweet on the surface and sticky underneath.
 - Her power reaches the real world through **her minions** and through **colour**: when someone
   beats her minions, she tints the place in her pink, darker and stranger, to show she is watching.
+- **What she wants (chapter 2, a proposal: possible plot twist).** In Barcelona she pops the
+  routines of Gerard's friends, taking away their adult lives to return them to childhood. They are
+  left sad and lost, and she looks like the villain. The twist: **she may be good**. She wants
+  everyone to have more time, to be kids again, to play, to respect each other and to have fun
+  outside obligation; she just goes about it like a tantrum. At the end Gerard can **join her
+  cause** instead of defeating her (`docs/chapter-2.md`).
 
 ### Her minions (esbirros)
 
@@ -47,7 +73,7 @@ story is about. Update it whenever a decision changes the story.
   the neighbours' houses: gum ramparts, wrapper-twist towers, bubble domes and a crown tower with
   a balcony over the street. It is chapter 1's mini dungeon and the game's final dungeon. It
   leaves Sant Quirze when the boys return to reality, and in **phase two it reappears in
-  Barcelona, on top of Gerard's school**. Design: `docs/bubbaloo-palace.md`.
+  Barcelona, on top of the Rec Comtal school (Trinitat Vella, chapter 2)**. Design: `docs/bubbaloo-palace.md`.
 
 ## Gerard's classes
 
@@ -55,6 +81,14 @@ story is about. Update it whenever a decision changes the story.
   contradicts, always says the opposite. It is unlocked when he shouts "¡No!" to save Bernat.
   How the class system grows from here is still open. **Classes belong to the party**: Aitor can wear Noísta too (`docs/party.md`). Its skill **No-ta** breaks what the Queen's gum holds. Her minions make things obey;
   Gerard refuses, which is why he is the one who can face her.
+
+## Ánimas
+
+- An **ánima** is what makes a person who they are: a small light that leaves a friend and goes
+  with Gerard when he helps them. It makes the party stronger and weakens the Queen's palace.
+- First round: Gerard restores what the Queen popped, and the ánimas he collects are **grey**:
+  he gave his friends their routine back. Second round (*la segunda vuelta*): he helps them find
+  the kid underneath, and each ánima takes its **colour**. Proposal; see `docs/chapter-2.md`.
 
 ## People
 
@@ -66,12 +100,20 @@ story is about. Update it whenever a decision changes the story.
 | **Mamá** | Gives Gerard running shoes for his birthday and sends him to fetch Bernat. |
 | **Aitor** | Gerard's partner; they live in the Meridiana flat. A man a little taller than Gerard, with a short beard and glasses (provisional model and portrait until there are photos). From chapter 2 he is in the party, played by a second player; he fights with the party's ánimas. |
 | **Nuria Mendoza** | The real person behind La Reina Bubbaloo. Secret for now. |
+| **Nuria and Uri** | Friends of Gerard and Aitor who live in **Cardedeu**, reached by Rodalies from La Sagrera (chapter 2). Whether this Nuria is Nuria Mendoza is an open question. |
 
 ## Places
 
 - **Passatge Maresme, 20 (Sant Quirze del Vallès)**: Gerard's house and street, built from the
   family's plan. Bernat lives on the west side of the same street.
-- **Avinguda Meridiana (Barcelona)**: chapter 2's home.
+- **Avinguda Meridiana (Barcelona)**: chapter 2's home, Gerard and Aitor's flat, a few steps from
+  the L1 metro.
+- **Institut Escola Rec Comtal** (Trinitat Vella, Sant Andreu: Via de Bàrcino 90 and Mare de Déu
+  de Lorda 25; named after the medieval Rec Comtal canal that runs through the neighbourhood).
+  La Reina Bubbaloo's palace appears on top of it in chapter 2, with every pupil inside.
+- **Cardedeu** (Vallès Oriental): Nuria and Uri's town, by train.
+- **Barcelona** as a whole is the chapter 2 world map: sea, Collserola, avenues, landmarks, metro
+  (`docs/barcelona.md`).
 
 ## Story so far (chapter 1)
 
@@ -100,11 +142,19 @@ story is about. Update it whenever a decision changes the story.
   Chapter 1 was a dream of his childhood. It is his 35th birthday.
 - He **keeps the Noísta class**.
 - A **Bubbaloo wrapper** lies on his bedside shelf: something came back from the dream.
-- **The day repeats.** From here on Gerard lives his birthday in a loop: every morning starts with
-  "¡NO!", dreamlike, beside Aitor; the TV always reports that a castle has appeared on top of the
-  **Rec Comptal school**; and the day ends (at its end, or when he falls outside) in black and
-  back to 08:00. Classes and what he has learned stay; friends forget. Outside is dangerous and
-  gets pinker as the day goes on. Each friend he spends a day with brings out a new class.
+- **The TV turns itself on**: *Última hora*, a pink castle has appeared on top of the **Rec Comtal
+  school** while all the pupils were inside.
+- **The city is open**: from the metro at the Meridiana, Gerard and Aitor can go anywhere the
+  lines go, including the castle, which is far too strong for them at first.
+- **The castle is her power, made visible**: at first huge and bristling with towers under a
+  storm; it loses towers as Gerard and Aitor give people back what they had lost.
+- **Falling is waking up.** When they lose, Gerard wakes in bed shouting "¡NO!" the next morning,
+  with everything he has done kept (no time loop: that earlier idea is dropped).
+- **Her power spreads every day** they do not push it back: the castle grows, the pink reaches Sant
+  Andreu, the Meridiana, the flat. If it gets there, the flat is her castle and the only way on is
+  back to the day before (the countdown of `docs/chapter-2.md`). Time matters; routine wastes it.
+- **Friends and ánimas**: each friend he helps gives him their ánima. Hidden clues in the world
+  point to them (the R4 now reaches Cardedeu, where Nuria and Uri live).
   Design: `docs/chapter-2.md`.
 
 ## Running threads
@@ -113,3 +163,7 @@ story is about. Update it whenever a decision changes the story.
 - **Gerard's classes**: Noísta is the first. How the system grows (and what becomes of the moods
   once planned in `docs/chapter-1.md`) is still open, on purpose.
 - **The pink light**: a story flag (`first-fight`) keeps Sant Quirze in La Reina Bubbaloo's tint.
+- **Routine vs. ilusión**: every friend's story in chapter 2 is a version of it (see *What the game
+  is about*).
+- **Is the Queen good?** Planted softly in chapter 2 (she takes nothing a kid would miss), paid off
+  at the throne.

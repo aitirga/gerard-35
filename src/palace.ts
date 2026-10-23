@@ -184,6 +184,83 @@ export function createPalace(app: pc.Application, effects: Effects) {
   }
   dome(crown, 0, 13.4, 0, 1.9);
 
+  // ——— La Fortaleza (chapter 2): what the palace grows into over Barcelona ———
+  // Every piece has a threat `threshold`: it stands while the castle's threat is above it, so
+  // as Gerard and Aitor help people the towers fall one by one (docs/chapter-2.md). At 0 (the
+  // dream of chapter 1) none of it is there.
+  const thorn = mat('#4a1033', .55), thornDark = mat('#22061a', .45), slit = mat('#ff2f7a', .6, 2.4);
+  const cloud = mat('#2a0b20', .2, 0, .82), cloudLight = mat('#5c1a45', .2, 0, .7), bolt = mat('#ffb3d9', .4, 3.5, .9);
+  const menace: { pivot: pc.Entity; threshold: number; stem?: pc.Entity; stemFrom?: number }[] = [];
+  function threatening(name: string, x: number, y: number, z: number, threshold: number) {
+    const pivot = new pc.Entity(name); pivot.setLocalPosition(x, y, z); root.addChild(pivot);
+    pivot.enabled = false; menace.push({ pivot, threshold }); return pivot;
+  }
+  /** A spiked tower: dark gum trunk, thorns, a lit slit up its face, a needle spire and a gum ball. */
+  function spikeTower(x: number, z: number, height: number, radius: number, threshold: number, seed: number) {
+    const t = threatening('Torre de espina', x, 0, z, threshold);
+    // The stem reaches down to the ground when the palace sits on a roof (`setFoundation`).
+    const stem = part(t, 'Pie de la torre', 'cylinder', thornDark, [0, -.5, 0], [radius * 2.1, 1, radius * 2.1]);
+    menace.at(-1)!.stem = stem;
+    const rings = Math.max(3, Math.round(height / 2.2));
+    for (let k = 0; k < rings; k++) {
+      const taper = 1 - k / rings * .45, y = (k + .5) * height / rings;
+      part(t, 'Tronco de espina', 'cylinder', k % 2 ? thorn : gumDeep, [0, y, 0], [radius * 2 * taper, height / rings * 1.02, radius * 2 * taper], [0, k * 17 + seed * 40, 0]);
+      // Thorns sticking out, turning round the trunk.
+      const a = (k * 2.1 + seed) % (Math.PI * 2);
+      part(t, 'Espina', 'cone', thornDark, [Math.sin(a) * radius * taper, y, Math.cos(a) * radius * taper], [radius * .55, radius * 1.3, radius * .55], [Math.cos(a) * 80, 0, -Math.sin(a) * 80]);
+    }
+    part(t, 'Rendija encendida', 'box', slit, [0, height * .55, radius * .86], [radius * .32, height * .55, .12], [0, 0, 0], false);
+    part(t, 'Almenas de espina', 'cylinder', thorn, [0, height + .2, 0], [radius * 2.5, .5, radius * 2.5]);
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2 + seed;
+      part(t, 'Pincho', 'cone', thornDark, [Math.sin(a) * radius * 1.1, height + .9, Math.cos(a) * radius * 1.1], [radius * .5, 1.3, radius * .5], [0, 0, 0]);
+    }
+    part(t, 'Aguja', 'cone', thornDark, [0, height + 3.2, 0], [radius * 1.5, 5.6, radius * 1.5]);
+    cores.push(part(t, 'Ojo de la torre', 'sphere', core, [0, height + 6.3, 0], [radius * .9, radius * .9, radius * .9], [0, 0, 0], false));
+    for (const [dx, length] of [[radius * .7, 1.2], [-radius * .6, .8]]) drip(t, gum, dx, height + .1, radius * .6, length, .22);
+  }
+  // A ring of spiked towers round the back and sides, tallest behind the keep. Thresholds go from
+  // the small outer ones (first to fall) to the tall ones guarding the keep (last to fall).
+  const ring_ = [
+    [-15, -3, 10, 1.1], [15, -3, 10, 1.1], [-13, -11, 14, 1.3], [13, -11, 14, 1.3],
+    [-9, -15, 18, 1.4], [9, -15, 18, 1.4], [-4, -16.5, 22, 1.5], [4, -16.5, 22, 1.5],
+    [-17.5, -8, 12, 1.2], [17.5, -8, 12, 1.2], [-11, 2.6, 8, 1], [11, 2.6, 8, 1],
+  ];
+  const order = [10, 11, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7];
+  order.forEach((i, rank) => { const [x, z, hgt, r] = ring_[i]; spikeTower(x, z, hgt, r, .94 - rank / order.length * .82, i * 1.7); });
+  // Thorns along both ramparts.
+  for (const side of [-1, 1]) {
+    const spikes = threatening('Espinas de la muralla', side * 6.5, 2.6, 0, .3);
+    for (let x = -4; x <= 4; x += 1) part(spikes, 'Espina de muralla', 'cone', thornDark, [x, .55, .1], [.35, 1.2, .35], [0, 0, side * (x % 2 ? 12 : -8)]);
+  }
+  // The keep looks down at the street: two slanted, glowing eyes under the crown.
+  const eyes = threatening('Ojos de la torre', 0, 0, -7, .7);
+  for (const side of [-1, 1]) {
+    part(eyes, 'Ceja', 'box', thornDark, [side * .95, 9.05, 2.86], [1.5, .28, .3], [0, 0, side * -18]);
+    part(eyes, 'Ojo encendido', 'sphere', slit, [side * .95, 8.55, 2.9], [1.2, .45, .2], [0, 0, side * -12], false);
+  }
+  // A storm over the crown: lumps of dark cloud turning slowly, lit from inside now and then.
+  const storm = threatening('Tormenta', 0, 21, -7, .55);
+  for (let i = 0; i < 14; i++) {
+    const a = i / 14 * Math.PI * 2, r = 6 + (i % 3) * 2.2, size = 3.4 + (i % 4) * .9;
+    part(storm, 'Nube', 'sphere', i % 3 ? cloud : cloudLight, [Math.sin(a) * r, (i % 2) * .8, Math.cos(a) * r], [size * 1.4, size * .7, size], [0, 0, 0], false);
+  }
+  const flashes = [0, 1, 2].map(i => part(storm, 'Relámpago', 'box', bolt, [Math.sin(i * 2.1) * 5, -2.5, Math.cos(i * 2.1) * 5], [.25, 5, .25], [0, 0, 18 - i * 15], false));
+  let threat = 0, foundation = 0;
+  /** The castle's threat, 0 (the dream) to 1 (at its worst): pieces stand while it is above their threshold. */
+  function setThreat(level: number) {
+    threat = clamp01(level);
+    for (const m of menace) m.pivot.enabled = threat > m.threshold;
+    // The gum itself darkens as she grows stronger.
+    gumDeep.diffuse.lerp(new pc.Color().fromString('#d94a8c'), new pc.Color().fromString('#8a1d5c'), threat); gumDeep.update();
+  }
+  /** How far below the palace's base the ground is (it sits on a roof): tower stems reach down to it. */
+  function setFoundation(depth: number) {
+    foundation = Math.max(0, depth);
+    for (const m of menace) if (m.stem) { m.stem.setLocalScale(m.stem.getLocalScale().x, foundation + .02, m.stem.getLocalScale().z); m.stem.setLocalPosition(0, -foundation / 2, 0); }
+  }
+  setThreat(0);
+
   // ——— Animation ———
   let progress = 1, time = 0, popTime = Infinity;
   const pieceScale = (delay: number, t: number) => stretch(clamp01((t - delay) / .2));
@@ -201,6 +278,9 @@ export function createPalace(app: pc.Application, effects: Effects) {
     /** 0 = not there, 1 = standing; anything between is the inflation. */
     grow,
     get progress() { return progress; },
+    setThreat, setFoundation,
+    get threat() { return threat; },
+    get foundation() { return foundation; },
     /** Where the gate stands and which way it faces (yaw in degrees, 0 = towards +z). */
     place(position: pc.Vec3, yaw = 0) { root.setPosition(position); root.setEulerAngles(0, yaw, 0); },
     /** The gate's bubble bursts as someone walks through; it reforms behind them. */
@@ -227,6 +307,11 @@ export function createPalace(app: pc.Application, effects: Effects) {
       const pulse = 1.5 + Math.sin(t * 1.3) * .45;
       if (animate) { core.emissiveIntensity = pulse; core.update(); }
       cores.forEach((c, i) => { const s = c.getLocalScale(); const k = 1 + Math.sin(t * 1.3 + i) * (animate ? .06 : 0); c.setLocalScale(s.x, s.x * k, s.z); });
+      if (storm.enabled) {
+        storm.setLocalEulerAngles(0, t * 6, 0);
+        // Now and then a flash inside the cloud.
+        flashes.forEach((f, i) => { f.enabled = animate && Math.sin(t * (1.7 + i * .6) + i * 2) > .93; });
+      }
     },
     destroy() { root.destroy(); kit.materials.forEach(m => m.destroy()); kit.meshes.forEach(m => m.destroy()); },
   };

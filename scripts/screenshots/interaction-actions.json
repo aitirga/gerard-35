@@ -1,0 +1,150 @@
+{
+  "title": "Avisos · Acciones concretas y compañeros",
+  "description": "Verificación de las etiquetas breves en la cama, las luces, la televisión y Bernat. Usa movimiento reducido y detiene el renderizado continuo durante cada captura para evitar bloqueos del compositor. No conecta luces reales.",
+  "steps": [
+    {
+      "open": "/?story=tv-news&solo=1",
+      "reducedMotion": "reduce"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        10,
+        13
+      ]
+    },
+    {
+      "until": "document.querySelector('#interact').dataset.interaction === 'meridiana-bed' && !document.querySelector('#interact').hidden"
+    },
+    {
+      "eval": "const text = document.querySelector('#interact span'); if (text.hidden || text.textContent !== 'Dormir') throw Error('Bed needs its short specific action');"
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = false;"
+    },
+    {
+      "shot": "sleep",
+      "delay": 0,
+      "caption": "Dormir añade un texto breve porque la acción concreta lo necesita"
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = true;"
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        21,
+        10
+      ]
+    },
+    {
+      "until": "document.querySelector('#interact').dataset.interaction === 'lamp-mesa' && !document.querySelector('#interact').hidden"
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = false;"
+    },
+    {
+      "shot": "lamp",
+      "delay": 0,
+      "caption": "La lámpara tiene su aviso junto al punto de uso"
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = true;"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-lamp]')"
+    },
+    {
+      "eval": "const prompt = document.querySelector('#interact'); if (!prompt.hidden && getComputedStyle(prompt).visibility !== 'hidden' && getComputedStyle(prompt).display !== 'none') throw Error('Prompt remains visible over lamp dial');"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        16,
+        3
+      ]
+    },
+    {
+      "until": "document.querySelector('#interact').dataset.interaction === 'meridiana-tv' && !document.querySelector('#interact').hidden"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-watching]') && !document.querySelector('#interact').hidden"
+    },
+    {
+      "eval": "const prompt = document.querySelector('#interact'); const text = prompt.querySelector('span'); if (prompt.hidden || text.hidden || text.textContent !== 'Dejar de mirar') throw Error('TV must retain its local exit action');"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = false;"
+    },
+    {
+      "shot": "television",
+      "delay": 0,
+      "caption": "Al mirar la televisión, una acción breve permite dejar de mirar"
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = true;"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!document.querySelector('#hud[data-watching]')"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "open": "/?story=bernat-stalled",
+      "reducedMotion": "reduce"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        15,
+        25
+      ]
+    },
+    {
+      "until": "document.querySelector('#interact').dataset.interaction === 'talk-bernat' && !document.querySelector('#interact').hidden && !document.querySelector('#companion-bubble').hidden"
+    },
+    {
+      "eval": "const key = document.querySelector('#interact').getBoundingClientRect(); const bubble = document.querySelector('#companion-bubble').getBoundingClientRect(); if (key.top < bubble.bottom && key.bottom > bubble.top && key.left < bubble.right && key.right > bubble.left) throw Error('Companion key overlaps his speech bubble');"
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = false;"
+    },
+    {
+      "shot": "companion",
+      "delay": 0,
+      "caption": "El aviso de Bernat deja espacio a su bocadillo y aclara la pregunta especial"
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = true;"
+    }
+  ]
+}

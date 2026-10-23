@@ -1,0 +1,26 @@
+{
+  "title": "Building visibility · Facades only open when they hide Gerard",
+  "description": "The inaccessible corner beside Fruites Meridiana keeps its facade while Gerard is visible. Walking along it never opens a hole. An actual obstruction in the passage still opens, with neighbouring buildings left whole, and closes again in the open street.",
+  "steps": [
+    { "open": "/?story=metro&solo=1" },
+    { "skipDialogue": true },
+    { "teleport": "meridiana-calle", "cell": [55, 38] },
+    { "wait": 2000 },
+    { "eval": "window.buildingCutRadii = () => window.gerard.game.app.root.findByName('Entorno: meridiana-calle').find(e => !!e.render).flatMap(e => e.render.meshInstances).map(m => m.getParameter('geoCutRadius')?.data).filter(r => r !== undefined); if (window.buildingCutRadii().some(r => r > 0)) throw new Error('The unobstructing corner must stay whole');" },
+    { "shot": "visible-corner", "caption": "Beside the inaccessible corner: both characters are visible and the facade stays whole" },
+    { "eval": "window.gerard.game.standAt({x: 60, z: 38})" },
+    { "wait": 2000 },
+    { "eval": "if (window.buildingCutRadii().some(r => r > 0)) throw new Error('Walking beside the fruit shop must not open its facade');" },
+    { "shot": "along-facade", "caption": "Along Fruites Meridiana: being close to a facade does not activate the cut" },
+    { "eval": "window.gerard.game.standAt({x: 142, z: 16})" },
+    { "wait": 2500 },
+    { "until": "window.buildingCutRadii().some(r => r > 4.9)" },
+    { "eval": "const radii = window.buildingCutRadii(); if (!radii.some(r => r > 4.9)) throw new Error('An actual obstruction must still open'); if (!radii.some(r => r === 0)) throw new Error('Unobstructing neighbouring buildings must stay whole');" },
+    { "shot": "occluded-passage", "caption": "In the passage: only the building that hides Gerard opens; its neighbours keep their facades" },
+    { "eval": "window.gerard.game.standAt({x: 50, z: 40})" },
+    { "wait": 2500 },
+    { "until": "window.buildingCutRadii().every(r => r === 0)" },
+    { "eval": "if (window.buildingCutRadii().some(r => r > 0)) throw new Error('All cuts must close again in the open street');" },
+    { "shot": "back-in-open-street", "caption": "Back in the open street: every facade closes again" }
+  ]
+}

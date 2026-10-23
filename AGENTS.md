@@ -11,6 +11,7 @@
 ## Game philosophy
 
 - Progress comes from exploring, trying things and talking to people. Never add an objective panel, quest log, waypoint, arrow, checklist or any other UI that tells the player what to do next or where to go.
+- Keep guidance general. Maps show places and the player's position, never action lists, numbered interactions or steps to follow.
 - People and the world give direction: a character mentions where something is, a door explains in its own dialogue why it won't open yet, a companion reacts in a speech bubble. If players could get stuck, add a person, a line or a visible detail to the world, not a hint panel.
 - The HUD only shows what the player has, can press or is next to: a key hint (key + verb, e.g. "Shift · Correr") the first time an action becomes possible, which disappears once used; a note when an item is gained; and the prompt for whatever is within reach.
 - Teach by doing: each new control or system appears right before it is needed, so trying it is how it is learned.

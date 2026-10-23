@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 
 const { values: options, positionals } = parseArgs({
   allowPositionals: true,
-  options: { url: { type: 'string' }, size: { type: 'string', default: '1440x900' }, headed: { type: 'boolean', default: false }, out: { type: 'string' } },
+  options: { url: { type: 'string' }, size: { type: 'string', default: '1440x900' }, headed: { type: 'boolean', default: false }, gpu: { type: 'boolean', default: false }, out: { type: 'string' } },
 });
 const scenarioDir = resolve('scripts/screenshots');
 const available = (await readdir(scenarioDir)).filter(f => f.endsWith('.json')).map(f => f.slice(0, -5));
@@ -28,15 +28,15 @@ let vite;
 let base = options.url;
 if (!base) {
   const { createServer } = await import('vite');
-  vite = await createServer({ logLevel: process.env.SCREENSHOT_DEBUG ? 'info' : 'silent', server: { port: 5199, strictPort: false, open: false } });
+  vite = await createServer({ logLevel: process.env.SCREENSHOT_DEBUG ? 'info' : 'silent', server: { port: 5199, strictPort: false, open: false, hmr: false, watch: null } });
   await vite.listen();
   base = vite.resolvedUrls.local[0];
 }
 
 const browser = await chromium.launch({
   headless: !options.headed,
-  // Software WebGL so it also works on machines and containers without a GPU.
-  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-proxy-server'],
+  // Default to software WebGL for machines without a GPU; desktops can opt into their GPU.
+  args: [...(options.gpu ? [] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']), '--ignore-gpu-blocklist', '--no-proxy-server'],
 });
 const page = await browser.newPage({ viewport: { width, height } });
 // Web fonts and other outside requests are not needed and can hang offline machines.
@@ -60,8 +60,9 @@ async function until(expression, timeout = 60000) {
 // (a hold may have an `until`, a shot a `delay`).
 const steps = {
   async open(step) {
+    await page.emulateMedia({ reducedMotion: step.reducedMotion ?? 'no-preference' });
     await page.goto(new URL(step.open, base).href, { waitUntil: 'domcontentloaded' });
-    await until('!!window.gerard', 30000);
+    await until(step.ready ?? '!!window.gerard', 30000);
   },
   async teleport(step) {
     const [x, z] = step.cell;
@@ -98,6 +99,7 @@ try {
   for (const [index, step] of scenario.steps.entries()) {
     const kind = Object.keys(steps).find(key => key in step);
     if (!kind) throw new Error(`Step ${index + 1} has no known action: ${JSON.stringify(step)}`);
+    if (process.env.SCREENSHOT_DEBUG) console.log(`  step ${index + 1}: ${JSON.stringify(step)}`);
     await steps[kind](step);
   }
 } catch (error) {
@@ -105,6 +107,9 @@ try {
   // A short game summary makes timeouts easier to read.
   failed.state = await page.evaluate(() => window.gerard && JSON.stringify({
     location: document.title, position: window.gerard.game.position, flags: window.gerard.story.saved,
+    day: window.gerard.story.days.clock, wake: window.gerard.game.wakePhase,
+    timeScale: window.gerard.game.app.timeScale,
+    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
     companion: window.gerard.story.companion, bubble: window.gerard.story.bubble,
   })).catch(() => undefined);
   await page.screenshot({ path: resolve(out, 'failure.png') }).catch(() => {});

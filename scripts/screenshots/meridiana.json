@@ -1,0 +1,124 @@
+{
+  "title": "Avinguda Meridiana · Fabra i Puig",
+  "description": "The street outside the flat, rebuilt from OpenStreetMap and photos of the avenue today: the renewed sidewalk in grey panot with its plane trees, varied windows on the blocks (blinds, balconies with plants and washing, enclosed galleries, lit flats), the real shops on the ground floors, red and white barriers from the works, benches facing the shop fronts, the bus lane and the bike lane in the planted median, the bus shelter, the graffiti hoarding and Hipercor with its tower. Then down the Fabra i Puig stair, which opens the network plan on the station wall.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        50,
+        40
+      ]
+    },
+    {
+      "shot": "portal",
+      "delay": 2500,
+      "caption": "Out of the portal: home's corner block, its 1 € shop and fruit shop, the Fabra i Puig metro on the left"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        78,
+        40
+      ]
+    },
+    {
+      "shot": "shops",
+      "delay": 2500,
+      "caption": "The even side: Granier, 365, Vision-Prix, benches facing the shops and the bus shelter on the panot"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        70,
+        51
+      ]
+    },
+    {
+      "shot": "median",
+      "delay": 2500,
+      "caption": "The median: bike lane between planted beds, young trees on stakes, the works' barriers and sacks"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        195,
+        40
+      ]
+    },
+    {
+      "shot": "hipercor",
+      "delay": 2500,
+      "caption": "Hipercor: the wavy canopy, the blue letters, the tower behind and the graffiti hoarding"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        39,
+        42
+      ]
+    },
+    {
+      "shot": "metro",
+      "delay": 2500,
+      "caption": "The Fabra i Puig entrance: the totem with the M, L1 and the name, the stair going down between granite and glass"
+    },
+    {
+      "hold": [
+        "KeyW"
+      ],
+      "until": "window.gerard.travelUI.open",
+      "timeout": 30000
+    },
+    {
+      "shot": "plan",
+      "delay": 1500,
+      "caption": "Walking into the stair opens the network plan on the station wall, framed on Fabra i Puig and Trinitat Vella, the trip dashed with its stops"
+    },
+    {
+      "press": "Minus",
+      "times": 2,
+      "gap": 300
+    },
+    {
+      "shot": "plan-city",
+      "delay": 1200,
+      "caption": "− (or the wheel) zooms out to the whole city; dragging pans, + zooms in"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "shot": "back-up",
+      "delay": 1500,
+      "caption": "Esc goes back up: Gerard stands at the entrance again"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        120,
+        40
+      ]
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "overview",
+      "delay": 3000,
+      "caption": "The avenue from above, Fabra i Puig to Hipercor"
+    },
+    {
+      "press": "KeyR"
+    }
+  ]
+}

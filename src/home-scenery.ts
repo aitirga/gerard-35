@@ -1,6 +1,8 @@
 import * as pc from 'playcanvas';
 import type { Environment, FloorKind, Stairs } from './environments';
 import type { PropKit } from './props';
+import { lampRgb, type Lamp, type LightId } from './home-lights';
+import { MERIDIANA_BED } from './bed';
 
 /** What `buildScenery` lends the house, so everything is tracked and destroyed with the scene. */
 export interface HomeKit {
@@ -60,13 +62,68 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const cyl = (name: string, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent = root) => piece(parent, name, 'cylinder', m, px, y0 + h / 2, pz, w, h, d);
   const ball = (name: string, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent = root) => piece(parent, name, 'sphere', m, px, y0 + h / 2, pz, w, h, d);
   const cone = (name: string, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent = root) => piece(parent, name, 'cone', m, px, y0 + h / 2, pz, w, h, d);
-  /** The house's own lamps, with the intensity each has when switched on. */
-  const lamps: { light: pc.LightComponent; on: number }[] = [];
+  /** Every light in the house, with the intensity it has when switched on; `setLamps` dims them all together. */
+  const houseLights: { light: pc.LightComponent; on: number }[] = [];
+  /** How far the morning dark lets the lamps shine (1 = as set), and each bulb's last look. */
+  let dim = 1;
+  const looks = new Map<LightId, Lamp>();
   function light(px: number, y: number, pz: number, color = '#ffd9a8', intensity = 1.1, range = 5.5) {
     const e = new pc.Entity('Luz de casa');
     e.addComponent('light', { type: 'omni', color: new pc.Color().fromString(color), intensity, range, castShadows: false });
     root.addChild(e); e.setPosition(x(px), y, z(pz));
-    lamps.push({ light: e.light!, on: intensity });
+    houseLights.push({ light: e.light!, on: intensity });
+    return e.light!;
+  }
+  /** The flat's lamps are the bulbs at home (src/home-lights.ts): their light and their glowing parts. */
+  const lamps = new Map<LightId, { lights: { light: pc.LightComponent; intensity: number }[]; glows: pc.StandardMaterial[]; pools: pc.StandardMaterial[] }>();
+  let poolTexture: pc.Texture | undefined;
+  /** A soft patch of the lamp's colour on the floor under it: daylight would wash out the light alone. */
+  function pool(px: number, pz: number, radius: number) {
+    if (!poolTexture) {
+      const [c, ctx] = canvas(128);
+      const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      // A long, soft fade: the patch should read as light spreading, not as a spot.
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.25, '#d2d2d2'); g.addColorStop(0.6, '#5a5a5a'); g.addColorStop(1, '#000000');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+      poolTexture = kit.texture(c);
+    }
+    const m = mat('Luz en el suelo', '#000000', 0);
+    m.emissiveMap = poolTexture; m.useLighting = false; m.blendType = pc.BLEND_ADDITIVE; m.depthWrite = false; m.update();
+    piece(root, 'Luz en el suelo', 'plane', m, px, 0.035, pz, radius * 2, 1, radius * 2, false);
+    return m;
+  }
+  function lamp(id: LightId, px: number, y: number, pz: number, intensity = 1.1, range = 5.5, floor = 1.3) {
+    const entry = lamps.get(id) ?? { lights: [], glows: [], pools: [] };
+    lamps.set(id, entry);
+    // The lamps carry the flat's light: a wide, gentle reach fills the room instead of a hot spot
+    // around the bulb (the falloff is linear to `range`).
+    entry.lights.push({ light: light(px, y, pz, '#ffe4bd', intensity, range * 2), intensity: intensity * 1.15 });
+    if (floor) entry.pools.push(pool(px, pz, floor * 1.6));
+    const glow = mat(`Bombilla: ${id}`, '#ffe3b3', 0.2, 1.6);
+    entry.glows.push(glow);
+    return glow;
+  }
+  function setLamp(id: LightId, look: Lamp) {
+    looks.set(id, look);
+    const entry = lamps.get(id);
+    if (!entry) return;
+    const [r, g, b] = lampRgb(look);
+    for (const { light: component, intensity } of entry.lights) {
+      component.enabled = look.on && dim > 0.01;
+      component.color = new pc.Color(r, g, b);
+      component.intensity = intensity * (0.3 + 0.9 * look.brightness) * dim;
+    }
+    for (const glow of entry.glows) {
+      glow.emissive.set(r, g, b);
+      glow.emissiveIntensity = look.on ? (0.3 + 1.5 * look.brightness) * dim : 0;
+      glow.diffuse.set(look.on ? r : 0.85, look.on ? g : 0.84, look.on ? b : 0.8);
+      glow.update();
+    }
+    for (const patch of entry.pools) {
+      patch.emissive.set(r, g, b);
+      patch.emissiveIntensity = look.on ? (0.15 + 0.35 * look.brightness) * dim : 0;
+      patch.update();
+    }
   }
   /** A pivot at `base`: everything added to it folds down there while it hides Gerard. */
   function foldaway(x0: number, z0: number, x1: number, z1: number, base: number, top: number) {
@@ -790,6 +847,12 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       e.lookAt(x(x1), y1, z(z1));
       return e;
     }
+    /** A pendant on a cord: a black shade with the bulb `id` glowing under it, and its light. */
+    function pendant(id: LightId, px: number, pz: number, intensity = 1.1, range = 5.5, floor = 1.3) {
+      rod('Cable', black, [px, wallHeight, pz], [px, 2.24, pz], 0.015);
+      cone('Pantalla', black, px, pz, 2.06, 0.34, 0.2, 0.34).setEulerAngles(180, 0, 0);
+      ball('Bombilla', lamp(id, px, 2.15, pz, intensity, range, floor), px, pz, 1.98, 0.13, 0.1, 0.13);
+    }
     /** Wall tiles one unit wide, repeated along the wall; `bond` staggers rows like subway tiles. */
     function tiles(name: string, height: number, tw: number, th: number, fill: string, grout: string, bond: boolean) {
       const [c, ctx] = canvas(256, Math.round(256 * height));
@@ -947,7 +1010,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     box('Frente alto', bodbynPanel, 12.05, north + 0.365, 1.42, 0.86, 0.86, 0.012);
     box('Plafón alto', bodbyn, 12.05, north + 0.373, 1.48, 0.72, 0.74, 0.012);
     box('Tirador', pull, 11.72, north + 0.39, 1.48, 0.025, 0.13, 0.03);
-    light(10.2, 2.3, 2.2, '#ffe6c4', 1.1, 5);
+    // The kitchen's bulb hangs beside the fridge and pantry block, over the way into the living room.
+    pendant('cocina', 11.1, 4.85, 1.2);
     // Tall units across the kitchen: the fridge with a pine wine rack on top, and the oven column.
     const fridge = standing('Frigorífico', white, 9.02, 5.52, 0.9, 0.7, 1.85);
     const pine = mat('Pino', '#d8b98a', 0.2);
@@ -1001,7 +1065,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     box('Papel', white, 0.45, 8.45, 0.96, 0.3, 0.01, 0.2);
     box('Torre del PC', black, 2.05, 8.5, 0, 0.22, 0.46, 0.46);
     swivel(1.3, 7.3, 'south', mat('Silla gamer', '#26262a', 0.2), 0.85, mat('Etiqueta amarilla', '#f2d23a', 0.4));
-    light(2.6, 2.3, 5.5, '#ffe4bd', 1, 5);
+    pendant('estudio', 2.6, 5.5, 1, 5);
 
     // ——— Gallery: red clay floor, washer, boiler, outdoor AC unit, drying rack and a railing ———
     for (let pz = 9.2; pz < 12.85; pz += 0.12) box('Barrote', black, 5, pz, 0, 0.025, 1.0, 0.025).render!.castShadows = false;
@@ -1030,7 +1094,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     for (const [i, c] of ['#1f2a3d', '#6b4a3a', '#c9503f', '#8a8f94', '#2f2f33'].entries()) box('Ropa', mat('Ropa', c, 0.05), 6.95 + (i % 3) * 0.33, 8.75 + (i >> 1) * 0.28, 0.75 + (i % 2) * 0.4, 0.26, 0.5, 0.02);
     box('Baúl', mat('Baúl', '#2b2b2d', 0.2), 7.35, 10.5, 0, 0.84, 0.6, 1.6);
     box('Tapa del baúl', mat('Baúl', '#353538', 0.2), 7.35, 10.5, 0.6, 0.88, 0.04, 1.64);
-    light(6.4, 2.2, 10, '#fff0dc', 0.8, 4);
+    pendant('galeria', 6.5, 10, 0.8, 4);
 
     // ——— Bedroom: bed with drawers, headboard with shelves, open oak wardrobe, AC over the windows ———
     const pax = mat('Armario roble', '#c9a36e', 0.25), wireBasket = mat('Cesta blanca', '#ecebe8', 0.4);
@@ -1066,7 +1130,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     // nightstand with a lamp on each side; a rug under it. Nothing lies on it: Gerard and Aitor
     // sleep in it at the start of chapter 2.
     const bedWhite = mat('Canapé blanco', '#f2f1ee', 0.3), seam = mat('Junta', '#d9d7d0', 0.3);
-    const bl = 3.0, bw = 2.0, hz = 17 - FACE - 0.1, bcx = 10.5, bcz = hz - bl / 2;
+    const { length: bl, width: bw, headZ: hz, x: bcx, z: bcz } = MERIDIANA_BED;
     box('Alfombra', mat('Alfombra de lana', '#c9b9a0', 0.05), bcx, bcz - 0.35, 0, 3.4, 0.015, 3.8);
     box('Canapé', bedWhite, bcx, bcz, 0, bw, 0.42, bl);
     for (const dz of [-0.75, 0, 0.75]) for (const side of [-1, 1]) box('Cajón del canapé', seam, bcx + side * (bw / 2 + 0.005), bcz + dz, 0.1, 0.01, 0.24, 0.65);
@@ -1085,6 +1149,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       cyl('Pie de la lámpara', black, nx + side * 0.08, nz + 0.05, 0.5, 0.05, 0.3, 0.05);
       cyl('Pantalla de la lámpara', shade, nx + side * 0.08, nz + 0.05, 0.76, 0.28, 0.22, 0.28);
     }
+    // The bedroom's light is two bulbs over the bed (Cama and Armario at home), switched as one.
+    for (const px of [10.05, 10.95]) pendant('dormitorio', px, 14.9, 0.8, 6, 1.9);
     // Aitor's side (west): water and phone. Gerard's side (east) is where the wrapper turns up.
     cyl('Botella de agua', glass, bcx - bw / 2 - 0.5, hz - 0.35, 0.5, 0.08, 0.24, 0.08);
     box('Móvil', black, bcx - bw / 2 - 0.28, hz - 0.4, 0.5, 0.08, 0.01, 0.15);
@@ -1092,7 +1158,6 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     const ac = onWall('east', 8 + FACE, 9);
     box('Split', white, 8 + FACE + 0.12, 9, 2.12, 0.24, 0.3, 1.0, ac);
     box('Rejilla del split', mat('Rejilla', '#c9cccf', 0.3), 8 + FACE + 0.245, 9, 2.14, 0.01, 0.06, 0.9, ac);
-    light(10.5, 2.3, 14, '#ffe4bd', 0.9, 6);
 
     // ——— Bathroom: tub with a pale blue curtain, beige square tiles, oak vanity, towel rail ———
     const beige = tiles('Azulejo beige', 1.6, 0.2, 0.2, '#ddd6ca', '#f0ece5', false);
@@ -1147,8 +1212,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     box('Móvil', black, 18.4, 4.1, 0.6, 0.16, 0.02, 0.3).setEulerAngles(0, 20, 0);
     for (const dx of [0, 0.12]) box('Mando a distancia', black, 17.6 + dx, 4.0, 0.5, 0.05, 0.02, 0.2);
     // Desk behind the sofa: monitor, laptop and two black office chairs.
-    box('Escritorio', paleOak, 16.0, 5.45, 0.72, 2.8, 0.04, 0.68);
-    for (const px of [14.68, 17.32]) box('Pata del escritorio', black, px, 5.45, 0, 0.05, 0.72, 0.6);
+    box('Escritorio', paleOak, 16.12, 5.45, 0.72, 2.5, 0.04, 0.68);
+    for (const px of [14.94, 17.3]) box('Pata del escritorio', black, px, 5.45, 0, 0.05, 0.72, 0.6);
     box('Portátil', steel, 15.3, 5.45, 0.76, 0.42, 0.02, 0.3);
     box('Pantalla del portátil', black, 15.3, 5.29, 0.77, 0.42, 0.28, 0.02).setEulerAngles(-12, 0, 0);
     box('Monitor', black, 16.6, 5.2, 0.98, 0.9, 0.52, 0.04);
@@ -1156,8 +1221,22 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     box('Pie del monitor', black, 16.6, 5.15, 0.76, 0.22, 0.24, 0.12);
     box('Webcam', black, 16.6, 5.2, 1.5, 0.12, 0.05, 0.05);
     for (const px of [15.2, 17.0]) swivel(px, 6.2, 'north', mat('Malla negra', '#2a2b2e', 0.2), 0.62);
-    birdOfParadise(18.1, 6.05);
-    light(16.6, 2.3, 3.2, '#ffe4bd', 1.1, 5.5);
+    birdOfParadise(18.1, 5.3);
+    // The sofa's bulb is the living room's ceiling light: a big oval flush mount (LIFX Ceiling
+    // 13x26"), its long side along the TV wall, over the space between the sofa and the TV.
+    // The camera sees it from above, so the face it shows glows, inside a white rim.
+    cyl('Marco del plafón', white, 16.6, 2.9, 2.46, 0.9, 0.04, 0.46);
+    cyl('Difusor del plafón', lamp('sofa', 16.6, 2.25, 2.9, 1.5, 7.5, 1.9), 16.6, 2.9, 2.47, 0.82, 0.05, 0.39);
+    // Luna: a linen cylinder lamp on the white drawer unit on wheels at the kitchen end of the desk,
+    // the unit's side flush with the end of the sofa. Its bulb lights the unit from above and in front,
+    // so the white reads white; the glowing shade casts no shadow of its own.
+    const unitX = 14.65;
+    box('Cajonera', white, unitX, 5.4, 0.05, 0.36, 0.6, 0.48);
+    for (const y of [0.1, 0.24, 0.38, 0.52]) box('Cajón', mat('Junta', '#d9d7d0', 0.3), unitX, 5.4 + 0.245, y, 0.32, 0.005, 0.005);
+    for (const [dx, dz] of [[-0.13, -0.18], [0.13, -0.18], [-0.13, 0.18], [0.13, 0.18]]) ball('Rueda', black, unitX + dx, 5.4 + dz, 0, 0.05, 0.05, 0.05).render!.castShadows = false;
+    box('Mando del aire', white, unitX - 0.04, 5.55, 0.65, 0.06, 0.02, 0.16).render!.castShadows = false;
+    for (const [dx, dz] of [[-0.07, -0.05], [0.07, -0.05], [0, 0.08]]) ball('Pata de la lámpara', mat('Latón', '#c9a55a', 0.6), unitX + dx, 5.3 + dz, 0.65, 0.03, 0.03, 0.03).render!.castShadows = false;
+    cyl('Luna', lamp('luna', unitX, 1.2, 5.7, 0.8, 3.2, 0.9), unitX, 5.3, 0.68, 0.2, 0.3, 0.2).render!.castShadows = false;
     // French windows onto the balcony: both leaves open into the room, a header and transom above.
     const header = foldaway(21 - FACE, 2.5, 21 + FACE, 4.5, CUT_HEIGHT, wallHeight);
     box('Travesaño', profile, 21, 3.5, doorTop, THICKNESS, 0.08, 2.0, header);
@@ -1201,12 +1280,11 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       for (let i = 0; i < n; i++) ball('Potus', leaves[i % 3], px + (i % 2 ? 0.12 : -0.1), kz - 0.05 - i * 0.02, ky + 0.2 - i * 0.28, 0.16, 0.14, 0.12);
     }
     box('Pie de la lámpara de arco', black, 21.2, 12.45, 0.06, 0.035, 1.69, 0.035);
-    rod('Arco', black, [21.2, 1.75, 12.45], [20.9, 2.15, 11.9]);
-    rod('Arco', black, [20.9, 2.15, 11.9], [20.4, 2.0, 11.15]);
+    rod('Arco', black, [21.2, 1.75, 12.45], [20.8, 2.3, 11.4]);
+    rod('Arco', black, [20.8, 2.3, 11.4], [19.75, 2.1, 9.9]);
     box('Base de mármol', mat('Mármol', '#e8e4dc', 0.6), 21.2, 12.45, 0, 0.34, 0.06, 0.34);
-    cone('Pantalla', mat('Pantalla crema', '#d9d2c6', 0.3), 20.4, 11.15, 1.72, 0.5, 0.32, 0.5);
-    ball('Bombilla', glow, 20.4, 11.15, 1.68, 0.14, 0.1, 0.14);
-    light(20.3, 1.6, 10.6, '#ffd49a', 1.1, 4.5);
+    cone('Pantalla', mat('Pantalla crema', '#d9d2c6', 0.3), 19.75, 9.9, 1.8, 0.5, 0.32, 0.5);
+    ball('Bombilla', lamp('mesa', 19.7, 1.55, 9.8, 1.1, 4.5), 19.75, 9.9, 1.76, 0.14, 0.1, 0.14);
     cyl('Esterilla', mat('Esterilla', '#2aa6a0', 0.3), 21.72, 12.25, 0, 0.14, 0.62, 0.14);
     for (let pz = 7.25; pz < 8.3; pz += 0.1) box('Radiador', ceramic, 21.78, pz, 0.12, 0.1, 0.6, 0.07);
 
@@ -1219,7 +1297,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     chair(23.2, 2.3, 'south', outdoor, outdoor);
     chair(23.2, 4.7, 'north', outdoor, outdoor);
     box('Farol de pared', black, 22.4, north + 0.1, 1.85, 0.16, 0.26, 0.16);
-    box('Luz del farol', glow, 22.4, north + 0.1, 1.9, 0.1, 0.14, 0.17);
+    box('Luz del farol', lamp('terraza', 22.6, 1.8, 1.0, 0.8, 3.5), 22.4, north + 0.1, 1.9, 0.1, 0.14, 0.17);
     box('Toldo recogido', mat('Toldo crema', '#efe6cf', 0.1), 22.5, north + 0.12, 2.42, 3.0, 0.14, 0.2);
 
     // ——— Across the Meridiana: peach blocks with green awnings, clear of the camera's view of the flat ———
@@ -1554,7 +1632,11 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   }
   return {
     /** Dims every lamp in the house: 1 is on, 0 off. */
-    setLamps(k: number) { for (const lamp of lamps) { lamp.light.intensity = lamp.on * k; lamp.light.enabled = k > 0.01; } },
+    setLamps(k: number) {
+      dim = k;
+      for (const lamp of houseLights) { lamp.light.intensity = lamp.on * k; lamp.light.enabled = k > 0.01; }
+      for (const [id, look] of looks) setLamp(id, look);
+    },
     /** Folds walls and tall furniture that stand between `focus` and the camera. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       for (const fold of folds) {
@@ -1567,5 +1649,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       }
     },
     destroy() { meshes.forEach(m => m.destroy()); },
+    setLamp,
+    lampPosition(id: LightId) { return lamps.get(id)?.lights[0]?.light.entity.getPosition().clone(); },
   };
 }

@@ -13,11 +13,18 @@ default:
     @just --list --color never
     @printf '\nLive development: just backend + just dev (two terminals).\n'
 
-# Install exact dependencies (Node + Python)
+# Install exact dependencies (Node + Python) and the house's lights library (vendor/)
 [group('Setup')]
 setup:
+    git submodule update --init
     npm ci
     uv sync --locked
+
+# Move the house's lights library (vendor/geraitor_domotic_house) to its latest main
+[group('Setup')]
+lights-update:
+    git submodule update --init --remote vendor/geraitor_domotic_house
+    git -C vendor/geraitor_domotic_house log --oneline -1
 
 # Start the Vite dev server with hot reload on http://127.0.0.1:5173
 [group('Development')]
@@ -30,11 +37,17 @@ dev-battle foes="4" allies="1":
     @[[ "{{ foes }}" =~ ^[234]$ && "{{ allies }}" =~ ^[12]$ ]] || { printf 'Use 2–4 foes and 1–2 allies.\n'; exit 1; }
     npm run dev -- --open '/?battle={{ foes }}&allies={{ allies }}'
 
-# Jump into chapter 1 after a story beat: just dev-chapter got-backpack (new = from the start)
+# Jump in after a story beat: just dev-chapter got-backpack, or metro for chapter 2's open city (new = from the start)
 [group('Development')]
 dev-chapter beat="new":
-    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|noista|wrapper-room|caught|got-wrapper)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack).\n'; exit 1; }
+    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|noista|wrapper-room|caught|got-wrapper|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|anima-uri)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
+
+# Wake up on a later day of chapter 2 to see the Queen's spread: just dev-day 6 (7 is the end)
+[group('Development')]
+dev-day day="4":
+    @[[ "{{ day }}" =~ ^[0-9]+$ && "{{ day }}" -ge 2 ]] || { printf 'Use a day from 2 on (7 is the end without ánimas).\n'; exit 1; }
+    npm run dev -- --open '/?story=castle&day={{ day }}'
 
 # Debug chapter 2 with one player: Gerard's controls also drive Aitor in battle (just dev-solo off to undo)
 [group('Development')]
@@ -57,6 +70,28 @@ backend:
 [group('Development')]
 run: build
     uv run --locked uvicorn server:app --host 127.0.0.1 --port 8080
+
+# Open the desktop combat lab: tune encounters, compare policies and replay a seed
+[group('Combat')]
+combat-lab:
+    npm run dev -- --open /combat-lab.html
+
+# Run reproducible difficulty batches (use --help for seeds, policies and tuning)
+[group('Combat')]
+[positional-arguments]
+combat-sim *args:
+    node --experimental-strip-types scripts/combat-sim.mjs "$@"
+
+# Check the generic engine, simulator and campaign integration
+[group('Combat')]
+combat-check:
+    node --experimental-strip-types --test tests/combat-*.test.mjs
+
+# Verify the desktop lab in Chromium (use --build after just build for production assets)
+[group('Combat')]
+[positional-arguments]
+combat-browser-check *args:
+    node scripts/combat-lab-smoke.mjs "$@"
 
 # Type-check the TypeScript source without emitting files
 [group('Quality')]
@@ -117,6 +152,13 @@ deploy-ai-key:
     @[[ -n "${TYPESAFE_API_KEY:-}" ]] || { printf 'Set TYPESAFE_API_KEY in .env first.\n'; exit 1; }
     printf 'TYPESAFE_API_KEY=%s\n' "$TYPESAFE_API_KEY" | fly secrets import
 
+# Let the deployed game drive the lights at home: LIFX_TOKEN and HOME_LIGHTS_KEY from .env (docs/home-lights.md)
+[group('Deployment')]
+deploy-lights:
+    @[[ -n "${LIFX_TOKEN:-}" && -n "${HOME_LIGHTS_KEY:-}" ]] || { printf 'Set LIFX_TOKEN and HOME_LIGHTS_KEY in .env first.\n'; exit 1; }
+    printf 'LIFX_TOKEN=%s\nHOME_LIGHTS_KEY=%s\n' "$LIFX_TOKEN" "$HOME_LIGHTS_KEY" | fly secrets import
+    @printf 'Open the game once with ?luces=<HOME_LIGHTS_KEY> to connect the lights from that browser.\n'
+
 # Tail logs from the deployed app
 [group('Deployment')]
 deploy-logs:
@@ -137,16 +179,37 @@ geo-fetch zone="alegia":
     @[[ -f "assets/geo/{{ zone }}/zone.json" ]] || { printf 'No assets/geo/%s/zone.json; copy assets/geo/alegia/zone.json first.\n' "{{ zone }}"; exit 1; }
     uv run --locked python tools/geo.py fetch {{ zone }}
 
-# Rebuild src/geo/<zone>.json and its preview from the saved map data (offline)
+# Rebuild src/geo/<zone>.json and its preview from the saved map data or its sketch (offline)
 [group('Data')]
 geo-build zone="alegia":
-    @[[ -f "assets/geo/{{ zone }}/osm.json" ]] || { printf 'No map data for %s; run just geo-fetch %s first.\n' "{{ zone }}" "{{ zone }}"; exit 1; }
+    @[[ -f "assets/geo/{{ zone }}/osm.json" || -f "assets/geo/{{ zone }}/sketch.json" ]] || { printf 'No map data for %s; run just geo-fetch %s first (or sketch it).\n' "{{ zone }}" "{{ zone }}"; exit 1; }
     uv run --locked python tools/geo.py build {{ zone }}
 
 # List the real places that can be built
 [group('Data')]
 geo-zones:
-    @ls -d assets/geo/*/ | xargs -n1 basename
+    @ls assets/geo/*/zone.json | xargs -n1 dirname | xargs -n1 basename
+
+# Rebuild the network map: hand-drawn stations and landmarks + the real city behind (docs/barcelona.md)
+[group('Data')]
+city: && city-background
+    uv run --locked python tools/city.py build
+
+# Download Barcelona's streets, coast and parks from OpenStreetMap, then rebuild the map
+[group('Data')]
+city-fetch: && city
+    uv run --locked python tools/city.py fetch
+
+# Download every building's footprint and height from OpenStreetMap, then rebuild the map
+[group('Data')]
+city-fetch-buildings: && city
+    uv run --locked python tools/city.py fetch-buildings
+
+# Render the ground under the 3D city into public/maps/barcelona.webp
+[group('Data')]
+city-background:
+    @[[ -f output/city/background.svg ]] || { printf 'No street data yet; run just city-fetch first.\n'; exit 0; }
+    node scripts/city-background.mjs
 
 # Generate portrait, expressions, full-body art and 3D model: just character bernat --description '…' (--help)
 [group('Tools')]

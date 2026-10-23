@@ -1,0 +1,619 @@
+{
+  "id": "meridiana-calle",
+  "name": "Avinguda Meridiana",
+  "region": "Sant Andreu, Barcelona",
+  "anchor": {
+    "address": "Avinguda Meridiana, Fabra i Puig, Barcelona",
+    "lat": 41.429,
+    "lon": 2.1841
+  },
+  "bounds_m": {
+    "west": -180,
+    "east": 165,
+    "north": -72,
+    "south": 58
+  },
+  "bounds_turned": true,
+  "cell_m": 1.5,
+  "rotation_deg": -62,
+  "zoom": 11.5,
+  "spawn": {
+    "x_m": -104,
+    "z_m": -12
+  },
+  "storey_m": 3.0,
+  "lane_m": 3.2,
+  "redraw": [
+    "Avinguda Meridiana"
+  ],
+  "zebras_x_m": [
+    -67,
+    30,
+    104
+  ],
+  "reference": {
+    "checked": "2026-10-22",
+    "streetview_capture": "Photos taken on the avenue at night, October 2026 (shared in chat, not committed)",
+    "notes": [
+      "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-22) for the blocks, cross streets, trees, lamps, benches, bins, bike racks, shops and zebra crossings. The avenue's own carriageways are redrawn in sketch.json (`redraw`) as the cross-section after the works.",
+      "Turned -62°: the Meridiana runs left to right, Fabra i Puig on the left, Hipercor (Meridiana 350-356) on the right; the even side, with the shops, faces the camera.",
+      "Sidewalk: renewed, light grey panot tiles in a square grid, wide; square tree pits with dark soil and fallen leaves; metal grates.",
+      "Trees: plane trees with pale, mottled trunks along the curb; young trees held by three wooden stakes with crossbars in the new beds.",
+      "Beds: long planted strips of low shrubs and grasses along the curb and on both sides of the bike lane in the median.",
+      "Roads: new black asphalt, white dashed lanes, zebra crossings, BUS painted on the side road's bus lane; white bike symbol and dashed centre line on the bike lane.",
+      "Furniture: wooden benches and single chairs with grey metal frames, tall slim grey LED lamps, traffic lights with yellow housings on curved poles, a bus shelter with a yellow roof and seat, bins, bikes locked to poles.",
+      "Works: red and white plastic barriers everywhere, white sacks of rubble, yellow and metal fence panels, a long metal hoarding covered in graffiti.",
+      "Buildings: beige and cream blocks of flats of eight to eleven storeys with shops on the ground floor (Granier, 365, Vision-Prix, General Óptica, Al Meu BB, Café Entrepans, Zamora Floristas, a 1 € shop by home); orange blocks across the avenue; Hipercor's beige box with its wavy concrete canopy and blue lit letters, a dark tower behind it.",
+      "Traffic: TMB red buses and white Sagalés coaches; few cars.",
+      "The flat's exact portal is not known: home is the corner block by the Fabra i Puig metro entrance (open question in docs/chapter-2.md)."
+    ],
+    "viewpoints": [
+      {
+        "name": "fabra-i-puig",
+        "lat": 41.43,
+        "lon": 2.1836,
+        "heading": 152,
+        "pitch": 5
+      },
+      {
+        "name": "hipercor",
+        "lat": 41.4283,
+        "lon": 2.1849,
+        "heading": 332,
+        "pitch": 5
+      }
+    ]
+  },
+  "look": {
+    "ground": "panot",
+    "footway": "panot",
+    "grass": "bed",
+    "asphalt": "#3e4043",
+    "markings": true
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#e7dccb",
+        "#d8c7ae",
+        "#cdb497",
+        "#e2d6c4",
+        "#c9b8a2"
+      ],
+      "base": "#5f5a54",
+      "trim": "#f1ece3",
+      "roof": "#a9a297",
+      "roof_kind": "flat",
+      "facade": "flats",
+      "ground": "shops",
+      "levels": 8
+    },
+    "orange": {
+      "walls": [
+        "#d58a5c",
+        "#cf7c50",
+        "#d9946a"
+      ],
+      "trim": "#f3ebdf",
+      "base": "#6b5d52"
+    },
+    "home": {
+      "walls": [
+        "#e6d3b3"
+      ],
+      "base": "#7f776a",
+      "trim": "#fbf6ec",
+      "roof": "#a89c8c",
+      "ground": "lobby"
+    },
+    "hipercor": {
+      "walls": [
+        "#d9d0c0"
+      ],
+      "base": "#cfc6b5",
+      "trim": "#2d4f8a",
+      "roof": "#9e978b",
+      "facade": "mall",
+      "ground": "mall-front"
+    },
+    "tower": {
+      "walls": [
+        "#30363c"
+      ],
+      "base": "#2a2f34",
+      "trim": "#4a5560",
+      "roof": "#3a4046",
+      "facade": "curtain",
+      "ground": "lobby"
+    }
+  },
+  "buildings": {
+    "way/614237380": {
+      "style": "home",
+      "label": "Casa"
+    },
+    "way/115317630": {
+      "style": "hipercor",
+      "levels": 4,
+      "sign": "HIPERCOR"
+    },
+    "sketch/torre-hipercor": {
+      "style": "tower"
+    },
+    "relation/9282487": {
+      "style": "orange"
+    },
+    "relation/9282492": {
+      "style": "orange"
+    },
+    "relation/9282494": {
+      "style": "orange"
+    },
+    "way/667493466": {
+      "style": "orange"
+    },
+    "way/667493518": {
+      "style": "orange"
+    },
+    "way/665352779": {
+      "levels": 1
+    }
+  },
+  "osm_props": {
+    "tree": {
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    "lamp": {
+      "style": "led"
+    },
+    "bench": {},
+    "bin": {},
+    "bike-rack": {}
+  },
+  "shops": [
+    {
+      "name": "Todo a 1 €",
+      "kind": "variety_store",
+      "x_m": -112,
+      "z_m": -14
+    },
+    {
+      "name": "Fruites Meridiana",
+      "kind": "greengrocer",
+      "x_m": -86,
+      "z_m": -14
+    }
+  ],
+  "props": [
+    {
+      "kind": "metro",
+      "x_m": -127,
+      "z_m": -11,
+      "name": "Fabra i Puig",
+      "line": "L1"
+    },
+    {
+      "kind": "shelter",
+      "x_m": -45,
+      "z_m": -9.8
+    },
+    {
+      "kind": "bus",
+      "x_m": -62,
+      "z_m": -4.0,
+      "color": "#eceae3",
+      "livery": "sagales"
+    },
+    {
+      "kind": "lamp",
+      "style": "led",
+      "x_m": -164,
+      "z_m": -8.8,
+      "to": {
+        "x_m": 150,
+        "z_m": -8.8
+      },
+      "every_m": 22
+    },
+    {
+      "kind": "lamp",
+      "style": "led",
+      "x_m": -154,
+      "z_m": 2,
+      "to": {
+        "x_m": 150,
+        "z_m": 2
+      },
+      "every_m": 26
+    },
+    {
+      "kind": "lamp",
+      "style": "led",
+      "x_m": -164,
+      "z_m": 29.4,
+      "to": {
+        "x_m": 150,
+        "z_m": 29.4
+      },
+      "every_m": 22
+    },
+    {
+      "kind": "tree",
+      "species": "plane",
+      "scale": 0.7,
+      "base": "ground",
+      "stakes": true,
+      "trunk": "#c9bc9f",
+      "x_m": -172,
+      "z_m": 7.6,
+      "to": {
+        "x_m": 158,
+        "z_m": 7.6
+      },
+      "every_m": 9
+    },
+    {
+      "kind": "tree",
+      "species": "plane",
+      "scale": 0.65,
+      "base": "ground",
+      "stakes": true,
+      "trunk": "#c9bc9f",
+      "x_m": -167,
+      "z_m": 1.8,
+      "to": {
+        "x_m": 153,
+        "z_m": 1.8
+      },
+      "every_m": 12
+    },
+    {
+      "kind": "bench",
+      "x_m": -96,
+      "z_m": -10,
+      "to": {
+        "x_m": 150,
+        "z_m": -10
+      },
+      "every_m": 16
+    },
+    {
+      "kind": "bench",
+      "style": "chair",
+      "x_m": -79,
+      "z_m": -10.2
+    },
+    {
+      "kind": "bench",
+      "style": "chair",
+      "x_m": -77,
+      "z_m": -10.2
+    },
+    {
+      "kind": "bench",
+      "style": "chair",
+      "x_m": -23,
+      "z_m": -10.2
+    },
+    {
+      "kind": "bench",
+      "style": "chair",
+      "x_m": -21,
+      "z_m": -10.2
+    },
+    {
+      "kind": "bench",
+      "style": "chair",
+      "x_m": 71,
+      "z_m": -10.2
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -69,
+      "z_m": -8.6
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -65,
+      "z_m": 2.2
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -65,
+      "z_m": 29.4
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 28,
+      "z_m": -8.6
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 32,
+      "z_m": 2.2
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 32,
+      "z_m": 29.4
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 102,
+      "z_m": -8.6
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 106,
+      "z_m": 2.2
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 106,
+      "z_m": 29.4
+    },
+    {
+      "kind": "barrier",
+      "color": "red",
+      "x_m": -100,
+      "z_m": 8.4,
+      "to": {
+        "x_m": -76,
+        "z_m": 8.4
+      },
+      "every_m": 3.2
+    },
+    {
+      "kind": "barrier",
+      "color": "white",
+      "x_m": -98.4,
+      "z_m": 8.4,
+      "to": {
+        "x_m": -77.6,
+        "z_m": 8.4
+      },
+      "every_m": 3.2
+    },
+    {
+      "kind": "barrier",
+      "color": "red",
+      "x_m": -10,
+      "z_m": 8.4,
+      "to": {
+        "x_m": 14,
+        "z_m": 8.4
+      },
+      "every_m": 3
+    },
+    {
+      "kind": "barrier",
+      "color": "red",
+      "x_m": 88,
+      "z_m": -12.5,
+      "to": {
+        "x_m": 100,
+        "z_m": -12.5
+      },
+      "every_m": 1.6
+    },
+    {
+      "kind": "barrier",
+      "color": "white",
+      "x_m": 101.6,
+      "z_m": -12.5
+    },
+    {
+      "kind": "barrier",
+      "color": "red",
+      "x_m": -58,
+      "z_m": -11.6
+    },
+    {
+      "kind": "barrier",
+      "color": "red",
+      "x_m": -56.4,
+      "z_m": -11.6
+    },
+    {
+      "kind": "barrier",
+      "color": "white",
+      "x_m": 8,
+      "z_m": -11.4
+    },
+    {
+      "kind": "barrier",
+      "color": "red",
+      "x_m": 9.6,
+      "z_m": -11.4
+    },
+    {
+      "kind": "barrier",
+      "color": "red",
+      "x_m": -6,
+      "z_m": -7.2
+    },
+    {
+      "kind": "barrier",
+      "style": "panel",
+      "x_m": 84,
+      "z_m": -11.5
+    },
+    {
+      "kind": "barrier",
+      "style": "panel",
+      "x_m": 85.6,
+      "z_m": -11.5
+    },
+    {
+      "kind": "barrier",
+      "style": "fence",
+      "x_m": -71,
+      "z_m": -9.6
+    },
+    {
+      "kind": "barrier",
+      "style": "fence",
+      "x_m": 26,
+      "z_m": -9.6
+    },
+    {
+      "kind": "bag",
+      "x_m": -97.8,
+      "z_m": 7.0
+    },
+    {
+      "kind": "bag",
+      "x_m": -96.4,
+      "z_m": 7.0
+    },
+    {
+      "kind": "bag",
+      "x_m": -82,
+      "z_m": 7.0
+    },
+    {
+      "kind": "bag",
+      "x_m": 92,
+      "z_m": -10.8
+    },
+    {
+      "kind": "bag",
+      "x_m": 120,
+      "z_m": -11.2
+    },
+    {
+      "kind": "hoarding",
+      "x_m": 124,
+      "z_m": -14.2,
+      "length": 24
+    },
+    {
+      "kind": "bike-rack",
+      "x_m": -114,
+      "z_m": -10
+    },
+    {
+      "kind": "bin",
+      "x_m": -48.5,
+      "z_m": -10
+    },
+    {
+      "kind": "manhole",
+      "x_m": -90,
+      "z_m": -11
+    },
+    {
+      "kind": "manhole",
+      "x_m": -30,
+      "z_m": -11.5
+    },
+    {
+      "kind": "manhole",
+      "x_m": 40,
+      "z_m": -2.5
+    },
+    {
+      "kind": "manhole",
+      "x_m": 76,
+      "z_m": -11
+    }
+  ],
+  "places": [
+    {
+      "id": "meridiana-portal",
+      "label": "Entrar en casa",
+      "x_m": -104,
+      "z_m": -13.5,
+      "to": {
+        "environment": "meridiana",
+        "cell": {
+          "x": 7,
+          "z": 2
+        }
+      }
+    },
+    {
+      "id": "station-fabra-i-puig",
+      "label": "Bajar al metro",
+      "x_m": -124.5,
+      "z_m": -10.5,
+      "step": {
+        "x_m": -125.25,
+        "z_m": -11.25,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "meridiana-avinguda",
+      "label": "Mirar la avenida",
+      "x_m": -60,
+      "z_m": -8.6,
+      "lines": [
+        "La Meridiana. Seis carriles, y hoy apenas pasa un coche.",
+        "La gente está parada en las aceras, mirando todos hacia el norte. Hacia Trinitat Vella."
+      ]
+    },
+    {
+      "id": "clue-r4-marquesina",
+      "label": "Mirar la marquesina",
+      "x_m": -42,
+      "z_m": -11.2
+    },
+    {
+      "id": "meridiana-granier",
+      "label": "Mirar el Granier",
+      "x_m": -72,
+      "z_m": -12.6,
+      "lines": [
+        "El Granier. Huele a cruasán recién hecho.",
+        "La dependienta ha salido a la puerta con el delantal puesto. Mira hacia el norte, como todo el mundo."
+      ]
+    },
+    {
+      "id": "meridiana-hipercor",
+      "label": "Mirar el Hipercor",
+      "x_m": 108,
+      "z_m": -13.5,
+      "lines": [
+        "El Hipercor, con las puertas abiertas y nadie entrando.",
+        "Hasta el guardia de seguridad ha salido a mirar hacia Trinitat Vella."
+      ]
+    },
+    {
+      "id": "meridiana-obras",
+      "label": "Mirar las obras",
+      "x_m": -88,
+      "z_m": 7.8,
+      "lines": [
+        "Las obras de la Meridiana. Vallas rojas y blancas, sacos de escombros y la mediana a medio plantar.",
+        "Los árboles nuevos aún van atados a sus palos."
+      ]
+    },
+    {
+      "id": "meridiana-grafitis",
+      "label": "Mirar los grafitis",
+      "x_m": 140,
+      "z_m": -12.6,
+      "lines": [
+        "Una valla de obra llena de grafitis. Firmas, letras gordas, un gato.",
+        "Y en medio, una pompa de chicle rosa enorme. Esa no estaba ayer."
+      ]
+    }
+  ],
+  "labels": [
+    {
+      "text": "AVINGUDA MERIDIANA",
+      "x_m": -30,
+      "z_m": 18.7,
+      "width": 12
+    },
+    {
+      "text": "FABRA I PUIG",
+      "x_m": -118,
+      "z_m": -13.2,
+      "width": 5
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "note": "The Avinguda Meridiana's cross-section after the 2025-26 works, drawn by hand over the OpenStreetMap data (osm.json) from photos taken on the avenue in October 2026: the east sidewalk with its curb bed, the side road with the bus lane, the planted median with the bike lane, the two carriageways and the west bed. In the turned frame: metres, x along the avenue (+x towards Hipercor, south-east), z across it (+z towards the camera, west). zone.json `redraw` leaves OSM's own Meridiana ways out.",
+  "drawn": "2026-10-22",
+  "frame": "turned",
+  "features": [
+    { "id": "lateral-est", "keep": true, "highway": "secondary", "name": "Avinguda Meridiana", "line": [[200, -2.5], [-170, -2.5]],
+      "tags": { "lanes": "2", "oneway": "yes", "bus:lanes": "|designated", "width": "7" } },
+    { "id": "parterre-vorera", "keep": true, "area": "grass", "rect": [-170, -8, 370, 2] },
+    { "id": "parterre-mitjana-nord", "keep": true, "area": "grass", "rect": [-170, 1, 370, 2.2] },
+    { "id": "carril-bici", "keep": true, "highway": "cycleway", "name": "Avinguda Meridiana", "line": [[-170, 4.6], [200, 4.6]],
+      "tags": { "width": "3" } },
+    { "id": "parterre-mitjana-sud", "keep": true, "area": "grass", "rect": [-170, 6.2, 370, 2.8] },
+    { "id": "calcada-muntanya", "keep": true, "highway": "primary", "name": "Avinguda Meridiana", "line": [[200, 13.8], [-170, 13.8]],
+      "tags": { "lanes": "3", "oneway": "yes" } },
+    { "id": "calcada-mar", "keep": true, "highway": "primary", "name": "Avinguda Meridiana", "line": [[-170, 23.6], [200, 23.6]],
+      "tags": { "lanes": "3", "oneway": "yes" } },
+    { "id": "parterre-oest", "keep": true, "area": "grass", "rect": [-170, 28.4, 370, 2] },
+    { "id": "torre-hipercor", "keep": true, "building": "office", "rect": [122, -72, 36, 24], "levels": 15 }
+  ]
+}

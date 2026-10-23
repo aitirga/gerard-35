@@ -2,9 +2,12 @@ import * as pc from 'playcanvas';
 import type { Environment } from './environments';
 import { createPropKit } from './props';
 import { buildHome } from './home-scenery';
+import type { Lamp, LightId } from './home-lights';
 import type { HouseVolume } from './palace';
 import { buildPalaceInterior } from './palace-scenery';
 import { buildGeo } from './geo-scenery';
+import type { Cell } from './movement';
+import { createTraffic } from './traffic';
 
 /** La Reina Bubbaloo's light, once she has noticed Gerard and Bernat. */
 export const BUBBALOO = {
@@ -133,9 +136,14 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const glow = mat('Farolas', '#ffdb9c', 0.2, 2);
   const w = environment.grid[0].length, d = environment.grid.length;
   const night = environment.id === 'patio';
-  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : new pc.Color(0.48, 0.48, 0.43);
-  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : new pc.Color(1, 0.87, 0.68);
-  const sunIntensity = night ? 1.15 : 1.65;
+  // The Meridiana flat is lit by its lamps, which are the bulbs at home: the window light stays low.
+  const lamplit = environment.id === 'meridiana';
+  // Outdoors by day: a near-white sun, and a blue sky that tints the shade and lights it from the other side.
+  const outdoor = !night && !lamplit && !environment.plan && !environment.palace;
+  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
+  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
+  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : outdoor ? 1.8 : 1.65;
+  const skyIntensity = 0.42;
   app.scene.ambientLight = ambient.clone();
   let tone = 0, dark = 0;
   app.scene.fog.type = pc.FOG_NONE;
@@ -146,6 +154,12 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     shadowDistance: 95, shadowBias: 0.2, normalOffsetBias: 0.04, shadowType: pc.SHADOW_PCF3_32F,
   });
   sun.setEulerAngles(48, -35, 0); root.addChild(sun);
+  let sky: pc.Entity | undefined;
+  if (outdoor) {
+    sky = new pc.Entity('Luz del cielo');
+    sky.addComponent('light', { type: 'directional', color: new pc.Color(0.6, 0.72, 0.95), intensity: skyIntensity, castShadows: false });
+    sky.setEulerAngles(35, 150, 0); root.addChild(sky);
+  }
   // Floor plans lay their own backdrop, open under a stairwell.
   const backdrop = mat('Fondo', night ? '#172a30' : '#67746b');
   const backdropColor = backdrop.diffuse.clone();
@@ -380,7 +394,9 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     }
   }
   // Props come from the environment data, so any scene can use trees, cars, lamps…
-  for (const prop of environment.props) props.place(prop, root, new pc.Vec3(x(prop.x), 0, z(prop.z)));
+  for (const prop of environment.props) props.place(prop, root, new pc.Vec3(x(prop.x), 0, z(prop.z)), batch.id);
+  // A real street with painted lanes has cars driving them, and its traffic lights change.
+  const traffic = environment.geo?.look?.markings ? createTraffic(root, props, environment.geo, x, z) : undefined;
   return {
     root,
     houses: houseVolumes as readonly HouseVolume[],
@@ -403,6 +419,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       const color = new pc.Color().lerp(sunColor, BUBBALOO.sun, k);
       sun.light!.color = color.lerp(color, DAWN.sun, dark);
       sun.light!.intensity = pc.math.lerp(pc.math.lerp(sunIntensity, BUBBALOO.sunIntensity, k), DAWN.sunIntensity, dark);
+      if (sky) sky.light!.intensity = skyIntensity * (1 - k * 0.8);
       backdrop.diffuse.lerp(backdropColor, BUBBALOO.backdrop, k); backdrop.update();
       const fog = app.scene.fog;
       fog.type = k > 0.001 ? pc.FOG_LINEAR : pc.FOG_NONE;
@@ -414,9 +431,10 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     setDark(k: number) {
       dark = k; home?.setLamps(1 - k); this.setTone(tone);
     },
-    /** `focus` is what must stay visible (the player); crowns in front of it turn see-through. */
-    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
+    /** `focus` is what must stay visible (the player); crowns in front of it turn see-through. `walkers` (cells) are who traffic stops for; without them it holds still. */
+    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3, walkers?: Cell[]) {
       props.update(dt, animate, focus, toCamera);
+      if (walkers) traffic?.update(dt, walkers);
       home?.update(dt, animate, focus, toCamera);
       palace?.update(dt, animate);
       geo?.update(dt, animate, focus, toCamera);
@@ -424,6 +442,9 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       time += dt;
       for (const m of flowing) { m.diffuseMapOffset.set(time * .03, time * .05); m.emissiveMapOffset.set(-time * .04, time * .025); m.update(); }
     },
-    destroy() { app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
+    /** A lamp in the Meridiana flat (src/home-lights.ts); other scenes have none. */
+    setLamp(id: LightId, lamp: Lamp) { home?.setLamp(id, lamp); },
+    lampPosition(id: LightId) { return home?.lampPosition(id); },
+    destroy() { traffic?.destroy(); app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }

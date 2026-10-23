@@ -32,6 +32,8 @@ export const GLYPHS = {
   overview: { keyboard: 'R', ...pad('View', 'Create', '−', 'Select') },
   /** The character panel; on a pad, the top face button. */
   party: { keyboard: 'C', ...pad('Y', '△', 'X', 'Botón superior') },
+  /** Gerard's user menu from the dock: Tab on the keyboard, the top face button on a pad. */
+  user: { keyboard: 'Tab', ...pad('Y', '△', 'X', 'Botón superior') },
   /** Items live in the menu on a pad. */
   items: { keyboard: 'I', ...pad('☰', 'Options', '+', 'Start') },
   /** A skill's details in battle: the top face button. */

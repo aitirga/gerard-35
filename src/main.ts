@@ -10,6 +10,14 @@ import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
 import { watchGlyphs } from './input-glyphs';
 import type { MemberId } from './story';
+import { createTravelUI } from './travel-ui';
+import { STATION_PLACES, entranceId } from './transit';
+import { cityMarkers } from './map-markers';
+import { palaceGuards } from './battle';
+import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById } from './home-lights';
+import { mountHomeLightsPage } from './home-lights-ui';
+import { createLampPicker } from './lamp-picker';
+import { createInteractionPrompt } from './interaction-prompt';
 
 const isMember = (id: string): id is MemberId => id === 'gerard' || id === 'bernat' || id === 'aitor';
 
@@ -23,11 +31,16 @@ let dirty = false;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 const environmentSelect = document.querySelector<HTMLSelectElement>('#environment')!;
 const interactButton = document.querySelector<HTMLButtonElement>('#interact')!;
+const interactionPrompt = createInteractionPrompt(interactButton);
 const dialogue = createDialogueBanner(document.querySelector<HTMLElement>('#hud')!);
 const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
+// Chapter 2: the station map (metro and Rodalies) and the TV news.
+const travelUI = createTravelUI(document.querySelector<HTMLElement>('#hud')!);
 const hud = document.querySelector<HTMLElement>('#hud')!;
 // Every key shown in the HUD follows the device in use: keyboard and mouse, or the last pad touched.
 const stopGlyphs = watchGlyphs();
+// The bulbs at home (docs/home-lights.md): they follow the place and the fights once connected in the menu.
+const homeLights = createHomeLights();
 // Development: ?story=<flag> starts with every flag up to that one (just dev-chapter), ?story=new from scratch.
 const devStory = (() => {
   if (!import.meta.env.DEV) return undefined;
@@ -36,6 +49,11 @@ const devStory = (() => {
   return STORY_FLAGS.slice(0, (STORY_FLAGS as readonly string[]).indexOf(at) + 1);
 })();
 const story = new Story(devStory ?? []);
+// Development: ?day=<n> starts chapter 2 on that day, to see the Queen's spread (just dev-day).
+if (import.meta.env.DEV) {
+  const day = Number(new URLSearchParams(location.search).get('day'));
+  if (Number.isInteger(day) && day > 1) story.days.clock.day = day;
+}
 // Who wears which class is a choice that comes and goes, so it lives in this browser, not in the story flags.
 const loadoutKey = 'gerard35.loadout.v1';
 function restoreLoadout() { try { story.loadout = JSON.parse(localStorage.getItem(loadoutKey) ?? '{}'); } catch { /* Storage is optional. */ } }
@@ -54,7 +72,9 @@ if (import.meta.env.DEV) {
     control.mode = localStorage.getItem(soloKey) === 'solo' ? 'solo' : 'duo';
   } catch { control.mode = requested !== null && requested !== '0' ? 'solo' : 'duo'; }
 }
-let savedStory = JSON.stringify(story.saved);
+/** What was last sent: the flags and the days (a new hour is worth saving too). */
+const progress = () => JSON.stringify([story.saved, story.days]);
+let savedStory = progress();
 let startStory: (() => void) | undefined;
 async function load() {
   if (loading || loaded) return;
@@ -66,7 +86,7 @@ async function load() {
     if (!Number.isInteger(state.score) || state.score < 0) throw new Error('state');
     previousScore = state.score;
     // A development jump keeps its own flags instead of the saved progress.
-    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); savedStory = JSON.stringify(story.saved); restoreLoadout(); }
+    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); story.loadDays(state.days, state.story); savedStory = progress(); restoreLoadout(); }
     loaded = true;
     if (dirty) void save();
   } catch {
@@ -81,7 +101,7 @@ async function save() {
   try {
     const response = await fetch('/api/state', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score: previousScore + sessionSteps, story: devStory ? [] : story.saved }), keepalive: true,
+      body: JSON.stringify({ score: previousScore + sessionSteps, story: devStory ? [] : story.saved, ...(devStory ? {} : { days: story.days }) }), keepalive: true,
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) throw new Error('save');
@@ -100,7 +120,12 @@ window.addEventListener('pagehide', () => { void save(); });
 
 try {
   const battleUI = createBattleUI(document.querySelector<HTMLElement>('#hud')!, {
-    change: (state, effect, onImpact) => game.setBattle(state, effect, onImpact),
+    change: async (state, effect, onImpact) => {
+      // With the bulbs connected a hit may wait a moment, so it lands as they flash.
+      const hold = homeLights.battle(state, effect);
+      if (hold) await new Promise(resolve => setTimeout(resolve, hold));
+      return game.setBattle(state, effect, onImpact);
+    },
     target: id => game.selectTarget(id),
     awaken: id => { game.awaken(id); storyEvent({ type: 'class', id }); },
     driver: id => battleDriver(control, id),
@@ -115,8 +140,10 @@ try {
     battleUI.refresh();
     exploration.relayout();
   }
+  let storyPaused = false;
+  const menuOpen = () => !!document.querySelector('#controller-menu[open]');
   const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, story, {
-    pause: paused => game.setPaused(paused),
+    pause: paused => game.setPaused(paused || storyPaused || menuOpen()),
     openMenu: () => controller.open(),
     wear: (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } },
     // With a second player on Aitor, each player gets their own half of the status screen.
@@ -139,7 +166,7 @@ try {
     else if (effect.kind === 'item') storyUI.item(effect.item);
     else if (effect.kind === 'hint') storyUI.hint(effect.id, learned[effect.id]);
     else if (effect.kind === 'minion') { await game.summonMinion(); storyEvent({ type: 'minion' }); }
-    else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(); }
+    else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(effect.encounter); }
     else if (effect.kind === 'palace') { await game.raisePalace(); storyEvent({ type: 'palace' }); }
     else if (effect.kind === 'gate') await game.popGate();
     else if (effect.kind === 'travel') game.setEnvironment(effect.environment, effect.cell);
@@ -147,7 +174,64 @@ try {
     else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }
     else if (effect.kind === 'wake') await game.wake(() => storyUI.blackout(false, 2000));
     else if (effect.kind === 'rise') await game.rise();
-    else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
+    else if (effect.kind === 'fall') { homeLights.moment('fall'); await storyUI.blackout(true, 1600); }
+    else if (effect.kind === 'news') await watchNews();
+    else if (effect.kind === 'metro') await ride(effect.station);
+    else if (effect.kind === 'look') await game.look(effect.anchor);
+    else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
+    else { storyPaused = true; game.setPaused(true); await storyUI.card(effect.id); storyPaused = false; game.setPaused(!!exploration.active || menuOpen()); }
+  }
+  /**
+   * Watching the TV in the flat: the camera comes close to its screen, where the news loops
+   * (src/news-tv.ts), until a key, a click or a button looks away. It never covers the game.
+   */
+  let lookAway: (() => void) | undefined;
+  async function watchNews() {
+    exploration.close();
+    game.watchTV(true); hud.dataset.watching = 'true'; homeLights.moment('tv');
+    interactionPrompt.show({ id: 'stop-watching', cell: { x: 16, z: 2 }, label: 'Dejar de mirar', hint: 'Dejar de mirar' });
+    const shown = performance.now();
+    await new Promise<void>(resolve => {
+      const done = () => { if (performance.now() - shown < 1200) return; window.removeEventListener('keydown', key, { capture: true }); canvas.removeEventListener('click', done); lookAway = undefined; resolve(); };
+      const key = (event: KeyboardEvent) => {
+        if (!['KeyE', 'Space', 'Enter', 'Escape'].includes(event.code)) return;
+        event.preventDefault(); event.stopImmediatePropagation(); if (!event.repeat) done();
+      };
+      window.addEventListener('keydown', key, { capture: true }); canvas.addEventListener('click', done);
+      lookAway = done;
+    });
+    delete hud.dataset.watching; interactionPrompt.show(undefined);
+    game.watchTV(false); homeLights.moment('tv-off');
+  }
+  /**
+   * The end: she has covered everything. The only way on is back to the morning before; that
+   * day's progress is lost (docs/chapter-2.md § The Queen's advance).
+   */
+  async function theEnd() {
+    storyPaused = true; game.setPaused(true);
+    await storyUI.doom();
+    const effects = story.rewind();
+    storyChanged();
+    for (const effect of effects) await play(effect);
+    storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
+  }
+  /** Down into a station: pick a destination on the network map, ride, and come up its entrance. */
+  async function ride(from: string) {
+    exploration.close(); storyPaused = true; game.setPaused(true);
+    const to = await travelUI.show(from, {}, cityMarkers({ castle: story.has('tv-news'), threat: story.castleThreat, spread: Math.min(1, story.spread) }));
+    const place = to ? STATION_PLACES[to] : undefined;
+    const entrance = place && ENVIRONMENTS[place.environment].interactions.find(i => i.id === entranceId(to!));
+    if (place && entrance) {
+      await storyUI.blackout(true, 450);
+      game.setEnvironment(place.environment, entrance.cell);
+      await storyUI.blackout(false, 650);
+    } else if (!to) {
+      // Back up the stair: Gerard comes out at the entrance, not standing on the steps.
+      const here = STATION_PLACES[from], back = here && ENVIRONMENTS[here.environment].interactions.find(i => i.id === entranceId(from));
+      if (back) game.standAt(back.cell);
+    }
+    storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
+    if (to) storyEvent({ type: 'arrive', station: to });
   }
   function storyChanged() {
     game.refreshStory();
@@ -155,7 +239,7 @@ try {
     // The active class dresses the whole interface (style.css: #hud[data-class]).
     if (story.gerardClass) hud.dataset.class = story.gerardClass; else delete hud.dataset.class;
     exploration.refresh();
-    const saved = JSON.stringify(story.saved);
+    const saved = progress();
     if (saved !== savedStory) { savedStory = saved; dirty = true; clearTimeout(saveTimer); void save(); }
   }
   function storyEvent(event: StoryEvent) {
@@ -164,8 +248,9 @@ try {
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
   const game = createGame(canvas, {
-    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes }); },
-    onBattleEnd: (phase, encounter) => storyEvent({ type: 'battle', won: phase === 'won', encounter }),
+    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, guards: palaceGuards(story.animas.length) }); },
+    // Backing off is neither a win nor a fall.
+    onBattleEnd: (phase, encounter) => { if (phase !== 'escaped') storyEvent({ type: 'battle', won: phase === 'won', encounter }); },
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onStep: (steps, cell) => {
@@ -177,31 +262,43 @@ try {
     },
     onLocation: (id, cell) => {
       currentLocation = id;
+      homeLights.setPlace(id);
       exploration.update(id, cell);
       environmentSelect.value = id;
       const geo = ENVIRONMENTS[id].geo;
-      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
+      // Chapter 2's palace stands on the Rec Comtal school, not at the end of Passatge Maresme.
+      const school = id === 'palacio' && story.adult;
+      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
       document.querySelector('#location-detail')!.textContent = geo ? `Según el mapa · ${geo.attribution}` : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
-        : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
+        : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
       document.title = `${ENVIRONMENTS[id].name} · Gerard 35`;
     },
-    // Only the key floats beside what is within reach; the label stays for screen readers and the mouse.
-    onInteraction: interaction => {
-      interactButton.hidden = !interaction;
-      interactButton.querySelector('span')!.textContent = interaction?.label ?? '';
-      interactButton.title = interaction?.label ?? '';
-    },
-    onPromptScreen: at => {
-      interactButton.toggleAttribute('data-offscreen', !at);
-      if (at) interactButton.style.transform = `translate(${Math.round(at.x)}px, ${Math.round(at.y)}px) translate(-50%, -100%)`;
-    },
+    onInteraction: interactionPrompt.show,
+    onInteractionScreen: interactionPrompt.position,
     onDialogue: dialogue.show,
-    onStory: storyEvent,
+    // A lamp in the Meridiana flat opens its dial: colour and brightness, in the game and at home.
+    onStory: event => {
+      const lamp = event.type === 'interact' ? lampInteraction(event.id) : undefined;
+      if (lamp) lampPicker.open(lamp); else storyEvent(event);
+    },
   }, story);
+  const lampPicker = createLampPicker(hud, homeLights, paused => game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active));
+  for (const light of HOUSE_LIGHTS) game.setLamp(light.id, homeLights.flat[light.id]);
+  homeLights.onFlat((id, lamp) => game.setLamp(id, lamp));
+  game.setLampLabels(id => {
+    const lamp = lampInteraction(id);
+    return lamp ? `${homeLights.flat[lamp].on ? 'Cambiar' : 'Encender'} ${lightById(lamp).name}` : undefined;
+  });
+  // Her light and the evening fade in over seconds; the bulbs follow in steps.
+  const followMood = () => homeLights.setMood({ tone: game.lightTone, dusk: story.dusk });
+  followMood();
+  const moodTimer = setInterval(followMood, 1000);
   const controllerContext = () => battleUI.controllerContext !== 'world' ? battleUI.controllerContext
+    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
+  let restoreLightsOnResume = false;
   const controller = createControllerUI({
     context: controllerContext,
     direction: (direction, stick, running) => controllerContext() === 'world' ? game.setControllerInput(direction, stick, running) : game.setControllerInput(null, null),
@@ -211,10 +308,21 @@ try {
       get: () => control.mode,
       set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
     } : undefined,
-    pause: value => game.setPaused(value || !!exploration.active),
+    pause: value => game.setPaused(value || storyPaused || lampPicker.isOpen || !!exploration.active),
     panel: id => id ? exploration.show(id) : exploration.close(),
+    lights: section => mountHomeLightsPage(section, homeLights),
+    exit: () => {
+      clearTimeout(saveTimer); void save();
+      restoreLightsOnResume = homeLights.settings.enabled;
+      void homeLights.setEnabled(false, false);
+    },
+    resume: () => { if (restoreLightsOnResume) void homeLights.setEnabled(true, false); },
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
+      if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
+      if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
+      if (lookAway) { if (action === 'confirm' || action === 'cancel') lookAway(); return; }
+      if (storyUI.doomOpen) { if (action === 'confirm') storyUI.confirmDoom(); return; }
       // Each player opens their own half of the status screen with the top face button.
       // In a fight the same button shows a skill's details.
       if (action === 'character') { if (battleUI.controllerContext !== 'world') battleUI.details(player); else if (/^(world|journal:)/.test(controllerContext())) exploration.control(action, player); return; }
@@ -241,7 +349,7 @@ try {
     game.setEnvironment(environmentSelect.value as EnvironmentId);
     canvas.focus({ preventScroll: true });
   });
-  interactButton.addEventListener('click', () => { dialogue.open ? dialogue.advance() : game.interact(); canvas.focus({ preventScroll: true }); });
+  interactButton.addEventListener('click', () => { if (lookAway) lookAway(); else if (dialogue.open) dialogue.advance(); else game.interact(); canvas.focus({ preventScroll: true }); });
   document.querySelector('#overview')!.addEventListener('click', () => game.toggleOverview());
   document.querySelectorAll<HTMLButtonElement>('[data-direction]').forEach(button => {
     button.addEventListener('pointerdown', event => {
@@ -273,9 +381,9 @@ try {
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => params.get('party') === 'adult' ? battleUI.open(adult.battleParty(true), foes, { animas: adult.classes })
       : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas: ['matemagico', ...(params.has('noista') ? ['noista' as const] : [])] }));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged } });
+    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, homeLights } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { stopGlyphs(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { stopGlyphs(); clearInterval(moodTimer); lampPicker.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;
