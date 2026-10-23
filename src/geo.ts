@@ -17,10 +17,12 @@ export interface GeoBuilding {
   base?: string | null;
   trim?: string | null;
   roofColor?: string | null;
-  /** Upper floors: rendered, timber, iron-balconies, ashlar or ashlar-windows. */
+  /** Upper floors: rendered, timber, iron-balconies, ashlar, ashlar-windows, flats, school, mall or curtain. */
   facade: string;
-  /** Ground floor: masonry, arcade, ashlar or ashlar-arcade. */
+  /** Ground floor: masonry, arcade, ashlar, ashlar-arcade, shops, lobby, mall or curtain. */
   ground: string;
+  /** Big lit letters over the ground floor of the wall facing the camera (HIPERCOR). */
+  sign?: string;
   poly: GeoPoint[];
   /** Minimum-area rectangle around the footprint; the roof sits on it. `angle` is the `w` axis. */
   box: { cx: number; cz: number; w: number; d: number; angle: number };
@@ -32,7 +34,15 @@ export interface GeoRoad {
   name?: string | null;
   width: number;
   line: GeoPoint[];
+  /** With the zone's `lane_m`: lanes to paint, whether it is one way, and which lane (from the left) is the bus's. */
+  lanes?: number;
+  oneway?: boolean;
+  bus?: number;
 }
+/** A shop, bar or bank of the map: its sign on its building's street wall, at (x, z), facing (nx, nz). */
+export interface GeoShop { name: string | null; kind: string; building: string; x: number; z: number; nx: number; nz: number }
+/** A zebra crossing: centre, the road's direction (radians, in grid space) and its width in cells. */
+export interface GeoCrossing { x: number; z: number; angle: number; width: number }
 export interface GeoScene {
   id: string;
   name: string;
@@ -51,8 +61,19 @@ export interface GeoScene {
   buildings: GeoBuilding[];
   props: ({ kind: string; x: number; z: number } & Record<string, unknown>)[];
   /** Things to look at (`lines`), doors to another scene (`to`), or, with neither, the story's own. */
-  places: { id: string; label: string; lines: string[]; cell: { x: number; z: number }; to?: { environment: string; cell: { x: number; z: number } } }[];
+  places: {
+    id: string; label: string; lines: string[]; cell: { x: number; z: number }; to?: { environment: string; cell: { x: number; z: number } };
+    /** Cells that use the place when walked into, like a station's stair. */
+    step?: { x: number; z: number; w: number; d: number };
+  }[];
   labels: { text: string; x: number; z: number; width: number }[];
+  shops?: GeoShop[];
+  crossings?: GeoCrossing[];
+  /**
+   * The street's surfaces: `ground` and `footway` `panot` (Barcelona's grey sidewalk tiles), `grass`
+   * `bed` (planted strips of shrubs), `asphalt` colour, and `markings` (lanes, zebras, BUS, bikes).
+   */
+  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean };
   /** Named points for pieces the game adds itself, e.g. where the palace stands (`y` in cells). */
   anchors?: Record<string, { x: number; z: number; y?: number }>;
 }

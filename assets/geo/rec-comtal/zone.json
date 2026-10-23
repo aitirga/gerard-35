@@ -402,7 +402,8 @@
       "kind": "metro",
       "east_m": -100,
       "south_m": 16,
-      "line": "l1"
+      "line": "L1",
+      "name": "Trinitat Vella"
     },
     {
       "kind": "manhole",
@@ -429,8 +430,14 @@
     {
       "id": "station-trinitat-vella",
       "label": "Bajar al metro",
-      "east_m": -104,
-      "south_m": 15
+      "east_m": -97.75,
+      "south_m": 18.25,
+      "step": {
+        "east_m": -97.75,
+        "south_m": 16.75,
+        "w": 3,
+        "d": 1
+      }
     },
     {
       "id": "enter-school",

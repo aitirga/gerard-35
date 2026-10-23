@@ -13,15 +13,39 @@ export type TreeSpecies = 'plane' | 'olive' | 'cypress' | 'yucca';
 /** What the trunk stands in: a paved street pit (default), an indoor pot, or bare ground. */
 export type TreeBase = 'pit' | 'pot' | 'ground';
 /** Reusable scene pieces, anchored on a cell. `src/props.ts` draws them in any environment. */
+/** `yaw` (degrees) turns a one-cell prop's front (+z) towards a road; the build sets it for benches, lamps and lights. */
 export type WorldProp =
-  | { kind: 'tree'; x: number; z: number; species?: TreeSpecies; scale?: number; base?: TreeBase }
+  /** `stakes`: a young tree held by three wooden stakes; `trunk`: bark colour (Barcelona's pale plane trees). */
+  | { kind: 'tree'; x: number; z: number; species?: TreeSpecies; scale?: number; base?: TreeBase; stakes?: boolean; trunk?: string }
   /** A car spans its anchor and the next cell along +z, or along +x with `along: 'x'`. */
   | { kind: 'car'; x: number; z: number; color: string; along?: 'x' | 'z' }
-  | { kind: 'lamp'; x: number; z: number }
+  /** `led`: a tall, slim grey pole with a small white LED head, as on the renewed Meridiana. */
+  | { kind: 'lamp'; x: number; z: number; style?: 'classic' | 'led'; yaw?: number }
   | { kind: 'manhole'; x: number; z: number }
-  /** A station entrance: the metro's red M (or Rodalies' orange R) on a pole beside a railed stair. */
-  | { kind: 'metro'; x: number; z: number; network?: 'metro' | 'rodalies' };
+  /**
+   * A station entrance: a totem with the metro's red M (or Rodalies' orange R), the line and the
+   * station's `name`, beside a stair going down over the next three cells along +x.
+   */
+  | { kind: 'metro'; x: number; z: number; network?: 'metro' | 'rodalies'; name?: string; line?: string }
+  /** Wooden slats on a grey metal frame: a long bench or a single chair. */
+  | { kind: 'bench'; x: number; z: number; style?: 'bench' | 'chair'; yaw?: number }
+  /** Street works: a red or white plastic jersey barrier, a yellow fence panel or a metal crowd barrier. */
+  | { kind: 'barrier'; x: number; z: number; color?: 'red' | 'white'; style?: 'jersey' | 'panel' | 'fence'; yaw?: number }
+  /** A white sack of rubble from the works. */
+  | { kind: 'bag'; x: number; z: number }
+  | { kind: 'bin'; x: number; z: number }
+  /** A steel hoop with a bike locked to it. */
+  | { kind: 'bike-rack'; x: number; z: number; yaw?: number }
+  /** A traffic light with yellow housings on a curved pole, and a pedestrian light lower down. */
+  | { kind: 'traffic-light'; x: number; z: number; yaw?: number }
+  /** A bus shelter with a yellow roof and seat; three cells along +x. */
+  | { kind: 'shelter'; x: number; z: number }
+  /** A city bus (TMB red, Sagalés white) stopped along +x, five cells long. */
+  | { kind: 'bus'; x: number; z: number; color: string; livery?: 'tmb' | 'sagales' }
+  /** A works hoarding of corrugated metal covered in graffiti, `length` cells along +x. */
+  | { kind: 'hoarding'; x: number; z: number; length: number };
 export type PropKind = WorldProp['kind'];
+const along = (n: number): Cell[] => Array.from({ length: n }, (_, x) => ({ x, z: 0 }));
 /** Cells each kind blocks, relative to its anchor; visuals are built on the same footprint. */
 export const PROP_FOOTPRINTS: Record<PropKind, readonly Cell[]> = {
   tree: [{ x: 0, z: 0 }],
@@ -29,8 +53,18 @@ export const PROP_FOOTPRINTS: Record<PropKind, readonly Cell[]> = {
   lamp: [{ x: 0, z: 0 }],
   manhole: [],
   metro: [{ x: 0, z: 0 }],
+  bench: [{ x: 0, z: 0 }],
+  barrier: [{ x: 0, z: 0 }],
+  bag: [{ x: 0, z: 0 }],
+  bin: [{ x: 0, z: 0 }],
+  'bike-rack': [{ x: 0, z: 0 }],
+  'traffic-light': [{ x: 0, z: 0 }],
+  shelter: along(3),
+  bus: along(5),
+  hoarding: along(1),
 };
 export function propCells(prop: WorldProp): Cell[] {
+  if (prop.kind === 'hoarding') return along(prop.length).map(o => ({ x: prop.x + o.x, z: prop.z }));
   const turned = prop.kind === 'car' && prop.along === 'x';
   return PROP_FOOTPRINTS[prop.kind].map(offset => turned ? { x: prop.x + offset.z, z: prop.z + offset.x } : { x: prop.x + offset.x, z: prop.z + offset.z });
 }
@@ -47,11 +81,15 @@ export interface Interaction {
   id: string;
   cell: Cell;
   label: string;
+  /** Optional short caption for an action the object alone does not explain. */
+  hint?: string;
+  /** Visual anchor in grid coordinates, when the action is reached from a different cell. */
+  anchor?: Cell & { y: number };
   /** Doors and stairs: where the interaction takes Gerard. */
   to?: { environment: EnvironmentId; cell: Cell };
   /** What Gerard says when looking at something. */
   lines?: string[];
-  /** Stairs: walking into these cells uses the interaction, no key needed. */
+  /** Stairs: walking into these cells uses the interaction, no key needed (a door travels; a station's stair goes down to the map). */
   step?: Rect;
 }
 export type FloorKind = 'tile' | 'stone' | 'deck' | 'gravel' | 'grass' | 'concrete' | 'laminate' | 'terracotta';
@@ -138,7 +176,7 @@ function createNeighborhood(): Environment {
     spawn: { x: 20, z: 24 }, houses, props, zoom: 10.5,
     interactions: [
       { id: 'enter-home', cell: { x: 21, z: 23 }, label: 'Entrar en casa de Gerard', to: { environment: 'home-entrance', cell: { x: 2, z: 2 } } },
-      { id: 'call-bernat', cell: { x: 8, z: 24 }, label: 'Llamar a Bernat' },
+      { id: 'call-bernat', cell: { x: 8, z: 24 }, label: 'Llamar a Bernat', hint: 'Llamar a Bernat' },
     ],
   };
 }
@@ -321,14 +359,14 @@ export const MERIDIANA = house({
   // The yucca beside the TV; every other plant is furniture.
   props: [{ kind: 'tree', x: 15, z: 1, species: 'yucca', scale: 0.9, base: 'pot' }],
   interactions: [
-    { id: 'meridiana-door', cell: { x: 6, z: 1 }, label: 'Salir a la Meridiana', to: { environment: 'meridiana-calle', cell: { x: 45, z: 23 } } },
+    { id: 'meridiana-door', cell: { x: 6, z: 1 }, label: 'Salir a la Meridiana', to: { environment: 'meridiana-calle', cell: { x: 50, z: 40 } } },
     // The piano and the balcony take time in chapter 2 (the story answers them, src/days.ts).
-    { id: 'meridiana-piano', cell: { x: 2, z: 5 }, label: 'Tocar el piano' },
+    { id: 'meridiana-piano', cell: { x: 2, z: 5 }, label: 'Tocar el piano', hint: 'Tocar el piano' },
     { id: 'meridiana-kitchen', cell: { x: 10, z: 2 }, label: 'Mirar la cocina', lines: ['Encimera de madera, azulejos blancos… y alguien tiene que fregar.'] },
     // The story turns the TV on (chapter 2's news); before that it is just the TV.
-    { id: 'meridiana-tv', cell: { x: 16, z: 2 }, label: 'Mirar la tele' },
+    { id: 'meridiana-tv', cell: { x: 16, z: 2 }, label: 'Mirar la tele', anchor: { x: 16.75, z: 1.8, y: 1.65 } },
     { id: 'meridiana-painting', cell: { x: 19, z: 11 }, label: 'Mirar el cuadro', lines: ['Barcelona de noche, con la torre encendida. Nuestra ciudad, en la pared.'] },
-    { id: 'meridiana-balcony', cell: { x: 22, z: 3 }, label: 'Tomar un café en el balcón' },
+    { id: 'meridiana-balcony', cell: { x: 22, z: 3 }, label: 'Tomar un café en el balcón', hint: 'Tomar café' },
     // The lamps are the bulbs at home (src/home-lights.ts): pressing one changes both. The game
     // writes their labels as what the next press does.
     { id: 'lamp-cocina', cell: { x: 11, z: 5 }, label: 'Luz de la cocina' },
@@ -408,7 +446,7 @@ export function geoEnvironment(id: EnvironmentId, scene: GeoScene): Environment 
     id, name: scene.name, grid: blockProps(scene.grid, props), spawn: scene.spawn, zoom: scene.zoom,
     houses: [], props, geo: scene,
     // A place with lines is looked at, one with `to` is a door; with neither, the story answers it.
-    interactions: scene.places.map(({ id, label, lines, cell, to }) => ({ id, label, cell, ...(lines.length ? { lines } : {}), ...(to ? { to: to as Interaction['to'] } : {}) })),
+    interactions: scene.places.map(({ id, label, lines, cell, to, step }) => ({ id, label, cell, ...(lines.length ? { lines } : {}), ...(to ? { to: to as Interaction['to'] } : {}), ...(step ? { step } : {}) })),
   };
 }
 /** San Juan kalea in Alegia (Gipuzkoa), around number 95. */

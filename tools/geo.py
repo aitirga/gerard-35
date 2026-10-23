@@ -39,7 +39,9 @@ ATTRIBUTION = "© OpenStreetMap contributors (ODbL)"
 M_PER_DEG_LAT = 110_540
 
 # Tags worth keeping; everything else is dropped from osm.json.
-KEEP = ("building", "highway", "railway", "waterway", "natural", "landuse", "leisure", "place", "amenity", "bridge", "man_made")
+KEEP = ("building", "highway", "railway", "waterway", "natural", "landuse", "leisure", "place", "amenity", "bridge", "man_made", "shop")
+# Nodes worth keeping: street furniture, trees, shops and station entrances.
+KEEP_NODES = {"natural", "highway", "amenity", "man_made", "shop", "railway"}
 # Road widths in metres, by highway=*. Unknown kinds fall back to "service".
 ROAD_WIDTH = {
     "motorway": 10, "trunk": 9, "primary": 8, "secondary": 7, "tertiary": 6.5, "unclassified": 5,
@@ -48,6 +50,20 @@ ROAD_WIDTH = {
 }
 PATHS = {"pedestrian", "footway", "cycleway", "path", "steps", "track"}
 BLOCKED_ROADS = {"motorway", "trunk", "motorway_link", "trunk_link"}
+# Map nodes a zone can turn into props with `osm_props` (prop kind -> tag); see docs/environment-styling.md.
+OSM_PROPS = {"tree": ("natural", "tree"), "lamp": ("highway", "street_lamp"), "bench": ("amenity", "bench"),
+             "bin": ("amenity", "waste_basket"), "bike-rack": ("amenity", "bicycle_parking")}
+# Props that face the nearest road (their `yaw`, degrees) instead of standing square.
+FACING_PROPS = {"bench", "bike-rack", "traffic-light", "lamp"}
+# ...and those that turn their back to it: benches by the curb look at the shop fronts.
+BACK_TO_ROAD = {"bench"}
+# Cells each prop kind blocks along +x from its anchor (src/environments.ts PROP_FOOTPRINTS).
+PROP_LENGTH = {"shelter": 3, "bus": 5}
+# Amenities that count as shops: they get a sign on their building's ground floor.
+SHOP_AMENITIES = {"restaurant", "cafe", "bar", "fast_food", "pharmacy", "bank", "pub", "ice_cream", "post_office",
+                  "clinic", "dentist", "betting", "bureau_de_change"}
+# Roads drawn into the turned frame never sit where a prop from the map would block them.
+OPEN_FOR_PROPS = set("pgs.")
 # Raster classes, highest priority first. Lower-case classes are walkable.
 WALKABLE = set("rpsgb.")
 
@@ -73,7 +89,13 @@ class Frame:
         a = math.radians(zone.get("rotation_deg", 0))
         self.cos, self.sin = math.cos(a), math.sin(a)
         self.bounds = b = zone["bounds_m"]
-        corners = [self.rotate(e, s) for e in (b["west"], b["east"]) for s in (b["north"], b["south"])]
+        # `bounds_turned`: the bounds are a rectangle in the turned frame (x along the street, z towards
+        # the camera), so a diagonal avenue can fill the map instead of the box round its diamond.
+        self.turned = zone.get("bounds_turned", False)
+        if self.turned:
+            corners = [(b["west"], b["north"]), (b["east"], b["south"])]
+        else:
+            corners = [self.rotate(e, s) for e in (b["west"], b["east"]) for s in (b["north"], b["south"])]
         self.x0 = min(c[0] for c in corners)
         self.z0 = min(c[1] for c in corners)
         self.width = round((max(c[0] for c in corners) - self.x0) / self.cell)
@@ -96,8 +118,28 @@ class Frame:
     def cells(self, lat: float, lon: float) -> tuple[float, float]:
         return self.from_metres(*self.metres(lat, lon))
 
+    def from_turned(self, x: float, z: float) -> tuple[float, float]:
+        """Cell coordinates of a point given in metres in the turned frame (`x_m`, `z_m`)."""
+        return (x - self.x0) / self.cell - 0.5, (z - self.z0) / self.cell - 0.5
+
+    def unturn(self, x: float, z: float) -> tuple[float, float]:
+        """East/south metres of a point given in the turned frame."""
+        return x * self.cos + z * self.sin, -x * self.sin + z * self.cos
+
+    def item(self, item: dict) -> tuple[float, float]:
+        """Cells of a zone-file item, placed with east_m/south_m or, in the turned frame, x_m/z_m."""
+        if "x_m" in item: return self.from_turned(item["x_m"], item["z_m"])
+        return self.from_metres(item["east_m"], item["south_m"])
+
     def bbox(self, margin: float = 40) -> tuple[float, float, float, float]:
         b = self.bounds
+        if self.turned:
+            # Undo the turn on the four corners and take the box round them.
+            points = []
+            for x in (b["west"] - margin, b["east"] + margin):
+                for z in (b["north"] - margin, b["south"] + margin):
+                    points.append(self.latlon(*self.unturn(x, z)))
+            return (min(p[0] for p in points), min(p[1] for p in points), max(p[0] for p in points), max(p[1] for p in points))
         south, west = self.latlon(b["west"] - margin, b["south"] + margin)
         north, east = self.latlon(b["east"] + margin, b["north"] - margin)
         return south, west, north, east
@@ -191,7 +233,7 @@ def trim(elements: list[dict]) -> list[dict]:
         tags = e["tags"]
         if not any(k in tags for k in KEEP) and "addr:housenumber" not in tags:
             continue
-        if e["id"].startswith("node/") and not ({"natural", "highway", "amenity", "man_made"} & tags.keys() or "addr:housenumber" in tags):
+        if e["id"].startswith("node/") and not (KEEP_NODES & tags.keys() or "addr:housenumber" in tags):
             continue
         if e["id"].startswith("way/") and len(e.get("geom", [])) < 2:
             continue
@@ -366,7 +408,9 @@ SKETCH_AREAS = {"square": {"place": "square"}, "grass": {"leisure": "park"}, "wa
 def sketch_elements(sketch: dict, frame: "Frame", keep_only: bool = False) -> list[dict]:
     """Hand-drawn features (metres from the anchor) as the same elements osm.json holds."""
     out = []
-    to_geom = lambda points: [list(frame.latlon(e, s)) for e, s in points]
+    # `"frame": "turned"`: the sketch is drawn in the turned frame (x along the street, z towards the camera).
+    turned = sketch.get("frame") == "turned"
+    to_geom = lambda points: [list(frame.latlon(*(frame.unturn(e, s) if turned else (e, s)))) for e, s in points]
     for f in sketch.get("features", []):
         if keep_only and not f.get("keep"):
             continue
@@ -390,6 +434,7 @@ def sketch_elements(sketch: dict, frame: "Frame", keep_only: bool = False) -> li
         else:
             sys.exit(f"Sketch feature {f.get('id')} is not a building, area, highway or railway.")
         if f.get("name"): tags["name"] = f["name"]
+        tags |= f.get("tags", {})
         geom = to_geom(f["line"]) if "line" in f else to_geom(ring) if ring else None
         if not geom:
             sys.exit(f"Sketch feature {f.get('id')} needs rect, poly or line.")
@@ -403,6 +448,9 @@ def map_data(zone_id: str, zone: dict, frame: "Frame") -> dict:
     sketch = json.loads(sketch_path.read_text()) if sketch_path.exists() else None
     if osm_path.exists():
         osm = json.loads(osm_path.read_text())
+        # `redraw`: streets by these names are left out of the map data and drawn by the sketch instead.
+        redraw = set(zone.get("redraw", []))
+        osm["elements"] = [e for e in osm["elements"] if not ("highway" in e["tags"] and e["tags"].get("name") in redraw)]
         if sketch: osm["elements"] += sketch_elements(sketch, frame, keep_only=True)
         return osm
     if not sketch:
@@ -416,6 +464,8 @@ def map_data(zone_id: str, zone: dict, frame: "Frame") -> dict:
 def classify(element: dict) -> str | None:
     t = element["tags"]
     if "building" in t: return "building"
+    # Tunnels, culverts and underground corridors are not on the street (the metro, the rail tunnel).
+    if t.get("tunnel") in ("yes", "culvert", "building_passage") or t.get("location") == "underground": return None
     if t.get("natural") == "water" or t.get("waterway") == "riverbank" or t.get("landuse") == "reservoir": return "water"
     if t.get("waterway") in ("river", "stream", "canal"): return "waterway"
     if t.get("landuse") == "forest" or t.get("natural") in ("wood", "scrub"): return "forest"
@@ -432,7 +482,7 @@ def build(zone_id: str) -> None:
     osm = map_data(zone_id, zone, frame)
     W, D, cell = frame.width, frame.depth, frame.cell
     to_cells = lambda geom: [list(frame.cells(lat, lon)) for lat, lon in geom]
-    from_m = lambda item: frame.from_metres(item["east_m"], item["south_m"])
+    from_m = frame.item
     lo, hi = (-0.5, -0.5), (W - 0.5, D - 0.5)
 
     areas = {"water": [], "forest": [], "grass": [], "square": []}
@@ -463,8 +513,19 @@ def build(zone_id: str) -> None:
                 if highway in ("motorway_junction", "crossing", "bus_stop", "proposed", "construction"): continue
                 width = ROAD_WIDTH.get(highway.removesuffix("_link"), ROAD_WIDTH["service"])
                 road_kind = "bridge" if t.get("bridge") == "yes" else "motorway" if highway in BLOCKED_ROADS else "path" if highway in PATHS else "road"
-            roads.append({"id": e["id"], "kind": road_kind, "highway": highway, "name": t.get("name"),
-                          "width": round(width / cell, 2), "line": polys[0] if polys else []})
+                # `lane_m`: roads tagged with their lanes get that many lanes' width (a wide avenue reads wide).
+                if zone.get("lane_m") and road_kind == "road" and t.get("lanes", "").isdigit():
+                    width = max(width, int(t["lanes"]) * zone["lane_m"])
+                if zone.get("lane_m") and t.get("width", "").replace(".", "", 1).isdigit():
+                    width = float(t["width"])
+            road = {"id": e["id"], "kind": road_kind, "highway": highway, "name": t.get("name"),
+                    "width": round(width / cell, 2), "line": polys[0] if polys else []}
+            if zone.get("lane_m") and t.get("lanes", "").isdigit():
+                road |= {"lanes": int(t["lanes"]), "oneway": t.get("oneway") == "yes"}
+                # The bus lane, counted from the left of the way's direction (OSM's bus:lanes order).
+                bus = [i for i, v in enumerate(t.get("bus:lanes", t.get("psv:lanes", "")).split("|")) if v == "designated"]
+                if bus: road["bus"] = bus[0]
+            roads.append(road)
     # A river drawn only as a line becomes water where no water area covers it.
     if areas["water"]:
         roads = [r for r in roads if r["kind"] != "waterway"]
@@ -518,21 +579,37 @@ def build(zone_id: str) -> None:
         # Lines are looked at; `to` is a door to another scene; neither: the story answers it.
         places.append({"id": place["id"], "label": place["label"], "lines": place.get("lines", []), "cell": {"x": x, "z": z}}
                       | ({"to": place["to"]} if "to" in place else {}))
-    keep_clear = {spawn} | {(p["cell"]["x"], p["cell"]["z"]) for p in places}
+        # `step`: cells that use the place when walked into (a station's stair), `w` × `d` from a corner.
+        if "step" in place:
+            sx, sz = (round(v) for v in from_m(place["step"]))
+            places[-1]["step"] = {"x": sx, "z": sz, "w": place["step"]["w"], "d": place["step"]["d"]}
+    step_cells = {(p["step"]["x"] + i, p["step"]["z"] + j) for p in places if "step" in p for i in range(p["step"]["w"]) for j in range(p["step"]["d"])}
+    keep_clear = {spawn} | {(p["cell"]["x"], p["cell"]["z"]) for p in places} | step_cells
 
     props = scatter_trees(zone, raster, W, D, cell)
-    for p in zone.get("props", []):
-        x, z = from_m(p)
-        prop = {k: v for k, v in p.items() if k not in ("east_m", "south_m")} | {"x": round(x), "z": round(z)}
-        if prop["kind"] == "car" and zone.get("rotation_deg", 0) % 180 == 0:
-            prop["along"] = "x"  # the zone's streets run east-west, so cars park along x
-        props.append(prop)
+    props += map_props(zone, osm["elements"], frame, raster, roads)
+    # Works go down last, so they can make room for the trees and furniture around them.
+    for p in sorted(zone.get("props", []), key=lambda p: p["kind"] in ("barrier", "bag")):
+        trees = {(q["x"], q["z"]) for q in props if q["kind"] == "tree"}
+        for x, z in rows(p, frame):
+            prop = {k: v for k, v in p.items() if k not in ("east_m", "south_m", "x_m", "z_m", "to", "every_m")} | {"x": round(x), "z": round(z)}
+            # Works props never share a cell, and leave each tree its pit: a barrier line breaks around trunks.
+            taken = {c for q in props for c in prop_cells(q)}
+            if prop["kind"] in ("barrier", "bag") and any(
+                    c in taken or any((c[0] + dx, c[1] + dz) in trees for dx in (-1, 0, 1) for dz in (-1, 0, 1)) for c in prop_cells(prop)):
+                continue
+            if prop["kind"] == "car" and (zone.get("rotation_deg", 0) % 180 == 0 or frame.turned):
+                prop["along"] = "x"  # the zone's streets run along x, so cars park along x
+            if prop["kind"] in FACING_PROPS and "yaw" not in prop:
+                prop["yaw"] = facing(prop["x"], prop["z"], roads, prop["kind"])
+            props.append(prop)
     props = [p for p in props if all(0 < c[0] < W - 1 and 0 < c[1] < D - 1 and c not in keep_clear for c in prop_cells(p))]
     # Props are solid; anything they cut off from the spawn becomes solid too, so every open cell is reachable.
     blocked = {c for p in props for c in prop_cells(p)}
     reach = flood(spawn, blocked)
     grid = ["".join("." if (x, z) in reach or (x, z) in blocked and ch == "." else "#" for x, ch in enumerate(row)) for z, row in enumerate(grid)]
-    stranded = [p["id"] for p in places if (p["cell"]["x"], p["cell"]["z"]) not in reach]
+    stranded = [p["id"] for p in places if (p["cell"]["x"], p["cell"]["z"]) not in reach
+                or "step" in p and any(c not in reach for c in step_cells if p["step"]["x"] <= c[0] < p["step"]["x"] + p["step"]["w"] and p["step"]["z"] <= c[1] < p["step"]["z"] + p["step"]["d"])]
 
     scene = {
         "id": zone["id"], "name": zone["name"], "region": zone.get("region", ""), "attribution": osm["attribution"],
@@ -541,6 +618,9 @@ def build(zone_id: str) -> None:
         "areas": {k: [rounded(a["poly"]) for a in v] for k, v in areas.items()},
         "roads": [{**r, "line": rounded(piece)} for r in roads if r["kind"] != "waterway" for piece in clip_line(r["line"], *lo, *hi)],
         "buildings": buildings, "props": props, "places": places,
+        "shops": shops_on_walls(zone, osm["elements"], frame, buildings, W, D),
+        "crossings": crossings(zone, osm["elements"], frame, roads, W, D),
+        "look": zone.get("look", {}),
         "labels": [{"text": l["text"], "x": round(from_m(l)[0], 2), "z": round(from_m(l)[1], 2), "width": l.get("width", 4)} for l in zone.get("labels", [])],
         # Named points for the game's own pieces (e.g. where the palace stands), in cells.
         "anchors": {name: {"x": round(from_m(a)[0], 2), "z": round(from_m(a)[1], 2), **({"y": a["y_m"] / cell} if "y_m" in a else {})}
@@ -559,7 +639,129 @@ def build(zone_id: str) -> None:
 def prop_cells(p: dict) -> list[tuple[int, int]]:
     if p["kind"] == "manhole": return []
     if p["kind"] == "car": return [(p["x"], p["z"]), (p["x"] + 1, p["z"]) if p.get("along") == "x" else (p["x"], p["z"] + 1)]
-    return [(p["x"], p["z"])]
+    return [(p["x"] + i, p["z"]) for i in range(p.get("length", PROP_LENGTH.get(p["kind"], 1)))]
+
+
+def rows(p: dict, frame: Frame) -> list[tuple[float, float]]:
+    """Where a zone prop stands: once, or with `to` and `every_m` once every so many metres up to `to`."""
+    start = frame.item(p)
+    if "to" not in p: return [start]
+    end = frame.item(p["to"])
+    count = max(1, round(math.hypot(end[0] - start[0], end[1] - start[1]) * frame.cell / p.get("every_m", 6)))
+    return [(start[0] + (end[0] - start[0]) * i / count, start[1] + (end[1] - start[1]) * i / count) for i in range(count + 1)]
+
+
+def nearest_road(x: float, z: float, roads: list, kinds=("road",)) -> tuple[float, tuple, tuple] | None:
+    """Distance to the nearest road of these kinds, the nearest point on it, and its segment."""
+    best = None
+    for r in roads:
+        if r["kind"] not in kinds: continue
+        for a, b in zip(r["line"], r["line"][1:]):
+            d = segment_distance(x, z, a, b)
+            if best is None or d < best[0]: best = (d, a, b, r)
+    if not best: return None
+    d, a, b, r = best
+    dx, dz = b[0] - a[0], b[1] - a[1]
+    t = 0 if dx == dz == 0 else max(0, min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz)))
+    return d, (a[0] + t * dx, a[1] + t * dz), (a, b, r)
+
+
+def facing(x: float, z: float, roads: list, kind: str = "") -> int:
+    """Yaw in degrees that turns a prop's front (+z) towards the nearest road (or away from it,
+    for BACK_TO_ROAD kinds), in 15° steps."""
+    near = nearest_road(x, z, roads)
+    if not near: return 0
+    px, pz = near[1]
+    turn = 180 if kind in BACK_TO_ROAD else 0
+    return (int(round(math.degrees(math.atan2(px - x, pz - z)) / 15) * 15) + turn) % 360
+
+
+def map_props(zone: dict, elements: list, frame: Frame, raster: list, roads: list) -> list[dict]:
+    """Props from map nodes the zone asks for (`osm_props`: kind -> extra fields), on open ground only."""
+    wanted = zone.get("osm_props", {})
+    out = []
+    for e in elements:
+        if not e["id"].startswith("node/"): continue
+        for kind, (key, value) in OSM_PROPS.items():
+            if kind not in wanted or e["tags"].get(key) != value: continue
+            x, z = (round(v) for v in frame.cells(*e["at"]))
+            if not (0 < x < frame.width - 1 and 0 < z < frame.depth - 1) or raster[z][x] not in OPEN_FOR_PROPS: continue
+            prop = {"kind": kind, "x": x, "z": z} | wanted[kind]
+            if kind in FACING_PROPS: prop["yaw"] = facing(x, z, roads, kind)
+            out.append(prop)
+    return out
+
+
+def shops_on_walls(zone: dict, elements: list, frame: Frame, buildings: list, W: int, D: int) -> list[dict]:
+    """Every shop, bar and bank of the map (and the zone's own `shops`), as a sign on the nearest street wall."""
+    signed = {k for k, v in zone.get("buildings", {}).items() if "sign" in v}
+    found = []
+    for e in elements:
+        t = e["tags"]
+        kind = t.get("shop") or (t["amenity"] if t.get("amenity") in SHOP_AMENITIES else None)
+        if not kind or e["id"] in signed: continue
+        if "at" in e: x, z = frame.cells(*e["at"])
+        elif e.get("geom"):
+            cells = [frame.cells(*p) for p in e["geom"]]
+            x, z = sum(c[0] for c in cells) / len(cells), sum(c[1] for c in cells) / len(cells)
+        else: continue
+        found.append((x, z, t.get("name") or t.get("brand"), kind))
+    found += [(*frame.item(s), s["name"], s["kind"]) for s in zone.get("shops", [])]
+    out = []
+    for x, z, name, kind in found:
+        if not (0 <= x < W and 0 <= z < D): continue
+        best = None
+        for b in buildings:
+            poly = b["poly"]
+            for a, c in zip(poly, poly[1:] + poly[:1]):
+                length = math.hypot(c[0] - a[0], c[1] - a[1])
+                if length < 1.5: continue
+                nx, nz = (c[1] - a[1]) / length, -(c[0] - a[0]) / length
+                mx, mz = (a[0] + c[0]) / 2, (a[1] + c[1]) / 2
+                if point_in_polygon(mx + nx * 0.3, mz + nz * 0.3, poly): nx, nz = -nx, -nz
+                # Only walls onto the street: a wall shared with the next building is not a shop front.
+                if any(point_in_polygon(mx + nx * 1.2, mz + nz * 1.2, o["poly"]) for o in buildings): continue
+                d = segment_distance(x, z, a, c)
+                if best is None or d < best[0]: best = (d, a, c, b, length, nx, nz)
+        if not best or best[0] > 8: continue
+        d, a, c, b, length, nx, nz = best
+        ux, uz = (c[0] - a[0]) / length, (c[1] - a[1]) / length
+        along = max(min(((x - a[0]) * ux + (z - a[1]) * uz), length - 1.2), 1.2) if length > 2.4 else length / 2
+        fx, fz = a[0] + ux * along, a[1] + uz * along
+        out.append({"name": name, "kind": kind, "building": b["id"],
+                    "x": round(fx, 2), "z": round(fz, 2), "nx": round(nx, 3), "nz": round(nz, 3), "along": round(along, 2)})
+    # Two shops on one wall a sign's width apart: the second moves along the wall.
+    out.sort(key=lambda s: (s["building"], s["nx"], s["nz"], s["x"], s["z"]))
+    for prev, s in zip(out, out[1:]):
+        if s["building"] == prev["building"] and (s["nx"], s["nz"]) == (prev["nx"], prev["nz"]):
+            gap = math.hypot(s["x"] - prev["x"], s["z"] - prev["z"])
+            if gap < 2.6:
+                push = 2.6 - gap
+                s["x"], s["z"] = round(s["x"] - s["nz"] * push, 2), round(s["z"] + s["nx"] * push, 2)
+    return [{k: v for k, v in s.items() if k != "along"} for s in out]
+
+
+def crossings(zone: dict, elements: list, frame: Frame, roads: list, W: int, D: int) -> list[dict]:
+    """Zebra crossings where the map has highway=crossing on a road (and, with `zebras_x_m`, across every
+    road at those points along the turned frame): centre, road direction and width."""
+    points = [frame.cells(*e["at"]) for e in elements if e["tags"].get("highway") == "crossing" and "at" in e]
+    for x_m in zone.get("zebras_x_m", []):
+        x = frame.from_turned(x_m, 0)[0]
+        for r in roads:
+            if r["kind"] != "road": continue
+            for a, b in zip(r["line"], r["line"][1:]):
+                if (a[0] - x) * (b[0] - x) <= 0 and a[0] != b[0]:
+                    points.append((x, a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0])))
+    out = []
+    for x, z in points:
+        if not (0 <= x < W and 0 <= z < D): continue
+        near = nearest_road(x, z, roads)
+        if not near or near[0] > near[2][2]["width"] / 2: continue
+        (a, b, r) = near[2]
+        if any(math.hypot(c["x"] - x, c["z"] - z) < 2 for c in out): continue
+        out.append({"x": round(near[1][0], 2), "z": round(near[1][1], 2),
+                    "angle": round(math.atan2(b[1] - a[1], b[0] - a[0]), 3), "width": r["width"]})
+    return out
 
 
 def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
@@ -569,8 +771,9 @@ def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
     chosen = override.get(f"tag:building={t['building']}", {}) | override.get(e["id"], {})
     style_name = chosen.get("style", "default")
     style = rules.get("default", {}) | rules.get(style_name, {})
-    levels = int(float(t.get("building:levels", chosen.get("levels", style.get("levels", 3)))))
-    height = float(t["height"]) if "height" in t else levels * zone.get("storey_m", 3)
+    # A per-building override wins over the map's own levels (a mall tagged with its office tower's).
+    levels = chosen["levels"] if "levels" in chosen else int(float(t.get("building:levels", style.get("levels", 3))))
+    height = float(t["height"]) if "height" in t and "levels" not in chosen else levels * zone.get("storey_m", 3)
     return {
         "id": e["id"], "style": style_name, "name": t.get("name"), "number": chosen.get("label", t.get("addr:housenumber")),
         "levels": levels, "height": round(height / cell, 2),
@@ -579,7 +782,7 @@ def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
         "roofColor": style.get("roof"), "facade": chosen.get("facade", style.get("facade", "rendered")),
         "ground": chosen.get("ground", style.get("ground", "masonry")),
         "poly": rounded(poly), "box": oriented_box(poly),
-    }
+    } | ({"sign": chosen["sign"]} if "sign" in chosen else {})
 
 
 def scatter_trees(zone: dict, raster: list, W: int, D: int, cell: float) -> list[dict]:
