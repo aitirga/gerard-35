@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <canvas id="game" tabindex="0" aria-label="Barrio isométrico. W, A, S y D para moverte. Shift para correr. E para interactuar. C para personaje. I para objetos. M para mapa."></canvas>
+    <canvas id="game" tabindex="0" aria-label="Barrio isométrico. W, A, S y D para moverte. Shift para correr. E para interactuar. C para personaje. I para objetos. M para mapa local. Mayús y M para Mapa del mundo."></canvas>
     <div class="vignette" aria-hidden="true"></div>
     <main id="hud">
       <section class="place-panel" aria-label="Entorno">
@@ -30,7 +30,7 @@
         <span id="location-detail">Reconstrucción aproximada · Nº 20</span>
         <button id="overview">Vista general <kbd>R</kbd></button>
       </section>
-      <button id="interact" hidden><kbd>E</kbd><span></span><small></small></button>
+      <button id="interact" type="button" aria-label="Interactuar" hidden><kbd aria-hidden="true">E</kbd><span hidden></span></button>
       <footer class="bottom-bar">
         <div class="controls"><div class="move-keys" aria-hidden="true"><kbd>W</kbd><div><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div></div><div><strong>Mover</strong><span>WASD · Joystick &nbsp; / &nbsp; E para interactuar</span></div></div>
       </footer>

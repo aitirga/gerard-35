@@ -70,6 +70,32 @@
         "GERARD_API=http://127.0.0.1:8091 exec npm run dev -- --port 5195 --strictPort"
       ],
       "port": 5195
+    },
+    {
+      "name": "dev-traffic",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5211",
+        "--strictPort"
+      ],
+      "port": 5211
+    },
+    {
+      "name": "dev-city",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5203",
+        "--strictPort"
+      ],
+      "port": 5203
     }
   ]
 }

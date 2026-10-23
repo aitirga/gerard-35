@@ -15,6 +15,7 @@ import { palaceGuards } from './battle';
 import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById } from './home-lights';
 import { mountHomeLightsPage } from './home-lights-ui';
 import { createLampPicker } from './lamp-picker';
+import { createInteractionPrompt } from './interaction-prompt';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
@@ -26,6 +27,7 @@ let dirty = false;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 const environmentSelect = document.querySelector<HTMLSelectElement>('#environment')!;
 const interactButton = document.querySelector<HTMLButtonElement>('#interact')!;
+const interactionPrompt = createInteractionPrompt(interactButton);
 const dialogue = createDialogueBanner(document.querySelector<HTMLElement>('#hud')!);
 const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
 // Chapter 2: the station map (metro and Rodalies) and the TV news.
@@ -128,7 +130,9 @@ try {
     game.setPartnerDriven(partnerDriven(control, story.partner));
     battleUI.refresh();
   }
-  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused), () => controller.open(), story,
+  let storyPaused = false;
+  const menuOpen = () => !!document.querySelector('#controller-menu[open]');
+  const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, paused => game.setPaused(paused || storyPaused || menuOpen()), () => controller.open(), story,
     (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } });
   let currentLocation: EnvironmentId = story.resume.environment;
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
@@ -158,7 +162,7 @@ try {
     else if (effect.kind === 'metro') await ride(effect.station);
     else if (effect.kind === 'look') await game.look(effect.anchor);
     else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
-    else { game.setPaused(true); await storyUI.card(effect.id); game.setPaused(!!exploration.active); }
+    else { storyPaused = true; game.setPaused(true); await storyUI.card(effect.id); storyPaused = false; game.setPaused(!!exploration.active || menuOpen()); }
   }
   /**
    * Watching the TV in the flat: the camera comes close to its screen, where the news loops
@@ -168,7 +172,7 @@ try {
   async function watchNews() {
     exploration.close();
     game.watchTV(true); hud.dataset.watching = 'true'; homeLights.moment('tv');
-    interactButton.hidden = false; interactButton.querySelector('span')!.textContent = 'Dejar de mirar';
+    interactionPrompt.show({ id: 'stop-watching', cell: { x: 16, z: 2 }, label: 'Dejar de mirar', hint: 'Dejar de mirar' });
     const shown = performance.now();
     await new Promise<void>(resolve => {
       const done = () => { if (performance.now() - shown < 1200) return; window.removeEventListener('keydown', key, { capture: true }); canvas.removeEventListener('click', done); lookAway = undefined; resolve(); };
@@ -179,7 +183,7 @@ try {
       window.addEventListener('keydown', key, { capture: true }); canvas.addEventListener('click', done);
       lookAway = done;
     });
-    delete hud.dataset.watching; interactButton.hidden = true;
+    delete hud.dataset.watching; interactionPrompt.show(undefined);
     game.watchTV(false); homeLights.moment('tv-off');
   }
   /**
@@ -187,16 +191,16 @@ try {
    * day's progress is lost (docs/chapter-2.md § The Queen's advance).
    */
   async function theEnd() {
-    game.setPaused(true);
+    storyPaused = true; game.setPaused(true);
     await storyUI.doom();
     const effects = story.rewind();
     storyChanged();
     for (const effect of effects) await play(effect);
-    game.setPaused(!!exploration.active);
+    storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
   }
   /** Down into a station: pick a destination on the network map, ride, and come up its entrance. */
   async function ride(from: string) {
-    exploration.close(); game.setPaused(true);
+    exploration.close(); storyPaused = true; game.setPaused(true);
     const to = await travelUI.show(from, {}, cityMarkers({ castle: story.has('tv-news'), threat: story.castleThreat, spread: Math.min(1, story.spread) }));
     const place = to ? STATION_PLACES[to] : undefined;
     const entrance = place && ENVIRONMENTS[place.environment].interactions.find(i => i.id === entranceId(to!));
@@ -204,8 +208,12 @@ try {
       await storyUI.blackout(true, 450);
       game.setEnvironment(place.environment, entrance.cell);
       await storyUI.blackout(false, 650);
+    } else if (!to) {
+      // Back up the stair: Gerard comes out at the entrance, not standing on the steps.
+      const here = STATION_PLACES[from], back = here && ENVIRONMENTS[here.environment].interactions.find(i => i.id === entranceId(from));
+      if (back) game.standAt(back.cell);
     }
-    game.setPaused(!!exploration.active);
+    storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
     if (to) storyEvent({ type: 'arrive', station: to });
   }
   function storyChanged() {
@@ -230,7 +238,7 @@ try {
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onStep: (steps, cell) => {
       sessionSteps = steps;
-      exploration.update(currentLocation, cell, steps);
+      exploration.update(currentLocation, cell);
       dirty = true;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => { void save(); }, 700);
@@ -250,10 +258,8 @@ try {
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
       document.title = `${ENVIRONMENTS[id].name} · Gerard 35`;
     },
-    onInteraction: interaction => {
-      interactButton.hidden = !interaction;
-      interactButton.querySelector('span')!.textContent = interaction?.label ?? '';
-    },
+    onInteraction: interactionPrompt.show,
+    onInteractionScreen: interactionPrompt.position,
     onDialogue: dialogue.show,
     // A lamp in the Meridiana flat opens its dial: colour and brightness, in the game and at home.
     onStory: event => {
@@ -261,7 +267,7 @@ try {
       if (lamp) lampPicker.open(lamp); else storyEvent(event);
     },
   }, story);
-  const lampPicker = createLampPicker(hud, homeLights, paused => game.setPaused(paused || !!exploration.active));
+  const lampPicker = createLampPicker(hud, homeLights, paused => game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active));
   for (const light of HOUSE_LIGHTS) game.setLamp(light.id, homeLights.flat[light.id]);
   homeLights.onFlat((id, lamp) => game.setLamp(id, lamp));
   game.setLampLabels(id => {
@@ -275,6 +281,7 @@ try {
   const controllerContext = () => battleUI.controllerContext !== 'world' ? battleUI.controllerContext
     : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
+  let restoreLightsOnResume = false;
   const controller = createControllerUI({
     context: controllerContext,
     direction: (direction, stick, running) => controllerContext() === 'world' ? game.setControllerInput(direction, stick, running) : game.setControllerInput(null, null),
@@ -284,9 +291,15 @@ try {
       get: () => control.mode,
       set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
     } : undefined,
-    pause: value => game.setPaused(value || !!exploration.active),
+    pause: value => game.setPaused(value || storyPaused || lampPicker.isOpen || !!exploration.active),
     panel: id => id ? exploration.show(id) : exploration.close(),
     lights: section => mountHomeLightsPage(section, homeLights),
+    exit: () => {
+      clearTimeout(saveTimer); void save();
+      restoreLightsOnResume = homeLights.settings.enabled;
+      void homeLights.setEnabled(false, false);
+    },
+    resume: () => { if (restoreLightsOnResume) void homeLights.setEnabled(true, false); },
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (travelUI.open) { if (action !== 'overview' && action !== 'character') travelUI.control(action); return; }
@@ -314,7 +327,7 @@ try {
     game.setEnvironment(environmentSelect.value as EnvironmentId);
     canvas.focus({ preventScroll: true });
   });
-  interactButton.addEventListener('click', () => { dialogue.open ? dialogue.advance() : game.interact(); canvas.focus({ preventScroll: true }); });
+  interactButton.addEventListener('click', () => { if (lookAway) lookAway(); else if (dialogue.open) dialogue.advance(); else game.interact(); canvas.focus({ preventScroll: true }); });
   document.querySelector('#overview')!.addEventListener('click', () => game.toggleOverview());
   document.querySelectorAll<HTMLButtonElement>('[data-direction]').forEach(button => {
     button.addEventListener('pointerdown', event => {

@@ -71,6 +71,28 @@ backend:
 run: build
     uv run --locked uvicorn server:app --host 127.0.0.1 --port 8080
 
+# Open the desktop combat lab: tune encounters, compare policies and replay a seed
+[group('Combat')]
+combat-lab:
+    npm run dev -- --open /combat-lab.html
+
+# Run reproducible difficulty batches (use --help for seeds, policies and tuning)
+[group('Combat')]
+[positional-arguments]
+combat-sim *args:
+    node --experimental-strip-types scripts/combat-sim.mjs "$@"
+
+# Check the generic engine, simulator and campaign integration
+[group('Combat')]
+combat-check:
+    node --experimental-strip-types --test tests/combat-*.test.mjs
+
+# Verify the desktop lab in Chromium (use --build after just build for production assets)
+[group('Combat')]
+[positional-arguments]
+combat-browser-check *args:
+    node scripts/combat-lab-smoke.mjs "$@"
+
 # Type-check the TypeScript source without emitting files
 [group('Quality')]
 typecheck:
@@ -178,7 +200,12 @@ city: && city-background
 city-fetch: && city
     uv run --locked python tools/city.py fetch
 
-# Render the 3D city behind the network map into public/maps/barcelona.webp
+# Download every building's footprint and height from OpenStreetMap, then rebuild the map
+[group('Data')]
+city-fetch-buildings: && city
+    uv run --locked python tools/city.py fetch-buildings
+
+# Render the ground under the 3D city into public/maps/barcelona.webp
 [group('Data')]
 city-background:
     @[[ -f output/city/background.svg ]] || { printf 'No street data yet; run just city-fetch first.\n'; exit 0; }

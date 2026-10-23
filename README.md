@@ -70,7 +70,7 @@ The LIFX bulbs in the Meridiana flat play along: each place tints the living roo
 fights flash on every hit and turn red with a heartbeat as health runs out, and the flat in the game
 mirrors the real one both ways: each lamp opens a colour dial, and a light switched at home shows in
 the game. At home `just backend` finds the bulbs on the LAN and changes them in milliseconds
-(`LIFX_TOKEN` in `.env` is the cloud fallback); connect them from the menu (Esc · Luces de casa). The house's
+(`LIFX_TOKEN` in `.env` is the cloud fallback); connect them from **Esc → Configuración → Luces de casa**. The house's
 library is a git submodule in `vendor/geraitor_domotic_house` (`just setup` checks it out). Design,
 bulbs and limits: [docs/home-lights.md](docs/home-lights.md).
 
@@ -82,6 +82,21 @@ JSON files in `scripts/screenshots/` (`just screenshots-list`): `chapter-1` walk
 opening block, `scenes` tours every environment. Write a new one for each feature you want to
 show; the step format is in [scripts/screenshots/README.md](scripts/screenshots/README.md).
 Run `just screenshots-browser` once on a new machine to download Chromium.
+
+## Combat foundation and difficulty lab
+
+`just combat-lab` opens the desktop simulator at `/combat-lab.html`: compare three strategies
+on identical seeds, tune enemy health/direct damage, replay a fight action by action, edit the
+encounter JSON, and export a reproducible report. Run the same engine without a browser:
+
+```bash
+just combat-sim --compare --runs 1000 --seed 3517 --out output/combat/report.json
+just combat-check
+```
+
+The lab uses provisional mechanical fixtures. The campaign shares numeric resolution while
+retaining its story-specific turn flow and current tuning. Architecture, extension examples
+and limits: [docs/combat.md](docs/combat.md).
 
 ## Battle AI
 
@@ -308,18 +323,22 @@ the pools shimmer (`scenery.update`). All of it stops under reduced motion.
 
 ### Adventure panels
 
-Press **C** for Gerard's character sheet or **M** for the current local map;
-press the same key again or **Escape** to return. Both are also available from
-on-screen buttons. Exploration pauses while a panel is open; dialogue and combat
-keep control of their own inputs. The character sheet is deliberately minimal:
-portrait, location, session steps and companion status, with equipment and skills
-reserved for later.
+Press **Tab** or click Gerard's portrait to open the user menu: **Personaje**, **Objetos**,
+**Mapa** and **Cómo jugar**. **C**, **I** and **H** open the character, items and help sections directly.
+**M** opens only the local map in a centred view; **Shift + M** opens the **Mapa del mundo** of Barcelona.
+From the world map, **M** or **Escape** returns to the local map; **M** or **Escape** again closes it.
+Both map views also have buttons to switch scale. Exploration pauses
+while the menu is open; dialogue and combat keep control of their own inputs. The character
+sheet shows Gerard's portrait, location and companions, plus the party's
+equipment, stats and available classes.
 
 `src/exploration-ui.ts` owns the shared panel shell, shortcuts, focus handling and
 panel registry. `src/world-map.ts` draws any `Environment` from its collision grid,
-house footprints and numbered interactions, with no location-specific map layout.
+house footprints, room names and player position, with no location-specific map layout.
 Add locations in `src/environments.ts` to reuse the renderer. The map is an
-informational local overview, not a travel menu.
+informational local overview. `src/exploration-world-map.ts` reuses the Barcelona city drawing
+for the world map, with a location pin only when Gerard is in Barcelona. Neither map lists actions or marks interactions to discover;
+guidance stays general and comes from the world and its characters.
 
 The shared `--ui-*` tokens in `src/style.css` extend the combat panel's visual
 language through exploration, dialogue and the journal: translucent forest-green
@@ -330,7 +349,7 @@ and respect reduced-motion preferences when adding UI.
 
 ### Desktop controllers
 
-Press **Esc** (or **+ / Start** on a controller), then choose **Mando** to see connected controllers, test raw buttons and axes, or
+Press **Esc** (or **+ / Start** on a controller), then choose **Configuración → Mando** to see connected controllers, test raw buttons and axes, or
 assign controls. Recognized standard Nintendo Switch / Switch 2 controllers use
 **A** to confirm/interact, **B** to go back, and **+** to open the menu. Other
 standard controllers use the bottom face button, right face button, and Start.
@@ -339,7 +358,10 @@ to run at twice walking speed; release it to walk again. With custom mappings, h
 the assigned cancel/back control to run. B still goes back in menus and battles. Battles support command,
 skill and target selection, confirmation, cancellation, and returning to the
 street. Dialogue supports confirm to reveal/advance and cancel to close.
-The adventure menu offers Continue, Controller settings, and How to play. Esc goes back from settings and closes the main menu. Keyboard and mouse remain available.
+The pause menu offers **Configuración** (Mando and Luces de casa) and **Salir del juego**.
+Esc goes back one settings page at a time, then returns to the game. The upper face button
+(X on Nintendo, △ on PlayStation, Y on Xbox) opens the separate user menu, including
+**Cómo jugar**. Keyboard and mouse remain available.
 
 Controllers without browser standard mapping stay inactive until configured.
 Choose the active device, then **Asignar controles** and assign four directions,

@@ -3,6 +3,7 @@
  * here; `src/story.ts` decides when each one plays. docs/chapter-1.md explains the design.
  */
 import type { Dialogue, DialogueLine } from './dialogue';
+import { MERIDIANA_BED } from './bed.ts';
 
 const g = (text: string, expression?: string): DialogueLine => ({ speaker: 'gerard', text, expression });
 const mama = (text: string): DialogueLine => ({ speaker: 'mama', text });
@@ -44,12 +45,12 @@ export const PLACES = {
   /**
    * Chapter 2 opens in the Meridiana flat: Gerard wakes with a start on his side (east) of the
    * double bed, head on the pillows against the south wall (`bed` is where his feet rest), and
-   * gets up beside it (`wakeUp`); Aitor stands on the other side. The Bubbaloo wrapper lies on
+   * gets up beside it (`wakeUp`); Aitor sleeps on the other side and follows him out. The Bubbaloo wrapper lies on
    * Gerard's nightstand (`spot`), picked up from the cell in front of it.
    */
-  bed: { x: 11, z: 15 },
-  wakeUp: { environment: 'meridiana', cell: { x: 12, z: 13 } },
-  aitor: { environment: 'meridiana', cell: { x: 9, z: 14 } },
+  bed: MERIDIANA_BED.sleepers.gerard.rest,
+  wakeUp: { environment: 'meridiana', cell: MERIDIANA_BED.sleepers.gerard.stand },
+  aitor: { environment: 'meridiana', cell: MERIDIANA_BED.sleepers.aitor.stand },
   envoltorio: { environment: 'meridiana', cell: { x: 12, z: 15 }, spot: { x: 11.78, z: 16.45, y: .53 } },
   /** The drain in the wrapper room the second minion rises from. */
   drain: { x: 5, z: 16 },
