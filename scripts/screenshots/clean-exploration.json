@@ -1,0 +1,19 @@
+{
+  "title": "Exploración sin coordenadas ni pasos",
+  "description": "El mapa conserva la posición visual de Gerard; no aparecen coordenadas ni contadores de pasos.",
+  "steps": [
+    { "open": "/?story=got-backpack" },
+    { "skipDialogue": true },
+    { "teleport": "maresme", "cell": [17, 22] },
+    { "eval": "window.gerard.game.app.autoRender = false;" },
+    { "shot": "juego", "delay": 800, "caption": "Juego sin bloque de posición ni contador de pasos." },
+    { "press": "KeyM" },
+    { "until": "document.querySelector('#hud').dataset.panel === 'map'" },
+    { "eval": "const panel = document.querySelector('.journal-content'); if (!panel.querySelector('.map-player')) throw Error('Missing player marker'); if (/Tu posici[oó]n|Pasos de esta sesión/i.test(document.querySelector('#hud').textContent)) throw Error('Coordinates or steps still visible');" },
+    { "shot": "mapa", "delay": 800, "caption": "Mapa sin coordenadas numéricas, con el marcador de Gerard." },
+    { "press": "KeyC" },
+    { "until": "document.querySelector('#hud').dataset.panel === 'character'" },
+    { "eval": "const panel = document.querySelector('.journal-content'); if (/pasos/i.test(panel.textContent)) throw Error('Step counter still visible'); if (!panel.textContent.includes('Compañía') || !panel.textContent.includes('Ubicación')) throw Error('Missing character details');" },
+    { "shot": "personaje", "delay": 800, "caption": "Ficha de personaje sin número de pasos." }
+  ]
+}
