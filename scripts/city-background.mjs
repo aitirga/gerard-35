@@ -6,7 +6,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 const root = new URL('..', import.meta.url);
 const source = new URL('output/city/background.svg', root);
 const target = new URL('public/maps/barcelona.webp', root);
-const width = Number(process.argv[2] ?? 5200);
+const width = Number(process.argv[2] ?? 8192);
 
 const svg = await readFile(source, 'utf8').catch(() => {
   console.error('No output/city/background.svg; run just city first.');

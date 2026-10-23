@@ -269,8 +269,9 @@ Next:
 1. **Who are the friends?** Names, where they live, what the Queen's bubble did to them, what
    ánima each gives. Nuria and Uri (Cardedeu) are the first. Is this Nuria the Nuria Mendoza behind
    La Reina Bubbaloo (`docs/lore.md`)? That would put the reveal in Cardedeu.
-2. **Which metro is home?** The flat is on the Meridiana; the scene assumes the L1 at Fabra i Puig.
-   Navas, La Sagrera, Sant Andreu or Torras i Bages are all on the same line.
+2. **Which metro is home?** The flat is on the Meridiana; the scene assumes the L1 at Fabra i Puig,
+   and home is the corner block by its Av. Meridiana entrance (`meridiana-calle`, `Casa`). The real
+   portal is not known yet: moving home is one override in `assets/geo/meridiana-calle/zone.json`.
 3. **What is the Rec Comtal school to Gerard?** Where he works (a teacher?), where a friend
    teaches, or where a friend's kid goes. It changes what the TV says and why the castle is there.
 4. **How many ánimas** open the throne: all of them, or enough (e.g. four of six)?

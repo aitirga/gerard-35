@@ -1,0 +1,44 @@
+{
+  "title": "Chapter 2 · The network map as a 3D city",
+  "description": "Down into the L1 at Fabra i Puig: the network map is a 3D model of the real Barcelona, every building from OpenStreetMap standing at its height on the streets, parks and sea, the L1 and L5 running over the roofs on posts, stations, names and the famous places drawn upright over it. Then the whole city, a close look turned round the Sagrada Família.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "import('/src/map-markers.ts').then(m => { void window.gerard.travelUI.show('fabra-i-puig', {}, m.cityMarkers({ castle: true, threat: .8, spread: .3 })) }) && undefined"
+    },
+    {
+      "until": "window.gerard.travelUI.open",
+      "timeout": 20000
+    },
+    {
+      "shot": "map-framed",
+      "delay": 8000,
+      "caption": "Opening at Fabra i Puig: framed on where Gerard is and where he can go, the castle's halo over Trinitat Vella"
+    },
+    {
+      "press": "Digit0"
+    },
+    {
+      "shot": "map-whole",
+      "delay": 2500,
+      "caption": "0 shows the whole city: Collserola at the top, the sea at the bottom, the Llobregat and the Besòs at each end"
+    },
+    {
+      "eval": "import('/src/transit.ts').then(t => { const s = t.CITY_MAP.landmarks.find(l => l.id === 'sagrada-familia') ?? t.CITY_MAP.landmarks[0]; window.gerard.travelUI.city.orbit = { x: s.x, y: s.y, distance: 2600, yaw: .6, pitch: .62 } }) && undefined"
+    },
+    {
+      "shot": "map-close",
+      "delay": 2500,
+      "caption": "Zoomed in and turned with the right button: the Eixample's blocks round the Sagrada Família, the L5 on its posts"
+    }
+  ]
+}

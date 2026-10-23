@@ -65,14 +65,14 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        45,
-        23
+        50,
+        40
       ]
     },
     {
       "shot": "meridiana",
       "delay": 2500,
-      "caption": "Out on the Avinguda Meridiana (sketched scene): home's door and the L1 entrance at Fabra i Puig"
+      "caption": "Out on the Avinguda Meridiana (OpenStreetMap and photos of the renewed avenue): home's corner block, the shops, the L1 entrance at Fabra i Puig"
     },
     {
       "press": "KeyR"
@@ -80,7 +80,7 @@
     {
       "shot": "meridiana-overview",
       "delay": 2500,
-      "caption": "The avenue from above: side roads, carriageways, the planted median, plane trees"
+      "caption": "The avenue from above: the bus lane, the planted median with the bike lane, the works, Hipercor and its tower"
     },
     {
       "press": "KeyR"
@@ -88,8 +88,8 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        57,
-        21
+        37,
+        41
       ]
     },
     {

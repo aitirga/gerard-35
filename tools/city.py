@@ -2,6 +2,8 @@
 
   fetch  OpenStreetMap streets, railways, coast, rivers and green areas for the whole map ->
          assets/geo/barcelona/streets.json (simplified, compact; needs network)
+  fetch-buildings  every building's footprint and height -> output/city/buildings.json (not committed;
+         `build` projects it into public/maps/barcelona-buildings.bin, which is)
   build  assets/geo/barcelona/city.json -> src/geo/barcelona.json, projected to metres on a map
          turned so the coast runs left to right with the sea at the bottom; streets.json ->
          output/city/background.svg, the city drawn in 3D (scripts/city-background.mjs turns it
@@ -11,6 +13,7 @@ city.json is drawn by hand (stations, lines, landmarks, places); the city behind
 src/city-map.ts lays the background image under the lines and draws the icons.
 """
 import argparse
+from array import array
 import json
 import math
 import sys
@@ -24,11 +27,13 @@ ROOT = Path(__file__).resolve().parent.parent
 CITY = ROOT / "assets" / "geo" / "barcelona"
 M_PER_DEG_LAT = 110_540
 STREETS = CITY / "streets.json"
+# Too big to commit (tens of MB): kept with the download cache; the game reads the projected .bin.
+BUILDINGS = ROOT / "output" / "city" / "buildings.json"
 USER_AGENT = "gerard-35-environment-tool/0.1 (personal game prototype)"
 OVERPASS = ("https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
             "https://overpass.kumi.systems/api/interpreter")
-# The area is asked in TILES × TILES pieces.
-TILES = 5
+# The area is asked in TILES × TILES pieces (buildings, far denser, in more).
+TILES, BUILDING_TILES = 5, 6
 ATTRIBUTION = "© OpenStreetMap contributors (ODbL)"
 # How far the background reaches past the map's extent, as a share of its width and in metres
 # down and up: a wide screen shows more than the extent.
@@ -43,6 +48,13 @@ ROAD_CLASS = {
 ROAD_WIDTH = {"motorway": 34, "primary": 28, "secondary": 22, "tertiary": 17, "link": 14, "street": 12, "pedestrian": 10}
 # The city in 3D: how far round the streets the city is built, and how high the roofs stand.
 BUILT_REACH, ROOF = 75, 22
+# Buildings: metres per storey, heights when OpenStreetMap gives none, and the smallest kept (m²).
+LEVEL_M, DEFAULT_HEIGHT, MIN_BUILDING_M2 = 3.1, 16, 40
+BUILDING_HEIGHT = {"house": 7, "detached": 7, "semidetached_house": 7, "terrace": 9, "garage": 3, "garages": 3, "shed": 3,
+                   "hut": 3, "kiosk": 3, "industrial": 10, "warehouse": 10, "retail": 8, "service": 5, "church": 22, "cathedral": 30}
+CIVIC = {"church", "cathedral", "chapel", "school", "university", "college", "hospital", "public", "civic", "government",
+         "train_station", "museum", "stadium", "sports_hall", "townhall", "library", "theatre", "kindergarten", "place_of_worship"}
+WORKS = {"industrial", "warehouse", "retail", "commercial", "office", "supermarket", "service", "garage", "garages", "hangar", "factory"}
 # Streets are cut this much wider out of the blocks so the paving still shows past the walls.
 GAP = 18
 
@@ -125,11 +137,10 @@ def join(lines: list[list]) -> list[list]:
     return lines
 
 
-def overpass_tile(tile: tuple[float, float, float, float]) -> list[dict] | None:
-    """One tile's streets, railways, coast, rivers and green areas, with geometry."""
-    box = ",".join(f"{v:.5f}" for v in tile)
+def city_query(box: str) -> str:
+    """Streets, railways, coast, rivers and green areas, with geometry."""
     roads = "|".join(ROAD_CLASS)
-    query = f"""[out:json][timeout:180];
+    return f"""[out:json][timeout:180];
 (
   way["highway"~"^({roads})$"]["tunnel"!~"yes|building_passage"]({box});
   way["railway"~"^(rail|light_rail)$"]["tunnel"!="yes"]({box});
@@ -141,6 +152,18 @@ def overpass_tile(tile: tuple[float, float, float, float]) -> list[dict] | None:
   wr["natural"~"^(wood|scrub|heath|beach|water)$"]({box});
 );
 out geom qt;"""
+
+
+def buildings_query(box: str) -> str:
+    """Every building's footprint and the tags that say how tall it is."""
+    return f"""[out:json][timeout:180];
+way["building"]["building"!~"^(roof|no|construction)$"]({box});
+out tags geom qt;"""
+
+
+def overpass_tile(tile: tuple[float, float, float, float], query=city_query) -> list[dict] | None:
+    """One tile of the map, asked of whichever Overpass server answers."""
+    query = query(",".join(f"{v:.5f}" for v in tile))
     for attempt in range(3):
         for url in OVERPASS:
             try:
@@ -154,7 +177,10 @@ out geom qt;"""
     return None
 
 
-def fetch() -> None:
+def fetch_tiles(cache: Path, tiles: int, query=city_query) -> tuple[list[dict], str]:
+    """Every element in the map's wide area, asked tile by tile: Overpass gives up (504) on the
+    whole area at once. Each tile is kept in `cache`, so running it again only asks for the tiles
+    still missing."""
     city = json.loads((CITY / "city.json").read_text())
     project = Projection(city["frame"])
     built = json.loads((ROOT / "src" / "geo" / "barcelona.json").read_text())
@@ -163,34 +189,33 @@ def fetch() -> None:
     s, n = min(c[0] for c in corners), max(c[0] for c in corners)
     w, e = min(c[1] for c in corners), max(c[1] for c in corners)
     box = f"{s:.4f},{w:.4f},{n:.4f},{e:.4f}"
-    # Asked tile by tile: Overpass gives up (504) on the whole area at once. Each tile is kept
-    # in output/city/osm/, so running it again only asks for the tiles still missing.
-    cache = ROOT / "output" / "city" / "osm"
     cache.mkdir(parents=True, exist_ok=True)
-    print(f"Fetching OpenStreetMap for {box} in {TILES * TILES} tiles…")
+    print(f"Fetching OpenStreetMap for {box} in {tiles * tiles} tiles…")
     seen: dict[tuple, dict] = {}
     missing = 0
-    for i in range(TILES):
-        for j in range(TILES):
-            tile = (s + (n - s) * i / TILES, w + (e - w) * j / TILES, s + (n - s) * (i + 1) / TILES, w + (e - w) * (j + 1) / TILES)
+    for i in range(tiles):
+        for j in range(tiles):
+            tile = (s + (n - s) * i / tiles, w + (e - w) * j / tiles, s + (n - s) * (i + 1) / tiles, w + (e - w) * (j + 1) / tiles)
             path = cache / f"tile-{i}-{j}.json"
             if path.exists():
                 elements = json.loads(path.read_text())
             else:
-                elements = overpass_tile(tile)
+                elements = overpass_tile(tile, query)
                 if elements is None:
                     missing += 1
                     continue
                 path.write_text(json.dumps(elements, separators=(",", ":")))
                 time.sleep(2)
-            print(f"  tile {i * TILES + j + 1}/{TILES * TILES}: {len(elements)} features")
+            print(f"  tile {i * tiles + j + 1}/{tiles * tiles}: {len(elements)} features")
             for el in elements:
                 seen[(el["type"], el["id"])] = el
     if missing:
         sys.exit(f"{missing} tiles could not be fetched (Overpass busy); run it again to fetch only those. Nothing written yet.")
-    elements = list(seen.values())
+    return list(seen.values()), box
 
-    # Stored in 1e-5 degrees from the frame's centre (about a metre), simplified in metres.
+
+def compactor(city: dict):
+    """Geometry stored in 1e-5 degrees from the frame's centre (about a metre), simplified in metres."""
     lat0, lon0 = city["frame"]["lat"], city["frame"]["lon"]
     kx = 111_320 * math.cos(math.radians(lat0))
     def compact(geometry: list[dict], tolerance: float = 3) -> list[int]:
@@ -199,6 +224,14 @@ def fetch() -> None:
         for x, y in simplify(metres, tolerance):
             flat += [round(y / M_PER_DEG_LAT * 1e5), round(x / kx * 1e5)]
         return flat
+    return compact
+
+
+def fetch() -> None:
+    city = json.loads((CITY / "city.json").read_text())
+    elements, box = fetch_tiles(ROOT / "output" / "city" / "osm", TILES)
+    lat0, lon0 = city["frame"]["lat"], city["frame"]["lon"]
+    compact = compactor(city)
     def outers(e: dict) -> list[list[dict]]:
         if e["type"] == "way":
             return [e["geometry"]] if "geometry" in e else []
@@ -215,7 +248,7 @@ def fetch() -> None:
         t = e.get("tags", {})
         if e["type"] == "node":
             continue
-        if "highway" in t and e["type"] == "way":
+        if t.get("highway") in ROAD_CLASS and e["type"] == "way":
             data["roads"][ROAD_CLASS[t["highway"]]].append(compact(e["geometry"]))
         elif "railway" in t and e["type"] == "way":
             data["rail"].append(compact(e["geometry"], 6))
@@ -236,6 +269,53 @@ def fetch() -> None:
     counts = ", ".join(f"{len(v)} {k}" for k, v in data["roads"].items())
     print(f"Wrote {STREETS.relative_to(ROOT)} ({STREETS.stat().st_size // 1024} KB): {counts}; "
           f"{len(data['coast'])} coast lines, {len(data['green']) + len(data['wood'])} green areas")
+
+
+def building_height(t: dict) -> float:
+    """Metres, from the tags when OpenStreetMap says, else from what kind of building it is."""
+    for key in ("height", "building:height"):
+        try:
+            return max(3.0, float(t[key].replace("m", "").replace(",", ".").strip()))
+        except (KeyError, ValueError):
+            pass
+    try:
+        levels = float(t["building:levels"]) + float(t.get("roof:levels", 0)) * .5
+        return max(3.0, levels * LEVEL_M + 1)
+    except (KeyError, ValueError):
+        return BUILDING_HEIGHT.get(t.get("building", ""), DEFAULT_HEIGHT)
+
+
+def building_kind(t: dict) -> int:
+    """Which palette a building is painted from (src/city-3d.ts BUILDING_COLOURS)."""
+    kind = t.get("building", "")
+    if kind in CIVIC or t.get("amenity") in CIVIC or "historic" in t:
+        return 2
+    return 1 if kind in WORKS else 0
+
+
+def fetch_buildings() -> None:
+    city = json.loads((CITY / "city.json").read_text())
+    elements, box = fetch_tiles(ROOT / "output" / "city" / "osm-buildings", BUILDING_TILES, buildings_query)
+    compact = compactor(city)
+    kept = []
+    for e in elements:
+        geometry = e.get("geometry")
+        if e["type"] != "way" or not geometry or len(geometry) < 4:
+            continue
+        flat = compact(geometry, 1.5)
+        if len(flat) < 8:
+            continue
+        # Shoelace in 1e-5 degrees, close enough to tell a shed from a block.
+        area = abs(sum(flat[i] * flat[(i + 3) % len(flat)] - flat[(i + 2) % len(flat)] * flat[i + 1]
+                       for i in range(0, len(flat), 2))) / 2 * 1.1 * .85
+        if area < MIN_BUILDING_M2:
+            continue
+        t = e.get("tags", {})
+        kept.append([round(building_height(t)), building_kind(t), *flat])
+    data = {"attribution": ATTRIBUTION, "fetched": date.today().isoformat(), "bbox": box, "origin": [city["frame"]["lat"], city["frame"]["lon"]],
+            "unit": "[height m, kind, then 1e-5 degrees from origin as [lat, lon] pairs]", "buildings": kept}
+    BUILDINGS.write_text(json.dumps(data, separators=(",", ":")) + "\n")
+    print(f"Wrote {BUILDINGS.relative_to(ROOT)} ({BUILDINGS.stat().st_size // 1024} KB): {len(kept)} buildings")
 
 
 def background(project: Projection, wide: dict, out: Path) -> dict | None:
@@ -280,7 +360,12 @@ def background(project: Projection, wide: dict, out: Path) -> dict | None:
     mask = (f'<mask id="built" maskUnits="userSpaceOnUse" {rect}><rect {rect} fill="#000"/>{reach}{holes}'
             f'<path d="{rail}" {stroke} stroke="#000" stroke-width="14"/><path d="{green}{wood}{water}{beach}" fill="#000"/>'
             f'<path d="{sea}" fill="#000"/><path d="{rivers}" {stroke} stroke="#000" stroke-width="90"/></mask>')
-    walls = "".join(f'<rect {rect} fill="#cfb386" mask="url(#built)" transform="translate(0 {-ROOF * k / 4:.1f})"/>' for k in range(4))
+    # With real buildings (src/city-3d.ts) the image is only the ground they stand on: the
+    # blocks are a pavement a shade darker than the streets, and nothing stands up.
+    ground = BUILDINGS.exists()
+    walls = "" if ground else "".join(f'<rect {rect} fill="#cfb386" mask="url(#built)" transform="translate(0 {-ROOF * k / 4:.1f})"/>' for k in range(4))
+    roofs = (f'<rect {rect} fill="#d8cbac" mask="url(#built)"/>' if ground
+             else f'<rect {rect} fill="#fbf1dc" mask="url(#built)" transform="translate(0 {-ROOF})"/>')
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{wide["x0"]} {wide["y0"]} {W} {H}" width="{W}" height="{H}">',
         f'<defs>{mask}</defs>',
@@ -294,7 +379,7 @@ def background(project: Projection, wide: dict, out: Path) -> dict | None:
         f'<path d="{sea}" fill="none" stroke="#f5da92" stroke-width="40"/>',
         f'<path d="{piers}" {stroke} stroke="#e2d4b2" stroke-width="30"/>',
         walls,
-        f'<rect {rect} fill="#fbf1dc" mask="url(#built)" transform="translate(0 {-ROOF})"/>',
+        roofs,
         *(f'<path d="{roads[k]}" {stroke} stroke="#3b2a2030" stroke-width="{ROAD_WIDTH[k] + 10}"/><path d="{roads[k]}" {stroke} stroke="#fffaf0" stroke-width="{ROAD_WIDTH[k]}"/>' for k in ("secondary", "primary", "motorway")),
         "</svg>",
     ]
@@ -302,6 +387,34 @@ def background(project: Projection, wide: dict, out: Path) -> dict | None:
     (out / "background.svg").write_text("".join(parts))
     print(f"Background in {(out / 'background.svg').relative_to(ROOT)}; `just city-background` renders it")
     return {**wide, "href": "maps/barcelona.webp"}
+
+
+def buildings(project: Projection) -> dict | None:
+    """buildings.json -> public/maps/barcelona-buildings.bin, projected to map metres for
+    src/city-3d.ts: little-endian int16s, per building its height (m), kind, point count and
+    then x, y of each point."""
+    if not BUILDINGS.exists():
+        print(f"No {BUILDINGS.relative_to(ROOT)}; run `just city-fetch-buildings` for the city in 3D.")
+        return None
+    osm = json.loads(BUILDINGS.read_text())
+    lat0, lon0 = osm["origin"]
+    out = []
+    for b in osm["buildings"]:
+        height, kind, flat = b[0], b[1], b[2:]
+        points = [project(lat0 + flat[i] / 1e5, lon0 + flat[i + 1] / 1e5) for i in range(0, len(flat), 2)]
+        if points[0] == points[-1]:
+            points = points[:-1]
+        if len(points) < 3:
+            continue
+        out += [min(height, 400), kind, len(points), *(v for p in points for v in p)]
+    target = ROOT / "public" / "maps" / "barcelona-buildings.bin"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    data = array("h", out)
+    if sys.byteorder == "big":
+        data.byteswap()
+    target.write_bytes(data.tobytes())
+    print(f"Buildings in {target.relative_to(ROOT)} ({target.stat().st_size // 1024} KB)")
+    return {"href": "maps/barcelona-buildings.bin", "count": len(osm["buildings"])}
 
 
 def build() -> None:
@@ -340,6 +453,9 @@ def build() -> None:
     image = background(project, wide_extent(extent), ROOT / "output" / "city")
     if image:
         data["background"] = image
+    blocks = buildings(project)
+    if blocks:
+        data["buildings"] = blocks
     out = ROOT / "src" / "geo" / "barcelona.json"
     out.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n")
     print(f"Built {out.relative_to(ROOT)}: {len(districts)} districts, {len(stations)} stations, "
@@ -370,9 +486,8 @@ def preview(data: dict, out: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("step", choices=("fetch", "build"))
-    step = parser.parse_args().step
-    fetch() if step == "fetch" else build()
+    parser.add_argument("step", choices=("fetch", "fetch-buildings", "build"))
+    {"fetch": fetch, "fetch-buildings": fetch_buildings, "build": build}[parser.parse_args().step]()
 
 
 if __name__ == "__main__":

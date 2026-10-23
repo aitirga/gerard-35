@@ -6,22 +6,25 @@ Chapter 2's world is Barcelona (and later a little beyond: Cardedeu). It works o
    the Rec Comtal school, later a station or a friend's street). Each is **designed by hand**,
    inspired by the real place and simplified on purpose. Only a handful exist; most of the city is
    never walked.
-2. **The network map**: the whole city as a **cartoon**, with its sea, hills, rivers, its
-   streets and blocks in 3D, big avenues and famous places, and the metro lines over it. It is what Gerard sees when he goes
-   down into a station, and how he travels between places. It is never a 3D scene.
+2. **The network map**: the whole city as a **3D model**, a cartoon of the real Barcelona with
+   its sea, hills, rivers, streets and every building, its famous places, and the metro lines
+   running over the roofs. It is what Gerard sees when he goes down into a station, and how he
+   travels between places. It is looked at, never walked.
 
-The city behind the lines is **real**: Barcelona's streets, coast, rivers and parks from
-OpenStreetMap, drawn in 3D into one image. Stations, lines, landmarks and places on top are drawn
-by hand.
+The city under the lines is **real**: Barcelona's streets, coast, rivers, parks and buildings
+from OpenStreetMap. Stations, lines, landmarks and places on top are drawn by hand.
 
 ```
 OpenStreetMap ──► just city-fetch ──► assets/geo/barcelona/streets.json (simplified, committed)
+              └──► just city-fetch-buildings ──► output/city/buildings.json (footprints, heights; not committed)
                                                    │
 assets/geo/barcelona/city.json ──► just city ──► src/geo/barcelona.json ──► src/city-map.ts (SVG) ──► travel-ui.ts
  (hand-drawn: coast, hills, rivers,   tools/city.py      projected                ▲        ▲
   districts, avenues, landmarks,         │                                        │        │
-  places, stations, lines; [lat, lon])   └► output/city/background.svg ──► public/maps/barcelona.webp
-                                            (just city-background, Chromium)      src/map-markers.ts (icons)
+  places, stations, lines; [lat, lon])   ├► output/city/background.svg ──► public/maps/barcelona.webp (ground)
+                                         │  (just city-background, Chromium)
+                                         └► public/maps/barcelona-buildings.bin ──► src/city-3d.ts (the model)
+                                                                                   src/map-markers.ts (icons)
 src/transit.ts  lines, stations, which place each station opens, story rules for lines
 ```
 
@@ -29,20 +32,29 @@ src/transit.ts  lines, stations, which place each station opens, story rules for
 
 ### Look
 
-- **The real city in 3D, in the background** (`tools/city.py` `background`). The blocks are
-  whatever lies between the real streets, near enough to them to be built: pale roofs lifted
-  above walls in shade, so the city reads in 3D from above. Big roads are wider and lighter,
-  railways a thin line; parks, woods (Collserola, Montjuïc), beaches, rivers and the sea come from
-  the same data. It is rendered once into `public/maps/barcelona.webp`, an `<image>` under the
-  lines, so thousands of streets cost the game nothing. Districts are never drawn.
-- **Cartoon on top.** Flat colours, a thick dark outline on what matters, little waves on the sea.
-  Without `streets.json` (before the first `just city-fetch`) the map falls back to the
-  hand-drawn sea, hills, rivers and avenues.
+- **A model of the real city** (`src/city-3d.ts`, its own PlayCanvas app in the panel). The
+  ground is one picture (`tools/city.py` `background`, rendered into `public/maps/barcelona.webp`):
+  streets, big roads wider and lighter, railways, parks, woods (Collserola, Montjuïc), beaches,
+  rivers and the sea. On it stands **every building** from OpenStreetMap at its height
+  (`height`, else `building:levels`, else a guess by kind), stretched ×2.4 so the city reads from
+  high up: warm facades for homes, greys for works and offices, terracotta for churches, schools
+  and other civic buildings, glass for towers; lit from the left like the icons, roofs a shade
+  lighter. The buildings are cut into 8 × 8 meshes. Districts are never drawn.
+- **The lines over the roofs**: thick slabs in the line's colour with dark ink sides, a round
+  joint at every station, a post down to the street under each station and a soft shadow on the
+  ground.
+- **Drawn on top, upright**: stations, their names, the pin, the trip and the markers are one SVG
+  over the canvas, moved every frame to where the camera sees them, so they never tilt. From far
+  away only the names that matter stay.
+- **Falls back** to the flat cartoon plan (`src/city-map.ts`: the picture with blocks lifted in
+  2.5D, or the hand-drawn sea, hills, rivers and avenues before the first `just city-fetch`) when
+  WebGL or the buildings are missing.
 - **Landmarks are abstract little volumes** lit from the left like the blocks, on a soft
   shadow: a cluster of spires, a bullet tower dotted with windows, the solar pergola…
 - **North-west up, sea at the bottom.** The map is turned so the coast runs left to right along
   the bottom edge (Llobregat on the left, Besòs on the right) and Collserola rises along the top:
-  the way people from Barcelona picture their city.
+  the way people from Barcelona picture their city. The camera looks at it from the sea side,
+  tilted; the player can turn it round.
 - **Few lines.** For now only the **L1 (red)** and the **L5 (blue)**, thick and outlined, with
   chunky white stations. More lines (the R4 to Cardedeu) are added when a place on them exists.
 - **Where Gerard is**: a small pin on the current station. Nothing marks a friend, a mission or a
@@ -67,12 +79,20 @@ what to do next (`AGENTS.md`).
 
 ### Travel
 
-1. A station entrance in a place is an interaction (*"Bajar al metro"*).
-2. The network map opens on that station. Selectable stations are the ones that lead to a place
-   (bigger, glowing); the rest are drawn but cannot be picked. Arrows, the stick, the mouse or the
-   D-pad move between them; Enter/A travels; Esc/B goes back up.
-3. The trip: a small train runs along the line on the map, changing at shared stations; then the
-   screen fades and the party comes up the destination's entrance.
+1. A station entrance in a place is a totem (the red M, the line and the station's name) beside a
+   stair going down between granite kerbs and glass, lit from the hall. Walking into the stair goes
+   down (the place's `step` cells); pressing E beside it (*"Bajar al metro"*) does the same.
+2. The network plan opens on the station wall: white tiles, the station's name on a dark sign in
+   its line's colour, the plan framed on where Gerard is (*Estás aquí*) and where he can go, every
+   station named, the lines' ends in the legend. Selectable stations are the ones that lead to a
+   place (bigger, glowing); the rest are drawn but cannot be picked. Arrows, the stick, the mouse
+   or the D-pad move between them, and the trip to the one picked is dashed on the plan with its
+   stops and changes; Enter/A travels. The wheel or +/− zoom, dragging pans, dragging with the
+   right button (or Shift) turns and tilts the model, 0 shows the whole city. Esc/B goes back up:
+   the party stands at the entrance again.
+3. The trip: a small train runs along the line over the roofs, changing at shared stations, the
+   camera drifting after it; then the screen fades and the party comes up the destination's
+   entrance.
 4. Lines can be closed by the story (`transit.ts` rules), with a person or sign in the world
    saying why.
 
@@ -91,10 +111,14 @@ what to do next (`AGENTS.md`).
 | `stations`, `lines` | Stations (`id`, `name`, `at`) and lines (`id`, `name`, `kind`, `colour`, ordered `stations`) |
 
 `just city` (`tools/city.py`) projects it to `src/geo/barcelona.json`, writes a rough preview
-in `output/city/`, and, when `streets.json` exists, draws the background and renders it
-(`just city-background`, `scripts/city-background.mjs`). `just city-fetch` downloads
-`streets.json` again (Overpass, a minute or two; the area is the map's extent widened so wide
-screens show city too). Data © OpenStreetMap contributors (ODbL).
+in `output/city/`, and, when `streets.json` exists, draws the ground and renders it
+(`just city-background`, `scripts/city-background.mjs`); when `buildings.json` exists, it
+projects the buildings into `public/maps/barcelona-buildings.bin` (int16s: per building its
+height, kind, point count and points in map metres; committed, unlike `buildings.json`, which
+stays in `output/city/`) and leaves the lifted blocks out of the ground. `just city-fetch` and `just city-fetch-buildings` download them again from Overpass tile
+by tile (5 × 5 and 6 × 6 tiles over the map's extent widened so wide screens show city too; each
+tile is kept in `output/city/`, so a run that fails halfway only asks again for what is missing).
+Data © OpenStreetMap contributors (ODbL).
 
 ## Places and stations
 
@@ -133,10 +157,21 @@ metres from the zone's anchor (buildings as rectangles or polygons, roads and pa
 `highway` kind, squares, grass, water), inspired by how the real place looks and simplified for
 play. `just geo-build <zone>` turns them into the scene with the same builder and looks as the
 other real places (`docs/environment-styling.md`): facades, roofs, trees, props, places to look at,
-doors and named `anchors` (where the palace stands).
+doors and named `anchors` (where the palace stands). A sketch may be drawn in the turned frame
+(`"frame": "turned"`: x along the street, z towards the camera) and give features extra OSM `tags`
+(`lanes`, `oneway`, `bus:lanes`, `width`); next to an `osm.json`, only its `keep` features are added.
 
-- **`meridiana-calle`**: the Avinguda Meridiana by Fabra i Puig: side roads, two carriageways with
-  a planted median, blocks of flats with shops, home's door and the L1 entrance.
+- **`meridiana-calle`**: the Avinguda Meridiana from Fabra i Puig to Hipercor (Meridiana 350-356),
+  the one real-data zone of Barcelona: OpenStreetMap for the blocks, cross streets, street trees,
+  lamps, benches, shops and zebra crossings (`osm.json`), with the avenue's own cross-section after
+  the 2025-26 works redrawn in `sketch.json` (`redraw`) from photos taken on it in October 2026.
+  Turned -62° so the avenue runs left to right with the even side, the shops, facing the camera:
+  the wide panot sidewalk with plane trees and benches, the curb bed, the side road with the bus
+  lane and the Sagalés coach at the shelter, the planted median with the bike lane and young
+  staked trees, the works' red and white barriers and sacks, the two carriageways and the west bed.
+  Real signs on the ground floors (Granier, 365, Vision-Prix, General Óptica, Al Meu BB, Café
+  Entrepans, Zamora Floristas' kiosk…), Hipercor's box with its blue letters and the dark tower
+  behind, the graffiti hoarding in front of it, home's corner block (Casa) and the L1 entrance.
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
   the camera, blocks of flats, the L1 entrance and the castle on the roof.

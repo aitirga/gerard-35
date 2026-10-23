@@ -42,6 +42,8 @@ export interface CityMapOptions {
   markers?: readonly MapMarker[];
   /** The trip being made, highlighted on top of its lines. */
   route?: readonly Leg[];
+  /** The trip to the station picked now, before going: a lighter dashed highlight. */
+  preview?: readonly Leg[];
   label?: string;
 }
 
@@ -83,21 +85,26 @@ export function renderCityMap(options: CityMapOptions = {}): string {
     const line = LINES.find(l => l.id === leg.line)!;
     parts.push(`<path class="city-route" d="${straight(leg.stations.map(id => [at(id).x, at(id).y]))}" stroke="${line.colour}" stroke-width="${unit * 3.4}"/>`);
   }
+  if (!options.route?.length && options.preview?.length) for (const leg of options.preview) {
+    parts.push(`<path class="city-preview" d="${straight(leg.stations.map(id => [at(id).x, at(id).y]))}" stroke-width="${unit * 1}" stroke-dasharray="${unit * 1.4} ${unit * 1.2}"/>`);
+  }
   for (const m of options.markers ?? []) parts.push(renderMarker(m, unit * 2.6));
   const counts = new Map<string, number>();
   for (const line of LINES) for (const id of line.stations) counts.set(id, (counts.get(id) ?? 0) + 1);
   for (const s of Object.values(STATIONS)) {
     const pickable = selectable.has(s.id), here = options.current === s.id, chosen = options.selected === s.id;
     const r = unit * (pickable || here ? 1.6 : (counts.get(s.id) ?? 1) > 1 ? 1.2 : .8);
-    const name = pickable || here || NAMED.has(s.id);
-    parts.push(`<g class="city-station${pickable ? ' is-pickable' : ''}${here ? ' is-here' : ''}${chosen ? ' is-selected' : ''}" data-station="${s.id}">`
+    // Every station is named, as on the plan in a station; the ones that matter a size up.
+    const big = pickable || here, size = unit * (big ? 1.7 : NAMED.has(s.id) ? 1.3 : 1);
+    parts.push(`<g class="city-station${pickable ? ' is-pickable' : ''}${here ? ' is-here' : ''}${chosen ? ' is-selected' : ''}${big || NAMED.has(s.id) ? '' : ' is-minor'}" data-station="${s.id}">`
       + `${pickable ? `<circle class="city-station-glow" cx="${s.x}" cy="${s.y}" r="${r * 2.2}"/>` : ''}`
       + `<circle cx="${s.x}" cy="${s.y}" r="${r}" stroke-width="${unit * .45}"/>`
-      + `${name ? `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${unit * (pickable || here ? 1.7 : 1.3)}">${escape(s.name)}</text>` : ''}<title>${escape(s.name)}</title></g>`);
+      + `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${size}">${escape(s.name)}</text><title>${escape(s.name)}</title></g>`);
   }
   if (options.current) {
     const s = at(options.current);
-    parts.push(`<g class="city-pin" transform="translate(${s.x} ${s.y})"><path d="M0,0L${-unit * 1.5},${-unit * 3}A${unit * 1.9},${unit * 1.9},0,1,1,${unit * 1.5},${-unit * 3}Z" stroke-width="${unit * .45}"/><text y="${-unit * 3.6}" font-size="${unit * 1.7}">G</text></g>`);
+    parts.push(`<g class="city-pin" transform="translate(${s.x} ${s.y})"><path d="M0,0L${-unit * 1.5},${-unit * 3}A${unit * 1.9},${unit * 1.9},0,1,1,${unit * 1.5},${-unit * 3}Z" stroke-width="${unit * .45}"/><text y="${-unit * 3.6}" font-size="${unit * 1.7}">G</text>`
+      + `<text class="city-pin-label" y="${-unit * 6.6}" font-size="${unit * 1.5}" stroke-width="${unit * .5}">Estás aquí</text></g>`);
   }
   return `<svg class="city-map" viewBox="${v.x0} ${v.y0} ${w} ${h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escape(options.label ?? 'Plano de Barcelona con las líneas de metro')}">${parts.join('')}</svg>`;
 }
