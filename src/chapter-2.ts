@@ -75,7 +75,7 @@ export const LINES_2 = {
   /** The first time they come down into the metro: the city opens. */
   metroFirst: both(
     gerard('Fabra i Puig. Cuántas mañanas habré bajado estas escaleras medio dormido.'),
-    aitor('Hoy vas bien despierto. Venga, la L1 hasta Trinitat Vella son cuatro paradas.'),
+    aitor('Hoy vas bien despierto. Venga, la L1 hasta Trinitat Vella son tres paradas.'),
   ),
   /** Coming up at Trinitat Vella the first time: the castle over the school. */
   recComtalFirst: both(
@@ -133,7 +133,7 @@ export const LINES_2 = {
     both(gerard('¡NO!'), aitor('Buenos días… Otra vez gritando. ¿Mismo sueño?'), aitor('La tele lleva toda la mañana encendida. Sigue ahí, el castillo.')),
     both(gerard('¡NO!'), aitor('Ey. Despierta.'), aitor('Dicen en la tele que ha crecido esta noche. Ya ocupa media Trinitat Vella.')),
     both(gerard('¡NO!'), aitor('Gerard… mira por la ventana. El cielo tiene otro color.'), aitor('Ya ha llegado a Sant Andreu. No podemos seguir así.')),
-    both(gerard('¡NO!'), aitor('No he dormido. Se oía crujir la Meridiana, como un envoltorio.'), aitor('Está casi aquí. Hoy tiene que servir para algo.')),
+    both(gerard('¡NO!'), aitor('He dormido fatal. Se oía crujir la Meridiana, como un envoltorio.'), aitor('Está casi aquí. Hoy tiene que servir para algo.')),
     both(gerard('¡NO!'), aitor('Gerard. La escalera huele a fresa.'), aitor('Si hoy no la paramos, mañana no habrá casa a la que volver.')),
   ],
   /** As the day goes, Aitor notices it. */

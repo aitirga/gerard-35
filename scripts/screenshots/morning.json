@@ -1,0 +1,135 @@
+{
+  "title": "Meridiana · Despertar juntos",
+  "description": "Una nueva mañana: Gerard y Aitor duermen en sus mitades de la cama. Gerard se despierta primero, Aitor reacciona y ambos salen por sus lados antes de volver a caminar. Se comprueba también con el segundo mando conectado.",
+  "steps": [
+    {
+      "open": "/?story=castle&day=2&solo=1"
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = false; window.gerard.game.app.renderNextFrame = true; window.advanceMorning = condition => { const app = window.gerard.game.app; app.autoRender = false; for (let frame = 0; frame < 60 && app.timeScale !== 0 && !condition(); frame++) app.fire(\"update\", 1 / 60); app.renderNextFrame = true; return condition(); };"
+    },
+    {
+      "until": "window.advanceMorning ? window.advanceMorning(() => (document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]'))) : (document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]'))"
+    },
+    {
+      "eval": "window.gerard.game.standAt({x:10,z:13});"
+    },
+    {
+      "eval": "window.morningStop = 'asleep'; window.gerard.game.app.on('update', () => { if (window.morningStop && window.gerard.game.wakePhase === window.morningStop && document.querySelector('#blackout')?.dataset.on === 'false') { window.gerard.game.app.timeScale = 0; window.morningStop = undefined; window.gerard.game.app.once('frameend', () => { window.gerard.game.app.autoRender = false; }); } });"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.advanceMorning ? window.advanceMorning(() => (window.gerard.game.app.timeScale === 0)) : (window.gerard.game.app.timeScale === 0)",
+      "timeout": 120000
+    },
+    {
+      "shot": "dormidos",
+      "delay": 2500,
+      "caption": "Día 3: ambos empiezan dormidos, con la cabeza en las almohadas y sin atravesar el colchón."
+    },
+    {
+      "eval": "window.morningStop = 'gerard-awake'; window.gerard.game.app.timeScale = 1;"
+    },
+    {
+      "until": "window.advanceMorning ? window.advanceMorning(() => (window.gerard.game.app.timeScale === 0)) : (window.gerard.game.app.timeScale === 0)",
+      "timeout": 120000
+    },
+    {
+      "shot": "gerard-despierta",
+      "delay": 800,
+      "caption": "Gerard se incorpora primero; Aitor todavía está tumbado a su lado."
+    },
+    {
+      "eval": "window.morningStop = 'standing'; window.gerard.game.app.timeScale = 1;"
+    },
+    {
+      "until": "window.advanceMorning ? window.advanceMorning(() => (window.gerard.game.app.timeScale === 0)) : (window.gerard.game.app.timeScale === 0)",
+      "timeout": 120000
+    },
+    {
+      "shot": "fuera-de-la-cama",
+      "delay": 800,
+      "caption": "Cada uno sale por su lado y baja al suelo antes de ir al pie de la cama."
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1;"
+    },
+    {
+      "until": "window.advanceMorning ? window.advanceMorning(() => (!window.gerard.game.wakePhase && !!document.querySelector('#hud[data-dialogue]'))) : (!window.gerard.game.wakePhase && !!document.querySelector('#hud[data-dialogue]'))"
+    },
+    {
+      "eval": "if (window.gerard.story.days.clock.day !== 3) throw new Error('No ha empezado el día 3'); if (JSON.stringify(window.gerard.game.position) !== JSON.stringify({x:12,z:13})) throw new Error('Gerard no queda en suelo libre'); if (JSON.stringify(window.gerard.game.partnerPosition) !== JSON.stringify({x:9,z:14})) throw new Error('Aitor no queda en su lado');"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "hold": [
+        "KeyW",
+        "KeyD"
+      ],
+      "until": "window.advanceMorning ? window.advanceMorning(() => (window.gerard.game.position.z < 11)) : (window.gerard.game.position.z < 11)",
+      "timeout": 30000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "seguir-por-el-pie",
+      "caption": "Aitor rodea el pie de la cama al seguir a Gerard, sin cruzar el colchón."
+    },
+    {
+      "eval": "window.fakePad = i => ({id:'Xbox Wireless Controller',index:i,connected:true,mapping:'standard',timestamp:0,axes:[0,0,0,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))}); navigator.getGamepads = () => [window.pad1, window.pad2]; window.pad1 = fakePad(0); window.pad2 = fakePad(1); window.gerard.control.mode = 'duo'; window.gerard.controlChanged();"
+    },
+    {
+      "until": "window.advanceMorning ? window.advanceMorning(() => (window.gerard.game.partnerFree)) : (window.gerard.game.partnerFree)"
+    },
+    {
+      "eval": "window.gerard.game.standAt({x:10,z:13});"
+    },
+    {
+      "eval": "window.morningStop = 'asleep'; window.pad2.axes[0] = 1;"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.advanceMorning ? window.advanceMorning(() => (window.gerard.game.app.timeScale === 0)) : (window.gerard.game.app.timeScale === 0)",
+      "timeout": 120000
+    },
+    {
+      "shot": "dormidos-con-dos-mandos",
+      "delay": 2500,
+      "caption": "Día 4, con dos mandos: Aitor también duerme y el stick no interrumpe el despertar."
+    },
+    {
+      "eval": "window.morningStop = 'standing'; window.gerard.game.app.timeScale = 1;"
+    },
+    {
+      "until": "window.advanceMorning ? window.advanceMorning(() => (window.gerard.game.app.timeScale === 0)) : (window.gerard.game.app.timeScale === 0)",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.pad2.axes[0] = 0; window.gerard.game.app.timeScale = 1;"
+    },
+    {
+      "until": "window.advanceMorning ? window.advanceMorning(() => (!window.gerard.game.wakePhase && !!document.querySelector('#hud[data-dialogue]'))) : (!window.gerard.game.wakePhase && !!document.querySelector('#hud[data-dialogue]'))"
+    },
+    {
+      "eval": "if (!window.gerard.game.partnerFree) throw new Error('Se ha perdido el segundo jugador'); if (JSON.stringify(window.gerard.game.partnerPosition) !== JSON.stringify({x:9,z:14})) throw new Error('El mando ha movido a Aitor durante el despertar');"
+    },
+    {
+      "shot": "dos-jugadores-despiertos",
+      "delay": 1000,
+      "caption": "La secuencia devuelve el control al segundo jugador con ambos fuera de la cama."
+    }
+  ]
+}

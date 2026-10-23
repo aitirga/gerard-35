@@ -388,9 +388,10 @@ export function createHomeLights() {
     onChange(listener: () => void) { listeners.add(listener); return () => listeners.delete(listener); },
     /** The flat's lamps changed, from the house or from Gerard. */
     onFlat(listener: (id: LightId, lamp: Lamp) => void) { flatListeners.add(listener); return () => flatListeners.delete(listener); },
-    async setEnabled(on: boolean) {
+    /** `remember: false` temporarily releases the lights on exit without changing the saved choice. */
+    async setEnabled(on: boolean, remember = true) {
       if (on === settings.enabled && (on ? status.state !== 'off' : status.state === 'off')) return;
-      settings = { ...settings, enabled: on }; save();
+      settings = { ...settings, enabled: on }; if (remember) save();
       if (on) await connect(); else { release(); status = { state: 'off' }; changed(); }
     },
     update(next: Partial<Omit<LightsSettings, 'enabled'>>) { settings = { ...settings, ...next }; save(); changed(); settle(.8); },

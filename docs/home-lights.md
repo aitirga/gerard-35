@@ -15,7 +15,7 @@ latest `main`); the cloud takes up to a second.
 
 1. At home nothing else is needed: `just backend` finds the bulbs on the network. For the cloud
    fallback put `LIFX_TOKEN` in `.env` (https://cloud.lifx.com/settings).
-2. `just backend` and `just dev`, open the game, press Esc and pick **07 · Luces de casa**.
+2. `just backend` and `just dev`, open the game and choose **Esc → Configuración → Luces de casa**.
 3. **Conectar las luces de casa.** The choice is remembered in this browser. The page says whether
    they go *por la red de casa, al instante* or *por la nube*.
 

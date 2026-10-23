@@ -116,7 +116,7 @@ const STORY_INTERACTIONS = {
   'take-mochila': { place: PLACES.mochila, label: 'Coger la mochila' },
   'take-chicle': { place: PLACES.chicle, label: 'Mirar el bol de chicles' },
   'take-envoltorio': { place: PLACES.envoltorio, label: 'Mirar la mesilla' },
-  'meridiana-bed': { place: { environment: 'meridiana', cell: { x: 10, z: 13 } }, label: 'Dormir' },
+  'meridiana-bed': { place: { environment: 'meridiana', cell: { x: 10, z: 13 } }, label: 'Dormir', hint: 'Dormir', anchor: { x: 10.5, z: 14.5, y: .95 } },
 } as const;
 /** Looking at things inside the palace that answer with Bernat's voice too. */
 const PALACE_LOOKS: { id: string; cell: Cell; label: string; dialogue: Dialogue }[] = [
@@ -352,24 +352,24 @@ export class Story {
   /** Story interactions in this scene; `partner` is the cell of whoever walks with Gerard. */
   interactions(environment: EnvironmentId, partner?: Cell): Interaction[] {
     const list: Interaction[] = [];
-    for (const [id, { place, label }] of Object.entries(STORY_INTERACTIONS)) {
+    for (const [id, { place, label, ...prompt }] of Object.entries(STORY_INTERACTIONS)) {
       if (place.environment !== environment) continue;
       if (id === 'take-pocion' && this.has('got-potion')) continue;
       if (id === 'take-mochila' && this.has('got-backpack')) continue;
       if (id === 'take-chicle' && this.has('got-chicle')) continue;
       if (id === 'take-envoltorio' && (this.has('got-wrapper') || !this.adult)) continue;
       if (id === 'meridiana-bed' && !this.adult) continue;
-      list.push({ id, label, cell: { ...place.cell } });
+      list.push({ id, label, ...prompt, cell: { ...place.cell } });
     }
     if (partner && this.partner === 'aitor') list.push({ id: 'talk-aitor', label: 'Hablar con Aitor', cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
     if (environment === 'maresme' && this.has('palace') && !this.adult) list.push({ id: 'enter-palace', label: 'Atravesar la pompa', cell: { x: PLACES.palace.door.x, z: PLACES.palace.door.z - 1 } });
     if (environment === 'palacio') {
       // Chapter 1's looks answer with Bernat's voice; at 35 only the curtain is worth a word.
       for (const look of PALACE_LOOKS) if (!this.adult || look.id === 'look-curtain') list.push({ id: look.id, label: look.label, cell: { ...look.cell } });
-      if (!this.has('wrapper-room')) list.push({ id: 'push-back-door', label: 'Empujar la puerta', cell: { ...BACK_DOOR } });
-      if (this.adult) list.push({ id: 'challenge-guards', label: 'Cruzar la cortina', cell: { ...PLACES_2.guards.challenge } });
+      if (!this.has('wrapper-room')) list.push({ id: 'push-back-door', label: 'Empujar la puerta', hint: 'Empujar', cell: { ...BACK_DOOR } });
+      if (this.adult) list.push({ id: 'challenge-guards', label: 'Cruzar la cortina', hint: 'Cruzar la cortina', cell: { ...PLACES_2.guards.challenge } });
     }
-    if (partner && this.partner === 'bernat') list.push({ id: 'talk-bernat', label: this.companion === 'stalled' ? 'Preguntarle a Bernat qué pasa' : 'Hablar con Bernat', cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
+    if (partner && this.partner === 'bernat') list.push({ id: 'talk-bernat', label: this.companion === 'stalled' ? 'Preguntarle a Bernat qué pasa' : 'Hablar con Bernat', hint: this.companion === 'stalled' ? 'Preguntar qué pasa' : undefined, cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
     return list;
   }
   /** A dialogue that stops a door from working, if the story is not ready for it. */

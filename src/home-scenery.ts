@@ -2,6 +2,7 @@ import * as pc from 'playcanvas';
 import type { Environment, FloorKind, Stairs } from './environments';
 import type { PropKit } from './props';
 import { lampRgb, type Lamp, type LightId } from './home-lights';
+import { MERIDIANA_BED } from './bed';
 
 /** What `buildScenery` lends the house, so everything is tracked and destroyed with the scene. */
 export interface HomeKit {
@@ -1121,7 +1122,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     // A double bed with its headboard on the south wall, centred across the room so there is a
     // nightstand with a lamp on each side; a rug under it.
     const bedWhite = mat('Canapé blanco', '#f2f1ee', 0.3), seam = mat('Junta', '#d9d7d0', 0.3);
-    const bl = 3.0, bw = 2.0, hz = 17 - FACE - 0.1, bcx = 10.5, bcz = hz - bl / 2;
+    const { length: bl, width: bw, headZ: hz, x: bcx, z: bcz } = MERIDIANA_BED;
     box('Alfombra', mat('Alfombra de lana', '#c9b9a0', 0.05), bcx, bcz - 0.35, 0, 3.4, 0.015, 3.8);
     box('Canapé', bedWhite, bcx, bcz, 0, bw, 0.42, bl);
     for (const dz of [-0.75, 0, 0.75]) for (const side of [-1, 1]) box('Cajón del canapé', seam, bcx + side * (bw / 2 + 0.005), bcz + dz, 0.1, 0.01, 0.24, 0.65);
@@ -1637,5 +1638,6 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     },
     destroy() { meshes.forEach(m => m.destroy()); },
     setLamp,
+    lampPosition(id: LightId) { return lamps.get(id)?.lights[0]?.light.entity.getPosition().clone(); },
   };
 }

@@ -24,7 +24,8 @@
     { "shot": "lamp-lit-flat", "delay": 2500, "caption": "The flat is lit by its lamps: the bedroom's two bulbs over the bed (one light) in red, the kitchen switched off and in shadow" },
     { "press": "KeyR" },
     { "press": "Escape" },
+    { "eval": "document.querySelector('[data-open=settings]').click()" },
     { "eval": "document.querySelector('[data-open=lights]').click()" },
-    { "shot": "menu-lights", "delay": 1500, "caption": "Menu · Luces de casa: connect the bulbs (LAN or cloud), living room or whole house, intensity, and the lead (Auto) with its test flash" }
+    { "shot": "menu-lights", "delay": 1500, "caption": "Pause · Configuración · Luces de casa: connect the bulbs (LAN or cloud), living room or whole house, intensity, and the lead (Auto) with its test flash" }
   ]
 }
