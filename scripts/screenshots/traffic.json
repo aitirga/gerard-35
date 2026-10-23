@@ -1,0 +1,99 @@
+{
+  "title": "Traffic and daylight on the Meridiana",
+  "description": "Cars, taxis and buses drive the avenue's lanes, queue at red lights, keep out of a blocked junction and go on green, while the traffic lights and walk signals change with them; the bike lane in the median shows a bicycle seen from the side. Then the outdoor daylight (a near-white sun with a cool sky fill) on Passatge Maresme in the morning.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        70,
+        51
+      ]
+    },
+    {
+      "shot": "bike-lane",
+      "delay": 2500,
+      "caption": "The median's bike lane: a white bicycle in profile every few metres, between the planted beds"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        136,
+        43
+      ]
+    },
+    {
+      "shot": "junction",
+      "delay": 1500,
+      "caption": "Escòcia crossing the Meridiana: cars wait at the stop line while the other street has green"
+    },
+    {
+      "wait": 9000
+    },
+    {
+      "shot": "junction-later",
+      "caption": "A few seconds later the lights have turned and the queue moves off"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        100,
+        57
+      ]
+    },
+    {
+      "shot": "stops-for-gerard",
+      "delay": 3000,
+      "caption": "Gerard standing in a lane of the calçada: the cars brake and wait behind him"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        120,
+        40
+      ]
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "overview",
+      "delay": 3000,
+      "caption": "The avenue from above with its traffic, Fabra i Puig to Hipercor"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "open": "/?story=got-backpack"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        20,
+        24
+      ]
+    },
+    {
+      "shot": "maresme",
+      "delay": 2500,
+      "caption": "Daylight on Passatge Maresme: neutral sun, blue-tinted shade instead of the old sepia"
+    }
+  ]
+}
