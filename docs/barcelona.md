@@ -137,8 +137,9 @@ Data © OpenStreetMap contributors (ODbL).
 | --- | --- | --- | --- |
 | Fabra i Puig | L1 | `meridiana-calle` (home's street) | Playable |
 | Trinitat Vella | L1 | `rec-comtal` (the school under the palace) | Playable |
-| La Sagrera | L1, L5 | Platform with the R4 poster | Next |
-| Cardedeu | R4 (to add) | Nuria and Uri | Next |
+| La Sagrera | L1, L5, R4 | Change for the R4 (the poster clue is on the Meridiana's bus shelter) | On the map |
+| Sant Andreu (Rodalies) | R4 | — | On the map |
+| Cardedeu | R4 | Nuria and Uri (`docs/quests/nuria.md`) | At the map's edge (`edge` in `city.json`: a town beyond the map waits at its border, named with an arrow) |
 
 ### Making a new place reachable
 

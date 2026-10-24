@@ -79,7 +79,9 @@ export function renderCityMap(options: CityMapOptions = {}): string {
   // Lines: a dark outline under the colour, cartoon style.
   for (const line of LINES) {
     const d = straight(line.stations.map(id => [at(id).x, at(id).y]));
-    parts.push(`<path class="city-line-edge" d="${d}" stroke-width="${unit * 2.5}"/><path class="city-line" d="${d}" stroke="${line.colour}" stroke-width="${unit * 1.7}"><title>${line.name}</title></path>`);
+    // Rodalies trains run on a railway, drawn as a sleeper-striped band, not a metro tube.
+    const rail = line.kind === 'rodalies' ? ` stroke-dasharray="${unit * 1.6} ${unit * .5}"` : '';
+    parts.push(`<path class="city-line-edge" d="${d}" stroke-width="${unit * 2.5}"/><path class="city-line" d="${d}" stroke="${line.colour}" stroke-width="${unit * 1.7}"${rail}><title>${line.name}</title></path>`);
   }
   if (options.route?.length) for (const leg of options.route) {
     const line = LINES.find(l => l.id === leg.line)!;
@@ -99,7 +101,9 @@ export function renderCityMap(options: CityMapOptions = {}): string {
     parts.push(`<g class="city-station${pickable ? ' is-pickable' : ''}${here ? ' is-here' : ''}${chosen ? ' is-selected' : ''}${big || NAMED.has(s.id) ? '' : ' is-minor'}" data-station="${s.id}">`
       + `${pickable ? `<circle class="city-station-glow" cx="${s.x}" cy="${s.y}" r="${r * 2.2}"/>` : ''}`
       + `<circle cx="${s.x}" cy="${s.y}" r="${r}" stroke-width="${unit * .45}"/>`
-      + `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${size}">${escape(s.name)}</text><title>${escape(s.name)}</title></g>`);
+      // A town beyond the map is named inwards, with an arrow pointing on to it.
+      + (s.edge ? `<text x="${s.x - r * 1.5}" y="${s.y + unit * .55}" font-size="${size}" text-anchor="end">${escape(s.name)} →</text>` : `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${size}">${escape(s.name)}</text>`)
+      + `<title>${escape(s.name)}</title></g>`);
   }
   if (options.current) {
     const s = at(options.current);

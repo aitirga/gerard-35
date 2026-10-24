@@ -7,8 +7,8 @@ import { castleThreat } from '../src/animas.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { canWalk } from '../src/movement.ts';
 
-test('the cartoon map has its hand-drawn layers and, for now, only the red and blue lines', () => {
-  assert.deepEqual(LINES.map(l => [l.id, l.colour]), [['l1', '#e1393e'], ['l5', '#1f78c0']]);
+test('the cartoon map has its hand-drawn layers, the red and blue lines and the R4 to Cardedeu', () => {
+  assert.deepEqual(LINES.map(l => [l.id, l.colour, l.kind]), [['l1', '#e1393e', 'metro'], ['l5', '#1f78c0', 'metro'], ['r4', '#f2a900', 'rodalies']]);
   for (const line of LINES) {
     assert.ok(line.stations.length > 1, line.id);
     for (const id of line.stations) assert.ok(STATIONS[id], `${line.id}: ${id}`);
@@ -43,7 +43,7 @@ test('trips change lines at shared stations and prefer staying on', () => {
   assert.deepEqual(legs.map(l => l.line), ['l1', 'l5'], 'La Sagrera: from the red line to the blue');
   assert.equal(legs[0].stations.at(-1), 'la-sagrera');
   assert.equal(legs[1].stations[0], 'la-sagrera');
-  assert.deepEqual(linesAt('la-sagrera').map(l => l.id), ['l1', 'l5']);
+  assert.deepEqual(linesAt('la-sagrera').map(l => l.id), ['l1', 'l5', 'r4']);
   // A closed line is avoided, or there is no way at all.
   assert.equal(route('fabra-i-puig', 'sagrada-familia', { lines: ['l5'] }), undefined);
   assert.equal(route('fabra-i-puig', 'trinitat-vella', { stations: ['sant-andreu'] }), undefined, 'only the L1 reaches Trinitat Vella');
@@ -60,4 +60,12 @@ test('only stations with a place are destinations, and each place has its entran
     assert.equal(stationOf(entrance.id), station);
   }
   assert.equal(stationOf('meridiana-tv'), undefined);
+});
+
+test('the R4 leaves from La Sagrera for Cardedeu, a town waiting at the map\'s edge', () => {
+  assert.deepEqual(route('fabra-i-puig', 'cardedeu').map(l => l.line), ['l1', 'r4']);
+  assert.ok(STATIONS.cardedeu.edge);
+  const { x0, x1, y0, y1 } = CITY_MAP.extent;
+  assert.ok(STATIONS.cardedeu.x > x0 && STATIONS.cardedeu.x < x1 && STATIONS.cardedeu.y > y0 && STATIONS.cardedeu.y < y1, 'drawn inside the map');
+  assert.match(renderCityMap(), /Cardedeu →/);
 });

@@ -434,6 +434,13 @@ def build() -> None:
     far = 50_000
     sea = coast + [[coast[-1][0] + far, coast[-1][1]], [coast[-1][0] + far, far], [coast[0][0] - far, far], [coast[0][0] - far, coast[0][1]]]
     stations = [{"id": s["id"], "name": s["name"], **at(s)} for s in city["stations"]]
+    # Stations beyond the map (Rodalies towns like Cardedeu) wait at its edge, on the way to them.
+    inset = min(extent["x1"] - extent["x0"], extent["y1"] - extent["y0"]) * .05
+    for s, spec in zip(stations, city["stations"]):
+        if spec.get("edge"):
+            x = min(max(s["x"], extent["x0"] + inset), extent["x1"] - inset)
+            y = min(max(s["y"], extent["y0"] + inset), extent["y1"] - inset)
+            s.update(x=round(x), y=round(y), edge=True)
     known = {s["id"] for s in stations}
     missing = [sid for l in city["lines"] for sid in l["stations"] if sid not in known]
     if missing:

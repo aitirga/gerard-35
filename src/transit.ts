@@ -8,7 +8,8 @@ import type { EnvironmentId } from './environments';
 
 export type LineKind = 'metro' | 'rodalies';
 export interface Line { id: string; name: string; kind: LineKind; colour: string; stations: string[] }
-export interface Station { id: string; name: string; x: number; y: number }
+/** `edge`: a town beyond the map (Cardedeu), waiting at its border on the way there. */
+export interface Station { id: string; name: string; x: number; y: number; edge?: boolean }
 type Points = number[][];
 /** The cartoon city (tools/city.py): hand-drawn layers in metres, on a map with the sea at the bottom. */
 export interface CityMap {

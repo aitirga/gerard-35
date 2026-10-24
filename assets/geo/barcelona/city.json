@@ -1245,6 +1245,23 @@
     41.4196,
     2.1478
    ]
+  },
+  {
+   "id": "sant-andreu-comtal",
+   "name": "Sant Andreu",
+   "at": [
+    41.4363,
+    2.1925
+   ]
+  },
+  {
+   "id": "cardedeu",
+   "name": "Cardedeu",
+   "at": [
+    41.6393,
+    2.3569
+   ],
+   "edge": true
   }
  ],
  "lines": [
@@ -1299,6 +1316,17 @@
     "el-carmel",
     "el-coll",
     "vall-d-hebron"
+   ]
+  },
+  {
+   "id": "r4",
+   "name": "R4",
+   "kind": "rodalies",
+   "colour": "#f2a900",
+   "stations": [
+    "la-sagrera",
+    "sant-andreu-comtal",
+    "cardedeu"
    ]
   }
  ]
