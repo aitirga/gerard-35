@@ -325,3 +325,16 @@ test('days saved elsewhere: later clocks win, and a rewind (newer epoch) replace
   story.loadDays({ nonsense: true });
   assert.deepEqual(story.clock, { day: 2, hour: 8 });
 });
+test('ánimas grow with fights won wearing them, and each level says what it teaches', async () => {
+  const { Story } = await import('../src/story.ts');
+  const { LEVEL_WINS } = await import('../src/levels.ts');
+  const story = new Story(['noista', 'papagato']);
+  let learned = [];
+  for (let i = 0; i < LEVEL_WINS[0]; i++) learned = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['papagato', 'papagato', 'noista'] });
+  assert.equal(story.wins.papagato, LEVEL_WINS[0], 'two wearers, one fight');
+  assert.equal(story.levels.papagato, 2); assert.ok(story.has('papagato-2'));
+  assert.deepEqual(learned.find(e => e.kind === 'learn'), { kind: 'learn', classId: 'papagato', level: 2, skills: ['llaga'] });
+  assert.equal(story.levels.noista, 1, 'Noísta has no level table yet');
+  story.handle({ type: 'battle', won: false, encounter: 'dogs', worn: ['papagato'] });
+  assert.equal(story.wins.papagato, LEVEL_WINS[0], 'a lost fight teaches nothing');
+});

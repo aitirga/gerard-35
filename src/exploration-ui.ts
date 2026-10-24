@@ -7,6 +7,7 @@ import { ANIMAS, animaBonus } from './animas';
 import { ITEMS, ITEM_KIND_LABELS, itemsOfKind, type ItemKind } from './items';
 import type { MemberId, PartyMember, Story } from './story';
 import { CLASS_STATS, SKILLS, type ClassId } from './battle';
+import { LEVELLED } from './levels';
 import { CLASSES } from './classes';
 import { PROFILES, STAT_LABELS, withBonus, type Stats } from './stats';
 import { currentThought, diary, storyClock } from './journal';
@@ -110,7 +111,8 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   }
   const bonusChips = (classId: ClassId) => (Object.entries(CLASS_STATS[classId]) as [keyof Stats, number][])
     .map(([key, value]) => `<li data-sign="${value > 0 ? 'up' : 'down'}">${STAT_LABELS[key]} ${value > 0 ? '+' : '−'}${Math.abs(value)}</li>`).join('');
-  const skillsOf = (classId: ClassId) => SKILLS.filter(s => s.class === classId);
+  /** What an ánima knows so far: skills it has not learned yet are never shown (AGENTS.md: only what the party has). */
+  const skillsOf = (classId: ClassId) => SKILLS.filter(s => s.class === classId && (!('level' in s) || (story.levels[classId] ?? 1) >= s.level));
   function statRows(member: PartyMember) {
     const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
     return `<dl class="status-bars">${STAT_ORDER.map(key => {
@@ -139,7 +141,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
         <div class="status-portrait" data-member="${member.id}" style="--anima:${animaColour(member) ?? 'var(--sheet-accent)'}">${portrait(member)}<i class="vitals-burst" aria-hidden="true"></i></div>
         <div class="status-name"><span class="battle-kicker">${own === 'aitor' ? 'EL COMPAÑERO' : 'EL PROTAGONISTA'}</span><h2>${escape(member.name)}</h2><p>${escape(member.note)}</p>${equipment(member)}</div>
       </section>
-      <section class="status-stats"><span class="battle-kicker">ESTADÍSTICAS</span>${statRows(member)}${story.battles ? `<span class="battle-kicker">HABILIDADES</span><ul class="status-skills">${SKILLS.filter(s => s.class === member.classId).map(s => `<li><strong>${s.name}</strong><small>${s.cost} SEC</small><span>${s.description}</span></li>`).join('')}</ul>` : ''}</section>
+      <section class="status-stats"><span class="battle-kicker">ESTADÍSTICAS</span>${statRows(member)}${story.battles ? `<span class="battle-kicker">HABILIDADES</span><ul class="status-skills">${(member.classId ? skillsOf(member.classId) : []).map(s => `<li><strong>${s.name}</strong><small>${s.cost} SEC</small><span>${s.description}</span></li>`).join('')}</ul>` : ''}</section>
       <section class="status-side">
         <div class="status-vitals">${plate(member)}${animaSwitch(member)}${animaLine(member)}</div>
         <article class="status-mission"><span class="battle-kicker">AHORA</span><p>${currentThought(story, own).mission}</p></article>
@@ -168,7 +170,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     return `<div class="animas-page">
       <section class="anima-wearers" data-count="${wards.length}">${wearers}</section>
       <article class="anima-detail" style="--scarf:${spec.colour}">
-        <div><span class="battle-kicker">ÁNIMA</span><h2>${spec.name}</h2><p class="anima-motto">${spec.motto}</p></div>
+        <div><span class="battle-kicker">ÁNIMA${LEVELLED.includes(viewing) ? ` · NIVEL ${story.levels[viewing] ?? 1}` : ''}</span><h2>${spec.name}</h2><p class="anima-motto">${spec.motto}</p></div>
         <section><span class="battle-kicker">CAMBIA</span><ul class="anima-bonus">${bonusChips(viewing)}</ul></section>
         <section><span class="battle-kicker">HABILIDADES</span><ul class="anima-skills">${skillsOf(viewing).map(s => `<li><strong>${s.name}</strong><small>${s.cost} SEC</small><span>${s.description}</span></li>`).join('')}</ul></section>
         <p class="anima-rule">Cada uno lleva la suya. En combate se cambia en tu turno y no lo gasta.</p>

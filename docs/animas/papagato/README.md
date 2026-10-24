@@ -72,7 +72,9 @@ party for 3 rounds; runs side by side with Análisis Parálisis) in `src/battle.
 `#hud[data-class="papagato"]` in `src/style.css` (cream paper, rounded cards, MIAU); Haru and Yuki
 as procedural cats (`src/cats.ts`) beside the wearer in fights (`src/battle-scene.ts`): Haru
 pounces on Zarpazo, Yuki hides on her skill. Unlocked by the `papagato` story flag. Screenshots:
-`just screenshots papagato`. Still to do: levels 2 and 3 (needs ánima levels).
+`just screenshots papagato`. Levels 2 and 3 (`src/levels.ts`): *Zarpa en la llaga* (cost 10,
+power 26 plus 4 per Sangrado stack, which it spends) and *Las dos a la vez* (cost 14, power 24 to
+every foe, one Sangrado stack each).
 
 Plan: _to write once the design converges_ (`../README.md` § How an ánima is built).
 

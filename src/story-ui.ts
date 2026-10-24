@@ -3,6 +3,8 @@
 // Looks live in style.css (#story-card, .story-notes, .key-hint, #companion-bubble).
 import { ITEMS, ITEM_KIND_LABELS, type ItemId } from './items';
 import { STORY_CARDS, STORY_HINTS } from './story';
+import { ANIMA_NAMES, SKILLS, type ClassId, type SkillId } from './battle';
+import { CLASSES } from './classes';
 
 const ITEM_NOTE_MS = 4200;
 const CARD_MS = 3400;
@@ -42,6 +44,18 @@ export function createStoryUI(hud: HTMLElement) {
       el.querySelector('p')!.textContent = item.description;
       notes.append(el);
       setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS);
+    },
+    /** An ánima grew (src/levels.ts): a note like an item's, with what it learned. */
+    learn(classId: ClassId, level: number, skills: SkillId[]) {
+      const el = document.createElement('article');
+      el.className = 'story-note'; el.style.setProperty('--note-accent', CLASSES[classId].colour);
+      el.innerHTML = `<span class="battle-kicker"></span><strong></strong><p></p>`;
+      el.querySelector('span')!.textContent = `ÁNIMA · ${ANIMA_NAMES[classId].toUpperCase()} · NIVEL ${level}`;
+      const learned = SKILLS.filter(skill => skills.includes(skill.id));
+      el.querySelector('strong')!.textContent = learned.length ? `Aprende ${learned.map(skill => skill.name).join(' y ')}` : 'Se hace más fuerte';
+      el.querySelector('p')!.textContent = learned.map(skill => skill.description).join(' ');
+      notes.append(el);
+      setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS * 1.5);
     },
     /** A key and a verb that stays until the player has used it (or a newer hint replaces it). */
     hint(id: keyof typeof STORY_HINTS, learned?: () => boolean) {

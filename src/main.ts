@@ -59,6 +59,10 @@ const loadoutKey = 'gerard35.loadout.v1';
 function restoreLoadout() { try { story.loadout = JSON.parse(localStorage.getItem(loadoutKey) ?? '{}'); } catch { /* Storage is optional. */ } }
 function keepLoadout() { try { localStorage.setItem(loadoutKey, JSON.stringify(story.loadout)); } catch { /* Storage is optional. */ } }
 restoreLoadout();
+// Fights won per ánima (src/levels.ts) also live here; the levels they reach are story flags.
+const winsKey = 'gerard35.wins.v1';
+try { story.wins = JSON.parse(localStorage.getItem(winsKey) ?? '{}'); } catch { /* Storage is optional. */ }
+function keepWins() { try { localStorage.setItem(winsKey, JSON.stringify(story.wins)); } catch { /* Storage is optional. */ } }
 /**
  * Two players from chapter 2 (docs/party.md). `solo` is for development only: player 1 also plays
  * Aitor. It comes from ?solo (just dev-solo) or the switch on the Mando page, and is remembered.
@@ -179,6 +183,7 @@ try {
     else if (effect.kind === 'metro') await ride(effect.station);
     else if (effect.kind === 'look') await game.look(effect.anchor);
     else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
+    else if (effect.kind === 'learn') storyUI.learn(effect.classId, effect.level, effect.skills);
     else { storyPaused = true; game.setPaused(true); await storyUI.card(effect.id); storyPaused = false; game.setPaused(!!exploration.active || menuOpen()); }
   }
   /**
@@ -248,9 +253,9 @@ try {
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
   const game = createGame(canvas, {
-    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, guards: palaceGuards(story.animas.length) }); },
+    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, levels: story.levels, guards: palaceGuards(story.animas.length) }); },
     // Backing off is neither a win nor a fall.
-    onBattleEnd: (phase, encounter) => { if (phase !== 'escaped') storyEvent({ type: 'battle', won: phase === 'won', encounter }); },
+    onBattleEnd: (phase, encounter, worn) => { if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn }); keepWins(); } },
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onStep: (steps, cell) => {

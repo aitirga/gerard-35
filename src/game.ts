@@ -46,7 +46,8 @@ export interface GameCallbacks {
   /** A fight starts; `withPartner` says whether the companion is there to fight too. */
   onEncounter: (withPartner: boolean, foes: number, options: { possessed: boolean; encounter: Encounter }) => void;
   /** A fight closed, however it ended. */
-  onBattleEnd: (phase: BattlePhase, encounter: Encounter) => void;
+  /** `worn`: the ánimas the party wore when the fight ended (they grow with each win, src/levels.ts). */
+  onBattleEnd: (phase: BattlePhase, encounter: Encounter, worn: ClassId[]) => void;
   onBattleTargets: (targets: { id: string; x: number; y: number; visible: boolean }[]) => void;
   /** Where the companion's head is on screen, for speech bubbles; undefined when he is not shown. */
   onCompanionScreen: (at: { x: number; y: number } | undefined) => void;
@@ -710,7 +711,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   function setBattle(next: BattleState | undefined, effect?: BattleEffect, onImpact?: () => void) {
     if (!next && battle) {
       if (battle.encounter === 'dogs') pack.finish(battle.phase === 'won');
-      callbacks.onBattleEnd(battle.phase, battle.encounter);
+      callbacks.onBattleEnd(battle.phase, battle.encounter, battle.allies.flatMap(a => a.classId ? [a.classId] : []));
     }
     const fight = next?.encounter ?? encounterId;
     const stage = fight === 'palace-minion' ? PALACE_STAGE : fight === 'palace-guards' ? PLACES_2.guardStage : pack.area.stage;

@@ -19,7 +19,7 @@ const COMMANDS: { id: Command; name: string }[] = [
   { id: 'defend', name: 'Defender' },
   { id: 'escape', name: 'Huir' },
 ];
-const TARGETS = { foes: 'Un enemigo', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
+const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** The details hint goes once it has been used (AGENTS.md: key hints disappear once used). */
@@ -451,6 +451,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else if (effect.boosted && effect.skill) { const skill = effect.skill; effect.boosted.forEach(id => pop(id, SKILLS.find(s => s.id === skill)!.name.split(' ')[0], 'guard', `${boostedStats(skill)} +${state!.boosts?.[skill]?.amount ?? 0}`)); }
       else if (effect.skill && SKILLS.find(s => s.id === effect.skill)!.kind === 'heal' && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', 'PV');
       else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
+      else if (effect.hits) effect.hits.forEach(h => pop(h.target, `−${h.amount}`, 'damage', h.status ? `Sangrado ${h.status.stacks}` : SKILLS.find(s => s.id === effect.skill)!.name));
       else if (effect.target && target) pop(effect.target, `−${effect.amount ?? 0}`, 'damage', target.hp === 0 ? '¡Fuera!' : target.guarding ? 'Protegido' : effect.skill ? SKILLS.find(s => s.id === effect.skill)!.name : '');
     });
     if (token === generation) { delete root.dataset.resolving; delete root.dataset.actor; }
@@ -587,7 +588,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     },
     /** `party` is who fights on Gerard's side (story.battleParty), or a size for chapter 1's boys. */
     /** `animas` are the party's unlocked ánimas (story.classes); L and R walk through them. `guards` sizes the palace guards. */
-    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; animas?: ClassId[]; guards?: GuardStrength } = {}) {
+    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; animas?: ClassId[]; guards?: GuardStrength; levels?: Partial<Record<ClassId, number>> } = {}) {
       if (state) return;
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
@@ -596,6 +597,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       state = encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId, options.animas)
         : encounter === 'palace-guards' ? createGuardBattle(slots, options.guards ?? palaceGuards(0), options.animas)
         : createBattle(slots, foeCount, possessed, undefined, options.animas); busy = true;
+      state.levels = options.levels;
       foeCount = state.foes.length;
       root.toggleAttribute('data-possessed', possessed);
       root.dataset.encounter = encounter;

@@ -7,7 +7,8 @@ import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { Cell } from './movement';
 import type { ItemId } from './items';
-import { ANIMA_NAMES, palaceGuards, type ClassId, type PartySlot } from './battle.ts';
+import { ANIMA_NAMES, SKILLS, palaceGuards, type ClassId, type PartySlot, type SkillId } from './battle.ts';
+import { LEVELLED, levelFlag, levelForWins, levelOf, MAX_LEVEL } from './levels.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
@@ -25,6 +26,8 @@ export const STORY_FLAGS = [
   'tv-news', 'metro', 'rec-comtal', 'castle', 'palace-tried', 'clue-r4', 'anima-nuria', 'anima-uri',
   // Nuria's mission (docs/quests/nuria.md): Papagato is the party's for good.
   'papagato',
+  // Ánima levels reached (src/levels.ts).
+  'papagato-2', 'papagato-3',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 
@@ -37,8 +40,8 @@ export type StoryEvent =
   | { type: 'leash' }
   /** La Reina Bubbaloo's minion has stepped out and popped its bubble: the dogs obey it now. */
   | { type: 'minion' }
-  /** A fight ended; `encounter` says which one (the street dogs if missing). */
-  | { type: 'battle'; won: boolean; encounter?: EncounterId }
+  /** A fight ended; `encounter` says which one (the street dogs if missing), `worn` the ánimas the party wore at the end. */
+  | { type: 'battle'; won: boolean; encounter?: EncounterId; worn?: ClassId[] }
   /** The palace has finished rising over the north end of the street. */
   | { type: 'palace' }
   /** Gerard is (or is no longer) heading back south, away from the palace. */
@@ -85,7 +88,9 @@ export type StoryEffect =
   /** The camera turns to a named anchor of the scene (the palace), or back to Gerard without one. */
   | { kind: 'look'; anchor?: string }
   /** The Queen has covered everything: the end, with the way back to the morning before. */
-  | { kind: 'doom' };
+  | { kind: 'doom' }
+  /** An ánima reached a new level and learned `skills` (src/levels.ts). */
+  | { kind: 'learn'; classId: ClassId; level: number; skills: SkillId[] };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Noísta, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards';
@@ -154,6 +159,8 @@ export class Story {
   private away = false;
   /** Who wears which class; members missing here wear their default (see `classOf`). */
   private worn: Loadout = {};
+  /** Fights won wearing each ánima (src/levels.ts). Kept in the browser by `main.ts`, like the loadout. */
+  wins: Partial<Record<ClassId, number>> = {};
   /**
    * The days in Barcelona (src/days.ts): what day and hour it is, and the last mornings to come
    * back to. Saved next to the flags.
@@ -205,6 +212,43 @@ export class Story {
    * Ánimas (classes in the code) the party has unlocked; anyone in the party but Bernat can wear
    * any of them. Matemágico is Gerard's from the start; Noísta wakes up in the palace.
    */
+  /** Each unlocked ánima's level (1 until it grows). */
+  get levels(): Partial<Record<ClassId, number>> {
+    return Object.fromEntries(this.classes.map(id => [id, levelOf(id, flag => this.flags.has(flag as StoryFlag))]));
+  }
+  /**
+   * A fight was won wearing `worn`: each ánima counts it once, and one that reaches a new level
+   * sets its flag and says what it learned.
+   */
+  private grow(worn: ClassId[] = []): StoryEffect[] {
+    const effects: StoryEffect[] = [];
+    for (const id of new Set(worn)) {
+      if (!LEVELLED.includes(id) || !this.classes.includes(id)) continue;
+      const wins = this.wins[id] = (this.wins[id] ?? 0) + 1;
+      const before = this.levels[id] ?? 1, reached = Math.min(MAX_LEVEL, levelForWins(wins));
+      for (let level = before + 1; level <= reached; level++) {
+        this.set(levelFlag(id, level as 2 | 3) as StoryFlag);
+        effects.push({ kind: 'learn', classId: id, level, skills: SKILLS.filter(skill => skill.class === id && 'level' in skill && skill.level === level).map(skill => skill.id) });
+      }
+    }
+    return effects;
+  }
+  /** What a fight's end means for the story, before any ánima grows. */
+  private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!event.won) {
+      if (!this.adult) return [];
+      // Chapter 2: falling is waking up at home the next morning, with everything done kept.
+      return this.endDay('fall');
+    }
+    if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten), ...this.spend('fight')];
+    if (event.encounter === 'palace-minion') {
+      if (!this.set('wrapper-room')) return [];
+      return [say(LINES.afterNoista), { kind: 'ambush' }];
+    }
+    if (!this.has('minion') || !this.set('first-fight')) return [];
+    return [say(LINES.afterFight), { kind: 'palace' }];
+  }
   get classes(): ClassId[] {
     return [
       'matemagico' as const,
@@ -415,19 +459,10 @@ export class Story {
       case 'minion':
         if (!this.has('dejavu') || !this.set('minion')) return [];
         return [say(LINES.minion), { kind: 'battle', encounter: 'dogs' }];
-      case 'battle':
-        if (!event.won) {
-          if (!this.adult) return [];
-          // Chapter 2: falling is waking up at home the next morning, with everything done kept.
-          return this.endDay('fall');
-        }
-        if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten), ...this.spend('fight')];
-        if (event.encounter === 'palace-minion') {
-          if (!this.set('wrapper-room')) return [];
-          return [say(LINES.afterNoista), { kind: 'ambush' }];
-        }
-        if (!this.has('minion') || !this.set('first-fight')) return [];
-        return [say(LINES.afterFight), { kind: 'palace' }];
+      case 'battle': {
+        const learned = event.won ? this.grow(event.worn) : [];
+        return [...this.afterBattle(event), ...learned];
+      }
       case 'palace':
         if (!this.has('first-fight') || !this.set('palace')) return [];
         return [say(LINES.palaceRises)];

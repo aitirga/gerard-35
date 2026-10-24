@@ -75,6 +75,8 @@ Fuerza, Defensa).
 | No-ta | Whoever wears **Noísta** | 10 | 40 magic | Breaks the Queen's gum (pringue) |
 | Zarpazo de Haru | Whoever wears **Papagato** | 6 | 16 physical | Adds two Sangrado stacks |
 | Yuki se esconde | Whoever wears **Papagato** | 8 | +4 | Defensa +4 for the whole party for 3 rounds; runs alongside Análisis Parálisis |
+| Zarpa en la llaga | **Papagato**, level 2 | 10 | 26 physical | +4 per Sangrado stack on the target, and spends them |
+| Las dos a la vez | **Papagato**, level 3 | 14 | 24 physical | Every foe, one Sangrado stack each |
 
 Every skill comes with an ánima: whoever wears none has none. Bernat never wears one and only
 attacks (Habilidad is greyed out on his turn); Aitor has skills only while he wears an ánima.

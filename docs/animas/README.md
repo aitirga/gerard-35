@@ -55,7 +55,12 @@ one stronger.
   get the next one, per the HUD rule in `AGENTS.md`); a note when a skill is learned.
 - Every ánima has its level table in its own folder; Matemágico and Noísta still need theirs.
 
-Nothing of this exists in code yet.
+Built (`src/levels.ts`): fights won count per ánima, once per fight even with two wearers, and
+live in the browser (`gerard35.wins.v1`, like the loadout); reaching 3 wins gives level 2 and 8
+wins level 3, each a story flag (`papagato-2`, `papagato-3`) so it is saved and a story event can
+grant it. A skill with `level` in `SKILLS` is hidden until then, in fights and on the Ánimas page
+(which shows *ÁNIMA · NIVEL n*). Reaching a level shows a note: *ÁNIMA · PAPAGATO · NIVEL 2 ·
+Aprende Zarpa en la llaga*. Only Papagato has a table so far (`LEVELLED`).
 
 ## Combined skills
 

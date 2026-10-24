@@ -492,8 +492,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 /* Chapter story HUD: no objective panel (see AGENTS.md). Item notes top right, one key hint at
    the bottom, Bernat's speech bubble over his head, full-screen chapter cards. */
 .story-notes { position: absolute; top: 22px; right: 22px; width: 320px; display: grid; gap: 10px; }
-.story-note { padding: 14px 16px; border: 1px solid var(--ui-line); border-top: 2px solid #a5cf8f; background: var(--ui-surface); color: var(--ui-paper); box-shadow: var(--ui-shadow); backdrop-filter: blur(12px); animation: encounter-right .35s ease both; transition: opacity .3s, translate .3s; }
-.story-note .battle-kicker { color: #a5cf8f; }
+.story-note { padding: 14px 16px; border: 1px solid var(--ui-line); border-top: 2px solid var(--note-accent, #a5cf8f); background: var(--ui-surface); color: var(--ui-paper); box-shadow: var(--ui-shadow); backdrop-filter: blur(12px); animation: encounter-right .35s ease both; transition: opacity .3s, translate .3s; }
+.story-note .battle-kicker { color: var(--note-accent, #a5cf8f); }
 .story-note strong { display: block; margin-top: 6px; font-size: 15px; }
 .story-note p { margin: 6px 0 0; font-size: 12px; line-height: 1.55; color: var(--ui-muted); }
 .story-note[data-leaving] { opacity: 0; translate: 20px 0; }

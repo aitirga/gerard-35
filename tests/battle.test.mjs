@@ -224,7 +224,7 @@ test('the palace minion swallows every hit, and whatever the party does the beat
 
 test('skill descriptions follow the plain shape in AGENTS.md, with the intensity their power gives', () => {
   const intensity = power => power <= 20 ? 'leve' : power <= 34 ? 'medi[oa]' : power <= 49 ? 'alt[oa]' : 'muy alt[oa]';
-  const targets = { foes: 'a un enemigo', allies: 'a un aliado herido', party: 'a todo el equipo' };
+  const targets = { foes: 'a un enemigo', 'all-foes': 'a todos los enemigos', allies: 'a un aliado herido', party: 'a todo el equipo' };
   for (const skill of SKILLS.filter(s => !('abstract' in s && s.abstract))) {
     const extra = '( [A-ZÁÉÍÓÚ][^.]*\\.)*';
     const shape = skill.kind === 'boost' ? `^(Sube|Baja) [^.]+ de ${targets[skill.side].slice(2)} durante ${BOOST_ROUNDS} rondas\\.${extra}$`
@@ -316,4 +316,21 @@ test('Papagato is the party\'s once the mission is won', async () => {
   const { Story } = await import('../src/story.ts');
   assert.deepEqual(new Story(['noista']).classes, ['matemagico', 'noista']);
   assert.deepEqual(new Story(['noista', 'papagato']).classes, ['matemagico', 'noista', 'papagato']);
+});
+test('Papagato grows: Zarpa en la llaga cashes in Sangrado, Las dos a la vez reaches every foe', () => {
+  const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }];
+  const s = createBattle(party, 3, false, undefined, ['papagato']);
+  const gerard = s.allies[0];
+  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'escondite'], 'level 1');
+  s.levels = { papagato: 3 };
+  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'escondite', 'llaga', 'a-la-vez']);
+  const all = act(s, 'skill', undefined, 'a-la-vez');
+  assert.equal(all.hits.length, 3);
+  assert.ok(s.foes.every(f => stacks(f, 'sangrado') === 1));
+  const plain = createBattle(party, 1, false, undefined, ['papagato']); plain.levels = { papagato: 2 };
+  const bled = createBattle(party, 1, false, undefined, ['papagato']); bled.levels = { papagato: 2 };
+  addStatus(bled.foes[0], 'sangrado', 5);
+  const a = act(plain, 'skill', 'dog-0', 'llaga').amount, b = act(bled, 'skill', 'dog-0', 'llaga').amount;
+  assert.equal(b - a, 5 * 4, 'four more per stack');
+  assert.equal(stacks(bled.foes[0], 'sangrado'), 0, 'and it spends them');
 });

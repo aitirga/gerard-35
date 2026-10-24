@@ -34,6 +34,9 @@ export const SKILLS = [
   // Papagato's skills are Haru's and Yuki's: the wearer only asks.
   { id: 'zarpazo', name: 'Zarpazo de Haru', cost: 6, side: 'foes', power: 16, kind: 'physical', bleed: 2, description: 'Daño leve físico a un enemigo. Añade sangrado.', class: 'papagato' },
   { id: 'escondite', name: 'Yuki se esconde', cost: 8, side: 'party', power: 4, kind: 'boost', stats: ['defensa'], description: 'Sube Defensa de todo el equipo durante 3 rondas.', class: 'papagato' },
+  // Learned as Papagato grows (src/levels.ts): `level` is the one that teaches it.
+  { id: 'llaga', name: 'Zarpa en la llaga', cost: 10, side: 'foes', power: 26, kind: 'physical', perBleed: 4, level: 2, description: 'Daño medio físico a un enemigo. Hace más daño cuanto más sangrado tenga. Gasta el sangrado.', class: 'papagato' },
+  { id: 'a-la-vez', name: 'Las dos a la vez', cost: 14, side: 'all-foes', power: 24, kind: 'physical', bleed: 1, level: 3, description: 'Daño medio físico a todos los enemigos. Añade sangrado.', class: 'papagato' },
 ] as const;
 /** How many rounds a boost lasts, counting the one it is used in. */
 export const BOOST_ROUNDS = 3;
@@ -87,6 +90,8 @@ export interface BattleState {
   animas: ClassId[];
   /** Gerard has said no (Noísta is awake): the palace minion stops escalating. */
   awakened: boolean;
+  /** Each ánima's level (src/levels.ts); a skill with a higher `level` is not learned yet. */
+  levels?: Partial<Record<ClassId, number>>;
 }
 /**
  * Someone who fights on the party's side: `id` names them in the fight, `profile` gives their
@@ -124,9 +129,9 @@ export function switchAnima(state: BattleState, step: -1 | 1): ClassId | undefin
 }
 /** Unlocked ánimas, starting from whatever the party already wears. */
 const wornAnimas = (slots: PartySlot[]) => [...new Set(slots.flatMap(s => s.classId ? [s.classId] : []))];
-/** The skills `actor` can use: their ánima's. */
-export function skillsFor(_state: BattleState, actor: Combatant) {
-  return SKILLS.filter(skill => actor.classId === skill.class);
+/** The skills `actor` can use: their ánima's, as far as it has grown. */
+export function skillsFor(state: BattleState, actor: Combatant) {
+  return SKILLS.filter(skill => actor.classId === skill.class && (!('level' in skill) || (state.levels?.[skill.class] ?? 1) >= skill.level));
 }
 /** Rounds a party boost has left, this one included (0 when it is not running); without `skill`, the longest. */
 export function boostRounds(state: BattleState, skill?: SkillId): number {
@@ -166,7 +171,11 @@ export function addStatus(c: Combatant, id: StatusId, count = 1) {
 }
 /** What happens to one fighter's statuses at the end of a round. */
 export interface StatusTick { target: string; status: StatusId; amount: number; stacks: number }
-export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; boosted?: string[]; status?: { id: StatusId; stacks: number } }
+export interface BattleEffect {
+  kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; boosted?: string[]; status?: { id: StatusId; stacks: number };
+  /** A skill that reaches every foe: what it did to each one (`target` is the first). */
+  hits?: { target: string; amount: number; status?: { id: StatusId; stacks: number } }[];
+}
 /** Bridge the campaign's flat resources to the core; positive healing never revives. */
 function changeHealth(target: Combatant, delta: number) {
   const result = adjustResource({ current: target.hp, max: target.maxHp }, delta, false);
@@ -244,15 +253,17 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   if (!ability) return [];
   // A boost already running has nothing to add until it wears off.
   if (ability.kind === 'boost') return boostRounds(state, ability.id) ? [] : state.allies.filter(a => a.hp > 0);
-  return ability.side === 'foes' ? state.foes.filter(f => f.hp > 0) : state.allies.filter(a => a.hp > 0 && a.hp < a.maxHp);
+  return ability.side === 'foes' || ability.side === 'all-foes' ? state.foes.filter(f => f.hp > 0) : state.allies.filter(a => a.hp > 0 && a.hp < a.maxHp);
 }
-/** Whether a skill needs a target picked, or simply happens (Análisis Parálisis reaches everyone). */
-export const aimed = (skill: SkillId) => SKILLS.find(s => s.id === skill)?.side !== 'party';
+/** Whether a skill needs a target picked, or simply happens (Análisis Parálisis reaches the whole party, Las dos a la vez every foe). */
+export const aimed = (skill: SkillId) => { const side = SKILLS.find(s => s.id === skill)?.side; return side !== 'party' && side !== 'all-foes'; };
 /** What `skill` (or a plain attack) does to `target` before it is clamped to what is left. */
 function strike(state: BattleState, actor: Combatant, target: Combatant, skill?: Skill) {
   const stats = current(state, actor), guard = current(state, target);
   if (!skill) return physical(18, stats, guard);
-  return skill.kind === 'magic' ? magical(skill.power, stats, guard) : physical(skill.power, stats, guard);
+  // Zarpa en la llaga: the deeper the bleeding, the harder it lands.
+  const power = skill.power + ('perBleed' in skill ? skill.perBleed * stacks(target, 'sangrado') : 0);
+  return skill.kind === 'magic' ? magical(power, stats, guard) : physical(power, stats, guard);
 }
 export function act(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId): BattleEffect | undefined {
   if (state.phase !== 'player') return;
@@ -261,7 +272,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   const ability = SKILLS.find(s => s.id === skill);
   const targets = validTargets(state, action, skill);
   const party = action === 'skill' && ability?.side === 'party';
-  const target = party ? undefined : targets.find(f => f.id === targetId);
+  const everyone = action === 'skill' && ability?.side === 'all-foes';
+  const target = party ? undefined : everyone ? targets[0] : targets.find(f => f.id === targetId);
   if ((action === 'attack' || action === 'skill') && !target && !(party && targets.length)) return;
   if (action === 'skill' && (!ability || actor.secondary < ability.cost || !skillsFor(state, actor).includes(ability))) return;
   const effect: BattleEffect = { actor: actor.id, kind: action };
@@ -278,6 +290,16 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     state.boosts = { ...state.boosts, [ability!.id]: { amount: ability!.power, until: state.round + BOOST_ROUNDS - 1 } };
     effect.boosted = targets.map(ally => ally.id);
     state.message = `${actor.name} usa ${ability!.name}. ${boostedStats(ability!.id)} +${ability!.power} para el equipo durante ${BOOST_ROUNDS} rondas.`;
+  } else if (everyone) {
+    // Las dos a la vez: Haru and Yuki go for every foe at once.
+    spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = target!.id;
+    effect.hits = targets.map(foe => {
+      const amount = changeHealth(foe, -strike(state, actor, foe, ability));
+      const status = 'bleed' in ability! && foe.hp > 0 ? { id: 'sangrado' as const, stacks: addStatus(foe, 'sangrado', ability.bleed) } : undefined;
+      return { target: foe.id, amount, status };
+    });
+    effect.amount = effect.hits[0]?.amount;
+    state.message = `${actor.name} usa ${ability!.name}. ${effect.hits.length === 1 ? `−${effect.amount} PV.` : `Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`}`;
   } else if (target) {
     if (action === 'skill') { spendSecondary(actor, ability!.cost); effect.skill = skill; }
     effect.target = target.id;
@@ -294,6 +316,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       effect.amount = changeHealth(target, -damage);
       const name = action !== 'skill' ? 'Atacar' : ability!.name;
       state.message = action === 'skill' && skill === 'nota' ? `${actor.name} dice que NO. El pringue revienta. −${effect.amount} PV.` : `${actor.name} usa ${name} contra ${target.name}. −${effect.amount} PV.`;
+      if (action === 'skill' && ability && 'perBleed' in ability && target.statuses?.sangrado) delete target.statuses.sangrado;
       if (action === 'skill' && ability && 'bleed' in ability && target.hp > 0) {
         effect.status = { id: 'sangrado', stacks: addStatus(target, 'sangrado', ability.bleed) };
         state.message += ` Sangrado ${effect.status.stacks}.`;
