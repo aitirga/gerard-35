@@ -24,14 +24,14 @@ export type FearEncounter = 'cebollon' | 'plato' | 'game-over' | 'uri-vertigo';
 /** Where things are. Cells must be walkable (tests/nuria.test.mjs). */
 export const PLACES_NURIA = {
   /** Nuria waits at her door, on the long block of Carrer de Jacint Verdaguer. */
-  nuria: { environment: STREET, cell: { x: 91, z: 58 } },
+  nuria: { environment: STREET, cell: { x: 107, z: 68 } },
   /** Haru waits at the station's door and leads the way, looking back. */
-  haru: { environment: STREET, cell: { x: 31, z: 180 }, radius: 4 },
+  haru: { environment: STREET, cell: { x: 32, z: 185 }, radius: 4 },
   /** Round the corner of Doctor Daurella, the street closes into Uri's maze. */
-  corner: { environment: STREET, cell: { x: 126, z: 57 } },
+  corner: { environment: STREET, cell: { x: 141, z: 74 } },
   /** Where the maze lets them in, and back out to the street. */
   mazeIn: { environment: MAZE, cell: { x: 4, z: 41 } },
-  streetBack: { environment: STREET, cell: { x: 124, z: 58 } },
+  streetBack: { environment: STREET, cell: { x: 136, z: 74 } },
   /** Uri, Nil in his arms, waits at the end of each level; reaching him sends him on. */
   uri: [
     { environment: MAZE, cell: { x: 29, z: 43 }, radius: 3 },
