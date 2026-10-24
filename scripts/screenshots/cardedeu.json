@@ -1,0 +1,15 @@
+{
+  "title": "Cardedeu · Nuria's street",
+  "description": "Cardedeu from OpenStreetMap (just geo cardedeu) with what the map lacks drawn by hand from the aerial reference: Nuria's long two-storey block with its terracotta roof on Carrer de Jacint Verdaguer, the white-roofed house on the Doctor Daurella corner, the houses and gardens across the street, and the R4 station a short walk away.",
+  "steps": [
+    { "open": "/?story=metro&solo=1" },
+    { "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },
+    { "teleport": "cardedeu", "cell": [29, 183] },
+    { "shot": "station", "delay": 2500, "caption": "Out of Cardedeu station: the R4 brought them here" },
+    { "teleport": "cardedeu", "cell": [89, 60] },
+    { "shot": "nuria-door", "delay": 2500, "caption": "Carrer de Jacint Verdaguer: Nuria's door on the long block" },
+    { "press": "KeyR" },
+    { "shot": "overview", "delay": 2500, "caption": "From above: the block, the street, the gardens" },
+    { "press": "KeyR" }
+  ]
+}

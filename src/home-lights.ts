@@ -97,6 +97,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   palacio: { salon: [hex('#ff8fbf', .55, .45), hex('#b48ad6', .45, .4), white(2300, .4), hex('#e0569b', .5, .6)], rest: hex('#ff9fc8', .2, .35) },
   // A Basque village: green hills, grey stone, a soft overcast sky.
   alegia: { salon: [white(3600, .7), hex('#5f9a5a', .55, .55), hex('#8aa0b5', .5, .4), white(3000, .6)], rest: white(3400, .3) },
+  // Cardedeu: a quiet Vallès street, white render, terracotta roofs and gardens.
+  cardedeu: { salon: [white(2900, .8), hex('#c8693f', .55, .5), hex('#79a86a', .5, .5), white(3300, .6)], rest: white(3000, .3) },
   // The Meridiana outside: peach façades, green awnings, plane trees and a Barcelona sky.
   'meridiana-calle': { salon: [hex('#f2b38f', .75, .45), hex('#8ec5e8', .6, .5), hex('#2f9c86', .5, .6), white(3200, .7)], rest: white(3200, .3) },
   // The Rec Comtal school: brick and a pale sky (the castle's pink comes with the tone).

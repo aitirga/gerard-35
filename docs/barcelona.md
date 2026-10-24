@@ -173,6 +173,12 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   Real signs on the ground floors (Granier, 365, Vision-Prix, General Óptica, Al Meu BB, Café
   Entrepans, Zamora Floristas' kiosk…), Hipercor's box with its blue letters and the dark tower
   behind, the graffiti hoarding in front of it, home's corner block (Casa) and the L1 entrance.
+- **`cardedeu`**: Nuria's street in Cardedeu (`docs/quests/nuria.md`), a real-data zone like
+  Alegia: OpenStreetMap (`osm.json`) from Carrer del Doctor Daurella down to the railway, with the
+  R4 station on Avinguda del Rei En Jaume, plus what the map lacks drawn in `sketch.json` from the
+  aerial reference: Nuria's long two-storey block with a hipped terracotta roof (her door the first
+  on Carrer de Jacint Verdaguer), the white-roofed corner house, the houses and gardens across the
+  street. Turned 90° so her block faces the camera.
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
   the camera, blocks of flats, the L1 entrance and the castle on the roof.

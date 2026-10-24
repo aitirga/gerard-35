@@ -1,0 +1,140 @@
+{
+  "id": "cardedeu",
+  "name": "Cardedeu · Carrer de Jacint Verdaguer",
+  "region": "Cardedeu, Vallès Oriental",
+  "anchor": {
+    "address": "Carrer de Jacint Verdaguer, 08440 Cardedeu",
+    "lat": 41.6373255,
+    "lon": 2.3543989
+  },
+  "bounds_m": {
+    "west": -80,
+    "east": 190,
+    "north": -90,
+    "south": 100
+  },
+  "cell_m": 1.25,
+  "rotation_deg": 90,
+  "zoom": 11.5,
+  "spawn": {
+    "east_m": 150,
+    "south_m": 63
+  },
+  "storey_m": 3.0,
+  "reference": {
+    "checked": "2026-10-24",
+    "streetview_capture": "",
+    "notes": [
+      "Nuria's street (docs/quests/nuria.md): Carrer de Jacint Verdaguer between Carrer del Doctor Daurella (north) and a Passeig (south). A narrow one-way street, cars parked on its east side, zebra crossings at both ends.",
+      "West side: Nuria's home, a long two-storey block with a hipped reddish terracotta roof and white render, her door the first one; at the north corner a small house with a white roof and a garden; a grass plot behind.",
+      "East side: terraced houses with yards and a big tree over a walled garden.",
+      "Cardedeu station (R4) about 170 m to the south-east, on Avinguda del Rei En Jaume.",
+      "Aerial reference: assets/references/environments/cardedeu-jacint-verdaguer/aerial.png (local)."
+    ],
+    "viewpoints": []
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#efe7d8",
+        "#e8dcc6",
+        "#f3ede2",
+        "#e1d2ba",
+        "#ece2cf"
+      ],
+      "base": "#a89c88",
+      "trim": "#ffffff",
+      "roof": "#b9603d",
+      "roof_kind": "hip",
+      "facade": "rendered",
+      "ground": "masonry",
+      "levels": 2
+    },
+    "nuria": {
+      "walls": [
+        "#f4efe6"
+      ],
+      "base": "#b8ab96",
+      "trim": "#ffffff",
+      "roof": "#b5583a",
+      "roof_kind": "hip",
+      "facade": "rendered",
+      "ground": "masonry",
+      "levels": 2
+    }
+  },
+  "buildings": {
+    "sketch/casa-nuria": {
+      "style": "nuria",
+      "label": "Casa de Nuria"
+    },
+    "sketch/casa-cantonada": {
+      "style": "nuria",
+      "roof": "#e9e6df",
+      "roof_kind": "flat",
+      "levels": 1
+    }
+  },
+  "props": [
+    {
+      "kind": "tree",
+      "east_m": 17,
+      "south_m": -24
+    },
+    {
+      "kind": "lamp",
+      "east_m": -6,
+      "south_m": -30
+    },
+    {
+      "kind": "lamp",
+      "east_m": 4,
+      "south_m": -50
+    },
+    {
+      "kind": "bin",
+      "east_m": -6,
+      "south_m": -12
+    },
+    {
+      "kind": "bench",
+      "east_m": 140,
+      "south_m": 62
+    }
+  ],
+  "places": [
+    {
+      "id": "station-cardedeu",
+      "label": "Entrar en la estación",
+      "east_m": 152,
+      "south_m": 66,
+      "step": {
+        "east_m": 150.5,
+        "south_m": 66,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "nuria-portal",
+      "label": "Mirar el portal",
+      "east_m": -7,
+      "south_m": -12,
+      "lines": [
+        "El portal de Nuria. En el buzón, una pegatina de un gato y otra que dice «Nil».",
+        "Por la ventana de abajo se ve un rascador de gatos."
+      ]
+    },
+    {
+      "id": "cardedeu-estacio",
+      "label": "Mirar el cartel",
+      "east_m": 146,
+      "south_m": 63,
+      "lines": [
+        "«Cardedeu». Rodalies, R2 Nord y ahora también la R4.",
+        "Huele a pan recién hecho desde algún sitio."
+      ]
+    }
+  ],
+  "anchors": {}
+}

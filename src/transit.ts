@@ -40,6 +40,7 @@ export const STATIONS: Readonly<Record<string, Station>> = Object.fromEntries(CI
 export const STATION_PLACES: Readonly<Record<string, { environment: EnvironmentId }>> = {
   'fabra-i-puig': { environment: 'meridiana-calle' },
   'trinitat-vella': { environment: 'rec-comtal' },
+  cardedeu: { environment: 'cardedeu' },
 };
 /** The interaction in a place that is the station's entrance. */
 export const entranceId = (station: string) => `station-${station}`;

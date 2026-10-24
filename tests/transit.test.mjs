@@ -50,8 +50,8 @@ test('trips change lines at shared stations and prefer staying on', () => {
 });
 
 test('only stations with a place are destinations, and each place has its entrance', () => {
-  assert.deepEqual(destinations('fabra-i-puig'), ['trinitat-vella']);
-  assert.deepEqual(destinations('fabra-i-puig', { stations: ['trinitat-vella'] }), []);
+  assert.deepEqual(destinations('fabra-i-puig'), ['trinitat-vella', 'cardedeu']);
+  assert.deepEqual(destinations('fabra-i-puig', { stations: ['trinitat-vella', 'cardedeu'] }), []);
   for (const [station, place] of Object.entries(STATION_PLACES)) {
     const environment = ENVIRONMENTS[place.environment];
     const entrance = environment.interactions.find(i => i.id === entranceId(station));
