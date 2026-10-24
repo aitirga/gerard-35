@@ -1,6 +1,6 @@
 # Nuria · Cardedeu (working title)
 
-Status: designing (round 10 next: assets, then open questions and the plan) · Last updated: 2026-10-24
+Status: plan written (round 10) · waiting for the go to build · Last updated: 2026-10-24
 
 ## Summary
 
@@ -177,42 +177,146 @@ its colour. Which plan exactly: _open_ (one line of dialogue, no new mechanic).
 
 ## Assets
 
-Waiting on the user (round 9): photos of Nuria, Uri and the cats in
-`assets/references/characters/<id>/` (`nuria`, `uri`, `haru`, `yuki`), and a short description of
-Nuria and of Uri (age, build, hair, glasses or beard, usual clothes, colours).
+Photos are in `assets/references/characters/` (local, ignored by git): `nuria/`, `uri/`, `nil/`,
+`haru/`, `yuki/`, and `group/` (the family selfie; the old flatmates with both cats). Pair photos
+sit in both people's folders, so each `--description` says who is who.
+
+Descriptions drafted from the photos (proposals, ready to paste):
+
+- **Nuria**: `Woman in her mid-thirties, slim, long dark-brown wavy hair worn loose or half up, dark brown eyes, freckles, wide warm smile, a small silver hoop in her nose and several small silver hoops in her ears. Cream knit top with navy and red horizontal stripes, light jeans, white trainers. She is the woman in the photos.`
+- **Uri**: `Man in his mid-thirties, medium build, short dark-brown hair, short trimmed dark beard, brown eyes, calm friendly half smile. Plain white T-shirt with a small red heart on the sleeve, dark jeans, grey trainers. He is the man in the photos.`
+- **Nil** (procedural, in Uri's arms): baby of about eight months, chubby, short dark-brown hair,
+  big dark-brown eyes, a big gummy smile, a white onesie with little green crocodiles and a blue
+  bandana bib.
+- **Haru** (procedural): slim short-haired dilute calico: grey and soft orange-cream patches on the
+  back and head, an orange-cream blaze on the forehead, white chest, belly, paws and muzzle,
+  green eyes.
+- **Yuki** (procedural): plump long-haired fluffy white cat, pale grey at the base of the tail,
+  pink ears, sleepy half-closed eyes.
 
 | Who / what | How | Photos | Description | Portrait | Expressions | 3D | SPEAKERS |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Nuria | `just character nuria` | — | — | — | `preocupado`, `riendo` | — | — |
-| Uri | `just character uri`; violet eyes by recolouring `Ojo` in code | — | — | — | `riendo`, `sorprendido`, `crio=grinning like a mischievous kid, wide eyes` | — | — |
-| Nil (baby) | Procedural, in Uri's arms | — | hair / clothes optional | — | — | — | — |
-| Haru: tricolour (cat, female, bold) | Procedural, like `src/minion.ts` | to come | | | | — | |
-| Yuki: white (cat, female, fearful) | Procedural | to come | | | | — | |
-| Cebollón, Plato Misterioso, Game Over, El Vértigo | Procedural | — | | | | — | |
+| Nuria | `just character nuria` | ✓ 5 | ✓ draft | — | `preocupado`, `riendo` | — | — |
+| Uri | `just character uri`; violet eyes by recolouring `Ojo` in code | ✓ 4 | ✓ draft | — | `riendo`, `sorprendido`, `crio=…` | — | — |
+| Nil (baby) | Procedural, in Uri's arms | ✓ 2 | ✓ | — | — | — | — |
+| Haru | Procedural cat (`src/cats.ts`) | ✓ 3 | ✓ | | | — | |
+| Yuki | Procedural cat | ✓ 2 | ✓ | | | — | |
+| Cebollón, Plato Misterioso, Game Over, El Vértigo | Procedural | — | in this doc | | | — | |
 | Cardedeu, Jacint Verdaguer | `just geo cardedeu` (zone to create) | aerial ✓; facade and door to come | | | | | |
 | La Sagrera platform, R4 on the map | Scene + `src/transit.ts` | — | | | | | |
 
-Commands, per character (only `--dry-run` is free):
+Commands (only `--dry-run` is free):
 
 ```bash
-just character nuria --description '…' --dry-run
-just character nuria --description '…' --only portrait      # OpenAI credits; review public/portraits/nuria.png
-just character nuria --only expressions fullbody model      # OpenAI + Claude credits
-just character nuria --only expressions --expressions preocupado riendo
-just character uri --only expressions --expressions riendo sorprendido 'crio=grinning like a mischievous kid, wide eyes'
+just character nuria --description '<Nuria above>' --dry-run
+just character nuria --description '<Nuria above>' --only portrait     # OpenAI; review public/portraits/nuria.png
+just character nuria --description '<Nuria above>' --only expressions fullbody model --expressions preocupado riendo
+just character uri --description '<Uri above>' --dry-run
+just character uri --description '<Uri above>' --only portrait
+just character uri --description '<Uri above>' --only expressions fullbody model --expressions riendo sorprendido 'crio=grinning like a mischievous kid, wide eyes'
 ```
+
+## Converge check
+
+Read as a player, where they could get stuck, and what the world does about it:
+
+- **From Cardedeu station to Nuria's street**: the zone may not reach the station. Haru waits at
+  the station exit and trots off towards Jacint Verdaguer, looking back (a cat as a guide, no
+  arrow); Aitor: *"¿Esa no es Haru?"*.
+- **The first ambush**: before the first one, Uri shouts from ahead *"¡Cuidado con los
+  contenedores, que muerden!"*, then the first bin lid rattles in plain view.
+- **El Vértigo's eye**: the first time it spins, Aitor shouts *"¡Agárrate a las tejas!"* (and the
+  Defender glyph is already in the menu).
+- **El Plato Misterioso**: each food is drawn big and Gerard names it (*"¡Es una alcachofa!"*), so
+  the weakness can be read without a panel.
+- **Leaving**: at the station Aitor asks before they go; the line says what is lost.
+
+Balance: it is one of the first missions, so every fight is tuned for Gerard and Aitor with
+Matemágico, Noísta and Papagato at level 1 and no friend ánimas, with `just combat-sim`. Other
+quests: none yet, nothing repeated.
 
 ## Open
 
-- Nuria's street number, and which end the first door is at.
+- Nuria's street number, and which end the first door is at (step 6 can start without it).
+- The two decisions at the top of the implementation plan.
 - The Passeig at the south end (its name).
-- Is this Nuria **Nuria Mendoza**, the woman behind La Reina Bubbaloo? (Story decision for
-  `docs/lore.md`.)
-- Does Uri still give his own ánima (`ANIMAS.uri` exists as a placeholder), or is this one
-  mission with one ánima?
+- Is this Nuria **Nuria Mendoza**, the woman behind La Reina Bubbaloo? Nothing in this mission
+  depends on it; recommended: no, keep the secret elsewhere. (Story decision for `docs/lore.md`.)
 - Balance: as an early mission, the boss must be beatable with Matemágico, Noísta, Papagato and no
   other ánimas.
 
 ## Implementation plan
 
-Written in the converge step.
+Each step is one or a few `feat: …` commits and leaves the game playable. Order follows
+dependencies; steps marked **blocked** need something from the user first.
+
+**Before step 1, decide** (recommendations in brackets):
+
+- `ANIMAS` has `nuria` and `uri`: one mission, two lights? [Yes: Nuria's light when the cats are
+  kept, Uri's when he beats his fear; it is a hard mission and they are two friends.]
+- Papagato's wearer stats [Velocidad +2, Fuerza +1, Espíritu −1] and colour [warm orange].
+
+1. **Statuses in story fights.** Stacking statuses on `Combatant` in `src/battle.ts` (stacks,
+   duration, end-of-round tick), shown on the fighters in `src/battle-ui.ts`. First three:
+   **Sangrado** (damage per stack each round, −1 stack per round), **Mareo** (−Velocidad per
+   stack), **Llorera** (the Cebollón's: more misses). Same rules as the combat core
+   (`docs/combat.md`), with a parity case in `tests/combat-integration.test.mjs`; unit tests in
+   `tests/battle.test.mjs`. Docs: `docs/animas/README.md` § Shared mechanics.
+2. **Papagato, level 1.** `papagato` in `ClassId`, `ANIMA_NAMES`, `CLASS_STATS`; *Zarpazo de
+   Haru* and *Yuki se esconde* in `SKILLS`; `CLASSES` look; `#hud[data-class="papagato"]` theme in
+   `src/style.css`; `ANIMAS.nuria` renamed and coloured. **Haru and Yuki** as procedural cats
+   (`src/cats.ts`, from the photo notes) sitting beside the wearer in fights and jumping on each
+   skill (`src/battle-scene.ts`). Screenshot scenario `papagato` (fight with the ánima worn, via a
+   debug story flag). Docs: `docs/animas/papagato/`, `docs/party.md`.
+3. **Ánima levels.** Wins per ánima (both wearers count) and story-given levels, a level table per
+   ánima, a note when a skill is learned, the level on the Ánimas page. Papagato level 2 *Zarpa en
+   la llaga* and level 3 *Las dos a la vez*. Where it is kept: with the loadout in the browser, or
+   in the story save [the story save, so it follows the player]. Tests. Can come after step 10
+   if the mission should be playable first.
+4. **Nuria and Uri** (**blocked**: running `just character` with credits, see *Assets*).
+   Portraits, expressions, 3D; `nuria` and `uri` in `SPEAKERS`; Nil procedural in Uri's arms; the
+   violet eyes as an `Ojo` recolour while the Queen holds him.
+5. **La Sagrera and the R4.** The La Sagrera station scene with the R4 platform and the existing
+   `clueR4Marquesina` poster; the R4 line to Cardedeu in `src/transit.ts` and `city.json`; the
+   Rodalies trip on the network map (`docs/barcelona.md` § Making a new place reachable). Tests in
+   `tests/transit.test.mjs`.
+6. **Cardedeu.** `assets/geo/cardedeu/zone.json` anchored on Carrer de Jacint Verdaguer (aerial
+   notes above; facade photos if the user has them), `just geo cardedeu`, the station entrance,
+   Nuria's door, three lines in `src/environments.ts`. If the station is out of the zone's bounds,
+   the trip ends at a station entrance placed at the nearest street end. Screenshot scenario
+   `cardedeu`.
+7. **The mission's story.** `src/friends/nuria.ts` (the one-file-per-friend convention in
+   `docs/barcelona.md` § Architecture): Haru at the station, Nuria at her door, her lines, the cats
+   lent (ÁNIMA DESBLOQUEADA, Papagato on trial), Haru and Yuki following the party
+   (`src/follower.ts`). **Mission state is not saved**: leaving (Aitor's question at the
+   station), falling (wake at home) or the day ending gives the cats back and resets it; only the
+   win sets flags (`nuria-uri`, `papagato`, `anima-nuria`, `anima-uri`). Hours: 3
+   (`src/days.ts`). Tests in `tests/story.test.mjs`: the lending, every way of losing it, the win.
+8. **The maze.** Three levels over the Cardedeu zone (a mission variant of the street: hedges,
+   parked cars and fences closing it into a maze): 1 · La calle, 2 · Los patios with fences that
+   move on Uri's *"¡cambio!"*, 3 · Hacia arriba up stairs and ladders to the roof. Uri ahead with
+   Nil, lines per level, running off. **Ambushes** as data (cell, tell, foe): the tell plays when
+   the party is near, walking into it starts the fight, going round does not (pure module +
+   test). Risk to check first: walking on raised floors and ladders (`Room.level` exists for the
+   flat); if it is too costly, level 3 becomes outdoor stairs on the block's side.
+9. **The three fear monsters.** Procedural models (`src/fears.ts`, styled like `src/minion.ts`)
+   and encounters: **Cebollón** (layers as a shell that multi-hit peels; Llorera), **Plato
+   Misterioso** (a food per round with its own weakness), **Game Over** (restarts with full PV after
+   N rounds). `FoeKind`s, `Encounter`s and AI in `src/battle-ai.ts`; balance with
+   `just combat-sim`. Tests per rule.
+10. **El Vértigo.** `Encounter` `uri-vertigo`, `FoeKind` `vertigo`: Altura (1–5) shown by the
+    camera and the street sinking below, the eye's one-round warning, *Mirar abajo* (Mareo and
+    Altura +1 unless defending), *Vacío* at 5; phase 2 at half PV as a scripted beat (the
+    existing `beat` phase, like Bernat's in chapter 1): Uri steps in front of Nil, his eyes clear;
+    phase 3 Altura falls each round and Uri climbs down. The rooftop arena on Nuria's block.
+    Balance with `just combat-sim`; tests for the phases and that the twist always happens.
+11. **The win and home.** Uri himself again (eyes back), the lights to Gerard (castle threat and
+    the Queen's spread follow from the flags), Papagato kept, Haru and Yuki in the Meridiana flat
+    from then on (two cats wandering the flat's floor). Screenshot scenario `nuria` covering the
+    arrival, the lending, an ambush, each monster, the Vértigo phases and the cats at home.
+12. **Docs.** `docs/chapter-2.md` (friends and clues tables, implementation list), `docs/lore.md`
+    (story so far), `docs/party.md` (Papagato, statuses, levels), `docs/animas/` (implementation
+    sections).
+
+Later, outside this plan: the second round (block 5, one dialogue and Papagato's colour), and the
+combined skills (Noísta + Papagato, Matemágico + Papagato).
