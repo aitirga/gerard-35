@@ -10,13 +10,15 @@ export type BattlePhase = 'player' | 'enemy' | 'beat' | 'won' | 'lost' | 'escape
  * person: once unlocked, anyone in the party but Bernat can wear one, and it adds its stats and
  * its skills to whoever wears it. In a fight the active fighter swaps them with L and R.
  */
-export type ClassId = 'matemagico' | 'noista';
-export const ANIMA_NAMES: Record<ClassId, string> = { matemagico: 'Matemágico', noista: 'Noísta' };
+export type ClassId = 'matemagico' | 'noista' | 'papagato';
+export const ANIMA_NAMES: Record<ClassId, string> = { matemagico: 'Matemágico', noista: 'Noísta', papagato: 'Papagato' };
 export const CLASS_STATS: Record<ClassId, StatBonus> = {
   // Counting everything twice sharpens the mind a little.
   matemagico: { magia: 1, espiritu: 1 },
   // Saying no is a matter of conviction, not muscle.
   noista: { magia: 2, espiritu: 2, defensa: -1 },
+  // Haru and Yuki at your feet: quick and scrappy, less calm (docs/animas/papagato/).
+  papagato: { velocidad: 2, fuerza: 1, espiritu: -1 },
 };
 /**
  * Descriptions follow the shape in AGENTS.md ("Daño alto mágico a un enemigo. Rompe el pringue."),
@@ -26,9 +28,12 @@ export const CLASS_STATS: Record<ClassId, StatBonus> = {
  * Bernat only attacks.
  */
 export const SKILLS = [
-  { id: 'analisis', name: 'Análisis Parálisis', cost: 10, side: 'party', power: 3, kind: 'boost', description: 'Sube Fuerza y Magia de todo el equipo durante 3 rondas.', class: 'matemagico' },
+  { id: 'analisis', name: 'Análisis Parálisis', cost: 10, side: 'party', power: 3, kind: 'boost', stats: ['fuerza', 'magia'], description: 'Sube Fuerza y Magia de todo el equipo durante 3 rondas.', class: 'matemagico' },
   { id: 'cardioide', name: 'Cardioide', cost: 8, side: 'allies', power: 24, kind: 'heal', description: 'Cura media a un aliado herido.', class: 'matemagico' },
   { id: 'nota', name: 'No-ta', cost: 10, side: 'foes', power: 40, kind: 'magic', description: 'Daño alto mágico a un enemigo. Rompe el pringue.', class: 'noista' },
+  // Papagato's skills are Haru's and Yuki's: the wearer only asks.
+  { id: 'zarpazo', name: 'Zarpazo de Haru', cost: 6, side: 'foes', power: 16, kind: 'physical', bleed: 2, description: 'Daño leve físico a un enemigo. Añade sangrado.', class: 'papagato' },
+  { id: 'escondite', name: 'Yuki se esconde', cost: 8, side: 'party', power: 4, kind: 'boost', stats: ['defensa'], description: 'Sube Defensa de todo el equipo durante 3 rondas.', class: 'papagato' },
 ] as const;
 /** How many rounds a boost lasts, counting the one it is used in. */
 export const BOOST_ROUNDS = 3;
@@ -76,8 +81,8 @@ export interface BattleState {
   /** Dogs under La Reina Bubbaloo's spell: they surround the party, so nobody can escape. */
   possessed: boolean;
   encounter: Encounter;
-  /** Análisis Parálisis: the party's Fuerza and Magia are up by `amount` until the end of round `until`. */
-  boost?: { amount: number; until: number };
+  /** Party boosts running, by skill: Análisis Parálisis (Fuerza and Magia), Yuki se esconde (Defensa), each up by `amount` until the end of round `until`. */
+  boosts?: Partial<Record<SkillId, { amount: number; until: number }>>;
   /** The ánimas the party has unlocked, in the order L and R walk through them. */
   animas: ClassId[];
   /** Gerard has said no (Noísta is awake): the palace minion stops escalating. */
@@ -123,12 +128,27 @@ const wornAnimas = (slots: PartySlot[]) => [...new Set(slots.flatMap(s => s.clas
 export function skillsFor(_state: BattleState, actor: Combatant) {
   return SKILLS.filter(skill => actor.classId === skill.class);
 }
-/** Rounds the party boost has left, this one included (0 when there is none). */
-export const boostRounds = (state: BattleState) => state.boost ? Math.max(0, state.boost.until - state.round + 1) : 0;
+/** Rounds a party boost has left, this one included (0 when it is not running); without `skill`, the longest. */
+export function boostRounds(state: BattleState, skill?: SkillId): number {
+  if (!skill) return Math.max(0, ...Object.keys(state.boosts ?? {}).map(id => boostRounds(state, id as SkillId)));
+  const boost = state.boosts?.[skill];
+  return boost ? Math.max(0, boost.until - state.round + 1) : 0;
+}
+/** What a boost skill raises, in words ("Fuerza y Magia"). */
+export function boostedStats(skill: SkillId) {
+  const ability = SKILLS.find(s => s.id === skill);
+  const names = ability && 'stats' in ability ? ability.stats.map(stat => STAT_NAMES[stat]) : [];
+  return names.length > 1 ? `${names.slice(0, -1).join(', ')} y ${names.at(-1)}` : names[0] ?? '';
+}
+const STAT_NAMES: Record<string, string> = { fuerza: 'Fuerza', magia: 'Magia', defensa: 'Defensa', espiritu: 'Espíritu', velocidad: 'Velocidad' };
 /** A fighter's stats right now: the party boost adds to the allies' own. */
 function current(state: BattleState, c: Combatant): Stats {
-  const boost = boostRounds(state) && state.allies.includes(c) ? state.boost!.amount : 0;
-  let stats = boost ? withBonus(c.stats, { fuerza: boost, magia: boost }) : c.stats;
+  let stats = c.stats;
+  if (state.allies.includes(c)) for (const ability of SKILLS) {
+    if (!('stats' in ability) || !boostRounds(state, ability.id)) continue;
+    const amount = state.boosts![ability.id]!.amount;
+    stats = withBonus(stats, Object.fromEntries(ability.stats.map(stat => [stat, amount])));
+  }
   for (const id of STATUS_IDS) {
     const stacks = c.statuses?.[id], spec = STATUSES[id];
     if (!stacks || !spec.stats) continue;
@@ -223,7 +243,7 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   const ability = SKILLS.find(s => s.id === skill);
   if (!ability) return [];
   // A boost already running has nothing to add until it wears off.
-  if (ability.kind === 'boost') return boostRounds(state) ? [] : state.allies.filter(a => a.hp > 0);
+  if (ability.kind === 'boost') return boostRounds(state, ability.id) ? [] : state.allies.filter(a => a.hp > 0);
   return ability.side === 'foes' ? state.foes.filter(f => f.hp > 0) : state.allies.filter(a => a.hp > 0 && a.hp < a.maxHp);
 }
 /** Whether a skill needs a target picked, or simply happens (Análisis Parálisis reaches everyone). */
@@ -255,9 +275,9 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     actor.guarding = true; state.message = `${actor.name} se prepara para el siguiente golpe.`;
   } else if (party) {
     spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = actor.id;
-    state.boost = { amount: ability!.power, until: state.round + BOOST_ROUNDS - 1 };
+    state.boosts = { ...state.boosts, [ability!.id]: { amount: ability!.power, until: state.round + BOOST_ROUNDS - 1 } };
     effect.boosted = targets.map(ally => ally.id);
-    state.message = `${actor.name} usa ${ability!.name}. Fuerza y Magia +${ability!.power} para el equipo durante ${BOOST_ROUNDS} rondas.`;
+    state.message = `${actor.name} usa ${ability!.name}. ${boostedStats(ability!.id)} +${ability!.power} para el equipo durante ${BOOST_ROUNDS} rondas.`;
   } else if (target) {
     if (action === 'skill') { spendSecondary(actor, ability!.cost); effect.skill = skill; }
     effect.target = target.id;
@@ -274,6 +294,10 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       effect.amount = changeHealth(target, -damage);
       const name = action !== 'skill' ? 'Atacar' : ability!.name;
       state.message = action === 'skill' && skill === 'nota' ? `${actor.name} dice que NO. El pringue revienta. −${effect.amount} PV.` : `${actor.name} usa ${name} contra ${target.name}. −${effect.amount} PV.`;
+      if (action === 'skill' && ability && 'bleed' in ability && target.hp > 0) {
+        effect.status = { id: 'sangrado', stacks: addStatus(target, 'sangrado', ability.bleed) };
+        state.message += ` Sangrado ${effect.status.stacks}.`;
+      }
     }
   }
   if (state.foes.every(f => f.hp === 0)) {

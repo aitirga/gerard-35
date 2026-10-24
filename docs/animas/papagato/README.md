@@ -65,8 +65,14 @@ saying yes gives Papagato its colour (_open_).
 
 ## Implementation
 
-Nothing built yet. Blocked by: statuses in story fights (Sangrado), ánima levels, a model for the
-cats (two small procedural cats, like `src/minion.ts`, or character JSON).
+Built (level 1): `papagato` in `ClassId`, `ANIMA_NAMES`, `CLASS_STATS` and the skills *Zarpazo de
+Haru* (cost 6, power 16, two Sangrado stacks) and *Yuki se esconde* (cost 8, Defensa +4 for the
+party for 3 rounds; runs side by side with Análisis Parálisis) in `src/battle.ts`; `CLASSES` look
+(orange shirt, cream stripes, a grey scarf) in `src/classes.ts`; the theme
+`#hud[data-class="papagato"]` in `src/style.css` (cream paper, rounded cards, MIAU); Haru and Yuki
+as procedural cats (`src/cats.ts`) beside the wearer in fights (`src/battle-scene.ts`): Haru
+pounces on Zarpazo, Yuki hides on her skill. Unlocked by the `papagato` story flag. Screenshots:
+`just screenshots papagato`. Still to do: levels 2 and 3 (needs ánima levels).
 
 Plan: _to write once the design converges_ (`../README.md` § How an ánima is built).
 

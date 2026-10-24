@@ -294,3 +294,26 @@ test('Mareo and Llorera weaken the stats they name, per stack', () => {
   act(s, 'defend'); s.allies[0].guarding = false; enemyAct(s, 'dog-0');
   assert.equal(before - s.allies[0].hp, 9 + 2, 'Mareo takes Defensa away');
 });
+test('Papagato: Haru\'s claw adds Sangrado, Yuki raises Defensa, and both boosts run side by side', async () => {
+  const { boostRounds, createGuardBattle, palaceGuards } = await import('../src/battle.ts');
+  const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'matemagico' }];
+  const s = createGuardBattle(party, palaceGuards(6));
+  const gerard = s.allies.find(a => a.id === 'gerard'), aitor = s.allies.find(a => a.id === 'aitor');
+  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'escondite']);
+  s.active = s.allies.indexOf(gerard);
+  const claw = act(s, 'skill', 'guard-0', 'zarpazo');
+  assert.deepEqual(claw.status, { id: 'sangrado', stacks: 2 });
+  assert.equal(stacks(s.foes[0], 'sangrado'), 2);
+  s.phase = 'player'; s.active = s.allies.indexOf(aitor);
+  act(s, 'skill', undefined, 'analisis');
+  s.phase = 'player'; s.active = s.allies.indexOf(gerard);
+  act(s, 'skill', undefined, 'escondite');
+  assert.equal(boostRounds(s, 'analisis'), BOOST_ROUNDS); assert.equal(boostRounds(s, 'escondite'), BOOST_ROUNDS);
+  s.phase = 'player';
+  assert.deepEqual(validTargets(s, 'skill', 'escondite'), [], 'cannot be stacked while it runs');
+});
+test('Papagato is the party\'s once the mission is won', async () => {
+  const { Story } = await import('../src/story.ts');
+  assert.deepEqual(new Story(['noista']).classes, ['matemagico', 'noista']);
+  assert.deepEqual(new Story(['noista', 'papagato']).classes, ['matemagico', 'noista', 'papagato']);
+});

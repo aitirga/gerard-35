@@ -29,6 +29,18 @@ export const CLASSES: Record<ClassId, { name: string; motto: string; look: Recor
     },
     scarf: '#e2483d',
   },
+  // Gerard and the cats he shared with Nuria: Haru and Yuki go wherever he goes (docs/animas/papagato/).
+  papagato: {
+    name: ANIMA_NAMES.papagato,
+    motto: 'Nunca va solo. Haru y Yuki van con él.',
+    colour: '#f0954a',
+    look: {
+      'Camiseta mostaza': '#e9894a',
+      'Rayas azul marino': '#f4efe6',
+      'Pantalones': '#5d6068',
+    },
+    scarf: '#7d7f86',
+  },
 };
 /** Each material's own colour, so taking an ánima off (or swapping it) puts it back. */
 const ownColours = new WeakMap<pc.Material, pc.Color>();

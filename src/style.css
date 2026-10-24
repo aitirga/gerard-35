@@ -568,6 +568,28 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-dock[data-anima="noista"] .skill-list button { background: #2b1a1f; }
 .battle-dock[data-anima="noista"] .skill-list button:hover, .battle-dock[data-anima="noista"] .skill-list button:focus-visible { background: #3a1f26; border-color: var(--ui-gold); }
 .battle-dock[data-anima="noista"] .command-back { color: var(--ui-paper); }
+
+/* Papagato (docs/animas/papagato/): Haru and Yuki's. Warm cream paper, cat-orange instead of gold,
+   soft rounded cards like cushions, and a big MIAU sleeping in the battle's corner. */
+#hud[data-class="papagato"] {
+  --ui-ink: #2a2320;
+  --ui-surface: #2a2320ee;
+  --ui-gold: #f0954a;
+  --ui-paper: #fbf3e6;
+  --ui-muted: #cdb9a6;
+  --ui-line: #f0954a40;
+  --ui-shadow: 0 6px 0 #f0954a55;
+}
+#hud[data-class="papagato"] #battle { background: linear-gradient(180deg, #2a2320a8, transparent 29%, transparent 48%, #2a2320e0); }
+#hud[data-class="papagato"] #battle::after { content: 'MIAU'; inset: auto -1% 5% auto; width: auto; z-index: 0; background: none; transform: rotate(-6deg); animation: none; font: 900 22vw/1 'Manrope', sans-serif; letter-spacing: -.06em; color: #f0954a; opacity: .07; }
+.battle-dock[data-anima="papagato"] .command { border-radius: 14px; background: var(--ui-paper); box-shadow: 0 6px 0 #f0954aaa; }
+.battle-dock[data-anima="papagato"] .command:has(.command-trigger:hover), .battle-dock[data-anima="papagato"] .command:has(.command-trigger:focus-visible) { background: #ffe3cc; }
+.battle-dock[data-anima="papagato"] .command.expanded { background: var(--ui-gold); color: #2a2320; }
+.battle-dock[data-anima="papagato"] .command[data-command="skill"]::after { border-left-color: var(--ui-gold); }
+.battle-dock[data-anima="papagato"] .skill-sheet { border-radius: 14px; background: var(--ui-ink); border-left-color: var(--ui-gold); box-shadow: 0 6px 0 #f0954aaa; }
+.battle-dock[data-anima="papagato"] .skill-list button { border-radius: 10px; background: #382e29; }
+.battle-dock[data-anima="papagato"] .skill-list button:hover, .battle-dock[data-anima="papagato"] .skill-list button:focus-visible { background: #4a3b33; border-color: var(--ui-gold); }
+.battle-dock[data-anima="papagato"] .command-back { color: var(--ui-paper); }
 #hud[data-class="noista"] .skill-info { border-top-color: var(--ui-gold); box-shadow: 7px 7px 0 #e2483daa; }
 #hud[data-class="noista"] .battle-result { box-shadow: 12px 12px 0 #e2483d55; }
 #hud[data-class="noista"] #battle { transition: background .6s; }

@@ -1,6 +1,6 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { act, aimed, ANIMA_NAMES, awaken, boostRounds, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, skillsFor, SKILLS, STATUSES, switchAnima, validTargets, wearAnima, wearsAnimas, type ClassId, type Encounter, type GuardStrength, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatusId } from './battle';
+import { act, aimed, ANIMA_NAMES, awaken, boostedStats, boostRounds, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, skillsFor, SKILLS, STATUSES, switchAnima, validTargets, wearAnima, wearsAnimas, type ClassId, type Encounter, type GuardStrength, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatusId } from './battle';
 import { CLASSES } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -288,7 +288,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const boost = card.querySelector<HTMLElement>('.unit-boost')!;
       boost.hidden = !boostRounds(state) || c.hp === 0;
       boost.textContent = `▲ ${boostRounds(state)}`;
-      boost.title = `Análisis Parálisis: Fuerza y Magia +${state.boost?.amount ?? 0}`;
+      boost.title = SKILLS.filter(skill => boostRounds(state!, skill.id)).map(skill => `${skill.name}: ${boostedStats(skill.id)} +${state!.boosts![skill.id]!.amount}`).join(' · ');
       card.querySelector('.unit-status')!.textContent = c.hp === 0 ? 'FUERA' : c.guarding ? 'EN GUARDIA' : state.allies[state.active].id === c.id && state.phase === 'player' ? 'ACTIVO' : '';
       setVitals(card.querySelector('.vitals')!, c.hp, c.maxHp, c.secondary, c.maxSecondary);
       const plate = root.querySelector(`.battle-target[data-target="${c.id}"]`);
@@ -448,7 +448,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (card) { void card.offsetWidth; card.classList.add('contact-hit'); }
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard');
-      else if (effect.boosted) effect.boosted.forEach(id => pop(id, 'Análisis', 'guard', `Fuerza y Magia +${state!.boost?.amount ?? 0}`));
+      else if (effect.boosted && effect.skill) { const skill = effect.skill; effect.boosted.forEach(id => pop(id, SKILLS.find(s => s.id === skill)!.name.split(' ')[0], 'guard', `${boostedStats(skill)} +${state!.boosts?.[skill]?.amount ?? 0}`)); }
       else if (effect.skill && SKILLS.find(s => s.id === effect.skill)!.kind === 'heal' && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', 'PV');
       else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
       else if (effect.target && target) pop(effect.target, `−${effect.amount ?? 0}`, 'damage', target.hp === 0 ? '¡Fuera!' : target.guarding ? 'Protegido' : effect.skill ? SKILLS.find(s => s.id === effect.skill)!.name : '');

@@ -23,6 +23,8 @@ export const STORY_FLAGS = [
   'caught', 'got-wrapper',
   // Chapter 2 (docs/chapter-2.md): open progression, so these are never cleared.
   'tv-news', 'metro', 'rec-comtal', 'castle', 'palace-tried', 'clue-r4', 'anima-nuria', 'anima-uri',
+  // Nuria's mission (docs/quests/nuria.md): Papagato is the party's for good.
+  'papagato',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 
@@ -203,7 +205,13 @@ export class Story {
    * Ánimas (classes in the code) the party has unlocked; anyone in the party but Bernat can wear
    * any of them. Matemágico is Gerard's from the start; Noísta wakes up in the palace.
    */
-  get classes(): ClassId[] { return this.has('noista') ? ['matemagico', 'noista'] : ['matemagico']; }
+  get classes(): ClassId[] {
+    return [
+      'matemagico' as const,
+      ...this.has('noista') ? ['noista' as const] : [],
+      ...this.has('papagato') ? ['papagato' as const] : [],
+    ];
+  }
   /** Gerard's active ánima, which also dresses the interface. */
   get gerardClass(): GerardClass | undefined { return this.classOf('gerard'); }
   /** The ánima `member` wears: their choice if it is unlocked, otherwise Gerard wears the newest. */

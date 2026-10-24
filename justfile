@@ -40,7 +40,7 @@ dev-battle foes="4" allies="1":
 # Jump in after a story beat: just dev-chapter got-backpack, or metro for chapter 2's open city (new = from the start)
 [group('Development')]
 dev-chapter beat="new":
-    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|noista|wrapper-room|caught|got-wrapper|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|anima-uri)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
+    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|noista|wrapper-room|caught|got-wrapper|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|anima-uri|papagato)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
 
 # Wake up on a later day of chapter 2 to see the Queen's spread: just dev-day 6 (7 is the end)

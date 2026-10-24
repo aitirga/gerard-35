@@ -73,6 +73,8 @@ Fuerza, Defensa).
 | Análisis Parálisis | Whoever wears **Matemágico** | 10 | +3 | Fuerza and Magia +3 for the whole party for 3 rounds (the one it is used in included); cannot be stacked while it runs |
 | Cardioide | Whoever wears **Matemágico** | 8 | 24 heal | Heals one hurt ally |
 | No-ta | Whoever wears **Noísta** | 10 | 40 magic | Breaks the Queen's gum (pringue) |
+| Zarpazo de Haru | Whoever wears **Papagato** | 6 | 16 physical | Adds two Sangrado stacks |
+| Yuki se esconde | Whoever wears **Papagato** | 8 | +4 | Defensa +4 for the whole party for 3 rounds; runs alongside Análisis Parálisis |
 
 Every skill comes with an ánima: whoever wears none has none. Bernat never wears one and only
 attacks (Habilidad is greyed out on his turn); Aitor has skills only while he wears an ánima.

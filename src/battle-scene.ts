@@ -6,6 +6,7 @@ import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
 import { DOG_PROFILES } from './encounters';
 import type { Effects } from './effects';
+import { createCat, type Cat } from './cats';
 
 /**
  * Replace these stand-ins with imported models without changing combat or UI. `partyModel` gives
@@ -85,6 +86,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     plantFeet: ReturnType<typeof createGroundContact>;
   }
   const fighters = new Map<string, Fighter>();
+  /** Haru and Yuki, beside whoever wears Papagato (docs/animas/papagato/): they act on its skills. */
+  const cats = new Map<string, { haru: Cat; yuki: Cat }>();
   /** Models for foes that are not dogs, cloned when a fight starts (the game passes the minion). */
   let minionTemplate: pc.Entity | undefined;
   // No-ta: a giant red rubber stamp that slams NO onto the target, and the word left on the ground.
@@ -153,6 +156,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (!target) { hit(actor, gold, .55); effects.emit('spark', new pc.Vec3(actor.base.x, 1.1, actor.base.z), 6, .3); return; }
     // Análisis Parálisis: a gold flicker of ideas over everyone still standing.
     if (action.skill === 'analisis') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, gold, .7); effects.emit('spark', new pc.Vec3(f.base.x, 1.6, f.base.z), 10, .4); } return; }
+    // Yuki se esconde: a soft white shimmer over everyone she shelters.
+    if (action.skill === 'escondite') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, white, .5); effects.emit('poof', new pc.Vec3(f.base.x, .3, f.base.z), 5, .3); } return; }
     if (action.skill === 'cardioide') { hit(target, green, .85); effects.emit('heal', new pc.Vec3(target.base.x, .35, target.base.z), 16, .5); return; }
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
     const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
@@ -160,6 +165,55 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     effects.emit('spark', new pc.Vec3(target.base.x - dx / d * reach, 1, target.base.z - dz / d * reach), guarded ? 4 : action.skill ? 16 : 10, .15);
     effects.emit('dust', new pc.Vec3(target.base.x, .12, target.base.z), guarded ? 3 : 7, .35);
     hit(target, white, guarded ? .4 : 1);
+  }
+  /**
+   * Haru sits a step ahead of Papagato's wearer, towards the foes; Yuki a step behind. Zarpazo de
+   * Haru: she pounces on the target and trots back. Yuki se esconde: she slips behind the wearer
+   * and curls up small.
+   */
+  function updateCats(t: number, animate: boolean, actor?: Fighter, target?: Fighter) {
+    for (const [id, f] of fighters) {
+      const ally = state?.allies.find(a => a.id === id);
+      const wearing = !!ally && ally.classId === 'papagato' && f.hp > 0;
+      let pair = cats.get(id);
+      if (wearing && !pair) {
+        pair = { haru: createCat(app, 'haru'), yuki: createCat(app, 'yuki') };
+        battleRoot.addChild(pair.haru.entity); battleRoot.addChild(pair.yuki.entity);
+        cats.set(id, pair);
+        effects.emit('poof', new pc.Vec3(f.base.x, .2, f.base.z), 8, .3);
+      }
+      if (!pair) continue;
+      pair.haru.entity.enabled = pair.yuki.entity.enabled = wearing && entryTime >= ENTRY_SECONDS * .6;
+      if (!wearing) continue;
+      const foes = [...fighters.values()].filter(o => !o.party && o.hp > 0);
+      const center = foes.length ? foes.reduce((sum, o) => sum.add(o.base), new pc.Vec3()).mulScalar(1 / foes.length) : new pc.Vec3(f.base.x + 3, 0, f.base.z);
+      const mine = effect?.actor === id;
+      // Haru: rest, or the pounce out and back.
+      const rest = new pc.Vec3(f.base.x + .75, 0, f.base.z - .5);
+      let at = rest.clone(), lift = 0, look = center;
+      if (mine && effect?.skill === 'zarpazo' && target && actor === f) {
+        const out = smooth((t - .05) / (CONTACT_SECONDS - .05)), back = smooth((t - CONTACT_SECONDS - .15) / .45);
+        const strike = new pc.Vec3(target.base.x - .55, 0, target.base.z + .1);
+        at = new pc.Vec3().lerp(rest, strike, out * (1 - back));
+        lift = animate ? Math.sin(out * Math.PI) * .55 * (1 - back) + Math.sin(back * Math.PI) * .3 : 0;
+        look = back > .05 ? rest.clone().add(new pc.Vec3(-1, 0, 0)) : target.base;
+      }
+      placeCat(pair.haru, at, lift, look, animate, 0, 1);
+      // Yuki: behind, or hiding behind the wearer.
+      const shelter = new pc.Vec3(f.base.x - .55, 0, f.base.z + .5);
+      const hide = mine && effect?.skill === 'escondite' ? (animate ? Math.sin(clamp01(t / .85) * Math.PI) : 0) : 0;
+      const spot = new pc.Vec3().lerp(shelter, new pc.Vec3(f.base.x - .4, 0, f.base.z + .05), hide);
+      placeCat(pair.yuki, spot, 0, center, animate, 2.3, 1 - hide * .35);
+    }
+  }
+  function placeCat(cat: Cat, at: pc.Vec3, lift: number, look: pc.Vec3, animate: boolean, seed: number, height: number) {
+    cat.entity.setPosition(at.x, groundHeight(at.x, at.z) + lift, at.z);
+    cat.entity.setEulerAngles(0, face(at, look), 0);
+    // A touch bigger than life, so they read from the fight's camera.
+    cat.entity.setLocalScale(1.35, 1.35 * height, 1.35);
+    const idle = idlePose(time, seed + 5);
+    cat.tail.setLocalEulerAngles(animate ? Math.sin(time * 2.4 + seed) * 8 : 0, animate ? Math.sin(time * 1.6 + seed) * 28 : 0, 0);
+    cat.head.setLocalEulerAngles(animate ? idle.breathe * 4 : 0, animate ? idle.look * 22 : 0, 0);
   }
   return {
     dogs, anchor, cameraKick, focus,
@@ -252,7 +306,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         });
       }
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false;
-      if (!next) { fighters.forEach(f => { f.model.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); sparks.enabled = false; selectedTarget = undefined; effects.clear(); }
+      if (!next) { cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); fighters.forEach(f => { f.model.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); sparks.enabled = false; selectedTarget = undefined; effects.clear(); }
       else [...next.allies, ...next.foes].forEach(u => { fighters.get(u.id)!.hp = u.hp; });
       player.enabled = !next;
       if (!entering && !nextEffect) return Promise.resolve();
@@ -268,10 +322,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       });
       const actor = effect ? fighters.get(effect.actor) : undefined;
       const target = effect?.target ? fighters.get(effect.target) : undefined;
-      // Heals and boosts stay put: no run-up to anyone.
-      const support = effect?.skill === 'cardioide' || effect?.skill === 'analisis';
+      // Heals and boosts stay put: no run-up to anyone. Papagato's wearer stays put too: Haru goes.
+      const support = effect?.skill === 'cardioide' || effect?.skill === 'analisis' || effect?.skill === 'escondite';
+      const catStrike = effect?.skill === 'zarpazo';
       const t = animate ? effectTime : ACTION_SECONDS;
-      const motion = actor && target && !support ? contactMotion(actor.base, target.base, t) : undefined;
+      const motion = actor && target && !support && !catStrike ? contactMotion(actor.base, target.base, t) : undefined;
       const contact = effect?.target && !support ? CONTACT_SECONDS : .2;
       if (effect && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.();
@@ -368,6 +423,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           });
         }
       }
+      updateCats(t, animate, actor, target);
       // No-ta: the stamp falls on the target, slams, and lifts; the NO stays printed on the ground a moment.
       const stamping = effect?.skill === 'nota' && !!target;
       stamp.enabled = stamping && animate && t < ACTION_SECONDS;
