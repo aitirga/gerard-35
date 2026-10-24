@@ -184,6 +184,8 @@ try {
     else if (effect.kind === 'look') await game.look(effect.anchor);
     else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
     else if (effect.kind === 'learn') storyUI.learn(effect.classId, effect.level, effect.skills);
+    else if (effect.kind === 'anima') { storyUI.unlocked(effect.classId); keepLoadout(); storyChanged(); }
+    else if (effect.kind === 'lights') await game.releaseLights(effect.people);
     else { storyPaused = true; game.setPaused(true); await storyUI.card(effect.id); storyPaused = false; game.setPaused(!!exploration.active || menuOpen()); }
   }
   /**

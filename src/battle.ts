@@ -42,7 +42,19 @@ export const SKILLS = [
 export const BOOST_ROUNDS = 3;
 export type SkillId = typeof SKILLS[number]['id'];
 type Skill = typeof SKILLS[number];
-export type FoeKind = 'dog' | 'minion' | 'guardian';
+export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'plato' | 'game-over' | 'vertigo';
+/** El Plato Misterioso's dishes: each round a new one under the cloche, each with its own weakness. */
+export const DISHES = {
+  alcachofa: { name: 'una alcachofa', physical: 1.5, magic: .5 },
+  coliflor: { name: 'una coliflor', physical: .5, magic: 1.5 },
+  sorpresa: { name: 'algo que nadie sabe qué es', physical: 1, magic: 1 },
+} as const;
+export type DishId = keyof typeof DISHES;
+const DISH_ORDER: DishId[] = ['alcachofa', 'coliflor', 'sorpresa'];
+/** Game Over's countdown: if it is still standing after this many rounds it starts again, full PV. */
+export const GAME_OVER_ROUNDS = 4;
+/** El Vértigo's roof: Altura from 1 to this; at the top, Vacío. */
+export const MAX_ALTURA = 5;
 /**
  * Statuses that stack (docs/animas/README.md § Shared mechanics). Each stack does its part once
  * more: Sangrado hurts at the end of every round, Mareo and Llorera weaken the stats. Every round
@@ -72,9 +84,17 @@ export interface Combatant {
   power?: number;
   /** Stacks of each status the fighter carries. */
   statuses?: Partial<Record<StatusId, number>>;
+  /** El Cebollón's layers: while it has any, each hit only peels one off and lands at half. */
+  layers?: number;
+  /** El Plato Misterioso: the dish under the cloche this round. */
+  dish?: DishId;
+  /** Game Over: rounds left before it restarts with full PV. */
+  countdown?: number;
 }
 /** Which fight this is: the street dogs, the palace minion that wakes Noísta, or the palace guards of chapter 2. */
-export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards';
+export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'cebollon' | 'plato' | 'game-over' | 'uri-vertigo';
+/** Uri's maze and roof (docs/quests/nuria.md): the fears' fights. */
+export const FEAR_ENCOUNTERS = ['cebollon', 'plato', 'game-over', 'uri-vertigo'] as const;
 /** Bernat's HP floor in the palace fight: the hit that would cross it stops there and starts the beat. */
 export const BEAT_HP = 20;
 export interface BattleState {
@@ -92,6 +112,12 @@ export interface BattleState {
   awakened: boolean;
   /** Each ánima's level (src/levels.ts); a skill with a higher `level` is not learned yet. */
   levels?: Partial<Record<ClassId, number>>;
+  /**
+   * El Vértigo's roof (docs/quests/nuria.md § Final boss): how high it has risen, whether its
+   * spiral eye is spinning (next turn it makes everyone look down), and whether Uri has stepped
+   * in front of Nil (from then on the roof only comes down).
+   */
+  vertigo?: { altura: number; eye: boolean; uri: boolean };
 }
 /**
  * Someone who fights on the party's side: `id` names them in the fight, `profile` gives their
@@ -102,8 +128,8 @@ export interface PartySlot { id: string; name: string; profile: ProfileId; class
 export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[] {
   return [{ id: 'gerard', name: 'Gerard', profile: 'gerard', classId: gerardClass }, ...(allyCount === 2 ? [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }] : [])];
 }
-/** Nobody runs from possessed dogs or from the palace minion; the palace guards let them back off. */
-export const cornered = (state: BattleState) => state.possessed || state.encounter === 'palace-minion';
+/** Nobody runs from possessed dogs, the palace minion or El Vértigo's roof; the palace guards and the maze's fears let them back off. */
+export const cornered = (state: BattleState) => state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo';
 /** Gerard's ánima in this fight. */
 export const gerardClass = (state: BattleState) => state.allies.find(a => a.id === 'gerard')?.classId;
 /** Bernat wears no ánima: he only attacks. */
@@ -245,6 +271,28 @@ export function createGuardBattle(party: PartySlot[], guards: GuardStrength, ani
     message: guards.count > 1 ? `${guards.count} guardianes de chicle se despegan de la cortina. Son enormes.` : 'Un guardián de chicle se despega de la cortina.',
   };
 }
+const FEAR_FOES = {
+  cebollon: { id: 'cebollon', name: 'El Cebollón', kind: 'cebollon', power: 11, message: 'El contenedor salta. Dentro hay una cebolla enorme, capa sobre capa. Ya pica en los ojos.' },
+  plato: { id: 'plato', name: 'El Plato Misterioso', kind: 'plato', power: 12, message: 'La campana tiembla sobre el plato. Algo dentro se mueve.' },
+  'game-over': { id: 'game-over', name: 'Game Over', kind: 'game-over', power: 12, message: 'De la tele sale un fantasma de píxeles. «INSERT COIN».' },
+  'uri-vertigo': { id: 'vertigo', name: 'El Vértigo', kind: 'vertigo', power: 10, message: 'Del borde del tejado sube algo altísimo, de escaleras y tejas, con un ojo en espiral.' },
+} as const;
+/** Uri's fears (docs/quests/nuria.md): one foe each, with its own rule. */
+export function createFearBattle(party: PartySlot[], encounter: (typeof FEAR_ENCOUNTERS)[number], animas?: ClassId[]): BattleState {
+  const spec = FEAR_FOES[encounter];
+  const one: Combatant = { ...foe(spec.id, spec.name, spec.kind), power: spec.power };
+  if (encounter === 'cebollon') one.layers = 4;
+  if (encounter === 'plato') one.dish = DISH_ORDER[0];
+  if (encounter === 'game-over') one.countdown = GAME_OVER_ROUNDS;
+  const unlocked = animas ?? wornAnimas(party);
+  return {
+    allies: lineUp(party), foes: [one],
+    active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
+    animas: unlocked, awakened: unlocked.includes('noista'),
+    vertigo: encounter === 'uri-vertigo' ? { altura: 1, eye: false, uri: false } : undefined,
+    message: encounter === 'plato' ? `${spec.message} Levanta la campana: ¡es ${DISHES[one.dish!].name}!` : spec.message,
+  };
+}
 /** Who an action can be aimed at. A party skill is not aimed: these are who it would heal. */
 export function validTargets(state: BattleState, action: BattleAction, skill: SkillId = 'nota'): Combatant[] {
   if (action === 'attack') return state.foes.filter(f => f.hp > 0);
@@ -264,6 +312,15 @@ function strike(state: BattleState, actor: Combatant, target: Combatant, skill?:
   // Zarpa en la llaga: the deeper the bleeding, the harder it lands.
   const power = skill.power + ('perBleed' in skill ? skill.perBleed * stacks(target, 'sangrado') : 0);
   return skill.kind === 'magic' ? magical(power, stats, guard) : physical(power, stats, guard);
+}
+/** What a fear's own rule does to a hit that lands on it (the dish's weakness, the onion's layers, the roof coming down). */
+function fearDamage(state: BattleState, target: Combatant, damage: number, magic: boolean) {
+  let out = damage;
+  if (target.dish) out *= DISHES[target.dish][magic ? 'magic' : 'physical'];
+  if (target.layers) out /= 2;
+  // Once Uri stands up to it, every step down the roof leaves El Vértigo weaker.
+  if (state.vertigo?.uri) out *= 1 + (MAX_ALTURA - state.vertigo.altura) * .12;
+  return Math.max(1, Math.round(out));
 }
 export function act(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId): BattleEffect | undefined {
   if (state.phase !== 'player') return;
@@ -294,7 +351,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     // Las dos a la vez: Haru and Yuki go for every foe at once.
     spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = target!.id;
     effect.hits = targets.map(foe => {
-      const amount = changeHealth(foe, -strike(state, actor, foe, ability));
+      const amount = changeHealth(foe, -fearDamage(state, foe, strike(state, actor, foe, ability), false));
+      if (foe.layers) foe.layers--;
       const status = 'bleed' in ability! && foe.hp > 0 ? { id: 'sangrado' as const, stacks: addStatus(foe, 'sangrado', ability.bleed) } : undefined;
       return { target: foe.id, amount, status };
     });
@@ -311,11 +369,13 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       effect.amount = 0; effect.swallowed = true;
       state.message = `${actor.name} golpea a ${target.name}… y el chicle se lo traga. Ni un rasguño.`;
     } else {
-      const damage = strike(state, actor, target, action === 'skill' ? ability : undefined);
+      const damage = fearDamage(state, target, strike(state, actor, target, action === 'skill' ? ability : undefined), action === 'skill' && ability!.kind === 'magic');
       if (action === 'skill' && skill === 'nota') target.shell = false;
       effect.amount = changeHealth(target, -damage);
       const name = action !== 'skill' ? 'Atacar' : ability!.name;
       state.message = action === 'skill' && skill === 'nota' ? `${actor.name} dice que NO. El pringue revienta. −${effect.amount} PV.` : `${actor.name} usa ${name} contra ${target.name}. −${effect.amount} PV.`;
+      if (target.layers) { target.layers--; state.message += target.layers ? ` Una capa menos: quedan ${target.layers}.` : ' ¡La última capa!'; }
+      if (state.vertigo && target.kind === 'vertigo') shakeVertigo(state, target, action === 'skill' && !!ability && (ability.class === 'papagato' || ability.id === 'nota'));
       if (action === 'skill' && ability && 'perBleed' in ability && target.statuses?.sangrado) delete target.statuses.sangrado;
       if (action === 'skill' && ability && 'bleed' in ability && target.hp > 0) {
         effect.status = { id: 'sangrado', stacks: addStatus(target, 'sangrado', ability.bleed) };
@@ -325,7 +385,11 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   }
   if (state.foes.every(f => f.hp === 0)) {
     state.phase = 'won';
-    state.message = state.encounter === 'palace-minion' ? 'El esbirro se queda tieso, se agrieta como chicle viejo… y revienta.'
+    state.message = state.encounter === 'cebollon' ? 'El Cebollón se queda sin capas. Debajo no había nada. Ya no pica.'
+      : state.encounter === 'plato' ? 'La campana cae al suelo. El plato, vacío. Uri, a lo lejos: «¡Puaj!».'
+      : state.encounter === 'game-over' ? '«GAME OVER». Pero esta vez para él. El fantasma se apaga.'
+      : state.encounter === 'uri-vertigo' ? 'El Vértigo se deshace en tejas que caen sin ruido. Uri respira.'
+      : state.encounter === 'palace-minion' ? 'El esbirro se queda tieso, se agrieta como chicle viejo… y revienta.'
       : state.encounter === 'palace-guards' ? 'Los guardianes se deshacen en charcos rosas. La cortina tiembla.'
       : state.possessed ? `El rosa se les va de los ojos. ${state.foes.length === 1 ? 'El perro sale corriendo' : 'Los perros salen corriendo'}, con el rabo entre las patas.`
       : `${state.foes.length === 1 ? 'El perro se tranquiliza' : 'Los perros se tranquilizan'}. ¡Camino despejado!`;
@@ -344,6 +408,7 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   const target = alive.find(a => a.id === targetId) ?? alive[(state.round + state.foes.findIndex(f => f.id === id) - 1) % alive.length];
   if (!actor || !target) return;
   if (state.encounter === 'palace-minion') return minionAct(state, actor);
+  if ((FEAR_ENCOUNTERS as readonly string[]).includes(state.encounter)) return fearAct(state, actor, target);
   state.enemyActions.push(id);
   if (actor.power !== undefined) {
     // The palace guards: one heavy fist each, guarding takes two thirds off.
@@ -379,6 +444,68 @@ function minionAct(state: BattleState, actor: Combatant): BattleEffect | undefin
   state.message = `${actor.name} escupe chicle a ${target.name}. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
   if (awakening) { state.phase = 'beat'; state.message = `${target.name} cae de rodillas. El esbirro se infla para el último golpe…`; }
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Toca recuperar el aliento. Puedes volver a intentarlo.'; }
+  return { actor: actor.id, kind: 'enemy', target: target.id, amount };
+}
+/**
+ * A hit on El Vértigo: a Papagato skill or No-ta on its spinning eye shuts it, and the first time
+ * it drops to half, Uri stands up to it. The twist always comes: by round 6 at the latest (`nextRound`).
+ */
+function shakeVertigo(state: BattleState, vertigo: Combatant, eyeHit: boolean) {
+  const roof = state.vertigo!;
+  if (roof.eye && eyeHit) { roof.eye = false; state.message += ' El ojo deja de girar.'; }
+  if (!roof.uri && vertigo.hp > 0 && vertigo.hp <= vertigo.maxHp / 2) standUp(state);
+}
+function standUp(state: BattleState) {
+  state.vertigo!.uri = true; state.vertigo!.eye = false;
+  state.message += ' ¡Uri se pone delante de Nil! El violeta se le va de los ojos: «¡A mi hijo, no!».';
+}
+/**
+ * The fears' own turns. El Cebollón makes everyone cry while it has layers. El Plato Misterioso
+ * swaps the dish. Game Over hits hard. El Vértigo spins its eye one turn and makes everyone look
+ * down the next (Mareo and Altura +1, unless they hold on: Defender); at the top of the roof,
+ * Vacío. Once Uri stands up, the roof only comes down and its hits soften.
+ */
+function fearAct(state: BattleState, actor: Combatant, target: Combatant): BattleEffect | undefined {
+  state.enemyActions.push(actor.id);
+  const alive = state.allies.filter(a => a.hp > 0);
+  const hit = (who: Combatant, power: number) => {
+    const raw = physical(power, current(state, actor), current(state, who));
+    return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
+  };
+  let amount = 0;
+  const roof = state.vertigo;
+  if (roof) {
+    if (roof.uri) {
+      amount = hit(target, actor.power! + roof.altura * 2);
+      state.message = `El Vértigo se tambalea y da un manotazo a ${target.name}. −${amount} PV. Uri baja un paso, con Nil bien agarrado.`;
+    } else if (roof.altura >= MAX_ALTURA) {
+      for (const ally of alive) amount = hit(ally, actor.power! * 2 + 4);
+      roof.altura = 3; roof.eye = false;
+      state.message = `Vacío. El tejado se hunde de golpe bajo todos. El suelo vuelve a quedar más cerca.`;
+    } else if (roof.eye) {
+      roof.eye = false; roof.altura++;
+      const dizzy = alive.filter(a => !a.guarding);
+      for (const ally of dizzy) addStatus(ally, 'mareo');
+      amount = hit(target, actor.power! + roof.altura * 3);
+      state.message = `Mirar abajo. El tejado sube: altura ${roof.altura}. ${dizzy.length ? `${dizzy.map(a => a.name).join(' y ')} se marea${dizzy.length > 1 ? 'n' : ''}.` : 'Os habéis agarrado a las tejas.'} −${amount} PV a ${target.name}.`;
+    } else {
+      roof.eye = true;
+      amount = hit(target, actor.power! + roof.altura * 2);
+      state.message = `El Vértigo golpea a ${target.name}. −${amount} PV. Su ojo en espiral empieza a girar…`;
+    }
+  } else if (actor.kind === 'cebollon') {
+    amount = hit(target, actor.power!);
+    if (actor.layers) for (const ally of alive) addStatus(ally, 'llorera');
+    state.message = actor.layers ? `El Cebollón suelta su olor. A todos se les saltan las lágrimas. −${amount} PV a ${target.name}.` : `El Cebollón, pelado, rueda contra ${target.name}. −${amount} PV.`;
+  } else if (actor.kind === 'plato') {
+    amount = hit(target, actor.power!);
+    actor.dish = DISH_ORDER[(DISH_ORDER.indexOf(actor.dish ?? 'alcachofa') + 1) % DISH_ORDER.length];
+    state.message = `El Plato Misterioso salpica a ${target.name}. −${amount} PV. Cambia de plato: ¡ahora es ${DISHES[actor.dish].name}!`;
+  } else {
+    amount = hit(target, actor.power!);
+    state.message = `Game Over atraviesa a ${target.name}. −${amount} PV. «CONTINUE? ${actor.countdown ?? 0}…»`;
+  }
+  if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; }
   return { actor: actor.id, kind: 'enemy', target: target.id, amount };
 }
 /**
@@ -429,6 +556,14 @@ export function nextRound(state: BattleState): StatusTick[] {
     }
   }
   if (state.foes.every(f => f.hp === 0)) { state.phase = 'won'; state.message = 'Se desploman, sin fuerzas para seguir.'; return ticks; }
+  // Game Over: still standing when its countdown runs out, it starts again with full PV.
+  for (const f of state.foes) if (f.countdown !== undefined && f.hp > 0 && --f.countdown <= 0) {
+    f.hp = f.maxHp; f.countdown = GAME_OVER_ROUNDS; f.statuses = {};
+    state.message = '«CONTINUE». Game Over vuelve a empezar con toda la vida.';
+  }
+  const roof = state.vertigo;
+  if (roof && !roof.uri && state.round + 1 >= 6) standUp(state);
+  else if (roof?.uri && roof.altura > 1) roof.altura--;
   if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; return ticks; }
   state.round++; state.active = state.allies.findIndex(a => a.hp > 0);
   state.allies.forEach(a => { a.guarding = false; });

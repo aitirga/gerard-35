@@ -45,6 +45,16 @@ export function createStoryUI(hud: HTMLElement) {
       notes.append(el);
       setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS);
     },
+    /** An ánima woke up outside a fight (Nuria lends the cats): the same note, ÁNIMA DESBLOQUEADA. */
+    unlocked(classId: ClassId) {
+      const el = document.createElement('article');
+      el.className = 'story-note'; el.style.setProperty('--note-accent', CLASSES[classId].colour);
+      el.innerHTML = `<span class="battle-kicker">ÁNIMA DESBLOQUEADA</span><strong></strong><p></p>`;
+      el.querySelector('strong')!.textContent = ANIMA_NAMES[classId];
+      el.querySelector('p')!.textContent = CLASSES[classId].motto;
+      notes.append(el);
+      setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS * 1.5);
+    },
     /** An ánima grew (src/levels.ts): a note like an item's, with what it learned. */
     learn(classId: ClassId, level: number, skills: SkillId[]) {
       const el = document.createElement('article');

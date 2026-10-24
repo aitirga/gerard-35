@@ -1,0 +1,131 @@
+{
+  "id": "cardedeu-laberinto",
+  "name": "Cardedeu · El laberinto de Uri",
+  "region": "Cardedeu, Vallès Oriental",
+  "anchor": {
+    "address": "Carrer de Jacint Verdaguer, 08440 Cardedeu",
+    "lat": 41.6373255,
+    "lon": 2.3543989
+  },
+  "bounds_m": {
+    "west": -40,
+    "east": 80,
+    "north": -30,
+    "south": 30
+  },
+  "cell_m": 1.25,
+  "rotation_deg": 0,
+  "zoom": 11.5,
+  "spawn": {
+    "east_m": -34,
+    "south_m": 22
+  },
+  "storey_m": 2.6,
+  "reference": {
+    "checked": "2026-10-25",
+    "streetview_capture": "",
+    "notes": [
+      "DESIGNED: Uri's maze, invented; see the sketch's note."
+    ],
+    "viewpoints": []
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#5f8f4e",
+        "#6a9a56",
+        "#56854a"
+      ],
+      "base": "#4c7a40",
+      "trim": "#5f8f4e",
+      "roof": "#4f7d41",
+      "roof_kind": "flat",
+      "facade": "hedge",
+      "ground": "hedge",
+      "levels": 1
+    },
+    "tapia": {
+      "walls": [
+        "#c98d6a",
+        "#d29a76"
+      ],
+      "base": "#a86b52",
+      "trim": "#e0c7a5",
+      "roof": "#b5583a",
+      "roof_kind": "flat",
+      "facade": "hedge",
+      "ground": "hedge",
+      "levels": 1
+    }
+  },
+  "buildings": {
+    "tag:building=tapia": {
+      "style": "tapia"
+    }
+  },
+  "props": [
+    {
+      "kind": "car",
+      "east_m": -32,
+      "south_m": 4,
+      "color": "#c8423b"
+    },
+    {
+      "kind": "car",
+      "east_m": -20,
+      "south_m": -20,
+      "color": "#3a5a8a"
+    },
+    {
+      "kind": "car",
+      "east_m": -7,
+      "south_m": 4,
+      "color": "#e9e6df"
+    },
+    {
+      "kind": "bin",
+      "east_m": -31,
+      "south_m": -6
+    },
+    {
+      "kind": "bin",
+      "east_m": -6,
+      "south_m": -20
+    },
+    {
+      "kind": "bench",
+      "east_m": 19,
+      "south_m": 14
+    },
+    {
+      "kind": "tree",
+      "east_m": 33,
+      "south_m": 0
+    },
+    {
+      "kind": "lamp",
+      "east_m": 48,
+      "south_m": -2
+    },
+    {
+      "kind": "tree",
+      "east_m": 60,
+      "south_m": 20
+    }
+  ],
+  "places": [
+    {
+      "id": "salir-laberinto",
+      "label": "Volver a la calle",
+      "east_m": -37,
+      "south_m": 22
+    },
+    {
+      "id": "subir-tejado",
+      "label": "Subir por la escalera",
+      "east_m": 74,
+      "south_m": 24
+    }
+  ],
+  "anchors": {}
+}

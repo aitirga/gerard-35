@@ -355,7 +355,14 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         ctx.fillStyle = 'rgba(190,220,235,.22)'; ctx.fillRect(x0 + 3, y0 + 3, ww * 0.35, wh - 6);
         ctx.fillStyle = frame; ctx.fillRect(x0 + ww / 2 - 2, y0, 4, wh);
       };
-      if (kind === 'rendered' || kind === 'timber') {
+      if (kind === 'hedge') {
+        // A clipped hedge (Uri's maze, docs/quests/nuria.md): the wall colour, flecked with leaves.
+        ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+        for (let k = 0; k < 220; k++) {
+          ctx.fillStyle = jitter(k * 3.1) > .5 ? 'rgba(20,40,15,.22)' : 'rgba(200,235,150,.16)';
+          ctx.beginPath(); ctx.arc(jitter(k * 1.7) * w, jitter(k * 2.3) * h, 3 + jitter(k * 5.9) * 7, 0, Math.PI * 2); ctx.fill();
+        }
+      } else if (kind === 'rendered' || kind === 'timber') {
         ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
         if (kind === 'timber') {
           ctx.fillStyle = trim;

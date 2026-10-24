@@ -17,6 +17,9 @@ import { buildCharacter, type CharacterSpec } from './character-model';
 import type { Partner, Story, StoryEvent } from './story';
 import type { ItemId } from './items';
 import { Follower, pathTo } from './follower';
+import { createCat, type Cat } from './cats';
+import { createFears } from './fears';
+import { FEAR_ENCOUNTERS } from './battle';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
 import { PLACES_2 } from './chapter-2';
 import { createNewsTV, type NewsTV } from './news-tv';
@@ -131,6 +134,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   const lamps: Partial<Record<LightId, Lamp>> = {};
   let lampLabel: ((id: string) => string | undefined) | undefined;
   battleScene.setMinionTemplate(minion.root);
+  const fears = createFears(app);
+  battleScene.setFears(fears);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let backpack = rig.body.find(node => BACKPACK_PARTS.has(node.name)) as pc.Entity[];
   function dress(adult: boolean) {
@@ -147,6 +152,91 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   const castRoot = new pc.Entity('Reparto');
   app.root.addChild(castRoot);
   let npcs: { entity: pc.Entity; cell: Cell; body: pc.Entity; materials: pc.Material[] }[] = [];
+  const violetEyes = new pc.StandardMaterial(); violetEyes.diffuse.fromString('#5a2a8a'); violetEyes.emissive.fromString('#b07aff'); violetEyes.emissiveIntensity = 1.4; violetEyes.update();
+  /** Haru and Yuki walking with the party while Nuria lends them (docs/quests/nuria.md). */
+  let catWalk: { haru: Cat; yuki: Cat; lead: Follower; back: Follower; environment: string } | undefined;
+  function walkCats(delta: number) {
+    const want = story.nuria.lent && !battle;
+    if (catWalk && (!want || catWalk.environment !== environment.id)) { catWalk.haru.destroy(); catWalk.yuki.destroy(); catWalk = undefined; }
+    if (!want) return;
+    if (!catWalk) {
+      const start = beside(movement.cell);
+      catWalk = { haru: createCat(app, 'haru'), yuki: createCat(app, 'yuki'), lead: new Follower(start), back: new Follower(start), environment: environment.id };
+      for (const cat of [catWalk.haru, catWalk.yuki]) { cat.entity.reparent(castRoot); cat.entity.setLocalScale(1.35, 1.35, 1.35); }
+    }
+    // A jump (a door, a teleport) leaves no trail to walk: the cats land beside Gerard.
+    if (Math.hypot(catWalk.lead.position.x - movement.position.x, catWalk.lead.position.z - movement.position.z) > 8) { const at = beside(movement.cell); catWalk.lead.reset(at); catWalk.back.reset(at); }
+    catWalk.lead.update(delta, movement.position, false, running());
+    catWalk.back.update(delta, catWalk.lead.position, false, running());
+    for (const [cat, follower, seed] of [[catWalk.haru, catWalk.lead, 0], [catWalk.yuki, catWalk.back, 2]] as const) {
+      const at = scenery.toWorld(follower.position.x, follower.position.z);
+      const hop = follower.walking && !reducedMotion.matches ? Math.abs(Math.sin(clock * 12 + seed)) * .05 : 0;
+      cat.entity.setPosition(at.x, scenery.groundHeight(at.x, at.z) + hop, at.z);
+      cat.entity.setLocalEulerAngles(0, follower.facing, 0);
+      cat.tail.setLocalEulerAngles(0, Math.sin(clock * 2 + seed) * 25, 0);
+    }
+  }
+  /**
+   * The lights of the people Gerard helped (docs/quests/nuria.md § The lights): one person at a
+   * time, their body gives a quick white flash, a small light rises out of their chest, hangs for
+   * a breath, then arcs with a short trail into Gerard or Aitor, who flash as it goes in. A baby's
+   * light (Nil, in Uri's arms) splits in two and goes into both.
+   */
+  async function releaseLights(people: string[]) {
+    cutscene = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined);
+    const glow = new pc.StandardMaterial(); glow.diffuse.set(1, 1, 1); glow.emissive.fromString('#fff3c4'); glow.emissiveIntensity = 2.4; glow.update();
+    const chest = (entity: pc.Entity, y = 1.25) => entity.getPosition().clone().add(new pc.Vec3(0, y, 0));
+    const pulse = (materials: pc.Material[], strength: number) => materials.forEach(m => {
+      const standard = m as pc.StandardMaterial;
+      standard.emissive.set(strength, strength * .95, strength * .8); standard.emissiveIntensity = 1; standard.update();
+    });
+    const frame = () => new Promise<number>(resolve => requestAnimationFrame(resolve));
+    const mate = mateHere();
+    const receivers = [{ entity: player, materials: rig.materials }, ...(mate?.entity.enabled ? [{ entity: mate.entity, materials: mate.rig.materials }] : [])];
+    for (const [i, person] of people.entries()) {
+      const source = npcs.find(n => n.entity.name === (person === 'nil' ? 'uri' : person));
+      const from = source ? chest(source.entity, person === 'nil' ? .95 : 1.25) : chest(player);
+      if (person === 'nil' && source) from.add(source.entity.forward.clone().mulScalar(-.3));
+      const to = person === 'nil' ? receivers : [receivers[i % receivers.length]];
+      const orbs = to.map(() => {
+        const orb = new pc.Entity('Luz'); orb.addComponent('render', { type: 'sphere', material: glow, castShadows: false });
+        orb.setLocalScale(.18, .18, .18); castRoot.addChild(orb); orb.setPosition(from); return orb;
+      });
+      effects.emit('poof', new pc.Vec3(from.x, scenery.groundHeight(from.x, from.z) + .1, from.z), 10, .4);
+      effects.emit('spark', from, 12, .3);
+      const start = performance.now(), length = reducedMotion.matches ? 200 : 1700;
+      for (let t = 0; t < 1; t = Math.min(1, (performance.now() - start) / length)) {
+        const k = t * length / 1000;
+        // The body's mini flash, fading over the first half second.
+        if (source) pulse(source.materials, Math.max(0, .9 - k * 1.8));
+        orbs.forEach((orb, j) => {
+          const target = chest(to[j].entity);
+          const rise = Math.min(1, k / .35), fly = Math.max(0, Math.min(1, (k - .6) / 1.0));
+          const lifted = from.clone().add(new pc.Vec3(0, .55 * rise, 0));
+          const eased = fly * fly * (3 - 2 * fly);
+          const at = new pc.Vec3().lerp(lifted, target, eased);
+          at.y += Math.sin(eased * Math.PI) * 1.1;
+          const breathe = 1 + Math.sin(k * 14) * .12;
+          orb.setPosition(at); orb.setLocalScale(.18 * breathe, .18 * breathe, .18 * breathe);
+          if (fly > 0 && fly < 1 && Math.random() < .5) effects.emit('spark', at.clone(), 1, .12);
+        });
+        await frame();
+      }
+      if (source) pulse(source.materials, 0);
+      orbs.forEach((orb, j) => {
+        effects.emit('spark', chest(to[j].entity), 18, .35);
+        orb.destroy();
+      });
+      // Whoever it goes into flashes as it enters.
+      for (const r of to) pulse(r.materials, .8);
+      for (let f = 0; f < 20; f++) { for (const r of to) pulse(r.materials, .8 * (1 - f / 20)); await frame(); }
+      for (const r of to) pulse(r.materials, 0);
+    }
+    glow.destroy();
+    cutscene = false; lastPrompt = ''; updatePrompt();
+  }
+  /** Where a fight with one of Uri's fears is staged: where it jumped out. */
+  let fearStage: Cell = { x: 0, z: 0 };
   let pickups: { entity: pc.Entity; cell: Cell; materials: pc.Material[]; spot?: { x: number; z: number; y: number } }[] = [];
   /**
    * Whoever walks with Gerard: Bernat around Sant Quirze in chapter 1, Aitor everywhere from
@@ -249,8 +339,17 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   function refreshStory() {
     for (const list of [npcs, pickups]) for (const item of list) { item.entity.destroy(); item.materials.forEach(m => m.destroy()); }
     npcs = story.npcs(environment.id).map(npc => {
+      if (npc.cat) {
+        // Haru and Yuki (src/cats.ts): a cat is its own model, not a character.
+        const cat = createCat(app, npc.cat); cat.entity.name = npc.id; cat.entity.reparent(castRoot);
+        cat.entity.setLocalScale(npc.scale, npc.scale, npc.scale);
+        placeOnGround(cat.entity, npc.cell);
+        return { entity: cat.entity, cell: npc.cell, body: cat.entity, materials: [] };
+      }
       const entity = new pc.Entity(npc.id); castRoot.addChild(entity);
       const rig = buildCharacter(CHARACTERS[`./characters/${npc.character}.json`], entity);
+      // Uri in the Queen's hold: violet eyes (docs/lore.md), until he is himself again.
+      if (npc.id === 'uri' && !story.has('nuria-uri')) entity.find(node => node.name === 'Ojo').forEach(eye => { (eye as pc.Entity).render!.meshInstances.forEach(mesh => { mesh.material = violetEyes; }); });
       entity.setLocalScale(npc.scale, npc.scale, npc.scale);
       placeOnGround(entity, npc.cell, .06);
       return { entity, cell: npc.cell, body: rig.body, materials: rig.materials };
@@ -686,10 +785,12 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     await play(1.4, () => {});
   }
   /** A fight inside the palace: the minion of chapter 1, or the guards before the curtain in chapter 2. */
-  function startPalaceFight(encounter: 'palace-minion' | 'palace-guards' = 'palace-minion') {
-    if (battle || environment.id !== 'palacio') return;
+  function startPalaceFight(encounter: Exclude<Encounter, 'dogs'> = 'palace-minion') {
+    const fear = (FEAR_ENCOUNTERS as readonly string[]).includes(encounter);
+    if (battle || (!fear && environment.id !== 'palacio')) return;
     clearInput();
     movement.teleport(environment.grid, movement.cell);
+    if (fear) fearStage = { ...movement.cell };
     encounterId = encounter;
     callbacks.onEncounter(true, encounter === 'palace-guards' ? story.guarded.length : 1, { possessed: false, encounter });
   }
@@ -714,7 +815,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       callbacks.onBattleEnd(battle.phase, battle.encounter, battle.allies.flatMap(a => a.classId ? [a.classId] : []));
     }
     const fight = next?.encounter ?? encounterId;
-    const stage = fight === 'palace-minion' ? PALACE_STAGE : fight === 'palace-guards' ? PLACES_2.guardStage : pack.area.stage;
+    const stage = fight === 'palace-minion' ? PALACE_STAGE : fight === 'palace-guards' ? PLACES_2.guardStage
+      : (FEAR_ENCOUNTERS as readonly string[]).includes(fight) ? fearStage : pack.area.stage;
     const settled = battleScene.set(next, scenery.toWorld(stage.x, stage.z), effect, onImpact); battle = next; clearInput();
     if (!next) {
       movement.resolveOverlap(occupiedCells(), !reducedMotion.matches);
@@ -868,7 +970,11 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const to = story.redirect(target.id) ?? target.to;
     if (gate) callbacks.onDialogue(gate);
     else if (to) setEnvironment(to.environment, to.cell);
-    else if (target.lines) callbacks.onDialogue({ left: 'gerard', lines: target.lines.map(text => ({ speaker: 'gerard' as const, text })) });
+    else if (target.lines) {
+      // Places say their lines in Gerard's voice: the boy's in chapter 1, the man's at 35.
+      const voice = story.adult ? 'gerard35' as const : 'gerard' as const;
+      callbacks.onDialogue({ left: voice, lines: target.lines.map(text => ({ speaker: voice, text })) });
+    }
     else callbacks.onStory({ type: 'interact', id: target.id });
   }
   function keydown(event: KeyboardEvent) {
@@ -933,6 +1039,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       const mate = mateHere();
       if (mate && free) drivePartner(dt, delta);
       else if (mate && mate.id === 'aitor') mate.follower.update(delta, movement.position, false, running());
+      walkCats(delta);
       // Gerard pulling against the tether: Aitor calls him back.
       const apart = free && input && Math.hypot(movement.position.x - free.position.x, movement.position.z - free.position.z) > TETHER - .6;
       tetherTug = apart ? tetherTug + Math.min(dt, .25) : 0;
@@ -1108,7 +1215,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     window.removeEventListener('blur', clearInput); document.removeEventListener('visibilitychange', clearInput);
     window.removeEventListener('resize', resize);
     canvas.removeEventListener('pointerup', touchDog);
-    battleScene.destroy(); minion.destroy(); palace.destroy(); approach?.destroy(); effects.destroy();
+    battleScene.destroy(); minion.destroy(); fears.destroy(); palace.destroy(); approach?.destroy(); effects.destroy();
     guards.forEach(g => g.destroy());
     tv?.destroy(); overgrowth?.destroy();
     scenery.destroy(); rig.materials.forEach(m => m.destroy()); Object.values(mates).forEach(m => m.rig.materials.forEach(material => material.destroy()));
@@ -1130,7 +1237,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       cameraTarget.copy(scenery.toWorld(movement.cell.x, movement.cell.z));
       positionPlayer(); lastPrompt = ''; updatePrompt();
     },
-    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV,
+    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV, releaseLights,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },
     /** Someone swapped ánima in a fight (L / R): the fight shows it, and the boy's street outfit follows. */

@@ -116,16 +116,6 @@
       }
     },
     {
-      "id": "nuria-portal",
-      "label": "Mirar el portal",
-      "east_m": -7,
-      "south_m": -12,
-      "lines": [
-        "El portal de Nuria. En el buzón, una pegatina de un gato y otra que dice «Nil».",
-        "Por la ventana de abajo se ve un rascador de gatos."
-      ]
-    },
-    {
       "id": "cardedeu-estacio",
       "label": "Mirar el cartel",
       "east_m": 146,

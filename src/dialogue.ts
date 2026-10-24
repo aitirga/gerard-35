@@ -46,6 +46,34 @@ export const SPEAKERS = {
       <path d="M23 19.5h2" stroke="#1f1c1c" stroke-width="1"/><circle cx="19.5" cy="20" r=".9" fill="#2a1d16"/><circle cx="28.5" cy="20" r=".9" fill="#2a1d16"/>
     </svg>`,
   },
+  /** Nuria (docs/quests/nuria.md), provisional until `just character nuria`: long dark wavy hair, a nose ring, her striped top. */
+  nuria: {
+    name: 'Nuria', skin: '#e9bf9c', hair: '#3b2a22', top: '#f1e8da', accent: '#c8423b',
+    art: `<svg viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="23" fill="#c8423b" opacity=".16"/>
+      <path d="M12 30c-2-10 1-22 12-22s14 12 12 22l-3 6H15Z" fill="#3b2a22"/>
+      <path d="M9 48c0-9 6-13 15-13s15 4 15 13Z" fill="#f1e8da"/><path d="M10 42h28M9.5 45.5h29" stroke="#2b3a66" stroke-width="1.4"/><path d="M11 38.6h26" stroke="#c8423b" stroke-width="1.3"/>
+      <rect x="21" y="29" width="6" height="7" fill="#e9bf9c"/>
+      <rect x="15.5" y="11" width="17" height="20" rx="6" fill="#e9bf9c"/>
+      <path d="M15 19c1-7 5-10 9-10s9 3 10 10c-4-1-8-4-10-7-2 3-5 6-9 7Z" fill="#3b2a22"/>
+      <circle cx="20" cy="21" r="1" fill="#2a1d16"/><circle cx="28" cy="21" r="1" fill="#2a1d16"/>
+      <path d="M20 26.5c2.4 2 5.6 2 8 0" stroke="#9a4f45" stroke-width="1.2" fill="none"/><circle cx="25.6" cy="24.6" r=".9" fill="none" stroke="#c9c9cf" stroke-width=".6"/>
+    </svg>`,
+  },
+  /** Uri (docs/quests/nuria.md), provisional until `just character uri`: short dark hair, a short beard, a white T-shirt. */
+  uri: {
+    name: 'Uri', skin: '#e3b38f', hair: '#2e2420', top: '#f5f3ef', accent: '#9a6cd8',
+    art: `<svg viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="23" fill="#9a6cd8" opacity=".16"/>
+      <path d="M8 48c0-9 6-14 16-14s16 5 16 14Z" fill="#f5f3ef"/><path d="M33 40l2 3" stroke="#d43a4a" stroke-width="1.6"/>
+      <rect x="21" y="28" width="6" height="7" fill="#e3b38f"/>
+      <rect x="15" y="9" width="18" height="21" rx="5" fill="#e3b38f"/>
+      <path d="M15 15v-3a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v3l-2-3H17Z" fill="#2e2420"/>
+      <path d="M15 22v3c0 5 4 8 9 8s9-3 9-8v-3l-2 2c-1 2-3 2-4 1h-6c-1 1-3 1-4-1Z" fill="#3a2c24" opacity=".85"/>
+      <circle cx="20" cy="20" r="1.1" fill="#2a1d16"/><circle cx="28" cy="20" r="1.1" fill="#2a1d16"/>
+      <path d="M21 26.5c2 1 4 1 6 0" stroke="#7a4636" stroke-width="1.1" fill="none"/>
+    </svg>`,
+  },
 } satisfies Record<string, Speaker>;
 
 export type SpeakerId = keyof typeof SPEAKERS;

@@ -332,6 +332,10 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="sangrado"] { --status: #ff6b6b; }
 .unit-statuses i[data-status="mareo"] { --status: #b9a4ff; }
 .unit-statuses i[data-status="llorera"] { --status: #8fd3ff; }
+.unit-statuses i[data-status="capas"] { --status: #e8c25a; }
+.unit-statuses i[data-status="plato"] { --status: #f0d9a8; }
+.unit-statuses i[data-status="reinicio"] { --status: #3aff8a; }
+.unit-statuses i[data-status="ojo"] { --status: #c9a8ff; animation: battle-shake .5s infinite; }
 .battle-target:disabled { cursor: default; }
 #battle[data-targeting] .battle-target:not(:disabled) { pointer-events: auto; cursor: pointer; }
 .battle-target.is-eligible, .battle-target.is-targeted, .battle-target:focus-visible { outline: none; }

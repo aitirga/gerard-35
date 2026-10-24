@@ -98,6 +98,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   // A Basque village: green hills, grey stone, a soft overcast sky.
   alegia: { salon: [white(3600, .7), hex('#5f9a5a', .55, .55), hex('#8aa0b5', .5, .4), white(3000, .6)], rest: white(3400, .3) },
   // Cardedeu: a quiet Vallès street, white render, terracotta roofs and gardens.
+  // Uri's maze: hedge green and garden walls, a little strange.
+  'cardedeu-laberinto': { salon: [hex('#5f8f4e', .6, .5), hex('#9a6cd8', .45, .45), white(3000, .6), hex('#c98d6a', .5, .5)], rest: hex('#7da86a', .25, .35) },
   cardedeu: { salon: [white(2900, .8), hex('#c8693f', .55, .5), hex('#79a86a', .5, .5), white(3300, .6)], rest: white(3000, .3) },
   // The Meridiana outside: peach façades, green awnings, plane trees and a Barcelona sky.
   'meridiana-calle': { salon: [hex('#f2b38f', .75, .45), hex('#8ec5e8', .6, .5), hex('#2f9c86', .5, .6), white(3200, .7)], rest: white(3200, .3) },
@@ -157,6 +159,11 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   possessed: [hex('#ff5fa8', .7, .7), hex('#a05ae0', .55, .7), hex('#ff8a6a', .6, .6), hex('#e04a9a', .6, .75)],
   'palace-minion': [hex('#e0409a', .65, .75), hex('#8a4ad6', .55, .75), hex('#ff7fc0', .6, .55), hex('#c03a8a', .6, .8)],
   'palace-guards': [hex('#c8306e', .65, .8), hex('#7a3ad6', .5, .8), hex('#ff5a4a', .55, .75), hex('#e0409a', .6, .8)],
+  // Uri's fears: onion gold and tears, a dinner-table white, arcade neon, and the roof's violet dusk.
+  cebollon: [hex('#e8c25a', .7, .7), hex('#8fd3ff', .55, .6), white(3000, .6), hex('#c89a3a', .6, .7)],
+  plato: [white(3600, .75), hex('#7fb05a', .55, .65), hex('#f0d9a8', .5, .6), hex('#c86a4a', .55, .7)],
+  'game-over': [hex('#3aff8a', .6, .8), hex('#ff3ad6', .55, .8), hex('#3a8aff', .55, .75), hex('#ffe23a', .5, .7)],
+  'uri-vertigo': [hex('#9a6cd8', .65, .8), hex('#3a4a8a', .5, .7), hex('#c8693f', .55, .65), hex('#e0d0ff', .45, .6)],
 };
 const ALARM = hex('#ff2a1a', .75, 1);
 /** 0 with everyone healthy, 1 when someone still standing is about to fall. */

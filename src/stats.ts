@@ -41,6 +41,11 @@ export const PROFILES = {
   minion: base(40, 0),
   /** The palace guards of chapter 2: the stats of a wall. Their PV and hit depend on the party's ánimas (battle.ts). */
   guardian: base(220, 0, 14, 10, 14, 12, 8),
+  /** Uri's fears in his maze (docs/quests/nuria.md): the onion, the covered dish, the arcade ghost and El Vértigo. */
+  cebollon: base(150, 0, 12, 10, 11, 10, 8),
+  plato: base(130, 0, 12, 12, 10, 10, 9),
+  'game-over': base(120, 0, 13, 13, 9, 9, 12),
+  vertigo: base(260, 0, 13, 13, 12, 12, 9),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;
 

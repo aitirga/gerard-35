@@ -1,0 +1,316 @@
+{
+  "title": "Nuria's mission · Cardedeu, Uri's maze and El Vértigo",
+  "description": "docs/quests/nuria.md played through: out of the R4 at Cardedeu Haru waits at the station; Nuria at her door lends Haru and Yuki (Papagato, on trial) and the cats walk with the party; round the corner Uri's maze of hedges and garden walls, Uri ahead with Nil in his arms and violet eyes; El Cebollón jumps out of a bin, El Plato Misterioso and Game Over wait further in, El Vértigo on the roof; won, the three lights leave Nuria, Uri and Nil and go into Gerard and Aitor.",
+  "steps": [
+    {
+      "open": "/?story=clue-r4&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "localStorage.removeItem('gerard35.loadout.v1')"
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [
+        29,
+        184
+      ]
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'arrive', station: 'cardedeu' })"
+    },
+    {
+      "shot": "arrive",
+      "delay": 1500,
+      "caption": "Out of the R4 at Cardedeu: «¿Esa no es Haru?»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [
+        30,
+        182
+      ]
+    },
+    {
+      "shot": "haru",
+      "delay": 1500,
+      "caption": "Haru at the station's door: she looks back and leads the way"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [
+        90,
+        59
+      ]
+    },
+    {
+      "shot": "nuria-door",
+      "delay": 1500,
+      "caption": "Nuria at her door with Haru and Yuki"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "nuria-talks",
+      "delay": 1200,
+      "caption": "Nuria: Uri has gone strange, talking non-stop, and ran off round the corner with Nil"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "papagato-lent",
+      "delay": 300,
+      "caption": "ÁNIMA DESBLOQUEADA · Papagato: she lends them the cats"
+    },
+    {
+      "hold": [
+        "KeyD"
+      ],
+      "ms": 1500
+    },
+    {
+      "shot": "cats-follow",
+      "delay": 600,
+      "caption": "Haru and Yuki walk with Gerard and Aitor"
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [
+        126,
+        58
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.title.includes('laberinto')",
+      "timeout": 20000
+    },
+    {
+      "shot": "maze-in",
+      "delay": 1500,
+      "caption": "Round the corner, Uri's maze: «¡NIVEL UNO!»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "cardedeu-laberinto",
+      "cell": [
+        26,
+        43
+      ]
+    },
+    {
+      "shot": "uri",
+      "delay": 1500,
+      "caption": "Uri ahead with Nil in his arms and violet eyes"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "maze-overview",
+      "delay": 2500,
+      "caption": "The maze from above: hedges, garden walls, the way to the roof"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "teleport": "cardedeu-laberinto",
+      "cell": [
+        18,
+        11
+      ]
+    },
+    {
+      "shot": "ambush-tell",
+      "delay": 400,
+      "caption": "The bin shakes and it smells of onion: the place warns first"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "cebollon",
+      "delay": 1200,
+      "caption": "El Cebollón: layer on layer (Capas 4), and everyone's eyes water"
+    },
+    {
+      "press": "Digit5"
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result')?.hidden",
+      "timeout": 30000
+    },
+    {
+      "eval": "document.querySelector('#battle .battle-result button').click()"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.startPalaceFight('plato')"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "plato",
+      "delay": 1200,
+      "caption": "El Plato Misterioso: under the cloche, an artichoke this round"
+    },
+    {
+      "press": "Digit5"
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result')?.hidden",
+      "timeout": 30000
+    },
+    {
+      "eval": "document.querySelector('#battle .battle-result button').click()"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.startPalaceFight('game-over')"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "game-over",
+      "delay": 1200,
+      "caption": "Game Over: if it is still standing when the countdown runs out, CONTINUE"
+    },
+    {
+      "press": "Digit5"
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result')?.hidden",
+      "timeout": 30000
+    },
+    {
+      "eval": "document.querySelector('#battle .battle-result button').click()"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.startPalaceFight('uri-vertigo')"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "vertigo",
+      "delay": 1500,
+      "caption": "El Vértigo: ladders and roof tiles, a spiral eye, and ALTURA in the heading"
+    },
+    {
+      "press": "Digit4"
+    },
+    {
+      "press": "Enter",
+      "gap": 400
+    },
+    {
+      "until": "document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === 'aitor' && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4"
+    },
+    {
+      "press": "Enter",
+      "gap": 400
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "vertigo-eye",
+      "delay": 800,
+      "caption": "Its eye starts to spin: next turn everyone looks down, unless they hold on"
+    },
+    {
+      "open": "/?story=clue-r4&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [
+        90,
+        60
+      ]
+    },
+    {
+      "eval": "window.gerard.story.handle({ type: 'interact', id: 'talk-nuria' }); window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'uri-vertigo', worn: ['papagato'] })"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.title.startsWith('Cardedeu')",
+      "timeout": 20000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "lights",
+      "delay": 700,
+      "caption": "The lights: Nuria flashes and a light rises out of her chest"
+    },
+    {
+      "shot": "lights-flight",
+      "delay": 900,
+      "caption": "It arcs into Gerard; then Uri's into Aitor, and Nil's splits in two"
+    },
+    {
+      "shot": "home",
+      "delay": 5000,
+      "caption": "Nuria, Uri and Nil together at the door; Uri's eyes are his own again"
+    }
+  ]
+}

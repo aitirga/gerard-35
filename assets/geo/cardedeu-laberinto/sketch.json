@@ -1,0 +1,193 @@
+{
+ "note": "Uri's maze (docs/quests/nuria.md): round the corner of Carrer de Jacint Verdaguer the street closes into a maze of hedges and garden walls that grows harder, three levels left to right: 1 · La calle (hedges and parked cars), 2 · Los patios (garden walls), 3 · Hacia arriba (to the ladder up Nuria's roof). Designed by hand; metres from Cardedeu's anchor, not a real layout.",
+ "drawn": "2026-10-25",
+ "features": [
+  {
+   "id": "hedge-nord",
+   "building": "hedge",
+   "levels": 1,
+   "rect": [
+    -40,
+    -30,
+    120,
+    2
+   ]
+  },
+  {
+   "id": "hedge-sud",
+   "building": "hedge",
+   "levels": 1,
+   "rect": [
+    -40,
+    28,
+    120,
+    2
+   ]
+  },
+  {
+   "id": "hedge-oest",
+   "building": "hedge",
+   "levels": 1,
+   "rect": [
+    -40,
+    -28,
+    2,
+    56
+   ]
+  },
+  {
+   "id": "hedge-est",
+   "building": "hedge",
+   "levels": 1,
+   "rect": [
+    78,
+    -28,
+    2,
+    56
+   ]
+  },
+  {
+   "id": "hedge-calle-a",
+   "building": "hedge",
+   "levels": 1,
+   "rect": [
+    -26,
+    -28,
+    2,
+    40
+   ]
+  },
+  {
+   "id": "hedge-calle-b",
+   "building": "hedge",
+   "levels": 1,
+   "rect": [
+    -14,
+    -12,
+    2,
+    40
+   ]
+  },
+  {
+   "id": "hedge-calle-fi",
+   "building": "hedge",
+   "levels": 1,
+   "rect": [
+    0,
+    -28,
+    2,
+    46
+   ]
+  },
+  {
+   "id": "tapia-patio-a",
+   "building": "tapia",
+   "levels": 1,
+   "rect": [
+    12,
+    -10,
+    2,
+    38
+   ]
+  },
+  {
+   "id": "tapia-patio-b",
+   "building": "tapia",
+   "levels": 1,
+   "rect": [
+    24,
+    -28,
+    2,
+    38
+   ]
+  },
+  {
+   "id": "tapia-patio-fi",
+   "building": "tapia",
+   "levels": 1,
+   "rect": [
+    40,
+    -10,
+    2,
+    38
+   ]
+  },
+  {
+   "id": "hedge-amunt-a",
+   "building": "hedge",
+   "levels": 1,
+   "rect": [
+    54,
+    -28,
+    2,
+    42
+   ]
+  },
+  {
+   "id": "hedge-amunt-b",
+   "building": "hedge",
+   "levels": 1,
+   "rect": [
+    66,
+    -14,
+    2,
+    42
+   ]
+  },
+  {
+   "id": "carrer",
+   "highway": "residential",
+   "name": "Carrer de Jacint Verdaguer",
+   "line": [
+    [
+     -38,
+     20
+    ],
+    [
+     -2,
+     20
+    ]
+   ]
+  },
+  {
+   "id": "pati-1",
+   "area": "grass",
+   "rect": [
+    2,
+    -28,
+    10,
+    56
+   ]
+  },
+  {
+   "id": "pati-2",
+   "area": "grass",
+   "rect": [
+    26,
+    -10,
+    14,
+    38
+   ]
+  },
+  {
+   "id": "pati-3",
+   "area": "square",
+   "rect": [
+    14,
+    -28,
+    10,
+    56
+   ]
+  },
+  {
+   "id": "escala",
+   "area": "square",
+   "rect": [
+    68,
+    -28,
+    10,
+    56
+   ]
+  }
+ ]
+}

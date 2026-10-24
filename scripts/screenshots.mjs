@@ -42,7 +42,7 @@ const page = await browser.newPage({ viewport: { width, height } });
 // Web fonts and other outside requests are not needed and can hang offline machines.
 await page.route(url => !['localhost', '127.0.0.1'].includes(url.hostname), route => route.abort());
 const errors = [];
-page.on('pageerror', error => errors.push(String(error)));
+page.on('pageerror', error => errors.push(error.stack ?? String(error)));
 page.on('console', m => { if (process.env.SCREENSHOT_DEBUG) console.log('  [page]', m.text()); });
 
 const shots = [];

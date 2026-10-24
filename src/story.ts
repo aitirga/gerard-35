@@ -14,6 +14,8 @@ import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId }
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
+import { AMBUSHES, LINES_NURIA, MAZE, PLACES_NURIA, STREET, type FearEncounter } from './friends/nuria.ts';
+import type { CatId } from './cats';
 import { COSTS, DAY_END, DAY_START, EVENING, LATE, dusk, freshDays, readDays, spread, stage, type Activity, type Days } from './days.ts';
 import { ENVIRONMENTS } from './environments.ts';
 
@@ -28,6 +30,9 @@ export const STORY_FLAGS = [
   'papagato',
   // Ánima levels reached (src/levels.ts).
   'papagato-2', 'papagato-3',
+  // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the three lights
+  // that went with Gerard (docs/quests/nuria.md).
+  'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri', 'luz-nil',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 
@@ -90,14 +95,25 @@ export type StoryEffect =
   /** The Queen has covered everything: the end, with the way back to the morning before. */
   | { kind: 'doom' }
   /** An ánima reached a new level and learned `skills` (src/levels.ts). */
-  | { kind: 'learn'; classId: ClassId; level: number; skills: SkillId[] };
+  | { kind: 'learn'; classId: ClassId; level: number; skills: SkillId[] }
+  /** An ánima woke up outside a fight (Nuria lends the cats: Papagato). */
+  | { kind: 'anima'; classId: ClassId }
+  /** The lights of the people Gerard helped leave them and go into Gerard and Aitor (docs/quests/nuria.md § The lights). */
+  | { kind: 'lights'; people: string[] };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Noísta, and chapter 2's palace guards. */
-export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards';
+export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | FearEncounter;
 /** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
 export type GerardClass = ClassId;
 
-export interface StoryNpc { id: 'mama' | 'jan'; character: string; environment: EnvironmentId; cell: Cell; scale: number }
+/** Someone standing in a scene: a character model, or one of the cats (`cat`). */
+export interface StoryNpc { id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki'; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId }
+/**
+ * Nuria's mission while it runs (docs/quests/nuria.md). Nothing here is saved: leaving with the
+ * train, falling or the day ending hands the cats back, and only winning sets flags.
+ */
+interface NuriaRun { lent: boolean; warned: boolean; haru: boolean; entered: boolean; stage: number; beaten: string[] }
+const freshRun = (): NuriaRun => ({ lent: false, warned: false, haru: false, entered: false, stage: 0, beaten: [] });
 export type Companion = 'none' | 'follow' | 'stalled';
 /** La Reina Bubbaloo's minion in the manhole: lurking (a faint bubble now and then) until its entrance, then gone below. */
 export type MinionState = 'lurking' | 'gone';
@@ -159,6 +175,10 @@ export class Story {
   private away = false;
   /** Who wears which class; members missing here wear their default (see `classOf`). */
   private worn: Loadout = {};
+  /** Nuria's mission while it runs; not saved. */
+  nuria: NuriaRun = freshRun();
+  /** Whether Nuria has lent the cats before (she says it differently the second time). Not saved. */
+  private lentBefore = false;
   /** Fights won wearing each ánima (src/levels.ts). Kept in the browser by `main.ts`, like the loadout. */
   wins: Partial<Record<ClassId, number>> = {};
   /**
@@ -233,9 +253,32 @@ export class Story {
     }
     return effects;
   }
+  /** Walking up to one of Nuria's mission's places: Haru at the station, Uri ahead, an ambush. */
+  private nearNuria(id: string): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult || this.has('nuria-uri')) return [];
+    if (id === 'haru' && !this.nuria.haru) { this.nuria.haru = true; return [say(LINES_NURIA.haru)]; }
+    const reached = /^uri-(\d)$/.exec(id);
+    if (reached && Number(reached[1]) === this.nuria.stage) { this.nuria.stage++; return [say(LINES_NURIA.uri[Number(reached[1])])]; }
+    const ambush = AMBUSHES.find(a => a.id === id);
+    if (ambush && this.nuria.lent && !this.nuria.beaten.includes(ambush.id)) return [say(ambush.tell), { kind: 'battle', encounter: ambush.encounter }];
+    return [];
+  }
+  /** Uri is himself again: the cats and Papagato stay, the three lights go with Gerard and Aitor. */
+  private winNuria(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.set('nuria-uri')) return [];
+    for (const flag of ['papagato', 'anima-nuria', 'luz-nuria', 'luz-uri', 'luz-nil'] as const) this.set(flag);
+    this.nuria = freshRun();
+    const door: StoryEffect = { kind: 'travel', environment: STREET, cell: { x: PLACES_NURIA.nuria.cell.x - 1, z: PLACES_NURIA.nuria.cell.z + 2 } };
+    return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), { kind: 'lights', people: ['nuria', 'uri', 'nil'] }, ...this.spend('fight')];
+  }
   /** What a fight's end means for the story, before any ánima grows. */
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (event.won && event.encounter === 'uri-vertigo') return this.winNuria();
+    const ambush = AMBUSHES.find(a => a.encounter === event.encounter);
+    if (event.won && ambush) { if (!this.nuria.beaten.includes(ambush.id)) this.nuria.beaten.push(ambush.id); return []; }
     if (!event.won) {
       if (!this.adult) return [];
       // Chapter 2: falling is waking up at home the next morning, with everything done kept.
@@ -253,7 +296,8 @@ export class Story {
     return [
       'matemagico' as const,
       ...this.has('noista') ? ['noista' as const] : [],
-      ...this.has('papagato') ? ['papagato' as const] : [],
+      // Lent by Nuria for her mission, or the party's for good once it is won.
+      ...this.has('papagato') || this.nuria.lent ? ['papagato' as const] : [],
     ];
   }
   /** Gerard's active ánima, which also dresses the interface. */
@@ -335,6 +379,8 @@ export class Story {
    */
   private endDay(why: 'night' | 'sleep' | 'fall'): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    // Whatever Nuria's mission had reached is undone: the cats went back to her.
+    this.nuria = freshRun();
     const firstFall = why === 'fall' && this.set('palace-tried');
     this.days.clock = { day: this.days.clock.day + 1, hour: DAY_START };
     this.remember();
@@ -356,7 +402,15 @@ export class Story {
   /** Places the story watches in this scene (the TV that turned itself on). */
   triggers(environment: EnvironmentId): Trigger[] {
     const { tv } = PLACES_2;
-    return this.adult && !this.has('tv-news') && environment === tv.environment ? [{ id: 'tv', cell: { ...tv.cell }, radius: tv.radius }] : [];
+    if (this.adult && !this.has('tv-news') && environment === tv.environment) return [{ id: 'tv', cell: { ...tv.cell }, radius: tv.radius }];
+    if (!this.adult || this.has('nuria-uri')) return [];
+    const { haru, uri } = PLACES_NURIA, run = this.nuria;
+    if (environment === STREET && !run.lent && !run.haru) return [{ id: 'haru', cell: { ...haru.cell }, radius: haru.radius }];
+    if (environment !== MAZE || !run.lent) return [];
+    const list: Trigger[] = AMBUSHES.filter(a => !run.beaten.includes(a.id)).map(a => ({ id: a.id, cell: { ...a.cell }, radius: a.radius }));
+    const next = uri[run.stage];
+    if (next) list.push({ id: `uri-${run.stage}`, cell: { ...next.cell }, radius: next.radius });
+    return list;
   }
   /** Where a door leads instead of its own destination, by story: the palace opens onto the school in chapter 2. */
   redirect(interactionId: string): { environment: EnvironmentId; cell: Cell } | undefined {
@@ -391,8 +445,22 @@ export class Story {
       { id: 'jan', character: 'jan-child', environment: PLACES.jan.environment, cell: PLACES.jan.cell, scale: 1.12 },
     ];
     // Chapter 1 is a dream: once Gerard wakes, home in Sant Quirze is empty, and Aitor walks with him (the partner, not an NPC).
-    if (this.adult) return [];
+    if (this.adult) return this.nuriaNpcs().filter(npc => npc.environment === environment);
     return all.filter(npc => npc.environment === environment);
+  }
+  /** Nuria at her door, the cats with her until she lends them, and Uri ahead in his maze. */
+  private nuriaNpcs(): StoryNpc[] {
+    const { nuria, haru, uri } = PLACES_NURIA, run = this.nuria, won = this.has('nuria-uri');
+    const at = (c: Cell, dx: number, dz: number) => ({ x: c.x + dx, z: c.z + dz });
+    const list: StoryNpc[] = [{ id: 'nuria', character: 'nuria', environment: STREET, cell: { ...nuria.cell }, scale: 1.12 }];
+    if (won) list.push({ id: 'uri', character: 'uri', environment: STREET, cell: at(nuria.cell, -2, 0), scale: 1.12 });
+    if (!won && !run.lent) {
+      list.push({ id: 'yuki', character: '', cat: 'yuki', environment: STREET, cell: at(nuria.cell, 1, 1), scale: 1.35 });
+      list.push({ id: 'haru', character: '', cat: 'haru', environment: STREET, cell: run.haru ? at(nuria.cell, -1, 1) : { ...haru.cell }, scale: 1.35 });
+    }
+    const ahead = uri[run.stage];
+    if (!won && run.lent && ahead) list.push({ id: 'uri', character: 'uri', environment: MAZE, cell: { ...ahead.cell }, scale: 1.12 });
+    return list;
   }
   /** Loose things still lying around, drawn as pickups. */
   pickups(environment: EnvironmentId): { id: ItemId; cell: Cell; spot?: { x: number; z: number; y: number } }[] {
@@ -418,6 +486,10 @@ export class Story {
       list.push({ id, label, ...prompt, cell: { ...place.cell } });
     }
     if (partner && this.partner === 'aitor') list.push({ id: 'talk-aitor', label: 'Hablar con Aitor', cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
+    if (this.adult && environment === STREET) {
+      list.push({ id: 'talk-nuria', label: 'Hablar con Nuria', cell: { ...PLACES_NURIA.nuria.cell } });
+      if (this.nuria.lent) list.push({ id: 'enter-maze', label: 'Doblar la esquina', hint: 'Doblar la esquina', cell: { ...PLACES_NURIA.corner.cell } });
+    }
     if (environment === 'maresme' && this.has('palace') && !this.adult) list.push({ id: 'enter-palace', label: 'Atravesar la pompa', cell: { x: PLACES.palace.door.x, z: PLACES.palace.door.z - 1 } });
     if (environment === 'palacio') {
       // Chapter 1's looks answer with Bernat's voice; at 35 only the curtain is worth a word.
@@ -483,13 +555,15 @@ export class Story {
         return [home, { kind: 'wake' }, say(LINES.waking), { kind: 'rise' }, { kind: 'hint', id: 'duo' }];
       }
       case 'near':
-        if (event.id !== 'tv' || !this.adult || !this.set('tv-news')) return [];
+        if (event.id !== 'tv') return this.nearNuria(event.id);
+        if (!this.adult || !this.set('tv-news')) return [];
         // The ticker carries the R4 clue: seen on the TV, it is known.
         this.set('clue-r4');
         return [{ kind: 'news' }, say(LINES_2.news)];
       case 'arrive':
         // Every trip takes its hour.
         if (event.station === 'trinitat-vella' && this.set('rec-comtal')) return [{ kind: 'look', anchor: 'palace' }, say(LINES_2.recComtalFirst), { kind: 'look' }, ...this.spend('metro')];
+        if (event.station === 'cardedeu' && this.set('cardedeu')) return [say(LINES_NURIA.arrive), ...this.spend('metro')];
         return this.spend('metro');
       case 'south':
         if (this.companion !== 'follow' || this.has('dejavu') || !this.set('bernat-stalled')) return [];
@@ -501,6 +575,30 @@ export class Story {
         return [];
     }
     switch (event.id) {
+      case 'talk-nuria': {
+        if (!this.adult) return [];
+        if (this.has('nuria-uri')) return [say(LINES_NURIA.home)];
+        if (this.nuria.lent) return [say(LINES_NURIA.nuriaWaiting)];
+        // She lends them the cats: Papagato wakes up, on trial until Uri is back.
+        const again = this.nuria.haru && this.has('papagato-2' as StoryFlag) ? false : this.lentBefore;
+        this.nuria = { ...freshRun(), lent: true, haru: true };
+        this.lentBefore = true;
+        if (!this.worn.gerard) this.worn.gerard = 'papagato';
+        return [say(again ? LINES_NURIA.nuriaAgain : LINES_NURIA.nuriaFirst), { kind: 'anima', classId: 'papagato' }];
+      }
+      case 'enter-maze': {
+        if (!this.nuria.lent) return [];
+        const inside: StoryEffect = { kind: 'travel', environment: MAZE, cell: { ...PLACES_NURIA.mazeIn.cell } };
+        if (this.nuria.entered) return [inside];
+        // Looking for Uri takes its hour; the rest of the mission is paid when it is won.
+        this.nuria.entered = true;
+        return [inside, say(LINES_NURIA.mazeIn), ...this.spend('cafe')];
+      }
+      case 'salir-laberinto':
+        return [{ kind: 'travel', environment: STREET, cell: { ...PLACES_NURIA.streetBack.cell } }];
+      case 'subir-tejado':
+        if (!this.nuria.lent || this.nuria.stage < PLACES_NURIA.uri.length) return [];
+        return [say(LINES_NURIA.roof), { kind: 'battle', encounter: 'uri-vertigo' }];
       case 'talk-jan':
         if (this.set('met-jan')) return [say(LINES.jan)];
         return [say(this.has('got-potion') ? LINES.janAfterPotion : LINES.janAgain)];
@@ -575,6 +673,11 @@ export class Story {
     }
     // Down into a station: the first time, the city opens (the `metro` flag).
     const station = stationOf(event.id);
+    // Leaving Cardedeu with Nuria's cats: Aitor asks first, and going hands them back.
+    if (station === 'cardedeu' && this.nuria.lent) {
+      if (!this.nuria.warned) { this.nuria.warned = true; return [say(LINES_NURIA.leaveWarn)]; }
+      this.nuria = freshRun();
+    }
     if (station && this.adult) return [...(this.set('metro') ? [say(LINES_2.metroFirst)] : []), { kind: 'metro', station }];
     if (event.id === 'look-curtain' && this.adult) return [say(LINES_2.curtain)];
     const look = PALACE_LOOKS.find(l => l.id === event.id);

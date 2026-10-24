@@ -7,6 +7,7 @@ import { createGroundContact, type GroundHeight } from './ground-contact';
 import { DOG_PROFILES } from './encounters';
 import type { Effects } from './effects';
 import { createCat, type Cat } from './cats';
+import type { Fears } from './fears';
 
 /**
  * Replace these stand-ins with imported models without changing combat or UI. `partyModel` gives
@@ -90,6 +91,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const cats = new Map<string, { haru: Cat; yuki: Cat }>();
   /** Models for foes that are not dogs, cloned when a fight starts (the game passes the minion). */
   let minionTemplate: pc.Entity | undefined;
+  /** Uri's fears (src/fears.ts), by kind, and how El Vértigo's eye turns. */
+  let fears: Fears | undefined;
   // No-ta: a giant red rubber stamp that slams NO onto the target, and the word left on the ground.
   function lettering(fill: string, background?: string) {
     const c = document.createElement('canvas'); c.width = 256; c.height = 128;
@@ -219,6 +222,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     dogs, anchor, cameraKick, focus,
     /** The model cloned for minion foes. */
     setMinionTemplate(model: pc.Entity) { minionTemplate = model; },
+    /** Uri's fears' models (src/fears.ts). */
+    setFears(models: Fears) { fears = models; },
     /**
      * Gerard said no: a white flash and a shockwave that rocks the foes, and when it fades he
      * wears his class. The story records the class; this is only what the fight shows.
@@ -273,8 +278,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         anchor.copy(center); entryTime = 0;
         for (const [party, units] of [[true, next.allies], [false, next.foes]] as const) units.forEach((unit, i) => {
           // The palace guards (chapter 2) are minions grown to the size of a wardrobe.
-          const minion = !party && (unit.kind === 'minion' || unit.kind === 'guardian') && !!minionTemplate;
-          const source = party ? partyModel(unit.id) : minion ? minionTemplate! : dogs[i];
+          const fear = !party && unit.kind ? fears?.templates.get(unit.kind) : undefined;
+          const minion = !party && (!!fear || ((unit.kind === 'minion' || unit.kind === 'guardian') && !!minionTemplate));
+          const source = party ? partyModel(unit.id) : fear ?? (minion ? minionTemplate! : dogs[i]);
           const model = source.clone(); model.enabled = true;
           if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
             (component as pc.RenderComponent).meshInstances.forEach(mesh => {
@@ -424,6 +430,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         }
       }
       updateCats(t, animate, actor, target);
+      // El Vértigo's spiral eye: slow at rest, fast while it is about to make everyone look down.
+      const vertigo = fighters.get('vertigo');
+      if (vertigo && fears && animate) fears.spin(vertigo.model, dt, !!state?.vertigo?.eye);
       // No-ta: the stamp falls on the target, slams, and lifts; the NO stays printed on the ground a moment.
       const stamping = effect?.skill === 'nota' && !!target;
       stamp.enabled = stamping && animate && t < ACTION_SECONDS;
