@@ -1,6 +1,6 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { act, aimed, ANIMA_NAMES, awaken, boostRounds, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, skillsFor, SKILLS, switchAnima, validTargets, wearAnima, wearsAnimas, type ClassId, type Encounter, type GuardStrength, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
+import { act, aimed, ANIMA_NAMES, awaken, boostRounds, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, skillsFor, SKILLS, STATUSES, switchAnima, validTargets, wearAnima, wearsAnimas, type ClassId, type Encounter, type GuardStrength, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatusId } from './battle';
 import { CLASSES } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -120,6 +120,20 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     setTimeout(() => el.remove(), 1100);
   }
   const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+  /** The statuses a fighter carries, as small chips on their nameplate ("Sangrado 3"). */
+  function showStatuses(plate: Element, c: Combatant) {
+    let list = plate.querySelector<HTMLElement>('.unit-statuses');
+    if (!list) { list = document.createElement('span'); list.className = 'unit-statuses'; plate.append(list); }
+    const entries = Object.entries(c.statuses ?? {}).filter(([, n]) => n && c.hp > 0) as [StatusId, number][];
+    const signature = entries.map(([id, n]) => `${id}${n}`).join(',');
+    if (list.dataset.for === signature) return;
+    list.dataset.for = signature;
+    list.replaceChildren(...entries.map(([id, n]) => {
+      const chip = document.createElement('i'); chip.dataset.status = id;
+      chip.textContent = `${STATUSES[id].name} ${n}`;
+      return chip;
+    }));
+  }
   /** A line said over a fighter's head, inside the fight (the rest of the HUD is shut). */
   async function speak(line: { speaker: keyof typeof SPEAKERS; text: string }, ms: number, shout = false) {
     const at = positions.get(line.speaker);
@@ -279,12 +293,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       setVitals(card.querySelector('.vitals')!, c.hp, c.maxHp, c.secondary, c.maxSecondary);
       const plate = root.querySelector(`.battle-target[data-target="${c.id}"]`);
       if (plate) plate.querySelectorAll('.enemy-health').forEach((bar, i) => fill(bar, i === 0 ? c.hp / c.maxHp : c.secondary / c.maxSecondary));
+      if (plate) showStatuses(plate, c);
     }
     const order = state.allies.map(c => root.querySelector(`.party-card[data-unit="${c.id}"]`)!).filter(card => card.parentElement === roster);
     if (order.some((card, i) => roster.children[i] !== card)) order.forEach(card => roster.append(card));
     for (const foe of state.foes) {
       const plate = get<HTMLButtonElement>(`.battle-target[data-target="${foe.id}"]`);
       fill(plate.querySelector('.enemy-health')!, foe.hp / foe.maxHp);
+      showStatuses(plate, foe);
       const health = foe.hp === 0 ? 'fuera de combate' : foe.hp === foe.maxHp ? 'salud completa' : foe.hp / foe.maxHp <= .3 ? 'salud baja' : 'herido';
       plate.setAttribute('aria-label', `Elegir a ${foe.name}, ${health}`);
       plate.classList.toggle('is-down', foe.hp === 0);
@@ -459,7 +475,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // enemyAct may have stopped the fight for the palace beat (TypeScript still thinks it is 'enemy').
       if ((state.phase as BattleState['phase']) === 'beat') await playBeat(token);
       if (token !== generation || !state) return;
-      nextRound(state); void callbacks.change(state);
+      const ticks = nextRound(state); void callbacks.change(state);
+      if (ticks.length) {
+        // The round's end: what keeps hurting hurts now, one after another.
+        render();
+        for (const tick of ticks) { pop(tick.target, `−${tick.amount}`, 'damage', STATUSES[tick.status].name); await wait(380); }
+        if (token !== generation || !state) return;
+      }
     }
     busy = false; render();
     if (state.phase === 'player') focusFirst();

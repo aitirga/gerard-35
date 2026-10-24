@@ -91,18 +91,26 @@ second ánima.
 - **Payoff skills** read the stacks: the more Sangrado, the harder they hit (*Zarpa en la llaga*).
 - Open to other ánimas: anything sharp, cutting or nagging can add stacks; anything else can
   feed off them.
-- Built on the combat core's stacking statuses and `custom` effects (`docs/combat.md`); the
-  story's fights (`src/battle.ts`) do not have statuses yet.
+- Built in the story's fights: `STATUSES`, `addStatus` and the end-of-round tick in `nextRound`
+  (`src/battle.ts`); 2 PV per stack, up to 10 stacks. The fight shows the stacks as chips under
+  each nameplate and the tick as a hit at the round's end.
 - Description in skills: one short sentence, e.g. `Añade sangrado.`
 
 ### Mareo (dizziness)
 
-- A stacking status that lowers Velocidad. First used by El Vértigo (`docs/quests/nuria.md`).
+- A stacking status: per stack Velocidad −2, Defensa −1, Espíritu −1. First used by El Vértigo
+  (`docs/quests/nuria.md`).
+
+### Llorera (crying)
+
+- A stacking status: per stack Fuerza −2 and Magia −2 (tears in the eyes). First used by El
+  Cebollón (`docs/quests/nuria.md`).
 
 | Mechanic | Applied by | Exploited by |
 | --- | --- | --- |
 | Sangrado | Papagato (Haru) | Papagato (*Zarpa en la llaga*) |
 | Mareo | El Vértigo (foe) | — |
+| Llorera | El Cebollón (foe) | — |
 
 ## How an ánima is built
 

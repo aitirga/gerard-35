@@ -35,6 +35,19 @@ export const BOOST_ROUNDS = 3;
 export type SkillId = typeof SKILLS[number]['id'];
 type Skill = typeof SKILLS[number];
 export type FoeKind = 'dog' | 'minion' | 'guardian';
+/**
+ * Statuses that stack (docs/animas/README.md § Shared mechanics). Each stack does its part once
+ * more: Sangrado hurts at the end of every round, Mareo and Llorera weaken the stats. Every round
+ * each one loses `decay` stacks, so they fade unless something keeps adding them.
+ */
+export type StatusId = 'sangrado' | 'mareo' | 'llorera';
+export interface StatusSpec { name: string; max: number; decay: number; tick?: number; stats?: StatBonus }
+export const STATUSES: Record<StatusId, StatusSpec> = {
+  sangrado: { name: 'Sangrado', max: 10, decay: 1, tick: 2 },
+  mareo: { name: 'Mareo', max: 5, decay: 1, stats: { velocidad: -2, defensa: -1, espiritu: -1 } },
+  llorera: { name: 'Llorera', max: 5, decay: 1, stats: { fuerza: -2, magia: -2 } },
+};
+const STATUS_IDS = Object.keys(STATUSES) as StatusId[];
 export interface Combatant {
   id: string; name: string; hp: number; maxHp: number;
   secondary: number; maxSecondary: number; guarding: boolean;
@@ -49,6 +62,8 @@ export interface Combatant {
   shell?: boolean;
   /** A foe's own hit at average stats, when it has one (the palace guards). */
   power?: number;
+  /** Stacks of each status the fighter carries. */
+  statuses?: Partial<Record<StatusId, number>>;
 }
 /** Which fight this is: the street dogs, the palace minion that wakes Noísta, or the palace guards of chapter 2. */
 export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards';
@@ -113,9 +128,25 @@ export const boostRounds = (state: BattleState) => state.boost ? Math.max(0, sta
 /** A fighter's stats right now: the party boost adds to the allies' own. */
 function current(state: BattleState, c: Combatant): Stats {
   const boost = boostRounds(state) && state.allies.includes(c) ? state.boost!.amount : 0;
-  return boost ? withBonus(c.stats, { fuerza: boost, magia: boost }) : c.stats;
+  let stats = boost ? withBonus(c.stats, { fuerza: boost, magia: boost }) : c.stats;
+  for (const id of STATUS_IDS) {
+    const stacks = c.statuses?.[id], spec = STATUSES[id];
+    if (!stacks || !spec.stats) continue;
+    stats = withBonus(stats, Object.fromEntries(Object.entries(spec.stats).map(([key, value]) => [key, value * stacks])));
+  }
+  return stats;
 }
-export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; boosted?: string[] }
+/** Stacks of `id` on `c` (0 when none). */
+export const stacks = (c: Combatant, id: StatusId) => c.statuses?.[id] ?? 0;
+/** Adds `count` stacks of `id`, up to its maximum; returns the stacks it ends with. */
+export function addStatus(c: Combatant, id: StatusId, count = 1) {
+  const next = Math.min(STATUSES[id].max, stacks(c, id) + count);
+  c.statuses = { ...c.statuses, [id]: next };
+  return next;
+}
+/** What happens to one fighter's statuses at the end of a round. */
+export interface StatusTick { target: string; status: StatusId; amount: number; stacks: number }
+export interface BattleEffect { kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; boosted?: string[]; status?: { id: StatusId; stacks: number } }
 /** Bridge the campaign's flat resources to the core; positive healing never revives. */
 function changeHealth(target: Combatant, delta: number) {
   const result = adjustResource({ current: target.hp, max: target.maxHp }, delta, false);
@@ -199,9 +230,9 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
 export const aimed = (skill: SkillId) => SKILLS.find(s => s.id === skill)?.side !== 'party';
 /** What `skill` (or a plain attack) does to `target` before it is clamped to what is left. */
 function strike(state: BattleState, actor: Combatant, target: Combatant, skill?: Skill) {
-  const stats = current(state, actor);
-  if (!skill) return physical(18, stats, target.stats);
-  return skill.kind === 'magic' ? magical(skill.power, stats, target.stats) : physical(skill.power, stats, target.stats);
+  const stats = current(state, actor), guard = current(state, target);
+  if (!skill) return physical(18, stats, guard);
+  return skill.kind === 'magic' ? magical(skill.power, stats, guard) : physical(skill.power, stats, guard);
 }
 export function act(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId): BattleEffect | undefined {
   if (state.phase !== 'player') return;
@@ -269,13 +300,13 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   state.enemyActions.push(id);
   if (actor.power !== undefined) {
     // The palace guards: one heavy fist each, guarding takes two thirds off.
-    const hit = physical(actor.power, actor.stats, target.stats);
+    const hit = physical(actor.power, current(state, actor), current(state, target));
     const amount = changeHealth(target, -(target.guarding ? Math.ceil(hit / 3) : hit));
     state.message = `${actor.name} aplasta a ${target.name} con un puño de chicle. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
     if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; }
     return { actor: actor.id, kind: 'enemy', target: target.id, amount };
   }
-  const strength = physical(state.allies.length === 1 && state.foes.length > 1 ? 5 : 9, actor.stats, target.stats);
+  const strength = physical(state.allies.length === 1 && state.foes.length > 1 ? 5 : 9, current(state, actor), current(state, target));
   const damage = target.guarding ? Math.ceil(strength / 3) : strength;
   const amount = changeHealth(target, -damage);
   state.message = `${actor.name} da un empujón a ${target.name}. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
@@ -331,10 +362,30 @@ export function awaken(state: BattleState, classId: ClassId) {
   state.active = state.allies.indexOf(gerard); state.phase = 'player';
   state.message = 'Gerard ha dicho que no. Algo ha despertado en él: Noísta.';
 }
-export function nextRound(state: BattleState) {
-  if (state.phase !== 'enemy' || state.foes.some(f => f.hp > 0 && !state.enemyActions.includes(f.id))) return;
+/**
+ * The end of a round: statuses do their part and fade (Sangrado hurts first, then every status
+ * loses its `decay`), then the next round starts. Returns what the statuses did, in order, so the
+ * fight can show it. A fight can end here: foes bled out, or the party did.
+ */
+export function nextRound(state: BattleState): StatusTick[] {
+  if (state.phase !== 'enemy' || state.foes.some(f => f.hp > 0 && !state.enemyActions.includes(f.id))) return [];
+  const ticks: StatusTick[] = [];
+  for (const c of [...state.foes, ...state.allies]) {
+    if (!c.statuses) continue;
+    for (const id of STATUS_IDS) {
+      const count = stacks(c, id), spec = STATUSES[id];
+      if (!count) continue;
+      const amount = spec.tick && c.hp > 0 ? changeHealth(c, -spec.tick * count) : 0;
+      const left = c.hp > 0 ? Math.max(0, count - spec.decay) : 0;
+      if (left) c.statuses[id] = left; else delete c.statuses[id];
+      if (amount) ticks.push({ target: c.id, status: id, amount, stacks: left });
+    }
+  }
+  if (state.foes.every(f => f.hp === 0)) { state.phase = 'won'; state.message = 'Se desploman, sin fuerzas para seguir.'; return ticks; }
+  if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; return ticks; }
   state.round++; state.active = state.allies.findIndex(a => a.hp > 0);
   state.allies.forEach(a => { a.guarding = false; });
   state.enemyActions = [];
   state.phase = 'player'; state.message = 'Tu turno. Elige tu siguiente movimiento.';
+  return ticks;
 }

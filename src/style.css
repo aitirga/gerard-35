@@ -325,6 +325,13 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-target[data-side="allies"] .enemy-health.secondary { height: 2px; margin-top: -2px; }
 .battle-target[data-side="allies"] .enemy-health.secondary i { background: #e7c476; }
 .battle-target.is-down { opacity: .4; }
+/* Statuses ride under the health bar: small, in the status's own colour. */
+.unit-statuses { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
+.unit-statuses:empty { display: none; }
+.unit-statuses i { padding: 1px 4px; border-radius: 2px; background: #1b1216cc; color: var(--status, var(--battle-paper)); font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.unit-statuses i[data-status="sangrado"] { --status: #ff6b6b; }
+.unit-statuses i[data-status="mareo"] { --status: #b9a4ff; }
+.unit-statuses i[data-status="llorera"] { --status: #8fd3ff; }
 .battle-target:disabled { cursor: default; }
 #battle[data-targeting] .battle-target:not(:disabled) { pointer-events: auto; cursor: pointer; }
 .battle-target.is-eligible, .battle-target.is-targeted, .battle-target:focus-visible { outline: none; }

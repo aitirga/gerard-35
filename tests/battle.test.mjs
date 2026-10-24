@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima, SKILLS } from '../src/battle.ts';
+import { createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima, SKILLS, STATUSES, addStatus, stacks } from '../src/battle.ts';
 
 test('single ally completes a round and takes damage only during enemy turn', () => {
   const s = createBattle();
@@ -260,4 +260,37 @@ test('the palace guards cannot be beaten without ánimas, and can be backed off 
     nextRound(strong);
   }
   assert.equal(strong.phase, 'won');
+});
+test('statuses stack to their maximum, Sangrado hurts per stack each round and fades', () => {
+  const s = createBattle();
+  const dog = s.foes[0];
+  assert.equal(addStatus(dog, 'sangrado', 3), 3);
+  assert.equal(addStatus(dog, 'sangrado', 20), STATUSES.sangrado.max);
+  dog.statuses.sangrado = 3;
+  act(s, 'defend'); enemyAct(s, 'dog-0');
+  const ticks = nextRound(s);
+  assert.deepEqual(ticks, [{ target: 'dog-0', status: 'sangrado', amount: 3 * STATUSES.sangrado.tick, stacks: 2 }]);
+  assert.equal(dog.hp, 54 - 6);
+  act(s, 'defend'); enemyAct(s, 'dog-0'); nextRound(s);
+  act(s, 'defend'); enemyAct(s, 'dog-0'); nextRound(s);
+  assert.equal(stacks(dog, 'sangrado'), 0, 'gone once it runs out');
+  assert.equal(dog.hp, 54 - 6 - 4 - 2);
+});
+test('a foe that bleeds out ends the fight at the end of the round', () => {
+  const s = createBattle();
+  s.foes[0].hp = 3; addStatus(s.foes[0], 'sangrado', 2);
+  act(s, 'defend'); enemyAct(s, 'dog-0'); nextRound(s);
+  assert.equal(s.phase, 'won');
+});
+test('Mareo and Llorera weaken the stats they name, per stack', () => {
+  const s = createBattle();
+  const clear = act(s, 'attack', 'dog-0').amount;
+  enemyAct(s, 'dog-0'); nextRound(s);
+  addStatus(s.allies[0], 'llorera', 2);
+  assert.equal(act(s, 'attack', 'dog-0').amount, clear - 2 * 2, 'Llorera takes Fuerza away');
+  enemyAct(s, 'dog-0'); nextRound(s);
+  const before = s.allies[0].hp;
+  s.allies[0].statuses = {}; addStatus(s.allies[0], 'mareo', 2);
+  act(s, 'defend'); s.allies[0].guarding = false; enemyAct(s, 'dog-0');
+  assert.equal(before - s.allies[0].hp, 9 + 2, 'Mareo takes Defensa away');
 });
