@@ -1,5 +1,7 @@
 # Party, stats and two players
 
+> Each ánima's design, levels and shared mechanics (Sangrado): `docs/animas/` (one folder per ánima).
+
 From chapter 2 Gerard is never alone: **Aitor** walks with him from the moment he wakes up, and a
 second player can take him on a second controller. This page covers who controls whom, the
 character stats, and how ánimas (classes in the code) are shared. Numbers are provisional and meant to be tuned.

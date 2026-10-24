@@ -156,7 +156,8 @@ Guard strength is a pure function of the ánimas the party holds (`palaceGuards`
 
 ## Friends and ánimas (block 3)
 
-The heart of the chapter. La Reina Bubbaloo has blown her bubble over the lives of Gerard's
+The heart of the chapter. Each friend's mission is designed in its own doc under `docs/quests/`
+(Nuria: `docs/quests/nuria.md`). La Reina Bubbaloo has blown her bubble over the lives of Gerard's
 friends: what held their adult days together has popped (the office is gone, the alarm does not
 ring, the train to work never comes, the to-do list is blank). They are lost and sad: *"si no voy
 a trabajar, ¿qué soy?"*. Gerard finds them, spends time with them, helps with what they need. When

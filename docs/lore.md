@@ -63,6 +63,8 @@ friends' stories and the second round carry it.
   rising through a manhole lid now and then. When they act, a head pokes out for a moment and
   sinks back. Keep them barely on screen; the player should hardly notice them.
 - **What they touch obeys the Queen.** Animals they possess get **dark pink eyes** and attack.
+  **People** she takes hold of get **violet eyes** and turn into kids again, wild but kids (Uri,
+  `docs/quests/nuria.md`).
 - They never talk. Out in the world they never stay to fight: they send what they possess
   instead. Only inside the Queen's palace does one rise from a drain and fight in person.
 - Built procedurally in `src/minion.ts`.
@@ -86,6 +88,9 @@ friends' stories and the second round carry it.
 
 - An **ánima** is what makes a person who they are: a small light that leaves a friend and goes
   with Gerard when he helps them. It makes the party stronger and weakens the Queen's palace.
+- Each ánima's design, levels and shared mechanics: `docs/animas/` (one folder per ánima).
+- **Papagato** is Nuria's ánima (Cardedeu): it brings Haru and Yuki, the cats, to fight beside the
+  party. In design (`docs/quests/nuria.md`, `docs/animas/papagato/`).
 - First round: Gerard restores what the Queen popped, and the ánimas he collects are **grey**:
   he gave his friends their routine back. Second round (*la segunda vuelta*): he helps them find
   the kid underneath, and each ánima takes its **colour**. Proposal; see `docs/chapter-2.md`.
@@ -100,7 +105,9 @@ friends' stories and the second round carry it.
 | **Mamá** | Gives Gerard running shoes for his birthday and sends him to fetch Bernat. |
 | **Aitor** | Gerard's partner; they live in the Meridiana flat. A man a little taller than Gerard, with a short beard and glasses (provisional model and portrait until there are photos). From chapter 2 he is in the party, played by a second player; he fights with the party's ánimas. |
 | **Nuria Mendoza** | The real person behind La Reina Bubbaloo. Secret for now. |
-| **Nuria and Uri** | Friends of Gerard and Aitor who live in **Cardedeu**, reached by Rodalies from La Sagrera (chapter 2). Whether this Nuria is Nuria Mendoza is an open question. |
+| **Nuria and Uri** | Friends of Gerard and Aitor who live in **Cardedeu**, reached by Rodalies from La Sagrera (chapter 2). Nuria, Gerard and Aitor once shared a flat; she has just become a mother. Whether this Nuria is Nuria Mendoza is an open question. |
+| **Nil** | Nuria and Uri's baby (under a year old). In Nuria's mission Uri runs off down the street with him (`docs/quests/nuria.md`). |
+| **Haru and Yuki** | The cats who live with Nuria (both female: one white, one tricolour); they are Gerard's cats too, from when Nuria, Gerard and Aitor lived together. Nuria's ánima, **Papagato**, brings them into the party's fights. |
 
 ## Places
 
