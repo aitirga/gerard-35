@@ -89,6 +89,9 @@ friends' stories and the second round carry it.
 - An **ánima** is what makes a person who they are: a small light that leaves a friend and goes
   with Gerard when he helps them. It makes the party stronger and weakens the Queen's palace.
 - Each ánima's design, levels and shared mechanics: `docs/animas/` (one folder per ánima).
+- **Every person helped gives a light**: it flashes out of them and goes into Gerard and Aitor,
+  and at home it waits in a jar. Letting one out holds the Queen back a day. Nuria's household
+  gives three: Nuria, Uri and Nil.
 - **Papagato** is Nuria's ánima (Cardedeu): it brings Haru and Yuki, the cats, to fight beside the
   party. In design (`docs/quests/nuria.md`, `docs/animas/papagato/`).
 - First round: Gerard restores what the Queen popped, and the ánimas he collects are **grey**:

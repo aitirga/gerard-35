@@ -23,7 +23,8 @@ Status: designing · Comes from: Nuria's mission, `docs/quests/nuria.md`
 
 ## Stats
 
-Proposal: Velocidad +2, Fuerza +1, Espíritu −1 (quick and scrappy). Nuria's light (`ANIMAS`)
+Provisional (decided, to tune): Velocidad +2, Fuerza +1, Espíritu −1 (quick and scrappy). Colour
+in the second round: warm orange `#f0954a`. Nuria's light (`ANIMAS`)
 gives its own party bonus, separate.
 
 ## Signature: Sangrado

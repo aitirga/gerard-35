@@ -106,9 +106,32 @@ fight; going round it does not.
    childhood and his **fears**. The goal is to reach and catch Uri (puzzle + the mission's own
    dynamic). The theme of the whole mini-dungeon is **fear** (decided).
 4. Boss: **El Vértigo** on the roof of Nuria's block; Uri beats his fear (see *Final boss*).
-5. Win: Uri is himself again, Nil safe. Papagato stays with the party for good, Nuria's ánima
-   light goes with Gerard, and **Haru and Yuki come home**: from then on they live in the
-   Meridiana flat too.
+5. Win: Uri is himself again, Nil safe. **Three lights** leave Nuria, Uri and Nil and go into
+   Gerard and Aitor (see *The lights*). Papagato stays with the party for good, and **Haru and Yuki
+   come home**: from then on they live in the Meridiana flat too.
+
+## The lights
+
+Decided (round 11): the mission gives **three lights, one per person helped: Nuria, Uri and Nil**.
+They are lore first (what makes each of them who they are) and a small brake on the Queen.
+
+- **The moment** (the animation, reusable for every friend): one person at a time, their body
+  gives a **mini flash** (a quick white pulse over the whole model, a soft ring on the ground), a
+  small glowing light rises out of their chest, hangs for a breath, then arcs through the air with
+  a short trail and **goes into Gerard or Aitor**, who flash briefly as it enters (and their
+  vitals plate ripples, `flashAnima`). Proposal: Nuria's into Gerard, Uri's into Aitor, Nil's
+  splits in two and goes into both.
+- **Kept at home**: the first time they get home afterwards, the lights leave Gerard and Aitor and
+  settle into a glass jar on the living room shelf (proposal: *el bote de las luces*). Grey in the
+  first round, as the lore says.
+- **Used for a day**: at the jar, *"Usar una luz"* lets one out: it flies out of the window
+  towards the castle and the Queen's spread goes back **one day**. Proposal: at most one a day.
+- **Count, never names**: the jar shows lit lights and spent ones (dark, like an empty marble),
+  so anyone can see how many are left and how many were used. No names, no labels, no counter on
+  the HUD.
+- Using a light does not take the mission's ánima away: Nuria's household still counts as one
+  friend helped for the castle, the guards, the party bonus and the three days the ánima already
+  wins back.
 
 - **Freedom always** (decided): they can leave, go home and come back as often as they like, but
   nothing is kept until it is won: leaving hands Papagato and the cats back to Nuria, who waits
@@ -252,9 +275,10 @@ dependencies; steps marked **blocked** need something from the user first.
 
 **Before step 1, decide** (recommendations in brackets):
 
-- `ANIMAS` has `nuria` and `uri`: one mission, two lights? [Yes: Nuria's light when the cats are
-  kept, Uri's when he beats his fear; it is a hard mission and they are two friends.]
-- Papagato's wearer stats [Velocidad +2, Fuerza +1, Espíritu −1] and colour [warm orange].
+- Settled (round 11): the mission is **one friend helped** (`ANIMAS.nuria`; the `uri` placeholder
+  goes) and gives **three lights** (Nuria, Uri, Nil), spendable at home for one day each.
+- Papagato's wearer stats and colour: decided provisionally (the user left it to the plan):
+  Velocidad +2, Fuerza +1, Espíritu −1; warm orange `#f0954a`. Tune with `just combat-sim`.
 
 1. **Statuses in story fights.** Stacking statuses on `Combatant` in `src/battle.ts` (stacks,
    duration, end-of-round tick), shown on the fighters in `src/battle-ui.ts`. First three:
@@ -290,7 +314,7 @@ dependencies; steps marked **blocked** need something from the user first.
    lent (ÁNIMA DESBLOQUEADA, Papagato on trial), Haru and Yuki following the party
    (`src/follower.ts`). **Mission state is not saved**: leaving (Aitor's question at the
    station), falling (wake at home) or the day ending gives the cats back and resets it; only the
-   win sets flags (`nuria-uri`, `papagato`, `anima-nuria`, `anima-uri`). Hours: 3
+   win sets flags (`nuria-uri`, `papagato`, `anima-nuria`, `luz-nuria`, `luz-uri`, `luz-nil`). Hours: 3
    (`src/days.ts`). Tests in `tests/story.test.mjs`: the lending, every way of losing it, the win.
 8. **The maze.** Three levels over the Cardedeu zone (a mission variant of the street: hedges,
    parked cars and fences closing it into a maze): 1 · La calle, 2 · Los patios with fences that
@@ -310,11 +334,20 @@ dependencies; steps marked **blocked** need something from the user first.
     existing `beat` phase, like Bernat's in chapter 1): Uri steps in front of Nil, his eyes clear;
     phase 3 Altura falls each round and Uri climbs down. The rooftop arena on Nuria's block.
     Balance with `just combat-sim`; tests for the phases and that the twist always happens.
-11. **The win and home.** Uri himself again (eyes back), the lights to Gerard (castle threat and
-    the Queen's spread follow from the flags), Papagato kept, Haru and Yuki in the Meridiana flat
+11. **The lights.** Pure rules first: lights earned (`luz-<person>` flags) and lights used
+    (`luz-<person>-usada`, story flags so a rewind puts them back), at most one a day;
+    `spread(day, animas, used)` in `src/days.ts` becomes `(day − 1 − 3 × ánimas − used) / 6`.
+    Then the reusable animation `src/anima-lights.ts` (body flash, rising light, arc and trail,
+    the receiver's flash; it takes any person and any receiver, so every friend reuses it), the
+    jar on the flat's living-room shelf with lit and spent lights, *"Mirar las luces"* and
+    *"Usar una luz"* (the light out of the window, Aitor's line, the castle pulled back). Tests in
+    `tests/story.test.mjs` and a days test. Screenshot scenario `lights`.
+12. **The win and home.** Uri himself again (eyes back), the three lights into Gerard and Aitor,
+    then into the jar at home (castle threat and the Queen's spread follow from the flags),
+    Papagato kept, Haru and Yuki in the Meridiana flat
     from then on (two cats wandering the flat's floor). Screenshot scenario `nuria` covering the
     arrival, the lending, an ambush, each monster, the Vértigo phases and the cats at home.
-12. **Docs.** `docs/chapter-2.md` (friends and clues tables, implementation list), `docs/lore.md`
+13. **Docs.** `docs/chapter-2.md` (friends and clues tables, the lights in § The Queen's advance, implementation list), `docs/lore.md`
     (story so far), `docs/party.md` (Papagato, statuses, levels), `docs/animas/` (implementation
     sections).
 

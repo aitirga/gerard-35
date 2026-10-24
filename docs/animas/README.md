@@ -27,6 +27,10 @@ The word covers two related things; keep them apart when designing:
 | **A wearable ánima** | A way of being that someone in the party puts on: a look, a colour, an interface theme, stats and skills. Gerard's power is changing it. | `ClassId`, `CLASSES` (`src/classes.ts`), `CLASS_STATS`, `SKILLS` (`src/battle.ts`) |
 | **A friend's ánima** | The small light that leaves a friend when Gerard helps them: a party-wide stat bonus that also weakens the palace guards. | `ANIMAS` (`src/animas.ts`), `anima-<friend>` flags |
 
+Each **person** helped also gives a **light** (a friend's household can give several: Nuria, Uri
+and Nil give three). Lights are kept in a jar at home and can be spent for a day against the
+Queen (`docs/chapter-2.md` § The Queen's advance). They are not ánimas and carry no stats.
+
 A friend's mission usually gives both: the friend's light, and a wearable ánima that comes from
 them (Nuria → Papagato). Player-facing text says *ánima* for both, never *clase*.
 

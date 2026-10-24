@@ -99,6 +99,11 @@ morning it reaches the end; **each ánima wins three days back**. So a day spent
 coffees is a day closer to the end, and a day spent helping a friend pushes her back. Each friend's
 mission should fit in a day.
 
+**The lights** (decided 2026-10-24, first in Nuria's mission, `docs/quests/nuria.md` § The
+lights): every person Gerard helps gives a light, kept in a jar at home. Each one can be let out
+once to push her back **one more day**, so the spread becomes `(day − 1 − 3 × ánimas − lights
+used) / 6`. The jar shows how many are lit and how many were used, never whose they were.
+
 **The end.** On that morning the flat is already part of her castle: gum over the walls and floors,
 thorns, everything pink (`story.doomed`). Aitor: *"Hemos llegado tarde."* A screen says she has
 covered everything, with one button: **Volver al día anterior**. It takes them back to the morning
