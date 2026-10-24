@@ -14,7 +14,7 @@ import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId }
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
-import { AMBUSHES, LINES_NURIA, MAZE, PLACES_NURIA, STREET, type FearEncounter } from './friends/nuria.ts';
+import { FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
 import { COSTS, DAY_END, DAY_START, EVENING, LATE, dusk, freshDays, readDays, spread, stage, type Activity, type Days } from './days.ts';
 import { ENVIRONMENTS } from './environments.ts';
@@ -253,15 +253,16 @@ export class Story {
     }
     return effects;
   }
-  /** Walking up to one of Nuria's mission's places: Haru at the station, Uri ahead, an ambush. */
+  /** Walking up to one of Nuria's mission's places: Haru at the station, Uri ahead, the summit, or a fear reaching Gerard. */
   private nearNuria(id: string): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (!this.adult || this.has('nuria-uri')) return [];
     if (id === 'haru' && !this.nuria.haru) { this.nuria.haru = true; return [say(LINES_NURIA.haru)]; }
     const reached = /^uri-(\d)$/.exec(id);
     if (reached && Number(reached[1]) === this.nuria.stage) { this.nuria.stage++; return [say(LINES_NURIA.uri[Number(reached[1])])]; }
-    const ambush = AMBUSHES.find(a => a.id === id);
-    if (ambush && this.nuria.lent && !this.nuria.beaten.includes(ambush.id)) return [say(ambush.tell), { kind: 'battle', encounter: ambush.encounter }];
+    if (id === 'summit' && this.nuria.lent && this.nuria.stage >= PLACES_NURIA.uri.length) return [say(LINES_NURIA.roof), { kind: 'battle', encounter: 'uri-vertigo' }];
+    const fear = FEARS.find(f => f.id === id);
+    if (fear && this.nuria.lent && !this.nuria.beaten.includes(fear.id)) return [say(fear.tell), { kind: 'battle', encounter: fear.encounter }];
     return [];
   }
   /** Uri is himself again: the cats and Papagato stay, the three lights go with Gerard and Aitor. */
@@ -277,8 +278,8 @@ export class Story {
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (event.won && event.encounter === 'uri-vertigo') return this.winNuria();
-    const ambush = AMBUSHES.find(a => a.encounter === event.encounter);
-    if (event.won && ambush) { if (!this.nuria.beaten.includes(ambush.id)) this.nuria.beaten.push(ambush.id); return []; }
+    const fear = FEARS.find(f => f.encounter === event.encounter);
+    if (event.won && fear) { if (!this.nuria.beaten.includes(fear.id)) this.nuria.beaten.push(fear.id); return []; }
     if (!event.won) {
       if (!this.adult) return [];
       // Chapter 2: falling is waking up at home the next morning, with everything done kept.
@@ -407,10 +408,15 @@ export class Story {
     const { haru, uri } = PLACES_NURIA, run = this.nuria;
     if (environment === STREET && !run.lent && !run.haru) return [{ id: 'haru', cell: { ...haru.cell }, radius: haru.radius }];
     if (environment !== MAZE || !run.lent) return [];
-    const list: Trigger[] = AMBUSHES.filter(a => !run.beaten.includes(a.id)).map(a => ({ id: a.id, cell: { ...a.cell }, radius: a.radius }));
     const next = uri[run.stage];
-    if (next) list.push({ id: `uri-${run.stage}`, cell: { ...next.cell }, radius: next.radius });
-    return list;
+    if (next) return [{ id: `uri-${run.stage}`, cell: { ...next.cell }, radius: next.radius }];
+    const { summit } = PLACES_NURIA;
+    return [{ id: 'summit', cell: { ...summit.cell }, radius: summit.radius }];
+  }
+  /** Uri's fears still hunting the ramp (src/chasers.ts moves them; reaching Gerard is a `near` with their id). */
+  fears(environment: EnvironmentId) {
+    if (environment !== MAZE || !this.adult || !this.nuria.lent || this.has('nuria-uri')) return [];
+    return FEARS.filter(f => !this.nuria.beaten.includes(f.id));
   }
   /** Where a door leads instead of its own destination, by story: the palace opens onto the school in chapter 2. */
   redirect(interactionId: string): { environment: EnvironmentId; cell: Cell } | undefined {
@@ -596,9 +602,6 @@ export class Story {
       }
       case 'salir-laberinto':
         return [{ kind: 'travel', environment: STREET, cell: { ...PLACES_NURIA.streetBack.cell } }];
-      case 'subir-tejado':
-        if (!this.nuria.lent || this.nuria.stage < PLACES_NURIA.uri.length) return [];
-        return [say(LINES_NURIA.roof), { kind: 'battle', encounter: 'uri-vertigo' }];
       case 'talk-jan':
         if (this.set('met-jan')) return [say(LINES.jan)];
         return [say(this.has('got-potion') ? LINES.janAfterPotion : LINES.janAgain)];

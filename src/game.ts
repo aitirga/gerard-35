@@ -19,6 +19,8 @@ import type { ItemId } from './items';
 import { Follower, pathTo } from './follower';
 import { createCat, type Cat } from './cats';
 import { createFears } from './fears';
+import { buildTower, type Tower } from './tower-scene';
+import { createChaser, rest, updateChaser, type Chaser } from './chasers';
 import { FEAR_ENCOUNTERS } from './battle';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
 import { PLACES_2 } from './chapter-2';
@@ -235,6 +237,51 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     glow.destroy();
     cutscene = false; lastPrompt = ''; updatePrompt();
   }
+  /**
+   * La torre de Uri (src/tower.ts): its ramp and walls, El Vértigo towering on the platform with
+   * Uri and Nil at the top of it, and Uri's fears hunting the ramp (src/chasers.ts).
+   */
+  let tower: Tower | undefined;
+  let summit: pc.Entity | undefined;
+  let hunters: { chaser: Chaser; model: pc.Entity; id: string }[] = [];
+  function dressScene() {
+    tower?.destroy(); tower = undefined; summit?.destroy(); summit = undefined;
+    hunters.forEach(h => h.model.destroy()); hunters = [];
+    if (environment.id !== 'cardedeu-laberinto') return;
+    tower = buildTower(app, environment.grid, scenery);
+    summit = fears.templates.get('vertigo')!.clone(); summit.enabled = !story.has('nuria-uri');
+    tower.root.addChild(summit); summit.setPosition(tower.summit); summit.setLocalEulerAngles(0, 0, 0);
+  }
+  function huntFears(delta: number, dt: number) {
+    const wanted = story.fears(environment.id);
+    hunters = hunters.filter(h => { const keep = wanted.some(f => f.id === h.id); if (!keep) { effects.emit('poof', h.model.getPosition().clone(), 14, .4); h.model.destroy(); } return keep; });
+    for (const spec of wanted) if (!hunters.some(h => h.id === spec.id)) {
+      const kind = spec.encounter === 'game-over' ? 'game-over' : spec.encounter;
+      const model = fears.templates.get(kind)!.clone(); model.enabled = true; model.setLocalScale(.85, .85, .85);
+      castRoot.addChild(model);
+      hunters.push({ id: spec.id, model, chaser: createChaser({ id: spec.id, patrol: spec.patrol, sight: spec.sight, walk: spec.walk, run: spec.run }) });
+    }
+    let chased = false;
+    for (const h of hunters) {
+      if (!battle && !cutscene && !paused) {
+        // In small steps, so a slow frame never carries a fear through a wall.
+        let event: ReturnType<typeof updateChaser>;
+        for (let left = Math.min(dt, .5); left > 0 && !event; left -= .05) event = updateChaser(h.chaser, Math.min(.05, left), movement.position, environment.grid);
+        if (event === 'spotted') { effects.emit('spark', h.model.getPosition().clone().add(new pc.Vec3(0, 2, 0)), 16, .35); }
+        if (event === 'caught') { rest(h.chaser); clearInput(); movement.walking = false; callbacks.onStory({ type: 'near', id: h.id }); }
+      }
+      chased ||= h.chaser.mode === 'chase';
+      h.model.enabled = !battle;
+      const at = scenery.toWorld(h.chaser.position.x, h.chaser.position.z);
+      const bob = h.chaser.mode === 'chase' ? Math.abs(Math.sin(clock * 14)) * .25 : Math.abs(Math.sin(clock * 5)) * .08;
+      h.model.setPosition(at.x, scenery.groundHeight(at.x, at.z) + bob, at.z);
+      h.model.setLocalEulerAngles(0, h.chaser.facing, h.chaser.mode === 'chase' ? Math.sin(clock * 18) * 6 : 0);
+    }
+    document.getElementById('hud')?.toggleAttribute('data-chased', chased && !battle);
+    document.getElementById('hud')?.toggleAttribute('data-tower', environment.id === 'cardedeu-laberinto');
+    if (summit) { summit.enabled = !story.has('nuria-uri') && !battle; fears.spin(summit, delta, false); }
+    tower?.follow(player.getPosition());
+  }
   /** Where a fight with one of Uri's fears is staged: where it jumped out. */
   let fearStage: Cell = { x: 0, z: 0 };
   let pickups: { entity: pc.Entity; cell: Cell; materials: pc.Material[]; spot?: { x: number; z: number; y: number } }[] = [];
@@ -379,7 +426,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     // Around the Rec Comtal the castle's pink only half takes the light: it is morning in Barcelona.
     // Chapter 2: her pink spreads from the school day after day, and every evening it creeps in with the dusk.
     const spread = Math.min(1, story.spread);
-    toneTarget = environment.id === 'palacio' || (SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo') ? 1
+    // Uri's tower is all the Queen's: violet dark and haze.
+    toneTarget = environment.id === 'palacio' || environment.id === 'cardedeu-laberinto' || (SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo') ? 1
       : environment.id === 'rec-comtal' ? .5 + spread * .4 : environment.id === 'meridiana-calle' ? spread * .5
       : environment.id === 'meridiana' ? (story.doomed ? 1 : spread * .25) : 0;
     if (story.adult && environment.id !== 'palacio') toneTarget = Math.min(1, Math.max(toneTarget, story.dusk * .6));
@@ -817,7 +865,12 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const fight = next?.encounter ?? encounterId;
     const stage = fight === 'palace-minion' ? PALACE_STAGE : fight === 'palace-guards' ? PLACES_2.guardStage
       : (FEAR_ENCOUNTERS as readonly string[]).includes(fight) ? fearStage : pack.area.stage;
-    const settled = battleScene.set(next, scenery.toWorld(stage.x, stage.z), effect, onImpact); battle = next; clearInput();
+    const centre = scenery.toWorld(stage.x, stage.z); centre.y = scenery.groundHeight(centre.x, centre.z) > .1 ? scenery.groundHeight(centre.x, centre.z) : 0;
+    // Uri's fears out on the ramp step aside while a fight is on.
+    hunters.forEach(h => { h.model.enabled = !next; });
+    // In a corridor running along z (Uri's tower), the sides line up along it.
+    const blockedX = !canWalk({ x: Math.round(stage.x) - 2, z: Math.round(stage.z) }, environment.grid) || !canWalk({ x: Math.round(stage.x) + 2, z: Math.round(stage.z) }, environment.grid);
+    const settled = battleScene.set(next, centre, effect, onImpact, blockedX); battle = next; clearInput();
     if (!next) {
       movement.resolveOverlap(occupiedCells(), !reducedMotion.matches);
       lastPrompt = ''; positionPlayer(); updatePrompt();
@@ -931,6 +984,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     scenery.destroy();
     environment = ENVIRONMENTS[id];
     scenery = buildScenery(app, environment);
+    dressScene();
     for (const [id, lamp] of Object.entries(lamps) as [LightId, Lamp][]) scenery.setLamp(id, lamp);
     movement.teleport(environment.grid, destination ?? environment.spawn);
     stairsArmed = false; arrival = movement.cell; inStep = '';
@@ -1040,6 +1094,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       if (mate && free) drivePartner(dt, delta);
       else if (mate && mate.id === 'aitor') mate.follower.update(delta, movement.position, false, running());
       walkCats(delta);
+      huntFears(delta, dt);
       // Gerard pulling against the tether: Aitor calls him back.
       const apart = free && input && Math.hypot(movement.position.x - free.position.x, movement.position.z - free.position.z) > TETHER - .6;
       tetherTug = apart ? tetherTug + Math.min(dt, .25) : 0;
@@ -1223,7 +1278,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   });
   if (environment.id === 'maresme') placePalace();
   else if (environment.id === 'rec-comtal') placePalaceOnSchool();
-  refreshStory();
+  refreshStory(); dressScene();
   tone = toneTarget; scenery.setTone(tone);
   app.start();
   return {

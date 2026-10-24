@@ -30,32 +30,37 @@ export const PLACES_NURIA = {
   /** Round the corner of Doctor Daurella, the street closes into Uri's maze. */
   corner: { environment: STREET, cell: { x: 141, z: 74 } },
   /** Where the maze lets them in, and back out to the street. */
-  mazeIn: { environment: MAZE, cell: { x: 4, z: 41 } },
+  mazeIn: { environment: MAZE, cell: { x: 25, z: 54 } },
   streetBack: { environment: STREET, cell: { x: 136, z: 74 } },
   /** Uri, Nil in his arms, waits at the end of each level; reaching him sends him on. */
   uri: [
-    { environment: MAZE, cell: { x: 29, z: 43 }, radius: 3 },
-    { environment: MAZE, cell: { x: 62, z: 6 }, radius: 3 },
-    { environment: MAZE, cell: { x: 89, z: 40 }, radius: 3 },
+    { environment: MAZE, cell: { x: 21, z: 49 }, radius: 2.5 },
+    { environment: MAZE, cell: { x: 27, z: 45 }, radius: 2.5 },
+    { environment: MAZE, cell: { x: 21, z: 41 }, radius: 2.5 },
   ],
+  /** The platform on top: walking onto it with Uri up there starts the boss. */
+  summit: { environment: MAZE, cell: { x: 27, z: 33 }, radius: 3 },
 } as const;
 
 /**
- * The ambushes (docs/quests/nuria.md § The maze): each place warns before (`tell`), and walking
- * into it starts the fight; going round it does not.
+ * Uri's fears on the ramp (docs/quests/nuria.md § The maze): each walks its stretch, and if it
+ * sees Gerard it runs at him (src/chasers.ts); when it reaches him the fight starts after its line.
  */
-export const AMBUSHES: readonly { id: string; level: number; cell: Cell; radius: number; encounter: Exclude<FearEncounter, 'uri-vertigo'>; tell: Dialogue }[] = [
+export const FEARS: readonly { id: string; encounter: Exclude<FearEncounter, 'uri-vertigo'>; patrol: readonly Cell[]; sight: number; walk: number; run: number; tell: Dialogue }[] = [
   {
-    id: 'ambush-cebollon', level: 0, cell: { x: 18, z: 10 }, radius: 2, encounter: 'cebollon',
-    tell: both(gerard('Ese contenedor tiembla.'), aitor('Huele… a cebolla. Mucho.')),
+    id: 'fear-cebollon', encounter: 'cebollon', sight: 8, walk: 1.6, run: 4.4,
+    patrol: [{ x: 49, z: 45 }, { x: 49, z: 9 }],
+    tell: both(aitor('¡Esa cebolla viene a por nosotros!'), gerard('Me pican los ojos solo de verla.')),
   },
   {
-    id: 'ambush-plato', level: 1, cell: { x: 47, z: 9 }, radius: 2, encounter: 'plato',
-    tell: both(aitor('¿Una mesa puesta en medio del patio?'), gerard('Con la campana tapada. No pienso levantarla.')),
+    id: 'fear-plato', encounter: 'plato', sight: 9, walk: 1.8, run: 4.6,
+    patrol: [{ x: 9, z: 9 }, { x: 45, z: 9 }],
+    tell: both(gerard('Una campana de plato… corriendo.'), aitor('No la levantes. No la levantes.')),
   },
   {
-    id: 'ambush-game-over', level: 2, cell: { x: 80, z: 24 }, radius: 2, encounter: 'game-over',
-    tell: both(gerard('Esa tele se ha encendido sola.'), aitor('«PRESS START». No me gusta nada.')),
+    id: 'fear-game-over', encounter: 'game-over', sight: 11, walk: 2.2, run: 5,
+    patrol: [{ x: 13, z: 13 }, { x: 13, z: 41 }, { x: 41, z: 41 }, { x: 41, z: 13 }],
+    tell: both(aitor('«PLAYER 1».'), gerard('Nos ha visto. ¡Corre!')),
   },
 ];
 
@@ -90,11 +95,12 @@ export const LINES_NURIA = {
     nuria('Haru y Yuki volvieron solas. ¿Lo intentáis otra vez?'),
     nuria('Llevadlas. Uri sigue ahí dentro.'),
   ),
-  /** Into the maze, the first time. */
+  /** Into the tower's ground, the first time. */
   mazeIn: both(
     gerard('Esto no estaba aquí.'),
-    aitor('Setos. Paredes. Coches donde no caben coches.'),
-    uri('¡NIVEL UNO! ¡Si me pilláis, gano yo! ¡No, espera, si me pilláis ganáis vosotros! ¡Da igual, corred!'),
+    aitor('Una torre. En Cardedeu. Y una rampa que da vueltas y vueltas hacia arriba.'),
+    gerard('Y arriba del todo… una escalera. Enorme.'),
+    uri('¡NIVEL UNO! ¡Hasta arriba del todo! ¡Si me pilláis, ganáis! ¡Corred!'),
   ),
   /** At the station with the cats: Aitor asks before they go. */
   leaveWarn: both(
@@ -106,29 +112,29 @@ export const LINES_NURIA = {
     withUri(
       uri('¡Casi! ¡Casi me pilláis! Nil también se ríe, ¿le oís? ¡Nil se ríe!'),
       gerard('Uri, para un momento.'),
-      uri('¡No! ¡Nivel dos! ¡Ahora salen más!'),
+      uri('¡No! ¡Nivel dos! ¡Más arriba!'),
     ),
     withUri(
       uri('¿Sabéis que nunca había hablado tanto? ¡Me encanta! ¡Tengo un montón de cosas guardadas!'),
       aitor('Uri, tus ojos…'),
-      uri('¡Nivel tres! ¡El último! ¡Hacia arriba!'),
+      uri('¡Nivel tres! ¡El último! ¡Arriba del todo!'),
     ),
     withUri(
-      uri('Arriba. Al tejado. Desde ahí se ve todo Cardedeu.'),
+      uri('Arriba. A lo más alto. Desde ahí se ve todo Cardedeu.'),
       gerard('A ti no te gustan las alturas.'),
       uri('…'),
     ),
   ],
-  /** Up the ladder: Uri frozen on the ridge, and El Vértigo rising from the drop. */
+  /** On top: the giant ladder, Uri frozen at the very top of it with Nil, and the ladder opens its eye. */
   roof: both(
     gerard('¡Uri!'),
-    aitor('Está en el caballete, con Nil en brazos. No se mueve.'),
-    gerard('Algo sube por el borde del tejado…'),
+    aitor('Está arriba del todo de la escalera, con Nil en brazos. No se mueve.'),
+    gerard('La escalera… tiene un ojo. Y nos está mirando.'),
   ),
   /** El Vértigo is gone: Uri on the ridge, then all of them back down at the door. */
   won: withUri(
     uri('Pues no está tan alto.'),
-    uri('…Gerard. Aitor. ¿Qué hacemos en el tejado?'),
+    uri('…Gerard. Aitor. ¿Qué hacemos aquí arriba?'),
     gerard('Bajar. Despacito. Nuria te espera.'),
   ),
   home: withNuria(

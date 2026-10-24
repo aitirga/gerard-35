@@ -5,6 +5,7 @@ import MERIDIANA_CALLE_SCENE from './geo/meridiana-calle.json' with { type: 'jso
 import REC_COMTAL_SCENE from './geo/rec-comtal.json' with { type: 'json' };
 import CARDEDEU_SCENE from './geo/cardedeu.json' with { type: 'json' };
 import CARDEDEU_MAZE_SCENE from './geo/cardedeu-laberinto.json' with { type: 'json' };
+import { towerGrid } from './tower.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
   | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto';
@@ -459,7 +460,9 @@ export const REC_COMTAL = geoEnvironment('rec-comtal', REC_COMTAL_SCENE as GeoSc
 /** Nuria's street in Cardedeu (docs/quests/nuria.md), from the R4. */
 export const CARDEDEU = geoEnvironment('cardedeu', CARDEDEU_SCENE as GeoScene);
 /** Uri's maze, round the corner of Nuria's street (docs/quests/nuria.md § The maze). */
-export const CARDEDEU_MAZE = geoEnvironment('cardedeu-laberinto', CARDEDEU_MAZE_SCENE as GeoScene);
+const MAZE_GROUND = geoEnvironment('cardedeu-laberinto', CARDEDEU_MAZE_SCENE as GeoScene);
+/** Its tower's walls are drawn into the grid (src/tower.ts): the ramp spirals up ring by ring. */
+export const CARDEDEU_MAZE = { ...MAZE_GROUND, grid: towerGrid(MAZE_GROUND.grid) };
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,

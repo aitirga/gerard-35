@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Story, STORY_FLAGS } from '../src/story.ts';
-import { AMBUSHES, PLACES_NURIA } from '../src/friends/nuria.ts';
+import { FEARS, PLACES_NURIA } from '../src/friends/nuria.ts';
+import { TOWER, TOP_HEIGHT, onTop, towerEntrance, towerHeights } from '../src/tower.ts';
+import { createChaser, rest, updateChaser, GIVE_UP } from '../src/chasers.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { canWalk } from '../src/movement.ts';
 import { act, addStatus, createFearBattle, enemyAct, MAX_ALTURA, nextRound, GAME_OVER_ROUNDS } from '../src/battle.ts';
@@ -11,7 +13,7 @@ const kinds = effects => effects.map(e => e.kind);
 const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'noista' }];
 
 test('every place of Nuria\'s mission stands on a walkable cell', () => {
-  const places = [PLACES_NURIA.nuria, PLACES_NURIA.haru, PLACES_NURIA.corner, PLACES_NURIA.mazeIn, PLACES_NURIA.streetBack, ...PLACES_NURIA.uri, ...AMBUSHES.map(a => ({ environment: 'cardedeu-laberinto', cell: a.cell }))];
+  const places = [PLACES_NURIA.nuria, PLACES_NURIA.haru, PLACES_NURIA.corner, PLACES_NURIA.mazeIn, PLACES_NURIA.streetBack, PLACES_NURIA.summit, ...PLACES_NURIA.uri, ...FEARS.flatMap(f => f.patrol.map(cell => ({ environment: 'cardedeu-laberinto', cell })))];
   for (const place of places) assert.ok(canWalk(place.cell, ENVIRONMENTS[place.environment].grid), `${place.environment} ${place.cell.x},${place.cell.z}`);
 });
 
@@ -29,20 +31,60 @@ test('Nuria lends the cats: Papagato on trial, and the corner opens onto Uri\'s 
   assert.ok(story.interactions('cardedeu').some(i => i.id === 'enter-maze'));
   const inside = story.handle({ type: 'interact', id: 'enter-maze' });
   assert.equal(inside[0].environment, 'cardedeu-laberinto');
-  assert.deepEqual(story.triggers('cardedeu-laberinto').map(t => t.id), [...AMBUSHES.map(a => a.id), 'uri-0']);
+  assert.deepEqual(story.triggers('cardedeu-laberinto').map(t => t.id), ['uri-0']);
+  assert.deepEqual(story.fears('cardedeu-laberinto').map(f => f.id), FEARS.map(f => f.id));
 });
 
-test('the maze: ambushes start their fight and stay beaten, Uri runs on, and the roof waits for him', () => {
+test('the tower: a fear that reaches Gerard starts its fight and stays beaten, Uri climbs ahead, and the summit waits for him', () => {
   const story = adult();
   story.handle({ type: 'interact', id: 'talk-nuria' }); story.handle({ type: 'interact', id: 'enter-maze' });
-  assert.deepEqual(story.handle({ type: 'interact', id: 'subir-tejado' }), [], 'Uri is not up there yet');
-  const ambush = story.handle({ type: 'near', id: 'ambush-cebollon' });
-  assert.deepEqual(ambush.at(-1), { kind: 'battle', encounter: 'cebollon' });
+  assert.deepEqual(story.handle({ type: 'near', id: 'summit' }), [], 'Uri is not up there yet');
+  const caught = story.handle({ type: 'near', id: 'fear-cebollon' });
+  assert.deepEqual(caught.at(-1), { kind: 'battle', encounter: 'cebollon' });
   story.handle({ type: 'battle', won: true, encounter: 'cebollon', worn: ['papagato'] });
-  assert.ok(!story.triggers('cardedeu-laberinto').some(t => t.id === 'ambush-cebollon'));
+  assert.ok(!story.fears('cardedeu-laberinto').some(f => f.id === 'fear-cebollon'));
   for (const n of [0, 1, 2]) { assert.equal(kinds(story.handle({ type: 'near', id: `uri-${n}` }))[0], 'dialogue'); }
-  assert.ok(!story.triggers('cardedeu-laberinto').some(t => t.id.startsWith('uri-')));
-  assert.deepEqual(story.handle({ type: 'interact', id: 'subir-tejado' }).at(-1), { kind: 'battle', encounter: 'uri-vertigo' });
+  assert.deepEqual(story.triggers('cardedeu-laberinto').map(t => t.id), ['summit']);
+  assert.deepEqual(story.handle({ type: 'near', id: 'summit' }).at(-1), { kind: 'battle', encounter: 'uri-vertigo' });
+});
+
+test('the tower\'s ramp climbs evenly round every ring up to the platform, with no short cut', () => {
+  const grid = ENVIRONMENTS['cardedeu-laberinto'].grid;
+  const heights = towerHeights(grid);
+  assert.equal(heights.get(`${towerEntrance().x},${towerEntrance().z}`), 0);
+  const top = [...heights].filter(([k]) => { const [x, z] = k.split(',').map(Number); return onTop({ x, z }); });
+  assert.ok(top.length > 100 && top.every(([, h]) => h === TOP_HEIGHT()), 'a flat platform on top');
+  // Every ring is walked round: Uri's stops climb, one ring higher each.
+  const at = c => heights.get(`${c.x},${c.z}`);
+  const stops = PLACES_NURIA.uri.map(u => at(u.cell));
+  assert.ok(stops.every((h, i) => i === 0 || h > stops[i - 1]), stops.join(' < '));
+  assert.ok(stops[0] > TOP_HEIGHT() / 5, 'the first ring alone climbs a good way');
+  // Neighbouring ramp cells never jump: it is a ramp, not stairs.
+  for (const [k, h] of heights) {
+    const [x, z] = k.split(',').map(Number);
+    for (const [dx, dz] of [[1, 0], [0, 1]]) { const n = heights.get(`${x + dx},${z + dz}`); if (n !== undefined && !onTop({ x, z })) assert.ok(Math.abs(n - h) < .6, `${k}: ${h} vs ${n}`); }
+  }
+});
+
+test('a fear walks its round, chases Gerard when it sees him, gives up when it loses him, and rests after a fight', () => {
+  const grid = ENVIRONMENTS['cardedeu-laberinto'].grid;
+  const spec = FEARS.find(f => f.id === 'fear-cebollon');
+  const c = createChaser({ id: spec.id, patrol: spec.patrol, sight: spec.sight, walk: spec.walk, run: spec.run });
+  const far = { x: 25, z: 54 };
+  for (let i = 0; i < 20; i++) assert.equal(updateChaser(c, .1, far, grid), undefined);
+  assert.equal(c.mode, 'patrol');
+  const near = { x: c.position.x, z: c.position.z - 4 };
+  assert.equal(updateChaser(c, .1, near, grid), 'spotted');
+  let event;
+  for (let i = 0; i < 40 && event !== 'caught'; i++) event = updateChaser(c, .1, near, grid);
+  assert.equal(event, 'caught');
+  rest(c);
+  assert.equal(updateChaser(c, .1, near, grid), undefined, 'resting after the fight');
+  const d = createChaser({ id: 'x', patrol: spec.patrol, sight: spec.sight, walk: spec.walk, run: spec.run });
+  updateChaser(d, .1, { x: d.position.x, z: d.position.z - 5 }, grid);
+  let lost;
+  for (let t = 0; t < GIVE_UP + 1 && lost !== 'lost'; t += .1) lost = updateChaser(d, .1, far, grid);
+  assert.equal(lost, 'lost');
 });
 
 test('beating El Vértigo keeps Papagato, the cats and the three lights', () => {

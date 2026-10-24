@@ -271,7 +271,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     },
     get entering() { return !!state && entryTime < ENTRY_SECONDS; },
     get entryProgress() { return smooth(entryTime / ENTRY_SECONDS); },
-    set(next: BattleState | undefined, center: pc.Vec3, nextEffect?: BattleEffect, onImpact?: () => void): Promise<void> {
+    /**
+     * `alongZ`: the fight is staged in a corridor that runs along z (Uri's tower), so the two sides
+     * face each other along it instead of across it.
+     */
+    set(next: BattleState | undefined, center: pc.Vec3, nextEffect?: BattleEffect, onImpact?: () => void, alongZ = false): Promise<void> {
       settle();
       const entering = !!next && !state;
       if (entering) {
@@ -287,7 +291,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
               if (mesh.material.name === 'Camiseta mostaza') mesh.material = allyJacket;
             });
           });
-          const base = new pc.Vec3(anchor.x + (party ? -2.2 : 1.2), .15, anchor.z + (i - (units.length - 1) / 2) * 1.9 + (party ? .6 : -.6));
+          const across = (i - (units.length - 1) / 2) * (alongZ ? 1.1 : 1.9) + (party ? .6 : -.6) * (alongZ ? .4 : 1), apart = party ? -2.2 : 1.2;
+          const base = alongZ ? new pc.Vec3(anchor.x + across * .5, anchor.y + .15, anchor.z - apart * 1.3) : new pc.Vec3(anchor.x + apart, anchor.y + .15, anchor.z + across);
           const start = source.getPosition().clone(); if (party) start.z += i * 1.4;
           battleRoot.addChild(model); model.setPosition(start);
           const body = party ? model.findByName('Cuerpo') as pc.Entity : null;

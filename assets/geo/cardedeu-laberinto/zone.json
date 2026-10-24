@@ -1,6 +1,6 @@
 {
   "id": "cardedeu-laberinto",
-  "name": "Cardedeu · El laberinto de Uri",
+  "name": "Cardedeu · La torre de Uri",
   "region": "Cardedeu, Vallès Oriental",
   "anchor": {
     "address": "Carrer de Jacint Verdaguer, 08440 Cardedeu",
@@ -8,17 +8,17 @@
     "lon": 2.3543989
   },
   "bounds_m": {
-    "west": -40,
-    "east": 80,
-    "north": -30,
-    "south": 30
+    "west": -35,
+    "east": 35,
+    "north": -35,
+    "south": 35
   },
   "cell_m": 1.25,
   "rotation_deg": 0,
   "zoom": 11.5,
   "spawn": {
-    "east_m": -34,
-    "south_m": 22
+    "east_m": -26,
+    "south_m": 33
   },
   "storey_m": 2.6,
   "reference": {
@@ -32,99 +32,58 @@
   "styles": {
     "default": {
       "walls": [
-        "#5f8f4e",
-        "#6a9a56",
-        "#56854a"
+        "#2f5a2c",
+        "#36632f",
+        "#2a5228"
       ],
-      "base": "#4c7a40",
-      "trim": "#5f8f4e",
-      "roof": "#4f7d41",
+      "base": "#1f3f1d",
+      "trim": "#2f5a2c",
+      "roof": "#24461f",
       "roof_kind": "flat",
       "facade": "hedge",
       "ground": "hedge",
-      "levels": 1
-    },
-    "tapia": {
-      "walls": [
-        "#c98d6a",
-        "#d29a76"
-      ],
-      "base": "#a86b52",
-      "trim": "#e0c7a5",
-      "roof": "#b5583a",
-      "roof_kind": "flat",
-      "facade": "hedge",
-      "ground": "hedge",
-      "levels": 1
+      "levels": 3
     }
   },
-  "buildings": {
-    "tag:building=tapia": {
-      "style": "tapia"
-    }
-  },
+  "buildings": {},
   "props": [
     {
-      "kind": "car",
-      "east_m": -32,
-      "south_m": 4,
-      "color": "#c8423b"
-    },
-    {
-      "kind": "car",
-      "east_m": -20,
-      "south_m": -20,
-      "color": "#3a5a8a"
-    },
-    {
-      "kind": "car",
-      "east_m": -7,
-      "south_m": 4,
-      "color": "#e9e6df"
-    },
-    {
-      "kind": "bin",
-      "east_m": -31,
-      "south_m": -6
-    },
-    {
-      "kind": "bin",
-      "east_m": -6,
-      "south_m": -20
-    },
-    {
-      "kind": "bench",
-      "east_m": 19,
-      "south_m": 14
+      "kind": "tree",
+      "east_m": -33,
+      "south_m": -33,
+      "species": "cypress"
     },
     {
       "kind": "tree",
       "east_m": 33,
-      "south_m": 0
-    },
-    {
-      "kind": "lamp",
-      "east_m": 48,
-      "south_m": -2
+      "south_m": -33,
+      "species": "cypress"
     },
     {
       "kind": "tree",
-      "east_m": 60,
-      "south_m": 20
+      "east_m": 33,
+      "south_m": 33,
+      "species": "cypress"
+    },
+    {
+      "kind": "tree",
+      "east_m": -33,
+      "south_m": -10,
+      "species": "cypress"
+    },
+    {
+      "kind": "tree",
+      "east_m": 33,
+      "south_m": 0,
+      "species": "cypress"
     }
   ],
   "places": [
     {
       "id": "salir-laberinto",
       "label": "Volver a la calle",
-      "east_m": -37,
-      "south_m": 22
-    },
-    {
-      "id": "subir-tejado",
-      "label": "Subir por la escalera",
-      "east_m": 74,
-      "south_m": 24
+      "east_m": -31,
+      "south_m": 33
     }
   ],
   "anchors": {}

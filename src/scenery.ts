@@ -409,6 +409,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       return Number.isFinite(height) ? height : .025;
     },
     toWorld(px: number, pz: number) { return new pc.Vec3(x(px), 0, z(pz)); },
+    /** A raised surface that feet follow (`top` high over the `w` × `d` cells centred on px, pz): Uri's tower ramp. */
+    addSurface(px: number, pz: number, w: number, d: number, top: number) { surfaces.push({ x: x(px), z: z(pz), w, d, y: top }); },
     /**
      * Blends the light from this scene's own (0) to La Reina Bubbaloo's (1): a low magenta sun,
      * a dim violet ambient and a pink haze that thickens with distance (docs/lore.md).

@@ -95,28 +95,13 @@
       "press": "KeyE"
     },
     {
-      "until": "document.title.includes('laberinto')",
+      "until": "document.title.includes('torre')",
       "timeout": 20000
     },
     {
-      "shot": "maze-in",
-      "delay": 1500,
-      "caption": "Round the corner, Uri's maze: «¡NIVEL UNO!»"
-    },
-    {
-      "skipDialogue": true
-    },
-    {
-      "teleport": "cardedeu-laberinto",
-      "cell": [
-        26,
-        43
-      ]
-    },
-    {
-      "shot": "uri",
-      "delay": 1500,
-      "caption": "Uri ahead with Nil in his arms and violet eyes"
+      "shot": "tower-in",
+      "delay": 2000,
+      "caption": "Round the corner: a dark tower where there was none, and a ramp winding up round it"
     },
     {
       "skipDialogue": true
@@ -125,9 +110,9 @@
       "press": "KeyR"
     },
     {
-      "shot": "maze-overview",
-      "delay": 2500,
-      "caption": "The maze from above: hedges, garden walls, the way to the roof"
+      "shot": "tower-overview",
+      "delay": 3000,
+      "caption": "From above: the ramp rings round the tower, ring inside ring, up to the platform where El Vértigo stands"
     },
     {
       "press": "KeyR"
@@ -135,37 +120,69 @@
     {
       "teleport": "cardedeu-laberinto",
       "cell": [
-        18,
-        11
+        12,
+        49
       ]
     },
     {
-      "shot": "ambush-tell",
-      "delay": 400,
-      "caption": "The bin shakes and it smells of onion: the place warns first"
+      "shot": "ramp",
+      "delay": 1800,
+      "caption": "Up the first ring: walls always higher than you, violet lanterns, the haze"
+    },
+    {
+      "teleport": "cardedeu-laberinto",
+      "cell": [
+        19,
+        49
+      ]
+    },
+    {
+      "shot": "uri-ahead",
+      "delay": 1500,
+      "caption": "Uri ahead, Nil in his arms, violet eyes: «¡Nivel dos! ¡Más arriba!»"
     },
     {
       "skipDialogue": true
     },
     {
-      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
-      "timeout": 60000
+      "teleport": "cardedeu-laberinto",
+      "cell": [
+        49,
+        34
+      ]
+    },
+    {
+      "shot": "spotted",
+      "delay": 900,
+      "caption": "El Cebollón has seen them: it runs, and the edges of the screen beat like a heart"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' || !!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "caught",
+      "delay": 300,
+      "caption": "It caught them"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "[...document.querySelectorAll('#battle .turn-meta')].some(e => e.textContent === 'TU TURNO') && document.querySelector('#battle').dataset.phase === 'player'",
+      "timeout": 90000
     },
     {
       "shot": "cebollon",
       "delay": 1200,
-      "caption": "El Cebollón: layer on layer (Capas 4), and everyone's eyes water"
+      "caption": "El Cebollón: layer on layer, and everyone's eyes water"
     },
     {
-      "press": "Digit5"
-    },
-    {
-      "press": "Enter",
-      "gap": 600
+      "eval": "document.querySelector('#battle [data-command=\"escape\"] .command-trigger').click()"
     },
     {
       "until": "!document.querySelector('#battle .battle-result')?.hidden",
-      "timeout": 30000
+      "timeout": 90000
     },
     {
       "eval": "document.querySelector('#battle .battle-result button').click()"
@@ -174,101 +191,34 @@
       "wait": 1500
     },
     {
-      "eval": "window.gerard.game.startPalaceFight('plato')"
+      "eval": "window.gerard.story.nuria.stage = 3"
     },
     {
-      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
-      "timeout": 60000
+      "teleport": "cardedeu-laberinto",
+      "cell": [
+        27,
+        31
+      ]
     },
     {
-      "shot": "plato",
-      "delay": 1200,
-      "caption": "El Plato Misterioso: under the cloche, an artichoke this round"
+      "wait": 600
     },
     {
-      "press": "Digit5"
+      "shot": "summit",
+      "delay": 600,
+      "caption": "On top: El Vértigo, a giant of ladders five times their height, Uri and Nil at the very top"
     },
     {
-      "press": "Enter",
-      "gap": 600
+      "skipDialogue": true
     },
     {
-      "until": "!document.querySelector('#battle .battle-result')?.hidden",
-      "timeout": 30000
-    },
-    {
-      "eval": "document.querySelector('#battle .battle-result button').click()"
-    },
-    {
-      "wait": 1500
-    },
-    {
-      "eval": "window.gerard.game.startPalaceFight('game-over')"
-    },
-    {
-      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
-      "timeout": 60000
-    },
-    {
-      "shot": "game-over",
-      "delay": 1200,
-      "caption": "Game Over: if it is still standing when the countdown runs out, CONTINUE"
-    },
-    {
-      "press": "Digit5"
-    },
-    {
-      "press": "Enter",
-      "gap": 600
-    },
-    {
-      "until": "!document.querySelector('#battle .battle-result')?.hidden",
-      "timeout": 30000
-    },
-    {
-      "eval": "document.querySelector('#battle .battle-result button').click()"
-    },
-    {
-      "wait": 1500
-    },
-    {
-      "eval": "window.gerard.game.startPalaceFight('uri-vertigo')"
-    },
-    {
-      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
-      "timeout": 60000
+      "until": "[...document.querySelectorAll('#battle .turn-meta')].some(e => e.textContent === 'TU TURNO') && document.querySelector('#battle').dataset.phase === 'player'",
+      "timeout": 90000
     },
     {
       "shot": "vertigo",
       "delay": 1500,
-      "caption": "El Vértigo: ladders and roof tiles, a spiral eye, and ALTURA in the heading"
-    },
-    {
-      "press": "Digit4"
-    },
-    {
-      "press": "Enter",
-      "gap": 400
-    },
-    {
-      "until": "document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === 'aitor' && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
-      "timeout": 60000
-    },
-    {
-      "press": "Digit4"
-    },
-    {
-      "press": "Enter",
-      "gap": 400
-    },
-    {
-      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
-      "timeout": 60000
-    },
-    {
-      "shot": "vertigo-eye",
-      "delay": 800,
-      "caption": "Its eye starts to spin: next turn everyone looks down, unless they hold on"
+      "caption": "The fight: ALTURA in the heading, the spiral eye on its chest"
     },
     {
       "open": "/?story=clue-r4&solo=1"

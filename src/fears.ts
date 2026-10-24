@@ -66,21 +66,44 @@ export function createFears(app: pc.Application) {
     part(pixels, 'Pupila', 'box', mat('#2a3aff', .5, .3), [side * .21 + .04, .75, .19], [.1, .12, .03]);
   }
 
-  // El Vértigo: two ladders stacked crooked, roof tiles hanging off them, and on top a spiral eye.
+  // El Vértigo: a giant of ladders, five times Gerard's height. Two legs of ladder, a body of
+  // stacked, crooked ladders armoured in roof tiles, arms of ladder hanging down, a great spiral eye,
+  // and right at the top, frozen, Uri with Nil in his arms.
   const vertigo = root('El Vértigo');
-  part(vertigo, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.6, .02, 1.6]);
-  const wood = mat('#8a6a4a', .3), tile = mat('#b5583a', .35), tileDark = mat('#8f3f2a', .35);
-  const ladder = (y: number, lean: number, h: number) => {
-    const l = new pc.Entity('Escalera'); l.setLocalPosition(0, y, 0); l.setLocalEulerAngles(0, 0, lean); vertigo.addChild(l);
-    for (const side of [-1, 1]) part(l, 'Larguero', 'box', wood, [side * .32, h / 2, 0], [.08, h, .08]);
-    for (let k = .3; k < h; k += .38) part(l, 'Peldaño', 'box', wood, [0, k, 0], [.64, .05, .06]);
+  part(vertigo, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [4.2, .02, 4.2]);
+  const wood = mat('#6e5238', .25), woodDark = mat('#4a3626', .25), tile = mat('#b5583a', .35), tileDark = mat('#7f3524', .35);
+  const ladder = (parent: pc.Entity, name: string, at: number[], lean: number[], h: number, w = .9) => {
+    const l = new pc.Entity(name); l.setLocalPosition(at[0], at[1], at[2]); l.setLocalEulerAngles(lean[0], lean[1], lean[2]); parent.addChild(l);
+    for (const side of [-1, 1]) part(l, 'Larguero', 'box', wood, [side * w / 2, h / 2, 0], [.14, h, .14]);
+    for (let k = .35; k < h; k += .45) part(l, 'Peldaño', 'box', woodDark, [0, k, 0], [w, .08, .1]);
     return l;
   };
-  ladder(0, 3, 1.5); const upper = ladder(1.42, -6, 1.2);
-  for (let k = 0; k < 8; k++) part(vertigo, 'Teja', 'box', k % 2 ? tile : tileDark, [Math.sin(k * 2.1) * .6, .3 + k * .32, Math.cos(k * 1.7) * .2], [.46, .09, .3], [20 * Math.sin(k), k * 40, 15 * Math.cos(k)]);
-  const eyeHead = new pc.Entity('Cabeza de chicle'); eyeHead.setLocalPosition(0, 1.35, .1); upper.addChild(eyeHead);
-  const rings = ['#e0d0ff', '#9a6cd8', '#e0d0ff', '#6a3ab8', '#e0d0ff', '#2a1440'].map(c => mat(c, .6, .25));
-  rings.forEach((m, i) => part(eyeHead, i === rings.length - 1 ? 'Ojo' : 'Espiral', 'cylinder', m, [0, 0, .02 + i * .012], [1.2 - i * .19, .02, 1.2 - i * .19], [90, 0, 0]));
+  // Legs, then the trunk, swaying a little apart.
+  ladder(vertigo, 'Pierna', [-.9, 0, 0], [0, 0, 6], 3.4, .7); ladder(vertigo, 'Pierna', [.9, 0, 0], [0, 0, -6], 3.4, .7);
+  const trunk = ladder(vertigo, 'Tronco', [0, 3.2, 0], [0, 0, 2], 3.6, 1.6);
+  ladder(trunk, 'Brazo', [-1.3, 3.2, 0], [0, 0, 160], 2.8, .5); ladder(trunk, 'Brazo', [1.3, 3.2, 0], [0, 0, -160], 2.8, .5);
+  // Roof tiles stuck on like scales, more of them higher up.
+  for (let k = 0; k < 22; k++) {
+    const y = .6 + (k / 22) * 3.2, a = k * 2.399;
+    part(trunk, 'Teja', 'box', k % 2 ? tile : tileDark, [Math.cos(a) * .95, y, Math.sin(a) * .35 + .2], [.62, .1, .42], [25 * Math.sin(k * 1.3), k * 37, 20 * Math.cos(k * .7)]);
+  }
+  // The eye: a great spiral on the chest, turning (see `spin`).
+  const eyeHead = new pc.Entity('Cabeza de chicle'); eyeHead.setLocalPosition(0, 2.4, .3); trunk.addChild(eyeHead);
+  part(eyeHead, 'Marco del ojo', 'cylinder', woodDark, [0, 0, -.04], [2.3, .06, 2.3], [90, 0, 0]);
+  const rings = ['#e0d0ff', '#9a6cd8', '#e0d0ff', '#6a3ab8', '#e0d0ff', '#2a1440'].map(c => mat(c, .6, .35));
+  rings.forEach((m, i) => part(eyeHead, i === rings.length - 1 ? 'Ojo' : 'Espiral', 'cylinder', m, [0, 0, .02 + i * .014], [2.1 - i * .34, .02, 2.1 - i * .34], [90, 0, 0]));
+  // Uri at the very top, Nil in his arms, too scared to move.
+  const uri = new pc.Entity('Uri arriba'); uri.setLocalPosition(0, 3.75, 0); trunk.addChild(uri);
+  const skin = mat('#e3b38f', .3), tee = mat('#f5f3ef', .3), jeans = mat('#2f3a4a', .3), hair = mat('#2e2420', .3);
+  part(uri, 'Piernas de Uri', 'box', jeans, [0, .3, 0], [.32, .6, .22]);
+  part(uri, 'Camiseta de Uri', 'box', tee, [0, .82, 0], [.42, .46, .28]);
+  part(uri, 'Cabeza de Uri', 'sphere', skin, [0, 1.25, 0], [.32, .38, .3]);
+  part(uri, 'Pelo de Uri', 'sphere', hair, [0, 1.38, -.03], [.31, .18, .29]);
+  part(uri, 'Barba de Uri', 'sphere', hair, [0, 1.13, .06], [.24, .14, .2]);
+  part(uri, 'Ojos de Uri', 'box', mat('#b07aff', .6, 1.4), [0, 1.27, .15], [.18, .04, .02]);
+  part(uri, 'Nil', 'sphere', mat('#f7f5ef', .3), [0, .86, .2], [.22, .26, .2]);
+  part(uri, 'Cabeza de Nil', 'sphere', mat('#efc9a8', .3), [0, 1.05, .24], [.16, .17, .15]);
+  part(uri, 'Babero de Nil', 'box', mat('#6f93c4', .3), [0, .95, .3], [.13, .05, .05]);
 
   const templates = new Map<FoeKind, pc.Entity>([['cebollon', onion], ['plato', dish], ['game-over', ghost], ['vertigo', vertigo]]);
   return {
