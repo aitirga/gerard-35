@@ -1,6 +1,6 @@
 # Nuria · Cardedeu (working title)
 
-Status: plan written (round 10) · waiting for the go to build · Last updated: 2026-10-24
+Status: building on `feat/nuria-mission` · steps 1–10 and the lights' animation done · Last updated: 2026-10-24
 
 ## Summary
 
@@ -68,33 +68,36 @@ cats come home with Gerard; give up, and they go back to Nuria. Round the corner
 - Uri has run off down the street with Nil (proposal: racing the pushchair like a go-kart).
 - Round the corner, the street becomes a mini-dungeon.
 
-## The maze (mini-dungeon)
+## The tower (mini-dungeon)
 
-Theme: **fear**, Uri's. Uri loves video games, so the maze plays like one: three levels, each
-harder, and Uri (as a kid) narrates them from ahead, never the HUD: *"¡Nivel dos! ¡Ahora salen
-más!"*. At each level Uri shows up ahead with Nil in his arms, violet-eyed, talking non-stop, and
-runs off (*"¡No me pillas!"*): he is what pulls the player on.
+Redesigned with the user (2026-10-25): not a flat maze but **La torre de Uri**, a dark tower that
+rises round the corner of Nuria's street, and a **ramp that spirals up round it**, ring inside
+ring, to a platform on top where **El Vértigo** stands, a giant of ladders five times Gerard's
+height, with **Uri and Nil at the very top of it**. Theme: **fear**; lighting dark (the Queen's
+violet haze, black-violet walls always higher than you, a few violet lanterns, a soft light that
+goes with Gerard), and the screen's edges close in, beating like a heart while something chases.
 
-| Level | Where | What gets harder | Monster |
-| --- | --- | --- | --- |
-| 1 · La calle | Jacint Verdaguer closed into a maze of parked cars, hedges and fences | Learn that monsters burst out of places | **El Cebollón** |
-| 2 · Los patios | The yards of the terraced houses across the street | Fences move when Uri shouts *"¡cambio!"* | **El Plato Misterioso** |
-| 3 · Hacia arriba | Stairs, balconies and ladders up Nuria's block | Vertical; looking down | **Game Over** |
-| Top | The tiled roof of Nuria's block | — | **El Vértigo** (boss) |
+- **The climb** (`src/tower.ts`, pure, tested): four rings; every wall has one gap on the camera's
+  side and a short wall across each corridor beside it, so each ring is walked all the way round,
+  turning one way then the other. The ramp rises evenly with the walking distance (no steps) up to
+  the flat platform. Drawn as merged meshes (`src/tower-scene.ts`); feet follow it
+  (`scenery.addSurface`).
+- **Uri climbs ahead**, Nil in his arms, violet eyes, and waits at the end of each ring
+  (*"¡Nivel dos! ¡Más arriba!"*); reaching him sends him on. After the third ring he is on top of
+  El Vértigo, and stepping onto the platform starts the boss.
+- **Uri's fears hunt the ramp** (`src/chasers.ts`, pure, tested): El Cebollón (ring 1), El Plato
+  Misterioso (ring 2) and Game Over (ring 3) walk their stretch; when one sees Gerard (close, nothing
+  in between) it runs at him; out of sight for a while it gives up and walks back; when it reaches
+  him its line plays and the fight starts. Beaten, it is gone; fled from, it rests a few seconds.
+  Fights in a corridor line the two sides up along it.
+- The fears' rules in a fight are below (*Monsters*); the boss is *Final boss*.
 
-**Ambushes are fair**: the place warns first (a bin lid rattling, a hedge shaking, a car boot
-jumping). A player who looks can step around or brace. Proposal: walking into one starts the
-fight; going round it does not.
+**Monsters**:
 
-**Monsters** (proposals; the user likes the three):
-
-- **El Cebollón** (he hates onion): a huge onion in layers. Each hit peels one; while it has
-  layers it makes everyone cry (they miss more). Multi-hit attacks (the cats' claws) peel it fast:
-  the fight that teaches Papagato.
-- **El Plato Misterioso** (he won't try new food): a dish under a cloche. Each round it lifts the
-  lid and is a different food with a different weakness: look before you hit.
-- **Game Over** (the video games of his childhood): a pixel ghost. If it is not beaten within a
-  few rounds it "restarts" with full PV. Pressure to hit hard.
+- **El Cebollón** (he hates onion): layers (*Capas 4*), each hit peels one and lands at half; while
+  it has layers everyone cries (*Llorera*).
+- **El Plato Misterioso** (he won't try new food): a different dish each round with its own weakness.
+- **Game Over** (the video games of his childhood): restarts with full PV when its countdown ends.
 
 ## Beats
 
