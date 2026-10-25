@@ -1,6 +1,6 @@
 # Nuria · Cardedeu (working title)
 
-Status: building on `feat/nuria-mission` · steps 1–3 and 5–13 done; step 4 (portraits) waits for `just character` · Last updated: 2026-10-25
+Status: building on `feat/nuria-mission` · steps 1–13 done (step 4 without the 3D model) · Last updated: 2026-10-25
 
 ## Summary
 
@@ -222,8 +222,8 @@ Descriptions drafted from the photos (proposals, ready to paste):
 
 | Who / what | How | Photos | Description | Portrait | Expressions | 3D | SPEAKERS |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Nuria | `just character nuria` | ✓ 5 | ✓ draft | — | `preocupado`, `riendo` | — | — |
-| Uri | `just character uri`; violet eyes by recolouring `Ojo` in code | ✓ 4 | ✓ draft | — | `riendo`, `sorprendido`, `crio=…` | — | — |
+| Nuria | `just character nuria` | ✓ 5 | ✓ | ✓ | `preocupado`, `riendo` | hand-made primitives | ✓ |
+| Uri | `just character uri`; violet eyes by recolouring `Ojo` in code | ✓ 4 | ✓ | ✓ | `riendo`, `sorprendido`, `crio=…` | hand-made primitives, Nil in his arms | ✓ |
 | Nil (baby) | Procedural, in Uri's arms | ✓ 2 | ✓ | — | — | — | — |
 | Haru | Procedural cat (`src/cats.ts`) | ✓ 3 | ✓ | | | — | |
 | Yuki | Procedural cat | ✓ 2 | ✓ | | | — | |
@@ -356,9 +356,14 @@ dependencies; steps marked **blocked** need something from the user first.
 
 ### Built
 
-Steps 1–3 and 5–13 are built and tested (`tests/nuria.test.mjs`, `tests/story.test.mjs`); step 4
-waits for the portraits. Where the built version differs from the plan above:
+Steps 1–13 are built and tested (`tests/nuria.test.mjs`, `tests/story.test.mjs`). Where the built version differs from the plan above:
 
+- **Step 4**: portraits and expressions from `just character nuria` / `uri` (photos from the main
+  checkout's `assets/references/characters/`), shown in every mission line: Nuria `preocupado` while
+  Uri is lost and `riendo` when he is back; Uri `crio` while the Queen holds him, `riendo` on top and
+  `sorprendido` as he wakes. The 3D models stay the hand-made primitives in `src/characters/` (Uri's
+  carries Nil and the `Ojo` the code turns violet); the full-body references for a generated model
+  are in `assets/characters/<id>/fullbody.png` (local).
 - **Step 8–10**: the maze became *La torre de Uri* (§ The tower); El Vértigo stands on its top
   platform, not on the roof of Nuria's block. Its fight frames the whole giant, eye and Uri on top
   (`battleScene.foeTop` lifts and widens the camera for foes far taller than the party).
