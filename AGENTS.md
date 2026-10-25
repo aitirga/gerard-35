@@ -7,6 +7,7 @@
 - Maintain the existing justfile with clearly named, grouped commands for setup, dev, build, run, checks, and applicable data/database/export workflows. Follow project and sibling justfile conventions; terminal colors must respect NO_COLOR and non-interactive output.
 - Name git branches with a type prefix matching the change: `feat/`, `bugfix/`, `hotfix/`, `docs/`, `refactor/`, `chore/`, `test/` (for example, `feat/character-panel`). Never create branches starting with `claude/`.
 - After visual or gameplay changes, capture progress with `just screenshots <scenario>` (add or update a scenario in `scripts/screenshots/` for new features) and share the key screenshots with the user.
+- Show the user what you produce in herdr's assets sidebar, never by opening it in their browser. Inside herdr (`test "${HERDR_ENV:-}" = 1`), add each screenshot gallery right after generating it, and re-add it each time it is regenerated (the same target updates it): `herdr-assets add output/screenshots/<scenario>/index.html --group Screenshots --title "<short human title>" --note "<what changed>"`. Do the same for other things worth opening: docs you wrote (`--group Docs`), reports (`--group Reports`) and local URLs to check (`--group Links`). Run it from the checkout you are working in (a feature worktree has its own assets). Then tell the user it is in their sidebar and still give the path. Outside herdr, just give the paths.
 
 ## Game philosophy
 

@@ -62,3 +62,9 @@ How an ánima is built: `ClassId` and `ANIMA_NAMES`,
 `CLASS_STATS`, `SKILLS` (`src/battle.ts`), `CLASSES` (`src/classes.ts`), the theme in
 `src/style.css`, any new status or system first (with tests), the unlock flag and moment, a
 screenshot scenario, and `docs/party.md`. Each step a `feat: …` commit.
+
+## Showing the work
+
+The ánima's doc and any screenshots of it (`just screenshots <ánima>`) go into herdr's assets
+sidebar with `herdr-assets add` as `AGENTS.md` says, re-added whenever they change. Never open
+them in the user's browser; say they are in the sidebar and give the path.
