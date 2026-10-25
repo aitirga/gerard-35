@@ -18,6 +18,7 @@ import type { Partner, Story, StoryEvent } from './story';
 import type { ItemId } from './items';
 import { Follower, pathTo } from './follower';
 import { createCat, type Cat } from './cats';
+import { createWanderer, wander, type Wanderer } from './cat-wander';
 import { createFears } from './fears';
 import { buildTower, type Tower } from './tower-scene';
 import { createChaser, rest, updateChaser, type Chaser } from './chasers';
@@ -176,6 +177,31 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       cat.entity.setPosition(at.x, scenery.groundHeight(at.x, at.z) + hop, at.z);
       cat.entity.setLocalEulerAngles(0, follower.facing, 0);
       cat.tail.setLocalEulerAngles(0, Math.sin(clock * 2 + seed) * 25, 0);
+    }
+  }
+  /** Haru and Yuki at home in the Meridiana flat once Nuria's mission is won, strolling and sitting. */
+  let homeCats: { cat: Cat; walk: Wanderer }[] = [];
+  let homeCatsKey = '';
+  function settleHomeCats() {
+    const wanted = story.catsAtHome(environment.id);
+    const key = environment.id + wanted.map(c => c.id).join();
+    if (key === homeCatsKey) return;
+    homeCatsKey = key;
+    homeCats.forEach(h => h.cat.destroy()); homeCats = [];
+    for (const [i, { id, cell }] of wanted.entries()) {
+      const cat = createCat(app, id); cat.entity.reparent(castRoot); cat.entity.setLocalScale(1.35, 1.35, 1.35);
+      homeCats.push({ cat, walk: createWanderer(cell, 1 + i * 2.5) });
+    }
+  }
+  function strollCats(delta: number) {
+    for (const [i, { cat, walk }] of homeCats.entries()) {
+      const other = homeCats[1 - i]?.walk.position;
+      wander(walk, delta, environment.grid, Math.random, [movement.cell, ...(other ? [{ x: Math.round(other.x), z: Math.round(other.z) }] : [])]);
+      const at = scenery.toWorld(walk.position.x, walk.position.z);
+      const hop = walk.walking && !reducedMotion.matches ? Math.abs(Math.sin(clock * 9 + i * 2)) * .03 : 0;
+      cat.entity.setPosition(at.x, scenery.groundHeight(at.x, at.z) + hop, at.z);
+      cat.entity.setLocalEulerAngles(0, walk.facing, 0);
+      cat.tail.setLocalEulerAngles(0, Math.sin(clock * (walk.walking ? 2 : .8) + i * 2) * 25, 0);
     }
   }
   /**
@@ -432,7 +458,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       : environment.id === 'rec-comtal' ? .5 + spread * .4 : environment.id === 'meridiana-calle' ? spread * .5
       : environment.id === 'meridiana' ? (story.doomed ? 1 : spread * .25) : 0;
     if (story.adult && environment.id !== 'palacio') toneTarget = Math.min(1, Math.max(toneTarget, story.dusk * .6));
-    updateTV(); updateJar(); overgrow();
+    updateTV(); updateJar(); settleHomeCats(); overgrow();
     // Bernat first steps out of his own front door; scene changes place a partner beside Gerard instead.
     const mate = mateHere();
     for (const other of Object.values(mates)) if (other !== mate) other.shown = false;
@@ -1195,6 +1221,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       if (mate && free) drivePartner(dt, delta);
       else if (mate && mate.id === 'aitor') mate.follower.update(delta, movement.position, false, running());
       walkCats(delta);
+      strollCats(delta);
       huntFears(delta, dt);
       // Gerard pulling against the tether: Aitor calls him back.
       const apart = free && input && Math.hypot(movement.position.x - free.position.x, movement.position.z - free.position.z) > TETHER - .6;

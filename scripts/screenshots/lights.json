@@ -1,6 +1,6 @@
 {
-  "title": "Las luces · the jar at home",
-  "description": "After Nuria's mission (docs/quests/nuria.md § The lights): the three lights in a glass jar on the TV unit of the Meridiana flat. Usar una luz lets one out: it rises, flies out of the balcony towards the castle and her power goes back a day. The spent one stays in the jar, dark like an empty marble, and the jar only offers a look until the next morning.",
+  "title": "Las luces y las gatas · home after Nuria's mission",
+  "description": "After Nuria's mission (docs/quests/nuria.md § The lights, § Beats): Haru and Yuki stroll about the Meridiana flat, and the three lights sit in a glass jar on the TV unit. Usar una luz lets one out: it rises, flies out of the balcony towards the castle and her power goes back a day. The spent one stays in the jar, dark like an empty marble, and the jar only offers a look until the next morning.",
   "steps": [
     {
       "open": "/?story=luz-nil&day=8"
@@ -8,6 +8,22 @@
     {
       "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
       "timeout": 60000
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        18,
+        6
+      ],
+      "settle": 1500
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "shot": "cats-home",
+      "delay": 500,
+      "caption": "Haru and Yuki live in the flat now, strolling between the living room and the dining room"
     },
     {
       "teleport": "meridiana",

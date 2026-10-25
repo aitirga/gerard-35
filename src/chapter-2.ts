@@ -20,6 +20,8 @@ export const PLACES_2 = {
   guardStage: { x: 16, z: 17 },
   /** In front of the school door, where the palace lets them out. */
   school: { environment: 'rec-comtal' as EnvironmentId, door: 'enter-school' },
+  /** Where Haru and Yuki start their day in the flat once they live there (docs/quests/nuria.md § Beats). */
+  cats: { environment: 'meridiana' as EnvironmentId, haru: { x: 19, z: 3 }, yuki: { x: 20, z: 7 } },
   /** The jar of lights on the west end of the TV unit (docs/quests/nuria.md § The lights). */
   jar: { environment: 'meridiana' as EnvironmentId, cell: { x: 15, z: 2 }, anchor: { x: 15.3, z: 1.4, y: 2.1 } },
 } as const;

@@ -167,3 +167,28 @@ test('Haru\'s claw on the spinning eye shuts it, and the twist comes at half PV'
   assert.ok(s.vertigo.uri);
   assert.match(s.message, /Uri se pone delante de Nil/);
 });
+
+test('after the win Haru and Yuki live in the Meridiana flat, strolling on its floor', async () => {
+  const { createWanderer, wander } = await import('../src/cat-wander.ts');
+  assert.deepEqual(adult().catsAtHome('meridiana'), [], 'not before Uri is back');
+  const story = adult();
+  story.handle({ type: 'interact', id: 'talk-nuria' });
+  story.handle({ type: 'battle', won: true, encounter: 'uri-vertigo', worn: ['papagato'] });
+  const cats = story.catsAtHome('meridiana');
+  assert.deepEqual(cats.map(c => c.id), ['haru', 'yuki']);
+  assert.deepEqual(story.catsAtHome('cardedeu'), []);
+  const grid = ENVIRONMENTS.meridiana.grid;
+  let seed = 7;
+  const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (const { cell } of cats) {
+    assert.ok(canWalk(cell, grid));
+    const cat = createWanderer(cell);
+    const visited = new Set();
+    for (let t = 0; t < 120; t += .1) {
+      wander(cat, .1, grid, random);
+      assert.ok(canWalk({ x: Math.round(cat.position.x), z: Math.round(cat.position.z) }, grid), 'stays on the floor');
+      visited.add(`${Math.round(cat.position.x)},${Math.round(cat.position.z)}`);
+    }
+    assert.ok(visited.size > 3, 'it moves about');
+  }
+});

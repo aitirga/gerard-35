@@ -485,6 +485,12 @@ export class Story {
     if (!won && run.lent && ahead) list.push({ id: 'uri', character: 'uri', environment: MAZE, cell: { ...ahead.cell }, scale: 1.12 });
     return list;
   }
+  /** Haru and Yuki, home in the Meridiana flat once Uri is himself again (src/cat-wander.ts walks them). */
+  catsAtHome(environment: EnvironmentId): { id: CatId; cell: Cell }[] {
+    const { cats } = PLACES_2;
+    if (!this.adult || !this.has('nuria-uri') || environment !== cats.environment) return [];
+    return [{ id: 'haru', cell: { ...cats.haru } }, { id: 'yuki', cell: { ...cats.yuki } }];
+  }
   /** Loose things still lying around, drawn as pickups. */
   pickups(environment: EnvironmentId): { id: ItemId; cell: Cell; spot?: { x: number; z: number; y: number } }[] {
     const all = [
