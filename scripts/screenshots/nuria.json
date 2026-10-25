@@ -169,6 +169,13 @@
       "skipDialogue": true
     },
     {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' || !!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
       "until": "[...document.querySelectorAll('#battle .turn-meta')].some(e => e.textContent === 'TU TURNO') && document.querySelector('#battle').dataset.phase === 'player'",
       "timeout": 90000
     },

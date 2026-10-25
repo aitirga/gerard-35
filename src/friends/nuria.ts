@@ -9,8 +9,9 @@ import type { Cell } from '../movement';
 
 const gerard = (text: string): DialogueLine => ({ speaker: 'gerard35', text });
 const aitor = (text: string): DialogueLine => ({ speaker: 'aitor', text });
-const nuria = (text: string): DialogueLine => ({ speaker: 'nuria', text });
-const uri = (text: string): DialogueLine => ({ speaker: 'uri', text });
+const nuria = (text: string, expression?: 'preocupado' | 'riendo'): DialogueLine => ({ speaker: 'nuria', text, expression });
+/** Uri talks like a kid (`crio`) while the Queen holds him. */
+const uri = (text: string, expression?: 'crio' | 'riendo' | 'sorprendido'): DialogueLine => ({ speaker: 'uri', text, expression });
 const both = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard35', right: 'aitor', lines });
 const withNuria = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard35', right: 'nuria', lines });
 const withUri = (...lines: DialogueLine[]): Dialogue => ({ left: 'gerard35', right: 'uri', lines });
@@ -78,21 +79,21 @@ export const LINES_NURIA = {
   /** Nuria at her door, before anything. */
   nuriaFirst: withNuria(
     nuria('¡Gerard! ¡Aitor! Menos mal.'),
-    nuria('Es Uri. Se ha levantado raro. Hablando. Sin parar. Uri, ¡hablando!'),
+    nuria('Es Uri. Se ha levantado raro. Hablando. Sin parar. Uri, ¡hablando!', 'preocupado'),
     gerard('¿Uri? ¿Nuestro Uri?'),
     nuria('Se ha puesto a jugar a pillar con Nil en brazos y ha salido corriendo. Dobló la esquina de Doctor Daurella y… la calle ya no es la calle.'),
-    nuria('Tenía los ojos de color violeta.'),
+    nuria('Tenía los ojos de color violeta.', 'preocupado'),
     gerard('Violeta… es ella. La Reina.'),
     nuria('Llevaos a Haru y a Yuki. Siempre han sido un poco vuestras. Y ellas a Uri le encuentran donde sea.'),
-    nuria('Yo no puedo ir: alguien tiene que estar aquí si vuelve.'),
+    nuria('Yo no puedo ir: alguien tiene que estar aquí si vuelve.', 'preocupado'),
   ),
   /** Nuria again, while they look for Uri. */
   nuriaWaiting: withNuria(
-    nuria('Por la esquina de Doctor Daurella. Daos prisa, por favor.'),
+    nuria('Por la esquina de Doctor Daurella. Daos prisa, por favor.', 'preocupado'),
   ),
   /** Nuria when they come back without Uri (they gave up or fell). */
   nuriaAgain: withNuria(
-    nuria('Haru y Yuki volvieron solas. ¿Lo intentáis otra vez?'),
+    nuria('Haru y Yuki volvieron solas. ¿Lo intentáis otra vez?', 'preocupado'),
     nuria('Llevadlas. Uri sigue ahí dentro.'),
   ),
   /** Into the tower's ground, the first time. */
@@ -100,7 +101,7 @@ export const LINES_NURIA = {
     gerard('Esto no estaba aquí.'),
     aitor('Una torre. En Cardedeu. Y una rampa que da vueltas y vueltas hacia arriba.'),
     gerard('Y arriba del todo… una escalera. Enorme.'),
-    uri('¡NIVEL UNO! ¡Hasta arriba del todo! ¡Si me pilláis, ganáis! ¡Corred!'),
+    uri('¡NIVEL UNO! ¡Hasta arriba del todo! ¡Si me pilláis, ganáis! ¡Corred!', 'crio'),
   ),
   /** At the station with the cats: Aitor asks before they go. */
   leaveWarn: both(
@@ -110,17 +111,17 @@ export const LINES_NURIA = {
   /** Reaching Uri at the end of each level: he runs on. */
   uri: [
     withUri(
-      uri('¡Casi! ¡Casi me pilláis! Nil también se ríe, ¿le oís? ¡Nil se ríe!'),
+      uri('¡Casi! ¡Casi me pilláis! Nil también se ríe, ¿le oís? ¡Nil se ríe!', 'crio'),
       gerard('Uri, para un momento.'),
-      uri('¡No! ¡Nivel dos! ¡Más arriba!'),
+      uri('¡No! ¡Nivel dos! ¡Más arriba!', 'crio'),
     ),
     withUri(
-      uri('¿Sabéis que nunca había hablado tanto? ¡Me encanta! ¡Tengo un montón de cosas guardadas!'),
+      uri('¿Sabéis que nunca había hablado tanto? ¡Me encanta! ¡Tengo un montón de cosas guardadas!', 'crio'),
       aitor('Uri, tus ojos…'),
-      uri('¡Nivel tres! ¡El último! ¡Arriba del todo!'),
+      uri('¡Nivel tres! ¡El último! ¡Arriba del todo!', 'crio'),
     ),
     withUri(
-      uri('Arriba. A lo más alto. Desde ahí se ve todo Cardedeu.'),
+      uri('Arriba. A lo más alto. Desde ahí se ve todo Cardedeu.', 'crio'),
       gerard('A ti no te gustan las alturas.'),
       uri('…'),
     ),
@@ -133,14 +134,14 @@ export const LINES_NURIA = {
   ),
   /** El Vértigo is gone: Uri on the ridge, then all of them back down at the door. */
   won: withUri(
-    uri('Pues no está tan alto.'),
-    uri('…Gerard. Aitor. ¿Qué hacemos aquí arriba?'),
+    uri('Pues no está tan alto.', 'riendo'),
+    uri('…Gerard. Aitor. ¿Qué hacemos aquí arriba?', 'sorprendido'),
     gerard('Bajar. Despacito. Nuria te espera.'),
   ),
   home: withNuria(
-    nuria('¡Uri! ¡Nil!'),
+    nuria('¡Uri! ¡Nil!', 'riendo'),
     uri('Perdona. No sé qué me ha pasado. Solo quería… jugar.'),
-    nuria('Ya. Pues mira, igual deberíamos jugar más.'),
+    nuria('Ya. Pues mira, igual deberíamos jugar más.', 'riendo'),
     nuria('Gerard, quedaos a Haru y a Yuki un tiempo. Os han echado de menos.'),
   ),
 } as const;
