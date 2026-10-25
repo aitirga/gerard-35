@@ -820,7 +820,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-dock[data-dock="2"] .vitals-avatar { order: 2; }
 .battle-dock[data-dock="2"] .vitals-head, .battle-dock[data-dock="2"] .vitals-numbers { flex-direction: row-reverse; }
 .battle-dock[data-dock="2"] .vitals-waves { transform: scaleX(-1); }
-/* The ánima switch, right under the card: L, one pill per ánima (the worn one lit), R. */
+/* The ánima switch, right under the card: L, one bar with a segment per ánima (the worn one lit), R. */
 .anima-switch { display: flex; align-items: center; gap: 8px; padding: 0 8px; }
 .battle-dock[data-dock="2"] .anima-switch { justify-content: flex-end; }
 .battle-dock[data-dock="2"] .anima-switch .battle-kicker { order: 9; }
@@ -839,6 +839,19 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .anima-chips button:enabled:hover, .anima-chips button:focus-visible { border-color: var(--battle-gold); outline: none; box-shadow: 0 0 0 2px var(--battle-gold); }
 .anima-chips button:disabled { cursor: default; opacity: .5; }
 .anima-chips button[aria-pressed="true"]:disabled { opacity: .8; }
+/* In a fight the ánimas never wrap: one bar, up to four segments; names shrink from three on, and at
+   four they shrink again and the ÁNIMA label steps aside. */
+.battle-dock .anima-chips { flex: 1 1 auto; flex-wrap: nowrap; min-width: 0; gap: 2px; padding: 3px; border: 1px solid #ffffff2e; border-radius: 999px; background: #10201bd9; }
+.battle-dock .anima-chips button { flex: 1 1 auto; min-width: 0; padding: 6px 10px 6px 24px; border: 0; background: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.battle-dock .anima-chips button::before { left: 9px; width: 9px; height: 9px; margin-top: -4.5px; }
+.battle-dock .anima-chips button:enabled:hover, .battle-dock .anima-chips button:focus-visible { box-shadow: inset 0 0 0 1.5px var(--battle-gold); }
+.battle-dock .anima-chips button[aria-pressed="true"] { background: var(--battle-paper); box-shadow: inset 0 0 0 1.5px var(--battle-gold), 0 0 14px color-mix(in srgb, var(--battle-gold) 35%, transparent); }
+.battle-dock .anima-chips:has(> :nth-child(3)) button { padding: 5px 6px 5px 17px; font-size: 9.5px; letter-spacing: -.01em; }
+.battle-dock .anima-chips:has(> :nth-child(3)) button::before { left: 6px; width: 7px; height: 7px; margin-top: -3.5px; }
+.battle-dock .anima-switch:has(.anima-chips > :nth-child(4)) { gap: 6px; padding: 0 2px; }
+.battle-dock .anima-switch:has(.anima-chips > :nth-child(4)) .battle-kicker { display: none; }
+.battle-dock .anima-chips:has(> :nth-child(4)) button { padding: 5px 4px 5px 13px; font-size: 8.5px; letter-spacing: -.02em; }
+.battle-dock .anima-chips:has(> :nth-child(4)) button::before { left: 4px; width: 6px; height: 6px; margin-top: -3px; }
 .dock-wait { margin: 0; padding: 12px 16px; border-left: 3px solid var(--battle-gold); background: #10201bc4; font-size: 12px; letter-spacing: .04em; color: #c9d3c5; }
 .battle-dock[data-dock="2"] .dock-wait { border-left: 0; border-right: 3px solid var(--battle-gold); text-align: right; }
 .battle-dock[data-dock="2"] .turn-heading { flex-direction: row-reverse; }

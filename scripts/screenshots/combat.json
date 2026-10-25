@@ -1,10 +1,15 @@
 {
   "title": "Combat · Command menu and ánimas",
-  "description": "The battle menu: Atacar, Habilidad, ?????, Defender and Huir, under the fighter's vitals plate and ánima pills, flanked by Q and E (L and R on a controller), which swap the active fighter's ánima: the menu sweeps, the face lights up, the theme and the skills change. Habilidad opens its skills sideways; △ / Y (I on the keyboard) shows a skill's cost and description beside it. Bernat wears no ánima and has no skills.",
+  "description": "The battle menu: Atacar, Habilidad, ?????, Defender and Huir, under the fighter's vitals plate and ánima bar (one segment per ánima, never wrapping: up to four share it, names shrinking to fit), flanked by Q and E (L and R on a controller), which swap the active fighter's ánima: the menu sweeps, the face lights up, the theme and the skills change. Habilidad opens its skills sideways; △ / Y (I on the keyboard) shows a skill's cost and description beside it. Bernat wears no ánima and has no skills.",
   "steps": [
     { "open": "/?story=noista&battle=3&allies=2&noista=1" },
     { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
     { "shot": "noista", "delay": 1500, "caption": "Gerard wears Noísta: Q · Matemágico · Noísta · E under his plate" },
+    { "eval": "window.extraAnimas = [['Papagato', '#7fc8d8'], ['Cuarta ánima', '#9bd27a']].map(([name, colour]) => { const b = document.createElement('button'); b.type = 'button'; b.tabIndex = -1; b.textContent = name; b.style.setProperty('--chip', colour); return b; }); window.extraAnimas.slice(0, 1).forEach(b => document.querySelector('.battle-dock[data-dock=\"1\"] .anima-chips').append(b));" },
+    { "shot": "three-animas", "delay": 300, "caption": "Preview with a third ánima (mocked): one bar, names a size smaller" },
+    { "eval": "window.extraAnimas.slice(1).forEach(b => document.querySelector('.battle-dock[data-dock=\"1\"] .anima-chips').append(b));" },
+    { "shot": "four-animas", "delay": 300, "caption": "Preview with four ánimas (mocked): still one bar, the ÁNIMA label steps aside" },
+    { "eval": "window.extraAnimas.forEach(b => b.remove());" },
     { "press": "KeyQ" },
     { "shot": "swapping", "delay": 150, "caption": "Q / L: the menu sweeps while the ánima changes" },
     { "shot": "matematico", "delay": 2500, "caption": "Matemágico on: Gerard's own colours and interface" },

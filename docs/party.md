@@ -90,13 +90,15 @@ Impulso and Abrazo are out for now.
   unlocked ánima until told otherwise. With a second player each player opens their own half of
   the status screen (Gerard left, Aitor right), dresses only their own character, and sees the
   keys of their own device.
-- **In a fight**, each fighter's dock has their vitals plate and the ánima pills, flanked by the
-  L and R keys (Q / E on the keyboard). On your own turn L / R or a click on a pill swaps the
-  ánima: free, the turn stays theirs, PV and Secundaria keep what is left. The menu sweeps, the
-  face on the plate and the 3D fighter light up in the ánima's colour, the dock takes its theme,
-  and the skills (also an open skill sheet) change at once. The choice stays on after the fight.
-  Bernat's dock has no pills. With a second player on Aitor the fight splits: Gerard's dock bottom
-  left, Aitor's bottom right, each in their own ánima's colours and their own device's keys.
+- **In a fight**, each fighter's dock has their vitals plate and the ánima bar, flanked by the L
+  and R keys (Q / E on the keyboard): one bar with a segment per ánima that never wraps (up to
+  four share it, the names shrinking to fit). On your own turn L / R or a click on a segment swaps
+  the ánima: free, the turn stays theirs, PV and Secundaria keep what is left. The menu sweeps,
+  the face on the plate and the 3D fighter light up in the ánima's colour, the dock takes its
+  theme, and the skills (also an open skill sheet) change at once. The choice stays on after the
+  fight. Bernat's dock has no ánima bar. With a second player on Aitor the fight splits: Gerard's
+  dock bottom left, Aitor's bottom right, each in their own ánima's colours and their own device's
+  keys.
 - Who wears what is a choice that changes back and forth, so it is kept in the browser, not in
   the saved story flags.
 
