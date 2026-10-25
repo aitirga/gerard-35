@@ -132,9 +132,34 @@ Add an **Implementation plan** section to the doc: ordered, small steps, each on
    the boss and the ánima unlock (`just screenshots <id>`).
 8. **Docs**: the friend's row in `docs/chapter-2.md` (the template table and clues table),
    people and places in `docs/lore.md`, skills in `docs/party.md`.
+9. **Report**: the mission's page (§ Report).
 
 Mark which steps are blocked by missing assets. End by asking whether to start with step 1 (on a
 `feat/<id>-mission` branch, via the `feature` skill) or keep refining.
+
+## Report
+
+When a mission is built (all its playable steps done, or the user stops for now), make a small
+visual page that shows it to the user: `output/reports/<id>/index.html`, copied from
+[report.html](report.html). That template is the design for every mission and ánima report
+(`output/reports/nuria-mission/` is the first one): keep its styles, palette and lightbox and only
+fill or drop sections, so all reports look alike.
+
+- **Content**, in Spanish: the hero (eyebrow, title with the memorable part in `<em>`, a two–three
+  sentence lede, chips with branch, commits, files and lines, tests passing and steps done, the
+  best screenshot); *El recorrido* (one beat per step of the route, a real line of dialogue and two
+  screenshots each); one section per thing that makes the mission itself (place, mechanic, enemies,
+  boss, the ánima's skills table, any new system); *Cómo está hecho* (branch commits, modules,
+  `just screenshots` scenarios, docs touched); *Pendiente y decisiones* (open questions for the user
+  as `.q` cards). Facts come from the code, the doc and `git log main..HEAD`, never invented.
+- **Screenshots**: run `just screenshots <scenario>` first and reference them relatively
+  (`../../screenshots/<scenario>/<shot>.png`, with `data-cap`). Don't copy images.
+- **Changes later**: when the user edits a mission (a new beat, a reworked boss, more skills),
+  update that same page in place, never a new one: the affected sections, new screenshots, chips,
+  commit list (the session's in amber) and the footer date. Drop pending cards that got settled.
+- **Show it**: `herdr-assets add output/reports/<id>/index.html --title "<Misión de X>" --group
+  Reports` (same path again updates the link), and give the user the path. `output/` is
+  untracked, so the page stays local.
 
 ## Assets
 
