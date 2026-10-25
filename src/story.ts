@@ -33,8 +33,13 @@ export const STORY_FLAGS = [
   // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the three lights
   // that went with Gerard (docs/quests/nuria.md).
   'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri', 'luz-nil',
+  // Lights let out of the jar at home, each one a day won back (docs/quests/nuria.md § The lights).
+  'luz-nuria-usada', 'luz-uri-usada', 'luz-nil-usada',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
+/** Whose lights can be won, in the order they are let out of the jar. */
+export const LIGHTS = ['nuria', 'uri', 'nil'] as const;
+export type LightId = typeof LIGHTS[number];
 
 export type StoryEvent =
   | { type: 'start' }
@@ -99,7 +104,9 @@ export type StoryEffect =
   /** An ánima woke up outside a fight (Nuria lends the cats: Papagato). */
   | { kind: 'anima'; classId: ClassId }
   /** The lights of the people Gerard helped leave them and go into Gerard and Aitor (docs/quests/nuria.md § The lights). */
-  | { kind: 'lights'; people: string[] };
+  | { kind: 'lights'; people: string[] }
+  /** A light leaves the jar at home and flies out of the window towards the castle. */
+  | { kind: 'release-light' };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Noísta, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | FearEncounter;
@@ -161,6 +168,7 @@ export interface Trigger { id: string; cell: Cell; radius: number }
 const SCHOOL_DOOR = ENVIRONMENTS[PLACES_2.school.environment].interactions.find(i => i.id === PLACES_2.school.door)!.cell;
 /** Doors out of the house: closed by the story until Gerard is ready for school. */
 const HOUSE_EXITS = new Set(['leave-hall', 'leave-living']);
+const JAR = PLACES_2.jar;
 /** La Pompa from the inside: it will not let them out until the wrapper room is cleared. */
 const PALACE_EXIT = 'leave-palace';
 
@@ -213,7 +221,16 @@ export class Story {
   get animas(): AnimaId[] { return ANIMA_IDS.filter(id => this.flags.has(`anima-${id}` as StoryFlag)); }
   get clock() { return { ...this.days.clock }; }
   /** How far La Reina Bubbaloo's power has spread this morning: 0 at first, 1 is the end. */
-  get spread() { return this.adult ? spread(this.days.clock.day, this.animas.length) : 0; }
+  get spread() { return this.adult ? spread(this.days.clock.day, this.animas.length, this.jar.filter(l => l.used).length) : 0; }
+  /** The lights in the jar at home, in the order they were won: lit, or spent (`used`). No names on screen. */
+  get jar(): { id: LightId; used: boolean }[] {
+    return LIGHTS.filter(id => this.has(`luz-${id}`)).map(id => ({ id, used: this.has(`luz-${id}-usada`) }));
+  }
+  /** A light has already been let out today (at most one a day): one is spent that this morning was not. */
+  get lightUsedToday() {
+    const morning = this.days.mornings.find(m => m.day === this.days.clock.day);
+    return !!morning && LIGHTS.some(id => this.has(`luz-${id}-usada`) && !morning.story.includes(`luz-${id}-usada`));
+  }
   /** The flat has become part of her castle: the game is over until they go back a day. */
   get doomed() { return this.spread >= 1; }
   /** How far into the evening it is (0 by day, 1 at night): the light turns pinker. */
@@ -496,6 +513,10 @@ export class Story {
       list.push({ id: 'talk-nuria', label: 'Hablar con Nuria', cell: { ...PLACES_NURIA.nuria.cell } });
       if (this.nuria.lent) list.push({ id: 'enter-maze', label: 'Doblar la esquina', hint: 'Doblar la esquina', cell: { ...PLACES_NURIA.corner.cell } });
     }
+    if (this.adult && environment === JAR.environment && this.jar.length) {
+      const lit = this.jar.some(l => !l.used) && !this.lightUsedToday;
+      list.push({ id: 'meridiana-luces', label: lit ? 'Usar una luz' : 'Mirar las luces', hint: lit ? 'Usar una luz' : 'Mirar las luces', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });
+    }
     if (environment === 'maresme' && this.has('palace') && !this.adult) list.push({ id: 'enter-palace', label: 'Atravesar la pompa', cell: { x: PLACES.palace.door.x, z: PLACES.palace.door.z - 1 } });
     if (environment === 'palacio') {
       // Chapter 1's looks answer with Bernat's voice; at 35 only the curtain is worth a word.
@@ -656,6 +677,14 @@ export class Story {
       case 'meridiana-piano':
         if (!this.adult) return [];
         return [say(LINES_2.piano), ...this.spend('piano')];
+      case 'meridiana-luces': {
+        if (!this.adult || !this.jar.length) return [];
+        const next = this.jar.find(l => !l.used);
+        if (!next) return [say(LINES_2.jarSpent)];
+        if (this.lightUsedToday) return [say(LINES_2.jarToday)];
+        this.set(`luz-${next.id}-usada`);
+        return [{ kind: 'release-light' }, say(LINES_2.jarUsed)];
+      }
       case 'meridiana-balcony':
         if (!this.adult) return [];
         return [say(LINES_2.cafe), ...this.spend('cafe')];

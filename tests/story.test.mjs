@@ -338,3 +338,38 @@ test('ánimas grow with fights won wearing them, and each level says what it tea
   story.handle({ type: 'battle', won: false, encounter: 'dogs', worn: ['papagato'] });
   assert.equal(story.wins.papagato, LEVEL_WINS[0], 'a lost fight teaches nothing');
 });
+
+test('the jar of lights: one light a day flies to the castle and wins a day back; spent ones stay dark', async () => {
+  const { spread, GRACE_DAYS } = await import('../src/days.ts');
+  assert.equal(spread(5, 1, 0), (5 - 1 - 3) / GRACE_DAYS);
+  assert.equal(spread(5, 1, 1), 0, 'each light used is a day won back');
+  assert.equal(spread(2, 0, 3), 0, 'never below the first morning');
+
+  assert.deepEqual(new Story(upTo('castle')).interactions('meridiana').filter(i => i.id === 'meridiana-luces'), [], 'no jar before any light');
+  const story = new Story([...upTo('castle'), 'anima-nuria', 'luz-nuria', 'luz-uri', 'luz-nil']);
+  story.days.clock.day = 6;
+  const jar = () => story.interactions('meridiana').find(i => i.id === 'meridiana-luces');
+  assert.ok(canWalk(jar().cell, ENVIRONMENTS.meridiana.grid));
+  assert.equal(jar().label, 'Usar una luz');
+  assert.deepEqual(story.jar.map(l => l.used), [false, false, false]);
+  const before = story.spread;
+  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-luces' })), ['release-light', 'dialogue']);
+  assert.ok(story.spread < before, 'her power goes back');
+  assert.deepEqual(story.jar.map(l => l.used), [true, false, false]);
+  assert.equal(jar().label, 'Mirar las luces', 'at most one a day');
+  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-luces' })), ['dialogue']);
+  assert.equal(story.jar.filter(l => l.used).length, 1);
+
+  // The next morning another one can go; a rewind puts back the one used that day.
+  story.handle({ type: 'interact', id: 'meridiana-bed' });
+  assert.equal(jar().label, 'Usar una luz');
+  story.handle({ type: 'interact', id: 'meridiana-luces' });
+  assert.equal(story.jar.filter(l => l.used).length, 2);
+  story.days.clock.day++; story.handle({ type: 'interact', id: 'meridiana-piano' });
+  story.rewind();
+  assert.equal(story.jar.filter(l => l.used).length, 1, 'the rewound day gives its light back');
+
+  const spent = new Story([...upTo('castle'), 'luz-nuria', 'luz-nuria-usada']);
+  assert.equal(spent.interactions('meridiana').find(i => i.id === 'meridiana-luces').label, 'Mirar las luces');
+  assert.deepEqual(beats(spent.handle({ type: 'interact', id: 'meridiana-luces' })), ['dialogue']);
+});

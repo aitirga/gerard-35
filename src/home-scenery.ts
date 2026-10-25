@@ -1193,7 +1193,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     for (const px of [16.0, 16.8, 17.6]) box('Puerta de roble', paleOak, px, north + 0.445, 0.33, 0.76, 0.34, 0.01);
     box('Televisor', mat('Marco del televisor', '#b8bcbf', 0.7), 16.75, north + 0.03, 0.98, 1.84, 1.04, 0.03);
     box('Pantalla apagada', mat('Pantalla apagada', '#15181c', 0.95), 16.75, north + 0.05, 1.0, 1.8, 1.0, 0.01);
-    box('Marco de fotos', white, 15.85, north + 0.3, 0.75, 0.2, 0.24, 0.04).setEulerAngles(-10, 0, 0);
+    // The west end stays clear for the jar of lights (docs/quests/nuria.md § The lights).
+    box('Marco de fotos', white, 16.05, north + 0.3, 0.75, 0.2, 0.24, 0.04).setEulerAngles(-10, 0, 0);
     for (const px of [16.3, 17.7]) ball('Altavoz', black, px, north + 0.3, 0.75, 0.16, 0.16, 0.16);
     for (const px of [16.7, 16.9]) cyl('Vela', mat('Vela', '#f5eedc', 0.2), px, north + 0.28, 0.75, 0.08, 0.1, 0.08);
     box('Mando', black, 17.2, north + 0.34, 0.75, 0.16, 0.04, 0.1);

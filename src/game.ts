@@ -235,6 +235,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       for (const r of to) pulse(r.materials, 0);
     }
     glow.destroy();
+    settling = 'pending';
     cutscene = false; lastPrompt = ''; updatePrompt();
   }
   /**
@@ -431,7 +432,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       : environment.id === 'rec-comtal' ? .5 + spread * .4 : environment.id === 'meridiana-calle' ? spread * .5
       : environment.id === 'meridiana' ? (story.doomed ? 1 : spread * .25) : 0;
     if (story.adult && environment.id !== 'palacio') toneTarget = Math.min(1, Math.max(toneTarget, story.dusk * .6));
-    updateTV(); overgrow();
+    updateTV(); updateJar(); overgrow();
     // Bernat first steps out of his own front door; scene changes place a partner beside Gerard instead.
     const mate = mateHere();
     for (const other of Object.values(mates)) if (other !== mate) other.shown = false;
@@ -643,6 +644,106 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       }
     } else if (!wanted && tv) { tv.destroy(); tv = undefined; }
     tv?.setStage(stage(story.spread));
+  }
+  /**
+   * The jar of lights on the TV unit (docs/quests/nuria.md § The lights): a glass jar with a cork,
+   * one marble of light per person helped, lit or spent (dark, like an empty marble). It shows how
+   * many are left and how many were used, never whose they are. The first time home after a win,
+   * the lights go from Gerard and Aitor into it (`settling`).
+   */
+  let jar: { root: pc.Entity; key: string; materials: pc.Material[] } | undefined;
+  let settling: false | 'pending' | 'flying' = false;
+  function jarSpot() {
+    const unit = scenery.root.findByName('Mueble de TV') as pc.Entity | null;
+    const box = unit?.render?.meshInstances[0]?.aabb;
+    if (!box) return undefined;
+    return new pc.Vec3(box.getMin().x + .21, box.getMax().y, box.center.z + .04);
+  }
+  function updateJar() {
+    const lights = environment.id === 'meridiana' && story.adult ? story.jar : [];
+    const key = lights.map(l => l.used ? 'o' : '*').join('') + (settling ? '…' : '');
+    if (settling === 'pending' && lights.length && !cutscene) { settling = 'flying'; void settleLights(); }
+    if (jar?.key === key) return;
+    if (jar) { jar.root.destroy(); jar.materials.forEach(m => m.destroy()); jar = undefined; }
+    const spot = lights.length ? jarSpot() : undefined;
+    if (!spot) return;
+    const root = new pc.Entity('Bote de las luces'); castRoot.addChild(root); root.setPosition(spot);
+    const glass = new pc.StandardMaterial(); glass.diffuse.fromString('#9fc7d4'); glass.opacity = .1; glass.blendType = pc.BLEND_NORMAL; glass.depthWrite = false; glass.specular.set(.15, .15, .15); glass.gloss = .7; glass.update();
+    const cork = new pc.StandardMaterial(); cork.diffuse.fromString('#b48a5a'); cork.update();
+    const lit = new pc.StandardMaterial(); lit.useLighting = false; lit.emissive.fromString('#ff9d1c'); lit.update();
+    const spent = new pc.StandardMaterial(); spent.useLighting = false; spent.emissive.fromString('#3a3644'); spent.update();
+    const part = (name: string, type: string, material: pc.Material, y: number, sx: number, sy: number, x = 0, z = 0) => {
+      const e = new pc.Entity(name); e.addComponent('render', { type, material, castShadows: false });
+      e.setLocalPosition(x, y, z); e.setLocalScale(sx, sy, sx); root.addChild(e); return e;
+    };
+    // Marbles on the bottom, in a little heap; hidden while the lights are still on their way.
+    if (!settling) lights.forEach((l, i) => {
+      const angle = i * 2.1, r = i % 4 ? .075 : 0;
+      const y = .075 + Math.floor(i / 4) * .13, x = Math.cos(angle) * r, z = Math.sin(angle) * r;
+      part(l.used ? 'Luz apagada' : 'Luz', 'sphere', l.used ? spent : lit, y, .14, .14, x, z);
+    });
+    part('Bote', 'cylinder', glass, .21, .34, .42);
+    part('Tapón', 'cylinder', cork, .44, .24, .06);
+    const rim = new pc.StandardMaterial(); rim.diffuse.fromString('#d6ecf2'); rim.opacity = .55; rim.blendType = pc.BLEND_NORMAL; rim.depthWrite = false; rim.update();
+    part('Borde del bote', 'cylinder', rim, .405, .3, .025);
+    part('Fondo del bote', 'cylinder', rim, .008, .34, .016);
+    if (lights.some(l => !l.used) && !settling) {
+      const glow = new pc.Entity('Brillo del bote'); glow.addComponent('light', { type: 'omni', color: new pc.Color(1, .93, .75), intensity: .8, range: 1.4, castShadows: false });
+      glow.setLocalPosition(0, .15, 0); root.addChild(glow);
+    }
+    jar = { root, key, materials: [glass, cork, lit, spent, rim] };
+  }
+  /** The lights go from Gerard and Aitor into the jar, the first time home after winning them. */
+  async function settleLights() {
+    const spot = jarSpot();
+    if (!spot) { settling = false; return; }
+    const glow = new pc.StandardMaterial(); glow.diffuse.set(1, 1, 1); glow.emissive.fromString('#fff3c4'); glow.emissiveIntensity = 2.4; glow.update();
+    const target = spot.clone().add(new pc.Vec3(0, .08, 0));
+    const givers = [player, ...(mateHere()?.entity.enabled ? [mateHere()!.entity] : [])];
+    const orbs = story.jar.filter(l => !l.used).map((_, i) => {
+      const orb = new pc.Entity('Luz'); orb.addComponent('render', { type: 'sphere', material: glow, castShadows: false });
+      orb.setLocalScale(.14, .14, .14); castRoot.addChild(orb);
+      return { orb, from: givers[i % givers.length].getPosition().clone().add(new pc.Vec3(0, 1.25, 0)), delay: i * .35 };
+    });
+    const start = performance.now(), length = reducedMotion.matches ? .2 : 1.6;
+    for (let k = 0; k < length + .35 * orbs.length; k = (performance.now() - start) / 1000) {
+      for (const { orb, from, delay } of orbs) {
+        const t = Math.max(0, Math.min(1, (k - delay) / length)), eased = t * t * (3 - 2 * t);
+        const at = new pc.Vec3().lerp(from, target, eased); at.y += Math.sin(eased * Math.PI) * .8;
+        orb.setPosition(at); orb.enabled = t < 1;
+      }
+      await new Promise(requestAnimationFrame);
+    }
+    effects.emit('spark', target, 14, .25);
+    orbs.forEach(o => o.orb.destroy()); glow.destroy();
+    settling = false; updateJar();
+  }
+  /** One light leaves the jar, rises and flies out of the balcony towards the castle. */
+  async function releaseLight() {
+    const spot = jarSpot();
+    if (!spot) return;
+    cutscene = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined);
+    const glow = new pc.StandardMaterial(); glow.useLighting = false; glow.emissive.fromString('#ff9d1c'); glow.update();
+    const orb = new pc.Entity('Luz'); orb.addComponent('render', { type: 'sphere', material: glow, castShadows: false });
+    castRoot.addChild(orb);
+    const from = spot.clone().add(new pc.Vec3(0, .08, 0)), lifted = from.clone().add(new pc.Vec3(0, .7, 0));
+    const balcony = scenery.toWorld(22.5, 3); balcony.y = 1.6;
+    const away = scenery.toWorld(30, 1); away.y = 6;
+    effects.emit('spark', from, 12, .3);
+    // On the app's clock, so a slowed `app.timeScale` slows it too (the screenshot scenario).
+    const length = reducedMotion.matches ? .3 : 3;
+    for (let k = 0; k < length; k += await new Promise<number>(resolve => app.once('update', resolve))) {
+      const t = k / length;
+      const at = t < .2 ? new pc.Vec3().lerp(from, lifted, t / .2)
+        : t < .7 ? new pc.Vec3().lerp(lifted, balcony, (t - .2) / .5)
+        : new pc.Vec3().lerp(balcony, away, (t - .7) / .3);
+      const size = .28 * (1 + Math.sin(k * 12) * .1) * (t < .7 ? 1 : 1 - (t - .7) / .3 * .7);
+      orb.setPosition(at); orb.setLocalScale(size, size, size);
+      if (Math.random() < .4) effects.emit('spark', at.clone(), 1, .12);
+    }
+    orb.destroy(); glow.destroy();
+    updateJar();
+    cutscene = false; lastPrompt = ''; updatePrompt();
   }
   /** The camera comes close to the TV (`on`), or goes back to Gerard. */
   function watchTV(on: boolean) {
@@ -1292,7 +1393,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       cameraTarget.copy(scenery.toWorld(movement.cell.x, movement.cell.z));
       positionPlayer(); lastPrompt = ''; updatePrompt();
     },
-    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV, releaseLights,
+    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV, releaseLights, releaseLight,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },
     /** Someone swapped ánima in a fight (L / R): the fight shows it, and the boy's street outfit follows. */

@@ -20,6 +20,8 @@ export const PLACES_2 = {
   guardStage: { x: 16, z: 17 },
   /** In front of the school door, where the palace lets them out. */
   school: { environment: 'rec-comtal' as EnvironmentId, door: 'enter-school' },
+  /** The jar of lights on the west end of the TV unit (docs/quests/nuria.md § The lights). */
+  jar: { environment: 'meridiana' as EnvironmentId, cell: { x: 15, z: 2 }, anchor: { x: 15.3, z: 1.4, y: 2.1 } },
 } as const;
 
 /** The broadcast (src/news-ui.ts). The ticker hides the chapter's first clue among ordinary news. */
@@ -147,6 +149,10 @@ export const LINES_2 = {
   /** Things to do that take time (the countdown is why they matter). */
   piano: both(gerard('Una pieza. Solo una.'), aitor('Suena bonita. Aunque se nos va la mañana…')),
   cafe: both(gerard('Un café en el balcón. Desde aquí se ve el rosa, al fondo.'), aitor('Cada día está un poco más cerca.')),
+  /** The jar of lights at home: one let out flies to the castle and wins a day back. */
+  jarUsed: both(gerard('Vuela. Hacia el castillo.'), aitor('Mira el rosa, al fondo… se ha echado atrás. Nos ha dado un día.')),
+  jarToday: both(aitor('Hoy ya ha salido una. Las otras, mejor guardarlas para cuando haga falta.')),
+  jarSpent: both(gerard('Ya no queda ninguna encendida.'), aitor('Pero el bote sigue ahí. Algo de ellos se quedó en casa.')),
   /** The end: she has covered everything. */
   doom: both(
     gerard('¡NO!'),

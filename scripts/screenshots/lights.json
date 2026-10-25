@@ -1,0 +1,75 @@
+{
+  "title": "Las luces · the jar at home",
+  "description": "After Nuria's mission (docs/quests/nuria.md § The lights): the three lights in a glass jar on the TV unit of the Meridiana flat. Usar una luz lets one out: it rises, flies out of the balcony towards the castle and her power goes back a day. The spent one stays in the jar, dark like an empty marble, and the jar only offers a look until the next morning.",
+  "steps": [
+    {
+      "open": "/?story=luz-nil&day=8"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        15,
+        2
+      ],
+      "settle": 1500
+    },
+    {
+      "shot": "jar",
+      "delay": 1500,
+      "caption": "The jar on the TV unit, three lights lit, and the prompt Usar una luz"
+    },
+    {
+      "eval": "window.__spread = window.gerard.story.spread"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = .4"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "(window.gerard.game.app.root.findByName('Bote de las luces') && window.gerard.game.app.root.find(n => n.name === 'Luz' && n.parent?.name === 'Reparto')[0])?.getPosition().y > 1.35",
+      "timeout": 60000
+    },
+    {
+      "shot": "light-rises",
+      "caption": "A light leaves the jar and rises"
+    },
+    {
+      "until": "(window.gerard.game.app.root.findByName('Bote de las luces') && window.gerard.game.app.root.find(n => n.name === 'Luz' && n.parent?.name === 'Reparto')[0])?.getPosition().x > window.gerard.game.app.root.findByName('Bote de las luces').getPosition().x + 3",
+      "timeout": 60000
+    },
+    {
+      "shot": "light-flies",
+      "caption": "It flies across the living room to the balcony, towards the castle"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "until": "document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "shot": "light-gone",
+      "delay": 1500,
+      "caption": "Gone towards the castle: Aitor sees the pink go back a day"
+    },
+    {
+      "skipDialogue": true,
+      "settle": 1500
+    },
+    {
+      "until": "window.gerard.story.jar.filter(l => l.used).length === 1 && window.gerard.story.spread <= window.__spread"
+    },
+    {
+      "shot": "jar-spent",
+      "delay": 1500,
+      "caption": "One spent light, dark in the jar; today the jar only offers Mirar las luces"
+    }
+  ]
+}

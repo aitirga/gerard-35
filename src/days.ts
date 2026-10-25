@@ -26,9 +26,12 @@ export interface Morning { day: number; story: string[] }
 export interface Days { epoch: number; clock: Clock; mornings: Morning[] }
 export const freshDays = (): Days => ({ epoch: 0, clock: { day: 1, hour: DAY_START }, mornings: [] });
 
-/** How far her power has spread on `day` with `animas` gathered: 0 the first morning, 1 the end. */
-export function spread(day: number, animas: number) {
-  return Math.max(0, day - 1 - DAYS_PER_ANIMA * animas) / GRACE_DAYS;
+/**
+ * How far her power has spread on `day` with `animas` gathered and `lights` used (each light let
+ * out of the jar at home wins back one day): 0 the first morning, 1 the end.
+ */
+export function spread(day: number, animas: number, lights = 0) {
+  return Math.max(0, day - 1 - DAYS_PER_ANIMA * animas - lights) / GRACE_DAYS;
 }
 /** The same, as a stage for lines and headlines: 0 (it has just appeared) to 4 (the last day). */
 export function stage(value: number) { return Math.max(0, Math.min(4, Math.floor(value * 5))); }

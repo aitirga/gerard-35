@@ -186,6 +186,7 @@ try {
     else if (effect.kind === 'learn') storyUI.learn(effect.classId, effect.level, effect.skills);
     else if (effect.kind === 'anima') { storyUI.unlocked(effect.classId); keepLoadout(); storyChanged(); }
     else if (effect.kind === 'lights') await game.releaseLights(effect.people);
+    else if (effect.kind === 'release-light') { await game.releaseLight(); storyChanged(); }
     else { storyPaused = true; game.setPaused(true); await storyUI.card(effect.id); storyPaused = false; game.setPaused(!!exploration.active || menuOpen()); }
   }
   /**
