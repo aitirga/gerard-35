@@ -771,6 +771,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     updateJar();
     cutscene = false; lastPrompt = ''; updatePrompt();
   }
+  /** A foe far taller than the party (El Vértigo, with Uri on top): the fight's camera looks up to take it in. */
+  function tallLift() { return Math.max(0, battleScene.foeTop - 4) * .42; }
   /** The camera comes close to the TV (`on`), or goes back to Gerard. */
   function watchTV(on: boolean) {
     watchingTV = on && !!tv;
@@ -1366,7 +1368,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const shared = free && mate?.entity.enabled ? mate.entity.getPosition() : undefined;
     const between = shared ? player.getPosition().clone().lerp(player.getPosition(), shared, .5) : player.getPosition().clone();
     const apart = shared ? player.getPosition().distance(shared) : 0;
-    const target = battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1, 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
+    const target = battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
     cameraTarget.lerp(cameraTarget, target, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 7));
     const cameraOffset = battle ? new pc.Vec3(5, 9, 15) : new pc.Vec3(40, 52, 40);
     if (battleScene.entering && !reducedMotion.matches) {
@@ -1380,7 +1382,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     camera.lookAt(cameraTarget);
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
-    const height = battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
+    const height = battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .68) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
     camera.camera!.orthoHeight = pc.math.lerp(camera.camera!.orthoHeight, height, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
     positionPrompt();
     callbacks.onBattleTargets(battleScene.targets().map(({ id, position, visible }) => {

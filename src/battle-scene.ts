@@ -87,6 +87,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     plantFeet: ReturnType<typeof createGroundContact>;
   }
   const fighters = new Map<string, Fighter>();
+  /** How high the tallest foe reaches above the ground, so the camera can take it in (El Vértigo). */
+  let foeTop = 0;
   /** Haru and Yuki, beside whoever wears Papagato (docs/animas/papagato/): they act on its skills. */
   const cats = new Map<string, { haru: Cat; yuki: Cat }>();
   /** Models for foes that are not dogs, cloned when a fight starts (the game passes the minion). */
@@ -220,6 +222,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   return {
     dogs, anchor, cameraKick, focus,
+    /** How high the tallest foe of this fight reaches (0 outside a fight). */
+    get foeTop() { return foeTop; },
     /** The model cloned for minion foes. */
     setMinionTemplate(model: pc.Entity) { minionTemplate = model; },
     /** Uri's fears' models (src/fears.ts). */
@@ -316,6 +320,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           if (party) wearClass(model, unit.classId);
         });
       }
+      if (next && !foeTop) {
+        // Measured once per fight, in the pose it was built in.
+        for (const f of fighters.values()) if (!f.party) for (const r of f.model.findComponents('render') as pc.RenderComponent[]) for (const m of r.meshInstances) foeTop = Math.max(foeTop, m.aabb.getMax().y - f.model.getPosition().y);
+      }
+      if (!next) foeTop = 0;
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false;
       if (!next) { cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); fighters.forEach(f => { f.model.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); sparks.enabled = false; selectedTarget = undefined; effects.clear(); }
       else [...next.allies, ...next.foes].forEach(u => { fighters.get(u.id)!.hp = u.hp; });
