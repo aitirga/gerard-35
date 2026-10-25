@@ -1,6 +1,6 @@
 # Nuria · Cardedeu (working title)
 
-Status: building on `feat/nuria-mission` · steps 1–10 and the lights' animation done · Last updated: 2026-10-24
+Status: building on `feat/nuria-mission` · steps 1–3 and 5–13 done; step 4 (portraits) waits for `just character` · Last updated: 2026-10-25
 
 ## Summary
 
@@ -353,6 +353,26 @@ dependencies; steps marked **blocked** need something from the user first.
 13. **Docs.** `docs/chapter-2.md` (friends and clues tables, the lights in § The Queen's advance, implementation list), `docs/lore.md`
     (story so far), `docs/party.md` (Papagato, statuses, levels), `docs/animas/` (implementation
     sections).
+
+### Built
+
+Steps 1–3 and 5–13 are built and tested (`tests/nuria.test.mjs`, `tests/story.test.mjs`); step 4
+waits for the portraits. Where the built version differs from the plan above:
+
+- **Step 8–10**: the maze became *La torre de Uri* (§ The tower); El Vértigo stands on its top
+  platform, not on the roof of Nuria's block. Its fight frames the whole giant, eye and Uri on top
+  (`battleScene.foeTop` lifts and widens the camera for foes far taller than the party).
+- **Step 11**: the light animation lives in `game.releaseLights` (not a module of its own yet);
+  the jar sits on the west end of the TV unit in the living room, built by `updateJar` in
+  `src/game.ts` from `story.jar`, and *"Usar una luz"* plays `game.releaseLight` (the
+  `release-light` effect). A light is spent today when this morning's saved flags lack its
+  `luz-<person>-usada`, so no new save field was needed. Screenshots: `just screenshots lights`.
+- **Step 12**: the first time home after the win the lights fly from Gerard and Aitor into the
+  jar (not saved: after a reload they are simply there). Haru and Yuki stroll the flat
+  (`src/cat-wander.ts`: a few cells to a spot nearby, a sit, another spot), from
+  `story.catsAtHome`; shown in `just screenshots lights`.
+- **Open**: § The lights asks for grey lights in the first round; the jar's lit ones glow amber for
+  now, since a pale grey glow vanished against the cream wall behind the TV unit.
 
 Later, outside this plan: the second round (block 5, one dialogue and Papagato's colour), and the
 combined skills (Noísta + Papagato, Matemágico + Papagato).

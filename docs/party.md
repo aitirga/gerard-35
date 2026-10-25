@@ -78,6 +78,14 @@ Fuerza, Defensa).
 | Zarpa en la llaga | **Papagato**, level 2 | 10 | 26 physical | +4 per Sangrado stack on the target, and spends them |
 | Las dos a la vez | **Papagato**, level 3 | 14 | 24 physical | Every foe, one Sangrado stack each |
 
+**Statuses** (story fights, `STATUSES` in `src/battle.ts`; `docs/animas/README.md` § Shared
+mechanics): they stack, show under the fighter's nameplate, and lose a stack at the end of each
+round. **Sangrado** (up to 10) hurts at the end of every round; **Mareo** (up to 5, El Vértigo)
+lowers Velocidad, Defensa and Espíritu; **Llorera** (up to 5, El Cebollón) lowers Fuerza and Magia.
+
+**Levels** (`src/levels.ts`): fights won wearing an ánima make it grow; 3 wins give level 2 and 8
+level 3, each a story flag. Only Papagato has levels so far.
+
 Every skill comes with an ánima: whoever wears none has none. Bernat never wears one and only
 attacks (Habilidad is greyed out on his turn); Aitor has skills only while he wears an ánima.
 Impulso and Abrazo are out for now.

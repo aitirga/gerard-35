@@ -166,6 +166,17 @@ friends' stories and the second round carry it.
 - **Friends and ánimas**: each friend he helps gives him their ánima. Hidden clues in the world
   point to them (the R4 now reaches Cardedeu, where Nuria and Uri live).
   Design: `docs/chapter-2.md`.
+- **Nuria** (`docs/quests/nuria.md`): in Cardedeu, Haru waits at the station and leads them to
+  Nuria's door. The Queen has turned **Uri**, who never talks, into a kid again: violet eyes, never
+  quiet, and he has run off with **Nil**, their baby, up a dark tower round the corner. Nuria lends
+  Gerard the cats, **Haru and Yuki**, and **Papagato** wakes up in him. Up the tower Uri's fears
+  hunt them (El Cebollón, El Plato Misterioso, Game Over) and on top **El Vértigo**, his fear of
+  heights, holds Uri and Nil; when it reaches for Nil, Uri, very loyal, steps in front of it and
+  speaks for himself. Uri is himself again, Papagato stays, and Haru and Yuki come to live in the
+  Meridiana flat.
+- **The lights**: every person helped gives a small light, what makes them who they are. Nuria's,
+  Uri's and Nil's go into Gerard and Aitor and then wait in a glass jar at home. Let out, a light
+  flies to the castle and pushes her back a day; spent ones stay in the jar, dark.
 
 ## Running threads
 

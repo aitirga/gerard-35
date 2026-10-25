@@ -79,7 +79,7 @@ are free; doing things takes hours:
 | A fight (the palace guards) | 2 |
 | Playing the piano at home | 2 |
 | A coffee on the balcony | 1 |
-| A friend's mission (to come) | 2–4 |
+| A friend's mission (Nuria's: 1 going into Uri's tower, 2 more when it is won) | 2–4 |
 
 The day ends at 22:00 wherever they are (Aitor: *"Ya está. Es de noche"*), when they go to bed
 (*"Dormir"* at the bed, once the news has been seen), or when they fall in a fight. Black, and they
@@ -103,6 +103,14 @@ mission should fit in a day.
 lights): every person Gerard helps gives a light, kept in a jar at home. Each one can be let out
 once to push her back **one more day**, so the spread becomes `(day − 1 − 3 × ánimas − lights
 used) / 6`. The jar shows how many are lit and how many were used, never whose they were.
+
+Built: the jar stands on the west end of the TV unit in the flat (`PLACES_2.jar`), a glass jar with
+a cork and one marble per light, amber while lit and dark once spent. The first time home after a
+win, the lights fly from Gerard and Aitor into it. *"Usar una luz"* lets the next lit one out: it
+rises, flies across the living room and out of the balcony towards the castle, and Aitor sees the
+pink go back. At most one a day: after that the jar only offers *"Mirar las luces"*. Used lights
+are story flags (`luz-<person>-usada`), so going back a day puts that day's light back; a light
+counts as used today when this morning's saved flags do not have its flag yet.
 
 **The end.** On that morning the flat is already part of her castle: gum over the walls and floors,
 thorns, everything pink (`story.doomed`). Aitor: *"Hemos llegado tarde."* A screen says she has
@@ -191,6 +199,12 @@ Template per friend:
 | Ánima | Name, colour, stat bonus, the class or skill it brings |
 | Second round | What their ánima's colour is, and what being a kid again means for them (block 5) |
 
+Friends so far:
+
+| Friend | Where | Mission | Ánima | Lights | Status |
+| --- | --- | --- | --- | --- | --- |
+| **Nuria**, with Uri and Nil | Carrer de Jacint Verdaguer, Cardedeu (R4 from La Sagrera) | *La torre de Uri*: Uri, a kid again, climbs a dark tower; his fears hunt the ramp and El Vértigo waits on top (`docs/quests/nuria.md`) | **Papagato** (Haru and Yuki fight with the party) | Nuria, Uri, Nil | Playable on `feat/nuria-mission`; Nuria's and Uri's portraits to come |
+
 Each friend's mission is a small, hand-made piece: its own scene or two, its own lines, often one
 mechanic nobody else uses. The shared parts (scene, travel, dialogue, flags, ánima, battle) are
 generic; what makes it theirs is data and one script hook (`docs/barcelona.md` § Architecture).
@@ -210,7 +224,7 @@ notification, graffiti, a menu on a bar's board. A clue:
 
 | Clue | Where | Points to |
 | --- | --- | --- |
-| *"La R4 se amplía desde La Sagrera hasta Cardedeu"* | TV ticker; later La Sagrera's platform | Cardedeu: Nuria and Uri |
+| *"La R4 se amplía desde La Sagrera hasta Cardedeu"* (`clue-r4`) | TV ticker; the lit R4 poster of a bus shelter; later La Sagrera's platform | Cardedeu: Nuria and Uri; at Cardedeu station Haru waits and trots off to Nuria's street |
 
 ## The Queen and the second round (blocks 4 and 5)
 
@@ -230,7 +244,14 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
 
 - `src/story.ts`: the flags and the rules, for both chapters. Chapter 2's flags: `tv-news`,
   `metro`, `rec-comtal`, `palace-tried`, `clue-r4`, and one `anima-<friend>` per friend.
-  `party`, `battleParty` and `palaceGuards` read the ánimas from them.
+  `party`, `battleParty` and `palaceGuards` read the ánimas from them. Nuria's mission adds
+  `cardedeu`, `nuria-uri`, `papagato` (and its levels `papagato-2`, `papagato-3`), one
+  `luz-<person>` per light and `luz-<person>-usada` once it is let out; `jar`, `lightUsedToday` and
+  `catsAtHome` read them. The mission itself is never saved (`story.nuria`).
+- `src/friends/nuria.ts`: Nuria's mission (places, lines, fears); `src/tower.ts` and
+  `src/tower-scene.ts`: Uri's tower; `src/chasers.ts`: the fears that hunt it; `src/fears.ts`:
+  their models and El Vértigo; `src/cats.ts`: Haru and Yuki; `src/cat-wander.ts`: the cats
+  strolling about the flat; `src/levels.ts`: ánima levels.
 - `src/chapter-2.ts`: chapter 2's lines, places, triggers, the news broadcast and the clues.
 - `src/animas.ts`: the ánimas: who they come from, colour, stat bonus.
 - `src/days.ts`: days, hours, the Queen's spread, saved mornings.
@@ -244,9 +265,11 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
   (`story.redirect`), the palace standing on the school, the guards' fight.
 - Story events: `near` (walked up to a trigger), `arrive` (came out of a station), `battle` with
   `won: false` in chapter 2 (falls and wakes up). New effects: `news` (watch the TV), `metro`
-  (the station map), `fall`, `look` (the camera turns to a scene anchor) and `doom` (the end).
-- Screenshots: `just screenshots chapter-2-city`, `castle-threat`, `countdown`; `just dev-day 6` wakes
-  up on a later day.
+  (the station map), `fall`, `look` (the camera turns to a scene anchor) and `doom` (the end);
+  for the missions `anima` (an ánima wakes up outside a fight), `learn` (a level reached),
+  `lights` (the people helped give their lights) and `release-light` (one leaves the jar).
+- Screenshots: `just screenshots chapter-2-city`, `castle-threat`, `countdown`, and for Nuria's
+  mission `cardedeu`, `nuria`, `papagato` and `lights`; `just dev-day 6` wakes up on a later day.
 
 ## Implementation list
 
@@ -264,11 +287,22 @@ Done in the first slice (2026-10-18):
    escape allowed; falling wakes Gerard at home with everything kept.
 7. The ánima data model and its bonus to the party and malus to the guards; ánimas in Personaje.
 
+Done in Nuria's mission (`feat/nuria-mission`, 2026-10-25; `docs/quests/nuria.md` § Implementation plan):
+
+10. Stacking statuses in story fights (Sangrado, Mareo, Llorera) and ánima levels.
+11. Papagato, with Haru and Yuki fighting beside its wearer, up to level 3.
+12. The R4 from La Sagrera to Cardedeu on the network map, and Cardedeu's real streets.
+13. The mission: Haru at the station, Nuria lends the cats, La torre de Uri with his fears and
+    El Vértigo; giving up or falling hands the cats back; winning keeps Papagato.
+14. The lights: they leave Nuria, Uri and Nil into Gerard and Aitor, then wait in a jar at home,
+    one a day to push her back; Haru and Yuki live in the flat from then on.
+
 Next:
 
 1. Polish the two designed scenes with photos of the real places (facades, the school's sign).
-2. La Sagrera station scene (the R4 platform, the clue poster), the R4 on the map, and Cardedeu (the first friends).
-3. Friends: who they are, where, their missions and ánimas (open question 1).
+2. La Sagrera station scene (the R4 platform, the clue poster).
+3. More friends: who they are, where, their missions and ánimas (open question 1); Nuria's and
+   Uri's portraits and 3D (`just character`, with credits).
 4. The guards' fight presentation: their own model (now the minion, scaled up).
 5. The throne and the Queen's scene (block 4), then the second round (block 5).
 6. A few possessed animals of the city as random encounters between the metro and each place.

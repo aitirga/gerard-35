@@ -76,7 +76,12 @@ pounces on Zarpazo, Yuki hides on her skill. Unlocked by the `papagato` story fl
 power 26 plus 4 per Sangrado stack, which it spends) and *Las dos a la vez* (cost 14, power 24 to
 every foe, one Sangrado stack each).
 
-Plan: _to write once the design converges_ (`../README.md` § How an ánima is built).
+In Nuria's mission (`docs/quests/nuria.md`): lent when Nuria hands over the cats (an `anima`
+effect, ÁNIMA DESBLOQUEADA) and worn by Gerard unless he already wears something; given back when
+the party leaves Cardedeu, falls or the day ends; kept for good with the `papagato` flag when
+El Vértigo falls. While lent, Haru and Yuki follow the party (`src/follower.ts`); afterwards they
+live in the Meridiana flat, strolling between the living room and the dining room
+(`src/cat-wander.ts`, `story.catsAtHome`). Screenshots: `just screenshots nuria` and `lights`.
 
 ## Open
 
