@@ -74,6 +74,14 @@ the game. At home `just backend` finds the bulbs on the LAN and changes them in 
 library is a git submodule in `vendor/geraitor_domotic_house` (`just setup` checks it out). Design,
 bulbs and limits: [docs/home-lights.md](docs/home-lights.md).
 
+## Music and sound
+
+Songs loop exactly between named marks, crossfade, and jump to their ending on the next bar; fights
+have their own song, menus duck it, and menus and blows have synth effects. Levels live in
+**Esc → Configuración → Sonido**. Songs go in `public/music/`; `just music-loop <file>` finds where
+one loops and `just music-seam` renders the join to listen to. How it all fits:
+[docs/audio.md](docs/audio.md).
+
 ## Screenshots
 
 `just screenshots <scenario>` plays a scripted scenario in Chromium and saves numbered
@@ -133,6 +141,7 @@ src/city-map.ts     Barcelona's cartoon network map as SVG
 src/travel-ui.ts    The station map and the trip; src/news-ui.ts the TV news
 src/story-ui.ts     Chapter cards, item notes, key hints, speech bubble
 src/home-lights.ts  The lights at home: places, fights, the lead and the mirrored flat
+src/audio.ts        Sound engine; src/music.ts songs and loops, src/sfx.ts effects (docs/audio.md)
 src/items.ts        Item catalogue: common items and key items
 src/follower.ts     A companion who walks Gerard's path behind him
 src/game.ts         Isometric courtyard, Gerard model, lights, shadows and input
@@ -361,7 +370,7 @@ house footprints, room names and positions, with no location-specific map layout
 `src/exploration-world-map.ts` draws Barcelona. Maps show places and positions, never things to do.
 
 The pause menu (**Escape**, or Start / + on a controller) has Continuar, Estado, Objetos, Mapa,
-**Configuración** (Mando and **Luces de casa**, see docs/home-lights.md), Cómo jugar and Salir
+**Configuración** (Mando, **Sonido**, see docs/audio.md, and **Luces de casa**, see docs/home-lights.md), Cómo jugar and Salir
 del juego.
 Add locations in `src/environments.ts` to reuse the renderer. The map is an
 informational local overview. `src/exploration-world-map.ts` reuses the Barcelona city drawing

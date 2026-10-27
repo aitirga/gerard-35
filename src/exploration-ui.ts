@@ -215,7 +215,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
         <div><dt>Dos jugadores</dt><dd>Con Aitor en el mando 2, cada uno abre su menú en su mitad de la pantalla</dd></div>
         <div><dt>Vista general</dt><dd data-glyph-template="{overview}"></dd></div>
         <div><dt>Combate</dt><dd data-glyph-template="{pick} elegir · {confirm} confirmar · {cancel} volver · {details} detalles de una habilidad · {prev} / {next} cambiar de ánima"></dd></div>
-        <div><dt>Pausa</dt><dd data-glyph-template="{menu} · En Configuración, el mando y las luces de casa"></dd></div>
+        <div><dt>Pausa</dt><dd data-glyph-template="{menu} · En Configuración, el mando, el sonido y las luces de casa"></dd></div>
       </dl></div>`;
   }
   function diaryPage(sheet: Sheet) {

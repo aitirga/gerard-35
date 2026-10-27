@@ -13,11 +13,15 @@ import type { MemberId } from './story';
 import { createTravelUI } from './travel-ui';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
-import { palaceGuards } from './battle';
+import { palaceGuards, SKILLS, type BattleEffect, type BattleState } from './battle';
 import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById } from './home-lights';
 import { mountHomeLightsPage } from './home-lights-ui';
 import { createLampPicker } from './lamp-picker';
 import { createInteractionPrompt } from './interaction-prompt';
+import { createAudio } from './audio';
+import { createMusic, isTrack } from './music';
+import { createSfx, watchMenuSounds } from './sfx';
+import { mountSoundPage } from './sound-ui';
 
 const isMember = (id: string): id is MemberId => id === 'gerard' || id === 'bernat' || id === 'aitor';
 
@@ -41,6 +45,30 @@ const hud = document.querySelector<HTMLElement>('#hud')!;
 const stopGlyphs = watchGlyphs();
 // The bulbs at home (docs/home-lights.md): they follow the place and the fights once connected in the menu.
 const homeLights = createHomeLights();
+// Music and sound effects (docs/audio.md): silent until the first key, click or pad button.
+const audio = createAudio();
+const music = createMusic(audio);
+const sfx = createSfx(audio);
+// Registered before the menus so Escape is heard before they take it.
+const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#controller-menu[open], #hud[data-panel], #lamp-dial:not([hidden]), #travel:not([hidden])'));
+/** A blow lands with a thump, a cure or a boost with a sparkle. */
+function impactSound(effect: BattleEffect) {
+  const kind = effect.skill && SKILLS.find(s => s.id === effect.skill)?.kind;
+  if (kind === 'heal' || kind === 'boost') sfx.play('heal');
+  else if ((effect.kind === 'attack' || effect.kind === 'skill' || effect.kind === 'enemy') && effect.amount) sfx.play('hit');
+}
+/** The fight's song: it comes in with the fight, plays its ending on a win and fades on a fall, an escape or leaving. */
+let battlePhase: BattleState['phase'] | undefined;
+function scoreBattle(state: BattleState | undefined) {
+  const was = battlePhase;
+  battlePhase = state?.phase;
+  if (battlePhase === was) return;
+  if (!state) { if (music.playing === 'battle') music.stop({ fade: 1.5 }); }
+  else if (was === undefined) void music.play('battle', { restart: true, fade: .4 });
+  if (battlePhase === 'won') void music.jump('ending', { at: 'bar' });
+  else if (battlePhase === 'lost') music.stop({ fade: 2.5 });
+  else if (battlePhase === 'escaped') music.stop({ fade: 1 });
+}
 // Development: ?story=<flag> starts with every flag up to that one (just dev-chapter), ?story=new from scratch.
 const devStory = (() => {
   if (!import.meta.env.DEV) return undefined;
@@ -124,7 +152,8 @@ try {
       // With the bulbs connected a hit may wait a moment, so it lands as they flash.
       const hold = homeLights.battle(state, effect);
       if (hold) await new Promise(resolve => setTimeout(resolve, hold));
-      return game.setBattle(state, effect, onImpact);
+      scoreBattle(state);
+      return game.setBattle(state, effect, effect ? () => { impactSound(effect); onImpact?.(); } : onImpact);
     },
     target: id => game.selectTarget(id),
     awaken: id => { game.awaken(id); storyEvent({ type: 'class', id }); },
@@ -143,7 +172,7 @@ try {
   let storyPaused = false;
   const menuOpen = () => !!document.querySelector('#controller-menu[open]');
   const exploration = createExplorationUI(document.querySelector<HTMLElement>('#hud')!, story, {
-    pause: paused => game.setPaused(paused || storyPaused || menuOpen()),
+    pause: paused => { game.setPaused(paused || storyPaused || menuOpen()); music.duck(paused || menuOpen()); },
     openMenu: () => controller.open(),
     wear: (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } },
     // With a second player on Aitor, each player gets their own half of the status screen.
@@ -284,7 +313,7 @@ try {
       if (lamp) lampPicker.open(lamp); else storyEvent(event);
     },
   }, story);
-  const lampPicker = createLampPicker(hud, homeLights, paused => game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active));
+  const lampPicker = createLampPicker(hud, homeLights, paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); });
   for (const light of HOUSE_LIGHTS) game.setLamp(light.id, homeLights.flat[light.id]);
   homeLights.onFlat((id, lamp) => game.setLamp(id, lamp));
   game.setLampLabels(id => {
@@ -308,11 +337,13 @@ try {
       get: () => control.mode,
       set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
     } : undefined,
-    pause: value => game.setPaused(value || storyPaused || lampPicker.isOpen || !!exploration.active),
+    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || !!exploration.active); },
     panel: id => id ? exploration.show(id) : exploration.close(),
     lights: section => mountHomeLightsPage(section, homeLights),
+    sound: section => mountSoundPage(section, audio),
     exit: () => {
       clearTimeout(saveTimer); void save();
+      music.stop({ fade: .5 });
       restoreLightsOnResume = homeLights.settings.enabled;
       void homeLights.setEnabled(false, false);
     },
@@ -380,10 +411,13 @@ try {
     const adult = new Story(['caught', 'noista']);
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => params.get('party') === 'adult' ? battleUI.open(adult.battleParty(true), foes, { animas: adult.classes })
       : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas: ['matemagico', ...(params.has('noista') ? ['noista' as const] : [])] }));
+    // ?music=battle&from=126 plays a song from a mark or second on the first key or click, to hear a loop's seam (just dev-music).
+    const track = params.get('music');
+    if (track && isTrack(track)) void audio.unlocked.then(() => music.play(track, { from: Number.isFinite(Number(params.get('from'))) ? Number(params.get('from')) : params.get('from') ?? 'start', fade: 0 }));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, homeLights } });
+    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, homeLights, audio, music, sfx } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { stopGlyphs(); clearInterval(moodTimer); lampPicker.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

@@ -61,6 +61,12 @@ dev-character name="gerard-child":
     @[[ -f "src/characters/{{ name }}.json" ]] || { printf 'No src/characters/%s.json; run just character first.\n' "{{ name }}"; exit 1; }
     npm run dev -- --open '/?character={{ name }}'
 
+# Play a song from a mark or second to hear its loop: just dev-music battle 126 (press a key to start)
+[group('Development')]
+dev-music track="battle" from="start":
+    @[[ "{{ track }}" =~ ^[a-z0-9-]+$ && "{{ from }}" =~ ^([a-z-]+|[0-9]+(\.[0-9]+)?)$ ]] || { printf 'Use a track from src/music.ts and a mark or seconds, e.g. just dev-music battle 126.\n'; exit 1; }
+    npm run dev -- --open '/?music={{ track }}&from={{ from }}'
+
 # Start the persistent API on port 8080, proxied by `just dev` under /api
 [group('Development')]
 backend:
@@ -210,6 +216,17 @@ city-fetch-buildings: && city
 city-background:
     @[[ -f output/city/background.svg ]] || { printf 'No street data yet; run just city-fetch first.\n'; exit 0; }
     node scripts/city-background.mjs
+
+# Find where a song loops: tempo, opening notes and seams (just music-loop public/music/battle.m4a --start 2.1:2.7)
+[group('Audio')]
+[positional-arguments]
+music-loop file *args:
+    uv run --locked python tools/music_loop.py analyze "$@"
+
+# Write a seam to output/music/ to listen to: the loop's end, then its start (just music-seam public/music/battle.m4a 2.368 130.766)
+[group('Audio')]
+music-seam file start end:
+    uv run --locked python tools/music_loop.py preview '{{ file }}' '{{ start }}' '{{ end }}'
 
 # Generate portrait, expressions, full-body art and 3D model: just character bernat --description '…' (--help)
 [group('Tools')]

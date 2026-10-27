@@ -1047,3 +1047,4 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .map-footer kbd { width: auto; min-width: 19px; padding: 0 4px; font-size: 9px; color: inherit; text-align: center; }
 @keyframes map-open { from { opacity: 0; scale: .98; } }
 @media (prefers-reduced-motion: reduce) { .status-sheet, .status-sheet[data-layout="map"] { animation: none; } }
+.sound-level output { min-width: 70px; }

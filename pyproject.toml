@@ -12,4 +12,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "anthropic>=1.12.1",
+    "numpy>=2.5.4",
 ]
