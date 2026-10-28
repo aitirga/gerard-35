@@ -79,7 +79,11 @@ attacks (Habilidad is greyed out on his turn); Aitor has skills only while he we
 Impulso and Abrazo are out for now.
 
 - **Ánimas belong to the party** (the code calls them classes: `ClassId`, `CLASSES`). Gerard has
-  **Matemágico** from the start (Magia +1, Espíritu +1; his own look and the gold interface);
+  **Matemágico** from the start (Magia +1, Espíritu +1; his own look and the gold interface).
+  As a boy (chapter 1) it is still called **Nen curiós**, in Catalan ("Tot ho pregunta. Fins i tot
+  el que no cal."); at 35 it is Matemágico, and in fights whoever wears it thinks out loud: two
+  ghostly little birds glide round the head while light bulbs and question marks of soft light
+  drift up out of it and fade (`src/thoughts.ts`). Exploring, it does not show;
   **Noísta** wakes up in chapter 1's palace (Magia +2, Espíritu +2, Defensa −1; the red scarf and
   the protest-poster interface). Anyone in the party but Bernat can wear any unlocked ánima, both
   at once if they like. Wearing one adds its stats and its skills. An ánima's colour and look come

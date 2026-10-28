@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import type { BattleEffect, BattleState, ClassId } from './battle';
-import { CLASSES, inheritColour, wearClass } from './classes';
+import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CONTACT_SECONDS, ENTRY_SECONDS, clamp01, contactMotion, smooth } from './battle-motion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
@@ -80,6 +80,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     body: pc.Entity | null; head: pc.Entity | null; tail: pc.Entity | null; ears: pc.Entity[]; eyes: pc.Entity[]; eyeScale: number; seed: number;
     /** Foes that are not dogs (the palace minion) wobble instead of sniffing. */
     minion: boolean;
+    /** Gerard at 35 or Aitor: a grown-up's Matemágico thinks out loud (thoughts.ts). */
+    grown: boolean;
     arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
     plantFeet: ReturnType<typeof createGroundContact>;
@@ -176,7 +178,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       effects.emit('poof', new pc.Vec3(gerard.base.x, .5, gerard.base.z), 18, .4);
       effects.emit('spark', new pc.Vec3(gerard.base.x, 1.1, gerard.base.z), 24, .3);
       for (const f of fighters.values()) if (!f.party) hit(f, white, .9);
-      setTimeout(() => wearClass(gerard.model, id), 260);
+      setTimeout(() => wearClass(gerard.model, id, gerard.grown), 260);
     },
     /**
      * L / R in a fight: a burst of light in the ánima's colour, sparks rising round them, and the
@@ -188,7 +190,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       hit(f, new pc.Color().fromString(CLASSES[classId].colour), 1.8);
       effects.emit('spark', new pc.Vec3(f.base.x, 1.2, f.base.z), 20, .35);
       effects.emit('poof', new pc.Vec3(f.base.x, .3, f.base.z), 10, .45);
-      setTimeout(() => wearClass(f.model, classId), 180);
+      setTimeout(() => wearClass(f.model, classId, f.grown), 180);
     },
     /** Dark pink, glowing eyes for the street dogs: they obey La Reina Bubbaloo's minion. */
     possess(on: boolean) {
@@ -241,14 +243,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const head = model.findByName(party ? 'Pivote de cabeza' : minion ? 'Cabeza de chicle' : 'Cabeza de perro') as pc.Entity | null;
           const eyes = model.find(node => node.name === 'Ojo') as pc.Entity[];
           fighters.set(unit.id, {
-            model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null, minion,
+            model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null, minion, grown: party && grownUp(unit.profile),
             ears: model.find(node => node.name === 'Oreja') as pc.Entity[], eyeScale: eyes[0]?.getLocalScale().y ?? 1, seed: party ? i * 3.1 + .4 : i,
             flash: 0, flashColor: white, ...ownMaterials(model),
             scale: model.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
           });
           // Whoever wears an ánima shows it in the fight, even when the street model does not (Gerard at 35, Aitor).
           // Dressed after ownMaterials, so the street model keeps its own look.
-          if (party) wearClass(model, unit.classId);
+          if (party) wearClass(model, unit.classId, grownUp(unit.profile));
         });
       }
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false;

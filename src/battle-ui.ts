@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { act, aimed, ANIMA_NAMES, awaken, boostRounds, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, skillsFor, SKILLS, switchAnima, validTargets, wearAnima, wearsAnimas, type ClassId, type Encounter, type GuardStrength, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
-import { CLASSES } from './classes';
+import { act, aimed, awaken, boostRounds, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, skillsFor, SKILLS, switchAnima, validTargets, wearAnima, wearsAnimas, type ClassId, type Encounter, type GuardStrength, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
+import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
 import { flashAnima, setVitals, vitalsPlate } from './vitals';
@@ -164,7 +164,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // The one new thing on screen: Habilidades pulses until it is opened.
     get('[data-command="skill"]').classList.add('is-new');
   }
-  const plate = (c: Combatant) => vitalsPlate({ id: c.id, name: c.name, profile: c.profile, hp: c.hp, maxHp: c.maxHp, sec: c.secondary, maxSec: c.maxSecondary, anima: c.classId && CLASSES[c.classId].name, colour: c.classId && CLASSES[c.classId].colour, scarf: c.classId && CLASSES[c.classId].scarf });
+  const plate = (c: Combatant) => vitalsPlate({ id: c.id, name: c.name, profile: c.profile, hp: c.hp, maxHp: c.maxHp, sec: c.secondary, maxSec: c.maxSecondary, anima: c.classId && animaOf(c.classId, grownUp(c.profile)).name, colour: c.classId && CLASSES[c.classId].colour, scarf: c.classId && CLASSES[c.classId].scarf });
   /** A card's face and ánima: redrawn when the fighter changes ánima, the bars stay and glide. */
   function dress(card: HTMLElement, c: Combatant) {
     const fresh = document.createElement('div'); fresh.innerHTML = plate(c);
@@ -246,10 +246,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Bernat wears no ánima: his dock has no pills.
       switcher.hidden = !wearsAnimas(owner) || !state.animas.length || owner.hp === 0;
       const chips = switcher.querySelector('.anima-chips')!;
-      const signature = `${owner.id}:${state.animas.join(',')}`;
+      const signature = `${owner.id}:${owner.profile}:${state.animas.join(',')}`;
       if (chips.getAttribute('data-for') !== signature) {
         chips.setAttribute('data-for', signature);
-        chips.innerHTML = state.animas.map(id => `<button type="button" tabindex="-1" data-anima="${id}" style="--chip:${CLASSES[id].colour}">${ANIMA_NAMES[id]}</button>`).join('');
+        chips.innerHTML = state.animas.map(id => `<button type="button" tabindex="-1" data-anima="${id}" style="--chip:${CLASSES[id].colour}">${animaOf(id, grownUp(owner.profile)).name}</button>`).join('');
       }
       const off = !mine || busy || targeting || callbacks.waiting(owner.id);
       switcher.toggleAttribute('data-off', off);
@@ -358,7 +358,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function fillSkills() {
     if (!state) return;
     const actor = state.allies[state.active];
-    get('.skill-flyout .battle-kicker').textContent = `HABILIDADES · ${actor.name.toUpperCase()}${actor.classId ? ` · ${ANIMA_NAMES[actor.classId].toUpperCase()}` : ''}`;
+    get('.skill-flyout .battle-kicker').textContent = `HABILIDADES · ${actor.name.toUpperCase()}${actor.classId ? ` · ${animaOf(actor.classId, grownUp(actor.profile)).name.toUpperCase()}` : ''}`;
     // Unaffordable skills stay focusable so their details can still be read.
     get('.skill-list').innerHTML = skillsFor(state, actor).map((skill, i) => {
       const affordable = actor.secondary >= skill.cost;

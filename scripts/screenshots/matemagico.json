@@ -1,0 +1,94 @@
+{
+  "title": "Matemágico · Nen curiós",
+  "description": "Gerard's own ánima grows with him: as a boy (chapter 1) it is called Nen curiós, in Catalan, with its own motto; at 35 it is Matemágico, and in fights whoever wears it thinks out loud: two ghostly little birds glide round the head while light bulbs and question marks of soft light drift up out of it and fade. Exploring, nothing shows.",
+  "steps": [
+    {
+      "open": "/?story=new"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "nen-curios",
+      "delay": 1500,
+      "caption": "Chapter 1: the boy's ánima is Nen curiós, \"Tot ho pregunta. Fins i tot el que no cal.\""
+    },
+    {
+      "open": "/?story=got-wrapper&solo=0"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "localStorage.removeItem('gerard35.loadout.v1'); window.gerard.story.loadout = {};"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "eval": "document.querySelector('[data-wear=\"gerard\"][data-class-id=\"matemagico\"]').click();"
+    },
+    {
+      "shot": "matemagico-sheet",
+      "delay": 1200,
+      "caption": "At 35 the same ánima is Matemágico"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "shot": "street",
+      "delay": 1500,
+      "caption": "Exploring at 35 with Matemágico on: nothing over his head, the ánima shows in fights"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=0&battle=2&party=adult"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "until": "document.querySelector('.battle-dock[data-member=\"gerard\"] .anima-chips button[data-anima=\"matemagico\"]:not([disabled])')",
+      "timeout": 60000
+    },
+    {
+      "eval": "document.querySelector('.battle-dock[data-member=\"gerard\"] .anima-chips button[data-anima=\"matemagico\"]:not([disabled])').click();"
+    },
+    {
+      "shot": "battle",
+      "delay": 2500,
+      "caption": "In a fight Gerard swaps to Matemágico (Q): birds of light glide round his head and a thought drifts up"
+    },
+    {
+      "shot": "battle-later",
+      "delay": 1400,
+      "caption": "A moment later: the thoughts fade in, rise and dissolve"
+    },
+    {
+      "shot": "battle-later-2",
+      "delay": 1400,
+      "caption": "And again: bulbs and question marks, never the same"
+    }
+  ]
+}
