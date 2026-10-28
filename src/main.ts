@@ -59,10 +59,11 @@ function impactSound(effect: BattleEffect) {
   else if ((effect.kind === 'attack' || effect.kind === 'skill' || effect.kind === 'enemy') && effect.amount) sfx.play('hit');
 }
 /**
- * Each place's song, coming in slowly from anywhere in it; a place without one fades to silence.
+ * Each place's song, coming in slowly from anywhere in it (a vamping or cycled one from the top);
+ * a place without one fades to silence.
  * The castle's song is haunted as much as the castle is threatening right now (src/haunt.ts).
  */
-const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { meridiana: 'home', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo' };
+const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'sad', meridiana: 'home', 'meridiana-calle': 'concrete', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo' };
 let place: EnvironmentId | undefined;
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
