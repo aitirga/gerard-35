@@ -217,6 +217,12 @@ city-background:
     @[[ -f output/city/background.svg ]] || { printf 'No street data yet; run just city-fetch first.\n'; exit 0; }
     node scripts/city-background.mjs
 
+# Ship a song from its master in assets/music/ to public/music/<name>.m4a (copied if .m4a, else encoded): just music-export battle
+[group('Audio')]
+music-export name:
+    @[[ "{{ name }}" =~ ^[a-z0-9-]+$ ]] || { printf 'Use the song name without extension, e.g. just music-export battle.\n'; exit 1; }
+    @src=$(ls assets/music/{{ name }}.* 2>/dev/null | head -n1); [[ -n "$src" ]] || { printf 'No master for %s in assets/music/.\n' '{{ name }}'; exit 1; }; mkdir -p public/music; if [[ "$src" == *.m4a ]]; then cp "$src" public/music/{{ name }}.m4a; else ffmpeg -v error -y -i "$src" -vn -c:a aac -b:a 192k public/music/{{ name }}.m4a; fi; printf '%s → public/music/%s.m4a\n' "$src" '{{ name }}'
+
 # Find where a song loops: tempo, opening notes and seams (just music-loop public/music/battle.m4a --start 2.1:2.7)
 [group('Audio')]
 [positional-arguments]

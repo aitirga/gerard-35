@@ -50,9 +50,13 @@ The director, `music` in [src/main.ts](../src/main.ts):
 
 ### Adding a song
 
-1. Put the file in `public/music/`. Use `.m4a` (AAC) or `.ogg`/`.opus`; desktop Chrome, Edge,
-   Safari and Firefox decode AAC.
-2. `just music-loop public/music/<song>.m4a` prints the tempo, the opening notes (to spot the
+1. Keep the master in `assets/music/<song>.<ext>` (WAV, FLAC, AIFF or M4A). It stays on your
+   machine: `assets/` is never served or committed for audio. `just music-export <song>` puts the
+   copy the game plays in `public/music/<song>.m4a`: copied as is if the master is already `.m4a`,
+   otherwise encoded to AAC (which every desktop browser decodes). Run it again after changing the
+   master.
+2. Measure on the exported file, since encoding can shift the start by a few milliseconds.
+   `just music-loop public/music/<song>.m4a` prints the tempo, the opening notes (to spot the
    downbeat the loop starts on) and ranked seam candidates. Narrow the search with
    `--start 2.1:2.7 --end 110:` once you know roughly where.
 3. `just music-seam public/music/<song>.m4a <start> <end>` writes

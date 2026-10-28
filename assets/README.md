@@ -13,8 +13,11 @@ assets/
     props/         cars, trees, furniture, signage
   models/          working files and exports from the modelling step
                    (.blend, high-poly GLB, texture bakes)
+  music/           song masters (WAV, FLAC, M4A); `just music-export <song>`
+                   ships the copy the game plays to public/music/
 public/
   models/          game-ready GLB/textures, served at ./models/… at runtime
+  music/           game-ready songs, served at ./music/… (docs/audio.md)
 ```
 
 Suggested convention inside `references/`: one folder per subject, e.g.
