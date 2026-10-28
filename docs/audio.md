@@ -46,7 +46,7 @@ battle: { src: 'music/battle.m4a', marks: { start: 0, loop: 2.398, ending: 131.9
   starting on its downbeat so that any of them can follow any other. The song plays one version,
   then another picked at random (never the same twice in a row), with no end. The next version is
   queued 2 s before the seam and starts sample-exact on it, with a 20 ms crossfade. The number of
-  versions comes from the file's length.
+  versions comes from the file's length. `from: 'random'` comes in at the start of a random version.
 
 The director, `music` in [src/main.ts](../src/main.ts):
 
@@ -122,13 +122,12 @@ game; if a browser places them differently (the AAC priming is 44 ms), check by 
 
 ### Songs waiting for their place
 
-Masters in `assets/music/`, not exported or played yet:
+Masters in `assets/music/`, not exported or played yet (`concrete`, `sad` and `mazmorra-2` are
+exported and wait for `PLACE_SONGS` and Uri's tower, above):
 
 | Song | Length | Idea |
 | --- | --- | --- |
 | `intro-piano` | 0:56 | The game's welcome screen, when it exists. |
-| `song-sad` | 1:36 | |
-| `song-concrete` | 1:40 | |
 
 ### The castle's haunt
 
