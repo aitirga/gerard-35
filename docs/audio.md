@@ -42,6 +42,12 @@ battle: { src: 'music/battle.m4a', marks: { start: 0, loop: 2.398, ending: 131.9
   by at most about 2 dB, which the gain makes up.
 - `bpm`, `beatsPerBar` and `downbeat` (a mark on the first beat of a bar) let jumps wait for the
   next beat or bar, so they land in time.
+- `vamp: { from, to, laps: [2, 4] }` repeats the section between two marks a random number of
+  times (laps, the first included), then lets the song go on. The repeat is the source's own loop,
+  so it is sample-exact; halfway through the last lap the director lets go of it and the song plays
+  past the section's end. `music.moveOn()` makes the lap it is in the last one, for a moment in the
+  game to call later. With a `loop` too, the song starts over from the loop's start at its end (a
+  new voice, sample-exact) and vamps again with new laps. `from: 'random'` starts it from the top.
 - `cycle: 48` makes the file **versions of one cycle** of that many seconds, back to back, each
   starting on its downbeat so that one can follow another. The song opens with the first version,
   then plays the others picked at random (never the same twice in a row), with no end. The first
@@ -57,6 +63,7 @@ The director, `music` in [src/main.ts](../src/main.ts):
 | `music.play('battle', { from: 'start', fade: .5 })` | Starts a song from a mark, a second or `'random'`, crossfading (equal power) from whatever plays. The same song keeps going unless `restart: true`. |
 | `music.jump('ending', { at: 'bar', loop: false })` | Moves the song to a mark on the next `beat`, `bar`, at the `loop-end`, or `now`, with a short crossfade; `loop: false` plays it out from there instead of looping. |
 | `music.stop({ fade: 1 })` | Fades the song out. |
+| `music.moveOn()` | Ends a vamp: the song finishes the lap it is in and goes on. |
 | `music.duck(true)` | Lowers and muffles the music, as the menus do. |
 | `music.position()`, `music.playing` | Where the song is (following its loop), and which song it is. |
 
@@ -66,6 +73,9 @@ The director, `music` in [src/main.ts](../src/main.ts):
   (`song-home`, 18 min) comes in over 4 s from a random point and plays on; leaving for a place
   without a song fades it over 2 s. A fight takes over, and the place's song comes back, from
   somewhere else, when the fight is over.
+- **Streets**: `sad` in Passatge Maresme and `concrete` on Meridiana street, each from the top
+  over 4 s (`sad` from a random point). `just screenshots street-music --chrome` checks both and the
+  vamp.
 - **La Reina Bubbaloo's castle**: `bubbaloo` (`bubbaloo-light`, 13 min) the same way, at the Rec
   Comtal school and inside the palace (chapter 1's too), haunted as below. Walking from the school
   into the palace keeps the same take going.
@@ -83,15 +93,19 @@ The first two are at 110 BPM, measured with `just music-loop` and a self-similar
   the sixth's seam at 288 s. Version 1 opens it, then 2–6 mix. Version 1 is also the quietest
   (−17.9 dB against −16.6 to −17.2 for the rest). It is for friends' missions, one song per mission, picked among the
   mazmorra songs.
-- `concrete` (`song-concrete`, 1:40) loops whole: 184 beats (46 bars) from its first downbeat at
-  0 s to 100.364 s, the break at 40–43.6 s included. Its last beat decays into the first. It is for
-  the concrete, robot-like places: the streets of Barcelona (`meridiana-calle`, `rec-comtal`).
+- `concrete` (`song-concrete`, 1:40) is 46 bars from its first downbeat at 0 s to 100.364 s. Bar 1
+  opens; bars 2 to 17 (2.182 → 37.091 s, Logic's locators 2 to 18) vamp two to four times; then
+  bar 18, the break at bars 19 and 20 (40–43.6 s) and the rest play, and at 100.364 s it starts over
+  from bar 1. Bar 18 sounds like bar 2, so the jump back is unheard; bar 19 starts the break, so
+  the section stops before it. It is for the concrete, robot-like places: Meridiana street
+  (`meridiana-calle`) for now; the school on Rec Comtal plays the castle's song.
 
 - `sad` (`song-sad`, 1:36) loops whole: 80 beats (20 bars) at 50 BPM from 0 to 96 s, playing at
   full level to the last sample. It is the childhood street's song, Passatge Maresme, where the
   game starts.
 
-`just dev-music mazmorra-2 45` plays the first seam 3 s in.
+`just dev-music mazmorra-2 45` plays the first seam 3 s in, and `just dev-music concrete 34`
+the vamp coming back to bar 2.
 
 ### Adding a song
 
@@ -125,8 +139,8 @@ game; if a browser places them differently (the AAC priming is 44 ms), check by 
 
 ### Songs waiting for their place
 
-Masters in `assets/music/`, not exported or played yet (`concrete`, `sad` and `mazmorra-2` are
-exported and wait for `PLACE_SONGS` and Uri's tower, above):
+Masters in `assets/music/`, not exported or played yet (`mazmorra-2` is exported and waits for
+Uri's tower, above):
 
 | Song | Length | Idea |
 | --- | --- | --- |

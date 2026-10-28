@@ -10,9 +10,12 @@ import { createHaunt, type Haunt } from './haunt.ts';
  * haunt (src/haunt.ts) at whatever level `music.haunt` last set. `loudness` is a long take's
  * loudness map (`just music-export` writes it), so it comes in anywhere at an even level. `cycle`
  * makes the file versions of one cycle of that many seconds, back to back: they play one into
- * another in random order, with no end.
+ * another in random order, with no end. A `vamp` repeats the section between its two marks a random
+ * number of `laps` (or until `music.moveOn`), then the song goes on; with a `loop` too, the song
+ * starts over from the loop's start at its end, and vamps again.
  */
-export interface Track { src: string; marks: Record<string, number>; loop?: readonly [string, string]; bpm?: number; beatsPerBar?: number; downbeat?: string; stream?: boolean; loudness?: string; haunted?: boolean; cycle?: number }
+export interface Vamp { from: string; to: string; laps: readonly [number, number] }
+export interface Track { src: string; marks: Record<string, number>; loop?: readonly [string, string]; bpm?: number; beatsPerBar?: number; downbeat?: string; stream?: boolean; loudness?: string; haunted?: boolean; cycle?: number; vamp?: Vamp }
 export const TRACKS = {
   // Measured with `just music-loop`: the quick notes end on a piano G that rings until the C strikes
   // at 2.398 s; the loop starts right there, so it comes round on the C alone, and runs everything
@@ -23,9 +26,10 @@ export const TRACKS = {
   home: { src: 'music/song-home.m4a', marks: { start: 0 }, stream: true, loudness: 'music/song-home.loudness.json' },
   // La Reina Bubbaloo's castle, 13 minutes, the same way; it warps more the stronger the castle is.
   bubbaloo: { src: 'music/bubbaloo-light.m4a', marks: { start: 0 }, stream: true, loudness: 'music/bubbaloo-light.loudness.json', haunted: true },
-  // The concrete streets: the whole song loops, 184 beats (46 bars) at 110 BPM from its first
-  // downbeat at 0 s, break at 40 s included.
-  concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, end: 100.364 }, loop: ['start', 'end'], bpm: 110, beatsPerBar: 4, downbeat: 'start' },
+  // The concrete streets, 46 bars at 110 BPM: bar 1 opens, bars 2 to 17 (16 bars, Logic's 2 to 18)
+  // vamp two to four times, then the rest plays, the break at bars 19 and 20 included, and the song
+  // starts over from bar 1 at its end.
+  concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, vamp: 2.182, on: 37.091, end: 100.364 }, loop: ['start', 'end'], vamp: { from: 'vamp', to: 'on', laps: [2, 4] }, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
   // Passatge Maresme, where the game starts: the whole song loops, 80 beats (20 bars) at 50 BPM.
   sad: { src: 'music/song-sad.m4a', marks: { start: 0, end: 96 }, loop: ['start', 'end'], bpm: 50, beatsPerBar: 4, downbeat: 'start' },
   // A friend's mission: six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23),
@@ -85,6 +89,20 @@ export function nextVersion(count: number, previous: number, random = Math.rando
   return previous > 0 && pick >= previous ? pick + 1 : pick;
 }
 
+/** How many times a vamp plays its section, between its fewest and most laps. */
+export function vampLaps([fewest, most]: readonly [number, number], random = Math.random) {
+  return fewest + Math.floor(random() * (most - fewest + 1));
+}
+/**
+ * The song position after `elapsed` seconds of a voice started at `offset` that plays the section
+ * from `from` to `to` `laps` times (the first lap may start inside it), then goes on.
+ */
+export function vampPosition(elapsed: number, offset: number, { from, to, laps }: { from: number; to: number; laps: number }) {
+  const position = offset + elapsed, length = to - from;
+  if (offset >= to || position < to) return position;
+  return position < from + laps * length ? from + (position - from) % length : position - (laps - 1) * length;
+}
+
 /** Where to jump: right away, on the next beat or bar, or when the loop comes round. */
 export type Quantize = 'now' | 'beat' | 'bar' | 'loop-end';
 
@@ -128,15 +146,19 @@ export function fadeCurve(from: number, to: number, steps = 32) {
   return curve;
 }
 
-/** A cycled voice holds the timer that queues the next version, and the one it took over from while that still plays out. */
-interface Voice { track: TrackId; source?: AudioBufferSourceNode; element?: HTMLAudioElement; gain: GainNode; startedAt: number; offset: number; loop?: [number, number]; timer?: ReturnType<typeof setTimeout>; handoff?: Voice }
+/**
+ * A cycled or vamping voice holds the timer that queues what follows it, and the one it took over
+ * from while that still plays out; a vamping one also its section in seconds and the timer that
+ * lets go of it.
+ */
+interface Voice { track: TrackId; source?: AudioBufferSourceNode; element?: HTMLAudioElement; gain: GainNode; startedAt: number; offset: number; loop?: [number, number]; timer?: ReturnType<typeof setTimeout>; handoff?: Voice; vamp?: { from: number; to: number; laps: number }; cut?: ReturnType<typeof setTimeout> }
 /** Lead time for anything scheduled, so the first samples are never late. */
 const LEAD = .03;
 /** A streamed take crossfades into another random point this many seconds before its file ends. */
 const TAKE_FADE = 6;
 /** A take that came in matched to another's loudness eases back to its own level over this long. */
 const SETTLE = 20;
-/** A cycled track queues its next version this many seconds before the seam, and crossfades over `SEAM` there. */
+/** A cycled track queues its next version (a vamping one its start over) this many seconds before the seam, and crossfades over `SEAM` there. */
 const QUEUE = 2, SEAM = .02;
 
 export type Music = ReturnType<typeof createMusic>;
@@ -173,17 +195,43 @@ export function createMusic(audio: GameAudio) {
     const source = context.createBufferSource(), gain = context.createGain();
     source.buffer = buffer;
     const range = loopRange(track);
-    // Starting in the ending, or asked to play out, means not going back into the loop.
-    const loop = loops && range && offset < range[1] ? range : undefined;
+    // Starting in the ending, or asked to play out, means not going back into the loop. A vamping
+    // song loops its section instead, and starts over at the loop's end (`plan`).
+    const vamp = track.vamp && loops && offset < markTime(track, track.vamp.to)
+      ? { from: markTime(track, track.vamp.from), to: markTime(track, track.vamp.to), laps: vampLaps(track.vamp.laps) } : undefined;
+    const loop = !track.vamp && loops && range && offset < range[1] ? range : undefined;
     if (loop) { source.loop = true; source.loopStart = loop[0]; source.loopEnd = loop[1]; }
+    if (vamp) { source.loop = vamp.laps > 1; source.loopStart = vamp.from; source.loopEnd = vamp.to; }
     gain.gain.value = fade > 0 ? 0 : 1;
     source.connect(gain).connect(output(id));
-    const voice: Voice = { track: id, source, gain, startedAt: at, offset, loop };
+    const voice: Voice = { track: id, source, gain, startedAt: at, offset, loop, vamp };
     source.onended = () => { gain.disconnect(); if (current === voice) current = undefined; else if (current?.handoff === voice) current.handoff = undefined; };
     source.start(at, offset);
     if (fade > 0) ramp(gain.gain, 1, at, fade);
     if (track.cycle) queue(voice, track.cycle, at);
+    if (track.vamp && loops) plan(voice);
     return voice;
+  }
+  /**
+   * A vamping voice lets go of its section halfway through the last lap, so it plays on past it,
+   * and at the loop's end hands over to the song from the top, sample-exact.
+   */
+  function plan(voice: Voice) {
+    clearTimeout(voice.timer); clearTimeout(voice.cut);
+    const now = audio.buses!.context.currentTime, { vamp, source } = voice;
+    // The time a position in the song comes, counting the laps still to play.
+    const when = (position: number) => voice.startedAt + position - voice.offset + (vamp ? (vamp.laps - 1) * (vamp.to - vamp.from) : 0);
+    if (vamp && source!.loop) voice.cut = setTimeout(() => { source!.loop = false; }, Math.max(0, when(vamp.to - (vamp.to - vamp.from) / 2) - now) * 1000);
+    const range = loopRange(TRACKS[voice.track]);
+    if (!range) return;
+    const seam = when(range[1]);
+    voice.timer = setTimeout(() => {
+      if (current !== voice) return;
+      voice.handoff = undefined;
+      current = start(voice.track, source!.buffer!, range[0], seam, SEAM);
+      current.handoff = voice;
+      release(voice, seam, SEAM);
+    }, Math.max(0, seam - QUEUE - now) * 1000);
   }
   /** A take's loudness map, fetched once; without one it simply comes in anywhere. */
   function loudnessOf(id: TrackId) {
@@ -254,7 +302,7 @@ export function createMusic(audio: GameAudio) {
     }, Math.max(0, seam - QUEUE - audio.buses!.context.currentTime) * 1000);
   }
   function release(voice: Voice, at: number, fade: number) {
-    clearTimeout(voice.timer);
+    clearTimeout(voice.timer); clearTimeout(voice.cut);
     ramp(voice.gain.gain, 0, at, fade);
     voice.source?.stop(at + fade + .05);
     const element = voice.element;
@@ -270,6 +318,7 @@ export function createMusic(audio: GameAudio) {
   function position(voice: Voice, now: number): number {
     if (voice.handoff && now < voice.startedAt) return position(voice.handoff, now);
     if (voice.element) return voice.element.currentTime;
+    if (voice.vamp) return vampPosition(Math.max(0, now - voice.startedAt), voice.offset, voice.vamp);
     return loopPosition(Math.max(0, now - voice.startedAt), voice.offset, voice.loop);
   }
 
@@ -292,8 +341,8 @@ export function createMusic(audio: GameAudio) {
       const at = audio.buses!.context.currentTime + LEAD;
       const previous = current;
       // A take restarted over itself matches what plays; from silence or another song, its middle.
-      // A cycled song always opens with its first version.
-      const { offset, level } = from === 'random' && track.cycle ? { offset: 0, level: 1 }
+      // A cycled song always opens with its first version, and a vamping one from the top.
+      const { offset, level } = from === 'random' && (track.cycle || track.vamp) ? { offset: 0, level: 1 }
         : from === 'random' ? comeIn(source.duration, map, map && previous?.track === id ? loudnessNow(previous, map) : undefined) : { offset: markTime(track, from), level: 1 };
       current = source instanceof AudioBuffer ? start(id, source, offset, at, fade) : stream(id, source, offset, at, fade, level);
       if (previous) release(previous, at, Math.max(fade, .03));
@@ -309,6 +358,18 @@ export function createMusic(audio: GameAudio) {
       const when = ahead + untilBoundary(position(voice, ahead), at, track, voice.loop);
       current = start(voice.track, buffer, markTime(track, to), when, fade, loop);
       release(voice, when, Math.max(fade, .01));
+    },
+    /**
+     * Ends a vamp: the song finishes the lap it is in and goes on. For a moment in the game to call
+     * (none does yet: the laps are random).
+     */
+    moveOn() {
+      const voice = current, bus = audio.buses;
+      if (!voice?.vamp || !voice.source?.loop || !bus) return;
+      const { from, to } = voice.vamp, played = voice.offset + Math.max(0, bus.context.currentTime - voice.startedAt);
+      voice.vamp.laps = Math.max(1, Math.floor((played - from) / (to - from)) + 1);
+      voice.source.loop = false;
+      plan(voice);
     },
     /** Fades the song out. */
     stop({ fade = 1 }: { fade?: number } = {}) {

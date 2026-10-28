@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_AUDIO, levelGain, validAudioSettings } from '../src/audio.ts';
-import { TRACKS, cycleCount, evenStart, fadeCurve, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, nextVersion, randomStart, untilBoundary } from '../src/music.ts';
+import { TRACKS, cycleCount, evenStart, fadeCurve, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, nextVersion, randomStart, untilBoundary, vampLaps, vampPosition } from '../src/music.ts';
 import { readFileSync } from 'node:fs';
 import { DREAM_HAUNT, HAUNT_SOUNDS, castleHaunt, hauntMix, swing } from '../src/haunt.ts';
 import { castleThreat } from '../src/animas.ts';
@@ -140,4 +140,28 @@ test('a cycled song opens with its first version, then mixes the others, never o
   assert.equal(nextVersion(1, 0), 0, 'a single version repeats');
   assert.equal(nextVersion(2, 1), 1, 'with two, the second repeats');
   for (const [id, track] of Object.entries(TRACKS)) if ('cycle' in track) assert.ok(track.cycle > 0 && !('loop' in track), `${id} both loops and cycles`);
+});
+
+test('a vamp repeats its section for its laps, then the song goes on', () => {
+  const vamp = { from: 2, to: 10, laps: 3 };
+  close(vampPosition(1, 0, vamp), 1, 'the intro');
+  close(vampPosition(9, 0, vamp), 9, 'the first lap');
+  close(vampPosition(10, 0, vamp), 2, 'back to the section start');
+  close(vampPosition(25, 0, vamp), 9, 'the third lap');
+  close(vampPosition(26, 0, vamp), 10, 'on past the section after the last lap');
+  close(vampPosition(30, 0, vamp), 14);
+  close(vampPosition(3, 6, vamp), 9, 'started inside the section, that lap counts');
+  close(vampPosition(4, 6, vamp), 2);
+  close(vampPosition(5, 12, vamp), 17, 'started past the section, it plays straight');
+  close(vampPosition(20, 0, { ...vamp, laps: 1 }), 20, 'one lap is no repeat');
+  assert.equal(vampLaps([2, 4], () => 0), 2);
+  assert.equal(vampLaps([2, 4], () => .999), 4);
+  assert.equal(vampLaps([3, 3], () => .5), 3);
+  for (const [id, track] of Object.entries(TRACKS)) {
+    if (!('vamp' in track)) continue;
+    const from = markTime(track, track.vamp.from), to = markTime(track, track.vamp.to), range = loopRange(track);
+    assert.ok(from < to && track.vamp.laps[0] >= 1 && track.vamp.laps[0] <= track.vamp.laps[1], `${id}'s vamp is backwards`);
+    if (range) assert.ok(range[0] <= from && to <= range[1], `${id} vamps outside its loop`);
+    if (track.bpm) { const bars = (to - from) * track.bpm / 60 / (track.beatsPerBar ?? 4); assert.ok(Math.abs(bars - Math.round(bars)) < .01, `${id}'s vamp is ${bars} bars`); }
+  }
 });
