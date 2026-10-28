@@ -1,5 +1,5 @@
 // Plays a scripted scenario in a real browser and saves numbered screenshots plus a gallery page.
-// Usage: node scripts/screenshots.mjs <scenario> [--url http://127.0.0.1:5173] [--size 1440x900] [--headed] [--out dir]
+// Usage: node scripts/screenshots.mjs <scenario> [--url http://127.0.0.1:5173] [--size 1440x900] [--headed] [--chrome] [--out dir]
 // Scenarios live in scripts/screenshots/<name>.json; the step format is documented in scripts/screenshots/README.md.
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 
 const { values: options, positionals } = parseArgs({
   allowPositionals: true,
-  options: { url: { type: 'string' }, size: { type: 'string', default: '1440x900' }, headed: { type: 'boolean', default: false }, gpu: { type: 'boolean', default: false }, out: { type: 'string' } },
+  options: { url: { type: 'string' }, size: { type: 'string', default: '1440x900' }, headed: { type: 'boolean', default: false }, gpu: { type: 'boolean', default: false }, chrome: { type: 'boolean', default: false }, out: { type: 'string' } },
 });
 const scenarioDir = resolve('scripts/screenshots');
 const available = (await readdir(scenarioDir)).filter(f => f.endsWith('.json')).map(f => f.slice(0, -5));
@@ -35,6 +35,8 @@ if (!base) {
 
 const browser = await chromium.launch({
   headless: !options.headed,
+  // Playwright's Chromium cannot decode AAC, so scenarios that play music (.m4a) use the installed Chrome.
+  ...(options.chrome ? { channel: 'chrome' } : {}),
   // Default to software WebGL for machines without a GPU; desktops can opt into their GPU.
   args: [...(options.gpu ? [] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']), '--ignore-gpu-blocklist', '--no-proxy-server'],
 });

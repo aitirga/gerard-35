@@ -6,7 +6,8 @@ show progress after any visual change, or to reproduce a bug step by step. It st
 dev server unless you pass `--url` (for example `just screenshots chapter-1 --url http://127.0.0.1:5173`
 to use a running `just dev`, with or without `just backend`). Other options: `--size 1920x1080`,
 `--headed` to watch it play, `--out <dir>`. On a desktop with a GPU, `--gpu` uses the native
-renderer instead of software WebGL for faster captures. The private server ignores source
+renderer instead of software WebGL for faster captures. Playwright's Chromium cannot decode AAC, so a scenario that plays
+music (`.m4a`) needs `--chrome`, which runs the installed Google Chrome instead. The private server ignores source
 changes during a run so another development session cannot reset the scenario.
 
 The page errors it sees make the run fail, and a failed step saves `failure.png` and prints the
