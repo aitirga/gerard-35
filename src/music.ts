@@ -8,9 +8,11 @@ import { createHaunt, type Haunt } from './haunt.ts';
  * when the director jumps there. `bpm`, `beatsPerBar` and `downbeat` (a mark on the first beat
  * of a bar) let jumps wait for the next beat or bar. A `haunted` song plays through the castle's
  * haunt (src/haunt.ts) at whatever level `music.haunt` last set. `loudness` is a long take's
- * loudness map (`just music-export` writes it), so it comes in anywhere at an even level.
+ * loudness map (`just music-export` writes it), so it comes in anywhere at an even level. `cycle`
+ * makes the file versions of one cycle of that many seconds, back to back: they play one into
+ * another in random order, with no end.
  */
-export interface Track { src: string; marks: Record<string, number>; loop?: readonly [string, string]; bpm?: number; beatsPerBar?: number; downbeat?: string; stream?: boolean; loudness?: string; haunted?: boolean }
+export interface Track { src: string; marks: Record<string, number>; loop?: readonly [string, string]; bpm?: number; beatsPerBar?: number; downbeat?: string; stream?: boolean; loudness?: string; haunted?: boolean; cycle?: number }
 export const TRACKS = {
   // Measured with `just music-loop`: the quick notes end on a piano G that rings until the C strikes
   // at 2.398 s; the loop starts right there, so it comes round on the C alone, and runs everything
@@ -21,6 +23,12 @@ export const TRACKS = {
   home: { src: 'music/song-home.m4a', marks: { start: 0 }, stream: true, loudness: 'music/song-home.loudness.json' },
   // La Reina Bubbaloo's castle, 13 minutes, the same way; it warps more the stronger the castle is.
   bubbaloo: { src: 'music/bubbaloo-light.m4a', marks: { start: 0 }, stream: true, loudness: 'music/bubbaloo-light.loudness.json', haunted: true },
+  // The concrete streets: the whole song loops, 184 beats (46 bars) at 110 BPM from its first
+  // downbeat at 0 s, break at 40 s included.
+  concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, end: 100.364 }, loop: ['start', 'end'], bpm: 110, beatsPerBar: 4, downbeat: 'start' },
+  // A friend's mission: six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23),
+  // each starting on its downbeat, so any can follow any.
+  'mazmorra-2': { src: 'music/song-mazmorra-2.m4a', marks: { start: 0 }, cycle: 48, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
 } satisfies Record<string, Track>;
 export type TrackId = keyof typeof TRACKS;
 export const isTrack = (id: string): id is TrackId => Object.hasOwn(TRACKS, id);
@@ -59,6 +67,16 @@ export function evenStart(duration: number, margin: number, loudness: Loudness, 
 /** The gain that brings a point of `to` dB to `from` dB, never more than `limit` dB either way. */
 export function matchGain(from: number, to: number, limit = 6) {
   return 10 ** (Math.max(-limit, Math.min(limit, from - to)) / 20);
+}
+/** How many versions of its cycle a file holds. */
+export function cycleCount(duration: number, cycle: number) {
+  return Math.max(1, Math.round(duration / cycle));
+}
+/** The version to play after `previous`: any other one, so none plays twice in a row. */
+export function nextVersion(count: number, previous: number, random = Math.random) {
+  if (count < 2) return 0;
+  const pick = Math.floor(random() * (count - 1));
+  return pick >= previous ? pick + 1 : pick;
 }
 
 /** Where to jump: right away, on the next beat or bar, or when the loop comes round. */
@@ -104,13 +122,16 @@ export function fadeCurve(from: number, to: number, steps = 32) {
   return curve;
 }
 
-interface Voice { track: TrackId; source?: AudioBufferSourceNode; element?: HTMLAudioElement; gain: GainNode; startedAt: number; offset: number; loop?: [number, number] }
+/** A cycled voice holds the timer that queues the next version, and the one it took over from while that still plays out. */
+interface Voice { track: TrackId; source?: AudioBufferSourceNode; element?: HTMLAudioElement; gain: GainNode; startedAt: number; offset: number; loop?: [number, number]; timer?: ReturnType<typeof setTimeout>; handoff?: Voice }
 /** Lead time for anything scheduled, so the first samples are never late. */
 const LEAD = .03;
 /** A streamed take crossfades into another random point this many seconds before its file ends. */
 const TAKE_FADE = 6;
 /** A take that came in matched to another's loudness eases back to its own level over this long. */
 const SETTLE = 20;
+/** A cycled track queues its next version this many seconds before the seam, and crossfades over `SEAM` there. */
+const QUEUE = 2, SEAM = .02;
 
 export type Music = ReturnType<typeof createMusic>;
 
@@ -152,9 +173,10 @@ export function createMusic(audio: GameAudio) {
     gain.gain.value = fade > 0 ? 0 : 1;
     source.connect(gain).connect(output(id));
     const voice: Voice = { track: id, source, gain, startedAt: at, offset, loop };
-    source.onended = () => { gain.disconnect(); if (current === voice) current = undefined; };
+    source.onended = () => { gain.disconnect(); if (current === voice) current = undefined; else if (current?.handoff === voice) current.handoff = undefined; };
     source.start(at, offset);
     if (fade > 0) ramp(gain.gain, 1, at, fade);
+    if (track.cycle) queue(voice, track.cycle, at);
     return voice;
   }
   /** A take's loudness map, fetched once; without one it simply comes in anywhere. */
@@ -212,7 +234,21 @@ export function createMusic(audio: GameAudio) {
     if (level !== 1) gain.gain.setValueCurveAtTime(fadeCurve(level, 1), at + Math.max(0, fade) + .01, SETTLE);
     return voice;
   }
+  /** At the end of its version, the voice hands over to another one, sample-exact on the downbeat. */
+  function queue(voice: Voice, cycle: number, at: number) {
+    const version = Math.floor(voice.offset / cycle + 1e-6);
+    const seam = at + (version + 1) * cycle - voice.offset;
+    const buffer = voice.source!.buffer!;
+    voice.timer = setTimeout(() => {
+      if (current !== voice) return;
+      voice.handoff = undefined;
+      current = start(voice.track, buffer, nextVersion(cycleCount(buffer.duration, cycle), version) * cycle, seam, SEAM);
+      current.handoff = voice;
+      release(voice, seam, SEAM);
+    }, Math.max(0, seam - QUEUE - audio.buses!.context.currentTime) * 1000);
+  }
   function release(voice: Voice, at: number, fade: number) {
+    clearTimeout(voice.timer);
     ramp(voice.gain.gain, 0, at, fade);
     voice.source?.stop(at + fade + .05);
     const element = voice.element;
@@ -220,8 +256,13 @@ export function createMusic(audio: GameAudio) {
       element.ontimeupdate = null;
       setTimeout(() => { element.pause(); element.removeAttribute('src'); element.load(); voice.gain.disconnect(); }, (at - audio.buses!.context.currentTime + fade) * 1000 + 100);
     }
+    // A version still playing out before its seam fades with the one that took over.
+    const handoff = voice.handoff;
+    voice.handoff = undefined;
+    if (handoff) release(handoff, at, fade);
   }
-  function position(voice: Voice, now: number) {
+  function position(voice: Voice, now: number): number {
+    if (voice.handoff && now < voice.startedAt) return position(voice.handoff, now);
     if (voice.element) return voice.element.currentTime;
     return loopPosition(Math.max(0, now - voice.startedAt), voice.offset, voice.loop);
   }
@@ -245,7 +286,9 @@ export function createMusic(audio: GameAudio) {
       const at = audio.buses!.context.currentTime + LEAD;
       const previous = current;
       // A take restarted over itself matches what plays; from silence or another song, its middle.
-      const { offset, level } = from === 'random' ? comeIn(source.duration, map, map && previous?.track === id ? loudnessNow(previous, map) : undefined) : { offset: markTime(track, from), level: 1 };
+      // A cycled song comes in at the start of one of its versions, on the downbeat.
+      const { offset, level } = from === 'random' && track.cycle ? { offset: Math.floor(Math.random() * cycleCount(source.duration, track.cycle)) * track.cycle, level: 1 }
+        : from === 'random' ? comeIn(source.duration, map, map && previous?.track === id ? loudnessNow(previous, map) : undefined) : { offset: markTime(track, from), level: 1 };
       current = source instanceof AudioBuffer ? start(id, source, offset, at, fade) : stream(id, source, offset, at, fade, level);
       if (previous) release(previous, at, Math.max(fade, .03));
       follow(id, Math.max(fade, 1));

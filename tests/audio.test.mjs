@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_AUDIO, levelGain, validAudioSettings } from '../src/audio.ts';
-import { TRACKS, evenStart, fadeCurve, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, randomStart, untilBoundary } from '../src/music.ts';
+import { TRACKS, cycleCount, evenStart, fadeCurve, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, nextVersion, randomStart, untilBoundary } from '../src/music.ts';
 import { readFileSync } from 'node:fs';
 import { DREAM_HAUNT, HAUNT_SOUNDS, castleHaunt, hauntMix, swing } from '../src/haunt.ts';
 import { castleThreat } from '../src/animas.ts';
@@ -122,4 +122,21 @@ test('every long take ships its loudness map', () => {
     const { db } = JSON.parse(readFileSync(path, 'utf8'));
     assert.ok(db.length > 60 && db.every(Number.isFinite), `${id}'s map is broken`);
   }
+});
+
+test('a cycled song plays its versions in any order, never one twice in a row', () => {
+  assert.equal(cycleCount(288.02, 48), 6, 'mazmorra-2 holds six versions');
+  assert.equal(cycleCount(20, 48), 1, 'a file shorter than its cycle is one version');
+  const picks = new Set();
+  for (let previous = 0; previous < 6; previous++) {
+    for (let i = 0; i < 5; i++) {
+      const next = nextVersion(6, previous, () => i / 5);
+      assert.notEqual(next, previous);
+      assert.ok(next >= 0 && next < 6);
+      picks.add(`${previous}>${next}`);
+    }
+  }
+  assert.equal(picks.size, 30, 'every other version can follow');
+  assert.equal(nextVersion(1, 0), 0, 'a single version repeats');
+  for (const [id, track] of Object.entries(TRACKS)) if ('cycle' in track) assert.ok(track.cycle > 0 && !('loop' in track), `${id} both loops and cycles`);
 });
