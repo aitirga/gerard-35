@@ -26,6 +26,8 @@ export const TRACKS = {
   // The concrete streets: the whole song loops, 184 beats (46 bars) at 110 BPM from its first
   // downbeat at 0 s, break at 40 s included.
   concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, end: 100.364 }, loop: ['start', 'end'], bpm: 110, beatsPerBar: 4, downbeat: 'start' },
+  // Passatge Maresme, where the game starts: the whole song loops, 80 beats (20 bars) at 50 BPM.
+  sad: { src: 'music/song-sad.m4a', marks: { start: 0, end: 96 }, loop: ['start', 'end'], bpm: 50, beatsPerBar: 4, downbeat: 'start' },
   // A friend's mission: six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23),
   // each starting on its downbeat, so any can follow any.
   'mazmorra-2': { src: 'music/song-mazmorra-2.m4a', marks: { start: 0 }, cycle: 48, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
