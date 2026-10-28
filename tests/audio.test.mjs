@@ -124,7 +124,7 @@ test('every long take ships its loudness map', () => {
   }
 });
 
-test('a cycled song plays its versions in any order, never one twice in a row', () => {
+test('a cycled song opens with its first version, then mixes the others, never one twice in a row', () => {
   assert.equal(cycleCount(288.02, 48), 6, 'mazmorra-2 holds six versions');
   assert.equal(cycleCount(20, 48), 1, 'a file shorter than its cycle is one version');
   const picks = new Set();
@@ -132,11 +132,12 @@ test('a cycled song plays its versions in any order, never one twice in a row', 
     for (let i = 0; i < 5; i++) {
       const next = nextVersion(6, previous, () => i / 5);
       assert.notEqual(next, previous);
-      assert.ok(next >= 0 && next < 6);
+      assert.ok(next >= 1 && next < 6, 'the first version never comes back');
       picks.add(`${previous}>${next}`);
     }
   }
-  assert.equal(picks.size, 30, 'every other version can follow');
+  assert.equal(picks.size, 25, 'every other version but the first can follow');
   assert.equal(nextVersion(1, 0), 0, 'a single version repeats');
+  assert.equal(nextVersion(2, 1), 1, 'with two, the second repeats');
   for (const [id, track] of Object.entries(TRACKS)) if ('cycle' in track) assert.ok(track.cycle > 0 && !('loop' in track), `${id} both loops and cycles`);
 });

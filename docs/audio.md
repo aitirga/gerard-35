@@ -43,10 +43,12 @@ battle: { src: 'music/battle.m4a', marks: { start: 0, loop: 2.398, ending: 131.9
 - `bpm`, `beatsPerBar` and `downbeat` (a mark on the first beat of a bar) let jumps wait for the
   next beat or bar, so they land in time.
 - `cycle: 48` makes the file **versions of one cycle** of that many seconds, back to back, each
-  starting on its downbeat so that any of them can follow any other. The song plays one version,
-  then another picked at random (never the same twice in a row), with no end. The next version is
-  queued 2 s before the seam and starts sample-exact on it, with a 20 ms crossfade. The number of
-  versions comes from the file's length. `from: 'random'` comes in at the start of a random version.
+  starting on its downbeat so that one can follow another. The song opens with the first version,
+  then plays the others picked at random (never the same twice in a row), with no end. The first
+  never comes back: it starts from silence, while each of the others carries the reverb tail of
+  the one before it in the file, so going back to it would cut that tail and drop the sound. The next
+  version is queued 2 s before the seam and starts sample-exact on it, with a 20 ms crossfade. The
+  number of versions comes from the file's length. `from: 'random'` opens it from the first version.
 
 The director, `music` in [src/main.ts](../src/main.ts):
 
@@ -78,7 +80,8 @@ The first two are at 110 BPM, measured with `just music-loop` and a self-similar
 
 - `mazmorra-2` (`song-mazmorra-2`, 4:48) holds six versions of one 48 s cycle: 88 beats, Logic's
   bars 1 to 23. Each starts on its downbeat at 0, 48, 96, 144, 192 and 240 s, and the file ends on
-  the sixth's seam at 288 s. It is for friends' missions, one song per mission, picked among the
+  the sixth's seam at 288 s. Version 1 opens it, then 2–6 mix. Version 1 is also the quietest
+  (−17.9 dB against −16.6 to −17.2 for the rest). It is for friends' missions, one song per mission, picked among the
   mazmorra songs.
 - `concrete` (`song-concrete`, 1:40) loops whole: 184 beats (46 bars) from its first downbeat at
   0 s to 100.364 s, the break at 40–43.6 s included. Its last beat decays into the first. It is for

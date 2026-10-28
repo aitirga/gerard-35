@@ -74,11 +74,15 @@ export function matchGain(from: number, to: number, limit = 6) {
 export function cycleCount(duration: number, cycle: number) {
   return Math.max(1, Math.round(duration / cycle));
 }
-/** The version to play after `previous`: any other one, so none plays twice in a row. */
+/**
+ * The version to play after `previous`: never the same twice in a row, and never the first, which
+ * only opens the song. It starts from silence, while the others carry the tail of the one before
+ * them in the file, so going back to it drops the sound.
+ */
 export function nextVersion(count: number, previous: number, random = Math.random) {
-  if (count < 2) return 0;
-  const pick = Math.floor(random() * (count - 1));
-  return pick >= previous ? pick + 1 : pick;
+  if (count < 3) return count - 1;
+  const pick = 1 + Math.floor(random() * (count - (previous === 0 ? 1 : 2)));
+  return previous > 0 && pick >= previous ? pick + 1 : pick;
 }
 
 /** Where to jump: right away, on the next beat or bar, or when the loop comes round. */
@@ -288,8 +292,8 @@ export function createMusic(audio: GameAudio) {
       const at = audio.buses!.context.currentTime + LEAD;
       const previous = current;
       // A take restarted over itself matches what plays; from silence or another song, its middle.
-      // A cycled song comes in at the start of one of its versions, on the downbeat.
-      const { offset, level } = from === 'random' && track.cycle ? { offset: Math.floor(Math.random() * cycleCount(source.duration, track.cycle)) * track.cycle, level: 1 }
+      // A cycled song always opens with its first version.
+      const { offset, level } = from === 'random' && track.cycle ? { offset: 0, level: 1 }
         : from === 'random' ? comeIn(source.duration, map, map && previous?.track === id ? loudnessNow(previous, map) : undefined) : { offset: markTime(track, from), level: 1 };
       current = source instanceof AudioBuffer ? start(id, source, offset, at, fade) : stream(id, source, offset, at, fade, level);
       if (previous) release(previous, at, Math.max(fade, .03));
