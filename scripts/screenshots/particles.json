@@ -1,0 +1,246 @@
+{
+  "title": "Particles · Air, fight effects and elements",
+  "description": "The particle system (src/particles.ts, src/effects.ts, docs/graphics.md): each scene's air (pollen on the street, dust in the flat, fireflies in the patio, La Reina Bubbaloo's gloom and bubbles in her palace), then a fight frozen in time while each effect plays a few frames: a blow, a guarded blow, a hit on gum, Cardioide's cure, Análisis Parálisis, an ánima waking, No-ta's stamp, a knockout, the victory confetti, a hit of each element (fire, ice, air, energy, water, earth, light, shadow) and lasting auras.",
+  "steps": [
+    {
+      "open": "/?story=bernat-joined"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        20,
+        24
+      ]
+    },
+    {
+      "shot": "street-air",
+      "delay": 2500,
+      "caption": "Passatge Maresme: pollen drifting on the breeze"
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        7,
+        3
+      ]
+    },
+    {
+      "shot": "flat-air",
+      "delay": 2500,
+      "caption": "The Meridiana flat: dust motes hanging in the light"
+    },
+    {
+      "teleport": "patio",
+      "cell": [
+        6,
+        9
+      ]
+    },
+    {
+      "shot": "patio-air",
+      "delay": 2500,
+      "caption": "The patio at night: fireflies wandering and pulsing"
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        5,
+        15
+      ]
+    },
+    {
+      "shot": "palace-air",
+      "delay": 2500,
+      "caption": "La Reina Bubbaloo's palace: pink gloom and gum bubbles rising, parting around Gerard"
+    },
+    {
+      "open": "/?story=noista&battle=3&allies=2&noista=1"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.fx = (play, frames, keep) => { const g = window.gerard.game, app = g.app; app.timeScale = 0; if (!keep) g.effects.clear(); const stage = app.root.findByName('Escenario de combate'); const models = stage.children.filter(c => c.enabled && !['Objetivo', 'Marca de tinta', 'Sello No-ta'].includes(c.name)).sort((a, b) => a.getPosition().x - b.getPosition().x); const at = (m, y = 0) => { const p = m.getPosition(); return { x: p.x, y: p.y + y, z: p.z }; }; play(g.effects, models.slice(0, 2), models.slice(2), at); for (let i = 0; i < frames; i++) app.fire('update', 1 / 60); };"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.impact(at(foes[1], .9), at(allies[0], .9), 1.4, { feet: at(foes[1]) }), 5)"
+    },
+    {
+      "shot": "impact",
+      "delay": 400,
+      "caption": "A blow: flash, sparks flying on through, a ring and dust at the feet"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.impact(at(foes[1], .9), at(allies[0], .9), 1.4, { feet: at(foes[1]) }), 22)"
+    },
+    {
+      "shot": "impact-after",
+      "delay": 400,
+      "caption": "A moment later: sparks skip on the floor, dust rolls out and settles"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.impact(at(allies[1], .9), at(foes[0], .9), 1, { guarded: true, feet: at(allies[1]) }), 5)"
+    },
+    {
+      "shot": "guarded",
+      "delay": 400,
+      "caption": "A guarded blow: fewer sparks and a blue ward"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.impact(at(foes[0], .9), at(allies[0], .9), 1.2, { gum: true, feet: at(foes[0]) }), 110)"
+    },
+    {
+      "shot": "gum",
+      "delay": 400,
+      "caption": "A hit on gum: drops fly, land and stay stuck as splats among pink spores"
+    },
+    {
+      "eval": "fx((e, allies) => e.heal({ ...allies[0].getPosition() }, 1.6), 30)"
+    },
+    {
+      "shot": "heal",
+      "delay": 400,
+      "caption": "Cardioide: light rises from a heart-shaped curve and spirals up"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => allies.forEach(a => e.insight(at(a, 1.9))), 30)"
+    },
+    {
+      "shot": "insight",
+      "delay": 400,
+      "caption": "Análisis Parálisis: ideas circling over every head"
+    },
+    {
+      "eval": "fx((e, allies) => e.anima({ ...allies[0].getPosition() }, '#e2483d', true), 14)"
+    },
+    {
+      "shot": "awaken",
+      "delay": 400,
+      "caption": "An ánima wakes: a flash and a vortex of its colour"
+    },
+    {
+      "eval": "fx((e, allies) => e.anima({ ...allies[0].getPosition() }, '#e2483d', true), 40)"
+    },
+    {
+      "shot": "awaken-after",
+      "delay": 400,
+      "caption": "The vortex lifting away"
+    },
+    {
+      "eval": "fx((e, allies, foes) => e.stamp({ ...foes[2].getPosition() }), 16)"
+    },
+    {
+      "shot": "stamp",
+      "delay": 400,
+      "caption": "No-ta lands: a shockwave of dust and red ink spattered round it"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.poof(at(foes[0], .35)), 20)"
+    },
+    {
+      "shot": "poof",
+      "delay": 400,
+      "caption": "Knocked out: off in a puff of smoke"
+    },
+    {
+      "eval": "fx((e, allies, foes) => { const a = allies[0].getPosition(), f = foes[1].getPosition(); e.confetti({ x: (a.x + f.x) / 2, y: a.y + 3.2, z: (a.z + f.z) / 2 }, ['#f3cf78', '#fff4ec', '#e2483d', '#6f8fa8']); }, 70)"
+    },
+    {
+      "shot": "confetti",
+      "delay": 400,
+      "caption": "Victory: confetti tumbling down"
+    },
+    {
+      "eval": "fx(() => {}, 160, true)"
+    },
+    {
+      "shot": "confetti-landed",
+      "delay": 400,
+      "caption": "…and settling flat on the ground where it fell"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.element('fire', at(foes[1], .9), { from: at(allies[0], .9), feet: at(foes[1]) }), 22)"
+    },
+    {
+      "shot": "element-fire",
+      "delay": 400,
+      "caption": "Fire: flames licking up from the feet, cinders and soot"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.element('ice', at(foes[1], .9), { from: at(allies[0], .9), feet: at(foes[1]) }), 22)"
+    },
+    {
+      "shot": "element-ice",
+      "delay": 400,
+      "caption": "Ice: shards flying on through, frost rolling out, snowflakes settling"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.element('air', at(foes[1], .9), { from: at(allies[0], .9), feet: at(foes[1]) }), 22)"
+    },
+    {
+      "shot": "element-air",
+      "delay": 400,
+      "caption": "Air: gusts and leaves caught in a whirlwind"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.element('energy', at(foes[1], .9), { from: at(allies[0], .9), feet: at(foes[1]) }), 14)"
+    },
+    {
+      "shot": "element-energy",
+      "delay": 400,
+      "caption": "Energy: lightning crackling round the target, orbs pulled back in"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.element('water', at(foes[1], .9), { from: at(allies[0], .9), feet: at(foes[1]) }), 22)"
+    },
+    {
+      "shot": "element-water",
+      "delay": 400,
+      "caption": "Water: a splash whose drops leave ripples where they land"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.element('earth', at(foes[1], .9), { from: at(allies[0], .9), feet: at(foes[1]) }), 22)"
+    },
+    {
+      "shot": "element-earth",
+      "delay": 400,
+      "caption": "Earth: rocks thrown up, bouncing, and a wave of dust"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.element('light', at(foes[1], .9), { from: at(allies[0], .9), feet: at(foes[1]) }), 22)"
+    },
+    {
+      "shot": "element-light",
+      "delay": 400,
+      "caption": "Light: rays rising from a ring round the feet, stars"
+    },
+    {
+      "eval": "fx((e, allies, foes, at) => e.element('shadow', at(foes[1], .9), { from: at(allies[0], .9), feet: at(foes[1]) }), 22)"
+    },
+    {
+      "shot": "element-shadow",
+      "delay": 400,
+      "caption": "Shadow: dark smoke and violet wisps drawn into the target"
+    },
+    {
+      "eval": "window.auraAt = new (window.gerard.game.app.root.getPosition().constructor)(); fx((e, allies, foes) => { const p = foes[1].getPosition(); window.auraAt.set(p.x, p.y, p.z); e.aura('fire', window.auraAt, 5, 1); const q = allies[0].getPosition(); window.auraAt2 = window.auraAt.clone().set(q.x, q.y, q.z); e.aura('ice', window.auraAt2, 5, 1.5); }, 90)"
+    },
+    {
+      "shot": "auras",
+      "delay": 400,
+      "caption": "Auras: a foe burning, an ally frozen (states that last several turns)"
+    },
+    {
+      "eval": "fx((e, allies, foes) => { const p = foes[0].getPosition(); const a = p.clone(); e.aura('energy', a, 5, 1); const q = allies[1].getPosition(); e.aura('air', q.clone(), 5, 1.5); }, 60)"
+    },
+    {
+      "shot": "auras-2",
+      "delay": 400,
+      "caption": "Auras: a foe charged with energy, an ally wrapped in wind"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    }
+  ]
+}

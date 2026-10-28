@@ -12,6 +12,8 @@ import { STREET_END_AREA, WanderingPack } from './encounters';
 import { createMinion } from './minion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createEffects } from './effects';
+import type { ParticleBody } from './particles';
+import { createPost } from './post';
 import { createGroundContact } from './ground-contact';
 import { buildCharacter, type CharacterSpec } from './character-model';
 import type { Partner, Story, StoryEvent } from './story';
@@ -75,7 +77,8 @@ const GUARD_SCALE = 1.9;
 const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'] };
 
 export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, story: Story) {
-  const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
+  // No antialiasing on the canvas itself: the post pass (src/post.ts) renders the scene with 4× MSAA.
+  const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: false, alpha: false } });
   app.maxDeltaTime = SHOW_STEP;
   app.graphicsDevice.maxPixelRatio = Math.min(window.devicePixelRatio, 2);
   app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
@@ -89,6 +92,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     clearColor: new pc.Color(0.2, 0.26, 0.24), nearClip: 0.1, farClip: 180, toneMapping: pc.TONEMAP_ACES,
   });
   app.root.addChild(camera);
+  const post = createPost(app, camera.camera!);
   const player = new pc.Entity('Jugador');
   app.root.addChild(player);
   // Gerard's model: the boy in chapter 1, the man at 35 once he wakes up (`dress`).
@@ -96,6 +100,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   player.setPosition(0, 0.06, 0);
   let plantFeet = createGroundContact(player, rig.feet);
   const effects = createEffects(app);
+  effects.setScene(environment, scenery);
   // Each fighter is cloned from their street model; Bernat borrows Gerard's (recoloured) as before.
   const battleScene = createBattleScene(app, player, id => id === 'aitor' ? mates.aitor.entity : player, (x, z) => scenery.groundHeight(x, z), effects);
   const pack = new WanderingPack(ENVIRONMENTS.maresme.grid, Math.random, STREET_END_AREA);
@@ -131,6 +136,11 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   let lampLabel: ((id: string) => string | undefined) | undefined;
   battleScene.setMinionTemplate(minion.root);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const bodies: ParticleBody[] = [];
+  const bodyOf = (entity: pc.Entity, radius: number, height: number): ParticleBody => {
+    const p = entity.getPosition();
+    return { x: p.x, y: p.y, z: p.z, radius: radius * entity.getLocalScale().x, height: height * entity.getLocalScale().y, key: entity };
+  };
   let backpack = rig.body.find(node => BACKPACK_PARTS.has(node.name)) as pc.Entity[];
   function dress(adult: boolean) {
     if (adult === grownUp) return;
@@ -224,7 +234,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     const [main, trim] = PICKUP_COLOURS[id].map(hex => {
       const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.emissive.fromString(hex); m.emissiveIntensity = .35; m.gloss = .6; m.update(); return m;
     });
-    const part = (type: string, m: pc.Material, p: number[], sc: number[]) => {
+    const part = (type: pc.RenderComponent['type'], m: pc.Material, p: number[], sc: number[]) => {
       const e = new pc.Entity(); e.addComponent('render', { type, material: m, castShadows: true });
       e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(sc[0], sc[1], sc[2]); holder.addChild(e);
     };
@@ -828,6 +838,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     scenery.destroy();
     environment = ENVIRONMENTS[id];
     scenery = buildScenery(app, environment);
+    effects.setScene(environment, scenery);
     for (const [id, lamp] of Object.entries(lamps) as [LightId, Lamp][]) scenery.setLamp(id, lamp);
     movement.teleport(environment.grid, destination ?? environment.spawn);
     stairsArmed = false; arrival = movement.cell; inStep = '';
@@ -1062,13 +1073,23 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       tone = animate ? tone + Math.sign(toneTarget - tone) * Math.min(Math.abs(toneTarget - tone), delta / 3.5) : toneTarget;
       scenery.setTone(tone);
     }
-    camera.camera!.clearColor = clear.lerp(dayClear, BUBBALOO.clear, tone);
+    camera.camera!.clearColor = post.clear(clear.lerp(dayClear, BUBBALOO.clear, tone));
     battleScene.update(shown, animate);
     // Traffic waits out fights and the pause menu; otherwise it stops for Gerard and his partner.
     const partner = mateHere();
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
       battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
-    effects.update(shown);
+    // Particles part around everyone standing in the scene, and the air fills what the camera sees.
+    bodies.length = 0;
+    if (player.enabled) bodies.push(bodyOf(player, .3, 1.5));
+    if (mate?.entity.enabled) bodies.push(bodyOf(mate.entity, .3, mate.id === 'aitor' ? 2 : 1.4));
+    for (const npc of npcs) if (npc.entity.enabled) bodies.push(bodyOf(npc.entity, .3, 1.6));
+    for (const dog of battleScene.dogs) if (dog.enabled) bodies.push(bodyOf(dog, .35, .9));
+    battleScene.bodies(bodies);
+    effects.setBodies(bodies);
+    effects.setTone(tone); post.setTone(tone);
+    const view = camera.camera!.orthoHeight * Math.max(1, canvas.clientWidth / Math.max(1, canvas.clientHeight));
+    effects.update(shown, { focus: cameraTarget, reach: Math.min(40, view * 1.1), animate: !reducedMotion.matches, paused });
     const aspect = canvas.clientWidth / canvas.clientHeight;
     const follow = environment.zoom;
     // Two players share the frame: the camera looks between them and pulls back as they part.
@@ -1107,7 +1128,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     window.removeEventListener('blur', clearInput); document.removeEventListener('visibilitychange', clearInput);
     window.removeEventListener('resize', resize);
     canvas.removeEventListener('pointerup', touchDog);
-    battleScene.destroy(); minion.destroy(); palace.destroy(); approach?.destroy(); effects.destroy();
+    battleScene.destroy(); minion.destroy(); palace.destroy(); approach?.destroy(); effects.destroy(); post.destroy();
     guards.forEach(g => g.destroy());
     tv?.destroy(); overgrowth?.destroy();
     scenery.destroy(); rig.materials.forEach(m => m.destroy()); Object.values(mates).forEach(m => m.rig.materials.forEach(material => material.destroy()));
@@ -1119,7 +1140,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   tone = toneTarget; scenery.setTone(tone);
   app.start();
   return {
-    app, setEnvironment, interact, encounter, setBattle, refreshStory, summonMinion,
+    app, effects, post, setEnvironment, interact, encounter, setBattle, refreshStory, summonMinion,
     /** Puts Gerard (and whoever is with him) back on `cell` of this scene, e.g. up a station's stair. */
     standAt(cell: Cell) {
       movement.teleport(environment.grid, cell);

@@ -21,7 +21,7 @@ export interface PalaceKit {
   materials: pc.StandardMaterial[];
   meshes: pc.Mesh[];
   mat(hex: string, gloss?: number, glow?: number, opacity?: number): pc.StandardMaterial;
-  part(parent: pc.Entity, name: string, type: string, m: pc.Material, p: number[], s: number[], r?: number[], shadows?: boolean): pc.Entity;
+  part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], m: pc.Material, p: number[], s: number[], r?: number[], shadows?: boolean): pc.Entity;
   ring(parent: pc.Entity, name: string, m: pc.Material, ringRadius: number, tubeRadius: number, p: number[], r?: number[], sector?: number): pc.Entity;
 }
 /** Shared builders so the palace, its street dressing and its interior look like one building. */

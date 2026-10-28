@@ -8,7 +8,7 @@ export default defineConfig({
   server: { proxy: { '/api': process.env.GERARD_API ?? 'http://127.0.0.1:8080' } },
   build: {
     rollupOptions: { input: { game: 'index.html', combatLab: 'combat-lab.html' } },
-    // The PlayCanvas engine is a single ~2 MB chunk; that's expected.
-    chunkSizeWarningLimit: 2500,
+    // The PlayCanvas engine makes the game a single ~2.6 MB chunk; that's expected.
+    chunkSizeWarningLimit: 3000,
   },
 });

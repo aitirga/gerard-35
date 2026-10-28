@@ -51,7 +51,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   }
   // Everything built here stands still, so it is merged into a few draw calls per material.
   const batch = app.batcher.addGroup(`Estático: ${environment.id}`, false, 16);
-  function mesh(name: string, type: string, m: pc.StandardMaterial, px: number, y: number, pz: number, w: number, h: number, d: number) {
+  function mesh(name: string, type: pc.RenderComponent['type'], m: pc.StandardMaterial, px: number, y: number, pz: number, w: number, h: number, d: number) {
     const e = new pc.Entity(name);
     e.addComponent('render', { type, material: m, castShadows: true, receiveShadows: true, batchGroupId: batch.id });
     e.setPosition(x(px), y, z(pz)); e.setLocalScale(w, h, d); root.addChild(e); return e;

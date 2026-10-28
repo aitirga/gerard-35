@@ -38,7 +38,7 @@ export function createPropKit() {
     if (glow) { m.emissive.fromString(hex); m.emissiveIntensity = glow; }
     m.update(); materials.push(m); return m;
   }
-  function part(parent: pc.Entity, name: string, type: string, m: pc.Material, p: number[], s: number[], r?: number[]) {
+  function part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], m: pc.Material, p: number[], s: number[], r?: number[]) {
     const e = new pc.Entity(name);
     e.addComponent('render', { type, material: m, castShadows: true, receiveShadows: true, ...(batchGroupId === undefined ? {} : { batchGroupId }) });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]);

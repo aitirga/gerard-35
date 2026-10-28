@@ -1,0 +1,18 @@
+{
+  "title": "Graphics · Look of the scenes",
+  "description": "The same views before and after rendering changes: the street by day, La Reina Bubbaloo's palace, the Meridiana flat, the night patio and a fight.",
+  "steps": [
+    { "open": "/?story=bernat-joined" },
+    { "teleport": "maresme", "cell": [20, 24] },
+    { "shot": "street", "delay": 1500, "caption": "Passatge Maresme by day" },
+    { "teleport": "palacio", "cell": [5, 15] },
+    { "shot": "palace", "delay": 1500, "caption": "La Reina Bubbaloo's palace" },
+    { "teleport": "meridiana", "cell": [7, 3] },
+    { "shot": "meridiana", "delay": 1500, "caption": "The Meridiana flat" },
+    { "teleport": "patio", "cell": [6, 9] },
+    { "shot": "patio", "delay": 1500, "caption": "The patio at night" },
+    { "open": "/?story=noista&battle=3&allies=2&noista=1" },
+    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
+    { "shot": "battle", "delay": 1500, "caption": "A fight at rest" }
+  ]
+}

@@ -23,7 +23,7 @@ function glow(colour: string, opacity: number) {
   m.update(); return m;
 }
 
-function part(parent: pc.Entity, type: string, material: pc.Material, p: number[], s: number[], r: number[] = [0, 0, 0]) {
+function part(parent: pc.Entity, type: pc.RenderComponent['type'], material: pc.Material, p: number[], s: number[], r: number[] = [0, 0, 0]) {
   const e = new pc.Entity(NAME); parent.addChild(e);
   e.addComponent('render', { type, material, castShadows: false, receiveShadows: false });
   e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); e.setLocalEulerAngles(r[0], r[1], r[2]);

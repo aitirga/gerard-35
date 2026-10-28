@@ -20,6 +20,11 @@ export interface HomeKit {
 
 /** Heights and thickness in world units; one grid cell is one unit. */
 const WALL_HEIGHT = 2.6;
+/**
+ * The lamps' patches add light on top of a lit floor. Since the post pass (src/post.ts) blends that
+ * in linear HDR rather than on gamma-encoded colours, the same patch needs this much more glow.
+ */
+const POOL_GAIN = 4.5;
 const CUT_HEIGHT = 0.42;
 const THICKNESS = 0.26;
 const FACE = THICKNESS / 2;
@@ -52,7 +57,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const jitter = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
 
   // Bottom-anchored primitives in grid coordinates; `parent` may be a folding pivot.
-  function piece(parent: pc.Entity, name: string, type: string, m: pc.Material, px: number, y: number, pz: number, w: number, h: number, d: number, shadows = true) {
+  function piece(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], m: pc.Material, px: number, y: number, pz: number, w: number, h: number, d: number, shadows = true) {
     const e = new pc.Entity(name);
     e.addComponent('render', { type, material: m, castShadows: shadows, receiveShadows: true });
     parent.addChild(e); e.setPosition(x(px), y, z(pz)); e.setLocalScale(w, h, d);
@@ -121,7 +126,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     }
     for (const patch of entry.pools) {
       patch.emissive.set(r, g, b);
-      patch.emissiveIntensity = look.on ? (0.15 + 0.35 * look.brightness) * dim : 0;
+      patch.emissiveIntensity = look.on ? (0.15 + 0.35 * look.brightness) * dim * POOL_GAIN : 0;
       patch.update();
     }
   }

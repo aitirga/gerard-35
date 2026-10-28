@@ -47,7 +47,7 @@ export function buildCharacter(spec: CharacterSpec, parent: pc.Entity) {
   function entity(name: string, holder: pc.Entity, [x, y, z]: Vec3) {
     const node = new pc.Entity(name); node.setLocalPosition(x, y, z); holder.addChild(node); return node;
   }
-  function mesh(name: string, shape: string, mat: pc.StandardMaterial, holder: pc.Entity, pos: Vec3, [sx, sy, sz]: Vec3, [rx, ry, rz]: Vec3) {
+  function mesh(name: string, shape: pc.RenderComponent['type'], mat: pc.StandardMaterial, holder: pc.Entity, pos: Vec3, [sx, sy, sz]: Vec3, [rx, ry, rz]: Vec3) {
     const node = entity(name, holder, pos);
     node.addComponent('render', { type: shape, material: mat, castShadows: true, receiveShadows: true });
     node.setLocalScale(sx, sy, sz); node.setLocalEulerAngles(rx, ry, rz);
