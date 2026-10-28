@@ -8,11 +8,14 @@
   preview  <file> <start> <end> [--around 4]   output/music/<song>/seam-<start>-<end>.wav: the
                                                seconds before the end, then those after the start
   analyze  <file>                              tempo, the opening onsets and the best seams
+  loudness <file>                              <file>.loudness.json beside it: dB per second, so a
+                                               long take can come in anywhere at an even level
 
 Decodes with ffmpeg (mono, 22.05 kHz). Times are seconds into the file as ffmpeg decodes it,
 which is what decodeAudioData gives the game; check by ear with just dev-music. docs/audio.md.
 """
 import argparse
+import json
 import shutil
 import subprocess
 import sys
@@ -109,6 +112,16 @@ def preview(path: Path, start: float, end: float, around: float) -> Path:
     return out
 
 
+def loudness(path: Path, x: np.ndarray) -> Path:
+    """Each second's loudness in dB, over five seconds round it so single hits don't count."""
+    seconds = x[: len(x) // RATE * RATE].reshape(-1, RATE)
+    power = np.convolve((seconds ** 2).mean(1), np.ones(5) / 5, 'same')
+    db = np.round(10 * np.log10(np.maximum(power, 1e-10)), 1)
+    out = path.with_suffix('.loudness.json')
+    out.write_text(json.dumps({'db': db.tolist()}, separators=(',', ':')) + '\n')
+    return out
+
+
 def span(text: str, length: float) -> tuple[float, float]:
     low, _, high = text.partition(':')
     return float(low or 0), float(high) if high else length
@@ -117,7 +130,7 @@ def span(text: str, length: float) -> tuple[float, float]:
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('onsets', 'tempo', 'seams', 'preview', 'analyze'):
+    for name in ('onsets', 'tempo', 'seams', 'preview', 'analyze', 'loudness'):
         command = sub.add_parser(name)
         command.add_argument('file', type=Path)
         if name == 'onsets':
@@ -139,6 +152,9 @@ def main():
         return
     x = decode(args.file)
     length = len(x) / RATE
+    if args.command == 'loudness':
+        print(loudness(args.file, x))
+        return
     if args.command in ('tempo', 'analyze'):
         print(f'{args.file} · {length:.3f} s')
         beats = tempo(x)

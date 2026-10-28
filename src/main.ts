@@ -19,7 +19,8 @@ import { mountHomeLightsPage } from './home-lights-ui';
 import { createLampPicker } from './lamp-picker';
 import { createInteractionPrompt } from './interaction-prompt';
 import { createAudio } from './audio';
-import { createMusic, isTrack } from './music';
+import { createMusic, isTrack, type TrackId } from './music';
+import { castleHaunt } from './haunt';
 import { createSfx, watchMenuSounds } from './sfx';
 import { mountSoundPage } from './sound-ui';
 
@@ -57,15 +58,32 @@ function impactSound(effect: BattleEffect) {
   if (kind === 'heal' || kind === 'boost') sfx.play('heal');
   else if ((effect.kind === 'attack' || effect.kind === 'skill' || effect.kind === 'enemy') && effect.amount) sfx.play('hit');
 }
+/**
+ * Each place's song, coming in slowly from anywhere in it; a place without one fades to silence.
+ * The castle's song is haunted as much as the castle is threatening right now (src/haunt.ts).
+ */
+const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { meridiana: 'home', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo' };
+let place: EnvironmentId | undefined;
+/** `just dev-music` plays its own song, which a place's song must not cover. */
+const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
+function scorePlace(id: EnvironmentId) {
+  place = id;
+  if (battlePhase || devSong) return;
+  const song = PLACE_SONGS[id];
+  music.haunt(castleHaunt(story));
+  // A streamed take can only start after the first key or click.
+  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase) void music.play(song, { from: 'random', fade: 4 }); });
+  else if (music.playing && Object.values(PLACE_SONGS).includes(music.playing)) music.stop({ fade: 2 });
+}
 /** The fight's song: it comes in with the fight, plays its ending on a win and fades on a fall, an escape or leaving. */
 let battlePhase: BattleState['phase'] | undefined;
 function scoreBattle(state: BattleState | undefined) {
   const was = battlePhase;
   battlePhase = state?.phase;
   if (battlePhase === was) return;
-  if (!state) { if (music.playing === 'battle') music.stop({ fade: 1.5 }); }
+  if (!state) { if (music.playing === 'battle') music.stop({ fade: 1.5 }); if (place) scorePlace(place); }
   else if (was === undefined) void music.play('battle', { restart: true, fade: .4 });
-  if (battlePhase === 'won') void music.jump('ending', { at: 'bar' });
+  if (battlePhase === 'won') void music.jump('ending', { at: 'bar', loop: false });
   else if (battlePhase === 'lost') music.stop({ fade: 2.5 });
   else if (battlePhase === 'escaped') music.stop({ fade: 1 });
 }
@@ -264,6 +282,8 @@ try {
   }
   function storyChanged() {
     game.refreshStory();
+    // An ánima gained takes some of the castle's power, and of its song's haunt.
+    if (!devSong) music.haunt(castleHaunt(story));
     game.setPartnerDriven(partnerDriven(control, story.partner));
     // The active class dresses the whole interface (style.css: #hud[data-class]).
     if (story.gerardClass) hud.dataset.class = story.gerardClass; else delete hud.dataset.class;
@@ -292,6 +312,7 @@ try {
     onLocation: (id, cell) => {
       currentLocation = id;
       homeLights.setPlace(id);
+      scorePlace(id);
       exploration.update(id, cell);
       environmentSelect.value = id;
       const geo = ENVIRONMENTS[id].geo;
@@ -347,7 +368,7 @@ try {
       restoreLightsOnResume = homeLights.settings.enabled;
       void homeLights.setEnabled(false, false);
     },
-    resume: () => { if (restoreLightsOnResume) void homeLights.setEnabled(true, false); },
+    resume: () => { if (restoreLightsOnResume) void homeLights.setEnabled(true, false); scorePlace(currentLocation); },
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
@@ -412,7 +433,9 @@ try {
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => params.get('party') === 'adult' ? battleUI.open(adult.battleParty(true), foes, { animas: adult.classes })
       : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas: ['matemagico', ...(params.has('noista') ? ['noista' as const] : [])] }));
     // ?music=battle&from=126 plays a song from a mark or second on the first key or click, to hear a loop's seam (just dev-music).
-    const track = params.get('music');
+    const track = params.get('music'), haunt = Number(params.get('haunt'));
+    // &haunt=.8 plays a haunted song at that level instead of the castle's (just dev-music bubbaloo random .8).
+    if (params.has('haunt') && Number.isFinite(haunt)) music.haunt(haunt);
     if (track && isTrack(track)) void audio.unlocked.then(() => music.play(track, { from: Number.isFinite(Number(params.get('from'))) ? Number(params.get('from')) : params.get('from') ?? 'start', fade: 0 }));
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
     Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, homeLights, audio, music, sfx } });

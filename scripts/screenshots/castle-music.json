@@ -1,0 +1,93 @@
+{
+  "title": "Chapter 2 · The castle's song",
+  "description": "bubbaloo-light comes in from a random point at the castle on the Rec Comtal school, haunted as much as the castle is threatening: everything at threat 1, less inside the palace after two ánimas. The overlay is the scenario's, not the game's: it prints the song, its position and the haunt level. Then it plays the take from 785 s so it wraps to another point, level-matched, and logs both loudnesses. The last step renders each haunt sound offline and logs its loudness (SCREENSHOT_DEBUG=1). It plays music, so run it with --chrome: just screenshots castle-music --chrome.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "until": "window.gerard.music.playing === 'home'",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic = () => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:99;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.4 monospace'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing} · ${m.position()?.toFixed(1)} s · haunt ${m.haunted?.level.toFixed(2) ?? '—'}`; }"
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        86,
+        74
+      ]
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "until": "window.gerard.music.playing === 'bubbaloo' && window.gerard.music.position() > 1 && window.gerard.music.haunted?.level === 1",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic()"
+    },
+    {
+      "shot": "castle-full-threat",
+      "delay": 2500,
+      "caption": "Threat 1 at the school: bubbaloo-light from a random point, fully haunted (drone, draught, thunder, sag, heartbeat)"
+    },
+    {
+      "eval": "window.gerard.story.merge(['anima-nuria', 'anima-uri']); window.gerard.game.refreshStory(); undefined"
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        16,
+        18
+      ]
+    },
+    {
+      "until": "window.gerard.music.playing === 'bubbaloo' && Math.abs(window.gerard.music.haunted.level - window.gerard.story.castleThreat) < 1e-9 && window.gerard.story.castleThreat < .75",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic()"
+    },
+    {
+      "shot": "palace-three-animas",
+      "delay": 2500,
+      "caption": "Two ánimas (threat 0.7), inside the palace: the same take plays on, less haunted (thunder and bell still, no sag or heartbeat)"
+    },
+    {
+      "eval": "window.gerard.music.play('bubbaloo', { from: 785, restart: true, fade: 0 })"
+    },
+    {
+      "until": "window.gerard.music.position() > 786",
+      "timeout": 30000
+    },
+    {
+      "eval": "fetch('/music/bubbaloo-light.loudness.json').then(r => r.json()).then(map => { window.loudMap = map; window.before = window.gerard.music.position(); })"
+    },
+    {
+      "until": "window.gerard.music.position() < 760",
+      "timeout": 30000
+    },
+    {
+      "eval": "(() => { const at = t => window.loudMap.db[Math.floor(t)]; const after = window.gerard.music.position(); console.log('WRAP', `from ${window.before.toFixed(1)} s (${at(window.before)} dB) to ${after.toFixed(1)} s (${at(after)} dB), median ${[...window.loudMap.db].sort((a, b) => a - b)[window.loudMap.db.length >> 1]} dB`); window.showMusic(); })()"
+    },
+    {
+      "shot": "after-the-wrap",
+      "delay": 1500,
+      "caption": "Near the file's end the take crossfades into another point of similar loudness, matched in gain and easing back over 20 s"
+    },
+    {
+      "eval": "import('/src/haunt.ts').then(async ({ createHaunt }) => { const measure = buffer => { const d = buffer.getChannelData(0); let peak = 0, sum = 0, n = 0; for (const v of d) { peak = Math.max(peak, Math.abs(v)); if (Math.abs(v) > 1e-3) { sum += v * v; n++; } } return `peak ${peak.toFixed(3)} rms ${Math.sqrt(sum / Math.max(1, n)).toFixed(4)}`; }; for (const id of ['music-box', 'breath', 'bell', 'thunder', 'heartbeat']) { const c = new OfflineAudioContext(2, 48000 * 14, 48000); createHaunt(c, c.destination).sound(id); console.log('HAUNT', id, measure(await c.startRendering())); } const c = new OfflineAudioContext(2, 48000 * 8, 48000); createHaunt(c, c.destination).set(1, .03); console.log('HAUNT beds at 1', measure(await c.startRendering())); })"
+    }
+  ]
+}

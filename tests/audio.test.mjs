@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_AUDIO, levelGain, validAudioSettings } from '../src/audio.ts';
-import { TRACKS, fadeCurve, loopPosition, loopRange, markTime, untilBoundary } from '../src/music.ts';
+import { TRACKS, evenStart, fadeCurve, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, randomStart, untilBoundary } from '../src/music.ts';
+import { readFileSync } from 'node:fs';
+import { DREAM_HAUNT, HAUNT_SOUNDS, castleHaunt, hauntMix, swing } from '../src/haunt.ts';
+import { castleThreat } from '../src/animas.ts';
 
 const close = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 1e-6, `${message ?? ''} ${actual} ≠ ${expected}`);
 
@@ -50,4 +53,73 @@ test('fades follow an equal-power curve', () => {
   const fadeIn = fadeCurve(0, 1, 16), fadeOut = fadeCurve(1, 0, 16);
   close(fadeIn[0], 0); close(fadeIn[15], 1); close(fadeOut[0], 1); close(fadeOut[15], 0);
   for (let i = 0; i < 16; i++) close(fadeIn[i] ** 2 + fadeOut[i] ** 2, 1, `power at ${i}`);
+});
+
+test('a long take comes in anywhere but too near its end', () => {
+  close(randomStart(100, 24, () => 0), 0);
+  close(randomStart(100, 24, () => .999999), 75.999924);
+  close(randomStart(10, 24, () => .5), 0, 'shorter than the margin');
+});
+
+test('an unhaunted song plays untouched', () => {
+  const mix = hauntMix(0);
+  assert.equal(mix.wobble, 0); assert.equal(mix.drift, 0); assert.equal(mix.drone, 0); assert.equal(mix.draught, 0);
+  close(mix.cutoff, 20000);
+  assert.deepEqual(mix.sounds, []);
+  assert.deepEqual(hauntMix(Number.NaN).sounds, [], 'nonsense is silence');
+});
+
+test('the castle haunts its song more the stronger it is', () => {
+  let previous = hauntMix(0);
+  for (let level = .05; level <= 1.0001; level += .05) {
+    const mix = hauntMix(level);
+    assert.ok(mix.wobble > previous.wobble && mix.cutoff < previous.cutoff && mix.every < previous.every, `at ${level}`);
+    assert.ok(mix.drone >= previous.drone && mix.draught >= previous.draught && mix.sounds.length >= previous.sounds.length, `at ${level}`);
+    previous = mix;
+  }
+  assert.deepEqual(hauntMix(1).sounds, Object.keys(HAUNT_SOUNDS), 'everything at her worst');
+  // Each ánima takes a sound away, the way the castle's towers fall.
+  const heard = animas => hauntMix(castleThreat(animas)).sounds;
+  assert.ok(heard(0).includes('heartbeat'));
+  assert.ok(!heard(1).includes('heartbeat') && heard(1).includes('sag'));
+  assert.ok(!heard(2).includes('sag') && heard(2).includes('thunder'), 'the storm still stands at two ánimas');
+  assert.deepEqual(heard(6), ['music-box'], 'the floor keeps a music box');
+});
+
+test('chapter 1 dreams the castle; chapter 2 follows its threat', () => {
+  assert.equal(castleHaunt({ adult: false, castleThreat: 1 }), DREAM_HAUNT);
+  assert.equal(castleHaunt({ adult: true, castleThreat: .55 }), .55);
+  assert.deepEqual(hauntMix(DREAM_HAUNT).sounds, ['music-box', 'breath'], 'no storm in the dream');
+});
+
+test('the pitch swing bends the song by the cents asked', () => {
+  const rate = .37, cents = 24, peak = 2 * Math.PI * rate * swing(cents, rate);
+  close(1200 * Math.log2(1 + peak), cents);
+  assert.equal(swing(0, rate), 0);
+});
+
+test('a long take comes in near the loudness asked, matched and capped', () => {
+  const map = { db: [-30, -30, -20, -20, -10, -10, -10, -10, -10, -10] };
+  close(loudnessAt(map, 1.5), -25, 'between seconds');
+  close(loudnessAt(map, 99), -10, 'past the end');
+  close(medianLoudness(map), -10);
+  close(medianLoudness({ db: [-1, -3, -2, -4] }), -2.5);
+  // Candidates at 0, 2 and 4 s: the one nearest -20 dB wins, whatever order they come in.
+  const draws = [0, .4, .2];
+  const start = evenStart(15, 5, map, -20, () => draws.shift() ?? 0, 3);
+  close(start, 2);
+  close(matchGain(-20, -20), 1);
+  close(matchGain(-20, -26), 10 ** (6 / 20), 'a quieter point is lifted');
+  close(matchGain(-20, -40), 10 ** (6 / 20), 'never more than 6 dB');
+  close(matchGain(-30, -20), 10 ** (-6 / 20), 'a louder one is lowered');
+});
+
+test('every long take ships its loudness map', () => {
+  for (const [id, track] of Object.entries(TRACKS)) {
+    if (!track.stream) continue;
+    assert.ok(track.loudness, `${id} has no loudness map`);
+    const path = new URL(`../public/${track.loudness}`, import.meta.url);
+    const { db } = JSON.parse(readFileSync(path, 'utf8'));
+    assert.ok(db.length > 60 && db.every(Number.isFinite), `${id}'s map is broken`);
+  }
 });

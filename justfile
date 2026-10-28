@@ -61,11 +61,11 @@ dev-character name="gerard-child":
     @[[ -f "src/characters/{{ name }}.json" ]] || { printf 'No src/characters/%s.json; run just character first.\n' "{{ name }}"; exit 1; }
     npm run dev -- --open '/?character={{ name }}'
 
-# Play a song from a mark or second to hear its loop: just dev-music battle 126 (press a key to start)
+# Play a song from a mark, second or random point, and a haunted one at a level: just dev-music battle 126, just dev-music bubbaloo random .8 (press a key to start)
 [group('Development')]
-dev-music track="battle" from="start":
-    @[[ "{{ track }}" =~ ^[a-z0-9-]+$ && "{{ from }}" =~ ^([a-z-]+|[0-9]+(\.[0-9]+)?)$ ]] || { printf 'Use a track from src/music.ts and a mark or seconds, e.g. just dev-music battle 126.\n'; exit 1; }
-    npm run dev -- --open '/?music={{ track }}&from={{ from }}'
+dev-music track="battle" from="start" haunt="":
+    @[[ "{{ track }}" =~ ^[a-z0-9-]+$ && "{{ from }}" =~ ^([a-z-]+|[0-9]+(\.[0-9]+)?)$ && "{{ haunt }}" =~ ^([01]|0?\.[0-9]+)?$ ]] || { printf 'Use a track from src/music.ts, a mark or seconds and an optional haunt from 0 to 1, e.g. just dev-music bubbaloo random .8.\n'; exit 1; }
+    npm run dev -- --open '/?music={{ track }}&from={{ from }}{{ if haunt != "" { "&haunt=" + haunt } else { "" } }}'
 
 # Start the persistent API on port 8080, proxied by `just dev` under /api
 [group('Development')]
@@ -217,11 +217,12 @@ city-background:
     @[[ -f output/city/background.svg ]] || { printf 'No street data yet; run just city-fetch first.\n'; exit 0; }
     node scripts/city-background.mjs
 
-# Ship a song from its master in assets/music/ to public/music/<name>.m4a (copied if .m4a, else encoded): just music-export battle
+# Ship a song from its master in assets/music/ to public/music/<name>.m4a (copied if .m4a, else encoded) with its loudness map: just music-export battle
 [group('Audio')]
 music-export name:
     @[[ "{{ name }}" =~ ^[a-z0-9-]+$ ]] || { printf 'Use the song name without extension, e.g. just music-export battle.\n'; exit 1; }
     @src=$(ls assets/music/{{ name }}.* 2>/dev/null | head -n1); [[ -n "$src" ]] || { printf 'No master for %s in assets/music/.\n' '{{ name }}'; exit 1; }; mkdir -p public/music; if [[ "$src" == *.m4a ]]; then cp "$src" public/music/{{ name }}.m4a; else ffmpeg -v error -y -i "$src" -vn -c:a aac -b:a 192k public/music/{{ name }}.m4a; fi; printf '%s → public/music/%s.m4a\n' "$src" '{{ name }}'
+    @uv run --locked python tools/music_loop.py loudness public/music/{{ name }}.m4a
 
 # Find where a song loops: tempo, opening notes and seams (just music-loop public/music/battle.m4a --start 2.1:2.7)
 [group('Audio')]
@@ -229,7 +230,7 @@ music-export name:
 music-loop file *args:
     uv run --locked python tools/music_loop.py analyze "$@"
 
-# Write a seam to output/music/ to listen to: the loop's end, then its start (just music-seam public/music/battle.m4a 2.368 130.766)
+# Write a seam to output/music/ to listen to: the loop's end, then its start (just music-seam public/music/battle.m4a 2.398 134.398)
 [group('Audio')]
 music-seam file start end:
     uv run --locked python tools/music_loop.py preview '{{ file }}' '{{ start }}' '{{ end }}'
