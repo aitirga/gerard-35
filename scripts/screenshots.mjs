@@ -94,7 +94,8 @@ const steps = {
   async shot(step) {
     if (step.delay) await wait(step.delay);
     const file = `${String(shots.length + 1).padStart(2, '0')}-${step.shot}.png`;
-    await page.screenshot({ path: resolve(out, file) });
+    const [x, y, width, height] = step.clip ?? [];
+    await page.screenshot({ path: resolve(out, file), ...(step.clip ? { clip: { x, y, width, height } } : {}) });
     shots.push({ file, caption: step.caption ?? step.shot });
     console.log(`  ${file}`);
   },

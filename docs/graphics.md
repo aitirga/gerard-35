@@ -12,6 +12,7 @@ src/game.ts ── camera ──► src/post.ts       CameraFrame: HDR + 4× MSA
 src/battle-scene.ts ─────► effects.impact / heal / anima / stamp / element / comet / trails …
             └─ hit feel ► src/hit-feel.ts   hit-stop, camera lurch and punch-in; post.pulse for fringe + bloom
                                │                               weather and ground marks
+src/scenery.ts ── sun, sky ─► src/lighting.ts   shadows fitted to the view (PCSS / PCF), sky reflections
 ```
 
 Check visual changes with `just screenshots graphics` (the same five views every time: street,
@@ -386,6 +387,61 @@ fringing starts) and `LOOK.hit` in `src/post.ts` (fringe and bloom at a full pul
 time through an attack, a dog's bite, a guarded bite, an ánima swap, a No-ta knockout and an ánima
 waking, and logs each contact, hold and resolution on screen.
 
+## Shadows and sky (`src/lighting.ts`)
+
+`LIGHTING` holds every number. Each scene's sun gets its shadows from `lighting(app).shade()`, and
+`buildScenery` picks the sky (`setSky`: `day` for the street and Alegia, `indoor` for the flats,
+`night` for the patio, `palace` inside hers) and passes her light along (`setTone`).
+
+**Shadows follow the view.** The engine fits the sun's shadow map round the camera's view box
+from its near clip to `shadowDistance`, so with the camera 77 m away most of the 2048² texels used
+to land on empty air (about 20 texels a metre). While the engine culls, `lighting.ts` narrows that
+box to the slab where things stand: the floor (`floor`) up to the tallest shadow receiver on screen
+(rescanned every `scanEvery` frames, between `ceiling` bounds). The map then covers about what the
+camera sees, which roughly doubles its texels per metre following Gerard, and it grows and shrinks
+with the zoom. Its radius moves in steps of 2^(1/8) (`step`), so the texel grid holds still while the
+zoom eases and only jumps a few percent at a step, and the engine snaps the map to whole texels as
+the camera moves, so edges do not shimmer. Only the shadow changes: what is drawn is untouched.
+`shadowSlice` is the maths (`tests/lighting.test.mjs`). The backdrop under the diorama no longer
+casts: as a 200 m caster it stretched the shadow depth range, which PCSS uses to size its search.
+
+**Soft where it should be.** On WebGPU the sun uses PCSS (`SHADOW_PCSS_32F`): it looks for the
+casters round each point and widens the penumbra with their distance, so a house's shadow is crisp
+at the wall and soft at its far edge, a tree's trunk sharp and its crown blurred. `penumbra` is the
+width per metre between caster and receiver; `samples` and `blockerSamples` trade grain in wide
+penumbrae for cost. Its wider footprint needs more `normalOffsetBias` (.12) than PCF did against
+acne. On WebGL2 PCSS costs tens of milliseconds a frame (it scales with its samples there), so
+WebGL2 keeps a fixed 5×5 PCF, still fitted to the view. VSM (`vsm`) was tried: smooth and free of
+grain, but evenly soft (no hardening at contact) and its blur passes cost more than PCSS on WebGPU.
+
+**The sky is only reflected.** Each sky is three colours (zenith, horizon, ground) painted into a
+small equirect texture and prefiltered by the engine (`EnvLighting.generateAtlas`) into the
+environment atlas (`app.scene.envAtlas`); no skybox is drawn. Matte materials have no specular, so
+the atlas would only change their ambient: `lighting.ts` overwrites the atlas's ambient part with
+the scene's flat `ambientLight`, so they light exactly as before. Glossy ones reflect it through
+`shine(material, kind)` (`LIGHTING.shine`: specular colour and `reflectivity`): pools, the bath,
+the river, glass, car paint, steel, gold and her gum. With the ortho camera a flat surface reflects
+one direction (floors and roofs the zenith, walls and windows the ground below the horizon), and
+rounded ones the whole gradient, which is what gives her gum its pale pink rim.
+
+Her light is a second sky (`bubbaloo`) and the dark morning a third (`dawn`). The scene's own sky and
+hers are kept built; in between, the atlas is rebuilt in `steps` (12) as the tone fades, while the
+ambient part follows `ambientLight` smoothly. A rebuild costs about 1–2 ms on the GPU, at most a
+dozen times in a fade and twice on a scene change; standing still costs nothing.
+
+For comparisons (development build): `window.gerard.game.lighting` has `shadows` (`'pcss'`, `'vsm'`,
+`'pcf5'`, `'pcf3'`), `fit` and `sky`; `settings` is `LIGHTING` live and `refresh()` applies it.
+`just screenshots lighting --gpu` (and with `--webgl`) shows every view after and before.
+
+Measured with `--perf` on an Apple GPU at 1440×900 (GPU ms a frame, street following Gerard):
+
+| | WebGPU | WebGL2 |
+| --- | --- | --- |
+| Before (PCF 3×3, no fit, no sky) | 1.0 | 4.7–7 |
+| Fit + sky, PCF | 1.0 | same, +0.2–0.6 for 5×5 |
+| Fit + sky, PCSS 20/12 | 2.2 (1.6 in the overview) | 118–165: not used |
+| Fit + sky, VSM | 2.6 | 18–20 |
+
 ## What next
 
 In rough order of what each adds for its cost:
@@ -393,11 +449,11 @@ In rough order of what each adds for its cost:
 1. **Colour grading per scene** with LUTs (`colorLUT`, blending two for transitions) and
    `colorEnhance` (shadows, highlights, vibrance): warm morning in the flat, cool night patio,
    her pink taking over as a LUT blend rather than only lights.
-2. **Softer shadows** (`SHADOW_PCSS_32F` or VSM) and shadow resolution that follows the zoom, and
-   **image-based lighting** (a prefiltered environment atlas) so glossy gum, glass and water
-   reflect a sky instead of only the sun.
-3. **Weather in the story**: choose rain or snow per scene and chapter, and puddles that gather
+2. **Weather in the story**: choose rain or snow per scene and chapter, and puddles that gather
    and dry where rain has fallen. Settled snow reads as soft patches; an even sheet needs its own
    particle shape (in both shader languages).
+3. **Shadows and sky, further**: a normal map on the pools so their sky reflection ripples, a
+   second shadow map for the overview on fast GPUs, and a hemisphere ambient from the sky (the
+   atlas's own ambient) once the scenes are rebalanced for it.
 4. **GPU particles** (compute) once counts need more than ~20k, on WebGPU only, keeping the CPU
    simulation for WebGL2.

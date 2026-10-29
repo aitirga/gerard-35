@@ -31,7 +31,7 @@ development build exposes `window.gerard = { game, story }`.
 | `{ "press": "KeyE" }` | Presses a key (Playwright names: `KeyE`, `Escape`, `Shift`…). | `times`, `gap` ms |
 | `{ "hold": ["KeyS", "KeyA"], "ms": 2000 }` | Holds keys, e.g. to walk (S+A walks down the street). | `until` instead of `ms`, `timeout` |
 | `{ "skipDialogue": true }` | Advances the open conversation to its end. | `settle` ms |
-| `{ "shot": "mum", "caption": "…" }` | Saves the next numbered screenshot. | `delay` ms before it |
+| `{ "shot": "mum", "caption": "…" }` | Saves the next numbered screenshot. | `delay` ms before it; `clip` `[x, y, width, height]` saves only that part of the page, for close crops |
 | `{ "until": "<js>" }` | Waits until the expression is true. | `timeout` ms (60000) |
 | `{ "eval": "<js>" }` | Runs JavaScript in the page. | |
 | `{ "wait": 1000 }` | Waits. | |

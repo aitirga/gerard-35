@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import type { Effects } from './effects';
 import type { GeoScene } from './geo';
+import { shine } from './lighting';
 
 /**
  * El Palacio de la Reina Bubbaloo seen from outside (docs/bubbaloo-palace.md). Local space: the
@@ -63,7 +64,7 @@ export function palaceKit(app: pc.Application): PalaceKit {
     materials, meshes,
     mat(hex, gloss = .8, glow = 0, opacity = 1) {
       const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.gloss = gloss; m.useMetalness = false;
-      m.specular.set(.5, .42, .48);
+      shine(m, 'gum');
       if (glow) { m.emissive.fromString(hex); m.emissiveIntensity = glow; }
       if (opacity < 1) { m.opacity = opacity; m.blendType = pc.BLEND_NORMAL; m.depthWrite = false; }
       m.update(); materials.push(m); return m;

@@ -3,6 +3,7 @@ import type { Environment, FloorKind, Stairs } from './environments';
 import type { PropKit } from './props';
 import { lampRgb, type Lamp, type LightId } from './home-lights';
 import { MERIDIANA_BED } from './bed';
+import { shine } from './lighting';
 
 /** What `buildScenery` lends the house, so everything is tracked and destroyed with the scene. */
 export interface HomeKit {
@@ -220,12 +221,12 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const sky = mat('Luz de ventana', '#d3e8ef', 0.7, 0.45);
   const glow = mat('Luz cálida', '#ffe3b3', 0.2, 1.6);
   const screen = mat('Pantalla', '#86b4d8', 0.8, 0.55);
-  const gold = mat('Oro', '#d7ad45', 0.85);
+  const gold = shine(mat('Oro', '#d7ad45', 0.85), 'steel');
   const leaves = [mat('Hoja', '#5f8a55', 0.3), mat('Hoja clara', '#80a867', 0.3), mat('Hoja oscura', '#476f4b', 0.3)];
   const pot = mat('Maceta blanca', '#e9e5dc', 0.3);
   const soil = mat('Tierra', '#5e4d3c');
   const glass = mat('Vidrio', '#d6ecf0', 0.95);
-  glass.opacity = 0.22; glass.blendType = pc.BLEND_NORMAL; glass.depthWrite = false; glass.update();
+  glass.opacity = 0.22; glass.blendType = pc.BLEND_NORMAL; glass.depthWrite = false; shine(glass, 'glass');
   // The flat keeps its old cream-painted timber windows; the house has black steel.
   const profile = apartment ? mat('Carpintería crema', '#efe8da', 0.3) : black;
 
@@ -807,7 +808,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     light(12, 2.2, 6.5); light(18, 2.2, 6.5);
     // Bathroom: bath under the window, floating vanity, toilet.
     box('Bañera', lacquer, 14.5, north + 0.38, 0, 1.74, 0.55, 0.74);
-    box('Agua', mat('Agua del baño', '#bfe1e6', 0.9), 14.5, north + 0.38, 0.5, 1.6, 0.02, 0.6);
+    box('Agua', shine(mat('Agua del baño', '#bfe1e6', 0.9), 'water'), 14.5, north + 0.38, 0.5, 1.6, 0.02, 0.6);
     box('Mueble de lavabo', walnut, 13 + FACE + 0.24, 2.7, 0.35, 0.48, 0.4, 1.1);
     box('Lavabo', lacquer, 13 + FACE + 0.24, 2.7, 0.75, 0.42, 0.08, 0.48);
     box('Espejo', steel, 13 + FACE + 0.02, 2.7, 1.15, 0.03, 0.8, 0.8, onWall('east', 13 + FACE, 2.7));

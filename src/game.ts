@@ -14,6 +14,7 @@ import { WalkAnimation, idlePose } from './walk-animation';
 import { createEffects } from './effects';
 import type { ParticleBody } from './particles';
 import { createPost } from './post';
+import { lighting } from './lighting';
 import { createGroundContact } from './ground-contact';
 import { buildCharacter, type CharacterSpec } from './character-model';
 import type { Partner, Story, StoryEvent } from './story';
@@ -1192,6 +1193,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   app.start();
   return {
     app, effects, post, setEnvironment, interact, encounter, setBattle, refreshStory, summonMinion,
+    /** The sun's shadows and the sky's reflections (src/lighting.ts), with toggles for comparisons. */
+    lighting: lighting(app),
     /** Puts Gerard (and whoever is with him) back on `cell` of this scene, e.g. up a station's stair. */
     standAt(cell: Cell) {
       movement.teleport(environment.grid, cell);

@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
 import type { GeoBuilding, GeoPoint, GeoScene } from './geo';
+import { shine } from './lighting';
 import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from './building-occlusion';
 
 /** What `buildScenery` lends a generated place, so everything is tracked and destroyed with the scene. */
@@ -286,7 +287,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   // Rivers reuse the pool's caustics, tinted deep green and drifting downstream.
   const river = mat('Río', '#7f9f8c', 0.85);
   river.diffuseMap = kit.water.diffuseMap; river.emissive.fromString('#6f9a86'); river.emissiveMap = kit.water.diffuseMap; river.emissiveIntensity = 0.08;
-  river.update();
+  shine(river, 'water');
   flat('Río', scene.areas.water, LAYER.water, river, 0.08);
   let time = 0;
 
