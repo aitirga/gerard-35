@@ -19,6 +19,12 @@ latest `main`); the cloud takes up to a second.
 3. **Conectar las luces de casa.** The choice is remembered in this browser. The page says whether
    they go *por la red de casa, al instante* or *por la nube*.
 
+If the lights are not there the page says why, and they keep trying by themselves: within a few
+seconds when the game's server does not answer (not started, restarting, or another app on its
+port), every half minute when the server finds no bulbs, and at once when the tab comes back.
+Only a missing house key waits for the player. `just backend` listens on 8035 (`GERARD_API_PORT`
+moves it, for `just dev`'s proxy too), not 8080, which other projects tend to take.
+
 **Soltar las luces** gives the house back the lights of the flat (see below), and closing the tab
 does the same. Nothing changes at home until the lights are connected.
 
@@ -104,7 +110,10 @@ the difference (40 ms at 500 ms) and the lights never arrive late.
 ## Requests
 
 On the LAN every state goes straight out as SetColor/SetLightPower and flashes as SetWaveform, each
-acknowledged by the bulb and sent again once if it is not. Through the cloud LIFX allows 120
+acknowledged by the bulb and sent again once if it is not. Only a bulb heard from in the last 10 s
+is reached on the LAN; one that was found but stays quiet goes through the cloud. macOS's Local
+Network privacy may let the server's Python broadcast but not reach a single bulb ("No route to
+host"); then each message goes to the network's broadcast address, still addressed to its bulb. Through the cloud LIFX allows 120
 requests a minute and `lights.py` stays under 100 with a token bucket:
 
 - States queue per bulb and only the newest is sent; one look for several bulbs goes as one fast

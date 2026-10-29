@@ -4,6 +4,7 @@ const REASONS: Record<string, string> = {
   library: 'Falta la librería de casa: git submodule update --init.',
   token: 'El servidor no encuentra las bombillas en la red de casa ni tiene LIFX_TOKEN en .env.',
   key: 'Este servidor pide la llave de casa: abre el juego con ?luces=<llave> una vez.',
+  server: 'El servidor del juego no contesta (just backend). Se conectan solas en cuanto vuelva.',
 };
 const SCOPES: Record<Scope, string> = { salon: 'Solo el salón', casa: 'Toda la casa' };
 const INTENSITIES: Record<Intensity, string> = { suave: 'Suave · sin destellos fuertes', normal: 'Normal', intensa: 'Intensa' };

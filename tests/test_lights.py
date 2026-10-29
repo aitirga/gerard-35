@@ -123,6 +123,7 @@ class FakeLan:
 
     def __init__(self, serials=("d073d5000001", "d073d5000002")):
         self.addresses = {serial: "192.168.1.2" for serial in serials}
+        self.answered = set(serials)
         self.calls = []
 
     def read(self):
@@ -161,6 +162,30 @@ class LanTests(unittest.TestCase):
         house._send(*house.next_request())
         self.assertEqual(lan.calls, [])
         self.assertEqual(api.calls[-1][:2], ("PUT", "lights/id:d073d5000002/state"))
+
+    def test_a_bulb_found_but_not_answering_goes_through_the_cloud(self):
+        api, lan = FakeApi(), FakeLan()
+        lan.answered = {"d073d5000001"}
+        house = HomeLights(api, lan, clock=Clock(), worker=False)
+        house.inventory = BULBS
+        house.set([{"light": "Luna", "power": False, "color": None, "brightness": None}], 0.5)
+        house._send(*house.next_request())
+        self.assertEqual(lan.calls, [])
+        self.assertEqual(api.calls[-1][:2], ("PUT", "lights/id:d073d5000002/state"))
+
+    def test_when_a_single_address_is_refused_messages_are_broadcast_to_their_bulb(self):
+        class Socket:
+            def __init__(self): self.sent = []
+            def sendto(self, message, address):
+                if address[0] != "192.168.1.255":
+                    raise OSError(lifx_lan.errno.EHOSTUNREACH, "No route to host")
+                self.sent.append((lifx_lan.parse(message)[1], address))
+        lan, sock = lifx_lan.LanBulbs(targets=["192.168.1.255"]), Socket()
+        lan.addresses, lan.reach = {"d073d5000001": "192.168.1.2"}, "192.168.1.255"
+        lan._deliver(sock, lifx_lan.packet(lifx_lan.GET, target="d073d5000001"), "d073d5000001")
+        lan._deliver(sock, lifx_lan.packet(lifx_lan.GET, target="d073d5000001"), "d073d5000001")
+        self.assertEqual(sock.sent, [("d073d5000001", ("192.168.1.255", lifx_lan.PORT))] * 2)
+        self.assertEqual(lan.broadcast, "192.168.1.255")
 
     def test_messages_follow_the_lan_protocol(self):
         message = lifx_lan.packet(lifx_lan.SET_COLOR, b"\0" * 13, target="d073d5000001", source=7, sequence=3, ack=True)
