@@ -222,9 +222,9 @@ Descriptions drafted from the photos (proposals, ready to paste):
 
 | Who / what | How | Photos | Description | Portrait | Expressions | 3D | SPEAKERS |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Nuria | `just character nuria` | ✓ 5 | ✓ | ✓ | `preocupado`, `riendo` | hand-made primitives | ✓ |
-| Uri | `just character uri`; violet eyes by recolouring `Ojo` in code | ✓ 4 | ✓ | ✓ | `riendo`, `sorprendido`, `crio=…` | hand-made primitives, Nil in his arms | ✓ |
-| Nil (baby) | Procedural, in Uri's arms | ✓ 2 | ✓ | — | — | — | — |
+| Nuria | `just character nuria` | ✓ 5 | ✓ | ✓ | `preocupado`, `riendo` | ✓ generated primitives | ✓ |
+| Uri | `just character uri`; violet eyes by recolouring `Ojo` in code | ✓ 4 | ✓ | ✓ | `riendo`, `sorprendido`, `crio=…` | ✓ generated primitives, Nil in his arms | ✓ |
+| Nil (baby) | `just character nil`; in 3D, part of Uri's model | ✓ 2 | ✓ | ✓ | `riendo`, `sorprendido` | in Uri's arms | — (he does not speak yet) |
 | Haru | Procedural cat (`src/cats.ts`) | ✓ 3 | ✓ | | | — | |
 | Yuki | Procedural cat | ✓ 2 | ✓ | | | — | |
 | Cebollón, Plato Misterioso, Game Over, El Vértigo | Procedural | — | in this doc | | | — | |
@@ -361,9 +361,10 @@ Steps 1–13 are built and tested (`tests/nuria.test.mjs`, `tests/story.test.mjs
 - **Step 4**: portraits and expressions from `just character nuria` / `uri` (photos from the main
   checkout's `assets/references/characters/`), shown in every mission line: Nuria `preocupado` while
   Uri is lost and `riendo` when he is back; Uri `crio` while the Queen holds him, `riendo` on top and
-  `sorprendido` as he wakes. The 3D models stay the hand-made primitives in `src/characters/` (Uri's
-  carries Nil and the `Ojo` the code turns violet); the full-body references for a generated model
-  are in `assets/characters/<id>/fullbody.png` (local).
+  `sorprendido` as he wakes. The 3D models in `src/characters/` are generated from the full-body
+  references (`just character <id> --only model`, `assets/characters/<id>/fullbody.png`, local) at
+  the cast's scale; Uri's carries Nil and the `Ojo` the code turns violet. Nil has a portrait with
+  `riendo` and `sorprendido` (`public/portraits/nil*.png`), ready for a speaker when he has a line.
 - **Step 8–10**: the maze became *La torre de Uri* (§ The tower); El Vértigo stands on its top
   platform, not on the roof of Nuria's block. Its fight frames the whole giant, eye and Uri on top
   (`battleScene.foeTop` lifts and widens the camera for foes far taller than the party).
