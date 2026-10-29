@@ -6,7 +6,11 @@ show progress after any visual change, or to reproduce a bug step by step. It st
 dev server unless you pass `--url` (for example `just screenshots chapter-1 --url http://127.0.0.1:5173`
 to use a running `just dev`, with or without `just backend`). Other options: `--size 1920x1080`,
 `--headed` to watch it play, `--out <dir>`. On a desktop with a GPU, `--gpu` uses the native
-renderer instead of software WebGL for faster captures. Playwright's Chromium cannot decode AAC, so a scenario that plays
+renderer instead of software WebGL for faster captures, and the game draws on WebGPU there (the
+runner passes the flags headless Chromium needs to expose it); add `--webgl` to force WebGL2
+(`?gpu=webgl2` on every opened URL) and compare the two. Without `--gpu` the game falls back to
+software WebGL2. `--perf` serves PlayCanvas's profiler build instead of the debug one and lifts the
+60 fps cap, for timing runs such as `gpu-perf`. Playwright's Chromium cannot decode AAC, so a scenario that plays
 music (`.m4a`) needs `--chrome`, which runs the installed Google Chrome instead. The private server ignores source
 changes during a run so another development session cannot reset the scenario.
 
@@ -38,6 +42,11 @@ Give shots after an animation (panels, dialogue typing) a `delay` of about 1500 
 
 `combat-lab` opens the standalone combat simulator, captures the strategy comparison and a
 seeded replay, then repeats the same seeds with higher enemy direct damage.
+
+`gpu-perf` samples frame time, CPU time per frame, GPU time and draw calls for five seconds each in
+the street (following Gerard and in the overview), the palace and a fight full of effects, and
+prints a table in its last shot. Compare `just screenshots gpu-perf --gpu --perf` with the same plus
+`--webgl` (docs/graphics.md has the numbers).
 
 `morning` advances the game's update clock in 1/60 s steps between its key poses, then stops
 rendering until the screenshot is saved. This keeps the bed sequence reproducible on slow GPUs.

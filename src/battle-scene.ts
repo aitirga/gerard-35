@@ -98,7 +98,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     ctx.fillStyle = fill; ctx.font = '900 108px Inter, Arial Black, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('NO', 128, 70);
     if (!background) { ctx.strokeStyle = fill; ctx.lineWidth = 8; ctx.strokeRect(6, 6, 244, 116); }
-    const t = new pc.Texture(app.graphicsDevice, { mipmaps: true }); t.setSource(c); return t;
+    const t = new pc.Texture(app.graphicsDevice, { width: c.width, height: c.height, mipmaps: true }); t.setSource(c); return t;
   }
   const stampTexture = lettering('#fff4ec', '#e2483d'), inkTexture = lettering('#e2483d');
   const stampRed = mat('#c8323c');

@@ -207,6 +207,7 @@ export function createCity3D(host: HTMLElement): City3D | undefined {
   host.append(canvas);
   let app: pc.Application;
   try {
+    // Stays on WebGL2: an unlit model in a panel gains nothing from WebGPU, and a synchronous device keeps the map's fallback simple.
     app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
   } catch {
     canvas.remove();

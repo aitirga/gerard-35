@@ -15,9 +15,27 @@ export const LOOK = {
   bubbaloo: { vignette: new pc.Color(.07, 0, .035), saturation: 1.12 },
 } as const;
 
+/**
+ * Half an 8-bit step of noise on the final colour, in display space, so the shallow gradients of
+ * lamp light and dusk sky don't step into bands on an 8-bit screen. Runs after tone mapping, in
+ * the compose pass's end hook, in both shader languages.
+ */
+const DITHER = {
+  glsl: `
+    float ditherNoise = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+    result = pow(max(pow(max(result, vec3(0.0)), vec3(1.0 / 2.2)) + (ditherNoise - 0.5) / 255.0, vec3(0.0)), vec3(2.2));`,
+  wgsl: `
+    let ditherNoise = fract(52.9829189 * fract(dot(pcPosition.xy, vec2f(0.06711056, 0.00583715))));
+    result = pow(max(pow(max(result, vec3f(0.0)), vec3f(1.0 / 2.2)) + (ditherNoise - 0.5) / 255.0, vec3f(0.0)), vec3f(2.2));`,
+};
+
 export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
+  pc.ShaderChunks.get(app.graphicsDevice, pc.SHADERLANGUAGE_GLSL).set('composeMainEndPS', DITHER.glsl);
+  pc.ShaderChunks.get(app.graphicsDevice, pc.SHADERLANGUAGE_WGSL).set('composeMainEndPS', DITHER.wgsl);
   const frame = new pc.CameraFrame(app, camera);
   frame.rendering.samples = LOOK.samples;
+  // 16-bit float, not the default 11/11/10: its 6-bit mantissas band the flat's lamp light and the dusk sky.
+  frame.rendering.renderFormats = [pc.PIXELFORMAT_RGBA16F, pc.PIXELFORMAT_RGBA32F];
   frame.rendering.toneMapping = pc.TONEMAP_ACES;
   Object.assign(frame.bloom, LOOK.bloom);
   Object.assign(frame.vignette, LOOK.vignette);

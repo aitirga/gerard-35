@@ -77,9 +77,24 @@ const SCHOOL_PALACE_SCALE = 1.3;
 const GUARD_SCALE = 1.9;
 const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'] };
 
-export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, story: Story) {
+/**
+ * The graphics device: WebGPU where the browser has it, WebGL2 otherwise; `?gpu=webgl2` skips
+ * WebGPU, to compare or to dodge a bad driver. Custom shaders carry both GLSL and WGSL,
+ * so WebGPU never needs the engine's GLSL→WGSL transpilers (docs/graphics.md).
+ */
+async function createDevice(canvas: HTMLCanvasElement) {
+  const forced = new URLSearchParams(location.search).get('gpu');
+  const deviceTypes = forced === 'webgl2' ? [pc.DEVICETYPE_WEBGL2] : [pc.DEVICETYPE_WEBGPU, pc.DEVICETYPE_WEBGL2];
   // No antialiasing on the canvas itself: the post pass (src/post.ts) renders the scene with 4× MSAA.
-  const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: false, alpha: false } });
+  const device = await pc.createGraphicsDevice(canvas, { deviceTypes, antialias: false, alpha: false });
+  console.info(`Gerard 35 dibuja con ${device.isWebGPU ? 'WebGPU' : 'WebGL2'}`);
+  return device;
+}
+
+export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, story: Story) {
+  const app = new pc.Application(canvas, { graphicsDevice: await createDevice(canvas) });
+  // ?stats shows the engine's frame, CPU and GPU timings (harmless in production).
+  if (new URLSearchParams(location.search).has('stats')) new pc.MiniStats(app);
   app.maxDeltaTime = SHOW_STEP;
   app.graphicsDevice.maxPixelRatio = Math.min(window.devicePixelRatio, 2);
   app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);

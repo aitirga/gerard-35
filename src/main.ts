@@ -387,7 +387,7 @@ try {
       if (help.immune && ally.hp > 0) ally.hp = ally.maxHp;
     }
   }
-  const game = createGame(canvas, {
+  const game = await createGame(canvas, {
     onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, guards: palaceGuards(story.animas.length) }); },
     // Backing off is neither a win nor a fall.
     onBattleEnd: (phase, encounter) => {

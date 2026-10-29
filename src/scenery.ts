@@ -71,13 +71,13 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     ctx.strokeStyle = '#c8be8e'; ctx.lineWidth = 5; ctx.strokeRect(8, 8, 496, 112);
     ctx.font = '500 45px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#f6e9c4'; ctx.fillText(text, 256, 66, 465);
-    const texture = new pc.Texture(app.graphicsDevice, { mipmaps: true }); texture.setSource(c); textures.push(texture);
+    const texture = new pc.Texture(app.graphicsDevice, { width: c.width, height: c.height, mipmaps: true }); texture.setSource(c); textures.push(texture);
     const m = mat(text, '#ffffff'); m.diffuseMap = texture; m.update();
     const e = mesh(text, 'plane', m, px, y, pz, width, 1, width / 4);
     return e;
   }
   function texture(c: HTMLCanvasElement) {
-    const t = new pc.Texture(app.graphicsDevice, { mipmaps: true, anisotropy: 8, addressU: pc.ADDRESS_REPEAT, addressV: pc.ADDRESS_REPEAT });
+    const t = new pc.Texture(app.graphicsDevice, { width: c.width, height: c.height, mipmaps: true, anisotropy: 8, addressU: pc.ADDRESS_REPEAT, addressV: pc.ADDRESS_REPEAT });
     t.setSource(c); textures.push(t); return t;
   }
   // Deterministic jitter keeps procedural surfaces identical between reloads.

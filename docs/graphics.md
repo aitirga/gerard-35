@@ -18,7 +18,7 @@ simulation headless.
 
 ## The engine
 
-PlayCanvas **2.23.3** (latest stable, October 2026) on **WebGL2**. It stays:
+PlayCanvas **2.23.3** (latest stable, October 2026) on **WebGPU**, falling back to **WebGL2**. It stays:
 
 - The game is built in code (no editor): ~15k lines of TypeScript on PlayCanvas's entities,
   static batching, PCF shadows and shader chunks (the building cutaway). Moving to Three.js or
@@ -26,12 +26,6 @@ PlayCanvas **2.23.3** (latest stable, October 2026) on **WebGL2**. It stays:
   and fit badly with the HTML HUD.
 - It is actively maintained (patches every week or two) and ships what a modern look needs:
   HDR post (`CameraFrame`), bloom, SSAO, depth of field, colour grading, TAA, WebGPU, compute.
-- **WebGPU is not on yet.** Tried on an M1 Pro (October 2026): it runs, but every GLSL shader of
-  ours fails to compile there (the building cutaway, so the street's buildings vanish, and the
-  particles), it stalls longer on arrival while it builds pipelines, and it saves only about a
-  fifth of the CPU per frame. Our cost is draw calls, not the API: switch when compute (GPU
-  particles, indirect draws) is worth porting the chunks to WGSL.
-
 ## Performance
 
 The cost is the CPU submitting draw calls; the GPU has room. Aim for under ~8 ms of `app.render`
@@ -51,6 +45,58 @@ about 6 ms, Maresme and Rec Comtal 3–5 ms.
 
 2.23 changed two typings: a render component's `type` is a union (`pc.RenderComponent['type']`, not
 `string`) and `meshInstance.material` may be `null`.
+
+### WebGPU, WebGL2 and how to tell
+
+`createGame` (src/game.ts) is async: `createDevice` asks `pc.createGraphicsDevice` for WebGPU and
+falls back to WebGL2 when the browser has no adapter (Safari without the flag, old drivers,
+software rendering). Both look the same; the post pass, fog, shadows and particles were compared
+shot by shot on both (`graphics`, `particles`, `scenes`, `city-cutaway`).
+
+- `?gpu=webgl2` skips WebGPU (to compare, or to dodge a bad driver); it works in production too.
+- The console says `Gerard 35 dibuja con WebGPU` (or `WebGL2`) once, and
+  `window.gerard.game.app.graphicsDevice.isWebGPU` tells in a development build.
+- `?stats` shows `pc.MiniStats` (frame, CPU and GPU time, draw calls, VRAM), harmless in production.
+- The 3D city map (src/city-3d.ts) keeps its own small WebGL2 app: an unlit model in a panel gains
+  nothing from WebGPU, and its synchronous creation keeps the flat-plan fallback simple.
+
+On an M1 Pro (Chromium 141 headless, 1440×900 at 1×, release engine, no frame cap:
+`just screenshots gpu-perf --gpu --perf`, then the same with `--webgl`), WebGPU is the smoother of
+the two, mostly because the CPU spends less time per draw call (~1000 of them in the street):
+
+| View | WebGPU fps · CPU ms · p95 ms | WebGL2 fps · CPU ms · p95 ms |
+| --- | --- | --- |
+| Street, following Gerard | 416–501 · 1.8–2.1 · 2.7–3.3 | 254–263 · 3.6 · 7.7–9.0 |
+| Street, overview | 383–516 · 1.7–2.3 · 2.7–4.2 | 286–288 · 3.2–3.3 · 5.3–6.8 |
+| Palace | 565–656 · 1.3–1.5 · 2.2–2.7 | 123–159 · 6.0–7.8 · 11.5–16.4 |
+| Fight with every element going off | 416–469 · 1.7–2.0 · 2.8–3.1 | 399–432 · 1.9–2.1 · 3.4–3.5 |
+
+At the usual 60 fps cap both hold 16.7 ms frames on this machine; the gap is the headroom left
+for weaker computers, and the palace's stalls on WebGL2 (one frame in twenty takes ~16 ms) are
+gone (ranges over two runs each). In the development build the engine's debug checks make WebGPU *slower* (8 ms of CPU a frame
+against 5.6), so always time with `--perf`, never with `just dev`.
+
+### Custom shaders in both languages
+
+WebGPU never transpiles GLSL at runtime (that needs extra wasm downloads), so every custom shader
+ships in GLSL and WGSL, side by side and line for line, and a change to one goes into the other:
+
+- **ShaderMaterial** (the particles, `VERTEX`/`FRAGMENT` and `VERTEX_WGSL`/`FRAGMENT_WGSL` in
+  src/particles.ts): pass `vertexWGSL`/`fragmentWGSL` next to the GLSL. In WGSL, declare
+  `attribute name: vec4f;`, `varying name: vec2f;` and `uniform name: vec3f;` as in GLSL; the
+  engine copies attributes and varyings into globals of the same name, uniforms are read as
+  `uniform.name`, the vertex writes `output.position` and `output.vName`, and the fragment writes
+  `output.color`. The engine's includes (`gammaPS`, `tonemappingPS`, `fogPS`) exist in both and
+  keep their function names; `fog_color` becomes `uniform.fog_color`.
+- **Chunks on a StandardMaterial** (the building cutaway in src/geo-scenery.ts): set the same chunk
+  names in `getShaderChunks(pc.SHADERLANGUAGE_WGSL)` too. Module-level state is `var<private>`,
+  and the forward pass ends on `output.color` instead of `gl_FragColor`. Uniforms a chunk declares
+  are bound in every pass on WebGPU (shadows too), so give them a value up front.
+- Watch the few functions that differ: `atan(y, x)` is `atan2`, GLSL's `mod` is `x - y * floor(x / y)`
+  (WGSL's `%` truncates), `discard` and every `if` body need braces, and there is no implicit
+  int-to-float.
+
+Check both with `just screenshots particles --gpu` and the same with `--webgl`.
 
 ## Flush faces (`src/flush-faces.ts`)
 
@@ -167,7 +213,7 @@ In rough order of what each adds for its cost:
 6. **Softer shadows** (`SHADOW_PCSS_32F` or VSM) and shadow resolution that follows the zoom.
 7. **Image-based lighting** (a prefiltered environment atlas) so glossy gum, glass and water
    reflect a sky instead of only the sun.
-8. **Hit feel**: chromatic fringing on big hits (`CameraFrame.fringing`), a few frames of
-   hit-stop, and `pc.MiniStats` behind a `?stats` flag for profiling.
-9. **WebGPU and GPU particles** once counts need more than ~20k or compute pays off: port the
-   cutaway chunk to WGSL first.
+8. **Hit feel**: chromatic fringing on big hits (`CameraFrame.fringing`) and a few frames of
+   hit-stop.
+9. **GPU particles** (compute) once counts need more than ~20k, on WebGPU only, keeping the CPU
+   simulation for WebGL2.

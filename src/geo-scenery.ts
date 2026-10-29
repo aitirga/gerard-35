@@ -46,6 +46,10 @@ interface BuildingCut { triangles: number[]; instances: pc.MeshInstance[]; radiu
  * edge whose light bleeds softly into the solid wall beyond it.
  * Shadows are left whole.
  */
+const CUT = {
+  near: BUILDING_CUT_NEAR.toFixed(2), radius: CUT_RADIUS.toFixed(1), edge: CUT_EDGE.toFixed(2), halfEdge: (CUT_EDGE * 0.5).toFixed(2),
+  halo: CUT_HALO.toFixed(2), stub: CUT_STUB.toFixed(2), flare: CUT_FLARE.toFixed(2),
+};
 const CUTAWAY_DECLARATION = `
 uniform vec3 geoCutFocus;
 uniform vec3 geoCutToCamera;
@@ -57,15 +61,15 @@ const CUTAWAY_MAIN = `
 if (geoCutRadius > 0.0) {
   vec3 cutOffset = vPositionW - geoCutFocus;
   float cutAlong = dot(cutOffset, geoCutToCamera);
-  if (cutAlong > ${BUILDING_CUT_NEAR.toFixed(2)}) {
+  if (cutAlong > ${CUT.near}) {
     float cutAcross = length(cutOffset - geoCutToCamera * cutAlong);
-    float cutReach = geoCutRadius * (1.0 + ${CUT_FLARE.toFixed(2)} * (cutAlong - ${BUILDING_CUT_NEAR.toFixed(2)}) / ${CUT_RADIUS.toFixed(1)});
+    float cutReach = geoCutRadius * (1.0 + ${CUT.flare} * (cutAlong - ${CUT.near}) / ${CUT.radius});
     // The foot of every wall stays, so the building's edge still shows where Gerard can't pass.
-    float cutStub = vPositionW.y - (geoCutFocus.y + ${CUT_STUB.toFixed(2)});
-    float cutInside = step(cutAcross, cutReach - ${CUT_EDGE.toFixed(2)});
+    float cutStub = vPositionW.y - (geoCutFocus.y + ${CUT.stub});
+    float cutInside = step(cutAcross, cutReach - ${CUT.edge});
     if (cutInside * step(0.0, cutStub) > 0.5) discard;
-    float cutRing = 1.0 - smoothstep(cutReach - ${(CUT_EDGE * 0.5).toFixed(2)}, cutReach + ${CUT_HALO.toFixed(2)}, cutAcross);
-    float cutFoot = step(cutAcross, cutReach) * smoothstep(-${CUT_HALO.toFixed(2)}, -${(CUT_EDGE * 0.5).toFixed(2)}, cutStub);
+    float cutRing = 1.0 - smoothstep(cutReach - ${CUT.halfEdge}, cutReach + ${CUT.halo}, cutAcross);
+    float cutFoot = step(cutAcross, cutReach) * smoothstep(-${CUT.halo}, -${CUT.halfEdge}, cutStub);
     geoCutGlow = max(cutRing, cutFoot);
   }
 }
@@ -74,6 +78,37 @@ if (geoCutRadius > 0.0) {
 const CUTAWAY_END = `
 #ifdef FORWARD_PASS
 gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(${CUT_GLOW}), geoCutGlow * 0.75);
+#endif
+`;
+/** The same cut in WGSL for WebGPU, line for line with the GLSL above (keep both in step). */
+const CUTAWAY_DECLARATION_WGSL = `
+uniform geoCutFocus: vec3f;
+uniform geoCutToCamera: vec3f;
+uniform geoCutRadius: f32;
+var<private> geoCutGlow: f32 = 0.0;
+`;
+const CUTAWAY_MAIN_WGSL = `
+#ifdef FORWARD_PASS
+if (uniform.geoCutRadius > 0.0) {
+  let cutOffset = vPositionW - uniform.geoCutFocus;
+  let cutAlong = dot(cutOffset, uniform.geoCutToCamera);
+  if (cutAlong > ${CUT.near}) {
+    let cutAcross = length(cutOffset - uniform.geoCutToCamera * cutAlong);
+    let cutReach = uniform.geoCutRadius * (1.0 + ${CUT.flare} * (cutAlong - ${CUT.near}) / ${CUT.radius});
+    // The foot of every wall stays, so the building's edge still shows where Gerard can't pass.
+    let cutStub = vPositionW.y - (uniform.geoCutFocus.y + ${CUT.stub});
+    let cutInside = step(cutAcross, cutReach - ${CUT.edge});
+    if (cutInside * step(0.0, cutStub) > 0.5) { discard; }
+    let cutRing = 1.0 - smoothstep(cutReach - ${CUT.halfEdge}, cutReach + ${CUT.halo}, cutAcross);
+    let cutFoot = step(cutAcross, cutReach) * smoothstep(-${CUT.halo}, -${CUT.halfEdge}, cutStub);
+    geoCutGlow = max(cutRing, cutFoot);
+  }
+}
+#endif
+`;
+const CUTAWAY_END_WGSL = `
+#ifdef FORWARD_PASS
+output.color = vec4f(mix(output.color.rgb, vec3f(${CUT_GLOW}), geoCutGlow * 0.75), output.color.a);
 #endif
 `;
 
@@ -149,10 +184,13 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   const buildingCuts = new Map<pc.Entity, BuildingCut>();
   /** Building materials open the glowing cut; the ground and streets never do. */
   function cutaway<M extends pc.StandardMaterial>(m: M) {
-    const chunks = m.getShaderChunks(pc.SHADERLANGUAGE_GLSL);
-    chunks.set('litUserDeclarationPS', CUTAWAY_DECLARATION);
-    chunks.set('litUserMainStartPS', CUTAWAY_MAIN);
-    chunks.set('litUserMainEndPS', CUTAWAY_END);
+    const glsl = m.getShaderChunks(pc.SHADERLANGUAGE_GLSL), wgsl = m.getShaderChunks(pc.SHADERLANGUAGE_WGSL);
+    glsl.set('litUserDeclarationPS', CUTAWAY_DECLARATION);
+    glsl.set('litUserMainStartPS', CUTAWAY_MAIN);
+    glsl.set('litUserMainEndPS', CUTAWAY_END);
+    wgsl.set('litUserDeclarationPS', CUTAWAY_DECLARATION_WGSL);
+    wgsl.set('litUserMainStartPS', CUTAWAY_MAIN_WGSL);
+    wgsl.set('litUserMainEndPS', CUTAWAY_END_WGSL);
     m.update(); return m;
   }
   const jitter = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
@@ -842,7 +880,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   // obstruction cannot open a hole in a neighbouring building that leaves Gerard visible.
   const occluders = [...buildingCuts.values()].map(cut => ({ cut, shape: createBuildingOccluder(cut.triangles) }));
   const cutFocus = device.scope.resolve('geoCutFocus'), cutToCamera = device.scope.resolve('geoCutToCamera'), cutRadius = device.scope.resolve('geoCutRadius');
-  cutRadius.setValue(0);
+  // Every pass binds the declared uniforms (WebGPU fills a buffer for the shadow pass too), so give them a value up front.
+  cutRadius.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]);
 
   return {
     /** Opens the glowing cut round `focus` while a building stands between it and the camera. */

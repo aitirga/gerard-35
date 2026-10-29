@@ -174,6 +174,7 @@ function flowField() {
   return field;
 }
 
+/** The particle shader for WebGL2; `VERTEX_WGSL` and `FRAGMENT_WGSL` below are the same for WebGPU. */
 const VERTEX = /* glsl */ `
 attribute vec3 vertex_position;
 attribute vec4 aPosSize;
@@ -316,6 +317,165 @@ void main(void) {
   colour = gammaCorrectOutput(toneMap(colour));
   // Premultiplied: covering particles hide what is behind, additive ones (alpha 0) only add.
   gl_FragColor = vec4(colour * a, a * (1.0 - additive));
+}`;
+
+/**
+ * The same shader in WGSL for WebGPU, line for line with the GLSL above (keep both in step).
+ * The engine copies attributes and varyings into globals of the same name; uniforms are read
+ * through `uniform.`, the position goes to `output.position` and the colour to `output.color`.
+ */
+const VERTEX_WGSL = /* wgsl */ `
+attribute vertex_position: vec3f;
+attribute aPosSize: vec4f;
+attribute aColour: vec4f;
+attribute aMotion: vec4f;
+attribute aLook: vec4f;
+uniform matrix_viewProjection: mat4x4f;
+uniform matrix_view: mat4x4f;
+varying vUv: vec2f;
+varying vColour: vec4f;
+varying vLook: vec4f;
+@vertex
+fn vertexMain(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+  let corner = vertex_position.xy;
+  let view = uniform.matrix_view;
+  let right = vec3f(view[0][0], view[1][0], view[2][0]);
+  let up = vec3f(view[0][1], view[1][1], view[2][1]);
+  let size = aPosSize.w;
+  let c = cos(aMotion.w); let s = sin(aMotion.w);
+  var world: vec3f;
+  if (aLook.y > 1.5) {
+    let r = vec2f(c * corner.x - s * corner.y, s * corner.x + c * corner.y) * size;
+    world = aPosSize.xyz + vec3f(r.x, 0.0, r.y);
+  } else if (aLook.y > 0.5) {
+    // A streak: the head at the particle, the tail trailing back along its motion on screen.
+    let onScreen = vec2f(dot(aMotion.xyz, right), dot(aMotion.xyz, up));
+    let tail = length(onScreen);
+    let dir = select(vec2f(0.0, 1.0), onScreen / tail, tail > 0.0001);
+    let along = right * dir.x + up * dir.y;
+    let across = up * dir.x - right * dir.y;
+    let halfLength = size + tail * 0.5;
+    world = aPosSize.xyz - along * (tail * 0.5) + along * (corner.x * halfLength) + across * (corner.y * size);
+  } else {
+    let q = corner * aMotion.xy;
+    let r = vec2f(c * q.x - s * q.y, s * q.x + c * q.y) * size;
+    world = aPosSize.xyz + right * r.x + up * r.y;
+  }
+  output.vUv = corner;
+  output.vColour = aColour;
+  output.vLook = aLook;
+  output.position = uniform.matrix_viewProjection * vec4f(world, 1.0);
+  return output;
+}`;
+
+const FRAGMENT_WGSL = /* wgsl */ `
+#include "gammaPS"
+#include "tonemappingPS"
+#include "fogPS"
+uniform uLight: vec3f;
+varying vUv: vec2f;
+varying vColour: vec4f;
+varying vLook: vec4f;
+fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
+fn wave(x: f32) -> f32 { let i = floor(x); let f = fract(x); return mix(hash(vec2f(i, 0.0)), hash(vec2f(i + 1.0, 0.0)), f * f * (3.0 - 2.0 * f)); }
+fn noise(p: vec2f) -> f32 {
+  let i = floor(p);
+  var f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2f(1.0, 0.0)), f.x), mix(hash(i + vec2f(0.0, 1.0)), hash(i + vec2f(1.0, 1.0)), f.x), f.y);
+}
+// Round shading for puffs, lit from the upper left like the low-poly scene.
+fn shade(uv: vec2f) -> f32 {
+  let n = vec3f(uv, sqrt(max(0.0, 1.0 - dot(uv, uv))));
+  return 0.62 + 0.48 * max(0.0, dot(n, vec3f(-0.36, 0.6, 0.71)));
+}
+// GLSL's mod: WGSL's % truncates, which flips the result for negative x.
+fn floorMod(x: f32, y: f32) -> f32 { return x - y * floor(x / y); }
+@fragment
+fn fragmentMain(input: FragmentInput) -> FragmentOutput {
+  var output: FragmentOutput;
+  let shape = floor(vLook.x);
+  let seed = fract(vLook.x);
+  let uv = vUv;
+  let r = length(uv);
+  var a = 0.0; var white = 0.0; var lit = 1.0;
+  if (shape < 0.5) {
+    let core = exp(-r * r * 26.0);
+    a = (exp(-r * r * 4.5) * 0.7 + core) * clamp(1.0 - r * r, 0.0, 1.0);
+    white = core * 0.5;
+  } else if (shape < 1.5) {
+    a = smoothstep(1.0, 0.84, r);
+    lit = shade(uv * 0.95);
+  } else if (shape < 2.5) {
+    let across = 1.0 - uv.y * uv.y;
+    a = across * across * across * smoothstep(-1.0, -0.3, uv.x) * smoothstep(1.0, 0.65, uv.x);
+    white = pow(max(0.0, 1.0 - abs(uv.y)), 6.0) * smoothstep(-0.5, 0.6, uv.x) * 0.8;
+  } else if (shape < 3.5) {
+    let d = (r - 0.8) / 0.11;
+    a = (exp(-d * d) + exp(-r * r * 3.0) * 0.08) * smoothstep(1.0, 0.93, r);
+  } else if (shape < 4.5) {
+    let q = abs(uv);
+    let rays = max(exp(-q.x * 13.0 - q.y * q.y * 2.6), exp(-q.y * 13.0 - q.x * q.x * 2.6));
+    let core = exp(-r * r * 16.0);
+    a = (rays + core) * clamp(1.0 - r * r, 0.0, 1.0);
+    white = core * 0.6;
+  } else if (shape < 5.5) {
+    let n = noise(uv * 2.3 + seed * 37.0) * 0.6 + noise(uv * 5.1 - seed * 11.0) * 0.4;
+    a = smoothstep(1.0, 0.3, r + (n - 0.5) * 0.7) * 0.8;
+    lit = shade(uv * 0.9) * (0.88 + n * 0.25);
+  } else if (shape < 6.5) {
+    let g = uv - vec2f(-0.34, 0.38);
+    let rim = smoothstep(0.68, 0.95, r) * smoothstep(1.0, 0.95, r);
+    let glint = exp(-dot(g, g) * 40.0);
+    a = rim * 0.85 + 0.1 * smoothstep(1.0, 0.9, r) + glint;
+    white = glint;
+  } else if (shape < 7.5) {
+    let q = abs(uv);
+    a = smoothstep(1.0, 0.86, q.x) * smoothstep(1.0, 0.86, q.y);
+    lit = 0.82 + 0.25 * uv.y;
+  } else if (shape < 8.5) {
+    let angle = atan2(uv.y, uv.x);
+    let edge = 0.74 + 0.15 * sin(angle * 5.0 + seed * 31.0) + 0.07 * sin(angle * 9.0 - seed * 17.0);
+    a = smoothstep(edge, edge - 0.08, r);
+    let g = uv - vec2f(-0.22, 0.26);
+    lit = 0.88 + 0.3 * exp(-dot(g, g) * 9.0);
+  } else if (shape < 9.5) {
+    // A six-armed snowflake: fold every arm onto one, then draw the arm and its two side twigs.
+    let sector = 1.0471976;
+    let angle = floorMod(atan2(uv.y, uv.x) + sector * 0.5, sector) - sector * 0.5;
+    let q = vec2f(cos(angle), abs(sin(angle))) * r;
+    let arm = smoothstep(0.085, 0.03, q.y) * smoothstep(1.0, 0.86, r);
+    let twig = smoothstep(0.07, 0.02, abs(q.y - (q.x - 0.45) * 0.9)) * step(0.45, q.x) * step(q.x, 0.78);
+    a = max(arm, twig) + exp(-r * r * 30.0) * 0.6;
+    white = exp(-r * r * 20.0) * 0.5;
+  } else if (shape < 10.5) {
+    // Lightning: a jagged path along the streak, a hot core and a soft halo.
+    let path = (wave(uv.x * 3.0 + seed * 40.0) - 0.5) * 0.9 + (wave(uv.x * 9.0 - seed * 23.0) - 0.5) * 0.35;
+    let d = abs(uv.y - path);
+    a = (exp(-d * d * 140.0) + exp(-d * d * 10.0) * 0.3) * smoothstep(1.0, 0.75, abs(uv.x));
+    white = exp(-d * d * 500.0);
+  } else {
+    // A flame: round at the root, licking up to a point, with a hot core.
+    let t = uv.y * 0.5 + 0.5;
+    let x = uv.x + (wave(t * 3.0 + seed * 19.0) - 0.5) * 0.35 * t;
+    let w = 0.72 * pow(1.0 - t, 0.8) * sqrt(clamp(t * 3.0, 0.0, 1.0));
+    a = smoothstep(w, w - 0.18, abs(x));
+    white = smoothstep(0.6, 0.0, abs(x) / max(w, 0.01)) * (1.0 - t) * 0.4;
+  }
+  a *= vColour.a;
+  if (a < 0.004) { discard; }
+  let additive = vLook.z;
+  let peak = max(1.0, max(vColour.r, max(vColour.g, vColour.b)));
+  var colour = mix(vColour.rgb, vec3f(peak), clamp(white, 0.0, 1.0)) * lit * mix(uniform.uLight, vec3f(1.0), vLook.w);
+  #if (FOG != NONE)
+    let fogged = getFogFactor();
+    colour = mix(mix(uniform.fog_color, colour, fogged), colour * fogged, additive);
+  #endif
+  colour = gammaCorrectOutput(toneMap(colour));
+  // Premultiplied: covering particles hide what is behind, additive ones (alpha 0) only add.
+  output.color = vec4f(colour * a, a * (1.0 - additive));
+  return output;
 }`;
 
 /** Floats per particle in the instance buffer: position + size, colour, motion, look. */
@@ -528,7 +688,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
   const material = new pc.ShaderMaterial({
     uniqueName: 'gerard-particles',
     attributes: { vertex_position: pc.SEMANTIC_POSITION, aPosSize: pc.SEMANTIC_ATTR10, aColour: pc.SEMANTIC_ATTR11, aMotion: pc.SEMANTIC_ATTR12, aLook: pc.SEMANTIC_ATTR13 },
-    vertexGLSL: VERTEX, fragmentGLSL: FRAGMENT,
+    vertexGLSL: VERTEX, fragmentGLSL: FRAGMENT, vertexWGSL: VERTEX_WGSL, fragmentWGSL: FRAGMENT_WGSL,
   });
   material.name = 'Partículas';
   material.blendType = pc.BLEND_PREMULTIPLIED;
