@@ -1,20 +1,22 @@
-# Graphics: engine, post pass and particles
+# Graphics: engine, post pass, particles and trails
 
 How the game is drawn: the engine and why it stays, the post pass that gives the HDR look and
-bloom, and the particle system used for fights, elements and each scene's air. What to build next
-is at the end.
+bloom, the particle system used for fights, elements and each scene's air, and the ribbon trails
+behind swings and spells. What to build next is at the end.
 
 ```
 src/game.ts ── camera ──► src/post.ts       CameraFrame: HDR + 4× MSAA, bloom, ACES, vignette, her pink tone
             └─ effects ─► src/effects.ts    kinds (dust, sparks, fire…), battle recipes, elements, auras, scene air
-                               └──────────► src/particles.ts   CPU simulation + one instanced draw
-src/battle-scene.ts ─────► effects.impact / heal / anima / stamp / element …
+                               ├──────────► src/particles.ts   CPU simulation + one instanced draw
+                               └──────────► src/trails.ts      ribbons: one strip, one draw
+src/battle-scene.ts ─────► effects.impact / heal / anima / stamp / element / comet / trails …
 ```
 
 Check visual changes with `just screenshots graphics` (the same five views every time: street,
 palace, flat, patio, a fight) and `just screenshots particles` (each scene's air, then a fight frozen
-in time while every effect, element and aura plays). `tests/particles.test.mjs` runs the real
-simulation headless.
+in time while every effect, element and aura plays), and `just screenshots trails` (swings, spells
+and spirals frozen mid-flight). `tests/particles.test.mjs` and `tests/trails.test.mjs` run the real
+simulation and strip building headless.
 
 ## The engine
 
@@ -182,7 +184,8 @@ scene's light (`effects` feeds ambient + part of the sun as `uLight`), glowing o
 | `heal(feet, height)` | Cardioide: light rising from a cardioid round the feet, spiralling up. |
 | `insight(head)` | Análisis Parálisis: ideas circling over a head. |
 | `stamp(feet)` | No-ta: a shockwave of dust and red ink spattered round the print. |
-| `anima(body, colour, big)` | An ánima wakes (`big`) or is swapped in: its colour swirls up and rings out. |
+| `anima(body, colour, big)` | An ánima wakes (`big`) or is swapped in: its colour swirls up in strands of light and rings out. |
+| `comet(from, to, colour, seconds, options)` | A spell flying in an arc (a trail, below) that flares where it lands. |
 | `poof(where)` | Off in a puff of smoke. |
 | `confetti(centre, colours)` | The fight is won: confetti that tumbles down and lies where it falls. |
 | `element(element, target, { from, strength, feet })` | A hit of `fire`, `ice`, `air`, `energy`, `water`, `earth`, `light`, `shadow` or `gum`. |
@@ -194,6 +197,44 @@ thickens with her light (`setTone`). It fills what the camera sees and survives 
 
 To add a kind, add an entry to `KINDS` (sizes are half-widths in metres; the street camera shows
 40–75 px a metre, so glows under ~0.05 m disappear) and check it in the `particles` scenario.
+
+## Trails (`src/trails.ts`)
+
+Ribbons of light behind whatever moves fast, reached as `effects.trails`. A trail keeps where its
+head has been and when; every frame each trail becomes a strip of vertex pairs (a soft tip ahead
+of the head, then two vertices a point), and every trail goes into **one dynamic vertex buffer
+drawn as one triangle strip**: consecutive trails are joined by repeating a vertex at each end,
+which makes triangles with no area. The strip faces the camera (the shader spreads it across the
+line as it runs on screen) or, with `normal`, lies flat in a plane like a blade's arc. Its width,
+colour and alpha follow each point's age: widest, whitest (`core`) and brightest at the head,
+thinning (`taper`) and fading to nothing at `life` seconds old, with soft edges. `intensity` over
+1 blooms; `additive` 1 only adds light. Blending, fog, tonemapping and gamma are the particles'.
+
+| Call | What it draws |
+| --- | --- |
+| `follow(entity or point, { offset, seconds, space, … })` | Light streaming from an entity (at `offset` in its own space: a fist, a nose) or a point you keep moving, until `stop()` or `seconds`. Its path is recorded and filled with a centripetal Catmull–Rom curve, a point every 5 cm, so a slow frame draws a curve, not a polyline. With `space` (the swinger) it is kept in that entity's space, so a fist swung while running in draws the swing's arc instead of a streak along the run. |
+| `comet(from, to, colour, seconds, { arc, bend, onArrive })` | A head flying from A to B (easing out, `arc` metres over the line, `bend` sideways); `effects.comet` adds a flare on arrival. |
+| `spiral(centre, colour, { radius, narrow, height, turns, phase, seconds })` | A strand climbing round a point on the floor, narrowing as it rises. |
+
+Comets and spirals are drawn from their path itself (28 points between the head and the tail
+`life` seconds behind it), so they are smooth at any frame rate. Every call takes the look options
+(`colour` as one hex or head and tail, `width` in metres, `life`, `intensity`, `additive`, `core`,
+`taper`, `opacity`, `normal`) and returns `{ stop(), done }`.
+
+In fights (`trailsFor` in src/battle-scene.ts): a blow swings an arc from the leading hand
+(`Mano` on the first `Brazo`) for the quarter second into contact, a dog's from its nose and the
+gum minion's from its head; skills are in the wearer's ánima colour (`CLASSES[id].colour`, white
+at the head); Cardioide and Análisis Parálisis fly as comets to whoever they reach (winding round
+the caster when it is them); No-ta's stamp streaks down with a speed line at each side; an ánima
+waking winds three strands up round Gerard, a swap two (`effects.anima`). Reduced motion turns
+trails off (`trails.enabled`), and `effects.clear()` ends them with the fight.
+
+To add one, call `effects.trails.follow(…)` when the move starts and let `seconds` stop it, or
+`effects.comet(…)` for a spell; check it in the `trails` scenario. The buffer holds 4096
+vertices (256 KB): a swing is up to ~45, a comet or a strand 58, an awakening 174; past the
+capacity a trail is skipped for that frame, never cut. Six trails at once (an awakening, a comet
+and two swings, 350 vertices) take about 0.2 ms a frame to build on the CPU, then one 22 KB
+upload and one draw call.
 
 ## What next
 
@@ -209,7 +250,6 @@ In rough order of what each adds for its cost:
    scene depth (`rendering.sceneDepthMap`).
 4. **Weather and decals**: rain (streaks + ripples), snow (flakes that settle) and persistent
    marks (scorch, frost, gum) as ground decals with a budget, from the kinds that already exist.
-5. **Ribbons and trails** for swings and spells (a strip renderer next to the particles).
 6. **Softer shadows** (`SHADOW_PCSS_32F` or VSM) and shadow resolution that follows the zoom.
 7. **Image-based lighting** (a prefiltered environment atlas) so glossy gum, glass and water
    reflect a sky instead of only the sun.

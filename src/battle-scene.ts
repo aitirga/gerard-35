@@ -5,7 +5,7 @@ import { ACTION_SECONDS, CONTACT_SECONDS, ENTRY_SECONDS, clamp01, contactMotion,
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
 import { DOG_PROFILES } from './encounters';
-import type { Effects } from './effects';
+import { tint, type Effects } from './effects';
 import type { ParticleBody } from './particles';
 
 /**
@@ -162,6 +162,43 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const blow = new pc.Vec3(target.base.x - dx / d * reach, groundHeight(target.base.x, target.base.z) + (target.minion ? .9 : .85) * target.scale.y, target.base.z - dz / d * reach);
     effects.impact(blow, actor.base, action.skill ? 1.4 : 1, { guarded, gum: target.minion, feet: floorUnder(target) });
     hit(target, white, guarded ? .4 : 1);
+  }
+  /** Which effect has started its trails, and how far: 1 once the spell leaves, 2 once the blow swings. */
+  let trailed: BattleEffect | undefined, trailStage = 0;
+  /**
+   * Light left by the action in flight: the leading fist (a dog's nose, the gum's head) swings an
+   * arc into the blow, skills in the wearer's ánima colour; a cure or a boost flies to whoever it
+   * reaches, and No-ta's stamp streaks down. Short and fast: each one fades in a few tenths.
+   */
+  function trailsFor(action: BattleEffect, actor: Fighter, target: Fighter | undefined, t: number, support: boolean) {
+    if (trailed !== action) { trailed = action; trailStage = 0; }
+    const classId = state?.allies.find(a => a.id === action.actor)?.classId;
+    const colour = action.skill && classId ? CLASSES[classId].colour : undefined;
+    const light: [string, string] | undefined = colour ? [tint(colour, .35), colour] : undefined;
+    const arm = actor.arms[0] as pc.Entity | undefined;
+    if (trailStage === 0) {
+      trailStage = 1;
+      if (support && light) {
+        // Cardioide flies to whoever it heals, Análisis Parálisis to every head; on oneself it winds round.
+        const reached = action.skill === 'analisis' ? [...fighters.values()].filter(f => f.party && f.hp > 0) : target ? [target] : [];
+        const from = (arm?.findByName('Mano') as pc.Entity | null ?? actor.model).getPosition();
+        for (const f of reached) {
+          const floor = groundHeight(f.base.x, f.base.z);
+          if (f === actor) effects.trails.spiral({ x: f.base.x, y: floor + .3, z: f.base.z }, light, { radius: .5, narrow: .6, height: 1.5 * f.scale.y, turns: 1.2, seconds: .45, width: .09, core: .35 });
+          else effects.comet(from, { x: f.base.x, y: floor + (action.skill === 'analisis' ? 1.9 : 1.1) * f.scale.y, z: f.base.z }, colour!, .24, { width: .13, arc: .6 });
+        }
+      }
+      if (action.skill === 'nota' && stamp.enabled) for (const side of [-1, 1]) {
+        effects.trails.follow(stamp, { offset: { x: side * .8, y: .3, z: 0 }, seconds: CONTACT_SECONDS, colour: ['#fff4ec', '#e2483d'], width: .11, life: .25, taper: .5, intensity: 2.4 });
+      }
+    }
+    // A fist swings an arc in the swinger's own space, from just past the hand; a dog or the gum leaves a streak along its lunge.
+    if (trailStage === 1 && !support && target && t >= (arm ? .24 : .16)) {
+      trailStage = 2;
+      const look = { colour: light ?? (actor.minion ? ['#ffd0e6', '#ff5fa2'] as const : ['#fff1cc', '#ffb347'] as const), width: light ? .2 : .15, intensity: light ? 3 : 1.8, core: light ? .7 : .45 };
+      if (arm) effects.trails.follow(arm, { ...look, offset: { x: 0, y: -.42, z: 0 }, space: actor.model, seconds: .26, life: .2 });
+      else if (actor.head) effects.trails.follow(actor.head, { ...look, offset: actor.minion ? { x: 0, y: .35, z: .45 } : { x: 0, y: .09, z: .45 }, seconds: .32, life: .2, width: .15 });
+    }
   }
   return {
     dogs, anchor, cameraKick, focus,
@@ -390,6 +427,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           effects.stamp(target.base);
         }
       }
+      if (animate && effect && actor) trailsFor(effect, actor, target, t, support);
       const inkAge = time - inkAt;
       inkMark.enabled = inkAge < 1.8;
       if (inkMark.enabled) { ink.opacity = 1 - smooth((inkAge - 1) / .8); ink.update(); }

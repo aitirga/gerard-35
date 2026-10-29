@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import { createParticles, type ParticleAttractor, type ParticleBody, type ParticleEmitter, type ParticleKind, type ParticleWorld, type Vec } from './particles.ts';
 import { propCells, type Environment } from './environments.ts';
+import { createTrails, type CometOptions } from './trails.ts';
 
 /**
  * What the game's particles look like and how they behave (the engine is src/particles.ts):
@@ -93,6 +94,7 @@ const toLinear = (v: number) => v ** 2.2;
 
 export function createEffects(app: pc.Application) {
   const particles = createParticles(app, 6000);
+  const trails = createTrails(app);
   for (const [name, kind] of Object.entries(KINDS)) particles.define(name, kind as ParticleKind);
   let air: { emitter: ParticleEmitter; kind: Air['kinds'][number] }[] = [];
   let bounds: ParticleWorld | undefined;
@@ -108,6 +110,8 @@ export function createEffects(app: pc.Application) {
 
   const effects = {
     particles,
+    /** Ribbons of light behind swings and spells (src/trails.ts): `follow`, `comet`, `spiral`. */
+    trails,
     /** A plain puff of one kind; `spread` is the radius it appears over. */
     emit(kind: EffectKind, at: Vec, count = 6, spread = .25) { particles.burst(kind, at, count, { spread }); },
     /**
@@ -164,6 +168,23 @@ export function createEffects(app: pc.Application) {
       particles.burst('star', { x: body.x, y: floor + 1.2, z: body.z }, 6 * n, { spread: .4, colour: light });
       particles.attract({ at: { x: body.x, y: floor + .9, z: body.z }, pull: .6, swirl: 6, lift: 2.4, radius: 1.4, life: big ? 1.6 : 1.1 });
       if (big) particles.burst('spark', { x: body.x, y: floor + 1.1, z: body.z }, 24, { spread: .3, colour: light });
+      // Strands of its light wind up round the body, three when it wakes, two when it is swapped in.
+      for (let i = 0; i < n + 1; i++) {
+        trails.spiral({ x: body.x, y: floor + .1, z: body.z }, light, big
+          ? { radius: .95, narrow: .35, height: 2.5, turns: 1.6, phase: i * Math.PI * 2 / 3, seconds: 1.05, width: .13, intensity: 3, core: .35 }
+          : { radius: .75, narrow: .4, height: 1.9, turns: 1.3, phase: i * Math.PI, seconds: .75, width: .1, intensity: 2.6, core: .35 });
+      }
+    },
+    /**
+     * A spell flying from `from` to `to` in `seconds` (arcing over the straight line, see
+     * `CometOptions`), flaring where it lands.
+     */
+    comet(from: Vec, to: Vec, colour: string, seconds = .35, options: CometOptions = {}) {
+      const light: [string, string] = [tint(colour, .5), colour];
+      return trails.comet(from, to, light, seconds, {
+        ...options,
+        onArrive() { particles.burst('flash', to, 1, { size: .35, colour: light }); particles.burst('ember', to, 6, { spread: .12, colour: light }); options.onArrive?.(); },
+      });
     },
     /**
      * An element hits `target` (thrown from `from`): every element has its own burst on top of a
@@ -303,16 +324,18 @@ export function createEffects(app: pc.Application) {
         if (aura.left <= 0) { aura.streams.forEach(stream => stream.emitter.remove()); aura.twirl?.remove(); auras.splice(i, 1); }
       }
       particles.update(view.paused ? 0 : dt);
+      trails.enabled = animate;
+      trails.update(view.paused ? 0 : dt);
     },
-    /** Ends every effect and aura in flight; the scene's air stays. */
-    clear() { auras.forEach(aura => { aura.left = 0; }); particles.clear(); },
-    destroy() { particles.destroy(); },
+    /** Ends every effect, aura and trail in flight; the scene's air stays. */
+    clear() { auras.forEach(aura => { aura.left = 0; }); particles.clear(); trails.clear(); },
+    destroy() { particles.destroy(); trails.destroy(); },
   };
   return effects;
 }
 
 /** `hex` mixed towards white by `k`, for the bright edge of a coloured light. */
-function tint(hex: string, k: number) {
+export function tint(hex: string, k: number) {
   const c = new pc.Color().fromString(hex);
   return new pc.Color(c.r + (1 - c.r) * k, c.g + (1 - c.g) * k, c.b + (1 - c.b) * k).toString(false);
 }
