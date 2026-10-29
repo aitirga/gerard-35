@@ -618,7 +618,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /** The flat's lamps come on by themselves (`on` 0 → 1), with a flicker first; the daylight fades under them. */
   function lightsOn(room: NonNullable<typeof bedroom>, on: number) {
     const flicker = on < .12 ? 0 : on < .2 ? .7 : on < .3 ? .1 : smooth((on - .3) / .7);
-    scenery.setDark(1 - flicker);
+    scenery.setDark(1 - flicker); post.setDark(1 - flicker);
     room.daylight.findComponents('light').forEach(light => { (light as pc.LightComponent).enabled = flicker < .99; });
   }
   const down = new pc.Vec3(0, -1, 0);
@@ -672,7 +672,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     mates.aitor.follower.reset(PLACES.aitor.cell);
     free?.teleport(environment.grid, PLACES.aitor.cell);
     waking = 0;
-    scenery.setDark(1);
+    scenery.setDark(1); post.setDark(1);
     const material = new pc.StandardMaterial(); material.diffuse.fromString('#eadcc6'); material.gloss = .05; material.update();
     bedroom = { material, daylight: doorDaylight(), duvets: { gerard: sleeperDuvet(material, 'gerard', 11.52), aitor: sleeperDuvet(material, 'aitor', 9.48) } };
     const bed = scenery.toWorld(MERIDIANA_BED.x, 15.4);
@@ -884,8 +884,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     else if (id === 'rec-comtal') placePalaceOnSchool();
     inside = new Set();
     refreshStory();
-    // A new scene opens in its final light; only the story's turn fades.
-    tone = toneTarget; scenery.setTone(tone);
+    // A new scene opens in its final light; only the story's turn fades. Its colour look cross-fades.
+    tone = toneTarget; scenery.setTone(tone); post.setScene(id);
     const mate = mateHere();
     if (mate) placeMate(mate);
     overview = false;
@@ -1189,7 +1189,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   if (environment.id === 'maresme') placePalace();
   else if (environment.id === 'rec-comtal') placePalaceOnSchool();
   refreshStory();
-  tone = toneTarget; scenery.setTone(tone);
+  tone = toneTarget; scenery.setTone(tone); post.setScene(environment.id);
   app.start();
   return {
     app, effects, post, setEnvironment, interact, encounter, setBattle, refreshStory, summonMinion,

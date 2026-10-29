@@ -1,0 +1,371 @@
+{
+  "title": "Grading · Each scene's colour look",
+  "description": "Every scene plain (grading off) and graded (src/grading.ts): warm afternoon street, the warm house, the cool night patio, the warm morning flat, crisp Alegia, Barcelona concrete, Trinitat Vella under half her tone, the sugary palace; a cross-fade caught half way; the street and the house under La Reina Bubbaloo's tone; and the dark flat before the lamps come on.",
+  "steps": [
+    {
+      "open": "/?story=bernat-joined"
+    },
+    {
+      "eval": "document.querySelector('#hud').style.visibility = 'hidden'"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        20,
+        24
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "maresme-plain",
+      "delay": 600,
+      "caption": "Passatge Maresme · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "maresme",
+      "delay": 600,
+      "caption": "Passatge Maresme · graded"
+    },
+    {
+      "teleport": "home-entrance",
+      "cell": [
+        2,
+        2
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "home-entrance-plain",
+      "delay": 600,
+      "caption": "Casa de Gerard · Entrada · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "home-entrance",
+      "delay": 600,
+      "caption": "Casa de Gerard · Entrada · graded"
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        5,
+        6
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "home-floor-1-plain",
+      "delay": 600,
+      "caption": "Casa de Gerard · Planta 1 · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "home-floor-1",
+      "delay": 600,
+      "caption": "Casa de Gerard · Planta 1 · graded"
+    },
+    {
+      "teleport": "home-floor-2",
+      "cell": [
+        3,
+        4
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "home-floor-2-plain",
+      "delay": 600,
+      "caption": "Casa de Gerard · Planta 2 · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "home-floor-2",
+      "delay": 600,
+      "caption": "Casa de Gerard · Planta 2 · graded"
+    },
+    {
+      "teleport": "patio",
+      "cell": [
+        6,
+        9
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "patio-plain",
+      "delay": 600,
+      "caption": "El patio · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "patio",
+      "delay": 600,
+      "caption": "El patio · graded"
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        7,
+        3
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "meridiana-plain",
+      "delay": 600,
+      "caption": "Meridiana · the flat · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "meridiana",
+      "delay": 600,
+      "caption": "Meridiana · the flat · graded"
+    },
+    {
+      "teleport": "alegia",
+      "cell": [
+        155,
+        51
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "alegia-plain",
+      "delay": 600,
+      "caption": "Alegia · San Juan kalea · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "alegia",
+      "delay": 600,
+      "caption": "Alegia · San Juan kalea · graded"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        50,
+        39
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "meridiana-calle-plain",
+      "delay": 600,
+      "caption": "Meridiana · the avenue · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "meridiana-calle",
+      "delay": 600,
+      "caption": "Meridiana · the avenue · graded"
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        17,
+        63
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "rec-comtal-plain",
+      "delay": 600,
+      "caption": "Trinitat Vella · Rec Comtal (half her tone) · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "rec-comtal",
+      "delay": 600,
+      "caption": "Trinitat Vella · Rec Comtal (half her tone) · graded"
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        5,
+        15
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "palacio-plain",
+      "delay": 600,
+      "caption": "Her palace (always her tone) · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "palacio",
+      "delay": 600,
+      "caption": "Her palace (always her tone) · graded"
+    },
+    {
+      "teleport": "patio",
+      "cell": [
+        6,
+        9
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 0; window.gerard.game.setEnvironment('maresme', { x: 20, z: 24 })"
+    },
+    {
+      "eval": "{ const app = window.gerard.game.app; for (let i = 0; i < 30; i++) app.fire('update', 1 / 60); }"
+    },
+    {
+      "shot": "crossfade-half",
+      "delay": 300,
+      "caption": "Time frozen half a second after leaving the night patio: the street's light is in, its colour look half way there"
+    },
+    {
+      "eval": "{ const app = window.gerard.game.app; for (let i = 0; i < 60; i++) app.fire('update', 1 / 60); }"
+    },
+    {
+      "shot": "crossfade-done",
+      "delay": 300,
+      "caption": "A second later: the street's own look"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "open": "/?story=palace"
+    },
+    {
+      "eval": "document.querySelector('#hud').style.visibility = 'hidden'"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        20,
+        24
+      ],
+      "settle": 2500
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "maresme-her-plain",
+      "delay": 600,
+      "caption": "Passatge Maresme under her tone · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "maresme-her",
+      "delay": 600,
+      "caption": "Passatge Maresme under her tone · graded"
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        5,
+        6
+      ],
+      "settle": 1800
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "home-her-plain",
+      "delay": 600,
+      "caption": "The house under her tone · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "home-her",
+      "delay": 600,
+      "caption": "The house under her tone · graded"
+    },
+    {
+      "open": "/?story=caught"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana')",
+      "timeout": 60000
+    },
+    {
+      "eval": "document.querySelector('#hud').style.visibility = 'hidden'"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.wake(() => new Promise(() => {})); undefined"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.post.graded = false"
+    },
+    {
+      "shot": "dark-plain",
+      "delay": 600,
+      "caption": "The flat before anyone is up · plain"
+    },
+    {
+      "eval": "window.gerard.game.post.graded = true"
+    },
+    {
+      "shot": "dark",
+      "delay": 600,
+      "caption": "The flat before anyone is up · graded"
+    }
+  ]
+}

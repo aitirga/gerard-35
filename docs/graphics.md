@@ -4,8 +4,12 @@ How the game is drawn: the engine and why it stays, the post pass that gives the
 bloom, the particle system used for fights, elements and each scene's air, and the ribbon trails
 behind swings and spells. What to build next is at the end.
 
+bloom, each scene's colour grade, and the particle system used for fights, elements and each
+scene's air. What to build next is at the end.
+
 ```
 src/game.ts ── camera ──► src/post.ts       CameraFrame: HDR + 4× MSAA, bloom, ACES, vignette, her pink tone
+                               └──────────► src/grading.ts     a colour look per scene (LUT + colorEnhance), cross-fades
             └─ effects ─► src/effects.ts    kinds (dust, sparks, fire…), battle recipes, elements, auras, scene air
                                ├──────────► src/particles.ts   CPU simulation + one instanced draw
                                └──────────► src/trails.ts      ribbons: one strip, one draw
@@ -131,8 +135,9 @@ are checked; a plane or custom mesh laid on another surface still needs its own 
 
 The main camera renders through `pc.CameraFrame`: the scene goes to a linear HDR buffer with
 4× MSAA (so the canvas itself has no antialiasing), bright pixels bloom, ACES tone-maps at the end
-and a vignette darkens the corners. `LOOK` holds every number. Under La Reina Bubbaloo's light
-(`setTone`) the vignette turns her pink and colours get a touch richer.
+and a vignette darkens the corners. `LOOK` holds every number. Each scene is colour graded
+(below), and under La Reina Bubbaloo's light (`setTone`) her own grade blends in and the vignette
+turns her pink.
 
 Rules that come with a linear HDR buffer:
 
@@ -145,7 +150,7 @@ Rules that come with a linear HDR buffer:
 - **Clear colours go through `post.clear()`**, which linearises them; a plain sRGB clear comes out
   paler.
 - For before/after comparisons, `window.gerard.game.post.enabled = false` renders straight to the
-  screen (development build).
+  screen (development build), and `post.graded = false` keeps the pass but drops the grading.
 
 ### Tilt-shift and contact shadows
 
@@ -185,6 +190,55 @@ Cost at 1440×900 on an M1 Pro (release engine, `--perf`): on WebGPU +0.4–0.7 
 (about +0.5 ms CPU for ~50% more draw calls, +0.5–0.8 ms GPU); on WebGL2 about +1–2 ms, mostly
 the prepass's draw calls. SSAO alone costs about the same as the tilt-shift alone, and both
 together little more than either, since they share the prepass.
+
+## Colour grading (`src/grading.ts`)
+
+Each scene has a **look** (`LOOKS`): a colour transform baked into a lookup table, plus a few of
+CameraFrame's `colorEnhance` dials. It adds mood and never repaints: the palette must survive.
+
+| Look | Mood |
+| --- | --- |
+| `maresme` | A sunny Mediterranean afternoon: golden light, teal shade, a little more vibrance. |
+| `home-*` | Gerard's family house: warm afternoon indoors, soft amber shade opened up. |
+| `patio` | A cool blue night: blue in the shade, the lamps and fireflies keep their warmth. |
+| `meridiana` | The flat in the morning: soft and airy, peachy shade, the hot oranges held back. |
+| `alegia` | Crisp Basque air: cool shade, clean greens, a touch of clarity. |
+| `meridiana-calle` | Barcelona concrete: cool and a little hard. |
+| `rec-comtal` | A Barcelona morning round the school, a touch warmer than the avenue. |
+| `palacio` | Her palace: sugary and saturated, candy highlights over violet shade. |
+| `bubbaloo` | Her light anywhere: magenta shade, pink light, darker and stranger. |
+| `oscuro` | The flat before anyone is up (`setDark`): blue and grey until the lamps come on. |
+
+How it works:
+
+- A look's `grade` is a transform in display (sRGB) space: white balance (`temperature`, `tint`),
+  `lift` / `gamma` / `gain` per channel, split toning (`shadows`, `highlights`: colour added to
+  each, never to black or white), an S-curve `contrast` and `saturation`. `gradeColour` is the
+  pure function; `lutTable` bakes it once into a 16³ LUT (the engine's 256×16 strip, Unreal
+  layout), and each look's texture is built the first time it is shown.
+- The engine applies the LUT **after** ACES tone mapping and `colorEnhance` **before** it, on the HDR
+  colour (so `colorEnhance.shadows` opens up the shade without touching what blooms).
+- The first LUT slot is the scene's look, the second her `bubbaloo` look, blended by her tone
+  (`colorLUT.blend`) times the look's `her` (the palace takes only a third: it is sugary, not
+  gloomy). Her old saturation boost now lives in that LUT.
+- `post.setScene(id)` (from `setEnvironment`) cross-fades the first slot over `GRADE_FADE` (one
+  second; instant with reduced motion): while it fades, and while the flat is dark, a spare
+  texture is rewritten each frame with the mix. Otherwise nothing is uploaded.
+- Both slots stay filled and `colorEnhance` stays on, so there is one compose shader throughout.
+  No shader of ours: the engine's chunks run on WebGL2 and WebGPU alike, and the two give the same
+  picture (the `grading` scenario with `--gpu` and `--gpu --webgl`).
+- The engine filters the 16³ LUT in linear light between steps placed in sRGB, so the darkest step
+  (below about 17/255) comes out up to ~4/255 lighter and a smooth dark gradient shows faint steps
+  if stretched. The patio, the darkest scene, pulls its shade back down with `colorEnhance.shadows`.
+
+Cost: two LUT lookups (four bilinear fetches) and the `colorEnhance` maths per pixel in the
+compose pass that already runs; 16 KB of texture per look shown, plus a 16 KB upload a frame only
+while a cross-fade or the dark morning lasts.
+
+To tune or add a look, edit `LOOKS` and check it with `just screenshots grading`, which shows every
+scene plain and graded, a cross-fade half way, the street and the house under her tone and the
+dark flat. `tests/grading.test.mjs` keeps every look honest: black stays near black, white near
+white, mid grey near itself and greys in order.
 
 ## Particles (`src/particles.ts`)
 
@@ -447,14 +501,13 @@ Measured with `--perf` on an Apple GPU at 1440×900 (GPU ms a frame, street foll
 
 In rough order of what each adds for its cost:
 
-1. **Colour grading per scene** with LUTs (`colorLUT`, blending two for transitions) and
-   `colorEnhance` (shadows, highlights, vibrance): warm morning in the flat, cool night patio,
-   her pink taking over as a LUT blend rather than only lights.
-2. **Weather in the story**: choose rain or snow per scene and chapter, and puddles that gather
+1. **Weather in the story**: choose rain or snow per scene and chapter, and puddles that gather
    and dry where rain has fallen. Settled snow reads as soft patches; an even sheet needs its own
    particle shape (in both shader languages).
-3. **Shadows and sky, further**: a normal map on the pools so their sky reflection ripples, a
+2. **Shadows and sky, further**: a normal map on the pools so their sky reflection ripples, a
    second shadow map for the overview on fast GPUs, and a hemisphere ambient from the sky (the
    atlas's own ambient) once the scenes are rebalanced for it.
+3. **A look for chapter 2's dusk** (`story.dusk`), which today only raises her tone, and a finer
+   LUT (32³) if the darkest gradients ever show steps.
 4. **GPU particles** (compute) once counts need more than ~20k, on WebGPU only, keeping the CPU
    simulation for WebGL2.

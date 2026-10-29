@@ -1,10 +1,12 @@
 import * as pc from 'playcanvas';
+import { createGrading } from './grading.ts';
 
 /**
  * The look after the scene is drawn (PlayCanvas's CameraFrame): the scene renders in HDR with
  * 4× MSAA, whatever shines brighter than white (lamps, sparks, flames, her pink eyes) blooms,
- * ACES tone-maps it at the end, and the corners darken a little. La Reina Bubbaloo's light
- * (`setTone`) pulls that vignette to her pink and the colours a touch richer (docs/graphics.md).
+ * ACES tone-maps it at the end, and the corners darken a little. Each scene has its colour grade
+ * (src/grading.ts), and La Reina Bubbaloo's light (`setTone`) blends in her own and pulls that
+ * vignette to her pink (docs/graphics.md).
  */
 export const LOOK = {
   /** MSAA samples for the HDR scene; 2 halves the memory on a weak GPU at retina sizes. */
@@ -12,7 +14,7 @@ export const LOOK = {
   /** How much of the glow is added back, how wide it spreads and how bright a pixel must be to glow (linear). */
   bloom: { intensity: .045, blurLevel: 12, threshold: 1.15 },
   vignette: { intensity: .32, inner: .55, outer: 1.25, curvature: .6 },
-  bubbaloo: { vignette: new pc.Color(.07, 0, .035), saturation: 1.12 },
+  bubbaloo: { vignette: new pc.Color(.07, 0, .035) },
   /** Soft particles: a depth prepass of the opaque scene that particles fade against (src/particles.ts). */
   softParticles: true,
   // ── Tilt-shift and contact shadows (`setupDepthLook`) ──────────────────────────────────────
@@ -79,6 +81,8 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   // prepass and share it, so this switch only saves its cost when both of those are off too.
   frame.rendering.sceneDepthMap = LOOK.softParticles;
   const depth = setupDepthLook(app, frame, camera);
+  // Colour grading per scene (src/grading.ts): the looks live there, the calls below.
+  const grading = createGrading(app, frame);
   let tone = -1;
   const linear = new pc.Color();
   // --- Hit feel: a pulse of fringing and bloom that fades on real time (docs/graphics.md) ---
@@ -123,8 +127,8 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
       if (Math.abs(k - tone) < .002) return;
       tone = k;
       frame.vignette.color.lerp(pc.Color.BLACK, LOOK.bubbaloo.vignette, k);
-      frame.grading.saturation = pc.math.lerp(1, LOOK.bubbaloo.saturation, k);
       frame.update();
+      grading.setTone(k);
     },
     // ── Tilt-shift and contact shadows ──
     focus: depth.focus,
@@ -135,10 +139,19 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
     set ssao(on: boolean) { depth.ssao = on; depth.apply(); },
     get ssao() { return depth.ssao; },
     // ──
+    // ── Colour grading (src/grading.ts) ──
+    /** The scene's colour look; a change cross-fades over about a second. */
+    setScene: grading.setScene,
+    /** Before anyone is up (1) the look goes blue and grey; 0 is the scene's own. */
+    setDark: grading.setDark,
+    /** Grading off (false) for before/after comparisons; the rest of the pass stays. */
+    set graded(on: boolean) { grading.graded = on; },
+    get graded() { return grading.graded; },
+    // ── end of colour grading ──
     /** Turns the whole pass off (the camera renders straight to the screen) or back on. */
     set enabled(on: boolean) { frame.enabled = on; if (on) frame.update(); },
     get enabled() { return frame.enabled; },
-    destroy() { app.off('update', fadeHit); frame.destroy(); },
+    destroy() { app.off('update', fadeHit); grading.destroy(); frame.destroy(); },
   };
 }
 
