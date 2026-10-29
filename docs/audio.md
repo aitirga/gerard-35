@@ -93,19 +93,24 @@ The first two are at 110 BPM, measured with `just music-loop` and a self-similar
   the sixth's seam at 288 s. Version 1 opens it, then 2–6 mix. Version 1 is also the quietest
   (−17.9 dB against −16.6 to −17.2 for the rest). It is for friends' missions, one song per mission, picked among the
   mazmorra songs.
-- `concrete` (`song-concrete`, 1:40) is 46 bars from its first downbeat at 0 s to 100.364 s. Bar 1
-  opens; bars 2 to 17 (2.182 → 37.091 s, Logic's locators 2 to 18) vamp two to four times; then
-  bar 18, the break at bars 19 and 20 (40–43.6 s) and the rest play, and at 100.364 s it starts over
-  from bar 1. Bar 18 sounds like bar 2, so the jump back is unheard; bar 19 starts the break, so
-  the section stops before it. It is for the concrete, robot-like places: Meridiana street
-  (`meridiana-calle`) for now; the school on Rec Comtal plays the castle's song.
+- `concrete` (`song-concrete`, 1:40) is 46 bars from its first downbeat at 0 s to 100.364 s.
+  Bars 1 to 9 open; bars 10 to 17 (19.635 → 37.090 s, Logic's locators 10 to 18) vamp three to
+  seven times; then bar 18, the break at bars 19 and 20 (40–43.6 s) and the rest play, and at
+  100.364 s it starts over from bar 1. The song runs in 8-bar phrases (bars 2–9 and 10–17), each
+  ending on the same drum fill, so bar 10 starts with the tail of bar 9's fill just as bar 18 does
+  with bar 17's. Going back to bar 2 instead cut that tail off: bar 2 follows the quiet bar 1, so
+  the cymbals stopped dead, with a click (a jump of .25 at the cut, against at most .055 between
+  neighbouring samples there). Both marks sit 58 samples (1.2 ms) before the downbeat, where the
+  two waveforms meet within a natural step. Bar 19 starts the break, so the section stops before
+  it. It is for the concrete, robot-like places: Meridiana street (`meridiana-calle`) for now; the
+  school on Rec Comtal plays the castle's song.
 
 - `sad` (`song-sad`, 1:36) loops whole: 80 beats (20 bars) at 50 BPM from 0 to 96 s, playing at
   full level to the last sample. It is the childhood street's song, Passatge Maresme, where the
   game starts.
 
 `just dev-music mazmorra-2 45` plays the first seam 3 s in, and `just dev-music concrete 34`
-the vamp coming back to bar 2.
+the vamp coming back to bar 10.
 
 ### Adding a song
 
@@ -156,31 +161,37 @@ lowers by .15 down to .1; a fixed .35 in chapter 1's dream), whenever a place's 
 whenever the story changes.
 
 What the level does, all tuned to the song's C minor and going into the music bus, so the music
-slider and the menus' duck apply:
+slider and the menus' duck apply. Every number below is a knob in `HAUNT` at the top of
+[src/haunt.ts](../src/haunt.ts): an effect is silent up to its `from` level and grows to `full` at
+level 1, and a sound plays while the level is above its `from`, at its `volume` (1 as designed, 0
+never). As the party gathers ánimas and gets ready to go in, the threat falls and each effect eases
+along its own range, so tuning how the castle calms down is editing that table.
 
 - **The song warps**: a delay line swept by two slow LFOs bends its pitch like a warped tape (up to
   24 cents at .37 Hz and 10 at .06 Hz at level 1), and a lowpass darkens it (20 kHz at 0, 3.8 kHz
   at 1).
 - **Beds**: a low C2–G2 drone that beats slowly (from .15) and a draught of filtered noise
   wandering across the stereo field (from .4).
-- **Sounds now and then**, about one every 36 s at level 0 down to every 12 s at 1, through a long
-  dark echo. Each plays while the level is above its threshold, the way the castle's pieces stand
+- **Sounds now and then**, on average one every 36 s at level 0 down to every 12 s at 1, through a
+  long dark echo. Each plays while the level is above its `from`, the way the castle's pieces stand
   (src/palace.ts):
 
-| Sound | Above | |
+| Sound | From | |
 | --- | --- | --- |
-| `music-box` | 0 | A few falling notes, further apart and flatter, like a box winding down. |
 | `breath` | .25 | A breath crossing from one side to the other. |
 | `bell` | .4 | A minor-third bell on C or G, once or twice, far off. |
 | `thunder` | .55 | A low roll with cracks: the storm over the crown appears at the same threat. |
-| `sag` | .7 | The song itself drags like a tape and catches up. |
+| `sag` | .7 | The song itself drags like a tape and catches up (its `volume` is how far). |
 | `heartbeat` | .85 | Four slowing beats under the floor; only before the first ánima. |
 
-So the dream has the music box and the breath; chapter 2 starts with everything, the heartbeat goes
-with the first ánima, the sag with the second, and at the floor only the music box is left.
+So the dream has the breath; chapter 2 starts with everything, the heartbeat goes with the first
+ánima, the sag with the second, and at the floor only the warped song and its drone are left.
 
 Hear it with `just dev-music bubbaloo random .8` (the third argument is the level), and play one
-sound on demand from the console with `gerard.music.haunted.sound('bell')`. `just screenshots
+sound on demand from the console with `gerard.music.haunted.sound('bell')`. To try a knob without
+reloading, change it from the console and set the level again:
+`const { HAUNT } = await import('/src/haunt.ts'); HAUNT.drone.full = .05; gerard.music.haunted.set(.8)`
+(sounds pick up their new `from` and `volume` the next time one plays). `just screenshots
 castle-music --chrome` checks the song, the level and a level-matched wrap in the game, and logs each sound's loudness:
 against the song's median of about .057 RMS, they sit between .005 (the breath) and .022 (the
 heartbeat), and the beds at level 1 at about .02.

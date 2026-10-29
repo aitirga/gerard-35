@@ -3,16 +3,40 @@
  * the worse the castle is right now, the more the song warps and darkens, a low drone and a draught
  * creep in under it, and things sound now and then in the castle around it. Every sound is tuned to
  * the song's C minor. The `level` is the castle's threat (src/animas.ts), so the music eases as the
- * party gathers ánimas, the way the castle's towers fall.
+ * party gathers ánimas and gets ready to go in, the way the castle's towers fall.
  */
-export type HauntSound = 'music-box' | 'breath' | 'bell' | 'thunder' | 'sag' | 'heartbeat';
+
 /**
- * Each sound plays while the level is above its threshold, as the castle's pieces stand
- * (src/palace.ts): thunder comes with the storm over the crown (.55), the song sags once the
- * keep's eyes are lit (.7) and a heartbeat only at her worst, before any ánima.
+ * Every knob of the haunt, by level. An effect is silent up to its `from` level and grows to
+ * `full` at level 1; a sound plays now and then while the level is above its `from`, at its
+ * `volume` (1 as designed, 0 never). Sounds follow the castle's pieces (src/palace.ts): thunder
+ * comes with the storm over the crown (.55), the song sags once the keep's eyes are lit (.7) and
+ * a heartbeat only at her worst, before any ánima.
  */
-export const HAUNT_SOUNDS: Record<HauntSound, number> = { 'music-box': 0, breath: .25, bell: .4, thunder: .55, sag: .7, heartbeat: .85 };
-/** Chapter 1's palace is a dream: a music box and a breath, never the storm. */
+export const HAUNT = {
+  /** The song's pitch wobbling like a warped tape, in cents. */
+  wobble: { from: 0, full: 24 },
+  /** A slower drift of its pitch under the wobble, in cents. */
+  drift: { from: 0, full: 10 },
+  /** A lowpass darkening the song, in Hz (20000 leaves it as it is). */
+  darken: { from: 0, full: 3800 },
+  /** A low C drone that beats slowly, as a gain. */
+  drone: { from: .15, full: .03 },
+  /** A draught through the halls, as a gain. */
+  draught: { from: .4, full: .025 },
+  /** Mean seconds between sounds, at level 0 and at level 1. */
+  every: [36, 12],
+  sounds: {
+    breath: { from: .25, volume: 1 },
+    bell: { from: .4, volume: 1 },
+    thunder: { from: .55, volume: 1 },
+    /** Its volume is how far the song drags. */
+    sag: { from: .7, volume: 1 },
+    heartbeat: { from: .85, volume: 1 },
+  },
+};
+export type HauntSound = keyof typeof HAUNT.sounds;
+/** Chapter 1's palace is a dream: a breath now and then, never the storm. */
 export const DREAM_HAUNT = .35;
 
 const clamp01 = (value: number) => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
@@ -22,18 +46,20 @@ export function castleHaunt({ adult, castleThreat }: { adult: boolean; castleThr
   return adult ? castleThreat : DREAM_HAUNT;
 }
 
-/** What a level does to the song: pitch wobble and drift in cents, the lowpass, layer gains and the sounds it allows. */
+/** How far past `from` a level is, 0 at `from` and below, 1 at level 1. */
+const past = (l: number, from: number) => from >= 1 ? 0 : Math.max(0, l - from) / (1 - from);
+
+/** What a level does to the song (`HAUNT`): pitch wobble and drift in cents, the lowpass, layer gains and the sounds it allows. */
 export function hauntMix(level: number) {
-  const l = clamp01(level);
+  const l = clamp01(level), { wobble, drift, darken, drone, draught, every, sounds } = HAUNT;
   return {
-    wobble: 24 * l,
-    drift: 10 * l,
-    cutoff: 20000 * (3800 / 20000) ** l,
-    drone: Math.max(0, l - .15) / .85 * .03,
-    draught: Math.max(0, l - .4) / .6 * .025,
-    sounds: l > 0 ? (Object.keys(HAUNT_SOUNDS) as HauntSound[]).filter(id => l > HAUNT_SOUNDS[id]) : [],
-    /** Mean seconds between sounds: about one every half minute at the floor, every twelve at the worst. */
-    every: 36 - 24 * l,
+    wobble: wobble.full * past(l, wobble.from),
+    drift: drift.full * past(l, drift.from),
+    cutoff: 20000 * (darken.full / 20000) ** past(l, darken.from),
+    drone: drone.full * past(l, drone.from),
+    draught: draught.full * past(l, draught.from),
+    sounds: l > 0 ? (Object.keys(sounds) as HauntSound[]).filter(id => l > sounds[id].from && sounds[id].volume > 0) : [],
+    every: every[0] + (every[1] - every[0]) * l,
   };
 }
 
@@ -43,9 +69,8 @@ export const swing = (cents: number, rate: number) => (2 ** (cents / 1200) - 1) 
 /** The pitch bend of a delay line runs on this much delay, so the swings never reach zero. */
 const BASE_DELAY = .03;
 const WOBBLE_RATE = .37, DRIFT_RATE = .061;
-/** C minor, around the song: C2 for the drone, C3 and G2 for the bell, a pentatonic for the music box. */
+/** C minor, around the song: C2 for the drone, C3 and G2 for the bell. */
 const C2 = 65.41, G2 = 98, C3 = 130.81;
-const BOX = [1046.5, 1244.5, 1396.9, 1568, 1864.7];
 
 export type Haunt = ReturnType<typeof createHaunt>;
 
@@ -99,12 +124,12 @@ export function createHaunt(context: AudioContext, out: AudioNode) {
     return beds;
   }
 
-  /** A short-lived output for one sound, placed left or right; it lets go of itself after `length` seconds. */
-  function place(pan: number, length: number): [GainNode, StereoPannerNode] {
-    const gain = context.createGain(), panner = context.createStereoPanner();
-    panner.pan.value = pan;
-    gain.connect(panner).connect(sounds);
-    setTimeout(() => { gain.disconnect(); panner.disconnect(); }, (length + 4) * 1000);
+  /** A short-lived output for one sound at its `volume`, placed left or right; it lets go of itself after `length` seconds. */
+  function place(id: HauntSound, pan: number, length: number): [GainNode, StereoPannerNode] {
+    const gain = context.createGain(), volume = context.createGain(), panner = context.createStereoPanner();
+    volume.gain.value = HAUNT.sounds[id].volume; panner.pan.value = pan;
+    gain.connect(volume).connect(panner).connect(sounds);
+    setTimeout(() => { gain.disconnect(); volume.disconnect(); panner.disconnect(); }, (length + 4) * 1000);
     return [gain, panner];
   }
   function partial(dest: AudioNode, at: number, freq: number, gain: number, decay: number, type: OscillatorType = 'sine') {
@@ -127,26 +152,16 @@ export function createHaunt(context: AudioContext, out: AudioNode) {
   }
   const random = (from: number, to: number) => from + Math.random() * (to - from);
   const RECIPES: Record<HauntSound, (at: number) => void> = {
-    // A music box winding down: a few falling notes, further apart and flatter each time.
-    'music-box': at => {
-      const [out] = place(random(-.6, .6), 6), count = 3 + Math.floor(Math.random() * 3);
-      let t = at, top = 2 + Math.floor(Math.random() * 3);
-      for (let k = 0; k < count; k++) {
-        const freq = BOX[Math.max(0, top - k) % BOX.length] * (k === 0 && Math.random() < .5 ? 2 : 1) * 2 ** (-(k * 14 + random(0, 18)) / 1200);
-        partial(out, t, freq, .032, 1.5); partial(out, t, freq * 3.01, .008, .5);
-        t += .3 + k * .12;
-      }
-    },
     // A breath down a corridor: noise swelling through a vowel-like band, crossing from one side to the other.
     breath: at => {
-      const [out, panner] = place(0, 4), from = Math.random() < .5 ? -1 : 1;
+      const [out, panner] = place('breath', 0, 4), from = Math.random() < .5 ? -1 : 1;
       panner.pan.setValueAtTime(from * .8, at); panner.pan.linearRampToValueAtTime(-from * .8, at + 3);
       out.gain.setValueAtTime(0, at); out.gain.linearRampToValueAtTime(.09, at + 1.3); out.gain.linearRampToValueAtTime(0, at + 3);
       hiss(out, at, 3.1, f => { f.type = 'bandpass'; f.Q.value = 3; f.frequency.setValueAtTime(700, at); f.frequency.exponentialRampToValueAtTime(1500, at + 1.3); f.frequency.exponentialRampToValueAtTime(600, at + 3); });
     },
     // A bell tolling somewhere above: a minor-third bell on C or G, once or twice.
     bell: at => {
-      const [out] = place(random(-.4, .4), 16), root = Math.random() < .6 ? C3 : G2, far = context.createBiquadFilter();
+      const [out] = place('bell', random(-.4, .4), 16), root = Math.random() < .6 ? C3 : G2, far = context.createBiquadFilter();
       far.type = 'lowpass'; far.frequency.value = 1900; far.connect(out);
       setTimeout(() => far.disconnect(), 20000);
       const tolls = Math.random() < .5 ? 1 : 2;
@@ -156,7 +171,7 @@ export function createHaunt(context: AudioContext, out: AudioNode) {
     },
     // Thunder from the storm over the crown: a slow low roll with a crack or two in it.
     thunder: at => {
-      const [out] = place(random(-.5, .5), 8);
+      const [out] = place('thunder', random(-.5, .5), 8);
       out.gain.setValueAtTime(0, at); out.gain.linearRampToValueAtTime(.32, at + .7); out.gain.exponentialRampToValueAtTime(.0005, at + 7);
       hiss(out, at, 7.2, f => { f.type = 'lowpass'; f.Q.value = .9; f.frequency.setValueAtTime(260, at); f.frequency.exponentialRampToValueAtTime(70, at + 7); });
       for (let k = 0; k < 2; k++) {
@@ -171,12 +186,12 @@ export function createHaunt(context: AudioContext, out: AudioNode) {
       const time = warp.delayTime;
       time.cancelScheduledValues(at);
       time.setValueAtTime(BASE_DELAY, at);
-      time.linearRampToValueAtTime(BASE_DELAY + .05, at + 1.6);
+      time.linearRampToValueAtTime(BASE_DELAY + .05 * HAUNT.sounds.sag.volume, at + 1.6);
       time.linearRampToValueAtTime(BASE_DELAY, at + 3.4);
     },
     // A heartbeat under the floor, slowing.
     heartbeat: at => {
-      const [out] = place(0, 6);
+      const [out] = place('heartbeat', 0, 6);
       for (let k = 0; k < 4; k++) {
         const t = at + k * (.95 + k * .08);
         for (const [dt, gain] of [[0, .16], [.27, .11]] as const) {

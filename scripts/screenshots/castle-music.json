@@ -87,7 +87,7 @@
       "caption": "Near the file's end the take crossfades into another point of similar loudness, matched in gain and easing back over 20 s"
     },
     {
-      "eval": "import('/src/haunt.ts').then(async ({ createHaunt }) => { const measure = buffer => { const d = buffer.getChannelData(0); let peak = 0, sum = 0, n = 0; for (const v of d) { peak = Math.max(peak, Math.abs(v)); if (Math.abs(v) > 1e-3) { sum += v * v; n++; } } return `peak ${peak.toFixed(3)} rms ${Math.sqrt(sum / Math.max(1, n)).toFixed(4)}`; }; for (const id of ['music-box', 'breath', 'bell', 'thunder', 'heartbeat']) { const c = new OfflineAudioContext(2, 48000 * 14, 48000); createHaunt(c, c.destination).sound(id); console.log('HAUNT', id, measure(await c.startRendering())); } const c = new OfflineAudioContext(2, 48000 * 8, 48000); createHaunt(c, c.destination).set(1, .03); console.log('HAUNT beds at 1', measure(await c.startRendering())); })"
+      "eval": "import('/src/haunt.ts').then(async ({ createHaunt }) => { const measure = buffer => { const d = buffer.getChannelData(0); let peak = 0, sum = 0, n = 0; for (const v of d) { peak = Math.max(peak, Math.abs(v)); if (Math.abs(v) > 1e-3) { sum += v * v; n++; } } return `peak ${peak.toFixed(3)} rms ${Math.sqrt(sum / Math.max(1, n)).toFixed(4)}`; }; for (const id of ['breath', 'bell', 'thunder', 'heartbeat']) { const c = new OfflineAudioContext(2, 48000 * 14, 48000); createHaunt(c, c.destination).sound(id); console.log('HAUNT', id, measure(await c.startRendering())); } const c = new OfflineAudioContext(2, 48000 * 8, 48000); createHaunt(c, c.destination).set(1, .03); console.log('HAUNT beds at 1', measure(await c.startRendering())); })"
     }
   ]
 }

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { DEFAULT_AUDIO, levelGain, validAudioSettings } from '../src/audio.ts';
 import { TRACKS, cycleCount, evenStart, fadeCurve, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, nextVersion, randomStart, untilBoundary, vampLaps, vampPosition } from '../src/music.ts';
 import { readFileSync } from 'node:fs';
-import { DREAM_HAUNT, HAUNT_SOUNDS, castleHaunt, hauntMix, swing } from '../src/haunt.ts';
+import { DREAM_HAUNT, HAUNT, castleHaunt, hauntMix, swing } from '../src/haunt.ts';
 import { castleThreat } from '../src/animas.ts';
 
 const close = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 1e-6, `${message ?? ''} ${actual} ≠ ${expected}`);
@@ -77,19 +77,30 @@ test('the castle haunts its song more the stronger it is', () => {
     assert.ok(mix.drone >= previous.drone && mix.draught >= previous.draught && mix.sounds.length >= previous.sounds.length, `at ${level}`);
     previous = mix;
   }
-  assert.deepEqual(hauntMix(1).sounds, Object.keys(HAUNT_SOUNDS), 'everything at her worst');
+  assert.deepEqual(hauntMix(1).sounds, Object.keys(HAUNT.sounds), 'everything at her worst');
   // Each ánima takes a sound away, the way the castle's towers fall.
   const heard = animas => hauntMix(castleThreat(animas)).sounds;
   assert.ok(heard(0).includes('heartbeat'));
   assert.ok(!heard(1).includes('heartbeat') && heard(1).includes('sag'));
   assert.ok(!heard(2).includes('sag') && heard(2).includes('thunder'), 'the storm still stands at two ánimas');
-  assert.deepEqual(heard(6), ['music-box'], 'the floor keeps a music box');
+  assert.deepEqual(heard(6), [], 'at the floor only the song is left');
 });
 
 test('chapter 1 dreams the castle; chapter 2 follows its threat', () => {
   assert.equal(castleHaunt({ adult: false, castleThreat: 1 }), DREAM_HAUNT);
   assert.equal(castleHaunt({ adult: true, castleThreat: .55 }), .55);
-  assert.deepEqual(hauntMix(DREAM_HAUNT).sounds, ['music-box', 'breath'], 'no storm in the dream');
+  assert.deepEqual(hauntMix(DREAM_HAUNT).sounds, ['breath'], 'no storm in the dream');
+});
+
+test('the haunt follows its table', () => {
+  const { drone, sounds } = HAUNT, was = { from: drone.from, full: drone.full, bell: sounds.bell.volume };
+  try {
+    drone.from = .5; drone.full = .1;
+    assert.equal(hauntMix(.5).drone, 0, 'silent up to its level');
+    close(hauntMix(.75).drone, .05); close(hauntMix(1).drone, .1);
+    sounds.bell.volume = 0;
+    assert.ok(!hauntMix(1).sounds.includes('bell'), 'a sound at volume 0 never plays');
+  } finally { drone.from = was.from; drone.full = was.full; sounds.bell.volume = was.bell; }
 });
 
 test('the pitch swing bends the song by the cents asked', () => {

@@ -26,10 +26,11 @@ export const TRACKS = {
   home: { src: 'music/song-home.m4a', marks: { start: 0 }, stream: true, loudness: 'music/song-home.loudness.json' },
   // La Reina Bubbaloo's castle, 13 minutes, the same way; it warps more the stronger the castle is.
   bubbaloo: { src: 'music/bubbaloo-light.m4a', marks: { start: 0 }, stream: true, loudness: 'music/bubbaloo-light.loudness.json', haunted: true },
-  // The concrete streets, 46 bars at 110 BPM: bar 1 opens, bars 2 to 17 (16 bars, Logic's 2 to 18)
-  // vamp two to four times, then the rest plays, the break at bars 19 and 20 included, and the song
-  // starts over from bar 1 at its end.
-  concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, vamp: 2.182, on: 37.091, end: 100.364 }, loop: ['start', 'end'], vamp: { from: 'vamp', to: 'on', laps: [2, 4] }, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
+  // The concrete streets, 46 bars at 110 BPM: bars 1 to 9 open, bars 10 to 17 (8 bars, Logic's 10
+  // to 18) vamp three to seven times, then the rest plays, the break at bars 19 and 20 included, and
+  // the song starts over from bar 1 at its end. Bar 17 ends on the same fill as bar 9, so going back
+  // to bar 10 keeps its tail; both marks sit 58 samples before the downbeat, where the waveforms meet.
+  concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, vamp: 19.635146, on: 37.089708, end: 100.364 }, loop: ['start', 'end'], vamp: { from: 'vamp', to: 'on', laps: [3, 7] }, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
   // Passatge Maresme, where the game starts: the whole song loops, 80 beats (20 bars) at 50 BPM.
   sad: { src: 'music/song-sad.m4a', marks: { start: 0, end: 96 }, loop: ['start', 'end'], bpm: 50, beatsPerBar: 4, downbeat: 'start' },
   // A friend's mission: six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23),
