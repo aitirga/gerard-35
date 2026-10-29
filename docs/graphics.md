@@ -11,6 +11,7 @@ src/game.ts ── camera ──► src/post.ts       CameraFrame: HDR + 4× MSA
                                └──────────► src/trails.ts      ribbons: one strip, one draw
 src/battle-scene.ts ─────► effects.impact / heal / anima / stamp / element / comet / trails …
             └─ hit feel ► src/hit-feel.ts   hit-stop, camera lurch and punch-in; post.pulse for fringe + bloom
+                               │                               weather and ground marks
 ```
 
 Check visual changes with `just screenshots graphics` (the same five views every time: street,
@@ -18,6 +19,10 @@ palace, flat, patio, a fight) and `just screenshots particles` (each scene's air
 in time while every effect, element and aura plays), and `just screenshots trails` (swings, spells
 and spirals frozen mid-flight). `tests/particles.test.mjs` and `tests/trails.test.mjs` run the real
 simulation and strip building headless.
+
+in time while every effect, element and aura plays). `just screenshots weather` shows rain and snow
+on the street and the patio, and the marks a fight leaves. `tests/particles.test.mjs` runs the real
+simulation headless.
 
 ## The engine
 
@@ -206,8 +211,11 @@ Each step (slow frames are split into steps of at most 1/45 s), a particle:
   and solid cells from the grid: walls 2.6 m in plans, furniture 0.8 m, street houses as tall
   as their volumes, props 1 m. Particles bounce (`bounce`, `friction`), settle on furniture tops,
   stick flat where they land (`stick`: gum, confetti, snow) or burst into something else
-  (`pop` + `onLand`: drops into ripples or splats). `onDeath` does the same when a particle
-  dies (bubbles popping).
+  (`pop` + `onLand`, one kind or several: drops into ripples or splats, rain into a ripple and
+  spray). `onDeath` does the same when a particle dies (bubbles popping).
+
+`retire(kinds, keep, seconds)` is a budget: it fades the oldest particles of those kinds out over
+`seconds` (through their own `fadeOut`, from wherever they are in it) until only `keep` are left.
 
 `intensity` makes a kind shine past white so the post pass blooms it. Covering particles take the
 scene's light (`effects` feeds ambient + part of the sun as `uLight`), glowing ones ignore it
@@ -249,6 +257,51 @@ the palace, on a heavily loaded machine). Set `LOOK.softParticles` to false to d
 Each scene has its **air** (`AIR`): dust motes in the light indoors, pollen on the breeze outside,
 fireflies in the patio at night, gloom and bubbles in her palace, and her pink gloom outside that
 thickens with her light (`setTone`). It fills what the camera sees and survives `clear()`.
+
+## Weather and marks (`src/effects.ts`)
+
+**Weather** falls over scenes with a sky (never in `plan` interiors or in her palace):
+`effects.setWeather('clear' | 'rain' | 'snow', intensity 0–1, now?)`. It ramps in and out over
+`WEATHER_RAMP` (4 s) and crossfades when it changes; `now`, or entering a scene, starts it already
+falling. In development, `?weather=rain|snow&intensity=.6` sets it from the URL. The story will
+choose it later; nothing on the HUD shows it.
+
+- **Rain**: `spark` streaks falling at 9 m/s, leaning with the scene's wind (×2.5), that `pop` on
+  floors, roofs and furniture tops into a `ripplet` (a ground ring) and a drop of `spray`; it melts
+  settled snow. Over half intensity a low `haze` hangs about. Covering particles and marks take
+  30 % less light.
+- **Snow**: `flake`s drifting down at 0.85 m/s on the random walk, the flow field and the wind,
+  each leaving a soft `drift` patch (a flat `smoke`) where it lands; overlapping patches read as a
+  dusting. A scene that opens in snow starts dusted.
+- Pollen and fireflies thin out under either.
+- **Reduced motion**: nothing falls. Snow is only a still dusting on the floor; rain only dims.
+
+Budgets (`WEATHER`; heavy weather, measured headless with the game's view): rain lands at most
+1400 drops a second, about 1700 particles alive with ripples, spray and mist on the street (the
+widest scenes stay under ~2400). Snow falls at most 220 flakes a second and keeps at most
+`settled` 2000 patches, the oldest melting first: about 2900 alive on the street, ~3200 in the
+widest scenes, a few hundred of them melting at any time. With the air (≤ ~450 outside) that
+still leaves the 6000-particle pool over 2000 for a fight, whose bursts are a few hundred.
+
+**Marks** are what hits leave on the ground: `effects.mark(kind, at, size)` with `scorch` (fire,
+with embers dying out), `frost` (ice), `gum`, `wet` (water) or `dust` (earth). `element()` leaves
+its element's mark under the target (`ELEMENT_MARKS`) and gum blows (`impact` with `gum`) a small
+puddle. A mark stays while a fight lasts (`update` gets `fight`), fades over 2.5 s when it ends
+(`clear()` or the fight flag dropping), and outside a fight fades after 40 s. Past `MARK_BUDGET`
+(320 layers, ~45 marks) the oldest fade first.
+
+They are a second, 512-particle pool with the same shader and shapes (`splat`, `smoke`, `flake`,
+`glow` lying flat), not a decal renderer: the particle pool draws in no particular order, so a
+covering scorch drawn after a flame would dim it; the marks' pool sorts behind every other
+transparent draw (`calculateSortDistance`), so flames, dust and rain always lie on top. Each layer
+sits 3 cm over the floor under it (kerbs and steps included, and over painted planes such as the
+street's name, which the floor height does not know about), far above the depth precision of the
+orthographic camera (and only a pixel or two off in this view), and marks never write depth, so they cannot z-fight with the floor or
+with each other.
+
+To add a mark, add its flat kinds to `MARK_KINDS` (long `life` and a small `fadeOut`, which the
+budget fades through; `brief` layers like embers die on their own), its layers to `MARKS`, and,
+if an element leaves it, an entry in `ELEMENT_MARKS`.
 
 To add a kind, add an entry to `KINDS` (sizes are half-widths in metres; the street camera shows
 40–75 px a metre, so glows under ~0.05 m disappear) and check it in the `particles` scenario.
@@ -337,13 +390,14 @@ waking, and logs each contact, hold and resolution on screen.
 
 In rough order of what each adds for its cost:
 
-2. **Colour grading per scene** with LUTs (`colorLUT`, blending two for transitions) and
+1. **Colour grading per scene** with LUTs (`colorLUT`, blending two for transitions) and
    `colorEnhance` (shadows, highlights, vibrance): warm morning in the flat, cool night patio,
    her pink taking over as a LUT blend rather than only lights.
-4. **Weather and decals**: rain (streaks + ripples), snow (flakes that settle) and persistent
-   marks (scorch, frost, gum) as ground decals with a budget, from the kinds that already exist.
-6. **Softer shadows** (`SHADOW_PCSS_32F` or VSM) and shadow resolution that follows the zoom.
-7. **Image-based lighting** (a prefiltered environment atlas) so glossy gum, glass and water
+2. **Softer shadows** (`SHADOW_PCSS_32F` or VSM) and shadow resolution that follows the zoom, and
+   **image-based lighting** (a prefiltered environment atlas) so glossy gum, glass and water
    reflect a sky instead of only the sun.
-8. **GPU particles** (compute) once counts need more than ~20k, on WebGPU only, keeping the CPU
+3. **Weather in the story**: choose rain or snow per scene and chapter, and puddles that gather
+   and dry where rain has fallen. Settled snow reads as soft patches; an even sheet needs its own
+   particle shape (in both shader languages).
+4. **GPU particles** (compute) once counts need more than ~20k, on WebGPU only, keeping the CPU
    simulation for WebGL2.

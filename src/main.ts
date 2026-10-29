@@ -543,6 +543,9 @@ try {
     // &haunt=.8 plays a haunted song at that level instead of the castle's (just dev-music bubbaloo random .8).
     if (params.has('haunt') && Number.isFinite(haunt)) music.haunt(haunt);
     if (track && isTrack(track)) void audio.unlocked.then(() => music.play(track, { from: Number.isFinite(Number(params.get('from'))) ? Number(params.get('from')) : params.get('from') ?? 'start', fade: 0 }));
+    // ?weather=rain|snow&intensity=.6 sets the sky over outdoor scenes (the story will choose it later).
+    const weather = params.get('weather'), intensity = Number(params.get('intensity') ?? 1);
+    if (weather === 'rain' || weather === 'snow') game.effects.setWeather(weather, Number.isFinite(intensity) ? intensity : 1, true);
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
     Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, homeLights, audio, music, sfx } });
   }

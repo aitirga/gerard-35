@@ -62,8 +62,8 @@ export interface ParticleKind {
   flicker?: number; flickerRate?: number;
   /** Confetti tumbles: turns a second around its long side. */
   tumble?: number;
-  /** Particles left behind when it lands for the first time, or when it dies. */
-  onLand?: SubBurst; onDeath?: SubBurst;
+  /** Particles left behind when it lands for the first time (one kind or several), or when it dies. */
+  onLand?: SubBurst | readonly SubBurst[]; onDeath?: SubBurst;
   /**
    * Soft particles: how deep (m, up to .9) it fades out in front of what it cuts into (floors,
    * walls, people), so a puff never shows a hard straight line. Never more than its own size;
@@ -133,7 +133,7 @@ interface Compiled {
   wander: number; wanderRate: number; flow: number; wind: number;
   collide: boolean; bounce: number; friction: number; stick: boolean; pop: boolean; bodies: number;
   stretch: number; spin: [number, number]; flicker: number; flickerRate: number; tumble: number;
-  colour: Float32Array; onLand?: SubBurst; onDeath?: SubBurst; soft: number;
+  colour: Float32Array; onLand?: readonly SubBurst[]; onDeath?: SubBurst; soft: number;
 }
 
 const range = (r: Range | undefined, fallback: number): [number, number] => r === undefined ? [fallback, fallback] : typeof r === 'number' ? [r, r] : [r[0], r[1]];
@@ -533,7 +533,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
   const age = f32(), life = f32(), size = f32(), rot = f32(), spin = f32(), seed = f32();
   const colour = new Float32Array(capacity * 6);
   const kind = new Uint8Array(capacity), state = new Uint8Array(capacity), ambient = new Uint8Array(capacity);
-  const LANDED = 1, STUCK = 2;
+  const LANDED = 1, STUCK = 2, FADING = 4;
   let alive = 0, recycle = 0, time = 0;
   const field = flowField();
   const flow = new Float32Array(3);
@@ -698,7 +698,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
           y = floor;
           if (!(state[i] & LANDED)) {
             state[i] |= LANDED;
-            if (k.onLand) { px[i] = x; py[i] = y; pz[i] = z; queue(k.onLand, i); }
+            if (k.onLand) { px[i] = x; py[i] = y; pz[i] = z; for (const sub of k.onLand) queue(sub, i); }
             if (k.pop) { kill(i); i--; continue; }
           }
           if (k.stick) { state[i] |= STUCK; ux = uy = uz = 0; y = floor + .012 + seed[i] * .006; }
@@ -870,7 +870,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
         wander: def.wander ?? 0, wanderRate: def.wanderRate ?? 1, flow: def.flow ?? 0, wind: def.wind ?? 0,
         collide: def.collide ?? false, bounce: def.bounce ?? 0, friction: def.friction ?? 0, stick: def.stick ?? false, pop: def.pop ?? false, bodies: def.bodies ?? 0,
         stretch: def.stretch ?? 0, spin: range(def.spin, 0), flicker: def.flicker ?? 0, flickerRate: def.flickerRate ?? 1, tumble: def.tumble ?? 0,
-        colour: colourPair(def.colour, new Float32Array(6)), onLand: def.onLand, onDeath: def.onDeath,
+        colour: colourPair(def.colour, new Float32Array(6)), onLand: def.onLand && [def.onLand].flat(), onDeath: def.onDeath,
         soft: def.orient === 'ground' ? 0 : Math.min(.9, def.soft ?? ((def.additive ?? 0) >= 1 ? 0 : .3)),
       };
       const existing = names.get(name);
@@ -918,8 +918,30 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
     groundAt,
     /** Where every living particle is (x, y, z each) and whether it is stuck, for tests and debugging. */
     snapshot() {
-      return Array.from({ length: alive }, (_, i) => ({ x: px[i], y: py[i], z: pz[i], stuck: (state[i] & STUCK) !== 0, kind: [...names].find(([, id]) => id === kind[i])![0] }));
+      return Array.from({ length: alive }, (_, i) => ({ x: px[i], y: py[i], z: pz[i], stuck: (state[i] & STUCK) !== 0, fading: (state[i] & FADING) !== 0, kind: [...names].find(([, id]) => id === kind[i])![0] }));
     },
+    /**
+     * A budget: fades out the oldest particles of the named kinds over `seconds` until at most
+     * `keep` are left, none by default. Each fades from where it is through its own `fadeOut`, so
+     * give budgeted kinds one. Returns how many are left.
+     */
+    retire(names: readonly string[], keep = 0, seconds = 1) {
+      const ids = names.map(kindId), found: number[] = [];
+      for (let i = 0; i < alive; i++) if (ids.includes(kind[i]) && !(state[i] & FADING)) found.push(i);
+      if (found.length <= keep) return found.length;
+      found.sort((a, b) => age[b] - age[a]);
+      for (let n = found.length - keep - 1; n >= 0; n--) {
+        const i = found[n], f = kinds[kind[i]].fadeOut, t = age[i] / life[i];
+        state[i] |= FADING;
+        if (!f) { life[i] = Math.min(life[i], age[i] + seconds); continue; }
+        // Jump to the point of its own fade-out where it looks as it does now, `seconds` from the end.
+        const left = Math.min(1, (1 - t) / f);
+        life[i] = seconds / f; age[i] = life[i] * (1 - left * f);
+      }
+      return keep;
+    },
+    /** The single draw call, e.g. to order it against other transparent things. */
+    meshInstance: instance,
     /** How much scene light covering particles take (linear RGB); glowing ones ignore it. */
     setLight(r: number, g: number, b: number) { light[0] = r; light[1] = g; light[2] = b; material.setParameter('uLight', light); },
     /** Soft particles on or off (for comparisons); they also need the post pass's scene depth (src/post.ts). */

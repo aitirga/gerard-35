@@ -116,3 +116,88 @@ test('the scene world stands walls where the plan draws them and leaves floors o
   const furniture = home.plan.flatMap((row, z) => [...row].map((glyph, x) => ({ glyph, x, z }))).find(c => c.glyph === 'o');
   assert.ok(top(furniture.x, furniture.z) < 1.5, 'furniture is low enough to settle on');
 });
+
+/** Effects over one scene, as the game builds it but with flat floors. */
+function effectsIn(id) {
+  const effects = createEffects(headlessApp()), environment = ENVIRONMENTS[id];
+  const cx = (environment.grid[0].length - 1) / 2, cz = (environment.grid.length - 1) / 2;
+  effects.setScene(environment, { root: new pc.Entity(), groundHeight: () => 0, toWorld: (x, z) => new pc.Vec3(x - cx, 0, z - cz), houses: [] });
+  return effects;
+}
+const play = (effects, seconds, fight = false) => { for (let t = 0; t < seconds; t += 1 / 60) effects.update(1 / 60, { focus: { x: 0, y: 0, z: 0 }, reach: 30, animate: true, paused: false, fight }); };
+const lasting = effects => effects.marks.snapshot().filter(p => !['glowing'].includes(p.kind));
+
+test('marks keep to their budget, the oldest fading first', () => {
+  const effects = effectsIn('patio');
+  for (let i = 0; i < 80; i++) { effects.element(['fire', 'ice', 'water', 'earth', 'gum'][i % 5], { x: -4 + i % 9, y: 1, z: -4 + Math.floor(i / 9) }); play(effects, .05, true); }
+  effects.mark('scorch', { x: 5.5, y: 0, z: 5.5 }, .6);
+  play(effects, 4, true);
+  const left = lasting(effects);
+  assert.ok(left.length <= 320, `${left.length} mark layers over the budget`);
+  assert.ok(left.length > 200, 'the budget is used, not emptied');
+  assert.ok(left.some(p => p.kind === 'scorch' && Math.hypot(p.x - 5.5, p.z - 5.5) < .1), 'the newest mark is still there');
+  assert.ok(left.every(p => p.y > -.001 && p.y < .05), 'marks lie just above the floor');
+});
+
+test('marks stay through a fight and fade out after it instead of vanishing', () => {
+  const effects = effectsIn('patio');
+  effects.element('fire', { x: 0, y: 1, z: 0 });
+  play(effects, 60, true);
+  const fought = lasting(effects).length;
+  assert.ok(fought > 0, 'a fight minute later the scorch is still there');
+  effects.clear();
+  assert.equal(lasting(effects).length, fought, 'clearing starts a fade, not a cut');
+  assert.ok(lasting(effects).every(p => p.fading));
+  play(effects, 3);
+  assert.equal(lasting(effects).length, 0, 'faded out a few seconds later');
+  effects.mark('gum', { x: 0, y: 0, z: 0 });
+  play(effects, 30);
+  assert.ok(lasting(effects).length > 0, 'outside a fight a mark stays a while…');
+  play(effects, 15);
+  assert.equal(lasting(effects).length, 0, '…then fades');
+});
+
+test('snow settles on the floor and its settled patches keep to a cap', () => {
+  const effects = effectsIn('maresme');
+  effects.setWeather('snow', 1, true);
+  play(effects, 2);
+  const falling = effects.particles.snapshot().filter(p => p.kind === 'snow').length;
+  assert.ok(falling > 200, `${falling} flakes falling`);
+  play(effects, 40);
+  const settled = effects.particles.snapshot().filter(p => p.kind === 'drift');
+  // The cap is checked four times a second, so a quarter second's landings may wait their turn.
+  assert.ok(settled.filter(p => !p.fading).length <= 2000 + 60, `${settled.length} settled patches`);
+  assert.ok(settled.filter(p => p.stuck).length > 1000, 'the ground is dusted');
+  assert.ok(effects.particles.count < 3300, `${effects.particles.count} particles alive in heavy snow`);
+});
+
+test('rain falls outdoors and lands in ripples, but never indoors', () => {
+  const street = effectsIn('maresme');
+  street.setWeather('rain', 1, true);
+  play(street, 3);
+  const kinds = street.particles.snapshot().map(p => p.kind);
+  assert.ok(kinds.filter(k => k === 'rain').length > 300 && kinds.includes('ripplet') && kinds.includes('spray'));
+  assert.ok(street.particles.count < 2600, `${street.particles.count} particles alive in heavy rain`);
+  // Clearing up ramps it out over a few seconds.
+  street.setWeather('clear');
+  play(street, 1);
+  assert.ok(street.weather.rain > .5 && street.weather.rain < 1);
+  play(street, 6);
+  assert.equal(street.particles.snapshot().filter(p => p.kind === 'rain').length, 0);
+  const flat = effectsIn('meridiana');
+  flat.setWeather('rain', 1, true);
+  play(flat, 2);
+  assert.equal(flat.particles.snapshot().filter(p => p.kind === 'rain').length, 0);
+});
+
+test('with reduced motion nothing falls: snow is only a still dusting', () => {
+  const effects = effectsIn('maresme');
+  effects.setWeather('snow', 1, true);
+  for (let t = 0; t < 3; t += 1 / 60) effects.update(1 / 60, { focus: { x: 0, y: 0, z: 0 }, reach: 30, animate: false, paused: false });
+  const kinds = effects.particles.snapshot().map(p => p.kind);
+  assert.equal(kinds.filter(k => k === 'snow').length, 0);
+  assert.ok(kinds.filter(k => k === 'drift').length > 300);
+  effects.setWeather('rain', 1, true);
+  for (let t = 0; t < 1; t += 1 / 60) effects.update(1 / 60, { focus: { x: 0, y: 0, z: 0 }, reach: 30, animate: false, paused: false });
+  assert.equal(effects.particles.snapshot().filter(p => p.kind === 'rain').length, 0);
+});

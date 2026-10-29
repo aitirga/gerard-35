@@ -1125,7 +1125,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     effects.setBodies(bodies);
     effects.setTone(tone); post.setTone(tone);
     const view = camera.camera!.orthoHeight * Math.max(1, canvas.clientWidth / Math.max(1, canvas.clientHeight));
-    effects.update(shown * battleScene.pace, { focus: cameraTarget, reach: Math.min(40, view * 1.1), animate: !reducedMotion.matches, paused });
+    effects.update(shown * battleScene.pace, { focus: cameraTarget, reach: Math.min(40, view * 1.1), animate: !reducedMotion.matches, paused, fight: !!battle });
     const aspect = canvas.clientWidth / canvas.clientHeight;
     const follow = environment.zoom;
     // Two players share the frame: the camera looks between them and pulls back as they part.

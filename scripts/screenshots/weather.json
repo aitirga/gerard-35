@@ -1,0 +1,33 @@
+{
+  "title": "Weather and marks · Rain, snow and ground marks",
+  "description": "Weather over outdoor scenes and the marks hits leave on the ground (src/effects.ts, docs/graphics.md): heavy rain on Passatge Maresme (slanting streaks, ripples and spray where they land, a low mist), the same street a few seconds after it turns to snow (flakes drifting, a dusting settling on the floor), the night patio in rain, then a fight frozen in time where fire, ice, water, earth and gum each leave their mark, and the marks fading once the fight is over.",
+  "steps": [
+    { "open": "/?story=bernat-joined&weather=rain" },
+    { "teleport": "maresme", "cell": [20, 24] },
+    { "skipDialogue": true },
+    { "shot": "street-rain", "delay": 3000, "caption": "Passatge Maresme in heavy rain: streaks leaning with the wind, ripples and spray where they land, a low mist" },
+    { "eval": "window.step = seconds => { const app = window.gerard.game.app; app.timeScale = 0; for (let i = 0; i < seconds * 60; i++) app.fire('update', 1 / 60); }; window.gerard.game.effects.setWeather('snow', 1); step(2.5)" },
+    { "shot": "street-turning", "delay": 400, "caption": "The rain clearing as the snow comes in (both ramp over a few seconds)" },
+    { "eval": "step(12)" },
+    { "shot": "street-snow", "delay": 400, "caption": "Twelve seconds of snow: flakes drifting on the eddies, a dusting settling on the floor and the roofs" },
+    { "eval": "window.gerard.game.app.timeScale = 1" },
+    { "eval": "window.gerard.game.effects.setWeather('rain', .8, true)" },
+    { "teleport": "patio", "cell": [6, 9] },
+    { "eval": "step(3); window.gerard.game.app.timeScale = 1" },
+    { "shot": "patio-rain", "delay": 400, "caption": "The patio at night in rain: fewer fireflies, ripples on the tiles and the furniture tops" },
+    { "open": "/?story=bernat-joined&battle=3&allies=2" },
+    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
+    { "eval": "window.fx = (play, frames) => { const g = window.gerard.game, app = g.app; app.timeScale = 0; const stage = app.root.findByName('Escenario de combate'); const models = stage.children.filter(c => c.enabled && !['Objetivo', 'Marca de tinta', 'Sello No-ta'].includes(c.name)).sort((a, b) => a.getPosition().x - b.getPosition().x); const at = (m, y = 0) => { const p = m.getPosition(); return { x: p.x, y: p.y + y, z: p.z }; }; play(g.effects, models.slice(0, 2), models.slice(2), at); for (let i = 0; i < frames; i++) app.fire('update', 1 / 60); };" },
+    { "eval": "fx((e, allies, foes, at) => { const hit = (el, m, from) => e.element(el, at(m, .9), { from: at(from, .9), feet: at(m) }); hit('fire', foes[0], allies[0]); hit('ice', foes[1], allies[0]); hit('water', foes[2], allies[1]); hit('earth', allies[0], foes[0]); hit('gum', allies[1], foes[2]); }, 24)" },
+    { "shot": "fight-hits", "delay": 400, "caption": "Fire, ice, water, earth and gum land at once (time frozen)" },
+    { "eval": "fx(() => {}, 150)" },
+    { "shot": "fight-marks", "delay": 400, "caption": "When the bursts are gone their marks stay: scorch with dying embers, frost, a wet patch, dust and pebbles, a gum puddle" },
+    { "eval": "fx((e, allies, foes, at) => { const a = at(allies[0]), b = at(foes[1]); ['scorch', 'frost', 'wet', 'dust', 'gum'].forEach((kind, i) => { const t = (i + .5) / 5; e.mark(kind, { x: a.x + (b.x - a.x) * t + 2.2, y: a.y, z: a.z + (b.z - a.z) * t + 2.2 }, .7); }); }, 60)" },
+    { "shot": "marks-row", "delay": 400, "caption": "Each mark on open floor, in order: scorch, frost, wet, dust, gum" },
+    { "eval": "fx(e => e.clear(), 70)" },
+    { "shot": "marks-fading", "delay": 400, "caption": "The fight is over (clear): the marks fade out instead of vanishing" },
+    { "eval": "fx(() => {}, 120)" },
+    { "shot": "marks-gone", "delay": 400, "caption": "…and a couple of seconds later the ground is clean" },
+    { "eval": "window.gerard.game.app.timeScale = 1" }
+  ]
+}

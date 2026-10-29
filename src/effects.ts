@@ -89,13 +89,104 @@ const AIR: Partial<Record<string, Air>> = {
 /** Ambient particles stop growing past this, however far the camera pulls back. */
 const AMBIENT_CAP = 1600;
 
+// ── Weather ─────────────────────────────────────────────────────────────────────────────────────
+/** What falls from the sky over a scene with one (never indoors or in her palace). */
+export type Weather = 'clear' | 'rain' | 'snow';
+const WEATHER_KINDS = {
+  // Rain: fast streaks leaning with the wind that burst into a ripple and a little spray where they land…
+  rain: { shape: 'spark', orient: 'velocity', colour: ['#eef5fb', '#c4d8e8'], additive: .3, glow: .45, opacity: .75, life: [1.6, 1.8], size: [.02, .028], stretch: .09, collide: true, pop: true, onLand: [{ kind: 'ripplet', count: 1 }, { kind: 'spray', count: 1 }] },
+  ripplet: { shape: 'ring', orient: 'ground', colour: '#eef7ff', additive: .4, glow: .5, opacity: .9, life: [.35, .5], size: [.045, .065], sizeEnd: 3.5, fadeOut: 1, gravity: 30, collide: true, stick: true },
+  spray: { shape: 'spark', orient: 'velocity', colour: '#f2f9ff', additive: .5, glow: .6, opacity: .9, life: [.14, .22], size: [.012, .016], fadeOut: .5, speed: [.4, .8], rise: [1, 1.6], gravity: 9, stretch: .07 },
+  // …and in heavy rain a low mist.
+  haze: { shape: 'smoke', colour: ['#c9d5de', '#aebfcc'], glow: .2, opacity: .2, life: [5, 8], size: [.8, 1.3], fadeIn: .3, fadeOut: .4, drag: .5, wind: .4, flow: .2 },
+  // Snow: flakes drifting down on the random walk and the eddies, leaving a soft patch where they land.
+  snow: { shape: 'flake', colour: '#ffffff', additive: .2, glow: .7, life: [11, 12], size: [.065, .1], fadeOut: .05, wander: .3, wanderRate: 1, flow: .35, wind: .5, spin: [20, 70], collide: true, pop: true, onLand: { kind: 'drift', count: 1 }, bodies: .4 },
+  drift: { shape: 'smoke', orient: 'ground', colour: '#ffffff', glow: .45, opacity: .75, life: [90, 120], size: [.22, .36], fadeIn: .01, fadeOut: .04, gravity: 30, collide: true, stick: true },
+} satisfies Record<string, ParticleKind>;
+/**
+ * How hard each weather falls at full intensity: landings per 100 m² of view a second, and the most a
+ * second however wide the view. Snow also keeps at most `settled` patches on the ground (oldest
+ * melt first), so a long snowfall never grows the pool: under ~2400 particles for rain, ~3200 for snow.
+ */
+const WEATHER = {
+  rain: { density: 90, most: 1400, low: 2, high: 12, speed: 9 },
+  snow: { density: 10, most: 220, low: .3, high: 9, speed: .85, settled: 2000 },
+};
+/** Seconds weather takes to come in or clear up. */
+const WEATHER_RAMP = 4;
+/** Average seconds a weather particle takes to reach the floor, to fill the view as it would be. */
+const fallTime = (w: { low: number; high: number; speed: number }) => (w.low + w.high) / 2 / w.speed;
+
+// ── Marks ───────────────────────────────────────────────────────────────────────────────────────
+/** What a hit leaves on the ground: scorch after fire, frost after ice, a gum puddle, a wet patch, dust. */
+export type Mark = 'scorch' | 'frost' | 'gum' | 'wet' | 'dust';
+/**
+ * Marks are their own small pool of flat particles, drawn before every other particle so flames and
+ * dust stay on top of them. Sizes are half-widths for a mark of size 1 (the soft `smoke` patches are
+ * drawn wider, since they fade from a third of the way out); lives are long because marks
+ * leave by budget or when the fight ends (`clear`), except `brief` layers (embers dying out).
+ */
+const MARK_KINDS = {
+  scorch: { shape: 'smoke', orient: 'ground', colour: '#1c1511', life: 1200, size: [1.3, 1.5], fadeOut: .01 },
+  char: { shape: 'splat', orient: 'ground', colour: ['#1a1411', '#2e231c'], opacity: .9, life: 1200, size: [.22, .36], fadeOut: .01 },
+  ash: { shape: 'smoke', orient: 'ground', colour: '#8a817a', opacity: .6, life: 1200, size: [.35, .55], fadeOut: .01 },
+  glowing: { shape: 'glow', orient: 'ground', colour: ['#ffb056', '#ff5a1f'], additive: 1, glow: 1, intensity: 2.2, life: [5, 9], size: [.06, .12], fadeOut: .5, flicker: .5, flickerRate: 1.5 },
+  rimefloor: { shape: 'smoke', orient: 'ground', colour: '#dff3ff', additive: .3, glow: .55, opacity: .85, life: 1200, size: [1.3, 1.5], fadeOut: .01 },
+  crystal: { shape: 'flake', orient: 'ground', colour: '#ffffff', additive: .6, glow: .85, life: 1200, size: [.1, .17], fadeOut: .01 },
+  puddle: { shape: 'splat', orient: 'ground', colour: '#ff5fa2', glow: .25, opacity: .95, life: 1200, size: [.75, .9], fadeOut: .01 },
+  blob: { shape: 'splat', orient: 'ground', colour: ['#ff5fa2', '#ff7ab4'], glow: .25, life: 1200, size: [.15, .26], fadeOut: .01 },
+  damp: { shape: 'smoke', orient: 'ground', colour: '#33506a', opacity: .5, life: 1200, size: [1.3, 1.5], fadeOut: .01 },
+  sheen: { shape: 'splat', orient: 'ground', colour: '#b4dcf5', additive: .7, glow: .7, opacity: .7, life: 1200, size: [.2, .35], fadeOut: .01 },
+  dirt: { shape: 'smoke', orient: 'ground', colour: '#9c8662', opacity: .85, life: 1200, size: [1.3, 1.5], fadeOut: .01 },
+  pebble: { shape: 'splat', orient: 'ground', colour: ['#6e5a47', '#8a7560'], life: 1200, size: [.06, .1], fadeOut: .01 },
+} satisfies Record<string, ParticleKind>;
+type MarkKind = keyof typeof MARK_KINDS;
+/** Each mark's layers: a kind, how many, how far out they scatter and how big (× the mark's size). */
+const MARKS: Record<Mark, { kind: MarkKind; count: number; spread: number; size: number; brief?: boolean }[]> = {
+  scorch: [{ kind: 'ash', count: 6, spread: .85, size: 1 }, { kind: 'scorch', count: 1, spread: 0, size: 1 }, { kind: 'char', count: 5, spread: .6, size: 1 }, { kind: 'glowing', count: 10, spread: .6, size: 1, brief: true }],
+  frost: [{ kind: 'rimefloor', count: 1, spread: 0, size: 1 }, { kind: 'crystal', count: 7, spread: .7, size: 1 }],
+  gum: [{ kind: 'puddle', count: 1, spread: 0, size: 1 }, { kind: 'blob', count: 4, spread: .85, size: 1 }],
+  wet: [{ kind: 'damp', count: 1, spread: 0, size: 1 }, { kind: 'damp', count: 2, spread: .6, size: .55 }, { kind: 'sheen', count: 2, spread: .4, size: 1 }],
+  dust: [{ kind: 'dirt', count: 1, spread: 0, size: 1 }, { kind: 'pebble', count: 7, spread: .8, size: 1 }],
+};
+/** The mark each element leaves where it hits (the rest leave none). */
+const ELEMENT_MARKS: Partial<Record<Element, Mark>> = { fire: 'scorch', ice: 'frost', gum: 'gum', water: 'wet', earth: 'dust' };
+/** Lasting mark layers alive at once; past it the oldest marks fade out. */
+const MARK_BUDGET = 320;
+/** Outside a fight a mark fades after this long; in one, it stays until the fight ends. */
+const MARK_SECONDS = 40;
+/** How long a mark takes to fade out. */
+const MARK_FADE = 2.5;
+/** The kinds a mark lasts as, which the budget counts. */
+const LASTING = [...new Set(Object.values(MARKS).flat().filter(layer => !layer.brief).map(layer => layer.kind))];
+
 /** Linear sRGB, like the engine's light colours. */
 const toLinear = (v: number) => v ** 2.2;
 
 export function createEffects(app: pc.Application) {
   const particles = createParticles(app, 6000);
   const trails = createTrails(app);
-  for (const [name, kind] of Object.entries(KINDS)) particles.define(name, kind as ParticleKind);
+  for (const [name, kind] of Object.entries({ ...KINDS, ...WEATHER_KINDS })) particles.define(name, kind as ParticleKind);
+  // Marks: their own pool, sorted behind every other transparent thing so they lie under it all.
+  const marks = createParticles(app, 512);
+  for (const [name, kind] of Object.entries(MARK_KINDS)) marks.define(name, kind as ParticleKind);
+  marks.meshInstance.calculateSortDistance = () => 1e7;
+  /** Lasting marks, oldest first: how many layers each left and how long it has left outside a fight. */
+  const placed: { layers: number; left: number }[] = [];
+  let fighting = false;
+  /** Fades the oldest `count` marks out (all of them by default). */
+  const fadeMarks = (count = placed.length) => {
+    placed.splice(0, count);
+    marks.retire(LASTING, placed.reduce((n, m) => n + m.layers, 0), MARK_FADE);
+  };
+  // Weather: the falling emitters, how much of each is wanted and how much falls now.
+  const sky = { rain: 0, snow: 0 }, wanted = { rain: 0, snow: 0 };
+  let falls: { rain: ParticleEmitter; snow: ParticleEmitter; haze: ParticleEmitter; settle: ParticleEmitter } | undefined;
+  let outdoors = false, settleCheck = 0;
+  /** Fill the view with the weather at once (a new scene, or weather set `now`). */
+  let fill = false;
+  /** The rain's fall, read by its emitter at every drop, so leaning it with the wind is enough. */
+  const rainFall = { x: 0, y: -WEATHER.rain.speed, z: 0 };
   let air: { emitter: ParticleEmitter; kind: Air['kinds'][number] }[] = [];
   let bounds: ParticleWorld | undefined;
   let sun: pc.LightComponent | undefined;
@@ -128,7 +219,7 @@ export function createEffects(app: pc.Application) {
       const feet = options.feet ?? { x: target.x, y: groundAt(target.x, target.z), z: target.z };
       particles.burst('shock', { x: feet.x, y: feet.y + .03, z: feet.z }, 1, { size: .6 + k * .5 });
       particles.burst('dust', { x: feet.x, y: feet.y + .05, z: feet.z }, Math.round(4 + 5 * k), { spread: .35, flat: true, speed: 1.3 });
-      if (options.gum) { particles.burst('goo', target, Math.round(4 + 5 * k), { spread: .2, direction, cone: 1.1 }); particles.burst('spore', target, 8, { spread: .3 }); }
+      if (options.gum) { effects.mark('gum', feet, .25 + .1 * k); particles.burst('goo', target, Math.round(4 + 5 * k), { spread: .2, direction, cone: 1.1 }); particles.burst('spore', target, 8, { spread: .3 }); }
     },
     /** Cardioide: light rises from a heart-shaped curve round the feet and spirals up the body. */
     heal(target: Vec, height = 1.6) {
@@ -198,6 +289,8 @@ export function createEffects(app: pc.Application) {
       const onward = d > 1e-3 ? { x: dx / d, y: .5, z: dz / d } : undefined;
       particles.burst('flash', target, 1, { size: .45 + k * .35, colour: colours });
       particles.burst(element === 'ice' ? 'rime' : 'shock', floor, 1, { size: .7 + k * .5, colour: colours });
+      const mark = ELEMENT_MARKS[element];
+      if (mark) effects.mark(mark, feet, .5 + .25 * k);
       switch (element) {
         case 'fire':
           linger('fire', feet, .9);
@@ -250,6 +343,41 @@ export function createEffects(app: pc.Application) {
       }
     },
     /**
+     * A mark left on the ground at `at` (its floor is found below it), `size` metres across its middle
+     * layer. It stays while a fight lasts and fades when it ends (`clear`); outside a fight it fades
+     * after `MARK_SECONDS`, and past `MARK_BUDGET` the oldest marks fade first.
+     */
+    mark(kind: Mark, at: Vec, size = .6) {
+      let layers = 0;
+      for (const layer of MARKS[kind]) {
+        // Each layer lies on its own patch of floor, so steps and kerbs keep their marks, 3 cm up so
+        // painted planes the floor height does not know about (the street's name) stay underneath.
+        marks.burst(layer.kind, at, layer.count, { size: size * layer.size, place: (_, __, out) => {
+          const a = Math.random() * Math.PI * 2, r = size * layer.spread * Math.sqrt(Math.random()), x = at.x + Math.cos(a) * r, z = at.z + Math.sin(a) * r;
+          const floor = marks.groundAt(x, z);
+          out.set(x - at.x, (floor > -Infinity ? floor : at.y) + .03 - at.y, z - at.z);
+        } });
+        if (!layer.brief) layers += layer.count;
+      }
+      placed.push({ layers, left: MARK_SECONDS });
+      let over = 0;
+      for (let n = placed.reduce((sum, m) => sum + m.layers, 0); n > MARK_BUDGET && over < placed.length - 1; over++) n -= placed[over].layers;
+      if (over) fadeMarks(over);
+    },
+    /** The lasting marks, for tests and debugging. */
+    marks,
+    /**
+     * What falls over scenes with a sky: `clear`, `rain` or `snow`, `intensity` 0–1. It comes in and
+     * clears up over a few seconds, or at once with `now`; a new scene starts with it already falling.
+     */
+    setWeather(kind: Weather, intensity = 1, now = false) {
+      const k = kind === 'clear' ? 0 : Math.min(1, Math.max(0, intensity));
+      wanted.rain = kind === 'rain' ? k : 0; wanted.snow = kind === 'snow' ? k : 0;
+      if (now) { sky.rain = wanted.rain; sky.snow = wanted.snow; fill = true; }
+    },
+    /** What falls now and how hard (0–1), ramps included. */
+    get weather() { return { rain: sky.rain, snow: sky.snow }; },
+    /**
      * An element clings to someone for `seconds` (burning, frozen, charged…): it keeps coming off
      * them wherever `at` (kept up to date by the caller) goes. `stop()` ends it early.
      */
@@ -276,14 +404,24 @@ export function createEffects(app: pc.Application) {
      */
     setScene(environment: Environment, scenery: { root: pc.Entity; groundHeight(x: number, z: number): number; toWorld(x: number, z: number): pc.Vec3; houses: readonly { x0: number; x1: number; z0: number; z1: number; top: number }[] }) {
       bounds = sceneWorld(environment, scenery);
-      particles.setWorld(bounds);
+      particles.setWorld(bounds); marks.setWorld(bounds);
       sun = (scenery.root.findComponents('light') as pc.LightComponent[]).filter(l => l.type === 'directional').sort((a, b) => b.intensity - a.intensity)[0];
       air.forEach(a => a.emitter.remove());
       auras.forEach(aura => { aura.left = 0; });
-      particles.clear(true);
+      particles.clear(true); marks.clear(true); placed.length = 0;
       const mood = AIR[environment.id] ?? (environment.plan ? INDOORS : OUTDOORS);
       particles.wind.set(...mood.wind); particles.turbulence = mood.turbulence;
       air = mood.kinds.map(kind => ({ kind, emitter: particles.emitter(kind.kind, { x: 0, y: 0, z: 0 }, { rate: 0, ambient: true, area: { x: 1, z: 1, low: kind.low, high: kind.high } }) }));
+      // Weather only falls where there is a sky; a new scene starts with it already falling.
+      outdoors = !environment.plan && !environment.palace;
+      sky.rain = wanted.rain; sky.snow = wanted.snow; fill = true;
+      if (!falls) {
+        const sheet = (kind: string, w: { low: number; high: number }, velocity?: Vec) => particles.emitter(kind, { x: 0, y: 0, z: 0 }, { rate: 0, ambient: true, area: { x: 1, z: 1, low: w.low, high: w.high }, velocity });
+        falls = {
+          rain: sheet('rain', WEATHER.rain, rainFall), snow: sheet('snow', WEATHER.snow, { x: 0, y: -WEATHER.snow.speed, z: 0 }),
+          haze: sheet('haze', { low: .1, high: .9 }), settle: sheet('drift', { low: .01, high: .03 }),
+        };
+      }
       warm = true;
     },
     /** People particles part around this frame: who, where, how wide and how tall. */
@@ -294,28 +432,39 @@ export function createEffects(app: pc.Application) {
      * `focus` is what the camera looks at and `reach` how far it sees around it; the air fills
      * that area. `animate` false (reduced motion) stills the air; `paused` freezes everything.
      */
-    update(dt: number, view: { focus: Vec; reach: number; animate: boolean; paused: boolean }) {
+    update(dt: number, view: { focus: Vec; reach: number; animate: boolean; paused: boolean; fight?: boolean }) {
       animate = view.animate;
       // Covering particles take the scene's light: its ambient plus part of the sun.
       const ambientLight = app.scene.ambientLight, s = sun ? sun.intensity * .45 : 0, c = sun?.color;
-      particles.setLight(
-        Math.min(1.3, toLinear(ambientLight.r) + (c ? toLinear(c.r) * s : 0)),
-        Math.min(1.3, toLinear(ambientLight.g) + (c ? toLinear(c.g) * s : 0)),
-        Math.min(1.3, toLinear(ambientLight.b) + (c ? toLinear(c.b) * s : 0)));
+      // Under rain the sky is heavier: covering particles (and marks) take a little less of it.
+      const dim = 1 - .3 * (outdoors ? sky.rain : 0);
+      const lit = [ambientLight.r, ambientLight.g, ambientLight.b].map((v, i) => Math.min(1.3, toLinear(v) + (c ? toLinear([c.r, c.g, c.b][i]) * s : 0)) * dim);
+      particles.setLight(lit[0], lit[1], lit[2]); marks.setLight(lit[0], lit[1], lit[2]);
       // The air fills what the camera sees, but only over the scene itself.
       const x0 = Math.max(view.focus.x - view.reach, bounds?.x0 ?? -Infinity), x1 = Math.min(view.focus.x + view.reach, bounds?.x1 ?? Infinity);
       const z0 = Math.max(view.focus.z - view.reach, bounds?.z0 ?? -Infinity), z1 = Math.min(view.focus.z + view.reach, bounds?.z1 ?? Infinity);
       const area = Math.max(0, x1 - x0) * Math.max(0, z1 - z0) / 100;
       for (const { emitter, kind } of air) {
         const k = KINDS[kind.kind] as ParticleKind, life = typeof k.life === 'number' ? k.life : (k.life[0] + k.life[1]) / 2;
-        const wanted = Math.min(AMBIENT_CAP, kind.density * area * (kind.bubbaloo ? tone : 1));
+        // Pollen and fireflies hide from rain and snow.
+        const wanted = Math.min(AMBIENT_CAP, kind.density * area * (kind.bubbaloo ? tone : 1 - .8 * (outdoors ? Math.max(sky.rain, sky.snow) : 0)));
         emitter.at.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
         emitter.area!.x = Math.max(0, x1 - x0) / 2; emitter.area!.z = Math.max(0, z1 - z0) / 2;
         emitter.rate = wanted / life;
         emitter.enabled = animate;
         if (warm && animate) emitter.warm();
       }
+      if (falls) weather(dt, view.paused, x0, x1, z0, z1, area);
       warm = false;
+      // Marks stay while a fight lasts and fade once it is over; outside one they fade after a while.
+      if (fighting && !view.fight) fadeMarks();
+      fighting = !!view.fight;
+      if (!fighting && !view.paused && placed.length) {
+        for (const m of placed) m.left -= dt;
+        let old = 0;
+        while (old < placed.length && placed[old].left <= 0) old++;
+        if (old) fadeMarks(old);
+      }
       for (let i = auras.length - 1; i >= 0; i--) {
         const aura = auras[i];
         if (!view.paused) aura.left -= dt;
@@ -326,11 +475,47 @@ export function createEffects(app: pc.Application) {
       particles.update(view.paused ? 0 : dt);
       trails.enabled = animate;
       trails.update(view.paused ? 0 : dt);
+      marks.update(view.paused ? 0 : dt);
     },
-    /** Ends every effect, aura and trail in flight; the scene's air stays. */
-    clear() { auras.forEach(aura => { aura.left = 0; }); particles.clear(); trails.clear(); },
-    destroy() { particles.destroy(); trails.destroy(); },
+    /** Ends every effect, aura and trail in flight; the scene's air and weather stay, and marks fade out. */
+    clear() { auras.forEach(aura => { aura.left = 0; }); particles.clear(); trails.clear(); fadeMarks(); },
+    destroy() { particles.destroy(); trails.destroy(); marks.destroy(); },
   };
+
+  /**
+   * Weather over the part of the scene in view (`x0`…`z1`, `area` in 100 m²): ramps towards what was
+   * asked, leans the rain with the wind and keeps settled snow under its budget. With reduced motion
+   * nothing falls: snow is only a still dusting on the floor, and rain only the dimmer light.
+   */
+  function weather(dt: number, paused: boolean, x0: number, x1: number, z0: number, z1: number, area: number) {
+    const f = falls!, step = paused ? 0 : dt / WEATHER_RAMP;
+    for (const w of ['rain', 'snow'] as const) sky[w] += Math.max(-step, Math.min(step, wanted[w] - sky[w]));
+    const rain = outdoors ? sky.rain : 0, snow = outdoors ? sky.snow : 0;
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, hx = Math.max(0, x1 - x0) / 2, hz = Math.max(0, z1 - z0) / 2;
+    for (const e of [f.rain, f.snow, f.haze, f.settle]) { e.at.set(cx, 0, cz); e.area!.x = hx; e.area!.z = hz; }
+    // Rain leans with the scene's wind, and a little more, so it reads as slanting.
+    rainFall.x = particles.wind.x * 2.5; rainFall.z = particles.wind.z * 2.5;
+    f.rain.rate = Math.min(WEATHER.rain.most, WEATHER.rain.density * area * rain);
+    f.snow.rate = Math.min(WEATHER.snow.most, WEATHER.snow.density * area * snow);
+    // Past half intensity, up to 3 patches of mist per 100 m² hang low (each lives ~6.5 s).
+    f.haze.rate = 3 * area * Math.max(0, rain - .5) * 2 / 6.5;
+    const drift = WEATHER_KINDS.drift.life, driftLife = (drift[0] + drift[1]) / 2;
+    f.settle.rate = animate ? 0 : WEATHER.snow.settled * .5 * snow / driftLife;
+    for (const e of [f.rain, f.snow, f.haze]) e.enabled = animate;
+    f.settle.enabled = !animate;
+    if (fill) {
+      fill = false;
+      // A scene that opens mid-storm: the air full of what is falling and the ground already white.
+      if (animate) for (const [e, w] of [[f.rain, WEATHER.rain], [f.snow, WEATHER.snow]] as const) {
+        const rate = e.rate, k = WEATHER_KINDS[e === f.rain ? 'rain' : 'snow'].life;
+        e.rate = rate * fallTime(w) / ((k[0] + k[1]) / 2); e.warm(); e.rate = rate;
+      }
+      if (animate) f.haze.warm();
+      if (snow) { const rate = f.settle.rate; f.settle.rate = WEATHER.snow.settled * .7 * snow / driftLife; f.settle.warm(); f.settle.rate = rate; }
+    }
+    // Settled snow keeps to its budget, the oldest patches melting first, and rain melts it all.
+    if ((settleCheck -= dt) <= 0 && !paused) { settleCheck = .25; particles.retire(['drift'], Math.round(WEATHER.snow.settled * Math.max(0, 1 - rain * 2)), 2); }
+  }
   return effects;
 }
 
