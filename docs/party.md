@@ -39,6 +39,10 @@ A LOS DOS* badge, and the status screen is one wide sheet with the same badge. T
 `just dev-solo off` / `?solo=0`) or the switch on the Mando page, which only exists in the dev
 build. The choice is remembered in the browser. Release builds are always two-player.
 
+The dev build never makes Aitor's turn wait for a second controller: while there is none, it
+plays as `solo`, and a second controller that connects takes Aitor back. `?solo=0` waits for it,
+as the release does (the `duo` screenshots use it).
+
 ## Stats
 
 | Stat | What it does |

@@ -1,6 +1,6 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { act, aimed, awaken, boostRounds, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, skillsFor, SKILLS, switchAnima, validTargets, wearAnima, wearsAnimas, type ClassId, type Encounter, type GuardStrength, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
+import { act, aimed, awaken, BEAT_HP, boostRounds, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, skillsFor, SKILLS, switchAnima, validTargets, wearAnima, wearsAnimas, type ClassId, type Encounter, type GuardStrength, type PartySlot, type SkillId, type BattleAction, type BattleEffect, type BattleState, type Combatant } from './battle';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -24,6 +24,9 @@ const TARGETS = { foes: 'Un enemigo', allies: 'Un aliado herido', party: 'Todo e
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** The details hint goes once it has been used (AGENTS.md: key hints disappear once used). */
 let detailsLearned = false;
+/** Where the picker can jump a fight in development (`jumpTo`). */
+export type FightMoment = 'won' | 'lost' | 'foes-low' | 'party-low' | 'beat';
+
 export function createBattleUI(hud: HTMLElement, callbacks: {
   change: (state: BattleState | undefined, effect?: BattleEffect, onImpact?: () => void) => Promise<void>;
   target: (id?: string) => void;
@@ -536,7 +539,39 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     else if (direction === 'left') return;
     else walk([...root.querySelectorAll<HTMLButtonElement>('.command-trigger, .battle-result button')]);
   }
+  /**
+   * Development (the picker, docs/dev-tools.md): jumps the fight to a moment. A win or a loss shows
+   * its result; 1 PV leaves the next blow to decide; `beat` plays the palace minion's "¡NO!" now.
+   */
+  async function jumpTo(moment: FightMoment) {
+    if (!state || busy || state.phase !== 'player') return;
+    const token = generation;
+    collapse();
+    if (moment === 'won' || moment === 'lost') {
+      for (const unit of moment === 'won' ? state.foes : state.allies) unit.hp = 0;
+      state.phase = moment;
+      state.message = moment === 'won' ? 'Depuración: combate ganado.' : 'Depuración: combate perdido.';
+    } else if (moment === 'foes-low' || moment === 'party-low') {
+      for (const unit of moment === 'foes-low' ? state.foes : state.allies) if (unit.hp > 0) unit.hp = 1;
+    } else if (moment === 'beat') {
+      const bernat = state.allies.find(a => a.id === 'bernat');
+      if (state.encounter !== 'palace-minion' || state.awakened || !bernat) return;
+      bernat.hp = Math.max(1, Math.min(bernat.hp, BEAT_HP)); state.phase = 'beat';
+      busy = true; await callbacks.change(state); await playBeat(token);
+      if (token !== generation || !state) return;
+      busy = false;
+    }
+    await callbacks.change(state);
+    if (token !== generation || !state) return;
+    render();
+    if (state.phase === 'player') focusFirst();
+  }
   return {
+    /** Development: what the picker needs to offer this fight's moments. */
+    get fight() { return state && { encounter: state.encounter, phase: state.phase, awakened: state.awakened, busy }; },
+    jumpTo,
+    /** Development: leaves the fight at once, with no result (the picker, before going elsewhere). */
+    end() { if (state) close(); },
     get controllerContext() { return !state ? 'world' : `battle:${busy ? 'busy' : state.phase}:${selected ?? ''}:${selectedSkill ?? ''}:${targeting}`; },
     /** △ / Y: the details window beside the focused skill. */
     details(player: PlayerId = 1) {

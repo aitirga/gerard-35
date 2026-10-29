@@ -145,8 +145,8 @@ export function createControllerUI(callbacks: {
       if (!root.open && callbacks.context().startsWith('journal:')) return;
       // In a battle sub-menu, Escape backs out before opening the main menu.
       if (!root.open && callbacks.context().startsWith('battle:') && callbacks.context().split(':')[2]) return;
-      // The station map, the TV and the end screen take Escape themselves.
-      if (!root.open && ['travel', 'news', 'doom'].includes(callbacks.context())) return;
+      // The station map, the TV, the end screen and the place picker take Escape themselves.
+      if (!root.open && ['travel', 'news', 'doom', 'jump'].includes(callbacks.context())) return;
       event.preventDefault(); event.stopImmediatePropagation();
       if (!event.repeat) { if (root.open) back(); else open(); }
     } else if (root.open && !mapping && event.target !== select) {

@@ -1170,6 +1170,8 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
     awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },
     /** Someone swapped ánima in a fight (L / R): the fight shows it, and the boy's street outfit follows. */
     changeAnima(member: string, id: ClassId) { battleScene.changeAnima(member, id); if (member === 'gerard' && !story.adult) wearClass(player, id); },
+    /** Development (the fight tester): the dogs' eyes, pink or not, whatever the story says; refreshStory puts it back. */
+    possess(on: boolean) { possessed = on; battleScene.possess(on); },
     setControllerInput(direction: Direction | null, stick: Stick | null, running = false) { controllerDirection = direction; controllerStick = stick; controllerRunning = running; },
     /** Player 2's controller, for Aitor. */
     setPartnerInput(direction: Direction | null, stick: Stick | null, running = false) { partnerDirection = direction; partnerStick = stick; partnerRunning = running; },

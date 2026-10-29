@@ -318,6 +318,8 @@ can win all six party/pack combinations.
 - `just test`: movement, environment, combat, seeded wandering and Python API tests.
 - `just dev-battle 4 2`: open a deterministic four-foe/two-ally fight; accepts 2–4 foes and 1–2 allies.
   With an existing dev server, open `/?battle=4&allies=2`. These parameters are ignored in production.
+- In `just dev`, click the place's name (top left) for the picker: any place, any story point and a
+  fight tester with every ánima, party and foe ([docs/dev-tools.md](docs/dev-tools.md)).
 - `just check`: includes 240 seeded random combat simulations and 120 seeded pack walks.
   Browser checks should cover 2, 3 and 4 foes, both party sizes, targeting with mouse
   and keyboard, victory/defeat/escape, and reduced motion on desktop.

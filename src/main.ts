@@ -5,7 +5,7 @@ import { type Direction } from './movement';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
 import { createDialogueBanner } from './dialogue';
 import { createBattleUI } from './battle-ui';
-import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent } from './story';
+import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
 import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
 import { watchGlyphs } from './input-glyphs';
@@ -13,10 +13,14 @@ import type { MemberId } from './story';
 import { createTravelUI } from './travel-ui';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
-import { palaceGuards, SKILLS, type BattleEffect, type BattleState } from './battle';
+import { palaceGuards, SKILLS, type BattleEffect, type BattleState, type PartySlot } from './battle';
+import { ANIMA_IDS, animaBonus, type AnimaId } from './animas';
+import { flagsAt, spotAt } from './story-points';
+import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './jump-menu';
 import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById } from './home-lights';
 import { mountHomeLightsPage } from './home-lights-ui';
 import { createLampPicker } from './lamp-picker';
+import { setWallFolding } from './home-scenery';
 import { createInteractionPrompt } from './interaction-prompt';
 import { createAudio } from './audio';
 import { createMusic, isTrack, type TrackId } from './music';
@@ -34,7 +38,6 @@ let loading = false;
 let saving = false;
 let dirty = false;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
-const environmentSelect = document.querySelector<HTMLSelectElement>('#environment')!;
 const interactButton = document.querySelector<HTMLButtonElement>('#interact')!;
 const interactionPrompt = createInteractionPrompt(interactButton);
 const dialogue = createDialogueBanner(document.querySelector<HTMLElement>('#hud')!);
@@ -88,13 +91,20 @@ function scoreBattle(state: BattleState | undefined) {
   else if (battlePhase === 'lost') music.stop({ fade: 2.5 });
   else if (battlePhase === 'escaped') music.stop({ fade: 1 });
 }
-// Development: ?story=<flag> starts with every flag up to that one (just dev-chapter), ?story=new from scratch.
-const devStory = (() => {
+/**
+ * Development: ?story=<flag> starts with that flag and what it needs (just dev-chapter), where it
+ * happened; ?story=new from scratch. In chapter 2, &with=nuria,uri adds those ánima missions as done.
+ */
+const devJump = (() => {
   if (!import.meta.env.DEV) return undefined;
-  const at = new URLSearchParams(location.search).get('story');
+  const params = new URLSearchParams(location.search);
+  const at = params.get('story');
   if (at === null) return undefined;
-  return STORY_FLAGS.slice(0, (STORY_FLAGS as readonly string[]).indexOf(at) + 1);
+  if (!(STORY_FLAGS as readonly string[]).includes(at)) return { flags: [] };
+  const missions = (params.get('with') ?? '').split(',').filter((id): id is AnimaId => (ANIMA_IDS as string[]).includes(id));
+  return { flags: flagsAt(at as StoryFlag, missions), spot: spotAt(at as StoryFlag) };
 })();
+const devStory = devJump?.flags;
 const story = new Story(devStory ?? []);
 // Development: ?day=<n> starts chapter 2 on that day, to see the Queen's spread (just dev-day).
 if (import.meta.env.DEV) {
@@ -119,6 +129,12 @@ if (import.meta.env.DEV) {
     control.mode = localStorage.getItem(soloKey) === 'solo' ? 'solo' : 'duo';
   } catch { control.mode = requested !== null && requested !== '0' ? 'solo' : 'duo'; }
 }
+/**
+ * Development never waits for a second controller: without one, player 1 plays Aitor too, as in
+ * `solo`, until a second controller connects. `?solo=0` waits for it, as the release does.
+ */
+const waitsForPad = !import.meta.env.DEV || new URLSearchParams(location.search).get('solo') === '0';
+const playing = (): Control => !waitsForPad && !control.secondPad ? { ...control, mode: 'solo' } : control;
 /** What was last sent: the flags and the days (a new hour is worth saving too). */
 const progress = () => JSON.stringify([story.saved, story.days]);
 let savedStory = progress();
@@ -171,16 +187,17 @@ try {
       // With the bulbs connected a hit may wait a moment, so it lands as they flash.
       const hold = homeLights.battle(state, effect);
       if (hold) await new Promise(resolve => setTimeout(resolve, hold));
+      if (import.meta.env.DEV && state) applyHelp(state);
       scoreBattle(state);
       return game.setBattle(state, effect, effect ? () => { impactSound(effect); onImpact?.(); } : onImpact);
     },
     target: id => game.selectTarget(id),
-    awaken: id => { game.awaken(id); storyEvent({ type: 'class', id }); },
-    driver: id => battleDriver(control, id),
-    waiting: id => waitingForPlayer2(control, id),
+    awaken: id => { game.awaken(id); if (!testing) storyEvent({ type: 'class', id }); },
+    driver: id => battleDriver(playing(), id),
+    waiting: id => waitingForPlayer2(playing(), id),
     // Each fighter's pick in the fight is their pick for the adventure too.
-    anima: (id, classId) => { game.changeAnima(id, classId); if (isMember(id) && story.wear(id, classId)) { keepLoadout(); storyChanged(); } },
-    solo: () => control.mode === 'solo',
+    anima: (id, classId) => { game.changeAnima(id, classId); if (!testing && isMember(id) && story.wear(id, classId)) { keepLoadout(); storyChanged(); } },
+    solo: () => playing().mode === 'solo',
   });
   /** Re-applies who drives Aitor after the mode or the second controller changes. */
   function controlChanged() {
@@ -197,7 +214,7 @@ try {
     // With a second player on Aitor, each player gets their own half of the status screen.
     split: () => partnerDriven(control, story.partner),
     partner: () => game.partnerPosition,
-    solo: () => control.mode === 'solo',
+    solo: () => playing().mode === 'solo',
   });
   let currentLocation: EnvironmentId = story.resume.environment;
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
@@ -207,7 +224,7 @@ try {
     items: () => exploration.active === 'items',
     party: () => exploration.active === 'character',
     // Shown when Aitor joins; it goes once a second controller is there to play him.
-    duo: () => control.secondPad || control.mode === 'solo',
+    duo: () => control.secondPad || playing().mode === 'solo',
   };
   async function play(effect: StoryEffect) {
     if (effect.kind === 'dialogue') await new Promise<void>(resolve => dialogue.show(effect.dialogue, resolve));
@@ -297,10 +314,87 @@ try {
     storyChanged();
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
+  /**
+   * The place panel's picker (src/jump-menu.ts, docs/dev-tools.md): places, and in development
+   * story points to start over at and the fight tester.
+   */
+  const jumpMenu = createJumpMenu(document.querySelector<HTMLElement>('.place-panel')!, {
+    travel: id => {
+      dialogue.close();
+      // From a fight (development): leave it first; the street takes the new place once it is gone.
+      if (battleUI.fight) leaveFight();
+      const go = () => battlePhase === undefined ? game.setEnvironment(id) : requestAnimationFrame(go);
+      go();
+    },
+    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || !!exploration.active),
+    dev: import.meta.env.DEV ? {
+      flags: () => story.saved,
+      day: () => story.days.clock.day,
+      story: (at, day, missions) => { location.search = `?${new URLSearchParams({ story: at, ...(missions?.length ? { with: missions.join(',') } : {}), ...(day && day > 1 ? { day: String(day) } : {}) })}`; },
+      fight: setup => startFight(setup),
+      current: () => battleUI.fight,
+      help: () => help,
+      setHelp: value => { help = value; },
+      jumpTo: moment => void battleUI.jumpTo(moment),
+      leave: () => leaveFight(),
+      folding: () => folding,
+      setFolding: on => {
+        folding = on; setWallFolding(on);
+        try { localStorage.setItem(foldingKey, on ? '1' : '0'); } catch { /* Storage is optional. */ }
+      },
+    } : undefined,
+  });
+  /** Development: walls folding away is off for now; the picker turns it on to try it, remembered in this browser. */
+  const foldingKey = 'gerard35.wallFolding';
+  let folding = false;
+  if (import.meta.env.DEV) try { folding = localStorage.getItem(foldingKey) === '1'; } catch { /* Storage is optional. */ }
+  setWallFolding(folding);
+  /** Development: the help every fight gets (the picker's Combate page, or the tester's setup). */
+  let help: FightHelp = { free: false, immune: false };
+  /** A fight left from the picker: no result reaches the story. */
+  let leaving = false;
+  function leaveFight() { if (!battleUI.fight) return; leaving = true; battleUI.end(); }
+  /** The fight tester's fight now: it touches no story flag and helps as asked. */
+  let testing: FightSetup | undefined;
+  /** Where each fight is staged (game.ts): the dogs in the street, the minion and the guards in the palace. */
+  const FIGHT_PLACES = { dogs: 'maresme', possessed: 'maresme', 'palace-minion': 'palacio', 'palace-guards': 'palacio' } as const;
+  /** Starts a test fight; another chapter's party needs that chapter's Gerard, so it reloads there. */
+  function startFight(setup: FightSetup) {
+    if (setup.adult !== story.adult) {
+      location.search = `?${new URLSearchParams({ story: setup.adult ? 'got-wrapper' : 'minion', fight: JSON.stringify(setup) })}`;
+      return;
+    }
+    exploration.close(); dialogue.close();
+    const place = FIGHT_PLACES[setup.encounter];
+    if (currentLocation !== place) game.setEnvironment(place);
+    const bonus = setup.adult && setup.friends.length ? { bonus: animaBonus(setup.friends) } : {};
+    const party: PartySlot[] = [
+      { id: 'gerard', name: 'Gerard', profile: setup.adult ? 'gerard35' : 'gerard', classId: setup.wear.gerard, ...bonus },
+      ...!setup.partner ? [] : setup.adult ? [{ id: 'aitor', name: 'Aitor', profile: 'aitor' as const, classId: setup.wear.aitor, ...bonus }] : [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }],
+    ];
+    const possessed = setup.encounter === 'possessed';
+    // A frame for the new place to settle before the fight takes its stage.
+    requestAnimationFrame(() => {
+      testing = setup; help = { free: setup.free, immune: setup.immune };
+      game.possess(possessed);
+      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, animas: setup.animas, guards: palaceGuards(setup.adult ? setup.friends.length : 0) });
+    });
+  }
+  /** The help: skills cost nothing, and no blow takes the party's PV (it is back before the bar moves). */
+  function applyHelp(state: BattleState) {
+    for (const ally of state.allies) {
+      if (help.free) ally.secondary = ally.maxSecondary;
+      if (help.immune && ally.hp > 0) ally.hp = ally.maxHp;
+    }
+  }
   const game = createGame(canvas, {
     onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, guards: palaceGuards(story.animas.length) }); },
     // Backing off is neither a win nor a fall.
-    onBattleEnd: (phase, encounter) => { if (phase !== 'escaped') storyEvent({ type: 'battle', won: phase === 'won', encounter }); },
+    onBattleEnd: (phase, encounter) => {
+      // A test fight, or one left from the picker, leaves the story as it was, and the street as the story has it.
+      if (testing || leaving) { testing = undefined; leaving = false; game.refreshStory(); return; }
+      if (phase !== 'escaped') storyEvent({ type: 'battle', won: phase === 'won', encounter });
+    },
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onStep: (steps, cell) => {
@@ -315,7 +409,7 @@ try {
       homeLights.setPlace(id);
       scorePlace(id);
       exploration.update(id, cell);
-      environmentSelect.value = id;
+      jumpMenu.setPlace(id);
       const geo = ENVIRONMENTS[id].geo;
       // Chapter 2's palace stands on the Rec Comtal school, not at the end of Passatge Maresme.
       const school = id === 'palacio' && story.adult;
@@ -346,7 +440,7 @@ try {
   const followMood = () => homeLights.setMood({ tone: game.lightTone, dusk: story.dusk });
   followMood();
   const moodTimer = setInterval(followMood, 1000);
-  const controllerContext = () => battleUI.controllerContext !== 'world' ? battleUI.controllerContext
+  const controllerContext = () => jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
     : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   let restoreLightsOnResume = false;
@@ -372,6 +466,7 @@ try {
     resume: () => { if (restoreLightsOnResume) void homeLights.setEnabled(true, false); scorePlace(currentLocation); },
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
+      if (jumpMenu.isOpen) { if (action === 'cancel') jumpMenu.close(); return; }
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
       if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
       if (lookAway) { if (action === 'confirm' || action === 'cancel') lookAway(); return; }
@@ -397,11 +492,6 @@ try {
     },
 
   });
-  environmentSelect.addEventListener('change', () => {
-    dialogue.close();
-    game.setEnvironment(environmentSelect.value as EnvironmentId);
-    canvas.focus({ preventScroll: true });
-  });
   interactButton.addEventListener('click', () => { if (lookAway) lookAway(); else if (dialogue.open) dialogue.advance(); else game.interact(); canvas.focus({ preventScroll: true }); });
   document.querySelector('#overview')!.addEventListener('click', () => game.toggleOverview());
   document.querySelectorAll<HTMLButtonElement>('[data-direction]').forEach(button => {
@@ -420,13 +510,28 @@ try {
   });
   canvas.focus({ preventScroll: true });
   startStory = () => {
-    const { environment, cell } = story.resume;
+    // Development: the fight tester reloaded into the other chapter to start its fight (?fight=…).
+    const fight = import.meta.env.DEV ? new URLSearchParams(location.search).get('fight') : null;
+    // A story point stands Gerard where it happened (story-points.ts); the tester takes him to its own stage.
+    const { environment, cell } = (!fight && devJump?.spot) || story.resume;
     if (story.started && environment !== currentLocation) game.setEnvironment(environment, cell);
     storyChanged();
     storyEvent({ type: 'start' });
+    if (fight) { try { startFight(validFight(JSON.parse(fight))); } catch { /* A broken link starts no fight. */ } }
   };
   // Repeatable desktop battle checks without affecting production or saved progress.
   if (import.meta.env.DEV) {
+    // The picker from anywhere, fights included: F2, or the button over the fight.
+    const debugFight = document.createElement('button');
+    debugFight.type = 'button'; debugFight.className = 'jump-fight'; debugFight.dataset.jumpTrigger = '';
+    debugFight.innerHTML = 'Depuración <kbd>F2</kbd>';
+    debugFight.addEventListener('click', () => jumpMenu.toggle('fight'));
+    document.querySelector('#battle')?.append(debugFight);
+    window.addEventListener('keydown', event => {
+      if (event.code !== 'F2' || event.repeat) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      jumpMenu.toggle(battleUI.fight ? 'fight' : undefined);
+    }, { capture: true });
     const params = new URLSearchParams(location.search);
     const foes = Number(params.get('battle'));
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
@@ -441,7 +546,7 @@ try {
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
     Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, homeLights, audio, music, sfx } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;
