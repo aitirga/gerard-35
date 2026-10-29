@@ -196,7 +196,7 @@ brief downtime during deploys. Local data lives in ignored `data/`.
 
 GitHub Actions now runs checks only: Pages cannot host the persistent API.
 For a full production preview locally, run `just build` and `just backend`, then
-open http://127.0.0.1:8080. For frontend hot reload, run `just dev` alongside the backend.
+open http://127.0.0.1:8035. For frontend hot reload, run `just dev` alongside the backend.
 
 ## Why this stack?
 
