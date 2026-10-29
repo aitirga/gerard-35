@@ -1,0 +1,14 @@
+{
+  "title": "Meridiana flat · The TV",
+  "description": "The flat in chapter 2 with the news on its TV, filmed 15 times a second while it is in view, and up close while watching it, at 30.",
+  "steps": [
+    { "open": "/?story=metro&solo=1" },
+    { "skipDialogue": true },
+    { "teleport": "meridiana", "cell": [7, 3] },
+    { "shot": "flat", "delay": 2500, "caption": "The flat, the news playing on the TV in the living room" },
+    { "eval": "window.gerard.game.watchTV(true)" },
+    { "shot": "watching", "delay": 2500, "caption": "Watching it up close: the castle on the Rec Comtal, ÚLTIMA HORA and the ticker" },
+    { "eval": "window.gerard.game.watchTV(false)" },
+    { "shot": "back", "delay": 1500, "caption": "Looking away: the camera goes back to Gerard" }
+  ]
+}

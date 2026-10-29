@@ -35,6 +35,8 @@ export function createControllerUI(callbacks: {
   resume: () => void;
   /** Fills the "Luces de casa" page (src/home-lights-ui.ts). */
   lights: (section: HTMLElement) => void;
+  /** Fills the "Sonido" page (src/sound-ui.ts). */
+  sound: (section: HTMLElement) => void;
 }) {
   const profiles: Record<string, ControllerProfile> = Object.create(null);
   try { const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '{}'); if (saved && typeof saved === 'object') for (const [id, profile] of Object.entries(saved)) if (validProfile(profile)) profiles[id] = profile; } catch { /* Storage is optional. */ }
@@ -43,13 +45,14 @@ export function createControllerUI(callbacks: {
   const icon = (path: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
   const gear = icon('<path d="m9 3-.7 2.5-2.5.7L4 8.5 5.8 11l-.1 2L4 15.5l1.8 2.3 2.5.7L9 21h6l.7-2.5 2.5-.7 1.8-2.3-1.8-2.5.1-2L20 8.5l-1.8-2.3-2.5-.7L15 3Z"/><circle cx="12" cy="12" r="3"/>');
   const padIcon = icon('<path d="M7 7h10c3 0 4 9 3 10s-3-1-5-3H9c-2 2-4 4-5 3S4 7 7 7Z"/><path d="M7 9v4m-2-2h4m6-1h.01M18 12h.01"/>');
+  const soundIcon = icon('<path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9a4 4 0 0 1 0 6m2.5-8.5a7.5 7.5 0 0 1 0 11"/>');
   const lightIcon = icon('<path d="M9 18h6m-5 3h4M8 13a6 6 0 1 1 8 0c-1 1-1 2-1 3H9c0-1 0-2-1-3Z"/>');
   const exitIcon = icon('<path d="M10 4H5v16h5m3-13 5 5-5 5m-4-5h9"/>');
   root.innerHTML = `<header class="journal-heading"><div><div class="pause-brand"><span class="battle-kicker">GERARD <b>35</b></span><span class="pause-state">EN PAUSA</span></div><h1 id="controller-title">Un respiro.</h1></div><button class="journal-close" data-back><span>Volver al juego</span> <kbd data-glyph="cancel">Esc</kbd></button></header>
     <section data-page="home">
       <p class="menu-intro">Tómate tu tiempo. La aventura puede esperar.</p>
       <nav class="pause-options" aria-label="Menú de pausa">
-        <button data-open="settings"><span class="menu-option-icon">${gear}</span><span class="menu-option-copy"><strong>Configuración</strong><small>Mandos y luces de casa</small></span><span class="menu-option-arrow" aria-hidden="true">↗</span></button>
+        <button data-open="settings"><span class="menu-option-icon">${gear}</span><span class="menu-option-copy"><strong>Configuración</strong><small>Mandos, sonido y luces de casa</small></span><span class="menu-option-arrow" aria-hidden="true">↗</span></button>
         <button data-exit><span class="menu-option-icon">${exitIcon}</span><span class="menu-option-copy"><strong>Salir del juego</strong><small>Hasta la próxima aventura</small></span><span class="menu-option-arrow" aria-hidden="true">↗</span></button>
       </nav>
     </section>
@@ -57,6 +60,7 @@ export function createControllerUI(callbacks: {
       <p class="menu-intro">Haz que el juego se sienta como en casa.</p>
       <nav class="settings-options" aria-label="Configuración">
         <button data-open="controller"><span class="menu-option-icon">${padIcon}</span><strong>Mando</strong><small>Conectar, probar y asignar controles</small><span class="setting-tag" data-pad-summary>Sin conectar</span></button>
+        <button data-open="sound"><span class="menu-option-icon">${soundIcon}</span><strong>Sonido</strong><small>Música, efectos y silencio</small><span class="setting-tag" data-sound-summary></span></button>
         <button data-open="lights"><span class="menu-option-icon">${lightIcon}</span><strong>Luces de casa</strong><small>Ambiente, intensidad y sincronización</small><span class="setting-tag">A tu ritmo</span></button>
       </nav>
     </section>
@@ -69,6 +73,7 @@ export function createControllerUI(callbacks: {
       <div class="controller-actions"><button data-remap>Asignar controles</button><button data-reset>Restablecer</button><button data-abort hidden>Cancelar asignación</button></div>
       <p class="controller-note">Conecta el mando al ordenador y pulsa un botón. Si no aparece, comprueba la conexión y la compatibilidad de tu navegador. Usa Esc para cancelar una asignación.</p>
     </section>
+    <section data-page="sound" hidden></section>
     <section data-page="lights" hidden></section>
     <section data-page="exited" hidden>
       <div class="exit-emblem" aria-hidden="true">35</div><p class="menu-intro">Nos vemos en la próxima aventura.</p>
@@ -85,8 +90,9 @@ export function createControllerUI(callbacks: {
   let previousButtons: boolean[] = [];
   let previousDirection: Direction | null = null;
   let frame = 0, previousFocus: HTMLElement | null = null;
-  let page: 'home' | 'settings' | 'controller' | 'lights' | 'exited' = 'home';
+  let page: 'home' | 'settings' | 'controller' | 'sound' | 'lights' | 'exited' = 'home';
   callbacks.lights(root.querySelector<HTMLElement>('[data-page="lights"]')!);
+  callbacks.sound(root.querySelector<HTMLElement>('[data-page="sound"]')!);
   const edges = new ControllerEdges();
   // Player 2: whichever other connected controller the game can read.
   const edges2 = new ControllerEdges();
@@ -112,7 +118,7 @@ export function createControllerUI(callbacks: {
   function showPage(value: typeof page) {
     page = value;
     root.querySelectorAll<HTMLElement>('[data-page]').forEach(el => { el.hidden = el.dataset.page !== page; });
-    get('#controller-title').textContent = { home: 'Un respiro.', settings: 'A tu manera.', controller: 'Tu mando.', lights: 'Como en casa.', exited: 'Gerard 35.' }[page];
+    get('#controller-title').textContent = { home: 'Un respiro.', settings: 'A tu manera.', controller: 'Tu mando.', sound: 'Tu sonido.', lights: 'Como en casa.', exited: 'Gerard 35.' }[page];
     get('[data-back]').hidden = page === 'exited';
     get('[data-back] span').textContent = page === 'home' ? 'Volver al juego' : 'Volver';
     get('.pause-state').textContent = page === 'home' ? 'EN PAUSA' : page === 'exited' ? 'HASTA PRONTO' : 'CONFIGURACIÓN';
@@ -124,7 +130,7 @@ export function createControllerUI(callbacks: {
   function back() {
     if (mapping) abort();
     else if (page === 'exited') return;
-    else if (page === 'controller' || page === 'lights') showPage('settings');
+    else if (page === 'controller' || page === 'sound' || page === 'lights') showPage('settings');
     else if (page === 'settings') showPage('home');
     else close();
   }
@@ -139,8 +145,8 @@ export function createControllerUI(callbacks: {
       if (!root.open && callbacks.context().startsWith('journal:')) return;
       // In a battle sub-menu, Escape backs out before opening the main menu.
       if (!root.open && callbacks.context().startsWith('battle:') && callbacks.context().split(':')[2]) return;
-      // The station map, the TV and the end screen take Escape themselves.
-      if (!root.open && ['travel', 'news', 'doom'].includes(callbacks.context())) return;
+      // The station map, the TV, the end screen and the place picker take Escape themselves.
+      if (!root.open && ['travel', 'news', 'doom', 'jump'].includes(callbacks.context())) return;
       event.preventDefault(); event.stopImmediatePropagation();
       if (!event.repeat) { if (root.open) back(); else open(); }
     } else if (root.open && !mapping && event.target !== select) {

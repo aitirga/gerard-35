@@ -509,7 +509,7 @@
   "anchors": {
     "palace": {
       "east_m": 0,
-      "south_m": 7,
+      "south_m": 4,
       "y_m": 9
     }
   }

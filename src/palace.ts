@@ -1,5 +1,7 @@
 import * as pc from 'playcanvas';
 import type { Effects } from './effects';
+import type { GeoScene } from './geo';
+import { shine } from './lighting';
 
 /**
  * El Palacio de la Reina Bubbaloo seen from outside (docs/bubbaloo-palace.md). Local space: the
@@ -17,11 +19,41 @@ function stretch(k: number) {
 }
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
+/**
+ * A building the palace grows out of (chapter 2's Rec Comtal school): its middle, width and depth
+ * in world space with its front wall facing +z, its height and the street's height at its door.
+ */
+export interface Footing { x: number; z: number; width: number; depth: number; height: number; ground: number }
+/** The building under a scene's `palace` anchor, as the palace's footing (an unturned box). */
+export function footingOf(scene: GeoScene, toWorld: (x: number, z: number) => pc.Vec3, groundHeight: (x: number, z: number) => number): Footing | undefined {
+  const anchor = scene.anchors?.palace;
+  const building = anchor && scene.buildings.find(({ box }) => Math.abs(anchor.x - box.cx) <= box.w / 2 && Math.abs(anchor.z - box.cz) <= box.d / 2);
+  if (!building) return undefined;
+  const { cx, cz, w, d } = building.box, at = toWorld(cx, cz);
+  return { x: at.x, z: at.z, width: w, depth: d, height: building.height, ground: groundHeight(at.x, at.z + d / 2 + .5) };
+}
+/**
+ * How the palace sits on a footing: the gate and its ramparts stand in the street at `street`
+ * scale, set `inset` into the front wall; everything else stands on a layer of gum `gum` thick on
+ * the roof, no deeper than the roof (`BODY_DEPTH` is the keep and wings' depth at scale 1).
+ */
+const SEAT = { street: 1.3, inset: .3, gum: .3, margin: .5 };
+const BODY_DEPTH = 6;
+/**
+ * Where the fortress' spiked towers stand round a footing, in world units from the middle of its
+ * roof (+z towards the street), in the order of the ring below: small ones on the roof's corners
+ * and beside its ends, tall ones behind it. Their feet reach the street.
+ */
+const RING_ON_FOOTING = [
+  [-17, -4.3], [17, -4.3], [-13, -8.5], [13, -8.5], [-7.5, -10.5], [7.5, -10.5], [-2.5, -12], [2.5, -12],
+  [-23.5, -1], [23.5, -1], [-19, 4.2], [19, 4.2],
+];
+
 export interface PalaceKit {
   materials: pc.StandardMaterial[];
   meshes: pc.Mesh[];
   mat(hex: string, gloss?: number, glow?: number, opacity?: number): pc.StandardMaterial;
-  part(parent: pc.Entity, name: string, type: string, m: pc.Material, p: number[], s: number[], r?: number[], shadows?: boolean): pc.Entity;
+  part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], m: pc.Material, p: number[], s: number[], r?: number[], shadows?: boolean): pc.Entity;
   ring(parent: pc.Entity, name: string, m: pc.Material, ringRadius: number, tubeRadius: number, p: number[], r?: number[], sector?: number): pc.Entity;
 }
 /** Shared builders so the palace, its street dressing and its interior look like one building. */
@@ -32,7 +64,7 @@ export function palaceKit(app: pc.Application): PalaceKit {
     materials, meshes,
     mat(hex, gloss = .8, glow = 0, opacity = 1) {
       const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.gloss = gloss; m.useMetalness = false;
-      m.specular.set(.5, .42, .48);
+      shine(m, 'gum');
       if (glow) { m.emissive.fromString(hex); m.emissiveIntensity = glow; }
       if (opacity < 1) { m.opacity = opacity; m.blendType = pc.BLEND_NORMAL; m.depthWrite = false; }
       m.update(); materials.push(m); return m;
@@ -61,10 +93,13 @@ export function createPalace(app: pc.Application, effects: Effects) {
   const flavours = FLAVOURS.map(hex => mat(hex, .9, .15));
 
   const root = new pc.Entity('Palacio de la Reina Bubbaloo'); app.root.addChild(root);
+  // The gate's side of the palace and the rest of it, apart so the rest can sit on a roof (`seat`).
+  const street = new pc.Entity('Frente del palacio'), body = new pc.Entity('Cuerpo del palacio');
+  root.addChild(street); root.addChild(body);
   /** Each piece grows from its own base, starting at `delay` of the whole growth. */
   const pieces: { pivot: pc.Entity; delay: number }[] = [];
-  function piece(name: string, x: number, z: number, delay: number) {
-    const pivot = new pc.Entity(name); pivot.setLocalPosition(x, 0, z); root.addChild(pivot);
+  function piece(name: string, x: number, z: number, delay: number, parent = body) {
+    const pivot = new pc.Entity(name); pivot.setLocalPosition(x, 0, z); parent.addChild(pivot);
     pieces.push({ pivot, delay }); return pivot;
   }
   const drips: { entity: pc.Entity; length: number; phase: number }[] = [];
@@ -90,12 +125,12 @@ export function createPalace(app: pc.Application, effects: Effects) {
 
   // ——— The plinth: a slab of plum gum the palace stands on ———
   const base = piece('Base de chicle', 0, -6.6, .28);
-  part(base, 'Losa de chicle', 'box', plum, [0, -.45, 0], [26, .9, 13.6]);
-  part(base, 'Borde redondeado', 'cylinder', plum, [0, -.05, 6.75], [.9, 26, .9], [0, 0, 90]);
+  const slab = part(base, 'Losa de chicle', 'box', plum, [0, -.45, 0], [26, .9, 13.6]);
+  const edge = part(base, 'Borde redondeado', 'cylinder', plum, [0, -.05, 6.75], [.9, 26, .9], [0, 0, 90]);
 
   // ——— Muralla de chicle: two stretches of rampart either side of the gate ———
   for (const side of [-1, 1]) {
-    const wall = piece('Muralla de chicle', side * 6.5, 0, .36 + (side > 0 ? .03 : 0));
+    const wall = piece('Muralla de chicle', side * 6.5, 0, .36 + (side > 0 ? .03 : 0), street);
     part(wall, 'Muralla', 'box', gumDeep, [0, 1.2, 0], [9.1, 2.4, .9]);
     part(wall, 'Remate redondo', 'cylinder', gum, [0, 2.4, 0], [1.05, 9.1, 1.05], [0, 0, 90]);
     for (let x = -4.1; x <= 4.15; x += .82) drip(wall, gum, x + Math.sin(x * 3) * .12, 2.25, .48, .35 + (Math.sin(x * 7.3) * .5 + .5) * .8);
@@ -107,7 +142,7 @@ export function createPalace(app: pc.Application, effects: Effects) {
   }
 
   // ——— La Pompa: a round gum-ball mouth with a bubble stretched across it ———
-  const gate = piece('La Pompa', 0, 0, .44);
+  const gate = piece('La Pompa', 0, 0, .44, street);
   for (const side of [-1, 1]) {
     part(gate, 'Pilar de la puerta', 'cylinder', gumDeep, [side * 2.25, 1.6, 0], [1.3, 3.2, 1.3]);
     part(gate, 'Bola del pilar', 'sphere', gum, [side * 2.25, 3.45, 0], [1.5, 1.4, 1.5]);
@@ -120,8 +155,10 @@ export function createPalace(app: pc.Application, effects: Effects) {
   const glint = part(gate, 'Brillo de la pompa', 'sphere', shine, [-.75, 2.35, .92], [.5, .26, .08], [0, 0, 30], false);
 
   // ——— Torres de envoltorio: twisted wrapper towers with a bubble dome on top ———
+  const towers: pc.Entity[] = [];
   for (const side of [-1, 1]) {
-    const tower = piece('Torre de envoltorio', side * 4.7, -1.7, .5 + (side > 0 ? .05 : 0));
+    const tower = piece('Torre de envoltorio', side * 4.7, -1.7, .5 + (side > 0 ? .05 : 0), street);
+    towers.push(tower);
     const top = twist(tower, 1.55, 9, 7.2);
     part(tower, 'Remate del envoltorio', 'cone', gum, [0, top + .5, 0], [2.6, 1.1, 2.6], [180, 0, 0]);
     dome(tower, 0, top + 1.55, 0, 2.3);
@@ -130,8 +167,10 @@ export function createPalace(app: pc.Application, effects: Effects) {
   }
 
   // ——— Las alas: barrel-vaulted gum halls between the towers and the keep ———
+  const wings: pc.Entity[] = [];
   for (const side of [-1, 1]) {
     const wing = piece('Ala del palacio', side * 8.4, -4.8, .6);
+    wings.push(wing);
     part(wing, 'Nave', 'box', gumDeep, [0, 2, 0], [4.4, 4, 5.4]);
     part(wing, 'Bóveda', 'cylinder', gum, [0, 4, 0], [4.4, 5.4, 2.4], [90, 0, 0]);
     for (const x of [-1.1, 1.1]) {
@@ -190,17 +229,19 @@ export function createPalace(app: pc.Application, effects: Effects) {
   // dream of chapter 1) none of it is there.
   const thorn = mat('#4a1033', .55), thornDark = mat('#22061a', .45), slit = mat('#ff2f7a', .6, 2.4);
   const cloud = mat('#2a0b20', .2, 0, .82), cloudLight = mat('#5c1a45', .2, 0, .7), bolt = mat('#ffb3d9', .4, 3.5, .9);
-  const menace: { pivot: pc.Entity; threshold: number; stem?: pc.Entity; stemFrom?: number }[] = [];
-  function threatening(name: string, x: number, y: number, z: number, threshold: number) {
-    const pivot = new pc.Entity(name); pivot.setLocalPosition(x, y, z); root.addChild(pivot);
+  const menace: { pivot: pc.Entity; threshold: number }[] = [];
+  /** The spiked towers: where each stands in the palace and round a footing (`seat`), and its foot. */
+  const spires: { pivot: pc.Entity; stem: pc.Entity; radius: number; threshold: number; at: readonly number[]; onFooting: readonly number[] }[] = [];
+  function threatening(name: string, x: number, y: number, z: number, threshold: number, parent = body) {
+    const pivot = new pc.Entity(name); pivot.setLocalPosition(x, y, z); parent.addChild(pivot);
     pivot.enabled = false; menace.push({ pivot, threshold }); return pivot;
   }
   /** A spiked tower: dark gum trunk, thorns, a lit slit up its face, a needle spire and a gum ball. */
-  function spikeTower(x: number, z: number, height: number, radius: number, threshold: number, seed: number) {
+  function spikeTower(x: number, z: number, height: number, radius: number, threshold: number, seed: number, onFooting: readonly number[]) {
     const t = threatening('Torre de espina', x, 0, z, threshold);
     // The stem reaches down to the ground when the palace sits on a roof (`setFoundation`).
     const stem = part(t, 'Pie de la torre', 'cylinder', thornDark, [0, -.5, 0], [radius * 2.1, 1, radius * 2.1]);
-    menace.at(-1)!.stem = stem;
+    spires.push({ pivot: t, stem, radius: radius * 1.05, threshold, at: [x, z], onFooting });
     const rings = Math.max(3, Math.round(height / 2.2));
     for (let k = 0; k < rings; k++) {
       const taper = 1 - k / rings * .45, y = (k + .5) * height / rings;
@@ -227,10 +268,10 @@ export function createPalace(app: pc.Application, effects: Effects) {
     [-17.5, -8, 12, 1.2], [17.5, -8, 12, 1.2], [-11, 2.6, 8, 1], [11, 2.6, 8, 1],
   ];
   const order = [10, 11, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7];
-  order.forEach((i, rank) => { const [x, z, hgt, r] = ring_[i]; spikeTower(x, z, hgt, r, .94 - rank / order.length * .82, i * 1.7); });
+  order.forEach((i, rank) => { const [x, z, hgt, r] = ring_[i]; spikeTower(x, z, hgt, r, .94 - rank / order.length * .82, i * 1.7, RING_ON_FOOTING[i]); });
   // Thorns along both ramparts.
   for (const side of [-1, 1]) {
-    const spikes = threatening('Espinas de la muralla', side * 6.5, 2.6, 0, .3);
+    const spikes = threatening('Espinas de la muralla', side * 6.5, 2.6, 0, .3, street);
     for (let x = -4; x <= 4; x += 1) part(spikes, 'Espina de muralla', 'cone', thornDark, [x, .55, .1], [.35, 1.2, .35], [0, 0, side * (x % 2 ? 12 : -8)]);
   }
   // The keep looks down at the street: two slanted, glowing eyes under the crown.
@@ -257,9 +298,88 @@ export function createPalace(app: pc.Application, effects: Effects) {
   /** How far below the palace's base the ground is (it sits on a roof): tower stems reach down to it. */
   function setFoundation(depth: number) {
     foundation = Math.max(0, depth);
-    for (const m of menace) if (m.stem) { m.stem.setLocalScale(m.stem.getLocalScale().x, foundation + .02, m.stem.getLocalScale().z); m.stem.setLocalPosition(0, -foundation / 2, 0); }
+    for (const { stem } of spires) { stem.setLocalScale(stem.getLocalScale().x, foundation + .02, stem.getLocalScale().z); stem.setLocalPosition(0, -foundation / 2, 0); }
   }
   setThreat(0);
+
+  // ——— Grown out of a building (chapter 2): the school's door is the gate ———
+  // Gum from the roof down the front wall and a runner from the gate to the kerb, made for the
+  // first footing the palace sits on.
+  let dressing: pc.Entity | undefined;
+  function dress(footing: Footing) {
+    dressing = new pc.Entity('Chicle sobre la escuela'); root.addChild(dressing);
+    const front = SEAT.inset, top = footing.height - footing.ground + SEAT.gum;
+    // Drips run down the front wall from the lip of gum on the roof, a few of them long tongues
+    // that reach down to the ramparts.
+    for (let x = -footing.width / 2 + .5; x <= footing.width / 2 - .4; x += .75) {
+      const wave = Math.sin(x * 1.9) * .5 + .5, tongue = Math.sin(x * .73 + 1) > .86;
+      drip(dressing, gum, x + Math.sin(x * 5.1) * .15, top - .1, front + .08, tongue ? 2.6 + wave * 1.2 : .35 + wave * 1.1, tongue ? .34 : .26);
+    }
+    // The runner from under the bubble to the kerb, with a wrapper-white edge.
+    const from = .7, to = 4.2;
+    const runner = new pc.Entity('Alfombra de chicle'); runner.setLocalPosition(0, .07, (from + to) / 2); dressing.addChild(runner);
+    part(runner, 'Alfombra', 'box', gumDeep, [0, 0, 0], [1.6, .03, to - from], [0, 0, 0], false);
+    for (const side of [-1, 1]) part(runner, 'Ribete', 'box', wrapper, [side * .83, .005, 0], [.1, .035, to - from], [0, 0, 0], false);
+  }
+  /** The palace's own layout, where it stands on its own (chapter 1). */
+  const layout = {
+    towers: towers.map(t => t.getLocalPosition().clone()), wings: wings.map(w => w.getLocalPosition().clone()),
+    base: base.getLocalPosition().clone(), slab: slab.getLocalScale().clone(), edge: [edge.getLocalPosition().clone(), edge.getLocalScale().clone()] as const,
+  };
+  let seated: Footing | undefined, across = 1;
+  /**
+   * Grows the palace out of a building (`footing`), or puts it back on its own (`undefined`). The
+   * gate fills the building's front door with its pillars half in the wall and its ramparts over
+   * the ground floor, and the wrapper towers climb out of the wall; the keep, wings and crown
+   * stand on a layer of gum on the roof at `scale`, which grows them taller but never wider than
+   * the roof; the fortress' spiked towers stand round the building with their feet in the street.
+   */
+  function seat(footing: Footing | undefined, scale = 1) {
+    seated = footing;
+    root.setLocalScale(1, 1, 1);
+    if (dressing) dressing.enabled = !!footing;
+    if (!footing) {
+      street.setLocalScale(1, 1, 1); body.setLocalScale(1, 1, 1); body.setLocalPosition(0, 0, 0);
+      towers.forEach((t, i) => t.setLocalPosition(layout.towers[i])); wings.forEach((w, i) => w.setLocalPosition(layout.wings[i]));
+      base.setLocalPosition(layout.base); slab.setLocalScale(layout.slab); edge.setLocalPosition(layout.edge[0]); edge.setLocalScale(layout.edge[1]);
+      spires.forEach(({ pivot, at }) => pivot.setLocalPosition(at[0], 0, at[1]));
+      setFoundation(0);
+      return;
+    }
+    if (!dressing) dress(footing);
+    root.setPosition(footing.x, footing.ground, footing.z + footing.depth / 2 - SEAT.inset); root.setEulerAngles(0, 0, 0);
+    street.setLocalScale(SEAT.street, SEAT.street, SEAT.street);
+    towers.forEach((t, i) => t.setLocalPosition(layout.towers[i].x, 0, -.3));
+    // The keep's middle over the roof's middle, the wings beside it.
+    across = Math.min(scale, (footing.depth - SEAT.margin) / BODY_DEPTH);
+    const lift = footing.height - footing.ground + SEAT.gum, middle = SEAT.inset - footing.depth / 2;
+    body.setLocalScale(across, scale, across);
+    body.setLocalPosition(0, lift, middle + 7 * across);
+    wings.forEach((w, i) => w.setLocalPosition(layout.wings[i].x, 0, -6.7));
+    // The gum on the roof stops a little inside its edges, and rounds off over the front wall.
+    const width = (footing.width - .4) / across, depth = (footing.depth - .4) / across;
+    base.setLocalPosition(0, 0, -7); slab.setLocalScale(width, .9, depth);
+    edge.setLocalPosition(0, -.05, depth / 2); edge.setLocalScale(.9, width, .9);
+    spires.forEach(({ pivot, onFooting }) => pivot.setLocalPosition(onFooting[0] / across, 0, -7 + onFooting[1] / across));
+    setFoundation(lift / scale);
+  }
+  /**
+   * What the seated palace stands on in the street, as boxes in world space: the ramparts, the
+   * gate and the spiked towers standing now. Nothing on its own (chapter 1 keeps its own walls).
+   */
+  function footprint() {
+    if (!seated) return [];
+    const at = root.getPosition(), k = SEAT.street;
+    const boxes = [-1, 1].map(side => ({ x0: at.x + side * 6.5 * k - 4.6 * k, x1: at.x + side * 6.5 * k + 4.6 * k, z0: at.z - .55 * k, z1: at.z + .55 * k }));
+    boxes.push({ x0: at.x - 2.95 * k, x1: at.x + 2.95 * k, z0: at.z - .7 * k, z1: at.z + 1 * k });
+    // By the threat, not `enabled`, which is also false while the whole palace is hidden.
+    for (const { pivot, radius, threshold } of spires) {
+      if (threat <= threshold) continue;
+      const p = pivot.getPosition(), r = radius * across;
+      boxes.push({ x0: p.x - r, x1: p.x + r, z0: p.z - r, z1: p.z + r });
+    }
+    return boxes;
+  }
 
   // ——— Animation ———
   let progress = 1, time = 0, popTime = Infinity;
@@ -278,7 +398,9 @@ export function createPalace(app: pc.Application, effects: Effects) {
     /** 0 = not there, 1 = standing; anything between is the inflation. */
     grow,
     get progress() { return progress; },
-    setThreat, setFoundation,
+    setThreat, setFoundation, seat, footprint,
+    /** The foot of the keep, the middle of the palace (on the roof when seated). */
+    get heart() { return keep.getPosition().clone(); },
     get threat() { return threat; },
     get foundation() { return foundation; },
     /** Where the gate stands and which way it faces (yaw in degrees, 0 = towards +z). */

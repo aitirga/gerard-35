@@ -83,6 +83,12 @@ proposal).
 
 The pair table lives here; each ánima's folder lists the pairs it is part of and links back.
 
+## Action points (proposal)
+
+An idea under discussion: replace Secundaria with a small pool of points per ánima, full at the
+start of each fight and recovering only while the ánima rests, so fights push the player to
+change ánima. See `docs/action-points.md`.
+
 ## Shared mechanics
 
 Statuses and rules that more than one ánima can apply or exploit. Add here before using one in a

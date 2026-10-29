@@ -1,0 +1,27 @@
+{
+  "title": "Chapter 2 · The street songs",
+  "description": "song-sad plays in Passatge Maresme, and song-concrete on Meridiana street: bars 1 to 9, then bars 10 to 17 vamping three to seven times before the rest of the song, and over again from bar 1. The overlay is the scenario's, not the game's: it prints the song and its position. It plays from 34 s so the vamp wraps back to bar 10 (19.64 s), then moves on past bar 18 (37.09 s). It plays music, so run it with --chrome: just screenshots street-music --chrome.",
+  "steps": [
+    { "open": "/?story=metro&solo=1" },
+    { "skipDialogue": true },
+    { "press": "Escape", "times": 2 },
+    { "eval": "window.showMusic = () => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:99;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.4 monospace'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing} · ${m.position()?.toFixed(2)} s`; }" },
+    { "teleport": "maresme", "cell": [17, 22] },
+    { "until": "window.gerard.music.playing === 'sad' && window.gerard.music.position() > 1", "timeout": 30000 },
+    { "eval": "window.showMusic()" },
+    { "shot": "maresme-sad", "delay": 1500, "caption": "Passatge Maresme: song-sad, looping whole (0 → 96 s)" },
+    { "teleport": "meridiana-calle", "cell": [55, 38] },
+    { "until": "window.gerard.music.playing === 'concrete' && window.gerard.music.position() > 1", "timeout": 30000 },
+    { "eval": "window.showMusic()" },
+    { "shot": "meridiana-concrete", "delay": 1500, "caption": "Meridiana street: song-concrete from bar 1" },
+    { "eval": "window.gerard.music.play('concrete', { from: 34, restart: true, fade: 0 })" },
+    { "until": "window.gerard.music.position() > 34", "timeout": 30000 },
+    { "until": "window.gerard.music.position() < 30", "timeout": 30000 },
+    { "eval": "window.showMusic(); console.log('VAMP', `wrapped back to ${window.gerard.music.position().toFixed(2)} s`)" },
+    { "shot": "vamp-wraps", "delay": 800, "caption": "At bar 18 (37.09 s) the vamp goes back to bar 10 (19.64 s)" },
+    { "eval": "window.gerard.music.jump(36, { at: 'now' }); window.gerard.music.moveOn()" },
+    { "until": "window.gerard.music.position() > 37.5", "timeout": 30000 },
+    { "eval": "window.showMusic(); console.log('VAMP', `moved on to ${window.gerard.music.position().toFixed(2)} s`)" },
+    { "shot": "vamp-moves-on", "delay": 800, "caption": "After moveOn() the lap is the last: the song goes on past bar 18 to the break and the rest" }
+  ]
+}

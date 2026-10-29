@@ -21,7 +21,7 @@ export function createCat(app: pc.Application, id: CatId) {
     if (!m) { m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.gloss = gloss; m.useMetalness = false; m.update(); mats.set(hex + gloss, m); }
     return m;
   };
-  function part(parent: pc.Entity, name: string, type: string, hex: string, p: number[], s: number[], r: number[] = [0, 0, 0], gloss?: number) {
+  function part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], hex: string, p: number[], s: number[], r: number[] = [0, 0, 0], gloss?: number) {
     const e = new pc.Entity(name); e.addComponent('render', { type, material: mat(hex, gloss), castShadows: true });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); e.setLocalEulerAngles(r[0], r[1], r[2]);
     parent.addChild(e); return e;

@@ -1,11 +1,13 @@
 import * as pc from 'playcanvas';
 import type { BattleEffect, BattleState, ClassId } from './battle';
-import { CLASSES, inheritColour, wearClass } from './classes';
+import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CONTACT_SECONDS, ENTRY_SECONDS, clamp01, contactMotion, smooth } from './battle-motion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
 import { DOG_PROFILES } from './encounters';
-import type { Effects } from './effects';
+import { tint, type Effects } from './effects';
+import type { ParticleBody } from './particles';
+import { FightClock, HIT, landing, spring, wobble, type Blow } from './hit-feel';
 import { createCat, type Cat } from './cats';
 import type { Fears } from './fears';
 
@@ -24,7 +26,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   // Eyes have their own materials so La Reina Bubbaloo's minion can turn them dark pink and glowing.
   const eyeDark = mat('#3c302a'), eyePink = mat('#7a1240');
   eyePink.emissive.fromString('#ff2d86'); eyePink.emissiveIntensity = 1.6; eyePink.gloss = .8; eyePink.update();
-  function part(parent: pc.Entity, name: string, type: string, material: pc.StandardMaterial, p: number[], s: number[]) {
+  function part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], material: pc.StandardMaterial, p: number[], s: number[]) {
     const e = new pc.Entity(name); e.addComponent('render', { type, material, castShadows: true });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); parent.addChild(e); return e;
   }
@@ -82,6 +84,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     body: pc.Entity | null; head: pc.Entity | null; tail: pc.Entity | null; ears: pc.Entity[]; eyes: pc.Entity[]; eyeScale: number; seed: number;
     /** Foes that are not dogs (the palace minion) wobble instead of sniffing. */
     minion: boolean;
+    /** Gerard at 35 or Aitor: a grown-up's Matemágico thinks out loud (thoughts.ts). */
+    grown: boolean;
     arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
     plantFeet: ReturnType<typeof createGroundContact>;
@@ -103,7 +107,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     ctx.fillStyle = fill; ctx.font = '900 108px Inter, Arial Black, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('NO', 128, 70);
     if (!background) { ctx.strokeStyle = fill; ctx.lineWidth = 8; ctx.strokeRect(6, 6, 244, 116); }
-    const t = new pc.Texture(app.graphicsDevice, { mipmaps: true }); t.setSource(c); return t;
+    const t = new pc.Texture(app.graphicsDevice, { width: c.width, height: c.height, mipmaps: true }); t.setSource(c); return t;
   }
   const stampTexture = lettering('#fff4ec', '#e2483d'), inkTexture = lettering('#e2483d');
   const stampRed = mat('#c8323c');
@@ -124,6 +128,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let impact: (() => void) | undefined;
   let complete: (() => void) | undefined;
   let impacted = false;
+  // Hit feel (hit-feel.ts): the fight's clock holds on contact; the camera lurch, the punch-in and the post pulse run on real time.
+  const clock = new FightClock();
+  const sway = [0, 1, 2].map(() => ({ x: 0, v: 0 })), zoom = { x: 0, v: 0 };
+  let real = 0, animating = true;
+  let pulse: ((fringe: number, bloom: number) => void) | undefined;
+  /** A blow lands: the picture lurches along (x, y, z), heavy ones punch in and fringe; returns the landing for the hit-stop. */
+  function land(blow: Blow, x: number, y: number, z: number) {
+    const l = landing(blow);
+    [x, y, z].forEach((d, i) => { sway[i].x = -d * l.kick; sway[i].v = 0; });
+    zoom.x = Math.max(zoom.x, l.punch);
+    pulse?.(l.fringe, l.bloom);
+    return l;
+  }
   const anchor = new pc.Vec3();
   const cameraKick = new pc.Vec3();
   const focus = new pc.Vec3();
@@ -132,13 +149,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const marker = part(battleRoot, 'Objetivo', 'cylinder', targetMaterial, [0, .03, 0], [1.1, .025, 1.1]);
   marker.enabled = false;
   let selectedTarget: string | undefined;
-  const sparkMaterial = mat('#ffe2a0');
-  sparkMaterial.emissive.fromString('#ffe2a0'); sparkMaterial.emissiveIntensity = 1.2; sparkMaterial.update();
-  const sparks = new pc.Entity('Destello de contacto'); battleRoot.addChild(sparks); sparks.enabled = false;
-  for (let i = 0; i < 7; i++) {
-    const ray = part(sparks, 'Impact', 'box', sparkMaterial, [0, 0, 0], [.035, .035, .3]);
-    ray.setLocalEulerAngles(0, i * 360 / 7, 25 + i * 13);
-  }
+  /** Confetti falls once per won fight. */
+  let celebrated = false;
   const face = (from: pc.Vec3, to: pc.Vec3) => Math.atan2(to.x - from.x, to.z - from.z) * 180 / Math.PI;
   const white = new pc.Color(1, .96, .86), green = new pc.Color(.62, 1, .5), gold = new pc.Color(1, .82, .4);
   function hit(f: Fighter, color: pc.Color, strength = 1) { f.hitAt = time; f.flash = strength; f.flashColor = color; }
@@ -146,8 +158,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   function ownMaterials(model: pc.Entity) {
     const copies = new Map<pc.Material, pc.StandardMaterial>();
     model.findComponents('render').forEach(component => (component as pc.RenderComponent).meshInstances.forEach(mesh => {
-      let copy = copies.get(mesh.material);
-      if (!copy) { copy = (mesh.material as pc.StandardMaterial).clone(); copies.set(mesh.material, copy); inheritColour(mesh.material, copy); }
+      const source = mesh.material as pc.StandardMaterial;
+      let copy = copies.get(source);
+      if (!copy) { copy = source.clone(); copies.set(source, copy); inheritColour(source, copy); }
       mesh.material = copy;
     }));
     const materials = [...copies.values()];
@@ -155,21 +168,67 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     return { materials, glow: materials.map(m => m.emissive.clone().mulScalar(m.emissiveIntensity)) };
   }
   function settle() { const done = complete; complete = undefined; done?.(); }
-  /** One-shot contact feedback: sparks where the blow lands, dust at the feet, a flash on whoever is affected. */
+  const floorUnder = (f: Fighter) => new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z), f.base.z);
+  /**
+   * One-shot contact feedback: a flash and sparks where the blow lands, a ring and dust at the feet,
+   * a flash on whoever is affected. Returns how a blow lands (hit-feel.ts); support skills only glow.
+   */
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
-    if (!target) { hit(actor, gold, .55); effects.emit('spark', new pc.Vec3(actor.base.x, 1.1, actor.base.z), 6, .3); return; }
-    // Análisis Parálisis: a gold flicker of ideas over everyone still standing.
-    if (action.skill === 'analisis') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, gold, .7); effects.emit('spark', new pc.Vec3(f.base.x, 1.6, f.base.z), 10, .4); } return; }
+    if (!target) { hit(actor, gold, .55); effects.emit('star', new pc.Vec3(actor.base.x, 1.3, actor.base.z), 8, .35); return; }
+    // Análisis Parálisis: a gold flicker of ideas circling over everyone still standing.
+    if (action.skill === 'analisis') { pulse?.(0, .3); for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, gold, .7); effects.insight(new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + 1.9 * f.scale.y, f.base.z)); } return; }
     // Yuki se esconde: a soft white shimmer over everyone she shelters.
-    if (action.skill === 'escondite') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, white, .5); effects.emit('poof', new pc.Vec3(f.base.x, .3, f.base.z), 5, .3); } return; }
-    if (action.skill === 'cardioide') { hit(target, green, .85); effects.emit('heal', new pc.Vec3(target.base.x, .35, target.base.z), 16, .5); return; }
+    if (action.skill === 'escondite') { pulse?.(0, .25); for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, white, .5); effects.emit('poof', new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + .3, f.base.z), 5, .3); } return; }
+    if (action.skill === 'cardioide') { pulse?.(0, .35); hit(target, green, .85); effects.heal(floorUnder(target), 1.6 * target.scale.y); return; }
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
+    const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
+    const felt: Blow = { share: unit ? (action.amount ?? 0) / unit.maxHp : 0, skill: !!action.skill, guarded, ko: target.hp <= 0, swallowed: action.swallowed, beat: state?.phase === 'beat' };
+    // No-ta: the stamp itself makes the noise (see the stamp below); the picture slams down with it.
+    if (action.skill === 'nota') { hit(target, white, 1); return land(felt, 0, -1, 0); }
     const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
     const reach = target.party ? .25 : .6;
-    effects.emit('spark', new pc.Vec3(target.base.x - dx / d * reach, 1, target.base.z - dz / d * reach), guarded ? 4 : action.skill ? 16 : 10, .15);
-    effects.emit('dust', new pc.Vec3(target.base.x, .12, target.base.z), guarded ? 3 : 7, .35);
+    const blow = new pc.Vec3(target.base.x - dx / d * reach, groundHeight(target.base.x, target.base.z) + (target.minion ? .9 : .85) * target.scale.y, target.base.z - dz / d * reach);
+    effects.impact(blow, actor.base, action.skill ? 1.4 : 1, { guarded, gum: target.minion, feet: floorUnder(target) });
     hit(target, white, guarded ? .4 : 1);
+    return land(felt, dx / d, 0, dz / d);
+  }
+  /** Which effect has started its trails, and how far: 1 once the spell leaves, 2 once the blow swings. */
+  let trailed: BattleEffect | undefined, trailStage = 0;
+  /**
+   * Light left by the action in flight: the leading fist (a dog's nose, the gum's head) swings an
+   * arc into the blow, skills in the wearer's ánima colour; a cure or a boost flies to whoever it
+   * reaches, and No-ta's stamp streaks down. Short and fast: each one fades in a few tenths.
+   */
+  function trailsFor(action: BattleEffect, actor: Fighter, target: Fighter | undefined, t: number, support: boolean) {
+    if (trailed !== action) { trailed = action; trailStage = 0; }
+    const classId = state?.allies.find(a => a.id === action.actor)?.classId;
+    const colour = action.skill && classId ? CLASSES[classId].colour : undefined;
+    const light: [string, string] | undefined = colour ? [tint(colour, .35), colour] : undefined;
+    const arm = actor.arms[0] as pc.Entity | undefined;
+    if (trailStage === 0) {
+      trailStage = 1;
+      if (support && light) {
+        // Cardioide flies to whoever it heals, Análisis Parálisis to every head; on oneself it winds round.
+        const reached = action.skill === 'analisis' ? [...fighters.values()].filter(f => f.party && f.hp > 0) : target ? [target] : [];
+        const from = (arm?.findByName('Mano') as pc.Entity | null ?? actor.model).getPosition();
+        for (const f of reached) {
+          const floor = groundHeight(f.base.x, f.base.z);
+          if (f === actor) effects.trails.spiral({ x: f.base.x, y: floor + .3, z: f.base.z }, light, { radius: .5, narrow: .6, height: 1.5 * f.scale.y, turns: 1.2, seconds: .45, width: .09, core: .35 });
+          else effects.comet(from, { x: f.base.x, y: floor + (action.skill === 'analisis' ? 1.9 : 1.1) * f.scale.y, z: f.base.z }, colour!, .24, { width: .13, arc: .6 });
+        }
+      }
+      if (action.skill === 'nota' && stamp.enabled) for (const side of [-1, 1]) {
+        effects.trails.follow(stamp, { offset: { x: side * .8, y: .3, z: 0 }, seconds: CONTACT_SECONDS, colour: ['#fff4ec', '#e2483d'], width: .11, life: .25, taper: .5, intensity: 2.4 });
+      }
+    }
+    // A fist swings an arc in the swinger's own space, from just past the hand; a dog or the gum leaves a streak along its lunge.
+    if (trailStage === 1 && !support && target && t >= (arm ? .24 : .16)) {
+      trailStage = 2;
+      const look = { colour: light ?? (actor.minion ? ['#ffd0e6', '#ff5fa2'] as const : ['#fff1cc', '#ffb347'] as const), width: light ? .2 : .15, intensity: light ? 3 : 1.8, core: light ? .7 : .45 };
+      if (arm) effects.trails.follow(arm, { ...look, offset: { x: 0, y: -.42, z: 0 }, space: actor.model, seconds: .26, life: .2 });
+      else if (actor.head) effects.trails.follow(actor.head, { ...look, offset: actor.minion ? { x: 0, y: .35, z: .45 } : { x: 0, y: .09, z: .45 }, seconds: .32, life: .2, width: .15 });
+    }
   }
   /**
    * Haru sits a step ahead of Papagato's wearer, towards the foes; Yuki a step behind. Zarpazo de
@@ -224,6 +283,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     dogs, anchor, cameraKick, focus,
     /** How high the tallest foe of this fight reaches (0 outside a fight). */
     get foeTop() { return foeTop; },
+    /** How much of the ortho height the frame is punched in by a heavy blow right now. */
+    get punch() { return zoom.x; },
+    /** How fast particles should run: slowed while a hit-stop holds the fight. */
+    get pace() { return clock.hold > 0 ? HIT.pace : 1; },
+    /** Where big moments send their chromatic fringe and bloom swell (post.pulse). */
+    setPulse(next: (fringe: number, bloom: number) => void) { pulse = next; },
     /** The model cloned for minion foes. */
     setMinionTemplate(model: pc.Entity) { minionTemplate = model; },
     /** Uri's fears' models (src/fears.ts). */
@@ -236,10 +301,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const gerard = fighters.get('gerard');
       if (!gerard) return;
       hit(gerard, white, 2.2); shake = .8;
-      effects.emit('poof', new pc.Vec3(gerard.base.x, .5, gerard.base.z), 18, .4);
-      effects.emit('spark', new pc.Vec3(gerard.base.x, 1.1, gerard.base.z), 24, .3);
+      if (animating) { pulse?.(1, 1); zoom.x = HIT.punch.size; }
+      effects.anima(gerard.base, CLASSES[id].colour, true);
       for (const f of fighters.values()) if (!f.party) hit(f, white, .9);
-      setTimeout(() => wearClass(gerard.model, id), 260);
+      setTimeout(() => wearClass(gerard.model, id, gerard.grown), 260);
     },
     /**
      * L / R in a fight: a burst of light in the ánima's colour, sparks rising round them, and the
@@ -249,9 +314,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const f = fighters.get(id);
       if (!f) return;
       hit(f, new pc.Color().fromString(CLASSES[classId].colour), 1.8);
-      effects.emit('spark', new pc.Vec3(f.base.x, 1.2, f.base.z), 20, .35);
-      effects.emit('poof', new pc.Vec3(f.base.x, .3, f.base.z), 10, .45);
-      setTimeout(() => wearClass(f.model, classId), 180);
+      if (animating) pulse?.(.25, .45);
+      effects.anima(f.base, CLASSES[classId].colour);
+      setTimeout(() => wearClass(f.model, classId, f.grown), 180);
     },
     /** Dark pink, glowing eyes for the street dogs: they obey La Reina Bubbaloo's minion. */
     possess(on: boolean) {
@@ -263,6 +328,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
     },
     selectTarget(id?: string) { selectedTarget = id; },
+    /** Adds whoever is standing in the fight to `out`, so particles flow around them. */
+    bodies(out: ParticleBody[]) {
+      for (const f of fighters.values()) {
+        if (!f.model.enabled) continue;
+        const p = f.model.getPosition();
+        out.push({ x: p.x, y: p.y, z: p.z, radius: (f.party ? .3 : .38) * f.scale.x, height: (f.party ? 1.5 : 1) * f.scale.y, key: f.model });
+      }
+    },
     targets() {
       return [...fighters].map(([id, f]) => ({
         id, position: f.model.getPosition().clone().add(new pc.Vec3(0, f.party ? 1.65 : 1.45, 0)), visible: f.hp > 0 && entryTime >= ENTRY_SECONDS,
@@ -283,7 +356,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       settle();
       const entering = !!next && !state;
       if (entering) {
-        anchor.copy(center); entryTime = 0;
+        anchor.copy(center); entryTime = 0; celebrated = false;
         for (const [party, units] of [[true, next.allies], [false, next.foes]] as const) units.forEach((unit, i) => {
           // The palace guards (chapter 2) are minions grown to the size of a wardrobe.
           const fear = !party && unit.kind ? fears?.templates.get(unit.kind) : undefined;
@@ -292,7 +365,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const model = source.clone(); model.enabled = true;
           if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
             (component as pc.RenderComponent).meshInstances.forEach(mesh => {
-              if (mesh.material.name === 'Camiseta mostaza') mesh.material = allyJacket;
+              if (mesh.material?.name === 'Camiseta mostaza') mesh.material = allyJacket;
             });
           });
           const across = (i - (units.length - 1) / 2) * (alongZ ? 1.1 : 1.9) + (party ? .6 : -.6) * (alongZ ? .4 : 1), apart = party ? -2.2 : 1.2;
@@ -310,14 +383,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const head = model.findByName(party ? 'Pivote de cabeza' : minion ? 'Cabeza de chicle' : 'Cabeza de perro') as pc.Entity | null;
           const eyes = model.find(node => node.name === 'Ojo') as pc.Entity[];
           fighters.set(unit.id, {
-            model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null, minion,
+            model, base, start, hp: unit.hp, party, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null, minion, grown: party && grownUp(unit.profile),
             ears: model.find(node => node.name === 'Oreja') as pc.Entity[], eyeScale: eyes[0]?.getLocalScale().y ?? 1, seed: party ? i * 3.1 + .4 : i,
             flash: 0, flashColor: white, ...ownMaterials(model),
             scale: model.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
           });
           // Whoever wears an ánima shows it in the fight, even when the street model does not (Gerard at 35, Aitor).
           // Dressed after ownMaterials, so the street model keeps its own look.
-          if (party) wearClass(model, unit.classId);
+          if (party) wearClass(model, unit.classId, grownUp(unit.profile));
         });
       }
       if (next && !foeTop) {
@@ -325,14 +398,16 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         for (const f of fighters.values()) if (!f.party) for (const r of f.model.findComponents('render') as pc.RenderComponent[]) for (const m of r.meshInstances) foeTop = Math.max(foeTop, m.aabb.getMax().y - f.model.getPosition().y);
       }
       if (!next) foeTop = 0;
-      state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false;
-      if (!next) { cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); fighters.forEach(f => { f.model.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); sparks.enabled = false; selectedTarget = undefined; effects.clear(); }
+      state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false; clock.clear();
+      if (!next) { cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); fighters.forEach(f => { f.model.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); selectedTarget = undefined; effects.clear(); }
       else [...next.allies, ...next.foes].forEach(u => { fighters.get(u.id)!.hp = u.hp; });
       player.enabled = !next;
       if (!entering && !nextEffect) return Promise.resolve();
       return new Promise(resolve => { complete = resolve; });
     },
     update(dt: number, animate = true) {
+      // Real time drives the camera; the fight itself stands still while a hit-stop holds.
+      const elapsed = dt; real += dt; animating = animate; dt = clock.advance(dt);
       time += dt; effectTime += dt;
       entryTime = animate ? Math.min(ENTRY_SECONDS, entryTime + dt) : ENTRY_SECONDS;
       cameraKick.set(0, 0, 0); focus.set(0, 0, 0);
@@ -345,13 +420,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // Heals and boosts stay put: no run-up to anyone. Papagato's wearer stays put too: Haru goes.
       const support = effect?.skill === 'cardioide' || effect?.skill === 'analisis' || effect?.skill === 'escondite';
       const catStrike = effect?.skill === 'zarpazo';
-      const t = animate ? effectTime : ACTION_SECONDS;
-      const motion = actor && target && !support && !catStrike ? contactMotion(actor.base, target.base, t) : undefined;
       const contact = effect?.target && !support ? CONTACT_SECONDS : .2;
       if (effect && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.();
-        if (animate && effect) contactBurst(effect, actor, target);
+        const landed = animate && effect ? contactBurst(effect, actor, target) : undefined;
+        // Hit-stop: rewind to the contact pose and hold it (FightClock.stop).
+        if (landed) effectTime -= clock.stop(landed.stop, effectTime - contact);
       }
+      const t = animate ? effectTime : ACTION_SECONDS;
+      const motion = actor && target && !support && !catStrike ? contactMotion(actor.base, target.base, t) : undefined;
       const entryMove = smooth((entryTime - .22) / .85);
       const selected = selectedTarget ? fighters.get(selectedTarget) : undefined;
       marker.enabled = !!selected && selected.hp > 0 && !effect && entryTime >= ENTRY_SECONDS;
@@ -409,7 +486,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (fall) {
           roll += fall * (f.party ? 78 : -84);
           hop += Math.sin(clamp01(down / .3) * Math.PI) * .28;
-          if (!f.poofed && down > .62) { f.poofed = true; effects.emit('poof', new pc.Vec3(position.x, .35, position.z), 12, .35); }
+          if (!f.poofed && down > .62) { f.poofed = true; effects.poof(new pc.Vec3(position.x, groundHeight(position.x, position.z) + .35, position.z)); }
         }
         const shrink = down < 0 ? 1 : 1 - smooth((down - (animate ? .62 : .18)) / (animate ? .22 : .4));
         f.arms.forEach((arm, i) => arm.setLocalEulerAngles(celebrating ? -165 + Math.sin(time * 11 + i * Math.PI) * 12 : guarding ? -60 : -notice * 25 - strike * (i === 0 ? 85 : 35) - stride * (i === 0 ? 1 : -1), 0, guarding ? (i === 0 ? -20 : 20) : 0));
@@ -453,40 +530,33 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (stamping && target && stamp.enabled) {
         const fall = smooth(t / CONTACT_SECONDS), lift = smooth((t - CONTACT_SECONDS - .25) / .4);
         const y = (target.minion ? 1.9 : 1.3) + (1 - fall) * 2.2 + lift * 3;
-        const squash = t > CONTACT_SECONDS && t < CONTACT_SECONDS + .2 ? .8 : 1;
+        // Squashed from the contact frame on, so a hit-stop holds the slam itself.
+        const squash = t >= CONTACT_SECONDS && t < CONTACT_SECONDS + .2 ? .8 : 1;
         stamp.setPosition(target.base.x, y, target.base.z); stamp.setLocalScale(1.2, 1.2 * squash, 1.2);
         if (t >= CONTACT_SECONDS && inkAt < time - 2) {
-          inkAt = time; shake = .5;
+          inkAt = time; shake = .6;
           inkMark.setPosition(target.base.x, groundHeight(target.base.x, target.base.z) + .04, target.base.z);
-          effects.emit('spark', new pc.Vec3(target.base.x, 1, target.base.z), 22, .6);
+          effects.stamp(target.base);
         }
       }
+      // Zarpazo de Haru: the cat pounces, the wearer's fist leaves no arc.
+      if (animate && effect && actor && !catStrike) trailsFor(effect, actor, target, t, support);
       const inkAge = time - inkAt;
       inkMark.enabled = inkAge < 1.8;
       if (inkMark.enabled) { ink.opacity = 1 - smooth((inkAge - 1) / .8); ink.update(); }
-      shake = Math.max(0, shake - dt);
-      if (shake > 0 && animate) cameraKick.add(new pc.Vec3(Math.sin(time * 70) * shake * .25, Math.cos(time * 63) * shake * .15, 0));
-      sparks.enabled = !!motion && animate && t >= CONTACT_SECONDS && t < CONTACT_SECONDS + .22;
-      if (support && target && animate && t >= .2 && t < .8) {
-        sparks.enabled = true;
-        const burst = (t - .2) / .6;
-        sparks.setPosition(target.base.x, 1 + burst * .8, target.base.z);
-        sparks.setLocalScale(.8, .8, .8);
-        sparks.children.forEach((ray, i) => {
-          const a = i * Math.PI * 2 / 7;
-          ray.setLocalPosition(Math.cos(a) * .6, Math.sin(a) * .4, 0);
-        });
+      // The lurch springs back and shakes keep going through a hit-stop: they run on real time.
+      shake = Math.max(0, shake - elapsed);
+      sway.forEach(s => spring(s, elapsed, HIT.spring.omega, HIT.spring.zeta));
+      spring(zoom, elapsed, HIT.punch.omega, 1);
+      const quake = animate ? shake * shake * .3 : 0;
+      if (animate) cameraKick.set(sway[0].x + wobble(real, 0) * quake, sway[1].x + wobble(real, 5) * quake * .6, sway[2].x);
+      // The fight is won: confetti in the party's ánima colours rains over the field.
+      if (state?.phase === 'won' && !effect && !celebrated && animate) {
+        celebrated = true;
+        const colours = new Set(['#f3cf78', '#fff4ec', ...state.allies.map(a => a.classId ? CLASSES[a.classId].colour : '#6f8fa8')]);
+        effects.confetti(new pc.Vec3(anchor.x - 1, groundHeight(anchor.x, anchor.z) + 3.2, anchor.z), [...colours]);
       }
       if (motion && target) {
-        const burst = clamp01((t - CONTACT_SECONDS) / .22);
-        sparks.setPosition(target.base.x - motion.ux * (target.party ? .4 : 1.05), 1.05, target.base.z - motion.uz * (target.party ? .4 : 1.05));
-        sparks.setLocalScale(1 + burst * 1.6, 1 + burst * 1.6, 1 + burst * 1.6);
-        sparks.children.forEach((ray, i) => {
-          const a = i * Math.PI * 2 / 7;
-          ray.setLocalPosition(Math.cos(a) * burst * .35, Math.sin(a) * burst * .35, 0);
-        });
-        const kick = animate ? Math.sin(burst * Math.PI * 2) * (1 - burst) * .045 : 0;
-        cameraKick.set(kick, kick * .45, 0);
         const emphasis = animate ? Math.sin(clamp01(t / ACTION_SECONDS) * Math.PI) * .12 : 0;
         focus.set((target.base.x - anchor.x) * emphasis, 0, (target.base.z - anchor.z) * emphasis);
       }

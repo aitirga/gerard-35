@@ -37,7 +37,7 @@ export function createMinion(app: pc.Application, effects: Effects) {
   const gum = mat('#ff6fae', .88, .08), gumDeep = mat('#e0488a', .8, .05), goo = mat('#c2306f', .9, .04);
   const shine = mat('#ffd3e6', .9, .6), eye = mat('#24081a', .95), pupil = mat('#ff3d8b', .6, 1.6);
   const mouth = mat('#5a0f33', .4), bubbleSkin = mat('#ff9cc8', .95, .25, .72), puddleSkin = mat('#d23b7d', .95, .1);
-  function part(parent: pc.Entity, name: string, type: string, m: pc.Material, p: number[], s: number[], r: number[] = [0, 0, 0]) {
+  function part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], m: pc.Material, p: number[], s: number[], r: number[] = [0, 0, 0]) {
     const e = new pc.Entity(name); e.addComponent('render', { type, material: m, castShadows: type !== 'cylinder' });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); e.setLocalEulerAngles(r[0], r[1], r[2]);
     parent.addChild(e); return e;

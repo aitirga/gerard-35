@@ -8,7 +8,7 @@ import { ITEMS, ITEM_KIND_LABELS, itemsOfKind, type ItemKind } from './items';
 import type { MemberId, PartyMember, Story } from './story';
 import { CLASS_STATS, SKILLS, type ClassId } from './battle';
 import { LEVELLED } from './levels';
-import { CLASSES } from './classes';
+import { animaOf, CLASSES } from './classes';
 import { PROFILES, STAT_LABELS, withBonus, type Stats } from './stats';
 import { currentThought, diary, storyClock } from './journal';
 import type { PlayerId } from './party';
@@ -101,13 +101,13 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   /** Out of a fight everyone is rested: full PV and Secundaria, with the ánima's colours. */
   function plate(member: PartyMember) {
     const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
-    return vitalsPlate({ id: member.id, name: member.name, profile: member.profile, hp: stats.pv, maxHp: stats.pv, sec: stats.sec, maxSec: stats.sec, anima: member.classId && CLASSES[member.classId].name, colour: animaColour(member), scarf: member.classId && CLASSES[member.classId].scarf });
+    return vitalsPlate({ id: member.id, name: member.name, profile: member.profile, hp: stats.pv, maxHp: stats.pv, sec: stats.sec, maxSec: stats.sec, anima: member.classId && animaOf(member.classId, story.adult).name, colour: animaColour(member), scarf: member.classId && CLASSES[member.classId].scarf });
   }
   /** One chip per woken ánima (and none): each member wears their own, and two can differ. */
   function animaSwitch(member: PartyMember) {
     // Bernat wears no ánima: he only attacks.
     if (!story.classes.length || member.id === 'bernat') return '';
-    return `<div class="anima-switch" role="group" aria-label="Ánima de ${escape(member.name)}"><span class="battle-kicker">ÁNIMA</span><div class="anima-chips">${[null, ...story.classes].map(id => `<button type="button" data-key="wear:${member.id}:${id ?? ''}" data-wear="${member.id}" data-class-id="${id ?? ''}" aria-pressed="${(member.classId ?? null) === id}" style="--chip:${id ? CLASSES[id].colour : 'var(--ui-paper)'}">${id ? CLASSES[id].name : 'Sin ánima'}</button>`).join('')}</div></div>`;
+    return `<div class="anima-switch" role="group" aria-label="Ánima de ${escape(member.name)}"><span class="battle-kicker">ÁNIMA</span><div class="anima-chips">${[null, ...story.classes].map(id => `<button type="button" data-key="wear:${member.id}:${id ?? ''}" data-wear="${member.id}" data-class-id="${id ?? ''}" aria-pressed="${(member.classId ?? null) === id}" style="--chip:${id ? CLASSES[id].colour : 'var(--ui-paper)'}">${id ? animaOf(id, story.adult).name : 'Sin ánima'}</button>`).join('')}</div></div>`;
   }
   const bonusChips = (classId: ClassId) => (Object.entries(CLASS_STATS[classId]) as [keyof Stats, number][])
     .map(([key, value]) => `<li data-sign="${value > 0 ? 'up' : 'down'}">${STAT_LABELS[key]} ${value > 0 ? '+' : '−'}${Math.abs(value)}</li>`).join('');
@@ -123,7 +123,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   /** What the worn ánima is about, in one line under the switch. */
   function animaLine(member: PartyMember) {
     if (!story.classes.length || !member.classId) return '';
-    const spec = CLASSES[member.classId];
+    const spec = animaOf(member.classId, story.adult);
     return `<p class="anima-line">${spec.motto} <b>${skillsOf(member.classId).map(s => s.name).join(' · ')}</b></p>`;
   }
   function equipment(member: PartyMember) {
@@ -164,7 +164,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const classes = story.classes, wards = wardsOf(sheet);
     const own = wards.find(m => m.id === ownerOf(sheet)) ?? wards[0];
     const viewing = sheet.viewing && classes.includes(sheet.viewing) ? sheet.viewing : own?.classId ?? classes[0];
-    const spec = CLASSES[viewing];
+    const spec = animaOf(viewing, story.adult);
     // Each member: their vitals and their own ánima.
     const wearers = wards.map(m => `<article class="anima-wearer" data-member="${m.id}">${plate(m)}${animaSwitch(m)}</article>`).join('');
     return `<div class="animas-page">
@@ -217,7 +217,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
         <div><dt>Dos jugadores</dt><dd>Con Aitor en el mando 2, cada uno abre su menú en su mitad de la pantalla</dd></div>
         <div><dt>Vista general</dt><dd data-glyph-template="{overview}"></dd></div>
         <div><dt>Combate</dt><dd data-glyph-template="{pick} elegir · {confirm} confirmar · {cancel} volver · {details} detalles de una habilidad · {prev} / {next} cambiar de ánima"></dd></div>
-        <div><dt>Pausa</dt><dd data-glyph-template="{menu} · En Configuración, el mando y las luces de casa"></dd></div>
+        <div><dt>Pausa</dt><dd data-glyph-template="{menu} · En Configuración, el mando, el sonido y las luces de casa"></dd></div>
       </dl></div>`;
   }
   function diaryPage(sheet: Sheet) {

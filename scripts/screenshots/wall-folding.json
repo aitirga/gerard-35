@@ -1,0 +1,17 @@
+{
+  "title": "Walls folding away",
+  "description": "Walls and tall furniture used to fold down to a skirting while they hid Gerard. That is off for now, to try the house without it; in development the picker's Lugares tab has 'Paredes que se pliegan' to turn it back on (remembered in this browser).",
+  "steps": [
+    { "open": "/?story=bernat-joined" },
+    { "until": "window.gerard && !document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },
+    { "eval": "localStorage.removeItem('gerard35.wallFolding')" },
+    { "teleport": "home-floor-1", "cell": [14, 3] },
+    { "shot": "folding-off", "delay": 2000, "caption": "Off (now the default): in the narrow room behind the wall, the wall stays standing and hides Gerard" },
+    { "eval": "document.querySelector('#environment').click()" },
+    { "shot": "picker-switch", "delay": 600, "caption": "Development picker · Lugares: 'Paredes que se pliegan', Sí or No" },
+    { "eval": "document.querySelector('[data-folds=\"1\"]').click(); document.querySelector('#environment').click()" },
+    { "shot": "folding-on", "delay": 2000, "caption": "Sí: the wall in front of Gerard folds down to its skirting, as before" },
+    { "eval": "document.querySelector('#environment').click(); document.querySelector('[data-folds=\"0\"]').click(); document.querySelector('#environment').click(); localStorage.removeItem('gerard35.wallFolding')" },
+    { "shot": "folding-off-again", "delay": 2000, "caption": "Back to No: the wall rises again" }
+  ]
+}

@@ -5,6 +5,8 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 set dotenv-load := true
 
 site_url := "https://gerard-35-aitirga.fly.dev/"
+# The local API's port, its own so another project's server on 8080 never answers for it.
+api_port := env("GERARD_API_PORT", "8035")
 
 # Show the command menu
 [group('Help')]
@@ -61,15 +63,21 @@ dev-character name="gerard-child":
     @[[ -f "src/characters/{{ name }}.json" ]] || { printf 'No src/characters/%s.json; run just character first.\n' "{{ name }}"; exit 1; }
     npm run dev -- --open '/?character={{ name }}'
 
-# Start the persistent API on port 8080, proxied by `just dev` under /api
+# Play a song from a mark, second or random point, and a haunted one at a level: just dev-music battle 126, just dev-music bubbaloo random .8 (press a key to start)
+[group('Development')]
+dev-music track="battle" from="start" haunt="":
+    @[[ "{{ track }}" =~ ^[a-z0-9-]+$ && "{{ from }}" =~ ^([a-z-]+|[0-9]+(\.[0-9]+)?)$ && "{{ haunt }}" =~ ^([01]|0?\.[0-9]+)?$ ]] || { printf 'Use a track from src/music.ts, a mark or seconds and an optional haunt from 0 to 1, e.g. just dev-music bubbaloo random .8.\n'; exit 1; }
+    npm run dev -- --open '/?music={{ track }}&from={{ from }}{{ if haunt != "" { "&haunt=" + haunt } else { "" } }}'
+
+# Start the persistent API on port 8035 (GERARD_API_PORT), proxied by `just dev` under /api
 [group('Development')]
 backend:
-    uv run --locked uvicorn server:app --host 127.0.0.1 --port 8080 --reload
+    uv run --locked uvicorn server:app --host 127.0.0.1 --port {{ api_port }} --reload
 
-# Build, then serve game + API together on http://127.0.0.1:8080
+# Build, then serve game + API together on http://127.0.0.1:8035
 [group('Development')]
 run: build
-    uv run --locked uvicorn server:app --host 127.0.0.1 --port 8080
+    uv run --locked uvicorn server:app --host 127.0.0.1 --port {{ api_port }}
 
 # Open the desktop combat lab: tune encounters, compare policies and replay a seed
 [group('Combat')]
@@ -210,6 +218,24 @@ city-fetch-buildings: && city
 city-background:
     @[[ -f output/city/background.svg ]] || { printf 'No street data yet; run just city-fetch first.\n'; exit 0; }
     node scripts/city-background.mjs
+
+# Ship a song from its master in assets/music/ to public/music/<name>.m4a (copied if .m4a, else encoded) with its loudness map: just music-export battle
+[group('Audio')]
+music-export name:
+    @[[ "{{ name }}" =~ ^[a-z0-9-]+$ ]] || { printf 'Use the song name without extension, e.g. just music-export battle.\n'; exit 1; }
+    @src=$(ls assets/music/{{ name }}.* 2>/dev/null | head -n1); [[ -n "$src" ]] || { printf 'No master for %s in assets/music/.\n' '{{ name }}'; exit 1; }; mkdir -p public/music; if [[ "$src" == *.m4a ]]; then cp "$src" public/music/{{ name }}.m4a; else ffmpeg -v error -y -i "$src" -vn -c:a aac -b:a 192k public/music/{{ name }}.m4a; fi; printf '%s → public/music/%s.m4a\n' "$src" '{{ name }}'
+    @uv run --locked python tools/music_loop.py loudness public/music/{{ name }}.m4a
+
+# Find where a song loops: tempo, opening notes and seams (just music-loop public/music/battle.m4a --start 2.1:2.7)
+[group('Audio')]
+[positional-arguments]
+music-loop file *args:
+    uv run --locked python tools/music_loop.py analyze "$@"
+
+# Write a seam to output/music/ to listen to: the loop's end, then its start (just music-seam public/music/battle.m4a 2.398 134.398)
+[group('Audio')]
+music-seam file start end:
+    uv run --locked python tools/music_loop.py preview '{{ file }}' '{{ start }}' '{{ end }}'
 
 # Generate portrait, expressions, full-body art and 3D model: just character bernat --description '…' (--help)
 [group('Tools')]

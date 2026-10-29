@@ -1,0 +1,29 @@
+{
+  "title": "GPU \u00b7 Frame timings",
+  "description": "Samples the engine's frame for a few seconds in heavy views (the street following Gerard and in the overview, La Reina Bubbaloo's palace, a fight with every element and aura going off) and prints frame time, CPU time per frame, GPU time and draw calls. Run it with --gpu --perf (release engine, no 60 fps cap), then with --gpu --perf --webgl, and compare the last shot; each line is also logged with SCREENSHOT_DEBUG=1.",
+  "steps": [
+    {"open": "/?story=bernat-joined&stats"},
+    {"eval": "window.perf = (label, ms = 5000) => new Promise(done => { const app = window.gerard.game.app, device = app.graphicsDevice, profiler = device.gpuProfiler, s = []; if (profiler) profiler.enabled = true; let start = 0; const begin = () => { start = performance.now(); }; const end = () => s.push([app.stats.frame.ms, performance.now() - start, profiler?.frameTime, app.stats.drawCalls.total]); app.on('frameupdate', begin); app.on('frameend', end); setTimeout(() => { app.off('frameupdate', begin); app.off('frameend', end); s.splice(0, 5); const n = s.length, mean = i => { const v = s.map(x => x[i]).filter(x => x !== undefined); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN; }, worst = s.map(x => x[0]).sort((a, b) => a - b)[Math.floor(n * .95)]; const r = { label, backend: device.isWebGPU ? 'WebGPU' : 'WebGL2', fps: +(1000 / mean(0)).toFixed(1), frameMs: +mean(0).toFixed(2), p95Ms: +worst.toFixed(2), cpuMs: +mean(1).toFixed(2), gpuMs: +mean(2).toFixed(2), draws: Math.round(mean(3)) }; (window.perfResults ??= []).push(r); console.log('perf ' + JSON.stringify(r)); done(); }, ms); }); sessionStorage.perf = String(window.perf)"},
+    {"teleport": "maresme", "cell": [20, 24], "settle": 2500},
+    {"eval": "perf('street, following Gerard')"},
+    {"shot": "street", "caption": "Passatge Maresme, following Gerard"},
+    {"eval": "window.gerard.game.toggleOverview()"},
+    {"wait": 2500},
+    {"eval": "perf('street, overview (R)')"},
+    {"shot": "overview", "caption": "Passatge Maresme in the overview"},
+    {"eval": "window.gerard.game.toggleOverview()"},
+    {"teleport": "palacio", "cell": [5, 15], "settle": 2500},
+    {"eval": "perf('palace')"},
+    {"shot": "palace", "caption": "La Reina Bubbaloo's palace"},
+    {"eval": "sessionStorage.perfResults = JSON.stringify(window.perfResults)"},
+    {"open": "/?story=noista&battle=3&allies=2&noista=1&stats"},
+    {"until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000},
+    {"eval": "window.perf = eval(sessionStorage.perf)"},
+    {"eval": "{ const g = window.gerard.game, e = g.effects, stage = g.app.root.findByName('Escenario de combate'), models = stage.children.filter(c => c.enabled && !['Objetivo', 'Marca de tinta', 'Sello No-ta'].includes(c.name)).sort((a, b) => a.getPosition().x - b.getPosition().x), allies = models.slice(0, 2), foes = models.slice(2), at = (m, y = 0) => { const p = m.getPosition(); return { x: p.x, y: p.y + y, z: p.z }; }, elements = ['fire', 'ice', 'air', 'energy', 'water', 'earth', 'light', 'shadow']; let i = 0; foes.forEach((f, k) => e.aura(elements[k], f.getPosition().clone(), 30, 1)); window.storm = setInterval(() => { const foe = foes[i % foes.length]; e.element(elements[i % elements.length], at(foe, .9), { from: at(allies[i % 2], .9), feet: at(foe) }); e.impact(at(foe, .9), at(allies[0], .9), 1.4, { feet: at(foe) }); if (i % 4 === 0) e.heal({ ...allies[0].getPosition() }, 1.6); if (i % 6 === 0) e.confetti(at(allies[1], 3), ['#f3cf78', '#fff4ec', '#e2483d']); i++; }, 250); }"},
+    {"wait": 1500},
+    {"eval": "perf('fight, effects and auras playing')"},
+    {"shot": "fight", "caption": "A fight with every element, blows, cures and confetti going off"},
+    {"eval": "clearInterval(window.storm); { const rows = [...JSON.parse(sessionStorage.perfResults), ...window.perfResults]; const pre = document.createElement('pre'); pre.id = 'perf-results'; pre.style.cssText = 'position:fixed;inset:auto 24px 24px 24px;z-index:99999;margin:0;padding:16px;background:#101f25ee;color:#eeeade;font:14px/1.5 ui-monospace,monospace;border:1px solid #c6d6ad55'; pre.textContent = [`${rows[0].backend} · ${navigator.userAgent.match(/Chrome\\/[\\d.]+/)?.[0] ?? ''} · ${innerWidth}×${innerHeight} @${devicePixelRatio}x`, 'view                                fps   frame ms  p95 ms  cpu ms  gpu ms  draws', ...rows.map(r => `${r.label.padEnd(34)} ${String(r.fps).padStart(5)} ${String(r.frameMs).padStart(9)} ${String(r.p95Ms).padStart(7)} ${String(r.cpuMs).padStart(7)} ${String(r.gpuMs).padStart(7)} ${String(r.draws).padStart(6)}`)].join('\\n'); document.body.append(pre); console.log('perf table\\n' + pre.textContent); }"},
+    {"shot": "results", "delay": 300, "caption": "Mean frame time, 95th percentile, CPU time per frame (update + render), GPU time (when the browser exposes timer queries) and draw calls"}
+  ]
+}

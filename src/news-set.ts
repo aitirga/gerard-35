@@ -49,7 +49,7 @@ export function createNewsSet(app: pc.Application, stage: NewsStage, castle: pc.
     if (glow) { m.emissive.fromString(hex); m.emissiveIntensity = glow; }
     m.update(); materials.push(m); cache.set(key, m); return m;
   }
-  function part(parent: pc.Entity, type: string, m: pc.Material, p: number[], s: number[], r: number[] = [0, 0, 0]) {
+  function part(parent: pc.Entity, type: pc.RenderComponent['type'], m: pc.Material, p: number[], s: number[], r: number[] = [0, 0, 0]) {
     const e = new pc.Entity(); e.addComponent('render', { type, material: m, castShadows: true, receiveShadows: true });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); e.setLocalEulerAngles(r[0], r[1], r[2]);
     parent.addChild(e); return e;

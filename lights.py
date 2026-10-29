@@ -95,7 +95,7 @@ class HomeLights:
 
     @property
     def transport(self) -> str:
-        return "lan" if self.lan and self.lan.addresses else "cloud"
+        return "lan" if self.lan and self.lan.answered else "cloud"
 
     def _measure(self, run, *args, **kwargs):
         start = self.clock()
@@ -114,9 +114,9 @@ class HomeLights:
         """Every bulb as the game reads it, from a recent read when there is one."""
         if fresh or self.clock() - self.read_at > self.READ_SECONDS[self.transport]:
             raw = None
-            if self.transport == "lan":
+            if self.lan and self.lan.addresses:
                 raw = self.lan.read() or None
-                if raw and len(raw) < len(self.lan.addresses) and self.clock() - self.discovered_at > self.DISCOVER_SECONDS:
+                if len(raw or ()) < len(self.lan.addresses) and self.clock() - self.discovered_at > self.DISCOVER_SECONDS:
                     self.discovered_at = self.clock()
                     self.lan.discover()
             if raw is None and self.api and self.budget.take():
@@ -152,7 +152,8 @@ class HomeLights:
             return None
         ids = self.ids(labels)
         serials = [ids.get(label) for label in labels]
-        return serials if all(serial in self.lan.addresses for serial in serials) else None
+        # Found is not enough: a bulb that does not answer would never get the message.
+        return serials if all(serial in self.lan.answered for serial in serials) else None
 
     # ------------------------------------------------------------------ writing
     def set(self, states: list[dict], duration: float):
@@ -285,6 +286,8 @@ def house() -> HomeLights | None:
             lan = LanBulbs() if os.environ.get("HOME_LIGHTS_LAN", "1") != "0" else None
             if lan and not lan.discover():
                 lan = None
+            elif lan:
+                lan.read()
             token = lifx_token()
             api = LifxApiClient(token) if LifxApiClient is not None and token else None
             if lan or api:

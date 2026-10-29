@@ -15,18 +15,7 @@
     <main id="hud">
       <section class="place-panel" aria-label="Entorno">
         <span class="eyebrow">SANT QUIRZE DEL VALLÈS</span>
-        <select id="environment" aria-label="Elegir entorno">
-          <option value="maresme">Passatge Maresme</option>
-          <option value="patio">El patio · Prueba de movimiento</option>
-          <option value="home-entrance" disabled>Casa de Gerard · Entrada</option>
-          <option value="home-floor-1" disabled>Casa de Gerard · Planta 1</option>
-          <option value="home-floor-2" disabled>Casa de Gerard · Planta 2</option>
-          <option value="meridiana">Meridiana · Casa de Gerard y Aitor</option>
-          <option value="alegia">Alegia · San Juan kalea</option>
-          <option value="meridiana-calle">Barcelona · Avinguda Meridiana</option>
-          <option value="rec-comtal">Barcelona · Escola Rec Comtal</option>
-          <option value="palacio" disabled>Palacio de la Reina Bubbaloo</option>
-        </select>
+        <button id="environment" type="button" data-jump-trigger aria-haspopup="dialog" aria-expanded="false"><span class="place-name">Passatge Maresme</span><span class="place-caret" aria-hidden="true"></span></button>
         <span id="location-detail">Reconstrucción aproximada · Nº 20</span>
         <button id="overview">Vista general <kbd data-glyph="overview">R</kbd></button>
       </section>

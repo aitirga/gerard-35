@@ -1,0 +1,115 @@
+{
+  "title": "Trails · Swings, spells and spirals",
+  "description": "Ribbon trails (src/trails.ts, docs/graphics.md) in a fight frozen in time and stepped frame by frame: Gerard's fist mid-swing and just after contact, a dog lunging, No-ta (the fist in Noísta's red and the stamp streaking down), Cardioide and Análisis Parálisis flying to the party in Matemágico's gold, an ánima waking in three strands and a swap in two, and a comet thrown between fighters.",
+  "steps": [
+    {
+      "open": "/?story=noista&battle=3&allies=2&noista=1"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.step = frames => { for (let i = 0; i < frames; i++) window.gerard.game.app.fire('update', 1 / 60); }; window.play = (effect, frames, anima = 'noista') => import('/src/battle.ts').then(m => { const g = window.gerard.game; g.app.timeScale = 0; g.effects.clear(); g.setBattle(m.createBattle(2, 3, false, anima), effect); step(frames); }); window.models = () => { const stage = window.gerard.game.app.root.findByName('Escenario de combate'); return stage.children.filter(c => c.enabled && !['Objetivo', 'Marca de tinta', 'Sello No-ta'].includes(c.name)).sort((a, b) => a.getPosition().x - b.getPosition().x); };"
+    },
+    {
+      "eval": "play({ kind: 'attack', actor: 'gerard', target: 'dog-1' }, 24)"
+    },
+    {
+      "shot": "attack-swing",
+      "delay": 400,
+      "caption": "A plain attack: Gerard's fist swings an arc of warm light into the blow"
+    },
+    {
+      "eval": "step(5)"
+    },
+    {
+      "shot": "attack-contact",
+      "delay": 400,
+      "caption": "At contact: the arc fades into the flash and sparks"
+    },
+    {
+      "eval": "play({ kind: 'enemy', actor: 'dog-0', target: 'gerard' }, 25)"
+    },
+    {
+      "shot": "dog-lunge",
+      "delay": 400,
+      "caption": "A dog lunges: a streak behind its nose"
+    },
+    {
+      "eval": "play({ kind: 'skill', skill: 'nota', actor: 'gerard', target: 'dog-1' }, 17)"
+    },
+    {
+      "shot": "nota-stamp",
+      "delay": 400,
+      "caption": "No-ta: the stamp falls, two speed lines streaking behind it"
+    },
+    {
+      "eval": "step(8)"
+    },
+    {
+      "shot": "nota-swing",
+      "delay": 400,
+      "caption": "No-ta: Gerard's fist swings in Noísta's red as the stamp comes down"
+    },
+    {
+      "eval": "play({ kind: 'skill', skill: 'cardioide', actor: 'gerard', target: 'bernat' }, 9, 'matemagico')"
+    },
+    {
+      "shot": "cardioide",
+      "delay": 400,
+      "caption": "Cardioide: a comet of Matemágico's gold flies to Bernat"
+    },
+    {
+      "eval": "play({ kind: 'skill', skill: 'analisis', actor: 'gerard', target: 'gerard' }, 10, 'matemagico')"
+    },
+    {
+      "shot": "analisis",
+      "delay": 400,
+      "caption": "Análisis Parálisis: gold to Bernat's head, a strand winding round Gerard"
+    },
+    {
+      "eval": "play(undefined, 0).then(() => { window.gerard.game.awaken('noista'); step(22); })"
+    },
+    {
+      "shot": "awaken",
+      "delay": 400,
+      "caption": "An ánima wakes: three strands of its light wind up round him"
+    },
+    {
+      "eval": "step(22)"
+    },
+    {
+      "shot": "awaken-after",
+      "delay": 400,
+      "caption": "…climbing and narrowing as they fade"
+    },
+    {
+      "eval": "play(undefined, 0).then(() => { window.gerard.game.changeAnima('gerard', 'matemagico'); step(20); })"
+    },
+    {
+      "shot": "swap",
+      "delay": 400,
+      "caption": "A swap (L / R): two strands, quicker"
+    },
+    {
+      "eval": "play(undefined, 0).then(() => { const [a, , , d] = models(); const p = a.getPosition(), q = d.getPosition(); window.gerard.game.effects.comet({ x: p.x, y: p.y + 1.2, z: p.z }, { x: q.x, y: q.y + .7, z: q.z }, '#7fc8d8', .45, { arc: 1.2 }); step(16); })"
+    },
+    {
+      "shot": "comet",
+      "delay": 400,
+      "caption": "effects.comet: a spell thrown in an arc between fighters"
+    },
+    {
+      "eval": "step(14)"
+    },
+    {
+      "shot": "comet-arrives",
+      "delay": 400,
+      "caption": "…flaring where it lands as its tail catches up"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    }
+  ]
+}

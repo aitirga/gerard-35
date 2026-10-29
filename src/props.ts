@@ -1,4 +1,5 @@
 import * as pc from 'playcanvas';
+import { shine } from './lighting';
 import type { TreeSpecies, WorldProp } from './environments';
 
 /** How see-through a crown gets while it hides the player, and how quickly it fades. */
@@ -38,7 +39,7 @@ export function createPropKit() {
     if (glow) { m.emissive.fromString(hex); m.emissiveIntensity = glow; }
     m.update(); materials.push(m); return m;
   }
-  function part(parent: pc.Entity, name: string, type: string, m: pc.Material, p: number[], s: number[], r?: number[]) {
+  function part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], m: pc.Material, p: number[], s: number[], r?: number[]) {
     const e = new pc.Entity(name);
     e.addComponent('render', { type, material: m, castShadows: true, receiveShadows: true, ...(batchGroupId === undefined ? {} : { batchGroupId }) });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]);
@@ -62,7 +63,7 @@ export function createPropKit() {
   const soil = mat('Tierra', '#6f5e49');
   const clay = mat('Maceta de barro', '#b8704f');
   const metal = mat('Forja verde', '#354d47', 0.5);
-  const glass = mat('Cristal azul', '#557c83', 0.8);
+  const glass = shine(mat('Cristal azul', '#557c83', 0.8), 'glass');
   const glow = mat('Farolas', '#ffdb9c', 0.2, 2);
   const rim = mat('Marco de alcantarilla', '#8f8a78', 0.3);
   const iron = mat('Hierro de alcantarilla', '#6d6a5e', 0.45);
@@ -169,7 +170,7 @@ export function createPropKit() {
   }
   function car(holder: pc.Entity, color: string) {
     let body = paint.get(color);
-    if (!body) { body = mat('Carrocería', color, 0.65); paint.set(color, body); }
+    if (!body) { body = shine(mat('Carrocería', color, 0.65), 'paint'); paint.set(color, body); }
     // The body spans the anchor cell and the next one along +z, like its footprint.
     part(holder, 'Coche', 'box', body, [0, 0.32, 0.5], [0.84, 0.45, 1.85]);
     part(holder, 'Cabina', 'box', glass, [0, 0.66, 0.5], [0.72, 0.36, 0.95]);
@@ -188,14 +189,14 @@ export function createPropKit() {
   const signOrange = mat('Rombo de Rodalies', '#e57d1e', 0.35, 0.35);
   const signWhite = mat('Letra del rótulo', '#ffffff', 0.3, 0.5);
   const railing = mat('Barandilla del metro', '#5c6366', 0.6);
-  const steel = mat('Acero inoxidable', '#c9ced1', 0.8);
+  const steel = shine(mat('Acero inoxidable', '#c9ced1', 0.8), 'steel');
   const granite = mat('Granito', '#a9a7a1', 0.25);
   // Pale granite at the top, darker as the stair goes down (hex: materials take no hsl()).
   const steps = [0, 1, 2, 3, 4, 5, 6, 7].map(i => { const v = Math.round(226 - i * 21).toString(16); return mat('Escalón', `#${v}${v}${Math.round(218 - i * 21).toString(16)}`, 0.15); });
   const nosing = mat('Canto del escalón', '#3c3f42', 0.3);
   const hallGlow = mat('Luz del vestíbulo', '#ffe1ad', 0.2, 2.2);
   const balustrade = mat('Cristal de la barandilla', '#bcd6dc', 0.9);
-  balustrade.opacity = 0.3; balustrade.blendType = pc.BLEND_NORMAL; balustrade.update();
+  balustrade.opacity = 0.3; balustrade.blendType = pc.BLEND_NORMAL; shine(balustrade, 'glass');
   const plates = new Map<string, pc.StandardMaterial>();
   /** The station's name plate under the diamond: the line's badge and the name, white on dark. */
   function plate(name: string, line: string, colour: string) {
@@ -303,7 +304,7 @@ export function createPropKit() {
   };
   const signals: Signal[] = [];
   const shelterGlass = mat('Cristal de marquesina', '#a9c7cf', 0.9);
-  shelterGlass.opacity = 0.35; shelterGlass.blendType = pc.BLEND_NORMAL; shelterGlass.update();
+  shelterGlass.opacity = 0.35; shelterGlass.blendType = pc.BLEND_NORMAL; shine(shelterGlass, 'glass');
   // The shelter's lit poster is Rodalies' R4 ad Gerard reads there (chapter-2.ts, clueR4Marquesina).
   const poster = painted('Cartel de Rodalies', 64, 128, ctx => {
     ctx.fillStyle = '#f4f1ea'; ctx.fillRect(0, 0, 64, 128);

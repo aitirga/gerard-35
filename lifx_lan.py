@@ -5,6 +5,7 @@ milliseconds and has no rate limit. Only what the game needs is here: finding th
 them, setting colour and power, and the waveforms behind breathe and pulse.
 https://lan.developer.lifx.com/docs
 """
+import errno
 import random
 import socket
 import struct
@@ -62,12 +63,24 @@ def broadcasts() -> list[str]:
 
 
 class LanBulbs:
-    """The bulbs that answered on this network, by serial (the id the cloud API uses too)."""
+    """The bulbs that answered on this network, by serial (the id the cloud API uses too).
+
+    macOS's Local Network privacy can let a program broadcast but not reach a single address on
+    the network ("No route to host"): then every message goes to the network's broadcast address,
+    still addressed to its bulb by serial, and only that bulb takes it.
+    """
+
+    HEARD_SECONDS = 10
 
     def __init__(self, targets: list[str] | None = None, timeout: float = 0.25):
         self.targets = targets or broadcasts()
         self.timeout = timeout
         self.addresses: dict[str, str] = {}
+        #: When each bulb last answered: on Wi-Fi a bulb may miss a read and still be there.
+        self.heard: dict[str, float] = {}
+        #: Where messages go when this program may only broadcast (see above), else None.
+        self.broadcast: str | None = None
+        self.reach: str | None = None
         self.source = random.randint(2, 2**31)
         self.sequence = 0
 
@@ -77,6 +90,26 @@ class LanBulbs:
         sock.settimeout(0.02)
         return sock
 
+    @property
+    def answered(self) -> set[str]:
+        """The bulbs heard from lately: only these are reached on the LAN."""
+        now = time.monotonic()
+        return {serial for serial, at in self.heard.items() if now - at < self.HEARD_SECONDS}
+
+    def _deliver(self, sock, message: bytes, serial: str):
+        if not self.broadcast:
+            try:
+                sock.sendto(message, (self.addresses[serial], PORT))
+                return
+            except OSError as error:
+                if error.errno not in (errno.EHOSTUNREACH, errno.EPERM, errno.EACCES) or not self.reach:
+                    return
+                self.broadcast = self.reach
+        try:
+            sock.sendto(message, (self.broadcast, PORT))
+        except OSError:
+            pass
+
     def _exchange(self, messages: dict[str, bytes], answer: int, timeout: float | None = None) -> dict[str, tuple]:
         """Sends one message per bulb and collects the answers of kind `answer`, sending again once to
         whoever stays quiet past half the timeout."""
@@ -85,11 +118,8 @@ class LanBulbs:
         with self._socket() as sock:
             for attempt in range(2):
                 for serial, message in messages.items():
-                    if serial not in replies:
-                        try:
-                            sock.sendto(message, (self.addresses[serial], PORT))
-                        except (OSError, KeyError):
-                            pass
+                    if serial not in replies and serial in self.addresses:
+                        self._deliver(sock, message, serial)
                 end = time.monotonic() + timeout / 2
                 while time.monotonic() < end and len(replies) < len(messages):
                     try:
@@ -113,6 +143,7 @@ class LanBulbs:
                     sock.sendto(packet(GET_SERVICE, source=self.source, response=True), (target, PORT))
                 except OSError:
                     continue
+                self.reach = self.reach or target
             end = time.monotonic() + wait
             while time.monotonic() < end:
                 try:
@@ -137,6 +168,7 @@ class LanBulbs:
         messages = {serial: packet(GET, target=serial, source=self.source, sequence=self._next(), response=True)
                     for serial in self.addresses}
         replies = self._exchange(messages, LIGHT_STATE)
+        self.heard.update({serial: time.monotonic() for serial in replies})
         return [{"id": serial, **light_state(payload)} for serial, (_, _, _, payload) in replies.items()]
 
     def set(self, serials: list[str], color: dict | None, power: bool | None, duration: float):

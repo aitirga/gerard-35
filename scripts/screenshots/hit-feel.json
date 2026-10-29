@@ -1,0 +1,216 @@
+{
+  "title": "Hit feel · Hit-stop, fringing and camera punch",
+  "description": "How a blow lands in a fight (src/hit-feel.ts, docs/graphics.md): the fight holds still for a few frames on contact, the picture lurches along the blow and springs back, and heavy moments fringe the colours apart, swell the bloom and punch the frame in. Time is frozen and stepped 1/60 s at a time so each shot is a known moment around contact; the log at the bottom left times every contact, hold and resolution.",
+  "steps": [
+    {
+      "open": "/?story=noista&battle=3&allies=2&noista=1"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.hf = (() => {\n  // A pad seen by the browser (a real one on this desktop) must not open the pause menu mid-run.\n  navigator.getGamepads = () => [];\n  const g = window.gerard.game, app = g.app, cam = app.root.findByName('Cámara isométrica');\n  const acts = [], lines = [];\n  let frame = 0;\n  const pre = document.createElement('pre');\n  pre.style.cssText = 'position:fixed;right:8px;bottom:128px;z-index:99999;margin:0;padding:6px 8px;max-width:640px;font:11px/1.35 ui-monospace,monospace;color:#fff;background:rgba(0,0,0,.62);border-radius:4px;pointer-events:none;white-space:pre-wrap';\n  document.body.append(pre);\n  const say = text => { lines.push(text); console.log('[hit-feel]', text); pre.textContent = lines.slice(-4).join('\\n'); };\n  const stage = () => app.root.findByName('Escenario de combate');\n  const pose = () => stage().children.filter(c => c.enabled && c.name !== 'Objetivo').map(c => { const p = c.getPosition(), s = c.getLocalScale(), r = c.getLocalEulerAngles(); return [p.x, p.y, p.z, s.x, s.y, r.x, r.z].map(v => v.toFixed(5)).join(','); }).join('|');\n  const ms = frames => Math.round(frames * 1000 / 60);\n  const original = g.setBattle;\n  g.setBattle = (state, effect, onImpact) => {\n    window.hfState = state;\n    if (!effect) return original(state, effect, onImpact);\n    const a = { n: acts.length, who: effect.actor, kind: effect.skill ?? effect.kind, target: effect.target, start: frame, poses: [] };\n    acts.push(a);\n    return original(state, effect, () => { a.contact = frame; onImpact?.(); }).then(() => {\n      a.done = frame;\n      // Frames after contact that showed exactly the contact pose: the hit-stop.\n      const i = a.poses.findIndex(p => p.frame === a.contact);\n      let held = 0; if (i >= 0) while (a.poses[i + held + 1] && a.poses[i + held + 1].pose === a.poses[i].pose) held++;\n      a.held = held;\n      const target = state && [...state.allies, ...state.foes].find(c => c.id === a.target);\n      const guarded = state?.allies.find(c => c.id === a.target)?.guarding;\n      say(`#${a.n} ${a.who} ${a.kind}${a.target ? ' → ' + a.target : ''}${guarded ? ' (guarded)' : ''}${target && target.hp === 0 ? ' (KO)' : ''}: contact +${ms((a.contact ?? NaN) - a.start)} ms · held ${held} frames after it (${ms(held)} ms) · fringe ${(a.fringe ?? 0).toFixed(1)} · resolved +${ms(a.done - a.start)} ms = 1167 + ${ms(a.done - a.start) - 1167} ms`);\n    });\n  };\n  async function step(n = 1) {\n    for (let i = 0; i < n; i++) {\n      frame++; app.fire(\"update\", 1 / 60);\n      const a = acts.at(-1); if (a && a.done === undefined) a.poses.push({ frame, pose: pose() });\n      // The post pulse is fired by the contact burst, just after the impact callback.\n      for (const b of acts) if (b.contact === frame) b.fringe = g.post.frame.fringing.intensity;\n      // A message, not a timer: chained timers get throttled to about one a second in a headless tab.\n      await new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });\n    }\n  }\n  return {\n    acts, say, step,\n    /** Every action's timing at once, for the last shot. */\n    summary() { pre.textContent = lines.filter(l => l.startsWith('#') || l.startsWith('post')).join('\\n'); },\n    freeze() { app.timeScale = 0; },\n    /** Steps until the last action is `seconds` in. */\n    async to(seconds) { const a = acts.at(-1); while ((frame - a.start) / 60 < seconds - 1e-6) await step(); },\n    async untilContact(n) { const end = Date.now() + 60000; while (!acts[n] || acts[n].contact === undefined) {\n      // Between actions the interface may be waiting on real time (the enemy plan), so let it run.\n      if (!acts[n] && acts.at(-1)?.done !== undefined) await new Promise(r => setTimeout(r, 20));\n      await step(); if (Date.now() > end) throw new Error('no contact for action ' + n); } },\n    async until(test, max = 1200) { for (let i = 0; i < max && !test(); i++) { await new Promise(r => setTimeout(r, 5)); await step(); } },\n    async settle() { const a = acts.at(-1); while (a.done === undefined) await step(); },\n    /** One line on what the camera and post pass are doing this frame. */\n    probe(label) { const p = cam.getPosition(); say(`${label}: frame ${frame} · fringing ${g.post.frame.fringing.intensity.toFixed(1)} · bloom ${g.post.frame.bloom.intensity.toFixed(3)} · orthoHeight ${cam.camera.orthoHeight.toFixed(3)}`); },\n  };\n})();\n"
+    },
+    {
+      "eval": "hf.freeze(); hf.probe(\"rest\")"
+    },
+    {
+      "shot": "rest",
+      "delay": 300,
+      "caption": "The fight at rest, time frozen: the scenario steps it 1/60 s at a time from here and logs each action (bottom left)"
+    },
+    {
+      "press": "Digit1"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "eval": "hf.to(.43).then(() => hf.probe(\"attack, 30 ms before contact\"))"
+    },
+    {
+      "shot": "attack-before",
+      "delay": 300,
+      "caption": "Atacar: Gerard 30 ms before contact"
+    },
+    {
+      "eval": "hf.untilContact(0).then(() => hf.probe(\"attack contact\"))"
+    },
+    {
+      "shot": "attack-contact",
+      "delay": 300,
+      "caption": "Contact: the fight holds on this pose (the dog squashed and white), the picture lurches along the blow"
+    },
+    {
+      "eval": "hf.step(3).then(() => hf.probe(\"attack, 50 ms into the hold\"))"
+    },
+    {
+      "shot": "attack-held",
+      "delay": 300,
+      "caption": "50 ms later: still the same pose, only the camera springs back and the sparks drift on, slowed"
+    },
+    {
+      "eval": "hf.step(5).then(() => hf.probe(\"attack, after the hold\"))"
+    },
+    {
+      "shot": "attack-after",
+      "delay": 300,
+      "caption": "After the hold: the dog recoils and the fight goes on"
+    },
+    {
+      "eval": "hf.settle()"
+    },
+    {
+      "eval": "hf.step(20)"
+    },
+    {
+      "press": "Digit4"
+    },
+    {
+      "eval": "hf.settle()"
+    },
+    {
+      "eval": "hf.untilContact(2).then(() => hf.probe(\"first dog contact\"))"
+    },
+    {
+      "shot": "dog-contact",
+      "delay": 300,
+      "caption": "A dog bites Gerard: a plain blow, held a few frames, no fringe"
+    },
+    {
+      "eval": "hf.untilContact(3).then(() => hf.probe(\"guarded contact\"))"
+    },
+    {
+      "shot": "guarded-contact",
+      "delay": 300,
+      "caption": "Bernat guards: a short hold and a small lurch"
+    },
+    {
+      "eval": "hf.until(() => hf.acts.length >= 5 && hf.acts[4].done !== undefined)"
+    },
+    {
+      "eval": "hf.step(30)"
+    },
+    {
+      "eval": "hf.step(2)"
+    },
+    {
+      "press": "KeyQ"
+    },
+    {
+      "eval": "hf.step(2).then(() => hf.probe(\"ánima swap\"))"
+    },
+    {
+      "shot": "swap",
+      "delay": 300,
+      "caption": "Q / L swaps the ánima: a light swell of bloom and a touch of fringe"
+    },
+    {
+      "eval": "hf.step(40)"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "eval": "hf.step(40).then(() => hfState.foes.forEach(f => { if (f.hp > 0) f.hp = 1; }))"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "press": "Digit1"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "eval": "hf.to(.43).then(() => hf.probe(\"No-ta, before the slam\"))"
+    },
+    {
+      "shot": "nota-before",
+      "delay": 300,
+      "caption": "No-ta on a dog with 1 PV left: the stamp falling"
+    },
+    {
+      "eval": "hf.untilContact(hf.acts.length - 1).then(() => hf.probe(\"No-ta knockout contact\"))"
+    },
+    {
+      "shot": "nota-contact",
+      "delay": 300,
+      "caption": "The stamp slams and knocks the dog out: the longest hold, full fringe, bloom swell, the frame punches in and the picture slams down"
+    },
+    {
+      "eval": "hf.step(5).then(() => hf.probe(\"No-ta, 83 ms into the hold\"))"
+    },
+    {
+      "shot": "nota-held",
+      "delay": 300,
+      "caption": "83 ms in: still held; fringe and bloom fading, the punch springing back"
+    },
+    {
+      "eval": "hf.step(12).then(() => hf.probe(\"No-ta, after\"))"
+    },
+    {
+      "shot": "nota-after",
+      "delay": 300,
+      "caption": "After: the dog tips over and the camera shakes out"
+    },
+    {
+      "eval": "hf.settle()"
+    },
+    {
+      "eval": "window.gerard.game.awaken(\"noista\"); hf.step(1).then(() => hf.probe(\"ánima wakes\"))"
+    },
+    {
+      "shot": "awaken",
+      "delay": 300,
+      "caption": "An ánima wakes (called directly here): full fringe and bloom, a punch-in and a shake"
+    },
+    {
+      "eval": "hf.step(30).then(() => { const g = window.gerard.game; g.post.enabled = false; g.post.pulse(1, 1); hf.say(`post off: pulse ignored, fringing ${g.post.frame.fringing.intensity.toFixed(2)}`); g.post.enabled = true; hf.summary(); })"
+    },
+    {
+      "shot": "log",
+      "delay": 300,
+      "caption": "The timing log: contact on time, the hold, and every action resolving 1167 ms plus its hold"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "open": "/?story=noista&battle=3&allies=2&noista=1",
+      "reducedMotion": "reduce"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.hf = (() => {\n  // A pad seen by the browser (a real one on this desktop) must not open the pause menu mid-run.\n  navigator.getGamepads = () => [];\n  const g = window.gerard.game, app = g.app, cam = app.root.findByName('Cámara isométrica');\n  const acts = [], lines = [];\n  let frame = 0;\n  const pre = document.createElement('pre');\n  pre.style.cssText = 'position:fixed;right:8px;bottom:128px;z-index:99999;margin:0;padding:6px 8px;max-width:640px;font:11px/1.35 ui-monospace,monospace;color:#fff;background:rgba(0,0,0,.62);border-radius:4px;pointer-events:none;white-space:pre-wrap';\n  document.body.append(pre);\n  const say = text => { lines.push(text); console.log('[hit-feel]', text); pre.textContent = lines.slice(-4).join('\\n'); };\n  const stage = () => app.root.findByName('Escenario de combate');\n  const pose = () => stage().children.filter(c => c.enabled && c.name !== 'Objetivo').map(c => { const p = c.getPosition(), s = c.getLocalScale(), r = c.getLocalEulerAngles(); return [p.x, p.y, p.z, s.x, s.y, r.x, r.z].map(v => v.toFixed(5)).join(','); }).join('|');\n  const ms = frames => Math.round(frames * 1000 / 60);\n  const original = g.setBattle;\n  g.setBattle = (state, effect, onImpact) => {\n    window.hfState = state;\n    if (!effect) return original(state, effect, onImpact);\n    const a = { n: acts.length, who: effect.actor, kind: effect.skill ?? effect.kind, target: effect.target, start: frame, poses: [] };\n    acts.push(a);\n    return original(state, effect, () => { a.contact = frame; onImpact?.(); }).then(() => {\n      a.done = frame;\n      // Frames after contact that showed exactly the contact pose: the hit-stop.\n      const i = a.poses.findIndex(p => p.frame === a.contact);\n      let held = 0; if (i >= 0) while (a.poses[i + held + 1] && a.poses[i + held + 1].pose === a.poses[i].pose) held++;\n      a.held = held;\n      const target = state && [...state.allies, ...state.foes].find(c => c.id === a.target);\n      const guarded = state?.allies.find(c => c.id === a.target)?.guarding;\n      say(`#${a.n} ${a.who} ${a.kind}${a.target ? ' → ' + a.target : ''}${guarded ? ' (guarded)' : ''}${target && target.hp === 0 ? ' (KO)' : ''}: contact +${ms((a.contact ?? NaN) - a.start)} ms · held ${held} frames after it (${ms(held)} ms) · fringe ${(a.fringe ?? 0).toFixed(1)} · resolved +${ms(a.done - a.start)} ms = 1167 + ${ms(a.done - a.start) - 1167} ms`);\n    });\n  };\n  async function step(n = 1) {\n    for (let i = 0; i < n; i++) {\n      frame++; app.fire(\"update\", 1 / 60);\n      const a = acts.at(-1); if (a && a.done === undefined) a.poses.push({ frame, pose: pose() });\n      // The post pulse is fired by the contact burst, just after the impact callback.\n      for (const b of acts) if (b.contact === frame) b.fringe = g.post.frame.fringing.intensity;\n      // A message, not a timer: chained timers get throttled to about one a second in a headless tab.\n      await new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });\n    }\n  }\n  return {\n    acts, say, step,\n    /** Every action's timing at once, for the last shot. */\n    summary() { pre.textContent = lines.filter(l => l.startsWith('#') || l.startsWith('post')).join('\\n'); },\n    freeze() { app.timeScale = 0; },\n    /** Steps until the last action is `seconds` in. */\n    async to(seconds) { const a = acts.at(-1); while ((frame - a.start) / 60 < seconds - 1e-6) await step(); },\n    async untilContact(n) { const end = Date.now() + 60000; while (!acts[n] || acts[n].contact === undefined) {\n      // Between actions the interface may be waiting on real time (the enemy plan), so let it run.\n      if (!acts[n] && acts.at(-1)?.done !== undefined) await new Promise(r => setTimeout(r, 20));\n      await step(); if (Date.now() > end) throw new Error('no contact for action ' + n); } },\n    async until(test, max = 1200) { for (let i = 0; i < max && !test(); i++) { await new Promise(r => setTimeout(r, 5)); await step(); } },\n    async settle() { const a = acts.at(-1); while (a.done === undefined) await step(); },\n    /** One line on what the camera and post pass are doing this frame. */\n    probe(label) { const p = cam.getPosition(); say(`${label}: frame ${frame} · fringing ${g.post.frame.fringing.intensity.toFixed(1)} · bloom ${g.post.frame.bloom.intensity.toFixed(3)} · orthoHeight ${cam.camera.orthoHeight.toFixed(3)}`); },\n  };\n})();\n"
+    },
+    {
+      "eval": "hf.freeze()"
+    },
+    {
+      "press": "Digit1"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "eval": "hf.settle()"
+    },
+    {
+      "eval": "hf.say(`reduced motion: fringing ${window.gerard.game.post.frame.fringing.intensity.toFixed(2)} (rest), no hold`)"
+    },
+    {
+      "shot": "reduced-motion",
+      "delay": 300,
+      "caption": "prefers-reduced-motion: the attack resolves at once, with no hold, lurch or fringe"
+    }
+  ]
+}

@@ -39,6 +39,10 @@ A LOS DOS* badge, and the status screen is one wide sheet with the same badge. T
 `just dev-solo off` / `?solo=0`) or the switch on the Mando page, which only exists in the dev
 build. The choice is remembered in the browser. Release builds are always two-player.
 
+The dev build never makes Aitor's turn wait for a second controller: while there is none, it
+plays as `solo`, and a second controller that connects takes Aitor back. `?solo=0` waits for it,
+as the release does (the `duo` screenshots use it).
+
 ## Stats
 
 | Stat | What it does |
@@ -91,7 +95,11 @@ attacks (Habilidad is greyed out on his turn); Aitor has skills only while he we
 Impulso and Abrazo are out for now.
 
 - **Ánimas belong to the party** (the code calls them classes: `ClassId`, `CLASSES`). Gerard has
-  **Matemágico** from the start (Magia +1, Espíritu +1; his own look and the gold interface);
+  **Matemágico** from the start (Magia +1, Espíritu +1; his own look and the gold interface).
+  As a boy (chapter 1) it is still called **Nen curiós**, in Catalan ("Tot ho pregunta. Fins i tot
+  el que no cal."); at 35 it is Matemágico, and in fights whoever wears it thinks out loud: two
+  ghostly little birds glide round the head while light bulbs and question marks of soft light
+  drift up out of it and fade (`src/thoughts.ts`). Exploring, it does not show;
   **Noísta** wakes up in chapter 1's palace (Magia +2, Espíritu +2, Defensa −1; the red scarf and
   the protest-poster interface). Anyone in the party but Bernat can wear any unlocked ánima, both
   at once if they like. Wearing one adds its stats and its skills. An ánima's colour and look come
@@ -102,13 +110,15 @@ Impulso and Abrazo are out for now.
   unlocked ánima until told otherwise. With a second player each player opens their own half of
   the status screen (Gerard left, Aitor right), dresses only their own character, and sees the
   keys of their own device.
-- **In a fight**, each fighter's dock has their vitals plate and the ánima pills, flanked by the
-  L and R keys (Q / E on the keyboard). On your own turn L / R or a click on a pill swaps the
-  ánima: free, the turn stays theirs, PV and Secundaria keep what is left. The menu sweeps, the
-  face on the plate and the 3D fighter light up in the ánima's colour, the dock takes its theme,
-  and the skills (also an open skill sheet) change at once. The choice stays on after the fight.
-  Bernat's dock has no pills. With a second player on Aitor the fight splits: Gerard's dock bottom
-  left, Aitor's bottom right, each in their own ánima's colours and their own device's keys.
+- **In a fight**, each fighter's dock has their vitals plate and the ánima bar, flanked by the L
+  and R keys (Q / E on the keyboard): one bar with a segment per ánima that never wraps (up to
+  four share it, the names shrinking to fit). On your own turn L / R or a click on a segment swaps
+  the ánima: free, the turn stays theirs, PV and Secundaria keep what is left. The menu sweeps,
+  the face on the plate and the 3D fighter light up in the ánima's colour, the dock takes its
+  theme, and the skills (also an open skill sheet) change at once. The choice stays on after the
+  fight. Bernat's dock has no ánima bar. With a second player on Aitor the fight splits: Gerard's
+  dock bottom left, Aitor's bottom right, each in their own ánima's colours and their own device's
+  keys.
 - Who wears what is a choice that changes back and forth, so it is kept in the browser, not in
   the saved story flags.
 

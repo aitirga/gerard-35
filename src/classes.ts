@@ -1,5 +1,8 @@
 import * as pc from 'playcanvas';
 import { ANIMA_NAMES, type ClassId } from './battle';
+import type { ProfileId } from './stats';
+import { think } from './thoughts';
+import { separateFlushFaces } from './flush-faces';
 
 /**
  * Ánimas, called classes in the code (docs/party.md). Matemágico is Gerard's from the start;
@@ -8,12 +11,15 @@ import { ANIMA_NAMES, type ClassId } from './battle';
  * An ánima is a look (material recolours by name and, optionally, a scarf), a colour (its pills,
  * plates and flashes in the status screen and fights), an interface theme
  * (`#hud[data-class]` in style.css), and its stats and skills (CLASS_STATS and SKILLS in battle.ts).
+ * `child` is what the ánima is called while its wearer is a boy (chapter 1), in Catalan.
  */
-export const CLASSES: Record<ClassId, { name: string; motto: string; look: Record<string, string>; colour: string; scarf?: string }> = {
-  // Gerard's everyday self: his own clothes, his own interface.
+export const CLASSES: Record<ClassId, { name: string; motto: string; look: Record<string, string>; colour: string; scarf?: string; child?: { name: string; motto: string } }> = {
+  // Gerard's everyday self: his own clothes, his own interface. As a boy it is still curiosity;
+  // at 35 it is Matemágico, and in fights his head shows it (thoughts.ts).
   matemagico: {
     name: ANIMA_NAMES.matemagico,
     motto: 'Lo calcula todo. Hasta lo que no hace falta.',
+    child: { name: 'Nen curiós', motto: 'Tot ho pregunta. Fins i tot el que no cal.' },
     colour: '#f3cf78',
     look: {},
   },
@@ -42,6 +48,13 @@ export const CLASSES: Record<ClassId, { name: string; motto: string; look: Recor
     scarf: '#7d7f86',
   },
 };
+/** Whether a fighter's profile is a grown-up (chapter 2 on): Gerard at 35 and Aitor. */
+export const grownUp = (profile: ProfileId) => profile === 'gerard35' || profile === 'aitor';
+/** An ánima as its wearer knows it: a boy's has its `child` name and motto. */
+export function animaOf(id: ClassId, grown: boolean) {
+  const spec = CLASSES[id];
+  return grown || !spec.child ? spec : { ...spec, ...spec.child };
+}
 /** Each material's own colour, so taking an ánima off (or swapping it) puts it back. */
 const ownColours = new WeakMap<pc.Material, pc.Color>();
 /** A material copy (a fighter's own) remembers the colour its source had before any ánima. */
@@ -53,10 +66,12 @@ export function inheritColour(source: pc.Material, copy: pc.Material) {
 /**
  * Dresses a character model in an ánima (or in none): recolours its materials by name, putting
  * back the ones the ánima leaves alone, and swaps the scarf at the neck. Works on Gerard in the
- * street and on his battle copy, as many times as he changes.
+ * street and on his battle copy, as many times as he changes. A `grown` Matemágico also thinks
+ * out loud: ideas, birds and question marks over the head.
  */
-export function wearClass(model: pc.Entity, id: ClassId | undefined) {
+export function wearClass(model: pc.Entity, id: ClassId | undefined, grown = false) {
   const spec = id ? CLASSES[id] : undefined;
+  think(model, grown && id === 'matemagico');
   const body = model.findByName('Cuerpo') as pc.Entity | null;
   body?.findByName('Pañuelo')?.destroy();
   const seen = new Set<pc.Material>();
@@ -82,5 +97,6 @@ export function wearClass(model: pc.Entity, id: ClassId | undefined) {
   part('Nudo del pañuelo', [.15, .91, .1], [.1, .1, .1], [0, 0, 45]);
   part('Punta del pañuelo', [-.05, .8, -.18], [.1, .22, .03], [12, 0, 8]);
   part('Punta del pañuelo', [.06, .78, -.18], [.09, .2, .03], [16, 0, -10]);
+  separateFlushFaces(model);
 }
 

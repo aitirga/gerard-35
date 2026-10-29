@@ -3,6 +3,7 @@ import type { Environment, FloorKind, Stairs } from './environments';
 import type { PropKit } from './props';
 import { lampRgb, type Lamp, type LightId } from './home-lights';
 import { MERIDIANA_BED } from './bed';
+import { shine } from './lighting';
 
 /** What `buildScenery` lends the house, so everything is tracked and destroyed with the scene. */
 export interface HomeKit {
@@ -16,10 +17,17 @@ export interface HomeKit {
   z: (pz: number) => number;
   /** Registers a walkable top, so feet follow decks, steps and landings. */
   surface: (px: number, pz: number, w: number, d: number, top: number) => void;
+  /** The scene's static batch group, for every part that never folds. */
+  batch: number;
 }
 
 /** Heights and thickness in world units; one grid cell is one unit. */
 const WALL_HEIGHT = 2.6;
+/**
+ * The lamps' patches add light on top of a lit floor. Since the post pass (src/post.ts) blends that
+ * in linear HDR rather than on gamma-encoded colours, the same patch needs this much more glow.
+ */
+const POOL_GAIN = 4.5;
 const CUT_HEIGHT = 0.42;
 const THICKNESS = 0.26;
 const FACE = THICKNESS / 2;
@@ -29,6 +37,13 @@ const FOLD_RATE = 14;
 const LINE_GLYPHS = new Set(['#', 'W', 'D', 'G', '+']);
 const SOLID_GLYPHS = new Set(['#', 'W', 'D', 'G']);
 const MANA = ['#f4efdc', '#3a7fc0', '#433b3b', '#d4492f', '#3f8a4f'];
+
+/**
+ * Walls and tall furniture folding away while they hide Gerard: off for now, to try the house
+ * without it. The picker's Lugares tab turns it back on in development (docs/dev-tools.md).
+ */
+let folding = false;
+export function setWallFolding(on: boolean) { folding = on; }
 
 type Along = 'x' | 'z';
 type Face = 'south' | 'east';
@@ -49,13 +64,16 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const doorTop = outdoors ? 2.05 : 2.2;
   const folds: Fold[] = [];
   const meshes: pc.Mesh[] = [];
+  /** Every box and solid the house builds; those that never fold are batched at the end. */
+  const parts: pc.Entity[] = [];
   const jitter = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
 
   // Bottom-anchored primitives in grid coordinates; `parent` may be a folding pivot.
-  function piece(parent: pc.Entity, name: string, type: string, m: pc.Material, px: number, y: number, pz: number, w: number, h: number, d: number, shadows = true) {
+  function piece(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], m: pc.Material, px: number, y: number, pz: number, w: number, h: number, d: number, shadows = true) {
     const e = new pc.Entity(name);
     e.addComponent('render', { type, material: m, castShadows: shadows, receiveShadows: true });
     parent.addChild(e); e.setPosition(x(px), y, z(pz)); e.setLocalScale(w, h, d);
+    parts.push(e);
     return e;
   }
   const box = (name: string, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent = root) => piece(parent, name, 'box', m, px, y0 + h / 2, pz, w, h, d);
@@ -121,7 +139,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     }
     for (const patch of entry.pools) {
       patch.emissive.set(r, g, b);
-      patch.emissiveIntensity = look.on ? (0.15 + 0.35 * look.brightness) * dim : 0;
+      patch.emissiveIntensity = look.on ? (0.15 + 0.35 * look.brightness) * dim * POOL_GAIN : 0;
       patch.update();
     }
   }
@@ -184,6 +202,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     const e = new pc.Entity(name);
     e.addComponent('render', { meshInstances: [new pc.MeshInstance(geometry, m)], castShadows: true, receiveShadows: true });
     parent.addChild(e); e.setPosition(x(px), y0, z(pz)); e.setLocalScale(w, h, d);
+    parts.push(e);
     return e;
   }
 
@@ -202,12 +221,12 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const sky = mat('Luz de ventana', '#d3e8ef', 0.7, 0.45);
   const glow = mat('Luz cálida', '#ffe3b3', 0.2, 1.6);
   const screen = mat('Pantalla', '#86b4d8', 0.8, 0.55);
-  const gold = mat('Oro', '#d7ad45', 0.85);
+  const gold = shine(mat('Oro', '#d7ad45', 0.85), 'steel');
   const leaves = [mat('Hoja', '#5f8a55', 0.3), mat('Hoja clara', '#80a867', 0.3), mat('Hoja oscura', '#476f4b', 0.3)];
   const pot = mat('Maceta blanca', '#e9e5dc', 0.3);
   const soil = mat('Tierra', '#5e4d3c');
   const glass = mat('Vidrio', '#d6ecf0', 0.95);
-  glass.opacity = 0.22; glass.blendType = pc.BLEND_NORMAL; glass.depthWrite = false; glass.update();
+  glass.opacity = 0.22; glass.blendType = pc.BLEND_NORMAL; glass.depthWrite = false; shine(glass, 'glass');
   // The flat keeps its old cream-painted timber windows; the house has black steel.
   const profile = apartment ? mat('Carpintería crema', '#efe8da', 0.3) : black;
 
@@ -789,7 +808,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     light(12, 2.2, 6.5); light(18, 2.2, 6.5);
     // Bathroom: bath under the window, floating vanity, toilet.
     box('Bañera', lacquer, 14.5, north + 0.38, 0, 1.74, 0.55, 0.74);
-    box('Agua', mat('Agua del baño', '#bfe1e6', 0.9), 14.5, north + 0.38, 0.5, 1.6, 0.02, 0.6);
+    box('Agua', shine(mat('Agua del baño', '#bfe1e6', 0.9), 'water'), 14.5, north + 0.38, 0.5, 1.6, 0.02, 0.6);
     box('Mueble de lavabo', walnut, 13 + FACE + 0.24, 2.7, 0.35, 0.48, 0.4, 1.1);
     box('Lavabo', lacquer, 13 + FACE + 0.24, 2.7, 0.75, 0.42, 0.08, 0.48);
     box('Espejo', steel, 13 + FACE + 0.02, 2.7, 1.15, 0.03, 0.8, 0.8, onWall('east', 13 + FACE, 2.7));
@@ -1631,6 +1650,14 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     }
     return false;
   }
+  // What never folds stands still: merge it into a few draw calls per material. Folding parts move,
+  // and see-through ones (glass) keep their own draw so they sort behind and in front of the rest.
+  const foldPivots = new Set<pc.GraphNode>(folds.map(fold => fold.pivot));
+  for (const part of parts) {
+    let node: pc.GraphNode | null = part, moves = false;
+    while (node && node !== root && !moves) { moves = foldPivots.has(node); node = node.parent; }
+    if (!moves && part.render!.meshInstances.every(m => m.material?.blendType === pc.BLEND_NONE)) part.render!.batchGroupId = kit.batch;
+  }
   return {
     /** Dims every lamp in the house: 1 is on, 0 off. */
     setLamps(k: number) {
@@ -1641,7 +1668,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     /** Folds walls and tall furniture that stand between `focus` and the camera. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       for (const fold of folds) {
-        const target = focus && toCamera && hides(fold, focus, toCamera) ? 0 : 1;
+        const target = folding && focus && toCamera && hides(fold, focus, toCamera) ? 0 : 1;
         if (fold.t === target) continue;
         fold.t = animate ? fold.t + (target - fold.t) * (1 - Math.exp(-dt * FOLD_RATE)) : target;
         if (Math.abs(fold.t - target) < 0.02) fold.t = target;

@@ -129,7 +129,8 @@ Add an **Implementation plan** section to the doc: ordered, small steps, each on
    `just combat-sim`.
 6. **Tests**: `tests/battle.test.mjs` (skill description shape), story rules, the mechanic.
 7. **Screenshots**: a scenario in `scripts/screenshots/<id>.json` covering arrival, the mechanic,
-   the boss and the ánima unlock (`just screenshots <id>`).
+   the boss and the ánima unlock (`just screenshots <id>`), each run added to herdr's assets
+   sidebar (`AGENTS.md`).
 8. **Docs**: the friend's row in `docs/chapter-2.md` (the template table and clues table),
    people and places in `docs/lore.md`, skills in `docs/party.md`.
 9. **Report**: the mission's page (§ Report).
@@ -181,3 +182,10 @@ creature, any NPC with lines), checking what already exists:
 
 Give the exact commands to run, in order, and say which steps cost API credits (`--dry-run`
 first).
+
+## Showing the work
+
+Whatever the user will want to look at (the quest doc as it grows, each `just screenshots` gallery,
+a reference image) goes into herdr's assets sidebar with `herdr-assets add` as `AGENTS.md` says,
+re-added whenever it changes. Never open it in their browser; say it is in the sidebar and give the
+path.

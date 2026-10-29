@@ -16,7 +16,7 @@ export function createFears(app: pc.Application) {
     if (opacity < 1) { m.opacity = opacity; m.blendType = pc.BLEND_NORMAL; m.depthWrite = false; }
     m.update(); materials.push(m); return m;
   };
-  function part(parent: pc.Entity, name: string, type: string, m: pc.Material, p: number[], s: number[], r: number[] = [0, 0, 0]) {
+  function part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], m: pc.Material, p: number[], s: number[], r: number[] = [0, 0, 0]) {
     const e = new pc.Entity(name); e.addComponent('render', { type, material: m, castShadows: true });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); e.setLocalEulerAngles(r[0], r[1], r[2]);
     parent.addChild(e); return e;

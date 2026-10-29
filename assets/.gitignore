@@ -16,6 +16,16 @@
 *.blend1
 *.psd
 
+# Song masters stay local; the game plays the copy `just music-export` puts in public/music/.
+*.wav
+*.aif
+*.aiff
+*.flac
+*.mp3
+*.m4a
+*.ogg
+*.opus
+
 # Approved generated game artwork (not the personal reference photos).
 !characters/gerard/portrait-approved.png
 !characters/gerard/portrait-transparent.png

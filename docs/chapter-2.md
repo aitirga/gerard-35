@@ -45,7 +45,9 @@ replaced by **open progression**, as decided on 2026-10-18:
    on. If Gerard heads for the front door first, Aitor stops him: *"Espera. ¿Oyes eso? La tele se ha
    encendido sola."* (a diegetic gate, the only one in the flat).
 3. **The TV in the living room plays the news all day, looping, while they are at home**: it is a
-   real TV in the room, filmed in 3D (`src/news-tv.ts`), never a full screen over the game.
+   real TV in the room, filmed in 3D (`src/news-tv.ts`), never a full screen over the game. It films
+   15 pictures a second while the screen is in view and 30 while someone watches it up close, with no
+   shadows on the set (`docs/graphics.md` § Performance).
    **Approaching it** (no key: just walking up to it) the camera comes close to the screen to watch
    it; *"Mirar la tele"* does the same later, and any key looks away. On the screen:
    - a red **ÚLTIMA HORA** band and the headline *"Aparece un castillo rosa encima de la escuela
@@ -139,9 +141,15 @@ rewind: the server lets a newer epoch replace the flags, and ignores tabs still 
 ## The palace, any time (block 2)
 
 From the moment they reach the metro, the L1 takes them to **Trinitat Vella**, a short walk from
-the school. The **Institut Escola Rec Comtal** is buried under La Reina Bubbaloo's palace: the same
-building as in chapter 1 (`docs/bubbaloo-palace.md`), now sitting on the school roof, its gum
-ramparts poured over the playground. La Pompa (the gate) lets anyone in.
+the school. The **Institut Escola Rec Comtal** has grown into La Reina Bubbaloo's palace: the same
+building as in chapter 1 (`docs/bubbaloo-palace.md`), grown out of the school instead of set on
+top of it. La Pompa (the gate) fills the school's front door on the pavement of Via de Bàrcino,
+its pillars half in the wall and a pink runner out to the kerb; its gum ramparts cover the ground
+floor either side, and the two wrapper towers climb out of the front wall. The keep, the wings
+and the crown stand on a layer of gum over the roof, which rounds off over the front wall and drips
+down it, and the spiked towers stand round the school with their feet in the street, where nobody
+can walk through them. Each day it grows taller, never wider than the roof (`seat` in
+`src/palace.ts`). La Pompa lets anyone in.
 
 - **Inside is the same palace**, as Gerard remembers it from the dream. Aitor sees it for the
   first time; his lines carry the surprise.

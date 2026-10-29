@@ -1,4 +1,5 @@
 import * as pc from 'playcanvas';
+import { separateFlushFaces } from './flush-faces';
 
 /**
  * A character built from primitives, stored as JSON in src/characters/.
@@ -47,7 +48,7 @@ export function buildCharacter(spec: CharacterSpec, parent: pc.Entity) {
   function entity(name: string, holder: pc.Entity, [x, y, z]: Vec3) {
     const node = new pc.Entity(name); node.setLocalPosition(x, y, z); holder.addChild(node); return node;
   }
-  function mesh(name: string, shape: string, mat: pc.StandardMaterial, holder: pc.Entity, pos: Vec3, [sx, sy, sz]: Vec3, [rx, ry, rz]: Vec3) {
+  function mesh(name: string, shape: pc.RenderComponent['type'], mat: pc.StandardMaterial, holder: pc.Entity, pos: Vec3, [sx, sy, sz]: Vec3, [rx, ry, rz]: Vec3) {
     const node = entity(name, holder, pos);
     node.addComponent('render', { type: shape, material: mat, castShadows: true, receiveShadows: true });
     node.setLocalScale(sx, sy, sz); node.setLocalEulerAngles(rx, ry, rz);
@@ -86,6 +87,8 @@ export function buildCharacter(spec: CharacterSpec, parent: pc.Entity) {
       mesh(part.name, part.shape, mat, target, [x * side, y, z], part.scale, [ex, ey * side, ez * side]);
     }
   }
+  // Rebuilt into a model already in the scene (Gerard growing up), so it settles its own faces.
+  separateFlushFaces(body);
   const eyes = body.find(node => node.name === RIG.eye) as pc.Entity[];
   const feet = [limbs[0], limbs[2]].map(leg => leg.findByName(RIG.foot) as pc.Entity);
   return { body, head, limbs, feet, eyes, eyeHeights: eyes.map(eye => eye.getLocalScale().y), materials: [...materials.values()] };

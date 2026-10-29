@@ -1,0 +1,214 @@
+{
+  "title": "Soft particles · Puffs that meet the floor and the walls",
+  "description": "Soft particles (src/particles.ts, src/post.ts, docs/graphics.md): covering particles fade where they cut into the scene, using the post pass's depth prepass. Time is frozen and the camera zoomed in on Gerard's childhood home, Gerard hidden; each effect is shown with soft particles off (the old hard straight cut) and then on, from the same frozen frame: dust, smoke (poof), frost and soot on the floor, then in a corner against two walls. Last, a poof beside Gerard inside a street building's cut, which must not fade behind the walls the cut removed. Then the post pass is turned off (no depth: particles draw as before, nothing breaks) and on again.",
+  "steps": [
+    {
+      "open": "/?story=got-backpack"
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        4,
+        10
+      ]
+    },
+    {
+      "eval": "window.sp = (play, frames, zoom = 1.8, hide = true) => { const g = window.gerard.game, app = g.app; app.timeScale = 0; g.effects.clear(); const me = app.root.findByName('Jugador'); me.enabled = !hide; const p = me.getPosition(); const c = { x: p.x, y: Math.max(g.effects.particles.groundAt(p.x, p.z), -1), z: p.z }; play(g.effects, (dx, dy, dz) => ({ x: c.x + dx, y: c.y + dy, z: c.z + dz })); for (let i = 0; i < frames; i++) app.fire('update', 1 / 60); app.root.findByName('Cámara isométrica').camera.orthoHeight = zoom; }; window.soft = on => { window.gerard.game.effects.particles.soft = on; };"
+    },
+    {
+      "eval": "sp((e, at) => e.particles.burst('dust', at(0, .05, 0), 22, { spread: .5, flat: true, speed: 1.3 }), 14); soft(false)"
+    },
+    {
+      "shot": "floor-dust-hard",
+      "delay": 500,
+      "caption": "Dust on the living-room floor, soft particles off: a hard straight line where it cuts in"
+    },
+    {
+      "eval": "soft(true)"
+    },
+    {
+      "shot": "floor-dust-soft",
+      "delay": 500,
+      "caption": "Dust on the living-room floor, soft particles on (same frozen frame): it fades out where it meets it"
+    },
+    {
+      "eval": "sp((e, at) => e.poof(at(0, .35, 0)), 20); soft(false)"
+    },
+    {
+      "shot": "floor-poof-hard",
+      "delay": 500,
+      "caption": "Smoke (poof) on the living-room floor, soft particles off: a hard straight line where it cuts in"
+    },
+    {
+      "eval": "soft(true)"
+    },
+    {
+      "shot": "floor-poof-soft",
+      "delay": 500,
+      "caption": "Smoke (poof) on the living-room floor, soft particles on (same frozen frame): it fades out where it meets it"
+    },
+    {
+      "eval": "sp((e, at) => e.particles.burst('frost', at(0, .1, 0), 14, { spread: .5, ring: true, speed: .8 }), 30); soft(false)"
+    },
+    {
+      "shot": "floor-frost-hard",
+      "delay": 500,
+      "caption": "Frost on the living-room floor, soft particles off: a hard straight line where it cuts in"
+    },
+    {
+      "eval": "soft(true)"
+    },
+    {
+      "shot": "floor-frost-soft",
+      "delay": 500,
+      "caption": "Frost on the living-room floor, soft particles on (same frozen frame): it fades out where it meets it"
+    },
+    {
+      "eval": "sp((e, at) => e.particles.burst('soot', at(0, .2, 0), 10, { spread: .35 }), 18); soft(false)"
+    },
+    {
+      "shot": "floor-soot-hard",
+      "delay": 500,
+      "caption": "Soot on the living-room floor, soft particles off: a hard straight line where it cuts in"
+    },
+    {
+      "eval": "soft(true)"
+    },
+    {
+      "shot": "floor-soot-soft",
+      "delay": 500,
+      "caption": "Soot on the living-room floor, soft particles on (same frozen frame): it fades out where it meets it"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        1,
+        1
+      ]
+    },
+    {
+      "eval": "sp((e, at) => e.particles.burst('dust', at(-0.3, .05, -0.3), 22, { spread: .5, flat: true, speed: 1.3 }), 14); soft(false)"
+    },
+    {
+      "shot": "wall-dust-hard",
+      "delay": 500,
+      "caption": "Dust in the corner of the hall, against two walls, soft particles off: a hard straight line where it cuts in"
+    },
+    {
+      "eval": "soft(true)"
+    },
+    {
+      "shot": "wall-dust-soft",
+      "delay": 500,
+      "caption": "Dust in the corner of the hall, against two walls, soft particles on (same frozen frame): it fades out where it meets it"
+    },
+    {
+      "eval": "sp((e, at) => e.poof(at(-0.3, .35, -0.3)), 20); soft(false)"
+    },
+    {
+      "shot": "wall-poof-hard",
+      "delay": 500,
+      "caption": "Smoke (poof) in the corner of the hall, against two walls, soft particles off: a hard straight line where it cuts in"
+    },
+    {
+      "eval": "soft(true)"
+    },
+    {
+      "shot": "wall-poof-soft",
+      "delay": 500,
+      "caption": "Smoke (poof) in the corner of the hall, against two walls, soft particles on (same frozen frame): it fades out where it meets it"
+    },
+    {
+      "eval": "sp((e, at) => e.particles.burst('frost', at(-0.3, .1, -0.3), 14, { spread: .5, ring: true, speed: .8 }), 30); soft(false)"
+    },
+    {
+      "shot": "wall-frost-hard",
+      "delay": 500,
+      "caption": "Frost in the corner of the hall, against two walls, soft particles off: a hard straight line where it cuts in"
+    },
+    {
+      "eval": "soft(true)"
+    },
+    {
+      "shot": "wall-frost-soft",
+      "delay": 500,
+      "caption": "Frost in the corner of the hall, against two walls, soft particles on (same frozen frame): it fades out where it meets it"
+    },
+    {
+      "eval": "sp((e, at) => e.particles.burst('soot', at(-0.3, .2, -0.3), 10, { spread: .35 }), 18); soft(false)"
+    },
+    {
+      "shot": "wall-soot-hard",
+      "delay": 500,
+      "caption": "Soot in the corner of the hall, against two walls, soft particles off: a hard straight line where it cuts in"
+    },
+    {
+      "eval": "soft(true)"
+    },
+    {
+      "shot": "wall-soot-soft",
+      "delay": 500,
+      "caption": "Soot in the corner of the hall, against two walls, soft particles on (same frozen frame): it fades out where it meets it"
+    },
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        55,
+        38
+      ]
+    },
+    {
+      "eval": "window.gerard.game.standAt({x: 142, z: 16})"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "until": "window.gerard.game.app.root.findByName('Entorno: meridiana-calle').find(e => !!e.render).flatMap(e => e.render.meshInstances).some(m => (m.getParameter('geoCutRadius')?.data ?? 0) > 4.9)"
+    },
+    {
+      "eval": "window.sp = (play, frames, zoom = 1.8, hide = true) => { const g = window.gerard.game, app = g.app; app.timeScale = 0; g.effects.clear(); const me = app.root.findByName('Jugador'); me.enabled = !hide; const p = me.getPosition(); const c = { x: p.x, y: Math.max(g.effects.particles.groundAt(p.x, p.z), -1), z: p.z }; play(g.effects, (dx, dy, dz) => ({ x: c.x + dx, y: c.y + dy, z: c.z + dz })); for (let i = 0; i < frames; i++) app.fire('update', 1 / 60); app.root.findByName('Cámara isométrica').camera.orthoHeight = zoom; }; window.soft = on => { window.gerard.game.effects.particles.soft = on; };"
+    },
+    {
+      "eval": "sp((e, at) => e.poof(at(.4, .35, .4)), 20, 4, false); soft(false)"
+    },
+    {
+      "shot": "cut-poof-hard",
+      "delay": 500,
+      "caption": "Smoke (poof) beside Gerard inside a building's cut, soft particles off: a hard straight line where it cuts in"
+    },
+    {
+      "eval": "soft(true)"
+    },
+    {
+      "shot": "cut-poof-soft",
+      "delay": 500,
+      "caption": "Smoke (poof) beside Gerard inside a building's cut, soft particles on (same frozen frame): it fades out where it meets it"
+    },
+    {
+      "eval": "window.gerard.game.post.enabled = false"
+    },
+    {
+      "shot": "cut-poof-no-post",
+      "delay": 800,
+      "caption": "The post pass turned off: no scene depth, so particles draw as before (hard cut) and nothing breaks"
+    },
+    {
+      "eval": "window.gerard.game.post.enabled = true"
+    },
+    {
+      "shot": "cut-poof-post-back",
+      "delay": 800,
+      "caption": "The post pass back on: soft particles return"
+    }
+  ]
+}

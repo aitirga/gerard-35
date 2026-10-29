@@ -318,8 +318,10 @@ fight under three strategies, the beat and No-ta), `tests/environments.test.mjs`
 - **Noísta** comes from Gerard always contradicting. The wider class system stays open (see
   *How classes fit the game*).
 - **The palace leaves Sant Quirze** when the boys return to reality at the end of chapter 1. In
-  phase two it reappears in **Barcelona, on top of the Rec Comtal school (Trinitat Vella, chapter 2)**. So `src/palace.ts` must sit on
-  any base, a street end or a school roof, and its growth animation must work in both places.
+  phase two it reappears in **Barcelona, grown out of the Rec Comtal school (Trinitat Vella, chapter 2)**. So `src/palace.ts` must sit on
+  any base, a street end or a school, and its growth animation must work in both places. On a
+  building (`seat(footing)`) the gate and ramparts stay in the street, in its front door, and the
+  rest stands on its roof: the entrance is always on the ground the party walks on.
 - **No portrait hints at Nuria Mendoza** for now; the Queen's portraits show an invented look.
 
 ## Open questions

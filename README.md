@@ -74,6 +74,14 @@ the game. At home `just backend` finds the bulbs on the LAN and changes them in 
 library is a git submodule in `vendor/geraitor_domotic_house` (`just setup` checks it out). Design,
 bulbs and limits: [docs/home-lights.md](docs/home-lights.md).
 
+## Music and sound
+
+Songs loop exactly between named marks, crossfade, and jump to their ending on the next bar; fights
+have their own song, menus duck it, and menus and blows have synth effects. Levels live in
+**Esc → Configuración → Sonido**. Songs go in `public/music/`; `just music-loop <file>` finds where
+one loops and `just music-seam` renders the join to listen to. How it all fits:
+[docs/audio.md](docs/audio.md).
+
 ## Screenshots
 
 `just screenshots <scenario>` plays a scripted scenario in Chromium and saves numbered
@@ -133,6 +141,7 @@ src/city-map.ts     Barcelona's cartoon network map as SVG
 src/travel-ui.ts    The station map and the trip; src/news-ui.ts the TV news
 src/story-ui.ts     Chapter cards, item notes, key hints, speech bubble
 src/home-lights.ts  The lights at home: places, fights, the lead and the mirrored flat
+src/audio.ts        Sound engine; src/music.ts songs and loops, src/sfx.ts effects (docs/audio.md)
 src/items.ts        Item catalogue: common items and key items
 src/follower.ts     A companion who walks Gerard's path behind him
 src/game.ts         Isometric courtyard, Gerard model, lights, shadows and input
@@ -187,7 +196,7 @@ brief downtime during deploys. Local data lives in ignored `data/`.
 
 GitHub Actions now runs checks only: Pages cannot host the persistent API.
 For a full production preview locally, run `just build` and `just backend`, then
-open http://127.0.0.1:8080. For frontend hot reload, run `just dev` alongside the backend.
+open http://127.0.0.1:8035. For frontend hot reload, run `just dev` alongside the backend.
 
 ## Why this stack?
 
@@ -309,6 +318,8 @@ can win all six party/pack combinations.
 - `just test`: movement, environment, combat, seeded wandering and Python API tests.
 - `just dev-battle 4 2`: open a deterministic four-foe/two-ally fight; accepts 2–4 foes and 1–2 allies.
   With an existing dev server, open `/?battle=4&allies=2`. These parameters are ignored in production.
+- In `just dev`, click the place's name (top left) for the picker: any place, any story point and a
+  fight tester with every ánima, party and foe ([docs/dev-tools.md](docs/dev-tools.md)).
 - `just check`: includes 240 seeded random combat simulations and 120 seeded pack walks.
   Browser checks should cover 2, 3 and 4 foes, both party sizes, targeting with mouse
   and keyboard, victory/defeat/escape, and reduced motion on desktop.
@@ -361,7 +372,7 @@ house footprints, room names and positions, with no location-specific map layout
 `src/exploration-world-map.ts` draws Barcelona. Maps show places and positions, never things to do.
 
 The pause menu (**Escape**, or Start / + on a controller) has Continuar, Estado, Objetos, Mapa,
-**Configuración** (Mando and **Luces de casa**, see docs/home-lights.md), Cómo jugar and Salir
+**Configuración** (Mando, **Sonido**, see docs/audio.md, and **Luces de casa**, see docs/home-lights.md), Cómo jugar and Salir
 del juego.
 Add locations in `src/environments.ts` to reuse the renderer. The map is an
 informational local overview. `src/exploration-world-map.ts` reuses the Barcelona city drawing

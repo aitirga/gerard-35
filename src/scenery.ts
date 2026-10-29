@@ -8,6 +8,7 @@ import { buildPalaceInterior } from './palace-scenery';
 import { buildGeo } from './geo-scenery';
 import type { Cell } from './movement';
 import { createTraffic } from './traffic';
+import { lighting, shine } from './lighting';
 
 /** La Reina Bubbaloo's light, once she has noticed Gerard and Bernat. */
 export const BUBBALOO = {
@@ -51,7 +52,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   }
   // Everything built here stands still, so it is merged into a few draw calls per material.
   const batch = app.batcher.addGroup(`Estático: ${environment.id}`, false, 16);
-  function mesh(name: string, type: string, m: pc.StandardMaterial, px: number, y: number, pz: number, w: number, h: number, d: number) {
+  function mesh(name: string, type: pc.RenderComponent['type'], m: pc.StandardMaterial, px: number, y: number, pz: number, w: number, h: number, d: number) {
     const e = new pc.Entity(name);
     e.addComponent('render', { type, material: m, castShadows: true, receiveShadows: true, batchGroupId: batch.id });
     e.setPosition(x(px), y, z(pz)); e.setLocalScale(w, h, d); root.addChild(e); return e;
@@ -71,13 +72,13 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     ctx.strokeStyle = '#c8be8e'; ctx.lineWidth = 5; ctx.strokeRect(8, 8, 496, 112);
     ctx.font = '500 45px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#f6e9c4'; ctx.fillText(text, 256, 66, 465);
-    const texture = new pc.Texture(app.graphicsDevice, { mipmaps: true }); texture.setSource(c); textures.push(texture);
+    const texture = new pc.Texture(app.graphicsDevice, { width: c.width, height: c.height, mipmaps: true }); texture.setSource(c); textures.push(texture);
     const m = mat(text, '#ffffff'); m.diffuseMap = texture; m.update();
     const e = mesh(text, 'plane', m, px, y, pz, width, 1, width / 4);
     return e;
   }
   function texture(c: HTMLCanvasElement) {
-    const t = new pc.Texture(app.graphicsDevice, { mipmaps: true, anisotropy: 8, addressU: pc.ADDRESS_REPEAT, addressV: pc.ADDRESS_REPEAT });
+    const t = new pc.Texture(app.graphicsDevice, { width: c.width, height: c.height, mipmaps: true, anisotropy: 8, addressU: pc.ADDRESS_REPEAT, addressV: pc.ADDRESS_REPEAT });
     t.setSource(c); textures.push(t); return t;
   }
   // Deterministic jitter keeps procedural surfaces identical between reloads.
@@ -115,12 +116,12 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     const m = mat('Agua', '#ffffff', 0.9);
     m.diffuseMap = t; m.diffuseMapTiling.set(2.4, 1.8);
     m.emissive.fromString('#9fe7e4'); m.emissiveMap = t; m.emissiveIntensity = .12; m.emissiveMapTiling.set(1.7, 2.6);
-    m.update(); flowing.push(m); return m;
+    shine(m, 'water'); flowing.push(m); return m;
   }
   const white = mat('Piedra clara', '#e3dec8');
   const terracotta = mat('Terracota', '#c38266');
   const trim = mat('Aleros', '#9e9179');
-  const glass = mat('Cristal azul', '#557c83', 0.8);
+  const glass = shine(mat('Cristal azul', '#557c83', 0.8), 'glass');
   const warm = mat('Ventanas cálidas', '#f2c780', 0.3, 0.3);
   const grass = mat('Jardín', '#697f4e');
   const leaf = props.leaf;
@@ -132,7 +133,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   sidewalk.diffuseMapTiling.set(1.4, 41); sidewalk.update();
   const concrete = mat('Base', '#817e6d');
   const water = waterMaterial();
-  const solar = mat('Panel solar', '#334b57', 0.65);
+  const solar = shine(mat('Panel solar', '#334b57', 0.65), 'paint');
   const glow = mat('Farolas', '#ffdb9c', 0.2, 2);
   const w = environment.grid[0].length, d = environment.grid.length;
   const night = environment.id === 'patio';
@@ -147,12 +148,12 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   app.scene.ambientLight = ambient.clone();
   let tone = 0, dark = 0;
   app.scene.fog.type = pc.FOG_NONE;
+  // Soft shadows fitted to the view, and the sky glossy things reflect (src/lighting.ts).
+  const light = lighting(app);
+  light.setSky(night ? 'night' : environment.palace ? 'palace' : outdoor ? 'day' : 'indoor');
   const sun = new pc.Entity('Sol de la tarde');
-  sun.addComponent('light', {
-    type: 'directional', color: sunColor.clone(),
-    intensity: sunIntensity, castShadows: true, shadowResolution: 2048,
-    shadowDistance: 95, shadowBias: 0.2, normalOffsetBias: 0.04, shadowType: pc.SHADOW_PCF3_32F,
-  });
+  sun.addComponent('light', { type: 'directional', color: sunColor.clone(), intensity: sunIntensity, castShadows: true, shadowDistance: 95 });
+  light.shade(sun.light!);
   sun.setEulerAngles(48, -35, 0); root.addChild(sun);
   let sky: pc.Entity | undefined;
   if (outdoor) {
@@ -163,7 +164,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   // Floor plans lay their own backdrop, open under a stairwell.
   const backdrop = mat('Fondo', night ? '#172a30' : '#67746b');
   const backdropColor = backdrop.diffuse.clone();
-  if (!environment.plan) box('Fondo', backdrop, cx, -1.05, cz, 200, 0.2, 200);
+  // The backdrop only receives shadows: as a caster it would stretch the sun's shadow depth over 200 m.
+  if (!environment.plan) box('Fondo', backdrop, cx, -1.05, cz, 200, 0.2, 200).render!.castShadows = false;
   // Floor plans build their own plinth, with room for a stairwell going down.
   if (!environment.plan && !environment.palace) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
 
@@ -366,17 +368,17 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       floor('Acceso de terracota', 'box', terracotta, 8.3, 0.09, house.z + 2, 1.3, 0.16, 4.82);
       for (const dz of [-1.2, 1.2]) planter(8, house.z + 2 + dz, 1.2, 'z');
     }
-    label('PASSATGE MARESME', 15.6, 0.06, 33, 5.4);
-    label('SANT QUIRZE', 15.6, 0.06, 6, 3.8);
-    // Boundary hedges close the playable slice without pretending it is the whole town.
-    for (const pz of [0.7, 41.6]) box('Límite del barrio', leaf[2], 16, 0.38, pz, 17, 0.65, 0.7);
+    // Boundary hedges close the playable slice without pretending it is the whole town. The north
+    // one sits a little inside the palace's rampart (src/palace.ts), never flush with its face,
+    // where the two would flicker through each other.
+    for (const pz of [0.6, 41.6]) box('Límite del barrio', leaf[2], 16, 0.38, pz, 17, 0.65, 0.7);
   } else if (environment.geo) {
-    geo = buildGeo({ app, root, batch: batch.id, mat, texture, label, water, x, z }, environment.geo);
+    geo = buildGeo({ app, root, batch: batch.id, mat, texture, water, x, z }, environment.geo);
   } else if (environment.palace) {
     palace = buildPalaceInterior({ app, root, x, z, texture }, environment);
   } else if (environment.plan) {
     home = buildHome({
-      app, root, props, mat, texture, x, z,
+      app, root, props, mat, texture, x, z, batch: batch.id,
       surface: (px, pz, w, d, top) => { surfaces.push({ x: x(px), z: z(pz), w, d, y: top }); },
     }, environment);
   } else {
@@ -428,6 +430,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       fog.color.copy(BUBBALOO.fog);
       fog.start = pc.math.lerp(400, BUBBALOO.fogStart, k);
       fog.end = pc.math.lerp(520, BUBBALOO.fogEnd, k);
+      light.setTone(k, dark);
     },
     /** Before anyone is up (1): the lamps are off and only a little daylight comes in; 0 is the scene's normal light. */
     setDark(k: number) {

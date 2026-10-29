@@ -63,12 +63,16 @@ How an ánima is built: `ClassId` and `ANIMA_NAMES`,
 `src/style.css`, any new status or system first (with tests), the unlock flag and moment, a
 screenshot scenario, and `docs/party.md`. Each step a `feat: …` commit.
 
-## 4 · Report
+## 4 · Report and showing the work
 
 When the ánima is built (or a change to it is: new level, skill, look), show it on a page made
 from the shared template [../side-quest/report.html](../side-quest/report.html), following
 `/side-quest` § Report (same design, content from the code, screenshots by relative path, updated in
-place, `herdr-assets add`). If the ánima comes from a friend's mission, it is a section of that
-mission's page (`output/reports/<mission>/`); otherwise it has its own,
-`output/reports/anima-<id>/index.html`, with the hero, its skills table per level, combined skills,
-look and interface, *Cómo está hecho* and *Pendiente y decisiones*.
+place). If the ánima comes from a friend's mission, it is a section of that mission's page
+(`output/reports/<mission>/`); otherwise it has its own, `output/reports/anima-<id>/index.html`,
+with the hero, its skills table per level, combined skills, look and interface, *Cómo está hecho*
+and *Pendiente y decisiones*.
+
+The page, the ánima's doc and any screenshots of it (`just screenshots <ánima>`) go into herdr's
+assets sidebar with `herdr-assets add` as `AGENTS.md` says, re-added whenever they change. Never open
+them in the user's browser; say they are in the sidebar and give the path.

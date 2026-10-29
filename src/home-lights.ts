@@ -290,12 +290,34 @@ export function createHomeLights() {
   const save = () => { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* Storage is optional. */ } };
   const later = (ms: number, run: () => void) => { const t = setTimeout(() => { timers.delete(t); run(); }, ms); timers.add(t); };
   const headers = () => ({ 'Content-Type': 'application/json', ...(key ? { 'X-Lights-Key': key } : {}) });
+  let retry: ReturnType<typeof setTimeout> | undefined;
+  let misses = 0;
+  const stopRetry = () => { clearTimeout(retry); retry = undefined; };
+  /**
+   * The lights are wanted but not there. They try again by themselves: soon for a server that is
+   * starting or restarting, every half minute for a house the server cannot find. A missing key
+   * needs the player.
+   */
+  function unavailable(reason: string) {
+    if (!settings.enabled) return;
+    if (status.state === 'unavailable' && status.reason === reason && retry) return;
+    stopPolling(); stopRetry();
+    status = { state: 'unavailable', reason }; changed();
+    if (reason === 'key') return;
+    const wait = reason === 'server' ? Math.min(15000, 1500 * 2 ** misses++) : 30000;
+    retry = setTimeout(() => { retry = undefined; void connect(); }, wait);
+  }
   async function call(method: string, path: string, body?: unknown, keepalive = false) {
     try {
       const response = await fetch(`/api/lights${path}`, { method, headers: headers(), body: body === undefined ? undefined : JSON.stringify(body), keepalive, signal: AbortSignal.timeout(8000) });
-      if (response.status === 403 || response.status === 503) { status = { state: 'unavailable', reason: response.status === 403 ? 'key' : 'token' }; stopPolling(); changed(); }
+      if (response.status === 403 || response.status === 503) unavailable(response.status === 403 ? 'key' : 'token');
+      // Not the game's server answering (down, restarting, or another app on its port).
+      else if (!keepalive && (response.status >= 500 || (method === 'GET' && !response.ok))) unavailable('server');
       return response.ok ? response : undefined;
-    } catch { return undefined; }
+    } catch {
+      if (!keepalive) unavailable('server');
+      return undefined;
+    }
   }
   // A bulb switched off keeps its colour for the next time a switch turns it on, so an off lamp read
   // from the house carries it, and giving the house back restores it too. OFF itself has none.
@@ -328,9 +350,11 @@ export function createHomeLights() {
   /** While Gerard is in the flat, a lamp switched at home turns on or off in the game too. */
   async function read(initial = false) {
     const response = await call('GET', '');
-    const reply = await response?.json().catch(() => undefined) as { available: boolean; reason?: string; latency?: number; transport?: Transport; lights: HouseBulb[] } | undefined;
-    if (!reply) return;
-    if (!reply.available) { status = { state: 'unavailable', reason: reply.reason ?? 'token' }; stopPolling(); changed(); return; }
+    if (!response) return;
+    const reply = await response.json().catch(() => undefined) as { available: boolean; reason?: string; latency?: number; transport?: Transport; lights: HouseBulb[] } | undefined;
+    if (typeof reply?.available !== 'boolean' || (reply.available && !Array.isArray(reply.lights))) { unavailable('server'); return; }
+    if (!reply.available) { unavailable(reply.reason ?? 'token'); return; }
+    misses = 0;
     const bulbsOf = (light: HouseLight) => reply.lights.filter(b => light.labels.includes(b.label) && b.connected);
     present = new Set(HOUSE_LIGHTS.filter(light => bulbsOf(light).length).map(light => light.id));
     let returned: Partial<Record<LightId, Lamp>> = {};
@@ -350,7 +374,8 @@ export function createHomeLights() {
       }
     }
     const now = status as LightsStatus;
-    if (now.state === 'connecting' || now.state === 'on') {
+    // Switched off while the read was on its way: it stays off.
+    if (now.state !== 'off') {
       const moved = now.state === 'on' && now.transport !== reply.transport;
       status = { state: 'on', lights: present.size, latency: reply.latency, transport: reply.transport ?? 'cloud' };
       if (moved) startPolling();
@@ -366,16 +391,23 @@ export function createHomeLights() {
     }, POLL_MS[transport()]);
   }
   function stopPolling() { if (poll) clearInterval(poll); poll = undefined; }
-  async function connect() {
-    status = { state: 'connecting' }; changed();
-    // The flat starts as the house is right now.
-    await read(true);
-    if ((status as LightsStatus).state !== 'on') return;
-    startPolling();
-    settle(1.5, true);
+  let connecting: Promise<void> | undefined;
+  /** Takes the lights; a retry keeps saying why they were not there until they are. */
+  function connect() {
+    stopRetry();
+    connecting ??= (async () => {
+      if (status.state === 'off' || status.state === 'on') { status = { state: 'connecting' }; changed(); }
+      // The flat starts as the house is right now.
+      await read(true);
+      if ((status as LightsStatus).state !== 'on') return;
+      startPolling();
+      settle(1.5, true);
+    })().finally(() => { connecting = undefined; });
+    return connecting;
   }
   /** The game lets go: every bulb back to the flat, which is the house as the game last knew it. */
   function release() {
+    stopRetry();
     if (!active()) return;
     timers.forEach(clearTimeout); timers.clear(); holding = 0; fallen = false; finished = undefined;
     const states = HOUSE_LIGHTS.filter(light => present.has(light.id)).flatMap(light => bulbStates(light.id, flat[light.id]));
@@ -387,7 +419,13 @@ export function createHomeLights() {
   window.addEventListener('pagehide', release);
   // Back from the browser's page cache: take the lights again.
   window.addEventListener('pageshow', event => { if (event.persisted && settings.enabled) void connect(); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && active() && mirroring()) void read(); });
+  // Back to the tab or the network: lights that were missing try again at once.
+  const again = () => { if (settings.enabled && status.state === 'unavailable' && status.reason !== 'key') { misses = 0; void connect(); } };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    if (active() && mirroring()) void read(); else again();
+  });
+  window.addEventListener('online', again);
 
   return {
     get settings() { return settings; },

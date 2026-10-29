@@ -1,0 +1,88 @@
+{
+  "title": "Chapter 2 · The castle on the Rec Comtal school",
+  "description": "La Reina Bubbaloo's castle grown out of the Rec Comtal school: its gate bursts out of the school's front door onto the pavement of Via de Bàrcino, gum swallows the ground floor and drips from the roof, and the keep and towers rise out of the roof. Seen at the door, from the street, from the side and with most ánimas gathered.",
+  "steps": [
+    {
+      "open": "/?story=rec-comtal&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Trinitat') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        86,
+        65
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "door",
+      "delay": 3500,
+      "caption": "At the school door: the castle's gate stands on the pavement, its bubble filling the doorway"
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        86,
+        74
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.game.toggleOverview()"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "street",
+      "delay": 3500,
+      "caption": "From Via de Bàrcino at threat 1: the school swallowed by gum, the keep and towers rising out of its roof"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.game.toggleOverview()"
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        108,
+        64
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "side",
+      "delay": 3500,
+      "caption": "From the east end of the school: the rampart and wing along the facade"
+    },
+    {
+      "eval": "window.gerard.story.merge(['anima-nuria', 'anima-uri']); window.gerard.game.refreshStory()"
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        86,
+        66
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "door-calmer",
+      "delay": 3000,
+      "caption": "With two ánimas (threat 0.7): fewer towers, no eyes; the gate stays where it is"
+    }
+  ]
+}

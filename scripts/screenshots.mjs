@@ -1,5 +1,5 @@
 // Plays a scripted scenario in a real browser and saves numbered screenshots plus a gallery page.
-// Usage: node scripts/screenshots.mjs <scenario> [--url http://127.0.0.1:5173] [--size 1440x900] [--headed] [--out dir]
+// Usage: node scripts/screenshots.mjs <scenario> [--url http://127.0.0.1:5173] [--size 1440x900] [--headed] [--gpu] [--webgl] [--perf] [--chrome] [--out dir]
 // Scenarios live in scripts/screenshots/<name>.json; the step format is documented in scripts/screenshots/README.md.
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 
 const { values: options, positionals } = parseArgs({
   allowPositionals: true,
-  options: { url: { type: 'string' }, size: { type: 'string', default: '1440x900' }, headed: { type: 'boolean', default: false }, gpu: { type: 'boolean', default: false }, out: { type: 'string' } },
+  options: { url: { type: 'string' }, size: { type: 'string', default: '1440x900' }, headed: { type: 'boolean', default: false }, gpu: { type: 'boolean', default: false }, webgl: { type: 'boolean', default: false }, perf: { type: 'boolean', default: false }, chrome: { type: 'boolean', default: false }, out: { type: 'string' } },
 });
 const scenarioDir = resolve('scripts/screenshots');
 const available = (await readdir(scenarioDir)).filter(f => f.endsWith('.json')).map(f => f.slice(0, -5));
@@ -28,15 +28,22 @@ let vite;
 let base = options.url;
 if (!base) {
   const { createServer } = await import('vite');
-  vite = await createServer({ logLevel: process.env.SCREENSHOT_DEBUG ? 'info' : 'silent', server: { port: 5199, strictPort: false, open: false, hmr: false, watch: null } });
+  // --perf serves the engine's profiler build (release code with timings): the debug build that
+  // development uses validates every WebGPU call and costs several milliseconds a frame.
+  const engine = options.perf ? { resolve: { alias: [{ find: /^playcanvas$/, replacement: resolve('node_modules/playcanvas/build/playcanvas.prf/src/index.js') }] } } : {};
+  vite = await createServer({ logLevel: process.env.SCREENSHOT_DEBUG ? 'info' : 'silent', server: { port: 5199, strictPort: false, open: false, hmr: false, watch: null }, ...engine });
   await vite.listen();
   base = vite.resolvedUrls.local[0];
 }
 
 const browser = await chromium.launch({
   headless: !options.headed,
-  // Default to software WebGL for machines without a GPU; desktops can opt into their GPU.
-  args: [...(options.gpu ? [] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']), '--ignore-gpu-blocklist', '--no-proxy-server'],
+  // Playwright's Chromium cannot decode AAC, so scenarios that play music (.m4a) use the installed Chrome.
+  ...(options.chrome ? { channel: 'chrome' } : {}),
+  // Default to software WebGL for machines without a GPU; desktops can opt into their GPU, where
+  // the game renders on WebGPU (headless Chromium needs both flags to expose it) unless --webgl.
+  // --perf also lifts the 60 fps cap, so frame times show what each backend can do.
+  args: [...(options.gpu ? ['--enable-gpu', '--enable-unsafe-webgpu'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']), ...(options.perf ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : []), '--ignore-gpu-blocklist', '--no-proxy-server'],
 });
 const page = await browser.newPage({ viewport: { width, height } });
 // Web fonts and other outside requests are not needed and can hang offline machines.
@@ -61,7 +68,10 @@ async function until(expression, timeout = 60000) {
 const steps = {
   async open(step) {
     await page.emulateMedia({ reducedMotion: step.reducedMotion ?? 'no-preference' });
-    await page.goto(new URL(step.open, base).href, { waitUntil: 'domcontentloaded' });
+    const url = new URL(step.open, base);
+    // --webgl forces the game's WebGL2 renderer (src/game.ts reads ?gpu), to compare with WebGPU.
+    if (options.webgl) url.searchParams.set('gpu', 'webgl2');
+    await page.goto(url.href, { waitUntil: 'domcontentloaded' });
     await until(step.ready ?? '!!window.gerard', 30000);
   },
   async teleport(step) {
@@ -84,7 +94,8 @@ const steps = {
   async shot(step) {
     if (step.delay) await wait(step.delay);
     const file = `${String(shots.length + 1).padStart(2, '0')}-${step.shot}.png`;
-    await page.screenshot({ path: resolve(out, file) });
+    const [x, y, width, height] = step.clip ?? [];
+    await page.screenshot({ path: resolve(out, file), ...(step.clip ? { clip: { x, y, width, height } } : {}) });
     shots.push({ file, caption: step.caption ?? step.shot });
     console.log(`  ${file}`);
   },

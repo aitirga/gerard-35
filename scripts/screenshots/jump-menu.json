@@ -1,0 +1,206 @@
+{
+  "title": "Picker and fight tester",
+  "description": "The place panel's picker: places with search, the story by chapters and arcs (each ánima mission on its own), and the fight tester (development only).",
+  "steps": [
+    {
+      "open": "/?story=minion"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "panel",
+      "caption": "The place panel: the place's name opens the picker"
+    },
+    {
+      "eval": "document.querySelector(\"#environment\").click()"
+    },
+    {
+      "shot": "places",
+      "delay": 600,
+      "caption": "Lugares: every place, grouped, the current one marked"
+    },
+    {
+      "eval": "const s = document.querySelector('.jump-search'); s.value = 'barc'; s.dispatchEvent(new Event('input', { bubbles: true }));"
+    },
+    {
+      "shot": "search",
+      "delay": 400,
+      "caption": "Typing filters the places"
+    },
+    {
+      "eval": "document.querySelector(\"[data-tab=\\\"story\\\"]\").click()"
+    },
+    {
+      "shot": "story",
+      "delay": 400,
+      "caption": "Historia: every story point, with where the story is now"
+    },
+    {
+      "eval": "document.querySelector('.jump-arc[aria-label=\"La ciudad\"]').scrollIntoView({ block: 'start' })"
+    },
+    {
+      "shot": "story-2",
+      "delay": 400,
+      "caption": "Chapter 2's arcs, with the day and the ánimas a jump starts with"
+    },
+    {
+      "eval": "document.querySelector('.jump-body').scrollTop = 9999"
+    },
+    {
+      "shot": "story-missions",
+      "delay": 400,
+      "caption": "Each ánima mission is its own arc, picked on its own"
+    },
+    {
+      "eval": "document.querySelector(\"[data-tab=\\\"fight\\\"]\").click()"
+    },
+    {
+      "shot": "fight-setup",
+      "delay": 400,
+      "caption": "Combate: party, ánimas, foes and help"
+    },
+    {
+      "eval": "document.querySelector(\"[data-start]\").click()"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && !document.querySelector('#battle[data-entering]')",
+      "timeout": 60000
+    },
+    {
+      "shot": "fight-dogs",
+      "delay": 1500,
+      "caption": "A test fight: Gerard and Bernat against three dogs, every ánima unlocked"
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 60000
+    },
+    {
+      "press": "F2"
+    },
+    {
+      "shot": "fight-live",
+      "delay": 600,
+      "caption": "F2 (or Depuración) in a fight: its help, the moments to jump to, and the way out"
+    },
+    {
+      "eval": "document.querySelector('[data-moment=\"won\"]').click()"
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'won'",
+      "timeout": 30000
+    },
+    {
+      "shot": "fight-won",
+      "delay": 1500,
+      "caption": "Victoria: straight to the fight's result"
+    },
+    {
+      "open": "/?story=minion&fight=%7B%22adult%22%3Afalse%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22palace-minion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%7D"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 60000
+    },
+    {
+      "press": "F2"
+    },
+    {
+      "shot": "minion-live",
+      "delay": 600,
+      "caption": "Against the palace minion the page offers its beat"
+    },
+    {
+      "eval": "document.querySelector('[data-moment=\"beat\"]').click()"
+    },
+    {
+      "until": "document.querySelector('#battle .class-banner:not([hidden])')",
+      "timeout": 30000
+    },
+    {
+      "shot": "minion-beat",
+      "delay": 300,
+      "caption": "El «¡NO!»: Noísta wakes, without playing the six rounds"
+    },
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22noista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22noista%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22palace-guards%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "shot": "fight-guards",
+      "delay": 1800,
+      "caption": "Chapter 2: Gerard (Noísta) and Aitor (Matemágico) against the gum guards, with Nuria's ánima"
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 60000
+    },
+    {
+      "press": "F2"
+    },
+    {
+      "eval": "document.querySelector('[data-tab=\"places\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('[data-place=\"meridiana-calle\"]').click()"
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]') && document.querySelector('#environment .place-name').textContent === 'Avinguda Meridiana'",
+      "timeout": 30000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "left-fight",
+      "caption": "A place from Lugares leaves the fight first, with no result for the story"
+    },
+    {
+      "open": "/?story=rec-comtal&with=uri"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'Escola Rec Comtal'",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "document.querySelector('#environment').click(); document.querySelector('[data-tab=\"story\"]').click(); document.querySelector('[data-beat=\"rec-comtal\"]').scrollIntoView({ block: 'center' })"
+    },
+    {
+      "shot": "jumped-school",
+      "delay": 600,
+      "caption": "A jump stands Gerard where its step happens: Escola Rec Comtal, with Uri's ánima and not Nuria's"
+    },
+    {
+      "eval": "if (window.gerard.story.animas.join() !== 'uri') throw new Error('animas: ' + window.gerard.story.animas)"
+    },
+    {
+      "open": "/?story=castle"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && window.gerard.story.has('castle')",
+      "timeout": 90000
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "shot": "jumped-castle",
+      "caption": "Dentro del castillo: inside it, at its gate"
+    }
+  ]
+}

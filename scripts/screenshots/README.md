@@ -6,7 +6,12 @@ show progress after any visual change, or to reproduce a bug step by step. It st
 dev server unless you pass `--url` (for example `just screenshots chapter-1 --url http://127.0.0.1:5173`
 to use a running `just dev`, with or without `just backend`). Other options: `--size 1920x1080`,
 `--headed` to watch it play, `--out <dir>`. On a desktop with a GPU, `--gpu` uses the native
-renderer instead of software WebGL for faster captures. The private server ignores source
+renderer instead of software WebGL for faster captures, and the game draws on WebGPU there (the
+runner passes the flags headless Chromium needs to expose it); add `--webgl` to force WebGL2
+(`?gpu=webgl2` on every opened URL) and compare the two. Without `--gpu` the game falls back to
+software WebGL2. `--perf` serves PlayCanvas's profiler build instead of the debug one and lifts the
+60 fps cap, for timing runs such as `gpu-perf`. Playwright's Chromium cannot decode AAC, so a scenario that plays
+music (`.m4a`) needs `--chrome`, which runs the installed Google Chrome instead. The private server ignores source
 changes during a run so another development session cannot reset the scenario.
 
 The page errors it sees make the run fail, and a failed step saves `failure.png` and prints the
@@ -26,7 +31,7 @@ development build exposes `window.gerard = { game, story }`.
 | `{ "press": "KeyE" }` | Presses a key (Playwright names: `KeyE`, `Escape`, `Shift`…). | `times`, `gap` ms |
 | `{ "hold": ["KeyS", "KeyA"], "ms": 2000 }` | Holds keys, e.g. to walk (S+A walks down the street). | `until` instead of `ms`, `timeout` |
 | `{ "skipDialogue": true }` | Advances the open conversation to its end. | `settle` ms |
-| `{ "shot": "mum", "caption": "…" }` | Saves the next numbered screenshot. | `delay` ms before it |
+| `{ "shot": "mum", "caption": "…" }` | Saves the next numbered screenshot. | `delay` ms before it; `clip` `[x, y, width, height]` saves only that part of the page, for close crops |
 | `{ "until": "<js>" }` | Waits until the expression is true. | `timeout` ms (60000) |
 | `{ "eval": "<js>" }` | Runs JavaScript in the page. | |
 | `{ "wait": 1000 }` | Waits. | |
@@ -37,6 +42,11 @@ Give shots after an animation (panels, dialogue typing) a `delay` of about 1500 
 
 `combat-lab` opens the standalone combat simulator, captures the strategy comparison and a
 seeded replay, then repeats the same seeds with higher enemy direct damage.
+
+`gpu-perf` samples frame time, CPU time per frame, GPU time and draw calls for five seconds each in
+the street (following Gerard and in the overview), the palace and a fight full of effects, and
+prints a table in its last shot. Compare `just screenshots gpu-perf --gpu --perf` with the same plus
+`--webgl` (docs/graphics.md has the numbers).
 
 `morning` advances the game's update clock in 1/60 s steps between its key poses, then stops
 rendering until the screenshot is saved. This keeps the bed sequence reproducible on slow GPUs.
