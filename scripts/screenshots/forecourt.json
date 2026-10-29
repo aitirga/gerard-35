@@ -1,0 +1,37 @@
+{
+  "title": "Palace forecourt and streets",
+  "description": "The palace's forecourt in Passatge Maresme: the gate with no tree in front of it, the rampart over the north boundary hedge (which used to share its front face and flicker through it), and the street with no name painted on the ground.",
+  "steps": [
+    {
+      "open": "/?story=palace&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Passatge') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 90000
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        14,
+        4
+      ]
+    },
+    {
+      "shot": "rampart",
+      "delay": 3000,
+      "caption": "The gate with nothing in front of it, and the rampart's base clean: the hedge sits inside it instead of flush with its face"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        16,
+        30
+      ]
+    },
+    {
+      "shot": "maresme-street",
+      "delay": 3000,
+      "caption": "Passatge Maresme with no name on the ground"
+    }
+  ]
+}

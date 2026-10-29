@@ -5,7 +5,7 @@ import { BUBBALOO, buildScenery } from './scenery';
 import { type Dialogue } from './dialogue';
 import { createBattleScene } from './battle-scene';
 import { type BattleEffect, type BattlePhase, type BattleState, type ClassId, type Encounter } from './battle';
-import { createPalace, createPalaceApproach, type PalaceApproach } from './palace';
+import { createPalace, createPalaceApproach, footingOf, type PalaceApproach } from './palace';
 import { wearClass } from './classes';
 import { createQueenHands } from './queen-hands';
 import { STREET_END_AREA, WanderingPack } from './encounters';
@@ -71,7 +71,7 @@ const WITH_BERNAT = new Set<EnvironmentId>([...SANT_QUIRZE, 'palacio']);
 const PALACE_STAGE: Cell = { x: 5, z: 15.5 };
 /** The longest step cutscenes, fight animations and effects take in one frame (seconds). */
 const SHOW_STEP = 0.25;
-/** In chapter 2 the palace stands on the Rec Comtal school, bigger than over Passatge Maresme. */
+/** In chapter 2 the palace grows out of the Rec Comtal school, bigger than over Passatge Maresme. */
 const SCHOOL_PALACE_SCALE = 1.3;
 /** The palace guards are minions grown to the size of a wardrobe. */
 const GUARD_SCALE = 1.9;
@@ -207,7 +207,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   /** What stands in the way of anyone in this scene, besides the two players themselves. */
   function sceneCells(): Cell[] {
     const drain = environment.id === 'palacio' && drainRisen && !story.has('wrapper-room') ? [{ x: PLACES.drain.x, z: PLACES.drain.z }] : [];
-    return [...npcs.map(n => n.cell), ...story.blocked(environment.id), ...drain, ...(environment.id === 'palacio' ? story.guarded : []), ...(environment.id === 'maresme' ? pack.occupied : [])];
+    return [...npcs.map(n => n.cell), ...story.blocked(environment.id), ...drain, ...(environment.id === 'palacio' ? story.guarded : []), ...(environment.id === 'maresme' ? pack.occupied : []), ...(environment.id === 'rec-comtal' ? castleCells : [])];
   }
   function occupiedCells(): readonly Cell[] {
     // With two players, Aitor is solid and Gerard may not walk out of the frame they share.
@@ -362,20 +362,31 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
   function placePalace() {
     const gate = scenery.toWorld(PLACES.palace.gate.x, PLACES.palace.gate.z);
     gate.y = scenery.groundHeight(gate.x, gate.z);
-    palace.place(gate); palace.root.setLocalScale(1, 1, 1);
+    palace.seat(undefined); palace.place(gate);
     // The dream's palace: none of the fortress of chapter 2.
-    palace.setThreat(0); palace.setFoundation(0);
+    palace.setThreat(0);
   }
-  /** Chapter 2: the palace on the school roof, where the scene's `palace` anchor says (also on the news set). */
+  /** The cells the castle on the school stands on in the street: its gate, ramparts and spiked towers. */
+  let castleCells: Cell[] = [];
+  /**
+   * Chapter 2: the palace grown out of the building under the scene's `palace` anchor, the school
+   * (also on the news set): its gate in the school's front door, the rest on the roof.
+   */
   function placePalaceOnSchool() {
-    const anchor = environment.geo?.anchors?.palace;
-    if (!anchor) return;
-    const at = scenery.toWorld(anchor.x, anchor.z); at.y = anchor.y ?? 0;
-    // It grows bigger each day her power spreads.
-    const scale = SCHOOL_PALACE_SCALE * (1 + Math.min(1, story.spread) * .6);
-    palace.place(at); palace.root.setLocalScale(scale, scale, scale);
-    // Its spiked towers reach down past the roof to the street; how many stand is the story's threat.
-    palace.setFoundation(at.y / scale); palace.setThreat(story.castleThreat);
+    const footing = environment.geo && footingOf(environment.geo, scenery.toWorld, scenery.groundHeight);
+    if (!footing) return;
+    // It grows bigger each day her power spreads; how many spiked towers stand is the story's threat.
+    palace.seat(footing, SCHOOL_PALACE_SCALE * (1 + Math.min(1, story.spread) * .6));
+    palace.setThreat(story.castleThreat);
+    const origin = scenery.toWorld(0, 0);
+    castleCells = palace.footprint().flatMap(({ x0, x1, z0, z1 }) => {
+      const cells: Cell[] = [];
+      // Every cell whose middle is under it, so the school door's cell stays in front of the bubble.
+      for (let x = Math.ceil(x0 - origin.x); x <= Math.floor(x1 - origin.x); x++) {
+        for (let z = Math.ceil(z0 - origin.z); z <= Math.floor(z1 - origin.z); z++) if (canWalk({ x, z }, environment.grid)) cells.push({ x, z });
+      }
+      return cells;
+    });
   }
   /** The guards stand before the curtain in chapter 2, as many as the party's ánimas leave. */
   function placeGuards() {
@@ -1067,7 +1078,7 @@ export function createGame(canvas: HTMLCanvasElement, callbacks: GameCallbacks, 
       g.setLocalScale(GUARD_SCALE * (1 - breathe * .5), GUARD_SCALE * (1 + breathe), GUARD_SCALE * (1 - breathe * .5));
       g.setLocalEulerAngles(0, animate ? Math.sin(clock * .7 + i) * 8 : 0, 0);
     });
-    tv?.update(shown, animate);
+    tv?.update(shown, animate, watchingTV);
     // The minion lives under the street's manhole, and in the palace under the wrapper room's drain.
     const lair = environment.id === 'palacio' ? PLACES.drain : PLACES.minion.manhole;
     minion.update(shown, animate, {

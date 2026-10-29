@@ -1,7 +1,7 @@
 import * as pc from 'playcanvas';
 import { buildScenery } from './scenery';
 import { ENVIRONMENTS } from './environments';
-import { createPalace } from './palace';
+import { createPalace, footingOf } from './palace';
 import { createNewsSet, NEWS_SHOTS } from './news-set';
 import type { Effects } from './effects';
 import { NEWS } from './chapter-2';
@@ -14,6 +14,11 @@ import { NEWS } from './chapter-2';
  * drawn on a second, see-through layer over it. Nothing covers the game: it is a TV in the room.
  */
 const VIDEO = { width: 640, height: 360 };
+/**
+ * How many times a second the news camera films: filming is drawing a whole second scene, so as
+ * often as footage needs, and smoother while someone watches up close.
+ */
+const FILM_RATE = { room: 15, watching: 30 };
 const GRAPHICS = { width: 1280, height: 720 };
 
 export interface NewsTVOptions {
@@ -33,14 +38,13 @@ export function createNewsTV(app: pc.Application, effects: Effects, screen: pc.E
   const where = ENVIRONMENTS['rec-comtal'];
   const set = buildScenery(app, where);
   const palace = createPalace(app, effects);
-  const anchor = where.geo!.anchors!.palace;
-  const at = set.toWorld(anchor.x, anchor.z); at.y = anchor.y ?? 0;
-  const scale = options.castleScale * (1 + options.spread * .6);
-  palace.place(at); palace.root.setLocalScale(scale, scale, scale);
-  palace.setFoundation(at.y / scale); palace.setThreat(options.threat); palace.grow(1);
-  const castle = at.clone().add(new pc.Vec3(0, 0, -7 * scale));
+  palace.seat(footingOf(where.geo!, set.toWorld, set.groundHeight), options.castleScale * (1 + options.spread * .6));
+  palace.setThreat(options.threat); palace.grow(1);
+  const castle = palace.heart;
   const news = createNewsSet(app, set, castle);
   for (const root of [set.root, palace.root, news.root]) onLayer(root, layer.id);
+  // On a screen this small shadows read as nothing, and casting them nearly doubles what filming costs.
+  for (const root of [set.root, palace.root, news.root]) for (const light of root.findComponents('light') as pc.LightComponent[]) light.castShadows = false;
   const batch = app.batcher.getGroupByName(`Estático: ${where.id}`);
   if (batch) { batch.layers = [layer.id]; app.batcher.markGroupDirty(batch.id); }
 
@@ -71,14 +75,16 @@ export function createNewsTV(app: pc.Application, effects: Effects, screen: pc.E
   glass.setPosition(front);
   // A plane faces +y; turned a quarter it faces the room (+z). The camera's picture comes out of its
   // render target upside down and the canvas does not, so the canvas is flipped back to stand upright.
-  for (const [name, m, dz, flip] of [['Imagen', picture, 0, 1], ['Rótulos', overlay, .004, -1]] as const) {
+  const faces = [['Imagen', picture, 0, 1], ['Rótulos', overlay, .004, -1]] as const;
+  const [image] = faces.map(([name, m, dz, flip]) => {
     const e = new pc.Entity(name);
     e.addComponent('render', { type: 'plane', material: m, castShadows: false, receiveShadows: false });
     e.setLocalPosition(0, 0, dz); e.setLocalEulerAngles(90, 0, 0); e.setLocalScale(size.x, 1, -size.y * flip);
     glass.addChild(e);
-  }
+    return e.render!.meshInstances[0];
+  });
 
-  let shot = 0, t = 0, time = 0, drawn = -1, stage = options.stage;
+  let shot = 0, t = 0, time = 0, drawn = -1, stage = options.stage, unfilmed = 0;
   /** The broadcast's graphics for this moment: redrawn a dozen times a second. */
   function draw() {
     const W = GRAPHICS.width, H = GRAPHICS.height, id = NEWS_SHOTS[shot].id;
@@ -123,8 +129,15 @@ export function createNewsTV(app: pc.Application, effects: Effects, screen: pc.E
     get screen() { return front.clone(); },
     /** Today's headline changes with the Queen's spread. */
     setStage(value: number) { stage = value; },
-    update(dt: number, animate: boolean) {
+    /** `watching`: the camera is up close on the screen, so the picture moves more smoothly. */
+    update(dt: number, animate: boolean, watching = false) {
       time += dt; t += dt;
+      // Film only when the next picture is due and the screen was in view last frame; the screen
+      // keeps the last picture in between.
+      const period = 1 / (watching ? FILM_RATE.watching : FILM_RATE.room);
+      unfilmed += dt;
+      lens.camera!.enabled = unfilmed >= period && (watching || image.visibleThisFrame);
+      if (lens.camera!.enabled) unfilmed %= period;
       if (t > NEWS_SHOTS[shot].seconds && animate) { shot = (shot + 1) % NEWS_SHOTS.length; t = 0; }
       const s = news.shot(NEWS_SHOTS[shot].id, t);
       const k = animate ? s.shake : 0;

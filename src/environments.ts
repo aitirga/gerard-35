@@ -152,7 +152,8 @@ function createNeighborhood(): Environment {
     // leads straight into the open-air entrance of his house.
     if (i === 3) carve({ x: 8, z: z + 2, w: 3, d: 1 });
   }
-  const props: WorldProp[] = [{ kind: 'tree', x: 16, z: 4, scale: 1.25 }];
+  // The north end stays clear: the palace's gate rises there (src/palace.ts).
+  const props: WorldProp[] = [];
   for (const z of [9, 15, 20, 29, 35, 39]) {
     props.push({ kind: 'tree', x: 10, z }, { kind: 'tree', x: 21, z: z - 1 });
   }
