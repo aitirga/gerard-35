@@ -40,10 +40,11 @@ export const LOOK = {
    * Hit feel (`pulse`): chromatic fringing at a full pulse (CameraFrame units: the colours part by
    * intensity / 1024 of the screen times the squared distance from the centre, so the middle of the
    * fight stays sharp), the bloom intensity added at a full pulse, and how fast each fades (seconds
-   * to fall to about a third). Fringing stays on at `rest`, invisible, so the first big hit does not
-   * wait for its shader variant to compile.
+   * to fall to about a third). Fringing is off at rest: the engine's fringe re-samples the sharp
+   * scene for red and blue while green comes through the tilt-shift's blur, so even a weak fringe
+   * splits every edge green and magenta. Its shader is compiled once at start instead (`warmFringe`).
    */
-  hit: { fringe: 70, bloom: .07, fringeFade: .09, bloomFade: .2, rest: .01 },
+  hit: { fringe: 70, bloom: .07, fringeFade: .09, bloomFade: .2 },
 } as const;
 
 /**
@@ -71,7 +72,9 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   Object.assign(frame.bloom, LOOK.bloom);
   Object.assign(frame.vignette, LOOK.vignette);
   frame.grading.enabled = true;
-  frame.fringing.intensity = LOOK.hit.rest;
+  // Draw one frame with the fringe on, so its shader variant is built before the first big hit.
+  frame.fringing.intensity = .01;
+  app.once('frameend', function warmFringe() { if (!hit.fringe) { frame.fringing.intensity = 0; frame.update(); } });
   // The scene's linear depth for soft particles; tilt-shift and contact shadows need the same
   // prepass and share it, so this switch only saves its cost when both of those are off too.
   frame.rendering.sceneDepthMap = LOOK.softParticles;
@@ -82,7 +85,7 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   // The bloom is only touched while it swells (from the intensity it had), so other code may set it.
   const hit = { fringe: 0, bloom: 0, bloomBase: 0 };
   function showHit() {
-    frame.fringing.intensity = LOOK.hit.rest + LOOK.hit.fringe * hit.fringe;
+    frame.fringing.intensity = LOOK.hit.fringe * hit.fringe;
     if (hit.bloom || hit.bloomBase) frame.bloom.intensity = hit.bloomBase + LOOK.hit.bloom * hit.bloom;
     if (!hit.bloom) hit.bloomBase = 0;
     frame.update();

@@ -376,8 +376,9 @@ from the share of the target's PV the blow took, skill or plain, guarded, knocko
   swimming.
 - **`post.pulse(fringe, bloom)`** jumps `CameraFrame.fringing` and the bloom intensity up and lets
   them fade on real time (`LOOK.hit` in `src/post.ts`). Fringing grows with the square of the
-  distance from the centre, so the fighters stay readable and the edges split. It stays on at an
-  invisible `rest` so the first big hit does not wait for a shader compile; with the pass off a
+  distance from the centre, so the fighters stay readable and the edges split. It is off at rest
+  (the engine's fringe would split every edge green and magenta through the tilt-shift's blur) and
+  its shader is built in the first frame, so the first big hit does not wait for it; with the pass off a
   pulse does nothing.
 - prefers-reduced-motion (`animate` false) skips all of it: no hold, no lurch, no pulse.
 
