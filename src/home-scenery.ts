@@ -16,6 +16,8 @@ export interface HomeKit {
   z: (pz: number) => number;
   /** Registers a walkable top, so feet follow decks, steps and landings. */
   surface: (px: number, pz: number, w: number, d: number, top: number) => void;
+  /** The scene's static batch group, for every part that never folds. */
+  batch: number;
 }
 
 /** Heights and thickness in world units; one grid cell is one unit. */
@@ -34,6 +36,13 @@ const FOLD_RATE = 14;
 const LINE_GLYPHS = new Set(['#', 'W', 'D', 'G', '+']);
 const SOLID_GLYPHS = new Set(['#', 'W', 'D', 'G']);
 const MANA = ['#f4efdc', '#3a7fc0', '#433b3b', '#d4492f', '#3f8a4f'];
+
+/**
+ * Walls and tall furniture folding away while they hide Gerard: off for now, to try the house
+ * without it. The picker's Lugares tab turns it back on in development (docs/dev-tools.md).
+ */
+let folding = false;
+export function setWallFolding(on: boolean) { folding = on; }
 
 type Along = 'x' | 'z';
 type Face = 'south' | 'east';
@@ -54,6 +63,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const doorTop = outdoors ? 2.05 : 2.2;
   const folds: Fold[] = [];
   const meshes: pc.Mesh[] = [];
+  /** Every box and solid the house builds; those that never fold are batched at the end. */
+  const parts: pc.Entity[] = [];
   const jitter = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
 
   // Bottom-anchored primitives in grid coordinates; `parent` may be a folding pivot.
@@ -61,6 +72,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     const e = new pc.Entity(name);
     e.addComponent('render', { type, material: m, castShadows: shadows, receiveShadows: true });
     parent.addChild(e); e.setPosition(x(px), y, z(pz)); e.setLocalScale(w, h, d);
+    parts.push(e);
     return e;
   }
   const box = (name: string, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent = root) => piece(parent, name, 'box', m, px, y0 + h / 2, pz, w, h, d);
@@ -189,6 +201,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     const e = new pc.Entity(name);
     e.addComponent('render', { meshInstances: [new pc.MeshInstance(geometry, m)], castShadows: true, receiveShadows: true });
     parent.addChild(e); e.setPosition(x(px), y0, z(pz)); e.setLocalScale(w, h, d);
+    parts.push(e);
     return e;
   }
 
@@ -1635,6 +1648,14 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     }
     return false;
   }
+  // What never folds stands still: merge it into a few draw calls per material. Folding parts move,
+  // and see-through ones (glass) keep their own draw so they sort behind and in front of the rest.
+  const foldPivots = new Set<pc.GraphNode>(folds.map(fold => fold.pivot));
+  for (const part of parts) {
+    let node: pc.GraphNode | null = part, moves = false;
+    while (node && node !== root && !moves) { moves = foldPivots.has(node); node = node.parent; }
+    if (!moves && part.render!.meshInstances.every(m => m.material?.blendType === pc.BLEND_NONE)) part.render!.batchGroupId = kit.batch;
+  }
   return {
     /** Dims every lamp in the house: 1 is on, 0 off. */
     setLamps(k: number) {
@@ -1645,7 +1666,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     /** Folds walls and tall furniture that stand between `focus` and the camera. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       for (const fold of folds) {
-        const target = focus && toCamera && hides(fold, focus, toCamera) ? 0 : 1;
+        const target = folding && focus && toCamera && hides(fold, focus, toCamera) ? 0 : 1;
         if (fold.t === target) continue;
         fold.t = animate ? fold.t + (target - fold.t) * (1 - Math.exp(-dt * FOLD_RATE)) : target;
         if (Math.abs(fold.t - target) < 0.02) fold.t = target;

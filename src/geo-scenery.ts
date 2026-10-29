@@ -9,7 +9,6 @@ export interface GeoKit {
   batch: number;
   mat: (name: string, hex: string, gloss?: number, glow?: number) => pc.StandardMaterial;
   texture: (canvas: HTMLCanvasElement) => pc.Texture;
-  label: (text: string, px: number, y: number, pz: number, width?: number) => pc.Entity;
   water: pc.StandardMaterial;
   /** Grid → scene coordinates. */
   x: (px: number) => number;
@@ -826,7 +825,6 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }
 
   // ------------------------------------------------------------ surroundings
-  for (const l of scene.labels) kit.label(l.text, l.x, LAYER.bridge + 0.01, l.z, l.width);
   // Wooded hills close every side but the camera's, as the valley does around the town.
   const hill = [mat('Monte', '#4e6b45', 0.05), mat('Monte lejano', '#5f7c55', 0.05), mat('Monte sombra', '#41593b', 0.05)];
   const hills: [number, number, number, number, number][] = [

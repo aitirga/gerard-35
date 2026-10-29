@@ -26,9 +26,28 @@ PlayCanvas **2.23.3** (latest stable, October 2026) on **WebGL2**. It stays:
   and fit badly with the HTML HUD.
 - It is actively maintained (patches every week or two) and ships what a modern look needs:
   HDR post (`CameraFrame`), bloom, SSAO, depth of field, colour grading, TAA, WebGPU, compute.
-- **WebGPU is not on yet.** The cutaway is written as GLSL chunks only and would silently vanish,
-  and our scenes (low poly, ortho, batched) are far from any CPU or GPU limit. Switch when compute
-  (GPU particles, indirect draws) is worth porting the chunks to WGSL.
+- **WebGPU is not on yet.** Tried on an M1 Pro (October 2026): it runs, but every GLSL shader of
+  ours fails to compile there (the building cutaway, so the street's buildings vanish, and the
+  particles), it stalls longer on arrival while it builds pipelines, and it saves only about a
+  fifth of the CPU per frame. Our cost is draw calls, not the API: switch when compute (GPU
+  particles, indirect draws) is worth porting the chunks to WGSL.
+
+## Performance
+
+The cost is the CPU submitting draw calls; the GPU has room. Aim for under ~8 ms of `app.render`
+per frame, so a 120 Hz screen keeps an even pace (above it, frames alternate 8 and 16 ms and walking
+looks choppy). Measure on the release engine: `npm run dev` serves PlayCanvas's debug build, which is
+about half as fast.
+
+- **Batch what stands still.** Scenery parts go into the scene's group `Estático: <id>`
+  (`scenery.ts`, props, geo, and the house's parts that never fold). In the Meridiana flat this took
+  the draw calls from about 2,300 to 1,000.
+- **A second camera draws a second scene.** The flat's TV (`src/news-tv.ts`) films a whole Rec
+  Comtal set, so it films 15 pictures a second (30 while watching it up close), only while the
+  screen is in view, and the set casts no shadows. Before that it was two thirds of the flat's cost.
+
+Reference, M1 Pro, 1440×900 at 2×, walking: the flat about 5 ms of render CPU, Avinguda Meridiana
+about 6 ms, Maresme and Rec Comtal 3–5 ms.
 
 2.23 changed two typings: a render component's `type` is a union (`pc.RenderComponent['type']`, not
 `string`) and `meshInstance.material` may be `null`.

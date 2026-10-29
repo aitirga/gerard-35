@@ -366,17 +366,17 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       floor('Acceso de terracota', 'box', terracotta, 8.3, 0.09, house.z + 2, 1.3, 0.16, 4.82);
       for (const dz of [-1.2, 1.2]) planter(8, house.z + 2 + dz, 1.2, 'z');
     }
-    label('PASSATGE MARESME', 15.6, 0.06, 33, 5.4);
-    label('SANT QUIRZE', 15.6, 0.06, 6, 3.8);
-    // Boundary hedges close the playable slice without pretending it is the whole town.
-    for (const pz of [0.7, 41.6]) box('Límite del barrio', leaf[2], 16, 0.38, pz, 17, 0.65, 0.7);
+    // Boundary hedges close the playable slice without pretending it is the whole town. The north
+    // one sits a little inside the palace's rampart (src/palace.ts), never flush with its face,
+    // where the two would flicker through each other.
+    for (const pz of [0.6, 41.6]) box('Límite del barrio', leaf[2], 16, 0.38, pz, 17, 0.65, 0.7);
   } else if (environment.geo) {
-    geo = buildGeo({ app, root, batch: batch.id, mat, texture, label, water, x, z }, environment.geo);
+    geo = buildGeo({ app, root, batch: batch.id, mat, texture, water, x, z }, environment.geo);
   } else if (environment.palace) {
     palace = buildPalaceInterior({ app, root, x, z, texture }, environment);
   } else if (environment.plan) {
     home = buildHome({
-      app, root, props, mat, texture, x, z,
+      app, root, props, mat, texture, x, z, batch: batch.id,
       surface: (px, pz, w, d, top) => { surfaces.push({ x: x(px), z: z(pz), w, d, y: top }); },
     }, environment);
   } else {
