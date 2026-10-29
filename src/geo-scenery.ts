@@ -57,7 +57,8 @@ uniform float geoCutRadius;
 float geoCutGlow = 0.0;
 `;
 const CUTAWAY_MAIN = `
-#ifdef FORWARD_PASS
+// The depth prepass (soft particles, src/post.ts) must see the same hole, or particles fade behind a wall that isn't there.
+#if defined(FORWARD_PASS) || defined(PREPASS_PASS)
 if (geoCutRadius > 0.0) {
   vec3 cutOffset = vPositionW - geoCutFocus;
   float cutAlong = dot(cutOffset, geoCutToCamera);
@@ -88,7 +89,8 @@ uniform geoCutRadius: f32;
 var<private> geoCutGlow: f32 = 0.0;
 `;
 const CUTAWAY_MAIN_WGSL = `
-#ifdef FORWARD_PASS
+// The depth prepass (soft particles, src/post.ts) must see the same hole, or particles fade behind a wall that isn't there.
+#if defined(FORWARD_PASS) || defined(PREPASS_PASS)
 if (uniform.geoCutRadius > 0.0) {
   let cutOffset = vPositionW - uniform.geoCutFocus;
   let cutAlong = dot(cutOffset, uniform.geoCutToCamera);

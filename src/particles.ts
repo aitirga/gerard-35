@@ -64,6 +64,12 @@ export interface ParticleKind {
   tumble?: number;
   /** Particles left behind when it lands for the first time, or when it dies. */
   onLand?: SubBurst; onDeath?: SubBurst;
+  /**
+   * Soft particles: how deep (m, up to .9) it fades out in front of what it cuts into (floors,
+   * walls, people), so a puff never shows a hard straight line. Never more than its own size;
+   * 0 keeps the cut. Defaults to .3, or 0 for pure light (`additive` 1) and `ground` particles.
+   */
+  soft?: number;
 }
 export interface SubBurst { kind: string; count: number; /** Takes the parent's colour. */ inherit?: boolean }
 
@@ -127,7 +133,7 @@ interface Compiled {
   wander: number; wanderRate: number; flow: number; wind: number;
   collide: boolean; bounce: number; friction: number; stick: boolean; pop: boolean; bodies: number;
   stretch: number; spin: [number, number]; flicker: number; flickerRate: number; tumble: number;
-  colour: Float32Array; onLand?: SubBurst; onDeath?: SubBurst;
+  colour: Float32Array; onLand?: SubBurst; onDeath?: SubBurst; soft: number;
 }
 
 const range = (r: Range | undefined, fallback: number): [number, number] => r === undefined ? [fallback, fallback] : typeof r === 'number' ? [r, r] : [r[0], r[1]];
@@ -186,6 +192,7 @@ uniform mat4 matrix_view;
 varying vec2 vUv;
 varying vec4 vColour;
 varying vec4 vLook;
+varying vec2 vDepth;
 void main(void) {
   vec2 corner = vertex_position.xy;
   vec3 right = vec3(matrix_view[0][0], matrix_view[1][0], matrix_view[2][0]);
@@ -193,10 +200,12 @@ void main(void) {
   float size = aPosSize.w;
   float c = cos(aMotion.w), s = sin(aMotion.w);
   vec3 world;
-  if (aLook.y > 1.5) {
+  // aLook.y: the whole part is the orientation, the fraction the softness in metres.
+  float orient = floor(aLook.y);
+  if (orient > 1.5) {
     vec2 r = vec2(c * corner.x - s * corner.y, s * corner.x + c * corner.y) * size;
     world = aPosSize.xyz + vec3(r.x, 0.0, r.y);
-  } else if (aLook.y > 0.5) {
+  } else if (orient > 0.5) {
     // A streak: the head at the particle, the tail trailing back along its motion on screen.
     vec2 onScreen = vec2(dot(aMotion.xyz, right), dot(aMotion.xyz, up));
     float tail = length(onScreen);
@@ -213,6 +222,7 @@ void main(void) {
   vUv = corner;
   vColour = aColour;
   vLook = aLook;
+  vDepth = vec2(-(matrix_view * vec4(world, 1.0)).z, aLook.y - orient);
   gl_Position = matrix_viewProjection * vec4(world, 1.0);
 }`;
 
@@ -220,10 +230,17 @@ const FRAGMENT = /* glsl */ `
 #include "gammaPS"
 #include "tonemappingPS"
 #include "fogPS"
+// Soft particles need the post pass's depth prepass; rendering into the scene depth itself rules it out.
+#if defined(SCENE_DEPTHMAP_LINEAR) && !defined(SCENE_TEXTURE_DEPTH)
+  #define SOFT_PARTICLES
+  #include "screenDepthPS"
+  uniform float uSoft;
+#endif
 uniform vec3 uLight;
 varying vec2 vUv;
 varying vec4 vColour;
 varying vec4 vLook;
+varying vec2 vDepth;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float wave(float x) { float i = floor(x), f = fract(x); return mix(hash(vec2(i, 0.0)), hash(vec2(i + 1.0, 0.0)), f * f * (3.0 - 2.0 * f)); }
 float noise(vec2 p) {
@@ -306,6 +323,11 @@ void main(void) {
     white = smoothstep(0.6, 0.0, abs(x) / max(w, 0.01)) * (1.0 - t) * 0.4;
   }
   a *= vColour.a;
+  #ifdef SOFT_PARTICLES
+    // Fade over the last metres in front of the scene behind it (both linear view depth, metres).
+    float soft = vDepth.y * uSoft;
+    if (soft > 0.0) a *= clamp((getLinearScreenDepth() - vDepth.x) / soft, 0.0, 1.0);
+  #endif
   if (a < 0.004) discard;
   float additive = vLook.z;
   float peak = max(1.0, max(vColour.r, max(vColour.g, vColour.b)));
@@ -335,6 +357,7 @@ uniform matrix_view: mat4x4f;
 varying vUv: vec2f;
 varying vColour: vec4f;
 varying vLook: vec4f;
+varying vDepth: vec2f;
 @vertex
 fn vertexMain(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
@@ -345,10 +368,12 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   let size = aPosSize.w;
   let c = cos(aMotion.w); let s = sin(aMotion.w);
   var world: vec3f;
-  if (aLook.y > 1.5) {
+  // aLook.y: the whole part is the orientation, the fraction the softness in metres.
+  let orient = floor(aLook.y);
+  if (orient > 1.5) {
     let r = vec2f(c * corner.x - s * corner.y, s * corner.x + c * corner.y) * size;
     world = aPosSize.xyz + vec3f(r.x, 0.0, r.y);
-  } else if (aLook.y > 0.5) {
+  } else if (orient > 0.5) {
     // A streak: the head at the particle, the tail trailing back along its motion on screen.
     let onScreen = vec2f(dot(aMotion.xyz, right), dot(aMotion.xyz, up));
     let tail = length(onScreen);
@@ -365,6 +390,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   output.vUv = corner;
   output.vColour = aColour;
   output.vLook = aLook;
+  output.vDepth = vec2f(-(uniform.matrix_view * vec4f(world, 1.0)).z, aLook.y - orient);
   output.position = uniform.matrix_viewProjection * vec4f(world, 1.0);
   return output;
 }`;
@@ -373,10 +399,17 @@ const FRAGMENT_WGSL = /* wgsl */ `
 #include "gammaPS"
 #include "tonemappingPS"
 #include "fogPS"
+// Soft particles need the post pass's depth prepass; rendering into the scene depth itself rules it out.
+#if defined(SCENE_DEPTHMAP_LINEAR) && !defined(SCENE_TEXTURE_DEPTH)
+  #define SOFT_PARTICLES
+  #include "screenDepthPS"
+  uniform uSoft: f32;
+#endif
 uniform uLight: vec3f;
 varying vUv: vec2f;
 varying vColour: vec4f;
 varying vLook: vec4f;
+varying vDepth: vec2f;
 fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
 fn wave(x: f32) -> f32 { let i = floor(x); let f = fract(x); return mix(hash(vec2f(i, 0.0)), hash(vec2f(i + 1.0, 0.0)), f * f * (3.0 - 2.0 * f)); }
 fn noise(p: vec2f) -> f32 {
@@ -464,6 +497,11 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
     white = smoothstep(0.6, 0.0, abs(x) / max(w, 0.01)) * (1.0 - t) * 0.4;
   }
   a *= vColour.a;
+  #ifdef SOFT_PARTICLES
+    // Fade over the last metres in front of the scene behind it (both linear view depth, metres).
+    let soft = vDepth.y * uniform.uSoft;
+    if (soft > 0.0) { a *= clamp((getLinearScreenDepthFrag() - vDepth.x) / soft, 0.0, 1.0); }
+  #endif
   if (a < 0.004) { discard; }
   let additive = vLook.z;
   let peak = max(1.0, max(vColour.r, max(vColour.g, vColour.b)));
@@ -697,6 +735,8 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
   material.update();
   const light = new Float32Array([1, 1, 1]);
   material.setParameter('uLight', light);
+  let soft = true;
+  material.setParameter('uSoft', 1);
   const instance = new pc.MeshInstance(quad, material);
   instance.setInstancing(buffer);
   instance.instancingCount = 0;
@@ -728,7 +768,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
         instances[o + 8] = Math.cos(time * k.tumble * Math.PI * 2 * (.6 + s * .8) + s * 9) * .6; instances[o + 9] = 1; instances[o + 10] = 0;
       } else { instances[o + 8] = k.tumble ? .6 : k.aspect[0]; instances[o + 9] = k.aspect[1]; instances[o + 10] = 0; }
       instances[o + 11] = rot[i];
-      instances[o + 12] = k.shape + s * .98; instances[o + 13] = orient; instances[o + 14] = k.additive; instances[o + 15] = k.glow;
+      instances[o + 12] = k.shape + s * .98; instances[o + 13] = orient + (orient === 2 ? 0 : Math.min(k.soft, instances[o + 3])); instances[o + 14] = k.additive; instances[o + 15] = k.glow;
     }
     if (alive) buffer.unlock(0, alive * STRIDE * 4);
     instance.instancingCount = alive;
@@ -831,6 +871,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
         collide: def.collide ?? false, bounce: def.bounce ?? 0, friction: def.friction ?? 0, stick: def.stick ?? false, pop: def.pop ?? false, bodies: def.bodies ?? 0,
         stretch: def.stretch ?? 0, spin: range(def.spin, 0), flicker: def.flicker ?? 0, flickerRate: def.flickerRate ?? 1, tumble: def.tumble ?? 0,
         colour: colourPair(def.colour, new Float32Array(6)), onLand: def.onLand, onDeath: def.onDeath,
+        soft: def.orient === 'ground' ? 0 : Math.min(.9, def.soft ?? ((def.additive ?? 0) >= 1 ? 0 : .3)),
       };
       const existing = names.get(name);
       if (existing !== undefined) kinds[existing] = compiled;
@@ -881,6 +922,9 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
     },
     /** How much scene light covering particles take (linear RGB); glowing ones ignore it. */
     setLight(r: number, g: number, b: number) { light[0] = r; light[1] = g; light[2] = b; material.setParameter('uLight', light); },
+    /** Soft particles on or off (for comparisons); they also need the post pass's scene depth (src/post.ts). */
+    get soft() { return soft; },
+    set soft(on: boolean) { soft = on; material.setParameter('uSoft', on ? 1 : 0); },
     update(dt: number, simulate = true) {
       if (dt > 0 && simulate) {
         time += dt;

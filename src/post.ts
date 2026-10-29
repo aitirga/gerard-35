@@ -13,6 +13,8 @@ export const LOOK = {
   bloom: { intensity: .045, blurLevel: 12, threshold: 1.15 },
   vignette: { intensity: .32, inner: .55, outer: 1.25, curvature: .6 },
   bubbaloo: { vignette: new pc.Color(.07, 0, .035), saturation: 1.12 },
+  /** Soft particles: a depth prepass of the opaque scene that particles fade against (src/particles.ts). */
+  softParticles: true,
 } as const;
 
 /**
@@ -40,6 +42,8 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   Object.assign(frame.bloom, LOOK.bloom);
   Object.assign(frame.vignette, LOOK.vignette);
   frame.grading.enabled = true;
+  // Soft particles: the scene's linear depth, for particles to fade where they meet it.
+  frame.rendering.sceneDepthMap = LOOK.softParticles;
   frame.update();
   let tone = -1;
   const linear = new pc.Color();

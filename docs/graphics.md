@@ -173,6 +173,21 @@ Each step (slow frames are split into steps of at most 1/45 s), a particle:
 scene's light (`effects` feeds ambient + part of the sun as `uLight`), glowing ones ignore it
 (`glow`).
 
+**Soft particles**: covering particles fade out over the last `soft` metres (default .3, never more
+than the particle's own size) in front of whatever is behind them, so a puff of smoke, dust or frost
+melts into the floor, a wall or someone instead of showing a hard straight line. The post pass
+renders a depth prepass of the opaque scene (`rendering.sceneDepthMap`, `LOOK.softParticles` in
+src/post.ts); it stores linear view depth (−z in view space, metres), the same for the ortho camera
+and on both backends, and the shader compares it with the particle's own view depth. Pure light
+(`additive` 1: sparks, flashes, glows) and `ground` particles keep the cut, so hits stay bright where
+they touch and splats never vanish. The building cutaway also cuts the prepass, or particles would
+fade behind walls that aren't drawn. Without the post pass there is no depth and particles draw as
+before; `window.gerard.game.effects.particles.soft = false` compares (`just screenshots soft-particles`).
+The prepass draws the opaque scene a second time (depth only): 30–50 % more draw calls (fight
+750 → 977, street 1078 → 1580, palace 1006 → 1549) and, in `just screenshots gpu-perf --gpu --perf`,
+about 0.1–0.9 ms more CPU a frame on WebGPU; WebGL2 pays more for the same draws (several ms in
+the palace, on a heavily loaded machine). Set `LOOK.softParticles` to false to drop it.
+
 ## Effects (`src/effects.ts`)
 
 `KINDS` defines every kind as data; `createEffects` builds the recipes on top:
@@ -246,8 +261,6 @@ In rough order of what each adds for its cost:
 2. **Colour grading per scene** with LUTs (`colorLUT`, blending two for transitions) and
    `colorEnhance` (shadows, highlights, vibrance): warm morning in the flat, cool night patio,
    her pink taking over as a LUT blend rather than only lights.
-3. **Soft particles**: fade covering particles where they cut into the floor or walls, using the
-   scene depth (`rendering.sceneDepthMap`).
 4. **Weather and decals**: rain (streaks + ripples), snow (flakes that settle) and persistent
    marks (scorch, frost, gum) as ground decals with a budget, from the kinds that already exist.
 6. **Softer shadows** (`SHADOW_PCSS_32F` or VSM) and shadow resolution that follows the zoom.
