@@ -45,8 +45,10 @@ named "Zapatilla" (it keeps the foot on the ground). Use other descriptive Spani
 
 Style: chunky, friendly, low-poly proportions in the spirit of the example, with clear silhouettes and the outfit's \
 main colours. Players see the character small and from above, so favour a few readable shapes and colour blocks \
-(roughly 25-80 parts) over tiny details; anything thinner than 0.01 disappears. Adults are taller than the child \
-example (about 1.7-1.8 to the top of the head instead of 1.4) with smaller heads relative to their bodies."""
+(roughly 25-80 parts) over tiny details; anything thinner than 0.01 disappears. Every character shares the cast's \
+scale and build, children and adults alike: about 1.3-1.4 to the top of the head, the neck pivot near y = 0.94, \
+shoulders near x = 0.275 and hips near x = 0.115, with chunky widths (a torso about 0.5 wide). Adults show their age \
+with a slightly smaller head (headScale about 0.94, 0.84, 0.94), not by being taller or slimmer."""
 
 
 def vec3(value) -> bool:
