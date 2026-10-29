@@ -140,6 +140,45 @@ Rules that come with a linear HDR buffer:
 - For before/after comparisons, `window.gerard.game.post.enabled = false` renders straight to the
   screen (development build).
 
+### Tilt-shift and contact shadows
+
+Two effects read the scene depth, which a **depth prepass** draws first (an MSAA scene can't
+sample its own depth). It re-issues every opaque draw, so it is most of their cost and is shared
+by both, and by anything else that wants `uSceneDepthMap` (soft particles, decals).
+
+- **Tilt-shift** is the engine's depth of field (`CameraFrame.dof`, near and far blur). It works
+  with the orthographic camera as it is: the engine linearises ortho depth, and the circle of
+  confusion comes only from that depth. `post.focus(points, mode)`, called by src/game.ts every
+  frame after the camera moves, puts the sharp plane through what the camera follows (Gerard and
+  his partner, every fighter, a cut-scene's subject), so the ground blurs above and below them on
+  screen like a photographed miniature, and roofs near the camera go soft too. The sharp depth is
+  `band × orthoHeight` (the same share of the screen at any zoom), and the blur grows over that
+  depth again up to `blur` pixels (at 540 tall). The overview (R) uses a narrower band and more
+  blur; fights widen the band to every fighter plus `margin`, so a fighter is never soft (only the
+  far floor and the dark behind blurs). A screen-space blur by height on screen would also have
+  worked, but it would need our own pass in both shader languages and would blur a tall house
+  next to Gerard; the depth one is the engine's in GLSL and WGSL.
+- **Contact shadows** are the engine's SSAO (`CameraFrame.ssao`), multiplied into the final
+  colour: creases where walls meet floors, under furniture, cars and feet. The engine's shader
+  rebuilds positions for a perspective camera, which under ours stretches the scene about five
+  times sideways and smears the result, so `orthoSsao` swaps two lines (positions from the view's
+  real size, `uOrthoSize` = 2 × orthoHeight, and the sampling disk sized by it), in GLSL and WGSL
+  (`ORTHO_SSAO`). If an engine update moves those lines it warns and turns SSAO off rather than
+  show it wrong. It runs at half resolution (no visible difference here) with a 0.9 m radius.
+- The building cutaway also cuts the prepass (`PREPASS_PASS` in src/geo-scenery.ts); otherwise the
+  walls cut away in front of Gerard would still be in the depth and blur him.
+
+Tune both in `LOOK.tiltShift` and `LOOK.ssao`. In a development build,
+`window.gerard.game.post.tiltShift = false` and `.ssao = false` switch them off to compare, and
+`post.frame.debug = 'dofcoc'` or `'ssao'` shows the blur amount (red behind, green in front) or the
+occlusion alone. `just screenshots tilt-shift --gpu` (and with `--webgl`) shoots the street, the
+overview, the flat, the house, the palace and a fight with neither, SSAO only and both.
+
+Cost at 1440×900 on an M1 Pro (release engine, `--perf`): on WebGPU +0.4–0.7 ms a frame
+(about +0.5 ms CPU for ~50% more draw calls, +0.5–0.8 ms GPU); on WebGL2 about +1–2 ms, mostly
+the prepass's draw calls. SSAO alone costs about the same as the tilt-shift alone, and both
+together little more than either, since they share the prepass.
+
 ## Particles (`src/particles.ts`)
 
 One pool of up to 6000 particles, simulated on the CPU in flat typed arrays (one array per
@@ -255,9 +294,6 @@ upload and one draw call.
 
 In rough order of what each adds for its cost:
 
-1. **Tilt-shift depth of field** (`CameraFrame.dof`, focus on the player) for a miniature
-   diorama look, and **SSAO** (`CameraFrame.ssao`) for contact shadows under furniture and
-   between houses; both need checking with the ortho camera.
 2. **Colour grading per scene** with LUTs (`colorLUT`, blending two for transitions) and
    `colorEnhance` (shadows, highlights, vibrance): warm morning in the flat, cool night patio,
    her pink taking over as a LUT blend rather than only lights.

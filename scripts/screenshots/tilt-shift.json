@@ -1,0 +1,268 @@
+{
+  "title": "Tilt-shift and contact shadows",
+  "description": "The depth look of src/post.ts (docs/graphics.md): each view frozen in time and shot three ways, without either effect, with contact shadows (orthographic SSAO) only, and with the tilt-shift depth of field too. The street following Gerard and from above (R), the Meridiana flat, the house's first floor, La Reina Bubbaloo's palace and a fight, plus debug views of the fight's blur and contact shadows.",
+  "steps": [
+    {
+      "open": "/?story=bernat-joined"
+    },
+    {
+      "eval": "window.look = (tilt, ssao, debug) => { const g = window.gerard.game, p = g.post; p.tiltShift = tilt; p.ssao = ssao; p.frame.debug = debug ?? null; p.frame.update(); for (let i = 0; i < 3; i++) g.app.fire('update', 0); };"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        20,
+        24
+      ],
+      "settle": 2500
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 0"
+    },
+    {
+      "eval": "look(false, false)"
+    },
+    {
+      "shot": "street-off",
+      "delay": 600,
+      "caption": "Passatge Maresme, following Gerard: without tilt-shift or contact shadows"
+    },
+    {
+      "eval": "look(false, true)"
+    },
+    {
+      "shot": "street-ssao",
+      "delay": 600,
+      "caption": "Passatge Maresme, following Gerard: contact shadows only"
+    },
+    {
+      "eval": "look(true, true)"
+    },
+    {
+      "shot": "street-on",
+      "delay": 600,
+      "caption": "Passatge Maresme, following Gerard: tilt-shift and contact shadows"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "eval": "window.gerard.game.toggleOverview()"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 0"
+    },
+    {
+      "eval": "look(false, false)"
+    },
+    {
+      "shot": "overview-off",
+      "delay": 600,
+      "caption": "Passatge Maresme from above (R): without tilt-shift or contact shadows"
+    },
+    {
+      "eval": "look(false, true)"
+    },
+    {
+      "shot": "overview-ssao",
+      "delay": 600,
+      "caption": "Passatge Maresme from above (R): contact shadows only"
+    },
+    {
+      "eval": "look(true, true)"
+    },
+    {
+      "shot": "overview-on",
+      "delay": 600,
+      "caption": "Passatge Maresme from above (R): tilt-shift and contact shadows"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "eval": "window.gerard.game.toggleOverview()"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        7,
+        3
+      ],
+      "settle": 2500
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 0"
+    },
+    {
+      "eval": "look(false, false)"
+    },
+    {
+      "shot": "flat-off",
+      "delay": 600,
+      "caption": "The Meridiana flat: without tilt-shift or contact shadows"
+    },
+    {
+      "eval": "look(false, true)"
+    },
+    {
+      "shot": "flat-ssao",
+      "delay": 600,
+      "caption": "The Meridiana flat: contact shadows only"
+    },
+    {
+      "eval": "look(true, true)"
+    },
+    {
+      "shot": "flat-on",
+      "delay": 600,
+      "caption": "The Meridiana flat: tilt-shift and contact shadows"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        17,
+        10
+      ],
+      "settle": 2500
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 0"
+    },
+    {
+      "eval": "look(false, false)"
+    },
+    {
+      "shot": "house-off",
+      "delay": 600,
+      "caption": "Gerard's house, first floor: without tilt-shift or contact shadows"
+    },
+    {
+      "eval": "look(false, true)"
+    },
+    {
+      "shot": "house-ssao",
+      "delay": 600,
+      "caption": "Gerard's house, first floor: contact shadows only"
+    },
+    {
+      "eval": "look(true, true)"
+    },
+    {
+      "shot": "house-on",
+      "delay": 600,
+      "caption": "Gerard's house, first floor: tilt-shift and contact shadows"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        5,
+        15
+      ],
+      "settle": 2500
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 0"
+    },
+    {
+      "eval": "look(false, false)"
+    },
+    {
+      "shot": "palace-off",
+      "delay": 600,
+      "caption": "La Reina Bubbaloo's palace: without tilt-shift or contact shadows"
+    },
+    {
+      "eval": "look(false, true)"
+    },
+    {
+      "shot": "palace-ssao",
+      "delay": 600,
+      "caption": "La Reina Bubbaloo's palace: contact shadows only"
+    },
+    {
+      "eval": "look(true, true)"
+    },
+    {
+      "shot": "palace-on",
+      "delay": 600,
+      "caption": "La Reina Bubbaloo's palace: tilt-shift and contact shadows"
+    },
+    {
+      "open": "/?story=noista&battle=3&allies=2&noista=1"
+    },
+    {
+      "eval": "window.look = (tilt, ssao, debug) => { const g = window.gerard.game, p = g.post; p.tiltShift = tilt; p.ssao = ssao; p.frame.debug = debug ?? null; p.frame.update(); for (let i = 0; i < 3; i++) g.app.fire('update', 0); };"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 0"
+    },
+    {
+      "eval": "look(false, false)"
+    },
+    {
+      "shot": "fight-off",
+      "delay": 600,
+      "caption": "A fight: without tilt-shift or contact shadows"
+    },
+    {
+      "eval": "look(false, true)"
+    },
+    {
+      "shot": "fight-ssao",
+      "delay": 600,
+      "caption": "A fight: contact shadows only"
+    },
+    {
+      "eval": "look(true, true)"
+    },
+    {
+      "shot": "fight-on",
+      "delay": 600,
+      "caption": "A fight: tilt-shift and contact shadows"
+    },
+    {
+      "eval": "look(true, true, 'dofcoc')"
+    },
+    {
+      "shot": "fight-coc",
+      "delay": 600,
+      "caption": "A fight, debug view of the blur: red is blur behind the band, green in front; every fighter stays black (sharp)"
+    },
+    {
+      "eval": "look(true, true, 'ssao')"
+    },
+    {
+      "shot": "fight-ssao",
+      "delay": 600,
+      "caption": "A fight, debug view of the contact shadows alone"
+    },
+    {
+      "eval": "look(true, true); window.gerard.game.app.timeScale = 1"
+    }
+  ]
+}

@@ -155,6 +155,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   battleScene.setMinionTemplate(minion.root);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const bodies: ParticleBody[] = [];
+  /** Who the tilt-shift keeps sharp this frame (src/post.ts). */
+  const framing: ParticleBody[] = [];
   const bodyOf = (entity: pc.Entity, radius: number, height: number): ParticleBody => {
     const p = entity.getPosition();
     return { x: p.x, y: p.y, z: p.z, radius: radius * entity.getLocalScale().x, height: height * entity.getLocalScale().y, key: entity };
@@ -1142,6 +1144,15 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
     const height = battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
     camera.camera!.orthoHeight = pc.math.lerp(camera.camera!.orthoHeight, height, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
+    // The tilt-shift's sharp band runs through what the camera follows: the fighters, a cut-scene's subject, Gerard (and his partner).
+    framing.length = 0;
+    if (battle) battleScene.bodies(framing);
+    else if (cinematic) framing.push({ x: cinematic.target.x, y: cinematic.target.y, z: cinematic.target.z, radius: 0, height: 0 });
+    else {
+      if (player.enabled) framing.push(bodyOf(player, .3, 1.5));
+      if (shared && mate) framing.push(bodyOf(mate.entity, .3, mate.id === 'aitor' ? 2 : 1.4));
+    }
+    post.focus(framing, battle ? 'fight' : overview && !cinematic ? 'overview' : 'follow');
     positionPrompt();
     callbacks.onBattleTargets(battleScene.targets().map(({ id, position, visible }) => {
       camera.camera!.worldToScreen(position, screen);
