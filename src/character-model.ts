@@ -1,4 +1,5 @@
 import * as pc from 'playcanvas';
+import { separateFlushFaces } from './flush-faces';
 
 /**
  * A character built from primitives, stored as JSON in src/characters/.
@@ -86,6 +87,8 @@ export function buildCharacter(spec: CharacterSpec, parent: pc.Entity) {
       mesh(part.name, part.shape, mat, target, [x * side, y, z], part.scale, [ex, ey * side, ez * side]);
     }
   }
+  // Rebuilt into a model already in the scene (Gerard growing up), so it settles its own faces.
+  separateFlushFaces(body);
   const eyes = body.find(node => node.name === RIG.eye) as pc.Entity[];
   const feet = [limbs[0], limbs[2]].map(leg => leg.findByName(RIG.foot) as pc.Entity);
   return { body, head, limbs, feet, eyes, eyeHeights: eyes.map(eye => eye.getLocalScale().y), materials: [...materials.values()] };

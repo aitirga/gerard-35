@@ -33,6 +33,26 @@ PlayCanvas **2.23.3** (latest stable, October 2026) on **WebGL2**. It stays:
 2.23 changed two typings: a render component's `type` is a union (`pc.RenderComponent['type']`, not
 `string`) and `meshInstance.material` may be `null`.
 
+## Flush faces (`src/flush-faces.ts`)
+
+Models are built from boxes, and two parts often end in the same plane facing the same way: a
+dog's leg flush with the side of its body, a skirting board flush with a wall, a tread on a step.
+The depth buffer cannot tell which is in front, so the surface flickers between the two as the
+camera or the model moves (z-fighting). The depth buffer itself has plenty of precision; only
+faces in exactly the same plane fight.
+
+`separateFlushFacesOnArrival(app)` (in `createGame`) fixes it for everything put under `app.root`:
+once a model is built, and before its first frame and static batch, each box face lying on a
+bigger one in another colour is pushed out 1.7 mm, a fraction of a pixel. A stack (wall, step,
+tread) comes out in that order; the other side of a pushed part stays where it was, so nothing
+opens a gap. Same-colour pairs (glasses rims) are left alone. Parts added to a model already in
+the scene call `separateFlushFaces(model)` themselves: `buildCharacter` (Gerard growing up),
+`wearClass` (the ánima's scarf) and the pickups.
+
+So a new model needs nothing special: build it from boxes, flush where it reads best. Only boxes
+are checked; a plane or custom mesh laid on another surface still needs its own small offset.
+`tests/flush-faces.test.mjs` covers it.
+
 ## Post pass (`src/post.ts`)
 
 The main camera renders through `pc.CameraFrame`: the scene goes to a linear HDR buffer with

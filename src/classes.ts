@@ -2,6 +2,7 @@ import * as pc from 'playcanvas';
 import { ANIMA_NAMES, type ClassId } from './battle';
 import type { ProfileId } from './stats';
 import { think } from './thoughts';
+import { separateFlushFaces } from './flush-faces';
 
 /**
  * Ánimas, called classes in the code (docs/party.md). Matemágico is Gerard's from the start;
@@ -84,5 +85,6 @@ export function wearClass(model: pc.Entity, id: ClassId | undefined, grown = fal
   part('Nudo del pañuelo', [.15, .91, .1], [.1, .1, .1], [0, 0, 45]);
   part('Punta del pañuelo', [-.05, .8, -.18], [.1, .22, .03], [12, 0, 8]);
   part('Punta del pañuelo', [.06, .78, -.18], [.09, .2, .03], [16, 0, -10]);
+  separateFlushFaces(model);
 }
 
