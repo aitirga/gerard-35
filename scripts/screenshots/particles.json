@@ -1,6 +1,6 @@
 {
   "title": "Particles · Air, fight effects and elements",
-  "description": "The particle system (src/particles.ts, src/effects.ts, docs/graphics.md): each scene's air (pollen on the street, dust in the flat, fireflies in the patio, La Reina Bubbaloo's gloom and bubbles in her palace), then a fight frozen in time while each effect plays a few frames: a blow, a guarded blow, a hit on gum, Cardioide's cure, Análisis Parálisis, an ánima waking, No-ta's stamp, a knockout, the victory confetti, a hit of each element (fire, ice, air, energy, water, earth, light, shadow) and lasting auras.",
+  "description": "The particle system (src/particles.ts, src/effects.ts, docs/graphics.md): each scene's air (pollen on the street, her fine pink gloom on it once the light turns, dust in the flat, fireflies in the patio, La Reina Bubbaloo's gloom and bubbles in her palace), then a fight frozen in time while each effect plays a few frames: a blow, a guarded blow, a hit on gum, Cardioide's cure, Análisis Parálisis, an ánima waking, No-ta's stamp, a knockout, the victory confetti, a hit of each element (fire, ice, air, energy, water, earth, light, shadow) and lasting auras.",
   "steps": [
     {
       "open": "/?story=bernat-joined"
@@ -16,6 +16,21 @@
       "shot": "street-air",
       "delay": 2500,
       "caption": "Passatge Maresme: pollen drifting on the breeze"
+    },
+    {
+      "open": "/?story=first-fight"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        16,
+        22
+      ]
+    },
+    {
+      "shot": "street-gloom",
+      "delay": 3000,
+      "caption": "Passatge Maresme in her light: a fine, sparse pink gloom twinkling in the air"
     },
     {
       "teleport": "meridiana",
