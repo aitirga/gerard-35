@@ -7,6 +7,7 @@ import { createGroundContact, type GroundHeight } from './ground-contact';
 import { DOG_PROFILES } from './encounters';
 import { tint, type Effects } from './effects';
 import type { ParticleBody } from './particles';
+import { FightClock, HIT, landing, spring, wobble, type Blow } from './hit-feel';
 
 /**
  * Replace these stand-ins with imported models without changing combat or UI. `partyModel` gives
@@ -119,6 +120,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let impact: (() => void) | undefined;
   let complete: (() => void) | undefined;
   let impacted = false;
+  // Hit feel (hit-feel.ts): the fight's clock holds on contact; the camera lurch, the punch-in and the post pulse run on real time.
+  const clock = new FightClock();
+  const sway = [0, 1, 2].map(() => ({ x: 0, v: 0 })), zoom = { x: 0, v: 0 };
+  let real = 0, animating = true;
+  let pulse: ((fringe: number, bloom: number) => void) | undefined;
+  /** A blow lands: the picture lurches along (x, y, z), heavy ones punch in and fringe; returns the landing for the hit-stop. */
+  function land(blow: Blow, x: number, y: number, z: number) {
+    const l = landing(blow);
+    [x, y, z].forEach((d, i) => { sway[i].x = -d * l.kick; sway[i].v = 0; });
+    zoom.x = Math.max(zoom.x, l.punch);
+    pulse?.(l.fringe, l.bloom);
+    return l;
+  }
   const anchor = new pc.Vec3();
   const cameraKick = new pc.Vec3();
   const focus = new pc.Vec3();
@@ -147,21 +161,27 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   function settle() { const done = complete; complete = undefined; done?.(); }
   const floorUnder = (f: Fighter) => new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z), f.base.z);
-  /** One-shot contact feedback: a flash and sparks where the blow lands, a ring and dust at the feet, a flash on whoever is affected. */
+  /**
+   * One-shot contact feedback: a flash and sparks where the blow lands, a ring and dust at the feet,
+   * a flash on whoever is affected. Returns how a blow lands (hit-feel.ts); support skills only glow.
+   */
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
     if (!target) { hit(actor, gold, .55); effects.emit('star', new pc.Vec3(actor.base.x, 1.3, actor.base.z), 8, .35); return; }
     // Análisis Parálisis: a gold flicker of ideas circling over everyone still standing.
-    if (action.skill === 'analisis') { for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, gold, .7); effects.insight(new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + 1.9 * f.scale.y, f.base.z)); } return; }
-    if (action.skill === 'cardioide') { hit(target, green, .85); effects.heal(floorUnder(target), 1.6 * target.scale.y); return; }
-    // No-ta: the stamp itself makes the noise (see the stamp below).
-    if (action.skill === 'nota') { hit(target, white, 1); return; }
+    if (action.skill === 'analisis') { pulse?.(0, .3); for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, gold, .7); effects.insight(new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + 1.9 * f.scale.y, f.base.z)); } return; }
+    if (action.skill === 'cardioide') { pulse?.(0, .35); hit(target, green, .85); effects.heal(floorUnder(target), 1.6 * target.scale.y); return; }
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
+    const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
+    const felt: Blow = { share: unit ? (action.amount ?? 0) / unit.maxHp : 0, skill: !!action.skill, guarded, ko: target.hp <= 0, swallowed: action.swallowed, beat: state?.phase === 'beat' };
+    // No-ta: the stamp itself makes the noise (see the stamp below); the picture slams down with it.
+    if (action.skill === 'nota') { hit(target, white, 1); return land(felt, 0, -1, 0); }
     const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
     const reach = target.party ? .25 : .6;
     const blow = new pc.Vec3(target.base.x - dx / d * reach, groundHeight(target.base.x, target.base.z) + (target.minion ? .9 : .85) * target.scale.y, target.base.z - dz / d * reach);
     effects.impact(blow, actor.base, action.skill ? 1.4 : 1, { guarded, gum: target.minion, feet: floorUnder(target) });
     hit(target, white, guarded ? .4 : 1);
+    return land(felt, dx / d, 0, dz / d);
   }
   /** Which effect has started its trails, and how far: 1 once the spell leaves, 2 once the blow swings. */
   let trailed: BattleEffect | undefined, trailStage = 0;
@@ -202,6 +222,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   return {
     dogs, anchor, cameraKick, focus,
+    /** How much of the ortho height the frame is punched in by a heavy blow right now. */
+    get punch() { return zoom.x; },
+    /** How fast particles should run: slowed while a hit-stop holds the fight. */
+    get pace() { return clock.hold > 0 ? HIT.pace : 1; },
+    /** Where big moments send their chromatic fringe and bloom swell (post.pulse). */
+    setPulse(next: (fringe: number, bloom: number) => void) { pulse = next; },
     /** The model cloned for minion foes. */
     setMinionTemplate(model: pc.Entity) { minionTemplate = model; },
     /**
@@ -212,6 +238,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const gerard = fighters.get('gerard');
       if (!gerard) return;
       hit(gerard, white, 2.2); shake = .8;
+      if (animating) { pulse?.(1, 1); zoom.x = HIT.punch.size; }
       effects.anima(gerard.base, CLASSES[id].colour, true);
       for (const f of fighters.values()) if (!f.party) hit(f, white, .9);
       setTimeout(() => wearClass(gerard.model, id, gerard.grown), 260);
@@ -224,6 +251,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const f = fighters.get(id);
       if (!f) return;
       hit(f, new pc.Color().fromString(CLASSES[classId].colour), 1.8);
+      if (animating) pulse?.(.25, .45);
       effects.anima(f.base, CLASSES[classId].colour);
       setTimeout(() => wearClass(f.model, classId, f.grown), 180);
     },
@@ -296,7 +324,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           if (party) wearClass(model, unit.classId, grownUp(unit.profile));
         });
       }
-      state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false;
+      state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false; clock.clear();
       if (!next) { fighters.forEach(f => { f.model.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); selectedTarget = undefined; effects.clear(); }
       else [...next.allies, ...next.foes].forEach(u => { fighters.get(u.id)!.hp = u.hp; });
       player.enabled = !next;
@@ -304,6 +332,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       return new Promise(resolve => { complete = resolve; });
     },
     update(dt: number, animate = true) {
+      // Real time drives the camera; the fight itself stands still while a hit-stop holds.
+      const elapsed = dt; real += dt; animating = animate; dt = clock.advance(dt);
       time += dt; effectTime += dt;
       entryTime = animate ? Math.min(ENTRY_SECONDS, entryTime + dt) : ENTRY_SECONDS;
       cameraKick.set(0, 0, 0); focus.set(0, 0, 0);
@@ -315,13 +345,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const target = effect?.target ? fighters.get(effect.target) : undefined;
       // Heals and boosts stay put: no run-up to anyone.
       const support = effect?.skill === 'cardioide' || effect?.skill === 'analisis';
-      const t = animate ? effectTime : ACTION_SECONDS;
-      const motion = actor && target && !support ? contactMotion(actor.base, target.base, t) : undefined;
       const contact = effect?.target && !support ? CONTACT_SECONDS : .2;
       if (effect && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.();
-        if (animate && effect) contactBurst(effect, actor, target);
+        const landed = animate && effect ? contactBurst(effect, actor, target) : undefined;
+        // Hit-stop: rewind to the contact pose and hold it (FightClock.stop).
+        if (landed) effectTime -= clock.stop(landed.stop, effectTime - contact);
       }
+      const t = animate ? effectTime : ACTION_SECONDS;
+      const motion = actor && target && !support ? contactMotion(actor.base, target.base, t) : undefined;
       const entryMove = smooth((entryTime - .22) / .85);
       const selected = selectedTarget ? fighters.get(selectedTarget) : undefined;
       marker.enabled = !!selected && selected.hp > 0 && !effect && entryTime >= ENTRY_SECONDS;
@@ -419,10 +451,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (stamping && target && stamp.enabled) {
         const fall = smooth(t / CONTACT_SECONDS), lift = smooth((t - CONTACT_SECONDS - .25) / .4);
         const y = (target.minion ? 1.9 : 1.3) + (1 - fall) * 2.2 + lift * 3;
-        const squash = t > CONTACT_SECONDS && t < CONTACT_SECONDS + .2 ? .8 : 1;
+        // Squashed from the contact frame on, so a hit-stop holds the slam itself.
+        const squash = t >= CONTACT_SECONDS && t < CONTACT_SECONDS + .2 ? .8 : 1;
         stamp.setPosition(target.base.x, y, target.base.z); stamp.setLocalScale(1.2, 1.2 * squash, 1.2);
         if (t >= CONTACT_SECONDS && inkAt < time - 2) {
-          inkAt = time; shake = .5;
+          inkAt = time; shake = .6;
           inkMark.setPosition(target.base.x, groundHeight(target.base.x, target.base.z) + .04, target.base.z);
           effects.stamp(target.base);
         }
@@ -431,8 +464,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const inkAge = time - inkAt;
       inkMark.enabled = inkAge < 1.8;
       if (inkMark.enabled) { ink.opacity = 1 - smooth((inkAge - 1) / .8); ink.update(); }
-      shake = Math.max(0, shake - dt);
-      if (shake > 0 && animate) cameraKick.add(new pc.Vec3(Math.sin(time * 70) * shake * .25, Math.cos(time * 63) * shake * .15, 0));
+      // The lurch springs back and shakes keep going through a hit-stop: they run on real time.
+      shake = Math.max(0, shake - elapsed);
+      sway.forEach(s => spring(s, elapsed, HIT.spring.omega, HIT.spring.zeta));
+      spring(zoom, elapsed, HIT.punch.omega, 1);
+      const quake = animate ? shake * shake * .3 : 0;
+      if (animate) cameraKick.set(sway[0].x + wobble(real, 0) * quake, sway[1].x + wobble(real, 5) * quake * .6, sway[2].x);
       // The fight is won: confetti in the party's ánima colours rains over the field.
       if (state?.phase === 'won' && !effect && !celebrated && animate) {
         celebrated = true;
@@ -440,9 +477,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         effects.confetti(new pc.Vec3(anchor.x - 1, groundHeight(anchor.x, anchor.z) + 3.2, anchor.z), [...colours]);
       }
       if (motion && target) {
-        const burst = clamp01((t - CONTACT_SECONDS) / .22);
-        const kick = animate ? Math.sin(burst * Math.PI * 2) * (1 - burst) * .045 : 0;
-        cameraKick.set(kick, kick * .45, 0);
         const emphasis = animate ? Math.sin(clamp01(t / ACTION_SECONDS) * Math.PI) * .12 : 0;
         focus.set((target.base.x - anchor.x) * emphasis, 0, (target.base.z - anchor.z) * emphasis);
       }

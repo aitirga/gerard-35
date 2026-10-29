@@ -36,6 +36,14 @@ export const LOOK = {
    */
   ssao: { enabled: true, lighting: false, radius: .9, intensity: .8, power: 2, samples: 12, minAngle: 10, scale: .5, blur: true },
   // ────────────────────────────────────────────────────────────────────────────────────────────
+  /**
+   * Hit feel (`pulse`): chromatic fringing at a full pulse (CameraFrame units: the colours part by
+   * intensity / 1024 of the screen times the squared distance from the centre, so the middle of the
+   * fight stays sharp), the bloom intensity added at a full pulse, and how fast each fades (seconds
+   * to fall to about a third). Fringing stays on at `rest`, invisible, so the first big hit does not
+   * wait for its shader variant to compile.
+   */
+  hit: { fringe: 70, bloom: .07, fringeFade: .09, bloomFade: .2, rest: .01 },
 } as const;
 
 /**
@@ -63,14 +71,43 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   Object.assign(frame.bloom, LOOK.bloom);
   Object.assign(frame.vignette, LOOK.vignette);
   frame.grading.enabled = true;
+  frame.fringing.intensity = LOOK.hit.rest;
   // The scene's linear depth for soft particles; tilt-shift and contact shadows need the same
   // prepass and share it, so this switch only saves its cost when both of those are off too.
   frame.rendering.sceneDepthMap = LOOK.softParticles;
   const depth = setupDepthLook(app, frame, camera);
   let tone = -1;
   const linear = new pc.Color();
+  // --- Hit feel: a pulse of fringing and bloom that fades on real time (docs/graphics.md) ---
+  // The bloom is only touched while it swells (from the intensity it had), so other code may set it.
+  const hit = { fringe: 0, bloom: 0, bloomBase: 0 };
+  function showHit() {
+    frame.fringing.intensity = LOOK.hit.rest + LOOK.hit.fringe * hit.fringe;
+    if (hit.bloom || hit.bloomBase) frame.bloom.intensity = hit.bloomBase + LOOK.hit.bloom * hit.bloom;
+    if (!hit.bloom) hit.bloomBase = 0;
+    frame.update();
+  }
+  function fadeHit(dt: number) {
+    if (!hit.fringe && !hit.bloom) return;
+    hit.fringe *= Math.exp(-dt / LOOK.hit.fringeFade); hit.bloom *= Math.exp(-dt / LOOK.hit.bloomFade);
+    if (hit.fringe < .01) hit.fringe = 0;
+    if (hit.bloom < .01) hit.bloom = 0;
+    showHit();
+  }
+  app.on('update', fadeHit);
+  /**
+   * A blow, a stamp or an ánima lands: `fringe` and `bloom` (0–1) jump to at least that much and
+   * fade within a few tenths of a second. Does nothing while the pass is off.
+   */
+  function pulse(fringe: number, bloom = 0) {
+    if (!frame.enabled || (fringe <= 0 && bloom <= 0)) return;
+    if (bloom > 0 && !hit.bloom) hit.bloomBase = frame.bloom.intensity;
+    hit.fringe = Math.max(hit.fringe, Math.min(1, fringe)); hit.bloom = Math.max(hit.bloom, Math.min(1, bloom));
+    showHit();
+  }
+  // --- end hit feel ---
   return {
-    frame,
+    frame, pulse,
     /**
      * The background colour to give the camera for `colour` as the eye should see it: the HDR
      * buffer is linear and gamma-encoded at the end, so a straight sRGB clear would come out paler.
@@ -98,7 +135,7 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
     /** Turns the whole pass off (the camera renders straight to the screen) or back on. */
     set enabled(on: boolean) { frame.enabled = on; if (on) frame.update(); },
     get enabled() { return frame.enabled; },
-    destroy() { frame.destroy(); },
+    destroy() { app.off('update', fadeHit); frame.destroy(); },
   };
 }
 

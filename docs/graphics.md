@@ -10,6 +10,7 @@ src/game.ts ── camera ──► src/post.ts       CameraFrame: HDR + 4× MSA
                                ├──────────► src/particles.ts   CPU simulation + one instanced draw
                                └──────────► src/trails.ts      ribbons: one strip, one draw
 src/battle-scene.ts ─────► effects.impact / heal / anima / stamp / element / comet / trails …
+            └─ hit feel ► src/hit-feel.ts   hit-stop, camera lurch and punch-in; post.pulse for fringe + bloom
 ```
 
 Check visual changes with `just screenshots graphics` (the same five views every time: street,
@@ -290,6 +291,48 @@ capacity a trail is skipped for that frame, never cut. Six trails at once (an aw
 and two swings, 350 vertices) take about 0.2 ms a frame to build on the CPU, then one 22 KB
 upload and one draw call.
 
+## Hit feel (`src/hit-feel.ts`)
+
+When a blow lands (`contactBurst` in `src/battle-scene.ts`, at `CONTACT_SECONDS`) the fight holds
+still for a moment, the picture lurches along the blow and springs back, and heavy moments fringe
+the colours apart and swell the bloom. `landing(blow)` turns what happened into numbers: a weight
+from the share of the target's PV the blow took, skill or plain, guarded, knockout or the beat.
+
+| Contact | Hit-stop | Picture | Post pass |
+| --- | --- | --- | --- |
+| Plain blow (Atacar, a dog's bite, a guard's fist) | 55–90 ms, longer the bigger the bite | Lurch along the blow | Fringe only on big bites |
+| Guarded blow | Half (~30–45 ms) | Smaller lurch | None |
+| Gum swallows the blow | 35 ms | Small lurch | None |
+| No-ta | 100–135 ms | Slams down, punch-in, shake | Strong fringe, bloom swell |
+| Knockout | +50 ms (up to 180) | Punch-in | Full fringe, bloom swell |
+| The beat (the minion's blow that drops Bernat) | 160 ms or more | Punch-in | Full fringe and bloom |
+| Cardioide, Análisis Parálisis | None | — | A soft bloom swell |
+| An ánima wakes | None | Punch-in, shake | Full fringe and bloom |
+| Ánima swap (L / R) | None | — | A touch of fringe, bloom swell |
+
+- **Hit-stop** is the fight's own clock (`FightClock`): from contact it hands the fight no time for
+  the stop, so poses, flashes, squash and the stamp all hold. The held pose is the contact itself
+  (the clock rewinds the frame's overshoot and holds that much less), so an action always takes
+  `ACTION_SECONDS` plus exactly its stop and its Promise resolves then. Particles keep flying
+  through the hold at `HIT.pace` (30%), so the burst blooms out while the bodies are frozen.
+- **The camera** runs on real time, so it moves through the hold: a lurch along the blow that
+  springs back with one small overshoot (`HIT.spring`), a punch-in of the ortho height on heavy
+  blows (`HIT.punch`, critically damped), and a decaying shake for No-ta and an ánima waking. The
+  kick is a sideways move added after `lookAt` in `src/game.ts`, so the picture shifts without
+  swimming.
+- **`post.pulse(fringe, bloom)`** jumps `CameraFrame.fringing` and the bloom intensity up and lets
+  them fade on real time (`LOOK.hit` in `src/post.ts`). Fringing grows with the square of the
+  distance from the centre, so the fighters stay readable and the edges split. It stays on at an
+  invisible `rest` so the first big hit does not wait for a shader compile; with the pass off a
+  pulse does nothing.
+- prefers-reduced-motion (`animate` false) skips all of it: no hold, no lurch, no pulse.
+
+Tunables: `HIT` in `src/hit-feel.ts` (stop lengths, particle pace, lurch, spring, punch, where
+fringing starts) and `LOOK.hit` in `src/post.ts` (fringe and bloom at a full pulse, fade times).
+`tests/hit-feel.test.mjs` checks the timing; `just screenshots hit-feel` steps a fight 1/60 s at a
+time through an attack, a dog's bite, a guarded bite, an ánima swap, a No-ta knockout and an ánima
+waking, and logs each contact, hold and resolution on screen.
+
 ## What next
 
 In rough order of what each adds for its cost:
@@ -302,7 +345,5 @@ In rough order of what each adds for its cost:
 6. **Softer shadows** (`SHADOW_PCSS_32F` or VSM) and shadow resolution that follows the zoom.
 7. **Image-based lighting** (a prefiltered environment atlas) so glossy gum, glass and water
    reflect a sky instead of only the sun.
-8. **Hit feel**: chromatic fringing on big hits (`CameraFrame.fringing`) and a few frames of
-   hit-stop.
-9. **GPU particles** (compute) once counts need more than ~20k, on WebGPU only, keeping the CPU
+8. **GPU particles** (compute) once counts need more than ~20k, on WebGPU only, keeping the CPU
    simulation for WebGL2.

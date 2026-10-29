@@ -121,6 +121,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   effects.setScene(environment, scenery);
   // Each fighter is cloned from their street model; Bernat borrows Gerard's (recoloured) as before.
   const battleScene = createBattleScene(app, player, id => id === 'aitor' ? mates.aitor.entity : player, (x, z) => scenery.groundHeight(x, z), effects);
+  battleScene.setPulse(post.pulse);
   const pack = new WanderingPack(ENVIRONMENTS.maresme.grid, Math.random, STREET_END_AREA);
   let battle: BattleState | undefined;
   let paused = false;
@@ -940,6 +941,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   resize(); positionPlayer();
   camera.setPosition(cameraTarget.x + 40, cameraTarget.y + 52, cameraTarget.z + 40);
   callbacks.onLocation(environment.id, movement.cell);
+  /** The camera's ortho height before any punch-in, and the hit kick it wears this frame. */
+  let viewHeight = camera.camera!.orthoHeight;
+  const cameraKick = new pc.Vec3();
   app.on('update', (dt: number) => {
     const delta = Math.min(dt, 0.05);
     // Cutscenes, fight animations and effects keep the clock on slow machines (a frame or two a
@@ -1121,7 +1125,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     effects.setBodies(bodies);
     effects.setTone(tone); post.setTone(tone);
     const view = camera.camera!.orthoHeight * Math.max(1, canvas.clientWidth / Math.max(1, canvas.clientHeight));
-    effects.update(shown, { focus: cameraTarget, reach: Math.min(40, view * 1.1), animate: !reducedMotion.matches, paused });
+    effects.update(shown * battleScene.pace, { focus: cameraTarget, reach: Math.min(40, view * 1.1), animate: !reducedMotion.matches, paused });
     const aspect = canvas.clientWidth / canvas.clientHeight;
     const follow = environment.zoom;
     // Two players share the frame: the camera looks between them and pulls back as they part.
@@ -1136,14 +1140,20 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       cameraOffset.add(new pc.Vec3(arc * 3, arc * 1.5, -arc * 2));
     }
     const desiredCamera = cameraTarget.clone().add(cameraOffset);
-    camera.setPosition(reducedMotion.matches ? desiredCamera : camera.getPosition().clone().lerp(camera.getPosition(), desiredCamera, 1 - Math.exp(-delta * 6)));
-    if (battle) camera.setPosition(camera.getPosition().clone().add(battleScene.cameraKick));
-    else if (cinematic) camera.setPosition(camera.getPosition().clone().add(cameraWobble));
+    // The camera eases from where it rests, without last frame's hit kick (added after it looks).
+    const rest = camera.getPosition().clone().sub(cameraKick);
+    camera.setPosition(reducedMotion.matches ? desiredCamera : rest.lerp(rest, desiredCamera, 1 - Math.exp(-delta * 6)));
+    if (cinematic && !battle) camera.setPosition(camera.getPosition().clone().add(cameraWobble));
     camera.lookAt(cameraTarget);
+    // A blow shoves the whole picture: a sideways move after lookAt, so nothing swims or tilts.
+    cameraKick.copy(battle ? battleScene.cameraKick : pc.Vec3.ZERO);
+    camera.translate(cameraKick);
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
     const height = battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
-    camera.camera!.orthoHeight = pc.math.lerp(camera.camera!.orthoHeight, height, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
+    viewHeight = pc.math.lerp(viewHeight, height, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
+    // Heavy blows punch the frame in for a moment (battle-scene `punch`).
+    camera.camera!.orthoHeight = viewHeight * (1 - (battle ? battleScene.punch : 0));
     // The tilt-shift's sharp band runs through what the camera follows: the fighters, a cut-scene's subject, Gerard (and his partner).
     framing.length = 0;
     if (battle) battleScene.bodies(framing);
