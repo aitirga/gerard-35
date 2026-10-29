@@ -61,11 +61,11 @@ export const LIGHTING = {
       indoor: { zenith: '#f1e2c4', horizon: '#c99f72', ground: '#6e4f36' },
       /** The patio at night: deep blue above, a lamp-warmed horizon, dark stone. */
       night: { zenith: '#0e1a2f', horizon: '#3a4a5c', ground: '#16191a' },
-      /** Inside her palace: a dark plum vault over a pale pink glow, which rims her gum. */
-      palace: { zenith: '#3a0e34', horizon: '#f596d0', ground: '#3b0b2c' },
+      /** Inside her palace: a dark plum vault over a deep pink glow, which rims her gum without washing her walls out. */
+      palace: { zenith: '#2a0a26', horizon: '#9c3f7c', ground: '#2a0820' },
     } satisfies Record<SkyKind, SkyColours>,
     /** La Reina Bubbaloo's sky: dark plum above, pale pink haze on the horizon (`setTone` 1). */
-    bubbaloo: { zenith: '#3a0e34', horizon: '#f596d0', ground: '#2e0c26' } satisfies SkyColours,
+    bubbaloo: { zenith: '#2a0a26', horizon: '#9c3f7c', ground: '#220a1c' } satisfies SkyColours,
     /** Before anyone is up (`setDark` 1): a pale, dim morning. */
     dawn: { zenith: '#b8bfc6', horizon: '#8c8f92', ground: '#3d3b38' } satisfies SkyColours,
   },
