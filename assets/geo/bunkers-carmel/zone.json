@@ -1,0 +1,262 @@
+{
+  "id": "bunkers-carmel",
+  "name": "Búnkers del Carmel",
+  "region": "Turó de la Rovira, Horta-Guinardó, Barcelona",
+  "anchor": {
+    "address": "Turó de la Rovira, Carrer de Marià Labèrnia, Barcelona",
+    "lat": 41.41938,
+    "lon": 2.16175
+  },
+  "bounds_m": {
+    "west": -75,
+    "east": 46,
+    "north": -58,
+    "south": 42
+  },
+  "cell_m": 1.25,
+  "rotation_deg": 180,
+  "zoom": 12,
+  "spawn": {
+    "east_m": -54,
+    "south_m": -42
+  },
+  "storey_m": 3.0,
+  "reference": {
+    "checked": "2026-10-30",
+    "streetview_capture": "Not walked: Wikimedia Commons photos 2013-2024 and the MUHBA/Actium archaeological plan (1:500, 2015) are the references (docs/places/bunkers.md)",
+    "notes": [
+      "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-30) for the water tank (way/142894787), the officers' pavilion (way/1167567030), the concrete footways and steps, Carrer del Turó de la Rovira and the park. The battery's pieces the fetch does not keep or the map lacks (each gun pit, the twin emplacement, the parapets, the shacks' walls and floors, the slopes) are drawn in sketch.json from the MUHBA/Actium plan (1:500, 2015), georeferenced on the water tank and checked on the ICGC orthophoto and against the map's own outline of the battery (way/142894789), its wall arcs and the 2023 fence (barrier ways), within 2-3 m.",
+      "Anchor: the summit, 262 m (UTM 31N 429949.95, 4585652.90 in the Actium report). The hill is a narrow NE-SW ridge, 300 m long and 65 m wide on average; the battery fills its top, about 80 x 30 m.",
+      "Turned 180° (south up): the crest runs across the screen, the officers' pavilion and the NE gate on the left, the water tank on the right; the parapets and the city (Eixample, Sagrada Família, Torre Glòries, the sea: south-east) straight up; the north slope with its paths, Carrer del Turó de la Rovira and the El Carmel metro (north-west, 0.8 km) towards the camera. Trinitat Vella and the palace (NNE, 3.9 km) lie to the left, a little towards the camera: the backdrop brings them up to the view.",
+      "Battery (1937-38, Republican DECA): four Vickers 105 mm guns; seven firing positions survive as round pits 6-9 m across, sunk about a metre, with a low curved parapet of board-marked concrete (formwork lines, pebbly aggregate), a round gun mount in the middle and small square ammunition niches with rusty red steel doors in the parapet.",
+      "Shanty town 'Els Canons' (1944-1990): about 110 shacks and 600 people built on and between the emplacements; demolished for the 1992 Olympics. What remains: red-brick walls with white lime render, concrete floor slabs and patches of floor tiles (25 x 25 cm grès, red terracotta, grey and white hydraulic tiles), steps, a fountain on the 1963 water tank.",
+      "Restored 2011 (MUHBA): concrete paths, grey gravel between the remains, black iron railings, five interpretation panels (dark steel lecterns), stone retaining walls of rubble (dry stone, M1-M16 in the plan).",
+      "Water tank (dipòsit, 1963): a concrete cylinder about 14 m across and 7 m high at the SW end, fenced, a railing and small huts on its roof.",
+      "Ground: bare rock (grey-brown slate and granite outcrops), dry gold grass (Hyparrhenia), crumbled earth, gravel. Plants: Aleppo pines and stone pines on the slopes, olive trees, prickly pears (figueres de moro) and agaves below the parapets, fennel, rosemary.",
+      "People: dozens to hundreds at sunset, sitting on the parapets and the long terrace's roof with their legs over the edge, phones up, a guitar, beer cans; graffiti on the shacks' brick walls.",
+      "Since 2 May 2023 a 2 m bar fence closes the summit at night: open 9:00-19:30 in summer and 9:00-17:30 in winter (Guàrdia Urbana and civic agents close the gates); still a point of conflict with neighbours in April 2026 (Diari Catalunya).",
+      "Access: on foot only. Bus 22 turns round on Carrer de la Gran Vista; the 119 and the V17 stop near Marià Labèrnia; the nearest metro stations, El Carmel and El Coll | La Teixonera (L5) and Alfons X (L4), are 15-25 minutes uphill. The game's El Carmel entrance stands at the foot of the west path, compressed from 0.8 km."
+    ],
+    "viewpoints": [
+      {
+        "name": "mirador",
+        "lat": 41.41915,
+        "lon": 2.16165,
+        "heading": 150,
+        "pitch": -5
+      },
+      {
+        "name": "bateria",
+        "lat": 41.41905,
+        "lon": 2.1613,
+        "heading": 55,
+        "pitch": 0
+      },
+      {
+        "name": "cami-oest",
+        "lat": 41.41965,
+        "lon": 2.161,
+        "heading": 110,
+        "pitch": 5
+      }
+    ]
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#e9e2d2",
+        "#ddd3bf",
+        "#e4dccb"
+      ],
+      "base": "#8e8577",
+      "trim": "#f2eee6",
+      "roof": "#b0a79a",
+      "roof_kind": "flat",
+      "facade": "rendered",
+      "ground": "masonry",
+      "levels": 2
+    },
+    "tank": {
+      "walls": [
+        "#a6a197"
+      ],
+      "base": "#8f8a80",
+      "trim": "#7d786f",
+      "roof": "#9c978d",
+      "facade": "mall",
+      "ground": "mall-front"
+    },
+    "parapet": {
+      "walls": [
+        "#a39d90",
+        "#9c968a",
+        "#aaa395"
+      ],
+      "base": "#8c867b",
+      "trim": "#b5ae9f",
+      "roof": "#b8b1a2",
+      "roof_kind": "flat",
+      "facade": "mall",
+      "ground": "mall-front"
+    },
+    "shack": {
+      "walls": [
+        "#ece6da",
+        "#e3dccd"
+      ],
+      "base": "#a4533a",
+      "trim": "#f1ece2",
+      "roof": "#c2b8a6",
+      "roof_kind": "flat",
+      "facade": "rendered",
+      "ground": "masonry"
+    },
+    "pavilion": {
+      "walls": [
+        "#d9cfbd"
+      ],
+      "base": "#8f877a",
+      "trim": "#efe9de",
+      "roof": "#a9a194",
+      "roof_kind": "flat",
+      "facade": "rendered",
+      "ground": "masonry",
+      "levels": 1
+    }
+  },
+  "buildings": {
+    "way/142894787": {
+      "style": "tank",
+      "levels": 2,
+      "label": "Dipòsit"
+    },
+    "way/1167567030": {
+      "style": "pavilion",
+      "levels": 1,
+      "label": "Pavelló"
+    },
+    "tag:building=ruins": {
+      "style": "parapet"
+    },
+    "sketch/barraca-1": {
+      "style": "shack"
+    },
+    "sketch/barraca-2": {
+      "style": "shack"
+    },
+    "sketch/barraca-3": {
+      "style": "shack"
+    },
+    "sketch/excavacio": {
+      "style": "shack"
+    }
+  },
+  "trees": {
+    "forest_every_m": 6,
+    "species": [
+      "olive",
+      "olive",
+      "cypress"
+    ]
+  },
+  "props": [
+    {
+      "kind": "metro",
+      "east_m": -50,
+      "south_m": -40,
+      "name": "El Carmel",
+      "line": "L5"
+    }
+  ],
+  "places": [
+    {
+      "id": "station-el-carmel",
+      "label": "Bajar al metro",
+      "east_m": -52,
+      "south_m": -38.5,
+      "step": {
+        "east_m": -51.25,
+        "south_m": -40,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "bunkers-ciudad",
+      "label": "Mirar la ciudad",
+      "east_m": 2,
+      "south_m": 14.5,
+      "lines": [
+        "Toda Barcelona a los pies, hasta el mar. La Sagrada Família, la torre Glòries, el puerto al fondo.",
+        "Desde aquí arriba no se oye nada. Solo el viento y alguien tocando la guitarra."
+      ]
+    },
+    {
+      "id": "bunkers-canonera",
+      "label": "Mirar el emplazamiento",
+      "east_m": -30.5,
+      "south_m": 22.5,
+      "lines": [
+        "Un círculo de hormigón con un muñón en medio. Aquí había un cañón antiaéreo en la guerra.",
+        "Ahora la gente se sienta en el borde con las piernas colgando, a esperar que se ponga el sol."
+      ]
+    },
+    {
+      "id": "bunkers-baldosas",
+      "label": "Mirar las baldosas",
+      "east_m": -20,
+      "south_m": 32,
+      "lines": [
+        "Baldosas en medio de la hierba seca: rojas, grises, alguna con flores.",
+        "Eran los suelos de las barracas. Aquí arriba vivió gente hasta el noventa."
+      ]
+    },
+    {
+      "id": "bunkers-deposito",
+      "label": "Mirar el depósito",
+      "east_m": -35.5,
+      "south_m": 20,
+      "lines": [
+        "El depósito del agua, redondo y gris. Lo pusieron cuando aquí todavía había barracas."
+      ]
+    },
+    {
+      "id": "bunkers-pabellon",
+      "label": "Mirar el pabellón",
+      "east_m": 40,
+      "south_m": -12,
+      "lines": [
+        "El pabellón de los oficiales, ahora un museo pequeño. Abre por las mañanas; a esta hora está cerrado."
+      ]
+    },
+    {
+      "id": "bunkers-restos",
+      "label": "Mirar los restos",
+      "east_m": -11.5,
+      "south_m": 0.5,
+      "lines": [
+        "Paredes de ladrillo encaladas, a media altura. Una barraca, con su puerta y todo.",
+        "Alguien ha dejado una lata de cerveza encima, bien derecha."
+      ]
+    },
+    {
+      "id": "bunkers-valla",
+      "label": "Mirar la valla",
+      "east_m": -52,
+      "south_m": 6,
+      "lines": [
+        "Una valla de barrotes de dos metros alrededor de toda la cima. La cierran al caer la tarde.",
+        "Por ahora la puerta está abierta."
+      ]
+    },
+    {
+      "id": "bunkers-norte",
+      "label": "Mirar al norte",
+      "east_m": 30,
+      "south_m": -20
+    }
+  ],
+  "osm_props": {
+    "bin": {}
+  }
+}
