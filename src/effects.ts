@@ -59,6 +59,8 @@ const KINDS = {
   // The air of each scene: dust in the light indoors, pollen outside, fireflies at night, and her gloom.
   mote: { shape: 'glow', colour: '#fff1d2', additive: .7, glow: .6, opacity: .55, life: [6, 10], size: [.03, .05], fadeIn: .2, fadeOut: .3, gravity: .01, drag: .5, wander: .05, wanderRate: .5, flow: .05, flicker: .25, flickerRate: .6, collide: true, bodies: .9 },
   pollen: { shape: 'glow', colour: '#fff8dc', additive: .6, glow: .6, opacity: .7, life: [6, 9], size: [.03, .055], fadeIn: .2, fadeOut: .3, drag: .3, wind: .6, wander: .12, flow: .25, collide: true, bodies: .7 },
+  // October on the Meridiana: dry plane leaves drifting down the avenue and lying on the panot a while.
+  dryleaf: { shape: 'confetti', colour: ['#d0a85c', '#8f6a3a'], glow: .12, life: [7, 10], size: [.07, .1], fadeIn: .1, fadeOut: .15, gravity: .3, drag: 1.4, wind: .7, wander: .35, wanderRate: .8, flow: .3, spin: [40, 140], tumble: 1, collide: true, stick: true, bodies: .5 },
   firefly: { shape: 'glow', colour: ['#ecff96', '#b8f060'], additive: 1, glow: 1, intensity: 2, life: [6, 10], size: [.07, .12], fadeIn: .15, fadeOut: .2, drag: 1, wander: .45, wanderRate: .8, flow: .2, flicker: .85, flickerRate: .35, collide: true, bounce: .6, bodies: .5 },
   gloom: { shape: 'glow', colour: ['#ffa6d2', '#ff6fb2'], additive: .9, glow: 1, intensity: 1.05, opacity: .75, life: [6, 10], size: [.03, .06], fadeIn: .25, fadeOut: .35, rise: [.05, .2], gravity: -.05, drag: .6, wander: .2, flow: .3, flicker: .5, flickerRate: .6, collide: true, bodies: .8 },
 } satisfies Record<string, ParticleKind>;
@@ -85,6 +87,8 @@ const OUTDOORS: Air = { kinds: [{ kind: 'pollen', density: 4, low: .4, high: 3 }
 const AIR: Partial<Record<string, Air>> = {
   patio: { kinds: [{ kind: 'firefly', density: 7, low: .3, high: 2 }], wind: [.05, 0, .02], turbulence: .6 },
   palacio: { kinds: [{ kind: 'gloom', density: 9, low: .1, high: 3 }, { kind: 'bubble', density: 2, low: 0, high: .4 }], wind: [0, .04, 0], turbulence: .7 },
+  // Pollen and the plane trees' falling leaves, on a light wind along the avenue.
+  'meridiana-calle': { kinds: [{ kind: 'pollen', density: 3, low: .4, high: 3 }, { kind: 'dryleaf', density: 1.2, low: .4, high: 4 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.45, 0, .05], turbulence: .9 },
 };
 /** Ambient particles stop growing past this, however far the camera pulls back. */
 const AMBIENT_CAP = 1600;

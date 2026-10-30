@@ -47,12 +47,13 @@
       "Traffic: TMB red buses and white Sagalés coaches; few cars.",
       "The flat's exact portal is not known: home is the corner block by the Fabra i Puig metro entrance (open question in docs/chapter-2.md).",
       "WORKS (2026-10-30, beteve.cat and Ajuntament): this stretch is the Felip II–Fabra i Puig phase of the Meridiana reform, begun in April 2025 for 18 months: two general lanes and a bus lane each way, a two-way bike lane in a central planted median with a double row of trees, wider sidewalks with beds, about 275 new trees and 7,200 m² of beds, crossings from 9 to 15. October 2026 is its last weeks.",
-      "CROSS-SECTION: OpenStreetMap (2026-10-22) agrees: east carriageway centred at z≈5 and west at z≈20 (3 lanes, one a bus lane, 12 m each), the bike lane under construction at z≈13 (4 m), the old kerb-line plane trees at z≈-7 and the new bed's trees at z≈-1, the west trees at z≈28–32. Six lanes in all, as Gerard says; the sketch's side road plus 3 + 3 lanes (eight) is to be redrawn (docs/places/meridiana.md).",
       "HIPERCOR (CC0 photo, 2022): a white scalloped canopy, a row of shallow vaults, over light panels with thin blue vertical stripes, HIPERCOR in blue on a white sign; recycling containers and benches in front. Behind it rise the rental slabs of 15–17 storeys (OSM relation/8938011, 8938019, 8938017, x 122–348 z −109…−80) with dark brown spandrels and white ribbon windows: the 'dark tower' of the night photos is the nearest of them.",
       "BLOCKS (openly licensed photos of the avenue): cream render or tan facing brick, continuous balcony slabs with white or aluminium railings, enclosed aluminium galleries, green and grey canvas awnings, set-back top floors, bare brick party walls (mitgeres) where heights change; flat terraces with stair and lift housings, water tanks, aerials, air conditioners and washing.",
       "FURNITURE a local knows: curved grey poles with yellow traffic lights, the grey, yellow, blue, green and brown recycling containers in a row by the kerb, Bicing docks (OSM: Av. Meridiana 404, Concepció Arenal 176), motorbikes parked on the sidewalk, the ONCE kiosk, a newsstand.",
       "UNDER THE AVENUE: the L1 and the Rodalies tunnel (R3, R4, R7); the Renfe station is now Barcelona-Fabra i Puig (OSM), once Sant Andreu Arenal; the L1 also comes up at Concepció Arenal (OSM entrances at x≈−24 and x≈6, z≈−7).",
-      "LEFT OUT on purpose: the 1987 bombing memorial and the avenue's protests; nothing tragic or political in a birthday game."
+      "LEFT OUT on purpose: the 1987 bombing memorial and the avenue's protests; nothing tragic or political in a birthday game.",
+      "CROSS-SECTION (built 2026-10-30, sketch.json): six lanes as OpenStreetMap and the city's design have them. East sidewalk of panot z -13.5…-3.5 with the old plane trees in pits; kerb bed -3.5…-0.5 (paved through at the Fabra i Puig bus stop, x -50…-36); east carriageway -0.5…10 (bus lane by the kerb + 2 lanes, towards Fabra i Puig); median 10…16.5 (bed, two-way bike lane at 13.25, bed); west carriageway 16.5…27 (2 lanes + bus lane, towards Hipercor); west bed 27…29.5; west sidewalk to 37.5. Beds stop at the three zebras.",
+      "SLABS: the brown-banded rental slab stands at the map's back edge behind Hipercor (sketch `bloc-hipercor`, 16 storeys), some 30 m nearer than the real one so it stays in the map."
     ],
     "viewpoints": [
       {
@@ -97,7 +98,13 @@
     "footway": "panot",
     "grass": "bed",
     "asphalt": "#3e4043",
-    "markings": true
+    "markings": true,
+    "materials": {
+      "road": "asfalt-nou",
+      "bike": "asfalt-nou"
+    },
+    "kerbs": true,
+    "edge": "city"
   },
   "styles": {
     "default": {
@@ -114,7 +121,12 @@
       "roof_kind": "flat",
       "facade": "flats",
       "ground": "shops",
-      "levels": 8
+      "levels": 8,
+      "balcony_m": 1.0,
+      "balcony": "#ebe6dc",
+      "cornice": true,
+      "rooftop": true,
+      "party": "#b98d6e"
     },
     "orange": {
       "walls": [
@@ -123,7 +135,8 @@
         "#d9946a"
       ],
       "trim": "#f3ebdf",
-      "base": "#6b5d52"
+      "base": "#6b5d52",
+      "balcony": "#d98c66"
     },
     "home": {
       "walls": [
@@ -132,27 +145,47 @@
       "base": "#7f776a",
       "trim": "#fbf6ec",
       "roof": "#a89c8c",
-      "ground": "lobby"
+      "ground": "lobby",
+      "balcony": "#f4efe5"
     },
     "hipercor": {
       "walls": [
-        "#d9d0c0"
+        "#e2ded6"
       ],
-      "base": "#cfc6b5",
+      "base": "#d8d4cb",
       "trim": "#2d4f8a",
       "roof": "#9e978b",
       "facade": "mall",
-      "ground": "mall-front"
+      "ground": "mall-front",
+      "balcony_m": 0,
+      "cornice": false,
+      "rooftop": true
     },
-    "tower": {
+    "brick": {
       "walls": [
-        "#30363c"
+        "#c9a47a",
+        "#bf9a6e",
+        "#cda982"
       ],
-      "base": "#2a2f34",
-      "trim": "#4a5560",
-      "roof": "#3a4046",
-      "facade": "curtain",
-      "ground": "lobby"
+      "trim": "#f2eee6",
+      "base": "#5f5a54",
+      "balcony": "#e7e2d8",
+      "materials": {
+        "wall": "mao-groc"
+      }
+    },
+    "slab": {
+      "walls": [
+        "#7d6553"
+      ],
+      "base": "#4f4a45",
+      "trim": "#eef0ee",
+      "roof": "#9a958c",
+      "facade": "slab",
+      "ground": "lobby",
+      "balcony_m": 0,
+      "cornice": true,
+      "rooftop": true
     }
   },
   "buildings": {
@@ -164,9 +197,6 @@
       "style": "hipercor",
       "levels": 4,
       "sign": "HIPERCOR"
-    },
-    "sketch/torre-hipercor": {
-      "style": "tower"
     },
     "relation/9282487": {
       "style": "orange"
@@ -185,12 +215,37 @@
     },
     "way/665352779": {
       "levels": 1
+    },
+    "sketch/bloc-hipercor": {
+      "style": "slab"
+    },
+    "way/665335775": {
+      "style": "brick"
+    },
+    "way/665335782": {
+      "style": "brick"
+    },
+    "way/644463848": {
+      "style": "brick"
+    },
+    "way/667491329": {
+      "style": "brick"
+    },
+    "way/667491356": {
+      "style": "brick"
+    },
+    "relation/9243612": {
+      "facade": "photo:galeries-meridiana",
+      "balcony_m": 0
     }
   },
   "osm_props": {
     "tree": {
       "species": "plane",
-      "trunk": "#c6b89b"
+      "trunk": "#c6b89b",
+      "in_bed": {
+        "base": "ground"
+      }
     },
     "lamp": {
       "style": "led"
@@ -222,87 +277,107 @@
       "line": "L1"
     },
     {
+      "kind": "containers",
+      "x_m": 60,
+      "z_m": -4.3
+    },
+    {
+      "kind": "containers",
+      "x_m": -140,
+      "z_m": -4.3
+    },
+    {
+      "kind": "containers",
+      "x_m": -10,
+      "z_m": 32.0
+    },
+    {
+      "kind": "containers",
+      "x_m": 112,
+      "z_m": 31.6
+    },
+    {
       "kind": "shelter",
-      "x_m": -45,
-      "z_m": -9.8
+      "x_m": -44,
+      "z_m": -2.2
     },
     {
       "kind": "bus",
-      "x_m": -62,
-      "z_m": -4.0,
+      "x_m": -40,
+      "z_m": 25.25,
       "color": "#eceae3",
       "livery": "sagales"
     },
     {
       "kind": "lamp",
-      "style": "led",
       "x_m": -164,
-      "z_m": -8.8,
+      "z_m": -4.1,
       "to": {
         "x_m": 150,
-        "z_m": -8.8
+        "z_m": -4.1
       },
-      "every_m": 22
+      "every_m": 24,
+      "style": "led"
     },
     {
       "kind": "lamp",
-      "style": "led",
       "x_m": -154,
-      "z_m": 2,
+      "z_m": 11.7,
       "to": {
         "x_m": 150,
-        "z_m": 2
+        "z_m": 11.7
       },
-      "every_m": 26
+      "every_m": 26,
+      "style": "led"
     },
     {
       "kind": "lamp",
-      "style": "led",
       "x_m": -164,
-      "z_m": 29.4,
+      "z_m": 29.2,
       "to": {
         "x_m": 150,
-        "z_m": 29.4
+        "z_m": 29.2
       },
-      "every_m": 22
+      "every_m": 24,
+      "style": "led"
     },
     {
       "kind": "tree",
+      "x_m": -172,
+      "z_m": 10.3,
+      "to": {
+        "x_m": 158,
+        "z_m": 10.3
+      },
+      "every_m": 9,
       "species": "plane",
       "scale": 0.7,
       "base": "ground",
       "stakes": true,
-      "trunk": "#c9bc9f",
-      "x_m": -172,
-      "z_m": 7.6,
-      "to": {
-        "x_m": 158,
-        "z_m": 7.6
-      },
-      "every_m": 9
+      "trunk": "#c9bc9f"
     },
     {
       "kind": "tree",
+      "x_m": -167,
+      "z_m": 16.1,
+      "to": {
+        "x_m": 153,
+        "z_m": 16.1
+      },
+      "every_m": 12,
       "species": "plane",
       "scale": 0.65,
       "base": "ground",
       "stakes": true,
-      "trunk": "#c9bc9f",
-      "x_m": -167,
-      "z_m": 1.8,
-      "to": {
-        "x_m": 153,
-        "z_m": 1.8
-      },
-      "every_m": 12
+      "trunk": "#c9bc9f"
     },
     {
       "kind": "bench",
       "x_m": -96,
-      "z_m": -10,
+      "z_m": -5.1,
       "to": {
         "x_m": 150,
-        "z_m": -10
+        "z_m": -5.1
       },
       "every_m": 16
     },
@@ -310,120 +385,140 @@
       "kind": "bench",
       "style": "chair",
       "x_m": -79,
-      "z_m": -10.2
+      "z_m": -5.3
     },
     {
       "kind": "bench",
       "style": "chair",
       "x_m": -77,
-      "z_m": -10.2
+      "z_m": -5.3
     },
     {
       "kind": "bench",
       "style": "chair",
       "x_m": -23,
-      "z_m": -10.2
+      "z_m": -5.3
     },
     {
       "kind": "bench",
       "style": "chair",
       "x_m": -21,
-      "z_m": -10.2
+      "z_m": -5.3
     },
     {
       "kind": "bench",
       "style": "chair",
       "x_m": 71,
-      "z_m": -10.2
+      "z_m": -5.3
     },
     {
       "kind": "traffic-light",
       "x_m": -69,
-      "z_m": -8.6
+      "z_m": -1.0
     },
     {
       "kind": "traffic-light",
       "x_m": -65,
-      "z_m": 2.2
+      "z_m": 10.6
     },
     {
       "kind": "traffic-light",
       "x_m": -65,
-      "z_m": 29.4
+      "z_m": 27.4
     },
     {
       "kind": "traffic-light",
       "x_m": 28,
-      "z_m": -8.6
+      "z_m": -1.0
     },
     {
       "kind": "traffic-light",
       "x_m": 32,
-      "z_m": 2.2
+      "z_m": 10.6
     },
     {
       "kind": "traffic-light",
       "x_m": 32,
-      "z_m": 29.4
+      "z_m": 27.4
     },
     {
       "kind": "traffic-light",
       "x_m": 102,
-      "z_m": -8.6
+      "z_m": -1.0
     },
     {
       "kind": "traffic-light",
       "x_m": 106,
-      "z_m": 2.2
+      "z_m": 10.6
     },
     {
       "kind": "traffic-light",
       "x_m": 106,
-      "z_m": 29.4
+      "z_m": 27.4
     },
     {
       "kind": "barrier",
-      "color": "red",
       "x_m": -100,
-      "z_m": 8.4,
+      "z_m": 15.6,
       "to": {
         "x_m": -76,
-        "z_m": 8.4
+        "z_m": 15.6
       },
-      "every_m": 3.2
+      "every_m": 3.2,
+      "color": "red"
     },
     {
       "kind": "barrier",
-      "color": "white",
       "x_m": -98.4,
-      "z_m": 8.4,
+      "z_m": 15.6,
       "to": {
         "x_m": -77.6,
-        "z_m": 8.4
+        "z_m": 15.6
       },
-      "every_m": 3.2
+      "every_m": 3.2,
+      "color": "white"
     },
     {
       "kind": "barrier",
-      "color": "red",
       "x_m": -10,
-      "z_m": 8.4,
+      "z_m": 15.6,
       "to": {
         "x_m": 14,
-        "z_m": 8.4
+        "z_m": 15.6
       },
-      "every_m": 3
+      "every_m": 3,
+      "color": "red"
+    },
+    {
+      "kind": "bag",
+      "x_m": -97.8,
+      "z_m": 14.9
+    },
+    {
+      "kind": "bag",
+      "x_m": -96.4,
+      "z_m": 14.9
+    },
+    {
+      "kind": "bag",
+      "x_m": -82,
+      "z_m": 14.9
+    },
+    {
+      "kind": "bag",
+      "x_m": 2.5,
+      "z_m": 14.9
     },
     {
       "kind": "barrier",
-      "color": "red",
       "x_m": 88,
       "z_m": -12.5,
       "to": {
         "x_m": 100,
         "z_m": -12.5
       },
-      "every_m": 1.6
+      "every_m": 1.6,
+      "color": "red"
     },
     {
       "kind": "barrier",
@@ -487,21 +582,6 @@
     },
     {
       "kind": "bag",
-      "x_m": -97.8,
-      "z_m": 7.0
-    },
-    {
-      "kind": "bag",
-      "x_m": -96.4,
-      "z_m": 7.0
-    },
-    {
-      "kind": "bag",
-      "x_m": -82,
-      "z_m": 7.0
-    },
-    {
-      "kind": "bag",
       "x_m": 92,
       "z_m": -10.8
     },
@@ -517,14 +597,34 @@
       "length": 24
     },
     {
+      "kind": "bicing",
+      "x_m": -174,
+      "z_m": -25.5
+    },
+    {
+      "kind": "terrace",
+      "x_m": 6,
+      "z_m": -10.4
+    },
+    {
+      "kind": "terrace",
+      "x_m": 9,
+      "z_m": -10.4
+    },
+    {
+      "kind": "terrace",
+      "x_m": 12,
+      "z_m": -10.4
+    },
+    {
       "kind": "bike-rack",
       "x_m": -114,
       "z_m": -10
     },
     {
       "kind": "bin",
-      "x_m": -48.5,
-      "z_m": -10
+      "x_m": -47.5,
+      "z_m": -3.9
     },
     {
       "kind": "manhole",
@@ -539,12 +639,77 @@
     {
       "kind": "manhole",
       "x_m": 40,
-      "z_m": -2.5
+      "z_m": 3.0
     },
     {
       "kind": "manhole",
       "x_m": 76,
       "z_m": -11
+    },
+    {
+      "kind": "grate",
+      "x_m": -120,
+      "z_m": 13.25
+    },
+    {
+      "kind": "grate",
+      "x_m": -40,
+      "z_m": 13.25
+    },
+    {
+      "kind": "grate",
+      "x_m": 60,
+      "z_m": 13.25
+    },
+    {
+      "kind": "grate",
+      "x_m": 140,
+      "z_m": 13.25
+    },
+    {
+      "kind": "moto",
+      "x_m": -92.25,
+      "z_m": -4.6
+    },
+    {
+      "kind": "moto",
+      "x_m": -90.75,
+      "z_m": -4.6
+    },
+    {
+      "kind": "moto",
+      "x_m": -89.25,
+      "z_m": -4.6
+    },
+    {
+      "kind": "moto",
+      "x_m": -26.25,
+      "z_m": -4.6
+    },
+    {
+      "kind": "moto",
+      "x_m": -24.75,
+      "z_m": -4.6
+    },
+    {
+      "kind": "moto",
+      "x_m": 42.75,
+      "z_m": -4.6
+    },
+    {
+      "kind": "moto",
+      "x_m": 44.25,
+      "z_m": -4.6
+    },
+    {
+      "kind": "moto",
+      "x_m": -60.75,
+      "z_m": 31.2
+    },
+    {
+      "kind": "moto",
+      "x_m": -59.25,
+      "z_m": 31.2
     }
   ],
   "places": [
@@ -577,7 +742,7 @@
       "id": "meridiana-avinguda",
       "label": "Mirar la avenida",
       "x_m": -60,
-      "z_m": -8.6,
+      "z_m": -4.6,
       "lines": [
         "La Meridiana. Seis carriles, y hoy apenas pasa un coche.",
         "La gente está parada en las aceras, mirando todos hacia el norte. Hacia Trinitat Vella."
@@ -586,8 +751,8 @@
     {
       "id": "clue-r4-marquesina",
       "label": "Mirar la marquesina",
-      "x_m": -42,
-      "z_m": -11.2
+      "x_m": -41,
+      "z_m": -3.6
     },
     {
       "id": "meridiana-granier",
@@ -613,7 +778,7 @@
       "id": "meridiana-obras",
       "label": "Mirar las obras",
       "x_m": -88,
-      "z_m": 7.8,
+      "z_m": 13.25,
       "lines": [
         "Las obras de la Meridiana. Vallas rojas y blancas, sacos de escombros y la mediana a medio plantar.",
         "Los árboles nuevos aún van atados a sus palos."
@@ -634,7 +799,7 @@
     {
       "text": "AVINGUDA MERIDIANA",
       "x_m": -30,
-      "z_m": 18.7,
+      "z_m": 21.75,
       "width": 12
     },
     {
@@ -642,6 +807,26 @@
       "x_m": -118,
       "z_m": -13.2,
       "width": 5
+    }
+  ],
+  "landmarks": [
+    {
+      "kind": "vaulted-canopy",
+      "id": "marquesina-hipercor",
+      "x_m": 126,
+      "z_m": -15.3,
+      "rotation_deg": -1.15,
+      "size_m": [
+        78,
+        2.6
+      ],
+      "solid": false,
+      "params": {
+        "vault_m": 6.5,
+        "height_m": 3.0,
+        "rise_m": 0.5,
+        "colour": "#ecebe6"
+      }
     }
   ]
 }

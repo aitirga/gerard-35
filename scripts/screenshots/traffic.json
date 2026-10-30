@@ -16,7 +16,7 @@
       "teleport": "meridiana-calle",
       "cell": [
         70,
-        51
+        56
       ]
     },
     {
@@ -47,13 +47,13 @@
       "teleport": "meridiana-calle",
       "cell": [
         100,
-        57
+        51
       ]
     },
     {
       "shot": "stops-for-gerard",
       "delay": 3000,
-      "caption": "Gerard standing in a lane of the calçada: the cars brake and wait behind him"
+      "caption": "Gerard standing in a lane of the east carriageway: the cars and scooters brake and wait behind him"
     },
     {
       "teleport": "meridiana-calle",

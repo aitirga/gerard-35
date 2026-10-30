@@ -31,8 +31,8 @@ test('the avenue and its side streets fill with traffic that never drives into i
 
 test('cars stop for someone standing in their lane', () => {
   const { traffic, cars } = street();
-  // A lane of the calçada de muntanya, which drives towards -x.
-  const lane = { x: 100, z: 56.7 - 6.4 / 2 + 6.4 / 6 };
+  // The middle lane of the east carriageway (z 4.75 m in the turned frame), which drives towards -x.
+  const lane = { x: 100, z: (4.75 + 72) / 1.5 - 0.5 };
   for (let frame = 0; frame < 900; frame++) {
     traffic.update(1 / 20, [lane]);
     for (const c of cars()) assert.ok(Math.hypot(c.x - lane.x, c.z - lane.z) > 1.2, `a car reached the walker at frame ${frame}`);
