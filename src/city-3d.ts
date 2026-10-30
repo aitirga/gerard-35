@@ -414,7 +414,14 @@ export function createCity3D(host: HTMLElement): City3D | undefined {
       const next = clamp({ ...orbit, distance: orbit.distance * factor }), k = 1 - next.distance / orbit.distance;
       set(at ? { ...next, x: orbit.x + (at.x - orbit.x) * k, y: orbit.y + (at.y - orbit.y) * k } : next);
     },
-    pause(value) { paused = value; app.autoRender = !paused; if (!paused) { resize(); app.renderNextFrame = true; } },
+    // Paused, the model stops its frame loop altogether: a running PlayCanvas app makes itself the
+    // current one every frame, and entities the game creates between frames (the place a ride
+    // arrives at) would join this app instead of the game's and never be drawn.
+    pause(value) {
+      paused = value; app.autoRender = !paused;
+      if (paused) { cancelAnimationFrame(app.frameRequestId); app.frameRequestId = null; }
+      else { resize(); app.renderNextFrame = true; if (!app.frameRequestId) app.requestAnimationFrame(); }
+    },
     destroy() { observer.disconnect(); app.destroy(); canvas.remove(); overlay.remove(); },
   };
 }

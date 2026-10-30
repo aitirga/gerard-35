@@ -1,0 +1,29 @@
+{
+  "id": "terra",
+  "name": "Terra",
+  "kind": "material",
+  "size_m": [
+    2.0,
+    2.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "raked_dirt",
+    "name": "Raked Dirt",
+    "url": "https://polyhaven.com/a/raked_dirt",
+    "author": "Dario Barresi, Dimitrios Savva",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven raked_dirt --id terra",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#706350",
+  "made": "2026-10-30"
+}

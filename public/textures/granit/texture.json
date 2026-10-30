@@ -1,0 +1,29 @@
+{
+  "id": "granit",
+  "name": "Granit",
+  "kind": "material",
+  "size_m": [
+    2.3,
+    2.3
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "granite_tile",
+    "name": "Granite Tile",
+    "url": "https://polyhaven.com/a/granite_tile",
+    "author": "Charlotte Baglioni",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven granite_tile --id granit",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#4e4e4f",
+  "made": "2026-10-30"
+}

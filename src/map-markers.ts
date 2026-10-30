@@ -33,6 +33,14 @@ function spire(x: number, w: number, top: number, fruit: string) {
     + shade(`M${x},1V${top + .12}Q${x + .1 * w},${top + .2},${x + w * .3},${top + .35}L${x + w},1Z`, '#c9a46a')
     + `<circle fill="${fruit}" cx="${x}" cy="${top}" r=".09"/>`;
 }
+/** One of Plaça d'Espanya's Venetian towers: a brick shaft, a stone belfry with its arch, a pointed roof. */
+function campanile(x: number) {
+  const l = x - .22, r = x + .22, d = .14;
+  return `<path fill="#c96b4a" d="M${l},1V-.85H${r}V1Z"/>${shade(`M${r},1V-.85L${r + d},-.95V.9Z`, '#9d4f35')}`
+    + `<path fill="#ead2a0" d="M${l},-.85V-1.25H${r}V-.85Z"/>${shade(`M${r},-.85V-1.25L${r + d},-1.35V-.95Z`, '#c9a46a')}`
+    + `<path fill="#3b2a20" stroke="none" d="M${x - .07},-.92V-1.1A.07,.07,0,0,1,${x + .07},-1.1V-.92Z"/>`
+    + `<path fill="#c96b4a" d="M${l},-1.25L${x + .05},-1.95L${r},-1.25Z"/>${shade(`M${r},-1.25L${x + .05},-1.95L${r + d},-1.35Z`, '#9d4f35')}`;
+}
 
 /**
  * Cartoon drawings in a 2 × 2 box around (0, 0), bottom at y = 1, with a thick dark outline.
@@ -79,6 +87,11 @@ export const ICONS: Record<string, (level: number, reach: number) => string> = {
   dome: () => `<path fill="#e98f5a" d="M-.85,1V.1H.45V1Z"/>${shade('M.45,1V.1L.85,-.1V.8Z', '#c26a3a')}`
     + `<path fill="#5fa6a0" d="M-.78,.1Q-.78,-.75,-.2,-.8Q.38,-.75,.38,.1Z"/><path fill="none" stroke="#e9c35a" stroke-width=".07" d="M-.65,-.25Q-.2,-.4,.25,-.25"/>`
     + `<path fill="none" stroke-width=".07" d="M-.2,-.8V-1.25"/><circle fill="#e9c35a" cx="-.2" cy="-1.3" r=".1"/><path fill="#3b2a20" d="M-.55,1V.55A.13,.13,0,0,1,-.29,.55V1ZM-.11,1V.55A.13,.13,0,0,1,.15,.55V1Z"/>`,
+  /** Plaça d'Espanya: the two Venetian towers at the foot of Montjuïc. */
+  venetian: () => `<path fill="#e2d4b2" d="M-1,1L-.8,.7H1L.8,1Z"/>${campanile(-.5)}${campanile(.5)}`,
+  /** Búnkers del Carmel: the dry top of the Turó de la Rovira and the round concrete gun pits on it. */
+  bunker: () => `<path fill="#c8b47c" d="M-1,1Q-.92,-.45,0,-.5Q.92,-.45,1,1Z"/>${shade('M.3,1V-.46Q.92,-.32,1,1Z', '#9c8a58')}`
+    + [[-.38, -.05, .36], [.42, .35, .3]].map(([x, y, r]) => `<ellipse fill="#dedad0" cx="${x}" cy="${y}" rx="${r}" ry="${r * .5}"/><ellipse fill="#6f6658" stroke="none" cx="${x}" cy="${y + .02}" rx="${r * .55}" ry="${r * .24}"/>`).join(''),
   home: () => `<path fill="#f7d26a" d="M-.75,1V-.05H.45V1Z"/>${shade('M.45,1V-.05L.85,-.25V.8Z', '#d9ac3e')}<path fill="#d9473f" d="M-.95,0L-.15,-.9L.6,-.2L.45,0Z"/><path fill="#a8323a" d="M.45,0L.6,-.2L-.15,-.9L.15,-1.05L.95,-.35Z"/><path fill="#ff7aa8" d="M-.15,.75C-.55,.4,-.45,.05,-.15,.25C.15,.05,.25,.4,-.15,.75Z"/>`,
   school: () => `<path fill="#f2efe6" d="M-.95,1V-.2H.55V1Z"/>${shade('M.55,1V-.2L.95,-.4V.8Z', '#cbc4b2')}<path fill="#e8742c" d="M-.95,-.2L-.2,-.75L.55,-.2Z"/><path fill="#b9561c" d="M.55,-.2L-.2,-.75L.2,-.95L.95,-.4Z"/><path fill="none" stroke="${INK}" stroke-width=".1" d="M-.2,-.75V-1.4"/><path fill="#e8742c" d="M-.2,-1.4H.25L.1,-1.25L.25,-1.1H-.2Z"/>`,
   /**
