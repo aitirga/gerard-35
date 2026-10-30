@@ -1,0 +1,29 @@
+{
+  "id": "saulo",
+  "name": "Sauló",
+  "kind": "material",
+  "size_m": [
+    2.1,
+    2.1
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "sandy_gravel",
+    "name": "Sandy Gravel",
+    "url": "https://polyhaven.com/a/sandy_gravel",
+    "author": "Charlotte Baglioni",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven sandy_gravel --id saulo",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#aea396",
+  "made": "2026-10-30"
+}
