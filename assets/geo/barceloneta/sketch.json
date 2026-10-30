@@ -1,0 +1,10 @@
+{
+  "note": "What the map data lacks, drawn over the OpenStreetMap data (osm.json): the sea, which OSM holds only as a coastline (and as the whole Mar Balear relation, left out of osm.json for its size). Its shore follows the coastline ways 500581857 and 500581852 point by point, out to the salient behind the breakwater at the zone's NNE end. In the turned frame: metres, x along the coast (+x north-north-east), z across it (+z towards the sea and the camera).",
+  "drawn": "2026-10-30",
+  "frame": "turned",
+  "features": [
+    { "id": "mar", "keep": true, "area": "water", "name": "Mar Mediterrània",
+      "poly": [[-160, 43.5], [-131.7, 43.5], [-90.8, 42.1], [-58.2, 44.1], [-22.8, 45.5], [32.6, 60.6], [64.7, 72.9], [81.1, 81.6],
+               [91.2, 87.7], [99.1, 92.5], [117.0, 104.6], [128.9, 108.8], [140, 103], [140, 130], [-160, 130]] }
+  ]
+}

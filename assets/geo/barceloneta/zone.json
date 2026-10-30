@@ -1,0 +1,128 @@
+{
+  "id": "barceloneta",
+  "name": "La Barceloneta · Platja de Sant Miquel",
+  "region": "La Barceloneta, Ciutat Vella, Barcelona",
+  "anchor": {
+    "address": "L'Estel Ferit, Passeig Marítim de la Barceloneta, Barcelona",
+    "lat": 41.3764939,
+    "lon": 2.1910857
+  },
+  "bounds_m": {
+    "west": -150,
+    "east": 130,
+    "north": -100,
+    "south": 120
+  },
+  "bounds_turned": true,
+  "cell_m": 1.5,
+  "rotation_deg": 65,
+  "zoom": 12,
+  "spawn": {
+    "x_m": 20,
+    "z_m": -24
+  },
+  "storey_m": 3.0,
+  "reference": {
+    "checked": "2026-10-30",
+    "streetview_capture": "Not used: Wikimedia Commons photos (2013-2026, listed in docs/places/barceloneta.md) and the Google Maps viewpoints below, looked at only",
+    "notes": [
+      "MAP DATA: OpenStreetMap (osm.json) for the old Barceloneta's blocks and streets, the beach (Platja de Sant Miquel), the promenade's footways, showers, toilets, boards and the restaurants on the block ends. The sea is not an area in OSM (only the coastline), so sketch.json draws it as water along the real coastline.",
+      "Turned 65°: the coast runs left to right (+x towards the Barceloneta beach and the breakwater, north-north-east), the sea faces the camera (+z), the old Barceloneta is at the back (-z). The blocks' long sides face the camera square on, the promenade's block ends face the sea.",
+      "Anchor: L'Estel Ferit (Rebecca Horn, 1992, also 'Homenatge a la Barceloneta'): four hollow iron cubes about 2.6 m each, stacked off true to 10.6 m on a low concrete plinth (BCNROC record: 10.60 x 5.17 x 5.17 m, iron, glass and light). Rust brown, each cube with a band of small square windows on one face near its top, the lowest cube darker grey steel. In 2021 a rope cordon on timber posts ran round it; people sit on the plinth.",
+      "Beach: Platja de Sant Miquel, about 60 m of sand from the promenade wall to the water here, widening to the north-east into the salient behind the T-shaped breakwater (whose arm comes ashore at the zone's NNE end). Sand light and warm, trampled and tracked by the cleaning tractors; a darker wet band at the waterline; small waves breaking in two or three white lines; yellow buoys marking the swimming area.",
+      "Promenade (Passeig Marítim de la Barceloneta, Jordi Henrich and Olga Tarrasó, first phase 1992 from Plaça del Mar to Almirall Cervera): pedestrian here, wide, paved in large grey stone slabs; on the beach side a white concrete parapet over a lower timber boardwalk at sand level, with steps and ramps down to the sand at the showers; black bollards; tall fan palms (Washingtonia by their look); slim lamp masts carrying a stack of round spotlights.",
+      "Beach furniture: showers on steel posts over a timber deck with grey stone slabs (OSM: three in the zone), toilets, 'Platja de Sant Miquel' boards and the 'Estat de les platges' board; lifeguard posts: the white cabin on a steel frame with the orange 'SALVAMENT' band (2023), and the older leaning timber-and-steel lookout mast with its round platform and shade ring; beach volleyball nets beside the sculpture; a beach bar (guingueta) pavilion with a flat white roof on steel posts, curtains, loungers and parasols; bike racks and the red Bicing bikes on the promenade.",
+      "Old Barceloneta (18th-century grid of 'quarts de casa', raised in the 19th and 20th centuries): long narrow blocks one house deep each side, four to seven storeys, streets five to seven metres wide. Render in ochre, warm yellow, orange, brick red and cream; stone window surrounds; one small iron balcony per window; washing on lines and folding racks on nearly every balcony; green blinds and awnings; air conditioners; flags. Flat roofs (terrats) with water tanks and aerials. Restaurants on the block ends facing the promenade (Can Majó, Surf House, Santa Marta…).",
+      "Seen from the beach: the W Barcelona (Hotel Vela, Ricardo Bofill, 2009, 99 m), a glass sail at the beach's SSW end on the port's reclaimed land; the Torre de Sant Sebastià of the port cable car; Montjuïc beyond the roofs.",
+      "The L4 Barceloneta station is inland, at Pla de Palau, about 700 m north-west of the sculpture: the game's entrance stands at the zone's inland edge, at the end of a street of the old Barceloneta, as if the station were just round the corner."
+    ],
+    "viewpoints": [
+      { "name": "estel-sea", "lat": 41.37675, "lon": 2.19065, "heading": 115, "pitch": 5 },
+      { "name": "beach-w-hotel", "lat": 41.37700, "lon": 2.19160, "heading": 200, "pitch": 5 },
+      { "name": "promenade-north", "lat": 41.37640, "lon": 2.19060, "heading": 25, "pitch": 5 },
+      { "name": "carrer-del-meer", "lat": 41.37720, "lon": 2.19020, "heading": 300, "pitch": 10 }
+    ]
+  },
+  "look": {
+    "asphalt": "#4a4a4c",
+    "markings": false,
+    "materials": {
+      "sand": { "texture": "sorra", "tint": "#e6d0a2" },
+      "square": { "texture": "granit", "tint": "#a9adb0" }
+    }
+  },
+  "styles": {
+    "default": {
+      "walls": ["#d9b26f", "#e3c27e", "#cf8a55", "#b8583c", "#e8dcc4", "#d6a65c"],
+      "base": "#8c8478",
+      "trim": "#ece4d2",
+      "roof": "#bdb09c",
+      "roof_kind": "flat",
+      "facade": "flats",
+      "ground": "masonry",
+      "levels": 5
+    },
+    "promenade-end": {
+      "ground": "shops"
+    }
+  },
+  "buildings": {},
+  "osm_props": {
+    "bench": {},
+    "bin": {},
+    "bike-rack": {}
+  },
+  "landmarks": [
+    { "kind": "estel-ferit", "id": "estel-ferit", "x_m": 0, "z_m": 0, "size_m": [5.2, 3.2], "rotation_deg": 0,
+      "params": { "cubes": 4, "cube_m": 2.6, "height_m": 10.6 }, "textures": ["acer-corten"] }
+  ],
+  "props": [
+    { "kind": "metro", "x_m": 112, "z_m": -95, "name": "Barceloneta", "line": "L4" }
+  ],
+  "places": [
+    {
+      "id": "station-barceloneta",
+      "label": "Bajar al metro",
+      "x_m": 113.5,
+      "z_m": -94,
+      "step": { "x_m": 113, "z_m": -95, "w": 3, "d": 1 }
+    },
+    {
+      "id": "barceloneta-estel",
+      "label": "Mirar los cubos",
+      "x_m": 0,
+      "z_m": 3.5,
+      "lines": [
+        "L'Estel Ferit. Cuatro cubos de hierro oxidado, uno encima de otro, torcidos como si se fueran a caer.",
+        "Dicen que es por los chiringuitos que había aquí, en la arena, antes de las Olimpiadas."
+      ]
+    },
+    {
+      "id": "barceloneta-mar",
+      "label": "Mirar el mar",
+      "x_m": -20,
+      "z_m": 38,
+      "lines": [
+        "El Mediterráneo. Olas pequeñas que se deshacen en espuma y vuelven a empezar.",
+        "Al fondo, el hotel con forma de vela."
+      ]
+    },
+    {
+      "id": "barceloneta-balcons",
+      "label": "Mirar los balcones",
+      "x_m": -20,
+      "z_m": -38,
+      "lines": [
+        "La Barceloneta de siempre: calles estrechas y ropa tendida en todos los balcones.",
+        "Alguien ha dejado una toalla de playa secándose junto a las sábanas."
+      ]
+    }
+  ],
+  "labels": [
+    { "text": "PASSEIG MARÍTIM DE LA BARCELONETA", "x_m": 40, "z_m": -24, "width": 16 }
+  ],
+  "anchors": {
+    "estel": { "x_m": 0, "z_m": 0, "y_m": 5 },
+    "w-hotel": { "x_m": -195, "z_m": 80 }
+  }
+}
