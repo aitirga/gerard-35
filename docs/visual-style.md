@@ -47,7 +47,7 @@ library is `public/textures/<id>/` (albedo, normal, `texture.json`: `asfalt`, `c
 
 | Rule | Detail |
 | --- | --- |
-| Sources | CC0 (ambientCG, Poly Haven); Wikimedia Commons under CC0, CC BY or CC BY-SA, with author, licence and file URL in `public/textures/credits.json`; our own procedural painting; generated images only for fantasy surfaces no photo can give (the palace), recorded as such. Raw downloads stay in `output/` (git-ignored). |
+| Sources | CC0 (ambientCG, Poly Haven); Wikimedia Commons under CC0, CC BY or CC BY-SA, with author, licence and file URL in each texture's own `public/textures/<id>/texture.json` (written by `tools/textures.py`; there is no shared credits file); our own procedural painting; generated images only for fantasy surfaces no photo can give (the palace), recorded as such. Raw downloads stay in `output/` (git-ignored). |
 | Never shipped | Google Maps, Street View, satellite, Google Images, photorealistic 3D tiles, images of unknown licence. Look at them, never copy them. No brand logos as images: write the name in a plain typeface. |
 | Format | webp, at most 1024 px (2048 only for one signature facade per place), each under ~400 KB. |
 | Real scale | A panot tile is 20 cm, a Catalan brick 29 × 5 cm on its face, a storey about 3 m, a roof tile row about 20 cm. A wrong scale is what makes a miniature look fake. |

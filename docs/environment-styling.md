@@ -104,9 +104,13 @@ vertical.
    spawn (red) are drawn over the walkable grid. Unreachable open ground is drawn darker.
 5. Add `props`, `places` and `labels`. Places snap to the nearest cell reachable from the spawn;
    the build fails and names the place if one is cut off.
-6. Hook it into the game (three lines): add the id to `EnvironmentId`, add
-   `export const <ZONE> = geoEnvironment('<zone>', <ZONE>_SCENE as GeoScene);` with its JSON import
-   to `ENVIRONMENTS` in `src/environments.ts`, and an `<option>` in `index.html`.
+6. Hook it into the game: in `src/environments.ts` add the id to `EnvironmentId`, the JSON import,
+   `export const <ZONE> = geoEnvironment('<zone>', <ZONE>_SCENE as GeoScene);` and its entry in
+   `ENVIRONMENTS`; give it a look in `LOOKS` (`src/grading.ts`, the typecheck asks for it) and an
+   entry in `PLACES` (`src/jump-menu.ts`) so the development picker reaches it. A place with a metro
+   or train station also gets `<station>: { environment: '<zone>' }` in `STATION_PLACES`
+   (`src/transit.ts`) and a place `station-<station>` on a walkable cell (with a `metro` prop and a
+   `step`, like Fabra i Puig on the Meridiana); `tests/transit.test.mjs` checks both.
 7. Add a screenshot scenario in `scripts/screenshots/<zone>.json` (copy `alegia.json`) and run
    `just screenshots <zone>`; `just check` runs the environment tests on the new grid.
 
