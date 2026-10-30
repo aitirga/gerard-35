@@ -1,12 +1,11 @@
 {
- "note": "What OpenStreetMap does not have round Nuria's door (docs/quests/nuria.md), drawn from the aerial reference: the long two-storey block with the hipped terracotta roof on the west side of Carrer de Jacint Verdaguer (Nuria's home), the small white-roofed house at the Doctor Daurella corner, the terraced houses with yards across the street and the walled garden under the big tree. Metres from the anchor (east, south). Generated: the houses lining the streets where OpenStreetMap has none (`casa-fila-*`), two storeys, set back from the road; the hand-drawn ones follow the street, 6° off north.",
- "drawn": "2026-10-25",
+ "note": "What OpenStreetMap does not have round Nuria's door (docs/quests/nuria.md), drawn from the aerial reference: the long two-storey block on the west side of Carrer de Jacint Verdaguer (Nuria's home), drawn as two halves so it gets its two hipped roofs end to end (`casa-nuria-nord` and `casa-nuria`, her door in the southern one), the small white-roofed house at the Doctor Daurella corner, the terraced houses with yards across the street and the walled garden under the big tree. Metres from the anchor (east, south). Generated: the houses lining the streets where OpenStreetMap has none (`casa-fila-*`), two storeys, set back from the road; the hand-drawn ones follow the street, 6° off north.",
+ "drawn": "2026-10-30",
  "features": [
   {
-   "id": "casa-nuria",
+   "id": "casa-nuria-nord",
    "keep": true,
    "building": "apartments",
-   "name": "Casa de Nuria",
    "levels": 2,
    "poly": [
     [
@@ -16,6 +15,31 @@
     [
      -10.44,
      -52.55
+    ],
+    [
+     -8.04,
+     -29.68
+    ],
+    [
+     -20.96,
+     -28.32
+    ]
+   ]
+  },
+  {
+   "id": "casa-nuria",
+   "keep": true,
+   "building": "apartments",
+   "name": "Casa de Nuria",
+   "levels": 2,
+   "poly": [
+    [
+     -20.96,
+     -28.32
+    ],
+    [
+     -8.04,
+     -29.68
     ],
     [
      -5.63,
