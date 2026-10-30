@@ -447,6 +447,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       time += dt;
       for (const m of flowing) { m.diffuseMapOffset.set(time * .03, time * .05); m.emissiveMapOffset.set(-time * .04, time * .025); m.update(); }
     },
+    /** Rain (0–1) and the evening (0–1) on a real street: wet asphalt and puddles, light spilling from the shops (src/geo-scenery.ts). */
+    setStreet(rain: number, dusk: number) { geo?.setStreet(rain, dusk); },
     /** A lamp in the Meridiana flat (src/home-lights.ts); other scenes have none. */
     setLamp(id: LightId, lamp: Lamp) { home?.setLamp(id, lamp); },
     lampPosition(id: LightId) { return home?.lampPosition(id); },

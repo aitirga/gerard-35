@@ -1407,6 +1407,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     battleScene.update(shown, animate);
     // Traffic waits out fights and the pause menu; otherwise it stops for Gerard and his partner.
     const partner = mateHere();
+    scenery.setStreet(effects.weather.rain, story.dusk);
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
       battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
     // Particles part around everyone standing in the scene, and the air fills what the camera sees.

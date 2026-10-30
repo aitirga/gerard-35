@@ -43,10 +43,16 @@ export interface GeoBuilding {
   ground: string;
   /** Big lit letters over the ground floor of the wall facing the camera (HIPERCOR). */
   sign?: string;
-  /** Real grain under the painted upper floors (`wall`) and ground floor (`base`), and the roof's tiles: texture ids. */
-  materials?: { wall?: string; base?: string; roof?: string };
+  /** Real grain under the painted upper floors (`wall`), ground floor (`base`) and party walls (`party`), and the roof's tiles: texture ids. */
+  materials?: { wall?: string; base?: string; roof?: string; party?: string };
   /** A photo (texture id) of the real facade, on the wall facing the camera. */
   signature?: string;
+  /**
+   * Relief beyond the painted walls: balcony slabs `balcony_m` deep every storey on the walls the
+   * camera sees (their fronts in `balcony`), a cornice, the clutter of a flat roof (stair housings,
+   * water tanks, aerials, air conditioners) and bare party walls in `party` where it rises over a neighbour.
+   */
+  relief?: { balcony_m?: number; balcony?: string; cornice?: boolean; rooftop?: boolean; party?: string };
   poly: GeoPoint[];
   /** Minimum-area rectangle around the footprint; the roof sits on it. `angle` is the `w` axis. */
   box: { cx: number; cz: number; w: number; d: number; angle: number };
@@ -95,9 +101,11 @@ export interface GeoScene {
   crossings?: GeoCrossing[];
   /**
    * The street's surfaces: `ground` and `footway` `panot` (Barcelona's grey sidewalk tiles), `grass`
-   * `bed` (planted strips of shrubs), `asphalt` colour, and `markings` (lanes, zebras, BUS, bikes).
+   * `bed` (planted strips of shrubs), `asphalt` colour, `markings` (lanes, zebras, BUS, bikes),
+   * `kerbs` (granite kerbs along the roads, lowered at zebras) and `edge` (`city`: hazy blocks
+   * beyond the map instead of wooded hills).
    */
-  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean };
+  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; kerbs?: boolean; edge?: 'hills' | 'city' };
   /** Named points for pieces the game adds itself, e.g. where the palace stands (`y` in cells). */
   anchors?: Record<string, { x: number; z: number; y?: number }>;
   /** Real materials of the street's surfaces (ground, footway, road, bike, square, grass, bed, forest, sand, rail, bridge). */
