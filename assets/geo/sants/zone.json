@@ -1,0 +1,342 @@
+{
+  "id": "sants",
+  "name": "Sants · Carrer de Valladolid",
+  "region": "Sants, Barcelona",
+  "anchor": {
+    "address": "Carrer de Valladolid 41, 08014 Barcelona",
+    "lat": 41.3782469,
+    "lon": 2.1372794
+  },
+  "bounds_m": {
+    "west": -115,
+    "east": 85,
+    "north": -50,
+    "south": 350
+  },
+  "bounds_turned": true,
+  "cell_m": 1.5,
+  "rotation_deg": 30,
+  "zoom": 10.5,
+  "spawn": {
+    "x_m": -66,
+    "z_m": 317
+  },
+  "storey_m": 3.0,
+  "reference": {
+    "checked": "2026-10-30",
+    "streetview_capture": "",
+    "notes": [
+      "PLACE: El Nucli is a real shop, Carrer de Valladolid 41 (local), Sants: Magic: the Gathering, other card games, board games and role-playing books, with tournaments, drafts and presentations (elnucli.es, October 2026; OSM node 13504772602, shop=toys). It moved here from Carrer del Vallespir 24, where Time Out reviewed it in 2014 as 'la madriguera del ocio alternativo de Sants'. Its badge: a round wine-red disc with fanned cards drawn in neon red-coral lines, 'EL NUCLI · cau de l'oci'. The real frontage was not seen (no open photo): the shop front in the game is designed.",
+      "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-30): cadastre-split building parts with building:levels, so the skyline is real; house numbers along Valladolid (odd side north, even side south); 144 street trees; every bar and shop on the route.",
+      "Turned 30°: Carrer de Valladolid runs left to right at the top, El Nucli's front (odd side) faces the camera across a narrow one-way street; Carrer de Santa Caterina runs straight down from the shop to the Passeig de Sant Antoni; Carrer de Riego and the Plaça d'Osca lead on down to Carrer de Sants and the L1 entrance of Plaça de Sants (Riego vestibule) at the bottom.",
+      "Valladolid: narrow one-way street, cars parked on the odd side, plane trees and a purple-leaved plum by number 43; 4-9 storeys, early-1900s houses in cream render scored as ashlar, stone surrounds, segmental arches on the ground floor, iron balconies with plants, wooden shutters (Ten To Go Hostel photo, number 43, July 2024).",
+      "Across from El Nucli: low 2-3 storey parts, then the back of the Palau Balañà cinema (Passeig de Sant Antoni 41-43), closed since February 2020: a long low box with a white geometric relief band, a glazed entrance band and its letters still up ('PALAU BALAÑA MULTICINES 7 SALES').",
+      "Corner of Valladolid and Santa Caterina: Casa Astor (bar). Valladolid also has Pinyi Bicis, two sushi bars (number 40) and a pharmacy at number 10.",
+      "Passeig de Sant Antoni: a diagonal boulevard with planted strips, benches and a two-way bike lane; its north side is a wall of 8-12 storey blocks from the 1960s-70s with bars on the ground floor (Via Fora!, Pub Gris, Disco Bar Joe's); the Cosmo Apartments tower (number 30) at the east end.",
+      "Plaça d'Osca: a small square of bar terraces (Fo Bar, El Passadís, Seixanta Quaranta, Homo Sibaris, La Mestressa, a cooperative bar); Carrer de Riego: a narrow pedestrian street with painted shop shutters and a bookshop.",
+      "Carrer de Sants: the neighbourhood's long shopping street, four lanes; the Plaça de Sants L1 entrances (Riego and Cros) are stairs between granite kerbs with black iron railings in a zigzag pattern, the station sign with the L1 and L5 squares, white hexagonal tiles inside (CC0 photo, 2025).",
+      "Plaça de Joan Peiró at the east edge: works round Sants station (remodelling 2025-2028, the square being planted, the Bosc de Viriat); the station itself is about 250 m further east, off the map."
+    ],
+    "viewpoints": [
+      {
+        "name": "el-nucli",
+        "lat": 41.37815,
+        "lon": 2.13735,
+        "heading": 330,
+        "pitch": 8
+      },
+      {
+        "name": "palau-balana",
+        "lat": 41.3775,
+        "lon": 2.13834,
+        "heading": 340,
+        "pitch": 8
+      },
+      {
+        "name": "placa-d-osca",
+        "lat": 41.3762,
+        "lon": 2.13838,
+        "heading": 0,
+        "pitch": 5
+      },
+      {
+        "name": "riego-metro",
+        "lat": 41.37542,
+        "lon": 2.13856,
+        "heading": 0,
+        "pitch": 5
+      }
+    ]
+  },
+  "look": {
+    "ground": "panot",
+    "footway": "panot",
+    "grass": "bed",
+    "asphalt": "#3f4144",
+    "markings": true
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#d9bf8c",
+        "#dcc8a4",
+        "#cfa47a",
+        "#e3d4b6",
+        "#c99377",
+        "#bdb3b8"
+      ],
+      "base": "#6f6152",
+      "trim": "#efe5d0",
+      "roof": "#b3a796",
+      "roof_kind": "flat",
+      "facade": "iron-balconies",
+      "ground": "shops",
+      "levels": 5
+    },
+    "block": {
+      "walls": [
+        "#c9b9a0",
+        "#b9a68c",
+        "#d7c9b0"
+      ],
+      "trim": "#e8e2d6",
+      "facade": "flats"
+    },
+    "cosmo": {
+      "walls": [
+        "#7d7a75"
+      ],
+      "base": "#3e3d3b",
+      "trim": "#b9b4ab",
+      "facade": "flats",
+      "ground": "lobby"
+    },
+    "cinema": {
+      "walls": [
+        "#ebe7df"
+      ],
+      "base": "#5d5a56",
+      "trim": "#3c3c3c",
+      "roof": "#9c968c",
+      "facade": "mall",
+      "ground": "mall-front"
+    },
+    "nucli": {
+      "walls": [
+        "#dcc59b"
+      ],
+      "base": "#5c1a1f",
+      "trim": "#efe5d0"
+    }
+  },
+  "buildings": {
+    "way/1309103252": {
+      "style": "nucli",
+      "label": "El Nucli"
+    },
+    "way/1309103578": {
+      "style": "cinema",
+      "sign": "PALAU BALAÑÀ"
+    },
+    "way/1309944597": {
+      "style": "cosmo"
+    },
+    "way/1309102099": {
+      "style": "block"
+    },
+    "way/1309102111": {
+      "style": "block"
+    },
+    "way/1309102024": {
+      "style": "block"
+    },
+    "way/1309102173": {
+      "style": "block"
+    },
+    "way/1309102129": {
+      "style": "block"
+    },
+    "way/1309102117": {
+      "style": "block"
+    }
+  },
+  "osm_props": {
+    "tree": {
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    "bench": {},
+    "bin": {},
+    "bike-rack": {}
+  },
+  "props": [
+    {
+      "kind": "metro",
+      "x_m": -71,
+      "z_m": 321,
+      "name": "Plaça de Sants",
+      "line": "L1"
+    },
+    {
+      "kind": "car",
+      "x_m": -62,
+      "z_m": 2.5,
+      "color": "#d8d6c7"
+    },
+    {
+      "kind": "car",
+      "x_m": -48,
+      "z_m": 2.5,
+      "color": "#3c4448"
+    },
+    {
+      "kind": "car",
+      "x_m": 24,
+      "z_m": 2.5,
+      "color": "#7d2f2b"
+    },
+    {
+      "kind": "lamp",
+      "x_m": -100,
+      "z_m": 140,
+      "to": {
+        "x_m": 20,
+        "z_m": 113
+      },
+      "every_m": 24
+    }
+  ],
+  "places": [
+    {
+      "id": "station-placa-de-sants",
+      "label": "Bajar al metro",
+      "x_m": -68.5,
+      "z_m": 321,
+      "step": {
+        "x_m": -69.25,
+        "z_m": 321,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "sants-nucli",
+      "label": "Entrar en El Nucli",
+      "x_m": 0,
+      "z_m": 1.5,
+      "to": {
+        "environment": "el-nucli",
+        "cell": {
+          "x": 6,
+          "z": 22
+        }
+      }
+    },
+    {
+      "id": "sants-nucli-escaparate",
+      "label": "Mirar el escaparate",
+      "x_m": 3.5,
+      "z_m": 1.5,
+      "lines": [
+        "El Nucli. Cajas de juegos apiladas detrás del cristal y el cartel del torneo del viernes.",
+        "Dentro hay luz y se oyen dados. Es lo único normal que he visto en toda la calle."
+      ]
+    },
+    {
+      "id": "sants-casa-astor",
+      "label": "Mirar el bar",
+      "x_m": -14,
+      "z_m": 15,
+      "lines": [
+        "Casa Astor. Tapas en la barra y la tele encendida sin volumen.",
+        "El camarero seca el mismo vaso desde que he llegado."
+      ]
+    },
+    {
+      "id": "sants-palau-balana",
+      "label": "Mirar el cine",
+      "x_m": 30,
+      "z_m": 80,
+      "lines": [
+        "El Palau Balañà. Cerró hace años y nadie ha quitado las letras.",
+        "Hay luz detrás del cristal de la taquilla."
+      ]
+    },
+    {
+      "id": "sants-passeig",
+      "label": "Mirar el paseo",
+      "x_m": -60,
+      "z_m": 128,
+      "lines": [
+        "El Passeig de Sant Antoni. Bancos, árboles y el carril bici.",
+        "En todos los bancos hay alguien sentado, y todos miran hacia el mismo sitio."
+      ]
+    },
+    {
+      "id": "sants-riego",
+      "label": "Mirar las persianas",
+      "x_m": -40,
+      "z_m": 232,
+      "lines": [
+        "Persianas pintadas, una por tienda. Un tigre, un barco, unas manos enormes.",
+        "La calle es tan estrecha que se oye todo lo que pasa en los pisos. Hoy no se oye nada."
+      ]
+    },
+    {
+      "id": "sants-osca",
+      "label": "Mirar las terrazas",
+      "x_m": -20,
+      "z_m": 262,
+      "lines": [
+        "La plaza d'Osca, llena de terrazas. No queda una mesa libre.",
+        "Nadie habla. Las cañas están llenas y nadie bebe."
+      ]
+    },
+    {
+      "id": "sants-carrer-de-sants",
+      "label": "Mirar la calle",
+      "x_m": -90,
+      "z_m": 306,
+      "lines": [
+        "La calle de Sants. Tiendas una detrás de otra, hasta donde alcanza la vista.",
+        "Todas las persianas están a media altura. Todas a la misma."
+      ]
+    },
+    {
+      "id": "sants-obras",
+      "label": "Mirar las obras",
+      "x_m": 70,
+      "z_m": 70,
+      "lines": [
+        "Vallas y máquinas paradas. Detrás está la estación de Sants, en obras desde hace meses.",
+        "Por los altavoces anuncian trenes, uno detrás de otro, sin parar."
+      ]
+    }
+  ],
+  "labels": [
+    {
+      "text": "CARRER DE VALLADOLID",
+      "x_m": -62,
+      "z_m": 7,
+      "width": 9
+    },
+    {
+      "text": "PASSEIG DE SANT ANTONI",
+      "x_m": -82,
+      "z_m": 137,
+      "width": 10
+    },
+    {
+      "text": "PLAÇA D'OSCA",
+      "x_m": -22,
+      "z_m": 272,
+      "width": 6
+    },
+    {
+      "text": "CARRER DE SANTS",
+      "x_m": -98,
+      "z_m": 316,
+      "width": 8
+    }
+  ]
+}
