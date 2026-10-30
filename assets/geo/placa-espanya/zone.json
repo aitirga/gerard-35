@@ -1,0 +1,313 @@
+{
+  "id": "placa-espanya",
+  "name": "Plaça d'Espanya",
+  "region": "Sants-Montjuïc, Barcelona",
+  "anchor": {
+    "address": "Font de la Plaça d'Espanya, Barcelona",
+    "lat": 41.3750413,
+    "lon": 2.1491446
+  },
+  "bounds_m": {
+    "west": -175,
+    "east": 140,
+    "north": -170,
+    "south": 195
+  },
+  "bounds_turned": true,
+  "cell_m": 1.5,
+  "rotation_deg": 162,
+  "zoom": 12,
+  "spawn": {
+    "x_m": -70,
+    "z_m": -43
+  },
+  "storey_m": 3.4,
+  "lane_m": 3.2,
+  "reference": {
+    "checked": "2026-10-30",
+    "streetview_capture": "Not checked in Street View yet; looked at openly licensed Wikimedia Commons photos from 2019 to July 2025 (docs/places/espanya.md lists them)",
+    "notes": [
+      "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-30 through the OSM API bbox call: Overpass was busy). The anchor is the centre of Jujol's fountain.",
+      "Turned 162°: Avinguda de la Reina Maria Cristina (bearing 153°) runs straight up the screen between the two Venetian towers, towards Montjuïc and the Palau Nacional; Las Arenas is at the bottom, nearest the camera; Gran Via crosses the screen from left to right.",
+      "Square: a roundabout about 120 m across between kerbs (the island's edge about 41 m from the centre, the ring road four to six lanes wide); 34,000 m² in all. Five roads meet: Gran Via (both ways), Paral·lel, Creu Coberta, Tarragona and Maria Cristina.",
+      "Island: an oval lawn ringed by red-leaved shrubs, the fountain on a triangular basin. Since late 2024 the island is a works site for the FGC L8 extension (OSM landuse=construction 'Perllongament FGC Llobregat-Anoia'): yellow plastic barriers round the whole island, dug soil and blue tarps, the fountain dry; the roundabout down to four lanes in places. The tunnel-boring shaft and its acoustic shed are on Gran Via between Llançà and Vilamarí, behind Las Arenas (2026).",
+      "Fountain (Font dels Tres Mars, Josep Maria Jujol, 1929): grey and cream stone, three basins on a triangle, a central edicle with three niches (Ebre, Guadalquivir and Tajo by Miquel Blay), three Corinthian columns, bronze groups at the corners (the Oslé brothers), a bronze brazier with three Victories on top (Frederic Llobet), iron lanterns. About 30 m across the basins; the top about 20 m high (estimate).",
+      "Venetian towers (Ramon Reventós, 1927-29): two identical towers 47 m high on a 7.2 m square base, about 33 m apart centre to centre, one each side of the avenue. A slightly battered cream base with a door, a shaft of exposed red brick with three recessed arched channels per face and slit windows, a wide cream cornice on brackets, a loggia of Corinthian columns, a pyramidal copper roof gone dark grey-green.",
+      "Las Arenas (August Font i Carreras, 1900; Richard Rogers and Alonso-Balaguer, shopping centre opened 2011): a neo-Mudéjar bullring 100 m across in red-orange brick, two tiers of horseshoe arches with cream and brick voussoirs, bands of coloured ceramic triangles, saw-tooth brick cornices and crenellations, the main gate tower with ARENAS DE BARCELONA and the city's arms. The old facade stands on a grey concrete band carried by red steel V struts over a glazed ground floor with purple panels; above it a flat dish roof with a red steel rim and a round public terrace walk; a red panoramic lift tower outside, facing the square.",
+      "Fira (1929 Exhibition palaces): the Palau de Comunicacions i Transports (east) and the Palau del Vestit (west) face the square with curved fronts of giant columns in warm pinkish limestone, glass between them, a balustrade with urns, obelisk pinnacles and big arched doors; grey sheet roofs behind. In front, a wide forecourt in salmon concrete slabs and grey granite steps; cypresses beside the towers.",
+      "Around: Hotel Catalonia Barcelona Plaza (grey stone grid of square windows, 9 storeys) between Creu Coberta and Tarragona; the Mossos d'Esquadra station (light grey offices) between Gran Via and Paral·lel; Eixample and Sants blocks of six to ten storeys; Torre Allianz behind on Tarragona.",
+      "Street: wide asphalt with many lanes, arrows and BUS markings; grey granite slabs and panot on the sidewalks; tall lamp masts with three or four heads; traffic lights on curved poles; plane trees on Gran Via and Tarragona; benches and Bicing docks.",
+      "Traffic: yellow-and-black taxis queuing on Tarragona, TMB red buses, turquoise interurban buses, the red tourist bus, coaches for the fairs.",
+      "Background: up the avenue, its median fountains, the Magic Fountain (about 480 m), Puig i Cadafalch's four columns, the stairs and cascades, the Palau Nacional (MNAC, about 820 m) with its dome and towers, Montjuïc's pines and Calatrava's white communications tower. Out of reach: drawn as a backdrop."
+    ],
+    "viewpoints": [
+      {
+        "name": "les-arenes",
+        "lat": 41.375786,
+        "lon": 2.149364,
+        "heading": 169,
+        "pitch": 8
+      },
+      {
+        "name": "torres",
+        "lat": 41.374182,
+        "lon": 2.149933,
+        "heading": 340,
+        "pitch": 5
+      },
+      {
+        "name": "fira",
+        "lat": 41.37439,
+        "lon": 2.150249,
+        "heading": 100,
+        "pitch": 5
+      },
+      {
+        "name": "gran-via",
+        "lat": 41.375962,
+        "lon": 2.150044,
+        "heading": 300,
+        "pitch": 10
+      }
+    ]
+  },
+  "look": {
+    "ground": "panot",
+    "footway": "panot",
+    "asphalt": "#46474a",
+    "markings": true
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#dccbb0",
+        "#cfb995",
+        "#e4d8c3",
+        "#c9b79c",
+        "#d6c2a4"
+      ],
+      "base": "#6f655a",
+      "trim": "#efe8dc",
+      "roof": "#a39a8c",
+      "roof_kind": "flat",
+      "facade": "flats",
+      "ground": "shops",
+      "levels": 7
+    },
+    "fira": {
+      "walls": [
+        "#cdb9a0"
+      ],
+      "base": "#b9a88f",
+      "trim": "#e6dccb",
+      "roof": "#b4aea4",
+      "facade": "ashlar-windows",
+      "ground": "ashlar-arcade",
+      "levels": 3
+    },
+    "arenas": {
+      "walls": [
+        "#9a5e40"
+      ],
+      "base": "#d9d6cf",
+      "trim": "#d8cdbf",
+      "roof": "#cfc6b2",
+      "facade": "ashlar-windows",
+      "ground": "arcade",
+      "levels": 5
+    },
+    "hotel": {
+      "walls": [
+        "#c9c2b3"
+      ],
+      "base": "#8d867a",
+      "trim": "#e8e4dc",
+      "roof": "#9d968a",
+      "facade": "flats",
+      "ground": "lobby",
+      "levels": 9
+    },
+    "offices": {
+      "walls": [
+        "#d8d2c6"
+      ],
+      "base": "#7a7570",
+      "trim": "#b23a2e",
+      "roof": "#a09a90",
+      "facade": "school",
+      "ground": "lobby",
+      "levels": 7
+    },
+    "tower": {
+      "walls": [
+        "#30363c"
+      ],
+      "base": "#2a2f34",
+      "trim": "#4a5560",
+      "roof": "#3a4046",
+      "facade": "curtain",
+      "ground": "lobby"
+    }
+  },
+  "buildings": {
+    "way/1105997329": {
+      "style": "arenas",
+      "label": "Las Arenas"
+    },
+    "relation/21193576": {
+      "style": "fira",
+      "label": "Torres Venecianes"
+    },
+    "way/126832508": {
+      "style": "fira",
+      "levels": 2,
+      "label": "Font de la Plaça d'Espanya"
+    },
+    "way/22886315": {
+      "style": "fira"
+    },
+    "way/1369028110": {
+      "style": "fira"
+    },
+    "way/618800603": {
+      "style": "fira",
+      "levels": 1
+    },
+    "relation/4113601": {
+      "style": "hotel"
+    },
+    "way/1103783042": {
+      "style": "hotel",
+      "levels": 8
+    },
+    "way/196370675": {
+      "style": "offices"
+    },
+    "way/618800609": {
+      "style": "arenas",
+      "levels": 6
+    },
+    "way/1105997326": {
+      "style": "offices",
+      "levels": 4
+    }
+  },
+  "osm_props": {
+    "tree": {
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    "bench": {},
+    "bin": {},
+    "bike-rack": {}
+  },
+  "props": [
+    {
+      "kind": "metro",
+      "x_m": -76,
+      "z_m": -48,
+      "name": "Espanya",
+      "line": "L1 L3"
+    },
+    {
+      "kind": "tree",
+      "species": "cypress",
+      "base": "ground",
+      "x_m": -106,
+      "z_m": -66
+    },
+    {
+      "kind": "tree",
+      "species": "cypress",
+      "base": "ground",
+      "x_m": -108,
+      "z_m": -62
+    },
+    {
+      "kind": "tree",
+      "species": "cypress",
+      "base": "ground",
+      "x_m": -66,
+      "z_m": -108
+    },
+    {
+      "kind": "tree",
+      "species": "cypress",
+      "base": "ground",
+      "x_m": -62,
+      "z_m": -110
+    }
+  ],
+  "places": [
+    {
+      "id": "station-espanya",
+      "label": "Bajar al metro",
+      "x_m": -73.5,
+      "z_m": -47.5,
+      "step": {
+        "x_m": -74.25,
+        "z_m": -48.25,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "espanya-torres",
+      "label": "Mirar las torres",
+      "x_m": -92,
+      "z_m": -70,
+      "lines": [
+        "Las torres venecianas. Cuarenta y siete metros de ladrillo, copiadas del campanario de San Marcos.",
+        "Las levantaron para la Exposición del 29 y tenían que derribarlas después. Siguen aquí."
+      ]
+    },
+    {
+      "id": "espanya-avinguda",
+      "label": "Mirar la avenida",
+      "x_m": -104,
+      "z_m": -100,
+      "lines": [
+        "La avenida sube recta hasta el Palau Nacional, allá arriba en Montjuïc.",
+        "En medio, la Font Màgica. Hoy está callada."
+      ]
+    },
+    {
+      "id": "espanya-font",
+      "label": "Mirar la fuente",
+      "x_m": 0,
+      "z_m": 44,
+      "lines": [
+        "La fuente de los tres mares, de Jujol. Seca, y rodeada de vallas amarillas.",
+        "Las obras de la L8. Llevan tanto tiempo que ya son parte de la plaza."
+      ]
+    },
+    {
+      "id": "espanya-arenas",
+      "label": "Mirar Las Arenas",
+      "x_m": 8,
+      "z_m": 84,
+      "lines": [
+        "Las Arenas. Una plaza de toros hecha centro comercial, levantada sobre patas rojas.",
+        "Arriba hay un mirador redondo. Desde ahí se ve toda la plaza."
+      ]
+    },
+    {
+      "id": "espanya-fira",
+      "label": "Mirar la Fira",
+      "x_m": -112,
+      "z_m": -38,
+      "lines": [
+        "El Palau de Comunicacions. Columnas como troncos y nadie entre ellas.",
+        "Hoy no hay feria. Solo palomas en la escalinata."
+      ]
+    }
+  ],
+  "labels": [
+    {
+      "text": "PLAÇA D'ESPANYA",
+      "x_m": 4,
+      "z_m": 52,
+      "width": 12
+    }
+  ]
+}
