@@ -7,12 +7,16 @@ import { castleThreat } from '../src/animas.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { canWalk } from '../src/movement.ts';
 
-test('the cartoon map has its hand-drawn layers, the red and blue lines and the R4 to Cardedeu', () => {
-  assert.deepEqual(LINES.map(l => [l.id, l.colour, l.kind]), [['l1', '#e1393e', 'metro'], ['l5', '#1f78c0', 'metro'], ['r4', '#f2a900', 'rodalies']]);
+test('the cartoon map has its hand-drawn layers, the metro lines in their colours and the R4 to Cardedeu', () => {
+  assert.deepEqual(LINES.map(l => [l.id, l.colour, l.kind]), [
+    ['l1', '#e1393e', 'metro'], ['l3', '#3aa83e', 'metro'], ['l4', '#fcbe00', 'metro'], ['l5', '#1f78c0', 'metro'], ['r4', '#f2a900', 'rodalies'],
+  ]);
   for (const line of LINES) {
     assert.ok(line.stations.length > 1, line.id);
+    assert.equal(new Set(line.stations).size, line.stations.length, `${line.id} stops once at each station`);
     for (const id of line.stations) assert.ok(STATIONS[id], `${line.id}: ${id}`);
   }
+  for (const id of Object.keys(STATIONS)) assert.ok(linesAt(id).length, `${id} is on a line`);
   assert.ok(CITY_MAP.districts.length >= 10 && CITY_MAP.districts.every(d => d.poly.length >= 5 && d.colour), 'districts are soft blobs with a colour');
   assert.ok(CITY_MAP.sea.length > 4 && CITY_MAP.places.some(p => p.id === 'rec-comtal') && CITY_MAP.places.some(p => p.id === 'home'));
   for (const l of CITY_MAP.landmarks) assert.ok(ICONS[l.icon], `${l.id} has an icon to draw`);
@@ -49,9 +53,33 @@ test('trips change lines at shared stations and prefer staying on', () => {
   assert.equal(route('fabra-i-puig', 'trinitat-vella', { stations: ['sant-andreu'] }), undefined, 'only the L1 reaches Trinitat Vella');
 });
 
-test('only stations with a place are destinations, and each place has its entrance', () => {
-  assert.deepEqual(destinations('fabra-i-puig'), ['trinitat-vella', 'cardedeu']);
-  assert.deepEqual(destinations('fabra-i-puig', { stations: ['trinitat-vella', 'cardedeu'] }), []);
+test('the new places\' stations are on the network, in the real order, and meet where the real lines do', () => {
+  const l1 = LINES.find(l => l.id === 'l1').stations;
+  assert.deepEqual(l1.slice(0, 6), ['santa-eulalia', 'mercat-nou', 'placa-de-sants', 'hostafrancs', 'espanya', 'rocafort'], 'the L1 west from Espanya to Sants');
+  assert.deepEqual(LINES.find(l => l.id === 'l3').stations.slice(0, 8), ['sants-estacio', 'tarragona', 'espanya', 'poble-sec', 'paral-lel', 'drassanes', 'liceu', 'catalunya']);
+  assert.deepEqual(LINES.find(l => l.id === 'l4').stations.slice(3), ['urquinaona', 'jaume-i', 'barceloneta', 'ciutadella-vila-olimpica', 'bogatell', 'llacuna']);
+  const meets = { espanya: ['l1', 'l3'], catalunya: ['l1', 'l3'], 'placa-de-sants': ['l1', 'l5'], urquinaona: ['l1', 'l4'], 'passeig-de-gracia': ['l3', 'l4'], diagonal: ['l3', 'l5'], verdaguer: ['l4', 'l5'] };
+  for (const [station, lines] of Object.entries(meets)) assert.deepEqual(linesAt(station).map(l => l.id), lines, station);
+  for (const id of ['placa-de-sants', 'espanya', 'poble-sec', 'barceloneta', 'sagrada-familia', 'el-carmel']) assert.ok(route('fabra-i-puig', id)?.length, `home reaches ${id}`);
+});
+
+test('trips to the new places change where a traveller would', () => {
+  const change = (from, to) => route(from, to).map(l => [l.line, l.stations.at(-1)]);
+  assert.deepEqual(change('fabra-i-puig', 'barceloneta'), [['l1', 'urquinaona'], ['l4', 'barceloneta']], 'to the beach, at Urquinaona');
+  assert.deepEqual(change('fabra-i-puig', 'poble-sec'), [['l1', 'catalunya'], ['l3', 'poble-sec']], 'to Poble Sec, at Catalunya');
+  assert.deepEqual(change('fabra-i-puig', 'espanya'), [['l1', 'espanya']], 'Plaça d\'Espanya without changing');
+  assert.deepEqual(change('poble-sec', 'sagrada-familia'), [['l3', 'diagonal'], ['l5', 'sagrada-familia']], 'the green line to the blue at Diagonal');
+  assert.deepEqual(change('sagrada-familia', 'barceloneta'), [['l5', 'verdaguer'], ['l4', 'barceloneta']]);
+  assert.equal(route('fabra-i-puig', 'placa-de-sants').at(-1).stations.at(-1), 'placa-de-sants');
+  assert.ok(route('fabra-i-puig', 'placa-de-sants').length <= 2, 'Sants on the L1 or by the L5, never more');
+  assert.equal(route('el-carmel', 'barceloneta', { lines: ['l4'] }), undefined, 'only the yellow line goes down to the beach');
+});
+
+test('only stations with a place are destinations, every place is reachable from home, and each has its entrance', () => {
+  const places = Object.keys(STATION_PLACES);
+  assert.ok(places.includes('trinitat-vella') && places.includes('cardedeu'));
+  assert.deepEqual(destinations('fabra-i-puig'), places.filter(id => id !== 'fabra-i-puig'));
+  assert.deepEqual(destinations('fabra-i-puig', { stations: places }), []);
   for (const [station, place] of Object.entries(STATION_PLACES)) {
     const environment = ENVIRONMENTS[place.environment];
     const entrance = environment.interactions.find(i => i.id === entranceId(station));

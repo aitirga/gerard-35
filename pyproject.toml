@@ -13,4 +13,5 @@ dependencies = [
 dev = [
     "anthropic>=1.12.1",
     "numpy>=2.5.4",
+    "pillow>=13.0.0",
 ]

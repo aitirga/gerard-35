@@ -1,0 +1,29 @@
+{
+  "id": "estuc",
+  "name": "Estuc",
+  "kind": "material",
+  "size_m": [
+    1.5,
+    1.5
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "plaster_grey_04",
+    "name": "Plaster Grey 04",
+    "url": "https://polyhaven.com/a/plaster_grey_04",
+    "author": "Rob Tuytel",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven plaster_grey_04 --id estuc",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#948f81",
+  "made": "2026-10-30"
+}

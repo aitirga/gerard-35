@@ -1,0 +1,29 @@
+{
+  "id": "sorra",
+  "name": "Sorra de platja",
+  "kind": "material",
+  "size_m": [
+    1.8,
+    1.8
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "dense_sand",
+    "name": "Dense Sand",
+    "url": "https://polyhaven.com/a/dense_sand",
+    "author": "Dimitrios Savva",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven dense_sand --id sorra",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#938063",
+  "made": "2026-10-30"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "asfalt",
+  "name": "Asfalt",
+  "kind": "material",
+  "size_m": [
+    30.0,
+    30.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "aerial_asphalt_01",
+    "name": "Aerial Asphalt 01",
+    "url": "https://polyhaven.com/a/aerial_asphalt_01",
+    "author": "Rob Tuytel",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven aerial_asphalt_01 --id asfalt",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    1024,
+    1024
+  ],
+  "mean": "#666267",
+  "made": "2026-10-30"
+}
