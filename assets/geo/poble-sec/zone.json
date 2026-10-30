@@ -1,0 +1,270 @@
+{
+  "id": "poble-sec",
+  "name": "Poble Sec · Carrer de Blai",
+  "region": "El Poble-sec, Barcelona",
+  "anchor": {
+    "address": "Carrer de Blai / Carrer de Tapioles, Barcelona",
+    "lat": 41.373685,
+    "lon": 2.164479
+  },
+  "bounds_m": {
+    "west": -150,
+    "east": 300,
+    "north": -128,
+    "south": 40
+  },
+  "bounds_turned": true,
+  "cell_m": 1.5,
+  "rotation_deg": 153,
+  "zoom": 11,
+  "spawn": {
+    "x_m": 251,
+    "z_m": 6
+  },
+  "storey_m": 3.0,
+  "lane_m": 3.2,
+  "reference": {
+    "checked": "2026-10-30",
+    "streetview_capture": "Not walked in person; Wikimedia Commons photos from 2008 to 2023 (docs/places/poble-sec.md lists them) and Street View as a reference only",
+    "notes": [
+      "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-30): the blocks between Avinguda del Paral·lel and Carrer d'Elkano, Carrer de Blai (pedestrian, paving stones) from Carrer de Salvà to Plaça dels Ocellets, the cross streets that climb towards Montjuïc (Salvà, Poeta Cabanyes, Tapioles, Margarit, Blasco de Garay, Creu dels Molers), street trees, the bars and restaurants on Blai, the library and the church of Santa Madrona.",
+      "Turned 153°: Carrer de Blai runs left to right (number 1 at the left, near Carrer de Blesa; Plaça dels Ocellets and the Paral·lel at the right), the uphill side of the street faces the camera and Montjuïc rises at the back. The cross streets climb away from the camera; their left-hand side faces it.",
+      "Slope: Blai follows the contour and is level (EU-DEM 25 m: within 4 m along its length); the cross streets rise about 3 m to Elkano, then steeply: Magalhães +6 m, Passeig de l'Exposició +17 m, the foot of the Margarit stairs +31 m and their top +50 m. The playable ground is the level part; the slope above Elkano, the stairs and Montjuïc are the backdrop.",
+      "Carrer de Blai: about 450 m long and 9.5-10 m wall to wall, pedestrian and paved in grey concrete slabs with no kerbs (already so in the 2012 photos); a pintxos street since about 2010-2011 (bars side by side, counters of pintxos on toothpicks, paid by counting the toothpicks), terraces of folding tables and parasols, menu boards and chalk boards, young street trees in square pits.",
+      "Buildings: narrow lots (6-10 m), four to seven storeys, from the 1880s to the 1970s side by side. Old houses in warm render (ochre, sand, sienna, pale peach) with an iron balcony per French window, rolled-up slatted blinds hung over the railings, green or brown wooden shutters, plant pots and washing; some modernista facades with sgraffito (Blai 56-58, 1906: pale green floral sgraffito on ochre, carved balconies) and stone ones (Blai 37); later infill in exposed brick or cream with continuous balconies. Flat roofs (terrats) with aerials, water tanks and washing lines.",
+      "Ground floors: bars and restaurants, a library (Biblioteca Poble Sec - Francesc Boix, Blai 34), greengrocers, phone shops, roller shutters covered in graffiti and murals.",
+      "Cross streets: narrow (8-10 m wall to wall), one-way asphalt with narrow sidewalks, cars parked on one side, motorbikes, balconies close overhead; looking up them, Montjuïc's pines; looking down, the Paral·lel.",
+      "Plaça dels Ocellets: a small paved square that joins the end of Blai to the Paral·lel. Avinguda del Paral·lel: a wide avenue (two carriageways, a bike lane, plane trees, wide paving-stone pavements).",
+      "Metro: El Poble-sec (L3) is under the Paral·lel between Carrer de Manso and Carrer del Parlament; its entrance on the Poble Sec side is at Carrer de Teodor Bonaplata, about 210 m west of Plaça dels Ocellets along the avenue. In the game the entrance stands in Plaça dels Ocellets, where Blai meets the Paral·lel.",
+      "Recent change: Carrer d'Elkano was rebuilt from Jaume Fabra to Margarit in 2024-2025 (single-level paving at its top end; from Radas to Margarit a raised pavement with parking bays that zigzag, raised crossings and a tree every 13 m behind stone bollards). The map may not show the new trees yet.",
+      "Montjuïc above: the slope covered in stone pines and holm oaks, the castle's walls on the crest; the stairs of Carrer de Margarit (204 steps), Carrer de Blasco de Garay (70 steps) and Carrer del Roser climb from the top of Poble Sec to Passeig de l'Exposició and the park."
+    ],
+    "viewpoints": [
+      {
+        "name": "blai-tapioles",
+        "lat": 41.37372,
+        "lon": 2.16442,
+        "heading": 300,
+        "pitch": 5
+      },
+      {
+        "name": "blai-salva",
+        "lat": 41.37317,
+        "lon": 2.16578,
+        "heading": 300,
+        "pitch": 5
+      },
+      {
+        "name": "margarit-uphill",
+        "lat": 41.37398,
+        "lon": 2.16352,
+        "heading": 200,
+        "pitch": 15
+      },
+      {
+        "name": "placa-ocellets",
+        "lat": 41.37485,
+        "lon": 2.16175,
+        "heading": 120,
+        "pitch": 5
+      }
+    ]
+  },
+  "look": {
+    "ground": "panot",
+    "footway": "panot",
+    "asphalt": "#46484a",
+    "markings": true
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#d9a77a",
+        "#c98a5e",
+        "#e3c39b",
+        "#b8744a",
+        "#e6d2b5",
+        "#cf9a76"
+      ],
+      "base": "#7a6552",
+      "trim": "#efe4d0",
+      "roof": "#a89a88",
+      "roof_kind": "flat",
+      "facade": "iron-balconies",
+      "ground": "shops",
+      "levels": 5
+    },
+    "flats": {
+      "walls": [
+        "#b06a4c",
+        "#c9a27c",
+        "#d8c3a6"
+      ],
+      "base": "#6e5f52",
+      "trim": "#e9e0d0",
+      "roof": "#9f968a",
+      "roof_kind": "flat",
+      "facade": "flats",
+      "ground": "shops"
+    },
+    "church": {
+      "walls": [
+        "#cdbb9c"
+      ],
+      "base": "#a8977a",
+      "trim": "#e6dcc8",
+      "roof": "#8f7f6a",
+      "roof_kind": "gable",
+      "facade": "ashlar-windows",
+      "ground": "ashlar"
+    },
+    "civic": {
+      "walls": [
+        "#e0c49c"
+      ],
+      "base": "#a08667",
+      "trim": "#f2ead9",
+      "roof": "#a89a88",
+      "roof_kind": "flat",
+      "facade": "iron-balconies",
+      "ground": "lobby",
+      "levels": 3
+    }
+  },
+  "buildings": {
+    "way/1264332421": {
+      "label": "Casa de Emilie",
+      "levels": 4
+    },
+    "way/215873439": {
+      "style": "church",
+      "label": "Santa Madrona"
+    }
+  },
+  "osm_props": {
+    "tree": {
+      "species": "plane"
+    },
+    "lamp": {},
+    "bench": {},
+    "bin": {},
+    "bike-rack": {}
+  },
+  "props": [
+    {
+      "kind": "metro",
+      "x_m": 243,
+      "z_m": 8,
+      "name": "Poble Sec",
+      "line": "L3"
+    }
+  ],
+  "places": [
+    {
+      "id": "station-poble-sec",
+      "label": "Bajar al metro",
+      "x_m": 245.5,
+      "z_m": 8.5,
+      "step": {
+        "x_m": 244.25,
+        "z_m": 7.75,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "poble-sec-barras",
+      "label": "Mirar las barras",
+      "x_m": -74,
+      "z_m": -3,
+      "lines": [
+        "Carrer de Blai. Una barra detrás de otra, y en cada una, bandejas de pinchos con su palillo.",
+        "Aquí se paga contando palillos. Siempre se queda alguno debajo de la servilleta."
+      ]
+    },
+    {
+      "id": "poble-sec-emilie",
+      "label": "Mirar el portal",
+      "x_m": 65.5,
+      "z_m": -9,
+      "lines": [
+        "El portal de Emilie. En el buzón del ático, su nombre escrito a mano y una pegatina de un circuito.",
+        "Arriba, su balcón: plantas, un cable que baja hasta el de abajo y la luz azulada de una pantalla."
+      ]
+    },
+    {
+      "id": "poble-sec-escales",
+      "label": "Mirar las escaleras",
+      "x_m": 48,
+      "z_m": -124,
+      "lines": [
+        "Carrer de Margarit arriba, la calle se vuelve escalera. Más de doscientos escalones hasta Montjuïc.",
+        "Arriba, los pinos. Otro día subo."
+      ]
+    },
+    {
+      "id": "poble-sec-biblioteca",
+      "label": "Mirar la biblioteca",
+      "x_m": 40,
+      "z_m": 4,
+      "lines": [
+        "Biblioteca Poble Sec - Francesc Boix. Era un fotógrafo del barrio.",
+        "En Mauthausen escondió los negativos que los nazis querían quemar."
+      ]
+    },
+    {
+      "id": "poble-sec-santa-madrona",
+      "label": "Mirar el campanario",
+      "x_m": 4,
+      "z_m": 30,
+      "lines": [
+        "Santa Madrona. Un campanario de piedra con reloj, encajado entre balcones.",
+        "Ardió en la Semana Trágica y la destrozaron otra vez en la guerra. Las dos veces la volvieron a levantar."
+      ]
+    }
+  ],
+  "labels": [
+    {
+      "text": "CARRER DE BLAI",
+      "x_m": -95,
+      "z_m": 0,
+      "width": 8
+    },
+    {
+      "text": "CARRER DE BLAI",
+      "x_m": 165,
+      "z_m": 0,
+      "width": 8
+    },
+    {
+      "text": "CARRER D'ELKANO",
+      "x_m": 160,
+      "z_m": -107,
+      "width": 9
+    },
+    {
+      "text": "PLAÇA DELS OCELLETS",
+      "x_m": 257,
+      "z_m": -1,
+      "width": 10
+    }
+  ],
+  "anchors": {
+    "blai": {
+      "x_m": -40,
+      "z_m": 0
+    },
+    "emilie": {
+      "x_m": 65.5,
+      "z_m": -9
+    },
+    "escales": {
+      "x_m": 47,
+      "z_m": -128
+    },
+    "santa-madrona": {
+      "x_m": 20,
+      "z_m": 30
+    }
+  }
+}
