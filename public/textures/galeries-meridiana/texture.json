@@ -1,0 +1,29 @@
+{
+  "id": "galeries-meridiana",
+  "name": "Galeries de la Meridiana",
+  "kind": "photo",
+  "size_m": [
+    2.7,
+    6.0
+  ],
+  "source": {
+    "site": "Wikimedia Commons",
+    "name": "Meridiana_-_20220803_195337.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:Meridiana_-_20220803_195337.jpg",
+    "author": "Pere López Brosa",
+    "licence": "CC BY-SA 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "command": "tools/textures.py photo https://commons.wikimedia.org/wiki/File:Meridiana_-_20220803_195337.jpg --id galeries-meridiana",
+  "bays": 1,
+  "storeys": 2,
+  "files": {
+    "albedo": "albedo.webp"
+  },
+  "px": [
+    230,
+    512
+  ],
+  "mean": "#818b8d",
+  "made": "2026-10-30"
+}
