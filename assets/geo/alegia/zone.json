@@ -3,14 +3,14 @@
   "name": "Alegia · San Juan kalea",
   "region": "Alegia, Gipuzkoa",
   "anchor": { "address": "San Juan kalea 95, 20260 Alegia, Gipuzkoa", "lat": 43.1001658, "lon": -2.1003344 },
-  "bounds_m": { "west": -45, "east": 190, "north": -65, "south": 55 },
+  "bounds_m": { "west": -45, "east": 290, "north": -95, "south": 60 },
   "cell_m": 1.25,
   "rotation_deg": 180,
   "zoom": 11,
   "spawn": { "east_m": -4, "south_m": -9 },
   "storey_m": 3.0,
   "reference": {
-    "checked": "2026-10-15",
+    "checked": "2026-10-30",
     "streetview_capture": "2025-06",
     "notes": [
       "93-95: modern four-storey block, cream render, white bands, ground-floor arcade along the street, black iron balconies with geraniums, wall lamps on brackets.",
@@ -18,22 +18,39 @@
       "San Juan kalea (old part, 61-91): narrow asphalt street with no pavements; three- and four-storey terraced houses, masonry ground floors, timber-framed or rendered upper floors, wooden balconies and glazed miradors, deep eaves.",
       "San Juan church: ashlar sandstone, pale grey-cream blocks, small windows, square belfry.",
       "Roofs (satellite): terracotta tile, mostly hipped; a dense band of riverside trees along the Oria; steep wooded hills all around.",
-      "South bank: road with a dark wooden rail fence along the river."
+      "South bank: road with a dark wooden rail fence along the river.",
+      "2026-10-30 (Commons photos 2010-2019, PNOA orthophoto, OSM): sources and credits in docs/places/alegia.md.",
+      "Roofs (PNOA): curved clay tiles weathered to a dusty brown-red with grey lichen, darker than plain terracotta; the town hall's roof is the darkest.",
+      "Town hall (63, 18th-century baroque): square, three storeys of cool grey ashlar with rusticated quoins and a hipped roof with deep dark eaves; on the square (north-west) four round arches, a continuous iron balcony on the first floor, four single balconies above, a central pediment with the coat of arms and a clock turret with a bell spire; on the river side a five-arch loggia standing on the rubble river wall.",
+      "Zubimusu (65), west of the town hall: pale blue-grey render, dark green shutters, iron balconies with geraniums, two stone arches at the ground floor, one of them the passage to Zubi Zaharra. House 61 across the square: grey-beige pebbledash with pale stone bands and green shutters.",
+      "Town hall square (Herriko enparantza): grey granite setts laid in fan arcs with pale stone bands; pollarded plane trees, a stone fountain (Plazako iturria), benches.",
+      "Txintxarri plaza, east of the town hall by the river: a giant stone cowbell (joare) lying on rocks, a wooden culture cabin (Kabia, 2023), a wisteria pergola with terraces, green railings on the river.",
+      "Zubi Zaharra (late 17th century, restored after the 1983 flood): a narrow humpback footbridge of grey rubble and ashlar, a large and a smaller round arch, a central pier with a rounded cutwater carried up to a refuge with a cross; moss and ferns.",
+      "Riverside of 61-91: back gardens on a three-metre rubble wall with a brick coping, brick pillars and white iron railings; wooden balconies, galleries and timber framing on the river fronts; a weir just upstream of the bridge.",
+      "Church square (east of the church, at its foot): a row of pollarded plane trees, a stone fountain (Elizako iturria), planters with geraniums. The baroque portal and the belfry face east, away from the camera.",
+      "Street lamps along San Juan kalea: wall brackets painted blue with cream bowl shades. Every old house carries its name (Konfiteroenea, Kafeteroenea, Txanboliñenea...).",
+      "North-east of the town hall: San Juan kalea turns north-east towards the Kale Beheko fountain, with bars, the post office, a pharmacy and a playground with a small court (Parke ttikie). The open-air pelota court, the Santo Kristo hermitage and the station are 100-150 m beyond the map's corner.",
+      "South bank east of the road bridge: Bulebarra, a paved prow with stepped seating and a row of plane trees above the river, then the Amezketa stream joining the Oria."
     ],
     "viewpoints": [
       { "name": "95-east", "lat": 43.10025, "lon": -2.10035, "heading": 90, "pitch": 5 },
       { "name": "church-west", "lat": 43.10035, "lon": -2.0993, "heading": 250, "pitch": 8 },
       { "name": "terrace-east", "lat": 43.10035, "lon": -2.0993, "heading": 60, "pitch": 8 },
-      { "name": "south-bank", "lat": 43.0997, "lon": -2.0985, "heading": 290, "pitch": 5 }
+      { "name": "south-bank", "lat": 43.0997, "lon": -2.0985, "heading": 290, "pitch": 5 },
+      { "name": "town-hall-square", "lat": 43.10045, "lon": -2.0985, "heading": 135, "pitch": 10 },
+      { "name": "zubi-zaharra", "lat": 43.09985, "lon": -2.0983, "heading": 0, "pitch": 5 },
+      { "name": "txintxarri-plaza", "lat": 43.10035, "lon": -2.0979, "heading": 240, "pitch": 5 },
+      { "name": "kale-beheko", "lat": 43.1006, "lon": -2.0975, "heading": 30, "pitch": 5 },
+      { "name": "bulebarra", "lat": 43.1001, "lon": -2.0972, "heading": 300, "pitch": 5 }
     ]
   },
   "styles": {
-    "default": { "walls": ["#ece4d3", "#e8dcc4", "#f1ebde", "#e3d3b8", "#efe6d6"], "base": "#a69a86", "trim": "#f7f3ea", "roof": "#b4643f", "roof_kind": "hip", "facade": "rendered", "ground": "masonry" },
-    "arcade-block": { "walls": ["#efe7d6"], "base": "#d8cfbd", "trim": "#ffffff", "roof": "#b05a38", "roof_kind": "hip", "facade": "iron-balconies", "ground": "arcade", "levels": 4 },
-    "terrace": { "walls": ["#f0e8d8", "#e6d6b8", "#efe1c4", "#e9dfcf", "#dcc7a4"], "base": "#9a8c76", "trim": "#5b3d2a", "roof": "#b4643f", "roof_kind": "hip", "facade": "timber", "ground": "masonry", "levels": 4 },
-    "stone": { "walls": ["#cfc6b3"], "base": "#b9ae98", "trim": "#a99c84", "roof": "#8f6a55", "roof_kind": "hip", "facade": "ashlar", "ground": "ashlar", "levels": 5 },
-    "civic": { "walls": ["#d9cfba"], "base": "#b9ae98", "trim": "#f4efe4", "roof": "#a65a3a", "roof_kind": "hip", "facade": "ashlar-windows", "ground": "ashlar-arcade", "levels": 3 },
-    "small": { "walls": ["#e7dccb"], "base": "#9a8c76", "trim": "#6b4c35", "roof": "#b4643f", "roof_kind": "gable", "facade": "rendered", "ground": "masonry", "levels": 2 }
+    "default": { "walls": ["#ece4d3", "#e8dcc4", "#f1ebde", "#e3d3b8", "#efe6d6"], "base": "#a69a86", "trim": "#f7f3ea", "roof": "#a8614a", "roof_kind": "hip", "facade": "rendered", "ground": "masonry" },
+    "arcade-block": { "walls": ["#efe7d6"], "base": "#d8cfbd", "trim": "#ffffff", "roof": "#a65c44", "roof_kind": "hip", "facade": "iron-balconies", "ground": "arcade", "levels": 4 },
+    "terrace": { "walls": ["#f0e8d8", "#e6d6b8", "#efe1c4", "#e9dfcf", "#dcc7a4"], "base": "#9a8c76", "trim": "#5b3d2a", "roof": "#a8614a", "roof_kind": "hip", "facade": "timber", "ground": "masonry", "levels": 4 },
+    "stone": { "walls": ["#b2ab9e"], "base": "#9a9387", "trim": "#a39c8f", "roof": "#8a5e4f", "roof_kind": "hip", "facade": "ashlar", "ground": "ashlar", "levels": 5 },
+    "civic": { "walls": ["#a3a29f"], "base": "#8f8e8b", "trim": "#c9c7c2", "roof": "#7e5446", "roof_kind": "hip", "facade": "ashlar-windows", "ground": "ashlar-arcade", "levels": 3 },
+    "small": { "walls": ["#e7dccb"], "base": "#9a8c76", "trim": "#6b4c35", "roof": "#a8614a", "roof_kind": "gable", "facade": "rendered", "ground": "masonry", "levels": 2 }
   },
   "buildings": {
     "way/44888083": { "style": "arcade-block", "label": "93-95" },
@@ -41,6 +58,8 @@
     "way/498097825": { "style": "stone", "levels": 4 },
     "way/1228477394": { "style": "stone", "levels": 8, "roof_kind": "pyramid" },
     "way/44884436": { "style": "civic" },
+    "way/508788862": { "walls": "#a9b6c3", "facade": "iron-balconies", "ground": "ashlar-arcade", "levels": 4 },
+    "way/48893677": { "walls": "#b8b29f", "facade": "rendered", "levels": 4 },
     "way/44887739": { "levels": 3 },
     "way/1227826052": { "style": "small" },
     "way/1227832775": { "style": "small" },
@@ -51,6 +70,7 @@
   "props": [
     { "kind": "tree", "east_m": -2, "south_m": -24, "species": "plane", "scale": 1.5 },
     { "kind": "tree", "east_m": 10, "south_m": -27, "species": "plane", "scale": 1.2 },
+    { "kind": "tree", "east_m": 101, "south_m": -30, "species": "plane", "to": { "east_m": 101, "south_m": -44 }, "every_m": 7 },
     { "kind": "car", "east_m": 6, "south_m": -9, "color": "#f2f2ef" },
     { "kind": "car", "east_m": 14, "south_m": -9, "color": "#9aa4a8" },
     { "kind": "car", "east_m": 24, "south_m": -9.5, "color": "#6f8fa8" },
@@ -70,7 +90,9 @@
     { "id": "alegia-townhall", "label": "Mirar el ayuntamiento", "osm": "way/44884436",
       "lines": ["Alegiko udaletxea. El ayuntamiento, con sus arcos de piedra en la planta baja."] },
     { "id": "alegia-bridge", "label": "Asomarse al Oria", "osm": "way/508788821",
-      "lines": ["Zubi Zaharra, el puente viejo. Abajo, el Oria baja verde y tranquilo."] }
+      "lines": ["Zubi Zaharra, el puente viejo. Abajo, el Oria baja verde y tranquilo."] },
+    { "id": "alegia-joare", "label": "Mirar el cencerro de piedra", "east_m": 188, "south_m": -12,
+      "lines": ["Un cencerro enorme de piedra, tumbado sobre unas rocas.", "A los de Alegia los llaman txintxarris: aquí se hacían cencerros."] }
   ],
   "labels": [
     { "text": "SAN JUAN KALEA", "east_m": 60, "south_m": -11, "width": 7 },
