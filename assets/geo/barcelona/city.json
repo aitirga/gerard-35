@@ -937,6 +937,24 @@
     41.4114,
     2.1749
    ]
+  },
+  {
+   "id": "placa-espanya",
+   "name": "Plaça d'Espanya",
+   "kind": "venetian",
+   "at": [
+    41.3731,
+    2.1494
+   ]
+  },
+  {
+   "id": "bunkers-carmel",
+   "name": "Búnkers del Carmel",
+   "kind": "bunker",
+   "at": [
+    41.4192,
+    2.1617
+   ]
   }
  ],
  "places": [
