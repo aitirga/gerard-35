@@ -1,0 +1,29 @@
+{
+  "id": "carreu",
+  "name": "Carreu",
+  "kind": "material",
+  "size_m": [
+    2.1,
+    2.1
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "stone_block_wall",
+    "name": "Stone Block Wall",
+    "url": "https://polyhaven.com/a/stone_block_wall",
+    "author": "Amal Kumar",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven stone_block_wall --id carreu",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#3e2e1e",
+  "made": "2026-10-30"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "rajola",
+  "name": "Rajola de terrat",
+  "kind": "material",
+  "size_m": [
+    2.08,
+    2.08
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "terracotta_floor_tiles",
+    "name": "Terracotta Floor Tiles",
+    "url": "https://polyhaven.com/a/terracotta_floor_tiles",
+    "author": "Dimitrios Savva",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven terracotta_floor_tiles --id rajola",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#4d271a",
+  "made": "2026-10-30"
+}

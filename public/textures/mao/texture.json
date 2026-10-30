@@ -1,0 +1,29 @@
+{
+  "id": "mao",
+  "name": "Maó vist",
+  "kind": "material",
+  "size_m": [
+    2.0,
+    2.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "large_red_bricks",
+    "name": "Large Red Bricks",
+    "url": "https://polyhaven.com/a/large_red_bricks",
+    "author": "Rob Tuytel",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven large_red_bricks --id mao",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#a97452",
+  "made": "2026-10-30"
+}
