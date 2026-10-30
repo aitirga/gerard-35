@@ -32,8 +32,8 @@
     104
   ],
   "reference": {
-    "checked": "2026-10-22",
-    "streetview_capture": "Photos taken on the avenue at night, October 2026 (shared in chat, not committed)",
+    "checked": "2026-10-30",
+    "streetview_capture": "Photos taken on the avenue at night, October 2026 (shared in chat, not committed); openly licensed photos and the city's reform notes, 2026-10-30 (docs/places/meridiana.md)",
     "notes": [
       "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-22) for the blocks, cross streets, trees, lamps, benches, bins, bike racks, shops and zebra crossings. The avenue's own carriageways are redrawn in sketch.json (`redraw`) as the cross-section after the works.",
       "Turned -62°: the Meridiana runs left to right, Fabra i Puig on the left, Hipercor (Meridiana 350-356) on the right; the even side, with the shops, faces the camera.",
@@ -45,7 +45,14 @@
       "Works: red and white plastic barriers everywhere, white sacks of rubble, yellow and metal fence panels, a long metal hoarding covered in graffiti.",
       "Buildings: beige and cream blocks of flats of eight to eleven storeys with shops on the ground floor (Granier, 365, Vision-Prix, General Óptica, Al Meu BB, Café Entrepans, Zamora Floristas, a 1 € shop by home); orange blocks across the avenue; Hipercor's beige box with its wavy concrete canopy and blue lit letters, a dark tower behind it.",
       "Traffic: TMB red buses and white Sagalés coaches; few cars.",
-      "The flat's exact portal is not known: home is the corner block by the Fabra i Puig metro entrance (open question in docs/chapter-2.md)."
+      "The flat's exact portal is not known: home is the corner block by the Fabra i Puig metro entrance (open question in docs/chapter-2.md).",
+      "WORKS (2026-10-30, beteve.cat and Ajuntament): this stretch is the Felip II–Fabra i Puig phase of the Meridiana reform, begun in April 2025 for 18 months: two general lanes and a bus lane each way, a two-way bike lane in a central planted median with a double row of trees, wider sidewalks with beds, about 275 new trees and 7,200 m² of beds, crossings from 9 to 15. October 2026 is its last weeks.",
+      "CROSS-SECTION: OpenStreetMap (2026-10-22) agrees: east carriageway centred at z≈5 and west at z≈20 (3 lanes, one a bus lane, 12 m each), the bike lane under construction at z≈13 (4 m), the old kerb-line plane trees at z≈-7 and the new bed's trees at z≈-1, the west trees at z≈28–32. Six lanes in all, as Gerard says; the sketch's side road plus 3 + 3 lanes (eight) is to be redrawn (docs/places/meridiana.md).",
+      "HIPERCOR (CC0 photo, 2022): a white scalloped canopy, a row of shallow vaults, over light panels with thin blue vertical stripes, HIPERCOR in blue on a white sign; recycling containers and benches in front. Behind it rise the rental slabs of 15–17 storeys (OSM relation/8938011, 8938019, 8938017, x 122–348 z −109…−80) with dark brown spandrels and white ribbon windows: the 'dark tower' of the night photos is the nearest of them.",
+      "BLOCKS (openly licensed photos of the avenue): cream render or tan facing brick, continuous balcony slabs with white or aluminium railings, enclosed aluminium galleries, green and grey canvas awnings, set-back top floors, bare brick party walls (mitgeres) where heights change; flat terraces with stair and lift housings, water tanks, aerials, air conditioners and washing.",
+      "FURNITURE a local knows: curved grey poles with yellow traffic lights, the grey, yellow, blue, green and brown recycling containers in a row by the kerb, Bicing docks (OSM: Av. Meridiana 404, Concepció Arenal 176), motorbikes parked on the sidewalk, the ONCE kiosk, a newsstand.",
+      "UNDER THE AVENUE: the L1 and the Rodalies tunnel (R3, R4, R7); the Renfe station is now Barcelona-Fabra i Puig (OSM), once Sant Andreu Arenal; the L1 also comes up at Concepció Arenal (OSM entrances at x≈−24 and x≈6, z≈−7).",
+      "LEFT OUT on purpose: the 1987 bombing memorial and the avenue's protests; nothing tragic or political in a birthday game."
     ],
     "viewpoints": [
       {
@@ -61,6 +68,27 @@
         "lon": 2.1849,
         "heading": 332,
         "pitch": 5
+      },
+      {
+        "name": "granier",
+        "lat": 41.42952,
+        "lon": 2.18356,
+        "heading": 62,
+        "pitch": 12
+      },
+      {
+        "name": "concepcio-arenal",
+        "lat": 41.42862,
+        "lon": 2.18443,
+        "heading": 152,
+        "pitch": 5
+      },
+      {
+        "name": "hipercor-front",
+        "lat": 41.42788,
+        "lon": 2.18462,
+        "heading": 62,
+        "pitch": 20
       }
     ]
   },
