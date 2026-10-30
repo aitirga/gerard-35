@@ -136,6 +136,11 @@ screenshots scenario="chapter-1" *options="":
 screenshots-list:
     @ls scripts/screenshots/*.json | xargs -n1 basename | sed 's/\.json$//'
 
+# Stitch the places report from each contribution in output/reports/places/sections/
+[group('Screenshots')]
+places-report:
+    node scripts/places-report.mjs
+
 # Download the Chromium build Playwright uses (once per machine)
 [group('Screenshots')]
 screenshots-browser:
