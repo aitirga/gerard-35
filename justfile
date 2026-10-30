@@ -203,6 +203,29 @@ geo-build zone="alegia":
 geo-zones:
     @ls assets/geo/*/zone.json | xargs -n1 dirname | xargs -n1 basename
 
+# Fetch a CC0 material into public/textures/<id>/: just texture-fetch polyhaven clay_roof_tiles_02 --id teula (--help)
+[group('Data')]
+[positional-arguments]
+texture-fetch *args:
+    uv run --locked python tools/textures.py fetch "$@"
+
+# Make a facade, bays or a sign from a photo (local or Wikimedia Commons): just texture-photo foto.jpg --id <id> --size-m 12 9 --corners …
+[group('Data')]
+[positional-arguments]
+texture-photo *args:
+    uv run --locked python tools/textures.py photo "$@"
+
+# Draw Barcelona's panot (square or flor) over a fetched grain: just texture-panot flor --id panot-flor --grain formigo
+[group('Data')]
+[positional-arguments]
+texture-panot *args:
+    uv run --locked python tools/textures.py panot "$@"
+
+# List the real textures with their size, source and licence
+[group('Data')]
+textures:
+    @uv run --locked python tools/textures.py list
+
 # Rebuild the network map: hand-drawn stations and landmarks + the real city behind (docs/barcelona.md)
 [group('Data')]
 city: && city-background

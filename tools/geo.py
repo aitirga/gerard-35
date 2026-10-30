@@ -15,6 +15,8 @@ sketch features marked "keep" are added on top of the map data. docs/barcelona.m
 
 Zone files live in assets/geo/<zone>/zone.json; docs/environment-styling.md explains every field.
 Coordinates in a zone file are metres from the anchor: east_m (+ east) and south_m (+ south).
+Real materials (public/textures/<id>/, made by tools/textures.py) are named in the zone's `look` and
+`styles`; the build embeds each one's metadata in the scene, so the game needs no manifest.
 """
 import argparse
 import hashlib
@@ -63,9 +65,28 @@ PROP_LENGTH = {"shelter": 3, "bus": 5}
 SHOP_AMENITIES = {"restaurant", "cafe", "bar", "fast_food", "pharmacy", "bank", "pub", "ice_cream", "post_office",
                   "clinic", "dentist", "betting", "bureau_de_change"}
 # Roads drawn into the turned frame never sit where a prop from the map would block them.
-OPEN_FOR_PROPS = set("pgs.")
+OPEN_FOR_PROPS = set("pgsa.")
 # Raster classes, highest priority first. Lower-case classes are walkable.
-WALKABLE = set("rpsgb.")
+WALKABLE = set("rpsgab.")
+TEXTURES = ROOT / "public" / "textures"
+# Each surface's default material (docs/environment-styling.md § Real materials): a texture in
+# public/textures/ and the colour it is tinted to (None: the texture's own colour). The tints are the
+# colours the surfaces were painted before, so every zone gains real grain without changing its palette.
+# A zone's `look.materials` overrides any of them; "none" keeps the painted surface.
+LOOK_MATERIALS = {
+    "ground": ("formigo", "#cbc2ab"), "footway": ("saulo", "#b7a888"), "road": ("asfalt", "#66625e"),
+    "bike": ("asfalt", "#8a6b5f"), "square": ("granit", "#a99d88"), "grass": ("gespa", "#86a462"),
+    "bed": ("terra", "#4f4234"), "forest": ("gespa", "#4f6d42"), "sand": ("sorra", None),
+    "rail": ("grava", "#857b6f"), "bridge": ("carreu", "#b3a68d"),
+}
+# Buildings: the real grain under the painted bays of each facade and ground kind, and the roof's tiles
+# (tinted by the style's roof colour). Kinds missing here get "estuc" (render) and "carreu" (stone plinth).
+WALL_MATERIALS = {"ashlar": "carreu", "ashlar-windows": "carreu", "mall": "formigo", "curtain": None, "hedge": None}
+BASE_MATERIALS = {"masonry": "mamposteria", "mall-front": None, "hedge": None}
+ROOF_MATERIALS = {"flat": "rajola"}
+# Map nodes that become landmarks in every zone (kind -> tag and real size in metres), unless the zone's
+# `osm_landmarks` turns them off; the node's name goes to the builder as `name`.
+OSM_LANDMARKS = {"fountain": ("amenity", "drinking_water", (0.6, 0.6)), "kiosk": ("shop", "kiosk", (2.2, 1.5))}
 
 
 def zone_dir(zone: str) -> Path:
@@ -402,7 +423,7 @@ def pick(seed: str, options: list):
 
 SKETCH_ATTRIBUTION = "Diseñado a mano, inspirado en el lugar real"
 SKETCH_AREAS = {"square": {"place": "square"}, "grass": {"leisure": "park"}, "water": {"natural": "water"},
-                "forest": {"landuse": "forest"}, "parking": {"amenity": "parking"}}
+                "forest": {"landuse": "forest"}, "parking": {"amenity": "parking"}, "sand": {"natural": "beach"}}
 
 
 def sketch_elements(sketch: dict, frame: "Frame", keep_only: bool = False) -> list[dict]:
@@ -470,6 +491,7 @@ def classify(element: dict) -> str | None:
     if t.get("waterway") in ("river", "stream", "canal"): return "waterway"
     if t.get("landuse") == "forest" or t.get("natural") in ("wood", "scrub"): return "forest"
     if t.get("leisure") in ("garden", "park") or t.get("landuse") in ("grass", "meadow", "village_green"): return "grass"
+    if t.get("natural") in ("beach", "sand"): return "sand"
     if t.get("place") == "square" or t.get("amenity") == "parking" or (t.get("highway") == "pedestrian" and t.get("area") == "yes"): return "square"
     if t.get("railway") in ("rail", "light_rail", "narrow_gauge"): return "rail"
     if "highway" in t and "geom" in element: return "road"
@@ -485,7 +507,7 @@ def build(zone_id: str) -> None:
     from_m = frame.item
     lo, hi = (-0.5, -0.5), (W - 0.5, D - 0.5)
 
-    areas = {"water": [], "forest": [], "grass": [], "square": []}
+    areas = {"water": [], "forest": [], "grass": [], "square": [], "sand": []}
     roads, buildings, centroids = [], [], {}
     for e in osm["elements"]:
         kind = classify(e)
@@ -544,6 +566,7 @@ def build(zone_id: str) -> None:
         return lambda x, z: any(segment_distance(x, z, a, b) <= w for a, b, w in segs)
     # Painted lowest priority first; later layers win.
     paint("g", in_any([a["poly"] for a in areas["grass"]]))
+    paint("a", in_any([a["poly"] for a in areas["sand"]]))
     paint("F", in_any([a["poly"] for a in areas["forest"]]))
     paint("s", in_any([a["poly"] for a in areas["square"]]))
     paint("W", in_any([a["poly"] for a in areas["water"]]))
@@ -554,6 +577,11 @@ def build(zone_id: str) -> None:
     paint("M", near_lines({"motorway"}, 1))
     paint("b", near_lines({"bridge"}))
     paint("B", in_any([b["poly"] for b in buildings]))
+    # Landmarks stand on open ground; solid ones block their footprint like a building.
+    found_landmarks = landmarks(zone, osm["elements"], frame, raster)
+    for lm in found_landmarks:
+        if lm["solid"]:
+            for x, z in landmark_cells(lm, W, D): raster[z][x] = "L"
 
     # The map edge is always solid.
     grid = ["".join("." if raster[z][x] in WALKABLE and 0 < x < W - 1 and 0 < z < D - 1 else "#" for x in range(W)) for z in range(D)]
@@ -618,14 +646,18 @@ def build(zone_id: str) -> None:
         "areas": {k: [rounded(a["poly"]) for a in v] for k, v in areas.items()},
         "roads": [{**r, "line": rounded(piece)} for r in roads if r["kind"] != "waterway" for piece in clip_line(r["line"], *lo, *hi)],
         "buildings": buildings, "props": props, "places": places,
-        "shops": shops_on_walls(zone, osm["elements"], frame, buildings, W, D),
+        "shops": shops_on_walls(zone, [e for e in osm["elements"] if e["id"] not in {lm["id"] for lm in found_landmarks}], frame, buildings, W, D),
         "crossings": crossings(zone, osm["elements"], frame, roads, W, D),
         "look": zone.get("look", {}),
         "labels": [{"text": l["text"], "x": round(from_m(l)[0], 2), "z": round(from_m(l)[1], 2), "width": l.get("width", 4)} for l in zone.get("labels", [])],
         # Named points for the game's own pieces (e.g. where the palace stands), in cells.
         "anchors": {name: {"x": round(from_m(a)[0], 2), "z": round(from_m(a)[1], 2), **({"y": a["y_m"] / cell} if "y_m" in a else {})}
                     for name, a in zone.get("anchors", {}).items()},
+        "landmarks": [{k: v for k, v in lm.items() if k != "textures"} for lm in found_landmarks],
     }
+    # Real materials last: what the look, the buildings and the landmarks name, with each texture's metadata.
+    scene["materials"] = look_materials(zone)
+    scene["textures"] = embed_textures(scene, [t for lm in found_landmarks for t in lm.get("textures", [])])
     out = ROOT / "src" / "geo" / f"{zone_id}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     if not stranded: out.write_text(json.dumps(scene, ensure_ascii=False, separators=(",", ":")) + "\n")
@@ -774,15 +806,115 @@ def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
     # A per-building override wins over the map's own levels (a mall tagged with its office tower's).
     levels = chosen["levels"] if "levels" in chosen else int(float(t.get("building:levels", style.get("levels", 3))))
     height = float(t["height"]) if "height" in t and "levels" not in chosen else levels * zone.get("storey_m", 3)
+    facade, ground = chosen.get("facade", style.get("facade", "rendered")), chosen.get("ground", style.get("ground", "masonry"))
+    roof = chosen.get("roof_kind", t.get("roof:shape", style.get("roof_kind", "hip")))
     return {
         "id": e["id"], "style": style_name, "name": t.get("name"), "number": chosen.get("label", t.get("addr:housenumber")),
-        "levels": levels, "height": round(height / cell, 2),
-        "roof": chosen.get("roof_kind", t.get("roof:shape", style.get("roof_kind", "hip"))),
+        "levels": levels, "height": round(height / cell, 2), "roof": roof,
         "walls": chosen.get("walls", pick(e["id"], style.get("walls", ["#e8e0d0"]))), "base": style.get("base"), "trim": style.get("trim"),
-        "roofColor": style.get("roof"), "facade": chosen.get("facade", style.get("facade", "rendered")),
-        "ground": chosen.get("ground", style.get("ground", "masonry")),
+        "roofColor": style.get("roof"), "facade": facade, "ground": ground,
         "poly": rounded(poly), "box": oriented_box(poly),
-    } | ({"sign": chosen["sign"]} if "sign" in chosen else {})
+        "materials": building_materials(style.get("materials", {}) | chosen.get("materials", {}), facade, ground, roof),
+    } | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {})
+
+
+# ---------------------------------------------------------------- real materials
+
+def building_materials(named: dict, facade: str, ground: str, roof: str) -> dict:
+    """The textures under a building's painted walls and plinth and on its roof: the style's or the
+    building's `materials`, else the defaults for its kinds. "none" (or a photo facade) leaves it painted."""
+    hedge = facade == "hedge"
+    out = {"wall": named.get("wall", WALL_MATERIALS.get(facade, "estuc")),
+           "base": named.get("base", BASE_MATERIALS.get(ground, "carreu")),
+           "roof": named.get("roof", None if hedge else ROOF_MATERIALS.get(roof, "teula"))}
+    if facade.startswith("photo:"): out["wall"] = None
+    if ground.startswith("photo:"): out["base"] = None
+    return {k: v for k, v in out.items() if v and v != "none"}
+
+
+def look_materials(zone: dict) -> dict:
+    """Each surface's texture and tint: LOOK_MATERIALS, the street's own colours, then `look.materials`."""
+    look = zone.get("look", {})
+    out = {k: {"texture": t, "tint": c} for k, (t, c) in LOOK_MATERIALS.items()}
+    if look.get("ground") == "panot": out["ground"] = {"texture": "panot-gris", "tint": None}
+    if look.get("asphalt"):
+        # Barcelona's bike lanes are the same new asphalt as the road.
+        out["road"] = out["bike"] = {"texture": "asfalt", "tint": look["asphalt"]}
+    for k, v in look.get("materials", {}).items():
+        out[k] = {"texture": v, "tint": None} if isinstance(v, str) else {"texture": v.get("texture"), "tint": v.get("tint")}
+    return {k: {kk: vv for kk, vv in v.items() if vv is not None} for k, v in out.items() if v["texture"] and v["texture"] != "none"}
+
+
+def texture_info(texture_id: str) -> dict | None:
+    """What the game needs of a texture: its kind, files, real size, mean colour and bays (photos)."""
+    path = TEXTURES / texture_id / "texture.json"
+    if not path.exists(): return None
+    t = json.loads(path.read_text())
+    return {k: t[k] for k in ("kind", "files", "size_m", "mean", "bays", "storeys") if k in t}
+
+
+def embed_textures(scene: dict, extra: list[str]) -> dict:
+    """Every texture the scene names, by id. A missing one is dropped (with a warning) so the game
+    paints that surface as before."""
+    named = set(extra) | {m["texture"] for m in scene["materials"].values()}
+    for b in scene["buildings"]:
+        named |= set(b["materials"].values())
+        named |= {k.removeprefix("photo:") for k in (b["facade"], b["ground"]) if k.startswith("photo:")}
+        if "signature" in b: named.add(b["signature"])
+    found = {t: info for t in sorted(named) if (info := texture_info(t))}
+    missing = sorted(named - found.keys())
+    if missing:
+        print(f"Textures not in public/textures/ (painted instead): {', '.join(missing)}; see `just textures`.", file=sys.stderr)
+        scene["materials"] = {k: v for k, v in scene["materials"].items() if v["texture"] in found}
+        for b in scene["buildings"]:
+            b["materials"] = {k: v for k, v in b["materials"].items() if v in found}
+            if b.get("signature") not in found: b.pop("signature", None)
+    return found
+
+
+# ---------------------------------------------------------------- landmarks
+
+def landmarks(zone: dict, elements: list, frame: Frame, raster: list) -> list[dict]:
+    """The zone's `landmarks` and the map nodes in OSM_LANDMARKS, in cells: centre, turn, footprint."""
+    W, D, cell = frame.width, frame.depth, frame.cell
+    out = []
+    centroid = {e["id"]: frame.cells(*e["at"]) for e in elements if "at" in e}
+    for i, lm in enumerate(zone.get("landmarks", [])):
+        if "osm" in lm:
+            if lm["osm"] not in centroid: sys.exit(f"Landmark {lm.get('id', i)}: no map node {lm['osm']}.")
+            x, z = centroid[lm["osm"]]
+        else:
+            x, z = frame.item(lm)
+        w, d = lm.get("size_m", [cell, cell])
+        out.append({"kind": lm["kind"], "id": lm.get("id", f"{lm['kind']}-{i + 1}"), "x": round(x, 2), "z": round(z, 2),
+                    "angle": lm.get("rotation_deg", 0), "w": round(w / cell, 2), "d": round(d / cell, 2),
+                    "solid": lm.get("solid", True), "params": lm.get("params", {}), "textures": lm.get("textures", [])})
+    # Street furniture from the map, only on open ground and away from the zone's own props.
+    wanted = {k: v for k, v in OSM_LANDMARKS.items() if zone.get("osm_landmarks", {}).get(k, {}) is not False}
+    taken = {c for p in zone.get("props", []) for x, z in rows(p, frame) for c in prop_cells({**p, "x": round(x), "z": round(z)})}
+    for e in elements:
+        if not e["id"].startswith("node/"): continue
+        for kind, (key, value, (w, d)) in wanted.items():
+            if e["tags"].get(key) != value: continue
+            x, z = (round(v) for v in centroid[e["id"]])
+            if not (0 < x < W - 1 and 0 < z < D - 1) or raster[z][x] not in OPEN_FOR_PROPS or (x, z) in taken: continue
+            params = zone.get("osm_landmarks", {}).get(kind, {}) | ({"name": e["tags"]["name"]} if "name" in e["tags"] else {})
+            out.append({"kind": kind, "id": e["id"], "x": x, "z": z, "angle": params.get("rotation_deg", 0), "w": round(w / cell, 2),
+                        "d": round(d / cell, 2), "solid": True, "params": {k: v for k, v in params.items() if k != "rotation_deg"}, "textures": []})
+    return out
+
+
+def landmark_cells(lm: dict, W: int, D: int) -> list[tuple[int, int]]:
+    """Cells whose centre lies inside the landmark's turned footprint (at least the one under its centre)."""
+    a = math.radians(lm["angle"])
+    c, s = math.cos(a), math.sin(a)
+    reach = math.ceil(math.hypot(lm["w"], lm["d"]) / 2) + 1
+    cells = {(round(lm["x"]), round(lm["z"]))}
+    for z in range(round(lm["z"]) - reach, round(lm["z"]) + reach + 1):
+        for x in range(round(lm["x"]) - reach, round(lm["x"]) + reach + 1):
+            dx, dz = x - lm["x"], z - lm["z"]
+            if abs(dx * c - dz * s) <= lm["w"] / 2 and abs(dx * s + dz * c) <= lm["d"] / 2: cells.add((x, z))
+    return [(x, z) for x, z in sorted(cells) if 0 <= x < W and 0 <= z < D]
 
 
 def scatter_trees(zone: dict, raster: list, W: int, D: int, cell: float) -> list[dict]:
@@ -809,13 +941,13 @@ def scatter_trees(zone: dict, raster: list, W: int, D: int, cell: float) -> list
 def preview(scene: dict, raster: list, out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
     colours = {"W": "#5aa6c8", "F": "#4f7a4a", "g": "#9cc07f", "s": "#d8c7a8", "r": "#8a8a8a", "p": "#c8b48a",
-               "b": "#b8a98e", "R": "#555", "M": "#333", "B": "#b4643f", ".": "#e6e2d4"}
+               "b": "#b8a98e", "R": "#555", "M": "#333", "B": "#b4643f", ".": "#e6e2d4", "a": "#ecd9a8", "L": "#7a4fa0"}
     s = 6
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {scene["width"] * s} {scene["depth"] * s}" '
              f'width="{scene["width"] * s}" height="{scene["depth"] * s}" font-family="sans-serif">']
     for z, row in enumerate(raster):
         for x, c in enumerate(row):
-            fill = colours[c] if scene["grid"][z][x] == "." or c in "WFBRM" else "#bdb6a3"
+            fill = colours[c] if scene["grid"][z][x] == "." or c in "WFBRML" else "#bdb6a3"
             parts.append(f'<rect x="{x * s}" y="{z * s}" width="{s}" height="{s}" fill="{fill}"/>')
     for b in scene["buildings"]:
         pts = " ".join(f"{(x + .5) * s:.1f},{(z + .5) * s:.1f}" for x, z in b["poly"])
