@@ -75,8 +75,9 @@ export function greyOf(texture: LoadedTexture) {
 
 const grains = new Map<string, HTMLCanvasElement>();
 /**
- * The texture as neutral grey grain (mean 50 %, a set contrast), to lay over a painted wall with
- * `overlay`: the wall keeps its own colour and gains the texture's light and shade.
+ * The texture as neutral grey grain (mean 50 %), to lay over a painted wall with `hard-light`:
+ * below the mean that multiplies the wall's own colour by the texture's light and shade relative
+ * to its mean, so render stays faint and the joints of stone and brick as dark as in the photo.
  */
 export function grainOf(texture: LoadedTexture, size = 256) {
   let c = grains.get(texture.id);
@@ -88,11 +89,7 @@ export function grainOf(texture: LoadedTexture, size = 256) {
   const lum = new Float32Array(n);
   let sum = 0;
   for (let i = 0; i < n; i++) { lum[i] = (px[i * 4] * 0.299 + px[i * 4 + 1] * 0.587 + px[i * 4 + 2] * 0.114) / 255; sum += lum[i]; }
-  const mean = sum / n;
-  let variance = 0;
-  for (let i = 0; i < n; i++) variance += (lum[i] - mean) ** 2;
-  // Every material ends up with about the same strength: plaster's faint mottling and brick's joints alike.
-  const gain = 0.08 / Math.max(Math.sqrt(variance / n), 0.01);
+  const mean = sum / n, gain = 0.5 / Math.max(mean, 0.05);
   for (let i = 0; i < n; i++) {
     const v = Math.round(Math.min(1, Math.max(0, 0.5 + (lum[i] - mean) * gain)) * 255);
     px[i * 4] = px[i * 4 + 1] = px[i * 4 + 2] = v; px[i * 4 + 3] = 255;

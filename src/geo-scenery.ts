@@ -26,8 +26,8 @@ const EAVE = 0.35;
 const ROOF_PITCH = Math.tan(30 * Math.PI / 180);
 /** Ground layers stack a hair apart so large flat polygons never z-fight. */
 const LAYER = { ground: 0.004, grass: 0.012, sand: 0.014, forest: 0.016, square: 0.02, water: 0.028, path: 0.036, road: 0.042, rail: 0.046, bridge: 0.07 };
-/** How strongly a real material's grain shows through the painted walls (overlay, 0–1). */
-const GRAIN = 0.7;
+/** How strongly a real material's grain shows through the painted walls (hard light, 0–1). */
+const GRAIN = 0.85;
 /** A roof's slope is this much longer than the ground it covers (30° pitch). */
 const SLOPE = 1 / Math.cos(30 * Math.PI / 180);
 /**
@@ -445,14 +445,13 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         const across = Math.max(1, Math.round(bayM / sw)), up = Math.max(1, Math.round(storeyM * (ground ? 1.15 : 1) / sh));
         const pattern = ctx.createPattern(g, 'repeat')!;
         pattern.setTransform(new DOMMatrix().scale(128 / across / g.width, 192 / up / g.height));
-        ctx.save(); ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = GRAIN; ctx.fillStyle = pattern; ctx.fillRect(0, 0, w, h); ctx.restore();
+        ctx.save(); ctx.globalCompositeOperation = 'hard-light'; ctx.globalAlpha = GRAIN; ctx.fillStyle = pattern; ctx.fillRect(0, 0, w, h); ctx.restore();
         return true;
       };
-      /** Stone courses: the real stone's own, or painted ones. */
+      /** Stone courses: painted joints a miniature can read, over the real stone's grain (or painted shades without one). */
       const stones = (fill: string, rows: number, slot: 'wall' | 'base') => {
-        if (paint(fill, slot)) return;
-        const rh = h / rows;
-        for (let r = 0; r < rows; r++) for (let k = -1; k < w / 40 + 1; k++) {
+        const real = paint(fill, slot), rh = h / rows;
+        if (!real) for (let r = 0; r < rows; r++) for (let k = -1; k < w / 40 + 1; k++) {
           ctx.fillStyle = `rgba(${jitter(r * 13 + k) > 0.5 ? '255,255,255' : '0,0,0'},${0.04 + jitter(r * 7 + k) * 0.06})`;
           ctx.fillRect(k * 40 + (r % 2) * 20 + 1, r * rh + 1, 38, rh - 2);
         }
