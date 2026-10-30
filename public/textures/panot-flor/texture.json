@@ -1,0 +1,28 @@
+{
+  "id": "panot-flor",
+  "name": "Panot de flor",
+  "kind": "material",
+  "size_m": [
+    3.2,
+    3.2
+  ],
+  "source": {
+    "site": "drawn by tools/textures.py",
+    "name": "panot flor",
+    "url": "",
+    "author": "gerard-35 (pattern) over Granular Concrete by Dario Barresi, Michael Jenkins",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py panot flor --id panot-flor --grain formigo",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    1024,
+    1024
+  ],
+  "mean": "#92908a",
+  "made": "2026-10-30"
+}
