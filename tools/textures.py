@@ -32,7 +32,8 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 TEXTURES = ROOT / "public" / "textures"
 RAW = ROOT / "output" / "textures" / "raw"
-USER_AGENT = "gerard-35-texture-tool/0.1 (personal game prototype)"
+# Wikimedia refuses clients that do not say who they are and where to find them.
+USER_AGENT = "gerard-35-texture-tool/0.1 (https://gerard-35-aitirga.fly.dev/; personal game)"
 POLYHAVEN = "https://api.polyhaven.com"
 AMBIENTCG = "https://ambientcg.com/api/v2/full_json"
 COMMONS = "https://commons.wikimedia.org/w/api.php"
