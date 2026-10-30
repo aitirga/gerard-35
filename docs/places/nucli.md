@@ -19,11 +19,11 @@ This doc is the place only: Bernat's mission, his lines and the phone call stay 
 **El Nucli is a real shop**: Carrer de Valladolid 41 (a ground-floor local), Sants, 08014
 Barcelona. It sells Magic: the Gathering, other card games (Flesh and Blood, Lorcana), board games
 for every kind of player and role-playing books, and it runs tournaments, drafts and release
-presentations (its own site, October 2026). Its site carries the WPN Premium badge, the tier of
-Magic stores with a real play area. It moved to Valladolid from Carrer del Vallespir 24, where Time Out reviewed it in
-2014 as *"la madriguera del ocio alternativo de Sants"*, with board-game demos anyone could ask for.
-Its badge is a round wine-red disc with fanned cards drawn in neon red lines and the motto *cau de
-l'oci* (the den of play).
+presentations (its own site, October 2026). Its site carries the WPN Premium badge, the top tier
+of Magic stores, which means a real play area. It moved to Valladolid from Carrer del Vallespir
+24, where Time Out reviewed it in 2014 as *"la madriguera del ocio alternativo de Sants"*, with
+board-game demos anyone could ask for. Its badge is a round wine-red disc with fanned cards drawn
+in neon crimson lines and the motto *cau de l'oci* (the den of play).
 
 What could not be checked: **no open photo of the shop's frontage or inside exists** (Commons has
 none; the shop's site only shows product banners). The frontage and the inside below are designed
@@ -86,47 +86,51 @@ Checked against the places that exist or are being built: the Meridiana (pale 19
 grey avenue, works barriers, Hipercor blue), the Rec Comtal (brick, the school's orange, the pink
 castle), Cardedeu (white render, terracotta roofs), Alegia (timber and green hills), Plaça d'Espanya
 (red brick towers, monumental and open), the Barceloneta (sea light, laundry), the Poble Sec
-(slopes and steps under Montjuïc). Sants is the **narrow, lived-in, warm-ochre neighbourhood with
-one lit shop in it**.
+(slopes and steps under Montjuïc), the Búnkers (dry earth and concrete in golden light). Sants is
+the **narrow, lived-in ochre neighbourhood in shade, with one lit shop in it**. The card follows the
+style guide's first proposal (Sants: ochre `#cfa463`, painted shutters and old render, cool light;
+El Nucli: bottle green `#2f4a3a`, boxes and felt, warm light) and refines it from the references.
+The colours with a meaning stay out: no saturated pink (hers), no crimson (Noísta's).
 
 ### The street (`sants`)
 
 | | |
 | --- | --- |
-| Dominant hue | Warm ochre render, `#d9bf8c` (range: sand `#dcc8a4`, salmon `#cfa47a`, pale stone `#e3d4b6`, old terracotta `#c99377`, a grey-lilac house `#bdb3b8`): deeper and more varied than the Meridiana's pale beige |
-| Secondary hue | El Nucli's wine red `#5d0e11` on the shop front, with a coral-red line `#e8463c` (the real badge's neon is a crimson `#fb1f50`; it leans to coral so the only pink in Sants stays the Queen's) |
+| Dominant hue | Ochre render `#cfa463` (range per house: sand `#dcc8a4`, salmon `#cfa47a`, pale stone `#e3d4b6`, old terracotta `#c99377`, a grey-lilac house `#bdb3b8`): deeper and more varied than the Meridiana's pale beige |
+| Secondary hue | El Nucli's wine red `#5d0e11` on the shop front, its name in cream `#f3e6d0`. The real badge's lines are a neon crimson-pink (`#fb1f50`): left out, since saturated pink is hers and crimson is Noísta's |
 | Accents | The cinema's white relief `#ebe7df`; black-green iron `#2b2f2c` on balconies and railings; plane-tree green |
-| Signature material | Render scored into ashlar blocks with stone surrounds and arched ground floors, iron balconies with plants and wooden shutters |
+| Signature material | Old render scored into ashlar blocks, with stone surrounds and arched ground floors; shop shutters painted as murals; iron balconies with plants, wooden shutters |
 | Ground | Grey panot sidewalks, narrow; Riego's grey setts `#6e6a66` with no kerb; a bike lane on the Passeig |
 | Silhouette | Uneven rooflines of 4 to 9 storeys along Valladolid; the long low white box of the closed cinema across from the shop; the wall of tall blocks on the Passeig; the Cosmo tower |
-| Light and mood | Late afternoon: low warm sun down the narrow streets, blue-grey shade, El Nucli's window glowing amber `#ffb35c`. Quiet: people sitting still on every bench and terrace, all looking the same way |
-| Props kit | Plane trees in pits, parked cars on one side, scooters on the pavement, recycling containers, benches, bar terraces (tables, chairs, parasols), the metro entrance with its zigzag railing, works fences at the Plaça de Joan Peiró, painted shutters |
+| Light and mood | Cool: the end of the day, the narrow streets already in blue-grey shade, the sun only on the top floors; the one warm note is El Nucli's window `#ffb35c`, the place's one glow (lamp light). Quiet: people sitting still on every bench and terrace, all looking the same way |
+| Props kit | Plane trees in pits, parked cars on one side, scooters on the pavement, recycling containers, benches, bar terraces (tables, chairs, parasols), the metro entrance with its zigzag railing, painted shutters |
 | Sound cue | Suitcase wheels rattling over panot towards the station, the station's announcement chime far off over the roofs, a train's rumble; inside the shop, dice |
 | Only here | El Nucli's round wine-red sign hung out over the door, the one lit shop in a quiet street, facing the dark letters of a cinema that closed |
-| Grade (proposal, `src/grading.ts`) | Dusk in a narrow street: a touch warm in the light, blue in the shade, contrast 1.07, saturation .95 |
+| Grade (proposal, `src/grading.ts`) | A street in shade: a little cool (temperature about −.04), blue in the shadows, contrast 1.07, saturation .95; the warm window does the rest |
 
 ### The shop (`el-nucli`)
 
 | | |
 | --- | --- |
-| Dominant hue | Warm wood `#d8b48a` (birch-ply shelving) on cream walls `#efe6d2` |
-| Secondary hue | One wine-red wall `#5d0e11` with the shop's name; the mosaic of box spines in every colour |
-| Signature material | The wall of game boxes, floor to ceiling, their spines readable |
+| Dominant hue | Bottle green `#2f4a3a`: the felt on the play tables and the play hall's painted walls |
+| Secondary hue | Warm wood `#d8b48a` (birch-ply shelving) on cream walls `#efe6d2` in the shop; one wine-red wall `#5d0e11` with the name in cream; the mosaic of box spines in every colour |
+| Signature material | The wall of game boxes, floor to ceiling, their spines readable; green felt |
 | Floor | Old hydraulic tiles in the shop (terracotta `#b6563f`, cream `#e9dfcb`, slate `#3f4a52`), common in Sants ground floors; plain terrazzo `#cfc7b8` in the play hall and the back room |
 | Light | Warm pendant pools `#ffcf8a` over each table; one bare bulb over the round table in the back room; the street outside through the window, cooler |
 | Props kit | Shelving cubes full of boxes, a central gondola, the counter with the till and a bowl of loose dice, a glass case of single cards in sleeves, a pegboard of sleeves and dice, six tables with chairs and games half played (tiles, wooden pieces, cards, dice, a score pad), the cork board of tournaments, a drinks fridge, cardboard stock boxes, a curtain over the back door |
 | Sound cue | Shuffling and dice, a fridge hum, the bell over the street door |
 | Only here | Box titles that exist nowhere else (invented, in Spanish and Catalan: *Faro de Niebla*, *Los Telares*, *Vapor Vell*, *Mercado de Sombras*, *Rodalies*…), and a back room the street cannot see |
-| Grade (proposal) | Warm and close: tungsten light, wine in the shade, soft contrast |
+| Grade (proposal) | Warm and close: tungsten light, green-brown shade, soft contrast |
 
 ## Layout
 
 ### The street: `assets/geo/sants/zone.json`
 
 - **Frame**: anchor on El Nucli (41.3782469, 2.1372794); turned 30° so Carrer de Valladolid runs left
-  to right and the shop's front (odd side) faces the camera; `bounds_turned` x −115 … 85 m, z −50 …
-  350 m; 1.5 m cells: **133 × 267 cells**, 306 buildings, zoom 10.5 (closer than the Meridiana's
-  11.5: the streets are narrow).
+  to right and the shop's front (odd side) faces the camera; `bounds_turned` x −130 … 55 m, z −52 …
+  345 m, edges on streets (Alcolea, Badalona, Vallespir, Sants); 1.5 m cells: **123 × 265 cells**,
+  288 buildings (62 of them courtyard parts of 1-2 storeys), zoom 10.5 (closer than the
+  Meridiana's 11.5: the streets are narrow).
 - **The route** (preview: `output/geo/sants/preview.png`): the party comes up the L1 stairs on
   Carrer de Sants (bottom left, spawn), walks up Carrer de Riego past the Plaça d'Osca, crosses the
   Passeig de Sant Antoni, and goes straight up Carrer de Santa Caterina, which ends on Valladolid
@@ -143,7 +147,6 @@ one lit shop in it**.
 | Carrer de Riego (`sants-riego`) | −40, 232 | Lines |
 | Plaça d'Osca (`sants-osca`) | −20, 262 | Lines |
 | Carrer de Sants (`sants-carrer-de-sants`) | −90, 306 | Lines |
-| Works at the Plaça de Joan Peiró (`sants-obras`) | 70, 70 | Lines |
 | Metro (`station-placa-de-sants`) | totem −71, 321; stair −69.25 … −64.75 | L1 totem "Plaça de Sants"; add `'placa-de-sants': { environment: 'sants' }` to `STATION_PLACES` |
 
 - **Styles**: `default` (ochre range, `iron-balconies` upper floors, `shops` ground floors, flat
@@ -211,8 +214,11 @@ there). The shopkeeper is a person of the mission, not of the place.
 
 ## Texture candidates
 
-All CC0 unless stated. Commons files need their author, licence and file URL in
-`public/textures/credits.json`; CC BY-SA ones are shared alike.
+First the foundation's shared library in `public/textures/` (render `estuc`, ashlar `carreu`,
+`panot-gris`, `asfalt`, tiles `rajola`, `saulo`…) once it is merged; the table lists the signature
+additions and fallbacks, within the guide's dozen new textures per place. All CC0 unless stated.
+Commons files need their author, licence and file URL in `public/textures/credits.json`; CC BY-SA
+ones are shared alike.
 
 | Use | Source | Licence, author |
 | --- | --- | --- |
@@ -230,7 +236,7 @@ All CC0 unless stated. Commons files need their author, licence and file URL in
 | Hydraulic tiles | Own painting (crisp pattern in the three colours above); reference [RajolaHidraulica 6173](https://commons.wikimedia.org/wiki/File:RajolaHidraulica_6173.jpg) | Own; ref. CC BY 3.0, Amadalvarez |
 | Terrazzo | Poly Haven [`terrazzo_tiles`](https://polyhaven.com/a/terrazzo_tiles), ambientCG [`Tiles040`](https://ambientcg.com/view?id=Tiles040) | CC0 |
 | Stock boxes | ambientCG [`Cardboard002`](https://ambientcg.com/view?id=Cardboard002), [`Cardboard004`](https://ambientcg.com/view?id=Cardboard004) | CC0 |
-| Play mats, felt | ambientCG [`Fabric034`](https://ambientcg.com/view?id=Fabric034) | CC0 |
+| Table felt (the shop's dominant green) | ambientCG [`Fabric034`](https://ambientcg.com/view?id=Fabric034), tinted bottle green | CC0 |
 | Box spines and covers, posters, the shop sign | Own painting: invented titles and art, our own lettering (never the shop's logo or any real game's art) | Own |
 
 No generated images are needed here.
@@ -242,10 +248,12 @@ After the foundation (materials pipeline, landmark modules, `docs/visual-style.m
 1. Re-read `docs/visual-style.md`, `tools/textures.py` and `src/landmarks/`; fit the identity card
    to the guide.
 2. **Street data**: `just geo-build sants`. Narrow the roads (`lane_m` about 3; Valladolid one lane
-   plus parking) so the sidewalks exist: today the wide road raster swallows the street trees (16
-   of 167 OSM trees land). Drop or merge tiny courtyard parts if the draw calls are high.
+   plus parking) so there is sidewalk for trees and furniture: today the road raster fills
+   Valladolid from facade to facade. OSM has only 19 trees inside the zone (14 land), so the plane
+   trees seen in the photos (Valladolid, the Passeig, Santa Caterina) go in as `tree` props. Drop or
+   merge tiny courtyard parts if the draw calls are high.
 3. **Hook it up**: `sants` and `el-nucli` in `EnvironmentId` and `ENVIRONMENTS`; `PLACES` in
-   `src/jump-menu.ts` (*Sants · Carrer de Valladolid* and *El Nucli*, group Barcelona); 
+   `src/jump-menu.ts` (*Sants · Carrer de Valladolid* and *El Nucli*, group Barcelona);
    `'placa-de-sants': { environment: 'sants' }` in `STATION_PLACES`; grades in `src/grading.ts`.
 4. **Materials**: process the candidates with `tools/textures.py` (webp ≤ 1024 px, the cinema's
    relief up to 2048), credits for the Commons ones; a Sants facade kind (ochre ashlar render,
@@ -273,6 +281,7 @@ After the foundation (materials pipeline, landmark modules, `docs/visual-style.m
   square, off the map.
 - Real bars and shops keep their real names on their signs, as on the Meridiana; the strange
   behaviour in the lines is the Queen's, never the businesses'.
-- Zone size: 133 × 267 cells and 306 buildings, the biggest Barcelona zone so far; watch the frame
-  time.
+- Zone size: 123 × 265 cells and 288 buildings, the biggest Barcelona zone so far (the Meridiana
+  has 52, Cardedeu 169); the guide's budget is about 1000 draw calls, so the courtyard parts may
+  need merging or dropping, and the buildings batching, before the build is done.
 - Music for the street and the shop: Aitor's call.

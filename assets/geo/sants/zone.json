@@ -8,10 +8,10 @@
     "lon": 2.1372794
   },
   "bounds_m": {
-    "west": -115,
-    "east": 85,
-    "north": -50,
-    "south": 350
+    "west": -130,
+    "east": 55,
+    "north": -52,
+    "south": 345
   },
   "bounds_turned": true,
   "cell_m": 1.5,
@@ -28,14 +28,14 @@
     "notes": [
       "PLACE: El Nucli is a real shop, Carrer de Valladolid 41 (local), Sants: Magic: the Gathering, other card games, board games and role-playing books, with tournaments, drafts and presentations (elnucli.es, October 2026; OSM node 13504772602, shop=toys). It moved here from Carrer del Vallespir 24, where Time Out reviewed it in 2014 as 'la madriguera del ocio alternativo de Sants'. Its badge: a round wine-red disc with fanned cards drawn in neon red-coral lines, 'EL NUCLI · cau de l'oci'. The real frontage was not seen (no open photo): the shop front in the game is designed.",
       "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-30): cadastre-split building parts with building:levels, so the skyline is real; house numbers along Valladolid (odd side north, even side south); 144 street trees; every bar and shop on the route.",
-      "Turned 30°: Carrer de Valladolid runs left to right at the top, El Nucli's front (odd side) faces the camera across a narrow one-way street; Carrer de Santa Caterina runs straight down from the shop to the Passeig de Sant Antoni; Carrer de Riego and the Plaça d'Osca lead on down to Carrer de Sants and the L1 entrance of Plaça de Sants (Riego vestibule) at the bottom.",
+      "Turned 30°: Carrer de Valladolid runs left to right at the top, El Nucli's front (odd side) faces the camera across a narrow one-way street; Carrer de Santa Caterina runs straight down from the shop to the Passeig de Sant Antoni; Carrer de Riego and the Plaça d'Osca lead on down to Carrer de Sants and the L1 entrance of Plaça de Sants (Riego vestibule) at the bottom. Edges on streets: Carrer d'Alcolea (west), Carrer de Badalona (north), Carrer del Vallespir (east), Carrer de Sants (south).",
       "Valladolid: narrow one-way street, cars parked on the odd side, plane trees and a purple-leaved plum by number 43; 4-9 storeys, early-1900s houses in cream render scored as ashlar, stone surrounds, segmental arches on the ground floor, iron balconies with plants, wooden shutters (Ten To Go Hostel photo, number 43, July 2024).",
       "Across from El Nucli: low 2-3 storey parts, then the back of the Palau Balañà cinema (Passeig de Sant Antoni 41-43), closed since February 2020: a long low box with a white geometric relief band, a glazed entrance band and its letters still up ('PALAU BALAÑA MULTICINES 7 SALES').",
       "Corner of Valladolid and Santa Caterina: Casa Astor (bar). Valladolid also has Pinyi Bicis, two sushi bars (number 40) and a pharmacy at number 10.",
       "Passeig de Sant Antoni: a diagonal boulevard with planted strips, benches and a two-way bike lane; its north side is a wall of 8-12 storey blocks from the 1960s-70s with bars on the ground floor (Via Fora!, Pub Gris, Disco Bar Joe's); the Cosmo Apartments tower (number 30) at the east end.",
       "Plaça d'Osca: a small square of bar terraces (Fo Bar, El Passadís, Seixanta Quaranta, Homo Sibaris, La Mestressa, a cooperative bar); Carrer de Riego: a narrow pedestrian street with painted shop shutters and a bookshop.",
       "Carrer de Sants: the neighbourhood's long shopping street, four lanes; the Plaça de Sants L1 entrances (Riego and Cros) are stairs between granite kerbs with black iron railings in a zigzag pattern, the station sign with the L1 and L5 squares, white hexagonal tiles inside (CC0 photo, 2025).",
-      "Plaça de Joan Peiró at the east edge: works round Sants station (remodelling 2025-2028, the square being planted, the Bosc de Viriat); the station itself is about 250 m further east, off the map."
+      "Carrer del Vallespir is the east edge; just beyond it the Plaça de Joan Peiró is fenced for the works round Sants station (remodelling 2025-2028, the square being planted, the Bosc de Viriat), and the station itself is about 250 m east of the shop."
     ],
     "viewpoints": [
       {
@@ -300,16 +300,6 @@
       "lines": [
         "La calle de Sants. Tiendas una detrás de otra, hasta donde alcanza la vista.",
         "Todas las persianas están a media altura. Todas a la misma."
-      ]
-    },
-    {
-      "id": "sants-obras",
-      "label": "Mirar las obras",
-      "x_m": 70,
-      "z_m": 70,
-      "lines": [
-        "Vallas y máquinas paradas. Detrás está la estación de Sants, en obras desde hace meses.",
-        "Por los altavoces anuncian trenes, uno detrás de otro, sin parar."
       ]
     }
   ],
