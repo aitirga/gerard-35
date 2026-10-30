@@ -20,6 +20,8 @@ const MAIN_GREEN = 16, CROSS_GREEN = 10, AMBER = 3, CLEAR = 3;
 const CYCLE = MAIN_GREEN + CROSS_GREEN + 2 * (AMBER + CLEAR);
 /** Streets with through traffic; service roads, alleys and living streets stay quiet. */
 const DRIVEN = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified']);
+/** Scooters weave through Barcelona's traffic: about one vehicle in six. */
+const MOTO_COLOURS = ['#f1f0eb', '#1f2326', '#b3312c', '#a7adb1', '#2f4f7a'];
 const CAR_COLOURS = ['#f2f1ec', '#20252b', '#9aa0a4', '#b63a32', '#c9ccce', '#2c4a6e', '#5b6066', '#e8e4d8', '#7a2e2a', '#2f5a48', '#d8b04a'];
 /** Barcelona's taxis (black and yellow) show as yellow cars, about one in seven. */
 const TAXI = '#f2c230';
@@ -212,14 +214,16 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
   }
   function spawn(e: Edge, lane: number) {
     const bus = lane === 0 && e.road.highway !== 'residential' && random() < 0.12;
-    const colour = bus ? '#c8232c' : random() < 0.14 ? TAXI : CAR_COLOURS[Math.floor(random() * CAR_COLOURS.length)];
-    const entity = new pc.Entity(bus ? 'Bus en marcha' : 'Coche en marcha');
+    const moto = !bus && random() < 0.16;
+    const colour = bus ? '#c8232c' : moto ? MOTO_COLOURS[Math.floor(random() * MOTO_COLOURS.length)] : random() < 0.14 ? TAXI : CAR_COLOURS[Math.floor(random() * CAR_COLOURS.length)];
+    const entity = new pc.Entity(bus ? 'Bus en marcha' : moto ? 'Moto en marcha' : 'Coche en marcha');
     root.addChild(entity);
     // The models' fronts face -z, centred on the entity.
     if (bus) kit.place({ kind: 'bus', x: 0, z: 0, color: colour, livery: 'tmb' }, entity, new pc.Vec3(0, 0, 2)).setLocalEulerAngles(0, 90, 0);
+    else if (moto) kit.place({ kind: 'moto', x: 0, z: 0, color: colour, rider: true }, entity, new pc.Vec3(0, 0, 0));
     else kit.place({ kind: 'car', x: 0, z: 0, color: colour }, entity, new pc.Vec3(0, 0, -0.5));
     const v: Vehicle = {
-      entity, bus, length: bus ? 4.9 : 1.85, width: bus ? 1.02 : 0.84, cruise: (bus ? 0.75 : 1) * (CRUISE[0] + random() * (CRUISE[1] - CRUISE[0])),
+      entity, bus, length: bus ? 4.9 : moto ? 1.1 : 1.85, width: bus ? 1.02 : moto ? 0.5 : 0.84, cruise: (bus ? 0.75 : 1) * (CRUISE[0] + random() * (CRUISE[1] - CRUISE[0])),
       edge: e, s: 0, lane, offset: laneOffset(e, lane), v: 0, x: 0, z: 0, hx: 1, hz: 0, yaw: 0, slip: [0, 0], held: 0, squeeze: 0,
     };
     v.next = choose(e); v.v = v.cruise * 0.8;

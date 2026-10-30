@@ -453,6 +453,73 @@ export function createPropKit() {
     for (let i = 0; i <= length; i += 2) part(holder, 'Poste de valla', 'box', frame, [i - 0.5, 0.88, -0.06], [0.06, 1.76, 0.06]);
   }
 
+  // Barcelona's containers: grey bodies with the lid and front in each stream's colour.
+  const binColours = ['#7f8589', '#f2c230', '#2f6fb5', '#3f8f4a', '#7a5233'].map((c, i) => mat(`Contenedor ${i}`, c, 0.35));
+  const binBody = mat('Cuerpo de contenedor', '#5d6368', 0.35);
+  function containers(holder: pc.Entity) {
+    binColours.forEach((colour, i) => {
+      part(holder, 'Contenedor', 'box', binBody, [i, 0.58, 0], [0.9, 1, 0.78]);
+      part(holder, 'Tapa', 'box', colour, [i, 1.12, -0.02], [0.94, 0.08, 0.84]);
+      part(holder, 'Frente', 'box', colour, [i, 0.78, 0.4], [0.72, 0.36, 0.02]);
+      for (const dx of [-0.36, 0.36]) part(holder, 'Pie', 'box', black, [i + dx, 0.04, 0], [0.08, 0.08, 0.6]);
+    });
+  }
+  const bicingRed = mat('Rojo Bicing', '#d0262e', 0.4), bicingWhite = mat('Blanco Bicing', '#eceae4', 0.4);
+  /** A bike standing along z (front to -z), wheels in the YZ plane. */
+  function bike(parent: pc.Entity, dx: number, frameColour: pc.Material) {
+    for (const dz of [-0.36, 0.36]) part(parent, 'Rueda', 'torus', rubber, [dx, 0.3, dz], [0.56, 0.1, 0.56], [0, 0, 90]);
+    part(parent, 'Cuadro', 'box', frameColour, [dx, 0.42, 0], [0.05, 0.05, 0.62], [12, 0, 0]);
+    part(parent, 'Cesta', 'box', frameColour, [dx, 0.66, -0.42], [0.3, 0.18, 0.22]);
+    part(parent, 'Sillín', 'box', black, [dx, 0.68, 0.16], [0.08, 0.04, 0.16]);
+    part(parent, 'Manillar', 'box', black, [dx, 0.72, -0.3], [0.38, 0.04, 0.04]);
+  }
+  function bicing(holder: pc.Entity) {
+    // Along +x: the terminal with its screen, then a rail of docks with a bike in most of them.
+    part(holder, 'Base del Bicing', 'box', frame, [1.5, 0.03, -0.25], [3.9, 0.06, 0.3]);
+    part(holder, 'Terminal', 'box', bicingRed, [0, 0.75, -0.25], [0.32, 1.5, 0.22]);
+    part(holder, 'Pantalla', 'box', black, [0, 1.15, -0.13], [0.22, 0.26, 0.02]);
+    for (let i = 1; i < 4; i++) {
+      part(holder, 'Anclaje', 'box', frame, [i, 0.35, -0.3], [0.12, 0.7, 0.12]);
+      if (noise(i, 2, 3) > 0.25) bike(holder, i, i % 2 ? bicingRed : bicingWhite);
+    }
+  }
+  const motoPaint = ['#f1f0eb', '#1f2326', '#b3312c', '#a7adb1', '#2f4f7a'].map(c => shine(mat('Carenado', c, 0.6), 'paint'));
+  const rider = mat('Chaqueta', '#2b3138', 0.3), helmet = shine(mat('Casco', '#e9e7e1', 0.7), 'paint');
+  function moto(holder: pc.Entity, colour?: string, riding = false) {
+    // A scooter along z, front to -z: two small wheels, the step-through body, seat and top box.
+    const p = holder.getPosition(), body = colour ? (paint.get(colour) ?? shine(mat('Carenado', colour, 0.6), 'paint')) : motoPaint[Math.floor(noise(p.x, p.z, 4) * motoPaint.length)];
+    if (colour) paint.set(colour, body);
+    for (const dz of [-0.45, 0.45]) part(holder, 'Rueda', 'torus', rubber, [0, 0.2, dz], [0.42, 0.12, 0.42], [0, 0, 90]);
+    part(holder, 'Plataforma', 'box', black, [0, 0.24, 0.02], [0.26, 0.06, 0.5]);
+    part(holder, 'Carenado trasero', 'box', body, [0, 0.42, 0.3], [0.3, 0.32, 0.5]);
+    part(holder, 'Escudo', 'box', body, [0, 0.55, -0.36], [0.3, 0.56, 0.12], [-12, 0, 0]);
+    part(holder, 'Asiento', 'box', black, [0, 0.62, 0.26], [0.26, 0.07, 0.48]);
+    part(holder, 'Manillar', 'box', black, [0, 0.9, -0.4], [0.5, 0.04, 0.05]);
+    if (riding) {
+      part(holder, 'Motorista', 'box', rider, [0, 0.95, 0.18], [0.36, 0.55, 0.26], [-10, 0, 0]);
+      part(holder, 'Casco', 'sphere', helmet, [0, 1.35, 0.1], [0.28, 0.28, 0.28]);
+    } else if (noise(p.x, p.z, 5) > 0.5) part(holder, 'Baúl', 'box', black, [0, 0.8, 0.5], [0.3, 0.24, 0.26]);
+  }
+  const alu = mat('Aluminio', '#b9bcbd', 0.55), tableTop = mat('Mesa de terraza', '#e6e2d9', 0.3);
+  function terrace(holder: pc.Entity) {
+    // A round café table and two aluminium chairs facing each other across it.
+    part(holder, 'Pie de mesa', 'cylinder', alu, [0, 0.36, 0], [0.05, 0.7, 0.05]);
+    part(holder, 'Base de mesa', 'cylinder', alu, [0, 0.02, 0], [0.34, 0.03, 0.34]);
+    part(holder, 'Mesa', 'cylinder', tableTop, [0, 0.72, 0], [0.56, 0.03, 0.56]);
+    for (const side of [-1, 1]) {
+      part(holder, 'Asiento', 'box', alu, [side * 0.46, 0.44, 0], [0.34, 0.04, 0.34]);
+      part(holder, 'Respaldo', 'box', alu, [side * 0.62, 0.66, 0], [0.04, 0.42, 0.34]);
+      for (const [dx, dz] of [[-0.14, -0.14], [0.14, -0.14], [-0.14, 0.14], [0.14, 0.14]]) part(holder, 'Pata', 'box', alu, [side * 0.46 + dx, 0.22, dz], [0.03, 0.44, 0.03]);
+    }
+  }
+  function grate(holder: pc.Entity) {
+    // Flat, like a manhole: a steel frame and slats over the dark of the tunnel.
+    part(holder, 'Fondo de rejilla', 'box', black, [0, 0.03, 0], [1.6, 0.012, 0.75]);
+    part(holder, 'Marco de rejilla', 'box', rim, [0, 0.036, -0.39], [1.7, 0.016, 0.05]);
+    part(holder, 'Marco de rejilla', 'box', rim, [0, 0.036, 0.39], [1.7, 0.016, 0.05]);
+    for (let i = 0; i < 12; i++) part(holder, 'Lama', 'box', iron, [-0.74 + i * 0.135, 0.04, 0], [0.05, 0.014, 0.75]);
+  }
+
   function setOpacity(t: Tree, opacity: number) {
     t.opacity = opacity;
     const opaque = opacity >= 0.999;
@@ -502,6 +569,11 @@ export function createPropKit() {
       else if (prop.kind === 'shelter') shelter(holder);
       else if (prop.kind === 'bus') bus(holder, prop.color, prop.livery ?? 'tmb');
       else if (prop.kind === 'hoarding') hoarding(holder, prop.length);
+      else if (prop.kind === 'containers') containers(holder);
+      else if (prop.kind === 'bicing') bicing(holder);
+      else if (prop.kind === 'moto') moto(holder, prop.color, prop.rider);
+      else if (prop.kind === 'terrace') terrace(holder);
+      else if (prop.kind === 'grate') grate(holder);
       else manhole(holder);
       batchGroupId = undefined;
       return holder;
