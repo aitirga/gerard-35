@@ -104,8 +104,11 @@ export interface GeoScene {
    * `bed` (planted strips of shrubs), `asphalt` colour, `markings` (lanes, zebras, BUS, bikes),
    * `kerbs` (granite kerbs along the roads, lowered at zebras) and `edge` (`city`: hazy blocks
    * beyond the map instead of wooded hills).
+   * `river_m` sinks the water that many metres below the street between stone banks, `water` is its
+   * colour (a turbid river, which mirrors less sky than the pool's blue one), and `hills: false` leaves
+   * out the generic hills (a landmark draws the place's own).
    */
-  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; kerbs?: boolean; edge?: 'hills' | 'city' };
+  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; kerbs?: boolean; edge?: 'hills' | 'city'; river_m?: number; water?: string; hills?: boolean };
   /** Named points for pieces the game adds itself, e.g. where the palace stands (`y` in cells). */
   anchors?: Record<string, { x: number; z: number; y?: number }>;
   /** Real materials of the street's surfaces (ground, footway, road, bike, square, grass, bed, forest, sand, rail, bridge). */

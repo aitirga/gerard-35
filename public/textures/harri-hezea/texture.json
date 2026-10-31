@@ -1,0 +1,29 @@
+{
+  "id": "harri-hezea",
+  "name": "Castle Wall Variation",
+  "kind": "material",
+  "size_m": [
+    2.0,
+    2.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "castle_wall_varriation",
+    "name": "Castle Wall Variation",
+    "url": "https://polyhaven.com/a/castle_wall_varriation",
+    "author": "Rob Tuytel",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven castle_wall_varriation --id harri-hezea",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#897f6a",
+  "made": "2026-10-30"
+}

@@ -130,9 +130,9 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `lane_m` | Lane width: roads tagged `lanes` get that many lanes' width (or their `width` tag), and keep `lanes`, `oneway` and the bus lane (`bus:lanes`) for the markings |
 | `redraw` | Street names whose map ways are left out, to be drawn by the sketch's `keep` features instead (an avenue whose works the map does not show yet) |
 | `osm_props` | Props from map nodes, by kind, with extra fields for each: `tree` (natural=tree), `lamp` (street_lamp), `bench`, `bin` (waste_basket), `bike-rack` (bicycle_parking). Only on open ground; lamps and racks face the nearest road, benches turn their back to it (they look at the shop fronts) |
-| `shops` | Shops the map lacks: `name`, `kind` (an OSM shop or amenity value) and a position. Every shop, bar, bank and pharmacy of the map gets a sign on the nearest street wall of its building |
+| `shops` | Shops the map lacks: `name`, `kind` (an OSM shop or amenity value) and a position. Every shop, bar, bank and pharmacy of the map gets a sign on the nearest street wall of its building. `kind: "house"` is a house's name instead: a glazed tile beside the door, blue letters on white (Alegia's *Konfiteroenea*) |
 | `zebras_x_m` | Points along the turned frame where a zebra crossing runs across every road; the map's own `highway=crossing` nodes are drawn too |
-| `look` | The street's surfaces: `ground`/`footway` `panot` (grey sidewalk tiles; footways are not drawn over it), `grass` `bed` (soil and shrubs), `asphalt` colour (bike lanes too), `markings` (lanes, edges, zebras, BUS, bikes; a street with markings also gets moving traffic, see below), and `materials`: the real material of each surface (see [Real materials](#real-materials)) |
+| `look` | The street's surfaces: `ground`/`footway` `panot` (grey sidewalk tiles; footways are not drawn over it), `grass` `bed` (soil and shrubs), `asphalt` colour (bike lanes too), `markings` (lanes, edges, zebras, BUS, bikes; a street with markings also gets moving traffic, see below), and `materials`: the real material of each surface (see [Real materials](#real-materials)). `river_m` sinks the water that many metres below the street between stone banks (the `bank` material; rain falls into it), `water` is the river's colour (a turbid river: on pale ripples, so it is the colour you see, mirroring less sky than the pool-blue default), and `hills: false` leaves out the generic round hills when a landmark draws the place's own (Alegia's `valley`) |
 | `look.kerbs`, `look.edge` | `kerbs: true` lays granite kerbs (`granit`, 30 cm wide, standing a little proud) along every road's edges, lowered at the zebras, with puddles in their gutters after rain; `edge: "city"` closes the far sides with rows of plain blocks in dulled render and brick on a skirt of street instead of wooded hills |
 | `zoom` | Follow-camera zoom (orthographic half-height) |
 | `spawn` | `east_m`/`south_m`; snapped to the nearest walkable cell |
@@ -155,7 +155,7 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `walls` | List of render colours; each building gets one |
 | `base`, `trim`, `roof` | Stone plinth, frames/bands/timber, roof tiles |
 | `roof_kind` | `hip`, `gable`, `pyramid`, `flat`. `flat` is a tiled terrace on the real outline with a parapet; footprints that fill less than 85 % of their oriented box (an L, a courtyard) get the same outline with their own roof tiles |
-| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (framing, brown shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks, painted as an atlas of four bays by three storeys that starts at a different bay on every wall: each bay keeps its kind all the way up, a window, twin windows, a balcony with an iron or panel railing, plants, washing and sometimes an awning, or an enclosed aluminium gallery, while blinds, lit flats and air conditioners change from flat to flat), `school` (a band of glazing with coloured frames), `mall` (blank concrete with a thin stripe in the trim colour), `curtain` (an office tower in dark glass, a few windows lit) |
+| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (Basque framing over whitewash, an atlas of three bays by two storeys: crooked posts, braces, wooden or iron balconies with geraniums, board shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks, painted as an atlas of four bays by three storeys that starts at a different bay on every wall: each bay keeps its kind all the way up, a window, twin windows, a balcony with an iron or panel railing, plants, washing and sometimes an awning, or an enclosed aluminium gallery, while blinds, lit flats and air conditioners change from flat to flat), `school` (a band of glazing with coloured frames), `mall` (blank concrete with a thin stripe in the trim colour), `curtain` (an office tower in dark glass, a few windows lit) |
 | `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade`, `shops` (shop windows under striped awnings, some shutters down and tagged), `lobby` (glass doors under a coloured band), `mall-front` (lit glass under a wavy concrete canopy) |
 | `levels` | Default storeys (OSM `building:levels` or `height` win when present) |
 | `balcony_m`, `balcony`, `cornice`, `rooftop`, `party` | Relief as real geometry: balcony slabs `balcony_m` deep every storey on the walls the camera sees (fronts in `balcony`), a cornice under the parapet, a flat roof's clutter (stair and lift housings, water tanks, aerials, dishes, air conditioners) and bare party walls in the `party` colour where a block rises over its neighbour |
@@ -200,23 +200,32 @@ real material as soon as the textures load.
 
 ## Alegia, worked example
 
-- **Zone**: 235 × 120 m around San Juan kalea 95 (anchor 43.10017, -2.10033), 1.25 m cells
-  (188 × 96), rotated 180° so the river is at the back and the street fronts face the camera.
-- **Data** (OSM, fetched 2026-10-15): 35 buildings, most with their house name and number, San Juan kalea
-  and Kale Gora, the church (San Juan eliza), the town hall (Alegiko udaletxea, 63), Zubi Zaharra,
-  the Oria riverbank polygon, the Bidegorri, the Madrid–Hendaye railway and the A-1.
-- **Street View** (June 2025 capture) and satellite gave the styles:
-  - `arcade-block` for 93–95: four storeys, cream render, arcade, iron balconies with geraniums;
-  - `terrace` for the old houses 61–91: timber framing over stone ground floors, four storeys;
-  - `stone` for the church and its belfry (pyramid roof), `civic` for the town hall;
-  - the pollarded plane tree and parked cars in front of 95, lamps along the street.
-- **Places**: the portal of 95, the plane tree, the church, the town hall and the bridge.
-- **Approximate**: storeys and colours are per style, not per house; facades are painted bays;
-  roofs are fitted to boxes; the arcade at 95 is not walkable; riverbank trees are scattered,
-  not surveyed; open ground behind the church is walkable gravel in the game.
+Alegia is the place built furthest with every tool on this page; its brief, identity card, sources
+and credits are in [places/alegia.md](places/alegia.md).
+
+- **Zone**: 335 × 155 m around San Juan kalea 95 (anchor 43.10017, -2.10033), 1.25 m cells
+  (268 × 124), rotated 180° so the river is at the back and the street fronts face the camera.
+- **Data** (OSM, fetched 2026-10-30): 62 buildings, most with their house name, San Juan kalea, the
+  church, the town hall, Zubi Zaharra and the road bridge, the Oria riverbank, the riverside
+  bidegorri, the Madrid–Hendaye railway and the N-I.
+- **Look**: `river_m: 3` sinks the Oria between rubble banks under an overcast sky (`scenery.ts`
+  turns the sun soft and white for `alegia`; `lighting.ts` gives it the `overcast` sky, whose
+  horizon is the wooded hills the water mirrors); `hills: false` hands the backdrop to the `valley`
+  landmark (wooded ridge, meadows with farmhouses, Txindoki, mist on the slopes).
+- **Materials**: setts (`galtzada`), wet rubble (`harri-hezea`) on the church, bridge and banks, old
+  canal tiles (`teila-zaharra`) on every roof, river pebbles (`legarra`), and the town hall's real
+  front (`udaletxea`, a signature facade).
+- **Landmarks**: `alegia-town-hall`, `zubi-zaharra`, `belfry`, `church-windows`, `weir`, `joare`,
+  `pergola`, `toka`, `pelota-wall`, `railing` (both banks), `wall-lamp`, `bunting`, `valley`.
+- **Life**: the `alegia` air is a drizzle that rings the puddles and the river, and low mist;
+  every old house wears its name tile (`shops` of kind `house`).
+- **Sketch**: `sketch.json` keeps one feature over the map, Bulebarra laid as a square: OSM tags it
+  a park, the orthophoto shows a paved prow.
+- **Approximate**: storeys and colours are per style except where set per house; the arcade at
+  95 is painted, not walkable; riverbank trees are scattered, not surveyed.
 
 Build it with `just geo-build alegia`; refresh the data with `just geo alegia` (the result may
-change if OSM changes). Pick it in the environment selector, or `just screenshots alegia`.
+change if OSM changes). Pick it in the development picker, or `just screenshots alegia`.
 
 ## Limits and next steps
 
@@ -348,6 +357,7 @@ zone keeps its palette and gains the real grain and its normal map. Defaults (`L
 | `grass` / `bed` / `forest` | `gespa` / `terra` / `gespa` | `#86a462` / `#4f4234` / `#4f6d42` |
 | `sand` | `sorra` | its own |
 | `rail` / `bridge` | `grava` / `carreu` | `#857b6f` / `#b3a68d` |
+| `bank` (the walls of a sunk river, `look.river_m`) | painted stone | `#7d7b70` |
 
 **Buildings.** The real grain goes *under* the painted bays: each plain wall is filled with the
 building's own colour and the texture is laid over it as neutral grey grain (`hard-light`), then the
@@ -428,7 +438,7 @@ landmarks are for geo zones.
 | `rotation_deg` | Turn round the vertical, counter-clockwise seen from above; at 0 the landmark's front (+z) faces the camera |
 | `size_m` | Footprint `[width, depth]` in metres (default one cell) |
 | `solid` | Default `true`: the cells whose centre is inside the turned footprint are blocked like a building, so places snap round it |
-| `params` | Anything the builder reads (colours, a phase, a name) |
+| `params` | Anything the builder reads (colours, a phase, a name). `building` (a `way/<id>`) says which building the landmark dresses: its `cut` pieces then join that building's cut and vanish with its wall, instead of floating in the hole (a belfry's bells, a church's windows, the town hall's turret) |
 | `textures` | Texture ids the builder uses that the zone does not already use, so the build embeds them |
 
 The map also gives small landmarks in every zone (`OSM_LANDMARKS` in `tools/geo.py`), on open
@@ -460,7 +470,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
 | `mat(name, hex, gloss, glow)` | A plain material, shared within the scene |
 | `surface(texture, tint, gloss)` | A real material, tinted, tiling by metres on `mesh()` UVs; plain `tint` until it loads |
 | `part(name, type, material, position, scale, rotation?, parent?)` | A primitive merged into the static batch |
-| `mesh()` / `add(name, mesh, material, { cut, shadows, parent })` | Hand-built meshes; `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building), otherwise batched |
+| `mesh()` / `add(name, mesh, material, { cut, shadows, parent })` | Hand-built meshes (`quad`, `tri`, and `box(centre, size)` with UVs in metres); `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building, or its building's with `params.building`), otherwise batched |
 | `texture(canvas)` | A painted canvas texture (signs), destroyed with the scene |
 
 Rules: build at real size in metres; nothing tall may hide Gerard (`cut: true`); reuse materials

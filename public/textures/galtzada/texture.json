@@ -1,0 +1,29 @@
+{
+  "id": "galtzada",
+  "name": "Cobblestone Floor 07",
+  "kind": "material",
+  "size_m": [
+    2.0,
+    2.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "cobblestone_floor_07",
+    "name": "Cobblestone Floor 07",
+    "url": "https://polyhaven.com/a/cobblestone_floor_07",
+    "author": "Rob Tuytel",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven cobblestone_floor_07 --id galtzada",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#615c4d",
+  "made": "2026-10-30"
+}

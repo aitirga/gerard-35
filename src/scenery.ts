@@ -137,20 +137,22 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const glow = mat('Farolas', '#ffdb9c', 0.2, 2);
   const w = environment.grid[0].length, d = environment.grid.length;
   const night = environment.id === 'patio';
+  // Alegia is drawn under a thin overcast (docs/places/alegia.md): a softer, whiter sun and more light from the sky.
+  const overcast = environment.id === 'alegia';
   // The Meridiana flat is lit by its lamps, which are the bulbs at home: the window light stays low.
   const lamplit = environment.id === 'meridiana';
   // Outdoors by day: a near-white sun, and a blue sky that tints the shade and lights it from the other side.
   const outdoor = !night && !lamplit && !environment.plan && !environment.palace;
-  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
-  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
-  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : outdoor ? 1.8 : 1.65;
-  const skyIntensity = 0.42;
+  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : overcast ? new pc.Color(0.4, 0.44, 0.48) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
+  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : overcast ? new pc.Color(0.96, 0.97, 0.95) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
+  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : overcast ? 1.3 : outdoor ? 1.8 : 1.65;
+  const skyIntensity = overcast ? 0.55 : 0.42;
   app.scene.ambientLight = ambient.clone();
   let tone = 0, dark = 0;
   app.scene.fog.type = pc.FOG_NONE;
   // Soft shadows fitted to the view, and the sky glossy things reflect (src/lighting.ts).
   const light = lighting(app);
-  light.setSky(night ? 'night' : environment.palace ? 'palace' : outdoor ? 'day' : 'indoor');
+  light.setSky(night ? 'night' : environment.palace ? 'palace' : overcast ? 'overcast' : outdoor ? 'day' : 'indoor');
   const sun = new pc.Entity('Sol de la tarde');
   sun.addComponent('light', { type: 'directional', color: sunColor.clone(), intensity: sunIntensity, castShadows: true, shadowDistance: 95 });
   light.shade(sun.light!);
@@ -161,13 +163,22 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     sky.addComponent('light', { type: 'directional', color: new pc.Color(0.6, 0.72, 0.95), intensity: skyIntensity, castShadows: false });
     sky.setEulerAngles(35, 150, 0); root.addChild(sky);
   }
-  // Floor plans lay their own backdrop, open under a stairwell.
-  const backdrop = mat('Fondo', night ? '#172a30' : '#67746b');
+  // Floor plans lay their own backdrop, open under a stairwell. Under Alegia's overcast the usual one
+  // reads pale beside the river, so it is the dark green of the valley floor.
+  const backdrop = mat('Fondo', night ? '#172a30' : overcast ? '#3f4a3c' : '#67746b');
   const backdropColor = backdrop.diffuse.clone();
+  // A geo place that sinks its river below the street (look.river_m) stands on a deeper plinth.
+  const drop = environment.geo ? (environment.geo.look?.river_m ?? 0) / environment.geo.cell_m : 0;
   // The backdrop only receives shadows: as a caster it would stretch the sun's shadow depth over 200 m.
-  if (!environment.plan) box('Fondo', backdrop, cx, -1.05, cz, 200, 0.2, 200).render!.castShadows = false;
-  // Floor plans build their own plinth, with room for a stairwell going down.
-  if (!environment.plan && !environment.palace) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
+  if (!environment.plan) box('Fondo', backdrop, cx, -1.05 - drop, cz, 200, 0.2, 200).render!.castShadows = false;
+  // Floor plans build their own plinth, with room for a stairwell going down; under a sunk river it is
+  // hollow, four sides and a floor below the water, so the river shows through the street.
+  if (drop > 0) {
+    const deep = 0.8 + drop, y = -0.02 - deep / 2;
+    box('Maqueta', concrete, cx, -0.02 - deep + 0.05, cz, w + 0.2, 0.1, d + 0.2);
+    for (const pz of [-0.55, d - 0.45]) box('Maqueta', concrete, cx, y, pz, w + 0.2, deep, 0.1);
+    for (const px of [-0.55, w - 0.45]) box('Maqueta', concrete, px, y, cz, 0.1, deep, d + 0.2);
+  } else if (!environment.plan && !environment.palace) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
 
   function pointLight(px: number, y: number, pz: number) {
     const light = new pc.Entity('Luz cálida');
@@ -410,6 +421,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       }
       return Number.isFinite(height) ? height : .025;
     },
+    /** Where a geo place sinks its river, the water's surface (rain falls into it); elsewhere nothing. */
+    waterHeight(px: number, pz: number) { return geo?.waterAt(px, pz); },
     toWorld(px: number, pz: number) { return new pc.Vec3(x(px), 0, z(pz)); },
     /** A raised surface that feet follow (`top` high over the `w` × `d` cells centred on px, pz): Uri's tower ramp. */
     addSurface(px: number, pz: number, w: number, d: number, top: number) { surfaces.push({ x: x(px), z: z(pz), w, d, y: top }); },

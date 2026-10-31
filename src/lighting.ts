@@ -63,6 +63,8 @@ export const LIGHTING = {
       night: { zenith: '#0e1a2f', horizon: '#3a4a5c', ground: '#16191a' },
       /** Inside her palace: a dark plum vault over a deep pink glow, which rims her gum without washing her walls out. */
       palace: { zenith: '#2a0a26', horizon: '#9c3f7c', ground: '#2a0820' },
+      /** Alegia's thin overcast: a pale grey lid of cloud, and low down the wooded hills that close the valley, so the river mirrors green, not blue. */
+      overcast: { zenith: '#aab3b6', horizon: '#7f8b79', ground: '#434c3e' },
     } satisfies Record<SkyKind, SkyColours>,
     /** La Reina Bubbaloo's sky: dark plum above, pale pink haze on the horizon (`setTone` 1). */
     bubbaloo: { zenith: '#2a0a26', horizon: '#9c3f7c', ground: '#220a1c' } satisfies SkyColours,
@@ -81,7 +83,7 @@ export const LIGHTING = {
 };
 
 export type ShadowKind = 'pcss' | 'vsm' | 'pcf5' | 'pcf3';
-export type SkyKind = 'day' | 'indoor' | 'night' | 'palace';
+export type SkyKind = 'day' | 'indoor' | 'night' | 'palace' | 'overcast';
 type SkyColours = { zenith: string; horizon: string; ground: string };
 type Shine = keyof typeof LIGHTING.shine;
 
