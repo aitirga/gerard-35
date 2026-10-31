@@ -154,7 +154,7 @@ runs before rendering the ground, which then has nothing to render).
 | Sant Andreu (Rodalies) | R4 | — | On the map |
 | Plaça de Sants | L1, L5 | El Nucli, the game store where Gerard meets Bernat | On the map |
 | Espanya | L1, L3 | Plaça d'Espanya | On the map |
-| Poble Sec | L3 | Poble Sec | On the map |
+| Poble Sec | L3 | `poble-sec` (Carrer de Blai, Emilie's corner; the entrance in Plaça dels Ocellets) | Playable |
 | Barceloneta | L4 | The beach | On the map |
 | Sagrada Família | L5 | The temple's surroundings and its inside | On the map |
 | El Carmel | L5 | The Búnkers del Carmel | On the map |
@@ -205,6 +205,12 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
   the camera, blocks of flats, the L1 entrance and the castle on the roof.
+- **`poble-sec`**: Carrer de Blai in Poble Sec, where Emilie lives (`docs/places/poble-sec.md`), a
+  real-data zone from OpenStreetMap: Blai from Carrer de Salvà to Plaça dels Ocellets with its bars,
+  terraces and festoons, the cross streets climbing to Carrer d'Elkano, Emilie's corner at Blai and
+  Margarit, and Montjuïc drawn behind the back edge as terraces, stairs and pines (the
+  `montjuic-vessant` landmark). Turned 153° so Blai runs left to right with its bar side facing the
+  camera; the L3 entrance stands in Plaça dels Ocellets.
 
 ## The TV news set
 

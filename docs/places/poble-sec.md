@@ -1,16 +1,15 @@
 # Poble Sec · Carrer de Blai and the Montjuïc slope
 
-Status: research and draft (2026-10-30). Nothing is wired into the game yet: the zone draft lives in
-`assets/geo/poble-sec/` (`zone.json` and the OpenStreetMap data in `osm.json`), and the build waits
-for the shared foundation (real materials in `tools/textures.py`, landmark modules in
-`src/landmarks/`, `docs/visual-style.md`).
+Status: built (2026-10-31). The place `poble-sec` is playable: the L3 brings the party up in Plaça
+dels Ocellets, and the development picker lists it under Barcelona (*Poble Sec · Carrer de Blai*).
+Screenshots: `just screenshots poble-sec --gpu`.
 
 Where Emilie lives (`docs/story-outline.md`, People: a friend of Gerard and Aitor, very clever; her
 mission will be a technical problem). This step gives her a corner and a door to look at, no mission.
 
 | Id | What | How it is reached |
 | --- | --- | --- |
-| `poble-sec` | Carrer de Blai from Carrer de Salvà to Plaça dels Ocellets, the cross streets that climb towards Montjuïc as far as Carrer d'Elkano, Emilie's corner at Blai and Margarit, and the slope rising behind as the backdrop | Metro: the station `poble-sec` (L3, already on the network map), its entrance in Plaça dels Ocellets |
+| `poble-sec` | Carrer de Blai from Carrer de Salvà to Plaça dels Ocellets, the cross streets that climb towards Montjuïc as far as Carrer d'Elkano, Emilie's corner at Blai and Margarit, and the slope rising behind as the backdrop | Metro: the station `poble-sec` (L3), its entrance in Plaça dels Ocellets (`STATION_PLACES` in `src/transit.ts`) |
 
 ## The real place in 2026
 
@@ -102,85 +101,105 @@ saved or shipped. Aitor's own photos of Blai at night would be the best referenc
 
 ## Identity card
 
-Status: refined from `docs/visual-style.md` because the research shows the stairs are at the top
-of the barrio, 300 m above Blai: the place's material is its houses (render, iron balconies, rolled
-blinds) and the stairs move to the landmark.
+Status: built; refined from `docs/visual-style.md` because the research showed the stairs are at
+the top of the barrio, 300 m above Blai: the place's material is its houses (render, iron balconies,
+rolled blinds) and the stairs moved to the landmark. Colours measured on the screenshots.
 
 | | |
 | --- | --- |
-| Dominant | Sienna render `#b8744a` (the old houses in evening light) |
-| Secondary | Montjuïc pine `#4e6b3c`, terrace bulbs `#f2c27a`, Blai's slabs `#a7a197`, shutter green `#3f5a3a`, cream render `#e6d2b5` |
-| Material | Warm render bays with an iron balcony per French window and rolled slatted blinds hung over the railing (`photo:poble-sec-bays`, from Elkano 61, over `estuc`) |
-| Ground | Blai's grey concrete slabs from wall to wall, no kerbs (`blai-lloses`); the cross streets' narrow asphalt and grey panot sidewalks (`asfalt`, `panot-gris`) |
-| Landmark | Montjuïc rising behind the roofs: stepped rows of houses on stone walls, Margarit's long stair with its handrail, umbrella pines on top (kind: a slope and its stairs). Secondary, never the landmark: Santa Madrona's sandstone tower |
-| Light | New look `poble-sec`: warm evening, deeper shade, lit windows; `day` sky; drawn for about 20:00, but it must hold from morning to night like every place. The terraces' festoon bulbs are the place's one glow |
-| Props | Bar terraces (folding aluminium tables and chairs, closed parasols, chalkboard menus, planters), festoon strings over them, pintxo counters through open bar doors, rows of recycling containers, parked scooters, plants and washing on balconies, wall lamps on brackets, the L3 totem |
-| Air | Warm motes under the terrace lights, still air |
-| Sound | Chatter, cutlery and glasses on the terraces, a waiter calling an order, a scooter labouring uphill, a TV through an open balcony, swifts screaming at dusk |
-| Only here | Every street that climbs from Blai ends in stairs going up into Montjuïc's pines (in the game, at the zone's back edge) |
-| Text | Catalan street plates (white marble, black letters: *Carrer de Blai*, *Plaça dels Ocellets*); bar boards as on the street (*Pintxos*, *Vermut*, *Tapes*); the real bar names in plain type |
-| Wink | None yet |
-| Emilie | Her corner (invented resident, real lot): the narrow wedge of four storeys where Carrer de Margarit leaves Blai, both faces seen by the camera, her door on Margarit beside the café. Top floor: a balcony crowded with plants, an orange extension cable dropping to the floor below, the bluish light of a screen; a small antenna and a solar panel on the roof. Nothing on it points anywhere: it is just how her home looks |
+| Dominant | Warm sienna-ochre render and terracotta flat roofs, `#b08c58` in the low sun (measured), over cool blue-grey shade `#323c4f` |
+| Secondary | Montjuïc's pines `#4e6b3c`, the festoons' bulbs `#ffcf7e`, Blai's slabs `#96908a`, the cream and orange trim of the Elkano 73 bays `#e6d2b5` / `#c27b3e` |
+| Material | Warm render bays with an iron balcony per French window and slatted blinds rolled over the railing: two photo atlases (`poble-sec-bays` from Elkano 61, `poble-sec-bays-siena` from Elkano 73) mixed with the painted `iron-balconies` in a sienna palette |
+| Ground | Blai's grey concrete slabs (30 × 60 cm, running bond) from wall to wall with no kerbs (`blai-lloses`), also on the cross streets' sidewalks; narrow asphalt on the cross streets |
+| Landmark | Montjuïc behind the roofs: terraces of houses on rubble-stone walls, every street from Blai going on up as a stair with its handrail, Passeig de l'Exposició's trees, the slope of umbrella pines and holm oaks and the castle's wall on the crest (kind: a slope and its stairs; `montjuic-vessant`) |
+| Light | `poble-sec` in `LOOKS`: warm (temperature +.10), contrast 1.06, cool lifted shade; `day` sky; drawn for the start of the evening |
+| Props | Bar terraces (aluminium tables and folding chairs, plates of pintxos, a glass of vermut, a parasol folded shut, a planter, the A-frame chalkboard), festoons of bulbs zigzagging across Blai, bar fronts lit from inside (`bars` ground floors), young trees in pits, the roofs' stair huts, water tanks, aerials and washing (`terrats`), the L3 totem and stair |
+| Air | `AIR['poble-sec']`: warm motes in still air (and her gloom when the story brings it) |
+| Sound | Chatter, cutlery and glasses on the terraces, a waiter calling an order, a scooter labouring uphill, a TV through an open balcony, swifts at dusk (no file yet) |
+| Only here | Every street that climbs from Blai ends in a stair going up into Montjuïc's pines; and Blai's festoons, the place's one glow |
+| Text | Catalan and as on the street: the real bar names on their signs (La Tasqueta de Blai, Bota Bar, Mai Tanca…), chalkboards *PINTXOS*, *VERMUT*, *TAPES*, *BRAVES*, *CERVESA*; *CARRER DE BLAI*, *CARRER D'ELKANO*, *PLAÇA DELS OCELLETS* on the ground |
+| Wink | None |
+| Emilie | Her corner (invented resident, real lot `way/1264332421`): the narrow four-storey wedge where Carrer de Margarit leaves Blai, in the cream and orange Elkano 73 bays, both faces seen by the camera, her door on Margarit beside the corner bar. Top floor: a balcony crowded with pots and geraniums, an orange extension cable dropping to the balcony below, the bluish light of a screen behind the glass; on the roof a small aerial, two solar panels and a row of pots (`casa-emilie`). Nothing on it points anywhere: it is just how her home looks |
 
 ### How it stands apart
 
-| Compared with | ΔE (dominants) | Why it is not confused |
+| Compared with | ΔE (CIE76, against `#b08c58`) | Why it is not confused |
 | --- | --- | --- |
-| Plaça d'Espanya (L3, one stop; one district) | 40 | Colour, material (houses vs monumental stone and brick towers), ground (slabs vs granite plaza); both warm, Espanya golden afternoon, Poble Sec evening |
-| Sants street (one district) | 21 | Colour, material (render with balconies vs painted shutters), ground, light (Sants cool and in shade) |
-| Trinitat Vella · Rec Comtal | 11 | Not neighbours. Brick 60s blocks in the morning vs older render houses with iron balconies at evening |
-| Cardedeu | 13 | Not neighbours. Hipped clay roofs and gardens seen from above vs flat roofs over narrow streets |
-| El piso de la Meridiana | 12 | Not neighbours. An interior in wood |
-| Búnkers del Carmel | 19 | Not neighbours. An open hill at sunset vs dense streets |
+| Plaça d'Espanya (L3, one stop; one district) | 29 (`#d8ccb2`) | Material (houses and balconies vs monumental stone and brick towers), ground (slabs vs a granite plaza), landmark (a wooded slope with stairs vs twin campaniles) |
+| Sants street (one district) | 12 (`#cfa463`) | The closest colour: told apart by material (render with iron balconies vs painted shutters), ground (Blai's slabs), light (Poble Sec warm evening, Sants cool and in shade) and the hill at the back; three of four |
+| Trinitat Vella · Rec Comtal | 22 | Not neighbours. Brick blocks in the morning vs render with balconies at evening, terraces and festoons |
+| Cardedeu | 28 | Not neighbours. Hipped clay roofs and gardens vs flat terrats with huts over narrow streets |
+| El piso de la Meridiana | 14 | Not neighbours. An interior in wood |
+| Búnkers del Carmel | 7 | Not neighbours (L5, another district), the nearest colour: an open hilltop of concrete and earth at sunset vs dense streets of render, balconies and terraces |
 
-The palace's pink and the possession violet never appear; the bulbs are amber, not pink.
+The palace's pink and the possession violet never appear; the bulbs are amber; the only blue is
+the glow of Emilie's screen.
 
 ## The zone (`assets/geo/poble-sec/zone.json`)
 
-A real-data zone like the Meridiana and the Sagrada Família: OpenStreetMap for the blocks, streets,
-trees, shops and bars (`osm.json`, 3399 features from Overpass, fetched 2026-10-30), styled in
-`zone.json`.
+A real-data zone like the Meridiana: OpenStreetMap for the blocks, streets, trees, shops and bars
+(`osm.json`, 3399 features from Overpass, fetched 2026-10-30), styled in `zone.json`.
 
 - **Frame**: anchor 41.373685, 2.164479 (where Tapioles crosses Blai), turned **153°** with
   `bounds_turned`, so Blai runs along x at z ≈ 0: number 1 at the left (Salvà side), Plaça dels
-  Ocellets and the Paral·lel at the right. The uphill side of Blai (odd numbers, its bars) faces the
-  camera; the cross streets climb away from it towards Montjuïc at the back, their left-hand
-  houses facing the camera; the Paral·lel cuts the near right corner.
+  Ocellets and the Paral·lel at the right. The uphill side of Blai (odd numbers, most of its bars)
+  faces the camera; the cross streets climb away from it towards Montjuïc at the back (the upper
+  right of the screen), their left-hand houses facing the camera; the Paral·lel cuts the near right
+  corner.
 - **Bounds** (turned frame, metres): x −150 (just past Salvà) to 300 (the Paral·lel), z −128 (the
   first houses beyond Elkano) to 40 (through the blocks that run down to the Paral·lel). 1.5 m
-  cells: **300 × 112**, 289 buildings, 10 645 walkable cells. Zoom 11.
-- **Streets** (centre lines in the turned frame): Blai z ≈ 0 (walls at z −4.5 and +5);
-  Elkano z ≈ −93 at the left to −112 at the right; cross streets at Salvà x ≈ −122, Poeta Cabanyes
-  −62, Tapioles 0, Margarit 73 → 47 (it leans), Blasco de Garay 128 → 105, Creu dels Molers 230 →
-  204; Plaça dels Ocellets x 233-283.
-- **Spawn and station**: in Plaça dels Ocellets (251, 6), beside the L3 totem and stair (243, 8),
-  `station-poble-sec` with its three-cell stair. The real entrance is 210 m further along the
-  Paral·lel; it moves to where Blai meets the avenue.
+  cells: **300 × 112**, 289 buildings, about 10 540 walkable cells. Zoom 11.
+- **Streets** (centre lines in the turned frame): Blai z ≈ 0 (walls at z −4.5 to −5.9 and +4 to
+  +5); Elkano z ≈ −93 at the left to −112 at the right; cross streets where they meet Blai: Salvà
+  x ≈ −125, Poeta Cabanyes −66, Tapioles −2, Margarit 72 (it leans to 46 at the back edge),
+  Blasco de Garay 128, Creu dels Molers 230; Plaça dels Ocellets x 233–283.
+- **Spawn and station**: in Plaça dels Ocellets (251, 6), beside the L3 totem (242.5, 8) and its
+  stair, `station-poble-sec` with its three-cell step, like Fabra i Puig on the Meridiana. The real
+  entrance is 210 m further along the Paral·lel; it moves to where Blai meets the avenue.
 - **Places** (Spanish, Gerard's voice, no hints): the bars (*Mirar las barras*, at La Tasqueta de
   Blai), Emilie's door (*Mirar el portal*), the stairs at the top of Margarit (*Mirar las
   escaleras*: "Otro día subo", the reason he does not climb), the library (*Mirar la biblioteca*:
-  Francesc Boix), Santa Madrona (*Mirar el campanario*).
+  Francesc Boix).
 - **Labels**: CARRER DE BLAI (twice), CARRER D'ELKANO, PLAÇA DELS OCELLETS.
-- **Anchors**: `blai`, `emilie` (her door), `escales` (the foot of the stairs), `santa-madrona`.
-- **Buildings**: Emilie's wedge `way/1264332421` (4 storeys, label *Casa de Emilie*), the church
-  `way/215873439` (style `church`); every other house takes the map's storeys (mostly 6 and 7).
+- **Anchors**: `blai`, `emilie` (her door), `escales` (the foot of the stairs).
+- **Buildings**: every house takes the map's storeys (mostly 6 and 7). Four styles, spread by a
+  hash of the building's id so neighbours differ: `default` (the painted `iron-balconies` in seven
+  sienna and ochre renders, flat terracotta roofs), `bays` (the Elkano 61 photo atlas, about 40 %
+  of the houses of three to seven storeys), `siena` (the Elkano 73 atlas, cream with orange trim,
+  about 13 %) and `flats` (the 60s–70s blocks of eight storeys or more). The 37 buildings whose
+  ground floor the map lists as a bar, restaurant or café get the painted `bars` ground floor.
+  Emilie's wedge `way/1264332421` is labelled *Casa de Emilie*, four storeys, style `siena`.
 
 ```
-z −128 ┄┄ backdrop beyond the edge: rows of houses stepping up, Margarit's stair, pines ┄┄┄┄┄┄┄┄┄
+z −128 ┄┄ Montjuïc beyond the edge: terraces of houses, a stair up every street, pines, the castle ┄┄
         the first houses up the slope, their fronts facing the camera
 z ≈ −100 ════════════ Carrer d'Elkano (rebuilt 2024-25 from Margarit to the right) ════════════
         │Salvà        │Poeta Cabanyes │Tapioles    ╲Margarit     │Blasco de Garay │Creu dels Molers
         │   deep blocks of narrow 5-7 storey houses, courtyards inside              │
         │             │               │     Emilie ▣╲            │                │
-z = 0  ═╪══ CARRER DE BLAI · pedestrian · bars and terraces on both sides ══════════╪══ Plaça dels
-        │             │               │ Santa Madrona ╲ library   │                │   Ocellets ● L3
+z = 0  ═╪══ CARRER DE BLAI · slabs · bars, terraces and festoons on both sides ═════╪══ Plaça dels
+        │             │               │              ╲ library    │                │   Ocellets ● L3
 z = 40 ┄┴┄┄ cut through the blocks that run down to the Paral·lel ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄╲ Paral·lel ┄┄
        x −150        −62              0            73            128              230        300
 ```
 
-The preview (`just geo-build poble-sec` → `output/geo/poble-sec/preview.png`) shows the layout
-reads: Blai straight across, the cross streets climbing to Elkano, the plaça and the avenue at the
-right, every place reachable.
+### Blai: terraces, festoons and bars
+
+- **`terrassa-blai`** (27 of them): one in front of each bar or restaurant the map lists on Blai,
+  on whichever side it is, never two within 5.5 m on a side, 4.6 × 1.8 m against the wall so the
+  middle 6 m stay free. Aluminium tables and folding chairs, plates of pintxos and a glass, a
+  parasol folded shut, a planter and the A-frame chalkboard (*PINTXOS*, *VERMUT*, *TAPES*, *MENÚ*,
+  *BRAVES*, *CERVESA*). Low: nothing reaches Gerard's head.
+- **`garlanda`** (6 runs): festoons zigzagging from wall to wall at 4.8 m over the runs of
+  terraces between the cross streets, a bulb every 0.85 m. The bulbs glow past the bloom
+  threshold: the place's one glow. None over Plaça dels Ocellets (there is no wall across to hang
+  them from).
+- **`bars`** (a painted ground floor in `facade()`, `src/geo-scenery.ts`): the bar front open and
+  lit, bottles on the back shelves, the counter with its trays of pintxos; beside it a window with
+  stools, a roller shutter half up with a tag, or the menu board of food photos; a lamp on a
+  bracket over each bay. The real name goes above on the sign the map gives every bar.
+- **Trees**: eleven young plane trees in square pits on Blai's south side between the terraces
+  (the map has none on Blai; the photos do).
 
 ### The slope on flat ground
 
@@ -188,84 +207,91 @@ The game's ground is flat. Here that is mostly true: Blai and the streets as far
 about 3 m, so the playable part stays level. The slope is the zone's back edge, made on purpose
 (the diorama is cut where the hill starts):
 
-- **`montjuic-vessant`** (a landmark module, beyond z −128, never walked): two or three rows of
-  houses stepping up on rubble-stone retaining walls (`mamposteria`), each row 5-6 m above the one
-  before; every cross street carries on up between them as stairs with an iron handrail; Margarit's
-  is the long one (the real 204 steps, with lamps), climbing to the pines; umbrella pines and holm
-  oaks over pine-needle ground (`pinassa`), and far back, low, the wall of the castle on the crest.
-- **Compressed**: in reality 200-300 m of steeper streets (Magalhães, Plaça del Sortidor, Passeig de
-  l'Exposició) lie between Elkano and the stairs. The backdrop folds them into one rise, so every
-  street from Blai visibly ends in stairs climbing the hill.
-- **Gate**: the street ends where the diorama ends, like every zone; at Margarit, the place *Mirar
-  las escaleras* lets Gerard say why he is not going up today.
+- **`montjuic-vessant`** (a landmark beyond z −128, 470 × 110 m, never walked): three terraces
+  held by rubble-stone walls (`mamposteria`), 6, 7 and 7 m high, a street along the top of each
+  with its parapet; rows of three- to five-storey houses in the sienna palette on the first two;
+  every cross street from Blai carries on up as a 4.4 m stair cut into the terraces between stone
+  walls, with an iron handrail up the middle and a lamp at the top of each flight; Passeig de
+  l'Exposició's plane trees on the third; then the slope (`pinassa`, folded so it is not a plane)
+  up to 58 m with about 330 umbrella pines and holm oaks, Margarit's stair going on up through
+  them in seven flights with handrails and lamps, and the castle's crenellated wall on the crest.
+  One mesh per material (about 17 draw calls).
+- **Compressed**: in reality 200–300 m of steeper streets (Magalhães, Plaça del Sortidor, Passeig de
+  l'Exposició) lie between Elkano and the stairs, and the castle is a kilometre away. The backdrop
+  folds them into one rise, so every street from Blai visibly ends in stairs climbing the hill.
+- **Gate**: the street ends where the diorama ends, like every zone, at the foot of the first
+  stone wall; at Margarit, the place *Mirar las escaleras* lets Gerard say why he is not going up
+  today.
 
-## Texture candidates
+### Roofs
 
-Budget: at most about 12 new textures; this place needs five, the rest comes from the library.
+**`terrats`** (eight landmarks, each covering a strip of the zone): for every flat roof of three
+storeys or more, the stair's hut (where it fits inside the real outline), the fibre-cement water
+tank on most of them, one or two aerials and, on some, a washing line with the week's clothes.
+They are cut with the roof under them wherever the see-through cut opens (`cut: 'always'`), so
+nothing floats over the hole round Gerard. Emilie's roof is dressed by hand instead
+(`casa-emilie`).
+
+## Textures and credits
+
+Four new textures; everything else comes from the shared library (`asfalt`, `carreu`, `estuc`,
+`granit`, `mamposteria`, `rajola`, …). Credits also live in each `texture.json`.
 
 | Id | Use | Source | Licence, author | Notes |
 | --- | --- | --- | --- | --- |
-| `poble-sec-bays` | Photo atlas, 3 bays × 2 storeys, the old houses' upper floors | [Elkano 61.jpg](https://commons.wikimedia.org/wiki/File:Elkano_61.jpg) | CC BY-SA 3.0, Xavier Badia Castellà | Nearly frontal; rectify by its four corners, cut the half-hidden first bay; pale yellow, so the street's colour changes come from mixing it with the painted `iron-balconies` in the zone's palette |
-| `poble-sec-bays-crema` | Photo atlas, 2 × 2, cream with green roll-down blinds | [Creu dels Molers 63.jpg](https://commons.wikimedia.org/wiki/File:Creu_dels_Molers_63.jpg) | CC BY-SA 3.0, Xavier Badia Castellà | Frontal; a second family so a block never repeats one photo |
-| `poble-sec-baixos` | Ground-floor atlas for the cross streets: an arched doorway, a graffiti-covered shutter, a stone plinth | [Elkano 73.jpg](https://commons.wikimedia.org/wiki/File:Elkano_73.jpg), [Creu dels Molers 39.jpg](https://commons.wikimedia.org/wiki/File:Creu_dels_Molers_39.jpg) | CC BY-SA 3.0, Xavier Badia Castellà | Crop out the shop's name board; Blai's bars are painted instead (below) |
-| `blai-lloses` | Blai's grey concrete slabs | Poly Haven [`concrete_pavement_03`](https://polyhaven.com/a/concrete_pavement_03), or [`granite_tile_04`](https://polyhaven.com/a/granite_tile_04) | CC0 | Tint to `#a7a197`; check the slab size against the 2012 photos (about 40 cm) |
-| `pinassa` | Montjuïc's pine-needle ground in the backdrop | Poly Haven [`forest_ground_04`](https://polyhaven.com/a/forest_ground_04) (pine forest collection) | CC0 | |
-| Optional signature | One recognisable front on the seen side of Blai | [Blai 37.jpg](https://commons.wikimedia.org/wiki/File:Blai_37.jpg) (stone, curved crown) or [Creu dels Molers 22.jpg](https://commons.wikimedia.org/wiki/File:Creu_dels_Molers_22.jpg) | CC BY-SA 3.0, Xavier Badia Castellà | Both shot from below: strong rectification; only if the bays alone do not read |
-| Reused | Render, flat roofs, sidewalks, asphalt, retaining walls, Montjuïc stone, stair treads, 60s brick | `estuc`, `rajola`, `panot-gris`, `asfalt`, `mamposteria`, `carreu`, `granit`, `mao` | CC0 | Already in `public/textures/` |
+| `blai-lloses` | Blai's grey concrete slabs, 30 × 60 cm in running bond, tinted `#96908a` (the open ground everywhere, so the cross streets' sidewalks too) and `#928b80` (Plaça dels Ocellets) | Poly Haven [`concrete_pavement`](https://polyhaven.com/a/concrete_pavement), 1.8 m tile | CC0, Charlotte Baglioni | The slab size matches the photos of Blai 41 |
+| `pinassa` | Montjuïc's ground under the pines, tinted `#474d33` | Poly Haven [`forest_ground_04`](https://polyhaven.com/a/forest_ground_04) (pine forest collection) | CC0 | |
+| `poble-sec-bays` | Photo atlas, 3 bays × 2 storeys: curved iron balconies, carved lintels, slatted blinds | [Elkano 61.jpg](https://commons.wikimedia.org/wiki/File:Elkano_61.jpg), rectified by its four corners | CC BY-SA 3.0, Xavier Badia Castellà | Midtones lifted and warmed (recorded in `adjusted`) so the shaded photo reads as the pale render it is under the evening grade |
+| `poble-sec-bays-siena` | Photo atlas, 2 bays × 1 storey: cream render with orange balcony slabs and window surrounds, a long iron balcony with plants | [Elkano 73.jpg](https://commons.wikimedia.org/wiki/File:Elkano_73.jpg), cropped straight | CC BY-SA 3.0, Xavier Badia Castellà | The orange pilaster at each edge doubles where the atlas repeats, like a party wall |
 
-Also looked at and set aside: Poly Haven `concrete_pavers` (interlocking, not Barcelona),
-`clay_plaster` and `damaged_plaster` (too rough at this scale; `estuc` is enough), the painted
-portrait shutters (Sants already has murals on shutters as its "only here"; a single one here could
-be a found detail, not a texture).
+Set aside: Creu dels Molers 63 (cream with green blinds) and a ground-floor atlas (Elkano 73's
+shutter carries a shop's name across its middle; Creu dels Molers 39's upper floors are behind a
+tree): Blai's bars are painted instead; Blai 37 as a signature facade (shot from below; the bays
+already read).
 
-## Build plan (after the foundation merges)
+## How it was built
 
-1. Merge the foundation into `feat/places-poble-sec`; `just geo-build poble-sec`.
-2. Textures: `just texture-photo` for `poble-sec-bays`, `poble-sec-bays-crema` and
-   `poble-sec-baixos` (credits from Commons in each `texture.json`); `just texture-fetch polyhaven`
-   for `blai-lloses` and `pinassa`. Look at each at its real size.
-3. Styles in `zone.json`: `default` (old houses: `photo:poble-sec-bays` or the painted
-   `iron-balconies` in the sienna palette, `estuc`, flat `rajola` roofs), `crema`
-   (`photo:poble-sec-bays-crema`), `flats` (60s-70s infill, `mao` or cream), `church`; spread them
-   by building id so neighbours differ. `look.materials`: Blai's pedestrian ways and Plaça dels
-   Ocellets in `blai-lloses`, sidewalks `panot-gris`, roads `asfalt` `#46484a`.
-4. A painted ground floor `bars` in `facade()` (`src/geo-scenery.ts`): open bar fronts lit warm
-   from inside, a counter of pintxos, a chalkboard, a menu board, a roller shutter half up; given to
-   the buildings whose ground floor the map lists as a bar or restaurant on Blai.
-5. Landmarks (`src/landmarks/`): `montjuic-vessant` (the backdrop above), `terrassa` (a bar
-   terrace: two to six folding tables and chairs, a closed parasol, a chalkboard, a planter; low, so
-   it never hides Gerard; about fifteen along the seen side of Blai, leaving the middle free) and
-   `garlanda` (a festoon of warm bulbs strung over a terrace at about 4.5 m; thin, so it never hides
-   him; the place's bloom). Optional: Santa Madrona's tower (`campanar`), drawn simply.
-6. Props: an umbrella `pine` tree species in `src/props.ts` for the backdrop (the Búnkers, Sagrada
-   and Espanya streams need it too: whoever is first adds it); Elkano's new trees every 13 m from
-   Margarit rightwards; recycling container rows where the map has `amenity=recycling` (shared with
-   Sants); the L3 totem's plate in L3 green (the plate is red for every metro line today).
-7. Wiring: the id in `EnvironmentId` and `ENVIRONMENTS` (`src/environments.ts`) and `index.html`;
-   `STATION_PLACES['poble-sec']` in `src/transit.ts`; the place in `PLACES` (`src/jump-menu.ts`,
-   group Barcelona); `LOOKS['poble-sec']` in `src/grading.ts` (warm evening, temperature about
-   +.10, contrast 1.06); `AIR['poble-sec']` in `src/effects.ts` (warm motes, still air).
-8. Screenshots: `scripts/screenshots/poble-sec.json` (arriving in Plaça dels Ocellets, the terraces
-   on Blai, Emilie's corner, the top of Margarit with the stairs, the overview) and
-   `just screenshots poble-sec --gpu`; check Gerard in greyscale and the draw calls with `?stats`.
-9. Checks: `just typecheck`, `npm test`, `uv run --locked python -m unittest discover -s tests`.
-   Docs: `docs/barcelona.md` (the station and the designed zone), the Poble Sec row and card in
-   `docs/visual-style.md`, this file.
+1. `just geo-build poble-sec` from `osm.json` and `zone.json`.
+2. Textures with `tools/textures.py`: `fetch polyhaven concrete_pavement --id blai-lloses`,
+   `fetch polyhaven forest_ground_04 --id pinassa`, `photo <Commons URL> --id poble-sec-bays
+   --size-m 8.1 6 --bays 3 --storeys 2 --corners 580,332 3769,332 3953,2635 476,2635` and `photo
+   <Commons URL> --id poble-sec-bays-siena --size-m 5.4 3 --bays 2 --storeys 1 --crop
+   475,575,3302,1666` (then the midtone lift on `poble-sec-bays`).
+3. `zone.json`: styles, the buildings' styles and `bars` ground floors, the terraces (one per bar
+   on Blai, from the map's shops), the festoons over their runs, the trees, the landmarks. They were
+   written by a one-off script from the built scene; the data in `zone.json` is the source now.
+4. Landmark modules in `src/landmarks/`: `terrassa-blai`, `garlanda`, `montjuic-vessant`,
+   `casa-emilie`, `terrats`, with their solids in `src/landmark-shapes.ts` (boxes, bars, prisms
+   and foliage lenses gathered into one mesh per material).
+5. Wiring: `EnvironmentId`, `ENVIRONMENTS` (`src/environments.ts`), `LOOKS['poble-sec']`
+   (`src/grading.ts`), `PLACES` (`src/jump-menu.ts`, Barcelona), `STATION_PLACES['poble-sec']`
+   (`src/transit.ts`), `AIR['poble-sec']` (`src/effects.ts`), the home bulbs' colours
+   (`src/home-lights.ts`, the typecheck asks for every place).
+6. Screenshots: `scripts/screenshots/poble-sec.json` (Plaça dels Ocellets, Blai, Emilie's corner
+   and door, the top of Margarit, a cross street, the overview, and a last shot with the draw calls).
 
 ## Approximate, open and risks
 
-- **Draw calls.** 289 buildings, about six times the Meridiana's 52, each with its own walls,
-  ground floor, roof, lid and parapet (they open the see-through cut, so they are not batched). The
-  follow camera sees a fraction; the overview sees all. Measure first; if it is over budget, trim
-  the bounds (x −60 and z −118 keep Blai's core: about 220 buildings) or drop the one-storey
-  courtyard sheds the map lists inside the blocks (42 of them, never seen from the street).
-- **The station** moves 210 m along the Paral·lel to Plaça dels Ocellets.
-- **The stairs** are compressed: in reality they start 200-300 m above Elkano.
+- **Draw calls.** Following Gerard about 1 060–1 150 (one frame each, `--gpu`), over the ~1 000 of
+  the budget by about 10 %; the overview about 6 850 (the Meridiana's is about 10 000). Most of it
+  is the 289 buildings (five meshes each, unbatched because they open the cut) and the 82 shop
+  signs; this place's own pieces add about 100. If it must come down: drop the one-storey courtyard
+  sheds inside the blocks (never seen from the street; needs a way to skip buildings in
+  `tools/geo.py`), or trim the bounds to Blai's core.
+- **The station** moves 210 m along the Paral·lel to Plaça dels Ocellets. Its totem's plate is red
+  like every metro line's today (`src/props.ts`); the L3's is green.
+- **The stairs and the hill** are compressed: in reality the stairs start 200–300 m above Elkano
+  and the castle is a kilometre away.
 - **Storeys** come from the map (`building:levels`, Catastro-derived); none were checked house by
-  house.
-- **Emilie** is invented on a real lot above a real café; her name appears only on a letterbox in a
+  house. Facades are spread by hash, not house by house.
+- **Santa Madrona** is just outside the bounds (its footprint's centre is south of z 40), so its
+  tower is not drawn and the place that looked at it was removed.
+- **Blai's slabs** cover all open ground, so the cross streets' sidewalks are slabs too (in reality
+  a mix of panot and slabs).
+- **Emilie** is invented on a real lot above a real bar; her name appears only on a letterbox in a
   line, never on the street.
-- **Terraces and festoons**: their number and placement are a reading of the photos and guides, not
-  a survey; festoons are the nice-to-see liberty of the place.
+- **Terraces and festoons**: their number and placement are a reading of the photos, the guides
+  and the map's bars, not a survey; the festoons are the nice-to-see liberty of the place.
 - **Not covered**: Plaça del Sortidor, the Paral·lel's theatres and the three chimneys (outside the
-  zone); Emilie's flat inside (a hand-made interior if her mission needs it).
+  zone); Elkano's new trees (2024-25) and the recycling containers; Emilie's flat inside (a
+  hand-made interior if her mission needs it); the ambient sound.

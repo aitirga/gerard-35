@@ -155,7 +155,7 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `base`, `trim`, `roof` | Stone plinth, frames/bands/timber, roof tiles |
 | `roof_kind` | `hip`, `gable`, `pyramid`, `flat`. `flat` is a tiled terrace on the real outline with a parapet; footprints that fill less than 85 % of their oriented box (an L, a courtyard) get the same outline with their own roof tiles |
 | `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (framing, brown shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks, painted as an atlas of four bays by three storeys that starts at a different bay on every wall: each bay keeps its kind all the way up, a window, twin windows, a balcony with an iron or panel railing, plants, washing and sometimes an awning, or an enclosed aluminium gallery, while blinds, lit flats and air conditioners change from flat to flat), `school` (a band of glazing with coloured frames), `mall` (blank concrete with a thin stripe in the trim colour), `curtain` (an office tower in dark glass, a few windows lit) |
-| `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade`, `shops` (shop windows under striped awnings, some shutters down and tagged), `lobby` (glass doors under a coloured band), `mall-front` (lit glass under a wavy concrete canopy) |
+| `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade`, `shops` (shop windows under striped awnings, some shutters down and tagged), `lobby` (glass doors under a coloured band), `mall-front` (lit glass under a wavy concrete canopy), `bars` (a pintxos street's bar fronts, open and lit, the counter with its trays, a window with stools, a shutter half up or a menu board of photos) |
 | `levels` | Default storeys (OSM `building:levels` or `height` win when present) |
 | `materials` | Real materials of the style: `wall` (grain under the painted upper floors), `base` (under the ground floor) and `roof` (tiles, tinted by `roof`); texture ids, or `"none"` to keep it painted. Defaults by kind in [Real materials](#real-materials) |
 
@@ -457,7 +457,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
 | `mat(name, hex, gloss, glow)` | A plain material, shared within the scene |
 | `surface(texture, tint, gloss)` | A real material, tinted, tiling by metres on `mesh()` UVs; plain `tint` until it loads |
 | `part(name, type, material, position, scale, rotation?, parent?)` | A primitive merged into the static batch |
-| `mesh()` / `add(name, mesh, material, { cut, shadows, parent })` | Hand-built meshes; `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building), otherwise batched |
+| `mesh()` / `add(name, mesh, material, { cut, shadows, parent })` | Hand-built meshes; `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building), `cut: 'always'` for pieces spread over many buildings (roof huts) that must vanish with whichever roof is cut, otherwise batched. `src/landmark-shapes.ts` adds boxes, bars, prisms and foliage to one mesh, so a hundred chairs or pines cost one draw call |
 | `texture(canvas)` | A painted canvas texture (signs), destroyed with the scene |
 
 Rules: build at real size in metres; nothing tall may hide Gerard (`cut: true`); reuse materials
