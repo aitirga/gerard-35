@@ -88,6 +88,19 @@ const SCHOOL_PALACE_SCALE = 1.3;
 const GUARD_SCALE = 1.9;
 const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'] };
 
+/** The strongest right stick among standard pads (x right, y down), past a small dead zone. */
+function rightStick() {
+  const out = new pc.Vec2();
+  let pads: (Gamepad | null)[] = [];
+  try { pads = [...(navigator.getGamepads?.() ?? [])]; } catch { /* Restricted browser contexts may deny the API. */ }
+  for (const pad of pads) {
+    if (!pad?.connected || pad.mapping !== 'standard') continue;
+    const x = pad.axes[2] ?? 0, y = pad.axes[3] ?? 0, size = Math.hypot(x, y);
+    if (size > .2 && size > out.length()) out.set(x, y).mulScalar(Math.min(1, (size - .2) / .75) / size);
+  }
+  return out;
+}
+
 /**
  * The graphics device: WebGPU only (docs/graphics.md). Every custom shader is WGSL; a browser without
  * WebGPU gets a note saying what the game needs instead of a black page.
@@ -1272,6 +1285,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /** The camera's ortho height before any punch-in, and the hit kick it wears this frame. */
   let viewHeight = camera.camera!.orthoHeight;
   const cameraKick = new pc.Vec3();
+  /** In a fight the right stick leans the camera a little round the fight (−1…1 each way); let go, it eases back. */
+  const battleLook = new pc.Vec2();
   /** A train under the street (the Meridiana's median): whether it runs, where it is along x in cells, its way and the wait for the next. */
   const train = { running: false, x: 0, way: 1, wait: 6, scene: '', grates: [] as { x: number; z: number }[] };
   app.on('update', (dt: number) => {
@@ -1495,6 +1510,15 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       orbit.update(delta, sight && (pose => sight(towardCamera(pose))), reducedMotion.matches);
     }
     const offset = battle ? new pc.Vec3(5, 9, 15) : vec(cameraOffset(orbit.pose));
+    if (battle) {
+      const stick = rightStick();
+      battleLook.lerp(battleLook, stick, 1 - Math.exp(-delta * (stick.length() ? 5 : 3)));
+      // Up to 25° round the fight and 10° up or down, so the foes and the party always stay in view.
+      const yaw = -battleLook.x * 25 * pc.math.DEG_TO_RAD, length = offset.length();
+      offset.set(offset.x * Math.cos(yaw) + offset.z * Math.sin(yaw), offset.y, offset.z * Math.cos(yaw) - offset.x * Math.sin(yaw));
+      const pitch = Math.asin(offset.y / length) + battleLook.y * 10 * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
+      offset.set(offset.x / flat * Math.cos(pitch) * length, Math.sin(pitch) * length, offset.z / flat * Math.cos(pitch) * length);
+    } else battleLook.set(0, 0);
     // The view is orthographic, so how far back the camera stands only decides what its clip planes
     // keep: over a big place's overview it backs away along its view and sees further, so neither the
     // near corner nor the far one (and what stands beyond it) is cut off.

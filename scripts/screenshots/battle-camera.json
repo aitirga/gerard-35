@@ -1,0 +1,18 @@
+{
+  "title": "Fight camera · leaning it with the right stick",
+  "description": "In a fight the right stick leans the camera a little round the fight (up to 25° either side, 10° up or down), and it eases back when let go (src/game.ts `rightStick`). The stick is a fake standard pad set from the page.",
+  "steps": [
+    { "open": "/?story=noista&battle=3&allies=2&noista=1" },
+    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
+    { "eval": "window.stick = (x, y) => { const pad = { connected: true, mapping: 'standard', id: 'fake', axes: [0, 0, x, y], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }; navigator.getGamepads = () => [pad]; }; stick(0, 0)" },
+    { "shot": "rest", "delay": 1500, "caption": "The fight's own angle, the stick at rest" },
+    { "eval": "stick(1, 0)" },
+    { "shot": "right", "delay": 1500, "caption": "Stick right: the camera swings round to the right" },
+    { "eval": "stick(-1, 0)" },
+    { "shot": "left", "delay": 1500, "caption": "Stick left: round to the left" },
+    { "eval": "stick(0, -1)" },
+    { "shot": "up", "delay": 1500, "caption": "Stick up: the camera drops and looks further up the stands" },
+    { "eval": "stick(0, 0)" },
+    { "shot": "back", "delay": 2000, "caption": "Let go: it eases back to the fight's own angle" }
+  ]
+}
