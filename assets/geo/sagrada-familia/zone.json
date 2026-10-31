@@ -79,7 +79,7 @@
       "ground": "panot-flor",
       "square": {
         "texture": "granit",
-        "tint": "#a9a59c"
+        "tint": "#9b968b"
       },
       "footway": {
         "texture": "saulo",
@@ -89,7 +89,8 @@
         "texture": "gespa",
         "tint": "#6c8650"
       }
-    }
+    },
+    "edge": "city"
   },
   "styles": {
     "default": {
@@ -194,7 +195,7 @@
             "plane"
           ],
           "base": "ground",
-          "keep": 0.6
+          "keep": 0.5
         },
         "way/23431084": {
           "species": [
@@ -204,7 +205,7 @@
             "palm"
           ],
           "base": "ground",
-          "keep": 0.55
+          "keep": 0.45
         }
       },
       "keep": 0.75
@@ -264,8 +265,8 @@
       "x_m": 0,
       "z_m": 44,
       "lines": [
-        "La puerta del Nacimiento. Un vigilante mira las entradas en la barrera; sin entrada no pasa nadie.",
-        "Las de hoy se acabaron hace semanas. Habrá que volver con un motivo."
+        "La puerta del Nacimiento. En la barrera, un vigilante revisa las entradas: sin entrada no pasa nadie.",
+        "Las de hoy se agotaron hace semanas."
       ]
     },
     {
@@ -377,11 +378,13 @@
   "anchors": {
     "basilica": {
       "x_m": 2,
-      "z_m": -3
+      "z_m": -3,
+      "y_m": 70
     },
     "naixement": {
       "x_m": 1,
-      "z_m": 34
+      "z_m": 34,
+      "y_m": 24
     },
     "passio": {
       "x_m": 2,
@@ -402,11 +405,15 @@
       "id": "basilica",
       "x_m": 2,
       "z_m": -3,
-      "solid": false,
+      "solid": true,
       "textures": [
         "pedra-naixement",
         "pedra-montjuic",
         "carreu"
+      ],
+      "size_m": [
+        98,
+        84
       ]
     },
     {
@@ -501,13 +508,29 @@
           ]
         ],
         "reflection": {
+          "across": 5,
+          "width": 36,
           "towers": [
             [
-              -12.5,
-              26
+              -12,
+              22
             ],
             [
-              -5,
+              -4.5,
+              27
+            ],
+            [
+              4.5,
+              27
+            ],
+            [
+              12,
+              22
+            ]
+          ],
+          "spires": [
+            [
+              -9,
               31
             ],
             [
@@ -515,12 +538,22 @@
               31
             ],
             [
-              16.5,
-              26
+              -3,
+              34
+            ],
+            [
+              3,
+              34
+            ],
+            [
+              17,
+              29
+            ],
+            [
+              0,
+              42
             ]
-          ],
-          "spire": 44,
-          "width": 40
+          ]
         }
       }
     },
@@ -608,6 +641,98 @@
         "style": "group",
         "umbrella": "#2f6fb5",
         "count": 7
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "fotos-naixement",
+      "x_m": 13,
+      "z_m": 58,
+      "size_m": [
+        17,
+        7
+      ],
+      "params": {
+        "style": "scatter",
+        "face": 190,
+        "count": 14,
+        "phones": 0.45
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "fotos-estany",
+      "x_m": 9,
+      "z_m": 154,
+      "size_m": [
+        9,
+        4
+      ],
+      "params": {
+        "style": "scatter",
+        "face": 175,
+        "count": 6,
+        "phones": 0.7
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "fotos-passio",
+      "x_m": 2,
+      "z_m": -98,
+      "size_m": [
+        10,
+        4
+      ],
+      "params": {
+        "style": "scatter",
+        "face": 0,
+        "count": 6,
+        "phones": 0.4
+      }
+    },
+    {
+      "kind": "kiosk",
+      "id": "quiosc-records",
+      "x_m": -38,
+      "z_m": 64,
+      "size_m": [
+        2.2,
+        1.5
+      ],
+      "params": {
+        "sign": "RECORDS"
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "fotos-marina",
+      "x_m": -14,
+      "z_m": 64,
+      "size_m": [
+        12,
+        5
+      ],
+      "params": {
+        "style": "scatter",
+        "face": 165,
+        "count": 8,
+        "phones": 0.5
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "grup-portal",
+      "x_m": 24,
+      "z_m": 47,
+      "size_m": [
+        5,
+        4.5
+      ],
+      "params": {
+        "style": "group",
+        "umbrella": "#3f8a5a",
+        "count": 8
       }
     }
   ]

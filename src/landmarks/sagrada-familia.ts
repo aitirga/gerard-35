@@ -25,7 +25,7 @@ const SPIRE_FROM = 40, SPIRE_SCALE = 0.7;
 const height = (m: number) => m <= SPIRE_FROM ? m : SPIRE_FROM + (m - SPIRE_FROM) * SPIRE_SCALE;
 
 /** Stone of the two ages: Gaudí's weathered Montjuïc sandstone and the pale ashlar of the new work. */
-const OLD = '#8c7f6e', NEW = '#c4b9a4', TOWER = '#b3a690';
+const OLD = '#8c7f6e', NEW = '#c9bfab', TOWER = '#cdc2ad';
 
 export function build(kit: LandmarkKit, _landmark: GeoLandmark) {
   const random = seeded(2026);
@@ -63,18 +63,29 @@ export function build(kit: LandmarkKit, _landmark: GeoLandmark) {
   box(parts.panel, -36, 0, 23.05, -24, 4.6, 23.3);
 
   // ------------------------------------------------------------ the apse
-  // Gaudí's first work above the crypt (1890s), in the old stone: a half ring of chapels with
-  // neo-Gothic pinnacles, and the newer apse rising behind it to Mary's tower.
+  // Gaudí's first work above the crypt (1890s), in the old stone: a half ring of seven chapels
+  // between buttresses, each lit by two tall lancets and crowned by a slim neo-Gothic pinnacle,
+  // smaller ones between them. Behind, the new apse rises in pale stone, its clerestory pierced by
+  // long windows and ringed by pinnacles, under a cone of roof that Mary's tower stands in.
   const APSE: [number, number] = [15, -1];
-  lathe(parts.montjuic, APSE[0], APSE[1], [[28, 0], [28, 24], [26.5, 27], [20, 27]], 14, { from: -Math.PI / 2, to: Math.PI / 2 });
-  lathe(parts.fresh, APSE[0], APSE[1], [[20, 24], [19, height(52)], [7, height(70)]], 12, { from: -Math.PI / 2, to: Math.PI / 2 });
+  const ring = (a: number, r: number): [number, number] => [APSE[0] + Math.cos(a) * r, APSE[1] + Math.sin(a) * r];
+  lathe(parts.montjuic, APSE[0], APSE[1], [[28, 0], [28, 21], [27.2, 23], [24, 25]], 14, { from: -Math.PI / 2, to: Math.PI / 2 });
+  for (let i = 0; i <= 7; i++) {
+    const [bx, bz] = ring(-Math.PI / 2 + Math.PI * i / 7, 28.4);
+    beam(parts.montjuic, [bx, 0, bz], [bx, 21, bz], 1.5, 1.5);
+    lathe(parts.montjuic, bx, bz, [[0.9, 21], [0.7, 27], [0, 33]], 6);
+  }
   for (let i = 0; i < 7; i++) {
-    const a = -Math.PI / 2 + Math.PI * (i + 0.5) / 7, cx = APSE[0] + Math.cos(a) * 26, cz = APSE[1] + Math.sin(a) * 26;
-    lathe(parts.montjuic, cx, cz, [[2.4, 24], [2.2, 33], [1.3, 40], [0, height(50)]], 8);
-    for (const s of [-1, 1]) {
-      const b = a + s * Math.PI / 14;
-      lathe(parts.montjuic, APSE[0] + Math.cos(b) * 27.5, APSE[1] + Math.sin(b) * 27.5, [[0.8, 26], [0.6, 31], [0, 35]], 6);
-    }
+    const a = -Math.PI / 2 + Math.PI * (i + 0.5) / 7, [cx, cz] = ring(a, 26.6);
+    lathe(parts.montjuic, cx, cz, [[2.4, 22], [2.2, 30], [1.5, 38], [0.8, 46], [0, height(56)]], 8);
+    for (const side of [-1, 1]) lancet(parts.dark, APSE, a + side * 0.075, 28.06, 4, 16, 1.5);
+  }
+  lathe(parts.fresh, APSE[0], APSE[1], [[21, 24], [21, height(56)], [18.5, height(59)], [6, height(68)]], 12, { from: -Math.PI / 2, to: Math.PI / 2 });
+  for (let i = 0; i < 6; i++) lancet(parts.dark, APSE, -Math.PI / 2 + Math.PI * (i + 0.5) / 6, 21.06, 28, height(52), 2.2);
+  for (let i = 0; i <= 6; i++) {
+    const [px, pz] = ring(-Math.PI / 2 + Math.PI * i / 6, 21.4);
+    lathe(parts.fresh, px, pz, [[1.3, height(54)], [1, height(62)], [0, height(72)]], 6);
+    blob(parts.mosaic, [px, height(72) + 0.6, pz], 0.8, 0.9, 0.8);
   }
 
   // ------------------------------------------------------------ the Nativity facade
@@ -86,8 +97,10 @@ export function build(kit: LandmarkKit, _landmark: GeoLandmark) {
   gable(parts.old, -9, 9, 30, height(46), 30, FRONT - 1.5);
   gable(parts.old, -19.5, -9.5, 30, 36, 30, FRONT - 0.8);
   gable(parts.old, 9.5, 19.5, 30, 36, 30, FRONT - 0.8);
-  arch(parts.dark, 0, 0, FRONT + 0.08, 9, 15);
-  for (const x of [-13.5, 13.5]) arch(parts.dark, x, 0, FRONT + 0.08, 5.6, 10);
+  // The portals stand above the street on three broad steps of newer stone.
+  for (let k = 0; k < 3; k++) box(parts.fresh, -19.5, k * 0.35, FRONT, 19.5, (k + 1) * 0.35, FRONT + 2.4 - k * 0.8);
+  arch(parts.dark, 0, 1.05, FRONT + 0.08, 9, 14);
+  for (const x of [-13.5, 13.5]) arch(parts.dark, x, 1.05, FRONT + 0.08, 5.6, 9);
   // The portals' sculpture: lumps of carved stone all over, sculpted columns between the doors,
   // the paler figures of the Nativity over them, stalactites hanging from every arch.
   for (let i = 0; i < 80; i++) {
@@ -111,10 +124,16 @@ export function build(kit: LandmarkKit, _landmark: GeoLandmark) {
     }
   }
   // The cypress, the tree of life, over the Portal of Charity: dark green with white doves.
-  lathe(parts.green, 0, FRONT - 3.5, [[1.2, height(42)], [3, height(44)], [2.6, height(50)], [1.2, height(55)], [0, height(58)]], 10);
+  lathe(parts.green, 0, FRONT - 3.5, [[1, height(41)], [2.8, height(43)], [3, height(47)], [2.2, height(52)], [1.1, height(56)], [0, height(60)]], 14);
+  for (let i = 0; i < 11; i++) {
+    const a = i * 2.4, y = height(43.5) + (i / 11) * (height(55) - height(43.5)), r = 3.3 - i * 0.16;
+    blob(parts.white, [Math.cos(a) * r, y, FRONT - 3.5 + Math.sin(a) * r], 0.5, 0.36, 0.5, 6, 3);
+  }
+  // A ragged crest of small pinnacles along the top, so the old front never ends in a straight line.
   for (let i = 0; i < 9; i++) {
-    const a = i * 2.4, y = height(44) + (i / 9) * (height(55) - height(44));
-    blob(parts.white, [Math.cos(a) * 2.4, y, FRONT - 3.5 + Math.sin(a) * 2.4], 0.55, 0.4, 0.55, 4, 3);
+    const x = -18 + i * 4.5;
+    if (Math.abs(x) < 8) continue;
+    lathe(parts.old, x, FRONT - 0.8, [[1.1, 29.5], [0.8, 32], [0, 34 + random() * 3]], 6);
   }
   const bells = (x: number, z: number, real: number, stone: Mesh) => bellTower(parts, stone, x, z, height(real));
   bells(-14.5, 33, 98, parts.bells); bells(-7, 33, 107, parts.bells); bells(7, 33, 107, parts.bells); bells(14.5, 33, 98, parts.bells);
@@ -173,12 +192,12 @@ export function build(kit: LandmarkKit, _landmark: GeoLandmark) {
     fresh: kit.surface('carreu', NEW, 0.05),
     bells: tint(kit.mat('Campanarios del Nacimiento', '#ffffff', 0.05), slots(random, '#86735e', '#2a231c', 0.5), [1, 1]),
     pale: tint(kit.mat('Campanarios de la Pasión', '#ffffff', 0.05), slots(random, '#c3b6a0', '#3a322a', 0.12), [1, 1]),
-    lattice: tint(kit.mat('Celosía de las torres', '#ffffff', 0.05), lattice(random, TOWER), [4, 4]),
+    lattice: tint(kit.mat('Celosía de las torres', '#ffffff', 0.05), lattice(random, TOWER), [7, 7]),
     mosaic: tint(kit.mat('Trencadís de los pináculos', '#ffffff', 0.55), trencadis(random), [1.6, 1.6]),
     white: kit.mat('Piedra blanca', '#f1ede4', 0.3),
     red: kit.mat('Cruz de los pináculos', '#b8322a', 0.5),
     dark: kit.mat('Sombra de los portales', '#2a231d', 0.1),
-    glass: kit.mat('Vidrieras', '#2f5664', 0.75, 0.15),
+    glass: kit.mat('Vidrieras', '#34444c', 0.75, 0.08),
     green: kit.mat('Ciprés de piedra', '#3e6a46', 0.3),
     star: kit.mat('Estrella de María', '#d8eef2', 0.8, 0.9),
     crane: tint(kit.mat('Celosía de las grúas', '#ffffff', 0.4), craneLattice('#e6b31e'), [2.2, 2.2], { alpha: true }),
@@ -196,11 +215,12 @@ function bellTower(parts: Record<string, Mesh>, stone: Mesh, x: number, z: numbe
   for (let i = 0; i <= 8; i++) { const f = i / 8; profile.push([4.6 * (1 - 0.6 * f ** 1.6), base * f]); }
   lathe(stone, x, z, profile, 16, { wraps: 1, band: 9 });
   lathe(parts.mosaic, x, z, [[1.85, base], [1.2, base + length * 0.3], [1.5, base + length * 0.55], [0.9, base + length * 0.75], [0.45, base + length * 0.86], [0, base + length * 0.9]], 6);
+  // The crozier's cross on top: four red arms tipped with white balls round a white one.
   const y = base + length * 0.93;
-  blob(parts.white, [x, y, z], 1.15, 1.15, 1.15, 6, 4);
-  lathe(parts.red, x, z, [[0, y - 0.25], [1.7, y - 0.2], [1.7, y + 0.2], [0, y + 0.25]], 8);
-  for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; blob(parts.white, [x + Math.cos(a) * 1.85, y, z + Math.sin(a) * 1.85], 0.45, 0.45, 0.45, 4, 3); }
-  blob(parts.red, [x, y + 1.5, z], 0.5, 0.5, 0.5, 4, 3);
+  blob(parts.white, [x, y, z], 0.95, 0.95, 0.95, 6, 4);
+  for (const [dx, dz] of [[1, 0], [0, 1]]) beam(parts.red, [x - dx * 1.7, y, z - dz * 1.7], [x + dx * 1.7, y, z + dz * 1.7], 0.6);
+  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) blob(parts.white, [x + dx * 1.9, y, z + dz * 1.9], 0.5, 0.5, 0.5, 6, 3);
+  blob(parts.white, [x, y + 1.5, z], 0.5, 0.5, 0.5, 6, 3);
 }
 
 /** An Evangelist's white figure: a body and two raised wings, read as one bright shape from far away. */
@@ -337,6 +357,14 @@ function arch(b: Mesh, x: number, y: number, z: number, w: number, h: number) {
   }
 }
 
+/** A tall pointed window on a round wall: centred at angle `a` on the circle of radius `r` round `c`, from `y0` to `y1`. */
+function lancet(b: Mesh, c: [number, number], a: number, r: number, y0: number, y1: number, w: number) {
+  const out: V3 = [Math.cos(a), 0, Math.sin(a)], along: V3 = [-Math.sin(a), 0, Math.cos(a)];
+  const at = (s: number, y: number): V3 => [c[0] + out[0] * r + along[0] * s * w / 2, y, c[1] + out[2] * r + along[2] * s * w / 2];
+  b.quad(at(-1, y0), at(1, y0), at(1, y1), at(-1, y1), out, [0, y0], [w, y0], [w, y1], [0, y1]);
+  b.tri(at(-1, y1), at(1, y1), at(0, y1 + w * 0.9), out, [0, y1], [w, y1], [w / 2, y1 + w * 0.9]);
+}
+
 /** A vertical sheet in the plane x = `x` (scaffolding over the Glory), seen from both sides. */
 function quadX(b: Mesh, x: number, z0: number, z1: number, y0: number, y1: number) {
   b.quad([x, y0, z1], [x, y0, z0], [x, y1, z0], [x, y1, z1], [-1, 0, 0], [z1, y0], [z0, y0], [z0, y1], [z1, y1]);
@@ -380,16 +408,17 @@ function slots(random: () => number, stone: string, shadow: string, soot: number
     }
   });
 }
-/** 4 × 4 m of a high tower: pale stone ribs round triangular openings, staggered row by row. */
+/** 7 × 7 m of a high tower: pale stone ribs round triangular openings, staggered row by row. */
 function lattice(random: () => number, stone: string) {
   return canvas(256, 256, ctx => {
     ctx.fillStyle = stone; ctx.fillRect(0, 0, 256, 256);
     grain(ctx, random, 256, 256, 0.1);
+    // Small openings in wide ribs, so from far away the tower still reads pale.
     for (let row = 0; row < 4; row++) for (let k = -1; k < 5; k++) {
-      const x = k * 64 + (row % 2 ? 32 : 0), y = row * 64 + 10, up = (k + row) % 2 === 0;
-      ctx.fillStyle = '#4a4236'; ctx.beginPath();
-      if (up) { ctx.moveTo(x + 32, y); ctx.lineTo(x + 52, y + 44); ctx.lineTo(x + 12, y + 44); }
-      else { ctx.moveTo(x + 12, y); ctx.lineTo(x + 52, y); ctx.lineTo(x + 32, y + 44); }
+      const x = k * 64 + (row % 2 ? 32 : 0), y = row * 64 + 14, up = (k + row) % 2 === 0;
+      ctx.fillStyle = '#5e5447'; ctx.beginPath();
+      if (up) { ctx.moveTo(x + 32, y); ctx.lineTo(x + 46, y + 34); ctx.lineTo(x + 18, y + 34); }
+      else { ctx.moveTo(x + 18, y); ctx.lineTo(x + 46, y); ctx.lineTo(x + 32, y + 34); }
       ctx.fill();
       ctx.strokeStyle = 'rgba(255,248,232,.25)'; ctx.lineWidth = 2; ctx.stroke();
     }

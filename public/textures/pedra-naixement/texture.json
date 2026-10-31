@@ -3,8 +3,8 @@
   "name": "Pedra esculpida del Naixement",
   "kind": "material",
   "size_m": [
-    1.5,
-    1.5
+    3.5,
+    3.5
   ],
   "source": {
     "site": "Poly Haven",
@@ -25,5 +25,5 @@
     512
   ],
   "mean": "#7e6146",
-  "made": "2026-10-30"
+  "made": "2026-10-31"
 }
