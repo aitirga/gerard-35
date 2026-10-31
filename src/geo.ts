@@ -111,3 +111,12 @@ export interface GeoScene {
    */
   drop?: { edge: GeoPoint[]; depth: number; run: number };
 }
+
+/**
+ * How far a hilltop's flank runs out (cells) where its edge faces (dx, dz) on the grid: `run`, and up
+ * to 2.5 times that on the sides the camera looks at (it looks along −x −z), so they read as a slope.
+ */
+export function flankRun(run: number, dx: number, dz: number) {
+  const len = Math.hypot(dx, dz) || 1;
+  return run * (1 + 1.5 * Math.max(0, (dx + dz) * Math.SQRT1_2 / len));
+}

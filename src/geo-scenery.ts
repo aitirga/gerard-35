@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import type { GeoBuilding, GeoPoint, GeoScene } from './geo';
+import { flankRun, type GeoBuilding, type GeoPoint, type GeoScene } from './geo';
 import { shine } from './lighting';
 import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from './building-occlusion';
 import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
@@ -1114,7 +1114,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   /**
    * The hill's flank: rings offset outwards from the brow (mitred at the corners), dropping `depth`
    * cells over `run` with a smoothstep, so the top rounds over and the foot eases into the plain.
-   * Dressed in the zone's `flank` material, with low scrub scattered down it.
+   * The sides the camera looks at run out up to 2.5 times further (`flankRun`), so they read as a
+   * slope rather than a cliff. Dressed in the zone's `flank` material, with low scrub scattered down it.
    */
   function flank(drop: NonNullable<GeoScene['drop']>) {
     const edge = drop.edge, n = edge.length, RINGS = 8;
@@ -1130,16 +1131,21 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const along = [0];
     for (let i = 1; i <= n; i++) along.push(along[i - 1] + Math.hypot(edge[i % n][0] - edge[i - 1][0], edge[i % n][1] - edge[i - 1][1]) * cellM);
     const profile = (t: number) => -drop.depth * t * t * (3 - 2 * t);
-    const slope = [0];
-    for (let r = 1; r <= RINGS; r++) slope.push(slope[r - 1] + Math.hypot(drop.run / RINGS, profile(r / RINGS) - profile((r - 1) / RINGS)) * cellM);
+    const runs = miters.map(m => flankRun(drop.run, m[0], m[1]));
+    // Distance down the slope at each corner and ring, so the material keeps its real size however long the run.
+    const slope = runs.map(run => {
+      const s = [0];
+      for (let r = 1; r <= RINGS; r++) s.push(s[r - 1] + Math.hypot(run / RINGS, profile(r / RINGS) - profile((r - 1) / RINGS)) * cellM);
+      return s;
+    });
     const at = (i: number, r: number): V3 => {
       const t = r / RINGS, k = i % n;
-      return [x(edge[k][0] + miters[k][0] * drop.run * t), profile(t), z(edge[k][1] + miters[k][1] * drop.run * t)];
+      return [x(edge[k][0] + miters[k][0] * runs[k] * t), profile(t), z(edge[k][1] + miters[k][1] * runs[k] * t)];
     };
     const b = new MeshBuilder();
     for (let i = 0; i < n; i++) for (let r = 0; r < RINGS; r++) {
-      const out: V3 = [normals[i][0], 0.6, normals[i][1]];
-      b.quad(at(i, r), at(i + 1, r), at(i + 1, r + 1), at(i, r + 1), out, [along[i], slope[r]], [along[i + 1], slope[r]], [along[i + 1], slope[r + 1]], [along[i], slope[r + 1]]);
+      const out: V3 = [normals[i][0], 0.6, normals[i][1]], j = (i + 1) % n;
+      b.quad(at(i, r), at(i + 1, r), at(i + 1, r + 1), at(i, r + 1), out, [along[i], slope[i][r]], [along[i + 1], slope[j][r]], [along[i + 1], slope[j][r + 1]], [along[i], slope[i][r + 1]]);
     }
     add('Ladera', b, surface('Ladera', 'flank', speckles('#7a6648', ['#6b5a40', '#8a7656', '#5d5038']), 0.25), root, true, false);
     // Low scrub: clumps along the flank, thicker near the top, a little apart from the brow.
@@ -1151,7 +1157,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         const t = 0.06 + jitter(k + 1) ** 1.6 * 0.8, f = s / len, r = (0.45 + jitter(k + 2) * 0.65) / cellM;
         const ex = edge[i][0] + (edge[(i + 1) % n][0] - edge[i][0]) * f, ez = edge[i][1] + (edge[(i + 1) % n][1] - edge[i][1]) * f;
         const mx = miters[i][0] + (miters[(i + 1) % n][0] - miters[i][0]) * f, mz = miters[i][1] + (miters[(i + 1) % n][1] - miters[i][1]) * f;
-        const c: V3 = [x(ex + mx * drop.run * t), profile(t), z(ez + mz * drop.run * t)];
+        const run = runs[i] + (runs[(i + 1) % n] - runs[i]) * f;
+        const c: V3 = [x(ex + mx * run * t), profile(t), z(ez + mz * run * t)];
         blob(scrub[k % 3].b, c, r, r * (0.5 + jitter(k + 3) * 0.3));
         k += 4;
       }
