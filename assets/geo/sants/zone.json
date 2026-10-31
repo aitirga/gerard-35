@@ -1,0 +1,960 @@
+{
+  "id": "sants",
+  "name": "Sants · Carrer de Valladolid",
+  "region": "Sants, Barcelona",
+  "anchor": {
+    "address": "Carrer de Valladolid 41, 08014 Barcelona",
+    "lat": 41.3782469,
+    "lon": 2.1372794
+  },
+  "bounds_m": {
+    "west": -130,
+    "east": 55,
+    "north": -52,
+    "south": 345
+  },
+  "bounds_turned": true,
+  "cell_m": 1.5,
+  "rotation_deg": 30,
+  "zoom": 10.5,
+  "spawn": {
+    "x_m": -66,
+    "z_m": 317
+  },
+  "storey_m": 3.0,
+  "lane_m": 3.0,
+  "reference": {
+    "checked": "2026-10-30",
+    "streetview_capture": "",
+    "notes": [
+      "PLACE: El Nucli is a real shop, Carrer de Valladolid 41 (local), Sants: Magic: the Gathering, other card games, board games and role-playing books, with tournaments, drafts and presentations (elnucli.es, October 2026; OSM node 13504772602, shop=toys). It moved here from Carrer del Vallespir 24, where Time Out reviewed it in 2014 as 'la madriguera del ocio alternativo de Sants'. Its badge: a round wine-red disc with fanned cards drawn in neon red-coral lines, 'EL NUCLI · cau de l'oci'. The real frontage was not seen (no open photo): the shop front in the game is designed.",
+      "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-30): cadastre-split building parts with building:levels, so the skyline is real; house numbers along Valladolid (odd side north, even side south); 144 street trees; every bar and shop on the route.",
+      "Turned 30°: Carrer de Valladolid runs left to right at the top, El Nucli's front (odd side) faces the camera across a narrow one-way street; Carrer de Santa Caterina runs straight down from the shop to the Passeig de Sant Antoni; Carrer de Riego and the Plaça d'Osca lead on down to Carrer de Sants and the L1 entrance of Plaça de Sants (Riego vestibule) at the bottom. Edges on streets: Carrer d'Alcolea (west), Carrer de Badalona (north), Carrer del Vallespir (east), Carrer de Sants (south).",
+      "Valladolid: narrow one-way street, cars parked on the odd side, plane trees and a purple-leaved plum by number 43; 4-9 storeys, early-1900s houses in cream render scored as ashlar, stone surrounds, segmental arches on the ground floor, iron balconies with plants, wooden shutters (Ten To Go Hostel photo, number 43, July 2024).",
+      "Across from El Nucli: low 2-3 storey parts, then the back of the Palau Balañà cinema (Passeig de Sant Antoni 41-43), closed since February 2020: a long low box with a white geometric relief band, a glazed entrance band and its letters still up ('PALAU BALAÑA MULTICINES 7 SALES').",
+      "Corner of Valladolid and Santa Caterina: Casa Astor (bar). Valladolid also has Pinyi Bicis, two sushi bars (number 40) and a pharmacy at number 10.",
+      "Passeig de Sant Antoni: a diagonal boulevard with planted strips, benches and a two-way bike lane; its north side is a wall of 8-12 storey blocks from the 1960s-70s with bars on the ground floor (Via Fora!, Pub Gris, Disco Bar Joe's); the Cosmo Apartments tower (number 30) at the east end.",
+      "Plaça d'Osca: a small square of bar terraces (Fo Bar, El Passadís, Seixanta Quaranta, Homo Sibaris, La Mestressa, a cooperative bar); Carrer de Riego: a narrow pedestrian street with painted shop shutters and a bookshop.",
+      "Carrer de Sants: the neighbourhood's long shopping street, four lanes; the Plaça de Sants L1 entrances (Riego and Cros) are stairs between granite kerbs with black iron railings in a zigzag pattern, the station sign with the L1 and L5 squares, white hexagonal tiles inside (CC0 photo, 2025).",
+      "Carrer del Vallespir is the east edge; just beyond it the Plaça de Joan Peiró is fenced for the works round Sants station (remodelling 2025-2028, the square being planted, the Bosc de Viriat), and the station itself is about 250 m east of the shop."
+    ],
+    "viewpoints": [
+      {
+        "name": "el-nucli",
+        "lat": 41.37815,
+        "lon": 2.13735,
+        "heading": 330,
+        "pitch": 8
+      },
+      {
+        "name": "palau-balana",
+        "lat": 41.3775,
+        "lon": 2.13834,
+        "heading": 340,
+        "pitch": 8
+      },
+      {
+        "name": "placa-d-osca",
+        "lat": 41.3762,
+        "lon": 2.13838,
+        "heading": 0,
+        "pitch": 5
+      },
+      {
+        "name": "riego-metro",
+        "lat": 41.37542,
+        "lon": 2.13856,
+        "heading": 0,
+        "pitch": 5
+      }
+    ]
+  },
+  "look": {
+    "ground": "panot",
+    "footway": "panot",
+    "asphalt": "#3f4144",
+    "markings": true,
+    "materials": {
+      "square": {
+        "texture": "granit",
+        "tint": "#9d9a93"
+      },
+      "grass": {
+        "texture": "gespa",
+        "tint": "#66794f"
+      }
+    }
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#cfa463",
+        "#d8bf96",
+        "#c99a6e",
+        "#e0cba6",
+        "#c48c6e",
+        "#b8acb0"
+      ],
+      "base": "#6f6152",
+      "trim": "#efe5d0",
+      "roof": [
+        "#b07a62",
+        "#a8a096",
+        "#bf8f74",
+        "#9c978f",
+        "#a86a52"
+      ],
+      "roof_kind": "flat",
+      "facade": "sants",
+      "ground": "sants-shops",
+      "levels": 5
+    },
+    "block": {
+      "walls": [
+        "#c9b9a0",
+        "#b9a68c",
+        "#d7c9b0"
+      ],
+      "trim": "#e8e2d6",
+      "facade": "flats",
+      "ground": "shops"
+    },
+    "cosmo": {
+      "walls": [
+        "#7d7a75"
+      ],
+      "base": "#3e3d3b",
+      "trim": "#b9b4ab",
+      "facade": "flats",
+      "ground": "lobby"
+    },
+    "cinema": {
+      "walls": [
+        "#ebe7df"
+      ],
+      "base": "#6e655c",
+      "trim": "#d9d4ca",
+      "roof": "#9c968c",
+      "facade": "mall",
+      "ground": "ashlar"
+    },
+    "nucli": {
+      "walls": [
+        "#dcc59b"
+      ],
+      "base": "#8a7a62",
+      "trim": "#efe5d0"
+    }
+  },
+  "buildings": {
+    "way/1309103252": {
+      "style": "nucli",
+      "label": "El Nucli"
+    },
+    "way/1309103578": {
+      "style": "cinema",
+      "signature": "palau-balana"
+    },
+    "way/1309944597": {
+      "style": "cosmo"
+    },
+    "way/1309102099": {
+      "style": "block"
+    },
+    "way/1309102111": {
+      "style": "block"
+    },
+    "way/1309102024": {
+      "style": "block"
+    },
+    "way/1309102173": {
+      "style": "block"
+    },
+    "way/1309102129": {
+      "style": "block"
+    },
+    "way/1309102117": {
+      "style": "block"
+    }
+  },
+  "osm_props": {
+    "tree": {
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    "bench": {},
+    "bin": {},
+    "bike-rack": {}
+  },
+  "props": [
+    {
+      "kind": "metro",
+      "x_m": -71,
+      "z_m": 321,
+      "name": "Plaça de Sants",
+      "line": "L1"
+    },
+    {
+      "kind": "lamp",
+      "x_m": -100,
+      "z_m": 140,
+      "to": {
+        "x_m": 20,
+        "z_m": 113
+      },
+      "every_m": 24
+    },
+    {
+      "kind": "car",
+      "x_m": -61.75,
+      "z_m": 2.75,
+      "color": "#d8d6c7"
+    },
+    {
+      "kind": "car",
+      "x_m": -48.25,
+      "z_m": 2.75,
+      "color": "#3c4448"
+    },
+    {
+      "kind": "car",
+      "x_m": -30.25,
+      "z_m": 2.75,
+      "color": "#9aa4a8"
+    },
+    {
+      "kind": "car",
+      "x_m": 23.75,
+      "z_m": 2.75,
+      "color": "#7d2f2b"
+    },
+    {
+      "kind": "car",
+      "x_m": 37.25,
+      "z_m": 2.75,
+      "color": "#2f3a44"
+    },
+    {
+      "kind": "tree",
+      "x_m": -54.25,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": -36.25,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": 8.75,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.75
+    },
+    {
+      "kind": "tree",
+      "x_m": 16.25,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": 32.75,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -30.25,
+      "z_m": 10.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "x_m": 20.75,
+      "z_m": 10.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "x_m": -111.25,
+      "z_m": 110.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": -105.25,
+      "z_m": 106.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.05
+    },
+    {
+      "kind": "tree",
+      "x_m": -90.25,
+      "z_m": 101.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": -75.25,
+      "z_m": 98.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.1
+    },
+    {
+      "kind": "tree",
+      "x_m": -67.75,
+      "z_m": 103.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -54.25,
+      "z_m": 94.25,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": -45.25,
+      "z_m": 94.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.05
+    },
+    {
+      "kind": "tree",
+      "x_m": -34.75,
+      "z_m": 94.25,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": 2.75,
+      "z_m": 83.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.9
+    },
+    {
+      "kind": "bench",
+      "x_m": -97.75,
+      "z_m": 322.25,
+      "yaw": 330
+    },
+    {
+      "kind": "bench",
+      "x_m": -117.25,
+      "z_m": 118.25
+    },
+    {
+      "kind": "bench",
+      "x_m": -108.25,
+      "z_m": 122.75
+    },
+    {
+      "kind": "bench",
+      "x_m": -96.25,
+      "z_m": 121.25
+    },
+    {
+      "kind": "tree",
+      "x_m": -24.25,
+      "z_m": 248.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -45.25,
+      "z_m": 272.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -9.25,
+      "z_m": 290.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": 5.75,
+      "z_m": 269.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -34.75,
+      "z_m": 248.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.35
+    },
+    {
+      "kind": "tree",
+      "x_m": -31.75,
+      "z_m": 265.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.6
+    },
+    {
+      "kind": "tree",
+      "x_m": -16.75,
+      "z_m": 259.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.55
+    },
+    {
+      "kind": "tree",
+      "x_m": -13.75,
+      "z_m": 275.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.4
+    },
+    {
+      "kind": "tree",
+      "x_m": -4.75,
+      "z_m": 281.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.35
+    },
+    {
+      "kind": "tree",
+      "x_m": -33.25,
+      "z_m": 277.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.45
+    },
+    {
+      "kind": "bench",
+      "x_m": -75.25,
+      "z_m": 104.75,
+      "yaw": 15
+    },
+    {
+      "kind": "bench",
+      "x_m": -66.25,
+      "z_m": 104.75,
+      "yaw": 15
+    },
+    {
+      "kind": "bench",
+      "x_m": -54.25,
+      "z_m": 100.25,
+      "yaw": 15
+    },
+    {
+      "kind": "bench",
+      "x_m": -45.25,
+      "z_m": 98.75,
+      "yaw": 15
+    },
+    {
+      "kind": "tree",
+      "x_m": 10.25,
+      "z_m": 74.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.3
+    },
+    {
+      "kind": "tree",
+      "x_m": 17.75,
+      "z_m": 80.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.15
+    },
+    {
+      "kind": "tree",
+      "x_m": 25.25,
+      "z_m": 71.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.25
+    }
+  ],
+  "places": [
+    {
+      "id": "station-placa-de-sants",
+      "label": "Bajar al metro",
+      "x_m": -68.5,
+      "z_m": 321,
+      "step": {
+        "x_m": -69.25,
+        "z_m": 321,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "sants-nucli",
+      "label": "Entrar en El Nucli",
+      "x_m": 0,
+      "z_m": 1.5,
+      "to": {
+        "environment": "el-nucli",
+        "cell": {
+          "x": 6,
+          "z": 23
+        }
+      }
+    },
+    {
+      "id": "sants-nucli-escaparate",
+      "label": "Mirar el escaparate",
+      "x_m": 3.5,
+      "z_m": 1.5,
+      "lines": [
+        "El Nucli. Cajas de juegos apiladas detrás del cristal y el cartel del torneo del viernes.",
+        "Dentro hay luz y se oyen dados. Es lo único normal que he visto en toda la calle."
+      ]
+    },
+    {
+      "id": "sants-casa-astor",
+      "label": "Mirar el bar",
+      "x_m": -14,
+      "z_m": 15,
+      "lines": [
+        "Casa Astor. Tapas en la barra y la tele encendida sin volumen.",
+        "El camarero seca el mismo vaso desde que he llegado."
+      ]
+    },
+    {
+      "id": "sants-palau-balana",
+      "label": "Mirar el cine",
+      "x_m": 19.25,
+      "z_m": 71.75,
+      "lines": [
+        "El Palau Balañà. Cerró hace años y nadie ha quitado las letras.",
+        "Detrás del cristal aún cuelgan los carteles de las últimas películas que pusieron."
+      ]
+    },
+    {
+      "id": "sants-passeig",
+      "label": "Mirar el paseo",
+      "x_m": -63.25,
+      "z_m": 106.25,
+      "lines": [
+        "El Passeig de Sant Antoni. Bancos, árboles y césped.",
+        "En todos los bancos hay alguien sentado, y todos miran hacia el mismo sitio."
+      ]
+    },
+    {
+      "id": "sants-riego",
+      "label": "Mirar las persianas",
+      "x_m": -40,
+      "z_m": 232,
+      "lines": [
+        "Persianas pintadas, una por tienda. Un tigre, un barco, unas manos enormes.",
+        "La calle es tan estrecha que se oye todo lo que pasa en los pisos. Hoy no se oye nada."
+      ]
+    },
+    {
+      "id": "sants-osca",
+      "label": "Mirar las terrazas",
+      "x_m": -20,
+      "z_m": 262,
+      "lines": [
+        "La plaça d'Osca, llena de terrazas. No queda una mesa libre.",
+        "Nadie habla. Las cañas están llenas y nadie bebe."
+      ]
+    },
+    {
+      "id": "sants-carrer-de-sants",
+      "label": "Mirar la calle",
+      "x_m": -90,
+      "z_m": 306,
+      "lines": [
+        "La calle de Sants. Tiendas una detrás de otra, hasta donde alcanza la vista.",
+        "Los escaparates están encendidos y dentro no hay nadie. Ni siquiera detrás del mostrador."
+      ]
+    }
+  ],
+  "labels": [
+    {
+      "text": "CARRER DE VALLADOLID",
+      "x_m": -62,
+      "z_m": 7,
+      "width": 9
+    },
+    {
+      "text": "PASSEIG DE SANT ANTONI",
+      "x_m": -82,
+      "z_m": 137,
+      "width": 10
+    },
+    {
+      "text": "PLAÇA D'OSCA",
+      "x_m": -22,
+      "z_m": 272,
+      "width": 6
+    },
+    {
+      "text": "CARRER DE SANTS",
+      "x_m": -98,
+      "z_m": 316,
+      "width": 8
+    }
+  ],
+  "landmarks": [
+    {
+      "kind": "nucli-front",
+      "id": "el-nucli",
+      "x_m": 0.65,
+      "z_m": -0.05,
+      "rotation_deg": 0,
+      "size_m": [
+        8.6,
+        0.5
+      ],
+      "solid": false,
+      "params": {
+        "width": 8.6,
+        "door": -0.65
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-1",
+      "x_m": -39.85,
+      "z_m": 267.85,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 4,
+        "seed": 1,
+        "parasol": "#ece6d8",
+        "people": 4,
+        "look": 120
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-2",
+      "x_m": -33.3,
+      "z_m": 257.07,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 3,
+        "seed": 2,
+        "parasol": "#ece6d8",
+        "people": 3,
+        "look": 120
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-3",
+      "x_m": -30.87,
+      "z_m": 273.31,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 2,
+        "chairs": 4,
+        "seed": 3,
+        "parasol": "#ece6d8",
+        "people": 3,
+        "look": 120
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-4",
+      "x_m": -24.32,
+      "z_m": 262.53,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 3,
+        "seed": 4,
+        "people": 3,
+        "look": 120
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-5",
+      "x_m": -21.89,
+      "z_m": 278.77,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 4,
+        "seed": 5,
+        "parasol": "#ece6d8",
+        "people": 4,
+        "look": 120
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-6",
+      "x_m": -15.34,
+      "z_m": 267.99,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 2,
+        "chairs": 3,
+        "seed": 6,
+        "parasol": "#ece6d8",
+        "people": 2,
+        "look": 120
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-7",
+      "x_m": -12.92,
+      "z_m": 284.23,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 4,
+        "seed": 7,
+        "people": 4,
+        "look": 120
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-8",
+      "x_m": -6.36,
+      "z_m": 273.45,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 3,
+        "seed": 8,
+        "parasol": "#ece6d8",
+        "people": 3,
+        "look": 120
+      }
+    },
+    {
+      "kind": "fanal-osca",
+      "id": "fanal-osca",
+      "x_m": -22.75,
+      "z_m": 271.25,
+      "rotation_deg": -31,
+      "size_m": [
+        1.2,
+        1.2
+      ]
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-1",
+      "x_m": -97.75,
+      "z_m": 322.25,
+      "rotation_deg": 330,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 1,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-2",
+      "x_m": -117.25,
+      "z_m": 118.25,
+      "rotation_deg": 195,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 1,
+        "seed": 2,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-3",
+      "x_m": -108.25,
+      "z_m": 122.75,
+      "rotation_deg": 195,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 3,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-4",
+      "x_m": -96.25,
+      "z_m": 121.25,
+      "rotation_deg": 195,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 3,
+        "seed": 4,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-5",
+      "x_m": -75.25,
+      "z_m": 104.75,
+      "rotation_deg": 15,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 5,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-6",
+      "x_m": -66.25,
+      "z_m": 104.75,
+      "rotation_deg": 15,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 1,
+        "seed": 6,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-7",
+      "x_m": -54.25,
+      "z_m": 100.25,
+      "rotation_deg": 15,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 7,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-8",
+      "x_m": -45.25,
+      "z_m": 98.75,
+      "rotation_deg": 15,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 8,
+        "look": 120
+      }
+    },
+    {
+      "kind": "contenidors",
+      "id": "contenidors-valladolid",
+      "x_m": -10.75,
+      "z_m": 2.75,
+      "rotation_deg": 180,
+      "size_m": [
+        8.0,
+        1.2
+      ]
+    }
+  ],
+  "no_signs": [
+    "node/13504772602"
+  ]
+}

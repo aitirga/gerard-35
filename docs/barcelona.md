@@ -152,7 +152,7 @@ runs before rendering the ground, which then has nothing to render).
 | Trinitat Vella | L1 | `rec-comtal` (the school under the palace) | Playable |
 | La Sagrera | L1, L5, R4 | Change for the R4 (the poster clue is on the Meridiana's bus shelter) | On the map |
 | Sant Andreu (Rodalies) | R4 | — | On the map |
-| Plaça de Sants | L1, L5 | El Nucli, the game store where Gerard meets Bernat | On the map |
+| Plaça de Sants | L1, L5 | `sants` (Carrer de Valladolid), the street of El Nucli, the game store where Gerard meets Bernat (`el-nucli`) | Playable |
 | Espanya | L1, L3 | Plaça d'Espanya | On the map |
 | Poble Sec | L3 | Poble Sec | On the map |
 | Barceloneta | L4 | `barceloneta` (the beach: Platja de Sant Miquel, L'Estel Ferit) | Playable |
@@ -223,6 +223,13 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   walls and floors, scrub and pines down to the El Carmel entrance (compressed 0.8 km), people
   sitting on the parapets. The first hilltop (`drop`): beyond its brow lies the real city from the
   network map's model, remapped round the hill down to the sea, with her castle far off.
+- **`sants`** and **`el-nucli`** (`docs/places/nucli.md`): a real-data zone (OpenStreetMap,
+  turned 30°) from the Plaça de Sants L1 stairs on Carrer de Sants, up Carrer de Riego past the
+  Plaça d'Osca's terraces, across the Passeig de Sant Antoni and the closed Palau Balañà (its real
+  front as a signature photo), to El Nucli at Carrer de Valladolid 41, the street's one lit shop.
+  People sit still on every bench and terrace, every head turned the same way. A door leads into
+  the shop (a `house()` plan): the wall of boxes and the counter, the play hall's six felt tables
+  and the back room behind a curtain, where Bernat's seat waits (`NUCLI_BERNAT_SEAT`).
 
 ## The TV news set
 

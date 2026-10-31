@@ -109,6 +109,16 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },
     enhance: { shadows: -.1, midtones: -.04 },
   },
+  /** Sants, Carrer de Valladolid: narrow ochre streets already in shade at the end of the day, blue in the shadows; El Nucli's window does the warmth. */
+  sants: {
+    grade: { temperature: -.05, shadows: [-.006, .002, .018], highlights: [.012, .006, -.004], contrast: 1.07, saturation: .95 },
+    enhance: { shadows: .14, dehaze: .03 },
+  },
+  /** El Nucli inside: tungsten light over green felt, warm and close, with soft brown shade. */
+  'el-nucli': {
+    grade: { temperature: .1, lift: [.014, .008, .002], shadows: [.006, .004, -.008], highlights: [.02, .01, -.014], contrast: .98, saturation: 1.02 },
+    enhance: { shadows: .1, highlights: -.1, vibrance: .05 },
+  },
   /** La Reina Bubbaloo's light: magenta in the shade, pink in the light, a little darker and stranger. */
   bubbaloo: {
     grade: { lift: [.012, 0, .01], gamma: [.98, .95, .97], gain: [1, .96, .98], shadows: [.024, -.008, .02], highlights: [.02, -.002, .01], contrast: 1.05, saturation: 1 },

@@ -22,7 +22,9 @@ export interface GeoKit {
 /** One facade bay is this wide in cells; textures repeat once per bay and storey. */
 const BAY = 1.8;
 /** Facades painted as an atlas of several bays × storeys, so a long wall does not repeat one window. */
-const FACADE_ATLAS: Record<string, [number, number]> = { flats: [4, 3], timber: [3, 2], vila: [3, 2], barceloneta: [4, 3] };
+const FACADE_ATLAS: Record<string, [number, number]> = { flats: [4, 3], timber: [3, 2], vila: [3, 2], barceloneta: [4, 3], sants: [3, 2] };
+/** Ground floors painted over more bays than the usual two, so a street of shop fronts does not repeat. */
+const GROUND_BAYS: Record<string, number> = { 'sants-shops': 6 };
 const EAVE = 0.35;
 const ROOF_PITCH = Math.tan(30 * Math.PI / 180);
 /** Ground layers stack a hair apart so large flat polygons never z-fight. */
@@ -627,9 +629,9 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const key = `${kind}|${wall}|${trim}|${base}|${grain.wall}|${grain.base}`;
     let m = textures.get(key);
     if (m) return m;
-    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front', 'shopfronts', 'socol'].includes(kind);
+    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front', 'shopfronts', 'socol', 'sants-shops'].includes(kind);
     const [atlasU, atlasV] = FACADE_ATLAS[kind] ?? [1, 1];
-    const w = ground ? 256 : 128 * atlasU, h = 192 * atlasV;
+    const w = ground ? 128 * (GROUND_BAYS[kind] ?? 2) : 128 * atlasU, h = 192 * atlasV;
     const glass = '#2c3a42', wood = '#5b3d2a';
     // Varies blinds, shutters and awnings between walls of different colours.
     const seed = [...wall].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
@@ -932,6 +934,108 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
           // A telephone or power cable sagging across the front.
           const cy = 30 + r(98) * (h - 60);
           ctx.strokeStyle = 'rgba(30,30,30,.55)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, cy); ctx.quadraticCurveTo(w / 2, cy + 14, w, cy + 4); ctx.stroke();
+        }
+      } else if (kind === 'sants') {
+        // Old Sants houses (Carrer de Valladolid, Badalona 9): render scored into ashlar blocks, a pale
+        // stone surround round each French window, a string course at every floor, wooden roll-up
+        // blinds hanging outside (persianes) or louvred shutters, iron balconies on stone slabs, a few plants.
+        paint(wall, 'wall');
+        const r = (i: number) => jitter(seed * 3.7 + i);
+        ctx.strokeStyle = 'rgba(70,50,30,.16)'; ctx.lineWidth = 1.2;
+        for (let y = 12; y < h; y += 24) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+        for (let y = 12, k = 0; y < h; y += 24, k++) for (let x = (k % 2) * 24; x < w; x += 48) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 24); ctx.stroke(); }
+        const stone = '#e6dac2', wood = ['#6b5038', '#56664f', '#7a6a50', '#59605f', '#8a6d48', '#6f5a48'][Math.floor(r(1) * 6)];
+        for (let fy = 0; fy < atlasV; fy++) {
+          const y0 = fy * 192;
+          ctx.fillStyle = trim; ctx.fillRect(0, y0 + 180, w, 12);
+          ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(0, y0 + 178, w, 2);
+          for (let bx = 0; bx < atlasU; bx++) {
+            const x0 = bx * 128, i = 20 + fy * 11 + bx * 5;
+            const balcony = r(i) > 0.4, lit = r(i + 1) > 0.88, blind = r(i + 2);
+            // The stone surround, with a deeper lintel.
+            ctx.fillStyle = stone; ctx.fillRect(x0 + 30, y0 + 22, 68, 142); ctx.fillRect(x0 + 26, y0 + 18, 76, 12);
+            ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(x0 + 26, y0 + 30, 76, 2);
+            // The opening: dark glass or a lit room, two leaves.
+            ctx.fillStyle = lit ? '#f1c77a' : glass; ctx.fillRect(x0 + 37, y0 + 32, 54, 132);
+            ctx.fillStyle = lit ? 'rgba(255,245,220,.5)' : 'rgba(190,220,235,.2)'; ctx.fillRect(x0 + 40, y0 + 36, 14, 124);
+            ctx.fillStyle = trim; ctx.fillRect(x0 + 62, y0 + 32, 4, 132);
+            if (blind < 0.62) {
+              // A persiana rolled down part of the way, its slats and the roll at the top.
+              const down = 0.25 + r(i + 3) * 0.7, bh = 128 * down;
+              ctx.fillStyle = wood; ctx.fillRect(x0 + 35, y0 + 32, 58, bh);
+              ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = y0 + 35; y < y0 + 32 + bh; y += 4) ctx.fillRect(x0 + 35, y, 58, 1.2);
+              ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(x0 + 35, y0 + 32, 58, 5);
+              ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x0 + 35, y0 + 32 + bh, 58, 2);
+            } else if (blind < 0.85) {
+              // Louvred shutters folded back against the wall on either side.
+              ctx.fillStyle = wood; ctx.fillRect(x0 + 10, y0 + 32, 18, 132); ctx.fillRect(x0 + 100, y0 + 32, 18, 132);
+              ctx.fillStyle = 'rgba(0,0,0,.2)'; for (let y = y0 + 36; y < y0 + 164; y += 6) { ctx.fillRect(x0 + 10, y, 18, 1.5); ctx.fillRect(x0 + 100, y, 18, 1.5); }
+            } else {
+              // A net curtain behind the glass.
+              ctx.fillStyle = 'rgba(240,236,226,.55)'; ctx.fillRect(x0 + 37, y0 + 40, 54, 110);
+            }
+            if (balcony) {
+              // A stone slab on its shadow, the iron railing over it, sometimes pots of plants.
+              ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x0 + 16, y0 + 170, 96, 6);
+              ctx.fillStyle = '#c9bda6'; ctx.fillRect(x0 + 14, y0 + 162, 100, 9);
+              ctx.fillStyle = '#26292a'; ctx.fillRect(x0 + 16, y0 + 118, 96, 4);
+              for (let k = 0; k < 16; k++) ctx.fillRect(x0 + 17 + k * 6, y0 + 118, 2, 44);
+              if (r(i + 4) > 0.55) {
+                // Modernista railings belly out with a curl at the middle.
+                ctx.strokeStyle = '#26292a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x0 + 64, y0 + 140, 10, 0, Math.PI * 2); ctx.stroke();
+              }
+              if (r(i + 5) > 0.5) for (let k = 0; k < 4; k++) {
+                ctx.fillStyle = '#9a5a3c'; ctx.fillRect(x0 + 20 + k * 24, y0 + 150, 10, 12);
+                ctx.fillStyle = ['#4f7a3a', '#6d9a48', '#3f6a38', r(i + 6 + k) > 0.8 ? '#c8503e' : '#5c8a44'][k];
+                ctx.beginPath(); ctx.arc(x0 + 25 + k * 24, y0 + 144, 9 + r(i + k) * 4, 0, Math.PI * 2); ctx.fill();
+              }
+            } else {
+              // A French window with a low iron guard and a stone sill.
+              ctx.fillStyle = '#c9bda6'; ctx.fillRect(x0 + 28, y0 + 163, 72, 6);
+              ctx.fillStyle = '#26292a'; ctx.fillRect(x0 + 36, y0 + 134, 56, 3);
+              for (let k = 0; k < 10; k++) ctx.fillRect(x0 + 37 + k * 6, y0 + 134, 2, 29);
+            }
+          }
+        }
+      } else if (kind === 'sants-shops') {
+        // Sants ground floors: scored stone render, segmental arches, and behind each a lit shop, a
+        // street door with its fanlight grille, or a metal shutter painted with a mural (Carrer de Riego).
+        paint(base, 'base');
+        ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1.5;
+        for (let y = 20; y < h; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+        const murals = [
+          // A tiger, a boat on the sea, two enormous hands, a field of flowers, rings of colour.
+          (x0: number, y0: number, ww: number, hh: number) => { ctx.fillStyle = '#d9894a'; ctx.fillRect(x0, y0 + hh * 0.3, ww, hh * 0.45); ctx.fillStyle = '#2a2420'; for (let k = 0; k < 6; k++) ctx.fillRect(x0 + 8 + k * ww / 6, y0 + hh * 0.3, 5, hh * 0.45); ctx.fillStyle = '#f2e6c8'; ctx.beginPath(); ctx.arc(x0 + ww * 0.8, y0 + hh * 0.42, 9, 0, Math.PI * 2); ctx.fill(); },
+          (x0: number, y0: number, ww: number, hh: number) => { ctx.fillStyle = '#3c6f93'; ctx.fillRect(x0, y0 + hh * 0.55, ww, hh * 0.45); ctx.fillStyle = '#e8e0cc'; ctx.beginPath(); ctx.moveTo(x0 + ww * 0.25, y0 + hh * 0.55); ctx.lineTo(x0 + ww * 0.75, y0 + hh * 0.55); ctx.lineTo(x0 + ww * 0.65, y0 + hh * 0.66); ctx.lineTo(x0 + ww * 0.35, y0 + hh * 0.66); ctx.fill(); ctx.fillRect(x0 + ww * 0.49, y0 + hh * 0.2, 3, hh * 0.35); ctx.beginPath(); ctx.moveTo(x0 + ww * 0.52, y0 + hh * 0.22); ctx.lineTo(x0 + ww * 0.72, y0 + hh * 0.5); ctx.lineTo(x0 + ww * 0.52, y0 + hh * 0.5); ctx.fill(); },
+          (x0: number, y0: number, ww: number, hh: number) => { ctx.fillStyle = '#d6a37e'; for (const k of [0, 1]) { ctx.beginPath(); ctx.ellipse(x0 + ww * (0.3 + k * 0.4), y0 + hh * 0.55, ww * 0.17, hh * 0.32, (k ? -1 : 1) * 0.3, 0, Math.PI * 2); ctx.fill(); } ctx.fillStyle = 'rgba(0,0,0,.2)'; for (let k = 0; k < 4; k++) ctx.fillRect(x0 + ww * 0.2 + k * 6, y0 + hh * 0.3, 2, hh * 0.2); },
+          (x0: number, y0: number, ww: number, hh: number) => { ctx.fillStyle = '#5b7f45'; ctx.fillRect(x0, y0 + hh * 0.6, ww, hh * 0.4); for (let k = 0; k < 9; k++) { ctx.fillStyle = ['#e0b23a', '#c8643f', '#f2e6c8'][k % 3]; ctx.beginPath(); ctx.arc(x0 + 8 + (k * 37) % (ww - 12), y0 + hh * (0.45 + (k % 3) * 0.12), 6, 0, Math.PI * 2); ctx.fill(); } },
+          (x0: number, y0: number, ww: number, hh: number) => { for (let k = 0; k < 4; k++) { ctx.strokeStyle = ['#c8643f', '#2f62a8', '#e0b23a', '#3f8a4f'][k]; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(x0 + ww / 2, y0 + hh * 0.7, 12 + k * 9, Math.PI, 0); ctx.stroke(); } },
+        ];
+        const bays = w / 128;
+        for (let i = 0; i < bays; i++) {
+          const x0 = i * 128 + 14, ow = 100, top = 46, kind = jitter(seed * 1.9 + i * 7.3);
+          // The arched opening in its stone frame.
+          ctx.fillStyle = '#ddd2bd'; ctx.beginPath(); ctx.moveTo(x0 - 6, h); ctx.lineTo(x0 - 6, top + 8); ctx.quadraticCurveTo(x0 + ow / 2, top - 16, x0 + ow + 6, top + 8); ctx.lineTo(x0 + ow + 6, h); ctx.fill();
+          ctx.save(); ctx.beginPath(); ctx.moveTo(x0, h); ctx.lineTo(x0, top + 14); ctx.quadraticCurveTo(x0 + ow / 2, top - 6, x0 + ow, top + 14); ctx.lineTo(x0 + ow, h); ctx.clip();
+          if (kind < 0.3) {
+            // A lit shop: warm glass, a door in it, shelves behind.
+            ctx.fillStyle = 'rgba(255,206,140,.8)'; ctx.fillRect(x0, top - 10, ow, h);
+            ctx.fillStyle = 'rgba(120,80,40,.35)'; for (let k = 0; k < 3; k++) ctx.fillRect(x0 + 6, top + 50 + k * 34, ow - 44, 4);
+            ctx.fillStyle = '#3a3f42'; ctx.fillRect(x0 + ow - 34, top + 20, 4, h); ctx.fillRect(x0, top + 20, ow, 4);
+          } else if (kind < 0.62) {
+            // A metal shutter down, painted as a mural.
+            ctx.fillStyle = '#8f9396'; ctx.fillRect(x0, top - 10, ow, h);
+            murals[Math.floor(jitter(seed + i * 3.1) * murals.length)](x0, top, ow, h - top);
+            ctx.fillStyle = 'rgba(0,0,0,.14)'; for (let y = top; y < h; y += 6) ctx.fillRect(x0, y, ow, 1.5);
+          } else {
+            // A street door of dark wood under a fanlight with an iron grille.
+            ctx.fillStyle = '#2c3a42'; ctx.fillRect(x0, top - 10, ow, 60);
+            ctx.strokeStyle = '#1d1f20'; ctx.lineWidth = 2; for (let k = 1; k < 6; k++) { ctx.beginPath(); ctx.moveTo(x0 + k * ow / 6, top - 10); ctx.lineTo(x0 + k * ow / 6, top + 50); ctx.stroke(); }
+            ctx.fillStyle = '#4a3324'; ctx.fillRect(x0 + 6, top + 50, ow - 12, h);
+            ctx.fillStyle = '#5f4330'; for (let k = 0; k < 2; k++) ctx.fillRect(x0 + 12 + k * (ow - 24) / 2, top + 58, (ow - 36) / 2, h - top - 66);
+            ctx.fillStyle = '#c9b48a'; ctx.fillRect(x0 + ow / 2 - 2, top + 110, 4, 10);
+          }
+          ctx.restore();
         }
       } else if (kind === 'school') {
         // A school: one wide band of glazing per storey with coloured frames.
@@ -1441,7 +1545,9 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       const sign = ccw ? 1 : -1;
       const n: V3 = [(c[1] - a[1]) / len * sign, 0, -(c[0] - a[0]) / len * sign];
       const bays = Math.max(1, Math.round(len / BAY));
-      base.quad(P(a, 0), P(c, 0), P(c, groundTop), P(a, groundTop), n, [0, 0], [bays / 2, 0], [bays / 2, 1], [0, 1]);
+      // Wide ground atlases start at a different bay on every wall, like the facades above.
+      const groundBays = GROUND_BAYS[b.ground] ?? 2, g0 = groundBays > 2 ? Math.floor(jitter(i * 3 + b.poly.length * 7) * groundBays) / groundBays : 0;
+      base.quad(P(a, 0), P(c, 0), P(c, groundTop), P(a, groundTop), n, [g0, 0], [g0 + bays / groundBays, 0], [g0 + bays / groundBays, 1], [g0, 1]);
       if (H > groundTop + 0.05) {
         const floors = (H - groundTop) / storey;
         if (shared?.has(i)) { bare.quad(P(a, groundTop), P(c, groundTop), P(c, H), P(a, H), n, [0, 0], [bays, 0], [bays, floors], [0, floors]); continue; }

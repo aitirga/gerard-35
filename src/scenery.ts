@@ -140,7 +140,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   // Alegia is drawn under a thin overcast (docs/places/alegia.md): a softer, whiter sun and more light from the sky.
   const overcast = environment.id === 'alegia';
   // The Meridiana flat is lit by its lamps, which are the bulbs at home: the window light stays low.
-  const lamplit = environment.id === 'meridiana';
+  // El Nucli is lit the same way, by its pendants over the tables.
+  const lamplit = environment.id === 'meridiana' || environment.id === 'el-nucli';
   // Outdoors by day: a near-white sun, and a blue sky that tints the shade and lights it from the other side.
   const outdoor = !night && !lamplit && !environment.plan && !environment.palace;
   // The Búnkers del Carmel are drawn at sunset: a golden sun (from the same side as everywhere) and lilac shade.

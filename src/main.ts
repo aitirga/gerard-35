@@ -421,8 +421,9 @@ try {
       const geo = ENVIRONMENTS[id].geo;
       // Chapter 2's palace stands on the Rec Comtal school, not at the end of Passatge Maresme.
       const school = id === 'palacio' && story.adult;
-      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
+      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
       document.querySelector('#location-detail')!.textContent = geo ? `Según el mapa · ${geo.attribution}` : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
+        : id === 'el-nucli' ? 'Carrer de Valladolid, 41 · Tienda de juegos'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
         : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';

@@ -843,7 +843,8 @@ def map_props(zone: dict, elements: list, frame: Frame, raster: list, roads: lis
 
 def shops_on_walls(zone: dict, elements: list, frame: Frame, buildings: list, W: int, D: int) -> list[dict]:
     """Every shop, bar and bank of the map (and the zone's own `shops`), as a sign on the nearest street wall."""
-    signed = {k for k, v in zone.get("buildings", {}).items() if "sign" in v}
+    # A building with its own big `sign`, and the map shops a landmark letters itself (`no_signs`), get no shop sign.
+    signed = {k for k, v in zone.get("buildings", {}).items() if "sign" in v} | set(zone.get("no_signs", []))
     found = []
     for e in elements:
         t = e["tags"]

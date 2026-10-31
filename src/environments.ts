@@ -7,10 +7,12 @@ import CARDEDEU_SCENE from './geo/cardedeu.json' with { type: 'json' };
 import CARDEDEU_MAZE_SCENE from './geo/cardedeu-laberinto.json' with { type: 'json' };
 import BUNKERS_CARMEL_SCENE from './geo/bunkers-carmel.json' with { type: 'json' };
 import BARCELONETA_SCENE from './geo/barceloneta.json' with { type: 'json' };
+import SANTS_SCENE from './geo/sants.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
-  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta';
+  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta'
+  | 'sants' | 'el-nucli';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /**
@@ -119,7 +121,7 @@ export interface Interaction {
   /** Stairs: walking into these cells uses the interaction, no key needed (a door travels; a station's stair goes down to the map). */
   step?: Rect;
 }
-export type FloorKind = 'tile' | 'stone' | 'deck' | 'gravel' | 'grass' | 'concrete' | 'laminate' | 'terracotta';
+export type FloorKind = 'tile' | 'stone' | 'deck' | 'gravel' | 'grass' | 'concrete' | 'laminate' | 'terracotta' | 'hydraulic' | 'terrazzo';
 /** A named area of a floor plan; `level` raises its floor, e.g. a deck or a stair landing. */
 export interface Room extends Rect { name: string; floor: FloorKind; level?: number }
 /** A flight of steps over a rectangle, climbing `from` → `to` towards `up`. */
@@ -407,6 +409,65 @@ export const MERIDIANA = house({
     { id: 'lamp-galeria', cell: { x: 6, z: 9 }, label: 'Luz de la galería' },
   ],
 });
+/**
+ * El Nucli, the board-game shop at Carrer de Valladolid 41 in Sants (docs/places/nucli.md), where
+ * Gerard meets Bernat on the quiet. The street door is at the bottom, as outside, so the wall of
+ * boxes (west) and each room's back wall stand for the camera. Shop at the front, the play hall
+ * with its six tables behind the wine-red wall, and a back room behind a curtain that nobody sees
+ * from the street. Wider than the real local, to leave room to play. `src/nucli-scenery.ts`
+ * furnishes it. The cell right behind each inner wall is furniture, so no wall stands between
+ * Gerard and the camera except for a step through a doorway.
+ */
+export const EL_NUCLI = house({
+  id: 'el-nucli', name: 'El Nucli · Sants', spawn: { x: 6, z: 23 }, zoom: HOME_ZOOM,
+  plan: [
+    '##############',
+    '#oooooooooooo#',
+    '#o..........o#',
+    '#o..oooo..ooo#',
+    '#o..oooo..ooo#',
+    '#o..........o#',
+    '#ooooooo..ooo#',
+    '########++####',
+    '#ooooo.....oo#',
+    '#............#',
+    '#.oo..oo..oo.#',
+    '#.oo..oo..oo.#',
+    '#............#',
+    '#.oo..oo..oo.#',
+    '#.oo..oo..oo.#',
+    '#ooooooo.....#',
+    '########.....#',
+    '#o...........#',
+    '#o.ooooo....o#',
+    '#o..........o#',
+    '#o..........o#',
+    '#o....ooo...o#',
+    '#o....ooo....#',
+    '#o...........#',
+    '#oooo...oooo.#',
+    '##GGGGGGGGGG##',
+  ],
+  rooms: [
+    { name: 'Trastienda', x: 1, z: 1, w: 12, d: 6, floor: 'concrete' },
+    { name: 'Sala de juego', x: 1, z: 8, w: 12, d: 8, floor: 'terrazzo' },
+    { name: 'Tienda', x: 1, z: 17, w: 12, d: 8, floor: 'hydraulic' },
+  ],
+  // A yucca in a pot in the shop window's corner.
+  props: [{ kind: 'tree', x: 12, z: 24, species: 'yucca', scale: 0.75, base: 'pot' }],
+  interactions: [
+    { id: 'nucli-salida', cell: { x: 6, z: 24 }, label: 'Salir a la calle', to: { environment: 'sants', cell: { x: 86, z: 36 } } },
+    { id: 'nucli-estanteria', cell: { x: 2, z: 21 }, label: 'Mirar las estanterías', lines: ['Cajas hasta el techo: Faro de Niebla, Los Telares, Vapor Vell, Mercado de Sombras, Rodalies…', 'Algunas las he jugado en casa de alguien. Otras no las había visto nunca.'] },
+    { id: 'nucli-mostrador', cell: { x: 4, z: 19 }, label: 'Mirar el mostrador', lines: ['La caja, un bote de dados sueltos a un euro y una campanita.', 'Nadie detrás. La campanita está boca abajo.'] },
+    { id: 'nucli-vitrina', cell: { x: 7, z: 19 }, label: 'Mirar la vitrina', lines: ['Cartas sueltas en fundas, cada una con su precio escrito a lápiz.', 'Las más caras, arriba del todo, con su propia luz.'] },
+    { id: 'nucli-partida', cell: { x: 8, z: 11 }, label: 'Mirar la partida', lines: ['Una partida a medias: losetas, fichas de madera, una libreta con los puntos.', 'Las sillas están apartadas, como si se hubieran levantado todos a la vez.'] },
+    { id: 'nucli-tablon', cell: { x: 6, z: 9 }, label: 'Mirar el tablón', lines: ['Torneos, presentaciones y «se busca jugador para campaña de rol, los jueves».', 'Encima de todo han clavado una hoja nueva. Está en blanco.'] },
+    // Bernat's mission (docs/quests/bernat.md) takes this over once he is there; until then it is a table.
+    { id: 'nucli-mesa', cell: { x: 8, z: 4 }, label: 'Mirar la mesa', lines: ['Una mesa redonda entre cajas sin abrir, y dos sillas.', 'Desde aquí no se ve la calle. Y desde la calle no se ve esto.'] },
+  ],
+});
+/** Where Bernat sits in El Nucli's back room: the round table's west chair, his back to the cartons and the curtain in sight. His mission puts him here. */
+export const NUCLI_BERNAT_SEAT: Cell = { x: 4, z: 3 };
 /** What each character of the palace plan stands for (docs/bubbaloo-palace.md). */
 export const PALACE_GLYPHS = {
   '.': 'suelo', '+': 'arco o paso', 'R': 'sumidero', '#': 'muro de chicle', 'P': 'muro con retrato',
@@ -492,6 +553,8 @@ export const CARDEDEU_MAZE = { ...MAZE_GROUND, grid: towerGrid(MAZE_GROUND.grid)
 export const BUNKERS_CARMEL = geoEnvironment('bunkers-carmel', BUNKERS_CARMEL_SCENE as GeoScene);
 /** The beach of the L4: the Platja de Sant Miquel, L'Estel Ferit and the old Barceloneta (docs/places/barceloneta.md). */
 export const BARCELONETA = geoEnvironment('barceloneta', BARCELONETA_SCENE as GeoScene);
+/** Sants (docs/places/nucli.md): from the Plaça de Sants metro up Carrer de Riego to El Nucli on Carrer de Valladolid. */
+export const SANTS = geoEnvironment('sants', SANTS_SCENE as GeoScene);
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
@@ -499,6 +562,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   'meridiana-calle': MERIDIANA_CALLE, 'rec-comtal': REC_COMTAL, cardedeu: CARDEDEU, 'cardedeu-laberinto': CARDEDEU_MAZE,
   'bunkers-carmel': BUNKERS_CARMEL,
   barceloneta: BARCELONETA,
+  sants: SANTS, 'el-nucli': EL_NUCLI,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;
