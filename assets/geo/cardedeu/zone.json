@@ -326,8 +326,8 @@
     },
     {
       "kind": "car",
-      "east_m": 0.6,
-      "south_m": -9.6,
+      "east_m": -2.4,
+      "south_m": -35.9,
       "color": "#dcdcd8"
     },
     {
@@ -975,9 +975,9 @@
     {
       "kind": "tanca",
       "id": "tanca-jardi-gran",
-      "x_m": 3.9,
+      "x_m": 5,
       "z_m": -22.5,
-      "rotation_deg": 90,
+      "rotation_deg": -90,
       "size_m": [
         29,
         1.25
@@ -988,7 +988,7 @@
       "params": {
         "height_m": 1.5,
         "gates": [
-          -11
+          11
         ],
         "colour": "#e9dcc0",
         "hedge_m": 1.8,
