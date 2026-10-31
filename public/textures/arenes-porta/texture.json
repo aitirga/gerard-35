@@ -1,0 +1,27 @@
+{
+  "id": "arenes-porta",
+  "name": "Les Arenes: the gate tower (063 Les Arenes, detall)",
+  "kind": "photo",
+  "size_m": [
+    15.6,
+    20.6
+  ],
+  "source": {
+    "site": "Wikimedia Commons",
+    "name": "063_Les_Arenes,_detall.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:063_Les_Arenes,_detall.jpg",
+    "author": "Enfo",
+    "licence": "CC BY-SA 3.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "command": "tools/textures.py photo https://commons.wikimedia.org/wiki/File:063_Les_Arenes,_detall.jpg --id arenes-porta --size-m 15.6 20.6 --crop 0,110,2529,3346",
+  "files": {
+    "albedo": "albedo.webp"
+  },
+  "px": [
+    775,
+    1024
+  ],
+  "mean": "#916950",
+  "made": "2026-10-30"
+}

@@ -18,7 +18,8 @@ export interface LandmarkKit {
   mat(name: string, hex: string, gloss?: number, glow?: number): pc.StandardMaterial;
   /**
    * A real material from public/textures/ (listed in the landmark's `textures` in zone.json, or one
-   * the scene already uses), tinted to `tint`; plain `tint` until it loads or if it is missing. It
+   * the scene already uses), tinted to `tint`; plain `tint` until it loads or if it is missing. An
+   * empty `tint` keeps the texture's own colours (a photo of a facade). It
    * tiles by real metres on MeshBuilder meshes whose UVs are in metres; a primitive's faces count 0–1.
    */
   surface(texture: string, tint: string, gloss?: number): pc.StandardMaterial;

@@ -1018,7 +1018,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       surface(texture, tint, gloss = 0.1) {
         const key = `surface|${texture}|${tint}|${gloss}`;
         let m = shared.get(key);
-        if (!m) { const made = m = mat(`${texture} ${tint}`, tint, gloss); shared.set(key, m); onLoad.push(() => dress(made, texture, tint)); }
+        // An empty tint keeps the texture's own colours (a photo), its mean colour until it loads.
+        if (!m) { const made = m = mat(`${texture} ${tint}`, tint || (scene.textures?.[texture]?.mean ?? '#ffffff'), gloss); shared.set(key, m); onLoad.push(() => dress(made, texture, tint || undefined)); }
         return m;
       },
       part(name, type, material, position, scale, rotation, parent = pivot) {
