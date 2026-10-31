@@ -12,9 +12,9 @@
     { "shot": "plaza", "delay": 1500, "caption": "Plaza Don Pio Montoya · El plátano podado" },
     { "teleport": "alegia", "cell": [150, 64] },
     { "shot": "old-street", "delay": 1500, "caption": "La calle vieja · Entramado de madera, azulejos con el nombre de cada casa, farolas azules" },
-    { "teleport": "alegia", "cell": [126, 69] },
+    { "teleport": "alegia", "cell": [131, 71] },
     { "shot": "konfiteroenea", "delay": 1500, "caption": "Konfiteroenea · Banderitas de fiestas sobre la calle" },
-    { "teleport": "alegia", "cell": [171, 78] },
+    { "teleport": "alegia", "cell": [169, 83] },
     { "press": "KeyE" },
     { "shot": "church", "delay": 1500, "caption": "La iglesia de San Juan y su campanario" },
     { "skipDialogue": true },
@@ -28,7 +28,7 @@
     { "shot": "txintxarri", "delay": 1500, "caption": "Txintxarri plaza · El cencerro de piedra" },
     { "teleport": "alegia", "cell": [10, 97] },
     { "shot": "frontoia", "delay": 1500, "caption": "Parke ttikie · El frontón de los críos" },
-    { "teleport": "alegia", "cell": [34, 39] },
-    { "shot": "bulebarra", "delay": 1500, "caption": "Bulebarra · Al otro lado del puente de la carretera" }
+    { "teleport": "alegia", "cell": [30, 43] },
+    { "shot": "bulebarra", "delay": 1500, "caption": "Bulebarra · La toka de los mayores bajo los plátanos, sobre el río" }
   ]
 }
