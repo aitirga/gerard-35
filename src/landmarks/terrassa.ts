@@ -1,6 +1,6 @@
 import type { GeoLandmark } from '../geo';
 import type { LandmarkKit } from '../landmarks';
-import { seated } from './assegut';
+import { seated } from './assegut.ts';
 
 /**
  * A bar's terrace on a square (the Plaça d'Osca): a row of round aluminium tables along its local x,
