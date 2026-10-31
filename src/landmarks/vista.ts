@@ -42,16 +42,11 @@ const SUN: [number, number] = [-0.573, 0.819];
 
 const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
 /**
- * Vertex colours and canvas textures reach the shader as linear values: stored as painted (sRGB)
- * they come out washed pale, so they are linearised first (as the engine does for material colours).
+ * Vertex colours reach the shader as linear values: stored as painted (sRGB) they come out washed
+ * pale, so they are linearised first (as the engine does for material colours). Canvas textures
+ * are decoded from sRGB by the engine itself, so they stay as painted.
  */
 const LINEAR = Array.from({ length: 256 }, (_, v) => Math.round(255 * (v / 255) ** 2.2));
-function linearise(c: HTMLCanvasElement) {
-  const ctx = c.getContext('2d')!, image = ctx.getImageData(0, 0, c.width, c.height), d = image.data;
-  for (let i = 0; i < d.length; i += 4) { d[i] = LINEAR[d[i]]; d[i + 1] = LINEAR[d[i + 1]]; d[i + 2] = LINEAR[d[i + 2]]; }
-  ctx.putImageData(image, 0, 0);
-  return c;
-}
 const mix = (a: number[], b: number[], t: number) => a.map((v, i) => v + (b[i] - v) * t);
 /** How much of the haze covers the city at `r` metres. */
 const hazeAt = (r: number) => 0.75 * r / (r + 4000);
@@ -161,26 +156,28 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   haze.idx.push(0, 1, 2, 0, 2, 3);
   const hazeMat = unlit('Bruma lejana'); hazeMat.emissiveVertexColor = true; hazeMat.update();
   add('Bruma lejana', haze, hazeMat);
-  let farAhead = 0;
-  for (let d = -40; d <= 40; d += 5) {
-    const b = Math.atan2(ahead[0], -ahead[1]) + d * Math.PI / 180;
-    farAhead = Math.max(farAhead, at(b).base + scale * Math.log(1 + FAR / near));
-  }
-  // A card square to the camera, its foot on the horizon beyond the sea: the camera looks along the grid's (−1, −1) 42.6° down.
+  // The sky all round, its foot on the horizon beyond the city: a ring of panels leaning out at the
+  // camera's angle (it looks along the grid's (−1, −1) 42.6° down), so the one straight ahead stands
+  // square to it and the overview and a look sideways (her castle) find sky there too. Only the
+  // panels that face the camera are built: the near side would stand between it and the hill.
   const sky = document.createElement('canvas'); sky.width = 4; sky.height = 256;
   const sctx = sky.getContext('2d')!, grad = sctx.createLinearGradient(0, 256, 0, 0);
   for (const [t, c] of SKY) grad.addColorStop(t, c);
   sctx.fillStyle = grad; sctx.fillRect(0, 0, 4, 256);
-  const skyMat = unlit('Cielo del atardecer'); skyMat.emissiveMap = kit.texture(linearise(sky)); skyMat.update();
-  const cos = Math.cos(42.6 * Math.PI / 180), sin = Math.sin(42.6 * Math.PI / 180);
-  const right = [-ahead[1], ahead[0]], up = [ahead[0] * sin, cos, ahead[1] * sin];
-  const foot = [ahead[0] * (farAhead + 4), y0, ahead[1] * (farAhead + 4)], W = 700, H = 160;
-  const card = new Geometry(), white = [255, 255, 255];
-  for (const [s, t] of [[-1, 0], [1, 0], [1, 1], [-1, 1]]) {
-    card.vertex(foot[0] + right[0] * s * W / 2 + up[0] * t * H, foot[1] + up[1] * t * H, foot[2] + right[1] * s * W / 2 + up[2] * t * H, white, 0.5, t);
+  const skyMat = unlit('Cielo del atardecer'); skyMat.emissiveMap = kit.texture(sky); skyMat.update();
+  const cos = Math.cos(42.6 * Math.PI / 180), sin = Math.sin(42.6 * Math.PI / 180), H = 160, white = [255, 255, 255];
+  const ring = new Geometry();
+  let last = -1;
+  for (let deg = 0; deg <= 360; deg += 4) {
+    const b = deg * Math.PI / 180, dx = Math.sin(b), dz = -Math.cos(b), rho = at(b).base + scale * Math.log(1 + FAR / near) + 4;
+    // How square the panel stands to the camera: 1 straight ahead, 0 edge on.
+    const facing = (dx * ahead[0] + dz * ahead[1]) * cos * cos + sin * sin;
+    const foot = ring.vertex(dx * rho, y0, dz * rho, white, 0.5, 0);
+    ring.vertex(dx * (rho + H * sin), y0 + H * cos, dz * (rho + H * sin), white, 0.5, 1);
+    if (last >= 0 && facing > 0.15) ring.idx.push(last, foot, foot + 1, last, foot + 1, last + 1);
+    last = facing > 0.15 ? foot : -1;
   }
-  card.idx.push(0, 1, 2, 0, 2, 3);
-  add('Cielo', card, skyMat);
+  add('Cielo', ring, skyMat);
 
   // ------------------------------------------------ the ground: the map's picture, warped round the hill
   const bg = CITY_MAP.background!;
@@ -202,7 +199,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   add('Ciudad (suelo)', ground, groundMat);
   void cityPicture(bg, CITY_MAP.sea, (mx - bg.x0) / (bg.x1 - bg.x0), (my - bg.y0) / (bg.y1 - bg.y0)).then(c => {
     if (!c || !kit.root.parent) return;
-    const t = kit.texture(linearise(c));
+    const t = kit.texture(c);
     t.addressU = t.addressV = pc.ADDRESS_CLAMP_TO_EDGE;
     groundMat.emissiveMap = t; groundMat.emissive.set(1, 1, 1); groundMat.update();
   });
