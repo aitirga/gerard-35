@@ -99,6 +99,11 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },
     enhance: { shadows: -.1, midtones: -.04 },
   },
+  /** Poble Sec: Carrer de Blai at the start of the evening, sienna render in low amber light over deeper, cooler shade. */
+  'poble-sec': {
+    grade: { temperature: .1, lift: [.006, .002, 0], shadows: [-.004, -.002, .016], highlights: [.022, .01, -.014], contrast: 1.06, saturation: 1.02 },
+    enhance: { shadows: -.06, vibrance: .08 },
+  },
   /** La Reina Bubbaloo's light: magenta in the shade, pink in the light, a little darker and stranger. */
   bubbaloo: {
     grade: { lift: [.012, 0, .01], gamma: [.98, .95, .97], gain: [1, .96, .98], shadows: [.024, -.008, .02], highlights: [.02, -.002, .01], contrast: 1.05, saturation: 1 },

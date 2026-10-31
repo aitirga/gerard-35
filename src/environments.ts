@@ -5,10 +5,12 @@ import MERIDIANA_CALLE_SCENE from './geo/meridiana-calle.json' with { type: 'jso
 import REC_COMTAL_SCENE from './geo/rec-comtal.json' with { type: 'json' };
 import CARDEDEU_SCENE from './geo/cardedeu.json' with { type: 'json' };
 import CARDEDEU_MAZE_SCENE from './geo/cardedeu-laberinto.json' with { type: 'json' };
+import POBLE_SEC_SCENE from './geo/poble-sec.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
-  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto';
+  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto'
+  | 'poble-sec';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /** Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses and a potted yucca. */
@@ -464,11 +466,14 @@ export const CARDEDEU = geoEnvironment('cardedeu', CARDEDEU_SCENE as GeoScene);
 const MAZE_GROUND = geoEnvironment('cardedeu-laberinto', CARDEDEU_MAZE_SCENE as GeoScene);
 /** Its tower's walls are drawn into the grid (src/tower.ts): the ramp spirals up ring by ring. */
 export const CARDEDEU_MAZE = { ...MAZE_GROUND, grid: towerGrid(MAZE_GROUND.grid) };
+/** Carrer de Blai in Poble Sec, where Emilie lives, under Montjuïc (docs/places/poble-sec.md); the L3 at Plaça dels Ocellets. */
+export const POBLE_SEC = geoEnvironment('poble-sec', POBLE_SEC_SCENE as GeoScene);
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
   meridiana: MERIDIANA, palacio: PALACIO, alegia: ALEGIA,
   'meridiana-calle': MERIDIANA_CALLE, 'rec-comtal': REC_COMTAL, cardedeu: CARDEDEU, 'cardedeu-laberinto': CARDEDEU_MAZE,
+  'poble-sec': POBLE_SEC,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

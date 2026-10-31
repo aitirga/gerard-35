@@ -85,6 +85,8 @@ const OUTDOORS: Air = { kinds: [{ kind: 'pollen', density: 4, low: .4, high: 3 }
 const AIR: Partial<Record<string, Air>> = {
   patio: { kinds: [{ kind: 'firefly', density: 7, low: .3, high: 2 }], wind: [.05, 0, .02], turbulence: .6 },
   palacio: { kinds: [{ kind: 'gloom', density: 9, low: .1, high: 3 }, { kind: 'bubble', density: 2, low: 0, high: .4 }], wind: [0, .04, 0], turbulence: .7 },
+  // Carrer de Blai: warm motes hanging in the still air under the terraces' bulbs.
+  'poble-sec': { kinds: [{ kind: 'mote', density: 5, low: .4, high: 4 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.05, 0, .02], turbulence: .5 },
 };
 /** Ambient particles stop growing past this, however far the camera pulls back. */
 const AMBIENT_CAP = 1600;

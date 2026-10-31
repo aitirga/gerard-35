@@ -1,0 +1,139 @@
+{
+  "title": "Poble Sec · Carrer de Blai",
+  "description": "Poble Sec from OpenStreetMap (just geo-build poble-sec): out of the L3 in Plaça dels Ocellets, Carrer de Blai's slabs, bars and terraces under the festoons, Emilie's corner on Carrer de Margarit, the top of Margarit where the street turns into stairs up Montjuïc, a cross street climbing towards Elkano, and the overview with the slope behind the roofs. The last shot reads the draw calls following Gerard and in the overview.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "poble-sec",
+      "cell": [
+        267,
+        89
+      ],
+      "settle": 2500
+    },
+    {
+      "shot": "ocellets",
+      "delay": 2500,
+      "caption": "Plaça dels Ocellets: out of the L3, where Blai meets the Paral·lel"
+    },
+    {
+      "eval": "window.psDraws = { 'Plaça dels Ocellets, following': window.gerard.game.app.stats.drawCalls.total }"
+    },
+    {
+      "teleport": "poble-sec",
+      "cell": [
+        40,
+        85
+      ],
+      "settle": 2500
+    },
+    {
+      "shot": "blai",
+      "delay": 2500,
+      "caption": "Carrer de Blai: slabs from wall to wall, bars side by side, terraces and festoons"
+    },
+    {
+      "eval": "window.psDraws['Blai, following'] = window.gerard.game.app.stats.drawCalls.total"
+    },
+    {
+      "teleport": "poble-sec",
+      "cell": [
+        146,
+        80
+      ],
+      "settle": 2500
+    },
+    {
+      "shot": "emilie",
+      "delay": 2500,
+      "caption": "Emilie's corner: the narrow wedge where Carrer de Margarit leaves Blai"
+    },
+    {
+      "teleport": "poble-sec",
+      "cell": [
+        144,
+        79
+      ],
+      "settle": 1500
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "emilie-door",
+      "delay": 2000,
+      "caption": "Mirar el portal: Gerard looks up at her balcony"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "poble-sec",
+      "cell": [
+        132,
+        3
+      ],
+      "settle": 2500
+    },
+    {
+      "shot": "escales",
+      "delay": 2500,
+      "caption": "Up Carrer de Margarit: past Elkano the street turns into stairs, terraces of houses and Montjuïc's pines"
+    },
+    {
+      "eval": "window.psDraws['Margarit top, following'] = window.gerard.game.app.stats.drawCalls.total"
+    },
+    {
+      "teleport": "poble-sec",
+      "cell": [
+        59,
+        50
+      ],
+      "settle": 2500
+    },
+    {
+      "shot": "poeta-cabanyes",
+      "delay": 2500,
+      "caption": "Carrer del Poeta Cabanyes: a cross street climbing from Blai towards Elkano, balconies close overhead"
+    },
+    {
+      "teleport": "poble-sec",
+      "cell": [
+        130,
+        85
+      ],
+      "settle": 2500
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "overview",
+      "delay": 3500,
+      "caption": "Overview (R): Blai across the middle, the cross streets climbing to Elkano and Montjuïc rising behind the roofs"
+    },
+    {
+      "eval": "window.psDraws['Overview (R)'] = window.gerard.game.app.stats.drawCalls.total"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "eval": "{ const pre = document.createElement('pre'); pre.style.cssText = 'position:fixed;inset:auto 24px 24px 24px;z-index:99999;margin:0;padding:16px;background:#101f25ee;color:#eeeade;font:16px/1.5 ui-monospace,monospace'; pre.textContent = ['Draw calls (one frame each)', ...Object.entries(window.psDraws).map(([k, v]) => k.padEnd(32) + String(v).padStart(6))].join('\\n'); document.body.append(pre); console.log(pre.textContent); }"
+    },
+    {
+      "shot": "draws",
+      "delay": 300,
+      "caption": "Draw calls following Gerard and in the overview"
+    }
+  ]
+}
