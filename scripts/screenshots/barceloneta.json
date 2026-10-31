@@ -86,7 +86,7 @@
     {
       "shot": "xiringuito",
       "delay": 2500,
-      "caption": "The beach bar at the west end: loungers in pairs under blue-and-white parasols"
+      "caption": "The beach bar at the west end: loungers in pairs under round blue-and-white parasols"
     },
     {
       "teleport": "barceloneta",
@@ -151,14 +151,14 @@
     {
       "teleport": "barceloneta",
       "cell": [
-        182,
-        136
+        178,
+        134
       ]
     },
     {
       "shot": "escullera",
       "delay": 2500,
-      "caption": "The east end: the breakwater's arm comes ashore past the edge, the sand widening behind it"
+      "caption": "The east end: the beach stops at the breakwater's arm, which comes ashore and runs out to sea"
     },
     {
       "teleport": "barceloneta",

@@ -486,19 +486,19 @@
     {
       "kind": "escullera",
       "id": "escullera-brac",
-      "x_m": 138,
+      "x_m": 125.5,
       "z_m": 128,
       "rotation_deg": -90,
       "size_m": [
         46,
         6
       ],
-      "solid": false
+      "solid": true
     },
     {
       "kind": "escullera",
       "id": "escullera-cap",
-      "x_m": 138,
+      "x_m": 125.5,
       "z_m": 152,
       "size_m": [
         34,
