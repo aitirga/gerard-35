@@ -147,7 +147,8 @@ lamps, benches and shops (`osm.json`, 3202 features, fetched from Overpass on 20
 - **The basilica's block**: the church's OSM outline (cloister included) is a low `temple` block
   under the landmark; the landmark is **solid** over a 98 × 84 m rectangle (x −47…51, z −45…39), so
   nobody walks into the facade or the portal's recess. The Escoles (`way/132513667`) are brick with
-  their wavy roof; the ticket and site pavilions are low grey boxes.
+  their wavy roof of terracotta tiles (`roof` `#a2674a`, darker and redder than the walls' brick, so
+  the roof reads as tiles and not as cloth); the ticket and site pavilions are low grey boxes.
 - **Spawn and station**: at the Provença / Avinguda Gaudí entrance (79, 66), next to the metro
   totem at (75.5, 57.5) and its three-cell stair (`station-sagrada-familia`, like Fabra i Puig). The
   totem's plate says L5 (it shows one line).

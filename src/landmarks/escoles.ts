@@ -6,17 +6,18 @@ import type { LandmarkKit } from '../landmarks';
  * a one-storey brick school for the builders' children whose walls wave in plan (the map's outline
  * already does) and whose thin-brick roof rises from eaves that go up and down in waves, opposite on
  * each side, to a level ridge. Drawn over the map's own building, which gives the walls: `wall` is
- * their top in metres, `waves` how many run along the length, `colour` the brick's.
+ * their top in metres, `waves` how many run along the length, `colour` the brick's and `roof` the
+ * roof's terracotta (the brick's if left out).
  */
 export const kind = 'escoles';
 
 type V3 = [number, number, number];
 
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
-  const p = landmark.params as { wall?: number; waves?: number; colour?: string };
+  const p = landmark.params as { wall?: number; waves?: number; colour?: string; roof?: string };
   const w = landmark.w * kit.cell, d = landmark.d * kit.cell, top = p.wall ?? 3, waves = p.waves ?? 3;
   // Walls of exposed brick; the roof's thin bricks, laid flat in layers, read like tiles from above.
-  const brick = kit.surface('mao', p.colour ?? '#b0866a', 0.05), tiles = kit.surface('rajola', p.colour ?? '#b0866a', 0.05);
+  const brick = kit.surface('mao', p.colour ?? '#b0866a', 0.05), tiles = kit.surface('rajola', p.roof ?? p.colour ?? '#b0866a', 0.05);
   const roof = kit.mesh(), walls = kit.mesh();
   const ridge = top + 1.5;
   /** The eave's height along the length: a wave, the far side the other way round. */
