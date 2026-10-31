@@ -133,7 +133,7 @@ metro.
 | The promenade's edge | `src/landmarks/passeig.ts`: parapet, boardwalk, bollards |
 | Beach pieces | `salvament.ts` (today's post), `guaita.ts` (the 1992 lookout: heavy leaning post, slatted platform, spoked hoop), `voleibol.ts`, `shower.ts` (also the map's `amenity=shower` nodes, `OSM_LANDMARKS`), `hamaques.ts` (the bar's loungers or someone's towels, under round eight-panel parasols, each colour one mesh), `gat-de-sorra.ts` (the wink), `boies.ts`, `escullera.ts` |
 | Backdrops | `vela.ts` (the W), `muntanya.ts` (Montjuïc); `look.hills: false` leaves out the wooded hills other zones get |
-| Palms and lamps | `palm` species and `mast` lamp style in `src/props.ts` |
+| Palms and lamps | `palm` species and `seafront` lamp style in `src/props.ts` |
 | Blocks | The `barceloneta` facade atlas in `src/geo-scenery.ts` (four bays by three storeys: French windows in stone surrounds, small iron balconies, green louvred shutters or roll blinds, washing on most railings, plants, sagging cables) and `terrat`: stair heads, fibre-cement tanks, aerials and washing lines on the flat roofs |
 | Light and air | `LOOKS.barceloneta` (`src/grading.ts`), its `AIR` in `src/effects.ts` (sand blown low by a sea breeze), the flat's lamps in its colours (`src/home-lights.ts`) |
 | Wiring | `EnvironmentId` and `ENVIRONMENTS` (`src/environments.ts`), `PLACES` (`src/jump-menu.ts`), `STATION_PLACES` (`src/transit.ts`), the scenario `scripts/screenshots/barceloneta.json` |

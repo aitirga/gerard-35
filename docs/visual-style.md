@@ -214,8 +214,8 @@ material, light and landmark, which the last column names.
 
 | Place | Dominant | Family | Signature material | Landmark kind | Look | Told from its nearest look-alike by |
 | --- | --- | --- | --- | --- | --- | --- |
-| Passatge Maresme | `#d6cfbc` | sunlit white | white render, flat roofs (`estuc`) | row of white cubes | `maresme` warm | Plaça d'Espanya (ΔE 4): render and houses vs monumental stone and towers |
-| Casa de Gerard | `#ecdcb8` | cream, indoor amber | plaster and pale tile (`rajola`) | the house cut open | `home-*` warm | Plaça d'Espanya (ΔE 8): a room in amber light vs an open square |
+| Passatge Maresme | `#d6cfbc` | sunlit white | white render, flat roofs (`estuc`) | row of white cubes | `maresme` warm | Sagrada inside (ΔE 8): a street of houses in the sun vs a nave in coloured light |
+| Casa de Gerard | `#ecdcb8` | cream, indoor amber | plaster and pale tile (`rajola`) | the house cut open | `home-*` warm | La Barceloneta (ΔE 8): a room in amber light vs an open beach |
 | El piso de la Meridiana | `#b9803f` | honey | wood parquet | the flat cut open, long balcony | `meridiana` warm | Poble Sec (ΔE 12): interior, wood |
 | Avinguda Meridiana | `#9fa09a` | cool grey | grey square panot (`panot-gris`), new black asphalt (`asfalt-nou`) | a mall box under brown-banded slabs | `meridiana-calle` cool | Sagrada outside (ΔE 13): panot and blocks vs carved stone |
 | Trinitat Vella · Rec Comtal | `#a8664e` | brick red-brown | exposed brick (`mao`) | the school and her palace on it | `rec-comtal` warm | Poble Sec (ΔE 11): brick blocks vs sienna render and stairs |
@@ -227,7 +227,7 @@ material, light and landmark, which the last column names.
 | Sants street (built) | `#cfa463` | ochre | painted roller shutters, old render scored as ashlar (`estuc`) | a lit shopfront in a row of shutters | `sants` cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
 | Sagrada Família, outside (proposal) | `#9f8f78` | weathered sandstone | carved sandstone | spires | new, neutral | Avinguda Meridiana (ΔE 13): carved stone and park vs panot and blocks |
 | Sagrada Família, inside (proposal) | `#e9e4d8` + coloured light | pale stone in coloured light | branching stone columns, stained glass | a forest of columns | new, neutral | Alegia (ΔE 5): its light is the colour |
-| Plaça d'Espanya (proposal) | `#d8ccb2` | pale limestone and water | monumental stone, brick towers | twin campaniles and a dome | new, warm | Maresme (ΔE 4): monument and water vs houses |
+| Plaça d'Espanya | `#c49884` | salmon paving, limestone and brick | monumental limestone, exposed brick | twin campaniles; a brick drum on red struts | `placa-espanya` warm | Sagrada outside (ΔE 13): flat paving, brick towers and a roundabout vs carved stone and spires |
 | La Barceloneta | `#e6d0a2` | sand and sea | sand (`sorra`, `sorra-humida`), rusted iron (`acer-corten`) | four stacked rusted cubes | `barceloneta` cool | Casa de Gerard (ΔE 7): open sea vs a room |
 | Poble Sec (built) | `#b08c58` | sienna-ochre and pine green | render bays with iron balconies (`poble-sec-bays`), Blai's slabs | the slope and its stairs | `poble-sec` warm | Búnkers (ΔE 7): dense streets with balconies and terraces vs an open hilltop |
 | Búnkers del Carmel | `#c09a5e` | dry gold grass, war concrete, golden light | board-marked concrete (`formigo-encofrat`), rock (`roca`), dry grass (`herba-seca`) | round gun pits on a bare crest above the city | `bunkers-carmel` warm, dusk sky | Sants (ΔE 5): open hill at sunset vs a shaded street |
@@ -263,8 +263,8 @@ share a landmark kind.
 | Avinguda Meridiana · Rec Comtal | L1, three stops | 37 | colour, material, light | ✓ |
 | El Nucli · Sants street | Door | 57 | all four | ✓ |
 | Sagrada inside · outside | Door | 32 | colour, ground, light (coloured nave) | ✓ |
-| Sants · Plaça d'Espanya | L1 and L3, two stops; one district | 29 | colour, material, light (cool and warm) | ✓ |
-| Plaça d'Espanya · Poble Sec | L3, one stop; one district | 40 | colour, material, ground | ✓ (both warm: Espanya golden afternoon, Poble Sec evening) |
+| Sants · Plaça d'Espanya | L1 and L3, two stops; one district | 24 | colour, material, light (cool and warm) | ✓ |
+| Plaça d'Espanya · Poble Sec | L3, one stop; one district | 22 | colour, material, ground | ✓ (both warm: Espanya golden afternoon, Poble Sec evening) |
 | Sants · Poble Sec | One district | 21 | colour, material, ground, light | ✓, the closest: keep Sants cool and in shade |
 | Sagrada outside · Búnkers del Carmel | Seen from the hilltop | 23 | colour, material, ground, light | ✓ |
 | Palace zones, door to door | Doors | 55–92 | all four | ✓ |
@@ -499,19 +499,22 @@ The one place whose identity is light, not material: build the light first.
 
 #### Plaça d'Espanya (L1 and L3)
 
+Built (`docs/places/espanya.md` has the reasons and the measured colours).
+
 | | |
 | --- | --- |
-| Dominant | Pale limestone `#d8ccb2` (the fountain, balustrades, the Palau Nacional), the wide roundabout's asphalt `#4a4b4d` |
-| Secondary | Brick red `#b0553a` (the Venetian towers, Las Arenas), water `#8fb8c0` |
-| Material | Monumental stone with water, two brick towers |
-| Ground | A wide granite plaza (`granit`) and the roundabout |
-| Landmark | The two Venetian towers framing the avenue up to the Palau Nacional's dome (kind: twin campaniles) |
-| Light | New look, golden late afternoon, long shadows |
-| Props | The central fountain, balustrades, lamps up the avenue, Las Arenas' round bulk and horseshoe arches, buses, the escalators up Montjuïc |
-| Air | Mist near the fountains |
-| Sound | The roundabout's roar, water, the Magic Fountain's music far up the avenue |
-| Only here | Cascades and fountains stepping up to the Palau Nacional |
-| Text | Catalan: *Plaça d'Espanya*, *Avinguda de la Reina Maria Cristina*, *Font Màgica* |
+| Dominant | The Fira's salmon forecourt slabs `#c49884` (`lloses-fira`), hue 19°: orange-red, never her pink |
+| Secondary | Warm limestone `#cdb9a0` (the colonnades, the fountain, the tower bases), tower brick `#b45e40`, Las Arenas' orange brick, the roundabout's asphalt `#46474a`, the dug island `#6e5840` |
+| Accent | Las Arenas' red steel `#b3261e`: its V struts, the rim's edge, the lift's mast |
+| Material | Monumental limestone and exposed brick (`carreu`, `mao`, Las Arenas' photographed bays) |
+| Ground | Salmon slabs and granite steps under the colonnades, panot sidewalks, a wide roundabout with arrows and BUS lanes, the island dug for the L8 behind yellow barriers |
+| Landmark | The two Venetian towers framing the avenue up to the Palau Nacional (kind: twin campaniles); Las Arenas' drum in the foreground |
+| Light | `placa-espanya`: golden late afternoon, the towers' long shadows across the forecourt |
+| Props | Lamp masts crowned with four heads, traffic lights, the works' yellow jersey barriers, a Bicing dock, the red and white tourist kiosk, cypresses, taxis and TMB buses in the traffic |
+| Air | Pollen |
+| Sound | The roundabout's roar, buses, water up the avenue (not built yet) |
+| Only here | Las Arenas' brick bullring floating on red steel V struts |
+| Text | Catalan: *PLAÇA D'ESPANYA* on the ring, *Espanya* on the metro, *TURISME*, *ARENAS DE BARCELONA* |
 
 #### La Barceloneta · the beach (L4)
 

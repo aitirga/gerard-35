@@ -1,0 +1,1233 @@
+{
+  "id": "placa-espanya",
+  "name": "Plaça d'Espanya",
+  "region": "Sants-Montjuïc, Barcelona",
+  "anchor": {
+    "address": "Font de la Plaça d'Espanya, Barcelona",
+    "lat": 41.3750413,
+    "lon": 2.1491446
+  },
+  "bounds_m": {
+    "west": -175,
+    "east": 140,
+    "north": -170,
+    "south": 215
+  },
+  "bounds_turned": true,
+  "cell_m": 1.5,
+  "rotation_deg": 162,
+  "zoom": 13,
+  "spawn": {
+    "x_m": -70,
+    "z_m": -43
+  },
+  "storey_m": 3.4,
+  "lane_m": 3.2,
+  "redraw": [
+    "Avinguda de la Reina Maria Cristina"
+  ],
+  "reference": {
+    "checked": "2026-10-30",
+    "streetview_capture": "Not checked in Street View yet; looked at openly licensed Wikimedia Commons photos from 2019 to July 2025 (docs/places/espanya.md lists them)",
+    "notes": [
+      "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-30 through the OSM API bbox call: Overpass was busy). The anchor is the centre of Jujol's fountain.",
+      "Turned 162°: Avinguda de la Reina Maria Cristina (bearing 153°) runs straight up the screen between the two Venetian towers, towards Montjuïc and the Palau Nacional; Las Arenas is at the bottom, nearest the camera; Gran Via crosses the screen from left to right.",
+      "Square: a roundabout about 120 m across between kerbs (the island's edge about 41 m from the centre, the ring road four to six lanes wide); 34,000 m² in all. Five roads meet: Gran Via (both ways), Paral·lel, Creu Coberta, Tarragona and Maria Cristina.",
+      "Island: an oval lawn ringed by red-leaved shrubs, the fountain on a triangular basin. Since late 2024 the island is a works site for the FGC L8 extension (OSM landuse=construction 'Perllongament FGC Llobregat-Anoia'): yellow plastic barriers round the whole island, dug soil and blue tarps, the fountain dry; the roundabout down to four lanes in places. The tunnel-boring shaft and its acoustic shed are on Gran Via between Llançà and Vilamarí, behind Las Arenas (2026).",
+      "Fountain (Font dels Tres Mars, Josep Maria Jujol, 1929): grey and cream stone, three basins on a triangle, a central edicle with three niches (Ebre, Guadalquivir and Tajo by Miquel Blay), three Corinthian columns, bronze groups at the corners (the Oslé brothers), a bronze brazier with three Victories on top (Frederic Llobet), iron lanterns. About 30 m across the basins; the top about 20 m high (estimate).",
+      "Venetian towers (Ramon Reventós, 1927-29): two identical towers 47 m high on a 7.2 m square base, about 33 m apart centre to centre, one each side of the avenue. A slightly battered cream base with a door, a shaft of exposed red brick with three recessed arched channels per face and slit windows, a wide cream cornice on brackets, a loggia of Corinthian columns, a pyramidal copper roof gone dark grey-green.",
+      "Las Arenas (August Font i Carreras, 1900; Richard Rogers and Alonso-Balaguer, shopping centre opened 2011): a neo-Mudéjar bullring 100 m across in red-orange brick, two tiers of horseshoe arches with cream and brick voussoirs, bands of coloured ceramic triangles, saw-tooth brick cornices and crenellations, the main gate tower with ARENAS DE BARCELONA and the city's arms. The old facade stands on a grey concrete band carried by red steel V struts over a glazed ground floor with purple panels; above it a flat dish roof with a red steel rim and a round public terrace walk; a red panoramic lift tower outside, facing the square.",
+      "Fira (1929 Exhibition palaces): the Palau de Comunicacions i Transports (east) and the Palau del Vestit (west) face the square with curved fronts of giant columns in warm pinkish limestone, glass between them, a balustrade with urns, obelisk pinnacles and big arched doors; grey sheet roofs behind. In front, a wide forecourt in salmon concrete slabs and grey granite steps; cypresses beside the towers.",
+      "Around: Hotel Catalonia Barcelona Plaza (grey stone grid of square windows, 9 storeys) between Creu Coberta and Tarragona; the Mossos d'Esquadra station (light grey offices) between Gran Via and Paral·lel; Eixample and Sants blocks of six to ten storeys; Torre Allianz behind on Tarragona.",
+      "Street: wide asphalt with many lanes, arrows and BUS markings; grey granite slabs and panot on the sidewalks; tall lamp masts with three or four heads; traffic lights on curved poles; plane trees on Gran Via and Tarragona; benches and Bicing docks.",
+      "Traffic: yellow-and-black taxis queuing on Tarragona, TMB red buses, turquoise interurban buses, the red tourist bus, coaches for the fairs.",
+      "Background: up the avenue, its median fountains, the Magic Fountain (about 480 m), Puig i Cadafalch's four columns, the stairs and cascades, the Palau Nacional (MNAC, about 820 m) with its dome and towers, Montjuïc's pines and Calatrava's white communications tower. Out of reach: drawn as a backdrop.",
+      "Hidden map buildings (`draw: false`): Las Arenas (way/1105997329, the landmark draws it) and the six exits and the bus shelter mapped round its foot (way/1105997330-1105997335, way/1559042345); the Venetian towers (relation/21193576) and the fountain (way/126832508), drawn by their landmarks; the tourist office (way/618800603), drawn as a kiosk; way/618800609, a raised layer over the Fira's forecourt."
+    ],
+    "viewpoints": [
+      {
+        "name": "les-arenes",
+        "lat": 41.375786,
+        "lon": 2.149364,
+        "heading": 169,
+        "pitch": 8
+      },
+      {
+        "name": "torres",
+        "lat": 41.374182,
+        "lon": 2.149933,
+        "heading": 340,
+        "pitch": 5
+      },
+      {
+        "name": "fira",
+        "lat": 41.37439,
+        "lon": 2.150249,
+        "heading": 100,
+        "pitch": 5
+      },
+      {
+        "name": "gran-via",
+        "lat": 41.375962,
+        "lon": 2.150044,
+        "heading": 300,
+        "pitch": 10
+      }
+    ]
+  },
+  "look": {
+    "ground": "panot",
+    "footway": "panot",
+    "asphalt": "#46474a",
+    "markings": true
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#dccbb0",
+        "#cfb995",
+        "#e4d8c3",
+        "#c9b79c",
+        "#d6c2a4"
+      ],
+      "base": "#6f655a",
+      "trim": "#efe8dc",
+      "roof": "#a39a8c",
+      "roof_kind": "flat",
+      "facade": "flats",
+      "ground": "shops",
+      "levels": 7
+    },
+    "fira": {
+      "walls": [
+        "#cdb9a0"
+      ],
+      "base": "#b9a88f",
+      "trim": "#e6dccb",
+      "roof": "#b4aea4",
+      "facade": "ashlar-windows",
+      "ground": "ashlar-arcade",
+      "levels": 3
+    },
+    "arenas": {
+      "walls": [
+        "#9a5e40"
+      ],
+      "base": "#d9d6cf",
+      "trim": "#d8cdbf",
+      "roof": "#cfc6b2",
+      "facade": "ashlar-windows",
+      "ground": "arcade",
+      "levels": 5
+    },
+    "hotel": {
+      "walls": [
+        "#c9c2b3"
+      ],
+      "base": "#8d867a",
+      "trim": "#e8e4dc",
+      "roof": "#9d968a",
+      "facade": "flats",
+      "ground": "lobby",
+      "levels": 9
+    },
+    "offices": {
+      "walls": [
+        "#d8d2c6"
+      ],
+      "base": "#7a7570",
+      "trim": "#b23a2e",
+      "roof": "#a09a90",
+      "facade": "school",
+      "ground": "lobby",
+      "levels": 7
+    },
+    "tower": {
+      "walls": [
+        "#30363c"
+      ],
+      "base": "#2a2f34",
+      "trim": "#4a5560",
+      "roof": "#3a4046",
+      "facade": "curtain",
+      "ground": "lobby"
+    }
+  },
+  "buildings": {
+    "way/1105997329": {
+      "draw": false
+    },
+    "relation/21193576": {
+      "draw": false
+    },
+    "way/126832508": {
+      "draw": false
+    },
+    "way/22886315": {
+      "style": "fira"
+    },
+    "way/1369028110": {
+      "style": "fira"
+    },
+    "way/618800603": {
+      "draw": false
+    },
+    "relation/4113601": {
+      "style": "hotel"
+    },
+    "way/1103783042": {
+      "style": "hotel",
+      "levels": 8
+    },
+    "way/196370675": {
+      "style": "offices"
+    },
+    "way/618800609": {
+      "draw": false
+    },
+    "way/1105997326": {
+      "style": "offices",
+      "levels": 4
+    },
+    "way/1105997330": {
+      "draw": false
+    },
+    "way/1105997331": {
+      "draw": false
+    },
+    "way/1105997332": {
+      "draw": false
+    },
+    "way/1105997333": {
+      "draw": false
+    },
+    "way/1105997334": {
+      "draw": false
+    },
+    "way/1105997335": {
+      "draw": false
+    },
+    "way/1559042345": {
+      "draw": false
+    },
+    "way/126829983": {
+      "style": "fira",
+      "levels": 2
+    },
+    "way/1547317397": {
+      "style": "fira",
+      "levels": 2
+    }
+  },
+  "osm_props": {
+    "tree": {
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    "bench": {},
+    "bin": {},
+    "bike-rack": {}
+  },
+  "props": [
+    {
+      "kind": "metro",
+      "x_m": -76,
+      "z_m": -48,
+      "name": "Espanya",
+      "line": "L1 L3"
+    },
+    {
+      "kind": "bike-rack",
+      "yaw": 90,
+      "x_m": -82,
+      "z_m": -44,
+      "to": {
+        "x_m": -82,
+        "z_m": -52.4
+      },
+      "every_m": 1.2
+    },
+    {
+      "kind": "tree",
+      "species": "cypress",
+      "base": "ground",
+      "x_m": -106,
+      "z_m": -66
+    },
+    {
+      "kind": "tree",
+      "species": "cypress",
+      "base": "ground",
+      "x_m": -108,
+      "z_m": -62
+    },
+    {
+      "kind": "tree",
+      "species": "cypress",
+      "base": "ground",
+      "x_m": -66,
+      "z_m": -108
+    },
+    {
+      "kind": "tree",
+      "species": "cypress",
+      "base": "ground",
+      "x_m": -62,
+      "z_m": -110
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 13,
+      "x_m": 16.3,
+      "z_m": 38.9,
+      "to": {
+        "x_m": 23.9,
+        "z_m": 37.1
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 30,
+      "x_m": 23.9,
+      "z_m": 37.1,
+      "to": {
+        "x_m": 32.0,
+        "z_m": 32.4
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 49,
+      "x_m": 32.0,
+      "z_m": 32.4,
+      "to": {
+        "x_m": 41.3,
+        "z_m": 21.6
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 61,
+      "x_m": 41.3,
+      "z_m": 21.6,
+      "to": {
+        "x_m": 47.5,
+        "z_m": 10.5
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 84,
+      "x_m": 47.5,
+      "z_m": 10.5,
+      "to": {
+        "x_m": 48.5,
+        "z_m": 1.4
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 98,
+      "x_m": 48.5,
+      "z_m": 1.4,
+      "to": {
+        "x_m": 47.3,
+        "z_m": -6.7
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 118,
+      "x_m": 47.3,
+      "z_m": -6.7,
+      "to": {
+        "x_m": 43.8,
+        "z_m": -13.4
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 129,
+      "x_m": 43.8,
+      "z_m": -13.4,
+      "to": {
+        "x_m": 36.8,
+        "z_m": -22.1
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 111,
+      "x_m": 36.8,
+      "z_m": -22.1,
+      "to": {
+        "x_m": 33.2,
+        "z_m": -31.5
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 100,
+      "x_m": 33.2,
+      "z_m": -31.5,
+      "to": {
+        "x_m": 30.4,
+        "z_m": -47.4
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 90,
+      "x_m": 30.4,
+      "z_m": -47.4,
+      "to": {
+        "x_m": 30.3,
+        "z_m": -61.1
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 98,
+      "x_m": 30.3,
+      "z_m": -61.1,
+      "to": {
+        "x_m": 29.4,
+        "z_m": -67.5
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 125,
+      "x_m": 29.4,
+      "z_m": -67.5,
+      "to": {
+        "x_m": 26.7,
+        "z_m": -71.4
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 151,
+      "x_m": 26.7,
+      "z_m": -71.4,
+      "to": {
+        "x_m": 22.0,
+        "z_m": -73.9
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": 178,
+      "x_m": 22.0,
+      "z_m": -73.9,
+      "to": {
+        "x_m": 16.6,
+        "z_m": -74.1
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -156,
+      "x_m": 16.6,
+      "z_m": -74.1,
+      "to": {
+        "x_m": 11.3,
+        "z_m": -71.7
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -143,
+      "x_m": 11.3,
+      "z_m": -71.7,
+      "to": {
+        "x_m": -6.1,
+        "z_m": -58.5
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -152,
+      "x_m": -6.1,
+      "z_m": -58.5,
+      "to": {
+        "x_m": -18.2,
+        "z_m": -52.2
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -151,
+      "x_m": -18.2,
+      "z_m": -52.2,
+      "to": {
+        "x_m": -29.6,
+        "z_m": -46.0
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -138,
+      "x_m": -29.6,
+      "z_m": -46.0,
+      "to": {
+        "x_m": -38.5,
+        "z_m": -38.1
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -123,
+      "x_m": -38.5,
+      "z_m": -38.1,
+      "to": {
+        "x_m": -46.6,
+        "z_m": -25.8
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -110,
+      "x_m": -46.6,
+      "z_m": -25.8,
+      "to": {
+        "x_m": -50.5,
+        "z_m": -15.1
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -88,
+      "x_m": -50.5,
+      "z_m": -15.1,
+      "to": {
+        "x_m": -50.1,
+        "z_m": -5.7
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -67,
+      "x_m": -50.1,
+      "z_m": -5.7,
+      "to": {
+        "x_m": -46.7,
+        "z_m": 2.5
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -47,
+      "x_m": -46.7,
+      "z_m": 2.5,
+      "to": {
+        "x_m": -40.5,
+        "z_m": 9.2
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -38,
+      "x_m": -40.5,
+      "z_m": 9.2,
+      "to": {
+        "x_m": -17.0,
+        "z_m": 27.5
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -24,
+      "x_m": -17.0,
+      "z_m": 27.5,
+      "to": {
+        "x_m": -2.8,
+        "z_m": 33.9
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -19,
+      "x_m": -2.8,
+      "z_m": 33.9,
+      "to": {
+        "x_m": 8.6,
+        "z_m": 37.9
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "color": "yellow",
+      "style": "jersey",
+      "yaw": -7,
+      "x_m": 8.6,
+      "z_m": 37.9,
+      "to": {
+        "x_m": 16.3,
+        "z_m": 38.9
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "barrier",
+      "style": "fence",
+      "yaw": 45,
+      "x_m": -134.06,
+      "z_m": -79.99,
+      "to": {
+        "x_m": -77.49,
+        "z_m": -136.56
+      },
+      "every_m": 1.3
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 1.0,
+      "z_m": 70.5
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 18.4,
+      "z_m": 68.4
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 49.2,
+      "z_m": 52.0
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 60.7,
+      "z_m": 38.8
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 68.7,
+      "z_m": 23.1
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 72.6,
+      "z_m": 6.0
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 67.8,
+      "z_m": -28.5
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 59.2,
+      "z_m": -43.8
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 47.3,
+      "z_m": -56.7
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 16.0,
+      "z_m": -71.9
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -18.8,
+      "z_m": -70.7
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -35.0,
+      "z_m": -63.9
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -49.0,
+      "z_m": -53.3
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -60.1,
+      "z_m": -39.7
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -67.5,
+      "z_m": -23.7
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -70.8,
+      "z_m": -6.5
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -28.3,
+      "z_m": 64.3
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 7.7,
+      "z_m": -97.3
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -12.4,
+      "z_m": -96.6
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -31.8,
+      "z_m": -91.7
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -49.9,
+      "z_m": -82.9
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -65.7,
+      "z_m": -70.6
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -78.6,
+      "z_m": -55.2
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -88.0,
+      "z_m": -37.5
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -93.5,
+      "z_m": -18.2
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -94.9,
+      "z_m": 1.9
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 31.9,
+      "z_m": -109.2
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 14.6,
+      "z_m": -112.7
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -2.9,
+      "z_m": -113.4
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -20.4,
+      "z_m": -111.4
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -37.3,
+      "z_m": -106.7
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -53.3,
+      "z_m": -99.5
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -68.0,
+      "z_m": -89.8
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -91.9,
+      "z_m": -64.1
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -100.5,
+      "z_m": -48.8
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -106.7,
+      "z_m": -32.4
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -110.2,
+      "z_m": -15.1
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -110.9,
+      "z_m": 2.4
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -101.5,
+      "z_m": -85.7
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -83.2,
+      "z_m": -104.0
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -110.7,
+      "z_m": -94.8
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -92.3,
+      "z_m": -113.2
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 45.8,
+      "z_m": 50.5
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -78.5,
+      "z_m": 8.7
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -68.6,
+      "z_m": 35.4
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -23.7,
+      "z_m": 67.0
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 21.2,
+      "z_m": 68.3
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -63.0,
+      "z_m": 45.2
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 44.5,
+      "z_m": 48.1
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -10.0,
+      "z_m": 74.1
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -81.6,
+      "z_m": 10.5
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 15.2,
+      "z_m": 65.3
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 76.6,
+      "z_m": -0.5
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -62.8,
+      "z_m": -49.2
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -47.5,
+      "z_m": -66.5
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": 68.1,
+      "z_m": -26.3
+    },
+    {
+      "kind": "traffic-light",
+      "x_m": -73.0,
+      "z_m": 36.9
+    }
+  ],
+  "places": [
+    {
+      "id": "station-espanya",
+      "label": "Bajar al metro",
+      "x_m": -73.5,
+      "z_m": -47.5,
+      "step": {
+        "x_m": -74.25,
+        "z_m": -48.25,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "espanya-torres",
+      "label": "Mirar las torres",
+      "x_m": -92,
+      "z_m": -70,
+      "lines": [
+        "Las torres venecianas. Cuarenta y siete metros de ladrillo, copiadas del campanario de San Marcos.",
+        "Las levantaron para la Exposición del 29 y tenían que derribarlas después. Siguen aquí."
+      ]
+    },
+    {
+      "id": "espanya-avinguda",
+      "label": "Mirar la avenida",
+      "x_m": -96.6,
+      "z_m": -99.1,
+      "lines": [
+        "La avenida sube recta hasta Montjuïc, entre las dos torres.",
+        "Al fondo, el Palau Nacional. Desde aquí parece que esté a dos pasos."
+      ]
+    },
+    {
+      "id": "espanya-font-magica",
+      "label": "Mirar la Font Màgica",
+      "x_m": -103.7,
+      "z_m": -106.2,
+      "lines": [
+        "La Font Màgica. Han vallado la plaza: esta noche hay espectáculo.",
+        "Detrás, las escaleras suben hasta el Palau Nacional. Desde abajo parece un castillo."
+      ]
+    },
+    {
+      "id": "espanya-font",
+      "label": "Mirar la fuente",
+      "x_m": -21.3,
+      "z_m": 25.5,
+      "lines": [
+        "La fuente de los tres mares, de Jujol. Seca, y rodeada de vallas amarillas.",
+        "Las obras de la L8. Llevan tanto tiempo que ya son parte de la plaza."
+      ]
+    },
+    {
+      "id": "espanya-arenas",
+      "label": "Mirar Las Arenas",
+      "x_m": 83.5,
+      "z_m": 148.5,
+      "lines": [
+        "Las Arenas. Era la plaza de toros; ahora es un centro comercial.",
+        "Levantaron la fachada entera sobre patas rojas y le pusieron un mirador redondo encima."
+      ]
+    },
+    {
+      "id": "espanya-fira",
+      "label": "Mirar la Fira",
+      "x_m": -112,
+      "z_m": -38,
+      "lines": [
+        "El Palau de Comunicacions. Columnas como troncos y nadie entre ellas.",
+        "Hoy no hay feria. Ni colas ni acreditaciones colgadas del cuello."
+      ]
+    }
+  ],
+  "labels": [
+    {
+      "text": "PLAÇA D'ESPANYA",
+      "x_m": 4,
+      "z_m": 52,
+      "width": 12
+    }
+  ],
+  "landmarks": [
+    {
+      "kind": "venetian-tower",
+      "id": "torre-oest",
+      "x_m": -97.8,
+      "z_m": -77.3,
+      "rotation_deg": 45,
+      "size_m": [
+        9,
+        9
+      ],
+      "textures": [
+        "mao",
+        "carreu",
+        "granit"
+      ]
+    },
+    {
+      "kind": "venetian-tower",
+      "id": "torre-est",
+      "x_m": -74.7,
+      "z_m": -100.4,
+      "rotation_deg": 45,
+      "size_m": [
+        9,
+        9
+      ],
+      "textures": [
+        "mao",
+        "carreu",
+        "granit"
+      ]
+    },
+    {
+      "kind": "espanya-fountain",
+      "id": "font",
+      "x_m": 1,
+      "z_m": -1.5,
+      "rotation_deg": 43,
+      "size_m": [
+        34,
+        34
+      ],
+      "params": {
+        "dry": true,
+        "works": [
+          40,
+          41,
+          36,
+          39,
+          57,
+          47,
+          47,
+          44,
+          32,
+          28,
+          28,
+          35
+        ]
+      },
+      "textures": [
+        "carreu",
+        "mamposteria",
+        "terra"
+      ]
+    },
+    {
+      "kind": "kiosk",
+      "id": "turisme",
+      "x_m": -80.5,
+      "z_m": -24.5,
+      "rotation_deg": 45,
+      "size_m": [
+        2.2,
+        1.5
+      ],
+      "params": {
+        "colour": "#ece8e1",
+        "accent": "#c8102e",
+        "sign": "TURISME"
+      }
+    },
+    {
+      "kind": "arenas",
+      "id": "arenes",
+      "x_m": 30.4,
+      "z_m": 136.8,
+      "rotation_deg": 0,
+      "size_m": [
+        100,
+        100
+      ],
+      "solid": false,
+      "textures": [
+        "arenes-arcs",
+        "arenes-porta",
+        "mao",
+        "formigo",
+        "carreu"
+      ],
+      "params": {
+        "gate": -138,
+        "lift": 194,
+        "lift_m": 61
+      }
+    },
+    {
+      "kind": "fira-hemicycle",
+      "id": "fira",
+      "x_m": 1,
+      "z_m": -1.5,
+      "solid": false,
+      "params": {
+        "radius": 124,
+        "inner": 62,
+        "fronts": [
+          [
+            -118,
+            -83
+          ],
+          [
+            164,
+            206
+          ]
+        ],
+        "forecourt": [
+          164,
+          277
+        ]
+      },
+      "textures": [
+        "lloses-fira",
+        "granit",
+        "carreu"
+      ]
+    },
+    {
+      "kind": "palau-nacional",
+      "id": "montjuic",
+      "x_m": -140.4,
+      "z_m": -142.9,
+      "rotation_deg": 45,
+      "size_m": [
+        170,
+        95
+      ],
+      "params": {
+        "fountain_z": 29
+      },
+      "textures": [
+        "carreu",
+        "granit",
+        "gespa"
+      ]
+    }
+  ]
+}

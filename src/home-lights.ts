@@ -115,6 +115,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   'el-nucli': { salon: [white(2400, .8), hex('#3f7a55', .5, .5), hex('#8a2a2e', .45, .45), white(2600, .7)], rest: white(2500, .3) },
   // Carrer de Blai at evening: sienna render, the terraces' amber bulbs and Montjuïc's pines.
   'poble-sec': { salon: [hex('#c77d4f', .7, .5), white(2200, .7), hex('#4e6b3c', .55, .45), hex('#f2c27a', .65, .55)], rest: white(2500, .3) },
+  // Plaça d'Espanya: a golden afternoon on salmon paving, the towers' brick and Las Arenas' red steel.
+  'placa-espanya': { salon: [white(2500, .85), hex('#c96a45', .6, .5), hex('#8ec0e6', .5, .45), hex('#d9734a', .55, .55)], rest: white(2800, .3) },
 };
 /** La Reina Bubbaloo's light (scenery.ts BUBBALOO): a magenta sun and a violet gloom. */
 const BUBBALOO = [hex('#db6ba8', .5, .55), hex('#9a5bc4', .4, .5), hex('#ff7fb3', .45, .5), hex('#c04a8a', .45, .6)];

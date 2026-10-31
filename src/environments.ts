@@ -9,11 +9,12 @@ import BUNKERS_CARMEL_SCENE from './geo/bunkers-carmel.json' with { type: 'json'
 import BARCELONETA_SCENE from './geo/barceloneta.json' with { type: 'json' };
 import SANTS_SCENE from './geo/sants.json' with { type: 'json' };
 import POBLE_SEC_SCENE from './geo/poble-sec.json' with { type: 'json' };
+import PLACA_ESPANYA_SCENE from './geo/placa-espanya.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
   | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta'
-  | 'sants' | 'el-nucli' | 'poble-sec';
+  | 'sants' | 'el-nucli' | 'poble-sec' | 'placa-espanya';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /**
@@ -31,8 +32,12 @@ export type WorldProp =
   | { kind: 'tree'; x: number; z: number; species?: TreeSpecies; scale?: number; base?: TreeBase; stakes?: boolean; trunk?: string }
   /** A car spans its anchor and the next cell along +z, or along +x with `along: 'x'`. */
   | { kind: 'car'; x: number; z: number; color: string; along?: 'x' | 'z' }
-  /** `led`: a tall, slim grey pole with a small white LED head, as on the renewed Meridiana; `mast`: the seafront's slim mast with a stack of round spotlights. */
-  | { kind: 'lamp'; x: number; z: number; style?: 'classic' | 'led' | 'mast'; yaw?: number }
+  /**
+   * `led`: a tall, slim grey pole with a small white LED head, as on the renewed Meridiana; `mast`: a
+   * square's tall mast with three heads on short arms, as round Plaça d'Espanya; `seafront`: the
+   * seafront's slim mast with a stack of round spotlights (the Barceloneta's Passeig Marítim).
+   */
+  | { kind: 'lamp'; x: number; z: number; style?: 'classic' | 'led' | 'mast' | 'seafront'; yaw?: number }
   | { kind: 'manhole'; x: number; z: number }
   /**
    * A station entrance: a totem with the metro's red M (or Rodalies' orange R), the line and the
@@ -41,8 +46,8 @@ export type WorldProp =
   | { kind: 'metro'; x: number; z: number; network?: 'metro' | 'rodalies'; name?: string; line?: string }
   /** Wooden slats on a grey metal frame: a long bench or a single chair. */
   | { kind: 'bench'; x: number; z: number; style?: 'bench' | 'chair'; yaw?: number }
-  /** Street works: a red or white plastic jersey barrier, a yellow fence panel or a metal crowd barrier. */
-  | { kind: 'barrier'; x: number; z: number; color?: 'red' | 'white'; style?: 'jersey' | 'panel' | 'fence'; yaw?: number }
+  /** Street works: a red, white or yellow plastic jersey barrier, a yellow fence panel or a metal crowd barrier. */
+  | { kind: 'barrier'; x: number; z: number; color?: 'red' | 'white' | 'yellow'; style?: 'jersey' | 'panel' | 'fence'; yaw?: number }
   /** A white sack of rubble from the works. */
   | { kind: 'bag'; x: number; z: number }
   | { kind: 'bin'; x: number; z: number }
@@ -558,6 +563,8 @@ export const BARCELONETA = geoEnvironment('barceloneta', BARCELONETA_SCENE as Ge
 export const SANTS = geoEnvironment('sants', SANTS_SCENE as GeoScene);
 /** Carrer de Blai in Poble Sec, where Emilie lives, under Montjuïc (docs/places/poble-sec.md); the L3 at Plaça dels Ocellets. */
 export const POBLE_SEC = geoEnvironment('poble-sec', POBLE_SEC_SCENE as GeoScene);
+/** Plaça d'Espanya (docs/places/espanya.md): the roundabout, the Venetian towers and Las Arenas, from the L1 and L3. */
+export const PLACA_ESPANYA = geoEnvironment('placa-espanya', PLACA_ESPANYA_SCENE as GeoScene);
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
@@ -567,6 +574,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   barceloneta: BARCELONETA,
   sants: SANTS, 'el-nucli': EL_NUCLI,
   'poble-sec': POBLE_SEC,
+  'placa-espanya': PLACA_ESPANYA,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

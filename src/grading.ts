@@ -104,6 +104,11 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: -.04, lift: [.004, .006, .01], shadows: [-.004, .004, .014], highlights: [.012, .01, .004], contrast: 1.02, saturation: 1.04 },
     enhance: { vibrance: .1, highlights: -.08, dehaze: .04 },
   },
+  /** Plaça d'Espanya: a golden late afternoon on stone and brick, the long shade of the towers a little cool. */
+  'placa-espanya': {
+    grade: { temperature: .1, shadows: [-.01, -.002, .016], highlights: [.022, .012, -.012], contrast: 1.07, saturation: .98 },
+    enhance: { highlights: -.1, vibrance: .06, dehaze: .03 },
+  },
   /** La torre de Uri: fear, violet-black shade that stays deep and a cold, unsure light. */
   'cardedeu-laberinto': {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },

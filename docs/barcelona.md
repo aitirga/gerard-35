@@ -153,7 +153,7 @@ runs before rendering the ground, which then has nothing to render).
 | La Sagrera | L1, L5, R4 | Change for the R4 (the poster clue is on the Meridiana's bus shelter) | On the map |
 | Sant Andreu (Rodalies) | R4 | — | On the map |
 | Plaça de Sants | L1, L5 | `sants` (Carrer de Valladolid), the street of El Nucli, the game store where Gerard meets Bernat (`el-nucli`) | Playable |
-| Espanya | L1, L3 | Plaça d'Espanya | On the map |
+| Espanya | L1, L3 | `placa-espanya`, Plaça d'Espanya (`docs/places/espanya.md`) | Playable |
 | Poble Sec | L3 | `poble-sec` (Carrer de Blai, Emilie's corner; the entrance in Plaça dels Ocellets) | Playable |
 | Barceloneta | L4 | `barceloneta` (the beach: Platja de Sant Miquel, L'Estel Ferit) | Playable |
 | Sagrada Família | L5 | The temple's surroundings and its inside | On the map |
@@ -236,6 +236,12 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   Margarit, and Montjuïc drawn behind the back edge as terraces, stairs and pines (the
   `montjuic-vessant` landmark). Turned 153° so Blai runs left to right with its bar side facing the
   camera; the L3 entrance stands in Plaça dels Ocellets.
+- **`placa-espanya`**: Plaça d'Espanya (`docs/places/espanya.md`), a real-data zone from
+  OpenStreetMap, turned 162° so Avinguda de la Reina Maria Cristina runs straight up the screen
+  between the two Venetian towers to the Magic Fountain and the Palau Nacional, a compressed
+  backdrop out of reach. The roundabout with Jujol's fountain dry behind the L8 works' yellow
+  barriers, Las Arenas' brick drum on red steel struts, the Fira's colonnades over a salmon
+  forecourt, the L1 and L3 entrance on it. Its landmarks are code (`src/landmarks/`).
 
 ## The TV news set
 

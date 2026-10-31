@@ -1443,6 +1443,11 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const target = battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
     cameraTarget.lerp(cameraTarget, target, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 7));
     const cameraOffset = battle ? new pc.Vec3(5, 9, 15) : new pc.Vec3(40, 52, 40);
+    // The view is orthographic, so how far back the camera stands only decides what its clip planes
+    // keep: over a big place's overview it backs away along its view and sees further, so neither the
+    // near corner nor the far one (and what stands beyond it) is cut off.
+    const spread = (environment.grid[0].length + environment.grid.length) / 2 * .52;
+    if (!battle && !cinematic && (overview || !follow)) cameraOffset.mulScalar(Math.max(1, (spread + 40) / cameraOffset.length()));
     if (battleScene.entering && !reducedMotion.matches) {
       const arc = Math.sin(battleScene.entryProgress * Math.PI);
       cameraOffset.add(new pc.Vec3(arc * 3, arc * 1.5, -arc * 2));
@@ -1452,6 +1457,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const rest = camera.getPosition().clone().sub(cameraKick);
     camera.setPosition(reducedMotion.matches ? desiredCamera : rest.lerp(rest, desiredCamera, 1 - Math.exp(-delta * 6)));
     if (cinematic && !battle) camera.setPosition(camera.getPosition().clone().add(cameraWobble));
+    // Backed away (or easing back), it sees past the far corner; following Gerard, as far as ever.
+    const distance = camera.getPosition().distance(cameraTarget);
+    const farClip = distance > 90 ? distance + spread + 80 : 180;
+    if (camera.camera!.farClip !== farClip) camera.camera!.farClip = farClip;
     camera.lookAt(cameraTarget);
     // A blow shoves the whole picture: a sideways move after lookAt, so nothing swims or tilts.
     cameraKick.copy(battle ? battleScene.cameraKick : pc.Vec3.ZERO);

@@ -1,0 +1,29 @@
+{
+  "id": "lloses-fira",
+  "name": "Lloses de la Fira (salmon concrete slabs of the forecourt)",
+  "kind": "material",
+  "size_m": [
+    3.0,
+    3.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "rectangular_paving",
+    "name": "Rectangular Paving",
+    "url": "https://polyhaven.com/a/rectangular_paving",
+    "author": "Dimitrios Savva",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven rectangular_paving --id lloses-fira",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#7f6c56",
+  "made": "2026-10-30"
+}

@@ -38,11 +38,13 @@ interface Edge {
 interface Vehicle {
   entity: pc.Entity; bus: boolean; length: number; width: number; cruise: number;
   edge: Edge; next?: Edge; s: number; lane: number; offset: number; v: number;
+  /** The streets it has driven, so it does not go round and round. */
+  seen: Set<Edge>;
   x: number; z: number; hx: number; hz: number; yaw: number;
   /** Drawn minus true position after a jump between streets, fading out. */
   slip: GeoPoint;
-  /** The car right in front, and seconds spent nose to nose with a car that is also waiting for it; past a few, it squeezes by. */
-  blocker?: Vehicle; held: number; squeeze: number;
+  /** The car right in front, and seconds spent nose to nose with a car that is also waiting for it; past a few, it squeezes by (`past`). */
+  blocker?: Vehicle; held: number; squeeze: number; past?: Vehicle;
   /** The junction it has entered: it drives through without stopping at that junction's other lines. */
   inside?: Cluster;
 }
@@ -153,11 +155,22 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
     let c = clusters.get(root);
     // Neighbouring junctions turn green one after another, at about a car's pace.
     if (!c) { c = { x: 0, z: 0, radius: 0, offset: -f.x / 6 }; clusters.set(root, c); }
-    for (const { e, s } of f.on) {
-      // One stop per street and junction: before whatever it meets first.
-      const old = e.stops.find(st => st.cluster === c);
-      if (old) { old.s = Math.min(old.s, Math.max(0.3, s)); continue; }
-      e.stops.push({ s: Math.max(0.3, s), cluster: c, group: 0, heading: [0, 0], box: 0 });
+    for (const on of f.on) {
+      // A street whose segment starts inside the junction (its lanes change in the middle of an
+      // avenue, as Carrer de Dublín's do on the Meridiana): its line goes on the segment leading in,
+      // before the junction, or its cars would wait with their noses in the avenue's lanes.
+      const [, , ux, uz] = at(on.e, 0);
+      const into = on.s >= 0.3 ? [] : edges.filter(p => {
+        if (p.end !== on.e.start || p.road === on.e.road || p.road.name !== on.e.road.name || p.length + on.s <= 0.3) return false;
+        const [, , px, pz] = at(p, p.length);
+        return px * ux + pz * uz > 0.7;
+      });
+      for (const { e, s } of into.length ? into.map(p => ({ e: p, s: p.length + on.s })) : [on]) {
+        // One stop per street and junction: before whatever it meets first.
+        const old = e.stops.find(st => st.cluster === c);
+        if (old) { old.s = Math.min(old.s, Math.max(0.3, s)); continue; }
+        e.stops.push({ s: Math.max(0.3, s), cluster: c, group: 0, heading: [0, 0], box: 0 });
+      }
     }
   }
   for (const [root, c] of clusters) {
@@ -199,9 +212,14 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
   const entries = edges.filter(e => onBorder(e.pts[0])).flatMap(e => e.lanes.map((_, lane) => ({ e, lane, wait: random() * 6 })));
   // Buses parked in the scene (at a stop) are in the way too.
   const parked: Obstacle[] = scene.props.filter(p => p.kind === 'bus').map(p => ({ x: p.x + 2, z: p.z, hx: 1, hz: 0, length: 4.9, width: 1.02 }));
-  function choose(e: Edge): Edge | undefined {
+  function choose(e: Edge, seen: ReadonlySet<Edge>): Edge | undefined {
     const options = (leaving.get(e.end) ?? []).filter(n => !(n.road === e.road && n.end === e.start));
-    return options.length ? options[Math.floor(random() * options.length)] : undefined;
+    // A driver is going somewhere: no U-turn onto the other carriageway and no street it has driven
+    // already (round and round a roundabout until it fills) while there is anywhere else to go.
+    const [, , ax, az] = at(e, e.length);
+    const rank = (n: Edge) => { const [, , bx, bz] = at(n, 0); return (ax * bx + az * bz > -0.5 ? 0 : 2) + (seen.has(n) ? 1 : 0); };
+    const best = Math.min(...options.map(rank)), pick = options.filter(n => rank(n) === best);
+    return pick.length ? pick[Math.floor(random() * pick.length)] : undefined;
   }
   const laneOffset = (e: Edge, lane: number) => e.lanes[Math.max(0, e.lanes.length - 1 - lane)];
   function place(v: Vehicle) {
@@ -224,9 +242,9 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
     else kit.place({ kind: 'car', x: 0, z: 0, color: colour }, entity, new pc.Vec3(0, 0, -0.5));
     const v: Vehicle = {
       entity, bus, length: bus ? 4.9 : moto ? 1.1 : 1.85, width: bus ? 1.02 : moto ? 0.5 : 0.84, cruise: (bus ? 0.75 : 1) * (CRUISE[0] + random() * (CRUISE[1] - CRUISE[0])),
-      edge: e, s: 0, lane, offset: laneOffset(e, lane), v: 0, x: 0, z: 0, hx: 1, hz: 0, yaw: 0, slip: [0, 0], held: 0, squeeze: 0,
+      edge: e, s: 0, lane, offset: laneOffset(e, lane), v: 0, x: 0, z: 0, hx: 1, hz: 0, yaw: 0, slip: [0, 0], held: 0, squeeze: 0, seen: new Set([e]),
     };
-    v.next = choose(e); v.v = v.cruise * 0.8;
+    v.next = choose(e, v.seen); v.v = v.cruise * 0.8;
     place(v); v.yaw = Math.atan2(-v.hx, -v.hz) * pc.math.RAD_TO_DEG;
     vehicles.push(v); return v;
   }
@@ -264,11 +282,18 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
       v.blocker = undefined;
       for (const o of others) {
         if (o.vehicle === v) continue;
+        // A car still on its way into this street is behind, however sharp the corner makes it look.
+        if (o.vehicle && o.vehicle.next === v.edge && o.vehicle.edge !== v.edge) continue;
         const across = !!o.vehicle && Math.abs(o.hx * v.hx + o.hz * v.hz) < 0.5;
         if (across && v.squeeze > 0) continue;
-        const g = gapTo(v, o, Math.abs(shift) > 0.05 ? shift : 0);
+        const g = gapTo(v, o, Math.abs(shift) > 0.05 ? shift : 0), ahead = (o.x - v.x) * v.hx + (o.z - v.z) * v.hz;
+        if (g < 0.5 && ahead < v.length) beside = true;
+        // One level with it or behind, in the lane it is moving into, holds its move across, not its
+        // way on: stopping dead there would block that one in turn.
+        if (ahead <= 0) continue;
+        // Squeezing by the car it waited for: it drives on past it, though never over into it.
+        if (v.squeeze > 0 && o.vehicle === v.past) continue;
         if (g < gap) { gap = g; leader = o.vehicle?.v ?? 0; v.blocker = o.vehicle; }
-        if (g < 0.5 && (o.x - v.x) * v.hx + (o.z - v.z) * v.hz < v.length) beside = true;
       }
       for (const o of people) gap = Math.min(gap, gapTo(v, o) - 1.2);
       // The lights ahead, on this street and the next.
@@ -293,15 +318,23 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
       const want = Math.min(limit, Math.sqrt(2 * BRAKE * 0.55 * Math.max(0, gap - 0.5)));
       v.v = want < v.v ? Math.max(want, v.v - BRAKE * 1.6 * dt) : Math.min(want, v.v + ACCEL * dt);
       if (gap < 0.25) v.v = 0;
-      // Two cars each waiting for the other across a junction: after a while one squeezes by.
+      // Cars each waiting for the next one round (two nose to nose across a junction, two moving over
+      // into each other's lane, three merging into one): after a while one of them squeezes by.
       v.squeeze = Math.max(0, v.squeeze - dt);
-      v.held = v.v < 0.1 && v.blocker?.blocker === v ? v.held + dt : 0;
-      if (v.held > 3) { v.squeeze = 3; v.held = 0; }
+      const ring: Vehicle[] = [];
+      let c = v.blocker;
+      while (c && c !== v && ring.length < 6) { ring.push(c); c = c.blocker; }
+      v.held = v.v < 0.1 && c === v ? v.held + dt : 0;
+      if (v.held > 3 && !ring.some(o => o.squeeze > 0)) { v.squeeze = 3; v.past = v.blocker; v.held = 0; }
       v.s += v.v * dt;
       const before: GeoPoint = [v.x, v.z];
       while (v.s >= v.edge.length) {
         if (!v.next) { v.s = -1; break; }
-        v.s -= v.edge.length; v.edge = v.next; v.next = choose(v.edge);
+        // A car still standing at the start of the next street, round a corner too sharp to see past: wait.
+        const next = v.next, lane = laneOffset(next, Math.min(v.lane, next.lanes.length - 1));
+        const there = v.squeeze > 0 ? undefined : vehicles.find(o => o !== v && o.edge === next && o.s - o.length / 2 < v.length / 2 + 0.3 && Math.abs(o.offset - lane) < (o.width + v.width) / 2);
+        if (there) { v.s = v.edge.length - 1e-3; v.v = 0; v.blocker = there; break; }
+        v.s -= v.edge.length; v.edge = next; v.seen.add(next); v.next = choose(next, v.seen);
         v.lane = Math.min(v.lane, v.edge.lanes.length - 1);
       }
       if (v.s < 0) continue;

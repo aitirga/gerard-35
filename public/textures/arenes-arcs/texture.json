@@ -1,0 +1,27 @@
+{
+  "id": "arenes-arcs",
+  "name": "Les Arenes: one bay of the drum (064 Les Arenes, detall; its left half mirrored)",
+  "kind": "photo",
+  "size_m": [
+    4.3,
+    11.9
+  ],
+  "source": {
+    "site": "Wikimedia Commons",
+    "name": "064_Les_Arenes,_detall.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:064_Les_Arenes,_detall.jpg",
+    "author": "Enfo",
+    "licence": "CC BY-SA 3.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "command": "the photo's columns 1293–1898 and rows 88–3456 (half a bay, pier centre to arch centre) beside their mirror image, then tools/textures.py photo output/textures/src/arenes-arcs-bay.png --id arenes-arcs --size-m 4.3 11.9",
+  "files": {
+    "albedo": "albedo.webp"
+  },
+  "px": [
+    370,
+    1024
+  ],
+  "mean": "#7a4c3a",
+  "made": "2026-10-30"
+}

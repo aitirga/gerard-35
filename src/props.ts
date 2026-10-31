@@ -349,7 +349,7 @@ export function createPropKit() {
   const frame = mat('Estructura gris', '#8d9295', 0.55);
   const poleGrey = mat('Poste gris', '#a3a8ab', 0.5);
   const ledGlow = mat('Luminaria LED', '#f4f2ea', 0.2, 2.4);
-  const jersey = { red: mat('Barrera roja', '#cf3529', 0.45), white: mat('Barrera blanca', '#ebe8e1', 0.45) };
+  const jersey = { red: mat('Barrera roja', '#cf3529', 0.45), white: mat('Barrera blanca', '#ebe8e1', 0.45), yellow: mat('Barrera amarilla', '#e8b01e', 0.45) };
   const panelYellow = mat('Valla amarilla', '#f0b21d', 0.4);
   const sack = mat('Saco de obra', '#e7e5df', 0.05);
   const sackShade = mat('Saco de obra sombra', '#c9c6be', 0.05);
@@ -419,7 +419,7 @@ export function createPropKit() {
    * round spotlights on short arms, turning round it as they climb.
    */
   const lens = mat('Cristal del foco', '#e6eaec', 0.6);
-  function mastLamp(holder: pc.Entity) {
+  function seafrontLamp(holder: pc.Entity) {
     part(holder, 'Base de mástil', 'cylinder', poleGrey, [0, 0.08, 0], [0.2, 0.16, 0.2]);
     part(holder, 'Mástil', 'cylinder', poleGrey, [0, 3.3, 0], [0.09, 6.6, 0.09]);
     for (let i = 0; i < 5; i++) {
@@ -438,7 +438,18 @@ export function createPropKit() {
     part(holder, 'Cabezal LED', 'box', poleGrey, [0, 4.55, 0.42], [0.16, 0.07, 0.36]);
     part(holder, 'Luz LED', 'box', ledGlow, [0, 4.51, 0.42], [0.13, 0.02, 0.32]);
   }
-  function barrier(holder: pc.Entity, colour: 'red' | 'white', style: 'jersey' | 'panel' | 'fence') {
+  function mastLamp(holder: pc.Entity) {
+    // A square's tall mast crowned by four small LED heads on short arms rising from its top.
+    part(holder, 'Base de báculo', 'cylinder', poleGrey, [0, 0.1, 0], [0.26, 0.2, 0.26]);
+    part(holder, 'Báculo', 'cylinder', poleGrey, [0, 4.1, 0], [0.12, 8.2, 0.12]);
+    for (const turn of [45, 135, 225, 315]) {
+      const arm = new pc.Entity('Brazo del báculo'); arm.setLocalEulerAngles(0, turn, 0); holder.addChild(arm);
+      part(arm, 'Brazo', 'box', poleGrey, [0, 8.3, 0.16], [0.05, 0.05, 0.36], [-35, 0, 0]);
+      part(arm, 'Cabezal LED', 'box', poleGrey, [0, 8.42, 0.34], [0.22, 0.12, 0.26]);
+      part(arm, 'Luz LED', 'box', ledGlow, [0, 8.355, 0.34], [0.18, 0.02, 0.22]);
+    }
+  }
+  function barrier(holder: pc.Entity, colour: 'red' | 'white' | 'yellow', style: 'jersey' | 'panel' | 'fence') {
     if (style === 'jersey') {
       // A water-filled plastic barrier: a wide foot, a narrow top and the two hollows of its handles.
       const m = jersey[colour];
@@ -645,7 +656,7 @@ export function createPropKit() {
         // Turned a quarter so the body runs along +x over its footprint; the anchor stays on its cell.
         if (prop.along === 'x') holder.children.forEach(c => { const p = c.getLocalPosition(); c.setLocalPosition(p.z, p.y, -p.x); c.setLocalRotation(QUARTER_TURN.clone().mul(c.getLocalRotation())); });
       }
-      else if (prop.kind === 'lamp') { if (prop.style === 'led') ledLamp(holder); else if (prop.style === 'mast') mastLamp(holder); else lamp(holder); }
+      else if (prop.kind === 'lamp') { if (prop.style === 'led') ledLamp(holder); else if (prop.style === 'mast') mastLamp(holder); else if (prop.style === 'seafront') seafrontLamp(holder); else lamp(holder); }
       else if (prop.kind === 'metro') station(holder, prop.network ?? 'metro', prop.name, prop.line);
       else if (prop.kind === 'bench') bench(holder, prop.style ?? 'bench');
       else if (prop.kind === 'barrier') barrier(holder, prop.color ?? 'red', prop.style ?? 'jersey');
