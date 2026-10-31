@@ -964,18 +964,32 @@
     {
       "kind": "barana",
       "id": "tanca",
-      "east_m": -36.6,
-      "south_m": 2.7,
+      "east_m": -32.76,
+      "south_m": 5.23,
       "rotation_deg": 146.6,
       "size_m": [
-        16,
-        0.3
+        6.8,
+        1.3
       ],
-      "solid": false,
       "params": {
         "h": 2,
         "every_m": 0.16,
-        "gap_m": 2.4,
+        "colour": "#2f3133"
+      }
+    },
+    {
+      "kind": "barana",
+      "id": "tanca-2",
+      "east_m": -38.44,
+      "south_m": 1.49,
+      "rotation_deg": 146.6,
+      "size_m": [
+        2.0,
+        1.3
+      ],
+      "params": {
+        "h": 2,
+        "every_m": 0.16,
         "colour": "#2f3133"
       }
     },

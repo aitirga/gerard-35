@@ -209,7 +209,7 @@ against the map's wall arcs (within 2-3 m).
 | `canonera` | Each pit's round floor, the gun mount (a concrete ring round a dark hole with its bolts) and three ammunition niches in the parapet's inner face, their rusty red steel doors shut or ajar |
 | `gent` | People in the game's block figures. Rows sit on the long terrace, the command post, the third parapet and the rims of pits A, B and D, legs over the edge, facing the city: phones up, cans, a guitar. Three stand at the terrace parapet filming. A civic agent in a high-visibility vest stands at the gate |
 | `atril` | Four MUHBA lecterns, dark steel with a painted face and a Catalan title: *Bateria antiaèria*, *Barraques dels Canons*, *Turó de la Rovira*, *Pavelló d'oficials* |
-| `barana` | Black iron railings round the excavation, a galvanised one on the water tank's roof. The 2 m bar fence crosses the climb to the battery, its gate open |
+| `barana` | Black iron railings round the excavation, a galvanised one on the water tank's roof. The 2 m bar fence crosses the climb to the battery in two solid runs either side of its open gate (`tanca`, `tanca-2`); the lower run is short, so the path up from the metro passes its end instead of its bars |
 | `matoll` | Prickly pears in the strips beyond the parapets and agaves by the paths. With `over: "forest"`, low scrub clumps (rosemary, mastic, broom, tall dry grass) cover every scrub cell the paths leave |
 | `rajoles` | Patches of the shacks' floors (red terracotta; grey hydraulic tiles, some patterned, some lost) and patches of dry grass with tufts among the gravel |
 
@@ -315,6 +315,8 @@ above are references only.
   a silhouette, not a model.
 - **The fence.** Only one stretch of the 2 m fence is drawn, with its gate on the climb to the
   battery. The real one rings the summit. The gate is always open and nobody closes it at dusk.
+  Its lower run stops short where the path from the metro meets the climb (that path ran under
+  its bars).
 - **Simplified buildings.** The pavilion is a plain one-storey house. The water tank is a plain
   cylinder with its railing, without the fountain or the huts on its roof.
 - **Not done:**
