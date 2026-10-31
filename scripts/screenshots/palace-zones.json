@@ -1,6 +1,6 @@
 {
   "title": "Chapter 2 · Inside the palace, zone by zone",
-  "description": "La Reina Bubbaloo's palace in chapter 2 (docs/places/palace-zones.md): the pink hall's east door with the school's orange frame, el patio (court green, its lines risen into kerbs) and el gimnasio (mat blue, wall bars into the dark), with their doors and gates.",
+  "description": "La Reina Bubbaloo's palace in chapter 2 (docs/places/palace-zones.md): the pink hall's east door with the school's orange frame, el patio (court green, its lines risen into kerbs), el gimnasio (mat blue, wall bars into the dark), la secretaría (manila and steel, a queue that never moves, his desk under the only warm lamp) and el salón del trono (night indigo and gold, her throne in one spotlight), with their doors and gates.",
   "steps": [
     { "open": "/?story=castle&solo=1" },
     { "teleport": "palacio", "cell": [19, 13] },
@@ -32,6 +32,34 @@
     { "teleport": "palacio-gimnasio", "cell": [13, 10] },
     { "shot": "gym-plint", "delay": 3000, "caption": "El plint, grown into a stepped tower; where the zone's boss will stand" },
     { "teleport": "palacio-gimnasio", "cell": [4, 2] },
-    { "shot": "gym-bars", "delay": 3000, "caption": "Ropes from a ceiling nobody can see; the ball cage, the changing rooms' door" }
+    { "shot": "gym-bars", "delay": 3000, "caption": "Ropes from a ceiling nobody can see; the ball cage, the changing rooms' door" },
+    { "teleport": "palacio-patio", "cell": [28, 1] },
+    { "press": "KeyE" },
+    { "shot": "office-gate", "delay": 1800, "caption": "«Es mi puerta. La llave entra… y no gira.»" },
+    { "skipDialogue": true },
+    { "teleport": "palacio-secretaria", "cell": [4, 19] },
+    { "shot": "office-arrival", "delay": 3500, "caption": "La secretaría from the visitors' side: the queue that never moves faces the finestreta" },
+    { "press": "KeyR" },
+    { "shot": "office-overview", "delay": 3500, "caption": "La secretaría from above: the counter, the same desk in rows, the archive's aisles with manila boxes on top, his desk in the far corner" },
+    { "press": "KeyR" },
+    { "teleport": "palacio-secretaria", "cell": [13, 13] },
+    { "shot": "office-desks", "delay": 3000, "caption": "Behind the counter: the same desk, mug and pile again and again, a pink note on every screen" },
+    { "teleport": "palacio-secretaria", "cell": [3, 2] },
+    { "shot": "office-gerard-desk", "delay": 3000, "caption": "La mesa de Gerard under the only warm lamp, the key cabinet, Direcció's door" },
+    { "teleport": "palacio-secretaria", "cell": [6, 1] },
+    { "press": "KeyE" },
+    { "shot": "direccio-gate", "delay": 1800, "caption": "«Direcció. Cerrada por dentro.» «Por debajo sale luz. Como la de un escenario.»" },
+    { "skipDialogue": true },
+    { "teleport": "palacio-trono", "cell": [12, 19] },
+    { "shot": "throne-arrival", "delay": 3500, "caption": "El salón del trono: up her stair into the school's assembly hall at night" },
+    { "press": "KeyR" },
+    { "shot": "throne-overview", "delay": 3500, "caption": "From above: empty folding chairs facing the stage, the ochre runner, her throne in the spotlight" },
+    { "press": "KeyR" },
+    { "teleport": "palacio-trono", "cell": [13, 7] },
+    { "shot": "throne-stage", "delay": 3000, "caption": "Before the stage, where the final confrontation will be: her bubble swelling over a seat of chewed gum" },
+    { "teleport": "palacio-trono", "cell": [15, 1] },
+    { "shot": "throne-balcony", "delay": 3000, "caption": "Behind the throne the balcony opens on the night city: the view in the gallery's «Desde el balcón»" },
+    { "teleport": "palacio-trono", "cell": [2, 16] },
+    { "shot": "throne-direccio", "delay": 3000, "caption": "Direcció's door in the west wall, the school's orange frame: the last shortcut, back to the secretaría" }
   ]
 }

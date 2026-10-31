@@ -232,9 +232,9 @@ test("chapter 2: the hall's east door opens onto the school, whose zones stay sh
   const to = story.redirect(door.id);
   assert.equal(to.environment, 'palacio-patio');
   assert.ok(canWalk(to.cell, ENVIRONMENTS['palacio-patio'].grid));
-  // The gym and the secretaría say why they will not open, in the world's own voice.
-  for (const id of ['patio-gimnasio', 'patio-secretaria']) assert.ok(story.gate(id)?.lines.length, id);
-  assert.equal(story.gate('patio-vestibulo'), undefined, 'the way back to the hall is always open');
+  // The gym, the secretaría and Direcció say why they will not open, in the world's own voice.
+  for (const id of ['patio-gimnasio', 'patio-secretaria', 'secretaria-direccio']) assert.ok(story.gate(id)?.lines.length, id);
+  for (const id of ['patio-vestibulo', 'secretaria-patio', 'trono-direccio', 'trono-escalera']) assert.equal(story.gate(id), undefined, `${id}: the ways back are always open`);
 });
 
 test('chapter 2: falling wakes Gerard at home and keeps everything', () => {
