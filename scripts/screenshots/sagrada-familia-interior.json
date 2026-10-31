@@ -5,7 +5,7 @@
     {"open": "/?story=metro&solo=1&stats"},
     {"until": "!!window.gerard", "timeout": 60000},
     {"skipDialogue": true},
-    {"teleport": "sagrada-familia", "cell": [73, 120], "settle": 3000},
+    {"teleport": "sagrada-familia", "cell": [73, 117], "settle": 3000},
     {"press": "KeyE"},
     {"until": "document.title.startsWith('Sagrada Família · Interior')", "timeout": 30000},
     {"shot": "inside-door", "delay": 3500, "caption": "Through the Nativity portal: daylight on the threshold, the sign asking for silence, the cool glass of the Nativity side and the first columns"},
@@ -37,7 +37,7 @@
     {"teleport": "sagrada-familia-interior", "cell": [36, 38], "settle": 2000},
     {"press": "KeyE"},
     {"until": "!document.title.includes('Interior')", "timeout": 30000},
-    {"shot": "back-out", "delay": 3000, "caption": "Back out through the Nativity, on the portal's steps facing the queue"},
+    {"shot": "back-out", "delay": 3000, "caption": "Back out through the Nativity, at the foot of the portal's steps facing the queue"},
     {"teleport": "sagrada-familia-interior", "cell": [33, 24], "settle": 3500},
     {"eval": "{ const app = window.gerard.game.app; const pre = document.createElement('pre'); pre.style.cssText = 'position:fixed;left:24px;bottom:24px;z-index:99999;margin:0;padding:12px 16px;background:#101f25ee;color:#eeeade;font:14px/1.5 ui-monospace,monospace'; pre.textContent = `draw calls ${app.stats.drawCalls.total} · frame ${app.stats.frame.ms.toFixed(1)} ms`; document.body.append(pre); }"},
     {"shot": "stats", "delay": 600, "caption": "Draw calls and frame time following Gerard under the crossing"}

@@ -156,7 +156,7 @@ lamps, benches and shops (`osm.json`, 3202 features, fetched from Overpass on 20
 | Id | Label | Cell | What Gerard says (short) |
 | --- | --- | --- | --- |
 | `station-sagrada-familia` | Bajar al metro | (125, 129) | The story answers it: the L5 |
-| `sagrada-familia-portal` | Entrar en la basílica | (73, 119) | The door into the inside ([Doors](#doors-between-the-two)) |
+| `sagrada-familia-portal` | Entrar en la basílica | (73, 116) | The door into the inside, at the foot of the portal's steps ([Doors](#doors-between-the-two)) |
 | `sagrada-familia-estany` | Mirar el estanque | (73, 150) | The facade upside down in the water; everyone takes the same picture |
 | `sagrada-familia-naixement` | Mirar la fachada | (58, 119) | Dark stone that seems to melt, the green cypress full of white doves |
 | `sagrada-familia-torre` | Mirar arriba | (93, 121) | The Tower of Jesus with its white cross since February, 172.5 m, half a metre under Montjuïc |
@@ -259,8 +259,8 @@ with the guard's lines (`story.gate`) or send it elsewhere (`story.redirect`).
 
 | From | Place / door | To |
 | --- | --- | --- |
-| Outside | `sagrada-familia-portal`, cell **(73, 119)** (x 0 m, z 44 m, on the steps of the Portal of Charity) | `{ environment: 'sagrada-familia-interior', cell: { x: 36, z: 37 } }`: just inside the Nativity door, by the sign asking for silence |
-| Inside | `sagrada-interior-salida` at **(36, 39)**, before the Nativity door `N` | `{ environment: 'sagrada-familia', cell: { x: 73, z: 121 } }`: back at the foot of the portal's steps, facing the queue |
+| Outside | `sagrada-familia-portal`, cell **(73, 116)** (x 0 m, z 40 m, the first walkable row at the foot of the Portal of Charity's steps) | `{ environment: 'sagrada-familia-interior', cell: { x: 36, z: 37 } }`: just inside the Nativity door, by the sign asking for silence |
+| Inside | `sagrada-interior-salida` at **(36, 39)**, before the Nativity door `N` | `{ environment: 'sagrada-familia', cell: { x: 73, z: 118 } }`: back in front of the portal's steps, facing the queue, two cells from the door so it does not offer itself again at once |
 
 Both places share the frame (the Nativity towards the camera), so Gerard keeps his bearings: he
 walks in "up" the screen and comes out "down" it. The Passion door (`S`) and the Glory's bronze doors

@@ -535,7 +535,7 @@ export const SAGRADA_FAMILIA_INTERIOR: Environment = {
   grid: BASILICA_PLAN.map(row => [...row].map(glyph => glyph === '.' ? '.' : '#').join('')),
   houses: [], props: [], basilica: { plan: BASILICA_PLAN },
   interactions: [
-    { id: 'sagrada-interior-salida', cell: { x: 36, z: 39 }, label: 'Salir por el Nacimiento', to: { environment: 'sagrada-familia', cell: { x: 73, z: 121 } } },
+    { id: 'sagrada-interior-salida', cell: { x: 36, z: 39 }, label: 'Salir por el Nacimiento', to: { environment: 'sagrada-familia', cell: { x: 73, z: 118 } } },
     { id: 'sagrada-interior-columnas', cell: { x: 11, z: 12 }, label: 'Mirar las columnas', lines: ['Las columnas se abren en ramas, como árboles de piedra.', 'Arenisca, granito, basalto, pórfido: cuanto más peso aguantan, más dura es la piedra.'] },
     { id: 'sagrada-interior-calidas', cell: { x: 13, z: 6 }, label: 'Mirar las vidrieras', lines: ['Rojo, naranja y amarillo. El lado de la Pasión: la tarde.', 'El suelo se tiñe de naranja, como si ardiera sin quemar.'] },
     { id: 'sagrada-interior-frias', cell: { x: 13, z: 34 }, label: 'Mirar las vidrieras', lines: ['Azul y verde. El lado del Nacimiento: la mañana.', 'Las manchas de luz se mueven despacio por el suelo. Es el sol, que también camina.'] },
