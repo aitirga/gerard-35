@@ -130,7 +130,7 @@
     {
       "shot": "terrace",
       "delay": 2500,
-      "caption": "Café Entrepans' tables, the recycling containers and parked scooters by the kerb bed, a lamp and the old plane trees"
+      "caption": "Café Entrepans' tables on the wide sidewalk, a bench and a lamp by the kerb bed, the old plane trees in their pits and the kiosk on the corner"
     },
     {
       "eval": "window.gerard.game.effects.setWeather('rain', 1, true)"
