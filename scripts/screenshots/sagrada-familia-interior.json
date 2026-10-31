@@ -19,6 +19,8 @@
     {"shot": "medallion", "delay": 800, "caption": "A porphyry column's knot with Luke's lit oval, the branches rising into the vault"},
     {"teleport": "sagrada-familia-interior", "cell": [14, 7], "settle": 2500},
     {"shot": "warm-glass", "delay": 800, "caption": "The Passion side: tall windows of red, orange and yellow glass, their light lying warm on the floor"},
+    {"teleport": "sagrada-familia-interior", "cell": [15, 9], "settle": 2500},
+    {"shot": "behind-column", "delay": 800, "caption": "Right behind a sandstone column: its trunk opens round Gerard, as the branches and the vault do, so the forest never hides him"},
     {"teleport": "sagrada-familia-interior", "cell": [14, 33], "settle": 2500},
     {"shot": "cool-glass", "delay": 800, "caption": "The Nativity side: the low wall's band of blue and green glass and its cool light on the floor"},
     {"teleport": "sagrada-familia-interior", "cell": [3, 20], "settle": 2500},

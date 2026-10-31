@@ -353,7 +353,9 @@ G..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y  21
   the buildings' cut outside; and as the camera pulls back to the overview, a plane sweeps in to the
   crossing and opens the vault's near half, so the overview reads as a model cut in two: the vault
   over the far half, the forest of trunks and branches and the coloured floor in the near one. The
-  branches open a narrow clearing of their own (2.4 units), only where they would cross Gerard.
+  branches open a narrow clearing of their own (2.4 units), only where they would cross Gerard, and
+  the trunks, knots and medallions a narrower one (1.4 units), so a column standing between him and
+  the camera opens round him instead of hiding him.
   Each material sets its own clearing: a value left in the shared uniform scope would carry over.
 - **Glass**: Vila-Grau's two palettes painted as leaded panes (own procedural painting), glowing:
   warm (reds, oranges, yellows) on the Passion side's tall walls (a pair of lancets and a rose in each

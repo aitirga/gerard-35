@@ -58,8 +58,13 @@ const RIM = 4.4;
 /** The clearing the vault opens round Gerard (world units, like the buildings' cut), and its glowing edge. */
 const CLEARING = 8;
 const CLEARING_EDGE = 1.2;
-/** The branches open a narrower one, only where they would cross Gerard himself. */
+/**
+ * The branches open a narrower one, only where they would cross Gerard himself; the trunks (with
+ * their knots and medallions) narrower still, so a column standing between him and the camera
+ * opens round him and the forest keeps its trunks everywhere else.
+ */
 const BRANCH_CLEARING = 2.4;
+const TRUNK_CLEARING = 1.4;
 /** The low walls on the camera's side, and the band of glass along them. */
 const LOW = 1.5, GLASS_FROM = 0.45, GLASS_TO = 1.25;
 /** The four Evangelists on the crossing's porphyry columns, as they stand: Mark and Luke towards the apse. */
@@ -144,8 +149,10 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
     rose: painted('Rosetón de la Gloria', roseWindow(random), [1, 1], { glow: 1.5, base: '#18141c' }),
   };
   const bronze = painted('Puertas de bronce', bronzeDoor(), [1, 1], { gloss: 0.55 });
-  const stones = Object.fromEntries((Object.keys(STONES) as Stone[]).map(k => [k, painted(`Columna de ${STONES[k].name.toLowerCase()}`, speckles(random, STONES[k].colour), [1.2, 1.2], { gloss: STONES[k].gloss })])) as Record<Stone, pc.StandardMaterial>;
-  const medallions = painted('Medallones de los evangelistas', evangelists(), [1, 1], { glow: 0.9, gloss: 0.6 });
+  // The columns' stone and their medallions open a narrow clearing round Gerard (`setClearing`).
+  const stones = Object.fromEntries((Object.keys(STONES) as Stone[]).map(k => [k, clearing(painted(`Columna de ${STONES[k].name.toLowerCase()}`, speckles(random, STONES[k].colour), [1.2, 1.2], { gloss: STONES[k].gloss }))])) as Record<Stone, pc.StandardMaterial>;
+  const medallions = clearing(painted('Medallones de los evangelistas', evangelists(), [1, 1], { glow: 0.9, gloss: 0.6 }));
+  const trunks = [...Object.values(stones), medallions];
   const wood = kit.mat('Sillas de madera', '#9a6a3e', 0.25), woodDark = kit.mat('Patas de las sillas', '#4a3626', 0.2);
   const brass = kit.mat('Latón', '#c9a24a', 0.7), rope = kit.mat('Cordón rojo', '#a52a2a', 0.2);
   const metal = kit.mat('Tubos del órgano', '#b9b8b2', 0.85);
@@ -457,10 +464,11 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   const cutPlane = device.scope.resolve('naveCutPlane');
   // Every pass binds the declared uniforms, so they get a value up front.
   cutRadius.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]); cutPlane.setValue([0, 0, 0, 1e5]);
-  /** The vault: the clearing and, in the overview, the plane; the branches: only a narrow clearing right round Gerard. */
+  /** The vault: the clearing and, in the overview, the plane; the branches and trunks: only a narrow clearing right round Gerard. */
   function setClearing(radius: number, plane: number[]) {
     for (const m of vaults) { m.setParameter('naveCutRadius', radius); m.setParameter('naveCutPlane', plane); }
     branches.setParameter('naveCutRadius', radius ? BRANCH_CLEARING : 0); branches.setParameter('naveCutPlane', [0, 0, 0, 1e5]);
+    for (const m of trunks) { m.setParameter('naveCutRadius', radius ? TRUNK_CLEARING : 0); m.setParameter('naveCutPlane', [0, 0, 0, 1e5]); }
   }
   setClearing(0, [0, 0, 0, 1e5]);
   /** The game's camera, whose pulled-back view (the overview) opens the vault's near half like a model cut in two. */
