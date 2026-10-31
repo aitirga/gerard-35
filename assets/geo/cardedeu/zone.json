@@ -166,7 +166,7 @@
       ],
       "base": "#c4a57a",
       "trim": "#f3e4bf",
-      "roof": "#a95a3c",
+      "roof": "#9f5a40",
       "facade": "plain",
       "levels": 1.5,
       "materials": {
@@ -808,7 +808,7 @@
         "colour": "#ecd69c",
         "trim": "#f3e4bf",
         "base": "#c4a57a",
-        "tiles": "#a95a3c",
+        "tiles": "#9f5a40",
         "clock": [
           -7.9,
           2.8
