@@ -27,7 +27,7 @@ from urllib.parse import unquote
 
 import httpx
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
 TEXTURES = ROOT / "public" / "textures"
@@ -61,7 +61,8 @@ def get_json(url: str, **params) -> dict:
 # ---------------------------------------------------------------- images
 
 def rgb(data: bytes) -> Image.Image:
-    return Image.open(io.BytesIO(data)).convert("RGB")
+    """The picture upright: phone photos are stored on their side with an EXIF turn that viewers apply."""
+    return ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
 
 
 def seam_error(image: Image.Image) -> float:
