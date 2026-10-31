@@ -2,10 +2,6 @@
   "id": "teila-zaharra",
   "name": "Roof 09",
   "kind": "material",
-  "size_m": [
-    4.0,
-    4.0
-  ],
   "source": {
     "site": "Poly Haven",
     "asset": "roof_09",
@@ -16,6 +12,11 @@
     "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
   },
   "command": "tools/textures.py fetch polyhaven roof_09 --id teila-zaharra",
+  "size_m": [
+    3.0,
+    3.0
+  ],
+  "note": "Light flattened: each pixel divided by its luminance blurred over a tenth of the tile, so the tile does not band on long roofs; size set to 3 m so each canal tile is about a third of a metre across (Poly Haven gives 4 m).",
   "files": {
     "albedo": "albedo.webp",
     "normal": "normal.webp"
@@ -24,6 +25,6 @@
     512,
     512
   ],
-  "mean": "#867461",
-  "made": "2026-10-30"
+  "mean": "#877461",
+  "made": "2026-10-31"
 }
