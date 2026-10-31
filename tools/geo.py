@@ -586,6 +586,9 @@ def build(zone_id: str) -> None:
     for lm in found_landmarks:
         if lm["solid"]:
             for x, z in landmark_cells(lm, W, D): raster[z][x] = "L"
+    # Gardens behind the houses, on the open ground left once streets, buildings and landmarks are down.
+    yard_polys, yard_trees = yards(zone, raster, W, D, cell)
+    areas["grass"] += [{"id": "yard", "poly": poly} for poly in yard_polys]
 
     # The map edge is always solid.
     grid = ["".join("." if raster[z][x] in WALKABLE and 0 < x < W - 1 and 0 < z < D - 1 else "#" for x in range(W)) for z in range(D)]
@@ -618,7 +621,7 @@ def build(zone_id: str) -> None:
     step_cells = {(p["step"]["x"] + i, p["step"]["z"] + j) for p in places if "step" in p for i in range(p["step"]["w"]) for j in range(p["step"]["d"])}
     keep_clear = {spawn} | {(p["cell"]["x"], p["cell"]["z"]) for p in places} | step_cells
 
-    props = scatter_trees(zone, raster, W, D, cell)
+    props = scatter_trees(zone, raster, W, D, cell) + yard_trees
     props += map_props(zone, osm["elements"], frame, raster, roads)
     # Works go down last, so they can make room for the trees and furniture around them.
     for p in sorted(zone.get("props", []), key=lambda p: p["kind"] in ("barrier", "bag")):
@@ -828,7 +831,9 @@ def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
         "id": e["id"], "style": style_name, "name": t.get("name"), "number": chosen.get("label", t.get("addr:housenumber")),
         "levels": levels, "height": round(height / cell, 2), "roof": roof,
         "walls": chosen.get("walls", pick(e["id"], style.get("walls", ["#e8e0d0"]))), "base": style.get("base"), "trim": style.get("trim"),
-        "roofColor": style.get("roof"), "facade": facade, "ground": ground,
+        # A list of roof colours: each building gets one, as with walls (tiles of different ages).
+        "roofColor": pick(f"{e['id']} roof", style["roof"]) if isinstance(style.get("roof"), list) else style.get("roof"),
+        "facade": facade, "ground": ground,
         "poly": rounded(poly), "box": oriented_box(poly),
         "materials": building_materials(style.get("materials", {}) | chosen.get("materials", {}), facade, ground, roof, "party" in style),
     } | relief(style | chosen) | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {})
@@ -962,6 +967,55 @@ def scatter_trees(zone: dict, raster: list, W: int, D: int, cell: float) -> list
     lattice(rules.get("forest_every_m", 6), lambda x, z: raster[z][x] == "F")
     lattice(rules.get("riverbank_every_m", 7), lambda x, z: raster[z][x] in "g." and near_water(x, z))
     return out
+
+
+def yards(zone: dict, raster: list, W: int, D: int, cell: float) -> tuple[list[list], list[dict]]:
+    """The gardens behind the houses (`yards`): open ground at least `from_road_m` from every street,
+    path, square and bridge, and three times that from the railway (its platforms stay paved), becomes
+    grass (marked "g" in the raster). Returns its rectangles (each row's runs of cells, merged with the
+    same run in the rows below) and a garden tree every `trees_every_m`, `tree_scale` times the usual
+    size, that keeps `clear_m` from walls and landmarks. The gardens stay walkable."""
+    rules = zone.get("yards")
+    if not rules: return [], []
+    far = rules.get("from_road_m", 6) / cell
+    def distance(sources: str) -> list[list[float]]:
+        # Chebyshev distance in cells, so a garden's edge runs parallel to the street in front.
+        dist = [[0 if raster[z][x] in sources else math.inf for x in range(W)] for z in range(D)]
+        queue = [(x, z) for z in range(D) for x in range(W) if dist[z][x] == 0]
+        for x, z in queue:
+            for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)):
+                nx, nz = x + dx, z + dz
+                if 0 <= nx < W and 0 <= nz < D and dist[nz][nx] > dist[z][x] + 1:
+                    dist[nz][nx] = dist[z][x] + 1
+                    queue.append((nx, nz))
+        return dist
+    street, rail = distance("rpsb"), distance("RM")
+    yard = [[raster[z][x] == "." and street[z][x] >= far and rail[z][x] >= 3 * far for x in range(W)] for z in range(D)]
+    rects, running = [], {}
+    for z in range(D + 1):
+        runs, x = set(), 0
+        while z < D and x < W:
+            if not yard[z][x]: x += 1; continue
+            start = x
+            while x < W and yard[z][x]: x += 1
+            runs.add((start, x))
+        for run in [r for r in running if r not in runs]: rects.append((*run, running.pop(run), z))
+        for run in runs: running.setdefault(run, z)
+    for z in range(D):
+        for x in range(W):
+            if yard[z][x]: raster[z][x] = "g"
+    every, clear = max(2, round(rules.get("trees_every_m", 8) / cell)), math.ceil(rules.get("clear_m", 2.5) / cell)
+    species, size, trees = rules.get("species", ["olive", "plane", "cypress"]), rules.get("tree_scale", 1), []
+    for z in range(1, D - 1, every):
+        for x in range(1, W - 1, every):
+            jx = x + int(hashlib.sha1(f"yard {x},{z}".encode()).hexdigest(), 16) % every
+            jz = z + int(hashlib.sha1(f"yard {z},{x}".encode()).hexdigest(), 16) % every
+            if jx >= W - 1 or jz >= D - 1 or not yard[jz][jx]: continue
+            if any(raster[jz + dz][jx + dx] in "BL" for dz in range(-clear, clear + 1) for dx in range(-clear, clear + 1)
+                   if 0 <= jz + dz < D and 0 <= jx + dx < W): continue
+            trees.append({"kind": "tree", "x": jx, "z": jz, "species": pick(f"yard {jx},{jz}", species), "base": "ground",
+                          "scale": round((0.9 + (jx * 7 + jz * 13) % 5 * 0.12) * size, 2)})
+    return [[[x0 - 0.5, z0 - 0.5], [x1 - 0.5, z0 - 0.5], [x1 - 0.5, z1 - 0.5], [x0 - 0.5, z1 - 0.5]] for x0, x1, z0, z1 in rects], trees
 
 
 def preview(scene: dict, raster: list, out: Path) -> None:

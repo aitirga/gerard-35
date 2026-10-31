@@ -1,0 +1,27 @@
+{
+  "id": "fleca-vella",
+  "name": "Fleca Vella de Josep Puig",
+  "kind": "photo",
+  "size_m": [
+    4.3,
+    10.4
+  ],
+  "source": {
+    "site": "Wikimedia Commons",
+    "name": "Cardedeu_-_Fleca_Vella.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:Cardedeu_-_Fleca_Vella.jpg",
+    "author": "Friviere",
+    "licence": "CC BY-SA 3.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "command": "tools/textures.py photo https://commons.wikimedia.org/wiki/File:Cardedeu_-_Fleca_Vella.jpg --id fleca-vella",
+  "files": {
+    "albedo": "albedo.webp"
+  },
+  "px": [
+    423,
+    1024
+  ],
+  "mean": "#836e44",
+  "made": "2026-10-30"
+}

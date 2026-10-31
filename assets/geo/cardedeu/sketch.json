@@ -1,7 +1,31 @@
 {
- "note": "What OpenStreetMap does not have round Nuria's door (docs/quests/nuria.md), drawn from the aerial reference: the long two-storey block with the hipped terracotta roof on the west side of Carrer de Jacint Verdaguer (Nuria's home), the small white-roofed house at the Doctor Daurella corner, the terraced houses with yards across the street and the walled garden under the big tree. Metres from the anchor (east, south). Generated: the houses lining the streets where OpenStreetMap has none (`casa-fila-*`), two storeys, set back from the road; the hand-drawn ones follow the street, 6° off north.",
- "drawn": "2026-10-25",
+ "note": "What OpenStreetMap does not have round Nuria's door (docs/quests/nuria.md), drawn from the aerial reference: the long two-storey block on the west side of Carrer de Jacint Verdaguer (Nuria's home), drawn as two halves so it gets its two hipped roofs end to end (`casa-nuria-nord` and `casa-nuria`, her door in the southern one), set back 1.6 m for its row of front patios, the block of flats behind it on Marià Borrell (`pisos-maria-borrell`), Plaça de Sant Joan's sauló (`placa-sant-joan`), the small white-roofed house at the Doctor Daurella corner, the yard of the terraced houses across the street (the houses are mapped) and the walled garden under the big tree. Metres from the anchor (east, south). Generated: the houses lining the streets where OpenStreetMap has none (`casa-fila-*`; those the reframe of 2026-10-30 put on mapped buildings or gardens, such as the museum's and Casa Pere Llibre's, or on the hand-drawn yard across the street, were removed), two storeys, set back from the road, two in five terraced houses with a flat terrace (`terrace`) and one in five gabled; the hand-drawn ones follow the street, 6° off north.",
+ "drawn": "2026-10-30",
  "features": [
+  {
+   "id": "casa-nuria-nord",
+   "keep": true,
+   "building": "apartments",
+   "levels": 2,
+   "poly": [
+    [
+     -23.38,
+     -51.24
+    ],
+    [
+     -12.05,
+     -52.43
+    ],
+    [
+     -9.64,
+     -29.55
+    ],
+    [
+     -20.98,
+     -28.36
+    ]
+   ]
+  },
   {
    "id": "casa-nuria",
    "keep": true,
@@ -10,20 +34,20 @@
    "levels": 2,
    "poly": [
     [
-     -23.37,
-     -51.19
+     -20.98,
+     -28.36
     ],
     [
-     -10.44,
-     -52.55
+     -9.64,
+     -29.55
     ],
     [
-     -5.63,
-     -6.81
+     -7.24,
+     -6.68
     ],
     [
-     -18.56,
-     -5.45
+     -18.58,
+     -5.49
     ]
    ]
   },
@@ -80,68 +104,20 @@
    "area": "grass",
    "poly": [
     [
-     -50.65,
-     -58.55
+     -37.47,
+     -59.91
     ],
     [
-     -25.79,
-     -61.16
+     -25.83,
+     -61.13
     ],
     [
-     -20.35,
-     -9.45
+     -20.4,
+     -9.42
     ],
     [
-     -45.21,
-     -6.84
-    ]
-   ]
-  },
-  {
-   "id": "adossada-1",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     6.61,
-     -65.46
-    ],
-    [
-     16.55,
-     -66.5
-    ],
-    [
-     17.39,
-     -58.54
-    ],
-    [
-     7.45,
-     -57.5
-    ]
-   ]
-  },
-  {
-   "id": "adossada-2",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     7.61,
-     -56.46
-    ],
-    [
-     17.55,
-     -57.5
-    ],
-    [
-     18.39,
-     -49.54
-    ],
-    [
-     8.45,
-     -48.5
+     -32.03,
+     -8.2
     ]
    ]
   },
@@ -188,30 +164,6 @@
     [
      7.63,
      -7.93
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-0",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     18.16,
-     -65.3
-    ],
-    [
-     26.33,
-     -67.65
-    ],
-    [
-     29.09,
-     -58.04
-    ],
-    [
-     20.92,
-     -55.69
     ]
    ]
   },
@@ -290,7 +242,7 @@
   {
    "id": "casa-fila-4",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -333,7 +285,10 @@
      -26.48,
      51.55
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-6",
@@ -362,7 +317,7 @@
   {
    "id": "casa-fila-7",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -386,7 +341,7 @@
   {
    "id": "casa-fila-8",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -410,7 +365,7 @@
   {
    "id": "casa-fila-9",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -477,12 +432,15 @@
      -29.28,
      5.76
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-12",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -525,7 +483,10 @@
      -26.83,
      35.12
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-14",
@@ -552,81 +513,9 @@
    ]
   },
   {
-   "id": "casa-fila-15",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     60.78,
-     -3.34
-    ],
-    [
-     61.37,
-     5.14
-    ],
-    [
-     71.35,
-     4.44
-    ],
-    [
-     70.75,
-     -4.04
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-16",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     61.4,
-     5.54
-    ],
-    [
-     62.0,
-     14.02
-    ],
-    [
-     71.98,
-     13.32
-    ],
-    [
-     71.38,
-     4.84
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-17",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     62.03,
-     14.42
-    ],
-    [
-     62.63,
-     22.9
-    ],
-    [
-     72.6,
-     22.2
-    ],
-    [
-     72.0,
-     13.72
-    ]
-   ]
-  },
-  {
    "id": "casa-fila-18",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -650,7 +539,7 @@
   {
    "id": "casa-fila-19",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -693,343 +582,10 @@
      73.88,
      40.35
     ]
-   ]
-  },
-  {
-   "id": "casa-fila-21",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     48.81,
-     -2.49
-    ],
-    [
-     49.4,
-     5.99
-    ],
-    [
-     39.43,
-     6.69
-    ],
-    [
-     38.83,
-     -1.79
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-22",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     49.43,
-     6.39
-    ],
-    [
-     50.03,
-     14.87
-    ],
-    [
-     40.06,
-     15.57
-    ],
-    [
-     39.46,
-     7.09
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-23",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     50.06,
-     15.26
-    ],
-    [
-     50.66,
-     23.74
-    ],
-    [
-     40.68,
-     24.45
-    ],
-    [
-     40.08,
-     15.97
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-24",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     50.69,
-     24.14
-    ],
-    [
-     51.28,
-     32.62
-    ],
-    [
-     41.31,
-     33.33
-    ],
-    [
-     40.71,
-     24.85
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-25",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     51.31,
-     33.02
-    ],
-    [
-     51.91,
-     41.5
-    ],
-    [
-     41.94,
-     42.2
-    ],
-    [
-     41.34,
-     33.72
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-26",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     51.94,
-     41.9
-    ],
-    [
-     52.54,
-     50.38
-    ],
-    [
-     42.56,
-     51.08
-    ],
-    [
-     41.96,
-     42.6
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-27",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     105.37,
-     -87.4
-    ],
-    [
-     97.07,
-     -85.59
-    ],
-    [
-     99.2,
-     -75.82
-    ],
-    [
-     107.5,
-     -77.63
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-28",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     96.68,
-     -85.5
-    ],
-    [
-     88.37,
-     -83.69
-    ],
-    [
-     90.5,
-     -73.92
-    ],
-    [
-     98.81,
-     -75.73
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-29",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     47.81,
-     -14.28
-    ],
-    [
-     46.98,
-     -22.74
-    ],
-    [
-     37.02,
-     -21.76
-    ],
-    [
-     37.86,
-     -13.3
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-30",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     46.94,
-     -23.14
-    ],
-    [
-     46.1,
-     -31.6
-    ],
-    [
-     36.15,
-     -30.62
-    ],
-    [
-     36.99,
-     -22.16
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-31",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     46.07,
-     -32.0
-    ],
-    [
-     45.23,
-     -40.45
-    ],
-    [
-     35.28,
-     -39.47
-    ],
-    [
-     36.11,
-     -31.02
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-32",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     45.19,
-     -40.85
-    ],
-    [
-     44.36,
-     -49.31
-    ],
-    [
-     34.41,
-     -48.33
-    ],
-    [
-     35.24,
-     -39.87
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-33",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     44.32,
-     -49.71
-    ],
-    [
-     43.49,
-     -58.17
-    ],
-    [
-     33.54,
-     -57.19
-    ],
-    [
-     34.37,
-     -48.73
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-34",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     43.45,
-     -58.57
-    ],
-    [
-     42.62,
-     -67.03
-    ],
-    [
-     32.66,
-     -66.05
-    ],
-    [
-     33.5,
-     -57.59
-    ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-35",
@@ -1149,31 +705,10 @@
      66.21,
      -51.87
     ]
-   ]
-  },
-  {
-   "id": "casa-fila-40",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     55.39,
-     -59.74
-    ],
-    [
-     54.56,
-     -68.2
-    ],
-    [
-     64.51,
-     -69.18
-    ],
-    [
-     65.34,
-     -60.72
-    ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-41",
@@ -1197,7 +732,10 @@
      186.93,
      -4.94
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-42",
@@ -1250,7 +788,7 @@
   {
    "id": "casa-fila-44",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -1272,81 +810,9 @@
    ]
   },
   {
-   "id": "casa-fila-45",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     175.73,
-     -25.87
-    ],
-    [
-     167.28,
-     -24.96
-    ],
-    [
-     166.21,
-     -34.9
-    ],
-    [
-     174.67,
-     -35.81
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-46",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     166.88,
-     -24.92
-    ],
-    [
-     158.43,
-     -24.01
-    ],
-    [
-     157.37,
-     -33.96
-    ],
-    [
-     165.82,
-     -34.86
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-47",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     158.03,
-     -23.97
-    ],
-    [
-     149.58,
-     -23.06
-    ],
-    [
-     148.52,
-     -33.01
-    ],
-    [
-     156.97,
-     -33.91
-    ]
-   ]
-  },
-  {
    "id": "casa-fila-48",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -1370,7 +836,7 @@
   {
    "id": "casa-fila-49",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -1440,126 +906,6 @@
    ]
   },
   {
-   "id": "casa-fila-52",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     6.21,
-     1.82
-    ],
-    [
-     14.67,
-     1.0
-    ],
-    [
-     15.64,
-     10.95
-    ],
-    [
-     7.18,
-     11.77
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-53",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     15.07,
-     0.96
-    ],
-    [
-     23.53,
-     0.13
-    ],
-    [
-     24.5,
-     10.09
-    ],
-    [
-     16.04,
-     10.91
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-54",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     23.93,
-     0.09
-    ],
-    [
-     32.39,
-     -0.73
-    ],
-    [
-     33.36,
-     9.22
-    ],
-    [
-     24.9,
-     10.05
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-55",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     170.04,
-     -47.65
-    ],
-    [
-     164.39,
-     -54.0
-    ],
-    [
-     156.92,
-     -47.35
-    ],
-    [
-     162.57,
-     -41.0
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-56",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     164.12,
-     -54.3
-    ],
-    [
-     158.47,
-     -60.65
-    ],
-    [
-     151.0,
-     -54.0
-    ],
-    [
-     156.65,
-     -47.65
-    ]
-   ]
-  },
-  {
    "id": "casa-fila-57",
    "keep": true,
    "building": "house",
@@ -1580,78 +926,6 @@
     [
      150.74,
      -54.3
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-58",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     179.01,
-     -55.63
-    ],
-    [
-     173.35,
-     -61.98
-    ],
-    [
-     180.82,
-     -68.62
-    ],
-    [
-     186.48,
-     -62.27
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-59",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     173.09,
-     -62.27
-    ],
-    [
-     167.44,
-     -68.62
-    ],
-    [
-     174.91,
-     -75.27
-    ],
-    [
-     180.56,
-     -68.92
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-60",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     167.17,
-     -68.92
-    ],
-    [
-     161.52,
-     -75.27
-    ],
-    [
-     168.99,
-     -81.92
-    ],
-    [
-     174.64,
-     -75.57
     ]
    ]
   },
@@ -1682,7 +956,7 @@
   {
    "id": "casa-fila-62",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -1706,7 +980,7 @@
   {
    "id": "casa-fila-63",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -1724,78 +998,6 @@
     [
      77.81,
      33.24
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-64",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     87.07,
-     23.57
-    ],
-    [
-     86.39,
-     15.1
-    ],
-    [
-     76.42,
-     15.89
-    ],
-    [
-     77.1,
-     24.37
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-65",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     86.36,
-     14.7
-    ],
-    [
-     85.68,
-     6.23
-    ],
-    [
-     75.71,
-     7.02
-    ],
-    [
-     76.39,
-     15.5
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-66",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     85.65,
-     5.83
-    ],
-    [
-     84.97,
-     -2.64
-    ],
-    [
-     75.0,
-     -1.85
-    ],
-    [
-     75.68,
-     6.62
     ]
    ]
   },
@@ -1821,7 +1023,10 @@
      111.12,
      48.44
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-68",
@@ -1845,7 +1050,10 @@
      110.41,
      39.56
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-69",
@@ -1869,7 +1077,10 @@
      109.71,
      30.69
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-70",
@@ -1893,12 +1104,15 @@
      109.0,
      21.82
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-71",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -1944,81 +1158,9 @@
    ]
   },
   {
-   "id": "casa-fila-73",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     11.53,
-     57.88
-    ],
-    [
-     19.99,
-     57.05
-    ],
-    [
-     19.01,
-     47.1
-    ],
-    [
-     10.55,
-     47.93
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-74",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     20.39,
-     57.01
-    ],
-    [
-     28.85,
-     56.19
-    ],
-    [
-     27.87,
-     46.23
-    ],
-    [
-     19.41,
-     47.06
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-75",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     29.24,
-     56.15
-    ],
-    [
-     37.7,
-     55.32
-    ],
-    [
-     36.73,
-     45.37
-    ],
-    [
-     28.27,
-     46.19
-    ]
-   ]
-  },
-  {
    "id": "casa-fila-76",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -2064,174 +1206,6 @@
    ]
   },
   {
-   "id": "casa-fila-78",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     139.18,
-     -49.75
-    ],
-    [
-     139.96,
-     -41.29
-    ],
-    [
-     149.92,
-     -42.21
-    ],
-    [
-     149.13,
-     -50.68
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-79",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     140.0,
-     -40.89
-    ],
-    [
-     140.78,
-     -32.43
-    ],
-    [
-     150.74,
-     -33.35
-    ],
-    [
-     149.95,
-     -41.81
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-80",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     125.59,
-     -66.37
-    ],
-    [
-     126.37,
-     -57.91
-    ],
-    [
-     116.41,
-     -56.99
-    ],
-    [
-     115.63,
-     -65.45
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-81",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     126.41,
-     -57.51
-    ],
-    [
-     127.19,
-     -49.05
-    ],
-    [
-     117.23,
-     -48.13
-    ],
-    [
-     116.45,
-     -56.59
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-82",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     127.23,
-     -48.65
-    ],
-    [
-     128.01,
-     -40.19
-    ],
-    [
-     118.05,
-     -39.26
-    ],
-    [
-     117.27,
-     -47.73
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-83",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     128.05,
-     -39.79
-    ],
-    [
-     128.83,
-     -31.32
-    ],
-    [
-     118.87,
-     -30.4
-    ],
-    [
-     118.09,
-     -38.87
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-84",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     128.87,
-     -30.93
-    ],
-    [
-     129.65,
-     -22.46
-    ],
-    [
-     119.69,
-     -21.54
-    ],
-    [
-     118.91,
-     -30.0
-    ]
-   ]
-  },
-  {
    "id": "casa-fila-85",
    "keep": true,
    "building": "house",
@@ -2253,12 +1227,15 @@
      154.32,
      6.71
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-86",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -2282,7 +1259,7 @@
   {
    "id": "casa-fila-87",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -2325,7 +1302,10 @@
      156.64,
      33.31
     ]
-   ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
   },
   {
    "id": "casa-fila-89",
@@ -2354,7 +1334,7 @@
   {
    "id": "casa-fila-90",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 3,
    "poly": [
     [
@@ -2378,7 +1358,7 @@
   {
    "id": "casa-fila-91",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -2426,7 +1406,7 @@
   {
    "id": "casa-fila-93",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -2448,57 +1428,9 @@
    ]
   },
   {
-   "id": "casa-fila-94",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     73.46,
-     -80.34
-    ],
-    [
-     65.19,
-     -78.4
-    ],
-    [
-     67.48,
-     -68.66
-    ],
-    [
-     75.75,
-     -70.61
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-95",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     112.11,
-     -19.73
-    ],
-    [
-     103.64,
-     -19.07
-    ],
-    [
-     102.86,
-     -29.04
-    ],
-    [
-     111.33,
-     -29.7
-    ]
-   ]
-  },
-  {
    "id": "casa-fila-96",
    "keep": true,
-   "building": "house",
+   "building": "terrace",
    "levels": 2,
    "poly": [
     [
@@ -2592,102 +1524,6 @@
    ]
   },
   {
-   "id": "casa-fila-100",
-   "keep": true,
-   "building": "house",
-   "levels": 3,
-   "poly": [
-    [
-     9.85,
-     40.17
-    ],
-    [
-     9.05,
-     31.71
-    ],
-    [
-     19.0,
-     30.76
-    ],
-    [
-     19.81,
-     39.22
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-101",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     9.01,
-     31.31
-    ],
-    [
-     8.2,
-     22.85
-    ],
-    [
-     18.16,
-     21.9
-    ],
-    [
-     18.97,
-     30.36
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-102",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     8.17,
-     22.45
-    ],
-    [
-     7.36,
-     13.99
-    ],
-    [
-     17.31,
-     13.04
-    ],
-    [
-     18.12,
-     21.5
-    ]
-   ]
-  },
-  {
-   "id": "casa-fila-103",
-   "keep": true,
-   "building": "house",
-   "levels": 2,
-   "poly": [
-    [
-     1.87,
-     -36.74
-    ],
-    [
-     0.89,
-     -45.19
-    ],
-    [
-     10.83,
-     -46.33
-    ],
-    [
-     11.8,
-     -37.89
-    ]
-   ]
-  },
-  {
    "id": "casa-fila-104",
    "keep": true,
    "building": "house",
@@ -2708,6 +1544,56 @@
     [
      -73.76,
      -30.94
+    ]
+   ],
+   "tags": {
+    "roof:shape": "gable"
+   }
+  },
+  {
+   "id": "pisos-maria-borrell",
+   "keep": true,
+   "building": "apartments",
+   "levels": 4,
+   "poly": [
+    [
+     -48.54,
+     -55.23
+    ],
+    [
+     -38.1,
+     -56.33
+    ],
+    [
+     -33.29,
+     -10.58
+    ],
+    [
+     -43.73,
+     -9.48
+    ]
+   ]
+  },
+  {
+   "id": "placa-sant-joan",
+   "keep": true,
+   "area": "square",
+   "poly": [
+    [
+     38.94,
+     -96.79
+    ],
+    [
+     42.27,
+     -82.5
+    ],
+    [
+     73.77,
+     -89.15
+    ],
+    [
+     67.75,
+     -107.99
     ]
    ]
   }

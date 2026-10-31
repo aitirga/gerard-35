@@ -5,7 +5,9 @@
  */
 import type { Dialogue, DialogueLine } from '../dialogue';
 import type { EnvironmentId } from '../environments';
+import type { GeoScene } from '../geo';
 import type { Cell } from '../movement';
+import CARDEDEU_SCENE from '../geo/cardedeu.json' with { type: 'json' };
 
 const gerard = (text: string): DialogueLine => ({ speaker: 'gerard35', text });
 const aitor = (text: string): DialogueLine => ({ speaker: 'aitor', text });
@@ -22,17 +24,27 @@ export const MAZE: EnvironmentId = 'cardedeu-laberinto';
 /** The fights that jump out of the maze, one per level, and the boss on the roof. */
 export type FearEncounter = 'cebollon' | 'plato' | 'game-over' | 'uri-vertigo';
 
+/**
+ * A spot on Nuria's street, named in `anchors` of assets/geo/cardedeu/zone.json in metres, as the
+ * cell it falls on: rebuilding or reframing the map keeps the mission where it belongs.
+ */
+function street(anchor: string): Cell {
+  const at = (CARDEDEU_SCENE as GeoScene).anchors?.[anchor];
+  if (!at) throw new Error(`Cardedeu has no anchor «${anchor}»`);
+  return { x: Math.round(at.x), z: Math.round(at.z) };
+}
+
 /** Where things are. Cells must be walkable (tests/nuria.test.mjs). */
 export const PLACES_NURIA = {
-  /** Nuria waits at her door, on the long block of Carrer de Jacint Verdaguer. */
-  nuria: { environment: STREET, cell: { x: 107, z: 68 } },
-  /** Haru waits at the station's door and leads the way, looking back. */
-  haru: { environment: STREET, cell: { x: 32, z: 185 }, radius: 4 },
+  /** Nuria waits at her door, on the long block of Carrer de Jacint Verdaguer; Uri, the cats and the way home stand round her. */
+  nuria: { environment: STREET, cell: street('nuria-door') },
+  /** Haru waits by the station on platform 1 and leads the way, looking back. */
+  haru: { environment: STREET, cell: street('haru-station'), radius: 4 },
   /** Round the corner of Doctor Daurella, the street closes into Uri's maze. */
-  corner: { environment: STREET, cell: { x: 141, z: 74 } },
+  corner: { environment: STREET, cell: street('maze-corner') },
   /** Where the maze lets them in, and back out to the street. */
   mazeIn: { environment: MAZE, cell: { x: 25, z: 54 } },
-  streetBack: { environment: STREET, cell: { x: 136, z: 74 } },
+  streetBack: { environment: STREET, cell: street('maze-back') },
   /** Uri, Nil in his arms, waits at the end of each level; reaching him sends him on. */
   uri: [
     { environment: MAZE, cell: { x: 21, z: 49 }, radius: 2.5 },

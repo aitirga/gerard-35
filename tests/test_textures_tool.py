@@ -113,6 +113,14 @@ class TexturesTest(unittest.TestCase):
         flat = Image.new("RGB", (32, 32), (90, 90, 90))
         self.assertEqual(textures.seam_error(flat), 0)
 
+    def test_photos_stored_on_their_side_come_upright(self):
+        # A phone photo: 40 × 20 pixels with the EXIF turn (6) that shows it as 20 × 40.
+        exif = Image.Exif()
+        exif[274] = 6
+        stored = io.BytesIO()
+        Image.new("RGB", (40, 20), (200, 180, 120)).save(stored, "JPEG", exif=exif.tobytes())
+        self.assertEqual(textures.rgb(stored.getvalue()).size, (20, 40))
+
     def test_perspective_straightens_a_quad(self):
         # A white quad on black, skewed: its four corners become the whole picture.
         image = Image.new("RGB", (200, 200), (0, 0, 0))

@@ -1,48 +1,32 @@
 {
   "title": "Cardedeu · Nuria's street",
-  "description": "Cardedeu from OpenStreetMap (just geo cardedeu) with what the map lacks drawn by hand from the aerial reference: Nuria's long two-storey block with its terracotta roof on Carrer de Jacint Verdaguer, the white-roofed house on the Doctor Daurella corner, the houses and gardens across the street, and the R4 station a short walk away.",
+  "description": "Cardedeu from OpenStreetMap and a sketch (just geo-build cardedeu), built as a yellow-and-white railway town of the 1900s under the Montseny (docs/places/cardedeu.md): platform 1 and the station's arcaded porch, Nuria's long block with its two hipped roofs and front patios on Carrer de Jacint Verdaguer, the sauló of Plaça de Sant Joan with the town hall's belvedere, the Fleca Vella's real front, Santa Maria's bell tower and the Montseny on the horizon.",
   "steps": [
-    {
-      "open": "/?story=metro&solo=1"
-    },
-    {
-      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
-      "timeout": 60000
-    },
-    {
-      "teleport": "cardedeu",
-      "cell": [
-        30,
-        188
-      ]
-    },
-    {
-      "shot": "station",
-      "delay": 2500,
-      "caption": "Out of Cardedeu station: the R4 brought them here"
-    },
-    {
-      "teleport": "cardedeu",
-      "cell": [
-        106,
-        70
-      ]
-    },
-    {
-      "shot": "nuria-door",
-      "delay": 2500,
-      "caption": "Carrer de Jacint Verdaguer: Nuria's door on the long block"
-    },
-    {
-      "press": "KeyR"
-    },
-    {
-      "shot": "overview",
-      "delay": 2500,
-      "caption": "From above: the block, the street, the gardens"
-    },
-    {
-      "press": "KeyR"
-    }
+    { "open": "/?story=metro&solo=1" },
+    { "until": "document.title.includes('Meridiana') && !document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },
+    { "teleport": "cardedeu", "cell": [170, 195] },
+    { "wait": 2500 },
+    { "skipDialogue": true },
+    { "shot": "station", "delay": 2000, "caption": "Andana 1: the station's porch of round arches, its clock and lanterns, the yellow line and the catenary" },
+    { "teleport": "cardedeu", "cell": [128, 188] },
+    { "shot": "platform", "delay": 2000, "caption": "Along platform 1 to the west: pavers, lamps, the name board and the fence; the cedars behind" },
+    { "teleport": "cardedeu", "cell": [60, 101] },
+    { "wait": 2500 },
+    { "skipDialogue": true },
+    { "shot": "nuria-door", "delay": 2000, "caption": "Carrer de Jacint Verdaguer: Nuria at her gate, the front patios, the cars along the east kerb and the walled garden under the cedar" },
+    { "teleport": "cardedeu", "cell": [60, 67] },
+    { "shot": "corner", "delay": 1800, "caption": "The Doctor Daurella end: the white-roofed corner house in its garden, the zebra, the flats behind" },
+    { "teleport": "cardedeu", "cell": [89, 47] },
+    { "shot": "sant-joan", "delay": 1800, "caption": "Plaça de Sant Joan: the town hall, Torre Lligé, with its porch of five arches, terrace, clock and belvedere, over the sauló and its plane trees" },
+    { "teleport": "cardedeu", "cell": [186, 47] },
+    { "shot": "fleca", "delay": 2500, "caption": "Carrer de Teresa Oller: the Fleca Vella's real front, ochre with granite quoins and iron letters" },
+    { "teleport": "cardedeu", "cell": [193, 24] },
+    { "shot": "campanar", "delay": 1800, "caption": "Plaça de l'Església: Santa Maria and its bell tower with Catalan merlons" },
+    { "teleport": "cardedeu", "cell": [97, 107] },
+    { "shot": "jardi", "delay": 1800, "caption": "Passeig de Pau Gesa: the gate of the Museu Tomàs Balvey's garden, gardens and trees behind the houses" },
+    { "teleport": "cardedeu", "cell": [110, 110] },
+    { "press": "KeyR" },
+    { "shot": "overview", "delay": 3000, "caption": "From above: hipped clay roofs and terraces, gardens, the railway, and the Montseny behind" },
+    { "press": "KeyR" }
   ]
 }

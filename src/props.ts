@@ -55,6 +55,8 @@ export function createPropKit() {
     olive: [mat('Olivo plateado', '#8d9b6f'), mat('Olivo claro', '#a6ae86'), mat('Olivo sombra', '#6f8060')],
     cypress: [mat('Ciprés', '#4c6947'), mat('Ciprés claro', '#5d7a52')],
     yucca: [mat('Yuca', '#3f7a45'), mat('Yuca clara', '#5e9a55'), mat('Yuca sombra', '#2f5c38')],
+    cedar: [mat('Cedro', '#3e5a4b'), mat('Cedro claro', '#55715f'), mat('Cedro sombra', '#2f4639')],
+    pine: [mat('Pino piñonero', '#52703f'), mat('Pino claro', '#68854d'), mat('Pino sombra', '#3d5531')],
   };
   const barkMat = mat('Troncos', '#817058');
   const wood = mat('Tutor de madera', '#b48a55', 0.1);
@@ -137,6 +139,33 @@ export function createPropKit() {
         crowns.push(blade);
       }
       [low, high, radius, sway] = [0.9 * s, 1.5 * s, 0.55 * s, 0.6];
+    } else if (species === 'cedar') {
+      // A garden cedar: a thick trunk under flat, blue-green boughs in uneven tiers, each a few
+      // clumps reaching out on different sides, narrowing to a ragged top.
+      part(pivot, 'Tronco', 'cylinder', bark, [0, 1.1 * s, 0], [0.32, 2.2 * s, 0.32]);
+      for (let i = 0; i < 5; i++) {
+        const w = (1.25 - i * 0.2) * s, y = (1.25 + i * 0.6) * s;
+        for (let k = 0; k < 3; k++) {
+          const a = (n(i * 3 + k + 20) + k / 3) * Math.PI * 2, d = (0.35 + n(i * 3 + k + 40) * 0.35) * w;
+          crowns.push(part(pivot, 'Rama de cedro', 'sphere', palette[(i + k) % 3], [Math.cos(a) * d, y + (n(i + k + 60) - 0.5) * 0.2 * s, Math.sin(a) * d],
+            [w * (1 + n(i + k + 70) * 0.4), 0.42 * s, w * (0.8 + n(i + k + 80) * 0.4)]));
+        }
+      }
+      crowns.push(part(pivot, 'Copa de cedro', 'sphere', palette[1], [0.1 * s, 4.25 * s, 0], [0.7 * s, 0.6 * s, 0.6 * s]));
+      [low, high, radius, sway] = [1.4 * s, 4.2 * s, 1.1 * s, 0.35];
+    } else if (species === 'pine') {
+      // A stone pine: a tall bare trunk, leaning a little, under a wide flat umbrella.
+      const lean = (n(5) - 0.5) * 14;
+      part(pivot, 'Tronco', 'cylinder', bark, [0, 1.35 * s, 0], [0.2, 2.7 * s, 0.2], [0, 0, lean]);
+      for (const side of [-1, 1]) part(pivot, 'Rama', 'cylinder', bark, [side * 0.35 * s, 2.75 * s, 0], [0.1, 0.8 * s, 0.1], [0, 0, -side * 55]);
+      crowns.push(part(pivot, 'Copa de pino', 'sphere', palette[0], [0, 3.05 * s, 0], [2.6 * s, 0.75 * s, 2.4 * s]));
+      // Flat clumps round the rim and a sunlit top keep the umbrella's outline ragged but flat.
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7 + n(i + 40) * 0.1) * Math.PI * 2, d = (0.95 + n(i + 50) * 0.2) * s, r = (0.7 + n(i + 60) * 0.2) * s;
+        crowns.push(part(pivot, 'Lóbulo de copa', 'sphere', palette[i % 3], [Math.cos(a) * d, (2.95 + n(i + 70) * 0.2) * s, Math.sin(a) * d], [r, r * 0.55, r]));
+      }
+      crowns.push(part(pivot, 'Copa soleada', 'sphere', palette[1], [0.1 * s, 3.3 * s, -0.05 * s], [1.7 * s, 0.4 * s, 1.6 * s]));
+      [low, high, radius, sway] = [2.7 * s, 3.4 * s, 1.35 * s, 0.6];
     } else if (species === 'olive') {
       // A short, split trunk under a round, silvery crown.
       part(pivot, 'Tronco', 'cylinder', oliveBark, [0, 0.32 * s, 0], [0.22, 0.66 * s, 0.22], [0, 0, 8]);

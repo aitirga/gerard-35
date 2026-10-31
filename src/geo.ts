@@ -106,7 +106,7 @@ export interface GeoScene {
    * beyond the map instead of wooded hills).
    * `river_m` sinks the water that many metres below the street between stone banks, `water` is its
    * colour (a turbid river, which mirrors less sky than the pool's blue one), and `hills: false` leaves
-   * out the generic hills (a landmark draws the place's own).
+   * out the generic hills (a landmark draws the place's own, or the place has its own horizon).
    */
   look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; kerbs?: boolean; edge?: 'hills' | 'city'; river_m?: number; water?: string; hills?: boolean };
   /** Named points for pieces the game adds itself, e.g. where the palace stands (`y` in cells). */

@@ -221,7 +221,7 @@ material, light and landmark, which the last column names.
 | Trinitat Vella · Rec Comtal | `#a8664e` | brick red-brown | exposed brick (`mao`) | the school and her palace on it | `rec-comtal` warm | Poble Sec (ΔE 11): brick blocks vs sienna render and stairs |
 | Her palace, outside | `#ff6fae` | her pink | glossy gum | crown tower, spiked towers | her tone | — (hers alone) |
 | Alegia | `#f1efe8` | white and dark timber | timber framing, ashlar (`carreu`) | square belfry | `alegia` cool | Sagrada inside (ΔE 5): street vs nave in coloured light |
-| Cardedeu | `#c4673c` | terracotta and garden green | hipped clay roofs (`teula`), lawns (`gespa`) | a long hipped roof | `cardedeu` warm | Poble Sec (ΔE 13): roofs and gardens vs render and stairs |
+| Cardedeu | `#b66e43` | terracotta and garden green | hipped clay roofs (`teula`), lawns (`gespa`) | a long hipped roof | `cardedeu` warm | Poble Sec (ΔE 3, the same colour): low roofs, lawns and garden trees seen from above vs render and stone stairs at evening |
 | La torre de Uri | `#1f0f22` | violet-black | dark stone walls | spiral tower | `cardedeu-laberinto` cool | Throne room (ΔE 25): violet vs indigo and gold |
 | El Nucli (proposal) | `#2f4a3a` | bottle green | board-game boxes, felt | the wall of boxes | new, warm | Palace patio (ΔE 25): indoor felt vs painted court |
 | Sants street (proposal) | `#cfa463` | ochre | painted roller shutters, old render (`estuc`) | a lit shopfront in a row of shutters | new, cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
@@ -259,7 +259,7 @@ share a landmark kind.
 | El piso · Avinguda Meridiana | Door | 44 | all four | ✓ |
 | Rec Comtal · her palace outside | Grown out of it | 51 | all four | ✓ |
 | Palace outside · entrance | Door | 17 | ground, light (palace sky) | ✓ (her own building) |
-| Cardedeu · La torre de Uri | Round the corner | 72 | all four | ✓ |
+| Cardedeu · La torre de Uri | Round the corner | 66 | all four | ✓ |
 | Avinguda Meridiana · Rec Comtal | L1, three stops | 37 | colour, material, light | ✓ |
 | El Nucli · Sants street | Door | 57 | all four | ✓ |
 | Sagrada inside · outside | Door | 32 | colour, ground, light (coloured nave) | ✓ |
@@ -394,16 +394,16 @@ Built to this card on 2026-10-31; the brief, sources and credits are in [places/
 
 | | |
 | --- | --- |
-| Dominant | Terracotta hipped roofs `#c4673c` seen from above, garden green `#8b8f6c` |
-| Secondary | Warm white render `#efe7d8`, green shutters `#3f7a4a`, stone plinths |
-| Material | Clay-tile roofs (`teula`), lawns (`gespa`) |
-| Ground | A narrow one-way street, narrow pavements, lawns |
-| Landmark | Nuria's long two-storey block under one hipped roof |
+| Dominant | Terracotta hipped roofs `#b66e43` seen from above (browner in the old centre), garden green `#8a9a57` (measured on the built overview) |
+| Secondary | Butter and ochre render (`#ecd69c` station, `#e7c36d` Fleca Vella), warm lime white on Nuria's block `#f3e9d8`, olive or brown louvred shutters, granite plinths |
+| Material | Clay-tile roofs (`teula`) with a white rim under the eaves, render over granite (`estuc`, `granit`), lawns and big garden trees behind every row (`gespa`) |
+| Ground | Asphalt streets with pale pavements, *sauló* in Plaça de Sant Joan, grey stone slabs over the old centre's streets (`lloses`), the platform's slabs and yellow line |
+| Landmark | Nuria's long two-storey block under two hipped roofs; the station's porch of round arches; Santa Maria's square tower at the back and the Montseny's blue ridge beyond |
 | Light | `cardedeu`: a warm afternoon; `day` sky |
-| Props | Garden walls with trees leaning over, cars parked on one side, zebra crossings, the R4 station |
+| Props | Garden walls with railings and gates, front patios with pots, cedars and stone pines, cars on one kerb, zebras, cone lamps and catenary gantries on the platform |
 | Air | Pollen, a few leaves |
 | Sound | The R4 pulling in, birds, a lawnmower, the cats |
-| Only here | The white-roofed corner house in its garden |
+| Only here | The white-roofed corner house in its garden; borregos in the Fleca Vella's window |
 | Text | Catalan: *Carrer de Jacint Verdaguer*, Rodalies signs |
 
 #### La torre de Uri (`cardedeu-laberinto`)
