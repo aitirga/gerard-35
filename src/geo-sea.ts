@@ -46,16 +46,20 @@ export function buildSea(kit: GeoKit, water: GeoPoint[][], size: { width: number
   // The sea and its white water carry on past the map's sides; the beach's bands stop at its edges.
   const first = Math.max(0, shore.points.findIndex(p => p[0] >= -0.5));
   const last = shore.points.length - 1 - Math.max(0, [...shore.points].reverse().findIndex(p => p[0] <= size.width - 0.5));
-  /** One band along the shore: rows at `d` metres, each with its colour and opacity; `beach` keeps it on the map. */
-  function band(name: string, rows: { d: number; colour?: string; alpha?: number }[], y: number, m: pc.Material, batched: boolean, beach = false) {
+  /**
+   * One band along the shore: rows at `d` metres, each with its colour and opacity; `beach` keeps it on
+   * the map. Its UVs run along the shore and out from it, in metres, or with `world` over the ground
+   * (so far out, where a bend of the coast fans the rows apart, the waves keep their size).
+   */
+  function band(name: string, rows: { d: number; colour?: string; alpha?: number }[], y: number, m: pc.Material, batched: boolean, beach = false, world = false) {
     const positions: number[] = [], normals: number[] = [], uvs: number[] = [], colours: number[] = [], indices: number[] = [];
     const points = beach ? shore!.points.slice(first, last + 1) : shore!.points, offset = beach ? first : 0, n = points.length;
     rows.forEach(({ d, colour = '#ffffff', alpha = 1 }) => {
       const c = new pc.Color().fromString(colour);
       points.forEach((p, k) => {
-        const i = k + offset, q = shore!.normals[i];
-        positions.push(x(p[0] + q[0] * d / cellM), y, z(p[1] + q[1] * d / cellM));
-        normals.push(0, 1, 0); uvs.push(shore!.along[i], d); colours.push(c.r, c.g, c.b, alpha);
+        const i = k + offset, q = shore!.normals[i], px = p[0] + q[0] * d / cellM, pz = p[1] + q[1] * d / cellM;
+        positions.push(x(px), y, z(pz));
+        normals.push(0, 1, 0); uvs.push(...(world ? [px * cellM, pz * cellM] : [shore!.along[i], d])); colours.push(c.r, c.g, c.b, alpha);
       });
     });
     for (let r = 0; r + 1 < rows.length; r++) for (let i = 0; i + 1 < n; i++) {
@@ -80,14 +84,14 @@ export function buildSea(kit: GeoKit, water: GeoPoint[][], size: { width: number
   // ------------------------------------------------------------ the sea
   // Its colour is in the vertices (by depth); small waves in two normal maps drifting across each other.
   const sea = new pc.StandardMaterial();
-  sea.name = 'Mar'; sea.diffuse.set(1, 1, 1); sea.diffuseVertexColor = true; sea.gloss = 0.86;
+  sea.name = 'Mar'; sea.diffuse.set(1, 1, 1); sea.diffuseVertexColor = true; sea.gloss = 0.92;
   const ripples = canvasTexture(256, 256, ctx => waveNormals(ctx, 256));
-  sea.normalMap = ripples; sea.normalMapTiling.set(1 / 7, 1 / 7); sea.bumpiness = 0.3;
-  sea.normalDetailMap = ripples; sea.normalDetailMapTiling.set(1 / 2.6, 1 / 3.1); sea.normalDetailMapBumpiness = 0.35;
+  sea.normalMap = ripples; sea.normalMapTiling.set(1 / 7, 1 / 7); sea.bumpiness = 0.6;
+  sea.normalDetailMap = ripples; sea.normalDetailMapTiling.set(1 / 2.6, 1 / 3.1); sea.normalDetailMapBumpiness = 0.6;
   // Less of the sky and the sun than a pool: the sea keeps its own blue, and the sun glitters on it
   // without burning a white patch into the overview.
-  shine(sea, 'water'); sea.specular.fromString('#55605f'); sea.reflectivity = 0.5; sea.update();
-  band('Mar', DEPTHS.map(([d, colour]) => ({ d, colour })), LAYER.sea, sea, false);
+  shine(sea, 'water'); sea.specular.fromString('#3e4847'); sea.reflectivity = 0.3; sea.update();
+  band('Mar', DEPTHS.map(([d, colour]) => ({ d, colour })), LAYER.sea, sea, false, false, true);
 
   // ------------------------------------------------------------ the wet sand
   // Fades in from the dry sand to the waterline, glossier as it nears the water.
