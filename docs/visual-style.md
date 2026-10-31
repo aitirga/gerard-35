@@ -217,7 +217,7 @@ material, light and landmark, which the last column names.
 | Passatge Maresme | `#d6cfbc` | sunlit white | white render, flat roofs (`estuc`) | row of white cubes | `maresme` warm | Plaça d'Espanya (ΔE 4): render and houses vs monumental stone and towers |
 | Casa de Gerard | `#ecdcb8` | cream, indoor amber | plaster and pale tile (`rajola`) | the house cut open | `home-*` warm | Plaça d'Espanya (ΔE 8): a room in amber light vs an open square |
 | El piso de la Meridiana | `#b9803f` | honey | wood parquet | the flat cut open, long balcony | `meridiana` warm | Poble Sec (ΔE 12): interior, wood |
-| Avinguda Meridiana | `#9fa09a` | cool grey | grey square panot (`panot-gris`), new asphalt | a mall box and a dark tower | `meridiana-calle` cool | Sagrada outside (ΔE 13): panot and blocks vs carved stone |
+| Avinguda Meridiana | `#9fa09a` | cool grey | grey square panot (`panot-gris`), new black asphalt (`asfalt-nou`) | a mall box under brown-banded slabs | `meridiana-calle` cool | Sagrada outside (ΔE 13): panot and blocks vs carved stone |
 | Trinitat Vella · Rec Comtal | `#a8664e` | brick red-brown | exposed brick (`mao`) | the school and her palace on it | `rec-comtal` warm | Poble Sec (ΔE 11): brick blocks vs sienna render and stairs |
 | Her palace, outside | `#ff6fae` | her pink | glossy gum | crown tower, spiked towers | her tone | — (hers alone) |
 | Alegia | `#f1efe8` | white and dark timber | timber framing, ashlar (`carreu`) | square belfry | `alegia` cool | Sagrada inside (ΔE 5): street vs nave in coloured light |
@@ -324,19 +324,21 @@ share a landmark kind.
 
 #### Avinguda Meridiana (`meridiana-calle`)
 
+Built 2026-10-31; how and from what in [places/meridiana.md](places/meridiana.md).
+
 | | |
 | --- | --- |
-| Dominant | Cool concrete grey `#9fa09a` (panot), new asphalt `#3e4043` |
-| Secondary | Beige blocks `#e2d6c4`, plane-tree and bed green `#7d9a4c`, the works' red and white |
-| Material | Grey square panot (`panot-gris`); eight-storey blocks with galleries and blinds |
-| Ground | Wide panot sidewalk, the side road's bus lane, the planted median with its bike lane |
-| Landmark | Hipercor's box with its blue letters and the dark tower behind (kind: a mall box and a tower) |
-| Light | `meridiana-calle`: cool and a little hard; `day` sky |
-| Props | Plane trees in square pits, staked young trees, LED lamps, benches facing the shops, the bus shelter and coach, red and white barriers, the L1 totem and stair, traffic |
-| Air | Pollen |
-| Sound | Heavy traffic, a bus kneeling at the stop, crossing beeps, the works |
-| Only here | The planted median: a bike lane between beds of staked young trees |
-| Text | Catalan street signs; the real shop names in type (Granier, 365, Vision-Prix…) |
+| Dominant | Cool panot grey `#9fa09a`, new black asphalt `#34363a` |
+| Secondary | Cream render `#ddd3bd`, tan facing brick `#c9a47a` (`mao-groc`), awning teal `#3f8f84` |
+| Material | Grey four-pastille panot (`panot-gris`) beside new black asphalt (`asfalt-nou`), both dark and glossy after rain; granite kerbs |
+| Ground | A 10 m panot sidewalk with the old plane trees in pits and a kerb bed; six lanes (two and a bus lane each way); the planted median with its two-way bike lane |
+| Landmark | Hipercor's white vaulted canopy and blue letters under a brown-banded residential slab (kind: a mall box under slabs) |
+| Light | `meridiana-calle`: cool and a little hard; `day` sky, a late-October afternoon |
+| Props | Plane trees in pits, staked young trees, LED lamps, curved poles with yellow lights, benches and single chairs facing the shops, the bus shelter and coach, five-colour recycling containers, a Bicing dock, parked scooters, café tables, red and white barriers and sacks, the L1 totem and stair, traffic and cyclists |
+| Air | Pollen and dry plane leaves on a light wind along the avenue |
+| Sound | Heavy traffic, a bus kneeling at the stop, crossing beeps, the works, a train under the median (not in the game yet) |
+| Only here | The planted median over the trains: a bike lane between beds of staked young trees, its vent grates breathing when a train passes underneath |
+| Text | Catalan street signs; the real shop names in type (Granier, 365, Vision-Prix…) over glass shop fronts |
 
 #### Trinitat Vella · Escola Rec Comtal (`rec-comtal`)
 

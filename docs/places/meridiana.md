@@ -1,14 +1,15 @@
 # Avinguda Meridiana · Fabra i Puig to Hipercor (`meridiana-calle`)
 
 The street outside Gerard and Aitor's flat, and the first place the player walks in chapter 2.
-Today's scene ([barcelona.md](../barcelona.md#designed-zones)) has the right blocks, shops and
-works, but a drawn look and an invented cross-section. This file is the research and the plan to
-redo it with real materials and real proportions, and to compare it side by side with today's
-(`docs/story-outline.md`, "First step, before any new zone").
+The scene before this work ([barcelona.md](../barcelona.md#designed-zones)) had the right blocks,
+shops and works, but a drawn look and an invented cross-section. This file is the research, the
+plan and the record of how it was redone with real materials and real proportions, compared side
+by side with the old scene (`docs/story-outline.md`, "First step, before any new zone").
 
-Status (2026-10-30): **research and draft**. `zone.json` has the new reference notes and
-viewpoints; nothing the build reads has changed yet. The cross-section below was drafted and
-built in a scratch copy only (its preview is in the places report).
+Status (2026-10-31): **built**. The six-lane cross-section, the real materials, the relief of the
+blocks, Hipercor's canopy and slab, the new street furniture, rain, dusk, cyclists and the trains
+under the median are in the game ([What was built](#what-was-built)). What stays approximate or
+left out is listed in [Approximate and open](#approximate-and-open).
 
 ## The place
 
@@ -66,9 +67,10 @@ and [Viquipèdia](https://ca.wikipedia.org/wiki/Avinguda_Meridiana). Google Maps
 looked at only (the viewpoints in `zone.json`), never copied. Aitor's own night photos from
 October 2026 remain the authority where they say something (`reference.notes`).
 
-## Today's scene, checked
+## The scene before, checked
 
-From `just screenshots meridiana --gpu` and `just screenshots traffic --gpu` on 2026-10-30:
+From `just screenshots meridiana --gpu` and `just screenshots traffic --gpu` on 2026-10-30, before
+the rebuild:
 
 | Works | Wrong or missing |
 | --- | --- |
@@ -87,7 +89,7 @@ From `just screenshots meridiana --gpu` and `just screenshots traffic --gpu` on 
 | --- | --- |
 | Dominant | Cool panot grey `#9fa09a`, new black asphalt `#34363a` |
 | Secondary | Cream render `#ddd3bd`, tan facing brick `#c9a47a`, awning teal `#3f8f84` |
-| Material | Grey four-pastille panot (`panot-gris`) beside new black asphalt (new `asfalt-nou`, with a wet twin) |
+| Material | Grey four-pastille panot (`panot-gris`) beside new black asphalt (`asfalt-nou`), both dark and glossy after rain |
 | Ground | A 13 m sidewalk of panot with the old plane trees in square pits and a new curb bed; six lanes; the central median with its bike lane |
 | Landmark | Hipercor's white scalloped canopy and blue letters under brown-banded slab towers (kind: a mall box under slabs) |
 | Light | `meridiana-calle`, cool and a little hard, `day` sky, a late-October afternoon: the even side faces west-south-west, so the low sun lights the shop fronts the camera sees |
@@ -137,33 +139,38 @@ replaces the glass tower: 15 storeys, about 72 × 22 m, long side to the avenue,
 (OSM puts it at z −109 … −84, just outside the map; moving the north edge to −112 costs a row of
 back streets and blocks, so only if the draw-call budget allows).
 
-## Texture candidates
+## Textures
 
 The shared library (`public/textures/`) first: `panot-gris` (sidewalks, 20 cm tiles), `granit`
 (kerbs and the stair), `terra` (beds and pits), `estuc` (render under the facade bays), `rajola`
 (terraces), `mao` (bare party walls), `formigo` (Hipercor's panels, the hoarding's base). New ones,
-at most about eight:
+at most about eight. **Made** marks the ones in `public/textures/`; the others were candidates
+left for later (see [Approximate and open](#approximate-and-open)):
 
-| Id (proposed) | Source | Licence | Use |
+| Id | Source | Licence | Use |
 | --- | --- | --- | --- |
-| `asfalt-nou` | Poly Haven [`clean_asphalt`](https://polyhaven.com/a/clean_asphalt); alternative ambientCG [`Asphalt010`](https://ambientcg.com/view?id=Asphalt010) | CC0 | The new black asphalt of every lane and the bike lane (the library's `asfalt` is old and pale) |
+| `asfalt-nou` (**made**) | Poly Haven [`clean_asphalt`](https://polyhaven.com/a/clean_asphalt); alternative ambientCG [`Asphalt010`](https://ambientcg.com/view?id=Asphalt010) | CC0 | The new black asphalt of every lane and the bike lane (the library's `asfalt` is old and pale) |
 | `asfalt-moll` | ambientCG [`Asphalt025A`](https://ambientcg.com/view?id=Asphalt025A) dry and [`Asphalt025C`](https://ambientcg.com/view?id=Asphalt025C) wet, one surface in two states | CC0 | Wet asphalt after rain: darker albedo, high gloss, blended in and out |
-| `mao-groc` | ambientCG [`Bricks072`](https://ambientcg.com/view?id=Bricks072) (clean tan, light mortar, like the photos); alternative Poly Haven [`yellow_brick`](https://polyhaven.com/a/yellow_brick) (rougher) | CC0 | The blocks' tan facing brick, at 29 × 5 cm |
+| `mao-groc` (**made**) | ambientCG [`Bricks072`](https://ambientcg.com/view?id=Bricks072) (clean tan, light mortar, like the photos); alternative Poly Haven [`yellow_brick`](https://polyhaven.com/a/yellow_brick) (rougher) | CC0 | The blocks' tan facing brick, at 29 × 5 cm |
 | `fulles` | Poly Haven [`dry_decay_leaves`](https://polyhaven.com/a/dry_decay_leaves); alternative ambientCG [`ScatteredLeaves009`](https://ambientcg.com/view?id=ScatteredLeaves009) | CC0 | Fallen plane leaves in the pits and beds, and drifts along the kerbs |
 | `persiana` | Poly Haven [`painted_metal_shutter`](https://polyhaven.com/a/painted_metal_shutter) | CC0 | Closed shops' roller shutters, tagged with painted graffiti |
 | `rajola-facana` (optional) | Poly Haven [`rectangular_facade_tiles_02`](https://polyhaven.com/a/rectangular_facade_tiles_02) | CC0 | A 1970s block clad in small ceramic tiles, for variety |
 | Granite kerb (if `granit` reads too dark) | ambientCG [`Granite002A`](https://ambientcg.com/view?id=Granite002A) | CC0 | 30 cm kerbstones |
-| Facade bays `flats` | Painted bays rebuilt over the materials above, checked against the CC0 Zarateman photos; one rectified photo bay set from *Meridiana - 20220803* (CC BY-SA 4.0, about 180 px a bay at the original 4128 px) if it reads better | CC0 / CC BY-SA 4.0 | Balcony, gallery, window and awning bays, in the `FACADE_ATLAS` |
+| `galeries-meridiana` (**made**) | One rectified bay of enclosed aluminium galleries from [*Meridiana - 20220803*](https://commons.wikimedia.org/wiki/File:Meridiana_-_20220803_195337.jpg), Pere López Brosa (`tools/textures.py photo`) | CC BY-SA 4.0 | The photo facade of the gallery block at Meridiana 378 (`relation/9243612`, `facade: photo:galeries-meridiana`) |
+| Facade bays `flats` | Painted bays over `estuc` and `mao-groc`, checked against the CC0 Zarateman photos | own | Balcony, gallery, window and awning bays, in the `FACADE_ATLAS` |
 | Hipercor | Procedural: white vaults, blue stripes over `formigo`, checked against the CC0 photo | own | The box and its canopy |
 | Slabs | Procedural ribbon bays: brown spandrel `#7d6553`, white window band, aluminium frames | own | The towers behind Hipercor |
 
-No openly licensed frontal photos of these shop fronts exist; they stay painted (glass, frame, the
-name in plain type), with no logos. Commons was busy (HTTP 429) on the day; the files above are the
+No openly licensed frontal photos of these shop fronts exist; they are painted (`shopfronts`: glass
+in aluminium frames, the lit shop seen through it, teal or grey awnings), with the names in plain
+type and no logos. Commons was busy (HTTP 429) on the day; the files above are the
 ones fetched.
 
 ## Build plan
 
-After the shared foundation (materials pipeline, `src/landmarks/`, `docs/visual-style.md`) merges:
+The plan as drawn up before building, after the shared foundation (materials pipeline,
+`src/landmarks/`, `docs/visual-style.md`); what became of each step is in
+[What was built](#what-was-built).
 
 1. **Before.** Keep today's captures (`output/screenshots/meridiana-before`, `traffic-before`) for
    the side-by-side.
@@ -202,13 +209,72 @@ After the shared foundation (materials pipeline, `src/landmarks/`, `docs/visual-
 Nothing here adds a story flag, a place or a fight, so the development picker keeps its
 `meridiana-calle` entry as it is.
 
-## Open questions
+## What was built
 
-- Aitor's photos describe "the side road's bus lane": the six-lane section assumes that road is the
+Built on `feat/places-meridiana`, 2026-10-30 and 31. Everything sits in the zone's own files
+(`assets/geo/meridiana-calle/zone.json`, `sketch.json`) or in additions to the shared geo builder
+that any real place can switch on.
+
+| Step | What is in the game | Where |
+| --- | --- | --- |
+| Cross-section | The six lanes as in the table above: each carriageway two lanes and a bus lane by the kerb, the median with its two-way bike lane between beds and two rows of staked young trees, the 10 m east sidewalk with the old plane trees in pits and a kerb bed paved through at the bus stop, the west bed. Props, places, labels and every scenario cell moved with it | `sketch.json`, `zone.json`, `scripts/screenshots/` |
+| Ground | `panot-gris` on every sidewalk, `asfalt-nou` on every lane and the bike lane, granite kerbs (`granit`, 30 cm wide, about 13 cm proud) along every road edge, lowered at the zebras | `look.materials`, `look.kerbs` |
+| Blocks | Balcony slabs 1 m deep every storey on the walls the camera sees (fronts in the style's `balcony` colour), a concrete cornice, bare brick party walls (*mitgeres*, `mao` tinted `#b98d6e`) where a block rises over its neighbour; tan facing brick (`mao-groc`) on five blocks, render (`estuc`) on the rest; the gallery block at 378 with the photo bay `galeries-meridiana` | styles `default`, `brick`, `orange`; `relief` in `src/geo-scenery.ts` |
+| Shop fronts | A new ground kind, `shopfronts`: glass in aluminium frames with the lit shop seen through (a warm ceiling, shelves of goods), teal or grey canvas awnings over about half, a rare shutter down with its tags; the real shop names stay as signs | `facade()` in `src/geo-scenery.ts` |
+| Roofs | Flat `rajola` terraces crowded with stair and lift housings, water tanks, aerials, satellite dishes and air conditioners, seeded per building, in one mesh per building | `rooftop` |
+| Hipercor | The OSM box at four retail storeys in `formigo` panels with thin blue stripes, the blue HIPERCOR letters, and the canopy as a landmark: a row of shallow concrete vaults 6.5 m wide along 78 m of front | `src/landmarks/vaulted-canopy.ts`, `landmarks` |
+| The slab | A 16-storey residential slab, 62 × 19 m, at the map's back edge behind Hipercor: brown spandrels and white ribbon windows (`slab` facade), its terrace crowded like the others | `sketch.json` `bloc-hipercor`, style `slab` |
+| Furniture | Four rows of five-colour recycling containers, a Bicing dock, parked scooters in twos and threes, café tables outside Café Entrepans, single chairs and benches on the wider sidewalk, vent grates on the median | `containers`, `bicing`, `moto`, `terrace`, `grate` in `src/props.ts` |
+| The edge | Instead of wooded hills, the city goes on past the far sides: three rows of plain blocks with storeys of windows in dulled render, brick and grey, on a skirt of street | `look.edge: "city"` |
+| Effects | Rain darkens and glosses the asphalt and the panot and leaves ragged puddles in the gutters, which dry slowly after; at dusk the open shops' windows glow and spill warm light on the panot, the LED lamps a cold one (decals, not lights); dry plane leaves drift down the avenue on a light wind and lie a while; scooters in the traffic; cyclists ride the bike lane both ways and brake for Gerard; now and then a train runs under the median and its draught puffs out of the grates one after another | `setStreet` in `src/geo-scenery.ts`, `dryleaf` and `draught` in `src/effects.ts`, `src/traffic.ts`, the train in `src/game.ts` |
+
+Checks: `just typecheck`, `npm test` (297), `uv run --locked python -m unittest discover -s tests`,
+`just geo-build meridiana-calle`, and `just screenshots meridiana|traffic|weather --gpu` and
+`street-music --gpu --chrome`, each looked at. Draw calls (`app.stats.drawCalls.total`, WebGPU,
+M1 Pro, other builds running alongside, so the times are noisy): following Gerard 1930 before and
+2485 after (+29 %), overview 9896 before and 11677 after (+18 %); the follow camera ran at about
+150 fps after.
+
+## Approximate and open
+
+- **Proportions.** Storeys stay at 3 m and the ground floor at 3.45 m (1.15 storeys), the bay at
+  1.8 cells (2.7 m). The real blocks have a ground floor of about 4.2 m and a mezzanine; changing
+  the storey height for one zone would move every building's windows, so it waits.
+- **No set-back top floors**, and the carriageways are not a step down from the sidewalks: the
+  scene has no ground heights, so the kerb is a raised granite strip with the same level on both
+  sides.
+- **The slab's place.** OSM puts the nearest slab some 30 m further back (z −109 … −84); it stands
+  at the map's back edge, rising out of the back of Hipercor's footprint, so it reads as "behind
+  Hipercor" from the camera. Only one of the three slabs is built.
+- **Textures left as candidates.** No wet twin (`asfalt-moll`: rain darkens and glosses the dry
+  materials instead), no fallen-leaf ground (`fulles`: the leaves are particles that settle), no
+  `persiana` (shutters are painted), no tiled-facade block.
+- **Photo bays.** Only the gallery block has one; Commons has no frontal, openly licensed photo of
+  these shop fronts or of the other blocks' bays good enough to rectify.
+- **Sound.** The card's sounds (traffic in waves, the bus kneeling, the crossing beeper, the train
+  rumbling) are not in the game: the street plays its song.
+- **Draw calls.** The relief, party walls and roof clutter add a few meshes per building
+  (+29 % following Gerard); batching them across buildings would need the cutaway to work per
+  instance.
+- **The outside on the camera side** is the sky's clear colour, as in every place (the edge blocks
+  only stand on the far sides, so they never hide the street).
+- Aitor's photos describe "the side road's bus lane": the six-lane section takes that road to be the
   east carriageway itself (bus lane + 2 lanes) with the bike median beyond it, as OSM and the city
-  show. Worth one look at his photos before redrawing.
+  show.
 - Which block is home is still unknown (`docs/chapter-2.md`).
 - A 2013 photo down the avenue ([Avinguda Meridiana.jpg](https://commons.wikimedia.org/wiki/File:Avinguda_Meridiana.jpg),
   CC BY-SA 3.0) shows salmon and orange blocks on one side with Hipercor's sign far off; which
   stretch it is is unclear, so Aitor's notes (beige and cream on the even side here, orange across)
   stand.
+
+## Credits
+
+| Texture | Source | Author | Licence |
+| --- | --- | --- | --- |
+| `asfalt-nou` | [Poly Haven, Clean Asphalt](https://polyhaven.com/a/clean_asphalt) | Dimitrios Savva | CC0 1.0 |
+| `mao-groc` | [ambientCG, Bricks072](https://ambientcg.com/a/Bricks072) | ambientCG (Lennart Demes) | CC0 1.0 |
+| `galeries-meridiana` | [Wikimedia Commons, Meridiana - 20220803 195337.jpg](https://commons.wikimedia.org/wiki/File:Meridiana_-_20220803_195337.jpg) | Pere López Brosa | CC BY-SA 4.0 |
+
+The shared library's `panot-gris`, `granit`, `estuc`, `mao`, `rajola` and `formigo` carry their own
+credits in their `texture.json`. Map data © OpenStreetMap contributors (ODbL). Shop fronts, the
+slab, Hipercor's panels and canopy, the edge blocks and the relief are painted or modelled in code.

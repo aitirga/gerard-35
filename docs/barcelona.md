@@ -188,14 +188,18 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
 - **`meridiana-calle`**: the Avinguda Meridiana from Fabra i Puig to Hipercor (Meridiana 350-356),
   the one real-data zone of Barcelona: OpenStreetMap for the blocks, cross streets, street trees,
   lamps, benches, shops and zebra crossings (`osm.json`), with the avenue's own cross-section after
-  the 2025-26 works redrawn in `sketch.json` (`redraw`) from photos taken on it in October 2026.
+  the 2025-26 works redrawn in `sketch.json` (`redraw`) from the city's design, openly licensed
+  photos and photos taken on it in October 2026 ([places/meridiana.md](places/meridiana.md)).
   Turned -62° so the avenue runs left to right with the even side, the shops, facing the camera:
-  the wide panot sidewalk with plane trees and benches, the curb bed, the side road with the bus
-  lane and the Sagalés coach at the shelter, the planted median with the bike lane and young
-  staked trees, the works' red and white barriers and sacks, the two carriageways and the west bed.
-  Real signs on the ground floors (Granier, 365, Vision-Prix, General Óptica, Al Meu BB, Café
-  Entrepans, Zamora Floristas' kiosk…), Hipercor's box with its blue letters and the dark tower
-  behind, the graffiti hoarding in front of it, home's corner block (Casa) and the L1 entrance.
+  the 10 m panot sidewalk with plane trees, benches, scooters and recycling containers, the kerb
+  bed, six lanes in new black asphalt behind granite kerbs (two and a bus lane each way, the
+  Sagalés coach at the shelter), the planted median with its two-way bike lane, cyclists, young
+  staked trees, the works' barriers and the vent grates the trains breathe through, and the west
+  bed. Blocks with balcony slabs, cornices, brick party walls and crowded terraces, glass shop
+  fronts with the real signs (Granier, 365, Vision-Prix, General Óptica, Al Meu BB, Café Entrepans
+  and its tables, Zamora Floristas' kiosk…), Hipercor's vaulted canopy and blue letters under a
+  brown-banded slab, the graffiti hoarding in front of it, home's corner block (Casa) and the L1
+  entrance; the city goes on past the far sides. Rain wets the street; at dusk the shops light it.
 - **`cardedeu`**: Nuria's street in Cardedeu (`docs/quests/nuria.md`), a real-data zone like
   Alegia: OpenStreetMap (`osm.json`) from Carrer del Doctor Daurella down to the railway, with the
   R4 station on Avinguda del Rei En Jaume, plus what the map lacks drawn in `sketch.json` from the
