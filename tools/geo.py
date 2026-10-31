@@ -630,8 +630,9 @@ def build(zone_id: str) -> None:
             if prop["kind"] in ("barrier", "bag") and any(
                     c in taken or any((c[0] + dx, c[1] + dz) in trees for dx in (-1, 0, 1) for dz in (-1, 0, 1)) for c in prop_cells(prop)):
                 continue
-            # A row of furniture (`to`, `every_m`) leaves out the spots something already stands on.
-            if "to" in p and any(c in taken for c in prop_cells(prop)): continue
+            # A row of furniture (`to`, `every_m`) leaves out the spots something already stands on, and
+            # those on a carriageway: a row along a sidewalk or a median breaks where a side street crosses it.
+            if "to" in p and (any(c in taken for c in prop_cells(prop)) or on_carriageway(x, z, roads)): continue
             if prop["kind"] == "car" and (zone.get("rotation_deg", 0) % 180 == 0 or frame.turned):
                 prop["along"] = "x"  # the zone's streets run along x, so cars park along x
             if prop["kind"] in FACING_PROPS and "yaw" not in prop:
@@ -687,6 +688,11 @@ def rows(p: dict, frame: Frame) -> list[tuple[float, float]]:
     end = frame.item(p["to"])
     count = max(1, round(math.hypot(end[0] - start[0], end[1] - start[1]) * frame.cell / p.get("every_m", 6)))
     return [(start[0] + (end[0] - start[0]) * i / count, start[1] + (end[1] - start[1]) * i / count) for i in range(count + 1)]
+
+
+def on_carriageway(x: float, z: float, roads: list) -> bool:
+    """Whether a point lies on a road's asphalt (paths and bike lanes do not count)."""
+    return any(r["kind"] == "road" and segment_distance(x, z, a, b) < r["width"] / 2 for r in roads for a, b in zip(r["line"], r["line"][1:]))
 
 
 def nearest_road(x: float, z: float, roads: list, kinds=("road",)) -> tuple[float, tuple, tuple] | None:
