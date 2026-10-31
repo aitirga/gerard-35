@@ -268,10 +268,13 @@
       "label": "Entrar en la basílica",
       "x_m": 0,
       "z_m": 44,
-      "lines": [
-        "La puerta del Nacimiento. En la barrera, un vigilante revisa las entradas: sin entrada no pasa nadie.",
-        "Las de hoy se agotaron hace semanas."
-      ]
+      "to": {
+        "environment": "sagrada-familia-interior",
+        "cell": {
+          "x": 36,
+          "z": 37
+        }
+      }
     },
     {
       "id": "sagrada-familia-estany",
