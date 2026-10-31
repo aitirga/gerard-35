@@ -1,0 +1,29 @@
+{
+  "id": "marbre",
+  "name": "Marbre clar",
+  "kind": "material",
+  "size_m": [
+    1.5,
+    1.5
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "marble_01",
+    "name": "Marble 01",
+    "url": "https://polyhaven.com/a/marble_01",
+    "author": "Rob Tuytel",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven marble_01 --id marbre",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#b19d7a",
+  "made": "2026-10-31"
+}
