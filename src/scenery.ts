@@ -141,16 +141,18 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const lamplit = environment.id === 'meridiana';
   // Outdoors by day: a near-white sun, and a blue sky that tints the shade and lights it from the other side.
   const outdoor = !night && !lamplit && !environment.plan && !environment.palace;
-  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
-  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
-  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : outdoor ? 1.8 : 1.65;
-  const skyIntensity = 0.42;
+  // The Búnkers del Carmel are drawn at sunset: a golden sun (from the same side as everywhere) and lilac shade.
+  const dusk = environment.id === 'bunkers-carmel';
+  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : dusk ? new pc.Color(0.36, 0.33, 0.4) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
+  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : dusk ? new pc.Color(1, 0.76, 0.5) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
+  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : dusk ? 1.7 : outdoor ? 1.8 : 1.65;
+  const skyIntensity = dusk ? 0.34 : 0.42;
   app.scene.ambientLight = ambient.clone();
   let tone = 0, dark = 0;
   app.scene.fog.type = pc.FOG_NONE;
   // Soft shadows fitted to the view, and the sky glossy things reflect (src/lighting.ts).
   const light = lighting(app);
-  light.setSky(night ? 'night' : environment.palace ? 'palace' : outdoor ? 'day' : 'indoor');
+  light.setSky(night ? 'night' : environment.palace ? 'palace' : dusk ? 'dusk' : outdoor ? 'day' : 'indoor');
   const sun = new pc.Entity('Sol de la tarde');
   sun.addComponent('light', { type: 'directional', color: sunColor.clone(), intensity: sunIntensity, castShadows: true, shadowDistance: 95 });
   light.shade(sun.light!);
@@ -158,16 +160,18 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   let sky: pc.Entity | undefined;
   if (outdoor) {
     sky = new pc.Entity('Luz del cielo');
-    sky.addComponent('light', { type: 'directional', color: new pc.Color(0.6, 0.72, 0.95), intensity: skyIntensity, castShadows: false });
+    sky.addComponent('light', { type: 'directional', color: dusk ? new pc.Color(0.62, 0.62, 0.92) : new pc.Color(0.6, 0.72, 0.95), intensity: skyIntensity, castShadows: false });
     sky.setEulerAngles(35, 150, 0); root.addChild(sky);
   }
   // Floor plans lay their own backdrop, open under a stairwell.
   const backdrop = mat('Fondo', night ? '#172a30' : '#67746b');
   const backdropColor = backdrop.diffuse.clone();
   // The backdrop only receives shadows: as a caster it would stretch the sun's shadow depth over 200 m.
-  if (!environment.plan) box('Fondo', backdrop, cx, -1.05, cz, 200, 0.2, 200).render!.castShadows = false;
+  // A hilltop (`drop`) stands on no plinth, and its backdrop lies under the city it looks down on.
+  const below = environment.geo?.drop?.depth ?? 0;
+  if (!environment.plan) box('Fondo', backdrop, cx, -1.05 - below, cz, 200, 0.2, 200).render!.castShadows = false;
   // Floor plans build their own plinth, with room for a stairwell going down.
-  if (!environment.plan && !environment.palace) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
+  if (!environment.plan && !environment.palace && !below) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
 
   function pointLight(px: number, y: number, pz: number) {
     const light = new pc.Entity('Luz cálida');

@@ -1,5 +1,5 @@
 import type * as pc from 'playcanvas';
-import type { GeoLandmark } from './geo';
+import type { GeoLandmark, GeoScene } from './geo';
 import type { MeshBuilder } from './geo-scenery';
 
 /**
@@ -14,6 +14,8 @@ export interface LandmarkKit {
   root: pc.Entity;
   /** Metres per cell, for builders that need the grid (the footprint `w`/`d` are in cells). */
   cell: number;
+  /** The whole place, for builders that read beyond their footprint (a hilltop's edge, its anchors). */
+  scene: GeoScene;
   /** A plain material, shared by name and colour within the scene. */
   mat(name: string, hex: string, gloss?: number, glow?: number): pc.StandardMaterial;
   /**

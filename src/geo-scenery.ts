@@ -299,7 +299,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }
   const groundMat = look.ground === 'panot' ? surface('Panot gris', 'ground', panot(), 0.25, 0.08)
     : surface('Suelo urbano', 'ground', speckles('#cbc2ab', ['#bfb59c', '#d6cdb8', '#b8ad94']), 0.25);
-  flat('Suelo', [[[-0.5, -0.5], [W - 0.5, -0.5], [W - 0.5, D - 0.5], [-0.5, D - 0.5]]], LAYER.ground, groundMat);
+  // On a hilltop (`drop`) the ground ends at the brow; elsewhere it fills the map.
+  flat('Suelo', [scene.drop?.edge ?? [[-0.5, -0.5], [W - 0.5, -0.5], [W - 0.5, D - 0.5], [-0.5, D - 0.5]]], LAYER.ground, groundMat);
   flat('Arena', scene.areas.sand ?? [], LAYER.sand, surface('Arena', 'sand', speckles('#e3cf9f', ['#d8c08a', '#efdfb8', '#cdb27a']), 0.25));
   if (look.grass === 'bed') {
     // Planted beds: dark soil with fallen leaves under clumps of low shrubs and grasses.
@@ -740,10 +741,42 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     return m;
   }
 
+  const walls = new Map<string, pc.StandardMaterial>();
+  /** A wall's real material at its real size (UVs in metres), plain `tint` until it loads; it opens the cut. */
+  function wallSurface(texture: string | undefined, tint: string) {
+    const key = `${texture}|${tint}`;
+    let m = walls.get(key);
+    if (m) return m;
+    const made = m = cutaway(mat(`Muro ${texture ?? 'pintado'}`, tint, 0.05));
+    if (texture) onLoad.push(() => dress(made, texture, tint));
+    walls.set(key, m);
+    return m;
+  }
+  /**
+   * `parapet`: a low wall in one real material at its real size, capped flat (the battery's
+   * board-marked concrete, the shacks' whitewashed brick, a water tank): no bays, no roof.
+   */
+  function lowWall(b: GeoBuilding, pivot: pc.Entity) {
+    const poly = b.poly, H = b.height, sign = signedArea(poly) > 0 ? 1 : -1;
+    const sides = new MeshBuilder(), cap = new MeshBuilder();
+    let along = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], c = poly[(i + 1) % poly.length], len = Math.hypot(c[0] - a[0], c[1] - a[1]);
+      if (len < 1e-3) continue;
+      const n: V3 = [(c[1] - a[1]) / len * sign, 0, -(c[0] - a[0]) / len * sign], u = len * cellM;
+      sides.quad(P(a, 0), P(c, 0), P(c, H), P(a, H), n, [along, 0], [along + u, 0], [along + u, H * cellM], [along, H * cellM]);
+      along += u;
+    }
+    for (const [i, j, k] of triangulate(poly)) cap.tri(P(poly[i], H), P(poly[j], H), P(poly[k], H), [0, 1, 0], metres(poly[i]), metres(poly[j]), metres(poly[k]));
+    add('Muro', sides, wallSurface(b.materials?.wall, b.walls), pivot, false);
+    add('Albardilla', cap, wallSurface(b.materials?.roof ?? b.materials?.wall, b.roofColor ?? b.walls), pivot, false);
+  }
+
   function building(b: GeoBuilding) {
     const pivot = new pc.Entity(`Edificio ${b.number ?? b.name ?? b.id}`);
     root.addChild(pivot); pivots.set(b.id, pivot);
     buildingCuts.set(pivot, { triangles: [], instances: [], radius: 0 });
+    if (b.facade === 'parapet') { lowWall(b, pivot); return; }
     const poly = b.poly, H = b.height, storey = scene.storey;
     const groundTop = Math.min(H, storey * 1.15);
     const ccw = signedArea(poly) > 0;
@@ -1014,7 +1047,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       return m;
     };
     return {
-      app, root: pivot, cell: cellM, mat: kitMat,
+      app, root: pivot, cell: cellM, scene, mat: kitMat,
       surface(texture, tint, gloss = 0.1) {
         const key = `surface|${texture}|${tint}|${gloss}`;
         let m = shared.get(key);
@@ -1063,17 +1096,79 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }
 
   // ------------------------------------------------------------ surroundings
-  // Wooded hills close every side but the camera's, as the valley does around the town.
-  const hill = [mat('Monte', '#4e6b45', 0.05), mat('Monte lejano', '#5f7c55', 0.05), mat('Monte sombra', '#41593b', 0.05)];
-  const hills: [number, number, number, number, number][] = [
-    [W * 0.15, -18, 70, 22, 40], [W * 0.5, -22, 90, 30, 46], [W * 0.88, -16, 70, 20, 38],
-    [-22, D * 0.3, 40, 18, 70], [-20, D * 0.85, 34, 14, 50],
-  ];
-  hills.forEach(([px, pz, w, h, d], i) => {
-    const e = new pc.Entity('Monte');
-    e.addComponent('render', { type: 'sphere', material: hill[i % 3], castShadows: false, receiveShadows: true, batchGroupId: kit.batch });
-    e.setPosition(x(px), -h * 0.15, z(pz)); e.setLocalScale(w, h, d); root.addChild(e);
-  });
+  // A hilltop falls away on every side to whatever its landmarks lay below (the Búnkers' city);
+  // elsewhere wooded hills close every side but the camera's, as the valley does around the town.
+  if (scene.drop) flank(scene.drop);
+  else {
+    const hill = [mat('Monte', '#4e6b45', 0.05), mat('Monte lejano', '#5f7c55', 0.05), mat('Monte sombra', '#41593b', 0.05)];
+    const hills: [number, number, number, number, number][] = [
+      [W * 0.15, -18, 70, 22, 40], [W * 0.5, -22, 90, 30, 46], [W * 0.88, -16, 70, 20, 38],
+      [-22, D * 0.3, 40, 18, 70], [-20, D * 0.85, 34, 14, 50],
+    ];
+    hills.forEach(([px, pz, w, h, d], i) => {
+      const e = new pc.Entity('Monte');
+      e.addComponent('render', { type: 'sphere', material: hill[i % 3], castShadows: false, receiveShadows: true, batchGroupId: kit.batch });
+      e.setPosition(x(px), -h * 0.15, z(pz)); e.setLocalScale(w, h, d); root.addChild(e);
+    });
+  }
+  /**
+   * The hill's flank: rings offset outwards from the brow (mitred at the corners), dropping `depth`
+   * cells over `run` with a smoothstep, so the top rounds over and the foot eases into the plain.
+   * Dressed in the zone's `flank` material, with low scrub scattered down it.
+   */
+  function flank(drop: NonNullable<GeoScene['drop']>) {
+    const edge = drop.edge, n = edge.length, RINGS = 8;
+    const normals = edge.map((a, i) => {
+      const b = edge[(i + 1) % n], len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return [(b[1] - a[1]) / len, -(b[0] - a[0]) / len];
+    });
+    // Mitred outward directions at each corner, capped where the corner is sharp.
+    const miters = edge.map((_, i) => {
+      const n1 = normals[(i + n - 1) % n], n2 = normals[i], k = 1 / Math.max(0.35, 1 + n1[0] * n2[0] + n1[1] * n2[1]);
+      return [(n1[0] + n2[0]) * k, (n1[1] + n2[1]) * k];
+    });
+    const along = [0];
+    for (let i = 1; i <= n; i++) along.push(along[i - 1] + Math.hypot(edge[i % n][0] - edge[i - 1][0], edge[i % n][1] - edge[i - 1][1]) * cellM);
+    const profile = (t: number) => -drop.depth * t * t * (3 - 2 * t);
+    const slope = [0];
+    for (let r = 1; r <= RINGS; r++) slope.push(slope[r - 1] + Math.hypot(drop.run / RINGS, profile(r / RINGS) - profile((r - 1) / RINGS)) * cellM);
+    const at = (i: number, r: number): V3 => {
+      const t = r / RINGS, k = i % n;
+      return [x(edge[k][0] + miters[k][0] * drop.run * t), profile(t), z(edge[k][1] + miters[k][1] * drop.run * t)];
+    };
+    const b = new MeshBuilder();
+    for (let i = 0; i < n; i++) for (let r = 0; r < RINGS; r++) {
+      const out: V3 = [normals[i][0], 0.6, normals[i][1]];
+      b.quad(at(i, r), at(i + 1, r), at(i + 1, r + 1), at(i, r + 1), out, [along[i], slope[r]], [along[i + 1], slope[r]], [along[i + 1], slope[r + 1]], [along[i], slope[r + 1]]);
+    }
+    add('Ladera', b, surface('Ladera', 'flank', speckles('#7a6648', ['#6b5a40', '#8a7656', '#5d5038']), 0.25), root, true, false);
+    // Low scrub: clumps along the flank, thicker near the top, a little apart from the brow.
+    const scrub = [mat('Matorral', '#59613a', 0.08), mat('Matorral seco', '#8a8052', 0.08), mat('Matorral oscuro', '#434b2c', 0.08)].map(m => ({ m, b: new MeshBuilder() }));
+    let k = 0;
+    for (let i = 0; i < n; i++) {
+      const len = Math.hypot(edge[(i + 1) % n][0] - edge[i][0], edge[(i + 1) % n][1] - edge[i][1]);
+      for (let s = 0.3; s < len; s += 1.1 + jitter(k) * 0.9) {
+        const t = 0.06 + jitter(k + 1) ** 1.6 * 0.8, f = s / len, r = (0.45 + jitter(k + 2) * 0.65) / cellM;
+        const ex = edge[i][0] + (edge[(i + 1) % n][0] - edge[i][0]) * f, ez = edge[i][1] + (edge[(i + 1) % n][1] - edge[i][1]) * f;
+        const mx = miters[i][0] + (miters[(i + 1) % n][0] - miters[i][0]) * f, mz = miters[i][1] + (miters[(i + 1) % n][1] - miters[i][1]) * f;
+        const c: V3 = [x(ex + mx * drop.run * t), profile(t), z(ez + mz * drop.run * t)];
+        blob(scrub[k % 3].b, c, r, r * (0.5 + jitter(k + 3) * 0.3));
+        k += 4;
+      }
+    }
+    for (const s of scrub) add('Matorral', s.b, s.m, root, true, false);
+  }
+  /** A low-poly clump (a squat double pyramid half sunk in the ground), cheap enough to scatter by the hundred. */
+  function blob(b: MeshBuilder, [cx, cy, cz]: V3, r: number, h: number) {
+    const ring = [0, 1, 2, 3, 4, 5].map(i => { const a = (i / 6 + jitter(cx + cz)) * Math.PI * 2; return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]; });
+    const top: V3 = [cx, cy + h, cz], bottom: V3 = [cx, cy - h * 0.4, cz];
+    for (let i = 0; i < 6; i++) {
+      const p: V3 = [ring[i][0], cy + h * 0.3, ring[i][1]], q: V3 = [ring[(i + 1) % 6][0], cy + h * 0.3, ring[(i + 1) % 6][1]];
+      const out = [(p[0] + q[0]) / 2 - cx, (p[2] + q[2]) / 2 - cz];
+      b.tri(p, q, top, [out[0], 0.8, out[1]]);
+      b.tri(p, q, bottom, [out[0], -0.3, out[1]]);
+    }
+  }
 
   // The real materials, once loaded, dress everything built above (a scene left meanwhile stays as it is).
   if (scene.textures && Object.keys(scene.textures).length) {

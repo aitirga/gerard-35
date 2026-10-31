@@ -105,4 +105,9 @@ export interface GeoScene {
   /** Every texture the scene names, by id, so the game needs no manifest. */
   textures?: Record<string, GeoTexture>;
   landmarks?: GeoLandmark[];
+  /**
+   * A hilltop (`drop` in zone.json): the ground ends at `edge` (cells) and the flank falls `depth`
+   * cells over `run` cells outwards, to what the zone's landmarks lay below.
+   */
+  drop?: { edge: GeoPoint[]; depth: number; run: number };
 }

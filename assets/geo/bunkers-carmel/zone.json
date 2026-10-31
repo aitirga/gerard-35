@@ -78,38 +78,39 @@
     },
     "tank": {
       "walls": [
-        "#a6a197"
+        "#a8a199"
       ],
-      "base": "#8f8a80",
-      "trim": "#7d786f",
-      "roof": "#9c978d",
-      "facade": "mall",
-      "ground": "mall-front"
+      "roof": "#b3ada3",
+      "facade": "parapet",
+      "materials": {
+        "wall": "formigo",
+        "roof": "formigo"
+      }
     },
     "parapet": {
       "walls": [
-        "#a39d90",
-        "#9c968a",
-        "#aaa395"
+        "#a8a194",
+        "#a39d91",
+        "#ada597"
       ],
-      "base": "#8c867b",
-      "trim": "#b5ae9f",
-      "roof": "#b8b1a2",
-      "roof_kind": "flat",
-      "facade": "mall",
-      "ground": "mall-front"
+      "roof": "#bab3a5",
+      "facade": "parapet",
+      "materials": {
+        "wall": "formigo-encofrat",
+        "roof": "formigo"
+      }
     },
     "shack": {
       "walls": [
         "#ece6da",
-        "#e3dccd"
+        "#e4ddcf"
       ],
-      "base": "#a4533a",
-      "trim": "#f1ece2",
-      "roof": "#c2b8a6",
-      "roof_kind": "flat",
-      "facade": "rendered",
-      "ground": "masonry"
+      "roof": "#a4533a",
+      "facade": "parapet",
+      "materials": {
+        "wall": "calc",
+        "roof": "mao"
+      }
     },
     "pavilion": {
       "walls": [
@@ -122,6 +123,17 @@
       "facade": "rendered",
       "ground": "masonry",
       "levels": 1
+    },
+    "floor": {
+      "walls": [
+        "#a4533a"
+      ],
+      "roof": "#b5664a",
+      "facade": "parapet",
+      "materials": {
+        "wall": "mao",
+        "roof": "rajola"
+      }
     }
   },
   "buildings": {
@@ -148,15 +160,15 @@
       "style": "shack"
     },
     "sketch/excavacio": {
-      "style": "shack"
+      "style": "floor"
     }
   },
   "trees": {
-    "forest_every_m": 6,
+    "forest_every_m": 7,
     "species": [
-      "olive",
-      "olive",
-      "cypress"
+      "pine",
+      "pine",
+      "olive"
     ]
   },
   "props": [
@@ -258,5 +270,167 @@
   ],
   "osm_props": {
     "bin": {}
-  }
+  },
+  "drop": {
+    "note": "The hilltop: the ground stays inside `keep` (east/south metres, the brow 1.5-2 m beyond the parapets and round the water tank) and the hill falls away beyond it, to the city below (the `vista` landmark).",
+    "keep": [
+      [
+        80,
+        -90
+      ],
+      [
+        80,
+        6
+      ],
+      [
+        44,
+        5.5
+      ],
+      [
+        37,
+        5.2
+      ],
+      [
+        34.5,
+        -1.5
+      ],
+      [
+        32.8,
+        -9.6
+      ],
+      [
+        28.4,
+        -4.8
+      ],
+      [
+        21.4,
+        5.6
+      ],
+      [
+        20.6,
+        9
+      ],
+      [
+        18.6,
+        13.4
+      ],
+      [
+        15,
+        15
+      ],
+      [
+        11.7,
+        13.8
+      ],
+      [
+        -3.8,
+        23
+      ],
+      [
+        -5,
+        26
+      ],
+      [
+        -8,
+        27.8
+      ],
+      [
+        -12,
+        27.8
+      ],
+      [
+        -26,
+        27.8
+      ],
+      [
+        -29,
+        29.4
+      ],
+      [
+        -33,
+        29.2
+      ],
+      [
+        -35,
+        31
+      ],
+      [
+        -37,
+        37.5
+      ],
+      [
+        -41.7,
+        39.3
+      ],
+      [
+        -46.5,
+        38
+      ],
+      [
+        -49.5,
+        33
+      ],
+      [
+        -60,
+        30
+      ],
+      [
+        -90,
+        28
+      ],
+      [
+        -90,
+        -90
+      ]
+    ],
+    "depth_m": 28,
+    "run_m": 12
+  },
+  "look": {
+    "materials": {
+      "ground": "herba-seca",
+      "grass": "herba-seca",
+      "forest": {
+        "texture": "roca",
+        "tint": "#6e6a4c"
+      },
+      "square": {
+        "texture": "grava",
+        "tint": "#b8b2a6"
+      },
+      "footway": {
+        "texture": "formigo",
+        "tint": "#c9c1b2"
+      },
+      "road": {
+        "texture": "asfalt",
+        "tint": "#56534f"
+      },
+      "flank": "roca"
+    }
+  },
+  "landmarks": [
+    {
+      "kind": "vista",
+      "id": "vista",
+      "east_m": 0,
+      "south_m": 0,
+      "rotation_deg": 180,
+      "solid": false,
+      "params": {
+        "below_m": 28,
+        "map": [
+          1240.9,
+          -1029.8
+        ],
+        "map_turn_deg": -60,
+        "scale_m": 8,
+        "near_m": 300,
+        "gap_m": 10,
+        "height": 0.6,
+        "min_m": 0.3,
+        "castle_m": 30
+      }
+    }
+  ]
 }

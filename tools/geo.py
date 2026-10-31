@@ -381,6 +381,85 @@ def area(poly: list) -> float:
     return sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(poly, poly[1:] + poly[:1])) / 2
 
 
+def side(a, b, p) -> float:
+    """Positive when p lies to the left of a→b (inside a polygon of positive `area`)."""
+    return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+
+
+def ears(poly: list) -> list[list]:
+    """Ear clipping of a simple polygon of positive `area`, as triangles (each convex, positive area)."""
+    idx, out = list(range(len(poly))), []
+    guard = len(poly) ** 2
+    while len(idx) > 3 and guard > 0:
+        guard -= 1
+        for k in range(len(idx)):
+            i0, i1, i2 = idx[k - 1], idx[k], idx[(k + 1) % len(idx)]
+            a, b, c = poly[i0], poly[i1], poly[i2]
+            if side(a, b, c) <= 1e-9: continue
+            if any(j not in (i0, i1, i2) and side(a, b, poly[j]) > 0 and side(b, c, poly[j]) > 0 and side(c, a, poly[j]) > 0 for j in idx): continue
+            out.append([a, b, c]); idx.pop(k); break
+        else:
+            break
+    if len(idx) == 3: out.append([poly[i] for i in idx])
+    return out
+
+
+def clip_convex(poly: list, window: list) -> list:
+    """Sutherland-Hodgman against a convex window of positive `area`."""
+    for a, b in zip(window, window[1:] + window[:1]):
+        if not poly: break
+        out = []
+        for p, q in zip(poly, poly[1:] + poly[:1]):
+            sp, sq = side(a, b, p), side(a, b, q)
+            if sq >= 0:
+                if sp < 0: out.append([p[0] + (q[0] - p[0]) * sp / (sp - sq), p[1] + (q[1] - p[1]) * sp / (sp - sq)])
+                out.append(q)
+            elif sp >= 0:
+                out.append([p[0] + (q[0] - p[0]) * sp / (sp - sq), p[1] + (q[1] - p[1]) * sp / (sp - sq)])
+        poly = out
+    return poly
+
+
+def lines_inside(line: list, poly: list) -> list[list]:
+    """The pieces of a line that lie inside a simple polygon: split where it crosses an edge."""
+    pieces, current = [], []
+    for a, b in zip(line, line[1:]):
+        ts = [0.0, 1.0]
+        for c, d in zip(poly, poly[1:] + poly[:1]):
+            sa, sb = side(c, d, a), side(c, d, b)
+            if (sa > 0) != (sb > 0) and sa != sb:
+                t = sa / (sa - sb)
+                q = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+                # Only where the segment meets the edge itself, not its extension.
+                if side(a, b, c) * side(a, b, d) <= 0: ts.append(t)
+        ts = sorted(set(ts))
+        for t0, t1 in zip(ts, ts[1:]):
+            p0 = [a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0]
+            p1 = [a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1]
+            if point_in_polygon((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, poly):
+                if not current: current = [p0]
+                current.append(p1)
+            elif current:
+                pieces.append(current); current = []
+    if current: pieces.append(current)
+    return [p for p in pieces if len(p) > 1]
+
+
+def drop_edge(zone: dict, frame: "Frame", lo: tuple, hi: tuple) -> list | None:
+    """`drop`: the ground that stays (`keep`, east/south metres) cut to the map, in cells, of positive area."""
+    if "drop" not in zone: return None
+    keep = [list(frame.from_metres(e, s)) for e, s in zone["drop"]["keep"]]
+    if area(keep) < 0: keep.reverse()
+    edge = clip(keep, *lo, *hi)
+    # Clipping leaves repeated and collinear corners along the map's edge; ear clipping wants neither.
+    clean = []
+    for p in edge:
+        if clean and math.dist(p, clean[-1]) < 1e-6: continue
+        clean.append(p)
+    while len(clean) > 2 and math.dist(clean[0], clean[-1]) < 1e-6: clean.pop()
+    return [p for i, p in enumerate(clean) if abs(side(clean[i - 1], p, clean[(i + 1) % len(clean)])) > 1e-6]
+
+
 def hull(points: list) -> list:
     pts = sorted(set(map(tuple, points)))
     if len(pts) < 3: return pts
@@ -551,6 +630,15 @@ def build(zone_id: str) -> None:
     # A river drawn only as a line becomes water where no water area covers it.
     if areas["water"]:
         roads = [r for r in roads if r["kind"] != "waterway"]
+    # `drop` (a hilltop): the ground stays inside `keep` and the hill falls away beyond it, so what the
+    # map has out there (slopes, paths, gardens) is left to the flank (docs/environment-styling.md § Hilltops).
+    edge = drop_edge(zone, frame, lo, hi)
+    if edge:
+        pieces = ears(edge)
+        for kind in areas:
+            areas[kind] = [{"id": a["id"], "poly": p} for a in areas[kind] for tri in pieces if len(p := clip_convex(a["poly"], tri)) > 2]
+        roads = [{**r, "line": piece} for r in roads for piece in lines_inside(r["line"], edge)]
+        buildings = [b for b in buildings if point_in_polygon(b["box"]["cx"], b["box"]["cz"], edge)]
 
     raster = [["." for _ in range(W)] for _ in range(D)]
     def paint(cls: str, test) -> None:
@@ -577,6 +665,7 @@ def build(zone_id: str) -> None:
     paint("M", near_lines({"motorway"}, 1))
     paint("b", near_lines({"bridge"}))
     paint("B", in_any([b["poly"] for b in buildings]))
+    if edge: paint("D", lambda x, z: not point_in_polygon(x, z, edge))
     # Landmarks stand on open ground; solid ones block their footprint like a building.
     found_landmarks = landmarks(zone, osm["elements"], frame, raster)
     for lm in found_landmarks:
@@ -655,6 +744,9 @@ def build(zone_id: str) -> None:
                     for name, a in zone.get("anchors", {}).items()},
         "landmarks": [{k: v for k, v in lm.items() if k != "textures"} for lm in found_landmarks],
     }
+    if edge:
+        # The flank: from the edge (cells), `depth` cells down over `run` cells outwards.
+        scene["drop"] = {"edge": rounded(edge), "depth": round(zone["drop"]["depth_m"] / cell, 2), "run": round(zone["drop"].get("run_m", 12) / cell, 2)}
     # Real materials last: what the look, the buildings and the landmarks name, with each texture's metadata.
     scene["materials"] = look_materials(zone)
     scene["textures"] = embed_textures(scene, [t for lm in found_landmarks for t in lm.get("textures", [])])
@@ -941,13 +1033,14 @@ def scatter_trees(zone: dict, raster: list, W: int, D: int, cell: float) -> list
 def preview(scene: dict, raster: list, out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
     colours = {"W": "#5aa6c8", "F": "#4f7a4a", "g": "#9cc07f", "s": "#d8c7a8", "r": "#8a8a8a", "p": "#c8b48a",
-               "b": "#b8a98e", "R": "#555", "M": "#333", "B": "#b4643f", ".": "#e6e2d4", "a": "#ecd9a8", "L": "#7a4fa0"}
+               "b": "#b8a98e", "R": "#555", "M": "#333", "B": "#b4643f", ".": "#e6e2d4", "a": "#ecd9a8", "L": "#7a4fa0",
+               "D": "#6f6a78"}
     s = 6
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {scene["width"] * s} {scene["depth"] * s}" '
              f'width="{scene["width"] * s}" height="{scene["depth"] * s}" font-family="sans-serif">']
     for z, row in enumerate(raster):
         for x, c in enumerate(row):
-            fill = colours[c] if scene["grid"][z][x] == "." or c in "WFBRML" else "#bdb6a3"
+            fill = colours[c] if scene["grid"][z][x] == "." or c in "WFBRMLD" else "#bdb6a3"
             parts.append(f'<rect x="{x * s}" y="{z * s}" width="{s}" height="{s}" fill="{fill}"/>')
     for b in scene["buildings"]:
         pts = " ".join(f"{(x + .5) * s:.1f},{(z + .5) * s:.1f}" for x, z in b["poly"])
