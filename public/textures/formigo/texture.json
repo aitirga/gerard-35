@@ -1,0 +1,29 @@
+{
+  "id": "formigo",
+  "name": "Formigó",
+  "kind": "material",
+  "size_m": [
+    2.4,
+    2.4
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "granular_concrete",
+    "name": "Granular Concrete",
+    "url": "https://polyhaven.com/a/granular_concrete",
+    "author": "Dario Barresi, Michael Jenkins",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven granular_concrete --id formigo",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#6d6659",
+  "made": "2026-10-30"
+}

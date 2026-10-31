@@ -55,8 +55,14 @@ src/transit.ts  lines, stations, which place each station opens, story rules for
   the bottom edge (Llobregat on the left, Besòs on the right) and Collserola rises along the top:
   the way people from Barcelona picture their city. The camera looks at it from the sea side,
   tilted; the player can turn it round.
-- **Few lines.** For now only the **L1 (red)** and the **L5 (blue)**, thick and outlined, with
-  chunky white stations. More lines (the R4 to Cardedeu) are added when a place on them exists.
+- **Few lines.** Only the lines that reach a place, thick and outlined, with chunky white
+  stations, in the colours of TMB's line signs: the **L1 (red)** from Santa Eulàlia to Fondo, the
+  **L3 (green)** from Sants Estació down the Paral·lel to Catalunya and Diagonal, the **L4
+  (yellow)** from Verdaguer down to the beaches at Llacuna, the **L5 (blue)** from Badal to Vall
+  d'Hebron, and the Rodalies **R4 (ochre)** from La Sagrera to Cardedeu. A line is cut where the
+  story stops needing it, but it always stops at its real stations in their real order; more lines
+  (the L2 through Sagrada Família, the L3 north to Vall d'Hebron) are added when a place on them
+  exists.
 - **Where Gerard is**: a small pin on the current station. Nothing marks a friend, a mission or a
   "go here".
 
@@ -68,7 +74,7 @@ a list of markers; the story decides which (`cityMarkers(state)`):
 
 | Marker | Icon | When |
 | --- | --- | --- |
-| Famous places (Sagrada Família, Torre Glòries, Park Güell, Tibidabo, Montjuïc, Camp Nou, Barceloneta, Fòrum, Arc de Triomf, Sant Pau) | `temple`, `tower`, `park`, `wheel`, `castle`, `stadium`, `beach`, `pergola`, `arch`, `dome` | Always |
+| Famous places (Sagrada Família, Torre Glòries, Park Güell, Tibidabo, Montjuïc, Camp Nou, Barceloneta, Fòrum, Arc de Triomf, Sant Pau, Plaça d'Espanya's Venetian towers, the Búnkers del Carmel) | `temple`, `tower`, `park`, `wheel`, `castle`, `stadium`, `beach`, `pergola`, `arch`, `dome`, `venetian`, `bunker` | Always |
 | Home | `home` | Always |
 | The Rec Comtal school | `school` | Until the TV news |
 | La Reina Bubbaloo's castle | `bubbaloo` | From the TV news; its size and towers follow the castle's threat (`level`); a pink halo round it widens as her power spreads (`reach`) |
@@ -108,7 +114,7 @@ what to do next (`AGENTS.md`).
 | `avenues` | Diagonal, Gran Via, Meridiana: named lines with a width class |
 | `landmarks` | `id`, `name`, `kind` (its icon), `at` |
 | `places` | Points the story puts its own markers on (`home`, `rec-comtal`) |
-| `stations`, `lines` | Stations (`id`, `name`, `at`) and lines (`id`, `name`, `kind`, `colour`, ordered `stations`) |
+| `stations`, `lines` | Stations (`id`, `name`, `at`: OpenStreetMap's station node, between the platforms when lines meet) and lines (`id`, `name`, `kind`, `colour`, ordered `stations`) |
 
 `just city` (`tools/city.py`) projects it to `src/geo/barcelona.json`, writes a rough preview
 in `output/city/`, and, when `streets.json` exists, draws the ground and renders it
@@ -119,6 +125,13 @@ stays in `output/city/`) and leaves the lifted blocks out of the ground. `just c
 by tile (5 × 5 and 6 × 6 tiles over the map's extent widened so wide screens show city too; each
 tile is kept in `output/city/`, so a run that fails halfway only asks again for what is missing).
 Data © OpenStreetMap contributors (ODbL).
+
+**Without `buildings.json`** (a fresh checkout: it is not committed), the build keeps the committed
+ground and buildings as they are and only redraws the hand-drawn layers, stations, lines and
+landmarks: drawing the ground again without the buildings would stand the blocks back up in it.
+It stops instead if the districts moved the map's extent, since the old ground would no longer fit.
+So a new station or line only needs `uv run --locked python tools/city.py build` (what `just city`
+runs before rendering the ground, which then has nothing to render).
 
 ## Places and stations
 
@@ -139,6 +152,16 @@ Data © OpenStreetMap contributors (ODbL).
 | Trinitat Vella | L1 | `rec-comtal` (the school under the palace) | Playable |
 | La Sagrera | L1, L5, R4 | Change for the R4 (the poster clue is on the Meridiana's bus shelter) | On the map |
 | Sant Andreu (Rodalies) | R4 | — | On the map |
+| Plaça de Sants | L1, L5 | El Nucli, the game store where Gerard meets Bernat | On the map |
+| Espanya | L1, L3 | Plaça d'Espanya | On the map |
+| Poble Sec | L3 | Poble Sec | On the map |
+| Barceloneta | L4 | The beach | On the map |
+| Sagrada Família | L5 | The temple's surroundings and its inside | On the map |
+| El Carmel | L5 | The Búnkers del Carmel | On the map |
+
+Other changes, where the real lines meet: Catalunya (L1, L3), Urquinaona (L1, L4), Passeig de
+Gràcia (L3, L4), Diagonal (L3, L5) and Verdaguer (L4, L5). From home the beach is a change at
+Urquinaona, Poble Sec one at Catalunya, Plaça d'Espanya the L1 all the way.
 | Cardedeu | R4 | Nuria and Uri (`docs/quests/nuria.md`) | At the map's edge (`edge` in `city.json`: a town beyond the map waits at its border, named with an arrow) |
 
 ### Making a new place reachable
