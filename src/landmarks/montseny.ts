@@ -55,6 +55,14 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   for (const [end, side] of [[ring[0], -1], [ring[ring.length - 1], 1]] as const) {
     bands[0].tri(end.foot, end.crest, end.back, [side, 0.3, 0]);
   }
+  // Distance flattens a range's relief: every facet's normal leans towards one (up and towards the
+  // camera) by `soft`, so the slopes shade gently instead of flashing like cut glass.
+  const soft = Number(landmark.params.soft ?? 0.7);
+  for (const b of bands) for (let i = 0; i < b.normals.length; i += 3) {
+    const n = [b.normals[i] * (1 - soft), b.normals[i + 1] * (1 - soft) + 0.8 * soft, b.normals[i + 2] * (1 - soft) + 0.6 * soft];
+    const len = Math.hypot(n[0], n[1], n[2]) || 1;
+    b.normals[i] = n[0] / len; b.normals[i + 1] = n[1] / len; b.normals[i + 2] = n[2] / len;
+  }
   const colours = [String(landmark.params.forest ?? '#6b7c8f'), String(landmark.params.colour ?? '#7d8ca3'), String(landmark.params.crest ?? '#a9b3c3')];
   const haze = Number(landmark.params.haze ?? 0.3);
   bands.forEach((b, i) => kit.add(['Montseny, falda', 'Montseny, laderas', 'Montseny, cresta'][i], b, kit.mat(`Montseny ${colours[i]}`, colours[i], 0.02, haze), { shadows: false }));
