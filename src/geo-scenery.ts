@@ -426,7 +426,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const key = `${kind}|${wall}|${trim}|${base}|${grain.wall}|${grain.base}`;
     let m = textures.get(key);
     if (m) return m;
-    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front'].includes(kind);
+    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front', 'bars'].includes(kind);
     const [atlasU, atlasV] = FACADE_ATLAS[kind] ?? [1, 1];
     const w = ground ? 256 : 128 * atlasU, h = 192 * atlasV;
     const glass = '#2c3a42', wood = '#5b3d2a';
@@ -616,6 +616,60 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
             for (let k = 0; k < 10; k++) { ctx.fillStyle = k % 2 ? '#f3eee2' : stripe; ctx.fillRect(x0 + k * 10, 30, 10, 20); }
           } else { ctx.fillStyle = trim; ctx.fillRect(x0, 34, 100, 16); ctx.fillStyle = '#2c3a42'; ctx.fillRect(x0 + 30, 70, 40, h - 70); }
         }
+      } else if (kind === 'bars') {
+        // A pintxos street's ground floors (Carrer de Blai): bar fronts open and lit from inside, the
+        // counter with its trays of pintxos and the bottles behind it, and beside it a window with
+        // stools, a roller shutter half up or the menu board of photos.
+        paint(base, 'base');
+        const frame = ['#6e2a24', '#2f4a35', '#262321', '#6b4528', '#7a5a2a'][seed % 5];
+        const inside = (x0: number, y0: number, ww: number, hh: number) => {
+          const light = ctx.createLinearGradient(0, y0, 0, y0 + hh);
+          light.addColorStop(0, '#f8d9a0'); light.addColorStop(1, '#b97a45');
+          ctx.fillStyle = light; ctx.fillRect(x0, y0, ww, hh);
+        };
+        ctx.fillStyle = frame; ctx.fillRect(4, 22, w - 8, 22);
+        // The bar: its front open, bottles on the back shelves, the counter and its pintxos.
+        ctx.fillStyle = frame; ctx.fillRect(8, 44, 112, h - 44);
+        inside(16, 50, 96, h - 50);
+        for (let r = 0; r < 2; r++) for (let k = 0; k < 13; k++) {
+          ctx.fillStyle = ['#3d5a2a', '#6b2a1f', '#d8c48a', '#2a3a44', '#8a5a2a'][(k + r * 3 + seed) % 5];
+          ctx.fillRect(20 + k * 7, 66 + r * 22, 4, 14);
+        }
+        ctx.fillStyle = 'rgba(70,40,20,.45)'; ctx.fillRect(16, 81, 96, 3); ctx.fillRect(16, 103, 96, 3);
+        ctx.fillStyle = '#4a2f1f'; ctx.fillRect(16, 124, 96, h - 124);
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(16, 114, 96, 10);
+        for (let k = 0; k < 12; k++) {
+          ctx.fillStyle = '#e2c38c'; ctx.fillRect(19 + k * 7.6, 117, 6, 6);
+          ctx.fillStyle = ['#b8402c', '#5d7a3a', '#6b3b22', '#f0eadb', '#d98a2c'][(k * 3 + seed) % 5]; ctx.fillRect(19 + k * 7.6, 115, 6, 3);
+        }
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(16, 124, 96, 3);
+        // The other bay, by bar: a window with stools at a ledge, a shutter half up, or the menu board.
+        const other = seed % 3;
+        ctx.fillStyle = frame; ctx.fillRect(136, 44, 112, h - 44);
+        if (other === 0) {
+          inside(144, 50, 96, h - 74);
+          ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(148, 54, 18, h - 82);
+          ctx.fillStyle = '#4a2f1f'; ctx.fillRect(144, 120, 96, 6);
+          for (let k = 0; k < 3; k++) { ctx.fillStyle = '#2b2422'; ctx.fillRect(156 + k * 30, 126, 12, 4); ctx.fillRect(160 + k * 30, 130, 4, h - 154); }
+          ctx.fillStyle = frame; ctx.fillRect(144, h - 24, 96, 24);
+        } else if (other === 1) {
+          inside(144, 50, 96, h - 50);
+          ctx.fillStyle = '#8f9396'; ctx.fillRect(144, 50, 96, 52);
+          ctx.fillStyle = 'rgba(0,0,0,.2)'; for (let y = 53; y < 102; y += 5) ctx.fillRect(144, y, 96, 1.5);
+          ctx.strokeStyle = ['#d23a5a', '#2f7fc4', '#f0c234', '#ffffff'][seed % 4]; ctx.lineWidth = 4; ctx.beginPath();
+          ctx.moveTo(156, 86); ctx.bezierCurveTo(170, 62, 186, 98, 206, 72); ctx.stroke();
+          ctx.fillStyle = '#4a2f1f'; ctx.fillRect(144, 140, 96, h - 140);
+        } else {
+          inside(144, 50, 42, h - 50);
+          ctx.fillStyle = '#f2efe6'; ctx.fillRect(194, 58, 46, 82);
+          for (let r = 0; r < 5; r++) for (let k = 0; k < 3; k++) {
+            ctx.fillStyle = ['#c98a3a', '#b8402c', '#e8d29a', '#6b8a3a', '#a85a2a'][(r * 3 + k + seed) % 5];
+            ctx.fillRect(198 + k * 14, 62 + r * 15, 11, 11);
+          }
+          ctx.fillStyle = frame; ctx.fillRect(194, 140, 46, h - 140);
+        }
+        // A lamp on a bracket over each bay.
+        for (const x0 of [64, 192]) { ctx.fillStyle = '#26292b'; ctx.fillRect(x0 - 2, 44, 4, 8); ctx.fillStyle = '#ffe2a8'; ctx.fillRect(x0 - 6, 50, 12, 6); }
       } else if (kind === 'ashlar' || kind === 'ashlar-windows') {
         stones(wall, 8, 'wall');
         if (kind === 'ashlar-windows') {
@@ -1035,6 +1089,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         const e = new pc.Entity(name), instance = new pc.MeshInstance(mesh, cut ? cutaway(material) : material);
         e.addComponent('render', { meshInstances: [instance], castShadows: shadows, receiveShadows: true, ...(cut ? {} : { batchGroupId: kit.batch }) });
         parent.addChild(e);
+        // Pieces scattered over many buildings (roof huts) stay cut wherever they come between Gerard and the camera.
+        if (cut === 'always') { instance.setParameter('geoCutRadius', CUT_RADIUS); return e; }
         if (cut) {
           // Tall pieces open the same cut as the buildings: their triangles in world space.
           let group = buildingCuts.get(pivot);
