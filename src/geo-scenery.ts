@@ -139,6 +139,16 @@ export class MeshBuilder {
   quad(a: V3, b: V3, c: V3, d: V3, facing: V3, ua: number[], ub: number[], uc: number[], ud: number[]) {
     this.tri(a, b, c, facing, ua, ub, uc); this.tri(a, c, d, facing, ua, uc, ud);
   }
+  /** An upright box round its centre, UVs in metres on every face (landmarks that must join a cut mesh). */
+  box([cx, cy, cz]: V3, [w, h, d]: V3) {
+    const x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - h / 2, y1 = cy + h / 2, z0 = cz - d / 2, z1 = cz + d / 2;
+    this.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], [x0, y0], [x1, y0], [x1, y1], [x0, y1]);
+    this.quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [0, 0, -1], [x1, y0], [x0, y0], [x0, y1], [x1, y1]);
+    this.quad([x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [1, 0, 0], [z1, y0], [z0, y0], [z0, y1], [z1, y1]);
+    this.quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], [-1, 0, 0], [z0, y0], [z1, y0], [z1, y1], [z0, y1]);
+    this.quad([x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0], [0, 1, 0], [x0, z1], [x1, z1], [x1, z0], [x0, z0]);
+    this.quad([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], [0, -1, 0], [x0, z0], [x1, z0], [x1, z1], [x0, z1]);
+  }
   mesh(device: pc.GraphicsDevice) {
     const m = new pc.Mesh(device);
     m.setPositions(this.positions); m.setNormals(this.normals); m.setUvs(0, this.uvs); m.setIndices(this.indices); m.update();
@@ -382,9 +392,20 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     }
   }), 0.5, 0.1);
   flat('Plazas', dry(scene.areas.square), LAYER.square, plaza);
-  // Rivers reuse the pool's caustics, tinted deep green (or the place's `water`) and drifting downstream.
+  // Rivers reuse the pool's caustics, tinted deep green and drifting downstream. A place's own `water`
+  // colour gets the same ripples on grey instead, so the pool's blue does not turn it teal.
+  const ripples = look.water ? kit.texture(canvas(128, 128, ctx => {
+    ctx.fillStyle = '#a0a0a0'; ctx.fillRect(0, 0, 128, 128);
+    ctx.strokeStyle = '#e2e2e240'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+    for (let i = 0; i < 12; i++) {
+      const y = jitter(i) * 128, a = jitter(i + 40) * 8 + 3;
+      ctx.beginPath();
+      for (let px = -8; px <= 136; px += 8) ctx.lineTo(px, y + Math.sin(px / 128 * Math.PI * 4 + i) * a);
+      ctx.stroke();
+    }
+  })) : kit.water.diffuseMap;
   const river = mat('Río', look.water ?? '#7f9f8c', 0.85);
-  river.diffuseMap = kit.water.diffuseMap; river.emissive.fromString(look.water ?? '#6f9a86'); river.emissiveMap = kit.water.diffuseMap; river.emissiveIntensity = 0.08;
+  river.diffuseMap = ripples; river.emissive.fromString(look.water ?? '#6f9a86'); river.emissiveMap = ripples; river.emissiveIntensity = 0.08;
   river.diffuseMapTiling.set(0.08 / cellM, 0.08 / cellM); river.emissiveMapTiling.set(0.08 / cellM, 0.08 / cellM);
   shine(river, 'water');
   flat('Río', scene.areas.water, LAYER.water - sunk, river);
@@ -1156,7 +1177,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   // Each kind is drawn by its own module in src/landmarks/ (docs/environment-styling.md § Landmarks),
   // under a pivot at its centre, turned by its angle and scaled so builders work in metres.
   const shared = new Map<string, pc.StandardMaterial>();
-  function landmarkKit(pivot: pc.Entity): LandmarkKit {
+  /** `owner`: the building a landmark dresses (`params.building`), whose cut its tall pieces then share. */
+  function landmarkKit(pivot: pc.Entity, owner?: pc.Entity): LandmarkKit {
     const kitMat = (name: string, hex: string, gloss = 0.2, glow = 0) => {
       const key = `${name}|${hex}|${gloss}|${glow}`;
       let m = shared.get(key);
@@ -1186,9 +1208,9 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         e.addComponent('render', { meshInstances: [instance], castShadows: shadows, receiveShadows: true, ...(cut ? {} : { batchGroupId: kit.batch }) });
         parent.addChild(e);
         if (cut) {
-          // Tall pieces open the same cut as the buildings: their triangles in world space.
-          let group = buildingCuts.get(pivot);
-          if (!group) { group = { triangles: [], instances: [], radius: 0 }; buildingCuts.set(pivot, group); }
+          // Tall pieces open the same cut as the buildings (the very one of the building they dress): their triangles in world space.
+          let group = buildingCuts.get(owner ?? pivot);
+          if (!group) { group = { triangles: [], instances: [], radius: 0 }; buildingCuts.set(owner ?? pivot, group); }
           const world = e.getWorldTransform(), v = new pc.Vec3();
           for (const index of builder.indices) {
             world.transformPoint(v.set(builder.positions[index * 3], builder.positions[index * 3 + 1], builder.positions[index * 3 + 2]), v);
@@ -1206,7 +1228,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     pivot.setLocalPosition(x(lm.x), 0, z(lm.z)); pivot.setLocalEulerAngles(0, lm.angle, 0); pivot.setLocalScale(1 / cellM, 1 / cellM, 1 / cellM);
     root.addChild(pivot);
     const builder = LANDMARKS.get(lm.kind);
-    if (builder) { builder.build(landmarkKit(pivot), lm); continue; }
+    if (builder) { builder.build(landmarkKit(pivot, pivots.get(String(lm.params.building))), lm); continue; }
     // A kind without its module yet (data merged before code): a plain block on its footprint.
     console.warn(`Monumento sin constructor: ${lm.kind} (src/landmarks/${lm.kind}.ts)`);
     if (lm.solid) landmarkKit(pivot).part('Monumento pendiente', 'box', mat('Monumento pendiente', '#9a948a'), [0, 0.5, 0], [lm.w * cellM, 1, lm.d * cellM]);
