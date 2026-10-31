@@ -156,7 +156,7 @@ runs before rendering the ground, which then has nothing to render).
 | Espanya | L1, L3 | Plaça d'Espanya | On the map |
 | Poble Sec | L3 | Poble Sec | On the map |
 | Barceloneta | L4 | The beach | On the map |
-| Sagrada Família | L5 | The temple's surroundings (`sagrada-familia`) and its inside | Playable outside |
+| Sagrada Família | L5 | The temple's surroundings (`sagrada-familia`) and its inside (`sagrada-familia-interior`, through the Nativity portal) | Playable |
 | El Carmel | L5 | The Búnkers del Carmel | On the map |
 
 Other changes, where the real lines meet: Catalunya (L1, L3), Urquinaona (L1, L4), Passeig de
@@ -211,6 +211,11 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   against the pale new stone, the Glory's cranes), the pond's reflection, the queue at entrance A,
   tour groups and visitors taking the picture, Gaudí's Escoles, the Falqués lamps on Avinguda de
   Gaudí and the L5 entrance on the Provença corner.
+- **`sagrada-familia-interior`** (not a geo zone: a hand-built scene, `src/basilica-scenery.ts`):
+  the basilica's inside through the Nativity portal, in the outside's frame and scale: the forest of
+  columns in four stones branching into the vault, the warm glass on the Passion side and the cool on
+  the Nativity side with their light pooled on the floor, the altar under its canopy, the crypt's
+  grilles and the Glory's rose and bronze doors (`docs/places/sagrada.md` § Inside).
 
 ## The TV news set
 

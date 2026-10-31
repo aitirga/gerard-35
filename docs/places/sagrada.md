@@ -1,17 +1,17 @@
 # Sagrada Família · the surroundings and the inside
 
-Status (2026-10-31): **the outside is built** (`sagrada-familia`, part 1): reachable from the
+Status (2026-10-31): **both are built.** The outside (`sagrada-familia`) is reachable from the
 development picker and from the L5, with the basilica as a landmark module, the pond and its
-reflection, the crowds, the Escoles' roof and the Falqués lamps. **The inside is planned** below and
-waits for part 2 (`sagrada-familia-interior`); the Nativity portal is a diegetic gate until then
-(see [Doors](#doors-between-the-two)).
+reflection, the crowds, the Escoles' roof and the Falqués lamps. The inside
+(`sagrada-familia-interior`) is a hand-built scene (`src/basilica-scenery.ts`) reached through the
+Nativity portal and left the same way (see [Doors](#doors-between-the-two)).
 
 Two places for a later mission (the story does not use them yet):
 
 | Id | What | How it is reached |
 | --- | --- | --- |
 | `sagrada-familia` | The basilica's block and its two squares: the Nativity facade over the pond of Plaça de Gaudí, the Passion side on Plaça de la Sagrada Família, the start of Avinguda de Gaudí, the queues, the visitors and the cranes | Metro: the station `sagrada-familia` (L5 on the network map; the real station is also L2, which the map adds when it has the line, `docs/barcelona.md`) |
-| `sagrada-familia-interior` | The inside: the forest of columns, the stained glass, the coloured light on the floor, the altar under its canopy | The Nativity portal, in and back out (part 2) |
+| `sagrada-familia-interior` | The inside: the forest of columns, the stained glass, the coloured light on the floor, the altar under its canopy | The Nativity portal, in and back out |
 
 ## The real place in 2026
 
@@ -107,8 +107,8 @@ has the four viewpoints); nothing from them is saved or shipped.
 | Props kit | Grey crowd barriers and the queue, tour groups behind a raised umbrella, the entrance signs, souvenir kiosks and terraces, stone pines and palms, reeds in the pond, tower cranes, scaffolding and hoarding on the Glory, Falqués lamps, the L2/L5 entrance | Rows of wooden chairs, the canopy, the organ, *silencio* signs, rope barriers, the Evangelists' medallions, visitors looking up |
 | Ambient sound | Crowd murmur in many languages, a guide's voice, pigeons, a crane's beep and a distant drill | A long reverberant hush, footsteps, a whispered *silencio*, an organ note now and then |
 | Only here | The pond reflects the Nativity and its spires, upside down and trembling | The floor is painted by moving pools of coloured light |
-| Look (`LOOKS`) | `sagrada-familia`: a warm Barcelona afternoon (temperature .03), warm highlights and cool blue shade, a breath of haze for the height | Part 2 (the glass brings the colour) |
-| Air | Pollen (the default outside) | Motes in the light, taking its colour |
+| Look (`LOOKS`) | `sagrada-familia`: a warm Barcelona afternoon (temperature .03), warm highlights and cool blue shade, a breath of haze for the height | `sagrada-familia-interior`: neutral white balance (the glass brings the colour), cool blue-green shade, warm highlights, colours a little richer; its own sky kind `nave` (white vault, warm horizon, blue-green ground) |
+| Air | Pollen (the default outside) | Motes hanging high in the light (`AIR` in `src/effects.ts`) |
 | World text | Street names in Catalan on the ground (PLAÇA DE GAUDÍ, CARRER DE LA MARINA, CARRER DE SARDENYA, AVINGUDA DE GAUDÍ), the visitors' entrance letter A, the kiosk's RECORDS | Few quiet signs, Catalan first |
 
 How it stands apart from the other places: the Meridiana is an avenue of beige flats, plane trees
@@ -156,7 +156,7 @@ lamps, benches and shops (`osm.json`, 3202 features, fetched from Overpass on 20
 | Id | Label | Cell | What Gerard says (short) |
 | --- | --- | --- | --- |
 | `station-sagrada-familia` | Bajar al metro | (125, 129) | The story answers it: the L5 |
-| `sagrada-familia-portal` | Entrar en la basílica | (73, 119) | The gate: a guard checks tickets at the barrier, today's sold out weeks ago |
+| `sagrada-familia-portal` | Entrar en la basílica | (73, 119) | The door into the inside ([Doors](#doors-between-the-two)) |
 | `sagrada-familia-estany` | Mirar el estanque | (73, 150) | The facade upside down in the water; everyone takes the same picture |
 | `sagrada-familia-naixement` | Mirar la fachada | (58, 119) | Dark stone that seems to melt, the green cypress full of white doves |
 | `sagrada-familia-torre` | Mirar arriba | (93, 121) | The Tower of Jesus with its white cross since February, 172.5 m, half a metre under Montjuïc |
@@ -253,104 +253,151 @@ is the crossing under the Tower of Jesus; +z the Nativity, +x the apse, −x the
 
 ## Doors between the two
 
-The interior does not exist yet, so `sagrada-familia-portal` is a place with lines: the guard at
-the barrier checks tickets and today's sold out weeks ago (a gate in the world's own words). Part 2
-turns it into the door, or lets the story redirect it (`story.gate` / `story.redirect`) while the
-mission is closed:
+`sagrada-familia-portal` is the door: the Nativity's Portal of Charity, on its steps. Nothing gates
+it yet (the place is for a later mission); when the mission is written, the story can hold it shut
+with the guard's lines (`story.gate`) or send it elsewhere (`story.redirect`).
 
 | From | Place / door | To |
 | --- | --- | --- |
-| Outside | `sagrada-familia-portal`, cell **(73, 119)** (x 0 m, z 44 m, on the steps of the Portal of Charity) | `{ environment: 'sagrada-familia-interior', cell: [36, 40] }`: just inside the Nativity door `N` of the plan below (row 41, columns 35–37) |
-| Inside | The Nativity door `N` | `{ environment: 'sagrada-familia', cell: [73, 119] }`: back on the portal's steps, facing the queue |
+| Outside | `sagrada-familia-portal`, cell **(73, 119)** (x 0 m, z 44 m, on the steps of the Portal of Charity) | `{ environment: 'sagrada-familia-interior', cell: { x: 36, z: 37 } }`: just inside the Nativity door, by the sign asking for silence |
+| Inside | `sagrada-interior-salida` at **(36, 39)**, before the Nativity door `N` | `{ environment: 'sagrada-familia', cell: { x: 73, z: 121 } }`: back at the foot of the portal's steps, facing the queue |
 
-Both places share the frame (the Nativity towards the camera), so Gerard keeps his bearings.
+Both places share the frame (the Nativity towards the camera), so Gerard keeps his bearings: he
+walks in "up" the screen and comes out "down" it. The Passion door (`S`) and the Glory's bronze doors
+(`G`) are shut behind a red rope and say why when looked at.
 
-## Inside: the plan (`sagrada-familia-interior`, hand-authored)
+## Inside: the scene (`sagrada-familia-interior`)
 
-A plan of glyphs like the palace's (`src/environments.ts`), at the same 1.5 m cells and in the same
-frame as outside (the Nativity towards the camera), so walking in through the Nativity keeps
-Gerard's bearings: the cool glass is on the near side, the warm glass on the tall far wall.
+A plan of glyphs in `src/environments.ts` (`BASILICA_PLAN`, glyphs in `BASILICA_GLYPHS`) built by
+its own scenery module, `src/basilica-scenery.ts`, like the palace's: a geo zone would bring a sun,
+a sky and hills that an inside has no use for. The plan has the outside's scale (1.5 m a cell) and
+frame, and the module builds in metres round the crossing at cell (36, 20), as the landmark does
+outside (it reuses the landmark's mesh helpers).
 
-- **Size**: 62 × 42 cells (93 × 63 m with the walls): nave x −52.5…−15 m, five aisles over 45 m;
-  transept x −15…15, z −30…30, three aisles; crossing 15 × 15 m; apse a half circle of 22.5 m
-  round (15, 0). About 90 m long, 60 m across the transept, as the real one.
-- **Columns** (one solid cell each), on the 7.5 m grid, by stone: `P` porphyry at the crossing's
-  four corners, `B` basalt round it, `g` granite in the nave's central rows, `s` sandstone in the
-  aisles and the apse's horseshoe.
-- **Walls**: `b` cool glass on the Nativity side, `r` warm glass on the Passion side, `#` the
-  Glory's inner wall with its rose. North and west walls (Passion, Glory) stand tall, south and east
-  ones (Nativity, apse) are cut low, as in the palace.
-- **Doors**: `N` the Nativity door, in and out (to `sagrada-familia-portal`'s cell outside);
-  `S` the Passion door and `G` the Glory doors are shut and say why (*Las puertas de la Gloria, de
-  bronce, con el padrenuestro en catalán. No se abren.*).
-- **Presbytery** `^` two steps up, the altar `A` under the canopy; `O` the organ; `c` crypt grilles.
+- **Size**: 62 × 41 cells. Nave x −52.5…−15 m, five aisles over 45 m (walls at z ±22.5); transept
+  x −15…15, z −30…30, three aisles; crossing 15 × 15 m under the Tower of Jesus; apse a half circle
+  of 22.5 m round (15, 0). About 90 m long and 60 m across, as the real one.
+- **Columns** on the 7.5 m grid, one solid cell each, by the load they carry: `P` porphyry at the
+  crossing's corners, `B` basalt round it, `g` granite in the nave's central rows, `s` sandstone in
+  the aisles, the transept's arms and the apse's horseshoe.
+- **Walls**: the far ones stand tall with their glass, the near ones are cut low with a band of it,
+  as in every interior: the Passion side (north here) and the Glory (west) tall; the Nativity side,
+  the Passion arm's east wall and the apse low.
+- **Doors**: `N` the Nativity (in and out), `S` the Passion and `G` the Glory, shut.
+- **Inside**: `^` the presbytery two steps up with the altar `A`, the organ `O`; `c` the crypt's
+  grilles; `h` chairs; `v` visitors and `w` the guard; `i` the sign asking for silence.
 
 ```
-                         rrrrrrrrrrSSSrrrrrrrrr                 0
-                         r....................r                 1
-                         r....................r                 2
-                         r....................r                 3
-                         r....................r                 4
-#rrrrrrrrrrrrrrrrrrrrrrrrr....................rrrrr             5
-#.........................s....s.........s........rrrr          6
-#....................................................rr         7
-#.....................................................rrr       8
-#.......................................................rr      9
-#....................................................c...rr     10
-#.....s....s....s....s....s....B.........B....B...........r     11
-#...............................................s.........rr    12
-#..........................................................rr   13
-#..................................................s........r   14
-#...........................................................r   15
-#.....g....g....g....g....g....P.........P....B.............rr  16
-#....................................................s.......r  17
-#...................................................O........r  18
-#.........................................^^^^...............r  19
-G.........................................^^^^...............r  20
-G.........................................^^A^........s......b  21
-G.........................................^^^^...............b  22
-#............................................................b  23
-#...................................................Os.......b  24
-#...........................................................bb  25
-#.....g....g....g....g....g....P.........P....B.............b   26
-#..................................................s........b   27
-#..........................................................bb   28
-#...............................................s.........bb    29
-#.........................................................b     30
-#.....s....s....s....s....s....B.........B....B..........bb     31
-#....................................................c..bb      32
-#.....................................................bbb       33
-#....................................................bb         34
-#.................................................bbbb          35
-#bbbbbbbbbbbbbbbbbbbbbbbbbs....s.........s....bbbbb             36
-                         b....................b                 37
-                         b....................b                 38
-                         b....................b                 39
-                         b....................b                 40
-                         bbbbbbbbbbNNNbbbbbbbbb                 41
+                          rrrrrrrrrSSSrrrrrrrrr                 0
+                          r...................r                 1
+                          r...................r                 2
+                          r...........vv......r                 3
+                          r...................r                 4
+#rrrrrrrrrrrrrrrrrrrrrrrrrr....s.........s....ryyyy             5
+#.................................................yyyy          6
+#....................................................yyy        7
+#......................................................yy       8
+#.......................................................yy      9
+#.....s....s....s....s....B....B.........B....B..........yy     10
+#.........................................................yy    11
+#..vv......................................................y    12
+#....................................................c.....yy   13
+#...........................................................y   14
+#.....g....g....g....g....B....P.........P....B...s.........y   15
+#..hhhhh.hhhhh.hhhhh........................................yy  16
+#..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y  17
+#..hhhhh.hhhhh.hhhhh......................^^^^^^^O..s........y  18
+G..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y  19
+G........................................w^^^^A^^^...........y  20
+G..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y  21
+#..hhhhh.hhhhh.hhhhh.............vv.......^^^^^^^O..s........y  22
+#..hhhhh.hhhhh.hhhhh..............v.......^^^^^^^^...........y  23
+#..hhhhh.hhhhh.hhhhh........................................yy  24
+#.....g....g....g....g....B....P.........P....B...s.........y   25
+#...........................................................y   26
+#....................................................c.....yy   27
+#........vv................................................y    28
+#.........................................................yy    29
+#.....s....s....s....s....B....B.........B....B..........yy     30
+#.......................................................yy      31
+#......................................................yy       32
+#....................................................yyy        33
+#.................................................yyyy          34
+#bbbbbbbbbbbbbbbbbbbbbbbbbb....s.........s....byyyy             35
+                          b...................b                 36
+                          b..vv...............b                 37
+                          b.....i.............b                 38
+                          b...................b                 39
+                          bbbbbbbbbNNNbbbbbbbbb                 40
 ```
 
-- **The forest, readable from above**: each column is a trunk whose section turns from a star to a
-  circle as it rises, a knot (an ellipsoid; the porphyry ones carry an Evangelist's lit oval), then
-  four branches up to a hexagonal "umbrella" of vault with a lit oculus. Heights are compressed
-  (knots about 12 m, umbrellas about 18 m) so the canopy sits in the frame; the umbrellas between
-  Gerard and the camera fade like tree crowns (`src/props.ts`). No ceiling is drawn above the
-  umbrellas; the tall far walls carry the glass and the Glory's rose.
-- **Light**: soft additive pools on the floor, blue-green on the near half and orange-red on the far
-  half, drifting slowly (a sun that moves); faint coloured shafts from the windows with dust motes
-  (`src/particles.ts`); the white stone tinted by whichever pool is closest. The canopy's lamps are
-  warm points.
-- **Things to look at** (draft lines): the columns (*Las columnas se abren en ramas, como árboles de
-  piedra.*), the cool glass (*Luz azul y verde en el suelo. El lado del Nacimiento, la mañana.*),
-  the warm glass (*Rojo y naranja. El lado de la Pasión, la tarde.*), a porphyry medallion (*Un
-  toro con alas en un óvalo de luz: Lucas.*), the canopy (*Siete lados, lámparas, uvas y espigas.
-  Debajo, Cristo.*), the crypt grille (*Por la rendija se ve la cripta. Ahí abajo está Gaudí.*).
-- **Gates**: the door is the only way in or out; the presbytery's rope and a guard keep the altar
-  apart until the mission says otherwise.
+### How it is built (`src/basilica-scenery.ts`)
+
+- **Floor and plinth**: pale marble slabs (`marbre`, tinted `#ddd7cb`, a little gloss) over every
+  cell inside the walls, on a dark plinth shaped like the plan, so the model floats over the dark
+  backdrop like the palace.
+- **The forest**: each column a trunk whose section is a star of twelve, ten, eight or six points
+  (porphyry, basalt, granite, sandstone, after the basilica's own account), turning as it rises with
+  its flutes fading towards the knot; the knot; the trunk going on up to the vault; three or four
+  branches leaving the knot, each forking once. Polished stone with painted grain, branches in bone
+  white. The four porphyry knots carry the Evangelists' lit ovals facing the camera (Mark and Luke
+  towards the apse, as in the 2026 photos; John and Matthew towards the nave).
+- **The vault**: over each column a cell, a shallow eight-sided funnel opening upwards, painted as
+  the vault looks from below (white stone, gold-peach rays round the oculus, small lit openings),
+  tinted warm on the Passion half and cool on the Nativity half. They overlap, and step up from the
+  aisles (10.5 m) to the nave and transept (13.5 m), the apse (15.5 m) and the crossing (17 m),
+  the real 30, 45, 75 and 60 m pressed so the canopy sits in the frame. The crossing has none: the
+  lantern's gold light lies on the floor there.
+- **The clearing**: the vault's material has its own shader chunk (GLSL and WGSL) that opens a
+  round clearing along the line from Gerard to the camera (8 world units, a warm glowing edge), like
+  the buildings' cut outside; and as the camera pulls back to the overview, a plane sweeps in to the
+  crossing and opens the vault's near half, so the overview reads as a model cut in two: the vault
+  over the far half, the forest of trunks and branches and the coloured floor in the near one.
+- **Glass**: Vila-Grau's two palettes painted as leaded panes (own procedural painting), glowing:
+  warm (reds, oranges, yellows) on the Passion side's tall walls (a pair of lancets and a rose in each
+  nave bay, three tall windows and a rose over the Passion's bronze door at the arm's end), cool
+  (blues, greens) on the Nativity side's low walls, gold round the apse. The Glory's wall carries the
+  multicoloured great rose, two smaller roses, four lancets over the choir's gallery, a blue window
+  over each side door and the bronze doors with the Lord's Prayer in Catalan (*Doneu-nos avui el pa
+  de cada dia* in gold).
+- **The light**: pools of light on the floor, each the glass's own painting blurred and faded at its
+  edges, cool on the Nativity half and warm on the Passion half, stretched along the sun's path; they
+  slide slowly together and breathe (the sun walking). Coloured lamps by each side tint the stone,
+  the canopy's lamps and a gold one in the apse warm the presbytery, a low sun throws the trunks'
+  shadows across the floor, and motes hang in the air.
+- **The presbytery**: two steps of white stone behind a red rope on brass posts, the guard at its
+  head; the porphyry altar with its cloth; the seven-sided canopy (cream parasol, gilt rim, fifty
+  lamps, vine leaves, grapes and ears of wheat) with Christ on the cross under it, hung by four cords;
+  two banks of organ pipes behind.
+- **Also**: the crypt's two grilles in the ambulatory (a dark opening with warm light below and a
+  brass rail), rows of wooden chairs in the nave, visitors from the outside's crowd module (looking
+  at the glass of their side, the altar from the crossing, some holding a phone up), the sign by the
+  door (*SILENCI · SILENCIO · SILENCE*), red ropes across the shut doors.
+- **Cost**: about 410–460 draw calls in the debug build (1440 × 900), 16.7 ms a frame at the 60 fps
+  cap, on WebGPU and WebGL2.
+
+### Things to look at (Spanish, Gerard's voice)
+
+| Id | Cell | Label | Lines |
+| --- | --- | --- | --- |
+| `sagrada-interior-salida` | (36, 39) | Salir por el Nacimiento | The door back out |
+| `sagrada-interior-columnas` | (11, 12) | Mirar las columnas | *Las columnas se abren en ramas, como árboles de piedra.* / *Arenisca, granito, basalto, pórfido: cuanto más peso aguantan, más dura es la piedra.* |
+| `sagrada-interior-calidas` | (13, 6) | Mirar las vidrieras | *Rojo, naranja y amarillo. El lado de la Pasión: la tarde.* / *El suelo se tiñe de naranja, como si ardiera sin quemar.* |
+| `sagrada-interior-frias` | (13, 34) | Mirar las vidrieras | *Azul y verde. El lado del Nacimiento: la mañana.* / *Las manchas de luz se mueven despacio por el suelo. Es el sol, que también camina.* |
+| `sagrada-interior-medallon` | (40, 26) | Mirar el medallón | *Un óvalo de luz en el nudo de la columna, con un toro con alas: Lucas.* / *Las cuatro del crucero son de pórfido rojo, la piedra más dura. Aguantan la torre de Jesús.* |
+| `sagrada-interior-altar` | (40, 20) | Mirar el altar | *El baldaquino: siete lados, lámparas, uvas y espigas. Debajo, Cristo, como si flotara.* / *Un cordón rojo y un vigilante: hasta el altar no se pasa.* |
+| `sagrada-interior-organo` | (51, 20) | Mirar el órgano | *Los tubos del órgano, detrás del altar. Hoy están callados.* |
+| `sagrada-interior-cripta` | (52, 13) | Mirar por la reja | *Por la reja se ve la cripta, abajo. Ahí está enterrado Gaudí.* |
+| `sagrada-interior-gloria` | (1, 20) | Mirar las puertas | *Las puertas de bronce de la Gloria, con el padrenuestro en catalán.* / *Fuera aún no hay fachada, solo obras: no se abren.* |
+| `sagrada-interior-pasion` | (36, 1) | Mirar la puerta | *La puerta de la Pasión. Cerrada: hoy se sale por donde se ha entrado.* |
+| `sagrada-interior-visitantes` | (35, 21) | Mirar a la gente | *Todo el mundo mira hacia arriba. Yo también.* |
+
+Gates are the world's own: the rope and the guard keep the presbytery, the ropes and the lines
+keep the shut doors.
 
 ## Textures
 
-Outside, as built. All through `tools/textures.py`, credits in each `public/textures/<id>/texture.json`:
+As built, outside and inside. All through `tools/textures.py`, credits in each `public/textures/<id>/texture.json`:
 
 | Use | Texture | Source | Licence |
 | --- | --- | --- | --- |
@@ -360,18 +407,15 @@ Outside, as built. All through `tools/textures.py`, credits in each `public/text
 | Ground, squares, paths, lawns | `panot-flor`, `granit`, `saulo`, `gespa` (shared) | Own panot drawing; Poly Haven | CC0 |
 | The Escoles' walls and roof | `mao`, `rajola` (shared) | Poly Haven | CC0 |
 | Falqués lamp's pedestal | `formigo` (shared) | Poly Haven `granular_concrete` | CC0 |
+| Inside: the floor's pale slabs | `marbre` (1.5 m a tile, tinted `#ddd7cb`) | Poly Haven `marble_01`, Rob Tuytel | CC0 |
+| Inside: the walls' ashlar | `carreu` (shared, tinted `#e3dccf`) | Poly Haven `sandstone_blocks_08` | CC0 |
+| Inside: column grain, stained glass and its light on the floor, the vault's painting, the Evangelists' ovals, the bronze doors' letters, the sign | Painted on canvases in `src/basilica-scenery.ts` | Own procedural painting | — |
 | Bell towers' slots, the high towers' lattice, trencadís, crane lattice, scaffolding, the facade's drawing, the pond's reflection, the crowds' palette | Painted on canvases in the landmark modules | Own procedural painting | — |
 
-No photo facade and no generated image: every surface outside has a real or procedural source.
-For the inside (part 2), the candidates stay:
-
-| Use | Source | Asset or file | Author | Licence |
-| --- | --- | --- | --- | --- |
-| Inside floor | ambientCG | `Tiles143` (beige limestone slabs) | ambientCG | CC0 |
-| Inside white stone (walls, branches, umbrellas) | Poly Haven | `large_sandstone_blocks` tinted bone-white | Poly Haven | CC0 |
-| Granite and basalt columns | Poly Haven | `granite_tile_03` (speckled; basalt tinted dark) | Poly Haven | CC0 |
-| Porphyry columns | ambientCG | `Granite004A` or `Travertine010` tinted red-brown | ambientCG | CC0 |
-| Stained glass | Own procedural (abstract leaded cells in Vila-Grau's two palettes), emissive | — | — | own work |
+No photo facade and no generated image: every surface, outside and in, has a real or procedural
+source. The candidates the research listed for the columns (granite and basalt tiles, a red stone
+for the porphyry) were not used: a tile's seams read wrong on a round column, and from the camera
+the flutes, the colour and a painted grain carry the stone.
 
 ## Build plan
 
@@ -379,12 +423,17 @@ Part 1, the outside (done): the zone and its wiring (`EnvironmentId`, `ENVIRONME
 `PLACE_LOOKS` in `src/home-lights.ts`, `PLACES`, `STATION_PLACES`), the landmark modules
 (`sagrada-familia`, `pond`, `crowd`, `falques-lamp`, `escoles`), two textures, the screenshot
 scenario `sagrada-familia` (`just screenshots sagrada-familia --gpu`: the arrival, the camera turned
-to the Nativity and to the towers, the portal's gate, the pond, the Passion side, the Escoles, the
-Glory, Avinguda de Gaudí, the overview with the spires and the pond's reflection, the draw calls).
+to the Nativity and to the towers, the portal, the pond, the Passion side, the Escoles, the Glory,
+Avinguda de Gaudí, the overview with the spires and the pond's reflection, the draw calls).
 
-Part 2, the inside: the plan above in `src/environments.ts` with its own scenery module (columns,
-umbrellas, glass walls, light pools, canopy), its sky and look, the doors of [Doors](#doors-between-the-two),
-its `PLACES` entry and screenshots (inside near the door, under the crossing, at the altar).
+Part 2, the inside (done): the plan and `SAGRADA_FAMILIA_INTERIOR` in `src/environments.ts`
+(`basilica` on `Environment`), `src/basilica-scenery.ts` and its branch in `src/scenery.ts` (dim
+ambient, a low sun, the sky kind `nave` in `src/lighting.ts`, a dark backdrop, no model base), its
+air in `src/effects.ts`, `LOOKS`, `PLACE_LOOKS`, `PLACES` (Barcelona, development only), the place
+panel's line in `src/main.ts`, the portal turned into the door, the texture `marbre`, and the
+screenshot scenario `sagrada-familia-interior` (`just screenshots sagrada-familia-interior --gpu`:
+walking in through the Nativity, the crossing, the altar, a medallion, the warm and cool glass, the
+Glory, the apse, the nave, the overview, walking back out, the draw calls).
 
 ## Approximate and open
 
@@ -397,7 +446,17 @@ its `PLACES` entry and screenshots (inside near the door, under the crossing, at
 - The pond's reflection is painted in the camera's frame, not mirrored: it shows the spires, but a
   real mirror from this camera would show the trees on the far shore.
 - The Passion facade faces away from the camera: only its towers and the visitors in front of it
-  show. Its magic square (every line adds to 33) and the Passion door are for part 2 or the story.
+  show. Its magic square (every line adds to 33) is for the story.
+- Inside, heights are pressed (knots at 6.5–10 m, the vault at 10.5–17 m instead of 30–75 m), and
+  the vault is a set of overlapping cells over the columns, not the real continuous hyperboloid
+  surface; it is painted as seen from below although the camera sees it from above. Columns fork
+  once (the real ones keep branching); the sandstone apse colonnade is a horseshoe of four, not the
+  real ring. The canopy is cream, not the real white with lettering; Christ is a simple figure.
+- The light pools are painted, not cast: they drift as one and do not follow the windows exactly.
+  The low sun lights the floor through the vault (it casts no shadow), which a real nave would not.
+- The Nativity portal opens for anyone; the mission that uses the inside will decide whether the
+  guard's lines come back as a gate (`story.gate`).
+- No sound of its own yet (the hush, an organ note): `PLACE_SONGS` has nothing for either place.
 - The totem shows L5 only; the real station is also L2, which the network map does not have yet.
 - Until the Meridiana stream's city edge is merged, wooded hills close the diorama's far sides,
   which a city centre would not have.
