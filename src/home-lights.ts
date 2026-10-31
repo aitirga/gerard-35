@@ -107,6 +107,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   'rec-comtal': { salon: [hex('#d98b5f', .7, .55), hex('#9cc6e6', .55, .45), white(3400, .65), hex('#e7a77a', .6, .45)], rest: white(3300, .3) },
   // The Búnkers del Carmel at sunset: golden grass, the pink band over the sea, a pale blue sky.
   'bunkers-carmel': { salon: [hex('#ffb35c', .7, .6), hex('#eab4a0', .5, .5), hex('#9fb8d8', .5, .45), white(2400, .6)], rest: white(2600, .3) },
+  // La Barceloneta: sand, the sea's turquoise, a pale midday sky and the rusted cubes.
+  barceloneta: { salon: [white(4200, .85), hex('#4fa3a5', .6, .55), hex('#e6d0a2', .45, .6), hex('#b0603a', .5, .45)], rest: white(4000, .35) },
 };
 /** La Reina Bubbaloo's light (scenery.ts BUBBALOO): a magenta sun and a violet gloom. */
 const BUBBALOO = [hex('#db6ba8', .5, .55), hex('#9a5bc4', .4, .5), hex('#ff7fb3', .45, .5), hex('#c04a8a', .45, .6)];

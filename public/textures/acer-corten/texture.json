@@ -1,0 +1,29 @@
+{
+  "id": "acer-corten",
+  "name": "Acer corten (rovell)",
+  "kind": "material",
+  "size_m": [
+    2.2,
+    2.2
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "rust_coarse_01",
+    "name": "Rust Coarse 01",
+    "url": "https://polyhaven.com/a/rust_coarse_01",
+    "author": "Dimitrios Savva, Rico Cilliers",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven rust_coarse_01 --id acer-corten",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#623920",
+  "made": "2026-10-30"
+}

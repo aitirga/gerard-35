@@ -4,6 +4,7 @@ import { shine } from './lighting';
 import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from './building-occlusion';
 import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
 import { LANDMARKS, type LandmarkKit } from './landmarks';
+import { buildSea } from './geo-sea';
 
 /** What `buildScenery` lends a generated place, so everything is tracked and destroyed with the scene. */
 export interface GeoKit {
@@ -21,7 +22,7 @@ export interface GeoKit {
 /** One facade bay is this wide in cells; textures repeat once per bay and storey. */
 const BAY = 1.8;
 /** Facades painted as an atlas of several bays × storeys, so a long wall does not repeat one window. */
-const FACADE_ATLAS: Record<string, [number, number]> = { flats: [4, 3], timber: [3, 2], vila: [3, 2] };
+const FACADE_ATLAS: Record<string, [number, number]> = { flats: [4, 3], timber: [3, 2], vila: [3, 2], barceloneta: [4, 3] };
 const EAVE = 0.35;
 const ROOF_PITCH = Math.tan(30 * Math.PI / 180);
 /** Ground layers stack a hair apart so large flat polygons never z-fight. */
@@ -147,22 +148,52 @@ export class MeshBuilder {
     this.tri(a, b, c, facing, ua, ub, uc, smooth && [smooth[0], smooth[1], smooth[2]]);
     this.tri(a, c, d, facing, ua, uc, ud, smooth && [smooth[0], smooth[2], smooth[3]]);
   }
-  /** An upright box round its centre, UVs in metres on every face (landmarks that must join a cut mesh). */
-  box([cx, cy, cz]: V3, [w, h, d]: V3) {
-    const x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - h / 2, y1 = cy + h / 2, z0 = cz - d / 2, z1 = cz + d / 2;
-    this.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], [x0, y0], [x1, y0], [x1, y1], [x0, y1]);
-    this.quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [0, 0, -1], [x1, y0], [x0, y0], [x0, y1], [x1, y1]);
-    this.quad([x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [1, 0, 0], [z1, y0], [z0, y0], [z0, y1], [z1, y1]);
-    this.quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], [-1, 0, 0], [z0, y0], [z1, y0], [z1, y1], [z0, y1]);
-    this.quad([x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0], [0, 1, 0], [x0, z1], [x1, z1], [x1, z0], [x0, z0]);
-    this.quad([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], [0, -1, 0], [x0, z0], [x1, z0], [x1, z1], [x0, z1]);
-  }
   mesh(device: pc.GraphicsDevice) {
     const m = new pc.Mesh(device);
     m.setPositions(this.positions); m.setNormals(this.normals); m.setUvs(0, this.uvs); m.setIndices(this.indices); m.update();
     return m;
   }
   get empty() { return this.indices.length === 0; }
+  /**
+   * A box, for pieces that must open the cut (`kit.add(…, { cut: true })`) or tile a real material by
+   * the metre: centre and size in metres, each face's UVs in metres. Upright (no `euler`), its UVs
+   * are the faces' own positions, so the grain runs on from one box to the next (a cornice on its
+   * wall); turned by `euler` (degrees round x, y and z: the roll first, then the pitch, then the turn
+   * round the vertical), each face's UVs start at its corner.
+   */
+  box(centre: number[], size: number[], euler?: number[]) {
+    if (!euler) {
+      const [cx, cy, cz] = centre, [w, h, d] = size;
+      const x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - h / 2, y1 = cy + h / 2, z0 = cz - d / 2, z1 = cz + d / 2;
+      this.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], [x0, y0], [x1, y0], [x1, y1], [x0, y1]);
+      this.quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [0, 0, -1], [x1, y0], [x0, y0], [x0, y1], [x1, y1]);
+      this.quad([x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [1, 0, 0], [z1, y0], [z0, y0], [z0, y1], [z1, y1]);
+      this.quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], [-1, 0, 0], [z0, y0], [z1, y0], [z1, y1], [z0, y1]);
+      this.quad([x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0], [0, 1, 0], [x0, z1], [x1, z1], [x1, z0], [x0, z0]);
+      this.quad([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], [0, -1, 0], [x0, z0], [x1, z0], [x1, z1], [x0, z1]);
+      return;
+    }
+    const [hx, hy, hz] = [size[0] / 2, size[1] / 2, size[2] / 2];
+    const r = [euler[0], euler[1], euler[2]].map(d => d * Math.PI / 180);
+    const [cx, sx, cy, sy, cz, sz] = [Math.cos(r[0]), Math.sin(r[0]), Math.cos(r[1]), Math.sin(r[1]), Math.cos(r[2]), Math.sin(r[2])];
+    const turn = (v: V3): V3 => {
+      let [x, y, z] = v;
+      [x, y] = [x * cz - y * sz, x * sz + y * cz];
+      [y, z] = [y * cx - z * sx, y * sx + z * cx];
+      [x, z] = [x * cy + z * sy, -x * sy + z * cy];
+      return [x, y, z];
+    };
+    const at = (x: number, y: number, z: number): V3 => { const p = turn([x, y, z]); return [p[0] + centre[0], p[1] + centre[1], p[2] + centre[2]]; };
+    const faces: [V3, V3, V3, V3, V3, number, number][] = [
+      [at(-hx, -hy, hz), at(hx, -hy, hz), at(hx, hy, hz), at(-hx, hy, hz), turn([0, 0, 1]), size[0], size[1]],
+      [at(hx, -hy, -hz), at(-hx, -hy, -hz), at(-hx, hy, -hz), at(hx, hy, -hz), turn([0, 0, -1]), size[0], size[1]],
+      [at(hx, -hy, hz), at(hx, -hy, -hz), at(hx, hy, -hz), at(hx, hy, hz), turn([1, 0, 0]), size[2], size[1]],
+      [at(-hx, -hy, -hz), at(-hx, -hy, hz), at(-hx, hy, hz), at(-hx, hy, -hz), turn([-1, 0, 0]), size[2], size[1]],
+      [at(-hx, hy, hz), at(hx, hy, hz), at(hx, hy, -hz), at(-hx, hy, -hz), turn([0, 1, 0]), size[0], size[2]],
+      [at(-hx, -hy, -hz), at(hx, -hy, -hz), at(hx, -hy, hz), at(-hx, -hy, hz), turn([0, -1, 0]), size[0], size[2]],
+    ];
+    for (const [a, c, d, e, n, u, v] of faces) this.quad(a, c, d, e, n, [0, 0], [u, 0], [u, v], [0, v]);
+  }
 }
 
 function inside(px: number, pz: number, poly: GeoPoint[]) {
@@ -429,7 +460,11 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   river.diffuseMapTiling.set(0.08 / cellM, 0.08 / cellM); river.emissiveMapTiling.set(0.08 / cellM, 0.08 / cellM);
   shine(river, 'water');
   if (look.water) { river.specular.fromString('#4a5050'); river.reflectivity = 0.55; river.update(); }
-  flat('Río', scene.areas.water, LAYER.water - sunk, river);
+  // A beach's water is the sea, with its shore, waves and swash (src/geo-sea.ts); anything else is a river.
+  const sea = look.sea
+    ? buildSea(kit, scene.areas.water, { width: W, depth: D, cell: cellM }, surface('Arena mojada', 'wet', speckles('#8d7655', ['#806a4b', '#9a8462']), 0.25, 0.3))
+    : undefined;
+  if (!sea) flat('Río', scene.areas.water, LAYER.water - sunk, river);
   if (sunk > 0) {
     // The banks: stone walls from the street down to the water, leaning back a little, darker and
     // green where the river licks them. Where the river leaves the map there is no bank: the diorama is cut.
@@ -831,6 +866,72 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
           const g = ctx.createLinearGradient(0, 0, 0, h);
           g.addColorStop(0, 'rgba(40,30,25,.16)'); g.addColorStop(1, 'rgba(40,30,25,0)');
           ctx.fillStyle = g; ctx.fillRect(sx, 0, sw, h);
+        }
+      } else if (kind === 'barceloneta') {
+        // The old Barceloneta (quarts de casa raised in the 19th century), four bays by three storeys:
+        // in every bay a French window in a stone surround onto a small iron balcony, closed by green
+        // louvred shutters or a wooden roll blind hung outside, washing over most railings, plants,
+        // the odd air conditioner, floor bands between storeys and a cable sagging across.
+        paint(wall, 'wall');
+        const r = (i: number) => jitter(seed * 5.1 + i);
+        const shutter = ['#4f7a52', '#3f6b55', '#6b8a5a', '#7d6a4f', '#5d7c86'][Math.floor(r(1) * 5)];
+        const stone = '#cfc5b0', iron = '#25292b';
+        const clothes = ['#f4f1ea', '#5e86c4', '#d05a5a', '#f2c94c', '#3fa38a', '#e8846a', '#2f3f66', '#f4f1ea'];
+        for (let fy = 0; fy < atlasV; fy++) for (let bx = 0; bx < atlasU; bx++) {
+          const x0 = bx * 128, y0 = fy * 192, i = 60 + fy * 17 + bx * 7;
+          const wx = x0 + 36, ww = 56, wy = y0 + 34, wh = 128;
+          ctx.fillStyle = 'rgba(255,250,240,.22)'; ctx.fillRect(x0, y0 + 180, 128, 6);
+          ctx.fillStyle = 'rgba(0,0,0,.1)'; ctx.fillRect(x0, y0 + 186, 128, 4);
+          // The stone surround with a shallow arched head, then the dark opening.
+          ctx.fillStyle = stone; ctx.beginPath(); ctx.roundRect(wx - 8, wy - 10, ww + 16, wh + 10, [16, 16, 0, 0]); ctx.fill();
+          ctx.fillStyle = glass; ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, [10, 10, 0, 0]); ctx.fill();
+          const close = r(i);
+          if (close < 0.45) {
+            // A wooden roll blind hanging outside, let down part of the way and tied.
+            const down = 0.3 + r(i + 1) * 0.65;
+            ctx.fillStyle = r(i + 8) > 0.5 ? shutter : '#a88a62'; ctx.fillRect(wx - 2, wy, ww + 4, wh * down);
+            ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = wy + 3; y < wy + wh * down; y += 4) ctx.fillRect(wx - 2, y, ww + 4, 1);
+          } else if (close < 0.85) {
+            // Louvred shutters, one leaf folded back against the wall, the other half shut.
+            ctx.fillStyle = shutter; ctx.fillRect(wx - 30, wy + 2, 24, wh - 2); ctx.fillRect(wx + ww / 2, wy + 2, ww / 2, wh - 2);
+            ctx.fillStyle = 'rgba(0,0,0,.2)';
+            for (let y = wy + 6; y < wy + wh; y += 5) { ctx.fillRect(wx - 30, y, 24, 1.5); ctx.fillRect(wx + ww / 2, y, ww / 2, 1.5); }
+          } else {
+            ctx.fillStyle = 'rgba(240,236,226,.7)'; ctx.fillRect(wx + 6, wy + 8, 14, wh - 10);
+          }
+          if (r(i + 2) > 0.15) {
+            // The balcony: a thin stone slab and a plain iron railing in front of the window.
+            ctx.fillStyle = '#b8b0a2'; ctx.fillRect(x0 + 18, y0 + 160, 92, 8);
+            ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x0 + 18, y0 + 168, 92, 5);
+            if (r(i + 3) > 0.35) {
+              // Washing over the railing: towels, a shirt, sheets, pegged on and hanging down.
+              for (let k = 0; k < 3; k++) {
+                if (r(i + 10 + k) < 0.3) continue;
+                ctx.fillStyle = clothes[Math.floor(r(i + 20 + k) * clothes.length)];
+                const cw = 18 + r(i + 30 + k) * 14, ch = 22 + r(i + 40 + k) * 26;
+                ctx.fillRect(x0 + 22 + k * 30, y0 + 120, cw, ch);
+                ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(x0 + 22 + k * 30, y0 + 120 + ch - 3, cw, 3);
+              }
+            }
+            ctx.fillStyle = iron; ctx.fillRect(x0 + 18, y0 + 118, 92, 4);
+            for (let k = 0; k < 13; k++) ctx.fillRect(x0 + 20 + k * 7.2, y0 + 118, 2, 42);
+            if (r(i + 4) > 0.7) for (let k = 0; k < 2; k++) {
+              ctx.fillStyle = '#b8704f'; ctx.fillRect(x0 + 24 + k * 64, y0 + 146, 12, 14);
+              ctx.fillStyle = ['#4f7a3a', '#6d9a48', '#d23a4a'][Math.floor(r(i + 5 + k) * 3)];
+              ctx.beginPath(); ctx.arc(x0 + 30 + k * 64, y0 + 142, 9, 0, Math.PI * 2); ctx.fill();
+            }
+          } else {
+            ctx.fillStyle = stone; ctx.fillRect(wx - 10, y0 + 160, ww + 20, 7);
+          }
+          if (r(i + 6) > 0.85) {
+            ctx.fillStyle = '#e8e6e1'; ctx.fillRect(x0 + 96, y0 + 40, 26, 18);
+            ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x0 + 96, y0 + 58, 26, 3);
+          }
+        }
+        if (r(99) > 0.4) {
+          // A telephone or power cable sagging across the front.
+          const cy = 30 + r(98) * (h - 60);
+          ctx.strokeStyle = 'rgba(30,30,30,.55)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, cy); ctx.quadraticCurveTo(w / 2, cy + 14, w, cy + 4); ctx.stroke();
         }
       } else if (kind === 'school') {
         // A school: one wide band of glazing per storey with coloured frames.
@@ -1380,6 +1481,46 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     add('Tejado', roof(b, H), b.roof === 'flat' ? terraceMaterial(b.roofColor ?? '#b0a597', grain.roof) : roofMaterial(b.roofColor ?? '#b4643f', grain.roof), pivot, false);
     // A Vallès house's gable is plain render; elsewhere it gets a window with shutters.
     if (b.roof !== 'flat') add('Hastial', gableEnds(b, H), facade(b.facade === 'vila' ? 'plain' : 'rendered', b.walls, trim, baseColour, grain), pivot, false);
+    if (b.terrat) terrat(b, H, pivot);
+  }
+  /**
+   * What stands on a lived-in terrat, read from above: each house of the row has its stair head
+   * (a small rendered box with a door), and there are water tanks of grey fibre cement, aerials and
+   * washing lines between them, placed along the roof's long side from a hash of the building.
+   */
+  function terrat(b: GeoBuilding, H: number, pivot: pc.Entity) {
+    const { cx, cz, w, d, angle } = b.box, long = w >= d, len = Math.max(w, d), wide = Math.min(w, d);
+    const ua = long ? angle : angle + Math.PI / 2, e1 = [Math.cos(ua), Math.sin(ua)], e2 = [-Math.sin(ua), Math.cos(ua)];
+    const seed = [...b.id].reduce((sum, ch) => sum * 31 + ch.charCodeAt(0), 7) % 9973, r = (i: number) => jitter(seed + i * 17.3);
+    const top = H + 0.25, m = 1 / cellM, yaw = -ua * 180 / Math.PI;
+    // A point on the roof `u` cells along its long side and `v` across, `y` cells up.
+    const at = (u: number, v: number, y: number) => [x(cx + e1[0] * u + e2[0] * v), y, z(cz + e1[1] * u + e2[1] * v)];
+    const heads = new MeshBuilder(), tanks = new MeshBuilder(), irons = new MeshBuilder(), washing = new MeshBuilder();
+    const house = 8.5 * m, count = Math.max(1, Math.floor(len / house));
+    for (let k = 0; k < count; k++) {
+      const u = -len / 2 + (k + 0.5) * len / count, side = r(k) > 0.5 ? 1 : -1;
+      // The stair head against one side of the roof, its door facing across it (not off an L's corner).
+      const hv = side * (wide / 2 - 1.4 * m);
+      if (!inside(cx + e1[0] * u + e2[0] * hv, cz + e1[1] * u + e2[1] * hv, b.poly)) continue;
+      heads.box(at(u, hv, top + 1.25 * m), [2.4 * m, 2.5 * m, 2.6 * m], [0, yaw, 0]);
+      // One or two water tanks beside it, and sometimes an aerial and a line of washing.
+      for (let t = 0; t < 1 + Math.round(r(k + 40)); t++) tanks.box(at(u + (1.9 + t * 1.3) * m * (r(k + 3) > 0.5 ? 1 : -1), hv, top + 0.6 * m), [1.1 * m, 1.2 * m, 1.1 * m], [0, yaw, 0]);
+      if (r(k + 60) > 0.45) {
+        const au = u - 2.4 * m * side, av = hv - 0.4 * side * m;
+        irons.box(at(au, av, top + 1.8 * m), [0.06 * m, 3.6 * m, 0.06 * m]);
+        for (const [y, l] of [[3.2, 1.2], [2.8, 0.9]]) irons.box(at(au, av, top + y * m), [l * m, 0.04 * m, 0.04 * m], [0, yaw + 90, 0]);
+      }
+      if (r(k + 80) > 0.4) {
+        // A line strung across the roof with sheets and towels on it, at head height.
+        const lu = u + (r(k + 81) - 0.5) * 3 * m;
+        irons.box(at(lu, 0, top + 1.6 * m), [0.03 * m, 0.03 * m, wide * 0.7], [0, yaw, 0]);
+        for (let c = 0; c < 4; c++) washing.box(at(lu, (c - 1.5) * wide * 0.16, top + 1.25 * m), [0.06 * m, 0.7 * m, 0.55 * m + r(k + c) * 0.4 * m], [0, yaw, 0]);
+      }
+    }
+    add('Casetas del terrado', heads, cutaway(mat('Caseta del terrado', b.walls, 0.1)), pivot, false);
+    add('Depósitos', tanks, cutaway(mat('Depósito de fibrocemento', '#a9a7a0', 0.15)), pivot, false);
+    add('Antenas', irons, cutaway(mat('Antena', '#3a3d40', 0.4)), pivot, false, false);
+    add('Ropa en el terrado', washing, cutaway(mat('Sábanas tendidas', '#f1efe8', 0.1)), pivot, false, false);
   }
   /** The photo atlas a `photo:<texture>` facade or ground floor names, if the scene has it. */
   function photo(kind: string) {
@@ -1909,6 +2050,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       weather(dt);
       if (animate) { time += dt; river.diffuseMapOffset.set(time * 0.05, time * 0.02); river.emissiveMapOffset.set(-time * 0.03, time * 0.04); river.update(); }
+      sea?.update(dt, animate);
       for (const { cut, shape } of occluders) {
         const target = focus && toCamera && buildingHidesPlayer(shape, focus, toCamera) ? CUT_RADIUS : 0;
         const radius = animate ? cut.radius + (target - cut.radius) * (1 - Math.exp(-dt * CUT_RATE)) : target;
@@ -1929,6 +2071,6 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       if (shownWet === 0 && wet === 0 && !streetSet) wet = raining;
       streetSet = true; rain = raining; dusk = evening;
     },
-    destroy() { alive = false; cutRadius.setValue(0); meshes.forEach(m => m.destroy()); gpu.forEach(t => t.destroy()); },
+    destroy() { alive = false; cutRadius.setValue(0); meshes.forEach(m => m.destroy()); gpu.forEach(t => t.destroy()); sea?.destroy(); },
   };
 }

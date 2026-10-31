@@ -155,7 +155,7 @@ runs before rendering the ground, which then has nothing to render).
 | Plaça de Sants | L1, L5 | El Nucli, the game store where Gerard meets Bernat | On the map |
 | Espanya | L1, L3 | Plaça d'Espanya | On the map |
 | Poble Sec | L3 | Poble Sec | On the map |
-| Barceloneta | L4 | The beach | On the map |
+| Barceloneta | L4 | `barceloneta` (the beach: Platja de Sant Miquel, L'Estel Ferit) | Playable |
 | Sagrada Família | L5 | The temple's surroundings and its inside | On the map |
 | El Carmel | L5 | `bunkers-carmel` (the Búnkers del Carmel at sunset) | Playable |
 
@@ -206,6 +206,14 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   aerial reference: Nuria's long two-storey block with a hipped terracotta roof (her door the first
   on Carrer de Jacint Verdaguer), the white-roofed corner house, the houses and gardens across the
   street. Turned 90° so her block faces the camera.
+- **`barceloneta`**: the beach of the L4 (`docs/places/barceloneta.md`), a real-data zone:
+  OpenStreetMap for the old Barceloneta's blocks, the beach, the promenade, its palms and showers,
+  with the sea drawn in `sketch.json` along the real coastline and drawn by `src/geo-sea.ts`
+  (waves, white water, the swash on the wet sand). Turned 65° so the sea faces the camera: the
+  Platja de Sant Miquel with L'Estel Ferit, the volleyball courts, the lifeguard post and the old
+  lookout, the Passeig Marítim's parapet and palms, the blocks behind with washing on the
+  balconies; the L4 stair at the end of a street on the back edge (the real station is 700 m
+  inland), the breakwater where the beach ends to the NNE and the W's sail past the SSW end.
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
   the camera, blocks of flats, the L1 entrance and the castle on the roof.

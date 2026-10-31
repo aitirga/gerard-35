@@ -1,0 +1,29 @@
+{
+  "id": "sorra-humida",
+  "name": "Sorra humida",
+  "kind": "material",
+  "size_m": [
+    1.87,
+    1.87
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "damp_beach_sand_02",
+    "name": "Damp Beach Sand 02",
+    "url": "https://polyhaven.com/a/damp_beach_sand_02",
+    "author": "Dimitrios Savva",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven damp_beach_sand_02 --id sorra-humida",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#5c5545",
+  "made": "2026-10-30"
+}

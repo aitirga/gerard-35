@@ -132,11 +132,12 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `osm_props` | Props from map nodes, by kind, with extra fields for each: `tree` (natural=tree), `lamp` (street_lamp), `bench`, `bin` (waste_basket), `bike-rack` (bicycle_parking). Only on open ground; lamps and racks face the nearest road, benches turn their back to it (they look at the shop fronts) |
 | `shops` | Shops the map lacks: `name`, `kind` (an OSM shop or amenity value) and a position. Every shop, bar, bank and pharmacy of the map gets a sign on the nearest street wall of its building. `kind: "house"` is a house's name instead: a glazed tile beside the door, blue letters on white (Alegia's *Konfiteroenea*) |
 | `zebras_x_m` | Points along the turned frame where a zebra crossing runs across every road; the map's own `highway=crossing` nodes are drawn too |
-| `look` | The street's surfaces: `ground`/`footway` `panot` (grey sidewalk tiles; footways are not drawn over it), `grass` `bed` (soil and shrubs), `asphalt` colour (bike lanes too), `markings` (lanes, edges, zebras, BUS, bikes; a street with markings also gets moving traffic, see below), and `materials`: the real material of each surface (see [Real materials](#real-materials)). `river_m` sinks the water that many metres below the street between stone banks (the `bank` material; rain falls into it), `water` is the river's colour (a turbid river: on pale ripples, so it is the colour you see, mirroring less sky than the pool-blue default), and `hills: false` leaves out the generic round hills when a landmark draws the place's own (Alegia's `valley`) |
+| `look` | The street's surfaces: `ground`/`footway` `panot` (grey sidewalk tiles; footways are not drawn over it), `grass` `bed` (soil and shrubs), `asphalt` colour (bike lanes too), `markings` (lanes, edges, zebras, BUS, bikes; a street with markings also gets moving traffic, see below), `sea: true` (the water is a sea with its shore, see [The sea](#the-sea)), and `materials`: the real material of each surface (see [Real materials](#real-materials)). `river_m` sinks the water that many metres below the street between stone banks (the `bank` material; rain falls into it), `water` is the river's colour (a turbid river: on pale ripples, so it is the colour you see, mirroring less sky than the pool-blue default), and `hills: false` leaves out the generic round hills when a landmark draws the place's own (Alegia's `valley`) or the zone's backdrops are landmarks (the Barceloneta) |
 | `look.kerbs`, `look.edge` | `kerbs: true` lays granite kerbs (`granit`, 30 cm wide, standing a little proud) along every road's edges, lowered at the zebras, with puddles in their gutters after rain; `edge: "city"` closes the far sides with rows of plain blocks in dulled render and brick on a skirt of street instead of wooded hills |
 | `zoom` | Follow-camera zoom (orthographic half-height) |
 | `spawn` | `east_m`/`south_m`; snapped to the nearest walkable cell |
 | `storey_m` | Height of one storey |
+| `edge_buildings` | `true`: buildings the map's edge cuts through are kept, cut at the edge, even when most of them lies outside (by default a building whose middle is off the map is left out), so the blocks carry on to the frame |
 | `reference` | `checked` date, `streetview_capture`, `notes` (one line per observation) and `viewpoints` (`name`, `lat`, `lon`, `heading`, `pitch`) for `fetch` |
 | `styles` | Named looks; `default` is merged under every other one (see below) |
 | `buildings` | Overrides by `way/<id>` (wins) or `tag:building=<value>`: `style`, `levels` (wins over the map's), `roof_kind`, `label`, `sign` (big lit letters over the ground floor of the wall facing the camera), `signature` (a photo texture of the real facade on that wall), `materials` (merged over the style's), and per house `walls` (one colour), `facade`, `ground` |
@@ -157,7 +158,8 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `walls` | List of render colours; each building gets one |
 | `base`, `trim`, `roof` | Stone plinth, frames/bands/timber, roof tiles |
 | `roof_kind` | `hip`, `gable`, `pyramid`, `flat`. `flat` is a tiled terrace on the real outline with a parapet; footprints that fill less than 85 % of their oriented box (an L, a courtyard) get the same outline with their own roof tiles |
-| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (Basque framing over whitewash, an atlas of three bays by two storeys: crooked posts, braces, wooden or iron balconies with geraniums, board shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks, painted as an atlas of four bays by three storeys that starts at a different bay on every wall: each bay keeps its kind all the way up, a window, twin windows, a balcony with an iron or panel railing, plants, washing and sometimes an awning, or an enclosed aluminium gallery, while blinds, lit flats and air conditioners change from flat to flat), `school` (a band of glazing with coloured frames), `mall` (blank concrete with a thin stripe in the trim colour), `curtain` (an office tower in dark glass, a few windows lit), `parapet` (a low wall in one real material at its real size, capped flat with no bays and no roof: the Búnkers' concrete, a shack's whitewash, a water tank; `materials.wall` for its sides, `materials.roof` for its cap) |
+| `terrat` | `true` on a `flat` roof: a lived-in *terrat*, with a stair head per house, fibre-cement water tanks, aerials and washing lines |
+| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (Basque framing over whitewash, an atlas of three bays by two storeys: crooked posts, braces, wooden or iron balconies with geraniums, board shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks, painted as an atlas of four bays by three storeys that starts at a different bay on every wall: each bay keeps its kind all the way up, a window, twin windows, a balcony with an iron or panel railing, plants, washing and sometimes an awning, or an enclosed aluminium gallery, while blinds, lit flats and air conditioners change from flat to flat), `barceloneta` (the old Barceloneta's *quarts de casa*: an atlas of four bays by three storeys, French windows in stone surrounds onto small iron balconies, green louvred shutters or roll blinds, washing over most railings, plants and a sagging cable), `school` (a band of glazing with coloured frames), `mall` (blank concrete with a thin stripe in the trim colour), `curtain` (an office tower in dark glass, a few windows lit), `parapet` (a low wall in one real material at its real size, capped flat with no bays and no roof: the Búnkers' concrete, a shack's whitewash, a water tank; `materials.wall` for its sides, `materials.roof` for its cap) |
 | `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade`, `shops` (shop windows under striped awnings, some shutters down and tagged), `lobby` (glass doors under a coloured band), `mall-front` (lit glass under a wavy concrete canopy) |
 | `levels` | Default storeys (OSM `building:levels` or `height` win when present) |
 | `balcony_m`, `balcony`, `cornice`, `rooftop`, `party` | Relief as real geometry: balcony slabs `balcony_m` deep every storey on the walls the camera sees (fronts in `balcony`), a cornice under the parapet, a flat roof's clutter (stair and lift housings, water tanks, aerials, dishes, air conditioners) and bare party walls in the `party` colour where a block rises over its neighbour |
@@ -272,6 +274,9 @@ nothing else. Credits live in each `texture.json`.
 | `granit` | Granite slabs: squares, kerbs, plinths | 2.3 | Poly Haven `granite_tile` |
 | `saulo` | *Sauló*, the park gravel | 2.1 | Poly Haven `sandy_gravel` |
 | `sorra` | Beach sand | 1.8 | Poly Haven `dense_sand` |
+| `sorra-humida` | Wet sand at the waterline (and the sand cat) | 1.87 | Poly Haven `damp_beach_sand_02` |
+| `fusta-passera` | Weathered boardwalk planks | 3 | Poly Haven `old_wood_floor` |
+| `acer-corten` | Rusted iron (L'Estel Ferit) | 2.2 | Poly Haven `rust_coarse_01` |
 | `gespa` | Grass with fallen leaves | 2 | Poly Haven `leafy_grass` |
 | `terra` | Raked soil (planted beds) | 2 | Poly Haven `raked_dirt` |
 | `grava` | Gravel (rail ballast) | 2.25 | Poly Haven `gravel_floor` |
@@ -365,6 +370,7 @@ zone keeps its palette and gains the real grain and its normal map. Defaults (`L
 | `square` | `granit` | `#a99d88` |
 | `grass` / `bed` / `forest` | `gespa` / `terra` / `gespa` | `#86a462` / `#4f4234` / `#4f6d42` |
 | `sand` | `sorra` | its own |
+| `wet` (the wet band of a sea's shore) | none (painted speckles) | `#8d7655` |
 | `rail` / `bridge` | `grava` / `carreu` | `#857b6f` / `#b3a68d` |
 | `bank` (the walls of a sunk river, `look.river_m`) | painted stone | `#7d7b70` |
 
@@ -452,8 +458,8 @@ landmarks are for geo zones.
 
 The map also gives small landmarks in every zone (`OSM_LANDMARKS` in `tools/geo.py`), on open
 ground away from the zone's props: drinking fountains (`fountain`, amenity=drinking_water: three
-in Alegia) and kiosks (`kiosk`, shop=kiosk: the ONCE booth on the Meridiana, which then gets no
-sign on a wall). `osm_landmarks` turns them off or passes params.
+in Alegia), kiosks (`kiosk`, shop=kiosk: the ONCE booth on the Meridiana, which then gets no
+sign on a wall) and beach showers (`shower`, amenity=shower). `osm_landmarks` turns them off or passes params.
 
 **The builder.** `src/landmarks.ts` finds every `src/landmarks/*.ts` with Vite's
 `import.meta.glob`; a module exports `kind` and `build(kit, landmark)`:
@@ -479,14 +485,15 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
 | `mat(name, hex, gloss, glow)` | A plain material, shared within the scene |
 | `surface(texture, tint, gloss)` | A real material, tinted, tiling by metres on `mesh()` UVs; plain `tint` until it loads |
 | `part(name, type, material, position, scale, rotation?, parent?)` | A primitive merged into the static batch |
-| `mesh()` / `add(name, mesh, material, { cut, shadows, parent })` | Hand-built meshes (`quad`, `tri`, and `box(centre, size)` with UVs in metres); `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building, or its building's with `params.building`), otherwise batched |
+| `mesh()` / `add(name, mesh, material, { cut, shadows, parent })` | Hand-built meshes (`quad`, `tri`, and `box(centre, size, euler?)` with UVs in metres: at the faces' own positions when upright, so neighbouring boxes' grain runs on, per face when turned); `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building, or its building's with `params.building`), otherwise batched |
 | `texture(canvas)` | A painted canvas texture (signs), destroyed with the scene |
 
 Rules: build at real size in metres; nothing tall may hide Gerard (`cut: true`); reuse materials
 (`mat` and `surface` share by name and colour) and prefer `part` or one `mesh()` per material so
 draw calls stay low; text in the world is Spanish or Catalan as on the street, never guidance. A
 kind with no module yet (data merged before code) draws a plain block on its footprint and warns;
-`tests/materials.test.mjs` fails until the module exists. Make a new landmark reachable from the
+`tests/materials.test.mjs` fails until the module exists. That test imports each module in Node, so a module
+imports only types from `src/landmarks.ts` (its `import.meta.glob` runs only under Vite). Make a new landmark reachable from the
 development picker (`PLACES` in `src/jump-menu.ts`) like any new place.
 
 ## Hilltops
@@ -515,6 +522,27 @@ of at a plinth. Set it with `drop` in `zone.json`:
 
 Put the brow a metre or two beyond the last thing people stand at, and keep the station and the
 paths inside it.
+
+## The sea
+
+A zone with `look.sea: true` (the Barceloneta) draws its water as a sea with its shore
+(`src/geo-sea.ts`) instead of the river's flat water. The coastline is the longest edge of the
+water polygons that is not the map's border (draw the water in `sketch.json` along OSM's
+`natural=coastline` ways, which have no area), carried on past both side edges so the sea fills
+the frame. Everything is a band measured in metres from that line:
+
+| Band | What |
+| --- | --- |
+| Sea | Colour by distance (`DEPTHS`: sand showing through, turquoise, deep blue), in vertex colours given as sRGB hex and converted to linear (read as linear they wash out); two layers of one normal map of wavelets running every way, in ground metres, drifting across each other. Keep its ripples free of a dominant direction: a few strong swells read as scanlines from the overview |
+| Wet sand | The `wet` surface, fading in from the dry sand to the waterline |
+| White water | Lines of foam rolling in every `CYCLE` seconds and dying before the shore |
+| Swash | Two sheets of water out of step running up the wet band and sliding back, a lace of foam at their edge |
+| Tracks | The cleaning tractor's tyre tracks and footprints on the dry sand |
+
+The beach's own bands (wet sand, swash, tracks) stop at the map's edges; the sea and its white
+water carry on. The sun glitters on the sea from the camera's position (the engine's view vector),
+so the glitter follows the view. The sea is the zone's border: nothing walkable lies in it, so
+landmarks in the water (`boies`) need not be solid.
 
 ## Traffic
 

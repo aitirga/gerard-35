@@ -88,7 +88,8 @@ BASE_MATERIALS = {"masonry": "mamposteria", "mall-front": None, "hedge": None}
 ROOF_MATERIALS = {"flat": "rajola"}
 # Map nodes that become landmarks in every zone (kind -> tag and real size in metres), unless the zone's
 # `osm_landmarks` turns them off; the node's name goes to the builder as `name`.
-OSM_LANDMARKS = {"fountain": ("amenity", "drinking_water", (0.6, 0.6)), "kiosk": ("shop", "kiosk", (2.2, 1.5))}
+OSM_LANDMARKS = {"fountain": ("amenity", "drinking_water", (0.6, 0.6)), "kiosk": ("shop", "kiosk", (2.2, 1.5)),
+                 "shower": ("amenity", "shower", (3.0, 2.4))}
 
 
 def zone_dir(zone: str) -> Path:
@@ -602,6 +603,12 @@ def build(zone_id: str) -> None:
         if kind == "building":
             poly = polys[0][:-1] if polys and polys[0][0] == polys[0][-1] else (polys[0] if polys else [])
             cx, cz = centroids.get(e["id"], (-99, -99))
+            if zone.get("edge_buildings") and len(poly) > 2 and not (0 <= cx < W and 0 <= cz < D):
+                # `edge_buildings`: a block the map's edge cuts through is kept, cut at the edge, so the
+                # streets run between houses to the frame instead of past empty lots.
+                poly = clip(poly, *lo, *hi)
+                if len(poly) < 3 or abs(area(poly)) < 12: continue
+                cx, cz = sum(p[0] for p in poly) / len(poly), sum(p[1] for p in poly) / len(poly)
             if len(poly) < 3 or not (0 <= cx < W and 0 <= cz < D): continue
             if area(poly) < 0: poly.reverse()
             buildings.append(make_building(zone, e, poly, cell))
@@ -928,7 +935,8 @@ def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
         "facade": facade, "ground": ground,
         "poly": rounded(poly), "box": oriented_box(poly),
         "materials": building_materials(style.get("materials", {}) | chosen.get("materials", {}), facade, ground, roof, "party" in style),
-    } | relief(style | chosen) | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {})
+    } | relief(style | chosen) | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {}) \
+      | ({"terrat": True} if roof == "flat" and chosen.get("terrat", style.get("terrat")) else {})
 
 
 def relief(style: dict) -> dict:

@@ -53,6 +53,8 @@ export interface GeoBuilding {
    * water tanks, aerials, air conditioners) and bare party walls in `party` where it rises over a neighbour.
    */
   relief?: { balcony_m?: number; balcony?: string; cornice?: boolean; rooftop?: boolean; party?: string };
+  /** A lived-in flat roof (Barcelona's terrat): stair heads, water tanks, aerials and washing lines on it. */
+  terrat?: boolean;
   poly: GeoPoint[];
   /** Minimum-area rectangle around the footprint; the roof sits on it. `angle` is the `w` axis. */
   box: { cx: number; cz: number; w: number; d: number; angle: number };
@@ -107,11 +109,12 @@ export interface GeoScene {
    * `river_m` sinks the water that many metres below the street between stone banks, `water` is its
    * colour (a turbid river, which mirrors less sky than the pool's blue one), and `hills: false` leaves
    * out the generic hills (a landmark draws the place's own, or the place has its own horizon).
+   * `sea: true` draws the water as the sea with its shore (src/geo-sea.ts).
    */
-  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; kerbs?: boolean; edge?: 'hills' | 'city'; river_m?: number; water?: string; hills?: boolean };
+  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; kerbs?: boolean; edge?: 'hills' | 'city'; river_m?: number; water?: string; hills?: boolean; sea?: boolean };
   /** Named points for pieces the game adds itself, e.g. where the palace stands (`y` in cells). */
   anchors?: Record<string, { x: number; z: number; y?: number }>;
-  /** Real materials of the street's surfaces (ground, footway, road, bike, square, grass, bed, forest, sand, rail, bridge). */
+  /** Real materials of the street's surfaces (ground, footway, road, bike, square, grass, bed, forest, sand, wet, rail, bridge). */
   materials?: Record<string, GeoMaterial>;
   /** Every texture the scene names, by id, so the game needs no manifest. */
   textures?: Record<string, GeoTexture>;

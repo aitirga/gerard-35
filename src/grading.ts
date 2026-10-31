@@ -99,6 +99,11 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: .07, lift: [.012, .006, .012], shadows: [.008, -.004, .022], highlights: [.024, .012, -.014], contrast: 1.05, saturation: 1.02 },
     enhance: { highlights: -.1, vibrance: .08 },
   },
+  /** La Barceloneta: the brightest place, a high Mediterranean midday; cool, with open blue shade and soft contrast. */
+  barceloneta: {
+    grade: { temperature: -.04, lift: [.004, .006, .01], shadows: [-.004, .004, .014], highlights: [.012, .01, .004], contrast: 1.02, saturation: 1.04 },
+    enhance: { vibrance: .1, highlights: -.08, dehaze: .04 },
+  },
   /** La torre de Uri: fear, violet-black shade that stays deep and a cold, unsure light. */
   'cardedeu-laberinto': {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },

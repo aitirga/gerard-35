@@ -1,0 +1,29 @@
+{
+  "id": "fusta-passera",
+  "name": "Fusta de la passera",
+  "kind": "material",
+  "size_m": [
+    3.0,
+    3.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "old_wood_floor",
+    "name": "Old Wood Floor",
+    "url": "https://polyhaven.com/a/old_wood_floor",
+    "author": "Guillaume Monsergent",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven old_wood_floor --id fusta-passera",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#56493e",
+  "made": "2026-10-30"
+}

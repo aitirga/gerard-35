@@ -228,7 +228,7 @@ material, light and landmark, which the last column names.
 | Sagrada Família, outside (proposal) | `#9f8f78` | weathered sandstone | carved sandstone | spires | new, neutral | Avinguda Meridiana (ΔE 13): carved stone and park vs panot and blocks |
 | Sagrada Família, inside (proposal) | `#e9e4d8` + coloured light | pale stone in coloured light | branching stone columns, stained glass | a forest of columns | new, neutral | Alegia (ΔE 5): its light is the colour |
 | Plaça d'Espanya (proposal) | `#d8ccb2` | pale limestone and water | monumental stone, brick towers | twin campaniles and a dome | new, warm | Maresme (ΔE 4): monument and water vs houses |
-| La Barceloneta (proposal) | `#e3cd9f` | sand and sea | sand (`sorra`), weathered steel | four stacked rusted cubes | new, cool | Casa de Gerard (ΔE 8): open sea vs a room |
+| La Barceloneta | `#e6d0a2` | sand and sea | sand (`sorra`, `sorra-humida`), rusted iron (`acer-corten`) | four stacked rusted cubes | `barceloneta` cool | Casa de Gerard (ΔE 7): open sea vs a room |
 | Poble Sec (proposal) | `#b8744a` | sienna and pine green | stone steps with iron rails | the slope and its stairs | new, warm | Rec Comtal (ΔE 11): render and stairs at evening vs brick in the morning |
 | Búnkers del Carmel | `#c09a5e` | dry gold grass, war concrete, golden light | board-marked concrete (`formigo-encofrat`), rock (`roca`), dry grass (`herba-seca`) | round gun pits on a bare crest above the city | `bunkers-carmel` warm, dusk sky | Sants (ΔE 5): open hill at sunset vs a shaded street |
 | Palace · entrance | `#c95a8d` | her pink | gum, wrapper paper | El Corazón Líquido | `palacio` | Palace outside (ΔE 17): the same building, inside |
@@ -510,6 +510,8 @@ The one place whose identity is light, not material: build the light first.
 | Text | Catalan: *Plaça d'Espanya*, *Avinguda de la Reina Maria Cristina*, *Font Màgica* |
 
 #### La Barceloneta · the beach (L4)
+
+Built as `barceloneta`; its refined card is in `docs/places/barceloneta.md`.
 
 | | |
 | --- | --- |

@@ -67,6 +67,8 @@ const KINDS = {
   // Alegia's txirimiri: a fine drizzle that drifts more than it falls, ringing the puddles, and low cloud.
   drizzle: { shape: 'spark', orient: 'velocity', colour: ['#eef4f7', '#cdd9df'], additive: .25, glow: .35, opacity: .5, life: [2.4, 3.2], size: [.011, .015], fadeIn: .15, fadeOut: .2, gravity: 4.5, drag: 2, wind: .7, wander: .1, wanderRate: 1.5, stretch: .05, collide: true, pop: true, onLand: { kind: 'ripplet', count: 1 } },
   mist: { shape: 'smoke', colour: ['#e3e9ea', '#c9d1d3'], glow: .3, opacity: .12, life: [9, 14], size: [1.1, 1.8], sizeEnd: 1.5, fadeIn: .35, fadeOut: .4, drag: .5, wind: .5, wander: .06, wanderRate: .4, flow: .1 },
+  // The beach's sea breeze picks up dry sand: fine grains streaking low over it, gone in a second.
+  sand: { shape: 'spark', orient: 'velocity', colour: ['#f1e3c2', '#dcc79c'], opacity: .6, life: [.9, 1.6], size: [.012, .02], fadeIn: .25, fadeOut: .45, drag: .2, wind: 2.5, wander: .25, wanderRate: 2, flow: .4, stretch: .05, collide: true },
   gloom: { shape: 'glow', colour: ['#ffa6d2', '#ff6fb2'], additive: .9, glow: 1, intensity: 1.05, opacity: .75, life: [6, 10], size: [.03, .06], fadeIn: .25, fadeOut: .35, rise: [.05, .2], gravity: -.05, drag: .6, wander: .2, flow: .3, flicker: .5, flickerRate: .6, collide: true, bodies: .8 },
 } satisfies Record<string, ParticleKind>;
 export type EffectKind = keyof typeof KINDS;
@@ -97,6 +99,8 @@ const AIR: Partial<Record<string, Air>> = {
   alegia: { kinds: [{ kind: 'drizzle', density: 18, low: .5, high: 7 }, { kind: 'mist', density: .5, low: .2, high: 1.6 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.3, 0, .2], turbulence: .8 },
   // The Búnkers del Carmel at sunset: gusts over the top, dust glinting in the low sun.
   'bunkers-carmel': { kinds: [{ kind: 'mote', density: 6, low: .3, high: 3 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.9, 0, .35], turbulence: 1.4 },
+  // The sea breeze blows in from the water (+z) and along the shore; it lifts sand, not pollen.
+  barceloneta: { kinds: [{ kind: 'sand', density: 5, low: .03, high: .45 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.5, 0, -.9], turbulence: 1.2 },
 };
 /** What particles need of a scene's scenery: its floors, a sunk river's water, its grid and its houses' volumes. */
 interface SceneShape {

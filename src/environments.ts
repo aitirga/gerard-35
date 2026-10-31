@@ -6,18 +6,19 @@ import REC_COMTAL_SCENE from './geo/rec-comtal.json' with { type: 'json' };
 import CARDEDEU_SCENE from './geo/cardedeu.json' with { type: 'json' };
 import CARDEDEU_MAZE_SCENE from './geo/cardedeu-laberinto.json' with { type: 'json' };
 import BUNKERS_CARMEL_SCENE from './geo/bunkers-carmel.json' with { type: 'json' };
+import BARCELONETA_SCENE from './geo/barceloneta.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
-  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto' | 'bunkers-carmel';
+  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /**
  * Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses, a potted
- * yucca, the big garden cedars and umbrella-topped stone pines of the Vallès (Cardedeu), and the
- * Aleppo pines of Barcelona's dry hills (the Búnkers del Carmel).
+ * yucca, the big garden cedars and umbrella-topped stone pines of the Vallès (Cardedeu), the
+ * Aleppo pines of Barcelona's dry hills (the Búnkers del Carmel) and the seafront's fan palms.
  */
-export type TreeSpecies = 'plane' | 'olive' | 'cypress' | 'yucca' | 'cedar' | 'pine' | 'aleppo';
+export type TreeSpecies = 'plane' | 'olive' | 'cypress' | 'yucca' | 'cedar' | 'pine' | 'aleppo' | 'palm';
 /** What the trunk stands in: a paved street pit (default), an indoor pot, or bare ground. */
 export type TreeBase = 'pit' | 'pot' | 'ground';
 /** Reusable scene pieces, anchored on a cell. `src/props.ts` draws them in any environment. */
@@ -27,8 +28,8 @@ export type WorldProp =
   | { kind: 'tree'; x: number; z: number; species?: TreeSpecies; scale?: number; base?: TreeBase; stakes?: boolean; trunk?: string }
   /** A car spans its anchor and the next cell along +z, or along +x with `along: 'x'`. */
   | { kind: 'car'; x: number; z: number; color: string; along?: 'x' | 'z' }
-  /** `led`: a tall, slim grey pole with a small white LED head, as on the renewed Meridiana. */
-  | { kind: 'lamp'; x: number; z: number; style?: 'classic' | 'led'; yaw?: number }
+  /** `led`: a tall, slim grey pole with a small white LED head, as on the renewed Meridiana; `mast`: the seafront's slim mast with a stack of round spotlights. */
+  | { kind: 'lamp'; x: number; z: number; style?: 'classic' | 'led' | 'mast'; yaw?: number }
   | { kind: 'manhole'; x: number; z: number }
   /**
    * A station entrance: a totem with the metro's red M (or Rodalies' orange R), the line and the
@@ -489,12 +490,15 @@ const MAZE_GROUND = geoEnvironment('cardedeu-laberinto', CARDEDEU_MAZE_SCENE as 
 export const CARDEDEU_MAZE = { ...MAZE_GROUND, grid: towerGrid(MAZE_GROUND.grid) };
 /** The Búnkers del Carmel on the Turó de la Rovira at sunset, the city below (docs/places/bunkers.md). */
 export const BUNKERS_CARMEL = geoEnvironment('bunkers-carmel', BUNKERS_CARMEL_SCENE as GeoScene);
+/** The beach of the L4: the Platja de Sant Miquel, L'Estel Ferit and the old Barceloneta (docs/places/barceloneta.md). */
+export const BARCELONETA = geoEnvironment('barceloneta', BARCELONETA_SCENE as GeoScene);
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
   meridiana: MERIDIANA, palacio: PALACIO, alegia: ALEGIA,
   'meridiana-calle': MERIDIANA_CALLE, 'rec-comtal': REC_COMTAL, cardedeu: CARDEDEU, 'cardedeu-laberinto': CARDEDEU_MAZE,
   'bunkers-carmel': BUNKERS_CARMEL,
+  barceloneta: BARCELONETA,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;
