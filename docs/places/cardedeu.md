@@ -140,7 +140,7 @@ group).
   camera, so the station's arcade, Nuria's street front, the town hall's porch and the Fleca
   Vella's front are all on seen sides.
 - **Bounds**: west −65, east 195, north −133, south 112 m from the anchor (Jacint Verdaguer at the
-  crossing with Pau Gesa): 227 × 217 cells of 1.25 m, 204 buildings, 28,603 walkable cells. The
+  crossing with Pau Gesa): 227 × 217 cells of 1.25 m, 153 buildings, 29,945 walkable cells. The
   north edge takes in Plaça de Sant Joan, Plaça d'Anselm Clavé, the Fleca Vella, Santa Maria and
   Sant Corneli; the south edge stops just past the second track.
 - **Spawn**: platform 1 in front of the arcade. The way out is round the west end of the station to
@@ -155,6 +155,12 @@ group).
 - **Gardens**: `yards` turns the ground 5 m or more from any street (15 m from the railway) into
   lawn with a garden tree every 8 m, at 1.45 times the usual size (cedars, stone pines, olives,
   planes, cypresses), as the aerial photo shows behind every row. They stay walkable.
+- **Generated rows**: `sketch.json` lines with houses (`casa-fila-*`) the streets OpenStreetMap left
+  empty before the reframe. Those that the wider frame put on mapped buildings or gardens were
+  removed on review (2026-10-31): 51 houses doubled the old centre's mapped houses, filled the
+  museum's garden and Casa Pere Llibre's, and stood on the yard across Nuria's street. Casa Pere
+  Llibre's garden (private on the map) got a low wall with railings on its two streets and big
+  trees, inferred, not seen in a photo.
 
 ## How it was built
 
