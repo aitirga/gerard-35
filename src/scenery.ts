@@ -154,7 +154,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   app.scene.fog.type = pc.FOG_NONE;
   // Soft shadows fitted to the view, and the sky glossy things reflect (src/lighting.ts).
   const light = lighting(app);
-  light.setSky(night ? 'night' : environment.palace ? 'palace' : outdoor ? 'day' : 'indoor');
+  light.setSky(night ? 'night' : environment.palace ? 'palace' : nave ? 'nave' : outdoor ? 'day' : 'indoor');
   const sun = new pc.Entity('Sol de la tarde');
   sun.addComponent('light', { type: 'directional', color: sunColor.clone(), intensity: sunIntensity, castShadows: true, shadowDistance: 95 });
   light.shade(sun.light!);

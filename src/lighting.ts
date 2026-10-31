@@ -63,6 +63,8 @@ export const LIGHTING = {
       night: { zenith: '#0e1a2f', horizon: '#3a4a5c', ground: '#16191a' },
       /** Inside her palace: a dark plum vault over a deep pink glow, which rims her gum without washing her walls out. */
       palace: { zenith: '#2a0a26', horizon: '#9c3f7c', ground: '#2a0820' },
+      /** The Sagrada Família's nave: a white vault, warm glass round the horizon, the floor washed blue-green. */
+      nave: { zenith: '#f2efe8', horizon: '#c98a62', ground: '#3f6f86' },
     } satisfies Record<SkyKind, SkyColours>,
     /** La Reina Bubbaloo's sky: dark plum above, pale pink haze on the horizon (`setTone` 1). */
     bubbaloo: { zenith: '#2a0a26', horizon: '#9c3f7c', ground: '#220a1c' } satisfies SkyColours,
@@ -81,7 +83,7 @@ export const LIGHTING = {
 };
 
 export type ShadowKind = 'pcss' | 'vsm' | 'pcf5' | 'pcf3';
-export type SkyKind = 'day' | 'indoor' | 'night' | 'palace';
+export type SkyKind = 'day' | 'indoor' | 'night' | 'palace' | 'nave';
 type SkyColours = { zenith: string; horizon: string; ground: string };
 type Shine = keyof typeof LIGHTING.shine;
 
