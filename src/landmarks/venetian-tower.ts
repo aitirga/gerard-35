@@ -17,7 +17,7 @@ const Y = { plinth: 0.6, base: 7, band: 7.6, arches: 31.6, shaft: 33.6, cornice:
 const HALF = 3.6, RECESS = 3.3, PIERS = [-1.1, 1.1], CHANNELS = [[-2.9, -1.35], [-0.85, 0.85], [1.35, 2.9]];
 
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
-  const brick = kit.surface('mao', String(landmark.params.brick ?? '#8a4632'));
+  const brick = kit.surface('mao', String(landmark.params.brick ?? '#b45e40'));
   const stone = kit.surface('carreu', '#d4c6ab');
   const granite = kit.surface('granit', '#a29b90');
   const copper = kit.mat('Cobre envejecido', '#56625b', 0.35);

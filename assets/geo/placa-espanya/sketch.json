@@ -1,7 +1,7 @@
 {
   "frame": "turned",
   "drawn": "2026-10-30",
-  "note": "Kept on top of the map data: Avinguda de la Reina Maria Cristina redrawn up to a loop round the Magic Fountain (the map's corner is Montjuïc, landmark palau-nacional), and the roundabout's island as lawn under the L8 works (its outline is the works site of OpenStreetMap way/1563314501).",
+  "note": "Kept on top of the map data: Avinguda de la Reina Maria Cristina redrawn up to a loop round the Magic Fountain (the map's corner is Montjuïc, landmark palau-nacional), closed to cars at the crowd barriers before tonight's show: traffic turns back through a gap in the median (`avinguda-gir`) and the closed stretch is `service`, which no car drives; and the roundabout's island as lawn under the L8 works (its outline is the works site of OpenStreetMap way/1563314501).",
   "features": [
     {
       "id": "avinguda-pujada",
@@ -46,6 +46,47 @@
           -79.6
         ],
         [
+          -93.96,
+          -105.04
+        ]
+      ]
+    },
+    {
+      "id": "avinguda-gir",
+      "keep": true,
+      "highway": "tertiary",
+      "name": "Avinguda de la Reina Maria Cristina",
+      "tags": {
+        "lanes": "1",
+        "oneway": "yes",
+        "width": "4"
+      },
+      "line": [
+        [
+          -93.96,
+          -105.04
+        ],
+        [
+          -102.34,
+          -96.66
+        ]
+      ]
+    },
+    {
+      "id": "avinguda-pujada-tancada",
+      "keep": true,
+      "highway": "service",
+      "name": "Avinguda de la Reina Maria Cristina",
+      "tags": {
+        "lanes": "2",
+        "oneway": "yes"
+      },
+      "line": [
+        [
+          -93.96,
+          -105.04
+        ],
+        [
           -106.34,
           -117.32
         ]
@@ -54,7 +95,7 @@
     {
       "id": "avinguda-font-magica",
       "keep": true,
-      "highway": "tertiary",
+      "highway": "service",
       "name": "Avinguda de la Reina Maria Cristina",
       "tags": {
         "lanes": "2",
@@ -156,9 +197,9 @@
       ]
     },
     {
-      "id": "avinguda-baixada",
+      "id": "avinguda-baixada-tancada",
       "keep": true,
-      "highway": "tertiary",
+      "highway": "service",
       "name": "Avinguda de la Reina Maria Cristina",
       "tags": {
         "lanes": "2",
@@ -172,6 +213,26 @@
         [
           -107.7,
           -101.8
+        ],
+        [
+          -102.34,
+          -96.66
+        ]
+      ]
+    },
+    {
+      "id": "avinguda-baixada",
+      "keep": true,
+      "highway": "tertiary",
+      "name": "Avinguda de la Reina Maria Cristina",
+      "tags": {
+        "lanes": "2",
+        "oneway": "yes"
+      },
+      "line": [
+        [
+          -102.34,
+          -96.66
         ],
         [
           -100.2,

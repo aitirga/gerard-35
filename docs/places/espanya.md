@@ -93,7 +93,7 @@ lifted a little for sunlight.
 | | |
 | --- | --- |
 | Dominant | Salmon concrete paving of the Fira's forecourt `#c49884` (hue 19°, nowhere near her pink) |
-| Secondary | Warm limestone `#cdb9a0` (the Fira's palaces, the fountain, the tower bases), tower brick `#8a4632`, Las Arenas' orange brick (its photo), roundabout asphalt `#46474a`, the island's dug soil `#6e5840` and lawn `#86a462`, copper `#56625b` |
+| Secondary | Warm limestone `#cdb9a0` (the Fira's palaces, the fountain, the tower bases), tower brick `#b45e40`, Las Arenas' orange brick (its photo), roundabout asphalt `#46474a`, the island's dug soil `#6e5840` and lawn `#86a462`, copper `#56625b` |
 | Accent | Las Arenas' red steel `#b3261e` (V struts, the rim's edge and ribs, the lift's mast): the place's one saturated colour |
 | Material | Monumental limestone and exposed brick: the Fira's giant columns, the towers' brick channels, Las Arenas' striped horseshoe arches |
 | Ground | Salmon slabs (`lloses-fira`) and three granite steps under the colonnades; grey panot and granite on the sidewalks; a wide asphalt roundabout full of arrows and BUS lanes; the island dug up for the L8, a fringe of lawn behind yellow jersey barriers |
@@ -127,10 +127,13 @@ through the OSM API, Overpass being busy) plus `sketch.json`.
   beside it. The spawn is a few metres away.
 - **Places to look at** (Gerard's voice): the towers, the avenue (the Palau Nacional at its end),
   the Magic Fountain (closed off for tonight's show), the fountain (from the works' barrier), Las
-  Arenas (from Tarragona, under its red struts), the Fira's colonnade.
+  Arenas (from Carrer de la Diputació, under its red struts, the Parc de Joan Miró behind), the
+  Fira's colonnade.
 - **Borders are real**: the palaces' walls, the blocks round the square, the works' barriers round
   the island; the avenue ends at the Magic Fountain's square, closed by crowd barriers before a
-  show (the line says why), with Montjuïc behind as a backdrop out of reach.
+  show (the line says why), with Montjuïc behind as a backdrop out of reach. Cars turn back
+  through a gap in the median just before the barriers (`sketch.json`: `avinguda-gir`; the
+  closed stretch and the loop round the fountain are `service`, which no car drives).
 - **Ground label**: *PLAÇA D'ESPANYA* on the ring.
 
 The build: `just geo-build placa-espanya` (36 buildings, 638 road pieces, 516 props, 7 places,
@@ -187,8 +190,10 @@ its source, author, licence and the command that made it. No generated images.
   cut by the frame, and from the follow camera it cannot be seen. The avenue's median fountains,
   the escalators and Calatrava's tower are not drawn.
 - **Las Arenas**: one photographed bay repeats all round (the real bays vary); the gate tower
-  faces where the map puts it, away from the camera, so it is seen at a grazing angle; the dish
-  roof is plain, without its vents and skylights; no ceramic triangles band.
+  stands where the real one does, at the corner of the square and Gran Via (the mapped exit at
+  −138°), so it faces away from the fixed camera and is never seen in play: turning `gate`
+  towards the camera (about 45°) would show its photo at the cost of the real layout, Aitor's
+  call; the dish roof is plain, without its vents and skylights; no ceramic triangles band.
 - **The fountain**: from outside the barriers it can only be seen at the edge of the follow view
   (the island is 70–100 m across); the overview shows it whole. The bronze groups and the rivers
   are simple masses.

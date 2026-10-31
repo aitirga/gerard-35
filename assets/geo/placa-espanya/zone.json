@@ -1062,7 +1062,7 @@
       "z_m": -38,
       "lines": [
         "El Palau de Comunicacions. Columnas como troncos y nadie entre ellas.",
-        "Hoy no hay feria. Solo palomas en la escalinata."
+        "Hoy no hay feria. Ni colas ni acreditaciones colgadas del cuello."
       ]
     }
   ],
@@ -1175,7 +1175,7 @@
         "carreu"
       ],
       "params": {
-        "gate": -29,
+        "gate": -138,
         "lift": 194,
         "lift_m": 61
       }

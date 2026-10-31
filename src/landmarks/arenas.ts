@@ -21,7 +21,7 @@ const BAYS = 73;
 const rad = (deg: number) => deg * Math.PI / 180;
 
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
-  const gate = Number(landmark.params.gate ?? -29), lift = Number(landmark.params.lift ?? 194), liftR = Number(landmark.params.lift_m ?? 61);
+  const gate = Number(landmark.params.gate ?? -138), lift = Number(landmark.params.lift ?? 194), liftR = Number(landmark.params.lift_m ?? 61);
   const facade = kit.surface('arenes-arcs', '');
   const front = kit.surface('arenes-porta', '');
   const brick = kit.surface('mao', '#9a5e40');

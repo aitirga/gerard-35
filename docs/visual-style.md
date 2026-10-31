@@ -496,7 +496,7 @@ Built (`docs/places/espanya.md` has the reasons and the measured colours).
 | | |
 | --- | --- |
 | Dominant | The Fira's salmon forecourt slabs `#c49884` (`lloses-fira`), hue 19°: orange-red, never her pink |
-| Secondary | Warm limestone `#cdb9a0` (the colonnades, the fountain, the tower bases), tower brick `#8a4632`, Las Arenas' orange brick, the roundabout's asphalt `#46474a`, the dug island `#6e5840` |
+| Secondary | Warm limestone `#cdb9a0` (the colonnades, the fountain, the tower bases), tower brick `#b45e40`, Las Arenas' orange brick, the roundabout's asphalt `#46474a`, the dug island `#6e5840` |
 | Accent | Las Arenas' red steel `#b3261e`: its V struts, the rim's edge, the lift's mast |
 | Material | Monumental limestone and exposed brick (`carreu`, `mao`, Las Arenas' photographed bays) |
 | Ground | Salmon slabs and granite steps under the colonnades, panot sidewalks, a wide roundabout with arrows and BUS lanes, the island dug for the L8 behind yellow barriers |
