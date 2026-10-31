@@ -22,7 +22,7 @@
     {
       "shot": "arrival",
       "delay": 3500,
-      "caption": "Up the Espanya stair (L1, L3) on the Fira's salmon forecourt: lamp masts, the colonnade of the Palau de Comunicacions, the roundabout below"
+      "caption": "Up the Espanya stair (L1, L3) on the Fira's salmon forecourt: lamp masts, the Bicing dock, the tourist kiosk, the roundabout below"
     },
     {
       "teleport": "placa-espanya",
@@ -35,6 +35,18 @@
       "shot": "towers",
       "delay": 2500,
       "caption": "The Venetian towers: granite plinth, cream stone base, red brick channels, loggia and copper pyramid"
+    },
+    {
+      "teleport": "placa-espanya",
+      "cell": [
+        42,
+        87
+      ]
+    },
+    {
+      "shot": "fira",
+      "delay": 2500,
+      "caption": "The Palau de Comunicacions' colonnade: giant limestone columns before tall glass, the balustrade with urns, the granite steps and the salmon forecourt"
     },
     {
       "teleport": "placa-espanya",
@@ -70,7 +82,7 @@
     {
       "shot": "fountain",
       "delay": 2500,
-      "caption": "Jujol's fountain, dry behind the L8 works' yellow barriers"
+      "caption": "Jujol's fountain from the works' barrier: the island dug for the L8 behind yellow jersey barriers, a fringe of lawn, tarps and spoil, the basins dry"
     },
     {
       "teleport": "placa-espanya",
@@ -82,7 +94,7 @@
     {
       "shot": "arenas",
       "delay": 2500,
-      "caption": "Las Arenas' gate tower, ARENAS DE BARCELONA, the brick drum on its band and red struts"
+      "caption": "Las Arenas from Carrer de Tarragona: the photographed brick bays on their concrete band and red steel V struts, the red rim and the terrace walk"
     },
     {
       "teleport": "placa-espanya",
