@@ -288,7 +288,7 @@ export function createPropKit() {
   const frame = mat('Estructura gris', '#8d9295', 0.55);
   const poleGrey = mat('Poste gris', '#a3a8ab', 0.5);
   const ledGlow = mat('Luminaria LED', '#f4f2ea', 0.2, 2.4);
-  const jersey = { red: mat('Barrera roja', '#cf3529', 0.45), white: mat('Barrera blanca', '#ebe8e1', 0.45) };
+  const jersey = { red: mat('Barrera roja', '#cf3529', 0.45), white: mat('Barrera blanca', '#ebe8e1', 0.45), yellow: mat('Barrera amarilla', '#e8b01e', 0.45) };
   const panelYellow = mat('Valla amarilla', '#f0b21d', 0.4);
   const sack = mat('Saco de obra', '#e7e5df', 0.05);
   const sackShade = mat('Saco de obra sombra', '#c9c6be', 0.05);
@@ -361,7 +361,18 @@ export function createPropKit() {
     part(holder, 'Cabezal LED', 'box', poleGrey, [0, 4.55, 0.42], [0.16, 0.07, 0.36]);
     part(holder, 'Luz LED', 'box', ledGlow, [0, 4.51, 0.42], [0.13, 0.02, 0.32]);
   }
-  function barrier(holder: pc.Entity, colour: 'red' | 'white', style: 'jersey' | 'panel' | 'fence') {
+  function mastLamp(holder: pc.Entity) {
+    // A square's tall mast: three LED heads on short arms, splayed so they light all round.
+    part(holder, 'Base de báculo', 'cylinder', poleGrey, [0, 0.1, 0], [0.26, 0.2, 0.26]);
+    part(holder, 'Báculo', 'cylinder', poleGrey, [0, 4.3, 0], [0.12, 8.6, 0.12]);
+    for (const turn of [0, 120, 240]) {
+      const arm = new pc.Entity('Brazo del báculo'); arm.setLocalEulerAngles(0, turn, 0); holder.addChild(arm);
+      part(arm, 'Brazo', 'box', poleGrey, [0, 8.55, 0.25], [0.06, 0.06, 0.5]);
+      part(arm, 'Cabezal LED', 'box', poleGrey, [0, 8.5, 0.6], [0.2, 0.1, 0.42]);
+      part(arm, 'Luz LED', 'box', ledGlow, [0, 8.44, 0.6], [0.16, 0.02, 0.36]);
+    }
+  }
+  function barrier(holder: pc.Entity, colour: 'red' | 'white' | 'yellow', style: 'jersey' | 'panel' | 'fence') {
     if (style === 'jersey') {
       // A water-filled plastic barrier: a wide foot, a narrow top and the two hollows of its handles.
       const m = jersey[colour];
@@ -491,7 +502,7 @@ export function createPropKit() {
         // Turned a quarter so the body runs along +x over its footprint; the anchor stays on its cell.
         if (prop.along === 'x') holder.children.forEach(c => { const p = c.getLocalPosition(); c.setLocalPosition(p.z, p.y, -p.x); c.setLocalRotation(QUARTER_TURN.clone().mul(c.getLocalRotation())); });
       }
-      else if (prop.kind === 'lamp') { if (prop.style === 'led') ledLamp(holder); else lamp(holder); }
+      else if (prop.kind === 'lamp') { if (prop.style === 'led') ledLamp(holder); else if (prop.style === 'mast') mastLamp(holder); else lamp(holder); }
       else if (prop.kind === 'metro') station(holder, prop.network ?? 'metro', prop.name, prop.line);
       else if (prop.kind === 'bench') bench(holder, prop.style ?? 'bench');
       else if (prop.kind === 'barrier') barrier(holder, prop.color ?? 'red', prop.style ?? 'jersey');

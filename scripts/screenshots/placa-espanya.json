@@ -1,0 +1,106 @@
+{
+  "title": "Plaça d'Espanya",
+  "description": "The great roundabout at the foot of Montjuïc, from OpenStreetMap and openly licensed photos: the party comes up the Espanya metro (L1 and L3) on the Fira's salmon forecourt beside the Venetian towers, walks to Jujol's fountain behind the L8 works' yellow barriers, and round to Las Arenas, the brick bullring lifted on red steel struts; the avenue runs up to the Palau Nacional on Montjuïc, a backdrop out of reach.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "placa-espanya",
+      "cell": [
+        69,
+        84
+      ]
+    },
+    {
+      "shot": "arrival",
+      "delay": 3500,
+      "caption": "Up the Espanya stair (L1, L3) on the Fira's salmon forecourt: lamp masts, the colonnade of the Palau de Comunicacions, the roundabout below"
+    },
+    {
+      "teleport": "placa-espanya",
+      "cell": [
+        55,
+        66
+      ]
+    },
+    {
+      "shot": "towers",
+      "delay": 2500,
+      "caption": "The Venetian towers: granite plinth, cream stone base, red brick channels, loggia and copper pyramid"
+    },
+    {
+      "teleport": "placa-espanya",
+      "cell": [
+        52,
+        47
+      ]
+    },
+    {
+      "shot": "avenue",
+      "delay": 2500,
+      "caption": "Between the towers, up Avinguda de la Reina Maria Cristina"
+    },
+    {
+      "teleport": "placa-espanya",
+      "cell": [
+        47,
+        42
+      ]
+    },
+    {
+      "shot": "font-magica",
+      "delay": 2500,
+      "caption": "The avenue's end: the Magic Fountain's square, closed by crowd barriers, the four columns and the stairs up Montjuïc"
+    },
+    {
+      "teleport": "placa-espanya",
+      "cell": [
+        101,
+        131
+      ]
+    },
+    {
+      "shot": "fountain",
+      "delay": 2500,
+      "caption": "Jujol's fountain, dry behind the L8 works' yellow barriers"
+    },
+    {
+      "teleport": "placa-espanya",
+      "cell": [
+        172,
+        212
+      ]
+    },
+    {
+      "shot": "arenas",
+      "delay": 2500,
+      "caption": "Las Arenas' gate tower, ARENAS DE BARCELONA, the brick drum on its band and red struts"
+    },
+    {
+      "teleport": "placa-espanya",
+      "cell": [
+        101,
+        131
+      ]
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "overview",
+      "delay": 4000,
+      "caption": "The whole square from above: the long axis from Las Arenas through the fountain and the towers to the Palau Nacional"
+    },
+    {
+      "press": "KeyR"
+    }
+  ]
+}

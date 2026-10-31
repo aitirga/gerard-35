@@ -577,6 +577,10 @@ def build(zone_id: str) -> None:
     paint("M", near_lines({"motorway"}, 1))
     paint("b", near_lines({"bridge"}))
     paint("B", in_any([b["poly"] for b in buildings]))
+    # A map building that a landmark draws (`"draw": false`, like a bullring or a monument) keeps its
+    # real footprint solid but is not extruded, and the shops inside it get no sign on a wall.
+    hidden = [b for b in buildings if zone.get("buildings", {}).get(b["id"], {}).get("draw") is False]
+    buildings = [b for b in buildings if b not in hidden]
     # Landmarks stand on open ground; solid ones block their footprint like a building.
     found_landmarks = landmarks(zone, osm["elements"], frame, raster)
     for lm in found_landmarks:
@@ -646,7 +650,8 @@ def build(zone_id: str) -> None:
         "areas": {k: [rounded(a["poly"]) for a in v] for k, v in areas.items()},
         "roads": [{**r, "line": rounded(piece)} for r in roads if r["kind"] != "waterway" for piece in clip_line(r["line"], *lo, *hi)],
         "buildings": buildings, "props": props, "places": places,
-        "shops": shops_on_walls(zone, [e for e in osm["elements"] if e["id"] not in {lm["id"] for lm in found_landmarks}], frame, buildings, W, D),
+        "shops": shops_on_walls(zone, [e for e in osm["elements"] if e["id"] not in {lm["id"] for lm in found_landmarks}], frame, buildings, W, D,
+                                [b["poly"] for b in hidden]),
         "crossings": crossings(zone, osm["elements"], frame, roads, W, D),
         "look": zone.get("look", {}),
         "labels": [{"text": l["text"], "x": round(from_m(l)[0], 2), "z": round(from_m(l)[1], 2), "width": l.get("width", 4)} for l in zone.get("labels", [])],
@@ -724,8 +729,9 @@ def map_props(zone: dict, elements: list, frame: Frame, raster: list, roads: lis
     return out
 
 
-def shops_on_walls(zone: dict, elements: list, frame: Frame, buildings: list, W: int, D: int) -> list[dict]:
-    """Every shop, bar and bank of the map (and the zone's own `shops`), as a sign on the nearest street wall."""
+def shops_on_walls(zone: dict, elements: list, frame: Frame, buildings: list, W: int, D: int, hidden: list = ()) -> list[dict]:
+    """Every shop, bar and bank of the map (and the zone's own `shops`), as a sign on the nearest street wall;
+    none for those inside a `hidden` footprint (a building a landmark draws)."""
     signed = {k for k, v in zone.get("buildings", {}).items() if "sign" in v}
     found = []
     for e in elements:
@@ -741,7 +747,7 @@ def shops_on_walls(zone: dict, elements: list, frame: Frame, buildings: list, W:
     found += [(*frame.item(s), s["name"], s["kind"]) for s in zone.get("shops", [])]
     out = []
     for x, z, name, kind in found:
-        if not (0 <= x < W and 0 <= z < D): continue
+        if not (0 <= x < W and 0 <= z < D) or any(point_in_polygon(x, z, poly) for poly in hidden): continue
         best = None
         for b in buildings:
             poly = b["poly"]

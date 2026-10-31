@@ -5,10 +5,11 @@ import MERIDIANA_CALLE_SCENE from './geo/meridiana-calle.json' with { type: 'jso
 import REC_COMTAL_SCENE from './geo/rec-comtal.json' with { type: 'json' };
 import CARDEDEU_SCENE from './geo/cardedeu.json' with { type: 'json' };
 import CARDEDEU_MAZE_SCENE from './geo/cardedeu-laberinto.json' with { type: 'json' };
+import PLACA_ESPANYA_SCENE from './geo/placa-espanya.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
-  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto';
+  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto' | 'placa-espanya';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /** Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses and a potted yucca. */
@@ -22,8 +23,11 @@ export type WorldProp =
   | { kind: 'tree'; x: number; z: number; species?: TreeSpecies; scale?: number; base?: TreeBase; stakes?: boolean; trunk?: string }
   /** A car spans its anchor and the next cell along +z, or along +x with `along: 'x'`. */
   | { kind: 'car'; x: number; z: number; color: string; along?: 'x' | 'z' }
-  /** `led`: a tall, slim grey pole with a small white LED head, as on the renewed Meridiana. */
-  | { kind: 'lamp'; x: number; z: number; style?: 'classic' | 'led'; yaw?: number }
+  /**
+   * `led`: a tall, slim grey pole with a small white LED head, as on the renewed Meridiana; `mast`: a
+   * square's tall mast with three heads on short arms, as round Plaça d'Espanya.
+   */
+  | { kind: 'lamp'; x: number; z: number; style?: 'classic' | 'led' | 'mast'; yaw?: number }
   | { kind: 'manhole'; x: number; z: number }
   /**
    * A station entrance: a totem with the metro's red M (or Rodalies' orange R), the line and the
@@ -32,8 +36,8 @@ export type WorldProp =
   | { kind: 'metro'; x: number; z: number; network?: 'metro' | 'rodalies'; name?: string; line?: string }
   /** Wooden slats on a grey metal frame: a long bench or a single chair. */
   | { kind: 'bench'; x: number; z: number; style?: 'bench' | 'chair'; yaw?: number }
-  /** Street works: a red or white plastic jersey barrier, a yellow fence panel or a metal crowd barrier. */
-  | { kind: 'barrier'; x: number; z: number; color?: 'red' | 'white'; style?: 'jersey' | 'panel' | 'fence'; yaw?: number }
+  /** Street works: a red, white or yellow plastic jersey barrier, a yellow fence panel or a metal crowd barrier. */
+  | { kind: 'barrier'; x: number; z: number; color?: 'red' | 'white' | 'yellow'; style?: 'jersey' | 'panel' | 'fence'; yaw?: number }
   /** A white sack of rubble from the works. */
   | { kind: 'bag'; x: number; z: number }
   | { kind: 'bin'; x: number; z: number }
@@ -464,11 +468,14 @@ export const CARDEDEU = geoEnvironment('cardedeu', CARDEDEU_SCENE as GeoScene);
 const MAZE_GROUND = geoEnvironment('cardedeu-laberinto', CARDEDEU_MAZE_SCENE as GeoScene);
 /** Its tower's walls are drawn into the grid (src/tower.ts): the ramp spirals up ring by ring. */
 export const CARDEDEU_MAZE = { ...MAZE_GROUND, grid: towerGrid(MAZE_GROUND.grid) };
+/** Plaça d'Espanya (docs/places/espanya.md): the roundabout, the Venetian towers and Las Arenas, from the L1 and L3. */
+export const PLACA_ESPANYA = geoEnvironment('placa-espanya', PLACA_ESPANYA_SCENE as GeoScene);
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
   meridiana: MERIDIANA, palacio: PALACIO, alegia: ALEGIA,
   'meridiana-calle': MERIDIANA_CALLE, 'rec-comtal': REC_COMTAL, cardedeu: CARDEDEU, 'cardedeu-laberinto': CARDEDEU_MAZE,
+  'placa-espanya': PLACA_ESPANYA,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;
