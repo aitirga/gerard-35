@@ -1,6 +1,6 @@
 {
   "title": "Traffic and daylight on the Meridiana",
-  "description": "Cars, taxis and buses drive the avenue's lanes, queue at red lights, keep out of a blocked junction and go on green, while the traffic lights and walk signals change with them; the bike lane in the median shows a bicycle seen from the side. Then the outdoor daylight (a near-white sun with a cool sky fill) on Passatge Maresme in the morning.",
+  "description": "Cars, taxis and buses drive the avenue's lanes, queue at red lights, keep out of a blocked junction and go on green, while the traffic lights and walk signals change with them; the bike lane in the median carries cyclists both ways, who brake for Gerard. Then the outdoor daylight (a near-white sun with a cool sky fill) on Passatge Maresme in the morning.",
   "steps": [
     {
       "open": "/?story=metro&solo=1"
@@ -16,13 +16,13 @@
       "teleport": "meridiana-calle",
       "cell": [
         70,
-        51
+        56
       ]
     },
     {
       "shot": "bike-lane",
       "delay": 2500,
-      "caption": "The median's bike lane: a white bicycle in profile every few metres, between the planted beds"
+      "caption": "The median's bike lane: cyclists ride it both ways, each on its own half, and brake for Gerard; a white bicycle in profile every few metres, between the planted beds"
     },
     {
       "teleport": "meridiana-calle",
@@ -47,13 +47,13 @@
       "teleport": "meridiana-calle",
       "cell": [
         100,
-        57
+        51
       ]
     },
     {
       "shot": "stops-for-gerard",
       "delay": 3000,
-      "caption": "Gerard standing in a lane of the calçada: the cars brake and wait behind him"
+      "caption": "Gerard standing in a lane of the east carriageway: the cars and scooters brake and wait behind him"
     },
     {
       "teleport": "meridiana-calle",

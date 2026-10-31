@@ -1,6 +1,6 @@
 {
   "title": "Avinguda Meridiana · Fabra i Puig",
-  "description": "The street outside the flat, rebuilt from OpenStreetMap and photos of the avenue today: the renewed sidewalk in grey panot with its plane trees, varied windows on the blocks (blinds, balconies with plants and washing, enclosed galleries, lit flats), the real shops on the ground floors, red and white barriers from the works, benches facing the shop fronts, the bus lane and the bike lane in the planted median, the bus shelter, the graffiti hoarding and Hipercor with its tower. Then down the Fabra i Puig stair, which opens the network plan on the station wall.",
+  "description": "The street outside the flat, rebuilt from OpenStreetMap, the city's design for the 2025-26 works and openly licensed photos: six lanes (two and a bus lane each way) with the planted median and its two-way bike lane, the 10 m panot sidewalk with the old plane trees in pits, granite kerbs lowered at the zebras, new black asphalt, blocks with balcony slabs, cornices, bare party walls and crowded terraces (stair housings, water tanks, aerials, air conditioners), Hipercor's vaulted canopy under the brown-banded slab, recycling containers, the Bicing dock, scooters and café tables; then the Fabra i Puig stair, which opens the network plan; the avenue from above; after rain (wet asphalt and puddles) and at dusk (shop light on the sidewalk).",
   "steps": [
     {
       "open": "/?story=metro&solo=1"
@@ -34,19 +34,19 @@
     {
       "shot": "shops",
       "delay": 2500,
-      "caption": "The even side: Granier, 365, Vision-Prix, benches facing the shops and the bus shelter on the panot"
+      "caption": "The even side: Granier, 365, Vision-Prix on the wide panot sidewalk, benches facing the shops, the kerb bed and the bus shelter"
     },
     {
       "teleport": "meridiana-calle",
       "cell": [
         70,
-        51
+        56
       ]
     },
     {
       "shot": "median",
       "delay": 2500,
-      "caption": "The median: bike lane between planted beds, young trees on stakes, the works' barriers and sacks"
+      "caption": "The median: the two-way bike lane between planted beds, young trees on stakes, the works' barriers and sacks, the vent grates over the trains (they breathe a pale draught when one runs underneath)"
     },
     {
       "teleport": "meridiana-calle",
@@ -58,7 +58,7 @@
     {
       "shot": "hipercor",
       "delay": 2500,
-      "caption": "Hipercor: the wavy canopy, the blue letters, the tower behind and the graffiti hoarding"
+      "caption": "Hipercor: the vaulted white canopy, the blue letters, the brown-banded slab behind and the graffiti hoarding"
     },
     {
       "teleport": "meridiana-calle",
@@ -115,10 +115,59 @@
     {
       "shot": "overview",
       "delay": 3000,
-      "caption": "The avenue from above, Fabra i Puig to Hipercor"
+      "caption": "The avenue from above, Fabra i Puig to Hipercor: six lanes and the median, the blocks' terraces, the city going on in the haze"
     },
     {
       "press": "KeyR"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        126,
+        44
+      ]
+    },
+    {
+      "shot": "terrace",
+      "delay": 2500,
+      "caption": "Café Entrepans' tables on the wide sidewalk, a bench and a lamp by the kerb bed, the old plane trees in their pits and the kiosk on the corner"
+    },
+    {
+      "eval": "window.gerard.game.effects.setWeather('rain', 1, true)"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        78,
+        44
+      ]
+    },
+    {
+      "shot": "rain",
+      "delay": 7000,
+      "caption": "Rain: the asphalt and the panot darken and shine, puddles gather in the gutters along the kerbs"
+    },
+    {
+      "eval": "window.gerard.game.effects.setWeather('clear', 0, true); window.gerard.story.days.clock.hour = 21"
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        7,
+        3
+      ]
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        78,
+        44
+      ]
+    },
+    {
+      "shot": "dusk",
+      "delay": 4000,
+      "caption": "Nine in the evening: the open shops spill warm light on the sidewalk, the LED lamps a cold one (her pink creeps in with the dusk)"
     }
   ]
 }

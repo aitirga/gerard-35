@@ -60,7 +60,9 @@ FACING_PROPS = {"bench", "bike-rack", "traffic-light", "lamp"}
 # ...and those that turn their back to it: benches by the curb look at the shop fronts.
 BACK_TO_ROAD = {"bench"}
 # Cells each prop kind blocks along +x from its anchor (src/environments.ts PROP_FOOTPRINTS).
-PROP_LENGTH = {"shelter": 3, "bus": 5}
+PROP_LENGTH = {"shelter": 3, "bus": 5, "containers": 5, "bicing": 4}
+# Flat street furniture that blocks nothing: manhole covers and the vent grates over a tunnel.
+FLAT_PROPS = {"manhole", "grate"}
 # Amenities that count as shops: they get a sign on their building's ground floor.
 SHOP_AMENITIES = {"restaurant", "cafe", "bar", "fast_food", "pharmacy", "bank", "pub", "ice_cream", "post_office",
                   "clinic", "dentist", "betting", "bureau_de_change"}
@@ -487,6 +489,8 @@ def classify(element: dict) -> str | None:
     if "building" in t: return "building"
     # Tunnels, culverts and underground corridors are not on the street (the metro, the rail tunnel).
     if t.get("tunnel") in ("yes", "culvert", "building_passage") or t.get("location") == "underground": return None
+    # Indoor corridors (a station's passages) are not streets either.
+    if t.get("highway") == "corridor" or t.get("indoor") in ("yes", "corridor"): return None
     if t.get("natural") == "water" or t.get("waterway") == "riverbank" or t.get("landuse") == "reservoir": return "water"
     if t.get("waterway") in ("river", "stream", "canal"): return "waterway"
     if t.get("landuse") == "forest" or t.get("natural") in ("wood", "scrub"): return "forest"
@@ -626,6 +630,9 @@ def build(zone_id: str) -> None:
             if prop["kind"] in ("barrier", "bag") and any(
                     c in taken or any((c[0] + dx, c[1] + dz) in trees for dx in (-1, 0, 1) for dz in (-1, 0, 1)) for c in prop_cells(prop)):
                 continue
+            # A row of furniture (`to`, `every_m`) leaves out the spots something already stands on, and
+            # those on a carriageway: a row along a sidewalk or a median breaks where a side street crosses it.
+            if "to" in p and (any(c in taken for c in prop_cells(prop)) or on_carriageway(x, z, roads)): continue
             if prop["kind"] == "car" and (zone.get("rotation_deg", 0) % 180 == 0 or frame.turned):
                 prop["along"] = "x"  # the zone's streets run along x, so cars park along x
             if prop["kind"] in FACING_PROPS and "yaw" not in prop:
@@ -669,7 +676,7 @@ def build(zone_id: str) -> None:
 
 
 def prop_cells(p: dict) -> list[tuple[int, int]]:
-    if p["kind"] == "manhole": return []
+    if p["kind"] in FLAT_PROPS: return []
     if p["kind"] == "car": return [(p["x"], p["z"]), (p["x"] + 1, p["z"]) if p.get("along") == "x" else (p["x"], p["z"] + 1)]
     return [(p["x"] + i, p["z"]) for i in range(p.get("length", PROP_LENGTH.get(p["kind"], 1)))]
 
@@ -681,6 +688,11 @@ def rows(p: dict, frame: Frame) -> list[tuple[float, float]]:
     end = frame.item(p["to"])
     count = max(1, round(math.hypot(end[0] - start[0], end[1] - start[1]) * frame.cell / p.get("every_m", 6)))
     return [(start[0] + (end[0] - start[0]) * i / count, start[1] + (end[1] - start[1]) * i / count) for i in range(count + 1)]
+
+
+def on_carriageway(x: float, z: float, roads: list) -> bool:
+    """Whether a point lies on a road's asphalt (paths and bike lanes do not count)."""
+    return any(r["kind"] == "road" and segment_distance(x, z, a, b) < r["width"] / 2 for r in roads for a, b in zip(r["line"], r["line"][1:]))
 
 
 def nearest_road(x: float, z: float, roads: list, kinds=("road",)) -> tuple[float, tuple, tuple] | None:
@@ -718,7 +730,10 @@ def map_props(zone: dict, elements: list, frame: Frame, raster: list, roads: lis
             if kind not in wanted or e["tags"].get(key) != value: continue
             x, z = (round(v) for v in frame.cells(*e["at"]))
             if not (0 < x < frame.width - 1 and 0 < z < frame.depth - 1) or raster[z][x] not in OPEN_FOR_PROPS: continue
-            prop = {"kind": kind, "x": x, "z": z} | wanted[kind]
+            extra = dict(wanted[kind])
+            # `in_bed`: what changes for one standing in a planted bed (a tree there needs no paved pit).
+            in_bed = extra.pop("in_bed", {})
+            prop = {"kind": kind, "x": x, "z": z} | extra | (in_bed if raster[z][x] == "g" else {})
             if kind in FACING_PROPS: prop["yaw"] = facing(x, z, roads, kind)
             out.append(prop)
     return out
@@ -814,19 +829,29 @@ def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
         "walls": chosen.get("walls", pick(e["id"], style.get("walls", ["#e8e0d0"]))), "base": style.get("base"), "trim": style.get("trim"),
         "roofColor": style.get("roof"), "facade": facade, "ground": ground,
         "poly": rounded(poly), "box": oriented_box(poly),
-        "materials": building_materials(style.get("materials", {}) | chosen.get("materials", {}), facade, ground, roof),
-    } | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {})
+        "materials": building_materials(style.get("materials", {}) | chosen.get("materials", {}), facade, ground, roof, "party" in style),
+    } | relief(style | chosen) | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {})
+
+
+def relief(style: dict) -> dict:
+    """What a building carries beyond its painted walls (docs/environment-styling.md § Styles): balcony
+    slabs every storey on the walls the camera sees (`balcony_m` deep, fronts in `balcony`), a cornice,
+    the clutter of a flat roof (`rooftop`) and bare party walls in `party` where it rises over a neighbour."""
+    out = {k: style[k] for k in ("balcony_m", "balcony", "cornice", "rooftop", "party") if style.get(k)}
+    return {"relief": out} if out else {}
 
 
 # ---------------------------------------------------------------- real materials
 
-def building_materials(named: dict, facade: str, ground: str, roof: str) -> dict:
-    """The textures under a building's painted walls and plinth and on its roof: the style's or the
-    building's `materials`, else the defaults for its kinds. "none" (or a photo facade) leaves it painted."""
+def building_materials(named: dict, facade: str, ground: str, roof: str, party: bool = False) -> dict:
+    """The textures under a building's painted walls and plinth and on its roof (and its bare party
+    walls, with `party`): the style's or the building's `materials`, else the defaults for its kinds.
+    "none" (or a photo facade) leaves it painted."""
     hedge = facade == "hedge"
     out = {"wall": named.get("wall", WALL_MATERIALS.get(facade, "estuc")),
            "base": named.get("base", BASE_MATERIALS.get(ground, "carreu")),
            "roof": named.get("roof", None if hedge else ROOF_MATERIALS.get(roof, "teula"))}
+    if party: out["party"] = named.get("party", "mao")
     if facade.startswith("photo:"): out["wall"] = None
     if ground.startswith("photo:"): out["base"] = None
     return {k: v for k, v in out.items() if v and v != "none"}

@@ -1235,6 +1235,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /** The camera's ortho height before any punch-in, and the hit kick it wears this frame. */
   let viewHeight = camera.camera!.orthoHeight;
   const cameraKick = new pc.Vec3();
+  /** A train under the street (the Meridiana's median): whether it runs, where it is along x in cells, its way and the wait for the next. */
+  const train = { running: false, x: 0, way: 1, wait: 6, scene: '', grates: [] as { x: number; z: number }[] };
   app.on('update', (dt: number) => {
     const delta = Math.min(dt, 0.05);
     // Cutscenes, fight animations and effects keep the clock on slow machines (a frame or two a
@@ -1407,6 +1409,18 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     battleScene.update(shown, animate);
     // Traffic waits out fights and the pause menu; otherwise it stops for Gerard and his partner.
     const partner = mateHere();
+    scenery.setStreet(effects.weather.rain, story.dusk);
+    // Now and then a train runs under the street: its draught puffs out of the vent grates one after
+    // another as it passes beneath them (the Meridiana's median, over the L1 and the Rodalies).
+    if (train.scene !== environment.id) { train.scene = environment.id; train.grates = environment.props.filter(p => p.kind === 'grate'); train.running = false; train.wait = 6; }
+    if (train.grates.length && animate && !battle && !paused && (train.wait -= delta) < 0) {
+      const xs = train.grates.map(g => g.x), start = Math.min(...xs) - 30, end = Math.max(...xs) + 30;
+      if (!train.running) { train.running = true; train.x = train.way > 0 ? start : end; }
+      const from = train.x;
+      train.x += train.way * 11 * delta;
+      for (const g of train.grates) if ((g.x - from) * (g.x - train.x) <= 0) effects.emit('draught', scenery.toWorld(g.x, g.z), 9, .5);
+      if (train.x < start || train.x > end) { train.running = false; train.way = -train.way; train.wait = 30 + Math.random() * 40; }
+    }
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
       battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
     // Particles part around everyone standing in the scene, and the air fills what the camera sees.

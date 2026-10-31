@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import type { GeoBuilding, GeoPoint, GeoScene } from './geo';
+import type { GeoBuilding, GeoPoint, GeoRoad, GeoScene } from './geo';
 import { shine } from './lighting';
 import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from './building-occlusion';
 import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
@@ -44,6 +44,8 @@ const CUT_FLARE = 0.25;
 const CUT_RATE = 8;
 /** The warm light the edge glows with. */
 const CUT_GLOW = '1.0, 0.86, 0.6';
+/** What wet asphalt and panot reflect, at full wetness. */
+const WET_SHEEN = new pc.Color(0.14, 0.14, 0.14);
 type V3 = [number, number, number];
 interface BuildingCut { triangles: number[]; instances: pc.MeshInstance[]; radius: number }
 
@@ -286,6 +288,14 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     });
   }
   const look = scene.look ?? {};
+  const streets = scene.roads.filter(r => r.kind === 'road');
+  /** Whether a point lies on the asphalt of a street (other than `self`). */
+  const onStreet = (px: number, pz: number, self?: GeoRoad) => streets.some(r => r !== self && r.line.some((a, i) => {
+    const b = r.line[i + 1];
+    if (!b) return false;
+    const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / l2));
+    return Math.hypot(a[0] + dx * t - px, a[1] + dz * t - pz) < r.width / 2 + 0.05;
+  }));
   /** Barcelona's renewed sidewalks: small light-grey square tiles, a few a shade lighter or darker. */
   function panot() {
     return canvas(256, 256, ctx => {
@@ -315,7 +325,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       for (let gz = Math.min(...zs) + 0.4; gz < Math.max(...zs); gz += 0.85) for (let gx = Math.min(...xs) + 0.3; gx < Math.max(...xs); gx += 0.95) {
         const px = gx + (jitter(k * 3 + 1) - 0.5) * 0.5, pz = gz + (jitter(k * 3 + 2) - 0.5) * 0.4, r = 0.45 + jitter(k * 3 + 3) * 0.4;
         k++;
-        if (!inside(px, pz, poly) || crowded(px, pz, r)) continue;
+        // …and off the streets that cross the bed.
+        if (!inside(px, pz, poly) || crowded(px, pz, r) || onStreet(px, pz)) continue;
         const e = new pc.Entity('Mata');
         e.addComponent('render', { type: 'sphere', material: shrubs[k % shrubs.length], castShadows: false, receiveShadows: true, batchGroupId: kit.batch });
         e.setPosition(x(px), 0.05, z(pz)); e.setLocalScale(r, r * (0.55 + jitter(k) * 0.4), r); root.addChild(e);
@@ -412,8 +423,54 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   add('Vía del tren', layers.rail, ballast, root, true, false);
   add('Puente', layers.bridge, bridgeDeck, root, true, false);
 
+  /** Stretches of kerb along each street's edges: where it starts and ends, and the side it faces. */
+  const kerbs: { a: GeoPoint; b: GeoPoint; out: GeoPoint }[] = [];
+  if (look.kerbs) {
+    // Granite kerbs, 30 cm wide and proud of the asphalt, along both edges of every street; broken
+    // where another street joins and lowered at the zebras, where people cross.
+    const lowered = (px: number, pz: number) => (scene.crossings ?? []).some(c => {
+      const dx = px - c.x, dz = pz - c.z, along = dx * Math.cos(c.angle) + dz * Math.sin(c.angle);
+      return Math.abs(along) < 1.4 && Math.abs(-dx * Math.sin(c.angle) + dz * Math.cos(c.angle)) < c.width / 2 + 0.6;
+    });
+    const stone = new MeshBuilder(), wide = 0.3 / cellM, high = 0.09;
+    for (const road of streets) for (let i = 0; i + 1 < road.line.length; i++) {
+      const a = road.line[i], b = road.line[i + 1], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (len < 0.5) continue;
+      const u = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+      for (const side of [-1, 1]) {
+        const n = [-u[1] * side, u[0] * side], off = road.width / 2;
+        const at = (t: number, o: number): GeoPoint => [a[0] + u[0] * t + n[0] * (off + o), a[1] + u[1] * t + n[1] * (off + o)];
+        const lay = (t0: number, t1: number) => {
+          const ring = [at(t0, 0), at(t1, 0), at(t1, wide), at(t0, wide)], mid = at((t0 + t1) / 2, wide / 2);
+          for (let k = 0; k < 4; k++) {
+            const p = ring[k], q = ring[(k + 1) % 4], l = Math.hypot(q[0] - p[0], q[1] - p[1]) * cellM;
+            stone.quad(P(p, 0), P(q, 0), P(q, high), P(p, high), [(p[0] + q[0]) / 2 - mid[0], 0, (p[1] + q[1]) / 2 - mid[1]], [0, 0], [l, 0], [l, high * cellM], [0, high * cellM]);
+          }
+          stone.quad(P(ring[0], high), P(ring[1], high), P(ring[2], high), P(ring[3], high), [0, 1, 0], metres(ring[0]), metres(ring[1]), metres(ring[2]), metres(ring[3]));
+          kerbs.push({ a: ring[0], b: ring[1], out: n });
+        };
+        // Sample the edge every half cell and lay a kerb over each unbroken run.
+        const steps = Math.max(1, Math.round(len / 0.5));
+        const ok = Array.from({ length: steps + 1 }, (_, k) => { const p = at(k * len / steps, wide / 2); return !onStreet(p[0], p[1], road) && !lowered(p[0], p[1]); });
+        for (let k = 0; k <= steps;) {
+          if (!ok[k]) { k++; continue; }
+          let e = k;
+          while (e < steps && ok[e + 1]) e++;
+          const t0 = k === 0 ? 0 : (k - 0.5) * len / steps, t1 = e === steps ? len : (e + 0.5) * len / steps;
+          if (t1 - t0 > 0.4) lay(t0, t1);
+          k = e + 1;
+        }
+      }
+    }
+    const granite = mat('Bordillo de granito', '#b9b5ac', 0.08);
+    onLoad.push(() => dress(granite, 'granit', '#b9b5ac'));
+    add('Bordillos', stone, granite, root, true, true);
+  }
+
   // ------------------------------------------------------------ facades and roofs
   const textures = new Map<string, pc.StandardMaterial>();
+  /** Facades whose lit windows and shop fronts glow as the evening comes (their emissive map is only those). */
+  const evening: pc.StandardMaterial[] = [];
   /** Each building's pivot, so its signs belong to it. */
   const pivots = new Map<string, pc.Entity>();
   const bayM = BAY * cellM, storeyM = scene.storey * cellM;
@@ -426,13 +483,16 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const key = `${kind}|${wall}|${trim}|${base}|${grain.wall}|${grain.base}`;
     let m = textures.get(key);
     if (m) return m;
-    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front'].includes(kind);
+    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front', 'shopfronts'].includes(kind);
     const [atlasU, atlasV] = FACADE_ATLAS[kind] ?? [1, 1];
     const w = ground ? 256 : 128 * atlasU, h = 192 * atlasV;
     const glass = '#2c3a42', wood = '#5b3d2a';
     // Varies blinds, shutters and awnings between walls of different colours.
     const seed = [...wall].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+    /** Lit windows and shop fronts, painted again on their own as the glow they give at dusk. */
+    const glows: number[][] = [];
     const draw = (ctx: CanvasRenderingContext2D) => {
+      glows.length = 0;
       // Painted top-down, as a facade is read; the wall's v runs bottom-up, so the canvas is flipped.
       ctx.setTransform(1, 0, 0, -1, 0, h);
       /** A plain wall in `fill`, with the real material's grain over it once loaded. */
@@ -518,6 +578,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         };
         const pane = (x0: number, y0: number, ww: number, hh: number, lit: boolean) => {
           ctx.fillStyle = lit ? '#f1c77a' : glass; ctx.fillRect(x0, y0, ww, hh);
+          if (lit) glows.push([x0, y0, ww, hh]);
           if (lit) { ctx.fillStyle = 'rgba(255,245,220,.6)'; ctx.fillRect(x0 + 2, y0, ww * 0.3, hh); ctx.fillRect(x0 + ww * 0.68, y0, ww * 0.3, hh); }
           else { ctx.fillStyle = 'rgba(190,220,235,.22)'; ctx.fillRect(x0 + 3, y0 + 3, ww * 0.3, hh - 6); }
         };
@@ -586,6 +647,31 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
             }
           }
         }
+      } else if (kind === 'slab') {
+        // A 1960s–70s rental slab: a white ribbon of windows in aluminium frames over a brown
+        // spandrel, storey after storey; a few blinds down, a few flats lit.
+        paint(wall, 'wall');
+        ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(0, 112, w, 4);
+        ctx.fillStyle = trim; ctx.fillRect(0, 16, w, 84);
+        for (const [i, x0] of [6, 68].entries()) {
+          const lit = jitter(seed + i * 5.3) > 0.82, down = jitter(seed + i * 9.1) > 0.6 ? 0.35 + jitter(seed + i) * 0.5 : 0;
+          ctx.fillStyle = lit ? '#f1c77a' : '#4f6572'; ctx.fillRect(x0, 22, 54, 72);
+          if (lit) glows.push([x0, 22, 54, 72]);
+          ctx.fillStyle = 'rgba(205,225,235,.28)'; ctx.fillRect(x0 + 3, 25, 16, 66);
+          if (down) { ctx.fillStyle = '#e8e2d2'; ctx.fillRect(x0, 22, 54, 72 * down); ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let y = 25; y < 22 + 72 * down; y += 4) ctx.fillRect(x0, y, 54, 1); }
+          ctx.fillStyle = '#c9cdcf'; ctx.fillRect(x0 + 26, 22, 3, 72);
+        }
+        ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(0, 100, w, 3);
+      } else if (kind === 'party') {
+        // A bare party wall (mitgera) where a block rises over its neighbour: the brick's own grain
+        // and water stains running down from the top.
+        paint(wall, 'wall');
+        for (let k = 0; k < 3; k++) {
+          const sx = jitter(seed + k * 3.7) * w, sw = 6 + jitter(seed + k) * 14;
+          const g = ctx.createLinearGradient(0, 0, 0, h);
+          g.addColorStop(0, 'rgba(40,30,25,.16)'); g.addColorStop(1, 'rgba(40,30,25,0)');
+          ctx.fillStyle = g; ctx.fillRect(sx, 0, sw, h);
+        }
       } else if (kind === 'school') {
         // A school: one wide band of glazing per storey with coloured frames.
         paint(wall, 'wall');
@@ -602,6 +688,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
           const shut = kind === 'shops' && jitter(seed + i) > 0.7;
           ctx.fillStyle = '#3a3f42'; ctx.fillRect(x0, 50, 100, h - 50);
           ctx.fillStyle = shut ? '#8f9396' : 'rgba(255,214,150,.55)'; ctx.fillRect(x0 + 6, 56, 88, h - 62);
+          if (!shut && kind === 'shops') glows.push([x0 + 6, 56, 88, h - 62]);
           if (shut) {
             ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 58; y < h; y += 6) ctx.fillRect(x0 + 6, y, 88, 1.5);
             // Barcelona's lowered shutters always carry a tag or two.
@@ -614,7 +701,50 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
           if (kind === 'shops') {
             const stripe = ['#3f6b4a', '#a8423a', '#2f5d8a', '#c88b2c'][(seed + i) % 4];
             for (let k = 0; k < 10; k++) { ctx.fillStyle = k % 2 ? '#f3eee2' : stripe; ctx.fillRect(x0 + k * 10, 30, 10, 20); }
-          } else { ctx.fillStyle = trim; ctx.fillRect(x0, 34, 100, 16); ctx.fillStyle = '#2c3a42'; ctx.fillRect(x0 + 30, 70, 40, h - 70); }
+          } else { ctx.fillStyle = trim; ctx.fillRect(x0, 34, 100, 16); ctx.fillStyle = '#2c3a42'; ctx.fillRect(x0 + 30, 70, 40, h - 70); glows.push([x0 + 30, 70, 40, h - 70]); }
+        }
+      } else if (kind === 'shopfronts') {
+        // The Meridiana's ground floors: shop windows in aluminium frames with the lit shop seen
+        // through the glass (a warm ceiling, shelves of goods), a teal or grey canvas awning over
+        // some, and here and there a shutter down with its tags.
+        paint(base, 'base');
+        const goods = ['#c9483c', '#e2c25a', '#4f7fa8', '#6e9a5a', '#ece6d8', '#7a6a58', '#d98a3c'];
+        for (const [i, x0] of [14, 142].entries()) {
+          const r = (k: number) => jitter(seed + i * 13 + k);
+          ctx.fillStyle = '#a3a8aa'; ctx.fillRect(x0, 46, 100, h - 46);
+          // The texture repeats every two shops, so a shutter down shows on every other one: keep it rare.
+          if (r(1) > 0.93) {
+            ctx.fillStyle = '#8f9396'; ctx.fillRect(x0 + 5, 52, 90, h - 52);
+            ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 54; y < h; y += 6) ctx.fillRect(x0 + 5, y, 90, 1.5);
+            for (let t = 0; t < 2; t++) {
+              ctx.strokeStyle = ['#2f7fc4', '#f0c234', '#ffffff', '#1d1d1d'][(seed + i + t) % 4]; ctx.lineWidth = 4; ctx.beginPath();
+              const tx = x0 + 14 + r(t + 3) * 46, ty = 96 + r(t + 5) * 60;
+              ctx.moveTo(tx, ty); ctx.bezierCurveTo(tx + 12, ty - 22, tx + 22, ty + 18, tx + 38, ty - 6); ctx.stroke();
+            }
+          } else {
+            const inside = ctx.createLinearGradient(0, 52, 0, h);
+            inside.addColorStop(0, '#f6e4c2'); inside.addColorStop(1, '#9c8466');
+            ctx.fillStyle = inside; ctx.fillRect(x0 + 5, 52, 90, h - 56);
+            glows.push([x0 + 5, 52, 90, h - 56]);
+            for (let s = 0; s < 3; s++) {
+              const y = 88 + s * 28;
+              for (let k = 0; k < 9; k++) {
+                const tall = 10 + r(s * 9 + k + 7) * 8;
+                ctx.fillStyle = goods[Math.floor(r(s * 9 + k + 40) * goods.length)]; ctx.fillRect(x0 + 8 + k * 10, y + 18 - tall, 8, tall);
+              }
+              ctx.fillStyle = 'rgba(60,50,40,.55)'; ctx.fillRect(x0 + 5, y + 18, 90, 3);
+            }
+            // The glass: a cool sheen, one bright streak of sky and the door's frame.
+            ctx.fillStyle = 'rgba(110,140,155,.3)'; ctx.fillRect(x0 + 5, 52, 90, h - 56);
+            ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.beginPath();
+            ctx.moveTo(x0 + 20, 52); ctx.lineTo(x0 + 44, 52); ctx.lineTo(x0 + 18, h - 4); ctx.lineTo(x0 + 5, h - 4); ctx.lineTo(x0 + 5, 90); ctx.fill();
+            ctx.fillStyle = '#a3a8aa'; ctx.fillRect(x0 + 60, 52, 4, h - 56); ctx.fillRect(x0 + 5, 76, 90, 3);
+          }
+          if (r(2) > 0.45) {
+            // A plain canvas awning, its scalloped hem in shadow.
+            ctx.fillStyle = ['#3f8f84', '#5d6a70', '#2f6e66'][Math.floor(r(4) * 3)]; ctx.fillRect(x0 - 2, 28, 104, 20);
+            ctx.fillStyle = 'rgba(0,0,0,.25)'; for (let k = 0; k < 8; k++) { ctx.beginPath(); ctx.arc(x0 + 4 + k * 13, 48, 6, 0, Math.PI); ctx.fill(); }
+          } else { ctx.fillStyle = trim; ctx.fillRect(x0, 34, 100, 12); }
         }
       } else if (kind === 'ashlar' || kind === 'ashlar-windows') {
         stones(wall, 8, 'wall');
@@ -639,7 +769,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         // Under a wavy concrete canopy, lit glass doors and shop windows.
         ctx.fillStyle = '#3a4148'; ctx.fillRect(0, 0, w, h);
         for (let k = 0; k < 6; k++) {
-          ctx.fillStyle = 'rgba(255,226,170,.62)'; ctx.fillRect(6 + k * 42, 70, 36, h - 74);
+          ctx.fillStyle = 'rgba(255,226,170,.62)'; ctx.fillRect(6 + k * 42, 70, 36, h - 74); glows.push([6 + k * 42, 70, 36, h - 74]);
           ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(9 + k * 42, 74, 8, h - 82);
         }
         ctx.fillStyle = base; ctx.fillRect(0, 0, w, 44);
@@ -673,6 +803,18 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const c = canvas(w, h, draw);
     const made = m = cutaway(textured(`Fachada ${kind}`, c, 0.1));
     textures.set(key, m);
+    if (glows.length) {
+      // What glows is the painted pane itself (the lit shop and its shelves, a flat's lamp), not a
+      // flat patch of colour, so the shop fronts keep their goods at dusk.
+      made.emissiveMap = kit.texture(canvas(w, h, ctx => {
+        ctx.setTransform(1, 0, 0, -1, 0, h); ctx.fillStyle = '#ffffff';
+        for (const [gx, gy, gw, gh] of glows) ctx.fillRect(gx, gy, gw, gh);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalCompositeOperation = 'source-in'; ctx.drawImage(c, 0, 0);
+        ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, w, h);
+      }));
+      made.emissive.set(1, 0.84, 0.6); made.emissiveIntensity = 0; made.update(); evening.push(made);
+    }
     // Repainted with the grain once the materials arrive.
     if (grain.wall || grain.base) onLoad.push(() => {
       const ctx = c.getContext('2d')!;
@@ -740,6 +882,179 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     return m;
   }
 
+  /**
+   * Walls a building shares with a neighbour (footprint edge → the neighbour's height): where it
+   * rises over the neighbour that wall is a bare party wall (mitgera), not a facade with windows.
+   */
+  function partyWalls(buildings: GeoBuilding[]) {
+    const out = new Map<string, Map<number, number>>();
+    const boxes = buildings.map(b => {
+      const xs = b.poly.map(p => p[0]), zs = b.poly.map(p => p[1]);
+      return [Math.min(...xs) - 1, Math.max(...xs) + 1, Math.min(...zs) - 1, Math.max(...zs) + 1];
+    });
+    buildings.forEach((a, ai) => {
+      const shared = new Map<number, number>();
+      for (let i = 0; i < a.poly.length; i++) {
+        const p = a.poly[i], q = a.poly[(i + 1) % a.poly.length], len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+        if (len < 1) continue;
+        const ux = (q[0] - p[0]) / len, uz = (q[1] - p[1]) / len;
+        const off = (v: GeoPoint) => Math.abs((v[0] - p[0]) * uz - (v[1] - p[1]) * ux);
+        let covered = 0, height = 0;
+        buildings.forEach((b, bi) => {
+          const [x0, x1, z0, z1] = boxes[bi];
+          if (bi === ai || Math.max(p[0], q[0]) < x0 || Math.min(p[0], q[0]) > x1 || Math.max(p[1], q[1]) < z0 || Math.min(p[1], q[1]) > z1) return;
+          for (let j = 0; j < b.poly.length; j++) {
+            // A wall of the neighbour on this wall's line, overlapping it.
+            const r = b.poly[j], s = b.poly[(j + 1) % b.poly.length];
+            if (off(r) > 0.35 || off(s) > 0.35) continue;
+            const t0 = (r[0] - p[0]) * ux + (r[1] - p[1]) * uz, t1 = (s[0] - p[0]) * ux + (s[1] - p[1]) * uz;
+            const overlap = Math.min(len, Math.max(t0, t1)) - Math.max(0, Math.min(t0, t1));
+            if (overlap > 0.5) { covered += overlap; height = Math.max(height, b.height); }
+          }
+        });
+        if (covered > len * 0.5) shared.set(i, height);
+      }
+      if (shared.size) out.set(a.id, shared);
+    });
+    return out;
+  }
+  const party = partyWalls(scene.buildings);
+  const palettes = new Map<string, pc.StandardMaterial>();
+  /** Swatches of a building's relief, one material for all of it: UV `swatch(i)` picks a colour. */
+  const SWATCHES = 8;
+  function reliefMaterial(b: GeoBuilding) {
+    const colours = [b.walls, b.relief?.balcony ?? b.trim ?? '#ece7dd', '#cfcbc2', '#e8e8e3', '#a9aba6', '#8e9497', '#3c4044', '#dcdad4'];
+    const key = colours.join('|');
+    let m = palettes.get(key);
+    if (!m) {
+      // Swatches of 16 px, so mipmaps never blend two colours.
+      m = cutaway(textured(`Relieve ${b.walls}`, canvas(16 * SWATCHES, 16, ctx => colours.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i * 16, 0, 16, 16); })), 0.15));
+      palettes.set(key, m);
+    }
+    return m;
+  }
+  const RENDER = 0, BALCONY = 1, CONCRETE = 2, TANK = 3, FIBRE = 4, STEEL = 5, DARK = 6, MACHINE = 7;
+  const swatch = (i: number) => [(i + 0.5) / SWATCHES, 0.5];
+  /** A box on the grid (corners `ring`, counter-clockwise or not, from `y0` to `y1` cells) in one colour, without its hidden bottom. */
+  function block(builder: MeshBuilder, ring: GeoPoint[], y0: number, y1: number, colour: number) {
+    const t = swatch(colour), cx = ring.reduce((s, p) => s + p[0], 0) / ring.length, cz = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], c = ring[(i + 1) % ring.length], mx = (a[0] + c[0]) / 2 - cx, mz = (a[1] + c[1]) / 2 - cz;
+      builder.quad(P(a, y0), P(c, y0), P(c, y1), P(a, y1), [mx, 0, mz], t, t, t, t);
+    }
+    for (let i = 1; i + 1 < ring.length; i++) builder.tri(P(ring[0], y1), P(ring[i], y1), P(ring[i + 1], y1), [0, 1, 0], t, t, t);
+  }
+  /** A rectangle centred on (cx, cz), `w` along `e1` and `d` across it. */
+  const rect = (cx: number, cz: number, e1: number[], w: number, d: number): GeoPoint[] => {
+    const e2 = [-e1[1], e1[0]];
+    return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([s, t]) => [cx + e1[0] * w / 2 * s + e2[0] * d / 2 * t, cz + e1[1] * w / 2 * s + e2[1] * d / 2 * t]);
+  };
+  const disc = (cx: number, cz: number, r: number, sides = 8): GeoPoint[] => Array.from({ length: sides }, (_, k) => [cx + Math.cos(k / sides * Math.PI * 2) * r, cz + Math.sin(k / sides * Math.PI * 2) * r]);
+  /**
+   * The relief that gives a block its shadow lines: balcony slabs with solid fronts every storey on
+   * the long walls the camera sees (in continuous bands or by pairs of bays, chosen per wall), a
+   * cornice under the parapet, and on a flat roof what Barcelona's terraces carry: stair and lift
+   * housings, water tanks, aerials, satellite dishes and air conditioners, seeded by the building.
+   */
+  function relief(b: GeoBuilding, groundTop: number, shared?: Map<number, number>) {
+    const r = b.relief, out = new MeshBuilder();
+    if (!r) return out;
+    const poly = b.poly, H = b.height, storey = scene.storey, sign = signedArea(poly) > 0 ? 1 : -1;
+    const seed = [...b.id].reduce((s, ch) => s * 31 + ch.charCodeAt(0), 7) % 9973;
+    const rand = (i: number) => jitter(seed + i * 1.37);
+    // Map outlines often break a straight front into several edges: walls run along all of them.
+    const edges = poly.map((a, i) => {
+      const c = poly[(i + 1) % poly.length], len = Math.hypot(c[0] - a[0], c[1] - a[1]) || 1e-6;
+      return { i, a, c, len, u: [(c[0] - a[0]) / len, (c[1] - a[1]) / len] };
+    }).filter(e => e.len > 1e-3);
+    const straight = (e: typeof edges[number], f: typeof edges[number]) => e.u[0] * f.u[0] + e.u[1] * f.u[1] > 0.985 && !shared?.has(e.i) && !shared?.has(f.i);
+    const first = Math.max(0, edges.findIndex((e, k) => !straight(edges[(k + edges.length - 1) % edges.length], e)));
+    const fronts: { i: number; a: GeoPoint; c: GeoPoint; party: boolean }[] = [];
+    for (let k = 0; k < edges.length;) {
+      const e = edges[(first + k) % edges.length];
+      let last = e;
+      for (k++; k < edges.length && straight(last, edges[(first + k) % edges.length]); k++) last = edges[(first + k) % edges.length];
+      fronts.push({ i: e.i, a: e.a, c: last.c, party: !!shared?.has(e.i) });
+    }
+    for (const { i, a, c, party } of fronts) {
+      const len = Math.hypot(c[0] - a[0], c[1] - a[1]);
+      if (len < 1e-3 || party) continue;
+      const u = [(c[0] - a[0]) / len, (c[1] - a[1]) / len], n = [u[1] * sign, -u[0] * sign];
+      const at = (t: number, o: number): GeoPoint => [a[0] + u[0] * t + n[0] * o, a[1] + u[1] * t + n[1] * o];
+      if (r.cornice && H > groundTop + 0.5) block(out, [at(-0.15, 0), at(len + 0.15, 0), at(len + 0.15, 0.22), at(-0.15, 0.22)], H - 0.14, H + 0.02, CONCRETE);
+      const depth = (r.balcony_m ?? 0) / cellM, seen = n[1] > 0.35 || n[0] > 0.6, pick = rand(i + 11);
+      if (!depth || !seen || len < BAY * 2 || pick > 0.85) continue;
+      // Continuous bands, or a balcony over every other pair of bays.
+      const runs: [number, number][] = [];
+      if (pick < 0.5) runs.push([0.35, len - 0.35]);
+      else for (let t = BAY * 0.25; t + BAY * 2 <= len - 0.2; t += BAY * 3) runs.push([t, t + BAY * 2]);
+      for (let k = 0; groundTop + k * storey + 0.7 < H; k++) {
+        const y = groundTop + k * storey;
+        for (const [t0, t1] of runs) {
+          block(out, [at(t0, 0), at(t1, 0), at(t1, depth), at(t0, depth)], y - 0.06, y + 0.06, CONCRETE);
+          block(out, [at(t0, depth - 0.05), at(t1, depth - 0.05), at(t1, depth), at(t0, depth)], y + 0.06, y + 0.62, BALCONY);
+          for (const t of [t0, t1 - 0.04]) block(out, [at(t, 0), at(t + 0.04, 0), at(t + 0.04, depth), at(t, depth)], y + 0.06, y + 0.62, BALCONY);
+        }
+      }
+    }
+    if (!r.rooftop || b.roof !== 'flat') return out;
+    // The terrace: stand things inside the footprint, clear of its edges and of each other.
+    const roofY = H + 0.25, area = Math.abs(signedArea(poly)), box = b.box, e1 = [Math.cos(box.angle), Math.sin(box.angle)];
+    const placed: [number, number, number][] = [];
+    const edgeDistance = (px: number, pz: number) => Math.min(...poly.map((p, i) => {
+      const q = poly[(i + 1) % poly.length], dx = q[0] - p[0], dz = q[1] - p[1], l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((px - p[0]) * dx + (pz - p[1]) * dz) / l2));
+      return Math.hypot(p[0] + dx * t - px, p[1] + dz * t - pz);
+    }));
+    let k = 0;
+    const spot = (radius: number): [number, number] | undefined => {
+      for (let tries = 0; tries < 24; tries++, k++) {
+        const px = box.cx + e1[0] * (rand(k * 2 + 50) - 0.5) * box.w - e1[1] * (rand(k * 2 + 51) - 0.5) * box.d;
+        const pz = box.cz + e1[1] * (rand(k * 2 + 50) - 0.5) * box.w + e1[0] * (rand(k * 2 + 51) - 0.5) * box.d;
+        if (!inside(px, pz, poly) || edgeDistance(px, pz) < radius + 0.5 || placed.some(([qx, qz, qr]) => Math.hypot(px - qx, pz - qz) < radius + qr + 0.3)) continue;
+        placed.push([px, pz, radius]); return [px, pz];
+      }
+    };
+    // Low buildings (shops in a courtyard) carry only their air conditioners.
+    const count = (per: number, most: number) => b.levels < 4 ? 0 : Math.min(most, 1 + Math.floor(area / per));
+    for (let n = count(260, 3); n > 0; n--) {
+      // A stair or lift housing in the block's render, with its slab roof.
+      const at = spot(1.6); if (!at) break;
+      block(out, rect(at[0], at[1], e1, 2.4, 1.7), roofY, roofY + 1.8, RENDER);
+      block(out, rect(at[0], at[1], e1, 2.6, 1.9), roofY + 1.8, roofY + 1.9, CONCRETE);
+      // Its door, on the side towards the camera.
+      const side = e1[0] > 0 ? 1 : -1;
+      block(out, rect(at[0] - e1[1] * 0.87 * side, at[1] + e1[0] * 0.87 * side, e1, 0.7, 0.05), roofY, roofY + 1.35, DARK);
+    }
+    for (let n = count(110, 6); n > 0; n--) {
+      const at = spot(0.4); if (!at) break;
+      const old = rand(n + 70) > 0.5;
+      block(out, disc(at[0], at[1], 0.36), roofY, roofY + (old ? 0.8 : 1), old ? FIBRE : TANK);
+    }
+    for (let n = Math.min(9, 1 + Math.floor(area / 80)); n > 0; n--) {
+      const at = spot(0.35); if (!at) break;
+      block(out, rect(at[0], at[1], e1, 0.55, 0.3), roofY, roofY + 0.4, MACHINE);
+    }
+    for (let n = count(150, 5); n > 0; n--) {
+      // An aerial: a mast with two crossbars.
+      const at = spot(0.3); if (!at) break;
+      const tall = 1.6 + rand(n + 90) * 0.9;
+      block(out, rect(at[0], at[1], e1, 0.05, 0.05), roofY, roofY + tall, STEEL);
+      for (const [dy, w] of [[0, 0.7], [-0.3, 0.5]]) block(out, rect(at[0], at[1], [-e1[1], e1[0]], w, 0.03), roofY + tall + dy - 0.03, roofY + tall + dy, STEEL);
+    }
+    for (let n = b.levels < 4 ? 0 : Math.floor(rand(99) * 3); n > 0; n--) {
+      // A satellite dish on a short post, tilted up to the south.
+      const at = spot(0.4); if (!at) break;
+      block(out, rect(at[0], at[1], e1, 0.06, 0.06), roofY, roofY + 0.5, STEEL);
+      const rim = disc(at[0], at[1] + 0.05, 0.33, 8);
+      for (let j = 1; j + 1 < rim.length; j++) {
+        const lift = (p: GeoPoint) => roofY + 0.5 - (p[1] - at[1] - 0.05) * 1.3;
+        out.tri(P(rim[0], lift(rim[0])), P(rim[j], lift(rim[j])), P(rim[j + 1], lift(rim[j + 1])), [0, 0.6, 0.8], swatch(MACHINE), swatch(MACHINE), swatch(MACHINE));
+      }
+    }
+    return out;
+  }
+
   function building(b: GeoBuilding) {
     const pivot = new pc.Entity(`Edificio ${b.number ?? b.name ?? b.id}`);
     root.addChild(pivot); pivots.set(b.id, pivot);
@@ -747,7 +1062,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const poly = b.poly, H = b.height, storey = scene.storey;
     const groundTop = Math.min(H, storey * 1.15);
     const ccw = signedArea(poly) > 0;
-    const walls = new MeshBuilder(), base = new MeshBuilder();
+    const shared = b.relief?.party ? party.get(b.id) : undefined;
+    const walls = new MeshBuilder(), base = new MeshBuilder(), bare = new MeshBuilder();
     for (let i = 0; i < poly.length; i++) {
       const a = poly[i], c = poly[(i + 1) % poly.length];
       const len = Math.hypot(c[0] - a[0], c[1] - a[1]); if (len < 1e-3) continue;
@@ -758,6 +1074,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       base.quad(P(a, 0), P(c, 0), P(c, groundTop), P(a, groundTop), n, [0, 0], [bays / 2, 0], [bays / 2, 1], [0, 1]);
       if (H > groundTop + 0.05) {
         const floors = (H - groundTop) / storey;
+        if (shared?.has(i)) { bare.quad(P(a, groundTop), P(c, groundTop), P(c, H), P(a, H), n, [0, 0], [bays, 0], [bays, floors], [0, floors]); continue; }
         // Atlas facades start at a different bay on every wall, so neighbours never line up (a photo
         // atlas counts whole bays: its material repeats once per its own bays and storeys).
         const [au, av] = FACADE_ATLAS[b.facade] ?? [1, 1], photoBays = photo(b.facade)?.bays ?? 0;
@@ -770,25 +1087,28 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     // Photo atlases stand on the painted flats and shops until they load.
     const upper = (kind: string) => photo(kind) ? photoFacade(kind, facade('flats', b.walls, trim, baseColour), 1, 1) : facade(kind, b.walls, trim, baseColour, grain);
     const lower = photo(b.ground) ? photoFacade(b.ground, facade('shops', b.walls, trim, baseColour), 2, 1) : facade(b.ground, b.walls, trim, baseColour, grain);
+    // Flat roofs and outlines a pitched roof cannot cover get a parapet round the real outline, which
+    // hides the edge of the roof; painted like the walls, it joins their mesh (one draw call fewer).
+    const outline = !boxy(b) || b.roof === 'flat', parapet = photo(b.facade) ? new MeshBuilder() : walls;
+    if (outline) for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], c = poly[(i + 1) % poly.length], len = Math.hypot(c[0] - a[0], c[1] - a[1]);
+      if (len < 1e-3) continue;
+      const sign = ccw ? 1 : -1, n: V3 = [(c[1] - a[1]) / len * sign, 0, -(c[0] - a[0]) / len * sign];
+      parapet.quad(P(a, H), P(c, H), P(c, H + 0.45), P(a, H + 0.45), n, [0, 0.9], [len / BAY, 0.9], [len / BAY, 1], [0, 1]);
+    }
     add('Planta baja', base, lower, pivot, false);
     add('Fachada', walls, upper(b.facade), pivot, false);
-    // A flat ceiling under the eaves closes the top of any footprint the roof does not cover.
-    const lid = new MeshBuilder();
-    for (const [i, j, k] of triangulate(poly)) lid.tri(P(poly[i], H), P(poly[j], H), P(poly[k], H), [0, 1, 0]);
-    add('Forjado', lid, cutaway(mat('Forjado', b.walls)), pivot, false, false);
-    add('Tejado', roof(b, H), b.roof === 'flat' ? terraceMaterial(b.roofColor ?? '#b0a597', grain.roof) : roofMaterial(b.roofColor ?? '#b4643f', grain.roof), pivot, false);
-    // Flat roofs and outlines a pitched roof cannot cover get a parapet round the real outline.
-    if (!boxy(b) || b.roof === 'flat') {
-      // A low parapet hides the edge of a flat roof.
-      const parapet = new MeshBuilder();
-      for (let i = 0; i < poly.length; i++) {
-        const a = poly[i], c = poly[(i + 1) % poly.length], len = Math.hypot(c[0] - a[0], c[1] - a[1]);
-        if (len < 1e-3) continue;
-        const sign = ccw ? 1 : -1, n: V3 = [(c[1] - a[1]) / len * sign, 0, -(c[0] - a[0]) / len * sign];
-        parapet.quad(P(a, H), P(c, H), P(c, H + 0.45), P(a, H + 0.45), n, [0, 0.9], [len / BAY, 0.9], [len / BAY, 1], [0, 1]);
-      }
-      add('Peto', parapet, photo(b.facade) ? facade('flats', b.walls, trim, baseColour) : facade(b.facade, b.walls, trim, baseColour, grain), pivot, false);
+    if (parapet !== walls) add('Peto', parapet, facade('flats', b.walls, trim, baseColour), pivot, false);
+    if (b.relief?.party) add('Medianera', bare, facade('party', b.relief.party, trim, baseColour, { wall: grain.party }), pivot, false);
+    add('Relieve', relief(b, groundTop, shared), reliefMaterial(b), pivot, false);
+    // A flat ceiling under the eaves closes the top of a footprint a pitched roof does not cover
+    // (a roof on the real outline covers it all).
+    if (!outline) {
+      const lid = new MeshBuilder();
+      for (const [i, j, k] of triangulate(poly)) lid.tri(P(poly[i], H), P(poly[j], H), P(poly[k], H), [0, 1, 0]);
+      add('Forjado', lid, cutaway(mat('Forjado', b.walls)), pivot, false, false);
     }
+    add('Tejado', roof(b, H), b.roof === 'flat' ? terraceMaterial(b.roofColor ?? '#b0a597', grain.roof) : roofMaterial(b.roofColor ?? '#b4643f', grain.roof), pivot, false);
     if (b.roof !== 'flat') add('Hastial', gableEnds(b, H), facade('rendered', b.walls, trim, baseColour, grain), pivot, false);
   }
   /** The photo atlas a `photo:<texture>` facade or ground floor names, if the scene has it. */
@@ -1063,17 +1383,126 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }
 
   // ------------------------------------------------------------ surroundings
-  // Wooded hills close every side but the camera's, as the valley does around the town.
-  const hill = [mat('Monte', '#4e6b45', 0.05), mat('Monte lejano', '#5f7c55', 0.05), mat('Monte sombra', '#41593b', 0.05)];
-  const hills: [number, number, number, number, number][] = [
-    [W * 0.15, -18, 70, 22, 40], [W * 0.5, -22, 90, 30, 46], [W * 0.88, -16, 70, 20, 38],
-    [-22, D * 0.3, 40, 18, 70], [-20, D * 0.85, 34, 14, 50],
-  ];
-  hills.forEach(([px, pz, w, h, d], i) => {
-    const e = new pc.Entity('Monte');
-    e.addComponent('render', { type: 'sphere', material: hill[i % 3], castShadows: false, receiveShadows: true, batchGroupId: kit.batch });
-    e.setPosition(x(px), -h * 0.15, z(pz)); e.setLocalScale(w, h, d); root.addChild(e);
+  if (look.edge === 'city') {
+    // The city goes on past the map's far sides: rows of plain blocks with their storeys of windows,
+    // in the place's render and brick dulled by distance, on a skirt of street; lower than the real
+    // ones, so they frame the place without stealing it.
+    const skirt = new MeshBuilder(), tops = new MeshBuilder();
+    const tints = ['#b9b2a3', '#ad9c86', '#a9a7a0'], far = tints.map(() => new MeshBuilder());
+    for (const ring of [[[-70, -70], [W + 30, -70], [W + 30, -0.5], [-70, -0.5]], [[-70, -0.5], [-0.5, -0.5], [-0.5, D + 30], [-70, D + 30]]] as GeoPoint[][]) {
+      skirt.quad(P(ring[0], -0.02), P(ring[1], -0.02), P(ring[2], -0.02), P(ring[3], -0.02), [0, 1, 0], [0, 0], [0, 0], [0, 0], [0, 0]);
+    }
+    let k = 0;
+    const blocks = (from: number, to: number, place: (along: number, row: number, w: number, d: number) => [number, number]) => {
+      for (let row = 0; row < 3; row++) for (let along = from; along < to; k++) {
+        const w = 9 + jitter(k * 3 + 1) * 10, d = 8 + jitter(k * 3 + 2) * 6, h = Math.round((3 + jitter(k * 3 + 3) * 2.5) * (1 + row * 0.15)) * scene.storey;
+        const [cx, cz] = place(along + w / 2, row, w, d);
+        const ring: GeoPoint[] = [[cx - w / 2, cz - d / 2], [cx + w / 2, cz - d / 2], [cx + w / 2, cz + d / 2], [cx - w / 2, cz + d / 2]];
+        const walls = far[Math.floor(jitter(k * 3 + 5) * far.length)];
+        ring.forEach((p, i) => {
+          const q = ring[(i + 1) % 4], l = Math.hypot(q[0] - p[0], q[1] - p[1]) / BAY;
+          walls.quad(P(p, 0), P(q, 0), P(q, h), P(p, h), [(p[0] + q[0]) / 2 - cx, 0, (p[1] + q[1]) / 2 - cz], [0, 0], [l, 0], [l, h / scene.storey], [0, h / scene.storey]);
+        });
+        tops.quad(P(ring[0], h), P(ring[1], h), P(ring[2], h), P(ring[3], h), [0, 1, 0], [0, 0], [0, 0], [0, 0], [0, 0]);
+        along += w + 3 + jitter(k * 3 + 4) * 4;
+      }
+    };
+    blocks(-40, W + 20, (along, row, _w, d) => [along, -4 - d / 2 - row * 17]);
+    blocks(-5, D + 15, (along, row, w) => [-4 - w / 2 - row * 17, along]);
+    add('Calles lejanas', skirt, mat('Calles lejanas', '#adaca5', 0.02), root, true, false);
+    tints.forEach((tint, i) => add('Ciudad lejana', far[i], textured(`Ciudad lejana ${tint}`, canvas(32, 48, ctx => {
+      ctx.fillStyle = tint; ctx.fillRect(0, 0, 32, 48);
+      ctx.fillStyle = '#7f8689'; ctx.fillRect(6, 10, 20, 22);
+      ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(4, 33, 24, 3);
+    }), 0.05), root, true, false));
+    add('Terrados lejanos', tops, mat('Terrados lejanos', '#a19e96', 0.05), root, true, false);
+  } else {
+    // Wooded hills close every side but the camera's, as the valley does around the town.
+    const hill = [mat('Monte', '#4e6b45', 0.05), mat('Monte lejano', '#5f7c55', 0.05), mat('Monte sombra', '#41593b', 0.05)];
+    const hills: [number, number, number, number, number][] = [
+      [W * 0.15, -18, 70, 22, 40], [W * 0.5, -22, 90, 30, 46], [W * 0.88, -16, 70, 20, 38],
+      [-22, D * 0.3, 40, 18, 70], [-20, D * 0.85, 34, 14, 50],
+    ];
+    hills.forEach(([px, pz, w, h, d], i) => {
+      const e = new pc.Entity('Monte');
+      e.addComponent('render', { type: 'sphere', material: hill[i % 3], castShadows: false, receiveShadows: true, batchGroupId: kit.batch });
+      e.setPosition(x(px), -h * 0.15, z(pz)); e.setLocalScale(w, h, d); root.addChild(e);
+    });
+  }
+
+  // ------------------------------------------------------------ rain and dusk on the street
+  // After rain the asphalt and the panot darken and shine, and puddles lie along the kerbs until
+  // they dry; at dusk the open shops spill warm light on the sidewalk and the lamps a cold one.
+  // Light pools and puddles are flat decals, never real lights.
+  const wetting = [asphalt, groundMat].map(m => ({ m, dry: new pc.Color(), spec: new pc.Color(), gloss: m.gloss, map: undefined as pc.Texture | null | undefined }));
+  let wet = 0, rain = 0, dusk = 0, shownWet = 0, shownDusk = 0, streetSet = false;
+  const puddles = new MeshBuilder();
+  kerbs.forEach((k, i) => {
+    const len = Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]), u = [(k.b[0] - k.a[0]) / len, (k.b[1] - k.a[1]) / len];
+    for (let t = 3 + jitter(i) * 8; t < len - 1; t += 9 + jitter(i * 7 + t) * 14) {
+      // A long, ragged puddle in the gutter, on the street side of the kerb.
+      const long = 0.7 + jitter(i + t) * 1.1, across = 0.25 + jitter(i * 3 + t) * 0.25;
+      const c: GeoPoint = [k.a[0] + u[0] * t - k.out[0] * (across + 0.05), k.a[1] + u[1] * t - k.out[1] * (across + 0.05)];
+      const rim = Array.from({ length: 10 }, (_, j): GeoPoint => {
+        const a = j / 10 * Math.PI * 2, r = 0.75 + jitter(i * 11 + j + t) * 0.35;
+        return [c[0] + (u[0] * Math.cos(a) * long + k.out[0] * Math.sin(a) * across) * r, c[1] + (u[1] * Math.cos(a) * long + k.out[1] * Math.sin(a) * across) * r];
+      });
+      for (let j = 1; j + 1 < rim.length; j++) puddles.tri(P(rim[0], LAYER.road + 0.008), P(rim[j], LAYER.road + 0.008), P(rim[j + 1], LAYER.road + 0.008), [0, 1, 0]);
+    }
   });
+  // Grey sky in still water: lighter than the wet asphalt round it.
+  const puddle = mat('Charco', '#7e868b', 0.95);
+  puddle.specular.set(0.25, 0.25, 0.25);
+  puddle.blendType = pc.BLEND_NORMAL; puddle.depthWrite = false; puddle.opacity = 0; puddle.update();
+  const puddleEntity = add('Charcos', puddles, puddle, root, true, false);
+  if (puddleEntity) puddleEntity.enabled = false;
+  /** A soft round pool of light painted once: bright in the middle, gone at the rim. */
+  const pool = (colour: string) => {
+    const m = textured(`Luz en el suelo ${colour}`, canvas(64, 64, ctx => {
+      const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, colour); g.addColorStop(0.55, colour.replace(/[\d.]+\)$/, '0.5)')); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
+    }), 0);
+    m.diffuse.set(0, 0, 0); m.emissiveMap = m.diffuseMap; m.emissive.set(1, 1, 1); m.emissiveIntensity = 0;
+    m.blendType = pc.BLEND_ADDITIVE; m.depthWrite = false; m.update();
+    return m;
+  };
+  const decal = (builder: MeshBuilder, c: GeoPoint, along: number[], w: number, d: number) => {
+    const across = [-along[1], along[0]], at = (s: number, t: number): V3 => P([c[0] + along[0] * s + across[0] * t, c[1] + along[1] * s + across[1] * t], LAYER.road + 0.012);
+    builder.quad(at(-w / 2, -d / 2), at(w / 2, -d / 2), at(w / 2, d / 2), at(-w / 2, d / 2), [0, 1, 0], [0, 0], [1, 0], [1, 1], [0, 1]);
+  };
+  const shopLight = new MeshBuilder(), lampLight = new MeshBuilder();
+  for (const shop of scene.shops ?? []) decal(shopLight, [shop.x + shop.nx * 0.5, shop.z + shop.nz * 0.5], [shop.nz, -shop.nx], 4, 3.4);
+  for (const p of scene.props) {
+    // Under the LED head, which hangs out over the street.
+    const yaw = Number(p.yaw ?? 0) * Math.PI / 180;
+    if (p.kind === 'lamp' && p.style === 'led') decal(lampLight, [p.x + Math.sin(yaw) * 0.5, p.z + Math.cos(yaw) * 0.5], [1, 0], 3.6, 3.6);
+  }
+  const warm = pool('rgba(255,196,120,1)'), cold = pool('rgba(236,240,244,1)');
+  const pools = [add('Luz de las tiendas', shopLight, warm, root, true, false), add('Luz de las farolas', lampLight, cold, root, true, false)];
+  pools.forEach(e => { if (e) e.enabled = false; });
+  function weather(dt: number) {
+    // Wet in a few seconds of rain, dry in about a minute after it stops.
+    wet = rain > wet ? Math.min(rain, wet + dt / 5) : Math.max(rain, wet - dt / 60);
+    if ((wet !== shownWet && (Math.abs(wet - shownWet) > 0.01 || wet === 0)) || (wet > 0 && wetting.some(w => w.m.diffuseMap !== w.map))) {
+      shownWet = wet;
+      for (const w of wetting) {
+        // The dry look is whatever the material shows when wetness starts or its texture changes.
+        if (w.m.diffuseMap !== w.map) { w.map = w.m.diffuseMap; w.dry.copy(w.m.diffuse); w.spec.copy(w.m.specular); w.gloss = w.m.gloss; }
+        const k = 1 - 0.42 * wet;
+        w.m.diffuse.set(w.dry.r * k, w.dry.g * k, w.dry.b * k); w.m.gloss = w.gloss + (0.5 - w.gloss) * wet;
+        w.m.specular.lerp(w.spec, WET_SHEEN, wet); w.m.update();
+      }
+      puddle.opacity = Math.min(1, wet * 1.3) * 0.5; puddle.update();
+      if (puddleEntity) puddleEntity.enabled = wet > 0.02;
+    }
+    if (Math.abs(dusk - shownDusk) > 0.01) {
+      shownDusk = dusk;
+      warm.emissiveIntensity = 0.6 * dusk; warm.update(); cold.emissiveIntensity = 0.2 * dusk; cold.update();
+      pools.forEach(e => { if (e) e.enabled = dusk > 0.02; });
+      for (const m of evening) { m.emissiveIntensity = 0.9 * dusk; m.update(); }
+    }
+  }
 
   // The real materials, once loaded, dress everything built above (a scene left meanwhile stays as it is).
   if (scene.textures && Object.keys(scene.textures).length) {
@@ -1091,6 +1520,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   return {
     /** Opens the glowing cut round `focus` while a building stands between it and the camera. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
+      weather(dt);
       if (animate) { time += dt; river.diffuseMapOffset.set(time * 0.05, time * 0.02); river.emissiveMapOffset.set(-time * 0.03, time * 0.04); river.update(); }
       for (const { cut, shape } of occluders) {
         const target = focus && toCamera && buildingHidesPlayer(shape, focus, toCamera) ? CUT_RADIUS : 0;
@@ -1105,6 +1535,12 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         const d = toCamera.clone().normalize();
         cutToCamera.setValue([d.x, d.y, d.z]);
       }
+    },
+    /** How hard it rains now (0–1; the street stays wet a while after) and how far the evening has come (0–1). */
+    setStreet(raining: number, evening: number) {
+      // A scene built under rain starts wet.
+      if (shownWet === 0 && wet === 0 && !streetSet) wet = raining;
+      streetSet = true; rain = raining; dusk = evening;
     },
     destroy() { alive = false; cutRadius.setValue(0); meshes.forEach(m => m.destroy()); gpu.forEach(t => t.destroy()); },
   };

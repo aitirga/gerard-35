@@ -133,13 +133,14 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `shops` | Shops the map lacks: `name`, `kind` (an OSM shop or amenity value) and a position. Every shop, bar, bank and pharmacy of the map gets a sign on the nearest street wall of its building |
 | `zebras_x_m` | Points along the turned frame where a zebra crossing runs across every road; the map's own `highway=crossing` nodes are drawn too |
 | `look` | The street's surfaces: `ground`/`footway` `panot` (grey sidewalk tiles; footways are not drawn over it), `grass` `bed` (soil and shrubs), `asphalt` colour (bike lanes too), `markings` (lanes, edges, zebras, BUS, bikes; a street with markings also gets moving traffic, see below), and `materials`: the real material of each surface (see [Real materials](#real-materials)) |
+| `look.kerbs`, `look.edge` | `kerbs: true` lays granite kerbs (`granit`, 30 cm wide, standing a little proud) along every road's edges, lowered at the zebras, with puddles in their gutters after rain; `edge: "city"` closes the far sides with rows of plain blocks in dulled render and brick on a skirt of street instead of wooded hills |
 | `zoom` | Follow-camera zoom (orthographic half-height) |
 | `spawn` | `east_m`/`south_m`; snapped to the nearest walkable cell |
 | `storey_m` | Height of one storey |
 | `reference` | `checked` date, `streetview_capture`, `notes` (one line per observation) and `viewpoints` (`name`, `lat`, `lon`, `heading`, `pitch`) for `fetch` |
 | `styles` | Named looks; `default` is merged under every other one (see below) |
 | `buildings` | Overrides by `way/<id>` (wins) or `tag:building=<value>`: `style`, `levels` (wins over the map's), `roof_kind`, `label`, `sign` (big lit letters over the ground floor of the wall facing the camera), `signature` (a photo texture of the real facade on that wall), `materials` (merged over the style's), and per house `walls` (one colour), `facade`, `ground` |
-| `props` | Extra props in metres: `tree` (`species`, `scale`, `base`, `stakes`, `trunk` colour), `car` (`color`), `lamp` (`style`: `led`), `manhole`, `metro` (a totem and a stair over the next three cells along x; `network`: `metro` or `rodalies`; `name` and `line` for the totem's plate), `bench` (`style`: `chair`), `barrier` (`color` red/white, `style` `jersey`, `panel`, `fence`), `bag`, `bin`, `bike-rack`, `traffic-light` (switched by the traffic), `shelter` (three cells along x), `bus` (`color`, `livery` `tmb`/`sagales`; five cells along x), `hoarding` (`length` cells along x). With `to` (a second position) and `every_m`, one prop every so many metres along the way. Cars park along x when the rotation is 0 or 180 or the bounds are turned |
+| `props` | Extra props in metres: `tree` (`species`, `scale`, `base`, `stakes`, `trunk` colour), `car` (`color`), `lamp` (`style`: `led`), `manhole`, `metro` (a totem and a stair over the next three cells along x; `network`: `metro` or `rodalies`; `name` and `line` for the totem's plate), `bench` (`style`: `chair`), `barrier` (`color` red/white, `style` `jersey`, `panel`, `fence`), `bag`, `bin`, `bike-rack`, `traffic-light` (switched by the traffic), `shelter` (three cells along x), `bus` (`color`, `livery` `tmb`/`sagales`; five cells along x), `hoarding` (`length` cells along x), `containers` (the five recycling containers, five cells along x), `bicing` (a dock, four cells along x), `moto` (a parked scooter), `terrace` (a café table and two chairs), `grate` (a flat vent grate over a tunnel). With `to` (a second position) and `every_m`, one prop every so many metres along the way, leaving out spots something already stands on and spots on a carriageway (a row breaks where a side street crosses it). Cars park along x when the rotation is 0 or 180 or the bounds are turned |
 | `trees` | Generated trees: `forest_every_m`, `riverbank_every_m`, `species` list |
 | `places` | Things to look at: `id`, `label`, `lines`, and either `osm` (any feature id) or `east_m`/`south_m`. With `to` (`environment`, `cell`) instead of `lines` it is a door; with neither, the story answers it (station entrances `station-<id>`, clues). `step` (a position, `w` and `d` in cells) makes those cells use the place when walked into: a station's stair (the three cells beside its `metro` prop) |
 | `labels` | Ground text: `text`, `east_m`, `south_m`, `width` in cells |
@@ -157,6 +158,8 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (framing, brown shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks, painted as an atlas of four bays by three storeys that starts at a different bay on every wall: each bay keeps its kind all the way up, a window, twin windows, a balcony with an iron or panel railing, plants, washing and sometimes an awning, or an enclosed aluminium gallery, while blinds, lit flats and air conditioners change from flat to flat), `school` (a band of glazing with coloured frames), `mall` (blank concrete with a thin stripe in the trim colour), `curtain` (an office tower in dark glass, a few windows lit) |
 | `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade`, `shops` (shop windows under striped awnings, some shutters down and tagged), `lobby` (glass doors under a coloured band), `mall-front` (lit glass under a wavy concrete canopy) |
 | `levels` | Default storeys (OSM `building:levels` or `height` win when present) |
+| `balcony_m`, `balcony`, `cornice`, `rooftop`, `party` | Relief as real geometry: balcony slabs `balcony_m` deep every storey on the walls the camera sees (fronts in `balcony`), a cornice under the parapet, a flat roof's clutter (stair and lift housings, water tanks, aerials, dishes, air conditioners) and bare party walls in the `party` colour where a block rises over its neighbour |
+| `ground: shopfronts` | Glass shop fronts in aluminium frames with the lit shop seen through (a warm ceiling, shelves of goods), teal or grey canvas awnings over about half and a rare shutter down (the Meridiana) |
 | `materials` | Real materials of the style: `wall` (grain under the painted upper floors), `base` (under the ground floor) and `roof` (tiles, tinted by `roof`); texture ids, or `"none"` to keep it painted. Defaults by kind in [Real materials](#real-materials) |
 
 `facade` and `ground` may also be `photo:<texture>`: an atlas of real bays cut from photos (see
@@ -224,8 +227,8 @@ change if OSM changes). Pick it in the environment selector, or `just screenshot
 - Terrain: the town is flat; slopes (Kale Gora) would need ground heights in the grid.
 - GLB: a landmark modelled in Blender could be loaded by its landmark module (the grid and places
   stay as they are); the loader is not written yet.
-- Kerbs: roads meet the panot flush; granite kerbs (`granit`) would be a thin raised strip along
-  `road` ribbons on panot zones.
+- Kerbs: `look.kerbs` lays a raised granite strip along the roads, but the carriageway is not a
+  step down from the sidewalk (scenes have no ground heights).
 
 ## Real materials
 
@@ -480,4 +483,9 @@ traffic light shows the turn of the street it stands beside, its walk signal the
 follow whoever is ahead, move over before a lane ends, keep out of a junction they could not clear
 and stop for Gerard or his partner standing in front of them. Do not put parked `car` or moving-bus
 props in a lane: they would block it; a bus at a stop goes in the bus lane.
+
+A two-way `cycleway` at least 1.8 cells wide (the Meridiana's median) carries cyclists both ways,
+one about every 55 cells each way, each on its own half; they keep behind the rider in front and
+brake for anyone standing in their way. Where the scene has `grate` props, a train runs under them
+every minute or so and its draught puffs out of each grate in turn as it passes (`src/game.ts`).
 

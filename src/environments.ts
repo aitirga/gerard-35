@@ -46,7 +46,19 @@ export type WorldProp =
   /** A city bus (TMB red, Sagalés white) stopped along +x, five cells long. */
   | { kind: 'bus'; x: number; z: number; color: string; livery?: 'tmb' | 'sagales' }
   /** A works hoarding of corrugated metal covered in graffiti, `length` cells along +x. */
-  | { kind: 'hoarding'; x: number; z: number; length: number };
+  | { kind: 'hoarding'; x: number; z: number; length: number }
+  /** Barcelona's five recycling containers in a row (rest, packaging, paper, glass, organic), five cells along +x. */
+  | { kind: 'containers'; x: number; z: number }
+  /** A Bicing dock: the red terminal and bikes locked side by side, four cells along +x. */
+  | { kind: 'bicing'; x: number; z: number }
+  /** A scooter parked across the sidewalk (front to -z); with `rider`, someone riding it (traffic). */
+  | { kind: 'moto'; x: number; z: number; color?: string; rider?: boolean }
+  /** Someone riding a bike (front to -z), for the bike lane's traffic. */
+  | { kind: 'cyclist'; x: number; z: number; color?: string }
+  /** A café table with two chairs on the sidewalk. */
+  | { kind: 'terrace'; x: number; z: number }
+  /** A flat vent grate over a tunnel, like those on the Meridiana's median over the trains. */
+  | { kind: 'grate'; x: number; z: number };
 export type PropKind = WorldProp['kind'];
 const along = (n: number): Cell[] => Array.from({ length: n }, (_, x) => ({ x, z: 0 }));
 /** Cells each kind blocks, relative to its anchor; visuals are built on the same footprint. */
@@ -65,6 +77,12 @@ export const PROP_FOOTPRINTS: Record<PropKind, readonly Cell[]> = {
   shelter: along(3),
   bus: along(5),
   hoarding: along(1),
+  containers: along(5),
+  bicing: along(4),
+  moto: [{ x: 0, z: 0 }],
+  cyclist: [{ x: 0, z: 0 }],
+  terrace: [{ x: 0, z: 0 }],
+  grate: [],
 };
 export function propCells(prop: WorldProp): Cell[] {
   if (prop.kind === 'hoarding') return along(prop.length).map(o => ({ x: prop.x + o.x, z: prop.z }));

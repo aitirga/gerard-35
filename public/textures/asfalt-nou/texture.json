@@ -1,0 +1,29 @@
+{
+  "id": "asfalt-nou",
+  "name": "Asfalt nou",
+  "kind": "material",
+  "size_m": [
+    2.1,
+    2.1
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "clean_asphalt",
+    "name": "Clean Asphalt",
+    "url": "https://polyhaven.com/a/clean_asphalt",
+    "author": "Dimitrios Savva",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven clean_asphalt --id asfalt-nou",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    1024,
+    1024
+  ],
+  "mean": "#454646",
+  "made": "2026-10-30"
+}

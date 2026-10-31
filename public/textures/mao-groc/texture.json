@@ -1,0 +1,29 @@
+{
+  "id": "mao-groc",
+  "name": "Maó groc",
+  "kind": "material",
+  "size_m": [
+    1.6,
+    0.5
+  ],
+  "source": {
+    "site": "ambientCG",
+    "asset": "Bricks072",
+    "name": "Bricks 072",
+    "url": "https://ambientcg.com/a/Bricks072",
+    "author": "ambientCG (Lennart Demes)",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch ambientcg Bricks072 --id mao-groc",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    256
+  ],
+  "mean": "#b39a72",
+  "made": "2026-10-30"
+}
