@@ -377,7 +377,7 @@ Built to this card on 2026-10-31; the brief, sources and credits are in [places/
 | | |
 | --- | --- |
 | Dominant | Whitewash `#ece7dc` with dark timber `#5a3b2c`, closed in by wet valley green `#3e5a36` |
-| Secondary | Grey rubble and ashlar `#8a8781`, wet asphalt `#535658`, old canal tiles aged darker (`teila-zaharra`, `#8c5443`), the river's grey-green `#41583f`, geranium red |
+| Secondary | Grey rubble and ashlar `#8a8781`, wet asphalt `#535658`, old canal tiles aged darker (`teila-zaharra`, `#8c5443`), the Oria's turbid olive `#5f633e`, geranium red |
 | Material | Timber framing over whitewash, grey rubble (`harri-hezea`) and ashlar, the town hall's real front, iron and wooden balconies |
 | Ground | A narrow street with no pavements; grey setts (`galtzada`) on the squares; the Oria sunk between rubble banks behind green railings |
 | Landmark | The town hall's clock turret and San Juan's square belfry; Zubi Zaharra's hump; wooded hills, meadows and Txindoki all round |

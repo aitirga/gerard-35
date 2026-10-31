@@ -132,7 +132,7 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `osm_props` | Props from map nodes, by kind, with extra fields for each: `tree` (natural=tree), `lamp` (street_lamp), `bench`, `bin` (waste_basket), `bike-rack` (bicycle_parking). Only on open ground; lamps and racks face the nearest road, benches turn their back to it (they look at the shop fronts) |
 | `shops` | Shops the map lacks: `name`, `kind` (an OSM shop or amenity value) and a position. Every shop, bar, bank and pharmacy of the map gets a sign on the nearest street wall of its building. `kind: "house"` is a house's name instead: a glazed tile beside the door, blue letters on white (Alegia's *Konfiteroenea*) |
 | `zebras_x_m` | Points along the turned frame where a zebra crossing runs across every road; the map's own `highway=crossing` nodes are drawn too |
-| `look` | The street's surfaces: `ground`/`footway` `panot` (grey sidewalk tiles; footways are not drawn over it), `grass` `bed` (soil and shrubs), `asphalt` colour (bike lanes too), `markings` (lanes, edges, zebras, BUS, bikes; a street with markings also gets moving traffic, see below), and `materials`: the real material of each surface (see [Real materials](#real-materials)). `river_m` sinks the water that many metres below the street between stone banks (the `bank` material; rain falls into it), `water` is the river's colour (on neutral ripples, so it is the colour you see), and `hills: false` leaves out the generic round hills when a landmark draws the place's own (Alegia's `valley`) |
+| `look` | The street's surfaces: `ground`/`footway` `panot` (grey sidewalk tiles; footways are not drawn over it), `grass` `bed` (soil and shrubs), `asphalt` colour (bike lanes too), `markings` (lanes, edges, zebras, BUS, bikes; a street with markings also gets moving traffic, see below), and `materials`: the real material of each surface (see [Real materials](#real-materials)). `river_m` sinks the water that many metres below the street between stone banks (the `bank` material; rain falls into it), `water` is the river's colour (a turbid river: on pale ripples, so it is the colour you see, mirroring less sky than the pool-blue default), and `hills: false` leaves out the generic round hills when a landmark draws the place's own (Alegia's `valley`) |
 | `zoom` | Follow-camera zoom (orthographic half-height) |
 | `spawn` | `east_m`/`south_m`; snapped to the nearest walkable cell |
 | `storey_m` | Height of one storey |
@@ -216,6 +216,8 @@ and credits are in [places/alegia.md](places/alegia.md).
   `pergola`, `toka`, `pelota-wall`, `railing` (both banks), `wall-lamp`, `bunting`, `valley`.
 - **Life**: the `alegia` air is a drizzle that rings the puddles and the river, and low mist;
   every old house wears its name tile (`shops` of kind `house`).
+- **Sketch**: `sketch.json` keeps one feature over the map, Bulebarra laid as a square: OSM tags it
+  a park, the orthophoto shows a paved prow.
 - **Approximate**: storeys and colours are per style except where set per house; the arcade at
   95 is painted, not walkable; riverbank trees are scattered, not surveyed.
 
