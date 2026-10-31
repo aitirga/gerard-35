@@ -102,7 +102,9 @@ test('every door and stair lands on a walkable cell, and there is always a way b
       assert.equal(canWalk(to.cell, destination.grid), true, `${environment.id}/${id}`);
       // The palace is entered through La Pompa, which only the story opens (src/story.ts, 'enter-palace').
       const storyWay = to.environment === 'maresme' && environment.id === 'palacio' && new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('palace') + 1)).interactions('maresme').some(i => i.id === 'enter-palace');
-      assert.ok(storyWay || destination.interactions.some(i => i.to?.environment === environment.id), `${to.environment} leads back to ${environment.id}`);
+      // The school's zones are entered through the hall's east door, which the story opens at 35.
+      const adult = new Story(['caught']), schoolWay = to.environment === 'palacio' && adult.interactions('palacio').some(i => adult.redirect(i.id)?.environment === environment.id);
+      assert.ok(storyWay || schoolWay || destination.interactions.some(i => i.to?.environment === environment.id), `${to.environment} leads back to ${environment.id}`);
     }
   }
   assert.equal(nearbyInteraction(NEIGHBORHOOD, { x:21,z:23 })?.to?.environment, 'home-entrance');

@@ -99,6 +99,18 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },
     enhance: { shadows: -.1, midtones: -.04 },
   },
+  /** Her palace in chapter 2, el patio: the end of a school day, flat and cooling, greens kept, her plum in the shade. */
+  'palacio-patio': {
+    grade: { temperature: -.03, lift: [.008, .004, .012], shadows: [.008, -.002, .018], highlights: [.012, .012, .004], contrast: 1.04, saturation: .96 },
+    enhance: { highlights: -.08, vibrance: .04 },
+    her: .2,
+  },
+  /** El gimnasio: cold tubes, blue-grey and a little green in the shade, hard light on the mats. */
+  'palacio-gimnasio': {
+    grade: { temperature: -.1, tint: -.04, lift: [0, .004, .012], shadows: [-.006, .004, .02], highlights: [.004, .01, .016], contrast: 1.07, saturation: .94 },
+    enhance: { shadows: -.06, dehaze: .03 },
+    her: .15,
+  },
   /** La Reina Bubbaloo's light: magenta in the shade, pink in the light, a little darker and stranger. */
   bubbaloo: {
     grade: { lift: [.012, 0, .01], gamma: [.98, .95, .97], gain: [1, .96, .98], shadows: [.024, -.008, .02], highlights: [.02, -.002, .01], contrast: 1.05, saturation: 1 },

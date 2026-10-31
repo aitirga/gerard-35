@@ -5,6 +5,7 @@ import { buildHome } from './home-scenery';
 import type { Lamp, LightId } from './home-lights';
 import type { HouseVolume } from './palace';
 import { buildPalaceInterior } from './palace-scenery';
+import { buildPalaceZone } from './palace-zones';
 import { buildGeo } from './geo-scenery';
 import type { Cell } from './movement';
 import { createTraffic } from './traffic';
@@ -141,9 +142,11 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const lamplit = environment.id === 'meridiana';
   // Outdoors by day: a near-white sun, and a blue sky that tints the shade and lights it from the other side.
   const outdoor = !night && !lamplit && !environment.plan && !environment.palace;
-  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
-  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
-  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : outdoor ? 1.8 : 1.65;
+  // A zone of the palace in chapter 2 brings its own light (src/palace-zone-plans.ts).
+  const zoneLight = environment.palace?.theme?.light;
+  const ambient = zoneLight ? new pc.Color().fromString(zoneLight.ambient) : night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
+  const sunColor = zoneLight ? new pc.Color().fromString(zoneLight.sun) : night ? new pc.Color(0.66, 0.81, 1) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
+  const sunIntensity = zoneLight ? zoneLight.intensity : night ? 1.15 : lamplit ? 0.85 : outdoor ? 1.8 : 1.65;
   const skyIntensity = 0.42;
   app.scene.ambientLight = ambient.clone();
   let tone = 0, dark = 0;
@@ -375,7 +378,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   } else if (environment.geo) {
     geo = buildGeo({ app, root, batch: batch.id, mat, texture, water, x, z }, environment.geo);
   } else if (environment.palace) {
-    palace = buildPalaceInterior({ app, root, x, z, texture }, environment);
+    palace = environment.palace.theme ? buildPalaceZone({ app, root, batch: batch.id, x, z, texture }, environment) : buildPalaceInterior({ app, root, x, z, texture }, environment);
   } else if (environment.plan) {
     home = buildHome({
       app, root, props, mat, texture, x, z, batch: batch.id,

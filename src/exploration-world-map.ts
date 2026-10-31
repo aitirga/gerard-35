@@ -25,14 +25,14 @@ export function explorationWorldPosition(
 ): ExplorationWorldPosition | undefined {
   let placeId: string;
   if (environment === 'meridiana' || environment === 'meridiana-calle') placeId = 'home';
-  else if (environment === 'rec-comtal' || (environment === 'palacio' && context.castle)) placeId = 'rec-comtal';
+  else if (environment === 'rec-comtal' || (environment === 'palacio' && context.castle) || environment.startsWith('palacio-')) placeId = 'rec-comtal';
   else return undefined;
 
   const place = CITY_MAP.places.find(p => p.id === placeId);
   if (!place) return undefined;
   const name = environment === 'meridiana-calle' ? 'Avinguda Meridiana'
     : environment === 'meridiana' ? 'Casa de Gerard y Aitor'
-    : environment === 'palacio' ? 'Castillo de la Reina Bubbaloo' : place.name;
+    : environment === 'palacio' || environment.startsWith('palacio-') ? 'Castillo de la Reina Bubbaloo' : place.name;
   return { id: place.id, name, x: place.x, y: place.y };
 }
 

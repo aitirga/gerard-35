@@ -85,6 +85,9 @@ const OUTDOORS: Air = { kinds: [{ kind: 'pollen', density: 4, low: .4, high: 3 }
 const AIR: Partial<Record<string, Air>> = {
   patio: { kinds: [{ kind: 'firefly', density: 7, low: .3, high: 2 }], wind: [.05, 0, .02], turbulence: .6 },
   palacio: { kinds: [{ kind: 'gloom', density: 9, low: .1, high: 3 }, { kind: 'bubble', density: 2, low: 0, high: .4 }], wind: [0, .04, 0], turbulence: .7 },
+  // Chapter 2's zones: chalk dust drifting over the yard, dust in the gym's tube light; her gloom only a little.
+  'palacio-patio': { kinds: [{ kind: 'mote', density: 5, low: .2, high: 2.4 }, { kind: 'gloom', density: 2, low: .1, high: 2.6 }], wind: [.2, 0, .08], turbulence: .8 },
+  'palacio-gimnasio': { kinds: [{ kind: 'mote', density: 14, low: .3, high: 4 }, { kind: 'gloom', density: 1, low: .1, high: 2 }], wind: [0, .02, 0], turbulence: .4 },
 };
 /** Ambient particles stop growing past this, however far the camera pulls back. */
 const AMBIENT_CAP = 1600;

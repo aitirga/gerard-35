@@ -31,6 +31,7 @@ import { PLACES_2 } from './chapter-2';
 import { createNewsTV, type NewsTV } from './news-tv';
 import { stage } from './days';
 import { palaceKit } from './palace';
+import { buildSchoolDoor } from './palace-zones';
 import { lampInteraction, type Lamp, type LightId } from './home-lights';
 import { MERIDIANA_BED, SITTING_SECONDS, WAKE_SECONDS, wakePhase, wakePose, type Sleeper } from './bed';
 import { separateFlushFaces, separateFlushFacesOnArrival } from './flush-faces';
@@ -403,7 +404,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   function interactions(): Interaction[] {
     const mate = mateHere();
-    const all = [...environment.interactions, ...story.interactions(environment.id, mate ? matePosition(mate) : undefined)];
+    const told = story.interactions(environment.id, mate ? matePosition(mate) : undefined);
+    // The story's version of a place replaces the scene's own (the hall's east door in chapter 2).
+    const all = [...environment.interactions.filter(i => !told.some(t => t.id === i.id)), ...told];
     return lampLabel ? all.map(i => { const label = lampLabel!(i.id); return label ? { ...i, label, hint: 'Ajustar luz' } : i; }) : all;
   }
   /** The closest thing within reach, so a pickup next to a door still gets picked; `byPartner` leaves out talking to himself. */
@@ -490,8 +493,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     toneTarget = environment.id === 'palacio' || environment.id === 'cardedeu-laberinto' || (SANT_QUIRZE.has(environment.id) && story.tone === 'bubbaloo') ? 1
       : environment.id === 'rec-comtal' ? .5 + spread * .4 : environment.id === 'meridiana-calle' ? spread * .5
       : environment.id === 'meridiana' ? (story.doomed ? 1 : spread * .25) : 0;
-    if (story.adult && environment.id !== 'palacio') toneTarget = Math.min(1, Math.max(toneTarget, story.dusk * .6));
-    updateTV(); updateJar(); settleHomeCats(); overgrow();
+    // Inside her palace in chapter 2, each zone of the school says how far she has crept in.
+    if (environment.palace?.theme) toneTarget = environment.palace.theme.her;
+    if (story.adult && !environment.palace) toneTarget = Math.min(1, Math.max(toneTarget, story.dusk * .6));
+    updateTV(); updateJar(); settleHomeCats(); overgrow(); schoolDoorway();
     // Bernat first steps out of his own front door; scene changes place a partner beside Gerard instead.
     const mate = mateHere();
     for (const other of Object.values(mates)) if (other !== mate) other.shown = false;
@@ -827,6 +832,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   /** The end (story.doomed): the flat has become part of her castle, gum over everything. */
   let overgrowth: { root: pc.Entity; destroy: () => void } | undefined;
+  let doorway: { destroy: () => void } | undefined;
+  /** Chapter 2: the hall's east door shows the school's orange frame, because the school is behind it now. */
+  function schoolDoorway() {
+    doorway?.destroy(); doorway = undefined;
+    if (story.adult && environment.id === 'palacio') doorway = buildSchoolDoor(app, scenery.toWorld);
+  }
   function overgrow() {
     overgrowth?.destroy(); overgrowth = undefined;
     if (!story.doomed || environment.id !== 'meridiana') return;
