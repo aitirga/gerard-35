@@ -472,6 +472,30 @@
       "x_m": -45.25,
       "z_m": 98.75,
       "yaw": 15
+    },
+    {
+      "kind": "tree",
+      "x_m": 10.25,
+      "z_m": 74.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.3
+    },
+    {
+      "kind": "tree",
+      "x_m": 17.75,
+      "z_m": 80.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.15
+    },
+    {
+      "kind": "tree",
+      "x_m": 25.25,
+      "z_m": 71.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.25
     }
   ],
   "places": [
@@ -523,11 +547,11 @@
     {
       "id": "sants-palau-balana",
       "label": "Mirar el cine",
-      "x_m": 30,
-      "z_m": 80,
+      "x_m": 19.25,
+      "z_m": 71.75,
       "lines": [
         "El Palau Balañà. Cerró hace años y nadie ha quitado las letras.",
-        "Hay luz detrás del cristal de la taquilla."
+        "Detrás del cristal aún quedan los carteles de las últimas películas. Nadie los ha cambiado."
       ]
     },
     {
@@ -567,7 +591,7 @@
       "z_m": 306,
       "lines": [
         "La calle de Sants. Tiendas una detrás de otra, hasta donde alcanza la vista.",
-        "Todas las persianas están a media altura. Todas a la misma."
+        "Los escaparates están encendidos y dentro no hay nadie. Ni siquiera detrás del mostrador."
       ]
     }
   ],
