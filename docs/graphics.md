@@ -12,6 +12,7 @@ src/game.ts ── camera ──► src/post.ts       CameraFrame: HDR + 4× MSA
                                └──────────► src/grading.ts     a colour look per scene (LUT + colorEnhance), cross-fades
             └─ effects ─► src/effects.ts    kinds (dust, sparks, fire…), battle recipes, elements, auras, scene air
                                ├──────────► src/particles.ts   CPU simulation + one instanced draw
+                               ├──────────► src/flames.ts      fire drawn whole by a noise shader: one draw
                                └──────────► src/trails.ts      ribbons: one strip, one draw
 src/battle-scene.ts ─────► effects.impact / heal / anima / stamp / element / comet / trails …
             └─ hit feel ► src/hit-feel.ts   hit-stop, camera lurch and punch-in; post.pulse for fringe + bloom
@@ -31,7 +32,7 @@ simulation headless.
 
 ## The engine
 
-PlayCanvas **2.23.3** (latest stable, October 2026) on **WebGPU**, falling back to **WebGL2**. It stays:
+PlayCanvas **2.23.3** (latest stable, October 2026) on **WebGPU** only. It stays:
 
 - The game is built in code (no editor): ~15k lines of TypeScript on PlayCanvas's entities,
   static batching, PCF shadows and shader chunks (the building cutaway). Moving to Three.js or
@@ -59,57 +60,73 @@ about 6 ms, Maresme and Rec Comtal 3–5 ms.
 2.23 changed two typings: a render component's `type` is a union (`pc.RenderComponent['type']`, not
 `string`) and `meshInstance.material` may be `null`.
 
-### WebGPU, WebGL2 and how to tell
+### WebGPU only
 
 `createGame` (src/game.ts) is async: `createDevice` asks `pc.createGraphicsDevice` for WebGPU and
-falls back to WebGL2 when the browser has no adapter (Safari without the flag, old drivers,
-software rendering). Both look the same; the post pass, fog, shadows and particles were compared
-shot by shot on both (`graphics`, `particles`, `scenes`, `city-cutaway`).
+nothing else. A browser with no adapter gets a note saying the game needs WebGPU (a recent Chrome,
+Edge or Safari) instead of a black page.
 
-- `?gpu=webgl2` skips WebGPU (to compare, or to dodge a bad driver); it works in production too.
-- The console says `Gerard 35 dibuja con WebGPU` (or `WebGL2`) once, and
-  `window.gerard.game.app.graphicsDevice.isWebGPU` tells in a development build.
+- The console says `Gerard 35 dibuja con WebGPU` once.
 - `?stats` shows `pc.MiniStats` (frame, CPU and GPU time, draw calls, VRAM), harmless in production.
-- The 3D city map (src/city-3d.ts) keeps its own small WebGL2 app: an unlit model in a panel gains
-  nothing from WebGPU, and its synchronous creation keeps the flat-plan fallback simple.
+- The 3D city map (src/city-3d.ts) has its own small WebGPU app on its own canvas. Its device comes
+  up asynchronously the first time the travel panel opens, and the panel waits for it.
 
 On an M1 Pro (Chromium 141 headless, 1440×900 at 1×, release engine, no frame cap:
-`just screenshots gpu-perf --gpu --perf`, then the same with `--webgl`), WebGPU is the smoother of
-the two, mostly because the CPU spends less time per draw call (~1000 of them in the street):
+`just screenshots gpu-perf --gpu --perf`; ranges over two runs each), with ~1000 draw calls in the
+street:
 
-| View | WebGPU fps · CPU ms · p95 ms | WebGL2 fps · CPU ms · p95 ms |
-| --- | --- | --- |
-| Street, following Gerard | 416–501 · 1.8–2.1 · 2.7–3.3 | 254–263 · 3.6 · 7.7–9.0 |
-| Street, overview | 383–516 · 1.7–2.3 · 2.7–4.2 | 286–288 · 3.2–3.3 · 5.3–6.8 |
-| Palace | 565–656 · 1.3–1.5 · 2.2–2.7 | 123–159 · 6.0–7.8 · 11.5–16.4 |
-| Fight with every element going off | 416–469 · 1.7–2.0 · 2.8–3.1 | 399–432 · 1.9–2.1 · 3.4–3.5 |
+| View | fps · CPU ms · p95 ms |
+| --- | --- |
+| Street, following Gerard | 416–501 · 1.8–2.1 · 2.7–3.3 |
+| Street, overview | 383–516 · 1.7–2.3 · 2.7–4.2 |
+| Palace | 565–656 · 1.3–1.5 · 2.2–2.7 |
+| Fight with every element going off | 416–469 · 1.7–2.0 · 2.8–3.1 |
 
-At the usual 60 fps cap both hold 16.7 ms frames on this machine; the gap is the headroom left
-for weaker computers, and the palace's stalls on WebGL2 (one frame in twenty takes ~16 ms) are
-gone (ranges over two runs each). In the development build the engine's debug checks make WebGPU *slower* (8 ms of CPU a frame
+At the usual 60 fps cap it holds 16.7 ms frames on this machine; the rest is the headroom left
+for weaker computers. In the development build the engine's debug checks make WebGPU *slower* (8 ms of CPU a frame
 against 5.6), so always time with `--perf`, never with `just dev`.
 
-### Custom shaders in both languages
+**Burning fighters** (`gpu-perf` also times a fight at rest, its three dogs burning at the three
+levels, and all five fighters burning at the highest). Measured on the same desktop with Chromium
+141 at 1440×900 and 2× pixels (`--scale 2`, as a Retina screen draws):
 
-WebGPU never transpiles GLSL at runtime (that needs extra wasm downloads), so every custom shader
-ships in GLSL and WGSL, side by side and line for line, and a change to one goes into the other:
+| Fight | frame ms · GPU ms · draws |
+| --- | --- |
+| At rest | 7.63 · 7.61 · 916 |
+| Three dogs burning (light, medium, high) | 8.23 · 8.16 · 962 |
+| All five fighters burning high | 9.07 · 9.01 · 1110 |
 
-- **ShaderMaterial** (the particles, `VERTEX`/`FRAGMENT` and `VERTEX_WGSL`/`FRAGMENT_WGSL` in
-  src/particles.ts): pass `vertexWGSL`/`fragmentWGSL` next to the GLSL. In WGSL, declare
-  `attribute name: vec4f;`, `varying name: vec2f;` and `uniform name: vec3f;` as in GLSL; the
+With all five burning, drawing the GPU fight particles (below) costs ~0.5 ms, the shells
+~0.25 ms, and the simulation pass, flames and light the rest; an idle fight's simulation costs
+nothing measurable.
+
+Turning each part off in turn showed that almost all of the cost is the fires' lights (each omni
+light costs every lit pixel within its range), not the flame shaders: the shells cost ~0.1 ms, the
+heat on the fighters' materials 0.05 ms. Before fires shared lights and had shorter ranges, three
+dogs burning cost +0.9 ms; now fires
+within `FIRE_SHARE` metres cast one light between them, at most `FIRE_LIGHTS` at once. At 1× it costs
+0.1–0.2 ms.
+
+### Custom shaders in WGSL
+
+Every custom shader is written in WGSL:
+
+- **ShaderMaterial** (the particles, `VERTEX_WGSL`/`FRAGMENT_WGSL` in src/particles.ts): pass
+  `vertexWGSL`/`fragmentWGSL`. Declare `attribute name: vec4f;`, `varying name: vec2f;` and
+  `uniform name: vec3f;`; the
   engine copies attributes and varyings into globals of the same name, uniforms are read as
   `uniform.name`, the vertex writes `output.position` and `output.vName`, and the fragment writes
-  `output.color`. The engine's includes (`gammaPS`, `tonemappingPS`, `fogPS`) exist in both and
-  keep their function names; `fog_color` becomes `uniform.fog_color`.
-- **Chunks on a StandardMaterial** (the building cutaway in src/geo-scenery.ts): set the same chunk
-  names in `getShaderChunks(pc.SHADERLANGUAGE_WGSL)` too. Module-level state is `var<private>`,
-  and the forward pass ends on `output.color` instead of `gl_FragColor`. Uniforms a chunk declares
-  are bound in every pass on WebGPU (shadows too), so give them a value up front.
-- Watch the few functions that differ: `atan(y, x)` is `atan2`, GLSL's `mod` is `x - y * floor(x / y)`
-  (WGSL's `%` truncates), `discard` and every `if` body need braces, and there is no implicit
+  `output.color`. The engine's includes (`gammaPS`, `tonemappingPS`, `fogPS`) keep their function
+  names; `fog_color` is `uniform.fog_color`.
+- **Chunks on a StandardMaterial** (the building cutaway in src/geo-scenery.ts): set the chunk
+  names in `getShaderChunks(pc.SHADERLANGUAGE_WGSL)`. Module-level state is `var<private>`,
+  and the forward pass ends on `output.color`. Uniforms a chunk declares are bound in every pass
+  (shadows too), so give them a value up front.
+- Watch WGSL's habits: `atan(y, x)` is `atan2`, a floored `mod` is `x - y * floor(x / y)`
+  (`%` truncates), `discard` and every `if` body need braces, and there is no implicit
   int-to-float.
 
-Check both with `just screenshots particles --gpu` and the same with `--webgl`.
+Check with `just screenshots particles --gpu`.
 
 ## Flush faces (`src/flush-faces.ts`)
 
@@ -168,13 +185,13 @@ by both, and by anything else that wants `uSceneDepthMap` (soft particles, decal
   depth again up to `blur` pixels (at 540 tall). The overview (R) uses a narrower band and more
   blur; fights widen the band to every fighter plus `margin`, so a fighter is never soft (only the
   far floor and the dark behind blurs). A screen-space blur by height on screen would also have
-  worked, but it would need our own pass in both shader languages and would blur a tall house
-  next to Gerard; the depth one is the engine's in GLSL and WGSL.
+  worked, but it would need our own pass and would blur a tall house next to Gerard; the depth
+  one is the engine's.
 - **Contact shadows** are the engine's SSAO (`CameraFrame.ssao`), multiplied into the final
   colour: creases where walls meet floors, under furniture, cars and feet. The engine's shader
   rebuilds positions for a perspective camera, which under ours stretches the scene about five
   times sideways and smears the result, so `orthoSsao` swaps two lines (positions from the view's
-  real size, `uOrthoSize` = 2 × orthoHeight, and the sampling disk sized by it), in GLSL and WGSL
+  real size, `uOrthoSize` = 2 × orthoHeight, and the sampling disk sized by it) in its WGSL
   (`ORTHO_SSAO`). If an engine update moves those lines it warns and turns SSAO off rather than
   show it wrong. It runs at half resolution (no visible difference here) with a 0.9 m radius.
 - The building cutaway also cuts the prepass (`PREPASS_PASS` in src/geo-scenery.ts); otherwise the
@@ -183,12 +200,11 @@ by both, and by anything else that wants `uSceneDepthMap` (soft particles, decal
 Tune both in `LOOK.tiltShift` and `LOOK.ssao`. In a development build,
 `window.gerard.game.post.tiltShift = false` and `.ssao = false` switch them off to compare, and
 `post.frame.debug = 'dofcoc'` or `'ssao'` shows the blur amount (red behind, green in front) or the
-occlusion alone. `just screenshots tilt-shift --gpu` (and with `--webgl`) shoots the street, the
+occlusion alone. `just screenshots tilt-shift --gpu` shoots the street, the
 overview, the flat, the house, the palace and a fight with neither, SSAO only and both.
 
-Cost at 1440×900 on an M1 Pro (release engine, `--perf`): on WebGPU +0.4–0.7 ms a frame
-(about +0.5 ms CPU for ~50% more draw calls, +0.5–0.8 ms GPU); on WebGL2 about +1–2 ms, mostly
-the prepass's draw calls. SSAO alone costs about the same as the tilt-shift alone, and both
+Cost at 1440×900 on an M1 Pro (release engine, `--perf`): +0.4–0.7 ms a frame
+(about +0.5 ms CPU for ~50% more draw calls, +0.5–0.8 ms GPU). SSAO alone costs about the same as the tilt-shift alone, and both
 together little more than either, since they share the prepass.
 
 ## Colour grading (`src/grading.ts`)
@@ -225,8 +241,7 @@ How it works:
   second; instant with reduced motion): while it fades, and while the flat is dark, a spare
   texture is rewritten each frame with the mix. Otherwise nothing is uploaded.
 - Both slots stay filled and `colorEnhance` stays on, so there is one compose shader throughout.
-  No shader of ours: the engine's chunks run on WebGL2 and WebGPU alike, and the two give the same
-  picture (the `grading` scenario with `--gpu` and `--gpu --webgl`).
+  No shader of ours: the engine's own chunks do it (the `grading` scenario with `--gpu`).
 - The engine filters the 16³ LUT in linear light between steps placed in sRGB, so the darkest step
   (below about 17/255) comes out up to ~4/255 lighter and a smooth dark gradient shows faint steps
   if stretched. The patio, the darkest scene, pulls its shade back down with `colorEnhance.shadows`.
@@ -255,11 +270,13 @@ material.
 Each step (slow frames are split into steps of at most 1/45 s), a particle:
 
 - falls (`gravity`; negative floats), slows in the air (`drag`) and takes the scene's `wind`;
+- changes colour over its life: two colours, or three (`middle` says when it shows the second);
 - **wanders on its own random walk**: an Ornstein–Uhlenbeck velocity (`wander` m/s, `wanderRate`
   1/s) that drifts and is pulled back towards still, so each particle has its own path;
 - **rides a swirling flow field**: the curl of smooth noise, precomputed once on a tiling 16³ grid
   and sampled per particle (`flow`), so particles follow eddies and never clump;
-- is pulled, swirled or lifted by **attractors** (heal spirals, whirlwinds, implosions);
+- is pulled, swirled or lifted by **attractors** (heal spirals, whirlwinds, implosions, a fire's
+  draw), as much as its `pulled` (1 by default);
 - **parts around people** (`bodies`): vertical capsules for Gerard, his partner, NPCs, dogs and
   every fighter, which push particles out and drag the air along as they walk through;
 - **meets the scene** (`collide`): floors baked from `scenery.groundHeight` (four samples a metre)
@@ -280,16 +297,213 @@ scene's light (`effects` feeds ambient + part of the sun as `uLight`), glowing o
 than the particle's own size) in front of whatever is behind them, so a puff of smoke, dust or frost
 melts into the floor, a wall or someone instead of showing a hard straight line. The post pass
 renders a depth prepass of the opaque scene (`rendering.sceneDepthMap`, `LOOK.softParticles` in
-src/post.ts); it stores linear view depth (−z in view space, metres), the same for the ortho camera
-and on both backends, and the shader compares it with the particle's own view depth. Pure light
+src/post.ts); it stores linear view depth (−z in view space, metres), the same for the ortho camera,
+and the shader compares it with the particle's own view depth. Pure light
 (`additive` 1: sparks, flashes, glows) and `ground` particles keep the cut, so hits stay bright where
 they touch and splats never vanish. The building cutaway also cuts the prepass, or particles would
 fade behind walls that aren't drawn. Without the post pass there is no depth and particles draw as
 before; `window.gerard.game.effects.particles.soft = false` compares (`just screenshots soft-particles`).
 The prepass draws the opaque scene a second time (depth only): 30–50 % more draw calls (fight
 750 → 977, street 1078 → 1580, palace 1006 → 1549) and, in `just screenshots gpu-perf --gpu --perf`,
-about 0.1–0.9 ms more CPU a frame on WebGPU; WebGL2 pays more for the same draws (several ms in
-the palace, on a heavily loaded machine). Set `LOOK.softParticles` to false to drop it.
+about 0.1–0.9 ms more CPU a frame. Set `LOOK.softParticles` to false to drop it.
+
+## Fight particles on the GPU (`src/fight-particles.ts`)
+
+A general particle engine on the GPU, used only in fights (and only with motion on, on a device
+that renders to float textures); everywhere else, in reduced motion and in the headless tests, effects stay on the CPU pool. 32 768 particles.
+
+- **State** is a float texture of five bands of rows (A position + age; B velocity + life; C kind,
+  seed, the part it clings to, size; D when it lets go + its colour tint; E the particle it follows,
+  where it sits in its chain, its batch), ping-ponged by **one full-screen pass a frame**
+  (`pc.drawQuadWithShader`): each band's texel recomputes the same step and writes its own share.
+- **Kinds are data, defined at runtime** (`define(name, kind)`, 16 slots, `GpuKind`): physics
+  (drag, gravity or buoyancy, turbulence, how much fields move it, collide, bounce, friction, cling
+  and for how long, settle), look (shape, three colour stops with brightness and when the middle one
+  shows, size at birth and death and how much each particle's size varies, streak length, how thin a
+  line is, spin, fades, additive, opacity, twinkle), how it sees others (separation, cohesion,
+  alignment, radius), chains (`follow`) and what it becomes (`onLand`, `onDeath`, with its own `life`).
+  Redefining a kind changes the particles of it already in flight.
+- **Shapes**: `glow`, `streak`, `flame`, `smoke`, `line` (crisp thin lines along their motion),
+  `shard` (a sharp diamond), `ring`, `star`, `dot` (hard-edged) and `strand` (a ribbon from a chain
+  link to the link ahead, so a chain draws as one line).
+- **Spawning** happens on the GPU: the CPU keeps a ring of slots and sends batches (`burst`,
+  `emitter`, up to 64 a frame): in a ball, on a ring round any axis (spinning with `around`), along a
+  line (`to`), or on the **surface of a fighter**: a random part above a fraction of their height, a
+  random face, a random point on it, thrown off along its normal. A burst may tint the kind
+  (`colour`) and cut itself into **chains** (`chain`): every link starts where its leader does, and
+  followers close in on the link ahead (lagging, so a chain draws a curve as its head moves). A
+  particle born this frame waits a frame to move, so it never reads its leader before it exists.
+- **Motion**: gravity or buoyancy, drag, a divergence-free turbulent flow (crossed sine waves pushing
+  across their own direction) and up to 16 **force fields** (`field`: swirl round any axis, pull or
+  push, lift along the axis, more turbulence), which can `follow` a fighter.
+- **Seeing each other**: a kind with separation, cohesion or alignment looks at its four ring
+  neighbours (siblings from the same batch: it moves towards their middle and matches their velocity)
+  and three random particles a frame (it keeps away from any within `radius`). No grid, no sort: 7
+  reads a particle, only for the kinds that ask.
+- **Meeting the fighters**: every part of every fighter (`setFighters`, each frame) is an oriented
+  box (world and inverse matrices and its mesh's bounds in a data texture), so particles bounce off
+  their real shape, slide along it and may **cling** (stored in the part's local space, riding it
+  wherever it goes) before letting go. A heightmap of the fight's floor catches the rest; there a kind
+  may settle, or become its `onLand` kind (shards into frost, gum into splats).
+- **Drawing**: one instanced draw of a quad per slot, reading the state in the vertex shader (dead
+  slots collapse to nothing), white-hot to mid to end over their lives, tinted, in the scene's fog
+  and tonemapping.
+- **Blur**: a kind's `blur` (0 crisp to 2, or at birth and at death so it softens as it fades)
+  draws it out of focus: its shape is averaged over five points and its quad grows so the halo is
+  never cut. Only blurred kinds pay the five lookups. Motes, embers, cures, fireflies, twinkles and
+  flares blur as they fade; `effects.gpu.get(name)` and `define` change it live.
+- **Crystals** (`volume`, up to 8): a sphere, a box or a `crystal` (a double pyramid) placed by a
+  rigid transform or following a node, as a signed distance in its own space. Its mode says what
+  particles do with it: `contain` (glass: what is inside stays in and bounces off its inner walls,
+  what is outside bounces off it), `solid` (bounced off), `orbit` (drawn onto a shell `distance` off
+  its surface and swirled round its axis) or `attract` (pulled in to settle on its faces and slide).
+  `kinds` limits it to some kinds. `effects` draws a visible crystal of glass for it (`crystalAt`:
+  it grows in, turns, bobs, and shrinks away or shatters into shards with a flash).
+- **Light from the particles**: a burst with `light: { intensity, range, colour? }` is a light group.
+  After each step a small pass sums each group on the GPU (64 of its particles: brightness-weighted
+  middle, colour and brightness, the colour and fade the draw uses) into an 8×2 float texture that
+  is read back without waiting (`texture.read`, one read in flight). A real omni light then follows
+  the cloud's middle in its colour, its brightness following theirs (against the brightest they have
+  been), so the light falls on the fighters, the floor and the scenery like any light and goes out
+  with them. The four brightest groups get a light (`FX_LIGHTS`), scaled down by daylight like a
+  fire's.
+
+`FIGHT_KINDS` in src/effects.ts defines 15 kinds; the fight uses them for blows (sparks and crisp
+`needle` lines that meet whoever was hit), for whoever burns (`FIRE_GPU`: tongues, embers and smoke
+off their own parts, a vortex round them) and for fire hits (a ring of embers drawn in, then blown
+out). `effects.fightFx(name, { model, from, colour, strength })` plays a preset made of them
+(`FIGHT_FX`): `needles`, `shatter` (ice: spinning shards that become frost), `arc` (energy: chains of
+light), `vortex` (an ánima's colour spiralling up), `swarm` (shadow: a flock that sees itself),
+`goo` (gum that clings and splats), `heal` and `fireworks` (rockets with trails that burst into
+embers). In development, `window.gerard.game.fx(name, fighterId, { from, colour })` plays one in a
+fight, and `just screenshots fight-fx --gpu --scale 2` records each; `effects.gpu.define(...)` and
+`effects.gpu.burst(...)` in the console try new ones live. `effects.gpu.draw = false` compares.
+Crystal presets: `prison` (a crystal closes round them, light bouncing inside it and off them),
+`orbit` (light circling a crystal over their head), `gather` (a crystal draws embers in and bursts),
+plus `meteor` (trails falling from high up that flare where they land, a scorch left) and `fireflies`
+(warm lights wandering round them); heal, vortex, arc, fireworks, prison, orbit, gather, meteor and
+fireflies light what is round them; the lattice presets (`ward`, `morph`, `current`, `veil`, `forge`, `shield`, `bubble`, `globe`, `orb`) are under Lattices. Firing all thirteen every 0.7 s (a storm no fight reaches)
+costs ~1.1 ms at 2× pixels, nearly all of it the lights; the first
+eight alone, before particles lit anything, cost ~0.15 ms.
+
+## Lattices (`src/lattice.ts`)
+
+A lattice is a shape made of fight particles that holds together: solid and stable, it bends when
+pushed and springs back, changes shape without losing its structure, flows, breaks where particles
+thrown at it hit hardest, and mends. `effects.gpu.lattice(kind, options)` makes one (up to 4 at once,
+up to 8192 members each); every field of the `GpuLattice` it returns can change from frame to frame.
+
+- **A grid, not a list of points.** A lattice is one batch of particles laid out as nx × ny × nz
+  cells. A member knows its cell from its place in the batch, so nothing about the shape is stored
+  per particle: its **home** is computed each frame from the cell, the lattice's shape and its
+  transform (`at`, `rotation`, or a node it `follow`s), and its **neighbours** are the six cells
+  next to its own (x wraps round). Moving, turning or reshaping a lattice costs nothing: the homes
+  move and the members follow, lagging as softly as the lattice is soft.
+- **Shapes are continuous maps of the grid** (cell −1…1 → the lattice's own space): `box` keeps it,
+  `ball` and `crystal` (a double pyramid) pull each shell of the grid radially onto their surface,
+  `ring` bends x round a circle and turns y × z into the tube's section, `column` does the same round
+  its height, `shield` cuts a heraldic escutcheon out of the grid (a straight top and sides, then two
+  arcs as wide as the shield meeting in a point) and bends it out along x towards +z, and `sphere`
+  wraps x round it and runs y from its bottom to its top (a hollow shell, z its thickness). A ring and
+  a sphere close round x: their rows are loops, with no seam. Each map keeps neighbours next to each other, so `shape`, `morphTo` and `morph` (0–1)
+  blend between any two without tearing. Each map also runs backwards (`latticeUnshape`): a point
+  leads straight to its cell. The maps exist twice, side by side in src/lattice.ts: TypeScript
+  (tested in `tests/lattice.test.mjs`) and WGSL.
+- **Springs.** `rigidity` (1/s²) pulls each member home, damped towards the home's own motion
+  (`damping`; the lattice's velocity and spin come from its transform frame to frame). `bonds` pull
+  it towards each neighbour at the distance their homes keep, and `viscosity` evens out its velocity
+  with theirs. Every spring is capped against the frame's length (`k·dt²`), so no lattice blows up on
+  a long frame. High rigidity is a solid; low rigidity with strong bonds a jelly; rigidity 0 a cloth
+  that falls and drapes over the fighters (members meet their parts like any `collide` kind).
+- **Flow.** `flow` scrolls the cells along x (cells a second): round a ring they circle it, along
+  anything else they stream through and start again at the other end. `wave` sends a ripple through
+  the homes.
+- **Meeting other particles.** `hitBy(batch)` (the slots a `burst` returns) throws that burst at the
+  lattice, up to three at once. Each bonded member looks at 24 of their particles a frame, at the
+  nearest point of each one's step this frame (so nothing slips through between frames), and takes
+  `transfer` of its velocity. Each thrown particle maps the middle of its step back to a cell, checks
+  that member and its six neighbours, and bounces off the nearest (`bounce`) or is caught (`bounce`
+  below 0: it dies there, becoming its `onDeath`).
+- **Breaking.** A bond stretched past `toughness` (0.5 = half its length) snaps: the member breaks
+  loose, as `breakInto` if given, and its neighbours lose that bond, so cracks run. A member glows
+  with its strain (`glow`) before it snaps; `rim` brightens its outline (first and last rows and
+  columns), a shield's edge. `push(at, radius, strength)` kicks members for one frame.
+  `dissolve` (0–1) breaks it progressively from `dissolveFrom`: `random`, `top`, `bottom`, `outside`,
+  or from where it was last pushed (`push`).
+- **Mending and assembling.** With `reform` (1/s²), loose members are drawn home, carrying their own
+  weight, and bond again within 0.4 of a cell. With `from: { at, spread, shape }` the members are born
+  loose there and fly in to build the lattice.
+- **Life.** A member's life (`life`) stops at `hold` of it while bonded (or on its way home); once
+  loose it ages through the rest and fades as its kind. `remove()` frees every member that way.
+  Nothing is lost when a lattice goes: its members are plain particles again.
+- **See-through.** `opacity` (0–1) dims every member, loose ones too. With `fresnel` (0–1) the
+  draw turns each member see-through as far as its surface faces the camera (its direction from the
+  lattice's middle, or for a shield from a point well behind it), keeping the outline bright: a body
+  of glass with what is inside showing. Any kind can be glass too (`glass` in `GpuKind`, 0–1): its
+  middle see-through, its edge kept and a glint up on its left, like a glass bead or a soap bubble.
+  `strands: 'y'` joins a lattice's strands along y instead of x: a sphere's meridians.
+- **State.** Members use band E's spare channel (lattice slot + 1, negative when loose) and, while
+  bonded, band D's first channel for their strain. Each lattice is a row of 22 texels in a data
+  texture (`LATTICE_COLS` in src/lattice.ts lists them). The ring allocator never puts a burst on a
+  living lattice's slots. Drawn as `strand`, a member ribbons to its row neighbour while both are
+  bonded, so a lattice reads as threads (`thread`, `veil`).
+
+`FIGHT_KINDS` adds `node` (a dot of light with a little weight, so loose bits fall), `pane` (the same
+dot, of glass), `facet` (flat diamonds of glass that fill between bands), `thread`, `veil` and `chip`
+(what a lattice breaks into). The `fightFx` presets are `ward` (a wall between the
+target and the blows: sparks dent it, hole it and knock bits loose, it mends, then crumbles),
+`morph` (a ball → crystal → ring → column → ball, shaken by pushes), `current` (a ring of threads
+streaming round the target), `veil` (cloth that drapes over them) and `forge` (embers assembling a
+crystal that bursts into chips), `shield` (an escutcheon of light with a bright rim and a boss, a
+small ball lattice, raised between the target and the blows: it unfolds from its middle, unbreakable
+until whole, takes three volleys, mends, and a last heavy volley shatters it from where it lands) and
+three spheres round the target that rise as a disc from its feet and swell round it, turning,
+deflect blows from three sides, heal at once and pop: `bubble` (bands of light, its parallels, with
+glass facets between them, a lattice each), `globe` (bands both ways, parallels and meridians, and
+the glass) and `orb` (glass made of the shield's dots alone, `opacity` and `fresnel`, which instead of popping takes a last heavy volley and shatters into chips from where it lands, like the shield). `just screenshots lattice --gpu --scale 2` records each, framed
+close with `game.frame` (which holds the fight camera too while set) and `game.fighterAt(id)`.
+
+`fightFx` takes a fighter's feet at their own origin when the scene's floor does not reach under the
+fight (`groundAt` reads −1 there); before, effects that start at the feet or the chest sat almost a
+metre low in such fights.
+
+## Reflections (`src/reflections.ts`)
+
+The sky (src/lighting.ts) gives every glossy surface a far, general reflection. Reflections add the
+near one and glass:
+
+- **Reflection probes** (`probe(at)`): a cubemap (256² a face, mipmapped, sRGB) rendered from a point
+  by six perspective cameras on the world and skybox layers, so what reflects it shows what is really
+  round it: the fighters, the floor, the light of the particles. All six faces at first, then one
+  face every third frame (the whole cube in under a third of a second), only what is within `far`
+  (6 m), and only while something uses it (`active`).
+- **The glass layer** (`glassLayer()`): what samples a probe would be read and written at once if a
+  probe drew it, so it lives on its own layer, which probes never render and the scene's cameras draw
+  just before the world's transparent things (particles inside glass show over it).
+- **Glass** (`glassMaterial(colour, cubemap)`, `glassMesh(device, triangles)`): a custom shader for
+  faceted meshes. It refracts the scene behind it from the post pass's colour copy, red, green and
+  blue bent by slightly different indices (dispersion, rainbow fringes at its edges); reflects the
+  probe more the more grazing the view (Schlick fresnel); glows faintly of its colour within,
+  brighter towards the rim; lights its edges where its faces meet (a per-vertex barycentric edge
+  coordinate, with the edges that split a flat face hidden, anti-aliased with `fwidth`); and catches
+  a key light's glint and the odd twinkle on a facet. `post.glass(true)` turns on the colour copy
+  (CameraFrame `sceneColorMap`: a copy of the frame with mipmaps and the scene pass split in two);
+  effects keeps it on from a fight's first crystal to its end, as switching it rebuilds the post
+  pass.
+
+Crystals (src/effects.ts, `crystalAt`) use all three: quartz, a hexagonal prism pointed at both ends
+(optionally with smaller points round its foot), on the glass layer, reflecting a probe at the
+newest crystal, with a key light of their colour that makes their faces glint and lights what is
+near. Their volume in the fight particles is the same shape (`quartz`). A crystal costs ~1.5 ms a
+frame at 2× pixels (the colour copy, then the probe), and only while
+there is one.
+
+**Particle sprites** (src/fight-particles.ts `shapeAt`, and the CPU pool's `glow`): light is a
+white-hot pinpoint, a body of its colour and a faint halo fading to nothing at the quad's edge;
+`dot` is a lit bead for matter (gum, frost: shaded from the upper left, a glint, a brighter rim,
+smooth-edged with `fwidth`, never turning) and a glowing orb for light (additive kinds); `star` has
+four fine tapering rays, four shorter diagonal ones, a hot core and a soft glow. Each particle is a
+touch brighter or dimmer than its kind, so a burst never looks flat.
 
 ## Effects (`src/effects.ts`)
 
@@ -306,12 +520,85 @@ the palace, on a heavily loaded machine). Set `LOOK.softParticles` to false to d
 | `comet(from, to, colour, seconds, options)` | A spell flying in an arc (a trail, below) that flares where it lands. |
 | `poof(where)` | Off in a puff of smoke. |
 | `confetti(centre, colours)` | The fight is won: confetti that tumbles down and lies where it falls. |
-| `element(element, target, { from, strength, feet })` | A hit of `fire`, `ice`, `air`, `energy`, `water`, `earth`, `light`, `shadow` or `gum`. |
+| `element(element, target, { from, strength, feet, body })` | A hit of `fire`, `ice`, `air`, `energy`, `water`, `earth`, `light`, `shadow` or `gum`; fire is left burning around `body`. |
 | `aura(element, at, seconds, height)` | A state that clings to someone (burning, frozen, charged…); keep `at` updated. |
+| `fire(at, level, { seconds, body })` | A fire at `light`, `medium` or `high`, alone or around someone (below); returns `{ level, burning, stop() }`. |
+
+**Fire** (`FIRE`, `src/flames.ts`) is drawn whole, never as sprites. Each fire is one upright
+surface turned to the camera (it stands like someone standing there, so it never sinks into the
+floor and whoever stands in front hides it), and its shader builds the flames: two slow fields of
+fractal noise rising through it warp a quick one, so its tongues split, merge and lick up without
+ever repeating, every fire on its own seed and the shader's clock. The noise eats more of the body
+the higher it climbs, tearing its top into tongues (more of them across a wider fire), and its
+temperature colours it, white-hot low in the heart, then yellow, orange and deep red at the tips;
+past `heat` 0 its heart blooms. Above it a column of smoke, lit warm from below and cooling to grey,
+takes the scene's light. All fires are one instanced draw, sorted after the marks and before the
+particles, so sparks fly over them.
+
+It comes in three levels, to be given to whatever needs one (a burning state, a skill's hit, a bin
+set alight): `light`, an ankle-high flicker; `medium`, a knee-high campfire that flares now and then;
+`high`, a blaze taller than a person, flaring and spitting sparks into a column of smoke. Only its
+sparks (`fleck`) are particles. It breathes (its strength and height swell and ebb), crackles (a
+flare: taller, hotter, a spray of sparks, a brighter light) and throws a flickering omni light (cheap:
+lighting is clustered), which shows at night and hardly by day (scaled by the scene's light). Change
+`level` while it burns and it grows or calms into it; `stop()` lets it die down over `FIRE_FADE`;
+`clear()` and a new scene put it out.
+
+**On someone's own body** (`fire(at, level, { model })`), it interacts with their geometry: every
+part of the model is drawn again a few centimetres bigger with the fire shell shader (`wrap` in
+src/flames.ts), on that part's own node, so the flames crawl over their actual surfaces and follow
+every move (a sniff, a blow, a squash). The shell's noise runs in world space, so the same flames
+cross from one part to the next; it is turned around their middle as time goes and twisted with
+height, so the flames swirl up them, faster the bigger the fire, hotter low on them and at their
+outline. A vortex (an attractor following them) spins its sparks round them as they rise, and each
+spark flies off a random part of them. Their body (`bodyOf`, from the parts' bounds) sizes the fire:
+around someone it reaches `wrap` times their height plus a quarter of the level's own height, so a
+blaze engulfs a dog without dwarfing it. In fights, `battleScene.ignite(id, level)` (in development
+`window.gerard.game.ignite`) sets a fighter alight: the fire is sized to their model, follows them,
+heats them (their materials glow warm and flicker with it, on top of the hit flash) and goes out
+when they fall. No skill sets anyone alight yet.
+
+**Around someone** (`fire(at, level, { body: { radius, height } })`, and the fire `aura`), it
+wraps them: one layer stands just behind them, so they hide its middle and it rises over their head,
+and, without their model, a lower, wider, partly see-through one stands just in front, licking up
+their lower half (with their model the shell burns in front of them instead); its light falls on them. A fire hit (`element('fire', …, { body })`) leaves one burning around whoever it hit,
+its level set by the hit's `strength`. `just screenshots fire --gpu` records it all as clips.
+
+**On fighters.** Particles of a blow burst inside whoever they hit, which used to hide most of them.
+A kind's `front` (or a burst's) draws it that many metres nearer the camera than it is: the same
+place on screen, only nearer in depth (soft fading included), so sparks, flashes, shards and stars
+show over the fighter they burst from while a wall further in front still hides them. Ground
+particles never take it; cures (`heal`) take little, so they still wind round the body.
+`effects.particles.front = false` compares. Hits also touch whoever they land on: every `impact` and
+`element` throws a brief light of its colour (`glint`, at most `GLINTS` at once) that lights them and
+around them, and sparks, shards, drops, rocks and gum bounce off their body (`bodies`).
 
 Each scene has its **air** (`AIR`): dust motes in the light indoors, pollen on the breeze outside,
 fireflies in the patio at night, gloom and bubbles in her palace, and her pink gloom outside that
 thickens with her light (`setTone`). It fills what the camera sees and survives `clear()`.
+
+## Statuses on fighters (`src/status-fx.ts`)
+
+How a status reads on whoever carries it, in a fight: the combat design's physical statuses (quemado, mojado, congelado, envenenado,
+sangrado, cegado, paralizado), the campaign's (`STATUSES` in src/battle.ts: sangrado, mareo,
+llorera), cauterizado, and the ten reactions between elements. Each look (`STATUS_LOOKS`) is data:
+
+- **streams** of GPU particles (above) off the fighter's own parts, their head or their feet, at a
+  rate for each level (I–III); as particles meet their parts, drops run down them, frost clings to
+  them, blood falls off them;
+- a **field** that follows them (the smoke that turns round a blinded head, the lights over a dizzy
+  one) and a **pulse** (a heartbeat, a jolt, bubbles);
+- the **body** responds: a tint of light on its materials (with the hit flash and the fire's heat in
+  battle-scene) and a way of moving: frozen stands still, poisoned or dizzy sways, paralysed twitches.
+
+Only sparks, drops, crystals and haze: haze is many faint soft glows overlapping, never a puff
+sprite. Applying a status again while it is on raises its level and restarts its clock (the
+design's `escalate`); Quemado burns through `ignite` at the fire's level. The campaign's statuses
+follow the fight's stacks (counted in rounds). `REACTIONS` turn one
+status into another with their own moment. In development, `window.gerard.game.status(id, look,
+level)` (0 takes it off), `react(reaction, id)` and `statusesOf(id)`; `just screenshots status-fx
+--gpu --scale 2` records each one. The combat engine does not have real-time statuses or
+reactions yet: when it does, its events only need to call `status` and `react`.
 
 ## Weather and marks (`src/effects.ts`)
 
@@ -460,14 +747,13 @@ the camera moves, so edges do not shimmer. Only the shadow changes: what is draw
 `shadowSlice` is the maths (`tests/lighting.test.mjs`). The backdrop under the diorama no longer
 casts: as a 200 m caster it stretched the shadow depth range, which PCSS uses to size its search.
 
-**Soft where it should be.** On WebGPU the sun uses PCSS (`SHADOW_PCSS_32F`): it looks for the
+**Soft where it should be.** The sun uses PCSS (`SHADOW_PCSS_32F`): it looks for the
 casters round each point and widens the penumbra with their distance, so a house's shadow is crisp
 at the wall and soft at its far edge, a tree's trunk sharp and its crown blurred. `penumbra` is the
 width per metre between caster and receiver; `samples` and `blockerSamples` trade grain in wide
 penumbrae for cost. Its wider footprint needs more `normalOffsetBias` (.12) than PCF did against
-acne. On WebGL2 PCSS costs tens of milliseconds a frame (it scales with its samples there), so
-WebGL2 keeps a fixed 5×5 PCF, still fitted to the view. VSM (`vsm`) was tried: smooth and free of
-grain, but evenly soft (no hardening at contact) and its blur passes cost more than PCSS on WebGPU.
+acne. VSM (`vsm`) was tried: smooth and free of
+grain, but evenly soft (no hardening at contact) and its blur passes cost more than PCSS.
 
 **The sky is only reflected.** Each sky is three colours (zenith, horizon, ground) painted into a
 small equirect texture and prefiltered by the engine (`EnvLighting.generateAtlas`) into the
@@ -486,16 +772,16 @@ dozen times in a fade and twice on a scene change; standing still costs nothing.
 
 For comparisons (development build): `window.gerard.game.lighting` has `shadows` (`'pcss'`, `'vsm'`,
 `'pcf5'`, `'pcf3'`), `fit` and `sky`; `settings` is `LIGHTING` live and `refresh()` applies it.
-`just screenshots lighting --gpu` (and with `--webgl`) shows every view after and before.
+`just screenshots lighting --gpu` shows every view after and before.
 
 Measured with `--perf` on an Apple GPU at 1440×900 (GPU ms a frame, street following Gerard):
 
-| | WebGPU | WebGL2 |
-| --- | --- | --- |
-| Before (PCF 3×3, no fit, no sky) | 1.0 | 4.7–7 |
-| Fit + sky, PCF | 1.0 | same, +0.2–0.6 for 5×5 |
-| Fit + sky, PCSS 20/12 | 2.2 (1.6 in the overview) | 118–165: not used |
-| Fit + sky, VSM | 2.6 | 18–20 |
+| | GPU ms |
+| --- | --- |
+| Before (PCF 3×3, no fit, no sky) | 1.0 |
+| Fit + sky, PCF | 1.0 |
+| Fit + sky, PCSS 20/12 | 2.2 (1.6 in the overview) |
+| Fit + sky, VSM | 2.6 |
 
 ## What next
 
@@ -503,11 +789,10 @@ In rough order of what each adds for its cost:
 
 1. **Weather in the story**: choose rain or snow per scene and chapter, and puddles that gather
    and dry where rain has fallen. Settled snow reads as soft patches; an even sheet needs its own
-   particle shape (in both shader languages).
+   particle shape.
 2. **Shadows and sky, further**: a normal map on the pools so their sky reflection ripples, a
    second shadow map for the overview on fast GPUs, and a hemisphere ambient from the sky (the
    atlas's own ambient) once the scenes are rebalanced for it.
 3. **A look for chapter 2's dusk** (`story.dusk`), which today only raises her tone, and a finer
    LUT (32³) if the darkest gradients ever show steps.
-4. **GPU particles** (compute) once counts need more than ~20k, on WebGPU only, keeping the CPU
-   simulation for WebGL2.
+4. **GPU particles** (compute) once counts need more than ~20k.

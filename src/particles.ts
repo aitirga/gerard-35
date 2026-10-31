@@ -16,13 +16,19 @@ export type ParticleOrient = 'face' | 'velocity' | 'ground';
 const ORIENTS: Record<ParticleOrient, number> = { face: 0, velocity: 1, ground: 2 };
 
 type Range = number | readonly [number, number];
+export type Colours = string | readonly [string, string] | readonly [string, string, string];
 export interface Vec { x: number; y: number; z: number }
 
 export interface ParticleKind {
   shape: ParticleShape;
   orient?: ParticleOrient;
-  /** Colour at birth and at the end of life (sRGB hex); a burst may bring its own. */
-  colour: string | readonly [string, string];
+  /**
+   * Colour at birth and at the end of life (sRGB hex), or at birth, in the `middle` of its life and
+   * at the end (fire: white-hot, orange, red); a burst may bring its own.
+   */
+  colour: Colours;
+  /** When a three-colour kind shows its middle colour (fraction of life, .5 by default). */
+  middle?: number;
   /** 0 covers what is behind it (dust, gum), 1 adds light (sparks, motes). */
   additive?: number;
   /** 0 takes the scene's light like a surface, 1 shines on its own. */
@@ -54,10 +60,20 @@ export interface ParticleKind {
   stick?: boolean; pop?: boolean;
   /** How much people moving through push it aside (0 ignores them). */
   bodies?: number;
+  /** How much attractors move it (1 by default, 0 ignores them): smoke barely feels a fire's draw. */
+  pulled?: number;
+  /**
+   * Metres it is drawn closer to the camera than it is (it stays where it is on screen): a blow's
+   * sparks show in front of whoever they burst from instead of inside them, yet a wall further
+   * in front still hides them. 0 by default; `ground` particles ignore it.
+   */
+  front?: number;
   /** Streak length per m/s, for `velocity` particles. */
   stretch?: number;
   /** Degrees per second. */
   spin?: Range;
+  /** Born standing up, leaning at most this many degrees either way (flames), instead of at any angle. */
+  tilt?: number;
   /** 0 steady, 1 twinkles fully; how many times a second. */
   flicker?: number; flickerRate?: number;
   /** Confetti tumbles: turns a second around its long side. */
@@ -84,7 +100,9 @@ export interface SpawnOptions {
   velocity?: Vec;
   /** Multipliers on the kind's own values. */
   speed?: number; size?: number; life?: number;
-  colour?: string | readonly [string, string];
+  colour?: Colours;
+  /** Instead of the kind's own `front`. */
+  front?: number;
   /** Custom placement (e.g. along a curve): write particle `i` of `n`'s offset from the point. */
   place?: (i: number, n: number, out: pc.Vec3) => void;
 }
@@ -131,9 +149,9 @@ interface Compiled {
   life: [number, number]; size: [number, number]; aspect: [number, number]; sizeEnd: number; growIn: number; fadeIn: number; fadeOut: number;
   speed: [number, number]; rise: [number, number]; gravity: number; drag: number;
   wander: number; wanderRate: number; flow: number; wind: number;
-  collide: boolean; bounce: number; friction: number; stick: boolean; pop: boolean; bodies: number;
-  stretch: number; spin: [number, number]; flicker: number; flickerRate: number; tumble: number;
-  colour: Float32Array; onLand?: readonly SubBurst[]; onDeath?: SubBurst; soft: number;
+  collide: boolean; bounce: number; friction: number; stick: boolean; pop: boolean; bodies: number; pulled: number; front: number;
+  stretch: number; spin: [number, number]; tilt: number; flicker: number; flickerRate: number; tumble: number;
+  colour: Float32Array; middle: number; onLand?: readonly SubBurst[]; onDeath?: SubBurst; soft: number;
 }
 
 const range = (r: Range | undefined, fallback: number): [number, number] => r === undefined ? [fallback, fallback] : typeof r === 'number' ? [r, r] : [r[0], r[1]];
@@ -145,9 +163,11 @@ function linear(hex: string) {
   if (!c) { const s = new pc.Color().fromString(hex); c = [s.r ** 2.2, s.g ** 2.2, s.b ** 2.2]; colourCache.set(hex, c); }
   return c;
 }
-function colourPair(colour: string | readonly [string, string], out: Float32Array) {
-  const [a, b] = typeof colour === 'string' ? [colour, colour] : colour;
-  out.set(linear(a), 0); out.set(linear(b), 3);
+/** Three linear colours (birth, middle, end) into `out`; with two, the middle is halfway between them. */
+function colourStops(colour: Colours, out: Float32Array) {
+  const [a, b, c] = typeof colour === 'string' ? [colour, colour, colour] : colour.length === 2 ? [colour[0], undefined, colour[1]] : colour;
+  out.set(linear(a), 0); out.set(linear(c), 6);
+  if (b) out.set(linear(b), 3); else for (let i = 0; i < 3; i++) out[3 + i] = (out[i] + out[6 + i]) / 2;
   return out;
 }
 
@@ -180,169 +200,8 @@ function flowField() {
   return field;
 }
 
-/** The particle shader for WebGL2; `VERTEX_WGSL` and `FRAGMENT_WGSL` below are the same for WebGPU. */
-const VERTEX = /* glsl */ `
-attribute vec3 vertex_position;
-attribute vec4 aPosSize;
-attribute vec4 aColour;
-attribute vec4 aMotion;
-attribute vec4 aLook;
-uniform mat4 matrix_viewProjection;
-uniform mat4 matrix_view;
-varying vec2 vUv;
-varying vec4 vColour;
-varying vec4 vLook;
-varying vec2 vDepth;
-void main(void) {
-  vec2 corner = vertex_position.xy;
-  vec3 right = vec3(matrix_view[0][0], matrix_view[1][0], matrix_view[2][0]);
-  vec3 up = vec3(matrix_view[0][1], matrix_view[1][1], matrix_view[2][1]);
-  float size = aPosSize.w;
-  float c = cos(aMotion.w), s = sin(aMotion.w);
-  vec3 world;
-  // aLook.y: the whole part is the orientation, the fraction the softness in metres.
-  float orient = floor(aLook.y);
-  if (orient > 1.5) {
-    vec2 r = vec2(c * corner.x - s * corner.y, s * corner.x + c * corner.y) * size;
-    world = aPosSize.xyz + vec3(r.x, 0.0, r.y);
-  } else if (orient > 0.5) {
-    // A streak: the head at the particle, the tail trailing back along its motion on screen.
-    vec2 onScreen = vec2(dot(aMotion.xyz, right), dot(aMotion.xyz, up));
-    float tail = length(onScreen);
-    vec2 dir = tail > 0.0001 ? onScreen / tail : vec2(0.0, 1.0);
-    vec3 along = right * dir.x + up * dir.y;
-    vec3 across = up * dir.x - right * dir.y;
-    float halfLength = size + tail * 0.5;
-    world = aPosSize.xyz - along * (tail * 0.5) + along * (corner.x * halfLength) + across * (corner.y * size);
-  } else {
-    vec2 q = corner * aMotion.xy;
-    vec2 r = vec2(c * q.x - s * q.y, s * q.x + c * q.y) * size;
-    world = aPosSize.xyz + right * r.x + up * r.y;
-  }
-  vUv = corner;
-  vColour = aColour;
-  vLook = aLook;
-  vDepth = vec2(-(matrix_view * vec4(world, 1.0)).z, aLook.y - orient);
-  gl_Position = matrix_viewProjection * vec4(world, 1.0);
-}`;
-
-const FRAGMENT = /* glsl */ `
-#include "gammaPS"
-#include "tonemappingPS"
-#include "fogPS"
-// Soft particles need the post pass's depth prepass; rendering into the scene depth itself rules it out.
-#if defined(SCENE_DEPTHMAP_LINEAR) && !defined(SCENE_TEXTURE_DEPTH)
-  #define SOFT_PARTICLES
-  #include "screenDepthPS"
-  uniform float uSoft;
-#endif
-uniform vec3 uLight;
-varying vec2 vUv;
-varying vec4 vColour;
-varying vec4 vLook;
-varying vec2 vDepth;
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float wave(float x) { float i = floor(x), f = fract(x); return mix(hash(vec2(i, 0.0)), hash(vec2(i + 1.0, 0.0)), f * f * (3.0 - 2.0 * f)); }
-float noise(vec2 p) {
-  vec2 i = floor(p), f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
-}
-// Round shading for puffs, lit from the upper left like the low-poly scene.
-float shade(vec2 uv) {
-  vec3 n = vec3(uv, sqrt(max(0.0, 1.0 - dot(uv, uv))));
-  return 0.62 + 0.48 * max(0.0, dot(n, vec3(-0.36, 0.6, 0.71)));
-}
-void main(void) {
-  float shape = floor(vLook.x);
-  float seed = fract(vLook.x);
-  vec2 uv = vUv;
-  float r = length(uv);
-  float a = 0.0, white = 0.0, lit = 1.0;
-  if (shape < 0.5) {
-    float core = exp(-r * r * 26.0);
-    a = (exp(-r * r * 4.5) * 0.7 + core) * clamp(1.0 - r * r, 0.0, 1.0);
-    white = core * 0.5;
-  } else if (shape < 1.5) {
-    a = smoothstep(1.0, 0.84, r);
-    lit = shade(uv * 0.95);
-  } else if (shape < 2.5) {
-    float across = 1.0 - uv.y * uv.y;
-    a = across * across * across * smoothstep(-1.0, -0.3, uv.x) * smoothstep(1.0, 0.65, uv.x);
-    white = pow(max(0.0, 1.0 - abs(uv.y)), 6.0) * smoothstep(-0.5, 0.6, uv.x) * 0.8;
-  } else if (shape < 3.5) {
-    float d = (r - 0.8) / 0.11;
-    a = (exp(-d * d) + exp(-r * r * 3.0) * 0.08) * smoothstep(1.0, 0.93, r);
-  } else if (shape < 4.5) {
-    vec2 q = abs(uv);
-    float rays = max(exp(-q.x * 13.0 - q.y * q.y * 2.6), exp(-q.y * 13.0 - q.x * q.x * 2.6));
-    float core = exp(-r * r * 16.0);
-    a = (rays + core) * clamp(1.0 - r * r, 0.0, 1.0);
-    white = core * 0.6;
-  } else if (shape < 5.5) {
-    float n = noise(uv * 2.3 + seed * 37.0) * 0.6 + noise(uv * 5.1 - seed * 11.0) * 0.4;
-    a = smoothstep(1.0, 0.3, r + (n - 0.5) * 0.7) * 0.8;
-    lit = shade(uv * 0.9) * (0.88 + n * 0.25);
-  } else if (shape < 6.5) {
-    vec2 g = uv - vec2(-0.34, 0.38);
-    float rim = smoothstep(0.68, 0.95, r) * smoothstep(1.0, 0.95, r);
-    float glint = exp(-dot(g, g) * 40.0);
-    a = rim * 0.85 + 0.1 * smoothstep(1.0, 0.9, r) + glint;
-    white = glint;
-  } else if (shape < 7.5) {
-    vec2 q = abs(uv);
-    a = smoothstep(1.0, 0.86, q.x) * smoothstep(1.0, 0.86, q.y);
-    lit = 0.82 + 0.25 * uv.y;
-  } else if (shape < 8.5) {
-    float angle = atan(uv.y, uv.x);
-    float edge = 0.74 + 0.15 * sin(angle * 5.0 + seed * 31.0) + 0.07 * sin(angle * 9.0 - seed * 17.0);
-    a = smoothstep(edge, edge - 0.08, r);
-    vec2 g = uv - vec2(-0.22, 0.26);
-    lit = 0.88 + 0.3 * exp(-dot(g, g) * 9.0);
-  } else if (shape < 9.5) {
-    // A six-armed snowflake: fold every arm onto one, then draw the arm and its two side twigs.
-    float sector = 1.0471976;
-    float angle = mod(atan(uv.y, uv.x) + sector * 0.5, sector) - sector * 0.5;
-    vec2 q = vec2(cos(angle), abs(sin(angle))) * r;
-    float arm = smoothstep(0.085, 0.03, q.y) * smoothstep(1.0, 0.86, r);
-    float twig = smoothstep(0.07, 0.02, abs(q.y - (q.x - 0.45) * 0.9)) * step(0.45, q.x) * step(q.x, 0.78);
-    a = max(arm, twig) + exp(-r * r * 30.0) * 0.6;
-    white = exp(-r * r * 20.0) * 0.5;
-  } else if (shape < 10.5) {
-    // Lightning: a jagged path along the streak, a hot core and a soft halo.
-    float path = (wave(uv.x * 3.0 + seed * 40.0) - 0.5) * 0.9 + (wave(uv.x * 9.0 - seed * 23.0) - 0.5) * 0.35;
-    float d = abs(uv.y - path);
-    a = (exp(-d * d * 140.0) + exp(-d * d * 10.0) * 0.3) * smoothstep(1.0, 0.75, abs(uv.x));
-    white = exp(-d * d * 500.0);
-  } else {
-    // A flame: round at the root, licking up to a point, with a hot core.
-    float t = uv.y * 0.5 + 0.5;
-    float x = uv.x + (wave(t * 3.0 + seed * 19.0) - 0.5) * 0.35 * t;
-    float w = 0.72 * pow(1.0 - t, 0.8) * sqrt(clamp(t * 3.0, 0.0, 1.0));
-    a = smoothstep(w, w - 0.18, abs(x));
-    white = smoothstep(0.6, 0.0, abs(x) / max(w, 0.01)) * (1.0 - t) * 0.4;
-  }
-  a *= vColour.a;
-  #ifdef SOFT_PARTICLES
-    // Fade over the last metres in front of the scene behind it (both linear view depth, metres).
-    float soft = vDepth.y * uSoft;
-    if (soft > 0.0) a *= clamp((getLinearScreenDepth() - vDepth.x) / soft, 0.0, 1.0);
-  #endif
-  if (a < 0.004) discard;
-  float additive = vLook.z;
-  float peak = max(1.0, max(vColour.r, max(vColour.g, vColour.b)));
-  vec3 colour = mix(vColour.rgb, vec3(peak), clamp(white, 0.0, 1.0)) * lit * mix(uLight, vec3(1.0), vLook.w);
-  #if (FOG != NONE)
-    float fogged = getFogFactor();
-    colour = mix(mix(fog_color, colour, fogged), colour * fogged, additive);
-  #endif
-  colour = gammaCorrectOutput(toneMap(colour));
-  // Premultiplied: covering particles hide what is behind, additive ones (alpha 0) only add.
-  gl_FragColor = vec4(colour * a, a * (1.0 - additive));
-}`;
-
 /**
- * The same shader in WGSL for WebGPU, line for line with the GLSL above (keep both in step).
+ * The particle shader, in WGSL for WebGPU.
  * The engine copies attributes and varyings into globals of the same name; uniforms are read
  * through `uniform.`, the position goes to `output.position` and the colour to `output.color`.
  */
@@ -354,6 +213,7 @@ attribute aMotion: vec4f;
 attribute aLook: vec4f;
 uniform matrix_viewProjection: mat4x4f;
 uniform matrix_view: mat4x4f;
+uniform uFront: f32;
 varying vUv: vec2f;
 varying vColour: vec4f;
 varying vLook: vec4f;
@@ -389,7 +249,11 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   }
   output.vUv = corner;
   output.vColour = aColour;
-  output.vLook = aLook;
+  // aLook.z: the whole part is how many centimetres nearer the camera it is drawn, the fraction how additive.
+  let nearer = floor(aLook.z);
+  output.vLook = vec4f(aLook.xy, (aLook.z - nearer) / 0.99, aLook.w);
+  // Towards the camera along its view: the same place on screen, only nearer in depth (soft fading too).
+  world += vec3f(view[0][2], view[1][2], view[2][2]) * nearer * 0.01 * uniform.uFront;
   output.vDepth = vec2f(-(uniform.matrix_view * vec4f(world, 1.0)).z, aLook.y - orient);
   output.position = uniform.matrix_viewProjection * vec4f(world, 1.0);
   return output;
@@ -406,6 +270,7 @@ const FRAGMENT_WGSL = /* wgsl */ `
   uniform uSoft: f32;
 #endif
 uniform uLight: vec3f;
+uniform uTime: f32;
 varying vUv: vec2f;
 varying vColour: vec4f;
 varying vLook: vec4f;
@@ -423,7 +288,7 @@ fn shade(uv: vec2f) -> f32 {
   let n = vec3f(uv, sqrt(max(0.0, 1.0 - dot(uv, uv))));
   return 0.62 + 0.48 * max(0.0, dot(n, vec3f(-0.36, 0.6, 0.71)));
 }
-// GLSL's mod: WGSL's % truncates, which flips the result for negative x.
+// A floored mod: WGSL's % truncates, which flips the result for negative x.
 fn floorMod(x: f32, y: f32) -> f32 { return x - y * floor(x / y); }
 @fragment
 fn fragmentMain(input: FragmentInput) -> FragmentOutput {
@@ -433,10 +298,13 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
   let uv = vUv;
   let r = length(uv);
   var a = 0.0; var white = 0.0; var lit = 1.0;
+  var hue = vec3f(1.0);
   if (shape < 0.5) {
-    let core = exp(-r * r * 26.0);
-    a = (exp(-r * r * 4.5) * 0.7 + core) * clamp(1.0 - r * r, 0.0, 1.0);
-    white = core * 0.5;
+    // Light: a white-hot pinpoint, a body of its colour and a faint halo, fading to nothing at the edge.
+    var edge = clamp(1.0 - r * r, 0.0, 1.0); edge *= edge;
+    let core = exp(-r * r * 60.0); let body = exp(-r * r * 9.0); let halo = 0.12 / (1.0 + r * r * 40.0);
+    a = (core + body * 0.6 + halo) * edge;
+    white = core * 0.9 + body * 0.1;
   } else if (shape < 1.5) {
     a = smoothstep(1.0, 0.84, r);
     lit = shade(uv * 0.95);
@@ -489,12 +357,19 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
     a = (exp(-d * d * 140.0) + exp(-d * d * 10.0) * 0.3) * smoothstep(1.0, 0.75, abs(uv.x));
     white = exp(-d * d * 500.0);
   } else {
-    // A flame: round at the root, licking up to a point, with a hot core.
+    // A flame: round at the root, licking up to a point. Noise rising through it sways the tip and
+    // eats its outline; it is white-hot low in the heart and redder towards its edges and tip.
     let t = uv.y * 0.5 + 0.5;
-    let x = uv.x + (wave(t * 3.0 + seed * 19.0) - 0.5) * 0.35 * t;
-    let w = 0.72 * pow(1.0 - t, 0.8) * sqrt(clamp(t * 3.0, 0.0, 1.0));
-    a = smoothstep(w, w - 0.18, abs(x));
-    white = smoothstep(0.6, 0.0, abs(x) / max(w, 0.01)) * (1.0 - t) * 0.4;
+    let rise = uniform.uTime * 1.7 + seed * 23.0;
+    let turb = noise(vec2f(uv.x * 1.8 + seed * 7.0, uv.y * 1.4 - rise)) * 0.65 + noise(vec2f(uv.x * 4.2 - seed * 5.0, uv.y * 3.1 - rise * 1.6)) * 0.35;
+    let x = uv.x + (turb - 0.5) * 0.7 * t + (wave(t * 3.0 + seed * 19.0) - 0.5) * 0.2 * t;
+    let w = 0.78 * pow(1.0 - t, 0.75) * sqrt(clamp(t * 3.5, 0.0, 1.0)) * (0.7 + 0.55 * turb);
+    let d = abs(x) / max(w, 0.01);
+    // Soft all over, melting into the bed at its root and thinning out towards the tip.
+    a = smoothstep(1.0, 0.4, d) * smoothstep(0.0, 0.08, w) * smoothstep(0.0, 0.3, t) * (1.0 - t * 0.35);
+    let heat = clamp((1.0 - d) * (1.15 - t), 0.0, 1.0);
+    white = smoothstep(0.55, 1.0, heat) * 0.35;
+    hue = mix(vec3f(1.0, 0.42, 0.22), vec3f(1.0), smoothstep(0.0, 0.55, heat));
   }
   a *= vColour.a;
   #ifdef SOFT_PARTICLES
@@ -505,7 +380,7 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
   if (a < 0.004) { discard; }
   let additive = vLook.z;
   let peak = max(1.0, max(vColour.r, max(vColour.g, vColour.b)));
-  var colour = mix(vColour.rgb, vec3f(peak), clamp(white, 0.0, 1.0)) * lit * mix(uniform.uLight, vec3f(1.0), vLook.w);
+  var colour = mix(vColour.rgb * hue, vec3f(peak), clamp(white, 0.0, 1.0)) * lit * mix(uniform.uLight, vec3f(1.0), vLook.w);
   #if (FOG != NONE)
     let fogged = getFogFactor();
     colour = mix(mix(uniform.fog_color, colour, fogged), colour * fogged, additive);
@@ -530,8 +405,9 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
   // Structure of arrays: each property of every particle in its own typed array.
   const f32 = () => new Float32Array(capacity);
   const px = f32(), py = f32(), pz = f32(), vx = f32(), vy = f32(), vz = f32(), wx = f32(), wy = f32(), wz = f32();
-  const age = f32(), life = f32(), size = f32(), rot = f32(), spin = f32(), seed = f32();
-  const colour = new Float32Array(capacity * 6);
+  const age = f32(), life = f32(), size = f32(), rot = f32(), spin = f32(), seed = f32(), front = f32();
+  /** Each particle's three colours, birth, middle and end (9 floats). */
+  const colour = new Float32Array(capacity * 9);
   const kind = new Uint8Array(capacity), state = new Uint8Array(capacity), ambient = new Uint8Array(capacity);
   const LANDED = 1, STUCK = 2, FADING = 4;
   let alive = 0, recycle = 0, time = 0;
@@ -583,7 +459,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
     if (id === undefined) throw new Error(`Unknown particle kind: ${name}`);
     return id;
   }
-  function spawn(id: number, x: number, y: number, z: number, svx: number, svy: number, svz: number, colours: Float32Array, sizeMul: number, lifeMul: number, isAmbient: boolean, ageAt = 0) {
+  function spawn(id: number, x: number, y: number, z: number, svx: number, svy: number, svz: number, colours: Float32Array, sizeMul: number, lifeMul: number, isAmbient: boolean, ageAt = 0, nearer?: number) {
     const k = kinds[id];
     let i: number;
     if (alive < capacity) i = alive++;
@@ -594,11 +470,12 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
     wx[i] = g * (Math.random() * 2 - 1); wy[i] = g * (Math.random() * 2 - 1); wz[i] = g * (Math.random() * 2 - 1);
     life[i] = Math.max(.05, pick(k.life) * lifeMul); age[i] = ageAt * life[i];
     size[i] = pick(k.size) * sizeMul; seed[i] = Math.random();
-    rot[i] = Math.random() * Math.PI * 2; spin[i] = pick(k.spin) * Math.PI / 180 * (Math.random() < .5 ? -1 : 1);
+    rot[i] = k.tilt >= 0 ? (Math.random() * 2 - 1) * k.tilt : Math.random() * Math.PI * 2; spin[i] = pick(k.spin) * Math.PI / 180 * (Math.random() < .5 ? -1 : 1);
     // A touch of variety in each particle's tone, so a burst never looks flat.
     const tone = (.88 + Math.random() * .24) * k.intensity;
-    for (let c = 0; c < 6; c++) colour[i * 6 + c] = colours[c] * tone;
+    for (let c = 0; c < 9; c++) colour[i * 9 + c] = colours[c] * tone;
     kind[i] = id; state[i] = 0; ambient[i] = isAmbient ? 1 : 0;
+    front[i] = k.orient === 2 ? 0 : Math.max(0, nearer ?? k.front);
     return i;
   }
   function kill(i: number) {
@@ -606,21 +483,28 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
     if (i === last) return;
     px[i] = px[last]; py[i] = py[last]; pz[i] = pz[last]; vx[i] = vx[last]; vy[i] = vy[last]; vz[i] = vz[last];
     wx[i] = wx[last]; wy[i] = wy[last]; wz[i] = wz[last];
-    age[i] = age[last]; life[i] = life[last]; size[i] = size[last]; rot[i] = rot[last]; spin[i] = spin[last]; seed[i] = seed[last];
-    colour.copyWithin(i * 6, last * 6, last * 6 + 6);
+    age[i] = age[last]; life[i] = life[last]; size[i] = size[last]; rot[i] = rot[last]; spin[i] = spin[last]; seed[i] = seed[last]; front[i] = front[last];
+    colour.copyWithin(i * 9, last * 9, last * 9 + 9);
     kind[i] = kind[last]; state[i] = state[last]; ambient[i] = ambient[last];
   }
   /** Sub-bursts wait until the step is over, so the arrays never shift under the loop. */
-  function queue(sub: SubBurst, i: number) {
-    const t = Math.min(1, age[i] / life[i]), o = i * 6;
-    pending.push(kindId(sub.kind), sub.count, px[i], py[i], pz[i], vx[i] * .3, Math.max(0, vy[i]) * .3, vz[i] * .3, sub.inherit ? 1 : 0,
-      colour[o] + (colour[o + 3] - colour[o]) * t, colour[o + 1] + (colour[o + 4] - colour[o + 1]) * t, colour[o + 2] + (colour[o + 5] - colour[o + 2]) * t, ambient[i]);
+  /** Particle `i`'s colour now (linear RGB) into `out` at `o`. */
+  function colourNow(i: number, out: Float32Array | number[], o: number) {
+    const t = Math.min(1, age[i] / life[i]), middle = kinds[kind[i]].middle, c = i * 9;
+    // Birth to middle, then middle to end.
+    const from = t < middle ? c : c + 3, f = t < middle ? t / middle : (t - middle) / (1 - middle);
+    for (let n = 0; n < 3; n++) out[o + n] = colour[from + n] + (colour[from + 3 + n] - colour[from + n]) * f;
   }
-  const subColour = new Float32Array(6);
+  const now = [0, 0, 0];
+  function queue(sub: SubBurst, i: number) {
+    colourNow(i, now, 0);
+    pending.push(kindId(sub.kind), sub.count, px[i], py[i], pz[i], vx[i] * .3, Math.max(0, vy[i]) * .3, vz[i] * .3, sub.inherit ? 1 : 0, now[0], now[1], now[2], ambient[i]);
+  }
+  const subColour = new Float32Array(9);
   function flushPending() {
     for (let p = 0; p < pending.length; p += 13) {
       const id = pending[p], k = kinds[id];
-      if (pending[p + 8]) for (let c = 0; c < 6; c++) subColour[c] = pending[p + 9 + (c % 3)];
+      if (pending[p + 8]) for (let c = 0; c < 9; c++) subColour[c] = pending[p + 9 + (c % 3)];
       const own = pending[p + 8] ? subColour : k.colour;
       for (let n = 0; n < pending[p + 1]; n++) {
         const a = Math.random() * Math.PI * 2, s = pick(k.speed);
@@ -646,10 +530,10 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
       uy -= k.gravity * h;
       if (k.drag) { const f = Math.exp(-k.drag * h); ux *= f; uy *= f; uz *= f; }
       if (k.wind) { const f = Math.min(1, k.wind * h); ux += (windX - ux) * f; uz += (windZ - uz) * f; uy += windY * f; }
-      for (const a of attractors) {
+      if (k.pulled) for (const a of attractors) {
         const dx = a.at.x - x, dy = a.at.y - y, dz = a.at.z - z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (d >= a.radius || d < 1e-4) continue;
-        const fall = 1 - d / a.radius, flat = Math.hypot(dx, dz) || 1;
+        const fall = (1 - d / a.radius) * k.pulled, flat = Math.hypot(dx, dz) || 1;
         ux += (dx / d * a.pull - dz / flat * a.swirl) * fall * h;
         uy += (dy / d * a.pull + a.lift) * fall * h;
         uz += (dz / d * a.pull + dx / flat * a.swirl) * fall * h;
@@ -726,7 +610,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
   const material = new pc.ShaderMaterial({
     uniqueName: 'gerard-particles',
     attributes: { vertex_position: pc.SEMANTIC_POSITION, aPosSize: pc.SEMANTIC_ATTR10, aColour: pc.SEMANTIC_ATTR11, aMotion: pc.SEMANTIC_ATTR12, aLook: pc.SEMANTIC_ATTR13 },
-    vertexGLSL: VERTEX, fragmentGLSL: FRAGMENT, vertexWGSL: VERTEX_WGSL, fragmentWGSL: FRAGMENT_WGSL,
+    vertexWGSL: VERTEX_WGSL, fragmentWGSL: FRAGMENT_WGSL,
   });
   material.name = 'Partículas';
   material.blendType = pc.BLEND_PREMULTIPLIED;
@@ -737,6 +621,10 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
   material.setParameter('uLight', light);
   let soft = true;
   material.setParameter('uSoft', 1);
+  let infront = true;
+  material.setParameter('uFront', 1);
+  // The shader's clock (flames lick with it), wrapped so it never loses precision.
+  material.setParameter('uTime', 0);
   const instance = new pc.MeshInstance(quad, material);
   instance.setInstancing(buffer);
   instance.instancingCount = 0;
@@ -750,12 +638,10 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
       const grow = k.growIn ? 1 - (1 - Math.min(1, t / k.growIn)) ** 2 : 1;
       let fade = (k.fadeIn ? Math.min(1, t / k.fadeIn) : 1) * (k.fadeOut ? Math.min(1, (1 - t) / k.fadeOut) : 1);
       if (k.flicker) fade *= 1 - k.flicker * (.5 + .5 * Math.sin(time * k.flickerRate * (.7 + s * .6) * Math.PI * 2 + s * 40));
-      const stuck = (state[i] & STUCK) !== 0, c = i * 6;
+      const stuck = (state[i] & STUCK) !== 0;
       instances[o] = px[i]; instances[o + 1] = py[i]; instances[o + 2] = pz[i];
       instances[o + 3] = size[i] * grow * Math.max(0, 1 + (k.sizeEnd - 1) * t);
-      instances[o + 4] = colour[c] + (colour[c + 3] - colour[c]) * t;
-      instances[o + 5] = colour[c + 1] + (colour[c + 4] - colour[c + 1]) * t;
-      instances[o + 6] = colour[c + 2] + (colour[c + 5] - colour[c + 2]) * t;
+      colourNow(i, instances, o + 4);
       instances[o + 7] = k.opacity * Math.max(0, fade);
       const orient = stuck ? 2 : k.orient;
       if (orient === 1) {
@@ -768,7 +654,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
         instances[o + 8] = Math.cos(time * k.tumble * Math.PI * 2 * (.6 + s * .8) + s * 9) * .6; instances[o + 9] = 1; instances[o + 10] = 0;
       } else { instances[o + 8] = k.tumble ? .6 : k.aspect[0]; instances[o + 9] = k.aspect[1]; instances[o + 10] = 0; }
       instances[o + 11] = rot[i];
-      instances[o + 12] = k.shape + s * .98; instances[o + 13] = orient + (orient === 2 ? 0 : Math.min(k.soft, instances[o + 3])); instances[o + 14] = k.additive; instances[o + 15] = k.glow;
+      instances[o + 12] = k.shape + s * .98; instances[o + 13] = orient + (orient === 2 ? 0 : Math.min(k.soft, instances[o + 3])); instances[o + 14] = Math.round(front[i] * 100) + k.additive * .99; instances[o + 15] = k.glow;
     }
     if (alive) buffer.unlock(0, alive * STRIDE * 4);
     instance.instancingCount = alive;
@@ -787,7 +673,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
     constructor(name: string, at: Vec, options: EmitterOptions) {
       this.id = kindId(name); this.at.set(at.x, at.y, at.z); this.rate = options.rate; this.options = options;
       this.area = options.area && { ...options.area };
-      this.colours = options.colour ? colourPair(options.colour, new Float32Array(6)) : kinds[this.id].colour;
+      this.colours = options.colour ? colourStops(options.colour, new Float32Array(9)) : kinds[this.id].colour;
     }
     emit(n: number, ageAt?: () => number) {
       const area = this.area;
@@ -800,7 +686,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
         if (solidAt(x, z) > y) continue;
         const k = kinds[this.id], a = Math.random() * Math.PI * 2, s = pick(k.speed) * (this.options.speed ?? 1);
         const v = this.options.velocity;
-        spawn(this.id, x, y, z, Math.cos(a) * s + (v?.x ?? 0), pick(k.rise) + (v?.y ?? 0), Math.sin(a) * s + (v?.z ?? 0), this.colours, this.options.size ?? 1, this.options.life ?? 1, !!this.options.ambient, ageAt?.());
+        spawn(this.id, x, y, z, Math.cos(a) * s + (v?.x ?? 0), pick(k.rise) + (v?.y ?? 0), Math.sin(a) * s + (v?.z ?? 0), this.colours, this.options.size ?? 1, this.options.life ?? 1, !!this.options.ambient, ageAt?.(), this.options.front);
       }
     }
     warm() {
@@ -849,11 +735,11 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
         ux = Math.cos(a) * speed; uy = 0; uz = Math.sin(a) * speed;
       }
       uy += pick(k.rise) * (o.speed ?? 1);
-      spawn(id, at.x + offset.x, at.y + offset.y, at.z + offset.z, ux + (o.velocity?.x ?? 0), uy + (o.velocity?.y ?? 0), uz + (o.velocity?.z ?? 0), colours, o.size ?? 1, o.life ?? 1, isAmbient);
+      spawn(id, at.x + offset.x, at.y + offset.y, at.z + offset.z, ux + (o.velocity?.x ?? 0), uy + (o.velocity?.y ?? 0), uz + (o.velocity?.z ?? 0), colours, o.size ?? 1, o.life ?? 1, isAmbient, 0, o.front);
     }
   }
 
-  const burstColour = new Float32Array(6);
+  const burstColour = new Float32Array(9);
   return {
     get count() { return alive; },
     capacity,
@@ -868,9 +754,9 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
         life: range(def.life, 1), size: range(def.size, .1), aspect: [def.aspect?.[0] ?? 1, def.aspect?.[1] ?? 1], sizeEnd: def.sizeEnd ?? 1, growIn: def.growIn ?? 0, fadeIn: def.fadeIn ?? 0, fadeOut: def.fadeOut ?? 0,
         speed: range(def.speed, 0), rise: range(def.rise, 0), gravity: def.gravity ?? 0, drag: def.drag ?? 0,
         wander: def.wander ?? 0, wanderRate: def.wanderRate ?? 1, flow: def.flow ?? 0, wind: def.wind ?? 0,
-        collide: def.collide ?? false, bounce: def.bounce ?? 0, friction: def.friction ?? 0, stick: def.stick ?? false, pop: def.pop ?? false, bodies: def.bodies ?? 0,
-        stretch: def.stretch ?? 0, spin: range(def.spin, 0), flicker: def.flicker ?? 0, flickerRate: def.flickerRate ?? 1, tumble: def.tumble ?? 0,
-        colour: colourPair(def.colour, new Float32Array(6)), onLand: def.onLand && [def.onLand].flat(), onDeath: def.onDeath,
+        collide: def.collide ?? false, bounce: def.bounce ?? 0, friction: def.friction ?? 0, stick: def.stick ?? false, pop: def.pop ?? false, bodies: def.bodies ?? 0, pulled: def.pulled ?? 1, front: def.orient === 'ground' ? 0 : Math.max(0, def.front ?? 0),
+        stretch: def.stretch ?? 0, spin: range(def.spin, 0), tilt: def.tilt === undefined ? -1 : def.tilt * Math.PI / 180, flicker: def.flicker ?? 0, flickerRate: def.flickerRate ?? 1, tumble: def.tumble ?? 0,
+        colour: colourStops(def.colour, new Float32Array(9)), middle: Math.min(.99, Math.max(.01, def.middle ?? .5)), onLand: def.onLand && [def.onLand].flat(), onDeath: def.onDeath,
         soft: def.orient === 'ground' ? 0 : Math.min(.9, def.soft ?? ((def.additive ?? 0) >= 1 ? 0 : .3)),
       };
       const existing = names.get(name);
@@ -880,7 +766,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
     /** One-off: `count` particles of `name` at `at`. */
     burst(name: string, at: Vec, count: number, options: SpawnOptions = {}) {
       const id = kindId(name);
-      burstFrom(id, at, count, options, options.colour ? colourPair(options.colour, burstColour) : kinds[id].colour, false);
+      burstFrom(id, at, count, options, options.colour ? colourStops(options.colour, burstColour) : kinds[id].colour, false);
     },
     /** A steady stream (move its `at`, change its `rate`); `area` fills a volume instead of a point. */
     emitter(name: string, at: Vec, options: EmitterOptions): ParticleEmitter {
@@ -916,9 +802,13 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
       for (let j = 0; j < floorRows; j++) for (let i = 0; i < floorCols; i++) floors[j * floorCols + i] = next.ground(next.x0 + i / FLOOR_RES, next.z0 + j / FLOOR_RES);
     },
     groundAt,
-    /** Where every living particle is (x, y, z each) and whether it is stuck, for tests and debugging. */
+    /** Where every living particle is (x, y, z each), its colour now (linear RGB), its angle, how much nearer it is drawn and whether it is stuck, for tests and debugging. */
     snapshot() {
-      return Array.from({ length: alive }, (_, i) => ({ x: px[i], y: py[i], z: pz[i], stuck: (state[i] & STUCK) !== 0, fading: (state[i] & FADING) !== 0, kind: [...names].find(([, id]) => id === kind[i])![0] }));
+      return Array.from({ length: alive }, (_, i) => {
+        const now = [0, 0, 0];
+        colourNow(i, now, 0);
+        return { x: px[i], y: py[i], z: pz[i], colour: now, angle: rot[i], front: front[i], stuck: (state[i] & STUCK) !== 0, fading: (state[i] & FADING) !== 0, kind: [...names].find(([, id]) => id === kind[i])![0] };
+      });
     },
     /**
      * A budget: fades out the oldest particles of the named kinds over `seconds` until at most
@@ -947,6 +837,9 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
     /** Soft particles on or off (for comparisons); they also need the post pass's scene depth (src/post.ts). */
     get soft() { return soft; },
     set soft(on: boolean) { soft = on; material.setParameter('uSoft', on ? 1 : 0); },
+    /** Effects drawn in front of whoever they burst from (`front`), or where they are (for comparisons). */
+    get front() { return infront; },
+    set front(on: boolean) { infront = on; material.setParameter('uFront', on ? 1 : 0); },
     update(dt: number, simulate = true) {
       if (dt > 0 && simulate) {
         time += dt;
@@ -959,6 +852,7 @@ export function createParticles(app: pc.AppBase, capacity = 6000) {
         for (let a = attractors.length - 1; a >= 0; a--) if ((attractors[a].age += dt) >= attractors[a].life) attractors.splice(a, 1);
         const steps = Math.min(8, Math.ceil(dt / STEP));
         for (let s = 0; s < steps; s++) { step(dt / steps); if (pending.length) flushPending(); }
+        material.setParameter('uTime', time % 600);
       }
       write();
     },

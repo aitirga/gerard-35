@@ -1,0 +1,207 @@
+{
+  "title": "Estados alterados · cómo se leen en el combatiente",
+  "description": "Propuesta de cómo se ve cada estado del diseño de combate (docs/combat.md: quemado, mojado, congelado, envenenado, sangrado, cegado por el humo, paralizado) y los de la campaña (mareo, llorera), sobre un perro en un combate real, con el motor de partículas en la GPU (src/status-fx.ts): partículas que salen de sus propias piezas, un tinte y una forma de moverse. Después, cada reacción entre elementos. Grabado a doble resolución (--gpu --scale 2) con el reloj del juego a 30 fps.",
+  "steps": [
+    {
+      "open": "/?story=noista&battle=3&allies=2&noista=1"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const ids = () => g.fighterIds(), foes = () => ids().filter(f => !f.party).map(f => f.id); const looks = ['quemado', 'mojado', 'congelado', 'envenenado', 'sangrado', 'cegado', 'paralizado', 'cauterizado', 'mareo', 'llorera']; return { g, foes, target: () => foes()[1], frame(height = 1.25) { const p = g.fighterAt(this.target()); g.frame({ x: p.x, y: p.y + .45, z: p.z }, height); }, clean() { for (const f of ids()) for (const l of looks) g.status(f.id, l, 0); g.effects.clear(); g.effects.gpu?.clear(); }, put(look, level, seconds) { g.status(this.target(), look, level, seconds); }, all(look, level, seconds) { for (const id of foes()) g.status(id, look, level, seconds); } }; })();"
+    },
+    {
+      "eval": "lab.frame(.95)"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.clean(); lab.put('quemado', 1, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "quemado",
+      "seconds": 4.5,
+      "warmup": 0.5,
+      "each": "if (frame === 45 || frame === 90) lab.put('quemado')",
+      "caption": "Quemado sube de nivel al recibir otro fuego mientras sigue activo: I (llamita), a los 1,5 s II (hoguera), a los 3 s III (incendio)"
+    },
+    {
+      "eval": "lab.clean(); lab.put('mojado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "mojado",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "caption": "Mojado (II): gotas que se forman en el cuerpo, bajan resbalando por sus piezas y dejan charquitos; destellos de agua y un brillo frío."
+    },
+    {
+      "eval": "lab.clean(); lab.put('congelado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "congelado",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "caption": "Congelado (II): escarcha que crece pegada a sus piezas y se queda, y frío que cae; el perro deja de moverse y brilla helado."
+    },
+    {
+      "eval": "lab.clean(); lab.put('envenenado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "envenenado",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "caption": "Envenenado (II): burbujas verdes que brotan del cuerpo, gotas que rezuman, vaho a sus pies y un latido de burbujas; se tambalea."
+    },
+    {
+      "eval": "lab.clean(); lab.put('sangrado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "sangrado",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "caption": "Sangrado (II): con cada latido brotan gotas que caen y quedan en el suelo; entre latidos, un goteo."
+    },
+    {
+      "eval": "lab.clean(); lab.put('cegado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "cegado",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "caption": "Cegado (II): humo oscuro pegado a la cabeza, girando sin dejarle ver."
+    },
+    {
+      "eval": "lab.clean(); lab.put('paralizado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "paralizado",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "caption": "Paralizado (II): descargas a sacudidas por el cuerpo, chispas y parpadeo eléctrico; tiembla a tirones."
+    },
+    {
+      "eval": "lab.clean(); lab.put('mareo', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "mareo",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "caption": "Mareo (II, de la campaña): lucecitas girando sobre la cabeza; se tambalea."
+    },
+    {
+      "eval": "lab.clean(); lab.put('llorera', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "llorera",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "caption": "Llorera (II, de la campaña): lágrimas que saltan de la cara y caen."
+    },
+    {
+      "eval": "lab.clean(); lab.put('quemado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "r-humo",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('humo', lab.target())",
+      "caption": "Quemado + Agua → Humo: la llama se apaga de golpe en vapor y humo oscuro que se le queda en la cabeza (Cegado)"
+    },
+    {
+      "eval": "lab.clean(); lab.put('mojado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "r-paralisis",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('paralisis', lab.target())",
+      "caption": "Mojado + Eléctrico → Parálisis: la descarga corre por el agua del cuerpo y lo deja paralizado"
+    },
+    {
+      "eval": "lab.clean(); lab.put('mojado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "r-congelar",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('congelar', lab.target())",
+      "caption": "Mojado + Frío → Congelado: las gotas se hielan en el sitio, una costra de escarcha le cubre de golpe"
+    },
+    {
+      "eval": "lab.clean(); lab.put('mojado', 2, 20); lab.frame(1.5)"
+    },
+    {
+      "record": "r-vapor",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('vapor', lab.target())",
+      "caption": "Mojado + Fuego → Vapor: el agua hierve en una columna de vapor que luego cubre a los enemigos un rato"
+    },
+    {
+      "eval": "lab.clean(); lab.put('envenenado', 2, 20); lab.frame(1.5)"
+    },
+    {
+      "record": "r-veneno-ardiente",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('veneno-ardiente', lab.target())",
+      "caption": "Envenenado + Fuego → Veneno ardiente: estalla en llamas verdes y naranjas que alcanzan a los de al lado"
+    },
+    {
+      "eval": "lab.clean(); lab.put('envenenado', 3, 20); lab.frame(1.5)"
+    },
+    {
+      "record": "r-contagio",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('contagio', lab.target())",
+      "caption": "Envenenado + Agua → Contagio: el veneno se diluye en un vaho verde que fluye a los de al lado y les prende, más débil"
+    },
+    {
+      "eval": "lab.clean(); lab.put('sangrado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "r-cauterizado",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('cauterizado', lab.target())",
+      "caption": "Sangrado + Fuego → Cauterizado: un fogonazo sella las heridas, que quedan brillando al rojo (no puede curarse)"
+    },
+    {
+      "eval": "lab.clean(); lab.put('congelado', 2, 20); lab.frame(0.95)"
+    },
+    {
+      "record": "r-anicos",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('anicos', lab.target())",
+      "caption": "Congelado + Golpe fuerte → Añicos: el hielo revienta en esquirlas que rebotan y deja escarcha en el suelo"
+    },
+    {
+      "eval": "lab.clean(); lab.all('cegado', 1, 20); lab.frame(1.5)"
+    },
+    {
+      "record": "r-tormenta",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('tormenta', lab.target())",
+      "caption": "Humo + Eléctrico → Tormenta: la descarga salta por el humo de un perro a otro"
+    },
+    {
+      "eval": "lab.clean(); lab.put('cegado', 2, 20); lab.frame(1.5)"
+    },
+    {
+      "record": "r-arrastre",
+      "seconds": 2.6,
+      "warmup": 1.2,
+      "each": "if (frame === 6) lab.g.react('arrastre', lab.target()); if (frame === 2) lab.frame(1.6)",
+      "caption": "Humo + Viento → Arrastra el humo: una ráfaga le arranca el humo de la cabeza y lo lleva al otro bando"
+    },
+    {
+      "eval": "lab.clean(); document.querySelector('#battle').style.visibility = ''; lab.frame(0.95)"
+    }
+  ]
+}

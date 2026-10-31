@@ -11,7 +11,7 @@ import { createQueenHands } from './queen-hands';
 import { STREET_END_AREA, WanderingPack } from './encounters';
 import { createMinion } from './minion';
 import { WalkAnimation, idlePose } from './walk-animation';
-import { createEffects } from './effects';
+import { createEffects, type FightFx } from './effects';
 import type { ParticleBody } from './particles';
 import { createPost } from './post';
 import { lighting } from './lighting';
@@ -87,16 +87,23 @@ const GUARD_SCALE = 1.9;
 const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'] };
 
 /**
- * The graphics device: WebGPU where the browser has it, WebGL2 otherwise; `?gpu=webgl2` skips
- * WebGPU, to compare or to dodge a bad driver. Custom shaders carry both GLSL and WGSL,
- * so WebGPU never needs the engine's GLSL→WGSL transpilers (docs/graphics.md).
+ * The graphics device: WebGPU only (docs/graphics.md). Every custom shader is WGSL; a browser without
+ * WebGPU gets a note saying what the game needs instead of a black page.
  */
 async function createDevice(canvas: HTMLCanvasElement) {
-  const forced = new URLSearchParams(location.search).get('gpu');
-  const deviceTypes = forced === 'webgl2' ? [pc.DEVICETYPE_WEBGL2] : [pc.DEVICETYPE_WEBGPU, pc.DEVICETYPE_WEBGL2];
   // No antialiasing on the canvas itself: the post pass (src/post.ts) renders the scene with 4× MSAA.
-  const device = await pc.createGraphicsDevice(canvas, { deviceTypes, antialias: false, alpha: false });
-  console.info(`Gerard 35 dibuja con ${device.isWebGPU ? 'WebGPU' : 'WebGL2'}`);
+  const device = 'gpu' in navigator
+    ? await pc.createGraphicsDevice(canvas, { deviceTypes: [pc.DEVICETYPE_WEBGPU], antialias: false, alpha: false }).catch(() => undefined)
+    : undefined;
+  if (!device?.isWebGPU) {
+    const note = document.createElement('p');
+    note.className = 'no-webgpu';
+    note.textContent = 'Gerard 35 necesita WebGPU. Ábrelo en una versión reciente de Chrome, Edge o Safari.';
+    note.style.cssText = 'position:fixed;inset:0;display:grid;place-items:center;margin:0;padding:2rem;text-align:center;font:600 1.2rem system-ui,sans-serif;color:#eeeade;background:#101f25;z-index:9999';
+    document.body.append(note);
+    throw new Error('WebGPU is not available');
+  }
+  console.info('Gerard 35 dibuja con WebGPU');
   return device;
 }
 
@@ -127,6 +134,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   player.setPosition(0, 0.06, 0);
   let plantFeet = createGroundContact(player, rig.feet);
   const effects = createEffects(app);
+  // Crystals' glass refracts the scene behind it: the post pass keeps a copy of it only while there is glass.
+  effects.onGlass(on => post.glass(on));
   effects.setScene(environment, scenery);
   // Each fighter is cloned from their street model; Bernat borrows Gerard's (recoloured) as before.
   const battleScene = createBattleScene(app, player, id => id === 'aitor' ? mates.aitor.entity : player, (x, z) => scenery.groundHeight(x, z), effects);
@@ -149,6 +158,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   let approach: PalaceApproach | undefined;
   /** A cut-scene camera: what to look at and how much to frame, instead of following Gerard. */
   let cinematic: { target: pc.Vec3; height: number } | undefined;
+  /** Development framing (`frame`): it holds the camera even in a fight, where story framings never do. */
+  let framed = false;
   const cameraWobble = new pc.Vec3();
   /** The palace minion has climbed out of its drain (not saved: on reload it waits below again). */
   let drainRisen = false;
@@ -617,7 +628,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     cinematic = { target: gate.clone().add(new pc.Vec3(0, 3, 4)), height: 13.5 };
     await play(1.4, () => {});
     await play(7.5, t => {
-      approach!.grow(Math.min(1, t * 1.6));
+      approach?.grow(Math.min(1, t * 1.6));
       palace.grow(Math.max(0, (t - .22) / .78));
       // A low rumble while the gum climbs the walls.
       if (t < .3 && !reducedMotion.matches) cameraWobble.set(Math.sin(t * 160) * .12, Math.sin(t * 130) * .06, 0); else cameraWobble.set(0, 0, 0);
@@ -1451,7 +1462,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const shared = free && mate?.entity.enabled ? mate.entity.getPosition() : undefined;
     const between = shared ? player.getPosition().clone().lerp(player.getPosition(), shared, .5) : player.getPosition().clone();
     const apart = shared ? player.getPosition().distance(shared) : 0;
-    const target = battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
+    const target = battle && framed && cinematic ? cinematic.target.clone() : battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
     cameraTarget.lerp(cameraTarget, target, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 7));
     const cameraOffset = battle ? new pc.Vec3(5, 9, 15) : new pc.Vec3(40, 52, 40);
     // The view is orthographic, so how far back the camera stands only decides what its clip planes
@@ -1478,7 +1489,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     camera.translate(cameraKick);
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
-    const height = battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .68) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
+    const height = battle && framed && cinematic ? cinematic.height : battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .68) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
     viewHeight = pc.math.lerp(viewHeight, height, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
     // Heavy blows punch the frame in for a moment (battle-scene `punch`).
     camera.camera!.orthoHeight = viewHeight * (1 - (battle ? battleScene.punch : 0));
@@ -1531,6 +1542,26 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       cameraTarget.copy(scenery.toWorld(movement.cell.x, movement.cell.z));
       positionPlayer(); lastPrompt = ''; updatePrompt();
     },
+    /** Development (the fire scenario): sets a fighter alight at a level, or lets them go out (battle-scene `ignite`). */
+    ignite: battleScene.ignite,
+    /** Development: who is in the fight. */
+    fighterIds: battleScene.fighterIds,
+    /** Development (the status scenario): puts a status on a fighter at a level (0 takes it off), a reaction, and what they carry (src/status-fx.ts). */
+    status: battleScene.status,
+    react: battleScene.react,
+    statusesOf: battleScene.statusesOf,
+    /** Development (the fight-fx scenario): plays a GPU fight effect on a fighter (`FIGHT_FX` in effects.ts), thrown from another. */
+    fx(name: FightFx, id: string, options: { from?: string; colour?: string; strength?: number } = {}) {
+      const model = battleScene.modelOf(id), from = options.from ? battleScene.modelOf(options.from)?.getPosition() : undefined;
+      return model ? effects.fightFx(name, { model, colour: options.colour, strength: options.strength, from: from && { x: from.x, y: from.y + .9, z: from.z } }) : false;
+    },
+    /** Development (screenshots and clips): the camera frames `target`, `height` metres tall (in a fight too), until `frame()` gives it back. */
+    frame(target?: { x: number; y: number; z: number }, height = 4) {
+      cinematic = target ? { target: new pc.Vec3(target.x, target.y, target.z), height } : undefined;
+      framed = !!target;
+    },
+    /** Development: where a fighter stands (the lattice and fight-fx scenarios frame them). */
+    fighterAt(id: string) { const p = battleScene.modelOf(id)?.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
     raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV, releaseLights, releaseLight,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },

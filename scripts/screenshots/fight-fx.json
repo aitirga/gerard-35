@@ -1,0 +1,235 @@
+{
+  "title": "Fight effects · the GPU particle engine",
+  "description": "Each preset of effects.fightFx (src/effects.ts) on the GPU engine (src/fight-particles.ts): crisp lines, shards that become frost, chains drawn as strands, tinted vortices, a swarm that sees itself, sticky gum that splats, rising cures and fireworks with trails that burst; then crystals particles stay inside, orbit or gather on, meteors and fireflies, whose light falls on the dogs and the floor. Played on a dog in a real fight, captured at twice the pixels (--gpu --scale 2) on the game's clock at 30 fps.",
+  "steps": [
+    {
+      "open": "/?story=noista&battle=3&allies=2&noista=1"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const ids = g.fighterIds(), foe = ids.filter(f => !f.party)[1].id, ally = ids.find(f => f.party).id; return { play(name, o = {}) { g.effects.clear(); return g.fx(name, foe, { from: ally, ...o }); } }; })();"
+    },
+    {
+      "eval": "lab.play('needles', {})"
+    },
+    {
+      "record": "needles",
+      "seconds": 1.2,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Needles: a blow's chips as crisp little lines of every size, spinning, skittering off the dogs and the floor"
+    },
+    {
+      "eval": "lab.play('shatter', {})"
+    },
+    {
+      "record": "shatter",
+      "seconds": 1.8,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Shatter (ice): spinning shards glance off the dogs and turn to frost where they land, a ring of frost at the feet"
+    },
+    {
+      "eval": "lab.play('arc', {})"
+    },
+    {
+      "record": "arc",
+      "seconds": 1.2,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Arc (energy): chains of light leap from above and crackle off the dog's surface, each chain one line, swirled round it"
+    },
+    {
+      "eval": "lab.play('vortex', {\"colour\": \"#e2483d\"})"
+    },
+    {
+      "record": "vortex",
+      "seconds": 2.2,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Vortex (an ánima's colour, tinted): a ring of motes and trailing strands spiral up round the dog; motes twinkle out as they die"
+    },
+    {
+      "eval": "lab.play('swarm', {})"
+    },
+    {
+      "record": "swarm",
+      "seconds": 3,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Swarm (shadow): particles that see each other, keeping apart, closing ranks and flying as one round the dog"
+    },
+    {
+      "eval": "lab.play('goo', {})"
+    },
+    {
+      "record": "goo",
+      "seconds": 2.4,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Goo (gum): blobs that stick to the dogs and ride along, and splat where they land"
+    },
+    {
+      "eval": "lab.play('heal', {})"
+    },
+    {
+      "record": "heal",
+      "seconds": 2,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Heal: green light rising from a ring round the feet, gathering as it rises (cohesion) and twinkling out"
+    },
+    {
+      "eval": "lab.play('fireworks', {\"colour\": \"#ffd27a\"})"
+    },
+    {
+      "record": "fireworks",
+      "seconds": 2.2,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Fireworks: rockets each with a chain trailing behind, bursting into embers when they die"
+    },
+    {
+      "eval": "lab.play('prison', {\"colour\": \"#9fd8ff\"})"
+    },
+    {
+      "record": "prison",
+      "seconds": 3,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Prison: a crystal closes round the dog; light caught inside bounces off its glass walls and off the dog, and lights the dog from within"
+    },
+    {
+      "eval": "lab.play('orbit', {\"colour\": \"#ffd76a\"})"
+    },
+    {
+      "record": "orbit",
+      "seconds": 2.8,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Orbit: motes and strands drawn onto a shell round a crystal over the dog's head, circling its faces; their light falls on the dogs"
+    },
+    {
+      "eval": "lab.play('gather', {\"colour\": \"#ff9a3c\"})"
+    },
+    {
+      "record": "gather",
+      "seconds": 2.4,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Gather: a crystal pulls embers in from all round, they settle on its faces and slide, until it bursts into shards with a flash"
+    },
+    {
+      "eval": "lab.play('meteor', {})"
+    },
+    {
+      "record": "meteor",
+      "seconds": 2.2,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Meteor: trails fall from high up and flare on landing; the light comes down with them and lights the floor and the dogs"
+    },
+    {
+      "eval": "lab.play('fireflies', {})"
+    },
+    {
+      "record": "fireflies",
+      "seconds": 3.5,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Fireflies: warm lights wander round the dog, keeping apart, and light it as they pass"
+    },
+    {
+      "eval": "{ const gpu = window.gerard.game.effects.gpu; window.softKinds = ['mote', 'twinkle', 'heal']; window.savedKinds = Object.fromEntries(softKinds.map(k => [k, gpu.get(k)])); softKinds.forEach(k => gpu.define(k, { ...savedKinds[k], blur: 0 })); }"
+    },
+    {
+      "eval": "lab.play('vortex', { colour: '#e2483d' })"
+    },
+    {
+      "record": "vortex-crisp",
+      "seconds": 2,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "Vortex with every particle crisp (blur 0): hard dots and stars"
+    },
+    {
+      "eval": "{ const gpu = window.gerard.game.effects.gpu; softKinds.forEach(k => gpu.define(k, savedKinds[k])); }"
+    },
+    {
+      "eval": "lab.play('vortex', { colour: '#e2483d' })"
+    },
+    {
+      "record": "vortex-soft",
+      "seconds": 2,
+      "clip": [
+        520,
+        160,
+        480,
+        360
+      ],
+      "caption": "The same vortex as defined: motes blur as they fade (blur 0 → 0.9) and twinkle out softly, like light out of focus"
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); document.querySelector('#battle').style.visibility = ''"
+    }
+  ]
+}

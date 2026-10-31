@@ -1,0 +1,219 @@
+{
+  "title": "Lattices · shapes made of particles",
+  "description": "Lattices on the GPU engine (src/lattice.ts, src/fight-particles.ts): shapes whose particles hold together, each drawn to its home and to its neighbours. A wall that thrown sparks dent, hole and knock apart and that mends itself; a ball that morphs into a crystal, a ring and a column keeping its structure, shaken by pushes; a ring that streams round itself in waves; a veil of cloth that drapes over a dog; embers that assemble into a crystal that bursts; a shield shaped like an escutcheon that takes a volley and shatters; and three spheres round a dog that deflect blows from every side and pop: bands with glass between them, bands both ways, and glass dots alone, which a last volley shatters like the shield. Played on a dog in a real fight with effects.fightFx, captured at twice the pixels (--gpu --scale 2) on the game's clock at 30 fps.",
+  "steps": [
+    {
+      "open": "/?story=noista&battle=3&allies=2&noista=1"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const ids = g.fighterIds(), foe = ids.filter(f => !f.party)[1].id, ally = ids.find(f => f.party).id; return { look({ up = .7, toward = 0, height = 1.5 } = {}) { g.effects.clear(); const f = g.fighterAt(foe), a = g.fighterAt(ally), dx = a.x - f.x, dz = a.z - f.z, d = Math.hypot(dx, dz) || 1; g.frame({ x: f.x + dx / d * toward, y: f.y + up, z: f.z + dz / d * toward }, height); }, play(name, o = {}) { g.effects.clear(); return g.fx(name, foe, { from: ally, ...o }); } }; })();"
+    },
+    {
+      "eval": "lab.look({ up: .55, toward: 1, height: 1.45 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('ward')"
+    },
+    {
+      "record": "ward",
+      "seconds": 4.6,
+      "caption": "Ward: a wall of light between the dog and the blows. Sparks dent it, punch holes and knock bits loose that fall; it draws them back and mends, then crumbles from the top",
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ]
+    },
+    {
+      "eval": "lab.look({ up: 1.4, height: 1.35 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('morph')"
+    },
+    {
+      "record": "morph",
+      "seconds": 5.2,
+      "caption": "Morph: a ball becomes a crystal, a ring, a column and a ball again, every point keeping its neighbours; two pushes shake it like jelly and it springs back",
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ]
+    },
+    {
+      "eval": "lab.look({ up: .55, height: 1.2 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('current')"
+    },
+    {
+      "record": "current",
+      "seconds": 3.9,
+      "caption": "Current: a ring of threads round the dog streams round itself in waves, tightens, runs faster and breaks into motes",
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ]
+    },
+    {
+      "eval": "lab.look({ up: .55, height: 1.2 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('veil')"
+    },
+    {
+      "record": "veil",
+      "seconds": 3.9,
+      "caption": "Veil: cloth of light falls on the dog, drapes over its back and head and lies on the floor, then frays away from its edges",
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ]
+    },
+    {
+      "eval": "lab.look({ up: 1.1, height: 1.6 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('forge')"
+    },
+    {
+      "record": "forge",
+      "seconds": 4.2,
+      "caption": "Forge: embers fly in from all round and bond into a crystal over the dog; it turns, then bursts from its heart into chips that rain down",
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ]
+    },
+    {
+      "eval": "lab.look({ up: .6, toward: 1, height: 1.4 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('shield')"
+    },
+    {
+      "record": "shield",
+      "seconds": 4.3,
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ],
+      "caption": "Shield: an escutcheon of light with a bright rim and a boss unfolds between the dog and the blows. Sparks glance off it, dent it and knock bits loose; it mends; a last heavy volley shatters it from where it lands"
+    },
+    {
+      "eval": "lab.look({ up: .6, height: 1.35 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('bubble')"
+    },
+    {
+      "record": "bubble",
+      "seconds": 3.6,
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ],
+      "caption": "Bubble: bands of light round the dog (the sphere's parallels) with glass facets between them. It spreads as a disc at its feet, swells round it and turns; blows from three sides glance off and dent it, it heals at once, then pops"
+    },
+    {
+      "eval": "lab.look({ up: .6, height: 1.35 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('globe')"
+    },
+    {
+      "record": "globe",
+      "seconds": 3.6,
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ],
+      "caption": "Globe: the same sphere with bands both ways, parallels and meridians, and the glass between them"
+    },
+    {
+      "eval": "lab.look({ up: .6, height: 1.35 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('orb')"
+    },
+    {
+      "record": "orb",
+      "seconds": 3.6,
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ],
+      "caption": "Orb: a sphere of glass made of the shield's dots alone, see-through where it faces you (opacity, fresnel and glass dots) and bright round its outline. A last heavy volley shatters it from where it lands, like the shield"
+    },
+    {
+      "eval": "lab.look({ up: .6, height: 1.35 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab.play('orb'); { const l = window.gerard.game.effects.gpu.lattices[0]; l.opacity = 1; l.fresnel = 0; }"
+    },
+    {
+      "record": "orb-solid",
+      "seconds": 2,
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ],
+      "caption": "The orb with nothing see-through (opacity 1, fresnel 0): a solid ball of dots that hides the dogs"
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); window.gerard.game.frame(); document.querySelector('#battle').style.visibility = ''"
+    }
+  ]
+}

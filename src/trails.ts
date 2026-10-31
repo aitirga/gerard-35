@@ -188,58 +188,8 @@ export function stripVertices(points: Float32Array, count: number, look: Look, o
   return vertex;
 }
 
-/** The trail shader for WebGL2; `VERTEX_WGSL` and `FRAGMENT_WGSL` below are the same for WebGPU. */
-const VERTEX = /* glsl */ `
-attribute vec4 aPosition;
-attribute vec4 aDirection;
-attribute vec4 aColour;
-attribute vec4 aLook;
-uniform mat4 matrix_viewProjection;
-uniform mat4 matrix_view;
-varying vec4 vColour;
-varying vec4 vLook;
-void main(void) {
-  vec3 across = aDirection.xyz;
-  if (aDirection.w < 0.5) {
-    // Facing the camera: spread across the line as it runs on screen.
-    vec3 right = vec3(matrix_view[0][0], matrix_view[1][0], matrix_view[2][0]);
-    vec3 up = vec3(matrix_view[0][1], matrix_view[1][1], matrix_view[2][1]);
-    vec2 onScreen = vec2(dot(aDirection.xyz, right), dot(aDirection.xyz, up));
-    float l = length(onScreen);
-    vec2 dir = l > 0.00001 ? onScreen / l : vec2(1.0, 0.0);
-    across = up * dir.x - right * dir.y;
-  }
-  vColour = aColour;
-  vLook = aLook;
-  gl_Position = matrix_viewProjection * vec4(aPosition.xyz + across * aPosition.w, 1.0);
-}`;
-
-const FRAGMENT = /* glsl */ `
-#include "gammaPS"
-#include "tonemappingPS"
-#include "fogPS"
-varying vec4 vColour;
-varying vec4 vLook;
-void main(void) {
-  float along = vLook.x, across = vLook.y;
-  // Soft edges, a tip that fades in ahead of the head, and a tail that fades out with age.
-  float edge = 1.0 - across * across;
-  float a = edge * edge * smoothstep(-1.0, 0.0, along) * pow(1.0 - clamp(along, 0.0, 1.0), 2.0) * vColour.a;
-  if (a < 0.004) discard;
-  float core = exp(-across * across * 14.0) * vLook.w * (1.0 - clamp(along, 0.0, 1.0));
-  float peak = max(1.0, max(vColour.r, max(vColour.g, vColour.b)));
-  vec3 colour = mix(vColour.rgb, vec3(peak), clamp(core, 0.0, 1.0));
-  float additive = vLook.z;
-  #if (FOG != NONE)
-    float fogged = getFogFactor();
-    colour = mix(mix(fog_color, colour, fogged), colour * fogged, additive);
-  #endif
-  colour = gammaCorrectOutput(toneMap(colour));
-  gl_FragColor = vec4(colour * a, a * (1.0 - additive));
-}`;
-
 /**
- * The same shader in WGSL for WebGPU, line for line with the GLSL above (keep both in step).
+ * The trail shader (WGSL).
  * The engine copies attributes and varyings into globals of the same name; uniforms are read
  * through `uniform.`, the position goes to `output.position` and the colour to `output.color`.
  */
@@ -311,7 +261,7 @@ export function createTrails(app: pc.AppBase, capacity = 4096) {
   const material = new pc.ShaderMaterial({
     uniqueName: 'gerard-trails',
     attributes: { aPosition: pc.SEMANTIC_POSITION, aDirection: pc.SEMANTIC_ATTR11, aColour: pc.SEMANTIC_ATTR12, aLook: pc.SEMANTIC_ATTR13 },
-    vertexGLSL: VERTEX, fragmentGLSL: FRAGMENT, vertexWGSL: VERTEX_WGSL, fragmentWGSL: FRAGMENT_WGSL,
+    vertexWGSL: VERTEX_WGSL, fragmentWGSL: FRAGMENT_WGSL,
   });
   material.name = 'Estelas';
   material.blendType = pc.BLEND_PREMULTIPLIED;

@@ -96,6 +96,7 @@ test('every effect, element and aura plays in every scene without throwing', () 
     effects.impact(target, from, 1, { guarded: true });
     effects.heal(target); effects.insight(target); effects.stamp(target); effects.anima(target, '#e2483d', true); effects.poof(target);
     effects.confetti(target, ['#f3cf78', '#e2483d']);
+    for (const level of ['light', 'medium', 'high']) effects.fire(new pc.Vec3(0, 0, 0), level, { seconds: .5 });
     for (const element of ['fire', 'ice', 'air', 'energy', 'water', 'earth', 'light', 'shadow', 'gum']) {
       effects.element(element, target, { from });
       effects.aura(element, new pc.Vec3(1, 0, 1), .5);
@@ -200,4 +201,139 @@ test('with reduced motion nothing falls: snow is only a still dusting', () => {
   effects.setWeather('rain', 1, true);
   for (let t = 0; t < 1; t += 1 / 60) effects.update(1 / 60, { focus: { x: 0, y: 0, z: 0 }, reach: 30, animate: false, paused: false });
   assert.equal(effects.particles.snapshot().filter(p => p.kind === 'rain').length, 0);
+});
+
+test('a three-colour kind passes through its middle colour when its middle says', () => {
+  const particles = createParticles(headlessApp(), 16);
+  particles.define('ember', { shape: 'glow', colour: ['#ff0000', '#00ff00', '#0000ff'], middle: .25, life: 1, size: .05 });
+  particles.burst('ember', { x: 0, y: 1, z: 0 }, 1);
+  const colour = () => particles.snapshot()[0].colour;
+  assert.ok(colour()[0] > .8 && colour()[1] < .05, 'red at birth');
+  run(particles, .25);
+  assert.ok(colour()[1] > .8 && colour()[0] < .1 && colour()[2] < .1, `green at a quarter of its life: ${colour()}`);
+  run(particles, .5);
+  assert.ok(colour()[2] > colour()[1], 'turning blue towards the end');
+});
+
+test('effects can be drawn in front of whoever they burst from', () => {
+  const particles = createParticles(headlessApp(), 16);
+  particles.define('spark', { shape: 'glow', colour: '#ffffff', life: 1, size: .05, front: .8 });
+  particles.define('dust', { shape: 'puff', orient: 'ground', colour: '#ffffff', life: 1, size: .05, front: .8 });
+  particles.burst('spark', { x: 0, y: 1, z: 0 }, 1);
+  particles.burst('spark', { x: 0, y: 1, z: 0 }, 1, { front: .3 });
+  particles.burst('dust', { x: 0, y: 0, z: 0 }, 1);
+  // A burst may bring its own; ground particles never take it.
+  assert.deepEqual(particles.snapshot().map(p => p.front), [.8, .3, 0].map(v => Math.fround(v)));
+});
+
+test('flames are born standing up, and smoke that is not pulled ignores attractors', () => {
+  const particles = createParticles(headlessApp(), 400);
+  particles.define('tongue', { shape: 'flame', colour: '#ffaa33', life: 10, size: .2, tilt: 10 });
+  particles.define('smoke', { shape: 'smoke', colour: '#444444', life: 10, size: .2, pulled: 0 });
+  particles.define('spark', { shape: 'glow', colour: '#ffffff', life: 10, size: .05 });
+  particles.burst('tongue', { x: 0, y: 0, z: 0 }, 100);
+  assert.ok(particles.snapshot().every(p => Math.abs(p.angle) <= 10 * Math.PI / 180 + 1e-6), 'upright within 10°');
+  particles.clear();
+  particles.burst('smoke', { x: 1, y: 0, z: 0 }, 20);
+  particles.burst('spark', { x: 1, y: 0, z: 0 }, 20);
+  particles.attract({ at: { x: 0, y: 0, z: 0 }, pull: 20, radius: 3 });
+  run(particles, .5);
+  const near = kind => particles.snapshot().filter(p => p.kind === kind).every(p => Math.hypot(p.x, p.z) < .9);
+  assert.ok(near('spark'), 'sparks are drawn in');
+  assert.ok(!near('smoke') && particles.snapshot().filter(p => p.kind === 'smoke').every(p => Math.abs(p.x - 1) < 1e-6), 'smoke stays put');
+});
+
+test('each level of fire burns bigger and taller than the one below, drawn whole, and dies down when stopped', () => {
+  const effects = effectsIn('patio');
+  const flames = () => effects.flames.list();
+  const measure = level => {
+    effects.clear(); play(effects, .1);
+    const fire = effects.fire(new pc.Vec3(0, 0, 0), level);
+    play(effects, 3);
+    const [flame] = flames();
+    const sparks = effects.particles.snapshot().filter(p => p.kind === 'fleck').length;
+    const burning = fire.burning;
+    fire.stop();
+    return { flame: { ...flame }, sparks, burning, fire };
+  };
+  const light = measure('light'), medium = measure('medium'), high = measure('high');
+  assert.ok(light.burning && medium.burning && high.burning, 'each one burns');
+  // One flame each, never a stream of sprites: only its sparks fly as particles.
+  assert.equal(effects.particles.snapshot().filter(p => !['fleck', 'mote', 'firefly'].includes(p.kind)).length, 0);
+  assert.ok(light.flame.height < medium.flame.height && medium.flame.height < high.flame.height, `taller at each level: ${light.flame.height}, ${medium.flame.height}, ${high.flame.height}`);
+  assert.ok(light.flame.width < medium.flame.width && medium.flame.width < high.flame.width, 'wider at each level');
+  assert.ok(light.sparks < medium.sparks && medium.sparks < high.sparks, `more sparks at each level: ${light.sparks}, ${medium.sparks}, ${high.sparks}`);
+  assert.ok(high.flame.height > 1.8 && high.flame.height < 2.8, `a blaze stands about two metres tall, not ${high.flame.height}`);
+  assert.notEqual(light.flame.seed, medium.flame.seed, 'every fire has its own pattern');
+  // Stopped, it dies down over a moment rather than vanishing, and its flame goes with it.
+  play(effects, .2);
+  assert.ok(high.fire.burning && flames()[0].strength < .9, 'still dying down');
+  play(effects, 1);
+  assert.ok(!high.fire.burning);
+  assert.equal(flames().length, 0, 'its flame is gone');
+});
+
+test('a fire around someone burns behind them and in front of them', () => {
+  const effects = effectsIn('patio');
+  effects.fire(new pc.Vec3(0, 0, 0), 'medium', { body: { radius: .4, height: 1.6 } });
+  play(effects, 1);
+  const [behind, front] = effects.flames.list();
+  assert.ok(behind.nearer < -.4 && front.nearer > .4, `drawn behind (${behind.nearer}) and in front (${front.nearer})`);
+  assert.ok(front.hollow > 0 && front.height < behind.height, 'the front licks up their lower half and lets them show through');
+  assert.ok(behind.height >= 1.6 * .85 * .9, 'it reaches up them as its level says');
+});
+
+test('a fire changes level while it burns and a fight clearing its effects puts it out', () => {
+  const effects = effectsIn('patio');
+  const fire = effects.fire(new pc.Vec3(0, 0, 0), 'light');
+  play(effects, 2);
+  const before = effects.flames.list()[0].height;
+  fire.level = 'high';
+  play(effects, .1);
+  assert.ok(effects.flames.list()[0].height < 1.5, 'it grows into its new level rather than jumping');
+  play(effects, 2);
+  assert.equal(fire.level, 'high');
+  assert.ok(effects.flames.list()[0].height > before * 3, `it grew: ${before} → ${effects.flames.list()[0].height} m`);
+  effects.clear();
+  play(effects, .1);
+  assert.ok(!fire.burning);
+});
+
+test('a fire on someone burns on their own parts, sized to them, heats them and shares its light', () => {
+  const app = headlessApp();
+  const effects = createEffects(app), environment = ENVIRONMENTS.patio;
+  const cx = (environment.grid[0].length - 1) / 2, cz = (environment.grid.length - 1) / 2;
+  effects.setScene(environment, { root: new pc.Entity(), groundHeight: () => 0, toWorld: (x, z) => new pc.Vec3(x - cx, 0, z - cz), houses: [] });
+  // Two dogs side by side, each a body and a head.
+  const dog = x => {
+    const model = new pc.Entity();
+    for (const [y, size] of [[.35, [.8, .4, .35]], [.65, [.3, .3, .3]]]) {
+      const part = new pc.Entity(); part.addComponent('render', { type: 'box' }); part.setLocalPosition(0, y, 0); part.setLocalScale(...size); model.addChild(part);
+    }
+    model.setPosition(x, 0, 0); app.root.addChild(model);
+    return model;
+  };
+  const first = dog(0), second = dog(1);
+  const fire = effects.fire(new pc.Vec3(0, 0, 0), 'high', { model: first });
+  effects.fire(new pc.Vec3(1, 0, 0), 'medium', { model: second });
+  play(effects, 1.5);
+  const layers = effects.flames.list();
+  assert.equal(layers.length, 2, 'one flame layer each, behind them: their shell burns in front');
+  assert.ok(layers[0].height > .8 && layers[0].height < 1.8, `a blaze sized to a dog, not a 2 m bonfire: ${layers[0].height}`);
+  assert.ok(fire.glow > .3, 'it heats whoever it is on');
+  const shells = app.scene.layers.getLayerById(pc.LAYERID_WORLD).meshInstances.filter(m => m.material.name === 'Llamas sobre el cuerpo');
+  assert.equal(shells.length, 4, 'every part of both dogs burns');
+  const lights = app.root.find(e => e.name === 'Luz del fuego' && e.enabled);
+  assert.equal(lights.length, 1, 'fires side by side cast one light between them');
+  effects.clear();
+  assert.equal(app.scene.layers.getLayerById(pc.LAYERID_WORLD).meshInstances.filter(m => m.material.name === 'Llamas sobre el cuerpo').length, 0, 'put out, nothing is left on them');
+});
+
+test('without a GPU that renders to float textures, fights keep their particles on the CPU', () => {
+  const effects = effectsIn('patio');
+  assert.equal(effects.gpu, undefined, 'the headless device cannot simulate on the GPU');
+  effects.setFighters([]);
+  effects.impact({ x: 0, y: 1, z: 0 }, { x: -2, y: 1, z: 0 }, 1.4);
+  play(effects, .05, true);
+  assert.ok(effects.particles.snapshot().some(p => p.kind === 'spark'), 'a blow still throws its sparks');
 });

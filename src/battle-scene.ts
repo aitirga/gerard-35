@@ -1,15 +1,16 @@
 import * as pc from 'playcanvas';
-import type { BattleEffect, BattleState, ClassId } from './battle';
+import { STATUSES, type BattleEffect, type BattleState, type ClassId, type StatusId } from './battle';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CONTACT_SECONDS, ENTRY_SECONDS, clamp01, contactMotion, smooth } from './battle-motion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createGroundContact, type GroundHeight } from './ground-contact';
 import { DOG_PROFILES } from './encounters';
-import { tint, type Effects } from './effects';
+import { tint, type Effects, type FireLevel } from './effects';
 import type { ParticleBody } from './particles';
 import { FightClock, HIT, landing, spring, wobble, type Blow } from './hit-feel';
 import { createCat, type Cat } from './cats';
 import type { Fears } from './fears';
+import { createStatusFx, type ReactionId, type StatusLookId } from './status-fx';
 
 /**
  * Replace these stand-ins with imported models without changing combat or UI. `partyModel` gives
@@ -89,6 +90,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
     plantFeet: ReturnType<typeof createGroundContact>;
+    /** Burning (`ignite`): the fire on them, where their feet are, and whether it heated them last frame. */
+    fire?: { handle: ReturnType<Effects['fire']>; at: pc.Vec3 };
+    heated?: boolean;
   }
   const fighters = new Map<string, Fighter>();
   /** How high the tallest foe reaches above the ground, so the camera can take it in (El Vértigo). */
@@ -154,6 +158,38 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const face = (from: pc.Vec3, to: pc.Vec3) => Math.atan2(to.x - from.x, to.z - from.z) * 180 / Math.PI;
   const white = new pc.Color(1, .96, .86), green = new pc.Color(.62, 1, .5), gold = new pc.Color(1, .82, .4);
   function hit(f: Fighter, color: pc.Color, strength = 1) { f.hitAt = time; f.flash = strength; f.flashColor = color; }
+  /**
+   * Sets a fighter alight at `level` (or changes how hard they burn), or lets the fire die down
+   * with no level. The fire is sized to their model and wraps it: their body burns, flames rise
+   * behind and in front of them, its light falls on them and they glow with its heat; it follows
+   * them and goes out when they fall.
+   */
+  function igniteFighter(id: string, level?: FireLevel, seconds = Infinity) {
+    const f = fighters.get(id);
+    if (!f) return;
+    if (!level) { f.fire?.handle.stop(); return; }
+    if (f.fire?.handle.burning) { f.fire.handle.level = level; return; }
+    const p = f.model.getPosition(), at = new pc.Vec3(p.x, groundHeight(p.x, p.z), p.z);
+    f.fire = { at, handle: effects.fire(at, level, { seconds, model: f.model }) };
+  }
+  // Statuses on the fighters (src/status-fx.ts); Quemado burns through `igniteFighter`.
+  const statusFx = createStatusFx(effects, { ignite: (id, level) => igniteFighter(id, level) });
+  /** The campaign's statuses as last shown, by fighter and status, so a change of stacks updates them. */
+  const shownStacks = new Map<string, number>();
+  /**
+   * The campaign's statuses (src/battle.ts `STATUSES`) are counted in rounds: shown while they have
+   * stacks, at a level by how many (a third of their most each), their ring holding what is left.
+   */
+  function syncStatuses(id: string, statuses: Partial<Record<StatusId, number>> | undefined) {
+    for (const look of ['sangrado', 'mareo', 'llorera'] as const) {
+      const n = statuses?.[look] ?? 0, key = `${id}:${look}`;
+      if ((shownStacks.get(key) ?? 0) === n) continue;
+      shownStacks.set(key, n);
+      const most = STATUSES[look].max;
+      if (n <= 0) statusFx.remove(id, look);
+      else statusFx.apply(id, look, { level: Math.ceil(n / most * 3), seconds: most, left: n, held: true });
+    }
+  }
   // Each fighter owns its material copies, so a flash never lights up the whole pack.
   function ownMaterials(model: pc.Entity) {
     const copies = new Map<pc.Material, pc.StandardMaterial>();
@@ -328,6 +364,28 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
     },
     selectTarget(id?: string) { selectedTarget = id; },
+    /**
+     * Sets a fighter alight at `level` (or changes how hard they burn), or lets the fire die down
+     * with no level. The fire is sized to their model and wraps it: their body burns, flames rise
+     * behind and in front of them, its light falls on them and they glow with its heat; it follows
+     * them and goes out when they fall.
+     */
+    ignite: igniteFighter,
+    /**
+     * Puts a status on a fighter (src/status-fx.ts: its look, a ring on the floor that empties as it
+     * runs out, a tint and a way of moving), raising its level if it is on already; level 0 takes it off.
+     */
+    status(id: string, look: StatusLookId, level?: number, seconds?: number) {
+      if (level === 0) statusFx.remove(id, look); else statusFx.apply(id, look, { level, seconds });
+    },
+    /** A reaction between elements on a fighter (docs/combat.md): what was on them turns into what it leaves. */
+    react(reaction: ReactionId, id: string) { statusFx.react(reaction, id); },
+    /** What statuses a fighter carries: look, level and how much is left (0–1). */
+    statusesOf(id: string) { return statusFx.on(id); },
+    /** Who is in the fight, for development tools and scenarios. */
+    fighterIds() { return [...fighters].map(([id, f]) => ({ id, party: f.party, hp: f.hp })); },
+    /** A fighter's model, for effects aimed at them. */
+    modelOf(id: string) { return fighters.get(id)?.model; },
     /** Adds whoever is standing in the fight to `out`, so particles flow around them. */
     bodies(out: ParticleBody[]) {
       for (const f of fighters.values()) {
@@ -399,7 +457,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
       if (!next) foeTop = 0;
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false; clock.clear();
-      if (!next) { cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); fighters.forEach(f => { f.model.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); selectedTarget = undefined; effects.clear(); }
+      if (!next) { cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { f.model.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); selectedTarget = undefined; effects.clear(); }
       else [...next.allies, ...next.foes].forEach(u => { fighters.get(u.id)!.hp = u.hp; });
       player.enabled = !next;
       if (!entering && !nextEffect) return Promise.resolve();
@@ -476,6 +534,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           roll = Math.sin(t * 52) * motion.recoil * 3;
         }
         const idle = idlePose(time, f.seed);
+        // Statuses move them too: frozen stands still, poisoned or dizzy sways, paralysed twitches.
+        const stance = statusFx.motion(id), lively = animate && stance !== 'freeze';
         const celebrating = animate && f.party && f.hp > 0 && state?.phase === 'won' && !effect;
         if (celebrating) hop = Math.abs(Math.sin(time * 5.5 + f.seed)) * .3;
         // Knocked-out fighters tip onto their side, then leave in a puff.
@@ -491,35 +551,52 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const shrink = down < 0 ? 1 : 1 - smooth((down - (animate ? .62 : .18)) / (animate ? .22 : .4));
         f.arms.forEach((arm, i) => arm.setLocalEulerAngles(celebrating ? -165 + Math.sin(time * 11 + i * Math.PI) * 12 : guarding ? -60 : -notice * 25 - strike * (i === 0 ? 85 : 35) - stride * (i === 0 ? 1 : -1), 0, guarding ? (i === 0 ? -20 : 20) : 0));
         f.legs.forEach((leg, i) => leg.setLocalEulerAngles(stride * (i % 2 ? -1 : 1), 0, 0));
-        f.tail?.setLocalEulerAngles(38 + strike * 20, animate ? Math.sin(time * (attacking ? 16 : 7) + f.seed) * 22 : 0, 0);
-        if (f.minion && f.head) f.head.setLocalEulerAngles(animate ? Math.sin(time * 2.2 + f.seed) * 6 - strike * 20 : 0, animate ? idle.look * 10 : 0, animate ? Math.sin(time * 1.7) * 5 : 0);
-        else if (!f.party && f.head) animateDogHead(f.head, f.ears, f.eyes, f.seed, stepping, animate, strike);
+        f.tail?.setLocalEulerAngles(38 + strike * 20, lively ? Math.sin(time * (attacking ? 16 : 7) + f.seed) * 22 : 0, 0);
+        if (f.minion && f.head) f.head.setLocalEulerAngles(lively ? Math.sin(time * 2.2 + f.seed) * 6 - strike * 20 : 0, lively ? idle.look * 10 : 0, lively ? Math.sin(time * 1.7) * 5 : 0);
+        else if (!f.party && f.head) animateDogHead(f.head, f.ears, f.eyes, f.seed, stepping, lively, strike);
         else {
-          f.head?.setLocalEulerAngles(animate ? -idle.breathe * 2 : 0, animate && id !== effect?.actor ? idle.look * 12 : 0, 0);
-          f.eyes.forEach(eye => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, f.eyeScale * (animate ? idle.blink : 1), s.z); });
+          f.head?.setLocalEulerAngles(lively ? -idle.breathe * 2 : 0, lively && id !== effect?.actor ? idle.look * 12 : 0, 0);
+          f.eyes.forEach(eye => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, f.eyeScale * (lively ? idle.blink : 1), s.z); });
         }
         f.body?.setLocalPosition(0, 0, 0);
         // The camera supplies the battle zoom; keep fighters proportional to the street.
         const since = f.hitAt === undefined ? Infinity : time - f.hitAt;
         const squash = animate && since < 1 ? Math.exp(-since * 7) * Math.cos(since * 30) : 0;
-        const breathe = animate && down < 0 ? idle.breathe * .018 + (f.minion ? Math.sin(time * 3.1 + f.seed) * .04 : 0) : 0;
+        const breathe = lively && down < 0 ? idle.breathe * .018 + (f.minion ? Math.sin(time * 3.1 + f.seed) * .04 : 0) : 0;
         const size = Math.max(.001, shrink);
         f.model.setLocalScale(f.scale.x * size * (1 + squash * .09), f.scale.y * size * (1 - squash * .16 + breathe), f.scale.z * size * (1 + squash * .09));
+        if (stance === 'sway' && animate && down < 0) roll += Math.sin(time * 2.3 + f.seed) * 6;
         f.model.setLocalEulerAngles(lean, f.turn, roll);
         if (fall) f.model.setPosition(position.x, groundHeight(position.x, position.z) + hop + fall * .22, position.z);
         else { f.model.setPosition(position); f.plantFeet(groundHeight, hop); }
+        if (stance === 'twitch' && animate && down < 0 && Math.random() < .4) f.model.translate((Math.random() - .5) * .05, Math.random() * .02, (Math.random() - .5) * .05);
         f.model.enabled = shrink > .01;
-        if (f.flash > 0) {
+        // Burning, they glow from within, warm and flickering with the fire on them.
+        if (f.fire) {
+          f.fire.at.set(position.x, groundHeight(position.x, position.z), position.z);
+          if (f.poofed) f.fire.handle.stop();
+          if (!f.fire.handle.burning) f.fire = undefined;
+        }
+        const heat = f.fire?.handle.glow ?? 0, tinted = statusFx.tint(id, time), statusLit = tinted[0] + tinted[1] + tinted[2] > 0;
+        if (f.flash > 0 || heat > 0 || statusLit || f.heated) {
           f.flash = Math.max(0, f.flash - dt * 4.5);
           const k = f.flash * f.flash;
           f.materials.forEach((m, i) => {
             const rest = f.glow[i];
             m.emissiveIntensity = 1;
-            m.emissive.set(rest.r + f.flashColor.r * k, rest.g + f.flashColor.g * k, rest.b + f.flashColor.b * k);
+            m.emissive.set(rest.r + f.flashColor.r * k + .3 * heat + tinted[0], rest.g + f.flashColor.g * k + .09 * heat + tinted[1], rest.b + f.flashColor.b * k + .015 * heat + tinted[2]);
             m.update();
           });
+          f.heated = heat > 0 || statusLit;
         }
       }
+      // Fight particles meet everyone still standing in it (src/fight-particles.ts).
+      effects.setFighters([...fighters.values()].map(f => f.model));
+      // Statuses read on whoever carries them (src/status-fx.ts), in the fight particles' order: the
+      // campaign's kept in step with the fight's stacks, and any put on with `status`.
+      statusFx.setFighters([...fighters.entries()].map(([id, f], index) => { const p = f.model.getPosition(); return { id, model: f.model, index, party: f.party, feet: new pc.Vec3(p.x, groundHeight(p.x, p.z), p.z) }; }));
+      if (state) for (const unit of [...state.allies, ...state.foes]) syncStatuses(unit.id, unit.statuses);
+      statusFx.update(dt, time);
       updateCats(t, animate, actor, target);
       // El Vértigo's spiral eye: slow at rest, fast while it is about to make everyone look down.
       const vertigo = fighters.get('vertigo');

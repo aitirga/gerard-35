@@ -126,7 +126,7 @@ build:
 clean:
     rm -rf dist
 
-# Play a scripted scenario and save screenshots + gallery: just screenshots chapter-1 (scripts/screenshots/)
+# Play a scripted scenario and save screenshots, clips (needs ffmpeg) + gallery: just screenshots fire --gpu (scripts/screenshots/)
 [group('Screenshots')]
 screenshots scenario="chapter-1" *options="":
     node scripts/screenshots.mjs {{ scenario }} {{ options }}
