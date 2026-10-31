@@ -102,7 +102,7 @@ const PATIO_THEME: ZoneTheme = {
   },
   // The end of the school day: a low, flat light, already cooling, under her plum sky.
   light: { ambient: '#6c6a7c', sun: '#ffe2cc', intensity: 1.45 },
-  her: .35,
+  her: .15,
   glow: '#dfe9ff',
   materials: {
     court: { texture: 'pista-pintada', tint: '#3f7d58', size: 4.5 },

@@ -299,13 +299,14 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
     }
     // The first floor's windows, above the string course, where the castle has swallowed the rest.
     for (let px = 2; px < W - 1; px += 3.2) part(root, 'Ventana del primer piso', 'box', glass, [x(px), 4.1, z(0) + .52], [1.6, .9, .03], [0, 0, 0], false);
-    // Her gum creeping over the top of the wall from her hall's door, thinning out towards the
-    // corners: she has the building, not yet the yard.
+    // Her gum creeping over the top of the wall from her hall's door, a few metres each way: she
+    // has the building, not yet the yard. A low crust, mostly the darker gum, and a few thin runs
+    // down the wall: a stain spreading, not a decoration.
     for (let px = 0; px < W; px += .7) {
       const s = jitter(px * 3 + 300), near = 1 - Math.min(1, Math.abs(px - 17) / 15);
-      if (s > .15 + near * .7) continue;
-      part(root, 'Chicle en lo alto', 'sphere', s < .2 ? gumDeep : gum, [x(px + (s - .5) * .6), tall, z(0) + .3], [(.5 + s) * (.6 + near), .16 + near * .25, .55 + near * .3], [0, s * 90, 0], false);
-      if (s < near * .25) part(root, 'Goterón', 'sphere', gum, [x(px), tall - .3 - s, z(0) + .53], [.09, .4 + near * 1.2, .07], [0, 0, 0], false);
+      if (near < .6 || s > .1 + near * .5) continue;
+      part(root, 'Chicle en lo alto', 'sphere', s < .45 ? gumDeep : gum, [x(px + (s - .5) * .6), tall + .02, z(0) + .25], [(.4 + s) * (.5 + near * .6), .07 + near * .08, .55 + near * .2], [0, s * 90, 0], false);
+      if (s < near * .15) part(root, 'Goterón', 'sphere', gumDeep, [x(px), tall - .25 - s, z(0) + .53], [.06, .3 + near * .8, .05], [0, 0, 0], false);
     }
     // The mural on the porch wall: welcome in the pupils' languages, painted over in pink but one.
     const mural = canvas(512, 160, ctx => {
