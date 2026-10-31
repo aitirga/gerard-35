@@ -1,6 +1,6 @@
 {
   "title": "Alegia · San Juan kalea",
-  "description": "The Basque village from map data (just geo alegia, docs/places/alegia.md): number 95 and its arcade, the old street with its named houses, the town hall square with the real facade and the clock turret, Zubi Zaharra and the weir over the sunk Oria, Txintxarri plaza's stone cowbell, the playground's pelota wall, the valley's hills, and the drizzle.",
+  "description": "The Basque village from map data (just geo alegia, docs/places/alegia.md): number 95 and its arcade, the old street with its named houses, the town hall square with the real facade and the clock turret, Zubi Zaharra and the weir over the sunk Oria, the txoko door, Txintxarri plaza's stone cowbell, the playground's pelota wall, the valley's hills, and the drizzle.",
   "steps": [
     { "open": "/?story=got-wrapper" },
     { "teleport": "alegia", "cell": [235, 55], "settle": 2500 },
@@ -14,6 +14,8 @@
     { "shot": "old-street", "delay": 1500, "caption": "La calle vieja · Entramado de madera, azulejos con el nombre de cada casa, farolas azules" },
     { "teleport": "alegia", "cell": [131, 71] },
     { "shot": "konfiteroenea", "delay": 1500, "caption": "Konfiteroenea · Banderitas de fiestas sobre la calle" },
+    { "teleport": "alegia", "cell": [118, 72] },
+    { "shot": "txoko", "delay": 1500, "caption": "La puerta del txoko en Mokoenea · «Bazkideak bakarrik», y al lado el azulejo de la casa" },
     { "teleport": "alegia", "cell": [169, 83] },
     { "press": "KeyE" },
     { "shot": "church", "delay": 1500, "caption": "La iglesia de San Juan y su campanario" },
