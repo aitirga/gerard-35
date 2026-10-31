@@ -100,7 +100,7 @@ meaning stay out: no saturated pink (hers), no crimson (Noísta's), no violet (p
 | Dominant | Ochre render `#cfa463`, per house from sand `#d8bf96`, salmon `#c99a6e`, pale stone `#e0cba6`, old terracotta `#c48c6e` to one grey-lilac `#b8acb0`: deeper and more varied than the Meridiana's pale beige |
 | Secondary | El Nucli's wine red `#5d0e11` with its name in cream `#f3e6d0`; grey panot `#a3a29b`; from above, terrats in terracotta `#b07a62` … `#a86a52` and grey `#a8a096`, `#9c978f` |
 | Material | Old render scored into ashlar with stone surrounds and arched ground floors (`sants` and `sants-shops` facades over `estuc`/`carreu`); shop shutters painted as murals; iron balconies with plants, wooden *persianes* |
-| Ground | Grey panot (`panot-gris`) on narrow pavements; the Plaça d'Osca in pale granite slabs (`granit`); lawns on the Passeig (`gespa`, toned down `#71895a`) |
+| Ground | Grey panot (`panot-gris`) on narrow pavements; the Plaça d'Osca in pale granite slabs (`granit`); lawns on the Passeig (`gespa`, toned down `#66794f`) |
 | Landmark | El Nucli's lit front with its round wine sign hung out over the door (kind: a lit shopfront in a row of shutters); across the Passeig, the closed Palau Balañà's white relief box (`palau-balana`, the real front); in the Plaça d'Osca, the five-lantern cast-iron lamp |
 | Light | `sants`, cool (temperature −.05, blue shadows, contrast 1.07, saturation .95), `day` sky, the end of the afternoon: the narrow streets in blue-grey shade, sun only on the top floors; the one glow is El Nucli's window `#ffb35c` and its warm spill on the pavement |
 | Props | Plane trees in pits, cars parked on one side, a row of Barcelona's five-colour containers, benches, bar terraces with white parasols, the metro stair, painted shutters |
@@ -138,7 +138,8 @@ cool), as `docs/visual-style.md` § Neighbours requires.
   to right and the shop's front (odd side) faces the camera; `bounds_turned` x −130 … 55 m, z −52 …
   345 m, its edges on streets (Alcolea, Badalona, Vallespir, Sants); 1.5 m cells: **123 × 265
   cells**, 288 buildings with heights from OSM `building:levels`, zoom 10.5. The map edge is the
-  border, as everywhere.
+  border, as everywhere. `lane_m` 3.0: streets tagged with their lanes keep them, so Carrer de Sants
+  is four lanes (12 m) with their markings and Valladolid is one way for the traffic.
 - **The route**: up the L1 stairs on Carrer de Sants (bottom left, spawn), up Carrer de Riego past
   the Plaça d'Osca, across the Passeig de Sant Antoni, straight up Carrer de Santa Caterina, which
   ends on Valladolid two doors from El Nucli. About 330 m: some 40 s walking.
@@ -155,7 +156,8 @@ cool), as `docs/visual-style.md` § Neighbours requires.
   `fanal-osca` (the square's lamp), `contenidors` (the five containers on Valladolid).
 - **Props**: the L1 totem and stair, plane trees (OSM's plus 6 more in the Plaça d'Osca and 13 on
   Valladolid and the Passeig), cars on Valladolid, lamps along the Passeig, 4 extra benches on the
-  Passeig's promenade.
+  Passeig's promenade, and one on Carrer de Sants standing in for the map's bench that the four
+  lanes cover (its two still people moved with it).
 - **Still people**: `assegut` places block figures (the game's style: box body, round head, hair
   cap) on a bench, and `terrassa` seats them at its tables with `people`. Every head turns to
   `look` (120°: north-east in the turned frame, towards Trinitat Vella). Their parts cast no sun

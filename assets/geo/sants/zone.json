@@ -22,6 +22,7 @@
     "z_m": 317
   },
   "storey_m": 3.0,
+  "lane_m": 3.0,
   "reference": {
     "checked": "2026-10-30",
     "streetview_capture": "",
@@ -80,7 +81,7 @@
       },
       "grass": {
         "texture": "gespa",
-        "tint": "#71895a"
+        "tint": "#66794f"
       }
     }
   },
@@ -356,6 +357,12 @@
     },
     {
       "kind": "bench",
+      "x_m": -97.75,
+      "z_m": 322.25,
+      "yaw": 330
+    },
+    {
+      "kind": "bench",
       "x_m": -117.25,
       "z_m": 118.25
     },
@@ -551,7 +558,7 @@
       "z_m": 71.75,
       "lines": [
         "El Palau Balañà. Cerró hace años y nadie ha quitado las letras.",
-        "Detrás del cristal aún quedan los carteles de las últimas películas. Nadie los ha cambiado."
+        "Detrás del cristal aún cuelgan los carteles de las últimas películas que pusieron."
       ]
     },
     {
@@ -560,7 +567,7 @@
       "x_m": -63.25,
       "z_m": 106.25,
       "lines": [
-        "El Passeig de Sant Antoni. Bancos, árboles y el carril bici.",
+        "El Passeig de Sant Antoni. Bancos, árboles y césped.",
         "En todos los bancos hay alguien sentado, y todos miran hacia el mismo sitio."
       ]
     },
@@ -580,7 +587,7 @@
       "x_m": -20,
       "z_m": 262,
       "lines": [
-        "La plaza d'Osca, llena de terrazas. No queda una mesa libre.",
+        "La plaça d'Osca, llena de terrazas. No queda una mesa libre.",
         "Nadie habla. Las cañas están llenas y nadie bebe."
       ]
     },
@@ -803,7 +810,7 @@
       "kind": "assegut",
       "id": "assegut-1",
       "x_m": -97.75,
-      "z_m": 319.25,
+      "z_m": 322.25,
       "rotation_deg": 330,
       "size_m": [
         1.2,
