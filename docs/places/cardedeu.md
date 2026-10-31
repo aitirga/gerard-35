@@ -5,10 +5,10 @@ old centre round it: the scene of Nuria's mission (`docs/quests/nuria.md`). Zone
 (real data, `assets/geo/cardedeu/`); Uri's tower round the corner is the separate zone
 `cardedeu-laberinto` (designed, left as it is).
 
-Status: researched and drafted 2026-10-30 (`zone.json` reframed and widened, OpenStreetMap
-refetched, Nuria's block split for its two roofs). The build waits for the shared materials
-pipeline, `src/landmarks/` and `docs/visual-style.md`. Until then `src/geo/cardedeu.json` is
-still the old build: rebuilding it moves every cell (see the build plan, step 1).
+Status: built 2026-10-31. Researched and reframed on 2026-10-30, then rebuilt on the shared real
+materials with its own facades, landmarks, gardens and horizon (§ How it was built). Nuria's
+mission reads its spots from the zone's anchors, so it survived the rebuild. `just screenshots
+cardedeu --gpu` and `just screenshots nuria --gpu` show it.
 
 ## The real place
 
@@ -105,152 +105,112 @@ Photos downloaded for study are in `output/refs/cardedeu/` (git-ignored).
 ## Identity card
 
 Checked against the other places: the Meridiana is cool Barcelona concrete and *panot*; Alegia is
-cream and timber over rubble-stone ground floors in a green valley; Sant Quirze is suburban and
-the palace is pink. Cardedeu is the warm one: a yellow-and-white railway town of the 1900s under
-the Montseny. Today it borrows Alegia's look (cream walls, rubble ground floors, green shutters,
-wooden rails), which the build has to undo.
+cream and timber over rubble-stone ground floors in a green valley, under a cool sky; Sant Quirze
+is suburban and the palace is pink. Cardedeu is the warm one: a railway town of summer houses from
+around 1900, low and gardened, under the Montseny. Before this build it borrowed Alegia's look
+(cream walls, rubble ground floors, green shutters, wooden rails, bare yards); the build removed it.
+
+Changed from the research card: the research led with the yellow render. From the diorama camera,
+roofs and gardens fill most of the screen, so the built card leads with them, as the guide's
+matrix already did (`docs/visual-style.md` § 2). The yellow and white render is what the follow
+camera sees at street level. Colours below were measured on the overview screenshot (median per
+group).
 
 | | |
 | --- | --- |
-| Dominant hue | Butter and ochre yellow render: `#ecd69c` (station), `#e7c36d` (Fleca Vella), with lime white `#f4f0e8` (Nuria's block) |
-| Secondary hue | Terracotta barrel tiles `#b05a3a`, weathered `#9a5b40`; olive-green louvred shutters `#5f7048` |
-| Signature material | Smooth stucco in warm tones over a grey plinth, Arab barrel-tile roofs, grey Montseny granite for quoins and plinths |
-| Ground | Narrow asphalt streets with grey pavers and granite kerbs; *sauló* `#cdb48a` in Plaça de Sant Joan; grey setts in the old squares; the platform's grey slabs and yellow line |
-| Silhouette | Low (one to three storeys), hipped roofs, belvedere towers on the villas, Santa Maria's square tower at the back, the Montseny's long blue ridge beyond |
-| Landmarks | The station's arcade, Torre Lligé, the Fleca Vella, Santa Maria's tower |
-| Light and mood | A calm Vallès afternoon: low warm sun, long soft shadows, golden on the yellow walls, the mountain hazy blue `#7d8ca3`. Quiet, a town where everyone walks; slightly warmer and softer than Barcelona (the current `cardedeu` grade fits) |
-| Props kit | Cars along one kerb, garden walls with railings and iron gates, hedges, cypresses, stone pines, cedars, pollarded plane trees, wrought-iron balconies, wall lanterns, the station clock, cone-topped platform lamps, lattice catenary gantries, the orange Rodalies totem, benches on *sauló* |
-| Ambient sound | Santa Maria's bell at the quarters and a Rodalies train passing (the platform chime when near the station) |
-| Only here | Borregos in the Fleca Vella's window, the long aniseed biscuits of Cardedeu |
+| Dominant hue | Terracotta Arab tiles seen from above `#b66e43` (22 % of the town in the overview), weathered browner in the old centre (`#86604f`–`#946049`), and garden green `#8a9a57` (12 %) |
+| Secondary hue | Butter and ochre render (`#ecd69c` station, `#e7c36d` Fleca Vella), warm lime white on Nuria's block (`#f3e9d8`); olive-green or brown louvred shutters (`#5f7048`, `#6b4f3a`); grey granite plinths |
+| Signature material | Hipped barrel-tile roofs (`teula`, a mix of tones per house), smooth render over a granite plinth (`estuc`, `granit`), lawns behind every row (`gespa`) |
+| Ground | Asphalt streets with pale pavements; *sauló* in Plaça de Sant Joan; grey stone slabs from wall to wall in the old centre (`lloses`); the platform's grey slabs with the yellow line |
+| Silhouette | Low (one to three storeys), hipped roofs with a white rim under the eaves, dark garden trees between them, Santa Maria's square tower at the back, the Montseny's long blue ridge beyond the north edge |
+| Landmarks | The station's porch of four round arches with its clock; Torre Lligé (the town hall) with five arches, terrace, clock gable and belvedere; the Fleca Vella's real front; Santa Maria's tower |
+| Light and mood | `cardedeu` look: a calm Vallès afternoon, warm (temperature +.07), `day` sky; the mountain hazy blue |
+| Props kit | Cars along the east kerb, garden walls with railings and iron gates, front patios with pots, hedges, cedars, stone pines, olives, cypresses, plane trees, cone-topped platform lamps, lattice catenary gantries, the platform's name boards, benches on *sauló* |
+| Air | Pollen (the default outside) |
+| Sound | Not built: Santa Maria's bell at the quarters and a Rodalies train passing would be its own (`docs/audio.md`) |
+| Only here | Borregos in the Fleca Vella's window (in Gerard's line), the white-roofed corner house in its garden |
+| Text | Catalan: *Passeig de Pau Gesa*, *Av. del Rei En Jaume*, *Plaça de Sant Joan* on the ground; *Cardedeu* on the platform boards; *Fleca Vella* on its real front |
 
 ## Layout
 
-`assets/geo/cardedeu/zone.json` (real data):
+`assets/geo/cardedeu/zone.json` (real data from OpenStreetMap plus `sketch.json`):
 
 - **Framing**: `rotation_deg` 6 (was 96), so Jacint Verdaguer runs straight along z. North is at
   the back: the old centre and, beyond the edge, the Montseny. The railway and platform 1 face the
   camera, so the station's arcade, Nuria's street front, the town hall's porch and the Fleca
-  Vella's front are all on seen sides. At 96° the arcade faced away and anyone on the platform
-  stood behind the station.
+  Vella's front are all on seen sides.
 - **Bounds**: west −65, east 195, north −133, south 112 m from the anchor (Jacint Verdaguer at the
-  crossing with Pau Gesa): 227 × 217 cells of 1.25 m (was 174 × 231), 203 buildings (was 169),
-  29,098 walkable cells. The north edge now takes in Plaça de Sant Joan, Plaça d'Anselm Clavé, the
-  Fleca Vella, Santa Maria and Sant Corneli; the south edge stops just past the second track.
-- **Spawn**: platform 1 in front of the arcade (150, 90). The way out is round the west end of
-  the station to Avinguda del Rei En Jaume, west to Jacint Verdaguer, then north to the block.
-- **Places**: `station-cardedeu` (the arcade, a step to leave), `cardedeu-estacio` (the station
-  sign), and three new things to look at, all on seen sides: `cardedeu-fleca` (the window),
-  `cardedeu-ajuntament` (the clock), `cardedeu-jardi` (the museum garden gate on Pau Gesa).
-- **Labels** on the ground: PASSEIG DE PAU GESA, AV. DEL REI EN JAUME (both run along x).
+  crossing with Pau Gesa): 227 × 217 cells of 1.25 m, 204 buildings, 28,603 walkable cells. The
+  north edge takes in Plaça de Sant Joan, Plaça d'Anselm Clavé, the Fleca Vella, Santa Maria and
+  Sant Corneli; the south edge stops just past the second track.
+- **Spawn**: platform 1 in front of the arcade. The way out is round the west end of the station to
+  Avinguda del Rei En Jaume, west to Jacint Verdaguer, then north to the block.
+- **Places**: `station-cardedeu` (the arcade, a step to leave), `cardedeu-estacio` (the sign), and
+  four things to look at on seen sides, each answered by Gerard in a short Spanish line with no
+  hint: `cardedeu-fleca` (the window and its borregos), `cardedeu-ajuntament` (the clock and the
+  belvedere), `cardedeu-jardi` (the museum garden's gate on Pau Gesa), `cardedeu-campanar` (Santa
+  Maria's tower).
 - **Anchors** (metres, so they survive any reframing): `nuria-door`, `haru-station`,
-  `maze-corner`, `maze-back` (the mission's spots, today hard-coded cells in
-  `src/friends/nuria.ts`) and `campanar` (Santa Maria's tower, position to confirm).
-- **Props drafted**: the six cars of the aerial along the east kerb, the big tree, the corner
-  garden's trees, a cypress and a tree by the station, LED lamps along platform 1, a bench on the
-  platform and one in Plaça de Sant Joan.
-- **Styles drafted** with today's kinds, to be replaced in the build: `estacio`, `ajuntament`,
-  `fleca`, `esglesia` and warmer default walls.
+  `maze-corner`, `maze-back`, read by `src/friends/nuria.ts`, and `campanar`.
+- **Gardens**: `yards` turns the ground 5 m or more from any street (15 m from the railway) into
+  lawn with a garden tree every 8 m, at 1.45 times the usual size (cedars, stone pines, olives,
+  planes, cypresses), as the aerial photo shows behind every row. They stay walkable.
 
-`assets/geo/cardedeu/sketch.json`: Nuria's block is now two buildings, `casa-nuria-nord` and
-`casa-nuria` (her door, labelled), so each gets its hipped roof and the valley shows between them.
-The rest of the sketch (the corner house, the east side, the generated `casa-fila-*` rows where
-OpenStreetMap has no footprints) is unchanged.
+## How it was built
 
-A draft build (`just geo-build cardedeu`, then reverted) confirmed the framing in the game: the
-arcade and platform face the camera, the parked cars line the right kerb, the Fleca Vella and the
-town hall show their fronts. Its preview is `output/geo/cardedeu/preview.png`.
-
-## Texture candidates
-
-CC0 (ambientCG, Poly Haven), tinted per style where a colour is given:
-
-| Use | Asset | Notes |
+| Piece | Where | What it does |
 | --- | --- | --- |
-| Roof tiles | Poly Haven `clay_roof_tiles_02` | Orange Arab barrel tiles; houses and the station |
-| Old roofs | ambientCG `RoofingTiles014B` | Dirty, older barrel tiles: the old centre, the church |
-| Fine stucco | ambientCG `Plaster003` | Tinted per wall colour: town houses, villas, station, town hall |
-| Textured render | Poly Haven `beige_wall_002` | The 1960s–70s rough render (*gota*): Nuria's block, the flats behind |
-| Sandstone bases | ambientCG `Bricks099` | The station's pier bases and plinth tiles |
-| Church stone | Poly Haven `large_sandstone_blocks` | Tinted grey for Santa Maria and its tower |
-| Granite | ambientCG `Granite003A` at a small scale | Speckle for painted quoins and plinths (the Fleca Vella) |
-| Pavement, platform | Poly Haven `concrete_pavement_02` | Grey square slabs |
-| Old squares, forecourt | ambientCG `PavingStones126A` | Grey rectangular setts |
-| *Sauló* | Poly Haven `gravel_ground_01` | Tinted `#cdb48a`: Plaça de Sant Joan, Sant Corneli |
-| Ballast | ambientCG `Gravel022` | Under the sleepers |
-| Platform edge | ambientCG `TactilePaving003` | The yellow tactile strip |
-| Fallen leaves | ambientCG `ScatteredLeaves008` | Plane leaves on the *sauló* (late October) |
+| Town houses | `vila` and `socol` in `facade()` (`src/geo-scenery.ts`) | Upper floors as an atlas of 3 bays × 2 storeys: moulded frames, louvred shutters in the house's colour, French windows on small iron balconies with geraniums, a string course and a white band under the eaves. Ground floor: render over a granite plinth, panelled doors under barred fanlights, barred windows or a garage shutter. `plain` is the station hall's bare render; gables of `vila` houses stay plain |
+| Roofs | `styles.*.roof` as a list (`tools/geo.py`) | Each house picks a tone: salmon to brown in the new streets, browner in the old centre (`centre`), a flat light-grey sheet roof on the corner house (`cantonada`) |
+| Nuria's block | `sketch.json`, `patis` landmark | Two hipped roofs end to end over the 47 m block; a row of front patios with low rendered walls, railings, gates, tiles and a pot in each |
+| Garden walls | `tanca` landmark | Rendered walls with a stone coping, railings and gates between pillars, a hedge behind: the big garden across Nuria's street and the museum garden on Pau Gesa |
+| The station | `porxo`, `andana`, `catenaria` landmarks | The porch of four round arches with the clock, lanterns, ticket machine and bench; platform 1 with its paving, yellow line, edge, cone lamps, name boards and fence; lattice gantries over both tracks |
+| Torre Lligé | `torre-llige` and `porxo` landmarks | The town hall's clock gable and belvedere, and its five-arch porch under a balustraded terrace |
+| Fleca Vella | `signature: fleca-vella` | The real front from Commons, at its real size, on the wall facing the camera |
+| Santa Maria | `esglesia` style, `campanar` landmark | Grey stone church and its 27 m square tower with Catalan merlons |
+| Old centre paving | `llosat` landmark, `lloses` texture | Grey stone slabs from wall to wall over the living streets round Plaça d'Anselm Clavé and Plaça de l'Església |
+| Plaça de Sant Joan | zone props | *Sauló*, eight plane trees with pale trunks, benches, two lamps |
+| Gardens | `yards` (`tools/geo.py`) | Lawn and big garden trees behind the houses (§ Layout) |
+| Trees | `cedar` and `pine` in `src/props.ts` | Garden cedars in uneven flat tiers and umbrella-topped stone pines, beside the existing species |
+| Horizon | `montseny` landmark, `look.hills: false` | The Montseny's ridge (Turó de l'Home and Les Agudes right of the middle) beyond the north edge, hazy blue with a paler crest, its facets softened as distance does; wooded hills in front of it. It replaces the generic hills |
+| Zebras | `pas-zebra` landmark | Both ends of Jacint Verdaguer |
+| Mission | `src/friends/nuria.ts`, `tests/nuria.test.mjs` | Nuria's door, Haru's spot and the maze corner come from the anchors; the test also checks the cells round her door are walkable |
+| Picker | `PLACES` in `src/jump-menu.ts` | `cardedeu` and `cardedeu-laberinto`, group *Cardedeu* |
 
-Wikimedia Commons (credit in `public/textures/credits.json`):
+Draw calls (`--gpu`, measured with a throwaway probe): about 1,450 following Gerard and 9,500 in
+the overview, in line with the Meridiana's 9,900.
 
-| Use | File | Author, licence |
-| --- | --- | --- |
-| The Fleca Vella's front (the one signature facade, up to 2048 px) | [Cardedeu - Fleca Vella.jpg](https://commons.wikimedia.org/wiki/File:Cardedeu_-_Fleca_Vella.jpg) | Friviere, CC BY-SA 3.0 |
-| Same, second choice | [195 Can Puig, la Fleca Vella, pl. Anselm Clavé 11](https://commons.wikimedia.org/wiki/File:195_Can_Puig,_la_Fleca_Vella,_pl._Anselm_Clav%C3%A9_11_-_c._Teresa_Oller_(Cardedeu).jpg) | Enric, CC BY-SA 4.0 |
-| Old-house bays (window over an iron balcony, panelled door), cleaned and desaturated | [135 Cases al passeig de Pau Gesa, 63-65](https://commons.wikimedia.org/wiki/File:135_Cases_al_passeig_de_Pau_Gesa,_63-65_(Cardedeu).jpg) | Enric, CC BY-SA 4.0 |
-| Station colours and arch proportions (painted, not copied) | [Estació de tren de Cardedeu 02.jpg](https://commons.wikimedia.org/wiki/File:Estaci%C3%B3_de_tren_de_Cardedeu_02.jpg) | Brunnaiz, CC BY-SA 4.0 |
+## Textures and credits
 
-The town hall is painted from its photo rather than textured with it: the photos carry banners
-and flags that do not belong in the game.
+Credits live in each texture's `public/textures/<id>/texture.json`.
 
-## Build plan
+| Texture | Used for | Source | Licence |
+| --- | --- | --- | --- |
+| `fleca-vella` | The Fleca Vella's signature front (4.3 × 10.4 m) | [Cardedeu - Fleca Vella.jpg](https://commons.wikimedia.org/wiki/File:Cardedeu_-_Fleca_Vella.jpg), Friviere, Wikimedia Commons | CC BY-SA 3.0 |
+| `lloses` | The old centre's stone slabs (2.4 m tile) | ambientCG [PavingStones126A](https://ambientcg.com/a/PavingStones126A) | CC0 |
+| `estuc`, `teula`, `rajola`, `granit`, `saulo`, `gespa`, `formigo`, `carreu`, `grava`, `asfalt` | Render, roof tiles, terrace and patio tiles, plinths, *sauló*, lawns, open ground, church stone, ballast, streets | The shared library, Poly Haven | CC0 |
 
-Each step is one or a few commits and leaves the game playable.
-
-1. **Rebuild and keep the mission working.** `just geo-build cardedeu`; move the mission's cells
-   in `src/friends/nuria.ts` to the zone's anchors (read from the built scene, so a later reframe
-   cannot break them) and Haru's spot to the platform's west end; update the cells in
-   `scripts/screenshots/cardedeu.json` and `nuria.json`. Both scenarios already fail on this
-   branch before any change: their first wait expects the title to start with `Meridiana`, and
-   `?story=metro` now opens on `Avinguda Meridiana`. Loosen that wait. `npm test`
-   (`tests/nuria.test.mjs` checks the cells are walkable).
-2. **Development picker.** Add `cardedeu` (and `cardedeu-laberinto`, debug only) to `PLACES` in
-   `src/jump-menu.ts`; today the place panel shows the bare id `cardedeu`.
-3. **Vallès facades.** Two new kinds in `facade()` (`src/geo-scenery.ts`), on the shared real
-   materials: `vila` (smooth stucco, moulded frames, green or brown louvred shutters or roller
-   blinds, a small iron balcony on the first floor) and ground `socol` (stucco over a grey plinth,
-   panelled doors, a barred window). They replace `rendered` and `masonry` (Alegia's timber and
-   rubble) everywhere in Cardedeu. Vary roofs: gabled for the `casa-fila` rows, flat terraces for
-   some newer blocks, hips for villas.
-4. **Nuria's block.** The two hips with the white rim; front patios with low walls and iron gates
-   along the street; her door marked by a doormat and a plant pot (no sign). The corner house's
-   metal roof, terrace and lawn.
-5. **The station** (a landmark module): the L-shaped porch with four round arches towards the
-   platform, the taller gabled hall, the scalloped eave, sandstone pier bases, clock, lanterns,
-   ticket machine. Platform 1 raised 1 m over the rails with grey slabs, the yellow line and
-   edge; cone-topped lamps; lattice gantries over the tracks every 50 m; grey fences; the orange
-   Rodalies totem. A Rodalies train at platform 1 when they arrive is optional.
-6. **Street level and kerbs.** Pavements 15 cm above the asphalt with a granite kerb; zebras at
-   both ends of Jacint Verdaguer; *sauló* in Plaça de Sant Joan with pollarded plane trees and
-   fallen leaves; setts in Plaça d'Anselm Clavé and Plaça de l'Església.
-7. **The old centre's landmarks** (modules or styles): Torre Lligé's porch, terrace and
-   belvedere; the Fleca Vella's front from Commons with borregos in the window; Santa Maria's
-   tower at `campanar` (position checked against the aerial photo), the church in grey stone;
-   Sant Corneli. Fill the centre's footprint gaps in the sketch with three-storey *cases de cós*
-   along the street fronts.
-8. **Gardens, walls and gates.** Walled gardens in the block interiors (now bare beige):
-   garden walls with railings and gates on the street fronts, hedges, lawns and patios; new tree
-   species `pine` (stone pine) and `cedar` beside `plane`, `olive`, `cypress`, `yucca`; the big
-   evergreen across the street as a cedar.
-9. **The Montseny.** The hills ring's back side becomes the Montseny: a long blue ridge `#7d8ca3`
-   with a pale crest, beyond the north edge and to the right of centre, given as data in
-   `zone.json` (a reusable `horizon` profile, so Alegia could have its own).
-10. **Sound and light.** Santa Maria's quarter bells and the passing train as the zone's ambience
-    (`docs/audio.md`); keep the warm grade, check it against the new yellows.
-11. **Uri's tower** (`cardedeu-laberinto`): materials only (hedge and path textures from the
-    shared pipeline); layout and gameplay untouched.
-12. **Checks and pictures.** `just typecheck`, `npm test`, `uv run --locked python -m unittest
-    discover -s tests` if `tools/` changes; `just screenshots cardedeu --gpu` (arrival on the
-    platform, the walk to the door, the old centre, the overview) and `just screenshots nuria
-    --gpu`. Watch the draw calls: 203 buildings now, more with the centre filled.
+The town hall, station and houses are painted from the photos in § References, not textured with
+them: the photos carry people, cars, banners and hard sun.
 
 ## Approximate and open
 
-- Storeys of the block of flats behind Nuria's and of the generated rows: guessed (2–3); to read
-  in Street View.
-- The big tree's species, the front patios and the corner house's wall colour come from the
-  aerial alone.
-- Santa Maria's tower position (`campanar`) is inferred from the footprint; confirm.
-- Nuria's door: kept where the mission had it (south half of the block); the real number is still
-  unknown.
+- **Approximate**: the storeys of the block of flats behind Nuria's and of the generated rows (2–3);
+  the big tree's species, the front patios and the corner house's walls (from the aerial alone);
+  Santa Maria's tower position (inferred from the footprint); Nuria's door (kept where the mission
+  had it; the real number is unknown); the extent of the stone paving (the living streets round
+  the two squares; the real paving may reach further along Sant Antoni and Teresa Oller).
+- **Gardens are generated**: every patch of ground well back from the streets becomes lawn with
+  trees. Real yards also hold patios, sheds and pools, and garden edges follow the cells, so they
+  step along diagonal streets.
+- **Not built**: pavements raised over the asphalt with granite kerbs (shared work, not started);
+  the station's scalloped eave course and half-hipped roof (a plain hip today); a Rodalies train at
+  the platform; the orange Rodalies totem; Sant Corneli beyond a plain block; fallen plane leaves
+  on the *sauló*; the bells and the passing train.
+- **Gerard's legs** can hide for a moment behind a near roof at some corners when the cut does not
+  open (the shared see-through rule); the screenshots avoid it, play may show it.
+- **Plane trees** in Plaça de Sant Joan use the shared plane species, a little brighter than the
+  real pollarded planes in autumn.
 - The second platform and the land beyond the tracks are scenery, not walkable.
 - No town cats besides Haru and Yuki, so nobody mistakes another cat for the guide.
+- `cardedeu-laberinto` (Uri's tower) is untouched.

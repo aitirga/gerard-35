@@ -141,6 +141,7 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `buildings` | Overrides by `way/<id>` (wins) or `tag:building=<value>`: `style`, `levels` (wins over the map's), `roof_kind`, `label`, `sign` (big lit letters over the ground floor of the wall facing the camera), `signature` (a photo texture of the real facade on that wall), `materials` (merged over the style's), and per house `walls` (one colour), `facade`, `ground` |
 | `props` | Extra props in metres: `tree` (`species`, `scale`, `base`, `stakes`, `trunk` colour), `car` (`color`), `lamp` (`style`: `led`), `manhole`, `metro` (a totem and a stair over the next three cells along x; `network`: `metro` or `rodalies`; `name` and `line` for the totem's plate), `bench` (`style`: `chair`), `barrier` (`color` red/white, `style` `jersey`, `panel`, `fence`), `bag`, `bin`, `bike-rack`, `traffic-light` (switched by the traffic), `shelter` (three cells along x), `bus` (`color`, `livery` `tmb`/`sagales`; five cells along x), `hoarding` (`length` cells along x). With `to` (a second position) and `every_m`, one prop every so many metres along the way. Cars park along x when the rotation is 0 or 180 or the bounds are turned |
 | `trees` | Generated trees: `forest_every_m`, `riverbank_every_m`, `species` list |
+| `yards` | Gardens behind the houses: open ground at least `from_road_m` (6) from every street, path and square, and three times that from the railway, becomes lawn with a garden tree every `trees_every_m` (8), `tree_scale` times the usual size, keeping `clear_m` (2.5) from walls; `species` list. Still walkable (Cardedeu) |
 | `places` | Things to look at: `id`, `label`, `lines`, and either `osm` (any feature id) or `east_m`/`south_m`. With `to` (`environment`, `cell`) instead of `lines` it is a door; with neither, the story answers it (station entrances `station-<id>`, clues). `step` (a position, `w` and `d` in cells) makes those cells use the place when walked into: a station's stair (the three cells beside its `metro` prop) |
 | `labels` | Ground text: `text`, `east_m`, `south_m`, `width` in cells |
 | `anchors` | Named points for the game's own pieces: `east_m`, `south_m`, optional `y_m` (height) |
@@ -161,6 +162,13 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 
 `facade` and `ground` may also be `photo:<texture>`: an atlas of real bays cut from photos (see
 [Photo facades](#photo-facades-and-signature-facades)).
+
+`roof` may also be a list of colours, like `walls`: each building gets one (tiles of different
+ages). Cardedeu adds the Vallès town house: `facade` `vila` (three bays by two storeys of moulded
+frames, louvred shutters, small iron balconies and a white band under the eaves) over `ground`
+`socol` (render over a granite plinth, panelled doors, barred windows); a `vila` house's gables
+are `plain` render. `look.hills: false` leaves out the wooded hills round the far sides, for a
+place that draws its own horizon (Cardedeu's `montseny` landmark).
 
 A new facade or ground kind is one more branch in `facade()` in `src/geo-scenery.ts`: it paints a
 canvas for one bay and one storey (ground textures are two bays wide; `FACADE_ATLAS` gives a kind
