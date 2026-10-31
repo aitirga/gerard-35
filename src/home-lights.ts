@@ -117,6 +117,10 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   'poble-sec': { salon: [hex('#c77d4f', .7, .5), white(2200, .7), hex('#4e6b3c', .55, .45), hex('#f2c27a', .65, .55)], rest: white(2500, .3) },
   // Plaça d'Espanya: a golden afternoon on salmon paving, the towers' brick and Las Arenas' red steel.
   'placa-espanya': { salon: [white(2500, .85), hex('#c96a45', .6, .5), hex('#8ec0e6', .5, .45), hex('#d9734a', .55, .55)], rest: white(2800, .3) },
+  // The Sagrada Família: ochre sandstone in the sun, a blue sky, the pines over the green pond.
+  'sagrada-familia': { salon: [white(3000, .8), hex('#c99a62', .6, .55), hex('#86b9e6', .55, .5), hex('#6f8a4a', .5, .5)], rest: white(3100, .3) },
+  // Inside it: white stone washed by the glass, orange and red on one side, blue and green on the other.
+  'sagrada-familia-interior': { salon: [hex('#e0742c', .65, .6), hex('#2f6fc0', .55, .6), hex('#3a9a5c', .5, .55), hex('#c43a2a', .55, .6)], rest: white(3600, .3) },
 };
 /** La Reina Bubbaloo's light (scenery.ts BUBBALOO): a magenta sun and a violet gloom. */
 const BUBBALOO = [hex('#db6ba8', .5, .55), hex('#9a5bc4', .4, .5), hex('#ff7fb3', .45, .5), hex('#c04a8a', .45, .6)];

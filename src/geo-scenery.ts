@@ -420,6 +420,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const clear = scene.props.filter(p => p.kind !== 'manhole' && p.kind !== 'car' && p.kind !== 'bus')
       .map(p => ({ x: p.x, z: p.z, r: p.kind === 'tree' ? 0.55 : 0.85 }));
     const crowded = (px: number, pz: number, r: number) => clear.some(c => Math.abs(px - c.x) < c.r + r * 0.35 && Math.abs(pz - c.z) < c.r + r * 0.35);
+    // A park's pond lies inside its lawn: no shrubs on the water.
+    const inWater = (px: number, pz: number) => scene.areas.water.some(w => inside(px, pz, w));
     let k = 0;
     for (const poly of scene.areas.grass) {
       const xs = poly.map(p => p[0]), zs = poly.map(p => p[1]);
@@ -427,7 +429,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         const px = gx + (jitter(k * 3 + 1) - 0.5) * 0.5, pz = gz + (jitter(k * 3 + 2) - 0.5) * 0.4, r = 0.45 + jitter(k * 3 + 3) * 0.4;
         k++;
         // …and off the streets that cross the bed.
-        if (!inside(px, pz, poly) || crowded(px, pz, r) || onStreet(px, pz)) continue;
+        if (!inside(px, pz, poly) || crowded(px, pz, r) || onStreet(px, pz) || inWater(px, pz)) continue;
         const e = new pc.Entity('Mata');
         e.addComponent('render', { type: 'sphere', material: shrubs[k % shrubs.length], castShadows: false, receiveShadows: true, batchGroupId: kit.batch });
         e.setPosition(x(px), 0.05, z(pz)); e.setLocalScale(r, r * (0.55 + jitter(k) * 0.4), r); root.addChild(e);
@@ -445,9 +447,12 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }), 0.5, 0.1);
   flat('Plazas', dry(scene.areas.square), LAYER.square, plaza);
   // Rivers reuse the pool's caustics, tinted deep green and drifting downstream. A place's own `water`
-  // is a turbid river: its colour on pale ripples, so the pool's blue does not turn it teal, and only a
-  // little of the sky on it, as a muddy river shows its own colour more than the clouds.
-  const ripples = look.water ? kit.texture(canvas(128, 128, ctx => {
+  // is murkier. A turbid river sunk below the street (`river_m`, Alegia's Oria): its colour on pale
+  // ripples, so the pool's blue does not turn it teal, and only a little of the sky on it, as a muddy
+  // river shows its own colour more than the clouds. A still park pond (the Sagrada Família's): its
+  // colour with the caustics faint in its glow, and less of the sky.
+  const turbid = !!look.water && sunk > 0, pond = !!look.water && !turbid;
+  const ripples = turbid ? kit.texture(canvas(128, 128, ctx => {
     ctx.fillStyle = '#e4e4e4'; ctx.fillRect(0, 0, 128, 128);
     ctx.strokeStyle = '#ffffff60'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
     for (let i = 0; i < 12; i++) {
@@ -458,10 +463,12 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     }
   })) : kit.water.diffuseMap;
   const river = mat('Río', look.water ?? '#7f9f8c', 0.85);
-  river.diffuseMap = ripples; river.emissive.fromString(look.water ?? '#6f9a86'); river.emissiveMap = ripples; river.emissiveIntensity = 0.08;
+  if (!pond) river.diffuseMap = ripples;
+  river.emissive.fromString(look.water ?? '#6f9a86'); river.emissiveMap = ripples; river.emissiveIntensity = 0.08;
   river.diffuseMapTiling.set(0.08 / cellM, 0.08 / cellM); river.emissiveMapTiling.set(0.08 / cellM, 0.08 / cellM);
   shine(river, 'water');
-  if (look.water) { river.specular.fromString('#4a5050'); river.reflectivity = 0.55; river.update(); }
+  if (turbid) { river.specular.fromString('#4a5050'); river.reflectivity = 0.55; river.update(); }
+  if (pond) { river.reflectivity *= 0.4; river.update(); }
   // A beach's water is the sea, with its shore, waves and swash (src/geo-sea.ts); anything else is a river.
   const sea = look.sea
     ? buildSea(kit, scene.areas.water, { width: W, depth: D, cell: cellM }, surface('Arena mojada', 'wet', speckles('#8d7655', ['#806a4b', '#9a8462']), 0.25, 0.3))

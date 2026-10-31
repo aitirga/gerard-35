@@ -1,0 +1,29 @@
+{
+  "id": "pedra-naixement",
+  "name": "Pedra esculpida del Naixement",
+  "kind": "material",
+  "size_m": [
+    3.5,
+    3.5
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "rock_06",
+    "name": "Rock 06",
+    "url": "https://polyhaven.com/a/rock_06",
+    "author": "Rob Tuytel",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven rock_06 --id pedra-naixement",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#7e6146",
+  "made": "2026-10-31"
+}

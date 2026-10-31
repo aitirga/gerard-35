@@ -1,0 +1,766 @@
+{
+  "id": "sagrada-familia",
+  "name": "Sagrada Família",
+  "region": "Eixample, Barcelona",
+  "anchor": {
+    "address": "Carrer de Mallorca 401, Barcelona",
+    "lat": 41.4036,
+    "lon": 2.1744
+  },
+  "bounds_m": {
+    "west": -110,
+    "east": 130,
+    "north": -135,
+    "south": 182
+  },
+  "bounds_turned": true,
+  "cell_m": 1.5,
+  "rotation_deg": 135,
+  "zoom": 14,
+  "spawn": {
+    "x_m": 79,
+    "z_m": 66
+  },
+  "storey_m": 3.0,
+  "lane_m": 3.2,
+  "reference": {
+    "checked": "2026-10-30",
+    "streetview_capture": "Not walked in person; Wikimedia Commons photos from February to August 2026 (docs/places/sagrada.md lists them) and Street View as a reference only",
+    "notes": [
+      "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-30): the Eixample blocks round the basilica, Plaça de Gaudí with its pond, Plaça de la Sagrada Família, Avinguda de Gaudí, street trees, lamps, benches, shops and the four metro entrances. OSM also maps every tower as a building:part with its height (Jesús 170 m, Mare de Déu 123 m, the four Evangelists 125 m, Passion 107-112 m, Nativity 98-107 m): the landmark module places its spires from those centroids.",
+      "Turned 135°: the Eixample grid runs along the game's axes, Carrer de la Marina along x. The Nativity facade (north-east, on Marina) faces the camera with Plaça de Gaudí and its pond in front of it; the apse (north-west, on Provença) is the right-hand face; the Glory (south-east, Mallorca, still a construction front) is on the left and the Passion (south-west, Sardenya) at the back, reached by walking round.",
+      "State in 2026: the cross of the Tower of Jesus Christ was set on 20 February 2026 (172.5 m, the tallest church in the world) and Pope Leo XIV blessed the tower on 10 June 2026, the centenary of Gaudí's death. 14 of 18 towers stand (4 Nativity, 4 Passion, 4 Evangelists, Mary with its lit twelve-pointed glass star since 2021, Jesus with its white hollow cross). The interior of the Jesus tower runs to 2028; the Glory facade and its stair over Carrer de Mallorca are not built: scaffolding, a hoarding and two or three yellow tower cranes stay on site.",
+      "Nativity facade: the old Montjuïc sandstone, weathered ochre-brown to soot-grey, sculpture that drips like wax, three portals, the green cypress with white doves over the central one, the four bell towers pierced by vertical slots and topped by Venetian-glass mosaic mitres in red, gold and white with SANCTUS spelled down them.",
+      "New stone: the nave's side walls, the apse, the Evangelist and Jesus towers are pale cream-grey ashlar; the high towers are covered in a lattice of triangular openings; white figures crown the Evangelists (bull, eagle, angel, lion). Contrast old dark Nativity vs new pale stone is the main read from far away.",
+      "Passion facade: bare pale stone, six inclined bone-like columns under a white pediment of bone columns with IESUS NAZARENUS REX IUDAEORUM in big white letters and a cross with the crown of thorns; Subirachs' angular figures; on Carrer de Sardenya, facing Plaça de la Sagrada Família.",
+      "Plaça de Gaudí: the pond (about 48 by 55 m) with green water, reeds, rocks and the facade's reflection, stone pines and palms, gravel paths, benches, a playground and sports courts at the Lepant end. Carrer de la Marina in front of the facade is pedestrian: queues, crowd barriers, the visitor entrance signs (A, B…), tour groups with flags, selfie sticks.",
+      "Plaça de la Sagrada Família: gardens with gravel paths, a playground and a dog run, cafés and souvenir shops on the Sardenya and Provença corners (Starbucks, Subway, FCBarcelona Botiga, gift shops).",
+      "Avinguda de Gaudí: a pedestrian diagonal from the Marina/Provença corner to Sant Pau, Pere Falqués' modernista lamp posts (the Cinc d'Oros model, set on the avenue in 1985 and often taken for Gaudí's), terraces of cafés and ice-cream shops, the Christmas light arches in winter.",
+      "Around: Eixample blocks of six to nine storeys with chamfered corners, cream, sand and ochre renders, iron balconies on the older ones and 1960s-70s flats with continuous balconies and aluminium windows on the newer; ground floors of souvenir shops, cafés and fast food. Gaudí's Escoles (one storey, brick, wavy roof) on the Mallorca/Sardenya corner of the basilica's block; the official shop on the Mallorca/Marina corner."
+    ],
+    "viewpoints": [
+      {
+        "name": "estany-placa-gaudi",
+        "lat": 41.40455,
+        "lon": 2.17566,
+        "heading": 225,
+        "pitch": 20
+      },
+      {
+        "name": "placa-sagrada-familia",
+        "lat": 41.40288,
+        "lon": 2.17326,
+        "heading": 45,
+        "pitch": 20
+      },
+      {
+        "name": "avinguda-gaudi",
+        "lat": 41.40541,
+        "lon": 2.1744,
+        "heading": 190,
+        "pitch": 15
+      },
+      {
+        "name": "gloria-mallorca",
+        "lat": 41.4031,
+        "lon": 2.17506,
+        "heading": 315,
+        "pitch": 15
+      }
+    ]
+  },
+  "look": {
+    "ground": "panot",
+    "footway": "panot",
+    "asphalt": "#3e4043",
+    "markings": true,
+    "water": "#4a5532",
+    "materials": {
+      "ground": "panot-flor",
+      "square": {
+        "texture": "granit",
+        "tint": "#9b968b"
+      },
+      "footway": {
+        "texture": "saulo",
+        "tint": "#c4b48f"
+      },
+      "grass": {
+        "texture": "gespa",
+        "tint": "#6c8650"
+      }
+    },
+    "edge": "city"
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#e3d4bb",
+        "#d6c19f",
+        "#c9a77f",
+        "#e7dccb",
+        "#cdb497",
+        "#d8b48c"
+      ],
+      "base": "#6e665c",
+      "trim": "#f1ece3",
+      "roof": "#a9a297",
+      "roof_kind": "flat",
+      "facade": "flats",
+      "ground": "shops",
+      "levels": 7
+    },
+    "temple": {
+      "walls": [
+        "#c9bca6"
+      ],
+      "base": "#9a8a74",
+      "trim": "#e8e0d0",
+      "roof": "#cfc4b2",
+      "roof_kind": "flat",
+      "facade": "ashlar",
+      "ground": "ashlar",
+      "levels": 2,
+      "materials": {
+        "roof": "carreu"
+      }
+    },
+    "escoles": {
+      "walls": [
+        "#b0866a"
+      ],
+      "base": "#9a6c4c",
+      "trim": "#e3d5bd",
+      "roof": "#a86f4b",
+      "roof_kind": "flat",
+      "facade": "ashlar",
+      "ground": "ashlar",
+      "levels": 1,
+      "materials": {
+        "wall": "mao",
+        "base": "mao"
+      }
+    },
+    "pavilion": {
+      "walls": [
+        "#d9d6cf"
+      ],
+      "base": "#8f8b84",
+      "trim": "#3a3d40",
+      "roof": "#bdb9b1",
+      "roof_kind": "flat",
+      "facade": "mall",
+      "ground": "mall-front",
+      "levels": 1
+    }
+  },
+  "buildings": {
+    "relation/9194723": {
+      "style": "temple",
+      "label": "Sagrada Família"
+    },
+    "way/132513667": {
+      "style": "escoles"
+    },
+    "way/459465564": {
+      "style": "pavilion"
+    },
+    "way/132513663": {
+      "style": "pavilion"
+    },
+    "way/132513670": {
+      "style": "pavilion"
+    },
+    "way/1373179983": {
+      "style": "pavilion"
+    },
+    "way/1207779378": {
+      "style": "temple",
+      "levels": 4
+    },
+    "way/1207779379": {
+      "style": "pavilion"
+    },
+    "way/1207779429": {
+      "style": "temple",
+      "levels": 4
+    }
+  },
+  "osm_props": {
+    "tree": {
+      "species": "plane",
+      "within": {
+        "relation/7708297": {
+          "species": [
+            "pine",
+            "pine",
+            "pine",
+            "palm",
+            "plane"
+          ],
+          "base": "ground",
+          "keep": 0.5
+        },
+        "way/23431084": {
+          "species": [
+            "plane",
+            "plane",
+            "pine",
+            "palm"
+          ],
+          "base": "ground",
+          "keep": 0.45
+        }
+      },
+      "keep": 0.75
+    },
+    "lamp": {},
+    "bench": {},
+    "bin": {},
+    "bike-rack": {}
+  },
+  "props": [
+    {
+      "kind": "metro",
+      "x_m": 75.5,
+      "z_m": 57.5,
+      "name": "Sagrada Família",
+      "line": "L5"
+    },
+    {
+      "kind": "barrier",
+      "style": "fence",
+      "x_m": -46,
+      "z_m": 44.5,
+      "to": {
+        "x_m": -7,
+        "z_m": 44.5
+      },
+      "every_m": 1.5
+    },
+    {
+      "kind": "barrier",
+      "style": "fence",
+      "x_m": -46,
+      "z_m": 49.5,
+      "to": {
+        "x_m": -7,
+        "z_m": 49.5
+      },
+      "every_m": 1.5
+    }
+  ],
+  "places": [
+    {
+      "id": "station-sagrada-familia",
+      "label": "Bajar al metro",
+      "x_m": 77.5,
+      "z_m": 59,
+      "step": {
+        "x_m": 76.75,
+        "z_m": 57.5,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "sagrada-familia-portal",
+      "label": "Entrar en la basílica",
+      "x_m": 0,
+      "z_m": 40,
+      "to": {
+        "environment": "sagrada-familia-interior",
+        "cell": {
+          "x": 36,
+          "z": 37
+        }
+      }
+    },
+    {
+      "id": "sagrada-familia-estany",
+      "label": "Mirar el estanque",
+      "x_m": 0,
+      "z_m": 91,
+      "lines": [
+        "El estanque de la plaça de Gaudí. En el agua, la fachada del Nacimiento al revés, temblando.",
+        "Todo el mundo hace la misma foto desde este lado. Yo también la hice, hace años."
+      ]
+    },
+    {
+      "id": "sagrada-familia-naixement",
+      "label": "Mirar la fachada",
+      "x_m": -22,
+      "z_m": 46,
+      "lines": [
+        "La fachada del Nacimiento, la que levantó Gaudí. Piedra oscura que parece derretirse.",
+        "Arriba del portal, un ciprés verde lleno de palomas blancas."
+      ]
+    },
+    {
+      "id": "sagrada-familia-torre",
+      "label": "Mirar arriba",
+      "x_m": 30,
+      "z_m": 48,
+      "lines": [
+        "La torre de Jesucristo, con la cruz blanca que le pusieron en febrero. Ciento setenta y dos metros y medio.",
+        "Medio metro menos que Montjuïc. Dicen que Gaudí no quería que su obra pasara a la de Dios."
+      ]
+    },
+    {
+      "id": "sagrada-familia-cola",
+      "label": "Mirar la cola",
+      "x_m": -26,
+      "z_m": 53,
+      "lines": [
+        "Una cola que da la vuelta a la esquina. Audioguías, palos de selfi, un grupo detrás de un paraguas amarillo.",
+        "Nadie mira el móvil. Están todos mirando hacia arriba."
+      ]
+    },
+    {
+      "id": "sagrada-familia-passio",
+      "label": "Mirar la fachada",
+      "x_m": 0,
+      "z_m": -74,
+      "lines": [
+        "La fachada de la Pasión. Piedra lisa, figuras con aristas y columnas inclinadas como huesos.",
+        "Arriba, en letras enormes: IESUS NAZARENUS REX IUDAEORUM."
+      ]
+    },
+    {
+      "id": "sagrada-familia-gloria",
+      "label": "Mirar las obras",
+      "x_m": -72,
+      "z_m": -10,
+      "lines": [
+        "La fachada de la Gloria, la principal. Todavía es un muro con andamios y una lona.",
+        "Las grúas siguen ahí. Siempre ha habido grúas."
+      ]
+    },
+    {
+      "id": "sagrada-familia-escoles",
+      "label": "Mirar las escuelas",
+      "x_m": -48,
+      "z_m": -66,
+      "lines": [
+        "Las escuelas que Gaudí hizo para los hijos de los obreros. El tejado ondula como una sábana tendida."
+      ]
+    },
+    {
+      "id": "sagrada-familia-farola",
+      "label": "Mirar la farola",
+      "x_m": 99,
+      "z_m": 98,
+      "lines": [
+        "Una farola de piedra y hierro con globos blancos. Todo el mundo cree que es de Gaudí; es de Pere Falqués.",
+        "Desde aquí la avenida apunta recta a la basílica."
+      ]
+    }
+  ],
+  "labels": [
+    {
+      "text": "PLAÇA DE GAUDÍ",
+      "x_m": 0,
+      "z_m": 168,
+      "width": 9
+    },
+    {
+      "text": "CARRER DE LA MARINA",
+      "x_m": -35,
+      "z_m": 74,
+      "width": 11
+    },
+    {
+      "text": "CARRER DE SARDENYA",
+      "x_m": 0,
+      "z_m": -79.5,
+      "width": 10
+    },
+    {
+      "text": "AVINGUDA DE GAUDÍ",
+      "x_m": 108,
+      "z_m": 120,
+      "width": 9
+    }
+  ],
+  "anchors": {
+    "basilica": {
+      "x_m": 2,
+      "z_m": -3,
+      "y_m": 70
+    },
+    "naixement": {
+      "x_m": 1,
+      "z_m": 34,
+      "y_m": 24
+    },
+    "passio": {
+      "x_m": 2,
+      "z_m": -50
+    },
+    "gloria": {
+      "x_m": -50,
+      "z_m": -10
+    },
+    "absis": {
+      "x_m": 50,
+      "z_m": -6
+    }
+  },
+  "landmarks": [
+    {
+      "kind": "sagrada-familia",
+      "id": "basilica",
+      "x_m": 2,
+      "z_m": -3,
+      "solid": true,
+      "textures": [
+        "pedra-naixement",
+        "pedra-montjuic",
+        "carreu"
+      ],
+      "size_m": [
+        98,
+        84
+      ]
+    },
+    {
+      "kind": "pond",
+      "id": "estany",
+      "x_m": 0,
+      "z_m": 119,
+      "solid": false,
+      "params": {
+        "outline": [
+          [
+            -17.5,
+            -17.9
+          ],
+          [
+            -24.5,
+            -8.3
+          ],
+          [
+            -24.1,
+            -1.0
+          ],
+          [
+            -21.4,
+            17.1
+          ],
+          [
+            -19.7,
+            21.6
+          ],
+          [
+            -5.6,
+            28.9
+          ],
+          [
+            4.2,
+            30.0
+          ],
+          [
+            13.2,
+            26.8
+          ],
+          [
+            24.1,
+            16.6
+          ],
+          [
+            24.3,
+            9.0
+          ],
+          [
+            22.3,
+            -3.8
+          ],
+          [
+            19.0,
+            -10.9
+          ],
+          [
+            15.0,
+            -13.3
+          ],
+          [
+            6.3,
+            -15.6
+          ],
+          [
+            -0.8,
+            -16.8
+          ],
+          [
+            -3.5,
+            -19.0
+          ],
+          [
+            -8.5,
+            -23.7
+          ],
+          [
+            -12.5,
+            -23.6
+          ]
+        ],
+        "rafts": [
+          [
+            -6,
+            4
+          ],
+          [
+            9,
+            12
+          ]
+        ],
+        "reflection": {
+          "across": 5,
+          "width": 36,
+          "towers": [
+            [
+              -12,
+              22
+            ],
+            [
+              -4.5,
+              27
+            ],
+            [
+              4.5,
+              27
+            ],
+            [
+              12,
+              22
+            ]
+          ],
+          "spires": [
+            [
+              -9,
+              31
+            ],
+            [
+              9,
+              31
+            ],
+            [
+              -3,
+              34
+            ],
+            [
+              3,
+              34
+            ],
+            [
+              17,
+              29
+            ],
+            [
+              0,
+              42
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kind": "falques-lamp",
+      "id": "fanal-1",
+      "x_m": 96,
+      "z_m": 100,
+      "size_m": [
+        1.5,
+        1.5
+      ],
+      "textures": [
+        "formigo"
+      ]
+    },
+    {
+      "kind": "falques-lamp",
+      "id": "fanal-2",
+      "x_m": 118,
+      "z_m": 122.6,
+      "size_m": [
+        1.5,
+        1.5
+      ],
+      "textures": [
+        "formigo"
+      ]
+    },
+    {
+      "kind": "crowd",
+      "id": "cua",
+      "x_m": -26.5,
+      "z_m": 47,
+      "size_m": [
+        39,
+        3
+      ],
+      "params": {
+        "style": "queue",
+        "guard": true,
+        "sign": "A"
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "grup-estany",
+      "x_m": 14,
+      "z_m": 91,
+      "size_m": [
+        5,
+        4.5
+      ],
+      "params": {
+        "style": "group",
+        "umbrella": "#e0b030",
+        "count": 10
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "grup-avinguda",
+      "x_m": 106,
+      "z_m": 114,
+      "size_m": [
+        4.5,
+        4.5
+      ],
+      "params": {
+        "style": "group",
+        "umbrella": "#c23b3b",
+        "count": 8
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "grup-marina",
+      "x_m": 40,
+      "z_m": 56,
+      "size_m": [
+        4.5,
+        4
+      ],
+      "params": {
+        "style": "group",
+        "umbrella": "#2f6fb5",
+        "count": 7
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "fotos-naixement",
+      "x_m": 13,
+      "z_m": 58,
+      "size_m": [
+        17,
+        7
+      ],
+      "params": {
+        "style": "scatter",
+        "face": 190,
+        "count": 14,
+        "phones": 0.45
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "fotos-estany",
+      "x_m": 9,
+      "z_m": 154,
+      "size_m": [
+        9,
+        4
+      ],
+      "params": {
+        "style": "scatter",
+        "face": 175,
+        "count": 6,
+        "phones": 0.7
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "fotos-passio",
+      "x_m": 2,
+      "z_m": -98,
+      "size_m": [
+        10,
+        4
+      ],
+      "params": {
+        "style": "scatter",
+        "face": 0,
+        "count": 6,
+        "phones": 0.4
+      }
+    },
+    {
+      "kind": "kiosk",
+      "id": "quiosc-records",
+      "x_m": -38,
+      "z_m": 64,
+      "size_m": [
+        2.2,
+        1.5
+      ],
+      "params": {
+        "sign": "RECORDS"
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "fotos-marina",
+      "x_m": -14,
+      "z_m": 64,
+      "size_m": [
+        12,
+        5
+      ],
+      "params": {
+        "style": "scatter",
+        "face": 165,
+        "count": 8,
+        "phones": 0.5
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "grup-portal",
+      "x_m": 24,
+      "z_m": 47,
+      "size_m": [
+        5,
+        4.5
+      ],
+      "params": {
+        "style": "group",
+        "umbrella": "#3f8a5a",
+        "count": 8
+      }
+    },
+    {
+      "kind": "escoles",
+      "id": "escoles",
+      "x_m": -35.4,
+      "z_m": -60.0,
+      "size_m": [
+        21.7,
+        12.4
+      ],
+      "solid": false,
+      "params": {
+        "wall": 3,
+        "waves": 3,
+        "roof": "#a2674a"
+      },
+      "textures": [
+        "mao",
+        "rajola"
+      ]
+    }
+  ]
+}

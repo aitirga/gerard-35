@@ -722,7 +722,7 @@ def build(zone_id: str) -> None:
     keep_clear = {spawn} | {(p["cell"]["x"], p["cell"]["z"]) for p in places} | step_cells
 
     props = scatter_trees(zone, raster, W, D, cell) + yard_trees
-    props += map_props(zone, osm["elements"], frame, raster, roads)
+    props += map_props(zone, osm["elements"], frame, raster, roads, areas)
     # Works go down last, so they can make room for the trees and furniture around them.
     for p in sorted(zone.get("props", []), key=lambda p: p["kind"] in ("barrier", "bag")):
         trees = {(q["x"], q["z"]) for q in props if q["kind"] == "tree"}
@@ -827,20 +827,31 @@ def facing(x: float, z: float, roads: list, kind: str = "") -> int:
     return (int(round(math.degrees(math.atan2(px - x, pz - z)) / 15) * 15) + turn) % 360
 
 
-def map_props(zone: dict, elements: list, frame: Frame, raster: list, roads: list) -> list[dict]:
-    """Props from map nodes the zone asks for (`osm_props`: kind -> extra fields), on open ground only."""
+def map_props(zone: dict, elements: list, frame: Frame, raster: list, roads: list, areas: dict | None = None) -> list[dict]:
+    """Props from map nodes the zone asks for (`osm_props`: kind -> extra fields), on open ground only.
+    `within` gives the props inside a map area their own fields (a park's pines): `species` may be a list
+    to pick from, and `keep` (0-1) keeps only that share of them, the same ones on every build."""
     wanted = zone.get("osm_props", {})
+    polys = {a["id"]: a["poly"] for group in (areas or {}).values() for a in group}
     out = []
     for e in elements:
         if not e["id"].startswith("node/"): continue
         for kind, (key, value) in OSM_PROPS.items():
             if kind not in wanted or e["tags"].get(key) != value: continue
-            x, z = (round(v) for v in frame.cells(*e["at"]))
+            fx, fz = frame.cells(*e["at"])
+            x, z = round(fx), round(fz)
             if not (0 < x < frame.width - 1 and 0 < z < frame.depth - 1) or raster[z][x] not in OPEN_FOR_PROPS: continue
-            extra = dict(wanted[kind])
+            fields = {k: v for k, v in wanted[kind].items() if k != "within"}
+            for area_id, extra in wanted[kind].get("within", {}).items():
+                if area_id in polys and point_in_polygon(fx, fz, polys[area_id]):
+                    fields |= extra
+                    break
             # `in_bed`: what changes for one standing in a planted bed (a tree there needs no paved pit).
-            in_bed = extra.pop("in_bed", {})
-            prop = {"kind": kind, "x": x, "z": z} | extra | (in_bed if raster[z][x] == "g" else {})
+            in_bed = fields.pop("in_bed", {})
+            if raster[z][x] == "g": fields |= in_bed
+            if int(hashlib.sha1(e["id"].encode()).hexdigest(), 16) % 1000 >= fields.pop("keep", 1) * 1000: continue
+            if isinstance(fields.get("species"), list): fields["species"] = pick(e["id"], fields["species"])
+            prop = {"kind": kind, "x": x, "z": z} | fields
             if kind in FACING_PROPS: prop["yaw"] = facing(x, z, roads, kind)
             out.append(prop)
     return out

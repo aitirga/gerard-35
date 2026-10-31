@@ -10,17 +10,19 @@ import BARCELONETA_SCENE from './geo/barceloneta.json' with { type: 'json' };
 import SANTS_SCENE from './geo/sants.json' with { type: 'json' };
 import POBLE_SEC_SCENE from './geo/poble-sec.json' with { type: 'json' };
 import PLACA_ESPANYA_SCENE from './geo/placa-espanya.json' with { type: 'json' };
+import SAGRADA_FAMILIA_SCENE from './geo/sagrada-familia.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
   | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta'
-  | 'sants' | 'el-nucli' | 'poble-sec' | 'placa-espanya';
+  | 'sants' | 'el-nucli' | 'poble-sec' | 'placa-espanya' | 'sagrada-familia' | 'sagrada-familia-interior';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /**
  * Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses, a potted
  * yucca, the big garden cedars and umbrella-topped stone pines of the Vallès (Cardedeu), the
- * Aleppo pines of Barcelona's dry hills (the Búnkers del Carmel) and the seafront's fan palms.
+ * Aleppo pines of Barcelona's dry hills (the Búnkers del Carmel), and the fan palms of the seafront
+ * and the parks (the Sagrada Família's Plaça de Gaudí has stone pines and palms too).
  */
 export type TreeSpecies = 'plane' | 'olive' | 'cypress' | 'yucca' | 'cedar' | 'pine' | 'aleppo' | 'palm';
 /** What the trunk stands in: a paved street pit (default), an indoor pot, or bare ground. */
@@ -150,6 +152,8 @@ export interface Environment {
   palace?: { plan: string[]; rooms: Room[] };
   /** A real place generated from map data (tools/geo.py), drawn by `src/geo-scenery.ts`. */
   geo?: GeoScene;
+  /** Inside the Sagrada Família: a plan in BASILICA_GLYPHS, built by `src/basilica-scenery.ts`. */
+  basilica?: { plan: string[] };
 }
 
 export const COURTYARD_ROWS = [
@@ -565,6 +569,84 @@ export const SANTS = geoEnvironment('sants', SANTS_SCENE as GeoScene);
 export const POBLE_SEC = geoEnvironment('poble-sec', POBLE_SEC_SCENE as GeoScene);
 /** Plaça d'Espanya (docs/places/espanya.md): the roundabout, the Venetian towers and Las Arenas, from the L1 and L3. */
 export const PLACA_ESPANYA = geoEnvironment('placa-espanya', PLACA_ESPANYA_SCENE as GeoScene);
+/** The Sagrada Família's block, Plaça de Gaudí and its pond (docs/places/sagrada.md), from the L5. */
+export const SAGRADA_FAMILIA = geoEnvironment('sagrada-familia', SAGRADA_FAMILIA_SCENE as GeoScene);
+/** What each character of the basilica's plan stands for (docs/places/sagrada.md § Inside). */
+export const BASILICA_GLYPHS = {
+  '.': 'suelo', '#': 'muro de la Gloria', 'r': 'muro con vidrieras cálidas (Pasión)', 'b': 'muro con vidrieras frías (Nacimiento)',
+  'y': 'muro del ábside', 'N': 'puerta del Nacimiento', 'S': 'puerta de la Pasión', 'G': 'puertas de la Gloria',
+  'P': 'columna de pórfido', 'B': 'columna de basalto', 'g': 'columna de granito', 's': 'columna de arenisca',
+  'h': 'sillas', '^': 'presbiterio', 'A': 'altar', 'O': 'órgano', 'c': 'reja de la cripta', 'v': 'visitantes', 'w': 'vigilante',
+  'i': 'cartel de silencio', ' ': 'fuera',
+} as const;
+/**
+ * Inside the Sagrada Família (docs/places/sagrada.md § Inside), at the outside's scale (1.5 m a cell)
+ * and in its frame: the Nativity towards the camera (south here), the Passion north, the Glory west,
+ * the apse east. The nave's five aisles and the transept's three on the 7.5 m grid of columns, the
+ * crossing at (36, 20) under the Tower of Jesus, the presbytery and the apse beyond it. North and west
+ * walls stand tall with their glass; south and east ones are cut low.
+ */
+const BASILICA_PLAN = [
+  '                          rrrrrrrrrSSSrrrrrrrrr               ', // 0
+  '                          r...................r               ', // 1
+  '                          r...................r               ', // 2
+  '                          r...........vv......r               ', // 3
+  '                          r...................r               ', // 4
+  '#rrrrrrrrrrrrrrrrrrrrrrrrrr....s.........s....ryyyy           ', // 5
+  '#.................................................yyyy        ', // 6
+  '#....................................................yyy      ', // 7
+  '#......................................................yy     ', // 8
+  '#.......................................................yy    ', // 9
+  '#.....s....s....s....s....B....B.........B....B..........yy   ', // 10
+  '#.........................................................yy  ', // 11
+  '#..vv......................................................y  ', // 12
+  '#....................................................c.....yy ', // 13
+  '#...........................................................y ', // 14
+  '#.....g....g....g....g....B....P.........P....B...s.........y ', // 15
+  '#..hhhhh.hhhhh.hhhhh........................................yy', // 16
+  '#..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y', // 17
+  '#..hhhhh.hhhhh.hhhhh......................^^^^^^^O..s........y', // 18
+  'G..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y', // 19
+  'G........................................w^^^^A^^^...........y', // 20
+  'G..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y', // 21
+  '#..hhhhh.hhhhh.hhhhh.............vv.......^^^^^^^O..s........y', // 22
+  '#..hhhhh.hhhhh.hhhhh..............v.......^^^^^^^^...........y', // 23
+  '#..hhhhh.hhhhh.hhhhh........................................yy', // 24
+  '#.....g....g....g....g....B....P.........P....B...s.........y ', // 25
+  '#...........................................................y ', // 26
+  '#....................................................c.....yy ', // 27
+  '#........vv................................................y  ', // 28
+  '#.........................................................yy  ', // 29
+  '#.....s....s....s....s....B....B.........B....B..........yy   ', // 30
+  '#.......................................................yy    ', // 31
+  '#......................................................yy     ', // 32
+  '#....................................................yyy      ', // 33
+  '#.................................................yyyy        ', // 34
+  '#bbbbbbbbbbbbbbbbbbbbbbbbbb....s.........s....byyyy           ', // 35
+  '                          b...................b               ', // 36
+  '                          b..vv...............b               ', // 37
+  '                          b.....i.............b               ', // 38
+  '                          b...................b               ', // 39
+  '                          bbbbbbbbbNNNbbbbbbbbb               ', // 40
+];
+export const SAGRADA_FAMILIA_INTERIOR: Environment = {
+  id: 'sagrada-familia-interior', name: 'Sagrada Família · Interior', spawn: { x: 36, z: 37 }, zoom: 11,
+  grid: BASILICA_PLAN.map(row => [...row].map(glyph => glyph === '.' ? '.' : '#').join('')),
+  houses: [], props: [], basilica: { plan: BASILICA_PLAN },
+  interactions: [
+    { id: 'sagrada-interior-salida', cell: { x: 36, z: 39 }, label: 'Salir por el Nacimiento', to: { environment: 'sagrada-familia', cell: { x: 73, z: 118 } } },
+    { id: 'sagrada-interior-columnas', cell: { x: 11, z: 12 }, label: 'Mirar las columnas', lines: ['Las columnas se abren en ramas, como árboles de piedra.', 'Arenisca, granito, basalto, pórfido: cuanto más peso aguantan, más dura es la piedra.'] },
+    { id: 'sagrada-interior-calidas', cell: { x: 13, z: 6 }, label: 'Mirar las vidrieras', lines: ['Rojo, naranja y amarillo. El lado de la Pasión: la tarde.', 'El suelo se tiñe de naranja, como si ardiera sin quemar.'] },
+    { id: 'sagrada-interior-frias', cell: { x: 13, z: 34 }, label: 'Mirar las vidrieras', lines: ['Azul y verde. El lado del Nacimiento: la mañana.', 'Las manchas de luz se mueven despacio por el suelo. Es el sol, que también camina.'] },
+    { id: 'sagrada-interior-medallon', cell: { x: 40, z: 26 }, label: 'Mirar el medallón', lines: ['Un óvalo de luz en el nudo de la columna, con un toro con alas: Lucas.', 'Las cuatro del crucero son de pórfido rojo, la piedra más dura. Aguantan la torre de Jesús.'] },
+    { id: 'sagrada-interior-altar', cell: { x: 40, z: 20 }, label: 'Mirar el altar', lines: ['El baldaquino: siete lados, lámparas, uvas y espigas. Debajo, Cristo, como si flotara.', 'Un cordón rojo y un vigilante: hasta el altar no se pasa.'] },
+    { id: 'sagrada-interior-organo', cell: { x: 51, z: 20 }, label: 'Mirar el órgano', lines: ['Los tubos del órgano, detrás del altar. Hoy están callados.'] },
+    { id: 'sagrada-interior-cripta', cell: { x: 52, z: 13 }, label: 'Mirar por la reja', lines: ['Por la reja se ve la cripta, abajo. Ahí está enterrado Gaudí.'] },
+    { id: 'sagrada-interior-gloria', cell: { x: 1, z: 20 }, label: 'Mirar las puertas', lines: ['Las puertas de bronce de la Gloria, con el padrenuestro en catalán.', 'Fuera aún no hay fachada, solo obras: no se abren.'] },
+    { id: 'sagrada-interior-pasion', cell: { x: 36, z: 1 }, label: 'Mirar la puerta', lines: ['La puerta de la Pasión. Cerrada: hoy se sale por donde se ha entrado.'] },
+    { id: 'sagrada-interior-visitantes', cell: { x: 35, z: 21 }, label: 'Mirar a la gente', lines: ['Todo el mundo mira hacia arriba. Yo también.'] },
+  ],
+};
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
@@ -575,6 +657,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   sants: SANTS, 'el-nucli': EL_NUCLI,
   'poble-sec': POBLE_SEC,
   'placa-espanya': PLACA_ESPANYA,
+  'sagrada-familia': SAGRADA_FAMILIA, 'sagrada-familia-interior': SAGRADA_FAMILIA_INTERIOR,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

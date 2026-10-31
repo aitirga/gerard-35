@@ -156,7 +156,7 @@ runs before rendering the ground, which then has nothing to render).
 | Espanya | L1, L3 | `placa-espanya`, Plaça d'Espanya (`docs/places/espanya.md`) | Playable |
 | Poble Sec | L3 | `poble-sec` (Carrer de Blai, Emilie's corner; the entrance in Plaça dels Ocellets) | Playable |
 | Barceloneta | L4 | `barceloneta` (the beach: Platja de Sant Miquel, L'Estel Ferit) | Playable |
-| Sagrada Família | L5 | The temple's surroundings and its inside | On the map |
+| Sagrada Família | L5 | The temple's surroundings (`sagrada-familia`) and its inside (`sagrada-familia-interior`, through the Nativity portal) | Playable |
 | El Carmel | L5 | `bunkers-carmel` (the Búnkers del Carmel at sunset) | Playable |
 
 Other changes, where the real lines meet: Catalunya (L1, L3), Urquinaona (L1, L4), Passeig de
@@ -242,6 +242,17 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   backdrop out of reach. The roundabout with Jujol's fountain dry behind the L8 works' yellow
   barriers, Las Arenas' brick drum on red steel struts, the Fira's colonnades over a salmon
   forecourt, the L1 and L3 entrance on it. Its landmarks are code (`src/landmarks/`).
+- **`sagrada-familia`**: the Sagrada Família's block from OpenStreetMap (`docs/places/sagrada.md`),
+  turned 135° so the Nativity and Plaça de Gaudí's pond face the camera: the basilica as it stands
+  in 2026 drawn by its landmark module (14 towers, the cross, Mary's star, the dark old Nativity
+  against the pale new stone, the Glory's cranes), the pond's reflection, the queue at entrance A,
+  tour groups and visitors taking the picture, Gaudí's Escoles, the Falqués lamps on Avinguda de
+  Gaudí and the L5 entrance on the Provença corner.
+- **`sagrada-familia-interior`** (not a geo zone: a hand-built scene, `src/basilica-scenery.ts`):
+  the basilica's inside through the Nativity portal, in the outside's frame and scale: the forest of
+  columns in four stones branching into the vault, the warm glass on the Passion side and the cool on
+  the Nativity side with their light pooled on the floor, the altar under its canopy, the crypt's
+  grilles and the Glory's rose and bronze doors (`docs/places/sagrada.md` § Inside).
 
 ## The TV news set
 

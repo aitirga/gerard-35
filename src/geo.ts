@@ -107,7 +107,7 @@ export interface GeoScene {
    * `kerbs` (granite kerbs along the roads, lowered at zebras) and `edge` (`city`: hazy blocks
    * beyond the map instead of wooded hills).
    * `river_m` sinks the water that many metres below the street between stone banks, `water` is its
-   * colour (a turbid river, which mirrors less sky than the pool's blue one), and `hills: false` leaves
+   * colour (a turbid river, which mirrors less sky than the pool's blue one, or a park's pond), and `hills: false` leaves
    * out the generic hills (a landmark draws the place's own, or the place has its own horizon).
    * `sea: true` draws the water as the sea with its shore (src/geo-sea.ts).
    */

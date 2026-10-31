@@ -78,8 +78,8 @@ test('cars span two cells, flat props stay walkable and props are reusable in ha
   for (const manhole of manholes) assert.equal(canWalk(manhole, NEIGHBORHOOD.grid), true);
   assert.ok(NEIGHBORHOOD.props.some(p => p.kind === 'lamp'));
   // Every environment uses the shared props, including the interior and the courtyard.
-  // (The Queen's palace is the exception: it is built from its own gum kit, src/palace-scenery.ts.)
-  for (const environment of Object.values(ENVIRONMENTS)) if (!environment.palace) assert.ok(environment.props.some(p => p.kind === 'tree'), environment.id);
+  // (The Queen's palace and the Sagrada Família's inside are the exceptions: each is built from its own kit.)
+  for (const environment of Object.values(ENVIRONMENTS)) if (!environment.palace && !environment.basilica) assert.ok(environment.props.some(p => p.kind === 'tree'), environment.id);
   assert.deepEqual(blockProps(['...', '...'], [{ kind:'tree', x:1, z:0 }]), ['.#.', '...']);
   assert.throws(() => blockProps(['..'], [{ kind:'car', x:0, z:0 }]), /outside/);
 });

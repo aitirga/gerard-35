@@ -103,6 +103,8 @@ const AIR: Partial<Record<string, Air>> = {
   barceloneta: { kinds: [{ kind: 'sand', density: 5, low: .03, high: .45 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.5, 0, -.9], turbulence: 1.2 },
   // Carrer de Blai: warm motes hanging in the still air under the terraces' bulbs.
   'poble-sec': { kinds: [{ kind: 'mote', density: 5, low: .4, high: 4 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.05, 0, .02], turbulence: .5 },
+  // The Sagrada Família inside: dust hanging high in the light from the glass.
+  'sagrada-familia-interior': { kinds: [{ kind: 'mote', density: 16, low: .3, high: 5 }], wind: [0, .02, 0], turbulence: .3 },
 };
 /** What particles need of a scene's scenery: its floors, a sunk river's water, its grid and its houses' volumes. */
 interface SceneShape {
@@ -438,7 +440,7 @@ export function createEffects(app: pc.Application) {
       particles.wind.set(...mood.wind); particles.turbulence = mood.turbulence;
       air = mood.kinds.map(kind => ({ kind, emitter: particles.emitter(kind.kind, { x: 0, y: 0, z: 0 }, { rate: 0, ambient: true, area: { x: 1, z: 1, low: kind.low, high: kind.high } }) }));
       // Weather only falls where there is a sky; a new scene starts with it already falling.
-      outdoors = !environment.plan && !environment.palace;
+      outdoors = !environment.plan && !environment.palace && !environment.basilica;
       sky.rain = wanted.rain; sky.snow = wanted.snow; fill = true;
       if (!falls) {
         const sheet = (kind: string, w: { low: number; high: number }, velocity?: Vec) => particles.emitter(kind, { x: 0, y: 0, z: 0 }, { rate: 0, ambient: true, area: { x: 1, z: 1, low: w.low, high: w.high }, velocity });

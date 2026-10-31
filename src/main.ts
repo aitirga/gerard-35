@@ -418,11 +418,11 @@ try {
       scorePlace(id);
       exploration.update(id, cell);
       jumpMenu.setPlace(id);
-      const geo = ENVIRONMENTS[id].geo;
+      const geo = ENVIRONMENTS[id].geo, basilica = !!ENVIRONMENTS[id].basilica;
       // Chapter 2's palace stands on the Rec Comtal school, not at the end of Passatge Maresme.
       const school = id === 'palacio' && story.adult;
-      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
-      document.querySelector('#location-detail')!.textContent = geo ? `Según el mapa · ${geo.attribution}` : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
+      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : basilica ? 'EIXAMPLE, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
+      document.querySelector('#location-detail')!.textContent = geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Según las fotos de 2026' : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
         : id === 'el-nucli' ? 'Carrer de Valladolid, 41 · Tienda de juegos'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
         : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
