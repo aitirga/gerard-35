@@ -113,6 +113,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   sants: { salon: [white(3800, .65), hex('#cfa463', .6, .5), hex('#7d93a6', .5, .45), hex('#ffb35c', .65, .6)], rest: white(3500, .28) },
   // El Nucli inside: tungsten pendants over green felt, the wine wall, boxes everywhere.
   'el-nucli': { salon: [white(2400, .8), hex('#3f7a55', .5, .5), hex('#8a2a2e', .45, .45), white(2600, .7)], rest: white(2500, .3) },
+  // Carrer de Blai at evening: sienna render, the terraces' amber bulbs and Montjuïc's pines.
+  'poble-sec': { salon: [hex('#c77d4f', .7, .5), white(2200, .7), hex('#4e6b3c', .55, .45), hex('#f2c27a', .65, .55)], rest: white(2500, .3) },
 };
 /** La Reina Bubbaloo's light (scenery.ts BUBBALOO): a magenta sun and a violet gloom. */
 const BUBBALOO = [hex('#db6ba8', .5, .55), hex('#9a5bc4', .4, .5), hex('#ff7fb3', .45, .5), hex('#c04a8a', .45, .6)];

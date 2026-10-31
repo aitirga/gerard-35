@@ -229,7 +229,7 @@ material, light and landmark, which the last column names.
 | Sagrada Família, inside (proposal) | `#e9e4d8` + coloured light | pale stone in coloured light | branching stone columns, stained glass | a forest of columns | new, neutral | Alegia (ΔE 5): its light is the colour |
 | Plaça d'Espanya (proposal) | `#d8ccb2` | pale limestone and water | monumental stone, brick towers | twin campaniles and a dome | new, warm | Maresme (ΔE 4): monument and water vs houses |
 | La Barceloneta | `#e6d0a2` | sand and sea | sand (`sorra`, `sorra-humida`), rusted iron (`acer-corten`) | four stacked rusted cubes | `barceloneta` cool | Casa de Gerard (ΔE 7): open sea vs a room |
-| Poble Sec (proposal) | `#b8744a` | sienna and pine green | stone steps with iron rails | the slope and its stairs | new, warm | Rec Comtal (ΔE 11): render and stairs at evening vs brick in the morning |
+| Poble Sec (built) | `#b08c58` | sienna-ochre and pine green | render bays with iron balconies (`poble-sec-bays`), Blai's slabs | the slope and its stairs | `poble-sec` warm | Búnkers (ΔE 7): dense streets with balconies and terraces vs an open hilltop |
 | Búnkers del Carmel | `#c09a5e` | dry gold grass, war concrete, golden light | board-marked concrete (`formigo-encofrat`), rock (`roca`), dry grass (`herba-seca`) | round gun pits on a bare crest above the city | `bunkers-carmel` warm, dusk sky | Sants (ΔE 5): open hill at sunset vs a shaded street |
 | Palace · entrance | `#c95a8d` | her pink | gum, wrapper paper | El Corazón Líquido | `palacio` | Palace outside (ΔE 17): the same building, inside |
 | Palace · el patio (proposal) | `#3f7d58` | court green | painted asphalt, rubber floor | the court's raised lines | new | El Nucli (ΔE 25): a painted court under the sky vs felt indoors |
@@ -532,6 +532,9 @@ Built as `barceloneta`; its refined card is in `docs/places/barceloneta.md`.
 | Text | Catalan: *Platja de la Barceloneta*, the flag board |
 
 #### Poble Sec · Carrer de Blai and the Montjuïc slope (L3, Emilie)
+
+Built (2026-10-31): the card as built, measured on screenshots, is in `docs/places/poble-sec.md`;
+this proposal is kept for the record.
 
 | | |
 | --- | --- |

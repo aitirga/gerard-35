@@ -1,0 +1,29 @@
+{
+  "id": "blai-lloses",
+  "name": "Lloses de Blai",
+  "kind": "material",
+  "size_m": [
+    1.8,
+    1.8
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "concrete_pavement",
+    "name": "Concrete Pavement",
+    "url": "https://polyhaven.com/a/concrete_pavement",
+    "author": "Charlotte Baglioni",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven concrete_pavement --id blai-lloses",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#7f7466",
+  "made": "2026-10-31"
+}

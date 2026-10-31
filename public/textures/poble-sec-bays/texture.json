@@ -1,0 +1,30 @@
+{
+  "id": "poble-sec-bays",
+  "name": "Balcons d'Elkano 61",
+  "kind": "photo",
+  "size_m": [
+    8.1,
+    6.0
+  ],
+  "source": {
+    "site": "Wikimedia Commons",
+    "name": "Elkano_61.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:Elkano_61.jpg",
+    "author": "Xavier Badia Castellà",
+    "licence": "CC BY-SA 3.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "command": "tools/textures.py photo https://commons.wikimedia.org/wiki/File:Elkano_61.jpg --id poble-sec-bays",
+  "bays": 3,
+  "storeys": 2,
+  "files": {
+    "albedo": "albedo.webp"
+  },
+  "px": [
+    1024,
+    759
+  ],
+  "mean": "#a19175",
+  "made": "2026-10-31",
+  "adjusted": "midtones lifted (gamma 0.7) and warmed (gain 1.05, 1, 0.92) so the shaded photo reads as the pale render it is under the game's evening light; the washing draped over the lower-left balcony covered with the bay beside it, so it does not repeat every two storeys and three bays"
+}

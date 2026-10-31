@@ -8,11 +8,12 @@ import CARDEDEU_MAZE_SCENE from './geo/cardedeu-laberinto.json' with { type: 'js
 import BUNKERS_CARMEL_SCENE from './geo/bunkers-carmel.json' with { type: 'json' };
 import BARCELONETA_SCENE from './geo/barceloneta.json' with { type: 'json' };
 import SANTS_SCENE from './geo/sants.json' with { type: 'json' };
+import POBLE_SEC_SCENE from './geo/poble-sec.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
   | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta'
-  | 'sants' | 'el-nucli';
+  | 'sants' | 'el-nucli' | 'poble-sec';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /**
@@ -555,6 +556,8 @@ export const BUNKERS_CARMEL = geoEnvironment('bunkers-carmel', BUNKERS_CARMEL_SC
 export const BARCELONETA = geoEnvironment('barceloneta', BARCELONETA_SCENE as GeoScene);
 /** Sants (docs/places/nucli.md): from the Plaça de Sants metro up Carrer de Riego to El Nucli on Carrer de Valladolid. */
 export const SANTS = geoEnvironment('sants', SANTS_SCENE as GeoScene);
+/** Carrer de Blai in Poble Sec, where Emilie lives, under Montjuïc (docs/places/poble-sec.md); the L3 at Plaça dels Ocellets. */
+export const POBLE_SEC = geoEnvironment('poble-sec', POBLE_SEC_SCENE as GeoScene);
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
@@ -563,6 +566,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   'bunkers-carmel': BUNKERS_CARMEL,
   barceloneta: BARCELONETA,
   sants: SANTS, 'el-nucli': EL_NUCLI,
+  'poble-sec': POBLE_SEC,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

@@ -101,6 +101,8 @@ const AIR: Partial<Record<string, Air>> = {
   'bunkers-carmel': { kinds: [{ kind: 'mote', density: 6, low: .3, high: 3 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.9, 0, .35], turbulence: 1.4 },
   // The sea breeze blows in from the water (+z) and along the shore; it lifts sand, not pollen.
   barceloneta: { kinds: [{ kind: 'sand', density: 5, low: .03, high: .45 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.5, 0, -.9], turbulence: 1.2 },
+  // Carrer de Blai: warm motes hanging in the still air under the terraces' bulbs.
+  'poble-sec': { kinds: [{ kind: 'mote', density: 5, low: .4, high: 4 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.05, 0, .02], turbulence: .5 },
 };
 /** What particles need of a scene's scenery: its floors, a sunk river's water, its grid and its houses' volumes. */
 interface SceneShape {

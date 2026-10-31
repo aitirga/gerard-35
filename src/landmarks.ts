@@ -32,9 +32,10 @@ export interface LandmarkKit {
   mesh(): MeshBuilder;
   /**
    * Adds a built mesh. `cut`: tall pieces open the see-through cut round Gerard like the buildings
-   * (their material gets the cut shader); otherwise the mesh joins the static batch.
+   * (their material gets the cut shader); `building`: pieces fixed to that building's walls or roof
+   * (a balcony, a roof hut), by its map id, open and close with its cut; otherwise the mesh joins the static batch.
    */
-  add(name: string, builder: MeshBuilder, material: pc.StandardMaterial, options?: { cut?: boolean; shadows?: boolean; parent?: pc.Entity }): pc.Entity | undefined;
+  add(name: string, builder: MeshBuilder, material: pc.StandardMaterial, options?: { cut?: boolean; building?: string; shadows?: boolean; parent?: pc.Entity }): pc.Entity | undefined;
   /** Paints a canvas texture (signs, tiles), tracked and destroyed with the scene. */
   texture(canvas: HTMLCanvasElement): pc.Texture;
 }
