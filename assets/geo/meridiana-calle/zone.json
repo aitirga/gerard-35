@@ -120,7 +120,7 @@
       "roof": "#a9a297",
       "roof_kind": "flat",
       "facade": "flats",
-      "ground": "shops",
+      "ground": "shopfronts",
       "levels": 8,
       "balcony_m": 1.0,
       "balcony": "#ebe6dc",

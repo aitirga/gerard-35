@@ -483,7 +483,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const key = `${kind}|${wall}|${trim}|${base}|${grain.wall}|${grain.base}`;
     let m = textures.get(key);
     if (m) return m;
-    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front'].includes(kind);
+    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front', 'shopfronts'].includes(kind);
     const [atlasU, atlasV] = FACADE_ATLAS[kind] ?? [1, 1];
     const w = ground ? 256 : 128 * atlasU, h = 192 * atlasV;
     const glass = '#2c3a42', wood = '#5b3d2a';
@@ -652,16 +652,16 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         // spandrel, storey after storey; a few blinds down, a few flats lit.
         paint(wall, 'wall');
         ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(0, 112, w, 4);
-        ctx.fillStyle = trim; ctx.fillRect(0, 10, w, 98);
+        ctx.fillStyle = trim; ctx.fillRect(0, 16, w, 84);
         for (const [i, x0] of [6, 68].entries()) {
-          const lit = jitter(seed + i * 5.3) > 0.82, down = jitter(seed + i * 9.1) > 0.6 ? 0.35 + jitter(seed + i) * 0.6 : 0;
-          ctx.fillStyle = lit ? '#f1c77a' : '#5f7684'; ctx.fillRect(x0, 18, 54, 82);
-          if (lit) glows.push([x0, 18, 54, 82]);
-          ctx.fillStyle = 'rgba(205,225,235,.28)'; ctx.fillRect(x0 + 3, 21, 16, 76);
-          if (down) { ctx.fillStyle = '#e8e2d2'; ctx.fillRect(x0, 18, 54, 82 * down); ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let y = 21; y < 18 + 82 * down; y += 4) ctx.fillRect(x0, y, 54, 1); }
-          ctx.fillStyle = '#c9cdcf'; ctx.fillRect(x0 + 26, 18, 3, 82);
+          const lit = jitter(seed + i * 5.3) > 0.82, down = jitter(seed + i * 9.1) > 0.6 ? 0.35 + jitter(seed + i) * 0.5 : 0;
+          ctx.fillStyle = lit ? '#f1c77a' : '#4f6572'; ctx.fillRect(x0, 22, 54, 72);
+          if (lit) glows.push([x0, 22, 54, 72]);
+          ctx.fillStyle = 'rgba(205,225,235,.28)'; ctx.fillRect(x0 + 3, 25, 16, 66);
+          if (down) { ctx.fillStyle = '#e8e2d2'; ctx.fillRect(x0, 22, 54, 72 * down); ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let y = 25; y < 22 + 72 * down; y += 4) ctx.fillRect(x0, y, 54, 1); }
+          ctx.fillStyle = '#c9cdcf'; ctx.fillRect(x0 + 26, 22, 3, 72);
         }
-        ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(0, 108, w, 3);
+        ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(0, 100, w, 3);
       } else if (kind === 'party') {
         // A bare party wall (mitgera) where a block rises over its neighbour: the brick's own grain
         // and water stains running down from the top.
@@ -702,6 +702,49 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
             const stripe = ['#3f6b4a', '#a8423a', '#2f5d8a', '#c88b2c'][(seed + i) % 4];
             for (let k = 0; k < 10; k++) { ctx.fillStyle = k % 2 ? '#f3eee2' : stripe; ctx.fillRect(x0 + k * 10, 30, 10, 20); }
           } else { ctx.fillStyle = trim; ctx.fillRect(x0, 34, 100, 16); ctx.fillStyle = '#2c3a42'; ctx.fillRect(x0 + 30, 70, 40, h - 70); glows.push([x0 + 30, 70, 40, h - 70]); }
+        }
+      } else if (kind === 'shopfronts') {
+        // The Meridiana's ground floors: shop windows in aluminium frames with the lit shop seen
+        // through the glass (a warm ceiling, shelves of goods), a teal or grey canvas awning over
+        // some, and here and there a shutter down with its tags.
+        paint(base, 'base');
+        const goods = ['#c9483c', '#e2c25a', '#4f7fa8', '#6e9a5a', '#ece6d8', '#7a6a58', '#d98a3c'];
+        for (const [i, x0] of [14, 142].entries()) {
+          const r = (k: number) => jitter(seed + i * 13 + k);
+          ctx.fillStyle = '#a3a8aa'; ctx.fillRect(x0, 46, 100, h - 46);
+          // The texture repeats every two shops, so a shutter down shows on every other one: keep it rare.
+          if (r(1) > 0.93) {
+            ctx.fillStyle = '#8f9396'; ctx.fillRect(x0 + 5, 52, 90, h - 52);
+            ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 54; y < h; y += 6) ctx.fillRect(x0 + 5, y, 90, 1.5);
+            for (let t = 0; t < 2; t++) {
+              ctx.strokeStyle = ['#2f7fc4', '#f0c234', '#ffffff', '#1d1d1d'][(seed + i + t) % 4]; ctx.lineWidth = 4; ctx.beginPath();
+              const tx = x0 + 14 + r(t + 3) * 46, ty = 96 + r(t + 5) * 60;
+              ctx.moveTo(tx, ty); ctx.bezierCurveTo(tx + 12, ty - 22, tx + 22, ty + 18, tx + 38, ty - 6); ctx.stroke();
+            }
+          } else {
+            const inside = ctx.createLinearGradient(0, 52, 0, h);
+            inside.addColorStop(0, '#f6e4c2'); inside.addColorStop(1, '#9c8466');
+            ctx.fillStyle = inside; ctx.fillRect(x0 + 5, 52, 90, h - 56);
+            glows.push([x0 + 5, 52, 90, h - 56]);
+            for (let s = 0; s < 3; s++) {
+              const y = 88 + s * 28;
+              for (let k = 0; k < 9; k++) {
+                const tall = 10 + r(s * 9 + k + 7) * 8;
+                ctx.fillStyle = goods[Math.floor(r(s * 9 + k + 40) * goods.length)]; ctx.fillRect(x0 + 8 + k * 10, y + 18 - tall, 8, tall);
+              }
+              ctx.fillStyle = 'rgba(60,50,40,.55)'; ctx.fillRect(x0 + 5, y + 18, 90, 3);
+            }
+            // The glass: a cool sheen, one bright streak of sky and the door's frame.
+            ctx.fillStyle = 'rgba(110,140,155,.3)'; ctx.fillRect(x0 + 5, 52, 90, h - 56);
+            ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.beginPath();
+            ctx.moveTo(x0 + 20, 52); ctx.lineTo(x0 + 44, 52); ctx.lineTo(x0 + 18, h - 4); ctx.lineTo(x0 + 5, h - 4); ctx.lineTo(x0 + 5, 90); ctx.fill();
+            ctx.fillStyle = '#a3a8aa'; ctx.fillRect(x0 + 60, 52, 4, h - 56); ctx.fillRect(x0 + 5, 76, 90, 3);
+          }
+          if (r(2) > 0.45) {
+            // A plain canvas awning, its scalloped hem in shadow.
+            ctx.fillStyle = ['#3f8f84', '#5d6a70', '#2f6e66'][Math.floor(r(4) * 3)]; ctx.fillRect(x0 - 2, 28, 104, 20);
+            ctx.fillStyle = 'rgba(0,0,0,.25)'; for (let k = 0; k < 8; k++) { ctx.beginPath(); ctx.arc(x0 + 4 + k * 13, 48, 6, 0, Math.PI); ctx.fill(); }
+          } else { ctx.fillStyle = trim; ctx.fillRect(x0, 34, 100, 12); }
         }
       } else if (kind === 'ashlar' || kind === 'ashlar-windows') {
         stones(wall, 8, 'wall');
@@ -1338,9 +1381,10 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   // ------------------------------------------------------------ surroundings
   if (look.edge === 'city') {
     // The city goes on past the map's far sides: rows of plain blocks with their storeys of windows,
-    // pale with distance, on a skirt of street; lower than the real ones, so they frame the place
-    // without stealing it.
-    const skirt = new MeshBuilder(), far = new MeshBuilder(), tops = new MeshBuilder();
+    // in the place's render and brick dulled by distance, on a skirt of street; lower than the real
+    // ones, so they frame the place without stealing it.
+    const skirt = new MeshBuilder(), tops = new MeshBuilder();
+    const tints = ['#b9b2a3', '#ad9c86', '#a9a7a0'], far = tints.map(() => new MeshBuilder());
     for (const ring of [[[-70, -70], [W + 30, -70], [W + 30, -0.5], [-70, -0.5]], [[-70, -0.5], [-0.5, -0.5], [-0.5, D + 30], [-70, D + 30]]] as GeoPoint[][]) {
       skirt.quad(P(ring[0], -0.02), P(ring[1], -0.02), P(ring[2], -0.02), P(ring[3], -0.02), [0, 1, 0], [0, 0], [0, 0], [0, 0], [0, 0]);
     }
@@ -1350,9 +1394,10 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         const w = 9 + jitter(k * 3 + 1) * 10, d = 8 + jitter(k * 3 + 2) * 6, h = Math.round((3 + jitter(k * 3 + 3) * 2.5) * (1 + row * 0.15)) * scene.storey;
         const [cx, cz] = place(along + w / 2, row, w, d);
         const ring: GeoPoint[] = [[cx - w / 2, cz - d / 2], [cx + w / 2, cz - d / 2], [cx + w / 2, cz + d / 2], [cx - w / 2, cz + d / 2]];
+        const walls = far[Math.floor(jitter(k * 3 + 5) * far.length)];
         ring.forEach((p, i) => {
           const q = ring[(i + 1) % 4], l = Math.hypot(q[0] - p[0], q[1] - p[1]) / BAY;
-          far.quad(P(p, 0), P(q, 0), P(q, h), P(p, h), [(p[0] + q[0]) / 2 - cx, 0, (p[1] + q[1]) / 2 - cz], [0, 0], [l, 0], [l, h / scene.storey], [0, h / scene.storey]);
+          walls.quad(P(p, 0), P(q, 0), P(q, h), P(p, h), [(p[0] + q[0]) / 2 - cx, 0, (p[1] + q[1]) / 2 - cz], [0, 0], [l, 0], [l, h / scene.storey], [0, h / scene.storey]);
         });
         tops.quad(P(ring[0], h), P(ring[1], h), P(ring[2], h), P(ring[3], h), [0, 1, 0], [0, 0], [0, 0], [0, 0], [0, 0]);
         along += w + 3 + jitter(k * 3 + 4) * 4;
@@ -1361,12 +1406,12 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     blocks(-40, W + 20, (along, row, _w, d) => [along, -4 - d / 2 - row * 17]);
     blocks(-5, D + 15, (along, row, w) => [-4 - w / 2 - row * 17, along]);
     add('Calles lejanas', skirt, mat('Calles lejanas', '#adaca5', 0.02), root, true, false);
-    add('Ciudad lejana', far, textured('Ciudad lejana', canvas(32, 48, ctx => {
-      ctx.fillStyle = '#a9aaa4'; ctx.fillRect(0, 0, 32, 48);
-      ctx.fillStyle = '#93979a'; ctx.fillRect(6, 10, 20, 22);
-      ctx.fillStyle = '#b4b3ac'; ctx.fillRect(4, 33, 24, 3);
-    }), 0.05), root, true, false);
-    add('Terrados lejanos', tops, mat('Terrados lejanos', '#b0afa8', 0.05), root, true, false);
+    tints.forEach((tint, i) => add('Ciudad lejana', far[i], textured(`Ciudad lejana ${tint}`, canvas(32, 48, ctx => {
+      ctx.fillStyle = tint; ctx.fillRect(0, 0, 32, 48);
+      ctx.fillStyle = '#7f8689'; ctx.fillRect(6, 10, 20, 22);
+      ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(4, 33, 24, 3);
+    }), 0.05), root, true, false));
+    add('Terrados lejanos', tops, mat('Terrados lejanos', '#a19e96', 0.05), root, true, false);
   } else {
     // Wooded hills close every side but the camera's, as the valley does around the town.
     const hill = [mat('Monte', '#4e6b45', 0.05), mat('Monte lejano', '#5f7c55', 0.05), mat('Monte sombra', '#41593b', 0.05)];
