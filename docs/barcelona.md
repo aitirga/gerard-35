@@ -156,7 +156,7 @@ runs before rendering the ground, which then has nothing to render).
 | Espanya | L1, L3 | Plaça d'Espanya | On the map |
 | Poble Sec | L3 | Poble Sec | On the map |
 | Barceloneta | L4 | The beach | On the map |
-| Sagrada Família | L5 | The temple's surroundings and its inside | On the map |
+| Sagrada Família | L5 | The temple's surroundings (`sagrada-familia`) and its inside | Playable outside |
 | El Carmel | L5 | The Búnkers del Carmel | On the map |
 
 Other changes, where the real lines meet: Catalunya (L1, L3), Urquinaona (L1, L4), Passeig de
@@ -205,6 +205,12 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
   the camera, blocks of flats, the L1 entrance and the castle on the roof.
+- **`sagrada-familia`**: the Sagrada Família's block from OpenStreetMap (`docs/places/sagrada.md`),
+  turned 135° so the Nativity and Plaça de Gaudí's pond face the camera: the basilica as it stands
+  in 2026 drawn by its landmark module (14 towers, the cross, Mary's star, the dark old Nativity
+  against the pale new stone, the Glory's cranes), the pond's reflection, the queue at entrance A,
+  tour groups and visitors taking the picture, Gaudí's Escoles, the Falqués lamps on Avinguda de
+  Gaudí and the L5 entrance on the Provença corner.
 
 ## The TV news set
 

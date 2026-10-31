@@ -1,16 +1,17 @@
 # Sagrada Família · the surroundings and the inside
 
-Status: research and draft (2026-10-30). Nothing is wired into the game yet: the zone draft lives in
-`assets/geo/sagrada-familia/`, the inside is planned below, and the build waits for the shared
-foundation (real materials in `tools/textures.py`, landmark modules in `src/landmarks/`,
-`docs/visual-style.md`).
+Status (2026-10-31): **the outside is built** (`sagrada-familia`, part 1): reachable from the
+development picker and from the L5, with the basilica as a landmark module, the pond and its
+reflection, the crowds, the Escoles' roof and the Falqués lamps. **The inside is planned** below and
+waits for part 2 (`sagrada-familia-interior`); the Nativity portal is a diegetic gate until then
+(see [Doors](#doors-between-the-two)).
 
 Two places for a later mission (the story does not use them yet):
 
 | Id | What | How it is reached |
 | --- | --- | --- |
-| `sagrada-familia` | The basilica's block and its two squares: the Nativity facade over the pond of Plaça de Gaudí, the Passion facade on Plaça de la Sagrada Família, the start of Avinguda de Gaudí, the queues and the cranes | Metro: the station `sagrada-familia` (L5 on the network map today; the real station is also L2, which the map adds when this place exists, `docs/barcelona.md`) |
-| `sagrada-familia-interior` | The inside: the forest of columns, the stained glass, the coloured light on the floor, the altar under its canopy | The Nativity portal, in and back out |
+| `sagrada-familia` | The basilica's block and its two squares: the Nativity facade over the pond of Plaça de Gaudí, the Passion side on Plaça de la Sagrada Família, the start of Avinguda de Gaudí, the queues, the visitors and the cranes | Metro: the station `sagrada-familia` (L5 on the network map; the real station is also L2, which the map adds when it has the line, `docs/barcelona.md`) |
+| `sagrada-familia-interior` | The inside: the forest of columns, the stained glass, the coloured light on the floor, the altar under its canopy | The Nativity portal, in and back out (part 2) |
 
 ## The real place in 2026
 
@@ -106,6 +107,9 @@ has the four viewpoints); nothing from them is saved or shipped.
 | Props kit | Grey crowd barriers and the queue, tour groups behind a raised umbrella, the entrance signs, souvenir kiosks and terraces, stone pines and palms, reeds in the pond, tower cranes, scaffolding and hoarding on the Glory, Falqués lamps, the L2/L5 entrance | Rows of wooden chairs, the canopy, the organ, *silencio* signs, rope barriers, the Evangelists' medallions, visitors looking up |
 | Ambient sound | Crowd murmur in many languages, a guide's voice, pigeons, a crane's beep and a distant drill | A long reverberant hush, footsteps, a whispered *silencio*, an organ note now and then |
 | Only here | The pond reflects the Nativity and its spires, upside down and trembling | The floor is painted by moving pools of coloured light |
+| Look (`LOOKS`) | `sagrada-familia`: a warm Barcelona afternoon (temperature .03), warm highlights and cool blue shade, a breath of haze for the height | Part 2 (the glass brings the colour) |
+| Air | Pollen (the default outside) | Motes in the light, taking its colour |
+| World text | Street names in Catalan on the ground (PLAÇA DE GAUDÍ, CARRER DE LA MARINA, CARRER DE SARDENYA, AVINGUDA DE GAUDÍ), the visitors' entrance letter A, the kiosk's RECORDS | Few quiet signs, Catalan first |
 
 How it stands apart from the other places: the Meridiana is an avenue of beige flats, plane trees
 and red-white works barriers; Trinitat Vella is brick and render round a school; Cardedeu is low
@@ -117,84 +121,149 @@ age, and the water is a still, green park pond, not a fountain. The palace's pin
 
 A real-data zone like the Meridiana: OpenStreetMap for the blocks, streets, squares, pond, trees,
 lamps, benches and shops (`osm.json`, 3202 features, fetched from Overpass on 2026-10-30), styled in
-`zone.json`.
+`zone.json` and built with `just geo-build sagrada-familia`.
 
 - **Frame**: anchor 41.4036, 2.1744 (the crossing), turned **135°** with `bounds_turned`, so the
   Eixample grid runs along the game's axes: Carrer de la Marina along x, the Nativity facing +z
   (the camera's side) and the apse facing +x. Both seen faces are the ones a local recognises from
-  Plaça de Gaudí and from Avinguda de Gaudí, which points straight at the camera. The Glory
-  (Mallorca, a construction front) is on the left; the Passion (Sardenya) is at the back and is
-  reached by walking round the block.
-- **Bounds** (turned frame, metres): x −110 (the flats across Mallorca) to 130 (the flats across
-  Provença and the first 80 m of Avinguda de Gaudí); z −135 (half of Plaça de la Sagrada Família)
-  to 182 (the far end of Plaça de Gaudí, before Lepant's houses). 1.5 m cells: **160 × 211**,
-  90 buildings, about 19 700 walkable cells. Zoom 14 (wider than the Meridiana's 11.5, for the
-  height).
-- **Streets** (centre lines in the turned frame): Marina z ≈ 72 (pedestrian in front of the
-  Nativity), Sardenya z ≈ −80, Mallorca x ≈ −69, Provença x ≈ 64 (pedestrian along the apse).
-  Avinguda de Gaudí leaves the Marina/Provença corner at (64, 71) towards +x +z.
-- **The basilica's block**: the church footprint from OSM (x −52…54, z −55…36, the cloister
-  included), the Escoles (−35, −58), the official shop (−33, 49) and site huts. In the draft the
-  church is an ordinary building 15 storeys high so the preview reads; the landmark module replaces
-  it.
-- **Spawn and station**: at the Provença / Avinguda Gaudí entrance (76, 57), on the corner where
-  the avenue starts, so the party comes up with the apse on one side and the Nativity ahead.
-  `station-sagrada-familia` with its three-cell stair, like Fabra i Puig.
-- **Places** (Spanish, Gerard's voice): the pond (*Mirar el estanque*), the Nativity (*Mirar la
-  fachada*), the Jesus tower (*Mirar arriba*), the queue (*Mirar la cola*), the Passion (*Mirar la
-  fachada*), the Glory works (*Mirar las obras*), the Escoles, the Falqués lamp. The Nativity portal
-  `sagrada-familia-portal` (*Entrar en la basílica*) has neither lines nor a door: the story answers
-  it, so it can be a diegetic gate until the mission opens it (a guard at the barrier: the tickets
-  for today sold out weeks ago) and the door to the inside afterwards.
+  Plaça de Gaudí and from Avinguda de Gaudí. The Glory (Mallorca, a construction front) is on the
+  left; the Passion (Sardenya) faces away from the camera and is reached by walking round the
+  block: from the game's camera its towers show, its sculpted front never does.
+- **Bounds** (turned frame, metres): x −110 to 130, z −135 to 182. 1.5 m cells: **160 × 211**,
+  90 buildings, 18 579 walkable cells reachable from the spawn. Zoom 14 (wider than the
+  Meridiana's 11.5).
+- **Streets** (centre lines): Marina z ≈ 72 (pedestrian in front of the Nativity), Sardenya
+  z ≈ −80, Mallorca x ≈ −69, Provença x ≈ 64. Avinguda de Gaudí leaves the Marina/Provença
+  corner at (64, 71) towards +x +z, straight down the screen.
+- **Surfaces**: Barcelona's flower panot (`panot-flor`) on the ground, the squares' granite tinted
+  a little darker (`#9b968b`) so the white stone of the steps and the people stand out, *sauló*
+  paths, grass, and the pond's own murky olive water (`look.water` `#4a5532`, ripples, less sky).
+  `look.edge: "city"` asks for the Meridiana stream's city edge instead of wooded hills once both
+  are merged (until then the generic hills stay).
+- **Trees**: the map's trees, three in four kept on the streets as plane trees; in Plaça de Gaudí
+  (`relation/7708297`) half of them kept as stone pines, palms and a few planes on bare ground; in
+  Plaça de la Sagrada Família (`way/23431084`) a little fewer, mostly planes (`osm_props.tree.within`,
+  a small addition to `tools/geo.py`).
+- **The basilica's block**: the church's OSM outline (cloister included) is a low `temple` block
+  under the landmark; the landmark is **solid** over a 98 × 84 m rectangle (x −47…51, z −45…39), so
+  nobody walks into the facade or the portal's recess. The Escoles (`way/132513667`) are brick with
+  their wavy roof; the ticket and site pavilions are low grey boxes.
+- **Spawn and station**: at the Provença / Avinguda Gaudí entrance (79, 66), next to the metro
+  totem at (75.5, 57.5) and its three-cell stair (`station-sagrada-familia`, like Fabra i Puig). The
+  totem's plate says L5 (it shows one line).
+- **Places** (Spanish, Gerard's voice; cells in the built grid):
+
+| Id | Label | Cell | What Gerard says (short) |
+| --- | --- | --- | --- |
+| `station-sagrada-familia` | Bajar al metro | (125, 129) | The story answers it: the L5 |
+| `sagrada-familia-portal` | Entrar en la basílica | (73, 119) | The gate: a guard checks tickets at the barrier, today's sold out weeks ago |
+| `sagrada-familia-estany` | Mirar el estanque | (73, 150) | The facade upside down in the water; everyone takes the same picture |
+| `sagrada-familia-naixement` | Mirar la fachada | (58, 119) | Dark stone that seems to melt, the green cypress full of white doves |
+| `sagrada-familia-torre` | Mirar arriba | (93, 121) | The Tower of Jesus with its white cross since February, 172.5 m, half a metre under Montjuïc |
+| `sagrada-familia-cola` | Mirar la cola | (56, 125) | A queue round the corner; nobody looks at their phone, they all look up |
+| `sagrada-familia-passio` | Mirar la fachada | (73, 40) | Smooth stone, angular figures, columns leaning like bones, IESUS NAZARENUS REX IUDAEORUM |
+| `sagrada-familia-gloria` | Mirar las obras | (25, 83) | The main facade is still scaffolding and a printed sheet; there have always been cranes |
+| `sagrada-familia-escoles` | Mirar las escuelas | (41, 46) | The roof waves like a sheet hung out to dry |
+| `sagrada-familia-farola` | Mirar la farola | (139, 155) | Everyone thinks it is Gaudí's; it is Pere Falqués' |
+
 - **Labels**: PLAÇA DE GAUDÍ, CARRER DE LA MARINA, CARRER DE SARDENYA, AVINGUDA DE GAUDÍ.
-- **Anchors** for the landmark: `basilica` (the crossing), `naixement`, `passio`, `gloria`, `absis`.
+- **Anchors** for the story's camera (`game.look(anchor)`): `basilica` (the crossing, 70 m up: the
+  towers), `naixement` (24 m up: the portals and the cypress), `passio`, `gloria`, `absis`.
 
 ```
-            Plaça de la Sagrada Família (gardens, playground)          −z, far
+            Plaça de la Sagrada Família (gardens, visitors looking up)    −z, far
   ──────────────────────── Carrer de Sardenya ─────────────────────────
   Mallorca  │ Escoles   [ Passion facade ]                 │ Provença
             │                                              │
   Glory  ◄──┤   nave ───── crossing (Jesus) ───── apse ►   │   flats
   works     │                                              │
             │ shop      [ Nativity facade ]  portal        │ ● metro (spawn)
-  ──────────────────────── Carrer de la Marina (pedestrian, queues) ── ╲
-            │        Plaça de Gaudí: pines, the pond        │  Avinguda de Gaudí
+  ──────────── Carrer de la Marina (pedestrian: queue A, visitors) ── ╲
+            │        Plaça de Gaudí: pines, palms, the pond  │  Avinguda de Gaudí
             │                                               │    ╲  (towards the camera)
                                                                          +z, near
 ```
 
-The preview (`just geo-build sagrada-familia` → `output/geo/sagrada-familia/preview.png`) shows the
-layout reads: the pond centred in front of the Nativity, the four streets, the diagonal avenue.
+### Landmarks (`landmarks` in zone.json, code in `src/landmarks/`)
 
-## The landmark (`src/landmarks/sagrada-familia.ts`, after the foundation)
+| Kind | Where | What |
+| --- | --- | --- |
+| `sagrada-familia` | `basilica`, the crossing | The basilica in 2026 (below) |
+| `pond` | `estany`, Plaça de Gaudí | Reeds and rocks round the map's outline, two duck rafts, and the reflection |
+| `crowd` | 9 of them | The queue at entrance A with its guard and sign, four tour groups behind a raised umbrella, and visitors spread out looking one way, some holding a phone up: in front of the Nativity, on Marina, across the pond (the postcard) and in front of the Passion |
+| `falques-lamp` | Two on Avinguda de Gaudí | Pere Falqués' lamp: a stone pedestal, the oxide-red iron spire and two tiers of white globes |
+| `escoles` | Over the Escoles' building | The wavy thin-brick roof and the wall that rises to its eaves |
+| `kiosk` | `quiosc-records`, Marina | A souvenir kiosk (RECORDS) |
 
-Built in code, recognisable from the diorama camera, not a sculpture-by-sculpture model.
+**The crowd** is one mesh per crowd, coloured from a painted palette (one texel per colour), so a
+square full of people costs one draw call, not one per colour: the old build with one primitive per
+body part and a material per colour cost about 60 draw calls in front of the Nativity alone.
 
-- **Heights stay real** (they are the point): Jesus 172.5 m with the cross, Mary 138 m with the
-  star, Evangelists 135 m, Passion 107-112 m, Nativity 98-107 m, nave roof roughly 60 m (to check
-  against a section). In the follow camera the portals and the base of the towers fill the frame;
-  the overview shows the whole cluster. If the overview cannot frame it, scale only the spires above the nave (not the
-  footprint) and say so.
-- **Towers from OSM**: one per `building:part`, at its centroid in the turned frame: Nativity
-  Bernabeu (−13, 30) 98 m, Simó (−5, 29) 107, Judes Tadeu (9, 29) 107, Maties (16, 29) 98; Passion
-  Felip (−11, −39) 107, Tomàs (−4, −39) 112, Bartomeu (9, −40) 112, Jaume (16, −40) 107;
-  Evangelists Joan (−8, 6), Lluc (12, 6), Mateu (−8, −15), Marc (13, −14) 125 (135 with figures);
-  Mary (25, −4) 123 (138 with the star); Jesus (2, −3) 170 (172.5).
-- **Shapes**: the bell towers are lathed parabolic cones (round section, tapering, a slight bulge),
-  then the mitre: a faceted cap and the mosaic finial (a ball of white spheres round a red and gold
-  cross). The high towers are faceted cones with a lattice of triangular openings and a white
-  figure, cross or star on top. Nave and apse: a long block with a stepped roof, pale gabled
-  windows with fruit pinnacles along the sides, the apse a ring of pointed pinnacles. Nativity: a
-  wide, deep portal block with three pointed portals, the dripping texture and the green cypress.
-  Passion: six inclined columns and the white pediment with its letters. Glory: a flat wall with
-  scaffolding, a hoarding and two tower cranes.
-- **Materials** (few, shared): old stone, new stone, high-tower stone (with the lattice openings
-  drawn into the texture, not cut in geometry), mosaic, white (figures, cross, Passion pediment),
-  emissive glass (the star and the windows at night), crane yellow. All static parts merged by
-  material: about ten draw calls.
-- **Nothing hides Gerard**: the same dithered see-through hole as the geo buildings when he walks
-  behind it (the Passion square and the Glory side), and the cranes' booms high enough to never
-  cut him.
+**The reflection**: the camera looks from the south-east of the grid, so anything mirrored in water
+hangs straight down the screen, along +x +z. The pond's reflection is painted in the screen's frame
+(its top on the far shore): the dark old front with four bell towers tipped in red, the pale high
+towers longer and fainter behind them with the white cross at the end of the longest, the pines on
+the shore, blurred, every row shaken sideways like ripples, glints of sky, faded towards the near
+shore. It is a painting, not a mirror: seen from this camera the real pond would reflect the trees
+on its far side, but the postcard is the place's identity, and it reads as such in the overview.
+
+## The landmark (`src/landmarks/sagrada-familia.ts`)
+
+Built in code, recognisable from the diorama camera, not a sculpture-by-sculpture model. The pivot
+is the crossing under the Tower of Jesus; +z the Nativity, +x the apse, −x the Glory, −z the Passion.
+
+- **Heights**: real up to the nave's roof (40 m), the spires above it pressed to 70 % of their real
+  rise, so the follow camera never clips the top of the Tower of Jesus when Gerard stands behind the
+  basilica, and the overview frames the cross: Jesus 172.5 m → 133 m, Evangelists 135 m → 107 m,
+  Nativity 98–107 m → 81–87 m. The ratios between the towers stay.
+- **Towers from OSM**: the four of the Nativity and the four of the Passion as slotted parabolic
+  shafts (a painted band of tall slots wrapping them) with mosaic mitres crowned by a white ball and
+  a red cross tipped with white balls; the four Evangelists, Mary's and Jesus' as faceted cones in
+  pale stone covered in a lattice of triangular openings (painted, 7 m a tile, small openings in
+  wide ribs so they read pale from far away), with the Evangelists' white winged figures, Mary's
+  twelve-pointed glass star (lit) and Jesus' white three-dimensional cross.
+- **The Nativity**: one deep block of `pedra-naixement` (Poly Haven `rock_06`, 3.5 m a tile) with
+  three pointed portals on three broad steps of newer stone, about eighty lumps of sculpture,
+  sculpted columns between the doors, paler figures, stalactites under every arch, a ragged crest
+  of small pinnacles and the green cypress with its white doves.
+- **Nave and transept**: pale new stone (`carreu` tinted `#c9bfab`), five aisles with the central
+  nave rising above, a gable over every 7.5 m bay crowned by a basket of fruit in mosaic, a rose
+  window and two lancets under it, and the printed sheet of the facade to come on the works' fence.
+- **The apse** (Gaudí's first work above the crypt, in `pedra-montjuic`, Poly Haven
+  `old_sandstone_02`): a half ring of seven chapels between buttresses, each with two dark lancets and
+  a slim pinnacle, smaller pinnacles between them; behind, the new apse in pale stone with six long
+  clerestory windows, a ring of pinnacles tipped with mosaic and a cone of roof that Mary's tower
+  stands in.
+- **The Passion**: six leaning bone columns under a white pediment and its cross, the four slotted
+  towers in paler stone (seen from the camera as towers only).
+- **The Glory**: scaffolding sheets over the nave's end and two yellow tower cranes (alpha-tested
+  lattice), their booms high above everything.
+- **Materials**: 17 meshes, one per material (old stone, Montjuïc stone, new stone, the two bell
+  tower paintings, the lattice, mosaic, white, red, dark, glass, green, star, crane lattice,
+  counterweights, scaffolding, the printed sheet), all with the see-through cut round Gerard like a
+  building.
+
+### Draw calls (debug build, 1440 × 900, `?stats`)
+
+| Where | Total | The Meridiana in the same build |
+| --- | --- | --- |
+| In front of the Nativity | about 1 300–1 500 | 2 270 total, 868 forward |
+| By the pond (the park's trees) | about 2 500 (820 forward, the rest shadows) | |
+| Overview (R) | about 10 700 | about 10 000 |
+
+## Doors between the two
+
+The interior does not exist yet, so `sagrada-familia-portal` is a place with lines: the guard at
+the barrier checks tickets and today's sold out weeks ago (a gate in the world's own words). Part 2
+turns it into the door, or lets the story redirect it (`story.gate` / `story.redirect`) while the
+mission is closed:
+
+| From | Place / door | To |
+| --- | --- | --- |
+| Outside | `sagrada-familia-portal`, cell **(73, 119)** (x 0 m, z 44 m, on the steps of the Portal of Charity) | `{ environment: 'sagrada-familia-interior', cell: [36, 40] }`: just inside the Nativity door `N` of the plan below (row 41, columns 35–37) |
+| Inside | The Nativity door `N` | `{ environment: 'sagrada-familia', cell: [73, 119] }`: back on the portal's steps, facing the queue |
+
+Both places share the frame (the Nativity towards the camera), so Gerard keeps his bearings.
 
 ## Inside: the plan (`sagrada-familia-interior`, hand-authored)
 
@@ -279,71 +348,59 @@ G.........................................^^^^...............b  22
 - **Gates**: the door is the only way in or out; the presbytery's rope and a guard keep the altar
   apart until the mission says otherwise.
 
-## Texture candidates
+## Textures
 
-All through `tools/textures.py` once it lands (`fetch ambientcg|polyhaven`, `photo`, `panot`):
-webp, at most 1024 px (2048 only for the Nativity portal), under about 400 KB each.
+Outside, as built. All through `tools/textures.py`, credits in each `public/textures/<id>/texture.json`:
+
+| Use | Texture | Source | Licence |
+| --- | --- | --- | --- |
+| Nativity stone, carved and weathered | `pedra-naixement` (3.5 m a tile, tinted `#8c7f6e`) | Poly Haven `rock_06`, Rob Tuytel | CC0 |
+| The apse's old Montjuïc ashlar | `pedra-montjuic` (1.53 m, tinted `#8e8170`) | Poly Haven `old_sandstone_02`, Dimitrios Savva | CC0 |
+| New pale stone: nave, transept, apse above, steps | `carreu` (shared) | Poly Haven `sandstone_blocks_08` | CC0 |
+| Ground, squares, paths, lawns | `panot-flor`, `granit`, `saulo`, `gespa` (shared) | Own panot drawing; Poly Haven | CC0 |
+| The Escoles' walls and roof | `mao`, `rajola` (shared) | Poly Haven | CC0 |
+| Falqués lamp's pedestal | `formigo` (shared) | Poly Haven `granular_concrete` | CC0 |
+| Bell towers' slots, the high towers' lattice, trencadís, crane lattice, scaffolding, the facade's drawing, the pond's reflection, the crowds' palette | Painted on canvases in the landmark modules | Own procedural painting | — |
+
+No photo facade and no generated image: every surface outside has a real or procedural source.
+For the inside (part 2), the candidates stay:
 
 | Use | Source | Asset or file | Author | Licence |
 | --- | --- | --- | --- | --- |
-| Nativity stone (old, tinted dark ochre, soot in the hollows) | Poly Haven | `old_sandstone_02` | Poly Haven | CC0 |
-| Nativity stone, alternative grain | ambientCG | `Concrete012` (old church sandstone plaster) | ambientCG | CC0 |
-| New pale ashlar (nave, apse, high towers) | Poly Haven | `large_sandstone_blocks` | Poly Haven | CC0 |
-| New ashlar, alternative | ambientCG | `Bricks084`, `Bricks008` | ambientCG | CC0 |
-| High towers' triangular lattice | Own procedural painting over the ashlar grain | — | — | own work |
-| Mosaic mitres and finials | Own procedural trencadís (red, gold, white) | — | — | own work |
-| Nativity portal (signature facade, rectified, 2048) | Commons | [Sagrada Família Nativity Façade from Ground, Barcelona, 2023.jpg](https://commons.wikimedia.org/wiki/File:Sagrada_Fam%C3%ADlia_Nativity_Fa%C3%A7ade_from_Ground,_Barcelona,_2023.jpg) (strong upward perspective: check it rectifies) | Julian Lupyan | CC0 |
-| Nave's pale side wall (gables, rose windows) | Commons | [Sagrada Familia back side.jpg](https://commons.wikimedia.org/wiki/File:Sagrada_Familia_back_side.jpg) (left half) | Blablabalooo | CC BY-SA 4.0 |
-| Passion pediment | Own drawing (bone columns and the letters, crisper than a photo); reference [Sagrada Familia front side.jpg](https://commons.wikimedia.org/wiki/File:Sagrada_Familia_front_side.jpg) | — | — | own work |
-| Flats facing Plaça de la Sagrada Família | Commons | [Plaça Sagrada Família, house 1 to 7 Barcelona, Spain 1.jpg](https://commons.wikimedia.org/wiki/File:Pla%C3%A7a_Sagrada_Fam%C3%ADlia,_house_1_to_7_Barcelona,_Spain_1.jpg) | Reda Kerbush | CC BY-SA 4.0 |
-| Eixample flats round the block | The foundation's shared Barcelona bay library (Meridiana stream) | — | — | — |
-| Sidewalks | `tools/textures.py panot square` | — | own work | — |
-| Pedestrian Marina, granite slabs | Poly Haven | `granite_tile_04` | Poly Haven | CC0 |
-| *Sauló* in both squares | Poly Haven | `park_sand` (or `park_dirt` under trees) | Poly Haven | CC0 |
-| *Sauló*, alternative | ambientCG | `Ground109`, `Gravel023` | ambientCG | CC0 |
-| Pond | The river's water tinted jade, plus a planar reflection | — | own work | — |
 | Inside floor | ambientCG | `Tiles143` (beige limestone slabs) | ambientCG | CC0 |
 | Inside white stone (walls, branches, umbrellas) | Poly Haven | `large_sandstone_blocks` tinted bone-white | Poly Haven | CC0 |
 | Granite and basalt columns | Poly Haven | `granite_tile_03` (speckled; basalt tinted dark) | Poly Haven | CC0 |
-| Porphyry columns | ambientCG | `Granite004A` or `Travertine010` tinted red-brown (pick the one with crystals) | ambientCG | CC0 |
+| Porphyry columns | ambientCG | `Granite004A` or `Travertine010` tinted red-brown | ambientCG | CC0 |
 | Stained glass | Own procedural (abstract leaded cells in Vila-Grau's two palettes), emissive | — | — | own work |
-
-No AI-generated images are needed here: every surface has a real or procedural source.
 
 ## Build plan
 
-1. **Rebase** on the foundation; read `docs/visual-style.md`, the landmark registry and
-   `tools/textures.py`.
-2. **Zone**: refresh `zone.json` to the foundation's fields (materials, landmark), `just geo-build
-   sagrada-familia`, add `sagrada-familia` to `EnvironmentId` and `ENVIRONMENTS`
-   (`geoEnvironment`), `PLACES` in `src/jump-menu.ts` (group Barcelona), `STATION_PLACES`
-   (`'sagrada-familia': { environment: 'sagrada-familia' }`); the totem shows L2 and L5. If the L2
-   joins the map, its stations and colour go in `city.json` (the foundation's lines).
-3. **Textures**: fetch the CC0 materials above, rectify the two Commons photos, write
-   `texture.json` credits.
-4. **Landmark**: `src/landmarks/sagrada-familia.ts` at the `basilica` anchor: footprint massing,
-   14 towers from the OSM parts, the four facades' signature pieces, cranes and scaffolding,
-   see-through hole, merged by material. Night: the cross and the star emissive.
-5. **Square and street dressing**: stone pines and palms in Plaça de Gaudí (a new `pine` tree
-   species if the kit lacks one), reeds and rocks in the pond, the pond's reflection, queue
-   barriers on Marina, tour groups (a `crowd` prop: people standing, one holding an umbrella up),
-   Falqués lamps on Avinguda de Gaudí (a `lamp` style), the Glory hoarding.
-6. **Inside**: the plan above in `src/environments.ts` with its own scenery module (columns,
-   umbrellas, glass walls, light pools, canopy), the Nativity door both ways, `PLACES` entry
-   (`sagrada-familia-interior`, *solo depuración* until the mission opens it).
-7. **Checks**: `just typecheck`, `npm test`, the tests on the new grids; a screenshot scenario
-   `scripts/screenshots/sagrada.json` (arrival at the metro, the pond view, the Passion square,
-   the overview with the spires, inside near the door, under the crossing, at the altar);
-   `just screenshots sagrada --gpu`, looked at and iterated.
-8. **Report**: the section `31-sagrada.html` with before/after and the screenshots.
+Part 1, the outside (done): the zone and its wiring (`EnvironmentId`, `ENVIRONMENTS`, `LOOKS`,
+`PLACE_LOOKS` in `src/home-lights.ts`, `PLACES`, `STATION_PLACES`), the landmark modules
+(`sagrada-familia`, `pond`, `crowd`, `falques-lamp`, `escoles`), two textures, the screenshot
+scenario `sagrada-familia` (`just screenshots sagrada-familia --gpu`: the arrival, the camera turned
+to the Nativity and to the towers, the portal's gate, the pond, the Passion side, the Escoles, the
+Glory, Avinguda de Gaudí, the overview with the spires and the pond's reflection, the draw calls).
+
+Part 2, the inside: the plan above in `src/environments.ts` with its own scenery module (columns,
+umbrellas, glass walls, light pools, canopy), its sky and look, the doors of [Doors](#doors-between-the-two),
+its `PLACES` entry and screenshots (inside near the door, under the crossing, at the altar).
 
 ## Approximate and open
 
 - Not walked in person: the reference is OSM plus 2026 Commons photos; the ground-floor shops come
-  from OSM and may lag.
-- Heights of the flats are a style default (seven storeys) until checked block by block.
-- The church footprint includes the cloister and the porches as one outline; the landmark draws
-  its own massing inside it.
-- The inside is simplified: five aisles and the column grid are kept, the vaults are suggested by
-  the umbrellas, the gallery levels, the choir lofts and the ambulatory chapels are left out.
+  from OSM and may lag. The flats round the block keep the style default (seven storeys).
+- The basilica is a massing with signature details, not a survey: the spires above the nave are
+  pressed to 70 % of their rise; the Passion's sculpture, the Sanctus letters, the Evangelists'
+  exact figures and the nave's windows are suggested, not modelled; up close (the story's camera)
+  the lattice and the mitres read as paintings.
+- The pond's reflection is painted in the camera's frame, not mirrored: it shows the spires, but a
+  real mirror from this camera would show the trees on the far shore.
+- The Passion facade faces away from the camera: only its towers and the visitors in front of it
+  show. Its magic square (every line adds to 33) and the Passion door are for part 2 or the story.
+- The totem shows L5 only; the real station is also L2, which the network map does not have yet.
+- Until the Meridiana stream's city edge is merged, wooded hills close the diorama's far sides,
+  which a city centre would not have.
+- The park's trees cost shadows: by the pond the frame draws about 2 500 calls in the debug build,
+  a little over the Meridiana's 2 270 (the forward pass is under it).
 - Which mission uses these places, and whether the Passion door ever opens, is for the story.

@@ -225,7 +225,7 @@ material, light and landmark, which the last column names.
 | La torre de Uri | `#1f0f22` | violet-black | dark stone walls | spiral tower | `cardedeu-laberinto` cool | Throne room (ΔE 25): violet vs indigo and gold |
 | El Nucli (proposal) | `#2f4a3a` | bottle green | board-game boxes, felt | the wall of boxes | new, warm | Palace patio (ΔE 25): indoor felt vs painted court |
 | Sants street (proposal) | `#cfa463` | ochre | painted roller shutters, old render (`estuc`) | a lit shopfront in a row of shutters | new, cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
-| Sagrada Família, outside (proposal) | `#9f8f78` | weathered sandstone | carved sandstone | spires | new, neutral | Avinguda Meridiana (ΔE 13): carved stone and park vs panot and blocks |
+| Sagrada Família, outside | `#8a7764` | weathered sandstone | carved sandstone | spires | `sagrada-familia` warm | Avinguda Meridiana (ΔE 18): carved stone and park vs panot and blocks |
 | Sagrada Família, inside (proposal) | `#e9e4d8` + coloured light | pale stone in coloured light | branching stone columns, stained glass | a forest of columns | new, neutral | Alegia (ΔE 5): its light is the colour |
 | Plaça d'Espanya (proposal) | `#d8ccb2` | pale limestone and water | monumental stone, brick towers | twin campaniles and a dome | new, warm | Maresme (ΔE 4): monument and water vs houses |
 | La Barceloneta (proposal) | `#e3cd9f` | sand and sea | sand (`sorra`), weathered steel | four stacked rusted cubes | new, cool | Casa de Gerard (ΔE 8): open sea vs a room |
