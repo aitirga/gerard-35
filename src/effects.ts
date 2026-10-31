@@ -85,6 +85,8 @@ const OUTDOORS: Air = { kinds: [{ kind: 'pollen', density: 4, low: .4, high: 3 }
 const AIR: Partial<Record<string, Air>> = {
   patio: { kinds: [{ kind: 'firefly', density: 7, low: .3, high: 2 }], wind: [.05, 0, .02], turbulence: .6 },
   palacio: { kinds: [{ kind: 'gloom', density: 9, low: .1, high: 3 }, { kind: 'bubble', density: 2, low: 0, high: .4 }], wind: [0, .04, 0], turbulence: .7 },
+  // The Búnkers del Carmel at sunset: gusts over the top, dust glinting in the low sun.
+  'bunkers-carmel': { kinds: [{ kind: 'mote', density: 6, low: .3, high: 3 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.9, 0, .35], turbulence: 1.4 },
 };
 /** Ambient particles stop growing past this, however far the camera pulls back. */
 const AMBIENT_CAP = 1600;

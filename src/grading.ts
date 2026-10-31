@@ -96,7 +96,7 @@ export const LOOKS: Record<LookId, Look> = {
   },
   /** The Búnkers del Carmel at sunset: golden light on dry grass and concrete, lilac shade, a soft haze. */
   'bunkers-carmel': {
-    grade: { temperature: .11, lift: [.012, .006, .01], shadows: [.008, -.004, .018], highlights: [.024, .012, -.014], contrast: 1.03, saturation: 1.02 },
+    grade: { temperature: .07, lift: [.012, .006, .012], shadows: [.008, -.004, .022], highlights: [.024, .012, -.014], contrast: 1.05, saturation: 1.02 },
     enhance: { highlights: -.1, vibrance: .08 },
   },
   /** La torre de Uri: fear, violet-black shade that stays deep and a cold, unsure light. */

@@ -144,7 +144,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   // The Búnkers del Carmel are drawn at sunset: a golden sun (from the same side as everywhere) and lilac shade.
   const dusk = environment.id === 'bunkers-carmel';
   const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : dusk ? new pc.Color(0.36, 0.33, 0.4) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
-  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : dusk ? new pc.Color(1, 0.76, 0.5) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
+  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : dusk ? new pc.Color(1, 0.8, 0.58) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
   const sunIntensity = night ? 1.15 : lamplit ? 0.85 : dusk ? 1.7 : outdoor ? 1.8 : 1.65;
   const skyIntensity = dusk ? 0.34 : 0.42;
   app.scene.ambientLight = ambient.clone();

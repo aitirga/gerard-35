@@ -11,7 +11,7 @@ import type { LandmarkKit } from '../landmarks';
 export const kind = 'canonera';
 
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
-  const radius = Number(landmark.params.radius_m ?? 3), wall = Number(landmark.params.wall_m ?? radius);
+  const radius = Number(landmark.params.radius_m ?? 3), wall = Number(landmark.params.wall_m ?? radius), mount = Math.min(1.9, radius * 1.2);
   const floor = kit.surface('formigo', '#b3ada2'), ring = kit.surface('formigo-encofrat', '#a39c90');
   const hole = kit.mat('Hueco del afuste', '#4d4843', 0.05), rust = kit.mat('Puerta oxidada', '#8a3f22', 0.25);
   const recess = kit.mat('Nicho', '#3b3632', 0.05), bolt = kit.mat('Pernos', '#5a4134', 0.3);
@@ -24,11 +24,11 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   }
   kit.add('Suelo del emplazamiento', slab, floor, { shadows: false });
   // The mount: a low concrete ring round a dark hole, its bolts sticking up.
-  kit.part('Afuste', 'cylinder', ring, [0, 0.13, 0], [1.9, 0.18, 1.9]);
-  kit.part('Hueco del afuste', 'cylinder', hole, [0, 0.135, 0], [1.25, 0.2, 1.25]);
+  kit.part('Afuste', 'cylinder', ring, [0, 0.13, 0], [mount, 0.18, mount]);
+  kit.part('Hueco del afuste', 'cylinder', hole, [0, 0.135, 0], [mount * 0.66, 0.2, mount * 0.66]);
   for (let i = 0; i < 6; i++) {
     const a = i / 6 * Math.PI * 2;
-    kit.part('Perno', 'cylinder', bolt, [Math.cos(a) * 0.78, 0.26, Math.sin(a) * 0.78], [0.06, 0.1, 0.06]);
+    kit.part('Perno', 'cylinder', bolt, [Math.cos(a) * mount * 0.41, 0.26, Math.sin(a) * mount * 0.41], [0.06, 0.1, 0.06]);
   }
   // Niches in the parapet's inner face, each with its door ajar or shut.
   for (const [k, deg] of ((landmark.params.niches as number[] | undefined) ?? []).entries()) {
