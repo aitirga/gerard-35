@@ -7,7 +7,8 @@ import type { LandmarkKit } from '../landmarks';
  * a rusticated podium, the edicle with Blay's three rivers in their niches, three Corinthian columns
  * with gilded capitals, the attic, and the bronze brazier on top with Llobet's Victories and the iron
  * lanterns. About 20 m high and 36 m across; the front (+z) is one corner. `dry`: the basins empty,
- * as during the L8 works; `works`: the island dug up round it, tarps, spoil and a digger.
+ * as during the L8 works; `works`: the island dug up round it, tarps, spoil and a digger, the soil
+ * reaching out as far as `works` says (metres, every 30° from the front; a ragged ring if `true`).
  * Nothing of it can hide Gerard (the island is behind barriers), so it all joins the static batch.
  */
 export const kind = 'espanya-fountain';
@@ -111,7 +112,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
       kit.part('Sombrerete', 'cone', iron, [ox, 17.2, oz], [0.55, 0.32, 0.55]);
     }
   }
-  if (landmark.params.works) works(kit);
+  if (landmark.params.works) works(kit, Array.isArray(landmark.params.works) ? landmark.params.works.map(Number) : undefined);
 }
 
 /** A triangular prism with corners at 0°, 120° and 240°, `r` from the centre, between two heights. */
@@ -128,20 +129,34 @@ function triangle(kit: LandmarkKit, m: Parameters<LandmarkKit['add']>[2], y0: nu
 }
 
 /**
- * The L8 works on the island (since late 2024): the lawn dug up round the fountain and towards the
- * shaft, blue tarps over the trenches, spoil heaps, a small digger and the site cabin.
+ * The L8 works on the island (since late 2024): the lawn dug up round the fountain and out to a
+ * fringe of grass by the barriers, a few tufts left standing, blue tarps over the trenches, spoil
+ * heaps, a small digger and the site cabin. `radii`: how far the soil reaches, every 30°.
  */
-function works(kit: LandmarkKit) {
+function works(kit: LandmarkKit, radii?: number[]) {
   const soil = kit.surface('terra', '#6e5840');
-  const ground = kit.mesh(), steps = 48;
-  // The dug ground: a ragged ring round the basins, reaching out towards the shaft (100°–130°).
-  const reach = (deg: number) => 23 + Math.sin(rad(deg) * 3 + 1) * 2.5 + Math.sin(rad(deg) * 7) * 1.2 + Math.max(0, 1 - Math.abs(deg - 115) / 22) * 24;
+  const ground = kit.mesh(), steps = 72;
+  // The dug ground: a ragged ring round the basins, out to `radii` (or towards the shaft, 100°–130°).
+  const base = (deg: number) => {
+    if (!radii?.length) return 23 + Math.max(0, 1 - Math.abs(deg - 115) / 22) * 24;
+    const i = deg / 360 * radii.length, k = Math.floor(i) % radii.length, t = i - Math.floor(i);
+    return radii[k] * (1 - t) + radii[(k + 1) % radii.length] * t;
+  };
+  const reach = (deg: number) => base(deg) + Math.sin(rad(deg) * 3 + 1) * 2.5 + Math.sin(rad(deg) * 7) * 1.2;
   for (let i = 0; i < steps; i++) {
     const a0 = i / steps * 360, a1 = (i + 1) / steps * 360;
     const p0 = at(a0, reach(a0), 0.045), p1 = at(a1, reach(a1), 0.045);
     ground.tri([0, 0.045, 0], p0, p1, [0, 1, 0], [0, 0], [p0[0], p0[2]], [p1[0], p1[2]]);
   }
   kit.add('Tierra removida', ground, soil, { shadows: false });
+  // Patches of the old lawn left standing among the trenches.
+  const lawn = kit.surface('gespa', '#86a462');
+  for (const [a, r, w, d] of [[20, 25, 5, 2.6], [165, 24, 4.4, 2.2], [250, 22, 3.6, 2], [305, 23, 4.4, 2.4], [75, 27, 3.6, 1.8]]) {
+    for (const k of [-1, 1]) {
+      const [x, , z] = at(a + k * 4, r + k * 0.6, 0);
+      kit.part('Hierba que queda', 'cylinder', lawn, [x, 0.06, z], [w * (k < 0 ? 1 : 0.7), 0.03, d * (k < 0 ? 1 : 0.8)], [0, a + k * 25, 0]);
+    }
+  }
   const tarp = kit.mat('Lona azul', '#2f5f9e', 0.35);
   for (const [a, r, w, d, turn] of [[30, 20, 6, 3.5, 20], [150, 21, 5, 4, -30], [200, 19.5, 7, 3, 70], [118, 34, 8, 5, 10], [270, 21, 4, 3, 45]]) {
     const [x, , z] = at(a, r, 0);

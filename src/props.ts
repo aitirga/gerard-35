@@ -362,14 +362,14 @@ export function createPropKit() {
     part(holder, 'Luz LED', 'box', ledGlow, [0, 4.51, 0.42], [0.13, 0.02, 0.32]);
   }
   function mastLamp(holder: pc.Entity) {
-    // A square's tall mast: three LED heads on short arms, splayed so they light all round.
+    // A square's tall mast crowned by four small LED heads on short arms rising from its top.
     part(holder, 'Base de báculo', 'cylinder', poleGrey, [0, 0.1, 0], [0.26, 0.2, 0.26]);
-    part(holder, 'Báculo', 'cylinder', poleGrey, [0, 4.3, 0], [0.12, 8.6, 0.12]);
-    for (const turn of [0, 120, 240]) {
+    part(holder, 'Báculo', 'cylinder', poleGrey, [0, 4.1, 0], [0.12, 8.2, 0.12]);
+    for (const turn of [45, 135, 225, 315]) {
       const arm = new pc.Entity('Brazo del báculo'); arm.setLocalEulerAngles(0, turn, 0); holder.addChild(arm);
-      part(arm, 'Brazo', 'box', poleGrey, [0, 8.55, 0.25], [0.06, 0.06, 0.5]);
-      part(arm, 'Cabezal LED', 'box', poleGrey, [0, 8.5, 0.6], [0.2, 0.1, 0.42]);
-      part(arm, 'Luz LED', 'box', ledGlow, [0, 8.44, 0.6], [0.16, 0.02, 0.36]);
+      part(arm, 'Brazo', 'box', poleGrey, [0, 8.3, 0.16], [0.05, 0.05, 0.36], [-35, 0, 0]);
+      part(arm, 'Cabezal LED', 'box', poleGrey, [0, 8.42, 0.34], [0.22, 0.12, 0.26]);
+      part(arm, 'Luz LED', 'box', ledGlow, [0, 8.355, 0.34], [0.18, 0.02, 0.22]);
     }
   }
   function barrier(holder: pc.Entity, colour: 'red' | 'white' | 'yellow', style: 'jersey' | 'panel' | 'fence') {

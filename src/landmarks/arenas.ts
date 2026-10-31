@@ -29,12 +29,13 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const cream = kit.surface('carreu', '#e2d6bd');
   const red = kit.mat('Acero rojo', '#b3261e', 0.5);
   const under = kit.mat('Bajo del alero', '#3a3e43', 0.3);
-  const roof = kit.mat('Cubierta de la cúpula', '#cdcac2', 0.3);
+  const roof = kit.mat('Cubierta de la cúpula', '#d3ccba', 0.3);
+  const walk = kit.mat('Mirador', '#a9a196', 0.15);
   const glass = kit.mat('Vidrio de Las Arenas', '#55707c', 0.85);
   const shops = kit.mat('Planta baja', '#3b3c45', 0.6);
 
   // The drum: glazed ground floor set back, the band, the photographed bays, the cornice and merlons.
-  const ground = kit.mesh(), band = kit.mesh(), bays = kit.mesh(), stone = kit.mesh(), glazed = kit.mesh(), rim = kit.mesh(), underside = kit.mesh(), dish = kit.mesh(), steel = kit.mesh();
+  const ground = kit.mesh(), band = kit.mesh(), bays = kit.mesh(), stone = kit.mesh(), glazed = kit.mesh(), rim = kit.mesh(), underside = kit.mesh(), deck = kit.mesh(), dish = kit.mesh(), steel = kit.mesh();
   const gateHalf = 7.8 / R; // the gate tower's half-width, as an angle: the bays stop at it
   const skip = (a: number) => Math.abs(Math.atan2(Math.sin(a - rad(gate)), Math.cos(a - rad(gate)))) < gateHalf;
   for (let i = 0; i < BAYS; i++) {
@@ -60,9 +61,10 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
     ring(rim, a0, a1, R + 4, RIM[0], RIM[1], i * bay);
     underside.quad(...flat(a0, a1, R - 3.2, R + 4, RIM[0]), [0, -1, 0], [0, 0], [bay, 0], [bay, 7], [0, 7]);
     if (i % 2 === 0) block(steel, a0, R + 0.4, RIM[0] - 0.35, 0.3, 0.35, 7.2);
-    // The terrace's glass parapet on the rim, and the dish rising from it.
-    ring(glazed, a0, a1, R + 3.8, RIM[1], RIM[1] + 1.1, i * bay);
-    rim.quad(...flat(a0, a1, R - 3.2, R + 4, RIM[1]), [0, 1, 0], [0, 0], [bay, 0], [bay, 7], [0, 7]);
+    // The terrace walk on the rim behind its glass parapet, a red steel edge outside it, and the dish rising from it.
+    ring(glazed, a0, a1, R + 2.8, RIM[1], RIM[1] + 1.1, i * bay);
+    deck.quad(...flat(a0, a1, R - 3.2, R + 2.8, RIM[1]), [0, 1, 0], [0, 0], [bay, 0], [bay, 6], [0, 6]);
+    rim.quad(...flat(a0, a1, R + 2.8, R + 4, RIM[1]), [0, 1, 0], [0, 0], [bay, 0], [bay, 1.2], [0, 1.2]);
     const s = (a: number, r: number, y: number): [number, number, number] => [Math.sin(a) * r, y, Math.cos(a) * r];
     dish.quad(s(a0, R - 3.2, RIM[1]), s(a1, R - 3.2, RIM[1]), s(a1, 14, DOME - 1), s(a0, 14, DOME - 1), [0, 1, 0], [0, 0], [bay, 0], [bay, 33], [0, 33]);
     dish.tri(s(a0, 14, DOME - 1), s(a1, 14, DOME - 1), [0, DOME, 0], [0, 1, 0], [0, 0], [1, 0], [0.5, 1]);
@@ -97,7 +99,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
 
   // 26 m of building: everything tall opens the cut round Gerard.
   for (const [name, mesh, m] of [['Planta baja', ground, shops], ['Banda de hormigón', band, concrete], ['Fachada de Las Arenas', bays, facade], ['Cornisa', stone, cream],
-    ['Banda acristalada', glazed, glass], ['Alero rojo', rim, red], ['Bajo del alero', underside, under], ['Cúpula', dish, roof], ['Acero rojo', steel, red],
+    ['Banda acristalada', glazed, glass], ['Alero rojo', rim, red], ['Bajo del alero', underside, under], ['Mirador', deck, walk], ['Cúpula', dish, roof], ['Acero rojo', steel, red],
     ['Puerta principal', g, front], ['Torre de la puerta', gs, brick], ['Ascensor', l, lattice], ['Mástil rojo', lr, red], ['Cabina', lg, glass]] as const) {
     kit.add(name, mesh, m, { cut: true });
   }
