@@ -461,9 +461,8 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
     return clearing(painted(name, vaultCanvas(random), [1, 1], { gloss: 0.2, glow: 0.14, base: tint }));
   }
   function clearing(m: pc.StandardMaterial) {
-    const glsl = m.getShaderChunks(pc.SHADERLANGUAGE_GLSL), wgsl = m.getShaderChunks(pc.SHADERLANGUAGE_WGSL);
-    glsl.set('litUserDeclarationPS', CLEARING_DECLARATION); glsl.set('litUserMainStartPS', CLEARING_MAIN); glsl.set('litUserMainEndPS', CLEARING_END);
-    wgsl.set('litUserDeclarationPS', CLEARING_DECLARATION_WGSL); wgsl.set('litUserMainStartPS', CLEARING_MAIN_WGSL); wgsl.set('litUserMainEndPS', CLEARING_END_WGSL);
+    const wgsl = m.getShaderChunks(pc.SHADERLANGUAGE_WGSL);
+    wgsl.set('litUserDeclarationPS', CLEARING_DECLARATION); wgsl.set('litUserMainStartPS', CLEARING_MAIN); wgsl.set('litUserMainEndPS', CLEARING_END);
     m.update(); return m;
   }
   const cutFocus = device.scope.resolve('naveCutFocus'), cutToCamera = device.scope.resolve('naveCutToCamera'), cutRadius = device.scope.resolve('naveCutRadius');
@@ -505,39 +504,15 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   };
 }
 
-// ------------------------------------------------------------ the vault's clearing (GLSL and WGSL, keep both in step)
+// ------------------------------------------------------------ the vault's clearing
 const CLEARING_DECLARATION = `
-uniform vec3 naveCutFocus;
-uniform vec3 naveCutToCamera;
-uniform float naveCutRadius;
-uniform vec4 naveCutPlane;
-float naveCutGlow = 0.0;
-`;
-const CLEARING_MAIN = `
-#if defined(FORWARD_PASS) || defined(PREPASS_PASS)
-if (dot(naveCutPlane.xyz, vPositionW) > naveCutPlane.w) discard;
-if (naveCutRadius > 0.0) {
-  vec3 cutOffset = vPositionW - naveCutFocus;
-  float cutAlong = dot(cutOffset, naveCutToCamera);
-  float cutAcross = length(cutOffset - naveCutToCamera * cutAlong);
-  if (cutAlong > 0.0 && cutAcross < naveCutRadius) discard;
-  naveCutGlow = step(0.0, cutAlong) * (1.0 - smoothstep(naveCutRadius, naveCutRadius + ${CLEARING_EDGE.toFixed(2)}, cutAcross));
-}
-#endif
-`;
-const CLEARING_END = `
-#ifdef FORWARD_PASS
-gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 0.88, 0.62), naveCutGlow * 0.55);
-#endif
-`;
-const CLEARING_DECLARATION_WGSL = `
 uniform naveCutFocus: vec3f;
 uniform naveCutToCamera: vec3f;
 uniform naveCutRadius: f32;
 uniform naveCutPlane: vec4f;
 var<private> naveCutGlow: f32 = 0.0;
 `;
-const CLEARING_MAIN_WGSL = `
+const CLEARING_MAIN = `
 #if defined(FORWARD_PASS) || defined(PREPASS_PASS)
 if (dot(uniform.naveCutPlane.xyz, vPositionW) > uniform.naveCutPlane.w) { discard; }
 if (uniform.naveCutRadius > 0.0) {
@@ -549,7 +524,7 @@ if (uniform.naveCutRadius > 0.0) {
 }
 #endif
 `;
-const CLEARING_END_WGSL = `
+const CLEARING_END = `
 #ifdef FORWARD_PASS
 output.color = vec4f(mix(output.color.rgb, vec3f(1.0, 0.88, 0.62), naveCutGlow * 0.55), output.color.a);
 #endif

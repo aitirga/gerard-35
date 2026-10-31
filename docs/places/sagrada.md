@@ -349,7 +349,7 @@ G..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y  21
   aisles (10.5 m) to the nave and transept (13.5 m), the apse (15.5 m) and the crossing (17 m),
   the real 30, 45, 75 and 60 m pressed so the canopy sits in the frame. The crossing has none: the
   lantern's gold light lies on the floor there.
-- **The clearing**: the vault's material has its own shader chunk (GLSL and WGSL) that opens a
+- **The clearing**: the vault's material has its own shader chunk (WGSL) that opens a
   round clearing along the line from Gerard to the camera (8 world units, a warm glowing edge), like
   the buildings' cut outside; and as the camera pulls back to the overview, a plane sweeps in to the
   crossing and opens the vault's near half, so the overview reads as a model cut in two: the vault
@@ -379,7 +379,7 @@ G..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y  21
   at the glass of their side, the altar from the crossing, some holding a phone up), the sign by the
   door (*SILENCI · SILENCIO · SILENCE*), red ropes across the shut doors.
 - **Cost**: about 410–460 draw calls in the debug build (1440 × 900), 16.7 ms a frame at the 60 fps
-  cap, on WebGPU and WebGL2.
+  cap, on WebGPU.
 
 ### Things to look at (Spanish, Gerard's voice)
 

@@ -1,6 +1,6 @@
 {
   "title": "Pausa, configuración y menú de usuario",
-  "description": "Desktop regression: separate pause and user menus, settings hierarchy (Mando, Sonido, Luces de casa), keyboard focus, controller navigation, exit and return. The scene's last rendered frame stays behind the menus to keep software WebGL captures light; gameplay updates and input remain active. Never connects the real house lights.",
+  "description": "Desktop regression: separate pause and user menus, settings hierarchy (Mando, Sonido, Luces de casa), keyboard focus, controller navigation, exit and return. The scene's last rendered frame stays behind the menus to keep software WebGPU captures light; gameplay updates and input remain active. Never connects the real house lights.",
   "steps": [
     { "open": "/?story=got-backpack" },
     { "until": "!document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },

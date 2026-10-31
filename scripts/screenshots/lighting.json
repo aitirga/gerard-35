@@ -1,9 +1,9 @@
 {
   "title": "Lighting · Soft shadows and sky reflections",
-  "description": "Each view after (shadows fitted to the view: PCSS on WebGPU, PCF 5×5 on WebGL2; sky reflections) and before (the old PCF 3×3 over the whole view box, no sky); the street's close crop also shows VSM and PCF 5×5 with the fit. Run with --gpu (WebGPU) and --gpu --webgl. Toggles: window.gerard.game.lighting (shadows, fit, sky).",
+  "description": "Each view after (shadows fitted to the view: PCSS; sky reflections) and before (the old PCF 3×3 over the whole view box, no sky); the street's close crop also shows VSM and PCF 5×5 with the fit. Run with --gpu. Toggles: window.gerard.game.lighting (shadows, fit, sky).",
   "steps": [
     {"open": "/?story=bernat-joined"},
-    {"eval": "window.look = mode => { const l = window.gerard.game.lighting; const own = l.settings.shadow.type[window.gerard.game.app.graphicsDevice.isWebGPU ? 'webgpu' : 'webgl2']; const m = { after: [own, true, true], before: ['pcf3', false, false], vsm: ['vsm', true, true], pcf: ['pcf5', true, true] }[mode]; l.shadows = m[0]; l.fit = m[1]; l.sky = m[2]; }"},
+    {"eval": "window.look = mode => { const l = window.gerard.game.lighting; const m = { after: ['pcss', true, true], before: ['pcf3', false, false], vsm: ['vsm', true, true], pcf: ['pcf5', true, true] }[mode]; l.shadows = m[0]; l.fit = m[1]; l.sky = m[2]; }"},
     {"teleport": "maresme", "cell": [20, 24], "settle": 5000},
     {"skipDialogue": true, "settle": 1500},
     {"eval": "look('after')"},
@@ -60,7 +60,7 @@
     {"shot": "patio-before", "delay": 1500, "caption": "The patio at night · before"},
     {"eval": "look('after')"},
     {"open": "/?story=noista&battle=3&allies=2&noista=1"},
-    {"eval": "window.look = mode => { const l = window.gerard.game.lighting; const own = l.settings.shadow.type[window.gerard.game.app.graphicsDevice.isWebGPU ? 'webgpu' : 'webgl2']; const m = { after: [own, true, true], before: ['pcf3', false, false], vsm: ['vsm', true, true], pcf: ['pcf5', true, true] }[mode]; l.shadows = m[0]; l.fit = m[1]; l.sky = m[2]; }"},
+    {"eval": "window.look = mode => { const l = window.gerard.game.lighting; const m = { after: ['pcss', true, true], before: ['pcf3', false, false], vsm: ['vsm', true, true], pcf: ['pcf5', true, true] }[mode]; l.shadows = m[0]; l.fit = m[1]; l.sky = m[2]; }"},
     {"until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000},
     {"eval": "look('after')"},
     {"shot": "battle-after", "delay": 1500, "caption": "A fight at rest · after"},

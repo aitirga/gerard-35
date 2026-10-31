@@ -19,10 +19,9 @@ export const LIGHTING = {
   shadow: {
     /**
      * `pcss` soft shadows that harden at contact, `vsm` blurred variance shadows, `pcf5` and `pcf3`
-     * fixed 5×5 and 3×3 filters (3×3 is what the game had). PCSS costs about 1 ms more on WebGPU
-     * but tens of ms on WebGL2 (it scales with its samples there), so WebGL2 keeps PCF.
+     * fixed 5×5 and 3×3 filters (3×3 is what the game had). PCSS costs about 1 ms more.
      */
-    type: { webgpu: 'pcss', webgl2: 'pcf5' } as Record<'webgpu' | 'webgl2', ShadowKind>,
+    type: 'pcss' as ShadowKind,
     resolution: 2048,
     /** Against acne: the PCSS disk reaches past one texel, so receivers are pushed out along their normal more than PCF needed (.04). */
     bias: .4,
@@ -120,7 +119,7 @@ export function lighting(app: pc.AppBase) {
 
 function createLighting(app: pc.AppBase) {
   const device = app.graphicsDevice;
-  let shadows: ShadowKind = LIGHTING.shadow.type[device.isWebGPU ? 'webgpu' : 'webgl2'], fit = true, sky = true;
+  let shadows: ShadowKind = LIGHTING.shadow.type, fit = true, sky = true;
 
   // ——— Shadows fitted to the view ———
   let ceiling: number = LIGHTING.shadow.ceiling[1], frames = 0;
@@ -170,8 +169,7 @@ function createLighting(app: pc.AppBase) {
 
   /** Resolves once the GPU has done all the work sent so far (for timings). */
   async function idle() {
-    const gpu = device as unknown as { gl?: WebGL2RenderingContext; wgpu?: { queue: { onSubmittedWorkDone(): Promise<void> } } };
-    gpu.gl?.finish();
+    const gpu = device as unknown as { wgpu?: { queue: { onSubmittedWorkDone(): Promise<void> } } };
     await gpu.wgpu?.queue.onSubmittedWorkDone();
   }
 

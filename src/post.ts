@@ -52,20 +52,14 @@ export const LOOK = {
 /**
  * Half an 8-bit step of noise on the final colour, in display space, so the shallow gradients of
  * lamp light and dusk sky don't step into bands on an 8-bit screen. Runs after tone mapping, in
- * the compose pass's end hook, in both shader languages.
+ * the compose pass's end hook.
  */
-const DITHER = {
-  glsl: `
-    float ditherNoise = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
-    result = pow(max(pow(max(result, vec3(0.0)), vec3(1.0 / 2.2)) + (ditherNoise - 0.5) / 255.0, vec3(0.0)), vec3(2.2));`,
-  wgsl: `
+const DITHER = `
     let ditherNoise = fract(52.9829189 * fract(dot(pcPosition.xy, vec2f(0.06711056, 0.00583715))));
-    result = pow(max(pow(max(result, vec3f(0.0)), vec3f(1.0 / 2.2)) + (ditherNoise - 0.5) / 255.0, vec3f(0.0)), vec3f(2.2));`,
-};
+    result = pow(max(pow(max(result, vec3f(0.0)), vec3f(1.0 / 2.2)) + (ditherNoise - 0.5) / 255.0, vec3f(0.0)), vec3f(2.2));`;
 
 export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
-  pc.ShaderChunks.get(app.graphicsDevice, pc.SHADERLANGUAGE_GLSL).set('composeMainEndPS', DITHER.glsl);
-  pc.ShaderChunks.get(app.graphicsDevice, pc.SHADERLANGUAGE_WGSL).set('composeMainEndPS', DITHER.wgsl);
+  pc.ShaderChunks.get(app.graphicsDevice, pc.SHADERLANGUAGE_WGSL).set('composeMainEndPS', DITHER);
   const frame = new pc.CameraFrame(app, camera);
   frame.rendering.samples = LOOK.samples;
   // 16-bit float, not the default 11/11/10: its 6-bit mantissas band the flat's lamp light and the dusk sky.
@@ -150,6 +144,11 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
     // ── end of colour grading ──
     /** Turns the whole pass off (the camera renders straight to the screen) or back on. */
     set enabled(on: boolean) { frame.enabled = on; if (on) frame.update(); },
+    /**
+     * Glass in the scene (refracting crystals) needs a copy of the scene's colour behind it: on
+     * while there is any, off otherwise, as the copy costs a full-screen pass a frame.
+     */
+    glass(on: boolean) { if (frame.rendering.sceneColorMap === on) return; frame.rendering.sceneColorMap = on; frame.update(); },
     get enabled() { return frame.enabled; },
     destroy() { app.off('update', fadeHit); grading.destroy(); frame.destroy(); },
   };
@@ -221,19 +220,12 @@ function setupDepthLook(app: pc.AppBase, frame: pc.CameraFrame, camera: pc.Camer
 }
 
 const patched = new WeakSet<object>();
-/** The lines `orthoSsao` swaps in the engine's SSAO shader, in GLSL and in WGSL (keep both in step). */
-const ORTHO_SSAO: Record<'glsl' | 'wgsl', [string, string][]> = {
-  glsl: [
-    ['uniform float uAspect;', 'uniform float uAspect;\nuniform float uOrthoSize;'],
-    ['(0.5 - uv) * vec2(uAspect, 1.0) * linearDepth,', '(uv - 0.5) * vec2(uAspect, 1.0) * uOrthoSize,'],
-    ['-(uProjectionScaleRadius / origin.z)', '(uProjectionScaleRadius / uOrthoSize)'],
-  ],
-  wgsl: [
-    ['uniform uAspect: f32;', 'uniform uAspect: f32;\nuniform uOrthoSize: f32;'],
-    ['(0.5 - uv) * vec2f(uniform.uAspect, 1.0) * linearDepth,', '(uv - 0.5) * vec2f(uniform.uAspect, 1.0) * uniform.uOrthoSize,'],
-    ['-(uniform.uProjectionScaleRadius / origin.z)', '(uniform.uProjectionScaleRadius / uniform.uOrthoSize)'],
-  ],
-};
+/** The lines `orthoSsao` swaps in the engine's WGSL SSAO shader. */
+const ORTHO_SSAO: [string, string][] = [
+  ['uniform uAspect: f32;', 'uniform uAspect: f32;\nuniform uOrthoSize: f32;'],
+  ['(0.5 - uv) * vec2f(uniform.uAspect, 1.0) * linearDepth,', '(uv - 0.5) * vec2f(uniform.uAspect, 1.0) * uniform.uOrthoSize,'],
+  ['-(uniform.uProjectionScaleRadius / origin.z)', '(uniform.uProjectionScaleRadius / uniform.uOrthoSize)'],
+];
 /**
  * The engine's SSAO rebuilds a pixel's view-space position as if seen through a perspective lens
  * (sideways offsets growing with depth). Under our orthographic camera that stretches the scene
@@ -245,11 +237,10 @@ const ORTHO_SSAO: Record<'glsl' | 'wgsl', [string, string][]> = {
 function orthoSsao(device: pc.GraphicsDevice, camera: pc.CameraComponent, pass: pc.RenderPassShaderQuad | null | undefined) {
   if (!pass || patched.has(pass)) return true;
   patched.add(pass);
-  const language = device.isWebGPU ? pc.SHADERLANGUAGE_WGSL : pc.SHADERLANGUAGE_GLSL;
-  const chunks = pc.ShaderChunks.get(device, language);
+  const chunks = pc.ShaderChunks.get(device, pc.SHADERLANGUAGE_WGSL);
   if (!chunks.has('ssaoOrthoPS')) {
     let source = chunks.get('ssaoPS') ?? '';
-    for (const [from, to] of ORTHO_SSAO[language === pc.SHADERLANGUAGE_WGSL ? 'wgsl' : 'glsl']) {
+    for (const [from, to] of ORTHO_SSAO) {
       if (!source.includes(from)) { console.warn('SSAO: the orthographic patch no longer fits the engine; contact shadows are off'); return false; }
       source = source.replace(from, to);
     }

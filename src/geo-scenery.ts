@@ -63,45 +63,12 @@ const CUT = {
   halo: CUT_HALO.toFixed(2), stub: CUT_STUB.toFixed(2), flare: CUT_FLARE.toFixed(2),
 };
 const CUTAWAY_DECLARATION = `
-uniform vec3 geoCutFocus;
-uniform vec3 geoCutToCamera;
-uniform float geoCutRadius;
-float geoCutGlow = 0.0;
-`;
-const CUTAWAY_MAIN = `
-// The depth prepass (soft particles, tilt-shift and contact shadows in src/post.ts) must see the same
-// hole, or they'd read a wall that isn't there.
-#if defined(FORWARD_PASS) || defined(PREPASS_PASS)
-if (geoCutRadius > 0.0) {
-  vec3 cutOffset = vPositionW - geoCutFocus;
-  float cutAlong = dot(cutOffset, geoCutToCamera);
-  if (cutAlong > ${CUT.near}) {
-    float cutAcross = length(cutOffset - geoCutToCamera * cutAlong);
-    float cutReach = geoCutRadius * (1.0 + ${CUT.flare} * (cutAlong - ${CUT.near}) / ${CUT.radius});
-    // The foot of every wall stays, so the building's edge still shows where Gerard can't pass.
-    float cutStub = vPositionW.y - (geoCutFocus.y + ${CUT.stub});
-    float cutInside = step(cutAcross, cutReach - ${CUT.edge});
-    if (cutInside * step(0.0, cutStub) > 0.5) discard;
-    float cutRing = 1.0 - smoothstep(cutReach - ${CUT.halfEdge}, cutReach + ${CUT.halo}, cutAcross);
-    float cutFoot = step(cutAcross, cutReach) * smoothstep(-${CUT.halo}, -${CUT.halfEdge}, cutStub);
-    geoCutGlow = max(cutRing, cutFoot);
-  }
-}
-#endif
-`;
-const CUTAWAY_END = `
-#ifdef FORWARD_PASS
-gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(${CUT_GLOW}), geoCutGlow * 0.75);
-#endif
-`;
-/** The same cut in WGSL for WebGPU, line for line with the GLSL above (keep both in step). */
-const CUTAWAY_DECLARATION_WGSL = `
 uniform geoCutFocus: vec3f;
 uniform geoCutToCamera: vec3f;
 uniform geoCutRadius: f32;
 var<private> geoCutGlow: f32 = 0.0;
 `;
-const CUTAWAY_MAIN_WGSL = `
+const CUTAWAY_MAIN = `
 // The depth prepass (soft particles, tilt-shift and contact shadows in src/post.ts) must see the same
 // hole, or they'd read a wall that isn't there.
 #if defined(FORWARD_PASS) || defined(PREPASS_PASS)
@@ -122,7 +89,7 @@ if (uniform.geoCutRadius > 0.0) {
 }
 #endif
 `;
-const CUTAWAY_END_WGSL = `
+const CUTAWAY_END = `
 #ifdef FORWARD_PASS
 output.color = vec4f(mix(output.color.rgb, vec3f(${CUT_GLOW}), geoCutGlow * 0.75), output.color.a);
 #endif
@@ -294,13 +261,10 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   const buildingCuts = new Map<pc.Entity, BuildingCut>();
   /** Building materials open the glowing cut; the ground and streets never do. */
   function cutaway<M extends pc.StandardMaterial>(m: M) {
-    const glsl = m.getShaderChunks(pc.SHADERLANGUAGE_GLSL), wgsl = m.getShaderChunks(pc.SHADERLANGUAGE_WGSL);
-    glsl.set('litUserDeclarationPS', CUTAWAY_DECLARATION);
-    glsl.set('litUserMainStartPS', CUTAWAY_MAIN);
-    glsl.set('litUserMainEndPS', CUTAWAY_END);
-    wgsl.set('litUserDeclarationPS', CUTAWAY_DECLARATION_WGSL);
-    wgsl.set('litUserMainStartPS', CUTAWAY_MAIN_WGSL);
-    wgsl.set('litUserMainEndPS', CUTAWAY_END_WGSL);
+    const wgsl = m.getShaderChunks(pc.SHADERLANGUAGE_WGSL);
+    wgsl.set('litUserDeclarationPS', CUTAWAY_DECLARATION);
+    wgsl.set('litUserMainStartPS', CUTAWAY_MAIN);
+    wgsl.set('litUserMainEndPS', CUTAWAY_END);
     m.update(); return m;
   }
   const jitter = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
