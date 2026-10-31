@@ -23,7 +23,7 @@ const LAYER = { tracks: 0.017, sea: 0.028, wet: 0.031, breakers: 0.034, swash: 0
 /** Bands across the shore, metres from the waterline. */
 const SEA_OUT = 260, WET_IN = -5, BREAKERS = [0.6, 24] as const, SWASH = [3, -7] as const;
 /** The sea's colour by distance from the shore: sand showing through, turquoise, then deep blue. */
-const DEPTHS: [number, string][] = [[0, '#86c9bd'], [2.5, '#5bb5b0'], [9, '#3f9fa6'], [24, '#2f86a0'], [55, '#22698e'], [SEA_OUT, '#1b557a']];
+const DEPTHS: [number, string][] = [[0, '#8cc4b6'], [2.5, '#5aa9a5'], [9, '#3f8f99'], [24, '#2f7890'], [55, '#265f7c'], [SEA_OUT, '#1f4e68']];
 /** Seconds for one wave to run up the sand and slide back; the white water rolls in on the same beat. */
 const CYCLE = 7.2;
 /** Metres between two lines of white water, and how fast they roll in (m/s). */
@@ -55,9 +55,13 @@ export function buildSea(kit: GeoKit, water: GeoPoint[][], size: { width: number
     const positions: number[] = [], normals: number[] = [], uvs: number[] = [], colours: number[] = [], indices: number[] = [];
     const points = beach ? shore!.points.slice(first, last + 1) : shore!.points, offset = beach ? first : 0, n = points.length;
     rows.forEach(({ d, colour = '#ffffff', alpha = 1 }) => {
-      const c = new pc.Color().fromString(colour);
+      // Vertex colours are linear: the hex is sRGB (read as linear, the sea washed out to a pool's pale cyan).
+      const c = new pc.Color().fromString(colour).linear();
       points.forEach((p, k) => {
-        const i = k + offset, q = shore!.normals[i], px = p[0] + q[0] * d / cellM, pz = p[1] + q[1] * d / cellM;
+        const i = k + offset, q = shore!.normals[i];
+        let px = p[0] + q[0] * d / cellM, pz = p[1] + q[1] * d / cellM;
+        // Where the coast bends near a side, the rows fan out past the map: hold them at its edge.
+        if (beach) [px, pz] = [Math.min(Math.max(px, -0.5), size.width - 0.5), Math.min(Math.max(pz, -0.5), size.depth - 0.5)];
         positions.push(x(px), y, z(pz));
         normals.push(0, 1, 0); uvs.push(...(world ? [px * cellM, pz * cellM] : [shore!.along[i], d])); colours.push(c.r, c.g, c.b, alpha);
       });
@@ -87,10 +91,10 @@ export function buildSea(kit: GeoKit, water: GeoPoint[][], size: { width: number
   sea.name = 'Mar'; sea.diffuse.set(1, 1, 1); sea.diffuseVertexColor = true; sea.gloss = 0.92;
   const ripples = canvasTexture(256, 256, ctx => waveNormals(ctx, 256));
   sea.normalMap = ripples; sea.normalMapTiling.set(1 / 7, 1 / 7); sea.bumpiness = 0.6;
-  sea.normalDetailMap = ripples; sea.normalDetailMapTiling.set(1 / 2.6, 1 / 3.1); sea.normalDetailMapBumpiness = 0.6;
+  sea.normalDetailMap = ripples; sea.normalDetailMapTiling.set(1 / 2.6, 1 / 3.1); sea.normalDetailMapBumpiness = 0.4;
   // Less of the sky and the sun than a pool: the sea keeps its own blue, and the sun glitters on it
   // without burning a white patch into the overview.
-  shine(sea, 'water'); sea.specular.fromString('#3e4847'); sea.reflectivity = 0.3; sea.update();
+  shine(sea, 'water'); sea.specular.fromString('#2c3434'); sea.reflectivity = 0.3; sea.update();
   band('Mar', DEPTHS.map(([d, colour]) => ({ d, colour })), LAYER.sea, sea, false, false, true);
 
   // ------------------------------------------------------------ the wet sand
@@ -202,15 +206,22 @@ export function coastline(water: GeoPoint[][], width: number, depth: number, cel
   return { points, normals, along };
 }
 
-/** A tileable field of small wind waves as a normal map: a few crossing swells and a fine chop. */
+/**
+ * A tileable field of small wind waves as a normal map: wavelets running every way, the longer ones
+ * taller, so their slopes weigh alike and no direction rules (a few dominant swells read as scanlines
+ * from the overview).
+ */
 function waveNormals(ctx: CanvasRenderingContext2D, size: number) {
   const h = new Float32Array(size * size);
-  const swells: [number, number, number, number][] = [[3, 1, 1, 0], [2, -3, 0.6, 1.3], [5, 2, 0.45, 2.1], [-4, 5, 0.35, 0.4], [9, -2, 0.2, 3.3], [7, 8, 0.15, 5.1]];
+  // Whole cycles per tile in u and v, so the field tiles; picked from a hash, spread over all directions.
+  const waves = Array.from({ length: 28 }, (_, k) => {
+    const a = (k + noise(k + 60) * 0.8) / 28 * Math.PI, f = 2 + noise(k + 90) * 11;
+    const fx = Math.round(Math.cos(a) * f), fy = Math.round(Math.sin(a) * f);
+    return [fx, fy, 1.5 / Math.max(1, Math.hypot(fx, fy)), noise(k + 120) * Math.PI * 2];
+  });
   for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
     let v = 0;
-    for (const [fx, fy, amp, ph] of swells) v += amp * Math.sin((fx * i + fy * j) / size * Math.PI * 2 + ph);
-    // Fine chop: a sharpened sum, so crests are narrow like real ripples.
-    v += 0.25 * Math.abs(Math.sin((13 * i + 11 * j) / size * Math.PI * 2 + noise(j) * 0.4)) ** 3;
+    for (const [fx, fy, amp, ph] of waves) v += amp * Math.sin((fx * i + fy * j) / size * Math.PI * 2 + ph);
     h[j * size + i] = v;
   }
   const img = ctx.createImageData(size, size), at = (i: number, j: number) => h[((j + size) % size) * size + ((i + size) % size)];
