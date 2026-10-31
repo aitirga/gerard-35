@@ -804,12 +804,16 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const made = m = cutaway(textured(`Fachada ${kind}`, c, 0.1));
     textures.set(key, m);
     if (glows.length) {
+      // What glows is the painted pane itself (the lit shop and its shelves, a flat's lamp), not a
+      // flat patch of colour, so the shop fronts keep their goods at dusk.
       made.emissiveMap = kit.texture(canvas(w, h, ctx => {
-        ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, w, h);
-        ctx.setTransform(1, 0, 0, -1, 0, h); ctx.fillStyle = '#ffc47a';
+        ctx.setTransform(1, 0, 0, -1, 0, h); ctx.fillStyle = '#ffffff';
         for (const [gx, gy, gw, gh] of glows) ctx.fillRect(gx, gy, gw, gh);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalCompositeOperation = 'source-in'; ctx.drawImage(c, 0, 0);
+        ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, w, h);
       }));
-      made.emissive.set(1, 1, 1); made.emissiveIntensity = 0; made.update(); evening.push(made);
+      made.emissive.set(1, 0.84, 0.6); made.emissiveIntensity = 0; made.update(); evening.push(made);
     }
     // Repainted with the grain once the materials arrive.
     if (grain.wall || grain.base) onLoad.push(() => {
@@ -1472,7 +1476,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   for (const p of scene.props) {
     // Under the LED head, which hangs out over the street.
     const yaw = Number(p.yaw ?? 0) * Math.PI / 180;
-    if (p.kind === 'lamp' && p.style === 'led') decal(lampLight, [p.x + Math.sin(yaw) * 0.5, p.z + Math.cos(yaw) * 0.5], [1, 0], 4.5, 4.5);
+    if (p.kind === 'lamp' && p.style === 'led') decal(lampLight, [p.x + Math.sin(yaw) * 0.5, p.z + Math.cos(yaw) * 0.5], [1, 0], 3.6, 3.6);
   }
   const warm = pool('rgba(255,196,120,1)'), cold = pool('rgba(236,240,244,1)');
   const pools = [add('Luz de las tiendas', shopLight, warm, root, true, false), add('Luz de las farolas', lampLight, cold, root, true, false)];
@@ -1494,7 +1498,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     }
     if (Math.abs(dusk - shownDusk) > 0.01) {
       shownDusk = dusk;
-      warm.emissiveIntensity = 0.6 * dusk; warm.update(); cold.emissiveIntensity = 0.3 * dusk; cold.update();
+      warm.emissiveIntensity = 0.6 * dusk; warm.update(); cold.emissiveIntensity = 0.2 * dusk; cold.update();
       pools.forEach(e => { if (e) e.enabled = dusk > 0.02; });
       for (const m of evening) { m.emissiveIntensity = 0.9 * dusk; m.update(); }
     }
