@@ -11,8 +11,11 @@ export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-
   | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
-/** Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses and a potted yucca. */
-export type TreeSpecies = 'plane' | 'olive' | 'cypress' | 'yucca';
+/**
+ * Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses, a potted
+ * yucca, and the big garden cedars and umbrella-topped stone pines of the Vallès (Cardedeu).
+ */
+export type TreeSpecies = 'plane' | 'olive' | 'cypress' | 'yucca' | 'cedar' | 'pine';
 /** What the trunk stands in: a paved street pit (default), an indoor pot, or bare ground. */
 export type TreeBase = 'pit' | 'pot' | 'ground';
 /** Reusable scene pieces, anchored on a cell. `src/props.ts` draws them in any environment. */
