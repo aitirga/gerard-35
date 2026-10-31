@@ -18,6 +18,8 @@
     { "shot": "patio-east", "delay": 3000, "caption": "The east court: a hoop with its net stiff with gum, bags along the fence, the floodlight" },
     { "teleport": "palacio-patio", "cell": [4, 8] },
     { "shot": "patio-west", "delay": 3000, "caption": "The west side: the brick party wall, the push-tap trough with its pink water, plane trees" },
+    { "teleport": "palacio-patio", "cell": [9, 2] },
+    { "shot": "porch-doors", "delay": 3000, "clip": [360, 120, 720, 450], "caption": "The porch: the Benvinguts mural painted over in pink but one word, the doors' orange frames and their signs" },
     { "teleport": "palacio-patio", "cell": [6, 1] },
     { "press": "KeyE" },
     { "shot": "gym-gate", "delay": 1800, "caption": "«La puerta no cede. Algo blando la sujeta por dentro.»" },

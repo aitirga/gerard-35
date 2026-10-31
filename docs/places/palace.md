@@ -1,9 +1,11 @@
 # Inside La Reina Bubbaloo's palace (chapter 2)
 
-Status: **research and draft** (2026-10-30). Nothing here is built yet: the build waits for the
-shared foundation (real materials through `tools/textures.py`, landmark modules, the visual style
-guide `docs/visual-style.md`). This file refines that guide's § 4 *The palace inside, by zones*
-with the real place, an identity card per zone, drafted plans and a build plan.
+Status: **research and plans** (2026-10-30), **part 1 built** (2026-10-31): the hall's east door
+in chapter 2, el patio and el gimnasio are built and documented, as built, in
+[palace-zones.md](palace-zones.md), with what part 2 (la secretaría, el salón del trono) must do.
+This file keeps the research: the real place, an identity card per zone, the drafted plans of all
+four zones and the texture candidates. It refines `docs/visual-style.md` § 4 *The palace inside,
+by zones*.
 
 Related: the palace's story and chapter 1 part in [bubbaloo-palace.md](../bubbaloo-palace.md),
 how chapter 2 reaches it in [chapter-2.md](../chapter-2.md) § The palace, any time, the decisions
