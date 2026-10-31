@@ -126,18 +126,24 @@ output.color = vec4f(mix(output.color.rgb, vec3f(${CUT_GLOW}), geoCutGlow * 0.75
 /** Collects triangles with flat normals; every face is wound so its normal agrees with `facing`. */
 export class MeshBuilder {
   positions: number[] = []; normals: number[] = []; uvs: number[] = []; indices: number[] = [];
-  tri(a: V3, b: V3, c: V3, facing: V3, ua: number[] = [0, 0], ub: number[] = [0, 0], uc: number[] = [0, 0]) {
+  /** `smooth`: a normal for each corner instead of the face's, so a curved surface drawn in facets shades round. */
+  tri(a: V3, b: V3, c: V3, facing: V3, ua: number[] = [0, 0], ub: number[] = [0, 0], uc: number[] = [0, 0], smooth?: [V3, V3, V3]) {
     const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
     let n: V3 = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
     const len = Math.hypot(...n) || 1;
     n = [n[0] / len, n[1] / len, n[2] / len];
-    if (n[0] * facing[0] + n[1] * facing[1] + n[2] * facing[2] < 0) { [b, c] = [c, b]; [ub, uc] = [uc, ub]; n = [-n[0], -n[1], -n[2]]; }
+    let [na, nb, nc] = smooth ?? [n, n, n];
+    if (n[0] * facing[0] + n[1] * facing[1] + n[2] * facing[2] < 0) {
+      [b, c] = [c, b]; [ub, uc] = [uc, ub]; n = [-n[0], -n[1], -n[2]];
+      [na, nb, nc] = smooth ? [na, nc, nb] : [n, n, n];
+    }
     const base = this.positions.length / 3;
-    for (const [p, t] of [[a, ua], [b, ub], [c, uc]] as const) { this.positions.push(...p); this.normals.push(...n); this.uvs.push(...t); }
+    for (const [p, t, m] of [[a, ua, na], [b, ub, nb], [c, uc, nc]] as const) { this.positions.push(...p); this.normals.push(...m); this.uvs.push(...t); }
     this.indices.push(base, base + 1, base + 2);
   }
-  quad(a: V3, b: V3, c: V3, d: V3, facing: V3, ua: number[], ub: number[], uc: number[], ud: number[]) {
-    this.tri(a, b, c, facing, ua, ub, uc); this.tri(a, c, d, facing, ua, uc, ud);
+  quad(a: V3, b: V3, c: V3, d: V3, facing: V3, ua: number[], ub: number[], uc: number[], ud: number[], smooth?: [V3, V3, V3, V3]) {
+    this.tri(a, b, c, facing, ua, ub, uc, smooth && [smooth[0], smooth[1], smooth[2]]);
+    this.tri(a, c, d, facing, ua, uc, ud, smooth && [smooth[0], smooth[2], smooth[3]]);
   }
   mesh(device: pc.GraphicsDevice) {
     const m = new pc.Mesh(device);
@@ -323,7 +329,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       }
     }
   } else flat('Huertas y jardines', scene.areas.grass, LAYER.grass, surface('Hierba', 'grass', speckles('#86a462', ['#7a9858', '#95b36d', '#6f8c4f']), 0.25));
-  flat('Bosque', scene.areas.forest, LAYER.forest, surface('Sotobosque', 'forest', speckles('#4f6d42', ['#45603a', '#5c7b4b', '#3d5634']), 0.25));
+  const undergrowth = surface('Sotobosque', 'forest', speckles('#4f6d42', ['#45603a', '#5c7b4b', '#3d5634']), 0.25);
+  flat('Bosque', scene.areas.forest, LAYER.forest, undergrowth);
   const plaza = surface('Losas de la plaza', 'square', canvas(128, 128, ctx => {
     ctx.fillStyle = '#a99d88'; ctx.fillRect(0, 0, 128, 128);
     for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) {
@@ -1115,10 +1122,11 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
    * The hill's flank: rings offset outwards from the brow (mitred at the corners), dropping `depth`
    * cells over `run` with a smoothstep, so the top rounds over and the foot eases into the plain.
    * The sides the camera looks at run out up to 2.5 times further (`flankRun`), so they read as a
-   * slope rather than a cliff. Dressed in the zone's `flank` material, with low scrub scattered down it.
+   * slope rather than a cliff, and are the hill's own undergrowth running on down (the zone's `forest`
+   * material, thick with scrub); the sides it looks across to the view are the bare `flank`.
    */
   function flank(drop: NonNullable<GeoScene['drop']>) {
-    const edge = drop.edge, n = edge.length, RINGS = 8;
+    const edge = drop.edge, n = edge.length, RINGS = 16;
     const normals = edge.map((a, i) => {
       const b = edge[(i + 1) % n], len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
       return [(b[1] - a[1]) / len, -(b[0] - a[0]) / len];
@@ -1131,6 +1139,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const along = [0];
     for (let i = 1; i <= n; i++) along.push(along[i - 1] + Math.hypot(edge[i % n][0] - edge[i - 1][0], edge[i % n][1] - edge[i - 1][1]) * cellM);
     const profile = (t: number) => -drop.depth * t * t * (3 - 2 * t);
+    /** The drawn slope's height at `t` down it: straight between the rings, so nothing on it floats or sinks. */
+    const slopeY = (t: number) => { const u = t * RINGS, r = Math.min(RINGS - 1, Math.floor(u)); return profile(r / RINGS) + (profile((r + 1) / RINGS) - profile(r / RINGS)) * (u - r); };
     const runs = miters.map(m => flankRun(drop.run, m[0], m[1]));
     // Distance down the slope at each corner and ring, so the material keeps its real size however long the run.
     const slope = runs.map(run => {
@@ -1142,24 +1152,37 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       const t = r / RINGS, k = i % n;
       return [x(edge[k][0] + miters[k][0] * runs[k] * t), profile(t), z(edge[k][1] + miters[k][1] * runs[k] * t)];
     };
-    const b = new MeshBuilder();
+    // Shaded round: a normal at every corner of every ring, from its neighbours along the brow and down
+    // the slope (flat facets would light the two halves of each twisted quad differently, in stripes).
+    const round = (i: number, r: number): V3 => {
+      const k = i % n, ahead = at(k + 1, r), behind = at(k + n - 1, r), below = at(k, Math.min(RINGS, r + 1)), above = at(k, Math.max(0, r - 1));
+      const t = [ahead[0] - behind[0], ahead[1] - behind[1], ahead[2] - behind[2]], d = [below[0] - above[0], below[1] - above[1], below[2] - above[2]];
+      const m: V3 = [t[1] * d[2] - t[2] * d[1], t[2] * d[0] - t[0] * d[2], t[0] * d[1] - t[1] * d[0]], len = (m[1] < 0 ? -1 : 1) * (Math.hypot(...m) || 1);
+      return [m[0] / len, m[1] / len, m[2] / len];
+    };
+    // Which sides face the camera (it looks along −x −z): those are dressed as the hill's scrub.
+    const near = normals.map(([nx, nz]) => (nx + nz) * Math.SQRT1_2 > 0.4);
+    const rock = new MeshBuilder(), scrubland = new MeshBuilder();
     for (let i = 0; i < n; i++) for (let r = 0; r < RINGS; r++) {
       const out: V3 = [normals[i][0], 0.6, normals[i][1]], j = (i + 1) % n;
-      b.quad(at(i, r), at(i + 1, r), at(i + 1, r + 1), at(i, r + 1), out, [along[i], slope[i][r]], [along[i + 1], slope[j][r]], [along[i + 1], slope[j][r + 1]], [along[i], slope[i][r + 1]]);
+      (near[i] ? scrubland : rock).quad(at(i, r), at(i + 1, r), at(i + 1, r + 1), at(i, r + 1), out, [along[i], slope[i][r]], [along[i + 1], slope[j][r]], [along[i + 1], slope[j][r + 1]], [along[i], slope[i][r + 1]],
+        [round(i, r), round(i + 1, r), round(i + 1, r + 1), round(i, r + 1)]);
     }
-    add('Ladera', b, surface('Ladera', 'flank', speckles('#7a6648', ['#6b5a40', '#8a7656', '#5d5038']), 0.25), root, true, false);
-    // Low scrub: clumps along the flank, thicker near the top, a little apart from the brow.
+    add('Ladera', rock, surface('Ladera', 'flank', speckles('#7a6648', ['#6b5a40', '#8a7656', '#5d5038']), 0.25), root, true, false);
+    add('Ladera de matorral', scrubland, undergrowth, root, true, false);
+    // Low scrub: on the bare sides a few clumps, thicker near the top, a little apart from the brow;
+    // on the camera's sides as thick as the zone's own scrub, all the way down.
     const scrub = [mat('Matorral', '#59613a', 0.08), mat('Matorral seco', '#8a8052', 0.08), mat('Matorral oscuro', '#434b2c', 0.08)].map(m => ({ m, b: new MeshBuilder() }));
     let k = 0;
     for (let i = 0; i < n; i++) {
       const len = Math.hypot(edge[(i + 1) % n][0] - edge[i][0], edge[(i + 1) % n][1] - edge[i][1]);
-      for (let s = 0.3; s < len; s += 1.1 + jitter(k) * 0.9) {
-        const t = 0.06 + jitter(k + 1) ** 1.6 * 0.8, f = s / len, r = (0.45 + jitter(k + 2) * 0.65) / cellM;
+      for (let s = 0.3; s < len; s += 1.1 + jitter(k) * 0.9) for (let q = 0; q < (near[i] ? 8 : 1); q++) {
+        const t = near[i] ? 0.03 + jitter(k + 1) * 0.94 : 0.06 + jitter(k + 1) ** 1.6 * 0.8, f = Math.min(1, (s + q * 0.23) / len), r = (0.45 + jitter(k + 2) * 0.65) / cellM;
         const ex = edge[i][0] + (edge[(i + 1) % n][0] - edge[i][0]) * f, ez = edge[i][1] + (edge[(i + 1) % n][1] - edge[i][1]) * f;
         const mx = miters[i][0] + (miters[(i + 1) % n][0] - miters[i][0]) * f, mz = miters[i][1] + (miters[(i + 1) % n][1] - miters[i][1]) * f;
         const run = runs[i] + (runs[(i + 1) % n] - runs[i]) * f;
-        const c: V3 = [x(ex + mx * run * t), profile(t), z(ez + mz * run * t)];
-        blob(scrub[k % 3].b, c, r, r * (0.5 + jitter(k + 3) * 0.3));
+        const spot: V3 = [x(ex + mx * run * t), slopeY(t), z(ez + mz * run * t)];
+        blob(scrub[k % 3].b, spot, r, r * (0.5 + jitter(k + 3) * 0.3));
         k += 4;
       }
     }

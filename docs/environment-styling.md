@@ -481,10 +481,13 @@ of at a plinth. Set it with `drop` in `zone.json`:
   is cut away, and its cells are painted solid (`D`, grey in the preview). The scene gets
   `drop: {edge, depth, run}` in cells.
 - **`src/geo-scenery.ts`.** The ground ends at the edge. A flank falls `depth` over `run` from it
-  with a smoothstep, so the top rounds over and the foot eases out. It wears the look's `flank`
-  material (`look.materials.flank`) with low scrub on it.
+  with a smoothstep, so the top rounds over and the foot eases out, shaded round (a normal at every
+  corner, not flat facets). It wears the look's `flank` material (`look.materials.flank`) with low
+  scrub on it.
 - **The camera's sides.** The sides the camera looks at run out up to 2.5 times further
-  (`flankRun` in `src/geo.ts`), so they read as a slope rather than a cliff.
+  (`flankRun` in `src/geo.ts`), so they read as a slope rather than a cliff. They are the hill's
+  own undergrowth running on down: the zone's `forest` material, as thick with scrub as the zone's
+  own, so the zone's edge does not show as a wall of rock.
 - **`src/scenery.ts`.** It builds no plinth, and the backdrop lies `depth` lower.
 - **What lies below** is the zone's own landmarks. `kit.scene.drop` tells a builder where the flank
   ends in every direction: `vista` lays the real city there.
