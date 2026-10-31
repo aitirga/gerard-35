@@ -12,6 +12,10 @@
     {"press":  "KeyE"},
     {"shot":  "nucli-window", "delay":  1800, "caption":  "Mirar el escaparate: Gerard's line"},
     {"skipDialogue":  true},
+    {"teleport":  "sants", "cell":  [86, 36], "settle":  800},
+    {"press":  "KeyE"},
+    {"until":  "document.title.startsWith('El Nucli')", "timeout":  20000},
+    {"shot":  "door-in", "delay":  1500, "caption":  "Entrar en El Nucli: the street door opens into the shop"},
     {"teleport":  "sants", "cell":  [76, 48], "settle":  1500},
     {"shot":  "santa-caterina", "delay":  1500, "caption":  "Carrer de Santa Caterina down from Valladolid, Casa Astor on the corner"},
     {"teleport":  "sants", "cell":  [99, 83], "settle":  1500},
@@ -33,6 +37,7 @@
     {"eval":  "window.gerard.game.toggleOverview()"},
     {"teleport":  "el-nucli", "cell":  [6, 23], "settle":  2500},
     {"shot":  "inside-shop", "delay":  1500, "caption":  "Inside El Nucli: hydraulic tiles, the wall of boxes, the counter before the wine wall"},
+    {"shot":  "box-wall", "clip":  [330, 0, 560, 340], "caption":  "Close: the wall of game boxes, stacked flat, standing on edge or face out"},
     {"teleport":  "el-nucli", "cell":  [4, 19], "settle":  800},
     {"press":  "KeyE"},
     {"shot":  "counter", "delay":  1800, "caption":  "Mirar el mostrador"},
@@ -43,6 +48,10 @@
     {"shot":  "back-room", "delay":  1500, "caption":  "The back room behind the curtain: stock shelves, unopened boxes, the round table under a bare bulb (Bernat's seat)"},
     {"eval":  "window.gerard.game.toggleOverview()"},
     {"shot":  "inside-overview", "delay":  3000, "caption":  "El Nucli from above: the shop, the play hall and the back room"},
-    {"eval":  "window.gerard.game.toggleOverview()"}
+    {"eval":  "window.gerard.game.toggleOverview()"},
+    {"teleport":  "el-nucli", "cell":  [6, 23], "settle":  1500},
+    {"press":  "KeyE"},
+    {"until":  "document.title.startsWith('Sants')", "timeout":  20000},
+    {"shot":  "door-out", "delay":  1500, "caption":  "Salir a la calle: back on Carrer de Valladolid, in front of the shop"}
   ]
 }
