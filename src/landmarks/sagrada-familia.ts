@@ -3,7 +3,7 @@ import type { GeoLandmark } from '../geo';
 import type { LandmarkKit } from '../landmarks';
 
 /**
- * The Sagrada Família as it stands in 2026 (docs/places/sagrada-familia.md): 14 of its 18 towers,
+ * The Sagrada Família as it stands in 2026 (docs/places/sagrada.md): 14 of its 18 towers,
  * the Tower of Jesus Christ with its white cross, Mary's lit star, the Nativity facade Gaudí built
  * in old Montjuïc stone, the newer pale nave, transept and Passion facade, the old apse with its
  * pinnacles, and the Glory still a construction front with its cranes. Recognisable from the

@@ -25,6 +25,8 @@
     {"shot": "pond", "delay": 800, "caption": "Plaça de Gaudí: the pond under the stone pines, the facade's reflection"},
     {"teleport": "sagrada-familia", "cell": [73, 40], "settle": 2500},
     {"shot": "passion", "delay": 800, "caption": "Behind: the Passion facade on Carrer de Sardenya, seen through the cut"},
+    {"teleport": "sagrada-familia", "cell": [49, 57], "settle": 2500},
+    {"shot": "escoles", "delay": 800, "caption": "Gaudí's Escoles on the Sardenya corner: brick walls that wave in plan under a roof whose eaves rise and fall"},
     {"teleport": "sagrada-familia", "cell": [25, 83], "settle": 2500},
     {"shot": "glory", "delay": 800, "caption": "The Glory on Carrer de Mallorca: still a construction front, hoarding and cranes"},
     {"teleport": "sagrada-familia", "cell": [134, 148], "settle": 2500},

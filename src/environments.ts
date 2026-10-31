@@ -468,7 +468,7 @@ export const CARDEDEU = geoEnvironment('cardedeu', CARDEDEU_SCENE as GeoScene);
 const MAZE_GROUND = geoEnvironment('cardedeu-laberinto', CARDEDEU_MAZE_SCENE as GeoScene);
 /** Its tower's walls are drawn into the grid (src/tower.ts): the ramp spirals up ring by ring. */
 export const CARDEDEU_MAZE = { ...MAZE_GROUND, grid: towerGrid(MAZE_GROUND.grid) };
-/** The Sagrada Família's block, Plaça de Gaudí and its pond (docs/places/sagrada-familia.md), from the L5. */
+/** The Sagrada Família's block, Plaça de Gaudí and its pond (docs/places/sagrada.md), from the L5. */
 export const SAGRADA_FAMILIA = geoEnvironment('sagrada-familia', SAGRADA_FAMILIA_SCENE as GeoScene);
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,

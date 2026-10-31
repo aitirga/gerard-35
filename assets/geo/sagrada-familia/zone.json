@@ -127,15 +127,19 @@
     },
     "escoles": {
       "walls": [
-        "#b97f57"
+        "#b0866a"
       ],
-      "base": "#8d5f43",
+      "base": "#9a6c4c",
       "trim": "#e3d5bd",
       "roof": "#a86f4b",
       "roof_kind": "flat",
       "facade": "ashlar",
-      "ground": "masonry",
-      "levels": 1
+      "ground": "ashlar",
+      "levels": 1,
+      "materials": {
+        "wall": "mao",
+        "base": "mao"
+      }
     },
     "pavilion": {
       "walls": [
@@ -734,6 +738,25 @@
         "umbrella": "#3f8a5a",
         "count": 8
       }
+    },
+    {
+      "kind": "escoles",
+      "id": "escoles",
+      "x_m": -35.4,
+      "z_m": -60.0,
+      "size_m": [
+        21.7,
+        12.4
+      ],
+      "solid": false,
+      "params": {
+        "wall": 3,
+        "waves": 3
+      },
+      "textures": [
+        "mao",
+        "rajola"
+      ]
     }
   ]
 }
