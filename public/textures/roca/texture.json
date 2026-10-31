@@ -1,0 +1,29 @@
+{
+  "id": "roca",
+  "name": "Roca",
+  "kind": "material",
+  "size_m": [
+    2.0,
+    2.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "rocks_ground_02",
+    "name": "Rocks Ground 02",
+    "url": "https://polyhaven.com/a/rocks_ground_02",
+    "author": "Rob Tuytel",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven rocks_ground_02 --id roca",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#6d5e46",
+  "made": "2026-10-30"
+}
