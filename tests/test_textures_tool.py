@@ -205,6 +205,23 @@ class GeoMaterialsTest(unittest.TestCase):
         self.assertEqual(scene["buildings"][0]["materials"], {"wall": "estuc"})
         self.assertNotIn("signature", scene["buildings"][0])
 
+    def test_map_trees_take_the_fields_of_the_area_they_stand_in(self):
+        zone = {"anchor": {"lat": 41.0, "lon": 2.0}, "cell_m": 1, "bounds_m": {"west": 0, "east": 40, "north": 0, "south": 20},
+                "osm_props": {"tree": {"species": "plane", "within": {"way/park": {"species": ["pine", "palm"], "base": "ground"},
+                                                                     "way/wood": {"keep": 0}}}}}
+        frame = geo.Frame(zone)
+        node = lambda i, east: {"id": f"node/{i}", "tags": {"natural": "tree"}, "at": frame.latlon(east, 10)}
+        trees = [node(i, 3 + i) for i in range(6)] + [node(10 + i, 22 + i) for i in range(6)] + [node(20, 35)]
+        areas = {"grass": [{"id": "way/park", "poly": [[0, 0], [12, 0], [12, 20], [0, 20]]}], "forest": [{"id": "way/wood", "poly": [[20, 0], [30, 0], [30, 20], [20, 20]]}]}
+        raster = [["." for _ in range(frame.width)] for _ in range(frame.depth)]
+        props = geo.map_props(zone, trees, frame, raster, [], areas)
+        park = [p for p in props if p["x"] < 12]
+        self.assertEqual(len(park), 6)
+        self.assertTrue(all(p["species"] in ("pine", "palm") and p["base"] == "ground" for p in park))
+        self.assertFalse([p for p in props if 20 <= p["x"] <= 30], "keep 0 drops every tree in the wood")
+        self.assertEqual([p["species"] for p in props if p["x"] > 30], ["plane"])
+        self.assertEqual(props, geo.map_props(zone, trees, frame, raster, [], areas), "the same trees on every build")
+
     def test_landmark_footprints_turn_with_them(self):
         lm = {"x": 10, "z": 10, "w": 4, "d": 1, "angle": 0}
         self.assertEqual({x for x, _ in geo.landmark_cells(lm, 30, 30)}, {8, 9, 10, 11, 12})
