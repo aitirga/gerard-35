@@ -376,30 +376,38 @@ export function furnishNucli(r: RoomKit) {
     box('Bordillo', mat('Bordillo de granito', '#8f8b84', 0.1), 6.5, 26.97, -1.5, 15.2, 1.52, 0.12);
   }
 
-  /** What fills a unit of cubes: in each, a row of boxes spine out, a stack lying flat or one box face out. */
+  /**
+   * What fills a unit of cubes: in each, a stack of boxes lying flat (how most shops keep them), a
+   * row standing on edge or one box face out. Game boxes, not books: square, thick, all about the
+   * same size in a cube, each with the seam where its lid meets its base.
+   */
   function cubeArt(cols: number, rows: number, seed: number) {
     const S = 96, [c, ctx] = canvas(cols * S, rows * S);
     ctx.fillStyle = '#2b2420'; ctx.fillRect(0, 0, c.width, c.height);
     for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
       const x0 = col * S, y1 = (row + 1) * S, n = seed * 31 + row * 7 + col * 3, kind = jitter(n * 1.3);
-      if (kind < 0.18) cover(ctx, x0 + 8, y1 - 84, 80, n);
-      else if (kind < 0.45) {
-        // A stack of boxes lying flat, titles along them.
+      if (kind < 0.3) cover(ctx, x0 + 8, y1 - 84, 80, n);
+      else if (kind < 0.7) {
+        // A stack of boxes lying flat, each lid's band of colour and its title along the side.
         let y = y1;
-        for (let k = 0; y > row * S + 26; k++) {
-          const h = 13 + jitter(n + k * 5) * 10, w = 70 + jitter(n + k * 3) * 22, colour = BOX_COLOURS[(n + k * 3) % BOX_COLOURS.length];
-          ctx.fillStyle = colour; ctx.fillRect(x0 + (S - w) / 2, y - h, w, h - 1);
+        for (let k = 0; y > row * S + 30; k++) {
+          const h = 17 + jitter(n + k * 5) * 9, w = 74 + jitter(n + k * 3) * 18, colour = BOX_COLOURS[(n + k * 3) % BOX_COLOURS.length], left = x0 + (S - w) / 2;
+          ctx.fillStyle = colour; ctx.fillRect(left, y - h, w, h - 1);
+          ctx.fillStyle = BOX_COLOURS[(n + k * 3 + 9) % BOX_COLOURS.length]; ctx.fillRect(left, y - h, 6, h - 1);
+          ctx.fillStyle = '#00000038'; ctx.fillRect(left, y - 5, w, 1.5);
           ctx.fillStyle = shade(colour); ctx.font = '700 8px "Helvetica Neue", Arial, sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
-          ctx.fillText(TITLES[(n + k) % TITLES.length].toUpperCase(), x0 + S / 2, y - h / 2, w - 8);
+          ctx.fillText(TITLES[(n + k) % TITLES.length].toUpperCase(), x0 + S / 2 + 3, y - h / 2 - 1, w - 14);
           y -= h;
         }
       } else {
-        // Boxes standing spine out: thick, square-shouldered, a band and the title up the spine.
+        // Boxes standing on edge, spine out: as thick as a box is deep, the same height across the cube.
+        const tall = 72 + jitter(n * 2.1) * 16;
         let x = x0 + 3;
-        for (let k = 0; x < x0 + S - 14; k++) {
-          const w = Math.min(14 + jitter(n + k * 7) * 14, x0 + S - 3 - x), h = 62 + jitter(n + k * 11) * 30, colour = BOX_COLOURS[(n + k * 5) % BOX_COLOURS.length];
+        for (let k = 0; x < x0 + S - 18; k++) {
+          const w = Math.min(19 + jitter(n + k * 7) * 15, x0 + S - 3 - x), h = tall + (jitter(n + k * 11) - 0.5) * 6, colour = BOX_COLOURS[(n + k * 5) % BOX_COLOURS.length];
           ctx.fillStyle = colour; ctx.fillRect(x, y1 - h, w, h);
-          ctx.fillStyle = BOX_COLOURS[(n + k * 5 + 9) % BOX_COLOURS.length]; ctx.fillRect(x, y1 - h + 5, w, 7);
+          ctx.fillStyle = BOX_COLOURS[(n + k * 5 + 9) % BOX_COLOURS.length]; ctx.fillRect(x, y1 - h + 4, w, 10);
+          ctx.fillStyle = '#00000038'; ctx.fillRect(x + w - 5, y1 - h, 1.5, h);
           ctx.fillStyle = '#ffffff26'; ctx.fillRect(x, y1 - h, 2, h);
           ctx.save(); ctx.translate(x + w / 2, y1 - 6); ctx.rotate(-Math.PI / 2);
           ctx.fillStyle = shade(colour); ctx.font = `700 ${Math.min(10, Math.max(6, w - 5))}px "Helvetica Neue", Arial, sans-serif`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
