@@ -136,6 +136,7 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `zoom` | Follow-camera zoom (orthographic half-height) |
 | `spawn` | `east_m`/`south_m`; snapped to the nearest walkable cell |
 | `storey_m` | Height of one storey |
+| `edge_buildings` | `true`: buildings the map's edge cuts through are kept, cut at the edge, even when most of them lies outside (by default a building whose middle is off the map is left out), so the blocks carry on to the frame |
 | `reference` | `checked` date, `streetview_capture`, `notes` (one line per observation) and `viewpoints` (`name`, `lat`, `lon`, `heading`, `pitch`) for `fetch` |
 | `styles` | Named looks; `default` is merged under every other one (see below) |
 | `buildings` | Overrides by `way/<id>` (wins) or `tag:building=<value>`: `style`, `levels` (wins over the map's), `roof_kind`, `label`, `sign` (big lit letters over the ground floor of the wall facing the camera), `signature` (a photo texture of the real facade on that wall), `materials` (merged over the style's), and per house `walls` (one colour), `facade`, `ground` |

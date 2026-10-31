@@ -520,6 +520,12 @@ def build(zone_id: str) -> None:
         if kind == "building":
             poly = polys[0][:-1] if polys and polys[0][0] == polys[0][-1] else (polys[0] if polys else [])
             cx, cz = centroids.get(e["id"], (-99, -99))
+            if zone.get("edge_buildings") and len(poly) > 2 and not (0 <= cx < W and 0 <= cz < D):
+                # `edge_buildings`: a block the map's edge cuts through is kept, cut at the edge, so the
+                # streets run between houses to the frame instead of past empty lots.
+                poly = clip(poly, *lo, *hi)
+                if len(poly) < 3 or abs(area(poly)) < 12: continue
+                cx, cz = sum(p[0] for p in poly) / len(poly), sum(p[1] for p in poly) / len(poly)
             if len(poly) < 3 or not (0 <= cx < W and 0 <= cz < D): continue
             if area(poly) < 0: poly.reverse()
             buildings.append(make_building(zone, e, poly, cell))
