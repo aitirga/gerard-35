@@ -22,6 +22,7 @@ const PLACES: Place[] = [
   { id: 'meridiana-calle', name: 'Avinguda Meridiana', detail: 'La calle del piso', group: 'Barcelona', open: true },
   { id: 'rec-comtal', name: 'Escola Rec Comtal', detail: 'Trinitat Vella', group: 'Barcelona', open: true },
   { id: 'sagrada-familia', name: 'Sagrada Família', detail: 'Plaça de Gaudí', group: 'Barcelona', open: false },
+  { id: 'sagrada-familia-interior', name: 'Sagrada Família · Interior', detail: 'La nave', group: 'Barcelona', open: false },
   { id: 'alegia', name: 'Alegia · San Juan kalea', detail: 'Según el mapa', group: 'Otros lugares', open: true },
   { id: 'patio', name: 'El patio', detail: 'Prueba de movimiento', group: 'Otros lugares', open: true },
 ];

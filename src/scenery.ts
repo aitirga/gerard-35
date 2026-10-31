@@ -5,6 +5,7 @@ import { buildHome } from './home-scenery';
 import type { Lamp, LightId } from './home-lights';
 import type { HouseVolume } from './palace';
 import { buildPalaceInterior } from './palace-scenery';
+import { buildBasilica } from './basilica-scenery';
 import { buildGeo } from './geo-scenery';
 import type { Cell } from './movement';
 import { createTraffic } from './traffic';
@@ -36,6 +37,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   let home: ReturnType<typeof buildHome> | undefined;
   let palace: ReturnType<typeof buildPalaceInterior> | undefined;
   let geo: ReturnType<typeof buildGeo> | undefined;
+  let basilica: ReturnType<typeof buildBasilica> | undefined;
   /** Street houses' main volumes, for things that grow over them (the palace's gum). */
   const houseVolumes: HouseVolume[] = [];
   const flowing: pc.StandardMaterial[] = [];
@@ -140,10 +142,12 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   // The Meridiana flat is lit by its lamps, which are the bulbs at home: the window light stays low.
   const lamplit = environment.id === 'meridiana';
   // Outdoors by day: a near-white sun, and a blue sky that tints the shade and lights it from the other side.
-  const outdoor = !night && !lamplit && !environment.plan && !environment.palace;
-  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
-  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
-  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : outdoor ? 1.8 : 1.65;
+  // Inside the Sagrada Família: dim stone, the light comes in colour through the glass (src/basilica-scenery.ts).
+  const nave = !!environment.basilica;
+  const outdoor = !night && !lamplit && !environment.plan && !environment.palace && !nave;
+  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : nave ? new pc.Color(0.3, 0.3, 0.33) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
+  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : nave ? new pc.Color(1, 0.93, 0.82) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
+  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : nave ? 1.05 : outdoor ? 1.8 : 1.65;
   const skyIntensity = 0.42;
   app.scene.ambientLight = ambient.clone();
   let tone = 0, dark = 0;
@@ -162,12 +166,12 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     sky.setEulerAngles(35, 150, 0); root.addChild(sky);
   }
   // Floor plans lay their own backdrop, open under a stairwell.
-  const backdrop = mat('Fondo', night ? '#172a30' : '#67746b');
+  const backdrop = mat('Fondo', night ? '#172a30' : nave ? '#26221f' : '#67746b');
   const backdropColor = backdrop.diffuse.clone();
   // The backdrop only receives shadows: as a caster it would stretch the sun's shadow depth over 200 m.
   if (!environment.plan) box('Fondo', backdrop, cx, -1.05, cz, 200, 0.2, 200).render!.castShadows = false;
   // Floor plans build their own plinth, with room for a stairwell going down.
-  if (!environment.plan && !environment.palace) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
+  if (!environment.plan && !environment.palace && !nave) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
 
   function pointLight(px: number, y: number, pz: number) {
     const light = new pc.Entity('Luz cálida');
@@ -374,6 +378,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     for (const pz of [0.6, 41.6]) box('Límite del barrio', leaf[2], 16, 0.38, pz, 17, 0.65, 0.7);
   } else if (environment.geo) {
     geo = buildGeo({ app, root, batch: batch.id, mat, texture, water, x, z }, environment.geo);
+  } else if (environment.basilica) {
+    basilica = buildBasilica({ app, root, batch: batch.id, mat, texture, x, z }, environment);
   } else if (environment.palace) {
     palace = buildPalaceInterior({ app, root, x, z, texture }, environment);
   } else if (environment.plan) {
@@ -443,6 +449,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       home?.update(dt, animate, focus, toCamera);
       palace?.update(dt, animate);
       geo?.update(dt, animate, focus, toCamera);
+      basilica?.update(dt, animate, focus, toCamera);
       if (!animate) return;
       time += dt;
       for (const m of flowing) { m.diffuseMapOffset.set(time * .03, time * .05); m.emissiveMapOffset.set(-time * .04, time * .025); m.update(); }
@@ -450,6 +457,6 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     /** A lamp in the Meridiana flat (src/home-lights.ts); other scenes have none. */
     setLamp(id: LightId, lamp: Lamp) { home?.setLamp(id, lamp); },
     lampPosition(id: LightId) { return home?.lampPosition(id); },
-    destroy() { traffic?.destroy(); app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
+    destroy() { traffic?.destroy(); app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); basilica?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }

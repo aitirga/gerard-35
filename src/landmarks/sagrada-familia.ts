@@ -252,9 +252,10 @@ function crane(parts: Record<string, Mesh>, x: number, z: number, top: number, j
 }
 
 // ------------------------------------------------------------ mesh helpers (metres, UVs in metres)
+// The inside (src/basilica-scenery.ts) builds with the same ones.
 
 /** A box from one corner to the other; every face but the bottom, UVs in metres so materials tile at real size. */
-function box(b: Mesh, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) {
+export function box(b: Mesh, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) {
   b.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], [x0, y0], [x1, y0], [x1, y1], [x0, y1]);
   b.quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [0, 0, -1], [-x1, y0], [-x0, y0], [-x0, y1], [-x1, y1]);
   b.quad([x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [1, 0, 0], [-z1, y0], [-z0, y0], [-z0, y1], [-z1, y1]);
@@ -291,7 +292,7 @@ function gable(b: Mesh, x0: number, x1: number, y0: number, apex: number, z0: nu
  * A body of revolution round (cx, cz): `profile` lists [radius, height] from the foot up. UVs count
  * metres round and up, or with `wraps` the painted band goes that many times round, `band` metres high.
  */
-function lathe(b: Mesh, cx: number, cz: number, profile: [number, number][], segments: number,
+export function lathe(b: Mesh, cx: number, cz: number, profile: [number, number][], segments: number,
   o: { from?: number; to?: number; phase?: number; wraps?: number; band?: number; sx?: number; sz?: number } = {}) {
   const from = (o.from ?? 0) + (o.phase ?? 0), to = (o.to ?? Math.PI * 2) + (o.phase ?? 0), sx = o.sx ?? 1, sz = o.sz ?? 1;
   const angle = (j: number) => from + (to - from) * j / segments;
@@ -311,14 +312,14 @@ function lathe(b: Mesh, cx: number, cz: number, profile: [number, number][], seg
 }
 
 /** An ellipsoid centred on `c`. */
-function blob(b: Mesh, c: V3, rx: number, ry: number, rz: number, segments = 6, rings = 4) {
+export function blob(b: Mesh, c: V3, rx: number, ry: number, rz: number, segments = 6, rings = 4) {
   const profile: [number, number][] = [];
   for (let k = 0; k <= rings; k++) { const t = Math.PI * k / rings; profile.push([Math.sin(t), c[1] - Math.cos(t) * ry]); }
   lathe(b, c[0], c[2], profile, segments, { sx: rx, sz: rz });
 }
 
 /** A square-section bar from `a` to `c`, `w` wide and `h` deep; `point` tapers it to a tip at `c`. */
-function beam(b: Mesh, a: V3, c: V3, w: number, h = w, point = false) {
+export function beam(b: Mesh, a: V3, c: V3, w: number, h = w, point = false) {
   const d = norm([c[0] - a[0], c[1] - a[1], c[2] - a[2]]);
   const up: V3 = Math.abs(d[1]) > 0.9 ? [1, 0, 0] : [0, 1, 0];
   const u = norm(cross(d, up)), v = cross(u, d);
@@ -336,7 +337,7 @@ function beam(b: Mesh, a: V3, c: V3, w: number, h = w, point = false) {
 }
 
 /** A flat disc facing +z (a rose window). */
-function disc(b: Mesh, x: number, y: number, z: number, r: number, segments: number) {
+export function disc(b: Mesh, x: number, y: number, z: number, r: number, segments: number) {
   for (let j = 0; j < segments; j++) {
     const a0 = j / segments * Math.PI * 2, a1 = (j + 1) / segments * Math.PI * 2;
     b.tri([x, y, z], [x + Math.cos(a0) * r, y + Math.sin(a0) * r, z], [x + Math.cos(a1) * r, y + Math.sin(a1) * r, z], [0, 0, 1], [x, y], [x + Math.cos(a0) * r, y + Math.sin(a0) * r], [x + Math.cos(a1) * r, y + Math.sin(a1) * r]);
@@ -344,7 +345,7 @@ function disc(b: Mesh, x: number, y: number, z: number, r: number, segments: num
 }
 
 /** A pointed arch facing +z: `w` wide, its straight sides `h` high, then two arcs meeting at a point. */
-function arch(b: Mesh, x: number, y: number, z: number, w: number, h: number) {
+export function arch(b: Mesh, x: number, y: number, z: number, w: number, h: number) {
   const outline: [number, number][] = [[x - w / 2, y], [x + w / 2, y], [x + w / 2, y + h]];
   for (let k = 1; k < 6; k++) { const t = k / 6; outline.push([x + w / 2 * (1 - t) ** 0.7, y + h + w * 0.62 * Math.sin(t * Math.PI / 2)]); }
   outline.push([x, y + h + w * 0.62]);
@@ -372,11 +373,11 @@ function quadX(b: Mesh, x: number, z0: number, z1: number, y0: number, y1: numbe
 
 const norm = (v: V3): V3 => { const l = Math.hypot(...v) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
 const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-function seeded(seed: number) { return () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
+export function seeded(seed: number) { return () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
 
 // ------------------------------------------------------------ painted surfaces (own procedural painting)
 
-function canvas(w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) {
+export function canvas(w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d')!); return c;
 }
 /** Grain of weathered stone: specks a shade lighter and darker, `soot` streaks running down. */

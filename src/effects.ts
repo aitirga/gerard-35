@@ -85,6 +85,8 @@ const OUTDOORS: Air = { kinds: [{ kind: 'pollen', density: 4, low: .4, high: 3 }
 const AIR: Partial<Record<string, Air>> = {
   patio: { kinds: [{ kind: 'firefly', density: 7, low: .3, high: 2 }], wind: [.05, 0, .02], turbulence: .6 },
   palacio: { kinds: [{ kind: 'gloom', density: 9, low: .1, high: 3 }, { kind: 'bubble', density: 2, low: 0, high: .4 }], wind: [0, .04, 0], turbulence: .7 },
+  // The Sagrada Família inside: dust hanging high in the light from the glass.
+  'sagrada-familia-interior': { kinds: [{ kind: 'mote', density: 16, low: .3, high: 5 }], wind: [0, .02, 0], turbulence: .3 },
 };
 /** Ambient particles stop growing past this, however far the camera pulls back. */
 const AMBIENT_CAP = 1600;
@@ -413,7 +415,7 @@ export function createEffects(app: pc.Application) {
       particles.wind.set(...mood.wind); particles.turbulence = mood.turbulence;
       air = mood.kinds.map(kind => ({ kind, emitter: particles.emitter(kind.kind, { x: 0, y: 0, z: 0 }, { rate: 0, ambient: true, area: { x: 1, z: 1, low: kind.low, high: kind.high } }) }));
       // Weather only falls where there is a sky; a new scene starts with it already falling.
-      outdoors = !environment.plan && !environment.palace;
+      outdoors = !environment.plan && !environment.palace && !environment.basilica;
       sky.rain = wanted.rain; sky.snow = wanted.snow; fill = true;
       if (!falls) {
         const sheet = (kind: string, w: { low: number; high: number }, velocity?: Vec) => particles.emitter(kind, { x: 0, y: 0, z: 0 }, { rate: 0, ambient: true, area: { x: 1, z: 1, low: w.low, high: w.high }, velocity });
