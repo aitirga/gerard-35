@@ -13,11 +13,12 @@ type V3 = [number, number, number];
 export const kind = 'joare';
 
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
-  const stone = kit.surface('granit', String(landmark.params.colour ?? '#77705f'), 0.12);
+  const stone = kit.surface('granit', String(landmark.params.colour ?? '#6c6963'), 0.12);
   const rock = kit.surface('harri-hezea', '#7f7e76', 0.08);
   // The bell: rings of a flattened, squarish section that widen from the crown to the mouth.
   const ring = (t: number) => {
-    const a = 0.38 + 0.52 * t ** 1.25, b = 0.32 + 0.12 * t, x = -1.2 + 2.3 * t, pts: V3[] = [];
+    // Broad and flat, the crown two thirds of the mouth, as the sculpture is (a cone would read as a megaphone).
+    const a = 0.62 + 0.36 * t ** 1.4, b = 0.26 + 0.1 * t, x = -1.2 + 2.3 * t, pts: V3[] = [];
     for (let k = 0; k < 20; k++) {
       const q = (k / 20) * Math.PI * 2, c = Math.cos(q), s = Math.sin(q);
       // A superellipse: rounded corners, flat sides, like the beaten iron of a real cowbell.
@@ -40,16 +41,17 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
     mouth.tri([1.05, 0, 0], [m[0] - 0.02, m[1] * 0.92, m[2] * 0.85], [n[0] - 0.02, n[1] * 0.92, n[2] * 0.85], [1, 0, 0]);
   }
   // Lying on its side with its broad face upright, the mouth tipped up a little, raised on the rocks.
-  const bell = new pc.Entity('Joare'); bell.setLocalPosition(0, 1.12, 0); bell.setLocalEulerAngles(0, 0, 8);
+  const bell = new pc.Entity('Joare'); bell.setLocalPosition(0, 1.32, 0); bell.setLocalEulerAngles(0, 0, 6);
   kit.root.addChild(bell);
   kit.add('Joare', body, stone, { parent: bell });
   kit.add('Boca del joare', mouth, kit.mat('Boca del joare', '#26231f', 0.1), { parent: bell, shadows: false });
   // The handle: a loop of stone over the crown, and the clapper, a stone rod out of the mouth.
-  for (let k = 0; k < 9; k++) {
-    const q = Math.PI * (k + 0.5) / 9;
-    kit.part('Asa del joare', 'box', stone, [-1.2 - Math.sin(q) * 0.42, Math.cos(q) * 0.3, 0], [0.16, 0.22, 0.2], [0, 0, (q * 180) / Math.PI - 90], bell);
+  // A wide loop from the top of the crown round to its foot, like the sculpture's.
+  for (let k = 0; k < 13; k++) {
+    const q = Math.PI * (k + 0.5) / 13;
+    kit.part('Asa del joare', 'box', stone, [-1.2 - Math.sin(q) * 0.5, Math.cos(q) * 0.55, 0], [0.15, 0.2, 0.16], [0, 0, (q * 180) / Math.PI - 90], bell);
   }
-  kit.part('Badajo', 'cylinder', stone, [1.3, -0.45, 0], [0.28, 1.2, 0.28], [0, 0, 90], bell);
+  kit.part('Badajo', 'cylinder', stone, [1.45, -0.85, 0], [0.3, 1.5, 0.3], [0, 0, 92], bell);
   kit.part('Roca', 'sphere', rock, [-0.6, 0.3, 0.05], [1.1, 0.75, 0.95], [0, 25, 8]);
   kit.part('Roca', 'sphere', rock, [0.45, 0.28, -0.05], [1.3, 0.7, 1.1], [0, -15, -6]);
 }

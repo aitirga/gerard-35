@@ -30,13 +30,19 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const sheet = kit.mesh();
   sheet.quad([-half, water + 0.2, -0.25], [half, water + 0.2, -0.25], [half, water + 0.01, -2.4], [-half, water + 0.01, -2.4], [0, 1, -0.3], [0, 0], [half / 2, 0], [half / 2, 1], [0, 1]);
   kit.add('Espuma del azud', sheet, foam, { shadows: false });
-  // A gravel bar below the weir, along the bank at the start of the sill.
-  const gravel = kit.surface('legarra', '#8c8a80', 0.05);
-  const bar = kit.mesh(), n = 16, cx = -half * 0.55, cz = -6, rx = half * 0.42, rz = 3;
+  // A gravel bar below the weir, a long lens along the bank where the current slows: dry pebbles on
+  // top, a darker wet rim where it slips under the water.
+  const dry = kit.surface('legarra', '#7d7a70', 0.05), wet = kit.surface('legarra', '#56574f', 0.3);
+  const bar = kit.mesh(), rim = kit.mesh(), n = 20, cx = -half + 2.2, cz = -9, rx = 2.6, rz = 8.5;
+  const edge = (k: number, f: number): [number, number] => {
+    const a = (k / n) * Math.PI * 2, wobble = 1 + Math.sin(k * 2.1) * 0.08;
+    return [cx + Math.cos(a) * rx * wobble * f, cz + Math.sin(a) * rz * wobble * f];
+  };
   for (let k = 0; k < n; k++) {
-    const a0 = (k / n) * Math.PI * 2, a1 = ((k + 1) / n) * Math.PI * 2, w0 = 1 + Math.sin(k * 2.1) * 0.15, w1 = 1 + Math.sin((k + 1) * 2.1) * 0.15;
-    const p0 = [cx + Math.cos(a0) * rx * w0, cz + Math.sin(a0) * rz * w0], p1 = [cx + Math.cos(a1) * rx * w1, cz + Math.sin(a1) * rz * w1];
-    bar.tri([cx, water + 0.12, cz], [p0[0], water + 0.01, p0[1]], [p1[0], water + 0.01, p1[1]], [0, 1, 0], [cx, cz], p0, p1);
+    const p0 = edge(k, 0.78), p1 = edge(k + 1, 0.78), q0 = edge(k, 1), q1 = edge(k + 1, 1);
+    bar.tri([cx, water + 0.14, cz], [p0[0], water + 0.06, p0[1]], [p1[0], water + 0.06, p1[1]], [0, 1, 0], [cx, cz], p0, p1);
+    rim.quad([p0[0], water + 0.06, p0[1]], [p1[0], water + 0.06, p1[1]], [q1[0], water + 0.005, q1[1]], [q0[0], water + 0.005, q0[1]], [0, 1, 0], p0, p1, q1, q0);
   }
-  kit.add('Barra de grava', bar, gravel, { shadows: false });
+  kit.add('Barra de grava', bar, dry, { shadows: false });
+  kit.add('Orilla mojada de la grava', rim, wet, { shadows: false });
 }

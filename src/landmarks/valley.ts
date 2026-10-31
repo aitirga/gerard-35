@@ -61,9 +61,9 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
     return at;
   };
   const near = kit.mesh(), high = kit.mesh(), left = kit.mesh();
-  slope(near, 'far', -halfW - 60, halfW + 70, 0, 34, -0.5, 30, 1.7, 36);
+  const nearAt = slope(near, 'far', -halfW - 60, halfW + 70, 0, 34, -0.5, 30, 1.7, 36);
   const meadowAt = slope(high, 'far', -halfW - 60, halfW + 70, 22, 64, 4, 46, 4.2, 70);
-  slope(left, 'left', -halfD - 50, halfD * 0.45, 0, 30, -0.5, 26, 7.9, 36);
+  const leftAt = slope(left, 'left', -halfD - 50, halfD * 0.45, 0, 30, -0.5, 26, 7.9, 36);
   kit.add('Monte cercano', near, woodland, { shadows: false });
   kit.add('Monte de prados', high, meadow, { shadows: false });
   kit.add('Monte de la izquierda', left, woodland, { shadows: false });
@@ -106,21 +106,31 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const rock = kit.mat('Caliza de la cumbre', '#ffffff', 0.05);
   rock.diffuseMap = kit.texture(limestone); rock.update();
   kit.add('Txindoki', peak, rock, { shadows: false });
-  // Low cloud caught on the slopes: soft white bands lying across the ridges.
+  // Low cloud caught on the slopes: soft white bands lying on the hillside a little above the trees,
+  // fading out at both edges and along their length, so they never cut into the ground.
   const cloud = document.createElement('canvas'); cloud.width = 256; cloud.height = 64;
   const cctx = cloud.getContext('2d')!;
-  for (let k = 0; k < 26; k++) {
-    const x = 10 + k * 9.4, y = 32 + Math.sin(k * 1.7) * 6, r = 16 + (k % 5) * 4;
+  for (let k = 0; k < 16; k++) {
+    const x = 20 + k * 14.5, y = 32 + Math.sin(k * 1.7) * 5, r = 13 + (k % 5) * 3;
     const g = cctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, 'rgba(236,240,240,.55)'); g.addColorStop(1, 'rgba(236,240,240,0)');
+    g.addColorStop(0, 'rgba(232,237,238,.16)'); g.addColorStop(1, 'rgba(232,237,238,0)');
     cctx.fillStyle = g; cctx.fillRect(x - r, y - r, r * 2, r * 2);
   }
-  const mist = kit.mat('Bruma en el monte', '#ffffff', 0, 0.35);
+  const mist = kit.mat('Bruma en el monte', '#ffffff', 0, 0.1);
   mist.diffuseMap = kit.texture(cloud); mist.opacityMap = mist.diffuseMap; mist.opacityMapChannel = 'a';
   mist.blendType = pc.BLEND_NORMAL; mist.depthWrite = false; mist.update();
   const bands = kit.mesh();
-  for (const [x0, x1, y, d] of [[-halfW - 30, -20, 21, 20], [30, halfW + 40, 26, 26], [-80, 90, 40, 52]]) {
-    bands.quad([x0, y, -halfD - d + 9], [x1, y, -halfD - d + 9], [x1, y + 1, -halfD - d - 9], [x0, y + 1, -halfD - d - 9], [0, 1, 0], [0, 1], [1, 1], [1, 0], [0, 0]);
-  }
+  /** A band along `a0`–`a1` between depths `d0` and `d1` on a slope, `lift` metres over it. */
+  const drape = (at: (a: number, d: number) => [number, number, number], a0: number, a1: number, d0: number, d1: number, lift: number) => {
+    const up = (p: [number, number, number]): [number, number, number] => [p[0], p[1] + lift, p[2]];
+    for (let a = a0; a < a1; a += 6) for (let j = 0; j < 4; j++) {
+      const da = d0 + (d1 - d0) * j / 4, db = d0 + (d1 - d0) * (j + 1) / 4, u0 = (a - a0) / (a1 - a0), u1 = (a + 6 - a0) / (a1 - a0);
+      bands.quad(up(at(a, da)), up(at(a + 6, da)), up(at(a + 6, db)), up(at(a, db)), [0, 1, 0], [u0, j / 4], [u1, j / 4], [u1, (j + 1) / 4], [u0, (j + 1) / 4]);
+    }
+  };
+  drape(nearAt, -halfW - 30, -20, 10, 24, 3.5);
+  drape(nearAt, 30, halfW + 40, 14, 28, 3.5);
+  drape(meadowAt, -80, 90, 30, 46, 3);
+  drape(leftAt, -halfD - 40, -halfD * 0.2, 8, 20, 3.5);
   kit.add('Bruma', bands, mist, { shadows: false });
 }

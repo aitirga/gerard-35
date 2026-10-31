@@ -1,6 +1,5 @@
 import type { GeoLandmark } from '../geo';
 import type { LandmarkKit } from '../landmarks';
-import type { MeshBuilder } from '../geo-scenery';
 
 type V3 = [number, number, number];
 
@@ -14,25 +13,14 @@ type V3 = [number, number, number];
  */
 export const kind = 'alegia-town-hall';
 
-/** A box with UVs in metres on every face. */
-function box(mesh: MeshBuilder, [cx, cy, cz]: V3, [w, h, d]: V3) {
-  const x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - h / 2, y1 = cy + h / 2, z0 = cz - d / 2, z1 = cz + d / 2;
-  mesh.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], [x0, y0], [x1, y0], [x1, y1], [x0, y1]);
-  mesh.quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [0, 0, -1], [x1, y0], [x0, y0], [x0, y1], [x1, y1]);
-  mesh.quad([x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [1, 0, 0], [z1, y0], [z0, y0], [z0, y1], [z1, y1]);
-  mesh.quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], [-1, 0, 0], [z0, y0], [z1, y0], [z1, y1], [z0, y1]);
-  mesh.quad([x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0], [0, 1, 0], [x0, z1], [x1, z1], [x1, z0], [x0, z0]);
-  mesh.quad([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], [0, -1, 0], [x0, z0], [x1, z0], [x1, z1], [x0, z1]);
-}
-
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const eaves = Number(landmark.params.height ?? 15);
   const stone = kit.surface('carreu', '#a19f99', 0.1);
   const tiles = kit.surface('teila-zaharra', '#7a5244', 0.1);
   const slabs = kit.mesh(), ashlar = kit.mesh(), roof = kit.mesh(), shade = kit.mesh();
   // The balconies' stone slabs, where the photo has them: the long one on the first floor, four above.
-  box(slabs, [-0.2, 4.85, 0.36], [18.1, 0.2, 0.72]);
-  for (const [a, b] of [[-8.8, -5.3], [-4.3, -0.85], [0.5, 3.7], [5.1, 8.4]]) box(slabs, [(a + b) / 2, 9.9, 0.26], [b - a, 0.16, 0.52]);
+  slabs.box([-0.2, 4.85, 0.36], [18.1, 0.2, 0.72]);
+  for (const [a, b] of [[-8.8, -5.3], [-4.3, -0.85], [0.5, 3.7], [5.1, 8.4]]) slabs.box([(a + b) / 2, 9.9, 0.26], [b - a, 0.16, 0.52]);
   // The pediment: a triangle of ashlar over the middle of the eaves, under its own little roof.
   const half = 5.6, rise = 2.4, out = 0.75, back = -4.6, apex = eaves + rise;
   ashlar.tri([-half, eaves - 0.1, 0.02], [half, eaves - 0.1, 0.02], [0, apex, 0.02], [0, 0, 1], [-half, eaves], [half, eaves], [0, apex]);
@@ -45,12 +33,12 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   }
   // The clock turret on the pediment: a stone block with the clock, curved shoulders, a cornice.
   const tz = -0.95, ty = apex - 0.3;
-  box(ashlar, [0, ty + 1.3, tz], [2.4, 2.6, 2.0]);
+  ashlar.box([0, ty + 1.3, tz], [2.4, 2.6, 2.0]);
   for (const s of [-1, 1]) {
-    for (let k = 0; k < 4; k++) box(ashlar, [s * (1.35 + k * 0.2), ty + 0.75 - k * 0.22, tz], [0.32, 0.5, 1.6]);
+    for (let k = 0; k < 4; k++) ashlar.box([s * (1.35 + k * 0.2), ty + 0.75 - k * 0.22, tz], [0.32, 0.5, 1.6]);
   }
-  box(ashlar, [0, ty + 2.72, tz], [2.8, 0.24, 2.4]);
-  box(ashlar, [0, ty + 2.98, tz], [2.1, 0.28, 1.7]);
+  ashlar.box([0, ty + 2.72, tz], [2.8, 0.24, 2.4]);
+  ashlar.box([0, ty + 2.98, tz], [2.1, 0.28, 1.7]);
   kit.add('Losas de los balcones', slabs, kit.mat('Losa de balcón', '#5f4434', 0.2), { cut: true });
   kit.add('Frontón y torreta', ashlar, stone, { cut: true });
   kit.add('Tejado del frontón', roof, tiles, { cut: true });
