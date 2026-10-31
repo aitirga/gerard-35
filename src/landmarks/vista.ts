@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import type { GeoLandmark } from '../geo';
+import { flankRun, type GeoLandmark } from '../geo.ts';
 import type { LandmarkKit } from '../landmarks';
 import { CITY_MAP } from '../transit.ts';
 
@@ -17,7 +17,8 @@ import { CITY_MAP } from '../transit.ts';
  * params: `below_m` (the zone's drop), `map` ([x, y]: the summit in the network map's metres),
  * `map_turn_deg` (the map's turn in tools/city.py), `scale_m`, `near_m`, `gap_m` (added straight
  * ahead, where the brow hides the plain), `height` (buildings' height against their width),
- * `min_m` (narrower buildings stay in the picture), `castle_m` (how far beyond the flank her castle stands).
+ * `min_m` (narrower buildings stay in the picture), `castle_m` (how far beyond the flank her castle stands,
+ * unless the scene has a `castillo` anchor: then it stands there), `castle_scale` (how big it is drawn).
  */
 export const kind = 'vista';
 
@@ -26,27 +27,41 @@ const BASE = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '
 const FAR = 9000;
 /** The evening haze the far city fades into, and the sky behind the sea, from the horizon up. */
 const HAZE = '#cdb7b1';
+/** The sea at dusk, under the pink band: a lilac blue a little lighter towards the horizon. */
+const SEA = '#7f8cab';
 const SKY: [number, string][] = [[0, '#c9b2b0'], [0.1, '#e7bfaa'], [0.22, '#e9c7b4'], [0.42, '#cfd0d6'], [0.7, '#b6c8db'], [1, '#9db6d3']];
 /** Façades by kind (tools/city.py `building_kind`: homes, works, civic), glass towers, and roof terraces. */
 const FACADES = [
-  ['#ead2ae', '#e2c39c', '#efdcbc', '#dcb48c', '#e7cfb0', '#d3ae8a', '#e9c9a0'],
-  ['#d3cbbf', '#c9c4ba', '#ddd3c3'],
-  ['#dd9f7c', '#d4a274', '#e2b08c'],
+  ['#d9b48c', '#cfa47c', '#dcbc98', '#c99a72', '#d6ae88', '#bf9370', '#d8b190'],
+  ['#bdb3a6', '#b2aca2', '#c6bcae'],
+  ['#cc8a66', '#c38f62', '#d19c78'],
 ];
-const GLASS = ['#9fb3c6', '#aab9c8'], TOWER_M = 70, ROOF = '#d6cabd';
+const GLASS = ['#8fa3b8', '#9aabbd'], TOWER_M = 70, ROOF = '#b9a99a';
 /** Toward the game's sun in the scene (src/scenery.ts turns it 48°, -35°): walls facing it are lit. */
 const SUN: [number, number] = [-0.573, 0.819];
 
 const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+/**
+ * Vertex colours and canvas textures reach the shader as linear values: stored as painted (sRGB)
+ * they come out washed pale, so they are linearised first (as the engine does for material colours).
+ */
+const LINEAR = Array.from({ length: 256 }, (_, v) => Math.round(255 * (v / 255) ** 2.2));
+function linearise(c: HTMLCanvasElement) {
+  const ctx = c.getContext('2d')!, image = ctx.getImageData(0, 0, c.width, c.height), d = image.data;
+  for (let i = 0; i < d.length; i += 4) { d[i] = LINEAR[d[i]]; d[i + 1] = LINEAR[d[i + 1]]; d[i + 2] = LINEAR[d[i + 2]]; }
+  ctx.putImageData(image, 0, 0);
+  return c;
+}
 const mix = (a: number[], b: number[], t: number) => a.map((v, i) => v + (b[i] - v) * t);
 /** How much of the haze covers the city at `r` metres. */
-const hazeAt = (r: number) => 0.85 * r / (r + 3000);
+const hazeAt = (r: number) => 0.75 * r / (r + 4000);
 
 /** Unlit triangles with a colour per vertex, grown as needed. */
 class Geometry {
   pos: number[] = []; col: number[] = []; uv: number[] = []; idx: number[] = [];
   vertex(x: number, y: number, z: number, c: number[], u = 0, v = 0) {
-    this.pos.push(x, y, z); this.col.push(Math.min(255, c[0]), Math.min(255, c[1]), Math.min(255, c[2]), 255); this.uv.push(u, v);
+    const lin = (v: number) => LINEAR[Math.max(0, Math.min(255, Math.round(v)))];
+    this.pos.push(x, y, z); this.col.push(lin(c[0]), lin(c[1]), lin(c[2]), 255); this.uv.push(u, v);
     return this.pos.length / 3 - 1;
   }
   mesh(device: pc.GraphicsDevice) {
@@ -98,7 +113,6 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   // the brow, plus the flank's run; straight ahead the plain starts further, under the brow's shadow.
   const drop = kit.scene.drop;
   const edge = (drop?.edge ?? []).map(([px, pz]) => local((px - landmark.x) * kit.cell, (pz - landmark.z) * kit.cell));
-  const run = (drop?.run ?? 0) * kit.cell;
   const start = Array.from({ length: 360 }, (_, deg) => {
     const dx = Math.sin(deg * Math.PI / 180), dz = -Math.cos(deg * Math.PI / 180);
     let far = 0;
@@ -109,6 +123,8 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
       const t = (px * sz - pz * sx) / denom, u = (px * dz - pz * dx) / denom;
       if (u >= 0 && u <= 1 && t > far) far = t;
     }
+    // The flank's run that way (longer on the camera's sides): this frame's direction back on the grid.
+    const run = flankRun(drop?.run ?? 0, dx * ca + dz * sa, -dx * sa + dz * ca) * kit.cell;
     const facing = Math.max(0, dx * ahead[0] + dz * ahead[1]);
     return { foot: far + run, base: far + run + gapM * facing * facing };
   });
@@ -155,7 +171,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const sctx = sky.getContext('2d')!, grad = sctx.createLinearGradient(0, 256, 0, 0);
   for (const [t, c] of SKY) grad.addColorStop(t, c);
   sctx.fillStyle = grad; sctx.fillRect(0, 0, 4, 256);
-  const skyMat = unlit('Cielo del atardecer'); skyMat.emissiveMap = kit.texture(sky); skyMat.update();
+  const skyMat = unlit('Cielo del atardecer'); skyMat.emissiveMap = kit.texture(linearise(sky)); skyMat.update();
   const cos = Math.cos(42.6 * Math.PI / 180), sin = Math.sin(42.6 * Math.PI / 180);
   const right = [-ahead[1], ahead[0]], up = [ahead[0] * sin, cos, ahead[1] * sin];
   const foot = [ahead[0] * (farAhead + 4), y0, ahead[1] * (farAhead + 4)], W = 700, H = 160;
@@ -184,9 +200,9 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   // Haze until the picture arrives.
   const groundMat = unlit('Suelo de la ciudad', HAZE);
   add('Ciudad (suelo)', ground, groundMat);
-  void cityPicture(bg, (mx - bg.x0) / (bg.x1 - bg.x0), (my - bg.y0) / (bg.y1 - bg.y0)).then(c => {
+  void cityPicture(bg, CITY_MAP.sea, (mx - bg.x0) / (bg.x1 - bg.x0), (my - bg.y0) / (bg.y1 - bg.y0)).then(c => {
     if (!c || !kit.root.parent) return;
-    const t = kit.texture(c);
+    const t = kit.texture(linearise(c));
     t.addressU = t.addressV = pc.ADDRESS_CLAMP_TO_EDGE;
     groundMat.emissiveMap = t; groundMat.emissive.set(1, 1, 1); groundMat.update();
   });
@@ -196,7 +212,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   if (href) void fetch(`${BASE}${href}`).then(r => r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.statusText))).then(buffer => {
     if (!kit.root.parent) return;
     const data = new Int16Array(buffer), city = new Geometry(), xs: number[] = [], zs: number[] = [], roof: number[] = [];
-    const sunlit = mix(white, rgb('#ffd29a'), 1), shade = rgb('#a99aaf');
+    const sunlit = rgb('#ffcf94'), shade = rgb('#8d82a3');
     for (let o = 0, n = 0; o < data.length; o += 3 + data[o + 2] * 2, n++) {
       const height = data[o], kindOf = data[o + 1], count = data[o + 2];
       let cx = 0, cy = 0, area = 0;
@@ -204,13 +220,14 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
       for (let i = 0, j = count - 1; i < count; j = i++) area += data[o + 3 + j * 2] * data[o + 4 + i * 2] - data[o + 3 + i * 2] * data[o + 4 + j * 2];
       const [ce, cn] = fromMap(cx / count, cy / count), centre = place(ce, cn);
       // The hill and its foot are the zone's own; tiny buildings far off are left to the picture.
-      if (centre.r < 150 || centre.r > FAR || Math.sqrt(Math.abs(area) / 2) * centre.wide < minW) continue;
+      if (centre.r < 200 || centre.r > FAR || Math.sqrt(Math.abs(area) / 2) * centre.wide < minW) continue;
       xs.length = zs.length = roof.length = 0;
       for (let i = 0; i < count; i++) {
         const [e, nn] = fromMap(data[o + 3 + i * 2], data[o + 4 + i * 2]), q = place(e, nn);
         xs.push(q.x); zs.push(q.z);
       }
-      const h = height * tall * centre.wide, top = y0 + h;
+      // Near blocks come out big; capped, so none rises over the brow like a wall.
+      const h = Math.min(height * tall * centre.wide, 2.5), top = y0 + h;
       const palette = height >= TOWER_M ? GLASS : FACADES[kindOf] ?? FACADES[0];
       const fog = hazeAt(centre.r);
       const base = mix(rgb(palette[(n * 2654435761 >>> 0) % palette.length]), hz, fog);
@@ -222,7 +239,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
         const nx = ez / len * turnSign, nz = -ex / len * turnSign;
         if (nx * -ahead[0] + nz * -ahead[1] < -0.2) continue;
         const lit = Math.max(0, nx * sun[0] + nz * sun[1]);
-        const c = mix(mix(base.map(v => v * 0.72), shade, 0.18 * (1 - fog)), base.map((v, k) => v * sunlit[k] / 255), lit);
+        const c = mix(mix(base.map(v => v * 0.66), shade, 0.3 * (1 - fog)), base.map((v, k) => v * sunlit[k] / 255 * 1.08), lit);
         const foot = c.map(v => v * 0.82);
         const a = city.vertex(xs[i], y0, zs[i], foot), b = city.vertex(xs[j], y0, zs[j], foot);
         const t1 = city.vertex(xs[j], top, zs[j], c), t0 = city.vertex(xs[i], top, zs[i], c);
@@ -236,20 +253,62 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
     add('Ciudad (edificios)', city, m);
   }).catch(error => console.warn('Sin edificios para la vista', error));
 
+  // ------------------------------------------------ the Sagrada Família and Torre Glòries, which every local looks for
+  // Neither is in the buildings' model (the temple is an icon on the network map; the tower a plain prism).
+  for (const [id, draw] of [['sagrada-familia', temple], ['torre-glories', bullet]] as const) {
+    const lm = CITY_MAP.landmarks.find(l => l.id === id);
+    if (!lm) continue;
+    const [e, n] = fromMap(lm.x, lm.y), q = place(e, n);
+    draw(kit, [q.x, y0, q.z], q.wide * tall, hazeAt(q.r));
+  }
+
   // ------------------------------------------------ her castle, far off on Trinitat Vella
-  const school = CITY_MAP.places.find(pl => pl.id === 'rec-comtal');
-  if (school) {
+  // At the scene's `castillo` anchor when it has one (where the story can turn the camera), else at its real bearing.
+  const anchor = kit.scene.anchors?.castillo, school = CITY_MAP.places.find(pl => pl.id === 'rec-comtal');
+  if (anchor) {
+    const [ax, az] = local((anchor.x - landmark.x) * kit.cell, (anchor.z - landmark.z) * kit.cell);
+    castle(kit, [ax, y0, az], num(p.castle_scale, 1));
+  } else if (school) {
     const [e, n] = fromMap(school.x, school.y), real = place(e, n), bearing = Math.atan2(e, n);
     const rho = Math.min(real.rho, at(bearing).base + castleM);
-    castle(kit, [rho * Math.sin(bearing), y0, -rho * Math.cos(bearing)]);
+    castle(kit, [rho * Math.sin(bearing), y0, -rho * Math.cos(bearing)], num(p.castle_scale, 1));
   }
+}
+
+/**
+ * The Sagrada Família seen from the hill: its eighteen towers as a crowd of tapering sandstone
+ * spires, the Jesus tower in the middle the tallest with its four-armed cross, the Nativity and
+ * Passion facades' bell towers either side. `k` is metres here per real metre.
+ */
+function temple(kit: LandmarkKit, [x, y, z]: number[], k: number, fog: number) {
+  const stone = kit.mat('Templo lejano', tone('#d2b78c', fog), 0.1), shade = kit.mat('Templo lejano en sombra', tone('#a88d6d', fog), 0.1);
+  const cross = kit.mat('Cruz del templo', '#f4efe6', 0.4, 0.6);
+  kit.part('Nave del templo', 'box', shade, [x, y + 22 * k, z], [90 * k, 44 * k, 60 * k]);
+  // [east, south, height, radius] in real metres from the crossing: the Jesus, Mary and Evangelists' towers, then the bell towers.
+  const towers = [[0, 0, 172, 9], [-14, -18, 138, 7], [18, -12, 135, 7], [-18, 14, 135, 7], [16, 16, 135, 7],
+    [-30, -38, 112, 4], [-14, -40, 105, 4], [14, -40, 105, 4], [30, -38, 112, 4], [-30, 40, 112, 4], [-12, 42, 107, 4], [12, 42, 107, 4], [30, 40, 112, 4]];
+  for (const [e, s, h, r] of towers) {
+    kit.part('Torre del templo', 'cone', stone, [x + e * k, y + h * k / 2, z + s * k], [r * 2 * k, h * k, r * 2 * k]);
+  }
+  kit.part('Cruz del templo', 'box', cross, [x, y + 176 * k, z], [1.2 * k * 6, 8 * k, 1.2 * k * 6]);
+}
+
+/** Torre Glòries: the bullet of coloured glass, a rounded top on its prism (which the buildings' model already draws). */
+function bullet(kit: LandmarkKit, [x, y, z]: number[], k: number, fog: number) {
+  kit.part('Cúpula de la torre', 'sphere', kit.mat('Torre de cristal', tone('#b07a7c', fog), 0.5, 0.15), [x, y + 132 * k, z], [40 * k, 40 * k, 40 * k]);
+}
+
+/** A colour faded into the evening haze by `fog` (0–1). */
+function tone(hex: string, fog: number) {
+  const c = mix(rgb(hex), rgb(HAZE), fog);
+  return `#${c.map(v => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
 }
 
 /**
  * The map's picture of the city at dusk: warmed, a little greyed, and hazier the farther it lies
  * from the summit (at `sx`, `sy`, 0–1 across it), as the real view is.
  */
-async function cityPicture(bg: { x0: number; x1: number; y0: number; y1: number; href: string }, sx: number, sy: number) {
+async function cityPicture(bg: { x0: number; x1: number; y0: number; y1: number; href: string }, sea: number[][], sx: number, sy: number) {
   const image = new Image();
   image.src = `${BASE}${bg.href}`;
   try { await image.decode(); } catch { console.warn('Sin plano para la vista'); return undefined; }
@@ -257,9 +316,13 @@ async function cityPicture(bg: { x0: number; x1: number; y0: number; y1: number;
   c.width = w; c.height = h;
   const ctx = c.getContext('2d')!;
   ctx.drawImage(image, 0, 0, w, h);
-  ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = '#d9bca6'; ctx.fillRect(0, 0, w, h);
-  ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = 'rgba(128,128,128,.4)'; ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = '#c4a08a'; ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = 'rgba(128,128,128,.3)'; ctx.fillRect(0, 0, w, h);
   ctx.globalCompositeOperation = 'source-over';
+  // The sea, repainted at dusk (the map's is a daytime blue).
+  const px = (pt: number[]) => [(pt[0] - bg.x0) / (bg.x1 - bg.x0) * w, (pt[1] - bg.y0) / (bg.y1 - bg.y0) * h] as const;
+  ctx.beginPath(); sea.forEach((pt, i) => i ? ctx.lineTo(...px(pt)) : ctx.moveTo(...px(pt))); ctx.closePath();
+  ctx.fillStyle = SEA; ctx.fill();
   const perM = w / (bg.x1 - bg.x0), haze = ctx.createRadialGradient(sx * w, sy * h, 0, sx * w, sy * h, FAR * perM);
   const [r, g, b] = rgb(HAZE);
   for (const d of [0, 500, 1000, 2000, 3000, 4500, 6000, FAR]) haze.addColorStop(d / FAR, `rgba(${r},${g},${b},${hazeAt(d).toFixed(3)})`);
@@ -271,15 +334,18 @@ async function cityPicture(bg: { x0: number; x1: number; y0: number; y1: number;
  * Her castle seen from afar: a pink body under a dome and a crown of thin spires, each tipped with
  * a glowing bead (src/palace.ts is the real one; this is its silhouette, a few metres high).
  */
-function castle(kit: LandmarkKit, [x, y, z]: number[]) {
+function castle(kit: LandmarkKit, [px, y, pz]: number[], k: number) {
   const gum = kit.mat('Castillo lejano', '#d9579a', 0.45), dark = kit.mat('Castillo lejano en sombra', '#a8467c', 0.35);
   const glow = kit.mat('Cuentas del castillo', '#ff7fbf', 0.3, 2.4);
-  kit.part('Cuerpo del castillo', 'box', dark, [x, y + 1.1, z], [5.2, 2.2, 3.6]);
-  kit.part('Cúpula del castillo', 'sphere', gum, [x + 0.4, y + 2.6, z], [2.6, 2.4, 2.6]);
+  // `castle_scale` makes it as big as the story needs it seen.
+  const pivot = new pc.Entity('Castillo lejano'); kit.root.addChild(pivot);
+  pivot.setLocalPosition(px, y, pz); pivot.setLocalScale(k, k, k);
+  kit.part('Cuerpo del castillo', 'box', dark, [0, 1.1, 0], [5.2, 2.2, 3.6], undefined, pivot);
+  kit.part('Cúpula del castillo', 'sphere', gum, [0.4, 2.6, 0], [2.6, 2.4, 2.6], undefined, pivot);
   const spires: number[][] = [[-2.1, -1.2, 5.4], [-1.2, 1.1, 6.6], [0.1, -1.4, 7.8], [1.3, 1.2, 6], [2.2, -0.6, 5], [-0.6, 0.2, 8.6], [1.9, 0.9, 4.4]];
   for (const [dx, dz, h] of spires) {
-    kit.part('Aguja del castillo', 'cylinder', gum, [x + dx, y + h / 2, z + dz], [0.42, h, 0.42]);
-    kit.part('Tejado de aguja', 'cone', dark, [x + dx, y + h + 0.45, z + dz], [0.62, 0.9, 0.62]);
-    kit.part('Cuenta del castillo', 'sphere', glow, [x + dx, y + h + 1.05, z + dz], [0.34, 0.34, 0.34]);
+    kit.part('Aguja del castillo', 'cylinder', gum, [dx, h / 2, dz], [0.42, h, 0.42], undefined, pivot);
+    kit.part('Tejado de aguja', 'cone', dark, [dx, h + 0.45, dz], [0.62, 0.9, 0.62], undefined, pivot);
+    kit.part('Cuenta del castillo', 'sphere', glow, [dx, h + 1.05, dz], [0.34, 0.34, 0.34], undefined, pivot);
   }
 }
