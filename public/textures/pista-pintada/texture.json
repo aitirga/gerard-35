@@ -1,0 +1,29 @@
+{
+  "id": "pista-pintada",
+  "name": "Pista pintada",
+  "kind": "material",
+  "size_m": [
+    2.0,
+    2.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "painted_concrete",
+    "name": "Painted Concrete",
+    "url": "https://polyhaven.com/a/painted_concrete",
+    "author": "Dario Barresi, Dimitrios Savva",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven painted_concrete --id pista-pintada",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#486a4f",
+  "made": "2026-10-31"
+}
