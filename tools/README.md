@@ -9,6 +9,7 @@ juego y la API) y pueden usar APIs de IA de pago con las claves de `.env`.
 | `just character <id> …` | Retrato, expresiones para conversaciones, cuerpo entero y modelo 3D de un personaje | OpenAI Images, Claude (o Meshy) |
 | `just dev-character <nombre>` | Abre el juego jugando con ese personaje | — |
 | `just geo <zona>` | Descarga un lugar real (OpenStreetMap + referencias de Google Maps) y lo construye como escenario jugable; ver [docs/environment-styling.md](../docs/environment-styling.md) | OpenStreetMap, Google Maps (opcional) |
+| `just texture-fetch …` · `just texture-photo …` · `just texture-panot …` · `just textures` | Materiales reales para los lugares: descarga texturas CC0 (Poly Haven, ambientCG), endereza fachadas de fotos propias o de Wikimedia Commons con licencia libre (CC0, CC BY, CC BY-SA), dibuja el panot de Barcelona y lista la biblioteca de `public/textures/` (créditos en el `texture.json` de cada una); ver [docs/environment-styling.md § Real materials](../docs/environment-styling.md#real-materials) | Poly Haven, ambientCG, Wikimedia Commons |
 | `just music-loop <archivo>` · `just music-seam <archivo> <inicio> <fin>` | Encuentra dónde hace bucle una canción (tempo, primeras notas, uniones candidatas) y escribe la unión en `output/music/` para escucharla; ver [docs/audio.md](../docs/audio.md) | — (ffmpeg local) |
 
 ## `just character`

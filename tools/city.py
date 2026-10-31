@@ -29,6 +29,7 @@ M_PER_DEG_LAT = 110_540
 STREETS = CITY / "streets.json"
 # Too big to commit (tens of MB): kept with the download cache; the game reads the projected .bin.
 BUILDINGS = ROOT / "output" / "city" / "buildings.json"
+BUILDINGS_BIN = ROOT / "public" / "maps" / "barcelona-buildings.bin"
 USER_AGENT = "gerard-35-environment-tool/0.1 (personal game prototype)"
 OVERPASS = ("https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
             "https://overpass.kumi.systems/api/interpreter")
@@ -407,7 +408,7 @@ def buildings(project: Projection) -> dict | None:
         if len(points) < 3:
             continue
         out += [min(height, 400), kind, len(points), *(v for p in points for v in p)]
-    target = ROOT / "public" / "maps" / "barcelona-buildings.bin"
+    target = BUILDINGS_BIN
     target.parent.mkdir(parents=True, exist_ok=True)
     data = array("h", out)
     if sys.byteorder == "big":
@@ -457,13 +458,26 @@ def build() -> None:
         "stations": stations,
         "lines": [{k: l[k] for k in ("id", "name", "kind", "colour", "stations") if k in l} for l in city["lines"]],
     }
-    image = background(project, wide_extent(extent), ROOT / "output" / "city")
-    if image:
-        data["background"] = image
-    blocks = buildings(project)
-    if blocks:
-        data["buildings"] = blocks
     out = ROOT / "src" / "geo" / "barcelona.json"
+    if not BUILDINGS.exists() and BUILDINGS_BIN.exists():
+        # buildings.json is not committed. Without it the committed ground and buildings stay as
+        # they are (the ground drawn again would stand the blocks back up in it): only the
+        # hand-drawn layers, stations and lines are built again.
+        kept = json.loads(out.read_text())
+        ground = kept.get("background", {})
+        if {k: ground.get(k) for k in ("x0", "y0", "x1", "y1")} != wide_extent(extent):
+            sys.exit("The map's extent moved, so the ground no longer fits it: run `just city-fetch-buildings`.")
+        data.update({k: kept[k] for k in ("background", "buildings") if k in kept})
+        # An old background.svg may be the one without buildings: `just city-background` must not render it.
+        (ROOT / "output" / "city" / "background.svg").unlink(missing_ok=True)
+        print(f"No {BUILDINGS.relative_to(ROOT)}: kept the committed ground and buildings.")
+    else:
+        image = background(project, wide_extent(extent), ROOT / "output" / "city")
+        if image:
+            data["background"] = image
+        blocks = buildings(project)
+        if blocks:
+            data["buildings"] = blocks
     out.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n")
     print(f"Built {out.relative_to(ROOT)}: {len(districts)} districts, {len(stations)} stations, "
           f"{len(data['lines'])} lines, {len(data['landmarks'])} landmarks, {out.stat().st_size // 1024} KB")

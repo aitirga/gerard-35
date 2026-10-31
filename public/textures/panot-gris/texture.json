@@ -1,0 +1,28 @@
+{
+  "id": "panot-gris",
+  "name": "Panot de quatre pastilles",
+  "kind": "material",
+  "size_m": [
+    3.2,
+    3.2
+  ],
+  "source": {
+    "site": "drawn by tools/textures.py",
+    "name": "panot square",
+    "url": "",
+    "author": "gerard-35 (pattern) over Granular Concrete by Dario Barresi, Michael Jenkins",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py panot square --id panot-gris --grain formigo",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    1024,
+    1024
+  ],
+  "mean": "#9c9b96",
+  "made": "2026-10-30"
+}

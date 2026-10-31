@@ -2,6 +2,8 @@ import * as pc from 'playcanvas';
 import type { GeoBuilding, GeoPoint, GeoScene } from './geo';
 import { shine } from './lighting';
 import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from './building-occlusion';
+import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
+import { LANDMARKS, type LandmarkKit } from './landmarks';
 
 /** What `buildScenery` lends a generated place, so everything is tracked and destroyed with the scene. */
 export interface GeoKit {
@@ -23,7 +25,11 @@ const FACADE_ATLAS: Record<string, [number, number]> = { flats: [4, 3] };
 const EAVE = 0.35;
 const ROOF_PITCH = Math.tan(30 * Math.PI / 180);
 /** Ground layers stack a hair apart so large flat polygons never z-fight. */
-const LAYER = { ground: 0.004, grass: 0.012, forest: 0.016, square: 0.02, water: 0.028, path: 0.036, road: 0.042, rail: 0.046, bridge: 0.07 };
+const LAYER = { ground: 0.004, grass: 0.012, sand: 0.014, forest: 0.016, square: 0.02, water: 0.028, path: 0.036, road: 0.042, rail: 0.046, bridge: 0.07 };
+/** How strongly a real material's grain shows through the painted walls (hard light, 0–1). */
+const GRAIN = 0.85;
+/** A roof's slope is this much longer than the ground it covers (30° pitch). */
+const SLOPE = 1 / Math.cos(30 * Math.PI / 180);
 /**
  * Radius of the see-through opening round Gerard, the glowing edge where it meets solid wall,
  * how much it widens per unit towards the camera, and how quickly it opens.
@@ -118,7 +124,7 @@ output.color = vec4f(mix(output.color.rgb, vec3f(${CUT_GLOW}), geoCutGlow * 0.75
 `;
 
 /** Collects triangles with flat normals; every face is wound so its normal agrees with `facing`. */
-class MeshBuilder {
+export class MeshBuilder {
   positions: number[] = []; normals: number[] = []; uvs: number[] = []; indices: number[] = [];
   tri(a: V3, b: V3, c: V3, facing: V3, ua: number[] = [0, 0], ub: number[] = [0, 0], uc: number[] = [0, 0]) {
     const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
@@ -223,40 +229,81 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d')!); return c;
   }
 
+  // ------------------------------------------------------------ real materials
+  // Every surface is painted first. The real textures the scene names (scene.textures, embedded by
+  // tools/geo.py) load meanwhile and then replace the paint on the ground and roofs, and lay their
+  // grain under the painted walls; a texture that fails to load leaves its surface painted.
+  // Ground, street and roof UVs count metres, so materials tile by their real size.
+  const cellM = scene.cell_m;
+  let loaded = new Map<string, LoadedTexture>();
+  const gpu = new Map<string, pc.Texture>();
+  const onLoad: (() => void)[] = [];
+  let alive = true;
+  /** A loaded texture's albedo, normal map, or albedo in grey (`grey`, for tinting), uploaded once per scene. */
+  function image(id: string, which: 'albedo' | 'normal' | 'grey') {
+    const t = loaded.get(id), img = t && (which === 'grey' ? greyOf(t).canvas : t[which]);
+    if (!img) return undefined;
+    let gpuT = gpu.get(`${id}|${which}`);
+    if (!gpuT) { gpuT = gpuTexture(device, img, `${id} ${which}`); gpu.set(`${id}|${which}`, gpuT); }
+    return gpuT;
+  }
+  /** Puts a loaded texture on a material: tiled by its real size, tinted, with its normal map. */
+  function dress(m: pc.StandardMaterial, id: string, tint?: string) {
+    const t = loaded.get(id);
+    if (!t) return;
+    const [sw, sh] = [t.info.size_m[0], t.info.size_m[1] ?? t.info.size_m[0]];
+    m.diffuseMap = image(id, tint ? 'grey' : 'albedo')!; m.diffuseMapTiling.set(1 / sw, 1 / sh);
+    const normal = image(id, 'normal');
+    if (normal) { m.normalMap = normal; m.normalMapTiling.set(1 / sw, 1 / sh); m.bumpiness = 0.8; }
+    m.diffuse.copy(tint ? tintColour(tint, greyOf(t)) : pc.Color.WHITE);
+    m.update();
+  }
+  /** A surface painted on `painted` (repeating `perCell` times per cell), dressed in the scene's material for `slot` once it loads. */
+  function surface(name: string, slot: string, painted: HTMLCanvasElement, perCell: number, gloss = 0.05) {
+    const m = textured(name, painted, gloss);
+    m.diffuseMapTiling.set(perCell / cellM, perCell / cellM); m.update();
+    const real = scene.materials?.[slot];
+    if (real) onLoad.push(() => dress(m, real.texture, real.tint));
+    return m;
+  }
+
   // ------------------------------------------------------------ ground
   const W = scene.width, D = scene.depth;
-  function flat(name: string, polys: GeoPoint[][], y: number, m: pc.Material, uvScale = 0.25) {
+  /** Ground and street UVs: metres on the map, so textures run on across polygons and roads. */
+  const metres = (p: GeoPoint) => [p[0] * cellM, p[1] * cellM];
+  function flat(name: string, polys: GeoPoint[][], y: number, m: pc.Material) {
     const b = new MeshBuilder();
     for (const poly of polys) for (const [i, j, k] of triangulate(poly)) {
-      const uv = (p: GeoPoint) => [p[0] * uvScale, p[1] * uvScale];
-      b.tri(P(poly[i], y), P(poly[j], y), P(poly[k], y), [0, 1, 0], uv(poly[i]), uv(poly[j]), uv(poly[k]));
+      b.tri(P(poly[i], y), P(poly[j], y), P(poly[k], y), [0, 1, 0], metres(poly[i]), metres(poly[j]), metres(poly[k]));
     }
     const e = add(name, b, m, root, true, false);
     return e;
   }
-  function speckled(name: string, base: string, specks: string[], size = 128, count = 900) {
-    return textured(name, canvas(size, size, ctx => {
+  function speckles(base: string, specks: string[], size = 128, count = 900) {
+    return canvas(size, size, ctx => {
       ctx.fillStyle = base; ctx.fillRect(0, 0, size, size);
       for (let i = 0; i < count; i++) { ctx.fillStyle = specks[i % specks.length]; ctx.fillRect(jitter(i) * size, jitter(i + 7e3) * size, 2, 2); }
-    }), 0.05);
+    });
   }
   const look = scene.look ?? {};
   /** Barcelona's renewed sidewalks: small light-grey square tiles, a few a shade lighter or darker. */
   function panot() {
-    return textured('Panot gris', canvas(256, 256, ctx => {
+    return canvas(256, 256, ctx => {
       ctx.fillStyle = '#8f8f8a'; ctx.fillRect(0, 0, 256, 256);
       for (let r = 0; r < 16; r++) for (let k = 0; k < 16; k++) {
         ctx.fillStyle = `hsl(40, 4%, ${66 + jitter(r * 16 + k) * 7}%)`;
         ctx.fillRect(k * 16 + 1, r * 16 + 1, 14, 14);
       }
       for (let i = 0; i < 160; i++) { ctx.fillStyle = 'rgba(70,66,60,.16)'; ctx.fillRect(jitter(i + 3e3) * 256, jitter(i + 4e3) * 256, 2, 2); }
-    }), 0.08);
+    });
   }
-  const groundMat = look.ground === 'panot' ? panot() : speckled('Suelo urbano', '#cbc2ab', ['#bfb59c', '#d6cdb8', '#b8ad94']);
+  const groundMat = look.ground === 'panot' ? surface('Panot gris', 'ground', panot(), 0.25, 0.08)
+    : surface('Suelo urbano', 'ground', speckles('#cbc2ab', ['#bfb59c', '#d6cdb8', '#b8ad94']), 0.25);
   flat('Suelo', [[[-0.5, -0.5], [W - 0.5, -0.5], [W - 0.5, D - 0.5], [-0.5, D - 0.5]]], LAYER.ground, groundMat);
+  flat('Arena', scene.areas.sand ?? [], LAYER.sand, surface('Arena', 'sand', speckles('#e3cf9f', ['#d8c08a', '#efdfb8', '#cdb27a']), 0.25));
   if (look.grass === 'bed') {
     // Planted beds: dark soil with fallen leaves under clumps of low shrubs and grasses.
-    flat('Parterres', scene.areas.grass, LAYER.grass, speckled('Tierra del parterre', '#4f4234', ['#5e4d3b', '#7a5a35', '#3f352a', '#8c6a3c'], 128, 1400));
+    flat('Parterres', scene.areas.grass, LAYER.grass, surface('Tierra del parterre', 'bed', speckles('#4f4234', ['#5e4d3b', '#7a5a35', '#3f352a', '#8c6a3c'], 128, 1400), 0.25));
     const shrubs = [mat('Arbusto', '#56733f', 0.1), mat('Arbusto claro', '#7b9150', 0.1), mat('Gramínea', '#93a05c', 0.1), mat('Arbusto oscuro', '#3f5a34', 0.1)];
     // Shrubs keep clear of whatever stands in the bed: a pit round each trunk, room around barriers and sacks.
     const clear = scene.props.filter(p => p.kind !== 'manhole' && p.kind !== 'car' && p.kind !== 'bus')
@@ -274,32 +321,35 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         e.setPosition(x(px), 0.05, z(pz)); e.setLocalScale(r, r * (0.55 + jitter(k) * 0.4), r); root.addChild(e);
       }
     }
-  } else flat('Huertas y jardines', scene.areas.grass, LAYER.grass, speckled('Hierba', '#86a462', ['#7a9858', '#95b36d', '#6f8c4f']));
-  flat('Bosque', scene.areas.forest, LAYER.forest, speckled('Sotobosque', '#4f6d42', ['#45603a', '#5c7b4b', '#3d5634']));
-  const plaza = textured('Losas de la plaza', canvas(128, 128, ctx => {
+  } else flat('Huertas y jardines', scene.areas.grass, LAYER.grass, surface('Hierba', 'grass', speckles('#86a462', ['#7a9858', '#95b36d', '#6f8c4f']), 0.25));
+  flat('Bosque', scene.areas.forest, LAYER.forest, surface('Sotobosque', 'forest', speckles('#4f6d42', ['#45603a', '#5c7b4b', '#3d5634']), 0.25));
+  const plaza = surface('Losas de la plaza', 'square', canvas(128, 128, ctx => {
     ctx.fillStyle = '#a99d88'; ctx.fillRect(0, 0, 128, 128);
     for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) {
       ctx.fillStyle = `hsl(${30 + jitter(r * 4 + k) * 8}, 18%, ${68 + jitter(r * 9 + k) * 8}%)`;
       ctx.fillRect(k * 32 + 1, r * 32 + 1, 30, 30);
     }
-  }), 0.1);
-  flat('Plazas', scene.areas.square, LAYER.square, plaza, 0.5);
+  }), 0.5, 0.1);
+  flat('Plazas', scene.areas.square, LAYER.square, plaza);
   // Rivers reuse the pool's caustics, tinted deep green and drifting downstream.
   const river = mat('Río', '#7f9f8c', 0.85);
   river.diffuseMap = kit.water.diffuseMap; river.emissive.fromString('#6f9a86'); river.emissiveMap = kit.water.diffuseMap; river.emissiveIntensity = 0.08;
+  river.diffuseMapTiling.set(0.08 / cellM, 0.08 / cellM); river.emissiveMapTiling.set(0.08 / cellM, 0.08 / cellM);
   shine(river, 'water');
-  flat('Río', scene.areas.water, LAYER.water, river, 0.08);
+  flat('Río', scene.areas.water, LAYER.water, river);
   let time = 0;
 
   // ------------------------------------------------------------ roads, paths, rails, bridges
+  // Street UVs are metres on the map too (not along each segment), so the asphalt runs on unbroken.
   const asphalt = look.asphalt
-    ? speckled('Asfalto nuevo', look.asphalt, ['#36383b', '#4a4c4f', '#525457'])
-    : speckled('Asfalto', '#66625e', ['#5b5854', '#726e69', '#7c7771']);
+    ? surface('Asfalto nuevo', 'road', speckles(look.asphalt, ['#36383b', '#4a4c4f', '#525457']), 0.5)
+    : surface('Asfalto', 'road', speckles('#66625e', ['#5b5854', '#726e69', '#7c7771']), 0.5);
   // Barcelona's bike lanes are the same black asphalt; the Basque bidegorri is red.
-  const bikeway = look.asphalt ? asphalt : speckled('Bidegorri', '#8a6b5f', ['#7e6156', '#957568']);
-  const footway = speckled('Senda', '#b7a888', ['#a99a7b', '#c3b596']);
-  const ballast = speckled('Balasto', '#857b6f', ['#6f665b', '#9a9083', '#5f574e']);
+  const bikeway = look.asphalt ? asphalt : surface('Bidegorri', 'bike', speckles('#8a6b5f', ['#7e6156', '#957568']), 0.5);
+  const footway = surface('Senda', 'footway', speckles('#b7a888', ['#a99a7b', '#c3b596']), 0.5);
+  const ballast = surface('Balasto', 'rail', speckles('#857b6f', ['#6f665b', '#9a9083', '#5f574e']), 0.5);
   const bridgeStone = mat('Piedra del puente', '#b3a68d', 0.1);
+  const bridgeDeck = surface('Tablero del puente', 'bridge', speckles('#b3a68d', ['#a89a80', '#bdb199']), 0.5, 0.1);
   const steel = mat('Carriles', '#5a5652', 0.6), sleeper = mat('Traviesas', '#6b5a48', 0.1);
   const barrier = mat('Bionda', '#c9c6bd', 0.4);
   function ribbon(builder: MeshBuilder, line: GeoPoint[], half: number, y: number) {
@@ -310,8 +360,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       // Each segment runs a little past its ends so joints have no gaps.
       const ex = (b[0] - a[0]) / len * half * 0.6, ez = (b[1] - a[1]) / len * half * 0.6;
       const s0 = [a[0] - ex, a[1] - ez], s1 = [b[0] + ex, b[1] + ez];
-      builder.quad(P([s0[0] + nx, s0[1] + nz], y), P([s1[0] + nx, s1[1] + nz], y), P([s1[0] - nx, s1[1] - nz], y), P([s0[0] - nx, s0[1] - nz], y),
-        [0, 1, 0], [0, 0], [len / 2, 0], [len / 2, 1], [0, 1]);
+      const c: GeoPoint[] = [[s0[0] + nx, s0[1] + nz], [s1[0] + nx, s1[1] + nz], [s1[0] - nx, s1[1] - nz], [s0[0] - nx, s0[1] - nz]];
+      builder.quad(P(c[0], y), P(c[1], y), P(c[2], y), P(c[3], y), [0, 1, 0], metres(c[0]), metres(c[1]), metres(c[2]), metres(c[3]));
     }
   }
   /** Thin walls along both edges of a line: bridge parapets, rails, crash barriers. */
@@ -360,15 +410,20 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   // On panot the sidewalk is the ground itself, so footways are not drawn over it.
   if (look.footway !== 'panot') add('Sendas', layers.foot, footway, root, true, false);
   add('Vía del tren', layers.rail, ballast, root, true, false);
-  add('Puente', layers.bridge, bridgeStone, root, true, false);
+  add('Puente', layers.bridge, bridgeDeck, root, true, false);
 
   // ------------------------------------------------------------ facades and roofs
   const textures = new Map<string, pc.StandardMaterial>();
   /** Each building's pivot, so its signs belong to it. */
   const pivots = new Map<string, pc.Entity>();
-  /** One bay of one storey (or two bays of the ground floor), painted once per look and colour. */
-  function facade(kind: string, wall: string, trim: string, base: string) {
-    const key = `${kind}|${wall}|${trim}|${base}`;
+  const bayM = BAY * cellM, storeyM = scene.storey * cellM;
+  /**
+   * One bay of one storey (or two bays of the ground floor), painted once per look and colour. With
+   * real materials (`grain`: texture ids for the upper floors' wall and the ground floor's base), the
+   * texture's grain is laid under the painted windows once it loads, tinted by the wall's own colour.
+   */
+  function facade(kind: string, wall: string, trim: string, base: string, grain: { wall?: string; base?: string } = {}) {
+    const key = `${kind}|${wall}|${trim}|${base}|${grain.wall}|${grain.base}`;
     let m = textures.get(key);
     if (m) return m;
     const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front'].includes(kind);
@@ -377,13 +432,26 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const glass = '#2c3a42', wood = '#5b3d2a';
     // Varies blinds, shutters and awnings between walls of different colours.
     const seed = [...wall].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
-    const c = canvas(w, h, ctx => {
+    const draw = (ctx: CanvasRenderingContext2D) => {
       // Painted top-down, as a facade is read; the wall's v runs bottom-up, so the canvas is flipped.
       ctx.setTransform(1, 0, 0, -1, 0, h);
-      const stones = (fill: string, rows: number) => {
+      /** A plain wall in `fill`, with the real material's grain over it once loaded. */
+      const paint = (fill: string, slot: 'wall' | 'base') => {
         ctx.fillStyle = fill; ctx.fillRect(0, 0, w, h);
-        const rh = h / rows;
-        for (let r = 0; r < rows; r++) for (let k = -1; k < w / 40 + 1; k++) {
+        const t = grain[slot] ? loaded.get(grain[slot]!) : undefined;
+        if (!t) return false;
+        // Whole tiles per bay and storey, so the grain repeats with the painted bays without a seam.
+        const g = grainOf(t), [sw, sh = sw] = t.info.size_m;
+        const across = Math.max(1, Math.round(bayM / sw)), up = Math.max(1, Math.round(storeyM * (ground ? 1.15 : 1) / sh));
+        const pattern = ctx.createPattern(g, 'repeat')!;
+        pattern.setTransform(new DOMMatrix().scale(128 / across / g.width, 192 / up / g.height));
+        ctx.save(); ctx.globalCompositeOperation = 'hard-light'; ctx.globalAlpha = GRAIN; ctx.fillStyle = pattern; ctx.fillRect(0, 0, w, h); ctx.restore();
+        return true;
+      };
+      /** Stone courses: painted joints a miniature can read, over the real stone's grain (or painted shades without one). */
+      const stones = (fill: string, rows: number, slot: 'wall' | 'base') => {
+        const real = paint(fill, slot), rh = h / rows;
+        if (!real) for (let r = 0; r < rows; r++) for (let k = -1; k < w / 40 + 1; k++) {
           ctx.fillStyle = `rgba(${jitter(r * 13 + k) > 0.5 ? '255,255,255' : '0,0,0'},${0.04 + jitter(r * 7 + k) * 0.06})`;
           ctx.fillRect(k * 40 + (r % 2) * 20 + 1, r * rh + 1, 38, rh - 2);
         }
@@ -399,13 +467,13 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       };
       if (kind === 'hedge') {
         // A clipped hedge (Uri's maze, docs/quests/nuria.md): the wall colour, flecked with leaves.
-        ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+        paint(wall, 'wall');
         for (let k = 0; k < 220; k++) {
           ctx.fillStyle = jitter(k * 3.1) > .5 ? 'rgba(20,40,15,.22)' : 'rgba(200,235,150,.16)';
           ctx.beginPath(); ctx.arc(jitter(k * 1.7) * w, jitter(k * 2.3) * h, 3 + jitter(k * 5.9) * 7, 0, Math.PI * 2); ctx.fill();
         }
       } else if (kind === 'rendered' || kind === 'timber') {
-        ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+        paint(wall, 'wall');
         if (kind === 'timber') {
           ctx.fillStyle = trim;
           ctx.fillRect(0, 0, w, 9); ctx.fillRect(0, h - 9, w, 9); ctx.fillRect(0, 0, 8, h); ctx.fillRect(w - 8, 0, 8, h);
@@ -419,7 +487,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         for (let i = 0; i < 9; i++) ctx.fillRect(28 + i * 9, 146, 4, 26);
         ctx.fillRect(22, 170, 84, 7);
       } else if (kind === 'iron-balconies') {
-        ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+        paint(wall, 'wall');
         ctx.fillStyle = trim; ctx.fillRect(0, h - 14, w, 14);
         window(34, 30, 60, 128, trim);
         ctx.fillStyle = '#b7b0a2'; ctx.fillRect(18, 150, 92, 9);
@@ -434,7 +502,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         // Barcelona blocks of flats, four bays by three storeys: each bay keeps its kind of opening
         // all the way up (window, balcony, enclosed gallery), while blinds, lights, plants,
         // washing and air conditioners change from flat to flat.
-        ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+        paint(wall, 'wall');
         const r = (i: number) => jitter(seed * 7.3 + i);
         const blindColours = ['#efe9dc', '#b8a98c', '#8a7a5e', '#5f6e57', '#a39d90', '#d9d2c2', '#7d8a8f'];
         const blindColour = blindColours[Math.floor(r(1) * blindColours.length)];
@@ -520,7 +588,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         }
       } else if (kind === 'school') {
         // A school: one wide band of glazing per storey with coloured frames.
-        ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+        paint(wall, 'wall');
         ctx.fillStyle = 'rgba(0,0,0,.05)'; ctx.fillRect(0, h - 10, w, 10);
         ctx.fillStyle = trim; ctx.fillRect(0, 44, w, 104);
         ctx.fillStyle = glass; ctx.fillRect(0, 52, w, 88);
@@ -529,7 +597,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       } else if (kind === 'shops' || kind === 'lobby') {
         // Ground floors on a Barcelona avenue: shop windows under striped awnings, metal shutters;
         // `lobby`: a school or block entrance, glass doors under a coloured band.
-        ctx.fillStyle = base; ctx.fillRect(0, 0, w, h);
+        paint(base, 'base');
         for (const [i, x0] of [14, 142].entries()) {
           const shut = kind === 'shops' && jitter(seed + i) > 0.7;
           ctx.fillStyle = '#3a3f42'; ctx.fillRect(x0, 50, 100, h - 50);
@@ -549,13 +617,13 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
           } else { ctx.fillStyle = trim; ctx.fillRect(x0, 34, 100, 16); ctx.fillStyle = '#2c3a42'; ctx.fillRect(x0 + 30, 70, 40, h - 70); }
         }
       } else if (kind === 'ashlar' || kind === 'ashlar-windows') {
-        stones(wall, 8);
+        stones(wall, 8, 'wall');
         if (kind === 'ashlar-windows') {
           ctx.fillStyle = trim; ctx.beginPath(); ctx.roundRect(38, 40, 52, 104, [26, 26, 0, 0]); ctx.fill();
           ctx.fillStyle = glass; ctx.beginPath(); ctx.roundRect(44, 46, 40, 94, [20, 20, 0, 0]); ctx.fill();
         }
       } else if (kind === 'masonry') {
-        stones(base, 6);
+        stones(base, 6, 'base');
         ctx.fillStyle = '#4a3324'; ctx.beginPath(); ctx.roundRect(36, 54, 58, h - 54, [6, 6, 0, 0]); ctx.fill();
         ctx.fillStyle = '#5f4330'; for (let i = 0; i < 4; i++) ctx.fillRect(40 + i * 14, 60, 9, h - 64);
         ctx.fillStyle = '#c9b48a'; ctx.fillRect(84, 120, 4, 8);
@@ -563,7 +631,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         ctx.fillStyle = '#26292b'; for (let i = 0; i < 5; i++) ctx.fillRect(166 + i * 10, 62, 3, 62);
       } else if (kind === 'mall') {
         // Hipercor's box: beige concrete panels with a thin blue stripe, no windows.
-        ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+        paint(wall, 'wall');
         ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(0, h - 4, w, 4); ctx.fillRect(w - 3, 0, 3, h);
         ctx.fillStyle = trim; ctx.fillRect(56, 0, 9, h);
         ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(0, 0, w, 6);
@@ -582,14 +650,14 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         ctx.fillStyle = trim; for (const x0 of [0, 128]) ctx.fillRect(x0, 44, 6, h - 44);
       } else if (kind === 'curtain') {
         // An office tower in dark glass: a grid of mullions, a few windows still lit.
-        ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+        paint(wall, 'wall');
         for (const [x0, y0] of [[8, 14], [68, 14], [8, 104], [68, 104]]) {
           const lit = jitter(seed + x0 * 3 + y0) > 0.72;
           ctx.fillStyle = lit ? 'rgba(255,224,160,.75)' : 'rgba(120,150,170,.25)'; ctx.fillRect(x0, y0, 52, 74);
         }
         ctx.fillStyle = trim; ctx.fillRect(0, 0, w, 8); ctx.fillRect(0, 94, w, 6); ctx.fillRect(0, 0, 4, h); ctx.fillRect(62, 0, 4, h);
       } else if (kind === 'arcade' || kind === 'ashlar-arcade') {
-        if (kind === 'arcade') { ctx.fillStyle = base; ctx.fillRect(0, 0, w, h); } else stones(base, 6);
+        if (kind === 'arcade') paint(base, 'base'); else stones(base, 6, 'base');
         for (const x0 of [14, 142]) {
           ctx.fillStyle = '#3c3530'; ctx.beginPath(); ctx.roundRect(x0, 34, 100, h - 34, [50, 50, 0, 0]); ctx.fill();
           ctx.fillStyle = '#6f5a44'; ctx.fillRect(x0 + 24, 96, 52, h - 96);
@@ -601,14 +669,42 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       const fade = ctx.createLinearGradient(0, h * 0.82, 0, h);
       fade.addColorStop(0, 'rgba(0,0,0,0)'); fade.addColorStop(1, ground ? 'rgba(0,0,0,.18)' : 'rgba(0,0,0,0)');
       ctx.fillStyle = fade; ctx.fillRect(0, 0, w, h);
-    });
-    m = cutaway(textured(`Fachada ${kind}`, c, 0.1));
+    };
+    const c = canvas(w, h, draw);
+    const made = m = cutaway(textured(`Fachada ${kind}`, c, 0.1));
     textures.set(key, m);
+    // Repainted with the grain once the materials arrive.
+    if (grain.wall || grain.base) onLoad.push(() => {
+      const ctx = c.getContext('2d')!;
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, w, h); draw(ctx);
+      made.diffuseMap?.upload();
+    });
+    return m;
+  }
+  /**
+   * A facade or ground floor from a photo atlas of real bays (`photo:<texture>`): painted as
+   * `fallback` until the photo loads (or if it is missing), then the photo's bays × storeys repeat
+   * along the wall. The wall's UVs count bays and storeys (`u`) or ground floors of two bays (`v`).
+   */
+  function photoFacade(kind: string, fallback: pc.StandardMaterial, perU: number, perV: number) {
+    const id = kind.slice('photo:'.length), key = `${kind}|${fallback.name}`;
+    let m = textures.get(key);
+    if (m) return m;
+    const made = m = cutaway(mat(`Fachada ${kind}`, '#ffffff', 0.1));
+    m.diffuseMap = fallback.diffuseMap; m.diffuseMapTiling.copy(fallback.diffuseMapTiling); m.update();
+    textures.set(key, m);
+    onLoad.push(() => {
+      const t = loaded.get(id);
+      if (!t) return;
+      made.diffuseMap = image(id, 'albedo')!;
+      made.diffuseMapTiling.set(perU / (t.info.bays ?? 1), perV / (t.info.storeys ?? 1)); made.update();
+    });
     return m;
   }
   const roofs = new Map<string, pc.StandardMaterial>();
-  function roofMaterial(colour: string) {
-    let m = roofs.get(colour);
+  /** Roof UVs count metres along the ridge and down the slope; `texture` dresses it in real tiles of its colour once loaded. */
+  function roofMaterial(colour: string, texture?: string) {
+    let m = roofs.get(`${colour}|${texture}`);
     if (m) return m;
     m = cutaway(textured(`Tejado ${colour}`, canvas(64, 64, ctx => {
       ctx.fillStyle = colour; ctx.fillRect(0, 0, 64, 64);
@@ -620,12 +716,15 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       }
       for (let i = 0; i < 40; i++) { ctx.fillStyle = `rgba(${jitter(i) > .5 ? '90,60,40' : '255,220,190'},.12)`; ctx.fillRect(jitter(i + 1) * 64, jitter(i + 2) * 64, 6, 3); }
     }), 0.15));
-    roofs.set(colour, m);
+    m.diffuseMapTiling.set(0.9 / cellM, 1.1 / (cellM * SLOPE)); m.update();
+    const made = m;
+    if (texture) onLoad.push(() => dress(made, texture, colour));
+    roofs.set(`${colour}|${texture}`, m);
     return m;
   }
   /** A Barcelona flat roof (terrat): square clay tiles in the roof colour, a few patched. */
-  function terraceMaterial(colour: string) {
-    let m = roofs.get(`terrat|${colour}`);
+  function terraceMaterial(colour: string, texture?: string) {
+    let m = roofs.get(`terrat|${colour}|${texture}`);
     if (m) return m;
     m = cutaway(textured(`Terrat ${colour}`, canvas(64, 64, ctx => {
       ctx.fillStyle = 'rgba(60,50,40,1)'; ctx.fillRect(0, 0, 64, 64);
@@ -634,7 +733,10 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         ctx.fillStyle = `rgba(${jitter(r * 4 + k + 50) > .5 ? '255,255,255' : '0,0,0'},${0.04 + jitter(r * 4 + k + 90) * 0.08})`; ctx.fillRect(k * 16 + 1, r * 16 + 1, 14, 14);
       }
     }), 0.1));
-    roofs.set(`terrat|${colour}`, m);
+    m.diffuseMapTiling.set(0.9 / cellM, 1.1 / cellM); m.update();
+    const made = m;
+    if (texture) onLoad.push(() => dress(made, texture, colour));
+    roofs.set(`terrat|${colour}|${texture}`, m);
     return m;
   }
 
@@ -656,19 +758,25 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       base.quad(P(a, 0), P(c, 0), P(c, groundTop), P(a, groundTop), n, [0, 0], [bays / 2, 0], [bays / 2, 1], [0, 1]);
       if (H > groundTop + 0.05) {
         const floors = (H - groundTop) / storey;
-        // Atlas facades start at a different bay on every wall, so neighbours never line up.
-        const [au, av] = FACADE_ATLAS[b.facade] ?? [1, 1], u0 = au > 1 ? Math.floor(jitter(i + b.poly.length * 17 + b.levels * 3) * au) / au : 0;
+        // Atlas facades start at a different bay on every wall, so neighbours never line up (a photo
+        // atlas counts whole bays: its material repeats once per its own bays and storeys).
+        const [au, av] = FACADE_ATLAS[b.facade] ?? [1, 1], photoBays = photo(b.facade)?.bays ?? 0;
+        const u0 = au > 1 ? Math.floor(jitter(i + b.poly.length * 17 + b.levels * 3) * au) / au
+          : photoBays > 1 ? Math.floor(jitter(i + b.poly.length * 17 + b.levels * 3) * photoBays) : 0;
         walls.quad(P(a, groundTop), P(c, groundTop), P(c, H), P(a, H), n, [u0, 0], [u0 + bays / au, 0], [u0 + bays / au, floors / av], [u0, floors / av]);
       }
     }
-    const trim = b.trim ?? '#f2ede2', baseColour = b.base ?? '#a69a86';
-    add('Planta baja', base, facade(b.ground, b.walls, trim, baseColour), pivot, false);
-    add('Fachada', walls, facade(b.facade, b.walls, trim, baseColour), pivot, false);
+    const trim = b.trim ?? '#f2ede2', baseColour = b.base ?? '#a69a86', grain = b.materials ?? {};
+    // Photo atlases stand on the painted flats and shops until they load.
+    const upper = (kind: string) => photo(kind) ? photoFacade(kind, facade('flats', b.walls, trim, baseColour), 1, 1) : facade(kind, b.walls, trim, baseColour, grain);
+    const lower = photo(b.ground) ? photoFacade(b.ground, facade('shops', b.walls, trim, baseColour), 2, 1) : facade(b.ground, b.walls, trim, baseColour, grain);
+    add('Planta baja', base, lower, pivot, false);
+    add('Fachada', walls, upper(b.facade), pivot, false);
     // A flat ceiling under the eaves closes the top of any footprint the roof does not cover.
     const lid = new MeshBuilder();
     for (const [i, j, k] of triangulate(poly)) lid.tri(P(poly[i], H), P(poly[j], H), P(poly[k], H), [0, 1, 0]);
     add('Forjado', lid, cutaway(mat('Forjado', b.walls)), pivot, false, false);
-    add('Tejado', roof(b, H), b.roof === 'flat' ? terraceMaterial(b.roofColor ?? '#b0a597') : roofMaterial(b.roofColor ?? '#b4643f'), pivot, false);
+    add('Tejado', roof(b, H), b.roof === 'flat' ? terraceMaterial(b.roofColor ?? '#b0a597', grain.roof) : roofMaterial(b.roofColor ?? '#b4643f', grain.roof), pivot, false);
     // Flat roofs and outlines a pitched roof cannot cover get a parapet round the real outline.
     if (!boxy(b) || b.roof === 'flat') {
       // A low parapet hides the edge of a flat roof.
@@ -679,9 +787,13 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         const sign = ccw ? 1 : -1, n: V3 = [(c[1] - a[1]) / len * sign, 0, -(c[0] - a[0]) / len * sign];
         parapet.quad(P(a, H), P(c, H), P(c, H + 0.45), P(a, H + 0.45), n, [0, 0.9], [len / BAY, 0.9], [len / BAY, 1], [0, 1]);
       }
-      add('Peto', parapet, facade(b.facade, b.walls, trim, baseColour), pivot, false);
+      add('Peto', parapet, photo(b.facade) ? facade('flats', b.walls, trim, baseColour) : facade(b.facade, b.walls, trim, baseColour, grain), pivot, false);
     }
-    if (b.roof !== 'flat') add('Hastial', gableEnds(b, H), facade('rendered', b.walls, trim, baseColour), pivot, false);
+    if (b.roof !== 'flat') add('Hastial', gableEnds(b, H), facade('rendered', b.walls, trim, baseColour, grain), pivot, false);
+  }
+  /** The photo atlas a `photo:<texture>` facade or ground floor names, if the scene has it. */
+  function photo(kind: string) {
+    return kind.startsWith('photo:') ? scene.textures?.[kind.slice('photo:'.length)] : undefined;
   }
   /** Whether the footprint nearly fills its oriented box, so a pitched roof on the box fits it. */
   const boxy = (b: GeoBuilding) => Math.abs(signedArea(b.poly)) / (b.box.w * b.box.d) > 0.85;
@@ -692,7 +804,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     if (b.roof === 'flat' || !boxy(b)) {
       const out = new MeshBuilder();
       for (const [i, j, k] of triangulate(b.poly)) out.tri(P(b.poly[i], H + 0.25), P(b.poly[j], H + 0.25), P(b.poly[k], H + 0.25), [0, 1, 0],
-        [b.poly[i][0] * 0.9, b.poly[i][1] * 1.1], [b.poly[j][0] * 0.9, b.poly[j][1] * 1.1], [b.poly[k][0] * 0.9, b.poly[k][1] * 1.1]);
+        metres(b.poly[i]), metres(b.poly[j]), metres(b.poly[k]));
       return out;
     }
     const ua = long ? box.angle : box.angle + Math.PI / 2;
@@ -703,9 +815,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const at = (u: number, v: number, y: number): V3 => P([box.cx + e1[0] * u + e2[0] * v, box.cz + e1[1] * u + e2[1] * v], y);
     const out = new MeshBuilder();
     const up = (u: number, v: number): V3 => [x(box.cx + e1[0] * u + e2[0] * v) - x(box.cx), 0.6, z(box.cz + e1[1] * u + e2[1] * v) - z(box.cz)];
-    const uv = (u: number, v: number) => [u * 0.9, Math.abs(v) * 1.1];
+    const uv = (u: number, v: number) => [u * cellM, Math.abs(v) * cellM * SLOPE];
     const c00 = at(-hl, -hs, H), c10 = at(hl, -hs, H), c11 = at(hl, hs, H), c01 = at(-hl, hs, H);
-    if (b.roof === 'flat') { out.quad(c00, c10, c11, c01, [0, 1, 0], [0, 0], [hl, 0], [hl, hs], [0, hs]); return out; }
     const r0 = at(-ridge, 0, H + rise), r1 = at(ridge, 0, H + rise);
     out.quad(c00, c10, r1, r0, up(0, -1), uv(-hl, -hs), uv(hl, -hs), uv(ridge, 0), uv(-ridge, 0));
     out.quad(c11, c01, r0, r1, up(0, 1), uv(hl, hs), uv(-hl, hs), uv(-ridge, 0), uv(ridge, 0));
@@ -777,9 +888,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     panel(`Rótulo ${text}`, parent, cutaway(lit(`Rótulo ${text}`, sign, 0.55)), [x(shop.x + shop.nx * 0.05), groundTop - 0.32, z(shop.z + shop.nz * 0.05)],
       [shop.nz, 0, -shop.nx], [0, 1, 0], 2.1, 0.46, normal);
   }
-  for (const b of scene.buildings) {
-    if (!b.sign) continue;
-    // The big letters go on the longest wall that faces the camera, over the ground floor.
+  /** A building's longest wall that faces the camera. */
+  function frontWall(b: GeoBuilding) {
     const ccw = signedArea(b.poly) > 0, sign = ccw ? 1 : -1;
     let best: { a: GeoPoint; c: GeoPoint; len: number; n: V3; score: number } | undefined;
     for (let i = 0; i < b.poly.length; i++) {
@@ -789,6 +899,24 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       const score = len * (n[2] + 0.3 * n[0]);
       if (!best || score > best.score) best = { a, c, len, n, score };
     }
+    return best;
+  }
+  for (const b of scene.buildings) {
+    const info = b.signature ? scene.textures?.[b.signature] : undefined, best = info && frontWall(b);
+    if (!info || !best) continue;
+    // A signature facade: the photo at its real size, standing on the street in the middle of the
+    // wall facing the camera (never wider or taller than the wall), shown once it has loaded.
+    const w = Math.min(info.size_m[0] / cellM, best.len), h = Math.min((info.size_m[1] ?? info.size_m[0]) / cellM, b.height);
+    const mid: GeoPoint = [(best.a[0] + best.c[0]) / 2 + best.n[0] * 0.04, (best.a[1] + best.c[1]) / 2 + best.n[2] * 0.04];
+    const m = cutaway(mat(`Fachada ${b.signature}`, '#ffffff', 0.12));
+    const e = panel(`Fachada ${b.signature}`, pivots.get(b.id)!, m, [x(mid[0]), h / 2, z(mid[1])], [best.n[2], 0, -best.n[0]], [0, 1, 0], w, h, best.n);
+    if (e) e.enabled = false;
+    const id = b.signature!;
+    onLoad.push(() => { if (!loaded.has(id) || !e) return; m.diffuseMap = image(id, 'albedo')!; m.update(); e.enabled = true; });
+  }
+  for (const b of scene.buildings) {
+    // The big letters go on the longest wall that faces the camera, over the ground floor.
+    const best = b.sign ? frontWall(b) : undefined;
     if (!best) continue;
     const w = Math.min(best.len * 0.5, 11), h = w / 5.5;
     const letters = canvas(512, 96, ctx => {
@@ -874,6 +1002,66 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     }
   }
 
+  // ------------------------------------------------------------ landmarks
+  // Each kind is drawn by its own module in src/landmarks/ (docs/environment-styling.md § Landmarks),
+  // under a pivot at its centre, turned by its angle and scaled so builders work in metres.
+  const shared = new Map<string, pc.StandardMaterial>();
+  function landmarkKit(pivot: pc.Entity): LandmarkKit {
+    const kitMat = (name: string, hex: string, gloss = 0.2, glow = 0) => {
+      const key = `${name}|${hex}|${gloss}|${glow}`;
+      let m = shared.get(key);
+      if (!m) { m = mat(name, hex, gloss, glow); shared.set(key, m); }
+      return m;
+    };
+    return {
+      app, root: pivot, cell: cellM, mat: kitMat,
+      surface(texture, tint, gloss = 0.1) {
+        const key = `surface|${texture}|${tint}|${gloss}`;
+        let m = shared.get(key);
+        if (!m) { const made = m = mat(`${texture} ${tint}`, tint, gloss); shared.set(key, m); onLoad.push(() => dress(made, texture, tint)); }
+        return m;
+      },
+      part(name, type, material, position, scale, rotation, parent = pivot) {
+        const e = new pc.Entity(name);
+        e.addComponent('render', { type, material, castShadows: true, receiveShadows: true, batchGroupId: kit.batch });
+        e.setLocalPosition(position[0], position[1], position[2]); e.setLocalScale(scale[0], scale[1], scale[2]);
+        if (rotation) e.setLocalEulerAngles(rotation[0], rotation[1], rotation[2]);
+        parent.addChild(e); return e;
+      },
+      mesh: () => new MeshBuilder(),
+      add(name, builder, material, { cut = false, shadows = true, parent = pivot } = {}) {
+        if (builder.empty) return undefined;
+        const mesh = builder.mesh(device); meshes.push(mesh);
+        const e = new pc.Entity(name), instance = new pc.MeshInstance(mesh, cut ? cutaway(material) : material);
+        e.addComponent('render', { meshInstances: [instance], castShadows: shadows, receiveShadows: true, ...(cut ? {} : { batchGroupId: kit.batch }) });
+        parent.addChild(e);
+        if (cut) {
+          // Tall pieces open the same cut as the buildings: their triangles in world space.
+          let group = buildingCuts.get(pivot);
+          if (!group) { group = { triangles: [], instances: [], radius: 0 }; buildingCuts.set(pivot, group); }
+          const world = e.getWorldTransform(), v = new pc.Vec3();
+          for (const index of builder.indices) {
+            world.transformPoint(v.set(builder.positions[index * 3], builder.positions[index * 3 + 1], builder.positions[index * 3 + 2]), v);
+            group.triangles.push(v.x, v.y, v.z);
+          }
+          group.instances.push(instance); instance.setParameter('geoCutRadius', 0);
+        }
+        return e;
+      },
+      texture: c => kit.texture(c),
+    };
+  }
+  for (const lm of scene.landmarks ?? []) {
+    const pivot = new pc.Entity(`Monumento ${lm.id}`);
+    pivot.setLocalPosition(x(lm.x), 0, z(lm.z)); pivot.setLocalEulerAngles(0, lm.angle, 0); pivot.setLocalScale(1 / cellM, 1 / cellM, 1 / cellM);
+    root.addChild(pivot);
+    const builder = LANDMARKS.get(lm.kind);
+    if (builder) { builder.build(landmarkKit(pivot), lm); continue; }
+    // A kind without its module yet (data merged before code): a plain block on its footprint.
+    console.warn(`Monumento sin constructor: ${lm.kind} (src/landmarks/${lm.kind}.ts)`);
+    if (lm.solid) landmarkKit(pivot).part('Monumento pendiente', 'box', mat('Monumento pendiente', '#9a948a'), [0, 0.5, 0], [lm.w * cellM, 1, lm.d * cellM]);
+  }
+
   // ------------------------------------------------------------ surroundings
   // Wooded hills close every side but the camera's, as the valley does around the town.
   const hill = [mat('Monte', '#4e6b45', 0.05), mat('Monte lejano', '#5f7c55', 0.05), mat('Monte sombra', '#41593b', 0.05)];
@@ -886,6 +1074,11 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     e.addComponent('render', { type: 'sphere', material: hill[i % 3], castShadows: false, receiveShadows: true, batchGroupId: kit.batch });
     e.setPosition(x(px), -h * 0.15, z(pz)); e.setLocalScale(w, h, d); root.addChild(e);
   });
+
+  // The real materials, once loaded, dress everything built above (a scene left meanwhile stays as it is).
+  if (scene.textures && Object.keys(scene.textures).length) {
+    loadTextures(scene.textures).then(t => { if (!alive) return; loaded = t; onLoad.forEach(dressUp => dressUp()); });
+  }
 
   // ------------------------------------------------------------ see-through cut
   // Materials are shared across blocks; the radius belongs to each mesh instance so a true
@@ -913,6 +1106,6 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         cutToCamera.setValue([d.x, d.y, d.z]);
       }
     },
-    destroy() { cutRadius.setValue(0); meshes.forEach(m => m.destroy()); },
+    destroy() { alive = false; cutRadius.setValue(0); meshes.forEach(m => m.destroy()); gpu.forEach(t => t.destroy()); },
   };
 }

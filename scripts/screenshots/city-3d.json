@@ -1,6 +1,6 @@
 {
   "title": "Chapter 2 · The network map as a 3D city",
-  "description": "Down into the L1 at Fabra i Puig: the network map is a 3D model of the real Barcelona, every building from OpenStreetMap standing at its height on the streets, parks and sea, the L1 and L5 running over the roofs on posts, stations, names and the famous places drawn upright over it. Then the whole city, a close look turned round the Sagrada Família.",
+  "description": "Down into the L1 at Fabra i Puig: the network map is a 3D model of the real Barcelona, every building from OpenStreetMap standing at its height on the streets, parks and sea, the L1, L3, L4 and L5 running over the roofs on posts, stations, names and the famous places drawn upright over it. Then the whole city, the centre where the lines meet, Sants and Plaça d'Espanya, the beach line, and a close look turned round the Sagrada Família.",
   "steps": [
     {
       "open": "/?story=metro&solo=1"
@@ -31,6 +31,30 @@
       "shot": "map-whole",
       "delay": 2500,
       "caption": "0 shows the whole city: Collserola at the top, the sea at the bottom, the Llobregat and the Besòs at each end"
+    },
+    {
+      "eval": "import('/src/transit.ts').then(t => { const s = [\"catalunya\", \"espanya\", \"barceloneta\", \"diagonal\"].map(id => t.STATIONS[id]); window.gerard.travelUI.city.orbit = { x: s.reduce((a, p) => a + p.x, 0) / s.length, y: s.reduce((a, p) => a + p.y, 0) / s.length, distance: 7200, yaw: 0, pitch: 0.95 } }) && undefined"
+    },
+    {
+      "shot": "map-centre",
+      "delay": 2500,
+      "caption": "The centre, where the lines meet: the red L1, the green L3 from Sants down the Paral·lel to Catalunya and Diagonal, the yellow L4 from Verdaguer to the beach, the blue L5"
+    },
+    {
+      "eval": "import('/src/transit.ts').then(t => { const s = [\"santa-eulalia\", \"placa-de-sants\", \"espanya\", \"tarragona\"].map(id => t.STATIONS[id]); window.gerard.travelUI.city.orbit = { x: s.reduce((a, p) => a + p.x, 0) / s.length, y: s.reduce((a, p) => a + p.y, 0) / s.length, distance: 3600, yaw: 0.25, pitch: 0.8 } }) && undefined"
+    },
+    {
+      "shot": "map-sants",
+      "delay": 2500,
+      "caption": "Sants and Plaça d'Espanya: the L1 west through Hostafrancs, Plaça de Sants (with the L5) and Mercat Nou to Santa Eulàlia, the L3 from Sants Estació through Tarragona to Espanya and Poble Sec"
+    },
+    {
+      "eval": "import('/src/transit.ts').then(t => { const s = [\"urquinaona\", \"barceloneta\", \"llacuna\"].map(id => t.STATIONS[id]); window.gerard.travelUI.city.orbit = { x: s.reduce((a, p) => a + p.x, 0) / s.length, y: s.reduce((a, p) => a + p.y, 0) / s.length + 450, distance: 3600, yaw: -0.2, pitch: 0.8 } }) && undefined"
+    },
+    {
+      "shot": "map-beach",
+      "delay": 2500,
+      "caption": "The yellow L4 down to the sea: Urquinaona (with the L1), Jaume I, Barceloneta, Ciutadella · Vila Olímpica, Bogatell and Llacuna along the beaches"
     },
     {
       "eval": "import('/src/transit.ts').then(t => { const s = t.CITY_MAP.landmarks.find(l => l.id === 'sagrada-familia') ?? t.CITY_MAP.landmarks[0]; window.gerard.travelUI.city.orbit = { x: s.x, y: s.y, distance: 2600, yaw: .6, pitch: .62 } }) && undefined"
