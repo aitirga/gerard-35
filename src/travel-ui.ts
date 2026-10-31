@@ -22,7 +22,7 @@ export function createTravelUI(hud: HTMLElement) {
   root.id = 'travel';
   root.setAttribute('aria-labelledby', 'travel-title');
   root.innerHTML = `<header class="travel-heading"><div><span class="battle-kicker">METRO · ESTACIÓN</span><h1 id="travel-title"></h1><p class="travel-lines"></p></div><p class="travel-status" aria-live="polite"></p></header>`
-    + `<div class="travel-map"></div><footer class="travel-foot"><ul class="travel-legend"></ul><p class="travel-help"><span><kbd>←</kbd><kbd>→</kbd> Elegir</span><span><kbd>Enter</kbd> Viajar</span><span><kbd>+</kbd><kbd>−</kbd> Acercar</span><span class="travel-rotate"><kbd>Clic dcho.</kbd> Girar</span><span><kbd>Esc</kbd> Volver arriba</span></p></footer>`;
+    + `<div class="travel-map"></div><footer class="travel-foot"><p class="travel-help"><span><kbd>←</kbd><kbd>→</kbd> Elegir</span><span><kbd>Enter</kbd> Viajar</span><span><kbd>+</kbd><kbd>−</kbd> Acercar</span><span class="travel-rotate"><kbd>Clic dcho.</kbd> Girar</span><span><kbd>Esc</kbd> Volver arriba</span></p></footer>`;
   hud.append(root);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let from = '', options: Closures = {}, markers: readonly MapMarker[] = [];
@@ -48,7 +48,6 @@ export function createTravelUI(hud: HTMLElement) {
     get('.travel-status').innerHTML = trip ? '' : selected && legs
       ? `${escape(STATIONS[selected].name)} · ${legs.map(l => badge(l.line)).join('<i>›</i>')} <small>${stops} ${stops === 1 ? 'parada' : 'paradas'}${legs.length > 1 ? ` · ${legs.length - 1} transbordo${legs.length > 2 ? 's' : ''}` : ''}</small>`
       : 'Desde aquí no hay a dónde ir.';
-    get('.travel-legend').innerHTML = LINES.map(l => `<li>${badge(l.id)} ${escape(STATIONS[l.stations[0]].name)} <i>↔</i> ${escape(STATIONS[l.stations.at(-1)!].name)}</li>`).join('');
   }
   /** Keeps a view inside the city and at a sane size; `w`/`h` follow the city's own shape. */
   function clampView(cx: number, cy: number, zoom: number): View {
@@ -199,11 +198,12 @@ export function createTravelUI(hud: HTMLElement) {
     /** The 3D model, when there is one (screenshot scenarios move its camera). */
     get city() { return city; },
     /** Shows the map from `station` with the story's `icons`; resolves with the destination, or nothing if they go back up. */
-    show(station: string, closures: Closures = {}, icons: readonly MapMarker[] = []): Promise<string | undefined> {
+    async show(station: string, closures: Closures = {}, icons: readonly MapMarker[] = []): Promise<string | undefined> {
       close();
       from = station; options = closures; markers = icons;
       choices = destinations(from, closures); selected = choices[0];
-      if (!tried) { tried = true; city = createCity3D(get('.travel-map')); root.classList.toggle('is-3d', !!city); }
+      // The model's WebGPU device comes up asynchronously the first time; the panel waits for it.
+      if (!tried) { tried = true; city = await createCity3D(get('.travel-map')); root.classList.toggle('is-3d', !!city); }
       // Open first: the model takes the panel's size and frames itself on it.
       root.open = true; city?.pause(false); frame(); render();
       window.addEventListener('keydown', keydown, { capture: true });

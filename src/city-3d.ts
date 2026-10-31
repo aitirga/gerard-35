@@ -2,27 +2,37 @@
  * Barcelona's network map as a 3D model of the real city (docs/barcelona.md § The network map):
  * the ground lies flat (`public/maps/barcelona.webp`: streets, parks, beaches and the sea), every
  * building from OpenStreetMap stands on it at its height (`public/maps/barcelona-buildings.bin`,
- * `just city-fetch-buildings`), and the metro lines run over the roofs as thick cartoon ribbons
- * on posts. Stations, names, markers, the pin and the train are drawn over the picture in one SVG,
- * placed every frame where the camera sees them, so they stay upright and readable.
+ * `just city-fetch-buildings`), and the metro lines run under the streets: thin bands of their
+ * colour on the ground, in a soft glow, seen faintly through the buildings that stand over them.
+ * Famous places stand as little models in the castle's style (src/city-landmarks.ts); La Reina
+ * Bubbaloo's castle rises in 3D in its pink halo. Stations, names, the landmarks' labels, the pin and the train are drawn over the picture
+ * in one SVG, placed every frame where the camera sees them, so they stay upright and readable.
  *
  * Map metres as everywhere (x right along the coast, y down towards the sea): in the scene x is
  * X, y is Z and up is Y. The camera orbits a point on the ground; `travel-ui.ts` drives it.
- * Falls back to the flat SVG (`city-map.ts`) when WebGL or the data are missing.
+ * Falls back to the flat SVG (`city-map.ts`) when WebGPU or the data are missing.
  */
 import * as pc from 'playcanvas';
 import { CITY_MAP, LINES, STATIONS, type Leg } from './transit';
-import { renderMarker } from './map-markers';
+import type { MapMarker } from './map-markers';
+import { LANDMARK_MODELS, LANDMARK_SCALE, type Sink } from './city-landmarks';
 import type { CityMapOptions } from './city-map';
 
 const BASE = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? './';
 const escape = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-const INK = '#3b2a20';
 
 /** Buildings stand this many times their real height, so the city still reads from high up. */
 const STRETCH = 2.4;
-/** The lines run this high over the ground (m), each a little above the one before; this wide. */
-const LINE_Y = 170, LINE_STEP = 8, LINE_W = 90, LINE_DEPTH = 22;
+/** The lines lie this high over the ground (m), each a little above the one before. */
+const LINE_Y = 9, LINE_STEP = 2.5;
+/** How wide a line reads on screen (px), and its glow round it (times the line's width). */
+const LINE_PX = 5.5, GLOW = 4;
+/** Seen through the buildings, a line is this opaque. */
+const XRAY = .55;
+/** The castle's pinks (La Reina Bubbaloo's alone, docs/visual-style.md). */
+const QUEEN = ['#ff6fae', '#d94a8c'], QUEEN_GLOW = '#ff6fae';
+/** A landmark's label stands this many pixels over the top of its building. */
+const STEM = 22;
 /** The camera: field of view, the lowest and highest it looks down from, nearest and farthest. */
 const FOV = 38, PITCH_MIN = .5, PITCH_MAX = 1.45, NEAR = 700;
 /** Chunks per side: the buildings are cut into CHUNKS × CHUNKS meshes so off-screen ones are skipped. */
@@ -96,8 +106,9 @@ function triangulate(xs: number[], zs: number[], ccw: boolean, out: number[]) {
  * The buildings, `barcelona-buildings.bin` (tools/city.py `buildings`): int16s, per building its
  * height, kind, point count and points. Walls are shaded as if lit from the left like the map's
  * icons, a little darker at the foot; roofs are flat terraces a shade lighter than the facade.
+ * Buildings within a famous place's `clear` radius are left out: its model stands there instead.
  */
-function buildingChunks(data: Int16Array, bounds: { x0: number; y0: number; x1: number; y1: number }) {
+function buildingChunks(data: Int16Array, bounds: { x0: number; y0: number; x1: number; y1: number }, clear: readonly { x: number; y: number; r: number }[]) {
   const chunks = Array.from({ length: CHUNKS * CHUNKS }, () => new Geometry(4096, 8192));
   const cw = (bounds.x1 - bounds.x0) / CHUNKS, chh = (bounds.y1 - bounds.y0) / CHUNKS;
   const xs: number[] = [], zs: number[] = [], roof: number[] = [];
@@ -107,6 +118,7 @@ function buildingChunks(data: Int16Array, bounds: { x0: number; y0: number; x1: 
     let area = 0;
     for (let i = 0; i < count; i++) { xs.push(data[o + 3 + i * 2]); zs.push(data[o + 4 + i * 2]); }
     for (let i = 0, j = count - 1; i < count; j = i++) area += xs[j] * zs[i] - xs[i] * zs[j];
+    if (clear.some(c => Math.hypot(c.x - xs[0], c.y - zs[0]) < c.r)) continue;
     const palette = data[o] >= TOWER_M ? TOWER_COLOURS : BUILDING_COLOURS[kind] ?? BUILDING_COLOURS[0];
     const base = rgb(palette[(n * 2654435761 >>> 0) % palette.length]);
     const top = base.map(c => c + (255 - c) * .3);
@@ -132,52 +144,83 @@ function buildingChunks(data: Int16Array, bounds: { x0: number; y0: number; x1: 
   return chunks.filter(g => g.i);
 }
 
-/**
- * The lines as slabs over the roofs: the top in the line's colour, the sides in dark ink, a round
- * joint at every station, a post down to the street under each station, and a soft shadow on the
- * ground, cast to the right as the light comes from the left.
- */
-function lineGeometry() {
-  const slab = new Geometry(), shadow = new Geometry();
-  const ink = rgb(INK);
-  const ribbon = (g: Geometry, pts: number[][], y: number, w: number, colour: number[], sides: boolean, alpha = 255) => {
-    for (let i = 0; i + 1 < pts.length; i++) {
-      const [ax, az] = pts[i], [bx, bz] = pts[i + 1], len = Math.hypot(bx - ax, bz - az) || 1;
-      const px = -(bz - az) / len * w / 2, pz = (bx - ax) / len * w / 2;
-      g.reserve(12, 18);
-      g.quad(g.vertex(ax + px, y, az + pz, colour, 1, alpha), g.vertex(bx + px, y, bz + pz, colour, 1, alpha), g.vertex(bx - px, y, bz - pz, colour, 1, alpha), g.vertex(ax - px, y, az - pz, colour, 1, alpha));
-      if (!sides) continue;
-      for (const s of [1, -1]) g.quad(g.vertex(ax + px * s, y, az + pz * s, ink), g.vertex(bx + px * s, y, bz + pz * s, ink), g.vertex(bx + px * s, y - LINE_DEPTH, bz + pz * s, ink, .8), g.vertex(ax + px * s, y - LINE_DEPTH, az + pz * s, ink, .8));
-    }
-    for (const [x, z] of pts) {
-      const sides_ = 16, r = w / 2;
-      g.reserve(sides_ * 5 + 1, sides_ * 9);
-      const centre = g.vertex(x, y + .5, z, colour, 1, alpha);
-      const ring = Array.from({ length: sides_ }, (_, k) => g.vertex(x + Math.cos(k / sides_ * Math.PI * 2) * r, y + .5, z + Math.sin(k / sides_ * Math.PI * 2) * r, colour, 1, alpha));
-      for (let k = 0; k < sides_; k++) g.tri(centre, ring[k], ring[(k + 1) % sides_]);
-      if (sides) for (let k = 0; k < sides_; k++) {
-        const a0 = k / sides_ * Math.PI * 2, a1 = (k + 1) / sides_ * Math.PI * 2;
-        g.quad(g.vertex(x + Math.cos(a0) * r, y, z + Math.sin(a0) * r, ink), g.vertex(x + Math.cos(a1) * r, y, z + Math.sin(a1) * r, ink),
-          g.vertex(x + Math.cos(a1) * r, y - LINE_DEPTH, z + Math.sin(a1) * r, ink, .8), g.vertex(x + Math.cos(a0) * r, y - LINE_DEPTH, z + Math.sin(a0) * r, ink, .8));
-      }
-    }
-  };
-  LINES.forEach((line, i) => {
-    const pts = line.stations.map(id => [STATIONS[id].x, STATIONS[id].y]);
-    const y = LINE_Y + i * LINE_STEP;
-    ribbon(slab, pts, y, LINE_W, rgb(line.colour), true);
-    ribbon(shadow, pts.map(([x, z]) => [x + y * .55, z - y * .2]), 3, LINE_W * 1.1, ink, false, 255);
-  });
-  // A post under every station: where on the street it is.
-  for (const s of Object.values(STATIONS)) {
-    const y = LINE_Y + Math.max(0, LINES.findIndex(l => l.stations.includes(s.id))) * LINE_STEP - LINE_DEPTH, r = 7;
-    slab.reserve(16, 24);
-    for (const [dx, dz, shade] of [[1, 0, .7], [0, 1, .85], [-1, 0, 1], [0, -1, .75]] as const) {
-      const ax = s.x + (dx - dz) * r, az = s.y + (dz + dx) * r, bx = s.x + (dx + dz) * r, bz = s.y + (dz - dx) * r;
-      slab.quad(slab.vertex(ax, 0, az, ink, shade), slab.vertex(bx, 0, bz, ink, shade), slab.vertex(bx, y, bz, ink, shade), slab.vertex(ax, y, az, ink, shade));
-    }
+/** A disc round (x, z) at height y, from `inner` alpha at its centre to `outer` at its rim. */
+function disc(g: Geometry, x: number, y: number, z: number, r: number, colour: number[], inner = 255, outer = 255, sides = 20) {
+  g.reserve(sides + 1, sides * 3);
+  const centre = g.vertex(x, y, z, colour, 1, inner);
+  const ring = Array.from({ length: sides }, (_, k) => g.vertex(x + Math.cos(k / sides * Math.PI * 2) * r, y, z + Math.sin(k / sides * Math.PI * 2) * r, colour, 1, outer));
+  for (let k = 0; k < sides; k++) g.tri(centre, ring[k], ring[(k + 1) % sides]);
+}
+
+/** A band `r` to each side of `pts`, round at every station; fading from `alpha` in its middle to `edge` at its sides. */
+function band(g: Geometry, pts: number[][], y: number, r: number, colour: number[], alpha = 255, edge = 255) {
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [ax, az] = pts[i], [bx, bz] = pts[i + 1], len = Math.hypot(bx - ax, bz - az) || 1;
+    const px = -(bz - az) / len * r, pz = (bx - ax) / len * r;
+    g.reserve(6, 12);
+    const a = g.vertex(ax, y, az, colour, 1, alpha), b = g.vertex(bx, y, bz, colour, 1, alpha);
+    g.quad(g.vertex(ax + px, y, az + pz, colour, 1, edge), g.vertex(bx + px, y, bz + pz, colour, 1, edge), b, a);
+    g.quad(a, b, g.vertex(bx - px, y, bz - pz, colour, 1, edge), g.vertex(ax - px, y, az - pz, colour, 1, edge));
   }
-  return { slab, shadow };
+  for (const [x, z] of pts) disc(g, x, y, z, r, colour, alpha, edge);
+}
+
+/**
+ * The lines under the streets, `w` metres wide (kept a few pixels wide on screen as the camera
+ * moves): a band of the line's colour on the ground, and round it a soft glow of the same colour
+ * that the buildings standing over it hide.
+ */
+function lineGeometry(w: number) {
+  const core = new Geometry(), glow = new Geometry();
+  LINES.forEach((line, i) => {
+    const pts = line.stations.map(id => [STATIONS[id].x, STATIONS[id].y]), y = LINE_Y + i * LINE_STEP, colour = rgb(line.colour);
+    band(core, pts, y, w / 2, colour);
+    band(glow, pts, y - 4, w / 2 * GLOW, colour.map(c => c + (255 - c) * .2), 130, 0);
+  });
+  return { core, glow };
+}
+
+/** A pointed tower of `sides` faces round (x, z), lit from the left like the blocks. */
+function tower(g: Geometry, x: number, z: number, r: number, h: number, roof: number, colour: number[], sides = 8) {
+  g.reserve(sides * 7, sides * 9);
+  const top = colour.map(c => c + (255 - c) * .2);
+  for (let k = 0; k < sides; k++) {
+    const a0 = k / sides * Math.PI * 2, a1 = (k + 1) / sides * Math.PI * 2, am = (a0 + a1) / 2;
+    const lit = .6 + .32 * Math.max(0, -Math.cos(am) * .8 + Math.sin(am) * .6);
+    const x0 = x + Math.cos(a0) * r, z0 = z + Math.sin(a0) * r, x1 = x + Math.cos(a1) * r, z1 = z + Math.sin(a1) * r;
+    g.quad(g.vertex(x0, 0, z0, colour, lit * .78), g.vertex(x1, 0, z1, colour, lit * .78), g.vertex(x1, h, z1, colour, lit), g.vertex(x0, h, z0, colour, lit));
+    if (roof > 0) g.tri(g.vertex(x0, h, z0, top, lit), g.vertex(x1, h, z1, top, lit), g.vertex(x, h + roof, z, top, lit * 1.05));
+  }
+}
+
+/**
+ * La Reina Bubbaloo's castle over the school: pink towers on a pink keep, more and taller the
+ * stronger she is (`level`, 0 to 1), `size` times as big; and on the ground round it her halo,
+ * `reach` icon units wide like the flat plan's (its brightest ring at .62 of it).
+ */
+function castleGeometry(m: MapMarker) {
+  const body = new Geometry(), halo = new Geometry();
+  const level = m.level ?? 0, size = m.size ?? 1, glow = rgb(QUEEN_GLOW);
+  const r = Math.max(1.6, m.reach ?? 0) * 210;
+  // The halo: clear in the middle, brightest on a ring, gone at its rim.
+  const sides = 48, ring = (k: number, rad: number, a: number) => halo.vertex(m.x + Math.cos(k / sides * Math.PI * 2) * rad, 4, m.y + Math.sin(k / sides * Math.PI * 2) * rad, glow, 1, a);
+  halo.reserve(sides * 3 + 1, sides * 9);
+  const c = halo.vertex(m.x, 4, m.y, glow, 1, 70);
+  const inner = Array.from({ length: sides }, (_, k) => ring(k, r * .62, 200)), outer = Array.from({ length: sides }, (_, k) => ring(k, r, 0));
+  for (let k = 0; k < sides; k++) {
+    const n = (k + 1) % sides;
+    halo.tri(c, inner[k], inner[n]);
+    halo.quad(inner[k], outer[k], outer[n], inner[n]);
+  }
+  const towers = 3 + Math.round(level * 6), spread = 130 * size;
+  tower(body, m.x, m.y, 150 * size, 80 * size, 0, rgb(QUEEN[1]), 12);
+  for (let i = 0; i < towers; i++) {
+    // A spiral out from the middle: the tallest in the middle, lower towards the walls.
+    const t = Math.sqrt((i + .5) / towers), angle = i * 2.39996;
+    const h = (260 + (1 - t) * (260 + level * 420)) * size;
+    tower(body, m.x + Math.cos(angle) * t * spread, m.y + Math.sin(angle) * t * spread, (34 + (1 - t) * 18) * size, h, (90 + (1 - t) * 40) * size, rgb(QUEEN[i % 2]));
+  }
+  return { body, halo };
 }
 
 export interface City3D {
@@ -198,22 +241,23 @@ export interface City3D {
   destroy(): void;
 }
 
-/** Builds the model in `host` (the travel panel's map box); undefined if WebGL is not there. */
-export function createCity3D(host: HTMLElement): City3D | undefined {
+/** Builds the model in `host` (the travel panel's map box); undefined if WebGPU is not there. */
+export async function createCity3D(host: HTMLElement): Promise<City3D | undefined> {
   const background = CITY_MAP.background, buildings = (CITY_MAP as { buildings?: { href: string } }).buildings;
   if (!background || !buildings) return undefined;
   const canvas = document.createElement('canvas');
   canvas.className = 'city-3d';
   host.append(canvas);
-  let app: pc.Application;
-  try {
-    // Stays on WebGL2: an unlit model in a panel gains nothing from WebGPU, and a synchronous device keeps the map's fallback simple.
-    app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
-  } catch {
-    canvas.remove();
-    return undefined;
-  }
-  const device = app.graphicsDevice;
+  // Its own WebGPU device on its own canvas, like the game's.
+  const made = 'gpu' in navigator ? await pc.createGraphicsDevice(canvas, { deviceTypes: [pc.DEVICETYPE_WEBGPU], antialias: true, alpha: false }).catch(() => undefined) : undefined;
+  if (!made?.isWebGPU) { made?.destroy(); canvas.remove(); return undefined; }
+  const device: pc.GraphicsDevice = made;
+  const app = new pc.AppBase(canvas);
+  const options = new pc.AppOptions();
+  options.graphicsDevice = device;
+  options.componentSystems = [pc.RenderComponentSystem, pc.CameraComponentSystem];
+  options.resourceHandlers = [pc.TextureHandler];
+  app.init(options);
   device.maxPixelRatio = Math.min(2, window.devicePixelRatio);
   app.setCanvasFillMode(pc.FILLMODE_NONE);
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
@@ -224,21 +268,29 @@ export function createCity3D(host: HTMLElement): City3D | undefined {
   const observer = new ResizeObserver(resize);
   observer.observe(host);
 
-  const unlit = (blend = false) => {
+  /** Unlit vertex colours; see-through ones take their vertices' alpha, x-ray ones draw over everything. */
+  const unlit = ({ blend = false, opacity = 1, xray = false } = {}) => {
     const m = new pc.StandardMaterial();
     m.useLighting = false; m.diffuse.set(0, 0, 0); m.emissive.set(1, 1, 1); m.emissiveVertexColor = true;
     m.cull = pc.CULLFACE_NONE;
-    if (blend) { m.blendType = pc.BLEND_NORMAL; m.opacity = .16; m.depthWrite = false; }
+    if (blend) { m.blendType = pc.BLEND_NORMAL; m.opacity = opacity; m.opacityVertexColor = true; m.opacityVertexColorChannel = 'a'; m.depthWrite = false; }
+    if (xray) m.depthTest = false;
     m.update();
     return m;
   };
-  const solid = unlit(), shade = unlit(true);
+  const solid = unlit(), soft = unlit({ blend: true }), xray = unlit({ blend: true, opacity: XRAY, xray: true }), halo = unlit({ blend: true });
+  // See-through things draw in the order they are added: the glows on the ground, then the lines seen through the buildings.
+  app.scene.layers.getLayerById(pc.LAYERID_WORLD)!.transparentSortMode = pc.SORTMODE_MANUAL;
+  let order = 0;
   const add = (name: string, mesh: pc.Mesh, material: pc.Material) => {
-    const e = new pc.Entity(name);
-    e.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, material)], castShadows: false, receiveShadows: false });
+    const e = new pc.Entity(name), instance = new pc.MeshInstance(mesh, material);
+    instance.drawOrder = order++;
+    e.addComponent('render', { meshInstances: [instance], castShadows: false, receiveShadows: false });
     app.root.addChild(e);
     return e;
   };
+  /** Puts a new mesh in an entity's place, dropping the old one. */
+  const swap = (e: pc.Entity, mesh: pc.Mesh) => { const instance = e.render!.meshInstances[0], old = instance.mesh; instance.mesh = mesh; old?.destroy(); };
 
   // The ground: land and sea far round the picture, then the picture of the city.
   const far = 60_000, { x0, y0, x1, y1 } = background;
@@ -263,12 +315,33 @@ export function createCity3D(host: HTMLElement): City3D | undefined {
     app.renderNextFrame = true;
   });
   app.assets.add(texture); app.assets.load(texture);
+  /** How high each famous place's model stands: its name card hangs over it. */
+  const tops = new Map<string, number>();
+  // Room for every model: the landmarks, home, and the school (and later the castle over it).
+  const clearing = [
+    ...CITY_MAP.landmarks.map(l => ({ x: l.x, y: l.y, r: (LANDMARK_MODELS[l.icon]?.clear ?? 0) * LANDMARK_SCALE })),
+    ...CITY_MAP.places.filter(p => p.id === 'home' || p.id === 'rec-comtal').map(p => ({ x: p.x, y: p.y, r: p.id === 'home' ? LANDMARK_MODELS.home.clear * LANDMARK_SCALE : 300 })),
+  ];
   void fetch(`${BASE}${buildings.href}`).then(r => r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.statusText))).then(buffer => {
-    buildingChunks(new Int16Array(buffer), background).forEach((g, i) => add(`Edificios ${i + 1}`, g.mesh(device), solid));
+    buildingChunks(new Int16Array(buffer), background, clearing).forEach((g, i) => add(`Edificios ${i + 1}`, g.mesh(device), solid));
+    app.renderNextFrame = true;
   }).catch(error => console.warn('No buildings for the city map', error));
-  const { slab, shadow } = lineGeometry();
-  add('Sombra de las líneas', shadow.mesh(device), shade);
-  add('Líneas', slab.mesh(device), solid);
+  // The castle (built when the story puts it on the map), the lines' glow, the lines, and the lines again through the buildings.
+  const empty = () => { const g = new Geometry(3, 3); g.tri(g.vertex(0, 0, 0, [0, 0, 0]), g.vertex(0, 0, 0, [0, 0, 0]), g.vertex(0, 0, 0, [0, 0, 0])); return g.mesh(device); };
+  const castleHalo = add('Halo del castillo', empty(), halo), castle = add('Castillo de la Reina', empty(), solid);
+  let castleKey = '';
+  const places = add('Lugares', empty(), solid);
+  let placesKey = '';
+  let lineWidth = 0;
+  const lineGlow = add('Brillo de las líneas', empty(), soft), lines = add('Líneas', empty(), solid), linesThrough = add('Líneas a través de los edificios', empty(), xray);
+  /** Keeps the lines LINE_PX wide on screen: rebuilt when the zoom changes their width by more than a tenth. */
+  function sizeLines(pxPerMetre: number) {
+    const w = Math.min(160, Math.max(12, LINE_PX / pxPerMetre));
+    if (lineWidth && Math.abs(w / lineWidth - 1) < .1) return;
+    lineWidth = w;
+    const { core, glow } = lineGeometry(w);
+    swap(lineGlow, glow.mesh(device)); swap(lines, core.mesh(device)); swap(linesThrough, core.mesh(device));
+  }
 
   const camera = new pc.Entity('Cámara del plano');
   camera.addComponent('camera', { fov: FOV, nearClip: 20, farClip: 120_000, clearColor: new pc.Color().fromString(HAZE), toneMapping: pc.TONEMAP_NONE, gammaCorrection: pc.GAMMA_SRGB });
@@ -294,6 +367,7 @@ export function createCity3D(host: HTMLElement): City3D | undefined {
     camera.lookAt(x, 0, y);
     camera.camera!.nearClip = Math.max(10, d * .05);
     app.scene.fog.start = d * 1.4; app.scene.fog.end = d * 5;
+    sizeLines(scale());
   }
 
   // The overlay: every element with a `data-at` (x, y, height) is moved to where it is seen.
@@ -315,67 +389,122 @@ export function createCity3D(host: HTMLElement): City3D | undefined {
   function placeOverlay() {
     const k = scale();
     overlay.classList.toggle('is-far', k < .13);
-    const iconScale = 22 * Math.min(1.7, Math.max(.75, Math.pow(k / .1, .3)));
+    // Stations first, then the landmarks' cards wherever they do not cover a station's name or another card.
+    const taken: number[][] = [], far = k < .13;
+    const overlaps = (r: number[]) => taken.some(t => r[0] < t[2] && r[2] > t[0] && r[1] < t[3] && r[3] > t[1]);
     for (const el of overlay.querySelectorAll<SVGGElement>('[data-at]')) {
       const [x, y, h] = el.dataset.at!.split(',').map(Number);
-      const p = project(x, y, h);
+      // A landmark's label hangs over the top of its building, once the buildings are in.
+      const p = project(x, y, el.dataset.landmark ? tops.get(el.dataset.landmark) ?? h : h);
       if (!p) { el.setAttribute('visibility', 'hidden'); continue; }
+      const w = Number(el.dataset.w ?? 0);
+      if (el.dataset.station && !(far && el.classList.contains('is-minor'))) taken.push([p[0] - 8, p[1] - 10, p[0] + 12 + w, p[1] + 8]);
+      if (el.dataset.landmark) {
+        const card = [p[0] - w / 2, p[1] - STEM - 22, p[0] + w / 2, p[1] - STEM];
+        if (overlaps(card)) { el.setAttribute('visibility', 'hidden'); continue; }
+        taken.push(card);
+      }
       el.removeAttribute('visibility');
-      el.setAttribute('transform', `translate(${p[0].toFixed(1)} ${p[1].toFixed(1)})${el.classList.contains('map-marker-slot') ? ` scale(${iconScale.toFixed(2)})` : ''}`);
+      el.setAttribute('transform', `translate(${p[0].toFixed(1)} ${p[1].toFixed(1)})`);
     }
     for (const t of trips) {
       const pts = t.points.map(([x, y, h]) => project(x, y, h)).filter((p): p is number[] => !!p);
       t.el.setAttribute('d', pts.length > 1 ? `M${pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('L')}` : '');
     }
-    const dot = overlay.querySelector<SVGCircleElement>('.city-train');
+    const dot = overlay.querySelector<SVGGElement>('.city-train');
     if (dot) {
-      const p = train && project(train.x, train.y, LINE_Y + LINE_STEP + 4);
-      if (p) { dot.setAttribute('cx', p[0].toFixed(1)); dot.setAttribute('cy', p[1].toFixed(1)); dot.removeAttribute('visibility'); }
+      const p = train && project(train.x, train.y, LINE_Y + 4);
+      if (p) { dot.setAttribute('transform', `translate(${p[0].toFixed(1)} ${p[1].toFixed(1)})`); dot.removeAttribute('visibility'); }
       else dot.setAttribute('visibility', 'hidden');
     }
   }
   const lineHeight = (id: string) => LINE_Y + Math.max(0, LINES.findIndex(l => l.id === id)) * LINE_STEP;
   const legPoints = (leg: Leg) => leg.stations.map(id => [STATIONS[id].x, STATIONS[id].y, lineHeight(leg.line) + 2]);
+  /** A label on a small rounded card, its bottom centre at (0, `y`): sized to its text once in the page. */
+  const card = (cls: string, text: string, y: number) => `<g class="${cls}" transform="translate(0 ${y})"><rect x="-20" y="-21" width="40" height="21" rx="10.5"/><text y="-6.5">${escape(text)}</text></g>`;
+  /** Sizes every card to its text, and notes how wide each name is (`data-w`) for placeOverlay to keep them apart. */
+  function fitCards() {
+    for (const g of overlay.querySelectorAll<SVGGElement>('.city-card')) {
+      const text = g.querySelector('text')!, rect = g.querySelector('rect')!, w = text.getComputedTextLength() + 20;
+      rect.setAttribute('x', (-w / 2).toFixed(1)); rect.setAttribute('width', w.toFixed(1));
+      const landmark = g.closest<SVGGElement>('[data-landmark]');
+      if (landmark) landmark.dataset.w = w.toFixed(0);
+    }
+    for (const g of overlay.querySelectorAll<SVGGElement>('[data-station]')) g.dataset.w = g.querySelector('text')!.getComputedTextLength().toFixed(0);
+  }
 
   function draw(options: CityMapOptions) {
     const selectable = new Set(options.selectable ?? []);
     const counts = new Map<string, number>();
     for (const line of LINES) for (const id of line.stations) counts.set(id, (counts.get(id) ?? 0) + 1);
     const named = new Set([...LINES.flatMap(l => [l.stations[0], l.stations.at(-1)!]), ...[...counts].filter(([, n]) => n > 1).map(([id]) => id)]);
-    const parts = [`<defs><radialGradient id="queen-halo"><stop offset=".25" stop-color="#ff6fae" stop-opacity="0"/><stop offset=".62" stop-color="#ff6fae" stop-opacity=".5"/><stop offset=".8" stop-color="#ff9fcb" stop-opacity=".22"/><stop offset="1" stop-color="#ff9fcb" stop-opacity="0"/></radialGradient></defs>`];
+    const parts: string[] = [];
     const tripLegs: { cls: string; colour: string; leg: Leg }[] = [
       ...(options.route ?? []).map(leg => ({ cls: 'city-route', colour: LINES.find(l => l.id === leg.line)!.colour, leg })),
       ...(options.route?.length ? [] : options.preview ?? []).map(leg => ({ cls: 'city-preview', colour: '#fffaf0', leg })),
     ];
     parts.push(...tripLegs.map((t, i) => `<path class="${t.cls}" data-trip="${i}" stroke="${t.colour}"/>`));
-    // Markers stand on the ground, upright, a little over the roofs round them.
-    for (const m of options.markers ?? []) parts.push(`<g class="map-marker-slot" data-at="${m.x},${m.y},60">${renderMarker({ ...m, x: 0, y: -1 }, 1)}</g>`);
+    // The castle is in the model itself; every other marker is a name on a card over where it stands.
+    const queen = options.markers?.find(m => m.icon === 'bubbaloo');
+    const key = queen ? `${queen.x},${queen.y},${queen.level},${queen.size},${queen.reach}` : '';
+    if (key !== castleKey) {
+      castleKey = key;
+      const built = queen && castleGeometry(queen);
+      swap(castle, built ? built.body.mesh(device) : empty()); swap(castleHalo, built ? built.halo.mesh(device) : empty());
+    }
+    // The famous places, home and the school as models, rebuilt when the story changes which stand.
+    const models = (options.markers ?? []).filter(m => m !== queen && LANDMARK_MODELS[m.icon]);
+    const modelsKey = models.map(m => `${m.id}:${m.icon}`).join();
+    if (modelsKey !== placesKey) {
+      placesKey = modelsKey;
+      const g = new Geometry(8192, 16384);
+      for (const m of models) {
+        // Each model is built at its place, then grown LANDMARK_SCALE times round its foot.
+        const k = LANDMARK_SCALE, grown: Sink = { reserve: (v, i) => g.reserve(v, i), tri: (a, b, c) => g.tri(a, b, c), quad: (a, b, c, d) => g.quad(a, b, c, d), vertex: (x, y, z, colour, shade, alpha) => g.vertex(m.x + (x - m.x) * k, y * k, m.y + (z - m.y) * k, colour, shade, alpha) };
+        LANDMARK_MODELS[m.icon].build(grown, m.x, m.y);
+        tops.set(m.id, LANDMARK_MODELS[m.icon].top * k);
+      }
+      swap(places, g.v ? g.mesh(device) : empty());
+    }
+    const cards: string[] = [];
+    for (const m of options.markers ?? []) {
+      if (m === queen) continue;
+      cards.push(`<g class="city-landmark" data-landmark="${m.id}" data-icon="${m.icon}" data-at="${m.x},${m.y},0">`
+        + `<line class="city-landmark-stem" y2="${-STEM}"/><circle class="city-landmark-foot" r="2.5"/>${card('city-card', m.name, -STEM)}<title>${escape(m.name)}</title></g>`);
+    }
     // Every station is named, as on the plan in a station; the ones that matter a size up.
     for (const s of Object.values(STATIONS)) {
       const pickable = selectable.has(s.id), here = options.current === s.id, chosen = options.selected === s.id;
-      const big = pickable || here, minor = !big && !named.has(s.id);
-      const r = big ? 9 : (counts.get(s.id) ?? 1) > 1 ? 7.5 : 5.5, size = big ? 17 : named.has(s.id) ? 14 : 12;
+      const big = pickable || here, minor = !big && !named.has(s.id), interchange = (counts.get(s.id) ?? 1) > 1;
+      const r = big ? 6.5 : interchange ? 5 : 3.8, size = big ? 15 : named.has(s.id) ? 13 : 11.5;
       const line = LINES.find(l => l.stations.includes(s.id))!;
-      parts.push(`<g class="city-station${pickable ? ' is-pickable' : ''}${here ? ' is-here' : ''}${chosen ? ' is-selected' : ''}${minor ? ' is-minor' : ''}" data-station="${s.id}" data-at="${s.x},${s.y},${lineHeight(line.id) + 2}">`
-        + `${pickable ? `<circle class="city-station-glow" r="${r * 2.2}"/>` : ''}<circle r="${r}" stroke-width="3"/>`
-        + `<text x="${r + 6}" y="${size * .36}" font-size="${size}">${escape(s.name)}</text><title>${escape(s.name)}</title></g>`);
+      parts.push(`<g class="city-station${pickable ? ' is-pickable' : ''}${here ? ' is-here' : ''}${chosen ? ' is-selected' : ''}${minor ? ' is-minor' : ''}${interchange ? ' is-interchange' : ''}" data-station="${s.id}" data-at="${s.x},${s.y},${lineHeight(line.id) + 2}" style="--line:${line.colour}">`
+        + `${pickable ? `<circle class="city-station-glow" r="${r * 2.4}"/>` : ''}<circle class="city-station-dot" r="${r}"/>`
+        + `<text x="${r + 5}" y="${size * .35}" font-size="${size}">${escape(s.name)}</text><title>${escape(s.name)}</title></g>`);
     }
+    // After the stations, so they keep their room and the cards lie over them.
+    parts.push(...cards);
     if (options.current) {
       const s = STATIONS[options.current], line = LINES.find(l => l.stations.includes(s.id))!;
-      parts.push(`<g class="city-pin" data-at="${s.x},${s.y},${lineHeight(line.id) + 2}"><path d="M0,0L-11,-22A14,14,0,1,1,11,-22Z" stroke-width="3"/><text y="-26" font-size="13">G</text>`
-        + `<text class="city-pin-label" y="-48" font-size="14" stroke-width="4">Estás aquí</text></g>`);
+      parts.push(`<g class="city-pin" data-at="${s.x},${s.y},${lineHeight(line.id) + 2}"><circle class="city-pin-pulse" r="11"/>${card('city-card city-pin-card', 'Estás aquí', -14)}</g>`);
     }
-    parts.push(`<circle class="city-train" r="9" visibility="hidden"/>`);
+    parts.push(`<g class="city-train" visibility="hidden"><circle r="7"/><circle class="city-train-core" r="3"/></g>`);
     overlay.setAttribute('role', 'img');
     overlay.setAttribute('aria-label', options.label ?? 'Plano de Barcelona con las líneas de metro');
     overlay.innerHTML = parts.join('');
+    fitCards();
     trips = tripLegs.map((t, i) => ({ el: overlay.querySelector<SVGPathElement>(`[data-trip="${i}"]`)!, points: legPoints(t.leg) }));
     placeOverlay();
   }
 
   // The scene moves only when the camera does; the overlay follows it every frame it draws.
   let paused = false;
-  app.on('update', () => { place(); });
+  let time = 0;
+  app.on('update', (dt: number) => {
+    place();
+    // Her halo breathes, as on the flat plan.
+    if (castleKey) { time += dt; halo.opacity = .75 + .25 * Math.sin(time * Math.PI * 2 / 3.2); halo.update(); }
+  });
   app.on('postrender', placeOverlay);
   place();
   app.start();

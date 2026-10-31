@@ -8,7 +8,7 @@ Chapter 2's world is Barcelona (and later a little beyond: Cardedeu). It works o
    never walked.
 2. **The network map**: the whole city as a **3D model**, a cartoon of the real Barcelona with
    its sea, hills, rivers, streets and every building, its famous places, and the metro lines
-   running over the roofs. It is what Gerard sees when he goes down into a station, and how he
+   running under the streets. It is what Gerard sees when he goes down into a station, and how he
    travels between places. It is looked at, never walked.
 
 The city under the lines is **real**: Barcelona's streets, coast, rivers, parks and buildings
@@ -40,23 +40,37 @@ src/transit.ts  lines, stations, which place each station opens, story rules for
   high up: warm facades for homes, greys for works and offices, terracotta for churches, schools
   and other civic buildings, glass for towers; lit from the left like the icons, roofs a shade
   lighter. The buildings are cut into 8 × 8 meshes. Districts are never drawn.
-- **The lines over the roofs**: thick slabs in the line's colour with dark ink sides, a round
-  joint at every station, a post down to the street under each station and a soft shadow on the
-  ground.
-- **Drawn on top, upright**: stations, their names, the pin, the trip and the markers are one SVG
-  over the canvas, moved every frame to where the camera sees them, so they never tilt. From far
-  away only the names that matter stay.
+- **The lines under the streets**: a thin band of the line's colour on the ground, kept about
+  5 px wide on screen at any zoom, in a soft glow of the same colour that the buildings over it
+  hide; drawn a second time, faint, through the buildings, so a line is never lost behind a
+  block. No posts, no outlines.
+- **Famous places are little models in the city** (`src/city-landmarks.ts`), in the castle's
+  style: plain volumes lit from the front left, in the icons' colours, 1.35 times bigger than
+  their own outsize scale so they read from the whole city. The real buildings round each one are
+  left out so it stands on open ground: the Sagrada Família's warm sandstone spires with their
+  coloured fruits, Torre Glòries' blue bullet dotted with windows, Park Güell's green hill and
+  mosaic bench, Tibidabo's Ferris wheel, Montjuïc's fort and flag, Camp Nou's striped bowl, the
+  sail hotel and parasols at Barceloneta, the Fòrum's tilted solar panel, the Arc de Triomf, Sant
+  Pau's green dome, Plaça d'Espanya's two towers, the Búnkers' gun pits, home and the school.
+- **La Reina Bubbaloo's castle stands in the model**: pink towers on a pink keep over the school,
+  more and taller the higher the threat, in a pink halo on the streets that breathes and widens as
+  her power spreads.
+- **Drawn on top, upright**: stations (small white dots ringed in their line's colour, dark rings
+  where lines meet), their names, the landmarks' names on small white cards on a stem over their
+  building, *Estás aquí* on a dark card over a pulsing dot, the trip and the train are one SVG over
+  the canvas, moved every frame to where the camera sees them, so they never tilt. A card that
+  would cover a station's name or another card is hidden; from far away only the station names
+  that matter stay.
 - **Falls back** to the flat cartoon plan (`src/city-map.ts`: the picture with blocks lifted in
   2.5D, or the hand-drawn sea, hills, rivers and avenues before the first `just city-fetch`) when
-  WebGL or the buildings are missing.
-- **Landmarks are abstract little volumes** lit from the left like the blocks, on a soft
-  shadow: a cluster of spires, a bullet tower dotted with windows, the solar pergola…
+  WebGPU or the buildings are missing.
+- **On the flat plan** (no WebGPU), landmarks are the cartoon icons of `src/map-markers.ts`
+  instead: a cluster of spires, a bullet tower dotted with windows, the solar pergola…
 - **North-west up, sea at the bottom.** The map is turned so the coast runs left to right along
   the bottom edge (Llobregat on the left, Besòs on the right) and Collserola rises along the top:
   the way people from Barcelona picture their city. The camera looks at it from the sea side,
   tilted; the player can turn it round.
-- **Few lines.** Only the lines that reach a place, thick and outlined, with chunky white
-  stations, in the colours of TMB's line signs: the **L1 (red)** from Santa Eulàlia to Fondo, the
+- **Few lines.** Only the lines that reach a place, in the colours of TMB's line signs: the **L1 (red)** from Santa Eulàlia to Fondo, the
   **L3 (green)** from Sants Estació down the Paral·lel to Catalunya and Diagonal, the **L4
   (yellow)** from Verdaguer down to the beaches at Llacuna, the **L5 (blue)** from Badal to Vall
   d'Hebron, and the Rodalies **R4 (ochre)** from La Sagrera to Cardedeu. A line is cut where the
@@ -80,7 +94,9 @@ a list of markers; the story decides which (`cityMarkers(state)`):
 | La Reina Bubbaloo's castle | `bubbaloo` | From the TV news; its size and towers follow the castle's threat (`level`); a pink halo round it widens as her power spreads (`reach`) |
 
 A new kind of marker is one drawing in `ICONS` (a 2 × 2 box, bottom at y = 1, the outline is
-added) and one entry where markers are listed. Markers say what is in the city; they never say
+added) for the flat plan, one model in `LANDMARK_MODELS` (`src/city-landmarks.ts`: how far it
+clears the blocks, how high its name card hangs, how it is built) for the 3D map, and one entry
+where markers are listed. Markers say what is in the city; they never say
 what to do next (`AGENTS.md`).
 
 ### Travel
@@ -90,13 +106,13 @@ what to do next (`AGENTS.md`).
    down (the place's `step` cells); pressing E beside it (*"Bajar al metro"*) does the same.
 2. The network plan opens on the station wall: white tiles, the station's name on a dark sign in
    its line's colour, the plan framed on where Gerard is (*Estás aquí*) and where he can go, every
-   station named, the lines' ends in the legend. Selectable stations are the ones that lead to a
+   station named. Selectable stations are the ones that lead to a
    place (bigger, glowing); the rest are drawn but cannot be picked. Arrows, the stick, the mouse
    or the D-pad move between them, and the trip to the one picked is dashed on the plan with its
    stops and changes; Enter/A travels. The wheel or +/− zoom, dragging pans, dragging with the
    right button (or Shift) turns and tilts the model, 0 shows the whole city. Esc/B goes back up:
    the party stands at the entrance again.
-3. The trip: a small train runs along the line over the roofs, changing at shared stations, the
+3. The trip: a small train runs along the line, changing at shared stations, the
    camera drifting after it; then the screen fades and the party comes up the destination's
    entrance.
 4. Lines can be closed by the story (`transit.ts` rules), with a person or sign in the world

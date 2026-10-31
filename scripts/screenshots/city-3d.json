@@ -1,6 +1,6 @@
 {
   "title": "Chapter 2 · The network map as a 3D city",
-  "description": "Down into the L1 at Fabra i Puig: the network map is a 3D model of the real Barcelona, every building from OpenStreetMap standing at its height on the streets, parks and sea, the L1, L3, L4 and L5 running over the roofs on posts, stations, names and the famous places drawn upright over it. Then the whole city, the centre where the lines meet, Sants and Plaça d'Espanya, the beach line, and a close look turned round the Sagrada Família.",
+  "description": "Down into the L1 at Fabra i Puig: the network map is a 3D model of the real Barcelona, every building from OpenStreetMap standing at its height on the streets, parks and sea, the L1, L3, L4 and L5 running under the streets in their colours, seen through the buildings, the famous buildings tinted, stations and names drawn upright over it. Then the whole city, the centre where the lines meet, Sants and Plaça d'Espanya, the beach line, a close look turned round the Sagrada Família and La Reina Bubbaloo's castle.",
   "steps": [
     {
       "open": "/?story=metro&solo=1"
@@ -62,7 +62,15 @@
     {
       "shot": "map-close",
       "delay": 2500,
-      "caption": "Zoomed in and turned with the right button: the Eixample's blocks round the Sagrada Família, the L5 on its posts"
+      "caption": "Zoomed in and turned with the right button: the Eixample's blocks round the Sagrada Família, the L5 under the streets"
+    },
+    {
+      "eval": "import('/src/transit.ts').then(t => { const s = t.CITY_MAP.places.find(p => p.id === 'rec-comtal'); window.gerard.travelUI.city.orbit = { x: s.x, y: s.y + 300, distance: 3400, yaw: .35, pitch: .62 } }) && undefined"
+    },
+    {
+      "shot": "map-castle",
+      "delay": 2500,
+      "caption": "La Reina Bubbaloo's castle over the school at Trinitat Vella: pink towers, more and taller the stronger she is, in her pink halo on the streets"
     }
   ]
 }
