@@ -337,23 +337,21 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       ctx.fillStyle = '#7c9a5b'; ctx.fillRect(0, 0, size, size);
       speckle('#6a8a4c', 1200, 3, 2); speckle('#93b06b', 800, 2, 7);
     } else if (kind === 'hydraulic') {
-      // An old Sants shop floor: cement tiles in terracotta, cream and slate, two to a cell (bigger than
-      // the real 20 cm, so the pattern reads from the camera). Each carries a quarter circle at every
-      // corner and a diamond in the middle, so four tiles meet in a ring.
-      const t = size / 2, terracotta = '#b6563f', cream = '#e9dfcb', slate = '#3f4a52';
-      for (let r = 0; r < 2; r++) for (let k = 0; k < 2; k++) {
-        const x0 = k * t, y0 = r * t, shade = 0.94 + jitter(r * 4 + k + 70) * 0.1;
+      // An old Sants shop floor: cement tiles at their real 25 cm, four to a cell's side, on a cream
+      // ground. Each carries a slate four-petal flower in the middle and a terracotta quarter circle
+      // at every corner, so four tiles meet in a small disc: a quiet carpet, never louder than Gerard.
+      const n = 4, t = size / n, terracotta = '#b4654e', cream = '#e6dcc6', slate = '#5a636a';
+      for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) {
+        const x0 = k * t, y0 = r * t, cx = x0 + t / 2, cy = y0 + t / 2, shade = 0.95 + jitter(r * 4 + k + 70) * 0.08;
         ctx.fillStyle = cream; ctx.fillRect(x0, y0, t, t);
         ctx.fillStyle = terracotta;
-        for (const [cx, cy] of [[x0, y0], [x0 + t, y0], [x0, y0 + t], [x0 + t, y0 + t]]) { ctx.beginPath(); ctx.arc(cx, cy, t * 0.36, 0, Math.PI * 2); ctx.fill(); }
-        ctx.fillStyle = cream;
-        for (const [cx, cy] of [[x0, y0], [x0 + t, y0], [x0, y0 + t], [x0 + t, y0 + t]]) { ctx.beginPath(); ctx.arc(cx, cy, t * 0.2, 0, Math.PI * 2); ctx.fill(); }
+        for (const [px, py] of [[x0, y0], [x0 + t, y0], [x0, y0 + t], [x0 + t, y0 + t]]) { ctx.beginPath(); ctx.arc(px, py, t * 0.22, 0, Math.PI * 2); ctx.fill(); }
         ctx.fillStyle = slate;
-        ctx.beginPath(); ctx.moveTo(x0 + t / 2, y0 + t * 0.2); ctx.lineTo(x0 + t * 0.8, y0 + t / 2); ctx.lineTo(x0 + t / 2, y0 + t * 0.8); ctx.lineTo(x0 + t * 0.2, y0 + t / 2); ctx.fill();
-        ctx.fillStyle = terracotta; ctx.fillRect(x0 + t * 0.44, y0 + t * 0.44, t * 0.12, t * 0.12);
+        for (let p = 0; p < 4; p++) { ctx.beginPath(); ctx.ellipse(cx + Math.cos(p * Math.PI / 2) * t * 0.13, cy + Math.sin(p * Math.PI / 2) * t * 0.13, t * 0.12, t * 0.07, p * Math.PI / 2, 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = terracotta; ctx.beginPath(); ctx.arc(cx, cy, t * 0.05, 0, Math.PI * 2); ctx.fill();
         // Worn cement: each tile a little lighter or darker, and the grout lines.
         ctx.fillStyle = `rgba(${shade > 1 ? '255,255,255' : '0,0,0'},${Math.abs(shade - 1) * 0.9})`; ctx.fillRect(x0, y0, t, t);
-        ctx.strokeStyle = '#8a7f72'; ctx.lineWidth = 2; ctx.strokeRect(x0 + 1, y0 + 1, t - 2, t - 2);
+        ctx.strokeStyle = '#a39888'; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y0 + 0.5, t - 1, t - 1);
       }
       speckle('#00000010', 500, 2, 21); speckle('#ffffff12', 300, 2, 23);
     } else if (kind === 'terrazzo') {

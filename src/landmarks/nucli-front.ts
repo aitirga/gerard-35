@@ -16,7 +16,7 @@ const WINE = '#5d0e11', CREAM = '#f3e6d0';
 
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const width = Number(landmark.params.width ?? 8.4), door = Number(landmark.params.door ?? 0), half = width / 2;
-  const top = 3.3, sill = 0.5, head = 2.55, doorW = 1.15;
+  const top = 3.6, sill = 0.5, head = 2.55, doorW = 1.15;
   const wine = kit.mat('Frente granate', WINE, 0.25);
   const iron = kit.mat('Hierro del rótulo', '#26292a', 0.4);
   // The front itself: wine-red panels round the openings, standing a hand in front of the wall.
@@ -33,12 +33,12 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   kit.part('Cornisa', 'box', kit.mat('Moldura crema', CREAM, 0.3), [0, top, z + 0.04], [width + 0.1, 0.07, 0.12]);
   for (const [x0, x1] of [openings[0], openings[2]]) kit.part('Alféizar', 'box', iron, [(x0 + x1) / 2, sill - 0.03, z + 0.06], [x1 - x0 + 0.06, 0.06, 0.1]);
 
-  // The fascia: the name in cream, hand-painted letters.
-  const fascia = canvas(1024, 96, ctx => {
-    ctx.fillStyle = WINE; ctx.fillRect(0, 0, 1024, 96);
+  // The fascia: the name in cream, hand-painted letters about 60 cm high, so they read from the street camera.
+  const fascia = canvas(1024, 128, ctx => {
+    ctx.fillStyle = WINE; ctx.fillRect(0, 0, 1024, 128);
     ctx.fillStyle = CREAM; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = '700 62px Georgia, "Times New Roman", serif'; ctx.fillText('EL NUCLI', 512, 42);
-    ctx.font = '600 15px "Helvetica Neue", Arial, sans-serif'; ctx.fillText('JOCS DE TAULA  ·  CARTES  ·  ROL', 512, 82);
+    ctx.font = '700 84px Georgia, "Times New Roman", serif'; ctx.fillText('EL NUCLI', 512, 54, 900);
+    ctx.font = '600 17px "Helvetica Neue", Arial, sans-serif'; ctx.fillText('JOCS DE TAULA  ·  CARTES  ·  ROL', 512, 112);
   });
   const sign = kit.mat('Rótulo de El Nucli', '#ffffff', 0.2);
   sign.diffuseMap = kit.texture(fascia); sign.update();
@@ -63,15 +63,15 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   for (const [a, b] of [openings[0], openings[2]]) kit.part('Montante', 'box', wine, [(a + b) / 2, (sill + head) / 2, z + 0.02], [0.06, head - sill, 0.06]);
 
   // The round sign hung out over the door: a wine disc on an iron bracket, the name and a fan of cards on both faces.
-  const sx = door - doorW / 2 - 0.45, sy = 3.0, out = 0.75;
-  kit.part('Escuadra', 'box', iron, [sx, sy + 0.5, out / 2 + 0.05], [0.04, 0.04, out + 0.1]);
-  kit.part('Escuadra', 'box', iron, [sx, sy + 0.3, 0.2], [0.03, 0.03, 0.45], [35, 0, 0]);
-  for (const k of [-1, 1]) kit.part('Cadena', 'box', iron, [sx, sy + 0.44, out + k * 0.18], [0.015, 0.12, 0.015]);
-  kit.part('Rótulo redondo', 'cylinder', wine, [sx, sy, out], [0.78, 0.06, 0.78], [0, 0, 90]);
+  const sx = door - doorW / 2 - 0.5, sy = 3.05, out = 0.95;
+  kit.part('Escuadra', 'box', iron, [sx, sy + 0.64, out / 2 + 0.05], [0.04, 0.04, out + 0.3]);
+  kit.part('Escuadra', 'box', iron, [sx, sy + 0.42, 0.22], [0.03, 0.03, 0.5], [35, 0, 0]);
+  for (const k of [-1, 1]) kit.part('Cadena', 'box', iron, [sx, sy + 0.57, out + k * 0.22], [0.015, 0.14, 0.015]);
+  kit.part('Rótulo redondo', 'cylinder', wine, [sx, sy, out], [1.0, 0.06, 1.0], [0, 0, 90]);
   const disc = canvas(256, 256, ctx => paintDisc(ctx));
   const face = kit.mat('Cara del rótulo redondo', '#ffffff', 0.25);
   face.diffuseMap = kit.texture(disc); face.opacityMap = face.diffuseMap; face.opacityMapChannel = 'a'; face.alphaTest = 0.5; face.update();
-  const faces = kit.mesh(), r = 0.39;
+  const faces = kit.mesh(), r = 0.5;
   for (const side of [1, -1]) {
     // Each face reads left to right from its own side of the street.
     const fx = sx + side * 0.033, left = out + side * r, right = out - side * r;

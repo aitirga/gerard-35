@@ -337,6 +337,16 @@ export function furnishNucli(r: RoomKit) {
     [[1, 2.2, 3], [1, 3.6, 2], [1, 5.0, 4], [12, 2.3, 2], [12, 3.6, 3], [12, 5.1, 1]].forEach(([px, pz, n], i) => stack(px, pz, n, i * 13 + 2));
     for (let px = 1; px <= 7; px++) stack(px, 6.1, 1 + Math.floor(jitter(px * 5) * 2), px * 7);
     for (const px of [10, 11, 12]) stack(px, 6.1, 1 + Math.floor(jitter(px * 3) * 2), px * 5);
+    // A pallet just delivered: one new game, the whole print run, still shrink-wrapped; the hand truck that brought it.
+    box('Palé', mat('Madera de palé', '#c4a676', 0.1), 10.9, 3.5, 0, 1.2, 0.14, 1.0);
+    const wrapped = mat('Juego precintado', '#2e5e6e', 0.75);
+    for (let layer = 0; layer < 4; layer++) for (let k = 0; k < 4; k++) {
+      box('Juego precintado', wrapped, 10.6 + (k % 2) * 0.6, 3.25 + Math.floor(k / 2) * 0.5, 0.14 + layer * 0.28, 0.56, 0.27, 0.46).setEulerAngles(0, (jitter(layer * 4 + k) - 0.5) * 3, 0);
+    }
+    for (const dx of [-0.2, 0.2]) box('Varal de la carretilla', black, 12.4 + dx, 4.42, 0.05, 0.04, 1.25, 0.04).setEulerAngles(-12, 0, 0);
+    box('Pala de la carretilla', black, 12.4, 4.3, 0.02, 0.45, 0.03, 0.25);
+    for (const dx of [-0.26, 0.26]) cyl('Rueda', black, 12.4 + dx, 4.5, 0.075, 0.2, 0.05, 0.2).setEulerAngles(0, 0, 90);
+
     // The round table and its two chairs: Bernat's facing the curtain, the other one empty.
     const cx = 5.5, cz = 3.5, top = 0.74;
     cyl('Mesa redonda', walnut, cx, cz, top - 0.05, 1.3, 0.05, 1.3);
