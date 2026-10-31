@@ -217,6 +217,7 @@ them: the photos carry people, cars, banners and hard sun.
   open (the shared see-through rule); the screenshots avoid it, play may show it.
 - **Plane trees** in Plaça de Sant Joan use the shared plane species, a little brighter than the
   real pollarded planes in autumn.
-- The second platform and the land beyond the tracks are scenery, not walkable.
+- The second platform and the land beyond the tracks are scenery, not walkable. Platform 1 lies level
+  with the tracks (the game keeps the ground flat), not a metre above them.
 - No town cats besides Haru and Yuki, so nobody mistakes another cat for the guide.
 - `cardedeu-laberinto` (Uri's tower) is untouched.
