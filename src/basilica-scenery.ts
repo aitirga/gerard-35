@@ -58,6 +58,8 @@ const RIM = 4.4;
 /** The clearing the vault opens round Gerard (world units, like the buildings' cut), and its glowing edge. */
 const CLEARING = 8;
 const CLEARING_EDGE = 1.2;
+/** The branches open a narrower one, only where they would cross Gerard himself. */
+const BRANCH_CLEARING = 2.4;
 /** The low walls on the camera's side, and the band of glass along them. */
 const LOW = 1.5, GLASS_FROM = 0.45, GLASS_TO = 1.25;
 /** The four Evangelists on the crossing's porphyry columns, as they stand: Mark and Luke towards the apse. */
@@ -159,7 +161,7 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   const parts = {
     floor: new MeshBuilder(), base: new MeshBuilder(), wall: new MeshBuilder(), white: new MeshBuilder(), dark: new MeshBuilder(),
     warm: new MeshBuilder(), cool: new MeshBuilder(), gold: new MeshBuilder(), bronze: new MeshBuilder(),
-    P: new MeshBuilder(), B: new MeshBuilder(), g: new MeshBuilder(), s: new MeshBuilder(), vaultWarm: new MeshBuilder(), vaultCool: new MeshBuilder(), medallions: new MeshBuilder(),
+    P: new MeshBuilder(), B: new MeshBuilder(), g: new MeshBuilder(), s: new MeshBuilder(), branches: new MeshBuilder(), vaultWarm: new MeshBuilder(), vaultCool: new MeshBuilder(), medallions: new MeshBuilder(),
     wood: new MeshBuilder(), woodDark: new MeshBuilder(), brass: new MeshBuilder(), rope: new MeshBuilder(), metal: new MeshBuilder(),
     cream: new MeshBuilder(), gilt: new MeshBuilder(), lamp: new MeshBuilder(), grapes: new MeshBuilder(), leaves: new MeshBuilder(), wheat: new MeshBuilder(),
     cross: new MeshBuilder(), body: new MeshBuilder(), cloth: new MeshBuilder(), crypt: new MeshBuilder(), daylight: new MeshBuilder(), sign: new MeshBuilder(),
@@ -259,13 +261,13 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
     trunk(b, cx, cz, r, stone.points, knot);
     blob(b, [cx, knot, cz], r * 1.45, r * 1.15, r * 1.45, stone.points, 5);
     // The trunk goes on up to the oculus; the branches leave the knot and fork once before the vault.
-    lathe(parts.white, cx, cz, [[r * 0.8, knot + r * 0.6], [r * 0.6, knot + 2.2], [0.4, top - 0.9]], 8);
+    lathe(parts.branches, cx, cz, [[r * 0.8, knot + r * 0.6], [r * 0.6, knot + 2.2], [0.4, top - 0.9]], 8);
     const turn = random() * Math.PI;
     for (let k = 0; k < stone.branches; k++) {
       const a = turn + k / stone.branches * Math.PI * 2, fork = knot + (top - knot) * 0.55;
       const elbow: V3 = [cx + Math.cos(a) * 1.1, fork, cz + Math.sin(a) * 1.1];
-      tube(parts.white, [cx, knot + r * 0.5, cz], elbow, r * 0.62, r * 0.48, 6);
-      for (const spread of [-0.4, 0.4]) tube(parts.white, elbow, [cx + Math.cos(a + spread) * 2.6, top - 0.35, cz + Math.sin(a + spread) * 2.6], r * 0.44, r * 0.3, 6);
+      tube(parts.branches, [cx, knot + r * 0.5, cz], elbow, r * 0.62, r * 0.48, 6);
+      for (const spread of [-0.4, 0.4]) tube(parts.branches, elbow, [cx + Math.cos(a + spread) * 2.6, top - 0.35, cz + Math.sin(a + spread) * 2.6], r * 0.44, r * 0.3, 6);
     }
     cup(cz < 0 ? parts.vaultWarm : parts.vaultCool, cx, cz, top, RIM);
     const evangelist = EVANGELISTS[`${i},${j}`];
@@ -418,9 +420,12 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   }
 
   // ------------------------------------------------------------ meshes, one per material
+  // Each material that opens sets its own clearing (a value left in the shared scope would carry over to the next).
+  const vaults = [vaultMaterial('Bóveda (lado de la Pasión)', '#fff0e2'), vaultMaterial('Bóveda (lado del Nacimiento)', '#eef3fa')];
+  const branches = clearing(kit.mat('Ramas de piedra blanca', '#ece6db', 0.25));
   const looks: Record<keyof typeof parts, pc.Material> = {
     floor: floorStone, base, wall: wallStone, white, dark, warm: glass.warm, cool: glass.cool, gold: glass.gold, bronze,
-    P: stones.P, B: stones.B, g: stones.g, s: stones.s, vaultWarm: vaultMaterial('Bóveda (lado de la Pasión)', '#fff0e2'), vaultCool: vaultMaterial('Bóveda (lado del Nacimiento)', '#eef3fa'), medallions,
+    P: stones.P, B: stones.B, g: stones.g, s: stones.s, branches, vaultWarm: vaults[0], vaultCool: vaults[1], medallions,
     wood, woodDark, brass, rope, metal, cream, gilt, lamp, grapes, leaves, wheat, cross, body, cloth, crypt, daylight, sign,
   };
   for (const [key, builder] of Object.entries(parts) as [keyof typeof parts, Mesh][]) {
@@ -440,7 +445,9 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
    * cut open round the line from Gerard to the camera and, in the overview, over the near half.
    */
   function vaultMaterial(name: string, tint: string) {
-    const m = painted(name, vaultCanvas(random), [1, 1], { gloss: 0.2, glow: 0.14, base: tint });
+    return clearing(painted(name, vaultCanvas(random), [1, 1], { gloss: 0.2, glow: 0.14, base: tint }));
+  }
+  function clearing(m: pc.StandardMaterial) {
     const glsl = m.getShaderChunks(pc.SHADERLANGUAGE_GLSL), wgsl = m.getShaderChunks(pc.SHADERLANGUAGE_WGSL);
     glsl.set('litUserDeclarationPS', CLEARING_DECLARATION); glsl.set('litUserMainStartPS', CLEARING_MAIN); glsl.set('litUserMainEndPS', CLEARING_END);
     wgsl.set('litUserDeclarationPS', CLEARING_DECLARATION_WGSL); wgsl.set('litUserMainStartPS', CLEARING_MAIN_WGSL); wgsl.set('litUserMainEndPS', CLEARING_END_WGSL);
@@ -448,7 +455,14 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   }
   const cutFocus = device.scope.resolve('naveCutFocus'), cutToCamera = device.scope.resolve('naveCutToCamera'), cutRadius = device.scope.resolve('naveCutRadius');
   const cutPlane = device.scope.resolve('naveCutPlane');
+  // Every pass binds the declared uniforms, so they get a value up front.
   cutRadius.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]); cutPlane.setValue([0, 0, 0, 1e5]);
+  /** The vault: the clearing and, in the overview, the plane; the branches: only a narrow clearing right round Gerard. */
+  function setClearing(radius: number, plane: number[]) {
+    for (const m of vaults) { m.setParameter('naveCutRadius', radius); m.setParameter('naveCutPlane', plane); }
+    branches.setParameter('naveCutRadius', radius ? BRANCH_CLEARING : 0); branches.setParameter('naveCutPlane', [0, 0, 0, 1e5]);
+  }
+  setClearing(0, [0, 0, 0, 1e5]);
   /** The game's camera, whose pulled-back view (the overview) opens the vault's near half like a model cut in two. */
   const view = () => app.systems.camera?.cameras.find(c => c.projection === pc.PROJECTION_ORTHOGRAPHIC);
   const crossing = new pc.Vec3(x(CROSSING.x), 0, z(CROSSING.z)), zoom = environment.zoom ?? 11;
@@ -458,12 +472,12 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       if (focus && toCamera) {
         const d = toCamera.clone().normalize();
-        cutFocus.setValue([focus.x, focus.y, focus.z]); cutToCamera.setValue([d.x, d.y, d.z]); cutRadius.setValue(CLEARING);
+        cutFocus.setValue([focus.x, focus.y, focus.z]); cutToCamera.setValue([d.x, d.y, d.z]);
         // The cut's plane faces the camera across the ground and sweeps in to the crossing as the view pulls back.
         const across = new pc.Vec3(d.x, 0, d.z).normalize(), height = view()?.orthoHeight ?? zoom;
         const t = Math.min(1, Math.max(0, (height - zoom * 1.25) / (zoom * 0.6)));
-        cutPlane.setValue([across.x, 0, across.z, across.dot(crossing) + (1 - t) * 80]);
-      } else { cutRadius.setValue(0); cutPlane.setValue([0, 0, 0, 1e5]); }
+        setClearing(CLEARING, [across.x, 0, across.z, across.dot(crossing) + (1 - t) * 80]);
+      } else setClearing(0, [0, 0, 0, 1e5]);
       if (!animate) return;
       time += dt;
       // The sun walks: every pool slides the same slow way and breathes a little.
