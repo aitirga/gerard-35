@@ -1,16 +1,16 @@
 # Búnkers del Carmel · the Turó de la Rovira
 
-Status: research and draft (2026-10-30). Nothing is wired into the game yet: the zone draft lives
-in `assets/geo/bunkers-carmel/` (`zone.json`, `osm.json`, `sketch.json`), and the build waits for
-the shared foundation (real materials in `tools/textures.py`, landmark modules in `src/landmarks/`,
-the new metro lines, `docs/visual-style.md`).
+Status: built (2026-10-31). The place is `bunkers-carmel` (`assets/geo/bunkers-carmel/`, built by
+`just geo-build bunkers-carmel`), reached from the metro at El Carmel (L5) and from the
+development picker (*Búnkers del Carmel*, Barcelona). Screenshots: `just screenshots
+bunkers-carmel --gpu`.
 
 A new place, the surprise among Barcelona's places: the only high viewpoint in the game, drawn at
 dusk, where the whole city lies below Gerard down to the sea.
 
 | Id | What | How it is reached |
 | --- | --- | --- |
-| `bunkers-carmel` | The top of the Turó de la Rovira (262 m): the Civil War anti-aircraft battery's gun pits, the ruins of the shanty town that grew on it, dry grass, pines and prickly pears, people sitting on the parapets, and the city below as a backdrop | Metro: the station `el-carmel` (L5). The real station is 0.8 km away and about 70 m lower; the game's entrance stands at the foot of the north-west steps, on Carrer del Turó de la Rovira, compressed (see [The zone](#the-zone-assetsgeobunkers-carmel)) |
+| `bunkers-carmel` | The top of the Turó de la Rovira (262 m): the Civil War anti-aircraft battery's gun pits, the ruins of the shanty town that grew on it, dry grass, pines and prickly pears, people sitting on the parapets, and the city below as a backdrop | Metro: the station `el-carmel` (L5). The real station is 0.8 km away and about 70 m lower; the game's entrance stands at the foot of the north-west steps, near Carrer del Turó de la Rovira, compressed (see [The zone](#the-zone-assetsgeobunkers-carmel)) |
 
 ## The real place in 2026
 
@@ -101,9 +101,9 @@ the three viewpoints); nothing from them is saved or shipped.
 
 ## Identity card
 
-Status: refined from `docs/visual-style.md` (proposal) because the references add the shacks'
-whitewash and brick, the dusk sky's real colours and the black railings, and because the card's
-"only here" can be built from the network map's own data.
+Status: built. Refined from the proposal in `docs/visual-style.md`, because the references add the
+shacks' whitewash and brick, the dusk sky's real colours and the black railings, and because the
+card's "only here" could be built from the network map's own data.
 
 | | |
 | --- | --- |
@@ -133,156 +133,191 @@ only one whose ground is wild (dry grass and rock) rather than paved or planted.
 
 ## The zone (`assets/geo/bunkers-carmel/`)
 
-A real-data zone with a sketch on top, like the Meridiana: OpenStreetMap gives the water tank,
-the officers' pavilion, the concrete paths and steps, the street and the park
-(`osm.json`, 166 features, fetched from Overpass on 2026-10-30); `sketch.json` adds what the map
-lacks, drawn from the Actium plan (1:500) georeferenced on the water tank and checked on the ICGC
-orthophoto and against OSM's wall arcs (within 2-3 m).
+A real-data zone with a sketch on top, like the Meridiana. OpenStreetMap gives the water tank, the
+officers' pavilion, the concrete paths and steps, the street and the park (`osm.json`, 166
+features, fetched from Overpass on 2026-10-30). `sketch.json` adds what the map lacks, drawn from
+the Actium plan (1:500), georeferenced on the water tank and checked on the ICGC orthophoto and
+against the map's wall arcs (within 2-3 m).
 
-- **Frame**: anchor 41.41938, 2.16175 (the summit, 262 m), turned **180°** (south up) so the view
-  is straight up the screen: the crest runs across it, the officers' pavilion and the NE gate on
-  the left, the water tank on the right, the parapets along the top edge and the city beyond them;
-  the north slope with its paths and the street come towards the camera. People sitting on the
-  parapets turn their backs to the camera and face the city, as in every photo of the place.
-- **Bounds**: east -75 to 46 m, south -58 to 42 m: 97 × 80 cells of 1.25 m (the cell of Alegia:
-  the walls and pits are small), about 5400 walkable cells. Zoom 12.
-- **The battery** (sketch, `keep`): the top as a `square` (concrete, gravel, floors); the seven gun
-  pits as C-shaped parapets 1.2 m high, open towards the battery's axis (`canonera-a` to `-g`:
-  A -30.5/23.3 and B -8/22.3 the twin emplacement, C -18.8/10.5, D 15.3/9.3, E 7/-1, F 12/-15,
-  G 23.5/-18.5, east/south metres); the command post between A and B (1.6 m: its south face is a
-  parapet to sit on); the parapets along the long terrace's south edge; three whitewashed shack
-  walls on the north edge; the excavated shacks under their steel grating, railed off.
-- **Slopes**: `forest` (solid scrub) on the steep north edge, the west slope and the gardens beyond
-  the street; the map's paths and steps cut through it, so the real paths are the way up. The
-  south slope is drawn as scrub in this draft; the build turns it into the drop (below).
-- **Arrival**: `station-el-carmel` and its `metro` totem stand on Carrer del Turó de la Rovira at
-  the foot of the north-west steps (-50, -40), the camera's side. **Compressed on purpose**: the
-  real El Carmel station is 0.8 km north-west, on the Rambla del Carmel, about 70 m lower, but its
-  real direction is exactly towards the camera, so the entrance sits where the walk from it
-  arrives. From there: the steps, the west gate in the bar fence, the steps beside the water tank,
-  and the battery opens at the twin emplacement with the city appearing over the parapets.
-- **Places** (Spanish, Gerard's voice): the city (*Mirar la ciudad*, at the long terrace's
-  parapet), a gun pit (*Mirar el emplazamiento*), the shacks' floors (*Mirar las baldosas*), the
-  water tank (*Mirar el depósito*), the officers' pavilion (*Mirar el pabellón*: closed at this
-  hour), the shacks' walls (*Mirar los restos*), the fence (*Mirar la valla*: it is locked at
-  dusk; for now the gate is open). `bunkers-norte` (*Mirar al norte*, at the NE end) has no lines:
-  the story answers it, so it can show her castle on Trinitat Vella when the story wants it.
-- **Styles**: `parapet` (concrete) for every `building=ruins`, `shack` (whitewash over a brick
-  base) for the shack walls, `tank`, `pavilion`. The current builder draws them as low houses; the
-  build gives them their own kinds (below).
+- **Frame**: anchor 41.41938, 2.16175 (the summit, 262 m), turned **180°** (south up). The view
+  is straight up the screen: the crest runs across it, with the officers' pavilion and the NE end
+  on the left, the water tank on the right, and the parapets along the top edge with the city
+  beyond them. The north slope, its paths and the street come towards the camera. People sitting
+  on the parapets turn their backs to the camera and face the city, as in every photo of the place.
+- **Bounds**: east -75 to 46 m, south -58 to 42 m: 97 × 80 cells of 1.25 m (the cell of Alegia,
+  because the walls and pits are small). Zoom 12. 1939 walkable cells: the battery's top, the
+  paths, the landing at the metro and the street.
+- **The battery** (sketch, `keep`):
+  - The top is a `square` of grey gravel (`grava`).
+  - The seven gun pits are C-shaped parapets 1.2 m high in board-marked concrete
+    (`formigo-encofrat`), open towards the battery's axis (`canonera-a` to `-g`): A and B are the
+    twin emplacement.
+  - The command post stands between A and B, 1.6 m high; people sit on its south edge.
+  - Three low parapets run along the long terrace's south edge.
+  - Three whitewashed shack walls, 1.4 m high, stand on the north edge (`calc`).
+  - The excavated shacks' floor is red tiles (`rajola`), railed off.
+- **Slopes**: one `forest` area (`vessant-nord`) covers both the north and the west slope as scrub
+  down to the street. OpenStreetMap's paths and steps cut through it, so the real paths are the
+  only way up. A landing is left round the metro.
+- **The hilltop** (`drop`): the ground stays inside `drop.keep`, the brow 1.5-2 m beyond the
+  parapets and round the water tank. Beyond it the hill falls 28 m to the city.
+  - In `tools/geo.py`, every area, path and building outside the brow is cut away, and the cells
+    beyond it are solid (`D`).
+  - In `src/geo-scenery.ts`, the ground ends at the brow and a flank falls away from it: rock
+    (`roca`) with scrub on it, rounding over at the top. On the view side it runs out over 16 m.
+  - On the sides the camera looks at it runs out up to 2.5 times further (`flankRun` in
+    `src/geo.ts`), so those sides read as a slope rather than a cliff.
+  - A hilltop has no plinth. The backdrop box lies under the city.
+- **Arrival**: `station-el-carmel` and its `metro` totem stand at the foot of the north-west steps,
+  near Carrer del Turó de la Rovira, on the camera's side.
+  - **This is compressed on purpose.** The real El Carmel station is 0.8 km north-west, on the
+    Rambla del Carmel, and about 70 m lower. Its real direction is exactly towards the camera, so
+    the entrance sits where the walk from it arrives.
+  - From the metro: the steps, then the zig-zag up the north-west slope, then the gate in the bar
+    fence, then the steps beside the water tank. The battery opens at the twin emplacement, with
+    the city appearing over the parapets.
+- **Places** (Spanish, Gerard's voice):
+
+| Place | Prompt | Where | Notes |
+| --- | --- | --- | --- |
+| `bunkers-ciudad` | *Mirar la ciudad* | The long terrace's parapet | |
+| `bunkers-canonera` | *Mirar el emplazamiento* | Inside pit A | |
+| `bunkers-baldosas` | *Mirar las baldosas* | By the excavated floor | |
+| `bunkers-deposito` | *Mirar el depósito* | The water tank | |
+| `bunkers-pabellon` | *Mirar el pabellón* | The officers' pavilion | Closed at this hour |
+| `bunkers-restos` | *Mirar los restos* | The shacks' walls | |
+| `bunkers-valla` | *Mirar la valla* | At the gate | The gate is open for now |
+| `bunkers-norte` | *Mirar al norte* | The NE end | Has no lines (below) |
+
+  `bunkers-norte` has no lines: the story answers it (`src/story.ts`, an adult only). The camera
+  turns to her castle far off (the `castillo` anchor) while Gerard and Aitor talk
+  (`LINES_2.bunkersNorte` in `src/chapter-2.ts`), then gives the camera back. No flag is set.
+- **Styles**:
+  - `parapet` for every `building=ruins`: board-marked concrete under a plain concrete cap.
+  - `shack`: whitewash over brick, whitewashed on top.
+  - `tank` and `floor` (tiles on brick).
+  - `pavilion`: a one-storey rendered house.
+  - The parapets, shacks, tank and floor use the `parapet` facade: a low wall in one real material
+    at its real size, capped flat, with no bays and no roof. They keep the see-through cut.
+- **Landmarks** (one module each in `src/landmarks/`):
+
+| Module | What it draws |
+| --- | --- |
+| `vista` | The city below (see [The view](#the-view-the-backdrop)) |
+| `canonera` | Each pit's round floor, the gun mount (a concrete ring round a dark hole with its bolts) and three ammunition niches in the parapet's inner face, their rusty red steel doors shut or ajar |
+| `gent` | People in the game's block figures. Rows sit on the long terrace, the command post, the third parapet and the rims of pits A, B and D, legs over the edge, facing the city: phones up, cans, a guitar. Three stand at the terrace parapet filming. A civic agent in a high-visibility vest stands at the gate |
+| `atril` | Four MUHBA lecterns, dark steel with a painted face and a Catalan title: *Bateria antiaèria*, *Barraques dels Canons*, *Turó de la Rovira*, *Pavelló d'oficials* |
+| `barana` | Black iron railings round the excavation and on the water tank's roof. The 2 m bar fence crosses the climb to the battery, its gate open |
+| `matoll` | Prickly pears in the strips beyond the parapets and agaves by the paths. With `over: "forest"`, low scrub clumps (rosemary, mastic, broom, tall dry grass) cover every scrub cell the paths leave |
+| `rajoles` | Patches of the shacks' floors (red terracotta; grey hydraulic tiles, some patterned, some lost) and patches of dry grass with tufts among the gravel |
+
+- **Trees**: Aleppo pines (a new `pine` species in `src/props.ts`, with a leaning trunk and a
+  broad, flat crown) and olives, every 9 m on the scrub.
+- **Light**: the look `bunkers-carmel` in `src/grading.ts` (warm, lilac shade) under a `dusk` sky
+  (`src/lighting.ts`).
+  - The sun is golden and the ambient lilac (`src/scenery.ts`). The sun keeps its usual direction:
+    colour and sky carry the hour.
+  - The air (`src/effects.ts`) has dust motes glinting in strong gusts.
+  - The home lamps' palette (`src/home-lights.ts`) gets the dusk too.
 
 ```
-                dusk sky · the sea · Port Olímpic · Diagonal Mar                   ↑ south-east
+                dusk sky · the sea · Port Olímpic's towers · Diagonal Mar                   ↑ south-east
           Glòries · Sagrada Família · the Eixample · Guinardó and Carmel below
  Pavelló ┐           ╭(D)━━━━━━━ long terrace parapet ━━━━━━━━╮(B)
          │  (G)  (F)   (E)     [excavated shacks]     (C)   ▭▭ command post ▭▭ (A)   ◯ dipòsit
-         └── north edge: whitewashed shack walls ── scrub ── dry stone terraces ──┘
-                   the north path loop · olives and pines · the bar fence
-                                                                   west gate ┘
+         └── north edge: whitewashed shack walls ── scrub ── paths ──────────┘
+                   scrub, pines and olives, the zig-zag paths · the bar fence and its gate
                   ● El Carmel (L5) · Carrer del Turó de la Rovira                  ↓ north-west (camera)
 ```
 
-`just geo-build bunkers-carmel` builds it (preview in `output/geo/bunkers-carmel/preview.png`); the
-draft's preview shows the layout reads: the pits along the crest, the parapets on the view side,
-the paths and steps up from the street.
-
 ## The view (the backdrop)
 
-The view is the place. Two facts shape it:
+The view is the place. Two facts shaped it:
 
-- The game's camera is orthographic, about 42.6° down from 40, 52, 40. A point `d` metres further
-  along the view and `h` metres lower moves up the screen by `0.68 d - 0.74 h`; with Gerard at the
-  parapet and a half-height of 12 m, the top of the screen is about 45 m ahead of him if the city
-  lies 25 m below the top. The real city (0.3 to 4.5 km) has to fit in roughly the 20 to 60 m
-  round the summit.
-- Uniform scale cannot do it: at 1:250 Trinitat Vella would fall under the hill itself, and the
-  near Carmel blocks would be as small as the far Eixample, which reads as a map, not a view.
+- **The camera.** It is orthographic, about 42.6° down. A point `d` metres further along the view
+  and `h` metres lower moves up the screen by `0.68 d - 0.74 h`. So with the city 28 m below the
+  top, the follow camera shows it from about 30 to 48 m beyond Gerard at the parapet. The real
+  city, 0.3 to 4.5 km away, has to fit in that band.
+- **Uniform scale cannot do it.** At 1:250 Trinitat Vella would fall under the hill itself, and the
+  near blocks would be as small as the far Eixample. That reads as a map, not a view.
 
-**Proposal: the city remapped round the hill** (`src/landmarks/vista.ts`, a landmark of this zone):
+**Built: the city remapped round the hill** (`src/landmarks/vista.ts`, the landmark `vista`,
+params in `zone.json`).
 
-1. Read every building from `public/maps/barcelona-buildings.bin` (the decoder in `src/city-3d.ts`,
-   shared) and the ground picture `public/maps/barcelona.webp` (streets, parks, sea).
-2. Keep the bearing of everything from the summit and compress its distance: radius
-   `ρ = ρ0 + a · ln(1 + r / r0)` with `ρ0` the hill's edge in that direction plus a few metres,
-   `r0 ≈ 300 m`, `a ≈ 12.6 m`, so the sea (4.5 km) lands about 60 m from the summit. Each building
-   is scaled by the local factor `a / (r0 + r)` (heights too, with the network map's ×2.4 stretch):
-   the Carmel blocks just below the hill come out at about half Gerard's height, the Sagrada
-   Família (2 km) about 2.3 m, the far Eixample a fine grain. That is the foreshortening of the real
-   view, and every landmark stays in its real direction: Sagrada Família SSE, Glòries SE, Montjuïc
-   SW, Trinitat Vella NNE.
-3. Lower it about 25 m under the top, on the ground picture warped the same way (a polar mesh),
-   the sea to its edge, and a dusk sky card behind it (the three bands above). City lights come on
-   as emissive dots as the look darkens.
-4. Merge it into a few static meshes with one vertex-coloured material (warm facades, lighter
-   roofs, as the network map); drop buildings under 6 m or 150 m² beyond 2 km. Target: a handful of
-   draw calls and well under 500k triangles.
-5. **Her castle** at Trinitat Vella's remapped spot (about 58 m north-north-east of the summit,
-   left of the hill and towards the camera): the palace's silhouette from `src/palace.ts`, three or
-   four times its local scale so it reads, glowing pink at dusk, sized by `castleThreat`. It is out
-   of the follow camera's frame on purpose: *Mirar al norte* at the NE end turns the camera to it
-   with the existing `look` effect while Gerard speaks, so it is found, never pointed at.
-6. **The hill's flank**: the zone's edge on the view side drops to the backdrop as a skirt of rock
-   and dry grass with pines, agaves and prickly pears standing on it, so the miniature is seen past
-   real ground, not past a cut.
+1. **Source.** Every building of `public/maps/barcelona-buildings.bin` (the network map's model)
+   on the map's ground picture (`public/maps/barcelona.webp`), repainted at dusk:
+   - warmed and a little greyed;
+   - the sea filled in a lilac blue from the map's coastline;
+   - hazier the farther it is.
+2. **Placement.** Everything keeps its real bearing from the summit and has its distance
+   compressed: `ρ = foot + gap · facing² + scale · ln(1 + r / near)`.
+   - `foot` is the end of the flank in that direction.
+   - `gap` (8 m) applies only straight ahead, where the brow hides the plain.
+   - `scale` is 6 m and `near` 300 m, so the sea, 4.5 km away, lands about 25 m beyond the foot straight ahead.
+3. **Size.** Each building is as wide as the compression makes it there. Its height keeps its real
+   proportion to that width (`height` 1), capped at 2.5 m.
+   - Blocks under 200 m away are left out: the hill hides them.
+   - Walls the camera cannot see are skipped.
+   - Lit walls turn gold, shaded ones lilac.
+   - The far city fades into the haze.
+4. **Drawing.** Two unlit meshes (ground and buildings) with vertex colours, linearised so they
+   show as painted, plus a haze plane round them and a dusk sky card square to the camera behind
+   the sea (pale blue over a pink band over a grey-blue one).
+5. **Landmarks.** The Sagrada Família is not in the model (it is an icon on the network map), so it
+   is drawn as its eighteen towers in sandstone, the Jesus tower tallest with its cross. Torre
+   Glòries gets its rounded top. Port Olímpic's two 154 m towers come from the model as they are,
+   by the sea.
+6. **Her castle** stands at the zone's `castillo` anchor: the palace's silhouette (a pink body
+   under a dome, seven spires with glowing beads), 1.5 times its far size (`castle_scale`). It
+   stands 30° east of Trinitat Vella's real bearing (35°) and nearer. At the real bearing it would
+   be under the hill from the camera. The overview shows it at the left edge; *Mirar al norte*
+   turns the camera to it.
 
-**Fallback**: a painted panorama card, rendered offline from the same model with a perspective
-camera at the summit and the dusk sky, set behind the drop and facing the camera (one draw call).
-Decide between them with screenshots of both from the parapet.
+Cost (WebGPU, `--gpu --perf`, this Mac): following Gerard at the parapet, 1024 draw calls at
+177 fps. In the overview, 2764 draw calls at 203 fps. The Meridiana street, following Gerard, makes
+1360 draw calls at 144 fps on the same run. The painted panorama card (the fallback) was not
+needed.
 
-## Texture candidates
+## Textures
 
-Shipped textures come from CC0 libraries or openly licensed Commons files (repo and site are
-public). The shared library already has `grava`, `terra`, `mao`, `rajola`, `mamposteria`, `estuc`
-and `formigo`; the new ones (four at most):
+Shipped textures come from CC0 libraries (the repo and site are public), made with
+`tools/textures.py fetch polyhaven <asset> --id <id>`. Each `texture.json` carries its credits.
 
-| Use | Source | Licence |
-| --- | --- | --- |
-| `formigo-encofrat`, the signature: board-marked war concrete for parapets, mounts and the command post | Poly Haven [`concrete_layers`](https://polyhaven.com/a/concrete_layers) (Amal Kumar; "coarse formwork lines, chipped edges", 1.55 m); alternatives [`wood_textured_concrete`](https://polyhaven.com/a/wood_textured_concrete) (Dimitrios Savva, 1.8 m), ambientCG `Concrete035` | CC0 |
-| `herba-seca`, the dry gold grass of the slopes and between the remains | Poly Haven [`withered_grass`](https://polyhaven.com/a/withered_grass) (Charlotte Baglioni, 2 m); alternatives [`dry_ground_rocks`](https://polyhaven.com/a/dry_ground_rocks) (Rob Tuytel, 4 m), [`dry_ground_01`](https://polyhaven.com/a/dry_ground_01) | CC0 |
-| `roca`, bare slate outcrops and the hill's flank | Poly Haven [`rocks_ground_02`](https://polyhaven.com/a/rocks_ground_02) (Rob Tuytel, 2 m); alternatives [`rock_face`](https://polyhaven.com/a/rock_face), [`gray_rocks`](https://polyhaven.com/a/gray_rocks), ambientCG `Rock058` | CC0 |
-| `calc`, the shacks' whitewash over brick | Poly Haven [`whitewashed_brick`](https://polyhaven.com/a/whitewashed_brick) (Charlotte Baglioni, 2 m); alternatives [`rough_plaster_brick`](https://polyhaven.com/a/rough_plaster_brick), ambientCG `PaintedPlaster015` / `PaintedPlaster016` | CC0 |
-| Rusty niche doors (small, could stay painted) | Poly Haven [`rust_coarse_01`](https://polyhaven.com/a/rust_coarse_01), [`rusty_metal_02`](https://polyhaven.com/a/rusty_metal_02) | CC0 |
-| Hydraulic floor tiles of the shacks | Drawn (`tools/textures.py`, like the panot) over `formigo`: 20 cm grey, ochre and patterned tiles, broken patches | own |
-| Dry stone terrace walls (north slope) | `mamposteria` (library) or Poly Haven [`stacked_stone_wall`](https://polyhaven.com/a/stacked_stone_wall) | CC0 |
-| One signature photo, if the CC0 concrete reads too clean | [Anti-aircraft batteries at Turó de la Rovira, 2016 05.jpg](https://commons.wikimedia.org/wiki/File:Anti-aircraft_batteries_at_Tur%C3%B3_de_la_Rovira,_2016_05.jpg), Benjamín Núñez González (the parapet's concrete, rectified with `textures.py photo`) | CC BY-SA 4.0 |
+| Id | Use | Source | Author | Licence | Size |
+| --- | --- | --- | --- | --- | --- |
+| `formigo-encofrat` | The signature: board-marked war concrete for the parapets, gun mounts and command post | Poly Haven [`concrete_layers`](https://polyhaven.com/a/concrete_layers) | Amal Kumar | CC0 | 1.55 m, 512 px |
+| `herba-seca` | The dry gold grass of the ground, the scrub and the patches | Poly Haven [`withered_grass`](https://polyhaven.com/a/withered_grass) | Charlotte Baglioni | CC0 | 2 m, 1024 px |
+| `roca` | The hill's flank | Poly Haven [`rocks_ground_02`](https://polyhaven.com/a/rocks_ground_02) | Rob Tuytel | CC0 | 2 m, 512 px |
+| `calc` | The shacks' whitewash over brick | Poly Haven [`whitewashed_brick`](https://polyhaven.com/a/whitewashed_brick) | Charlotte Baglioni | CC0 | 2 m, 512 px |
 
-No generated images: everything here exists in photos.
+The library's `grava` (gravel), `formigo` (paths, pit floors, the water tank), `asfalt`, `mao` and
+`rajola` (the floors' red tiles) are used as they are. The shacks' grey hydraulic tiles and the
+lecterns' faces are painted in code. No photo and no generated image ships; the Commons photos
+above are references only.
 
-## Build plan
+## Approximate and open
 
-1. Rebase on the foundation; move the zone onto its materials (`look` ground `herba-seca`,
-   paths `formigo`, gravel `grava`) and its landmark format.
-2. Wire it: `bunkers-carmel` in `EnvironmentId` and `ENVIRONMENTS`, its `<option>`, its entry in
-   `PLACES` (`src/jump-menu.ts`: *Búnkers del Carmel*, *Turó de la Rovira*, group Barcelona),
-   `STATION_PLACES['el-carmel']` (`src/transit.ts`; `city.json` already has the station on the L5
-   and the `bunker` landmark), the map marker if the place wants one.
-3. `tools/geo.py`: a `drop` area kind (solid, painted after paths so the map's paths down the slope
-   end at the edge, nothing drawn on it but the flank); `pine` among the tree species; props
-   `prickly-pear`, `agave`, `railing` (black iron bars), `lectern` (MUHBA).
-4. Fetch the four textures with credits; check each under 400 KB.
-5. The battery: the parapets stay sketch buildings, drawn by a `parapet` ground kind in
-   `formigo-encofrat` with a plain concrete lid (no roof tiles), so they keep the see-through cut;
-   a `bateria` landmark adds the gun mounts, the niches and their doors, the steel grating over the
-   excavated shacks, the floor-tile patches and the lecterns, merged by material.
-6. The hill's flank and the view (above), the dusk sky and the look `bunkers-carmel` in
-   `src/grading.ts` (warm, a touch of haze, deep warm shade), `AIR` with gusts and seeds.
-7. People: the news set's figures (`src/news-set.ts`) sitting along the parapets facing the city,
-   one with a guitar, a few standing with phones; the civic agent at the west gate.
-8. Story: no flag yet; `bunkers-norte` and the gate are the hooks (the castle seen from afar; the
-   civic agent closing at dusk as a diegetic end of the visit).
-9. Tests (`npm test`: reachable grid, places, station) and `scripts/screenshots/bunkers-carmel.json`
-   (arrival at the steps, the twin emplacement, the parapet with the city, the NE end looking
-   north, the overview); `just screenshots bunkers-carmel --gpu`, then `gpu-perf` for the backdrop.
-
-## Approximate, open and risky
-
-- The game's ground is flat: the pits are not sunk, the slopes are not slopes; the level changes
-  are shown by parapets, steps and the flank, never walked.
-- The battery's pieces are within 2-3 m of the real ones; the shacks' walls and floors are a
-  selection, not a survey.
-- The El Carmel entrance is compressed 0.8 km (said above, and in `zone.json`).
-- The dusk is a colour and a sky, not a different sun direction (the style guide's rule); the
-  real sunset light comes from the right of the screen and a little behind.
-- The remapped city is new code reading 3.6 MB of buildings: cost and legibility decide between it
-  and the painted card.
-- Sants (proposal) has the nearest dominant (ΔE 5); they differ in material, ground and light.
+- **Flat ground.** The game's ground is flat: the pits are not sunk and the slopes are not walked.
+  Parapets, steps and the flank show the level changes.
+- **Placement.** The battery's pieces are within 2-3 m of the real ones. The shacks' walls and
+  floors are a selection, not a survey.
+- **Compressions.** The El Carmel entrance is moved 0.8 km (said above and in `zone.json`). The
+  flank on the camera's sides is gentler than the real slope so it reads as a hill.
+- **Light.** The dusk is a colour and a sky, not a different sun direction (the style guide's
+  rule). The real sunset light comes from the right of the screen and a little behind.
+- **The view.** Its bearings are real except her castle's (moved 30°, see above). The city below
+  200 m and its smallest far buildings are left to the ground picture, and the Sagrada Família is
+  a silhouette, not a model.
+- **The fence.** Only one stretch of the 2 m fence is drawn, with its gate on the climb to the
+  battery. The real one rings the summit. The gate is always open and nobody closes it at dusk.
+- **Simplified buildings.** The pavilion is a plain one-storey house. The water tank is a plain
+  cylinder with its railing, without the fountain or the huts on its roof.
+- **Not done:**
+  - the sound card (wind, the city's hum, a guitar, parakeets): no place has its own ambience yet;
+  - city lights coming on in the dusk;
+  - the pink gum wink on a parapet;
+  - a story beat beyond the castle look.
+- **Looks.** Seen from the NE end, the flank's corner behind the pavilion reads as a dark rocky
+  pyramid. The people are still figures.
+- **Nearest dominant.** Sants (proposal) has the nearest dominant colour (ΔE 5). The two places
+  differ in material, ground and light.

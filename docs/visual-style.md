@@ -230,7 +230,7 @@ material, light and landmark, which the last column names.
 | Plaça d'Espanya (proposal) | `#d8ccb2` | pale limestone and water | monumental stone, brick towers | twin campaniles and a dome | new, warm | Maresme (ΔE 4): monument and water vs houses |
 | La Barceloneta (proposal) | `#e3cd9f` | sand and sea | sand (`sorra`), weathered steel | four stacked rusted cubes | new, cool | Casa de Gerard (ΔE 8): open sea vs a room |
 | Poble Sec (proposal) | `#b8744a` | sienna and pine green | stone steps with iron rails | the slope and its stairs | new, warm | Rec Comtal (ΔE 11): render and stairs at evening vs brick in the morning |
-| Búnkers del Carmel (proposal) | `#c09a5e` | dry earth, concrete, golden light | war concrete, rock (`formigo`, `terra`) | round platforms on a hilltop | new, warm | Sants (ΔE 5): open hill at sunset vs a shaded street |
+| Búnkers del Carmel | `#c09a5e` | dry gold grass, war concrete, golden light | board-marked concrete (`formigo-encofrat`), rock (`roca`), dry grass (`herba-seca`) | round gun pits on a bare crest above the city | `bunkers-carmel` warm, dusk sky | Sants (ΔE 5): open hill at sunset vs a shaded street |
 | Palace · entrance | `#c95a8d` | her pink | gum, wrapper paper | El Corazón Líquido | `palacio` | Palace outside (ΔE 17): the same building, inside |
 | Palace · el patio (proposal) | `#3f7d58` | court green | painted asphalt, rubber floor | the court's raised lines | new | El Nucli (ΔE 25): a painted court under the sky vs felt indoors |
 | Palace · el gimnasio (proposal) | `#2d5a9e` | mat blue | vinyl mats, varnished wood | the stacked vaulting box | new | Throne room (ΔE 23): blue under tubes vs indigo in the dark |
@@ -538,21 +538,24 @@ The one place whose identity is light, not material: build the light first.
 | Text | Catalan: *Carrer de Blai*, bar boards (*Pintxos*) |
 | Note | Emilie's own place is invented: its builder adds it to this card |
 
-#### Búnkers del Carmel · Turó de la Rovira (L5, El Carmel): the surprise
+#### Búnkers del Carmel · Turó de la Rovira (L5, El Carmel): the surprise (built)
+
+Built as `bunkers-carmel`; the full card, sources and what is approximate are in
+`docs/places/bunkers.md`.
 
 | | |
 | --- | --- |
-| Dominant | Dry earth and concrete in golden light `#c09a5e`; concrete `#a29f96` |
-| Secondary | Scrub olive `#6f7a4a`, the dusk sky, the city below |
-| Material | Civil War concrete (the anti-aircraft battery's round emplacements, `formigo`), bare rock and earth (`terra`) |
-| Ground | Dry earth, rock, concrete platforms; the tiled floors of the shacks that stood here until 1990 |
-| Landmark | The round gun platforms on the hilltop (kind: round platforms on a hill) |
-| Light | New look, golden hour, long shadows, haze on the horizon: the one place drawn at sunset, when people go up. An exception to the one-light rule, to decide with the story (chapter 2's dusk look is in `docs/graphics.md` § What next) |
-| Props | Platforms and walls, the battery's stairs, scrub, a few pines, people sitting on the edge, the museum's plaques |
-| Air | Wind, seeds and dust across the top |
-| Sound | Wind, the city's far hum, a guitar and talk at sunset, a dog |
-| Only here | The whole city at your feet: the miniature Barcelona below, the Sagrada Família, Torre Glòries and the sea (the network map's model could be the backdrop) |
-| Text | Catalan plaques: *Turó de la Rovira*, *Bateria antiaèria* |
+| Dominant | Dry gold grass and bare earth in low sun `#c09a5e`; war concrete `#a29f96` |
+| Secondary | Scrub and pines `#4f5a2e`; the dusk sky over the sea (pale blue `#b9cddd`, the pink band `#eac6b0`, the earth's shadow `#91959d`); the shacks' whitewash `#ece6da` and brick `#a4533a` |
+| Material | Board-marked Civil War concrete with pebbly aggregate (`formigo-encofrat`), over bare rock (`roca`) |
+| Ground | Grey gravel on the top (`grava`), concrete paths (`formigo`), dry grass and scrub (`herba-seca`), patches of the shacks' red and grey tiled floors |
+| Landmark | The round gun pits strung along a bare crest, the grey water tank at its end: a dry island above the city (kind: round platforms on a hilltop) |
+| Light | `bunkers-carmel`: golden hour, lilac shade, a `dusk` sky; the sun keeps the game's one direction, so colour and sky carry the hour |
+| Props | Gun mounts and niches with rusty red doors, black iron railings, MUHBA lecterns, the 2 m bar fence and its gate, prickly pears, agaves, Aleppo pines and olives, people sitting on the parapets facing the city, a civic agent |
+| Air | Gusts with dust motes glinting in the low sun |
+| Sound | Wind, the city's far hum, a guitar, many languages, parakeets (not built: no place has its own ambience yet) |
+| Only here | The whole real city at Gerard's feet, from the network map's model, down to the sea: the Sagrada Família, Torre Glòries, the Port Olímpic towers, and far off her castle |
+| Text | Catalan lecterns: *Bateria antiaèria*, *Barraques dels Canons*, *Turó de la Rovira*, *Pavelló d'oficials* |
 
 ## 4. The palace inside, by zones
 
