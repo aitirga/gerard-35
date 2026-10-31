@@ -209,7 +209,7 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   Platja de Sant Miquel with L'Estel Ferit, the volleyball courts, the lifeguard post and the old
   lookout, the Passeig Marítim's parapet and palms, the blocks behind with washing on the
   balconies; the L4 stair at the end of a street on the back edge (the real station is 700 m
-  inland), the breakwater and the W's sail past the ends.
+  inland), the breakwater where the beach ends to the NNE and the W's sail past the SSW end.
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
   the camera, blocks of flats, the L1 entrance and the castle on the roof.

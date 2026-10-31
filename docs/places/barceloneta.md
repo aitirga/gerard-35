@@ -103,7 +103,7 @@ camera inwards:
 
 | Band (turned z) | What |
 | --- | --- |
-| Sea, z > +43…+109 | Water from `sketch.json` along OSM's coastline (ways 500581857 and 500581852); the sea carries on past both side edges to the frame. Yellow buoys about 20 m out; the breakwater's arm and head past the NNE edge (x 138) |
+| Sea, z > +43…+109 | Water from `sketch.json` along OSM's coastline (ways 500581857 and 500581852); the sea carries on past both side edges to the frame. Yellow buoys about 20 m out; the breakwater's arm comes ashore just inside the NNE edge (x 125.5, about 12 m in from the real one, so the beach ends at its rocks instead of at the map's edge) and its head lies offshore; the arm's root on the sand is solid |
 | Waterline | The wet band (5 m) and the swash |
 | Sand, z −15…+43 (to +109 in the salient) | Platja de Sant Miquel (OSM `natural=beach`): the cubes at 0,0 with the rope cordon; two volleyball courts beside them on OSM's *Espai per a ús esportiu lliure*; the map's three showers; the Salvaje beach bar (its OSM building) with its loungers; the *SALVAMENT* post (number 4); the old lookout; five sets of towels; the sand cat by the parapet |
 | Parapet and boardwalk, z ≈ −15 | Six runs of a low white wall with the timber boardwalk below it on the beach side; the gaps between runs are the steps to the sand. Black bollards along the middle runs |
@@ -128,10 +128,10 @@ metro.
 | Piece | Where |
 | --- | --- |
 | Zone, map data, the sea's outline | `assets/geo/barceloneta/{zone.json,osm.json,sketch.json}` → `src/geo/barceloneta.json` (`just geo-build barceloneta`) |
-| The sea, wet sand, white water, swash, tracks | `src/geo-sea.ts`, used by any zone with `look.water: "sea"` (`docs/environment-styling.md`). Bands measured from the coastline: turquoise to deep blue by distance, two crossing normal maps with the sun's glitter, the wet band, lines of white water rolling in every 7.2 s, two swashes out of step running up the wet sand and back, the cleaning tractor's tracks and footprints on the dry sand |
+| The sea, wet sand, white water, swash, tracks | `src/geo-sea.ts`, used by any zone with `look.water: "sea"` (`docs/environment-styling.md` § The sea). Bands measured from the coastline: turquoise to deep blue by distance (vertex colours, converted from sRGB), two crossing normal maps of wavelets running every way with the sun's glitter, the wet band, lines of white water rolling in every 7.2 s, two swashes out of step running up the wet sand and back, the cleaning tractor's tracks and footprints on the dry sand |
 | L'Estel Ferit | `src/landmarks/estel-ferit.ts`: four 2.6 m cubes turned and tilted further off true as they climb to 10.6 m, the lowest darker, a band of two rows of six panes near each top, the concrete base and the rope cordon; opens the cut |
 | The promenade's edge | `src/landmarks/passeig.ts`: parapet, boardwalk, bollards |
-| Beach pieces | `salvament.ts` (today's post), `guaita.ts` (the 1992 lookout: heavy leaning post, slatted platform, spoked hoop), `voleibol.ts`, `shower.ts` (also the map's `amenity=shower` nodes, `OSM_LANDMARKS`), `hamaques.ts` (the bar's loungers or someone's towels), `gat-de-sorra.ts` (the wink), `boies.ts`, `escullera.ts` |
+| Beach pieces | `salvament.ts` (today's post), `guaita.ts` (the 1992 lookout: heavy leaning post, slatted platform, spoked hoop), `voleibol.ts`, `shower.ts` (also the map's `amenity=shower` nodes, `OSM_LANDMARKS`), `hamaques.ts` (the bar's loungers or someone's towels, under round eight-panel parasols, each colour one mesh), `gat-de-sorra.ts` (the wink), `boies.ts`, `escullera.ts` |
 | Backdrops | `vela.ts` (the W), `muntanya.ts` (Montjuïc); `look.hills: false` leaves out the wooded hills other zones get |
 | Palms and lamps | `palm` species and `mast` lamp style in `src/props.ts` |
 | Blocks | The `barceloneta` facade atlas in `src/geo-scenery.ts` (four bays by three storeys: French windows in stone surrounds, small iron balconies, green louvred shutters or roll blinds, washing on most railings, plants, sagging cables) and `terrat`: stair heads, fibre-cement tanks, aerials and washing lines on the flat roofs |
@@ -175,7 +175,8 @@ looked at (`output/geo/barceloneta/google/links.md`).
 - The W and Montjuïc are scaled backdrops, not at their real distance; the W shows only in the
   overview, not from the follow camera.
 - The sea's glitter is lit from the camera's position, so it follows the view; in the
-  overview it sits in the lower left as a field of sparkles.
+  overview it sits in the lower left as a field of fine, dim sparkles.
+- The breakwater stands about 12 m inside its real place, so the beach ends at it on the map.
 - Not built from the card: gulls, Bicing bikes, the flag board, the paddle surfer, spray where
   the waves break, and the sounds (waves, gulls, the vendor). The place has no song of its own in
   `PLACE_SONGS`.
