@@ -63,9 +63,10 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   if (side) kit.part('Cornisa', 'box', cornice, [L / 2 - T / 2 + 0.06, cy, 0], [T + 0.12, 0.16, D]);
   const roof = kit.mesh();
   if (p.roof === 'terrassa') {
-    // A terrace on top: a flat slab and a balustrade round its open sides.
+    // A terrace on top: a flat slab of terracotta tiles (as dark as `rajola` keeps its hue, see patis.ts)
+    // and a balustrade round its open sides.
     roof.quad([-L / 2, top + 0.17, -D / 2], [L / 2, top + 0.17, -D / 2], [L / 2, top + 0.17, D / 2], [-L / 2, top + 0.17, D / 2], [0, 1, 0], [-L / 2, -D / 2], [L / 2, -D / 2], [L / 2, D / 2], [-L / 2, D / 2]);
-    kit.add('Terraza', roof, kit.surface('rajola', String(p.floor ?? '#b9876a')), { cut: true });
+    kit.add('Terraza', roof, kit.surface('rajola', String(p.floor ?? '#946c55')), { cut: true });
     const stone = kit.mat('Balaustrada', String(p.trim ?? '#f3e7c8'), 0.1);
     kit.part('Pasamanos', 'box', stone, [0, top + 1.05, D / 2 - 0.12], [L, 0.12, 0.24]);
     for (let x = -L / 2 + 0.2; x <= L / 2 - 0.2; x += 0.32) kit.part('Balaústre', 'cylinder', stone, [x, top + 0.6, D / 2 - 0.12], [0.13, 0.78, 0.13]);

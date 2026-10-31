@@ -35,7 +35,9 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   kit.add('Tapias de los patios', wall, kit.surface('estuc', String(p.colour ?? '#f4f0e8')));
   kit.add('Albardilla', coping, kit.mat('Albardilla', '#b9b3a8', 0.1), { shadows: false });
   kit.add('Rejas de los patios', bars, railing(kit), { shadows: false });
-  kit.add('Suelo de los patios', floor, kit.surface('rajola', String(p.tiles ?? '#b9876a')), { shadows: false });
+  // `rajola` is a dark photo: a tint over about #949494 in any channel is clipped there and loses its
+  // hue (terracotta turns olive in the shade), so the default is the terracotta at that brightness.
+  kit.add('Suelo de los patios', floor, kit.surface('rajola', String(p.tiles ?? '#946c55')), { shadows: false });
   // A pot in each patio, a geranium or a little lemon tree, or a clipped shrub.
   const clay = kit.mat('Maceta de barro', '#b8704f', 0.1);
   const leaves = [kit.mat('Hoja de patio', '#557a3e', 0.1), kit.mat('Hoja clara', '#6f9148', 0.1), kit.mat('Seto', '#4f6b3f', 0.05)];
