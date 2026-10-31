@@ -108,6 +108,19 @@
     {
       "teleport": "poble-sec",
       "cell": [
+        238,
+        4
+      ],
+      "settle": 2500
+    },
+    {
+      "shot": "montjuic",
+      "delay": 2500,
+      "caption": "Top of Creu dels Molers: the first stone terrace of Montjuïc, its stair and the houses above"
+    },
+    {
+      "teleport": "poble-sec",
+      "cell": [
         130,
         85
       ],
