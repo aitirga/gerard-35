@@ -1,7 +1,7 @@
 # El Nucli · Sants
 
-Status: researched and drafted (2026-10-30). The street zone is `assets/geo/sants/`; the shop's
-inside is planned below and not built yet.
+Status: built (2026-10-31). Street zone `assets/geo/sants/` (`sants`), the shop's inside
+`EL_NUCLI` in `src/environments.ts`, furnished by `src/nucli-scenery.ts` (`el-nucli`).
 
 Where Gerard meets Bernat on the quiet (`docs/quests/bernat.md`: a spy feel, the city's people
 acting strangely under the Queen, Bernat apparently immune). Two environments joined by a door:
@@ -75,213 +75,191 @@ The surroundings, from OpenStreetMap and openly licensed photos:
 | Carrer de Riego from the Passeig (CC BY-SA 4.0, Matti Blume) | <https://commons.wikimedia.org/wiki/File:Carre_de_Riego,_Barcelona_(P1170727).jpg> |
 | Plaça de Sants entrance (CC0, ArnauC37) | <https://commons.wikimedia.org/wiki/File:Acc%C3%A9s_Pla%C3%A7a_de_Sants_L5_2025.jpg> |
 | A Sants house front, Badalona 9 (CC BY-SA 3.0, Pere prlpz) | <https://commons.wikimedia.org/wiki/File:Building_in_carrer_Badalona,_9.jpg> |
+| Plaça d'Osca, 2025 (CC BY-SA 4.0, AlbertRA) | <https://commons.wikimedia.org/wiki/File:Pla%C3%A7a_d%27Osca.jpg> |
+| Plaça d'Osca with its terraces (CC BY-SA 3.0, Darth vader 92) | <https://commons.wikimedia.org/wiki/File:Plaza_de_Huesca.jpg> |
 | Street View, to look at only | `output/geo/sants/google/links.md` (viewpoints `el-nucli`, `palau-balana`, `placa-d-osca`, `riego-metro`) |
 
-Raw downloads are in `output/refs/nucli/` (git-ignored). Nothing from Google, nor the shop's logo,
-goes into the game.
+Raw downloads are in `output/refs/nucli/` (git-ignored). Only the Palau Balañà photo ships, as a
+texture with its credits (below). Nothing from Google, nor the shop's logo, goes into the game.
 
-## Identity card
+## Identity
 
-Checked against the places that exist or are being built: the Meridiana (pale 1970s blocks, wide
-grey avenue, works barriers, Hipercor blue), the Rec Comtal (brick, the school's orange, the pink
-castle), Cardedeu (white render, terracotta roofs), Alegia (timber and green hills), Plaça d'Espanya
-(red brick towers, monumental and open), the Barceloneta (sea light, laundry), the Poble Sec
-(slopes and steps under Montjuïc), the Búnkers (dry earth and concrete in golden light). Sants is
-the **narrow, lived-in ochre neighbourhood in shade, with one lit shop in it**. The card follows the
-style guide's first proposal (Sants: ochre `#cfa463`, painted shutters and old render, cool light;
-El Nucli: bottle green `#2f4a3a`, boxes and felt, warm light) and refines it from the references.
-The colours with a meaning stay out: no saturated pink (hers), no crimson (Noísta's).
+Status: refined from `docs/visual-style.md` (Sants: ochre, painted shutters, cool light; El Nucli:
+bottle green, boxes and felt, warm light) after the references. Checked against the Meridiana
+(pale 1970s blocks, wide grey avenue, works barriers, Hipercor blue), the Rec Comtal (brick, the
+school's orange, the pink castle), Cardedeu (white render, terracotta roofs), Alegia (timber and
+green hills), Plaça d'Espanya (red brick towers, monumental and open), the Barceloneta (sea light),
+the Poble Sec (slopes and steps) and the Búnkers (dry earth and concrete in golden light). Sants is
+the **narrow, lived-in ochre neighbourhood in shade, with one lit shop in it**. The colours with a
+meaning stay out: no saturated pink (hers), no crimson (Noísta's), no violet (possession).
 
 ### The street (`sants`)
 
 | | |
 | --- | --- |
-| Dominant hue | Ochre render `#cfa463` (range per house: sand `#dcc8a4`, salmon `#cfa47a`, pale stone `#e3d4b6`, old terracotta `#c99377`, a grey-lilac house `#bdb3b8`): deeper and more varied than the Meridiana's pale beige |
-| Secondary hue | El Nucli's wine red `#5d0e11` on the shop front, its name in cream `#f3e6d0`. The real badge's lines are a neon crimson-pink (`#fb1f50`): left out, since saturated pink is hers and crimson is Noísta's |
-| Accents | The cinema's white relief `#ebe7df`; black-green iron `#2b2f2c` on balconies and railings; plane-tree green |
-| Signature material | Old render scored into ashlar blocks, with stone surrounds and arched ground floors; shop shutters painted as murals; iron balconies with plants, wooden shutters |
-| Ground | Grey panot sidewalks, narrow; Riego's grey setts `#6e6a66` with no kerb; a bike lane on the Passeig |
-| Silhouette | Uneven rooflines of 4 to 9 storeys along Valladolid; the long low white box of the closed cinema across from the shop; the wall of tall blocks on the Passeig; the Cosmo tower |
-| Light and mood | Cool: the end of the day, the narrow streets already in blue-grey shade, the sun only on the top floors; the one warm note is El Nucli's window `#ffb35c`, the place's one glow (lamp light). Quiet: people sitting still on every bench and terrace, all looking the same way |
-| Props kit | Plane trees in pits, parked cars on one side, scooters on the pavement, recycling containers, benches, bar terraces (tables, chairs, parasols), the metro entrance with its zigzag railing, painted shutters |
-| Sound cue | Suitcase wheels rattling over panot towards the station, the station's announcement chime far off over the roofs, a train's rumble; inside the shop, dice |
-| Only here | El Nucli's round wine-red sign hung out over the door, the one lit shop in a quiet street, facing the dark letters of a cinema that closed |
-| Grade (proposal, `src/grading.ts`) | A street in shade: a little cool (temperature about −.04), blue in the shadows, contrast 1.07, saturation .95; the warm window does the rest |
+| Dominant | Ochre render `#cfa463`, per house from sand `#d8bf96`, salmon `#c99a6e`, pale stone `#e0cba6`, old terracotta `#c48c6e` to one grey-lilac `#b8acb0`: deeper and more varied than the Meridiana's pale beige |
+| Secondary | El Nucli's wine red `#5d0e11` with its name in cream `#f3e6d0`; grey panot `#a3a29b`; from above, terrats in terracotta `#b07a62` … `#a86a52` and grey `#a8a096`, `#9c978f` |
+| Material | Old render scored into ashlar with stone surrounds and arched ground floors (`sants` and `sants-shops` facades over `estuc`/`carreu`); shop shutters painted as murals; iron balconies with plants, wooden *persianes* |
+| Ground | Grey panot (`panot-gris`) on narrow pavements; the Plaça d'Osca in pale granite slabs (`granit`); lawns on the Passeig (`gespa`, toned down `#71895a`) |
+| Landmark | El Nucli's lit front with its round wine sign hung out over the door (kind: a lit shopfront in a row of shutters); across the Passeig, the closed Palau Balañà's white relief box (`palau-balana`, the real front); in the Plaça d'Osca, the five-lantern cast-iron lamp |
+| Light | `sants`, cool (temperature −.05, blue shadows, contrast 1.07, saturation .95), `day` sky, the end of the afternoon: the narrow streets in blue-grey shade, sun only on the top floors; the one glow is El Nucli's window `#ffb35c` and its warm spill on the pavement |
+| Props | Plane trees in pits, cars parked on one side, a row of Barcelona's five-colour containers, benches, bar terraces with white parasols, the metro stair, painted shutters |
+| Air | Default pollen, still: nobody moves |
+| Sound | Suitcase wheels on panot towards the station, the station chime far off over the roofs, a train's rumble |
+| Only here | People sitting still on every bench and at every terrace table, full beers untouched, every head turned the same way (north-east, towards Trinitat Vella and her palace), whichever way the body faces |
+| Text | Catalan street labels (*CARRER DE VALLADOLID*, *PASSEIG DE SANT ANTONI*, *PLAÇA D'OSCA*, *CARRER DE SANTS*); real shop and bar names on their signs (77 from the map); *EL NUCLI · JOCS DE TAULA · CARTES · ROL* in a plain serif, never the real badge |
+| Wink | — |
 
 ### The shop (`el-nucli`)
 
 | | |
 | --- | --- |
-| Dominant hue | Bottle green `#2f4a3a`: the felt on the play tables and the play hall's painted walls |
-| Secondary hue | Warm wood `#d8b48a` (birch-ply shelving) on cream walls `#efe6d2` in the shop; one wine-red wall `#5d0e11` with the name in cream; the mosaic of box spines in every colour |
-| Signature material | The wall of game boxes, floor to ceiling, their spines readable; green felt |
-| Floor | Old hydraulic tiles in the shop (terracotta `#b6563f`, cream `#e9dfcb`, slate `#3f4a52`), common in Sants ground floors; plain terrazzo `#cfc7b8` in the play hall and the back room |
-| Light | Warm pendant pools `#ffcf8a` over each table; one bare bulb over the round table in the back room; the street outside through the window, cooler |
-| Props kit | Shelving cubes full of boxes, a central gondola, the counter with the till and a bowl of loose dice, a glass case of single cards in sleeves, a pegboard of sleeves and dice, six tables with chairs and games half played (tiles, wooden pieces, cards, dice, a score pad), the cork board of tournaments, a drinks fridge, cardboard stock boxes, a curtain over the back door |
-| Sound cue | Shuffling and dice, a fridge hum, the bell over the street door |
-| Only here | Box titles that exist nowhere else (invented, in Spanish and Catalan: *Faro de Niebla*, *Los Telares*, *Vapor Vell*, *Mercado de Sombras*, *Rodalies*…), and a back room the street cannot see |
-| Grade (proposal) | Warm and close: tungsten light, green-brown shade, soft contrast |
+| Dominant | Bottle green `#2f4a3a`: the felt on six tables and the play hall's painted walls |
+| Secondary | Birch-ply shelving `#d8b48a` on cream walls `#efe6d2`; the wine wall `#5d0e11` with the name in cream; the mosaic of box spines (twenty muted colours) |
+| Material | The wall of game boxes floor to ceiling, their spines readable; green felt |
+| Ground | Hydraulic cement tiles at their real 25 cm in the shop (cream `#e6dcc6`, terracotta `#b4654e`, slate `#5a636a`), terrazzo `#cfc7b8` in the play hall, concrete in the back room |
+| Landmark | The wall of boxes; the back room behind a curtain |
+| Light | `el-nucli`, warm (temperature .1, soft contrast .98), `indoor` sky; lamp-lit like the Meridiana flat: green enamel pendants with warm pools `#ffcf8a` over each table, a bare bulb over the back room's round table, the lit drinks fridge and card case |
+| Props | Shelving cubes of boxes, the gondola, the counter (till, jar of loose dice, d20, bell), the glass case of single cards, the pegboard of sleeves, the dice-tray table, six tables with games left half played (tiles and meeples, cards, a market board, dice and a score sheet, a hex map, a game being set up), the cork board, the fridge, the curtain, steel stock shelving, cartons, a pallet of one new game still shrink-wrapped, a hand truck |
+| Air | Motes in the lamp light |
+| Sound | Dice and shuffling, the fridge's hum, the bell over the street door |
+| Only here | Box titles that exist nowhere else (*Faro de Niebla*, *Los Telares*, *Vapor Vell*, *Mercado de Sombras*, *Rodalies*, *Cent Cases*…), and a back room the street cannot see |
+| Text | Catalan in the shop (*TORNEIG · DIVENDRES 19 H*, *OBERT*, *ES BUSCA JUGADOR*); invented titles in Spanish and Catalan |
+| Wink | — (the guide's idea, a box with Bernat's name as designer, is left to his mission) |
 
-## Layout
+Neighbours: the door pair differs in all four (colour ΔE 57, material, ground, light warm against
+cool), as `docs/visual-style.md` § Neighbours requires.
+
+## How it was built
 
 ### The street: `assets/geo/sants/zone.json`
 
 - **Frame**: anchor on El Nucli (41.3782469, 2.1372794); turned 30° so Carrer de Valladolid runs left
   to right and the shop's front (odd side) faces the camera; `bounds_turned` x −130 … 55 m, z −52 …
-  345 m, edges on streets (Alcolea, Badalona, Vallespir, Sants); 1.5 m cells: **123 × 265 cells**,
-  288 buildings (62 of them courtyard parts of 1-2 storeys), zoom 10.5 (closer than the
-  Meridiana's 11.5: the streets are narrow).
-- **The route** (preview: `output/geo/sants/preview.png`): the party comes up the L1 stairs on
-  Carrer de Sants (bottom left, spawn), walks up Carrer de Riego past the Plaça d'Osca, crosses the
-  Passeig de Sant Antoni, and goes straight up Carrer de Santa Caterina, which ends on Valladolid
-  two doors from El Nucli. About 330 m: some 40 s walking.
-- **What is where** (turned metres, x along Valladolid, z towards the camera):
+  345 m, its edges on streets (Alcolea, Badalona, Vallespir, Sants); 1.5 m cells: **123 × 265
+  cells**, 288 buildings with heights from OSM `building:levels`, zoom 10.5. The map edge is the
+  border, as everywhere.
+- **The route**: up the L1 stairs on Carrer de Sants (bottom left, spawn), up Carrer de Riego past
+  the Plaça d'Osca, across the Passeig de Sant Antoni, straight up Carrer de Santa Caterina, which
+  ends on Valladolid two doors from El Nucli. About 330 m: some 40 s walking.
+- **Styles**: `default` (the ochre range, `sants` facades: scored render, stone surrounds, string
+  courses, *persianes* or louvred shutters, iron balconies with pots; `sants-shops` ground floors:
+  segmental arches over lit shops, street doors with fanlight grilles or shutters painted with
+  murals; flat roofs whose colour is picked per building from a list), `block` (the Passeig's
+  tall blocks, `flats`), `cosmo` (the dark tower), `cinema` (the Palau Balañà with its signature
+  photo), `nucli` (the shop's building).
+- **Landmarks** (`src/landmarks/`): `nucli-front` (the wine front, fascia with letters about 60 cm
+  high, windows of boxes lit from inside, the door, the round sign on its iron bracket, the warm
+  spill on the pavement), `terrassa` × 8 (the Plaça d'Osca's terraces: aluminium tables, chairs,
+  full beers, white parasols, and `people` sitting at them), `assegut` × 8 (people on the benches),
+  `fanal-osca` (the square's lamp), `contenidors` (the five containers on Valladolid).
+- **Props**: the L1 totem and stair, plane trees (OSM's plus 6 more in the Plaça d'Osca and 13 on
+  Valladolid and the Passeig), cars on Valladolid, lamps along the Passeig, 4 extra benches on the
+  Passeig's promenade.
+- **Still people**: `assegut` places block figures (the game's style: box body, round head, hair
+  cap) on a bench, and `terrassa` seats them at its tables with `people`. Every head turns to
+  `look` (120°: north-east in the turned frame, towards Trinitat Vella). Their parts cast no sun
+  shadow and use few colours, to keep the draw calls down.
 
-| Thing | x, z | Note |
-| --- | --- | --- |
-| El Nucli's door (`sants-nucli`) | 0, 1.5 | Door to `el-nucli`, cell (6, 22). The street cell back is (76, 34) |
-| Shop window (`sants-nucli-escaparate`) | 3.5, 1.5 | Lines |
-| Casa Astor (`sants-casa-astor`) | −14, 15 | Lines; corner of Santa Caterina |
-| Palau Balañà (`sants-palau-balana`) | 30, 80 | Lines; building `way/1309103578`, style `cinema` |
-| Passeig de Sant Antoni (`sants-passeig`) | −60, 128 | Lines |
-| Carrer de Riego (`sants-riego`) | −40, 232 | Lines |
-| Plaça d'Osca (`sants-osca`) | −20, 262 | Lines |
-| Carrer de Sants (`sants-carrer-de-sants`) | −90, 306 | Lines |
-| Metro (`station-placa-de-sants`) | totem −71, 321; stair −69.25 … −64.75 | L1 totem "Plaça de Sants"; add `'placa-de-sants': { environment: 'sants' }` to `STATION_PLACES` |
+| Thing | x, z (turned m) | Cell | Note |
+| --- | --- | --- | --- |
+| Metro (`station-placa-de-sants`) | totem −71, 321 | stair (40, 248) | L1 "Plaça de Sants"; `STATION_PLACES['placa-de-sants']` |
+| El Nucli's door (`sants-nucli`) | 0, 1.5 | (86, 35) | To `el-nucli` (6, 23); the way back lands on (86, 36) |
+| Shop window (`sants-nucli-escaparate`) | 3.5, 1.5 | (88, 35) | Lines |
+| Casa Astor (`sants-casa-astor`) | −14, 15 | (76, 44) | Lines; corner of Santa Caterina |
+| Palau Balañà (`sants-palau-balana`) | 19.25, 71.75 | (99, 82) | Lines, in front of its facade |
+| Passeig de Sant Antoni (`sants-passeig`) | −63.25, 106.25 | (44, 105) | Lines, by the benches |
+| Carrer de Riego (`sants-riego`) | −40, 232 | (63, 190) | Lines |
+| Plaça d'Osca (`sants-osca`) | −20, 262 | (73, 209) | Lines |
+| Carrer de Sants (`sants-carrer-de-sants`) | −90, 306 | (26, 238) | Lines |
 
-- **Styles**: `default` (ochre range, `iron-balconies` upper floors, `shops` ground floors, flat
-  roofs), `block` (the Passeig's tall blocks, `flats`), `cosmo` (the dark tower), `cinema` (white,
-  `mall` facade, `mall-front` ground, sign *PALAU BALAÑÀ*), `nucli` (the shop's building, wine
-  plinth). Heights come from OSM `building:levels`.
-- **Signs**: every bar and shop of the map gets its sign (68, El Nucli's among them).
-- Labels on the ground: CARRER DE VALLADOLID, PASSEIG DE SANT ANTONI, PLAÇA D'OSCA, CARRER DE SANTS.
+### The shop: `EL_NUCLI` (`src/environments.ts`, `src/nucli-scenery.ts`)
 
-### The shop: `el-nucli` (planned, not built)
-
-A `house()` interior like the Meridiana flat (`src/environments.ts`, `PLAN_GLYPHS`), at the flat's
-scale. The street front is at the bottom, as outside, so the camera sees the long west wall of
-boxes and each room's back wall standing, while the window and the east wall fold away round
-Gerard. It is wider than the real local (about 6 m) to leave room for play.
+A `house()` plan at the flat's scale, the street front at the bottom as outside, so the camera
+sees the west wall of boxes and each room's back wall standing while the window and east wall
+fold away round Gerard. Wider than the real local, to leave room to play.
 
 ```
  x 0123456789abcd
 z 0 ##############
-  1 #oooo...ooooo#   Trastienda: stock shelves, stacked boxes
-  2 #o...........#
-  3 #o..oo.....oo#   round table (4-5, 3-4), Bernat's seat beside it (6, 3)
-  4 #o..oo.....oo#
-  5 #o...........#
-  6 #####+########   curtain over the door
-  7 #ooooooo.oooo#   Sala de juego: demo shelf, the cork board at (8, 7)
-  8 #............#
-  9 #.oo..oo..oo.#   six tables, games half played
- 10 #.oo..oo..oo.#
- 11 #............#
- 12 #.oo..oo..oo.#
+  1 #oooooooooooo#   Trastienda: steel stock shelving
+  2 #o..........o#
+  3 #o..oooo..ooo#   round table (Bernat's seat at 4, 3); the pallet at 10-11
+  4 #o..oooo..ooo#   nucli-mesa at (8, 4)
+  5 #o..........o#
+  6 #ooooooo..ooo#   cartons before the wall
+  7 ########++####   curtain door
+  8 #ooooo.....oo#   Sala de juego: demo shelves, cork board, fridge
+  9 #............#
+ 10 #.oo..oo..oo.#   six felt tables under pendants
+ 11 #.oo..oo..oo.#
+ 12 #............#
  13 #.oo..oo..oo.#
- 14 #............#
- 15 ###...########   wide opening from the shop
- 16 #oo.....ooooo#   Tienda: shelves on the west and north walls
- 17 #o..........o#
- 18 #o..ooo.....o#   central gondola
- 19 #o..ooo.....o#
+ 14 #.oo..oo..oo.#
+ 15 #ooooooo.....#   bench
+ 16 ########.....#   the wine wall with the name
+ 17 #o...........#   Tienda: the wall of boxes on the west
+ 18 #o.ooooo....o#   counter, glass case
+ 19 #o..........o#
  20 #o..........o#
- 21 #o......oooo.#   counter and the glass case of cards
- 22 #o...........#   spawn (6, 22)
- 23 #oo..........#
- 24 #GGGGGDGGGGGG#   shop window and the street door
+ 21 #o....ooo...o#   gondola
+ 22 #o....ooo....#
+ 23 #o...........#   spawn (6, 23)
+ 24 #oooo...oooo.#   window displays; the street door at (6, 24)
+ 25 ##GGGGGGGGGG##   shop window
 ```
 
-Rooms: *Tienda* (1, 16, 12 × 8, hydraulic tiles), *Sala de juego* (1, 7, 12 × 8, terrazzo),
-*Trastienda* (1, 1, 12 × 5, terrazzo). Two new floor kinds for the furnisher: `hydraulic`,
-`terrazzo`.
-
-Interactions (Spanish, in Gerard's voice; drafts):
-
-| id | cell | label | lines / to |
+| id | Cell | Label | Lines / to |
 | --- | --- | --- | --- |
-| `nucli-salida` | 6, 23 | Salir a la calle | to `sants` (76, 34) |
-| `nucli-estanteria` | 2, 17 | Mirar las estanterías | «Cajas hasta el techo: *Faro de Niebla*, *Los Telares*, *Mercado de Sombras*, *Rodalies*…» / «Algunas las he visto en casa de alguien. Otras no las había visto nunca.» |
-| `nucli-mostrador` | 8, 22 | Mirar el mostrador | «La caja, un bote de dados sueltos a un euro y una campanita.» / «Detrás, una cortina, y detrás de la cortina, cajas.» |
-| `nucli-vitrina` | 12, 22 | Mirar la vitrina | «Cartas sueltas en fundas, cada una con su precio escrito a lápiz.» / «Las más caras, arriba del todo, con su propia luz.» |
+| `nucli-salida` | 6, 24 | Salir a la calle | To `sants` (86, 36) |
+| `nucli-estanteria` | 2, 21 | Mirar las estanterías | «Cajas hasta el techo: Faro de Niebla, Los Telares, Vapor Vell, Mercado de Sombras, Rodalies…» / «Algunas las he jugado en casa de alguien. Otras no las había visto nunca.» |
+| `nucli-mostrador` | 4, 19 | Mirar el mostrador | «La caja, un bote de dados sueltos a un euro y una campanita.» / «Nadie detrás. La campanita está boca abajo.» |
+| `nucli-vitrina` | 7, 19 | Mirar la vitrina | «Cartas sueltas en fundas, cada una con su precio escrito a lápiz.» / «Las más caras, arriba del todo, con su propia luz.» |
 | `nucli-partida` | 8, 11 | Mirar la partida | «Una partida a medias: losetas, fichas de madera, una libreta con los puntos.» / «Las sillas están apartadas, como si se hubieran levantado todos a la vez.» |
-| `nucli-tablon` | 8, 8 | Mirar el tablón | «Torneos, presentaciones y "se busca jugador para campaña de rol, los jueves".» / «Encima de todo han clavado una hoja nueva. Está en blanco.» |
-| `nucli-mesa` | 6, 4 | Mirar la mesa | «Una mesa redonda entre cajas sin abrir, y dos sillas.» / «Desde aquí no se ve la calle. Y desde la calle no se ve esto.» |
+| `nucli-tablon` | 6, 9 | Mirar el tablón | «Torneos, presentaciones y «se busca jugador para campaña de rol, los jueves».» / «Encima de todo han clavado una hoja nueva. Está en blanco.» |
+| `nucli-mesa` | 8, 4 | Mirar la mesa | «Una mesa redonda entre cajas sin abrir, y dos sillas.» / «Desde aquí no se ve la calle. Y desde la calle no se ve esto.» |
 
-**Bernat's anchor**: the back room's round table, his seat at cell (6, 3) facing the curtain; the
-interaction `nucli-mesa` is the hook his mission can take over (`story` answers it once he is
-there). The shopkeeper is a person of the mission, not of the place.
+**Bernat's anchor**: `NUCLI_BERNAT_SEAT` (cell 4, 3) is his chair at the back room's round table,
+facing the curtain; `nucli-mesa` is the hook his mission takes over (its `story` answers it once he
+is there). No story flags were added; the shopkeeper belongs to the mission, not the place.
 
-## Texture candidates
+Two floor kinds joined `FloorKind` for it, painted in `src/home-scenery.ts`: `hydraulic` and
+`terrazzo`. `RoomKit` lends `src/nucli-scenery.ts` the house builder's parts, lights, pictures and
+folding walls, so the shop is furnished in its own module.
 
-First the foundation's shared library in `public/textures/` (render `estuc`, ashlar `carreu`,
-`panot-gris`, `asfalt`, tiles `rajola`, `saulo`…) once it is merged; the table lists the signature
-additions and fallbacks, within the guide's dozen new textures per place. All CC0 unless stated.
-Commons files need their author, licence and file URL in `public/textures/credits.json`; CC BY-SA
-ones are shared alike.
+### Wiring
 
-| Use | Source | Licence, author |
+`EnvironmentId`, `ENVIRONMENTS`, `SANTS` and `EL_NUCLI` in `src/environments.ts`; looks `sants` and
+`el-nucli` in `src/grading.ts`; lamp colours in `src/home-lights.ts`; `PLACES` in
+`src/jump-menu.ts` (*Sants · Carrer de Valladolid*, *El Nucli*, group Barcelona);
+`'placa-de-sants': { environment: 'sants' }` in `src/transit.ts`; the shop's eyebrow and address
+in `src/main.ts`; lamp-lit like the flat in `src/scenery.ts`. Screenshots:
+`just screenshots sants --gpu` (`scripts/screenshots/sants.json`).
+
+## Textures and credits
+
+| Texture | Use | Source |
 | --- | --- | --- |
-| Ochre render, base for every wall (tinted per style) | Poly Haven [`beige_wall_001`](https://polyhaven.com/a/beige_wall_001), [`yellow_plaster`](https://polyhaven.com/a/yellow_plaster) | CC0 |
-| Render scored as ashlar | Poly Haven [`plaster_brick_pattern`](https://polyhaven.com/a/plaster_brick_pattern); or painted by the facade code over the render | CC0 |
-| A Sants house front as bays (arched doors, balconies, ochre ashlar render) | [Building in carrer Badalona, 9](https://commons.wikimedia.org/wiki/File:Building_in_carrer_Badalona,_9.jpg), frontal | CC BY-SA 3.0, Pere prlpz |
-| Valladolid's own houses (ground-floor arches, iron balconies) | [Ten To Go Hostel](https://commons.wikimedia.org/wiki/File:Ten_To_Go_Hostel.jpg) | CC BY-SA 3.0, Pere prlpz |
-| One rubble-stone house | [Casa Roc Grau, Vallespir 32](https://commons.wikimedia.org/wiki/File:Casa_Roc_Grau_-_Vallespir_32_-_20240712_204648.jpg) | CC BY-SA 4.0, Pere López Brosa |
-| The cinema's white relief (signature facade, may be 2048) | [Palau Balana (P1170725)](https://commons.wikimedia.org/wiki/File:Palau_Balana,_Barcelona_(P1170725).jpg), frontal crop | CC BY-SA 4.0, Matti Blume |
-| Shop shutters (painted over for Riego) | Poly Haven [`painted_metal_shutter`](https://polyhaven.com/a/painted_metal_shutter) | CC0 |
-| Sidewalk panot | [Panot 4 pastilles](https://commons.wikimedia.org/wiki/File:Panot_4_pastilles_Barcelona.svg) (or the foundation's panot) | CC BY 4.0, GabuGabu |
-| Riego's setts | ambientCG [`PavingStones136`](https://ambientcg.com/view?id=PavingStones136), Poly Haven [`concrete_pavers_02`](https://polyhaven.com/a/concrete_pavers_02) | CC0 |
-| Roads | Poly Haven [`clean_asphalt`](https://polyhaven.com/a/clean_asphalt) | CC0 |
-| Shelving and tables | Poly Haven [`plywood`](https://polyhaven.com/a/plywood), [`kitchen_wood`](https://polyhaven.com/a/kitchen_wood), [`wood_table_001`](https://polyhaven.com/a/wood_table_001) | CC0 |
-| Hydraulic tiles | Own painting (crisp pattern in the three colours above); reference [RajolaHidraulica 6173](https://commons.wikimedia.org/wiki/File:RajolaHidraulica_6173.jpg) | Own; ref. CC BY 3.0, Amadalvarez |
-| Terrazzo | Poly Haven [`terrazzo_tiles`](https://polyhaven.com/a/terrazzo_tiles), ambientCG [`Tiles040`](https://ambientcg.com/view?id=Tiles040) | CC0 |
-| Stock boxes | ambientCG [`Cardboard002`](https://ambientcg.com/view?id=Cardboard002), [`Cardboard004`](https://ambientcg.com/view?id=Cardboard004) | CC0 |
-| Table felt (the shop's dominant green) | ambientCG [`Fabric034`](https://ambientcg.com/view?id=Fabric034), tinted bottle green | CC0 |
-| Box spines and covers, posters, the shop sign | Own painting: invented titles and art, our own lettering (never the shop's logo or any real game's art) | Own |
+| `palau-balana` (new, 2048 px, signature facade) | The cinema's front on the Passeig | [Palau Balana, Barcelona (P1170725)](https://commons.wikimedia.org/wiki/File:Palau_Balana,_Barcelona_(P1170725).jpg), Matti Blume, CC BY-SA 4.0; cropped, a tree, passers-by and a cyclist cloned out (`public/textures/palau-balana/texture.json`) |
+| `panot-gris`, `granit`, `gespa`, `asfalt`, `saulo`, `estuc`, `carreu`, `rajola` | Pavements, the square, lawns, roads, render, plinths, terrats | The shared library (CC0, Poly Haven and ambientCG; credits in each `texture.json`) |
+| Facades `sants`, `sants-shops` | House fronts and ground floors | Painted in `src/geo-scenery.ts`, from Valladolid 43 and Badalona 9 |
+| Shop front, round sign, box spines, covers, boards, posters, cards, floors | El Nucli | Painted in code: invented titles and art, our own lettering; never the shop's badge or a real game's art |
 
-No generated images are needed here.
-
-## Build plan
-
-After the foundation (materials pipeline, landmark modules, `docs/visual-style.md`) is merged in:
-
-1. Re-read `docs/visual-style.md`, `tools/textures.py` and `src/landmarks/`; fit the identity card
-   to the guide.
-2. **Street data**: `just geo-build sants`. Narrow the roads (`lane_m` about 3; Valladolid one lane
-   plus parking) so there is sidewalk for trees and furniture: today the road raster fills
-   Valladolid from facade to facade. OSM has only 19 trees inside the zone (14 land), so the plane
-   trees seen in the photos (Valladolid, the Passeig, Santa Caterina) go in as `tree` props. Drop or
-   merge tiny courtyard parts if the draw calls are high.
-3. **Hook it up**: `sants` and `el-nucli` in `EnvironmentId` and `ENVIRONMENTS`; `PLACES` in
-   `src/jump-menu.ts` (*Sants · Carrer de Valladolid* and *El Nucli*, group Barcelona);
-   `'placa-de-sants': { environment: 'sants' }` in `STATION_PLACES`; grades in `src/grading.ts`.
-4. **Materials**: process the candidates with `tools/textures.py` (webp ≤ 1024 px, the cinema's
-   relief up to 2048), credits for the Commons ones; a Sants facade kind (ochre ashlar render,
-   arched ground floor, iron balconies, wooden shutters) and the cinema's relief facade.
-5. **Landmarks**: El Nucli's front (wine fascia, the round sign hung out over the door, a window of
-   boxes and the tournament poster, warm light inside) and the Palau Balañà (white relief box,
-   glass band, letters unlit, a light behind the box-office glass), as modules in `src/landmarks/`.
-6. **Props**, only the ones the street needs: bar terraces (Plaça d'Osca, the Passeig), parked
-   scooters; the rest from the existing kit.
-7. **The shop inside**: the plan above with `house()`, furnished in its own function or module:
-   shelves as instanced boxes from one painted atlas of spines, tables with games half played,
-   counter, glass case, cork board, fridge, curtain, the back room. Doors both ways.
-8. **Check**: `just typecheck`, `npm test`, a screenshot scenario `scripts/screenshots/sants.json`
-   (the metro exit, the Plaça d'Osca, Valladolid with the shop, the cinema, then the shop, the play
-   hall and the back room); `just screenshots sants --gpu`, look, iterate.
-9. Report fragment to *hecho*.
+No generated images.
 
 ## Approximate or open
 
-- The shop's real frontage and inside were not seen; both are designed. Its name is real, its logo
-  is not reproduced.
-- The inside is wider than the real local, and the furniture is invented.
-- The grid is flat: the Passeig de Sant Antoni really stands above Carrer de Riego.
-- The metro totem says L1 (the Riego vestibule is L1 only); the station also has the L5 at the
-  square, off the map.
-- Real bars and shops keep their real names on their signs, as on the Meridiana; the strange
+- **The shop's real frontage and inside were not seen** (no open photo exists): both are designed.
+  Its name and address are real; its badge is not reproduced. The inside is wider than the real
+  local and its furniture invented.
+- **Draw calls**: about 1150–1300 following Gerard on the street and 1400 in the Plaça d'Osca
+  (its trees and people), against the guide's ~1000; 820–870 in the shop. The overview (R) of the
+  street costs about 7700 (the Meridiana's is about 10 000). Trees are the heaviest props.
+- **The grid is flat**: the Passeig de Sant Antoni really stands above Carrer de Riego (a ramp with
+  railings joins them).
+- **The totem says L1**: the Riego vestibule is L1 only; the L5 platforms of Plaça de Sants are
+  under the square, off the map.
+- **Terrats are bare**: tiled in several colours but without water tanks, aerials or washing.
+- **Real bars and shops** keep their real names on their signs, as on the Meridiana; the strange
   behaviour in the lines is the Queen's, never the businesses'.
-- Zone size: 123 × 265 cells and 288 buildings, the biggest Barcelona zone so far (the Meridiana
-  has 52, Cardedeu 169); the guide's budget is about 1000 draw calls, so the courtyard parts may
-  need merging or dropping, and the buildings batching, before the build is done.
-- Music for the street and the shop: Aitor's call.
+- **Music** for the street and the shop: Aitor's call (no `PLACE_SONGS` entry yet).

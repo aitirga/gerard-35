@@ -223,8 +223,8 @@ material, light and landmark, which the last column names.
 | Alegia | `#f1efe8` | white and dark timber | timber framing, ashlar (`carreu`) | square belfry | `alegia` cool | Sagrada inside (ΔE 5): street vs nave in coloured light |
 | Cardedeu | `#c4673c` | terracotta and garden green | hipped clay roofs (`teula`), lawns (`gespa`) | a long hipped roof | `cardedeu` warm | Poble Sec (ΔE 13): roofs and gardens vs render and stairs |
 | La torre de Uri | `#1f0f22` | violet-black | dark stone walls | spiral tower | `cardedeu-laberinto` cool | Throne room (ΔE 25): violet vs indigo and gold |
-| El Nucli (proposal) | `#2f4a3a` | bottle green | board-game boxes, felt | the wall of boxes | new, warm | Palace patio (ΔE 25): indoor felt vs painted court |
-| Sants street (proposal) | `#cfa463` | ochre | painted roller shutters, old render (`estuc`) | a lit shopfront in a row of shutters | new, cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
+| El Nucli (built) | `#2f4a3a` | bottle green | board-game boxes, felt | the wall of boxes | `el-nucli` warm | Palace patio (ΔE 25): indoor felt vs painted court |
+| Sants street (built) | `#cfa463` | ochre | painted roller shutters, old render scored as ashlar (`estuc`) | a lit shopfront in a row of shutters | `sants` cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
 | Sagrada Família, outside (proposal) | `#9f8f78` | weathered sandstone | carved sandstone | spires | new, neutral | Avinguda Meridiana (ΔE 13): carved stone and park vs panot and blocks |
 | Sagrada Família, inside (proposal) | `#e9e4d8` + coloured light | pale stone in coloured light | branching stone columns, stained glass | a forest of columns | new, neutral | Alegia (ΔE 5): its light is the colour |
 | Plaça d'Espanya (proposal) | `#d8ccb2` | pale limestone and water | monumental stone, brick towers | twin campaniles and a dome | new, warm | Maresme (ΔE 4): monument and water vs houses |
@@ -422,7 +422,8 @@ share a landmark kind.
 
 #### El Nucli · the game store (Plaça de Sants, L1 and L5)
 
-Where Gerard meets Bernat, on the quiet (`docs/quests/bernat.md`: a spy feel).
+Where Gerard meets Bernat, on the quiet (`docs/quests/bernat.md`: a spy feel). Built as `el-nucli`;
+the card refined from the real shop is in `docs/places/nucli.md`.
 
 | | |
 | --- | --- |
@@ -440,6 +441,9 @@ Where Gerard meets Bernat, on the quiet (`docs/quests/bernat.md`: a spy feel).
 | Wink | A box on the shelf with Bernat's name as designer |
 
 #### Sants · El Nucli's street
+
+Built as `sants` (Carrer de Valladolid, from OpenStreetMap); the refined card is in
+`docs/places/nucli.md`.
 
 | | |
 | --- | --- |
