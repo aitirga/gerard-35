@@ -99,6 +99,8 @@ export function createTravelUI(hud: HTMLElement) {
     render(legs);
     const points = legs.flatMap((leg, i) => leg.stations.slice(i ? 1 : 0).map(id => STATIONS[id]));
     const stops = points.length - 1;
+    // The plan may have opened on the whole city: the ride closes in on its own route and follows the train.
+    city?.frame(points);
     const train = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     const move = (x: number, y: number) => { if (city) city.train({ x, y }); else { train.setAttribute('cx', String(x)); train.setAttribute('cy', String(y)); } };
     if (!city) {
