@@ -275,12 +275,14 @@ already read).
 
 ## Approximate, open and risks
 
-- **Draw calls.** Following Gerard about 1 060–1 150 (one frame each, `--gpu`), over the ~1 000 of
-  the budget by about 10 %; the overview about 6 850 (the Meridiana's is about 10 000). Most of it
-  is the 289 buildings (five meshes each, unbatched because they open the cut) and the 82 shop
-  signs; this place's own pieces add about 100. If it must come down: drop the one-storey courtyard
-  sheds inside the blocks (never seen from the street; needs a way to skip buildings in
-  `tools/geo.py`), or trim the bounds to Blai's core.
+- **Draw calls.** Following Gerard about 1 100–1 170 and the overview about 7 400 (one frame each,
+  `--gpu`, `app.stats.drawCalls.total`, which counts the depth prepass and the shadows too). The
+  Meridiana avenue, the reference for the ~1 000 budget before the prepass, reads 2 271 the same way
+  (and about 10 000 in the overview), so Poble Sec is at about half of it: within budget. Most of it
+  is the 289 buildings (five meshes each, unbatched because they open the cut), the 82 shop signs
+  and one mesh per dressed roof (`terrats`); the place's other pieces add about 50. If it must come
+  down: drop the one-storey courtyard sheds inside the blocks (never seen from the street; needs a
+  way to skip buildings in `tools/geo.py`), or trim the bounds to Blai's core.
 - **The station** moves 210 m along the Paral·lel to Plaça dels Ocellets. Its totem's plate is red
   like every metro line's today (`src/props.ts`); the L3's is green.
 - **The stairs and the hill** are compressed: in reality the stairs start 200–300 m above Elkano
