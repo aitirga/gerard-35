@@ -393,10 +393,11 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }), 0.5, 0.1);
   flat('Plazas', dry(scene.areas.square), LAYER.square, plaza);
   // Rivers reuse the pool's caustics, tinted deep green and drifting downstream. A place's own `water`
-  // colour gets the same ripples on grey instead, so the pool's blue does not turn it teal.
+  // is a turbid river: its colour on pale ripples, so the pool's blue does not turn it teal, and only a
+  // little of the sky on it, as a muddy river shows its own colour more than the clouds.
   const ripples = look.water ? kit.texture(canvas(128, 128, ctx => {
-    ctx.fillStyle = '#a0a0a0'; ctx.fillRect(0, 0, 128, 128);
-    ctx.strokeStyle = '#e2e2e240'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+    ctx.fillStyle = '#e4e4e4'; ctx.fillRect(0, 0, 128, 128);
+    ctx.strokeStyle = '#ffffff60'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
     for (let i = 0; i < 12; i++) {
       const y = jitter(i) * 128, a = jitter(i + 40) * 8 + 3;
       ctx.beginPath();
@@ -408,6 +409,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   river.diffuseMap = ripples; river.emissive.fromString(look.water ?? '#6f9a86'); river.emissiveMap = ripples; river.emissiveIntensity = 0.08;
   river.diffuseMapTiling.set(0.08 / cellM, 0.08 / cellM); river.emissiveMapTiling.set(0.08 / cellM, 0.08 / cellM);
   shine(river, 'water');
+  if (look.water) { river.specular.fromString('#4a5050'); river.reflectivity = 0.55; river.update(); }
   flat('Río', scene.areas.water, LAYER.water - sunk, river);
   if (sunk > 0) {
     // The banks: stone walls from the street down to the water, leaning back a little, darker and

@@ -163,8 +163,9 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     sky.addComponent('light', { type: 'directional', color: new pc.Color(0.6, 0.72, 0.95), intensity: skyIntensity, castShadows: false });
     sky.setEulerAngles(35, 150, 0); root.addChild(sky);
   }
-  // Floor plans lay their own backdrop, open under a stairwell.
-  const backdrop = mat('Fondo', night ? '#172a30' : '#67746b');
+  // Floor plans lay their own backdrop, open under a stairwell. Under Alegia's overcast the usual one
+  // reads pale beside the river, so it is the dark green of the valley floor.
+  const backdrop = mat('Fondo', night ? '#172a30' : overcast ? '#3f4a3c' : '#67746b');
   const backdropColor = backdrop.diffuse.clone();
   // A geo place that sinks its river below the street (look.river_m) stands on a deeper plinth.
   const drop = environment.geo ? (environment.geo.look?.river_m ?? 0) / environment.geo.cell_m : 0;
