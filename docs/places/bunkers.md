@@ -166,7 +166,9 @@ against the map's wall arcs (within 2-3 m).
   - In `src/geo-scenery.ts`, the ground ends at the brow and a flank falls away from it: rock
     (`roca`) with scrub on it, rounding over at the top. On the view side it runs out over 16 m.
   - On the sides the camera looks at it runs out up to 2.5 times further (`flankRun` in
-    `src/geo.ts`), so those sides read as a slope rather than a cliff.
+    `src/geo.ts`), so those sides read as a slope rather than a cliff. There it is the north
+    slope's scrub running on down (the `forest` material, thick with clumps), not rock: in rock,
+    the arrival and the overview opened on a wall of repeating stones.
   - A hilltop has no plinth. The backdrop box lies under the city.
 - **Arrival**: `station-el-carmel` and its `metro` totem stand at the foot of the north-west steps,
   near Carrer del Turó de la Rovira, on the camera's side.
@@ -207,7 +209,7 @@ against the map's wall arcs (within 2-3 m).
 | `canonera` | Each pit's round floor, the gun mount (a concrete ring round a dark hole with its bolts) and three ammunition niches in the parapet's inner face, their rusty red steel doors shut or ajar |
 | `gent` | People in the game's block figures. Rows sit on the long terrace, the command post, the third parapet and the rims of pits A, B and D, legs over the edge, facing the city: phones up, cans, a guitar. Three stand at the terrace parapet filming. A civic agent in a high-visibility vest stands at the gate |
 | `atril` | Four MUHBA lecterns, dark steel with a painted face and a Catalan title: *Bateria antiaèria*, *Barraques dels Canons*, *Turó de la Rovira*, *Pavelló d'oficials* |
-| `barana` | Black iron railings round the excavation and on the water tank's roof. The 2 m bar fence crosses the climb to the battery, its gate open |
+| `barana` | Black iron railings round the excavation, a galvanised one on the water tank's roof. The 2 m bar fence crosses the climb to the battery, its gate open |
 | `matoll` | Prickly pears in the strips beyond the parapets and agaves by the paths. With `over: "forest"`, low scrub clumps (rosemary, mastic, broom, tall dry grass) cover every scrub cell the paths leave |
 | `rajoles` | Patches of the shacks' floors (red terracotta; grey hydraulic tiles, some patterned, some lost) and patches of dry grass with tufts among the gravel |
 
@@ -260,9 +262,12 @@ params in `zone.json`).
    - Walls the camera cannot see are skipped.
    - Lit walls turn gold, shaded ones lilac.
    - The far city fades into the haze.
-4. **Drawing.** Two unlit meshes (ground and buildings) with vertex colours, linearised so they
-   show as painted, plus a haze plane round them and a dusk sky card square to the camera behind
-   the sea (pale blue over a pink band over a grey-blue one).
+4. **Drawing.** Two unlit meshes (ground and buildings). The buildings' vertex colours are
+   linearised so they show as painted; the ground picture and the sky are canvas textures, which
+   the engine decodes itself, so they stay as painted. Round them a haze plane, and beyond the sea
+   a ring of dusk sky (pale blue over a pink band over a grey-blue one) leaning back at the
+   camera's angle, built only on the sides that face the camera, so the overview and the castle
+   look find sky too.
 5. **Landmarks.** The Sagrada Família is not in the model (it is an icon on the network map), so it
    is drawn as its eighteen towers in sandstone, the Jesus tower tallest with its cross. Torre
    Glòries gets its rounded top. Port Olímpic's two 154 m towers come from the model as they are,
@@ -317,7 +322,10 @@ above are references only.
   - city lights coming on in the dusk;
   - the pink gum wink on a parapet;
   - a story beat beyond the castle look.
-- **Looks.** Seen from the NE end, the flank's corner behind the pavilion reads as a dark rocky
-  pyramid. The people are still figures.
+- **Looks.** Seen from the NE end, the flank's corner behind the pavilion still reads a little
+  like a mound rising behind it (the orthographic camera shows a slope steeper than its own
+  angle that way). The people are still figures. Seen sideways (the castle look, the overview's
+  edges) the remapped city shows as streaks: its distances are squeezed far more than its widths.
+- **The street.** Carrer del Turó de la Rovira stops where the zone does, at the flank.
 - **Nearest dominant.** Sants (proposal) has the nearest dominant colour (ΔE 5). The two places
   differ in material, ground and light.
