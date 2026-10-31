@@ -21,7 +21,7 @@ export interface GeoKit {
 /** One facade bay is this wide in cells; textures repeat once per bay and storey. */
 const BAY = 1.8;
 /** Facades painted as an atlas of several bays × storeys, so a long wall does not repeat one window. */
-const FACADE_ATLAS: Record<string, [number, number]> = { flats: [4, 3] };
+const FACADE_ATLAS: Record<string, [number, number]> = { flats: [4, 3], vila: [3, 2] };
 const EAVE = 0.35;
 const ROOF_PITCH = Math.tan(30 * Math.PI / 180);
 /** Ground layers stack a hair apart so large flat polygons never z-fight. */
@@ -426,7 +426,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const key = `${kind}|${wall}|${trim}|${base}|${grain.wall}|${grain.base}`;
     let m = textures.get(key);
     if (m) return m;
-    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front'].includes(kind);
+    const ground = ['masonry', 'arcade', 'ashlar', 'ashlar-arcade', 'shops', 'lobby', 'mall-front', 'socol'].includes(kind);
     const [atlasU, atlasV] = FACADE_ATLAS[kind] ?? [1, 1];
     const w = ground ? 256 : 128 * atlasU, h = 192 * atlasV;
     const glass = '#2c3a42', wood = '#5b3d2a';
@@ -616,6 +616,80 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
             for (let k = 0; k < 10; k++) { ctx.fillStyle = k % 2 ? '#f3eee2' : stripe; ctx.fillRect(x0 + k * 10, 30, 10, 20); }
           } else { ctx.fillStyle = trim; ctx.fillRect(x0, 34, 100, 16); ctx.fillStyle = '#2c3a42'; ctx.fillRect(x0 + 30, 70, 40, h - 70); }
         }
+      } else if (kind === 'plain') {
+        // Plain render, like a station hall's wall over its ground floor: only a band at its foot.
+        paint(wall, 'wall');
+        ctx.fillStyle = trim; ctx.fillRect(0, h - 10, w, 8);
+        ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(0, h - 2, w, 2);
+      } else if (kind === 'vila' || kind === 'socol') {
+        // A Vallès town house (Cardedeu): smooth render, moulded frames and louvred shutters in the
+        // house's own colour. `vila`, the upper floors, is three bays by two storeys with the first
+        // floor at the bottom (a two-storey house shows only that row): French windows onto small
+        // iron balconies, smaller windows above. `socol`, the ground floor (two bays): the render
+        // over a grey granite plinth, a panelled door under a barred fanlight, and a window behind
+        // iron bars or, in some houses, a garage's roller shutter.
+        paint(wall, 'wall');
+        const r = (i: number) => jitter(seed * 5.1 + i);
+        const shutter = ['#5f7048', '#4c6650', '#6b4f3a', '#7d8a84', '#8a6a48'][Math.floor(r(1) * 5)];
+        const louvres = (x0: number, y0: number, ww: number, hh: number) => {
+          ctx.fillStyle = shutter; ctx.fillRect(x0, y0, ww, hh);
+          ctx.fillStyle = 'rgba(0,0,0,.24)'; for (let y = y0 + 3; y < y0 + hh - 2; y += 4) ctx.fillRect(x0 + 2, y, ww - 4, 1.5);
+          ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fillRect(x0, y0, 2, hh);
+        };
+        if (kind === 'socol') {
+          ctx.save(); ctx.beginPath(); ctx.rect(0, 150, w, h - 150); ctx.clip(); paint(base, 'base'); ctx.restore();
+          ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(0, 150, w, 3);
+          ctx.fillStyle = 'rgba(0,0,0,.2)'; for (let x0 = 40; x0 < w; x0 += 64) ctx.fillRect(x0, 153, 1.5, h - 153);
+          const door = ['#2f4a3a', '#5a3b26', '#5e2a24', '#3d4a55', '#6b4f3a'][Math.floor(r(2) * 5)];
+          ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(30, 44, 74, h - 44);
+          ctx.fillStyle = trim; ctx.fillRect(26, 38, 74, h - 38);
+          ctx.fillStyle = glass; ctx.fillRect(35, 47, 56, 22);
+          ctx.fillStyle = '#26292a'; for (let k = 0; k < 6; k++) ctx.fillRect(37 + k * 10, 47, 2, 22);
+          ctx.fillStyle = door; ctx.fillRect(35, 71, 56, h - 71);
+          ctx.fillStyle = 'rgba(255,255,255,.1)'; for (const px of [39, 65]) for (const py of [78, 118, 154]) ctx.fillRect(px, py, 22, 30);
+          ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(62, 71, 2, h - 71);
+          ctx.fillStyle = '#c9b48a'; ctx.fillRect(55, 126, 4, 8);
+          if (r(3) > 0.76) {
+            ctx.fillStyle = trim; ctx.fillRect(140, 50, 104, h - 50);
+            ctx.fillStyle = '#8d918f'; ctx.fillRect(147, 57, 90, h - 57);
+            ctx.fillStyle = 'rgba(0,0,0,.2)'; for (let y = 59; y < h; y += 5) ctx.fillRect(147, y, 90, 1.5);
+          } else {
+            ctx.fillStyle = trim; ctx.fillRect(159, 50, 66, 98);
+            ctx.fillStyle = glass; ctx.fillRect(167, 58, 50, 82);
+            louvres(167, 58, 50, 82 * (0.3 + r(4) * 0.5));
+            ctx.fillStyle = '#26292a';
+            for (let k = 0; k < 6; k++) ctx.fillRect(168 + k * 9.2, 54, 2.5, 90);
+            ctx.fillRect(163, 82, 58, 2.5); ctx.fillRect(163, 118, 58, 2.5);
+            ctx.fillStyle = '#c6beaf'; ctx.fillRect(155, 146, 74, 5);
+          }
+        } else for (let fy = 0; fy < atlasV; fy++) for (let bx = 0; bx < atlasU; bx++) {
+          const x0 = bx * 128, y0 = fy * 192, i = 20 + fy * 7 + bx * 3, first = fy === atlasV - 1;
+          // A string course over the storey below.
+          ctx.fillStyle = trim; ctx.fillRect(x0, y0 + 183, 128, 7);
+          ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(x0, y0 + 190, 128, 2);
+          const ww = first ? 50 : 44, top = y0 + (first ? 44 : 62), hh = first ? 124 : 78, wx = x0 + 64 - ww / 2;
+          // The moulded frame and its lintel, a little proud of the wall.
+          ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(wx - 6, top - 4, ww + 16, hh + 10);
+          ctx.fillStyle = trim; ctx.fillRect(wx - 8, top - 8, ww + 16, hh + 10); ctx.fillRect(wx - 12, top - 14, ww + 24, 7);
+          ctx.fillStyle = glass; ctx.fillRect(wx, top, ww, hh);
+          ctx.fillStyle = 'rgba(190,220,235,.2)'; ctx.fillRect(wx + 3, top + 3, ww * 0.3, hh - 6);
+          ctx.fillStyle = trim; ctx.fillRect(wx + ww / 2 - 1.5, top, 3, hh);
+          // Shutters folded back on both sides, or shut over the window (one leaf sometimes half open).
+          if (r(i) > 0.62) { louvres(wx, top, ww / 2 - 1, hh); louvres(wx + ww / 2 + 1, top, ww / 2 - 1, hh * (r(i + 1) > 0.5 ? 1 : 0.55)); }
+          else { louvres(wx - 31, top - 2, 22, hh + 2); louvres(wx + ww + 9, top - 2, 22, hh + 2); }
+          if (first && r(i + 2) > 0.3) {
+            // A stone slab and a wrought-iron railing; geraniums on some.
+            ctx.fillStyle = '#b9b2a4'; ctx.fillRect(x0 + 20, top + hh - 2, 88, 7);
+            ctx.fillStyle = 'rgba(0,0,0,.26)'; ctx.fillRect(x0 + 20, top + hh + 5, 88, 4);
+            if (r(i + 3) > 0.6) for (let k = 0; k < 4; k++) {
+              ctx.fillStyle = '#b8704f'; ctx.fillRect(x0 + 27 + k * 20, top + hh - 12, 9, 10);
+              ctx.fillStyle = ['#4f7a3a', '#c23a3a', '#6d9a48', '#b8475a'][(k + i) % 4];
+              ctx.beginPath(); ctx.arc(x0 + 31 + k * 20, top + hh - 17, 7, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.fillStyle = '#26292a'; ctx.fillRect(x0 + 22, top + hh - 42, 84, 3);
+            for (let k = 0; k < 13; k++) ctx.fillRect(x0 + 23 + k * 6.6, top + hh - 40, 2, 38);
+          } else { ctx.fillStyle = '#c6beaf'; ctx.fillRect(wx - 10, top + hh + 1, ww + 20, 5); }
+        }
       } else if (kind === 'ashlar' || kind === 'ashlar-windows') {
         stones(wall, 8, 'wall');
         if (kind === 'ashlar-windows') {
@@ -789,7 +863,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       }
       add('Peto', parapet, photo(b.facade) ? facade('flats', b.walls, trim, baseColour) : facade(b.facade, b.walls, trim, baseColour, grain), pivot, false);
     }
-    if (b.roof !== 'flat') add('Hastial', gableEnds(b, H), facade('rendered', b.walls, trim, baseColour, grain), pivot, false);
+    // A Vallès house's gable is plain render; elsewhere it gets a window with shutters.
+    if (b.roof !== 'flat') add('Hastial', gableEnds(b, H), facade(b.facade === 'vila' ? 'plain' : 'rendered', b.walls, trim, baseColour, grain), pivot, false);
   }
   /** The photo atlas a `photo:<texture>` facade or ground floor names, if the scene has it. */
   function photo(kind: string) {
@@ -1063,13 +1138,14 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }
 
   // ------------------------------------------------------------ surroundings
-  // Wooded hills close every side but the camera's, as the valley does around the town.
+  // Wooded hills close every side but the camera's, as the valley does around the town (unless the
+  // place draws its own horizon, like Cardedeu's Montseny).
   const hill = [mat('Monte', '#4e6b45', 0.05), mat('Monte lejano', '#5f7c55', 0.05), mat('Monte sombra', '#41593b', 0.05)];
   const hills: [number, number, number, number, number][] = [
     [W * 0.15, -18, 70, 22, 40], [W * 0.5, -22, 90, 30, 46], [W * 0.88, -16, 70, 20, 38],
     [-22, D * 0.3, 40, 18, 70], [-20, D * 0.85, 34, 14, 50],
   ];
-  hills.forEach(([px, pz, w, h, d], i) => {
+  if (look.hills !== false) hills.forEach(([px, pz, w, h, d], i) => {
     const e = new pc.Entity('Monte');
     e.addComponent('render', { type: 'sphere', material: hill[i % 3], castShadows: false, receiveShadows: true, batchGroupId: kit.batch });
     e.setPosition(x(px), -h * 0.15, z(pz)); e.setLocalScale(w, h, d); root.addChild(e);
