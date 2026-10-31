@@ -1,0 +1,29 @@
+{
+  "id": "poble-sec-bays-siena",
+  "name": "Balcó d'Elkano 73",
+  "kind": "photo",
+  "size_m": [
+    5.4,
+    3.0
+  ],
+  "source": {
+    "site": "Wikimedia Commons",
+    "name": "Elkano_73.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:Elkano_73.jpg",
+    "author": "Xavier Badia Castellà",
+    "licence": "CC BY-SA 3.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "command": "tools/textures.py photo https://commons.wikimedia.org/wiki/File:Elkano_73.jpg --id poble-sec-bays-siena",
+  "bays": 2,
+  "storeys": 1,
+  "files": {
+    "albedo": "albedo.webp"
+  },
+  "px": [
+    1024,
+    569
+  ],
+  "mean": "#73604c",
+  "made": "2026-10-31"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "pinassa",
+  "name": "Pinassa de Montjuïc",
+  "kind": "material",
+  "size_m": [
+    3.15,
+    3.15
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "forest_ground_04",
+    "name": "Forest Ground 04",
+    "url": "https://polyhaven.com/a/forest_ground_04",
+    "author": "Rob Tuytel, Rico Cilliers",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven forest_ground_04 --id pinassa",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#6a5a44",
+  "made": "2026-10-31"
+}
