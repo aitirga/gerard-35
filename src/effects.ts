@@ -11,9 +11,9 @@ import { createTrails, type CometOptions } from './trails.ts';
 const KINDS = {
   // Footfalls and landings: little lit puffs that roll out low and settle on the floor.
   dust: { shape: 'puff', colour: ['#d8ccae', '#c9bb98'], opacity: .9, life: [.6, 1.1], size: [.06, .11], sizeEnd: 1.7, growIn: .15, fadeOut: .5, speed: [.25, .6], rise: [.15, .45], gravity: .7, drag: 2.6, wander: .08, wanderRate: 2, flow: .05, collide: true, friction: .5, bodies: .5 },
-  // Someone leaving a fight, or arriving: soft smoke that swells, turns and rises.
   // A train passing under a street: its draught breathing out of a vent grate, pale and slow.
   draught: { shape: 'smoke', colour: ['#ecebe6', '#cfcdc6'], opacity: .4, life: [1.4, 2.2], size: [.16, .26], sizeEnd: 2.6, fadeIn: .2, fadeOut: .6, speed: [.2, .5], rise: [.8, 1.4], gravity: -.15, drag: 1.6, wander: .2, flow: .4 },
+  // Someone leaving a fight, or arriving: soft smoke that swells, turns and rises.
   poof: { shape: 'smoke', colour: ['#f1e9d4', '#d7d0bf'], glow: .15, life: [.8, 1.3], size: [.16, .28], sizeEnd: 2.3, growIn: .12, fadeOut: .6, speed: [.8, 1.6], rise: [.5, 1], gravity: -.35, drag: 3.2, wander: .15, flow: .25, spin: [20, 80], collide: true, bodies: .4 },
   // Contact: hot streaks that fly out, fall and skip on the floor.
   spark: { shape: 'spark', orient: 'velocity', colour: ['#fff1c8', '#ffad42'], additive: 1, glow: 1, intensity: 3, life: [.28, .55], size: [.022, .04], fadeOut: .4, speed: [3, 6], rise: [1, 2.6], gravity: 9, drag: 1.2, collide: true, bounce: .45, friction: .3, stretch: .06 },
