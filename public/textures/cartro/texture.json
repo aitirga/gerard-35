@@ -1,0 +1,29 @@
+{
+  "id": "cartro",
+  "name": "Cartró",
+  "kind": "material",
+  "size_m": [
+    0.6,
+    0.6
+  ],
+  "source": {
+    "site": "ambientCG",
+    "asset": "Cardboard004",
+    "name": "Cardboard 004",
+    "url": "https://ambientcg.com/a/Cardboard004",
+    "author": "ambientCG (Lennart Demes)",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch ambientcg Cardboard004 --id cartro",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#b98f4d",
+  "made": "2026-10-31"
+}

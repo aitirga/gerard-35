@@ -1,0 +1,29 @@
+{
+  "id": "terratzo",
+  "name": "Terratzo",
+  "kind": "material",
+  "size_m": [
+    2.0,
+    2.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "terrazzo_tiles",
+    "name": "Terrazzo Tiles",
+    "url": "https://polyhaven.com/a/terrazzo_tiles",
+    "author": "Amal Kumar",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven terrazzo_tiles --id terratzo",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#896d57",
+  "made": "2026-10-31"
+}

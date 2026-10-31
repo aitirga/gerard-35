@@ -1,0 +1,29 @@
+{
+  "id": "vellut",
+  "name": "Vellut",
+  "kind": "material",
+  "size_m": [
+    0.284,
+    0.273
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "velour_velvet",
+    "name": "Velour Velvet",
+    "url": "https://polyhaven.com/a/velour_velvet",
+    "author": "colormass, Rico Cilliers",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven velour_velvet --id vellut",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    492
+  ],
+  "mean": "#ae2d47",
+  "made": "2026-10-31"
+}
