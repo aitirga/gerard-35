@@ -57,10 +57,10 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   arcade(-L / 2, L / 2, arches, (s, y, inward) => [s, y, D / 2 - inward], [0, 0, 1]);
   if (side) arcade(-D / 2, D / 2, side, (s, y, inward) => [L / 2 - inward, y, s], [1, 0, 0]);
   else wall.quad([L / 2, 0, D / 2 - T], [L / 2, 0, D / 2], [L / 2, top, D / 2], [L / 2, top, D / 2 - T], [1, 0, 0], [0, 0], [T, 0], [T, top], [0, top]);
-  // A thin cornice over the arches, then the roof.
-  const cornice = kit.mat('Cornisa del porche', String(p.trim ?? '#f3e7c8'), 0.1);
-  kit.part('Cornisa', 'box', cornice, [0, top + 0.08, D / 2 - T / 2 + 0.06], [L + 0.12, 0.16, T + 0.12]);
-  if (side) kit.part('Cornisa', 'box', cornice, [L / 2 - T / 2 + 0.06, top + 0.08, 0], [T + 0.12, 0.16, D]);
+  // A thin cornice over the arches (under a lean-to's eave, so it never shows through the tiles), then the roof.
+  const cornice = kit.mat('Cornisa del porche', String(p.trim ?? '#f3e7c8'), 0.1), cy = p.roof === 'terrassa' ? top + 0.08 : top - 0.06;
+  kit.part('Cornisa', 'box', cornice, [0, cy, D / 2 - T / 2 + 0.06], [L + 0.12, 0.16, T + 0.12]);
+  if (side) kit.part('Cornisa', 'box', cornice, [L / 2 - T / 2 + 0.06, cy, 0], [T + 0.12, 0.16, D]);
   const roof = kit.mesh();
   if (p.roof === 'terrassa') {
     // A terrace on top: a flat slab and a balustrade round its open sides.
