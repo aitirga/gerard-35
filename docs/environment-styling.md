@@ -472,12 +472,17 @@ development picker (`PLACES` in `src/jump-menu.ts`) like any new place.
 A real street with `look.markings` gets cars, yellow taxis and the odd TMB bus (`src/traffic.ts`).
 They drive the lanes of every `road` whose `highway` carries through traffic (not service roads,
 alleys or living streets), keep right on two-way streets, never use the bus lane and turn at random
-where streets meet, entering and leaving at the edges of the map. Where two such streets cross,
+where streets meet, entering and leaving at the edges of the map; while there is anywhere else to
+go, a driver neither makes a U-turn onto the other carriageway nor drives a street it has already
+driven, so a roundabout empties instead of filling up. A stretch closed to cars is drawn as
+`service` (no car drives it), with a road back where they turn round. Where two such streets cross,
 and at zebras with a `traffic-light` prop within 8 cells, junctions take turns: the longest street
 through a junction gets the long green, the cross street and the people on foot the short one,
 with amber and all-red in between, and neighbouring junctions turn green one after another. Each
 traffic light shows the turn of the street it stands beside, its walk signal the opposite. Drivers
 follow whoever is ahead, move over before a lane ends, keep out of a junction they could not clear
-and stop for Gerard or his partner standing in front of them. Do not put parked `car` or moving-bus
-props in a lane: they would block it; a bus at a stop goes in the bus lane.
+and stop for Gerard or his partner standing in front of them; cars left waiting on each other in a
+loop (nose to nose, swapping lanes, merging) let one of them squeeze by after a few seconds. Do
+not put parked `car` or moving-bus props in a lane: they would block it; a bus at a stop goes in
+the bus lane.
 

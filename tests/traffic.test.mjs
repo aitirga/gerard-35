@@ -44,3 +44,23 @@ test('cars stop for someone standing in their lane', () => {
   traffic.update(1, [lane]);
   assert.equal(first().x, before.x, 'the first car keeps creeping on');
 });
+
+test('a roundabout never locks up: two minutes on, no car has stood still for a minute', () => {
+  // Plaça d'Espanya: five streets into one ring, slip roads, a U-turn and lanes that merge.
+  for (const zone of ['placa-espanya', 'meridiana-calle']) {
+    const place = JSON.parse(readFileSync(new URL(`../src/geo/${zone}.json`, import.meta.url)));
+    const ox = (place.width - 1) / 2, oz = (place.depth - 1) / 2;
+    const root = new pc.Entity();
+    const kit = { signals: [], place: (_prop, parent, position) => { const e = new pc.Entity(); e.setLocalPosition(position); parent.addChild(e); return e; } };
+    const traffic = createTraffic(root, kit, place, v => v - ox, v => v - oz);
+    const still = new Map();
+    for (let frame = 0; frame < 2400; frame++) {
+      const before = new Map(root.children.map(c => [c, c.getLocalPosition().clone()]));
+      traffic.update(1 / 20, []);
+      for (const c of root.children) still.set(c, before.get(c)?.distance(c.getLocalPosition()) < 1e-3 ? (still.get(c) ?? 0) + 1 / 20 : 0);
+    }
+    const stuck = root.children.filter(c => still.get(c) > 60);
+    assert.ok(root.children.length > 25, `${zone}: only ${root.children.length} vehicles`);
+    assert.equal(stuck.length, 0, `${zone}: ${stuck.length} vehicles have not moved for a minute`);
+  }
+});
