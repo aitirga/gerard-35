@@ -441,7 +441,7 @@ export const EL_NUCLI = house({
     { id: 'nucli-mesa', cell: { x: 8, z: 4 }, label: 'Mirar la mesa', lines: ['Una mesa redonda entre cajas sin abrir, y dos sillas.', 'Desde aquí no se ve la calle. Y desde la calle no se ve esto.'] },
   ],
 });
-/** Where Bernat sits in El Nucli's back room, at the round table, facing the curtain: his mission puts him here. */
+/** Where Bernat sits in El Nucli's back room: the round table's west chair, his back to the cartons and the curtain in sight. His mission puts him here. */
 export const NUCLI_BERNAT_SEAT: Cell = { x: 4, z: 3 };
 /** What each character of the palace plan stands for (docs/bubbaloo-palace.md). */
 export const PALACE_GLYPHS = {

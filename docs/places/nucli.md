@@ -222,7 +222,7 @@ z 0 ##############
 | `nucli-mesa` | 8, 4 | Mirar la mesa | «Una mesa redonda entre cajas sin abrir, y dos sillas.» / «Desde aquí no se ve la calle. Y desde la calle no se ve esto.» |
 
 **Bernat's anchor**: `NUCLI_BERNAT_SEAT` (cell 4, 3) is his chair at the back room's round table,
-facing the curtain; `nucli-mesa` is the hook his mission takes over (its `story` answers it once he
+its back to the cartons and the curtain in sight; `nucli-mesa` is the hook his mission takes over (its `story` answers it once he
 is there). No story flags were added; the shopkeeper belongs to the mission, not the place.
 
 Two floor kinds joined `FloorKind` for it, painted in `src/home-scenery.ts`: `hydraulic` and

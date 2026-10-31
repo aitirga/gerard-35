@@ -347,7 +347,7 @@ export function furnishNucli(r: RoomKit) {
     box('Pala de la carretilla', black, 12.4, 4.3, 0.02, 0.45, 0.03, 0.25);
     for (const dx of [-0.26, 0.26]) cyl('Rueda', black, 12.4 + dx, 4.5, 0.075, 0.2, 0.05, 0.2).setEulerAngles(0, 0, 90);
 
-    // The round table and its two chairs: Bernat's facing the curtain, the other one empty.
+    // The round table and its two chairs: Bernat's on the west, its back to the cartons and the curtain in sight; the other one empty.
     const cx = 5.5, cz = 3.5, top = 0.74;
     cyl('Mesa redonda', walnut, cx, cz, top - 0.05, 1.3, 0.05, 1.3);
     cyl('Pie de la mesa', black, cx, cz, 0.04, 0.1, top - 0.09, 0.1);
