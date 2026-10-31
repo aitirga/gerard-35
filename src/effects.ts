@@ -60,6 +60,9 @@ const KINDS = {
   mote: { shape: 'glow', colour: '#fff1d2', additive: .7, glow: .6, opacity: .55, life: [6, 10], size: [.03, .05], fadeIn: .2, fadeOut: .3, gravity: .01, drag: .5, wander: .05, wanderRate: .5, flow: .05, flicker: .25, flickerRate: .6, collide: true, bodies: .9 },
   pollen: { shape: 'glow', colour: '#fff8dc', additive: .6, glow: .6, opacity: .7, life: [6, 9], size: [.03, .055], fadeIn: .2, fadeOut: .3, drag: .3, wind: .6, wander: .12, flow: .25, collide: true, bodies: .7 },
   firefly: { shape: 'glow', colour: ['#ecff96', '#b8f060'], additive: 1, glow: 1, intensity: 2, life: [6, 10], size: [.07, .12], fadeIn: .15, fadeOut: .2, drag: 1, wander: .45, wanderRate: .8, flow: .2, flicker: .85, flickerRate: .35, collide: true, bounce: .6, bodies: .5 },
+  // Alegia's txirimiri: a fine drizzle that drifts more than it falls, ringing the puddles, and low cloud.
+  drizzle: { shape: 'spark', orient: 'velocity', colour: ['#eef4f7', '#cdd9df'], additive: .25, glow: .35, opacity: .5, life: [2.4, 3.2], size: [.011, .015], fadeIn: .15, fadeOut: .2, gravity: 4.5, drag: 2, wind: .7, wander: .1, wanderRate: 1.5, stretch: .05, collide: true, pop: true, onLand: { kind: 'ripplet', count: 1 } },
+  mist: { shape: 'smoke', colour: ['#e3e9ea', '#c9d1d3'], glow: .3, opacity: .12, life: [9, 14], size: [1.1, 1.8], sizeEnd: 1.5, fadeIn: .35, fadeOut: .4, drag: .5, wind: .5, wander: .06, wanderRate: .4, flow: .1 },
   gloom: { shape: 'glow', colour: ['#ffa6d2', '#ff6fb2'], additive: .9, glow: 1, intensity: 1.05, opacity: .75, life: [6, 10], size: [.03, .06], fadeIn: .25, fadeOut: .35, rise: [.05, .2], gravity: -.05, drag: .6, wander: .2, flow: .3, flicker: .5, flickerRate: .6, collide: true, bodies: .8 },
 } satisfies Record<string, ParticleKind>;
 export type EffectKind = keyof typeof KINDS;
@@ -85,7 +88,15 @@ const OUTDOORS: Air = { kinds: [{ kind: 'pollen', density: 4, low: .4, high: 3 }
 const AIR: Partial<Record<string, Air>> = {
   patio: { kinds: [{ kind: 'firefly', density: 7, low: .3, high: 2 }], wind: [.05, 0, .02], turbulence: .6 },
   palacio: { kinds: [{ kind: 'gloom', density: 9, low: .1, high: 3 }, { kind: 'bubble', density: 2, low: 0, high: .4 }], wind: [0, .04, 0], turbulence: .7 },
+  alegia: { kinds: [{ kind: 'drizzle', density: 18, low: .5, high: 7 }, { kind: 'mist', density: .5, low: .2, high: 1.6 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.3, 0, .2], turbulence: .8 },
 };
+/** What particles need of a scene's scenery: its floors, a sunk river's water, its grid and its houses' volumes. */
+interface SceneShape {
+  groundHeight(x: number, z: number): number;
+  waterHeight?(x: number, z: number): number | undefined;
+  toWorld(x: number, z: number): pc.Vec3;
+  houses: readonly { x0: number; x1: number; z0: number; z1: number; top: number }[];
+}
 /** Ambient particles stop growing past this, however far the camera pulls back. */
 const AMBIENT_CAP = 1600;
 
@@ -402,7 +413,7 @@ export function createEffects(app: pc.Application) {
      * A new scene: floors, walls and whatever stands on its cells become what particles collide
      * with, its sun lights them, and its air starts drifting.
      */
-    setScene(environment: Environment, scenery: { root: pc.Entity; groundHeight(x: number, z: number): number; toWorld(x: number, z: number): pc.Vec3; houses: readonly { x0: number; x1: number; z0: number; z1: number; top: number }[] }) {
+    setScene(environment: Environment, scenery: SceneShape & { root: pc.Entity }) {
       bounds = sceneWorld(environment, scenery);
       particles.setWorld(bounds); marks.setWorld(bounds);
       sun = (scenery.root.findComponents('light') as pc.LightComponent[]).filter(l => l.type === 'directional').sort((a, b) => b.intensity - a.intensity)[0];
@@ -529,7 +540,7 @@ export type Effects = ReturnType<typeof createEffects>;
 /** How tall whatever stands on a solid cell is, by what the plan draws there (metres). */
 const PLAN_TOPS: Record<string, number> = { '#': 2.6, W: 2.6, D: 2.6, G: 2.6, ' ': 2.6, o: .8, '=': 1, '/': 1.2 };
 /** The scene as particles feel it: its floors from the scenery, its walls and things from the grid. */
-export function sceneWorld(environment: Environment, scenery: { groundHeight(x: number, z: number): number; toWorld(x: number, z: number): pc.Vec3; houses: readonly { x0: number; x1: number; z0: number; z1: number; top: number }[] }): ParticleWorld {
+export function sceneWorld(environment: Environment, scenery: SceneShape): ParticleWorld {
   const rows = environment.grid.length, cols = environment.grid[0].length;
   const origin = scenery.toWorld(0, 0);
   const top = new Float32Array(cols * rows).fill(-Infinity);
@@ -538,6 +549,8 @@ export function sceneWorld(environment: Environment, scenery: { groundHeight(x: 
   for (let z = 0; z < rows; z++) for (let x = 0; x < cols; x++) {
     if (environment.grid[z][x] !== '#') continue;
     const p = scenery.toWorld(x, z);
+    // A river sunk below the street is a drop, not a block: what falls lands on the water.
+    if (scenery.waterHeight?.(p.x, p.z) !== undefined) continue;
     const house = scenery.houses.find(h => p.x >= h.x0 && p.x <= h.x1 && p.z >= h.z0 && p.z <= h.z1);
     top[z * cols + x] = house ? house.top : props.has(`${x},${z}`) ? 1 : plan ? (environment.palace ? 3 : PLAN_TOPS[plan[z]?.[x]] ?? 2.6) : 2.3;
   }
@@ -545,7 +558,7 @@ export function sceneWorld(environment: Environment, scenery: { groundHeight(x: 
     x0: origin.x - .5, z0: origin.z - .5, x1: origin.x + cols - .5, z1: origin.z + rows - .5,
     // Past the edge of the model is the backdrop far below.
     outside: -.95,
-    ground: (x, z) => scenery.groundHeight(x, z),
+    ground: (x, z) => scenery.waterHeight?.(x, z) ?? scenery.groundHeight(x, z),
     cells: { x: origin.x, z: origin.z, cols, rows, top },
   };
 }

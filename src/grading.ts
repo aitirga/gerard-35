@@ -74,10 +74,10 @@ export const LOOKS: Record<LookId, Look> = {
     enhance: { highlights: -.1 },
     her: .25,
   },
-  /** San Juan kalea, Alegia: crisp Basque air, clean greens and cool shade. */
+  /** San Juan kalea, Alegia: a thin overcast and txirimiri, cool soft light, wet greens and grey stone. */
   alegia: {
-    grade: { temperature: -.05, shadows: [-.008, .004, .014], highlights: [.01, .006, -.004], contrast: 1.05, saturation: 1.03 },
-    enhance: { vibrance: .12, dehaze: .04 },
+    grade: { temperature: -.07, lift: [.006, .008, .01], shadows: [-.006, .006, .014], highlights: [.004, .008, .008], contrast: 1, saturation: .98 },
+    enhance: { vibrance: .1, highlights: -.1, dehaze: -.03 },
   },
   /** The Meridiana avenue: Barcelona concrete, cool and a little hard. */
   'meridiana-calle': {

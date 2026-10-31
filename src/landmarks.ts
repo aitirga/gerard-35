@@ -14,6 +14,8 @@ export interface LandmarkKit {
   root: pc.Entity;
   /** Metres per cell, for builders that need the grid (the footprint `w`/`d` are in cells). */
   cell: number;
+  /** Height of the river's surface in metres: below 0 where the place sinks its river (`look.river_m`), else 0. */
+  water: number;
   /** A plain material, shared by name and colour within the scene. */
   mat(name: string, hex: string, gloss?: number, glow?: number): pc.StandardMaterial;
   /**
