@@ -1,8 +1,8 @@
 # Plaça d'Espanya (`placa-espanya`)
 
-Status: **research and draft** (2026-10-30). The zone's map data and a first `zone.json` exist
-(`assets/geo/placa-espanya/`); nothing is hooked into the game yet. The build waits for the shared
-foundation (real materials, landmark modules, the new metro lines, `docs/visual-style.md`).
+Status: **built** (2026-10-31): a playable geo zone, reached from the Espanya metro (L1 and L3)
+and from the development picker. `assets/geo/placa-espanya/` holds the map data and the zone,
+`src/landmarks/` its five landmark modules, `public/textures/` its three new textures.
 
 The great roundabout at the foot of Montjuïc, where Sants, Poble Sec and the Eixample meet: the
 two Venetian towers opening the avenue up to the Palau Nacional, Jujol's fountain in the middle,
@@ -77,132 +77,127 @@ never committed):
 | [292 Avinguda de Maria Cristina, des del mirador](https://commons.wikimedia.org/wiki/File:292_Avinguda_de_Maria_Cristina,_des_del_mirador_del_Palau_Nacional_(Barcelona).jpg) | Enric, CC BY-SA 4.0 | The axis seen from the Palau Nacional: four columns, Magic Fountain, towers, the square, Las Arenas |
 
 Google Maps and Street View (the zone's `viewpoints`, links in `output/geo/placa-espanya/google/links.md`)
-are still to be walked before the build, as a reference only.
+were not walked: the Commons photos above were enough for every surface and landmark. Nothing from
+Google is used or shipped.
 
 ## Identity
 
-Status: proposal, refined from `docs/visual-style.md` because the card there leads with pale
-limestone `#d8ccb2`, ΔE 4 from Passatge Maresme's white render. What covers the screen round the
-metro and the towers is the Fira's **salmon paving** in front of warm limestone, with brick and
-copper above: ΔE 23 from Maresme, 24 from Sants and 22 from Poble Sec (its neighbours), 13 from
-the Sagrada Família outside (no neighbour: carved sandstone and spires against paving, brick
-towers and an open roundabout). Colours measured on the overcast Commons photos, lifted a little
-for sunlight.
+Refined from the first card in `docs/visual-style.md`, which led with pale limestone `#d8ccb2`,
+ΔE 4 from Passatge Maresme's white render. What fills the screen round the metro and the towers is
+the Fira's **salmon paving** in front of warm limestone, with brick and copper above: ΔE 23 from
+Maresme, 24 from Sants and 22 from Poble Sec (its neighbours), 13 from the Sagrada Família outside
+(no neighbour, and carved sandstone and spires against paving, brick towers and an open
+roundabout), 45 from the palace entrance's pink. Colours measured on the overcast Commons photos,
+lifted a little for sunlight.
 
 | | |
 | --- | --- |
 | Dominant | Salmon concrete paving of the Fira's forecourt `#c49884` (hue 19°, nowhere near her pink) |
-| Secondary | Warm limestone `#cdb9a0` (the Fira's palaces, the fountain, the tower bases), tower brick `#8a4632`, Las Arenas' orange brick `#9a5e40`, roundabout asphalt `#46474a`, the island's lawn `#7f8f3a` |
-| Material | Monumental limestone and exposed brick: the Fira's columns, the towers' brick channels, Las Arenas' striped horseshoe arches |
-| Ground | Salmon slabs and grey granite steps round the towers; grey granite and panot on the sidewalks; a wide asphalt roundabout full of arrows and BUS lanes; the lawn island behind the works' yellow barriers |
-| Landmark | The two Venetian towers framing the avenue up to the Palau Nacional (kind: twin campaniles); Las Arenas' round drum and dish roof at the near side (kind: a brick drum) |
-| Light | New look `placa-espanya`: warm, golden late afternoon with long tower shadows across the forecourt; `day` sky |
-| Props | Tall lamp masts with three or four heads, traffic lights on curved poles, yellow-and-black taxis, TMB red and turquoise interurban buses, the red tourist bus, Bicing docks, the tourist kiosk, the ONCE kiosk, benches, cypresses by the towers, plane trees on Gran Via, the works' yellow jersey barriers |
-| Air | Pollen; a fine spray over the avenue's fountains (not on the dry island) |
-| Sound | The roundabout's roar, bus brakes and horns, the water up the avenue, fair-goers' voices |
+| Secondary | Warm limestone `#cdb9a0` (the Fira's palaces, the fountain, the tower bases), tower brick `#8a4632`, Las Arenas' orange brick (its photo), roundabout asphalt `#46474a`, the island's dug soil `#6e5840` and lawn `#86a462`, copper `#56625b` |
+| Accent | Las Arenas' red steel `#b3261e` (V struts, the rim's edge and ribs, the lift's mast): the place's one saturated colour |
+| Material | Monumental limestone and exposed brick: the Fira's giant columns, the towers' brick channels, Las Arenas' striped horseshoe arches |
+| Ground | Salmon slabs (`lloses-fira`) and three granite steps under the colonnades; grey panot and granite on the sidewalks; a wide asphalt roundabout full of arrows and BUS lanes; the island dug up for the L8, a fringe of lawn behind yellow jersey barriers |
+| Landmark | The two Venetian towers framing the avenue up to the Palau Nacional (twin campaniles); Las Arenas' brick drum and dish roof in the foreground |
+| Light | Look `placa-espanya` (`src/grading.ts`): a golden late afternoon, warm highlights and slightly cool shade, the towers' long shadows across the forecourt; `day` sky |
+| Props | Lamp masts crowned with four LED heads (`lamp` `mast`), traffic lights at the five entries, the works' yellow jersey barriers round the island, a Bicing dock by the metro, the red and white tourist information kiosk, cypresses by the towers, plane trees on Gran Via and Tarragona; taxis and TMB buses in the traffic |
+| Air | Pollen (the default) |
+| Sound | Not yet: the roundabout's roar, buses, water up the avenue (see below) |
 | Only here | Las Arenas' brick bullring floating on red steel V struts, its striped arches above a band of concrete |
-| Text | Catalan: *PLAÇA D'ESPANYA* on the ring, *Espanya* on the metro totem, *ARENAS DE BARCELONA* on the gate (real lettering, plain type), *Obres L8 · FGC* on the works boards |
-| Wink | Optional, to decide with Aitor: a pink gum bubble stuck to the bronze brazier on top of the fountain, seen only from Las Arenas' terrace |
+| Text | Catalan: *PLAÇA D'ESPANYA* on the ring, *Espanya* on the metro totem, *TURISME* on the kiosk, *ARENAS DE BARCELONA* in the gate's photo |
 
-Reserved colours to watch: the forecourt stays salmon (orange-red), never pink; Las Arenas' real
-purple panels are shifted to a greyed violet-brown so they are not read as her violet; the one
-saturated accent is the **red steel** of Las Arenas (`#b3261e`: V struts, roof rim, lift tower).
+Reserved colours kept: the forecourt is salmon (orange-red), never pink; Las Arenas' real purple
+panels are not drawn (its ground floor is a dark glazed band), so nothing reads as her violet.
 
 ## Layout
 
-`assets/geo/placa-espanya/zone.json`, real data (OpenStreetMap, fetched 2026-10-30 through the OSM
-API: Overpass was busy).
+`assets/geo/placa-espanya/zone.json`, real data: OpenStreetMap (`osm.json`, fetched 2026-10-30
+through the OSM API, Overpass being busy) plus `sketch.json`.
 
 - **Anchor**: the centre of Jujol's fountain (41.3750413, 2.1491446).
 - **Turn**: `rotation_deg` 162, so Avinguda de la Reina Maria Cristina (bearing 153°) runs
-  **straight up the screen** between the two towers: the follow camera and the overview look along
-  the axis to Montjuïc, which leaves the map at the diamond's top corner, where the backdrop goes.
-  Las Arenas sits at the near left, the Catalonia Plaza hotel at the near right, the Fira's two
-  palaces flank the avenue at the back, and Gran Via crosses from left to right.
-- **Bounds** (turned frame, `bounds_turned`): x −175…140 m, z −170…195 m: 210 × 243 cells of
-  1.5 m, the biggest zone so far (Meridiana: 230 × 87). It holds the whole roundabout, the towers
-  and about 50 m of avenue past them, the fronts of both palaces, and all of Las Arenas.
-- **Spawn and station**: the party comes up the *Exposició / Paral·lel* entrance on the Fira's
-  forecourt (`station-espanya` at x −73.5, z −47.5), a few metres from the eastern tower: the first
-  frame is the towers above Gerard and the roundabout below.
-- **Places** (draft lines, Gerard's voice, to review with the story): the towers, the avenue
-  (looking up to the Palau Nacional), the fountain (from the works' barrier), Las Arenas (at its
-  foot, by the Tarragona entrance), the Fira's colonnade.
+  **straight up the screen** between the two towers, towards Montjuïc, which sits in the diamond's
+  top corner. Las Arenas is at the near left, the Catalonia Plaza hotel at the near right, the
+  Fira's two palaces close the far side with their curved colonnades.
+- **Bounds** (turned frame): x −175…140 m, z −170…215 m, 210 × 257 cells of 1.5 m, the biggest
+  zone so far (Meridiana: 230 × 87). It holds the whole roundabout and its five roads, the towers
+  and the avenue up to the Magic Fountain, the fronts of both palaces, all of Las Arenas with the
+  street round it, and a corner of Parc de Joan Miró.
+- **Station**: the *Exposició / Paral·lel* entrance of the L1 and L3 on the Fira's forecourt (the
+  map's own node): `metro` prop *Espanya* at x −76, z −48, `station-espanya` with its stair cells
+  beside it. The spawn is a few metres away.
+- **Places to look at** (Gerard's voice): the towers, the avenue (the Palau Nacional at its end),
+  the Magic Fountain (closed off for tonight's show), the fountain (from the works' barrier), Las
+  Arenas (from Tarragona, under its red struts), the Fira's colonnade.
 - **Borders are real**: the palaces' walls, the blocks round the square, the works' barriers round
-  the island; the avenue ends at the map's top corner, where the backdrop stands (fountains,
-  the Magic Fountain, the four columns, the stairs and the Palau Nacional on its hill, out of reach
-  and compressed in distance).
+  the island; the avenue ends at the Magic Fountain's square, closed by crowd barriers before a
+  show (the line says why), with Montjuïc behind as a backdrop out of reach.
+- **Ground label**: *PLAÇA D'ESPANYA* on the ring.
 
-The draft builds (`just geo-build placa-espanya`: 45 buildings, 664 road pieces, 213 props, 6
-places, 32,401 walkable cells). The preview turned to the camera's view:
-`output/geo/placa-espanya/preview-camera.png`.
+The build: `just geo-build placa-espanya` (36 buildings, 638 road pieces, 516 props, 7 places,
+29,116 walkable cells).
 
-Known gaps in the draft: the second tower is missing (the OSM relation has two rings and the build
-takes the first), the island is plain open ground (the map has a construction area, no lawn), the
-fountain and Las Arenas are plain extrusions until their landmarks exist, and the palaces'
-footprints run past the map's edge.
+## How it is built
 
-## Texture candidates
+**Map fixes** (`tools/geo.py`, small): a building override `"draw": false` keeps a map building's
+footprint solid but does not extrude it, and the shops inside it get no sign on a wall. Used for
+the buildings a landmark draws (Las Arenas, the towers' relation, the fountain), for the exits and
+the bus shelter mapped round Las Arenas' foot (they would stand as seven-storey blocks), for the
+tourist office (drawn as a kiosk) and for a raised layer over the forecourt. Two small Fira
+pavilions behind the towers take the `fira` style.
 
-Shared library first (`public/textures/`, from the foundation): `asfalt` (roads), `granit` (steps,
-kerbs), `panot-gris` (sidewalks), `gespa` (the lawn), `terra` (the dug works), `formigo` (Las
-Arenas' concrete band), `mao` (brick, both landmarks, tinted), `carreu` (limestone, tinted).
+**Landmarks** (`src/landmarks/`, one module each):
 
-New, at most a handful:
+| Kind | What it draws | Notes |
+| --- | --- | --- |
+| `venetian-tower` | 47 m on a 7.2 m square: granite plinth, battered stone base with its door, brick shaft with three recessed channels a face closing in arches, slit windows, cornice on brackets, loggia of columns, copper pyramid | Two entries (`torre-oest`, `torre-est`) at the OSM relation's two rings; the shaft opens the see-through cut round Gerard |
+| `espanya-fountain` | Jujol's fountain: three oval basins, arms to the corner pedestals with dark bronze groups, rusticated podium, the edicle with the three rivers in their niches, three columns with gilded capitals, attic, brazier with the Victories, iron lanterns | `dry` (the basins empty, puddles), `works`: the island dug out to a fringe of lawn (radii every 30°), tufts of lawn left, tarps, spoil heaps, a digger and the site cabin |
+| `arenas` | Las Arenas: the photographed bays (`arenes-arcs`) round a 100 m drum over a concrete band on red V struts and a dark glazed ground floor, the cream cornice with merlons, the glazed band, the red rim with its ribs, the terrace walk with a red steel edge and a glass parapet, the dish roof, the gate tower (`arenes-porta`), the panoramic lift with its red mast | `gate`, `lift`, `lift_m`: angles and distance; `solid: false` because the map's footprint already blocks it |
+| `fira-hemicycle` | The curved fronts of the Palau de Comunicacions i Transports and the Palau del Vestit: giant columns on pedestals before tall glass, entablature, balustrade with urns, the end pavilions with arched doors and obelisks, three granite steps and the salmon forecourt down to the ring road | Arcs in degrees round the square's centre |
+| `palau-nacional` | The top of the avenue compressed into the map's corner: the Magic Fountain with its jets, the four columns, stairs and cascade up a green slope, the Palau Nacional with its dome, small domes and corner towers, pines | A backdrop out of reach, behind the crowd barriers |
 
-| Id (proposed) | Use | Source | Licence, author |
+The tourist office is the shared `kiosk` landmark in white and Barcelona red with *TURISME*.
+
+**Props** (`src/props.ts`, two additions): `lamp` style `mast` (a tall mast crowned with four small
+LED heads on short arms, as round the square) and a `yellow` jersey barrier (the L8 works' ring).
+
+**Look**: `placa-espanya` in `src/grading.ts` (golden afternoon) and its lamps in
+`src/home-lights.ts`.
+
+**Camera** (`src/game.ts`): in the overview of a big place the orthographic camera now backs away
+along its view and lengthens its far clip, so neither the near corner (Las Arenas) nor the
+backdrop behind the far one is clipped; following Gerard nothing changes.
+
+## Textures and credits
+
+| Id | Use | Source | Licence, author |
 | --- | --- | --- | --- |
-| `lloses-fira` | The Fira's salmon forecourt slabs (`look.materials.square`) | Poly Haven [`concrete_tiles`](https://polyhaven.com/a/concrete_tiles) tinted `#c49884` (alternative: [`rectangular_paving`](https://polyhaven.com/a/rectangular_paving)) | CC0, Dimitrios Savva |
-| `mao-torres` | The towers' fine red brick, if `mao` reads too coarse at 7.2 m faces | Poly Haven [`red_brick`](https://polyhaven.com/a/red_brick) | CC0, Rob Tuytel |
-| `pedra-fira` | Limestone ashlar of the palaces and the fountain, if `carreu` is too grey | Poly Haven [`sandstone_blocks_08`](https://polyhaven.com/a/sandstone_blocks_08) or [`white_sandstone_blocks_02`](https://polyhaven.com/a/white_sandstone_blocks_02) | CC0, Rob Tuytel |
-| `coure` | The towers' copper pyramids, dark grey-green | Poly Haven [`roof_slates_02`](https://polyhaven.com/a/roof_slates_02) tinted `#55605a`, or plain material with standing seams | CC0, Rob Tuytel |
-| `arenes-arcs` (the place's one 2048) | Las Arenas' bay atlas: lower horseshoe arch over the tile band, upper twin arches, rectified | [064 Les Arenes, detall](https://commons.wikimedia.org/wiki/File:064_Les_Arenes,_detall.jpg) (near frontal, both tiers) | CC BY-SA 3.0, Enfo |
-| `arenes-arcs` (lower band) | The arches over the concrete band and V struts | [Arenas de Barcelona 003](https://commons.wikimedia.org/wiki/File:Arenas_de_Barcelona_003.jpg) | CC0, Nasobema lyricum |
-| `arenes-porta` | The gate tower's front | [063 Les Arenes, detall](https://commons.wikimedia.org/wiki/File:063_Les_Arenes,_detall.jpg) | CC BY-SA 3.0, Enfo |
-| `arenes-ceramica` | The band of coloured ceramic triangles (a strip) | [131 Centre comercial Arenas … detall](https://commons.wikimedia.org/wiki/File:131_Centre_comercial_Arenas,_antiga_pla%C3%A7a_de_toros_(Barcelona),_detall.jpg), or painted by code from it | CC BY-SA 4.0, Enric |
-| `fira-columnata` | One bay of the palaces' colonnade (column, glass, entablature, balustrade) | [Palacio de Comunicaciones 2013](https://commons.wikimedia.org/wiki/File:Palacio_de_Comunicaciones_2013.jpg) or [133 Palau de Comunicacions i Transports …](https://commons.wikimedia.org/wiki/File:133_Palau_de_Comunicacions_i_Transports_i_Torres_Venecianes,_Fira_de_Barcelona,_pl._Espanya.jpg) | CC BY 3.0, Felix König; CC BY-SA 4.0, Enric |
+| `lloses-fira` | The Fira's salmon forecourt slabs, tinted `#c49884` | Poly Haven [`rectangular_paving`](https://polyhaven.com/a/rectangular_paving), 512 px, with its normal map | CC0, Dimitrios Savva |
+| `arenes-arcs` | One bay of Las Arenas' drum, 4.3 × 11.9 m (half a bay and its mirror image) | [064 Les Arenes, detall](https://commons.wikimedia.org/wiki/File:064_Les_Arenes,_detall.jpg), rectified | CC BY-SA 3.0, Enfo |
+| `arenes-porta` | The gate tower's front with ARENAS DE BARCELONA, 15.6 × 20.6 m | [063 Les Arenes, detall](https://commons.wikimedia.org/wiki/File:063_Les_Arenes,_detall.jpg), rectified | CC BY-SA 3.0, Enfo |
 
-ambientCG alternatives if a Poly Haven pick does not tile well: `PavingStones128` (slabs),
-`Bricks090` (fine red brick), `Metal047B` (patinated metal). Nothing from Google is shipped.
+From the shared library: `mao` (tower brick), `carreu` (limestone), `granit` (steps, plinths),
+`formigo` (Las Arenas' band), `mamposteria` (the fountain's podium), `terra` (the dug island),
+`gespa` (lawn and Montjuïc's slope), `asfalt`, `panot-gris`. Each texture's `texture.json` keeps
+its source, author, licence and the command that made it. No generated images.
 
-## Build plan
+## Approximate and open
 
-1. **After the foundation merges**: rebuild (`just geo-build placa-espanya`) so the scene gets the
-   real materials; check the preview again.
-2. **Landmarks** (`src/landmarks/`, one module each, `cut: true` on the tall meshes so they open
-   round Gerard):
-   - `venetian-tower` (two entries in `landmarks`, one per tower, 7.2 × 7.2 m): base 0–6 m in
-     limestone with a door, brick shaft to 36 m with three recessed arched channels per face and
-     slit windows, cornice on brackets, loggia with four columns a side, copper pyramid to 47 m.
-   - `espanya-fountain` (about 34 × 34 m): the three-lobed basin and parapet, three corner
-     pedestals with bronze groups as simple dark-bronze masses, the triangular edicle with three
-     niches, three columns, the attic, the brazier with three Victories, iron lanterns; `params.dry`
-     for today's state (dry basin) or water.
-   - `arenas` (100 m drum): a many-sided cylinder of two arcade tiers from the `arenes-arcs` atlas,
-     the cream crenellated cornice, the gate tower facing Gran Via with its lettering, the concrete
-     band on red V struts over a recessed glass ground floor, the dish roof with its red rim and
-     terrace walk, the red lift tower facing the square.
-   - `palau-nacional` (backdrop, not solid, beyond the top corner): the Palau Nacional (block,
-     central dome, two small domes, four corner towers) on a pine-covered mound, with the stairs,
-     the four columns and the Magic Fountain's basin in front, compressed to a fraction of its real
-     distance so the follow camera and the overview both see it up the axis.
-3. **Map fixes** (small, in `tools/geo.py` if needed): a `buildings` override that leaves a map
-   building out because a landmark draws it (the towers' relation, the fountain, Las Arenas and its
-   small annexes); clip or trim the palaces' footprints at the map's edge.
-4. **Ground** (`sketch.json`, `keep` features): the island's oval lawn round the basin, a dug patch
-   of works soil; `look.materials.square` = `lloses-fira` for the forecourts (OSM pedestrian areas).
-5. **Props**: the works ring of yellow jersey barriers round the island (a `yellow` jersey colour in
-   `src/props.ts`, `yaw` tangent to the ring); tall lamp masts (a new lamp style) round the square
-   and up the avenue; traffic lights at the five entries; taxis queuing on Tarragona; cypresses by
-   the towers (in the draft); the OSM trees, benches, bins and bike racks (in the draft).
-6. **Traffic**: the roundabout is many one-way OSM pieces with `junction=circular`; check that
-   `src/traffic.ts` copes, otherwise redraw the ring in the sketch (`redraw`) as clean lanes.
-7. **Hook it up**: `EnvironmentId`, `ENVIRONMENTS` and the selector option; `STATION_PLACES`
-   `espanya → placa-espanya` (`src/transit.ts`; the station and the L1/L3 exist in the foundation's
-   network); its entry in `PLACES` (`src/jump-menu.ts`); a `LOOKS` entry `placa-espanya` (warm,
-   golden); try `zoom` 13–14 so the 47 m towers fit the follow camera.
-8. **Screenshots**: `scripts/screenshots/placa-espanya.json` (arrival at the metro, the towers,
-   the fountain's barrier, Las Arenas' foot, the overview) with `just screenshots placa-espanya
-   --gpu`; `just screenshots gpu-perf --gpu --perf` against the Meridiana's budget.
-9. **Docs**: refine this card after the screenshots, update the Plaça d'Espanya row and card in
-   `docs/visual-style.md` and the places table in `docs/barcelona.md`.
+- **Compressed backdrop**: the Magic Fountain stands right behind the towers (really about 480 m
+  up the avenue) and the Palau Nacional just behind it (820 m); in the overview the Palau's top is
+  cut by the frame, and from the follow camera it cannot be seen. The avenue's median fountains,
+  the escalators and Calatrava's tower are not drawn.
+- **Las Arenas**: one photographed bay repeats all round (the real bays vary); the gate tower
+  faces where the map puts it, away from the camera, so it is seen at a grazing angle; the dish
+  roof is plain, without its vents and skylights; no ceramic triangles band.
+- **The fountain**: from outside the barriers it can only be seen at the edge of the follow view
+  (the island is 70–100 m across); the overview shows it whole. The bronze groups and the rivers
+  are simple masses.
+- **The Fira**: the palaces behind their colonnades are the map's footprints in the `fira` style;
+  their grey sheet roofs are plain; the end pavilions' obelisks are simplified.
+- **The L8 works** are drawn as the November 2024 photos show them; their state in October 2026
+  is not confirmed, and the acoustic shed on Gran Via (behind Las Arenas) is outside the map.
+- **Parc de Joan Miró** in the near corner is plain lawn (the real one is pines and palms on
+  gravel, the species the game does not have yet).
+- **Not done**: the square's sound (the roundabout's roar, buses, water), static buses at their
+  stops (the turned frame lays a `bus` prop across the road), the optional wink (a gum bubble on
+  the brazier, for Aitor to decide).
