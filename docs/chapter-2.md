@@ -163,8 +163,9 @@ can walk through them. Each day it grows taller, never wider than the roof (`sea
 - **Losing** wakes Gerard at home (see above). The palace remembers nothing; the party remembers
   everything.
 - **Behind the hall's east door, the school.** At 35 the door shows the school's orange frame
-  under her gum and opens onto the yard: the palace's zones, each with its own colour, the
-  school transformed (`docs/places/palace-zones.md`).
+  under her gum and opens onto the yard: the palace's zones (el patio, el gimnasio, la
+  secretaría, el salón del trono), each with its own colour, the school transformed
+  (`docs/places/palace-zones.md`). Their doors stay shut until the story opens them.
 
 **The castle itself shows it.** At first it is very, very threatening: twice the size of the
 dream's palace, a ring of twelve spiked towers with lit slits, thorns along the ramparts, glowing

@@ -1,8 +1,8 @@
 # Inside La Reina Bubbaloo's palace (chapter 2)
 
-Status: **research and plans** (2026-10-30), **part 1 built** (2026-10-31): the hall's east door
-in chapter 2, el patio and el gimnasio are built and documented, as built, in
-[palace-zones.md](palace-zones.md), with what part 2 (la secretaría, el salón del trono) must do.
+Status: **research and plans** (2026-10-30), **built** (2026-10-31): the hall's east door in
+chapter 2 and all four zones (el patio, el gimnasio, la secretaría, el salón del trono) are built
+and documented, as built, in [palace-zones.md](palace-zones.md), with what is left for the story.
 This file keeps the research: the real place, an identity card per zone, the drafted plans of all
 four zones and the texture candidates. It refines `docs/visual-style.md` § 4 *The palace inside,
 by zones*.

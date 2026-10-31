@@ -204,7 +204,9 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   street. Turned 90° so her block faces the camera.
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
-  the camera, blocks of flats, the L1 entrance and the castle on the roof.
+  the camera, blocks of flats, the L1 entrance and the castle on the roof. Inside the castle, the
+  school's own zones (`palacio-patio`, `palacio-gimnasio`, `palacio-secretaria`, `palacio-trono`)
+  are hand-authored plan scenes, not map zones: `docs/places/palace-zones.md`.
 
 ## The TV news set
 

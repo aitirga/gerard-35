@@ -232,10 +232,10 @@ material, light and landmark, which the last column names.
 | Poble Sec (proposal) | `#b8744a` | sienna and pine green | stone steps with iron rails | the slope and its stairs | new, warm | Rec Comtal (ΔE 11): render and stairs at evening vs brick in the morning |
 | Búnkers del Carmel (proposal) | `#c09a5e` | dry earth, concrete, golden light | war concrete, rock (`formigo`, `terra`) | round platforms on a hilltop | new, warm | Sants (ΔE 5): open hill at sunset vs a shaded street |
 | Palace · entrance | `#c95a8d` | her pink | gum, wrapper paper | El Corazón Líquido | `palacio` | Palace outside (ΔE 17): the same building, inside |
-| Palace · el patio (proposal) | `#3f7d58` | court green | painted asphalt, rubber floor | the court's raised lines | new | El Nucli (ΔE 25): a painted court under the sky vs felt indoors |
-| Palace · el gimnasio (proposal) | `#2d5a9e` | mat blue | vinyl mats, varnished wood | the stacked vaulting box | new | Throne room (ΔE 23): blue under tubes vs indigo in the dark |
-| Palace · la secretaría (proposal) | `#d6b46a` | manila | paper and steel cabinets | aisles of cabinets | new | Sants (ΔE 7): an office under her vs a street |
-| Palace · el salón del trono (proposal) | `#232a5c` | night indigo and gold | velvet, stage boards, her gum | the stage and her throne | new | El gimnasio (ΔE 23), La torre de Uri (ΔE 25): indigo and gold vs blue or violet |
+| Palace · el patio | `#3f7d58` | court green | painted resin court (`pista-pintada`), its lines as kerbs | the court's raised lines | `palacio-patio` cool | El Nucli (ΔE 25): a painted court under the sky vs felt indoors |
+| Palace · el gimnasio | `#2d5a9e` | mat blue | vinyl mats, pine wall bars, grey sports floor | the stacked vaulting box | `palacio-gimnasio` cold | Throne room (ΔE 23): blue under tubes vs indigo in the dark |
+| Palace · la secretaría | `#d6b46a` | manila and steel | archive boxes (`cartro`) on steel cabinets, terrazzo (`terratzo`) | aisles of cabinets | `palacio-secretaria` flat green | Sants (ΔE 7): an office under her vs a street |
+| Palace · el salón del trono | `#232a5c` | night indigo and gold | velvet (`vellut`), stage boards (`fusta-escenari`), her gum | the stage and her throne | `palacio-trono` night | El gimnasio (ΔE 23), La torre de Uri (ΔE 25): indigo and gold vs blue or violet |
 
 ΔE is CIE76 between dominant colours: under ~10 reads as the same colour, 20 as clearly different.
 
