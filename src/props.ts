@@ -500,6 +500,16 @@ export function createPropKit() {
       part(holder, 'Casco', 'sphere', helmet, [0, 1.35, 0.1], [0.28, 0.28, 0.28]);
     } else if (noise(p.x, p.z, 5) > 0.5) part(holder, 'Baúl', 'box', black, [0, 0.8, 0.5], [0.3, 0.24, 0.26]);
   }
+  const jackets = ['#3e5f8a', '#8a3a34', '#3c4a3e', '#c9b38a', '#2b2e33'].map(c => mat('Ropa de ciclista', c, 0.3));
+  const skin = mat('Piel', '#d9b08c', 0.3);
+  function cyclist(holder: pc.Entity, colour?: string) {
+    // A bike along z and its rider leaning over the bars.
+    const p = holder.getPosition(), body = colour ? mat('Ropa de ciclista', colour, 0.3) : jackets[Math.floor(noise(p.x, p.z, 6) * jackets.length)];
+    bike(holder, 0, frame);
+    part(holder, 'Ciclista', 'box', body, [0, 0.98, 0.06], [0.3, 0.46, 0.22], [-20, 0, 0]);
+    part(holder, 'Piernas', 'box', black, [0, 0.62, 0.02], [0.24, 0.32, 0.16]);
+    part(holder, 'Cabeza', 'sphere', skin, [0, 1.3, -0.04], [0.2, 0.2, 0.2]);
+  }
   const alu = mat('Aluminio', '#b9bcbd', 0.55), tableTop = mat('Mesa de terraza', '#e6e2d9', 0.3);
   function terrace(holder: pc.Entity) {
     // A round café table and two aluminium chairs facing each other across it.
@@ -572,6 +582,7 @@ export function createPropKit() {
       else if (prop.kind === 'containers') containers(holder);
       else if (prop.kind === 'bicing') bicing(holder);
       else if (prop.kind === 'moto') moto(holder, prop.color, prop.rider);
+      else if (prop.kind === 'cyclist') cyclist(holder, prop.color);
       else if (prop.kind === 'terrace') terrace(holder);
       else if (prop.kind === 'grate') grate(holder);
       else manhole(holder);

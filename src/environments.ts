@@ -53,6 +53,8 @@ export type WorldProp =
   | { kind: 'bicing'; x: number; z: number }
   /** A scooter parked across the sidewalk (front to -z); with `rider`, someone riding it (traffic). */
   | { kind: 'moto'; x: number; z: number; color?: string; rider?: boolean }
+  /** Someone riding a bike (front to -z), for the bike lane's traffic. */
+  | { kind: 'cyclist'; x: number; z: number; color?: string }
   /** A café table with two chairs on the sidewalk. */
   | { kind: 'terrace'; x: number; z: number }
   /** A flat vent grate over a tunnel, like those on the Meridiana's median over the trains. */
@@ -78,6 +80,7 @@ export const PROP_FOOTPRINTS: Record<PropKind, readonly Cell[]> = {
   containers: along(5),
   bicing: along(4),
   moto: [{ x: 0, z: 0 }],
+  cyclist: [{ x: 0, z: 0 }],
   terrace: [{ x: 0, z: 0 }],
   grate: [],
 };

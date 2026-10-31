@@ -337,9 +337,44 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
   for (let t = 0; t < 70; t += 0.2) step(0.2, []);
   draw(1);
 
+  // ------------------------------------------------------------ cyclists
+  // Two-way bike lanes wide enough for it (the Meridiana's median) carry cyclists both ways, each
+  // on its right half; they keep behind the one in front, wait for anyone standing in their way
+  // and ride on, end to end. Made after the cars' first minute so the cars keep their seeded start.
+  const cyclists: { entity: pc.Entity; lane: Edge; s: number; v: number; cruise: number }[] = [];
+  const riders = new pc.Entity('Ciclistas'); root.addChild(riders);
+  for (const road of scene.roads) {
+    if (road.highway !== 'cycleway' || road.width < 1.8 || road.line.length < 2) continue;
+    for (const pts of [road.line, [...road.line].reverse()]) {
+      const cum = [0];
+      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      const lane: Edge = { road, pts, cum, length: cum[cum.length - 1], lanes: [road.width / 4], start: '', end: '', stops: [] };
+      for (let k = 0; k < Math.floor(lane.length / 55); k++) {
+        const entity = new pc.Entity('Ciclista'); riders.addChild(entity);
+        kit.place({ kind: 'cyclist', x: 0, z: 0 }, entity, new pc.Vec3(0, 0, 0));
+        cyclists.push({ entity, lane, s: (k + random()) * 55, v: 0, cruise: 2.4 + random() * 1.4 });
+      }
+    }
+  }
+  function ride(dt: number, walkers: Cell[]) {
+    for (const c of cyclists) {
+      const [px, pz, hx, hz] = at(c.lane, c.s), off = c.lane.lanes[0];
+      const x0 = px - hz * off, z0 = pz + hx * off;
+      // Someone a few cells ahead in its half of the lane, or the rider in front: brake and wait.
+      const blocked = walkers.some(w => { const ax = (w.x - x0) * hx + (w.z - z0) * hz, side = Math.abs(-(w.x - x0) * hz + (w.z - z0) * hx); return ax > 0 && ax < 2.6 && side < 0.8; })
+        || cyclists.some(o => o !== c && o.lane === c.lane && o.s > c.s && o.s - c.s < 1.8);
+      c.v = blocked ? Math.max(0, c.v - BRAKE * dt) : Math.min(c.cruise, c.v + ACCEL * 0.5 * dt);
+      c.s += c.v * dt;
+      if (c.s > c.lane.length) c.s -= c.lane.length;
+      c.entity.setLocalPosition(x(x0), 0.05, z(z0));
+      c.entity.setLocalEulerAngles(0, Math.atan2(-hx, -hz) * pc.math.RAD_TO_DEG, 0);
+    }
+  }
+  ride(0, []);
+
   return {
     /** Moves the traffic on; `walkers` (grid cells) are the people cars stop for. */
-    update(dt: number, walkers: Cell[]) { step(dt, walkers); draw(dt); },
-    destroy() { vehicles.forEach(v => v.entity.destroy()); vehicles.length = 0; },
+    update(dt: number, walkers: Cell[]) { step(dt, walkers); draw(dt); ride(dt, walkers); },
+    destroy() { vehicles.forEach(v => v.entity.destroy()); vehicles.length = 0; riders.destroy(); cyclists.length = 0; },
   };
 }
