@@ -1,5 +1,5 @@
 import type * as pc from 'playcanvas';
-import type { GeoLandmark } from './geo';
+import type { GeoLandmark, GeoScene } from './geo';
 import type { MeshBuilder } from './geo-scenery';
 
 /**
@@ -16,6 +16,8 @@ export interface LandmarkKit {
   cell: number;
   /** Height of the river's surface in metres: below 0 where the place sinks its river (`look.river_m`), else 0. */
   water: number;
+  /** The whole place, for builders that read beyond their footprint (a hilltop's edge, its anchors). */
+  scene: GeoScene;
   /** A plain material, shared by name and colour within the scene. */
   mat(name: string, hex: string, gloss?: number, glow?: number): pc.StandardMaterial;
   /**

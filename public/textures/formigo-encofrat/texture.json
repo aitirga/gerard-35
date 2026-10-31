@@ -1,0 +1,29 @@
+{
+  "id": "formigo-encofrat",
+  "name": "Formigó encofrat",
+  "kind": "material",
+  "size_m": [
+    1.55,
+    1.55
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "concrete_layers",
+    "name": "Concrete Layers",
+    "url": "https://polyhaven.com/a/concrete_layers",
+    "author": "Amal Kumar",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven concrete_layers --id formigo-encofrat",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#6d655e",
+  "made": "2026-10-30"
+}

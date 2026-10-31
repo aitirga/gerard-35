@@ -57,10 +57,12 @@ export function createPropKit() {
     yucca: [mat('Yuca', '#3f7a45'), mat('Yuca clara', '#5e9a55'), mat('Yuca sombra', '#2f5c38')],
     cedar: [mat('Cedro', '#3e5a4b'), mat('Cedro claro', '#55715f'), mat('Cedro sombra', '#2f4639')],
     pine: [mat('Pino piñonero', '#52703f'), mat('Pino claro', '#68854d'), mat('Pino sombra', '#3d5531')],
+    aleppo: [mat('Pino carrasco', '#56602f'), mat('Pino carrasco claro', '#6f7840'), mat('Pino carrasco sombra', '#3d4624')],
   };
   const barkMat = mat('Troncos', '#817058');
   const wood = mat('Tutor de madera', '#b48a55', 0.1);
   const oliveBark = mat('Tronco de olivo', '#8a8173');
+  const pineBark = mat('Tronco de pino', '#6e5446');
   const stone = mat('Piedra clara', '#e3dec8');
   const soil = mat('Tierra', '#6f5e49');
   const clay = mat('Maceta de barro', '#b8704f');
@@ -166,6 +168,17 @@ export function createPropKit() {
       }
       crowns.push(part(pivot, 'Copa soleada', 'sphere', palette[1], [0.1 * s, 3.3 * s, -0.05 * s], [1.7 * s, 0.4 * s, 1.6 * s]));
       [low, high, radius, sway] = [2.7 * s, 3.4 * s, 1.35 * s, 0.6];
+    } else if (species === 'aleppo') {
+      // An Aleppo pine: a tall trunk leaning a little, under a broad, flat-topped crown of loose tufts.
+      const lean = (n(5) - 0.5) * 18 * Math.PI / 180, h = 2.1 * s;
+      part(pivot, 'Tronco de pino', 'cylinder', pineBark, [-Math.sin(lean) * h / 2, h / 2, 0], [0.15, h, 0.15], [0, 0, lean * 180 / Math.PI]);
+      const top = [-Math.sin(lean) * h, Math.cos(lean) * h];
+      crowns.push(part(pivot, 'Copa de pino', 'sphere', palette[0], [top[0], top[1] + 0.15 * s, 0], [1.9 * s, 0.55 * s, 1.6 * s]));
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5 + n(i + 20)) * Math.PI * 2, d = (0.55 + n(i + 30) * 0.3) * s, r = (0.6 + n(i + 40) * 0.3) * s;
+        crowns.push(part(pivot, 'Mata de pino', 'sphere', palette[i % 3], [top[0] + Math.cos(a) * d, top[1] + (0.05 + n(i + 50) * 0.3) * s, Math.sin(a) * d], [r * 1.3, r * 0.5, r * 1.3]));
+      }
+      [low, high, radius, sway] = [top[1] - 0.2 * s, top[1] + 0.5 * s, 1 * s, 0.6];
     } else if (species === 'olive') {
       // A short, split trunk under a round, silvery crown.
       part(pivot, 'Tronco', 'cylinder', oliveBark, [0, 0.32 * s, 0], [0.22, 0.66 * s, 0.22], [0, 0, 8]);

@@ -94,6 +94,11 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: .07, shadows: [-.008, .002, .014], highlights: [.018, .01, -.01], contrast: 1.04, saturation: 1.02 },
     enhance: { vibrance: .1 },
   },
+  /** The Búnkers del Carmel at sunset: golden light on dry grass and concrete, lilac shade, a soft haze. */
+  'bunkers-carmel': {
+    grade: { temperature: .07, lift: [.012, .006, .012], shadows: [.008, -.004, .022], highlights: [.024, .012, -.014], contrast: 1.05, saturation: 1.02 },
+    enhance: { highlights: -.1, vibrance: .08 },
+  },
   /** La torre de Uri: fear, violet-black shade that stays deep and a cold, unsure light. */
   'cardedeu-laberinto': {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },

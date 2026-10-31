@@ -157,7 +157,7 @@ runs before rendering the ground, which then has nothing to render).
 | Poble Sec | L3 | Poble Sec | On the map |
 | Barceloneta | L4 | The beach | On the map |
 | Sagrada Família | L5 | The temple's surroundings and its inside | On the map |
-| El Carmel | L5 | The Búnkers del Carmel | On the map |
+| El Carmel | L5 | `bunkers-carmel` (the Búnkers del Carmel at sunset) | Playable |
 
 Other changes, where the real lines meet: Catalunya (L1, L3), Urquinaona (L1, L4), Passeig de
 Gràcia (L3, L4), Diagonal (L3, L5) and Verdaguer (L4, L5). From home the beach is a change at
@@ -209,6 +209,12 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
   the camera, blocks of flats, the L1 entrance and the castle on the roof.
+- **`bunkers-carmel`**: the Búnkers del Carmel on the Turó de la Rovira at sunset
+  (`docs/places/bunkers.md`), a real-data zone with the battery drawn from the MUHBA's
+  archaeological plan. The seven gun pits in board-marked concrete, the command post, the shacks'
+  walls and floors, scrub and pines down to the El Carmel entrance (compressed 0.8 km), people
+  sitting on the parapets. The first hilltop (`drop`): beyond its brow lies the real city from the
+  network map's model, remapped round the hill down to the sea, with her castle far off.
 
 ## The TV news set
 

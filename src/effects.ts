@@ -95,6 +95,8 @@ const AIR: Partial<Record<string, Air>> = {
   // Pollen and the plane trees' falling leaves, on a light wind along the avenue.
   'meridiana-calle': { kinds: [{ kind: 'pollen', density: 3, low: .4, high: 3 }, { kind: 'dryleaf', density: 1.2, low: .4, high: 4 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.45, 0, .05], turbulence: .9 },
   alegia: { kinds: [{ kind: 'drizzle', density: 18, low: .5, high: 7 }, { kind: 'mist', density: .5, low: .2, high: 1.6 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.3, 0, .2], turbulence: .8 },
+  // The Búnkers del Carmel at sunset: gusts over the top, dust glinting in the low sun.
+  'bunkers-carmel': { kinds: [{ kind: 'mote', density: 6, low: .3, high: 3 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.9, 0, .35], turbulence: 1.4 },
 };
 /** What particles need of a scene's scenery: its floors, a sunk river's water, its grid and its houses' volumes. */
 interface SceneShape {

@@ -124,6 +124,12 @@ export const LINES_2 = {
     afterFall: both(aitor('Si esos guardianes son tan fuertes, necesitamos a alguien más. ¿A quién llamarías tú?')),
     clue: both(aitor('¿No decían en la tele que la R4 ahora llega hasta Cardedeu? Allí viven Nuria y Uri.')),
   },
+  /** The Búnkers del Carmel's north end: the camera turns to her castle far off on Trinitat Vella. */
+  bunkersNorte: both(
+    gerard('Al norte, Nou Barris. Por ahí queda nuestra casa, junto a la Meridiana.'),
+    gerard('Y al fondo, en la Trinitat… el rosa. Desde aquí arriba se ve lo grande que se ha hecho.'),
+    aitor('Toda la ciudad mirando al mar, y ella ahí, a nuestra espalda.'),
+  ),
   /** The bus shelter on the Meridiana: the same clue, a second time. */
   clueR4Marquesina: alone(
     gerard('Un cartel de Rodalies en la marquesina: «R4 · Nuevo: ahora de La Sagrera a Cardedeu».'),

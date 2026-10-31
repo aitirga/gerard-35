@@ -1,0 +1,1182 @@
+{
+  "id": "bunkers-carmel",
+  "name": "Búnkers del Carmel",
+  "region": "Turó de la Rovira, Horta-Guinardó, Barcelona",
+  "anchor": {
+    "address": "Turó de la Rovira, Carrer de Marià Labèrnia, Barcelona",
+    "lat": 41.41938,
+    "lon": 2.16175
+  },
+  "bounds_m": {
+    "west": -75,
+    "east": 46,
+    "north": -58,
+    "south": 42
+  },
+  "cell_m": 1.25,
+  "rotation_deg": 180,
+  "zoom": 12,
+  "spawn": {
+    "east_m": -54,
+    "south_m": -42
+  },
+  "storey_m": 3.0,
+  "reference": {
+    "checked": "2026-10-30",
+    "streetview_capture": "Not walked: Wikimedia Commons photos 2013-2024 and the MUHBA/Actium archaeological plan (1:500, 2015) are the references (docs/places/bunkers.md)",
+    "notes": [
+      "MAP DATA: OpenStreetMap (osm.json, fetched 2026-10-30) for the water tank (way/142894787), the officers' pavilion (way/1167567030), the concrete footways and steps, Carrer del Turó de la Rovira and the park. The battery's pieces the fetch does not keep or the map lacks (each gun pit, the twin emplacement, the parapets, the shacks' walls and floors, the slopes) are drawn in sketch.json from the MUHBA/Actium plan (1:500, 2015), georeferenced on the water tank and checked on the ICGC orthophoto and against the map's own outline of the battery (way/142894789), its wall arcs and the 2023 fence (barrier ways), within 2-3 m.",
+      "Anchor: the summit, 262 m (UTM 31N 429949.95, 4585652.90 in the Actium report). The hill is a narrow NE-SW ridge, 300 m long and 65 m wide on average; the battery fills its top, about 80 x 30 m.",
+      "Turned 180° (south up): the crest runs across the screen, the officers' pavilion and the NE gate on the left, the water tank on the right; the parapets and the city (Eixample, Sagrada Família, Torre Glòries, the sea: south-east) straight up; the north slope with its paths, Carrer del Turó de la Rovira and the El Carmel metro (north-west, 0.8 km) towards the camera. Trinitat Vella and the palace (NNE, 3.9 km) lie to the left, a little towards the camera: the backdrop brings them up to the view.",
+      "Battery (1937-38, Republican DECA): four Vickers 105 mm guns; seven firing positions survive as round pits 6-9 m across, sunk about a metre, with a low curved parapet of board-marked concrete (formwork lines, pebbly aggregate), a round gun mount in the middle and small square ammunition niches with rusty red steel doors in the parapet.",
+      "Shanty town 'Els Canons' (1944-1990): about 110 shacks and 600 people built on and between the emplacements; demolished for the 1992 Olympics. What remains: red-brick walls with white lime render, concrete floor slabs and patches of floor tiles (25 x 25 cm grès, red terracotta, grey and white hydraulic tiles), steps, a fountain on the 1963 water tank.",
+      "Restored 2011 (MUHBA): concrete paths, grey gravel between the remains, black iron railings, five interpretation panels (dark steel lecterns), stone retaining walls of rubble (dry stone, M1-M16 in the plan).",
+      "Water tank (dipòsit, 1963): a concrete cylinder about 14 m across and 7 m high at the SW end, fenced, a railing and small huts on its roof.",
+      "Ground: bare rock (grey-brown slate and granite outcrops), dry gold grass (Hyparrhenia), crumbled earth, gravel. Plants: Aleppo pines and stone pines on the slopes, olive trees, prickly pears (figueres de moro) and agaves below the parapets, fennel, rosemary.",
+      "People: dozens to hundreds at sunset, sitting on the parapets and the long terrace's roof with their legs over the edge, phones up, a guitar, beer cans; graffiti on the shacks' brick walls.",
+      "Since 2 May 2023 a 2 m bar fence closes the summit at night: open 9:00-19:30 in summer and 9:00-17:30 in winter (Guàrdia Urbana and civic agents close the gates); still a point of conflict with neighbours in April 2026 (Diari Catalunya).",
+      "Access: on foot only. Bus 22 turns round on Carrer de la Gran Vista; the 119 and the V17 stop near Marià Labèrnia; the nearest metro stations, El Carmel and El Coll | La Teixonera (L5) and Alfons X (L4), are 15-25 minutes uphill. The game's El Carmel entrance stands at the foot of the west path, compressed from 0.8 km."
+    ],
+    "viewpoints": [
+      {
+        "name": "mirador",
+        "lat": 41.41915,
+        "lon": 2.16165,
+        "heading": 150,
+        "pitch": -5
+      },
+      {
+        "name": "bateria",
+        "lat": 41.41905,
+        "lon": 2.1613,
+        "heading": 55,
+        "pitch": 0
+      },
+      {
+        "name": "cami-oest",
+        "lat": 41.41965,
+        "lon": 2.161,
+        "heading": 110,
+        "pitch": 5
+      }
+    ]
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#e9e2d2",
+        "#ddd3bf",
+        "#e4dccb"
+      ],
+      "base": "#8e8577",
+      "trim": "#f2eee6",
+      "roof": "#b0a79a",
+      "roof_kind": "flat",
+      "facade": "rendered",
+      "ground": "masonry",
+      "levels": 2
+    },
+    "tank": {
+      "walls": [
+        "#a8a199"
+      ],
+      "roof": "#b3ada3",
+      "facade": "parapet",
+      "materials": {
+        "wall": "formigo",
+        "roof": "formigo"
+      }
+    },
+    "parapet": {
+      "walls": [
+        "#a8a194",
+        "#a39d91",
+        "#ada597"
+      ],
+      "roof": "#bab3a5",
+      "facade": "parapet",
+      "materials": {
+        "wall": "formigo-encofrat",
+        "roof": "formigo"
+      }
+    },
+    "shack": {
+      "walls": [
+        "#ece6da",
+        "#e4ddcf"
+      ],
+      "roof": "#d9d2c4",
+      "facade": "parapet",
+      "materials": {
+        "wall": "calc",
+        "roof": "calc"
+      }
+    },
+    "pavilion": {
+      "walls": [
+        "#d9cfbd"
+      ],
+      "base": "#8f877a",
+      "trim": "#efe9de",
+      "roof": "#a9a194",
+      "roof_kind": "flat",
+      "facade": "rendered",
+      "ground": "masonry",
+      "levels": 1
+    },
+    "floor": {
+      "walls": [
+        "#a4533a"
+      ],
+      "roof": "#b5664a",
+      "facade": "parapet",
+      "materials": {
+        "wall": "mao",
+        "roof": "rajola"
+      }
+    }
+  },
+  "buildings": {
+    "way/142894787": {
+      "style": "tank",
+      "levels": 2,
+      "label": "Dipòsit"
+    },
+    "way/1167567030": {
+      "style": "pavilion",
+      "levels": 1,
+      "label": "Pavelló"
+    },
+    "tag:building=ruins": {
+      "style": "parapet"
+    },
+    "sketch/barraca-1": {
+      "style": "shack"
+    },
+    "sketch/barraca-2": {
+      "style": "shack"
+    },
+    "sketch/barraca-3": {
+      "style": "shack"
+    },
+    "sketch/excavacio": {
+      "style": "floor"
+    }
+  },
+  "trees": {
+    "forest_every_m": 9,
+    "species": [
+      "aleppo",
+      "aleppo",
+      "olive"
+    ]
+  },
+  "props": [
+    {
+      "kind": "metro",
+      "east_m": -50,
+      "south_m": -40,
+      "name": "El Carmel",
+      "line": "L5"
+    }
+  ],
+  "places": [
+    {
+      "id": "station-el-carmel",
+      "label": "Bajar al metro",
+      "east_m": -52,
+      "south_m": -38.5,
+      "step": {
+        "east_m": -51.25,
+        "south_m": -40,
+        "w": 3,
+        "d": 1
+      }
+    },
+    {
+      "id": "bunkers-ciudad",
+      "label": "Mirar la ciudad",
+      "east_m": 2,
+      "south_m": 14.5,
+      "lines": [
+        "Toda Barcelona a los pies, hasta el mar. La Sagrada Família, la torre Glòries, el puerto al fondo.",
+        "Desde aquí arriba no se oye nada. Solo el viento y alguien tocando la guitarra."
+      ]
+    },
+    {
+      "id": "bunkers-canonera",
+      "label": "Mirar el emplazamiento",
+      "east_m": -30.5,
+      "south_m": 22.5,
+      "lines": [
+        "Un círculo de hormigón con un muñón en medio. Aquí había un cañón antiaéreo en la guerra.",
+        "Ahora la gente se sienta en el borde con las piernas colgando, a esperar que se ponga el sol."
+      ]
+    },
+    {
+      "id": "bunkers-baldosas",
+      "label": "Mirar las baldosas",
+      "east_m": -6.8,
+      "south_m": 7.6,
+      "lines": [
+        "Baldosas en medio de la hierba seca: rojas, grises, alguna con flores.",
+        "Eran los suelos de las barracas. Aquí arriba vivió gente hasta el noventa."
+      ]
+    },
+    {
+      "id": "bunkers-deposito",
+      "label": "Mirar el depósito",
+      "east_m": -35.5,
+      "south_m": 20,
+      "lines": [
+        "El depósito del agua, redondo y gris. Lo pusieron cuando aquí todavía había barracas."
+      ]
+    },
+    {
+      "id": "bunkers-pabellon",
+      "label": "Mirar el pabellón",
+      "east_m": 40,
+      "south_m": -12,
+      "lines": [
+        "El pabellón de los oficiales, ahora un museo pequeño. Abre por las mañanas; a esta hora está cerrado."
+      ]
+    },
+    {
+      "id": "bunkers-restos",
+      "label": "Mirar los restos",
+      "east_m": -11.5,
+      "south_m": 0.5,
+      "lines": [
+        "Paredes de ladrillo encaladas, a media altura. Una barraca, con su puerta y todo.",
+        "Alguien ha dejado una lata de cerveza encima, bien derecha."
+      ]
+    },
+    {
+      "id": "bunkers-valla",
+      "label": "Mirar la valla",
+      "east_m": -35.55,
+      "south_m": 1.48,
+      "lines": [
+        "Una valla de barrotes de dos metros alrededor de toda la cima. La cierran al caer la tarde.",
+        "Por ahora la puerta está abierta."
+      ]
+    },
+    {
+      "id": "bunkers-norte",
+      "label": "Mirar al norte",
+      "east_m": 30,
+      "south_m": -20
+    }
+  ],
+  "osm_props": {
+    "bin": {}
+  },
+  "drop": {
+    "note": "The hilltop: the ground stays inside `keep` (east/south metres, the brow 1.5-2 m beyond the parapets and round the water tank) and the hill falls away beyond it, to the city below (the `vista` landmark).",
+    "keep": [
+      [
+        80,
+        -90
+      ],
+      [
+        80,
+        6
+      ],
+      [
+        44,
+        5.5
+      ],
+      [
+        37,
+        5.2
+      ],
+      [
+        34.5,
+        -1.5
+      ],
+      [
+        32.8,
+        -9.6
+      ],
+      [
+        28.4,
+        -4.8
+      ],
+      [
+        21.4,
+        5.6
+      ],
+      [
+        20.6,
+        9
+      ],
+      [
+        18.6,
+        13.4
+      ],
+      [
+        15,
+        15
+      ],
+      [
+        11.7,
+        13.8
+      ],
+      [
+        -3.8,
+        23
+      ],
+      [
+        -5,
+        26
+      ],
+      [
+        -8,
+        27.8
+      ],
+      [
+        -12,
+        27.8
+      ],
+      [
+        -26,
+        27.8
+      ],
+      [
+        -29,
+        29.4
+      ],
+      [
+        -33,
+        29.2
+      ],
+      [
+        -35,
+        31
+      ],
+      [
+        -37,
+        37.5
+      ],
+      [
+        -41.7,
+        39.3
+      ],
+      [
+        -46.5,
+        38
+      ],
+      [
+        -49.5,
+        33
+      ],
+      [
+        -60,
+        30
+      ],
+      [
+        -90,
+        28
+      ],
+      [
+        -90,
+        -90
+      ]
+    ],
+    "depth_m": 28,
+    "run_m": 16
+  },
+  "look": {
+    "materials": {
+      "ground": "herba-seca",
+      "grass": "herba-seca",
+      "forest": {
+        "texture": "herba-seca",
+        "tint": "#988a6a"
+      },
+      "square": {
+        "texture": "grava",
+        "tint": "#a7a39b"
+      },
+      "footway": {
+        "texture": "formigo",
+        "tint": "#bdb6a8"
+      },
+      "road": {
+        "texture": "asfalt",
+        "tint": "#56534f"
+      },
+      "flank": {
+        "texture": "roca",
+        "tint": "#a08e6c"
+      }
+    }
+  },
+  "landmarks": [
+    {
+      "kind": "vista",
+      "id": "vista",
+      "east_m": 0,
+      "south_m": 0,
+      "rotation_deg": 180,
+      "solid": false,
+      "params": {
+        "below_m": 28,
+        "map": [
+          1240.9,
+          -1029.8
+        ],
+        "map_turn_deg": -60,
+        "scale_m": 6,
+        "near_m": 300,
+        "gap_m": 8,
+        "height": 1.0,
+        "min_m": 0.3,
+        "castle_m": 30,
+        "castle_scale": 1.5
+      }
+    },
+    {
+      "kind": "canonera",
+      "id": "canonera-a",
+      "east_m": -30.5,
+      "south_m": 23.3,
+      "solid": false,
+      "params": {
+        "radius_m": 2.73,
+        "wall_m": 2.78,
+        "niches": [
+          55,
+          110,
+          165
+        ]
+      },
+      "textures": [
+        "formigo-encofrat"
+      ]
+    },
+    {
+      "kind": "canonera",
+      "id": "canonera-b",
+      "east_m": -7.7,
+      "south_m": 22.3,
+      "solid": false,
+      "params": {
+        "radius_m": 1.92,
+        "wall_m": 1.97,
+        "niches": [
+          215,
+          270,
+          325
+        ]
+      },
+      "textures": [
+        "formigo-encofrat"
+      ]
+    },
+    {
+      "kind": "canonera",
+      "id": "canonera-c",
+      "east_m": -18.8,
+      "south_m": 10.6,
+      "solid": false,
+      "params": {
+        "radius_m": 1.43,
+        "wall_m": 1.48,
+        "niches": [
+          106,
+          161,
+          216
+        ]
+      },
+      "textures": [
+        "formigo-encofrat"
+      ]
+    },
+    {
+      "kind": "canonera",
+      "id": "canonera-d",
+      "east_m": 15.3,
+      "south_m": 9.3,
+      "solid": false,
+      "params": {
+        "radius_m": 1.85,
+        "wall_m": 1.9,
+        "niches": [
+          170,
+          225,
+          280
+        ]
+      },
+      "textures": [
+        "formigo-encofrat"
+      ]
+    },
+    {
+      "kind": "canonera",
+      "id": "canonera-e",
+      "east_m": 7.0,
+      "south_m": -1.0,
+      "solid": false,
+      "params": {
+        "radius_m": 1.25,
+        "wall_m": 1.3,
+        "niches": [
+          155,
+          210,
+          265
+        ]
+      },
+      "textures": [
+        "formigo-encofrat"
+      ]
+    },
+    {
+      "kind": "canonera",
+      "id": "canonera-f",
+      "east_m": 12.0,
+      "south_m": -15.1,
+      "solid": false,
+      "params": {
+        "radius_m": 1.43,
+        "wall_m": 1.48,
+        "niches": [
+          324,
+          19,
+          74
+        ]
+      },
+      "textures": [
+        "formigo-encofrat"
+      ]
+    },
+    {
+      "kind": "canonera",
+      "id": "canonera-g",
+      "east_m": 23.5,
+      "south_m": -18.6,
+      "solid": false,
+      "params": {
+        "radius_m": 2.04,
+        "wall_m": 2.09,
+        "niches": [
+          285,
+          340,
+          35
+        ]
+      },
+      "textures": [
+        "formigo-encofrat"
+      ]
+    },
+    {
+      "kind": "gent",
+      "id": "gent-terrassa-1",
+      "east_m": -2.03,
+      "south_m": 19.44,
+      "rotation_deg": 30.69,
+      "size_m": [
+        6.49,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "seat_m": 1.0,
+        "count": 4,
+        "seed": 1
+      }
+    },
+    {
+      "kind": "gent",
+      "id": "gent-terrassa-2",
+      "east_m": 7.27,
+      "south_m": 13.92,
+      "rotation_deg": 30.69,
+      "size_m": [
+        7.93,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "seat_m": 1.0,
+        "count": 5,
+        "seed": 2,
+        "guitar": 2
+      }
+    },
+    {
+      "kind": "gent",
+      "id": "gent-comandament",
+      "east_m": -19.1,
+      "south_m": 25.47,
+      "rotation_deg": -0.0,
+      "size_m": [
+        13.06,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "seat_m": 1.6,
+        "count": 7,
+        "seed": 3
+      }
+    },
+    {
+      "kind": "gent",
+      "id": "gent-ampit",
+      "east_m": 23.19,
+      "south_m": -0.91,
+      "rotation_deg": 56.56,
+      "size_m": [
+        11.43,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "seat_m": 1.0,
+        "count": 5,
+        "seed": 4
+      }
+    },
+    {
+      "kind": "gent",
+      "id": "gent-canonera-a",
+      "east_m": -30.5,
+      "south_m": 27.25,
+      "rotation_deg": 0.0,
+      "size_m": [
+        1.7,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "seat_m": 1.2,
+        "count": 2,
+        "seed": 10
+      }
+    },
+    {
+      "kind": "gent",
+      "id": "gent-canonera-b",
+      "east_m": -6.13,
+      "south_m": 25.02,
+      "rotation_deg": 30.0,
+      "size_m": [
+        1.7,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "seat_m": 1.2,
+        "count": 2,
+        "seed": 11
+      }
+    },
+    {
+      "kind": "gent",
+      "id": "gent-canonera-d",
+      "east_m": 17.14,
+      "south_m": 11.76,
+      "rotation_deg": 36.87,
+      "size_m": [
+        1.7,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "seat_m": 1.2,
+        "count": 2,
+        "seed": 5
+      }
+    },
+    {
+      "kind": "gent",
+      "id": "gent-mirador",
+      "east_m": 4.84,
+      "south_m": 13.45,
+      "rotation_deg": 30.69,
+      "size_m": [
+        2.4,
+        0.8
+      ],
+      "params": {
+        "stand": true,
+        "count": 3,
+        "seed": 6
+      }
+    },
+    {
+      "kind": "matoll",
+      "id": "figueres-terrassa",
+      "east_m": 3.49,
+      "south_m": 17.45,
+      "rotation_deg": -149.31,
+      "size_m": [
+        18.02,
+        1.2
+      ],
+      "params": {
+        "kind": "figuera",
+        "count": 6,
+        "seed": 1
+      }
+    },
+    {
+      "kind": "matoll",
+      "id": "figueres-ampit",
+      "east_m": 24.11,
+      "south_m": -0.3,
+      "rotation_deg": -123.44,
+      "size_m": [
+        12.7,
+        1.2
+      ],
+      "params": {
+        "kind": "figuera",
+        "count": 4,
+        "seed": 2
+      }
+    },
+    {
+      "kind": "matoll",
+      "id": "atzavares-comandament",
+      "east_m": -19.1,
+      "south_m": 27.0,
+      "rotation_deg": 180.0,
+      "size_m": [
+        14.2,
+        1.2
+      ],
+      "params": {
+        "kind": "atzavara",
+        "count": 4,
+        "seed": 3
+      }
+    },
+    {
+      "kind": "matoll",
+      "id": "atzavares-cami",
+      "east_m": -44,
+      "south_m": -30,
+      "size_m": [
+        3,
+        2.5
+      ],
+      "params": {
+        "kind": "atzavara",
+        "count": 2,
+        "seed": 4
+      }
+    },
+    {
+      "kind": "matoll",
+      "id": "figueres-cami",
+      "east_m": -40,
+      "south_m": -8,
+      "size_m": [
+        3,
+        2.5
+      ],
+      "params": {
+        "kind": "figuera",
+        "count": 2,
+        "seed": 5
+      }
+    },
+    {
+      "kind": "matoll",
+      "id": "atzavares-diposit",
+      "east_m": -48,
+      "south_m": 22,
+      "size_m": [
+        3,
+        2.5
+      ],
+      "params": {
+        "kind": "atzavara",
+        "count": 3,
+        "seed": 6
+      }
+    },
+    {
+      "kind": "matoll",
+      "id": "figueres-pavello",
+      "east_m": 30,
+      "south_m": -26,
+      "size_m": [
+        3,
+        2.5
+      ],
+      "params": {
+        "kind": "figuera",
+        "count": 2,
+        "seed": 7
+      }
+    },
+    {
+      "kind": "matoll",
+      "id": "matoll",
+      "east_m": 0,
+      "south_m": 0,
+      "solid": false,
+      "params": {
+        "over": "forest"
+      }
+    },
+    {
+      "kind": "atril",
+      "id": "atril-bateria",
+      "east_m": -20.0,
+      "south_m": 19.4,
+      "rotation_deg": 45,
+      "size_m": [
+        1.2,
+        0.8
+      ],
+      "params": {
+        "title": "Bateria antiaèria",
+        "seed": 1
+      }
+    },
+    {
+      "kind": "atril",
+      "id": "atril-barraques",
+      "east_m": -6.0,
+      "south_m": 2.0,
+      "rotation_deg": 45,
+      "size_m": [
+        1.2,
+        0.8
+      ],
+      "params": {
+        "title": "Barraques dels Canons",
+        "seed": 2
+      }
+    },
+    {
+      "kind": "atril",
+      "id": "atril-turo",
+      "east_m": 12.0,
+      "south_m": 3.0,
+      "rotation_deg": 45,
+      "size_m": [
+        1.2,
+        0.8
+      ],
+      "params": {
+        "title": "Turó de la Rovira",
+        "seed": 3
+      }
+    },
+    {
+      "kind": "atril",
+      "id": "atril-pavello",
+      "east_m": 30.5,
+      "south_m": -13.5,
+      "rotation_deg": 45,
+      "size_m": [
+        1.2,
+        0.8
+      ],
+      "params": {
+        "title": "Pavelló d'oficials",
+        "seed": 4
+      }
+    },
+    {
+      "kind": "barana",
+      "id": "barana-excavacio-1",
+      "east_m": -13.39,
+      "south_m": 3.27,
+      "rotation_deg": -136.47,
+      "size_m": [
+        6.12,
+        0.3
+      ],
+      "solid": false,
+      "params": {
+        "h": 1
+      }
+    },
+    {
+      "kind": "barana",
+      "id": "barana-excavacio-2",
+      "east_m": -9.19,
+      "south_m": 3.49,
+      "rotation_deg": 130.6,
+      "size_m": [
+        6.13,
+        0.3
+      ],
+      "solid": false,
+      "params": {
+        "h": 1
+      }
+    },
+    {
+      "kind": "barana",
+      "id": "barana-excavacio-3",
+      "east_m": -9.41,
+      "south_m": 8.03,
+      "rotation_deg": 45.0,
+      "size_m": [
+        6.26,
+        0.3
+      ],
+      "solid": false,
+      "params": {
+        "h": 1
+      }
+    },
+    {
+      "kind": "barana",
+      "id": "barana-excavacio-4",
+      "east_m": -13.61,
+      "south_m": 7.81,
+      "rotation_deg": -50.71,
+      "size_m": [
+        6.29,
+        0.3
+      ],
+      "solid": false,
+      "params": {
+        "h": 1
+      }
+    },
+    {
+      "kind": "barana",
+      "id": "barana-diposit",
+      "east_m": -41.66,
+      "south_m": 31.18,
+      "size_m": [
+        11.6,
+        11.6
+      ],
+      "solid": false,
+      "params": {
+        "ring": true,
+        "y_m": 6,
+        "h": 1,
+        "bars": false,
+        "colour": "#c3c5c1"
+      }
+    },
+    {
+      "kind": "barana",
+      "id": "tanca",
+      "east_m": -32.76,
+      "south_m": 5.23,
+      "rotation_deg": 146.6,
+      "size_m": [
+        6.8,
+        1.3
+      ],
+      "params": {
+        "h": 2,
+        "every_m": 0.16,
+        "colour": "#2f3133"
+      }
+    },
+    {
+      "kind": "barana",
+      "id": "tanca-2",
+      "east_m": -38.44,
+      "south_m": 1.49,
+      "rotation_deg": 146.6,
+      "size_m": [
+        2.0,
+        1.3
+      ],
+      "params": {
+        "h": 2,
+        "every_m": 0.16,
+        "colour": "#2f3133"
+      }
+    },
+    {
+      "kind": "gent",
+      "id": "agent-civic",
+      "east_m": -34.35,
+      "south_m": 3.1,
+      "rotation_deg": 225,
+      "size_m": [
+        0.8,
+        0.8
+      ],
+      "params": {
+        "stand": true,
+        "count": 1,
+        "vest": true,
+        "seed": 9
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-1",
+      "east_m": -14,
+      "south_m": -3.5,
+      "rotation_deg": 0,
+      "size_m": [
+        3,
+        2
+      ],
+      "solid": false,
+      "params": {
+        "kind": "terracota",
+        "seed": 1
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-2",
+      "east_m": -6.8,
+      "south_m": -7.8,
+      "rotation_deg": 37,
+      "size_m": [
+        2.5,
+        2
+      ],
+      "solid": false,
+      "params": {
+        "kind": "terracota",
+        "seed": 2
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-3",
+      "east_m": -3,
+      "south_m": 4.5,
+      "rotation_deg": 74,
+      "size_m": [
+        2.2,
+        1.6
+      ],
+      "solid": false,
+      "params": {
+        "kind": "terracota",
+        "seed": 3
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-4",
+      "east_m": -19.5,
+      "south_m": 2.5,
+      "rotation_deg": 111,
+      "size_m": [
+        2,
+        1.6
+      ],
+      "solid": false,
+      "params": {
+        "kind": "hidraulica",
+        "seed": 4
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-5",
+      "east_m": -9.5,
+      "south_m": -6.2,
+      "rotation_deg": 148,
+      "size_m": [
+        1.8,
+        1.4
+      ],
+      "solid": false,
+      "params": {
+        "kind": "hidraulica",
+        "seed": 5
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-6",
+      "east_m": 0,
+      "south_m": 5,
+      "rotation_deg": 5,
+      "size_m": [
+        5,
+        3
+      ],
+      "solid": false,
+      "params": {
+        "kind": "herba",
+        "seed": 6
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-7",
+      "east_m": 22,
+      "south_m": -8,
+      "rotation_deg": 42,
+      "size_m": [
+        4,
+        3
+      ],
+      "solid": false,
+      "params": {
+        "kind": "herba",
+        "seed": 7
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-8",
+      "east_m": -26,
+      "south_m": 12,
+      "rotation_deg": 79,
+      "size_m": [
+        4,
+        2.5
+      ],
+      "solid": false,
+      "params": {
+        "kind": "herba",
+        "seed": 8
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-9",
+      "east_m": 33,
+      "south_m": -16,
+      "rotation_deg": 116,
+      "size_m": [
+        5,
+        3
+      ],
+      "solid": false,
+      "params": {
+        "kind": "herba",
+        "seed": 9
+      }
+    },
+    {
+      "kind": "rajoles",
+      "id": "rajoles-10",
+      "east_m": 5,
+      "south_m": -10,
+      "rotation_deg": 153,
+      "size_m": [
+        3,
+        2
+      ],
+      "solid": false,
+      "params": {
+        "kind": "herba",
+        "seed": 10
+      }
+    }
+  ],
+  "anchors": {
+    "castillo": {
+      "note": "Her castle far off, where the camera can see it past the hill's shoulder: 30° east of Trinitat Vella's real bearing (35°) and nearer, drawn by the `vista` landmark; `bunkers-norte` turns the camera to it.",
+      "east_m": 68,
+      "south_m": -31.7,
+      "y_m": -21
+    }
+  }
+}

@@ -146,6 +146,7 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `places` | Things to look at: `id`, `label`, `lines`, and either `osm` (any feature id) or `east_m`/`south_m`. With `to` (`environment`, `cell`) instead of `lines` it is a door; with neither, the story answers it (station entrances `station-<id>`, clues). `step` (a position, `w` and `d` in cells) makes those cells use the place when walked into: a station's stair (the three cells beside its `metro` prop) |
 | `labels` | Ground text: `text`, `east_m`, `south_m`, `width` in cells |
 | `anchors` | Named points for the game's own pieces: `east_m`, `south_m`, optional `y_m` (height) |
+| `drop` | A hilltop: `keep` (a polygon in east/south metres, the brow), `depth_m` and `run_m`. The ground ends at the brow and falls away beyond it (see [Hilltops](#hilltops)) |
 | `landmarks` | Pieces drawn by their own module in `src/landmarks/<kind>.ts`: `kind`, a position (`east_m`/`south_m`, `x_m`/`z_m` or `osm`), `rotation_deg`, `size_m`, `solid`, `params`, `textures` (see [Landmarks](#landmarks)) |
 | `osm_landmarks` | Landmarks the map gives in every zone (`fountain`: drinking water, `kiosk`: shop=kiosk): `{"kiosk": false}` turns one off, `{"fountain": {"colour": "#24384a"}}` passes it params |
 
@@ -156,7 +157,7 @@ the `id` fields in `src/geo/<zone>.json` after a first build.
 | `walls` | List of render colours; each building gets one |
 | `base`, `trim`, `roof` | Stone plinth, frames/bands/timber, roof tiles |
 | `roof_kind` | `hip`, `gable`, `pyramid`, `flat`. `flat` is a tiled terrace on the real outline with a parapet; footprints that fill less than 85 % of their oriented box (an L, a courtyard) get the same outline with their own roof tiles |
-| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (Basque framing over whitewash, an atlas of three bays by two storeys: crooked posts, braces, wooden or iron balconies with geraniums, board shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks, painted as an atlas of four bays by three storeys that starts at a different bay on every wall: each bay keeps its kind all the way up, a window, twin windows, a balcony with an iron or panel railing, plants, washing and sometimes an awning, or an enclosed aluminium gallery, while blinds, lit flats and air conditioners change from flat to flat), `school` (a band of glazing with coloured frames), `mall` (blank concrete with a thin stripe in the trim colour), `curtain` (an office tower in dark glass, a few windows lit) |
+| `facade` | Upper floors: `rendered` (window, green shutters, wooden rail), `timber` (Basque framing over whitewash, an atlas of three bays by two storeys: crooked posts, braces, wooden or iron balconies with geraniums, board shutters), `iron-balconies` (French windows, iron railings, geraniums, white floor bands), `ashlar` (stone courses), `ashlar-windows` (stone with arched windows), `flats` (Barcelona blocks, painted as an atlas of four bays by three storeys that starts at a different bay on every wall: each bay keeps its kind all the way up, a window, twin windows, a balcony with an iron or panel railing, plants, washing and sometimes an awning, or an enclosed aluminium gallery, while blinds, lit flats and air conditioners change from flat to flat), `school` (a band of glazing with coloured frames), `mall` (blank concrete with a thin stripe in the trim colour), `curtain` (an office tower in dark glass, a few windows lit), `parapet` (a low wall in one real material at its real size, capped flat with no bays and no roof: the Búnkers' concrete, a shack's whitewash, a water tank; `materials.wall` for its sides, `materials.roof` for its cap) |
 | `ground` | Ground floor: `masonry` (rubble stone, wooden door, barred window), `arcade` (round arches with lit shops), `ashlar`, `ashlar-arcade`, `shops` (shop windows under striped awnings, some shutters down and tagged), `lobby` (glass doors under a coloured band), `mall-front` (lit glass under a wavy concrete canopy) |
 | `levels` | Default storeys (OSM `building:levels` or `height` win when present) |
 | `balcony_m`, `balcony`, `cornice`, `rooftop`, `party` | Relief as real geometry: balcony slabs `balcony_m` deep every storey on the walls the camera sees (fronts in `balcony`), a cornice under the parapet, a flat roof's clutter (stair and lift housings, water tanks, aerials, dishes, air conditioners) and bare party walls in the `party` colour where a block rises over its neighbour |
@@ -487,6 +488,33 @@ draw calls stay low; text in the world is Spanish or Catalan as on the street, n
 kind with no module yet (data merged before code) draws a plain block on its footprint and warns;
 `tests/materials.test.mjs` fails until the module exists. Make a new landmark reachable from the
 development picker (`PLACES` in `src/jump-menu.ts`) like any new place.
+
+## Hilltops
+
+A zone on a hilltop (the Búnkers del Carmel, `docs/places/bunkers.md`) ends at its brow instead
+of at a plinth. Set it with `drop` in `zone.json`:
+
+```json
+"drop": { "keep": [[80, -90], [80, 6], [44, 5.5], [-90, 28], [-90, -90]], "depth_m": 28, "run_m": 16 }
+```
+
+- **`tools/geo.py`.** The polygon is clipped to the map. Every area, path and building outside it
+  is cut away, and its cells are painted solid (`D`, grey in the preview). The scene gets
+  `drop: {edge, depth, run}` in cells.
+- **`src/geo-scenery.ts`.** The ground ends at the edge. A flank falls `depth` over `run` from it
+  with a smoothstep, so the top rounds over and the foot eases out, shaded round (a normal at every
+  corner, not flat facets). It wears the look's `flank` material (`look.materials.flank`) with low
+  scrub on it.
+- **The camera's sides.** The sides the camera looks at run out up to 2.5 times further
+  (`flankRun` in `src/geo.ts`), so they read as a slope rather than a cliff. They are the hill's
+  own undergrowth running on down: the zone's `forest` material, as thick with scrub as the zone's
+  own, so the zone's edge does not show as a wall of rock.
+- **`src/scenery.ts`.** It builds no plinth, and the backdrop lies `depth` lower.
+- **What lies below** is the zone's own landmarks. `kit.scene.drop` tells a builder where the flank
+  ends in every direction: `vista` lays the real city there.
+
+Put the brow a metre or two beyond the last thing people stand at, and keep the station and the
+paths inside it.
 
 ## Traffic
 

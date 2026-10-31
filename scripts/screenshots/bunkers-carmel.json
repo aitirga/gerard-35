@@ -1,0 +1,22 @@
+{
+  "title": "Búnkers del Carmel · Turó de la Rovira",
+  "description": "The surprise among Barcelona's places (docs/places/bunkers.md): the anti-aircraft battery's gun pits on the hilltop at sunset, the shacks' ruins, dry grass and pines, people on the parapets, and the whole real city below to the sea, with her castle far off on Trinitat Vella.",
+  "steps": [
+    { "open": "/?story=metro" },
+    { "teleport": "bunkers-carmel", "cell": [80, 66] },
+    { "shot": "arrival", "delay": 2500, "caption": "Llegada · El Carmel (L5), al pie de las escaleras" },
+    { "teleport": "bunkers-carmel", "cell": [66, 35] },
+    { "shot": "gate", "delay": 1500, "caption": "La valla de la cima, con la puerta abierta y una agente cívica" },
+    { "teleport": "bunkers-carmel", "cell": [35, 23] },
+    { "shot": "city", "delay": 6000, "caption": "La terraza larga · Barcelona a los pies, hasta el mar" },
+    { "press": "KeyR" },
+    { "shot": "overview", "delay": 3000, "caption": "Vista general · La cima, una isla seca sobre la ciudad" },
+    { "press": "KeyR" },
+    { "teleport": "bunkers-carmel", "cell": [61, 16] },
+    { "shot": "twin", "delay": 2000, "caption": "El emplazamiento doble, el puesto de mando y el depósito" },
+    { "teleport": "bunkers-carmel", "cell": [12, 49] },
+    { "shot": "north", "delay": 2000, "caption": "El extremo noreste · El pabellón de los oficiales" },
+    { "press": "KeyE" },
+    { "shot": "castle", "delay": 3000, "caption": "Mirar al norte · Su castillo, a lo lejos, sobre la Trinitat" }
+  ]
+}

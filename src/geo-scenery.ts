@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import type { GeoBuilding, GeoPoint, GeoRoad, GeoScene, GeoShop } from './geo';
+import { flankRun, type GeoBuilding, type GeoPoint, type GeoRoad, type GeoScene, type GeoShop } from './geo';
 import { shine } from './lighting';
 import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from './building-occlusion';
 import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
@@ -128,18 +128,24 @@ output.color = vec4f(mix(output.color.rgb, vec3f(${CUT_GLOW}), geoCutGlow * 0.75
 /** Collects triangles with flat normals; every face is wound so its normal agrees with `facing`. */
 export class MeshBuilder {
   positions: number[] = []; normals: number[] = []; uvs: number[] = []; indices: number[] = [];
-  tri(a: V3, b: V3, c: V3, facing: V3, ua: number[] = [0, 0], ub: number[] = [0, 0], uc: number[] = [0, 0]) {
+  /** `smooth`: a normal for each corner instead of the face's, so a curved surface drawn in facets shades round. */
+  tri(a: V3, b: V3, c: V3, facing: V3, ua: number[] = [0, 0], ub: number[] = [0, 0], uc: number[] = [0, 0], smooth?: [V3, V3, V3]) {
     const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
     let n: V3 = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
     const len = Math.hypot(...n) || 1;
     n = [n[0] / len, n[1] / len, n[2] / len];
-    if (n[0] * facing[0] + n[1] * facing[1] + n[2] * facing[2] < 0) { [b, c] = [c, b]; [ub, uc] = [uc, ub]; n = [-n[0], -n[1], -n[2]]; }
+    let [na, nb, nc] = smooth ?? [n, n, n];
+    if (n[0] * facing[0] + n[1] * facing[1] + n[2] * facing[2] < 0) {
+      [b, c] = [c, b]; [ub, uc] = [uc, ub]; n = [-n[0], -n[1], -n[2]];
+      [na, nb, nc] = smooth ? [na, nc, nb] : [n, n, n];
+    }
     const base = this.positions.length / 3;
-    for (const [p, t] of [[a, ua], [b, ub], [c, uc]] as const) { this.positions.push(...p); this.normals.push(...n); this.uvs.push(...t); }
+    for (const [p, t, m] of [[a, ua, na], [b, ub, nb], [c, uc, nc]] as const) { this.positions.push(...p); this.normals.push(...m); this.uvs.push(...t); }
     this.indices.push(base, base + 1, base + 2);
   }
-  quad(a: V3, b: V3, c: V3, d: V3, facing: V3, ua: number[], ub: number[], uc: number[], ud: number[]) {
-    this.tri(a, b, c, facing, ua, ub, uc); this.tri(a, c, d, facing, ua, uc, ud);
+  quad(a: V3, b: V3, c: V3, d: V3, facing: V3, ua: number[], ub: number[], uc: number[], ud: number[], smooth?: [V3, V3, V3, V3]) {
+    this.tri(a, b, c, facing, ua, ub, uc, smooth && [smooth[0], smooth[1], smooth[2]]);
+    this.tri(a, c, d, facing, ua, uc, ud, smooth && [smooth[0], smooth[2], smooth[3]]);
   }
   /** An upright box round its centre, UVs in metres on every face (landmarks that must join a cut mesh). */
   box([cx, cy, cz]: V3, [w, h, d]: V3) {
@@ -370,7 +376,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   const dry = (polys: GeoPoint[][]) => sunk > 0 ? carve(polys, scene.areas.water) : polys;
   const groundMat = look.ground === 'panot' ? surface('Panot gris', 'ground', panot(), 0.25, 0.08)
     : surface('Suelo urbano', 'ground', speckles('#cbc2ab', ['#bfb59c', '#d6cdb8', '#b8ad94']), 0.25);
-  flat('Suelo', dry([[[-0.5, -0.5], [W - 0.5, -0.5], [W - 0.5, D - 0.5], [-0.5, D - 0.5]]]), LAYER.ground, groundMat);
+  // On a hilltop (`drop`) the ground ends at the brow; elsewhere it fills the map.
+  flat('Suelo', dry([scene.drop?.edge ?? [[-0.5, -0.5], [W - 0.5, -0.5], [W - 0.5, D - 0.5], [-0.5, D - 0.5]]]), LAYER.ground, groundMat);
   flat('Arena', dry(scene.areas.sand ?? []), LAYER.sand, surface('Arena', 'sand', speckles('#e3cf9f', ['#d8c08a', '#efdfb8', '#cdb27a']), 0.25));
   if (look.grass === 'bed') {
     // Planted beds: dark soil with fallen leaves under clumps of low shrubs and grasses.
@@ -394,7 +401,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       }
     }
   } else flat('Huertas y jardines', dry(scene.areas.grass), LAYER.grass, surface('Hierba', 'grass', speckles('#86a462', ['#7a9858', '#95b36d', '#6f8c4f']), 0.25));
-  flat('Bosque', dry(scene.areas.forest), LAYER.forest, surface('Sotobosque', 'forest', speckles('#4f6d42', ['#45603a', '#5c7b4b', '#3d5634']), 0.25));
+  const undergrowth = surface('Sotobosque', 'forest', speckles('#4f6d42', ['#45603a', '#5c7b4b', '#3d5634']), 0.25);
+  flat('Bosque', dry(scene.areas.forest), LAYER.forest, undergrowth);
   const plaza = surface('Losas de la plaza', 'square', canvas(128, 128, ctx => {
     ctx.fillStyle = '#a99d88'; ctx.fillRect(0, 0, 128, 128);
     for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) {
@@ -1284,10 +1292,42 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     return out;
   }
 
+  const walls = new Map<string, pc.StandardMaterial>();
+  /** A wall's real material at its real size (UVs in metres), plain `tint` until it loads; it opens the cut. */
+  function wallSurface(texture: string | undefined, tint: string) {
+    const key = `${texture}|${tint}`;
+    let m = walls.get(key);
+    if (m) return m;
+    const made = m = cutaway(mat(`Muro ${texture ?? 'pintado'}`, tint, 0.05));
+    if (texture) onLoad.push(() => dress(made, texture, tint));
+    walls.set(key, m);
+    return m;
+  }
+  /**
+   * `parapet`: a low wall in one real material at its real size, capped flat (the battery's
+   * board-marked concrete, the shacks' whitewashed brick, a water tank): no bays, no roof.
+   */
+  function lowWall(b: GeoBuilding, pivot: pc.Entity) {
+    const poly = b.poly, H = b.height, sign = signedArea(poly) > 0 ? 1 : -1;
+    const sides = new MeshBuilder(), cap = new MeshBuilder();
+    let along = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], c = poly[(i + 1) % poly.length], len = Math.hypot(c[0] - a[0], c[1] - a[1]);
+      if (len < 1e-3) continue;
+      const n: V3 = [(c[1] - a[1]) / len * sign, 0, -(c[0] - a[0]) / len * sign], u = len * cellM;
+      sides.quad(P(a, 0), P(c, 0), P(c, H), P(a, H), n, [along, 0], [along + u, 0], [along + u, H * cellM], [along, H * cellM]);
+      along += u;
+    }
+    for (const [i, j, k] of triangulate(poly)) cap.tri(P(poly[i], H), P(poly[j], H), P(poly[k], H), [0, 1, 0], metres(poly[i]), metres(poly[j]), metres(poly[k]));
+    add('Muro', sides, wallSurface(b.materials?.wall, b.walls), pivot, false);
+    add('Albardilla', cap, wallSurface(b.materials?.roof ?? b.materials?.wall, b.roofColor ?? b.walls), pivot, false);
+  }
+
   function building(b: GeoBuilding) {
     const pivot = new pc.Entity(`Edificio ${b.number ?? b.name ?? b.id}`);
     root.addChild(pivot); pivots.set(b.id, pivot);
     buildingCuts.set(pivot, { triangles: [], instances: [], radius: 0 });
+    if (b.facade === 'parapet') { lowWall(b, pivot); return; }
     const poly = b.poly, H = b.height, storey = scene.storey;
     const groundTop = Math.min(H, storey * 1.15);
     const ccw = signedArea(poly) > 0;
@@ -1586,7 +1626,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       return m;
     };
     return {
-      app, root: pivot, cell: cellM, water: -sunk * cellM, mat: kitMat,
+      app, root: pivot, cell: cellM, water: -sunk * cellM, scene, mat: kitMat,
       surface(texture, tint, gloss = 0.1) {
         const key = `surface|${texture}|${tint}|${gloss}`;
         let m = shared.get(key);
@@ -1635,7 +1675,10 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }
 
   // ------------------------------------------------------------ surroundings
-  if (look.edge === 'city') {
+  // A hilltop falls away on every side to whatever its landmarks lay below (the Búnkers' city);
+  // elsewhere the city or wooded hills close the far sides.
+  if (scene.drop) flank(scene.drop);
+  else if (look.edge === 'city') {
     // The city goes on past the map's far sides: rows of plain blocks with their storeys of windows,
     // in the place's render and brick dulled by distance, on a skirt of street; lower than the real
     // ones, so they frame the place without stealing it.
@@ -1755,6 +1798,87 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       warm.emissiveIntensity = 0.6 * dusk; warm.update(); cold.emissiveIntensity = 0.2 * dusk; cold.update();
       pools.forEach(e => { if (e) e.enabled = dusk > 0.02; });
       for (const m of evening) { m.emissiveIntensity = 0.9 * dusk; m.update(); }
+    }
+  }
+  /**
+   * The hill's flank: rings offset outwards from the brow (mitred at the corners), dropping `depth`
+   * cells over `run` with a smoothstep, so the top rounds over and the foot eases into the plain.
+   * The sides the camera looks at run out up to 2.5 times further (`flankRun`), so they read as a
+   * slope rather than a cliff, and are the hill's own undergrowth running on down (the zone's `forest`
+   * material, thick with scrub); the sides it looks across to the view are the bare `flank`.
+   */
+  function flank(drop: NonNullable<GeoScene['drop']>) {
+    const edge = drop.edge, n = edge.length, RINGS = 16;
+    const normals = edge.map((a, i) => {
+      const b = edge[(i + 1) % n], len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return [(b[1] - a[1]) / len, -(b[0] - a[0]) / len];
+    });
+    // Mitred outward directions at each corner, capped where the corner is sharp.
+    const miters = edge.map((_, i) => {
+      const n1 = normals[(i + n - 1) % n], n2 = normals[i], k = 1 / Math.max(0.35, 1 + n1[0] * n2[0] + n1[1] * n2[1]);
+      return [(n1[0] + n2[0]) * k, (n1[1] + n2[1]) * k];
+    });
+    const along = [0];
+    for (let i = 1; i <= n; i++) along.push(along[i - 1] + Math.hypot(edge[i % n][0] - edge[i - 1][0], edge[i % n][1] - edge[i - 1][1]) * cellM);
+    const profile = (t: number) => -drop.depth * t * t * (3 - 2 * t);
+    /** The drawn slope's height at `t` down it: straight between the rings, so nothing on it floats or sinks. */
+    const slopeY = (t: number) => { const u = t * RINGS, r = Math.min(RINGS - 1, Math.floor(u)); return profile(r / RINGS) + (profile((r + 1) / RINGS) - profile(r / RINGS)) * (u - r); };
+    const runs = miters.map(m => flankRun(drop.run, m[0], m[1]));
+    // Distance down the slope at each corner and ring, so the material keeps its real size however long the run.
+    const slope = runs.map(run => {
+      const s = [0];
+      for (let r = 1; r <= RINGS; r++) s.push(s[r - 1] + Math.hypot(run / RINGS, profile(r / RINGS) - profile((r - 1) / RINGS)) * cellM);
+      return s;
+    });
+    const at = (i: number, r: number): V3 => {
+      const t = r / RINGS, k = i % n;
+      return [x(edge[k][0] + miters[k][0] * runs[k] * t), profile(t), z(edge[k][1] + miters[k][1] * runs[k] * t)];
+    };
+    // Shaded round: a normal at every corner of every ring, from its neighbours along the brow and down
+    // the slope (flat facets would light the two halves of each twisted quad differently, in stripes).
+    const round = (i: number, r: number): V3 => {
+      const k = i % n, ahead = at(k + 1, r), behind = at(k + n - 1, r), below = at(k, Math.min(RINGS, r + 1)), above = at(k, Math.max(0, r - 1));
+      const t = [ahead[0] - behind[0], ahead[1] - behind[1], ahead[2] - behind[2]], d = [below[0] - above[0], below[1] - above[1], below[2] - above[2]];
+      const m: V3 = [t[1] * d[2] - t[2] * d[1], t[2] * d[0] - t[0] * d[2], t[0] * d[1] - t[1] * d[0]], len = (m[1] < 0 ? -1 : 1) * (Math.hypot(...m) || 1);
+      return [m[0] / len, m[1] / len, m[2] / len];
+    };
+    // Which sides face the camera (it looks along −x −z): those are dressed as the hill's scrub.
+    const near = normals.map(([nx, nz]) => (nx + nz) * Math.SQRT1_2 > 0.4);
+    const rock = new MeshBuilder(), scrubland = new MeshBuilder();
+    for (let i = 0; i < n; i++) for (let r = 0; r < RINGS; r++) {
+      const out: V3 = [normals[i][0], 0.6, normals[i][1]], j = (i + 1) % n;
+      (near[i] ? scrubland : rock).quad(at(i, r), at(i + 1, r), at(i + 1, r + 1), at(i, r + 1), out, [along[i], slope[i][r]], [along[i + 1], slope[j][r]], [along[i + 1], slope[j][r + 1]], [along[i], slope[i][r + 1]],
+        [round(i, r), round(i + 1, r), round(i + 1, r + 1), round(i, r + 1)]);
+    }
+    add('Ladera', rock, surface('Ladera', 'flank', speckles('#7a6648', ['#6b5a40', '#8a7656', '#5d5038']), 0.25), root, true, false);
+    add('Ladera de matorral', scrubland, undergrowth, root, true, false);
+    // Low scrub: on the bare sides a few clumps, thicker near the top, a little apart from the brow;
+    // on the camera's sides as thick as the zone's own scrub, all the way down.
+    const scrub = [mat('Matorral', '#59613a', 0.08), mat('Matorral seco', '#8a8052', 0.08), mat('Matorral oscuro', '#434b2c', 0.08)].map(m => ({ m, b: new MeshBuilder() }));
+    let k = 0;
+    for (let i = 0; i < n; i++) {
+      const len = Math.hypot(edge[(i + 1) % n][0] - edge[i][0], edge[(i + 1) % n][1] - edge[i][1]);
+      for (let s = 0.3; s < len; s += 1.1 + jitter(k) * 0.9) for (let q = 0; q < (near[i] ? 8 : 1); q++) {
+        const t = near[i] ? 0.03 + jitter(k + 1) * 0.94 : 0.06 + jitter(k + 1) ** 1.6 * 0.8, f = Math.min(1, (s + q * 0.23) / len), r = (0.45 + jitter(k + 2) * 0.65) / cellM;
+        const ex = edge[i][0] + (edge[(i + 1) % n][0] - edge[i][0]) * f, ez = edge[i][1] + (edge[(i + 1) % n][1] - edge[i][1]) * f;
+        const mx = miters[i][0] + (miters[(i + 1) % n][0] - miters[i][0]) * f, mz = miters[i][1] + (miters[(i + 1) % n][1] - miters[i][1]) * f;
+        const run = runs[i] + (runs[(i + 1) % n] - runs[i]) * f;
+        const spot: V3 = [x(ex + mx * run * t), slopeY(t), z(ez + mz * run * t)];
+        blob(scrub[k % 3].b, spot, r, r * (0.5 + jitter(k + 3) * 0.3));
+        k += 4;
+      }
+    }
+    for (const s of scrub) add('Matorral', s.b, s.m, root, true, false);
+  }
+  /** A low-poly clump (a squat double pyramid half sunk in the ground), cheap enough to scatter by the hundred. */
+  function blob(b: MeshBuilder, [cx, cy, cz]: V3, r: number, h: number) {
+    const ring = [0, 1, 2, 3, 4, 5].map(i => { const a = (i / 6 + jitter(cx + cz)) * Math.PI * 2; return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]; });
+    const top: V3 = [cx, cy + h, cz], bottom: V3 = [cx, cy - h * 0.4, cz];
+    for (let i = 0; i < 6; i++) {
+      const p: V3 = [ring[i][0], cy + h * 0.3, ring[i][1]], q: V3 = [ring[(i + 1) % 6][0], cy + h * 0.3, ring[(i + 1) % 6][1]];
+      const out = [(p[0] + q[0]) / 2 - cx, (p[2] + q[2]) / 2 - cz];
+      b.tri(p, q, top, [out[0], 0.8, out[1]]);
+      b.tri(p, q, bottom, [out[0], -0.3, out[1]]);
     }
   }
 
