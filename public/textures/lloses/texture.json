@@ -1,0 +1,29 @@
+{
+  "id": "lloses",
+  "name": "Paving Stones 126 A",
+  "kind": "material",
+  "size_m": [
+    2.4,
+    2.4
+  ],
+  "source": {
+    "site": "ambientCG",
+    "asset": "PavingStones126A",
+    "name": "Paving Stones 126 A",
+    "url": "https://ambientcg.com/a/PavingStones126A",
+    "author": "ambientCG (Lennart Demes)",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch ambientcg PavingStones126A --id lloses",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#a09b8e",
+  "made": "2026-10-31"
+}

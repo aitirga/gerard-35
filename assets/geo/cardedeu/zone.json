@@ -102,7 +102,15 @@
       ],
       "base": "#9d978c",
       "trim": "#f7f3ea",
-      "roof": "#b05a3a",
+      "roof": [
+        "#a25a40",
+        "#94583f",
+        "#ad664b",
+        "#8c5c4a",
+        "#9d553b",
+        "#a86047",
+        "#86604f"
+      ],
       "roof_kind": "hip",
       "facade": "vila",
       "ground": "socol",
@@ -112,12 +120,18 @@
       }
     },
     "centre": {
-      "roof": "#94593f",
+      "roof": [
+        "#8f5d48",
+        "#86604f",
+        "#946049",
+        "#7f5e50",
+        "#9a5b40"
+      ],
       "levels": 3
     },
     "nuria": {
       "walls": [
-        "#f4f0e8"
+        "#f3e9d8"
       ],
       "base": "#a8a399",
       "trim": "#ffffff",
@@ -1028,18 +1042,18 @@
       "kind": "montseny",
       "id": "montseny",
       "x_m": 111.8,
-      "z_m": -168.4,
+      "z_m": -200,
       "size_m": [
-        300,
-        50
+        320,
+        116
       ],
       "solid": false,
       "params": {
-        "height_m": 62,
-        "forest": "#5f6f86",
-        "colour": "#71809a",
-        "crest": "#9ea9bc",
-        "haze": 0.3
+        "height_m": 40,
+        "forest": "#41536a",
+        "colour": "#55657c",
+        "crest": "#717e93",
+        "haze": 0.06
       }
     },
     {
@@ -1093,8 +1107,114 @@
           ]
         ]
       }
+    },
+    {
+      "kind": "llosat",
+      "id": "llosat-centre",
+      "x_m": 149.27,
+      "z_m": -93.44,
+      "solid": false,
+      "textures": [
+        "lloses"
+      ],
+      "params": {
+        "tint": "#a39d90",
+        "polys": [
+          [
+            [
+              -27.5,
+              2.5
+            ],
+            [
+              26.25,
+              5.0
+            ],
+            [
+              26.25,
+              14.38
+            ],
+            [
+              -27.5,
+              16.25
+            ]
+          ],
+          [
+            [
+              -25.0,
+              12.5
+            ],
+            [
+              13.75,
+              12.5
+            ],
+            [
+              21.25,
+              33.75
+            ],
+            [
+              -26.25,
+              33.75
+            ]
+          ],
+          [
+            [
+              -27.5,
+              -35.0
+            ],
+            [
+              -5.0,
+              -35.0
+            ],
+            [
+              -5.0,
+              -7.5
+            ],
+            [
+              -10.0,
+              5.0
+            ],
+            [
+              -27.5,
+              5.0
+            ]
+          ],
+          [
+            [
+              -15.0,
+              -20.0
+            ],
+            [
+              26.25,
+              -20.0
+            ],
+            [
+              26.25,
+              -12.5
+            ],
+            [
+              -15.0,
+              -12.5
+            ]
+          ]
+        ]
+      }
     }
   ],
+  "yards": {
+    "from_road_m": 5,
+    "trees_every_m": 8,
+    "tree_scale": 1.45,
+    "clear_m": 3.5,
+    "species": [
+      "olive",
+      "plane",
+      "cypress",
+      "pine",
+      "cedar",
+      "olive",
+      "plane"
+    ]
+  },
   "osm_props": {
     "bike-rack": {}
   },
@@ -1111,7 +1231,7 @@
       },
       "grass": {
         "texture": "gespa",
-        "tint": "#8e9a62"
+        "tint": "#7f8c58"
       },
       "footway": {
         "texture": "saulo",
