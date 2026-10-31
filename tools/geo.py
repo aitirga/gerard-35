@@ -86,7 +86,8 @@ BASE_MATERIALS = {"masonry": "mamposteria", "mall-front": None, "hedge": None}
 ROOF_MATERIALS = {"flat": "rajola"}
 # Map nodes that become landmarks in every zone (kind -> tag and real size in metres), unless the zone's
 # `osm_landmarks` turns them off; the node's name goes to the builder as `name`.
-OSM_LANDMARKS = {"fountain": ("amenity", "drinking_water", (0.6, 0.6)), "kiosk": ("shop", "kiosk", (2.2, 1.5))}
+OSM_LANDMARKS = {"fountain": ("amenity", "drinking_water", (0.6, 0.6)), "kiosk": ("shop", "kiosk", (2.2, 1.5)),
+                 "shower": ("amenity", "shower", (3.0, 2.4))}
 
 
 def zone_dir(zone: str) -> Path:
@@ -815,7 +816,8 @@ def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
         "roofColor": style.get("roof"), "facade": facade, "ground": ground,
         "poly": rounded(poly), "box": oriented_box(poly),
         "materials": building_materials(style.get("materials", {}) | chosen.get("materials", {}), facade, ground, roof),
-    } | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {})
+    } | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {}) \
+      | ({"terrat": True} if roof == "flat" and chosen.get("terrat", style.get("terrat")) else {})
 
 
 # ---------------------------------------------------------------- real materials

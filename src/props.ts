@@ -55,7 +55,9 @@ export function createPropKit() {
     olive: [mat('Olivo plateado', '#8d9b6f'), mat('Olivo claro', '#a6ae86'), mat('Olivo sombra', '#6f8060')],
     cypress: [mat('Ciprés', '#4c6947'), mat('Ciprés claro', '#5d7a52')],
     yucca: [mat('Yuca', '#3f7a45'), mat('Yuca clara', '#5e9a55'), mat('Yuca sombra', '#2f5c38')],
+    palm: [mat('Palmera', '#5c7a3e'), mat('Palmera clara', '#7d9550'), mat('Palmera sombra', '#3f5a30')],
   };
+  const palmBark = mat('Tronco de palmera', '#8a7a68'), palmSkirt = mat('Falda de palmera', '#9b8158');
   const barkMat = mat('Troncos', '#817058');
   const wood = mat('Tutor de madera', '#b48a55', 0.1);
   const oliveBark = mat('Tronco de olivo', '#8a8173');
@@ -137,6 +139,23 @@ export function createPropKit() {
         crowns.push(blade);
       }
       [low, high, radius, sway] = [0.9 * s, 1.5 * s, 0.55 * s, 0.6];
+    } else if (species === 'palm') {
+      // A Washingtonia, the seafront's fan palm: a tall, slim trunk a little wider at the foot, a short
+      // trimmed skirt of dead fronds, and a small round crown of stiff fans splaying out and drooping.
+      part(pivot, 'Pie de palmera', 'cylinder', palmBark, [0, 0.5 * s, 0], [0.3, 1 * s, 0.3]);
+      part(pivot, 'Tronco de palmera', 'cylinder', palmBark, [0, 4 * s, 0], [0.22, 6.2 * s, 0.22]);
+      part(pivot, 'Falda de palmera', 'cylinder', palmSkirt, [0, 7.05 * s, 0], [0.42, 0.5 * s, 0.42]);
+      crowns.push(part(pivot, 'Cogollo', 'sphere', palette[2], [0, 7.45 * s, 0], [0.62 * s, 0.6 * s, 0.62 * s]));
+      for (let i = 0; i < 13; i++) {
+        const a = i * 137.5 + n(i) * 20, droop = 25 - (i % 4) * 20 + n(i + 4) * 8;
+        const turn = new pc.Entity('Abanico'); pivot.addChild(turn);
+        turn.setLocalPosition(0, 7.5 * s, 0); turn.setLocalEulerAngles(0, a, 0);
+        // A fan is a flat, wide leaf on a stalk: out along +x, tipped down by `droop`.
+        const fan = part(turn, 'Hoja de palmera', 'sphere', palette[i % 3], [0, 0, 0], [1.25 * s, 0.07, 0.62 * s], [0, 0, droop]);
+        fan.translateLocal(0.62 * s, 0, 0);
+        crowns.push(fan);
+      }
+      [low, high, radius, sway] = [6.9 * s, 8.1 * s, 1.15 * s, 0.35];
     } else if (species === 'olive') {
       // A short, split trunk under a round, silvery crown.
       part(pivot, 'Tronco', 'cylinder', oliveBark, [0, 0.32 * s, 0], [0.22, 0.66 * s, 0.22], [0, 0, 8]);
@@ -353,6 +372,22 @@ export function createPropKit() {
       part(holder, 'Montante del brazo', 'box', frame, [side * (w / 2 + 0.02), 0.5, 0.18], [0.04, 0.2, 0.04]);
     }
   }
+  /**
+   * The Passeig Marítim's lamp: a slim grey mast about ten metres tall, and near its top a stack of
+   * round spotlights on short arms, turning round it as they climb.
+   */
+  const lens = mat('Cristal del foco', '#e6eaec', 0.6);
+  function mastLamp(holder: pc.Entity) {
+    part(holder, 'Base de mástil', 'cylinder', poleGrey, [0, 0.08, 0], [0.2, 0.16, 0.2]);
+    part(holder, 'Mástil', 'cylinder', poleGrey, [0, 3.3, 0], [0.09, 6.6, 0.09]);
+    for (let i = 0; i < 5; i++) {
+      const a = i * 72 * Math.PI / 180, y = 4.7 + i * 0.38;
+      part(holder, 'Brazo del foco', 'box', poleGrey, [Math.sin(a) * 0.1, y, Math.cos(a) * 0.1], [0.04, 0.04, 0.2], [0, i * 72, 0]);
+      part(holder, 'Foco', 'sphere', poleGrey, [Math.sin(a) * 0.22, y, Math.cos(a) * 0.22], [0.2, 0.2, 0.2]);
+      // Off by day: the lens only catches the sky.
+      part(holder, 'Cristal del foco', 'sphere', lens, [Math.sin(a) * 0.22, y - 0.07, Math.cos(a) * 0.22], [0.12, 0.05, 0.12]);
+    }
+  }
   function ledLamp(holder: pc.Entity) {
     // A tall, slim grey pole with a short arm and a flat white LED head.
     part(holder, 'Base de farola', 'cylinder', poleGrey, [0, 0.05, 0], [0.16, 0.1, 0.16]);
@@ -491,7 +526,7 @@ export function createPropKit() {
         // Turned a quarter so the body runs along +x over its footprint; the anchor stays on its cell.
         if (prop.along === 'x') holder.children.forEach(c => { const p = c.getLocalPosition(); c.setLocalPosition(p.z, p.y, -p.x); c.setLocalRotation(QUARTER_TURN.clone().mul(c.getLocalRotation())); });
       }
-      else if (prop.kind === 'lamp') { if (prop.style === 'led') ledLamp(holder); else lamp(holder); }
+      else if (prop.kind === 'lamp') { if (prop.style === 'led') ledLamp(holder); else if (prop.style === 'mast') mastLamp(holder); else lamp(holder); }
       else if (prop.kind === 'metro') station(holder, prop.network ?? 'metro', prop.name, prop.line);
       else if (prop.kind === 'bench') bench(holder, prop.style ?? 'bench');
       else if (prop.kind === 'barrier') barrier(holder, prop.color ?? 'red', prop.style ?? 'jersey');

@@ -47,6 +47,8 @@ export interface GeoBuilding {
   materials?: { wall?: string; base?: string; roof?: string };
   /** A photo (texture id) of the real facade, on the wall facing the camera. */
   signature?: string;
+  /** A lived-in flat roof (Barcelona's terrat): stair heads, water tanks, aerials and washing lines on it. */
+  terrat?: boolean;
   poly: GeoPoint[];
   /** Minimum-area rectangle around the footprint; the roof sits on it. `angle` is the `w` axis. */
   box: { cx: number; cz: number; w: number; d: number; angle: number };
@@ -96,11 +98,13 @@ export interface GeoScene {
   /**
    * The street's surfaces: `ground` and `footway` `panot` (Barcelona's grey sidewalk tiles), `grass`
    * `bed` (planted strips of shrubs), `asphalt` colour, and `markings` (lanes, zebras, BUS, bikes).
+   * `water: 'sea'` draws the water as the sea with its shore (src/geo-sea.ts); `hills: false` leaves
+   * out the wooded hills round the far sides, for a zone that draws its own skyline.
    */
-  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean };
+  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; water?: 'sea'; hills?: boolean };
   /** Named points for pieces the game adds itself, e.g. where the palace stands (`y` in cells). */
   anchors?: Record<string, { x: number; z: number; y?: number }>;
-  /** Real materials of the street's surfaces (ground, footway, road, bike, square, grass, bed, forest, sand, rail, bridge). */
+  /** Real materials of the street's surfaces (ground, footway, road, bike, square, grass, bed, forest, sand, wet, rail, bridge). */
   materials?: Record<string, GeoMaterial>;
   /** Every texture the scene names, by id, so the game needs no manifest. */
   textures?: Record<string, GeoTexture>;
