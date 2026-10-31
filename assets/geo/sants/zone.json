@@ -77,22 +77,32 @@
       "square": {
         "texture": "granit",
         "tint": "#9d9a93"
+      },
+      "grass": {
+        "texture": "gespa",
+        "tint": "#71895a"
       }
     }
   },
   "styles": {
     "default": {
       "walls": [
-        "#d9bf8c",
-        "#dcc8a4",
-        "#cfa47a",
-        "#e3d4b6",
-        "#c99377",
-        "#bdb3b8"
+        "#cfa463",
+        "#d8bf96",
+        "#c99a6e",
+        "#e0cba6",
+        "#c48c6e",
+        "#b8acb0"
       ],
       "base": "#6f6152",
       "trim": "#efe5d0",
-      "roof": "#b3a796",
+      "roof": [
+        "#b07a62",
+        "#a8a096",
+        "#bf8f74",
+        "#9c978f",
+        "#a86a52"
+      ],
       "roof_kind": "flat",
       "facade": "sants",
       "ground": "sants-shops",
@@ -390,6 +400,78 @@
       "species": "plane",
       "trunk": "#c6b89b",
       "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -34.75,
+      "z_m": 248.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.35
+    },
+    {
+      "kind": "tree",
+      "x_m": -31.75,
+      "z_m": 265.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.6
+    },
+    {
+      "kind": "tree",
+      "x_m": -16.75,
+      "z_m": 259.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.55
+    },
+    {
+      "kind": "tree",
+      "x_m": -13.75,
+      "z_m": 275.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.4
+    },
+    {
+      "kind": "tree",
+      "x_m": -4.75,
+      "z_m": 281.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.35
+    },
+    {
+      "kind": "tree",
+      "x_m": -33.25,
+      "z_m": 277.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.45
+    },
+    {
+      "kind": "bench",
+      "x_m": -75.25,
+      "z_m": 104.75,
+      "yaw": 15
+    },
+    {
+      "kind": "bench",
+      "x_m": -66.25,
+      "z_m": 104.75,
+      "yaw": 15
+    },
+    {
+      "kind": "bench",
+      "x_m": -54.25,
+      "z_m": 100.25,
+      "yaw": 15
+    },
+    {
+      "kind": "bench",
+      "x_m": -45.25,
+      "z_m": 98.75,
+      "yaw": 15
     }
   ],
   "places": [
@@ -451,8 +533,8 @@
     {
       "id": "sants-passeig",
       "label": "Mirar el paseo",
-      "x_m": -60,
-      "z_m": 128,
+      "x_m": -63.25,
+      "z_m": 106.25,
       "lines": [
         "El Passeig de Sant Antoni. Bancos, árboles y el carril bici.",
         "En todos los bancos hay alguien sentado, y todos miran hacia el mismo sitio."
@@ -546,7 +628,9 @@
         "tables": 3,
         "chairs": 4,
         "seed": 1,
-        "parasol": "#e9e1cf"
+        "parasol": "#ece6d8",
+        "people": 4,
+        "look": 120
       }
     },
     {
@@ -562,7 +646,10 @@
       "params": {
         "tables": 3,
         "chairs": 3,
-        "seed": 2
+        "seed": 2,
+        "parasol": "#ece6d8",
+        "people": 3,
+        "look": 120
       }
     },
     {
@@ -579,7 +666,9 @@
         "tables": 2,
         "chairs": 4,
         "seed": 3,
-        "parasol": "#3e5f48"
+        "parasol": "#ece6d8",
+        "people": 3,
+        "look": 120
       }
     },
     {
@@ -595,7 +684,9 @@
       "params": {
         "tables": 3,
         "chairs": 3,
-        "seed": 4
+        "seed": 4,
+        "people": 3,
+        "look": 120
       }
     },
     {
@@ -612,7 +703,9 @@
         "tables": 3,
         "chairs": 4,
         "seed": 5,
-        "parasol": "#7a2a2e"
+        "parasol": "#ece6d8",
+        "people": 4,
+        "look": 120
       }
     },
     {
@@ -628,7 +721,10 @@
       "params": {
         "tables": 2,
         "chairs": 3,
-        "seed": 6
+        "seed": 6,
+        "parasol": "#ece6d8",
+        "people": 2,
+        "look": 120
       }
     },
     {
@@ -645,7 +741,8 @@
         "tables": 3,
         "chairs": 4,
         "seed": 7,
-        "parasol": "#e9e1cf"
+        "people": 4,
+        "look": 120
       }
     },
     {
@@ -661,8 +758,169 @@
       "params": {
         "tables": 3,
         "chairs": 3,
-        "seed": 8
+        "seed": 8,
+        "parasol": "#ece6d8",
+        "people": 3,
+        "look": 120
       }
+    },
+    {
+      "kind": "fanal-osca",
+      "id": "fanal-osca",
+      "x_m": -22.75,
+      "z_m": 271.25,
+      "rotation_deg": -31,
+      "size_m": [
+        1.2,
+        1.2
+      ]
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-1",
+      "x_m": -97.75,
+      "z_m": 319.25,
+      "rotation_deg": 330,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 1,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-2",
+      "x_m": -117.25,
+      "z_m": 118.25,
+      "rotation_deg": 195,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 1,
+        "seed": 2,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-3",
+      "x_m": -108.25,
+      "z_m": 122.75,
+      "rotation_deg": 195,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 3,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-4",
+      "x_m": -96.25,
+      "z_m": 121.25,
+      "rotation_deg": 195,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 3,
+        "seed": 4,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-5",
+      "x_m": -75.25,
+      "z_m": 104.75,
+      "rotation_deg": 15,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 5,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-6",
+      "x_m": -66.25,
+      "z_m": 104.75,
+      "rotation_deg": 15,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 1,
+        "seed": 6,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-7",
+      "x_m": -54.25,
+      "z_m": 100.25,
+      "rotation_deg": 15,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 7,
+        "look": 120
+      }
+    },
+    {
+      "kind": "assegut",
+      "id": "assegut-8",
+      "x_m": -45.25,
+      "z_m": 98.75,
+      "rotation_deg": 15,
+      "size_m": [
+        1.2,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "people": 2,
+        "seed": 8,
+        "look": 120
+      }
+    },
+    {
+      "kind": "contenidors",
+      "id": "contenidors-valladolid",
+      "x_m": -10.75,
+      "z_m": 2.75,
+      "rotation_deg": 180,
+      "size_m": [
+        8.0,
+        1.2
+      ]
     }
   ],
   "no_signs": [

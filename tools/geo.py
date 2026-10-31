@@ -813,7 +813,9 @@ def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
         "id": e["id"], "style": style_name, "name": t.get("name"), "number": chosen.get("label", t.get("addr:housenumber")),
         "levels": levels, "height": round(height / cell, 2), "roof": roof,
         "walls": chosen.get("walls", pick(e["id"], style.get("walls", ["#e8e0d0"]))), "base": style.get("base"), "trim": style.get("trim"),
-        "roofColor": style.get("roof"), "facade": facade, "ground": ground,
+        # `roof` may be a list, like `walls`: a street of flat roofs in several tiles and coatings.
+        "roofColor": pick(e["id"] + "/roof", style["roof"]) if isinstance(style.get("roof"), list) else style.get("roof"),
+        "facade": facade, "ground": ground,
         "poly": rounded(poly), "box": oriented_box(poly),
         "materials": building_materials(style.get("materials", {}) | chosen.get("materials", {}), facade, ground, roof),
     } | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {})
