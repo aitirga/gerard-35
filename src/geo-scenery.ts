@@ -934,14 +934,38 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     // White paint on the new asphalt: lanes, edges, zebra crossings, BUS on the bus lane, bikes on the bike lane.
     const paint = mat('Pintura vial', '#ecebe4', 0.2, 0.15);
     const lines = new MeshBuilder(), y = LAYER.road + 0.006;
-    const dash = (a: GeoPoint, b: GeoPoint, offset: number, on: number, off: number, wide: number) => {
+    // A road's paint stops where it runs onto a wider road's asphalt (a slip road into a roundabout, a
+    // side street at a junction), as real lines do, instead of crossing the wider road's lanes.
+    const asphalt = scene.roads.filter(r => r.kind === 'road');
+    const under = (p: GeoPoint, width: number) => asphalt.some(o => o.width > width + 0.5 && o.line.some((a, i) => {
+      const half = o.width / 2, b = o.line[i + 1];
+      // Round joints at the bends, none at the ends, so a road carried on by a wider one keeps its lines.
+      if (i > 0 && b && Math.hypot(p[0] - a[0], p[1] - a[1]) <= half) return true;
+      if (!b) return false;
+      const dx = b[0] - a[0], dz = b[1] - a[1], len2 = dx * dx + dz * dz, t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / len2;
+      return len2 > 1e-6 && t >= 0 && t <= 1 && Math.abs((p[0] - a[0]) * dz - (p[1] - a[1]) * dx) <= half * Math.sqrt(len2);
+    }));
+    /** Dashes along a–b, `offset` to its right; with `road` (that road's width), none under a wider road. */
+    const dash = (a: GeoPoint, b: GeoPoint, offset: number, on: number, off: number, wide: number, road?: number) => {
       const len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 1e-3) return;
       const ux = (b[0] - a[0]) / len, uz = (b[1] - a[1]) / len, rx = -uz, rz = ux;
-      for (let t = 0; t < len; t += on + off) {
-        const t1 = Math.min(len, t + on);
-        const p0: GeoPoint = [a[0] + ux * t + rx * offset, a[1] + uz * t + rz * offset], p1: GeoPoint = [a[0] + ux * t1 + rx * offset, a[1] + uz * t1 + rz * offset];
+      const at = (t: number): GeoPoint => [a[0] + ux * t + rx * offset, a[1] + uz * t + rz * offset];
+      const stroke = (t0: number, t1: number) => {
+        const p0 = at(t0), p1 = at(t1);
         lines.quad(P([p0[0] + rx * wide / 2, p0[1] + rz * wide / 2], y), P([p1[0] + rx * wide / 2, p1[1] + rz * wide / 2], y),
           P([p1[0] - rx * wide / 2, p1[1] - rz * wide / 2], y), P([p0[0] - rx * wide / 2, p0[1] - rz * wide / 2], y), [0, 1, 0], [0, 0], [1, 0], [1, 1], [0, 1]);
+      };
+      for (let t = 0; t < len; t += on + off) {
+        const t1 = Math.min(len, t + on);
+        if (road === undefined) { stroke(t, t1); continue; }
+        // Only the stretches clear of a wider road, checked every half cell.
+        const steps = Math.max(1, Math.ceil((t1 - t) / 0.5)), step = (t1 - t) / steps;
+        let from = -1;
+        for (let k = 0; k <= steps; k++) {
+          const clear = k < steps && !under(at(t + (k + 0.5) * step), road);
+          if (clear && from < 0) from = t + k * step;
+          if (!clear && from >= 0) { stroke(from, t + k * step); from = -1; }
+        }
       }
     };
     const decals: { m: pc.StandardMaterial; at: GeoPoint; u: GeoPoint; len: number; wid: number }[] = [];
@@ -976,12 +1000,15 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         const lane = r.width / r.lanes;
         for (let k = 1; k < r.lanes; k++) {
           const offset = -half + k * lane, solid = r.bus !== undefined && (k === r.bus || k === r.bus + 1);
-          dash(a, b, offset, solid ? len + 1 : 2, solid ? 0 : 2.4, solid ? 0.16 : 0.1);
+          dash(a, b, offset, solid ? len + 1 : 2, solid ? 0 : 2.4, solid ? 0.16 : 0.1, r.width);
         }
-        for (const side of [-1, 1]) dash(a, b, side * (half - 0.2), len + 1, 0, 0.1);
+        for (const side of [-1, 1]) dash(a, b, side * (half - 0.2), len + 1, 0, 0.1, r.width);
         if (r.bus !== undefined) {
           const offset = -half + (r.bus + 0.5) * lane, rx = -u[1], rz = u[0];
-          for (let t = 8; t < len; t += 24) decals.push({ m: busWord, at: [a[0] + u[0] * t + rx * offset, a[1] + u[1] * t + rz * offset], u, len: 2.4, wid: lane * 0.6 });
+          for (let t = 8; t < len; t += 24) {
+            const at: GeoPoint = [a[0] + u[0] * t + rx * offset, a[1] + u[1] * t + rz * offset];
+            if (!under(at, r.width)) decals.push({ m: busWord, at, u, len: 2.4, wid: lane * 0.6 });
+          }
         }
       }
     }
