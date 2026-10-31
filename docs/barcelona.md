@@ -216,7 +216,9 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   inland), the breakwater where the beach ends to the NNE and the W's sail past the SSW end.
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
-  the camera, blocks of flats, the L1 entrance and the castle on the roof.
+  the camera, blocks of flats, the L1 entrance and the castle on the roof. Inside the castle, the
+  school's own zones (`palacio-patio`, `palacio-gimnasio`, `palacio-secretaria`, `palacio-trono`)
+  are hand-authored plan scenes, not map zones: `docs/places/palace-zones.md`.
 - **`bunkers-carmel`**: the Búnkers del Carmel on the Turó de la Rovira at sunset
   (`docs/places/bunkers.md`), a real-data zone with the battery drawn from the MUHBA's
   archaeological plan. The seven gun pits in board-marked concrete, the command post, the shacks'

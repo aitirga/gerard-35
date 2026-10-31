@@ -6,6 +6,7 @@ import type { Lamp, LightId } from './home-lights';
 import type { HouseVolume } from './palace';
 import { buildPalaceInterior } from './palace-scenery';
 import { buildBasilica } from './basilica-scenery';
+import { buildPalaceZone } from './palace-zones';
 import { buildGeo } from './geo-scenery';
 import type { Cell } from './movement';
 import { createTraffic } from './traffic';
@@ -35,7 +36,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const surfaces: { x: number; z: number; w: number; d: number; y: number }[] = [];
   const props = createPropKit();
   let home: ReturnType<typeof buildHome> | undefined;
-  let palace: ReturnType<typeof buildPalaceInterior> | undefined;
+  let palace: { update(dt: number, animate: boolean, focus?: pc.Vec3): void; destroy(): void } | undefined;
   let geo: ReturnType<typeof buildGeo> | undefined;
   let basilica: ReturnType<typeof buildBasilica> | undefined;
   /** Street houses' main volumes, for things that grow over them (the palace's gum). */
@@ -148,11 +149,13 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   // Inside the Sagrada Família: dim stone, the light comes in colour through the glass (src/basilica-scenery.ts).
   const nave = !!environment.basilica;
   const outdoor = !night && !lamplit && !environment.plan && !environment.palace && !nave;
+  // A zone of the palace in chapter 2 brings its own light (src/palace-zone-plans.ts).
+  const zoneLight = environment.palace?.theme?.light;
   // The Búnkers del Carmel are drawn at sunset: a golden sun (from the same side as everywhere) and lilac shade.
   const dusk = environment.id === 'bunkers-carmel';
-  const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : nave ? new pc.Color(0.3, 0.3, 0.33) : overcast ? new pc.Color(0.4, 0.44, 0.48) : dusk ? new pc.Color(0.36, 0.33, 0.4) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
-  const sunColor = night ? new pc.Color(0.66, 0.81, 1) : nave ? new pc.Color(1, 0.93, 0.82) : overcast ? new pc.Color(0.96, 0.97, 0.95) : dusk ? new pc.Color(1, 0.8, 0.58) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
-  const sunIntensity = night ? 1.15 : lamplit ? 0.85 : nave ? 1.05 : overcast ? 1.3 : dusk ? 1.7 : outdoor ? 1.8 : 1.65;
+  const ambient = zoneLight ? new pc.Color().fromString(zoneLight.ambient) : night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : nave ? new pc.Color(0.3, 0.3, 0.33) : overcast ? new pc.Color(0.4, 0.44, 0.48) : dusk ? new pc.Color(0.36, 0.33, 0.4) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
+  const sunColor = zoneLight ? new pc.Color().fromString(zoneLight.sun) : night ? new pc.Color(0.66, 0.81, 1) : nave ? new pc.Color(1, 0.93, 0.82) : overcast ? new pc.Color(0.96, 0.97, 0.95) : dusk ? new pc.Color(1, 0.8, 0.58) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
+  const sunIntensity = zoneLight ? zoneLight.intensity : night ? 1.15 : lamplit ? 0.85 : nave ? 1.05 : overcast ? 1.3 : dusk ? 1.7 : outdoor ? 1.8 : 1.65;
   const skyIntensity = overcast ? 0.55 : dusk ? 0.34 : 0.42;
   app.scene.ambientLight = ambient.clone();
   let tone = 0, dark = 0;
@@ -397,7 +400,9 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   } else if (environment.basilica) {
     basilica = buildBasilica({ app, root, batch: batch.id, mat, texture, x, z }, environment);
   } else if (environment.palace) {
-    palace = buildPalaceInterior({ app, root, x, z, texture }, environment);
+    palace = environment.palace.theme
+      ? buildPalaceZone({ app, root, batch: batch.id, x, z, texture, surface: (px, pz, w, d, top) => { surfaces.push({ x: x(px), z: z(pz), w, d, y: top }); } }, environment)
+      : buildPalaceInterior({ app, root, x, z, texture }, environment);
   } else if (environment.plan) {
     home = buildHome({
       app, root, props, mat, texture, x, z, batch: batch.id,
@@ -465,7 +470,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       props.update(dt, animate, focus, toCamera);
       if (walkers) traffic?.update(dt, walkers);
       home?.update(dt, animate, focus, toCamera);
-      palace?.update(dt, animate);
+      palace?.update(dt, animate, focus);
       geo?.update(dt, animate, focus, toCamera);
       basilica?.update(dt, animate, focus, toCamera);
       if (!animate) return;

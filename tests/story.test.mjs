@@ -223,6 +223,19 @@ test('chapter 2 city: the metro opens the city, and the castle can be tried at o
   assert.ok(story.interactions('palacio').some(i => i.id === 'challenge-guards'));
   assert.deepEqual(beats(story.handle({ type: 'interact', id: 'challenge-guards' })), ['dialogue', 'battle:palace-guards']);
 });
+test("chapter 2: the hall's east door opens onto the school, whose zones stay shut for now", () => {
+  const child = new Story([]), story = new Story(['caught']);
+  assert.ok(!child.interactions('palacio').some(i => i.id === 'palace-east-door'), 'in the dream it stays a thing to look at');
+  assert.equal(child.redirect('palace-east-door'), undefined);
+  const door = story.interactions('palacio').find(i => i.id === 'palace-east-door');
+  assert.equal(door.label, 'Abrir la puerta');
+  const to = story.redirect(door.id);
+  assert.equal(to.environment, 'palacio-patio');
+  assert.ok(canWalk(to.cell, ENVIRONMENTS['palacio-patio'].grid));
+  // The gym, the secretaría and Direcció say why they will not open, in the world's own voice.
+  for (const id of ['patio-gimnasio', 'patio-secretaria', 'secretaria-direccio']) assert.ok(story.gate(id)?.lines.length, id);
+  for (const id of ['patio-vestibulo', 'secretaria-patio', 'trono-direccio', 'trono-escalera']) assert.equal(story.gate(id), undefined, `${id}: the ways back are always open`);
+});
 
 test('chapter 2: falling wakes Gerard at home and keeps everything', () => {
   // The TV news was seen (it carries the R4 clue) and the castle tried.

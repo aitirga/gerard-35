@@ -171,6 +171,8 @@ const HOUSE_EXITS = new Set(['leave-hall', 'leave-living']);
 const JAR = PLACES_2.jar;
 /** La Pompa from the inside: it will not let them out until the wrapper room is cleared. */
 const PALACE_EXIT = 'leave-palace';
+/** The hall's east door, which in chapter 2 opens onto the school's yard. */
+const SCHOOL_WAY = 'palace-east-door';
 
 export const STORY_CARDS = CARDS;
 export const STORY_HINTS = HINTS;
@@ -438,6 +440,7 @@ export class Story {
   /** Where a door leads instead of its own destination, by story: the palace opens onto the school in chapter 2. */
   redirect(interactionId: string): { environment: EnvironmentId; cell: Cell } | undefined {
     if (interactionId === PALACE_EXIT && this.adult) return { environment: PLACES_2.school.environment, cell: { x: SCHOOL_DOOR.x, z: SCHOOL_DOOR.z + 1 } };
+    if (interactionId === SCHOOL_WAY && this.adult) return { environment: 'palacio-patio', cell: { x: 17, z: 2 } };
     return undefined;
   }
   /** Cells the guards stand on in the palace hall (chapter 2): fewer as the party gathers ánimas. */
@@ -529,6 +532,8 @@ export class Story {
       for (const look of PALACE_LOOKS) if (!this.adult || look.id === 'look-curtain') list.push({ id: look.id, label: look.label, cell: { ...look.cell } });
       if (!this.has('wrapper-room')) list.push({ id: 'push-back-door', label: 'Empujar la puerta', hint: 'Empujar', cell: { ...BACK_DOOR } });
       if (this.adult) list.push({ id: 'challenge-guards', label: 'Cruzar la cortina', hint: 'Cruzar la cortina', cell: { ...PLACES_2.guards.challenge } });
+      // At 35 the east door opens: the school is behind it (src/palace-zone-plans.ts).
+      if (this.adult) list.push({ id: SCHOOL_WAY, label: 'Abrir la puerta', cell: { x: 21, z: 13 } });
     }
     if (partner && this.partner === 'bernat') list.push({ id: 'talk-bernat', label: this.companion === 'stalled' ? 'Preguntarle a Bernat qué pasa' : 'Hablar con Bernat', hint: this.companion === 'stalled' ? 'Preguntar qué pasa' : undefined, cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
     return list;
@@ -536,6 +541,10 @@ export class Story {
   /** A dialogue that stops a door from working, if the story is not ready for it. */
   gate(interactionId: string): Dialogue | undefined {
     if (interactionId === PALACE_EXIT) return this.has('wrapper-room') ? undefined : LINES.leaveLocked;
+    // Inside the palace the school's doors open zone by zone; none of the zones can be won yet.
+    if (interactionId === 'patio-gimnasio') return LINES_2.gymShut;
+    if (interactionId === 'patio-secretaria') return LINES_2.officeShut;
+    if (interactionId === 'secretaria-direccio') return LINES_2.directionShut;
     // The TV switched itself on when Gerard woke: Aitor will not go out before seeing it.
     if (interactionId === 'meridiana-door' && this.adult && !this.has('tv-news')) return LINES_2.doorBeforeNews;
     if (!HOUSE_EXITS.has(interactionId)) return undefined;

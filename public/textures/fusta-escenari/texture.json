@@ -1,0 +1,29 @@
+{
+  "id": "fusta-escenari",
+  "name": "Fusta d'escenari",
+  "kind": "material",
+  "size_m": [
+    2.03,
+    2.03
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "old_wooden_floor_02",
+    "name": "Old Wooden Floor 02",
+    "url": "https://polyhaven.com/a/old_wooden_floor_02",
+    "author": "Charlotte Baglioni, Jenelle van Heerden",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven old_wooden_floor_02 --id fusta-escenari",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#51310b",
+  "made": "2026-10-31"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "paret-pintada",
+  "name": "Paret pintada",
+  "kind": "material",
+  "size_m": [
+    1.8,
+    1.8
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "peeling_painted_wall",
+    "name": "Peeling Painted Wall",
+    "url": "https://polyhaven.com/a/peeling_painted_wall",
+    "author": "Dimitrios Savva",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven peeling_painted_wall --id paret-pintada",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#966c5d",
+  "made": "2026-10-31"
+}

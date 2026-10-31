@@ -139,6 +139,30 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { shadows: [-.006, .004, .018], highlights: [.016, .008, -.004], contrast: 1.05, saturation: 1.06 },
     enhance: { vibrance: .1, shadows: .08, highlights: -.1 },
   },
+  /** Her palace in chapter 2, el patio: the end of a school day, flat and cooling, greens kept, her plum in the shade. */
+  'palacio-patio': {
+    grade: { temperature: -.03, lift: [.008, .004, .012], shadows: [.008, -.002, .018], highlights: [.012, .012, .004], contrast: 1.04, saturation: .96 },
+    enhance: { highlights: -.08, vibrance: .04 },
+    her: .2,
+  },
+  /** El gimnasio: cold tubes, blue-grey and a little green in the shade, hard light on the mats. */
+  'palacio-gimnasio': {
+    grade: { temperature: -.1, tint: -.04, lift: [0, .004, .012], shadows: [-.006, .004, .02], highlights: [.004, .01, .016], contrast: 1.07, saturation: .94 },
+    enhance: { shadows: -.06, dehaze: .03 },
+    her: .15,
+  },
+  /** La secretaría: flat and tiring under greenish tubes, the manila kept, a little washed out. */
+  'palacio-secretaria': {
+    grade: { temperature: -.02, tint: -.05, lift: [.004, .008, .006], shadows: [-.004, .006, .008], highlights: [.008, .012, .002], contrast: .98, saturation: .9 },
+    enhance: { highlights: -.06, midtones: .02 },
+    her: .15,
+  },
+  /** El salón del trono: night indigo in the shade, warm gold in the light; she is the only saturated colour. */
+  'palacio-trono': {
+    grade: { temperature: -.04, lift: [.002, .002, .014], shadows: [-.006, -.004, .03], highlights: [.022, .014, -.004], contrast: 1.08, saturation: .96 },
+    enhance: { shadows: -.08, vibrance: .05 },
+    her: .2,
+  },
   /** La Reina Bubbaloo's light: magenta in the shade, pink in the light, a little darker and stranger. */
   bubbaloo: {
     grade: { lift: [.012, 0, .01], gamma: [.98, .95, .97], gain: [1, .96, .98], shadows: [.024, -.008, .02], highlights: [.02, -.002, .01], contrast: 1.05, saturation: 1 },

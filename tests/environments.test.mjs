@@ -25,6 +25,11 @@ for (const environment of Object.values(ENVIRONMENTS)) {
     for (const interaction of environment.interactions) {
       assert.ok(cells.has(`${interaction.cell.x},${interaction.cell.z}`), interaction.id);
     }
+    // The palace's zones: every boss's spot and set-piece is reached, or stands within two steps of where one can go.
+    const near = [-2, -1, 0, 1, 2];
+    for (const [id, a] of Object.entries(environment.palace?.anchors ?? {})) {
+      assert.ok(near.some(dx => near.some(dz => cells.has(`${a.x + dx},${a.z + dz}`))), id);
+    }
   });
 }
 test('Gerard is number 20, Bernat is opposite and every building footprint is solid', () => {
@@ -102,7 +107,11 @@ test('every door and stair lands on a walkable cell, and there is always a way b
       assert.equal(canWalk(to.cell, destination.grid), true, `${environment.id}/${id}`);
       // The palace is entered through La Pompa, which only the story opens (src/story.ts, 'enter-palace').
       const storyWay = to.environment === 'maresme' && environment.id === 'palacio' && new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('palace') + 1)).interactions('maresme').some(i => i.id === 'enter-palace');
-      assert.ok(storyWay || destination.interactions.some(i => i.to?.environment === environment.id), `${to.environment} leads back to ${environment.id}`);
+      // The school's zones are entered through the hall's east door, which the story opens at 35.
+      const adult = new Story(['caught']), schoolWay = to.environment === 'palacio' && adult.interactions('palacio').some(i => adult.redirect(i.id)?.environment === environment.id);
+      // The throne room's stair comes down behind the guards; going up is crossing them (the story's fight).
+      const curtainWay = to.environment === 'palacio' && environment.id === 'palacio-trono' && adult.interactions('palacio').some(i => i.id === 'challenge-guards');
+      assert.ok(storyWay || schoolWay || curtainWay || destination.interactions.some(i => i.to?.environment === environment.id), `${to.environment} leads back to ${environment.id}`);
     }
   }
   assert.equal(nearbyInteraction(NEIGHBORHOOD, { x:21,z:23 })?.to?.environment, 'home-entrance');

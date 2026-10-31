@@ -105,6 +105,12 @@ const AIR: Partial<Record<string, Air>> = {
   'poble-sec': { kinds: [{ kind: 'mote', density: 5, low: .4, high: 4 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.05, 0, .02], turbulence: .5 },
   // The Sagrada Família inside: dust hanging high in the light from the glass.
   'sagrada-familia-interior': { kinds: [{ kind: 'mote', density: 16, low: .3, high: 5 }], wind: [0, .02, 0], turbulence: .3 },
+  // Chapter 2's zones: chalk dust drifting over the yard, dust in the gym's tube light; her gloom only a little.
+  'palacio-patio': { kinds: [{ kind: 'mote', density: 5, low: .2, high: 2.4 }, { kind: 'gloom', density: 2, low: .1, high: 2.6 }], wind: [.2, 0, .08], turbulence: .8 },
+  'palacio-gimnasio': { kinds: [{ kind: 'mote', density: 14, low: .3, high: 4 }, { kind: 'gloom', density: 1, low: .1, high: 2 }], wind: [0, .02, 0], turbulence: .4 },
+  // Paper dust under the office's tubes; in the throne room, stage haze and her bubbles rising slowly.
+  'palacio-secretaria': { kinds: [{ kind: 'mote', density: 8, low: .3, high: 2.8 }, { kind: 'gloom', density: 1, low: .1, high: 2 }], wind: [0, .01, 0], turbulence: .3 },
+  'palacio-trono': { kinds: [{ kind: 'mote', density: 10, low: .4, high: 4.5 }, { kind: 'bubble', density: 2, low: 0, high: .6 }, { kind: 'gloom', density: 3, low: .1, high: 2.4 }], wind: [0, .03, 0], turbulence: .5 },
 };
 /** What particles need of a scene's scenery: its floors, a sunk river's water, its grid and its houses' volumes. */
 interface SceneShape {

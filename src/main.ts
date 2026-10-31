@@ -66,7 +66,7 @@ function impactSound(effect: BattleEffect) {
  * a place without one fades to silence.
  * The castle's song is haunted as much as the castle is threatening right now (src/haunt.ts).
  */
-const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'sad', meridiana: 'home', 'meridiana-calle': 'concrete', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo' };
+const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'sad', meridiana: 'home', 'meridiana-calle': 'concrete', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo' };
 let place: EnvironmentId | undefined;
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
@@ -420,12 +420,13 @@ try {
       jumpMenu.setPlace(id);
       const geo = ENVIRONMENTS[id].geo, basilica = !!ENVIRONMENTS[id].basilica;
       // Chapter 2's palace stands on the Rec Comtal school, not at the end of Passatge Maresme.
-      const school = id === 'palacio' && story.adult;
+      // Its zones (chapter 2 only) are the school itself.
+      const zone = !!ENVIRONMENTS[id].palace?.theme, school = (id === 'palacio' && story.adult) || zone;
       document.querySelector('.place-panel .eyebrow')!.textContent = id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : basilica ? 'EIXAMPLE, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
       document.querySelector('#location-detail')!.textContent = geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Según las fotos de 2026' : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
         : id === 'el-nucli' ? 'Carrer de Valladolid, 41 · Tienda de juegos'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
-        : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
+        : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : zone ? 'Dentro de la escuela Rec Comtal' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
       document.title = `${ENVIRONMENTS[id].name} · Gerard 35`;
     },

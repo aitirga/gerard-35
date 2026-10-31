@@ -177,4 +177,20 @@ export const LINES_2 = {
   ),
   /** The palace's things, seen at 35 (chapter 1's looks speak with Bernat's voice). */
   curtain: both(gerard('La cortina de chicle. Detrás está la escalera del trono.'), aitor('Y delante, ellos.')),
+  /** Inside the palace, the school (docs/places/palace-zones.md): the gym's door, held shut from inside. */
+  gymShut: both(
+    gerard('Dentro suena un silbato. Luego, nada.'),
+    aitor('La puerta no cede. Algo blando la sujeta por dentro.'),
+  ),
+  /** The secretaría's door: his own, every morning, and today his key will not turn. */
+  officeShut: both(
+    gerard('Es mi puerta. La llave entra… y no gira.'),
+    aitor('¿Seguro que es esa?'),
+    gerard('La abro cada mañana.'),
+  ),
+  /** Direcció, at the end of the secretaría: the last door before her, locked from the other side. */
+  directionShut: both(
+    gerard('Direcció. Cerrada por dentro.'),
+    aitor('Por debajo sale luz. Como la de un escenario.'),
+  ),
 } as const;
