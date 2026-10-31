@@ -399,7 +399,11 @@ export function createCity3D(host: HTMLElement): City3D | undefined {
       const xs = points.map(p => p.x), ys = points.map(p => p.y), w = whole();
       const r = host.getBoundingClientRect(), aspect = r.width && r.height ? r.width / r.height : 1.6;
       const span = Math.max((Math.max(...xs) - Math.min(...xs)) * 2.2, (Math.max(...ys) - Math.min(...ys)) * 2.2 * aspect, (extent.x1 - extent.x0) * least);
-      set({ x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 + span * .08, distance: span / aspect / (2 * Math.tan(FOV * Math.PI / 360)), yaw: w.yaw, pitch: .82 });
+      const distance = span / aspect / (2 * Math.tan(FOV * Math.PI / 360));
+      // Places all over the city (every line's playable stops): the whole of it from above, rather
+      // than a low view that reaches past the model's edges.
+      if (distance >= w.distance * .8) { set(w); return; }
+      set({ x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 + span * .08, distance, yaw: w.yaw, pitch: .82 });
     },
     pan(dx, dy) {
       const k = scale() || .1, c = Math.cos(orbit.yaw), s = Math.sin(orbit.yaw);
