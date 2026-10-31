@@ -92,43 +92,72 @@
   "styles": {
     "default": {
       "walls": [
-        "#efe2c4",
-        "#ecd5a8",
-        "#f3ece0",
-        "#e8c9a6",
-        "#e4d3b2"
+        "#ecd69c",
+        "#f4f0e8",
+        "#e7c98e",
+        "#efe3c8",
+        "#e3bf7a",
+        "#f1e6d6",
+        "#eccfb0"
       ],
-      "base": "#a39a8c",
+      "base": "#9d978c",
       "trim": "#f7f3ea",
       "roof": "#b05a3a",
       "roof_kind": "hip",
-      "facade": "rendered",
-      "ground": "masonry",
-      "levels": 2
+      "facade": "vila",
+      "ground": "socol",
+      "levels": 2,
+      "materials": {
+        "base": "granit"
+      }
+    },
+    "centre": {
+      "roof": "#94593f",
+      "levels": 3
     },
     "nuria": {
       "walls": [
         "#f4f0e8"
       ],
-      "base": "#b3aca0",
+      "base": "#a8a399",
       "trim": "#ffffff",
-      "roof": "#b5583a",
-      "roof_kind": "hip",
-      "facade": "rendered",
-      "ground": "masonry",
-      "levels": 2
+      "roof": "#b5583a"
+    },
+    "cantonada": {
+      "walls": [
+        "#efdcd2"
+      ],
+      "base": "#a8a399",
+      "trim": "#ffffff",
+      "roof": "#d6d8d5",
+      "roof_kind": "flat",
+      "levels": 1,
+      "materials": {
+        "base": "granit",
+        "roof": "formigo"
+      }
+    },
+    "pisos": {
+      "walls": [
+        "#dcc9a8",
+        "#d6c2a4"
+      ],
+      "facade": "flats",
+      "roof": "#a85a3c",
+      "levels": 4
     },
     "estacio": {
       "walls": [
         "#ecd69c"
       ],
-      "base": "#b99a6a",
-      "trim": "#f6ead0",
+      "base": "#c4a57a",
+      "trim": "#f3e4bf",
       "roof": "#a95a3c",
-      "roof_kind": "hip",
-      "facade": "rendered",
-      "ground": "arcade",
-      "levels": 1
+      "facade": "plain",
+      "levels": 1.5,
+      "materials": {
+        "base": "carreu"
+      }
     },
     "ajuntament": {
       "walls": [
@@ -137,9 +166,6 @@
       "base": "#cfc4ae",
       "trim": "#ffffff",
       "roof": "#9a5b40",
-      "roof_kind": "hip",
-      "facade": "rendered",
-      "ground": "arcade",
       "levels": 2
     },
     "fleca": {
@@ -147,16 +173,14 @@
         "#e7c36d"
       ],
       "base": "#8e8a83",
-      "trim": "#9a958c",
+      "trim": "#b8b1a4",
       "roof": "#a55a3c",
       "roof_kind": "flat",
-      "facade": "rendered",
-      "ground": "ashlar",
-      "levels": 3
+      "levels": 4
     },
     "esglesia": {
       "walls": [
-        "#bfb39b"
+        "#bcb19c"
       ],
       "base": "#a89c86",
       "trim": "#cfc4ae",
@@ -164,10 +188,20 @@
       "roof_kind": "gable",
       "facade": "ashlar",
       "ground": "ashlar",
-      "levels": 5
+      "levels": 4
+    },
+    "terrat": {
+      "roof": "#a98d78",
+      "roof_kind": "flat"
     }
   },
   "buildings": {
+    "tag:building=yes": {
+      "style": "centre"
+    },
+    "tag:building=terrace": {
+      "style": "terrat"
+    },
     "sketch/casa-nuria": {
       "style": "nuria",
       "label": "Casa de Nuria"
@@ -176,15 +210,16 @@
       "style": "nuria"
     },
     "sketch/casa-cantonada": {
-      "style": "nuria",
-      "walls": "#efdcd2",
-      "roof": "#d9dad6",
-      "roof_kind": "flat",
+      "style": "cantonada",
       "levels": 1
+    },
+    "sketch/pisos-maria-borrell": {
+      "style": "pisos"
     },
     "way/388883741": {
       "style": "estacio",
-      "label": "Estació de Cardedeu"
+      "label": "Estació de Cardedeu",
+      "levels": 1.5
     },
     "way/276684161": {
       "style": "ajuntament",
@@ -192,11 +227,14 @@
     },
     "way/755108786": {
       "style": "fleca",
-      "label": "Fleca Vella"
+      "label": "Fleca Vella",
+      "signature": "fleca-vella",
+      "levels": 4
     },
     "way/406655896": {
       "label": "Museu Arxiu Tomàs Balvey",
-      "levels": 3
+      "levels": 3,
+      "walls": "#eadcc0"
     },
     "way/740958696": {
       "style": "esglesia",
@@ -213,7 +251,8 @@
       "kind": "tree",
       "east_m": 17,
       "south_m": -24,
-      "scale": 2.2
+      "scale": 3.6,
+      "species": "cedar"
     },
     {
       "kind": "tree",
@@ -238,7 +277,8 @@
       "kind": "tree",
       "east_m": 128,
       "south_m": 62,
-      "scale": 1.8
+      "scale": 1.7,
+      "species": "cedar"
     },
     {
       "kind": "car",
@@ -287,30 +327,166 @@
       "south_m": -50
     },
     {
-      "kind": "lamp",
-      "style": "led",
-      "east_m": 112,
-      "south_m": 92,
-      "to": {
-        "east_m": 182,
-        "south_m": 99
-      },
-      "every_m": 17
-    },
-    {
       "kind": "bin",
       "east_m": -6,
       "south_m": -12
     },
     {
       "kind": "bench",
-      "east_m": 132,
-      "south_m": 89
+      "east_m": 50,
+      "south_m": -92
+    },
+    {
+      "kind": "tree",
+      "x_m": 98,
+      "z_m": 84,
+      "species": "cedar",
+      "scale": 1.9
+    },
+    {
+      "kind": "tree",
+      "x_m": 121,
+      "z_m": 78,
+      "species": "cypress",
+      "scale": 1.7
+    },
+    {
+      "kind": "tree",
+      "x_m": 123.5,
+      "z_m": 78,
+      "species": "cypress",
+      "scale": 1.5
+    },
+    {
+      "kind": "tree",
+      "x_m": 55,
+      "z_m": -94,
+      "scale": 1.15,
+      "base": "ground",
+      "trunk": "#cfc6b0"
+    },
+    {
+      "kind": "tree",
+      "x_m": 62,
+      "z_m": -94,
+      "scale": 1.15,
+      "base": "ground",
+      "trunk": "#cfc6b0"
+    },
+    {
+      "kind": "tree",
+      "x_m": 69,
+      "z_m": -94,
+      "scale": 1.15,
+      "base": "ground",
+      "trunk": "#cfc6b0"
+    },
+    {
+      "kind": "tree",
+      "x_m": 76,
+      "z_m": -94,
+      "scale": 1.15,
+      "base": "ground",
+      "trunk": "#cfc6b0"
+    },
+    {
+      "kind": "tree",
+      "x_m": 55,
+      "z_m": -84,
+      "scale": 1.15,
+      "base": "ground",
+      "trunk": "#cfc6b0"
+    },
+    {
+      "kind": "tree",
+      "x_m": 62,
+      "z_m": -84,
+      "scale": 1.15,
+      "base": "ground",
+      "trunk": "#cfc6b0"
+    },
+    {
+      "kind": "tree",
+      "x_m": 69,
+      "z_m": -84,
+      "scale": 1.15,
+      "base": "ground",
+      "trunk": "#cfc6b0"
+    },
+    {
+      "kind": "tree",
+      "x_m": 76,
+      "z_m": -84,
+      "scale": 1.15,
+      "base": "ground",
+      "trunk": "#cfc6b0"
     },
     {
       "kind": "bench",
-      "east_m": 50,
-      "south_m": -92
+      "x_m": 58.5,
+      "z_m": -89
+    },
+    {
+      "kind": "bench",
+      "x_m": 72.5,
+      "z_m": -89
+    },
+    {
+      "kind": "lamp",
+      "x_m": 51.5,
+      "z_m": -89
+    },
+    {
+      "kind": "lamp",
+      "x_m": 79.5,
+      "z_m": -89
+    },
+    {
+      "kind": "tree",
+      "x_m": 11.8,
+      "z_m": 21.6,
+      "species": "pine",
+      "scale": 1.5,
+      "base": "ground"
+    },
+    {
+      "kind": "tree",
+      "x_m": 34.3,
+      "z_m": 36.6,
+      "species": "pine",
+      "scale": 1.7,
+      "base": "ground"
+    },
+    {
+      "kind": "tree",
+      "x_m": 24.3,
+      "z_m": 9.0,
+      "species": "olive",
+      "base": "ground"
+    },
+    {
+      "kind": "tree",
+      "x_m": 45.5,
+      "z_m": -33,
+      "species": "pine",
+      "scale": 1.3,
+      "base": "ground"
+    },
+    {
+      "kind": "tree",
+      "x_m": 47,
+      "z_m": -18,
+      "species": "olive",
+      "scale": 0.9,
+      "base": "ground"
+    },
+    {
+      "kind": "tree",
+      "x_m": -25,
+      "z_m": -40,
+      "species": "pine",
+      "scale": 1.4,
+      "base": "ground"
     }
   ],
   "places": [
@@ -365,6 +541,16 @@
         "«Jardí del Museu Tomàs Balvey». Romero, salvia, lavanda…",
         "Plantas de botica. Huele a farmacia antigua."
       ]
+    },
+    {
+      "id": "cardedeu-campanar",
+      "label": "Mirar el campanario",
+      "x_m": 165,
+      "z_m": -107,
+      "lines": [
+        "El campanario de Santa Maria. Veintisiete metros de piedra y almenas.",
+        "Desde ahí arriba tiene que verse el Montseny entero."
+      ]
     }
   ],
   "labels": [
@@ -379,12 +565,18 @@
       "east_m": 80,
       "south_m": 58,
       "width": 9
+    },
+    {
+      "text": "PLAÇA DE SANT JOAN",
+      "x_m": 65.5,
+      "z_m": -89,
+      "width": 8
     }
   ],
   "anchors": {
     "nuria-door": {
-      "east_m": -5.9,
-      "south_m": -14.5
+      "east_m": -3.5,
+      "south_m": -14.4
     },
     "haru-station": {
       "east_m": 141,
@@ -402,6 +594,529 @@
       "east_m": 153,
       "south_m": -131,
       "y_m": 27
+    }
+  },
+  "landmarks": [
+    {
+      "kind": "andana",
+      "id": "andana-1",
+      "x_m": 100.0,
+      "z_m": 100.0,
+      "solid": false,
+      "textures": [
+        "granit"
+      ],
+      "params": {
+        "edge": [
+          [
+            -82.6,
+            -9.1
+          ],
+          [
+            -69.48,
+            -7.87
+          ],
+          [
+            -54.48,
+            -5.89
+          ],
+          [
+            -38.23,
+            -3.58
+          ],
+          [
+            -23.23,
+            -0.98
+          ],
+          [
+            -6.98,
+            2.07
+          ],
+          [
+            6.77,
+            4.8
+          ],
+          [
+            18.02,
+            7.03
+          ],
+          [
+            27.4,
+            8.89
+          ],
+          [
+            33.4,
+            10.08
+          ],
+          [
+            41.77,
+            11.74
+          ],
+          [
+            50.9,
+            14.05
+          ],
+          [
+            56.77,
+            15.55
+          ],
+          [
+            68.02,
+            18.4
+          ],
+          [
+            83.02,
+            22.44
+          ],
+          [
+            94.27,
+            25.76
+          ],
+          [
+            107.27,
+            29.58
+          ]
+        ],
+        "back": [
+          [
+            -82.6,
+            -12.8
+          ],
+          [
+            -69.48,
+            -12.28
+          ],
+          [
+            -54.48,
+            -11.69
+          ],
+          [
+            -38.23,
+            -10.37
+          ],
+          [
+            -23.23,
+            -9.06
+          ],
+          [
+            -6.98,
+            -7.07
+          ],
+          [
+            6.77,
+            -5.38
+          ],
+          [
+            18.02,
+            -3.55
+          ],
+          [
+            27.4,
+            -2.19
+          ],
+          [
+            33.4,
+            -4.32
+          ],
+          [
+            41.77,
+            -2.82
+          ],
+          [
+            50.9,
+            -1.19
+          ],
+          [
+            56.77,
+            3.2
+          ],
+          [
+            68.02,
+            6.31
+          ],
+          [
+            83.02,
+            10.66
+          ],
+          [
+            94.27,
+            13.94
+          ],
+          [
+            107.27,
+            17.43
+          ]
+        ],
+        "lamps_m": 16,
+        "name": "Cardedeu",
+        "paving": "#8f8c86",
+        "benches": [
+          90.5,
+          153.26
+        ],
+        "boards": [
+          59.94,
+          110.53
+        ],
+        "fence": [
+          [
+            0,
+            89.73
+          ],
+          [
+            153.75,
+            194.55
+          ]
+        ]
+      }
+    },
+    {
+      "kind": "porxo",
+      "id": "porxo-estacio",
+      "x_m": 144.43,
+      "z_m": 99.18,
+      "rotation_deg": -10.12,
+      "size_m": [
+        12.6,
+        3.0
+      ],
+      "solid": false,
+      "textures": [
+        "estuc",
+        "teula"
+      ],
+      "params": {
+        "arches": 4,
+        "side": 1,
+        "spring_m": 1.9,
+        "top_m": 3.8,
+        "rise_m": 0.45,
+        "colour": "#ecd69c",
+        "trim": "#f3e4bf",
+        "base": "#c4a57a",
+        "tiles": "#a95a3c",
+        "clock": [
+          -7.9,
+          2.8
+        ],
+        "lanterns": [
+          [
+            -9.9,
+            3.0
+          ],
+          [
+            5.1,
+            3.0
+          ]
+        ],
+        "machine": -1.6,
+        "bench": 2.6
+      }
+    },
+    {
+      "kind": "catenaria",
+      "id": "catenaria-112",
+      "x_m": 64.27,
+      "z_m": 100.8,
+      "rotation_deg": -8.06,
+      "size_m": [
+        0.5,
+        9.98
+      ],
+      "solid": false,
+      "params": {
+        "tracks": [
+          -1.39,
+          2.39
+        ],
+        "wire_m": 21
+      }
+    },
+    {
+      "kind": "catenaria",
+      "id": "catenaria-150",
+      "x_m": 111.77,
+      "z_m": 109.86,
+      "rotation_deg": -11.23,
+      "size_m": [
+        0.5,
+        9.97
+      ],
+      "solid": false,
+      "params": {
+        "tracks": [
+          -1.39,
+          2.39
+        ],
+        "wire_m": 21
+      }
+    },
+    {
+      "kind": "catenaria",
+      "id": "catenaria-196",
+      "x_m": 169.27,
+      "z_m": 122.83,
+      "rotation_deg": -14.24,
+      "size_m": [
+        0.5,
+        9.97
+      ],
+      "solid": false,
+      "params": {
+        "tracks": [
+          -1.38,
+          2.38
+        ],
+        "wire_m": 21
+      }
+    },
+    {
+      "kind": "campanar",
+      "id": "campanar-santa-maria",
+      "x_m": 166.02,
+      "z_m": -114.94,
+      "rotation_deg": 12.1,
+      "size_m": [
+        7,
+        7
+      ],
+      "solid": false,
+      "textures": [
+        "carreu"
+      ],
+      "params": {
+        "height_m": 27,
+        "stone": "#b9ae98"
+      }
+    },
+    {
+      "kind": "torre-llige",
+      "id": "torre-llige",
+      "x_m": 13.42,
+      "z_m": -77.41,
+      "rotation_deg": 99.1,
+      "size_m": [
+        14.1,
+        27
+      ],
+      "solid": false,
+      "textures": [
+        "estuc",
+        "teula"
+      ],
+      "params": {
+        "eave_m": 6,
+        "belvedere_at": [
+          0,
+          6
+        ],
+        "colour": "#efe6d2"
+      }
+    },
+    {
+      "kind": "porxo",
+      "id": "porxo-ajuntament",
+      "x_m": 28.26,
+      "z_m": -79.68,
+      "rotation_deg": 99.1,
+      "size_m": [
+        12,
+        3
+      ],
+      "solid": false,
+      "textures": [
+        "estuc",
+        "rajola"
+      ],
+      "params": {
+        "arches": 5,
+        "spring_m": 2.0,
+        "top_m": 3.4,
+        "roof": "terrassa",
+        "colour": "#efe6d2",
+        "trim": "#fbf7ee",
+        "base": "#cfc4ae",
+        "base_m": 0.6
+      }
+    },
+    {
+      "kind": "patis",
+      "id": "patis-nuria",
+      "x_m": -5.7,
+      "z_m": -30.4,
+      "rotation_deg": 90,
+      "size_m": [
+        46,
+        1.6
+      ],
+      "textures": [
+        "estuc",
+        "rajola"
+      ],
+      "params": {
+        "every_m": 4.6,
+        "colour": "#f4f0e8"
+      }
+    },
+    {
+      "kind": "tanca",
+      "id": "tanca-jardi-gran",
+      "x_m": 3.9,
+      "z_m": -22.5,
+      "rotation_deg": 90,
+      "size_m": [
+        29,
+        1.25
+      ],
+      "textures": [
+        "estuc"
+      ],
+      "params": {
+        "height_m": 1.5,
+        "gates": [
+          -11
+        ],
+        "colour": "#e9dcc0",
+        "hedge_m": 1.8,
+        "hedge": "#4d5f43"
+      }
+    },
+    {
+      "kind": "tanca",
+      "id": "tanca-museu",
+      "x_m": 44.85,
+      "z_m": -8.8,
+      "size_m": [
+        11.3,
+        1.25
+      ],
+      "textures": [
+        "estuc"
+      ],
+      "params": {
+        "height_m": 0.6,
+        "railing_m": 0.9,
+        "gates": [
+          -0.5
+        ],
+        "colour": "#eadcc0"
+      }
+    },
+    {
+      "kind": "pas-zebra",
+      "id": "zebra-9",
+      "x_m": -0.73,
+      "z_m": -9.2,
+      "size_m": [
+        5,
+        3
+      ],
+      "solid": false
+    },
+    {
+      "kind": "pas-zebra",
+      "id": "zebra-57",
+      "x_m": -0.73,
+      "z_m": -57.5,
+      "size_m": [
+        5,
+        3
+      ],
+      "solid": false
+    },
+    {
+      "kind": "montseny",
+      "id": "montseny",
+      "x_m": 111.8,
+      "z_m": -168.4,
+      "size_m": [
+        300,
+        50
+      ],
+      "solid": false,
+      "params": {
+        "height_m": 62,
+        "forest": "#5f6f86",
+        "colour": "#71809a",
+        "crest": "#9ea9bc",
+        "haze": 0.3
+      }
+    },
+    {
+      "kind": "montseny",
+      "id": "turons",
+      "x_m": 65.6,
+      "z_m": -148.4,
+      "size_m": [
+        330,
+        22
+      ],
+      "solid": false,
+      "params": {
+        "height_m": 12,
+        "forest": "#4d6146",
+        "colour": "#58704f",
+        "crest": "#647b59",
+        "haze": 0.1,
+        "profile": [
+          [
+            0,
+            0.5
+          ],
+          [
+            0.12,
+            0.8
+          ],
+          [
+            0.25,
+            0.55
+          ],
+          [
+            0.4,
+            0.9
+          ],
+          [
+            0.55,
+            0.6
+          ],
+          [
+            0.7,
+            1
+          ],
+          [
+            0.85,
+            0.65
+          ],
+          [
+            1,
+            0.75
+          ]
+        ]
+      }
+    }
+  ],
+  "osm_props": {
+    "bike-rack": {}
+  },
+  "look": {
+    "hills": false,
+    "materials": {
+      "ground": {
+        "texture": "formigo",
+        "tint": "#aca392"
+      },
+      "square": {
+        "texture": "saulo",
+        "tint": "#cdb48a"
+      },
+      "grass": {
+        "texture": "gespa",
+        "tint": "#8e9a62"
+      },
+      "footway": {
+        "texture": "saulo",
+        "tint": "#c2ab84"
+      }
     }
   }
 }

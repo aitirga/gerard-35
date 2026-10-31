@@ -15,6 +15,11 @@ const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'pa
 test('every place of Nuria\'s mission stands on a walkable cell', () => {
   const places = [PLACES_NURIA.nuria, PLACES_NURIA.haru, PLACES_NURIA.corner, PLACES_NURIA.mazeIn, PLACES_NURIA.streetBack, PLACES_NURIA.summit, ...PLACES_NURIA.uri, ...FEARS.flatMap(f => f.patrol.map(cell => ({ environment: 'cardedeu-laberinto', cell })))];
   for (const place of places) assert.ok(canWalk(place.cell, ENVIRONMENTS[place.environment].grid), `${place.environment} ${place.cell.x},${place.cell.z}`);
+  // Round Nuria at her door (src/story.ts): Uri, Haru and Yuki beside her, and where the party comes home.
+  const { x, z } = PLACES_NURIA.nuria.cell;
+  for (const cell of [{ x: x - 2, z }, { x: x - 1, z: z + 1 }, { x: x + 1, z: z + 1 }, { x: x - 1, z: z + 2 }]) {
+    assert.ok(canWalk(cell, ENVIRONMENTS.cardedeu.grid), `cardedeu ${cell.x},${cell.z} by Nuria's door`);
+  }
 });
 
 test('Nuria lends the cats: Papagato on trial, and the corner opens onto Uri\'s maze', () => {
