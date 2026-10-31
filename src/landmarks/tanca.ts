@@ -41,8 +41,8 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const p = landmark.params, L = landmark.w * kit.cell;
   const H = Number(p.height_m ?? 1), rail = Number(p.railing_m ?? 0), T = 0.3, gate = 1.2;
   const gates = ((p.gates as number[] | undefined) ?? []).slice().sort((a, b) => a - b);
-  const wall = kit.mesh(), coping = kit.mesh(), bars = kit.mesh(), hedge = kit.mesh();
-  // The wall in stretches between the gates, each gate between two pillars.
+  const wall = kit.mesh(), coping = kit.mesh(), bars = kit.mesh(), hedge = kit.mesh(), hedgeH = Number(p.hedge_m ?? 0);
+  // The wall in stretches between the gates, each gate between two pillars; the hedge behind leaves the gates open.
   let x = -L / 2;
   for (const g of [...gates, L / 2 + gate]) {
     const end = Math.min(L / 2, g - gate / 2);
@@ -50,13 +50,13 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
       slab(wall, x, end, 0, H, -T / 2, T / 2);
       slab(coping, x - 0.03, end + 0.03, H, H + 0.07, -T / 2 - 0.04, T / 2 + 0.04);
       if (rail) bars.quad([x, H + 0.07, 0], [end, H + 0.07, 0], [end, H + 0.07 + rail, 0], [x, H + 0.07 + rail, 0], [0, 0, 1], [x, 1], [end, 1], [end, 0], [x, 0]);
+      if (hedgeH > 0) slab(hedge, Math.max(x, -L / 2 + 0.2), Math.min(end, L / 2 - 0.2), 0, hedgeH, -T / 2 - 0.9, -T / 2 - 0.05);
     }
     if (g > L / 2) break;
     for (const side of [-1, 1]) slab(wall, g + side * gate / 2 - 0.22, g + side * gate / 2 + 0.22, 0, H + rail + 0.2, -0.22, 0.22);
     bars.quad([g - gate / 2 + 0.2, 0.05, 0], [g + gate / 2 - 0.2, 0.05, 0], [g + gate / 2 - 0.2, H + rail, 0], [g - gate / 2 + 0.2, H + rail, 0], [0, 0, 1], [0, 1], [1, 1], [1, 0], [0, 0]);
     x = g + gate / 2;
   }
-  if (Number(p.hedge_m ?? 0) > 0) slab(hedge, -L / 2 + 0.2, L / 2 - 0.2, 0, Number(p.hedge_m), -T / 2 - 0.9, -T / 2 - 0.05);
   kit.add('Muro del jardín', wall, kit.surface('estuc', String(p.colour ?? '#efe4cc')));
   kit.add('Albardilla', coping, kit.mat('Albardilla', String(p.coping ?? '#b9b3a8'), 0.1), { shadows: false });
   kit.add('Reja', bars, railing(kit), { shadows: false });
