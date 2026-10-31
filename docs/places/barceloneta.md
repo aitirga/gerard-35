@@ -5,11 +5,9 @@ the shore, L'Estel Ferit's rusty cubes on the sand and the old Barceloneta's nar
 washing on every balcony. It is the brightest, highest-key place in the game: Mediterranean midday
 light, sand and blue. The sea is the zone's border.
 
-Status (2026-10-30): **research and draft**. `assets/geo/barceloneta/` holds the zone (`zone.json`),
-the OpenStreetMap data (`osm.json`) and the sea (`sketch.json`); `just geo-build barceloneta`
-already lays it out (preview in `output/geo/barceloneta/preview.png`). Nothing is wired into the
-game yet: the build waits for the shared foundation (real materials, `src/landmarks/`, the sand
-area kind, `docs/visual-style.md`), see § Build plan.
+Status (2026-10-31): **built and playable**. The development picker reaches it (*La Barceloneta ·
+La playa · L4*), the L4's Barceloneta station leads to it, and `just screenshots barceloneta --gpu`
+walks through it. What is approximate or left is at the end.
 
 ## The real place
 
@@ -81,102 +79,104 @@ keep the sand pale rather than yellow. Reserved colours: the lifeguard band stay
 (`#ef7d32`, not Noísta's crimson), the volleyball nets white with a dark band (the L4 yellow is
 the totem's), parasols blue and white, nothing pink.
 
-Proposed look, in `LOOKS`' shape:
+Its look in `LOOKS` (`src/grading.ts`), a touch warmer and crisper than proposed once the sand
+was on screen (at `.98` contrast the sand washed out against the promenade):
 
 ```ts
-/** La Barceloneta: the brightest place, a high Mediterranean midday; cool, with open blue shade. */
 barceloneta: {
-  grade: { temperature: -.05, lift: [.01, .012, .016], shadows: [-.004, .004, .016], highlights: [.012, .01, .004], contrast: .98, saturation: 1.02 },
-  enhance: { vibrance: .08, shadows: .12, highlights: -.06, dehaze: .03 },
+  grade: { temperature: -.04, lift: [.004, .006, .01], shadows: [-.004, .004, .014], highlights: [.012, .01, .004], contrast: 1.02, saturation: 1.04 },
+  enhance: { vibrance: .1, highlights: -.08, dehaze: .04 },
 },
 ```
+
+What changed from the card while building: the sun glitter is a field of small sparkles on the
+sea, not a bloom; the *PASSEIG MARÍTIM* ground text is not drawn (geo places dropped painted
+ground text for speed); the parasols of someone's towels keep their own colours (orange, yellow,
+blue), the bar's stay blue and white.
 
 ## Layout
 
 `assets/geo/barceloneta/zone.json`: anchor L'Estel Ferit, turned 65° (`bounds_turned`) so the coast
 runs along x and the sea faces the camera; 280 × 220 m (x −150…+130 along the coast, z −100…+120
-from the old Barceloneta to the sea), 1.5 m cells (187 × 147). From the camera inwards:
+from the old Barceloneta to the sea), 1.5 m cells (187 × 147, about 16,000 walkable). From the
+camera inwards:
 
 | Band (turned z) | What |
 | --- | --- |
-| Sea, z > +43…+109 | Water from `sketch.json` along OSM's coastline; a far sea plane continues past the map's near edges. Yellow buoys, a paddle surfer |
-| Waterline | The wet band (~4 m) and the swash |
-| Sand, z −15…+43 (to +109 in the salient) | Platja de Sant Miquel (OSM `natural=beach`): the cubes at 0,0; the volleyball area beside them (OSM's *Espai per a ús esportiu lliure*, x 10…88); showers at x −117, −10, +98; the Salvaje beach bar at x −91; lifeguard cabin and old lookout (placed, not surveyed) |
-| Parapet and boardwalk, z ≈ −15 | A low white wall with gaps at the steps and showers; the timber boardwalk below it |
-| Promenade, z −15…−32 | OSM's pedestrian areas: slabs, palms, lamp masts, bollards, benches, Bicing; the ground label |
-| Block ends, z −35…−65 | Restaurants on the ground floors (from OSM: Can Majó, Surf House, Casa Costa, Tapaboca, Sea Breeze, KFC…) |
-| Old Barceloneta, to z −100 | Long blocks at 45° to the coast; seen from the camera their long fronts face it square on, washing on every balcony. 15 buildings |
-| L4 entrance, x 112 z −95 | At the inland edge, at the end of a street: the real station is 700 m inland, *round the corner* |
+| Sea, z > +43…+109 | Water from `sketch.json` along OSM's coastline (ways 500581857 and 500581852); the sea carries on past both side edges to the frame. Yellow buoys about 20 m out; the breakwater's arm and head past the NNE edge (x 138) |
+| Waterline | The wet band (5 m) and the swash |
+| Sand, z −15…+43 (to +109 in the salient) | Platja de Sant Miquel (OSM `natural=beach`): the cubes at 0,0 with the rope cordon; two volleyball courts beside them on OSM's *Espai per a ús esportiu lliure*; the map's three showers; the Salvaje beach bar (its OSM building) with its loungers; the *SALVAMENT* post (number 4); the old lookout; five sets of towels; the sand cat by the parapet |
+| Parapet and boardwalk, z ≈ −15 | Six runs of a low white wall with the timber boardwalk below it on the beach side; the gaps between runs are the steps to the sand. Black bollards along the middle runs |
+| Promenade, z −15…−32 | OSM's pedestrian areas in grey granite: the map's palms plus two rows added where it has none, mast lamps every 22–24 m, benches, bins, bike racks |
+| Block ends, z −35…−65 | Restaurants on the ground floors (from OSM: Can Majó, Surf House, Casa Costa, Tapaboca, Sea Breeze…) |
+| Old Barceloneta, to z −100 | Long blocks at 45° to the coast, their long fronts facing the camera (21 buildings with the bar and the hostel), five storeys unless OSM says otherwise; `edge_buildings` keeps the blocks the map's back edge cuts through, so the streets run between houses to the frame |
+| L4 entrance, cell (171–174, 2) | At the end of a street on the back edge, between two blocks: the real L4 station is at Pla de Palau, about 700 m inland, so the stair here stands for *round the corner*. The block in front hides it from the camera; the see-through cut opens round Gerard |
 
-Borders: the sea (near side), the breakwater's arm coming ashore at the NNE corner (x ≈ 129),
-Plaça del Mar's paving at the SSW cut, the blocks inland. Spawn on the promenade beside the
-cubes. Backdrop beyond the far edges: the W's sail past the SSW-sea corner (scaled down about
-four times and hazed, since the orthographic camera has no perspective), the cable car's tower, and
-Montjuïc as a low hill past the inland corner. The camera's follow view spans roughly 36 × 64 m,
-so the W reads mostly in the overview (R) and from the west end of the beach.
+Borders, all diegetic: the sea on the near side, the blocks inland, the breakwater at the NNE end
+and the cut at Plaça del Mar to the SSW. Spawn on the promenade beside the cubes. Backdrops past
+the edges, scaled down and hazed (the orthographic camera has no perspective): the W's glass sail
+(26 m tall instead of 99, on its pale apron ringed by boulders) out past the SSW corner, where it
+reads in the overview (R), and Montjuïc as a long low ridge past the inland corner.
 
-Places so far: `station-barceloneta` (the stair), `barceloneta-estel` (*Mirar los cubos*),
-`barceloneta-mar`, `barceloneta-balcons`. Lines say what Gerard sees, never where to go.
+Places to look at (lines say what Gerard sees, never where to go): the cubes, the sea, the
+balconies, the lifeguard post, the lookout, a shower, a volleyball net, the beach bar, someone's
+cooler (with the vendor calling *¡Cerveza, beer, agua!*), the sand cat, and the stair down to the
+metro.
 
-## Texture candidates
+## How it is built
 
-The shared library first; four new materials at most, all CC0.
+| Piece | Where |
+| --- | --- |
+| Zone, map data, the sea's outline | `assets/geo/barceloneta/{zone.json,osm.json,sketch.json}` → `src/geo/barceloneta.json` (`just geo-build barceloneta`) |
+| The sea, wet sand, white water, swash, tracks | `src/geo-sea.ts`, used by any zone with `look.water: "sea"` (`docs/environment-styling.md`). Bands measured from the coastline: turquoise to deep blue by distance, two crossing normal maps with the sun's glitter, the wet band, lines of white water rolling in every 7.2 s, two swashes out of step running up the wet sand and back, the cleaning tractor's tracks and footprints on the dry sand |
+| L'Estel Ferit | `src/landmarks/estel-ferit.ts`: four 2.6 m cubes turned and tilted further off true as they climb to 10.6 m, the lowest darker, a band of two rows of six panes near each top, the concrete base and the rope cordon; opens the cut |
+| The promenade's edge | `src/landmarks/passeig.ts`: parapet, boardwalk, bollards |
+| Beach pieces | `salvament.ts` (today's post), `guaita.ts` (the 1992 lookout: heavy leaning post, slatted platform, spoked hoop), `voleibol.ts`, `shower.ts` (also the map's `amenity=shower` nodes, `OSM_LANDMARKS`), `hamaques.ts` (the bar's loungers or someone's towels), `gat-de-sorra.ts` (the wink), `boies.ts`, `escullera.ts` |
+| Backdrops | `vela.ts` (the W), `muntanya.ts` (Montjuïc); `look.hills: false` leaves out the wooded hills other zones get |
+| Palms and lamps | `palm` species and `mast` lamp style in `src/props.ts` |
+| Blocks | The `barceloneta` facade atlas in `src/geo-scenery.ts` (four bays by three storeys: French windows in stone surrounds, small iron balconies, green louvred shutters or roll blinds, washing on most railings, plants, sagging cables) and `terrat`: stair heads, fibre-cement tanks, aerials and washing lines on the flat roofs |
+| Light and air | `LOOKS.barceloneta` (`src/grading.ts`), its `AIR` in `src/effects.ts` (sand blown low by a sea breeze), the flat's lamps in its colours (`src/home-lights.ts`) |
+| Wiring | `EnvironmentId` and `ENVIRONMENTS` (`src/environments.ts`), `PLACES` (`src/jump-menu.ts`), `STATION_PLACES` (`src/transit.ts`), the scenario `scripts/screenshots/barceloneta.json` |
 
-| Use | Candidate | Source · licence | Note |
+Budget: about 1,000 draw calls following Gerard on the promenade and 3,100 in the overview (the
+Meridiana: 2,100 and 10,000).
+
+## Textures and credits
+
+New in `public/textures/` (credits in each `texture.json`), all CC0 from Poly Haven via
+`tools/textures.py fetch polyhaven <asset> --id <id>`:
+
+| Id | Source | Author | Used for |
 | --- | --- | --- | --- |
-| Dry sand | `sorra` (library: Poly Haven *dense_sand*) tinted `#e6d0a2` | CC0 | First try. If it stays grey: ambientCG [Ground080](https://ambientcg.com/view?id=Ground080) (light, trampled) as `sorra-clara` |
-| Wet sand | Poly Haven [damp_beach_sand_02](https://polyhaven.com/a/damp_beach_sand_02) → `sorra-humida` | CC0 | Darker, glossier while the swash covers it |
-| Promenade | `granit` (library: *granite_tile*) tinted `#a9adb0`; alternative Poly Haven [granite_tile_04](https://polyhaven.com/a/granite_tile_04) | CC0 | Large grey slabs |
-| Boardwalk, showers, bar decks | Poly Haven [old_wood_floor](https://polyhaven.com/a/old_wood_floor) → `fusta-passera` | CC0 | Dark weathered planks |
-| L'Estel Ferit | Poly Haven [rust_coarse_01](https://polyhaven.com/a/rust_coarse_01) → `acer-corten` | CC0 | Even deep rust; the bottom cube tinted grey steel |
-| Breakwater | Poly Haven [rock_boulder_dry](https://polyhaven.com/a/rock_boulder_dry) → `escullera` | CC0 | Pale granite boulders |
-| Facades, roofs, streets | `estuc`, `rajola`, `asfalt`, `panot-gris` (library) | CC0 / own | Under a painted bay atlas |
-| Sea, foam | Own procedural (normal map of small waves; foam lace on canvas) | Own | No photo gives a sea seen from above that tiles |
+| `sorra-humida` | [damp_beach_sand_02](https://polyhaven.com/a/damp_beach_sand_02) | Dimitrios Savva | The wet band, the sand cat |
+| `fusta-passera` | [old_wood_floor](https://polyhaven.com/a/old_wood_floor) | Guillaume Monsergent | Boardwalk, shower decks |
+| `acer-corten` | [rust_coarse_01](https://polyhaven.com/a/rust_coarse_01) | Dimitrios Savva, Rico Cilliers | L'Estel Ferit |
 
-Commons facades (CC0 Zarateman street photos, CC BY-SA Jordiferrer) are references for painting the
-atlas, not textures: they are steep perspectives.
-
-## Build plan
-
-After the foundation merges into this branch:
-
-1. **Data.** `just geo-build barceloneta` with the sand class (OSM's beaches become walkable sand,
-   and stop the river-bank trees the current build scatters along the shore). Teach `trim()` in
-   `tools/geo.py` to leave out `place=sea|ocean` relations (the Mar Balear is 2.5 MB; it was dropped
-   from this `osm.json` by hand) so a re-fetch stays small. Trim the bounds if the walk feels long.
-2. **Wire it.** `EnvironmentId` and `ENVIRONMENTS` (`geoEnvironment('barceloneta', …)`), the
-   `index.html` option, its `PLACES` entry in `src/jump-menu.ts` (group Barcelona, *La playa · L4*),
-   `barceloneta: { environment: 'barceloneta' }` in `STATION_PLACES`, the row in `docs/barcelona.md`.
-3. **Ground.** Sand tinted, the wet band as a strip along the water's edge (`sorra-humida`), the
-   promenade's slabs, the boardwalk, the parapet as a low solid wall with gaps.
-4. **Sea.** Its own water (not the river's): turquoise at the shore to deep blue by distance,
-   scrolling normals, the sun's glitter as the place's one bloom; a far plane to the horizon. Waves:
-   two or three foam crests rolling in and fading, the swash running up the wet band and back on a
-   ~7 s cycle, the band darkening and drying behind it. Slower with reduced motion.
-5. **Landmarks** (`src/landmarks/`): `estel-ferit` (four 2.6 m cubes, each turned and tilted a few
-   degrees off the one below, window bands, the plinth, the rope cordon; opens the see-through cut),
-   `salvament` (cabin, band, flag), `guaita` (the old leaning lookout), `guingueta` (white flat
-   roof on posts, deck, counter, loungers, parasols), `dutxa`, `voleibol`, `escullera`.
-6. **Props.** A Washingtonia `palm` species in `src/props.ts`; a `mast` lamp style; bollards,
-   parasols, loungers, towels, buoys; a few gulls.
-7. **Facades.** A Barceloneta atlas (narrow bays, one iron balcony per window, washing on lines
-   and folding racks, green blinds, flags, air conditioners, stone surrounds) or `flats` with these
-   walls; flat roofs with water tanks and aerials; restaurants on the promenade ends.
-8. **Light and air.** `LOOKS.barceloneta` (above), its `AIR` (sand drift, spray, ≤ 300 particles),
-   the sea breeze.
-9. **Backdrop.** The W's sail, the cable car tower, Montjuïc.
-10. **Words.** More places (the lifeguard, the bar, the shower, the vendor), the boards' Catalan,
-    the wink.
-11. **Check.** `scripts/screenshots/barceloneta.json` (the cubes, the waterline, the promenade,
-    the L4 entrance, the overview, a greyscale shot), `just screenshots barceloneta --gpu`, `?stats`
-    against the Meridiana's budget, `just typecheck`, `npm test`.
+From the library: `sorra` (dry sand, tinted `#dbc394`), `granit` (promenade, `#909496`),
+`formigo` (parapet, the cubes' base), `asfalt`, `panot-gris`, `estuc`, `carreu`, `rajola`. Painted
+in code: the sea's ripples, the white water, the swash, the tracks, the facade atlas, the window
+band of the cubes, the *SALVAMENT* band and the volleyball net. No photo and no generated image
+ships. The Commons photos above were references to look at; Google Maps and Street View were only
+looked at (`output/geo/barceloneta/google/links.md`).
 
 ## Approximate or open
 
-- Flat ground: the promenade stands about 1.5 m over the sand in reality; here a low parapet marks it.
+- Flat ground: the promenade stands about 1.5 m over the sand in reality; here the low parapet
+  marks the step.
 - The beach's outline is OSM's, and storms move it every winter.
-- The lifeguard posts and nets are placed from photos, not surveyed; the station entrance is invented
-  (the real one is 700 m inland).
-- Storeys default to five where OSM gives none (real: four to seven); a 13-storey block at the SSW
-  corner comes from OSM and needs checking.
-- The W is a scaled backdrop, not at its real distance.
+- The lifeguard post, the lookout, the nets, the towels and the bar's loungers are placed from
+  photos, not surveyed. The buoys are about 20 m out instead of about 200, so they show from the
+  shore.
+- The station entrance is invented (the real one is 700 m inland, at Pla de Palau).
+- Storeys default to five where OSM gives none (real: four to seven). The 13-storey block at the
+  SSW corner is OSM's *Equity Point Sea* hostel (`building:levels=13`), left as mapped and not
+  checked on site.
+- The blocks the back edge cuts through end in a plain cut wall facing away from the camera.
+- The W and Montjuïc are scaled backdrops, not at their real distance; the W shows only in the
+  overview, not from the follow camera.
+- The sea's glitter is lit from the camera's position, so it follows the view; in the
+  overview it sits in the lower left as a field of sparkles.
+- Not built from the card: gulls, Bicing bikes, the flag board, the paddle surfer, spray where
+  the waves break, and the sounds (waves, gulls, the vendor). The place has no song of its own in
+  `PLACE_SONGS`.
+- No story uses the beach yet: it is a place to visit by metro.
