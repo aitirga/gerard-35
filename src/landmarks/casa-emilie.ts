@@ -10,7 +10,7 @@ import { bar, box, crown, prism } from '../landmark-shapes.ts';
  *
  * The pivot stands on the wall it decorates, the landmark's front (+z) facing out of it and its local
  * x along it; `floor` is the height of her balcony's slab, `roof` the roof's, `deep` how far the roof
- * runs back from this wall (all in metres).
+ * runs back from this wall (all in metres); `building` is her building's map id.
  */
 export const kind = 'casa-emilie';
 
@@ -50,12 +50,14 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const pv = kit.mesh();
   for (const z of [rz - 1, rz + 0.05]) pv.quad([-2.2, roof + 0.4, z], [-2.2, roof + 0.4, z + 0.95], [-0.6, roof + 1.1, z + 0.95], [-0.6, roof + 1.1, z], [-0.5, 1, 0], [0, 0], [1, 0], [1, 1], [0, 1]);
   for (const [x, r] of [[-1.4, 0.2], [-0.5, 0.16], [0.4, 0.22], [1.3, 0.17]] as const) pot(x, -0.5, r, 0.3, 'leaf', roof);
-  kit.add('Losas de balcón', slabs, kit.surface('estuc', '#d9cfbf'));
-  kit.add('Barandillas de Emilie', iron, kit.mat('Hierro de balcón', '#23272a', 0.45));
-  kit.add('Macetas', pots, kit.mat('Terracota', '#b4643f', 0.1));
-  kit.add('Plantas de Emilie', leaves, kit.mat('Hojas de maceta', '#4f7a3a', 0.1));
-  kit.add('Geranios', flowers, kit.mat('Geranio', '#c83d3d', 0.15));
-  kit.add('Alargador naranja', cable, kit.mat('Alargador', '#ec7a22', 0.35), { shadows: false });
-  kit.add('Luz de pantalla', screen, kit.mat('Luz de pantalla', '#8fb4ff', 0.6, 0.9), { shadows: false });
-  kit.add('Placa solar', pv, kit.mat('Placa solar', '#22314a', 0.75));
+  // Everything here hangs on her building, so it opens and closes with its cut.
+  const on = { building: String(params.building) };
+  kit.add('Losas de balcón', slabs, kit.surface('estuc', '#d9cfbf'), on);
+  kit.add('Barandillas de Emilie', iron, kit.mat('Hierro de balcón', '#23272a', 0.45), on);
+  kit.add('Macetas', pots, kit.mat('Terracota', '#b4643f', 0.1), on);
+  kit.add('Plantas de Emilie', leaves, kit.mat('Hojas de maceta', '#4f7a3a', 0.1), on);
+  kit.add('Geranios', flowers, kit.mat('Geranio', '#c83d3d', 0.15), on);
+  kit.add('Alargador naranja', cable, kit.mat('Alargador', '#ec7a22', 0.35), { ...on, shadows: false });
+  kit.add('Luz de pantalla', screen, kit.mat('Luz de pantalla', '#8fb4ff', 0.6, 0.9), { ...on, shadows: false });
+  kit.add('Placa solar', pv, kit.mat('Placa solar', '#22314a', 0.75), on);
 }

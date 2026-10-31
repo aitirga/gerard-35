@@ -157,7 +157,9 @@ A real-data zone like the Meridiana: OpenStreetMap for the blocks, streets, tree
   stair, `station-poble-sec` with its three-cell step, like Fabra i Puig on the Meridiana. The real
   entrance is 210 m further along the Paral·lel; it moves to where Blai meets the avenue.
 - **Places** (Spanish, Gerard's voice, no hints): the bars (*Mirar las barras*, at La Tasqueta de
-  Blai), Emilie's door (*Mirar el portal*), the stairs at the top of Margarit (*Mirar las
+  Blai), Emilie's door (*Mirar el portal*, at (68.25, −9) on the sidewalk in front of it: one cell
+  closer, against the wall, the wedge's tip hides Gerard and the cut takes away the balcony his line
+  describes), the stairs at the top of Margarit (*Mirar las
   escaleras*: "Otro día subo", the reason he does not climb), the library (*Mirar la biblioteca*:
   Francesc Boix).
 - **Labels**: CARRER DE BLAI (twice), CARRER D'ELKANO, PLAÇA DELS OCELLETS.
@@ -225,12 +227,13 @@ about 3 m, so the playable part stays level. The slope is the zone's back edge, 
 
 ### Roofs
 
-**`terrats`** (eight landmarks, each covering a strip of the zone): for every flat roof of three
-storeys or more, the stair's hut (where it fits inside the real outline), the fibre-cement water
-tank on most of them, one or two aerials and, on some, a washing line with the week's clothes.
-They are cut with the roof under them wherever the see-through cut opens (`cut: 'always'`), so
-nothing floats over the hole round Gerard. Emilie's roof is dressed by hand instead
-(`casa-emilie`).
+**`terrats`** (one landmark over the whole zone): for every flat roof of three storeys or more,
+the stair's hut (where it fits inside the real outline), the fibre-cement water tank on most of
+them, one or two aerials and, on some, a washing line with the week's clothes. Each roof's pieces
+are one mesh painted from a seven-colour palette and bound to their building's cut (`building` in
+the landmark kit), so they vanish exactly when the roof under them does: nothing floats over the
+hole round Gerard, and no hut is half eaten on a roof that stays whole. Emilie's roof is dressed by
+hand instead (`casa-emilie`, bound to her building the same way).
 
 ## Textures and credits
 

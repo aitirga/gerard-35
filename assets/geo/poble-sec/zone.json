@@ -751,7 +751,7 @@
     {
       "id": "poble-sec-emilie",
       "label": "Mirar el portal",
-      "x_m": 65.5,
+      "x_m": 68.25,
       "z_m": -9,
       "lines": [
         "El portal de Emilie. En el buzón del ático, su nombre escrito a mano y una pegatina de un circuito.",
@@ -811,7 +811,7 @@
       "z_m": 0
     },
     "emilie": {
-      "x_m": 65.5,
+      "x_m": 68.25,
       "z_m": -9
     },
     "escales": {
@@ -1383,7 +1383,8 @@
       "params": {
         "floor": 9.15,
         "roof": 12.38,
-        "deep": 6
+        "deep": 6,
+        "building": "way/1264332421"
       },
       "textures": [
         "estuc"
@@ -1391,11 +1392,11 @@
     },
     {
       "kind": "terrats",
-      "id": "terrats-1",
-      "x_m": -121.88,
+      "id": "terrats",
+      "x_m": 75,
       "z_m": -44,
       "size_m": [
-        56.25,
+        450,
         168
       ],
       "solid": false,
@@ -1405,149 +1406,7 @@
           "way/1264332421"
         ]
       },
-      "textures": [
-        "estuc"
-      ]
-    },
-    {
-      "kind": "terrats",
-      "id": "terrats-2",
-      "x_m": -65.62,
-      "z_m": -44,
-      "size_m": [
-        56.25,
-        168
-      ],
-      "solid": false,
-      "params": {
-        "zone": "poble-sec",
-        "skip": [
-          "way/1264332421"
-        ]
-      },
-      "textures": [
-        "estuc"
-      ]
-    },
-    {
-      "kind": "terrats",
-      "id": "terrats-3",
-      "x_m": -9.38,
-      "z_m": -44,
-      "size_m": [
-        56.25,
-        168
-      ],
-      "solid": false,
-      "params": {
-        "zone": "poble-sec",
-        "skip": [
-          "way/1264332421"
-        ]
-      },
-      "textures": [
-        "estuc"
-      ]
-    },
-    {
-      "kind": "terrats",
-      "id": "terrats-4",
-      "x_m": 46.88,
-      "z_m": -44,
-      "size_m": [
-        56.25,
-        168
-      ],
-      "solid": false,
-      "params": {
-        "zone": "poble-sec",
-        "skip": [
-          "way/1264332421"
-        ]
-      },
-      "textures": [
-        "estuc"
-      ]
-    },
-    {
-      "kind": "terrats",
-      "id": "terrats-5",
-      "x_m": 103.12,
-      "z_m": -44,
-      "size_m": [
-        56.25,
-        168
-      ],
-      "solid": false,
-      "params": {
-        "zone": "poble-sec",
-        "skip": [
-          "way/1264332421"
-        ]
-      },
-      "textures": [
-        "estuc"
-      ]
-    },
-    {
-      "kind": "terrats",
-      "id": "terrats-6",
-      "x_m": 159.38,
-      "z_m": -44,
-      "size_m": [
-        56.25,
-        168
-      ],
-      "solid": false,
-      "params": {
-        "zone": "poble-sec",
-        "skip": [
-          "way/1264332421"
-        ]
-      },
-      "textures": [
-        "estuc"
-      ]
-    },
-    {
-      "kind": "terrats",
-      "id": "terrats-7",
-      "x_m": 215.62,
-      "z_m": -44,
-      "size_m": [
-        56.25,
-        168
-      ],
-      "solid": false,
-      "params": {
-        "zone": "poble-sec",
-        "skip": [
-          "way/1264332421"
-        ]
-      },
-      "textures": [
-        "estuc"
-      ]
-    },
-    {
-      "kind": "terrats",
-      "id": "terrats-8",
-      "x_m": 271.88,
-      "z_m": -44,
-      "size_m": [
-        56.25,
-        168
-      ],
-      "solid": false,
-      "params": {
-        "zone": "poble-sec",
-        "skip": [
-          "way/1264332421"
-        ]
-      },
-      "textures": [
-        "estuc"
-      ]
+      "textures": []
     }
   ]
 }

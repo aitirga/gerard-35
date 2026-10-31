@@ -457,7 +457,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
 | `mat(name, hex, gloss, glow)` | A plain material, shared within the scene |
 | `surface(texture, tint, gloss)` | A real material, tinted, tiling by metres on `mesh()` UVs; plain `tint` until it loads |
 | `part(name, type, material, position, scale, rotation?, parent?)` | A primitive merged into the static batch |
-| `mesh()` / `add(name, mesh, material, { cut, shadows, parent })` | Hand-built meshes; `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building), `cut: 'always'` for pieces spread over many buildings (roof huts) that must vanish with whichever roof is cut, otherwise batched. `src/landmark-shapes.ts` adds boxes, bars, prisms and foliage to one mesh, so a hundred chairs or pines cost one draw call |
+| `mesh()` / `add(name, mesh, material, { cut, building, shadows, parent })` | Hand-built meshes; `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building), `building: <map id>` for pieces fixed to a building's walls or roof (a balcony, a roof hut) that open and close with its cut, otherwise batched. `src/landmark-shapes.ts` adds boxes, bars, prisms and foliage to one mesh, so a hundred chairs or pines cost one draw call |
 | `texture(canvas)` | A painted canvas texture (signs), destroyed with the scene |
 
 Rules: build at real size in metres; nothing tall may hide Gerard (`cut: true`); reuse materials
