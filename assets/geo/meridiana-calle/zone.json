@@ -176,7 +176,7 @@
     },
     "slab": {
       "walls": [
-        "#7d6553"
+        "#6f5747"
       ],
       "base": "#4f4a45",
       "trim": "#eef0ee",
@@ -814,16 +814,16 @@
       "kind": "vaulted-canopy",
       "id": "marquesina-hipercor",
       "x_m": 126,
-      "z_m": -15.3,
+      "z_m": -15.9,
       "rotation_deg": -1.15,
       "size_m": [
         78,
-        2.6
+        1.4
       ],
       "solid": false,
       "params": {
         "vault_m": 6.5,
-        "height_m": 3.0,
+        "height_m": 3.3,
         "rise_m": 0.5,
         "colour": "#ecebe6"
       }
