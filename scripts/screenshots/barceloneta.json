@@ -1,6 +1,6 @@
 {
   "title": "La Barceloneta · Platja de Sant Miquel",
-  "description": "The beach of the L4 (docs/places/barceloneta.md): the Passeig Marítim with its palms, lamp masts and white parapet over the timber boardwalk, L'Estel Ferit's four rusted cubes on the sand, the sea with its lines of white water and the swash running up the wet sand, the lifeguard post, the old lookout mast, the volleyball nets, the beach bar's loungers, the old Barceloneta's blocks with washing on the balconies, the L4 entrance at the inland edge, the overview with the W's sail and Montjuïc, and a greyscale check that Gerard stands out on the sand.",
+  "description": "The beach of the L4 (docs/places/barceloneta.md): the Passeig Marítim with its palms, lamp masts and white parapet over the timber boardwalk, L'Estel Ferit's four rusted cubes on the sand, the sea with its lines of white water and the swash running up the wet sand, the lifeguard post, the old lookout mast, the volleyball nets, the beach bar's loungers, the old Barceloneta's blocks with washing on the balconies, the L4 entrance at the inland edge, the breakwater at the east end, the overview with the W's sail, and a greyscale check that Gerard stands out on the sand.",
   "steps": [
     {
       "open": "/?story=metro&solo=1"
@@ -28,7 +28,7 @@
       "teleport": "barceloneta",
       "cell": [
         99,
-        72
+        70
       ]
     },
     {
@@ -127,26 +127,38 @@
     {
       "teleport": "barceloneta",
       "cell": [
-        174,
-        6
+        173,
+        5
       ]
     },
     {
       "shot": "station",
       "delay": 2500,
-      "caption": "The L4 entrance at the inland edge (the real station is round the corner, at Pla de Palau)"
+      "caption": "Up from the L4 at the inland edge, in a narrow street of the old Barceloneta (the real station is round the corner, at Pla de Palau); the cut opens the block in front"
     },
     {
       "teleport": "barceloneta",
       "cell": [
-        12,
-        93
+        16,
+        91
       ]
     },
     {
-      "shot": "vela",
+      "shot": "mar",
       "delay": 2500,
-      "caption": "The west end of the beach: the W's glass sail beyond the edge, scaled down and hazy"
+      "caption": "The west end of the beach, by the water: the swash on the wet sand and the yellow buoys of the bathing area"
+    },
+    {
+      "teleport": "barceloneta",
+      "cell": [
+        182,
+        136
+      ]
+    },
+    {
+      "shot": "escullera",
+      "delay": 2500,
+      "caption": "The east end: the breakwater's arm comes ashore past the edge, the sand widening behind it"
     },
     {
       "teleport": "barceloneta",
@@ -161,7 +173,7 @@
     {
       "shot": "overview",
       "delay": 3500,
-      "caption": "Overview: the sea along the near side, the beach, the promenade and the blocks; the W's sail and Montjuïc beyond"
+      "caption": "Overview: the sea along the near side with the sun glittering on it, the beach, the promenade's palms and the old Barceloneta's blocks; the W's sail beyond the west end"
     },
     {
       "press": "KeyR"

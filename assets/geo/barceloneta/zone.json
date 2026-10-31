@@ -22,6 +22,7 @@
     "z_m": -24
   },
   "storey_m": 3.0,
+  "edge_buildings": true,
   "reference": {
     "checked": "2026-10-30",
     "streetview_capture": "Not used: Wikimedia Commons photos (2013-2026, listed in docs/places/barceloneta.md) and the Google Maps viewpoints below, looked at only",
@@ -132,6 +133,9 @@
   "buildings": {
     "way/646559076": {
       "style": "tower"
+    },
+    "way/642014626": {
+      "terrat": false
     },
     "way/1534378627": {
       "style": "xiringuito",
@@ -311,6 +315,7 @@
       "id": "guaita",
       "x_m": 64,
       "z_m": 33,
+      "rotation_deg": 55,
       "size_m": [
         1.5,
         1.5
@@ -419,10 +424,93 @@
       }
     },
     {
+      "kind": "boies",
+      "id": "boies-1",
+      "x_m": -87,
+      "z_m": 64.5,
+      "rotation_deg": -1,
+      "size_m": [
+        125,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "every_m": 8
+      }
+    },
+    {
+      "kind": "boies",
+      "id": "boies-2",
+      "x_m": -0.5,
+      "z_m": 72.5,
+      "rotation_deg": -15,
+      "size_m": [
+        56,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "every_m": 8
+      }
+    },
+    {
+      "kind": "boies",
+      "id": "boies-3",
+      "x_m": 49,
+      "z_m": 89.5,
+      "rotation_deg": -23,
+      "size_m": [
+        52,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "every_m": 8
+      }
+    },
+    {
+      "kind": "boies",
+      "id": "boies-4",
+      "x_m": 95,
+      "z_m": 112.5,
+      "rotation_deg": -30,
+      "size_m": [
+        54,
+        1
+      ],
+      "solid": false,
+      "params": {
+        "every_m": 8
+      }
+    },
+    {
+      "kind": "escullera",
+      "id": "escullera-brac",
+      "x_m": 138,
+      "z_m": 128,
+      "rotation_deg": -90,
+      "size_m": [
+        46,
+        6
+      ],
+      "solid": false
+    },
+    {
+      "kind": "escullera",
+      "id": "escullera-cap",
+      "x_m": 138,
+      "z_m": 152,
+      "size_m": [
+        34,
+        6
+      ],
+      "solid": false
+    },
+    {
       "kind": "vela",
       "id": "w-barcelona",
-      "x_m": -166,
-      "z_m": 56,
+      "x_m": -172,
+      "z_m": 82,
       "rotation_deg": 30,
       "size_m": [
         14,
@@ -453,8 +541,8 @@
   "props": [
     {
       "kind": "metro",
-      "x_m": 112,
-      "z_m": -95,
+      "x_m": 107.25,
+      "z_m": -96.25,
       "name": "Barceloneta",
       "line": "L4"
     },
@@ -511,17 +599,39 @@
       "kind": "bin",
       "x_m": 52,
       "z_m": -26
+    },
+    {
+      "kind": "tree",
+      "species": "palm",
+      "x_m": -140,
+      "z_m": -24,
+      "to": {
+        "x_m": -95,
+        "z_m": -25
+      },
+      "every_m": 9
+    },
+    {
+      "kind": "tree",
+      "species": "palm",
+      "x_m": 66,
+      "z_m": -32,
+      "to": {
+        "x_m": 128,
+        "z_m": -32
+      },
+      "every_m": 9
     }
   ],
   "places": [
     {
       "id": "station-barceloneta",
       "label": "Bajar al metro",
-      "x_m": 113.5,
-      "z_m": -94,
+      "x_m": 110.25,
+      "z_m": -94.75,
       "step": {
-        "x_m": 113,
-        "z_m": -95,
+        "x_m": 108.75,
+        "z_m": -96.25,
         "w": 3,
         "d": 1
       }
@@ -640,8 +750,8 @@
       "y_m": 5
     },
     "w-hotel": {
-      "x_m": -166,
-      "z_m": 56
+      "x_m": -172,
+      "z_m": 82
     }
   }
 }
