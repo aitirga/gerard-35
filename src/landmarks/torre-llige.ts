@@ -15,17 +15,24 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const render = kit.surface('estuc', String(p.colour ?? '#efe6d2'));
   const trim = kit.mat('Molduras', String(p.trim ?? '#fbf7ee'), 0.1);
   const dark = kit.mat('Vano oscuro', '#2c3236', 0.3);
-  // The front gable: a wall rising over the eave, stepped up to a pointed top, with the clock.
-  const front = D / 2 + 0.05, gw = Number(p.gable_m ?? 5), gh = 2.3;
+  // The front gable: a wall rising over the eave, stepped up to a pointed top, with the clock. It
+  // stands out as far as the roof's overhang (0.35 cells), so it rises from the front in front of the
+  // tiles instead of out of them: a solid block back to the wall, read as one from the overview.
+  const wall = D / 2 + 0.01, front = D / 2 + 0.35 * kit.cell + 0.06, depth = front - wall, gw = Number(p.gable_m ?? 5), gh = 2.3;
+  const g = gw / 2, low = eave - 0.4, mid = eave + gh * 0.55, peak = eave + gh, slope = Math.hypot(g, peak - mid);
   const gable = kit.mesh();
-  gable.quad([-gw / 2, eave - 0.4, front], [gw / 2, eave - 0.4, front], [gw / 2, eave + gh * 0.55, front], [-gw / 2, eave + gh * 0.55, front], [0, 0, 1],
-    [-gw / 2, eave], [gw / 2, eave], [gw / 2, eave + gh * 0.55], [-gw / 2, eave + gh * 0.55]);
-  gable.tri([-gw / 2, eave + gh * 0.55, front], [gw / 2, eave + gh * 0.55, front], [0, eave + gh, front], [0, 0, 1], [-gw / 2, eave + gh * 0.55], [gw / 2, eave + gh * 0.55], [0, eave + gh]);
-  // Its back, so it reads as a wall and not a card from the overview.
-  gable.quad([-gw / 2, eave - 0.4, front - 0.35], [gw / 2, eave - 0.4, front - 0.35], [gw / 2, eave + gh * 0.55, front - 0.35], [-gw / 2, eave + gh * 0.55, front - 0.35], [0, 0, -1], [0, 0], [1, 0], [1, 1], [0, 1]);
-  gable.quad([-gw / 2, eave + gh * 0.55, front - 0.35], [gw / 2, eave + gh * 0.55, front - 0.35], [0, eave + gh, front - 0.35], [0, eave + gh, front], [0, 1, -0.2], [0, 0], [1, 0], [1, 1], [0, 1]);
+  for (const [z, facing] of [[front, 1], [wall, -1]] as const) {
+    gable.quad([-g, low, z], [g, low, z], [g, mid, z], [-g, mid, z], [0, 0, facing], [-g, low], [g, low], [g, mid], [-g, mid]);
+    gable.tri([-g, mid, z], [g, mid, z], [0, peak, z], [0, 0, facing], [-g, mid], [g, mid], [0, peak]);
+  }
+  for (const side of [-1, 1]) {
+    // Its ends, and the two slopes of its top.
+    gable.quad([side * g, low, wall], [side * g, low, front], [side * g, mid, front], [side * g, mid, wall], [side, 0, 0], [0, low], [depth, low], [depth, mid], [0, mid]);
+    gable.quad([side * g, mid, wall], [side * g, mid, front], [0, peak, front], [0, peak, wall], [side * (peak - mid), g, 0], [0, 0], [depth, 0], [depth, slope], [0, slope]);
+  }
+  gable.quad([-g, low, wall], [g, low, wall], [g, low, front], [-g, low, front], [0, -1, 0], [-g, 0], [g, 0], [g, depth], [-g, depth]);
   kit.add('Frontón', gable, render, { cut: true });
-  kit.part('Cornisa del frontón', 'box', trim, [0, eave + gh * 0.55, front - 0.15], [gw + 0.3, 0.14, 0.45]);
+  kit.part('Cornisa del frontón', 'box', trim, [0, mid, front - depth / 2], [gw + 0.3, 0.14, depth + 0.1]);
   // The clock: a white face in a moulded ring.
   kit.part('Marco del reloj', 'cylinder', trim, [0, eave + 0.75, front + 0.04], [1.25, 0.08, 1.25], [90, 0, 0]);
   kit.part('Esfera', 'cylinder', kit.mat('Esfera blanca', '#f6f4ee', 0.3, 0.1), [0, eave + 0.75, front + 0.09], [1.0, 0.04, 1.0], [90, 0, 0]);
