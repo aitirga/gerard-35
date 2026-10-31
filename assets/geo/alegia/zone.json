@@ -139,7 +139,7 @@
     {"kind": "railing", "id": "barandilla-bulebarra", "east_m": 224.24, "south_m": 14.44, "solid": false, "params": {"points": [[0.0, 0.0], [-13.65, 5.91], [-66.66, 35.81]]}},
     { "kind": "pelota-wall", "id": "frontoia", "east_m": 279.4, "south_m": -53.1, "size_m": [8, 0.5], "params": { "court": 9 } },
     { "kind": "wall-lamp", "east_m": 135.2, "south_m": -26.7, "rotation_deg": 14, "solid": false },
-    { "kind": "wall-lamp", "east_m": 126.1, "south_m": -23.9, "rotation_deg": 13, "solid": false },
+    { "kind": "wall-lamp", "east_m": 129.9, "south_m": -24.75, "rotation_deg": 13, "solid": false },
     { "kind": "wall-lamp", "east_m": 100.9, "south_m": -17.8, "rotation_deg": 13, "solid": false },
     { "kind": "wall-lamp", "east_m": 83.6, "south_m": -15.2, "rotation_deg": 5, "solid": false },
     { "kind": "wall-lamp", "east_m": 69.6, "south_m": -13.4, "rotation_deg": 12, "solid": false },
@@ -149,7 +149,8 @@
     { "kind": "wall-lamp", "east_m": 38.1, "south_m": -9.8, "rotation_deg": 2, "solid": false },
     { "kind": "wall-lamp", "east_m": 19.4, "south_m": -9.3, "rotation_deg": 2, "solid": false },
     { "kind": "bunting", "east_m": 138.6, "south_m": -29.6, "rotation_deg": 50, "size_m": [8.1, 0.3], "solid": false },
-    { "kind": "bunting", "east_m": 70.0, "south_m": -16.4, "rotation_deg": 130, "size_m": [6.0, 0.3], "solid": false },
+    { "kind": "bunting", "east_m": 130.0, "south_m": -28.25, "rotation_deg": 50, "size_m": [9.0, 0.3], "solid": false },
+    { "kind": "bunting", "east_m": 70.0, "south_m": -16.4, "rotation_deg": 50, "size_m": [6.0, 0.3], "solid": false },
     { "kind": "bunting", "east_m": 40.0, "south_m": -13.0, "rotation_deg": 50, "size_m": [9.1, 0.3], "solid": false }
   ],
   "places": [

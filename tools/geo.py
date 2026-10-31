@@ -762,14 +762,15 @@ def shops_on_walls(zone: dict, elements: list, frame: Frame, buildings: list, W:
         fx, fz = a[0] + ux * along, a[1] + uz * along
         out.append({"name": name, "kind": kind, "building": b["id"],
                     "x": round(fx, 2), "z": round(fz, 2), "nx": round(nx, 3), "nz": round(nz, 3), "along": round(along, 2)})
-    # Two shops on one wall a sign's width apart: the second moves along the wall.
+    # Two shops on one wall a sign's width apart: the second moves along the wall, away from the first.
     out.sort(key=lambda s: (s["building"], s["nx"], s["nz"], s["x"], s["z"]))
     for prev, s in zip(out, out[1:]):
         if s["building"] == prev["building"] and (s["nx"], s["nz"]) == (prev["nx"], prev["nz"]):
             gap = math.hypot(s["x"] - prev["x"], s["z"] - prev["z"])
             if gap < 2.6:
-                push = 2.6 - gap
-                s["x"], s["z"] = round(s["x"] - s["nz"] * push, 2), round(s["z"] + s["nx"] * push, 2)
+                ux, uz = -s["nz"], s["nx"]
+                push = (2.6 - gap) * (1 if (s["x"] - prev["x"]) * ux + (s["z"] - prev["z"]) * uz >= 0 else -1)
+                s["x"], s["z"] = round(s["x"] + ux * push, 2), round(s["z"] + uz * push, 2)
     return [{k: v for k, v in s.items() if k != "along"} for s in out]
 
 

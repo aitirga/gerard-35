@@ -4,7 +4,8 @@ import type { LandmarkKit } from '../landmarks';
 /**
  * Fiesta bunting strung across a street from one house front to the other: a cord sagging along
  * local x (the footprint's width) at `height` metres (default 6), hung with small triangular flags
- * in plain colours (`colours` overrides them). Alegia's July fiestas.
+ * in plain colours (`colours` overrides them). Alegia's July fiestas. The flags face along local z:
+ * turned about 45° they face the camera, at about 135° it sees them edge-on and they vanish.
  */
 export const kind = 'bunting';
 
