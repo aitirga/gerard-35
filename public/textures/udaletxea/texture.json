@@ -1,0 +1,28 @@
+{
+  "id": "udaletxea",
+  "name": "Alegiako udaletxea, the square front",
+  "kind": "photo",
+  "size_m": [
+    21.6,
+    15.0
+  ],
+  "source": {
+    "site": "Wikimedia Commons",
+    "name": "Alegiako_udaletxea.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:Alegiako_udaletxea.jpg",
+    "author": "Uranzu",
+    "licence": "CC BY-SA 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "note": "Rectified by its four corners (533,915 2496,795 2582,2368 403,2330 in the 3040 px original) to 21.6 x 15 m, the wall up to the edge of the eaves; banners, flags, flag poles and a passer-by painted out by copying the same part of an identical bay. Derived work, shared under CC BY-SA 4.0 like the photo.",
+  "command": "tools/textures.py photo <rectified and patched Alegiako_udaletxea.jpg> --id udaletxea --size-m 21.6 15 --px 2048 --licence 'CC BY-SA 4.0' --author Uranzu",
+  "files": {
+    "albedo": "albedo.webp"
+  },
+  "px": [
+    2048,
+    1422
+  ],
+  "mean": "#656058",
+  "made": "2026-10-30"
+}

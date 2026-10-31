@@ -1,0 +1,29 @@
+{
+  "id": "legarra",
+  "name": "Ganges River Pebbles",
+  "kind": "material",
+  "size_m": [
+    2.16,
+    2.16
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "ganges_river_pebbles",
+    "name": "Ganges River Pebbles",
+    "url": "https://polyhaven.com/a/ganges_river_pebbles",
+    "author": "Amal Kumar",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven ganges_river_pebbles --id legarra",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#7f7569",
+  "made": "2026-10-30"
+}

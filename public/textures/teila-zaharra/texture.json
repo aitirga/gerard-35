@@ -1,0 +1,29 @@
+{
+  "id": "teila-zaharra",
+  "name": "Roof 09",
+  "kind": "material",
+  "size_m": [
+    4.0,
+    4.0
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "roof_09",
+    "name": "Roof 09",
+    "url": "https://polyhaven.com/a/roof_09",
+    "author": "Rob Tuytel",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven roof_09 --id teila-zaharra",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#867461",
+  "made": "2026-10-30"
+}
