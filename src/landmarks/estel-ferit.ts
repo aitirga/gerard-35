@@ -1,5 +1,5 @@
 import type { GeoLandmark } from '../geo';
-import { box, type LandmarkKit } from '../landmarks';
+import type { LandmarkKit } from '../landmarks';
 
 /**
  * L'Estel Ferit (Rebecca Horn, 1992), on the Platja de Sant Miquel: four hollow iron cubes stacked
@@ -32,9 +32,9 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   for (let i = 0; i < count; i++) {
     const [dx, dz, roll, pitch, yaw] = OFF_TRUE[Math.min(i, OFF_TRUE.length - 1)];
     const centre = [dx, y + step / 2, dz], euler = [pitch, yaw, roll];
-    box(i === 0 ? lowest : iron, centre, [side, step, side], euler);
+    (i === 0 ? lowest : iron).box(centre, [side, step, side], euler);
     // The band sits on the front face near the top, a hair proud of the iron.
-    box(glass, rotate([-side * 0.08, step * 0.27, side / 2 + 0.012], euler, centre), [band[0], band[1], 0.01], euler);
+    glass.box(rotate([-side * 0.08, step * 0.27, side / 2 + 0.012], euler, centre), [band[0], band[1], 0.01], euler);
     // The next cube rests on this one's top, carried by its lean.
     y += step * Math.cos(roll * Math.PI / 180);
   }

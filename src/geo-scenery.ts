@@ -3,7 +3,7 @@ import type { GeoBuilding, GeoPoint, GeoScene } from './geo';
 import { shine } from './lighting';
 import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from './building-occlusion';
 import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
-import { LANDMARKS, box, type LandmarkKit } from './landmarks';
+import { LANDMARKS, type LandmarkKit } from './landmarks';
 import { buildSea } from './geo-sea';
 
 /** What `buildScenery` lends a generated place, so everything is tracked and destroyed with the scene. */
@@ -146,6 +146,33 @@ export class MeshBuilder {
     return m;
   }
   get empty() { return this.indices.length === 0; }
+  /**
+   * A box, for pieces that must open the cut (`kit.add(…, { cut: true })`) or tile a real material by
+   * the metre: centre and size in metres, turned by `euler` (degrees round x, y and z: the roll first,
+   * then the pitch, then the turn round the vertical), each face's UVs in metres.
+   */
+  box(centre: number[], size: number[], euler: number[] = [0, 0, 0]) {
+    const [hx, hy, hz] = [size[0] / 2, size[1] / 2, size[2] / 2];
+    const r = [euler[0], euler[1], euler[2]].map(d => d * Math.PI / 180);
+    const [cx, sx, cy, sy, cz, sz] = [Math.cos(r[0]), Math.sin(r[0]), Math.cos(r[1]), Math.sin(r[1]), Math.cos(r[2]), Math.sin(r[2])];
+    const turn = (v: V3): V3 => {
+      let [x, y, z] = v;
+      [x, y] = [x * cz - y * sz, x * sz + y * cz];
+      [y, z] = [y * cx - z * sx, y * sx + z * cx];
+      [x, z] = [x * cy + z * sy, -x * sy + z * cy];
+      return [x, y, z];
+    };
+    const at = (x: number, y: number, z: number): V3 => { const p = turn([x, y, z]); return [p[0] + centre[0], p[1] + centre[1], p[2] + centre[2]]; };
+    const faces: [V3, V3, V3, V3, V3, number, number][] = [
+      [at(-hx, -hy, hz), at(hx, -hy, hz), at(hx, hy, hz), at(-hx, hy, hz), turn([0, 0, 1]), size[0], size[1]],
+      [at(hx, -hy, -hz), at(-hx, -hy, -hz), at(-hx, hy, -hz), at(hx, hy, -hz), turn([0, 0, -1]), size[0], size[1]],
+      [at(hx, -hy, hz), at(hx, -hy, -hz), at(hx, hy, -hz), at(hx, hy, hz), turn([1, 0, 0]), size[2], size[1]],
+      [at(-hx, -hy, -hz), at(-hx, -hy, hz), at(-hx, hy, hz), at(-hx, hy, -hz), turn([-1, 0, 0]), size[2], size[1]],
+      [at(-hx, hy, hz), at(hx, hy, hz), at(hx, hy, -hz), at(-hx, hy, -hz), turn([0, 1, 0]), size[0], size[2]],
+      [at(-hx, -hy, -hz), at(hx, -hy, -hz), at(hx, -hy, hz), at(-hx, -hy, hz), turn([0, -1, 0]), size[0], size[2]],
+    ];
+    for (const [a, c, d, e, n, u, v] of faces) this.quad(a, c, d, e, n, [0, 0], [u, 0], [u, v], [0, v]);
+  }
 }
 
 function inside(px: number, pz: number, poly: GeoPoint[]) {
@@ -882,19 +909,19 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       // The stair head against one side of the roof, its door facing across it (not off an L's corner).
       const hv = side * (wide / 2 - 1.4 * m);
       if (!inside(cx + e1[0] * u + e2[0] * hv, cz + e1[1] * u + e2[1] * hv, b.poly)) continue;
-      box(heads, at(u, hv, top + 1.25 * m), [2.4 * m, 2.5 * m, 2.6 * m], [0, yaw, 0]);
+      heads.box(at(u, hv, top + 1.25 * m), [2.4 * m, 2.5 * m, 2.6 * m], [0, yaw, 0]);
       // One or two water tanks beside it, and sometimes an aerial and a line of washing.
-      for (let t = 0; t < 1 + Math.round(r(k + 40)); t++) box(tanks, at(u + (1.9 + t * 1.3) * m * (r(k + 3) > 0.5 ? 1 : -1), hv, top + 0.6 * m), [1.1 * m, 1.2 * m, 1.1 * m], [0, yaw, 0]);
+      for (let t = 0; t < 1 + Math.round(r(k + 40)); t++) tanks.box(at(u + (1.9 + t * 1.3) * m * (r(k + 3) > 0.5 ? 1 : -1), hv, top + 0.6 * m), [1.1 * m, 1.2 * m, 1.1 * m], [0, yaw, 0]);
       if (r(k + 60) > 0.45) {
         const au = u - 2.4 * m * side, av = hv - 0.4 * side * m;
-        box(irons, at(au, av, top + 1.8 * m), [0.06 * m, 3.6 * m, 0.06 * m]);
-        for (const [y, l] of [[3.2, 1.2], [2.8, 0.9]]) box(irons, at(au, av, top + y * m), [l * m, 0.04 * m, 0.04 * m], [0, yaw + 90, 0]);
+        irons.box(at(au, av, top + 1.8 * m), [0.06 * m, 3.6 * m, 0.06 * m]);
+        for (const [y, l] of [[3.2, 1.2], [2.8, 0.9]]) irons.box(at(au, av, top + y * m), [l * m, 0.04 * m, 0.04 * m], [0, yaw + 90, 0]);
       }
       if (r(k + 80) > 0.4) {
         // A line strung across the roof with sheets and towels on it, at head height.
         const lu = u + (r(k + 81) - 0.5) * 3 * m;
-        box(irons, at(lu, 0, top + 1.6 * m), [0.03 * m, 0.03 * m, wide * 0.7], [0, yaw, 0]);
-        for (let c = 0; c < 4; c++) box(washing, at(lu, (c - 1.5) * wide * 0.16, top + 1.25 * m), [0.06 * m, 0.7 * m, 0.55 * m + r(k + c) * 0.4 * m], [0, yaw, 0]);
+        irons.box(at(lu, 0, top + 1.6 * m), [0.03 * m, 0.03 * m, wide * 0.7], [0, yaw, 0]);
+        for (let c = 0; c < 4; c++) washing.box(at(lu, (c - 1.5) * wide * 0.16, top + 1.25 * m), [0.06 * m, 0.7 * m, 0.55 * m + r(k + c) * 0.4 * m], [0, yaw, 0]);
       }
     }
     add('Casetas del terrado', heads, cutaway(mat('Caseta del terrado', b.walls, 0.1)), pivot, false);

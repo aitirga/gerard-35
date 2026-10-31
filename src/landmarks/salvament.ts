@@ -1,5 +1,5 @@
 import type { GeoLandmark } from '../geo';
-import { box, type LandmarkKit } from '../landmarks';
+import type { LandmarkKit } from '../landmarks';
 
 /**
  * A lifeguard post on Barcelona's beaches today (2023): a white cabin on a galvanised steel frame,
@@ -19,9 +19,9 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
     kit.part('Riostra', 'box', steel, [sx * 1.05, deckY / 2, 0], [0.05, 0.05, 2.5], [-Math.atan2(deckY, 2.1) * 180 / Math.PI, 0, 0]);
   }
   // The deck with its orange band, the cabin on its back half, the roof over both.
-  box(cabin, [0, deckY + 0.05, 0], [2.6, 0.1, 2.6]);
-  box(cabin, [0, deckY + 1.1, -0.35], [1.9, 2.0, 1.7]);
-  box(roof, [0, deckY + 2.2, -0.1], [2.5, 0.12, 2.4]);
+  cabin.box([0, deckY + 0.05, 0], [2.6, 0.1, 2.6]);
+  cabin.box([0, deckY + 1.1, -0.35], [1.9, 2.0, 1.7]);
+  roof.box([0, deckY + 2.2, -0.1], [2.5, 0.12, 2.4]);
   kit.add('Caseta de socorristas', cabin, white, { cut: true });
   kit.add('Techo de la caseta', roof, white, { cut: true });
   const band = kit.mat('Franja SALVAMENT', '#ffffff', 0.3);

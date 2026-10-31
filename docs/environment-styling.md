@@ -458,14 +458,15 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
 | `mat(name, hex, gloss, glow)` | A plain material, shared within the scene |
 | `surface(texture, tint, gloss)` | A real material, tinted, tiling by metres on `mesh()` UVs; plain `tint` until it loads |
 | `part(name, type, material, position, scale, rotation?, parent?)` | A primitive merged into the static batch |
-| `mesh()` / `add(name, mesh, material, { cut, shadows, parent })` | Hand-built meshes; `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building), otherwise batched |
+| `mesh()` / `add(name, mesh, material, { cut, shadows, parent })` | Hand-built meshes (`quad`, `tri`, and `box(centre, size, euler)` for a turned box with UVs in metres); `cut: true` for anything tall enough to hide Gerard (its own cut group, like a building), otherwise batched |
 | `texture(canvas)` | A painted canvas texture (signs), destroyed with the scene |
 
 Rules: build at real size in metres; nothing tall may hide Gerard (`cut: true`); reuse materials
 (`mat` and `surface` share by name and colour) and prefer `part` or one `mesh()` per material so
 draw calls stay low; text in the world is Spanish or Catalan as on the street, never guidance. A
 kind with no module yet (data merged before code) draws a plain block on its footprint and warns;
-`tests/materials.test.mjs` fails until the module exists. Make a new landmark reachable from the
+`tests/materials.test.mjs` fails until the module exists. That test imports each module in Node, so a module
+imports only types from `src/landmarks.ts` (its `import.meta.glob` runs only under Vite). Make a new landmark reachable from the
 development picker (`PLACES` in `src/jump-menu.ts`) like any new place.
 
 ## Traffic

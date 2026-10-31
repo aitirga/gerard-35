@@ -1,5 +1,5 @@
 import type { GeoLandmark } from '../geo';
-import { box, type LandmarkKit } from '../landmarks';
+import type { LandmarkKit } from '../landmarks';
 
 /**
  * A beach shower of the Barcelona seafront: a timber deck at sand level with a grey stone slab in the
@@ -11,8 +11,8 @@ export const kind = 'shower';
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const steel = kit.mat('Acero de la ducha', '#c4c9cc', 0.7), deck = kit.mesh(), slab = kit.mesh();
   const [w, d] = [landmark.w * kit.cell, landmark.d * kit.cell];
-  box(deck, [0, 0.04, 0], [w, 0.06, d]);
-  box(slab, [0, 0.075, 0], [w * 0.5, 0.02, d * 0.45]);
+  deck.box([0, 0.04, 0], [w, 0.06, d]);
+  slab.box([0, 0.075, 0], [w * 0.5, 0.02, d * 0.45]);
   kit.add('Tarima de la ducha', deck, kit.surface('fusta-passera', '#6d5a49', 0.15));
   kit.add('Losa de la ducha', slab, kit.surface('granit', '#9a9da0', 0.2));
   const posts = Number(landmark.params.posts ?? 3);
