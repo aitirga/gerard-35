@@ -138,7 +138,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const w = environment.grid[0].length, d = environment.grid.length;
   const night = environment.id === 'patio';
   // The Meridiana flat is lit by its lamps, which are the bulbs at home: the window light stays low.
-  const lamplit = environment.id === 'meridiana';
+  // El Nucli is lit the same way, by its pendants over the tables.
+  const lamplit = environment.id === 'meridiana' || environment.id === 'el-nucli';
   // Outdoors by day: a near-white sun, and a blue sky that tints the shade and lights it from the other side.
   const outdoor = !night && !lamplit && !environment.plan && !environment.palace;
   const ambient = night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);

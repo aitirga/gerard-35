@@ -4,6 +4,7 @@ import type { PropKit } from './props';
 import { lampRgb, type Lamp, type LightId } from './home-lights';
 import { MERIDIANA_BED } from './bed';
 import { shine } from './lighting';
+import { furnishNucli } from './nucli-scenery';
 
 /** What `buildScenery` lends the house, so everything is tracked and destroyed with the scene. */
 export interface HomeKit {
@@ -46,8 +47,41 @@ let folding = false;
 export function setWallFolding(on: boolean) { folding = on; }
 
 type Along = 'x' | 'z';
-type Face = 'south' | 'east';
+export type Face = 'south' | 'east';
 interface Fold { pivot: pc.Entity; min: pc.Vec3; max: pc.Vec3; t: number }
+/** A bottom-anchored primitive in grid coordinates: `y0` its base, `w`, `h`, `d` its size. */
+type Part = (name: string, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent?: pc.Entity) => pc.Entity;
+/**
+ * What a place furnished in its own module borrows from the house builder (El Nucli,
+ * src/nucli-scenery.ts): the same parts, lights, pictures and folding walls as the houses.
+ */
+export interface RoomKit {
+  kit: HomeKit;
+  wallHeight: number;
+  /** Half a wall's thickness: a wall face stands this far from its grid line. */
+  face: number;
+  box: Part; cyl: Part; ball: Part; cone: Part;
+  /** A custom mesh scaled like a primitive, e.g. the twenty-sided die (`d20`). */
+  solid(name: string, geometry: pc.Mesh, m: pc.Material, px: number, pz: number, y0: number, w: number, h: number, d: number, parent?: pc.Entity): pc.Entity;
+  d20: pc.Mesh;
+  mat: HomeKit['mat'];
+  /** A warm point light in the room (dimmed with the house's lamps before anyone is up). */
+  light(px: number, y: number, pz: number, color?: string, intensity?: number, range?: number): pc.LightComponent;
+  /** A soft patch of `tint` light on the floor under a lamp. */
+  pool(px: number, pz: number, radius: number, tint: string, strength: number): pc.StandardMaterial;
+  canvas(w: number, h?: number): readonly [HTMLCanvasElement, CanvasRenderingContext2D];
+  painted(name: string, c: HTMLCanvasElement, gloss?: number, glow?: number): pc.StandardMaterial;
+  /** An upright image facing south (+z) or east (+x), reading left to right. */
+  picture(parent: pc.Entity, m: pc.Material, face: Face, px: number, pz: number, yc: number, w: number, h: number): pc.Entity;
+  /** The folding part of the wall behind a point on a south or east face. */
+  onWall(face: Face, px: number, pz: number): pc.Entity;
+  /** Tall furniture: the part below `split` stays, the rest folds like the walls. */
+  standing(name: string, m: pc.Material, px: number, pz: number, w: number, d: number, h: number, split?: number): pc.Entity;
+  chair(px: number, pz: number, facing: 'north' | 'south' | 'east' | 'west', seat: pc.Material, frame?: pc.Material, base?: number): void;
+  jitter(i: number): number;
+  glass: pc.StandardMaterial;
+  root: pc.Entity;
+}
 
 /**
  * Builds a floor plan from `environment.plan`: walls, doors, glazing, floors, steps and furniture.
@@ -60,6 +94,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const glyph = (px: number, pz: number) => plan[pz]?.[px] ?? ' ';
   const outdoors = environment.id === 'home-entrance';
   const apartment = environment.id === 'meridiana';
+  const shop = environment.id === 'el-nucli';
   const wallHeight = outdoors ? 2.3 : WALL_HEIGHT;
   const doorTop = outdoors ? 2.05 : 2.2;
   const folds: Fold[] = [];
@@ -96,7 +131,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   const lamps = new Map<LightId, { lights: { light: pc.LightComponent; intensity: number }[]; glows: pc.StandardMaterial[]; pools: pc.StandardMaterial[] }>();
   let poolTexture: pc.Texture | undefined;
   /** A soft patch of the lamp's colour on the floor under it: daylight would wash out the light alone. */
-  function pool(px: number, pz: number, radius: number) {
+  function pool(px: number, pz: number, radius: number, tint?: string, strength = 0) {
     if (!poolTexture) {
       const [c, ctx] = canvas(128);
       const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
@@ -106,7 +141,10 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       poolTexture = kit.texture(c);
     }
     const m = mat('Luz en el suelo', '#000000', 0);
-    m.emissiveMap = poolTexture; m.useLighting = false; m.blendType = pc.BLEND_ADDITIVE; m.depthWrite = false; m.update();
+    m.emissiveMap = poolTexture; m.useLighting = false; m.blendType = pc.BLEND_ADDITIVE; m.depthWrite = false;
+    // A lamp that is not one of home's bulbs keeps its own colour; home's are set by `setLamp`.
+    if (tint) { m.emissive.fromString(tint); m.emissiveIntensity = strength * POOL_GAIN; }
+    m.update();
     piece(root, 'Luz en el suelo', 'plane', m, px, 0.035, pz, radius * 2, 1, radius * 2, false);
     return m;
   }
@@ -207,7 +245,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   }
 
   // ——— Palette: a white, modern house with oak, black steel and a cream sofa ———
-  const wall = mat('Pared blanca', outdoors ? '#eeeae2' : '#f4f2ed', 0.1);
+  // El Nucli's walls are an old shop's cream; its own module paints the green and the wine over them.
+  const wall = mat(shop ? 'Pared crema' : 'Pared blanca', outdoors ? '#eeeae2' : shop ? '#efe6d2' : '#f4f2ed', 0.1);
   const black = mat('Perfilería negra', '#2a2d30', 0.35);
   const steel = mat('Acero cepillado', '#b7bcbe', 0.8);
   const oak = mat('Roble claro', '#c9a273', 0.3);
@@ -297,6 +336,32 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     } else if (kind === 'grass') {
       ctx.fillStyle = '#7c9a5b'; ctx.fillRect(0, 0, size, size);
       speckle('#6a8a4c', 1200, 3, 2); speckle('#93b06b', 800, 2, 7);
+    } else if (kind === 'hydraulic') {
+      // An old Sants shop floor: cement tiles in terracotta, cream and slate, two to a cell (bigger than
+      // the real 20 cm, so the pattern reads from the camera). Each carries a quarter circle at every
+      // corner and a diamond in the middle, so four tiles meet in a ring.
+      const t = size / 2, terracotta = '#b6563f', cream = '#e9dfcb', slate = '#3f4a52';
+      for (let r = 0; r < 2; r++) for (let k = 0; k < 2; k++) {
+        const x0 = k * t, y0 = r * t, shade = 0.94 + jitter(r * 4 + k + 70) * 0.1;
+        ctx.fillStyle = cream; ctx.fillRect(x0, y0, t, t);
+        ctx.fillStyle = terracotta;
+        for (const [cx, cy] of [[x0, y0], [x0 + t, y0], [x0, y0 + t], [x0 + t, y0 + t]]) { ctx.beginPath(); ctx.arc(cx, cy, t * 0.36, 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = cream;
+        for (const [cx, cy] of [[x0, y0], [x0 + t, y0], [x0, y0 + t], [x0 + t, y0 + t]]) { ctx.beginPath(); ctx.arc(cx, cy, t * 0.2, 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = slate;
+        ctx.beginPath(); ctx.moveTo(x0 + t / 2, y0 + t * 0.2); ctx.lineTo(x0 + t * 0.8, y0 + t / 2); ctx.lineTo(x0 + t / 2, y0 + t * 0.8); ctx.lineTo(x0 + t * 0.2, y0 + t / 2); ctx.fill();
+        ctx.fillStyle = terracotta; ctx.fillRect(x0 + t * 0.44, y0 + t * 0.44, t * 0.12, t * 0.12);
+        // Worn cement: each tile a little lighter or darker, and the grout lines.
+        ctx.fillStyle = `rgba(${shade > 1 ? '255,255,255' : '0,0,0'},${Math.abs(shade - 1) * 0.9})`; ctx.fillRect(x0, y0, t, t);
+        ctx.strokeStyle = '#8a7f72'; ctx.lineWidth = 2; ctx.strokeRect(x0 + 1, y0 + 1, t - 2, t - 2);
+      }
+      speckle('#00000010', 500, 2, 21); speckle('#ffffff12', 300, 2, 23);
+    } else if (kind === 'terrazzo') {
+      // Plain terrazzo in 40 cm tiles: pale cement with chips of marble, grey and ochre.
+      ctx.fillStyle = '#cfc7b8'; ctx.fillRect(0, 0, size, size);
+      speckle('#e9e4da', 700, 4, 31); speckle('#a59d90', 500, 3, 33); speckle('#8a7462', 160, 4, 35); speckle('#5d5953', 220, 2, 37); speckle('#d9b98a', 90, 5, 39);
+      ctx.strokeStyle = '#b0a897'; ctx.lineWidth = 2;
+      for (let k = 0; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(k * size / 2, 0); ctx.lineTo(k * size / 2, size); ctx.moveTo(0, k * size / 2); ctx.lineTo(size, k * size / 2); ctx.stroke(); }
     } else {
       ctx.fillStyle = '#b8b4ab'; ctx.fillRect(0, 0, size, size);
       speckle('#00000012', 500, 2, 4); speckle('#ffffff14', 400, 2, 8);
@@ -304,7 +369,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     }
     const t = kit.texture(c); surfaceTextures.set(kind, t); return t;
   }
-  const GLOSS: Record<FloorKind, number> = { tile: 0.62, stone: 0.25, deck: 0.2, gravel: 0.05, grass: 0.05, concrete: 0.3, laminate: 0.45, terracotta: 0.15 };
+  const GLOSS: Record<FloorKind, number> = { tile: 0.62, stone: 0.25, deck: 0.2, gravel: 0.05, grass: 0.05, concrete: 0.3, laminate: 0.45, terracotta: 0.15, hydraulic: 0.35, terrazzo: 0.5 };
   function surface(kind: FloorKind, w: number, d: number, offset: number) {
     const m = mat(`Suelo: ${kind}`, '#ffffff', GLOSS[kind]);
     m.diffuseMap = surfaceTexture(kind); m.diffuseMapTiling.set(w, d); m.diffuseMapOffset.set(offset, offset); m.update();
@@ -559,6 +624,10 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   else if (environment.id === 'home-floor-1') floorOne();
   else if (environment.id === 'home-floor-2') floorTwo();
   else if (apartment) meridiana();
+  else if (shop) furnishNucli({
+    kit, wallHeight, face: FACE, box, cyl, ball, cone, solid, d20: d20Mesh, mat,
+    light, pool, canvas, painted, picture, onWall, standing, chair, jitter, glass, root,
+  });
 
   function entrance() {
     const west = FACE, north = FACE;

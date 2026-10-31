@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Story, STORY_FLAGS } from '../src/story.ts';
-import { ENVIRONMENTS, NEIGHBORHOOD, HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2, MERIDIANA, PLAN_GLYPHS, PROP_FOOTPRINTS, blockProps, nearbyInteraction, planGrid, propCells } from '../src/environments.ts';
+import { ENVIRONMENTS, NEIGHBORHOOD, HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2, MERIDIANA, EL_NUCLI, PLAN_GLYPHS, PROP_FOOTPRINTS, blockProps, nearbyInteraction, planGrid, propCells } from '../src/environments.ts';
 import { FreeMovement, canWalk } from '../src/movement.ts';
 
 function reachable(environment) {
@@ -84,7 +84,7 @@ test('cars span two cells, flat props stay walkable and props are reusable in ha
   assert.throws(() => blockProps(['..'], [{ kind:'car', x:0, z:0 }]), /outside/);
 });
 
-const HOUSE = [HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2, MERIDIANA];
+const HOUSE = [HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2, MERIDIANA, EL_NUCLI];
 test('the house plans only use known glyphs and their grids block everything but floor, doorways and steps', () => {
   for (const floor of HOUSE) {
     for (const glyph of floor.plan.join('')) assert.ok(glyph in PLAN_GLYPHS, `${floor.id}: ${JSON.stringify(glyph)}`);
