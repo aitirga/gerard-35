@@ -35,7 +35,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const surfaces: { x: number; z: number; w: number; d: number; y: number }[] = [];
   const props = createPropKit();
   let home: ReturnType<typeof buildHome> | undefined;
-  let palace: ReturnType<typeof buildPalaceInterior> | undefined;
+  let palace: { update(dt: number, animate: boolean, focus?: pc.Vec3): void; destroy(): void } | undefined;
   let geo: ReturnType<typeof buildGeo> | undefined;
   /** Street houses' main volumes, for things that grow over them (the palace's gum). */
   const houseVolumes: HouseVolume[] = [];
@@ -378,7 +378,9 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   } else if (environment.geo) {
     geo = buildGeo({ app, root, batch: batch.id, mat, texture, water, x, z }, environment.geo);
   } else if (environment.palace) {
-    palace = environment.palace.theme ? buildPalaceZone({ app, root, batch: batch.id, x, z, texture }, environment) : buildPalaceInterior({ app, root, x, z, texture }, environment);
+    palace = environment.palace.theme
+      ? buildPalaceZone({ app, root, batch: batch.id, x, z, texture, surface: (px, pz, w, d, top) => { surfaces.push({ x: x(px), z: z(pz), w, d, y: top }); } }, environment)
+      : buildPalaceInterior({ app, root, x, z, texture }, environment);
   } else if (environment.plan) {
     home = buildHome({
       app, root, props, mat, texture, x, z, batch: batch.id,
@@ -444,7 +446,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       props.update(dt, animate, focus, toCamera);
       if (walkers) traffic?.update(dt, walkers);
       home?.update(dt, animate, focus, toCamera);
-      palace?.update(dt, animate);
+      palace?.update(dt, animate, focus);
       geo?.update(dt, animate, focus, toCamera);
       if (!animate) return;
       time += dt;

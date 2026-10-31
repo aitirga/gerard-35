@@ -9,7 +9,7 @@ import type { Environment, WorldProp } from './environments';
  * west walls stand tall and the south and east ones are cut low.
  */
 
-export type PalaceZoneId = 'patio' | 'gimnasio';
+export type PalaceZoneId = 'patio' | 'gimnasio' | 'secretaria' | 'trono';
 
 /**
  * A real material from public/textures/<texture>/, tinted to `tint` (its own colours without one);
@@ -41,9 +41,13 @@ export const ZONE_GLYPHS = {
   'H': 'canasta', 'T': 'plátano en su alcorque', 'b': 'banco', 'f': 'fuente de grifos', 'm': 'mochilas',
   'L': 'montón de objetos perdidos', 'E': 'muro con espalderas', 'M': 'colchonetas apiladas', 'C': 'carro de pelotas',
   'V': 'puerta de los vestuarios', 'r': 'cuerda (suelo)', 'o': 'aro en el suelo (suelo)', 'p': 'plinto',
+  'K': 'mostrador', 'W': 'la finestreta', 'F': 'trampilla del mostrador (suelo)', 'q': 'la cola', 'N': 'muro con el tablón de corcho',
+  'd': 'mesa de oficina', 'X': 'fotocopiadora', 'R': 'armarios del archivo', '~': 'montón de impresos', 'G': 'la mesa de Gerard',
+  'k': 'muro con el armario de llaves', 'h': 'sillas', 'O': 'el balcón', 'S': 'escenario (suelo alto)', '_': 'borde del escenario',
+  's': 'escalones del escenario (suelo)', 'c': 'bastidores', 'Q': 'el trono', 'n': 'piano',
   '1': 'puerta', '2': 'puerta', '3': 'puerta', ' ': 'fuera',
 } as const;
-const WALKABLE = new Set(['.', ',', 'B', 'r', 'o']);
+const WALKABLE = new Set(['.', ',', 'B', 'r', 'o', 'F', 'S', 's']);
 const grid = (plan: readonly string[]) => plan.map(row => [...row].map(glyph => WALKABLE.has(glyph) ? '.' : '#').join(''));
 
 /** The school's own colour, on every door between zones: orange is the school, pink is her. */
@@ -127,7 +131,7 @@ export const PALACE_PATIO: Environment = {
     { id: 'patio-vestibulo', cell: { x: 17, z: 1 }, label: 'Volver al vestíbulo', to: { environment: 'palacio', cell: { x: 20, z: 13 } } },
     // The story holds both doors shut until their zone may open (src/story.ts `gate`).
     { id: 'patio-gimnasio', cell: { x: 6, z: 1 }, label: 'Entrar en el gimnasio', to: { environment: 'palacio-gimnasio', cell: { x: 13, z: 16 } } },
-    { id: 'patio-secretaria', cell: { x: 28, z: 1 }, label: 'Abrir la secretaría' },
+    { id: 'patio-secretaria', cell: { x: 28, z: 1 }, label: 'Abrir la secretaría', to: { environment: 'palacio-secretaria', cell: { x: 4, z: 19 } } },
     { id: 'patio-mural', cell: { x: 12, z: 1 }, label: 'Mirar el mural', lines: ['«Benvinguts». En todas las lenguas que se hablan en el cole.', 'Alguien ha pintado encima, en rosa. Solo una palabra se lee todavía.'] },
     { id: 'patio-fuente', cell: { x: 2, z: 7 }, label: 'Mirar la fuente', lines: ['La fuente de los grifos que hay que apretar.', 'Sale un hilo de agua rosa.'] },
     { id: 'patio-objetos', cell: { x: 17, z: 13 }, label: 'Mirar los objetos perdidos', lines: ['Objetos perdidos: chaquetas, una flauta, un táper.', 'Cada junio el montón es el mismo. Nadie viene a buscarlo.'] },
@@ -199,5 +203,159 @@ export const PALACE_GYM: Environment = {
     { id: 'gimnasio-pelotas', cell: { x: 21, z: 1 }, label: 'Mirar el carro de pelotas', lines: ['El carro de las pelotas. Naranjas, todas.', 'Menos una.'] },
     { id: 'gimnasio-plinto', cell: { x: 13, z: 9 }, label: 'Mirar el plinto', lines: ['El plinto. Seis cajones, y encima más cajones.', 'Nadie ha saltado nunca tan alto.'] },
     { id: 'gimnasio-vestuarios', cell: { x: 19, z: 1 }, label: 'Mirar la puerta', lines: ['Vestidors. Huele a lejía.', 'Dentro gotea una ducha que nadie cierra.'] },
+  ],
+};
+
+// ——— La secretaría ——————————————————————————————————————————————————————————————————————
+/**
+ * Gerard's own office, entered for once from the visitors' side: a queue that never moves faces
+ * the finestreta in the counter; behind it the office repeats (the same desk in rows, then the
+ * archive's aisles of back-to-back cabinets with drifts of forms), and at their end, in the far
+ * corner, his own desk under the only warm lamp. *Direcció* (2) is the last shortcut, to the throne.
+ */
+const OFFICE_PLAN = [
+  '######2#####################', // 0
+  '#GG........................#', // 1
+  '#....RR......RR......RR....#', // 2
+  '#....RR..RR..RR~.RR..RR....#', // 3
+  'k....RR..RR..RR..RR..RR....#', // 4
+  '#..B.RR.~RR..RR..RR..RR....#', // 5
+  '#....RR..RR..RR..RR.~RR....#', // 6
+  '#....RR..RR..RR..RR..RR....#', // 7
+  '#........RR......RR........#', // 8
+  '#........................X.#', // 9
+  '#..dd..dd.......dd..dd..dd.#', // 10
+  '#..........................#', // 11
+  '#..dd..dd.......dd..dd..dd.#', // 12
+  '#..........................#', // 13
+  '#KKKKKWKKKKKKFKKKKKKKKKKKKK#', // 14
+  '#.....q....................#', // 15
+  'N.....q..........hhhhhh....#', // 16
+  'N.....q....................#', // 17
+  '#.....qqq..................#', // 18
+  '#..........................#', // 19
+  '####1#######################', // 20
+];
+const OFFICE_THEME: ZoneTheme = {
+  zone: 'secretaria',
+  palette: {
+    manila: '#d6b46a', steel: '#7f8a83', floor: '#9ea3a3', paper: '#f2efe6', binder: '#2f3e5c', counter: '#cbbfa6',
+    wall: '#e3e0d4', dado: '#8d968c', tube: '#eef4e6', lamp: '#f2c27a', shade: '#1d2124', door: SCHOOL_ORANGE, her: HER_PINK,
+  },
+  // Greenish tubes overhead, flat and tiring; his desk lamp is the only warm light.
+  light: { ambient: '#7d857f', sun: '#eef2e6', intensity: 1.05 },
+  her: .25,
+  glow: '#eef4e6',
+  materials: {
+    // The cool terrazzo of every public building, in 40 cm tiles.
+    floor: { texture: 'terratzo', tint: '#9ea3a3', size: 3.2 },
+    wall: { texture: 'paret-pintada', tint: '#e3e0d4' },
+    dado: { texture: 'paret-pintada', tint: '#8d968c' },
+    // Archive boxes on the cabinets: what the camera sees most, and the zone's manila.
+    box: { texture: 'cartro', tint: '#d6b46a' },
+  },
+  floors: { 'La secretaría': 'floor', 'La sala de espera': 'floor' },
+  height: 3.4,
+};
+export const PALACE_OFFICE: Environment = {
+  id: 'palacio-secretaria', name: 'Palacio · La secretaría', spawn: { x: 4, z: 19 }, zoom: 8,
+  grid: grid(OFFICE_PLAN), houses: [], props: [],
+  palace: {
+    plan: OFFICE_PLAN, theme: OFFICE_THEME,
+    rooms: [
+      { name: 'La secretaría', x: 1, z: 1, w: 26, d: 14, floor: 'tile' },
+      { name: 'La sala de espera', x: 1, z: 15, w: 26, d: 5, floor: 'tile' },
+    ],
+    // Where the zone's boss stands, before his desk; the desk itself is the set-piece.
+    anchors: { 'boss-secretaria': { x: 3, z: 5 }, 'la-mesa': { x: 2, z: 1 } },
+  },
+  interactions: [
+    { id: 'secretaria-patio', cell: { x: 4, z: 19 }, label: 'Volver al patio', to: { environment: 'palacio-patio', cell: { x: 28, z: 2 } } },
+    // The story holds Direcció shut until the zone may open (src/story.ts `gate`).
+    { id: 'secretaria-direccio', cell: { x: 6, z: 1 }, label: 'Abrir Direcció', to: { environment: 'palacio-trono', cell: { x: 1, z: 16 } } },
+    { id: 'secretaria-cola', cell: { x: 7, z: 17 }, label: 'Mirar la cola', lines: ['Una cola delante de la finestreta. Nadie se mueve.', 'Nadie se queja. Cada uno con su impreso en la mano.'] },
+    { id: 'secretaria-finestreta', cell: { x: 5, z: 15 }, label: 'Mirar la finestreta', lines: ['La finestreta. Desde este lado nunca la había visto.', 'Desde aquí se ve mi sitio. Vacío.'] },
+    { id: 'secretaria-tablon', cell: { x: 1, z: 16 }, label: 'Mirar el tablón', lines: ['Circulares, el calendario escolar, los horarios. Todo en su sitio.', 'Encima de cada hoja, una nota rosa. Sin nada escrito.'] },
+    { id: 'secretaria-mesas', cell: { x: 5, z: 11 }, label: 'Mirar las mesas', lines: ['La misma mesa, una y otra vez. La misma taza, el mismo montón.', 'Ninguna es la mía.'] },
+    { id: 'secretaria-fotocopiadora', cell: { x: 24, z: 9 }, label: 'Mirar la fotocopiadora', lines: ['La fotocopiadora no para.', 'Copias y copias de una hoja en blanco.'] },
+    { id: 'secretaria-llaves', cell: { x: 1, z: 4 }, label: 'Mirar las llaves', lines: ['Las llaves de todas las aulas, cada una en su gancho.', 'Las cuento sin querer. Están todas.'] },
+    { id: 'secretaria-mesa', cell: { x: 3, z: 1 }, label: 'Mirar mi mesa', lines: ['Mi mesa. Mi taza, el sello, el montón del día.', 'La única lámpara encendida es la mía.'] },
+  ],
+};
+
+// ——— El salón del trono —————————————————————————————————————————————————————————————————
+/**
+ * The school's sala d'actes at night: empty folding chairs face the stage, where her throne stands
+ * under one spotlight between velvet curtains; behind it the balcony opens through the north wall
+ * onto the night city. The stage is raised (walkable, up its corner steps). Entered down the stair
+ * behind her gum curtain (1) or, once la secretaría is won, through Direcció (2).
+ */
+const THRONE_PLAN = [
+  '###########OOOO###########', // 0
+  '#cccSSSSSSSSSSSSSSSSSSccc#', // 1
+  '#cccSnnSSSSSQQQSSSSSSSccc#', // 2
+  '#cccSSSSSSSSQQQSSSSSSSccc#', // 3
+  '#cccSSSSSSSSSSSSSSSSSSccc#', // 4
+  '#cccSSSSSSSSSSSSSSSSSSccc#', // 5
+  '#...ss______________ss...#', // 6
+  '#............B...........#', // 7
+  '#........................#', // 8
+  '#..hhhhhhhhh..hhhhhhhhh..#', // 9
+  '#........................#', // 10
+  '#..hhhhhhhhh..hhhhhhhhh..#', // 11
+  '#........................#', // 12
+  '#..hhhhhhhhh..hhhhhhhhh..#', // 13
+  '#........................#', // 14
+  '#..hhhhhhhhh..hhhhhhhhh..#', // 15
+  '2........................#', // 16
+  '#..hhhhhhhhh..hhhhhhhhh..#', // 17
+  '#........................#', // 18
+  '#........................#', // 19
+  '#........................#', // 20
+  '############11############', // 21
+];
+const THRONE_THEME: ZoneTheme = {
+  zone: 'trono',
+  palette: {
+    curtain: '#232a5c', night: '#10132b', gold: '#c9a046', stage: '#5a3b2a', floor: '#3b2c26', runner: '#7a5a2e',
+    spot: '#fff4dc', wall: '#283063', dado: '#4a3426', shade: '#0b0d1c', chair: '#8f9699', seat: '#3d4150',
+    door: SCHOOL_ORANGE, her: HER_PINK, core: '#ff3d8b',
+  },
+  // Night: cold light from the balcony and the windows; the spotlight and her core do the rest.
+  light: { ambient: '#353d6c', sun: '#8f9fe0', intensity: .7 },
+  her: .2,
+  glow: '#fff4dc',
+  materials: {
+    floor: { texture: 'fusta-escenari', tint: '#3b2c26', size: 2.4 },
+    stage: { texture: 'fusta-escenari', tint: '#5a3b2a', size: 2 },
+    dado: { texture: 'fusta-escenari', tint: '#4a3426', size: 1.6 },
+    wall: { texture: 'paret-pintada', tint: '#283063' },
+    curtain: { texture: 'vellut', tint: '#232a5c', size: .6 },
+    runner: { texture: 'vellut', tint: '#7a5a2e', size: .6 },
+  },
+  floors: { 'El escenario': 'floor', 'La platea': 'floor' },
+  height: 6,
+};
+export const PALACE_THRONE: Environment = {
+  id: 'palacio-trono', name: 'Palacio · El salón del trono', spawn: { x: 12, z: 19 }, zoom: 7.8,
+  grid: grid(THRONE_PLAN), houses: [], props: [],
+  palace: {
+    plan: THRONE_PLAN, theme: THRONE_THEME,
+    rooms: [
+      { name: 'El escenario', x: 1, z: 1, w: 24, d: 6, floor: 'deck' },
+      { name: 'La platea', x: 1, z: 7, w: 24, d: 14, floor: 'deck' },
+    ],
+    // The final confrontation, before the stage; her throne in the spotlight is the set-piece.
+    anchors: { 'boss-reina': { x: 13, z: 7 }, 'el-escenario': { x: 13, z: 3 } },
+  },
+  interactions: [
+    // Down the stair to her hall, out through the gum curtain behind the guards.
+    { id: 'trono-escalera', cell: { x: 12, z: 20 }, label: 'Bajar por la escalera', to: { environment: 'palacio', cell: { x: 16, z: 11 } } },
+    // Direcció opens from this side: the secretaría is locked from inside.
+    { id: 'trono-direccio', cell: { x: 1, z: 16 }, label: 'Volver a la secretaría', to: { environment: 'palacio-secretaria', cell: { x: 6, z: 1 } } },
+    { id: 'trono-sillas', cell: { x: 12, z: 11 }, label: 'Mirar las sillas', lines: ['Las sillas plegables de las fiestas de la escuela.', 'Todas mirando al escenario, como si fuera a empezar algo.'] },
+    { id: 'trono-piano', cell: { x: 7, z: 2 }, label: 'Mirar el piano', lines: ['El piano de los conciertos de fin de curso.', 'Hay una partitura abierta. No tiene título.'] },
+    { id: 'trono-trono', cell: { x: 13, z: 4 }, label: 'Mirar el trono', lines: ['Su trono. Una bola de chicle del tamaño de un coche.', 'Vacío. Todavía está caliente.'] },
+    { id: 'trono-balcon', cell: { x: 13, z: 1 }, label: 'Asomarse al balcón', lines: ['Barcelona de noche. La torre de colores, la Meridiana entera.', 'Desde aquí se ve casa.'] },
   ],
 };

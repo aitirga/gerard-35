@@ -111,6 +111,18 @@ export const LOOKS: Record<LookId, Look> = {
     enhance: { shadows: -.06, dehaze: .03 },
     her: .15,
   },
+  /** La secretaría: flat and tiring under greenish tubes, the manila kept, a little washed out. */
+  'palacio-secretaria': {
+    grade: { temperature: -.02, tint: -.05, lift: [.004, .008, .006], shadows: [-.004, .006, .008], highlights: [.008, .012, .002], contrast: .98, saturation: .9 },
+    enhance: { highlights: -.06, midtones: .02 },
+    her: .15,
+  },
+  /** El salón del trono: night indigo in the shade, warm gold in the light; she is the only saturated colour. */
+  'palacio-trono': {
+    grade: { temperature: -.04, lift: [.002, .002, .014], shadows: [-.006, -.004, .03], highlights: [.022, .014, -.004], contrast: 1.08, saturation: .96 },
+    enhance: { shadows: -.08, vibrance: .05 },
+    her: .2,
+  },
   /** La Reina Bubbaloo's light: magenta in the shade, pink in the light, a little darker and stranger. */
   bubbaloo: {
     grade: { lift: [.012, 0, .01], gamma: [.98, .95, .97], gain: [1, .96, .98], shadows: [.024, -.008, .02], highlights: [.02, -.002, .01], contrast: 1.05, saturation: 1 },

@@ -182,4 +182,9 @@ export const LINES_2 = {
     aitor('¿Seguro que es esa?'),
     gerard('La abro cada mañana.'),
   ),
+  /** Direcció, at the end of the secretaría: the last door before her, locked from the other side. */
+  directionShut: both(
+    gerard('Direcció. Cerrada por dentro.'),
+    aitor('Por debajo sale luz. Como la de un escenario.'),
+  ),
 } as const;

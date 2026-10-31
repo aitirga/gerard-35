@@ -6,11 +6,11 @@ import REC_COMTAL_SCENE from './geo/rec-comtal.json' with { type: 'json' };
 import CARDEDEU_SCENE from './geo/cardedeu.json' with { type: 'json' };
 import CARDEDEU_MAZE_SCENE from './geo/cardedeu-laberinto.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
-import { PALACE_GYM, PALACE_PATIO, type ZoneTheme } from './palace-zone-plans.ts';
+import { PALACE_GYM, PALACE_OFFICE, PALACE_PATIO, PALACE_THRONE, type ZoneTheme } from './palace-zone-plans.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
   | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto'
-  | 'palacio-patio' | 'palacio-gimnasio';
+  | 'palacio-patio' | 'palacio-gimnasio' | 'palacio-secretaria' | 'palacio-trono';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /** Tree shapes shared by every scene: street plane trees, garden olives, slim cypresses and a potted yucca. */
@@ -475,7 +475,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
   meridiana: MERIDIANA, palacio: PALACIO, alegia: ALEGIA,
   'meridiana-calle': MERIDIANA_CALLE, 'rec-comtal': REC_COMTAL, cardedeu: CARDEDEU, 'cardedeu-laberinto': CARDEDEU_MAZE,
-  'palacio-patio': PALACE_PATIO, 'palacio-gimnasio': PALACE_GYM,
+  'palacio-patio': PALACE_PATIO, 'palacio-gimnasio': PALACE_GYM, 'palacio-secretaria': PALACE_OFFICE, 'palacio-trono': PALACE_THRONE,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

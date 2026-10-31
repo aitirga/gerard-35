@@ -544,6 +544,7 @@ export class Story {
     // Inside the palace the school's doors open zone by zone; none of the zones can be won yet.
     if (interactionId === 'patio-gimnasio') return LINES_2.gymShut;
     if (interactionId === 'patio-secretaria') return LINES_2.officeShut;
+    if (interactionId === 'secretaria-direccio') return LINES_2.directionShut;
     // The TV switched itself on when Gerard woke: Aitor will not go out before seeing it.
     if (interactionId === 'meridiana-door' && this.adult && !this.has('tv-news')) return LINES_2.doorBeforeNews;
     if (!HOUSE_EXITS.has(interactionId)) return undefined;

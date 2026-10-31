@@ -23,6 +23,8 @@ const PLACES: Place[] = [
   { id: 'rec-comtal', name: 'Escola Rec Comtal', detail: 'Trinitat Vella', group: 'Barcelona', open: true },
   { id: 'palacio-patio', name: 'Palacio · El patio', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
   { id: 'palacio-gimnasio', name: 'Palacio · El gimnasio', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
+  { id: 'palacio-secretaria', name: 'Palacio · La secretaría', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
+  { id: 'palacio-trono', name: 'Palacio · El salón del trono', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
   { id: 'alegia', name: 'Alegia · San Juan kalea', detail: 'Según el mapa', group: 'Otros lugares', open: true },
   { id: 'patio', name: 'El patio', detail: 'Prueba de movimiento', group: 'Otros lugares', open: true },
 ];

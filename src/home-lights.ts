@@ -107,6 +107,10 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   'palacio-patio': { salon: [white(5200, .7), hex('#3f7d58', .6, .5), hex('#8a6aa8', .45, .4), hex('#ff6fae', .45, .35)], rest: white(4500, .25) },
   // The gym: blue mats and cold tubes.
   'palacio-gimnasio': { salon: [white(6000, .8), hex('#2d5a9e', .65, .5), white(5500, .6), hex('#c79a5b', .5, .45)], rest: white(5500, .3) },
+  // The secretaría: greenish tubes and manila, his warm desk lamp on the table's bulb.
+  'palacio-secretaria': { salon: [white(5000, .75), hex('#d6b46a', .55, .5), hex('#a8b8a6', .45, .45), hex('#f2c27a', .6, .5)], rest: white(4800, .25) },
+  // The throne room: night indigo, old gold, one warm spotlight and her pink.
+  'palacio-trono': { salon: [hex('#3a4590', .55, .4), hex('#c9a046', .5, .45), hex('#ff6fae', .4, .3), white(2900, .55)], rest: hex('#2a3170', .2, .3) },
   // The Rec Comtal school: brick and a pale sky (the castle's pink comes with the tone).
   'rec-comtal': { salon: [hex('#d98b5f', .7, .55), hex('#9cc6e6', .55, .45), white(3400, .65), hex('#e7a77a', .6, .45)], rest: white(3300, .3) },
 };
