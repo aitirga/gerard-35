@@ -664,9 +664,12 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
           }
         } else for (let fy = 0; fy < atlasV; fy++) for (let bx = 0; bx < atlasU; bx++) {
           const x0 = bx * 128, y0 = fy * 192, i = 20 + fy * 7 + bx * 3, first = fy === atlasV - 1;
-          // A string course over the storey below.
+          // A string course over the storey below, and a moulded band at the top: under the roof it is
+          // the white rim round the eaves of Nuria's block and the old houses.
           ctx.fillStyle = trim; ctx.fillRect(x0, y0 + 183, 128, 7);
           ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(x0, y0 + 190, 128, 2);
+          ctx.fillStyle = trim; ctx.fillRect(x0, y0, 128, 10);
+          ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x0, y0 + 10, 128, 3);
           const ww = first ? 50 : 44, top = y0 + (first ? 44 : 62), hh = first ? 124 : 78, wx = x0 + 64 - ww / 2;
           // The moulded frame and its lintel, a little proud of the wall.
           ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(wx - 6, top - 4, ww + 16, hh + 10);
