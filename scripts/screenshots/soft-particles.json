@@ -154,7 +154,7 @@
       "caption": "Soot in the corner of the hall, against two walls, soft particles on (same frozen frame): it fades out where it meets it"
     },
     {
-      "open": "/?story=metro&solo=1"
+      "open": "/?story=metro&solo=1&camara=fija"
     },
     {
       "skipDialogue": true
@@ -173,7 +173,7 @@
       "wait": 2500
     },
     {
-      "until": "window.gerard.game.app.root.findByName('Entorno: meridiana-calle').find(e => !!e.render).flatMap(e => e.render.meshInstances).some(m => (m.getParameter('geoCutRadius')?.data ?? 0) > 4.9)"
+      "until": "window.gerard.game.app.root.findByName('Entorno: meridiana-calle').find(e => !!e.render).flatMap(e => e.render.meshInstances).some(m => (m.getParameter('geoCutOpen')?.data ?? 0) > 0.98)"
     },
     {
       "eval": "window.sp = (play, frames, zoom = 1.8, hide = true) => { const g = window.gerard.game, app = g.app; app.timeScale = 0; g.effects.clear(); const me = app.root.findByName('Jugador'); me.enabled = !hide; const p = me.getPosition(); const c = { x: p.x, y: Math.max(g.effects.particles.groundAt(p.x, p.z), -1), z: p.z }; play(g.effects, (dx, dy, dz) => ({ x: c.x + dx, y: c.y + dy, z: c.z + dz })); for (let i = 0; i < frames; i++) app.fire('update', 1 / 60); app.root.findByName('Cámara isométrica').camera.orthoHeight = zoom; }; window.soft = on => { window.gerard.game.effects.particles.soft = on; };"

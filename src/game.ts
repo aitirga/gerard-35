@@ -14,6 +14,8 @@ import { WalkAnimation, idlePose } from './walk-animation';
 import { createEffects, type FightFx } from './effects';
 import type { ParticleBody } from './particles';
 import { createPost } from './post';
+import { createSilhouettes, occlusion } from './occlusion';
+import { cameraOffset, createCameraOrbit, towardCamera } from './camera-orbit';
 import { lighting } from './lighting';
 import { createGroundContact } from './ground-contact';
 import { buildCharacter, type CharacterSpec } from './character-model';
@@ -127,6 +129,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   });
   app.root.addChild(camera);
   const post = createPost(app, camera.camera!);
+  const silhouettes = createSilhouettes(app);
+  // In the street the camera turns to find Gerard behind a building (src/camera-orbit.ts).
+  const orbit = createCameraOrbit();
+  const vec = ({ x, y, z }: { x: number; y: number; z: number }) => new pc.Vec3(x, y, z);
+  /** Metres ahead of Gerard, while he walks, that the camera also keeps in sight (about a third of a second). */
+  const LOOK_AHEAD = 1.8;
   const player = new pc.Entity('Jugador');
   app.root.addChild(player);
   // Gerard's model: the boy in chapter 1, the man at 35 once he wakes up (`dress`).
@@ -1095,8 +1103,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const tilt = Math.min(1, Math.max(0.35, (length - 0.2) / 0.7));
       input = { x: partnerStick.x / length * tilt, y: partnerStick.y / length * tilt };
     } else if (partnerDirection) input = SCREEN_VECTORS[partnerDirection];
-    if (!input) { free.walking = false; tetherTug = 0; return; }
-    const grid = screenToGrid(input.x, input.y);
+    if (!input) { free.walking = false; tetherTug = 0; partnerYaw = orbit.pose.yaw; return; }
+    const grid = screenToGrid(input.x, input.y, partnerYaw);
     partnerFacing = facingToward(grid.x, grid.z);
     free.drive(grid.x, grid.z, dt, partnerCells(), partnerRunning && story.canRun);
     // Aitor pulling against the tether: he calls out to Gerard.
@@ -1117,6 +1125,11 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   const running = () => story.canRun && (controllerRunning || shiftHeld);
   let facing = 0;
   let visualFacing = 0;
+  /**
+   * The camera angle each player steers by: the one on screen when they started pressing, kept while
+   * they hold on, so a camera turning mid-walk never bends the way they are going.
+   */
+  let controlYaw = orbit.pose.yaw, partnerYaw = orbit.pose.yaw;
   const walk = new WalkAnimation();
   let clock = 0;
   let lastStride = 0;
@@ -1197,6 +1210,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const mate = mateHere();
     if (mate) placeMate(mate);
     overview = false;
+    // A new place starts from the camera's own angle.
+    orbit.reset(); controlYaw = partnerYaw = orbit.pose.yaw;
     lastPrompt = '';
     callbacks.onInteraction(undefined);
     callbacks.onLocation(id, movement.cell);
@@ -1252,7 +1267,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   document.addEventListener('visibilitychange', clearInput);
   window.addEventListener('resize', resize);
   resize(); positionPlayer();
-  camera.setPosition(cameraTarget.x + 40, cameraTarget.y + 52, cameraTarget.z + 40);
+  camera.setPosition(cameraTarget.clone().add(vec(cameraOffset(orbit.pose))));
   callbacks.onLocation(environment.id, movement.cell);
   /** The camera's ortho height before any punch-in, and the hit kick it wears this frame. */
   let viewHeight = camera.camera!.orthoHeight;
@@ -1277,8 +1292,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
         input = { x: controllerStick.x / length * tilt, y: controllerStick.y / length * tilt };
       }
       if (!input && controllerDirection) input = SCREEN_VECTORS[controllerDirection];
+      if (!input) controlYaw = orbit.pose.yaw;
       if (input) {
-        const grid = screenToGrid(input.x, input.y);
+        const grid = screenToGrid(input.x, input.y, controlYaw);
         facing = facingToward(grid.x, grid.z);
         if (movement.drive(grid.x, grid.z, dt, occupiedCells(), running())) callbacks.onStep(movement.steps, movement.cell);
         if (movement.walking) overview = false;
@@ -1445,6 +1461,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
       battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
+    silhouettes.update(partner ? [player, partner.entity] : [player]);
     // Particles part around everyone standing in the scene, and the air fills what the camera sees.
     bodies.length = 0;
     if (player.enabled) bodies.push(bodyOf(player, .3, 1.5));
@@ -1464,17 +1481,30 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const apart = shared ? player.getPosition().distance(shared) : 0;
     const target = battle && framed && cinematic ? cinematic.target.clone() : battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
     cameraTarget.lerp(cameraTarget, target, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 7));
-    const cameraOffset = battle ? new pc.Vec3(5, 9, 15) : new pc.Vec3(40, 52, 40);
+    // Out walking among buildings the camera may tilt up or swing round to find Gerard and his
+    // partner; fights, cut-scenes and the overview bring it home. While someone talks it only
+    // finishes the turn under way, and the pause menu holds it still.
+    if (document.querySelector('#hud[data-dialogue]') && !battle && !cinematic) orbit.update(delta, 'keep', reducedMotion.matches);
+    else if (!paused) {
+      const walking = !battle && !cinematic && !overview && !!follow && !cutscene && occlusion.camera === 'auto';
+      // Where Gerard will be in a moment counts too, so the angle it picks still works a few steps on.
+      const chest = new pc.Vec3(0, .7, 0).add(player.getPosition());
+      const ahead = movement.walking ? [chest.clone().add(new pc.Vec3(Math.sin(facing * pc.math.DEG_TO_RAD), 0, Math.cos(facing * pc.math.DEG_TO_RAD)).mulScalar(LOOK_AHEAD))] : [];
+      const people = [chest, ...ahead, ...(mate?.entity.enabled ? [new pc.Vec3(0, .7, 0).add(mate.entity.getPosition())] : [])];
+      const sight = walking ? scenery.sight?.(people) : undefined;
+      orbit.update(delta, sight && (pose => sight(towardCamera(pose))), reducedMotion.matches);
+    }
+    const offset = battle ? new pc.Vec3(5, 9, 15) : vec(cameraOffset(orbit.pose));
     // The view is orthographic, so how far back the camera stands only decides what its clip planes
     // keep: over a big place's overview it backs away along its view and sees further, so neither the
     // near corner nor the far one (and what stands beyond it) is cut off.
     const spread = (environment.grid[0].length + environment.grid.length) / 2 * .52;
-    if (!battle && !cinematic && (overview || !follow)) cameraOffset.mulScalar(Math.max(1, (spread + 40) / cameraOffset.length()));
+    if (!battle && !cinematic && (overview || !follow)) offset.mulScalar(Math.max(1, (spread + 40) / offset.length()));
     if (battleScene.entering && !reducedMotion.matches) {
       const arc = Math.sin(battleScene.entryProgress * Math.PI);
-      cameraOffset.add(new pc.Vec3(arc * 3, arc * 1.5, -arc * 2));
+      offset.add(new pc.Vec3(arc * 3, arc * 1.5, -arc * 2));
     }
-    const desiredCamera = cameraTarget.clone().add(cameraOffset);
+    const desiredCamera = cameraTarget.clone().add(offset);
     // The camera eases from where it rests, without last frame's hit kick (added after it looks).
     const rest = camera.getPosition().clone().sub(cameraKick);
     camera.setPosition(reducedMotion.matches ? desiredCamera : rest.lerp(rest, desiredCamera, 1 - Math.exp(-delta * 6)));
@@ -1530,7 +1560,11 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   tone = toneTarget; scenery.setTone(tone); post.setScene(environment.id);
   app.start();
   return {
-    app, effects, post, setEnvironment, interact, encounter, setBattle, refreshStory, summonMinion,
+    app, effects, post, setEnvironment,
+    /** How Gerard shows through what hides him (src/occlusion.ts): `style`, `silhouettes` and `camera`, live. */
+    occlusion,
+    /** The street camera's angle now and where it is heading (src/camera-orbit.ts). */
+    orbit, interact, encounter, setBattle, refreshStory, summonMinion,
     /** The sun's shadows and the sky's reflections (src/lighting.ts), with toggles for comparisons. */
     lighting: lighting(app),
     /** Puts Gerard (and whoever is with him) back on `cell` of this scene, e.g. up a station's stair. */

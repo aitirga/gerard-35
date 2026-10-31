@@ -148,6 +148,59 @@ So a new model needs nothing special: build it from boxes, flush where it reads 
 are checked; a plane or custom mesh laid on another surface still needs its own small offset.
 `tests/flush-faces.test.mjs` covers it.
 
+## Seeing Gerard behind things (`src/occlusion.ts`)
+
+The camera is orthographic and high, so a building often stands between Gerard and it. Three things
+keep him in sight, all set in `occlusion` (`?cut=`, `?silueta=0` and `?camara=fija` at load, and
+`window.gerard.game.occlusion` live in a development build):
+
+- **The street camera turns** (`occlusion.camera`, src/camera-orbit.ts). In places with buildings
+  (the ones generated from map data), when a building hides Gerard or his partner the camera tilts
+  up (to 55° or 68°) or swings round him (30°, 60° or 90° either way) to the nearest angle from
+  which nobody is hidden, and comes back to its own angle once they are in the open. It is
+  automatic, not a key: both players share the camera, the city is styled for one angle, and the
+  only reason to turn is a building in the way. To keep it calm and the controls honest:
+  - Tilting costs less than swinging (directions on screen stay where they were), and a swing
+    prefers the side the camera is already on. Every angle is tried against the buildings near
+    them (`sight` in src/geo-scenery.ts, the same rays as the cut), including where Gerard will be
+    1.8 m ahead while he walks, so the angle it picks still works a few steps on.
+  - It moves only after 0.35 s hidden (passing a corner never turns it), keeps a new angle at
+    least a second, and comes home after 1.2 s in the open. It turns at most 80° a second;
+    with reduced motion it cuts instead.
+  - Each player steers by the angle on screen when they started pressing (`controlYaw` in
+    src/game.ts, `screenToGrid(x, y, yaw)`), so a turn mid-walk never bends the way they are going;
+    the next press follows the new angle.
+  - Fights, cut-scenes and the overview (R) bring it home; while someone talks it only finishes the
+    turn under way. Interiors, the palace and Uri's maze have no buildings to ask, so it never turns there.
+  While it waits or turns, and where no angle shows him, the window below opens.
+- **The building opens** (`occlusion.style`, shader chunks in src/geo-scenery.ts). Only a building
+  that hides him opens (`buildingHidesPlayer`, a few rays from his body against its real
+  triangles), only what stands in front of him, and the foot of each wall stays. Styles:
+  - `dither` (default): a round window of 3.3 m radius on screen, centred on him. The camera is
+    orthographic, so a cylinder along the line of sight is the same circle at every depth (the roof
+    and the facade open alike). The last 1.1 m dissolves into a screen-space stipple (interleaved
+    gradient noise, the same pattern in the depth prepass) and the wall just outside darkens a touch,
+    as in Baldur's Gate 3 and Divinity: Original Sin 2.
+  - `ghost`: the whole building turns to a screen door (a third of it stays), as Diablo fades walls.
+    Shows the most, but at 1× the stipple shimmers into moiré over a large wall: it wants TAA.
+  - `ring`: the earlier cut of 5 m radius, wider towards the camera, traced by a glowing cream edge. Each
+    surface opens at its own size, so roofs and walls show stacked arcs.
+  - `none`: buildings stay whole; only the silhouette shows him.
+- **Silhouettes** (`occlusion.silhouettes`, `createSilhouettes`): Gerard and his partner are drawn a
+  second time, flat light blue, only where something stands in front of them (depth test reversed,
+  no depth write), as Torchlight and Diablo-likes show their heroes. The copies share each part's
+  mesh and node, so they follow every pose. The stencil keeps them off the people themselves: their
+  parts write 1 where they are seen, a copy draws only where the stencil is still 0 and raises it,
+  so an arm behind his own body never shows and overlapping parts never darken twice. The post
+  pass keeps a stencil buffer for it (`frame.rendering.stencil`). The tilt-shift blurs a silhouette
+  with the wall in front of it.
+
+Trees fade their crowns (src/props.ts) and house interiors fold their walls (src/home-scenery.ts)
+as before. `just screenshots camera-orbit` shoots the fixed and the turning camera from two hidden
+spots on Avinguda Meridiana and checks a key pressed after a turn; `hidden-view` shoots every window
+style from the same spots with the camera fixed; `building-visibility` checks that only the building
+in the way opens and closes again. `tests/camera-orbit.test.mjs` covers the camera's choices.
+
 ## Post pass (`src/post.ts`)
 
 The main camera renders through `pc.CameraFrame`: the scene goes to a linear HDR buffer with

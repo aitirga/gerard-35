@@ -1,7 +1,9 @@
 import * as pc from 'playcanvas';
 import { flankRun, type GeoBuilding, type GeoPoint, type GeoRoad, type GeoScene, type GeoShop } from './geo';
 import { shine } from './lighting';
-import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from './building-occlusion';
+import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder, type Point3 } from './building-occlusion';
+import { HOME_POSE } from './camera-orbit';
+import { occlusion, type OcclusionStyle } from './occlusion';
 import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
 import { LANDMARKS, type LandmarkKit } from './landmarks';
 import { buildSea } from './geo-sea';
@@ -34,64 +36,80 @@ const GRAIN = 0.85;
 /** A roof's slope is this much longer than the ground it covers (30° pitch). */
 const SLOPE = 1 / Math.cos(30 * Math.PI / 180);
 /**
- * Radius of the see-through opening round Gerard, the glowing edge where it meets solid wall,
- * how much it widens per unit towards the camera, and how quickly it opens.
+ * How a building that hides Gerard lets him show through, by `occlusion.style` (src/occlusion.ts):
+ *
+ * - `dither`: a round window centred on him on screen (the camera is orthographic, so a cylinder
+ *   along the line of sight is a circle on screen at every depth). Its rim dissolves into a fine
+ *   screen-space stipple instead of a hard line, and the wall just outside darkens a touch, so the
+ *   layers part. The see-through circles of Baldur's Gate 3 and Divinity: Original Sin 2.
+ * - `ghost`: the whole building turns to a screen door, `CUT_GHOST` of it left, as Diablo fades walls.
+ * - `ring`: the earlier cut, wider towards the camera and traced by a glowing edge.
+ *
+ * In every style the foot of the wall stays, up to `CUT_STUB` from the focus (0.7 above his feet),
+ * so the building's edge still shows where Gerard can't pass, and only what stands in front of him
+ * opens. Shadows are left whole. Each building opens at `CUT_RATE` while it hides him.
  */
-const CUT_RADIUS = 5;
-const CUT_EDGE = 0.14;
-/** How far the edge's light bleeds softly into the wall beyond it. */
-const CUT_HALO = 0.5;
-/** Height of the wall foot left inside the cut, from the focus (0.7 above Gerard's feet). */
+const CUT_DITHER = { radius: 3.3, band: 1.1, shade: 0.6, dark: 0.25, foot: 0.3 };
+const CUT_GHOST = 0.32;
+const CUT_RING = { radius: 5, edge: 0.14, halo: 0.5, flare: 0.25, glow: '1.0, 0.86, 0.6' };
 const CUT_STUB = -0.25;
-const CUT_FLARE = 0.25;
 const CUT_RATE = 8;
-/** The warm light the edge glows with. */
-const CUT_GLOW = '1.0, 0.86, 0.6';
+/** `geoCutStyle` in the shader, by style; `none` never opens. */
+export const CUT_STYLE_INDEX: Record<Exclude<OcclusionStyle, 'none'>, number> = { dither: 0, ghost: 1, ring: 2 };
 /** What wet asphalt and panot reflect, at full wetness. */
 const WET_SHEEN = new pc.Color(0.14, 0.14, 0.14);
 type V3 = [number, number, number];
-interface BuildingCut { triangles: number[]; instances: pc.MeshInstance[]; radius: number }
+interface BuildingCut { triangles: number[]; instances: pc.MeshInstance[]; open: number }
 
-/**
- * Buildings keep their shape: what lies between Gerard and the camera, inside a cylinder round
- * the line of sight that flares out towards it, is cut away, and the cut is traced by a glowing
- * edge whose light bleeds softly into the solid wall beyond it.
- * Shadows are left whole.
- */
+const f = (n: number) => n.toFixed(3);
 const CUT = {
-  near: BUILDING_CUT_NEAR.toFixed(2), radius: CUT_RADIUS.toFixed(1), edge: CUT_EDGE.toFixed(2), halfEdge: (CUT_EDGE * 0.5).toFixed(2),
-  halo: CUT_HALO.toFixed(2), stub: CUT_STUB.toFixed(2), flare: CUT_FLARE.toFixed(2),
+  near: f(BUILDING_CUT_NEAR), stub: f(CUT_STUB),
+  dither: { radius: f(CUT_DITHER.radius), band: f(CUT_DITHER.band), shade: f(CUT_DITHER.shade), dark: f(CUT_DITHER.dark), foot: f(CUT_DITHER.foot) },
+  ghost: f(1 - CUT_GHOST),
+  ring: { radius: f(CUT_RING.radius), edge: f(CUT_RING.edge), halfEdge: f(CUT_RING.edge / 2), halo: f(CUT_RING.halo), flare: f(CUT_RING.flare) },
 };
 const CUTAWAY_DECLARATION = `
 uniform geoCutFocus: vec3f;
 uniform geoCutToCamera: vec3f;
-uniform geoCutRadius: f32;
+uniform geoCutStyle: f32;
+uniform geoCutOpen: f32;
 var<private> geoCutGlow: f32 = 0.0;
+var<private> geoCutShade: f32 = 0.0;
 `;
 const CUTAWAY_MAIN = `
 // The depth prepass (soft particles, tilt-shift and contact shadows in src/post.ts) must see the same
-// hole, or they'd read a wall that isn't there.
+// hole, or they'd read a wall that isn't there; the stipple is fixed to the screen, so it matches too.
 #if defined(FORWARD_PASS) || defined(PREPASS_PASS)
-if (uniform.geoCutRadius > 0.0) {
+if (uniform.geoCutOpen > 0.0) {
   let cutOffset = vPositionW - uniform.geoCutFocus;
   let cutAlong = dot(cutOffset, uniform.geoCutToCamera);
   if (cutAlong > ${CUT.near}) {
     let cutAcross = length(cutOffset - uniform.geoCutToCamera * cutAlong);
-    let cutReach = uniform.geoCutRadius * (1.0 + ${CUT.flare} * (cutAlong - ${CUT.near}) / ${CUT.radius});
-    // The foot of every wall stays, so the building's edge still shows where Gerard can't pass.
     let cutStub = vPositionW.y - (uniform.geoCutFocus.y + ${CUT.stub});
-    let cutInside = step(cutAcross, cutReach - ${CUT.edge});
-    if (cutInside * step(0.0, cutStub) > 0.5) { discard; }
-    let cutRing = 1.0 - smoothstep(cutReach - ${CUT.halfEdge}, cutReach + ${CUT.halo}, cutAcross);
-    let cutFoot = step(cutAcross, cutReach) * smoothstep(-${CUT.halo}, -${CUT.halfEdge}, cutStub);
-    geoCutGlow = max(cutRing, cutFoot);
+    let cutNoise = fract(52.9829189 * fract(dot(pcPosition.xy, vec2f(0.06711056, 0.00583715))));
+    if (uniform.geoCutStyle < 0.5) {
+      let cutReach = ${CUT.dither.radius} * uniform.geoCutOpen;
+      let cutFoot = smoothstep(-${CUT.dither.foot}, 0.0, cutStub);
+      let cutHole = (1.0 - smoothstep(cutReach - ${CUT.dither.band}, cutReach, cutAcross)) * cutFoot;
+      if (cutHole > cutNoise) { discard; }
+      geoCutShade = 1.0 - smoothstep(cutReach - ${CUT.dither.band}, cutReach + ${CUT.dither.shade}, cutAcross);
+    } else if (uniform.geoCutStyle < 1.5) {
+      if (uniform.geoCutOpen * ${CUT.ghost} > cutNoise && cutStub > 0.0) { discard; }
+    } else {
+      let cutReach = ${CUT.ring.radius} * uniform.geoCutOpen * (1.0 + ${CUT.ring.flare} * (cutAlong - ${CUT.near}) / ${CUT.ring.radius});
+      let cutInside = step(cutAcross, cutReach - ${CUT.ring.edge});
+      if (cutInside * step(0.0, cutStub) > 0.5) { discard; }
+      let cutRing = 1.0 - smoothstep(cutReach - ${CUT.ring.halfEdge}, cutReach + ${CUT.ring.halo}, cutAcross);
+      let cutFoot = step(cutAcross, cutReach) * smoothstep(-${CUT.ring.halo}, -${CUT.ring.halfEdge}, cutStub);
+      geoCutGlow = max(cutRing, cutFoot);
+    }
   }
 }
 #endif
 `;
 const CUTAWAY_END = `
 #ifdef FORWARD_PASS
-output.color = vec4f(mix(output.color.rgb, vec3f(${CUT_GLOW}), geoCutGlow * 0.75), output.color.a);
+output.color = vec4f(mix(output.color.rgb, vec3f(${CUT_RING.glow}), geoCutGlow * 0.75) * (1.0 - ${CUT.dither.dark} * geoCutShade), output.color.a);
 #endif
 `;
 
@@ -252,14 +270,14 @@ function carve(polys: GeoPoint[][], holes: GeoPoint[][]): GeoPoint[][] {
 /**
  * Builds a place generated from map data: ground layers, roads and rails, a river, and every
  * building extruded from its real footprint with a hipped roof and painted facades. Buildings
- * between Gerard and the camera keep their height and open a cut round him traced by a glowing edge.
+ * between Gerard and the camera keep their height and open a see-through cut round him.
  */
 export function buildGeo(kit: GeoKit, scene: GeoScene) {
   const { app, root, mat, x, z } = kit;
   const device = app.graphicsDevice;
   const meshes: pc.Mesh[] = [];
   const buildingCuts = new Map<pc.Entity, BuildingCut>();
-  /** Building materials open the glowing cut; the ground and streets never do. */
+  /** Building materials open the see-through cut; the ground and streets never do. */
   function cutaway<M extends pc.StandardMaterial>(m: M) {
     const wgsl = m.getShaderChunks(pc.SHADERLANGUAGE_WGSL);
     wgsl.set('litUserDeclarationPS', CUTAWAY_DECLARATION);
@@ -281,7 +299,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       // footprint's bounding box must never count as a wall in front of Gerard.
       for (const index of builder.indices) cut.triangles.push(...builder.positions.slice(index * 3, index * 3 + 3));
       cut.instances.push(instance);
-      instance.setParameter('geoCutRadius', 0);
+      instance.setParameter('geoCutOpen', 0);
     }
     parent.addChild(e); return e;
   }
@@ -1556,7 +1574,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   function building(b: GeoBuilding) {
     const pivot = new pc.Entity(`Edificio ${b.number ?? b.name ?? b.id}`);
     root.addChild(pivot); pivots.set(b.id, pivot);
-    buildingCuts.set(pivot, { triangles: [], instances: [], radius: 0 });
+    buildingCuts.set(pivot, { triangles: [], instances: [], open: 0 });
     if (b.facade === 'parapet') { lowWall(b, pivot); return; }
     const poly = b.poly, H = b.height, storey = scene.storey;
     const groundTop = Math.min(H, storey * 1.15);
@@ -1950,17 +1968,17 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         parent.addChild(e);
         // A piece on a building's walls or roof opens and closes with that building's cut, so it never
         // floats over the hole nor is eaten while the roof under it stays whole.
-        if (host) { host.instances.push(instance); instance.setParameter('geoCutRadius', host.radius); return e; }
+        if (host) { host.instances.push(instance); instance.setParameter('geoCutOpen', host.open); return e; }
         if (cut) {
           // Tall pieces open the same cut as the buildings (the very one of the building they dress): their triangles in world space.
           let group = buildingCuts.get(owner ?? pivot);
-          if (!group) { group = { triangles: [], instances: [], radius: 0 }; buildingCuts.set(owner ?? pivot, group); }
+          if (!group) { group = { triangles: [], instances: [], open: 0 }; buildingCuts.set(owner ?? pivot, group); }
           const world = e.getWorldTransform(), v = new pc.Vec3();
           for (const index of builder.indices) {
             world.transformPoint(v.set(builder.positions[index * 3], builder.positions[index * 3 + 1], builder.positions[index * 3 + 2]), v);
             group.triangles.push(v.x, v.y, v.z);
           }
-          group.instances.push(instance); instance.setParameter('geoCutRadius', 0);
+          group.instances.push(instance); instance.setParameter('geoCutOpen', 0);
         }
         return e;
       },
@@ -2192,12 +2210,13 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }
 
   // ------------------------------------------------------------ see-through cut
-  // Materials are shared across blocks; the radius belongs to each mesh instance so a true
+  // Materials are shared across blocks; how open the cut is belongs to each mesh instance, so a true
   // obstruction cannot open a hole in a neighbouring building that leaves Gerard visible.
   const occluders = [...buildingCuts.values()].map(cut => ({ cut, shape: createBuildingOccluder(cut.triangles) }));
-  const cutFocus = device.scope.resolve('geoCutFocus'), cutToCamera = device.scope.resolve('geoCutToCamera'), cutRadius = device.scope.resolve('geoCutRadius');
+  const uniform = (name: string) => device.scope.resolve(name);
+  const cutFocus = uniform('geoCutFocus'), cutToCamera = uniform('geoCutToCamera'), cutStyle = uniform('geoCutStyle'), cutOpen = uniform('geoCutOpen');
   // Every pass binds the declared uniforms (WebGPU fills a buffer for the shadow pass too), so give them a value up front.
-  cutRadius.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]);
+  cutOpen.setValue(0); cutStyle.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]);
 
   // Which cells the sunk river fills, so rain and drizzle fall into it instead of onto the street's level.
   const riverCells = new Uint8Array(W * D);
@@ -2209,18 +2228,33 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       const i = Math.round(px - x(0)), j = Math.round(pz - z(0));
       return i >= 0 && j >= 0 && i < W && j < D && riverCells[j * W + i] ? LAYER.water - sunk : undefined;
     },
-    /** Opens the glowing cut round `focus` while a building stands between it and the camera. */
+    /**
+     * For the street camera (src/camera-orbit.ts): how many of `people` (focus points, 0.7 above the
+     * feet) a building hides from a camera along a direction. Only buildings tall and near enough to
+     * hide them from the home angle or any steeper one are tried.
+     */
+    sight(people: Point3[]) {
+      const reach = 1.2 / Math.tan(HOME_POSE.pitch * Math.PI / 180);
+      const near = occluders.filter(({ shape }) => people.some(p => {
+        const dx = Math.max(shape.min.x - p.x, 0, p.x - shape.max.x), dz = Math.max(shape.min.z - p.z, 0, p.z - shape.max.z);
+        return shape.max.y > p.y && Math.hypot(dx, dz) <= (shape.max.y - p.y) * reach + 1;
+      }));
+      return (toCamera: Point3) => people.filter(p => near.some(({ shape }) => buildingHidesPlayer(shape, p, toCamera))).length;
+    },
+    /** Opens the cut round `focus`, in the chosen style, while a building stands between it and the camera. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       weather(dt);
       if (animate) { time += dt; river.diffuseMapOffset.set(time * 0.05, time * 0.02); river.emissiveMapOffset.set(-time * 0.03, time * 0.04); river.update(); }
       sea?.update(dt, animate);
+      const style = occlusion.style;
+      if (style !== 'none') cutStyle.setValue(CUT_STYLE_INDEX[style]);
       for (const { cut, shape } of occluders) {
-        const target = focus && toCamera && buildingHidesPlayer(shape, focus, toCamera) ? CUT_RADIUS : 0;
-        const radius = animate ? cut.radius + (target - cut.radius) * (1 - Math.exp(-dt * CUT_RATE)) : target;
-        const next = Math.abs(radius - target) < 0.02 ? target : radius;
-        if (cut.radius === next) continue;
-        cut.radius = next;
-        for (const instance of cut.instances) instance.setParameter('geoCutRadius', cut.radius);
+        const target = style !== 'none' && focus && toCamera && buildingHidesPlayer(shape, focus, toCamera) ? 1 : 0;
+        const open = animate ? cut.open + (target - cut.open) * (1 - Math.exp(-dt * CUT_RATE)) : target;
+        const next = Math.abs(open - target) < 0.004 ? target : open;
+        if (cut.open === next) continue;
+        cut.open = next;
+        for (const instance of cut.instances) instance.setParameter('geoCutOpen', cut.open);
       }
       if (focus && toCamera) {
         cutFocus.setValue([focus.x, focus.y, focus.z]);
@@ -2234,6 +2268,6 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       if (shownWet === 0 && wet === 0 && !streetSet) wet = raining;
       streetSet = true; rain = raining; dusk = evening;
     },
-    destroy() { alive = false; cutRadius.setValue(0); meshes.forEach(m => m.destroy()); gpu.forEach(t => t.destroy()); sea?.destroy(); },
+    destroy() { alive = false; cutOpen.setValue(0); meshes.forEach(m => m.destroy()); gpu.forEach(t => t.destroy()); sea?.destroy(); },
   };
 }

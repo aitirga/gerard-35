@@ -482,6 +482,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     /** A lamp in the Meridiana flat (src/home-lights.ts); other scenes have none. */
     setLamp(id: LightId, lamp: Lamp) { home?.setLamp(id, lamp); },
     lampPosition(id: LightId) { return home?.lampPosition(id); },
+    /** Places with buildings: how many of these focus points a building hides from a camera along a direction (src/camera-orbit.ts). */
+    sight: geo?.sight,
     destroy() { traffic?.destroy(); app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); basilica?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }

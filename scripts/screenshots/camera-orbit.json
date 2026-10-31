@@ -1,0 +1,126 @@
+{
+  "title": "Camera · Finding Gerard behind buildings",
+  "description": "The street camera finds Gerard when a building hides him: from the same spots on Avinguda Meridiana, the fixed camera (with the dithered window) against the automatic one, which tilts up or swings round until nothing stands between it and Gerard and Aitor, and comes home once they are in the open. Checks that a key pressed after the turn still walks up the screen.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.cutOpen = () => window.gerard.game.app.root.findByName('Entorno: meridiana-calle').find(e => !!e.render).flatMap(e => e.render.meshInstances).map(m => m.getParameter('geoCutOpen')?.data).filter(r => r !== undefined); window.cutSettled = () => window.cutOpen().every(r => r === 0 || r === 1); window.orbit = () => window.gerard.game.orbit; window.atHome = () => window.orbit().target.yaw === 45 && window.orbit().target.pitch < 43;"
+    },
+    {
+      "eval": "window.gerard.game.occlusion.camera = 'fixed'"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        138,
+        62
+      ]
+    },
+    {
+      "until": "window.atHome() && window.orbit().settled && window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "crossing-fixed",
+      "delay": 600,
+      "caption": "On a crossing behind a tall block · Fixed camera: the dithered window shows Gerard through the block"
+    },
+    {
+      "eval": "window.gerard.game.occlusion.camera = 'auto'"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "until": "!window.atHome() && window.orbit().settled && window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "eval": "const t = window.orbit().target; window.lastPose = `${Math.round(t.yaw - 45)}° round, ${Math.round(t.pitch)}° down`; console.log('pose', window.lastPose)"
+    },
+    {
+      "shot": "crossing-auto",
+      "delay": 600,
+      "caption": "On a crossing behind a tall block · Automatic camera: it swings or tilts until nothing stands between it and them"
+    },
+    {
+      "eval": "window.gerard.game.occlusion.camera = 'fixed'"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        110,
+        18
+      ]
+    },
+    {
+      "until": "window.atHome() && window.orbit().settled && window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "side-street-fixed",
+      "delay": 600,
+      "caption": "In a side street between tall blocks · Fixed camera: the dithered window shows Gerard through the block"
+    },
+    {
+      "eval": "window.gerard.game.occlusion.camera = 'auto'"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "until": "!window.atHome() && window.orbit().settled && window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "eval": "const t = window.orbit().target; window.lastPose = `${Math.round(t.yaw - 45)}° round, ${Math.round(t.pitch)}° down`; console.log('pose', window.lastPose)"
+    },
+    {
+      "shot": "side-street-auto",
+      "delay": 600,
+      "caption": "In a side street between tall blocks · Automatic camera: it swings or tilts until nothing stands between it and them"
+    },
+    {
+      "eval": "window.before = { ...window.gerard.game.position }"
+    },
+    {
+      "hold": [
+        "KeyW"
+      ],
+      "ms": 500
+    },
+    {
+      "eval": "const p = window.gerard.game.position, d = { x: p.x - window.before.x, z: p.z - window.before.z }, len = Math.hypot(d.x, d.z), yaw = window.orbit().pose.yaw * Math.PI / 180, away = { x: -Math.sin(yaw), z: -Math.cos(yaw) }; if (len < 0.5) throw new Error(`W should walk Gerard, moved ${len}`); if ((d.x * away.x + d.z * away.z) / len < 0.9) throw new Error(`W should walk away from the turned camera, got ${JSON.stringify(d)} for yaw ${window.orbit().pose.yaw}`);"
+    },
+    {
+      "shot": "walk-up-after-turn",
+      "delay": 300,
+      "caption": "Pressed after the camera turned, W walks Gerard up the screen, away from the camera"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        50,
+        40
+      ]
+    },
+    {
+      "until": "window.atHome() && window.orbit().settled",
+      "timeout": 20000
+    },
+    {
+      "shot": "open-street",
+      "delay": 600,
+      "caption": "Back in the open: the camera has come home to its own angle"
+    }
+  ]
+}

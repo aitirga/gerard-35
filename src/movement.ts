@@ -31,9 +31,15 @@ export function stickDirection(x: number, y: number, previous: Direction | null 
   return y > 0 ? 'down' : 'up';
 }
 export interface Stick { x: number; y: number }
-/** The isometric camera sits at +x/+z, so grid axes appear as screen diagonals. */
-export function screenToGrid(x: number, y: number): Cell {
-  return { x: (x + y) * Math.SQRT1_2, z: (y - x) * Math.SQRT1_2 };
+/**
+ * A screen direction (x right, y down) as a grid direction, for a camera standing at `yaw` degrees
+ * round what it looks at (src/camera-orbit.ts). At home it sits at +x/+z (45°), so grid axes appear
+ * as screen diagonals.
+ */
+export function screenToGrid(x: number, y: number, yaw = 45): Cell {
+  if (yaw === 45) return { x: (x + y) * Math.SQRT1_2, z: (y - x) * Math.SQRT1_2 };
+  const c = Math.cos(yaw * Math.PI / 180), s = Math.sin(yaw * Math.PI / 180);
+  return { x: x * c + y * s, z: y * c - x * s };
 }
 /** Yaw that faces a grid-space vector: +z is 0°, +x is 90°. */
 export function facingToward(x: number, z: number) { return Math.atan2(x, z) * 180 / Math.PI; }

@@ -1,0 +1,175 @@
+{
+  "title": "Hidden view · How Gerard shows through what hides him",
+  "description": "The ways a building can let Gerard show through when it stands between him and the camera, shot from the same spots: the earlier ring cut, the dithered window (Baldur's Gate 3, Divinity: Original Sin 2), the ghost screen door (Diablo) and the building left whole with a silhouette (Torchlight). With the camera fixed (?camara=fija; camera-orbit shows it turning). The style is window.gerard.game.occlusion.style (?cut=), silhouettes window.gerard.game.occlusion.silhouettes (?silueta=0).",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1&camara=fija"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.cutOpen = () => window.gerard.game.app.root.findByName('Entorno: meridiana-calle').find(e => !!e.render).flatMap(e => e.render.meshInstances).map(m => m.getParameter('geoCutOpen')?.data).filter(r => r !== undefined); window.cutSettled = () => window.cutOpen().every(r => r === 0 || r === 1);"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        138,
+        62
+      ]
+    },
+    {
+      "eval": "Object.assign(window.gerard.game.occlusion, { style: 'ring', silhouettes: false })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "until": "window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "crossing-ring",
+      "delay": 800,
+      "caption": "On a crossing behind a tall block · Before: a cut of 5 m radius traced by a glowing edge, wider towards the camera"
+    },
+    {
+      "eval": "Object.assign(window.gerard.game.occlusion, { style: 'dither', silhouettes: true })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "until": "window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "crossing-dither",
+      "delay": 800,
+      "caption": "On a crossing behind a tall block · Dithered window (new default): a circle of 3.3 m radius round Gerard on screen, its rim dissolving, with silhouettes"
+    },
+    {
+      "eval": "Object.assign(window.gerard.game.occlusion, { style: 'ghost', silhouettes: true })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "until": "window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "crossing-ghost",
+      "delay": 800,
+      "caption": "On a crossing behind a tall block · Ghost: the whole building turns to a screen door, with silhouettes"
+    },
+    {
+      "eval": "Object.assign(window.gerard.game.occlusion, { style: 'none', silhouettes: true })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "until": "window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "crossing-none",
+      "delay": 800,
+      "caption": "On a crossing behind a tall block · Silhouette only: the building stays whole and Gerard and Aitor show through it"
+    },
+    {
+      "eval": "const n = window.gerard.game.app.scene.layers.getLayerByName('World').meshInstances.filter(m => m.material?.name === 'Silueta').length; if (n < 20 || n > 70) throw new Error(`Gerard and Aitor should have 20–70 silhouette parts, not ${n}`);"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        110,
+        18
+      ]
+    },
+    {
+      "eval": "Object.assign(window.gerard.game.occlusion, { style: 'ring', silhouettes: false })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "until": "window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "side-street-ring",
+      "delay": 800,
+      "caption": "In a side street between tall blocks · Before: a cut of 5 m radius traced by a glowing edge, wider towards the camera"
+    },
+    {
+      "eval": "Object.assign(window.gerard.game.occlusion, { style: 'dither', silhouettes: true })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "until": "window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "side-street-dither",
+      "delay": 800,
+      "caption": "In a side street between tall blocks · Dithered window (new default): a circle of 3.3 m radius round Gerard on screen, its rim dissolving, with silhouettes"
+    },
+    {
+      "eval": "Object.assign(window.gerard.game.occlusion, { style: 'ghost', silhouettes: true })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "until": "window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "side-street-ghost",
+      "delay": 800,
+      "caption": "In a side street between tall blocks · Ghost: the whole building turns to a screen door, with silhouettes"
+    },
+    {
+      "eval": "Object.assign(window.gerard.game.occlusion, { style: 'none', silhouettes: true })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "until": "window.cutSettled()",
+      "timeout": 20000
+    },
+    {
+      "shot": "side-street-none",
+      "delay": 800,
+      "caption": "In a side street between tall blocks · Silhouette only: the building stays whole and Gerard and Aitor show through it"
+    },
+    {
+      "eval": "Object.assign(window.gerard.game.occlusion, { style: 'dither', silhouettes: true })"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        50,
+        40
+      ]
+    },
+    {
+      "until": "window.cutOpen().every(r => r === 0)",
+      "timeout": 20000
+    },
+    {
+      "shot": "open-street",
+      "delay": 800,
+      "caption": "Back in the open street: every building is whole again"
+    }
+  ]
+}

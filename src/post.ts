@@ -74,6 +74,8 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   // The scene's linear depth for soft particles; tilt-shift and contact shadows need the same
   // prepass and share it, so this switch only saves its cost when both of those are off too.
   frame.rendering.sceneDepthMap = LOOK.softParticles;
+  // Gerard's silhouette behind walls marks where he is seen in the stencil (src/occlusion.ts).
+  frame.rendering.stencil = true;
   const depth = setupDepthLook(app, frame, camera);
   // Colour grading per scene (src/grading.ts): the looks live there, the calls below.
   const grading = createGrading(app, frame);

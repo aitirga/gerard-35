@@ -82,9 +82,12 @@ vertical.
 - **Face the camera.** The camera looks from the south-east of the grid, so walls facing grid
   south and east are the ones seen. Choose `rotation_deg` so the signature facades face it
   (Alegia uses 180: the houses on the river side of San Juan kalea show their street fronts).
-- **Nothing hides Gerard.** Buildings between Gerard and the camera keep their height and open a
-  dithered see-through hole round him (`src/geo-scenery.ts`), trees turn see-through
-  (`src/props.ts`). Folding walls down to a skirting is for house interiors only. No style may break that.
+  The camera swings round (up to a quarter turn) only to find Gerard behind a building, so the
+  other sides are seen now and then: give every wall a facade, not a blank.
+- **Nothing hides Gerard.** The street camera tilts or swings round to find him (`src/camera-orbit.ts`);
+  where it can't, buildings between Gerard and the camera keep their height and open a
+  dithered see-through window round him (`src/geo-scenery.ts`), trees turn see-through
+  (`src/props.ts`), and whatever still hides him shows his silhouette (`src/occlusion.ts`). Folding walls down to a skirting is for house interiors only. No style may break that.
 - **Gates are diegetic.** The map edge, the river and the rail are the borders; do not add
   invisible walls in open ground. If an area should be closed, add a fence or a person.
 - **Text in the world.** Street names go on the ground as labels (`labels`), like

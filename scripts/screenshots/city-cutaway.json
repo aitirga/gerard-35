@@ -1,9 +1,9 @@
 {
-  "title": "City · Glowing cut through buildings",
-  "description": "In the open city buildings keep their height: when one stands between Gerard and the camera, the part in front of him is cut away and the cut is traced by a glowing edge, instead of the whole block folding down. Interiors still fold their walls.",
+  "title": "City · See-through cut in buildings",
+  "description": "With the camera held at its own angle (?camara=fija), in the open city buildings keep their height: when one stands between Gerard and the camera, a round window opens in it round him and its rim dissolves (scripts/screenshots/hidden-view.json compares the other styles), instead of the whole block folding down. Interiors still fold their walls.",
   "steps": [
     {
-      "open": "/?story=metro&solo=1"
+      "open": "/?story=metro&solo=1&camara=fija"
     },
     {
       "until": "!!window.gerard",
@@ -30,7 +30,7 @@
         142,
         16
       ],
-      "caption": "Deep in the passage between two blocks: the block in front opens a glowing cut round Gerard and keeps its height"
+      "caption": "Deep in the passage between two blocks: the block in front opens a window round Gerard and keeps its height"
     },
     {
       "shot": "passage",
@@ -43,7 +43,7 @@
         148,
         72
       ],
-      "caption": "Behind the blocks across the avenue: only the glowing cut round Gerard, the rest of the facade and its roof stay"
+      "caption": "Behind the blocks across the avenue: only the window round Gerard, the rest of the facade and its roof stay"
     },
     {
       "shot": "south-block",
