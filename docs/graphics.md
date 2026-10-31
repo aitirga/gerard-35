@@ -154,24 +154,21 @@ The camera is orthographic and high, so a building often stands between Gerard a
 keep him in sight, all set in `occlusion` (`?cut=`, `?silueta=0` and `?camara=fija` at load, and
 `window.gerard.game.occlusion` live in a development build):
 
-- **The street camera turns** (`occlusion.camera`, src/camera-orbit.ts). In places with buildings
-  (the ones generated from map data), when a building hides Gerard or his partner the camera tilts
-  up (to 55° or 68°) or swings round him (30°, 60° or 90° either way) to the nearest angle from
-  which nobody is hidden, and comes back to its own angle once they are in the open. It is
-  automatic, not a key: both players share the camera, the city is styled for one angle, and the
-  only reason to turn is a building in the way. To keep it calm and the controls honest:
-  - Tilting costs less than swinging (directions on screen stay where they were), and a swing
-    prefers the side the camera is already on. Every angle is tried against the buildings near
-    them (`sight` in src/geo-scenery.ts, the same rays as the cut), including where Gerard will be
-    1.8 m ahead while he walks, so the angle it picks still works a few steps on.
-  - It moves only after 0.35 s hidden (passing a corner never turns it), keeps a new angle at
-    least a second, and comes home after 1.2 s in the open. It turns at most 80° a second;
-    with reduced motion it cuts instead.
+- **The street camera tilts** (`occlusion.camera`, src/camera-orbit.ts). It is calm on purpose:
+  swinging round made players dizzy, so in the street it never swings and never moves while anyone
+  walks. In places with buildings (the ones generated from map data), when Gerard and his partner
+  stand still and a building has hidden one of them for 1.5 s, the camera tilts up slowly (to 55°
+  or 68°, at most 18° a second) to the lowest angle that shows them, keeps it while they walk on,
+  and comes back to its own angle once they stand in the open for 1.2 s. Directions on screen
+  never change. It is automatic, not a key: both players share the camera and the city is styled
+  for one angle.
+  - Every angle is tried against the buildings near them (`sight` in src/geo-scenery.ts, the same
+    rays as the cut). `createCameraOrbit` can still swing round (30°, 60° or 90° either way,
+    `swing: true`, its default and what `tests/camera-orbit.test.mjs` covers); the game turns it off.
   - Each player steers by the angle on screen when they started pressing (`controlYaw` in
-    src/game.ts, `screenToGrid(x, y, yaw)`), so a turn mid-walk never bends the way they are going;
-    the next press follows the new angle.
+    src/game.ts, `screenToGrid(x, y, yaw)`), so a turn would never bend the way they are going.
   - Fights, cut-scenes and the overview (R) bring it home; while someone talks it only finishes the
-    turn under way. Interiors, the palace and Uri's maze have no buildings to ask, so it never turns there.
+    turn under way. Interiors, the palace and Uri's maze have no buildings to ask, so it never moves there.
   While it waits or turns, and where no angle shows him, the window below opens.
 - **The building opens** (`occlusion.style`, shader chunks in src/geo-scenery.ts). Only a building
   that hides him opens (`buildingHidesPlayer`, a few rays from his body against its real

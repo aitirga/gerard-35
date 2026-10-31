@@ -42,6 +42,12 @@ const TURN_RATE = 3;
 const MAX_SWING = 80;
 const MAX_TILT = 50;
 
+/**
+ * How a camera searches: `swing` lets it swing round (otherwise it only tilts up, so directions on
+ * screen never change), `hiddenDwell` seconds hidden before it moves, `maxTilt` degrees a second.
+ */
+export interface OrbitOptions { swing?: boolean; hiddenDwell?: number; maxTilt?: number }
+
 const radians = Math.PI / 180;
 /** The camera's offset from what it looks at. */
 export function cameraOffset(pose: CameraPose, distance = CAMERA_DISTANCE): Point3 {
@@ -64,7 +70,8 @@ function approach(value: number, target: number, dt: number, max: number) {
  * `sight(pose)` says how many of the people followed a building hides from a camera at that pose;
  * without it (a fight, a cut-scene, the overview, a place without buildings) the camera goes home.
  */
-export function createCameraOrbit() {
+export function createCameraOrbit({ swing = true, hiddenDwell = HIDDEN_DWELL, maxTilt = MAX_TILT }: OrbitOptions = {}) {
+  const poses = swing ? POSES : POSES.filter(p => p.yaw === HOME_POSE.yaw);
   const pose: CameraPose = { ...HOME_POSE };
   let target: CameraPose = HOME_POSE;
   let wait = 0, worse = 0, better = 0, hold = 0;
@@ -72,7 +79,7 @@ export function createCameraOrbit() {
   function search(sight: (pose: CameraPose) => number) {
     let best = target, hidden = sight(target), price = cost(target, target);
     if (hidden === 0 && target === HOME_POSE) return { best, hidden };
-    for (const candidate of POSES) {
+    for (const candidate of poses) {
       if (candidate === target) continue;
       const price2 = cost(candidate, target);
       if (hidden === 0 && price2 >= price) continue;
@@ -105,11 +112,11 @@ export function createCameraOrbit() {
         worse = best !== target && hidden < now ? worse + SEARCH_EVERY : 0;
         // As many are seen from a cheaper angle (nearer home): come back once it has lasted a while.
         better = best !== target && hidden === now ? better + SEARCH_EVERY : 0;
-        if (worse >= HIDDEN_DWELL - 1e-9 || better >= RETURN_DWELL - 1e-9) { target = best; worse = better = 0; hold = HOLD; }
+        if (worse >= hiddenDwell - 1e-9 || better >= RETURN_DWELL - 1e-9) { target = best; worse = better = 0; hold = HOLD; }
       }
       if (snap) { pose.yaw = target.yaw; pose.pitch = target.pitch; return; }
       pose.yaw = approach(pose.yaw, target.yaw, dt, MAX_SWING);
-      pose.pitch = approach(pose.pitch, target.pitch, dt, MAX_TILT);
+      pose.pitch = approach(pose.pitch, target.pitch, dt, maxTilt);
     },
   };
 }

@@ -144,7 +144,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   const post = createPost(app, camera.camera!);
   const silhouettes = createSilhouettes(app);
   // In the street the camera turns to find Gerard behind a building (src/camera-orbit.ts).
-  const orbit = createCameraOrbit();
+  // Calm on purpose (swinging round made players dizzy): it only tilts up, slowly, once someone has
+  // stood hidden a good moment; the window and the silhouettes show them meanwhile.
+  const orbit = createCameraOrbit({ swing: false, hiddenDwell: 1.5, maxTilt: 18 });
   const vec = ({ x, y, z }: { x: number; y: number; z: number }) => new pc.Vec3(x, y, z);
   /** Metres ahead of Gerard, while he walks, that the camera also keeps in sight (about a third of a second). */
   const LOOK_AHEAD = 1.8;
@@ -1496,10 +1498,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const apart = shared ? player.getPosition().distance(shared) : 0;
     const target = battle && framed && cinematic ? cinematic.target.clone() : battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
     cameraTarget.lerp(cameraTarget, target, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 7));
-    // Out walking among buildings the camera may tilt up or swing round to find Gerard and his
-    // partner; fights, cut-scenes and the overview bring it home. While someone talks it only
-    // finishes the turn under way, and the pause menu holds it still.
+    // Among buildings the camera may tilt up to find Gerard and his partner, but only while both stand
+    // still: walking, it holds whatever angle it has. Fights, cut-scenes and the overview bring it
+    // home. While someone talks it only finishes the turn under way, and the pause menu holds it still.
+    const moving = movement.walking || !!free?.walking || !!mate?.follower.walking;
     if (document.querySelector('#hud[data-dialogue]') && !battle && !cinematic) orbit.update(delta, 'keep', reducedMotion.matches);
+    else if (!paused && moving && !battle && !cinematic && !overview) orbit.update(delta, 'keep', reducedMotion.matches);
     else if (!paused) {
       const walking = !battle && !cinematic && !overview && !!follow && !cutscene && occlusion.camera === 'auto';
       // Where Gerard will be in a moment counts too, so the angle it picks still works a few steps on.

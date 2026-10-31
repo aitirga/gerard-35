@@ -50,7 +50,7 @@
     {
       "shot": "crossing-auto",
       "delay": 600,
-      "caption": "On a crossing behind a tall block · Automatic camera: it swings or tilts until nothing stands between it and them"
+      "caption": "On a crossing behind a tall block · Automatic camera: standing still, it slowly tilts up, never swings"
     },
     {
       "eval": "window.gerard.game.occlusion.camera = 'fixed'"
@@ -87,7 +87,7 @@
     {
       "shot": "side-street-auto",
       "delay": 600,
-      "caption": "In a side street between tall blocks · Automatic camera: it swings or tilts until nothing stands between it and them"
+      "caption": "In a side street between tall blocks · Automatic camera: standing still, it slowly tilts up, never swings"
     },
     {
       "eval": "window.before = { ...window.gerard.game.position }"
@@ -104,7 +104,7 @@
     {
       "shot": "walk-up-after-turn",
       "delay": 300,
-      "caption": "Pressed after the camera turned, W walks Gerard up the screen, away from the camera"
+      "caption": "Pressed after the camera tilted, W walks Gerard up the screen, away from the camera"
     },
     {
       "teleport": "meridiana-calle",
