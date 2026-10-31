@@ -392,7 +392,7 @@
       "grass": "herba-seca",
       "forest": {
         "texture": "herba-seca",
-        "tint": "#9a8556"
+        "tint": "#988a6a"
       },
       "square": {
         "texture": "grava",
@@ -957,7 +957,8 @@
         "ring": true,
         "y_m": 6,
         "h": 1,
-        "bars": false
+        "bars": false,
+        "colour": "#c3c5c1"
       }
     },
     {
