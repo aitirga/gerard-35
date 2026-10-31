@@ -37,47 +37,481 @@
       "The L4 Barceloneta station is inland, at Pla de Palau, about 700 m north-west of the sculpture: the game's entrance stands at the zone's inland edge, at the end of a street of the old Barceloneta, as if the station were just round the corner."
     ],
     "viewpoints": [
-      { "name": "estel-sea", "lat": 41.37675, "lon": 2.19065, "heading": 115, "pitch": 5 },
-      { "name": "beach-w-hotel", "lat": 41.37700, "lon": 2.19160, "heading": 200, "pitch": 5 },
-      { "name": "promenade-north", "lat": 41.37640, "lon": 2.19060, "heading": 25, "pitch": 5 },
-      { "name": "carrer-del-meer", "lat": 41.37720, "lon": 2.19020, "heading": 300, "pitch": 10 }
+      {
+        "name": "estel-sea",
+        "lat": 41.37675,
+        "lon": 2.19065,
+        "heading": 115,
+        "pitch": 5
+      },
+      {
+        "name": "beach-w-hotel",
+        "lat": 41.377,
+        "lon": 2.1916,
+        "heading": 200,
+        "pitch": 5
+      },
+      {
+        "name": "promenade-north",
+        "lat": 41.3764,
+        "lon": 2.1906,
+        "heading": 25,
+        "pitch": 5
+      },
+      {
+        "name": "carrer-del-meer",
+        "lat": 41.3772,
+        "lon": 2.1902,
+        "heading": 300,
+        "pitch": 10
+      }
     ]
   },
   "look": {
+    "ground": "panot",
+    "footway": "panot",
     "asphalt": "#4a4a4c",
     "markings": false,
+    "water": "sea",
+    "hills": false,
     "materials": {
-      "sand": { "texture": "sorra", "tint": "#e6d0a2" },
-      "square": { "texture": "granit", "tint": "#a9adb0" }
+      "sand": {
+        "texture": "sorra",
+        "tint": "#dbc394"
+      },
+      "wet": {
+        "texture": "sorra-humida",
+        "tint": "#8d7655"
+      },
+      "square": {
+        "texture": "granit",
+        "tint": "#909496"
+      }
     }
   },
   "styles": {
     "default": {
-      "walls": ["#d9b26f", "#e3c27e", "#cf8a55", "#b8583c", "#e8dcc4", "#d6a65c"],
+      "walls": [
+        "#d9b26f",
+        "#e3c27e",
+        "#cf8a55",
+        "#b8583c",
+        "#e8dcc4",
+        "#d6a65c"
+      ],
       "base": "#8c8478",
       "trim": "#ece4d2",
       "roof": "#bdb09c",
       "roof_kind": "flat",
-      "facade": "flats",
-      "ground": "masonry",
-      "levels": 5
+      "facade": "barceloneta",
+      "ground": "shops",
+      "levels": 5,
+      "terrat": true
     },
-    "promenade-end": {
-      "ground": "shops"
+    "tower": {
+      "walls": [
+        "#d8d2c4"
+      ],
+      "facade": "flats",
+      "ground": "shops",
+      "terrat": false
+    },
+    "xiringuito": {
+      "walls": [
+        "#f2efe8"
+      ],
+      "trim": "#f2efe8",
+      "base": "#f2efe8",
+      "roof": "#e9e6df",
+      "facade": "rendered",
+      "ground": "shops",
+      "levels": 1,
+      "terrat": false
     }
   },
-  "buildings": {},
+  "buildings": {
+    "way/646559076": {
+      "style": "tower"
+    },
+    "way/1534378627": {
+      "style": "xiringuito",
+      "levels": 1
+    }
+  },
   "osm_props": {
     "bench": {},
     "bin": {},
-    "bike-rack": {}
+    "bike-rack": {},
+    "tree": {
+      "species": "palm"
+    }
   },
   "landmarks": [
-    { "kind": "estel-ferit", "id": "estel-ferit", "x_m": 0, "z_m": 0, "size_m": [5.2, 3.2], "rotation_deg": 0,
-      "params": { "cubes": 4, "cube_m": 2.6, "height_m": 10.6 }, "textures": ["acer-corten"] }
+    {
+      "kind": "estel-ferit",
+      "id": "estel-ferit",
+      "x_m": 0,
+      "z_m": 0,
+      "size_m": [
+        9,
+        7
+      ],
+      "rotation_deg": 0,
+      "params": {
+        "cubes": 4,
+        "cube_m": 2.6,
+        "height_m": 10.6
+      },
+      "textures": [
+        "acer-corten",
+        "formigo"
+      ]
+    },
+    {
+      "kind": "passeig",
+      "x_m": -136.0,
+      "z_m": -11.25,
+      "size_m": [
+        28.24,
+        1.6
+      ],
+      "rotation_deg": 7.51,
+      "params": {
+        "boardwalk_m": 3
+      },
+      "textures": [
+        "formigo",
+        "fusta-passera"
+      ]
+    },
+    {
+      "kind": "passeig",
+      "x_m": -88.75,
+      "z_m": -13.07,
+      "size_m": [
+        49.84,
+        1.6
+      ],
+      "rotation_deg": 6.73,
+      "params": {
+        "boardwalk_m": 3
+      },
+      "textures": [
+        "formigo",
+        "fusta-passera"
+      ]
+    },
+    {
+      "kind": "passeig",
+      "x_m": -36.5,
+      "z_m": -19.24,
+      "size_m": [
+        45.31,
+        1.6
+      ],
+      "rotation_deg": 6.73,
+      "params": {
+        "boardwalk_m": 3
+      },
+      "textures": [
+        "formigo",
+        "fusta-passera"
+      ]
+    },
+    {
+      "kind": "passeig",
+      "x_m": 15.5,
+      "z_m": -18.92,
+      "size_m": [
+        43.01,
+        1.6
+      ],
+      "rotation_deg": 1.29,
+      "params": {
+        "boardwalk_m": 3,
+        "bollards_m": 6
+      },
+      "textures": [
+        "formigo",
+        "fusta-passera"
+      ]
+    },
+    {
+      "kind": "passeig",
+      "x_m": 67.5,
+      "z_m": -20.09,
+      "size_m": [
+        51.01,
+        1.6
+      ],
+      "rotation_deg": 1.29,
+      "params": {
+        "boardwalk_m": 3,
+        "bollards_m": 6
+      },
+      "textures": [
+        "formigo",
+        "fusta-passera"
+      ]
+    },
+    {
+      "kind": "passeig",
+      "x_m": 115.25,
+      "z_m": -17.3,
+      "size_m": [
+        29.5,
+        1.6
+      ],
+      "rotation_deg": -0.0,
+      "params": {
+        "boardwalk_m": 3
+      },
+      "textures": [
+        "formigo",
+        "fusta-passera"
+      ]
+    },
+    {
+      "kind": "voleibol",
+      "id": "voleibol-1",
+      "x_m": 19,
+      "z_m": -6,
+      "size_m": [
+        16,
+        8
+      ],
+      "solid": false
+    },
+    {
+      "kind": "voleibol",
+      "id": "voleibol-2",
+      "x_m": 43,
+      "z_m": -6,
+      "size_m": [
+        16,
+        8
+      ],
+      "solid": false
+    },
+    {
+      "kind": "salvament",
+      "id": "salvament",
+      "x_m": -40,
+      "z_m": 20,
+      "size_m": [
+        3,
+        3
+      ],
+      "params": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "guaita",
+      "id": "guaita",
+      "x_m": 64,
+      "z_m": 33,
+      "size_m": [
+        1.5,
+        1.5
+      ],
+      "params": {
+        "lean": 11
+      }
+    },
+    {
+      "kind": "hamaques",
+      "id": "hamaques-xiringuito",
+      "x_m": -90,
+      "z_m": 4,
+      "size_m": [
+        16,
+        8
+      ],
+      "params": {
+        "style": "loungers"
+      }
+    },
+    {
+      "kind": "hamaques",
+      "id": "tovalloles-1",
+      "x_m": -62,
+      "z_m": 14,
+      "size_m": [
+        3.2,
+        2.6
+      ],
+      "params": {
+        "style": "towels",
+        "seed": 1
+      }
+    },
+    {
+      "kind": "hamaques",
+      "id": "tovalloles-2",
+      "x_m": -18,
+      "z_m": 27,
+      "size_m": [
+        3.2,
+        2.6
+      ],
+      "params": {
+        "style": "towels",
+        "seed": 2
+      }
+    },
+    {
+      "kind": "hamaques",
+      "id": "tovalloles-3",
+      "x_m": 30,
+      "z_m": 24,
+      "size_m": [
+        3.2,
+        2.6
+      ],
+      "params": {
+        "style": "towels",
+        "seed": 3
+      }
+    },
+    {
+      "kind": "hamaques",
+      "id": "tovalloles-4",
+      "x_m": 82,
+      "z_m": 52,
+      "size_m": [
+        3.2,
+        2.6
+      ],
+      "params": {
+        "style": "towels",
+        "seed": 4
+      }
+    },
+    {
+      "kind": "hamaques",
+      "id": "tovalloles-5",
+      "x_m": -118,
+      "z_m": 22,
+      "size_m": [
+        3.2,
+        2.6
+      ],
+      "params": {
+        "style": "towels",
+        "seed": 5
+      }
+    },
+    {
+      "kind": "gat-de-sorra",
+      "id": "gat-de-sorra",
+      "x_m": -35,
+      "z_m": -12.5,
+      "size_m": [
+        3.2,
+        2.2
+      ],
+      "textures": [
+        "sorra-humida"
+      ],
+      "params": {
+        "scale": 1.8
+      }
+    },
+    {
+      "kind": "vela",
+      "id": "w-barcelona",
+      "x_m": -166,
+      "z_m": 56,
+      "rotation_deg": 30,
+      "size_m": [
+        14,
+        6
+      ],
+      "solid": false,
+      "params": {
+        "height_m": 26
+      }
+    },
+    {
+      "kind": "muntanya",
+      "id": "montjuic",
+      "x_m": -185,
+      "z_m": -150,
+      "rotation_deg": 45,
+      "size_m": [
+        170,
+        45
+      ],
+      "solid": false,
+      "params": {
+        "height_m": 26,
+        "castle": true
+      }
+    }
   ],
   "props": [
-    { "kind": "metro", "x_m": 112, "z_m": -95, "name": "Barceloneta", "line": "L4" }
+    {
+      "kind": "metro",
+      "x_m": 112,
+      "z_m": -95,
+      "name": "Barceloneta",
+      "line": "L4"
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": -135,
+      "z_m": -13.5,
+      "to": {
+        "x_m": -25,
+        "z_m": -23.5
+      },
+      "every_m": 22
+    },
+    {
+      "kind": "lamp",
+      "style": "mast",
+      "x_m": 5,
+      "z_m": -22,
+      "to": {
+        "x_m": 125,
+        "z_m": -24.5
+      },
+      "every_m": 24
+    },
+    {
+      "kind": "bench",
+      "yaw": 0,
+      "x_m": -124,
+      "z_m": -17,
+      "to": {
+        "x_m": -36,
+        "z_m": -26.5
+      },
+      "every_m": 22
+    },
+    {
+      "kind": "bench",
+      "yaw": 0,
+      "x_m": 17,
+      "z_m": -25.5,
+      "to": {
+        "x_m": 113,
+        "z_m": -27.5
+      },
+      "every_m": 24
+    },
+    {
+      "kind": "bin",
+      "x_m": -70,
+      "z_m": -22
+    },
+    {
+      "kind": "bin",
+      "x_m": 52,
+      "z_m": -26
+    }
   ],
   "places": [
     {
@@ -85,13 +519,18 @@
       "label": "Bajar al metro",
       "x_m": 113.5,
       "z_m": -94,
-      "step": { "x_m": 113, "z_m": -95, "w": 3, "d": 1 }
+      "step": {
+        "x_m": 113,
+        "z_m": -95,
+        "w": 3,
+        "d": 1
+      }
     },
     {
       "id": "barceloneta-estel",
       "label": "Mirar los cubos",
       "x_m": 0,
-      "z_m": 3.5,
+      "z_m": 5,
       "lines": [
         "L'Estel Ferit. Cuatro cubos de hierro oxidado, uno encima de otro, torcidos como si se fueran a caer.",
         "Dicen que es por los chiringuitos que había aquí, en la arena, antes de las Olimpiadas."
@@ -100,7 +539,7 @@
     {
       "id": "barceloneta-mar",
       "label": "Mirar el mar",
-      "x_m": -20,
+      "x_m": -125,
       "z_m": 38,
       "lines": [
         "El Mediterráneo. Olas pequeñas que se deshacen en espuma y vuelven a empezar.",
@@ -116,13 +555,93 @@
         "La Barceloneta de siempre: calles estrechas y ropa tendida en todos los balcones.",
         "Alguien ha dejado una toalla de playa secándose junto a las sábanas."
       ]
+    },
+    {
+      "id": "barceloneta-salvament",
+      "label": "Mirar la caseta",
+      "x_m": -40,
+      "z_m": 23.5,
+      "lines": [
+        "SALVAMENT. La caseta de los socorristas, cerrada.",
+        "«Fora de servei». Hasta el verano que viene, el mar se vigila solo."
+      ]
+    },
+    {
+      "id": "barceloneta-guaita",
+      "label": "Mirar la torre",
+      "x_m": 64,
+      "z_m": 37,
+      "lines": [
+        "Una torre de vigilancia de las Olimpiadas. Ya no sube nadie.",
+        "Está torcida a propósito. Aquí nada está del todo recto."
+      ]
+    },
+    {
+      "id": "barceloneta-dutxa",
+      "label": "Mirar la ducha",
+      "x_m": -10.5,
+      "z_m": -9.5,
+      "lines": [
+        "Una ducha de playa. El agua sale helada, como siempre."
+      ]
+    },
+    {
+      "id": "barceloneta-voleibol",
+      "label": "Mirar la red",
+      "x_m": 19,
+      "z_m": 0,
+      "lines": [
+        "Una red de vóley y el campo marcado con cinta en la arena.",
+        "Nadie juega. Solo hay huellas que van y vienen."
+      ]
+    },
+    {
+      "id": "barceloneta-xiringuito",
+      "label": "Mirar el chiringuito",
+      "x_m": -90,
+      "z_m": -1,
+      "lines": [
+        "Hamacas en fila y sombrillas de rayas. Huele a crema solar y a fritura."
+      ]
+    },
+    {
+      "id": "barceloneta-nevera",
+      "label": "Mirar la nevera",
+      "x_m": 30,
+      "z_m": 27,
+      "lines": [
+        "Una nevera azul junto a unas toallas. No hay nadie.",
+        "Desde la orilla alguien grita: «¡Cerveza, beer, agua!»"
+      ]
+    },
+    {
+      "id": "barceloneta-gat",
+      "label": "Mirar el gato de arena",
+      "x_m": -35,
+      "z_m": -9.5,
+      "lines": [
+        "Un gato de arena, hecho una rosca, durmiendo al sol.",
+        "Al lado, la gorra del escultor con tres monedas. Duerme igual que Haru."
+      ]
     }
   ],
   "labels": [
-    { "text": "PASSEIG MARÍTIM DE LA BARCELONETA", "x_m": 40, "z_m": -24, "width": 16 }
+    {
+      "text": "PASSEIG MARÍTIM DE LA BARCELONETA",
+      "x_m": 40,
+      "z_m": -28,
+      "width": 16
+    }
   ],
   "anchors": {
-    "estel": { "x_m": 0, "z_m": 0, "y_m": 5 },
-    "w-hotel": { "x_m": -195, "z_m": 80 }
+    "estel": {
+      "x_m": 0,
+      "z_m": 0,
+      "y_m": 5
+    },
+    "w-hotel": {
+      "x_m": -166,
+      "z_m": 56
+    }
   }
 }

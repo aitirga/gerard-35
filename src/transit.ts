@@ -41,6 +41,7 @@ export const STATION_PLACES: Readonly<Record<string, { environment: EnvironmentI
   'fabra-i-puig': { environment: 'meridiana-calle' },
   'trinitat-vella': { environment: 'rec-comtal' },
   cardedeu: { environment: 'cardedeu' },
+  barceloneta: { environment: 'barceloneta' },
 };
 /** The interaction in a place that is the station's entrance. */
 export const entranceId = (station: string) => `station-${station}`;
