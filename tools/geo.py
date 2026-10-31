@@ -735,7 +735,8 @@ def build(zone_id: str) -> None:
                 continue
             # A row of furniture (`to`, `every_m`) leaves out the spots something already stands on, and
             # those on a carriageway: a row along a sidewalk or a median breaks where a side street crosses it.
-            if "to" in p and (any(c in taken for c in prop_cells(prop)) or on_carriageway(x, z, roads)): continue
+            # Barriers stay whole: works and closures stand on the road on purpose (Plaça d'Espanya's L8 works).
+            if "to" in p and (any(c in taken for c in prop_cells(prop)) or (prop["kind"] != "barrier" and on_carriageway(x, z, roads))): continue
             if prop["kind"] == "car" and (zone.get("rotation_deg", 0) % 180 == 0 or frame.turned):
                 prop["along"] = "x"  # the zone's streets run along x, so cars park along x
             if prop["kind"] in FACING_PROPS and "yaw" not in prop:
