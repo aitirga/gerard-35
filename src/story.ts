@@ -694,6 +694,9 @@ export class Story {
       case 'meridiana-balcony':
         if (!this.adult) return [];
         return [say(LINES_2.cafe), ...this.spend('cafe')];
+      case 'bunkers-norte':
+        if (!this.adult) return [];
+        return [{ kind: 'look', anchor: 'castillo' }, say(LINES_2.bunkersNorte), { kind: 'look' }];
       case 'clue-r4-marquesina':
         this.set('clue-r4');
         return [say(LINES_2.clueR4Marquesina)];
