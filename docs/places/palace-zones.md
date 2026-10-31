@@ -25,7 +25,7 @@ west wall: the camera never sees a face looking west or north).
 
 | File | What it holds |
 | --- | --- |
-| [src/palace-zone-plans.ts](../../src/palace-zone-plans.ts) | Each zone's plan (glyph rows), rooms, named anchors, props, interactions and **theme** (`ZoneTheme`): palette, real materials by surface, which surface each room's floor is, wall height, its own light, how far her tone takes over (`her`) and the colour of its lamps. `ZONE_GLYPHS` names every glyph. No PlayCanvas: the tests read it. |
+| [src/palace-zone-plans.ts](../../src/palace-zone-plans.ts) | Each zone's plan (glyph rows), rooms, named anchors, props, interactions and **theme** (`ZoneTheme`): palette, real materials by surface (tinted, tiled at a chosen size, their wear softened where it is louder than the camera needs), which surface each room's floor is, wall height, its own light, how far her tone takes over (`her`) and the colour of its lamps. `ZONE_GLYPHS` names every glyph. No PlayCanvas: the tests read it. |
 | [src/palace-zones.ts](../../src/palace-zones.ts) | `buildPalaceZone`: what every zone shares (floors per room, the school's walls with their plinth or painted dado, low walls and galvanised fences, doors with the school's orange frame and a Catalan sign, lamps, her gum), then the zone's own dressing (`dressPatio`, `dressGym`, `dressSecretaria`, `dressTrono`) painted from its palette. Real textures (`public/textures/<id>/`, read through their `texture.json`) load meanwhile and replace the paint. Static meshes are batched; floors and walls use boxes whose UVs count metres, so one material per surface. Also `buildSchoolDoor`, the orange frame on the hall's east door in chapter 2. |
 | `src/environments.ts` | `palacio-patio`, `palacio-gimnasio`, `palacio-secretaria` and `palacio-trono` in `EnvironmentId` and `ENVIRONMENTS`. An environment is a zone when `palace.theme` is set. |
 | `src/scenery.ts` | Builds a zone with `buildPalaceZone` and takes its light (`theme.light`) instead of the palace's; hands it `surface` (raised floors feet follow: the throne room's stage) and the player's position each frame (its pool of light). |
@@ -91,13 +91,13 @@ a maze read from above; where a line stayed down, its paint still crosses the ga
 | --- | --- |
 | Dominant | Court green `#3f7d58` (the painted court) |
 | Palette | Line white `#e9ece4`, worn asphalt `#5d5e5c`, porch concrete `#a9a49a`, school cream `#ece6da`, plinth `#8d8a83`, school orange `#e8742c` (doors), galvanised fence `#9aa0a0`, hoop red `#c8402e`, trough `#b9b4a8`; her pink `#ff6fae` in details |
-| Materials | `pista-pintada` (court, tinted, 4.5 m tile), `asfalt` (round the court), `formigo` (porch), `estuc` (the school's facade), `mao` (the neighbours' brick party wall on the west, own colours) |
+| Materials | `pista-pintada` (court, tinted, 4.5 m tile, its chipped paint softened by half so the kerbs and lines read first), `asfalt` (round the court), `formigo` (porch), `estuc` (the school's facade), `mao` (the neighbours' brick party wall on the west, own colours) |
 | Landmark | **La pista**: the risen lines; the lost-property heap in the centre circle |
 | Light | Ambient `#6c6a7c`, a low warm-white sun `#ffe2cc` at 1.45; her tone 0.15 (0.35 in part 1: the school's cream read pink under her light; the plum stays in the shade and the sky); one cold floodlight `#dfe9ff` on a pole over the east fence |
 | Look | `palacio-patio`: slightly cool, greens kept, plum in the shade; `her` 0.2 |
 | Air | Chalk dust; a little of her gloom |
 | Props | Square porch pillars with beams back to the school landing on a string course (the roof cut away so the camera sees under it); classroom windows with blinds half down; first-floor windows above the canopy; the *Benvinguts* mural (twelve languages, rolled over in pink but the first word); two minibasket hoops on tubular posts (rim at 2.60 m, as for primary); the push-tap trough; two plane trees in pits; benches; school bags along the east fence; the lost-property heap (jackets, a recorder, a lunchbox); dry plane leaves; the street gate to Via de Bàrcino; a ball bouncing on its own |
-| Her pink | A low crust of gum along the top of the facade, mostly the darker gum, spreading a few metres each way from her hall's door (in part 1 it ran the whole facade in round blobs that read as candy); gum round that door; gum in the court's cracks and on some kerb joints; pink water in the trough; the nets stiff with gum; the street gate sealed; one pink gum ball in the lost property (the wink) |
+| Her pink | A stain of dull, half-dry gum spreading over the facade from her hall's door: one mass above the door breaking into islands a few metres each way, a thin crust on the coping, a few short runs (earlier tries, round blobs on the coping and then a band along it, read as candy and as icing); gum oozed out round that door, pressed flat on the wall; gum in the court's cracks and on some kerb joints; pink water in the trough; the nets stiff with gum; the street gate sealed; one pink gum ball in the lost property (the wink) |
 | Anchors | `boss-patio` (17,12), `la-pista` (17,14) |
 | Looks (Gerard) | the mural, the trough, the lost property, the bags, a hoop, the street gate |
 | Gates | *GIMNÀS*: Gerard «Dentro suena un silbato. Luego, nada.» Aitor «La puerta no cede. Algo blando la sujeta por dentro.» (the mats are stacked against it). *SECRETARIA*: «Es mi puerta. La llave entra… y no gira.» «¿Seguro que es esa?» «La abro cada mañana.» The street gate is only looked at. |
@@ -112,14 +112,14 @@ to **El plint**, the vaulting box grown into a stepped tower in the centre circl
 | | |
 | --- | --- |
 | Dominant | Mat blue `#2d5a9e` (the mats and the dado) |
-| Palette | Mat side `#24497f`, floor grey `#7d8287`, upper wall cream `#e8e2d4`, plinth grey `#6f747a`, wall-bar pine `#c79a5b`, line yellow `#e5b52e` and white `#e9ece4`, tube white `#e6f0ff`, shade `#1c2333`, leather `#7a4a2c`, ball orange `#e07a2e`, window plum `#6a3f7a`, steel `#8f9699`; her pink in details |
+| Palette | Mat side `#24497f`, floor grey `#7d8287`, upper wall cream `#e8e2d4`, plinth grey `#6f747a`, wall-bar pine `#c79a5b`, line yellow `#e5b52e` and white `#e9ece4`, tube white `#e6f0ff`, shade `#1c2333`, leather `#7a4a2c`, ball orange `#e07a2e`, window plum `#6e2453` (her plum from visual-style.md: the first violet `#6a3f7a` broke the rule that violet is possession's and fear's), steel `#8f9699`; her pink in details |
 | Materials | `estuc` (the floor: a worn grey sports floor, tinted, 3 m tile, with a sheen), `paret-pintada` (the dado in blue and the wall in cream: old peeling paint) |
 | Landmark | **El plint**: six pine boxes with their handholds, stepped into a 2 m tower, leather on top |
 | Light | Ambient `#7c8496`, a cold sun `#e4ecff` at 1.15; her tone 0.2; six tube fixtures on cables, three steady lamps and one that stutters |
 | Look | `palacio-gimnasio`: cold, a little green in the shade, hard on the mats; `her` 0.15 |
 | Air | Dust in the tube light; a trace of her gloom |
 | Props | Wall bars (pine uprights every metre, rungs every 19 cm up to 2.7 m and wider above), the dark fading above 3.6 m, barred high windows, ropes hanging from the dark (they sway though nothing moves the air), hoops on the floor, the ball cage, Swedish benches, a minibasket board on the west wall, the painted court (yellow lines, white key lines, the centre circle round the plint), the *VESTIDORS* door |
-| Her pink | Gum oozing from the plint's handholds, seeping between the floor's seams round it, one pink ball in the cage (the wink), one pink hoop |
+| Her pink | Gum oozing from the plint's handholds, seeping between the floor's seams round it, one pink ball in the cage (the wink), one pink hoop; her plum glowing in the high windows |
 | Anchors | `boss-gimnasio` (13,10), `el-plint` (13,7) |
 | Looks | the wall bars, a rope, the ball cage, the plint, the changing rooms' door |
 | Doors | Back to the patio (south, cut low); *VESTIDORS* on the north wall, always shut (it opens onto nothing yet) |
@@ -200,7 +200,7 @@ dropped (a hard-edged cone in the dark).
 | Ground | Rose and plum checkerboard | Green resin court, worn asphalt | Grey sports floor, yellow lines | Grey terrazzo | Dark walnut, ochre runner |
 | Light | Her magenta, pink lamps | Low end-of-day sun, one floodlight | Cold tubes, one flickering | Flat greenish tubes, one warm lamp | Dark; one spotlight, a pool that follows |
 | Height | Gum walls | Open sky over a facade | Walls into a dark with no ceiling | A low office (3.4 m) | A tall hall (6 m), the city behind |
-| Her pink | Everything | Gum in cracks, the trough, the crust | Gum in the plint's handholds | Sticky notes, the ink pad | The throne, the stair |
+| Her pink | Everything | Gum in cracks, the trough, the stain over the facade | Gum in the plint's handholds | Sticky notes, the ink pad | The throne, the stair |
 
 | Check | Result |
 | --- | --- |
@@ -208,7 +208,7 @@ dropped (a hard-edged cone in the dark).
 | Gerard and Aitor | Readable on every floor in every screenshot: the court, the grey sports floor, the terrazzo (Aitor's beige shirt is the closest pair, carried by his dark trousers) and, in the dark hall, inside the pool of light that follows them. Mats stop at the waist, kerbs at the knee, cabinets at 1.3 m with boxes on top (they hide the legs of whoever stands right behind them); the east wing is low. |
 | Pink | Her details in the four zones; the throne is the largest, on purpose, and the only saturated thing in its room. |
 | Orange | On every door between zones; nowhere else. Her stair has none: it is hers. |
-| Violet | Not used. |
+| Violet | Not used (the gym's windows were violet until the review; now her plum). |
 
 ## Credits
 

@@ -109,12 +109,18 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
     for (const [key, m] of surfaces) if (t.materials[key]) dress(m, loaded, t.materials[key]);
   }
   /** Lays a loaded texture on a surface: tiled by its real size, tinted, with its normal map. */
-  function dress(m: pc.StandardMaterial, loaded: Map<string, LoadedTexture>, { texture: id, tint, size }: ZoneMaterial) {
+  function dress(m: pc.StandardMaterial, loaded: Map<string, LoadedTexture>, { texture: id, tint, size, soften }: ZoneMaterial) {
     const tex = loaded.get(id);
     if (!tex) return;
     const [sw, sh = sw] = size ? [size, size] : tex.info.size_m;
     const upload = (image: ImageBitmap | HTMLCanvasElement, name: string) => { const g = gpuTexture(app.graphicsDevice, image, name); uploads.push(g); return g; };
-    m.diffuseMap = upload(tint ? greyOf(tex).canvas : tex.albedo, `${id} albedo`); m.diffuseMapTiling.set(1 / sw, 1 / sh);
+    const grey = tint ? greyOf(tex) : undefined;
+    // Softened: the grey drawn over with its own mean, so the tint still averages to `tint`.
+    const albedo = !grey ? tex.albedo : !soften ? grey.canvas : canvas(grey.canvas.width, grey.canvas.height, ctx => {
+      const v = Math.round(grey.linear ** (1 / 2.2) * 255);
+      ctx.drawImage(grey.canvas, 0, 0); ctx.globalAlpha = soften; ctx.fillStyle = `rgb(${v}, ${v}, ${v})`; ctx.fillRect(0, 0, grey.canvas.width, grey.canvas.height);
+    });
+    m.diffuseMap = upload(albedo, `${id} albedo`); m.diffuseMapTiling.set(1 / sw, 1 / sh);
     if (tex.normal) { m.normalMap = upload(tex.normal, `${id} normal`); m.normalMapTiling.set(1 / sw, 1 / sh); m.bumpiness = .7; }
     m.diffuse.copy(tint ? tintColour(tint, greyOf(tex)) : pc.Color.WHITE);
     m.update();
@@ -299,14 +305,20 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
     }
     // The first floor's windows, above the string course, where the castle has swallowed the rest.
     for (let px = 2; px < W - 1; px += 3.2) part(root, 'Ventana del primer piso', 'box', glass, [x(px), 4.1, z(0) + .52], [1.6, .9, .03], [0, 0, 0], false);
-    // Her gum creeping over the top of the wall from her hall's door, a few metres each way: she
-    // has the building, not yet the yard. A low crust, mostly the darker gum, and a few thin runs
-    // down the wall: a stain spreading, not a decoration.
-    for (let px = 0; px < W; px += .7) {
-      const s = jitter(px * 3 + 300), near = 1 - Math.min(1, Math.abs(px - 17) / 15);
-      if (near < .6 || s > .1 + near * .5) continue;
-      part(root, 'Chicle en lo alto', 'sphere', s < .45 ? gumDeep : gum, [x(px + (s - .5) * .6), tall + .02, z(0) + .25], [(.4 + s) * (.5 + near * .6), .07 + near * .08, .55 + near * .2], [0, s * 90, 0], false);
-      if (s < near * .15) part(root, 'Goterón', 'sphere', gumDeep, [x(px), tall - .25 - s, z(0) + .53], [.06, .3 + near * .8, .05], [0, 0, 0], false);
+    // Her gum spreading over the facade from her hall's door: she has the building, not yet the
+    // yard. Flat blotches on the wall, one mass above the door that breaks into islands a few
+    // metres each way, a thin crust over the coping where it is thickest and a few short runs: a
+    // stain spreading, not a decoration. Dull, half-dry gum, so her shine stays at the door.
+    const stain = mat('#c23f7c', .5, .04, 'gum');
+    for (let i = 0; i < 90; i++) {
+      const s = jitter(i + 300), side = jitter(i + 340) < .5 ? -1 : 1, reach = s * s * 6.5;
+      const px = 17 + side * reach, near = 1 - reach / 6.5, y = 3.05 + jitter(i + 380) * (tall - 3.05);
+      part(root, 'Chicle en la fachada', 'sphere', stain, [x(px), y, z(0) + .5], [.18 + near * .55 + jitter(i + 420) * .2, .14 + near * .4, .05], [0, 0, (jitter(i + 460) - .5) * 60], false);
+      if (near > .55 && y > tall - .6) part(root, 'Chicle en lo alto', 'sphere', stain, [x(px), tall, z(0) + .38], [.5 + near * .3, .06 + near * .06, .3], [0, 0, 0], false);
+      if (near > .5 && jitter(i + 500) < .12) {
+        const run = .25 + jitter(i + 540) * .6;
+        part(root, 'Goterón', 'cone', stain, [x(px), y - .1 - run / 2, z(0) + .505], [.08, run, .03], [180, 0, 0], false);
+      }
     }
     // The mural on the porch wall: welcome in the pupils' languages, painted over in pink but one.
     const mural = canvas(512, 160, ctx => {
@@ -330,9 +342,10 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
     // Doors off the porch: back to her hall (open, her gum round it), the gym and the secretaría.
     const hall = northDoor(17, 'VESTÍBUL', true);
     part(hall, 'Resplandor rosa', 'box', mat('#ff3d8b', .6, 1.4), [0, 1.2, .505], [.96, 2.3, .01], [0, 0, 0], false);
-    for (let k = 0; k < 7; k++) {
-      const a = k / 6 * Math.PI, s = jitter(k + 500);
-      part(hall, 'Chicle en el marco', 'sphere', s < .4 ? gumDeep : gum, [Math.cos(a) * .72, .3 + Math.sin(a) * 2.3, .55], [.4 + s * .3, .45 + s * .3, .3], [0, 0, 0], false);
+    // Her gum oozed out round its frame, pressed flat against the wall, more of it low down.
+    for (let k = 0; k < 15; k++) {
+      const a = k / 14 * Math.PI, s = jitter(k + 500), low = 1 - Math.sin(a) * .5;
+      part(hall, 'Chicle en el marco', 'sphere', s < .6 ? gumDeep : gum, [Math.cos(a) * (.66 + s * .1), .12 + Math.sin(a) * 2.28, .52], [(.2 + s * .16) * low + .08, (.26 + s * .2) * low + .06, .12], [0, 0, (s - .5) * 70], false);
     }
     northDoor(6, 'GIMNÀS', false);
     northDoor(28, 'SECRETARIA', false);

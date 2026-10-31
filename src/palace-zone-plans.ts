@@ -13,9 +13,11 @@ export type PalaceZoneId = 'patio' | 'gimnasio' | 'secretaria' | 'trono';
 
 /**
  * A real material from public/textures/<texture>/, tinted to `tint` (its own colours without one);
- * `size` (metres per tile) overrides the texture's own where its wear would repeat too plainly.
+ * `size` (metres per tile) overrides the texture's own where its wear would repeat too plainly;
+ * `soften` (0–1, tinted only) evens out that much of the photo's light and shade where its wear is
+ * louder than the camera needs.
  */
-export interface ZoneMaterial { texture: string; tint?: string; size?: number }
+export interface ZoneMaterial { texture: string; tint?: string; size?: number; soften?: number }
 /**
  * What makes a zone itself. `palette` names every colour its builder paints with; `materials` lays
  * real textures on some of those surfaces (painted in the palette's colour until they load);
@@ -98,14 +100,14 @@ const PATIO_THEME: ZoneTheme = {
   palette: {
     court: '#3f7d58', line: '#e9ece4', asphalt: '#5d5e5c', porch: '#a9a49a', wall: '#ece6da', plinth: '#8d8a83',
     door: SCHOOL_ORANGE, fence: '#9aa0a0', hoop: '#c8402e', trough: '#b9b4a8', backpack: '#2e4f7a', her: HER_PINK,
-    sky: '#2a1430',
   },
   // The end of the school day: a low, flat light, already cooling, under her plum sky.
   light: { ambient: '#6c6a7c', sun: '#ffe2cc', intensity: 1.45 },
   her: .15,
   glow: '#dfe9ff',
   materials: {
-    court: { texture: 'pista-pintada', tint: '#3f7d58', size: 4.5 },
+    // Its chipped paint kept, but quieter, so the white kerbs and lines read first.
+    court: { texture: 'pista-pintada', tint: '#3f7d58', size: 4.5, soften: .55 },
     asphalt: { texture: 'asfalt', tint: '#5d5e5c' },
     porch: { texture: 'formigo', tint: '#a9a49a' },
     wall: { texture: 'estuc', tint: '#ece6da' },
@@ -173,7 +175,8 @@ const GYM_THEME: ZoneTheme = {
   palette: {
     mat: '#2d5a9e', matSide: '#24497f', floor: '#7d8287', dado: '#2d5a9e', wall: '#e8e2d4', plinth: '#6f747a', pine: '#c79a5b',
     line: '#e5b52e', lineWhite: '#e9ece4', tube: '#e6f0ff', shade: '#1c2333', leather: '#7a4a2c', ball: '#e07a2e',
-    door: SCHOOL_ORANGE, steel: '#8f9699', her: HER_PINK, window: '#6a3f7a',
+    // The high windows glow with her plum (visual-style.md's, in her hue): violet is possession's and fear's.
+    door: SCHOOL_ORANGE, steel: '#8f9699', her: HER_PINK, window: '#6e2453',
   },
   // Cold tubes overhead; her plum light only through the high windows.
   light: { ambient: '#7c8496', sun: '#e4ecff', intensity: 1.15 },
