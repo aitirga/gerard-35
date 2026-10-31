@@ -93,3 +93,14 @@ Everything new in the story has to be reachable from here (AGENTS.md):
 - A new fight, foe, ánima or skill: playable from the fight tester (`FightSetup`, `startFight` in
   `src/main.ts`), with its stage in `FIGHT_PLACES` if it is fought somewhere new. A fight with
   phases (a boss) gets a `FightMoment` for each, so the picker can jump to it.
+
+## Effects lab
+
+`just dev-fx` (or `?fxlab` on any development URL, `?story=noista&fxlab` for a clean run) opens a
+fight with chapter 1's boys against three dogs and a panel on the right ([src/fx-lab.ts](../src/fx-lab.ts)).
+It plays each fight effect (`FIGHT_FX` in src/effects.ts) under a made-up attack name, each
+element's hit, fire at its three levels, every status at levels I–III and every reaction (the status
+first, then the element) on the picked fighter, thrown from another. Ally effects (shields, cures,
+veils) land on the first ally when a dog is picked. It can hide the fight's menu, bring the camera
+close, keep effects stacking, repeat the last one or clean everything. It never touches the fight's
+numbers or the story. `just screenshots fx-lab --gpu` clicks through it.

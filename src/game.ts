@@ -1596,6 +1596,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     },
     /** Development: where a fighter stands (the lattice and fight-fx scenarios frame them). */
     fighterAt(id: string) { const p = battleScene.modelOf(id)?.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
+    /** Development (the effects lab, src/fx-lab.ts): a fighter's model, for element hits aimed at them. */
+    battleModel: battleScene.modelOf,
     raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV, releaseLights, releaseLight,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },

@@ -543,11 +543,15 @@ try {
       jumpMenu.toggle(battleUI.fight ? 'fight' : undefined);
     }, { capture: true });
     const params = new URLSearchParams(location.search);
+    // ?fxlab adds the effects lab (src/fx-lab.ts) over a fight: chapter 1's boys against three dogs unless ?battle says otherwise.
+    const fxLab = params.has('fxlab');
+    if (fxLab && !params.has('battle')) { params.set('battle', '3'); params.set('allies', '2'); params.set('noista', '1'); }
     const foes = Number(params.get('battle'));
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
     const adult = new Story(['caught', 'noista']);
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => params.get('party') === 'adult' ? battleUI.open(adult.battleParty(true), foes, { animas: adult.classes })
       : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas: ['matemagico', ...(params.has('noista') ? ['noista' as const] : [])] }));
+    if (fxLab) void import('./fx-lab').then(({ mountFxLab }) => { const lab = mountFxLab(game); import.meta.hot?.dispose(() => lab.destroy()); });
     // ?music=battle&from=126 plays a song from a mark or second on the first key or click, to hear a loop's seam (just dev-music).
     const track = params.get('music'), haunt = Number(params.get('haunt'));
     // &haunt=.8 plays a haunted song at that level instead of the castle's (just dev-music bubbaloo random .8).

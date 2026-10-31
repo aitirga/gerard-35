@@ -39,6 +39,11 @@ dev-battle foes="4" allies="1":
     @[[ "{{ foes }}" =~ ^[234]$ && "{{ allies }}" =~ ^[12]$ ]] || { printf 'Use 2–4 foes and 1–2 allies.\n'; exit 1; }
     npm run dev -- --open '/?battle={{ foes }}&allies={{ allies }}'
 
+# Open the effects lab over a fight: every fight effect, element hit, fire, status and reaction on a click
+[group('Development')]
+dev-fx:
+    npm run dev -- --open '/?story=noista&fxlab'
+
 # Jump in after a story beat: just dev-chapter got-backpack, or metro for chapter 2's open city (new = from the start)
 [group('Development')]
 dev-chapter beat="new":

@@ -1162,3 +1162,18 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 #hud[data-tower][data-chased]::before { animation: heartbeat .9s ease-in-out infinite; background: radial-gradient(ellipse at 50% 55%, transparent 30%, #3a0a2acc 68%, #12020cf5 100%); }
 @keyframes heartbeat { 0%, 100% { opacity: .75; } 12% { opacity: 1; } 24% { opacity: .8; } 36% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { #hud[data-tower][data-chased]::before { animation: none; } }
+
+/* Development: the effects lab over a fight (src/fx-lab.ts, ?fxlab). */
+.fx-lab { position: fixed; top: 12px; right: 12px; z-index: 60; width: 340px; max-height: calc(100vh - 24px); overflow: auto; padding: 10px 12px; border-radius: 10px; background: rgb(16 31 37 / .9); color: #eeeade; font: 12px/1.35 system-ui, sans-serif; box-shadow: 0 6px 24px rgb(0 0 0 / .4); }
+.fx-lab header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.fx-lab.folded .fx-lab-body { display: none; }
+.fx-lab label { display: flex; gap: 6px; align-items: center; margin: 3px 0; }
+.fx-lab select, .fx-lab input[type="range"] { flex: 1; min-width: 0; }
+.fx-lab h3 { margin: 10px 0 4px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.fx-lab button { padding: 4px 6px; border: 1px solid rgb(255 255 255 / .18); border-radius: 6px; background: rgb(255 255 255 / .07); color: inherit; font: inherit; cursor: pointer; }
+.fx-lab button:hover { background: rgb(255 255 255 / .18); }
+.fx-lab-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.fx-lab-row { display: flex; gap: 4px; margin-top: 6px; }
+.fx-lab-row button { flex: 1; }
+.fx-lab-states { display: grid; grid-template-columns: 1fr repeat(4, 32px); gap: 3px 4px; align-items: center; }
+.fx-lab-note { margin: 6px 0 0; padding: 5px 7px; border-radius: 6px; background: rgb(255 255 255 / .08); }

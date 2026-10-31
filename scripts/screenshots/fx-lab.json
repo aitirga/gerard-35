@@ -1,0 +1,19 @@
+{
+  "title": "Effects lab · every fight effect on a click",
+  "description": "The development effects lab (?fxlab, just dev-fx, src/fx-lab.ts): a panel over a real fight that plays each fight effect under a made-up attack name, element hits, fire, statuses and reactions on the picked fighter. Clicks its own buttons, as a person would. Run it with --gpu.",
+  "steps": [
+    { "open": "/?story=noista&fxlab" },
+    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && !!document.querySelector('.fx-lab [data-field=target] option')", "timeout": 90000 },
+    { "shot": "panel", "delay": 1500, "caption": "The lab over a fight: target and thrower, strength, ánima colour, and a button per attack, element, fire level, status and reaction" },
+    { "eval": "document.querySelector('.fx-lab [data-fx=arc]').click()" },
+    { "shot": "arc", "delay": 350, "caption": "Cadena voltaica (arc) with an energy hit on the middle dog" },
+    { "eval": "document.querySelector('.fx-lab [data-fx=meteor]').click()" },
+    { "shot": "meteor", "delay": 900, "caption": "Lluvia de meteoros (meteor) with a fire hit" },
+    { "eval": "document.querySelector('.fx-lab [data-act=clean]').click(); document.querySelector('.fx-lab [data-fx=shield]').click()" },
+    { "shot": "shield", "delay": 900, "caption": "Escudo (shield): an ally effect lands on the first ally even with a dog picked" },
+    { "eval": "document.querySelector('.fx-lab [data-act=clean]').click(); document.querySelector('.fx-lab [data-field=zoom]').click(); document.querySelector('.fx-lab [data-look=congelado][data-level=\"3\"]').click()" },
+    { "shot": "frozen", "delay": 1500, "caption": "Congelado III with the camera brought close to the dog" },
+    { "eval": "document.querySelector('.fx-lab [data-reaction=paralisis]').click()" },
+    { "shot": "reaction", "delay": 1400, "caption": "Parálisis: mojado is put on first, then the shock turns it" }
+  ]
+}
