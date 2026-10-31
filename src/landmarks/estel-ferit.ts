@@ -18,7 +18,7 @@ const OFF_TRUE: [number, number, number, number, number][] = [
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const count = Number(landmark.params.cubes ?? 4), side = Number(landmark.params.cube_m ?? 2.6);
   const height = Number(landmark.params.height_m ?? 10.6), base = 0.45, step = (height - base) / count;
-  const rust = kit.surface('acer-corten', '#7a3f24', 0.18), dark = kit.surface('acer-corten', '#4e3a30', 0.18);
+  const rust = kit.surface('acer-corten', '#6a3620', 0.18), dark = kit.surface('acer-corten', '#4a3a31', 0.18);
   const concrete = kit.surface('formigo', '#c9c3b6', 0.08);
   // The base: a slab a little wider than the column, where people sit facing the sea.
   kit.part('Base de hormigón', 'box', concrete, [0.3, base / 2, 0], [side + 2.2, base, side + 1]);

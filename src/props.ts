@@ -55,7 +55,7 @@ export function createPropKit() {
     olive: [mat('Olivo plateado', '#8d9b6f'), mat('Olivo claro', '#a6ae86'), mat('Olivo sombra', '#6f8060')],
     cypress: [mat('Ciprés', '#4c6947'), mat('Ciprés claro', '#5d7a52')],
     yucca: [mat('Yuca', '#3f7a45'), mat('Yuca clara', '#5e9a55'), mat('Yuca sombra', '#2f5c38')],
-    palm: [mat('Palmera', '#5c7a3e'), mat('Palmera clara', '#7d9550'), mat('Palmera sombra', '#3f5a30')],
+    palm: [mat('Palmera', '#52703c'), mat('Palmera clara', '#6c854b'), mat('Palmera sombra', '#3a522e')],
   };
   const palmBark = mat('Tronco de palmera', '#8a7a68'), palmSkirt = mat('Falda de palmera', '#9b8158');
   const barkMat = mat('Troncos', '#817058');
