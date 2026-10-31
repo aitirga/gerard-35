@@ -43,11 +43,12 @@ const APSE = { x: 15, r: 22.5 };
  * The column stones, by the load they carry (the basilica's own account of its columns): porphyry
  * under the Tower of Jesus, basalt round it, granite in the central nave, sandstone in the aisles,
  * twelve, ten, eight and six points to their star. `knot` and `top` are the knot's and the vault's
- * heights, pressed from the real 30, 45 and 60 m vaults so the canopy sits in the frame.
+ * heights, pressed from the real vaults (aisles 30 m, nave and transept 45, apse 75, crossing 60)
+ * so the canopy sits in the frame.
  */
 const STONES = {
   P: { name: 'Pórfido', colour: '#8a6a62', gloss: 0.55, radius: 0.85, points: 12, knot: 10, top: 17, branches: 4 },
-  B: { name: 'Basalto', colour: '#5c5650', gloss: 0.5, radius: 0.72, points: 10, knot: 9, top: 15, branches: 4 },
+  B: { name: 'Basalto', colour: '#5c5650', gloss: 0.5, radius: 0.72, points: 10, knot: 8.5, top: 13.5, branches: 4 },
   g: { name: 'Granito', colour: '#8f8c86', gloss: 0.45, radius: 0.6, points: 8, knot: 8, top: 13.5, branches: 3 },
   s: { name: 'Arenisca', colour: '#cbbfa8', gloss: 0.12, radius: 0.48, points: 6, knot: 6.5, top: 10.5, branches: 3 },
 } as const;
@@ -140,8 +141,7 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
     gold: painted('Vidriera del ábside', stainedGlass(random, GOLD), [2.2, 2.2], { glow: 1.3, base: '#2a2010' }),
     rose: painted('Rosetón de la Gloria', roseWindow(random), [1, 1], { glow: 1.5, base: '#18141c' }),
   };
-  const bronze = painted('Puertas de bronce', bronzeDoor(), [4.8, 4], { gloss: 0.55 });
-  bronze.diffuseMapOffset.set(0.5, 0); bronze.update();
+  const bronze = painted('Puertas de bronce', bronzeDoor(), [1, 1], { gloss: 0.55 });
   const stones = Object.fromEntries((Object.keys(STONES) as Stone[]).map(k => [k, painted(`Columna de ${STONES[k].name.toLowerCase()}`, speckles(random, STONES[k].colour), [1.2, 1.2], { gloss: STONES[k].gloss })])) as Record<Stone, pc.StandardMaterial>;
   const medallions = painted('Medallones de los evangelistas', evangelists(), [1, 1], { glow: 0.9, gloss: 0.6 });
   const wood = kit.mat('Sillas de madera', '#9a6a3e', 0.25), woodDark = kit.mat('Patas de las sillas', '#4a3626', 0.2);
@@ -153,7 +153,7 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   const cross = kit.mat('Cruz de madera', '#5a3e28', 0.2), body = kit.mat('Cristo', '#e8dcc8', 0.3);
   const cloth = kit.mat('Mantel del altar', '#f6f2ea', 0.2);
   const crypt = kit.mat('Luz de la cripta', '#ffcf8a', 0.2, 1.6);
-  const daylight = kit.mat('Luz del día en la puerta', '#fff3d6', 0.2, 1.2);
+  const daylight = kit.mat('Luz del día en la puerta', '#ffeccc', 0.2, 0.55);
   const sign = painted('Cartel de silencio', silence(), [1, 1], { gloss: 0.3 });
 
   const parts = {
@@ -204,7 +204,7 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   disc(parts.dark, 0, 17.6, -29.2, 2.9, 20); rose(parts.warm, [0, 17.6, -29.12], 2.5);
   // The Passion's doors, shut: bronze written over with the Gospel, in a dark recess.
   box(parts.dark, -2.9, 0, -29.3, 2.9, 4.6, -29.2);
-  box(parts.bronze, -2.4, 0, -29.25, 2.4, 4, -29.1);
+  door(parts.bronze, -2.4, 2.4, 4, -29.15);
 
   // The Glory's inner wall (west, in its turned frame; x runs towards the Passion, the wall's face is z = 0):
   // the great rose, two smaller roses and four lancets over a gallery, the bronze doors with the
@@ -217,7 +217,7 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   box(gloryParts.white, -9.5, 4.2, 0, 9.5, 4.9, 1.3);
   for (let k = 0; k < 8; k++) box(gloryParts.white, -8.9 + k * 2.54, 3.6, 0, -8.3 + k * 2.54, 4.2, 1);
   box(gloryParts.dark, -3, 0, 0.01, 3, 4.6, 0.06);
-  box(gloryParts.bronze, -2.4, 0, 0.04, 2.4, 4, 0.16);
+  door(gloryParts.bronze, -2.4, 2.4, 4, 0.1);
   for (const cx of [-12, 12]) {
     arch(gloryParts.dark, cx, 0, 0.04, 2.6, 2.2);
     disc(gloryParts.dark, cx, 6.8, 0.04, 1.5, 16); rose(gloryParts.cool, [cx, 6.8, 0.1], 1.25);
@@ -234,8 +234,8 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   // The Nativity's end wall, with the door in the middle: daylight on the threshold from the portal outside.
   lowWall(parts, -15.75, 29.25, -2.6, 30.75, 'x', parts.cool);
   lowWall(parts, 2.6, 29.25, 15.75, 30.75, 'x', parts.cool);
-  parts.daylight.quad([-2.6, 0.012, 31.2], [2.6, 0.012, 31.2], [2.6, 0.012, 28.6], [-2.6, 0.012, 28.6], [0, 1, 0], [0, 0], [1, 0], [1, 1], [0, 1]);
-  for (const cx of [-2.85, 2.85]) box(parts.white, cx - 0.25, 0, 29.2, cx + 0.25, 1.9, 30.8);
+  parts.daylight.quad([-2.6, 0.012, 30.75], [2.6, 0.012, 30.75], [2.6, 0.012, 28.4], [-2.6, 0.012, 28.4], [0, 1, 0], [0, 0], [1, 0], [1, 1], [0, 1]);
+  for (const cx of [-2.85, 2.85]) box(parts.wall, cx - 0.25, 0, 29.2, cx + 0.25, LOW + 0.5, 30.8);
   // The apse: a round low wall with its chapels' buttresses and a band of gold glass.
   const apseFrom = -Math.PI / 2, apseTo = Math.PI / 2;
   lathe(parts.wall, APSE.x, 0, [[APSE.r + 0.7, 0], [APSE.r + 0.7, LOW]], 24, { from: apseFrom, to: apseTo });
@@ -329,12 +329,17 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
       tube(parts.brass, [cx + a[0] * 0.72, 0.88, cz + a[1] * 0.72], [cx + c[0] * 0.72, 0.88, cz + c[1] * 0.72], 0.04, 0.04, 4);
     }
   }
+  // A red rope across the shut doors, the Passion's and the Glory's.
+  for (const [a, c] of [[[-2.6, -28.4], [2.6, -28.4]], [[-52.3, -2.6], [-52.3, 2.6]]]) {
+    for (const [px, pz] of [a, c]) lathe(parts.brass, px, pz, [[0.16, 0], [0.06, 0.08], [0.05, 0.9], [0.09, 0.95], [0, 1.05]], 6);
+    tube(parts.rope, [a[0], 0.85, a[1]], [c[0], 0.85, c[1]], 0.05, 0.05, 4);
+  }
   // A sign by the door asks for silence, Catalan first.
   for (const { i, j } of findAll(plan, 'i')) {
     const cx = X(i), cz = Z(j), out: V3 = [Math.SQRT1_2, 0, Math.SQRT1_2], side: V3 = [Math.SQRT1_2, 0, -Math.SQRT1_2];
     lathe(parts.brass, cx, cz, [[0.25, 0], [0.05, 0.06], [0.04, 1.4], [0, 1.45]], 6);
     const at = (u: number, y: number): V3 => [cx + side[0] * u + out[0] * 0.06, y, cz + side[2] * u + out[2] * 0.06];
-    parts.sign.quad(at(-0.9, 1.2), at(0.9, 1.2), at(0.9, 2.4), at(-0.9, 2.4), out, [0, 0], [1, 0], [1, 1], [0, 1]);
+    parts.sign.quad(at(-0.9, 1.2), at(0.9, 1.2), at(0.9, 2.4), at(-0.9, 2.4), out, [0, 1], [1, 1], [1, 0], [0, 0]);
   }
 
   // ------------------------------------------------------------ the light through the glass
@@ -627,6 +632,10 @@ function cup(b: Mesh, cx: number, cz: number, top: number, rim: number) {
     // The rim's edge, so the cell reads as a shell of stone.
     b.quad(p(rim, top, a0), p(rim, top, a1), p(rim, top - 0.35, a1), p(rim, top - 0.35, a0), [Math.cos(am), 0, Math.sin(am)], uv(rim * 0.98, a0), uv(rim * 0.98, a1), uv(rim * 0.98, a1), uv(rim * 0.98, a0));
   }
+}
+/** A pair of doors facing +z from `x0` to `x1`, `h` high: the painting spread over both (UVs 0–1, its top up). */
+function door(b: Mesh, x0: number, x1: number, h: number, z: number) {
+  b.quad([x0, 0, z], [x1, 0, z], [x1, h, z], [x0, h, z], [0, 0, 1], [0, 1], [1, 1], [1, 0], [0, 0]);
 }
 /** A round window facing +z, its painting spread over the whole disc (UVs 0–1). */
 function rose(b: Mesh, c: V3, r: number, segments = 24) {
