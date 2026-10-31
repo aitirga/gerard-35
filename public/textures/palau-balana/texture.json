@@ -1,0 +1,28 @@
+{
+  "id": "palau-balana",
+  "name": "Palau Balañà, front on the Passeig de Sant Antoni (tree and passers-by retouched out)",
+  "kind": "photo",
+  "size_m": [
+    36.4,
+    12.0
+  ],
+  "source": {
+    "site": "Wikimedia Commons",
+    "name": "File:Palau Balana, Barcelona (P1170725).jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:Palau_Balana,_Barcelona_(P1170725).jpg",
+    "author": "Matti Blume",
+    "licence": "CC BY-SA 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "cropped to the facade; a bare tree, three passers-by and a cyclist cloned out with the relief's own pattern"
+  },
+  "command": "tools/textures.py photo <retouched crop of the Commons file> --id palau-balana --size-m 36.4 12 --px 2048",
+  "files": {
+    "albedo": "albedo.webp"
+  },
+  "px": [
+    2048,
+    675
+  ],
+  "mean": "#7b7877",
+  "made": "2026-10-30"
+}

@@ -71,9 +71,14 @@
   "look": {
     "ground": "panot",
     "footway": "panot",
-    "grass": "bed",
     "asphalt": "#3f4144",
-    "markings": true
+    "markings": true,
+    "materials": {
+      "square": {
+        "texture": "granit",
+        "tint": "#9d9a93"
+      }
+    }
   },
   "styles": {
     "default": {
@@ -89,8 +94,8 @@
       "trim": "#efe5d0",
       "roof": "#b3a796",
       "roof_kind": "flat",
-      "facade": "iron-balconies",
-      "ground": "shops",
+      "facade": "sants",
+      "ground": "sants-shops",
       "levels": 5
     },
     "block": {
@@ -100,7 +105,8 @@
         "#d7c9b0"
       ],
       "trim": "#e8e2d6",
-      "facade": "flats"
+      "facade": "flats",
+      "ground": "shops"
     },
     "cosmo": {
       "walls": [
@@ -115,17 +121,17 @@
       "walls": [
         "#ebe7df"
       ],
-      "base": "#5d5a56",
-      "trim": "#3c3c3c",
+      "base": "#6e655c",
+      "trim": "#d9d4ca",
       "roof": "#9c968c",
       "facade": "mall",
-      "ground": "mall-front"
+      "ground": "ashlar"
     },
     "nucli": {
       "walls": [
         "#dcc59b"
       ],
-      "base": "#5c1a1f",
+      "base": "#8a7a62",
       "trim": "#efe5d0"
     }
   },
@@ -136,7 +142,7 @@
     },
     "way/1309103578": {
       "style": "cinema",
-      "sign": "PALAU BALAÑÀ"
+      "signature": "palau-balana"
     },
     "way/1309944597": {
       "style": "cosmo"
@@ -178,24 +184,6 @@
       "line": "L1"
     },
     {
-      "kind": "car",
-      "x_m": -62,
-      "z_m": 2.5,
-      "color": "#d8d6c7"
-    },
-    {
-      "kind": "car",
-      "x_m": -48,
-      "z_m": 2.5,
-      "color": "#3c4448"
-    },
-    {
-      "kind": "car",
-      "x_m": 24,
-      "z_m": 2.5,
-      "color": "#7d2f2b"
-    },
-    {
       "kind": "lamp",
       "x_m": -100,
       "z_m": 140,
@@ -204,6 +192,204 @@
         "z_m": 113
       },
       "every_m": 24
+    },
+    {
+      "kind": "car",
+      "x_m": -61.75,
+      "z_m": 2.75,
+      "color": "#d8d6c7"
+    },
+    {
+      "kind": "car",
+      "x_m": -48.25,
+      "z_m": 2.75,
+      "color": "#3c4448"
+    },
+    {
+      "kind": "car",
+      "x_m": -30.25,
+      "z_m": 2.75,
+      "color": "#9aa4a8"
+    },
+    {
+      "kind": "car",
+      "x_m": 23.75,
+      "z_m": 2.75,
+      "color": "#7d2f2b"
+    },
+    {
+      "kind": "car",
+      "x_m": 37.25,
+      "z_m": 2.75,
+      "color": "#2f3a44"
+    },
+    {
+      "kind": "tree",
+      "x_m": -54.25,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": -36.25,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": 8.75,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.75
+    },
+    {
+      "kind": "tree",
+      "x_m": 16.25,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": 32.75,
+      "z_m": 2.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -30.25,
+      "z_m": 10.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "x_m": 20.75,
+      "z_m": 10.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.9
+    },
+    {
+      "kind": "tree",
+      "x_m": -111.25,
+      "z_m": 110.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": -105.25,
+      "z_m": 106.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.05
+    },
+    {
+      "kind": "tree",
+      "x_m": -90.25,
+      "z_m": 101.75,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": -75.25,
+      "z_m": 98.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.1
+    },
+    {
+      "kind": "tree",
+      "x_m": -67.75,
+      "z_m": 103.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -54.25,
+      "z_m": 94.25,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": -45.25,
+      "z_m": 94.25,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 1.05
+    },
+    {
+      "kind": "tree",
+      "x_m": -34.75,
+      "z_m": 94.25,
+      "species": "plane",
+      "trunk": "#c6b89b"
+    },
+    {
+      "kind": "tree",
+      "x_m": 2.75,
+      "z_m": 83.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.9
+    },
+    {
+      "kind": "bench",
+      "x_m": -117.25,
+      "z_m": 118.25
+    },
+    {
+      "kind": "bench",
+      "x_m": -108.25,
+      "z_m": 122.75
+    },
+    {
+      "kind": "bench",
+      "x_m": -96.25,
+      "z_m": 121.25
+    },
+    {
+      "kind": "tree",
+      "x_m": -24.25,
+      "z_m": 248.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -45.25,
+      "z_m": 272.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": -9.25,
+      "z_m": 290.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
+    },
+    {
+      "kind": "tree",
+      "x_m": 5.75,
+      "z_m": 269.75,
+      "species": "plane",
+      "trunk": "#c6b89b",
+      "scale": 0.95
     }
   ],
   "places": [
@@ -228,7 +414,7 @@
         "environment": "el-nucli",
         "cell": {
           "x": 6,
-          "z": 22
+          "z": 23
         }
       }
     },
@@ -328,5 +514,158 @@
       "z_m": 316,
       "width": 8
     }
+  ],
+  "landmarks": [
+    {
+      "kind": "nucli-front",
+      "id": "el-nucli",
+      "x_m": 0.65,
+      "z_m": -0.05,
+      "rotation_deg": 0,
+      "size_m": [
+        8.6,
+        0.5
+      ],
+      "solid": false,
+      "params": {
+        "width": 8.6,
+        "door": -0.65
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-1",
+      "x_m": -39.85,
+      "z_m": 267.85,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 4,
+        "seed": 1,
+        "parasol": "#e9e1cf"
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-2",
+      "x_m": -33.3,
+      "z_m": 257.07,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 3,
+        "seed": 2
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-3",
+      "x_m": -30.87,
+      "z_m": 273.31,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 2,
+        "chairs": 4,
+        "seed": 3,
+        "parasol": "#3e5f48"
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-4",
+      "x_m": -24.32,
+      "z_m": 262.53,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 3,
+        "seed": 4
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-5",
+      "x_m": -21.89,
+      "z_m": 278.77,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 4,
+        "seed": 5,
+        "parasol": "#7a2a2e"
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-6",
+      "x_m": -15.34,
+      "z_m": 267.99,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 2,
+        "chairs": 3,
+        "seed": 6
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-7",
+      "x_m": -12.92,
+      "z_m": 284.23,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 4,
+        "seed": 7,
+        "parasol": "#e9e1cf"
+      }
+    },
+    {
+      "kind": "terrassa",
+      "id": "terrassa-8",
+      "x_m": -6.36,
+      "z_m": 273.45,
+      "rotation_deg": -31,
+      "size_m": [
+        5.2,
+        1.6
+      ],
+      "params": {
+        "tables": 3,
+        "chairs": 3,
+        "seed": 8
+      }
+    }
+  ],
+  "no_signs": [
+    "node/13504772602"
   ]
 }
