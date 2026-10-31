@@ -372,19 +372,21 @@ share a landmark kind.
 
 #### Alegia · San Juan kalea (`alegia`)
 
+Built to this card on 2026-10-31; the brief, sources and credits are in [places/alegia.md](places/alegia.md).
+
 | | |
 | --- | --- |
-| Dominant | White render `#f1efe8` with dark timber `#4e3424` (proposal: today cream `#ece9e0`) |
-| Secondary | Hill green `#4f6b3a`, wet asphalt `#55595b`, roofs aged darker `#8f4f36` (proposal: today bright `#b4643f`), geranium red |
-| Material | Timber framing, ashlar sandstone (`carreu`), iron balconies |
-| Ground | A narrow street with no pavements |
-| Landmark | San Juan church's square belfry; the Oria and the railway; green hills all round |
-| Light | `alegia`: crisp and cool; `day` sky; the place for rain |
-| Props | Geraniums on iron balconies, the pollarded plane tree, wall lamps on brackets, the old bridge, parked cars |
-| Air | Pollen; a low mist over the river (proposal) |
-| Sound | The river, church bells, rain on the arcade, a train on the line |
-| Only here | The arcade at number 95 under iron balconies full of geraniums |
-| Text | Basque: *San Juan kalea*, *Udaletxea*, *Eliza* |
+| Dominant | Whitewash `#ece7dc` with dark timber `#5a3b2c`, closed in by wet valley green `#3e5a36` |
+| Secondary | Grey rubble and ashlar `#8a8781`, wet asphalt `#535658`, old canal tiles aged darker (`teila-zaharra`, `#8c5443`), the river's grey-green `#41583f`, geranium red |
+| Material | Timber framing over whitewash, grey rubble (`harri-hezea`) and ashlar, the town hall's real front, iron and wooden balconies |
+| Ground | A narrow street with no pavements; grey setts (`galtzada`) on the squares; the Oria sunk between rubble banks behind green railings |
+| Landmark | The town hall's clock turret and San Juan's square belfry; Zubi Zaharra's hump; wooded hills, meadows and Txindoki all round |
+| Light | `alegia`: soft and cool under a thin overcast (a whiter, softer sun; the `overcast` sky, whose horizon is the wooded hills); the place for rain |
+| Props | Geraniums on iron balconies, pollarded plane trees, blue wall lamps, house-name tiles, the toka, the pergola, July bunting, parked cars |
+| Air | Txirimiri (`drizzle`) that rings the puddles and the river; low mist |
+| Sound | The weir, church bells, rain on the arcade, a train on the line, cowbells up the hill (not built: places have no ambiences yet) |
+| Only here | The giant stone cowbell of Txintxarri plaza, and every old house wearing its name on a tile |
+| Text | Basque: *San Juan kalea*, *Udaletxea*, *Eliza*, house names, *Bazkideak bakarrik* |
 
 #### Cardedeu · Carrer de Jacint Verdaguer (`cardedeu`)
 

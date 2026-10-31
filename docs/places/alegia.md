@@ -2,15 +2,15 @@
 
 The Basque village in the game: San Juan kalea in Alegia (Tolosaldea, Gipuzkoa), from number 95
 to the town hall, Zubi Zaharra and the start of the old street's north-east turn. It is the
-worked example of [environment-styling.md](../environment-styling.md); this page is its brief:
-what the real place is, how it should feel in the game, and the plan to rebuild it with real
-materials, better geometry and life.
+worked example of [environment-styling.md](../environment-styling.md); this page is its brief and
+its record: what the real place is, how it should feel in the game, how it was built and what is
+still approximate.
 
-Status (2026-10-30): researched and drafted. `assets/geo/alegia/zone.json` has the wider bounds,
-new reference notes, corrected stone and roof colours, the church-square plane trees and one new
-place (the stone cowbell); `osm.json` was fetched again. The game still reads the previous
-`src/geo/alegia.json`: the rebuild waits for the shared materials pipeline (`tools/textures.py`),
-landmark modules (`src/landmarks/`) and the style guide (`docs/visual-style.md`).
+Status (2026-10-31): built. The zone has the wider bounds, real materials on every surface, the
+town hall's real front, landmarks for the town hall, Zubi Zaharra, the belfry, the church's
+windows, the weir, the stone cowbell, the pergola, the toka, the kids' pelota wall, the river
+railings and the valley, a sunk river under an overcast sky with drizzle, and thirteen things to
+look at. Screenshots: `just screenshots alegia --gpu`.
 
 ## The real place
 
@@ -133,54 +133,40 @@ and a green mountain.
 - Extending to the station and the pelota court would roughly double the grid (the street bends
   north-east); not done. If the trip to the Basque Country arrives by train, the station is the
   natural next extension.
-- Every cell shifts by (+80, +4) after the next `just geo-build alegia`: the screenshot scenario
-  must be updated in the same step.
 
-## Geometry plan
+## How it is built
 
-- **Town hall**: a landmark module replacing the extruded box: the four-arch portico on the
-  square, the five-arch loggia on the river, the arched passage to the bridge, the continuous
-  balcony, four single balconies, the pediment with the coat of arms, the clock turret with its
-  bell spire, deep dark eaves. Taller than now: about 13 m to the eaves (tall civic storeys) and
-  22 m to the spire.
-- **Zubi Zaharra**: a modelled humpback bridge, 38 m long and about 2.5 m wide, a large arch on the
-  town hall side, a smaller one on the south, the rounded cutwater rising to the refuge with the
-  cross, low parapets. The deck stays walkable; the arches show the river through them.
-- **Church**: nave and transept at the real 23 × 39 m, the belfry at about 25 m with a bell
-  opening on each face and a hipped tile cap; the church square with its three plane trees and
-  fountain.
-- **93–95 arcade**: walkable under the first floor (today it is solid), with square pillars.
-- **River**: the rubble river wall with brick coping along 61–91, the gardens with brick pillars
-  and white railings, the green-railed riverside path, the weir as a line of white water, grey
-  gravel bars, alders and willows on both banks.
-- **Hills and skyline**: the sphere hills become layered ridges: near, broadleaf woods; middle,
-  meadows with two or three white farmhouses; far, the Aralar ridge with **Txindoki's pale
-  limestone pyramid** at the back (south), softened by haze. Whether Txindoki shows from the
-  street is unconfirmed (the valley is narrow); putting it on the skyline is a small licence.
-- **Per house**: walls and facades from the photos (65 pale blue-grey, 61 grey pebbledash with
-  green shutters; blue, pink-red and yellow timber-framed houses where the build can place them),
-  house-name plaques on the old houses.
-- **Ground**: grey setts in fan arcs on the town hall square, red-brown paving at Don Pio Montoya,
-  grey street with red-brown edge bands.
+Everything is data in `assets/geo/alegia/zone.json`, built by `just geo-build alegia` into
+`src/geo/alegia.json`, plus one module per landmark kind in `src/landmarks/`.
 
-## Life and effects
+| Piece | How | Where it is approximate |
+| --- | --- | --- |
+| **Town hall** | The OSM block (`civic`, five storeys of ashlar) wears the real square front as a signature facade (`udaletxea`, 21.6 × 15 m). `alegia-town-hall` adds what stands out of it: the stone slabs of the long first-floor balcony and the four above, the pediment with its own roof, the clock turret with curved shoulders, the clock, the iron lantern with the bell and the weathervane | The river side and its five-arch loggia are the block's painted ashlar; the turret is drawn from photos, not measured |
+| **Zubi Zaharra** | `zubi-zaharra`: a humpback deck on two round arches (the big one on the town hall side), parapets, the rounded cutwater rising to the refuge with the cross, moss; walkable | Arch spans from photos; the vaulted passage beside Zubimusu is not opened |
+| **Church and belfry** | The OSM blocks in grey rubble (`harri-hezea`) with old tiles; `church-windows` puts two small round-headed windows in stone surrounds on each wall facing the camera; `belfry` gives the tower its bell stage: an opening with its bell and rail on each face, the clock on the north face (towards the camera, above the nave roof, as in the photos), cornices. Both join their building's cut (`params.building`), so nothing floats when the cut opens | The portal faces away from the camera and is not drawn; window count and size from photos of other walls |
+| **The Oria** | `look.river_m: 3` sinks the river three metres between rubble banks with a dark wet line; the water is grey-green (`look.water`) on neutral ripples and mirrors the overcast sky's wooded horizon; the drizzle falls into it. `weir`: the stone sill, the white spill and a gravel bar along the bank (`legarra`). `railing`: green iron railings along the riverside path, Txintxarri and Bulebarra, a dark wooden fence along the south bank road | The bank walls are straight drops from the street; the back gardens' brick pillars and white railings are not drawn (one green railing runs the whole north bank) |
+| **The houses** | `terrace` (timber framing over whitewash, an atlas of three bays by two storeys with wooden and iron balconies, geraniums, red or brown shutters), `default` and `small` rendered, 93–95 `arcade-block`; every roof in old canal tiles (`teila-zaharra`); three houses with their own colour (Zubimusu's blue-grey, a cream one, a white one); fourteen house-name tiles; ten blue wall lamps | Storeys and colours are per style, not per house; the arcade at 95 is painted, not walkable |
+| **Squares** | Grey setts (`galtzada`) on the town hall square, Txintxarri plaza and Don Pio Montoya; the stone cowbell (`joare`: a broad, flat bell on two rocks, its loop handle and the clapper on the ground); the wisteria `pergola` (green in July) with two benches; the church square's plane trees | The setts are not laid in the real fan arcs |
+| **Valley** | `valley`: a steep wooded ridge rising from the far edge, a higher ridge of meadows with four white farmhouses and clumps of trees, Txindoki's pale limestone pyramid, and mist draped on the slopes; `look.hills: false` drops the generic hills | Txindoki on the skyline is a licence: from the street the nearer hills hide it |
+| **Life** | The `alegia` air: txirimiri (`drizzle`, a fine rain that drifts and rings the puddles) and low mist; the overcast light (`scenery.ts`: a whiter, softer sun and more sky) and its grade (`grading.ts`); July bunting strung diagonally over the street; the toka pitch at Bulebarra (brick strip, box, discs, chalk line) | No people: the toka is shown by its pitch and its discs, not by players |
+| **Invented** | Goxotegia, a confectioner's at Konfiteroenea (73), true to the house's name; a txoko door at Mokoenea with its *Bazkideak bakarrik* tile; the kids' pelota wall on Parke ttikie's court | All three are marked as invented here; the real pelota court is outside the map |
 
-- **Weather**: txirimiri as the default mood (rain at low intensity, 0.2–0.35, with dry spells),
-  using the existing weather; low mist on the river in the morning and cloud bands on the hills.
-- **The river**: flowing Oria with foam at the weir and a sound; ripples under the drizzle.
-- **People**: toka players in txapelas by Txintxarri plaza, someone on a bench under the pergola,
-  a kid with a pelota at Parke ttikie.
-- **A frontón, invented where it fits**: Alegia's real pelota court is just outside the map, so a
-  small kids' pelota wall (green front wall, white lines, metal *chapa* strip) goes on the real
-  playground court of Parke ttikie, marked as invented.
-- **Food and a txoko**: the bars on the north-east street (Iskiña, Hilario Berri) for pintxos;
-  an invented confectioner at **Konfiteroenea** (73), true to the house's name; a txoko door
-  (members only, a diegetic gate) on a ground floor near the bridge.
-- **Fiestas** (story choice): July bunting across San Juan kalea, the town hall balcony dressed
-  with flowers. Keep flags and banners neutral (the real facade often carries political banners;
-  the textures paint them out).
-- **Sound** (ambiences per place are still to do in the audio system): weir, clock bell, train,
-  distant cowbells.
+Things to look at (Gerard's lines, in Spanish): number 95, the plane tree, the church, the town
+hall, the bridge, the weir, the cowbell, the house names, Konfiteroenea, the txoko door, the
+pelota wall, Bulebarra and the toka.
+
+### Engine additions (shared, small)
+
+- `look.river_m`, `look.water`, `look.hills` and the `bank` material (`src/geo.ts`,
+  `src/geo-scenery.ts`): a river sunk between banks, cut out of every ground layer, with a hollow
+  plinth under it (`src/scenery.ts`) and rain that falls into it (`src/effects.ts`).
+- The `timber` facade repainted as an atlas; `shops` of kind `house` draw a name tile.
+- The `overcast` sky (`src/lighting.ts`) and an overcast sun for Alegia (`src/scenery.ts`).
+- `params.building` lets a landmark join its building's cut; `MeshBuilder.box()` for landmarks.
+- The `drizzle` and `mist` particles and Alegia's air (`src/effects.ts`).
+
+Performance (2026-10-31, WebGPU, M-series Mac, 1440 × 900): 813–907 draw calls and 5–14 ms a
+frame following Gerard (budget ~1000), 4,239 calls in the overview.
 
 ## Marta (not decided)
 
@@ -189,56 +175,49 @@ expensive train ticket. Alegia could become her place: a choir launches the town
 the town hall, bertsolaris sing in the square, and the station is a short walk up the street.
 That is only a possibility for the story to decide; nothing in the zone depends on it.
 
-## Texture candidates
+## Textures and credits
 
-All shipped textures come from these (webp, ≤ 1024 px, one signature facade at 2048, under about
-400 KB each, credits in `public/textures/credits.json`).
+Credits live in each texture's own `texture.json` in `public/textures/<id>/`. What ships:
+
+| id | What | Source | Licence | Author |
+| --- | --- | --- | --- | --- |
+| `galtzada` | Granite setts, 2 m | [Poly Haven `cobblestone_floor_07`](https://polyhaven.com/a/cobblestone_floor_07) | CC0 | Rob Tuytel |
+| `harri-hezea` | Wet grey rubble: church, bridge, banks, weir, 2 m | [Poly Haven `castle_wall_varriation`](https://polyhaven.com/a/castle_wall_varriation) | CC0 | Rob Tuytel |
+| `legarra` | River pebbles: the gravel bar, 2.16 m | [Poly Haven `ganges_river_pebbles`](https://polyhaven.com/a/ganges_river_pebbles) | CC0 | Amal Kumar |
+| `teila-zaharra` | Old canal tiles with lichen, every roof, 3 m (its light flattened so long roofs do not band) | [Poly Haven `roof_09`](https://polyhaven.com/a/roof_09) | CC0 | Rob Tuytel |
+| `udaletxea` | The town hall's square front, rectified to 21.6 × 15 m at 2048 px, banners, flags and a passer-by painted out | [Alegiako udaletxea](https://commons.wikimedia.org/wiki/File:Alegiako_udaletxea.jpg) | CC BY-SA 4.0 (the derived texture too) | Uranzu |
+
+From the shared library: `formigo`, `asfalt`, `saulo`, `gespa`, `terra`, `grava`, `granit`, `carreu`,
+`estuc`, `mamposteria`, `mao` (the toka's pavers). No generated images.
+
+The candidates below were researched and not used (yet): the belfry bay, the river loggia, the
+timber-framed bays and the doors as photo atlases (`photo:` facades) would replace painted bays
+with real ones.
 
 | Use | Source | Licence | Author | Notes |
 | --- | --- | --- | --- | --- |
-| Town hall facade (signature) | [Alegia - Ayuntamiento 3](https://commons.wikimedia.org/wiki/File:Alegia_-_Ayuntamiento_3.JPG), frontal, 960 × 1280 | CC0 | Zarateman | Rectify, paint out the banners and the flag; [Alegiako udaletxea](https://commons.wikimedia.org/wiki/File:Alegiako_udaletxea.jpg) (3040 px, CC BY-SA 4.0, Uranzu) if 2048 px is needed |
 | Town hall river side and loggia | [Alegia 12](https://commons.wikimedia.org/wiki/File:Alegia_12.JPG), [Ayuntamiento 4](https://commons.wikimedia.org/wiki/File:Alegia_-_Ayuntamiento_4.JPG) | CC0 | Zarateman | Ashlar bay and loggia arch |
 | Belfry | [Iglesia de San Juan Bautista 2](https://commons.wikimedia.org/wiki/File:Alegia_-_Iglesia_de_San_Juan_Bautista_2.jpg) | CC0 | Zarateman | Bell-opening bay |
-| Bridge stone | [Alegia 08](https://commons.wikimedia.org/wiki/File:Alegia_08.JPG) | CC0 | Zarateman | Mossy rubble crop for the pier and spandrels |
+| Bridge stone | [Alegia 08](https://commons.wikimedia.org/wiki/File:Alegia_08.JPG) | CC0 | Zarateman | Mossy rubble crop |
 | River wall, gardens | [Alegia 10](https://commons.wikimedia.org/wiki/File:Alegia_10.JPG) | CC0 | Zarateman | Rubble wall with brick coping |
-| Timber-framed bays | [Alegia 37](https://commons.wikimedia.org/wiki/File:Alegia_37.jpg) (white), [Alegia 04](https://commons.wikimedia.org/wiki/File:Alegia_04.JPG) (blue), [Alegia 35](https://commons.wikimedia.org/wiki/File:Alegia_35.jpg) (brick nogging) | CC0 | Zarateman | One bay each, rectified |
-| Rubble ground floor, wall lamp | [20160819 Alegia kalea](https://commons.wikimedia.org/wiki/File:20160819_Alegia_kalea.jpg) | CC BY-SA 4.0 | Ksarasola | Reference for the blue lamp bracket; rubble from ambientCG instead |
+| Timber-framed bays | [Alegia 37](https://commons.wikimedia.org/wiki/File:Alegia_37.jpg), [Alegia 04](https://commons.wikimedia.org/wiki/File:Alegia_04.JPG), [Alegia 35](https://commons.wikimedia.org/wiki/File:Alegia_35.jpg) | CC0 | Zarateman | One bay each, rectified |
 | Shutters, door | [Alegia 06](https://commons.wikimedia.org/wiki/File:Alegia_06.JPG), [Alegia, puerta 1](https://commons.wikimedia.org/wiki/File:Alegia,_puerta_1.jpg) | CC0 | Zarateman | Window and studded door |
-| Grey ashlar | Poly Haven `large_grey_tiles`; ambientCG `Bricks066` (rusticated quoins) | CC0 | | Tint cool grey |
-| Warm rubble | Poly Haven `stone_wall`; ambientCG `Bricks099` | CC0 | | Old ground floors |
-| Wet grey rubble | Poly Haven `castle_wall_varriation`, `stone_wall_04` | CC0 | | Bridge, river wall |
-| Whitewash | ambientCG `Plaster001`, `Plaster003`; Poly Haven `painted_plaster_wall` | CC0 | | Tinted per house |
-| Roof | Poly Haven `roof_09` (weathered canal tiles), `ceramic_roof_01` (mossy) | CC0 | | Tint toward `#a8614a` |
-| Setts and slabs | ambientCG `PavingStones126A`; Poly Haven `large_grey_tiles` | CC0 | | Square and street |
-| River bed | Poly Haven `river_small_rocks`, `dry_river_pebbles`; ambientCG `Ground022` | CC0 | | Gravel bars |
-| Timber, balconies | Poly Haven `dark_planks`, `rough_wood`; ambientCG `Planks023A` | CC0 | | |
-| Brick nogging, pillars | Poly Haven `mixed_brick_wall`, `brick_wall_001` | CC0 | | |
-| Hills | Poly Haven `forest_leaves_02`, ambientCG `Grass007`, `Moss002` | CC0 | | Far ridges stay painted |
 
-## Build plan
-
-1. Merge the foundation; read `docs/visual-style.md` and the texture and landmark APIs.
-2. `just geo-build alegia` with the new bounds; update `scripts/screenshots/alegia.json` cells
-   (+80, +4) and add shots: the town hall square, Txintxarri plaza, Zubi Zaharra and the weir,
-   the north-east street with Parke ttikie, the overview, and the same street under txirimiri
-   (`?weather=rain&intensity=.3`).
-3. Textures: process the CC0 materials and the Commons crops above with `tools/textures.py`;
-   assign them through the zone's styles (ashlar, rubble, whitewash, timber, roof, setts).
-4. Landmarks: town hall, Zubi Zaharra and the church belfry as modules in `src/landmarks/`, keyed
-   to their OSM ids so the grid and places stay as they are.
-5. River and edges: river wall, garden fences, weir, gravel bars, riparian trees.
-6. Hills and skyline: layered ridges, farmhouses, the Aralar and Txindoki backdrop, mist bands.
-7. Life: the default drizzle, toka players, the pelota wall at Parke ttikie, bunting (if the
-   story wants July), house-name plaques, blue wall lamps.
-8. Check `just typecheck`, `npm test`, the screenshots (looked at, not trusted), and keep draw
-   calls in budget: one material per texture, static meshes batched.
+Reference photos (looked at, not shipped): the stone cowbell ([20160819 Alegia Joare eskultura](https://commons.wikimedia.org/wiki/File:20160819_Alegia_Joare_eskultura.jpg), Ksarasola, CC BY-SA 4.0), the toka ([Toka](https://commons.wikimedia.org/wiki/File:Toka.jpg)), the church ([San Juan eliza](https://commons.wikimedia.org/wiki/File:San_Juan_eliza_-_Alegia.jpg)).
 
 ## Approximate or open
 
-- Storeys and colours are per style except where set per house; most houses are not checked one
-  by one against Street View.
-- The church portal faces away from the camera; nothing is turned to show it.
-- Txindoki on the skyline is a licence; the kids' pelota wall is invented; the confectioner at 73
-  and the txoko are invented.
-- The street's surface (asphalt in 2025, slabs in older photos) needs a last look in Street View.
-- The station, the real pelota court and the hermitage are outside the map.
+- **Not built**: the back gardens' brick pillars and white railings; the setts' fan arcs; the
+  walkable arcade at 95; the vaulted passage to the bridge; the town hall's loggia in relief;
+  people (toka players, a choir); ambient sound (weir, bells, train, cowbells) waits for place
+  ambiences in the audio system.
+- **Licences taken**: Txindoki on the skyline; the invented confectioner, txoko and pelota wall.
+- **The cut**: a tall tower whose top projects outside the cut ring keeps its top (every tall
+  building does this); the belfry's bell stage now goes with its tower.
+- **The plinth**: the backdrop under the model is narrower than this wide zone, so at both ends
+  of the overview the model stands over the pale backdrop table.
+- **Narrow street**: in the narrowest stretch of San Juan kalea, by the facade, the cut can stay
+  shut while the eaves opposite hide Gerard's legs (the occlusion test checks a few rays from his
+  body; this is the game's general rule, not Alegia's).
+- **Outside the map**: the station, the real pelota court and the Santo Kristo hermitage; the
+  station is the natural next extension if the story brings Gerard by train.
