@@ -234,9 +234,9 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
 
   // Her gum, wherever she has crept in: glossy, a little see-through at the edges.
   const gum = mat(P.her, .88, .08, 'gum'), gumDeep = mat('#d94a8c', .8, .04, 'gum');
-  /** A flattened smear of her gum on the ground, at cell coordinates. */
+  /** A flattened smear of her gum on the ground, at cell coordinates, mostly the darker gum. */
   function smear(px: number, pz: number, seed: number, size = 1) {
-    part(root, 'Chicle', 'sphere', jitter(seed) < .5 ? gum : gumDeep, [x(px), .01, z(pz)], [(.25 + jitter(seed + 1) * .35) * size, .03, (.08 + jitter(seed + 2) * .1) * size], [0, jitter(seed + 3) * 180, 0], false);
+    part(root, 'Chicle', 'sphere', jitter(seed) < .3 ? gum : gumDeep, [x(px), .01, z(pz)], [(.25 + jitter(seed + 1) * .35) * size, .03, (.12 + jitter(seed + 2) * .12) * size], [0, jitter(seed + 3) * 180, 0], false);
   }
 
   // ——— El patio ————————————————————————————————————————————————————————————————————————————
@@ -269,7 +269,7 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
     for (let i = 0; i < 14; i++) smear(5 + jitter(i + 40) * 24, 7 + jitter(i + 60) * 14, i + 80, 1.4);
 
     // The porch: square concrete pillars carrying beams back to the school; its roof is cut away
-    // so the camera sees under it, and only a shallow canopy runs along the wall.
+    // so the camera sees under it (any slab over it would hide the doors' signs and Gerard).
     const concrete = mat(P.porch, .15), cream = mat(P.wall, .15);
     plan.forEach((row, pz) => [...row].forEach((c, px) => {
       if (c !== 'A') return;
@@ -278,7 +278,7 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
       part(pillar, 'Pilar', 'box', cream, [0, 1.6, 0], [.46, 3.2, .46]);
       part(pillar, 'Viga', 'box', concrete, [0, 3.05, -1.75], [.3, .3, 3.5]);
     }));
-    slab(root, 'Alero', concrete, [x(17), 3.25, z(0) + .95], [W - 2, .2, .9]);
+    slab(root, 'Imposta', concrete, [x((W - 1) / 2), 3.3, z(0) + .56], [W - 1, .22, .12]);
 
     // The school's facade: classroom windows with their blinds half down, between the doors.
     const glass = mat('#2a3540', .85, 0, 'glass'), frame = mat('#f1f1ee', .4), blind = mat('#d9cba8', .2);
@@ -288,7 +288,7 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
       part(root, 'Cristal', 'box', glass, [x(px), 1.8, z(0) + .53], [w, 1.3, .02], [0, 0, 0], false);
       part(root, 'Persiana', 'box', blind, [x(px), 2.15 + jitter(px) * .2 - .1, z(0) + .55], [w, .55 + jitter(px) * .3, .02], [0, 0, 0], false);
     }
-    // The first floor's windows, above the canopy, where the castle has swallowed the rest.
+    // The first floor's windows, above the string course, where the castle has swallowed the rest.
     for (let px = 2; px < W - 1; px += 3.2) part(root, 'Ventana del primer piso', 'box', glass, [x(px), 4.1, z(0) + .52], [1.6, .9, .03], [0, 0, 0], false);
     // Her gum creeping over the top of the wall from her hall's door, thinning out towards the
     // corners: she has the building, not yet the yard.
@@ -509,6 +509,14 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
       e.addComponent('render', { meshInstances: [new pc.MeshInstance(ring, mat(hoopColours[hoopIndex++ % hoopColours.length], .5))], castShadows: false, receiveShadows: true, batchGroupId: batch });
       e.setLocalPosition(x(px) + (jitter(px) - .5) * .2, .03, z(pz) + (jitter(px + 9) - .5) * .2); root.addChild(e);
     }));
+    // A minibasket board on the west wall, above the bars, as in every school gym.
+    const board = at(0, 8.5, 'Canasta de pared');
+    part(board, 'Brazo', 'box', steel, [.75, 2.9, 0], [1, .08, .08], [0, 0, 0], false);
+    part(board, 'Tablero', 'box', mat('#f4f4f0', .5), [1.25, 2.95, 0], [.04, .9, 1.5]);
+    part(board, 'Cuadro', 'box', mat('#c8402e', .4), [1.275, 2.85, 0], [.01, .4, .55], [0, 0, 0], false);
+    part(board, 'Aro', 'cylinder', mat('#e0602a', .5, 0, 'steel'), [1.5, 2.6, 0], [.46, .03, .46], [0, 0, 0], false);
+    part(board, 'Red', 'cone', mat('#eeeeea', .3), [1.5, 2.4, 0], [.4, .36, .4], [180, 0, 0], false);
+
     // Swedish benches along the east wall: a pine board on its upturned beam.
     for (const pz of [5, 11]) {
       const bench = at(24, pz + .5, 'Banco sueco');
@@ -561,7 +569,9 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
  */
 export function buildSchoolDoor(app: pc.Application, toWorld: (px: number, pz: number) => pc.Vec3) {
   const root = new pc.Entity('Marco de la escuela'); app.root.addChild(root);
-  const m = new pc.StandardMaterial(); m.diffuse.fromString('#e8742c'); m.gloss = .35; m.useMetalness = false; shine(m, 'paint'); m.update();
+  // A little light of its own, so the school's orange stays orange in her magenta light.
+  const m = new pc.StandardMaterial(); m.diffuse.fromString('#e8742c'); m.emissive.fromString('#e8742c'); m.emissiveIntensity = .35;
+  m.gloss = .35; m.useMetalness = false; shine(m, 'paint'); m.update();
   const p = toWorld(22, 13); root.setPosition(p.x, 0, p.z);
   const piece = (s: V3, at: V3) => {
     const e = new pc.Entity('Marco naranja'); e.addComponent('render', { type: 'box', material: m, castShadows: true, receiveShadows: true });
