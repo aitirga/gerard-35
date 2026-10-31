@@ -99,7 +99,7 @@
       ],
       "base": "#7a6552",
       "trim": "#efe4d0",
-      "roof": "#b07656",
+      "roof": "#a8704f",
       "roof_kind": "flat",
       "facade": "iron-balconies",
       "ground": "shops",
@@ -120,7 +120,7 @@
     },
     "bays": {
       "facade": "photo:poble-sec-bays",
-      "roof": "#a88a72",
+      "roof": "#a47a5e",
       "base": "#8a7660"
     },
     "siena": {
@@ -642,7 +642,7 @@
   "props": [
     {
       "kind": "metro",
-      "x_m": 243,
+      "x_m": 242.5,
       "z_m": 8,
       "name": "Poble Sec",
       "line": "L3"
@@ -1400,7 +1400,10 @@
       ],
       "solid": false,
       "params": {
-        "zone": "poble-sec"
+        "zone": "poble-sec",
+        "skip": [
+          "way/1264332421"
+        ]
       },
       "textures": [
         "estuc"
@@ -1417,7 +1420,10 @@
       ],
       "solid": false,
       "params": {
-        "zone": "poble-sec"
+        "zone": "poble-sec",
+        "skip": [
+          "way/1264332421"
+        ]
       },
       "textures": [
         "estuc"
@@ -1434,7 +1440,10 @@
       ],
       "solid": false,
       "params": {
-        "zone": "poble-sec"
+        "zone": "poble-sec",
+        "skip": [
+          "way/1264332421"
+        ]
       },
       "textures": [
         "estuc"
@@ -1451,7 +1460,10 @@
       ],
       "solid": false,
       "params": {
-        "zone": "poble-sec"
+        "zone": "poble-sec",
+        "skip": [
+          "way/1264332421"
+        ]
       },
       "textures": [
         "estuc"
@@ -1468,7 +1480,10 @@
       ],
       "solid": false,
       "params": {
-        "zone": "poble-sec"
+        "zone": "poble-sec",
+        "skip": [
+          "way/1264332421"
+        ]
       },
       "textures": [
         "estuc"
@@ -1485,7 +1500,10 @@
       ],
       "solid": false,
       "params": {
-        "zone": "poble-sec"
+        "zone": "poble-sec",
+        "skip": [
+          "way/1264332421"
+        ]
       },
       "textures": [
         "estuc"
@@ -1502,7 +1520,10 @@
       ],
       "solid": false,
       "params": {
-        "zone": "poble-sec"
+        "zone": "poble-sec",
+        "skip": [
+          "way/1264332421"
+        ]
       },
       "textures": [
         "estuc"
@@ -1519,7 +1540,10 @@
       ],
       "solid": false,
       "params": {
-        "zone": "poble-sec"
+        "zone": "poble-sec",
+        "skip": [
+          "way/1264332421"
+        ]
       },
       "textures": [
         "estuc"

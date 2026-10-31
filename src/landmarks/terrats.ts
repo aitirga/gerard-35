@@ -6,7 +6,7 @@ import { bar, box, prism } from '../landmark-shapes.ts';
 /**
  * What stands on Barcelona's flat roofs (terrats), seen from the diorama camera: the hut where the
  * stair comes out, often with the fibre-cement water tank on top, TV aerials and washing lines. For
- * every flat-roofed building of the place `zone` (its EnvironmentId) whose footprint's centre lies
+ * every flat-roofed building of the place `zone` (its EnvironmentId; `skip` lists ids dressed by hand) whose footprint's centre lies
  * inside this landmark's footprint, so a few landmarks share out a whole place. Each piece is placed
  * where it fits inside the real outline, and vanishes with the roof under it wherever the see-through
  * cut opens.
@@ -22,7 +22,8 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const cell = kit.cell, every = Number(landmark.params.every ?? 1);
   const huts = HUTS.map(() => kit.mesh()), tanks = kit.mesh(), iron = kit.mesh(), clothes = CLOTHES.map(() => kit.mesh());
   const within = (b: GeoBuilding) => Math.abs(b.box.cx - landmark.x) <= landmark.w / 2 && Math.abs(b.box.cz - landmark.z) <= landmark.d / 2;
-  scene.buildings.filter(b => b.roof === 'flat' && b.levels >= 3 && within(b)).forEach((b, n) => {
+  const skip = (landmark.params.skip as string[] | undefined) ?? [];
+  scene.buildings.filter(b => b.roof === 'flat' && b.levels >= 3 && within(b) && !skip.includes(b.id)).forEach((b, n) => {
     if (n % every) return;
     const r = (i: number) => { const v = Math.sin(hash(b.id) * 0.001 + i * 12.9898) * 43758.5453; return v - Math.floor(v); };
     const top = (b.height + 0.25) * cell, { cx, cz, angle } = b.box;

@@ -19,7 +19,7 @@ type V3 = [number, number, number];
  */
 export const kind = 'montjuic-vessant';
 
-const RISER = 0.17, TREAD = 0.3, STAIR = 3.2;
+const RISER = 0.17, TREAD = 0.3, STAIR = 4.4;
 const HOUSE_COLOURS = ['#c98a5e', '#b8744a', '#e3c39b', '#d9a77a', '#e6d2b5', '#cf9a76'];
 
 export function build(kit: LandmarkKit, landmark: GeoLandmark) {
@@ -164,7 +164,7 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   const add = (name: string, b: MeshBuilder, m: Parameters<LandmarkKit['add']>[2], shadows = true) => kit.add(name, b, m, { shadows });
   add('Muros de contención', wall, kit.surface('mamposteria', String(params.stone ?? '#a39785')));
   add('Calles de la ladera', ground, kit.surface('asfalt', '#5a5c5e'));
-  add('Escaleras', steps, kit.surface('granit', '#b3ada2'));
+  add('Escaleras', steps, kit.surface('granit', '#c4beb2'));
   add('Barandillas', iron, kit.mat('Hierro de barandilla', '#25292b', 0.45));
   add('Terrats de la ladera', roofs, kit.surface('rajola', '#a8735a'));
   add('Ladera de Montjuïc', slope, kit.surface('pinassa', String(params.ground ?? '#474d33')));

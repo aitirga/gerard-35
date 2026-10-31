@@ -38,16 +38,18 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
   pot(-0.6, 0.4, 0.13, 0.22, 'leaf', below);
   // The orange extension cable: tied to her railing, down the front, into the balcony below.
   const drop: [number, number, number][] = [[1.3, floor + 0.95, 0.82], [1.36, floor + 0.2, 0.9], [1.34, floor - 0.8, 0.86], [1.28, below + 1.4, 0.66], [1.18, below + 0.98, 0.52]];
-  for (let i = 0; i + 1 < drop.length; i++) bar(cable, drop[i], drop[i + 1], 0.03);
+  for (let i = 0; i + 1 < drop.length; i++) bar(cable, drop[i], drop[i + 1], 0.05);
   // The screen's bluish light behind the glass of her French window.
   screen.quad([-0.45, floor + 0.15, 0.03], [0.45, floor + 0.15, 0.03], [0.45, floor + 2.25, 0.03], [-0.45, floor + 2.25, 0.03], [0, 0, 1], [0, 0], [1, 0], [1, 1], [0, 1]);
-  // On the roof: a small aerial on its mast and a solar panel on a frame, tilted to the sun.
+  // On the roof: a small aerial on its mast, two solar panels on a frame tilted to the south (local −x
+  // on this wall) and a few pots along the front edge.
   const rz = -Math.min(deep * 0.45, 3);
   prism(iron, 0.9, roof, rz, 0.035, 3.2, 6);
   for (const [y, w] of [[2.5, 1.1], [2.8, 0.9], [3.05, 0.7]] as const) box(iron, 0.9, roof + y, rz, w, 0.03, 0.03);
-  box(iron, -0.8, roof, rz - 0.6, 1.5, 0.35, 0.05); box(iron, -0.8, roof, rz + 0.25, 1.5, 0.75, 0.05);
+  for (const z of [rz - 0.9, rz + 0.9]) { box(iron, -2.1, roof, z, 0.05, 0.4, 0.05); box(iron, -0.7, roof, z, 0.05, 1.05, 0.05); }
   const pv = kit.mesh();
-  pv.quad([-1.6, roof + 0.35, rz - 0.62], [0, roof + 0.35, rz - 0.62], [0, roof + 0.95, rz + 0.3], [-1.6, roof + 0.95, rz + 0.3], [0, 1, 0.5], [0, 0], [1, 0], [1, 1], [0, 1]);
+  for (const z of [rz - 1, rz + 0.05]) pv.quad([-2.2, roof + 0.4, z], [-2.2, roof + 0.4, z + 0.95], [-0.6, roof + 1.1, z + 0.95], [-0.6, roof + 1.1, z], [-0.5, 1, 0], [0, 0], [1, 0], [1, 1], [0, 1]);
+  for (const [x, r] of [[-1.4, 0.2], [-0.5, 0.16], [0.4, 0.22], [1.3, 0.17]] as const) pot(x, -0.5, r, 0.3, 'leaf', roof);
   kit.add('Losas de balcón', slabs, kit.surface('estuc', '#d9cfbf'));
   kit.add('Barandillas de Emilie', iron, kit.mat('Hierro de balcón', '#23272a', 0.45));
   kit.add('Macetas', pots, kit.mat('Terracota', '#b4643f', 0.1));
