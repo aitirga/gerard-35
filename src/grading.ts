@@ -99,6 +99,11 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },
     enhance: { shadows: -.1, midtones: -.04 },
   },
+  /** The Sagrada Família: a bright Barcelona afternoon on sandstone, warm light, cool blue shade and a breath of haze for the height. */
+  'sagrada-familia': {
+    grade: { temperature: .03, shadows: [-.006, .002, .016], highlights: [.016, .01, -.006], contrast: 1.04, saturation: .98 },
+    enhance: { dehaze: -.03, highlights: -.08, vibrance: .04 },
+  },
   /** La Reina Bubbaloo's light: magenta in the shade, pink in the light, a little darker and stranger. */
   bubbaloo: {
     grade: { lift: [.012, 0, .01], gamma: [.98, .95, .97], gain: [1, .96, .98], shadows: [.024, -.008, .02], highlights: [.02, -.002, .01], contrast: 1.05, saturation: 1 },

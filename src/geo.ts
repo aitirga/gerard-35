@@ -95,9 +95,10 @@ export interface GeoScene {
   crossings?: GeoCrossing[];
   /**
    * The street's surfaces: `ground` and `footway` `panot` (Barcelona's grey sidewalk tiles), `grass`
-   * `bed` (planted strips of shrubs), `asphalt` colour, and `markings` (lanes, zebras, BUS, bikes).
+   * `bed` (planted strips of shrubs), `asphalt` colour, `markings` (lanes, zebras, BUS, bikes) and `water`
+   * (the colour of its rivers and ponds).
    */
-  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean };
+  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; water?: string };
   /** Named points for pieces the game adds itself, e.g. where the palace stands (`y` in cells). */
   anchors?: Record<string, { x: number; z: number; y?: number }>;
   /** Real materials of the street's surfaces (ground, footway, road, bike, square, grass, bed, forest, sand, rail, bridge). */

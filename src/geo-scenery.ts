@@ -309,13 +309,15 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     const clear = scene.props.filter(p => p.kind !== 'manhole' && p.kind !== 'car' && p.kind !== 'bus')
       .map(p => ({ x: p.x, z: p.z, r: p.kind === 'tree' ? 0.55 : 0.85 }));
     const crowded = (px: number, pz: number, r: number) => clear.some(c => Math.abs(px - c.x) < c.r + r * 0.35 && Math.abs(pz - c.z) < c.r + r * 0.35);
+    // A park's pond lies inside its lawn: no shrubs on the water.
+    const wet = (px: number, pz: number) => scene.areas.water.some(w => inside(px, pz, w));
     let k = 0;
     for (const poly of scene.areas.grass) {
       const xs = poly.map(p => p[0]), zs = poly.map(p => p[1]);
       for (let gz = Math.min(...zs) + 0.4; gz < Math.max(...zs); gz += 0.85) for (let gx = Math.min(...xs) + 0.3; gx < Math.max(...xs); gx += 0.95) {
         const px = gx + (jitter(k * 3 + 1) - 0.5) * 0.5, pz = gz + (jitter(k * 3 + 2) - 0.5) * 0.4, r = 0.45 + jitter(k * 3 + 3) * 0.4;
         k++;
-        if (!inside(px, pz, poly) || crowded(px, pz, r)) continue;
+        if (!inside(px, pz, poly) || crowded(px, pz, r) || wet(px, pz)) continue;
         const e = new pc.Entity('Mata');
         e.addComponent('render', { type: 'sphere', material: shrubs[k % shrubs.length], castShadows: false, receiveShadows: true, batchGroupId: kit.batch });
         e.setPosition(x(px), 0.05, z(pz)); e.setLocalScale(r, r * (0.55 + jitter(k) * 0.4), r); root.addChild(e);
@@ -331,11 +333,14 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     }
   }), 0.5, 0.1);
   flat('Plazas', scene.areas.square, LAYER.square, plaza);
-  // Rivers reuse the pool's caustics, tinted deep green and drifting downstream.
-  const river = mat('Río', '#7f9f8c', 0.85);
-  river.diffuseMap = kit.water.diffuseMap; river.emissive.fromString('#6f9a86'); river.emissiveMap = kit.water.diffuseMap; river.emissiveIntensity = 0.08;
+  // Rivers reuse the pool's caustics, tinted deep green and drifting downstream. A place's own still
+  // water (`look.water`, a park pond) is murkier: its colour with faint ripples and less of the sky.
+  const river = mat('Río', look.water ?? '#7f9f8c', 0.85);
+  if (!look.water) river.diffuseMap = kit.water.diffuseMap;
+  river.emissive.fromString(look.water ?? '#6f9a86'); river.emissiveMap = kit.water.diffuseMap; river.emissiveIntensity = 0.08;
   river.diffuseMapTiling.set(0.08 / cellM, 0.08 / cellM); river.emissiveMapTiling.set(0.08 / cellM, 0.08 / cellM);
   shine(river, 'water');
+  if (look.water) { river.reflectivity *= 0.4; river.update(); }
   flat('Río', scene.areas.water, LAYER.water, river);
   let time = 0;
 

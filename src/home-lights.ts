@@ -105,6 +105,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   'meridiana-calle': { salon: [hex('#f2b38f', .75, .45), hex('#8ec5e8', .6, .5), hex('#2f9c86', .5, .6), white(3200, .7)], rest: white(3200, .3) },
   // The Rec Comtal school: brick and a pale sky (the castle's pink comes with the tone).
   'rec-comtal': { salon: [hex('#d98b5f', .7, .55), hex('#9cc6e6', .55, .45), white(3400, .65), hex('#e7a77a', .6, .45)], rest: white(3300, .3) },
+  // The Sagrada Família: ochre sandstone in the sun, a blue sky, the pines over the green pond.
+  'sagrada-familia': { salon: [white(3000, .8), hex('#c99a62', .6, .55), hex('#86b9e6', .55, .5), hex('#6f8a4a', .5, .5)], rest: white(3100, .3) },
 };
 /** La Reina Bubbaloo's light (scenery.ts BUBBALOO): a magenta sun and a violet gloom. */
 const BUBBALOO = [hex('#db6ba8', .5, .55), hex('#9a5bc4', .4, .5), hex('#ff7fb3', .45, .5), hex('#c04a8a', .45, .6)];

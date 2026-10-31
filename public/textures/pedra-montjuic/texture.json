@@ -1,0 +1,29 @@
+{
+  "id": "pedra-montjuic",
+  "name": "Carreu vell de Montjuïc",
+  "kind": "material",
+  "size_m": [
+    1.53,
+    1.53
+  ],
+  "source": {
+    "site": "Poly Haven",
+    "asset": "old_sandstone_02",
+    "name": "Old Sandstone 02",
+    "url": "https://polyhaven.com/a/old_sandstone_02",
+    "author": "Dimitrios Savva",
+    "licence": "CC0 1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "command": "tools/textures.py fetch polyhaven old_sandstone_02 --id pedra-montjuic",
+  "files": {
+    "albedo": "albedo.webp",
+    "normal": "normal.webp"
+  },
+  "px": [
+    512,
+    512
+  ],
+  "mean": "#89683e",
+  "made": "2026-10-30"
+}

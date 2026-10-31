@@ -72,9 +72,24 @@
   "look": {
     "ground": "panot",
     "footway": "panot",
-    "grass": "bed",
     "asphalt": "#3e4043",
-    "markings": true
+    "markings": true,
+    "water": "#4a5532",
+    "materials": {
+      "ground": "panot-flor",
+      "square": {
+        "texture": "granit",
+        "tint": "#a9a59c"
+      },
+      "footway": {
+        "texture": "saulo",
+        "tint": "#c4b48f"
+      },
+      "grass": {
+        "texture": "gespa",
+        "tint": "#6c8650"
+      }
+    }
   },
   "styles": {
     "default": {
@@ -96,15 +111,18 @@
     },
     "temple": {
       "walls": [
-        "#b9a58a"
+        "#c9bca6"
       ],
-      "base": "#8a7560",
+      "base": "#9a8a74",
       "trim": "#e8e0d0",
       "roof": "#cfc4b2",
       "roof_kind": "flat",
       "facade": "ashlar",
-      "ground": "ashlar-arcade",
-      "levels": 15
+      "ground": "ashlar",
+      "levels": 2,
+      "materials": {
+        "roof": "carreu"
+      }
     },
     "escoles": {
       "walls": [
@@ -153,19 +171,43 @@
     },
     "way/1207779378": {
       "style": "temple",
-      "levels": 6
+      "levels": 4
     },
     "way/1207779379": {
       "style": "pavilion"
     },
     "way/1207779429": {
       "style": "temple",
-      "levels": 6
+      "levels": 4
     }
   },
   "osm_props": {
     "tree": {
-      "species": "plane"
+      "species": "plane",
+      "within": {
+        "relation/7708297": {
+          "species": [
+            "pine",
+            "pine",
+            "pine",
+            "palm",
+            "plane"
+          ],
+          "base": "ground",
+          "keep": 0.6
+        },
+        "way/23431084": {
+          "species": [
+            "plane",
+            "plane",
+            "pine",
+            "palm"
+          ],
+          "base": "ground",
+          "keep": 0.55
+        }
+      },
+      "keep": 0.75
     },
     "lamp": {},
     "bench": {},
@@ -176,20 +218,42 @@
     {
       "kind": "metro",
       "x_m": 75.5,
-      "z_m": 57,
+      "z_m": 57.5,
       "name": "Sagrada Família",
       "line": "L5"
+    },
+    {
+      "kind": "barrier",
+      "style": "fence",
+      "x_m": -46,
+      "z_m": 44.5,
+      "to": {
+        "x_m": -7,
+        "z_m": 44.5
+      },
+      "every_m": 1.5
+    },
+    {
+      "kind": "barrier",
+      "style": "fence",
+      "x_m": -46,
+      "z_m": 49.5,
+      "to": {
+        "x_m": -7,
+        "z_m": 49.5
+      },
+      "every_m": 1.5
     }
   ],
   "places": [
     {
       "id": "station-sagrada-familia",
       "label": "Bajar al metro",
-      "x_m": 78,
-      "z_m": 57.5,
+      "x_m": 77.5,
+      "z_m": 59,
       "step": {
-        "x_m": 77.25,
-        "z_m": 56.75,
+        "x_m": 76.75,
+        "z_m": 57.5,
         "w": 3,
         "d": 1
       }
@@ -198,7 +262,11 @@
       "id": "sagrada-familia-portal",
       "label": "Entrar en la basílica",
       "x_m": 0,
-      "z_m": 44
+      "z_m": 44,
+      "lines": [
+        "La puerta del Nacimiento. Un vigilante mira las entradas en la barrera; sin entrada no pasa nadie.",
+        "Las de hoy se acabaron hace semanas. Habrá que volver con un motivo."
+      ]
     },
     {
       "id": "sagrada-familia-estany",
@@ -227,14 +295,14 @@
       "z_m": 48,
       "lines": [
         "La torre de Jesucristo, con la cruz blanca que le pusieron en febrero. Ciento setenta y dos metros y medio.",
-        "Un metro menos que Montjuïc. Gaudí no quería pasarse."
+        "Medio metro menos que Montjuïc. Dicen que Gaudí no quería que su obra pasara a la de Dios."
       ]
     },
     {
       "id": "sagrada-familia-cola",
       "label": "Mirar la cola",
-      "x_m": -40,
-      "z_m": 64,
+      "x_m": -26,
+      "z_m": 53,
       "lines": [
         "Una cola que da la vuelta a la esquina. Audioguías, palos de selfi, un grupo detrás de un paraguas amarillo.",
         "Nadie mira el móvil. Están todos mirando hacia arriba."
@@ -272,8 +340,8 @@
     {
       "id": "sagrada-familia-farola",
       "label": "Mirar la farola",
-      "x_m": 92,
-      "z_m": 88,
+      "x_m": 99,
+      "z_m": 98,
       "lines": [
         "Una farola de piedra y hierro con globos blancos. Todo el mundo cree que es de Gaudí; es de Pere Falqués.",
         "Desde aquí la avenida apunta recta a la basílica."
@@ -327,5 +395,220 @@
       "x_m": 50,
       "z_m": -6
     }
-  }
+  },
+  "landmarks": [
+    {
+      "kind": "sagrada-familia",
+      "id": "basilica",
+      "x_m": 2,
+      "z_m": -3,
+      "solid": false,
+      "textures": [
+        "pedra-naixement",
+        "pedra-montjuic",
+        "carreu"
+      ]
+    },
+    {
+      "kind": "pond",
+      "id": "estany",
+      "x_m": 0,
+      "z_m": 119,
+      "solid": false,
+      "params": {
+        "outline": [
+          [
+            -17.5,
+            -17.9
+          ],
+          [
+            -24.5,
+            -8.3
+          ],
+          [
+            -24.1,
+            -1.0
+          ],
+          [
+            -21.4,
+            17.1
+          ],
+          [
+            -19.7,
+            21.6
+          ],
+          [
+            -5.6,
+            28.9
+          ],
+          [
+            4.2,
+            30.0
+          ],
+          [
+            13.2,
+            26.8
+          ],
+          [
+            24.1,
+            16.6
+          ],
+          [
+            24.3,
+            9.0
+          ],
+          [
+            22.3,
+            -3.8
+          ],
+          [
+            19.0,
+            -10.9
+          ],
+          [
+            15.0,
+            -13.3
+          ],
+          [
+            6.3,
+            -15.6
+          ],
+          [
+            -0.8,
+            -16.8
+          ],
+          [
+            -3.5,
+            -19.0
+          ],
+          [
+            -8.5,
+            -23.7
+          ],
+          [
+            -12.5,
+            -23.6
+          ]
+        ],
+        "rafts": [
+          [
+            -6,
+            4
+          ],
+          [
+            9,
+            12
+          ]
+        ],
+        "reflection": {
+          "towers": [
+            [
+              -12.5,
+              26
+            ],
+            [
+              -5,
+              31
+            ],
+            [
+              9,
+              31
+            ],
+            [
+              16.5,
+              26
+            ]
+          ],
+          "spire": 44,
+          "width": 40
+        }
+      }
+    },
+    {
+      "kind": "falques-lamp",
+      "id": "fanal-1",
+      "x_m": 96,
+      "z_m": 100,
+      "size_m": [
+        1.5,
+        1.5
+      ],
+      "textures": [
+        "formigo"
+      ]
+    },
+    {
+      "kind": "falques-lamp",
+      "id": "fanal-2",
+      "x_m": 118,
+      "z_m": 122.6,
+      "size_m": [
+        1.5,
+        1.5
+      ],
+      "textures": [
+        "formigo"
+      ]
+    },
+    {
+      "kind": "crowd",
+      "id": "cua",
+      "x_m": -26.5,
+      "z_m": 47,
+      "size_m": [
+        39,
+        3
+      ],
+      "params": {
+        "style": "queue",
+        "guard": true,
+        "sign": "A"
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "grup-estany",
+      "x_m": 14,
+      "z_m": 91,
+      "size_m": [
+        5,
+        4.5
+      ],
+      "params": {
+        "style": "group",
+        "umbrella": "#e0b030",
+        "count": 10
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "grup-avinguda",
+      "x_m": 106,
+      "z_m": 114,
+      "size_m": [
+        4.5,
+        4.5
+      ],
+      "params": {
+        "style": "group",
+        "umbrella": "#c23b3b",
+        "count": 8
+      }
+    },
+    {
+      "kind": "crowd",
+      "id": "grup-marina",
+      "x_m": 40,
+      "z_m": 56,
+      "size_m": [
+        4.5,
+        4
+      ],
+      "params": {
+        "style": "group",
+        "umbrella": "#2f6fb5",
+        "count": 7
+      }
+    }
+  ]
 }

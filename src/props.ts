@@ -55,10 +55,14 @@ export function createPropKit() {
     olive: [mat('Olivo plateado', '#8d9b6f'), mat('Olivo claro', '#a6ae86'), mat('Olivo sombra', '#6f8060')],
     cypress: [mat('Ciprés', '#4c6947'), mat('Ciprés claro', '#5d7a52')],
     yucca: [mat('Yuca', '#3f7a45'), mat('Yuca clara', '#5e9a55'), mat('Yuca sombra', '#2f5c38')],
+    pine: [mat('Pino piñonero', '#4f5a2c'), mat('Pino claro', '#66733a'), mat('Pino sombra', '#3b4422')],
+    palm: [mat('Palmera', '#5b7a3a'), mat('Palmera clara', '#7a9548'), mat('Palmera sombra', '#43602e')],
   };
   const barkMat = mat('Troncos', '#817058');
   const wood = mat('Tutor de madera', '#b48a55', 0.1);
   const oliveBark = mat('Tronco de olivo', '#8a8173');
+  const pineBark = mat('Tronco de pino', '#7a5a44');
+  const palmBark = mat('Tronco de palmera', '#9a8466');
   const stone = mat('Piedra clara', '#e3dec8');
   const soil = mat('Tierra', '#6f5e49');
   const clay = mat('Maceta de barro', '#b8704f');
@@ -137,6 +141,28 @@ export function createPropKit() {
         crowns.push(blade);
       }
       [low, high, radius, sway] = [0.9 * s, 1.5 * s, 0.55 * s, 0.6];
+    } else if (species === 'pine') {
+      // A stone pine: a tall bare trunk with a lean and one fork, under a flat umbrella of dark needles.
+      const lean = (n(5) - 0.5) * 14;
+      part(pivot, 'Tronco de pino', 'cylinder', pineBark, [0, 1.3 * s, 0], [0.18, 2.6 * s, 0.18], [lean, 0, 0]);
+      part(pivot, 'Rama de pino', 'cylinder', pineBark, [0.32 * s, 2.45 * s, 0], [0.1, 0.9 * s, 0.1], [0, 0, -40]);
+      crowns.push(part(pivot, 'Copa de pino', 'sphere', palette[0], [0, 2.95 * s, 0], [2.6 * s, 0.75 * s, 2.4 * s]));
+      crowns.push(part(pivot, 'Copa de pino', 'sphere', palette[2], [0.45 * s, 2.75 * s, 0.2 * s], [1.6 * s, 0.55 * s, 1.5 * s]));
+      crowns.push(part(pivot, 'Copa de pino soleada', 'sphere', palette[1], [-0.25 * s, 3.2 * s, -0.15 * s], [1.7 * s, 0.45 * s, 1.5 * s]));
+      [low, high, radius, sway] = [2.7 * s, 3.3 * s, 1.3 * s, 0.6];
+    } else if (species === 'palm') {
+      // A date palm: a tall scaly trunk, a knot of old leaf bases and long fronds arching out and down.
+      part(pivot, 'Tronco de palmera', 'cylinder', palmBark, [0, 1.5 * s, 0], [0.32, 3 * s, 0.32]);
+      crowns.push(part(pivot, 'Cogollo', 'sphere', palette[2], [0, 3.05 * s, 0], [0.62 * s, 0.5 * s, 0.62 * s]));
+      for (let i = 0; i < 9; i++) {
+        const turn = new pc.Entity('Palma'); pivot.addChild(turn);
+        turn.setLocalPosition(0, 3.1 * s, 0); turn.setLocalEulerAngles(0, i * 40 + n(i + 2) * 20, 0);
+        const frond = part(turn, 'Hoja de palmera', 'box', palette[i % 3], [0, 0, 0], [0.34 * s, 0.04, 1.5 * s], [-(i % 2 ? 18 : 32) + n(i + 6) * 10, 0, 0]);
+        // Boxes grow from their centre: push each frond out along its own length.
+        frond.translateLocal(0, 0, 0.72 * s);
+        crowns.push(frond);
+      }
+      [low, high, radius, sway] = [2.8 * s, 3.3 * s, 1.3 * s, 0.7];
     } else if (species === 'olive') {
       // A short, split trunk under a round, silvery crown.
       part(pivot, 'Tronco', 'cylinder', oliveBark, [0, 0.32 * s, 0], [0.22, 0.66 * s, 0.22], [0, 0, 8]);
