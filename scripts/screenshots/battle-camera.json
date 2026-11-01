@@ -1,18 +1,22 @@
 {
-  "title": "Fight camera · leaning it with the right stick",
-  "description": "In a fight the right stick leans the camera a little round the fight (up to 25° either side, 10° up or down), and it eases back when let go (src/game.ts `rightStick`). The stick is a fake standard pad set from the page.",
+  "title": "Fight camera · moving it with the right stick",
+  "description": "In a fight either player's right stick moves the camera round the fight (up to 45° either side, 15° up or down) and it stays where it was left; pressing the stick in (R3) brings it back (src/game.ts `rightStick`). The pads are fake standard pads set from the page.",
   "steps": [
     { "open": "/?story=noista&battle=3&allies=2&noista=1" },
     { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
-    { "eval": "window.stick = (x, y) => { const pad = { connected: true, mapping: 'standard', id: 'fake', axes: [0, 0, x, y], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }; navigator.getGamepads = () => [pad]; }; stick(0, 0)" },
-    { "shot": "rest", "delay": 1500, "caption": "The fight's own angle, the stick at rest" },
+    { "eval": "window.stick = (x, y, r3 = false, second = false) => { const make = (ax, ay, click) => ({ connected: true, mapping: 'standard', id: 'fake', axes: [0, 0, ax, ay], buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: i === 10 && click, value: 0 })) }); navigator.getGamepads = () => second ? [make(0, 0, false), make(x, y, r3)] : [make(x, y, r3)]; }; stick(0, 0)" },
+    { "shot": "rest", "delay": 1500, "caption": "The fight's own angle" },
     { "eval": "stick(1, 0)" },
-    { "shot": "right", "delay": 1500, "caption": "Stick right: the camera swings round to the right" },
-    { "eval": "stick(-1, 0)" },
-    { "shot": "left", "delay": 1500, "caption": "Stick left: round to the left" },
-    { "eval": "stick(0, -1)" },
-    { "shot": "up", "delay": 1500, "caption": "Stick up: the camera drops and looks further up the stands" },
+    { "wait": 1400 },
     { "eval": "stick(0, 0)" },
-    { "shot": "back", "delay": 2000, "caption": "Let go: it eases back to the fight's own angle" }
+    { "shot": "right-kept", "delay": 1500, "caption": "Stick right, then let go: the camera has swung round and stays there" },
+    { "eval": "stick(0, -1, false, true)" },
+    { "wait": 900 },
+    { "eval": "stick(0, 0)" },
+    { "shot": "second-pad", "delay": 1500, "caption": "Player 2's stick moves the same camera: up lowers it, and it stays" },
+    { "eval": "stick(0, 0, true)" },
+    { "wait": 300 },
+    { "eval": "stick(0, 0)" },
+    { "shot": "r3", "delay": 2000, "caption": "R3 (pressing the stick in): back to the fight's own angle" }
   ]
 }

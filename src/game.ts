@@ -88,17 +88,21 @@ const SCHOOL_PALACE_SCALE = 1.3;
 const GUARD_SCALE = 1.9;
 const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'] };
 
-/** The strongest right stick among standard pads (x right, y down), past a small dead zone. */
+/**
+ * The right sticks of every standard pad, either player's (x right, y down), past a small dead
+ * zone and added up, and whether anyone is pressing it in (R3).
+ */
 function rightStick() {
   const out = new pc.Vec2();
-  let pads: (Gamepad | null)[] = [];
+  let pads: (Gamepad | null)[] = [], click = false;
   try { pads = [...(navigator.getGamepads?.() ?? [])]; } catch { /* Restricted browser contexts may deny the API. */ }
   for (const pad of pads) {
     if (!pad?.connected || pad.mapping !== 'standard') continue;
     const x = pad.axes[2] ?? 0, y = pad.axes[3] ?? 0, size = Math.hypot(x, y);
-    if (size > .2 && size > out.length()) out.set(x, y).mulScalar(Math.min(1, (size - .2) / .75) / size);
+    if (size > .2) out.add(new pc.Vec2(x, y).mulScalar(Math.min(1, (size - .2) / .75) / size));
+    click ||= !!pad.buttons[10]?.pressed;
   }
-  return out;
+  return { stick: out, click };
 }
 
 /**
@@ -1287,8 +1291,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /** The camera's ortho height before any punch-in, and the hit kick it wears this frame. */
   let viewHeight = camera.camera!.orthoHeight;
   const cameraKick = new pc.Vec3();
-  /** In a fight the right stick leans the camera a little round the fight (−1…1 each way); let go, it eases back. */
-  const battleLook = new pc.Vec2();
+  /**
+   * In a fight either player's right stick moves the camera round the fight (−1…1 each way, `battleAim`)
+   * and it stays there; pressing the stick in (R3) brings it back to the fight's own angle.
+   * `battleLook` eases towards the aim.
+   */
+  const battleLook = new pc.Vec2(), battleAim = new pc.Vec2();
   /** A train under the street (the Meridiana's median): whether it runs, where it is along x in cells, its way and the wait for the next. */
   const train = { running: false, x: 0, way: 1, wait: 6, scene: '', grates: [] as { x: number; z: number }[] };
   app.on('update', (dt: number) => {
@@ -1515,14 +1523,16 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     const offset = battle ? new pc.Vec3(5, 9, 15) : vec(cameraOffset(orbit.pose));
     if (battle) {
-      const stick = rightStick();
-      battleLook.lerp(battleLook, stick, 1 - Math.exp(-delta * (stick.length() ? 5 : 3)));
-      // Up to 25° round the fight and 10° up or down, so the foes and the party always stay in view.
-      const yaw = -battleLook.x * 25 * pc.math.DEG_TO_RAD, length = offset.length();
+      const { stick, click } = rightStick();
+      if (click) battleAim.set(0, 0);
+      else if (!paused) battleAim.add(stick.mulScalar(delta * .9)).set(pc.math.clamp(battleAim.x, -1, 1), pc.math.clamp(battleAim.y, -1, 1));
+      battleLook.lerp(battleLook, battleAim, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
+      // Up to 45° round the fight and 15° up or down, so the foes and the party always stay in view.
+      const yaw = -battleLook.x * 45 * pc.math.DEG_TO_RAD, length = offset.length();
       offset.set(offset.x * Math.cos(yaw) + offset.z * Math.sin(yaw), offset.y, offset.z * Math.cos(yaw) - offset.x * Math.sin(yaw));
-      const pitch = Math.asin(offset.y / length) + battleLook.y * 10 * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
+      const pitch = Math.asin(offset.y / length) + battleLook.y * 15 * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
       offset.set(offset.x / flat * Math.cos(pitch) * length, Math.sin(pitch) * length, offset.z / flat * Math.cos(pitch) * length);
-    } else battleLook.set(0, 0);
+    } else { battleLook.set(0, 0); battleAim.set(0, 0); }
     // The view is orthographic, so how far back the camera stands only decides what its clip planes
     // keep: over a big place's overview it backs away along its view and sees further, so neither the
     // near corner nor the far one (and what stands beyond it) is cut off.
