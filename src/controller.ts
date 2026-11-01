@@ -18,8 +18,13 @@ export interface PadSnapshot {
 export interface ControllerState { direction: Direction | null; stick: Stick | null; confirm: boolean; cancel: boolean; menu: boolean; character: boolean; overview: boolean; prev: boolean; next: boolean }
 export const idleController = (): ControllerState => ({ direction: null, stick: null, confirm: false, cancel: false, menu: false, character: false, overview: false, prev: false, next: false });
 export function isNintendo(id: string) { return /nintendo|joy-con|switch|057e|pro controller/i.test(id); }
-/** macOS' GameController layer already reports Nintendo pads by label (A = button 0), so only other platforms need the swap. */
-export const osLabelsNintendoFaceButtons = typeof document !== 'undefined' && /Mac/.test(navigator.userAgent);
+/**
+ * Only Safari on macOS reads pads through Apple's GameController layer, which already reports Nintendo
+ * pads by label (A = button 0). Chrome, Edge and Firefox (on macOS too) report them by position, like
+ * any standard pad, with A on the right (button 1), so they need the swap.
+ */
+export const osLabelsNintendoFaceButtons = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent)
+  && /Safari/.test(navigator.userAgent) && !/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS/.test(navigator.userAgent);
 export function defaultProfile(pad: PadSnapshot, osLabels = osLabelsNintendoFaceButtons): ControllerProfile | undefined {
   if (pad.mapping !== 'standard') return undefined;
   const swap = isNintendo(pad.id) && !osLabels;
