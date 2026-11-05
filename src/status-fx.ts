@@ -82,14 +82,11 @@ export const STATUS_KINDS: Record<string, GpuKind> = {
     drag: 2, gravity: -.15, curl: .7, response: .8, size: [.05, .13], sizeJitter: .6, shape: 'glow',
     colours: ['#c6ff7a', '#7cc832', '#3a6a14'], intensity: [1.4, 1, .6], middle: .4, fadeIn: .3, fadeOut: .5, additive: .45, opacity: .3,
   },
-  // Blood: drops that spurt from them with each beat, fall and stay on the floor a while.
-  blood: {
-    drag: .3, gravity: 9, curl: .02, response: .1, collide: true, bounce: 0, friction: .7, size: [.011, .009], sizeJitter: .5, stretch: .02, shape: 'dot',
-    colours: ['#ff4a5a', '#c01c2c', '#7a0e18'], intensity: [1.3, 1, .8], middle: .4, fadeOut: .1, additive: .1, onLand: 'pool',
-  },
-  pool: {
-    drag: 8, gravity: 30, collide: true, bounce: 0, friction: 1, settle: true, size: [.016, .028], sizeJitter: .5, shape: 'dot',
-    colours: ['#b0182a', '#8a1020', '#5a0a12'], intensity: [1, .9, .8], fadeOut: .35, additive: .05, life: [2.5, 4],
+  // A wound: short scratches of light that open on their body with each beat and fade where they
+  // are. Nothing drips or stays on the floor: fights show no blood.
+  gash: {
+    drag: 4, gravity: 0, curl: 0, response: 0, size: [.032, .014], sizeJitter: .5, stretch: .03, aspect: .14, shape: 'line',
+    colours: ['#ffffff', '#ffe2d8', '#ffb4a4'], intensity: [3.2, 2.2, 1.2], middle: .3, fadeIn: 0, fadeOut: .6, additive: 1,
   },
   // Smoke that blinds: dark haze that clings round their head, turning.
   smog: {
@@ -102,7 +99,7 @@ export const STATUS_KINDS: Record<string, GpuKind> = {
 export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
   quemado: {
     name: 'Quemado', family: 'físico', seconds: 20, fire: true,
-    shows: 'Arde: la llama trepa por su cuerpo y crece con el nivel (I llamita, II hoguera, III incendio); brasas y chisporroteo saltan de sus piezas.',
+    shows: 'Arde él mismo: prende en unos puntos de su cuerpo y se extiende por sus piezas dejando carbón con vetas al rojo, y de ellas salen lenguas de fuego en 3D (I unas manchas y llamitas, II casi todo, III envuelto entero); brasas, chispas, ceniza y humo saltan de su superficie.',
     streams: [],
   },
   mojado: {
@@ -136,10 +133,10 @@ export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
   },
   sangrado: {
     name: 'Sangrado', family: 'físico', seconds: 20,
-    shows: 'Con cada latido brotan gotas de sangre de su cuerpo que caen y quedan en el suelo; entre latido y latido, un goteo.',
-    streams: [{ kind: 'blood', rate: [2, 4, 7], from: 'body', above: .25, outward: .05, life: [1, 1.6] }],
-    pulse: { every: 1.1, streams: [{ kind: 'blood', count: [6, 12, 20], rate: [0, 0, 0], from: 'body', above: .3, outward: 1.1, up: .7, speed: .5, life: [.8, 1.4] }] },
-    tint: [.05, 0, 0],
+    shows: 'Con cada latido se le abren arañazos de luz en el cuerpo que destellan y se apagan donde están; entre latido y latido, alguno suelto. Nada gotea ni queda en el suelo.',
+    streams: [{ kind: 'gash', rate: [1, 2, 4], from: 'body', above: .25, outward: .03, speed: .02, life: [.3, .5] }],
+    pulse: { every: 1.1, streams: [{ kind: 'gash', count: [4, 8, 13], rate: [0, 0, 0], from: 'body', above: .3, outward: .04, speed: .03, life: [.35, .6] }] },
+    tint: [.03, .01, .01],
   },
   cegado: {
     name: 'Cegado', family: 'físico', seconds: 10,
@@ -259,6 +256,11 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
         list.push(a);
       }
       if (STATUS_LOOKS[look].fire) hooks.ignite(id, fireLevel(a.level));
+    },
+    /** Sets how long a status shown as `held` has left (the fight's clock keeps it, src/battle.ts `runClock`). */
+    hold(id: string, look: StatusLookId, left: number) {
+      const a = on.get(id)?.find(s => s.look === look && !s.ending);
+      if (a) a.left = Math.max(0, left);
     },
     /** Takes a status off at once. */
     remove(id: string, look: StatusLookId) {

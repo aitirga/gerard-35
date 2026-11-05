@@ -1,0 +1,61 @@
+{
+  "title": "El portal de Uri",
+  "description": "El portal al final de La calle que no acaba (docs/quests/nuria.md): visto desde la calle, un clip acercándose casilla a casilla (tiene que acelerar poco a poco, sin temblar) y otro de cerca con la cámara de siempre, donde se ven girar sus partículas. Ejecutar con --gpu --scale 2.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=portal&solo=1"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'La calle que no acaba'",
+      "timeout": 90000
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        16
+      ]
+    },
+    {
+      "shot": "street",
+      "delay": 2500,
+      "caption": "Al final de la calle, el portal a los miedos de Uri"
+    },
+    {
+      "record": "approach",
+      "seconds": 3,
+      "each": "if (window.frame % 8 === 0) window.gerard.game.standAt({ x: 22, z: Math.max(7, 16 - window.frame / 8) })",
+      "caption": "Acercándose al portal casilla a casilla: gira más deprisa poco a poco, sin temblar"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        6
+      ]
+    },
+    {
+      "shot": "close",
+      "delay": 2500,
+      "caption": "De cerca: un remolino violeta, sin ojo, con partículas girando hacia su pozo oscuro",
+      "clip": [
+        600,
+        110,
+        480,
+        380
+      ]
+    },
+    {
+      "record": "swirl",
+      "seconds": 3,
+      "warmup": 0.5,
+      "caption": "Las partículas giran hacia dentro y el remolino no para",
+      "clip": [
+        600,
+        110,
+        480,
+        380
+      ]
+    }
+  ]
+}

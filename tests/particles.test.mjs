@@ -94,7 +94,7 @@ test('every effect, element and aura plays in every scene without throwing', () 
     effects.setTone(1);
     effects.impact(target, from, 1.4, { gum: true });
     effects.impact(target, from, 1, { guarded: true });
-    effects.heal(target); effects.insight(target); effects.stamp(target); effects.anima(target, '#e2483d', true); effects.poof(target);
+    effects.heal(target); effects.insight(target); effects.binaryFire(target, from, { burn: true }); effects.binaryFire(target, from); effects.anima(target, '#f3cf78', true); effects.poof(target);
     effects.confetti(target, ['#f3cf78', '#e2483d']);
     for (const level of ['light', 'medium', 'high']) effects.fire(new pc.Vec3(0, 0, 0), level, { seconds: .5 });
     for (const element of ['fire', 'ice', 'air', 'energy', 'water', 'earth', 'light', 'shadow', 'gum']) {
@@ -299,7 +299,7 @@ test('a fire changes level while it burns and a fight clearing its effects puts 
   assert.ok(!fire.burning);
 });
 
-test('a fire on someone burns on their own parts, sized to them, heats them and shares its light', () => {
+test('a fire on someone burns their own parts, grows out of their triangles, heats them and shares its light', () => {
   const app = headlessApp();
   const effects = createEffects(app), environment = ENVIRONMENTS.patio;
   const cx = (environment.grid[0].length - 1) / 2, cz = (environment.grid.length - 1) / 2;
@@ -317,9 +317,8 @@ test('a fire on someone burns on their own parts, sized to them, heats them and 
   const fire = effects.fire(new pc.Vec3(0, 0, 0), 'high', { model: first });
   effects.fire(new pc.Vec3(1, 0, 0), 'medium', { model: second });
   play(effects, 1.5);
-  const layers = effects.flames.list();
-  assert.equal(layers.length, 2, 'one flame layer each, behind them: their shell burns in front');
-  assert.ok(layers[0].height > .8 && layers[0].height < 1.8, `a blaze sized to a dog, not a 2 m bonfire: ${layers[0].height}`);
+  assert.equal(effects.flames.list().length, 0, 'nothing stands on the floor: they burn themselves');
+  assert.ok(effects.flames.tongues >= 2 * 36, `tongues of flame grow out of them: ${effects.flames.tongues}`);
   assert.ok(fire.glow > .3, 'it heats whoever it is on');
   const shells = app.scene.layers.getLayerById(pc.LAYERID_WORLD).meshInstances.filter(m => m.material.name === 'Llamas sobre el cuerpo');
   assert.equal(shells.length, 4, 'every part of both dogs burns');
@@ -327,6 +326,7 @@ test('a fire on someone burns on their own parts, sized to them, heats them and 
   assert.equal(lights.length, 1, 'fires side by side cast one light between them');
   effects.clear();
   assert.equal(app.scene.layers.getLayerById(pc.LAYERID_WORLD).meshInstances.filter(m => m.material.name === 'Llamas sobre el cuerpo').length, 0, 'put out, nothing is left on them');
+  assert.equal(effects.flames.tongues, 0, 'nor any tongue of flame');
 });
 
 test('without a GPU that renders to float textures, fights keep their particles on the CPU', () => {

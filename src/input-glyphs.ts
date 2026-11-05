@@ -46,7 +46,11 @@ export const GLYPHS = {
   /** Pick among targets in any direction. */
   arrows: { keyboard: '← ↑ ↓ →', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
   /** Pick a battle command straight away. */
-  pick: { keyboard: '1–5', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
+  pick: { keyboard: '1–4', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
+  /** The same in the development build, whose menu has a fifth command (Dual). */
+  pickDev: { keyboard: '1–5', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
+  /** The fight's summary: both sides, PV, statuses and stats up or down. */
+  summary: { keyboard: 'R', ...pad('Cruceta ← →', 'Cruceta ← →', 'Cruceta ← →', 'Cruceta ← →') },
 } as const satisfies Record<string, Row>;
 export type Glyph = keyof typeof GLYPHS;
 

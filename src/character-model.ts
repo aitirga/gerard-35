@@ -40,8 +40,15 @@ export const RIG = { body: 'Cuerpo', head: 'Pivote de cabeza', arm: 'Brazo', leg
 
 const RING_SEGMENTS = 16;
 
+/**
+ * What each material is for, by its name: its key in the spec (jacket, navy, cream, trousers…),
+ * the same in every character. Ánimas recolour clothes by it (classes.ts `wearClass`).
+ */
+export const MATERIAL_ROLES = new Map<string, string>();
+
 export function buildCharacter(spec: CharacterSpec, parent: pc.Entity) {
   const materials = new Map(Object.entries(spec.materials).map(([key, m]) => {
+    MATERIAL_ROLES.set(m.name, key);
     const mat = new pc.StandardMaterial(); mat.name = m.name; mat.diffuse.fromString(m.color); mat.gloss = (m.gloss ?? 20) / 100;
     mat.update(); return [key, mat] as const;
   }));

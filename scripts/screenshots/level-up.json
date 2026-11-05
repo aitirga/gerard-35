@@ -1,0 +1,84 @@
+{
+  "title": "Subida de nivel: la victoria se toma su tiempo",
+  "description": "docs/animas/README.md § Levels, docs/combat.md § Victoria. The fight tester (La Cebolla y los suyos, Gerard in Matemágico and Aitor in Papagato, both at level 1) jumps to «won-level»: enough EXP for both ánimas to reach level 2. A quick Enter, and a pad's B and A, right as the screen opens do nothing: with a level reached, Seguir stays dim and deaf. Each level stamps in with a sweep of light and its sound; then what each ánima learned takes the screen, one band per ánima (HABILIDADES NUEVAS, the two skills side by side, their names landing with a glint, rays turning behind), and only once it has all shown does Seguir light up.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22fisico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22escolta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; ui.setAnimas(['matemagico', 'papagato', 'fisico'], {}); ui.refresh?.()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "ui.jumpTo('won-level')"
+    },
+    {
+      "until": "!document.querySelector('.battle-result').hidden",
+      "timeout": 20000
+    },
+    {
+      "wait": 250
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "eval": "ui.control('cancel'); ui.control('confirm')"
+    },
+    {
+      "until": "!document.querySelector('.battle-result').hidden && document.querySelector('.battle-result[data-holding]')",
+      "timeout": 2000
+    },
+    {
+      "shot": "victoria",
+      "delay": 150,
+      "caption": "The victory screen with levels coming: Enter, and a pad's B and A, pressed at once did nothing; Seguir stays dim"
+    },
+    {
+      "until": "document.querySelector('.xp-card[data-up]')",
+      "timeout": 10000
+    },
+    {
+      "shot": "nivel",
+      "delay": 250,
+      "caption": "«¡NIVEL 2!» stamps in, the card flashes in its colour and a sweep of light crosses it"
+    },
+    {
+      "until": "document.querySelector('.skill-reveal[data-anima=\"matemagico\"]:not([hidden])')",
+      "timeout": 10000
+    },
+    {
+      "shot": "matemagico-aprende",
+      "delay": 1300,
+      "caption": "HABILIDADES NUEVAS · Matemágico · nivel 2 · Gerard: Análisis Parálisis and Ángulo exacto, each with what it does and its maná; the result steps back"
+    },
+    {
+      "until": "document.querySelector('.skill-reveal[data-anima=\"papagato\"]:not([hidden])')",
+      "timeout": 10000
+    },
+    {
+      "shot": "papagato-aprende",
+      "delay": 1300,
+      "caption": "Then Papagato's band, in its own colour and type: Zarpazos and Ronroneo de Yuki"
+    },
+    {
+      "until": "!document.querySelector('.battle-result').hidden && document.querySelector('.battle-result[data-holding]')",
+      "timeout": 2000
+    },
+    {
+      "until": "document.querySelector('.battle-result[data-released]')",
+      "timeout": 15000
+    },
+    {
+      "shot": "seguir",
+      "delay": 700,
+      "caption": "Only once it has all shown does Seguir light up, with «Aprende …» left on each card"
+    }
+  ]
+}

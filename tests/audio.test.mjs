@@ -2,11 +2,26 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_AUDIO, levelGain, validAudioSettings } from '../src/audio.ts';
 import { TRACKS, cycleCount, evenStart, fadeCurve, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, nextVersion, randomStart, untilBoundary, vampLaps, vampPosition } from '../src/music.ts';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { DREAM_HAUNT, HAUNT, castleHaunt, hauntMix, swing } from '../src/haunt.ts';
 import { castleThreat } from '../src/animas.ts';
 
 const close = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 1e-6, `${message ?? ''} ${actual} ≠ ${expected}`);
+
+test('Uri\'s tower has its dark song, a long take that comes in anywhere with its loudness map', () => {
+  const track = TRACKS['mazmorra-oscuro'];
+  assert.equal(track.src, 'music/song-mazmorra-oscuro.m4a');
+  assert.equal(track.stream, true, 'eleven minutes: streamed, not decoded whole');
+  assert.equal(track.wraps, true, 'a random point only as it starts: it never jumps while it plays');
+  assert.ok(statSync(`public/${track.src}`).size > 1e6, 'its file is served');
+  const { db } = JSON.parse(readFileSync(`public/${track.loudness}`, 'utf8'));
+  assert.ok(db.length > 600, 'a second of map for each second of song');
+  // Two arrivals land apart, not always at the same place, and at a level near what is asked.
+  const random = (() => { let s = .13; return () => (s = (s * 9301 + .4927) % 1); })(), median = medianLoudness({ db });
+  const starts = Array.from({ length: 8 }, () => evenStart(db.length, 12, { db }, median, random));
+  assert.ok(new Set(starts.map(t => Math.round(t / 30))).size >= 4, `spread over the song: ${starts.map(Math.round)}`);
+  for (const t of starts) assert.ok(Math.abs(loudnessAt({ db }, t) - median) < 3, `${t} s is about as loud`);
+});
 
 test('stored audio settings are clamped and fall back to the defaults', () => {
   assert.deepEqual(validAudioSettings(null), DEFAULT_AUDIO);

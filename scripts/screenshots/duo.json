@@ -69,12 +69,12 @@
       "wait": 800
     },
     {
-      "eval": "document.querySelector('.status-sheet[data-player=\"2\"] [data-wear=\"aitor\"][data-class-id=\"noista\"]').click()"
+      "eval": "document.querySelector('.status-sheet[data-player=\"2\"] [data-wear=\"aitor\"][data-class-id=\"matemagico\"]').click()"
     },
     {
-      "shot": "aitor-noista",
+      "shot": "aitor-matemagico",
       "delay": 800,
-      "caption": "Ánimas in Aitor's half: he puts Noísta on (Magia +2, Espíritu +2, Defensa −1)"
+      "caption": "Ánimas in Aitor's half: he puts Matemágico on (Magia +1, Espíritu +1)"
     },
     {
       "eval": "document.querySelector('.status-sheet[data-player=\"2\"] [data-wear=\"aitor\"][data-class-id=\"\"]').click()"
@@ -136,7 +136,7 @@
     {
       "shot": "aitor-anima",
       "delay": 200,
-      "caption": "Player 2's L puts Noísta on Aitor: two players, two ánimas, each half in its own colours, the L / R keys in his pad's buttons"
+      "caption": "Player 2's L puts Matemágico on Aitor: two players, two ánimas, each half in its own colours, the L / R keys in his pad's buttons"
     },
     {
       "eval": "window.fakePads[1].buttons[13].pressed = true"

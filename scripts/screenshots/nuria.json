@@ -1,6 +1,6 @@
 {
-  "title": "Nuria's mission · Cardedeu, Uri's maze and El Vértigo",
-  "description": "docs/quests/nuria.md played through: out of the R4 at Cardedeu Haru waits at the station; Nuria at her door lends Haru and Yuki (Papagato, on trial) and the cats walk with the party; round the corner Uri's maze of hedges and garden walls, Uri ahead with Nil in his arms and violet eyes; El Cebollón jumps out of a bin, El Plato Misterioso and Game Over wait further in, El Vértigo on the roof; won, the three lights leave Nuria, Uri and Nil and go into Gerard and Aitor.",
+  "title": "Nuria's mission · Cardedeu, Uri's maze and Vertitrón",
+  "description": "docs/quests/nuria.md played through: out of the R4 at Cardedeu Haru waits at the station; Nuria at her door lends Haru and Yuki (Papagato, on trial) and the cats walk with the party; round the corner Uri's maze of hedges and garden walls, Uri ahead with Nil in his arms and violet eyes; El Cebollón jumps out of a bin, El Plato Misterioso and La Cebolla y los suyos wait further in, Vertitrón on the roof; won, two lights leave Nuria and Uri and go one into Gerard and one into Aitor (the counter and the banner up close: nuria-won).",
   "steps": [
     {
       "open": "/?story=clue-r4&solo=1"
@@ -112,7 +112,7 @@
     {
       "shot": "tower-overview",
       "delay": 3000,
-      "caption": "From above: the ramp rings round the tower, ring inside ring, up to the platform where El Vértigo stands"
+      "caption": "From above: the ramp rings round the tower, ring inside ring, up to the platform where Vertitrón stands"
     },
     {
       "press": "KeyR"
@@ -213,7 +213,7 @@
     {
       "shot": "summit",
       "delay": 600,
-      "caption": "On top: El Vértigo, a giant of ladders five times their height, Uri and Nil at the very top"
+      "caption": "On top: Vertitrón, a giant of ladders five times their height, Uri and Nil at the very top"
     },
     {
       "skipDialogue": true
@@ -262,7 +262,7 @@
     {
       "shot": "lights-flight",
       "delay": 900,
-      "caption": "It arcs into Gerard; then Uri's into Aitor, and Nil's splits in two"
+      "caption": "It arcs into Gerard; then Uri's (Nil in his arms) into Aitor"
     },
     {
       "shot": "home",

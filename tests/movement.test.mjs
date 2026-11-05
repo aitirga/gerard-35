@@ -76,6 +76,21 @@ test('free movement goes any direction and stops exactly where released', () => 
   drive(m, 0, 0, .5);
   assert.deepEqual(m.position, stop); assert.equal(m.walking, false);
 });
+test('a frame with no time in it moves nobody and never leaves the player at NaN', () => {
+  // The engine gives dt 0 when a frame's timestamp did not advance; holding a direction then, in the
+  // open or against a wall, once put Gerard at NaN and every later frame failed to render.
+  for (const [x, z] of [[1, 0], [0, -1], [Math.SQRT1_2, Math.SQRT1_2]]) {
+    const m = new FreeMovement(open, { x: 1, z: 1 });
+    drive(m, x, z, .5);
+    const before = m.position;
+    assert.equal(m.drive(x, z, 0), false);
+    assert.equal(m.drive(x, z, -.01), false);
+    assert.deepEqual(m.position, before);
+    assert.ok(Number.isFinite(m.position.x) && Number.isFinite(m.position.z));
+    drive(m, -x, -z, .2);
+    assert.ok(Number.isFinite(m.position.x) && Number.isFinite(m.position.z));
+  }
+});
 test('speed is the same at any frame rate, a stalled frame cannot teleport, and tilt scales it', () => {
   const lane = ['####################', '#..................#', '####################'];
   for (const fps of [30, 60, 144]) {

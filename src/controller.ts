@@ -5,18 +5,29 @@ export type ControlAction = typeof CONTROL_ACTIONS[number];
 export type Binding = { button: number } | { axis: number; sign: -1 | 1 };
 export type ControllerProfile = Record<ControlAction, Binding>;
 /**
- * Fixed extras on recognised pads: the top face button opens the status screen, L / R (the shoulder
- * buttons) turn its pages, Select/− toggles the overview.
+ * The D-pad's sides on their own, where they stand apart from walking (a fight: its up and down walk
+ * the menus and its left and right open the summary, `readController`'s `apart`).
  */
-export type ControllerEvent = ControlAction | 'character' | 'overview' | 'prev' | 'next';
+export type DpadSide = 'left' | 'right';
+export type DpadEvent = `dpad-${DpadSide}`;
+/**
+ * Fixed extras on recognised pads: the top face button opens the status screen, L / R (the shoulder
+ * buttons) turn its pages, Select/− toggles the overview; and the D-pad apart (`DpadEvent`).
+ */
+export type ControllerEvent = ControlAction | 'character' | 'overview' | 'prev' | 'next' | DpadEvent;
+/** Whether a press was one of the D-pad's sides set apart. */
+export const isDpad = (event: ControllerEvent): event is DpadEvent => event.startsWith('dpad-');
 export interface PadSnapshot {
   id: string; index: number; connected: boolean; mapping: string;
   buttons: readonly { pressed: boolean; value: number }[];
   axes: readonly number[];
 }
-/** `stick` is the analog vector (screen space, y down) when the stick, not the D-pad, drives `direction`. */
-export interface ControllerState { direction: Direction | null; stick: Stick | null; confirm: boolean; cancel: boolean; menu: boolean; character: boolean; overview: boolean; prev: boolean; next: boolean }
-export const idleController = (): ControllerState => ({ direction: null, stick: null, confirm: false, cancel: false, menu: false, character: false, overview: false, prev: false, next: false });
+/**
+ * `stick` is the analog vector (screen space, y down) when the stick, not the D-pad, drives `direction`.
+ * `dpad` is the D-pad's side when it stands apart from walking (`readController`'s `apart`); otherwise null.
+ */
+export interface ControllerState { direction: Direction | null; stick: Stick | null; dpad: DpadSide | null; confirm: boolean; cancel: boolean; menu: boolean; character: boolean; overview: boolean; prev: boolean; next: boolean }
+export const idleController = (): ControllerState => ({ direction: null, stick: null, dpad: null, confirm: false, cancel: false, menu: false, character: false, overview: false, prev: false, next: false });
 export function isNintendo(id: string) { return /nintendo|joy-con|switch|057e|pro controller/i.test(id); }
 /**
  * Only Safari on macOS reads pads through Apple's GameController layer, which already reports Nintendo
@@ -44,11 +55,18 @@ export function bindingPressed(pad: PadSnapshot, binding: Binding) {
   return 'button' in binding ? !!pad.buttons[binding.button]?.pressed
     : (pad.axes[binding.axis] ?? 0) * binding.sign > .55;
 }
-export function readController(pad: PadSnapshot, custom?: ControllerProfile, previous: Direction | null = null): ControllerState {
+/**
+ * What `pad` is pressing. The D-pad and the stick both give `direction`, the D-pad first; `apart`
+ * (a fight) sets the D-pad's left and right aside: they are `dpad` and give no `direction`. A pad
+ * with a custom mapping has one or the other bound, so for it nothing is set aside.
+ */
+export function readController(pad: PadSnapshot, custom?: ControllerProfile, previous: Direction | null = null, apart = false): ControllerState {
   const profile = custom ?? defaultProfile(pad);
   if (!pad.connected || !profile) return idleController();
   const directions = ['up', 'down', 'left', 'right'] as const;
-  const digital = directions.find(key => 'button' in profile[key] && bindingPressed(pad, profile[key]));
+  const pressed = directions.find(key => 'button' in profile[key] && bindingPressed(pad, profile[key]));
+  const dpad = apart && !custom && (pressed === 'left' || pressed === 'right') ? pressed : null;
+  const digital = dpad ? undefined : pressed;
   const strength = (key: Direction) => {
     const binding = profile[key];
     return 'axis' in binding ? Math.max(0, (pad.axes[binding.axis] ?? 0) * binding.sign) : 0;
@@ -58,7 +76,7 @@ export function readController(pad: PadSnapshot, custom?: ControllerProfile, pre
   const direction = digital ?? stickDirection(x, y, previous);
   const stick = !digital && direction ? { x, y } : null;
   const extra = (button: number) => !custom && !!pad.buttons[button]?.pressed;
-  return { direction, stick, confirm: bindingPressed(pad, profile.confirm), cancel: bindingPressed(pad, profile.cancel),
+  return { direction, stick, dpad, confirm: bindingPressed(pad, profile.confirm), cancel: bindingPressed(pad, profile.cancel),
     menu: bindingPressed(pad, profile.menu), character: extra(3), overview: extra(8), prev: extra(4), next: extra(5) };
 }
 /** One physical press cannot leak into the next screen or trigger after focus returns. */
@@ -71,11 +89,13 @@ export class ControllerEdges {
     const events: ControllerEvent[] = [];
     if (!enabled || context !== this.context) { this.blocked = true; this.context = context; }
     if (this.blocked) {
-      if (enabled && !state.direction && !state.confirm && !state.cancel && !state.menu && !state.character && !state.overview && !state.prev && !state.next) this.blocked = false;
+      if (enabled && !state.direction && !state.dpad && !state.confirm && !state.cancel && !state.menu && !state.character && !state.overview && !state.prev && !state.next) this.blocked = false;
       this.previous = state;
       return { direction: null, stick: null, running: false, events };
     }
     for (const action of ['menu', 'character', 'overview', 'prev', 'next', 'cancel', 'confirm'] as const) if (state[action] && !this.previous[action]) events.push(action);
+    // The D-pad's sides apart are a shortcut: one press, one event, no repeat.
+    if (state.dpad && state.dpad !== this.previous.dpad) events.push(`dpad-${state.dpad}`);
     if (state.direction) {
       if (state.direction !== this.previous.direction) { events.push(state.direction); this.repeatAt = now + 350; }
       else if (now >= this.repeatAt) { events.push(state.direction); this.repeatAt = now + 130; }

@@ -7,7 +7,7 @@ const STEPS = [{ x: 1, z: 0 }, { x: -1, z: 0 }, { x: 0, z: 1 }, { x: 0, z: -1 }]
  * La torre de Uri (docs/quests/nuria.md § The maze): round the corner of Nuria's street a dark
  * tower rises, and a ramp winds up round it, ring inside ring. Each ring is walked all the way
  * round (a wall blocks the short way) before its gap lets you up to the next, and at the very
- * top, on a platform, El Vértigo waits with Uri and Nil on it. Pure: the cells that block, how
+ * top, on a platform, Vertitrón waits with Uri and Nil on it. Pure: the cells that block, how
  * high each walkable cell stands, and where things are. The look is src/tower-scene.ts.
  */
 export interface TowerSpec {
@@ -20,7 +20,8 @@ export interface TowerSpec {
   /** How much each ring climbs, in scene units (a cell is one), up to the platform. */
   rise: number;
 }
-export const TOWER: TowerSpec = { centre: { x: 27, z: 27 }, walls: [24, 20, 16, 12, 8], top: 7, rise: 2.2 };
+/** Three rings, one per fear, five cells wide, each climbing well over the last, round a platform on top. */
+export const TOWER: TowerSpec = { centre: { x: 27, z: 27 }, walls: [26, 20, 14, 8], top: 7, rise: 2.8 };
 export const TOP_HEIGHT = (t: TowerSpec = TOWER) => t.rise * (t.walls.length - 1);
 
 const key = (c: Cell) => `${c.x},${c.z}`;
@@ -34,7 +35,8 @@ const key = (c: Cell) => `${c.x},${c.z}`;
 export function towerWalls(t: TowerSpec = TOWER): Set<string> {
   const blocked = new Set<string>();
   const { centre, walls } = t;
-  const gap = (k: number) => k % 2 === 0 ? [centre.x - 2, centre.x - 1] : [centre.x - 5, centre.x - 4];
+  // Three cells wide, on either side of the short wall (at centre.x − 4), turn and turn about.
+  const gap = (k: number) => k % 2 === 0 ? [centre.x - 3, centre.x - 2, centre.x - 1] : [centre.x - 7, centre.x - 6, centre.x - 5];
   walls.forEach((h, k) => {
     const open = gap(k);
     for (let x = centre.x - h; x <= centre.x + h; x++) for (let z = centre.z - h; z <= centre.z + h; z++) {
@@ -43,9 +45,14 @@ export function towerWalls(t: TowerSpec = TOWER): Set<string> {
       blocked.add(`${x},${z}`);
     }
   });
+  // Round the outside the tower is solid up to the map's edge, but for the way in on the south.
+  const edge = walls[0] + 1;
+  for (let x = centre.x - edge; x <= centre.x + edge; x++) for (let z = centre.z - edge; z <= centre.z + walls[0]; z++) {
+    if (Math.max(Math.abs(x - centre.x), Math.abs(z - centre.z)) === edge) blocked.add(`${x},${z}`);
+  }
   // The short walls across each corridor's south side, between its way in and its way on.
   walls.slice(0, -1).forEach((outer, k) => {
-    for (let z = centre.z + walls[k + 1] + 1; z < centre.z + outer; z++) blocked.add(`${centre.x - 3},${z}`);
+    for (let z = centre.z + walls[k + 1] + 1; z < centre.z + outer; z++) blocked.add(`${centre.x - 4},${z}`);
   });
   return blocked;
 }
@@ -56,6 +63,12 @@ export const towerEntrance = (t: TowerSpec = TOWER): Cell => ({ x: t.centre.x - 
 /** Cells inside the outer wall: the tower's footprint. */
 export function inTower(c: Cell, t: TowerSpec = TOWER) {
   return Math.max(Math.abs(c.x - t.centre.x), Math.abs(c.z - t.centre.z)) <= t.walls[0];
+}
+/** Which ring a cell is on: 1 the outermost, then up; the platform is one more; 0 outside the tower. */
+export function ringOf(c: Cell, t: TowerSpec = TOWER) {
+  const d = Math.max(Math.abs(Math.round(c.x) - t.centre.x), Math.abs(Math.round(c.z) - t.centre.z));
+  if (d >= t.walls[0]) return 0;
+  return t.walls.filter(h => h > d).length;
 }
 /** The platform on top: inside the innermost wall. */
 export function onTop(c: Cell, t: TowerSpec = TOWER) {

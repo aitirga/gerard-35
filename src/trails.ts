@@ -2,8 +2,8 @@ import * as pc from 'playcanvas';
 import type { Vec } from './particles';
 
 /**
- * Ribbons: light left behind by whatever moves fast (a fist, a lunging head, a spell, a falling
- * stamp). Each trail keeps where its head has been and when; every frame those points become one
+ * Ribbons: light left behind by whatever moves fast (a fist, a lunging head, a spell, a stream
+ * of fire). Each trail keeps where its head has been and when; every frame those points become one
  * strip, widest and hottest at the head and fading and thinning with age, and every trail is
  * drawn in a single draw call next to the particles (src/particles.ts, docs/graphics.md).
  */
@@ -41,16 +41,48 @@ export interface FollowOptions extends TrailLook {
 export interface CometOptions extends TrailLook {
   /** How high the path arcs over the straight line, in metres, and how far it bends sideways. */
   arc?: number; bend?: number;
+  /**
+   * The head winds round its path as it flies: `turns` round it, at most `radius` metres off it
+   * (none at either end), starting at `phase` radians. Two comets half a turn apart braid.
+   */
+  twist?: { turns: number; radius: number; phase?: number };
   /** Called once when the head arrives. */
   onArrive?: () => void;
+  /** Seconds before it sets off. */
+  delay?: number;
+}
+/**
+ * Where a comet's head is `f` (0 → 1) of the way from `from` to `to`: eased in, arcing `arc` over
+ * the straight line, bending `bend` across it and winding round it as its `twist` says. Effects
+ * that shed particles along a comet follow the same path.
+ */
+export function cometPath(from: Vec, to: Vec, options: Pick<CometOptions, 'arc' | 'bend' | 'twist'> = {}) {
+  const a = new pc.Vec3(from.x, from.y, from.z), b = new pc.Vec3(to.x, to.y, to.z), distance = a.distance(b);
+  const arc = options.arc ?? distance * .22, bend = options.bend ?? 0, twist = options.twist;
+  // Sideways is across the line on the ground, so a bend never tips the arc over.
+  const side = new pc.Vec3(-(b.z - a.z), 0, b.x - a.x).normalize();
+  // Up from the line, square to it and to `side`: the twist turns in that plane.
+  const up = new pc.Vec3().cross(side, new pc.Vec3().sub2(b, a).normalize()).normalize();
+  if (up.y < 0) up.mulScalar(-1);
+  return (f: number, out: pc.Vec3) => {
+    const e = 1 - (1 - f) ** 1.6, lift = Math.sin(e * Math.PI);
+    out.lerp(a, b, e);
+    out.y += lift * arc; out.x += side.x * lift * bend; out.z += side.z * lift * bend;
+    if (twist) {
+      const angle = (twist.phase ?? 0) + e * twist.turns * Math.PI * 2, r = twist.radius * lift;
+      const c = Math.cos(angle) * r, s = Math.sin(angle) * r;
+      out.x += side.x * c + up.x * s; out.y += side.y * c + up.y * s; out.z += side.z * c + up.z * s;
+    }
+    return out;
+  };
 }
 export interface SpiralOptions extends TrailLook {
   /** Radius at the bottom, how much of it is left at the top, and how high it climbs. */
   radius?: number; narrow?: number; height?: number;
   /** Turns around the centre, and where (radians) it starts. */
   turns?: number; phase?: number;
-  /** Seconds the head takes to climb. */
-  seconds?: number;
+  /** Seconds the head takes to climb, and before it sets off. */
+  seconds?: number; delay?: number;
 }
 /** A trail in flight; `stop()` lets it fade out from where its head is. */
 export interface Trail { stop(): void; readonly done: boolean }
@@ -326,9 +358,9 @@ export function createTrails(app: pc.AppBase, capacity = 4096) {
     return handle(t);
   }
   /** A trail whose head runs along `path` (0 → 1) in `seconds`; drawn from the path itself, so it stays smooth at any frame rate. */
-  function along(path: (f: number, out: pc.Vec3) => void, seconds: number, look: Look, onArrive?: () => void): Trail {
+  function along(path: (f: number, out: pc.Vec3) => void, seconds: number, look: Look, onArrive?: () => void, delay = 0): Trail {
     if (!enabled) return none;
-    const born = time, p = new pc.Vec3(), duration = Math.max(.01, seconds);
+    const born = time + delay, p = new pc.Vec3(), duration = Math.max(.01, seconds);
     let arrived = false;
     const t: Live = {
       look, done: false, stopped: false,
@@ -369,18 +401,11 @@ export function createTrails(app: pc.AppBase, capacity = 4096) {
         : (out: pc.Vec3) => { out.copy(source); return true; };
       return record(where, compile(options), options.seconds, options.space);
     },
-    /** A comet from `from` to `to` in `seconds`, arcing `arc` metres over the straight line. */
+    /** A comet from `from` to `to` in `seconds`, along `cometPath`. */
     comet(from: Vec, to: Vec, colour: string | readonly [string, string], seconds = .35, options: CometOptions = {}): Trail {
-      const a = new pc.Vec3(from.x, from.y, from.z), b = new pc.Vec3(to.x, to.y, to.z), distance = a.distance(b);
-      const arc = options.arc ?? distance * .22, bend = options.bend ?? 0;
-      // Sideways is across the line on the ground, so a bend never tips the arc over.
-      const side = new pc.Vec3(-(b.z - a.z), 0, b.x - a.x).normalize();
       const look = compile({ life: Math.min(.3, seconds * .7), width: .16, taper: 1.3, ...options, colour });
-      return along((f, out) => {
-        const e = 1 - (1 - f) ** 1.6, lift = Math.sin(e * Math.PI);
-        out.lerp(a, b, e);
-        out.y += lift * arc; out.x += side.x * lift * bend; out.z += side.z * lift * bend;
-      }, seconds, look, options.onArrive);
+      const path = cometPath(from, to, options);
+      return along((f, out) => { path(f, out); }, seconds, look, options.onArrive, options.delay);
     },
     /** A strand of light climbing round `centre` (on the floor), narrowing as it rises: an ánima waking. */
     spiral(centre: Vec, colour: string | readonly [string, string], options: SpiralOptions = {}): Trail {
@@ -389,7 +414,7 @@ export function createTrails(app: pc.AppBase, capacity = 4096) {
       return along((f, out) => {
         const e = 1 - (1 - f) ** 1.4, angle = phase + e * turns * Math.PI * 2, r = radius * (1 - (1 - narrow) * e);
         out.set(centre.x + Math.cos(angle) * r, centre.y + e * height, centre.z + Math.sin(angle) * r);
-      }, seconds, look);
+      }, seconds, look, undefined, options.delay);
     },
     /** How many vertices the last frame drew, and how many trails are alive. */
     get stats() { return { vertices: count, trails: live.length }; },

@@ -19,9 +19,10 @@ behind them the palace inflates like a blown bubble. Bernat: *"Es justo como en 
 volviendo real."* The boys walk up the street, through the bubble that seals the gate, and into
 the palace. They explore the hall and a gallery, step into a room full of giant wrappers, and a
 minion rises from a drain in the floor. Nothing they do hurts it. When it is about to finish
-Bernat (*"¡Gerard, me va a matar!"*), Gerard shouts *"¡No!"*. That unlocks his first class,
-**Noísta**: his clothes and colours change, the battle interface takes on the class's style, and
-he gains **No-ta**, the one skill that hurts the minion. It kills it.
+Bernat (*"¡Gerard, me va a matar!"*), Bernat, on his knees, begs him in Catalan: *"Pensa, Gerard!
+Fes la màgia amb la teva ment!"* Gerard thinks, and that wakes his first ánima, **Matemágico**:
+the battle interface turns into a gold-on-navy blueprint, and he gains **Foc Binari**, fire that
+melts the minion's gum. Then it can be hurt, and they finish it.
 
 ## Story order
 
@@ -35,8 +36,8 @@ he gains **No-ta**, the one skill that hurts the minion. It kills it.
 | 6 | **Galería de los Retratos**: portraits of the Queen as Bernat imagined her; an optional *Chicle de fresa* | Looking; a common item | 1:30 |
 | 7 | **Sala de los Envoltorios**: the drain gurgles, the minion rises, the fight starts | — | 0:20 |
 | 8 | **The unwinnable fight**: every hit is swallowed by the gum; the minion goes after Bernat | Trying everything | 2:00 |
-| 9 | *"¡Gerard, me va a matar!"* *"¡No!"* → Noísta: new look, new interface style, **No-ta** | A new class and a skill, by using them | 0:45 |
-| 10 | No-ta kills the minion. The back door unsticks. Gerard asks what is going on; Bernat: *"Creo que estamos en el castillo de la Reina… Ella es real… Quiere…"* | — | 0:40 |
+| 9 | *"¡Gerard, me va a matar!"* *"Pensa, Gerard! Fes la màgia amb la teva ment!"* → Matemágico: new interface style, **Foc Binari** | A new ánima and a skill, by using them | 0:45 |
+| 10 | Foc Binari melts the pringue; the minion falls. The back door unsticks. Bernat: *"¿Le has tirado fuego con la mano?"* Gerard: *"He pensado en unos y ceros… y me ha salido solo."* Gerard asks what is going on; Bernat: *"Creo que estamos en el castillo de la Reina… Ella es real… Quiere…"* | — | 0:40 |
 | 11 | **¡BAM!** Minions burst out of the floor all round them; La Reina Bubbaloo's hands (gelatine, far too big for the frame: only hands and forearms) come down and close round both boys; black. No end card. | — | 0:15 |
 | 12 | **Chapter 2 begins**: Gerard, now 35, bolts upright in bed in the Meridiana flat shouting *"¡NO!"*; Aitor is beside him. A Bubbaloo wrapper lies on the bedside shelf. | Exploring | — |
 
@@ -44,8 +45,9 @@ About 10 minutes, matching the 10–20 min block that `docs/chapter-1.md` keeps 
 real". There is no end card: the chapter ends in black and chapter 2 opens on Gerard waking up.
 
 Story flags, in order: `palace` (the street has changed), `in-palace` (went through the gate),
-`got-chicle`, `noista` (class unlocked), `wrapper-room` (minion beaten), `caught` (the Queen's
-hands; chapter 2 from here) and `got-wrapper`. The server's `STORY_FLAGS` follows, as today.
+`got-chicle`, `matemagico` (ánima unlocked; old saves' `noista` maps to it), `wrapper-room`
+(minion beaten), `caught` (the Queen's hands; chapter 2 from here) and `got-wrapper`. The
+server's `STORY_FLAGS` follows, as today.
 
 Diegetic gates (nothing on screen says where to go):
 
@@ -204,18 +206,19 @@ north–south axis, a strong centre.
   The fight starts.
 - North-east: the stuck door back to the hall.
 
-## The fight and Noísta
+## The fight and Matemágico
 
 ### The unwinnable part
 
 - **Foe:** *Esbirro de la Reina*, 40 HP, with **Pringue**: a gum shell that swallows every hit
   (damage 0, and a pop over the target: *"¡El chicle se lo traga!"*). Attacks do
-  nothing; Defender and Análisis Parálisis still work, so trying things is never pointless, only not enough.
+  nothing; Defender still works, so trying things is never pointless, only not enough. Gerard has
+  no ánima yet, so he has no skills either.
 - **No escape**, as in the first fight (the door has sealed behind them).
 - **It goes for Bernat.** Its spit (*Escupitajo pegajoso*) targets Bernat, and its damage grows
-  each round (*"el pringue crece"*), so healing and guarding buy time but cannot stall forever.
+  each round (*"el pringue crece"*), so guarding buys time but cannot stall forever.
   Its hits never knock Bernat out: the first hit that would leave him at 20 HP or less stops at
-  that line and **triggers the beat** (by round 4–5 whatever the player does).
+  that line and **triggers the beat** (by round 6 at the latest, whatever the player does).
 - Gerard is only targeted lightly, so he is never the one about to fall.
 
 ### The beat (inside the battle)
@@ -226,55 +229,65 @@ The battle interface stays up; the scene plays over it:
    hit.
 2. Speech bubbles over the fighters (inside the battle, since the rest of the HUD is inert during
    fights): Bernat, *"¡Gerard, me va a matar!"*
-3. Gerard, in a bigger bubble that shakes the screen: *"¡NO!"*
-4. A shockwave from Gerard throws the minion back a step. A white flash on Gerard, and when it
-   fades he wears the **Noísta** look. The battle interface switches theme with a short wipe.
-5. A banner inside the battle: **ÁNIMA DESBLOQUEADA · NOÍSTA**, *"Dice que no. Y el mundo le hace
-   caso."*
-6. Gerard's turn. **Habilidad** pulses once; inside it, **No-ta** is new. No key hint and no
-   instructions: it is the only new thing on screen, and the only one that has not failed yet.
+3. Bernat again, on his knees, in a bigger bubble that shakes the screen, in Catalan: *"Pensa,
+   Gerard! Fes la màgia amb la teva ment!"*
+4. While he says it, Matemágico wakes in Gerard: a gold flash on his face in the party card, and
+   the battle interface turns into Matemágico's blueprint. His Ánima is full.
+5. A banner inside the battle, a notebook page with *1 + 1 = 10* above the name: **ÁNIMA
+   DESBLOQUEADA · MATEMÁGICO**, *"Lo calcula todo. Hasta lo que no hace falta."*
+6. Gerard's turn. **Habilidad** pulses until it is opened; inside it, **Foc Binari** is new. No
+   key hint and no instructions: it is the only new thing on screen, and the only one that has
+   not failed yet.
 
-### No-ta
+After the beat the minion is shaken: plain spits at Bernat, no more escalation.
 
-- Costs 10 of Gerard's secondary bar. A rotund NO: **ignores and removes Pringue** and deals
-  40 damage, enough to kill the minion in one go.
-- Animation: a huge red rubber stamp reading **NO** slams down on the target (camera kick,
-  sparks in Noísta red), leaving the word printed on the ground for a second. The minion goes rigid,
-  cracks like old gum and pops into goo, which drains away down the grate.
-- Why it works (lore): the Queen's minions make things **obey**. Gerard's power is to **refuse**.
-  This makes Noísta the natural counter to La Reina Bubbaloo, and a reason why only Gerard can face her.
+### Foc Binari
 
-### Noísta: look and interface
+- Costs 1 circle of Ánima (of 5). Light magic fire (power 16): **fire melts the Pringue** and
+  hits through it; from then on Atacar works too. The minion has 40 PV, so it takes a few turns.
+- It sets the minion on fire (**Quemado**, a timed status: it burns every 2 s for 10 s, and a
+  second Foc Binari before it goes out raises it a level; `docs/animas/README.md`).
+- Animation: Gerard raises his hand and two braided streams of fire, orange-red and gold, fly to
+  the minion shedding embers; they burst into flame on it.
+  When it falls it goes rigid, cracks like old gum and pops into goo, which drains away down the
+  grate.
+- Why it works (lore): the Queen's gum holds things stuck and obedient. Gerard's power is to
+  **think it through**: he calculates everything, and here the calculation catches fire. Full
+  design in `docs/animas/matemagico/README.md`.
 
-- **Gerard's look** changes a little, not into a costume: the mustard shirt with navy stripes
-  becomes **crimson with charcoal stripes**, the trousers charcoal, the glasses get red frames,
-  and he wears a short crimson scarf tied at the neck that flutters when he runs. The look stays
-  outside battle too (it is his active class), and the dialogue portrait gets a tinted variant
-  when there is a generated one.
-- **Interface style** (the active class drives the shared `--ui-*` variables on `#hud`, so battle,
-  journal and hints change together):
-  - colours: ink `#1b1216`, accent **crimson** `#e2483d` (replaces the gold), paper bone `#f4ece2`,
-    muted `#c9b3ad`;
-  - shapes: protest-poster style, with command cards slanted a few degrees, a hard offset shadow in
-    crimson, and a faint diagonal **NO** watermark in the battle background;
-  - type: the battle title and kicker in heavy condensed italics, as if stamped.
-- **Character panel (C)**: Gerard's card shows *Clase · Noísta* and No-ta.
+After the fight Bernat: *"Siempre lo calculas todo. Todo. Y hoy… hoy nos ha salvado."* and,
+later in the palace, *"Matemágico. Así te voy a llamar. El que hace magia con la cabeza."*
 
-### How classes fit the game
+### Matemágico: look and interface
 
-**Noísta is the first class.** It comes from Gerard himself: he always contradicts, always says the
-opposite. Here that habit becomes a power at the moment it matters most. How classes work beyond
-this one (how many, where they come from, how switching works, and how it relates to the moods
-in `docs/chapter-1.md`) is **left open on purpose**, to be thought through later. Build Noísta so
-that it does not decide that: one class, its look, its theme and its skill.
+- **Gerard's look** does not change: Matemágico is his own clothes, his own head.
+- **Interface style** (the worn ánima drives the shared `--ui-*` variables on `#hud`, so battle,
+  journal and hints change together): a blueprint.
+  - colours: midnight-ink navy `#0f1a2c`, gold `#f3cf78` accents, paper `#f4efe0`;
+  - shapes: graph paper round the edges of the screen only, commands as index cards on squared
+    paper with a gold margin line and numbers `x01`…`x05`, a big ∑ watermark, the party card with
+    a number line instead of the wave;
+  - type: Georgia italic for headings and skill names, JetBrains Mono for numbers.
+- **Status screen**: Gerard's sheet in the same blueprint, with its own ∑, showing Matemágico and
+  Foc Binari.
+
+### How ánimas fit the game
+
+**Matemágico is the first ánima.** It comes from Gerard himself: he calculates everything, even
+what doesn't need it. Here that habit becomes a power at the moment it matters most, and Bernat,
+who knows him, is the one who calls it out of him. How ánimas grow from here is in
+`docs/animas/README.md`.
+
+Until 2026-11-01 this beat woke **Noísta** instead (Gerard shouting *"¡NO!"*, a rubber stamp
+skill, No-ta); it is retired and kept as a design in `docs/animas/noista/README.md`.
 
 ## How it is built
 
 Built in the four steps below. Files: `src/palace.ts` (exterior and the street's approach),
 `src/palace-scenery.ts` (interior), `palacio` in `src/environments.ts` (plan, rooms, things to
-look at), `src/classes.ts` (Noísta's look), and the beats in `src/story.ts` and `src/chapter-1.ts`.
+look at), `src/classes.ts` (Matemágico), and the beats in `src/story.ts` and `src/chapter-1.ts`.
 Tests: `tests/story.test.mjs` (the whole palace beat), `tests/battle.test.mjs` (the unwinnable
-fight under three strategies, the beat and No-ta), `tests/environments.test.mjs` (the plan).
+fight under three strategies, the beat and Foc Binari), `tests/environments.test.mjs` (the plan).
 
 1. **The palace exterior and the transformation**
    - `src/palace.ts`: builds and animates the exterior (rampart, gate and bubble, twist towers,
@@ -302,21 +315,22 @@ fight under three strategies, the beat and No-ta), `tests/environments.test.mjs`
      everywhere). The minion fighter reuses `src/minion.ts`.
    - Rules: `Pringue` (shell), escalating targeted attacks, a damage floor that triggers a
      scripted **beat**; pure and tested in `tests/battle.test.mjs`.
-   - In-battle speech bubbles and the class banner in `src/battle-ui.ts`.
-4. **Noísta**
-   - `src/classes.ts`: class definitions (name, look overrides by material, UI theme, skills).
-     `noista` flag → active class; Gerard's materials recoloured and the scarf part added in
-     `src/game.ts` / `src/character-model.ts`; battle clones pick it up.
-   - No-ta in `src/battle.ts` (cost, ignores and removes Pringue); the stamp effect in
-     `src/battle-scene.ts`; theme via `#hud[data-class="noista"]` in `src/style.css`.
-   - Party panel shows the class. Scenario `scripts/screenshots/noista.json` covering the fight
-     from the first swallowed hit to the stamp.
-   - Docs: `docs/lore.md` (palace, Noísta, why it counters the Queen), `docs/chapter-1.md`.
+   - In-battle speech bubbles and the ánima banner in `src/battle-ui.ts`.
+4. **Matemágico** (first built as Noísta, replaced on 2026-11-01)
+   - `src/classes.ts`: ánima definitions (name, motto, colour, look overrides by material).
+     `matemagico` flag → unlocked and worn; the beat (`awaken` in `src/battle.ts`, `playBeat` in
+     `src/battle-ui.ts`, `BATTLE_LINES` in `src/chapter-1.ts`).
+   - Foc Binari in `src/battle.ts` (cost, melts Pringue, Quemado); the fire in
+     `effects.binaryFire` (`src/effects.ts`); theme via `#hud[data-class="matemagico"]` in
+     `src/style.css`.
+   - Scenarios: `scripts/screenshots/palace.json` (the beat) and `matemagico.json` (Foc Binari,
+     Ánima, the interface).
+   - Docs: `docs/animas/matemagico/README.md`, `docs/lore.md`, `docs/chapter-1.md`.
 
 ## Decisions
 
-- **Noísta** comes from Gerard always contradicting. The wider class system stays open (see
-  *How classes fit the game*).
+- **Matemágico** comes from Gerard calculating everything, called out of him by Bernat. It
+  replaced Noísta (Gerard always contradicting), now retired (see *How ánimas fit the game*).
 - **The palace leaves Sant Quirze** when the boys return to reality at the end of chapter 1. In
   phase two it reappears in **Barcelona, grown out of the Rec Comtal school (Trinitat Vella, chapter 2)**. So `src/palace.ts` must sit on
   any base, a street end or a school, and its growth animation must work in both places. On a

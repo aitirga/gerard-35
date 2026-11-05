@@ -1,0 +1,60 @@
+{
+  "title": "Golpes que se ven al caer",
+  "description": "Lo que cambia una acción se ve al aterrizar cada golpe, no al elegirla (src/battle-ui.ts `holdBack`): en Zarpazos de fuego la barra sigue entera y sin icono de fuego durante el cartel; cada zarpazo baja lo suyo y, si su tirada sale 1 (tres de cada cuatro), enciende o sube el fuego en ese momento. Ejecutar con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard?.battleUI?.fight?.phase === 'player' && !document.querySelector('#battle[data-entering]') && !document.querySelector('#battle[data-resolving]') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 120000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.gerard.battleUI.setAnimas(['matemagico', 'papagato'], { matemagico: 2, papagato: 2 }); window.pick = (command, chosen) => { document.querySelector(`[data-command=\"${command}\"] .command-trigger`).click(); setTimeout(() => { document.querySelector(chosen).click(); setTimeout(() => { document.querySelector('button[data-target=\"vertigo\"]').click(); }, 150); }, 150); };"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "antes",
+      "caption": "Vertitrón entero, sin fuego. Aitor elige el dual"
+    },
+    {
+      "eval": "pick('dual', '[data-dual=\"zarpazos-de-fuego\"]')"
+    },
+    {
+      "until": "!document.querySelector('.dual-banner')?.hidden",
+      "timeout": 10000
+    },
+    {
+      "shot": "cartel",
+      "delay": 250,
+      "caption": "El cartel del dual: el golpe ya está resuelto por dentro, pero la barra sigue entera y no hay ningún icono de fuego"
+    },
+    {
+      "until": "parseFloat(document.querySelector('.battle-target[data-target=\"vertigo\"] .enemy-health b').style.width) < 100",
+      "timeout": 15000
+    },
+    {
+      "shot": "primer-zarpazo",
+      "caption": "Ya caen los zarpazos: cada número es el de un golpe, y la barra baja solo lo que ha caído"
+    },
+    {
+      "until": "document.querySelector('.damage-pop[data-status=\"quemado\"]')",
+      "timeout": 15000
+    },
+    {
+      "shot": "prende",
+      "caption": "Un zarpazo con tirada 1: el fuego prende o sube justo al caer"
+    },
+    {
+      "until": "!document.querySelector('#battle[data-resolving]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "final",
+      "delay": 300,
+      "caption": "Al terminar: todo el daño aplicado y el fuego en su nivel final"
+    }
+  ]
+}

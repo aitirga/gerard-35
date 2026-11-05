@@ -91,7 +91,7 @@ school's orange, the pink castle), Cardedeu (white render, terracotta roofs), Al
 green hills), Plaça d'Espanya (red brick towers, monumental and open), the Barceloneta (sea light),
 the Poble Sec (slopes and steps) and the Búnkers (dry earth and concrete in golden light). Sants is
 the **narrow, lived-in ochre neighbourhood in shade, with one lit shop in it**. The colours with a
-meaning stay out: no saturated pink (hers), no crimson (Noísta's), no violet (possession).
+meaning stay out: no saturated pink (hers), no violet (possession).
 
 ### The street (`sants`)
 

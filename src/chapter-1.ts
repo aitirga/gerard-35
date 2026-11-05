@@ -152,11 +152,11 @@ export const LINES = {
   /** Stepping into the wrapper room: the drain gurgles, then the minion rises. */
   drainGurgle: withBernat(g('¿Oyes eso? Viene del sumidero.')),
   drainRises: withBernat(bernat('Ese no se va a esconder.'), g('¡Bernat, atrás!')),
-  /** No-ta has burst the minion. */
-  afterNoista: withBernat(
-    bernat('¿Qué… qué ha sido eso? ¿Le has dicho que no y ha reventado?'),
-    g('No lo sé. Me ha salido solo.'),
-    bernat('Siempre llevas la contraria. Siempre. Y hoy… hoy nos ha salvado.'),
+  /** Matemágico's fire has burst the minion. */
+  afterMatemagico: withBernat(
+    bernat('¿Qué… qué ha sido eso? ¿Le has tirado fuego con la mano?'),
+    g('No lo sé. He pensado en unos y ceros… y me ha salido solo.'),
+    bernat('Siempre lo calculas todo. Todo. Y hoy… hoy nos ha salvado.'),
     g('Bernat… ¿qué está pasando aquí? De verdad.'),
     bernat('Creo… creo que estamos en el castillo de la Reina. Mi sueño no era un sueño, Gerard.'),
     bernat('Ella es real. Y si nos ha traído hasta aquí, es porque quiere algo de nosotros. Quiere…'),
@@ -173,13 +173,12 @@ export const LINES = {
     aitor('Y hoy no me despego de ti. Donde vayas tú, voy yo.'),
   ),
   aitorAgain: withAitor(aitor('Feliz cumpleaños, dormilón. El café está en la cocina… si te lo haces tú.')),
-  aitorWrapper: withAitor(gerard35('Aitor… ¿esto es tuyo?'), aitor('¿Un chicle Bubbaloo? Yo no como de eso desde que tenía diez años.')),
   envoltorio: withAitor(
     gerard35('Un envoltorio de chicle. Bubbaloo, de fresa.'),
     gerard35('…Estaba en mi mesilla. Y huele igual que en el sueño.'),
   ),
   bernatInPalace: withBernat(bernat('No te separes. En mi sueño, este sitio no acababa nunca.')),
-  bernatAfterNoista: withBernat(bernat('Noísta. Así te voy a llamar. El que siempre dice que no.')),
+  bernatAfterMatemagico: withBernat(bernat('Matemágico. Así te voy a llamar. El que hace magia con la cabeza.')),
   bernatFight: withBernat(bernat('¡Gerard, los perros! ¡Hay que quitarles ese rosa de los ojos!')),
   bernatAfter: withBernat(bernat('No me mires así. Esos perros no estaban ayer en la calle… estaban en mi libreta.')),
   bernatAfterFight: withBernat(bernat('La Reina Bubbaloo era solo un dibujo. Un dibujo, Gerard. Con corona de chicle.')),
@@ -188,7 +187,8 @@ export const LINES = {
 /** Said inside the palace fight, as speech over their heads (the rest of the HUD is shut during fights). */
 export const BATTLE_LINES = {
   aboutToDie: { speaker: 'bernat', text: '¡Gerard, me va a matar!' },
-  no: { speaker: 'gerard', text: '¡NO!' },
+  /** Bernat, on his knees, says it in Catalan: it is what wakes Matemágico. */
+  think: { speaker: 'bernat', text: 'Pensa, Gerard! Fes la màgia amb la teva ment!' },
 } as const satisfies Record<string, DialogueLine>;
 
 /**

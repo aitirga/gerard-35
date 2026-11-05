@@ -28,7 +28,7 @@ lights-update:
     git submodule update --init --remote vendor/geraitor_domotic_house
     git -C vendor/geraitor_domotic_house log --oneline -1
 
-# Start the Vite dev server with hot reload on http://127.0.0.1:5173
+# Start the Vite dev server on http://127.0.0.1:5173 (no live reload: reload the page to see changes)
 [group('Development')]
 dev:
     npm run dev
@@ -42,13 +42,19 @@ dev-battle foes="4" allies="1":
 # Open the effects lab over a fight: every fight effect, element hit, fire, status and reaction on a click
 [group('Development')]
 dev-fx:
-    npm run dev -- --open '/?story=noista&fxlab'
+    npm run dev -- --open '/?story=matemagico&fxlab'
 
 # Jump in after a story beat: just dev-chapter got-backpack, or metro for chapter 2's open city (new = from the start)
 [group('Development')]
 dev-chapter beat="new":
-    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|noista|wrapper-room|caught|got-wrapper|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|anima-uri|papagato)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
+    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|matemagico|wrapper-room|caught|got-wrapper|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|papagato|papagato-2|papagato-3|matemagico-2|matemagico-3)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
+
+# Start an ánima mission partway: just dev-mission nuria ring-2 (parts in missionParts, src/story-points.ts; start = its beginning)
+[group('Development')]
+dev-mission anima="nuria" part="start":
+    @[[ "{{ anima }}" =~ ^(nuria)$ && "{{ part }}" =~ ^[a-z0-9-]+$ ]] || { printf 'Use an ánima mission (nuria) and a part, e.g. just dev-mission nuria ring-2.\n'; exit 1; }
+    npm run dev -- --open '/?mission={{ anima }}&part={{ part }}'
 
 # Wake up on a later day of chapter 2 to see the Queen's spread: just dev-day 6 (7 is the end)
 [group('Development')]
@@ -94,6 +100,12 @@ combat-lab:
 [positional-arguments]
 combat-sim *args:
     node --experimental-strip-types scripts/combat-sim.mjs "$@"
+
+# Simulate the campaign's real fights: combinations, balance targets, Jev's opinion if asked (see docs/fight-sim.md)
+[group('Combat')]
+[positional-arguments]
+fight-sim *args:
+    @node --experimental-strip-types --no-warnings scripts/fight-sim.mjs "$@"
 
 # Check the generic engine, simulator and campaign integration
 [group('Combat')]

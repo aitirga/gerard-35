@@ -7,7 +7,7 @@
  */
 import type { EnvironmentId } from './environments.ts';
 import type { BattleEffect, BattleState } from './battle.ts';
-import { CONTACT_SECONDS } from './battle-motion.ts';
+import { CAST_CONTACT, CONTACT_SECONDS, DUAL_BANNER_SEEN, DUAL_FREEZE } from './battle-motion.ts';
 
 export type LightId = 'cocina' | 'sofa' | 'luna' | 'mesa' | 'dormitorio' | 'terraza' | 'estudio' | 'galeria';
 /**
@@ -101,6 +101,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   // Uri's maze: hedge green and garden walls, a little strange.
   'cardedeu-laberinto': { salon: [hex('#5f8f4e', .6, .5), hex('#9a6cd8', .45, .45), white(3000, .6), hex('#c98d6a', .5, .5)], rest: hex('#7da86a', .25, .35) },
   cardedeu: { salon: [white(2900, .8), hex('#c8693f', .55, .5), hex('#79a86a', .5, .5), white(3300, .6)], rest: white(3000, .3) },
+  // La calle que no acaba: the same street drained grey, dimming towards her violet at the far end.
+  'cardedeu-calle': { salon: [white(4200, .45), hex('#9c93a0', .35, .4), hex('#7d6f82', .4, .35), white(3800, .35)], rest: white(4000, .18) },
   // The Meridiana outside: peach façades, green awnings, plane trees and a Barcelona sky.
   'meridiana-calle': { salon: [hex('#f2b38f', .75, .45), hex('#8ec5e8', .6, .5), hex('#2f9c86', .5, .6), white(3200, .7)], rest: white(3200, .3) },
   // Her palace in chapter 2: the school yard's green court and its cold floodlight, a touch of her pink.
@@ -185,9 +187,15 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   'palace-guards': [hex('#c8306e', .65, .8), hex('#7a3ad6', .5, .8), hex('#ff5a4a', .55, .75), hex('#e0409a', .6, .8)],
   // Uri's fears: onion gold and tears, a dinner-table white, arcade neon, and the roof's violet dusk.
   cebollon: [hex('#e8c25a', .7, .7), hex('#8fd3ff', .55, .6), white(3000, .6), hex('#c89a3a', .6, .7)],
+  cebolla: [hex('#e8c25a', .7, .7), hex('#8fd3ff', .55, .6), white(3000, .6), hex('#c89a3a', .6, .7)],
   plato: [white(3600, .75), hex('#7fb05a', .55, .65), hex('#f0d9a8', .5, .6), hex('#c86a4a', .55, .7)],
-  'game-over': [hex('#3aff8a', .6, .8), hex('#ff3ad6', .55, .8), hex('#3a8aff', .55, .75), hex('#ffe23a', .5, .7)],
+  // La Cebolla y los suyos: onion gold, the fantasmita's arcade green, the tower's violet and a tear blue.
+  escolta: [hex('#e8c25a', .65, .75), hex('#3aff8a', .5, .8), hex('#9a6cd8', .55, .75), hex('#8fd3ff', .5, .6)],
   'uri-vertigo': [hex('#9a6cd8', .65, .8), hex('#3a4a8a', .5, .7), hex('#c8693f', .55, .65), hex('#e0d0ff', .45, .6)],
+  // Their young: the ring's own fear, in the tower's violet.
+  'crias-1': [hex('#e8c25a', .6, .7), hex('#9a6cd8', .5, .7), hex('#8fd3ff', .5, .6), hex('#c89a3a', .55, .7)],
+  'crias-2': [white(3600, .65), hex('#9a6cd8', .5, .7), hex('#7fb05a', .5, .65), hex('#c86a4a', .5, .7)],
+  'crias-3': [hex('#3aff8a', .55, .8), hex('#9a6cd8', .5, .75), hex('#ff3ad6', .5, .8), hex('#3a8aff', .5, .75)],
 };
 const ALARM = hex('#ff2a1a', .75, 1);
 /** 0 with everyone healthy, 1 when someone still standing is about to fall. */
@@ -215,8 +223,10 @@ export function heartbeat(state: BattleState, intensity: Intensity = 'normal'): 
 }
 /** Seconds from the start of a battle effect to the moment it lands (battle-scene.ts). */
 export function impactSeconds(effect: BattleEffect) {
-  const support = effect.skill === 'cardioide' || !!effect.boosted;
-  return effect.target && !support ? CONTACT_SECONDS : .2;
+  // A dual: the room flickers as its banner settles and its choreography begins (battle-scene.ts `dual`).
+  if (effect.dual) return DUAL_FREEZE + DUAL_BANNER_SEEN;
+  if (effect.skill === 'foc-binari') return CAST_CONTACT;
+  return effect.target && !effect.boosted ? CONTACT_SECONDS : .2;
 }
 /** How a hit lands at home: on the bulbs in front of the player, timed to the contact. */
 export function hitFlash(effect: BattleEffect, state: BattleState, intensity: Intensity = 'normal'): Flash | undefined {
@@ -225,16 +235,20 @@ export function hitFlash(effect: BattleEffect, state: BattleState, intensity: In
   const target = [...state.allies, ...state.foes].find(c => c.id === effect.target);
   const knockedOut = !!target && target.hp === 0;
   const byParty = state.allies.some(a => a.id === effect.actor);
-  // Cardioide heals one ally: a green swell; Análisis Parálisis lifts the whole party: warm orange everywhere.
-  if (effect.skill === 'cardioide') return { lights: front, kind: 'breathe', color: hex('#6ee08a', strong, .8), period: 1.3, cycles: 1, peak: .4 };
+  // A party boost lifts everyone: warm orange everywhere.
   if (effect.boosted) return { lights: [...front, 'mesa'], kind: 'breathe', color: hex('#ff9a3a', strong, .85), period: 1.3, cycles: 1, peak: .4 };
   if (effect.kind === 'defend') return { lights: front, kind: 'breathe', color: hex('#5aa0ff', .8 * strong, .8), period: .9, cycles: 1, peak: .3 };
   if (effect.kind === 'escape' || !effect.target) return undefined;
   if (effect.swallowed) return { lights: front, kind: 'breathe', color: hex('#ff6fae', .9 * strong, .8), period: .7, cycles: 1, peak: .15 };
-  if (effect.skill === 'nota') {
-    // The big NO: a strobe, unless the lights are set soft.
-    return intensity === 'suave' ? { lights: front, kind: 'breathe', color: hex('#b36bff', 1, .8), period: .6, cycles: 1, peak: .1 }
-      : { lights: front, kind: 'pulse', color: hex('#c08aff', 1, .7), period: .16, cycles: 3 };
+  // A dual: the whole room flickers gold and orange through its choreography (soft lights only swell).
+  if (effect.dual) {
+    return intensity === 'suave' ? { lights: [...front, 'mesa'], kind: 'breathe', color: hex('#ffb02e', 1, .85), period: 1.6, cycles: 1, peak: .3 }
+      : { lights: [...front, 'mesa'], kind: 'pulse', color: hex('#ffa62a', strong, .9), period: .22, cycles: 8 };
+  }
+  if (effect.skill === 'foc-binari') {
+    // Fire: the room flickers orange, longer the higher the fire it lights, unless the lights are set soft.
+    return intensity === 'suave' ? { lights: front, kind: 'breathe', color: hex('#ff8a2a', 1, .85), period: .6, cycles: 1, peak: .1 }
+      : { lights: front, kind: 'pulse', color: hex('#ff7a1a', 1, .9), period: .18, cycles: effect.burn ? 2 + 2 * effect.burn.level : 2 };
   }
   if (!byParty) return { lights: front, kind: 'breathe', color: hex('#ff2a1a', strong, 1), period: knockedOut ? .9 : .5, cycles: knockedOut ? 2 : 1, peak: .08 };
   const color = white(5500, strong);

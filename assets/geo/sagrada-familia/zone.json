@@ -90,7 +90,8 @@
         "tint": "#6c8650"
       }
     },
-    "edge": "city"
+    "edge": "city",
+    "cut": false
   },
   "styles": {
     "default": {

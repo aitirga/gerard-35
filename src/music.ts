@@ -12,10 +12,11 @@ import { createHaunt, type Haunt } from './haunt.ts';
  * makes the file versions of one cycle of that many seconds, back to back: they play one into
  * another in random order, with no end. A `vamp` repeats the section between its two marks a random
  * number of `laps` (or until `music.moveOn`), then the song goes on; with a `loop` too, the song
- * starts over from the loop's start at its end, and vamps again.
+ * starts over from the loop's start at its end, and vamps again. A long take that `wraps` only picks
+ * a random point as it starts: at the end of its file it goes on from the top.
  */
 export interface Vamp { from: string; to: string; laps: readonly [number, number] }
-export interface Track { src: string; marks: Record<string, number>; loop?: readonly [string, string]; bpm?: number; beatsPerBar?: number; downbeat?: string; stream?: boolean; loudness?: string; haunted?: boolean; cycle?: number; vamp?: Vamp }
+export interface Track { src: string; marks: Record<string, number>; loop?: readonly [string, string]; bpm?: number; beatsPerBar?: number; downbeat?: string; stream?: boolean; loudness?: string; haunted?: boolean; cycle?: number; vamp?: Vamp; wraps?: boolean }
 export const TRACKS = {
   // Measured with `just music-loop`: the quick notes end on a piano G that rings until the C strikes
   // at 2.398 s; the loop starts right there, so it comes round on the C alone, and runs everything
@@ -32,7 +33,12 @@ export const TRACKS = {
   // to bar 10 keeps its tail; both marks sit 58 samples before the downbeat, where the waveforms meet.
   concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, vamp: 19.635146, on: 37.089708, end: 100.364 }, loop: ['start', 'end'], vamp: { from: 'vamp', to: 'on', laps: [3, 7] }, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
   // Passatge Maresme, where the game starts: the whole song loops, 80 beats (20 bars) at 50 BPM.
-  sad: { src: 'music/song-sad.m4a', marks: { start: 0, end: 96 }, loop: ['start', 'end'], bpm: 50, beatsPerBar: 4, downbeat: 'start' },
+  // The file starts already sounding, so a cut at exactly 0 → 96 s clicked; the loop runs 43
+  // samples (at 48 kHz) after the start to 61 before 96 s, where the waveforms meet, 2 ms short.
+  triste: { src: 'music/song-triste.m4a', marks: { start: 0, loop: 0.000896, end: 95.998729 }, loop: ['loop', 'end'], bpm: 50, beatsPerBar: 4, downbeat: 'start' },
+  // Uri's tower, 11 minutes, dark: a long take, streamed, that comes in anywhere each time they go in
+  // or a fight ends, and never jumps while it plays. It fades in and out by itself, so its end meets its top.
+  'mazmorra-oscuro': { src: 'music/song-mazmorra-oscuro.m4a', marks: { start: 0 }, stream: true, loudness: 'music/song-mazmorra-oscuro.loudness.json', wraps: true },
   // A friend's mission: six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23),
   // each starting on its downbeat, so any can follow any.
   'mazmorra-2': { src: 'music/song-mazmorra-2.m4a', marks: { start: 0 }, cycle: 48, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
@@ -152,10 +158,10 @@ export function fadeCurve(from: number, to: number, steps = 32) {
  * from while that still plays out; a vamping one also its section in seconds and the timer that
  * lets go of it.
  */
-interface Voice { track: TrackId; source?: AudioBufferSourceNode; element?: HTMLAudioElement; gain: GainNode; startedAt: number; offset: number; loop?: [number, number]; timer?: ReturnType<typeof setTimeout>; handoff?: Voice; vamp?: { from: number; to: number; laps: number }; cut?: ReturnType<typeof setTimeout> }
+interface Voice { track: TrackId; source?: AudioBufferSourceNode; element?: HTMLAudioElement; media?: MediaElementAudioSourceNode; gain: GainNode; startedAt: number; offset: number; loop?: [number, number]; timer?: ReturnType<typeof setTimeout>; handoff?: Voice; vamp?: { from: number; to: number; laps: number }; cut?: ReturnType<typeof setTimeout> }
 /** Lead time for anything scheduled, so the first samples are never late. */
 const LEAD = .03;
-/** A streamed take crossfades into another random point this many seconds before its file ends. */
+/** A streamed take crossfades into another random point (one that `wraps`, into its top) this many seconds before its file ends. */
 const TAKE_FADE = 6;
 /** A take that came in matched to another's loudness eases back to its own level over this long. */
 const SETTLE = 20;
@@ -269,17 +275,18 @@ export function createMusic(audio: GameAudio) {
     const { context } = audio.buses!;
     const gain = context.createGain();
     gain.gain.value = fade > 0 ? 0 : 1;
-    context.createMediaElementSource(element).connect(gain).connect(output(id));
+    const media = context.createMediaElementSource(element);
+    media.connect(gain).connect(output(id));
     element.currentTime = offset;
-    const voice: Voice = { track: id, element, gain, startedAt: at, offset };
-    // Near the end of the file, come back in somewhere else, so the take plays on for as long as you stay.
+    const voice: Voice = { track: id, element, media, gain, startedAt: at, offset };
+    // Near the end of the file, come back in somewhere else (or from the top), so the take plays on for as long as you stay.
     element.ontimeupdate = () => {
       if (current !== voice || element.duration - element.currentTime > TAKE_FADE) return;
       element.ontimeupdate = null;
       void Promise.all([open(id), loudnessOf(id)]).then(([next, map]) => {
         if (current !== voice) return;
         const now = context.currentTime + LEAD;
-        const { offset, level } = comeIn(next.duration, map, map && loudnessNow(voice, map));
+        const { offset, level } = (TRACKS[id] as Track).wraps ? { offset: 0, level: 1 } : comeIn(next.duration, map, map && loudnessNow(voice, map));
         current = stream(id, next, offset, now, TAKE_FADE, level);
         release(voice, now, TAKE_FADE);
       }).catch(error => console.warn('No se pudo cargar la música', error));
@@ -309,7 +316,7 @@ export function createMusic(audio: GameAudio) {
     const element = voice.element;
     if (element) {
       element.ontimeupdate = null;
-      setTimeout(() => { element.pause(); element.removeAttribute('src'); element.load(); voice.gain.disconnect(); }, (at - audio.buses!.context.currentTime + fade) * 1000 + 100);
+      setTimeout(() => { element.pause(); element.removeAttribute('src'); element.load(); voice.media?.disconnect(); voice.gain.disconnect(); }, (at - audio.buses!.context.currentTime + fade) * 1000 + 100);
     }
     // A version still playing out before its seam fades with the one that took over.
     const handoff = voice.handoff;

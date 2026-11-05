@@ -4,7 +4,7 @@ import { TOWER, inTower, onTop, towerHeights, type TowerSpec } from './tower';
 /**
  * How La torre de Uri looks (src/tower.ts has its shape): the ramp as stone columns as high as
  * each cell stands, walls of dark brick that always rise well over the ramp beside them (you
- * never see out, only up), violet lanterns in the walls, and on top El Vértigo with Uri and Nil.
+ * never see out, only up), violet lanterns in the walls, and on top Vertitrón with Uri and Nil.
  * Everything is two merged meshes, so the whole tower is a handful of draw calls.
  */
 export interface TowerScenery {
@@ -95,9 +95,11 @@ export function buildTower(app: pc.Application, grid: readonly string[], scenery
   const top = t.rise * (t.walls.length - 1);
   return {
     root,
-    /** Where El Vértigo stands on top, in world space, and the height of the platform. */
+    /** Where Vertitrón stands on top, in world space, and the height of the platform. */
     summit: scenery.toWorld(t.centre.x, t.centre.z).add(new pc.Vec3(0, top, 0)),
     heightAt: (x: number, z: number) => height(Math.round(x), Math.round(z)) ?? 0,
+    /** What a fight's pocket is made of up here (src/pocket.ts): the ramp's stone, the walls' brick and the lanterns' violet. */
+    pocket: { floor: stone as pc.Material, wall: brick as pc.Material, light: new pc.Color(.72, .52, 1) },
     /** Keeps the soft light over Gerard. */
     follow(at: pc.Vec3) { near.setPosition(at.x, at.y + 2.2, at.z); },
     destroy() { root.destroy(); meshes.forEach(m => m.destroy()); materials.forEach(m => m.destroy()); },

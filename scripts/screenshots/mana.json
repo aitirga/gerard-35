@@ -1,0 +1,38 @@
+{
+  "title": "Maná: each ánima its own",
+  "description": "In a fight skills spend maná (docs/combat.md § Maná): each ánima has its own three circles per wearer, full at the start; changing ánima shows the other's pool, and ánimas left resting a whole round get one back.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Afalse%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && !document.querySelector('#battle[data-entering]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 90000
+    },
+    {
+      "shot": "start",
+      "delay": 1200,
+      "caption": "Aitor (Papagato) and Gerard (Matemágico): MANÁ ●●● under each one's PV"
+    },
+    {
+      "eval": "const s = window.gerard.battleUI; const g = document.querySelector('[data-command=\"skill\"] .command-trigger'); g?.click()"
+    },
+    {
+      "shot": "skills",
+      "delay": 800,
+      "caption": "Each skill's cost in maná circles"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "press": "KeyE",
+      "gap": 400
+    },
+    {
+      "shot": "switched",
+      "delay": 900,
+      "caption": "E: Aitor puts on Matemágico, and its own maná (full) shows instead of Papagato's"
+    }
+  ]
+}

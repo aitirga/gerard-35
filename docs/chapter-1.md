@@ -10,7 +10,7 @@ his power: **changing class by changing mood**, fast.
 | Block | Minutes | Status | Where |
 | --- | --- | --- | --- |
 | 1 · Casa y calle | 0–10 | Playable | Bedroom → kitchen → hall → street → Bernat's door → down the street → first fight |
-| 2 · El juego se hace real | 10–20 | Playable | The street turns into La Reina Bubbaloo's palace: the first mini dungeon and Noísta, Gerard's first class ([design](bubbaloo-palace.md)) |
+| 2 · El juego se hace real | 10–20 | Playable | The street turns into La Reina Bubbaloo's palace: the first mini dungeon and Matemágico, Gerard's first ánima ([design](bubbaloo-palace.md)) |
 | 3 · Final | — | Playable | Replaced: the palace ends in the Queen's hands, black, and Gerard waking up at 35 (chapter 2) |
 
 ## Design principles
@@ -55,7 +55,7 @@ his power: **changing class by changing mood**, fast.
 Story flags (saved): `intro`, `met-jan`, `got-shoes`, `got-potion`, `got-backpack`,
 `bernat-joined`, `bernat-stalled`, `dejavu`, `minion`, `first-fight`. Battles with the dogs stay
 off until `dejavu`; from `minion` on the dogs are possessed, and `first-fight` keeps Sant Quirze
-in La Reina Bubbaloo's light. The palace block adds `palace`, `in-palace`, `got-chicle`, `noista`
+in La Reina Bubbaloo's light. The palace block adds `palace`, `in-palace`, `got-chicle`, `matemagico`
 and `wrapper-room` (see the [palace design](bubbaloo-palace.md)).
 
 ### How it is built
@@ -85,8 +85,8 @@ and `wrapper-room` (see the [palace design](bubbaloo-palace.md)).
 ## Block 2 · El juego se hace real (10–20 min) — plan
 
 > Built as [La Reina Bubbaloo's palace](bubbaloo-palace.md): the houses at the north end turn into
-> her palace, a first mini dungeon where Gerard unlocks the Noísta class. The notes below are the
-> earlier idea, kept for reference.
+> her palace, a first mini dungeon where Matemágico wakes in Gerard, his first ánima. The notes
+> below are the earlier idea, kept for reference.
 
 1. **The switch** (now in block 1). The minion possesses the dogs, the first fight happens, and the
    light turns pink and gloomy. Still open: whether the HUD should also take La Reina Bubbaloo's

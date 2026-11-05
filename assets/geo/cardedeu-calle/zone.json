@@ -1,0 +1,355 @@
+{
+ "id": "cardedeu-calle",
+ "name": "Cardedeu · Jacint Verdaguer",
+ "region": "Cardedeu, Vallès Oriental",
+ "anchor": {
+  "address": "Carrer de Jacint Verdaguer, 08440 Cardedeu",
+  "lat": 41.6373255,
+  "lon": 2.3543989
+ },
+ "bounds_m": {
+  "west": -28,
+  "east": 28,
+  "north": -150,
+  "south": 30
+ },
+ "cell_m": 1.25,
+ "rotation_deg": 0,
+ "zoom": 11.5,
+ "spawn": {
+  "east_m": 0,
+  "south_m": -3
+ },
+ "storey_m": 3.0,
+ "reference": {
+  "checked": "2026-11-01",
+  "streetview_capture": "",
+  "notes": [
+   "DESIGNED: Nuria's street as Uri's fear bends it (docs/quests/nuria.md § La calle que no acaba): one way only, straight on, Nuria's block repeating on the left with her number on every door, the street narrowing and the houses growing as it goes, the colour draining to her violet dusk; the bubble portal at the far end is drawn by the game (src/street-unease.ts)."
+  ],
+  "viewpoints": []
+ },
+ "styles": {
+  "default": {
+   "walls": [
+    "#f3e9d8"
+   ],
+   "base": "#a8a399",
+   "trim": "#ffffff",
+   "roof": "#b5583a",
+   "roof_kind": "hip",
+   "facade": "vila",
+   "ground": "socol",
+   "levels": 2,
+   "materials": {
+    "base": "granit"
+   }
+  },
+  "nuria-0": {
+   "walls": [
+    "#f3e9d8"
+   ],
+   "roof": "#b5583a",
+   "trim": "#ffffff"
+  },
+  "fila-0": {
+   "walls": [
+    "#ecd69c",
+    "#efe3c8",
+    "#e7c98e"
+   ],
+   "roof": "#b5583a"
+  },
+  "nuria-1": {
+   "walls": [
+    "#e2d9cf"
+   ],
+   "roof": "#9a5544",
+   "trim": "#f1ede8"
+  },
+  "fila-1": {
+   "walls": [
+    "#ddcfae",
+    "#e0d6c4"
+   ],
+   "roof": "#9a5544"
+  },
+  "nuria-2": {
+   "walls": [
+    "#b9adb4"
+   ],
+   "roof": "#7a4a52",
+   "trim": "#cfc6cc"
+  },
+  "fila-2": {
+   "walls": [
+    "#b3a7a6",
+    "#a99eaa"
+   ],
+   "roof": "#7a4a52"
+  },
+  "nuria-3": {
+   "walls": [
+    "#7d6f82"
+   ],
+   "roof": "#4a3048",
+   "trim": "#9a8ea0"
+  },
+  "fila-3": {
+   "walls": [
+    "#6f6378",
+    "#665a70"
+   ],
+   "roof": "#4a3048"
+  }
+ },
+ "buildings": {
+  "sketch/oest-0": {
+   "style": "nuria-0"
+  },
+  "sketch/est-0": {
+   "style": "fila-0"
+  },
+  "sketch/oest-1": {
+   "style": "nuria-0"
+  },
+  "sketch/est-1": {
+   "style": "fila-0"
+  },
+  "sketch/oest-2": {
+   "style": "nuria-0"
+  },
+  "sketch/est-2": {
+   "style": "fila-0"
+  },
+  "sketch/oest-3": {
+   "style": "nuria-0"
+  },
+  "sketch/est-3": {
+   "style": "fila-0"
+  },
+  "sketch/oest-4": {
+   "style": "nuria-0"
+  },
+  "sketch/est-4": {
+   "style": "fila-0"
+  },
+  "sketch/oest-5": {
+   "style": "nuria-0"
+  },
+  "sketch/est-5": {
+   "style": "fila-0"
+  },
+  "sketch/oest-6": {
+   "style": "nuria-0"
+  },
+  "sketch/est-6": {
+   "style": "fila-0"
+  },
+  "sketch/oest-7": {
+   "style": "nuria-1"
+  },
+  "sketch/est-7": {
+   "style": "fila-1"
+  },
+  "sketch/oest-8": {
+   "style": "nuria-1"
+  },
+  "sketch/est-8": {
+   "style": "fila-1"
+  },
+  "sketch/oest-9": {
+   "style": "nuria-1"
+  },
+  "sketch/est-9": {
+   "style": "fila-1"
+  },
+  "sketch/oest-10": {
+   "style": "nuria-2"
+  },
+  "sketch/est-10": {
+   "style": "fila-2"
+  },
+  "sketch/oest-11": {
+   "style": "nuria-2"
+  },
+  "sketch/est-11": {
+   "style": "fila-2"
+  },
+  "sketch/oest-12": {
+   "style": "nuria-2"
+  },
+  "sketch/est-12": {
+   "style": "fila-2"
+  },
+  "sketch/oest-13": {
+   "style": "nuria-2"
+  },
+  "sketch/est-13": {
+   "style": "fila-2"
+  },
+  "sketch/oest-14": {
+   "style": "nuria-3"
+  },
+  "sketch/est-14": {
+   "style": "fila-3"
+  },
+  "sketch/oest-15": {
+   "style": "nuria-3"
+  },
+  "sketch/est-15": {
+   "style": "fila-3"
+  },
+  "sketch/oest-16": {
+   "style": "nuria-3"
+  },
+  "sketch/est-16": {
+   "style": "fila-3"
+  },
+  "sketch/oest-17": {
+   "style": "nuria-3"
+  },
+  "sketch/est-17": {
+   "style": "fila-3"
+  }
+ },
+ "props": [
+  {
+   "kind": "car",
+   "east_m": 4.9,
+   "south_m": -5,
+   "color": "#f2f2ef"
+  },
+  {
+   "kind": "lamp",
+   "east_m": -5.720000000000001,
+   "south_m": -14
+  },
+  {
+   "kind": "lamp",
+   "east_m": 5.720000000000001,
+   "south_m": -19
+  },
+  {
+   "kind": "car",
+   "east_m": 4.539999999999999,
+   "south_m": -25,
+   "color": "#f2f2ef"
+  },
+  {
+   "kind": "lamp",
+   "east_m": -5.36,
+   "south_m": -34
+  },
+  {
+   "kind": "lamp",
+   "east_m": 5.36,
+   "south_m": -39
+  },
+  {
+   "kind": "car",
+   "east_m": 4.1899999999999995,
+   "south_m": -45,
+   "color": "#f2f2ef"
+  },
+  {
+   "kind": "lamp",
+   "east_m": -5.010000000000001,
+   "south_m": -54
+  },
+  {
+   "kind": "lamp",
+   "east_m": 5.010000000000001,
+   "south_m": -59
+  },
+  {
+   "kind": "car",
+   "east_m": 3.8299999999999996,
+   "south_m": -65,
+   "color": "#f2f2ef"
+  },
+  {
+   "kind": "lamp",
+   "east_m": -4.65,
+   "south_m": -74
+  },
+  {
+   "kind": "lamp",
+   "east_m": 4.65,
+   "south_m": -79
+  },
+  {
+   "kind": "lamp",
+   "east_m": -4.29,
+   "south_m": -94
+  },
+  {
+   "kind": "lamp",
+   "east_m": 4.29,
+   "south_m": -99
+  },
+  {
+   "kind": "lamp",
+   "east_m": -3.94,
+   "south_m": -114
+  },
+  {
+   "kind": "lamp",
+   "east_m": 3.94,
+   "south_m": -119
+  },
+  {
+   "kind": "lamp",
+   "east_m": -3.5799999999999996,
+   "south_m": -134
+  },
+  {
+   "kind": "lamp",
+   "east_m": 3.5799999999999996,
+   "south_m": -139
+  },
+  {
+   "kind": "tree",
+   "east_m": -3.5,
+   "south_m": -14,
+   "species": "olive"
+  },
+  {
+   "kind": "bin",
+   "east_m": 4.8,
+   "south_m": -26
+  },
+  {
+   "kind": "manhole",
+   "east_m": 0.6,
+   "south_m": -86.8
+  }
+ ],
+ "places": [
+  {
+   "id": "calle-tornar",
+   "label": "Volver con Nuria",
+   "east_m": 0,
+   "south_m": 28.5
+  }
+ ],
+ "anchors": {
+  "calle-inici": {
+   "east_m": 0,
+   "south_m": -3
+  },
+  "calle-portal": {
+   "east_m": 0,
+   "south_m": -144
+  }
+ },
+ "look": {
+  "hills": false,
+  "materials": {
+   "ground": {
+    "texture": "formigo",
+    "tint": "#9f988c"
+   }
+  }
+ }
+}

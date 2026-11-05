@@ -50,7 +50,7 @@
       "caption": "Xbox pad: the A floats instead; stick, ☰ · Menú, View"
     },
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1"
+      "open": "/?story=matemagico&battle=3&allies=2"
     },
     {
       "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",

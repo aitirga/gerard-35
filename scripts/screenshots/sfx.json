@@ -1,0 +1,111 @@
+{
+  "title": "Efectos de sonido",
+  "description": "docs/audio.md § Effects: every synth recipe rendered offline and measured (it has to make a sound and not clip), and each sound that goes on (the bubble's hiss, far and close), the effects lab's Sonidos buttons, then a real fight against El Cebollón logging each sound asked for and in what order.",
+  "steps": [
+    {
+      "open": "/?story=matemagico&fxlab"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && !!document.querySelector('.fx-lab [data-sound]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "(async () => { const { SOUNDS, BEDS } = await import('/src/sfx.ts'); const rows = []; for (const [id, sound] of Object.entries(SOUNDS)) { const c = new OfflineAudioContext(1, 48000 * 2.2, 48000); const seconds = sound.synth(c, c.destination, .01, 1); const data = (await c.startRendering()).getChannelData(0); let peak = 0, sum = 0; for (const v of data) { peak = Math.max(peak, Math.abs(v)); sum += v * v; } let last = 0; for (let i = data.length - 1; i >= 0; i--) if (Math.abs(data[i]) > .0005) { last = i / 48000; break; } rows.push({ id, peak, rms: Math.sqrt(sum / Math.max(1, last * 48000)), seconds, last }); } for (const [id, make] of Object.entries(BEDS)) for (const drive of [0, 1]) { const c = new OfflineAudioContext(1, 48000 * 3, 48000); const bed = make(c, c.destination, 0); bed.drive(drive, 0); bed.stop(2.5); const data = (await c.startRendering()).getChannelData(0); let peak = 0, sum = 0; for (let i = 24000; i < 120000; i++) { const v = data[i]; peak = Math.max(peak, Math.abs(v)); sum += v * v; } let last = 0; for (let i = data.length - 1; i >= 0; i--) if (Math.abs(data[i]) > .0005) { last = i / 48000; break; } rows.push({ id: `${id}·${drive}`, peak, rms: Math.sqrt(sum / 96000), seconds: 2.5, last }); } window.sfxReport = rows; const el = document.createElement('pre'); el.id = 'sfx-report'; el.style.cssText = 'position:fixed;left:12px;top:12px;bottom:12px;z-index:9999;margin:0;padding:12px 16px;background:#101410f2;color:#e8f0e0;font:12px/1.42 ui-monospace,monospace;columns:2;column-gap:28px;overflow:hidden;width:calc(100vw - 340px)'; el.textContent = rows.map(r => `${r.id.padEnd(12)} pico ${r.peak.toFixed(2)}  rms ${r.rms.toFixed(3)}  ${r.last.toFixed(2)} s`).join('\\n'); document.body.append(el); })()"
+    },
+    {
+      "until": "window.sfxReport?.length >= 30",
+      "timeout": 30000
+    },
+    {
+      "until": "window.sfxReport.every(r => r.peak > .03 && r.peak <= 1 && r.last > .02 && r.last < r.seconds + .2)",
+      "timeout": 2000
+    },
+    {
+      "shot": "medidas",
+      "delay": 400,
+      "caption": "Every sound rendered and measured: each makes a sound, none clips, each ends when it says; the bubble's hiss far (·0) and close (·1)"
+    },
+    {
+      "eval": "document.querySelector('#sfx-report').remove()"
+    },
+    {
+      "eval": "document.querySelector('.fx-lab-body').scrollTop = document.querySelector('.fx-lab [data-sound]').offsetTop - 60"
+    },
+    {
+      "shot": "laboratorio",
+      "delay": 500,
+      "caption": "The effects lab: a button for each sound, to hear them (just dev-fx)"
+    },
+    {
+      "open": "/?mission=nuria&part=ring-1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.fightReady = () => document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger'); window.turnOf = id => window.fightReady() && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; { const set = window.gerard.game.setBattle; window.gerard.game.setBattle = (state, ...rest) => { window.fightState = state; return set(state, ...rest); }; } window.sounds = []; { const play = window.gerard.sfx.play; window.gerard.sfx.play = (id, options) => { if (!id.startsWith('ui-')) window.sounds.push(id); return play(id, options); }; }"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 52, z: 30 }); window.gerard.game.startPalaceFight('cebollon')"
+    },
+    {
+      "until": "window.fightReady()",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.battleUI.setAnimas(window.gerard.story.classes, { papagato: 2 }); window.sounds.length = 0"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"zarpazos\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click()"
+    },
+    {
+      "until": "window.turnOf('aitor')",
+      "timeout": 30000
+    },
+    {
+      "until": "['meow'].every(id => window.sounds.includes(id)) && window.sounds.filter(id => id === 'claw').length === 4 && window.sounds.filter(id => id === 'peel').length >= 3",
+      "timeout": 3000
+    },
+    {
+      "eval": "window.gerard.battleUI.fight; document.querySelector('[data-command=\"attack\"] .command-trigger').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click()"
+    },
+    {
+      "until": "window.turnOf('gerard')",
+      "timeout": 60000
+    },
+    {
+      "until": "window.sounds.includes('hit') && window.sounds.includes('slam') && window.sounds.includes('stat-down')",
+      "timeout": 3000
+    },
+    {
+      "eval": "{ const el = document.createElement('pre'); el.style.cssText = 'position:fixed;right:16px;top:100px;z-index:9999;margin:0;padding:10px 14px;background:#101410f2;color:#e8f0e0;font:13px/1.45 ui-monospace,monospace'; el.textContent = 'Sonidos pedidos en una ronda:\\n' + window.sounds.join('\\n'); document.body.append(el); }"
+    },
+    {
+      "shot": "una-ronda",
+      "delay": 300,
+      "caption": "One round against El Cebollón: Haru's miaow, four claws and the layers coming off, Aitor's blow, then the onion's weight and the tears lowering stats"
+    }
+  ]
+}

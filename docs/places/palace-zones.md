@@ -149,7 +149,7 @@ off the north wall beside it: the last door before her.
 | Look | `palacio-secretaria`: flat and tiring, a little green, washed out; `her` 0.15 |
 | Air | Paper dust; a trace of her gloom |
 | Props | The counter (laminate on a panelled front, a glass screen on aluminium posts), the finestreta with its *SECRETARIA* sign, opening hours and the *REGISTRE D'ENTRADA* stamp, the raised flap, the queue, a row of waiting chairs on their beam with a form left on one, ten identical desks with their chairs, the photocopier (a copy slides out every two seconds, copies piled on the floor), back-to-back four-drawer cabinets, archive boxes with labels, drifts of forms and loose sheets everywhere, shelves of binders by school year along the north wall, the clock stopped at nine, the cork board (circulars, calendar, timetables), the key cabinet (every classroom's key on its hook) |
-| La mesa de Gerard | His mug (white with a blue band), the school's seal, the registry stamp and its ink pad (her pink ink: the wink, No-ta's stamp's cousin), a framed photo, the day's pile, his chair pulled out, the articulated lamp |
+| La mesa de Gerard | His mug (white with a blue band), the school's seal, the registry stamp and its ink pad (her pink ink), a framed photo, the day's pile, his chair pulled out, the articulated lamp |
 | Her pink | Sticky notes on everything (screens, drawers, boxes, the glass, the board's papers), the ink on his stamp pad |
 | Anchors | `boss-secretaria` (3, 5), `la-mesa` (2, 1) |
 | Looks (Gerard) | the queue, the finestreta, the cork board, the desks, the photocopier, the keys, his desk |

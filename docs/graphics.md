@@ -14,7 +14,7 @@ src/game.ts ── camera ──► src/post.ts       CameraFrame: HDR + 4× MSA
                                ├──────────► src/particles.ts   CPU simulation + one instanced draw
                                ├──────────► src/flames.ts      fire drawn whole by a noise shader: one draw
                                └──────────► src/trails.ts      ribbons: one strip, one draw
-src/battle-scene.ts ─────► effects.impact / heal / anima / stamp / element / comet / trails …
+src/battle-scene.ts ─────► effects.impact / binaryFire / anima / element / comet / trails …
             └─ hit feel ► src/hit-feel.ts   hit-stop, camera lurch and punch-in; post.pulse for fringe + bloom
                                │                               weather and ground marks
 src/scenery.ts ── sun, sky ─► src/lighting.ts   shadows fitted to the view (PCSS / PCF), sky reflections
@@ -50,6 +50,19 @@ about half as fast.
 - **Batch what stands still.** Scenery parts go into the scene's group `Estático: <id>`
   (`scenery.ts`, props, geo, and the house's parts that never fold). In the Meridiana flat this took
   the draw calls from about 2,300 to 1,000.
+- **Trees and rigid props draw merged** (`merge` in src/props.ts). A tree is a dozen primitives
+  (trunk, branches, crown, lobes) under a swaying pivot, so it cannot join the static batch: its
+  trunk and crown are merged per material under the pivot instead (four draws, not twelve), its
+  pit, pot and stakes join the batch, and a crown that fades while Gerard is behind it switches
+  back to its own parts so the see-through lobes still sort one by one. Moving cars, buses, motos
+  and cyclists merge the same way (merged meshes are shared, so all cars cost one body mesh).
+  Over Avinguda Meridiana's overview this took the draw calls from about 11,100 to 5,000 and the
+  frame from 19 to 12 ms at 2× pixels, for 18 MB more vertex data. `just screenshots
+  zone-overview` shows it (and checks that merged and per-part crowns look the same).
+- **Developing on a busy GPU.** At 2× pixels the post pass costs more than the scene (about 13–17
+  ms of GPU in the city). A machine can draw fewer pixels in `just dev` only, with
+  `VITE_PIXEL_RATIO=1.5` (about half the pixels) in its git-ignored `.env.development.local`.
+  Builds, the deployed game and screenshots keep the full ratio.
 - **A second camera draws a second scene.** The flat's TV (`src/news-tv.ts`) films a whole Rec
   Comtal set, so it films 15 pictures a second (30 while watching it up close), only while the
   screen is in view, and the set casts no shadows. Before that it was two thirds of the flat's cost.
@@ -87,25 +100,20 @@ for weaker computers. In the development build the engine's debug checks make We
 against 5.6), so always time with `--perf`, never with `just dev`.
 
 **Burning fighters** (`gpu-perf` also times a fight at rest, its three dogs burning at the three
-levels, and all five fighters burning at the highest). Measured on the same desktop with Chromium
-141 at 1440×900 and 2× pixels (`--scale 2`, as a Retina screen draws):
+levels, and all five fighters burning at the highest). Measured on a MacBook with Chromium at
+1440×900 and 2× pixels (`--scale 2`, as a Retina screen draws), against the fires they replaced:
 
-| Fight | frame ms · GPU ms · draws |
+| Fight | frame ms before → now · draws |
 | --- | --- |
-| At rest | 7.63 · 7.61 · 916 |
-| Three dogs burning (light, medium, high) | 8.23 · 8.16 · 962 |
-| All five fighters burning high | 9.07 · 9.01 · 1110 |
+| At rest | 15.96 → 15.79 · 613 |
+| Three dogs burning (light, medium, high) | 16.38 → 16.68 · 659 |
+| All five fighters burning high | 17.67 → 18.70 · 811 |
 
-With all five burning, drawing the GPU fight particles (below) costs ~0.5 ms, the shells
-~0.25 ms, and the simulation pass, flames and light the rest; an idle fight's simulation costs
-nothing measurable.
-
-Turning each part off in turn showed that almost all of the cost is the fires' lights (each omni
-light costs every lit pixel within its range), not the flame shaders: the shells cost ~0.1 ms, the
-heat on the fighters' materials 0.05 ms. Before fires shared lights and had shorter ranges, three
-dogs burning cost +0.9 ms; now fires
-within `FIRE_SHARE` metres cast one light between them, at most `FIRE_LIGHTS` at once. At 1× it costs
-0.1–0.2 ms.
+Every tongue of flame on anyone is one draw call, and the burn on someone's surface one a part. Measuring
+the older fires, turning each part off in turn showed that most of the cost is the fires' lights (each omni
+light costs every lit pixel within its range), so fires within `FIRE_SHARE` metres cast one light between
+them, at most `FIRE_LIGHTS` at once. Catching fire surveys a body once: 0.7–2.4 ms on a foe, about 4 ms on
+Vertitrón or Gerard (77 visible parts), in the development build; every later fire on them reuses it.
 
 ### Custom shaders in WGSL
 
@@ -359,8 +367,9 @@ about 0.1–0.9 ms more CPU a frame. Set `LOOK.softParticles` to false to drop i
 
 ## Fight particles on the GPU (`src/fight-particles.ts`)
 
-A general particle engine on the GPU, used only in fights (and only with motion on, on a device
-that renders to float textures); everywhere else, in reduced motion and in the headless tests, effects stay on the CPU pool. 32 768 particles.
+A general particle engine on the GPU, used in fights, and on the street while something beaten comes
+apart there (Disintegration, below), only with motion on, on a device that renders to float textures;
+everywhere else, in reduced motion and in the headless tests, effects stay on the CPU pool. 32 768 particles.
 
 - **State** is a float texture of five bands of rows (A position + age; B velocity + life; C kind,
   seed, the part it clings to, size; D when it lets go + its colour tint; E the particle it follows,
@@ -379,7 +388,9 @@ that renders to float textures); everywhere else, in reduced motion and in the h
 - **Spawning** happens on the GPU: the CPU keeps a ring of slots and sends batches (`burst`,
   `emitter`, up to 64 a frame): in a ball, on a ring round any axis (spinning with `around`), along a
   line (`to`), or on the **surface of a fighter**: a random part above a fraction of their height, a
-  random face, a random point on it, thrown off along its normal. A burst may tint the kind
+  random face, a random point on it, thrown off along its normal; with `band` only within that band of
+  their height (drawn again until the point is in it), and with `fromPart` in the colour of the part it
+  leaves (each part's diffuse colour rides with its box). A burst may tint the kind
   (`colour`) and cut itself into **chains** (`chain`): every link starts where its leader does, and
   followers close in on the link ahead (lagging, so a chain draws a curve as its head moves). A
   particle born this frame waits a frame to move, so it never reads its leader before it exists.
@@ -418,9 +429,9 @@ that renders to float textures); everywhere else, in reduced motion and in the h
   with them. The four brightest groups get a light (`FX_LIGHTS`), scaled down by daylight like a
   fire's.
 
-`FIGHT_KINDS` in src/effects.ts defines 15 kinds; the fight uses them for blows (sparks and crisp
-`needle` lines that meet whoever was hit), for whoever burns (`FIRE_GPU`: tongues, embers and smoke
-off their own parts, a vortex round them) and for fire hits (a ring of embers drawn in, then blown
+`FIGHT_KINDS` in src/effects.ts defines the fight's kinds; it uses them for blows (sparks and crisp
+`needle` lines that meet whoever was hit), for whoever burns (`FIRE_GPU`: embers, crackle, smoke and
+ash off their own parts, a vortex round them) and for fire hits (a ring of embers drawn in, then blown
 out). `effects.fightFx(name, { model, from, colour, strength })` plays a preset made of them
 (`FIGHT_FX`): `needles`, `shatter` (ice: spinning shards that become frost), `arc` (energy: chains of
 light), `vortex` (an ánima's colour spiralling up), `swarm` (shadow: a flock that sees itself),
@@ -517,6 +528,46 @@ close with `game.frame` (which holds the fight camera too while set) and `game.f
 fight (`groundAt` reads −1 there); before, effects that start at the feet or the chest sat almost a
 metre low in such fights.
 
+## Disintegration (`src/disintegrate.ts`)
+
+A beaten foe does not fall over and leave in a puff: all at once, a little sooner at its feet, it
+crumbles into specks of violet and purple light, tiny and see-through, that hang where it stood for a
+moment, drift up a little with a short trail and fade (the crumbling under half a second, the specks
+about a second and a half). Violet is fear's and possession's (docs/visual-style.md): what held it
+leaving. In a fight each foe does as it is beaten; on the street, what stood for it does once the
+place shows again: a fear on the tower's ramp where it caught the party, and El Vértigo on the top,
+while Uri talks. `effects.disintegrate(model, { colour, delay, own, done })` runs one (`colour` in
+place of the violet and purple) and returns its `progress` and whether it is `finished`.
+
+- **The crumbling is a shader on its own materials** (`dissolvable`: WGSL chunks of the lit shader).
+  A front sweeps from below its feet to above its head (`DISINTEGRATE.seconds`, 0.42 s), so ragged
+  (`ragged` 1, a whole height of value noise: coarse over its height, fine per metre) that it eats
+  grains all over it at once. The noise is measured from where it stands, so the pattern rides with
+  it. A fragment the front has passed is discarded in every pass, its shadow and the depth prepass
+  too; one at the edge of a hole glows faintly violet. A fighter's material copies get the chunks
+  when the fight is built, so nothing compiles the moment it is beaten; a street model comes apart in
+  copies of its own, and gets its materials back once it is gone (a pack of young comes back whole).
+- **What it eats becomes fight particles born on its real parts**: bursts of `speck`s on its
+  `surface`, within the `band` of its height the front is crossing, so for a moment its shape stands
+  there in specks. Each speck is a chain of four drawn as a strand (its trail), half violet
+  (`#a274ff`), half deep purple (`#6c2cc4`), so they show on dark floors and on light ones; with no
+  white-hot core (`core: 0`) and little additive light, they keep their colour over any floor. Thick
+  drag and a little buoyancy: they hang, then rise a little, darkening as they fade; other effects'
+  force fields leave them be (`response: 0`). Bigger foes throw more and slightly bigger specks.
+- **In a fight** (`src/battle-scene.ts`) a beaten foe shudders for `DISINTEGRATE.shudder`, then crumbles
+  rising a touch (`DISINTEGRATE.lift`) and leaning back, frozen in its pose, with the `dissolve` sound (a
+  breath of air rising and soft notes climbing). El Vértigo lets go of Uri and Nil first: they stay
+  whole and come down to the floor. Gerard and Aitor still fall on their side and get back up.
+- **On the street** (`src/game.ts`): a fear beaten on the ramp leaves a copy where it stood, which
+  comes apart 0.35 s after the place shows again (never under the fight's glass) and is destroyed;
+  a pack of young beaten goes away whole and comes back later as before. El Vértigo on the top does
+  the same while Uri talks, and lets Uri and Nil down to the platform. While anything comes apart or
+  its specks still drift, the GPU engine runs outside the fight too.
+- **Reduced motion**: the crumbling alone, nothing thrown, nothing rising.
+
+`just screenshots disintegrate --gpu --scale 2` records three dogs beaten at once, El Cebollón beaten
+and then coming apart on the ramp, and El Vértigo in its fight and on the top.
+
 ## Reflections (`src/reflections.ts`)
 
 The sky (src/lighting.ts) gives every glossy surface a far, general reflection. Reflections add the
@@ -552,8 +603,10 @@ there is one.
 white-hot pinpoint, a body of its colour and a faint halo fading to nothing at the quad's edge;
 `dot` is a lit bead for matter (gum, frost: shaded from the upper left, a glint, a brighter rim,
 smooth-edged with `fwidth`, never turning) and a glowing orb for light (additive kinds); `star` has
-four fine tapering rays, four shorter diagonal ones, a hot core and a soft glow. Each particle is a
-touch brighter or dimmer than its kind, so a burst never looks flat.
+four fine tapering rays, four shorter diagonal ones, a hot core and a soft glow. A GPU kind's `core`
+(0–1, 1 by default) scales how white-hot any shape's middle is: 0 keeps a speck too small to have a
+core its own colour all through (a disintegration's violet). Each particle is a touch brighter or
+dimmer than its kind, so a burst never looks flat.
 
 ## Effects (`src/effects.ts`)
 
@@ -562,17 +615,18 @@ touch brighter or dimmer than its kind, so a burst never looks flat.
 | Call | What it shows |
 | --- | --- |
 | `emit(kind, at, count, spread)` | A plain burst of one kind (footfall dust, gum, spores). |
-| `impact(target, from, strength, { guarded, gum, feet })` | A blow: flash, sparks flying on through, a ring and dust at the feet; a guarded blow rings blue; gum foes spit drops that splat. |
-| `heal(feet, height)` | Cardioide: light rising from a cardioid round the feet, spiralling up. |
-| `insight(head)` | Análisis Parálisis: ideas circling over a head. |
-| `stamp(feet)` | No-ta: a shockwave of dust and red ink spattered round the print. |
+| `impact(target, from, strength, { guarded, gum, feet })` | A blow: flash, sparks flying on through (white-hot to gold, never clinging) and a little dust at the feet, no ring; on Gerard or Aitor it lands mid-body; a guarded blow glints blue; gum foes spit drops that splat. Nothing in a fight reads as blood. |
+| `binaryFire(from, to, { seconds, burn, feet, onArrive })` | Foc Binari: two braided streams of fire (orange to red, gold to orange) from the hand to one foe, shedding embers; with `burn` (a 1) they burst into fire, without it (a 0) they fizzle into smoke. |
+| `heal(feet, height)` | Light rising from a cardioid round the feet, spiralling up (no skill uses it now). |
+| `insight(head)` | Ideas circling over a head (no skill uses it now). |
 | `anima(body, colour, big)` | An ánima wakes (`big`) or is swapped in: its colour swirls up in strands of light and rings out. |
 | `comet(from, to, colour, seconds, options)` | A spell flying in an arc (a trail, below) that flares where it lands. |
 | `poof(where)` | Off in a puff of smoke. |
+| `disintegrate(model, { colour, delay, own, done })` | A beaten foe crumbles at once into tiny violet and purple specks that hang, drift up a little and fade, and is disabled (Disintegration, above). |
 | `confetti(centre, colours)` | The fight is won: confetti that tumbles down and lies where it falls. |
 | `element(element, target, { from, strength, feet, body })` | A hit of `fire`, `ice`, `air`, `energy`, `water`, `earth`, `light`, `shadow` or `gum`; fire is left burning around `body`. |
 | `aura(element, at, seconds, height)` | A state that clings to someone (burning, frozen, charged…); keep `at` updated. |
-| `fire(at, level, { seconds, body })` | A fire at `light`, `medium` or `high`, alone or around someone (below); returns `{ level, burning, stop() }`. |
+| `fire(at, level, { seconds, body, model })` | A fire at `light`, `medium` or `high`, alone, around someone or on their own body (below); returns `{ level, burning, glow, stop() }`. |
 
 **Fire** (`FIRE`, `src/flames.ts`) is drawn whole, never as sprites. Each fire is one upright
 surface turned to the camera (it stands like someone standing there, so it never sinks into the
@@ -587,32 +641,49 @@ particles, so sparks fly over them.
 
 It comes in three levels, to be given to whatever needs one (a burning state, a skill's hit, a bin
 set alight): `light`, an ankle-high flicker; `medium`, a knee-high campfire that flares now and then;
-`high`, a blaze taller than a person, flaring and spitting sparks into a column of smoke. Only its
-sparks (`fleck`) are particles. It breathes (its strength and height swell and ebb), crackles (a
+`high`, a blaze taller than a person, flaring and spitting sparks into a column of smoke. Standing on
+its own, only its sparks (`fleck`) are particles. It breathes (its strength and height swell and ebb), crackles (a
 flare: taller, hotter, a spray of sparks, a brighter light) and throws a flickering omni light (cheap:
 lighting is clustered), which shows at night and hardly by day (scaled by the scene's light). Change
 `level` while it burns and it grows or calms into it; `stop()` lets it die down over `FIRE_FADE`;
 `clear()` and a new scene put it out.
 
-**On someone's own body** (`fire(at, level, { model })`), it interacts with their geometry: every
-part of the model is drawn again a few centimetres bigger with the fire shell shader (`wrap` in
-src/flames.ts), on that part's own node, so the flames crawl over their actual surfaces and follow
-every move (a sniff, a blow, a squash). The shell's noise runs in world space, so the same flames
-cross from one part to the next; it is turned around their middle as time goes and twisted with
-height, so the flames swirl up them, faster the bigger the fire, hotter low on them and at their
-outline. A vortex (an attractor following them) spins its sparks round them as they rise, and each
-spark flies off a random part of them. Their body (`bodyOf`, from the parts' bounds) sizes the fire:
-around someone it reaches `wrap` times their height plus a quarter of the level's own height, so a
-blaze engulfs a dog without dwarfing it. In fights, `battleScene.ignite(id, level)` (in development
-`window.gerard.game.ignite`) sets a fighter alight: the fire is sized to their model, follows them,
-heats them (their materials glow warm and flicker with it, on top of the hit flash) and goes out
-when they fall. No skill sets anyone alight yet.
+**On someone's own body** (`fire(at, level, { model })`) they burn themselves, whatever they are made
+of, and nothing stands on the floor (`wrap` in src/flames.ts). It has three layers, all from their
+actual geometry, so it works on any model without knowing what it is:
 
-**Around someone** (`fire(at, level, { body: { radius, height } })`, and the fire `aura`), it
-wraps them: one layer stands just behind them, so they hide its middle and it rises over their head,
-and, without their model, a lower, wider, partly see-through one stands just in front, licking up
-their lower half (with their model the shell burns in front of them instead); its light falls on them. A fire hit (`element('fire', …, { body })`) leaves one burning around whoever it hit,
-its level set by the hit's `strength`. `just screenshots fire --gpu` records it all as clips.
+- **The burn.** It catches at four points of their surface, apart from each other, and spreads from
+  them, its edge torn by noise, as `spread` grows into its level (`FIRE[level].spread`: under half of them
+  at `light`, most at `medium`, all of them at `high`). Every part is drawn again a hair over
+  itself: behind the front char with veins of heat that breathe, along it a thin flickering line, ahead
+  of it a scorch. The pattern is pinned to each part in the pose they caught fire in, so it moves with
+  them and never swims.
+- **Tongues of flame.** Real 3D teardrops, seen from any side and hidden by the body like anything
+  else, grown out of points of their triangles chosen by area (`surveySurface`: never what faces the
+  floor, lies buried inside another of their parts or is a flat puddle at their feet; the survey is kept
+  per model, as every fire hit starts a fire). Each leaves along the way its surface faces, then climbs,
+  so the same code suits a wall, a sphere or a ladder; each swells, licks and sways, and at the end of each
+  breath its tip pinches off and rises. A tongue catches as the burn reaches it. They have no state: a
+  tongue's life is a function of the clock and its seed, and it finds its part's transform in a texture,
+  so they follow every move (a sniff, a blow, a squash) and everyone's are one draw call. How tall they
+  lick (`FIRE[level].lick`) scales with the square root of their height (`lickScale`): small on a cat,
+  big on a giant, never to scale. Mostly covering rather than added, flames in front of flames keep
+  their colour instead of summing to white.
+- **What flies off them** (`FIRE_GPU`): embers, crackle, smoke (many faint dark glows) and ash, on the
+  GPU, off their parts above their feet, more on a bigger body; a vortex (a field following them) carries
+  them round as they rise. Now and then it crackles: the tongues flare and a spray leaves them.
+
+In fights, `battleScene.ignite(id, level)` (in development `window.gerard.game.ignite`) sets a fighter
+alight, whoever they are, Vertitrón and its eye included: it follows them, heats them (their materials
+glow warm and flicker with it, on top of the hit flash) and goes out when they fall. A node tagged
+`fireproof` does not burn (Uri, riding Vertitrón). Quemado sets the foe alight this way while it lasts,
+at its level. `just screenshots burning --gpu --scale 2` records the levels and every kind of body.
+
+**Around someone with no model to burn** (`fire(at, level, { body: { radius, height } })`, and the
+fire `aura`), it wraps them: one layer stands just behind them, so they hide its middle and it rises
+over their head, and a lower, wider, partly see-through one stands just in front, licking up their lower
+half; its light falls on them. A fire hit (`element('fire', …, { body, model })`) leaves one burning on
+whoever it hit, its level set by the hit's `strength`. `just screenshots fire --gpu` records it all as clips.
 
 **On fighters.** Particles of a blow burst inside whoever they hit, which used to hide most of them.
 A kind's `front` (or a burst's) draws it that many metres nearer the camera than it is: the same
@@ -635,7 +706,7 @@ llorera), cauterizado, and the ten reactions between elements. Each look (`STATU
 
 - **streams** of GPU particles (above) off the fighter's own parts, their head or their feet, at a
   rate for each level (I–III); as particles meet their parts, drops run down them, frost clings to
-  them, blood falls off them;
+  them, a wound's scratches of light flash on them (no blood: Sangrado drips nothing);
 - a **field** that follows them (the smoke that turns round a blinded head, the lights over a dizzy
   one) and a **pulse** (a heartbeat, a jolt, bubbles);
 - the **body** responds: a tint of light on its materials (with the hit flash and the fire's heat in
@@ -698,6 +769,40 @@ if an element leaves it, an entry in `ELEMENT_MARKS`.
 To add a kind, add an entry to `KINDS` (sizes are half-widths in metres; the street camera shows
 40–75 px a metre, so glows under ~0.05 m disappear) and check it in the `particles` scenario.
 
+## Stats going up or down (`src/stat-fx.ts`)
+
+One animation for it, whatever the cause. What reads first: **three chevrons** pass in front of the
+fighter, on the camera's side and facing it, one after another (`chevronPose`, drawn by
+`src/stat-arrows.ts`): flat, unlit, each with a dark outline so it reads on any floor, popping in a
+little big, gliding up past them pointing up in blue, or down pointing down in red, and fading out.
+Under them a circle of light spins at the fighter's feet, with a second one that opens out when a stat
+rises and closes in when one falls; then a sheaf of fourteen thin bars runs past them, each its own width, length and speed, **down in red** when a stat falls and **up
+in blue** when one rises, with a tint on their body and the stat's name over them (*Defensa ▼*), rising with it or dropping. It
+sounds in step with the chevrons (`stat-up`, `stat-down` in `src/sfx.ts`): air rushing up and three bright
+notes climbing, a bell over each and a sparkle at the top; or air falling, three notes sinking and
+bending down, and a low thud as it lands.
+Particles go with the bars on the GPU (`effects.statChange`, kinds `rise`, `sink` and `drip`): rising,
+a ring of blue motes spins up off their feet on a brief vortex and fine streaks shoot past their head,
+twinkling out; falling, red drops run down off them and settle round their feet as dots while dim
+embers sink. It is sized to whoever it happens to. The colours stay saturated and not too bright, so
+they do not bloom to white on the fights' light floors.
+
+While a stat **stays** up or down (`statShifts` in `src/battle.ts`: a boost while it runs, Mareo
+or Llorera by their stacks, an onion with no layers left), **tiny bright motes of energy** leave the
+fighter's head on the GPU (`STAT_MOTES` and `STAT_MOTE_KINDS` in `src/stat-fx.ts`, streamed by
+`src/stat-motes.ts`): born on their own head's parts, a white-hot pinpoint in a body of colour, small
+but bright enough to bloom. Up, they are blue and drift up off it, wandering a little and twinkling
+as they fade; down, they are red and fall off it past their shoulders, dimming as they drop. Someone
+with stats both up and down gives off both. They start as the chevrons pass (`STAT_MOTES.delay`) and
+stop when the change wears off, the last ones finishing their way; what an action changes waits for
+its blow to land. They stop while the fighter is down. `window.gerard.game.statMotesOf(id)` says
+which they give off.
+
+To use it, say so in the rules: an action that changes stats fills in `BattleEffect.stats`
+(`src/battle.ts`) with who and which, and the fight plays it as the blow lands. Today: an onion's last
+layer breaking its defence, *Yuki se esconde*, *Análisis Parálisis*, and *Llorera* and *Mareo* landing. `just dev-fx` has it
+under *Características*, and `just screenshots stat-fx` shows it; `just screenshots stat-motes --gpu` shows the motes and the fight's summary.
+
 ## Trails (`src/trails.ts`)
 
 Ribbons of light behind whatever moves fast, reached as `effects.trails`. A trail keeps where its
@@ -724,8 +829,10 @@ Comets and spirals are drawn from their path itself (28 points between the head 
 In fights (`trailsFor` in src/battle-scene.ts): a blow swings an arc from the leading hand
 (`Mano` on the first `Brazo`) for the quarter second into contact, a dog's from its nose and the
 gum minion's from its head; skills are in the wearer's ánima colour (`CLASSES[id].colour`, white
-at the head); Cardioide and Análisis Parálisis fly as comets to whoever they reach (winding round
-the caster when it is them); No-ta's stamp streaks down with a speed line at each side; an ánima
+at the head); support skills fly as comets to whoever they reach (winding round the caster when
+it is them); Foc Binari draws its own two streams of fire (`effects.binaryFire`): the caster raises
+a hand, they leave it at `CAST_LAUNCH` (0.26 s) and land `CAST_FLIGHT` (0.42 s) later, at
+`CAST_CONTACT` (0.68 s; `src/battle-motion.ts`); an ánima
 waking winds three strands up round Gerard, a swap two (`effects.anima`). Reduced motion turns
 trails off (`trails.enabled`), and `effects.clear()` ends them with the fight.
 
@@ -748,21 +855,21 @@ from the share of the target's PV the blow took, skill or plain, guarded, knocko
 | Plain blow (Atacar, a dog's bite, a guard's fist) | 55–90 ms, longer the bigger the bite | Lurch along the blow | Fringe only on big bites |
 | Guarded blow | Half (~30–45 ms) | Smaller lurch | None |
 | Gum swallows the blow | 35 ms | Small lurch | None |
-| No-ta | 100–135 ms | Slams down, punch-in, shake | Strong fringe, bloom swell |
+| A skill hit (Foc Binari, Zarpazo…) | 100–135 ms | Lurch along the blow, punch-in | Strong fringe, bloom swell |
 | Knockout | +50 ms (up to 180) | Punch-in | Full fringe, bloom swell |
 | The beat (the minion's blow that drops Bernat) | 160 ms or more | Punch-in | Full fringe and bloom |
-| Cardioide, Análisis Parálisis | None | — | A soft bloom swell |
+| A party boost (Yuki se esconde) | None | — | A soft bloom swell |
 | An ánima wakes | None | Punch-in, shake | Full fringe and bloom |
 | Ánima swap (L / R) | None | — | A touch of fringe, bloom swell |
 
 - **Hit-stop** is the fight's own clock (`FightClock`): from contact it hands the fight no time for
-  the stop, so poses, flashes, squash and the stamp all hold. The held pose is the contact itself
+  the stop, so poses, flashes and squash all hold. The held pose is the contact itself
   (the clock rewinds the frame's overshoot and holds that much less), so an action always takes
   `ACTION_SECONDS` plus exactly its stop and its Promise resolves then. Particles keep flying
   through the hold at `HIT.pace` (30%), so the burst blooms out while the bodies are frozen.
 - **The camera** runs on real time, so it moves through the hold: a lurch along the blow that
   springs back with one small overshoot (`HIT.spring`), a punch-in of the ortho height on heavy
-  blows (`HIT.punch`, critically damped), and a decaying shake for No-ta and an ánima waking. The
+  blows (`HIT.punch`, critically damped), and a decaying shake for an ánima waking. The
   kick is a sideways move added after `lookAt` in `src/game.ts`, so the picture shifts without
   swimming.
 - **`post.pulse(fringe, bloom)`** jumps `CameraFrame.fringing` and the bloom intensity up and lets
@@ -776,8 +883,24 @@ from the share of the target's PV the blow took, skill or plain, guarded, knocko
 Tunables: `HIT` in `src/hit-feel.ts` (stop lengths, particle pace, lurch, spring, punch, where
 fringing starts) and `LOOK.hit` in `src/post.ts` (fringe and bloom at a full pulse, fade times).
 `tests/hit-feel.test.mjs` checks the timing; `just screenshots hit-feel` steps a fight 1/60 s at a
-time through an attack, a dog's bite, a guarded bite, an ánima swap, a No-ta knockout and an ánima
-waking, and logs each contact, hold and resolution on screen.
+time through an attack, a dog's bite, a guarded bite, an ánima swap, a Foc Binari knockout (in
+flight, contact, held, after) and an ánima waking, and logs each contact, hold and resolution on
+screen.
+
+### Tempo and entry (`src/battle-motion.ts`)
+
+Quick, with each beat marked. After every action the fight waits before the next actor moves
+(`holdAfter`, `BEAT`): a short breath (170 ms) after a plain blow, longer when something changed
+that needs reading: a layer off an onion (420 ms), someone down (460 ms), a status put on, a fire
+lit or raised (640 ms), stats up or down (720 ms, as their number comes a moment after the blow's).
+The foes' plan is worked out during that wait. A status that lands also says so on its own: its
+name stamped in its colour above the blow's number (`pop(…, 'status')`, `.damage-pop[data-kind="status"]`):
+*¡Quemado!* orange, *¡Sangrado!* red, *¡Mareo!* violet, *¡Llorera!* blue.
+
+A fight comes in in `ENTRY_SECONDS` (1.05 s), gathering speed: everyone rushes to their places
+along `surge` (cubic in-out: off slowly, a rush, a short brake), and the camera's follow rate
+climbs with the entry's progress (from 2 to 48 a second), so it leaves slowly and closes in
+quicker and quicker. The HUD's entrance beats in `src/style.css` fit inside it.
 
 ## Shadows and sky (`src/lighting.ts`)
 

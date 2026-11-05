@@ -1,0 +1,149 @@
+{
+  "title": "Haru y Yuki · animación",
+  "description": "Haru and Yuki's rig and gait (src/cats.ts, src/cat-gait.ts): two-bone legs placed by inverse kinematics, paws planted while they bear weight, a walk, a trot and a gallop chosen by their own speed, sitting, crouching, leaping and hiding, with breathing, blinks, ear flicks, glances and a four-segment tail. On Nuria's street following the party, then in a fight with Papagato.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=lent&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.title.length && !document.querySelector('#hud[data-dialogue]') && !!window.gerard.game.app.root.findByName('Reparto')?.children.find(c => c.name === 'Haru')",
+      "timeout": 90000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "{ const c = window.gerard.game.app.root.findByName('Reparto').children.find(c => c.name === 'Haru').getPosition(); window.gerard.game.frame({ x: c.x, y: c.y + .25, z: c.z }, 1.4); }"
+    },
+    {
+      "shot": "street-sitting",
+      "delay": 1200,
+      "caption": "Left waiting a moment beside Gerard, Haru and Yuki sit: rear down, hind paws tucked, tails round their paws"
+    },
+    {
+      "record": "street-catch-up",
+      "seconds": 4,
+      "fps": 30,
+      "each": "if (window.frame === 0) { const p = window.gerard.game.position, at = { x: Math.round(p.x), z: Math.round(p.z) }; for (const [dx, dz] of [[0, -6], [0, 6], [6, 0], [-6, 0], [0, -4], [4, 0]]) { try { window.gerard.game.standAt({ x: at.x + dx, z: at.z + dz }); break; } catch {} } } { const c = window.gerard.game.app.root.findByName('Reparto').children.find(c => c.name === 'Haru').getPosition(); window.gerard.game.frame({ x: c.x, y: c.y + .25, z: c.z }, 2.2); }",
+      "caption": "Gerard is suddenly a few metres on: they get up and gallop after him (hinds, then fores, body low), ease through a trot, stop beside him and, after a moment, sit"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?mission=nuria&part=done&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && !!window.gerard.game.app.root.findByName('Reparto')?.children.find(c => c.name === 'Haru')",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "record": "home-stroll",
+      "seconds": 6,
+      "fps": 30,
+      "each": "{ const c = window.gerard.game.app.root.findByName('Reparto').children.find(c => c.name === 'Haru').getPosition(); window.gerard.game.frame({ x: c.x, y: c.y + .25, z: c.z }, 1.6); }",
+      "caption": "At home after the mission: Haru strolls at a walk (left hind, left fore, right hind, right fore), stops and sits until the next stroll"
+    },
+    {
+      "open": "/?story=matemagico&battle=2&allies=2&animas=papagato"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "{ const c = window.gerard.game.app.root.findByName('Haru').getPosition(); window.gerard.game.frame({ x: c.x, y: c.y + .3, z: c.z }, 1.2); }"
+    },
+    {
+      "record": "haru-guard",
+      "seconds": 3,
+      "fps": 30,
+      "caption": "Haru on guard in a fight: head low and forward, ears pricked, the tip of her tail twitching, breathing"
+    },
+    {
+      "eval": "{ const c = window.gerard.game.app.root.findByName('Yuki').getPosition(); window.gerard.game.frame({ x: c.x, y: c.y + .3, z: c.z }, 1.2); }"
+    },
+    {
+      "record": "yuki-sitting",
+      "seconds": 3,
+      "fps": 30,
+      "caption": "Yuki sits behind Gerard: she glances round, blinks, an ear flicks"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"zarpazo\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "{ const h = window.gerard.game.app.root.findByName('Haru').getPosition(), d = window.gerard.game.fighterAt('dog-0'); window.gerard.game.frame({ x: (h.x + d.x) / 2, y: .5, z: (h.z + d.z) / 2 }, 2.6); }"
+    },
+    {
+      "record": "zarpazo",
+      "seconds": 1.8,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('.battle-target[data-target=\"dog-0\"]:not(:disabled)')?.click()",
+      "caption": "Zarpazo de Haru: crouched, she springs with her forelegs reaching and hind legs pushing back, lands low to swat, and hops back"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "until": "document.querySelector('.turn-label')?.textContent === 'Bernat' && !document.querySelector('#battle[data-resolving]') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"attack\"] .command-trigger').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
+    },
+    {
+      "until": "document.querySelector('.turn-label')?.textContent === 'Gerard' && !document.querySelector('#battle[data-resolving]') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "{ const y = window.gerard.game.app.root.findByName('Yuki').getPosition(); window.gerard.game.frame({ x: y.x + .1, y: y.y + .3, z: y.z - .2 }, 1.5); }"
+    },
+    {
+      "record": "escondite",
+      "seconds": 1.6,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('[data-skill=\"escondite\"]')?.click()",
+      "caption": "Yuki se esconde: she gets up, slinks behind Gerard pressed to the floor, ears flat and tail tucked, and goes back to sit"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    }
+  ]
+}

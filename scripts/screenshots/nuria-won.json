@@ -1,0 +1,118 @@
+{
+  "title": "Nuria's mission won · two lights, the ánima counter and Papagato's banner",
+  "description": "docs/quests/nuria.md § Beats 5 and § The lights: Vertitrón beaten, everyone back at Nuria's door. Two lights leave Nuria and Uri (Nil in his arms) and go one into Gerard and one into Aitor; the ánima counter beside the menus shows up with the first and counts each as it goes in, up to 2. Then the banner ÁNIMA DESBLOQUEADA · Papagato, a cream cushion card in cat-orange with a trail of paw prints walking up onto it: Papagato is theirs for good; going, the cat walks on up off the card, its prints fading behind it the oldest first, and the card fades away.",
+  "steps": [
+    {
+      "open": "/?story=clue-r4&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [
+        59,
+        100
+      ]
+    },
+    {
+      "eval": "window.gerard.story.handle({ type: 'interact', id: 'talk-nuria' }); window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'uri-vertigo', worn: ['papagato'] })"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.title.startsWith('Cardedeu')",
+      "timeout": 20000
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = .35"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "lights",
+      "delay": 1200,
+      "caption": "The lights: Nuria flashes and a light rises out of her chest"
+    },
+    {
+      "shot": "lights-flight",
+      "delay": 1800,
+      "caption": "It arcs into Gerard; then Uri's (Nil in his arms) into Aitor"
+    },
+    {
+      "until": "document.querySelector('.anima-count:not([hidden]) strong')?.textContent === '1'",
+      "timeout": 30000
+    },
+    {
+      "shot": "anima-1",
+      "delay": 250,
+      "caption": "Nuria's light is in: the ánima counter shows up beside the menus, 1 ánima"
+    },
+    {
+      "until": "document.querySelector('.anima-count:not([hidden]) strong')?.textContent === '2'",
+      "timeout": 30000
+    },
+    {
+      "shot": "anima-2",
+      "delay": 250,
+      "caption": "Uri's into Aitor: 2 ánimas, two and no more",
+      "clip": [
+        0,
+        140,
+        560,
+        110
+      ]
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "until": "document.querySelector('.anima-banner:not([hidden])')",
+      "timeout": 30000
+    },
+    {
+      "shot": "banner",
+      "delay": 1900,
+      "caption": "ÁNIMA DESBLOQUEADA · Papagato: theirs for good, a cat's paw prints walking up onto the card"
+    },
+    {
+      "until": "document.querySelector('.anima-banner[hidden]')",
+      "timeout": 30000
+    },
+    {
+      "eval": "const b = document.querySelector('.anima-banner'); const c = b.cloneNode(true); c.hidden = false; c.dataset.leaving = 'true'; c.dataset.still = 'true'; b.after(c); window.__still = t => c.getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = a.animationName === 'banner-in' ? 600 : t; }); window.__still(300)"
+    },
+    {
+      "shot": "banner-out-1",
+      "delay": 300,
+      "caption": "Going (held still here, step by step): the cat sets off again, its first prints fade, the oldest first, and the next ones step up the card"
+    },
+    {
+      "eval": "window.__still(750)"
+    },
+    {
+      "shot": "banner-out-2",
+      "delay": 300,
+      "caption": "The cat steps up off the card's top edge while the card fades, smaller and out of focus"
+    },
+    {
+      "eval": "window.__still(1050)"
+    },
+    {
+      "shot": "banner-out-3",
+      "delay": 300,
+      "caption": "The card has gone; the last prints, out in the street, fade after it"
+    },
+    {
+      "eval": "document.querySelector('.anima-banner[data-still]').remove()"
+    },
+    {
+      "shot": "home",
+      "delay": 1500,
+      "caption": "Nuria, Uri and Nil together at the door; Uri's eyes are his own again"
+    }
+  ]
+}

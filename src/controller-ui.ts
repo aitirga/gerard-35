@@ -1,4 +1,4 @@
-import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isNintendo, readController, validProfile, type Binding, type ControlAction, type ControllerEvent, type ControllerProfile, type PadSnapshot } from './controller';
+import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isDpad, isNintendo, readController, validProfile, type Binding, type ControlAction, type ControllerEvent, type ControllerProfile, type PadSnapshot } from './controller';
 import type { Direction, Stick } from './movement';
 import type { PanelId } from './exploration-ui';
 import type { ControlMode, PlayerId } from './party';
@@ -9,6 +9,20 @@ const storageKey = 'gerard35.controllers.v1';
 export function focusControllerButton(root: HTMLElement, direction: Direction) {
   const buttons = [...root.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')].filter(b => !b.closest('[hidden], [inert]') && b.getClientRects().length);
   const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+  // Grids (the Configuración cards) move to the nearest button in the pressed direction.
+  if (index >= 0) {
+    const centre = (b: HTMLElement) => { const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+    const from = centre(buttons[index]);
+    const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[direction];
+    let best: HTMLButtonElement | undefined, bestScore = Infinity;
+    for (const button of buttons) {
+      const to = centre(button), along = (to.x - from.x) * dx + (to.y - from.y) * dy;
+      if (along < 1) continue;
+      const score = along + 2 * Math.abs((to.x - from.x) * dy + (to.y - from.y) * dx);
+      if (score < bestScore) { bestScore = score; best = button; }
+    }
+    if (best) { best.focus(); return; }
+  }
   const step = direction === 'up' || direction === 'left' ? -1 : 1;
   buttons[index < 0 ? 0 : (index + step + buttons.length) % buttons.length]?.focus();
 }
@@ -23,6 +37,8 @@ export function createControllerUI(callbacks: {
   partnerDirection: (direction: Direction | null, stick: Stick | null, running: boolean) => void;
   /** A press; `player` is 1 for the first controller and 2 for the second. */
   action: (action: ControllerEvent, player: PlayerId) => void;
+  /** Whether the D-pad's sides stand apart from walking now (a fight: they come as `dpad-*`, its up and down still walk). */
+  dpadApart?: () => boolean;
   /** The second controller connected (its name) or left (undefined). */
   secondPad: (id: string | undefined) => void;
   /** Development only: whether player 1 also drives Aitor (`solo`) or player 2 does (`duo`). */
@@ -83,6 +99,9 @@ export function createControllerUI(callbacks: {
     <footer class="menu-footer" data-glyph-template="{updown} Elegir  ·  {confirm} Confirmar  ·  {cancel} Volver"></footer>`;
   document.body.append(root);
   const get = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
+  /** The poll runs every frame: it only touches the page when what it shows changes. */
+  const show = (s: string, text: string) => { const el = get(s); if (el.textContent !== text) el.textContent = text; };
+  const able = (s: string, on: boolean) => { const el = get<HTMLButtonElement>(s); if (el.disabled === on) el.disabled = !on; };
   const select = get<HTMLSelectElement>('select');
   let selected = -1, identity = '', padList = '\0', latest: PadSnapshot | undefined;
   let mapping: Partial<ControllerProfile> | undefined, step = 0, released = false;
@@ -143,7 +162,7 @@ export function createControllerUI(callbacks: {
     if (event.code === 'Escape') {
       // Escape closes the user menu instead of opening pause over it.
       if (!root.open && callbacks.context().startsWith('journal:')) return;
-      // In a battle sub-menu, Escape backs out before opening the main menu.
+      // In a battle sub-menu (or its summary), Escape backs out before opening the main menu.
       if (!root.open && callbacks.context().startsWith('battle:') && callbacks.context().split(':')[2]) return;
       // The station map, the TV, the end screen and the place picker take Escape themselves.
       if (!root.open && ['travel', 'news', 'doom', 'jump'].includes(callbacks.context())) return;
@@ -175,7 +194,7 @@ export function createControllerUI(callbacks: {
       if (!pads.length) { const option = document.createElement('option'); option.textContent = 'Ningún mando detectado'; select.append(option); }
     }
     latest = pads.find(p => p.index === selected) ?? pads[0];
-    selected = latest?.index ?? -1; select.value = String(selected);
+    selected = latest?.index ?? -1; if (select.value !== String(selected)) select.value = String(selected);
     const nextIdentity = latest ? `${latest.index}:${latest.id}` : '';
     if (nextIdentity !== identity) { identity = nextIdentity; previousDirection = null; abort(); }
     const profile = latest ? profiles[latest.id] ?? defaultProfile(latest) : undefined;
@@ -184,12 +203,12 @@ export function createControllerUI(callbacks: {
     const cancel = custom ? bindingLabel(custom.cancel) : latest && isNintendo(latest.id) ? 'B' : 'botón derecho';
     const menu = custom ? bindingLabel(custom.menu) : latest && isNintendo(latest.id) ? '+' : 'Start';
     const help = `${confirm} · Confirmar   /   ${cancel} · Volver / mantener para correr   /   ${menu} · Menú`;
-    get('[data-status]').textContent = !latest ? 'Sin mando. Conéctalo y pulsa un botón.' : profile ? `${latest.id} · ${custom ? 'Asignación personal' : 'Controles estándar'}` : `${latest.id} · Sin asignar: usa «Asignar controles».`;
-    get('[data-help]').textContent = profile ? help : 'Teclado y ratón disponibles mientras configuras el mando.';
-    get('[data-pad-summary]').textContent = profile ? 'Conectado' : latest ? 'Por configurar' : 'Sin conectar';
-    get<HTMLButtonElement>('[data-remap]').disabled = !latest || !!mapping;
-    get<HTMLButtonElement>('[data-reset]').disabled = !latest || !!mapping;
-    if (root.open) get('output').textContent = latest ? `Botones: ${latest.buttons.flatMap((b, i) => b.pressed ? [i] : []).join(', ') || 'ninguno'}\nEjes: ${latest.axes.map((v, i) => `${i}: ${v.toFixed(2)}`).join(' · ')}` : 'Esperando conexión…';
+    show('[data-status]', !latest ? 'Sin mando. Conéctalo y pulsa un botón.' : profile ? `${latest.id} · ${custom ? 'Asignación personal' : 'Controles estándar'}` : `${latest.id} · Sin asignar: usa «Asignar controles».`);
+    show('[data-help]', profile ? help : 'Teclado y ratón disponibles mientras configuras el mando.');
+    show('[data-pad-summary]', profile ? 'Conectado' : latest ? 'Por configurar' : 'Sin conectar');
+    able('[data-remap]', !!latest && !mapping);
+    able('[data-reset]', !!latest && !mapping);
+    if (root.open) show('output', latest ? `Botones: ${latest.buttons.flatMap((b, i) => b.pressed ? [i] : []).join(', ') || 'ninguno'}\nEjes: ${latest.axes.map((v, i) => `${i}: ${v.toFixed(2)}`).join(' · ')}` : 'Esperando conexión…');
     const focused = document.hasFocus() && !document.hidden;
     if (mapping && latest && focused) {
       if (!released) { if (latest.buttons.every(b => !b.pressed) && latest.axes.every((v, i) => Math.abs(v - (baseline[i] ?? 0)) < .2)) released = true; }
@@ -213,8 +232,10 @@ export function createControllerUI(callbacks: {
     const second = pads.find(p => p !== latest && (profiles[p.id] ?? defaultProfile(p)));
     const nextSecond = second ? `${second.index}:${second.id}` : '';
     if (nextSecond !== secondIdentity) { secondIdentity = nextSecond; previousDirection2 = null; callbacks.secondPad(second?.id); }
-    get('[data-second]').textContent = second ? `Mando 2 · Aitor: ${second.id}` : 'Mando 2 · Aitor: sin conectar. Conecta otro mando y pulsa un botón.';
-    const state2 = second ? readController(second, profiles[second.id], previousDirection2) : idleController();
+    show('[data-second]', second ? `Mando 2 · Aitor: ${second.id}` : 'Mando 2 · Aitor: sin conectar. Conecta otro mando y pulsa un botón.');
+    // Outside the pause menu, a fight sets the D-pad's left and right apart for both players.
+    const apart = !mapping && !root.open && !!callbacks.dpadApart?.();
+    const state2 = second ? readController(second, profiles[second.id], previousDirection2, apart) : idleController();
     previousDirection2 = focused ? state2.direction : null;
     const input2 = edges2.update(state2, `${secondIdentity}:${root.open ? 'menu' : callbacks.context()}`, now, focused && !mapping && !root.open);
     // Player 2's half of the screen (their status sheet, their fight dock) shows their own pad.
@@ -222,7 +243,7 @@ export function createControllerUI(callbacks: {
     callbacks.partnerDirection(input2.direction, input2.stick, input2.running);
     // Player 2 plays, talks and has their own half of the status screen; the menu and camera stay with player 1.
     for (const action of input2.events) if (action !== 'menu' && action !== 'overview') callbacks.action(action, 2);
-    const state = latest ? readController(latest, custom, previousDirection) : idleController();
+    const state = latest ? readController(latest, custom, previousDirection, apart) : idleController();
     previousDirection = focused ? state.direction : null;
     const context = `${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}`;
     const input = edges.update(state, context, now, focused && !mapping);
@@ -231,7 +252,7 @@ export function createControllerUI(callbacks: {
     for (const action of input.events) {
       if (root.open) {
         if (action === 'menu') { if (page !== 'exited') close(); }
-        else if (action === 'character' || action === 'overview' || action === 'prev' || action === 'next') continue;
+        else if (action === 'character' || action === 'overview' || action === 'prev' || action === 'next' || isDpad(action)) continue;
         else if (action === 'cancel') back();
         else if (action === 'confirm') clickControllerButton(root);
         else focusControllerButton(root, action);

@@ -1,0 +1,121 @@
+{
+  "title": "Misiones and Ánimas in the picker",
+  "description": "The development picker's Misiones tab (an ánima mission, part by part, from its beginning) and the Ánimas column beside it, which unlocks ánimas and sets their levels at once, mid-fight too (docs/dev-tools.md).",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=ring-2&solo=1"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "ring-2",
+      "caption": "just dev-mission nuria ring-2: in the tower at the end of the first ring, the cats lent, El Cebollón beaten"
+    },
+    {
+      "eval": "document.querySelector('#environment').click(); document.querySelector('[data-tab=\"missions\"]').click()"
+    },
+    {
+      "shot": "missions",
+      "delay": 600,
+      "caption": "Misiones: Nuria's mission part by part, the one the story is at marked; on the right, the ánimas unlocked now"
+    },
+    {
+      "eval": "document.querySelector('[data-set-anima=\"papagato\"][data-level=\"3\"]').click()"
+    },
+    {
+      "eval": "if (window.gerard.story.levels.papagato !== 3) throw new Error('levels: ' + JSON.stringify(window.gerard.story.levels))"
+    },
+    {
+      "shot": "animas-changed",
+      "delay": 400,
+      "caption": "Papagato at Nv 3, at once: the story's own level stays underlined, and the way back appears"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "press": "KeyE",
+      "gap": 600
+    },
+    {
+      "shot": "status-level-3",
+      "delay": 1200,
+      "caption": "The Ánimas page already shows Papagato at level 3, with its four skills"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "document.querySelector('#environment').click(); document.querySelector('[data-tab=\"story\"]').click()"
+    },
+    {
+      "shot": "story-with-animas",
+      "delay": 600,
+      "caption": "Historia has the same Ánimas column on its right"
+    },
+    {
+      "open": "/?mission=nuria&part=start&solo=1"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#hud[data-dialogue]') && window.gerard.story.has('cardedeu')",
+      "timeout": 90000
+    },
+    {
+      "shot": "start",
+      "delay": 1500,
+      "caption": "Desde el principio: up from the R4 at Cardedeu, the arrival line playing"
+    },
+    {
+      "eval": "if (window.gerard.story.classes.includes('papagato')) throw new Error('Papagato before Nuria lends it')"
+    },
+    {
+      "open": "/?mission=nuria&part=vertigo&solo=1"
+    },
+    {
+      "until": "!document.querySelector('#hud[data-dialogue]') || document.querySelector('#hud[data-battle]')",
+      "timeout": 90000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 90000
+    },
+    {
+      "shot": "vertigo",
+      "delay": 1200,
+      "caption": "Vertitrón: on the top of the tower the fight starts on arrival"
+    },
+    {
+      "press": "F2"
+    },
+    {
+      "eval": "document.querySelector('[data-tab=\"missions\"]').click(); document.querySelector('[data-set-anima=\"papagato\"][data-level=\"3\"]').click()"
+    },
+    {
+      "shot": "vertigo-animas",
+      "delay": 600,
+      "caption": "Mid-fight, F2 and Misiones: Papagato up to Nv 3 for this fight"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "shot": "vertigo-skills",
+      "delay": 900,
+      "caption": "The fight's skills already include the level 2 and 3 ones"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
-import type { Environment } from './environments';
+import type { Environment, WorldProp } from './environments';
+import type { GeoScene } from './geo';
 import { createPropKit } from './props';
 import { buildHome } from './home-scenery';
 import type { Lamp, LightId } from './home-lights';
@@ -27,6 +28,11 @@ export const BUBBALOO = {
 const DAWN = { ambient: new pc.Color(0.52, 0.54, 0.57), sun: new pc.Color(0.94, 0.96, 1), sunIntensity: 0.8 } as const;
 
 /** Visual-only builder. Gameplay uses Environment.grid and interactions. */
+/**
+ * How far over the ground a place laid into another stands (`overlay`): over its streets (≤ .046) and
+ * under the feet (.09), so neither flickers through the other.
+ */
+const OVERLAY_LIFT = .045;
 export function buildScenery(app: pc.Application, environment: Environment) {
   const root = new pc.Entity(`Entorno: ${environment.id}`);
   app.root.addChild(root);
@@ -34,7 +40,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const textures: pc.Texture[] = [];
   const meshes: pc.Mesh[] = [];
   const surfaces: { x: number; z: number; w: number; d: number; y: number }[] = [];
-  const props = createPropKit();
+  const props = createPropKit(app.graphicsDevice);
   let home: ReturnType<typeof buildHome> | undefined;
   let palace: { update(dt: number, animate: boolean, focus?: pc.Vec3): void; destroy(): void } | undefined;
   let geo: ReturnType<typeof buildGeo> | undefined;
@@ -299,7 +305,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
         bx('Cubierta del garaje', gravel, 0, garageDepth - 0.1, 2.1, 0.03, p0 + 0.1, p1 - 0.1);
         bx('Puerta del garaje', sectional, -0.13, -0.1, 0, 2.0, p0 + 0.15, p1 - 0.15);
       } else if (style.parking === 'drive') {
-        props.place({ kind: 'car', x: 0, z: 0, color: pick(10, carColours) }, root, new pc.Vec3(x(at(east ? 2.3 : 0.35)), 0, z((p0 + p1) / 2))).setLocalEulerAngles(0, east ? 90 : -90, 0);
+        props.place({ kind: 'car', x: 0, z: 0, color: pick(10, carColours) }, root, new pc.Vec3(x(at(east ? 2.3 : 0.35)), 0, z((p0 + p1) / 2)), batch.id).setLocalEulerAngles(0, east ? 90 : -90, 0);
       }
       // What each courtyard holds.
       // Without parking the courtyard runs the whole plot.
@@ -423,7 +429,10 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     }
   }
   // Props come from the environment data, so any scene can use trees, cars, lamps…
-  for (const prop of environment.props) props.place(prop, root, new pc.Vec3(x(prop.x), 0, z(prop.z)), batch.id);
+  // Each prop with what was built for it, so a place that changes (src/street-shift.ts) can sink some.
+  const placed = environment.props.map(prop => ({ prop, holder: props.place(prop, root, new pc.Vec3(x(prop.x), 0, z(prop.z)), batch.id) }));
+  /** Other places laid into this one (`overlay`). */
+  const overlays: ReturnType<typeof buildGeo>[] = [];
   // A real street with painted lanes has cars driving them, and its traffic lights change.
   const traffic = environment.geo?.look?.markings ? createTraffic(root, props, environment.geo, x, z) : undefined;
   return {
@@ -472,6 +481,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       home?.update(dt, animate, focus, toCamera);
       palace?.update(dt, animate, focus);
       geo?.update(dt, animate, focus, toCamera);
+      for (const o of overlays) o.update(dt, animate, focus, toCamera);
       basilica?.update(dt, animate, focus, toCamera);
       if (!animate) return;
       time += dt;
@@ -484,6 +494,26 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     lampPosition(id: LightId) { return home?.lampPosition(id); },
     /** Places with buildings: how many of these focus points a building hides from a camera along a direction (src/camera-orbit.ts). */
     sight: geo?.sight,
-    destroy() { traffic?.destroy(); app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); basilica?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
+    /** A building of a real place by its id, standing on the ground as one entity (it can rise, sink or hide). */
+    building(id: string) { return geo?.building(id); },
+    /** The props of the place standing on cells that pass `test`, with what was built for each. */
+    propsWhere(test: (cell: { x: number; z: number }) => boolean) { return placed.filter(p => test(p.prop)); },
+    /**
+     * Another real place laid into this one, its cell (x, z) on this one's (x + dx, z + dz), a hair over
+     * its ground: ground, streets, buildings and props, nothing batched, so each piece can rise or
+     * stretch on its own (Nuria's street turning into La calle que no acaba, src/street-shift.ts).
+     * Its root stands on `pivot` (this place's cells), so scaling it stretches it out from there.
+     */
+    overlay(scene: GeoScene, dx: number, dz: number, pivot: { x: number; z: number }) {
+      const holder = new pc.Entity(`Encima: ${scene.id}`); root.addChild(holder);
+      holder.setLocalPosition(x(pivot.x), OVERLAY_LIFT, z(pivot.z));
+      const built = buildGeo({ app, root: holder, batch: -1, mat, texture, water, x: v => v + dx - pivot.x, z: v => v + dz - pivot.z }, scene);
+      overlays.push(built);
+      const things = (scene.props as WorldProp[]).map(prop => ({ prop, holder: props.place(prop, holder, new pc.Vec3(prop.x + dx - pivot.x, 0, prop.z + dz - pivot.z)) }));
+      return { root: holder, building: built.building, props: things };
+    },
+    /** Static pieces hidden or shown since the scene was built: their merged draw calls are made again. */
+    rebatch() { app.batcher.markGroupDirty(batch.id); },
+    destroy() { overlays.forEach(o => o.destroy()); traffic?.destroy(); app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); basilica?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }

@@ -58,7 +58,7 @@
       "eval": "sessionStorage.perfResults = JSON.stringify(window.perfResults)"
     },
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1&stats"
+      "open": "/?story=matemagico&battle=3&allies=2&stats"
     },
     {
       "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
@@ -100,7 +100,7 @@
       "eval": "{ const g = window.gerard.game; g.fighterIds().forEach(f => g.ignite(f.id)); g.effects.clear(); }"
     },
     {
-      "eval": "{ const g = window.gerard.game, e = g.effects, stage = g.app.root.findByName('Escenario de combate'), models = stage.children.filter(c => c.enabled && !['Objetivo', 'Marca de tinta', 'Sello No-ta'].includes(c.name)).sort((a, b) => a.getPosition().x - b.getPosition().x), allies = models.slice(0, 2), foes = models.slice(2), at = (m, y = 0) => { const p = m.getPosition(); return { x: p.x, y: p.y + y, z: p.z }; }, elements = ['fire', 'ice', 'air', 'energy', 'water', 'earth', 'light', 'shadow']; let i = 0; foes.forEach((f, k) => e.aura(elements[k], f.getPosition().clone(), 30, 1)); window.storm = setInterval(() => { const foe = foes[i % foes.length]; e.element(elements[i % elements.length], at(foe, .9), { from: at(allies[i % 2], .9), feet: at(foe) }); e.impact(at(foe, .9), at(allies[0], .9), 1.4, { feet: at(foe) }); if (i % 4 === 0) e.heal({ ...allies[0].getPosition() }, 1.6); if (i % 6 === 0) e.confetti(at(allies[1], 3), ['#f3cf78', '#fff4ec', '#e2483d']); i++; }, 250); }"
+      "eval": "{ const g = window.gerard.game, e = g.effects, stage = g.app.root.findByName('Escenario de combate'), models = stage.children.filter(c => c.enabled && !['Objetivo', 'Marca de tinta'].includes(c.name)).sort((a, b) => a.getPosition().x - b.getPosition().x), allies = models.slice(0, 2), foes = models.slice(2), at = (m, y = 0) => { const p = m.getPosition(); return { x: p.x, y: p.y + y, z: p.z }; }, elements = ['fire', 'ice', 'air', 'energy', 'water', 'earth', 'light', 'shadow']; let i = 0; foes.forEach((f, k) => e.aura(elements[k], f.getPosition().clone(), 30, 1)); window.storm = setInterval(() => { const foe = foes[i % foes.length]; e.element(elements[i % elements.length], at(foe, .9), { from: at(allies[i % 2], .9), feet: at(foe) }); e.impact(at(foe, .9), at(allies[0], .9), 1.4, { feet: at(foe) }); if (i % 4 === 0) e.heal({ ...allies[0].getPosition() }, 1.6); if (i % 6 === 0) e.confetti(at(allies[1], 3), ['#f3cf78', '#fff4ec', '#e2483d']); i++; }, 250); }"
     },
     {
       "wait": 1500

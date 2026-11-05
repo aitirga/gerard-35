@@ -1,11 +1,13 @@
 import * as pc from 'playcanvas';
 import { createParticles, type ParticleAttractor, type ParticleBody, type ParticleEmitter, type ParticleKind, type ParticleWorld, type Vec } from './particles.ts';
 import { propCells, type Environment } from './environments.ts';
-import { createTrails, type CometOptions } from './trails.ts';
+import { cometPath, createTrails, type CometOptions } from './trails.ts';
 import { createFlames, type Flame, type Shell } from './flames.ts';
 import { createReflections, glassMaterial, glassMesh, type ReflectionProbe } from './reflections.ts';
 import { MAX_VOLUMES, canSimulate, createFightParticles, type GpuEmitter, type GpuField, type GpuKind, type GpuLattice, type GpuVolume } from './fight-particles.ts';
 import type { LatticeShape } from './lattice.ts';
+import { playStatChange, STAT_LOOKS, STAT_MOTE_KINDS, type StatWay } from './stat-fx.ts';
+import { createDisintegrations, type DisintegrateOptions, type Disintegration } from './disintegrate.ts';
 
 /**
  * What the game's particles look like and how they behave (the engine is src/particles.ts):
@@ -85,33 +87,37 @@ export type FireLevel = 'light' | 'medium' | 'high';
  * Each level of fire: half the width of its flames and how tall they stand (m), how much taller its
  * smoke rises (× height), how white-hot it burns (past 0 its heart blooms), its sparks a second, the
  * light it throws, and how often it crackles (seconds between flares, and the sparks each throws).
- * Wrapping someone, its flames reach `wrap` times their height and a quarter of `height` more; on
- * their own body (`model`) its shell burns this strongly.
+ * Around someone with no model to burn, its flames reach `wrap` times their height and a quarter of
+ * `height` more. On someone's own body (`model`) it has caught `spread` of them (0–1), its tongues lick
+ * `lick` metres on someone Gerard's size, and it heats them this much (`heats`).
  */
-const FIRE: Record<FireLevel, { width: number; height: number; wrap: number; shell: number; smoke: number; heat: number; sparks: number; light: { intensity: number; range: number }; crackle?: { every: [number, number]; sparks: number } }> = {
-  // A small flicker, ankle-high, with a thread of smoke (a singed sleeve, a lit bin).
-  light: { width: .2, height: .45, wrap: .45, shell: .75, smoke: .6, heat: .2, sparks: 1.5, light: { intensity: 1, range: 1.6 } },
-  // A campfire, knee-high: a steady body of flame, sparks rising and grey smoke over it.
-  medium: { width: .42, height: 1, wrap: .85, shell: 1, smoke: .9, heat: .6, sparks: 7, light: { intensity: 2.4, range: 3 }, crackle: { every: [1, 2.5], sparks: 6 } },
-  // A blaze taller than a person, roaring and flaring, spitting sparks into a column of dark smoke.
-  high: { width: .75, height: 2.2, wrap: 1.35, shell: 1.05, smoke: 1.1, heat: .7, sparks: 22, light: { intensity: 4.5, range: 5 }, crackle: { every: [.4, 1.2], sparks: 16 } },
+const FIRE: Record<FireLevel, { width: number; height: number; wrap: number; spread: number; lick: number; heats: number; smoke: number; heat: number; sparks: number; light: { intensity: number; range: number }; crackle?: { every: [number, number]; sparks: number } }> = {
+  // A small flicker with a thread of smoke (a lit bin). On someone, a few patches singeing and small flames off them.
+  light: { width: .2, height: .45, wrap: .45, spread: .42, lick: .3, heats: .7, smoke: .6, heat: .2, sparks: 1.5, light: { intensity: 1, range: 1.6 } },
+  // A campfire: a steady body of flame, sparks rising and grey smoke over it. On someone, most of them alight.
+  medium: { width: .42, height: 1, wrap: .85, spread: .72, lick: .44, heats: 1, smoke: .9, heat: .6, sparks: 7, light: { intensity: 2.4, range: 3 }, crackle: { every: [1, 2.5], sparks: 6 } },
+  // A blaze roaring and flaring, spitting sparks into a column of dark smoke. On someone, all of them engulfed.
+  high: { width: .75, height: 2.2, wrap: 1.35, spread: 1, lick: .62, heats: 1.1, smoke: 1.1, heat: .7, sparks: 22, light: { intensity: 4.5, range: 5 }, crackle: { every: [.4, 1.2], sparks: 16 } },
 };
+/** How much bigger than on someone Gerard's size a fire's tongues are on someone this tall (m): a cat's small, a giant's big but never to scale. */
+const lickScale = (height: number) => Math.max(.55, Math.min(2, Math.sqrt(height / 1.7)));
 // ── Fight particles (GPU) ───────────────────────────────────────────────────────────────────────
 /**
- * What fights throw on the GPU (src/fight-particles.ts): hot sparks that bounce off fighters, slide
- * along them and cling a moment; embers that ride the heat and the swirl; tongues of flame licking
- * off whoever burns; and smoke. Colours run white-hot → orange → deep red over their lives.
+ * What fights throw on the GPU (src/fight-particles.ts): hot sparks that bounce off fighters and
+ * slide along them, white-hot to gold, never clinging (red specks left on someone read as blood);
+ * embers that ride the heat and the swirl, cooling to deep red; and the smoke and ash off whoever burns.
+ * Every kind shares one namespace with the duals', statuses' and the rest (tests/fight-kinds.test.mjs).
  */
-const FIGHT_KINDS = {
+export const FIGHT_KINDS = {
   spark: {
-    drag: .5, gravity: 9, curl: .15, response: .3, collide: true, bounce: .42, friction: .28, stick: .22, stickTime: .45, settle: false,
-    colours: ['#ffffff', '#ffd27a', '#ff5a14'], intensity: [7, 4, 2], middle: .3, size: [.016, .01], sizeJitter: .6, stretch: .07, shape: 'streak',
+    drag: .5, gravity: 9, curl: .15, response: .3, collide: true, bounce: .42, friction: .28, settle: false,
+    colours: ['#ffffff', '#ffe2a0', '#ffb347'], intensity: [7, 4, 2], middle: .3, size: [.016, .01], sizeJitter: .6, stretch: .07, shape: 'streak',
     fadeIn: 0, fadeOut: .35, additive: 1, opacity: 1, flicker: .15,
   },
   // Crisp little lines: chips of a blow, snapped off and skittering (thin, hard-edged, every size).
   needle: {
     drag: .8, gravity: 7, curl: .1, response: .3, collide: true, bounce: .5, friction: .2, size: [.03, .018], sizeJitter: .7, stretch: .035, aspect: .12, shape: 'line',
-    colours: ['#ffffff', '#ffe2a8', '#ff8a3a'], intensity: [5, 3, 1.5], middle: .25, fadeOut: .4, additive: 1, spin: 720,
+    colours: ['#ffffff', '#ffe2a8', '#ffc061'], intensity: [5, 3, 1.5], middle: .25, fadeOut: .4, additive: 1, spin: 720,
   },
   // Embers riding the heat: tiny sparks, white-hot at the head, cooling to deep red down the tail,
   // pointing the way the swirl carries them.
@@ -120,6 +126,17 @@ const FIGHT_KINDS = {
     drag: .9, gravity: -.3, curl: 1.3, response: 1, collide: true, bounce: .45, friction: .3, stick: .35, stickTime: .9, settle: true,
     colours: ['#fff4c8', '#ff9a2e', '#b8320c'], intensity: [7, 4, 1.8], middle: .3, size: [.011, .005], sizeJitter: .6, stretch: .05, aspect: .3, shape: 'spark',
     fadeIn: .04, fadeOut: .3, additive: 1, opacity: 1, flicker: .35,
+  },
+  // Smoke off whoever burns: many faint dark glows overlapping, that rise, spread and thin out.
+  burnsmoke: {
+    blur: [.5, 1.4],
+    drag: 1.2, gravity: -1.5, curl: .9, response: 1, size: [.06, .26], sizeJitter: .6, shape: 'glow',
+    colours: ['#5a4a40', '#2e2826', '#171515'], intensity: [.9, .7, .5], middle: .3, fadeIn: .15, fadeOut: .55, additive: 0, opacity: .3,
+  },
+  // Flakes of what burns: they leave glowing, go dark and drift up turning.
+  burnash: {
+    drag: 1.6, gravity: -.7, curl: 1.1, response: 1, size: [.013, .007], sizeJitter: .6, stretch: 0, spin: 260, shape: 'shard',
+    colours: ['#ff8a3a', '#4a3a32', '#1c1816'], intensity: [2.2, .7, .5], middle: .2, fadeIn: .05, fadeOut: .35, additive: .15,
   },
   // A fire's crackle: pinpricks spat out in arcs that fall back, skip off bodies and the floor and die fast.
   crackle: {
@@ -227,6 +244,30 @@ const FIGHT_KINDS = {
     drag: .4, gravity: 3, curl: .1, response: 1, collide: true, bounce: 0, friction: .6, size: [.012, .009], shape: 'strand',
     colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [2.8, 2.2, 1], middle: .5, fadeIn: .1, fadeOut: .35, additive: .9,
   },
+  // A fire that does not catch: warm grey wisps that rise off where it landed, spread and thin out.
+  fizzle: {
+    drag: 1.6, gravity: -1.4, curl: 1, response: 1, size: [.05, .17], sizeJitter: .6, shape: 'glow',
+    colours: ['#e8dccb', '#9a9088', '#5f5953'], intensity: [1.2, .95, .8], middle: .35, fadeIn: .08, fadeOut: .55, additive: .15, opacity: .3,
+  },
+  // Stats rising (src/stat-fx.ts): fine streaks of light that speed up as they climb and twinkle out; any colour.
+  rise: {
+    blur: [0, .4],
+    drag: .3, gravity: -3.2, curl: .35, response: 1, size: [.012, .006], sizeJitter: .5, stretch: .07, aspect: .3, shape: 'spark',
+    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [3.2, 2.2, 1.2], middle: .3, fadeIn: .05, fadeOut: .4, additive: 1, flicker: .25, onDeath: 'twinkle',
+  },
+  // Stats falling: heavy drops that run down off whoever it is and settle round their feet as dots; any colour.
+  sink: {
+    drag: .4, gravity: 7, curl: .15, response: .6, collide: true, bounce: 0, friction: .9, size: [.016, .012], sizeJitter: .5, stretch: .05, aspect: .35, shape: 'spark',
+    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [4, 2.6, 1.4], middle: .3, fadeIn: .05, fadeOut: .25, additive: .7, onLand: 'sinkdrop',
+  },
+  // Its drops settled round the feet. Not `drip`: that name is a status's tears (status-fx), and kinds share one namespace.
+  sinkdrop: {
+    blur: [0, .5],
+    drag: 8, gravity: 30, collide: true, bounce: 0, friction: 1, settle: true, size: [.022, .03], sizeJitter: .4, shape: 'dot',
+    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [2.4, 1.6, .8], middle: .3, fadeOut: .5, additive: .6, life: [.6, 1.1],
+  },
+  // Stats that stay up or down: motes of energy off the head (src/stat-motes.ts), blue rising, red falling.
+  ...STAT_MOTE_KINDS,
   // What a lattice breaks into: sharp chips that spin, glance off bodies and fade.
   chip: {
     drag: .4, gravity: 9, curl: .1, response: .3, collide: true, bounce: .4, friction: .35, size: [.032, .02], sizeJitter: .5, stretch: .02, spin: 540, shape: 'shard',
@@ -234,17 +275,17 @@ const FIGHT_KINDS = {
   },
 } satisfies Record<string, GpuKind>;
 /** The fight effects to explore and give to skills (`effects.fightFx`, `window.gerard.game.fx`). */
-export const FIGHT_FX = ['shatter', 'arc', 'vortex', 'swarm', 'goo', 'heal', 'fireworks', 'needles', 'prison', 'orbit', 'gather', 'meteor', 'fireflies', 'ward', 'morph', 'current', 'veil', 'forge', 'shield', 'bubble', 'globe', 'orb'] as const;
+export const FIGHT_FX = ['shatter', 'arc', 'vortex', 'swarm', 'goo', 'heal', 'fireworks', 'needles', 'prison', 'orbit', 'gather', 'meteor', 'fireflies', 'ward', 'morph', 'current', 'veil', 'forge', 'shield', 'bubble', 'globe', 'orb', 'binari'] as const;
 export type FightFx = typeof FIGHT_FX[number];
 /**
- * What each level of fire throws off a fighter in a fight: embers and crackle a second, and the vortex
- * round them (m/s²). Its flames are drawn whole (the shell on their body, the flame behind them),
- * never as flame-shaped particles: particles are only sparks.
+ * What each level of fire throws off a fighter in a fight, off their own parts: embers, crackle, smoke
+ * and ash a second on someone Gerard's size, and the vortex round them (m/s²). Its flames are drawn
+ * whole (src/flames.ts, `wrap`), never as flame-shaped particles: particles are what flies off them.
  */
-const FIRE_GPU: Record<FireLevel, { embers: number; crackle: number; swirl: number; lift: number }> = {
-  light: { embers: 5, crackle: 4, swirl: 3, lift: 1.5 },
-  medium: { embers: 16, crackle: 14, swirl: 6, lift: 3 },
-  high: { embers: 40, crackle: 36, swirl: 10, lift: 5 },
+const FIRE_GPU: Record<FireLevel, { embers: number; crackle: number; smoke: number; ash: number; swirl: number; lift: number }> = {
+  light: { embers: 8, crackle: 3, smoke: 6, ash: 2, swirl: 2.5, lift: 1.2 },
+  medium: { embers: 26, crackle: 14, smoke: 18, ash: 7, swirl: 5, lift: 2.5 },
+  high: { embers: 75, crackle: 30, smoke: 42, ash: 16, swirl: 8, lift: 4.5 },
 };
 
 /** Someone an effect is on: how wide (m from their middle) and how tall they stand. */
@@ -270,6 +311,8 @@ const FIRE_LIGHTS = 2, FIRE_SHARE = 2.5;
 const GLINTS = 6;
 /** Seconds a fire takes to die down once stopped, or to grow into a new level. */
 const FIRE_FADE = .6;
+/** What flies off someone burning leaves their parts above this fraction of their height: never the floor or a puddle at their feet. */
+const FIRE_ABOVE = .05;
 /** The colour of the light a fire throws. */
 const FIRE_LIGHT = new pc.Color().fromString('#ff9a3c');
 
@@ -435,17 +478,20 @@ export function createEffects(app: pc.Application) {
 
   /**
    * Fires burning now: where, at what level, whom they wrap, how strong (0 out, 1 burning; it eases
-   * between them), how long they have left, their flames (one standing alone; around someone, one
-   * behind them and a see-through one in front), sparks and light, the size they are growing into,
-   * their own phase, the time to their next crackle and how much they flare.
+   * between them), how long they have left, their flames (one standing alone; around someone with no
+   * model, one behind them and a see-through one in front; on someone's own body, `shell` and no others),
+   * sparks and light, the size they are growing into, their own phase, the time to their next crackle
+   * and how much they flare.
    */
   interface Fire {
     at: pc.Vec3; level: FireLevel; body?: Body; model?: pc.Entity; strength: number; left: number;
-    behind: Flame; front?: Flame; shell?: Shell; sparks: ParticleEmitter; light: pc.Entity;
+    behind?: Flame; front?: Flame; shell?: Shell; sparks: ParticleEmitter; light: pc.Entity;
+    /** On someone's own body: how much their size scales its tongues (`lickScale`) and how far those lick now (m). */
+    bodyScale: number; lick: number;
     /** Around someone, a vortex that spins its sparks round them as they rise. */
     swirl?: ParticleAttractor;
-    /** In a fight, on someone's body: its tongues, embers and smoke on the GPU, and the vortex round them. */
-    gpu?: { embers: GpuEmitter; crackle: GpuEmitter; vortex: GpuField };
+    /** In a fight, on someone's body: what flies off them on the GPU, and the vortex round them. */
+    gpu?: { embers: GpuEmitter; crackle: GpuEmitter; smoke: GpuEmitter; ash: GpuEmitter; vortex: GpuField };
     /** How brightly it burns this frame (0–~1.4), for whoever it heats. */
     glow: number;
     /** The light it would cast alone this frame: intensity and where. */
@@ -467,12 +513,12 @@ export function createEffects(app: pc.Application) {
   function unGpu(fire: Fire) {
     if (!fire.gpu) return;
     const g = fire.gpu;
-    g.embers.remove(); g.crackle.remove(); g.vortex.remove();
+    g.embers.remove(); g.crackle.remove(); g.smoke.remove(); g.ash.remove(); g.vortex.remove();
     fire.gpu = undefined;
   }
   function douse(fire: Fire) {
     unGpu(fire);
-    fire.behind.remove(); fire.front?.remove(); fire.shell?.remove(); fire.swirl?.remove();
+    fire.behind?.remove(); fire.front?.remove(); fire.shell?.remove(); fire.swirl?.remove();
     fire.sparks.remove();
     fire.light.destroy();
   }
@@ -498,8 +544,8 @@ export function createEffects(app: pc.Application) {
           const who = fire.gpu ? fighterIndex(fire.model) : -1;
           if (who >= 0) {
             // On the GPU it bursts off their body: a spray of embers and a gout of flame.
-            gpu!.burst('crackle', { at: fire.at, count: f.crackle.sparks * 7, shape: 'surface', fighter: who, above: .3, outward: 2.2, up: 2.8, speed: 1.4, life: [.4, .9] });
-            gpu!.burst('ember', { at: fire.at, count: f.crackle.sparks * 2, shape: 'surface', fighter: who, above: .3, outward: 1.2, up: 2.2, speed: 1, life: [.9, 2] });
+            gpu!.burst('crackle', { at: fire.at, count: f.crackle.sparks * 3, shape: 'surface', fighter: who, above: FIRE_ABOVE, outward: 2.2, up: 2.8, speed: 1.4, life: [.4, .9] });
+            gpu!.burst('ember', { at: fire.at, count: f.crackle.sparks * 2, shape: 'surface', fighter: who, above: FIRE_ABOVE, outward: 1.2, up: 2.2, speed: 1, life: [.9, 2] });
           } else particles.burst('fleck', { x: fire.at.x, y: fire.at.y + fire.height * .35, z: fire.at.z }, f.crackle.sparks,
             { spread: fire.width * .5, flat: true, direction: { x: 0, y: 1, z: 0 }, cone: .7, speed: 1.6, front: fire.body ? fire.body.radius + .2 : 0 });
           fire.flare = 1;
@@ -517,38 +563,43 @@ export function createEffects(app: pc.Application) {
         flame.width = flame === fire.front ? fire.width * 1.2 : fire.width;
       }
       if (fire.shell) {
-        // Its own body burns, and its sparks fly off it: each from a part of it, wherever it is now.
+        // Its own body burns: it spreads over them bit by bit, and its tongues grow into the level and flare with it.
         const shell = fire.shell, part = shell.parts[Math.floor(Math.random() * shell.parts.length)];
-        shell.base = fire.at.y; shell.height = fire.body?.height ?? fire.height; shell.x = fire.at.x; shell.z = fire.at.z;
-        // The bigger the fire, the faster it turns round them.
-        shell.spin = 1.2 + f.shell * .8;
-        shell.strength = fire.strength * f.shell * (.85 + .15 * swell + .15 * fire.flare); shell.heat = f.heat * .5 * (1 + .6 * fire.flare);
+        shell.spread += (f.spread - shell.spread) * (1 - Math.exp(-dt * 1.8));
+        fire.lick += (f.lick * fire.bodyScale - fire.lick) * k;
+        shell.reach = fire.lick * (.88 + .12 * swell + .3 * fire.flare);
+        shell.strength = fire.strength * (.9 + .1 * swell + .15 * fire.flare); shell.heat = f.heat * (1 + .6 * fire.flare);
         if (part) { const box = part.aabb, c = box.center, e = box.halfExtents; fire.sparks.at.set(c.x + (Math.random() * 2 - 1) * e.x, c.y + Math.random() * e.y, c.z + (Math.random() * 2 - 1) * e.z); }
       } else fire.sparks.at.set(fire.at.x, fire.at.y + fire.height * .3, fire.at.z);
-      fire.glow = fire.strength * swell * flicker * (1 + .35 * fire.flare) * f.shell;
+      fire.glow = fire.strength * swell * flicker * (1 + .35 * fire.flare) * f.heats;
       if (fire.swirl) {
         fire.swirl.at.set(fire.at.x, fire.at.y + fire.height * .5, fire.at.z);
-        fire.swirl.swirl = (2 + 2.5 * f.shell) * fire.strength; fire.swirl.lift = .8 * fire.strength; fire.swirl.radius = fire.height * .9 + (fire.body?.radius ?? 0);
+        fire.swirl.swirl = (2 + 2.5 * f.heats) * fire.strength; fire.swirl.lift = .8 * fire.strength; fire.swirl.radius = fire.height * .9 + (fire.body?.radius ?? 0);
       }
       fire.sparks.rate = f.sparks * fire.strength * swell;
       // In a fight, on someone's body, its embers and crackle fly on the GPU and meet them.
       const who = gpuOn && fire.shell ? fighterIndex(fire.model) : -1;
       if (who >= 0) {
         const g = fire.gpu ??= {
-          embers: gpu!.emitter('ember', { at: fire.at, rate: 0, shape: 'surface', above: .3, life: [1, 2.2], speed: .6, outward: .7, up: 1.1 }),
-          crackle: gpu!.emitter('crackle', { at: fire.at, rate: 0, shape: 'surface', above: .25, life: [.3, .7], speed: 1, outward: 1.6, up: 2.2 }),
+          embers: gpu!.emitter('ember', { at: fire.at, rate: 0, shape: 'surface', above: FIRE_ABOVE, life: [.9, 2.2], speed: .5, outward: .8, up: 1.3 }),
+          crackle: gpu!.emitter('crackle', { at: fire.at, rate: 0, shape: 'surface', above: FIRE_ABOVE, life: [.3, .7], speed: 1, outward: 1.6, up: 2.2 }),
+          smoke: gpu!.emitter('burnsmoke', { at: fire.at, rate: 0, shape: 'surface', above: .25, life: [.9, 1.9], speed: .15, outward: .25, up: .7 }),
+          ash: gpu!.emitter('burnash', { at: fire.at, rate: 0, shape: 'surface', above: FIRE_ABOVE, life: [1.2, 2.6], speed: .25, outward: .4, up: .6 }),
           vortex: gpu!.field({ at: fire.at, radius: 1 }),
         };
-        const level = FIRE_GPU[fire.level], body = fire.body!, burning = fire.strength * swell;
-        for (const e of [g.embers, g.crackle]) e.fighter = who;
+        // A big body throws more of it, a small one less.
+        const level = FIRE_GPU[fire.level], body = fire.body!, burning = fire.strength * swell * fire.bodyScale * fire.bodyScale;
+        for (const e of [g.embers, g.crackle, g.smoke, g.ash]) e.fighter = who;
         g.embers.rate = level.embers * burning; g.crackle.rate = level.crackle * burning * (1 + 2 * fire.flare);
+        g.smoke.rate = level.smoke * burning; g.ash.rate = level.ash * burning;
         // The vortex: round them and up, drawing what drifts away back in.
         g.vortex.at.set(fire.at.x, fire.at.y + body.height * .45, fire.at.z);
         g.vortex.radius = body.height * 1.3 + 1; g.vortex.swirl = level.swirl * fire.strength; g.vortex.lift = level.lift * fire.strength;
         g.vortex.pull = 1.2 * fire.strength; g.vortex.turbulence = .5;
         fire.sparks.rate = 0;
       } else unGpu(fire);
-      fire.lux = f.light.intensity * firelight * fire.strength * swell * flicker * (1 + .35 * fire.flare);
+      // On someone the fire is smaller than on its own, and lights what is round it less.
+      fire.lux = f.light.intensity * (fire.shell ? .6 : 1) * firelight * fire.strength * swell * flicker * (1 + .35 * fire.flare);
       fire.lightY = fire.at.y + fire.height * .45;
     }
     shareLights();
@@ -577,6 +628,8 @@ export function createEffects(app: pc.Application) {
   // Fight particles on the GPU, where the device can: only in fights, with motion (`gpuOn`).
   const gpu = canSimulate(app.graphicsDevice) ? createFightParticles(app, FIGHT_KINDS) : undefined;
   let gpuOn = false;
+  /** Beaten foes coming apart (src/disintegrate.ts): in fights, and on the street too, where the engine runs for them. */
+  const disintegrations = createDisintegrations(gpu);
   /** Who is fighting (battle-scene `setFighters`): what fight particles meet. */
   let fightersNow: pc.Entity[] = [];
   /** Which fighter (`setFighters` order) a model is, or -1. */
@@ -755,8 +808,8 @@ export function createEffects(app: pc.Application) {
     /** A plain puff of one kind; `spread` is the radius it appears over. */
     emit(kind: EffectKind, at: Vec, count = 6, spread = .25) { particles.burst(kind, at, count, { spread }); },
     /**
-     * A blow lands at `at`, thrown from `from`: a flash, sparks flying on through, a ring on the
-     * floor and dust at the feet. `strength` 1 is a plain hit; guarded hits spark less and ring blue.
+     * A blow lands at `at`, thrown from `from`: a flash, sparks flying on through and a little dust
+     * at the feet. `strength` 1 is a plain hit; guarded hits spark less and glint blue.
      */
     impact(target: Vec, from: Vec, strength = 1, options: { guarded?: boolean; gum?: boolean; feet?: Vec } = {}) {
       const dx = target.x - from.x, dz = target.z - from.z, d = Math.hypot(dx, dz) || 1;
@@ -765,20 +818,18 @@ export function createEffects(app: pc.Application) {
       particles.burst('flash', target, 1, { size: .45 + k * .35 });
       glint(target, options.guarded ? '#cfe6ff' : '#ffe6b8', .8 + k * .9, 2.6, .22);
       if (gpuOn) {
-        // Hot streaks fly on into whoever was hit, glance off their head and back, slide along them
-        // and some cling a moment, glowing; a few embers float off.
+        // Hot streaks fly on through whoever was hit, mostly level with the blow, and glance off them.
+        // No embers: they settle on the body and the floor and read as drops of blood.
         const push = 3.5 + k * 2;
-        gpu!.burst('spark', { at: target, count: 30 + 60 * k, spread: .05, velocity: { x: direction.x * push, y: 1.8 + k, z: direction.z * push }, speed: 2.4, cone: 1.15, life: [.35, .95] });
-        gpu!.burst('needle', { at: target, count: 10 + 20 * k, spread: .05, velocity: { x: direction.x * push * .8, y: 2 + k, z: direction.z * push * .8 }, speed: 2, cone: 1.3, life: [.4, .9] });
-        gpu!.burst('ember', { at: target, count: 8 + 16 * k, spread: .12, velocity: { x: direction.x * 1.2, y: 1.4, z: direction.z * 1.2 }, speed: 1.2, cone: 1.5, life: [.7, 1.6] });
+        gpu!.burst('spark', { at: target, count: 30 + 60 * k, spread: .05, velocity: { x: direction.x * push, y: .6 + .5 * k, z: direction.z * push }, speed: 2.4, cone: 1.15, life: [.35, .95] });
+        gpu!.burst('needle', { at: target, count: 10 + 20 * k, spread: .05, velocity: { x: direction.x * push * .8, y: .8 + .5 * k, z: direction.z * push * .8 }, speed: 2, cone: 1.3, life: [.4, .9] });
       } else particles.burst('spark', target, Math.round(6 + 12 * k), { direction, cone: .95, spread: .1 });
       if (options.guarded) particles.burst('ward', target, 1);
       const feet = options.feet ?? { x: target.x, y: groundAt(target.x, target.z), z: target.z };
-      particles.burst('shock', { x: feet.x, y: feet.y + .03, z: feet.z }, 1, { size: .6 + k * .5 });
       particles.burst('dust', { x: feet.x, y: feet.y + .05, z: feet.z }, Math.round(4 + 5 * k), { spread: .35, flat: true, speed: 1.3 });
       if (options.gum) { effects.mark('gum', feet, .25 + .1 * k); particles.burst('goo', target, Math.round(4 + 5 * k), { spread: .2, direction, cone: 1.1 }); particles.burst('spore', target, 8, { spread: .3 }); }
     },
-    /** Cardioide: light rises from a heart-shaped curve round the feet and spirals up the body. */
+    /** A cure: light rises from a heart-shaped curve (a cardioid) round the feet and spirals up the body. */
     heal(target: Vec, height = 1.6) {
       const floor = groundAt(target.x, target.z), size = .32;
       particles.burst('heal', { x: target.x, y: floor + .1, z: target.z }, 36, {
@@ -792,19 +843,11 @@ export function createEffects(app: pc.Application) {
       particles.attract({ at: { x: target.x, y: floor + height * .6, z: target.z }, pull: 1.2, swirl: 3.2, lift: 1.4, radius: 1.8, life: 1.3 });
       particles.burst('star', { x: target.x, y: floor + height, z: target.z }, 6, { spread: .35 });
     },
-    /** Análisis Parálisis: gold sparks of ideas circling over a head. */
+    /** Ideas: gold sparks circling over a head. */
     insight(head: Vec) {
       particles.burst('star', head, 9, { spread: .45, ring: true, speed: .3, life: 1.3 });
       particles.burst('ember', head, 10, { spread: .35, ring: true, speed: .2, colour: ['#fff6cf', '#f3cf78'] });
       particles.attract({ at: head, pull: .8, swirl: 3.5, radius: 1, life: 1.2 });
-    },
-    /** No-ta lands: a shockwave of dust, red ink spattered round the print and a ring of sparks. */
-    stamp(feet: Vec) {
-      const floor = { x: feet.x, y: groundAt(feet.x, feet.z) + .04, z: feet.z };
-      particles.burst('shock', floor, 1, { size: 1.6, colour: ['#fff1e8', '#ff8a7a'] });
-      particles.burst('dust', floor, 26, { spread: .9, ring: true, speed: 3.4 });
-      particles.burst('ink', { x: feet.x, y: floor.y + .3, z: feet.z }, 12, { spread: .6, flat: true, speed: 1.2 });
-      particles.burst('spark', { x: feet.x, y: floor.y + .4, z: feet.z }, 20, { spread: .7, ring: true });
     },
     /** An ánima wakes (`big`) or is swapped in: its colour swirls up around the body and rings out. */
     anima(body: Vec, colour: string, big = false) {
@@ -824,6 +867,52 @@ export function createEffects(app: pc.Application) {
       }
     },
     /**
+     * Someone's stats go up or down (src/stat-fx.ts), `delay` seconds from now: the circles and bars
+     * of light, and on the GPU particles with them. Rising, a ring of motes spins up off their feet
+     * and fine streaks shoot up past their head; falling, red drops run down off them and settle
+     * round their feet while dim embers sink. `model` gives the particles someone to flow round.
+     */
+    statChange(feet: Vec, way: StatWay, o: { radius: number; height: number; delay?: number; model?: pc.Entity }) {
+      playStatChange(trails, feet, way, o);
+      if (!gpu || !gpuOn) return;
+      const look = STAT_LOOKS[way], r = Math.max(.55, o.radius), h = Math.max(1.5, o.height);
+      const burst = () => {
+        if (!gpuOn) return;
+        const ground = { x: feet.x, y: feet.y + .06, z: feet.z }, top = { x: feet.x, y: feet.y + h * 1.05, z: feet.z };
+        if (way === 'up') {
+          gpu.burst('mote', { at: ground, count: 90, shape: 'ring', spread: r * .95, around: 2.2, up: 1.3, speed: .25, life: [.8, 1.4], colour: look.glow, light: { intensity: 2, range: 2.4, colour: look.glow } });
+          gpu.burst('rise', { at: ground, count: 70, shape: 'ring', spread: r * .8, velocity: { x: 0, y: 2.2, z: 0 }, speed: .5, cone: .18, life: [.55, .95], colour: look.spark });
+          gpu.burst('twinkle', { at: top, count: 10, spread: r * .5, speed: .6, life: [.3, .6], colour: look.spark });
+          const field = gpu.field({ at: { x: feet.x, y: feet.y + h * .5, z: feet.z }, radius: r + 1, swirl: 5, lift: 2.2, pull: 1.2, ...o.model ? { follow: o.model, offset: { x: 0, y: h * .5, z: 0 } } : {} });
+          pulses.push({ field, left: .9 });
+        } else {
+          gpu.burst('sink', { at: top, count: 70, shape: 'ring', spread: r * .7, velocity: { x: 0, y: -1.4, z: 0 }, speed: .5, cone: .3, life: [.7, 1.1], colour: look.spark, light: { intensity: 1.6, range: 2.2, colour: look.glow } });
+          gpu.burst('mote', { at: { x: feet.x, y: feet.y + h * .6, z: feet.z }, count: 50, spread: r * .6, velocity: { x: 0, y: -1.1, z: 0 }, speed: .35, life: [.7, 1.1], colour: look.glow });
+          gpu.burst('sinkdrop', { at: ground, count: 26, shape: 'ring', spread: r * .9, speed: .15, life: [.6, 1.1], colour: look.glow });
+          const field = gpu.field({ at: { x: feet.x, y: feet.y + h * .5, z: feet.z }, radius: r + 1, swirl: 2, lift: -3, pull: 2, ...o.model ? { follow: o.model, offset: { x: 0, y: h * .5, z: 0 } } : {} });
+          pulses.push({ field, left: .7 });
+        }
+      };
+      // The particles leave with the bars, once the circle has spun.
+      later.push({ left: (o.delay ?? 0) + .18, then: burst });
+    },
+    /**
+     * Cardioide (Matemágico): a heart-shaped curve of green light drawn on the floor round whoever
+     * it cures, then the cure's light gathering and rising up them. On the GPU.
+     */
+    cardioid(model: pc.Entity) {
+      if (!gpu || !gpuOn) return;
+      const p = model.getPosition(), feet = { x: p.x, y: Math.max(groundAt(p.x, p.z), p.y), z: p.z }, body = bodyOf(model, feet);
+      // The cardioid r = 2a(1 − cos θ), its cusp under them, drawn as dots of light along it.
+      const a = Math.max(.22, body.radius * .55), points = 40;
+      for (let i = 0; i < points; i++) {
+        const t = i / points * Math.PI * 2, r = 2 * a * (1 - Math.cos(t));
+        const at = { x: feet.x + r * Math.cos(t) - a * 2, y: feet.y + .06, z: feet.z + r * Math.sin(t) };
+        later.push({ left: i / points * .35, then: () => gpuOn && gpu.burst('heal', { at, count: 6, spread: .04, velocity: { x: 0, y: .4, z: 0 }, speed: .15, life: [.9, 1.5], light: i % 10 ? undefined : { intensity: 1.4, range: 1.8 } }) });
+      }
+      later.push({ left: .3, then: () => effects.fightFx('heal', { model }) });
+    },
+    /**
      * A spell flying from `from` to `to` in `seconds` (arcing over the straight line, see
      * `CometOptions`), flaring where it lands.
      */
@@ -833,6 +922,74 @@ export function createEffects(app: pc.Application) {
         ...options,
         onArrive() { particles.burst('flash', to, 1, { size: .35, colour: light }); particles.burst('ember', to, 6, { spread: .12, colour: light }); options.onArrive?.(); },
       });
+    },
+    /**
+     * Foc Binari (Matemágico): two streams of fire leave a raised hand and braid round each other on
+     * their way, a one and a zero, shedding embers and crackle as they fly, and land together on
+     * whoever is at `to` in `seconds` (`onArrive` then). With a `gap` they land apart instead, tac,
+     * tac: the zero first, in a spray of gold sparks, and the one `gap` seconds after it, which is
+     * the one that catches or fizzles. `burn`: it catches, a burst of fire, and
+     * with their `model` a light flame on them for a moment (in a fight the Quemado status burns
+     * them instead, src/status-fx.ts `quemado`); otherwise it fizzles out in
+     * warm smoke and a few dying sparks.
+     * Its particles run on the GPU fight engine only; outside a fight only the ribbons fly.
+     */
+    binaryFire(from: Vec, to: Vec, o: { seconds?: number; gap?: number; burn?: boolean; model?: pc.Entity; feet?: Vec; onArrive?: () => void } = {}) {
+      const seconds = o.seconds ?? .42, gap = o.gap ?? 0;
+      const distance = Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z);
+      // Fire, not light: the one burns orange to red, the zero in Matemágico's gold to orange; half
+      // a turn apart, so they braid. Kept below white so bloom leaves them coloured.
+      const strands = [
+        { colour: ['#ffc46b', '#ff5a14'] as const, ember: '#ff7a1a', twist: { turns: 1.25, radius: .28, phase: 0 } },
+        { colour: ['#ffe2a0', '#f39a2a'] as const, ember: '#f3cf78', twist: { turns: 1.25, radius: .28, phase: Math.PI } },
+      ];
+      const arc = Math.min(.9, distance * .12);
+      if (gpuOn) gpu!.burst('flare', { at: from, count: 2, spread: .02, life: [.18, .28], colour: '#ffd27a', light: { intensity: 2.6, range: 2.4 } });
+      glint(from, '#ffc56a', 1.6, 2.4, .5);
+      // Apart, the zero leaves first and the one `gap` after it, with a flare of its own from the hand.
+      if (gap) later.push({ left: gap, then: () => gpu!.burst('flare', { at: from, count: 2, spread: .02, life: [.16, .24], colour: '#ffb347', light: { intensity: 2.2, range: 2.2 } }) });
+      strands.forEach((strand, i) => {
+        const path = cometPath(from, to, { arc, twist: strand.twist }), p = new pc.Vec3(), q = new pc.Vec3();
+        const delay = gap && i === 0 ? gap : 0;
+        trails.comet(from, to, strand.colour, seconds, { arc, twist: strand.twist, width: .1, life: .2, taper: 1.1, intensity: 2.2, core: .3, delay, onArrive: i === 0 ? arrive : gap ? tac : undefined });
+        // Each stream sheds fire where its head is, a little at a time, thrown on along its path.
+        const steps = 10;
+        for (let step = 0; step < steps; step++) {
+          const f = (step + .5) / steps;
+          later.push({ left: delay + f * seconds, then: () => {
+            path(f, p); path(Math.min(1, f + .04), q);
+            const dx = q.x - p.x, dy = q.y - p.y, dz = q.z - p.z, d = Math.hypot(dx, dy, dz) || 1, push = 2.2;
+            gpu!.burst('ember', { at: p, count: 24, spread: .06, velocity: { x: dx / d * push, y: dy / d * push + .3, z: dz / d * push }, speed: .7, life: [.25, .6], colour: strand.ember });
+            gpu!.burst('crackle', { at: p, count: 6, spread: .04, speed: 1.2, life: [.15, .35] });
+          } });
+        }
+      });
+      /** The zero landing on its own: a gold flash, a spray of sparks and a crackle. */
+      function tac() {
+        glint(to, '#ffd8a0', 1.8, 2.6, .25);
+        if (!gpuOn) return;
+        gpu!.burst('flare', { at: to, count: 2, spread: .04, life: [.14, .22], colour: '#ffe2b0' });
+        gpu!.burst('spark', { at: to, count: 34, spread: .05, speed: 2.8, life: [.2, .5] });
+        gpu!.burst('crackle', { at: to, count: 26, spread: .08, speed: 2.2, life: [.15, .35] });
+      }
+      function arrive() {
+        const feet = o.feet ?? { x: to.x, y: groundAt(to.x, to.z), z: to.z };
+        glint(to, o.burn ? '#ff9a2e' : '#ffd8a0', o.burn ? 3 : 1.6, 3, o.burn ? .5 : .3);
+        o.onArrive?.();
+        if (!gpuOn) return;
+        gpu!.burst('flare', { at: to, count: 3, spread: .05, life: [.2, .32], colour: o.burn ? '#ffb347' : '#ffe2b0' });
+        if (o.burn) {
+          // It catches: a lick of fire on their body, embers and crackle thrown out round them.
+          if (o.model) effects.fire(new pc.Vec3(feet.x, feet.y, feet.z), 'light', { seconds: 1.4, model: o.model });
+          gpu!.burst('ember', { at: to, count: 90, spread: .15, speed: 2.4, up: .8, life: [.6, 1.4] });
+          gpu!.burst('crackle', { at: to, count: 70, spread: .12, speed: 2.8, life: [.3, .7] });
+          gpu!.burst('spark', { at: to, count: 40, spread: .06, speed: 3, life: [.3, .8] });
+        } else {
+          // A zero: the fire goes out on them, a puff of warm smoke and a few sparks that die falling.
+          gpu!.burst('fizzle', { at: to, count: 46, spread: .18, speed: .5, up: .4, life: [.8, 1.4] });
+          gpu!.burst('crackle', { at: to, count: 24, spread: .1, speed: 1.4, life: [.2, .45] });
+        }
+      }
     },
     /**
      * An element hits `target` (thrown from `from`): every element has its own burst on top of a
@@ -971,8 +1128,9 @@ export function createEffects(app: pc.Application) {
      * burns to grow or calm it, and `stop()` lets it die down (`seconds` stops it by itself). With
      * `body` it burns around someone standing at `at`: flames behind them and, see-through, in
      * front of them, reaching up them as its level says, and its light falls on them. With their
-     * `model` too, their own body burns: flames crawl up its surfaces and sparks fly off it, moving
-     * with it (src/flames.ts, `wrap`); `glow` says how much to heat it.
+     * `model` it is their own body that burns, whatever it is made of, and nothing stands on the floor:
+     * it catches and spreads over their parts, tongues of flame grow out of them and embers, crackle,
+     * smoke and ash fly off them, moving with them (src/flames.ts, `wrap`); `glow` says how much to heat them.
      */
     fire(at: pc.Vec3, level: FireLevel = 'medium', options: { seconds?: number; body?: Body; model?: pc.Entity } = {}) {
       const f = FIRE[level], body = options.body ?? (options.model ? bodyOf(options.model, at) : undefined), size = fireSize(level, body);
@@ -981,15 +1139,17 @@ export function createEffects(app: pc.Application) {
       app.root.addChild(light);
       const fire: Fire = {
         at, level, body, model: options.model, strength: 0, left: options.seconds ?? Infinity, light, ...size, range: f.light.range,
-        // Alone it stands where it is; around someone, behind them, and a see-through layer in front.
-        behind: flames.add(at, { smoke: f.smoke, nearer: body ? -(body.radius + .05) : 0, strength: 0 }),
-        // On their own body the shell burns in front of them; around someone without one, a layer does.
+        bodyScale: lickScale(body?.height ?? 1.7), lick: f.lick * lickScale(body?.height ?? 1.7) * .4,
+        // Alone it stands where it is; around someone with no model, behind them, and a see-through layer in front.
+        behind: options.model ? undefined : flames.add(at, { smoke: f.smoke, nearer: body ? -(body.radius + .05) : 0, strength: 0 }),
         front: body && !options.model ? flames.add(at, { smoke: 0, nearer: body.radius + .12, hollow: .35, strength: 0 }) : undefined,
         shell: options.model ? flames.wrap(options.model) : undefined,
         swirl: body ? particles.attract({ at, pull: .4, swirl: 0, radius: 1 }) : undefined,
         sparks: particles.emitter('fleck', at, { rate: 0, spread: options.model ? .04 : size.width * .6, flat: true, front: body ? body.radius + .2 : 0 }),
         phase: Math.random() * 100, crackle: f.crackle ? between(f.crackle.every) : 0, flare: 0, glow: 0, lux: 0, lightY: at.y,
       };
+      // It catches at once, then spreads over them.
+      if (fire.shell) fire.shell.spread = f.spread * .45;
       fires.push(fire);
       return {
         at,
@@ -1003,6 +1163,11 @@ export function createEffects(app: pc.Application) {
       };
     },
     /** Out of the fight in a puff of smoke and a few stars. */
+    /**
+     * `model` comes apart from its feet up into its own colours and pale light that streams up, and
+     * is disabled (src/disintegrate.ts): a beaten foe, in a fight or where it stood on the street.
+     */
+    disintegrate(model: pc.Entity, o?: DisintegrateOptions): Disintegration { return disintegrations.start(model, o, animate); },
     poof(where: Vec) {
       particles.burst('poof', where, 14, { spread: .35 });
       particles.burst('star', at(where, where.y + .3), 5, { spread: .3 });
@@ -1093,6 +1258,10 @@ export function createEffects(app: pc.Application) {
         case 'fireworks':
           // Rockets with a trail behind each, bursting into embers over them.
           gpu.burst('trail', { at: { x: feet.x, y: feet.y + .1, z: feet.z }, count: n(12) * 20, chain: 20, spread: .2, velocity: { x: 0, y: 7.5, z: 0 }, speed: 1.8, cone: .5, life: [.8, 1.1], colour: o.colour ?? '#ffd27a', light: { intensity: 3, range: 3.5 } });
+          break;
+        case 'binari':
+          // Foc Binari, from `from` (or beside them) to their chest; at full strength it catches.
+          effects.binaryFire(from, chest, { burn: k >= 1, model: o.model, feet });
           break;
         case 'needles':
           gpu.burst('needle', { at: chest, count: n(160), spread: .05, velocity: { x: onward.x * 5, y: 2.2, z: onward.z * 5 }, speed: 2.8, cone: 1.2, life: [.5, 1.1] });
@@ -1392,7 +1561,7 @@ export function createEffects(app: pc.Application) {
       // Marks stay while a fight lasts and fade once it is over; outside one they fade after a while.
       if (fighting && !view.fight) fadeMarks();
       // The GPU's fight particles: a fight starting bakes its floor; one ending empties them.
-      const wantGpu = !!gpu && !!view.fight && animate;
+      const wantGpu = !!gpu && animate && (!!view.fight || disintegrations.busy);
       if (wantGpu && !gpuOn) gpu!.setFloor(view.focus, 16, (x, z) => groundAt(x, z));
       if (!wantGpu && gpuOn) { dropLattices(); dropCrystals();  fires.forEach(unGpu); pulses.forEach(p => p.field.remove()); pulses.length = 0; gpu!.clear(); fightersNow = []; }
       gpuOn = wantGpu;
@@ -1426,6 +1595,10 @@ export function createEffects(app: pc.Application) {
       }
       updateCrystals(view.paused ? 0 : dt);
       updateLattices(view.paused ? 0 : dt);
+      // Whatever is coming apart outside the fight's own fighters is one more for particles to be born on.
+      const parting = disintegrations.models.filter(m => !fightersNow.includes(m)), bodies = parting.length ? [...fightersNow, ...parting] : fightersNow;
+      gpu?.setFighters(bodies);
+      disintegrations.update(view.paused ? 0 : dt, gpuOn, bodies);
       if (gpu) { gpu.setLight(lit[0], lit[1], lit[2]); gpu.lightScale = firelight; gpu.update(view.paused ? 0 : dt, gpuOn); }
       particles.update(view.paused ? 0 : dt);
       trails.enabled = animate;
@@ -1433,7 +1606,7 @@ export function createEffects(app: pc.Application) {
       marks.update(view.paused ? 0 : dt);
     },
     /** Ends every effect, aura, fire and trail in flight (fires go out at once, as the fight they burn in may be going); the scene's air and weather stay, and marks fade out. */
-    clear() { dropLattices(); dropCrystals(); auras.forEach(aura => { aura.left = 0; }); fires.forEach(douse); fires.length = 0; glints.forEach(g => { g.age = g.seconds; }); particles.clear(); trails.clear(); fadeMarks(); },
+    clear() { disintegrations.clear(); dropLattices(); dropCrystals(); auras.forEach(aura => { aura.left = 0; }); fires.forEach(douse); fires.length = 0; glints.forEach(g => { g.age = g.seconds; }); particles.clear(); trails.clear(); fadeMarks(); },
     destroy() { dropCrystals(); reflections.destroy(); fires.forEach(douse); fires.length = 0; glints.forEach(g => g.light.destroy()); glints.length = 0; particles.destroy(); flames.destroy(); gpu?.destroy(); trails.destroy(); marks.destroy(); },
   };
 

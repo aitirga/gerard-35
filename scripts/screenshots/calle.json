@@ -1,0 +1,206 @@
+{
+  "title": "La calle que no acaba · Nuria and Uri's mission",
+  "description": "docs/quests/nuria.md § La calle que no acaba: Nuria tells them what Uri has been like since he woke, then, as they walk up from her door, houses rise out of the ground and shut every way but on until the corner unrolls into La calle with no cut: her street, past her block, runs one way only, straight on: her house again and again with a 1 on every door, the houses growing and the street narrowing, the colour draining to the Queen's violet and the screen's edges closing in, Aitor noticing it over his head, and at the far end the bubble that leads into Uri's fears.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=door&solo=1"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'Cardedeu · Jacint Verdaguer'",
+      "timeout": 90000
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [
+        59,
+        100
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "nuria-talks",
+      "delay": 1500,
+      "caption": "Nuria at her door: Uri woke up talking and has not stopped"
+    },
+    {
+      "press": "KeyE",
+      "times": 6,
+      "gap": 900
+    },
+    {
+      "shot": "nuria-uri-strange",
+      "delay": 1500,
+      "caption": "«Vamos a jugar a que no volvemos»: what Uri said as he took Nil"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 60, z: 92 })"
+    },
+    {
+      "shot": "rise-behind",
+      "delay": 700,
+      "caption": "Walking up from her door: a house is born across the street behind them, where the way to the station was"
+    },
+    {
+      "shot": "risen-behind",
+      "delay": 1800,
+      "caption": "Her house again, with a 1 on the door, where the crossing was"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 61, z: 86 })"
+    },
+    {
+      "shot": "rise-gardens",
+      "delay": 800,
+      "caption": "Another rises in the gardens on the right, dust and the ground shuddering"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 61, z: 67 })"
+    },
+    {
+      "shot": "rise-daurella",
+      "delay": 900,
+      "caption": "Both sides of Doctor Daurella close: no corner, no side street"
+    },
+    {
+      "shot": "risen-daurella",
+      "delay": 2500,
+      "caption": "Every way but on is shut"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 61, z: 62 })"
+    },
+    {
+      "shot": "unroll",
+      "delay": 900,
+      "caption": "The corner unrolls: what stood beyond it sinks and the street stretches out over it"
+    },
+    {
+      "shot": "unroll-houses",
+      "delay": 1300,
+      "caption": "Its houses are born one after another, away from them"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 10000
+    },
+    {
+      "shot": "calle-in",
+      "delay": 800,
+      "caption": "«Aquí había una esquina. Doctor Daurella.» «Ya no. Solo calle.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "unrolled",
+      "delay": 1500,
+      "caption": "Her street goes on, straight: La calle's own start laid over it"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 60, z: 33 })"
+    },
+    {
+      "shot": "before-swap",
+      "delay": 1500,
+      "caption": "Well inside, still on her street's map"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 60, z: 29 })"
+    },
+    {
+      "until": "document.querySelector('#environment .place-name').textContent === 'La calle que no acaba'",
+      "timeout": 10000
+    },
+    {
+      "shot": "calle-start",
+      "delay": 1200,
+      "caption": "A step on, in La calle itself: the same spot, nothing jumps"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        88
+      ]
+    },
+    {
+      "shot": "calle-quarter",
+      "delay": 2500,
+      "caption": "A quarter up: the same house again and again, a 1 on every door"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        58
+      ]
+    },
+    {
+      "shot": "calle-half",
+      "delay": 2500,
+      "caption": "Halfway: the colour drains, the edges close in, Aitor notices it"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        30
+      ]
+    },
+    {
+      "shot": "calle-late",
+      "delay": 2500,
+      "caption": "Further up: taller houses, a narrower street, the Queen's violet; the edges start to beat"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        10
+      ]
+    },
+    {
+      "shot": "portal-seen",
+      "delay": 1800,
+      "caption": "The bubble at the end: «por dentro está oscura»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "portal",
+      "delay": 2000,
+      "caption": "The bubble portal into Uri's fears: walking up to it goes through"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        5
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.querySelector('#environment .place-name').textContent === 'La torre de Uri'",
+      "timeout": 60000
+    },
+    {
+      "shot": "tower-in",
+      "delay": 2000,
+      "caption": "Through the bubble: «Esto ya no es Cardedeu»"
+    }
+  ]
+}

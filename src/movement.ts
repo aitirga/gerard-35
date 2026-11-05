@@ -108,6 +108,9 @@ export class FreeMovement {
     const length = Math.hypot(vx, vz);
     if (this.bouncing || !Number.isFinite(length) || length < 1e-6) return false;
     const distance = WALK_SPEED * (running ? 1.5 : 1) * clamp(dt, 0, 0.05) * Math.min(1, length);
+    // A frame with no time in it (the engine clamps a timestamp that did not advance to dt 0) moves
+    // nobody; walking it through `advance` with a zero step would put the player at NaN for good.
+    if (!(distance > 0)) return false;
     // Substeps keep a long frame from tunnelling through a wall.
     const substeps = Math.max(1, Math.ceil(distance / (RADIUS / 2)));
     const start = { ...this.at };
@@ -165,6 +168,8 @@ export class FreeMovement {
   /** Moves one substep; when a corner blocks it head-on, sidesteps around it instead of snagging. */
   private advance(delta: Cell, occupied: readonly Cell[]) {
     const length = Math.hypot(delta.x, delta.z);
+    // No step, no direction: every division by `length` below would be NaN.
+    if (!(length > 0)) return;
     const along = (from: Cell, to: Cell) => ((to.x - from.x) * delta.x + (to.z - from.z) * delta.z) / length;
     const next = this.collide({ x: this.at.x + delta.x, z: this.at.z + delta.z }, occupied);
     if (along(this.at, next) > length * 0.5) { this.at = next; return; }

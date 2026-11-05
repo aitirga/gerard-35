@@ -62,10 +62,38 @@ particles that hold together, docs/graphics.md "Lattices") on a dog in a real fi
 close: in a fight too, `frame()` holds the camera, and `game.fighterAt(id)` says where a fighter
 stands. Run it with `--gpu --scale 2`.
 
+`disintegrate` shows beaten foes coming apart into particles (docs/graphics.md "Disintegration"):
+three dogs beaten at once in a real fight (the picker's Victoria), El Cebollón caught on the tower's
+first ring, beaten, and coming apart again on the ramp where it stood, and Vertitrón beaten in its
+fight and on the top, letting Uri and Nil down. Run it with `--gpu --scale 2`.
+
+`duals` plays both dual attacks against Vertitrón with two players (two pads faked: the keyboard is
+Gerard, pad 2 is Aitor, driven through `battleUI.control(action, 2)`): the development-only Dual
+command and its sheet, Punto débil (its banner armed while aimed, then set off with the bars and the
+flare, the mark on the plate, the ×3 blow that spends it), a move readied ahead in the partner's dock
+playing by itself, Zarpazos de fuego armed the moment Zarpazos is picked over a readied Foc Binari,
+and both duals «Ya usado en este combate» afterwards. `level-up` jumps the fight tester to a win
+that levels both ánimas: quick presses that do not leave, the level stamps, one band per ánima with
+what it learned, and Seguir lighting up only at the end. `vertigo` shows Vertitrón (a robot with a glass eye in its chest, Uri and Nil on its head): its
+eye up close, each of its moves with Uri's shout over him (Pisotón, Barrido, Grito liberador, the
+eye charging, the Rayo terrorífico sweeping both), the picker's moments «Rayo cargado» and «Ojo
+roto» (`battleUI.jumpTo`), its eye broken by a blow, and the win (it kneels, Uri and Nil come down); `tower-foes` shows each tower foe's
+ability (the escort's four rounds, a platito's Darle la vuelta, El Plato's surprise and ¡Puaj!). The
+three start their fights from the fight tester's `?fight=` link (free maná, no PV lost); run them
+with `--gpu`.
+
 `fire` shows `effects.fire` at its three levels at night and by day, each up close, one fire
 changing level and dying down, then in a fight: fire hits wrapping the foe they hit, a foe burning, a
 real Atacar played through, and a frozen blow with effects drawn inside the dog and then in front of
 it (`effects.particles.front`), mostly as clips.
+
+`burning` shows Quemado on someone's own body: its three levels on a dog as clips, how it goes out,
+then every kind of body in the game (Gerard, Vertitrón, its eye, the guardian, the gum minion, the onion,
+the dish, the pixel ghost and the young), up close. Run it with `--gpu --scale 2`.
+
+`golpes` plays Zarpazos de fuego on Vertitrón and shows that what an action changes waits for its
+blows: the bar whole and no fire during the banner, then each claw taking its own and its fire catching
+as it lands. Run it with `--gpu`.
 
 `combat-lab` opens the standalone combat simulator, captures the strategy comparison and a
 seeded replay, then repeats the same seeds with higher enemy direct damage.

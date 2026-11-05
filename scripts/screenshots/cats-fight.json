@@ -1,0 +1,116 @@
+{
+  "title": "Haru y Yuki · los mismos dos en los combates de la misión",
+  "description": "While Nuria lends the cats (docs/animas/papagato/) a fight uses the two already following the party: they run in from where they were and walk on from where it leaves them, with Gerard and Aitor both wearing Papagato too. Each step fails if there is ever more than one Haru or one Yuki. Outside the mission the ánima still brings its own.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=ring-1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.borrowedPair = () => { const root = window.gerard.game.app.root; return ['Haru', 'Yuki'].every(name => root.find(e => e.name === name).length === 1 && root.findByName('Reparto').children.some(c => c.name === name)); }"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && window.borrowedPair()",
+      "timeout": 90000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "following",
+      "delay": 500,
+      "caption": "In the tower, Haru and Yuki walking behind the party"
+    },
+    {
+      "eval": "window.gerard.story.wear('aitor', 'papagato')"
+    },
+    {
+      "record": "running-in",
+      "seconds": 2,
+      "fps": 30,
+      "each": "window.frame === 0 && window.gerard.game.startPalaceFight('cebollon')",
+      "caption": "The fight starts: no poof, the same two run to their places"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "until": "window.borrowedPair()",
+      "timeout": 2000
+    },
+    {
+      "shot": "in-fight",
+      "delay": 1500,
+      "caption": "Gerard and Aitor both wear Papagato, and there is still one Haru and one Yuki"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"zarpazo\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "record": "zarpazo",
+      "seconds": 1.8,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click()",
+      "caption": "Zarpazo de Haru: the cat who was following them pounces and hops back"
+    },
+    {
+      "until": "window.borrowedPair()",
+      "timeout": 2000
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'won'",
+      "timeout": 30000
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.borrowedPair()",
+      "timeout": 2000
+    },
+    {
+      "shot": "after-fight",
+      "delay": 1500,
+      "caption": "Back on the ramp: the same two, walking back to the party from where the fight left them"
+    },
+    {
+      "open": "/?story=matemagico&battle=2&allies=2&animas=papagato"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "until": "['Haru', 'Yuki'].every(name => window.gerard.game.app.root.find(e => e.name === name).length === 1 && window.gerard.game.app.root.findByName('Escenario de combate').children.some(c => c.name === name))",
+      "timeout": 5000
+    },
+    {
+      "shot": "outside-the-mission",
+      "delay": 1000,
+      "caption": "Outside the mission Papagato still brings the cats itself"
+    }
+  ]
+}

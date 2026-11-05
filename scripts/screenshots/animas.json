@@ -1,0 +1,113 @@
+{
+  "title": "Ánimas en combate",
+  "description": "Cómo se ve cada ánima en quien la lleva (src/anima-looks.ts, classes.ts): Papagato con orejas, cola y collar con cascabel, y Haru y Yuki; Matemágico de azul plano reglado en oro, con unos y ceros girando. Al quitarse Papagato los gatos se van en una nube de humo, o se apartan si los ha prestado Nuria (la torre de Uri). Foc Binari golpea dos veces: tac, tac. Ejecutar con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "shot": "party",
+      "delay": 1800,
+      "caption": "Gerard con Papagato: Haru y Yuki a su lado"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: at.x, y: at.y + .9, z: at.z }, 1.25); }"
+    },
+    {
+      "shot": "papagato",
+      "delay": 1500,
+      "caption": "Papagato: naranja de Haru y blanco de Yuki, una oreja de cada una, cola anillada que se mece y collar con cascabel"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "record": "cats-leave",
+      "seconds": 2.4,
+      "each": "window.frame === 3 && document.querySelector('#battle .anima-chips [data-anima=\"matemagico\"]')?.click()",
+      "caption": "Gerard cambia a Matemágico: Haru y Yuki se van en una nube de humo"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: at.x, y: at.y + .9, z: at.z }, 1.25); }"
+    },
+    {
+      "shot": "matemagico",
+      "delay": 1800,
+      "caption": "Matemágico: azul plano reglado en oro, un anillo de unos y ceros que gira y sus pensamientos"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"foc-binari\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "record": "foc-binari",
+      "seconds": 2.2,
+      "each": "window.frame === 0 && document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click()",
+      "caption": "Foc Binari: el cero y luego el uno, tac, tac, cada uno con su golpe y su número"
+    },
+    {
+      "open": "/?mission=nuria&part=ring-1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.story.wear('gerard', 'papagato'); window.gerard.game.startPalaceFight('cebollon')"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "shot": "lent",
+      "delay": 1500,
+      "caption": "En la torre de Uri, con los gatos que ha prestado Nuria junto a Gerard"
+    },
+    {
+      "record": "cats-aside",
+      "seconds": 2.6,
+      "each": "window.frame === 3 && document.querySelector('#battle .anima-chips [data-anima=\"matemagico\"]')?.click()",
+      "caption": "Gerard cambia a Matemágico: los gatos prestados no desaparecen, se apartan detrás del grupo"
+    },
+    {
+      "shot": "aside",
+      "delay": 1500,
+      "caption": "Haru y Yuki sentados aparte hasta que alguien vuelva a llevar Papagato"
+    }
+  ]
+}

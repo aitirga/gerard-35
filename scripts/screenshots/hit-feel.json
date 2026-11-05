@@ -3,7 +3,7 @@
   "description": "How a blow lands in a fight (src/hit-feel.ts, docs/graphics.md): the fight holds still for a few frames on contact, the picture lurches along the blow and springs back, and heavy moments fringe the colours apart, swell the bloom and punch the frame in. Time is frozen and stepped 1/60 s at a time so each shot is a known moment around contact; the log at the bottom left times every contact, hold and resolution.",
   "steps": [
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1"
+      "open": "/?story=matemagico&battle=3&allies=2&animas=papagato,matemagico"
     },
     {
       "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
@@ -128,34 +128,34 @@
       "press": "Enter"
     },
     {
-      "eval": "hf.to(.43).then(() => hf.probe(\"No-ta, before the slam\"))"
+      "eval": "hf.to(.43).then(() => hf.probe(\"Foc Binari, in flight\"))"
     },
     {
-      "shot": "nota-before",
+      "shot": "foc-binari-flight",
       "delay": 300,
-      "caption": "No-ta on a dog with 1 PV left: the stamp falling"
+      "caption": "Foc Binari on a dog with 1 PV left: the two streams in flight"
     },
     {
-      "eval": "hf.untilContact(hf.acts.length - 1).then(() => hf.probe(\"No-ta knockout contact\"))"
+      "eval": "hf.untilContact(hf.acts.length - 1).then(() => hf.probe(\"Foc Binari knockout contact\"))"
     },
     {
-      "shot": "nota-contact",
+      "shot": "foc-binari-contact",
       "delay": 300,
-      "caption": "The stamp slams and knocks the dog out: the longest hold, full fringe, bloom swell, the frame punches in and the picture slams down"
+      "caption": "The fire lands and knocks the dog out: the longest hold, full fringe, bloom swell, the frame punches in"
     },
     {
-      "eval": "hf.step(5).then(() => hf.probe(\"No-ta, 83 ms into the hold\"))"
+      "eval": "hf.step(5).then(() => hf.probe(\"Foc Binari, 83 ms into the hold\"))"
     },
     {
-      "shot": "nota-held",
+      "shot": "foc-binari-held",
       "delay": 300,
       "caption": "83 ms in: still held; fringe and bloom fading, the punch springing back"
     },
     {
-      "eval": "hf.step(12).then(() => hf.probe(\"No-ta, after\"))"
+      "eval": "hf.step(12).then(() => hf.probe(\"Foc Binari, after\"))"
     },
     {
-      "shot": "nota-after",
+      "shot": "foc-binari-after",
       "delay": 300,
       "caption": "After: the dog tips over and the camera shakes out"
     },
@@ -163,7 +163,7 @@
       "eval": "hf.settle()"
     },
     {
-      "eval": "window.gerard.game.awaken(\"noista\"); hf.step(1).then(() => hf.probe(\"ánima wakes\"))"
+      "eval": "window.gerard.game.awaken(\"matemagico\"); hf.step(1).then(() => hf.probe(\"ánima wakes\"))"
     },
     {
       "shot": "awaken",
@@ -182,7 +182,7 @@
       "eval": "window.gerard.game.app.timeScale = 1"
     },
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1",
+      "open": "/?story=matemagico&battle=3&allies=2&animas=papagato,matemagico",
       "reducedMotion": "reduce"
     },
     {

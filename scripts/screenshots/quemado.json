@@ -1,0 +1,96 @@
+{
+  "title": "Quemado · fire that runs on the clock and rises a level",
+  "description": "Statuses in real time (docs/combat.md § Estados en tiempo real): Foc Binari sets the dog on fire, Quemado I, an icon over it whose clock ring empties as its seconds run out; it burns every two seconds, while the players choose too. Fired again before it goes out, it rises to Quemado II and III: bigger flames, harder pulses, the clock starting over.",
+  "steps": [
+    {
+      "open": "/?story=matemagico&battle=2&allies=2"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"skill\"] .command-trigger').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"foc-binari\"]').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-target=\"dog-0\"]').click()"
+    },
+    {
+      "shot": "quemado-1",
+      "delay": 1300,
+      "caption": "Foc Binari lands: Quemado I, a few patches of its own body alight, and over the dog its icon with a full clock ring"
+    },
+    {
+      "until": "!!document.querySelector('.damage-pop small') && [...document.querySelectorAll('.damage-pop small')].some(s => s.textContent.startsWith('Quemado'))",
+      "timeout": 15000
+    },
+    {
+      "shot": "pulse",
+      "delay": 150,
+      "caption": "Two seconds on, the fire pulses on its own (it does not wait for the round's end); the ring has turned a fifth"
+    },
+    {
+      "until": "document.querySelector('.turn-label')?.textContent === 'Bernat' && !document.querySelector('#battle[data-resolving]') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"attack\"] .command-trigger').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-target=\"dog-1\"]').click()"
+    },
+    {
+      "until": "document.querySelector('.turn-label')?.textContent === 'Gerard' && document.querySelector('#battle .round-badge strong')?.textContent === '02' && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "shot": "running-out",
+      "delay": 200,
+      "caption": "Round 2: the clock has run while the dogs acted; there is little left before it goes out"
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"skill\"] .command-trigger').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"foc-binari\"]').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-target=\"dog-0\"]').click()"
+    },
+    {
+      "shot": "quemado-2",
+      "delay": 1300,
+      "caption": "Fired again before it went out: Quemado II, most of it alight, the clock starting over"
+    },
+    {
+      "until": "[...document.querySelectorAll('.damage-pop small')].some(s => s.textContent === 'Quemado II')",
+      "timeout": 15000
+    },
+    {
+      "shot": "pulse-2",
+      "delay": 150,
+      "caption": "Quemado II pulses three times as hard"
+    }
+  ]
+}

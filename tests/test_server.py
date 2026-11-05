@@ -8,7 +8,7 @@ from unittest import mock
 import httpx
 from fastapi.testclient import TestClient
 from ai import JevProvider
-from server import STORY_FLAGS, app
+from server import STORY_FLAGS, app, known_flags
 
 
 class PersistenceTests(unittest.TestCase):
@@ -51,6 +51,10 @@ class PersistenceTests(unittest.TestCase):
         self.assertEqual(self.client.get('/api/state').json()['story'], ['intro', 'met-jan', 'got-shoes'])
         for story in [['flying'], 'intro', ['intro'] * (len(STORY_FLAGS) + 1)]:
             self.assertEqual(self.client.put('/api/state', json={'score': 1, 'story': story}).status_code, 422)
+
+    def test_renamed_flags_from_old_saves_keep_working(self):
+        # Noísta was retired: an old save's `noista` is Matemágico waking now.
+        self.assertEqual(known_flags(['intro', 'noista']), ['intro', 'matemagico'])
 
     def test_days_advance_and_going_back_a_day_replaces_the_flags(self):
         day = lambda epoch, d, h, mornings=(): {'epoch': epoch, 'clock': {'day': d, 'hour': h}, 'mornings': list(mornings)}

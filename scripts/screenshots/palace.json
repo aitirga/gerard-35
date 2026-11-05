@@ -1,9 +1,12 @@
 {
   "title": "Chapter 1 · El Palacio de la Reina Bubbaloo",
-  "description": "After the first fight: the north end of the street turns into the palace, La Pompa, the hall, the portraits, the wrapper room, the unwinnable fight, ¡NO! and Noísta, No-ta, and the ambush that ends the chapter.",
+  "description": "After the first fight: the north end of the street turns into the palace, La Pompa, the hall, the portraits, the wrapper room, the unwinnable fight, Bernat's cry and Matemágico, Foc Binari, and the ambush that ends the chapter.",
   "steps": [
     {
       "open": "/?story=first-fight"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
     },
     {
       "until": "!!window.gerard.game.app.root.findByName('Palacio de la Reina Bubbaloo')?.enabled",
@@ -218,38 +221,38 @@
       "timeout": 60000
     },
     {
-      "shot": "no",
-      "delay": 200,
-      "caption": "«¡NO!»"
+      "shot": "pensa",
+      "delay": 400,
+      "caption": "Bernat: «Pensa, Gerard! Fes la màgia amb la teva ment!»"
     },
     {
       "until": "window.sawBanner",
       "timeout": 60000
     },
     {
-      "shot": "noista",
+      "shot": "matemagico",
       "delay": 600,
-      "caption": "Ánima desbloqueada: Noísta"
+      "caption": "Ánima desbloqueada: Matemágico, on a page of graph paper"
     },
     {
       "until": "!document.querySelector('#battle').dataset.beat && !document.querySelector('[data-command=\"skill\"] .command-trigger').disabled",
       "timeout": 120000
     },
     {
-      "shot": "noista-ui",
+      "shot": "matemagico-ui",
       "delay": 1500,
-      "caption": "The interface turns Noísta; Habilidades pulses"
+      "caption": "The interface turns Matemágico's blueprint, five Ánima circles under Gerard's PV; Habilidades pulses"
     },
     {
       "eval": "document.querySelector('[data-command=\"skill\"] .command-trigger').click()"
     },
     {
-      "shot": "nota-skill",
+      "shot": "foc-binari-skill",
       "delay": 1200,
-      "caption": "No-ta, the new skill"
+      "caption": "Foc Binari, the new skill: one circle of Ánima"
     },
     {
-      "eval": "document.querySelector('[data-skill=\"nota\"]').click()"
+      "eval": "document.querySelector('[data-skill=\"foc-binari\"]').click()"
     },
     {
       "wait": 600
@@ -258,11 +261,21 @@
       "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
     },
     {
-      "wait": 900
+      "wait": 480
     },
     {
-      "shot": "stamp",
-      "caption": "No-ta: a giant NO stamped on the minion"
+      "shot": "foc-binari",
+      "caption": "Foc Binari: Gerard raises his hand and two streams of fire braid towards the minion"
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "foc-binari-lands",
+      "caption": "The fire lands and the gum melts; one circle of Ánima spent"
+    },
+    {
+      "eval": "(async () => { const sleep = ms => new Promise(r => setTimeout(r, ms)); const b = document.querySelector('#battle'); for (let i = 0; i < 600 && b.querySelector('.battle-result').hidden; i++) { const fire = b.querySelector('.skill-flyout:not([inert]) [data-skill=\"foc-binari\"]:not([aria-disabled])'); const skill = b.querySelector('[data-command=\"skill\"] .command-trigger'); const attack = b.querySelector('[data-command=\"attack\"] .command-trigger'); const target = b.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)'); if (target) target.click(); else if (fire) fire.click(); else if (!skill.disabled && !b.querySelector('.command.expanded')) skill.click(); else if (!attack.disabled) attack.click(); await sleep(400); } })()"
     },
     {
       "until": "!document.querySelector('#battle .battle-result').hidden",

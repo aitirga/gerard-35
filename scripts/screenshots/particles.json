@@ -1,6 +1,6 @@
 {
   "title": "Particles · Air, fight effects and elements",
-  "description": "The particle system (src/particles.ts, src/effects.ts, docs/graphics.md): each scene's air (pollen on the street, her fine pink gloom on it once the light turns, dust in the flat, fireflies in the patio, La Reina Bubbaloo's gloom and bubbles in her palace), then a fight frozen in time while each effect plays a few frames: a blow, a guarded blow, a hit on gum, Cardioide's cure, Análisis Parálisis, an ánima waking, No-ta's stamp, a knockout, the victory confetti, a hit of each element (fire, ice, air, energy, water, earth, light, shadow) and lasting auras.",
+  "description": "The particle system (src/particles.ts, src/effects.ts, docs/graphics.md): each scene's air (pollen on the street, her fine pink gloom on it once the light turns, dust in the flat, fireflies in the patio, La Reina Bubbaloo's gloom and bubbles in her palace), then a fight frozen in time while each effect plays a few frames: a blow, a guarded blow, a hit on gum, Cardioide's cure, Análisis Parálisis, an ánima waking, Foc Binari's two streams of fire, a knockout, the victory confetti, a hit of each element (fire, ice, air, energy, water, earth, light, shadow) and lasting auras.",
   "steps": [
     {
       "open": "/?story=bernat-joined"
@@ -69,14 +69,14 @@
       "caption": "La Reina Bubbaloo's palace: pink gloom and gum bubbles rising, parting around Gerard"
     },
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1"
+      "open": "/?story=matemagico&battle=3&allies=2"
     },
     {
       "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
       "timeout": 90000
     },
     {
-      "eval": "window.fx = (play, frames, keep) => { const g = window.gerard.game, app = g.app; app.timeScale = 0; if (!keep) g.effects.clear(); const stage = app.root.findByName('Escenario de combate'); const models = stage.children.filter(c => c.enabled && !['Objetivo', 'Marca de tinta', 'Sello No-ta'].includes(c.name)).sort((a, b) => a.getPosition().x - b.getPosition().x); const at = (m, y = 0) => { const p = m.getPosition(); return { x: p.x, y: p.y + y, z: p.z }; }; play(g.effects, models.slice(0, 2), models.slice(2), at); for (let i = 0; i < frames; i++) app.fire('update', 1 / 60); };"
+      "eval": "window.fx = (play, frames, keep) => { const g = window.gerard.game, app = g.app; app.timeScale = 0; if (!keep) g.effects.clear(); const stage = app.root.findByName('Escenario de combate'); const models = stage.children.filter(c => c.enabled && !['Objetivo', 'Marca de tinta'].includes(c.name)).sort((a, b) => a.getPosition().x - b.getPosition().x); const at = (m, y = 0) => { const p = m.getPosition(); return { x: p.x, y: p.y + y, z: p.z }; }; play(g.effects, models.slice(0, 2), models.slice(2), at); for (let i = 0; i < frames; i++) app.fire('update', 1 / 60); };"
     },
     {
       "eval": "fx((e, allies, foes, at) => e.impact(at(foes[1], .9), at(allies[0], .9), 1.4, { feet: at(foes[1]) }), 5)"
@@ -143,12 +143,12 @@
       "caption": "The vortex lifting away"
     },
     {
-      "eval": "fx((e, allies, foes) => e.stamp({ ...foes[2].getPosition() }), 16)"
+      "eval": "fx((e, allies, foes) => e.binaryFire({ ...allies[0].getPosition(), y: allies[0].getPosition().y + 1.2 }, { ...foes[2].getPosition(), y: foes[2].getPosition().y + .8 }, { burn: true }), 30)"
     },
     {
-      "shot": "stamp",
+      "shot": "foc-binari",
       "delay": 400,
-      "caption": "No-ta lands: a shockwave of dust and red ink spattered round it"
+      "caption": "Foc Binari: two braided streams of fire, embers shed along their path"
     },
     {
       "eval": "fx((e, allies, foes, at) => e.poof(at(foes[0], .35)), 20)"

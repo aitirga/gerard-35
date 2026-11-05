@@ -19,7 +19,7 @@ from lights import router as lights_router
 app = FastAPI()
 logger = logging.getLogger("uvicorn.error")
 # Story progress flags, in story order. Keep in sync with STORY_FLAGS in src/story.ts (a test checks it).
-STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "noista", "wrapper-room", "caught", "got-wrapper", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "anima-uri", "papagato", "papagato-2", "papagato-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri", "luz-nil", "luz-nuria-usada", "luz-uri-usada", "luz-nil-usada")
+STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "matemagico", "wrapper-room", "caught", "got-wrapper", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "papagato", "papagato-2", "papagato-3", "matemagico-2", "matemagico-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri", "luz-nuria-usada", "luz-uri-usada")
 
 
 @contextmanager
@@ -69,7 +69,13 @@ def get_state(request: Request, response: Response):
     return {"score": row[0], "story": known_flags(json.loads(row[1])), "days": json.loads(row[2])} if row else {"score": 0, "story": [], "days": None}
 
 
+# Flags that changed name; old saves keep working (src/story.ts has the same map). Nil's light is
+# gone (Nuria's household gives two), so a save that had it keeps Uri's.
+RENAMED_FLAGS = {"noista": "matemagico", "luz-nil": "luz-uri", "luz-nil-usada": "luz-uri-usada"}
+
+
 def known_flags(flags):
+    flags = {RENAMED_FLAGS.get(flag, flag) for flag in flags}
     return [flag for flag in STORY_FLAGS if flag in flags]
 
 

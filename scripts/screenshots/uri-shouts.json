@@ -1,0 +1,106 @@
+{
+  "title": "Uri's shouts · into the tower, up it and onto the top without stopping",
+  "description": "La torre de Uri (docs/quests/nuria.md § The tower): every time Uri speaks from the top of Vertitrón it is a jagged violet shout bubble (#shout-bubble, story effect `shout`) and the game goes on: going in (¡NIVEL UNO!), up out of each ring while the party keeps climbing, and onto the platform, where he calls for his boss a moment before the fight comes in. Over his head when he is in sight; from lower down, where he is above the screen, it hangs from the top edge with its tail pointing up at him.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=portal&solo=1"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent.includes('calle')",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'near', id: 'portal-through' })"
+    },
+    {
+      "until": "document.querySelector('#environment .place-name').textContent === 'La torre de Uri' && !document.querySelector('#shout-bubble').hidden",
+      "timeout": 30000
+    },
+    {
+      "shot": "shout-in",
+      "delay": 600,
+      "caption": "Through the bubble: «¡NIVEL UNO!…» from the top of the tower, no conversation, they can walk straight on"
+    },
+    {
+      "open": "/?mission=nuria&part=ring-2&solo=1"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "record": "walk-through",
+      "seconds": 3,
+      "keys": [
+        "KeyW"
+      ],
+      "each": "if (frame === 10) window.gerard.game.standAt({ x: 25, z: 42 })",
+      "caption": "Walking up out of the second ring: Uri's «¡Nivel tres! ¡El último!» pops up and Gerard keeps walking, no dialogue, no halt"
+    },
+    {
+      "eval": "window.gerard.story.nuria.lent = false; window.gerard.game.refreshStory(); window.gerard.story.nuria.stage = 2; window.gerard.game.standAt({ x: 21, z: 47 })"
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'near', id: 'uri-2' })"
+    },
+    {
+      "until": "!document.querySelector('#shout-bubble').hidden",
+      "timeout": 10000
+    },
+    {
+      "shot": "shout-from-below",
+      "delay": 500,
+      "caption": "From the ring below, Uri is above the screen: the shout hangs from the top edge, its tail pointing up at him (the fears kept away for these two shots)"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 38, z: 22 })"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "window.gerard.story.nuria.stage = 2; window.gerard.storyEvent({ type: 'near', id: 'uri-2' })"
+    },
+    {
+      "eval": "const v = window.gerard.game.app.root.findByName('La torre de Uri').findByName('Vertitrón').getPosition(); window.gerard.game.frame({ x: v.x, y: v.y + 4, z: v.z }, 12)"
+    },
+    {
+      "shot": "shout-over-uri",
+      "delay": 500,
+      "caption": "Framed on the top: «¡Arriba del todo! ¡Desde aquí se ve todo Cardedeu!» over Uri on Vertitrón"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.gerard.story.nuria.lent = true; window.gerard.game.refreshStory(); window.gerard.story.nuria.stage = 3; window.gerard.game.standAt({ x: 27, z: 31 })"
+    },
+    {
+      "until": "document.querySelector('#shout-bubble span').textContent.startsWith('¡Jefe')",
+      "timeout": 10000
+    },
+    {
+      "shot": "shout-summit",
+      "delay": 300,
+      "caption": "Onto the platform: «¡Jefe final! ¡Vertitrón, a por ellos!», seen a moment before the fight comes in"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "fight",
+      "delay": 1500,
+      "caption": "Vertitrón's fight, straight after the shout, with no conversation before it"
+    }
+  ]
+}

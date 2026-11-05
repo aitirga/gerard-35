@@ -1,6 +1,38 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HOME_POSE, cameraOffset, createCameraOrbit, towardCamera } from '../src/camera-orbit.ts';
+
+test('a place with its own angle starts there, goes home there, and tilts on up from it', () => {
+  const high = { yaw: 18, pitch: 62 };
+  const orbit = createCameraOrbit({ swing: false, hiddenDwell: .2 });
+  orbit.reset(high);
+  assert.deepEqual({ ...orbit.pose }, high);
+  assert.equal(orbit.target, high);
+  orbit.update(.1, () => 0);
+  assert.equal(orbit.target, high, 'nobody hidden, it stays');
+  const hidden = pose => pose.pitch < 70 ? 1 : 0;
+  for (let i = 0; i < 12; i++) orbit.update(.1, hidden);
+  assert.equal(orbit.target.yaw, high.yaw, 'it only tilts');
+  assert.ok(orbit.target.pitch > high.pitch);
+  for (let i = 0; i < 40; i++) orbit.update(.1, undefined);
+  assert.equal(orbit.target, high, 'a fight or the overview bring it back to this place\'s angle, not the game\'s');
+  orbit.reset();
+  assert.equal(orbit.target, HOME_POSE, 'the next place starts from the game\'s own');
+});
+
+test('a street that changes round the party turns the camera to its angle, it does not cut', () => {
+  const orbit = createCameraOrbit({ swing: false }), high = { yaw: 18, pitch: 62 };
+  orbit.turnHome(high);
+  assert.equal(orbit.target, high);
+  assert.deepEqual({ ...orbit.pose }, { ...HOME_POSE }, 'not yet there');
+  orbit.update(.1, 'keep');
+  assert.ok(orbit.pose.pitch > HOME_POSE.pitch && orbit.pose.yaw < HOME_POSE.yaw, 'turning, while they walk too');
+  assert.ok(orbit.pose.pitch < high.pitch);
+  for (let i = 0; i < 300; i++) orbit.update(.05, 'keep');
+  assert.deepEqual({ ...orbit.pose }, high);
+  orbit.turnHome();
+  assert.equal(orbit.target, HOME_POSE, 'and back');
+});
 import { buildingHidesPlayer, createBuildingOccluder } from '../src/building-occlusion.ts';
 import { screenToGrid } from '../src/movement.ts';
 

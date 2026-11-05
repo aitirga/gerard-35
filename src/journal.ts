@@ -18,7 +18,7 @@ const CLOCK: [StoryFlag, number][] = [
   ['intro', 7 * 60 + 30], ['met-jan', 7 * 60 + 34], ['got-potion', 7 * 60 + 36], ['got-shoes', 7 * 60 + 42],
   ['got-backpack', 7 * 60 + 48], ['bernat-joined', 7 * 60 + 55], ['bernat-stalled', 8 * 60 + 2], ['dejavu', 8 * 60 + 4],
   ['minion', 8 * 60 + 5], ['first-fight', 8 * 60 + 11], ['palace', 8 * 60 + 13], ['in-palace', 8 * 60 + 20],
-  ['got-chicle', 8 * 60 + 26], ['noista', 8 * 60 + 33], ['wrapper-room', 8 * 60 + 34],
+  ['got-chicle', 8 * 60 + 26], ['matemagico', 8 * 60 + 33], ['wrapper-room', 8 * 60 + 34],
   ['caught', 8 * 60], ['got-wrapper', 8 * 60 + 6],
 ];
 export function storyClock(story: Story): { time: string; day: string } {
@@ -42,7 +42,7 @@ const GERARD_DIARY: { chapter: 1 | 2; flag: StoryFlag; text: string }[] = [
   { chapter: 1, flag: 'palace', text: 'Al final del pasaje creció un palacio de chicle.' },
   { chapter: 1, flag: 'in-palace', text: 'Atravesamos la pompa. Pegajosa, pero se atraviesa.' },
   { chapter: 1, flag: 'got-chicle', text: 'Un chicle de fresa para el camino. Sabe a fresa… casi.' },
-  { chapter: 1, flag: 'noista', text: 'Dije que no. Y el mundo me hizo caso.' },
+  { chapter: 1, flag: 'matemagico', text: 'Pensé en unos y ceros. Y de la mano me salió fuego.' },
   { chapter: 1, flag: 'caught', text: 'Unas manos de gelatina. Luego, todo negro.' },
   { chapter: 2, flag: 'caught', text: 'Me desperté gritando «¡NO!». Treinta y cinco años. Barcelona.' },
   { chapter: 2, flag: 'got-wrapper', text: 'En la mesilla, un envoltorio de Bubbaloo. Del sueño. Huele a fresa.' },

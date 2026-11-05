@@ -1,0 +1,211 @@
+{
+  "title": "Sonidos de La calle que no acaba",
+  "description": "docs/audio.md § Effects and docs/quests/nuria.md § La calle que no acaba: walking up from Nuria's door, every house that rises, the corner stretching out and what sinks under it asks for its rumble from where it stands; then up La calle, the bubble's hiss level at each distance, and fading out through it into the tower. Sounds can't be heard in a screenshot: the overlays log what the game asked for.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=door&solo=1"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'Cardedeu · Jacint Verdaguer'",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.sounds = []; { const play = window.gerard.sfx.play; window.gerard.sfx.play = (id, options) => { if (!id.startsWith('ui-')) window.sounds.push({ id, volume: options?.volume ?? 1, pan: options?.pan ?? 0 }); return play(id, options); }; } window.bedOff = 0; window.hissAt = []; { const bed = window.gerard.sfx.bed; window.gerard.sfx.bed = (id, level) => { if (level) window.hiss = { ...level }; else if (window.hiss) { window.bedOff++; window.hiss = undefined; } return bed(id, level); }; }"
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [
+        59,
+        100
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "press": "KeyE",
+      "times": 6,
+      "gap": 900
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 60, z: 92 })"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 61, z: 86 })"
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 61, z: 67 })"
+    },
+    {
+      "wait": 3500
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 61, z: 62 })"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 10000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "until": "window.sounds.filter(s => s.id === 'rise').length > 5 && window.sounds.filter(s => s.id === 'stretch').length === 1 && window.sounds.some(s => s.id === 'sink') && window.sounds.findIndex(s => s.id === 'stretch') > window.sounds.findIndex(s => s.id === 'rise')",
+      "timeout": 3000
+    },
+    {
+      "eval": "{ const el = document.createElement('pre'); el.id = 'shift-sounds'; el.style.cssText = 'position:fixed;right:16px;top:16px;z-index:9999;margin:0;padding:12px 16px;background:#101410f0;color:#e8f0e0;font:14px/1.5 ui-monospace,monospace;max-height:calc(100vh - 32px);overflow:hidden'; el.textContent = 'Sonidos pedidos al cambiar la calle (volumen, pan):\\n' + window.sounds.map(s => `${s.id.padEnd(8)} ${s.volume.toFixed(2)}  ${s.pan >= 0 ? '+' : ''}${s.pan.toFixed(2)}`).join('\\n'); document.body.append(el); }"
+    },
+    {
+      "shot": "shift",
+      "delay": 300,
+      "caption": "Walking up from Nuria's door: a rumble for each house born out of the ground (the five that close the way, then La calle's own one after another, quieter and further off), the corner stretching out and what stood there sinking, each panned to its side of the screen"
+    },
+    {
+      "eval": "document.querySelector('#shift-sounds').remove(); window.gerard.game.standAt({ x: 60, z: 33 })"
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 60, z: 29 })"
+    },
+    {
+      "until": "document.querySelector('#environment .place-name').textContent === 'La calle que no acaba'",
+      "timeout": 10000
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        88
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.hissAt.push({ z: 88, d: Math.abs(88 - 2.5), volume: window.hiss?.volume ?? 0, drive: window.hiss?.drive ?? 0 })"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        40
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.hissAt.push({ z: 40, d: Math.abs(40 - 2.5), volume: window.hiss?.volume ?? 0, drive: window.hiss?.drive ?? 0 })"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        30
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.hissAt.push({ z: 30, d: Math.abs(30 - 2.5), volume: window.hiss?.volume ?? 0, drive: window.hiss?.drive ?? 0 })"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        20
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.hissAt.push({ z: 20, d: Math.abs(20 - 2.5), volume: window.hiss?.volume ?? 0, drive: window.hiss?.drive ?? 0 })"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        12
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.hissAt.push({ z: 12, d: Math.abs(12 - 2.5), volume: window.hiss?.volume ?? 0, drive: window.hiss?.drive ?? 0 })"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        7
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.hissAt.push({ z: 7, d: Math.abs(7 - 2.5), volume: window.hiss?.volume ?? 0, drive: window.hiss?.drive ?? 0 })"
+    },
+    {
+      "shot": "portal",
+      "delay": 200,
+      "caption": "At the bubble: its hiss at full, turning with it"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [
+        22,
+        5
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.querySelector('#environment .place-name').textContent === 'La torre de Uri'",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "until": "window.bedOff >= 1 && window.hissAt.every((h, i, all) => !i || h.volume >= all[i - 1].volume) && window.hissAt[0].volume === 0 && window.hissAt.at(-1).volume > .9",
+      "timeout": 3000
+    },
+    {
+      "eval": "{ const el = document.createElement('pre'); el.id = 'hiss-levels'; el.style.cssText = 'position:fixed;right:16px;top:16px;z-index:9999;margin:0;padding:12px 16px;background:#101410f0;color:#e8f0e0;font:14px/1.5 ui-monospace,monospace;max-height:calc(100vh - 32px);overflow:hidden'; el.textContent = 'Siseo del portal según la distancia:\\n' + window.hissAt.map(h => `z ${String(h.z).padStart(3)}  a ${h.d.toFixed(1).padStart(5)} m   volumen ${h.volume.toFixed(2)}  drive ${h.drive.toFixed(2)}`).join('\\n') + `\\n\\nAl cruzar a la torre: ${window.bedOff ? 'se apaga' : 'SIGUE SONANDO'}`; document.body.append(el); }"
+    },
+    {
+      "shot": "hiss",
+      "delay": 300,
+      "caption": "The bubble's hiss: silent down the street, coming up from about 30 m and at its full by the bubble, faster as they come (drive); through it, into the tower, it fades out"
+    }
+  ]
+}

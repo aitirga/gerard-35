@@ -1,0 +1,140 @@
+{
+  "title": "Disintegration · beaten foes come apart",
+  "description": "A beaten foe does not fall over and puff away: it shudders and, all at once (a little sooner at its feet), crumbles into tiny see-through specks of violet and purple light born on its own parts (a shader on its materials, src/disintegrate.ts, and the GPU particle engine). They hang where it stood for a moment, then drift up a little, each with a short trail, and fade. First three dogs beaten at once in a real fight (the picker's Victoria), close up; then El Cebollón on the tower's first ring: it catches the party, the fight is won, and back on the ramp the fear comes apart where it stood. Last, Vertitrón beaten at the top of the tower, the one boss that does not come apart: it drops to its knees and Uri comes down with Nil, and back on the top of the tower it kneels there too. Run with --gpu --scale 2.",
+  "steps": [
+    {
+      "open": "/?story=matemagico&battle=3&allies=2"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; const ids = g.fighterIds(), foes = ids.filter(f => !f.party).map(f => g.fighterAt(f.id)); const mid = foes.reduce((s, p) => ({ x: s.x + p.x / foes.length, y: s.y + p.y / foes.length, z: s.z + p.z / foes.length }), { x: 0, y: 0, z: 0 }); return { look(up = .9, height = 2.1) { g.frame({ x: mid.x, y: mid.y + up, z: mid.z }, height); } }; })(); document.querySelector('#battle').style.visibility = 'hidden'; lab.look();"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "before",
+      "caption": "Three dogs in a fight, before the blow that ends it"
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "record": "dogs",
+      "seconds": 2.6,
+      "caption": "Beaten: each dog shudders and crumbles at once into tiny violet and purple specks in its own shape, which hang a moment, drift up a little with short trails and fade"
+    },
+    {
+      "open": "/?mission=nuria&part=ring-1"
+    },
+    {
+      "until": "document.title.includes('torre') && !!window.gerard?.game",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "cardedeu-laberinto",
+      "cell": [
+        49,
+        34
+      ]
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' || !!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "[...document.querySelectorAll('#battle .turn-meta')].some(e => e.textContent === 'TU TURNO') && document.querySelector('#battle').dataset.phase === 'player'",
+      "timeout": 90000
+    },
+    {
+      "shot": "cebollon",
+      "delay": 800,
+      "caption": "El Cebollón caught them on the first ring"
+    },
+    {
+      "eval": "document.querySelector('#battle').style.visibility = 'hidden'; window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "record": "cebollon-fight",
+      "seconds": 2.4,
+      "caption": "Beaten in the fight, El Cebollón crumbles into violet specks that hang in the corridor, rise a little and fade"
+    },
+    {
+      "eval": "document.querySelector('#battle').style.visibility = ''"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result')?.hidden",
+      "timeout": 30000
+    },
+    {
+      "eval": "document.querySelector('#battle .battle-result button').click()"
+    },
+    {
+      "record": "cebollon-ramp",
+      "seconds": 3.2,
+      "caption": "Back on the ramp, the fear that caught them stands a moment where it stood and crumbles there too, instead of a puff of smoke",
+      "clip": [
+        435,
+        243,
+        480,
+        360
+      ]
+    },
+    {
+      "open": "/?mission=nuria&part=vertigo"
+    },
+    {
+      "until": "document.title.includes('torre') && !!window.gerard?.game",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "[...document.querySelectorAll('#battle .turn-meta')].some(e => e.textContent === 'TU TURNO') && document.querySelector('#battle').dataset.phase === 'player'",
+      "timeout": 90000
+    },
+    {
+      "eval": "const g = window.gerard.game, v = g.fighterAt('vertigo'); document.querySelector('#battle').style.visibility = 'hidden'; g.frame({ x: v.x, y: v.y + 4.5, z: v.z }, 6.5);"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "vertigo",
+      "caption": "Vertitrón, the tower's robot, Uri and Nil on top of it"
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "record": "vertigo",
+      "seconds": 3,
+      "caption": "Beaten, Vertitrón does not crumble: it drops to its knees, and Uri comes down with Nil, whole"
+    },
+    {
+      "eval": "window.gerard.game.frame(); document.querySelector('#battle').style.visibility = ''"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result')?.hidden || !!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "eval": "document.querySelector('#battle .battle-result:not([hidden]) button')?.click()"
+    },
+    {
+      "record": "vertigo-top",
+      "seconds": 2.6,
+      "caption": "Back on the top of the tower, while Uri comes round («Pues no está tan alto»), Vertitrón standing there kneels too, its eye dark, and Uri and Nil are down on the platform"
+    }
+  ]
+}

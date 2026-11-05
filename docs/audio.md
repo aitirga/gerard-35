@@ -31,8 +31,9 @@ battle: { src: 'music/battle.m4a', marks: { start: 0, loop: 2.398, ending: 131.9
 - `stream: true` makes it a **long take**: a song of many minutes played from the file as it
   downloads (an `<audio>` element routed into the music bus), because decoding it whole would take
   hundreds of MB. It has no loop marks. `from: 'random'` comes in anywhere, and six seconds before
-  the file ends it crossfades into another random point, so it plays on with no end. Jumps don't
-  apply to it.
+  the file ends it crossfades into another random point, so it plays on with no end. With `wraps: true`
+  a random point is only picked as it starts: at the end of the file it crossfades into its top, so
+  it never jumps while it plays. Jumps don't apply to it.
 - `loudness` points a long take at its **loudness map** (`public/music/<song>.loudness.json`, dB
   for each second over the five round it), so a random point never jumps from a hush into a swell.
   Of six random points it takes the one nearest in loudness to what plays (the outgoing point, gain
@@ -73,8 +74,12 @@ The director, `music` in [src/main.ts](../src/main.ts):
   (`song-home`, 18 min) comes in over 4 s from a random point and plays on; leaving for a place
   without a song fades it over 2 s. A fight takes over, and the place's song comes back, from
   somewhere else, when the fight is over.
-- **Streets**: `sad` in Passatge Maresme and `concrete` on Meridiana street, each from the top
-  over 4 s (`sad` from a random point). `just screenshots street-music --chrome` checks both and the
+- **Uri's tower**: `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11 min) the same way, from a different
+  point every time they go in and every time a fight there ends, and never at any other moment: at
+  the end of the file it goes on from the top. `just screenshots tower-music --chrome` checks it.
+- **Streets**: `triste` in Passatge Maresme and on Nuria's street in Cardedeu (Jacint Verdaguer, not
+  the street that never ends nor Uri's tower), and `concrete` on Meridiana street, each from the top
+  over 4 s (`triste` from a random point). `just screenshots street-music --chrome` checks both and the
   vamp.
 - **La Reina Bubbaloo's castle**: `bubbaloo` (`bubbaloo-light`, 13 min) the same way, at the Rec
   Comtal school and inside the palace (chapter 1's too), haunted as below. Walking from the school
@@ -84,7 +89,7 @@ The director, `music` in [src/main.ts](../src/main.ts):
   leaving the result screen fades whatever is left.
 - **Menus**: the pause menu, the user menu and the lamp dial duck the music while open.
 
-### The mazmorra, concrete and sad songs
+### The mazmorra, concrete and triste songs
 
 The first two are at 110 BPM, measured with `just music-loop` and a self-similarity check of the files.
 
@@ -92,7 +97,9 @@ The first two are at 110 BPM, measured with `just music-loop` and a self-similar
   bars 1 to 23. Each starts on its downbeat at 0, 48, 96, 144, 192 and 240 s, and the file ends on
   the sixth's seam at 288 s. Version 1 opens it, then 2–6 mix. Version 1 is also the quietest
   (−17.9 dB against −16.6 to −17.2 for the rest). It is for friends' missions, one song per mission, picked among the
-  mazmorra songs.
+  mazmorra songs; none plays it yet.
+- `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11:14) is Uri's tower's: a long take, streamed, with its
+  loudness map (−26.8 to −16.9 dB, median −20.7).
 - `concrete` (`song-concrete`, 1:40) is 46 bars from its first downbeat at 0 s to 100.364 s.
   Bars 1 to 9 open; bars 10 to 17 (19.635 → 37.090 s, Logic's locators 10 to 18) vamp three to
   seven times; then bar 18, the break at bars 19 and 20 (40–43.6 s) and the rest play, and at
@@ -105,9 +112,11 @@ The first two are at 110 BPM, measured with `just music-loop` and a self-similar
   it. It is for the concrete, robot-like places: Meridiana street (`meridiana-calle`) for now; the
   school on Rec Comtal plays the castle's song.
 
-- `sad` (`song-sad`, 1:36) loops whole: 80 beats (20 bars) at 50 BPM from 0 to 96 s, playing at
-  full level to the last sample. It is the childhood street's song, Passatge Maresme, where the
-  game starts.
+- `triste` (`song-triste`, 1:36) loops whole: 80 beats (20 bars) at 50 BPM, playing at full level
+  to the last sample. The file starts already sounding, so cutting at exactly 0 → 96 s clicked (a
+  jump about 15 times the largest natural step there); the loop runs from 0.000896 s (43 samples at
+  48 kHz) to 95.998729 s (61 before 96 s), where the two waveforms meet, 2 ms short of 80 beats. It
+  is the childhood street's song, Passatge Maresme, where the game starts.
 
 `just dev-music mazmorra-2 45` plays the first seam 3 s in, and `just dev-music concrete 34`
 the vamp coming back to bar 10.
@@ -145,7 +154,7 @@ game; if a browser places them differently (the AAC priming is 44 ms), check by 
 ### Songs waiting for their place
 
 Masters in `assets/music/`, not exported or played yet (`mazmorra-2` is exported and waits for
-Uri's tower, above):
+a friend's mission, above):
 
 | Song | Length | Idea |
 | --- | --- | --- |
@@ -203,20 +212,77 @@ that draws it with oscillators and noise. Each has a `gap` (no replay sooner tha
 `voices` cap (no more at once) and `jitter` (random detune in cents, so repeats don't sound
 mechanical). `sfx.play(id, { volume, pan })` plays one.
 
+There are no sound files yet: every effect is a synth recipe. `just dev-fx` has a button for each
+under *Sonidos*, to hear them, and `just screenshots sfx` measures them all (and the beds) and
+checks a fight's. `just screenshots calle-sounds` logs what Nuria's street asks for as it turns into
+La calle, and the bubble's hiss at each distance.
+
+**Which sound goes with what in a fight is one table**, `SKILL_SOUNDS` and `FOE_SOUNDS` in
+[src/battle-sounds.ts](../src/battle-sounds.ts): `start` as an action begins, `impact` as it lands.
+A new skill or foe does not compile until it says how it sounds there. A dual sounds like its two
+halves together (`dualSounds`): both starts, both impacts.
+What only the fight's picture knows the moment of, the battle scene cues (`setCue`), and what only
+the fight's screen knows, the screen does (`sound`).
+
 | Sound | When |
 | --- | --- |
 | `ui-move` | Moving from one menu button to the next (keyboard or pad). |
 | `ui-confirm` | Pressing a menu button. |
 | `ui-back` | A back button, or Escape out of a menu. |
-| `hit` | A blow lands in a fight (from the battle scene's impact moment). |
-| `heal` | A cure or a boost lands. |
+| `hit` | A blow lands: Atacar, a dog, Vertitrón; softer from a peeled onion. |
+| `hit-guarded` | A blow lands on someone holding on. |
+| `guard`, `mana` | Defender, and the maná it gives back. |
+| `swallowed` | The palace minion's gum swallows a blow. |
+| `fire-cast`, `fire-hit`, `fizzle`, `melt` | Foc Binari: gathering; landing and lighting; going out on wet layers; melting the gum. |
+| `burn` | Quemado pulses. |
+| `think` | *Análisis Parálisis*, *Ángulo exacto*. |
+| `cast-soft`, `heal` | *Cardioide*: gathering and curing; `heal` also *Ronroneo de Yuki*. |
+| `meow`, `meow-soft` | Haru or Yuki going: every Papagato skill (`meow-soft`, Yuki's purr). |
+| `claw` | *Zarpazo de Haru*, each of *Zarpazos*' claws, *Las dos a la vez*. |
+| `claw-deep` | *Zarpa en la llaga*. |
+| `bleed` | Sangrado at the end of a round. |
+| `peel` | A layer comes off an onion. |
+| `slam` | A big onion or a palace guard coming down (an Aplastón too); Vertitrón's blows on both (Barrido, and with `crack` its Rayo terrorífico). |
+| `bark`, `spit`, `splash`, `glitch`, `gust` | A dog; the minion; the dishes; the arcade ghosts; Vertitrón. |
+| `game-over` | A fantasmita's «GAME OVER» (only its blast: Game Over is no longer a monster). |
+| `stat-up`, `stat-down` | Stats going up or down (`BattleEffect.stats`, with `src/stat-fx.ts`). |
+| `ko`, `dissolve` | Someone falls; a beaten foe coming apart (src/disintegrate.ts). |
+| `poof` | Something gone in a puff (no fight uses it now). |
+| `flee` | Huir. |
+| `anima-swap`, `denied` | Changing ánima with L or R, or having nothing to change to. |
+| `dual-armed` | A dual's banner coming up while it is aimed, before it goes off (`dual` is its start in the fight). |
+| `awaken` | An ánima waking up mid-fight. |
+| `unlock`, `pickup` | A new ánima or a skill learned; an item gained. Out of fights too. |
+| `level-up`, `skill-learned` | On a fight's victory screen: an ánima's level stamping in; a skill it learned taking the screen. |
+| `rise`, `sink`, `stretch` | Nuria's street turning into La calle que no acaba (src/street-shift.ts): a house born out of the ground (a rumble, stone grinding and cracking up, a thud as it settles), what stood beyond the corner going down, and the corner stretching out into the street's start. |
+
+A sound from somewhere in the street (the shift's houses) comes from where it stands: quieter the
+further from Gerard (down to a fifth at 45 m) and panned to its side of the screen (`heard` in
+[src/game.ts](../src/game.ts)), through `sfx.play(id, { volume, pan })`.
+
+### Sounds that go on
+
+A sound in `BEDS` plays for as long as something is there, not once: `sfx.bed(id, level)` is
+called every frame with `{ volume, pan, drive }` (`drive` 0–1 steers it, what it means is up to
+each) and eases to it; called with no level it fades out and stops. It goes through the effects
+bus, so the Efectos slider applies.
+
+| Bed | When |
+| --- | --- |
+| `hiss` | The bubble at the end of La calle que no acaba (src/fear-portal.ts). A sharp hiss breathing on two slow swells, a narrower whirl of air going up and down and round from side to side at the bubble's own pace, and a low draught pulling into its well. Silent down the street, it comes up from about 32 m away to its full at the bubble (`hiss` in src/game.ts); `drive` is how close the party is, so the whirl turns faster and louder as the bubble does. Quiet in a menu or a fight, it fades out through the bubble into the tower. |
+
+Its layers' levels, far (`drive` 0) and at the bubble (1), are knobs in `HISS` in
+[src/sfx.ts](../src/sfx.ts), heard the next time the hiss starts:
+`const { HISS } = await import('/src/sfx.ts'); HISS.whirl = [.06, .35]`, then go back into La calle.
+At the bubble it sits at about .049 RMS (.03 the hiss, .025 the whirl, .034 the draught); a
+house rising at about .12, under a fight's `slam` (.14).
 
 The menu sounds come from `watchMenuSounds`, which listens to focus and clicks for the whole page.
 Keyboard, pad and mouse all go through them, so the menus need no sound code of their own.
 Buttons in the street (talk, walk, centre the view) are left quiet.
 
-Still to do: footsteps (from the walk cycle's foot plants), skill-specific combat sounds,
-ambiences per place, and songs for places.
+Still to do: footsteps (from the walk cycle's foot plants), ambiences per place, and real recorded
+sounds where a recipe falls short (`src` in `SOUNDS` takes a file under `public/`).
 
 ## MIDI, later
 

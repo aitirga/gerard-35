@@ -31,6 +31,8 @@ let vite;
 let base = options.url;
 if (!base) {
   const { createServer } = await import('vite');
+  // Screenshots keep the game's full pixel ratio, whatever this machine's .env.development.local lowers it to.
+  process.env.VITE_PIXEL_RATIO = '';
   // --perf serves the engine's profiler build (release code with timings): the debug build that
   // development uses validates every WebGPU call and costs several milliseconds a frame.
   const engine = options.perf ? { resolve: { alias: [{ find: /^playcanvas$/, replacement: resolve('node_modules/playcanvas/build/playcanvas.prf/src/index.js') }] } } : {};

@@ -1,0 +1,149 @@
+{
+  "title": "Atributos que siguen arriba o abajo, y el resumen del combate",
+  "description": "While a stat stays up or down (src/battle.ts `statShifts`) tiny bright motes of energy leave the fighter's head on the GPU (src/stat-motes.ts): blue ones drifting up when up, red ones falling past their shoulders when down. Over their heads the statuses stay first, as icons that shrink to fit when there are several, and the stats up or down sit apart under the bars, quieter («▲ DEF», «▼ FUE MAG»). The D-pad's left or right (R on the keyboard) opens the fight's summary: both sides, PV, maná, statuses and the stats up or down with why and for how long. Its up and down walk the menus, like the stick.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=ring-1"
+    },
+    {
+      "eval": "window.fakePad = { id: 'Xbox Wireless Controller', index: 0, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }; window.padOn = false; navigator.getGamepads = () => window.padOn ? [window.fakePad] : []; window.frames = n => new Promise(done => { const tick = () => n-- > 0 ? requestAnimationFrame(tick) : done(); tick(); }); window.tap = async button => { window.fakePad.buttons[button].pressed = true; await frames(6); window.fakePad.buttons[button].pressed = false; await frames(6); }; window.push = async (axis, value) => { window.fakePad.axes[axis] = value; await frames(6); window.fakePad.axes[axis] = 0; await frames(6); }; window.fightReady = () => document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger'); window.turnOf = id => window.fightReady() && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; { const set = window.gerard.game.setBattle; window.gerard.game.setBattle = (state, ...rest) => { window.fightState = state; return set(state, ...rest); }; }"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 52, z: 30 }); window.gerard.game.startPalaceFight('cebollon')"
+    },
+    {
+      "until": "window.turnOf('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "plates-and-key",
+      "delay": 800,
+      "caption": "The fight opens: the summary's key waits under the round until it is used once"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "record": "motas-suben",
+      "seconds": 2.6,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('[data-skill=\"escondite\"]')?.click()",
+      "caption": "Yuki se esconde: the chevrons rise, then tiny blue motes start rising off each one's head and keep coming while it lasts"
+    },
+    {
+      "until": "window.turnOf('aitor')",
+      "timeout": 30000
+    },
+    {
+      "until": "window.gerard.game.statMotesOf('gerard').includes('up') && window.gerard.game.statMotesOf('aitor').includes('up')",
+      "timeout": 5000
+    },
+    {
+      "eval": "{ const p = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: p.x, y: p.y + 1, z: p.z }, 1.6); }"
+    },
+    {
+      "shot": "motas-arriba",
+      "delay": 1500,
+      "caption": "Up: tiny blue motes rising off the head; «▲ DEF» under the bars"
+    },
+    {
+      "eval": "window.fightState.allies[1].statuses = { llorera: 2 }; window.fightState.allies[0].statuses = { mareo: 1 }; window.gerard.battleUI.refresh()"
+    },
+    {
+      "until": "window.gerard.game.statMotesOf('aitor').join() === 'up,down' && window.gerard.game.statMotesOf('gerard').join() === 'up,down'",
+      "timeout": 5000
+    },
+    {
+      "record": "motas-mixtas",
+      "seconds": 3,
+      "fps": 30,
+      "caption": "Both at once: Yuki's Defensa up and Llorera or Mareo bringing others down, blue motes rising and red ones falling off the same head"
+    },
+    {
+      "shot": "motas-mixtas",
+      "delay": 300,
+      "caption": "Up and down on the same fighter: «▲ DEF» and «▼ FUE MAG» apart from the status icons"
+    },
+    {
+      "eval": "window.gerard.game.frame(); { const foe = window.fightState.foes[0]; foe.layers = 0; foe.statuses = { sangrado: 3, mareo: 2, llorera: 1 }; foe.timed = { quemado: { level: 2, left: 9, next: 2 } }; } window.gerard.battleUI.refresh()"
+    },
+    {
+      "until": "window.gerard.game.statMotesOf('cebollon').includes('down')",
+      "timeout": 5000
+    },
+    {
+      "shot": "enemigo-varios",
+      "delay": 1500,
+      "caption": "Four statuses on one foe fit in one row, smaller; its stats down sit apart under its bar, and red motes fall off its top"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "until": "window.gerard.battleUI.summary === true && !document.querySelector('.battle-summary').hidden",
+      "timeout": 3000
+    },
+    {
+      "shot": "resumen",
+      "delay": 600,
+      "caption": "R opens the summary: each side with PV, maná, statuses and how long they last, then the stats up or down with why"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "until": "window.gerard.battleUI.summary === false && document.querySelector('.battle-summary').hidden && document.querySelector('.summary-key').hidden",
+      "timeout": 3000
+    },
+    {
+      "eval": "window.padOn = true; window.before = document.activeElement?.closest('[data-command]')?.dataset.command"
+    },
+    {
+      "eval": "window.command = () => document.activeElement?.closest('[data-command]')?.dataset.command; frames(12).then(() => tap(13)).then(() => { window.dpadTo = command(); return push(1, .9); }).then(() => { window.stickTo = command(); return tap(15); }).then(() => { window.padDone = true; })"
+    },
+    {
+      "until": "window.padDone === true",
+      "timeout": 10000
+    },
+    {
+      "until": "window.dpadTo !== window.before && window.stickTo !== window.dpadTo && window.gerard.battleUI.summary === true",
+      "timeout": 1000
+    },
+    {
+      "shot": "resumen-mando",
+      "delay": 600,
+      "caption": "On a pad: the D-pad's right opens it, after its down and the stick each walked the commands, and the keys say so"
+    },
+    {
+      "eval": "tap(14)"
+    },
+    {
+      "until": "window.gerard.battleUI.summary === false",
+      "timeout": 3000
+    },
+    {
+      "eval": "tap(14)"
+    },
+    {
+      "until": "window.gerard.battleUI.summary === true",
+      "timeout": 3000
+    },
+    {
+      "eval": "tap(1)"
+    },
+    {
+      "until": "window.gerard.battleUI.summary === false",
+      "timeout": 3000
+    }
+  ]
+}

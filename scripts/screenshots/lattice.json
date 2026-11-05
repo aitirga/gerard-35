@@ -3,7 +3,7 @@
   "description": "Lattices on the GPU engine (src/lattice.ts, src/fight-particles.ts): shapes whose particles hold together, each drawn to its home and to its neighbours. A wall that thrown sparks dent, hole and knock apart and that mends itself; a ball that morphs into a crystal, a ring and a column keeping its structure, shaken by pushes; a ring that streams round itself in waves; a veil of cloth that drapes over a dog; embers that assemble into a crystal that bursts; a shield shaped like an escutcheon that takes a volley and shatters; and three spheres round a dog that deflect blows from every side and pop: bands with glass between them, bands both ways, and glass dots alone, which a last volley shatters like the shield. Played on a dog in a real fight with effects.fightFx, captured at twice the pixels (--gpu --scale 2) on the game's clock at 30 fps.",
   "steps": [
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1"
+      "open": "/?story=matemagico&battle=3&allies=2"
     },
     {
       "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",

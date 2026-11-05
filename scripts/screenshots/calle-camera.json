@@ -1,0 +1,68 @@
+{
+  "title": "La calle que no acaba · la cámara desde arriba y la pompa que se cruza sola",
+  "description": "docs/quests/nuria.md § La calle que no acaba: the street has its own camera angle (Environment.view), high and nearly along it, so its houses no longer hide it and much more of it shows. Walking up to the bubble takes them through, anywhere across the street: nothing is pressed in this scenario but the way forward.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=street"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent === 'La calle que no acaba'",
+      "timeout": 90000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "principio",
+      "delay": 500,
+      "caption": "At the start of the street: from high up and nearly along it, the street shows and so does what is ahead"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [22, 70]
+    },
+    {
+      "shot": "mitad",
+      "delay": 2000,
+      "caption": "Halfway up: the same long way behind and ahead, the houses to either side"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [22, 13]
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "se-ve-la-pompa",
+      "delay": 800,
+      "caption": "The bubble comes into sight at the end, well before they reach it"
+    },
+    {
+      "hold": ["KeyW"],
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "hablan-de-la-pompa",
+      "delay": 800,
+      "caption": "Getting closer they talk about it, once"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "hold": ["KeyW"],
+      "until": "document.querySelector('#environment .place-name')?.textContent === 'La torre de Uri'",
+      "timeout": 20000
+    },
+    {
+      "shot": "dentro",
+      "delay": 1500,
+      "caption": "Walking on is all it takes: they are through, in Uri's tower, with no key pressed but forward"
+    }
+  ]
+}

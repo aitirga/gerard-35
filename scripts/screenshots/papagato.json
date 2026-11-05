@@ -23,12 +23,12 @@
       "gap": 600
     },
     {
-      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click(); document.querySelector('[data-wear=\"gerard\"][data-class-id=\"papagato\"]').click();"
+      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"matemagico\"]').click(); document.querySelector('[data-wear=\"gerard\"][data-class-id=\"papagato\"]').click();"
     },
     {
       "shot": "status-papagato",
       "delay": 1200,
-      "caption": "The Ánimas page: Gerard wears Papagato, level 3, with its four skills"
+      "caption": "The Ánimas page: Gerard wears Papagato, level 3, with its five skills"
     },
     {
       "press": "Escape"
@@ -94,7 +94,7 @@
       "press": "Digit2"
     },
     {
-      "press": "Digit4",
+      "press": "Digit5",
       "gap": 400
     },
     {

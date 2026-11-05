@@ -1,6 +1,6 @@
 {
   "title": "Fire · Three levels of flame, and effects on fighters",
-  "description": "effects.fire (src/effects.ts, src/flames.ts) and the fight particles simulated on the GPU (src/fight-particles.ts, docs/graphics.md): fire drawn whole by a shader at its three levels at night and by day, each up close, one fire changing level and dying down. Then a fight, captured at twice the pixels (run it with --gpu --scale 2): three dogs burning at the three levels (`game.ignite`), the flames crawling and swirling over their own bodies while GPU flame tongues, embers and smoke lick off their surfaces; fire hits at three strengths that suck embers in and set the dog alight; GPU sparks fired at a dog and embers dropped on the dogs, meeting their real shapes; a real Atacar on a burning dog; and a blow frozen in time drawn inside the dog (before) and in front of it (after). Clips run on the game's own clock at 30 fps.",
+  "description": "effects.fire (src/effects.ts, src/flames.ts) and the fight particles simulated on the GPU (src/fight-particles.ts, docs/graphics.md): fire drawn whole by a shader at its three levels at night and by day, each up close, one fire changing level and dying down. Then a fight, captured at twice the pixels (run it with --gpu --scale 2): three dogs burning at the three levels (`game.ignite`), each burning itself, tongues of flame growing out of its own parts while embers, ash and smoke fly off them; fire hits at three strengths that suck embers in and set the dog alight; GPU sparks fired at a dog and embers dropped on the dogs, meeting their real shapes; a real Atacar on a burning dog; and a blow frozen in time drawn inside the dog (before) and in front of it (after). Clips run on the game's own clock at 30 fps.",
   "steps": [
     {
       "open": "/?story=got-backpack"
@@ -93,14 +93,14 @@
       "caption": "The three levels in daylight"
     },
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1"
+      "open": "/?story=matemagico&battle=3&allies=2"
     },
     {
       "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
       "timeout": 90000
     },
     {
-      "eval": "window.fight = (() => { const g = window.gerard.game, app = g.app, root = app.root.findByName('Escenario de combate'); const ids = () => g.fighterIds(); const model = id => root.children.find(c => c.enabled && ids().some(f => f.id === id) && c === root.children.filter(e => e.enabled && !['Objetivo', 'Marca de tinta', 'Sello No-ta'].includes(e.name))[ids().findIndex(f => f.id === id)]); const at = (e, y = 0) => { const p = e.getPosition(); return { x: p.x, y: p.y + y, z: p.z }; }; return { g, app, ids, model, at, foes: () => ids().filter(f => !f.party).map(f => f.id), allies: () => ids().filter(f => f.party).map(f => f.id), hud(on) { document.querySelector('#battle').style.visibility = on ? '' : 'hidden'; if (on) document.querySelector('.command-trigger')?.focus(); }, out() { ids().forEach(f => g.ignite(f.id)); g.effects.clear(); }, hit(strength) { this.out(); const foe = this.model(this.foes()[0]), ally = this.model(this.allies()[0]); g.effects.element('fire', at(foe, .5), { from: at(ally, .5), feet: at(foe), strength, model: foe }); }, freeze(play, frames) { app.timeScale = 0; g.effects.clear(); play(g.effects, this.model(this.allies()[0]), this.model(this.foes()[1]), at); for (let i = 0; i < frames; i++) app.fire('update', 1 / 60); } }; })(); fight.hud(false);"
+      "eval": "window.fight = (() => { const g = window.gerard.game, app = g.app, root = app.root.findByName('Escenario de combate'); const ids = () => g.fighterIds(); const model = id => root.children.find(c => c.enabled && ids().some(f => f.id === id) && c === root.children.filter(e => e.enabled && !['Objetivo', 'Marca de tinta'].includes(e.name))[ids().findIndex(f => f.id === id)]); const at = (e, y = 0) => { const p = e.getPosition(); return { x: p.x, y: p.y + y, z: p.z }; }; return { g, app, ids, model, at, foes: () => ids().filter(f => !f.party).map(f => f.id), allies: () => ids().filter(f => f.party).map(f => f.id), hud(on) { document.querySelector('#battle').style.visibility = on ? '' : 'hidden'; if (on) document.querySelector('.command-trigger')?.focus(); }, out() { ids().forEach(f => g.ignite(f.id)); g.effects.clear(); }, hit(strength) { this.out(); const foe = this.model(this.foes()[0]), ally = this.model(this.allies()[0]); g.effects.element('fire', at(foe, .5), { from: at(ally, .5), feet: at(foe), strength, model: foe }); }, freeze(play, frames) { app.timeScale = 0; g.effects.clear(); play(g.effects, this.model(this.allies()[0]), this.model(this.foes()[1]), at); for (let i = 0; i < frames; i++) app.fire('update', 1 / 60); } }; })(); fight.hud(false);"
     },
     {
       "eval": "const [a, b, c] = fight.foes(); fight.g.ignite(a, 'light'); fight.g.ignite(b, 'medium'); fight.g.ignite(c, 'high');"
@@ -108,24 +108,12 @@
     {
       "shot": "burning-levels",
       "delay": 1500,
-      "clip": [
-        560,
-        210,
-        380,
-        270
-      ],
-      "caption": "Three dogs burning, left to right light, medium and high: the flames crawl over each dog's own body and follow its shape, rise behind it and lick up in front of it; each dog glows with the heat and is lit by its fire"
+      "caption": "Three dogs burning, left to right light, medium and high: each burns itself, the fire spreading over its own parts and tongues of flame growing out of them; each dog glows with the heat and is lit by its fire"
     },
     {
       "record": "burning-levels",
       "seconds": 3,
       "warmup": 1,
-      "clip": [
-        560,
-        210,
-        380,
-        270
-      ],
       "caption": "The same three dogs burning, light, medium and high, sniffing and breathing while the fire moves with them"
     },
     {
@@ -134,12 +122,6 @@
     {
       "record": "hit-weak",
       "seconds": 1.8,
-      "clip": [
-        560,
-        210,
-        380,
-        270
-      ],
       "caption": "A weak fire hit (strength 0.6): the dog's own body catches lightly"
     },
     {
@@ -148,12 +130,6 @@
     {
       "record": "hit",
       "seconds": 2.2,
-      "clip": [
-        560,
-        210,
-        380,
-        270
-      ],
       "caption": "A normal fire hit (strength 1): a medium fire on and around the dog"
     },
     {
@@ -162,12 +138,6 @@
     {
       "record": "hit-strong",
       "seconds": 2.6,
-      "clip": [
-        560,
-        210,
-        380,
-        270
-      ],
       "caption": "A strong fire hit (strength 1.6): the dog engulfed, then the fire dies down off it"
     },
     {
@@ -176,12 +146,6 @@
     {
       "record": "sparks-at-dog",
       "seconds": 1.2,
-      "clip": [
-        600,
-        280,
-        300,
-        220
-      ],
       "each": "if (frame === 10 || frame === 20) shoot();",
       "caption": "GPU sparks fired at a dog's flank: they glance off its real shape (every part is a box), skid along it and some cling a moment; the low ones pass between its legs"
     },
@@ -191,12 +155,6 @@
     {
       "record": "embers-on-dog",
       "seconds": 2,
-      "clip": [
-        600,
-        280,
-        300,
-        220
-      ],
       "caption": "Embers dropped on the dogs land on their backs and heads, spread along them, cling, and lift off again on the heat"
     },
     {
@@ -214,12 +172,6 @@
     {
       "record": "attack",
       "seconds": 3.2,
-      "clip": [
-        440,
-        200,
-        640,
-        420
-      ],
       "caption": "A real Atacar on a burning dog, played through: the fire goes with the dog as it is struck and squashed, the blow's flash and sparks show over it"
     },
     {
@@ -228,12 +180,6 @@
     {
       "shot": "blow-before",
       "delay": 500,
-      "clip": [
-        560,
-        210,
-        380,
-        270
-      ],
       "caption": "Before: a blow drawn where it bursts, inside the dog, which hides most of its flash and sparks (the same frozen frame)"
     },
     {
@@ -242,12 +188,6 @@
     {
       "shot": "blow-after",
       "delay": 500,
-      "clip": [
-        560,
-        210,
-        380,
-        270
-      ],
       "caption": "After: the same blow drawn in front of the dog it bursts from (effects' `front`)"
     },
     {

@@ -1,0 +1,26 @@
+{
+  "title": "Menú de ánimas",
+  "description": "The status screen's Ánimas page (src/exploration-ui.ts): the section open is a solid piece of the tab bar. For each of Gerard and Aitor, their own ánima (PROPIA: Matemágico, Físico), always theirs, apart from their extra slot (one for now) with the shared ánimas they can equip there (Papagato). Each row has its level, shared by whoever has it. The cursor shows an ánima beside the lists; confirming equips an extra (EQUIPADA) or takes it off; one the other has equipped cannot be equipped. Equipping only says which ánimas each can switch between in a fight.",
+  "steps": [
+    { "open": "/?mission=nuria&part=ring-1&solo=0" },
+    { "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent === 'La torre de Uri'", "timeout": 90000 },
+    { "eval": "window.gerard.story.merge(['papagato-2']); window.gerard.story.xp = { papagato: 130, matemagico: 35 };" },
+    { "wait": 1200 },
+    { "press": "KeyC" },
+    { "press": "KeyE" },
+    { "shot": "animas", "delay": 1400, "caption": "Ánimas: each one's own (PROPIA) apart from the extra slot; Gerard has Papagato equipped (1 / 1)" },
+    { "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"papagato\"]').focus()" },
+    { "shot": "la-lleva-gerard", "delay": 600, "caption": "Aitor's extra slot: Papagato is Gerard's now, so it says so and cannot be equipped" },
+    { "eval": "document.querySelector('[data-pick=\"gerard\"][data-class-id=\"papagato\"]').focus()" },
+    { "wait": 300 },
+    { "press": "Enter" },
+    { "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"papagato\"]').focus()" },
+    { "shot": "hueco-libre", "delay": 700, "caption": "Gerard takes it off: his slot is free (0 / 1) and he wears his own; Aitor can equip it" },
+    { "press": "Enter" },
+    { "shot": "papagato-aitor", "delay": 350, "caption": "Aitor equips Papagato: it stamps EQUIPADA in his slot and he wears it" },
+    { "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"fisico\"]').focus()" },
+    { "shot": "fisico-propia", "delay": 700, "caption": "Físico (a placeholder) is Aitor's own: fixed, only his, never taken off" },
+    { "press": "KeyQ" },
+    { "shot": "personaje", "delay": 1200, "caption": "Personaje: his pills are the ánimas he can switch between, his own and his extra" }
+  ]
+}

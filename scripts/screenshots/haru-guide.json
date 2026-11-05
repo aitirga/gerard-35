@@ -1,0 +1,95 @@
+{
+  "title": "Haru leads the way to Nuria's door",
+  "description": "Nuria's mission (docs/quests/nuria.md § Converge check): Haru waits at Cardedeu station, then walks ahead up the street, stops and looks back when the party falls behind, goes on when they come close, and sits by Nuria's door (src/guide.ts).",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=start&solo=1"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#hud[data-dialogue]')",
+      "timeout": 90000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 168, z: 189 })"
+    },
+    {
+      "until": "window.gerard.story.nuria.haru",
+      "timeout": 30000
+    },
+    {
+      "shot": "met",
+      "delay": 400,
+      "caption": "Haru at the station: «Quiere que la sigamos»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.game.guide && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "eval": "window._start = window.gerard.game.guide.path.length"
+    },
+    {
+      "until": "(() => { const g = window.gerard.game.guide; if (!g) return true; const n = g.path[0] ?? g.position, dx = g.position.x - n.x, dz = g.position.z - n.z, l = Math.hypot(dx, dz) || 1; try { window.gerard.game.standAt({ x: Math.round(g.position.x + dx / l * 2), z: Math.round(g.position.z + dz / l * 2) }); } catch {} return window.gerard.game.guide.path.length < window._start - 60; })()",
+      "timeout": 120000
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "const h = window.gerard.game.app.root.findByName('Reparto').children.find(c => c.name === 'Haru').getPosition(); window.gerard.game.frame({ x: h.x, y: h.y, z: h.z }, 5)"
+    },
+    {
+      "shot": "leading",
+      "delay": 500,
+      "caption": "She trots ahead up the street while they keep up"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "const g = window.gerard.game.guide, n = g.path[0], dx = g.position.x - n.x, dz = g.position.z - n.z, l = Math.hypot(dx, dz) || 1; window.gerard.game.standAt({ x: Math.round(g.position.x + dx / l * 10), z: Math.round(g.position.z + dz / l * 10) })"
+    },
+    {
+      "until": "window.gerard.game.guide.waiting",
+      "timeout": 10000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "eval": "const h = window.gerard.game.app.root.findByName('Reparto').children.find(c => c.name === 'Haru').getPosition(); window.gerard.game.frame({ x: h.x, y: h.y, z: h.z }, 5)"
+    },
+    {
+      "shot": "waiting",
+      "delay": 600,
+      "caption": "Left behind, she stops and turns to look at them, tail flicking, until they come close"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "until": "(() => { const g = window.gerard.game.guide; if (!g) return true; const n = g.path[0] ?? g.position, dx = g.position.x - n.x, dz = g.position.z - n.z, l = Math.hypot(dx, dz) || 1; try { window.gerard.game.standAt({ x: Math.round(g.position.x + dx / l * 2), z: Math.round(g.position.z + dz / l * 2) }); } catch {} return !!window.gerard.story.nuria.led; })()",
+      "timeout": 120000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "home",
+      "caption": "At Nuria's door she sits down beside her: they have arrived"
+    }
+  ]
+}

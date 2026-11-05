@@ -27,10 +27,15 @@ replaced by **open progression**, as decided on 2026-10-18:
 
 - **Nothing resets.** Whatever Gerard has done stays done: friends remember him, ánimas, classes,
   opened doors, learned clues. Losing a fight is not a game over and costs nothing but the trip.
-- **Falling is waking up.** When the party falls (in the palace or anywhere outside), the screen
-  goes pink and black and Gerard sits up in bed at home, "¡NO!", with Aitor beside him. It keeps the
-  dreamlike opening of the old loop as the game's way of forgiving, and it is diegetic: Gerard
+- **Falling is waking up, in the castle.** When the party falls in the castle (the palace and
+  its zones), the screen goes pink and black and Gerard sits up in bed at home, "¡NO!", with Aitor
+  beside him, and the day is over: the castle is strict, and it is crossed by the checkpoints its
+  bosses leave. It keeps the dreamlike opening of the old loop, and it is diegetic: Gerard
   literally wakes up from it. Aitor's line changes with how many times it has happened.
+- **Anywhere else a fall costs nothing** (decided on 2026-11-05): in the missions and the city the
+  lost screen offers *Reintentar el combate* (the same fight from the start) and *Volver a antes
+  del combate* (as if it never began), `forgiving` and `fallen` in `src/battle-ui.ts`, decided in
+  `src/main.ts`.
 - **But the days count** (decided on 2026-10-18, see *The Queen's advance* below): an unspoken
   countdown gives time a meaning and keeps side activities from eating the game.
 
@@ -104,7 +109,9 @@ mission should fit in a day.
 **The lights** (decided 2026-10-24, first in Nuria's mission, `docs/quests/nuria.md` § The
 lights): every person Gerard helps gives a light, kept in a jar at home. Each one can be let out
 once to push her back **one more day**, so the spread becomes `(day − 1 − 3 × ánimas − lights
-used) / 6`. The jar shows how many are lit and how many were used, never whose they were.
+used) / 6`. The jar shows how many are lit and how many were used, never whose they were, and the
+HUD counts the lit ones as the party's **Ecos de luz** (a chip beside the menus' buttons), to trade
+for improvements to the ánimas (`docs/quests/nuria.md` § The lights, idea in `docs/ideas.md`).
 
 Built: the jar stands on the west end of the TV unit in the flat (`PLACES_2.jar`), a glass jar with
 a cork and one marble per light, amber while lit and dark once spent. The first time home after a
@@ -190,8 +197,8 @@ he does, a small light leaves them and goes with him: their **ánima**, what mak
 who they are. Each ánima:
 
 - **makes the party stronger** (a stat bonus for everyone), and weakens the palace guards;
-- **brings something of that friend into Gerard**: a class (as Noísta came from saying no) or a
-  skill, and often a key for somewhere else in the city (a gum wall, a calm word for a possessed
+- **brings something of that friend into Gerard**: a wearable ánima (as Papagato came from
+  Nuria's cats) or a skill, and often a key for somewhere else in the city (a gum wall, a calm word for a possessed
   animal, a flooded street);
 - shows as a coloured light in Personaje (the HUD rule: it is something the party *has*).
 
@@ -215,7 +222,8 @@ Friends so far:
 
 | Friend | Where | Mission | Ánima | Lights | Status |
 | --- | --- | --- | --- | --- | --- |
-| **Nuria**, with Uri and Nil | Carrer de Jacint Verdaguer, Cardedeu (R4 from La Sagrera) | *La torre de Uri*: Uri, a kid again, climbs a dark tower; his fears hunt the ramp and El Vértigo waits on top (`docs/quests/nuria.md`) | **Papagato** (Haru and Yuki fight with the party) | Nuria, Uri, Nil | Playable on `feat/nuria-mission`; Nuria's and Uri's portraits to come |
+| **Nuria and Uri** (one mission), with Nil | Carrer de Jacint Verdaguer, Cardedeu (R4 from La Sagrera) | *La calle que no acaba*, then through a bubble *La torre de Uri*: Uri, a kid again, climbs a dark tower; his fears hunt the ramp and Vertitrón waits on top (`docs/quests/nuria.md`) | **Papagato** (Haru and Yuki fight with the party) | Nuria, Uri | Playable on `feat/nuria-mission`; Nuria's and Uri's portraits to come |
+| **Pedro** | _open_ | _open_ | _open_ | Pedro | Idea (2026-11-05): a gay friend Gerard and Aitor see a lot; Aitor wants him in the game. To design with `/side-quest` (mission, `docs/quests/pedro.md`) and `/anima` |
 
 Each friend's mission is a small, hand-made piece: its own scene or two, its own lines, often one
 mechanic nobody else uses. The shared parts (scene, travel, dialogue, flags, ánima, battle) are
@@ -262,7 +270,7 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
   `catsAtHome` read them. The mission itself is never saved (`story.nuria`).
 - `src/friends/nuria.ts`: Nuria's mission (places, lines, fears); `src/tower.ts` and
   `src/tower-scene.ts`: Uri's tower; `src/chasers.ts`: the fears that hunt it; `src/fears.ts`:
-  their models and El Vértigo; `src/cats.ts`: Haru and Yuki; `src/cat-wander.ts`: the cats
+  their models and Vertitrón; `src/cats.ts`: Haru and Yuki; `src/cat-wander.ts`: the cats
   strolling about the flat; `src/levels.ts`: ánima levels.
 - `src/chapter-2.ts`: chapter 2's lines, places, triggers, the news broadcast and the clues.
 - `src/animas.ts`: the ánimas: who they come from, colour, stat bonus.
@@ -276,10 +284,13 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
 - `src/game.ts`: proximity triggers (`story.triggers`), story redirects of doors
   (`story.redirect`), the palace standing on the school, the guards' fight.
 - Story events: `near` (walked up to a trigger), `arrive` (came out of a station), `battle` with
-  `won: false` in chapter 2 (falls and wakes up). New effects: `news` (watch the TV), `metro`
+  `won: false` in chapter 2 (falls in the castle and wakes up). New effects: `news` (watch the TV), `metro`
   (the station map), `fall`, `look` (the camera turns to a scene anchor) and `doom` (the end);
-  for the missions `anima` (an ánima wakes up outside a fight), `learn` (a level reached),
-  `lights` (the people helped give their lights) and `release-light` (one leaves the jar).
+  for the missions `anima` (an ánima wakes up outside a fight, as a note, or is kept for good,
+  `kept`, as the big ÁNIMA DESBLOQUEADA banner), `learn` (a level reached),
+  `lights` (the people helped give their lights), `release-light` (one leaves the jar) and `shout`
+  (someone far off shouts in a bubble over their head and nothing waits for it: Uri up his tower;
+  its trigger is `passing`, so Gerard is not stopped either).
 - Screenshots: `just screenshots chapter-2-city`, `castle-threat`, `countdown`, and for Nuria's
   mission `cardedeu`, `nuria`, `papagato` and `lights`; `just dev-day 6` wakes up on a later day.
 
@@ -305,8 +316,9 @@ Done in Nuria's mission (`feat/nuria-mission`, 2026-10-25; `docs/quests/nuria.md
 11. Papagato, with Haru and Yuki fighting beside its wearer, up to level 3.
 12. The R4 from La Sagrera to Cardedeu on the network map, and Cardedeu's real streets.
 13. The mission: Haru at the station, Nuria lends the cats, La torre de Uri with his fears and
-    El Vértigo; giving up or falling hands the cats back; winning keeps Papagato.
-14. The lights: they leave Nuria, Uri and Nil into Gerard and Aitor, then wait in a jar at home,
+    Vertitrón; giving up hands the cats back, a fall is fought again or stepped back from; winning keeps Papagato.
+14. The lights: Nuria's into Gerard and Uri's into Aitor, counted beside the menus as the party's
+    ánimas, then wait in a jar at home,
     one a day to push her back; Haru and Yuki live in the flat from then on.
 
 Next:

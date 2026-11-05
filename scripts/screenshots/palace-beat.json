@@ -1,0 +1,167 @@
+{
+  "title": "Palacio · Matemágico despierta",
+  "description": "The wrapper room, from the palace scenario: the unwinnable fight, Bernat's cry («Pensa, Gerard! Fes la màgia amb la teva ment!») wakes Matemágico, Foc Binari melts the minion's gum, the fight is won and the ambush follows.",
+  "steps": [
+    {
+      "open": "/?story=got-chicle"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Palacio')",
+      "timeout": 90000
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        2,
+        12
+      ]
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "drain",
+      "caption": "The minion climbs out of the drain"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!document.querySelector('#battle').hidden",
+      "timeout": 30000
+    },
+    {
+      "eval": "new MutationObserver(() => { if (document.querySelector('.battle-speech-line[data-shout]')) window.sawShout = true; if (document.querySelector('.class-banner:not([hidden])')) window.sawBanner = true; }).observe(document.querySelector('#battle'), { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] })"
+    },
+    {
+      "shot": "fight",
+      "delay": 4000,
+      "caption": "Un esbirro de verdad: every hit is swallowed"
+    },
+    {
+      "eval": "(async () => { const sleep = ms => new Promise(r => setTimeout(r, ms)); const b = document.querySelector('#battle'); for (let i = 0; i < 2000 && !b.dataset.beat; i++) { const attack = b.querySelector('[data-command=\"attack\"] .command-trigger'); const target = b.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)'); if (target) target.click(); else if (!attack.disabled) attack.click(); await sleep(400); } })()"
+    },
+    {
+      "until": "!!document.querySelector('.battle-speech-line')",
+      "timeout": 60000
+    },
+    {
+      "shot": "me-va-a-matar",
+      "delay": 300,
+      "caption": "«¡Gerard, me va a matar!»"
+    },
+    {
+      "until": "window.sawShout",
+      "timeout": 60000
+    },
+    {
+      "shot": "pensa",
+      "delay": 400,
+      "caption": "Bernat: «Pensa, Gerard! Fes la màgia amb la teva ment!»"
+    },
+    {
+      "until": "window.sawBanner",
+      "timeout": 60000
+    },
+    {
+      "shot": "matemagico",
+      "delay": 600,
+      "caption": "Ánima desbloqueada: Matemágico, on a page of graph paper"
+    },
+    {
+      "until": "!document.querySelector('#battle').dataset.beat && !document.querySelector('[data-command=\"skill\"] .command-trigger').disabled",
+      "timeout": 120000
+    },
+    {
+      "shot": "matemagico-ui",
+      "delay": 1500,
+      "caption": "The interface turns Matemágico's blueprint, five Ánima circles under Gerard's PV; Habilidades pulses"
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"skill\"] .command-trigger').click()"
+    },
+    {
+      "shot": "foc-binari-skill",
+      "delay": 1200,
+      "caption": "Foc Binari, the new skill: one circle of Ánima"
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"foc-binari\"]').click()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
+    },
+    {
+      "wait": 480
+    },
+    {
+      "shot": "foc-binari",
+      "caption": "Foc Binari: Gerard raises his hand and two streams of fire braid towards the minion"
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "foc-binari-lands",
+      "caption": "The fire lands and the gum melts; one circle of Ánima spent"
+    },
+    {
+      "eval": "(async () => { const sleep = ms => new Promise(r => setTimeout(r, ms)); const b = document.querySelector('#battle'); for (let i = 0; i < 600 && b.querySelector('.battle-result').hidden; i++) { const fire = b.querySelector('.skill-flyout:not([inert]) [data-skill=\"foc-binari\"]:not([aria-disabled])'); const skill = b.querySelector('[data-command=\"skill\"] .command-trigger'); const attack = b.querySelector('[data-command=\"attack\"] .command-trigger'); const target = b.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)'); if (target) target.click(); else if (fire) fire.click(); else if (!skill.disabled && !b.querySelector('.command.expanded')) skill.click(); else if (!attack.disabled) attack.click(); await sleep(400); } })()"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result').hidden",
+      "timeout": 120000
+    },
+    {
+      "shot": "won",
+      "delay": 800,
+      "caption": "It cracks like old gum and pops"
+    },
+    {
+      "eval": "document.querySelector('#battle .battle-result button').click()"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "after",
+      "delay": 1500,
+      "caption": "«Creo que estamos en el castillo de la Reina…»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!!window.gerard.game.app.root.findByName('Mano izquierda')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "bam",
+      "caption": "¡BAM! Minions everywhere (the rest: just screenshots ending)"
+    }
+  ]
+}

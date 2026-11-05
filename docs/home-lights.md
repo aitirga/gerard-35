@@ -31,7 +31,7 @@ does the same. Nothing changes at home until the lights are connected.
 | Option | What it does |
 | --- | --- |
 | Habitaciones | *Solo el salón* (default): places and fights use the four living-room bulbs. *Toda la casa*: the bedroom, terrace, study and gallery get a dimmer echo too. The flat always mirrors every bulb |
-| Intensidad | *Suave* dims everything and swaps No-ta's strobe for a swell; *Normal*; *Intensa* |
+| Intensidad | *Suave* dims everything and swaps Foc Binari's flicker for a swell; *Normal*; *Intensa* |
 | Adelanto | How long before a hit the bulbs are told. **Auto** (default) uses 40 ms on the LAN and 500 ms through the cloud; − and + set it by hand (0–1500 ms). **Probar** tells the bulbs now and flashes the screen after the lead: adjust until both flash together |
 
 ## The bulbs
@@ -92,7 +92,7 @@ a handful of requests.
   dogs pink, the palace minion and guards magenta and violet) with a white flash.
 - **Hits are timed to the contact.** Party hits flash white (Impulso orange, a knockout gold),
   hits on the party flash red, Defender blue, healing green, the gum shell swallowing a hit pink,
-  and No-ta strobes violet. Flashes play on the kitchen, sofa and moon bulbs.
+  and Foc Binari flickers orange (longer when it catches). Flashes play on the kitchen, sofa and moon bulbs.
 - **Low health raises the tension.** As the weakest fighter still standing loses health the
   palette slides to red and the room darkens; below about 38 % the table lamp starts a heartbeat,
   faster below 15 %. Palette changes leave that lamp alone so they never cut the heartbeat.

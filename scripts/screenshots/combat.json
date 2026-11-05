@@ -1,26 +1,111 @@
 {
-  "title": "Combat · Command menu and ánimas",
-  "description": "The battle menu: Atacar, Habilidad, ?????, Defender and Huir, under the fighter's vitals plate and ánima bar (one segment per ánima, never wrapping: up to four share it, names shrinking to fit), flanked by Q and E (L and R on a controller), which swap the active fighter's ánima: the menu sweeps, the face lights up, the theme and the skills change. Habilidad opens its skills sideways; △ / Y (I on the keyboard) shows a skill's cost and description beside it. Bernat wears no ánima and has no skills.",
+  "title": "Combat · Command menu, ánimas and maná",
+  "description": "The battle menu: Atacar, Habilidad, Defender and Huir (in development only, the Dual command sits third, docs/dev-tools.md; there is no mystery command), under the fighter's vitals plate (PV as a wave, the ánima's maná as circles) and ánima bar (one segment per ánima, never wrapping: up to four share it, names shrinking to fit), flanked by Q and E (L and R on a controller), which swap the active fighter's ánima: the menu sweeps, the face lights up, the theme and the skills change. Habilidad opens its skills sideways, each with its cost in circles; △ / Y (I on the keyboard) shows a skill's description and cost beside it. Bernat wears no ánima and has no skills or maná. The option in hand is told by its colour and a step to the right, never by a frame around it.",
   "steps": [
-    { "open": "/?story=noista&battle=3&allies=2&noista=1" },
-    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
-    { "shot": "noista", "delay": 1500, "caption": "Gerard wears Noísta: Q · Matemágico · Noísta · E under his plate" },
-    { "eval": "window.extraAnimas = [['Papagato', '#7fc8d8'], ['Cuarta ánima', '#9bd27a']].map(([name, colour]) => { const b = document.createElement('button'); b.type = 'button'; b.tabIndex = -1; b.textContent = name; b.style.setProperty('--chip', colour); return b; }); window.extraAnimas.slice(0, 1).forEach(b => document.querySelector('.battle-dock[data-dock=\"1\"] .anima-chips').append(b));" },
-    { "shot": "three-animas", "delay": 300, "caption": "Preview with a third ánima (mocked): one bar, names a size smaller" },
-    { "eval": "window.extraAnimas.slice(1).forEach(b => document.querySelector('.battle-dock[data-dock=\"1\"] .anima-chips').append(b));" },
-    { "shot": "four-animas", "delay": 300, "caption": "Preview with four ánimas (mocked): still one bar, the ÁNIMA label steps aside" },
-    { "eval": "window.extraAnimas.forEach(b => b.remove());" },
-    { "press": "KeyQ" },
-    { "shot": "swapping", "delay": 150, "caption": "Q / L: the menu sweeps while the ánima changes" },
-    { "shot": "matematico", "delay": 2500, "caption": "Matemágico on: Gerard's own colours and interface" },
-    { "press": "Digit2" },
-    { "press": "KeyI" },
-    { "shot": "details", "delay": 3000, "caption": "Matemágico's skill, Análisis Parálisis, with only its description and cost" },
-    { "press": "KeyE" },
-    { "shot": "noista-skills", "delay": 3000, "caption": "E / R with the skills open: Noísta's No-ta slides in instead" },
-    { "press": "Escape" },
-    { "press": "Digit4" },
-    { "until": "document.querySelector('.turn-label')?.textContent === 'Bernat' && !document.querySelector('#battle[data-resolving]')", "timeout": 60000 },
-    { "shot": "bernat", "delay": 1500, "caption": "Bernat wears no ánima: no pills, and Habilidad is off" }
+    {
+      "open": "/?story=matemagico&battle=3&allies=2&animas=matemagico,papagato"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "shot": "papagato",
+      "delay": 1500,
+      "caption": "Gerard wears Papagato: Q · Matemágico · Papagato · E under his plate, its maná as circles"
+    },
+    {
+      "eval": "window.extraAnimas = [['Tercera ánima', '#7fc8d8'], ['Cuarta ánima', '#9bd27a']].map(([name, colour]) => { const b = document.createElement('button'); b.type = 'button'; b.tabIndex = -1; b.textContent = name; b.style.setProperty('--chip', colour); return b; }); window.extraAnimas.slice(0, 1).forEach(b => document.querySelector('.battle-dock[data-dock=\"1\"] .anima-chips').append(b));"
+    },
+    {
+      "shot": "three-animas",
+      "delay": 300,
+      "caption": "Preview with a third ánima (mocked): one bar, names a size smaller"
+    },
+    {
+      "eval": "window.extraAnimas.slice(1).forEach(b => document.querySelector('.battle-dock[data-dock=\"1\"] .anima-chips').append(b));"
+    },
+    {
+      "shot": "four-animas",
+      "delay": 300,
+      "caption": "Preview with four ánimas (mocked): still one bar, the ÁNIMA label steps aside"
+    },
+    {
+      "eval": "window.extraAnimas.forEach(b => b.remove());"
+    },
+    {
+      "press": "KeyQ"
+    },
+    {
+      "shot": "swapping",
+      "delay": 150,
+      "caption": "Q / L: the menu sweeps while the ánima changes"
+    },
+    {
+      "shot": "matemagico",
+      "delay": 2500,
+      "caption": "Matemágico on: the blueprint interface"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "press": "KeyI"
+    },
+    {
+      "shot": "details",
+      "delay": 3000,
+      "caption": "Matemágico's skill, Foc Binari, with only its description and its cost in circles"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "papagato-skills",
+      "delay": 3000,
+      "caption": "E / R with the skills open: Papagato's skills slide in instead, each with its circles"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "press": "Digit4"
+    },
+    {
+      "until": "document.querySelector('.turn-label')?.textContent === 'Bernat' && !document.querySelector('#battle[data-resolving]')",
+      "timeout": 60000
+    },
+    {
+      "shot": "bernat",
+      "delay": 1500,
+      "caption": "Bernat wears no ánima: no pills, no maná circles, and Habilidad is off"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "shot": "walking",
+      "delay": 600,
+      "caption": "↓ walks the column: Defender warms up and steps right; no frame around it"
+    },
+    {
+      "eval": "const r = document.querySelector('.battle-result'); r.hidden = false; r.querySelector('h2').textContent = 'Un respiro.'; r.querySelectorAll('button').forEach(b => { b.hidden = b.dataset.after === 'close'; }); document.querySelector('.battle-bottom').hidden = true; r.querySelector('[data-after=\"retry\"]').focus();"
+    },
+    {
+      "shot": "result",
+      "delay": 900,
+      "caption": "Preview of a fall (mocked): the chosen button lights gold and steps right, the other waits dim"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "shot": "result-walk",
+      "delay": 600,
+      "caption": "↓ moves the light to the next button"
+    }
   ]
 }

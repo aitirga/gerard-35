@@ -59,7 +59,7 @@ test('block 1 plays from waking up to the first fight in order', () => {
   assert.deepEqual(story.saved, STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('first-fight') + 1));
 });
 
-test('the palace rises, they go in, and Noísta wakes up in the wrapper room', () => {
+test('the palace rises, they go in, and Matemágico wakes up in the wrapper room', () => {
   const story = new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('first-fight') + 1));
   assert.deepEqual(kinds(story.handle({ type: 'start' })), ['palace'], 'a reload replays the transformation');
   assert.deepEqual(kinds(story.handle({ type: 'palace' })), ['dialogue']);
@@ -91,11 +91,11 @@ test('the palace rises, they go in, and Noísta wakes up in the wrapper room', (
 
   assert.deepEqual(story.handle({ type: 'room', id: 'Galería de los Retratos' }), []);
   assert.deepEqual(kinds(story.handle({ type: 'room', id: 'Sala de los Envoltorios' })), ['dialogue', 'drain', 'dialogue', 'battle']);
+  assert.equal(story.gerardClass, undefined, 'no ánima before the fight');
+  story.handle({ type: 'class', id: 'matemagico' });
   assert.equal(story.gerardClass, 'matemagico');
-  story.wear('gerard', null);
-  story.handle({ type: 'class', id: 'noista' });
-  assert.equal(story.gerardClass, 'noista');
-  assert.match(story.party[0].note, /Noísta/);
+  assert.ok(story.has('matemagico'));
+  assert.match(story.party[0].note, /Matemágico/);
   const won = story.handle({ type: 'battle', won: true, encounter: 'palace-minion' });
   assert.deepEqual(won.map(e => e.kind), ['dialogue', 'ambush']);
   assert.match(won[0].dialogue.lines.at(-1).text, /Quiere…$/, 'Bernat is cut off mid-sentence');
@@ -116,24 +116,22 @@ test('caught by the Queen, Gerard wakes up at 35 in Barcelona with Aitor and a B
   assert.deepEqual(story.handle({ type: 'start' }), [], 'and no cut-scene replays after waking');
 
   assert.equal(story.adult, true);
-  assert.equal(story.gerardClass, 'noista', 'he keeps the class');
+  assert.equal(story.gerardClass, 'matemagico', 'he keeps the ánima');
   assert.equal(story.companion, 'none', 'Bernat stays in the dream');
   assert.deepEqual(story.items, [], 'the dream\'s things stay in the dream');
   assert.equal(story.canRun, true);
   assert.deepEqual(story.resume, { environment: 'meridiana', cell: PLACES.wakeUp.cell });
   assert.deepEqual(story.npcs('meridiana'), [], 'Aitor is no NPC: he walks with Gerard');
   assert.equal(story.partner, 'aitor');
-  assert.deepEqual(story.party.map(m => [m.id, m.profile, m.classId]), [['gerard', 'gerard35', 'noista'], ['aitor', 'aitor', undefined]]);
+  assert.deepEqual(story.party.map(m => [m.id, m.profile, m.classId]), [['gerard', 'gerard35', 'matemagico'], ['aitor', 'aitor', 'fisico']]);
   assert.deepEqual(story.npcs('home-floor-1'), [], 'home in Sant Quirze is empty now');
-  assert.match(story.party[0].note, /Noísta/);
+  assert.match(story.party[0].note, /Matemágico/);
 
   assert.deepEqual(story.pickups('meridiana').map(p => p.id), ['envoltorio']);
   assert.ok(story.pickups('meridiana')[0].spot, 'the wrapper lies on the bedside shelf');
-  assert.ok(!story.interactions('meridiana').some(i => i.id === 'talk-aitor'), 'talking to Aitor needs to know where he is');
-  assert.deepEqual(story.interactions('meridiana', { x: 9.4, z: 13.6 }).find(i => i.id === 'talk-aitor').cell, { x: 9, z: 14 });
+  assert.ok(!story.interactions('meridiana', { x: 9.4, z: 13.6 }).some(i => i.id === 'talk-aitor'), 'Aitor is player 2: nobody talks to him through a prompt');
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-envoltorio' })), ['dialogue', 'item:envoltorio']);
   assert.deepEqual(story.items, ['envoltorio']);
-  assert.match(story.handle({ type: 'interact', id: 'talk-aitor' })[0].dialogue.lines[1].text, /Bubbaloo/);
   assert.deepEqual(story.saved, STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('got-wrapper') + 1), 'every chapter 1 flag; chapter 2 starts here');
 });
 
@@ -247,21 +245,20 @@ test('chapter 2: falling wakes Gerard at home and keeps everything', () => {
   assert.deepEqual(story.saved, STORY_FLAGS.filter(f => before.includes(f) || f === 'palace-tried'), 'nothing is lost, the try is remembered');
   const again = story.handle({ type: 'battle', won: false, encounter: 'palace-guards' });
   assert.notEqual(again[3].dialogue, fall[3].dialogue, 'Aitor reacts differently the next time');
-  // After a fall, Aitor brings up the clue the TV gave.
-  assert.match(story.handle({ type: 'interact', id: 'talk-aitor' })[0].dialogue.lines.map(l => l.text).join(' '), /Cardedeu/);
   // Chapter 1's fights are simply tried again.
   assert.deepEqual(new Story(upTo('first-fight')).handle({ type: 'battle', won: false }), []);
 });
 
 test('ánimas strengthen the party and thin out the palace guards', () => {
   const none = new Story(upTo('palace-tried'));
-  const two = new Story([...upTo('palace-tried'), 'anima-nuria', 'anima-uri']);
+  const one = new Story([...upTo('palace-tried'), 'anima-nuria']);
   assert.deepEqual(none.animas, []);
-  assert.deepEqual(two.animas, ['nuria', 'uri']);
+  assert.deepEqual(one.animas, ['nuria']);
   assert.equal(none.battleParty(true)[0].bonus, undefined);
-  assert.deepEqual(two.battleParty(true).map(m => m.bonus), [{ magia: 1, espiritu: 1, pv: 20, fuerza: 1, defensa: 1 }, { magia: 1, espiritu: 1, pv: 20, fuerza: 1, defensa: 1 }]);
+  assert.deepEqual(one.battleParty(true).map(m => m.bonus), [{ magia: 1, espiritu: 1, pv: 10 }, { magia: 1, espiritu: 1, pv: 10 }]);
   assert.equal(none.guarded.length, 3);
-  assert.equal(two.guarded.length, 2);
+  assert.equal(one.guarded.length, 3, 'one ánima weakens them; it takes two to send one away');
+  assert.ok(one.castleThreat < none.castleThreat, 'but the castle already feels it');
   for (const cell of none.guarded) assert.ok(canWalk(cell, ENVIRONMENTS.palacio.grid), 'guards stand on the hall floor');
   assert.ok(canWalk({ x: 16, z: 10 }, ENVIRONMENTS.palacio.grid));
   assert.deepEqual(new Story(upTo('wrapper-room')).guarded, [], 'no guards in the dream');
@@ -338,18 +335,36 @@ test('days saved elsewhere: later clocks win, and a rewind (newer epoch) replace
   story.loadDays({ nonsense: true });
   assert.deepEqual(story.clock, { day: 2, hour: 8 });
 });
-test('ánimas grow with fights won wearing them, and each level says what it teaches', async () => {
+test('ánimas grow with the EXP of fights won, every ánima in the fight earns it whole, and each level says what it teaches', async () => {
   const { Story } = await import('../src/story.ts');
-  const { LEVEL_WINS } = await import('../src/levels.ts');
-  const story = new Story(['noista', 'papagato']);
-  let learned = [];
-  for (let i = 0; i < LEVEL_WINS[0]; i++) learned = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['papagato', 'papagato', 'noista'] });
-  assert.equal(story.wins.papagato, LEVEL_WINS[0], 'two wearers, one fight');
+  const { LEVEL_XP } = await import('../src/levels.ts');
+  const story = new Story(['matemagico', 'papagato']);
+  const first = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['papagato', 'matemagico'], xp: LEVEL_XP[0] - 1 });
+  assert.equal(first.some(e => e.kind === 'learn'), false);
+  assert.deepEqual(story.xp, { papagato: LEVEL_XP[0] - 1, matemagico: LEVEL_XP[0] - 1 }, 'not split between them');
+  const learned = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['papagato'], xp: 1 });
   assert.equal(story.levels.papagato, 2); assert.ok(story.has('papagato-2'));
-  assert.deepEqual(learned.find(e => e.kind === 'learn'), { kind: 'learn', classId: 'papagato', level: 2, skills: ['llaga'] });
-  assert.equal(story.levels.noista, 1, 'Noísta has no level table yet');
-  story.handle({ type: 'battle', won: false, encounter: 'dogs', worn: ['papagato'] });
-  assert.equal(story.wins.papagato, LEVEL_WINS[0], 'a lost fight teaches nothing');
+  assert.deepEqual(learned.find(e => e.kind === 'learn'), { kind: 'learn', classId: 'papagato', level: 2, skills: ['zarpazos', 'ronroneo'], quiet: true }, 'the victory screen showed it');
+  assert.equal(story.levels.matemagico, 1, 'it did not take part');
+  story.handle({ type: 'battle', won: false, encounter: 'dogs', worn: ['papagato'], xp: 500 });
+  assert.equal(story.xp.papagato, LEVEL_XP[0], 'a lost fight teaches nothing');
+  // A big win can go up two levels at once, each with its note.
+  const both = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['matemagico'], xp: 500 });
+  assert.deepEqual(both.filter(e => e.kind === 'learn').map(e => [e.level, e.skills]), [[2, ['analisis', 'angulo']], [3, ['cardioide']]]);
+  assert.equal(story.levels.matemagico, 3);
+});
+
+test('a level the story grants starts the EXP from its floor; development EXP plays out like a fight', async () => {
+  const { Story } = await import('../src/story.ts');
+  const { LEVEL_XP } = await import('../src/levels.ts');
+  const story = new Story(['matemagico', 'papagato', 'papagato-2']);
+  story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['papagato'], xp: 10 });
+  assert.equal(story.xp.papagato, LEVEL_XP[0] + 10);
+  story.debugAnimas = { papagato: 1 };
+  const notes = story.giveXp('papagato', LEVEL_XP[1]);
+  assert.equal(story.debugAnimas, undefined, 'back to the story\'s ánimas');
+  assert.equal(story.levels.papagato, 3);
+  assert.equal(notes.filter(e => e.kind === 'learn' && !e.quiet).length, 1, 'with its note');
 });
 
 test('the jar of lights: one light a day flies to the castle and wins a day back; spent ones stay dark', async () => {
@@ -359,16 +374,16 @@ test('the jar of lights: one light a day flies to the castle and wins a day back
   assert.equal(spread(2, 0, 3), 0, 'never below the first morning');
 
   assert.deepEqual(new Story(upTo('castle')).interactions('meridiana').filter(i => i.id === 'meridiana-luces'), [], 'no jar before any light');
-  const story = new Story([...upTo('castle'), 'anima-nuria', 'luz-nuria', 'luz-uri', 'luz-nil']);
+  const story = new Story([...upTo('castle'), 'anima-nuria', 'luz-nuria', 'luz-uri']);
   story.days.clock.day = 6;
   const jar = () => story.interactions('meridiana').find(i => i.id === 'meridiana-luces');
   assert.ok(canWalk(jar().cell, ENVIRONMENTS.meridiana.grid));
   assert.equal(jar().label, 'Usar una luz');
-  assert.deepEqual(story.jar.map(l => l.used), [false, false, false]);
+  assert.deepEqual(story.jar.map(l => l.used), [false, false]);
   const before = story.spread;
   assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-luces' })), ['release-light', 'dialogue']);
   assert.ok(story.spread < before, 'her power goes back');
-  assert.deepEqual(story.jar.map(l => l.used), [true, false, false]);
+  assert.deepEqual(story.jar.map(l => l.used), [true, false]);
   assert.equal(jar().label, 'Mirar las luces', 'at most one a day');
   assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-luces' })), ['dialogue']);
   assert.equal(story.jar.filter(l => l.used).length, 1);
@@ -383,6 +398,12 @@ test('the jar of lights: one light a day flies to the castle and wins a day back
   assert.equal(story.jar.filter(l => l.used).length, 1, 'the rewound day gives its light back');
 
   const spent = new Story([...upTo('castle'), 'luz-nuria', 'luz-nuria-usada']);
+  // A save from when Nil gave a light of his own keeps two: his counts as Uri's.
+  assert.deepEqual(new Story([...upTo('castle'), 'luz-nuria', 'luz-uri', 'luz-nil', 'luz-nil-usada']).jar, [{ id: 'nuria', used: false }, { id: 'uri', used: true }]);
+  // Its saved mornings too, so the server (which only takes known flags) still saves them.
+  const old = new Story(upTo('castle'));
+  old.loadDays({ epoch: 0, clock: { day: 3, hour: 9 }, mornings: [{ day: 3, story: ['intro', 'luz-nuria', 'luz-nil', 'luz-nil-usada'] }] });
+  assert.deepEqual(old.days.mornings[0].story, ['intro', 'luz-nuria', 'luz-uri', 'luz-uri-usada']);
   assert.equal(spent.interactions('meridiana').find(i => i.id === 'meridiana-luces').label, 'Mirar las luces');
   assert.deepEqual(beats(spent.handle({ type: 'interact', id: 'meridiana-luces' })), ['dialogue']);
 });

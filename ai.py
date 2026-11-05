@@ -25,9 +25,21 @@ class JevProvider:
         return response.json()["answers"]
 
 
+_jev: JevProvider | None = None
+
+
 def jev() -> JevProvider | None:
-    key = os.environ.get("TYPESAFE_API_KEY")
-    return JevProvider(key, os.environ.get("JEV_MODEL", "jev-latest")) if key else None
+    """One provider per key and model, so every enemy turn reuses its open connection instead of
+    opening (and leaking) a new HTTP client with its own TLS handshake."""
+    global _jev
+    key, model = os.environ.get("TYPESAFE_API_KEY"), os.environ.get("JEV_MODEL", "jev-latest")
+    if not key:
+        return None
+    if _jev is None or (_jev.api_key, _jev.model) != (key, model):
+        if _jev is not None:
+            _jev.client.close()
+        _jev = JevProvider(key, model)
+    return _jev
 
 
 DECISION_PROVIDERS = {"jev": jev}

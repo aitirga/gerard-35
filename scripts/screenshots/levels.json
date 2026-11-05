@@ -1,0 +1,73 @@
+{
+  "title": "Niveles de ánima, victoria y caídos",
+  "description": "Ánima levels by EXP (src/levels.ts, docs/animas/README.md § Levels) in a real fight of Uri's tower: Matemágico's new skills, Análisis Parálisis (the party's stats rising, with the new stat animation) and Cardioide (a cure drawn as a cardioid of light); Aitor falling and staying down where he fell; and the victory screen, each ánima that took part with its EXP bar filling and the level it reaches, with what it learns.",
+  "steps": [
+    { "open": "/?mission=nuria&part=ring-1" },
+    {
+      "eval": "navigator.getGamepads = () => []; window.fightReady = () => document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger'); window.turnOf = id => window.fightReady() && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; { const set = window.gerard.game.setBattle; window.gerard.game.setBattle = (state, ...rest) => { window.fightState = state; return set(state, ...rest); }; }"
+    },
+    { "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent === 'La torre de Uri'", "timeout": 90000 },
+    { "wait": 1500 },
+    { "eval": "window.gerard.game.standAt({ x: 52, z: 30 }); window.gerard.game.startPalaceFight('crias-1')" },
+    { "until": "window.fightReady()", "timeout": 60000 },
+    {
+      "eval": "window.fightState.foes.forEach(f => { f.maxHp = f.hp = 999; }); window.gerard.battleUI.setAnimas(['matemagico', 'papagato'], { matemagico: 3, papagato: 1 }); window.gerard.battleUI.refresh()"
+    },
+    { "until": "window.turnOf('gerard')", "timeout": 30000 },
+    { "press": "KeyE" },
+    { "wait": 700 },
+    { "press": "Digit2" },
+    { "wait": 700 },
+    { "shot": "habilidades-matemagico", "caption": "Matemágico at level 3: Foc Binari, Análisis Parálisis and Cardioide" },
+    {
+      "record": "analisis-paralisis",
+      "seconds": 2.2,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('[data-skill=\"analisis\"]')?.click()",
+      "caption": "Análisis Parálisis: Fuerza and Magia up for the whole party, with the new stat animation (fine bars, two circles, light rising)"
+    },
+    { "until": "window.turnOf('aitor')", "timeout": 30000 },
+    { "press": "KeyE" },
+    { "wait": 300 },
+    { "press": "KeyE" },
+    { "wait": 600 },
+    { "press": "Digit4" },
+    { "until": "window.turnOf('gerard')", "timeout": 60000 },
+    {
+      "eval": "{ const s = window.fightState, a = s.allies.find(x => x.id === 'aitor'), g = s.allies.find(x => x.id === 'gerard'); a.hp = Math.round(a.maxHp * .35); g.secondary = g.maxSecondary; window.gerard.battleUI.refresh(); }"
+    },
+    { "wait": 400 },
+    { "press": "Digit2" },
+    { "wait": 600 },
+    { "eval": "document.querySelector('[data-skill=\"cardioide\"]').click()" },
+    { "wait": 600 },
+    { "shot": "cardioide-objetivo", "caption": "Cardioide is aimed at the party: only the hurt one standing can be picked" },
+    {
+      "record": "cardioide",
+      "seconds": 2.4,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('.roster-target[data-target=\"aitor\"]:not(:disabled), .party-card[data-unit=\"aitor\"] .roster-target')?.click()",
+      "caption": "Cardioide: a cardioid of green light under Aitor and the cure rising, «+PV»"
+    },
+    { "until": "window.turnOf('aitor')", "timeout": 30000 },
+    { "press": "Digit4" },
+    { "until": "window.turnOf('gerard')", "timeout": 60000 },
+    { "eval": "{ const s = window.fightState; s.allies.find(x => x.id === 'aitor').hp = 0; window.gerard.game.setBattle(s); window.gerard.battleUI.refresh(); }" },
+    {
+      "record": "cae-aitor",
+      "seconds": 1.6,
+      "fps": 30,
+      "caption": "Aitor falls: he tips onto his side and stays there, eyes shut, no puff of smoke"
+    },
+    { "wait": 1500 },
+    { "shot": "aitor-tumbado", "caption": "Aitor stays lying where he fell (a future skill can bring him back up)" },
+    { "eval": "window.gerard.battleUI.setAnimas(['matemagico', 'papagato'], {}); window.gerard.battleUI.jumpTo('won-level')" },
+    {
+      "record": "victoria",
+      "seconds": 3.6,
+      "fps": 30,
+      "caption": "Victory: each ánima that took part, who wore it, its EXP bar filling, «¡NIVEL 2!» and what it learns"
+    },
+    { "shot": "victoria-subida", "delay": 2500, "caption": "The victory screen once the bars have filled: Matemágico and Papagato reach level 2" }
+  ]
+}

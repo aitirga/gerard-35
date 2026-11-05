@@ -1,30 +1,118 @@
 {
-  "title": "Matemágico · Nen curiós",
-  "description": "Gerard's own ánima grows with him: as a boy (chapter 1) it is called Nen curiós, in Catalan, with its own motto; at 35 it is Matemágico, and in fights whoever wears it thinks out loud: two ghostly little birds glide round the head while light bulbs and question marks of soft light drift up out of it and fade. Exploring, nothing shows.",
+  "title": "Matemágico · Foc Binari and Ánima",
+  "description": "Matemágico, Gerard's ánima of the mind (docs/animas/matemagico/): its blueprint interface (navy graph paper, gold sums, index-card commands, a number line on the card, a ∑ watermark), the Ánima circles that replace Secundaria (five to start; a skill spends its cost, Defender gives two back), and its first spell, Foc Binari: the hand goes up, two braided streams of fire fly to one foe, and a 1 sets it on fire (Quemadura) while a 0 fizzles. At 35 the same ánima thinks out loud over his head in fights.",
   "steps": [
     {
-      "open": "/?story=new"
+      "open": "/?story=matemagico&battle=3&allies=2"
     },
     {
-      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]')",
-      "timeout": 60000
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "shot": "interface",
+      "delay": 1500,
+      "caption": "Matemágico's interface: graph paper round the edges, index-card commands, five Ánima circles under Gerard's PV"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "shot": "skills",
+      "delay": 1200,
+      "caption": "Habilidad: Foc Binari, costing one circle"
+    },
+    {
+      "press": "KeyI"
+    },
+    {
+      "shot": "details",
+      "delay": 800,
+      "caption": "Its details: light fire damage to one foe, may burn, melts the gum"
+    },
+    {
+      "press": "KeyI"
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"foc-binari\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "{ window.gerard.game.app.timeScale = .12; const random = Math.random; Math.random = () => .9; try { document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click(); } finally { Math.random = random; } }"
     },
     {
       "wait": 1500
     },
     {
-      "press": "KeyC"
+      "shot": "cast",
+      "caption": "Slowed down: Gerard raises his hand"
     },
     {
-      "press": "KeyE"
+      "wait": 1500
     },
     {
-      "shot": "nen-curios",
-      "delay": 1500,
-      "caption": "Chapter 1: the boy's ánima is Nen curiós, \"Tot ho pregunta. Fins i tot el que no cal.\""
+      "shot": "streams",
+      "caption": "Two braided streams of fire, gold and white-hot, fly to the dog"
+    },
+    {
+      "wait": 1100
+    },
+    {
+      "shot": "lands",
+      "caption": "They land: a 1, so it catches (Quemadura), and one circle of Ánima is spent"
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "burning",
+      "caption": "The dog burns: its Quemadura chip counts the rounds left"
+    },
+    {
+      "until": "document.querySelector('.turn-label')?.textContent === 'Bernat' && !document.querySelector('#battle[data-resolving]') && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"attack\"] .command-trigger').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
+    },
+    {
+      "until": "document.querySelector('.turn-label')?.textContent === 'Gerard' && document.querySelector('#battle .round-badge strong')?.textContent === '02' && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "shot": "round-2",
+      "delay": 600,
+      "caption": "Round 2: four circles left, the dog still burning"
+    },
+    {
+      "press": "Digit4"
+    },
+    {
+      "wait": 250
+    },
+    {
+      "shot": "defend",
+      "caption": "Defender gives Ánima back: the circle fills again with a glow"
     },
     {
       "open": "/?story=got-wrapper&solo=0"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
     },
     {
       "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
@@ -46,20 +134,15 @@
       "eval": "document.querySelector('[data-wear=\"gerard\"][data-class-id=\"matemagico\"]').click();"
     },
     {
-      "shot": "matemagico-sheet",
+      "shot": "sheet",
       "delay": 1200,
-      "caption": "At 35 the same ánima is Matemágico"
-    },
-    {
-      "press": "Escape"
-    },
-    {
-      "shot": "street",
-      "delay": 1500,
-      "caption": "Exploring at 35 with Matemágico on: nothing over his head, the ánima shows in fights"
+      "caption": "The status screen at 35 with Matemágico on: the same blueprint, Ánima circles and Foc Binari's cost"
     },
     {
       "open": "/?story=got-wrapper&solo=0&battle=2&party=adult"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
     },
     {
       "until": "document.querySelector('#hud[data-battle]')",
@@ -69,26 +152,9 @@
       "wait": 4000
     },
     {
-      "until": "document.querySelector('.battle-dock[data-member=\"gerard\"] .anima-chips button[data-anima=\"matemagico\"]:not([disabled])')",
-      "timeout": 60000
-    },
-    {
-      "eval": "document.querySelector('.battle-dock[data-member=\"gerard\"] .anima-chips button[data-anima=\"matemagico\"]:not([disabled])').click();"
-    },
-    {
-      "shot": "battle",
-      "delay": 2500,
-      "caption": "In a fight Gerard swaps to Matemágico (Q): birds of light glide round his head and a thought drifts up"
-    },
-    {
-      "shot": "battle-later",
-      "delay": 1400,
-      "caption": "A moment later: the thoughts fade in, rise and dissolve"
-    },
-    {
-      "shot": "battle-later-2",
-      "delay": 1400,
-      "caption": "And again: bulbs and question marks, never the same"
+      "shot": "battle-35",
+      "delay": 1500,
+      "caption": "At 35, in a fight, Matemágico thinks out loud: birds of light and thoughts over his head"
     }
   ]
 }

@@ -2,6 +2,10 @@ import type { createGame } from './game';
 import { FIGHT_FX, type Element, type FightFx, type FireLevel } from './effects';
 import { REACTIONS, STATUS_LOOKS, type ReactionId, type StatusLookId } from './status-fx';
 import { CLASSES } from './classes';
+import type { StatWay } from './stat-fx';
+import { SOUNDS, type Sfx, type SoundId } from './sfx';
+import { DUALS, FOE_ABILITIES, type BattleEffect, type DualId, type FoeAbilityId } from './battle';
+import { DUAL_BANNER, DUAL_SLOW } from './battle-motion';
 
 type Game = Awaited<ReturnType<typeof createGame>>;
 
@@ -34,14 +38,28 @@ const ATTACKS: Record<FightFx, { name: string; element?: Element; ally?: boolean
   bubble: { name: 'Burbuja', ally: true },
   globe: { name: 'Globo terráqueo', ally: true },
   orb: { name: 'Orbe', ally: true },
+  // Matemágico's own: its streams land a moment later, so no element hit on top (Fuerza 1 or more catches).
+  binari: { name: 'Foc Binari' },
 };
 const ELEMENTS: Record<Element, string> = {
   fire: 'Fuego', ice: 'Hielo', air: 'Viento', energy: 'Energía', water: 'Agua', earth: 'Tierra', light: 'Luz', shadow: 'Sombra', gum: 'Chicle',
 };
 const FIRES: Record<FireLevel, string> = { light: 'Llamita', medium: 'Hoguera', high: 'Incendio' };
 const LOOKS = Object.keys(STATUS_LOOKS) as StatusLookId[];
+/**
+ * The tower's fears' abilities the lab can play (battle-scene.ts `worldFx`), each as the fight would
+ * show it on whoever is picked (a foe acting on the first ally), with what else it needs.
+ */
+const ABILITIES: { id: FoeAbilityId | 'ojo-roto'; name?: string; extra?: Partial<BattleEffect> }[] = [
+  { id: 'capa-nueva', extra: { regrown: true } }, { id: 'carrerilla' }, { id: 'aplaston' }, { id: 'vuelta', extra: { flipped: 'coliflor' } },
+  { id: 'transparente' }, { id: 'puaj' },
+  // Vertitrón's (src/battle.ts VERTIGO_TURNS), played by Vertitrón whoever is picked, and its eye breaking.
+  { id: 'pisoton' }, { id: 'barrido' }, { id: 'grito' }, { id: 'carga', name: 'Carga' }, { id: 'rayo' }, { id: 'ojo-roto', name: 'Ojo roto' },
+];
+const VERTITRON = new Set(['pisoton', 'barrido', 'grito', 'carga', 'rayo', 'ojo-roto']);
+const abilityName = (a: (typeof ABILITIES)[number]) => a.name ?? FOE_ABILITIES[a.id as FoeAbilityId].name;
 
-export function mountFxLab(game: Game) {
+export function mountFxLab(game: Game, sfx: Sfx) {
   const panel = document.createElement('aside');
   panel.className = 'fx-lab';
   panel.innerHTML = `
@@ -58,8 +76,16 @@ export function mountFxLab(game: Game) {
       <p class="fx-lab-note" hidden></p>
       <h3>Ataques</h3>
       <div class="fx-lab-grid">${FIGHT_FX.map(fx => `<button type="button" data-fx="${fx}" title="${fx}${ATTACKS[fx].element ? ' · ' + ATTACKS[fx].element : ''}${ATTACKS[fx].ally ? ' · a un aliado' : ''}">${ATTACKS[fx].name}</button>`).join('')}</div>
+      <h3>Ataques duales</h3>
+      <div class="fx-lab-grid">${DUALS.map(d => `<button type="button" data-dual="${d.id}" title="${d.parts.join(' + ')}">${d.name}</button>`).join('')}</div>
+      <h3>Habilidades de los miedos</h3>
+      <div class="fx-lab-grid">${ABILITIES.map(a => `<button type="button" data-ability="${a.id}">${abilityName(a)}</button>`).join('')}</div>
       <h3>Golpes de elemento</h3>
       <div class="fx-lab-grid">${Object.entries(ELEMENTS).map(([id, name]) => `<button type="button" data-element="${id}">${name}</button>`).join('')}</div>
+      <h3>Sonidos</h3>
+      <div class="fx-lab-grid">${Object.keys(SOUNDS).map(id => `<button type="button" data-sound="${id}">${id}</button>`).join('')}</div>
+      <h3>Características</h3>
+      <div class="fx-lab-grid"><button type="button" data-stat="down">Baja</button><button type="button" data-stat="up">Sube</button></div>
       <h3>Fuego</h3>
       <div class="fx-lab-grid">${Object.entries(FIRES).map(([id, name]) => `<button type="button" data-fire="${id}">${name}</button>`).join('')}<button type="button" data-fire="">Apagar</button></div>
       <h3>Estados</h3>
@@ -124,6 +150,51 @@ export function mountFxLab(game: Game) {
     if (spec.element) hit(spec.element, id, .6 * k);
     say(played ? `${spec.name} (${fx}) en ${id}` : `${fx} no se puede mostrar: hace falta simulación en la GPU (WebGPU) y movimiento sin reducir.`);
   }
+  /**
+   * A dual on the picked foe, from the first two of the party (the one wearing Matemágico draws, the
+   * one wearing Papagato brings the cats): its choreography as the fight plays it, numbers made up.
+   */
+  function dual(id: DualId) {
+    const spec = DUALS.find(d => d.id === id)!, party = fighters().filter(f => f.party), foe = fighters().find(f => f.id === target.value && !f.party) ?? fighters().find(f => !f.party);
+    if (!keep.checked) game.effects.clear();
+    if (party.length < 2 || !foe) { say('Hace falta un combate con dos aliados y un enemigo.'); return; }
+    game.frame();
+    const many = (spec.strikes ?? 1) > 1, coins = [1, 0, 1, 1, 0, 1, 0, 1] as (0 | 1)[];
+    const effect: BattleEffect = {
+      kind: 'skill', actor: party[0].id, target: foe.id, amount: many ? 64 : 20,
+      dual: { id: spec.id, name: spec.name, parts: [...spec.parts], actors: [party[0].id, party[1].id], spent: {} },
+      ...many ? { strikes: Array(spec.strikes).fill(8), coins, burns: coins.map((c, i) => c ? Math.min(3, coins.slice(0, i + 1).filter(Boolean).length) : 0) } : {},
+      ...spec.weakSpot ? { weakSpot: 'set' as const } : {},
+    };
+    // As the fight screen does when its banner drops.
+    game.slowmo(DUAL_SLOW, DUAL_BANNER);
+    say(game.preview(effect) ? `${spec.name} en ${foe.id}` : 'Hace falta un combate.');
+  }
+  /**
+   * A foe's ability, played by the picked foe on the first ally (or on itself, for what it does alone);
+   * Vertitrón's always by Vertitrón, on everyone it reaches.
+   */
+  function ability(id: FoeAbilityId | 'ojo-roto') {
+    const spec = ABILITIES.find(a => a.id === id)!, party = fighters().filter(f => f.party), picked = fighters().find(f => f.id === target.value && !f.party) ?? fighters().find(f => !f.party);
+    const foe = VERTITRON.has(id) ? fighters().find(f => f.id === 'vertigo') : picked;
+    if (!foe || !party.length) { say(VERTITRON.has(id) ? 'Hace falta el combate de Vertitrón.' : 'Hace falta un combate.'); return; }
+    if (!keep.checked) game.effects.clear();
+    game.frame();
+    if (id === 'ojo-roto') { say(game.preview({ kind: 'enemy', actor: foe.id, eye: 'broken' }) ? 'Ojo roto' : 'Hace falta un combate.'); return; }
+    const alone = id === 'capa-nueva' || id === 'vuelta' || id === 'transparente' || id === 'grito' || id === 'carga';
+    const everyone = id === 'barrido' || id === 'rayo';
+    const effect: BattleEffect = {
+      kind: 'enemy', actor: foe.id, ...alone ? {} : { target: party[0].id, amount: id === 'rayo' ? 36 : 12 },
+      ability: { id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} },
+      ...everyone ? { splash: party.slice(1).map(p => ({ target: p.id, amount: id === 'rayo' ? 36 : 12 })) } : {},
+      ...id === 'carrerilla' ? { telegraph: { id, name: FOE_ABILITIES[id].name, target: party[0].id } } : {},
+      ...id === 'carga' ? { telegraph: { id: 'rayo' as const, name: FOE_ABILITIES.rayo.name, at: 'todos' as const } } : {},
+      ...id === 'grito' ? { stats: [...party.map(p => ({ target: p.id, way: 'down' as const, stats: ['fuerza', 'magia'] as ('fuerza' | 'magia')[] })), { target: foe.id, way: 'up' as const, stats: ['fuerza', 'magia'] as ('fuerza' | 'magia')[] }] } : {},
+      ...id === 'transparente' ? { transparent: [foe.id] } : {},
+      ...spec.extra,
+    };
+    say(game.preview(effect) ? `${abilityName(spec)} (${foe.id})` : 'Hace falta un combate.');
+  }
   function hit(element: Element, id: string, k: number) {
     const at = chestOf(id), feet = game.fighterAt(id), source = from.value !== id ? chestOf(from.value) : undefined;
     const model = game.battleModel(id);
@@ -141,9 +212,14 @@ export function mountFxLab(game: Game) {
     if (d.act === 'fold') { panel.classList.toggle('folded'); button.textContent = panel.classList.contains('folded') ? '+' : '–'; return; }
     if (d.act === 'clean') { clean(); game.frame(); say(); return; }
     if (d.act === 'again') { last?.(); return; }
+    // A sound only sounds: it leaves the picture and the last effect alone.
+    if (d.sound) { sfx.play(d.sound as SoundId); return; }
     let run: (() => void) | undefined;
     if (d.fx) run = () => attack(d.fx as FightFx);
+    else if (d.dual) run = () => dual(d.dual as DualId);
+    else if (d.ability) run = () => ability(d.ability as FoeAbilityId | 'ojo-roto');
     else if (d.element) run = () => { if (!keep.checked) game.effects.clear(); frame(target.value); hit(d.element as Element, target.value, Number(strength.value)); say(`Golpe de ${ELEMENTS[d.element as Element]}`); };
+    else if (d.stat) run = () => { frame(target.value); game.statChange(target.value, d.stat as StatWay); say(d.stat === 'down' ? 'Baja una característica' : 'Sube una característica'); };
     else if (d.fire !== undefined) run = () => { frame(target.value); game.ignite(target.value, (d.fire || undefined) as FireLevel | undefined); say(d.fire ? FIRES[d.fire as FireLevel] : 'Fuego apagado'); };
     else if (d.look) run = () => { frame(target.value); game.status(target.value, d.look as StatusLookId, Number(d.level), 30); say(Number(d.level) ? `${STATUS_LOOKS[d.look as StatusLookId].name} ${'I'.repeat(Number(d.level))}` : ''); };
     else if (d.reaction) run = () => {

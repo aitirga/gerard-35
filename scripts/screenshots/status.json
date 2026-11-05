@@ -21,7 +21,7 @@
     {
       "shot": "estado",
       "delay": 1500,
-      "caption": "Estado (C): portrait, the vitals plate with its two waves, the ánima switch, stats and skills, a vague line about the day and the time"
+      "caption": "Estado (C): portrait, the vitals plate with its two waves, the ánima switch and its description, stats, a vague line about the day and the time"
     },
     {
       "press": "KeyE"
@@ -29,15 +29,15 @@
     {
       "shot": "animas",
       "delay": 1200,
-      "caption": "E (or R on a controller) turns the page: Ánimas, each member's vitals with their own ánima chips, and what the ánima changes"
+      "caption": "E (or R on a controller) turns the page: Ánimas, a list for each member with the ánimas they can wear and their levels, and the one under the cursor"
     },
     {
-      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click();"
+      "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"fisico\"]').click();"
     },
     {
       "shot": "animas-personalised",
       "delay": 350,
-      "caption": "Aitor puts Noísta on too: his face lights up in the ánima's colours"
+      "caption": "Aitor's own ánima, Físico, fixed: a press on it only shakes"
     },
     {
       "press": "KeyE"
@@ -135,19 +135,19 @@
       "eval": "tap(1, 4)"
     },
     {
-      "eval": "window.before = JSON.stringify(window.gerard.story.loadout); tap(1, 13)"
+      "eval": "tap(1, 13)"
     },
     {
       "eval": "tap(1, 0)"
     },
     {
-      "until": "JSON.stringify(window.gerard.story.loadout) !== window.before",
+      "until": "document.querySelector('.status-sheet[data-player=\"2\"] [data-panel=\"animas\"][aria-pressed=\"true\"]')",
       "timeout": 20000
     },
     {
       "shot": "duo-aitor-animas",
       "delay": 1200,
-      "caption": "Aitor's own Ánimas page, driven by his controller: his vitals and his ánima only"
+      "caption": "Aitor's own Ánimas page, driven by his controller: his own Físico, fixed, and his extra slot, still empty"
     },
     {
       "eval": "Promise.all([tap(0, 1), tap(1, 1)])"

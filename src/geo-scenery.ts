@@ -392,7 +392,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   const groundMat = look.ground === 'panot' ? surface('Panot gris', 'ground', panot(), 0.25, 0.08)
     : surface('Suelo urbano', 'ground', speckles('#cbc2ab', ['#bfb59c', '#d6cdb8', '#b8ad94']), 0.25);
   // On a hilltop (`drop`) the ground ends at the brow; elsewhere it fills the map.
-  flat('Suelo', dry([scene.drop?.edge ?? [[-0.5, -0.5], [W - 0.5, -0.5], [W - 0.5, D - 0.5], [-0.5, D - 0.5]]]), LAYER.ground, groundMat);
+  flat('Suelo', dry([scene.drop?.edge ?? scene.extent ?? [[-0.5, -0.5], [W - 0.5, -0.5], [W - 0.5, D - 0.5], [-0.5, D - 0.5]]]), LAYER.ground, groundMat);
   flat('Arena', dry(scene.areas.sand ?? []), LAYER.sand, surface('Arena', 'sand', speckles('#e3cf9f', ['#d8c08a', '#efdfb8', '#cdb27a']), 0.25));
   if (look.grass === 'bed') {
     // Planted beds: dark soil with fallen leaves under clumps of low shrubs and grasses.
@@ -2212,7 +2212,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   // ------------------------------------------------------------ see-through cut
   // Materials are shared across blocks; how open the cut is belongs to each mesh instance, so a true
   // obstruction cannot open a hole in a neighbouring building that leaves Gerard visible.
-  const occluders = [...buildingCuts.values()].map(cut => ({ cut, shape: createBuildingOccluder(cut.triangles) }));
+  // A building that has sunk or not yet risen (`pivot.enabled` false, src/street-shift.ts) hides nobody.
+  const occluders = [...buildingCuts.entries()].map(([pivot, cut]) => ({ pivot, cut, shape: createBuildingOccluder(cut.triangles) }));
   const uniform = (name: string) => device.scope.resolve(name);
   const cutFocus = uniform('geoCutFocus'), cutToCamera = uniform('geoCutToCamera'), cutStyle = uniform('geoCutStyle'), cutOpen = uniform('geoCutOpen');
   // Every pass binds the declared uniforms (WebGPU fills a buffer for the shadow pass too), so give them a value up front.
@@ -2235,7 +2236,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
      */
     sight(people: Point3[]) {
       const reach = 1.2 / Math.tan(HOME_POSE.pitch * Math.PI / 180);
-      const near = occluders.filter(({ shape }) => people.some(p => {
+      const near = occluders.filter(({ pivot, shape }) => pivot.enabled && people.some(p => {
         const dx = Math.max(shape.min.x - p.x, 0, p.x - shape.max.x), dz = Math.max(shape.min.z - p.z, 0, p.z - shape.max.z);
         return shape.max.y > p.y && Math.hypot(dx, dz) <= (shape.max.y - p.y) * reach + 1;
       }));
@@ -2246,10 +2247,11 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       weather(dt);
       if (animate) { time += dt; river.diffuseMapOffset.set(time * 0.05, time * 0.02); river.emissiveMapOffset.set(-time * 0.03, time * 0.04); river.update(); }
       sea?.update(dt, animate);
-      const style = occlusion.style;
+      // A place whose look says `cut: false` keeps its buildings whole: only the silhouette shows Gerard behind them.
+      const style = look.cut === false ? 'none' : occlusion.style;
       if (style !== 'none') cutStyle.setValue(CUT_STYLE_INDEX[style]);
-      for (const { cut, shape } of occluders) {
-        const target = style !== 'none' && focus && toCamera && buildingHidesPlayer(shape, focus, toCamera) ? 1 : 0;
+      for (const { pivot, cut, shape } of occluders) {
+        const target = style !== 'none' && pivot.enabled && focus && toCamera && buildingHidesPlayer(shape, focus, toCamera) ? 1 : 0;
         const open = animate ? cut.open + (target - cut.open) * (1 - Math.exp(-dt * CUT_RATE)) : target;
         const next = Math.abs(open - target) < 0.004 ? target : open;
         if (cut.open === next) continue;
@@ -2262,6 +2264,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         cutToCamera.setValue([d.x, d.y, d.z]);
       }
     },
+    /** A building by its id in the scene, as one entity standing on the ground (it can rise, sink or hide). */
+    building(id: string) { return pivots.get(id); },
     /** How hard it rains now (0–1; the street stays wet a while after) and how far the evening has come (0–1). */
     setStreet(raining: number, evening: number) {
       // A scene built under rain starts wet.

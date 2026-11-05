@@ -1,9 +1,10 @@
 import { ANIMAS, ANIMA_IDS, type AnimaId } from './animas';
-import type { ClassId, Encounter } from './battle';
+import { canWear, STAGED_MOMENTS, type ClassId, type Encounter, type StagedMoment } from './battle';
 import type { FightMoment } from './battle-ui';
 import { CLASSES } from './classes';
+import { xpFloor } from './levels';
 import type { EnvironmentId } from './environments';
-import { STORY_ARCS, isChapter2, missionsDone, type Arc } from './story-points';
+import { STORY_ARCS, isChapter2, missionParts, missionsDone, topLevel, type Arc } from './story-points';
 import type { StoryFlag } from './story';
 
 /**
@@ -22,7 +23,8 @@ const PLACES: Place[] = [
   { id: 'meridiana-calle', name: 'Avinguda Meridiana', detail: 'La calle del piso', group: 'Barcelona', open: true },
   { id: 'rec-comtal', name: 'Escola Rec Comtal', detail: 'Trinitat Vella', group: 'Barcelona', open: true },
   { id: 'cardedeu', name: 'Cardedeu · Jacint Verdaguer', detail: 'La calle de Nuria, de la estación al centro', group: 'Cardedeu', open: false },
-  { id: 'cardedeu-laberinto', name: 'La torre de Uri', detail: 'A la vuelta de la esquina', group: 'Cardedeu', open: false },
+  { id: 'cardedeu-calle', name: 'La calle que no acaba', detail: 'Jacint Verdaguer, recta hasta la pompa', group: 'Cardedeu', open: false },
+  { id: 'cardedeu-laberinto', name: 'La torre de Uri', detail: 'Al otro lado de la pompa', group: 'Cardedeu', open: false },
   { id: 'bunkers-carmel', name: 'Búnkers del Carmel', detail: 'Turó de la Rovira', group: 'Barcelona', open: false },
   { id: 'barceloneta', name: 'La Barceloneta', detail: 'La playa · L4', group: 'Barcelona', open: true },
   { id: 'sants', name: 'Sants · Carrer de Valladolid', detail: 'De la Plaça de Sants a El Nucli', group: 'Barcelona', open: true },
@@ -43,7 +45,9 @@ export const placeName = (id: EnvironmentId) => PLACES.find(p => p.id === id)?.n
 /** Days of chapter 2 to wake up on (7 is the last). */
 const DAYS = [1, 2, 3, 4, 5, 6, 7];
 
-export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards';
+/** Uri's tower (chapter 2): his fears, Vertitrón and the young of each ring. */
+const TOWER_FIGHTS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'crias-1', 'crias-2', 'crias-3'] as const;
+export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | (typeof TOWER_FIGHTS)[number];
 /** What the fight tester starts: who fights, wearing what, against whom, and the help it gives. */
 export interface FightSetup {
   adult: boolean; partner: boolean;
@@ -64,27 +68,44 @@ export function validFight(value: unknown): FightSetup {
   const v: Partial<FightSetup> = value && typeof value === 'object' ? value as Partial<FightSetup> : DEFAULT_FIGHT;
   const isClass = (id: unknown): id is ClassId => typeof id === 'string' && (CLASS_IDS as string[]).includes(id);
   const animas = Array.isArray(v.animas) ? CLASS_IDS.filter(id => v.animas!.includes(id)) : DEFAULT_FIGHT.animas;
-  const wear = { gerard: isClass(v.wear?.gerard) && animas.includes(v.wear.gerard) ? v.wear.gerard : undefined, aitor: isClass(v.wear?.aitor) && animas.includes(v.wear.aitor) ? v.wear.aitor : undefined };
+  // Each wears only what is theirs to wear (Matemágico Gerard, Físico Aitor), and never the same one.
+  const pick = (member: 'gerard' | 'aitor', id: unknown) => isClass(id) && animas.includes(id) && canWear(member, id) ? id : undefined;
+  const gerard = pick('gerard', v.wear?.gerard), aitor = pick('aitor', v.wear?.aitor);
+  const wear = { gerard, aitor: aitor === gerard ? undefined : aitor };
   const adult = v.adult === true;
   // The palace minion is chapter 1's fight: the boys, always together.
-  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards'] as const).find(e => e === v.encounter) ?? 'dogs';
+  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', ...TOWER_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
+  const tower = (TOWER_FIGHTS as readonly string[]).includes(encounter);
   return {
     adult, partner: encounter === 'palace-minion' ? true : v.partner !== false,
     wear, animas, friends: Array.isArray(v.friends) ? ANIMA_IDS.filter(id => v.friends!.includes(id)) : [],
-    encounter: adult && encounter === 'palace-minion' ? 'dogs' : encounter,
+    // The palace minion is chapter 1's; Uri's tower, chapter 2's.
+    encounter: (adult && encounter === 'palace-minion') || (!adult && tower) ? 'dogs' : encounter,
     foes: Number.isInteger(v.foes) ? Math.max(1, Math.min(4, v.foes!)) : DEFAULT_FIGHT.foes,
     free: v.free !== false, immune: v.immune === true,
   };
 }
 const fightKey = 'gerard35.fight.v1';
 
-type Tab = 'places' | 'story' | 'fight';
+type Tab = 'places' | 'story' | 'missions' | 'fight';
+/** The ánimas unlocked, each at its level (absent: locked). */
+export type AnimaLevels = Partial<Record<ClassId, number>>;
 export interface JumpMenuDev {
   /** The story's flags now, to mark where it is. */
   flags: () => readonly StoryFlag[];
   day: () => number;
   /** Starts over at a story point (`new` for the very beginning); in chapter 2, on a day and with those ánima missions done. */
   story: (at: StoryFlag | 'new', day?: number, missions?: AnimaId[]) => void;
+  /** Starts over at a part of an ánima mission (`missionParts`), on a day and with those other missions done. */
+  mission: (anima: AnimaId, part: string, day: number, missions?: AnimaId[]) => void;
+  /** The part of each mission the story is at now (`missionNow`), if it can start. */
+  missionNow: (anima: AnimaId) => string | undefined;
+  /** The ánimas unlocked and their levels now, those the story gives, each one's EXP, and whether they are the picker's. */
+  animas: () => { now: AnimaLevels; story: AnimaLevels; xp: AnimaLevels; changed: boolean; adult: boolean };
+  /** An ánima the story has earns EXP for real (saved, with its note if it learns something): an amount, or what takes it to its next level. */
+  giveXp: (id: ClassId, amount: number | 'level') => void;
+  /** Unlocks ánimas at those levels at once, the fight on now included; `undefined` gives back the story's. */
+  setAnimas: (levels: AnimaLevels | undefined) => void;
   fight: (setup: FightSetup) => void;
   /** The fight on now, if any: what it is and whether it can jump (only on a player's turn). */
   current: () => { encounter: Encounter; phase: string; awakened: boolean; busy: boolean } | undefined;
@@ -111,6 +132,8 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   let day = 1;
   /** Ánima missions a chapter 2 jump starts with done; until chosen, the ones the story has. */
   let missions: AnimaId[] | undefined;
+  /** The mission whose parts Misiones shows; until chosen, the first one. */
+  let mission: AnimaId = ANIMA_IDS[0];
   let returnFocus: HTMLElement | undefined;
   const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 
@@ -126,7 +149,6 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   }
   function storyPage() {
     const flags = dev!.flags(), last = flags.at(-1);
-    const done = missions ??= missionsDone(flags);
     const beat = (flag: StoryFlag, label: string, n: number, all: readonly StoryFlag[]) => `<button type="button" class="jump-item jump-beat" data-beat="${flag}" ${last && all.includes(last) ? 'aria-current="true"' : ''} ${all.every(f => flags.includes(f)) ? 'data-done' : ''}>
       <span class="jump-step">${n}</span><strong>${escape(label)}</strong><code>${flag}</code></button>`;
     const arc = (a: Arc) => `<div class="jump-arc" role="group" aria-label="${escape(a.title)}">
@@ -138,36 +160,85 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
         <button type="button" class="jump-item jump-beat" data-beat="new" ${!flags.length ? 'aria-current="true"' : ''}><span class="jump-step">0</span><strong>Desde el principio</strong><code>new</code></button>
         ${chapter(1, false)}</section>
       <section class="jump-group"><h3 class="eyebrow">CAPÍTULO 2 · BARCELONA</h3>
-        <div class="jump-row" role="group" aria-label="Día al saltar al capítulo 2"><span>Día</span>${DAYS.map(d => `<button type="button" data-day="${d}" aria-pressed="${d === day}">${d}</button>`).join('')}</div>
-        <div class="jump-row" role="group" aria-label="Misiones hechas al saltar al capítulo 2"><span>Con ánimas</span>${ANIMA_IDS.map(id => `<button type="button" data-mission="${id}" aria-pressed="${done.includes(id)}">${escape(ANIMAS[id].friend)}</button>`).join('')}</div>
+        ${dayRows()}
         ${chapter(2, false)}</section>
-      <section class="jump-group"><h3 class="eyebrow">CAPÍTULO 2 · MISIONES DE ÁNIMA</h3>
-        ${chapter(2, true)}
-        <p class="jump-note">Cada misión va por su cuenta: solo lleva lo que necesita y las ánimas marcadas arriba.</p></section>
+      <p class="jump-note">Las misiones de ánima, parte a parte, están en «Misiones».</p>
       <p class="jump-note">Recarga la partida en ese punto, donde pasa, sin guardar nada.</p>`;
   }
+  /** The chapter 2 jump's day and the other missions it starts with done, shared by Historia and Misiones. */
+  function dayRows(own?: AnimaId) {
+    const done = missions ??= missionsDone(dev!.flags());
+    return `<div class="jump-row" role="group" aria-label="Día al saltar al capítulo 2"><span>Día</span>${DAYS.map(d => `<button type="button" data-day="${d}" aria-pressed="${d === day}">${d}</button>`).join('')}</div>
+      <div class="jump-row" role="group" aria-label="Misiones hechas al saltar al capítulo 2"><span>Con ánimas</span>${ANIMA_IDS.map(id => `<button type="button" data-mission="${id}" aria-pressed="${id !== own && done.includes(id)}" ${id === own ? 'disabled' : ''}>${escape(ANIMAS[id].friend)}</button>`).join('')}</div>`;
+  }
+  /** Misiones: each ánima mission, and the parts of the chosen one to start at. */
+  function missionsPage() {
+    const arcs = STORY_ARCS.filter((a): a is Extract<typeof a, { anima: AnimaId }> => 'anima' in a);
+    const picker = `<div class="jump-row jump-missions" role="group" aria-label="Misión"><span>Misión</span>${arcs.map(a => `<button type="button" data-open-mission="${a.anima}" aria-pressed="${a.anima === mission}">${escape(ANIMAS[a.anima].friend)}</button>`).join('')}</div>`;
+    const arc = arcs.find(a => a.anima === mission)!, now = dev!.missionNow(mission);
+    const parts = missionParts(mission), at = parts.findIndex(p => p.id === now);
+    const part = (p: (typeof parts)[number], n: number) => `<button type="button" class="jump-item jump-beat jump-part" data-part="${p.id}" ${p.id === now ? 'aria-current="true"' : ''} ${n < at ? 'data-done' : ''}>
+      <span class="jump-step">${n}</span><strong>${escape(p.label)}</strong><code>${p.id}</code><small>${escape(p.detail)}</small></button>`;
+    return `
+      <section class="jump-group"><h3 class="eyebrow">CAPÍTULO 2 · MISIONES DE ÁNIMA</h3>
+        ${picker}${dayRows(mission)}
+        <div class="jump-arc" role="group" aria-label="${escape(arc.title)}">
+          <h4><span>${escape(arc.title)}</span><small>${escape(arc.detail)}</small></h4>
+          ${parts.map(part).join('')}</div></section>
+      <p class="jump-note">Recarga la partida en esa parte, donde pasa, sin guardar nada. Cada misión va por su cuenta: solo lleva lo que necesita y las ánimas marcadas arriba.</p>`;
+  }
+  /** The column beside Historia and Misiones: the ánimas unlocked now and their levels, changed at once. */
+  function animasColumn() {
+    const { now, story, xp, changed, adult } = dev!.animas();
+    const name = (id: ClassId) => adult ? CLASSES[id].name : CLASSES[id].child?.name ?? CLASSES[id].name;
+    const chip = (id: ClassId, level: number, label: string) => `<button type="button" data-set-anima="${id}" data-level="${level}" aria-pressed="${(now[id] ?? 0) === level}" ${(story[id] ?? 0) === level ? 'data-story' : ''}>${label}</button>`;
+    // EXP for real, as a fight would give it: only for ánimas the story has, up to the top level.
+    const grow = (id: ClassId) => {
+      const level = story[id], top = !level || level >= topLevel(id);
+      const earned = level ? Math.max(xp[id] ?? 0, xpFloor(level)) : 0;
+      return `<div class="fight-chips jump-xp" role="group" aria-label="Experiencia de ${escape(name(id))}">
+        <span>${level ? `${earned} EXP` : 'Sin desbloquear'}</span>
+        <button type="button" data-give-xp="${id}" data-amount="25" ${!level || top ? 'disabled' : ''}>+25 EXP</button>
+        <button type="button" data-give-xp="${id}" data-amount="level" ${!level || top ? 'disabled' : ''}>Subir de nivel</button></div>`;
+    };
+    const row = (id: ClassId) => `<div class="jump-anima"><strong style="--chip:${CLASSES[id].colour}">${escape(name(id))}</strong><div class="fight-chips" role="group" aria-label="${escape(name(id))}">
+      ${chip(id, 0, 'No')}${Array.from({ length: topLevel(id) }, (_, i) => chip(id, i + 1, `Nv ${i + 1}`)).join('')}</div>${grow(id)}</div>`;
+    return `<aside class="jump-side" aria-label="Ánimas">
+      <h3 class="eyebrow">ÁNIMAS</h3>
+      ${CLASS_IDS.map(row).join('')}
+      ${changed ? '<button type="button" class="jump-reset" data-animas-reset>Volver a las de la historia</button>' : '<p class="jump-note jump-story-note">Las que da la historia hasta aquí.</p>'}
+      <p class="jump-note">Los niveles se aplican al momento, también al combate en curso. Subrayado, lo que da la historia. No se guarda: un salto vuelve a las de la historia.</p>
+      <p class="jump-note">La experiencia sí cuenta: se guarda y sube de nivel como en un combate, con su aviso. Vuelve a las ánimas de la historia.</p>
+    </aside>`;
+  }
+  /** Every fight by name (TypeScript asks for each new one). */
+  const FIGHT_NAMES: Record<Encounter, string> = { dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle', cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'cebollitas', 'crias-2': 'crías del segundo anillo', 'crias-3': 'crías del tercer anillo' };
   /** During a fight: the help it gets, the moments it can jump to, and the way out. */
   function livePage() {
     const now = dev!.current()!, help = dev!.help();
     const ready = now.phase === 'player' && !now.busy;
+    // The moments a fight stages itself (Vertitrón's moments, El Plato's surprise), only in their own fight.
+    const staged = (Object.keys(STAGED_MOMENTS) as StagedMoment[]).filter(id => STAGED_MOMENTS[id].encounter === now.encounter);
     const moment = (id: FightMoment, label: string, disabled = false) => `<button type="button" data-moment="${id}" ${!ready || disabled ? 'disabled' : ''}>${label}</button>`;
     return `
-      <p class="jump-note jump-live">Combate en curso · ${escape(({ dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle' } as Record<Encounter, string>)[now.encounter])}</p>
+      <p class="jump-note jump-live">Combate en curso · ${escape(FIGHT_NAMES[now.encounter])}</p>
       <div class="fight-row"><span>Ayudas</span><div class="fight-chips">
         <button type="button" data-help="immune" aria-pressed="${help.immune}">Inmunidad</button><button type="button" data-help="free" aria-pressed="${help.free}">PM infinitos</button></div></div>
       <div class="fight-row"><span>Saltar a</span><div class="fight-chips">
-        ${moment('won', 'Victoria')}${moment('lost', 'Derrota')}${moment('foes-low', 'Enemigos a 1 PV')}${moment('party-low', 'Equipo a 1 PV')}
-        ${now.encounter === 'palace-minion' ? moment('beat', 'El «¡NO!» de Gerard', now.awakened) : ''}</div></div>
+        ${moment('won', 'Victoria')}${moment('won-level', 'Victoria subiendo de nivel')}${moment('lost', 'Derrota')}${moment('foes-low', 'Enemigos a 1 PV')}${moment('party-low', 'Equipo a 1 PV')}
+        ${now.encounter === 'palace-minion' ? moment('beat', 'Despierta Matemágico', now.awakened) : ''}</div></div>
+      ${staged.length ? `<div class="fight-row"><span>Momentos</span><div class="fight-chips">${staged.map(id => moment(id, STAGED_MOMENTS[id].label)).join('')}</div></div>` : ''}
       ${ready ? '' : '<p class="jump-note">Los saltos esperan al turno de un jugador.</p>'}
       <button type="button" class="jump-go jump-leave" data-leave>Salir del combate</button>
       <p class="jump-note">Salir no cuenta para la historia. Un lugar de «Lugares» también sale del combate.</p>`;
   }
+  const TOWER_LABELS: Record<(typeof TOWER_FIGHTS)[number], string> = { cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'Crías · anillo 1', 'crias-2': 'Crías · anillo 2', 'crias-3': 'Crías · anillo 3' };
   function fightPage() {
     if (dev!.current()) return livePage();
     const f = fight;
     const chip = (name: string, value: string, label: string, on: boolean, disabled = false) => `<button type="button" data-${name}="${value}" aria-pressed="${on}" ${disabled ? 'disabled' : ''}>${escape(label)}</button>`;
     const wearRow = (member: 'gerard' | 'aitor', label: string) => `<div class="fight-row"><span>${label}</span><div class="fight-chips">
-      ${chip(`wear-${member}`, '', 'Sin ánima', !f.wear[member])}${f.animas.map(id => chip(`wear-${member}`, id, f.adult || member === 'aitor' ? CLASSES[id].name : CLASSES[id].child?.name ?? CLASSES[id].name, f.wear[member] === id)).join('')}</div></div>`;
+      ${chip(`wear-${member}`, '', 'Sin ánima', !f.wear[member])}${f.animas.filter(id => canWear(member, id)).map(id => chip(`wear-${member}`, id, f.adult || member === 'aitor' ? CLASSES[id].name : CLASSES[id].child?.name ?? CLASSES[id].name, f.wear[member] === id, f.wear[member === 'gerard' ? 'aitor' : 'gerard'] === id)).join('')}</div></div>`;
     const guards = f.encounter === 'palace-guards', dogs = f.encounter === 'dogs' || f.encounter === 'possessed';
     return `
       <div class="fight-row"><span>Época</span><div class="fight-chips">${chip('adult', '0', 'Capítulo 1 · niños', !f.adult)}${chip('adult', '1', 'Capítulo 2 · a los 35', f.adult)}</div></div>
@@ -179,6 +250,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       <div class="fight-row"><span>Contra</span><div class="fight-chips">
         ${chip('encounter', 'dogs', 'Perros', f.encounter === 'dogs')}${chip('encounter', 'possessed', 'Perros poseídos', f.encounter === 'possessed')}
         ${chip('encounter', 'palace-minion', 'El esbirro', f.encounter === 'palace-minion', f.adult)}${chip('encounter', 'palace-guards', 'Guardianes de chicle', guards)}</div></div>
+      ${f.adult ? `<div class="fight-row"><span>Torre de Uri</span><div class="fight-chips">${TOWER_FIGHTS.map(id => chip('encounter', id, TOWER_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${dogs ? `<div class="fight-row"><span>Cuántos</span><div class="fight-chips">${[1, 2, 3, 4].map(n => chip('foes', String(n), String(n), f.foes === n)).join('')}</div></div>` : ''}
       ${guards ? '<p class="jump-note">Los guardianes son tantos y tan fuertes como dejan las ánimas de los amigos.</p>' : ''}
       <div class="fight-row"><span>Ayudas</span><div class="fight-chips">${chip('immune', '1', 'Inmunidad', f.immune)}${chip('free', '1', 'PM infinitos', f.free)}</div></div>
@@ -187,10 +259,17 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   }
   function render(focus?: string) {
     const filter = root.querySelector<HTMLInputElement>('.jump-search')?.value ?? '';
+    // Historia and Misiones are wide: the page, and the ánimas beside it.
+    const split = !!dev && (tab === 'story' || tab === 'missions');
+    root.toggleAttribute('data-wide', split);
+    // A chip changed on the same page keeps both columns where they were.
+    const keep = focus && !focus.startsWith('[data-tab') ? [...root.querySelectorAll<HTMLElement>('.jump-body, .jump-side')].map(el => el.scrollTop) : undefined;
     root.innerHTML = `
-      ${dev ? `<nav class="jump-tabs" role="tablist">${([['places', 'Lugares'], ['story', 'Historia'], ['fight', 'Combate']] as const).map(([id, label]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="${tab === id}">${label}</button>`).join('')}</nav>` : ''}
+      ${dev ? `<nav class="jump-tabs" role="tablist">${([['places', 'Lugares'], ['story', 'Historia'], ['missions', 'Misiones'], ['fight', 'Combate']] as const).map(([id, label]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="${tab === id}">${label}</button>`).join('')}</nav>` : ''}
       ${tab === 'places' ? `<input class="jump-search" type="search" placeholder="Buscar lugar" aria-label="Buscar lugar" value="${escape(filter)}" autocomplete="off">` : ''}
-      <div class="jump-body" data-page="${tab}">${tab === 'places' ? placesPage(filter) : tab === 'story' ? storyPage() : fightPage()}</div>`;
+      ${split ? `<div class="jump-split"><div class="jump-body" data-page="${tab}">${tab === 'story' ? storyPage() : missionsPage()}</div>${animasColumn()}</div>`
+        : `<div class="jump-body" data-page="${tab}">${tab === 'places' ? placesPage(filter) : fightPage()}</div>`}`;
+    if (keep) root.querySelectorAll<HTMLElement>('.jump-body, .jump-side').forEach((el, i) => { el.scrollTop = keep[i] ?? 0; });
     if (focus) root.querySelector<HTMLElement>(focus)?.focus({ preventScroll: true });
   }
   function setFight(change: Partial<FightSetup>) {
@@ -235,6 +314,18 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       dev!.story(at, later ? day : undefined, later ? missions : undefined);
       return;
     }
+    if (data.part) { close(); dev!.mission(mission, data.part, day, missions); return; }
+    if (data.openMission) { mission = data.openMission as AnimaId; render(`[data-open-mission="${mission}"]`); return; }
+    if (data.setAnima) {
+      const id = data.setAnima as ClassId, level = Number(data.level), next = { ...dev!.animas().now };
+      if (level) next[id] = level; else delete next[id];
+      dev!.setAnimas(next); render(`[data-set-anima="${id}"][data-level="${level}"]`); return;
+    }
+    if (data.giveXp) {
+      const id = data.giveXp as ClassId, amount = data.amount === 'level' ? 'level' : Number(data.amount);
+      dev!.giveXp(id, amount); render(`[data-give-xp="${id}"][data-amount="${data.amount}"]`); return;
+    }
+    if (data.animasReset !== undefined) { dev!.setAnimas(undefined); render('.jump-side [aria-pressed="true"]'); return; }
     if (data.folds) { dev!.setFolding(data.folds === '1'); render(`[data-folds="${data.folds}"]`); return; }
     if (data.day) { day = Number(data.day); render(`[data-day="${day}"]`); return; }
     if (data.mission) { const id = data.mission as AnimaId; missions = missions?.includes(id) ? missions.filter(m => m !== id) : [...missions ?? [], id]; render(`[data-mission="${id}"]`); return; }
@@ -277,7 +368,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       const items = enabled(row);
       next = items[(items.indexOf(active!) + step + items.length) % items.length];
     } else {
-      const rows = [...root.querySelectorAll<HTMLElement>('.jump-search, .jump-item, .fight-chips, .jump-row, .jump-go')];
+      const rows = [...root.querySelectorAll<HTMLElement>('.jump-search, .jump-item, .fight-chips, .jump-row, .jump-go, .jump-reset')];
       const at = rows.findIndex(row => row === active || row.contains(active));
       const row = rows[(at + step + rows.length) % rows.length];
       next = row?.matches('.fight-chips, .jump-row') ? row.querySelector<HTMLElement>('[aria-pressed="true"]:not([disabled])') ?? enabled(row)[0] : row;

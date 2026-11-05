@@ -6,8 +6,8 @@ import { pathTo } from './follower.ts';
  * there a while, and picks another. Pure: the game draws it.
  */
 export interface Wanderer { position: Cell; facing: number; walking: boolean; path: Cell[]; wait: number }
-/** Cells per second, how far a stroll goes, and how long a cat sits between strolls (seconds). */
-export const CAT_SPEED = 1.1, STROLL = 4, SIT = [2.5, 7] as const;
+/** Cells per second (an unhurried walk for their size: src/cat-gait.ts), how far a stroll goes, and how long a cat sits between strolls (seconds). */
+export const CAT_SPEED = .75, STROLL = 4, SIT = [2.5, 7] as const;
 
 export function createWanderer(start: Cell, wait = 0): Wanderer {
   return { position: { ...start }, facing: 0, walking: false, path: [], wait };

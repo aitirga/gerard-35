@@ -1,9 +1,9 @@
 {
   "title": "Las luces y las gatas · home after Nuria's mission",
-  "description": "After Nuria's mission (docs/quests/nuria.md § The lights, § Beats): Haru and Yuki stroll about the Meridiana flat, and the three lights sit in a glass jar on the TV unit. Usar una luz lets one out: it rises, flies out of the balcony towards the castle and her power goes back a day. The spent one stays in the jar, dark like an empty marble, and the jar only offers a look until the next morning.",
+  "description": "After Nuria's mission (docs/quests/nuria.md § The lights, § Beats): Haru and Yuki stroll about the Meridiana flat, and the two lights (the party's ánimas) sit in a glass jar on the TV unit. Usar una luz lets one out: it rises, flies out of the balcony towards the castle and her power goes back a day. The ánima counter beside the menus goes from 2 to 1. The spent one stays in the jar, dark like an empty marble, and the jar only offers a look until the next morning.",
   "steps": [
     {
-      "open": "/?story=luz-nil&day=8"
+      "open": "/?story=luz-uri&day=8"
     },
     {
       "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
@@ -36,7 +36,7 @@
     {
       "shot": "jar",
       "delay": 1500,
-      "caption": "The jar on the TV unit, three lights lit, and the prompt Usar una luz"
+      "caption": "The jar on the TV unit, two lights lit (2 ánimas beside the menus), and the prompt Usar una luz"
     },
     {
       "eval": "window.__spread = window.gerard.story.spread"
@@ -85,7 +85,7 @@
     {
       "shot": "jar-spent",
       "delay": 1500,
-      "caption": "One spent light, dark in the jar; today the jar only offers Mirar las luces"
+      "caption": "One spent light, dark in the jar, 1 ánima left; today the jar only offers Mirar las luces"
     }
   ]
 }

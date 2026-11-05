@@ -117,13 +117,6 @@ export const LINES_2 = {
     gerard('Son demasiado fuertes. Así no podemos.'),
     aitor('Pues no vayamos así. Busquemos ayuda. Tú tienes amigos para dar y regalar.'),
   ),
-  /** Talking to Aitor in chapter 2, by how far they have got. */
-  aitor: {
-    beforeNews: both(aitor('Feliz cumpleaños, dormilón. ¿Qué es ese pitido? Viene del salón.')),
-    afterNews: both(aitor('Trinitat Vella. La L1, en Fabra i Puig, aquí mismo. ¿Vamos?')),
-    afterFall: both(aitor('Si esos guardianes son tan fuertes, necesitamos a alguien más. ¿A quién llamarías tú?')),
-    clue: both(aitor('¿No decían en la tele que la R4 ahora llega hasta Cardedeu? Allí viven Nuria y Uri.')),
-  },
   /** The Búnkers del Carmel's north end: the camera turns to her castle far off on Trinitat Vella. */
   bunkersNorte: both(
     gerard('Al norte, Nou Barris. Por ahí queda nuestra casa, junto a la Meridiana.'),

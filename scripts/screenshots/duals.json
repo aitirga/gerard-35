@@ -1,0 +1,231 @@
+{
+  "title": "Ataques duales: Punto débil y Zarpazos de fuego",
+  "description": "docs/combat.md § Ataques duales, docs/quests/nuria.md § Dual attacks. Two players (two pads faked: the keyboard is Gerard, pad 2 is Aitor) against Vertitrón, Gerard in Matemágico and Aitor in Papagato, both at level 2 (the tester's help: free maná, no PV lost). Round 1: the dev-only Dual command (third in the menu) opens its sheet, each dual with its two halves and their combined cost; aiming Punto débil already puts its banner up (armed), and confirming sets it off (the banner bursts, black bars close in, gold flares from the edges, time slowed, the blueprint, the stroke) and leaves its mark on the foe's plate. Round 2: Gerard readies Foc Binari in his own dock (LUEGO · GERARD, the PREPARADO plate) while Aitor attacks, and Aitor's blow lands at ×3 and spends the mark; then the readied move plays by itself. Round 3: Gerard readies Foc Binari again and Aitor picks Zarpazos: nothing glows in the list, but the moment it is picked the Zarpazos de fuego banner comes up while he aims (its halves meeting in the middle); confirming sets it off (bars, flare, slow motion, the circle of binary marks, eight claws, the coins of fire). Round 4: each dual goes off once a fight, so the Dual sheet says «Ya usado en este combate» for both. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22fisico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]'); window.aitorTurn = () => window.ready() && document.querySelector('#battle[data-player=\"2\"]'); window.p2 = sel => { document.querySelector('.battle-dock[data-dock=\"2\"] ' + sel).focus(); ui.control('confirm', 2); };"
+    },
+    {
+      "until": "window.aitorTurn()",
+      "timeout": 180000
+    },
+    {
+      "eval": "ui.setAnimas(['matemagico', 'papagato', 'fisico'], { matemagico: 2, papagato: 2 }); ui.refresh?.()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "split",
+      "delay": 600,
+      "caption": "Aitor (pad 2) acts first; Gerard's dock offers to ready his move ahead (LUEGO · GERARD). Nothing marks a dual"
+    },
+    {
+      "eval": "p2('[data-command=\"dual\"] .command-trigger')"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"punto-debil\"]').focus(); ui.details(2)"
+    },
+    {
+      "shot": "dev-dual-sheet",
+      "delay": 900,
+      "caption": "Development only: the Dual command, third in the menu; its sheet lists each dual with its two halves, and the details box the combined cost (each half under whoever pays it) and the description"
+    },
+    {
+      "eval": "ui.details(2); document.querySelector('[data-dual=\"punto-debil\"]').focus(); ui.control('confirm', 2)"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "dev-dual-target",
+      "delay": 300,
+      "caption": "Punto débil asks for its target, and its banner is already up top, armed: «ATAQUE DUAL · Punto débil», who brings which half, the cost and the description"
+    },
+    {
+      "eval": "ui.control('confirm', 2)"
+    },
+    {
+      "until": "document.querySelector('.dual-banner[data-fire]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "punto-debil-banner",
+      "delay": 150,
+      "caption": "Confirmed: the banner bursts (the name punches out, rays behind it), black bars close in top and bottom, gold flares in from the edges, and time slows"
+    },
+    {
+      "record": "punto-debil",
+      "seconds": 2.6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Punto débil: grey spotlight but the two of them, the blueprint, the 37° arc, the crosshair and the dotted line; then one straight stroke, a white flash and a gold ✕",
+      "clip": [
+        300,
+        140,
+        1000,
+        640
+      ]
+    },
+    {
+      "until": "window.aitorTurn()",
+      "timeout": 120000
+    },
+    {
+      "shot": "mark",
+      "delay": 900,
+      "caption": "Round 2: the Punto débil mark on Vertitrón's plate (crosshair, ×3) and a gold crosshair over its eye"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "shot": "queue-skills",
+      "delay": 300,
+      "caption": "Gerard readies his move in his own dock, with his own cursor, while Aitor is still choosing"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "shot": "queue-plate",
+      "delay": 300,
+      "caption": "«PREPARADO · Foc Binari → Vertitrón», with Quitar to take it back"
+    },
+    {
+      "eval": "p2('[data-command=\"attack\"] .command-trigger')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "ui.control('confirm', 2)"
+    },
+    {
+      "record": "triple",
+      "seconds": 4.5,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Aitor's Atacar spends the mark: the crosshair bursts and the blow lands ×3; then Gerard's readied Foc Binari flashes «PREPARADO» in his dock and plays by itself"
+    },
+    {
+      "until": "window.aitorTurn()",
+      "timeout": 120000
+    },
+    {
+      "wait": 600
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "p2('[data-command=\"skill\"] .command-trigger')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"zarpazos\"]').focus(); ui.control('confirm', 2)"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "zarpazos-chosen",
+      "delay": 600,
+      "caption": "Aitor picks Zarpazos with Foc Binari readied: nothing glowed in the list, but now that it is picked the banner is up while he aims: Zarpazos de fuego"
+    },
+    {
+      "eval": "ui.control('confirm', 2)"
+    },
+    {
+      "until": "document.querySelector('.dual-banner[data-fire]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "zarpazos-de-fuego-banner",
+      "delay": 150,
+      "caption": "Confirmed: «ATAQUE DUAL · Zarpazos de fuego» goes off, Gerard's Foc Binari and Aitor's Zarpazos, «1 + 2 maná», bars and flare"
+    },
+    {
+      "record": "zarpazos-de-fuego",
+      "seconds": 3.2,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Zarpazos de fuego: the gold circle with its eight binary marks, Haru dashing mark to mark, a 1 lights fire and a 0 a spark, the camera swings round, the flame spiral",
+      "clip": [
+        300,
+        230,
+        1000,
+        640
+      ]
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "after",
+      "delay": 900,
+      "caption": "Round 4: the dual took Vertitrón down to 60 %, so its hand has come down beside it (chip Nil · 2) and phase 2 begins"
+    },
+    {
+      "until": "window.aitorTurn()",
+      "timeout": 120000
+    },
+    {
+      "eval": "p2('[data-command=\"dual\"] .command-trigger')"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "shot": "dual-used",
+      "delay": 300,
+      "caption": "Each dual goes off once a fight: the Dual sheet now says «Ya usado en este combate» for both"
+    }
+  ]
+}

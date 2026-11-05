@@ -19,7 +19,7 @@ export function createInteractionPrompt(button: HTMLButtonElement) {
       button.hidden = !current || !at;
       if (!at || !current) return;
       // Companions also speak above their heads; keep their key beside the face, below the bubble.
-      const companion = current.id === 'talk-bernat' || current.id === 'talk-aitor';
+      const companion = current.id === 'talk-bernat';
       const x = at.x + (companion ? 24 : 0), y = at.y + (companion ? 24 : 0);
       button.style.left = `${x}px`;
       button.style.top = `${y}px`;

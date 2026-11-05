@@ -1,0 +1,54 @@
+{
+  "title": "Bocadillo de Bernat",
+  "description": "El bocadillo que sale sobre la cabeza de Bernat: de lejos sobre la calle, y de cerca fijado en una posición con decimales, donde se veía la junta entre el globo y su pico. Ejecutar con --scale 2.",
+  "steps": [
+    {
+      "open": "/?story=bernat-stalled",
+      "reducedMotion": "reduce"
+    },
+    {
+      "teleport": "maresme",
+      "cell": [
+        15,
+        25
+      ]
+    },
+    {
+      "until": "!document.querySelector('#companion-bubble').hidden"
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = false;"
+    },
+    {
+      "shot": "street",
+      "delay": 0,
+      "caption": "El bocadillo sobre Bernat en la calle"
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = true; const style = document.createElement('style'); style.textContent = '#companion-bubble { transform: translate(720.37px, 380.62px) translate(-50%, -100%) !important; }'; document.head.append(style);"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = false;"
+    },
+    {
+      "shot": "close",
+      "delay": 0,
+      "clip": [
+        580,
+        300,
+        280,
+        110
+      ],
+      "caption": "De cerca: el pico sale del globo sin junta y su sombra sigue la del globo"
+    },
+    {
+      "eval": "window.gerard.game.app.autoRender = true;"
+    }
+  ]
+}

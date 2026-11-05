@@ -22,7 +22,7 @@ commands are:
 
 | Command              | What it does                                      |
 | -------------------- | ------------------------------------------------- |
-| `just dev`           | Start the dev server with hot reload              |
+| `just dev`           | Start the dev server (reload the page to see changes) |
 | `just check`         | Run all project checks                            |
 | `just build`         | Create a production bundle                        |
 | `just preview`       | Build and inspect static assets (API requires backend)     |
@@ -34,7 +34,7 @@ The underlying npm scripts remain available when `just` is not installed:
 
 | Command             | What it does                                  |
 | ------------------- | --------------------------------------------- |
-| `npm run dev`       | Start the dev server with hot reload          |
+| `npm run dev`       | Start the dev server (reload to see changes)  |
 | `npm run build`     | Type-check and build a production bundle      |
 | `npm run preview`   | Serve the production bundle locally           |
 | `npm run typecheck` | Run the TypeScript compiler without emitting  |
@@ -196,7 +196,7 @@ brief downtime during deploys. Local data lives in ignored `data/`.
 
 GitHub Actions now runs checks only: Pages cannot host the persistent API.
 For a full production preview locally, run `just build` and `just backend`, then
-open http://127.0.0.1:8035. For frontend hot reload, run `just dev` alongside the backend.
+open http://127.0.0.1:8035. To work on the frontend, run `just dev` alongside the backend and reload the page to see changes.
 
 ## Why this stack?
 
@@ -282,8 +282,8 @@ a battle view using the current neighborhood.
 Gerard fights alone initially; calling Bernat at his door adds a second ally to
 subsequent encounters, using Gerard’s model with a blue jacket as a stand-in.
 
-Choose **Atacar**, **Habilidad**, **?????** (not available yet), **Defender**, or
-**Huir**. Defender and Huir act at once. Habilidad slides a skill sheet out to its
+Choose **Atacar**, **Habilidad**, **Defender**, or **Huir** (development builds
+add a **Dual** command, see docs/dev-tools.md). Defender and Huir act at once. Habilidad slides a skill sheet out to its
 right (→ opens it, ← or **Esc** closes it). △ / Y on a controller, or **I** on the
 keyboard, floats a window beside the focused skill with its description and cost.
 Skills come from **ánimas**: the strip above the menu (L · Matemágico · Noísta · R)

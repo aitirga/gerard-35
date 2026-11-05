@@ -32,6 +32,13 @@ const BREAKER_GAP = 8.5, BREAKER_SPEED = BREAKER_GAP / CYCLE;
 const TRACKS = [64, 40];
 /** How far past the map's side edges the coast and its sea carry on, in cells. */
 const BEYOND = 160;
+/**
+ * The sea's two layers of small waves (`waveNormals`): metres one tile covers, how strongly it bends
+ * the light, and how it drifts (m/s, towards the shore and along it, + is the beach's +x). Both roll
+ * in, a little apart, so the water swells towards the beach instead of boiling on the spot.
+ */
+const RIPPLES = { size: 7, bump: 0.45, drift: [0.22, 0.05] } as const;
+const DETAIL = { size: [2.6, 3.1], bump: 0.22, drift: [0.12, -0.06] } as const;
 
 interface Shore { points: GeoPoint[]; normals: GeoPoint[]; along: number[] }
 
@@ -46,6 +53,11 @@ export function buildSea(kit: GeoKit, water: GeoPoint[][], size: { width: number
   // The sea and its white water carry on past the map's sides; the beach's bands stop at its edges.
   const first = Math.max(0, shore.points.findIndex(p => p[0] >= -0.5));
   const last = shore.points.length - 1 - Math.max(0, [...shore.points].reverse().findIndex(p => p[0] <= size.width - 0.5));
+  // Which way is out to sea over the map, on the ground (grid axes): the waves roll in against it.
+  const out = shore.normals.slice(first, last + 1).reduce((a, q) => [a[0] + q[0], a[1] + q[1]], [0, 0]);
+  const outLen = Math.hypot(out[0], out[1]) || 1, seaward = [out[0] / outLen, out[1] / outLen], alongshore = [seaward[1], -seaward[0]];
+  /** Ground velocity (grid axes, m/s) of something drifting `[in, along]`: in towards the beach, along it. */
+  const drift = ([inward, along]: readonly [number, number]) => [-seaward[0] * inward + alongshore[0] * along, -seaward[1] * inward + alongshore[1] * along];
   /**
    * One band along the shore: rows at `d` metres, each with its colour and opacity; `beach` keeps it on
    * the map. Its UVs run along the shore and out from it, in metres, or with `world` over the ground
@@ -90,8 +102,9 @@ export function buildSea(kit: GeoKit, water: GeoPoint[][], size: { width: number
   const sea = new pc.StandardMaterial();
   sea.name = 'Mar'; sea.diffuse.set(1, 1, 1); sea.diffuseVertexColor = true; sea.gloss = 0.92;
   const ripples = canvasTexture(256, 256, ctx => waveNormals(ctx, 256));
-  sea.normalMap = ripples; sea.normalMapTiling.set(1 / 7, 1 / 7); sea.bumpiness = 0.6;
-  sea.normalDetailMap = ripples; sea.normalDetailMapTiling.set(1 / 2.6, 1 / 3.1); sea.normalDetailMapBumpiness = 0.4;
+  sea.normalMap = ripples; sea.normalMapTiling.set(1 / RIPPLES.size, 1 / RIPPLES.size); sea.bumpiness = RIPPLES.bump;
+  sea.normalDetailMap = ripples; sea.normalDetailMapTiling.set(1 / DETAIL.size[0], 1 / DETAIL.size[1]); sea.normalDetailMapBumpiness = DETAIL.bump;
+  const rippleDrift = drift(RIPPLES.drift), detailDrift = drift(DETAIL.drift);
   // Less of the sky and the sun than a pool: the sea keeps its own blue, and the sun glitters on it
   // without burning a white patch into the overview.
   shine(sea, 'water'); sea.specular.fromString('#2c3434'); sea.reflectivity = 0.3; sea.update();
@@ -134,24 +147,32 @@ export function buildSea(kit: GeoKit, water: GeoPoint[][], size: { width: number
     // v counts from the sea end of the band (0) to its land end (1), one band per texture.
     m.diffuseMapTiling.set(1 / 30, -1 / span); m.opacityMapTiling.copy(m.diffuseMapTiling); m.update();
     band(`Ola ${k + 1}`, [{ d: s0, alpha: 0 }, { d: 1.2, alpha: 1 }, { d: s1, alpha: 1 }], LAYER.swash + k * 0.002, m, false, true);
-    return { m, phase, reach: 0.8, shift: k * 0.37 };
+    return { m, phase, reach: 0.8, shift: k * 0.37, cycle: -1 };
   });
 
   let time = 0;
   /** Where a wave's edge is over its cycle (0–1): it runs up fast, slides back slower, then rests. */
   const runUp = (t: number) => t < 0.28 ? 1 - (1 - t / 0.28) ** 2.4 : t < 0.78 ? 1 - ((t - 0.28) / 0.5) ** 1.6 : 0;
+  /** How much of a wave shows over its cycle: in as it starts, out over the end of its slide back. */
+  const fade = (t: number) => t < 0.06 ? t / 0.06 : t < 0.55 ? 1 : t < 0.76 ? 1 - (t - 0.55) / 0.21 : 0;
   function animate(dt: number) {
     time += dt;
-    sea.normalMapOffset.set(time * 0.035, time * 0.06); sea.normalDetailMapOffset.set(-time * 0.05, time * 0.025); sea.update();
-    // White water rolls towards the shore: the texture slides out to sea in v.
-    breakers.diffuseMapOffset.set(Math.sin(time * 0.05) * 0.3, time * BREAKER_SPEED / BREAKER_GAP); breakers.opacityMapOffset.copy(breakers.diffuseMapOffset); breakers.update();
+    // A pattern moves by minus its shift over its tiling: shifting by −velocity × tiling × time carries it along.
+    shift(sea.normalMapOffset, sea.normalMapTiling, -rippleDrift[0] * time / RIPPLES.size, -rippleDrift[1] * time / RIPPLES.size);
+    shift(sea.normalDetailMapOffset, sea.normalDetailMapTiling, -detailDrift[0] * time / DETAIL.size[0], -detailDrift[1] * time / DETAIL.size[1]);
+    sea.update();
+    // White water rolls towards the shore: shifting the texture forward in v slides it in (v grows out to sea).
+    shift(breakers.diffuseMapOffset, breakers.diffuseMapTiling, Math.sin(time * 0.05) * 0.3, time * BREAKER_SPEED / BREAKER_GAP);
+    breakers.opacityMapOffset.copy(breakers.diffuseMapOffset); breakers.update();
     for (const w of waves) {
       const t = time / CYCLE + w.phase, cycle = Math.floor(t), k = t - cycle;
       // Each wave reaches a little further or shorter, with its lace in a new place.
-      if (k < 0.02) { w.reach = 0.55 + noise(cycle * 7 + w.phase * 13) * 0.45; w.shift = noise(cycle * 3 + w.phase * 5); }
+      if (cycle !== w.cycle) { w.cycle = cycle; w.reach = 0.55 + noise(cycle * 7 + w.phase * 13) * 0.45; w.shift = noise(cycle * 3 + w.phase * 5); }
       // The texture's edge sits half-way (v .5); the band's v runs from the sea (0) to the land (1).
       const edge = 0.3 + runUp(k) * w.reach * 0.62;
-      w.m.diffuseMapOffset.set(w.shift, s0 / span + 0.5 - edge); w.m.opacityMapOffset.copy(w.m.diffuseMapOffset); w.m.update();
+      shift(w.m.diffuseMapOffset, w.m.diffuseMapTiling, w.shift, s0 / span + 0.5 - edge); w.m.opacityMapOffset.copy(w.m.diffuseMapOffset);
+      // It fades as it slides back into the sea and is gone while it rests, so its next lace never jumps into place.
+      w.m.opacity = fade(k); w.m.update();
     }
   }
   animate(0);
@@ -160,6 +181,13 @@ export function buildSea(kit: GeoKit, water: GeoPoint[][], size: { width: number
     destroy() { meshes.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); [sea, wet, breakers, ...waves.map(w => w.m)].forEach(m => m.destroy()); },
   };
 }
+
+/**
+ * Sets a texture's offset so that it reads `uv × tiling + (u, v)`. PlayCanvas flips the offset in v
+ * (it samples `v × tiling + 1 − tiling − offset`), so written straight, every v scroll runs backwards:
+ * the white water rolled out to sea and the swash rushed away from the sand.
+ */
+function shift(offset: pc.Vec2, tiling: pc.Vec2, u: number, v: number) { offset.set(u, 1 - tiling.y - v); }
 
 const noise = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
 
@@ -257,14 +285,14 @@ function breakerFoam(ctx: CanvasRenderingContext2D, w: number, h: number) {
 }
 
 /**
- * The swash, from the sea (top rows) to the sand (bottom): a thin glassy sheet of water, a lace of
+ * The swash, from the sea (top rows) to the sand (bottom): a thin glassy sheet of water the wet sand shows through, a lace of
  * foam at its edge half-way down, and nothing beyond, so sliding it in v runs the wave up and back.
  */
 function swashSheet(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.clearRect(0, 0, w, h);
   const edge = h / 2;
   const sheet = ctx.createLinearGradient(0, 0, 0, edge);
-  sheet.addColorStop(0, 'rgba(214,240,238,.55)'); sheet.addColorStop(1, 'rgba(226,246,244,.35)');
+  sheet.addColorStop(0, 'rgba(200,232,230,.32)'); sheet.addColorStop(1, 'rgba(222,244,242,.2)');
   for (let i = 0; i < w; i += 2) {
     const reach = edge + Math.sin(i / w * Math.PI * 4 + 0.7) * 7 + Math.sin(i / w * Math.PI * 14) * 3 + (noise(i + 40) - 0.5) * 3;
     ctx.fillStyle = sheet; ctx.fillRect(i, 0, 2, reach);

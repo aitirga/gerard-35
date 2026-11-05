@@ -178,7 +178,7 @@ floor is a cool terrazzo, never manila, so Gerard's and Matemágico's yellows st
 | Sound | The photocopier, a phone nobody answers, a stamp thudding, a clock |
 | Only here | The finestreta seen from the visitors' side, with a queue that never moves |
 | Text | Catalan: *SECRETARIA · Horari d'atenció*, *REGISTRE D'ENTRADA*, *DIRECCIÓ* |
-| Wink | The office's stamp and No-ta's stamp are cousins |
+| Wink | The office's stamp (it was No-ta's cousin; with Noísta retired, the wink is _open_) |
 | Her pink | Her sticky notes on everything, her ink on the stamp pad |
 
 ### El salón del trono (proposal)
@@ -206,7 +206,7 @@ Status: kept from `docs/visual-style.md` § 4, with the balcony placed where the
 | --- | --- |
 | Matrix (dominant family and signature material not both taken) | Patio: court green + resin court (El Nucli is bottle green + felt, ΔE 25). Gym: mat blue + vinyl and pine. Secretaría: manila + steel cabinets (Sants street is ochre + shutters and render, ΔE 7: told apart by material, ground and light). Throne: indigo + velvet (La torre de Uri is violet-black + dark stone, ΔE 25). |
 | Neighbours (doors) | Entrance → patio ΔE 82, patio → gym 68, patio → secretaría 51, secretaría → throne 93, entrance → throne (the curtain's stair) 55: all four of colour, material, ground and light differ at every door. |
-| Gerard and Aitor on the floors | Every floor where they walk is mid-value and away from their colours: court green L* 48, linoleum 54, terrazzo 67. The closest pairs are Aitor's beige shirt on the terrazzo and Gerard's provisional pyjama blue on the linoleum (both ΔE 19; Aitor's dark trousers and Gerard's ánima looks carry them). The throne's walnut is dark on purpose and near Noísta's charcoal (ΔE 14): a pool of light follows them there. No floor is mustard, navy, crimson or orange. |
+| Gerard and Aitor on the floors | Every floor where they walk is mid-value and away from their colours: court green L* 48, linoleum 54, terrazzo 67. The closest pairs are Aitor's beige shirt on the terrazzo and Gerard's provisional pyjama blue on the linoleum (both ΔE 19; Aitor's dark trousers and Gerard's ánima looks carry them). The throne's walnut is dark on purpose and near charcoal (ΔE 14 from the retired Noísta's): a pool of light follows them there. No floor is mustard, navy, crimson or orange. |
 | Reserved colours | Pink only as her details and the entrance; violet only in eyes; the school's orange on doors (Papagato's orange is a light, never a surface near him). One glow per zone at most: the floodlight, the flickering tube, the desk lamp, the spotlight. |
 
 ## Layout

@@ -11,7 +11,8 @@ const QUARTER_TURN = new pc.Quat().setFromEulerAngles(0, 90, 0);
 
 interface Tree {
   pivot: pc.Entity; yaw: number; phase: number; sway: number;
-  crowns: pc.RenderComponent[]; solid: pc.Material[]; ghosts: pc.StandardMaterial[];
+  /** The crown's parts (drawn only while it fades) and the crown merged per material (drawn while solid). */
+  crowns: pc.RenderComponent[]; merged: pc.Entity[]; solid: pc.Material[]; ghosts: pc.StandardMaterial[];
   /** Crown as a vertical capsule in world space: bottom and top centres plus radius. */
   bottom: pc.Vec3; top: pc.Vec3; radius: number;
   opacity: number;
@@ -22,17 +23,102 @@ export type SignalLight = 'red' | 'amber' | 'green';
 /** A placed traffic light whose lamps traffic can switch: the cars' head and the walk signal below. */
 export interface Signal { holder: pc.Entity; show(vehicle: SignalLight, walk: 'red' | 'green'): void }
 
+/** The engine's unit shapes (the render component's own primitives), rebuilt here to merge parts. */
+const SHAPES: Record<string, () => pc.Geometry> = {
+  box: () => new pc.BoxGeometry(),
+  capsule: () => new pc.CapsuleGeometry({ radius: 0.5, height: 2 }),
+  cone: () => new pc.ConeGeometry({ baseRadius: 0.5, peakRadius: 0, height: 1 }),
+  cylinder: () => new pc.CylinderGeometry({ radius: 0.5, height: 1 }),
+  plane: () => new pc.PlaneGeometry({ halfExtents: new pc.Vec2(0.5, 0.5), widthSegments: 1, lengthSegments: 1 }),
+  sphere: () => new pc.SphereGeometry({ radius: 0.5 }),
+  torus: () => new pc.TorusGeometry({ tubeRadius: 0.2, ringRadius: 0.3 }),
+};
+const shapes = new Map<string, pc.Geometry>();
+const shape = (type: string) => shapes.get(type) ?? shapes.set(type, SHAPES[type]()).get(type)!;
+/** A merged mesh keeps texture coordinates only for materials that read a map. */
+const MAPS = ['diffuseMap', 'emissiveMap', 'opacityMap', 'aoMap', 'glossMap', 'specularMap', 'metalnessMap'] as const;
+const inverse = new pc.Mat4(), normalMatrix = new pc.Mat3(), point = new pc.Vec3();
+
+/**
+ * Draws opaque `parts` (fixed under `parent`, made with a render `type`) as one mesh per material in
+ * `parent`'s space: the same triangles and normals, lit and shadowed the same, in one draw call per
+ * material instead of one per part. The parts are destroyed, or with `keep` only disabled (a fading
+ * crown brings them back). See-through parts keep their own draw, so they still sort. With `cache`,
+ * identical groups share one mesh, kept until its owner lets it go; without, each mesh goes with the
+ * last entity that draws it. Returns the merges.
+ */
+export function mergeParts(device: pc.GraphicsDevice, parent: pc.Entity, parts: pc.Entity[], { keep = false, cache }: { keep?: boolean; cache?: Map<string, pc.Mesh> } = {}) {
+  inverse.copy(parent.getWorldTransform()).invert();
+  const groups = new Map<pc.Material, { part: pc.Entity; local: pc.Mat4 }[]>();
+  for (const part of parts) {
+    const material = part.render?.material;
+    if (!material || material.blendType !== pc.BLEND_NONE || !(part.render!.type in SHAPES)) continue;
+    const entry = { part, local: new pc.Mat4().mul2(inverse, part.getWorldTransform()) };
+    const group = groups.get(material);
+    if (group) group.push(entry); else groups.set(material, [entry]);
+  }
+  const out: pc.Entity[] = [];
+  for (const [material, group] of groups) {
+    const textured = MAPS.some(k => (material as pc.StandardMaterial)[k]);
+    const key = cache && `${textured}|${group.map(({ part, local }) => `${part.render!.type}:${Array.from(local.data, v => v.toFixed(5))}`).join('|')}`;
+    let mesh = key ? cache!.get(key) : undefined;
+    if (!mesh) {
+      let vertices = 0, length = 0;
+      for (const { part } of group) { const g = shape(part.render!.type); vertices += g.positions!.length / 3; length += g.indices!.length; }
+      const positions = new Float32Array(vertices * 3), normals = new Float32Array(vertices * 3), uvs = textured ? new Float32Array(vertices * 2) : undefined;
+      const indices = vertices > 0xffff ? new Uint32Array(length) : new Uint16Array(length);
+      let base = 0, at = 0;
+      for (const { part, local } of group) {
+        const g = shape(part.render!.type), p = g.positions!, n = g.normals!, ix = g.indices!, d = local.data;
+        normalMatrix.invertMat4(local).transpose();
+        // A mirrored part turns its triangles inside out: wind them the other way.
+        const flip = d[0] * (d[5] * d[10] - d[6] * d[9]) - d[4] * (d[1] * d[10] - d[2] * d[9]) + d[8] * (d[1] * d[6] - d[2] * d[5]) < 0;
+        for (let i = 0; i < p.length; i += 3) {
+          const o = base * 3 + i;
+          local.transformPoint(point.set(p[i], p[i + 1], p[i + 2]), point);
+          positions[o] = point.x; positions[o + 1] = point.y; positions[o + 2] = point.z;
+          normalMatrix.transformVector(point.set(n[i], n[i + 1], n[i + 2]), point).normalize();
+          normals[o] = point.x; normals[o + 1] = point.y; normals[o + 2] = point.z;
+        }
+        if (uvs) uvs.set(Array.from(g.uvs!), base * 2);
+        for (let i = 0; i < ix.length; i += 3) {
+          indices[at++] = base + ix[i]; indices[at++] = base + ix[flip ? i + 2 : i + 1]; indices[at++] = base + ix[flip ? i + 1 : i + 2];
+        }
+        base += p.length / 3;
+      }
+      mesh = new pc.Mesh(device);
+      mesh.setPositions(positions); mesh.setNormals(normals);
+      if (uvs) mesh.setUvs(0, uvs);
+      mesh.setIndices(indices); mesh.update();
+      if (key) { mesh.incRefCount(); cache!.set(key, mesh); }
+    }
+    const first = group[0].part.render!;
+    const e = new pc.Entity(`Piezas: ${material.name}`);
+    e.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, material)], castShadows: first.castShadows, receiveShadows: first.receiveShadows });
+    parent.addChild(e); out.push(e);
+    for (const { part } of group) if (keep) part.enabled = false; else part.destroy();
+  }
+  return out;
+}
+
 /**
  * Reusable props with their own materials. Any scene can `place` a WorldProp under its own
  * root; call `update` every frame for swaying and see-through crowns, `destroy` when done.
  * Collision is not handled here: it comes from PROP_FOOTPRINTS in environments.ts.
  */
-export function createPropKit() {
+export function createPropKit(device: pc.GraphicsDevice) {
   const materials: pc.StandardMaterial[] = [];
   const trees: Tree[] = [];
   let time = 0;
   /** While placing a prop that never moves, its parts join the scene's static batch. */
   let batchGroupId: number | undefined;
+  /** The parts of the prop being placed, and whether the next ones change at run time (never merged). */
+  const placed: pc.Entity[] = [];
+  let live = false;
+  /** Merged meshes by shape, kept for the kit's life: every car of a colour shares its body's. */
+  const merges = new Map<string, pc.Mesh>();
+  /** Opaque parts of a prop that never move, as one mesh per material (`mergeParts`), shared by every identical prop of the kit. */
+  function merge(parent: pc.Entity, parts: pc.Entity[], keep = false) { return mergeParts(device, parent, parts, { keep, cache: merges }); }
   function mat(name: string, hex: string, gloss = 0.2, glow = 0) {
     const m = new pc.StandardMaterial();
     m.name = name; m.diffuse.fromString(hex); m.gloss = gloss;
@@ -44,7 +130,9 @@ export function createPropKit() {
     e.addComponent('render', { type, material: m, castShadows: true, receiveShadows: true, ...(batchGroupId === undefined ? {} : { batchGroupId }) });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]);
     if (r) e.setLocalEulerAngles(r[0], r[1], r[2]);
-    parent.addChild(e); return e;
+    parent.addChild(e);
+    if (!live) placed.push(e);
+    return e;
   }
   // Deterministic per-anchor noise: the same tree looks the same after every reload.
   const noise = (x: number, z: number, i: number) => { const v = Math.sin(x * 127.1 + z * 311.7 + i * 74.7) * 43758.5453; return v - Math.floor(v); };
@@ -118,6 +206,9 @@ export function createPropKit() {
       part(holder, 'Tierra de maceta', 'cylinder', soil, [0, 0.45, 0], [0.5, 0.02, 0.5]);
       lift = 0.44;
     }
+    // The pit, pot and stakes stand still (in the static batch, if any); the rest sways.
+    const still = placed.slice(), batched = batchGroupId;
+    batchGroupId = undefined;
     // Trunk and crowns hang from a base pivot, so the whole tree leans in the breeze.
     const pivot = new pc.Entity('Árbol'), yaw = n(1) * 360;
     pivot.setLocalPosition(0, lift, 0); pivot.setLocalEulerAngles(0, yaw, 0); holder.addChild(pivot);
@@ -215,6 +306,13 @@ export function createPropKit() {
       [low, high, radius, sway] = [1.7 * s, 2.1 * s, 0.88 * s, 1];
     }
     const world = holder.getPosition();
+    // A tree draws in a few calls instead of one per part: the base and the trunk merged per
+    // material, and the crown too while it is solid (its parts come back while it fades, so they
+    // sort one by one as they always have).
+    if (batched === undefined) merge(holder, still);
+    merge(pivot, placed.filter(p => !still.includes(p) && !crowns.includes(p)));
+    const merged = merge(pivot, crowns, true);
+    batchGroupId = batched;
     // Swap materials on the render component: mesh instances only exist once the parent is in the scene.
     const meshes = crowns.map(c => c.render!);
     const solid = meshes.map(r => r.material);
@@ -224,7 +322,7 @@ export function createPropKit() {
     });
     const ghostOf = new Map(ghosts);
     trees.push({
-      pivot, yaw, phase: x * .7 + z * .31, sway, crowns: meshes, solid, ghosts: solid.map(m => ghostOf.get(m)!),
+      pivot, yaw, phase: x * .7 + z * .31, sway, crowns: meshes, merged, solid, ghosts: solid.map(m => ghostOf.get(m)!),
       bottom: new pc.Vec3(world.x, world.y + lift + low, world.z), top: new pc.Vec3(world.x, world.y + lift + high, world.z), radius,
       opacity: 1,
     });
@@ -499,10 +597,10 @@ export function createPropKit() {
     part(holder, 'Brazo del semáforo', 'cylinder', poleGrey, [0, 3.3, 0.85], [0.06, 1.1, 0.06], [90, 0, 0]);
     const head = (y: number, z: number, colours: SignalLight[]) => {
       part(holder, 'Caja del semáforo', 'box', yellow, [0, y, z], [0.2, 0.2 * colours.length + 0.06, 0.14]);
-      // The lamps stay out of the static batch so they can change.
-      const batched = batchGroupId; batchGroupId = undefined;
+      // The lamps stay out of the static batch (and any merge) so they can change.
+      const batched = batchGroupId; batchGroupId = undefined; live = true;
       const foci = colours.map((c, i) => part(holder, 'Foco', 'sphere', lamps[c][1], [0, y + (colours.length - 1) * 0.1 - i * 0.2, z + 0.07], [0.15, 0.15, 0.1]).render!);
-      batchGroupId = batched;
+      batchGroupId = batched; live = false;
       return (lit: SignalLight) => foci.forEach((r, i) => { r.material = lamps[colours[i]][colours[i] === lit ? 0 : 1]; });
     };
     const cars = head(2.95, 1.35, ['red', 'amber', 'green']), walk = head(1.55, 0.1, ['red', 'green']);
@@ -621,7 +719,9 @@ export function createPropKit() {
   function setOpacity(t: Tree, opacity: number) {
     t.opacity = opacity;
     const opaque = opacity >= 0.999;
-    t.crowns.forEach((r, i) => { r.material = opaque ? t.solid[i] : t.ghosts[i]; });
+    // Solid, the crown draws merged; fading, its own parts take over in their see-through materials.
+    t.merged.forEach(e => { e.enabled = opaque; });
+    t.crowns.forEach((r, i) => { r.entity.enabled = !opaque || !t.merged.length; r.material = opaque ? t.solid[i] : t.ghosts[i]; });
     if (!opaque) for (const g of new Set(t.ghosts)) { g.opacity = opacity; g.update(); }
   }
   const ray = new pc.Vec3();
@@ -643,13 +743,15 @@ export function createPropKit() {
     signals: signals as readonly Signal[],
     /**
      * Builds a prop under `parent` at a local position that sits on the anchor cell. With `batch`,
-     * props that never move (everything but trees) join that static batch group.
+     * what never moves (everything but the trees' swaying trunks and crowns) joins that static
+     * batch group. Without one, the prop is rigid (a parked or moving car, a cyclist) and draws as
+     * one mesh per material; trees merge their own parts.
      */
     place(prop: WorldProp, parent: pc.Entity, position: pc.Vec3, batch?: number) {
       const holder = new pc.Entity(`Prop: ${prop.kind}`);
       holder.setLocalPosition(position); parent.addChild(holder);
       if ('yaw' in prop && prop.yaw) holder.setLocalEulerAngles(0, prop.yaw, 0);
-      batchGroupId = prop.kind === 'tree' ? undefined : batch;
+      batchGroupId = batch; placed.length = 0;
       if (prop.kind === 'tree') tree(holder, prop.x, prop.z, prop.species ?? 'plane', prop.scale ?? 1, prop.base ?? 'pit', prop.stakes, prop.trunk);
       else if (prop.kind === 'car') {
         car(holder, prop.color);
@@ -675,6 +777,8 @@ export function createPropKit() {
       else if (prop.kind === 'grate') grate(holder);
       else manhole(holder);
       batchGroupId = undefined;
+      if (batch === undefined && prop.kind !== 'tree') merge(holder, placed);
+      placed.length = 0;
       return holder;
     },
     /** Sways trees and fades crowns that stand between `focus` and the camera direction. */
@@ -688,6 +792,10 @@ export function createPropKit() {
         setOpacity(t, Math.abs(next - target) < 0.01 ? target : next);
       }
     },
-    destroy() { materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); trees.length = 0; signals.length = 0; },
+    destroy() {
+      materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); trees.length = 0; signals.length = 0;
+      for (const mesh of merges.values()) { mesh.decRefCount(); if (mesh.refCount < 1) mesh.destroy(); }
+      merges.clear();
+    },
   };
 }

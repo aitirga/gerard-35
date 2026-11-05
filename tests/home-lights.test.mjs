@@ -84,8 +84,23 @@ test('hits flash in front of the player, timed to the contact', () => {
   assert.ok(!hitFlash(attack, state).lights.includes('mesa'), 'the heartbeat lamp is left alone');
   const bite = hitFlash({ kind: 'enemy', actor: foe, target: 'gerard', amount: 10 }, state);
   assert.equal(bite.color.hue, hex('#ff2a1a', 1).hue, 'red when the party is hit');
-  const no = { kind: 'skill', actor: 'gerard', target: foe, amount: 40, skill: 'nota' };
-  assert.equal(hitFlash(no, state).kind, 'pulse');
-  assert.equal(hitFlash(no, state, 'suave').kind, 'breathe', 'no strobe when the lights are soft');
-  assert.equal(impactSeconds({ kind: 'skill', actor: 'gerard', target: 'gerard', skill: 'cardioide' }), .2);
+  const fire = { kind: 'skill', actor: 'gerard', target: foe, amount: 12, skill: 'foc-binari', burn: { id: 'quemado', level: 1 } };
+  assert.equal(hitFlash(fire, state).kind, 'pulse');
+  assert.ok(hitFlash(fire, state).cycles > hitFlash({ ...fire, burn: undefined }, state).cycles, 'a fire that catches flickers longer');
+  assert.ok(hitFlash({ ...fire, burn: { id: 'quemado', level: 3 } }, state).cycles > hitFlash(fire, state).cycles, 'and longer the higher it burns');
+  assert.equal(hitFlash(fire, state, 'suave').kind, 'breathe', 'no strobe when the lights are soft');
+  assert.equal(impactSeconds({ kind: 'skill', actor: 'gerard', target: 'gerard', skill: 'escondite', boosted: ['gerard'] }), .2);
+});
+
+test('a dual flickers the whole room gold and orange as its banner settles', () => {
+  const state = createGuardBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard-adult' }], palaceGuards(0));
+  const foe = state.foes[0].id;
+  const dual = { kind: 'skill', actor: 'gerard', target: foe, amount: 60, dual: { id: 'zarpazos-de-fuego', name: 'Zarpazos de fuego', parts: ['foc-binari', 'zarpazos'], actors: ['gerard', 'aitor'], spent: {} } };
+  const flash = hitFlash(dual, state);
+  assert.equal(flash.kind, 'pulse');
+  assert.ok(flash.lights.includes('mesa') && flash.cycles >= 6, 'every bulb, through the choreography');
+  const { hue } = flash.color;
+  assert.ok(hue >= 25 && hue <= 50, `gold to orange, never violet or pink: ${hue}`);
+  assert.equal(hitFlash(dual, state, 'suave').kind, 'breathe', 'no strobe when the lights are soft');
+  assert.ok(impactSeconds(dual) > CONTACT_SECONDS, 'it waits for the banner');
 });

@@ -3,7 +3,7 @@
   "description": "Propuesta de cómo se ve cada estado del diseño de combate (docs/combat.md: quemado, mojado, congelado, envenenado, sangrado, cegado por el humo, paralizado) y los de la campaña (mareo, llorera), sobre un perro en un combate real, con el motor de partículas en la GPU (src/status-fx.ts): partículas que salen de sus propias piezas, un tinte y una forma de moverse. Después, cada reacción entre elementos. Grabado a doble resolución (--gpu --scale 2) con el reloj del juego a 30 fps.",
   "steps": [
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1"
+      "open": "/?story=matemagico&battle=3&allies=2"
     },
     {
       "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",
@@ -26,7 +26,7 @@
       "seconds": 4.5,
       "warmup": 0.5,
       "each": "if (frame === 45 || frame === 90) lab.put('quemado')",
-      "caption": "Quemado sube de nivel al recibir otro fuego mientras sigue activo: I (llamita), a los 1,5 s II (hoguera), a los 3 s III (incendio)"
+      "caption": "Quemado sube de nivel al recibir otro fuego mientras sigue activo: I (unas manchas), a los 1,5 s II (casi todo), a los 3 s III (envuelto entero)"
     },
     {
       "eval": "lab.clean(); lab.put('mojado', 2, 20); lab.frame(0.95)"

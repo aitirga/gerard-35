@@ -1,0 +1,127 @@
+{
+  "title": "Uri's tower: the haze over the top, its corridors and the fights in them",
+  "description": "La torre de Uri (docs/quests/nuria.md § The tower): five-cell corridors in three rings, the top lost in violet haze from below and clearer ring by ring (Uri waits up there all along); a fight that catches the party on the ramp has no room between those walls, so it goes to a pocket of the tower (src/arena.ts, src/pocket.ts; just screenshots fight-room shows the diffusion); and a pack of the fears' young, a random mix that hits hard.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=ring-1&solo=1"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.gerard.story.nuria.lent = false; window.gerard.game.refreshStory(); window.gerard.game.standAt({ x: 50, z: 30 })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "const v = window.gerard.game.app.root.findByName('La torre de Uri').findByName('Vertitrón').getPosition(); window.gerard.game.frame({ x: v.x, y: v.y + 5, z: v.z }, 16)"
+    },
+    {
+      "shot": "haze-ring-1",
+      "delay": 1500,
+      "caption": "From the first ring there is nothing to see up there: only the violet dark (the fears are kept away for these three shots)"
+    },
+    {
+      "eval": "window.gerard.game.frame(); window.gerard.game.standAt({ x: 44, z: 30 })"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "const v = window.gerard.game.app.root.findByName('La torre de Uri').findByName('Vertitrón').getPosition(); window.gerard.game.frame({ x: v.x, y: v.y + 5, z: v.z }, 16)"
+    },
+    {
+      "shot": "haze-ring-2",
+      "delay": 1500,
+      "caption": "From the second, a shadow: something very tall"
+    },
+    {
+      "eval": "window.gerard.game.frame(); window.gerard.game.standAt({ x: 38, z: 22 })"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "const v = window.gerard.game.app.root.findByName('La torre de Uri').findByName('Vertitrón').getPosition(); window.gerard.game.frame({ x: v.x, y: v.y + 5, z: v.z }, 16)"
+    },
+    {
+      "shot": "haze-ring-3",
+      "delay": 1500,
+      "caption": "From the third, Vertitrón itself, with Uri and Nil at the top of it"
+    },
+    {
+      "eval": "window.gerard.story.nuria.lent = true; window.gerard.game.frame(); window.gerard.game.standAt({ x: 52, z: 30 }); window.gerard.storyEvent({ type: 'near', id: 'fear-cebollon' })"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 60000
+    },
+    {
+      "shot": "cebollon-along-z",
+      "delay": 1500,
+      "caption": "El Cebollón caught them against the outer wall of a north–south corridor: the fight goes to a pocket of the tower"
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'won'",
+      "timeout": 30000
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 30, z: 2 }); window.gerard.storyEvent({ type: 'near', id: 'brood-1a' })"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 60000
+    },
+    {
+      "shot": "young-along-x",
+      "delay": 1500,
+      "caption": "A pack of cebollitas caught them in an east–west corridor: in a pocket too, two or three, each with a layer that makes you cry"
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'won'",
+      "timeout": 30000
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]')",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 51, z: 51 }); window.gerard.storyEvent({ type: 'near', id: 'brood-2b' })"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 60000
+    },
+    {
+      "shot": "young-corner",
+      "delay": 1500,
+      "caption": "Caught at a corner: a mix of the second ring's young in a pocket, each platito with its own dish"
+    }
+  ]
+}

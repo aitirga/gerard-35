@@ -8,11 +8,9 @@ import { resolveAmount, resolveDamage } from './combat/engine.ts';
 export interface Stats {
   /** Puntos de vida. */
   pv: number;
-  /** Secundaria: what skills spend. */
-  sec: number;
   /** Physical hits: Atacar and the dogs' pushes. */
   fuerza: number;
-  /** Magic hits and healing: No-ta, Cardioide. */
+  /** Magic hits and healing: Foc Binari. */
   magia: number;
   /** Takes away from physical hits. */
   defensa: number;
@@ -22,30 +20,39 @@ export interface Stats {
   velocidad: number;
 }
 export const STAT_LABELS: Record<keyof Stats, string> = {
-  pv: 'PV', sec: 'Secundaria', fuerza: 'Fuerza', magia: 'Magia', defensa: 'Defensa', espiritu: 'Espíritu', velocidad: 'Velocidad',
+  pv: 'PV', fuerza: 'Fuerza', magia: 'Magia', defensa: 'Defensa', espiritu: 'Espíritu', velocidad: 'Velocidad',
 };
 export const AVERAGE = 10;
-const base = (pv: number, sec: number, fuerza = AVERAGE, magia = AVERAGE, defensa = AVERAGE, espiritu = AVERAGE, velocidad = AVERAGE): Stats =>
-  ({ pv, sec, fuerza, magia, defensa, espiritu, velocidad });
+const base = (pv: number, fuerza = AVERAGE, magia = AVERAGE, defensa = AVERAGE, espiritu = AVERAGE, velocidad = AVERAGE): Stats =>
+  ({ pv, fuerza, magia, defensa, espiritu, velocidad });
 
 /**
  * Who a fighter is underneath any class. Gerard has two: the boy of chapter 1 and the man of 35.
  * `gerard35` thinks and talks his way through (Magia, Espíritu); Aitor is the solid one (PV, Fuerza, Defensa).
  */
 export const PROFILES = {
-  gerard: base(100, 30),
-  bernat: base(85, 24),
-  gerard35: base(120, 36, 11, 13, 10, 12, 11),
-  aitor: base(135, 30, 13, 10, 12, 11, 10),
-  dog: base(54, 0),
-  minion: base(40, 0),
+  gerard: base(100),
+  bernat: base(85),
+  gerard35: base(120, 11, 13, 10, 12, 11),
+  aitor: base(135, 13, 10, 12, 11, 10),
+  dog: base(54),
+  minion: base(40),
   /** The palace guards of chapter 2: the stats of a wall. Their PV and hit depend on the party's ánimas (battle.ts). */
-  guardian: base(220, 0, 14, 10, 14, 12, 8),
-  /** Uri's fears in his maze (docs/quests/nuria.md): the onion, the covered dish, the arcade ghost and El Vértigo. */
-  cebollon: base(150, 0, 12, 10, 11, 10, 8),
-  plato: base(130, 0, 12, 12, 10, 10, 9),
-  'game-over': base(120, 0, 13, 13, 9, 9, 12),
-  vertigo: base(260, 0, 13, 13, 12, 12, 9),
+  guardian: base(220, 14, 10, 14, 12, 8),
+  /** Uri's fears in his maze (docs/quests/nuria.md): the onion, the covered dish and Vertitrón. */
+  cebollon: base(150, 12, 10, 11, 10, 8),
+  /** La Cebolla: the same onion, between the little ones and El Cebollón (battle.ts ONIONS). */
+  cebolla: base(110, 12, 10, 10, 10, 8),
+  plato: base(260, 12, 12, 10, 10, 9),
+  /**
+   * Vertitrón and its eye (a part of it, an optional target: broken, no more Rayo; battle.ts VERTIGO).
+   */
+  vertigo: base(360, 13, 13, 12, 12, 9),
+  'vertigo-ojo': base(100, 10, 10, 9, 9, 1),
+  /** Their young, in twos and threes up the tower (docs/quests/nuria.md § The tower): little PV and quick. The cebollitas are the easy ones. */
+  cebollita: base(34, 11, 8, 9, 8, 11),
+  platito: base(68, 13, 12, 9, 9, 10),
+  fantasmita: base(54, 12, 13, 8, 9, 13),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;
 

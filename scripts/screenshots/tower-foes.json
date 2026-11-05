@@ -1,0 +1,247 @@
+{
+  "title": "Los miedos de la torre y sus habilidades",
+  "description": "docs/quests/nuria.md § Monsters, docs/combat.md § Habilidades de los miedos. Each foe of Uri's tower showing its ability in the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost): the escort of ring 3, La Cebolla y los suyos, over four rounds (Pelada and Capa nueva, Transparente, Carrerilla with its chip naming the target, «GAME OVER», Aplastón); a platito's Darle la vuelta in a ring-2 pack; El Plato's surprise dish and its ¡Puaj!. No ability is named when it is used (no card over the foe, nothing under its damage number): what it does shows in the scene. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22fisico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22escolta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.aim = id => document.querySelector('.battle-target[data-side=\"foes\"]' + (id ? '[data-target=\"' + id + '\"]' : '') + ':not(:disabled)')?.click();"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "escolta",
+      "delay": 1500,
+      "caption": "Ring 3's fear, La Cebolla y los suyos: La Cebolla with four layers, a fantasmita counting down and a cebollita (the fight tester: Gerard and Aitor, free maná, no PV lost)"
+    },
+    {
+      "eval": "cmd('attack')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "elige-enemigo",
+      "delay": 300,
+      "caption": "Several foes standing: the prompt says «Elige un enemigo.»"
+    },
+    {
+      "eval": "aim('cebollita-2')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "pelada",
+      "delay": 900,
+      "caption": "Aitor's blow took the cebollita's only layer: its plate says Pelada (its next turn it grows one back)"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "record": "ronda-1",
+      "seconds": 8,
+      "fps": 30,
+      "tiles": 16,
+      "warmup": 0.2,
+      "caption": "Round 1, the foes' turn: La Cebolla's Peso (everyone cries), the fantasmita's Atravesar («2…»), and Capa nueva: the cebollita wraps itself in a cream layer, with no name over it"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "record": "ronda-2",
+      "seconds": 8,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 2 && cmd('defend')",
+      "caption": "Round 2: on its last count the fantasmita goes Transparente (50 % alpha, scanlines): physical blows go through it"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "transparente",
+      "delay": 900,
+      "caption": "The fantasmita's plate chip: Transparente"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "record": "ronda-3-carrerilla",
+      "seconds": 9,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 2 && cmd('defend')",
+      "caption": "Round 3: La Cebolla takes its run-up, Carrerilla (it rolls back and wobbles, violet streaks at whom it looks), and the fantasmita's «GAME OVER» blast hits everyone"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "carrerilla",
+      "delay": 900,
+      "caption": "Its plate chip names who it will fall on: Carrerilla → name"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "record": "ronda-4-aplaston",
+      "seconds": 8,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 2 && cmd('defend')",
+      "caption": "Round 4: Aplastón on the one it looked at, a ground shockwave with chips (braced by Defender)"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22fisico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22crias-2%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.aim = id => document.querySelector('.battle-target[data-side=\"foes\"]' + (id ? '[data-target=\"' + id + '\"]' : '') + ':not(:disabled)')?.click();"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "crias-2",
+      "delay": 1500,
+      "caption": "A ring-2 pack: platitos (each with its dish for good) and cebollitas"
+    },
+    {
+      "eval": "ui.jumpTo('foes-low')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "record": "darle-la-vuelta",
+      "seconds": 8,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 2 && cmd('defend')",
+      "caption": "Hurt below half, a platito spends its turn on Darle la vuelta: the dish spins 360° and its tint swaps, and so does its weakness"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "vuelta",
+      "delay": 900,
+      "caption": "The platito's plate after turning: its new dish"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22fisico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22plato%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.aim = id => document.querySelector('.battle-target[data-side=\"foes\"]' + (id ? '[data-target=\"' + id + '\"]' : '') + ':not(:disabled)')?.click();"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "plato",
+      "delay": 1500,
+      "caption": "El Plato Misterioso, its dish under the cloche"
+    },
+    {
+      "eval": "ui.jumpTo('plato-sorpresa')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "plato-sorpresa",
+      "delay": 1500,
+      "caption": "Picker moment «Plato sorpresa»: the surprise dish (the cloche rattles); single blows land at half, a dual whole"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "record": "puaj",
+      "seconds": 7,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 2 && cmd('defend')",
+      "caption": "On the surprise dish its turn is ¡Puaj!: a grey-green splash on everyone, then it swaps dish"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "despues-puaj",
+      "delay": 900,
+      "caption": "After ¡Puaj!: the next dish"
+    }
+  ]
+}

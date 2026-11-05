@@ -1,0 +1,25 @@
+{
+  "title": "Vertitrón en la cima",
+  "description": "docs/quests/nuria.md § The tower and docs/combat.md § Dónde se planta un combate: the boss fight as it starts on top of Uri's tower, in the middle of the platform. A giant stands further back and the camera turns round towards the party's back, so Vertitrón is seen whole and nearly from the front, its eye in its chest and Uri with Nil on top, over Gerard's and Aitor's shoulders, the two apart on screen. Run with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=vertigo"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "until": "document.querySelector('#battle')?.dataset.phase === 'player' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 120000
+    },
+    {
+      "shot": "start",
+      "delay": 1200,
+      "caption": "The fight on top as it starts: Vertitrón further back, nearly facing the camera, Uri and Nil on its head; Gerard and Aitor from behind, apart"
+    }
+  ]
+}

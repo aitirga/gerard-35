@@ -76,7 +76,7 @@ stops, none in Ciutat Vella, and the Búnkers only see the sea as part of the mi
 **Gerard first.** The sand is light (L* 84) and low in saturation; Gerard's navy (L* 17) reads
 hard against it, his mustard by saturation. The greyscale check matters here more than anywhere:
 keep the sand pale rather than yellow. Reserved colours: the lifeguard band stays orange
-(`#ef7d32`, not Noísta's crimson), the volleyball nets white with a dark band (the L4 yellow is
+(`#ef7d32`), the volleyball nets white with a dark band (the L4 yellow is
 the totem's), parasols blue and white, nothing pink.
 
 Its look in `LOOKS` (`src/grading.ts`), a touch warmer and crisper than proposed once the sand

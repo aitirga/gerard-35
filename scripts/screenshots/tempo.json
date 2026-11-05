@@ -1,0 +1,73 @@
+{
+  "title": "Tempo del combate",
+  "description": "El ritmo del combate (src/battle-motion.ts, docs/graphics.md § Tempo and entry): la entrada, que arranca despacio y acelera; Foc Binari con sus dos chorros trenzados que llegan casi a la vez (tac-tac), el ¡Quemado! naranja, y la pausa para leerlo antes de que los perros se muevan; y la entrada a un bolsillo de la torre, con los paneles girando cada vez más deprisa. Ejecutar con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Afalse%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.gerard.battleUI.end()"
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]')",
+      "timeout": 20000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "record": "entry",
+      "seconds": 1.5,
+      "each": "window.frame === 0 && window.gerard.battleUI.open([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }], 2, { encounter: 'dogs', animas: ['matemagico', 'papagato'] })",
+      "caption": "La entrada: arranca despacio y acelera hasta que todo está en su sitio (1,05 s)"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"foc-binari\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "record": "foc-tempo",
+      "seconds": 4,
+      "each": "window.frame === 0 && document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click()",
+      "caption": "Foc Binari: los dos chorros trenzados, tac-tac, ¡Quemado! en naranja, y una pausa para verlo antes de que ataquen los perros"
+    },
+    {
+      "open": "/?mission=nuria&part=ring-1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "record": "pocket-entry",
+      "seconds": 1.6,
+      "each": "window.frame === 0 && window.gerard.game.startPalaceFight('cebollon')",
+      "caption": "Entrar en un bolsillo de la torre: los paneles de cristal giran cada vez más deprisa (0,85 s)"
+    }
+  ]
+}

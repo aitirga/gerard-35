@@ -1,0 +1,270 @@
+{
+  "title": "Quemado · arde él mismo",
+  "description": "Quemado rehecho (src/flames.ts, docs/graphics.md): el fuego prende en unos puntos del cuerpo de quien arde y se extiende por sus piezas, dejando carbón con vetas al rojo tras un frente brillante; de sus triángulos reales salen lenguas de fuego en 3D que se ven desde cualquier lado y que el cuerpo tapa como a cualquier cosa, y de su superficie saltan brasas, chispas, ceniza y humo. Nada sale del suelo. Los tres niveles en un perro, y luego cada clase de cuerpo del juego. Ejecutar con --gpu --scale 2.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const foes = () => g.fighterIds().filter(f => !f.party).map(f => f.id), party = () => g.fighterIds().filter(f => f.party).map(f => f.id); return { g, foes, party, frame(id, height, up = .42) { const at = g.fighterAt(id); g.frame({ x: at.x, y: at.y + height * up, z: at.z }, height); }, burn(id, level) { g.status(id, 'quemado', level, 60); }, out(id) { g.status(id, 'quemado', 0); } }; })()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "lab.burn(lab.foes()[0], 1); lab.frame(lab.foes()[0], 1.3)"
+    },
+    {
+      "record": "perro-1",
+      "seconds": 2.4,
+      "warmup": 2.5,
+      "caption": "Quemado I, unas manchas: prende en su cuerpo, se extiende por sus piezas dejando carbón con vetas al rojo y le salen lenguas de fuego en 3D, brasas, chispas, ceniza y humo"
+    },
+    {
+      "eval": "lab.burn(lab.foes()[0], 2); lab.frame(lab.foes()[0], 1.3)"
+    },
+    {
+      "record": "perro-2",
+      "seconds": 2.4,
+      "warmup": 2,
+      "caption": "Quemado II, casi todo: prende en su cuerpo, se extiende por sus piezas dejando carbón con vetas al rojo y le salen lenguas de fuego en 3D, brasas, chispas, ceniza y humo"
+    },
+    {
+      "eval": "lab.burn(lab.foes()[0], 3); lab.frame(lab.foes()[0], 1.3)"
+    },
+    {
+      "record": "perro-3",
+      "seconds": 2.4,
+      "warmup": 2,
+      "caption": "Quemado III, envuelto entero: prende en su cuerpo, se extiende por sus piezas dejando carbón con vetas al rojo y le salen lenguas de fuego en 3D, brasas, chispas, ceniza y humo"
+    },
+    {
+      "record": "se-apaga",
+      "seconds": 1.6,
+      "each": "frame === 4 && lab.out(lab.foes()[0])",
+      "caption": "Se apaga: las llamas bajan y la quemadura se va con ellas"
+    },
+    {
+      "eval": "lab.foes().forEach((id, n) => lab.burn(id, n + 1)); lab.g.frame(); document.querySelector('#battle').style.visibility = ''"
+    },
+    {
+      "shot": "camara-de-juego",
+      "delay": 3500,
+      "caption": "Con la cámara de juego y la interfaz: tres perros en Quemado I, II y III"
+    },
+    {
+      "eval": "lab.foes().forEach(id => lab.out(id)); document.querySelector('#battle').style.visibility = 'hidden'"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "lab.burn(lab.party()[0], 3); lab.frame(lab.party()[0], 1.5)"
+    },
+    {
+      "shot": "gerard",
+      "delay": 3200,
+      "caption": "Gerard, Quemado III"
+    },
+    {
+      "eval": "lab.out(lab.party()[0])"
+    },
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const foes = () => g.fighterIds().filter(f => !f.party).map(f => f.id), party = () => g.fighterIds().filter(f => f.party).map(f => f.id); return { g, foes, party, frame(id, height, up = .42) { const at = g.fighterAt(id); g.frame({ x: at.x, y: at.y + height * up, z: at.z }, height); }, burn(id, level) { g.status(id, 'quemado', level, 60); }, out(id) { g.status(id, 'quemado', 0); } }; })()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "lab.burn('vertigo', 1); lab.frame('vertigo', 4.2, .5)"
+    },
+    {
+      "shot": "vertitron-1",
+      "delay": 3500,
+      "caption": "Vertitrón, Quemado I, unas manchas: arde su propio cuerpo, sin nada en el suelo, y Uri, arriba, no se quema"
+    },
+    {
+      "eval": "lab.burn('vertigo', 3); lab.frame('vertigo', 4.2, .5)"
+    },
+    {
+      "shot": "vertitron-3",
+      "delay": 3500,
+      "caption": "Vertitrón, Quemado III, envuelto entero: arde su propio cuerpo, sin nada en el suelo, y Uri, arriba, no se quema"
+    },
+    {
+      "eval": "lab.out('vertigo')"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "lab.burn('ojo', 3); lab.frame('vertigo', 2.4, .75)"
+    },
+    {
+      "shot": "ojo",
+      "delay": 3200,
+      "caption": "El ojo de Vertitrón, Quemado III"
+    },
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22encounter%22%3A%22palace-guards%22%2C%22foes%22%3A2%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const foes = () => g.fighterIds().filter(f => !f.party).map(f => f.id), party = () => g.fighterIds().filter(f => f.party).map(f => f.id); return { g, foes, party, frame(id, height, up = .42) { const at = g.fighterAt(id); g.frame({ x: at.x, y: at.y + height * up, z: at.z }, height); }, burn(id, level) { g.status(id, 'quemado', level, 60); }, out(id) { g.status(id, 'quemado', 0); } }; })()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "console.log('FOES palace-guards', JSON.stringify(lab.foes())); lab.foes().slice(0, 2).forEach((id, i) => lab.burn(id, i ? 3 : 2)); lab.frame(lab.foes()[0], 2.4)"
+    },
+    {
+      "shot": "palace-guards",
+      "delay": 3200,
+      "caption": "Guardián de chicle: II y, si hay otro, III"
+    },
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22encounter%22%3A%22palace-minion%22%2C%22foes%22%3A1%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const foes = () => g.fighterIds().filter(f => !f.party).map(f => f.id), party = () => g.fighterIds().filter(f => f.party).map(f => f.id); return { g, foes, party, frame(id, height, up = .42) { const at = g.fighterAt(id); g.frame({ x: at.x, y: at.y + height * up, z: at.z }, height); }, burn(id, level) { g.status(id, 'quemado', level, 60); }, out(id) { g.status(id, 'quemado', 0); } }; })()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "console.log('FOES palace-minion', JSON.stringify(lab.foes())); lab.foes().slice(0, 2).forEach((id, i) => lab.burn(id, i ? 3 : 2)); lab.frame(lab.foes()[0], 1.8)"
+    },
+    {
+      "shot": "palace-minion",
+      "delay": 3200,
+      "caption": "Esbirro de chicle: II y, si hay otro, III"
+    },
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22encounter%22%3A%22cebolla%22%2C%22foes%22%3A1%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const foes = () => g.fighterIds().filter(f => !f.party).map(f => f.id), party = () => g.fighterIds().filter(f => f.party).map(f => f.id); return { g, foes, party, frame(id, height, up = .42) { const at = g.fighterAt(id); g.frame({ x: at.x, y: at.y + height * up, z: at.z }, height); }, burn(id, level) { g.status(id, 'quemado', level, 60); }, out(id) { g.status(id, 'quemado', 0); } }; })()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "console.log('FOES cebolla', JSON.stringify(lab.foes())); lab.foes().slice(0, 2).forEach((id, i) => lab.burn(id, i ? 3 : 2)); lab.frame(lab.foes()[0], 1.6)"
+    },
+    {
+      "shot": "cebolla",
+      "delay": 3200,
+      "caption": "Cebolla: II y, si hay otro, III"
+    },
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22encounter%22%3A%22plato%22%2C%22foes%22%3A1%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const foes = () => g.fighterIds().filter(f => !f.party).map(f => f.id), party = () => g.fighterIds().filter(f => f.party).map(f => f.id); return { g, foes, party, frame(id, height, up = .42) { const at = g.fighterAt(id); g.frame({ x: at.x, y: at.y + height * up, z: at.z }, height); }, burn(id, level) { g.status(id, 'quemado', level, 60); }, out(id) { g.status(id, 'quemado', 0); } }; })()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "console.log('FOES plato', JSON.stringify(lab.foes())); lab.foes().slice(0, 2).forEach((id, i) => lab.burn(id, i ? 3 : 2)); lab.frame(lab.foes()[0], 1.6)"
+    },
+    {
+      "shot": "plato",
+      "delay": 3200,
+      "caption": "Plato: II y, si hay otro, III"
+    },
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22encounter%22%3A%22escolta%22%2C%22foes%22%3A1%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const foes = () => g.fighterIds().filter(f => !f.party).map(f => f.id), party = () => g.fighterIds().filter(f => f.party).map(f => f.id); return { g, foes, party, frame(id, height, up = .42) { const at = g.fighterAt(id); g.frame({ x: at.x, y: at.y + height * up, z: at.z }, height); }, burn(id, level) { g.status(id, 'quemado', level, 60); }, out(id) { g.status(id, 'quemado', 0); } }; })()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "console.log('FOES escolta', JSON.stringify(lab.foes())); lab.foes().slice(0, 2).forEach((id, i) => lab.burn(id, i ? 3 : 2)); lab.frame(lab.foes()[0], 1.4)"
+    },
+    {
+      "shot": "escolta",
+      "delay": 3200,
+      "caption": "Escolta del miedo (fantasmitas, hechos de píxeles): II y, si hay otro, III"
+    },
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22encounter%22%3A%22crias-1%22%2C%22foes%22%3A2%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.lab = (() => { const g = window.gerard.game; document.querySelector('#battle').style.visibility = 'hidden'; const foes = () => g.fighterIds().filter(f => !f.party).map(f => f.id), party = () => g.fighterIds().filter(f => f.party).map(f => f.id); return { g, foes, party, frame(id, height, up = .42) { const at = g.fighterAt(id); g.frame({ x: at.x, y: at.y + height * up, z: at.z }, height); }, burn(id, level) { g.status(id, 'quemado', level, 60); }, out(id) { g.status(id, 'quemado', 0); } }; })()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "console.log('FOES crias-1', JSON.stringify(lab.foes())); lab.foes().slice(0, 2).forEach((id, i) => lab.burn(id, i ? 3 : 2)); lab.frame(lab.foes()[0], 1.2)"
+    },
+    {
+      "shot": "crias-1",
+      "delay": 3200,
+      "caption": "Crías del miedo: II y, si hay otro, III"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ControllerEdges, defaultProfile, idleController, readController, validProfile } from '../src/controller.ts';
+import { ControllerEdges, defaultProfile, idleController, isDpad, readController, validProfile } from '../src/controller.ts';
 const pad = (id = 'Xbox', mapping = 'standard') => ({ id, mapping, index: 0, connected: true, axes: [0, 0], buttons: Array.from({ length: 18 }, () => ({ pressed: false, value: 0 })) });
 test('Nintendo A confirms, B cancels, and plus opens the menu on both generations', () => {
   for (const id of ['Nintendo Switch Pro Controller', 'Nintendo Switch 2 Pro Controller', 'Joy-Con (R)', '057e-2009']) {
@@ -111,4 +111,43 @@ test('L and R turn the status screen pages on recognised pads only', () => {
   p.buttons[4].pressed = false; p.buttons[5].pressed = true;
   assert.deepEqual(edge.update(readController(p), 'journal:character', 3).events, ['next']);
   assert.equal(readController(p, defaultProfile(pad())).next, false);
+});
+
+test('in a fight the D-pad walks up and down and sets its left and right apart', () => {
+  const p = pad();
+  p.buttons[15].pressed = true;
+  assert.equal(readController(p).direction, 'right', 'elsewhere the D-pad walks every way');
+  assert.equal(readController(p).dpad, null);
+  const apart = readController(p, undefined, null, true);
+  assert.equal(apart.direction, null, 'apart its side does not walk');
+  assert.equal(apart.dpad, 'right');
+  p.axes = [.9, 0];
+  assert.equal(readController(p, undefined, null, true).direction, 'right', 'the stick does');
+  assert.deepEqual(readController(p, undefined, null, true).stick, { x: .9, y: 0 });
+  // A custom mapping binds one or the other, so nothing is set aside.
+  const custom = { ...defaultProfile(pad()) };
+  p.axes = [0, 0];
+  assert.equal(readController(p, custom, null, true).direction, 'right');
+  assert.equal(readController(p, custom, null, true).dpad, null);
+  p.buttons[15].pressed = false;
+  for (const [button, way] of [[12, 'up'], [13, 'down']]) {
+    p.buttons[button].pressed = true;
+    const walking = readController(p, undefined, null, true);
+    assert.equal(walking.direction, way, 'up and down walk the menus');
+    assert.equal(walking.dpad, null);
+    p.buttons[button].pressed = false;
+  }
+});
+
+test('a D-pad side apart is one event, with no repeat while held', () => {
+  const p = pad(), edge = new ControllerEdges();
+  edge.update(readController(p, undefined, null, true), 'battle', 0);
+  p.buttons[14].pressed = true;
+  const first = edge.update(readController(p, undefined, null, true), 'battle', 1).events;
+  assert.deepEqual(first, ['dpad-left']);
+  assert.ok(isDpad(first[0]) && !isDpad('left'));
+  for (const now of [400, 800, 1200]) assert.deepEqual(edge.update(readController(p, undefined, null, true), 'battle', now).events, []);
+  p.buttons[14].pressed = false; edge.update(readController(p, undefined, null, true), 'battle', 1300);
+  p.buttons[14].pressed = true;
+  assert.deepEqual(edge.update(readController(p, undefined, null, true), 'battle', 1400).events, ['dpad-left']);
 });

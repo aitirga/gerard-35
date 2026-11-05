@@ -1,0 +1,146 @@
+{
+  "title": "Cambio de ánima en combate",
+  "description": "Un solo gesto al cambiar de ánima: la tarjeta y las barras de comando salen hacia la derecha con un fade muy rápido mientras las nuevas entran desde la izquierda. Las animaciones se congelan y se llevan a cada instante, para ver el cambio fotograma a fotograma aunque el render sea lento.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "{ const start = document.startViewTransition.bind(document); window.swap = []; window.seek = at => window.swap.forEach(a => { a.currentTime = at; }); document.startViewTransition = update => { window.swap = []; const t = start(update); t.ready.then(() => { window.swap = document.getAnimations().filter(a => a.effect?.pseudoElement?.startsWith('::view-transition') || /^anima-(glow|burst|rays)/.test(a.animationName ?? '')); window.swap.forEach(a => a.pause()); }); return t; }; }"
+    },
+    {
+      "shot": "papagato",
+      "delay": 1800,
+      "caption": "Antes: Gerard con Papagato"
+    },
+    {
+      "eval": "document.querySelector('#battle .anima-chips [data-anima=\"matemagico\"]').click()"
+    },
+    {
+      "until": "window.swap.length > 0",
+      "timeout": 20000
+    },
+    {
+      "eval": "window.seek(30)"
+    },
+    {
+      "shot": "out-30ms",
+      "delay": 300,
+      "caption": "30 ms: las barras de Papagato ya se van hacia la derecha, desvaneciéndose",
+      "clip": [
+        0,
+        420,
+        800,
+        480
+      ]
+    },
+    {
+      "eval": "window.seek(70)"
+    },
+    {
+      "shot": "out-70ms",
+      "delay": 300,
+      "caption": "70 ms: las viejas casi no se ven y las de Matemágico asoman por la izquierda",
+      "clip": [
+        0,
+        420,
+        800,
+        480
+      ]
+    },
+    {
+      "eval": "window.seek(120)"
+    },
+    {
+      "shot": "in-120ms",
+      "delay": 300,
+      "caption": "120 ms: las viejas han desaparecido y las nuevas llegan",
+      "clip": [
+        0,
+        420,
+        800,
+        480
+      ]
+    },
+    {
+      "eval": "window.seek(200)"
+    },
+    {
+      "shot": "in-200ms",
+      "delay": 300,
+      "caption": "200 ms: las nuevas casi en su sitio",
+      "clip": [
+        0,
+        420,
+        800,
+        480
+      ]
+    },
+    {
+      "eval": "window.swap.forEach(a => a.finish())"
+    },
+    {
+      "shot": "matemagico",
+      "delay": 1800,
+      "caption": "Después: Gerard con Matemágico"
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "shot": "matemagico-skills",
+      "delay": 1200,
+      "caption": "Las habilidades de Matemágico abiertas"
+    },
+    {
+      "eval": "document.querySelector('#battle .anima-chips [data-anima=\"papagato\"]').click()"
+    },
+    {
+      "until": "window.swap.length > 0",
+      "timeout": 20000
+    },
+    {
+      "eval": "window.seek(50)"
+    },
+    {
+      "shot": "skills-out-50ms",
+      "delay": 300,
+      "caption": "Con las habilidades abiertas se va todo junto, 50 ms",
+      "clip": [
+        0,
+        420,
+        800,
+        480
+      ]
+    },
+    {
+      "eval": "window.seek(150)"
+    },
+    {
+      "shot": "skills-in-150ms",
+      "delay": 300,
+      "caption": "150 ms: llegan las barras y las habilidades de Papagato",
+      "clip": [
+        0,
+        420,
+        800,
+        480
+      ]
+    },
+    {
+      "eval": "window.swap.forEach(a => a.finish())"
+    },
+    {
+      "shot": "papagato-skills",
+      "delay": 1500,
+      "caption": "Las habilidades de Papagato, con el foco en la primera"
+    }
+  ]
+}

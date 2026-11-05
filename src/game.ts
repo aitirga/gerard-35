@@ -1,17 +1,18 @@
 import * as pc from 'playcanvas';
 import { FreeMovement, SCREEN_VECTORS, canWalk, facingToward, screenToGrid, type Cell, type Direction, type Stick } from './movement';
-import { ENVIRONMENTS, INTERACTION_REACH, type EnvironmentId, type Interaction } from './environments';
+import { ENVIRONMENTS, INTERACTION_REACH, propCells, type EnvironmentId, type Interaction } from './environments';
 import { BUBBALOO, buildScenery } from './scenery';
 import { type Dialogue } from './dialogue';
-import { createBattleScene } from './battle-scene';
+import { createBattleScene, type FightStage } from './battle-scene';
 import { type BattleEffect, type BattlePhase, type BattleState, type ClassId, type Encounter } from './battle';
+import { fightXp, participants } from './levels';
 import { createPalace, createPalaceApproach, footingOf, type PalaceApproach } from './palace';
-import { wearClass } from './classes';
 import { createQueenHands } from './queen-hands';
 import { STREET_END_AREA, WanderingPack } from './encounters';
 import { createMinion } from './minion';
 import { WalkAnimation, idlePose } from './walk-animation';
 import { createEffects, type FightFx } from './effects';
+import type { Disintegration } from './disintegrate';
 import type { ParticleBody } from './particles';
 import { createPost } from './post';
 import { createSilhouettes, occlusion } from './occlusion';
@@ -19,15 +20,27 @@ import { cameraOffset, createCameraOrbit, towardCamera } from './camera-orbit';
 import { lighting } from './lighting';
 import { createGroundContact } from './ground-contact';
 import { buildCharacter, type CharacterSpec } from './character-model';
-import type { Partner, Story, StoryEvent } from './story';
+import { onTrigger, type Partner, type Story, type StoryEvent } from './story';
 import type { ItemId } from './items';
 import { Follower, pathTo } from './follower';
 import { createCat, type Cat } from './cats';
+import type { BedId, BedLevel, SoundId } from './sfx';
 import { createWanderer, wander, type Wanderer } from './cat-wander';
+import { createGuide, updateGuide, type Guide } from './guide';
+import { POCKET, fightCamera, planPocket, stageFight } from './arena';
+import { createPocket, type Pocket } from './pocket';
 import { createFears } from './fears';
+import { mergeParts } from './props';
 import { buildTower, type Tower } from './tower-scene';
+import { ringOf } from './tower';
 import { createChaser, rest, updateChaser, type Chaser } from './chasers';
-import { FEAR_ENCOUNTERS } from './battle';
+import { BODIES, createCrowd } from './crowd';
+import { dueMark, streetProgress, streetTone } from './street-unease';
+import { buildPortal, type Portal } from './fear-portal';
+import { CALLE, PLACES_NURIA, SHIFT, STREET as NURIA_STREET, STREET_MARKS } from './friends/nuria';
+import { createStreetShift, toCalle } from './street-shift';
+import { BROOD_ENCOUNTERS, BROOD_RINGS, FEAR_ENCOUNTERS, type BroodEncounter } from './battle';
+import type { FearEncounter } from './friends/nuria';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
 import { PLACES_2 } from './chapter-2';
 import { createNewsTV, type NewsTV } from './news-tv';
@@ -59,11 +72,17 @@ export interface GameCallbacks {
   /** A fight starts; `withPartner` says whether the companion is there to fight too. */
   onEncounter: (withPartner: boolean, foes: number, options: { possessed: boolean; encounter: Encounter }) => void;
   /** A fight closed, however it ended. */
-  /** `worn`: the ánimas the party wore when the fight ended (they grow with each win, src/levels.ts). */
-  onBattleEnd: (phase: BattlePhase, encounter: Encounter, worn: ClassId[]) => void;
+  /** `worn`: the ánimas that took part in the fight, and `xp` what it was worth to each (src/levels.ts). */
+  onBattleEnd: (phase: BattlePhase, encounter: Encounter, worn: ClassId[], xp: number) => void;
+  /** The fight's picture has reached a moment that sounds (src/battle-sounds.ts), or something in the street does. */
+  onSound: (id: SoundId, options?: { delay?: number; volume?: number; pan?: number }) => void;
+  /** A sound that goes on while something is near (the bubble's hiss), every frame; none fades it out. */
+  onBed: (id: BedId, level?: BedLevel) => void;
   onBattleTargets: (targets: { id: string; x: number; y: number; visible: boolean }[]) => void;
   /** Where the companion's head is on screen, for speech bubbles; undefined when he is not shown. */
   onCompanionScreen: (at: { x: number; y: number } | undefined) => void;
+  /** A shout from afar (`shout`) and where the shouter's head is on screen, every frame; undefined once it is over. */
+  onShout: (shout: { text: string; x: number; y: number } | undefined) => void;
   onStep: (steps: number, cell: Cell) => void;
   onLocation: (id: EnvironmentId, cell: Cell) => void;
   onInteraction: (interaction: Interaction | undefined) => void;
@@ -131,7 +150,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   // ?stats shows the engine's frame, CPU and GPU timings (harmless in production).
   if (new URLSearchParams(location.search).has('stats')) new pc.MiniStats(app);
   app.maxDeltaTime = SHOW_STEP;
-  app.graphicsDevice.maxPixelRatio = Math.min(window.devicePixelRatio, 2);
+  // Up to 2 device pixels per CSS pixel (a Retina screen's); a machine's `.env.development.local`
+  // may draw fewer while developing (VITE_PIXEL_RATIO, docs/graphics.md).
+  app.graphicsDevice.maxPixelRatio = Math.min(window.devicePixelRatio, Number(import.meta.env.VITE_PIXEL_RATIO) || 2);
   app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
   // Box parts flush with each other would flicker as anything moves (src/flush-faces.ts).
@@ -151,6 +172,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   // Calm on purpose (swinging round made players dizzy): it only tilts up, slowly, once someone has
   // stood hidden a good moment; the window and the silhouettes show them meanwhile.
   const orbit = createCameraOrbit({ swing: false, hiddenDwell: 1.5, maxTilt: 18 });
+  orbit.reset(environment.view);
+  /** Which way "up" walks: straight away from the camera, unless the place says otherwise. */
+  const steerYaw = () => environment.view?.steer ?? orbit.pose.yaw;
   const vec = ({ x, y, z }: { x: number; y: number; z: number }) => new pc.Vec3(x, y, z);
   /** Metres ahead of Gerard, while he walks, that the camera also keeps in sight (about a third of a second). */
   const LOOK_AHEAD = 1.8;
@@ -165,8 +189,13 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   effects.onGlass(on => post.glass(on));
   effects.setScene(environment, scenery);
   // Each fighter is cloned from their street model; Bernat borrows Gerard's (recoloured) as before.
-  const battleScene = createBattleScene(app, player, id => id === 'aitor' ? mates.aitor.entity : player, (x, z) => scenery.groundHeight(x, z), effects);
+  /** The pocket a fight moved to, while it goes on there (src/pocket.ts, `setBattle`). */
+  let pocket: Pocket | undefined;
+  // In a pocket the floor is its own, flat; elsewhere the scene's.
+  const battleScene = createBattleScene(app, player, id => id === 'aitor' ? mates.aitor.entity : player, (x, z) => pocket?.contains(x, z) ? pocket.floorAt() : scenery.groundHeight(x, z), effects);
   battleScene.setPulse(post.pulse);
+  battleScene.setSpot(post.spotlight);
+  battleScene.setCue((id, options) => callbacks.onSound(id, options));
   const pack = new WanderingPack(ENVIRONMENTS.maresme.grid, Math.random, STREET_END_AREA);
   let battle: BattleState | undefined;
   let paused = false;
@@ -176,6 +205,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   let possessed = false;
   /** 0 is the scene's own light, 1 is La Reina Bubbaloo's; `toneTarget` fades in over a few seconds. */
   let tone = 0, toneTarget = 0;
+  /** The scene's own tone, before La calle que no acaba darkens it step by step (`uneasy`). */
+  let sceneTone = 0;
   /** Seconds until a possessed dog gives off its next mote. */
   let spores = 0, sporeDog = 0;
   const dayClear = new pc.Color(0.2, 0.26, 0.24), clear = new pc.Color();
@@ -225,30 +256,71 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   // Story cast: people standing in the house, loose items, and Bernat walking behind Gerard.
   const castRoot = new pc.Entity('Reparto');
   app.root.addChild(castRoot);
-  let npcs: { entity: pc.Entity; cell: Cell; body: pc.Entity; materials: pc.Material[] }[] = [];
+  /** `cat`: Haru or Yuki standing as a character (src/cats.ts), posed every frame. */
+  let npcs: { entity: pc.Entity; cell: Cell; body: pc.Entity; materials: pc.Material[]; cat?: Cat }[] = [];
   const violetEyes = new pc.StandardMaterial(); violetEyes.diffuse.fromString('#5a2a8a'); violetEyes.emissive.fromString('#b07aff'); violetEyes.emissiveIntensity = 1.4; violetEyes.update();
-  /** Haru and Yuki walking with the party while Nuria lends them (docs/quests/nuria.md). */
-  let catWalk: { haru: Cat; yuki: Cat; lead: Follower; back: Follower; environment: string } | undefined;
-  function walkCats(delta: number) {
-    const want = story.nuria.lent && !battle;
-    if (catWalk && (!want || catWalk.environment !== environment.id)) { catWalk.haru.destroy(); catWalk.yuki.destroy(); catWalk = undefined; }
-    if (!want) return;
+  /** Haru and Yuki walking with the party while Nuria lends them (docs/quests/nuria.md). In a fight the same two stand in it (battleScene.borrowCats). */
+  let catWalk: { haru: Cat; yuki: Cat; lead: Follower; back: Follower; environment: string; still: [number, number] } | undefined;
+  function dropCats() {
+    catWalk?.haru.destroy(); catWalk?.yuki.destroy(); catWalk = undefined;
+  }
+  function standCat(cat: Cat, follower: Follower) {
+    const at = scenery.toWorld(follower.position.x, follower.position.z);
+    cat.entity.setPosition(at.x, scenery.groundHeight(at.x, at.z), at.z);
+    cat.entity.setLocalEulerAngles(0, follower.facing, 0);
+  }
+  /** The two are here, near Gerard, if they are lent, and gone if not. */
+  function settleCats() {
+    if (!story.nuria.lent || catWalk?.environment !== environment.id) dropCats();
+    if (!story.nuria.lent) return;
     if (!catWalk) {
       const start = beside(movement.cell);
-      catWalk = { haru: createCat(app, 'haru'), yuki: createCat(app, 'yuki'), lead: new Follower(start), back: new Follower(start), environment: environment.id };
+      catWalk = { haru: createCat(app, 'haru'), yuki: createCat(app, 'yuki'), lead: new Follower(start), back: new Follower(beside(movement.cell, start)), environment: environment.id, still: [0, 0] };
       for (const cat of [catWalk.haru, catWalk.yuki]) { cat.entity.reparent(castRoot); cat.entity.setLocalScale(1.35, 1.35, 1.35); }
     }
     // A jump (a door, a teleport) leaves no trail to walk: the cats land beside Gerard.
-    if (Math.hypot(catWalk.lead.position.x - movement.position.x, catWalk.lead.position.z - movement.position.z) > 8) { const at = beside(movement.cell); catWalk.lead.reset(at); catWalk.back.reset(at); }
-    catWalk.lead.update(delta, movement.position, false, running());
+    if (Math.hypot(catWalk.lead.position.x - movement.position.x, catWalk.lead.position.z - movement.position.z) > 8) { const at = beside(movement.cell); catWalk.lead.reset(at); catWalk.back.reset(beside(movement.cell, at)); }
+  }
+  function walkCats(delta: number) {
+    settleCats();
+    if (!catWalk) return;
+    // They bring up the rear, behind Aitor when he is there: on Gerard's heels they hide behind the two of them.
+    const mate = mateHere(), rear = mate ? matePosition(mate) : movement.position;
+    catWalk.lead.update(delta, rear, false, running());
     catWalk.back.update(delta, catWalk.lead.position, false, running());
-    for (const [cat, follower, seed] of [[catWalk.haru, catWalk.lead, 0], [catWalk.yuki, catWalk.back, 2]] as const) {
-      const at = scenery.toWorld(follower.position.x, follower.position.z);
-      const hop = follower.walking && !reducedMotion.matches ? Math.abs(Math.sin(clock * 12 + seed)) * .05 : 0;
-      cat.entity.setPosition(at.x, scenery.groundHeight(at.x, at.z) + hop, at.z);
-      cat.entity.setLocalEulerAngles(0, follower.facing, 0);
-      cat.tail.setLocalEulerAngles(0, Math.sin(clock * 2 + seed) * 25, 0);
+    // While Haru goes on ahead to show the way (leadCat), only Yuki walks with them.
+    const ahead = guiding?.cat;
+    catWalk.haru.entity.enabled = !ahead;
+    for (const [cat, follower, i] of [[catWalk.haru, catWalk.lead, 0], [catWalk.yuki, catWalk.back, 1]] as const) {
+      if (cat === catWalk.haru && ahead) continue;
+      standCat(cat, follower);
+      // Their legs follow their own speed (src/cat-gait.ts); left waiting a moment, they sit.
+      catWalk.still[i] = follower.walking || nudged(follower) ? 0 : catWalk.still[i] + delta;
+      cat.animate(delta, { animate: !reducedMotion.matches, sit: catWalk.still[i] > 1.4 ? 1 : 0 });
     }
+  }
+  /**
+   * Haru leading the way (story.guide, src/guide.ts): from Cardedeu station to Nuria's door, then,
+   * lent, up the street to where Uri ran. She walks ahead, stops and looks back when the party falls
+   * behind, and tells the story when she is there.
+   */
+  let guiding: { cat: Cat; walk: Guide; environment: string; arrive: string } | undefined;
+  function leadCat(delta: number) {
+    const want = battle ? undefined : story.guide(environment.id);
+    if (guiding && (!want || guiding.environment !== environment.id || guiding.arrive !== want.arrive)) { guiding.cat.destroy(); guiding = undefined; }
+    if (!want) return;
+    if (!guiding) {
+      const cat = createCat(app, want.id); cat.entity.reparent(castRoot); cat.entity.setLocalScale(1.35, 1.35, 1.35);
+      guiding = { cat, walk: createGuide(environment.grid, want.from, want.to), environment: environment.id, arrive: want.arrive };
+    }
+    const { cat, walk } = guiding;
+    const arrived = updateGuide(walk, delta, movement.position);
+    const at = scenery.toWorld(walk.position.x, walk.position.z);
+    cat.entity.setPosition(at.x, scenery.groundHeight(at.x, at.z), at.z);
+    cat.entity.setLocalEulerAngles(0, walk.facing, 0);
+    // Waiting, she watches the party, ears up, the tip of her tail flicking: come on.
+    cat.animate(delta, { animate: !reducedMotion.matches, alert: walk.waiting ? 1 : 0 });
+    if (arrived) callbacks.onStory({ type: 'near', id: guiding.arrive });
   }
   /** Haru and Yuki at home in the Meridiana flat once Nuria's mission is won, strolling and sitting. */
   let homeCats: { cat: Cat; walk: Wanderer }[] = [];
@@ -269,19 +341,19 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const other = homeCats[1 - i]?.walk.position;
       wander(walk, delta, environment.grid, Math.random, [movement.cell, ...(other ? [{ x: Math.round(other.x), z: Math.round(other.z) }] : [])]);
       const at = scenery.toWorld(walk.position.x, walk.position.z);
-      const hop = walk.walking && !reducedMotion.matches ? Math.abs(Math.sin(clock * 9 + i * 2)) * .03 : 0;
-      cat.entity.setPosition(at.x, scenery.groundHeight(at.x, at.z) + hop, at.z);
+      cat.entity.setPosition(at.x, scenery.groundHeight(at.x, at.z), at.z);
       cat.entity.setLocalEulerAngles(0, walk.facing, 0);
-      cat.tail.setLocalEulerAngles(0, Math.sin(clock * (walk.walking ? 2 : .8) + i * 2) * 25, 0);
+      // A stroll, then a sit until the next one.
+      cat.animate(delta, { animate: !reducedMotion.matches, sit: walk.walking || walk.path.length ? 0 : 1 });
     }
   }
   /**
    * The lights of the people Gerard helped (docs/quests/nuria.md § The lights): one person at a
    * time, their body gives a quick white flash, a small light rises out of their chest, hangs for
-   * a breath, then arcs with a short trail into Gerard or Aitor, who flash as it goes in. A baby's
-   * light (Nil, in Uri's arms) splits in two and goes into both.
+   * a breath, then arcs with a short trail into Gerard or Aitor in turn, who flash as it goes in.
+   * `entered` runs as each one goes in (the ánima counter counts it then).
    */
-  async function releaseLights(people: string[]) {
+  async function releaseLights(people: string[], entered?: () => void) {
     cutscene = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined);
     const glow = new pc.StandardMaterial(); glow.diffuse.set(1, 1, 1); glow.emissive.fromString('#fff3c4'); glow.emissiveIntensity = 2.4; glow.update();
     const chest = (entity: pc.Entity, y = 1.25) => entity.getPosition().clone().add(new pc.Vec3(0, y, 0));
@@ -289,84 +361,189 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const standard = m as pc.StandardMaterial;
       standard.emissive.set(strength, strength * .95, strength * .8); standard.emissiveIntensity = 1; standard.update();
     });
-    const frame = () => new Promise<number>(resolve => requestAnimationFrame(resolve));
+    // On the app's clock, so a slowed `app.timeScale` slows it too (the screenshot scenario).
+    const tick = () => new Promise<number>(resolve => app.once('update', resolve));
     const mate = mateHere();
     const receivers = [{ entity: player, materials: rig.materials }, ...(mate?.entity.enabled ? [{ entity: mate.entity, materials: mate.rig.materials }] : [])];
     for (const [i, person] of people.entries()) {
-      const source = npcs.find(n => n.entity.name === (person === 'nil' ? 'uri' : person));
-      const from = source ? chest(source.entity, person === 'nil' ? .95 : 1.25) : chest(player);
-      if (person === 'nil' && source) from.add(source.entity.forward.clone().mulScalar(-.3));
-      const to = person === 'nil' ? receivers : [receivers[i % receivers.length]];
-      const orbs = to.map(() => {
-        const orb = new pc.Entity('Luz'); orb.addComponent('render', { type: 'sphere', material: glow, castShadows: false });
-        orb.setLocalScale(.18, .18, .18); castRoot.addChild(orb); orb.setPosition(from); return orb;
-      });
+      const source = npcs.find(n => n.entity.name === person);
+      const from = source ? chest(source.entity) : chest(player);
+      const to = receivers[i % receivers.length];
+      const orb = new pc.Entity('Luz'); orb.addComponent('render', { type: 'sphere', material: glow, castShadows: false });
+      orb.setLocalScale(.18, .18, .18); castRoot.addChild(orb); orb.setPosition(from);
       effects.emit('poof', new pc.Vec3(from.x, scenery.groundHeight(from.x, from.z) + .1, from.z), 10, .4);
       effects.emit('spark', from, 12, .3);
-      const start = performance.now(), length = reducedMotion.matches ? 200 : 1700;
-      for (let t = 0; t < 1; t = Math.min(1, (performance.now() - start) / length)) {
-        const k = t * length / 1000;
+      const length = reducedMotion.matches ? .2 : 1.7;
+      for (let k = 0; k < length; k += await tick()) {
         // The body's mini flash, fading over the first half second.
         if (source) pulse(source.materials, Math.max(0, .9 - k * 1.8));
-        orbs.forEach((orb, j) => {
-          const target = chest(to[j].entity);
-          const rise = Math.min(1, k / .35), fly = Math.max(0, Math.min(1, (k - .6) / 1.0));
-          const lifted = from.clone().add(new pc.Vec3(0, .55 * rise, 0));
-          const eased = fly * fly * (3 - 2 * fly);
-          const at = new pc.Vec3().lerp(lifted, target, eased);
-          at.y += Math.sin(eased * Math.PI) * 1.1;
-          const breathe = 1 + Math.sin(k * 14) * .12;
-          orb.setPosition(at); orb.setLocalScale(.18 * breathe, .18 * breathe, .18 * breathe);
-          if (fly > 0 && fly < 1 && Math.random() < .5) effects.emit('spark', at.clone(), 1, .12);
-        });
-        await frame();
+        const target = chest(to.entity);
+        const rise = Math.min(1, k / .35), fly = Math.max(0, Math.min(1, (k - .6) / 1.0));
+        const lifted = from.clone().add(new pc.Vec3(0, .55 * rise, 0));
+        const eased = fly * fly * (3 - 2 * fly);
+        const at = new pc.Vec3().lerp(lifted, target, eased);
+        at.y += Math.sin(eased * Math.PI) * 1.1;
+        const breathe = 1 + Math.sin(k * 14) * .12;
+        orb.setPosition(at); orb.setLocalScale(.18 * breathe, .18 * breathe, .18 * breathe);
+        if (fly > 0 && fly < 1 && Math.random() < .5) effects.emit('spark', at.clone(), 1, .12);
       }
       if (source) pulse(source.materials, 0);
-      orbs.forEach((orb, j) => {
-        effects.emit('spark', chest(to[j].entity), 18, .35);
-        orb.destroy();
-      });
+      effects.emit('spark', chest(to.entity), 18, .35);
+      orb.destroy();
       // Whoever it goes into flashes as it enters.
-      for (const r of to) pulse(r.materials, .8);
-      for (let f = 0; f < 20; f++) { for (const r of to) pulse(r.materials, .8 * (1 - f / 20)); await frame(); }
-      for (const r of to) pulse(r.materials, 0);
+      entered?.();
+      const flash = .33;
+      for (let k = 0; k < flash; k += await tick()) pulse(to.materials, .8 * (1 - k / flash));
+      pulse(to.materials, 0);
     }
     glow.destroy();
     settling = 'pending';
     cutscene = false; lastPrompt = ''; updatePrompt();
   }
   /**
-   * La torre de Uri (src/tower.ts): its ramp and walls, El Vértigo towering on the platform with
-   * Uri and Nil at the top of it, and Uri's fears hunting the ramp (src/chasers.ts).
+   * La torre de Uri (src/tower.ts): its ramp and walls, Vertitrón standing on the platform with
+   * Uri and Nil on its head, and Uri's fears hunting the ramp (src/chasers.ts).
    */
   let tower: Tower | undefined;
   let summit: pc.Entity | undefined;
-  let hunters: { chaser: Chaser; model: pc.Entity; id: string }[] = [];
+  /** Vertitrón's own materials, and the violet shadow it shows as from lower down the tower. */
+  let summitMeshes: [pc.MeshInstance, pc.Material][] = [];
+  /**
+   * Vertitrón beaten: back on the top of the tower it drops to its knees where it stands, its eye goes
+   * dark, and Uri comes down to the platform with Nil, himself again (`t`: seconds since the top showed).
+   */
+  let summitKneel: { t: number; uri?: { node: pc.Entity; from: pc.Vec3; to: pc.Vec3 } } | undefined;
+  /** Its eye put out, once it is beaten. */
+  const summitDark = new pc.StandardMaterial(); summitDark.diffuse.fromString('#1a1020'); summitDark.gloss = .5; summitDark.useMetalness = false; summitDark.update();
+  function darkenSummit(model: pc.Entity) {
+    fears.eye(model, true);
+    for (const name of ['Globo del ojo', 'Iris del ojo']) (model.findByName(name) as pc.Entity | null)?.render?.meshInstances.forEach(m => { m.material = summitDark; });
+  }
+  /**
+   * Every frame, talk or not: what was beaten comes apart once the place shows again, not under the
+   * fight's glass (the fears on the ramp); Vertitrón on the top kneels.
+   */
+  function partBeaten(dt: number) {
+    for (const p of parting) if (!p.run && !battle && !diffusing) { p.model.enabled = true; p.run = effects.disintegrate(p.model, { delay: .35 }); }
+    parting = parting.filter(p => !p.run?.finished || (p.model.destroy(), false));
+    if (summit && summitKneel) kneelSummit(dt);
+  }
+  function kneelSummit(dt: number) {
+    const kneel = summitKneel!, model = summit!;
+    // Not under the fight's glass: only once the top shows again.
+    if (battle || diffusing || !tower) { model.enabled = false; return; }
+    if (!model.enabled) { model.enabled = true; for (const [mesh, own] of summitMeshes) mesh.material = own; darkenSummit(model); }
+    kneel.t += dt;
+    const k = reducedMotion.matches ? 1 : smooth((kneel.t - .35) / .9);
+    fears.pose(model, { kneel: k, time: clock });
+    const held = model.findByName('Uri arriba') as pc.Entity | null;
+    if (held && !kneel.uri && (k >= 1 || reducedMotion.matches)) {
+      const from = held.getPosition().clone(), turn = held.getRotation().clone(), size = held.getScale().clone();
+      held.reparent(tower.root); held.setPosition(from); held.setRotation(turn); held.setLocalScale(size);
+      fears.uriEyes(held, true);
+      const to = model.getPosition().clone().add(new pc.Vec3(1.9, 0, 1.7));
+      to.y = tower.summit.y;
+      kneel.uri = { node: held, from, to };
+    }
+    if (kneel.uri) {
+      const { node, from, to } = kneel.uri, u = reducedMotion.matches ? 1 : smooth((kneel.t - 1.4) / 1.1);
+      node.setPosition(from.x + (to.x - from.x) * u, from.y + (to.y - from.y) * u + Math.sin(u * Math.PI) * 1.2, from.z + (to.z - from.z) * u);
+    }
+  }
+  const summitShade = new pc.StandardMaterial(); summitShade.diffuse.fromString('#120818'); summitShade.emissive.fromString('#3a1a56'); summitShade.emissiveIntensity = .6;
+  summitShade.blendType = pc.BLEND_NORMAL; summitShade.depthWrite = false; summitShade.useMetalness = false; summitShade.update();
+  /** `away`: seconds until a pack of young beaten comes back (story FEARS `respawn`). */
+  let hunters: { chaser: Chaser; model: pc.Entity; id: string; respawn: boolean; away: number }[] = [];
+  /** The hunter whose fight is on, so a pack of young beaten can go away for a while. */
+  let fightingHunter: string | undefined;
+  /**
+   * Fears beaten on the ramp come apart where they stood (src/disintegrate.ts) once the party is back
+   * from the fight to see it: a copy of each, so a pack of young can go away and come back whole.
+   */
+  let parting: { model: pc.Entity; run?: Disintegration }[] = [];
+  function partFrom(model: pc.Entity) {
+    const ghost = model.clone(); ghost.enabled = false; castRoot.addChild(ghost);
+    parting.push({ model: ghost });
+  }
+  /** How long a pack of young stays away once beaten, and how far from Gerard it comes back. */
+  const RESPAWN = 40, RESPAWN_CLEAR = 10;
   function dressScene() {
-    tower?.destroy(); tower = undefined; summit?.destroy(); summit = undefined;
+    tower?.destroy(); tower = undefined; summit?.destroy(); summit = undefined; summitKneel = undefined;
+    portal?.destroy(); portal = undefined; streetSaid.clear(); streetLine = undefined;
+    if (environment.id === CALLE) {
+      const at = scenery.toWorld(PLACES_NURIA.portal.cell.x, PLACES_NURIA.portal.cell.z - 1.5);
+      portal = buildPortal(app, new pc.Vec3(at.x, scenery.groundHeight(at.x, at.z), at.z));
+    }
     hunters.forEach(h => h.model.destroy()); hunters = [];
+    parting.forEach(p => p.model.destroy()); parting = [];
     if (environment.id !== 'cardedeu-laberinto') return;
     tower = buildTower(app, environment.grid, scenery);
-    summit = fears.templates.get('vertigo')!.clone(); summit.enabled = !story.has('nuria-uri');
+    summit = fears.templates.get('vertigo')!.clone(); summit.enabled = true;
+    summitMeshes = (summit.findComponents('render') as pc.RenderComponent[]).flatMap(r => r.meshInstances.map(mesh => [mesh, mesh.material] as [pc.MeshInstance, pc.Material]));
     tower.root.addChild(summit); summit.setPosition(tower.summit); summit.setLocalEulerAngles(0, 0, 0);
+    // Beaten before: it kneels there for good, its eye dark, and Uri has gone home with Nil.
+    if (story.has('nuria-uri')) {
+      fears.pose(summit, { kneel: 1 }); darkenSummit(summit);
+      (summit.findByName('Uri arriba') as pc.Entity | null)?.destroy();
+      summitMeshes = (summit.findComponents('render') as pc.RenderComponent[]).flatMap(r => r.meshInstances.map(mesh => [mesh, mesh.material] as [pc.MeshInstance, pc.Material]));
+    }
   }
-  function huntFears(delta: number, dt: number) {
+  /** A fear as it hunts the ramp; their young go in a little pack of the ring's own fear, small. */
+  function huntingModel(encounter: FearEncounter) {
+    if (!(BROOD_ENCOUNTERS as readonly string[]).includes(encounter)) {
+      // On the ramp too an onion looks the size it fights at; the others keep to the corridor's size.
+      // Ring 3's fear hunts as La Cebolla it brings along (La Cebolla y los suyos).
+      const kind = encounter === 'escolta' ? 'cebolla' : encounter as Exclude<FearEncounter, BroodEncounter | 'uri-vertigo' | 'escolta'>;
+      const size = kind === 'cebollon' ? 1.5 : kind === 'cebolla' ? 1.1 : .85;
+      const model = fears.templates.get(kind)!.clone(); model.enabled = true; model.setLocalScale(size, size, size);
+      return model;
+    }
+    const pack = new pc.Entity('Crías'), kind = BROOD_RINGS[encounter as BroodEncounter][0];
+    const parent = kind === 'cebollita' ? 'cebollon' : kind === 'platito' ? 'plato' : 'fantasmita';
+    for (const [x, z] of [[-.45, .2], [.45, .2], [0, -.45]]) {
+      const one = fears.templates.get(parent)!.clone(); one.enabled = true; one.setLocalScale(.42, .42, .42); one.setLocalPosition(x, 0, z);
+      pack.addChild(one);
+    }
+    return pack;
+  }
+  /**
+   * A fear on the ramp only ever moves as a whole, so its pieces draw as one mesh per material: a
+   * pack of young is otherwise hundreds of little boxes, each drawn and shadowed on its own, and a
+   * few packs in view were most of the tower's draw calls. Hidden pieces stay as they are, so it
+   * runs once the model is in the scene (`enabled` counts its parents).
+   */
+  function mergeHunter(model: pc.Entity) {
+    const shown = (node: pc.GraphNode) => { for (let n: pc.GraphNode | null = node; n && n !== model; n = n.parent) if (n instanceof pc.Entity && !n.enabled) return false; return true; };
+    mergeParts(app.graphicsDevice, model, model.find(n => n !== model && n instanceof pc.Entity && !!n.render?.enabled && shown(n)) as pc.Entity[]);
+    return model;
+  }
+  function huntFears(dt: number) {
     const wanted = story.fears(environment.id);
-    hunters = hunters.filter(h => { const keep = wanted.some(f => f.id === h.id); if (!keep) { effects.emit('poof', h.model.getPosition().clone(), 14, .4); h.model.destroy(); } return keep; });
+    hunters = hunters.filter(h => { const keep = wanted.some(f => f.id === h.id); if (!keep) { partFrom(h.model); h.model.destroy(); } return keep; });
     for (const spec of wanted) if (!hunters.some(h => h.id === spec.id)) {
-      const kind = spec.encounter === 'game-over' ? 'game-over' : spec.encounter;
-      const model = fears.templates.get(kind)!.clone(); model.enabled = true; model.setLocalScale(.85, .85, .85);
-      castRoot.addChild(model);
-      hunters.push({ id: spec.id, model, chaser: createChaser({ id: spec.id, patrol: spec.patrol, sight: spec.sight, walk: spec.walk, run: spec.run }) });
+      const model = huntingModel(spec.encounter);
+      castRoot.addChild(model); mergeHunter(model);
+      hunters.push({ id: spec.id, model, respawn: !!spec.respawn, away: 0, chaser: createChaser({ id: spec.id, patrol: spec.patrol, sight: spec.sight, walk: spec.walk, run: spec.run }) });
     }
     let chased = false;
     for (const h of hunters) {
+      if (h.away > 0) {
+        h.model.enabled = false;
+        if (!battle && !cutscene && !paused) h.away -= dt;
+        if (h.away > 0) continue;
+        // Back on its round, never in sight of the party: out of the way, it waits a little longer.
+        const start = h.chaser.spec.patrol[0];
+        if (Math.hypot(start.x - movement.position.x, start.z - movement.position.z) < RESPAWN_CLEAR) { h.away = 2; continue; }
+        h.chaser = createChaser(h.chaser.spec);
+        const at = scenery.toWorld(start.x, start.z);
+        effects.emit('poof', new pc.Vec3(at.x, scenery.groundHeight(at.x, at.z) + .5, at.z), 14, .4);
+      }
       if (!battle && !cutscene && !paused) {
         // In small steps, so a slow frame never carries a fear through a wall.
         let event: ReturnType<typeof updateChaser>;
         for (let left = Math.min(dt, .5); left > 0 && !event; left -= .05) event = updateChaser(h.chaser, Math.min(.05, left), movement.position, environment.grid);
         if (event === 'spotted') { effects.emit('spark', h.model.getPosition().clone().add(new pc.Vec3(0, 2, 0)), 16, .35); }
-        if (event === 'caught') { rest(h.chaser); clearInput(); movement.walking = false; callbacks.onStory({ type: 'near', id: h.id }); }
+        if (event === 'caught') { rest(h.chaser); fightingHunter = h.id; clearInput(); movement.walking = false; callbacks.onStory({ type: 'near', id: h.id }); }
       }
       chased ||= h.chaser.mode === 'chase';
       h.model.enabled = !battle;
@@ -377,11 +554,108 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     document.getElementById('hud')?.toggleAttribute('data-chased', chased && !battle);
     document.getElementById('hud')?.toggleAttribute('data-tower', environment.id === 'cardedeu-laberinto');
-    if (summit) { summit.enabled = !story.has('nuria-uri') && !battle; fears.spin(summit, delta, false); }
+    if (summit && !summitKneel) {
+      summit.enabled = !battle;
+      // Its eye darts about up there too: a new look a few times a second, held still in between.
+      const look = Math.floor(clock * 1.7), rnd = (n: number) => { const x = Math.sin(n * 127.1) * 43758.5453; return x - Math.floor(x); };
+      if (!story.has('nuria-uri')) fears.pose(summit, { time: clock, spin: clock * 50 % 360, gaze: [(rnd(look) - .5) * 36, (rnd(look + 7) - .5) * 50, Math.sin(clock * 7) * 4] });
+    }
     tower?.follow(player.getPosition());
+    // From the foot of the tower the top is lost in the violet dark: nothing up there. From the second
+    // ring Vertitrón shows as a shadow, clearer as they climb, and from the third it is itself, Uri on top.
+    if (tower && summit?.enabled && !summitKneel) {
+      // Ring 1: nothing; ring 2: a faint shadow; ring 3 and the top: itself.
+      const ring = ringOf(movement.position);
+      summit.enabled = !battle && ring !== 1;
+      summitShade.opacity = .5; summitShade.update();
+      for (const [mesh, own] of summitMeshes) mesh.material = ring === 2 ? summitShade : own;
+    }
+  }
+  /** The camera jumps to where it should be this frame instead of easing there (a pocket's diffusion swaps the scene under it). */
+  let cameraCut = false;
+  /** Development: `&pocket` stages every fight in a pocket, wherever it starts (docs/dev-tools.md). */
+  const forcePocket = import.meta.env.DEV && new URLSearchParams(location.search).has('pocket');
+  /**
+   * La calle que no acaba (docs/quests/nuria.md): the further up it, the more of the Queen's violet
+   * light, the closer the screen's edges, and Aitor noticing things over his head. On Nuria's street
+   * a little of it already hangs in the air once she has told them about Uri.
+   */
+  let portal: Portal | undefined;
+  /** How far up the street the party is, for the portal (it keeps turning while they talk). */
+  let streetNear = 0;
+  const streetSaid = new Set<number>();
+  let streetLine: { text: string; until: number } | undefined;
+  function uneasy() {
+    const hud = document.getElementById('hud');
+    // Once her street has unrolled into La calle's start, it already counts as La calle, where it lies there.
+    const shifted = environment.id === NURIA_STREET && !!shift?.unrolled;
+    const inStreet = (environment.id === CALLE || shifted) && story.adult;
+    const at = shifted ? toCalle(movement.position, SHIFT) : movement.position;
+    const progress = inStreet ? streetProgress(at, PLACES_NURIA.calleIn.cell, PLACES_NURIA.portal.cell) : 0;
+    if (inStreet) {
+      toneTarget = Math.max(sceneTone, streetTone(progress), shifted ? .22 : 0);
+      const due = dueMark(STREET_MARKS, progress, streetSaid);
+      if (due !== undefined && mateHere()) { streetSaid.add(due); streetLine = { text: STREET_MARKS[due].text, until: clock + 4.2 }; }
+    } else if (environment.id === NURIA_STREET) toneTarget = Math.max(sceneTone, story.nuria.lent && !story.has('nuria-uri') ? .22 : 0);
+    hud?.toggleAttribute('data-uneasy', inStreet);
+    hud?.toggleAttribute('data-beating', inStreet && progress > .7);
+    hud?.style.setProperty('--unease', progress.toFixed(3));
+    streetNear = progress;
+  }
+  /**
+   * Nuria's street turning into La calle que no acaba as they walk up it from her door (src/street-shift.ts):
+   * houses rise and shut every way but on, the corner unrolls into the street's start, and well
+   * inside it they are in La calle itself, with no cut.
+   */
+  let shift: ReturnType<typeof createStreetShift> | undefined;
+  function shiftStreet(dt: number) {
+    if (environment.id !== NURIA_STREET || !story.adult || !story.nuria.lent || story.has('nuria-uri') || battle) return;
+    const base = ENVIRONMENTS[NURIA_STREET].grid;
+    shift ??= createStreetShift({
+      scenery, dust: (at, count, spread) => effects.emit('poof', at, count, spread),
+      sound: (id, at, volume) => { const { pan, near } = heard(at, 45); callbacks.onSound(id, { volume: volume * Math.max(.2, near), pan }); },
+    }, SHIFT, ENVIRONMENTS[NURIA_STREET].geo!, ENVIRONMENTS[CALLE].geo!, PLACES_NURIA.nuria.cell);
+    const mate = mateHere();
+    const party = [
+      ...free ? [free.position] : mate ? [mate.follower.position] : [],
+      ...catWalk ? [catWalk.lead.position, catWalk.back.position] : [],
+      ...guiding ? [guiding.walk.position] : [],
+    ];
+    const events = shift.update(dt, movement.position, party, base, !reducedMotion.matches);
+    if (events.grid) {
+      const grid = shift.grid(base);
+      environment = { ...environment, grid }; movement.grid = grid;
+      if (free) free.grid = grid;
+    }
+    if (events.lines) callbacks.onStory({ type: 'near', id: 'calle' });
+    if (events.swap) setEnvironment(CALLE, { x: Math.round(events.swap.x), z: Math.round(events.swap.z) }, events.swap);
+  }
+  /**
+   * How something at `at` (world) in the street reaches the ear, which goes with Gerard: `near` 1
+   * on top of him down to 0 at `reach` metres, and `pan` the side of the screen it is on.
+   */
+  function heard(at: pc.Vec3, reach: number) {
+    const here = scenery.toWorld(movement.position.x, movement.position.z), right = camera.right;
+    const dx = at.x - here.x, dz = at.z - here.z, d = Math.hypot(dx, dz);
+    const across = Math.hypot(right.x, right.z) || 1;
+    return { near: Math.max(0, 1 - d / reach), pan: d > .01 ? (dx * right.x + dz * right.z) / across / Math.max(d, 4) * .7 : 0, d };
+  }
+  /** Whether the bubble's hiss is on, so it is faded out once when the bubble goes. */
+  let hissing = false;
+  /**
+   * The bubble hisses (`BEDS.hiss`, src/sfx.ts): from about 32 m away it comes up, slowly and then
+   * fast, to its full at the bubble; it turns with it, faster as they come, and keeps quiet in a
+   * menu or a fight.
+   */
+  function hiss() {
+    if (!portal) { if (hissing) { hissing = false; callbacks.onBed('hiss'); } return; }
+    hissing = true;
+    const { pan, d } = heard(portal.root.getPosition(), 32);
+    const k = Math.min(1, Math.max(0, (32 - d) / 30)), near = k * k * (3 - 2 * k);
+    callbacks.onBed('hiss', { volume: paused || battle ? 0 : near ** 1.6, pan, drive: streetNear });
   }
   /** Where a fight with one of Uri's fears is staged: where it jumped out. */
-  let fearStage: Cell = { x: 0, z: 0 };
+  let fearStage: Cell | undefined;
   let pickups: { entity: pc.Entity; cell: Cell; materials: pc.Material[]; spot?: { x: number; z: number; y: number } }[] = [];
   /**
    * Whoever walks with Gerard: Bernat around Sant Quirze in chapter 1, Aitor everywhere from
@@ -398,6 +672,26 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   const mates = { bernat: makeMate('bernat', 'bernat-child', 1, PLACES.bernat.cell), aitor: makeMate('aitor', 'aitor', AITOR_SCALE, PLACES.aitor.cell) };
   const follower = mates.bernat.follower;
   let tug = 0;
+  /**
+   * Everyone who keeps clear of everyone else (src/crowd.ts, docs/crowd.md): one line per kind of
+   * body, each listing who is here right now. To make something new keep its distance, add it here.
+   */
+  const crowd = createCrowd();
+  /** Who the crowd moved aside this frame, and how far: they take a step instead of sliding. */
+  let shoved = new Map<object, Cell>();
+  const nudged = (owner: object) => { const d = shoved.get(owner); return !!d && Math.hypot(d.x, d.z) > 1e-3; };
+  crowd.add(BODIES.player, () => free ? [movement, free] : [movement]);
+  crowd.add(BODIES.person, () => { const mate = mateHere(); return mate && !(mate.id === 'aitor' && free) ? [mate.follower] : []; });
+  crowd.add(BODIES.cat, () => [
+    ...catWalk ? guiding ? [catWalk.back] : [catWalk.lead, catWalk.back] : [],
+    ...guiding ? [guiding.walk] : [],
+    ...homeCats.map(h => h.walk),
+  ]);
+  crowd.add(BODIES.monster, () => hunters.filter(h => h.away <= 0).map(h => h.chaser));
+  crowd.add(BODIES.figure, () => [
+    ...npcs.map(n => ({ position: n.cell })),
+    ...environment.id === 'maresme' ? pack.dogs.map(dog => ({ position: pack.position(dog) })) : [],
+  ]);
   /** Player 2 drives Aitor: his own collider, input and facing (undefined while he follows). */
   let free: FreeMovement | undefined;
   let partnerWanted = false;
@@ -405,6 +699,17 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   let partnerFacing = 0;
   /** What the partner says when the other player pulls too far away, and until when. */
   let tetherLine: { text: string; until: number } | undefined;
+  /**
+   * Uri shouting down from the top of his tower (a `shout` story effect): it goes on over his head
+   * for a few seconds while they keep climbing; nothing waits for it.
+   */
+  let shoutLine: { text: string; left: number } | undefined;
+  function shout(_speaker: 'uri', text: string) { shoutLine = { text, left: 2.6 + text.length * .035 }; }
+  /** Over Uri's head, up on Vertitrón (seen or not through the haze). */
+  function shoutAnchor() {
+    const uri = summit?.findByName('Uri arriba') as pc.Entity | null;
+    return uri ? uri.getPosition().clone().add(new pc.Vec3(0, 2.1 * uri.getScale().y, 0)) : undefined;
+  }
   let tetherTug = 0;
   /** The partner in this scene: Bernat walks with Gerard around Sant Quirze, not into other chapters' scenes; Aitor goes everywhere. */
   function mateHere(): Mate | undefined {
@@ -447,11 +752,11 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const all = [...environment.interactions.filter(i => !told.some(t => t.id === i.id)), ...told];
     return lampLabel ? all.map(i => { const label = lampLabel!(i.id); return label ? { ...i, label, hint: 'Ajustar luz' } : i; }) : all;
   }
-  /** The closest thing within reach, so a pickup next to a door still gets picked; `byPartner` leaves out talking to himself. */
-  function nearby(position: Cell, byPartner = false): Interaction | undefined {
-    const inReach = interactions().filter(i => !byPartner || i.id !== 'talk-aitor').map(i => ({ i, d: Math.hypot(i.cell.x - position.x, i.cell.z - position.z) })).filter(({ d }) => d <= INTERACTION_REACH);
+  /** The closest thing within reach, so a pickup next to a door still gets picked. */
+  function nearby(position: Cell): Interaction | undefined {
+    const inReach = interactions().map(i => ({ i, d: Math.hypot(i.cell.x - position.x, i.cell.z - position.z) })).filter(({ d }) => d <= INTERACTION_REACH);
     // The partner walks right behind Gerard: talking to them only wins when nothing else is in reach.
-    const last = ({ i }: { i: Interaction }) => Number(i.id === 'talk-bernat' || i.id === 'talk-aitor');
+    const last = ({ i }: { i: Interaction }) => Number(i.id === 'talk-bernat');
     return inReach.sort((a, b) => last(a) - last(b) || a.d - b.d)[0]?.i;
   }
   function placeOnGround(entity: pc.Entity, cell: Cell, lift = 0) {
@@ -485,14 +790,17 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   /** Rebuilds the cast for the current scene from the story; call after any story change. */
   function refreshStory() {
-    for (const list of [npcs, pickups]) for (const item of list) { item.entity.destroy(); item.materials.forEach(m => m.destroy()); }
+    // A story cat owns its materials (src/cats.ts): only its own destroy frees them and their GPU buffers.
+    for (const npc of npcs) if (npc.cat) npc.cat.destroy(); else npc.entity.destroy();
+    for (const pickup of pickups) pickup.entity.destroy();
+    for (const item of [...npcs, ...pickups]) item.materials.forEach(m => m.destroy());
     npcs = story.npcs(environment.id).map(npc => {
       if (npc.cat) {
         // Haru and Yuki (src/cats.ts): a cat is its own model, not a character.
         const cat = createCat(app, npc.cat); cat.entity.name = npc.id; cat.entity.reparent(castRoot);
         cat.entity.setLocalScale(npc.scale, npc.scale, npc.scale);
         placeOnGround(cat.entity, npc.cell);
-        return { entity: cat.entity, cell: npc.cell, body: cat.entity, materials: [] };
+        return { entity: cat.entity, cell: npc.cell, body: cat.entity, materials: [], cat };
       }
       const entity = new pc.Entity(npc.id); castRoot.addChild(entity);
       const rig = buildCharacter(CHARACTERS[`./characters/${npc.character}.json`], entity);
@@ -522,8 +830,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     placeGuards();
     battleScene.possess(possessed);
-    // The ánima look is the boy's outfit; at 35 he wakes in his pyjamas (the ánima stays in fights).
-    if (!story.adult) wearClass(player, story.gerardClass);
+    // In the street everyone wears their own clothes; an ánima's look shows in fights (classes.ts, anima-looks.ts).
     // Around the Rec Comtal the castle's pink only half takes the light: it is morning in Barcelona.
     // Chapter 2: her pink spreads from the school day after day, and every evening it creeps in with the dusk.
     const spread = Math.min(1, story.spread);
@@ -534,6 +841,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     // Inside her palace in chapter 2, each zone of the school says how far she has crept in.
     if (environment.palace?.theme) toneTarget = environment.palace.theme.her;
     if (story.adult && !environment.palace) toneTarget = Math.min(1, Math.max(toneTarget, story.dusk * .6));
+    sceneTone = toneTarget;
     updateTV(); updateJar(); settleHomeCats(); overgrow(); schoolDoorway();
     // Bernat first steps out of his own front door; scene changes place a partner beside Gerard instead.
     const mate = mateHere();
@@ -576,9 +884,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
   }
   /** A free cell next to `cell` for the companion to appear on after a scene change. */
-  function beside(cell: Cell): Cell {
+  /** A free walkable cell next to `cell`, other than `taken` (two cats never land on one spot). */
+  function beside(cell: Cell, taken?: Cell): Cell {
     const around = [{ x: 0, z: 1 }, { x: 1, z: 0 }, { x: -1, z: 0 }, { x: 0, z: -1 }].map(d => ({ x: cell.x + d.x, z: cell.z + d.z }));
-    return around.find(c => environment.grid[c.z]?.[c.x] === '.' && !npcs.some(n => n.cell.x === c.x && n.cell.z === c.z)) ?? cell;
+    return around.find(c => environment.grid[c.z]?.[c.x] === '.' && !npcs.some(n => n.cell.x === c.x && n.cell.z === c.z) && !(taken && taken.x === c.x && taken.z === c.z)) ?? cell;
   }
   /** `forced` is the story's fight: it starts even though the pack has not wandered into Gerard. */
   function encounter(forced = false) {
@@ -858,8 +1167,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     updateJar();
     cutscene = false; lastPrompt = ''; updatePrompt();
   }
-  /** A foe far taller than the party (El Vértigo, with Uri on top): the fight's camera looks up to take it in. */
-  function tallLift() { return Math.max(0, battleScene.foeTop - 4) * .42; }
+  /** A foe far taller than the party (Vertitrón, with Uri on top): the fight's camera looks up to take it in. */
+  function tallLift() { return Math.max(0, battleScene.foeTop - 4) * .75; }
   /** The camera comes close to the TV (`on`), or goes back to Gerard. */
   function watchTV(on: boolean) {
     watchingTV = on && !!tv;
@@ -1079,20 +1388,117 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     });
     cutscene = false; lastPrompt = ''; updatePrompt();
   }
-  function setBattle(next: BattleState | undefined, effect?: BattleEffect, onImpact?: () => void) {
-    if (!next && battle) {
-      if (battle.encounter === 'dogs') pack.finish(battle.phase === 'won');
-      callbacks.onBattleEnd(battle.phase, battle.encounter, battle.allies.flatMap(a => a.classId ? [a.classId] : []));
+  /**
+   * Where the fight under way stands (src/arena.ts `stageFight`, docs/combat.md § Where a fight
+   * stands): how its sides line up, and whether it moved to a pocket made of the place (src/pocket.ts).
+   */
+  let fightStage: FightStage = { layout: 'open' };
+  /** Where a fight that starts now begins, before it looks for room: a story's stage, or where Gerard stands. */
+  function fightSpot(fight: string): Cell {
+    if (fight === 'palace-minion') return PALACE_STAGE;
+    if (fight === 'palace-guards') return PLACES_2.guardStage;
+    if (fight === 'uri-vertigo') return PLACES_NURIA.summit.stage;
+    if ((FEAR_ENCOUNTERS as readonly string[]).includes(fight)) return fearStage ?? movement.cell;
+    // The street dogs at their end of the street; the fight tester anywhere else, where Gerard stands.
+    return environment.id === 'maresme' ? pack.area.stage : movement.cell;
+  }
+  /**
+   * A fight starts, goes on or ends. Starting, it is staged where it starts if it has room there;
+   * if not, the picture diffuses into a pocket made of the place and the fight goes on there, and
+   * diffuses back out when it ends.
+   */
+  function setBattle(next: BattleState | undefined, effect?: BattleEffect, onImpact?: (blow: number) => void): Promise<void> {
+    if (diffusing) return diffusing.done.then(() => setBattle(next, effect, onImpact));
+    if (next && !battle) {
+      const fight = next.encounter ?? encounterId;
+      const wearers = next.allies.flatMap((a, i) => a.classId === 'papagato' ? [i] : []);
+      const cast = { allies: next.allies.length, foes: next.foes.map(f => f.kind), cats: wearers.length ? wearers : catWalk ? [0] : [] };
+      const staged = forcePocket ? { pocket: true as const } : stageFight(environment.grid, fightSpot(fight), cast, environment.walls);
+      if (staged.pocket) return diffuse(() => {
+        // The same stretch of the place, widened until the fight fits, its two sides further apart (src/arena.ts `planPocket`).
+        const things = new Set(environment.props.flatMap(propCells).map(c => `${c.x},${c.z}`));
+        const plan = planPocket(environment.grid, fightSpot(fight), cast, things);
+        pocket = createPocket(app, {
+          roots: [scenery.root, ...tower ? [tower.root] : []], spot: player.getPosition().clone(), plan,
+          props: environment.props, wallHeight: environment.walls ?? 2.6, metres: environment.geo?.cell_m, look: tower?.pocket,
+        });
+        fightStage = { layout: plan.stage.layout, pocket: true, spread: POCKET.spread };
+        return applyBattle(next, effect, onImpact, pocket.centre);
+      });
+      fightStage = { layout: staged.layout };
+      const centre = scenery.toWorld(staged.centre.x, staged.centre.z);
+      centre.y = scenery.groundHeight(centre.x, centre.z) > .1 ? scenery.groundHeight(centre.x, centre.z) : 0;
+      return applyBattle(next, effect, onImpact, centre);
     }
-    const fight = next?.encounter ?? encounterId;
-    const stage = fight === 'palace-minion' ? PALACE_STAGE : fight === 'palace-guards' ? PLACES_2.guardStage
-      : (FEAR_ENCOUNTERS as readonly string[]).includes(fight) ? fearStage : pack.area.stage;
-    const centre = scenery.toWorld(stage.x, stage.z); centre.y = scenery.groundHeight(centre.x, centre.z) > .1 ? scenery.groundHeight(centre.x, centre.z) : 0;
+    if (!next && battle && pocket) return diffuse(() => {
+      const settled = applyBattle(undefined, effect, onImpact);
+      pocket?.destroy(); pocket = undefined; fightStage = { layout: 'open' };
+      return settled;
+    });
+    if (!next) fightStage = { layout: 'open' };
+    return applyBattle(next, effect, onImpact);
+  }
+  /**
+   * Into a pocket or out of one through glass (src/post.ts `diffuse`): the picture as it is is kept,
+   * `swap` changes what is there at once (the camera cuts with it), and pane by pane, at random,
+   * tick tick tick, the glass turns to show the new place. Resolves when every pane has turned and
+   * whatever `swap` started is done. Reduced motion just swaps.
+   */
+  let diffusing: { t: number; settled: Promise<void>; tick: number; finish: () => void; done: Promise<void> } | undefined;
+  /** Seconds for every pane to turn; they turn slowly at first and then in a rush (`stepDiffusion`). */
+  const DIFFUSE = .85;
+  function diffuse(swap: () => Promise<void>): Promise<void> {
+    if (reducedMotion.matches || !post.enabled || !post.snapshot()) { cameraCut = true; return swap(); }
+    clearInput(); movement.walking = false;
+    post.diffuse(0, clock, true);
+    const settled = swap(); cameraCut = true;
+    let finish = () => {};
+    const done = new Promise<void>(resolve => { finish = resolve; });
+    diffusing = { t: 0, settled, tick: .02, finish, done };
+    return done.then(() => settled);
+  }
+  function stepDiffusion(dt: number) {
+    const run = diffusing;
+    if (!run) return;
+    run.t += Math.min(dt, .05);
+    // Gathering speed: a few panes, then more and more, then the last ones all at once.
+    const turned = Math.min(1, (run.t / DIFFUSE) ** 2.2);
+    // A tick for the panes turning, at uneven moments, while most of them still have to.
+    if (turned < .9 && run.t >= run.tick) { callbacks.onSound('glass-tick'); run.tick = run.t + .028 + Math.random() * .05; }
+    post.diffuse(turned, clock, turned < 1);
+    if (turned >= 1) { diffusing = undefined; run.finish(); }
+  }
+  function applyBattle(next: BattleState | undefined, effect?: BattleEffect, onImpact?: (blow: number) => void, centre?: pc.Vec3) {
+    // Nuria's cats are the ones in the fight, no others (docs/animas/papagato/): they go in from
+    // where they were walking and walk on from where the fight leaves them.
+    if (next && !battle) {
+      settleCats();
+      if (catWalk) { standCat(catWalk.haru, catWalk.lead); standCat(catWalk.yuki, catWalk.back); }
+      battleScene.borrowCats(catWalk);
+    }
+    if (!next && battle) {
+      if (catWalk) {
+        const origin = scenery.toWorld(0, 0);
+        for (const [cat, follower] of [[catWalk.haru, catWalk.lead], [catWalk.yuki, catWalk.back]] as const) {
+          const at = cat.entity.getPosition();
+          follower.reset({ x: at.x - origin.x, z: at.z - origin.z });
+        }
+        catWalk.still = [0, 0];
+      }
+      if (battle.encounter === 'dogs') pack.finish(battle.phase === 'won');
+      // A pack of young beaten goes away for a while, then comes back to its round.
+      const caught = hunters.find(h => h.id === fightingHunter);
+      if (caught?.respawn && battle.phase === 'won') { caught.away = RESPAWN; partFrom(caught.model); }
+      if (battle.encounter === 'uri-vertigo' && battle.phase === 'won' && summit) summitKneel = { t: 0 };
+      // A fall keeps where the fight stood and who started it, so fighting it again stages it there.
+      if (battle.phase !== 'lost') { fightingHunter = undefined; fearStage = undefined; }
+      callbacks.onBattleEnd(battle.phase, battle.encounter, participants(battle).map(p => p.id), fightXp(battle));
+    }
     // Uri's fears out on the ramp step aside while a fight is on.
     hunters.forEach(h => { h.model.enabled = !next; });
-    // In a corridor running along z (Uri's tower), the sides line up along it.
-    const blockedX = !canWalk({ x: Math.round(stage.x) - 2, z: Math.round(stage.z) }, environment.grid) || !canWalk({ x: Math.round(stage.x) + 2, z: Math.round(stage.z) }, environment.grid);
-    const settled = battleScene.set(next, centre, effect, onImpact, blockedX); battle = next; clearInput();
+    // Vertitrón up top too: the fight has its own.
+    if (summit && next) summit.enabled = false;
+    const settled = battleScene.set(next, centre ?? battleScene.anchor, effect, onImpact, fightStage); battle = next; clearInput();
     if (!next) {
       movement.resolveOverlap(occupiedCells(), !reducedMotion.matches);
       lastPrompt = ''; positionPlayer(); updatePrompt();
@@ -1122,7 +1528,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const tilt = Math.min(1, Math.max(0.35, (length - 0.2) / 0.7));
       input = { x: partnerStick.x / length * tilt, y: partnerStick.y / length * tilt };
     } else if (partnerDirection) input = SCREEN_VECTORS[partnerDirection];
-    if (!input) { free.walking = false; tetherTug = 0; partnerYaw = orbit.pose.yaw; return; }
+    if (!input) { free.walking = false; tetherTug = 0; partnerYaw = steerYaw(); return; }
     const grid = screenToGrid(input.x, input.y, partnerYaw);
     partnerFacing = facingToward(grid.x, grid.z);
     free.drive(grid.x, grid.z, dt, partnerCells(), partnerRunning && story.canRun);
@@ -1148,7 +1554,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * The camera angle each player steers by: the one on screen when they started pressing, kept while
    * they hold on, so a camera turning mid-walk never bends the way they are going.
    */
-  let controlYaw = orbit.pose.yaw, partnerYaw = orbit.pose.yaw;
+  let controlYaw = steerYaw(), partnerYaw = steerYaw();
   const walk = new WalkAnimation();
   let clock = 0;
   let lastStride = 0;
@@ -1204,9 +1610,17 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const hop = movement.bouncing && !reducedMotion.matches ? Math.sin(movement.progress * Math.PI) * .18 : 0;
     player.setPosition(p.x, 0.09 + hop, p.z);
   }
-  function setEnvironment(id: EnvironmentId, destination?: Cell) {
+  /**
+   * `exact`: the spot in the new place where Gerard already stands, on its look-alike laid into the
+   * old one (src/street-shift.ts): nothing jumps, the camera and everyone walking with him carry on.
+   */
+  function setEnvironment(id: EnvironmentId, destination?: Cell, exact?: { x: number; z: number }) {
     if (battle) return;
     clearInput();
+    const from = movement.position, was = scenery.toWorld(from.x, from.z);
+    const along = exact ? { mate: mateHere() && { ...mateHere()!.follower.position }, aitor: free?.position, cats: catWalk && [{ ...catWalk.lead.position }, { ...catWalk.back.position }] } : undefined;
+    const said = exact ? new Set(streetSaid) : undefined;
+    shift = undefined;
     tv?.destroy(); tv = undefined; overgrowth?.destroy(); overgrowth = undefined;
     scenery.destroy();
     environment = ENVIRONMENTS[id];
@@ -1229,8 +1643,25 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const mate = mateHere();
     if (mate) placeMate(mate);
     overview = false;
+    if (exact && along && said) {
+      // The same street on the other side: everyone stands where they stood, and if its angle differs the camera turns to it.
+      orbit.turnHome(environment.view);
+      const ox = exact.x - from.x, oz = exact.z - from.z, moved = (p: Cell) => ({ x: p.x + ox, z: p.z + oz });
+      movement.at = { ...exact };
+      if (along.aitor && free) { free.teleport(environment.grid, nearestWalkable(moved(along.aitor))); free.at = moved(along.aitor); }
+      else if (along.mate && mate) mate.follower.reset(moved(along.mate));
+      if (along.cats && catWalk) { catWalk.environment = id; catWalk.lead.reset(moved(along.cats[0])); catWalk.back.reset(moved(along.cats[1])); }
+      for (const index of said) streetSaid.add(index);
+      const now = scenery.toWorld(exact.x, exact.z), shiftBy = now.clone().sub(was);
+      cameraTarget.add(shiftBy); camera.setPosition(camera.getPosition().clone().add(shiftBy));
+      lastPrompt = '';
+      callbacks.onInteraction(undefined);
+      callbacks.onLocation(id, movement.cell);
+      positionPlayer(); updatePrompt();
+      return;
+    }
     // A new place starts from the camera's own angle.
-    orbit.reset(); controlYaw = partnerYaw = orbit.pose.yaw;
+    orbit.reset(environment.view); controlYaw = partnerYaw = steerYaw();
     lastPrompt = '';
     callbacks.onInteraction(undefined);
     callbacks.onLocation(id, movement.cell);
@@ -1243,7 +1674,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (byPartner && !free) return;
     const from = byPartner ? free!.position : movement.position;
     if (story.battles && environment.id === 'maresme' && pack.touching(from, 1.5)) { encounter(); return; }
-    const target = nearby(from, byPartner);
+    const target = nearby(from);
     if (target) use(target);
   }
   /** What using a door, a stair, a thing to look at or the story's own interaction does. */
@@ -1301,10 +1732,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   const train = { running: false, x: 0, way: 1, wait: 6, scene: '', grates: [] as { x: number; z: number }[] };
   app.on('update', (dt: number) => {
     const delta = Math.min(dt, 0.05);
+    stepDiffusion(dt);
+    pocket?.update(delta, !reducedMotion.matches);
     // Cutscenes, fight animations and effects keep the clock on slow machines (a frame or two a
     // second with software rendering); walking stays on `delta`, which keeps collisions safe.
     const shown = Math.min(dt, SHOW_STEP);
-    if (!stopped() && !battle && !document.querySelector('#hud[data-dialogue]')) {
+    if (!stopped() && !battle && !diffusing && !document.querySelector('#hud[data-dialogue]')) {
       movement.update(dt);
       // Everything steers in screen space: held keys add up, otherwise the stick or D-pad.
       const keys = [...new Set(held.values())].reduce((sum, d) => ({ x: sum.x + SCREEN_VECTORS[d].x, y: sum.y + SCREEN_VECTORS[d].y }), { x: 0, y: 0 });
@@ -1317,7 +1750,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
         input = { x: controllerStick.x / length * tilt, y: controllerStick.y / length * tilt };
       }
       if (!input && controllerDirection) input = SCREEN_VECTORS[controllerDirection];
-      if (!input) controlYaw = orbit.pose.yaw;
+      if (!input) controlYaw = steerYaw();
       if (input) {
         const grid = screenToGrid(input.x, input.y, controlYaw);
         facing = facingToward(grid.x, grid.z);
@@ -1332,12 +1765,16 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
         if (gate) { clearInput(); callbacks.onDialogue(gate); } else setEnvironment(stairs.to.environment, stairs.to.cell);
       } else if (stairs && !stairs.to && input && stairs.id !== inStep) { movement.walking = false; use(stairs); }
       inStep = stairs?.id ?? '';
+      // Nobody walks through anybody (src/crowd.ts): last frame's overlaps eased apart before anyone moves on.
+      shoved = crowd.separate(delta, environment.grid);
       const mate = mateHere();
       if (mate && free) drivePartner(dt, delta);
       else if (mate && mate.id === 'aitor') mate.follower.update(delta, movement.position, false, running());
       walkCats(delta);
+      leadCat(delta);
       strollCats(delta);
-      huntFears(delta, dt);
+      huntFears(dt);
+      uneasy();
       // Gerard pulling against the tether: Aitor calls him back.
       const apart = free && input && Math.hypot(movement.position.x - free.position.x, movement.position.z - free.position.z) > TETHER - .6;
       tetherTug = apart ? tetherTug + Math.min(dt, .25) : 0;
@@ -1352,8 +1789,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       }
       // The story's triggers fire as Gerard walks up to them (the TV that switched itself on).
       for (const trigger of story.triggers(environment.id)) {
-        const near = Math.hypot(movement.position.x - trigger.cell.x, movement.position.z - trigger.cell.z) <= trigger.radius;
-        if (near && !inside.has(trigger.id)) { inside.add(trigger.id); clearInput(); movement.walking = false; callbacks.onStory({ type: 'near', id: trigger.id }); }
+        const near = onTrigger(trigger, movement.position);
+        if (near && !inside.has(trigger.id)) {
+          inside.add(trigger.id);
+          if (!trigger.passing) { clearInput(); movement.walking = false; }
+          callbacks.onStory({ type: 'near', id: trigger.id });
+        }
         else if (!near) inside.delete(trigger.id);
       }
       // Rooms tell the story when Gerard steps into them (the wrapper room's minion).
@@ -1372,9 +1813,15 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
         pack.update(delta, free ? [...movement.footprint, ...free.footprint] : movement.footprint);
         if (!movement.bouncing && pack.armed && (pack.touching(movement.position) || (free && pack.touching(free.position)))) encounter();
       }
-    } else { clearInput(); movement.walking = false; }
+    } else {
+      clearInput(); movement.walking = false; leadCat(0);
+      // Sent somewhere else while someone talks (the end of a fight, waking up at home): the cats don't stay behind in mid-air.
+      if (catWalk && catWalk.environment !== environment.id) dropCats();
+    }
     const walking = movement.walking && !paused && !battle && !document.querySelector('#hud[data-dialogue]');
     const animate = !reducedMotion.matches;
+    portal?.update(paused ? 0 : delta, streetNear, animate);
+    hiss();
     const pose = walk.update(delta * (running() && walking ? 2 : 1), !!walking, animate);
     clock += delta;
     // Each footfall kicks up a small puff under the planted shoe.
@@ -1406,7 +1853,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (mate?.entity.enabled) {
       const driven = mate.id === 'aitor' && !!free;
       const at = matePosition(mate);
-      const moving = driven ? free!.walking && !stopped() && !document.querySelector('#hud[data-dialogue]') : mate.follower.walking;
+      const moving = driven ? free!.walking && !stopped() && !document.querySelector('#hud[data-dialogue]') : mate.follower.walking || nudged(mate.follower);
       const fast = driven ? partnerRunning && story.canRun : running();
       const matePose = mate.walk.update(delta * (fast && moving ? 2 : 1), moving && !paused, animate);
       const p = scenery.toWorld(at.x, at.z);
@@ -1422,6 +1869,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     for (const npc of npcs) {
       const dx = movement.position.x - npc.cell.x, dz = movement.position.z - npc.cell.z;
       if (Math.hypot(dx, dz) < 4) npc.body.setLocalEulerAngles(0, facingToward(dx, dz), 0);
+      // A cat waiting as a character sits and breathes; turning to Gerard it shifts its paws.
+      npc.cat?.animate(delta, { animate, sit: 1 });
     }
     pickups.forEach((p, i) => {
       // Things lying on furniture stay put (the wrapper on the bedside shelf); loose ones float.
@@ -1451,6 +1900,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       if (t >= 1) { const { done } = timeline; timeline = undefined; done(); }
     }
     palace.update(shown, animate);
+    partBeaten(shown);
     // The guards sway, heavy and sticky, and step aside for the fight's own models.
     guards.forEach((g, i) => {
       g.enabled = !battle;
@@ -1464,6 +1914,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     minion.update(shown, animate, {
       manhole: scenery.toWorld(lair.x, lair.z), look: player.getPosition(), groundHeight: scenery.groundHeight,
     }, (environment.id === 'maresme' || environment.id === 'palacio') && !battle);
+    shiftStreet(paused ? 0 : shown);
     if (tone !== toneTarget) {
       tone = animate ? tone + Math.sign(toneTarget - tone) * Math.min(Math.abs(toneTarget - tone), delta / 3.5) : toneTarget;
       scenery.setTone(tone);
@@ -1504,8 +1955,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const shared = free && mate?.entity.enabled ? mate.entity.getPosition() : undefined;
     const between = shared ? player.getPosition().clone().lerp(player.getPosition(), shared, .5) : player.getPosition().clone();
     const apart = shared ? player.getPosition().distance(shared) : 0;
-    const target = battle && framed && cinematic ? cinematic.target.clone() : battle ? battleScene.anchor.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
-    cameraTarget.lerp(cameraTarget, target, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 7));
+    const target = battle && framed && cinematic ? cinematic.target.clone() : battle ? battleScene.frame.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
+    // A pocket's diffusion swaps the scene at its peak: the camera is there at once, not on its way.
+    const cut = cameraCut; cameraCut = false;
+    cameraTarget.lerp(cameraTarget, target, reducedMotion.matches || cut ? 1 : 1 - Math.exp(-delta * 7));
     // Among buildings the camera may tilt up to find Gerard and his partner, but only while both stand
     // still: walking, it holds whatever angle it has. Fights, cut-scenes and the overview bring it
     // home. While someone talks it only finishes the turn under way, and the pause menu holds it still.
@@ -1521,16 +1974,21 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const sight = walking ? scenery.sight?.(people) : undefined;
       orbit.update(delta, sight && (pose => sight(towardCamera(pose))), reducedMotion.matches);
     }
-    const offset = battle ? new pc.Vec3(5, 9, 15) : vec(cameraOffset(orbit.pose));
+    // A fight looks from the party's side, a little off it, from the south (over their shoulders at a
+    // giant); along a street, down it from the party's end (src/arena.ts `fightCamera`, which also
+    // decides where a fight has room to be seen).
+    const offset = !battle ? vec(cameraOffset(orbit.pose)) : vec(fightCamera(fightStage.layout, battle.foes.filter(f => !f.part).map(f => f.kind)));
     if (battle) {
       const { stick, click } = rightStick();
       if (click) battleAim.set(0, 0);
       else if (!paused) battleAim.add(stick.mulScalar(delta * .9)).set(pc.math.clamp(battleAim.x, -1, 1), pc.math.clamp(battleAim.y, -1, 1));
       battleLook.lerp(battleLook, battleAim, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
       // Up to 45° round the fight and 15° up or down, so the foes and the party always stay in view.
-      const yaw = -battleLook.x * 45 * pc.math.DEG_TO_RAD, length = offset.length();
+      // Big moments (a dual's two-shot and orbit, the Rayo) turn it a little more: battle-scene `lens`.
+      const lens = battleScene.lens;
+      const yaw = (-battleLook.x * 45 + lens.yaw) * pc.math.DEG_TO_RAD, length = offset.length();
       offset.set(offset.x * Math.cos(yaw) + offset.z * Math.sin(yaw), offset.y, offset.z * Math.cos(yaw) - offset.x * Math.sin(yaw));
-      const pitch = Math.asin(offset.y / length) + battleLook.y * 15 * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
+      const pitch = Math.asin(offset.y / length) + (battleLook.y * 15 + lens.pitch) * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
       offset.set(offset.x / flat * Math.cos(pitch) * length, Math.sin(pitch) * length, offset.z / flat * Math.cos(pitch) * length);
     } else { battleLook.set(0, 0); battleAim.set(0, 0); }
     // The view is orthographic, so how far back the camera stands only decides what its clip planes
@@ -1538,14 +1996,18 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     // near corner nor the far one (and what stands beyond it) is cut off.
     const spread = (environment.grid[0].length + environment.grid.length) / 2 * .52;
     if (!battle && !cinematic && (overview || !follow)) offset.mulScalar(Math.max(1, (spread + 40) / offset.length()));
-    if (battleScene.entering && !reducedMotion.matches) {
+    // Into a fight the camera gathers speed: it leaves slowly and closes in quicker and quicker,
+    // swinging a little out on the way (battle-scene `entryProgress`); otherwise it eases as ever.
+    const entering = battleScene.entering && !reducedMotion.matches;
+    const ease = entering ? 1 - Math.exp(-delta * (2 + 46 * battleScene.entryProgress ** 2)) : 1 - Math.exp(-delta * 6);
+    if (entering) {
       const arc = Math.sin(battleScene.entryProgress * Math.PI);
-      offset.add(new pc.Vec3(arc * 3, arc * 1.5, -arc * 2));
+      offset.add(new pc.Vec3(arc * 2.2, arc * 1.1, -arc * 1.5));
     }
     const desiredCamera = cameraTarget.clone().add(offset);
     // The camera eases from where it rests, without last frame's hit kick (added after it looks).
     const rest = camera.getPosition().clone().sub(cameraKick);
-    camera.setPosition(reducedMotion.matches ? desiredCamera : rest.lerp(rest, desiredCamera, 1 - Math.exp(-delta * 6)));
+    camera.setPosition(reducedMotion.matches || cut ? desiredCamera : rest.lerp(rest, desiredCamera, ease));
     if (cinematic && !battle) camera.setPosition(camera.getPosition().clone().add(cameraWobble));
     // Backed away (or easing back), it sees past the far corner; following Gerard, as far as ever.
     const distance = camera.getPosition().distance(cameraTarget);
@@ -1553,12 +2015,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (camera.camera!.farClip !== farClip) camera.camera!.farClip = farClip;
     camera.lookAt(cameraTarget);
     // A blow shoves the whole picture: a sideways move after lookAt, so nothing swims or tilts.
-    cameraKick.copy(battle ? battleScene.cameraKick : pc.Vec3.ZERO);
+    cameraKick.copy(battle ? battleScene.cameraKick : shift?.quake ?? pc.Vec3.ZERO);
     camera.translate(cameraKick);
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
-    const height = battle && framed && cinematic ? cinematic.height : battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .68) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
-    viewHeight = pc.math.lerp(viewHeight, height, reducedMotion.matches ? 1 : 1 - Math.exp(-delta * 6));
+    const height = battle && framed && cinematic ? cinematic.height : battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .97) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
+    viewHeight = pc.math.lerp(viewHeight, height, reducedMotion.matches || cut ? 1 : ease);
     // Heavy blows punch the frame in for a moment (battle-scene `punch`).
     camera.camera!.orthoHeight = viewHeight * (1 - (battle ? battleScene.punch : 0));
     // The tilt-shift's sharp band runs through what the camera follows: the fighters, a cut-scene's subject, Gerard (and his partner).
@@ -1579,6 +2041,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       camera.camera!.worldToScreen(mate.entity.getPosition().clone().add(new pc.Vec3(0, mate.id === 'aitor' ? 2.4 : 1.75, 0)), screen);
       callbacks.onCompanionScreen({ x: screen.x, y: screen.y });
     } else callbacks.onCompanionScreen(undefined);
+    // A fight ends it; otherwise it only runs out while it can be seen (not while the scene is still coming).
+    if (battle) shoutLine = undefined;
+    const shouter = shoutLine ? shoutAnchor() : undefined;
+    if (shouter) { shoutLine!.left -= delta; camera.camera!.worldToScreen(shouter, screen); callbacks.onShout({ text: shoutLine!.text, x: screen.x, y: screen.y }); }
+    else callbacks.onShout(undefined);
+    if (shoutLine && shoutLine.left <= 0) shoutLine = undefined;
 
   });
   app.on('destroy', () => {
@@ -1591,6 +2059,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     tv?.destroy(); overgrowth?.destroy();
     scenery.destroy(); rig.materials.forEach(m => m.destroy()); Object.values(mates).forEach(m => m.rig.materials.forEach(material => material.destroy()));
     for (const list of [npcs, pickups]) for (const item of list) item.materials.forEach(m => m.destroy());
+    npcs.forEach(npc => npc.cat?.destroy());
   });
   if (environment.id === 'maresme') placePalace();
   else if (environment.id === 'rec-comtal') placePalaceOnSchool();
@@ -1605,6 +2074,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     orbit, interact, encounter, setBattle, refreshStory, summonMinion,
     /** The sun's shadows and the sky's reflections (src/lighting.ts), with toggles for comparisons. */
     lighting: lighting(app),
+    /** Development and screenshots: whoever is leading the party now (Haru to Nuria's door), if anyone. */
+    get guide(): Readonly<Guide> | undefined { return guiding?.walk; },
     /** Puts Gerard (and whoever is with him) back on `cell` of this scene, e.g. up a station's stair. */
     standAt(cell: Cell) {
       movement.teleport(environment.grid, cell);
@@ -1618,10 +2089,20 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     ignite: battleScene.ignite,
     /** Development: who is in the fight. */
     fighterIds: battleScene.fighterIds,
+    /** A dual's banner slows the fight (battle-ui.ts `slowmo`): its scene, particles and choreography. */
+    slowmo: battleScene.slowmo,
+    /** How fast the 3D fight runs now (1: full speed), every slow motion together (battle-scene `speed`). */
+    fightSpeed: () => battleScene.speed,
+    /** Development (the effects lab): plays a dual or a foe's ability as the fight shows it, changing nothing. */
+    preview: battleScene.preview,
     /** Development (the status scenario): puts a status on a fighter at a level (0 takes it off), a reaction, and what they carry (src/status-fx.ts). */
     status: battleScene.status,
+    /** A timed status pulsed on a fighter (src/battle.ts `runClock`). */
+    statusPulse: battleScene.pulse,
     react: battleScene.react,
+    statChange: battleScene.statChange,
     statusesOf: battleScene.statusesOf,
+    statMotesOf: battleScene.statMotesOf,
     /** Development (the fight-fx scenario): plays a GPU fight effect on a fighter (`FIGHT_FX` in effects.ts), thrown from another. */
     fx(name: FightFx, id: string, options: { from?: string; colour?: string; strength?: number } = {}) {
       const model = battleScene.modelOf(id), from = options.from ? battleScene.modelOf(options.from)?.getPosition() : undefined;
@@ -1636,11 +2117,13 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     fighterAt(id: string) { const p = battleScene.modelOf(id)?.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
     /** Development (the effects lab, src/fx-lab.ts): a fighter's model, for element hits aimed at them. */
     battleModel: battleScene.modelOf,
-    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV, releaseLights, releaseLight,
+    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV, releaseLights, releaseLight, shout,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
-    awaken(id: ClassId) { battleScene.awaken(id); wearClass(player, id); },
+    awaken(id: ClassId) { battleScene.awaken(id); },
     /** Someone swapped ánima in a fight (L / R): the fight shows it, and the boy's street outfit follows. */
-    changeAnima(member: string, id: ClassId) { battleScene.changeAnima(member, id); if (member === 'gerard' && !story.adult) wearClass(player, id); },
+    changeAnima(member: string, id: ClassId) { battleScene.changeAnima(member, id); },
+    /** The fire on `id` stays as it shows until the next `setBattle`: what is coming has not landed yet. */
+    holdFire(id?: string) { battleScene.holdFire(id); },
     /** Development (the fight tester): the dogs' eyes, pink or not, whatever the story says; refreshStory puts it back. */
     possess(on: boolean) { possessed = on; battleScene.possess(on); },
     setControllerInput(direction: Direction | null, stick: Stick | null, running = false) { controllerDirection = direction; controllerStick = stick; controllerRunning = running; },
@@ -1649,7 +2132,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     /** Whether player 2 walks Aitor (otherwise he follows Gerard). */
     setPartnerDriven(on: boolean) { partnerWanted = on; if (!battle && waking === undefined) setPartnerFree(on && mateHere()?.id === 'aitor'); },
     /** What the partner says when the players pull apart, while it lasts. */
-    get partnerLine() { return tetherLine && tetherLine.until > clock ? tetherLine.text : undefined; },
+    get partnerLine() { return tetherLine && tetherLine.until > clock ? tetherLine.text : streetLine && streetLine.until > clock ? streetLine.text : undefined; },
     get partnerPosition() { const mate = mateHere(); return mate ? matePosition(mate) : undefined; },
     /** Morning animation stage, also used by repeatable screenshot scenarios. */
     get wakePhase() { return waking === undefined ? undefined : wakePhase(waking); },

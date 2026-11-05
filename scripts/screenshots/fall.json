@@ -1,0 +1,103 @@
+{
+  "title": "Caer en combate",
+  "description": "Perder un combate (src/battle-ui.ts `forgiving`, docs/chapter-2.md): fuera del castillo, como en la torre de Uri, la pantalla ofrece Reintentar el combate y Volver a antes del combate; en el castillo del capítulo 2 solo Despertar, que acaba el día.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=ring-1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.startPalaceFight('cebollon')"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "eval": "void window.gerard.battleUI.jumpTo('lost')"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result').hidden && !document.querySelector('#battle [data-after=\"retry\"]').hidden",
+      "timeout": 10000
+    },
+    {
+      "eval": "if (!document.querySelector('#battle [data-after=\"close\"]').hidden) throw Error('A fall outside the castle offers only Reintentar and Volver');"
+    },
+    {
+      "shot": "lost-tower",
+      "delay": 1200,
+      "caption": "Caen ante El Cebollón en la torre de Uri: Reintentar el combate o Volver a antes del combate"
+    },
+    {
+      "eval": "document.querySelector('#battle [data-after=\"retry\"]').click()"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "eval": "if (window.gerard.battleUI.fight.encounter !== 'cebollon') throw Error('Reintentar opens the same fight');"
+    },
+    {
+      "shot": "retried",
+      "delay": 1200,
+      "caption": "Reintentar: el mismo combate desde el principio, todos con la vida llena"
+    },
+    {
+      "eval": "void window.gerard.battleUI.jumpTo('lost')"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result').hidden && !document.querySelector('#battle [data-after=\"rewind\"]').hidden",
+      "timeout": 10000
+    },
+    {
+      "eval": "document.querySelector('#battle [data-after=\"rewind\"]').click()"
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "if (document.querySelector('#environment .place-name').textContent !== 'La torre de Uri') throw Error('Volver a antes del combate stays in the tower');"
+    },
+    {
+      "shot": "rewound",
+      "delay": 600,
+      "caption": "Volver a antes del combate: siguen en la rampa de la torre y el día no se acaba"
+    },
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22palace-guards%22%2C%22foes%22%3A3%2C%22free%22%3Afalse%2C%22immune%22%3Afalse%7D"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "eval": "void window.gerard.battleUI.jumpTo('lost')"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result').hidden && !document.querySelector('#battle [data-after=\"close\"]').hidden",
+      "timeout": 10000
+    },
+    {
+      "eval": "if (!document.querySelector('#battle [data-after=\"retry\"]').hidden) throw Error('The castle is strict: a fall there only wakes them up');"
+    },
+    {
+      "shot": "lost-castle",
+      "delay": 1200,
+      "caption": "En el castillo no hay segunda oportunidad: Despertar, y el día se acaba"
+    }
+  ]
+}

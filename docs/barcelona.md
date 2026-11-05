@@ -222,6 +222,11 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   aerial reference: Nuria's long two-storey block with a hipped terracotta roof (her door the first
   on Carrer de Jacint Verdaguer), the white-roofed corner house, the houses and gardens across the
   street. Turned 90° so her block faces the camera.
+- **`cardedeu-calle`**: *La calle que no acaba* (`docs/quests/nuria.md`), a designed zone written
+  by a script from its rules: Jacint Verdaguer once Uri has run up it, one way only and straight on,
+  Nuria's block repeating on the left with a 1 on every door, the houses growing and the fronts
+  closing in, the colour draining in four looks; the bubble at its end is drawn by
+  `src/street-unease.ts`.
 - **`barceloneta`**: the beach of the L4 (`docs/places/barceloneta.md`), a real-data zone:
   OpenStreetMap for the old Barceloneta's blocks, the beach, the promenade, its palms and showers,
   with the sea drawn in `sketch.json` along the real coastline and drawn by `src/geo-sea.ts`

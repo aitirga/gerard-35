@@ -2,7 +2,7 @@
   "title": "Effects lab · every fight effect on a click",
   "description": "The development effects lab (?fxlab, just dev-fx, src/fx-lab.ts): a panel over a real fight that plays each fight effect under a made-up attack name, element hits, fire, statuses and reactions on the picked fighter. Clicks its own buttons, as a person would. Run it with --gpu.",
   "steps": [
-    { "open": "/?story=noista&fxlab" },
+    { "open": "/?story=matemagico&fxlab" },
     { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && !!document.querySelector('.fx-lab [data-field=target] option')", "timeout": 90000 },
     { "shot": "panel", "delay": 1500, "caption": "The lab over a fight: target and thrower, strength, ánima colour, and a button per attack, element, fire level, status and reaction" },
     { "eval": "document.querySelector('.fx-lab [data-fx=arc]').click()" },

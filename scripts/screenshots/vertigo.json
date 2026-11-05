@@ -1,0 +1,253 @@
+{
+  "title": "Vertitrón: el robot del ojo, con Uri y Nil encima",
+  "description": "docs/quests/nuria.md § Final boss. Vertitrón in the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost): a robot of roof tiles and ladders with one glass eye bulging from its chest (GPU particles turning inside it, the eyeball darting about), Uri on its head with Nil in his arms, his eyes violet. Each of its moves with Uri's shout over him: Pisotón, Barrido, Grito liberador, the eye charging and the Rayo terrorífico sweeping both. Then the picker's moments (eye charged, eye broken), the eye broken by a blow, and the win: it kneels and Uri and Nil come down. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22fisico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.shout = () => !!document.querySelector('.battle-speech-line[data-speaker=\"uri\"]:not([data-leaving])'); window.eyeAt = () => { const p = window.gerard.game.fighterAt('ojo'); return p; };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "intro",
+      "delay": 1500,
+      "caption": "Vertitrón: a robot of roof tiles and ladders, a glass eye in its chest; on its head Uri with Nil, his eyes glowing violet. No dog anywhere"
+    },
+    {
+      "eval": "const p = window.gerard.game.fighterAt('vertigo'); window.gerard.game.frame({ x: p.x, y: p.y + 5.4, z: p.z }, 1.6)"
+    },
+    {
+      "shot": "uri-y-nil",
+      "delay": 900,
+      "caption": "Up close: Uri on its head holding Nil, his eyes violet like the possessed dogs'"
+    },
+    {
+      "eval": "const p = window.gerard.game.fighterAt('ojo'); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 1.1)"
+    },
+    {
+      "record": "ojo",
+      "seconds": 2,
+      "fps": 30,
+      "tiles": 8,
+      "caption": "Its eye up close: a glass ball, glints that stay put, the eyeball darting about inside, violet light turning in it"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.shout()",
+      "timeout": 60000
+    },
+    {
+      "shot": "pisoton",
+      "delay": 80,
+      "caption": "Pisotón: Uri shouts it («¡Pisotón!») from up on it as Vertitrón lifts a leg to stomp"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "document.querySelector('[data-actor=\"vertigo\"]') || window.shout()",
+      "timeout": 60000
+    },
+    {
+      "record": "barrido",
+      "seconds": 1.6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Barrido: an arm out flat swept across both, dust kicked up under it"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "document.querySelector('[data-actor=\"vertigo\"]') || window.shout()",
+      "timeout": 60000
+    },
+    {
+      "record": "grito",
+      "seconds": 1.6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Grito liberador: arms out, rings of violet thrown out from its chest; the party's Fuerza and Magia down, its own up"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.shout()",
+      "timeout": 60000
+    },
+    {
+      "shot": "cargando",
+      "delay": 400,
+      "caption": "The eye charges: «¡Cargando rayo terrorífico!», light drawn into it"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "cargado",
+      "delay": 800,
+      "caption": "Charged (Rayo terrorífico → todos): the eye glows hotter, its light turning much faster"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "document.querySelector('[data-actor=\"vertigo\"]') || window.shout()",
+      "timeout": 60000
+    },
+    {
+      "record": "rayo",
+      "seconds": 1.6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Rayo terrorífico: a beam from the eye sweeps across Aitor and Gerard"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.jumpTo('vertigo-carga')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "momento-carga",
+      "delay": 1200,
+      "caption": "Picker moment «Rayo cargado»"
+    },
+    {
+      "eval": "ui.jumpTo('vertigo-sin-ojo')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "momento-sin-ojo",
+      "delay": 1200,
+      "caption": "Picker moment «Ojo roto»: the eye dark and cracked, nothing turning in it"
+    },
+    {
+      "eval": "const p = window.gerard.game.fighterAt('ojo'); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 1.1)"
+    },
+    {
+      "shot": "ojo-roto-cerca",
+      "delay": 900,
+      "caption": "Up close: the broken eye"
+    },
+    {
+      "eval": "window.gerard.game.frame(); ui.jumpTo('vertigo-grito')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.jumpTo('foes-low')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('attack')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-target=\"ojo\"]')?.click()"
+    },
+    {
+      "record": "ojo-se-rompe",
+      "seconds": 1.8,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Picker «Enemigos a 1 PV», then a blow on the eye: it breaks (shards, a flash, smoke), stops dead and goes dark; Vertitrón shudders"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "document.head.insertAdjacentHTML('beforeend', '<style>.battle-result{visibility:hidden!important}</style>'); ui.jumpTo('won')"
+    },
+    {
+      "record": "victoria",
+      "seconds": 3.2,
+      "fps": 20,
+      "tiles": 12,
+      "caption": "Won (the result card hidden to see it): Vertitrón drops to its knees, its eye goes dark, and Uri comes down with Nil"
+    },
+    {
+      "shot": "rodillas",
+      "delay": 600,
+      "caption": "Vertitrón kneeling, Uri and Nil safe on the roof, the violet gone from his eyes"
+    }
+  ]
+}

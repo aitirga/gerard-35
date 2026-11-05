@@ -58,8 +58,152 @@ const DITHER = `
     let ditherNoise = fract(52.9829189 * fract(dot(pcPosition.xy, vec2f(0.06711056, 0.00583715))));
     result = pow(max(pow(max(result, vec3f(0.0)), vec3f(1.0 / 2.2)) + (ditherNoise - 0.5) / 255.0, vec3f(0.0)), vec3f(2.2));`;
 
+/**
+ * The glass a fight moves into its pocket, or out of it, through (src/pocket.ts, docs/combat.md §
+ * Dónde se planta un combate). The picture as it was is kept (`snapshot`) and the new place is
+ * already there behind it; the picture is small panes of glass of different sizes in rows that
+ * never line up, and pane by pane, one here, one there, tick tick tick, each turns to show the new
+ * place: it flashes as it turns, shows the place mirrored in it, bent and split into its colours,
+ * and settles straight. The panes still waiting show the old place stirred, more as more turn
+ * round them. Every bevel catches the light from its own angle; the seams are dark.
+ * `uDiffusion` is how far it has gone (0 none turned, 1 all), `uSnapshotOn` whether it is on,
+ * `uDiffusionSeed` the time.
+ */
+const DIFFUSION_DECLARATIONS = `
+uniform uDiffusion: f32;
+uniform uDiffusionSeed: f32;
+uniform uSnapshotOn: f32;
+var uSnapshot: texture_2d<f32>;
+var uSnapshotSampler: sampler;
+fn diffusionHash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
+fn glassSample(at: vec2f) -> vec3f { return textureSampleLevel(sceneTexture, sceneTextureSampler, clamp(at, vec2f(0.0), vec2f(1.0)), 0.0).rgb; }
+fn oldSample(at: vec2f) -> vec3f { return textureSampleLevel(uSnapshot, uSnapshotSampler, clamp(at, vec2f(0.0), vec2f(1.0)), 0.0).rgb; }`;
+const DIFFUSION = `
+    if (uniform.uSnapshotOn > 0.5) {
+      let flip = uniform.uDiffusion;
+      let size = vec2f(textureDimensions(sceneTexture, 0));
+      let cellSize = 24.0 * size.y / 900.0;
+      let px = uv * size;
+      let rowId = floor(px.y / cellSize);
+      let rowShift = diffusionHash(vec2f(rowId, 3.7)) * cellSize;
+      let shifted = vec2f(px.x + rowShift, px.y);
+      var paneId = floor(shifted / cellSize);
+      var paneSize = vec2f(cellSize);
+      var paneOrigin = paneId * cellSize;
+      if (diffusionHash(paneId + 41.0) < 0.5) {
+        let piece = cellSize * 0.5;
+        let sub = floor((shifted - paneOrigin) / piece);
+        paneOrigin = paneOrigin + sub * piece;
+        paneSize = vec2f(piece);
+        paneId = paneId * 2.0 + sub + 1000.0;
+      }
+      let q = (shifted - paneOrigin - paneSize * 0.5) / (paneSize * 0.5);
+      let r1 = diffusionHash(paneId);
+      let r2 = diffusionHash(paneId.yx + 7.3);
+      let r3 = diffusionHash(paneId + 19.1);
+      let r4 = diffusionHash(paneId.yx + 53.9);
+      let age = (flip - r3 * 0.86) / 0.14;
+      let stir = sin(clamp(flip, 0.0, 1.0) * 3.14159);
+      let tilt = (vec2f(r1, r2) - 0.5) * 2.0;
+      let paneUv = paneSize / size;
+      var seen = result;
+      var turning = 0.0;
+      if (age < 1.0) {
+        if (age < 0.0) {
+          seen = oldSample(uv + tilt * paneUv * 0.35 * stir);
+        } else {
+          turning = 1.0 - age;
+          let middle = (paneOrigin + paneSize * 0.5 - vec2f(rowShift, 0.0)) / size;
+          let bent = mix(uv, middle * 2.0 - uv, turning * turning) + tilt * paneUv * 0.5 * turning;
+          let split = normalize(q + vec2f(0.0001)) * turning * 0.006;
+          seen = vec3f(glassSample(bent + split).r, glassSample(bent).g, glassSample(bent - split).b);
+        }
+        #ifdef GRADING
+          seen = applyGrading(seen);
+        #endif
+        seen = toneMap(max(vec3f(0.0), seen));
+        #ifdef COLOR_LUT
+          seen = applyColorLUT(seen);
+        #endif
+        #ifdef VIGNETTE
+          seen = applyVignette(seen, uv);
+        #endif
+      }
+      let edge = max(abs(q.x), abs(q.y));
+      let bevel = smoothstep(0.7, 0.95, edge);
+      let facing = vec2f(cos(r4 * 6.2832), sin(r4 * 6.2832));
+      let lit = clamp(dot(normalize(q + vec2f(0.0001)), facing), 0.0, 1.0);
+      let seam = smoothstep(0.94, 1.0, edge);
+      let glassy = max(stir * 0.8, turning);
+      var glass = seen * (1.0 - bevel * 0.2 * glassy) + vec3f(bevel * lit * 0.4 * glassy) + vec3f(0.85, 0.92, 1.0) * turning * turning * 0.5;
+      result = glass * (1.0 - seam * 0.5 * glassy);
+    }`;
+
+/**
+ * A dual attack's spotlight (docs/combat.md § Ataques duales, `spotlight`): while it is on, the
+ * picture loses its colour and darkens towards the edges, except round up to SPOTS points of the
+ * screen (the two who attack and the cats), which keep theirs, warmed towards gold so the place's
+ * own light round them (the tower's violet) never frames the moment. Each spot is an upright ellipse
+ * (a figure, not a disc of floor). `uSpotOn` is how far it is on (0–1); each spot is its centre in
+ * screen uv (x, y), its radius (half its height) in screen heights and 1 if it is used.
+ */
+const SPOTS = 4;
+const SPOT_DECLARATIONS = `
+uniform uSpotOn: f32;
+uniform uSpotAspect: f32;
+${Array.from({ length: SPOTS }, (_, i) => `uniform uSpot${i}: vec4f;`).join('\n')}
+fn spotKeep(uv: vec2f, spot: vec4f) -> f32 {
+  if (spot.w < 0.5) { return 0.0; }
+  let d = length((uv - spot.xy) * vec2f(uniform.uSpotAspect * 1.9, 1.0));
+  return 1.0 - smoothstep(spot.z * 0.7, spot.z * 1.3, d);
+}`;
+const SPOT = `
+    if (uniform.uSpotOn > 0.001) {
+      let spotOn = uniform.uSpotOn;
+      let keep = max(max(spotKeep(uv, uniform.uSpot0), spotKeep(uv, uniform.uSpot1)), max(spotKeep(uv, uniform.uSpot2), spotKeep(uv, uniform.uSpot3)));
+      let grey = dot(result, vec3f(0.2126, 0.7152, 0.0722));
+      let dim = vec3f(grey) * vec3f(0.86, 0.84, 0.8);
+      let lit = mix(result, vec3f(grey) * vec3f(1.1, 0.98, 0.76), 0.35) * vec3f(1.04, 1.0, 0.9);
+      result = mix(result, mix(dim, lit, keep), spotOn * mix(0.82, 1.0, keep));
+      let edge = length((uv - vec2f(0.5)) * vec2f(uniform.uSpotAspect, 1.0));
+      result = result * (1.0 - spotOn * 0.5 * smoothstep(0.3, 0.95, edge) * (1.0 - keep * 0.6));
+    }`;
+
 export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
-  pc.ShaderChunks.get(app.graphicsDevice, pc.SHADERLANGUAGE_WGSL).set('composeMainEndPS', DITHER);
+  const chunks = pc.ShaderChunks.get(app.graphicsDevice, pc.SHADERLANGUAGE_WGSL);
+  chunks.set('composeDeclarationsPS', DIFFUSION_DECLARATIONS + SPOT_DECLARATIONS);
+  chunks.set('composeMainEndPS', DIFFUSION + SPOT + DITHER);
+  const scope = app.graphicsDevice.scope;
+  const diffusionId = scope.resolve('uDiffusion'), diffusionSeedId = scope.resolve('uDiffusionSeed'), snapshotOnId = scope.resolve('uSnapshotOn'), snapshotId = scope.resolve('uSnapshot');
+  diffusionId.setValue(0); diffusionSeedId.setValue(0); snapshotOnId.setValue(0);
+  // --- A dual's spotlight: its points are in the world, put on the screen once the camera has moved this frame ---
+  const spotOnId = scope.resolve('uSpotOn'), spotAspectId = scope.resolve('uSpotAspect'), spotIds = Array.from({ length: SPOTS }, (_, i) => scope.resolve(`uSpot${i}`));
+  const spotValues = Array.from({ length: SPOTS }, () => new Float32Array(4));
+  spotOnId.setValue(0); spotAspectId.setValue(1); spotIds.forEach((id, i) => id.setValue(spotValues[i]));
+  let spot: { amount: number; points: readonly { x: number; y: number; z: number; radius: number }[] } = { amount: 0, points: [] };
+  const spotScreen = new pc.Vec3(), spotWorld = new pc.Vec3();
+  function placeSpots() {
+    spotOnId.setValue(frame.enabled ? spot.amount : 0);
+    if (!spot.amount || !frame.enabled) return;
+    // Where the camera puts them on the screen (CSS pixels, from the top left), as uv of the picture.
+    const { width, height } = app.graphicsDevice.clientRect, cw = Math.max(1, width), ch = Math.max(1, height);
+    spotAspectId.setValue(cw / ch);
+    // An orthographic camera: a metre is the same share of the screen's height anywhere.
+    const metre = 1 / Math.max(.01, camera.orthoHeight * 2);
+    spotValues.forEach((value, i) => {
+      const p = spot.points[i];
+      if (p) {
+        camera.worldToScreen(spotWorld.set(p.x, p.y, p.z), spotScreen);
+        value[0] = spotScreen.x / cw; value[1] = spotScreen.y / ch; value[2] = p.radius * metre; value[3] = 1;
+      } else value[3] = 0;
+      spotIds[i].setValue(value);
+    });
+  }
+  app.on('prerender', placeSpots);
+  // The picture kept for the glass (`snapshot`): a copy of the scene's colour before the compose pass, sized to it.
+  const blank = new pc.Texture(app.graphicsDevice, { name: 'Sin instantánea', width: 1, height: 1, format: pc.PIXELFORMAT_RGBA8, mipmaps: false });
+  snapshotId.setValue(blank);
+  let kept: { texture: pc.Texture; target: pc.RenderTarget } | undefined;
   const frame = new pc.CameraFrame(app, camera);
   frame.rendering.samples = LOOK.samples;
   // 16-bit float, not the default 11/11/10: its 6-bit mantissas band the flat's lamp light and the dusk sky.
@@ -112,6 +256,33 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   return {
     frame, pulse,
     /**
+     * A dual attack's spotlight: `amount` (0–1) of the picture loses its colour and darkens towards
+     * its edges, except round `points` (world positions, `radius` metres; up to four), which keep it.
+     * 0 turns it off.
+     */
+    spotlight(amount: number, points: readonly { x: number; y: number; z: number; radius: number }[] = []) {
+      spot = { amount: Math.max(0, Math.min(1, amount)), points: points.slice(0, SPOTS) };
+    },
+    /**
+     * Keeps the picture as it is now for the glass (`diffuse`): call it before the scene changes
+     * under it. False if there is nothing to keep (the pass is off).
+     */
+    snapshot() {
+      const scene = (frame as unknown as { renderPassCamera?: { rt?: pc.RenderTarget } }).renderPassCamera?.rt?.colorBuffer;
+      const source = (frame as unknown as { renderPassCamera?: { rt?: pc.RenderTarget } }).renderPassCamera?.rt;
+      if (!frame.enabled || !scene || !source) return false;
+      if (!kept || kept.texture.width !== scene.width || kept.texture.height !== scene.height || kept.texture.format !== scene.format) {
+        kept?.target.destroy(); kept?.texture.destroy();
+        const texture = new pc.Texture(app.graphicsDevice, { name: 'Instantánea del cristal', width: scene.width, height: scene.height, format: scene.format, mipmaps: false, minFilter: pc.FILTER_LINEAR, magFilter: pc.FILTER_LINEAR, addressU: pc.ADDRESS_CLAMP_TO_EDGE, addressV: pc.ADDRESS_CLAMP_TO_EDGE });
+        kept = { texture, target: new pc.RenderTarget({ name: 'Instantánea del cristal', colorBuffer: texture, depth: false }) };
+      }
+      (app.graphicsDevice as unknown as { copyRenderTarget(source: pc.RenderTarget, dest: pc.RenderTarget, color: boolean, depth: boolean): boolean }).copyRenderTarget(source, kept.target, true, false);
+      snapshotId.setValue(kept.texture);
+      return true;
+    },
+    /** How far the glass has gone (0 none turned, 1 all), the time, and whether it is on at all. */
+    diffuse(amount: number, time: number, on = amount > 0 && amount < 1) { diffusionId.setValue(amount); diffusionSeedId.setValue(time % 1000); snapshotOnId.setValue(on ? 1 : 0); },
+    /**
      * The background colour to give the camera for `colour` as the eye should see it: the HDR
      * buffer is linear and gamma-encoded at the end, so a straight sRGB clear would come out paler.
      */
@@ -152,7 +323,7 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
      */
     glass(on: boolean) { if (frame.rendering.sceneColorMap === on) return; frame.rendering.sceneColorMap = on; frame.update(); },
     get enabled() { return frame.enabled; },
-    destroy() { app.off('update', fadeHit); grading.destroy(); frame.destroy(); },
+    destroy() { app.off('update', fadeHit); app.off('prerender', placeSpots); grading.destroy(); frame.destroy(); kept?.target.destroy(); kept?.texture.destroy(); blank.destroy(); },
   };
 }
 

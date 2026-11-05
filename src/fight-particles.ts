@@ -67,6 +67,8 @@ export interface GpuKind {
    * of glass or a soap bubble; 1 leaves little but its rim and the glint.
    */
   glass?: number;
+  /** How white-hot its middle is (0–1, 1 by default): 0 keeps it its own colour all through, for specks too small to have a core. */
+  core?: number;
   /** Becomes this kind when it first lands on the floor, or when it dies; its own life when it becomes one. */
   onLand?: string; onDeath?: string; life?: readonly [number, number];
 }
@@ -82,6 +84,13 @@ export interface GpuBurst {
   to?: { x: number; y: number; z: number };
   /** Which fighter (`setFighters` order) for `surface`; its parts above this fraction of its height only. */
   fighter?: number; above?: number;
+  /**
+   * `surface` only: born within this band of the fighter's height (0 its lowest point, 1 its highest),
+   * as a front eating it from the feet up leaves it (src/disintegrate.ts).
+   */
+  band?: readonly [number, number];
+  /** `surface` only: takes this much (0–1) of the colour of the part it is born on, the rest from `colour`. */
+  fromPart?: number;
   /**
    * Base velocity plus a kick of up to `speed` m/s any way; with a `cone` (radians) its direction is
    * instead spread within that cone round `velocity`, at its speed ± `speed`. Then off the surface by
@@ -206,7 +215,9 @@ export interface GpuLatticeOptions extends Partial<Omit<GpuLattice, 'at' | 'rota
 export interface GpuEmitter extends Omit<GpuBurst, 'count' | 'light'> { rate: number; remove(): void }
 
 const W = 256, H = 128, N = W * H, BANDS = 5;
-const MAX_KINDS = 48, KIND_COLS = 12, MAX_BATCHES = 64, SPAWN_COLS = 8, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, MAX_FIGHTERS = 8, FLOOR = 64;
+// Every kind registered at once: the fight's own, the duals', the statuses' and the motes' (one name each).
+export const MAX_KINDS = 64;
+const KIND_COLS = 12, MAX_BATCHES = 64, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
 const SPAWN_SHAPES = { ball: 0, ring: 1, surface: 2, line: 3 } as const;
 /** Crystals and other volumes particles meet; light groups (bursts that light their surroundings), the lights they share and how many particles each samples. */
 export const MAX_VOLUMES = 8;
@@ -374,21 +385,35 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
     } else if (s3.x > 2.5) { pos = mix(s1.xyz, s7.xyz, (offset - inChain + 0.5) / s0.y) + unitVec(r2, r3) * s1.w * r4; }
     else if (textureLoad(uFighters, vec2i(1, i32(s3.y)), 0).y < 0.5) { pos = s1.xyz; }
     else {
-      // On a fighter: a random part (above a fraction of its height), a random face, a random point on it.
+      // On a fighter: a random part (above a fraction of its height), a random face, a random point on
+      // it. Within a band of its height (a front eating it), drawn again until the point is in it.
       let fighter = textureLoad(uFighters, vec2i(1, i32(s3.y)), 0);
       let count = i32(fighter.y);
-      var pick = i32(fighter.x) + min(count - 1, i32(r2 * f32(count)));
-      for (var tries = 0; tries < 4; tries++) {
-        if (toWorld(pick, part4(6, pick).xyz).y >= fighter.z + (fighter.w - fighter.z) * s4.z) { break; }
-        pick = i32(fighter.x) + min(count - 1, i32(rnd(key, 20u + u32(tries)) * f32(count)));
+      let s8 = spawn4(8, b);
+      let bandLow = fighter.z + (fighter.w - fighter.z) * s8.x; let bandHigh = fighter.z + (fighter.w - fighter.z) * s8.y;
+      var pick = 0;
+      for (var draw = 0u; draw < 8u; draw++) {
+        // The first draw takes the burst's own numbers, as it always has.
+        let first = draw == 0u; let q = 48u + draw * 8u;
+        let d2 = select(rnd(key, q), r2, first); let d3 = select(rnd(key, q + 1u), r3, first); let d4 = select(rnd(key, q + 2u), r4, first);
+        let d5 = select(rnd(key, q + 3u), r5, first); let d6 = select(rnd(key, q + 4u), r6, first); let d7 = select(rnd(key, q + 5u), rnd(key, 8u), first);
+        let retry = select(q + 6u, 20u, first);
+        pick = i32(fighter.x) + min(count - 1, i32(d2 * f32(count)));
+        for (var tries = 0; tries < 4; tries++) {
+          if (toWorld(pick, part4(6, pick).xyz).y >= fighter.z + (fighter.w - fighter.z) * s4.z) { break; }
+          pick = i32(fighter.x) + min(count - 1, i32(rnd(key, retry + u32(tries) * select(1u, 97u, !first)) * f32(count)));
+        }
+        let box = part4(6, pick); let half_ = part4(7, pick);
+        var local = box.xyz + (vec3f(d3, d4, d5) * 2.0 - 1.0) * half_.xyz;
+        let axis = i32(d6 * 3.0);
+        let side = select(1.0, -1.0, d7 < 0.5);
+        if (axis == 0) { local.x = box.x + side * half_.x; } else if (axis == 1) { local.y = box.y + side * half_.y; } else { local.z = box.z + side * half_.z; }
+        normal = normalize(part4(axis, pick).xyz) * side;
+        pos = toWorld(pick, local) + normal * 0.02;
+        if (pos.y >= bandLow && pos.y <= bandHigh) { break; }
       }
-      let box = part4(6, pick); let half_ = part4(7, pick);
-      var local = box.xyz + (vec3f(r3, r4, r5) * 2.0 - 1.0) * half_.xyz;
-      let axis = i32(r6 * 3.0);
-      let side = select(1.0, -1.0, rnd(key, 8u) < 0.5);
-      if (axis == 0) { local.x = box.x + side * half_.x; } else if (axis == 1) { local.y = box.y + side * half_.y; } else { local.z = box.z + side * half_.z; }
-      normal = normalize(part4(axis, pick).xyz) * side;
-      pos = toWorld(pick, local) + normal * 0.02;
+      // The colour of the part it leaves, as much as asked.
+      if (s8.z > 0.0) { tint = mix(tint, part4(8, pick).rgb, s8.z); }
     }
     var dir = unitVec(rnd(key, 9u), rnd(key, 10u));
     let speed = length(s2.xyz);
@@ -712,6 +737,7 @@ varying vUv: vec2f;
 varying vColour: vec4f;
 varying vLook: vec4f;
 varying vGlass: f32;
+varying vCore: f32;
 fn st(band: i32, index: i32) -> vec4f { return textureLoad(uState, vec2i(index % ${W}, index / ${W} + band * ${H}), 0); }
 fn kin(k: i32, c: i32) -> vec4f { return textureLoad(uKinds, vec2i(c, k), 0); }
 @vertex
@@ -720,7 +746,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   let i = i32(aIndex.x);
   let A = st(0, i); let B = st(1, i); let C = st(2, i); let D = st(3, i); let E = st(4, i);
   if (!(B.w > 0.0 && A.w < B.w)) {
-    output.position = vec4f(2.0, 2.0, 2.0, 1.0); output.vUv = vec2f(0.0); output.vColour = vec4f(0.0); output.vLook = vec4f(0.0); output.vGlass = 0.0;
+    output.position = vec4f(2.0, 2.0, 2.0, 1.0); output.vUv = vec2f(0.0); output.vColour = vec4f(0.0); output.vLook = vec4f(0.0); output.vGlass = 0.0; output.vCore = 0.0;
     return output;
   }
   let k = i32(C.x);
@@ -807,6 +833,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   output.vColour = vec4f(colour, alpha);
   output.vLook = vec4f(shape, seed, f.z, blur);
   output.vGlass = k7.z;
+  output.vCore = kin(k, 11).z;
   output.position = uniform.matrix_viewProjection * vec4f(world, 1.0);
   return output;
 }`;
@@ -820,6 +847,7 @@ varying vUv: vec2f;
 varying vColour: vec4f;
 varying vLook: vec4f;
 varying vGlass: f32;
+varying vCore: f32;
 fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
 fn noise(p: vec2f) -> f32 { let i = floor(p); var f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2f(1.0, 0.0)), f.x), mix(hash(i + vec2f(0.0, 1.0)), hash(i + vec2f(1.0, 1.0)), f.x), f.y); }
 // Each shape: how covered (a), how white-hot (white) and how its colour is tinted at uv.
@@ -932,7 +960,7 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
     sh.a = mix(sh.a, sh.a * hollow + glint * 0.8, vGlass);
     sh.white = mix(sh.white, sh.white * hollow + glint, vGlass);
   }
-  var a = sh.a; let white = sh.white;
+  var a = sh.a; let white = sh.white * vCore;
   var colour = vColour.rgb * sh.tint;
   a *= vColour.a;
   if (a < 0.004) { discard; }
@@ -968,7 +996,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
   const targets = states.map(colorBuffer => new pc.RenderTarget({ colorBuffer, depth: false }));
   let current = 0;
   const kindTex = data(KIND_COLS, MAX_KINDS, 'Clases de partículas'), spawnTex = data(SPAWN_COLS, MAX_BATCHES, 'Nacimientos'), fieldTex = data(FIELD_COLS, MAX_FIELDS, 'Campos');
-  const partTex = data(8, MAX_PARTS, 'Partes de luchadores'), fighterTex = data(2, MAX_FIGHTERS, 'Luchadores'), floorTex = data(FLOOR, FLOOR, 'Suelo del combate');
+  const partTex = data(PART_COLS, MAX_PARTS, 'Partes de luchadores'), fighterTex = data(2, MAX_FIGHTERS, 'Luchadores'), floorTex = data(FLOOR, FLOOR, 'Suelo del combate');
   fill(floorTex, () => {});
   const volumeTex = data(VOLUME_COLS, MAX_VOLUMES, 'Volúmenes'), groupTex = data(1, MAX_LIGHT_GROUPS, 'Grupos de luz'), latticeTex = data(LATTICE_COLS, MAX_LATTICES, 'Retículas');
   const lightTex = data(MAX_LIGHT_GROUPS, 2, 'Luz de las partículas'), lightTarget = new pc.RenderTarget({ colorBuffer: lightTex, depth: false });
@@ -994,7 +1022,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     row(9, [ref(d.onLand), ref(d.onDeath), 0, d.follow ?? 12]);
     const blur = typeof d.blur === 'number' ? [d.blur, d.blur] : d.blur ?? [0, 0];
     row(10, [d.sizeJitter ?? 0, d.aspect ?? .25, Math.max(0, blur[0]), Math.max(0, blur[1])]);
-    row(11, [d.life?.[0] ?? .5, d.life?.[1] ?? d.life?.[0] ?? .5, 0, 0]);
+    row(11, [d.life?.[0] ?? .5, d.life?.[1] ?? d.life?.[0] ?? .5, Math.min(1, Math.max(0, d.core ?? 1)), 0]);
   }
   function uploadKinds() { const out = kindTex.lock() as Float32Array; out.set(kindData); kindTex.unlock(); }
   function define(name: string, kind: GpuKind) {
@@ -1139,7 +1167,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
           if (parts >= MAX_PARTS || !m.mesh || !m.visible) continue;
           const world = m.node.getWorldTransform(), w = world.data;
           inverse.copy(world).invert();
-          const inv = inverse.data, o = parts * 32, local = m.mesh.aabb;
+          const inv = inverse.data, o = parts * PART_COLS * 4, local = m.mesh.aabb;
           for (let row = 0; row < 3; row++) {
             pd.set([inv[row], inv[4 + row], inv[8 + row], inv[12 + row]], o + row * 4);
             pd.set([w[row], w[4 + row], w[8 + row], w[12 + row]], o + 12 + row * 4);
@@ -1147,6 +1175,9 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
           // A few millimetres of skin, so what bounces off never touches the body.
           pd.set([local.center.x, local.center.y, local.center.z, .004], o + 24);
           pd.set([local.halfExtents.x, local.halfExtents.y, local.halfExtents.z, 0], o + 28);
+          // Its colour, for what is born on it in its colour (`fromPart`).
+          const diffuse = (m.material as pc.StandardMaterial | null)?.diffuse;
+          pd.set(diffuse ? [diffuse.r ** 2.2, diffuse.g ** 2.2, diffuse.b ** 2.2, 1] : [1, 1, 1, 1], o + 32);
           if (first) { box.copy(m.aabb); first = false; } else box.add(m.aabb);
           parts++;
         }
@@ -1405,6 +1436,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
         out.set([o.up ?? 0, Math.max(1, Math.round(o.chain ?? 1)), o.around ?? 0, b.member], row + 20);
         out.set([c?.[0] ?? 1, c?.[1] ?? 1, c?.[2] ?? 1, c ? 1 : 0], row + 24);
         out.set([end.x, end.y, end.z, b.home ? 1 : 0], row + 28);
+        out.set([o.band?.[0] ?? -1, o.band?.[1] ?? 2, Math.min(1, Math.max(0, o.fromPart ?? 0)), 0], row + 32);
       }));
       live = Math.min(N, live + batches.reduce((n, b) => n + b.count, 0));
       fill(fieldTex, out => fields.slice(0, MAX_FIELDS).forEach((f, i) => {

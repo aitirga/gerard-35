@@ -38,7 +38,7 @@ const HAIR = ['#2b1d14', '#5a3b22', '#a8743a', '#1c1c1c', '#c9c2b6'];
 
 export function createNewsSet(app: pc.Application, stage: NewsStage, castle: pc.Vec3) {
   const root = new pc.Entity('Plató de las noticias'); app.root.addChild(root);
-  const props = createPropKit();
+  const props = createPropKit(app.graphicsDevice);
   const materials: pc.StandardMaterial[] = [];
   const cache = new Map<string, pc.StandardMaterial>();
   function mat(hex: string, gloss = .3, glow = 0) {

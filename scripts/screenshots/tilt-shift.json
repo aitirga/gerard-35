@@ -203,7 +203,7 @@
       "caption": "La Reina Bubbaloo's palace: tilt-shift and contact shadows"
     },
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1"
+      "open": "/?story=matemagico&battle=3&allies=2"
     },
     {
       "eval": "window.look = (tilt, ssao, debug) => { const g = window.gerard.game, p = g.post; p.tiltShift = tilt; p.ssao = ssao; p.frame.debug = debug ?? null; p.frame.update(); for (let i = 0; i < 3; i++) g.app.fire('update', 0); };"

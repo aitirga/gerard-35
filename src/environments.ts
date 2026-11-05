@@ -5,6 +5,7 @@ import MERIDIANA_CALLE_SCENE from './geo/meridiana-calle.json' with { type: 'jso
 import REC_COMTAL_SCENE from './geo/rec-comtal.json' with { type: 'json' };
 import CARDEDEU_SCENE from './geo/cardedeu.json' with { type: 'json' };
 import CARDEDEU_MAZE_SCENE from './geo/cardedeu-laberinto.json' with { type: 'json' };
+import CARDEDEU_CALLE_SCENE from './geo/cardedeu-calle.json' with { type: 'json' };
 import BUNKERS_CARMEL_SCENE from './geo/bunkers-carmel.json' with { type: 'json' };
 import BARCELONETA_SCENE from './geo/barceloneta.json' with { type: 'json' };
 import SANTS_SCENE from './geo/sants.json' with { type: 'json' };
@@ -15,7 +16,7 @@ import { towerGrid } from './tower.ts';
 import { PALACE_GYM, PALACE_OFFICE, PALACE_PATIO, PALACE_THRONE, type ZoneTheme } from './palace-zone-plans.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
-  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta'
+  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-calle' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta'
   | 'sants' | 'el-nucli' | 'poble-sec' | 'placa-espanya' | 'sagrada-familia' | 'sagrada-familia-interior'
   | 'palacio-patio' | 'palacio-gimnasio' | 'palacio-secretaria' | 'palacio-trono';
 export interface Rect { x: number; z: number; w: number; d: number }
@@ -146,6 +147,12 @@ export interface Environment {
   interactions: Interaction[];
   /** Follow-camera zoom (orthographic half-height); without it the camera frames the whole map. */
   zoom?: number;
+  /**
+   * The camera's own angle here instead of the game's (src/camera-orbit.ts), for a place the usual one
+   * cannot see into. `steer`: the way "up" walks, in degrees round the vertical like `yaw`, if not
+   * straight away from the camera (a long street, so it walks along it instead of into its wall).
+   */
+  view?: { yaw: number; pitch: number; steer?: number };
   /** Interiors: the drawn floor plan the grid comes from (see PLAN_GLYPHS), its rooms and steps. */
   plan?: string[];
   rooms?: Room[];
@@ -160,6 +167,12 @@ export interface Environment {
   geo?: GeoScene;
   /** Inside the Sagrada Família: a plan in BASILICA_GLYPHS, built by `src/basilica-scenery.ts`. */
   basilica?: { plan: string[] };
+  /**
+   * How tall its walls stand over the floor beside them, in cells, where they are taller than a
+   * fence or a low wall and a fight's camera cannot see through them: a fight staged here keeps that
+   * much more room towards the camera, or moves to a pocket (src/arena.ts `viewRoom`).
+   */
+  walls?: number;
 }
 
 export const COURTYARD_ROWS = [
@@ -561,10 +574,14 @@ export const MERIDIANA_CALLE = geoEnvironment('meridiana-calle', MERIDIANA_CALLE
 export const REC_COMTAL = geoEnvironment('rec-comtal', REC_COMTAL_SCENE as GeoScene);
 /** Nuria's street in Cardedeu (docs/quests/nuria.md), from the R4. */
 export const CARDEDEU = geoEnvironment('cardedeu', CARDEDEU_SCENE as GeoScene);
-/** Uri's maze, round the corner of Nuria's street (docs/quests/nuria.md § The maze). */
+/** La calle que no acaba: Nuria's street as Uri's fear bends it, one way to the bubble (docs/quests/nuria.md). */
+// Seen from high up and nearly along it: from the usual angle its houses, close on both sides, hid the street.
+export const CARDEDEU_CALLE: Environment = { ...geoEnvironment('cardedeu-calle', CARDEDEU_CALLE_SCENE as GeoScene), zoom: 15, view: { yaw: 18, pitch: 62, steer: 0 } };
+/** Uri's maze, through the bubble at the end of the street (docs/quests/nuria.md § The maze). */
 const MAZE_GROUND = geoEnvironment('cardedeu-laberinto', CARDEDEU_MAZE_SCENE as GeoScene);
 /** Its tower's walls are drawn into the grid (src/tower.ts): the ramp spirals up ring by ring. */
-export const CARDEDEU_MAZE = { ...MAZE_GROUND, grid: towerGrid(MAZE_GROUND.grid) };
+/** Its walls stand 2.6 over the ramp beside them and up to 5.4 over the ring below (src/tower-scene.ts `WALL_OVER`). */
+export const CARDEDEU_MAZE = { ...MAZE_GROUND, grid: towerGrid(MAZE_GROUND.grid), walls: 4 };
 /** The Búnkers del Carmel on the Turó de la Rovira at sunset, the city below (docs/places/bunkers.md). */
 export const BUNKERS_CARMEL = geoEnvironment('bunkers-carmel', BUNKERS_CARMEL_SCENE as GeoScene);
 /** The beach of the L4: the Platja de Sant Miquel, L'Estel Ferit and the old Barceloneta (docs/places/barceloneta.md). */
@@ -657,7 +674,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
   meridiana: MERIDIANA, palacio: PALACIO, alegia: ALEGIA,
-  'meridiana-calle': MERIDIANA_CALLE, 'rec-comtal': REC_COMTAL, cardedeu: CARDEDEU, 'cardedeu-laberinto': CARDEDEU_MAZE,
+  'meridiana-calle': MERIDIANA_CALLE, 'rec-comtal': REC_COMTAL, cardedeu: CARDEDEU, 'cardedeu-calle': CARDEDEU_CALLE, 'cardedeu-laberinto': CARDEDEU_MAZE,
   'bunkers-carmel': BUNKERS_CARMEL,
   barceloneta: BARCELONETA,
   sants: SANTS, 'el-nucli': EL_NUCLI,

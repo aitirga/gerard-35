@@ -1,3 +1,4 @@
+import { isDpad } from './controller';
 import { createControllerUI } from './controller-ui';
 import { createExplorationUI } from './exploration-ui';
 import { createGame } from './game';
@@ -5,6 +6,7 @@ import { type Direction } from './movement';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
 import { createDialogueBanner } from './dialogue';
 import { createBattleUI } from './battle-ui';
+import { toNextLevel } from './levels';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
 import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
@@ -13,9 +15,9 @@ import type { MemberId } from './story';
 import { createTravelUI } from './travel-ui';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
-import { palaceGuards, SKILLS, type BattleEffect, type BattleState, type PartySlot } from './battle';
+import { ANIMA_NAMES, CLASS_STATS, palaceGuards, type BattleState, type ClassId, type PartySlot } from './battle';
 import { ANIMA_IDS, animaBonus, type AnimaId } from './animas';
-import { flagsAt, spotAt } from './story-points';
+import { flagsAt, missionJump, missionNow, spotAt, type MissionPart, type Spot } from './story-points';
 import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './jump-menu';
 import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById } from './home-lights';
 import { mountHomeLightsPage } from './home-lights-ui';
@@ -26,6 +28,7 @@ import { createAudio } from './audio';
 import { createMusic, isTrack, type TrackId } from './music';
 import { castleHaunt } from './haunt';
 import { createSfx, watchMenuSounds } from './sfx';
+import { impactSounds, startSounds, type Cue } from './battle-sounds';
 import { mountSoundPage } from './sound-ui';
 
 const isMember = (id: string): id is MemberId => id === 'gerard' || id === 'bernat' || id === 'aitor';
@@ -55,18 +58,14 @@ const music = createMusic(audio);
 const sfx = createSfx(audio);
 // Registered before the menus so Escape is heard before they take it.
 const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#controller-menu[open], #hud[data-panel], #lamp-dial:not([hidden]), #travel:not([hidden])'));
-/** A blow lands with a thump, a cure or a boost with a sparkle. */
-function impactSound(effect: BattleEffect) {
-  const kind = effect.skill && SKILLS.find(s => s.id === effect.skill)?.kind;
-  if (kind === 'heal' || kind === 'boost') sfx.play('heal');
-  else if ((effect.kind === 'attack' || effect.kind === 'skill' || effect.kind === 'enemy') && effect.amount) sfx.play('hit');
-}
+/** The fight's sounds, from their table (src/battle-sounds.ts). */
+const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.play(id, options); };
 /**
  * Each place's song, coming in slowly from anywhere in it (a vamping or cycled one from the top);
  * a place without one fades to silence.
  * The castle's song is haunted as much as the castle is threatening right now (src/haunt.ts).
  */
-const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'sad', meridiana: 'home', 'meridiana-calle': 'concrete', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo' };
+const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo' };
 let place: EnvironmentId | undefined;
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
@@ -93,15 +92,20 @@ function scoreBattle(state: BattleState | undefined) {
 }
 /**
  * Development: ?story=<flag> starts with that flag and what it needs (just dev-chapter), where it
- * happened; ?story=new from scratch. In chapter 2, &with=nuria,uri adds those ánima missions as done.
+ * happened; ?story=new from scratch. ?mission=<ánima>&part=<part> starts an ánima mission partway
+ * (just dev-mission, `missionParts`). In chapter 2, &with=nuria,uri adds those ánima missions as done.
  */
-const devJump = (() => {
+const devJump = ((): { flags: StoryFlag[]; spot?: Spot; part?: MissionPart } | undefined => {
   if (!import.meta.env.DEV) return undefined;
   const params = new URLSearchParams(location.search);
-  const at = params.get('story');
+  const at = params.get('story'), mission = params.get('mission');
+  const missions = (params.get('with') ?? '').split(',').filter((id): id is AnimaId => (ANIMA_IDS as string[]).includes(id));
+  if (mission !== null) {
+    const jump = (ANIMA_IDS as string[]).includes(mission) ? missionJump(mission as AnimaId, params.get('part') ?? 'start', missions) : undefined;
+    return jump ?? { flags: [] };
+  }
   if (at === null) return undefined;
   if (!(STORY_FLAGS as readonly string[]).includes(at)) return { flags: [] };
-  const missions = (params.get('with') ?? '').split(',').filter((id): id is AnimaId => (ANIMA_IDS as string[]).includes(id));
   return { flags: flagsAt(at as StoryFlag, missions), spot: spotAt(at as StoryFlag) };
 })();
 const devStory = devJump?.flags;
@@ -116,10 +120,15 @@ const loadoutKey = 'gerard35.loadout.v1';
 function restoreLoadout() { try { story.loadout = JSON.parse(localStorage.getItem(loadoutKey) ?? '{}'); } catch { /* Storage is optional. */ } }
 function keepLoadout() { try { localStorage.setItem(loadoutKey, JSON.stringify(story.loadout)); } catch { /* Storage is optional. */ } }
 restoreLoadout();
-// Fights won per ánima (src/levels.ts) also live here; the levels they reach are story flags.
-const winsKey = 'gerard35.wins.v1';
-try { story.wins = JSON.parse(localStorage.getItem(winsKey) ?? '{}'); } catch { /* Storage is optional. */ }
-function keepWins() { try { localStorage.setItem(winsKey, JSON.stringify(story.wins)); } catch { /* Storage is optional. */ } }
+// A mission's part sets the run the story does not save (Nuria's cats lent, the tower's ring).
+if (devJump?.part?.nuria) story.startNuria(devJump.part.nuria);
+// Each ánima's EXP (src/levels.ts) also lives here; the levels it reaches are story flags.
+const xpKey = 'gerard35.xp.v1';
+try {
+  const saved: unknown = JSON.parse(localStorage.getItem(xpKey) ?? '{}');
+  if (saved && typeof saved === 'object') story.xp = Object.fromEntries(Object.entries(saved).filter(([id, xp]) => id in ANIMA_NAMES && typeof xp === 'number' && Number.isFinite(xp) && xp >= 0)) as Partial<Record<ClassId, number>>;
+} catch { /* Storage is optional. */ }
+function keepXp() { try { localStorage.setItem(xpKey, JSON.stringify(story.xp)); } catch { /* Storage is optional. */ } }
 /**
  * Two players from chapter 2 (docs/party.md). `solo` is for development only: player 1 also plays
  * Aitor. It comes from ?solo (just dev-solo) or the switch on the Mando page, and is remembered.
@@ -190,18 +199,33 @@ try {
     change: async (state, effect, onImpact) => {
       // With the bulbs connected a hit may wait a moment, so it lands as they flash.
       const hold = homeLights.battle(state, effect);
-      if (hold) await new Promise(resolve => setTimeout(resolve, hold));
+      // Meanwhile the fire it carries, already settled, does not show on whoever it is coming for.
+      if (hold) { game.holdFire(effect?.target); await new Promise(resolve => setTimeout(resolve, hold)); }
       if (import.meta.env.DEV && state) applyHelp(state);
       scoreBattle(state);
-      return game.setBattle(state, effect, effect ? () => { impactSound(effect); onImpact?.(); } : onImpact);
+      if (effect) playCues(startSounds(effect, state));
+      return game.setBattle(state, effect, effect ? blow => { if (state && !blow) playCues(impactSounds(effect, state)); onImpact?.(blow); } : onImpact);
     },
     target: id => game.selectTarget(id),
-    awaken: id => { game.awaken(id); if (!testing) storyEvent({ type: 'class', id }); },
+    sound: id => sfx.play(id),
+    awaken: id => { sfx.play('awaken'); game.awaken(id); if (!testing) storyEvent({ type: 'class', id: id as Exclude<ClassId, 'fisico'> }); },
     driver: id => battleDriver(playing(), id),
     waiting: id => waitingForPlayer2(playing(), id),
     // Each fighter's pick in the fight is their pick for the adventure too.
     anima: (id, classId) => { game.changeAnima(id, classId); if (!testing && isMember(id) && story.wear(id, classId)) { keepLoadout(); storyChanged(); } },
     solo: () => playing().mode === 'solo',
+    // The fight's clock (statuses timed in seconds) stops with the pause menu.
+    paused: () => menuOpen(),
+    pulse: id => game.statusPulse(id),
+    // A fall wakes Gerard up at home only in chapter 2's castle; anywhere else it can be fought again or stepped back from.
+    forgiving: () => !(story.adult && currentLocation.startsWith('palacio')),
+    fallen: choice => { fallen = choice; },
+    // The development build puts the Dual command in the fight's menu (docs/dev-tools.md).
+    dev: () => import.meta.env.DEV,
+    // A dual's banner slows the 3D fight as it slows the fight's clock (src/battle-scene.ts, FightClock).
+    slowmo: (scale, seconds) => game.slowmo(scale, seconds),
+    // …and its clock follows the scene's, whatever slows it (the choreography slows itself further).
+    speed: () => game.fightSpeed(),
   });
   /** Re-applies who drives Aitor after the mode or the second controller changes. */
   function controlChanged() {
@@ -215,6 +239,7 @@ try {
     pause: paused => { game.setPaused(paused || storyPaused || menuOpen()); music.duck(paused || menuOpen()); },
     openMenu: () => controller.open(),
     wear: (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } },
+    equip: (member, classId, on) => { if (on ? story.equip(member, classId) : story.unequip(member, classId)) { keepLoadout(); storyChanged(); } },
     // With a second player on Aitor, each player gets their own half of the status screen.
     split: () => partnerDriven(control, story.partner),
     partner: () => game.partnerPosition,
@@ -223,6 +248,8 @@ try {
   let currentLocation: EnvironmentId = story.resume.environment;
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
   let beats = Promise.resolve();
+  /** Lights won but still on their way into Gerard and Aitor: not counted yet. */
+  let lightsFlying = 0;
   const learned: Partial<Record<string, () => boolean>> = {
     run: () => game.running,
     items: () => exploration.active === 'items',
@@ -232,7 +259,7 @@ try {
   };
   async function play(effect: StoryEffect) {
     if (effect.kind === 'dialogue') await new Promise<void>(resolve => dialogue.show(effect.dialogue, resolve));
-    else if (effect.kind === 'item') storyUI.item(effect.item);
+    else if (effect.kind === 'item') { sfx.play('pickup'); storyUI.item(effect.item); }
     else if (effect.kind === 'hint') storyUI.hint(effect.id, learned[effect.id]);
     else if (effect.kind === 'minion') { await game.summonMinion(); storyEvent({ type: 'minion' }); }
     else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(effect.encounter); }
@@ -248,10 +275,22 @@ try {
     else if (effect.kind === 'metro') await ride(effect.station);
     else if (effect.kind === 'look') await game.look(effect.anchor);
     else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
-    else if (effect.kind === 'learn') storyUI.learn(effect.classId, effect.level, effect.skills);
-    else if (effect.kind === 'anima') { storyUI.unlocked(effect.classId); keepLoadout(); storyChanged(); }
-    else if (effect.kind === 'lights') await game.releaseLights(effect.people);
+    // A level reached in a fight was shown on its victory screen.
+    else if (effect.kind === 'learn') { if (!effect.quiet) { sfx.play('unlock'); storyUI.learn(effect.classId, effect.level, effect.skills); } }
+    else if (effect.kind === 'anima' && effect.kept) { sfx.play('unlock'); await storyUI.kept(effect.classId); }
+    else if (effect.kind === 'anima') { sfx.play('unlock'); storyUI.unlocked(effect.classId); keepLoadout(); storyChanged(); }
+    else if (effect.kind === 'lights') {
+      // The counter goes up as each light goes into Gerard or Aitor, not when the fight is won.
+      let flying = effect.people.length;
+      const entered = () => { flying--; lightsFlying--; showAnimas(true); };
+      try { await game.releaseLights(effect.people, entered); } finally { lightsFlying -= flying; showAnimas(); }
+    }
     else if (effect.kind === 'release-light') { await game.releaseLight(); storyChanged(); }
+    // A shout never stops the game; the next beat only waits for it when it asks (`beat`).
+    else if (effect.kind === 'shout') {
+      game.shout(effect.speaker, effect.text);
+      if (effect.beat) await new Promise(resolve => setTimeout(resolve, effect.beat! * 1000));
+    }
     else { storyPaused = true; game.setPaused(true); await storyUI.card(effect.id); storyPaused = false; game.setPaused(!!exploration.active || menuOpen()); }
   }
   /**
@@ -306,8 +345,14 @@ try {
     storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
     if (to) storyEvent({ type: 'arrive', station: to });
   }
+  /** The ánimas the party has to spend at home (the lit lights), from the first one that goes in. */
+  function showAnimas(gained = false) {
+    const lit = story.jar.filter(l => !l.used).length - lightsFlying;
+    storyUI.animas(story.adult && story.jar.length > lightsFlying ? Math.max(0, lit) : undefined, gained);
+  }
   function storyChanged() {
     game.refreshStory();
+    showAnimas();
     // An ánima gained takes some of the castle's power, and of its song's haunt.
     if (!devSong) music.haunt(castleHaunt(story));
     game.setPartnerDriven(partnerDriven(control, story.partner));
@@ -319,6 +364,7 @@ try {
   }
   function storyEvent(event: StoryEvent) {
     const effects = story.handle(event);
+    for (const effect of effects) if (effect.kind === 'lights') lightsFlying += effect.people.length;
     storyChanged();
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
   }
@@ -339,6 +385,25 @@ try {
       flags: () => story.saved,
       day: () => story.days.clock.day,
       story: (at, day, missions) => { location.search = `?${new URLSearchParams({ story: at, ...(missions?.length ? { with: missions.join(',') } : {}), ...(day && day > 1 ? { day: String(day) } : {}) })}`; },
+      mission: (anima, part, day, missions) => {
+        const others = missions?.filter(id => id !== anima) ?? [];
+        location.search = `?${new URLSearchParams({ mission: anima, part, ...(others.length ? { with: others.join(',') } : {}), ...(day > 1 ? { day: String(day) } : {}) })}`;
+      },
+      missionNow: anima => missionNow(anima, story.saved, story.nuria),
+      animas: () => ({ now: story.levels, story: story.storyLevels, xp: story.xp, changed: !!story.debugAnimas, adult: story.adult }),
+      giveXp: (id, amount) => {
+        const levels = story.storyLevels;
+        const effects = story.giveXp(id, amount === 'level' ? toNextLevel(story.xp[id] ?? 0, levels[id] ?? 1) : amount);
+        keepXp(); storyChanged();
+        battleUI.setAnimas(story.classes, story.levels, { gerard: story.kitOf('gerard'), aitor: story.kitOf('aitor') });
+        void (async () => { for (const effect of effects) await play(effect); })();
+      },
+      setAnimas: levels => {
+        const same = (a: Partial<Record<ClassId, number>>, b: Partial<Record<ClassId, number>>) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
+        story.debugAnimas = levels && !same(levels, story.storyLevels) ? levels : undefined;
+        storyChanged();
+        battleUI.setAnimas(story.classes, story.levels, { gerard: story.kitOf('gerard'), aitor: story.kitOf('aitor') });
+      },
       fight: setup => startFight(setup),
       current: () => battleUI.fight,
       help: () => help,
@@ -361,11 +426,13 @@ try {
   let help: FightHelp = { free: false, immune: false };
   /** A fight left from the picker: no result reaches the story. */
   let leaving = false;
+  /** The players chose to fight a fall again or go back to before it (battle-ui `fallen`): that end costs nothing. */
+  let fallen: 'retry' | 'rewind' | undefined;
   function leaveFight() { if (!battleUI.fight) return; leaving = true; battleUI.end(); }
   /** The fight tester's fight now: it touches no story flag and helps as asked. */
   let testing: FightSetup | undefined;
   /** Where each fight is staged (game.ts): the dogs in the street, the minion and the guards in the palace. */
-  const FIGHT_PLACES = { dogs: 'maresme', possessed: 'maresme', 'palace-minion': 'palacio', 'palace-guards': 'palacio' } as const;
+  const FIGHT_PLACES = { dogs: 'maresme', possessed: 'maresme', 'palace-minion': 'palacio', 'palace-guards': 'palacio', cebollon: 'cardedeu-laberinto', cebolla: 'cardedeu-laberinto', plato: 'cardedeu-laberinto', escolta: 'cardedeu-laberinto', 'uri-vertigo': 'cardedeu-laberinto', 'crias-1': 'cardedeu-laberinto', 'crias-2': 'cardedeu-laberinto', 'crias-3': 'cardedeu-laberinto' } as const;
   /** Starts a test fight; another chapter's party needs that chapter's Gerard, so it reloads there. */
   function startFight(setup: FightSetup) {
     if (setup.adult !== story.adult) {
@@ -385,7 +452,7 @@ try {
     requestAnimationFrame(() => {
       testing = setup; help = { free: setup.free, immune: setup.immune };
       game.possess(possessed);
-      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, animas: setup.animas, guards: palaceGuards(setup.adult ? setup.friends.length : 0) });
+      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, animas: setup.animas, levels: story.levels, xp: story.xp, guards: palaceGuards(setup.adult ? setup.friends.length : 0) });
     });
   }
   /** The help: skills cost nothing, and no blow takes the party's PV (it is back before the bar moves). */
@@ -396,15 +463,20 @@ try {
     }
   }
   const game = await createGame(canvas, {
-    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, levels: story.levels, guards: palaceGuards(story.animas.length) }); },
+    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, levels: story.levels, xp: story.xp, guards: palaceGuards(story.animas.length) }); },
     // Backing off is neither a win nor a fall.
-    onBattleEnd: (phase, encounter, worn) => {
+    onSound: (id, options) => sfx.play(id, options),
+    onBed: (id, level) => sfx.bed(id, level),
+    onBattleEnd: (phase, encounter, worn, xp) => {
+      // Fought again or stepped back from, a fall never reaches the story; a test fight fought again stays a test.
+      if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.refreshStory(); } return; }
       // A test fight, or one left from the picker, leaves the story as it was, and the street as the story has it.
       if (testing || leaving) { testing = undefined; leaving = false; game.refreshStory(); return; }
-      if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn }); keepWins(); }
+      if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn, xp }); keepXp(); }
     },
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
+    onShout: shout => storyUI.shout(dialogue.open || exploration.active ? undefined : shout),
     onStep: (steps, cell) => {
       sessionSteps = steps;
       exploration.update(currentLocation, cell);
@@ -474,9 +546,12 @@ try {
       void homeLights.setEnabled(false, false);
     },
     resume: () => { if (restoreLightsOnResume) void homeLights.setEnabled(true, false); scorePlace(currentLocation); },
+    // In a fight the D-pad's left and right do not walk: they open the summary.
+    dpadApart: () => !jumpMenu.isOpen && battleUI.controllerContext !== 'world',
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (jumpMenu.isOpen) { if (action === 'cancel') jumpMenu.close(); return; }
+      if (isDpad(action)) { battleUI.toggleSummary(); return; }
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
       if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
       if (lookAway) { if (action === 'confirm' || action === 'cancel') lookAway(); return; }
@@ -528,6 +603,8 @@ try {
     storyChanged();
     storyEvent({ type: 'start' });
     if (fight) { try { startFight(validFight(JSON.parse(fight))); } catch { /* A broken link starts no fight. */ } }
+    // A mission's part can play its moment on arrival: coming up from the R4, or Vertitrón beaten.
+    else if (devJump?.part?.event) storyEvent(devJump.part.event);
   };
   // Repeatable desktop battle checks without affecting production or saved progress.
   if (import.meta.env.DEV) {
@@ -545,13 +622,15 @@ try {
     const params = new URLSearchParams(location.search);
     // ?fxlab adds the effects lab (src/fx-lab.ts) over a fight: chapter 1's boys against three dogs unless ?battle says otherwise.
     const fxLab = params.has('fxlab');
-    if (fxLab && !params.has('battle')) { params.set('battle', '3'); params.set('allies', '2'); params.set('noista', '1'); }
+    if (fxLab && !params.has('battle')) { params.set('battle', '3'); params.set('allies', '2'); }
     const foes = Number(params.get('battle'));
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
-    const adult = new Story(['caught', 'noista']);
+    // &animas=matemagico,papagato unlocks those ánimas (Matemágico alone by default); Gerard wears the last.
+    const adult = new Story(['caught', 'matemagico']);
+    const animas = (params.get('animas')?.split(',') ?? ['matemagico']).filter((id): id is ClassId => id in CLASS_STATS);
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => params.get('party') === 'adult' ? battleUI.open(adult.battleParty(true), foes, { animas: adult.classes })
-      : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas: ['matemagico', ...(params.has('noista') ? ['noista' as const] : [])] }));
-    if (fxLab) void import('./fx-lab').then(({ mountFxLab }) => { const lab = mountFxLab(game); import.meta.hot?.dispose(() => lab.destroy()); });
+      : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas }));
+    if (fxLab) void import('./fx-lab').then(({ mountFxLab }) => { const lab = mountFxLab(game, sfx); import.meta.hot?.dispose(() => lab.destroy()); });
     // ?music=battle&from=126 plays a song from a mark or second on the first key or click, to hear a loop's seam (just dev-music).
     const track = params.get('music'), haunt = Number(params.get('haunt'));
     // &haunt=.8 plays a haunted song at that level instead of the castle's (just dev-music bubbaloo random .8).

@@ -70,3 +70,28 @@ test('the camera lurch springs back with one small overshoot and settles', () =>
   const slow = { x: .1, v: 0 }; spring(slow, .25, HIT.spring.omega, HIT.spring.zeta);
   assert.ok(Math.abs(slow.x) < .02);
 });
+
+test('slow motion stretches the fight by its scale, eases back to full speed and stacks with a hit-stop', () => {
+  const clock = new FightClock(), frame = 1 / 60;
+  clock.slow(.35, 1, .25);
+  // While it holds, a real second is a third of a fight second.
+  let fight = 0;
+  for (let real = 0; real < 1 - 1e-9; real += frame) fight += clock.advance(frame);
+  assert.ok(Math.abs(fight - .35) < .02, String(fight));
+  // Then it eases back over a quarter of a second, and runs at full speed after that.
+  let easing = 0;
+  for (let real = 0; real < .25 - 1e-9; real += frame) easing += clock.advance(frame);
+  assert.ok(easing > .25 * .35 && easing < .25, String(easing));
+  assert.equal(clock.scale, 1);
+  assert.equal(clock.advance(frame), frame);
+  // A hit-stop holds first, and what is left runs slow; two slow motions multiply; scale 1 ends one.
+  clock.slow(.5, 1); clock.stop(frame / 2, 0);
+  assert.ok(Math.abs(clock.advance(frame) - frame / 4) < 1e-9);
+  clock.slow(.5, 1, 0, 'scene');
+  assert.ok(Math.abs(clock.scale - .25) < 1e-9);
+  clock.slow(1, 1, 0, 'scene');
+  assert.ok(Math.abs(clock.scale - .5) < 1e-9);
+  // Clearing a fight's hit-stop keeps the slow motion; clearing it at its end does not.
+  clock.clear(); assert.ok(clock.scale < 1);
+  clock.clear(true); assert.equal(clock.scale, 1);
+});

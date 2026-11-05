@@ -19,8 +19,8 @@ export interface Anima {
 }
 
 export const ANIMAS = {
-  nuria: { id: 'nuria', friend: 'Nuria', name: 'Ánima de Nuria', colour: '#9fb4c8', bonus: { magia: 1, espiritu: 1, pv: 10 }, note: 'Cardedeu. Por diseñar con su historia.' },
-  uri: { id: 'uri', friend: 'Uri', name: 'Ánima de Uri', colour: '#b9c79f', bonus: { fuerza: 1, defensa: 1, pv: 10 }, note: 'Cardedeu. Por diseñar con su historia.' },
+  // Nuria and Uri's mission is one (docs/quests/nuria.md): one household, one ánima.
+  nuria: { id: 'nuria', friend: 'Nuria y Uri', name: 'Ánima de Nuria y Uri', colour: '#9fb4c8', bonus: { magia: 1, espiritu: 1, pv: 10 }, note: 'Cardedeu. Por diseñar con su historia.' },
 } as const satisfies Record<string, Anima>;
 export type AnimaId = keyof typeof ANIMAS;
 export const ANIMA_IDS = Object.keys(ANIMAS) as AnimaId[];

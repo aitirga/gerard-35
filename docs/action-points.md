@@ -1,6 +1,31 @@
-# Action points per ánima (proposal)
+# Action points per ánima: maná
 
-Status: idea, not decided, nothing built · Last updated: 2026-10-25
+Status: the base rules are built (below) as maná; the extra ideas are still to try · Last
+updated: 2026-11-01
+
+## Decided for now (2026-11-01)
+
+Built: the proposal's base rules, with the resource called **maná** (Secundaria first, then a
+shared pool called Ánima, were tried before):
+
+- **One pool per ánima and per wearer**, full at the start of every fight: 3 points
+  (`MANA_POINTS` in `src/battle.ts`). The worn ánima's pool is `Combatant.secondary`; the others
+  wait in `Combatant.mana` until worn again. Bernat wears none and has none; nobody has maná
+  without an ánima on.
+- A skill spends its cost: *Foc Binari* 1, *Zarpazo de Haru* 1, *Yuki se esconde* 1,
+  *Zarpa en la llaga* 2, *Las dos a la vez* 2.
+- **Resting ánimas recover**: at the end of each round every ánima not worn at any moment of it
+  gets 1 back (`REST_CHARGE`; `Combatant.worn` keeps which were worn).
+- **Defender** gives the worn ánima 2 back (`DEFEND_CHARGE`, only that one; 2026-11-05), besides guarding.
+- Changing ánima is free and keeps the turn. Atacar and Defender are always free.
+- **What it looks like**: the vitals plate's row of circles is labelled *MANÁ* and shows the worn
+  ánima's pool; changing ánima shows the new one's. A skill the fighter cannot pay says
+  *Sin maná*; the details box shows its cost as *MANÁ ●●*.
+
+Still ideas from the proposal below: pools that grow with levels, the "fresh entry" and "echo"
+ideas, a companion's line when a pool is empty, and lights from the jar adding points.
+
+## The proposal (2026-10-25)
 
 Replace Secundaria (one shared mana bar per fighter) with a **small pool of action points for
 each ánima**. Every fight starts with all pools full, but they are short, so a fighter who wants
@@ -21,7 +46,7 @@ Working name: *puntos de acción* (PA). A diegetic name is open (see the end).
 
 ## Rules (proposal)
 
-1. **One pool per ánima and per wearer.** Gerard's Noísta and Aitor's Noísta are separate
+1. **One pool per ánima and per wearer.** Gerard's Papagato and Aitor's Papagato are separate
    pools, so two players never spend each other's points. Bernat wears none and has none.
 2. **Full at the start of every fight.** Nothing carries over between fights: no rationing
    across a dungeon, no potions to buy for it, and no reason to avoid fights.
@@ -38,8 +63,8 @@ Working name: *puntos de acción* (PA). A diegetic name is open (see the end).
 7. **Defender** also gives the worn ánima +1 point: a slow way to stay in one ánima if you
    really want to.
 
-With two ánimas the rhythm is: spend Noísta's 3 points over two turns, switch to Matemágico
-(full), spend it while Noísta recovers, switch back. With four, there is always a rested one.
+With two ánimas the rhythm is: spend Papagato's 3 points over two turns, switch to Matemágico
+(full), spend it while Papagato recovers, switch back. With four, there is always a rested one.
 
 ### Ideas to try on top
 
@@ -47,8 +72,8 @@ Not part of the base proposal; test once the base works.
 
 - **Fresh entry:** the first skill used after switching into a *full* ánima gets a small bonus
   (or costs one point less). It rewards rotating instead of draining one ánima to zero.
-- **Echo:** the ánima you just left keeps a weak passive for one round (Noísta's Defensa −1
-  lingers, Matemágico's boost lasts one more round). Changing leaves a trace.
+- **Echo:** the ánima you just left keeps a weak passive for one round (Papagato's Espíritu −1
+  lingers, Yuki's Defensa boost lasts one more round). Changing leaves a trace.
 - **Combined skills** (`docs/animas/README.md` § Combined skills) spend points from both
   ánimas, one from each wearer: it makes wearing complementary ánimas a plan between players.
 - **Lights** from the jar (`docs/home-lights.md`) could raise every pool by 1 for a day instead
@@ -109,6 +134,6 @@ player has.
   round is split among the rested ones.
 - **Pool size per ánima.** Same for all (3), or part of each ánima's identity (a quick ánima with
   5 cheap points, a heavy one with 2 big ones)?
-- **Chapter 1** has only Nen curiós and Noísta for most of it: is a two-ánima rotation enough, or
-  does chapter 1 keep Secundaria and the points start in chapter 2?
+- **Chapter 1** has no ánima until the palace, and then only Matemágico: a rotation needs a
+  second ánima, so per-ánima pools would only matter from chapter 2.
 - **Items** that restore Secundaria (if any are planned) would restore points instead, or go.

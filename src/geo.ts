@@ -111,7 +111,7 @@ export interface GeoScene {
    * out the generic hills (a landmark draws the place's own, or the place has its own horizon).
    * `sea: true` draws the water as the sea with its shore (src/geo-sea.ts).
    */
-  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; kerbs?: boolean; edge?: 'hills' | 'city'; river_m?: number; water?: string; hills?: boolean; sea?: boolean };
+  look?: { ground?: 'panot'; footway?: 'panot'; grass?: 'bed'; asphalt?: string; markings?: boolean; kerbs?: boolean; edge?: 'hills' | 'city'; river_m?: number; water?: string; hills?: boolean; sea?: boolean; cut?: boolean };
   /** Named points for pieces the game adds itself, e.g. where the palace stands (`y` in cells). */
   anchors?: Record<string, { x: number; z: number; y?: number }>;
   /** Real materials of the street's surfaces (ground, footway, road, bike, square, grass, bed, forest, sand, wet, rail, bridge). */
@@ -124,6 +124,8 @@ export interface GeoScene {
    * cells over `run` cells outwards, to what the zone's landmarks lay below.
    */
   drop?: { edge: GeoPoint[]; depth: number; run: number };
+  /** Where the ground lies when it is not the whole map: a piece of a place laid into another (src/street-shift.ts). */
+  extent?: GeoPoint[];
 }
 
 /**

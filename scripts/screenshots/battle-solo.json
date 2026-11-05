@@ -23,12 +23,12 @@
       "gap": 600
     },
     {
-      "eval": "document.querySelector('[data-wear=\"gerard\"][data-class-id=\"\"]').click(); document.querySelector('[data-wear=\"aitor\"][data-class-id=\"noista\"]').click();"
+      "eval": "document.querySelector('[data-wear=\"gerard\"][data-class-id=\"\"]').click(); document.querySelector('[data-wear=\"aitor\"][data-class-id=\"matemagico\"]').click();"
     },
     {
       "shot": "status-solo",
       "delay": 1200,
-      "caption": "Solo debug: one wide sheet, the badge, and both members' ánimas (Gerard without, Aitor with Noísta)"
+      "caption": "Solo debug: one wide sheet, the badge, and both members' ánimas (Gerard without, Aitor with Matemágico)"
     },
     {
       "press": "Escape"
@@ -59,7 +59,7 @@
     {
       "shot": "battle-solo-aitor",
       "delay": 800,
-      "caption": "Aitor's turn on the same keyboard: his card moves into the dock, in Noísta's colours"
+      "caption": "Aitor's turn on the same keyboard: his card moves into the dock, in Matemágico's colours"
     },
     {
       "press": "Digit2"
@@ -67,7 +67,7 @@
     {
       "shot": "battle-solo-skills",
       "delay": 2200,
-      "caption": "Aitor's skills with Noísta: No-ta slides out of Habilidad"
+      "caption": "Aitor's skills with Matemágico: Foc Binari slides out of Habilidad"
     }
   ]
 }

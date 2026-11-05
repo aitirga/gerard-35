@@ -2,7 +2,7 @@
   "title": "Fight camera · moving it with the right stick",
   "description": "In a fight either player's right stick moves the camera round the fight (up to 45° either side, 15° up or down) and it stays where it was left; pressing the stick in (R3) brings it back (src/game.ts `rightStick`). The pads are fake standard pads set from the page.",
   "steps": [
-    { "open": "/?story=noista&battle=3&allies=2&noista=1" },
+    { "open": "/?story=matemagico&battle=3&allies=2" },
     { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')", "timeout": 90000 },
     { "eval": "window.stick = (x, y, r3 = false, second = false) => { const make = (ax, ay, click) => ({ connected: true, mapping: 'standard', id: 'fake', axes: [0, 0, ax, ay], buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: i === 10 && click, value: 0 })) }); navigator.getGamepads = () => second ? [make(0, 0, false), make(x, y, r3)] : [make(x, y, r3)]; }; stick(0, 0)" },
     { "shot": "rest", "delay": 1500, "caption": "The fight's own angle" },

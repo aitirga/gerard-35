@@ -75,8 +75,40 @@ export function landing(blow: Blow): Landing {
 export class FightClock {
   /** Seconds of hit-stop still to hold. */
   hold = 0;
-  /** Real seconds in, fight seconds out: nothing moves while a stop holds. */
-  advance(dt: number) { const held = Math.min(dt, this.hold); this.hold -= held; return dt - held; }
+  /**
+   * Slow motion (a dual's banner, docs/combat.md § Ataques duales), by who asked for it: the fight
+   * screen (`ui`, through the scene's `slowmo`) and the scene's own choreography (`scene`). Each runs
+   * at `scale` for `left` real seconds, then eases back to full speed over `ease`; together they
+   * multiply.
+   */
+  private slows = new Map<string, { scale: number; left: number; ease: number; easing: number }>();
+  /**
+   * Runs the fight at `scale` (0–1) for `seconds` of real time, then back to full speed over `ease`
+   * seconds. A new call from the same `by` replaces the last one; `scale` 1 or `seconds` 0 ends it.
+   */
+  slow(scale: number, seconds: number, ease = 0, by = 'ui') {
+    if (scale >= 1 || seconds <= 0 && ease <= 0) { this.slows.delete(by); return; }
+    this.slows.set(by, { scale: Math.max(0, scale), left: Math.max(0, seconds), ease: Math.max(0, ease), easing: 0 });
+  }
+  /** How fast the fight runs now, from its slow motions (1: full speed; a hit-stop is `hold`). */
+  get scale() {
+    let k = 1;
+    for (const s of this.slows.values()) k *= s.left > 0 || !s.ease ? s.scale : s.scale + (1 - s.scale) * Math.min(1, s.easing / s.ease);
+    return k;
+  }
+  /**
+   * Real seconds in, fight seconds out: nothing moves while a stop holds, and slow motion stretches
+   * the rest. The slow motions run on real time (a hit-stop does not lengthen them).
+   */
+  advance(dt: number) {
+    const held = Math.min(dt, this.hold); this.hold -= held;
+    const moving = (dt - held) * this.scale;
+    for (const [by, s] of this.slows) {
+      if (s.left > 0) s.left = Math.max(0, s.left - dt);
+      else if ((s.easing += dt) >= s.ease - 1e-6) this.slows.delete(by);
+    }
+    return moving;
+  }
   /**
    * Holds for `seconds` from a contact that happened `late` fight seconds ago (frames rarely land
    * on it exactly). Returns how far to rewind the fight so the held pose is the contact itself;
@@ -87,7 +119,8 @@ export class FightClock {
     this.hold = seconds - back;
     return back;
   }
-  clear() { this.hold = 0; }
+  /** No hit-stop left; with `slows`, no slow motion either (the fight ended). */
+  clear(slows = false) { this.hold = 0; if (slows) this.slows.clear(); }
 }
 
 /** A damped spring pulling `s.x` back to 0, stepped in small slices so slow frames stay stable. */

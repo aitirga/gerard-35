@@ -109,6 +109,11 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: .1, shadows: [-.01, -.002, .016], highlights: [.022, .012, -.012], contrast: 1.07, saturation: .98 },
     enhance: { highlights: -.1, vibrance: .06, dehaze: .03 },
   },
+  /** La calle que no acaba: Cardedeu's afternoon drained like an old photo left in the sun, cold in the shade. */
+  'cardedeu-calle': {
+    grade: { temperature: -.06, lift: [.01, .008, .014], shadows: [.004, -.002, .02], highlights: [.004, .004, .01], contrast: .96, saturation: .72 },
+    enhance: { shadows: -.06, dehaze: -.04 },
+  },
   /** La torre de Uri: fear, violet-black shade that stays deep and a cold, unsure light. */
   'cardedeu-laberinto': {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },

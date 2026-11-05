@@ -74,8 +74,7 @@ drawn for.
 
 1. **Gerard first.** Nothing near the middle of the screen is more saturated or more contrasted
    than him (in her palace, where pink is everywhere, he stands out by value and light instead).
-   No ground or wall where he walks in his own colours (mustard and navy, Noísta's crimson and
-   charcoal, his ánima's colour).
+   No ground or wall where he walks in his own colours (mustard and navy, his ánima's colour).
 2. **One saturated accent per place**, its signature, plus small ones (signs, flowers). The rest
    stays muted, at or a little below the photo.
 3. **Some colours carry meaning** and belong to it everywhere:
@@ -85,7 +84,7 @@ drawn for.
 | Bubble-gum pink to magenta, saturated (hue ~320–345°: `#ff6fae`, `#d94a8c`, `#ff3d8b`) | La Reina Bubbaloo | Her palace, her gum and bubbles, her minions, her tint (`bubbaloo`), the bubble that opens a mission's dungeon. A real pink thing elsewhere (a sign, a flower) is muted or shifted to red or violet. |
 | Violet (`#c9a2ff`, violet-black) | People she holds (violet eyes) and fear (Uri's tower) | Possessed eyes; fear dungeons |
 | Dark pink eyes | Animals she holds | Their eyes only |
-| Crimson `#e2483d` | Noísta | Its interface and Gerard's look |
+| Midnight-ink navy `#0f1a2c` graph paper with gold `#f3cf78` lines (a blueprint) | Matemágico | Its interface only. Navy in the world (Gerard's stripes, a place's paint) is not reserved |
 | Amber glass | The lights of the people helped | The jar at home |
 | Ánima colours (`CLASSES`, `ANIMAS`) | An ánima | Trails, auras, interface |
 | TMB and Rodalies line colours (L1 red, L3 green, L4 yellow, L5 blue, R4 ochre) | Transport | Station totems, signs and the network map |
@@ -222,6 +221,7 @@ material, light and landmark, which the last column names.
 | Her palace, outside | `#ff6fae` | her pink | glossy gum | crown tower, spiked towers | her tone | — (hers alone) |
 | Alegia | `#f1efe8` | white and dark timber | timber framing, ashlar (`carreu`) | square belfry | `alegia` cool | Sagrada inside (ΔE 5): street vs nave in coloured light |
 | Cardedeu | `#b66e43` | terracotta and garden green | hipped clay roofs (`teula`), lawns (`gespa`) | a long hipped roof | `cardedeu` warm | Poble Sec (ΔE 3, the same colour): low roofs, lawns and garden trees seen from above vs render and stone stairs at evening |
+| La calle que no acaba | `#9c93a0` → `#5e5266` | drained grey to violet dusk | one house repeated (Nuria's block, `estuc`), closing in | a straight street ending in a violet whirlpool | `cardedeu-calle` cold, desaturated | Cardedeu (ΔE 30): the same street drained of colour, walls closing vs warm roofs and gardens |
 | La torre de Uri | `#1f0f22` | violet-black | dark stone walls | spiral tower | `cardedeu-laberinto` cool | Throne room (ΔE 25): violet vs indigo and gold |
 | El Nucli (built) | `#2f4a3a` | bottle green | board-game boxes, felt | the wall of boxes | `el-nucli` warm | Palace patio (ΔE 25): indoor felt vs painted court |
 | Sants street (built) | `#cfa463` | ochre | painted roller shutters, old render scored as ashlar (`estuc`) | a lit shopfront in a row of shutters | `sants` cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
@@ -259,7 +259,8 @@ share a landmark kind.
 | El piso · Avinguda Meridiana | Door | 44 | all four | ✓ |
 | Rec Comtal · her palace outside | Grown out of it | 51 | all four | ✓ |
 | Palace outside · entrance | Door | 17 | ground, light (palace sky) | ✓ (her own building) |
-| Cardedeu · La torre de Uri | Round the corner | 66 | all four | ✓ |
+| Cardedeu · La calle que no acaba | Past Nuria's block | 30 | colour, ground (no gardens), light (warm against cold) | ✓ |
+| La calle que no acaba · La torre de Uri | Through the bubble | 38 | colour, material, ground | ✓ |
 | Avinguda Meridiana · Rec Comtal | L1, three stops | 37 | colour, material, light | ✓ |
 | El Nucli · Sants street | Door | 57 | all four | ✓ |
 | Sagrada inside · outside | Door | 32 | colour, ground, light (coloured nave) | ✓ |
@@ -406,6 +407,22 @@ Built to this card on 2026-10-31; the brief, sources and credits are in [places/
 | Only here | The white-roofed corner house in its garden; borregos in the Fleca Vella's window |
 | Text | Catalan: *Carrer de Jacint Verdaguer*, Rodalies signs |
 
+#### La calle que no acaba (`cardedeu-calle`)
+
+| | |
+| --- | --- |
+| Dominant | Drained grey-mauve `#9c93a0`, sinking to violet dusk `#5e5266` at the far end |
+| Secondary | Nuria's lime white `#f3e9d8` only at the start; roofs from terracotta `#b5583a` to plum `#4a3048` |
+| Material | One house, Nuria's block, again and again (`estuc` over `granit`), growing from two storeys to four |
+| Ground | One strip of grey asphalt, straight on, narrowing from 6.5 m to 4 m each side; no pavements, no gardens |
+| Landmark | A violet whirlpool at the far end, light spiralling into a dark well (kind: a portal) |
+| Light | `cardedeu-calle`: Cardedeu's afternoon drained and cold; her light grows with every step up the street |
+| Props | Lamps, the same white car, then nothing |
+| Air | Still; violet streaks spiralling into the portal, motes rising off the street into it |
+| Sound | Nothing, not even birds (Aitor says so); Uri laughing inside the bubble |
+| Only here | A 1 on every door, and the screen's edges closing in the further up you go |
+| Text | Only the house numbers |
+
 #### La torre de Uri (`cardedeu-laberinto`)
 
 | | |
@@ -414,7 +431,7 @@ Built to this card on 2026-10-31; the brief, sources and credits are in [places/
 | Secondary | Mauve ramp `#883b65` (her doing, so near her pink), lilac stone `#9a8fb0`, violet lanterns `#c9a2ff` |
 | Material | Dark stone walls, always higher than you |
 | Ground | The ramp spiralling up, ring inside ring |
-| Landmark | The tower, El Vértigo on top (kind: a spiral tower) |
+| Landmark | The tower, Vertitrón on top (kind: a spiral tower) |
 | Light | `cardedeu-laberinto`: cold and deep |
 | Props | Violet lanterns, the fears |
 | Air | Haze |
@@ -651,7 +668,7 @@ The zones' order is open; the story outline proposes la secretaría last before 
 | Sound | The photocopier, a phone nobody answers, stamps thudding, a clock |
 | Props | The counter window (*finestreta*), cabinets, binders, the photocopier, the noticeboard, the stamp *REGISTRE D'ENTRADA* |
 | Set-piece | **La mesa de Gerard**: his own desk at the end of the archive, as he left it (his mug, the school's seal, the pile of forms), under the one warm lamp |
-| Wink | The office's stamp and No-ta's stamp are cousins |
+| Wink | The office's stamp (it was No-ta's cousin; with Noísta retired, the wink is _open_) |
 
 #### El salón del trono (proposal)
 

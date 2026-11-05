@@ -23,9 +23,9 @@ The message under every chapter, to keep in mind when writing any scene, line or
   never lost, only forgotten.
 - **Against "growing up" as giving up.** Growing up should not mean switching off. Being an adult
   and keeping the kid alive are not opposites.
-- **You decide what you are.** Gerard's power is changing class: becoming a Noísta by saying no,
-  becoming something else with each friend. Nobody is their job or their routine; everyone can
-  choose again. This is the idea behind the final choice.
+- **You decide what you are.** Gerard's power is changing ánima: becoming a Matemágico by
+  thinking it through, becoming something else with each friend. Nobody is their job or their
+  routine; everyone can choose again. This is the idea behind the final choice.
 
 How it shows in play: the world itself breaks routines (the Queen's bubble pops them), people are
 lost without them, and Gerard helps them find what was under the routine. Nothing preaches; the
@@ -77,12 +77,18 @@ friends' stories and the second round carry it.
   leaves Sant Quirze when the boys return to reality, and in **phase two it reappears in
   Barcelona, on top of the Rec Comtal school (Trinitat Vella, chapter 2)**. Design: `docs/bubbaloo-palace.md`.
 
-## Gerard's classes
+## Gerard's wearable ánimas
 
-- Gerard's power is changing class. **Noísta** is the first. It comes from who he is: he always
-  contradicts, always says the opposite. It is unlocked when he shouts "¡No!" to save Bernat.
-  How the class system grows from here is still open. **Classes belong to the party**: Aitor can wear Noísta too (`docs/party.md`). Its skill **No-ta** breaks what the Queen's gum holds. Her minions make things obey;
-  Gerard refuses, which is why he is the one who can face her.
+- Gerard's power is changing ánima (the code calls them classes). **Matemágico** is the first. It
+  comes from who he is: he calculates everything, even what doesn't need it. It wakes when the
+  palace minion is about to finish Bernat and Bernat, on his knees, begs him: *"Pensa, Gerard! Fes
+  la màgia amb la teva ment!"* Gerard thinks of ones and zeros and fire comes out of his hand.
+  Its skill **Foc Binari** melts what the Queen's gum holds. Bernat names it: *"Matemágico. Así te
+  voy a llamar. El que hace magia con la cabeza."*
+- **Ánimas belong to the party**: Aitor can wear Matemágico too (`docs/party.md`). How they grow
+  is in `docs/animas/README.md`.
+- Until 2026-11-01 the first was **Noísta** (Gerard shouting "¡NO!"); it is retired and kept as a
+  design (`docs/animas/noista/README.md`).
 
 ## Ánimas
 
@@ -91,7 +97,9 @@ friends' stories and the second round carry it.
 - Each ánima's design, levels and shared mechanics: `docs/animas/` (one folder per ánima).
 - **Every person helped gives a light**: it flashes out of them and goes into Gerard and Aitor,
   and at home it waits in a jar. Letting one out holds the Queen back a day. Nuria's household
-  gives three: Nuria, Uri and Nil.
+  gives two, one for Gerard and one for Aitor: Nuria's and Uri's (Nil goes in his arms). The
+  party counts the ones it still has as its **Ecos de luz**, to spend on improving its ánimas
+  (idea: `docs/ideas.md`).
 - **Papagato** is Nuria's ánima (Cardedeu): it brings Haru and Yuki, the cats, to fight beside the
   party. In design (`docs/quests/nuria.md`, `docs/animas/papagato/`).
 - First round: Gerard restores what the Queen popped, and the ánimas he collects are **grey**:
@@ -111,6 +119,7 @@ friends' stories and the second round carry it.
 | **Nuria and Uri** | Friends of Gerard and Aitor who live in **Cardedeu**, reached by Rodalies from La Sagrera (chapter 2). Nuria, Gerard and Aitor once shared a flat; she has just become a mother. Whether this Nuria is Nuria Mendoza is an open question. |
 | **Nil** | Nuria and Uri's baby (under a year old). In Nuria's mission Uri runs off down the street with him (`docs/quests/nuria.md`). |
 | **Haru and Yuki** | The cats who live with Nuria (both female: one white, one tricolour); they are Gerard's cats too, from when Nuria, Gerard and Aitor lived together. Nuria's ánima, **Papagato**, brings them into the party's fights. |
+| **Pedro** | A gay friend of Gerard and Aitor; they see each other a lot. To be integrated with his own mission and ánima (idea, 2026-11-05: details to come from Aitor). |
 
 ## Places
 
@@ -139,8 +148,9 @@ friends' stories and the second round carry it.
 5. The houses at the north end of the street start to change, and La Reina Bubbaloo's palace
    inflates behind them. Bernat: it is just like his dream, and it is becoming real.
 6. Inside, past the hall and the portrait gallery, a minion rises from a drain in the wrapper room.
-   Nothing hurts it; when it is about to finish Bernat, Gerard shouts "¡NO!" and becomes a
-   **Noísta**. His **No-ta** stamps a giant NO on it and it bursts.
+   Nothing hurts it; when it is about to finish Bernat, Bernat begs Gerard to think, and
+   **Matemágico** wakes in him. His **Foc Binari**, fire from his hand, melts its gum, and it
+   bursts.
 
 7. Bernat starts to explain (they are in the Queen's castle; she is real; she wants…) and is cut
    off: minions burst out everywhere and **La Reina Bubbaloo's hands** (pink gelatine, so huge
@@ -150,7 +160,7 @@ friends' stories and the second round carry it.
 
 - **Gerard wakes up at 35** in the Meridiana flat, shouting "¡NO!", and **Aitor** is beside him.
   Chapter 1 was a dream of his childhood. It is his 35th birthday.
-- He **keeps the Noísta class**.
+- He **keeps Matemágico**. His waking "¡NO!" is a nightmare cry, not an ánima.
 - A **Bubbaloo wrapper** lies on his bedside shelf: something came back from the dream.
 - **The TV turns itself on**: *Última hora*, a pink castle has appeared on top of the **Rec Comtal
   school** while all the pupils were inside.
@@ -170,19 +180,19 @@ friends' stories and the second round carry it.
   Nuria's door. The Queen has turned **Uri**, who never talks, into a kid again: violet eyes, never
   quiet, and he has run off with **Nil**, their baby, up a dark tower round the corner. Nuria lends
   Gerard the cats, **Haru and Yuki**, and **Papagato** wakes up in him. Up the tower Uri's fears
-  hunt them (El Cebollón, El Plato Misterioso, Game Over) and on top **El Vértigo**, his fear of
-  heights, holds Uri and Nil; when it reaches for Nil, Uri, very loyal, steps in front of it and
-  speaks for himself. Uri is himself again, Papagato stays, and Haru and Yuki come to live in the
+  hunt them (El Cebollón, El Plato Misterioso, La Cebolla with its young) and on top **Vertitrón**,
+  his fear of heights become a robot, holds Uri and Nil up high, Uri shouting its moves like a video
+  game; beaten, it drops to its knees and Uri comes down with Nil. Uri is himself again, Papagato stays, and Haru and Yuki come to live in the
   Meridiana flat.
-- **The lights**: every person helped gives a small light, what makes them who they are. Nuria's,
-  Uri's and Nil's go into Gerard and Aitor and then wait in a glass jar at home. Let out, a light
+- **The lights**: every person helped gives a small light, what makes them who they are. Nuria's
+  goes into Gerard and Uri's into Aitor, and then they wait in a glass jar at home. Let out, a light
   flies to the castle and pushes her back a day; spent ones stay in the jar, dark.
 
 ## Running threads
 
 - **M1**: the conjuro chosen at the end of chapter 1 pays off later (see `docs/chapter-1.md`).
-- **Gerard's classes**: Noísta is the first. How the system grows (and what becomes of the moods
-  once planned in `docs/chapter-1.md`) is still open, on purpose.
+- **Gerard's ánimas**: Matemágico is the first. How the system grows (and what becomes of the
+  moods once planned in `docs/chapter-1.md`) is still open, on purpose.
 - **The pink light**: a story flag (`first-fight`) keeps Sant Quirze in La Reina Bubbaloo's tint.
 - **Routine vs. ilusión**: every friend's story in chapter 2 is a version of it (see *What the game
   is about*).

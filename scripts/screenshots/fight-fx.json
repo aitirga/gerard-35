@@ -3,7 +3,7 @@
   "description": "Each preset of effects.fightFx (src/effects.ts) on the GPU engine (src/fight-particles.ts): crisp lines, shards that become frost, chains drawn as strands, tinted vortices, a swarm that sees itself, sticky gum that splats, rising cures and fireworks with trails that burst; then crystals particles stay inside, orbit or gather on, meteors and fireflies, whose light falls on the dogs and the floor. Played on a dog in a real fight, captured at twice the pixels (--gpu --scale 2) on the game's clock at 30 fps.",
   "steps": [
     {
-      "open": "/?story=noista&battle=3&allies=2&noista=1"
+      "open": "/?story=matemagico&battle=3&allies=2"
     },
     {
       "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && document.activeElement?.matches('.command-trigger')",

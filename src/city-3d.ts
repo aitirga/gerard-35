@@ -258,7 +258,7 @@ export async function createCity3D(host: HTMLElement): Promise<City3D | undefine
   options.componentSystems = [pc.RenderComponentSystem, pc.CameraComponentSystem];
   options.resourceHandlers = [pc.TextureHandler];
   app.init(options);
-  device.maxPixelRatio = Math.min(2, window.devicePixelRatio);
+  device.maxPixelRatio = Math.min(Number((import.meta as { env?: { VITE_PIXEL_RATIO?: string } }).env?.VITE_PIXEL_RATIO) || 2, window.devicePixelRatio);
   app.setCanvasFillMode(pc.FILLMODE_NONE);
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
   const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

@@ -1,0 +1,57 @@
+{
+  "title": "Pulsos del Quemado",
+  "description": "El reloj de un estado con tiempo (Quemado) sobre quien lo lleva: el anillo se vacía y una muesca marca cada pulso que aún queda, donde estará la aguja cuando haga daño (src/battle-ui.ts `drain`). Ejecutar con --gpu --scale 2.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Afalse%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"foc-binari\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
+    },
+    {
+      "until": "!!document.querySelector('.battle-target[data-side=\"foes\"] .status-icon[data-status=\"quemado\"]')",
+      "timeout": 20000
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "{ const r = document.querySelector('.battle-target[data-side=\"foes\"] .status-icon[data-status=\"quemado\"]')?.getBoundingClientRect(); console.log('TICKS ' + JSON.stringify(r && { x: r.x, y: r.y, w: r.width, h: r.height }) + ' ' + document.querySelector('.battle-target[data-side=\"foes\"] .status-icon[data-status=\"quemado\"]')?.dataset.ticks); }"
+    },
+    {
+      "shot": "burning",
+      "delay": 0,
+      "caption": "Recién prendido: el anillo lleno y una muesca por cada pulso que queda"
+    },
+    {
+      "wait": 2300
+    },
+    {
+      "eval": "{ const r = document.querySelector('.battle-target[data-side=\"foes\"] .status-icon[data-status=\"quemado\"]')?.getBoundingClientRect(); console.log('TICKS ' + JSON.stringify(r && { x: r.x, y: r.y, w: r.width, h: r.height }) + ' ' + document.querySelector('.battle-target[data-side=\"foes\"] .status-icon[data-status=\"quemado\"]')?.dataset.ticks); }"
+    },
+    {
+      "shot": "later",
+      "delay": 0,
+      "caption": "Un pulso después: la aguja ha pasado la primera muesca, que ha hecho daño, y quedan las demás"
+    }
+  ]
+}

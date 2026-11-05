@@ -1,0 +1,62 @@
+{
+  "title": "Sangrado: herida abierta",
+  "description": "Sangrado como herida abierta (src/battle.ts `woundScale`, docs/animas/README.md § Sangrado): Zarpazo de Haru deja al perro sangrando; el siguiente golpe físico lo gasta todo y pega un 20 % más por cada sangrado, con un +% en rojo sobre los números. Ejecutar con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Afalse%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 90000
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "document.querySelector('[data-skill=\"zarpazo\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
+    },
+    {
+      "until": "!!document.querySelector('.damage-pop[data-kind=\"status\"][data-status=\"sangrado\"]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "bleeding",
+      "delay": 250,
+      "caption": "Zarpazo de Haru: ¡Sangrado! × 2 sobre el perro"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"attack\"] .command-trigger').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "window.__woundSeen = false; new MutationObserver(() => { if (document.querySelector('.damage-pop[data-kind=\"status\"][data-status=\"sangrado\"]')) window.__woundSeen = true; }).observe(document.querySelector('.battle-pops'), { childList: true }); document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
+    },
+    {
+      "until": "window.__woundSeen",
+      "timeout": 20000
+    },
+    {
+      "shot": "wound",
+      "delay": 250,
+      "caption": "Atacar lo gasta: +20 % en rojo (le quedaba un sangrado tras el final de la ronda) y el sangrado desaparece"
+    }
+  ]
+}

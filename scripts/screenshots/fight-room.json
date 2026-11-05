@@ -1,0 +1,61 @@
+{
+  "title": "Where a fight stands: in place when there is room, in a pocket of the same place, widened, when not",
+  "description": "docs/combat.md § Where a fight stands (src/arena.ts, src/pocket.ts). A fight that has room where it starts is staged right there, as always; on Uri's tower's ramp (five-cell corridors between tall walls) the picture breaks into glass and the fight goes on in the same corridor widened, its two sides further apart, and back when it is over. Vertitrón moves to the middle of the summit, away from its wall; the palace guards, too big for the hall, fight in a pocket of the palace; any place can be forced into one with &pocket (Cardedeu here); the street dogs stay where they always fought.",
+  "steps": [
+    { "open": "/?mission=nuria&part=ring-1&solo=1" },
+    { "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name').textContent === 'La torre de Uri'", "timeout": 90000 },
+    { "eval": "navigator.getGamepads = () => []; window.gerard.game.standAt({ x: 52, z: 30 })" },
+    { "wait": 1500 },
+    {
+      "record": "into-the-pocket",
+      "seconds": 3.2,
+      "fps": 30,
+      "each": "if (window.frame === 0) window.gerard.game.startPalaceFight('cebollon')",
+      "caption": "El Cebollón catches them on the ramp, five cells between tall walls: the picture breaks into panes of glass that bend and split what is behind them, frosts over, and clears onto the same corridor, widened"
+    },
+    { "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy", "timeout": 60000 },
+    { "shot": "pocket-of-the-tower", "delay": 1200, "caption": "The pocket: the same north–south corridor with four more cells of floor, its walls in the tower's brick (cut down on the camera's side), the ramp's stone and the lanterns' violet; the two sides half as far apart again" },
+    { "eval": "window.gerard.battleUI.jumpTo('won')" },
+    { "until": "window.gerard.battleUI.fight?.phase === 'won'", "timeout": 30000 },
+    { "wait": 1500 },
+    {
+      "record": "out-of-the-pocket",
+      "seconds": 2,
+      "fps": 30,
+      "each": "if (window.frame === 0) window.gerard.battleUI.control('cancel')",
+      "caption": "Won: the glass comes back and clears onto the ramp, where they were"
+    },
+    { "shot": "back-on-the-ramp", "delay": 600, "caption": "Back where the fight started" },
+
+    { "open": "/?mission=nuria&part=vertigo&solo=1" },
+    { "until": "window.gerard && !!document.querySelector('#hud[data-dialogue]')", "timeout": 90000 },
+    { "eval": "navigator.getGamepads = () => []" },
+    { "skipDialogue": true },
+    { "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy", "timeout": 60000 },
+    { "shot": "vertigo-in-the-middle", "delay": 1500, "caption": "Vertitrón on the summit stays in place: the fight moves to the middle of the platform, so nobody stands at its edge behind the wall" },
+
+    { "open": "/?story=metro&solo=1" },
+    { "until": "window.gerard && !document.querySelector('#hud[data-dialogue]')", "timeout": 90000 },
+    { "eval": "navigator.getGamepads = () => []" },
+    { "teleport": "palacio", "cell": [16, 10] },
+    { "press": "KeyE" },
+    { "until": "!!document.querySelector('#hud[data-dialogue]')", "timeout": 30000 },
+    { "skipDialogue": true },
+    { "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy", "timeout": 90000 },
+    { "shot": "guards-in-a-pocket", "delay": 1500, "caption": "Two gum guards the size of wardrobes have no room before the fountain: they fight in the same hall, fountain and pillars included, widened" },
+
+    { "open": "/?mission=nuria&part=door&battle=3&party=adult&pocket" },
+    { "until": "window.gerard && document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy", "timeout": 90000 },
+    { "shot": "cardedeu-pocket", "delay": 1500, "caption": "Any place can be forced into a pocket with &pocket: the same stretch of Cardedeu's street, wider, its own ground, its houses' facades and its trees and lamps where they stand" },
+
+    { "open": "/?story=minion&solo=1" },
+    { "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent.includes('Maresme')", "timeout": 90000 },
+    { "eval": "navigator.getGamepads = () => []; window.gerard.game.encounter(true)" },
+    { "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy", "timeout": 90000 },
+    { "shot": "dogs-in-place", "delay": 1500, "caption": "With room, a fight stands where it starts, as always: the street dogs on Passatge Maresme" },
+
+    { "open": "/?battle=4&allies=2" },
+    { "until": "window.gerard && document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy", "timeout": 90000 },
+    { "shot": "tester-pocket", "delay": 1500, "caption": "The fight tester with no story starts where Gerard stands; with no room for four dogs there, it goes to a widened copy of that place instead of a dark void" }
+  ]
+}

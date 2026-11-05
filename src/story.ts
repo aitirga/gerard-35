@@ -7,14 +7,14 @@ import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { Cell } from './movement';
 import type { ItemId } from './items';
-import { ANIMA_NAMES, SKILLS, palaceGuards, type ClassId, type PartySlot, type SkillId } from './battle.ts';
-import { LEVELLED, levelFlag, levelForWins, levelOf, MAX_LEVEL } from './levels.ts';
+import { ANIMA_NAMES, ANIMA_OWNERS, SKILLS, canWear, palaceGuards, type ClassId, type PartySlot, type SkillId } from './battle.ts';
+import { award, levelFlag, levelOf } from './levels.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
-import { FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, type FearEncounter } from './friends/nuria.ts';
+import { CALLE, FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
 import { COSTS, DAY_END, DAY_START, EVENING, LATE, dusk, freshDays, readDays, spread, stage, type Activity, type Days } from './days.ts';
 import { ENVIRONMENTS } from './environments.ts';
@@ -22,23 +22,30 @@ import { ENVIRONMENTS } from './environments.ts';
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
 export const STORY_FLAGS = [
   'intro', 'met-jan', 'got-shoes', 'got-potion', 'got-backpack', 'bernat-joined', 'bernat-stalled', 'dejavu',
-  'minion', 'first-fight', 'palace', 'in-palace', 'got-chicle', 'noista', 'wrapper-room',
+  'minion', 'first-fight', 'palace', 'in-palace', 'got-chicle', 'matemagico', 'wrapper-room',
   'caught', 'got-wrapper',
   // Chapter 2 (docs/chapter-2.md): open progression, so these are never cleared.
-  'tv-news', 'metro', 'rec-comtal', 'castle', 'palace-tried', 'clue-r4', 'anima-nuria', 'anima-uri',
+  'tv-news', 'metro', 'rec-comtal', 'castle', 'palace-tried', 'clue-r4', 'anima-nuria',
   // Nuria's mission (docs/quests/nuria.md): Papagato is the party's for good.
   'papagato',
   // Ánima levels reached (src/levels.ts).
-  'papagato-2', 'papagato-3',
-  // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the three lights
-  // that went with Gerard (docs/quests/nuria.md).
-  'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri', 'luz-nil',
+  'papagato-2', 'papagato-3', 'matemagico-2', 'matemagico-3',
+  // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the two lights
+  // that went with Gerard and Aitor (docs/quests/nuria.md).
+  'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri',
   // Lights let out of the jar at home, each one a day won back (docs/quests/nuria.md § The lights).
-  'luz-nuria-usada', 'luz-uri-usada', 'luz-nil-usada',
+  'luz-nuria-usada', 'luz-uri-usada',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
+/**
+ * Flags that changed name; old saves keep working (server.py has the same map). Nil's light is
+ * gone (Nuria's household gives two), so a save that had it keeps Uri's.
+ */
+const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-nil': 'luz-uri', 'luz-nil-usada': 'luz-uri-usada' };
+/** Only flags this version knows, renamed ones under their new name. */
+const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENAMED_FLAGS[f] ?? f).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
 /** Whose lights can be won, in the order they are let out of the jar. */
-export const LIGHTS = ['nuria', 'uri', 'nil'] as const;
+export const LIGHTS = ['nuria', 'uri'] as const;
 export type LightId = typeof LIGHTS[number];
 
 export type StoryEvent =
@@ -50,16 +57,19 @@ export type StoryEvent =
   | { type: 'leash' }
   /** La Reina Bubbaloo's minion has stepped out and popped its bubble: the dogs obey it now. */
   | { type: 'minion' }
-  /** A fight ended; `encounter` says which one (the street dogs if missing), `worn` the ánimas the party wore at the end. */
-  | { type: 'battle'; won: boolean; encounter?: EncounterId; worn?: ClassId[] }
+  /**
+   * A fight ended; `encounter` says which one (the street dogs if missing), `worn` the ánimas that
+   * took part (src/levels.ts `participants`) and `xp` what the fight was worth to each of them.
+   */
+  | { type: 'battle'; won: boolean; encounter?: EncounterId; worn?: ClassId[]; xp?: number }
   /** The palace has finished rising over the north end of the street. */
   | { type: 'palace' }
   /** Gerard is (or is no longer) heading back south, away from the palace. */
   | { type: 'away'; away: boolean }
   /** Gerard stepped into a named room of the scene. */
   | { type: 'room'; id: string }
-  /** An ánima woke up in Gerard, mid-fight (Matemágico he has from the start). */
-  | { type: 'class'; id: Exclude<GerardClass, 'matemagico'> }
+  /** An ánima woke up in Gerard, mid-fight (Matemágico, in the palace). */
+  | { type: 'class'; id: GerardClass }
   /** The Queen's hands have caught Gerard and Bernat: the screen is black. */
   | { type: 'caught' }
   /** Gerard walked up to one of the story's triggers (`story.triggers`). */
@@ -99,19 +109,35 @@ export type StoryEffect =
   | { kind: 'look'; anchor?: string }
   /** The Queen has covered everything: the end, with the way back to the morning before. */
   | { kind: 'doom' }
-  /** An ánima reached a new level and learned `skills` (src/levels.ts). */
-  | { kind: 'learn'; classId: ClassId; level: number; skills: SkillId[] }
-  /** An ánima woke up outside a fight (Nuria lends the cats: Papagato). */
-  | { kind: 'anima'; classId: ClassId }
-  /** The lights of the people Gerard helped leave them and go into Gerard and Aitor (docs/quests/nuria.md § The lights). */
+  /**
+   * An ánima reached a new level and learned `skills` (src/levels.ts). `quiet` when the fight's
+   * victory screen has already shown it.
+   */
+  | { kind: 'learn'; classId: ClassId; level: number; skills: SkillId[]; quiet?: boolean }
+  /**
+   * An ánima woke up outside a fight (Nuria lends the cats: Papagato), as a note; `kept` when it is
+   * the party's for good (the mission won), as the big ÁNIMA DESBLOQUEADA banner.
+   */
+  | { kind: 'anima'; classId: ClassId; kept?: boolean }
+  /**
+   * The lights of the people Gerard helped leave them and go into Gerard and Aitor, one each in turn
+   * (docs/quests/nuria.md § The lights). They are the party's ánimas to spend at home.
+   */
   | { kind: 'lights'; people: string[] }
   /** A light leaves the jar at home and flies out of the window towards the castle. */
-  | { kind: 'release-light' };
+  | { kind: 'release-light' }
+  /**
+   * Someone far off shouts, in a shout bubble over their head, and the game goes on, never stopped
+   * (Uri from the top of his tower: going in, up each ring, onto the platform). `beat`: seconds the
+   * next story beat waits so the shout is seen first (Vertitrón's fight after Uri calls for it).
+   */
+  | { kind: 'shout'; speaker: 'uri'; text: string; beat?: number };
 
-/** Scripted fights: the possessed street dogs, the palace minion that wakes Noísta, and chapter 2's palace guards. */
+/** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | FearEncounter;
 /** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
-export type GerardClass = ClassId;
+/** The ánimas Gerard can wake (Físico is Aitor's). */
+export type GerardClass = Exclude<ClassId, 'fisico'>;
 
 /** Someone standing in a scene: a character model, or one of the cats (`cat`). */
 export interface StoryNpc { id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki'; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId }
@@ -119,8 +145,14 @@ export interface StoryNpc { id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuk
  * Nuria's mission while it runs (docs/quests/nuria.md). Nothing here is saved: leaving with the
  * train, falling or the day ending hands the cats back, and only winning sets flags.
  */
-interface NuriaRun { lent: boolean; warned: boolean; haru: boolean; entered: boolean; stage: number; beaten: string[] }
-const freshRun = (): NuriaRun => ({ lent: false, warned: false, haru: false, entered: false, stage: 0, beaten: [] });
+/**
+ * `haru`: Haru met at the station, leading the way; `led`: she has brought them to Nuria's door;
+ * `street`: up La calle que no acaba once; `portal`: the bubble at its end seen; `entered`: in the tower once.
+ */
+export interface NuriaRun { lent: boolean; warned: boolean; haru: boolean; led: boolean; street: boolean; portal: boolean; entered: boolean; stage: number; beaten: string[] }
+export const freshRun = (): NuriaRun => ({ lent: false, warned: false, haru: false, led: false, street: false, portal: false, entered: false, stage: 0, beaten: [] });
+/** Where Haru sits by Nuria's door once she has led them there. */
+const HARU_HOME: Cell = { x: PLACES_NURIA.nuria.cell.x - 1, z: PLACES_NURIA.nuria.cell.z + 1 };
 export type Companion = 'none' | 'follow' | 'stalled';
 /** La Reina Bubbaloo's minion in the manhole: lurking (a faint bubble now and then) until its entrance, then gone below. */
 export type MinionState = 'lurking' | 'gone';
@@ -135,7 +167,14 @@ export interface PartyMember {
   classId?: ClassId;
 }
 /** Who wears which class. Not a story flag: it changes back and forth, so `main.ts` keeps it in the browser. */
-export type Loadout = Partial<Record<MemberId, ClassId | null>>;
+export interface Loadout {
+  /** The ánima each wears now, among their own (`kitOf`). */
+  worn?: Partial<Record<MemberId, ClassId>>;
+  /** The extra ánimas each has equipped, besides their own fixed one (`EXTRA_SLOTS` at most). */
+  extras?: Partial<Record<MemberId, ClassId[]>>;
+}
+/** How many extra ánimas each can equip besides their own (one for now: more slots may come). */
+export const EXTRA_SLOTS = 1;
 /** Who walks beside Gerard: Bernat in chapter 1, Aitor from chapter 2 on. */
 export type Partner = 'bernat' | 'aitor';
 
@@ -163,12 +202,21 @@ const BACK_DOOR: Cell = { x: 10, z: 16 };
 /** The room where the second minion waits. */
 export const WRAPPER_ROOM = 'Sala de los Envoltorios';
 /** A place the story watches: walking within `radius` of `cell` sends a `near` event. */
-export interface Trigger { id: string; cell: Cell; radius: number }
+/** A place the story watches: within `radius` cells of `cell`, or anywhere on the cells of `area` (a crossing, a street's width). */
+/** `passing`: walked through without stopping, since what it sets off holds nobody (a shout). */
+export interface Trigger { id: string; cell: Cell; radius: number; area?: { x: number; z: number; w: number; d: number }; passing?: boolean }
+/** Whether a position (in cells) is on a trigger. */
+export function onTrigger({ cell, radius, area }: Trigger, at: Cell): boolean {
+  if (area) return at.x >= area.x - .5 && at.x <= area.x + area.w - .5 && at.z >= area.z - .5 && at.z <= area.z + area.d - .5;
+  return Math.hypot(at.x - cell.x, at.z - cell.z) <= radius;
+}
 /** Where the school door is in Trinitat Vella: the palace lets them out there. */
 const SCHOOL_DOOR = ENVIRONMENTS[PLACES_2.school.environment].interactions.find(i => i.id === PLACES_2.school.door)!.cell;
 /** Doors out of the house: closed by the story until Gerard is ready for school. */
 const HOUSE_EXITS = new Set(['leave-hall', 'leave-living']);
 const JAR = PLACES_2.jar;
+/** Every ánima, in the order the story unlocks them. */
+const CLASS_ORDER = Object.keys(ANIMA_NAMES) as ClassId[];
 /** La Pompa from the inside: it will not let them out until the wrapper room is cleared. */
 const PALACE_EXIT = 'leave-palace';
 /** The hall's east door, which in chapter 2 opens onto the school's yard. */
@@ -183,21 +231,28 @@ export class Story {
   private tugs = 0;
   /** Whether Gerard is heading back south once the palace stands. Not saved. */
   private away = false;
-  /** Who wears which class; members missing here wear their default (see `classOf`). */
-  private worn: Loadout = {};
+  /** Which of their ánimas each wears now; members missing here wear their default (see `classOf`). */
+  private worn: Partial<Record<MemberId, ClassId>> = {};
+  /** The extra ánimas each has equipped (`equip`). */
+  private extras: Partial<Record<MemberId, ClassId[]>> = {};
   /** Nuria's mission while it runs; not saved. */
   nuria: NuriaRun = freshRun();
   /** Whether Nuria has lent the cats before (she says it differently the second time). Not saved. */
   private lentBefore = false;
-  /** Fights won wearing each ánima (src/levels.ts). Kept in the browser by `main.ts`, like the loadout. */
-  wins: Partial<Record<ClassId, number>> = {};
+  /**
+   * Development (the picker's Ánimas column, docs/dev-tools.md): the ánimas unlocked and each one's
+   * level, instead of what the story gives. Not saved, and no ánima grows while it is set.
+   */
+  debugAnimas?: Partial<Record<ClassId, number>>;
+  /** EXP each ánima has earned (src/levels.ts). Kept in the browser by `main.ts`, like the loadout. */
+  xp: Partial<Record<ClassId, number>> = {};
   /**
    * The days in Barcelona (src/days.ts): what day and hour it is, and the last mornings to come
    * back to. Saved next to the flags.
    */
   days: Days = freshDays();
   constructor(flags: Iterable<string> = []) {
-    this.flags = new Set([...flags].filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
+    this.flags = knownFlags(flags);
   }
   has(flag: StoryFlag) { return this.flags.has(flag); }
   /** Adds saved flags, e.g. from the server; returns whether anything new arrived. */
@@ -241,6 +296,8 @@ export class Story {
   loadDays(value: unknown, story?: Iterable<string>) {
     const days = readDays(value);
     if (!days || days.epoch < this.days.epoch) return;
+    // A morning saved by an older version may hold flags since renamed; the server only takes known ones.
+    days.mornings = days.mornings.map(m => ({ ...m, story: STORY_FLAGS.filter(f => knownFlags(m.story).has(f)) }));
     if (days.epoch > this.days.epoch && story) { this.flags.clear(); this.merge(story); }
     const later = days.clock.day * 24 + days.clock.hour >= this.days.clock.day * 24 + this.days.clock.hour;
     if (days.epoch > this.days.epoch || later) this.days = days;
@@ -249,56 +306,99 @@ export class Story {
   get castleThreat() { return castleThreat(this.animas.length); }
   /**
    * Ánimas (classes in the code) the party has unlocked; anyone in the party but Bernat can wear
-   * any of them. Matemágico is Gerard's from the start; Noísta wakes up in the palace.
+   * any of them. Matemágico wakes up in Gerard in the palace; Papagato comes from Nuria.
    */
   /** Each unlocked ánima's level (1 until it grows). */
   get levels(): Partial<Record<ClassId, number>> {
-    return Object.fromEntries(this.classes.map(id => [id, levelOf(id, flag => this.flags.has(flag as StoryFlag))]));
+    const debug = this.debugAnimas;
+    return debug ? Object.fromEntries(this.classes.map(id => [id, debug[id]])) : this.storyLevels;
+  }
+  /** The levels the story has reached, whatever the picker says. */
+  get storyLevels(): Partial<Record<ClassId, number>> {
+    return Object.fromEntries(this.storyClasses.map(id => [id, levelOf(id, flag => this.flags.has(flag as StoryFlag))]));
   }
   /**
-   * A fight was won wearing `worn`: each ánima counts it once, and one that reaches a new level
-   * sets its flag and says what it learned.
+   * A fight was won: each ánima in `worn` earns `xp` EXP (src/levels.ts `award`), and one that
+   * reaches a new level sets its flag and says what it learned. `quiet`: the fight already showed it.
    */
-  private grow(worn: ClassId[] = []): StoryEffect[] {
+  private grow(worn: ClassId[] = [], xp = 0, quiet = false): StoryEffect[] {
+    // Levels the picker chose stay as they are.
+    if (this.debugAnimas) return [];
     const effects: StoryEffect[] = [];
-    for (const id of new Set(worn)) {
-      if (!LEVELLED.includes(id) || !this.classes.includes(id)) continue;
-      const wins = this.wins[id] = (this.wins[id] ?? 0) + 1;
-      const before = this.levels[id] ?? 1, reached = Math.min(MAX_LEVEL, levelForWins(wins));
-      for (let level = before + 1; level <= reached; level++) {
-        this.set(levelFlag(id, level as 2 | 3) as StoryFlag);
-        effects.push({ kind: 'learn', classId: id, level, skills: SKILLS.filter(skill => skill.class === id && 'level' in skill && skill.level === level).map(skill => skill.id) });
+    for (const growth of award(worn.filter(id => this.storyClasses.includes(id)), xp, this.xp, this.storyLevels)) {
+      this.xp[growth.id] = growth.xpAfter;
+      for (let level = growth.levelBefore + 1; level <= growth.levelAfter; level++) {
+        this.set(levelFlag(growth.id, level as 2 | 3) as StoryFlag);
+        effects.push({ kind: 'learn', classId: growth.id, level, skills: SKILLS.filter(skill => skill.class === growth.id && 'level' in skill && skill.level === level).map(skill => skill.id), ...quiet ? { quiet } : {} });
       }
     }
     return effects;
+  }
+  /**
+   * Development (the picker's Ánimas column): `id` earns `xp` EXP as if from a fight, levels and
+   * notes included. Leaves the picker's own levels, so what it shows is the story's.
+   */
+  giveXp(id: ClassId, xp: number): StoryEffect[] {
+    this.debugAnimas = undefined;
+    return this.grow([id], xp);
   }
   /** Walking up to one of Nuria's mission's places: Haru at the station, Uri ahead, the summit, or a fear reaching Gerard. */
   private nearNuria(id: string): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (!this.adult || this.has('nuria-uri')) return [];
     if (id === 'haru' && !this.nuria.haru) { this.nuria.haru = true; return [say(LINES_NURIA.haru)]; }
+    // Haru has walked them to Nuria's door (src/guide.ts) and sits down beside her.
+    if (id === 'haru-home' && this.nuria.haru && !this.nuria.led) { this.nuria.led = true; return []; }
+    // Up the street, the corner where Uri ran has unrolled into more street (src/street-shift.ts).
+    if (id === 'calle' && this.nuria.lent) return this.enterCalle();
+    // The bubble at the end of the street comes into sight.
+    if (id === 'portal' && this.nuria.lent && !this.nuria.portal) { this.nuria.portal = true; return [say(LINES_NURIA.portal)]; }
+    if (id === 'portal-through' && this.nuria.lent) return this.enterMaze();
     const reached = /^uri-(\d)$/.exec(id);
-    if (reached && Number(reached[1]) === this.nuria.stage) { this.nuria.stage++; return [say(LINES_NURIA.uri[Number(reached[1])])]; }
-    if (id === 'summit' && this.nuria.lent && this.nuria.stage >= PLACES_NURIA.uri.length) return [say(LINES_NURIA.roof), { kind: 'battle', encounter: 'uri-vertigo' }];
+    // Up out of a ring: Uri shouts it from the top, and the climb goes on.
+    if (reached && Number(reached[1]) === this.nuria.stage) { this.nuria.stage++; return [{ kind: 'shout', speaker: 'uri', text: LINES_NURIA.shouts[Number(reached[1])] }]; }
+    // Onto the platform: Uri shouts for his boss, and the fight comes in as soon as it has been seen.
+    if (id === 'summit' && this.nuria.lent && this.nuria.stage >= PLACES_NURIA.uri.length) return [{ kind: 'shout', speaker: 'uri', text: LINES_NURIA.roof, beat: 1.5 }, { kind: 'battle', encounter: 'uri-vertigo' }];
     const fear = FEARS.find(f => f.id === id);
-    if (fear && this.nuria.lent && !this.nuria.beaten.includes(fear.id)) return [say(fear.tell), { kind: 'battle', encounter: fear.encounter }];
+    if (fear && this.nuria.lent && !this.nuria.beaten.includes(fear.id)) return [...fear.tell ? [say(fear.tell)] : [], { kind: 'battle', encounter: fear.encounter }];
     return [];
   }
-  /** Uri is himself again: the cats and Papagato stay, the three lights go with Gerard and Aitor. */
+  /**
+   * Her street has turned into La calle que no acaba before them (src/street-shift.ts walks them on
+   * into it, with no cut): the first time, they say so.
+   */
+  private enterCalle(): StoryEffect[] {
+    if (this.nuria.street) return [];
+    this.nuria.street = true;
+    return [{ kind: 'dialogue', dialogue: LINES_NURIA.calle }];
+  }
+  /** Through the bubble, into the tower. */
+  private enterMaze(): StoryEffect[] {
+    const inside: StoryEffect = { kind: 'travel', environment: MAZE, cell: { ...PLACES_NURIA.mazeIn.cell } };
+    if (this.nuria.entered) return [inside];
+    // Looking for Uri takes its hour; the rest of the mission is paid when it is won.
+    this.nuria.entered = true;
+    return [inside, { kind: 'shout', speaker: 'uri', text: LINES_NURIA.mazeIn }, ...this.spend('cafe')];
+  }
+  /**
+   * Uri is himself again: the cats and Papagato stay, two lights go with Gerard and Aitor (Nuria's
+   * and Uri's, Nil in his arms), and Papagato's banner says it is theirs for good.
+   */
   private winNuria(): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (!this.set('nuria-uri')) return [];
-    for (const flag of ['papagato', 'anima-nuria', 'luz-nuria', 'luz-uri', 'luz-nil'] as const) this.set(flag);
+    for (const flag of ['papagato', 'anima-nuria', 'luz-nuria', 'luz-uri'] as const) this.set(flag);
     this.nuria = freshRun();
     const door: StoryEffect = { kind: 'travel', environment: STREET, cell: { x: PLACES_NURIA.nuria.cell.x - 1, z: PLACES_NURIA.nuria.cell.z + 2 } };
-    return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), { kind: 'lights', people: ['nuria', 'uri', 'nil'] }, ...this.spend('fight')];
+    return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), { kind: 'lights', people: ['nuria', 'uri'] }, { kind: 'anima', classId: 'papagato', kept: true }, ...this.spend('fight')];
   }
   /** What a fight's end means for the story, before any ánima grows. */
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (event.won && event.encounter === 'uri-vertigo') return this.winNuria();
     const fear = FEARS.find(f => f.encounter === event.encounter);
-    if (event.won && fear) { if (!this.nuria.beaten.includes(fear.id)) this.nuria.beaten.push(fear.id); return []; }
+    // A fear beaten stays beaten; its young only go for a while (the game brings them back).
+    if (event.won && fear) { if (!fear.respawn && !this.nuria.beaten.includes(fear.id)) this.nuria.beaten.push(fear.id); return []; }
     if (!event.won) {
       if (!this.adult) return [];
       // Chapter 2: falling is waking up at home the next morning, with everything done kept.
@@ -307,39 +407,103 @@ export class Story {
     if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten), ...this.spend('fight')];
     if (event.encounter === 'palace-minion') {
       if (!this.set('wrapper-room')) return [];
-      return [say(LINES.afterNoista), { kind: 'ambush' }];
+      return [say(LINES.afterMatemagico), { kind: 'ambush' }];
     }
     if (!this.has('minion') || !this.set('first-fight')) return [];
     return [say(LINES.afterFight), { kind: 'palace' }];
   }
   get classes(): ClassId[] {
+    const debug = this.debugAnimas;
+    return debug ? CLASS_ORDER.filter(id => debug[id]) : this.storyClasses;
+  }
+  /** The ánimas the story has unlocked, whatever the picker says. */
+  get storyClasses(): ClassId[] {
     return [
-      'matemagico' as const,
-      ...this.has('noista') ? ['noista' as const] : [],
+      ...this.has('matemagico') ? ['matemagico' as const] : [],
       // Lent by Nuria for her mission, or the party's for good once it is won.
       ...this.has('papagato') || this.nuria.lent ? ['papagato' as const] : [],
+      // Aitor's own, from the morning he is in the party (a placeholder, still to design).
+      ...this.adult ? ['fisico' as const] : [],
     ];
   }
-  /** Gerard's active ánima, which also dresses the interface. */
-  get gerardClass(): GerardClass | undefined { return this.classOf('gerard'); }
-  /** The ánima `member` wears: their choice if it is unlocked, otherwise Gerard wears the newest. */
-  classOf(member: MemberId): ClassId | undefined {
-    const choice = this.worn[member];
-    if (choice !== undefined) return choice && this.classes.includes(choice) ? choice : undefined;
-    return member === 'gerard' ? this.classes.at(-1) : undefined;
+  /**
+   * Development: starts Nuria's mission partway (the picker's Misiones tab): the cats lent, the
+   * tower's ring reached, the fears beaten. Gerard wears Papagato if he wears nothing, as when she lends it.
+   */
+  startNuria(run: Partial<NuriaRun>) {
+    this.nuria = { ...freshRun(), ...run, beaten: migrateBeaten(run.beaten ?? []) };
+    if (!this.nuria.lent) return;
+    this.lentBefore = true;
+    if (!this.extrasOf('gerard').length) this.equip('gerard', 'papagato');
   }
-  /** Puts an ánima on a party member (or takes it off with `null`). Locked ánimas, and Bernat, are refused. */
-  wear(member: MemberId, classId: ClassId | null) {
-    if (member === 'bernat' || (classId && !this.classes.includes(classId))) return false;
+  /** Gerard's active ánima, which also dresses the interface. */
+  get gerardClass(): GerardClass | undefined { return this.classOf('gerard') as GerardClass | undefined; }
+  /**
+   * Each one's own ánima, always theirs and never taken off (docs/party.md): Matemágico is Gerard's
+   * (once it wakes), Físico Aitor's. Bernat has none.
+   */
+  fixedOf(member: MemberId): ClassId | undefined {
+    const own = (Object.entries(ANIMA_OWNERS) as [ClassId, string][]).find(([, who]) => who === member)?.[0];
+    return own && this.classes.includes(own) ? own : undefined;
+  }
+  /** The extra ánimas `member` has equipped, still unlocked. */
+  extrasOf(member: MemberId): ClassId[] {
+    return (this.extras[member] ?? []).filter(id => this.classes.includes(id) && canWear(member, id) && this.fixedOf(member) !== id).slice(0, EXTRA_SLOTS);
+  }
+  /** What `member` can switch between in a fight (L / R): their own ánima, then the extras equipped. */
+  kitOf(member: MemberId): ClassId[] {
+    const fixed = this.fixedOf(member);
+    return [...fixed ? [fixed] : [], ...this.extrasOf(member)];
+  }
+  /** The ánima `member` wears now: the one they last chose among theirs, otherwise an extra if they equipped one, otherwise their own. */
+  classOf(member: MemberId): ClassId | undefined {
+    const kit = this.kitOf(member), choice = this.worn[member];
+    return choice && kit.includes(choice) ? choice : this.extrasOf(member)[0] ?? kit[0];
+  }
+  /** Who has `classId` among their ánimas (their own, or equipped as an extra), if anyone. */
+  wearerOf(classId: ClassId): MemberId | undefined {
+    return (['gerard', 'aitor'] as const).find(member => (member === 'gerard' || this.partner === 'aitor') && this.kitOf(member).includes(classId));
+  }
+  /**
+   * Equips an extra ánima on `member`, in their slot (it takes the place of the one there, which
+   * goes back to the party): unlocked, not someone else's own, not equipped by another. They wear
+   * it at once. Bernat equips none.
+   */
+  equip(member: MemberId, classId: ClassId) {
+    if (member === 'bernat' || !this.classes.includes(classId) || !canWear(member, classId) || this.fixedOf(member) === classId) return false;
+    const other = this.wearerOf(classId);
+    if (other && other !== member) return false;
+    const kept = this.extrasOf(member).filter(id => id !== classId);
+    this.extras[member] = [...kept.slice(0, EXTRA_SLOTS - 1), classId];
     this.worn[member] = classId;
     return true;
   }
-  get loadout(): Loadout { return { ...this.worn }; }
-  set loadout(value: Loadout) {
-    this.worn = {};
-    for (const [member, classId] of Object.entries(value ?? {})) {
-      if (['gerard', 'aitor'].includes(member) && (classId === null || this.classes.includes(classId as ClassId))) this.worn[member as MemberId] = classId as ClassId | null;
-    }
+  /** Takes an extra ánima off `member`'s slot; they wear their own again. Their own cannot be taken off. */
+  unequip(member: MemberId, classId: ClassId) {
+    if (!this.extrasOf(member).includes(classId)) return false;
+    this.extras[member] = this.extrasOf(member).filter(id => id !== classId);
+    if (this.worn[member] === classId) delete this.worn[member];
+    return true;
+  }
+  /** Changes which of their ánimas `member` wears (L / R in a fight, or a pill): only one of theirs (`kitOf`). */
+  wear(member: MemberId, classId: ClassId) {
+    if (member === 'bernat' || !this.kitOf(member).includes(classId)) return false;
+    this.worn[member] = classId;
+    return true;
+  }
+  get loadout(): Loadout { return { worn: { ...this.worn }, extras: Object.fromEntries(Object.entries(this.extras).map(([m, ids]) => [m, [...ids ?? []]])) }; }
+  /** A saved loadout; anything invalid is dropped (and an old save's ánima worn becomes the extra it was). */
+  set loadout(value: Loadout | Record<string, unknown>) {
+    this.worn = {}; this.extras = {};
+    const members = ['gerard', 'aitor'] as const;
+    const isClass = (id: unknown): id is ClassId => typeof id === 'string' && (CLASS_ORDER as string[]).includes(id);
+    const v = (value ?? {}) as Record<string, unknown>;
+    // Before extras existed, the save was who wore what: whatever was not their own was an extra.
+    const old = !('worn' in v) && !('extras' in v);
+    const extras = (old ? Object.fromEntries(members.map(m => [m, isClass(v[m]) ? [v[m]] : []])) : v.extras ?? {}) as Record<string, unknown>;
+    const worn = (old ? Object.fromEntries(members.map(m => [m, v[m]])) : v.worn ?? {}) as Record<string, unknown>;
+    for (const member of members) for (const id of Array.isArray(extras[member]) ? extras[member] : []) if (isClass(id)) this.equip(member, id);
+    for (const member of members) if (isClass(worn[member])) this.wear(member, worn[member]);
   }
   /** Who walks beside Gerard here and now, if anyone. */
   get partner(): Partner | undefined { return this.adult ? 'aitor' : this.companion !== 'none' ? 'bernat' : undefined; }
@@ -363,11 +527,11 @@ export class Story {
   }
   get party(): PartyMember[] {
     const classId = this.classOf('gerard');
-    const note = classId === 'noista' ? 'Ánima: Noísta. Siempre dice que no.' : this.has('got-shoes') ? 'Listo para el cole.' : 'Aún en pijama.';
+    const note = classId === 'matemagico' ? 'Ánima: Matemágico. Hace magia con la mente.' : this.has('got-shoes') ? 'Listo para el cole.' : 'Aún en pijama.';
     // Chapter 2: Gerard at 35, and Aitor beside him from the moment he wakes up.
     if (this.adult) return [
       { id: 'gerard', name: 'Gerard', profile: 'gerard35', classId, equipment: [], note: classId ? `Treinta y cinco años. Ánima: ${ANIMA_NAMES[classId]}.` : 'Treinta y cinco años.' },
-      { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: this.classOf('aitor'), equipment: [], note: this.classOf('aitor') ? 'Lleva un ánima de Gerard. Y le queda bien.' : 'Pies en el suelo. Y un abrazo para todos.' },
+      { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: this.classOf('aitor'), equipment: [], note: this.classOf('aitor') === 'fisico' ? 'Ánima: Físico. La suya.' : this.classOf('aitor') ? 'Lleva un ánima de Gerard. Y le queda bien.' : 'Pies en el suelo. Y un abrazo para todos.' },
     ];
     const gerard: PartyMember = { id: 'gerard', name: 'Gerard', profile: 'gerard', classId, equipment: this.items.filter(i => i !== 'pocion' && i !== 'chicle'), note };
     return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', profile: 'bernat', equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
@@ -376,7 +540,7 @@ export class Story {
   battleParty(withPartner: boolean): PartySlot[] {
     const bonus = this.animas.length ? animaBonus(this.animas) : undefined;
     return this.party.filter(m => m.id === 'gerard' || withPartner)
-      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, ...(bonus ? { bonus } : {}) }));
+      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, kit: id === 'bernat' ? [] : this.kitOf(id), ...(bonus ? { bonus } : {}) }));
   }
   /** The morning of the current day, kept to come back to (taken the first time anything happens that day). */
   private remember() {
@@ -426,11 +590,28 @@ export class Story {
     if (!this.adult || this.has('nuria-uri')) return [];
     const { haru, uri } = PLACES_NURIA, run = this.nuria;
     if (environment === STREET && !run.lent && !run.haru) return [{ id: 'haru', cell: { ...haru.cell }, radius: haru.radius }];
+    const { portal } = PLACES_NURIA;
+    if (environment === CALLE) return !run.lent ? [] : [
+      ...run.portal ? [] : [{ id: 'portal', cell: { ...portal.cell }, radius: portal.radius }],
+      { id: 'portal-through', cell: { ...portal.cell }, radius: 0, area: { x: 0, z: 0, w: ENVIRONMENTS[CALLE].grid[0].length, d: Math.ceil(portal.cell.z + portal.through) } },
+    ];
     if (environment !== MAZE || !run.lent) return [];
     const next = uri[run.stage];
-    if (next) return [{ id: `uri-${run.stage}`, cell: { ...next.cell }, radius: next.radius }];
+    if (next) return [{ id: `uri-${run.stage}`, cell: { ...next.cell }, radius: next.radius, passing: true }];
     const { summit } = PLACES_NURIA;
-    return [{ id: 'summit', cell: { ...summit.cell }, radius: summit.radius }];
+    return [{ id: 'summit', cell: { ...summit.cell }, radius: summit.radius, passing: true }];
+  }
+  /**
+   * Someone leading the party in this scene (src/guide.ts walks them): Haru, from the station to
+   * Nuria's door, once met and until she gets there; then, lent, from the door up the street to the
+   * corner where Uri ran, until they first follow him. Getting there is a `near` with `arrive`.
+   */
+  guide(environment: EnvironmentId): { id: 'haru'; from: Cell; to: Cell; arrive: string } | undefined {
+    const run = this.nuria;
+    if (environment !== STREET || !this.adult || this.has('nuria-uri') || !run.haru) return undefined;
+    if (run.lent) return run.street ? undefined : { id: 'haru', from: { ...HARU_HOME }, to: { ...PLACES_NURIA.corner.cell }, arrive: 'haru-corner' };
+    if (run.led) return undefined;
+    return { id: 'haru', from: { ...PLACES_NURIA.haru.cell }, to: { ...HARU_HOME }, arrive: 'haru-home' };
   }
   /** Uri's fears still hunting the ramp (src/chasers.ts moves them; reaching Gerard is a `near` with their id). */
   fears(environment: EnvironmentId) {
@@ -476,16 +657,16 @@ export class Story {
   }
   /** Nuria at her door, the cats with her until she lends them, and Uri ahead in his maze. */
   private nuriaNpcs(): StoryNpc[] {
-    const { nuria, haru, uri } = PLACES_NURIA, run = this.nuria, won = this.has('nuria-uri');
+    const { nuria, haru } = PLACES_NURIA, run = this.nuria, won = this.has('nuria-uri');
     const at = (c: Cell, dx: number, dz: number) => ({ x: c.x + dx, z: c.z + dz });
     const list: StoryNpc[] = [{ id: 'nuria', character: 'nuria', environment: STREET, cell: { ...nuria.cell }, scale: 1.12 }];
     if (won) list.push({ id: 'uri', character: 'uri', environment: STREET, cell: at(nuria.cell, -2, 0), scale: 1.12 });
     if (!won && !run.lent) {
       list.push({ id: 'yuki', character: '', cat: 'yuki', environment: STREET, cell: at(nuria.cell, 1, 1), scale: 1.35 });
-      list.push({ id: 'haru', character: '', cat: 'haru', environment: STREET, cell: run.haru ? at(nuria.cell, -1, 1) : { ...haru.cell }, scale: 1.35 });
+      // Haru waits at the station, then leads the way (`guide`, drawn by the game), then sits by the door.
+      if (!run.haru || run.led) list.push({ id: 'haru', character: '', cat: 'haru', environment: STREET, cell: run.led ? { ...HARU_HOME } : { ...haru.cell }, scale: 1.35 });
     }
-    const ahead = uri[run.stage];
-    if (!won && run.lent && ahead) list.push({ id: 'uri', character: 'uri', environment: MAZE, cell: { ...ahead.cell }, scale: 1.12 });
+    // In the tower Uri is up at the top all along, on Vertitrón (src/fears.ts), not on the ramp.
     return list;
   }
   /** Haru and Yuki, home in the Meridiana flat once Uri is himself again (src/cat-wander.ts walks them). */
@@ -517,10 +698,8 @@ export class Story {
       if (id === 'meridiana-bed' && !this.adult) continue;
       list.push({ id, label, ...prompt, cell: { ...place.cell } });
     }
-    if (partner && this.partner === 'aitor') list.push({ id: 'talk-aitor', label: 'Hablar con Aitor', cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
     if (this.adult && environment === STREET) {
       list.push({ id: 'talk-nuria', label: 'Hablar con Nuria', cell: { ...PLACES_NURIA.nuria.cell } });
-      if (this.nuria.lent) list.push({ id: 'enter-maze', label: 'Doblar la esquina', hint: 'Doblar la esquina', cell: { ...PLACES_NURIA.corner.cell } });
     }
     if (this.adult && environment === JAR.environment && this.jar.length) {
       const lit = this.jar.some(l => !l.used) && !this.lightUsedToday;
@@ -574,7 +753,7 @@ export class Story {
         if (!this.has('dejavu') || !this.set('minion')) return [];
         return [say(LINES.minion), { kind: 'battle', encounter: 'dogs' }];
       case 'battle': {
-        const learned = event.won ? this.grow(event.worn) : [];
+        const learned = event.won ? this.grow(event.worn, event.xp, true) : [];
         return [...this.afterBattle(event), ...learned];
       }
       case 'palace':
@@ -625,19 +804,13 @@ export class Story {
         const again = this.nuria.haru && this.has('papagato-2' as StoryFlag) ? false : this.lentBefore;
         this.nuria = { ...freshRun(), lent: true, haru: true };
         this.lentBefore = true;
-        if (!this.worn.gerard) this.worn.gerard = 'papagato';
+        if (!this.extrasOf('gerard').length) this.equip('gerard', 'papagato');
         return [say(again ? LINES_NURIA.nuriaAgain : LINES_NURIA.nuriaFirst), { kind: 'anima', classId: 'papagato' }];
       }
-      case 'enter-maze': {
-        if (!this.nuria.lent) return [];
-        const inside: StoryEffect = { kind: 'travel', environment: MAZE, cell: { ...PLACES_NURIA.mazeIn.cell } };
-        if (this.nuria.entered) return [inside];
-        // Looking for Uri takes its hour; the rest of the mission is paid when it is won.
-        this.nuria.entered = true;
-        return [inside, say(LINES_NURIA.mazeIn), ...this.spend('cafe')];
-      }
-      case 'salir-laberinto':
+      case 'calle-tornar':
         return [{ kind: 'travel', environment: STREET, cell: { ...PLACES_NURIA.streetBack.cell } }];
+      case 'salir-laberinto':
+        return [{ kind: 'travel', environment: CALLE, cell: { ...PLACES_NURIA.calleBack.cell } }];
       case 'talk-jan':
         if (this.set('met-jan')) return [say(LINES.jan)];
         return [say(this.has('got-potion') ? LINES.janAfterPotion : LINES.janAgain)];
@@ -666,13 +839,6 @@ export class Story {
       case 'take-envoltorio':
         if (!this.adult || !this.set('got-wrapper')) return [];
         return [say(LINES.envoltorio), { kind: 'item', item: 'envoltorio' }];
-      case 'talk-aitor': {
-        if (!this.adult) return [];
-        const a = LINES_2.aitor;
-        if (this.has('palace-tried')) return [say(this.has('clue-r4') ? a.clue : a.afterFall)];
-        if (this.has('tv-news')) return [say(a.afterNews)];
-        return [say(this.has('got-wrapper') ? LINES.aitorWrapper : a.beforeNews)];
-      }
       case 'meridiana-tv':
         if (!this.adult) return [];
         if (this.set('tv-news')) { this.set('clue-r4'); return [{ kind: 'news' }, say(LINES_2.news)]; }
@@ -713,7 +879,7 @@ export class Story {
         return this.has('wrapper-room') ? [] : [say(LINES.backDoorStuck)];
       case 'talk-bernat':
         if (this.companion === 'stalled') { this.set('dejavu'); return [say(LINES.dejavu), { kind: 'minion' }]; }
-        if (this.has('wrapper-room')) return [say(LINES.bernatAfterNoista)];
+        if (this.has('wrapper-room')) return [say(LINES.bernatAfterMatemagico)];
         if (this.has('in-palace')) return [say(LINES.bernatInPalace)];
         if (this.has('palace')) return [say(LINES.bernatPalace)];
         if (this.has('first-fight')) return [say(LINES.bernatAfterFight)];

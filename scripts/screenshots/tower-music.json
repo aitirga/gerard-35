@@ -1,0 +1,112 @@
+{
+  "title": "La torre de Uri suena a song-mazmorra-oscuro",
+  "description": "docs/audio.md: song-mazmorra-oscuro plays in Uri's tower, a long take streamed that comes in from a different point every time on going in and when a fight there ends, and at no other moment: at the end of the file it goes on from the top. Needs --chrome (Playwright's Chromium cannot decode AAC).",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=ring-1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showMusic = text => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;right:16px;top:100px;z-index:9999;padding:10px 14px;background:#101410f2;color:#e8f0e0;font:14px/1.4 ui-monospace,monospace;white-space:pre'; document.body.append(el); } el.textContent = text; };"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-oscuro' && window.gerard.music.position() > 1",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.firstAt = window.gerard.music.position(); window.showMusic(`${window.gerard.music.playing}\\nentra en ${window.firstAt.toFixed(0)} s`)"
+    },
+    {
+      "shot": "al-entrar",
+      "delay": 1200,
+      "caption": "In the tower: song-mazmorra-oscuro, from wherever it came in"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 52, z: 30 }); window.gerard.game.startPalaceFight('crias-1')"
+    },
+    {
+      "until": "window.gerard.music.playing === 'battle'",
+      "timeout": 30000
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'won'",
+      "timeout": 30000
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-oscuro' && window.gerard.music.position() > 1",
+      "timeout": 30000
+    },
+    {
+      "until": "Math.abs(window.gerard.music.position() - window.firstAt) > 20",
+      "timeout": 3000
+    },
+    {
+      "eval": "window.showMusic(`${window.gerard.music.playing}\\nantes en ${window.firstAt.toFixed(0)} s\\nahora en ${window.gerard.music.position().toFixed(0)} s`)"
+    },
+    {
+      "shot": "tras-el-combate",
+      "delay": 1200,
+      "caption": "After the fight it comes back from somewhere else in the song"
+    },
+    {
+      "eval": "window.gerard.music.play('mazmorra-oscuro', { from: 664, restart: true, fade: 0 })"
+    },
+    {
+      "until": "window.gerard.music.position() > 664",
+      "timeout": 15000
+    },
+    {
+      "until": "window.gerard.music.position() < 8",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic(`${window.gerard.music.playing}\\nal llegar al final del fichero\\nsigue desde el principio: ${window.gerard.music.position().toFixed(0)} s`)"
+    },
+    {
+      "shot": "al-final",
+      "delay": 400,
+      "caption": "While it plays it never jumps: at the end of the file it goes on from the top"
+    },
+    {
+      "teleport": "cardedeu-calle",
+      "cell": [22, 60]
+    },
+    {
+      "until": "window.gerard.music.playing !== 'mazmorra-oscuro'",
+      "timeout": 15000
+    },
+    {
+      "eval": "window.showMusic(`fuera de la torre: ${window.gerard.music.playing ?? 'silencio'}`)"
+    },
+    {
+      "shot": "fuera",
+      "delay": 600,
+      "caption": "Out of the tower it fades"
+    }
+  ]
+}

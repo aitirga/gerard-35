@@ -1,6 +1,6 @@
 {
   "title": "Picker and fight tester",
-  "description": "The place panel's picker: places with search, the story by chapters and arcs (each ánima mission on its own), and the fight tester (development only).",
+  "description": "The place panel's picker: places with search, the story by chapters and arcs, the ánima missions part by part with the Ánimas column, and the fight tester (development only).",
   "steps": [
     {
       "open": "/?story=minion"
@@ -49,12 +49,12 @@
       "caption": "Chapter 2's arcs, with the day and the ánimas a jump starts with"
     },
     {
-      "eval": "document.querySelector('.jump-body').scrollTop = 9999"
+      "eval": "document.querySelector(\"[data-tab=\\\"missions\\\"]\").click()"
     },
     {
       "shot": "story-missions",
       "delay": 400,
-      "caption": "Each ánima mission is its own arc, picked on its own"
+      "caption": "Misiones: each ánima mission part by part, with the ánimas unlocked now on the right"
     },
     {
       "eval": "document.querySelector(\"[data-tab=\\\"fight\\\"]\").click()"
@@ -101,7 +101,7 @@
       "caption": "Victoria: straight to the fight's result"
     },
     {
-      "open": "/?story=minion&fight=%7B%22adult%22%3Afalse%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22palace-minion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%7D"
+      "open": "/?story=minion&fight=%7B%22adult%22%3Afalse%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%7D%2C%22animas%22%3A%5B%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22palace-minion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%7D"
     },
     {
       "until": "document.querySelector('#hud[data-battle]') && !document.querySelector('#battle[data-entering]')",
@@ -129,10 +129,10 @@
     {
       "shot": "minion-beat",
       "delay": 300,
-      "caption": "El «¡NO!»: Noísta wakes, without playing the six rounds"
+      "caption": "Bernat's cry: Matemágico wakes, without playing the six rounds"
     },
     {
-      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22noista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22noista%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22palace-guards%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+      "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22palace-guards%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
     },
     {
       "until": "document.querySelector('#hud[data-battle]') && !document.querySelector('#battle[data-entering]')",
@@ -141,7 +141,7 @@
     {
       "shot": "fight-guards",
       "delay": 1800,
-      "caption": "Chapter 2: Gerard (Noísta) and Aitor (Matemágico) against the gum guards, with Nuria's ánima"
+      "caption": "Chapter 2: Gerard (Papagato) and Aitor (Matemágico) against the gum guards, with Nuria's ánima"
     },
     {
       "until": "window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",

@@ -3,49 +3,43 @@ import { ANIMA_NAMES, type ClassId } from './battle';
 import type { ProfileId } from './stats';
 import { think } from './thoughts';
 import { separateFlushFaces } from './flush-faces';
+import { MATERIAL_ROLES } from './character-model';
+import { dressAnima } from './anima-looks';
 
 /**
- * Ánimas, called classes in the code (docs/party.md). Matemágico is Gerard's from the start;
- * Noísta wakes up in the palace (docs/bubbaloo-palace.md): Gerard always contradicts, and there
- * that habit becomes a power. Once unlocked an ánima is the party's, so Aitor can wear it too.
- * An ánima is a look (material recolours by name and, optionally, a scarf), a colour (its pills,
- * plates and flashes in the status screen and fights), an interface theme
+ * Ánimas, called classes in the code (docs/party.md). Matemágico wakes up in Gerard in the palace
+ * (docs/bubbaloo-palace.md): Bernat, about to be finished off, tells him to think, to do the magic
+ * with his mind. Once unlocked an ánima is the party's, so Aitor can wear it too.
+ * An ánima is a look (its clothes recoloured by what each piece is, and what it adds in
+ * anima-looks.ts: cat ears and a tail, rings of digits), a colour (its pills, plates and flashes
+ * in the status screen and fights; `scarf` is the one over the portraits), an interface theme
  * (`#hud[data-class]` in style.css), and its stats and skills (CLASS_STATS and SKILLS in battle.ts).
  * `child` is what the ánima is called while its wearer is a boy (chapter 1), in Catalan.
  */
 export const CLASSES: Record<ClassId, { name: string; motto: string; look: Record<string, string>; colour: string; scarf?: string; child?: { name: string; motto: string } }> = {
-  // Gerard's everyday self: his own clothes, his own interface. As a boy it is still curiosity;
-  // at 35 it is Matemágico, and in fights his head shows it (thoughts.ts).
+  // Gerard's own mind, dressed like its interface: blueprint blue ruled in gold, ones and zeros
+  // circling (anima-looks.ts). At 35 his head shows it in fights too (thoughts.ts) (docs/animas/matemagico/).
   matemagico: {
     name: ANIMA_NAMES.matemagico,
     motto: 'Lo calcula todo. Hasta lo que no hace falta.',
-    child: { name: 'Nen curiós', motto: 'Tot ho pregunta. Fins i tot el que no cal.' },
     colour: '#f3cf78',
-    look: {},
-  },
-  noista: {
-    name: ANIMA_NAMES.noista,
-    motto: 'Dice que no. Y el mundo le hace caso.',
-    colour: '#e2483d',
-    look: {
-      'Camiseta mostaza': '#c8323c',
-      'Rayas azul marino': '#23202a',
-      'Pantalones': '#2a2730',
-      'Gafas carey': '#d6283a',
-    },
-    scarf: '#e2483d',
+    look: { jacket: '#2f4a78', navy: '#f3cf78', cream: '#2f4a78', trousers: '#1e2a40' },
   },
   // Gerard and the cats he shared with Nuria: Haru and Yuki go wherever he goes (docs/animas/papagato/).
   papagato: {
     name: ANIMA_NAMES.papagato,
     motto: 'Nunca va solo. Haru y Yuki van con él.',
     colour: '#f0954a',
-    look: {
-      'Camiseta mostaza': '#e9894a',
-      'Rayas azul marino': '#f4efe6',
-      'Pantalones': '#5d6068',
-    },
+    // Haru's orange and Yuki's white, with their ears, a tail and a collar with a bell (anima-looks.ts).
+    look: { jacket: '#e9894a', navy: '#f4efe6', cream: '#f4efe6', trousers: '#5d6068' },
     scarf: '#7d7f86',
+  },
+  // Aitor's own ánima: a placeholder name and colour until it is designed (no look, no skills).
+  fisico: {
+    name: ANIMA_NAMES.fisico,
+    motto: 'El ánima de Aitor. Por descubrir.',
+    colour: '#8cc6a8',
+    look: {},
   },
 };
 /** Whether a fighter's profile is a grown-up (chapter 2 on): Gerard at 35 and Aitor. */
@@ -64,10 +58,11 @@ export function inheritColour(source: pc.Material, copy: pc.Material) {
 }
 
 /**
- * Dresses a character model in an ánima (or in none): recolours its materials by name, putting
- * back the ones the ánima leaves alone, and swaps the scarf at the neck. Works on Gerard in the
- * street and on his battle copy, as many times as he changes. A `grown` Matemágico also thinks
- * out loud: ideas, birds and question marks over the head.
+ * Dresses a character model in an ánima (or in none): recolours its clothes by what each piece is
+ * (MATERIAL_ROLES: the shirt, its stripes, the sleeves, the trousers), putting back the ones the
+ * ánima leaves alone, and puts on what it adds (anima-looks.ts). Works on any character and on its
+ * battle copy, as many times as they change. A `grown` Matemágico also thinks out loud: ideas,
+ * birds and question marks over the head.
  */
 export function wearClass(model: pc.Entity, id: ClassId | undefined, grown = false) {
   const spec = id ? CLASSES[id] : undefined;
@@ -80,23 +75,11 @@ export function wearClass(model: pc.Entity, id: ClassId | undefined, grown = fal
     if (seen.has(m)) return;
     seen.add(m);
     if (!ownColours.has(m)) ownColours.set(m, m.diffuse.clone());
-    const colour = spec?.look[m.name];
+    const role = MATERIAL_ROLES.get(m.name), colour = role ? spec?.look[role] : undefined;
     if (colour) m.diffuse.fromString(colour); else m.diffuse.copy(ownColours.get(m)!);
     m.update();
   }));
-  if (!body || !spec?.scarf) return;
-  const cloth = new pc.StandardMaterial(); cloth.name = 'Pañuelo'; cloth.diffuse.fromString(spec.scarf); cloth.gloss = .35; cloth.update();
-  const scarf = new pc.Entity('Pañuelo'); body.addChild(scarf);
-  const part = (name: string, p: number[], s: number[], r: number[] = [0, 0, 0]) => {
-    const e = new pc.Entity(name); e.addComponent('render', { type: 'box', material: cloth, castShadows: true });
-    e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); e.setLocalEulerAngles(r[0], r[1], r[2]);
-    scarf.addChild(e);
-  };
-  // A band round the neck, a knot at the side and two short tails down the back.
-  part('Banda del pañuelo', [0, .925, 0], [.4, .07, .32]);
-  part('Nudo del pañuelo', [.15, .91, .1], [.1, .1, .1], [0, 0, 45]);
-  part('Punta del pañuelo', [-.05, .8, -.18], [.1, .22, .03], [12, 0, 8]);
-  part('Punta del pañuelo', [.06, .78, -.18], [.09, .2, .03], [16, 0, -10]);
+  dressAnima(model, id);
   separateFlushFaces(model);
 }
 

@@ -23,10 +23,13 @@ export interface Point3 { x: number; y: number; z: number }
 /** The game's own angle: from the south-east, (40, 52, 40) away from Gerard. */
 export const HOME_POSE: CameraPose = { yaw: 45, pitch: Math.atan2(52, Math.hypot(40, 40)) * 180 / Math.PI };
 export const CAMERA_DISTANCE = Math.hypot(40, 52, 40);
-/** Every angle tried, home first: tilted up to 55° and 68°, swung up to a quarter turn either way. */
-const PITCHES = [HOME_POSE.pitch, 55, 68];
+/** Every angle tried from a camera's own, that first: tilted up (two steps), swung up to a quarter turn either way. */
 const SWINGS = [0, 30, -30, 60, -60, 90, -90];
-export const POSES: CameraPose[] = SWINGS.flatMap(swing => PITCHES.map(pitch => swing === 0 && pitch === HOME_POSE.pitch ? HOME_POSE : { yaw: HOME_POSE.yaw + swing, pitch }));
+const posesFrom = (home: CameraPose): CameraPose[] => {
+  const pitches = [home.pitch, ...[55, 68, 80].filter(pitch => pitch > home.pitch).slice(0, 2)];
+  return SWINGS.flatMap(swing => pitches.map(pitch => swing === 0 && pitch === home.pitch ? home : { yaw: home.yaw + swing, pitch }));
+};
+export const POSES = posesFrom(HOME_POSE);
 /** What a pose costs, in degrees: swinging round counts in full, tilting up less, and leaving the side the camera is on a third more. */
 const COST = { pitch: 1, stay: 0.35 };
 /**
@@ -57,8 +60,8 @@ export function cameraOffset(pose: CameraPose, distance = CAMERA_DISTANCE): Poin
 /** The unit direction from what it looks at towards the camera. */
 export function towardCamera(pose: CameraPose): Point3 { return cameraOffset(pose, 1); }
 
-function cost(pose: CameraPose, from: CameraPose) {
-  return Math.abs(pose.yaw - HOME_POSE.yaw) + COST.pitch * (pose.pitch - HOME_POSE.pitch) + COST.stay * Math.abs(pose.yaw - from.yaw);
+function cost(pose: CameraPose, from: CameraPose, home: CameraPose) {
+  return Math.abs(pose.yaw - home.yaw) + COST.pitch * (pose.pitch - home.pitch) + COST.stay * Math.abs(pose.yaw - from.yaw);
 }
 function approach(value: number, target: number, dt: number, max: number) {
   const step = (target - value) * (1 - Math.exp(-dt * TURN_RATE));
@@ -69,19 +72,22 @@ function approach(value: number, target: number, dt: number, max: number) {
 /**
  * `sight(pose)` says how many of the people followed a building hides from a camera at that pose;
  * without it (a fight, a cut-scene, the overview, a place without buildings) the camera goes home.
+ * Home is the game's own angle unless a place has its own (`Environment.view`).
  */
 export function createCameraOrbit({ swing = true, hiddenDwell = HIDDEN_DWELL, maxTilt = MAX_TILT }: OrbitOptions = {}) {
-  const poses = swing ? POSES : POSES.filter(p => p.yaw === HOME_POSE.yaw);
-  const pose: CameraPose = { ...HOME_POSE };
-  let target: CameraPose = HOME_POSE;
+  let home = HOME_POSE;
+  const posesOf = (from: CameraPose) => swing ? posesFrom(from) : posesFrom(from).filter(p => p.yaw === from.yaw);
+  let poses = posesOf(home);
+  const pose: CameraPose = { ...home };
+  let target: CameraPose = home;
   let wait = 0, worse = 0, better = 0, hold = 0;
   /** The cheapest pose that hides the fewest people, and how many it hides. */
   function search(sight: (pose: CameraPose) => number) {
-    let best = target, hidden = sight(target), price = cost(target, target);
-    if (hidden === 0 && target === HOME_POSE) return { best, hidden };
+    let best = target, hidden = sight(target), price = cost(target, target, home);
+    if (hidden === 0 && target === home) return { best, hidden };
     for (const candidate of poses) {
       if (candidate === target) continue;
-      const price2 = cost(candidate, target);
+      const price2 = cost(candidate, target, home);
       if (hidden === 0 && price2 >= price) continue;
       const hidden2 = sight(candidate);
       if (hidden2 < hidden || (hidden2 === hidden && price2 < price)) { best = candidate; hidden = hidden2; price = price2; }
@@ -94,8 +100,10 @@ export function createCameraOrbit({ swing = true, hiddenDwell = HIDDEN_DWELL, ma
     get target(): Readonly<CameraPose> { return target; },
     /** Whether it has arrived where it is heading. */
     get settled() { return pose.yaw === target.yaw && pose.pitch === target.pitch; },
-    /** Back home at once (a new scene). */
-    reset() { target = HOME_POSE; Object.assign(pose, HOME_POSE); wait = worse = better = hold = 0; },
+    /** Back home at once (a new scene); `next` is that scene's own angle, if it has one. */
+    reset(next: CameraPose = HOME_POSE) { home = next; poses = posesOf(home); target = home; Object.assign(pose, home); wait = worse = better = hold = 0; },
+    /** A new home to turn to, not cut to: a street that changes round the party (`reset` is for a new scene). */
+    turnHome(next: CameraPose = HOME_POSE) { if (next === home) return; home = next; poses = posesOf(home); target = home; worse = better = 0; },
     /**
      * `snap` (reduced motion) cuts to the new angle instead of turning. `'keep'` (someone is talking)
      * finishes the turn under way without looking for another angle.
@@ -103,7 +111,7 @@ export function createCameraOrbit({ swing = true, hiddenDwell = HIDDEN_DWELL, ma
     update(dt: number, sight?: ((pose: CameraPose) => number) | 'keep', snap = false) {
       hold -= dt;
       if (sight === 'keep') { /* finish the turn */ }
-      else if (!sight) { target = HOME_POSE; worse = better = 0; }
+      else if (!sight) { target = home; worse = better = 0; }
       else if ((wait -= dt) <= 0 && hold <= 0) {
         wait = SEARCH_EVERY;
         const now = sight(target);

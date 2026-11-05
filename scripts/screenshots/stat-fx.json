@@ -1,0 +1,109 @@
+{
+  "title": "Suben y bajan las características",
+  "description": "The one animation for a stat changing (src/stat-fx.ts, docs/graphics.md): three outlined chevrons pass in front of the fighter one after another, up in blue or down in red, over a quick circle at the feet and bars of light running past them, with the stat's name rising or dropping and its sound in step. Here on its own in the effects lab, then in a real fight: the last layer off El Cebollón breaks its defence, Yuki se esconde raises the party's Defensa.",
+  "steps": [
+    {
+      "open": "/?story=matemagico&fxlab"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && !!document.querySelector('.fx-lab [data-field=target] option')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('.fx-lab [data-field=zoom]').click()"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "record": "baja",
+      "seconds": 1.3,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('.fx-lab [data-stat=down]').click()",
+      "caption": "Baja: three red chevrons pointing down sink past the dog, over the circle and the red bars"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "record": "sube",
+      "seconds": 1.3,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('.fx-lab [data-stat=up]').click()",
+      "caption": "Sube: three blue chevrons pointing up rise past it, over the circle and the blue bars"
+    },
+    {
+      "open": "/?mission=nuria&part=ring-1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.fightReady = () => document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger'); window.turnOf = id => window.fightReady() && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; { const set = window.gerard.game.setBattle; window.gerard.game.setBattle = (state, ...rest) => { window.fightState = state; return set(state, ...rest); }; }"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 52, z: 30 }); window.gerard.game.startPalaceFight('cebollon')"
+    },
+    {
+      "until": "window.fightReady()",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fightState.foes[0].layers = 1; window.gerard.battleUI.refresh()"
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"attack\"] .command-trigger').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "record": "rompe-la-defensa",
+      "seconds": 1.9,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click()",
+      "caption": "The last layer flies off and its defence breaks: the circle, the red bars and «Defensa ▼»"
+    },
+    {
+      "until": "window.fightState.foes[0].layers === 0",
+      "timeout": 3000
+    },
+    {
+      "until": "window.turnOf('aitor')",
+      "timeout": 30000
+    },
+    {
+      "eval": "document.querySelector('[data-command=\"attack\"] .command-trigger').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click()"
+    },
+    {
+      "until": "window.turnOf('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "record": "sube-la-defensa",
+      "seconds": 1.6,
+      "fps": 30,
+      "each": "window.frame === 2 && document.querySelector('[data-skill=\"escondite\"]')?.click()",
+      "caption": "Yuki se esconde: Defensa up for the whole party, with the same animation in blue"
+    }
+  ]
+}
