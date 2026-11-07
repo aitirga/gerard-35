@@ -27,6 +27,14 @@ The message under every chapter, to keep in mind when writing any scene, line or
   thinking it through, becoming something else with each friend. Nobody is their job or their
   routine; everyone can choose again. This is the idea behind the final choice.
 
+**The tone (decided 2026-10-29): not a children's game.** The game started as a children's game
+(Bernat's notebook) and its motive is childhood, but it treats a very adult subject. There is
+humour and play, yet it is serious: the Queen is human and complex, not a cartoon villain; the
+friends' losses are real adult losses; fights are robust and demanding. No tantrums, no villain
+who just needs calming down, no joke monsters, no kiddy narration (`AGENTS.md` § Game philosophy).
+It covers **the visuals too**: playful winks are fine, but not as the general look; existing
+designs are reviewed case by case (`docs/story-outline.md` § Visual review).
+
 How it shows in play: the world itself breaks routines (the Queen's bubble pops them), people are
 lost without them, and Gerard helps them find what was under the routine. Nothing preaches; the
 friends' stories and the second round carry it.
@@ -35,10 +43,19 @@ friends' stories and the second round carry it.
 
 - **The whole game revolves around La Reina Bubbaloo**, a villain **Bernat invented** for the game
   he designs in his notebook. In chapter 1 his notebook game becomes real, and she comes with it.
-- **Who she really is: Nuria Mendoza.** This is a secret the player does not learn in chapter 1.
-  In-game, nobody says her real name until a later chapter decides how to reveal it.
-  - Open question: who Nuria Mendoza is in Gerard's life, and when and how the reveal happens.
-- **Her look (invented, as Bernat imagined her; nothing to do with Nuria Mendoza's real looks):**
+- **Who she really is (decided 2026-10-29): nobody.** She is **not Nuria Mendoza**. She is a
+  product of imagination: she **personifies being a kid** (*ser niño*), the part of everyone that
+  growing up and its responsibilities push aside. That is the critique the game makes, and it is
+  revealed **at the end**.
+  - **Where the name comes from: Nuria Mendoza.** A real person, **a good friend of Gerard's
+    today**. As kids they **called her "la Reina Bubbaloo"**; **she has never known**. Bernat's
+    villain borrows the nickname, not the person.
+  - **The false lead: Nuria Mendoza has disappeared.** During the game the idea comes up that the
+    Queen may be Nuria Mendoza: she is missing, and Bernat and other characters say they do not
+    know where she is. **She never appears in the game.**
+  - **The truth, in the credits**: Nuria Mendoza was **on holiday the whole time** and never found
+    out about any of it.
+- **Her look (invented, as Bernat imagined her; nothing to do with Nuria Mendoza):**
   tall and theatrical; hair piled up in a huge pink beehive shaped like a half-blown gum bubble;
   a crown of five gum balls in different flavours (strawberry, mint, grape, lemon, liquorice);
   a gown made of wrapper paper with twisted ends as puffed sleeves; long sticky gloves; a sceptre
@@ -47,12 +64,14 @@ friends' stories and the second round carry it.
 - Her colour is **bubble-gum pink**; her mood is sweet on the surface and sticky underneath.
 - Her power reaches the real world through **her minions** and through **colour**: when someone
   beats her minions, she tints the place in her pink, darker and stranger, to show she is watching.
-- **What she wants (chapter 2, a proposal: possible plot twist).** In Barcelona she pops the
-  routines of Gerard's friends, taking away their adult lives to return them to childhood. They are
-  left sad and lost, and she looks like the villain. The twist: **she may be good**. She wants
-  everyone to have more time, to be kids again, to play, to respect each other and to have fun
-  outside obligation; she just goes about it like a tantrum. At the end Gerard can **join her
-  cause** instead of defeating her (`docs/chapter-2.md`).
+- **What she wants (decided 2026-10-29).** In Barcelona she pops the routines of Gerard's friends,
+  taking away their adult lives to return them to childhood. They are left sad and lost, and she
+  looks like the villain. But **she is not all bad: her motive is good**. She wants everyone to be
+  kids again now that they are growing up and responsibilities keep piling on: more time, play,
+  fun outside obligation. Her means are cruel even if her reason is not. The game leans into her
+  **human side**.
+- **The ending (decided): three endings**, by Gerard's choice at the end: **kill her, wound her,
+  or let her live**. What each one means: open (`docs/story-outline.md`).
 
 ### Her minions (esbirros)
 
@@ -65,6 +84,10 @@ friends' stories and the second round carry it.
 - **What they touch obeys the Queen.** Animals they possess get **dark pink eyes** and attack.
   **People** she takes hold of get **violet eyes** and turn into kids again, wild but kids (Uri,
   `docs/quests/nuria.md`).
+- **People under her influence act strangely, at random** (decided 2026-10-29, from Bernat's
+  mission, `docs/quests/bernat.md`): passers-by, neighbours, anyone in the city may suddenly do
+  something odd. **The more her power spreads** (the countdown in `docs/chapter-2.md` § The
+  Queen's advance), **the more often and the stranger it gets.**
 - They never talk. Out in the world they never stay to fight: they send what they possess
   instead. Only inside the Queen's palace does one rise from a drain and fight in person.
 - Built procedurally in `src/minion.ts`.
@@ -110,13 +133,13 @@ friends' stories and the second round carry it.
 
 | Who | Role |
 | --- | --- |
-| **Gerard** | The protagonist. Chapter 1 opens on his birthday as a kid. Power: changing class by changing mood. |
+| **Gerard** | The protagonist. Chapter 1 opens on his birthday as a kid. At 35 he is **a teacher and the secretary of the Institut Escola Rec Comtal**, the school the castle grows out of. Power: changing class by changing mood. |
 | **Bernat** | Gerard's best friend and neighbour on Passatge Maresme. Designs games in a notebook, including La Reina Bubbaloo. Joins as a companion. |
 | **Jan** | Gerard's older brother. Teases him; brews a "POCIÓ" on his desk. |
 | **Mamá** | Gives Gerard running shoes for his birthday and sends him to fetch Bernat. |
-| **Aitor** | Gerard's partner; they live in the Meridiana flat. A man a little taller than Gerard, with a short beard and glasses (provisional model and portrait until there are photos). From chapter 2 he is in the party, played by a second player; he fights with the party's ánimas. |
-| **Nuria Mendoza** | The real person behind La Reina Bubbaloo. Secret for now. |
-| **Nuria and Uri** | Friends of Gerard and Aitor who live in **Cardedeu**, reached by Rodalies from La Sagrera (chapter 2). Nuria, Gerard and Aitor once shared a flat; she has just become a mother. Whether this Nuria is Nuria Mendoza is an open question. |
+| **Aitor** | Gerard's partner; they live in the Meridiana flat. A man a little taller than Gerard, with a short beard and glasses (provisional model and portrait until there are photos). From chapter 2 he is in the party, played by a second player; he fights with the party's ánimas. **The real Aitor made this game for Gerard: he is its creator and composed all its music.** |
+| **Nuria Mendoza** | A good friend of Gerard's today. As kids they called her "la Reina Bubbaloo" (she never knew). In the game she has disappeared and never appears; the player may suspect she is the Queen; she is not. The credits reveal she was on holiday the whole time and knew nothing. |
+| **Nuria and Uri** | Friends of Gerard and Aitor who live in **Cardedeu**, reached by Rodalies from La Sagrera (chapter 2). Nuria, Gerard and Aitor once shared a flat; she has just become a mother. Not Nuria Mendoza. |
 | **Nil** | Nuria and Uri's baby (under a year old). In Nuria's mission Uri runs off down the street with him (`docs/quests/nuria.md`). |
 | **Haru and Yuki** | The cats who live with Nuria (both female: one white, one tricolour); they are Gerard's cats too, from when Nuria, Gerard and Aitor lived together. Nuria's ánima, **Papagato**, brings them into the party's fights. |
 | **Pedro** | A gay friend of Gerard and Aitor; they see each other a lot. To be integrated with his own mission and ánima (idea, 2026-11-05: details to come from Aitor). |
@@ -196,5 +219,6 @@ friends' stories and the second round carry it.
 - **The pink light**: a story flag (`first-fight`) keeps Sant Quirze in La Reina Bubbaloo's tint.
 - **Routine vs. ilusión**: every friend's story in chapter 2 is a version of it (see *What the game
   is about*).
-- **Is the Queen good?** Planted softly in chapter 2 (she takes nothing a kid would miss), paid off
-  at the throne.
+- **Is the Queen good?** Not all bad, with a good motive (decided). Planted softly through chapter 2
+  (she takes nothing a kid would miss), paid off at the throne.
+- **Nuria Mendoza's disappearance**: the false lead about the Queen's identity, cleared at the end.

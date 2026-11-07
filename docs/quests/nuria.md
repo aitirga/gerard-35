@@ -1,6 +1,27 @@
 # Nuria y Uri · Cardedeu (working title)
 
-Status: building on `feat/nuria-mission` · steps 1–13 done (step 4 without the 3D model); foe abilities, Vertitrón and the dual attacks on `feat/side-mission-nuria` · Last updated: 2026-11-05
+Status: building on `feat/nuria-mission` · steps 1–13 done (step 4 without the 3D model); foe abilities, Vertitrón and the dual attacks on `feat/side-mission-nuria` · **tone review pending** (§ Tone review) · Last updated: 2026-11-07
+
+## Tone review (2026-10-29, updated 2026-11-07)
+
+The game's tone was settled while this mission was being designed: **not a children's game** (an
+adult subject told seriously, humour and play but no cartoon framing; combat robust and complex;
+`AGENTS.md` § Game philosophy). Most of the mission was built before that pass happened. What
+conflicts, as a starting list for it:
+
+- **Uri narrating like a video game**: *"¡Nivel dos! ¡Más arriba!"*, *"¡Jefe final! ¡Vertitrón, a
+  por ellos!"*, and the "levels" framing of the tower. What the Queen did to him needs an adult
+  weight.
+- **The fears as food gags**: El Cebollón (he hates onion), El Plato Misterioso (he won't try new
+  food), La Cebolla y los suyos with its cebollitas, platitos and the fantasmita's «GAME OVER».
+  His fears should be real.
+- **Velocidad is gone as a stat** (2026-10-31, `docs/combat.md`): Mareo (lowers Velocidad) and
+  Papagato's Velocidad +2 need another form.
+- **The pushchair raced like a go-kart** (proposal, § Unusual things).
+- **Papagato**: the cats fighting beside the party can stay, but its name, motto and skills should
+  be checked for the same register (`docs/animas/papagato/`).
+- What can likely stay: Nuria's worry, the cats lent and given back, the lights, and Uri coming
+  down from the top with Nil.
 
 ## Summary
 
@@ -477,8 +498,9 @@ repeated.
 - Nuria's street number, and which end the first door is at (step 6 can start without it).
 - The two decisions at the top of the implementation plan.
 - The Passeig at the south end (its name).
-- Is this Nuria **Nuria Mendoza**, the woman behind La Reina Bubbaloo? Nothing in this mission
-  depends on it; recommended: no, keep the secret elsewhere. (Story decision for `docs/lore.md`.)
+- ~~Is this Nuria **Nuria Mendoza**?~~ Settled (2026-10-29): no. The Queen is nobody (she
+  personifies being a kid) and Nuria Mendoza is the false lead, a real friend who never appears
+  (`docs/lore.md`).
 - Balance: as an early mission, the boss must be beatable with Matemágico, Papagato and no other
   ánimas.
 

@@ -252,9 +252,10 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
    trying to give it back, and doing it badly, by popping their lives.
 2. **La segunda vuelta**: Gerard goes back to each friend, now looking for the kid they were (a
    game, a passion, an excuse to play). Each ánima takes its colour. The city changes with them.
-3. **The choice**: burst her bubble and let Barcelona go back to normal, or **join her cause** and
-   change it from inside: a world where everyone has more time, plays, respects, has fun outside
-   obligation. Gerard decides what he is, which is what his class power always was.
+3. **The choice** (decided 2026-10-29: **three endings**): **kill her, wound her, or let her live**.
+   She is nobody: she personifies being a kid, with a good motive and cruel means
+   (`docs/lore.md`). Gerard decides what he is, which is what his class power always was. What
+   each ending shows: open (`docs/story-outline.md`).
 
 ## How it is built
 
@@ -334,8 +335,8 @@ Next:
 2. **Which metro is home?** The flat is on the Meridiana; the scene assumes the L1 at Fabra i Puig,
    and home is the corner block by its Av. Meridiana entrance (`meridiana-calle`, `Casa`). The real
    portal is not known yet: moving home is one override in `assets/geo/meridiana-calle/zone.json`.
-3. **What is the Rec Comtal school to Gerard?** Where he works (a teacher?), where a friend
-   teaches, or where a friend's kid goes. It changes what the TV says and why the castle is there.
+3. ~~**What is the Rec Comtal school to Gerard?**~~ Settled (2026-10-30): **his workplace; he is a
+   teacher and the school's secretary** (`docs/story-outline.md`).
 4. **How many ánimas** open the throne: all of them, or enough (e.g. four of six)?
 5. **The second round**: does it happen in the same city (colour returning street by street) or
    after a time jump?

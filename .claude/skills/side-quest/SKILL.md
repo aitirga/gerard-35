@@ -95,8 +95,12 @@ tell the user in one line what changed. The doc, not the chat, is the memory.
 - It fits in one in-game day and works for two players (Aitor on mando 2) and for the follower
   mode.
 - Nothing preaches: the friend's story carries the theme.
-- The Queen's secret (Nuria Mendoza) is never revealed by accident. If a mission touches it, flag
-  it as a story decision for `docs/lore.md`.
+- **Not a children's game** (`AGENTS.md` § Game philosophy): an adult subject told seriously, with
+  humour and play but no cartoon framing (tantrums, joke or food monsters, kiddy narration, a
+  villain to be calmed down). The friend's loss is a real adult loss; the boss is a real fight,
+  robust and complex.
+- The Queen is not Nuria Mendoza and Nuria Mendoza never appears; she is the false lead
+  (`docs/lore.md`, `docs/story-outline.md`). If a mission touches it, flag it as a story decision.
 
 ## 2 · Converge
 

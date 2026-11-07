@@ -15,6 +15,8 @@
 
 ## Game philosophy
 
+- **Tone: this is not a children's game.** It grew out of a children's game (Bernat's notebook, the childhood prologue), but it deals with a very adult subject: routine, responsibility, growing up and losing yourself in it. There is humour and there is play, but the game is serious. Write people, villains and conflicts as adults would recognise them: no cartoon framing (tantrums, a villain who just needs calming down, kiddy narration, joke monsters, food gags), no talking down. Childhood is the theme and the origin, never the register. This covers **the visuals too**: a playful wink here and there is fine (a gum detail, a nod to the notebook), but it is never the general look; each piece is judged case by case.
+- **Combat is robust and complex**: real decisions, readable systems that combine (statuses, resources, phases, weaknesses), bosses that test what the party has learned. Never simplified or made cute for a young audience.
 - Progress comes from exploring, trying things and talking to people. Never add an objective panel, quest log, waypoint, arrow, checklist or any other UI that tells the player what to do next or where to go.
 - Keep guidance general. Maps show places and the player's position, never action lists, numbered interactions or steps to follow.
 - People and the world give direction: a character mentions where something is, a door explains in its own dialogue why it won't open yet, a companion reacts in a speech bubble. If players could get stuck, add a person, a line or a visible detail to the world, not a hint panel.
