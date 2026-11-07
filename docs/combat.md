@@ -11,6 +11,134 @@ Tampoco convierten automáticamente los combates existentes en encuentros difíc
 equilibrado de la campaña necesita sus encuentros y sus decisiones reales: para eso está
 `just fight-sim` ([fight-sim.md](fight-sim.md)), que juega los combates de la campaña con sus reglas.
 
+## Dirección (decidido 2026-10-29)
+
+El combate es **robusto y complejo, no infantil** (`AGENTS.md` § Game philosophy): decisiones
+reales cada turno, sistemas legibles que se combinan (estados, recursos, fases, debilidades,
+ánimas que se complementan) y jefes que ponen a prueba lo aprendido. El juego nace de un juego de
+niños, pero no está hecho para niños: nada de simplificarlo ni de presentarlo como un juego
+infantil.
+
+## Turnos con tiempo real (dirección, 2026-10-31)
+
+**Qué está construido** (2026-11-07): parte de esta dirección ya está en el juego y se describe en
+§ *Estados en tiempo real*, que manda donde no coincidan: el reloj, Quemado (10 s, un pulso cada
+2 s, niveles I → III), Cegado y las reacciones Humo, Cauterizado y Tormenta, con sus reglas
+propias. Sigue sin construir: el turno aliado en paralelo, las fases separadas, quitar la
+Velocidad, las barreras, las posiciones y el resto de reacciones.
+
+**Decidido como dirección:** el combate mezcla **turnos y tiempo real**. Algunos estados no duran
+rondas sino **segundos**: *Quemado* no dura 2 turnos, dura **segundos** (la idea decía 20 s; construido con 10 s). Y si antes de que se apague
+cae encima **otro efecto del mismo elemento**, el estado **sube de nivel** (Quemado → Quemado II →
+…). No será así para todo: solo para los estados y elementos que lo pidan. El resto sigue
+midiéndose en turnos, como hoy.
+
+**El turno aliado, en paralelo** (decidido 2026-10-31): Gerard y Aitor **no eligen uno detrás
+de otro**. Los dos tienen su menú abierto a la vez y **cada uno actúa cuando elige**: en cuanto uno
+selecciona algo, su ataque se ejecuta. Así **el orden lo deciden los jugadores**, no la Velocidad,
+e influye (uno moja, el otro electrifica en cuanto lo ve), y deja sitio para **ataques especiales
+combinados** más adelante (`docs/animas/README.md` § Combined skills).
+
+**Fase aliada y fase enemiga, separadas** (decidido 2026-10-31): en general, primero actúa el
+grupo (los dos en paralelo, como arriba) y después los enemigos. Algún combate concreto podrá
+romper esa regla a propósito (un jefe que interrumpe, por ejemplo), caso por caso. El reloj de
+los estados sigue corriendo en las dos fases.
+
+**Sin Velocidad** (decidido 2026-10-31): la Velocidad **deja de ser un atributo**. El orden
+aliado lo deciden los jugadores; el de la fase enemiga lo fija cada encuentro (su definición o su
+IA). Pendiente en el código: hoy `src/stats.ts`, `src/battle.ts`, el laboratorio
+(`src/combat-lab.ts`, la regla de atributo de velocidad) y sus pruebas aún ordenan por ella; la
+sección *Orden de resolución y duración* describe ese motor actual.
+
+**Barreras** (idea por explorar, 2026-10-31): hechizos de protección que levantan una **barrera
+física y direccional** delante de alguien (encaja con las posiciones: cubre un lado o el frente).
+Combinando ciertos efectos de este tipo se **refuerza**: por ejemplo, una barrera con un segundo
+efecto se vuelve **espejo** y devuelve los ataques. Solo como idea; se irá explorando.
+
+**Reacciones entre elementos** (decidido como dirección): dentro de esa misma ventana, un elemento
+**distinto** no sube el nivel sino que **transforma** el estado:
+
+| Estado activo | Llega | Resultado |
+| --- | --- | --- |
+| Quemado | Agua | Quita Quemado; deja **Humo**, que causa **Cegado** durante un tiempo |
+| Mojado (del agua) | Eléctrico | **Parálisis** |
+| Mojado | Frío | **Congelado** |
+| Humo | Viento | **Arrastra el humo**: quita Humo y Cegado de ese bando y lo empuja al otro |
+| Envenenado | Fuego | **Veneno ardiente**: estalla y hace daño a los enemigos **adyacentes** |
+| Mojado | Fuego | **Vapor**: quita Mojado; daño leve a todos los enemigos durante un tiempo |
+| Congelado | Golpe físico fuerte | **Añicos**: daño extra alto y se acaba Congelado |
+| Envenenado | Agua | **Contagio**: el veneno se diluye y pasa, más débil, a los adyacentes |
+| Sangrado | Fuego | **Cauterizado**: corta el Sangrado, pero el objetivo no puede curarse un tiempo |
+| Humo | Eléctrico | **Tormenta**: la descarga salta entre todos los que están en el humo |
+
+**Dos familias de elementos** (decidido 2026-10-31): los **físicos** y los **mentales**, separados.
+
+- **Físicos, ahora**: fuego, agua, frío, eléctrico, veneno, viento y el golpe físico fuerte; sus
+  estados son quemado, mojado, congelado, envenenado, sangrado, cegado por el humo, paralizado.
+- **Mentales, en otro bloque más adelante**: el **Sonido** se queda para ese bloque (gusta la
+  idea), con estados como desorientado; nada mental entra hasta diseñarlo aparte.
+- Descartadas de la primera ronda de candidatas: choque térmico, veneno acelerado, pringue fundido
+  y derribado. *Cegado + Sonido → Desorientado* espera al bloque mental.
+
+**Cada ataque tiene un elemento** (decidido): habilidades y ataques de enemigos llevan su
+elemento asociado (o ninguno), que es lo que dispara las reacciones de arriba. Las descripciones
+ya lo prevén: `Daño alto mágico de tipo <X> a un enemigo.` (`AGENTS.md`).
+
+**Tipos en los monstruos** (duda abierta): un mini sistema de tipos, **secundario**, que no defina
+la estrategia: un monstruo resiste o sufre un poco más ciertos elementos (`Afinidad` ya lo
+permite), sin que sea la clave de cada combate. Si entra y cómo: por decidir.
+
+Reglas (decididas 2026-10-31):
+
+- **Las reacciones valen en los dos bandos**: también nos afectan a nosotros. Agua sobre un aliado
+  Quemado lo apaga, pero lo deja en el humo; un Veneno ardiente en un aliado alcanza a quien
+  tenga al lado.
+- **Posiciones fijas en el campo**: importa **quién tienes al lado** (adyacentes) y quién va
+  **delante o detrás**. Las posiciones serán un dato propio de cada combatiente, separado del
+  orden de actuación. Qué cambia exactamente ir delante
+  o detrás (quién recibe los golpes físicos, a quién alcanza un ataque a distancia, cómo se
+  cambia de sitio y cuánto cuesta): por diseñar.
+
+Una reacción solo ocurre **mientras el primer estado sigue activo**: si se apaga antes, el segundo
+elemento se aplica solo, sin reacción. En el motor encaja como una reacción del estado a una
+etiqueta de daño entrante (`Estado` ya admite reacciones y `Afinidad` ya trabaja con etiquetas):
+retirar el estado y aplicar otro. Así el contenido las declara sin que el motor conozca el
+fuego ni el agua.
+
+**Cuándo aflora** (decidido 2026-10-31): la dinámica **está siempre**, desde el primer combate,
+pero **no aflora al principio**: los primeros combates casi no ponen dos elementos en juego, así
+que no se nota. Sale cuando el juego **se complica un poco** (más ánimas con elemento, enemigos
+que traen el suyo). Propuesta para enseñarlo haciendo (`AGENTS.md`): la primera reacción la
+provoca un enemigo, a la vista (uno moja al grupo y otro trae electricidad), y desde ahí el
+jugador ya sabe que existe.
+
+Lo que cambia en el juego: aplicar algo ya no es solo *qué* sino *cuándo*. Encadenar a tiempo
+premia el orden de los turnos y, con dos jugadores, que Gerard y Aitor se coordinen
+(uno prende, el otro aviva antes de que se apague).
+
+Decidido y propuestas:
+
+- **El reloj corre siempre** (decidido 2026-10-31) durante el combate, también mientras se elige:
+  elegir rápido importa y los menús son parte de la tensión. Solo lo para el menú de pausa.
+- **El modelo.** Junto a la duración en finales de turno (sección *Orden de resolución y
+  duración*), una duración en milisegundos (`durationMs`) en la definición del estado, y un modo
+  de acumulación nuevo, `escalate`: volver a aplicarlo mientras sigue activo sube un nivel hasta
+  un máximo y reinicia su reloj; al apagarse, desaparece entero. Cada nivel es su propia
+  definición (más daño por pulso, otra afinidad, una reacción), para que el nivel alto pueda
+  hacer algo distinto y no solo más.
+- **Pulsos.** Un estado temporal pulsa cada cierto tiempo (construido: Quemado cada 2 s) en vez de al
+  final del turno de su propietario.
+- **Leerlo sin panel.** El estado se ve en el combatiente: las llamas crecen con el nivel y un
+  anillo que se vacía muestra el tiempo que le queda (está en el tablero, como pide la regla del
+  HUD en `AGENTS.md`).
+- **Qué elementos lo usan.** Fuego primero (escala); candidatos: Sangrado de Papagato (hoy por
+  rondas, `docs/animas/papagato/`), un frío que ralentiza más cuanto más se acumula, el pringue de
+  la Reina. Escalar no tiene por qué ser siempre bueno para quien lo aplica: un estado en el
+  enemigo podría tener un nivel alto que estalla y también afecta al grupo.
+- **El laboratorio.** El simulador es por turnos y determinista; necesita un reloj simulado (lo
+  que tarda cada acción en resolverse y un tiempo de decisión por política) para poder equilibrar
+  estos estados con la misma semilla.
+
 ## Modelo de contenido
 
 `src/combat/types.ts` define contratos de datos serializables. Los identificadores son cadenas

@@ -53,6 +53,26 @@ fixed, never taken off. Besides their own, each equips the shared ánimas (Papag
 extra slots (one for now, `EXTRA_SLOTS`); two never equip the same one. In a fight they switch
 among their own and their extras, one at a time (`docs/party.md`).
 
+## Passives (decided 2026-10-31)
+
+Every ánima has **passive abilities**: **few, but influential**, and they **define how that ánima
+is played**. A passive is always on while the ánima is worn (no cost, no button) and changes the
+wearer's decisions, not just their numbers: e.g. it makes an element's reactions stronger, rewards
+standing in front or behind, or changes what happens when the wearer is hit. One or two per ánima;
+a level may unlock or upgrade one. Each ánima's folder lists them under *Signature*.
+
+## Progression: ánimas and gear, not characters (decided 2026-10-31)
+
+**Gerard and Aitor do not level up.** Their base stats (`docs/party.md`) stay as they are all game;
+everything that changes them comes from **the ánimas they wear** (stats, skills, passives, and the
+ánima's own levels) and **the equipment they put on**.
+
+**Gear comes from people** (decided 2026-10-31): the people Gerard helps give him something of
+theirs, and **the player chooses what each of them wears**. It is never bought: shops sell food.
+So gear also tells the story of who was helped. Still to design: the slots, what each piece does,
+how it reads in the status screen. Chapter 1's shoes and backpack already use `equip` slots in
+`src/items.ts`.
+
 ## Levels
 
 Ánimas **grow**: the more one is worn, the more it learns. Each level brings a new skill or makes
@@ -228,6 +248,8 @@ second ánima.
 - A stacking status: per stack Velocidad −2, Defensa −1, Espíritu −1. First used by El Vértigo,
   the boss Vertitrón replaced; no foe brings it now (`docs/quests/nuria.md`). The turn order is fixed when a fight starts, so its Velocidad never
   reorders anyone; its Defensa and Espíritu do the harm.
+- **To redesign**: Velocidad is removed as a stat (decided 2026-10-31, `docs/combat.md` § Sin
+  Velocidad), so its Velocidad −2 goes with it.
 
 ### Llorera (crying, mental)
 

@@ -62,7 +62,8 @@ Screenshots and clips: `just screenshots cats`, `just screenshots cats-fight`.
 
 ## Stats
 
-Provisional (decided, to tune): Velocidad +2, Fuerza +1, Espíritu −1 (quick and scrappy). Colour
+Provisional (decided, to tune): Velocidad +2, Fuerza +1, Espíritu −1 (quick and scrappy).
+**To redo**: Velocidad is removed as a stat (2026-10-31, `docs/combat.md`). Colour
 in the second round: warm orange `#f0954a`. Nuria's light (`ANIMAS`)
 gives its own party bonus, separate.
 

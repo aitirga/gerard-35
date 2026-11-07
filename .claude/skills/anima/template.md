@@ -16,6 +16,10 @@ Status: designing · Comes from: <friend's mission `docs/quests/<friend>.md`, or
 
 <Its own rule, or a shared mechanic from `../README.md` used its own way.>
 
+Passives (one or two, always on while worn, defining how it is played):
+
+- 
+
 ## Skills per level
 
 | Level | Skill | Cost | Base | Description |

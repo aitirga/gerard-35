@@ -25,6 +25,9 @@ sides link to it.
 ## 1 · Rounds
 
 One topic at a time, each with 2–3 concrete proposals; follow the user if they jump ahead.
+Every proposal keeps the game's tone (`AGENTS.md` § Game philosophy): not a children's game, so
+an ánima is a serious way of fighting with depth (combos, trade-offs, decisions), never a cute
+gimmick; humour is welcome, cartoon framing is not.
 
 1. **Origin and fantasy**: where it comes from (a friend, a story moment, Gerard's own mood) and
    what it feels like to wear in one sentence. Its **motto** (like *"Dice que no. Y el mundo le hace
@@ -33,8 +36,11 @@ One topic at a time, each with 2–3 concrete proposals; follow the user if they
    control, a payoff). It should change how a fight is played, not just add numbers.
 3. **Stats**: the wearer's `CLASS_STATS` (sum near +4, at least one trade-off once there are
    several ánimas) and, if it comes from a friend, the party bonus in `ANIMAS`.
-4. **Signature mechanic**: one rule only this ánima has, or a shared one from *Shared
+4. **Signature mechanic and passives**: one rule only this ánima has, or a shared one from *Shared
    mechanics* (Sangrado, Mareo…) used in its own way. A new shared mechanic goes into that section.
+   Plus its **passives**: one or two, few but influential, always on while worn, that define how
+   the ánima is played (`docs/animas/README.md` § Passives). Characters never level up; the
+   ánima and gear carry all progression.
 5. **Skills per level**: a table of level → skill (cost, base power, kind, target, description in
    the fixed shape; intensity from base power: leve ≤20, media 21–34, alta 35–49, muy alta ≥50).
    Level 1 has one or two skills; each later level adds or upgrades one. Say what raises each

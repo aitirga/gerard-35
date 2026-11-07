@@ -21,6 +21,10 @@ character stats, and how ánimas (classes in the code) are shared. Numbers are p
 - **Both stay on screen.** The camera looks between them and pulls back as they part. Past
   `TETHER` (7 cells) the one ahead is held back by an invisible ring, and Aitor says so in a
   bubble ("¡Eh, espérame!"), so it reads as a person, not a wall.
+- **Decided 2026-10-31, not built yet** (`docs/combat.md` § Turnos con tiempo real): the party's
+  turn becomes **parallel**: Gerard and Aitor both have their commands open at once and each
+  acts the moment they choose, so the players set the order (and combined attacks can come
+  later). What follows describes today's alternating turns.
 - **In battle the screen splits too.** Gerard's dock sits bottom left and Aitor's bottom right,
   each with the fighter's face, PV (a wave) and Ánima (circles), their ánima switch and, on their
   turn, the commands, in the colours of their own ánima; the fight's backdrop stays one, Gerard's
@@ -49,6 +53,10 @@ as the release does (the `duo` screenshots use it).
 
 ## Stats
 
+**No character levels** (decided 2026-10-31): Gerard's and Aitor's stats below never grow on their
+own; ánimas (with their levels and passives) and equipment are what change them
+(`docs/animas/README.md` § Progression).
+
 | Stat | What it does |
 | --- | --- |
 | **PV** | Puntos de vida. |
@@ -56,7 +64,7 @@ as the release does (the `duo` screenshots use it).
 | **Magia** | Adds to magic hits (Foc Binari) and to healing. |
 | **Defensa** | Takes away from physical hits. |
 | **Espíritu** | Takes away from magic hits. |
-| **Velocidad** | Who acts first in the party's half of the round. |
+| **Velocidad** | Who acts first in the party's half of the round. **Being removed** (decided 2026-10-31): the players set the party's order (`docs/combat.md`); still in the code for now. |
 
 **10 is average.** Every amount has a base at average stats, and each point a stat is above or
 below 10 moves it by one: a physical hit is `base + Fuerza − Defensa`, a magic hit is
