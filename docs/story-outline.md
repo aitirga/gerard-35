@@ -1,6 +1,6 @@
 # Story map · the whole game, shallow
 
-Status: mapping (round 19) · Last updated: 2026-10-30
+Status: mapping (round 19), paused · Last updated: 2026-11-07
 
 The whole story at a glance, before any mission is designed in depth: the main arc, every friend
 in a few lines, how they connect, and what is still open. Each mission is then designed on its own
@@ -371,6 +371,13 @@ Who mentions whom, which ánima opens which place, where each clue lives. Fixed 
   the palace's zones (teacher bosses, shortcuts, the room puzzle) are a bigger design to write
   in `docs/bubbaloo-palace.md`.
 - `docs/chapter-2.md` open question 3 (what the school is to Gerard) is answered: his workplace.
+- **Main moved on while this map was drawn** (merged 2026-11-07), to fold in when it is picked up
+  again: **Noísta** is retired (2026-11-01, Matemágico took its place; its row in the visual
+  review stays only for reference); **Tecnópata** is Aitor's own ánima (`docs/animas/tecnopata/`);
+  **Pedro** is in `docs/lore.md` § People and needs a row in *People* and a mission; Nuria's
+  mission is **built** (Uri's tower, Vertitrón), so the bubble and falling items above apply to
+  the built version; ánimas already level with EXP and take **ecos de luz** at the jar
+  (`docs/animas/README.md`), to fit with money, food and gear.
 
 ## Open (tracker)
 

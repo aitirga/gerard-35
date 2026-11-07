@@ -1,6 +1,6 @@
 # Bernat · (working title)
 
-Status: designing (round 3) · Last updated: 2026-10-29
+Status: designing (round 3), paused · Last updated: 2026-10-29
 
 ## Summary
 
