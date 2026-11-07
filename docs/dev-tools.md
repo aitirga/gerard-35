@@ -185,6 +185,18 @@ Everything new in the story has to be reachable from here (AGENTS.md):
   `src/main.ts`), with its stage in `FIGHT_PLACES` if it is fought somewhere new. A fight with
   phases (a boss) gets a `FightMoment` for each, so the picker can jump to it.
 
+## The progress panel
+
+`docs/progress.toml` lists what the whole game needs, with a weight per block and per item. An item
+is done when its checks hold against the checkout (a file exists, a text is or is not in a file) or
+when it says `done = true`, for what code cannot tell. Adding an item makes the bar shrink; finishing
+or deleting one makes it grow. The file's header explains the checks.
+
+`scripts/herdr-progress` draws the total, the story a player can walk through, the priorities and
+the blocks. herdr opens it at the top of every tab's column in this project, because having the script is what
+turns it on (the `herdr-project` skill), and it looks again every 5 seconds. It measures its own checkout, so a feature's workspace shows that branch.
+`just progress` prints it once and `just progress --all` lists every item.
+
 ## Effects lab
 
 `just dev-fx` (or `?fxlab` on any development URL, `?story=matemagico&fxlab` for a clean run) opens a

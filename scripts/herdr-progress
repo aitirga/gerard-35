@@ -1,0 +1,276 @@
+#!/usr/bin/env python3
+"""How far the game is, from docs/progress.toml, measured against the checkout.
+
+Usage:
+  scripts/herdr-progress [--dir PATH]            the panel at the top of herdr's column; q quits, r rereads
+  scripts/herdr-progress --once [--all] [--dir PATH]   print it once (just progress)
+
+herdr-layout runs this in any project that has it. The checks read a few named files, so it
+looks again every few seconds and draws only when something changed. See docs/dev-tools.md.
+"""
+import argparse
+import glob
+import os
+import re
+import select
+import shutil
+import signal
+import subprocess
+import sys
+import termios
+import time
+import tomllib
+import tty
+from pathlib import Path
+
+REFRESH = 5
+CHECK_KEYS = {"done", "file", "grep", "absent", "in"}
+ITEM_KEYS = CHECK_KEYS | {"title", "weight", "priority"}
+EIGHTHS = " ▏▎▍▌▋▊▉"
+# Her pink at the start, then Papagato's orange, Matemágico's gold and a calm sage at the end.
+GRADIENT = ((255, 111, 174), (240, 149, 74), (243, 207, 120), (140, 198, 168))
+TRACK = (52, 50, 64)
+
+
+def load(path):
+    """The manifest, refusing a mistyped key: it would read as work not done, for ever."""
+    with open(path, "rb") as handle:
+        manifest = tomllib.load(handle)
+    known = {p["id"] for p in manifest.get("priority", [])}
+    for block in manifest.get("block", []):
+        for item in block.get("item", []):
+            name = item.get("title", "?")
+            if unknown := set(item) - ITEM_KEYS:
+                raise ValueError(f"{name}: no conozco {', '.join(sorted(unknown))}")
+            if ("grep" in item or "absent" in item) and "in" not in item:
+                raise ValueError(f"{name}: grep y absent necesitan in")
+            if "priority" in item and item["priority"] not in known:
+                raise ValueError(f"{name}: no hay prioridad {item['priority']}")
+    return manifest
+
+
+def is_done(item, root, read):
+    """A manual `done` wins; otherwise every check it has must hold, and one with none is pending."""
+    if "done" in item:
+        return bool(item["done"])
+    checks = []
+    if "file" in item:
+        checks.append(bool(glob.glob(item["file"], root_dir=root, recursive=True)))
+    if "grep" in item:
+        checks.append(any(re.search(item["grep"], text) for text in read(item["in"])))
+    if "absent" in item:
+        texts = read(item["in"])
+        checks.append(bool(texts) and not any(re.search(item["absent"], text) for text in texts))
+    return bool(checks) and all(checks)
+
+
+def share(items):
+    total = sum(i.get("weight", 1) for i in items)
+    return sum(i.get("weight", 1) for i in items if i["ok"]) / total if total else 0
+
+
+def weighted(blocks, key):
+    blocks = [b for b in blocks if b.get(key)]
+    total = sum(b[key] for b in blocks)
+    return sum(b[key] * b["share"] for b in blocks) / total if total else 0
+
+
+def measure(manifest, root):
+    """Every item ticked or not, each block's share, the total and the priorities."""
+    cache = {}
+
+    def read(patterns):
+        patterns = [patterns] if isinstance(patterns, str) else patterns
+        paths = sorted({p for pattern in patterns for p in glob.glob(pattern, root_dir=root, recursive=True)})
+        texts = []
+        for path in paths:
+            if path not in cache:
+                try:
+                    cache[path] = Path(root, path).read_text(errors="replace")
+                except OSError:
+                    cache[path] = None
+            if cache[path] is not None:
+                texts.append(cache[path])
+        return texts
+
+    blocks = []
+    for block in manifest.get("block", []):
+        items = [{**item, "ok": is_done(item, root, read)} for item in block.get("item", [])]
+        blocks.append({**block, "item": items, "share": share(items)})
+    every = [item for block in blocks for item in block["item"]]
+    priorities = []
+    for priority in manifest.get("priority", []):
+        items = [i for i in every if i.get("priority") == priority["id"]]
+        pending = [i for i in items if not i["ok"]]
+        priorities.append({"title": priority["title"], "items": items, "pending": pending, "share": share(items)})
+    return {"blocks": blocks, "total": weighted(blocks, "weight"), "story": weighted(blocks, "story"), "priorities": priorities}
+
+
+def percent(value):
+    """Rounded, but never 100 % before everything is done."""
+    return 100 if value >= 1 else min(99, round(value * 100))
+
+
+def gradient(position):
+    position = min(max(position, 0), 1) * (len(GRADIENT) - 1)
+    low = min(int(position), len(GRADIENT) - 2)
+    return tuple(round(a + (b - a) * (position - low)) for a, b in zip(GRADIENT[low], GRADIENT[low + 1]))
+
+
+def bar(value, width, colour):
+    """A bar in eighths of a cell, coloured by how far along each cell is, so reaching the far end turns it calm."""
+    cells = value * width
+    full, partial = int(cells), int((cells - int(cells)) * 8)
+    if not colour:
+        return "█" * full + "░" * (width - full)
+    out = []
+    for cell in range(width):
+        r, g, b = gradient(cell / max(width - 1, 1))
+        if cell < full:
+            out.append(f"\033[38;2;{r};{g};{b}m█")
+        else:
+            glyph = EIGHTHS[partial] if cell == full else " "
+            out.append(f"\033[38;2;{r};{g};{b}m\033[48;2;{TRACK[0]};{TRACK[1]};{TRACK[2]}m{glyph}\033[49m")
+    return "".join(out) + "\033[0m"
+
+
+def fit(text, width):
+    return text if len(text) <= width else text[: max(width - 1, 0)] + "…"
+
+
+def row(label, value, right, width, colour):
+    """`label ▕bar▏ right`, the label taking what the bar and the number leave."""
+    bar_width = max(min(width // 3, 18), 4)
+    room = max(width - bar_width - len(right) - 2, 1)
+    return f"{fit(label, room):<{room}} {bar(value, bar_width, colour)} {right}"
+
+
+def render(data, heading, rows, cols, colour, error=None):
+    """The panel's lines for this size: the bar always, then what fits, most useful first."""
+    bold, dim, reset = ("\033[1m", "\033[2m", "\033[0m") if colour else ("", "", "")
+    width = max(cols - 2, 10)
+    if data is None:
+        return [f" {fit(error or 'Leyendo…', width)}"]
+    total = f"{percent(data['total'])} %"
+    room = max(width - len(total) - 1, 1)
+    lines = [f" {bold}{fit(heading, room):<{room}} {total}{reset}"]
+    lines += [f" {bar(data['total'], width, colour)}"] * (2 if rows >= 9 else 1)
+    lines.append(f" {dim}Historia jugable {percent(data['story'])} %{reset}")
+    if error:
+        lines.append(f" {fit(error, width)}")
+
+    priorities = []
+    current = True
+    for index, priority in enumerate(data["priorities"], 1):
+        done, count = len(priority["items"]) - len(priority["pending"]), len(priority["items"])
+        if priority["pending"]:
+            mark, style = ("▸" if current else " "), (bold if current else "")
+            tally = f"{done}/{count}"
+            room = max(width - len(tally) - 5, 1)
+            priorities.append(f" {style}{mark} {index} {fit(priority['title'], room):<{room}}{reset} {dim}{tally}{reset}")
+            if current and rows >= 13:
+                priorities.append(f" {dim}    {fit('sigue: ' + priority['pending'][0]['title'], width - 4)}{reset}")
+            current = False
+        else:
+            priorities.append(f" {dim}✓ {index} {fit(priority['title'], width - 4)}{reset}")
+    if priorities and rows - len(lines) >= 3:
+        lines += ["", f" {bold}PRIORIDADES{reset}"] + priorities
+
+    left = rows - len(lines) - 2
+    # Without room for them all, the finished ones go first.
+    shown = data["blocks"] if left >= len(data["blocks"]) else [b for b in data["blocks"] if b["share"] < 1]
+    if shown and left >= 1:
+        lines += ["", f" {bold}BLOQUES{reset}"]
+        lines += [f" {row(b['title'], b['share'], f'{percent(b["share"]):>3} %', width, colour)}" for b in shown[:left]]
+    return lines[: max(rows, 1)]
+
+
+def manifest_path(root):
+    """This checkout's list, or for a worktree from before it had one, the list beside this script."""
+    own = Path(root, "docs/progress.toml")
+    return own if own.exists() else Path(__file__).resolve().parents[1] / "docs/progress.toml"
+
+
+def heading_of(root, head):
+    """`gerard-35 · feat/x`, from the checkout's HEAD file: no process every few seconds."""
+    name = Path(root).name
+    try:
+        text = Path(head).read_text().strip()
+    except (OSError, TypeError):
+        return name
+    project = re.sub(r"-(feat|feature|bugfix|fix|hotfix|docs|refactor|chore|test|perf)-.*$", "", name)
+    branch = text.removeprefix("ref: refs/heads/") if text.startswith("ref:") else text[:8]
+    return f"{project} · {branch}"
+
+
+def head_path(root):
+    found = subprocess.run(["git", "-C", root, "rev-parse", "--path-format=absolute", "--git-path", "HEAD"],
+                           capture_output=True, text=True, check=False)
+    return found.stdout.strip() if found.returncode == 0 else None
+
+
+def once(root, every, colour):
+    data = measure(load(manifest_path(root)), root)
+    size = shutil.get_terminal_size((72, 40))
+    for line in render(data, heading_of(root, head_path(root)), 200, min(size.columns, 100), colour):
+        print(line)
+    if every:
+        for block in data["blocks"]:
+            print(f"\n {block['title']} ({percent(block['share'])} %)")
+            for item in block["item"]:
+                print(f"   {'✓' if item['ok'] else '·'} {item['title']}")
+
+
+def watch(root, colour):
+    def stop(*_):
+        raise SystemExit
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGHUP, stop)
+    stdin = sys.stdin.fileno()
+    saved = termios.tcgetattr(stdin)
+    head = head_path(root)
+    data, error, shown, due = None, None, None, 0.0
+    tty.setcbreak(stdin)
+    sys.stdout.write("\033[?1049h\033[?25l")
+    try:
+        while True:
+            if time.monotonic() >= due:
+                due = time.monotonic() + REFRESH
+                try:
+                    data, error = measure(load(manifest_path(root)), root), None
+                except (OSError, ValueError, re.error) as problem:  # Half-saved: keep the last good numbers.
+                    error = f"docs/progress.toml: {problem}"
+            size = shutil.get_terminal_size((72, 24))
+            frame = render(data, heading_of(root, head), size.lines, size.columns, colour, error)
+            if frame != shown:
+                sys.stdout.write("\033[H" + "\033[K\n".join(frame) + "\033[K\033[J")
+                sys.stdout.flush()
+                shown = frame
+            if select.select([stdin], [], [], 1)[0]:
+                key = os.read(stdin, 16)
+                if not key or key in (b"q", b"Q", b"\x03"):
+                    return
+                if key in (b"r", b"R"):
+                    due = 0.0
+    finally:
+        sys.stdout.write("\033[?25h\033[?1049l")
+        sys.stdout.flush()
+        termios.tcsetattr(stdin, termios.TCSADRAIN, saved)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--dir", default=".", help="the checkout to measure")
+    parser.add_argument("--once", action="store_true", help="print it once and leave")
+    parser.add_argument("--all", action="store_true", help="with --once, every item")
+    args = parser.parse_args()
+    root = os.path.abspath(args.dir)
+    colour = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+    if args.once or not sys.stdin.isatty():
+        once(root, args.all, colour)
+    else:
+        watch(root, colour)
+
+
+if __name__ == "__main__":
+    main()

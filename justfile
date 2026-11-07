@@ -15,6 +15,11 @@ default:
     @just --list --color never
     @printf '\nLive development: just backend + just dev (two terminals).\n'
 
+# Show how far the game is, from docs/progress.toml (the bar at the top of herdr's column): just progress --all lists every item
+[group('Help')]
+progress *args:
+    @scripts/herdr-progress --once {{ args }}
+
 # Install exact dependencies (Node + Python) and the house's lights library (vendor/)
 [group('Setup')]
 setup:

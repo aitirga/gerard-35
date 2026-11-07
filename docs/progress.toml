@@ -1,0 +1,525 @@
+# How far the game is: the bar and the priorities at the top of herdr's column, and `just progress`.
+# scripts/herdr-progress reads this every few seconds and measures it against the checkout.
+#
+# A block's `weight` is its part of the whole game; `story` (optional) its part of the story a
+# player can walk through. An item's `weight` (default 1) is its part of its block. Adding an item
+# makes the bar shrink, finishing or dropping one makes it grow: cut a mission by deleting its items.
+#
+# An item is done when all of its checks hold, paths relative to the checkout:
+#   file = "glob"                 something matches
+#   grep = "regex", in = "glob"   the text is in one of those files (`in` can be a list)
+#   absent = "regex", in = "glob" the files exist and the text is in none of them
+#   done = true                   by hand, for what code cannot tell; it wins over any check
+# An item with no check is pending until it gets `done = true`.
+# Name what you build as a check expects, or change the check when you build it.
+
+# In the order they should be done. `priority` on an item says which one it counts towards.
+[[priority]]
+id = "guion"
+title = "Fijar el guion"
+
+[[priority]]
+id = "alcance"
+title = "Decidir qué misiones entran"
+
+[[priority]]
+id = "aitor"
+title = "La ánima propia de Aitor"
+
+[[priority]]
+id = "bernat"
+title = "La misión de Bernat"
+
+[[priority]]
+id = "palacio"
+title = "Completar el palacio"
+
+[[priority]]
+id = "final"
+title = "Construir el final"
+
+# ——— Guion y decisiones ———
+[[block]]
+title = "Guion y decisiones"
+weight = 4
+
+[[block.item]]
+title = "Plan de la historia en main"
+priority = "guion"
+file = "docs/story-outline.md"
+
+[[block.item]]
+title = "lore.md al día sobre quién es la Reina"
+priority = "guion"
+absent = "Who she really is: Nuria Mendoza"
+in = "docs/lore.md"
+
+[[block.item]]
+title = "chapter-2.md al día sobre el combate final"
+priority = "guion"
+absent = 'does not\s+fight'
+in = "docs/chapter-2.md"
+
+[[block.item]]
+title = "Decidir el tono: serio o como la misión de Nuria"
+priority = "guion"
+
+[[block.item]]
+title = "Decidir qué descubre Bernat"
+priority = "guion"
+
+[[block.item]]
+title = "Decidir qué muestra cada uno de los tres finales"
+priority = "guion"
+
+[[block.item]]
+title = "Lista final de misiones"
+priority = "alcance"
+
+[[block.item]]
+title = "Número de ánimas y reajuste del avance de la Reina"
+priority = "alcance"
+
+# ——— Motor ———
+[[block]]
+title = "Motor, combate y herramientas"
+weight = 20
+
+[[block.item]]
+title = "Motor WebGPU y escenarios"
+weight = 4
+file = "src/post.ts"
+
+[[block.item]]
+title = "Combate y simulador"
+weight = 5
+file = "src/battle-sim.ts"
+
+[[block.item]]
+title = "Dos jugadores"
+weight = 3
+file = "src/party.ts"
+
+[[block.item]]
+title = "Días y avance de la Reina"
+weight = 3
+file = "src/days.ts"
+
+[[block.item]]
+title = "Selector de desarrollo"
+weight = 3
+file = "src/jump-menu.ts"
+
+[[block.item]]
+title = "Versión final publicada y a 120 Hz"
+weight = 2
+
+# ——— Lo que ya se juega ———
+[[block]]
+title = "Prólogo"
+weight = 8
+story = 10
+
+[[block.item]]
+title = "Casa y calle"
+grep = "first-fight"
+in = "src/story-points.ts"
+
+[[block.item]]
+title = "Palacio y Matemágico"
+grep = "wrapper-room"
+in = "src/story-points.ts"
+
+[[block]]
+title = "Inicio del capítulo 2"
+weight = 7
+story = 10
+
+[[block.item]]
+title = "Despertar a los 35"
+weight = 6
+grep = "'caught'"
+in = "src/story-points.ts"
+
+[[block.item]]
+title = "Noticias en la tele"
+weight = 6
+file = "src/news-tv.ts"
+
+[[block.item]]
+title = "Metro y mapa de la ciudad"
+weight = 7
+file = "src/travel-ui.ts"
+
+[[block.item]]
+title = "Portal real de casa en la Meridiana"
+
+# ——— Escenarios ———
+[[block]]
+title = "Escenarios"
+weight = 12
+
+[[block.item]]
+title = "Meridiana"
+file = "src/geo/meridiana-calle.json"
+
+[[block.item]]
+title = "Rec Comtal"
+file = "src/geo/rec-comtal.json"
+
+[[block.item]]
+title = "Cardedeu"
+file = "src/geo/cardedeu-calle.json"
+
+[[block.item]]
+title = "Búnkers del Carmel"
+file = "src/geo/bunkers-carmel.json"
+
+[[block.item]]
+title = "Barceloneta"
+file = "src/geo/barceloneta.json"
+
+[[block.item]]
+title = "Sants"
+file = "src/geo/sants.json"
+
+[[block.item]]
+title = "El Nucli"
+file = "src/nucli-scenery.ts"
+
+[[block.item]]
+title = "Poble Sec"
+file = "src/geo/poble-sec.json"
+
+[[block.item]]
+title = "Plaça d'Espanya"
+file = "src/geo/placa-espanya.json"
+
+[[block.item]]
+title = "Sagrada Família"
+file = "src/geo/sagrada-familia.json"
+
+[[block.item]]
+title = "La Sagrera"
+file = "src/geo/*sagrera*.json"
+
+[[block.item]]
+title = "Entença"
+file = "src/geo/*entenca*.json"
+
+[[block.item]]
+title = "Gente e historia en Sants y El Nucli"
+grep = "sants|nucli"
+in = ["src/chapter-2.ts", "src/story.ts", "src/friends/*.ts"]
+
+[[block.item]]
+title = "Gente e historia en Poble Sec"
+grep = "poble-sec"
+in = ["src/chapter-2.ts", "src/story.ts", "src/friends/*.ts"]
+
+[[block.item]]
+title = "Gente e historia en la Barceloneta"
+grep = "barceloneta"
+in = ["src/chapter-2.ts", "src/story.ts", "src/friends/*.ts"]
+
+[[block.item]]
+title = "Gente e historia en Plaça d'Espanya"
+grep = "placa-espanya"
+in = ["src/chapter-2.ts", "src/story.ts", "src/friends/*.ts"]
+
+[[block.item]]
+title = "Gente e historia en la Sagrada Família"
+grep = "sagrada-familia"
+in = ["src/chapter-2.ts", "src/story.ts", "src/friends/*.ts"]
+
+# ——— Misiones: 1 de diseño y 3 de hacerla; se borra la pareja de la que no entre ———
+[[block]]
+title = "Misiones de amigos"
+weight = 20
+story = 40
+
+[[block.item]]
+title = "Nuria y Uri: diseño"
+file = "docs/quests/nuria.md"
+
+[[block.item]]
+title = "Nuria y Uri: jugable"
+weight = 3
+file = "src/friends/nuria.ts"
+
+[[block.item]]
+title = "Bernat: diseño"
+priority = "bernat"
+file = "docs/quests/bernat.md"
+
+[[block.item]]
+title = "Bernat: jugable"
+weight = 3
+priority = "bernat"
+file = "src/friends/bernat.ts"
+
+[[block.item]]
+title = "Emilie: diseño"
+file = "docs/quests/emilie.md"
+
+[[block.item]]
+title = "Emilie: jugable"
+weight = 3
+file = "src/friends/emilie.ts"
+
+[[block.item]]
+title = "Marta: diseño"
+file = "docs/quests/marta.md"
+
+[[block.item]]
+title = "Marta: jugable"
+weight = 3
+file = "src/friends/marta.ts"
+
+[[block.item]]
+title = "Luca: diseño"
+file = "docs/quests/luca.md"
+
+[[block.item]]
+title = "Luca: jugable"
+weight = 3
+file = "src/friends/luca.ts"
+
+[[block.item]]
+title = "Pedro: diseño"
+file = "docs/quests/pedro.md"
+
+[[block.item]]
+title = "Pedro: jugable"
+weight = 3
+file = "src/friends/pedro.ts"
+
+[[block.item]]
+title = "Amigos de la universidad: diseño"
+file = "docs/quests/universidad.md"
+
+[[block.item]]
+title = "Amigos de la universidad: jugable"
+weight = 3
+file = "src/friends/universidad.ts"
+
+[[block.item]]
+title = "Jan y los padres: diseño"
+file = "docs/quests/jan.md"
+
+[[block.item]]
+title = "Jan y los padres: jugable"
+weight = 3
+file = "src/friends/jan.ts"
+
+# ——— Ánimas ———
+[[block]]
+title = "Ánimas"
+weight = 7
+
+[[block.item]]
+title = "Matemágico"
+grep = "matemagico"
+in = "src/classes.ts"
+
+[[block.item]]
+title = "Papagato"
+grep = "papagato"
+in = "src/classes.ts"
+
+[[block.item]]
+title = "Tecnópata, la de Aitor"
+priority = "aitor"
+grep = "tecnopata"
+in = "src/classes.ts"
+
+[[block.item]]
+title = "La ánima de Bernat"
+priority = "bernat"
+grep = '^\s*bernat:'
+in = "src/animas.ts"
+
+[[block.item]]
+title = "La ánima de Emilie"
+grep = '^\s*emilie:'
+in = "src/animas.ts"
+
+[[block.item]]
+title = "La ánima de Marta"
+grep = '^\s*marta:'
+in = "src/animas.ts"
+
+[[block.item]]
+title = "La ánima de Luca"
+grep = '^\s*luca:'
+in = "src/animas.ts"
+
+[[block.item]]
+title = "La ánima de Pedro"
+grep = '^\s*pedro:'
+in = "src/animas.ts"
+
+# ——— El palacio por dentro ———
+[[block]]
+title = "Palacio por dentro"
+weight = 8
+story = 20
+
+[[block.item]]
+title = "Las cuatro zonas construidas"
+weight = 3
+grep = "palacio-trono"
+in = "src/environments.ts"
+
+[[block.item]]
+title = "Boss y puerta del patio"
+priority = "palacio"
+grep = "zona-patio"
+in = "src/story.ts"
+
+[[block.item]]
+title = "Boss y puerta del gimnasio"
+priority = "palacio"
+grep = "zona-gimnasio"
+in = "src/story.ts"
+
+[[block.item]]
+title = "Boss y puerta de la secretaría"
+priority = "palacio"
+grep = "zona-secretaria"
+in = "src/story.ts"
+
+[[block.item]]
+title = "Subida al trono tras los guardianes"
+priority = "palacio"
+grep = "palacio-trono"
+in = "src/story.ts"
+
+[[block.item]]
+title = "Puzle de salas del artilugio"
+priority = "palacio"
+grep = "artilugio"
+in = ["src/story.ts", "src/chapter-2.ts"]
+
+[[block.item]]
+title = "Zonas ganadas que cambian de aspecto"
+priority = "palacio"
+
+[[block.item]]
+title = "Modelo propio de los guardianes"
+priority = "palacio"
+file = "src/guardian*.ts"
+
+# ——— El final ———
+[[block]]
+title = "Final"
+weight = 10
+story = 20
+
+[[block.item]]
+title = "Las manos de la Reina"
+file = "src/queen-hands.ts"
+
+[[block.item]]
+title = "Modelo y combate de la Reina"
+weight = 4
+priority = "final"
+grep = "'reina'"
+in = "src/battle.ts"
+
+[[block.item]]
+title = "Aitor poseído, con el jugador 2 en contra"
+weight = 3
+priority = "final"
+grep = "aitor-poseido"
+in = ["src/battle.ts", "src/story.ts"]
+
+[[block.item]]
+title = "Artilugio físico: ESP32 y firmware"
+weight = 4
+priority = "final"
+file = "firmware/**/*.ino"
+
+[[block.item]]
+title = "Encontrarlo en casa con las luces"
+weight = 2
+priority = "final"
+grep = "artilugio"
+in = "src/home-lights.ts"
+
+[[block.item]]
+title = "Melodía de 6 notas en todas las canciones"
+weight = 2
+priority = "final"
+
+[[block.item]]
+title = "Los tres finales"
+weight = 2
+priority = "final"
+file = "src/endings.ts"
+
+[[block.item]]
+title = "Créditos"
+priority = "final"
+file = "src/credits.ts"
+
+# ——— Economía ———
+[[block]]
+title = "Economía"
+weight = 4
+
+[[block.item]]
+title = "Contador de Ecos de luz"
+grep = "anima-count"
+in = "src/story-ui.ts"
+
+[[block.item]]
+title = "Euros y trabajos"
+weight = 4
+grep = '\beuros\b'
+in = ["src/story.ts", "src/items.ts"]
+
+[[block.item]]
+title = "Tiendas de comida"
+weight = 4
+file = "src/shop*.ts"
+
+[[block.item]]
+title = "Billetes de tren"
+weight = 4
+grep = "billete"
+in = "src/transit.ts"
+
+[[block.item]]
+title = "Gastar Ecos de luz: más maná y ultis"
+weight = 4
+file = "src/ecos.ts"
+
+# ——— Música y pulido ———
+[[block]]
+title = "Música y pulido"
+weight = 4
+
+[[block.item]]
+title = "Canciones actuales"
+weight = 2
+file = "public/music/battle.m4a"
+
+[[block.item]]
+title = "Luces de casa"
+weight = 2
+file = "src/home-lights.ts"
+
+[[block.item]]
+title = "Banda sonora completa"
+weight = 2
+
+[[block.item]]
+title = "Sonido en los sitios que no lo tienen"
+weight = 2
+absent = 'Sound \| Not yet'
+in = "docs/places/espanya.md"
+
+[[block.item]]
+title = "Pasada final de pulido"
+weight = 2
