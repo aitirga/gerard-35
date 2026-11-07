@@ -11,18 +11,19 @@ recommended developer commands.
 
 ```bash
 just setup
-just backend # in one terminal
-just dev     # in another terminal
+just dev     # the game and its API together; opens the game in the browser
 ```
 
-Open the URL Vite prints (usually http://localhost:5173). Chapter 1 starts in Gerard's bedroom on his birthday morning (see [Chapter 1](#chapter-1)); the environment menu still jumps to any scene. Select the courtyard from the environment menu to return to the movement test scene. Move Gerard with W, A, S and D (or the arrow keys), a controller’s left stick or D-pad. On touch screens, use the on-screen arrows. Movement is free and follows the screen: W is up, D is right, and two keys together walk diagonally. The stick walks in any direction, slower with a light tilt. Gerard slides along walls and stops wherever you let go.
+`just dev` starts the API and Vite on the first free ports from 8035 and 5173 (a feature worktree
+next to the main checkout gets its own, and starts from a copy of the main checkout's save), prints
+both URLs and opens the game (`GERARD_OPEN=0 just dev` to not open it). Chapter 1 starts in Gerard's bedroom on his birthday morning (see [Chapter 1](#chapter-1)); the environment menu still jumps to any scene. Select the courtyard from the environment menu to return to the movement test scene. Move Gerard with W, A, S and D (or the arrow keys), a controller’s left stick or D-pad. On touch screens, use the on-screen arrows. Movement is free and follows the screen: W is up, D is right, and two keys together walk diagonally. The stick walks in any direction, slower with a light tilt. Gerard slides along walls and stops wherever you let go.
 
 Run `just` at any time for a grouped, color-coded command menu. The most common
 commands are:
 
 | Command              | What it does                                      |
 | -------------------- | ------------------------------------------------- |
-| `just dev`           | Start the dev server (reload the page to see changes) |
+| `just dev`           | Start the game and its API and open it (reload the page to see changes) |
 | `just check`         | Run all project checks                            |
 | `just build`         | Create a production bundle                        |
 | `just preview`       | Build and inspect static assets (API requires backend)     |

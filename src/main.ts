@@ -6,7 +6,9 @@ import { type Direction } from './movement';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
 import { createDialogueBanner } from './dialogue';
 import { createBattleUI } from './battle-ui';
-import { toNextLevel } from './levels';
+import { improvedBy } from './ecos';
+import { createJarUI } from './jar-ui';
+import { MAX_LEVEL, toNextLevel } from './levels';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
 import { createStoryUI } from './story-ui';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
@@ -15,7 +17,7 @@ import type { MemberId } from './story';
 import { createTravelUI } from './travel-ui';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
-import { ANIMA_NAMES, CLASS_STATS, palaceGuards, type BattleState, type ClassId, type PartySlot } from './battle';
+import { ANIMA_NAMES, CLASS_STATS, canWear, kitOf, manaMax, palaceGuards, type BattleState, type ClassId, type PartySlot } from './battle';
 import { ANIMA_IDS, animaBonus, type AnimaId } from './animas';
 import { flagsAt, missionJump, missionNow, spotAt, type MissionPart, type Spot } from './story-points';
 import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './jump-menu';
@@ -57,7 +59,7 @@ const audio = createAudio();
 const music = createMusic(audio);
 const sfx = createSfx(audio);
 // Registered before the menus so Escape is heard before they take it.
-const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#controller-menu[open], #hud[data-panel], #lamp-dial:not([hidden]), #travel:not([hidden])'));
+const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#controller-menu[open], #hud[data-panel], #lamp-dial:not([hidden]), #travel:not([hidden]), #jar-panel:not([hidden])'));
 /** The fight's sounds, from their table (src/battle-sounds.ts). */
 const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.play(id, options); };
 /**
@@ -123,12 +125,21 @@ restoreLoadout();
 // A mission's part sets the run the story does not save (Nuria's cats lent, the tower's ring).
 if (devJump?.part?.nuria) story.startNuria(devJump.part.nuria);
 // Each ánima's EXP (src/levels.ts) also lives here; the levels it reaches are story flags.
+// So is what the Ecos de luz are in (src/ecos.ts): it can change at the jar whenever they are home.
+const ecosKey = 'gerard35.ecos.v1';
+try { story.improvements = JSON.parse(localStorage.getItem(ecosKey) ?? '[]'); } catch { /* Storage is optional. */ }
+function keepEcos() { try { localStorage.setItem(ecosKey, JSON.stringify(story.improvements)); } catch { /* Storage is optional. */ } }
 const xpKey = 'gerard35.xp.v1';
 try {
   const saved: unknown = JSON.parse(localStorage.getItem(xpKey) ?? '{}');
-  if (saved && typeof saved === 'object') story.xp = Object.fromEntries(Object.entries(saved).filter(([id, xp]) => id in ANIMA_NAMES && typeof xp === 'number' && Number.isFinite(xp) && xp >= 0)) as Partial<Record<ClassId, number>>;
+  // Aitor's own ánima was a placeholder called Físico (`fisico`) before it became Tecnópata.
+  if (saved && typeof saved === 'object') story.xp = Object.fromEntries(Object.entries(saved).map(([id, xp]) => [id === 'fisico' ? 'tecnopata' : id, xp]).filter(([id, xp]) => id in ANIMA_NAMES && typeof xp === 'number' && Number.isFinite(xp) && xp >= 0)) as Partial<Record<ClassId, number>>;
 } catch { /* Storage is optional. */ }
 function keepXp() { try { localStorage.setItem(xpKey, JSON.stringify(story.xp)); } catch { /* Storage is optional. */ } }
+// And the dual attacks found (src/battle.ts DUALS): the ánimas screen shows only those.
+const dualsKey = 'gerard35.duals.v1';
+try { story.duals = JSON.parse(localStorage.getItem(dualsKey) ?? '[]'); } catch { /* Storage is optional. */ }
+function keepDuals() { try { localStorage.setItem(dualsKey, JSON.stringify(story.duals)); } catch { /* Storage is optional. */ } }
 /**
  * Two players from chapter 2 (docs/party.md). `solo` is for development only: player 1 also plays
  * Aitor. It comes from ?solo (just dev-solo) or the switch on the Mando page, and is remembered.
@@ -204,11 +215,13 @@ try {
       if (import.meta.env.DEV && state) applyHelp(state);
       scoreBattle(state);
       if (effect) playCues(startSounds(effect, state));
+      // A dual that goes off is found: the ánimas screen lists it from now on (not the tester's).
+      if (effect?.dual && !testing && story.discover(effect.dual.id)) keepDuals();
       return game.setBattle(state, effect, effect ? blow => { if (state && !blow) playCues(impactSounds(effect, state)); onImpact?.(blow); } : onImpact);
     },
     target: id => game.selectTarget(id),
     sound: id => sfx.play(id),
-    awaken: id => { sfx.play('awaken'); game.awaken(id); if (!testing) storyEvent({ type: 'class', id: id as Exclude<ClassId, 'fisico'> }); },
+    awaken: id => { sfx.play('awaken'); game.awaken(id); if (!testing) storyEvent({ type: 'class', id: id as Exclude<ClassId, 'tecnopata'> }); },
     driver: id => battleDriver(playing(), id),
     waiting: id => waitingForPlayer2(playing(), id),
     // Each fighter's pick in the fight is their pick for the adventure too.
@@ -285,7 +298,7 @@ try {
       const entered = () => { flying--; lightsFlying--; showAnimas(true); };
       try { await game.releaseLights(effect.people, entered); } finally { lightsFlying -= flying; showAnimas(); }
     }
-    else if (effect.kind === 'release-light') { await game.releaseLight(); storyChanged(); }
+    else if (effect.kind === 'jar') await jarUI.open();
     // A shout never stops the game; the next beat only waits for it when it asks (`beat`).
     else if (effect.kind === 'shout') {
       game.shout(effect.speaker, effect.text);
@@ -345,10 +358,9 @@ try {
     storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
     if (to) storyEvent({ type: 'arrive', station: to });
   }
-  /** The ánimas the party has to spend at home (the lit lights), from the first one that goes in. */
+  /** The Ecos de luz the party has free to put into an ánima at home, from the first one that goes in. */
   function showAnimas(gained = false) {
-    const lit = story.jar.filter(l => !l.used).length - lightsFlying;
-    storyUI.animas(story.adult && story.jar.length > lightsFlying ? Math.max(0, lit) : undefined, gained);
+    storyUI.animas(story.adult && story.jar.length > lightsFlying ? Math.max(0, story.ecosFree - lightsFlying) : undefined, gained);
   }
   function storyChanged() {
     game.refreshStory();
@@ -380,7 +392,7 @@ try {
       const go = () => battlePhase === undefined ? game.setEnvironment(id) : requestAnimationFrame(go);
       go();
     },
-    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || !!exploration.active),
+    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || jarUI.isOpen || !!exploration.active),
     dev: import.meta.env.DEV ? {
       flags: () => story.saved,
       day: () => story.days.clock.day,
@@ -404,10 +416,18 @@ try {
         storyChanged();
         battleUI.setAnimas(story.classes, story.levels, { gerard: story.kitOf('gerard'), aitor: story.kitOf('aitor') });
       },
+      ecos: () => ({ total: story.ecos, free: story.ecosFree, extra: story.debugEcos }),
+      giveEcos: count => { story.debugEcos = Math.max(0, story.debugEcos + count); storyChanged(); },
+      openJar: () => { void jarUI.open(); },
       fight: setup => startFight(setup),
       current: () => battleUI.fight,
       help: () => help,
-      setHelp: value => { help = value; },
+      setHelp: value => {
+        const unbinding = value.unbound !== help.unbound;
+        help = value;
+        battleUI.tweak(applyHelp);
+        if (unbinding) unboundAnimas();
+      },
       jumpTo: moment => void battleUI.jumpTo(moment),
       leave: () => leaveFight(),
       folding: () => folding,
@@ -423,7 +443,7 @@ try {
   if (import.meta.env.DEV) try { folding = localStorage.getItem(foldingKey) === '1'; } catch { /* Storage is optional. */ }
   setWallFolding(folding);
   /** Development: the help every fight gets (the picker's Combate page, or the tester's setup). */
-  let help: FightHelp = { free: false, immune: false };
+  let help: FightHelp = { free: false, immune: false, unbound: false };
   /** A fight left from the picker: no result reaches the story. */
   let leaving = false;
   /** The players chose to fight a fall again or go back to before it (battle-ui `fallen`): that end costs nothing. */
@@ -450,20 +470,52 @@ try {
     const possessed = setup.encounter === 'possessed';
     // A frame for the new place to settle before the fight takes its stage.
     requestAnimationFrame(() => {
-      testing = setup; help = { free: setup.free, immune: setup.immune };
+      testing = setup; help = { free: setup.free, immune: setup.immune, unbound: setup.unbound };
       game.possess(possessed);
-      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, animas: setup.animas, levels: story.levels, xp: story.xp, guards: palaceGuards(setup.adult ? setup.friends.length : 0) });
+      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, animas: setup.animas, levels: story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0) });
+      if (help.unbound) { unboundAnimas(); battleUI.tweak(applyHelp); }
     });
   }
-  /** The help: skills cost nothing, and no blow takes the party's PV (it is back before the bar moves). */
+  /**
+   * The help: skills cost nothing, and no blow takes the party's PV (it is back before the bar moves).
+   * Sin límites also keeps every ánima's maná full and lifts the skills' limits of use (`unbound`).
+   */
   function applyHelp(state: BattleState) {
+    state.unbound = help.unbound || undefined;
     for (const ally of state.allies) {
-      if (help.free) ally.secondary = ally.maxSecondary;
+      if (help.free || help.unbound) ally.secondary = ally.maxSecondary;
+      if (help.unbound) for (const id of Object.keys(ally.mana ?? {}) as ClassId[]) ally.mana![id] = manaMax(state.improved, id);
       if (help.immune && ally.hp > 0) ally.hp = ally.maxHp;
     }
   }
+  /**
+   * Sin límites puts every ánima at its top level in the kit of whoever can wear it; taken off, the
+   * fight's own ánimas, levels and kits come back (the tester's setup, or the story's), and whatever
+   * someone has on stays theirs, at its story level, until they switch away from it.
+   */
+  function unboundAnimas() {
+    const all = Object.keys(ANIMA_NAMES) as ClassId[];
+    if (help.unbound) {
+      battleUI.setAnimas(all, Object.fromEntries(all.map(id => [id, MAX_LEVEL])), Object.fromEntries((['gerard', 'aitor'] as const).map(who => [who, all.filter(id => canWear(who, id))])));
+      return;
+    }
+    // What each one has on stays in their kit until they switch away from it.
+    const worn: Partial<Record<string, ClassId>> = {};
+    battleUI.tweak(state => { for (const ally of state.allies) if (ally.classId) worn[ally.id] = ally.classId; });
+    const keep = (who: 'gerard' | 'aitor', kit: ClassId[]) => { const on = worn[who]; return on && !kit.includes(on) ? [...kit, on] : kit; };
+    const slot = (id: 'gerard' | 'aitor'): PartySlot => ({ id, name: id, profile: id === 'aitor' ? 'aitor' : testing!.adult ? 'gerard35' : 'gerard', classId: testing!.wear[id] });
+    const animas = testing ? testing.animas : story.classes;
+    battleUI.setAnimas([...new Set([...animas, ...Object.values(worn) as ClassId[]])], story.levels, {
+      gerard: keep('gerard', testing ? kitOf(slot('gerard'), animas) : story.kitOf('gerard')),
+      aitor: keep('aitor', testing ? kitOf(slot('aitor'), animas) : story.kitOf('aitor')),
+    });
+  }
   const game = await createGame(canvas, {
-    onEncounter: (withPartner, foes, options) => { exploration.close(); dialogue.close(); battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, levels: story.levels, xp: story.xp, guards: palaceGuards(story.animas.length) }); },
+    onEncounter: (withPartner, foes, options) => {
+      exploration.close(); dialogue.close();
+      battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, levels: story.levels, xp: story.xp, improved: story.improved, guards: palaceGuards(story.animas.length) });
+      if (import.meta.env.DEV && help.unbound) { unboundAnimas(); battleUI.tweak(applyHelp); }
+    },
     // Backing off is neither a win nor a fall.
     onSound: (id, options) => sfx.play(id, options),
     onBed: (id, level) => sfx.bed(id, level),
@@ -512,6 +564,11 @@ try {
     },
   }, story);
   const lampPicker = createLampPicker(hud, homeLights, paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); });
+  const jarUI = createJarUI(hud, story, {
+    pause: paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); },
+    sound: id => sfx.play(id),
+    changed: () => { keepEcos(); storyChanged(); },
+  });
   for (const light of HOUSE_LIGHTS) game.setLamp(light.id, homeLights.flat[light.id]);
   homeLights.onFlat((id, lamp) => game.setLamp(id, lamp));
   game.setLampLabels(id => {
@@ -523,7 +580,7 @@ try {
   followMood();
   const moodTimer = setInterval(followMood, 1000);
   const controllerContext = () => jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
-    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp'
+    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : jarUI.isOpen ? 'jar'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   let restoreLightsOnResume = false;
   const controller = createControllerUI({
@@ -535,7 +592,7 @@ try {
       get: () => control.mode,
       set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
     } : undefined,
-    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || !!exploration.active); },
+    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || jarUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || jarUI.isOpen || !!exploration.active); },
     panel: id => id ? exploration.show(id) : exploration.close(),
     lights: section => mountHomeLightsPage(section, homeLights),
     sound: section => mountSoundPage(section, audio),
@@ -554,6 +611,7 @@ try {
       if (isDpad(action)) { battleUI.toggleSummary(); return; }
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
       if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
+      if (jarUI.isOpen) { if (action !== 'overview' && action !== 'character') jarUI.control(action); return; }
       if (lookAway) { if (action === 'confirm' || action === 'cancel') lookAway(); return; }
       if (storyUI.doomOpen) { if (action === 'confirm') storyUI.confirmDoom(); return; }
       // Each player opens their own half of the status screen with the top face button.
@@ -642,7 +700,7 @@ try {
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
     Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, homeLights, audio, music, sfx } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

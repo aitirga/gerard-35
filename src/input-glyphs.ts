@@ -38,6 +38,8 @@ export const GLYPHS = {
   items: { keyboard: 'I', ...pad('☰', 'Options', '+', 'Start') },
   /** A skill's details in battle: the top face button. */
   details: { keyboard: 'I', ...pad('Y', '△', 'X', 'Botón superior') },
+  /** Atacar's next element in a fight: the same top face button (X on a Switch pad). */
+  element: { keyboard: 'X', ...pad('Y', '△', 'X', 'Botón superior') },
   /** The shoulder buttons: the previous / next ánima in a fight, or page in the status screen. */
   prev: { keyboard: 'Q', ...pad('LB', 'L1', 'L', 'LB') },
   next: { keyboard: 'E', ...pad('RB', 'R1', 'R', 'RB') },

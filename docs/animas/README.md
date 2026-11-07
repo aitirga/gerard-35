@@ -31,10 +31,9 @@ The word covers two related things; keep them apart when designing:
 In fights the word has a third use: **Ánima** is also the points skills spend (§ Ánima points).
 
 Each **person** helped also gives a **light** (a friend's household can give several: Nuria and
-Uri give two, one into Gerard and one into Aitor). Lights are kept in a jar at home and can be
-spent for a day against the Queen (`docs/chapter-2.md` § The Queen's advance). On screen the lit
-ones are counted as the party's **ánimas** (the lore's sense of the word), a currency to spend at
-home; they carry no stats and nobody wears them.
+Uri give two, one into Gerard and one into Aitor). Lights are kept in a jar at home. On screen they
+are the party's **Ecos de luz**, what improves the ánimas (§ Ecos de luz); they carry no stats and
+nobody wears them.
 
 A friend's mission usually gives both: the friend's light, and a wearable ánima that comes from
 them (Nuria → Papagato). Player-facing text says *ánima* for both, never *clase*.
@@ -46,10 +45,10 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 | [**Matemágico**](matemagico/README.md) | Chapter 1's palace: Bernat begs Gerard to think | `#f3cf78` gold | Magia +1, Espíritu +1 | Foc Binari; Análisis Parálisis, Ángulo exacto (2); Cardioide (3) | Playable |
 | [**Noísta**](noista/README.md) | Was chapter 1's palace: Gerard shouts "¡NO!" | `#e2483d` red | Magia +2, Espíritu +2, Defensa −1 | No-ta | Hidden: retired (2026-11-01), replaced by Matemágico |
 | [**Papagato**](papagato/README.md) | Nuria's mission (Cardedeu), `docs/quests/nuria.md` | `#f0954a` orange | Velocidad +2, Fuerza +1, Espíritu −1 | Haru and Yuki | Playable |
-| **Físico** | Aitor's own, from chapter 2's first morning | `#8cc6a8` sage | — | — | Placeholder (2026-11-05): name and colour only, to design with `/anima` |
+| [**Tecnópata**](tecnopata/README.md) | Aitor's own, from chapter 2's first morning (was the placeholder Físico) | `#4fe0ff` cyan | — | — | Designing (2026-11-05): look, drone-HUD interface and Bip, his robot, first |
 | _Pedro's_ | Pedro's mission (`docs/quests/pedro.md`, to write) | _open_ | _open_ | _open_ | Idea (2026-11-05): a shared ánima from Pedro, a gay friend of Gerard and Aitor they see a lot |
 
-**Who has what** (2026-11-05): Matemágico is Gerard's own and Físico Aitor's (`ANIMA_OWNERS`),
+**Who has what** (2026-11-05): Matemágico is Gerard's own and Tecnópata Aitor's (`ANIMA_OWNERS`),
 fixed, never taken off. Besides their own, each equips the shared ánimas (Papagato…) in their
 extra slots (one for now, `EXTRA_SLOTS`); two never equip the same one. In a fight they switch
 among their own and their extras, one at a time (`docs/party.md`).
@@ -101,6 +100,43 @@ Built (`src/levels.ts`, 2026-11-05):
   fight (`docs/dev-tools.md`). `just screenshots levels` shows the victory screen in a real fight,
   `just screenshots level-up` the hold and the bands from the fight tester.
 
+## Ecos de luz
+
+Built 2026-11-05, decided with Aitor. What improves an ánima is not levels alone: every light won is
+an **eco de luz**, to put into the ánimas at the **jar in the flat's living room** (`src/jar-ui.ts`,
+`src/ecos.ts`).
+
+- **Only at the jar, whenever.** *Abrir el bote* opens its screen. Every eco can be taken back and
+  put somewhere else as often as they like, one at a time or *Recoger todos los ecos*; nothing is
+  lost. Out of the flat nothing can change (a portal home is an idea for later, `docs/ideas.md`).
+- **Optional, and never enough for everything**: nothing in the story needs them.
+- **Saved in the browser**, like the loadout (`gerard35.ecos.v1`, `story.improvements`). What stands
+  is worked out from what the party has now (`withinEcos`): a rewound day can take a light back, and
+  what it paid for comes back with it.
+- **The chip** beside the menus' buttons counts the free ones. The marbles in the jar, in the flat and
+  on the screen, are lit while free and dark once in an ánima (on the screen, tinted by where it went).
+- *Usar una luz* (a light let out for a day against the Queen) is gone (2026-11-05).
+
+| Improvement | Ánima | Ecos | What it does |
+| --- | --- | --- | --- |
+| **Agua** | Matemágico | 1 | Atacar can carry water. On Quemado: Humo, it leaves Cegado |
+| **Fuego** | Matemágico | 1 | Atacar can carry fire. On Sangrado: Cauterizado, every stack at once |
+| **Eléctrico** | Matemágico | 1 | Atacar can carry electricity. On Cegado: Tormenta, magic on all in smoke |
+| **Maná +1** | Each | 2 | Its pool goes from 3 to 4 (`manaMax`, for whoever wears it) |
+| **Maná +2** | Each | 3 | From 4 to 5; needs Maná +1 |
+| **Pasiva** | Each | 2 | A place kept, asleep (`veiled`): shows, cannot be bought. To design |
+| **Definitiva** | Each | 3 | A place kept, asleep. To design |
+
+Prices from `just fight-sim` (2026-11-05): a Maná +1 is the strongest of them (Vertitrón for a player
+who does not think it through, `casual`: wins 54 % without it, about 72 % with one); elements change
+little for a bot, which rarely plays them on purpose, and are a tool to choose with (ring 3's young,
+`smart`, with Fuego: 64 % → 70 % of PV left). So Maná costs two, and with today's two ecos there is
+a real choice: one more maná, or two elements. Targets `vertigo-eco-mana`, `vertigo-eco-elementos`.
+
+A new improvement is an entry in `IMPROVEMENTS` (`src/ecos.ts`); the screen and the fight tester
+read it from there. What it does in a fight comes through `Improved` (`BattleState.improved`,
+`improve`). Screenshots: `just screenshots ecos --gpu`, `just screenshots elementos --gpu`.
+
 ## Combined skills
 
 **Dual attacks** (built 2026-11-05 for Matemágico + Papagato, `DUALS` in `src/battle.ts`): two
@@ -119,6 +155,11 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
   completes the other half, the dual's banner comes up while they aim it, and confirming fires the
   dual instead (`commit`). Only the earlier fighter completes one. The combined cost and the
   description show only then, in the dual's banner (and in the development Dual command).
+- **Found, then remembered** (decided 2026-11-05): once a dual has gone off in a fight (not the
+  fight tester's), it is found (`Story.discover`, kept in the browser like the EXP). On the status
+  screen's Ánimas page, under the lists, *HABILIDADES DÚO DESCUBIERTAS* shows the ones found that
+  the ánima under the cursor brings a half of: with whom, its two skills and what it does. Only
+  those found: before the first the card is not there, and it never says how many there are.
 - **What it costs**: both turns, and each wearer's half from their own ánima's maná (the skills' own
   costs). Both ánimas take part in the fight (EXP).
 - **What it is**: its blow uses the stats of whoever brings the half of its kind (a physical dual,
@@ -135,7 +176,8 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Pair | Dual | Halves | Levels | Status |
 | --- | --- | --- | --- | --- |
 | Matemágico + Papagato | **Zarpazos de fuego** | Foc Binari + Zarpazos | 1 · 2 | Built |
-| Matemágico + Papagato | **Punto débil** | Ángulo exacto + Zarpazo de Haru | 2 · 1 | Built |
+| Matemágico + Papagato | **Punto débil** | Ángulo exacto + Zarpazo sangriento | 2 · 1 | Built |
+| Matemágico + Tecnópata | **Rayo solar** | Foc Binari + Rayo de energía | 1 · 1 | Built (2026-11-06): charges a turn, sweeps every foe with Quemado II as the next round starts |
 | Matemágico + Papagato | *Cortina de fuego*, a burning shield | Foc Binari + Yuki se esconde | 1 · 1 | Idea, parked for later |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
@@ -218,12 +260,21 @@ second ánima.
   (`drain`); the icon flashes as one does. Landing, it says so in orange over the numbers
   (*¡Quemado!*, `pop(…, 'status')`).
 
+### Cegado (blinded, timed)
+
+- A **timed** status that hurts nobody: 10 s on the fight's clock, its level the level of the fire it
+  came from. The foe's blows land at 70 % / 50 % / 30 % (`REACTION_RULES`, `sighted`), whatever they are.
+- Left by Humo (Atacar · Agua on Quemado). Atacar · Eléctrico spends it (Tormenta). Details in
+  `docs/combat.md` § Reacciones entre elementos.
+
 | Mechanic | Applied by | Exploited by |
 | --- | --- | --- |
 | Sangrado | Papagato (Haru) | Papagato (*Zarpa en la llaga*) |
 | Mareo (mental) | None now (it was El Vértigo's) | Papagato (*Ronroneo de Yuki* cleanses it) |
 | Llorera (mental) | The onions (foe) | Papagato (*Ronroneo de Yuki* cleanses it) |
-| Quemado | Matemágico (*Foc Binari*; the dual *Zarpazos de fuego*, on a coin) | — |
+| Quemado | Matemágico (*Foc Binari*; the dual *Zarpazos de fuego*, on a coin) | Atacar · Agua (Humo) |
+| Sangrado (reaction) | Papagato (Haru) | Atacar · Fuego (Cauterizado) |
+| Cegado | Atacar · Agua on Quemado | Atacar · Eléctrico (Tormenta) |
 | Punto débil | The dual *Punto débil* | Any blow, the next one |
 
 ## How an ánima is built

@@ -1,4 +1,4 @@
-import { isOnion, type BattleEffect, type BattleState, type FoeKind, type SkillId } from './battle.ts';
+import { isOnion, type BattleEffect, type BattleState, type Element, type ElementReaction, type FoeKind, type SkillId } from './battle.ts';
 import type { SoundId } from './sfx.ts';
 
 /**
@@ -24,7 +24,15 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   'a-la-vez': { start: [{ id: 'meow' }, { id: 'meow-soft', delay: .12 }], impact: [{ id: 'claw' }, { id: 'claw', delay: .07 }, { id: 'hit' }] },
   angulo: { start: [{ id: 'think' }], impact: [] },
   ronroneo: { start: [{ id: 'meow-soft' }], impact: [{ id: 'heal' }] },
+  // Tecnópata's are Bip's: it charges up and fires, blows up, or hums its waves.
+  'rayo-energia': { start: [{ id: 'charge', volume: .45 }], impact: [{ id: 'zap' }, { id: 'hit', volume: .4 }] },
+  'rayo-sanacion': { start: [{ id: 'cast-soft' }], impact: [{ id: 'heal' }] },
+  explosion: { start: [{ id: 'charge', volume: .6 }], impact: [{ id: 'fire-hit' }, { id: 'slam' }, { id: 'crack', volume: .5, delay: .05 }] },
+  confusion: { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }] },
+  'rayo-encogedor': { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'zap', volume: .6 }, { id: 'sink' }] },
 };
+const ELEMENT_SOUNDS: Record<Element, Cue> = { agua: { id: 'splash', volume: .5 }, fuego: { id: 'fire-hit', volume: .45 }, electrico: { id: 'zap', volume: .6 } };
+const REACTION_SOUNDS: Record<ElementReaction, Cue[]> = { humo: [{ id: 'fizzle', delay: .04 }], cauterizado: [{ id: 'burn', delay: .04 }], tormenta: [{ id: 'zap', delay: .05 }, { id: 'zap', delay: .13 }] };
 /** A dual sounds like both its halves: the first one's start, both impacts. */
 export const dualSounds = (parts: readonly SkillId[]): Sounds => ({ start: parts.flatMap(id => SKILL_SOUNDS[id].start ?? []).slice(0, 2), impact: parts.flatMap(id => SKILL_SOUNDS[id].impact) });
 export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
@@ -44,9 +52,18 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
 };
 const foeOf = (effect: BattleEffect, state?: BattleState) => state?.foes.find(f => f.id === effect.actor);
 
+/** Matemágico's thrown Atacar as the ball leaves the hand (battle-scene): its own for each element. */
+export const spellLaunch = (element?: Element): Cue[] => element === 'fuego' ? [{ id: 'fire-cast', volume: .7 }]
+  : element === 'agua' ? [{ id: 'cast-soft' }, { id: 'splash', volume: .3 }]
+  : element === 'electrico' ? [{ id: 'cast-soft', volume: .7 }, { id: 'zap', volume: .6 }]
+  : [{ id: 'cast-soft' }];
 /** What sounds as an action begins. */
 export function startSounds(effect: BattleEffect, state?: BattleState): Cue[] {
+  // Thrown: the circle opens as he works it out; the ball's own sound comes as it leaves.
+  if (effect.kind === 'attack' && effect.spell) return [{ id: 'think', volume: .6 }];
   if (effect.kind === 'escape') return [{ id: 'flee' }];
+  // A charged dual going off (Rayo solar) sweeps with its fire: the charge already sounded.
+  if (effect.kind === 'skill' && effect.release) return [{ id: 'charge', volume: .5 }];
   if (effect.kind === 'skill' && effect.dual) return dualSounds(effect.dual.parts).start ?? [];
   if (effect.kind === 'skill' && effect.skill) return SKILL_SOUNDS[effect.skill].start ?? [];
   const kind = effect.kind === 'enemy' ? foeOf(effect, state)?.kind : undefined;
@@ -58,8 +75,12 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   if (effect.swallowed) return [{ id: 'swallowed' }];
   // A blow that opens a wound (it spent Sangrado) tears as it lands.
   const torn: Cue[] = effect.bled || effect.hits?.some(h => h.bled) ? [{ id: 'bleed', delay: .04 }] : [];
-  if (effect.kind === 'attack') return effect.amount ? [{ id: 'hit' }, ...torn] : [];
+  // Atacar with an element sounds of it, and what it turned on top.
+  if (effect.kind === 'attack') return effect.amount ? [{ id: 'hit' }, ...effect.element ? [ELEMENT_SOUNDS[effect.element]] : [], ...effect.reaction ? REACTION_SOUNDS[effect.reaction.id] : [], ...torn] : [];
   // A dual that rolls claw by claw sounds each claw as it lands, fire or not (battle-scene `dualStrike`): the first says nothing of the rest.
+  if (effect.kind === 'skill' && effect.release) return [{ id: 'beam' }, { id: 'fire-hit', delay: .06 }];
+  // Charging up only hums: it lands as the next round starts.
+  if (effect.kind === 'skill' && effect.charging) return [{ id: 'fire-cast', volume: .6 }, { id: 'mana', delay: .1 }];
   if (effect.kind === 'skill' && effect.dual) return [...effect.coins ? [] : dualSounds(effect.dual.parts).impact, ...torn];
   if (effect.kind === 'skill' && effect.skill) {
     // Fire that does not catch (an onion's wet layers) fizzles; on the palace minion's gum it melts it too.

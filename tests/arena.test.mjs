@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BODY, CAMERA, FOE_SIZE, POCKET, ROOM, axes, catSpots, fightCamera, fits, formation, placeCell, planPocket, pocketCellOf, pocketGrid, stageFight } from '../src/arena.ts';
+import { BODY, CAMERA, FOE_SIZE, POCKET, ROOM, axes, catSpots, fightCamera, fits, formation, placeCell, planPocket, pocketCellOf, pocketGrid, pocketWorld, stageFight } from '../src/arena.ts';
 import { ENVIRONMENTS, propCells } from '../src/environments.ts';
 import { STREET_AREA, STREET_END_AREA } from '../src/encounters.ts';
 import { PLACES_NURIA } from '../src/friends/nuria.ts';
@@ -162,6 +162,25 @@ test('a pocket of a corridor is the same corridor, wider; of a corner, the same 
   assert.ok(corner.rows >= POCKET.least && corner.columns >= POCKET.least);
   assert.ok(corner.cells.flat().includes('prop'));
   assert.ok(fightIn(corner, cast));
+});
+
+test('particles feel a pocket where it is built: its floor under every fighter, its walls as tall as they stand, the sky past its edges', () => {
+  const { grid } = ENVIRONMENTS['cardedeu-laberinto'], cast = { allies: 2, foes: ['cebollita', 'platito', 'fantasmita'] };
+  const plan = planPocket(grid, { x: 30, z: 4 }, cast, things('cardedeu-laberinto'));
+  // Built far from every place, its floor a little off zero so a floor read from elsewhere shows.
+  const at = { x: 0, y: .25, z: -4000 }, world = pocketWorld(plan, at, () => 2.5, -.95);
+  const ground = (x, z) => world.ground(at.x + x, at.z + z);
+  const slots = formation(plan.stage.layout, cast.allies, cast.foes, POCKET.spread);
+  for (const p of [{ x: 0, z: 0 }, ...slots.allies, ...slots.foes]) assert.equal(ground(p.x, p.z), at.y, `${p.x},${p.z}`);
+  // Cell (x, z) of the pocket stands at its offset from the fight's centre.
+  const cell = (x, z) => ({ x: at.x + x - plan.stage.centre.x, z: at.z + z - plan.stage.centre.z });
+  const { cells: solid } = world, top = (x, z) => solid.top[z * solid.cols + x];
+  assert.equal(solid.x, cell(0, 0).x); assert.equal(solid.z, cell(0, 0).z);
+  plan.cells.forEach((row, z) => row.forEach((c, x) => {
+    if (c === 'wall') assert.equal(top(x, z), 2.5, `${x},${z} is a wall`);
+    if (c === 'floor') assert.equal(top(x, z), -Infinity, `${x},${z} is open`);
+    if (c === 'void') assert.equal(world.ground(cell(x, z).x, cell(x, z).z), -.95, `${x},${z} is the sky`);
+  }));
 });
 
 test('a pocket copies the place cell by cell: a widened row or column copies the one through where the fight started', () => {

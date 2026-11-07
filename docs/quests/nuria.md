@@ -279,22 +279,16 @@ They are lore first (what makes each of them who they are, an *ánima* in the lo
 - **Kept at home**: the first time they get home afterwards, the lights leave Gerard and Aitor and
   settle into a glass jar on the living room shelf (proposal: *el bote de las luces*). Grey in the
   first round, as the lore says.
-- **Used for a day**: at the jar, *"Usar una luz"* lets one out: it flies out of the window
-  towards the castle and the Queen's spread goes back **one day**. Proposal: at most one a day.
-- **Count, never names**: the jar shows lit lights and spent ones (dark, like an empty marble),
-  so anyone can see how many are left and how many were used. No names, no labels.
-- **The Ecos de luz counter** (decided 2026-11-05, Aitor; first called *ánimas*, renamed the same
-  day because it clashed with the ánimas worn in a fight): the lit ones are the party's **Ecos de
-  luz**, a currency to improve the ánimas (more maná, an ánima's ulti; optional, never enough for
-  everything; final bosses drop one too: `docs/ideas.md`). A chip beside the menus' buttons (`.anima-count`,
-  `storyUI.animas`, `showAnimas` in `src/main.ts`) shows an amber light, like the jar's, and how
-  many are left; it shows up with the first one won, goes up as each light goes into Gerard or
-  Aitor (not when the fight ends) and down when one is spent, labelled *eco de luz* / *ecos de
-  luz*. It is something the party *has*, so the HUD rule allows it. Today they only buy *Usar una
-  luz*; the improvements are an idea (`docs/ideas.md`).
-- Using a light does not take the mission's ánima away: Nuria's household still counts as one
-  friend helped for the castle, the guards, the party bonus and the three days the ánima already
-  wins back.
+- **Count, never names**: the jar shows one marble per light, lit while free and dark once in an
+  ánima, so anyone can see how many there are. No names, no labels.
+- **The Ecos de luz** (decided 2026-11-05, Aitor; first called *ánimas*, renamed the same day because
+  it clashed with the ánimas worn in a fight): the lights are the party's **Ecos de luz**, put into the
+  ánimas and taken back at the jar (`docs/animas/README.md` § Ecos de luz; final bosses dropping one
+  too: `docs/ideas.md`). A chip beside the menus' buttons (`.anima-count`, `storyUI.animas`,
+  `showAnimas` in `src/main.ts`) shows an amber light, like the jar's, and how many are free; it shows
+  up with the first one won and goes up as each light goes into Gerard or Aitor (not when the fight
+  ends). It is something the party *has*, so the HUD rule allows it.
+- **Not for a day** (2026-11-05, Aitor): a light let out held the Queen back a day (*Usar una luz*); gone.
 
 - **Freedom always** (decided): they can leave, go home and come back as often as they like, but
   nothing is kept until it is won: leaving hands Papagato and the cats back to Nuria, who waits
@@ -366,7 +360,7 @@ Grito liberador. Fire and bleeding break it too.
 Built 2026-11-05 (`DUALS` in `src/battle.ts`; the rules in `docs/combat.md` § Ataques duales and
 `docs/animas/README.md` § Combined skills). Two skills of Matemágico and Papagato, one from each
 fighter, become one action: **Zarpazos de fuego** (Foc Binari + Zarpazos) and **Punto débil**
-(Ángulo exacto + Zarpazo de Haru). Neither exists at level 1: the first is possible once Papagato
+(Ángulo exacto + Zarpazo sangriento). Neither exists at level 1: the first is possible once Papagato
 reaches level 2, the second once Matemágico does, so both come up in the tower.
 
 - **How they are found**: by surprise. Nothing glows, nothing is listed, there is no hint. With two
@@ -551,13 +545,11 @@ dependencies; steps marked **blocked** need something from the user first.
 10. **The final boss.** First planned as El Vértigo (Altura, phases, Uri stepping in front of
     Nil); built on 2026-11-05 as **Vertitrón**, a robot with an optional eye (§ Final boss).
     Balance with `just fight-sim`; tests for its moves and its eye.
-11. **The lights.** Pure rules first: lights earned (`luz-<person>` flags) and lights used
-    (`luz-<person>-usada`, story flags so a rewind puts them back), at most one a day;
-    `spread(day, animas, used)` in `src/days.ts` becomes `(day − 1 − 3 × ánimas − used) / 6`.
+11. **The lights.** Pure rules first: lights earned (`luz-<person>` flags).
     Then the reusable animation `src/anima-lights.ts` (body flash, rising light, arc and trail,
     the receiver's flash; it takes any person and any receiver, so every friend reuses it), the
-    jar on the flat's living-room shelf with lit and spent lights, *"Mirar las luces"* and
-    *"Usar una luz"* (the light out of the window, Aitor's line, the castle pulled back). Tests in
+    jar on the flat's living-room shelf (since 2026-11-05 its screen, `docs/animas/README.md` § Ecos
+    de luz; *Usar una luz* is gone). Tests in
     `tests/story.test.mjs` and a days test. Screenshot scenario `lights`.
 12. **The win and home.** Uri himself again (eyes back), the two lights into Gerard and Aitor and
     the *ÁNIMA DESBLOQUEADA · Papagato* banner,
@@ -585,9 +577,7 @@ Steps 1–13 are built and tested (`tests/nuria.test.mjs`, `tests/story.test.mjs
   (`battleScene.foeTop` lifts and widens the camera for foes far taller than the party).
 - **Step 11**: the light animation lives in `game.releaseLights` (not a module of its own yet);
   the jar sits on the west end of the TV unit in the living room, built by `updateJar` in
-  `src/game.ts` from `story.jar`, and *"Usar una luz"* plays `game.releaseLight` (the
-  `release-light` effect). A light is spent today when this morning's saved flags lack its
-  `luz-<person>-usada`, so no new save field was needed. Screenshots: `just screenshots lights`.
+  `src/game.ts` from `story.jar`. Screenshots: `just screenshots lights`.
 - **Step 12**: the first time home after the win the lights fly from Gerard and Aitor into the
   jar (not saved: after a reload they are simply there). Haru and Yuki stroll the flat
   (`src/cat-wander.ts`: a few cells to a spot nearby, a sit, another spot), from

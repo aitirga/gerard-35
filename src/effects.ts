@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import { createParticles, type ParticleAttractor, type ParticleBody, type ParticleEmitter, type ParticleKind, type ParticleWorld, type Vec } from './particles.ts';
+import { BACKDROP, createParticles, type ParticleAttractor, type ParticleBody, type ParticleEmitter, type ParticleKind, type ParticleWorld, type Vec } from './particles.ts';
 import { propCells, type Environment } from './environments.ts';
 import { cometPath, createTrails, type CometOptions } from './trails.ts';
 import { createFlames, type Flame, type Shell } from './flames.ts';
@@ -268,6 +268,12 @@ export const FIGHT_KINDS = {
   },
   // Stats that stay up or down: motes of energy off the head (src/stat-motes.ts), blue rising, red falling.
   ...STAT_MOTE_KINDS,
+  // Bip's nanites (Tecnópata, src/bip.ts): bright cyan streaks thrown towards where they go and drawn
+  // in by a pull of their own (effects.nanites); they cling where they arrive and fade there.
+  nanite: {
+    drag: 2.4, gravity: 0, curl: .3, response: 1, size: [.032, .012], sizeJitter: .5, stretch: .045, shape: 'streak',
+    colours: ['#ffffff', '#9ff0ff', '#22b4dc'], intensity: [7, 4.5, 2.4], middle: .3, fadeIn: .04, fadeOut: .35, additive: 1, flicker: .2,
+  },
   // What a lattice breaks into: sharp chips that spin, glance off bodies and fade.
   chip: {
     drag: .4, gravity: 9, curl: .1, response: .3, collide: true, bounce: .4, friction: .35, size: [.032, .02], sizeJitter: .5, stretch: .02, spin: 540, shape: 'shard',
@@ -466,6 +472,13 @@ export function createEffects(app: pc.Application) {
   const rainFall = { x: 0, y: -WEATHER.rain.speed, z: 0 };
   let air: { emitter: ParticleEmitter; kind: Air['kinds'][number] }[] = [];
   let bounds: ParticleWorld | undefined;
+  /**
+   * The fight under way (`setFightStage`): its centre, which the GPU particles' floor is baked
+   * round, and in a pocket (src/pocket.ts) the ground it stands on instead of the scene's.
+   */
+  let stage: { centre: Vec; world?: ParticleWorld } | undefined;
+  /** What particles land on and bounce off now: the pocket's while a fight is in one, else the scene's. */
+  const worldNow = () => stage?.world ?? bounds;
   let sun: pc.LightComponent | undefined;
   let tone = 0, animate = true;
   const auras: { at: pc.Vec3; height: number; left: number; streams: { above: boolean; emitter: ParticleEmitter }[]; twirl?: ParticleAttractor }[] = [];
@@ -628,6 +641,8 @@ export function createEffects(app: pc.Application) {
   // Fight particles on the GPU, where the device can: only in fights, with motion (`gpuOn`).
   const gpu = canSimulate(app.graphicsDevice) ? createFightParticles(app, FIGHT_KINDS) : undefined;
   let gpuOn = false;
+  /** The GPU particles' floor, 16 m round `centre`; past it they take the floor at `centre`. */
+  const bakeFloor = (centre: Vec) => gpu?.setFloor(centre, 16, (x, z) => groundAt(x, z));
   /** Beaten foes coming apart (src/disintegrate.ts): in fights, and on the street too, where the engine runs for them. */
   const disintegrations = createDisintegrations(gpu);
   /** Who is fighting (battle-scene `setFighters`): what fight particles meet. */
@@ -811,23 +826,38 @@ export function createEffects(app: pc.Application) {
      * A blow lands at `at`, thrown from `from`: a flash, sparks flying on through and a little dust
      * at the feet. `strength` 1 is a plain hit; guarded hits spark less and glint blue.
      */
-    impact(target: Vec, from: Vec, strength = 1, options: { guarded?: boolean; gum?: boolean; feet?: Vec } = {}) {
+    impact(target: Vec, from: Vec, strength = 1, options: { guarded?: boolean; gum?: boolean; feet?: Vec; colour?: string } = {}) {
       const dx = target.x - from.x, dz = target.z - from.z, d = Math.hypot(dx, dz) || 1;
       const direction = { x: dx / d, y: .45, z: dz / d };
       const k = options.guarded ? .4 : strength;
       particles.burst('flash', target, 1, { size: .45 + k * .35 });
-      glint(target, options.guarded ? '#cfe6ff' : '#ffe6b8', .8 + k * .9, 2.6, .22);
+      glint(target, options.guarded ? '#cfe6ff' : options.colour ?? '#ffe6b8', .8 + k * .9, 2.6, .22);
       if (gpuOn) {
         // Hot streaks fly on through whoever was hit, mostly level with the blow, and glance off them.
         // No embers: they settle on the body and the floor and read as drops of blood.
         const push = 3.5 + k * 2;
-        gpu!.burst('spark', { at: target, count: 30 + 60 * k, spread: .05, velocity: { x: direction.x * push, y: .6 + .5 * k, z: direction.z * push }, speed: 2.4, cone: 1.15, life: [.35, .95] });
-        gpu!.burst('needle', { at: target, count: 10 + 20 * k, spread: .05, velocity: { x: direction.x * push * .8, y: .8 + .5 * k, z: direction.z * push * .8 }, speed: 2, cone: 1.3, life: [.4, .9] });
+        gpu!.burst('spark', { at: target, count: 30 + 60 * k, spread: .05, velocity: { x: direction.x * push, y: .6 + .5 * k, z: direction.z * push }, speed: 2.4, cone: 1.15, life: [.35, .95], colour: options.colour });
+        gpu!.burst('needle', { at: target, count: 10 + 20 * k, spread: .05, velocity: { x: direction.x * push * .8, y: .8 + .5 * k, z: direction.z * push * .8 }, speed: 2, cone: 1.3, life: [.4, .9], colour: options.colour });
       } else particles.burst('spark', target, Math.round(6 + 12 * k), { direction, cone: .95, spread: .1 });
       if (options.guarded) particles.burst('ward', target, 1);
       const feet = options.feet ?? { x: target.x, y: groundAt(target.x, target.z), z: target.z };
       particles.burst('dust', { x: feet.x, y: feet.y + .05, z: feet.z }, Math.round(4 + 5 * k), { spread: .35, flat: true, speed: 1.3 });
       if (options.gum) { effects.mark('gum', feet, .25 + .1 * k); particles.burst('goo', target, Math.round(4 + 5 * k), { spread: .2, direction, cone: 1.1 }); particles.burst('spore', target, 8, { spread: .3 }); }
+    },
+    /**
+     * Zarpazo sangriento (Papagato): Haru's claws tear three lines of light across whoever it hits
+     * (`clawLines`), one a breath after another, round `at` (in front of their body), white to coral
+     * as Sangrado's scratches (fights show no blood). `right` and
+     * `up` are the screen's there.
+     */
+    claw(at: Vec, axes: { right: Vec; up: Vec }, size = 1) {
+      const { right, up } = axes;
+      const point = (p: { x: number; y: number }) => ({ x: at.x + right.x * p.x + up.x * p.y, y: at.y + right.y * p.x + up.y * p.y, z: at.z + right.z * p.x + up.z * p.y });
+      for (const line of clawLines(size)) {
+        // Colours that cover what is behind them more than they add to it, so they read on a flash.
+        trails.comet(point(line.from), point(line.to), CLAW_COLOURS, .07, { arc: 0, delay: line.delay, width: .055 * size, life: .55, taper: .8, intensity: 1.6, core: .25, additive: .3 });
+        later.push({ left: line.delay + .07, then: () => particles.burst('spark', point(line.to), 4, { spread: .04, colour: CLAW_COLOURS }) });
+      }
     },
     /** A cure: light rises from a heart-shaped curve (a cardioid) round the feet and spirals up the body. */
     heal(target: Vec, height = 1.6) {
@@ -1162,6 +1192,25 @@ export function createEffects(app: pc.Application) {
         stop() { fire.left = 0; },
       };
     },
+    /**
+     * Bip (Tecnópata, src/bip.ts) coming out of its wearer or going back into them: cyan nanites
+     * stream from `from` to the node `to`, drawn in by a pull that moves only them, and cling and
+     * fade as they arrive. With `model` (a fighter) they rise off its own parts; otherwise they leave
+     * a little ball at `from`. Returns false where it cannot play (no GPU, not in a fight).
+     */
+    nanites(o: { from: Vec; to: pc.GraphNode; model?: pc.Entity; count?: number; seconds?: number }) {
+      if (!gpu || !gpuOn) return false;
+      const seconds = o.seconds ?? .75, who = fighterIndex(o.model), count = o.count ?? 260;
+      const pull = gpu.volume({ shape: 'sphere', mode: 'attract', strength: 75, swirl: 14, range: 3, bounce: 0, distance: .04, kinds: ['nanite'], follow: o.to, size: { x: .1, y: .1, z: .1 } });
+      later.push({ left: seconds + .35, then: () => pull.remove() });
+      // Thrown towards where they go, so they stream there at once; the pull brings them in.
+      const to = o.to.getPosition(), throwAt = 1.4 / seconds;
+      const velocity = { x: (to.x - o.from.x) * throwAt, y: (to.y - o.from.y) * throwAt, z: (to.z - o.from.z) * throwAt };
+      const light = { intensity: 2.2, range: 2.4 };
+      if (o.model && who >= 0) gpu.burst('nanite', { at: o.from, count, shape: 'surface', fighter: who, above: .2, outward: .4, velocity, speed: .6, life: [seconds * .75, seconds], light });
+      else gpu.burst('nanite', { at: o.from, count, spread: .12, velocity, speed: .5, cone: .4, life: [seconds * .75, seconds], light });
+      return true;
+    },
     /** Out of the fight in a puff of smoke and a few stars. */
     /**
      * `model` comes apart from its feet up into its own colours and pale light that streams up, and
@@ -1177,12 +1226,24 @@ export function createEffects(app: pc.Application) {
       colours.forEach(colour => particles.burst('confetti', centre, 18, { spread: 2.2, flat: true, colour }));
     },
     /**
+     * A fight takes its stage round `centre` (src/game.ts), or with nothing it is over. One moved to
+     * a pocket (src/pocket.ts, far from the place) brings the pocket's floor and walls (`world`,
+     * src/arena.ts `pocketWorld`): until it ends, particles land, bounce and leave marks on them.
+     */
+    setFightStage(next?: { centre: Vec; world?: ParticleWorld }) {
+      const before = worldNow();
+      stage = next && { centre: { x: next.centre.x, y: next.centre.y, z: next.centre.z }, world: next.world };
+      if (worldNow() !== before) { particles.setWorld(worldNow()); marks.setWorld(worldNow()); }
+      // The GPU's floor is baked as a fight starts; if the engine is already running, again now.
+      if (stage && gpuOn) bakeFloor(stage.centre);
+    },
+    /**
      * A new scene: floors, walls and whatever stands on its cells become what particles collide
      * with, its sun lights them, and its air starts drifting.
      */
     setScene(environment: Environment, scenery: SceneShape & { root: pc.Entity }) {
       bounds = sceneWorld(environment, scenery);
-      particles.setWorld(bounds); marks.setWorld(bounds);
+      particles.setWorld(worldNow()); marks.setWorld(worldNow());
       sun = (scenery.root.findComponents('light') as pc.LightComponent[]).filter(l => l.type === 'directional').sort((a, b) => b.intensity - a.intensity)[0];
       air.forEach(a => a.emitter.remove());
       auras.forEach(aura => { aura.left = 0; });
@@ -1562,7 +1623,7 @@ export function createEffects(app: pc.Application) {
       if (fighting && !view.fight) fadeMarks();
       // The GPU's fight particles: a fight starting bakes its floor; one ending empties them.
       const wantGpu = !!gpu && animate && (!!view.fight || disintegrations.busy);
-      if (wantGpu && !gpuOn) gpu!.setFloor(view.focus, 16, (x, z) => groundAt(x, z));
+      if (wantGpu && !gpuOn) bakeFloor(stage?.centre ?? view.focus);
       if (!wantGpu && gpuOn) { dropLattices(); dropCrystals();  fires.forEach(unGpu); pulses.forEach(p => p.field.remove()); pulses.length = 0; gpu!.clear(); fightersNow = []; }
       gpuOn = wantGpu;
       fighting = !!view.fight;
@@ -1654,6 +1715,21 @@ export function tint(hex: string, k: number) {
 }
 export type Effects = ReturnType<typeof createEffects>;
 
+/** Zarpazo sangriento's lines: white at the claw, coral behind it, as Sangrado's scratches of light (no blood). */
+export const CLAW_COLOURS = ['#fff0ea', '#ff8a72'] as const;
+/**
+ * Zarpazo sangriento's three claw lines (`effects.claw`) on the plane facing the camera round where
+ * it lands, x right and y up, in metres for a size of 1: side by side, from top right to bottom left
+ * as a paw swipes, the middle one longest, each starting a breath after the one before.
+ */
+export function clawLines(size = 1) {
+  // Down and to the left, and square to it.
+  const along = { x: -.45, y: -.893 }, across = { x: .893, y: -.45 }, gap = .26 * size;
+  return [-1, 0, 1].map((k, i) => {
+    const half = (k ? .36 : .44) * size, c = { x: across.x * k * gap, y: across.y * k * gap };
+    return { from: { x: c.x - along.x * half, y: c.y - along.y * half }, to: { x: c.x + along.x * half, y: c.y + along.y * half }, delay: i * .025 };
+  });
+}
 /** How tall whatever stands on a solid cell is, by what the plan draws there (metres). */
 const PLAN_TOPS: Record<string, number> = { '#': 2.6, W: 2.6, D: 2.6, G: 2.6, ' ': 2.6, o: .8, '=': 1, '/': 1.2 };
 /** The scene as particles feel it: its floors from the scenery, its walls and things from the grid. */
@@ -1674,7 +1750,7 @@ export function sceneWorld(environment: Environment, scenery: SceneShape): Parti
   return {
     x0: origin.x - .5, z0: origin.z - .5, x1: origin.x + cols - .5, z1: origin.z + rows - .5,
     // Past the edge of the model is the backdrop far below.
-    outside: -.95,
+    outside: BACKDROP,
     ground: (x, z) => scenery.waterHeight?.(x, z) ?? scenery.groundHeight(x, z),
     cells: { x: origin.x, z: origin.z, cols, rows, top },
   };

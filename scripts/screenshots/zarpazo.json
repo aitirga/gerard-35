@@ -1,0 +1,14 @@
+{
+  "title": "Zarpazo sangriento",
+  "description": "Zarpazo sangriento (Papagato, src/effects.ts `claw`): Haru pounces on a dog and her claws tear three white-coral lines across its body (Sangrado's scratches of light, no blood), from top right to bottom left, one a breath after another (`clawLines`); the blow under them stays small and throws coral sparks, and the dog flashes a soft coral. Gerard wears Papagato in the fight tester, on the Passatge Maresme. Run it with --gpu.",
+  "steps": [
+    { "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D" },
+    { "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === 'gerard'", "timeout": 120000 },
+    { "wait": 1500 },
+    { "press": "Digit2", "gap": 500 },
+    { "shot": "habilidades", "delay": 300, "caption": "Papagato's skills: Zarpazo sangriento first" },
+    { "press": "Digit1", "gap": 400 },
+    { "press": "Enter", "gap": 0 },
+    { "record": "zarpazo", "seconds": 1.2, "fps": 30, "tiles": 12, "caption": "Haru pounces and her claws tear three white-coral lines across the dog, one a breath after another, with coral sparks; Sangrado × 2" }
+  ]
+}

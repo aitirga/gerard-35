@@ -96,10 +96,10 @@ friends' stories and the second round carry it.
   with Gerard when he helps them. It makes the party stronger and weakens the Queen's palace.
 - Each ánima's design, levels and shared mechanics: `docs/animas/` (one folder per ánima).
 - **Every person helped gives a light**: it flashes out of them and goes into Gerard and Aitor,
-  and at home it waits in a jar. Letting one out holds the Queen back a day. Nuria's household
+  and at home it waits in a jar. Nuria's household
   gives two, one for Gerard and one for Aitor: Nuria's and Uri's (Nil goes in his arms). The
-  party counts the ones it still has as its **Ecos de luz**, to spend on improving its ánimas
-  (idea: `docs/ideas.md`).
+  party counts them as its **Ecos de luz**, which improve its ánimas, put in and taken back only
+  at the jar (`docs/animas/README.md` § Ecos de luz).
 - **Papagato** is Nuria's ánima (Cardedeu): it brings Haru and Yuki, the cats, to fight beside the
   party. In design (`docs/quests/nuria.md`, `docs/animas/papagato/`).
 - First round: Gerard restores what the Queen popped, and the ánimas he collects are **grey**:
@@ -185,8 +185,8 @@ friends' stories and the second round carry it.
   game; beaten, it drops to its knees and Uri comes down with Nil. Uri is himself again, Papagato stays, and Haru and Yuki come to live in the
   Meridiana flat.
 - **The lights**: every person helped gives a small light, what makes them who they are. Nuria's
-  goes into Gerard and Uri's into Aitor, and then they wait in a glass jar at home. Let out, a light
-  flies to the castle and pushes her back a day; spent ones stay in the jar, dark.
+  goes into Gerard and Uri's into Aitor, and then they wait in a glass jar at home, dark while they
+  are in an ánima.
 
 ## Running threads
 

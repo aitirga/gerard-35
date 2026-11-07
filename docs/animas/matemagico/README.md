@@ -61,15 +61,15 @@ and half of *Punto débil*. A foe that already carries the mark cannot take it a
 
 ## Foc Binari: the look
 
-Gerard raises his hand and two streams of fire leave it for one foe, braided round each other
+Gerard raises his hand, his circle opens (§ Casting) and two streams of fire leave it for one foe, braided round each other
 (one orange to red, one gold to orange, half a turn apart), and land a hair apart: a quick
 **tac-tac** (decided 2026-11-05). The zero, gold, lands first in a spray of gold sparks and barely
 holds the picture; the one leaves 0.085 s after it (`CAST_GAP`, `src/battle-motion.ts`) and lands
 with the fire and a full hit-stop. Each has its flash, its sound and its number (`−8` *Foc Binari*,
 then `−9`), and the fire it lights says so in orange above them (*¡Quemado!*, a status pop). The
 damage is one hit's, shared between the two (`split: 2` in `SKILLS`), so the balance stays where
-it was. Timing: the hand rises (0.26 s), the streams fly (0.42 s), the zero at 0.68 s, the one at
-0.765 s. The one catches on the foe and it starts to burn (the Quemado look: a flame climbing the body that grows with each level). The home lights flicker orange (`docs/home-lights.md`).
+it was. Timing: the hand rises and the circle opens (0.38 s), the streams fly (0.42 s), the zero at 0.8 s,
+the one at 0.885 s. The one catches on the foe and it starts to burn (the Quemado look: a flame climbing the body that grows with each level). The home lights flicker orange (`docs/home-lights.md`).
 
 ## Interface: a blueprint
 
@@ -86,6 +86,47 @@ status sheet and the class banner in `src/style.css`:
 - The status sheet in the same blueprint, with its own ∑.
 - The unlock banner as a notebook page, with *1 + 1 = 10* above the name.
 
+## Casting
+
+Decided 2026-11-05 (`src/math-cast.ts`). Matemágico does not run up and hit: he stays where he is and
+raises a hand. **One of the zeros circling him** (the nearest, `takeZero` in `src/anima-looks.ts`)
+leaves the ring and flies to his fingertip, rounding and taking the spell's colour on the way, and
+opens there into **his circle**, which takes its 36 evenly spaced ticks spinning fast and slowing like
+a dial, with a finer ring inside it turning the other way, half facing the camera so it reads as a
+circle. It is smaller on the boy of chapter 1, and a dark line runs under it so that it also shows on a
+bright floor. As the spell leaves, a new zero comes out in the place of the one that left. Every spell of
+his that throws something starts with it, and what it throws leaves its middle:
+
+| Action | Colour | What leaves the circle |
+| --- | --- | --- |
+| **Atacar** (`∅`) | Gold | The ball, at 0,44 s; it lands 0,4 s later |
+| Atacar · Agua | Blue | The ball, dripping beads, as the rim does |
+| Atacar · Fuego | Orange | The ball, with embers and crackle |
+| Atacar · Eléctrico | Yellow | The ball, with bolts from the rim to it and off it as it flies |
+| **Ángulo exacto** | Gold | The ball; it leaves its mark as it lands |
+| **Foc Binari** | Orange | The two streams, at 0,38 s, embers off the rim |
+| **Cardioide** | Green | Its comet, at 0,38 s, to whoever it cures |
+
+**The ball**: particles gather in the circle's middle as the rim's light runs in, and it leaves with a
+flash and a ring thrown off the circle, faster all the way. Round it, very small, float **0, e, 1, π**,
+always facing whoever looks; when it bursts they are thrown off and fade, and the sparks of its hit
+take its colour. Análisis Parálisis throws nothing, so it has no circle, and the duals keep their own
+drawing. It only changes the picture: Atacar is still a physical blow. Only the ball is particles
+(GPU); the circle and the signs are quads of light. In the fx lab (`just dev-fx`), under *Atacar de
+Matemágico*; `just screenshots atacar-lanzado --gpu --scale 2` for the clips.
+
+## Elements for Atacar
+
+Not there from the start: each one is bought with an eco de luz at the jar at home (`../README.md` §
+Ecos de luz). With any bought, wearing Matemágico, Gerard's Atacar block splits in one segment per
+element and one for none (`∅`), and the top face button (**X on a Switch pad**, X on the keyboard)
+walks them, on the commands or while aiming Atacar; a click picks one. The choice stays until
+changed, and sleeps while he wears another ánima.
+
+Same damage, free, and it lights **no status of its own** (it does not burn or freeze): a little
+burst of it where it lands, and it turns what the foe already carries, whoever put it there.
+`docs/combat.md` § Reacciones entre elementos. Nothing in the menu says which one reacts with what.
+
 ## Duals
 
 Built with Papagato (2026-11-05, `DUALS` in `src/battle.ts`; how they fire in `../README.md` §
@@ -94,7 +135,7 @@ Combined skills):
 | Dual | Matemágico + Papagato | Levels | Maná | Description |
 | --- | --- | --- | --- | --- |
 | **Zarpazos de fuego** | **Foc Binari** + Zarpazos | 1 · 2 | 1 + 2 | `Daño leve físico de tipo fuego a un enemigo. Golpea ocho veces. Cada golpe puede quemarlo o subir su fuego.` |
-| **Punto débil** | **Ángulo exacto** + Zarpazo de Haru | 2 · 1 | 1 + 1 | `Daño leve físico a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
+| **Punto débil** | **Ángulo exacto** + Zarpazo sangriento | 2 · 1 | 1 + 1 | `Daño leve físico a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
 
 Gerard draws the figure and Haru strikes it: eight claws round a circle of digits from `000` to
 `111`, each one that lands on a foe without layers flipping a coin for fire; or a protractor and a

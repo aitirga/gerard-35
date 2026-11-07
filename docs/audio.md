@@ -238,12 +238,14 @@ the fight's screen knows, the screen does (`sound`).
 | `think` | *Análisis Parálisis*, *Ángulo exacto*. |
 | `cast-soft`, `heal` | *Cardioide*: gathering and curing; `heal` also *Ronroneo de Yuki*. |
 | `meow`, `meow-soft` | Haru or Yuki going: every Papagato skill (`meow-soft`, Yuki's purr). |
-| `claw` | *Zarpazo de Haru*, each of *Zarpazos*' claws, *Las dos a la vez*. |
+| `claw` | *Zarpazo sangriento*, each of *Zarpazos*' claws, *Las dos a la vez*. |
 | `claw-deep` | *Zarpa en la llaga*. |
 | `bleed` | Sangrado at the end of a round. |
 | `peel` | A layer comes off an onion. |
 | `slam` | A big onion or a palace guard coming down (an Aplastón too); Vertitrón's blows on both (Barrido, and with `crack` its Rayo terrorífico). |
 | `bark`, `spit`, `splash`, `glitch`, `gust` | A dog; the minion; the dishes; the arcade ghosts; Vertitrón. |
+| `zap` | Atacar · Eléctrico landing, and its Tormenta. Agua and Fuego use `splash` and `fire-hit`, softer; their reactions, `fizzle` and `burn`. |
+| `think`, then `cast-soft` (`fire-cast` with Fuego) | Matemágico's thrown Atacar and Ángulo exacto: the circle opening, then the ball leaving (`spellLaunch`). |
 | `game-over` | A fantasmita's «GAME OVER» (only its blast: Game Over is no longer a monster). |
 | `stat-up`, `stat-down` | Stats going up or down (`BattleEffect.stats`, with `src/stat-fx.ts`). |
 | `ko`, `dissolve` | Someone falls; a beaten foe coming apart (src/disintegrate.ts). |

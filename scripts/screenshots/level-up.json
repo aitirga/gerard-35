@@ -3,14 +3,14 @@
   "description": "docs/animas/README.md § Levels, docs/combat.md § Victoria. The fight tester (La Cebolla y los suyos, Gerard in Matemágico and Aitor in Papagato, both at level 1) jumps to «won-level»: enough EXP for both ánimas to reach level 2. A quick Enter, and a pad's B and A, right as the screen opens do nothing: with a level reached, Seguir stays dim and deaf. Each level stamps in with a sweep of light and its sound; then what each ánima learned takes the screen, one band per ánima (HABILIDADES NUEVAS, the two skills side by side, their names landing with a glint, rays turning behind), and only once it has all shown does Seguir light up.",
   "steps": [
     {
-      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22fisico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22escolta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22escolta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
     },
     {
       "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
       "timeout": 120000
     },
     {
-      "eval": "window.ui = window.gerard.battleUI; ui.setAnimas(['matemagico', 'papagato', 'fisico'], {}); ui.refresh?.()"
+      "eval": "window.ui = window.gerard.battleUI; ui.setAnimas(['matemagico', 'papagato', 'tecnopata'], {}); ui.refresh?.()"
     },
     {
       "wait": 800

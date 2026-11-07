@@ -12,7 +12,7 @@ shared pool called Ánima, were tried before):
   (`MANA_POINTS` in `src/battle.ts`). The worn ánima's pool is `Combatant.secondary`; the others
   wait in `Combatant.mana` until worn again. Bernat wears none and has none; nobody has maná
   without an ánima on.
-- A skill spends its cost: *Foc Binari* 1, *Zarpazo de Haru* 1, *Yuki se esconde* 1,
+- A skill spends its cost: *Foc Binari* 1, *Zarpazo sangriento* 1, *Yuki se esconde* 1,
   *Zarpa en la llaga* 2, *Las dos a la vez* 2.
 - **Resting ánimas recover**: at the end of each round every ánima not worn at any moment of it
   gets 1 back (`REST_CHARGE`; `Combatant.worn` keeps which were worn).
@@ -23,7 +23,8 @@ shared pool called Ánima, were tried before):
   *Sin maná*; the details box shows its cost as *MANÁ ●●*.
 
 Still ideas from the proposal below: pools that grow with levels, the "fresh entry" and "echo"
-ideas, a companion's line when a pool is empty, and lights from the jar adding points.
+ideas, and a companion's line when a pool is empty. Lights from the jar do add points now, one
+ánima at a time, not for a day (Maná +1 and +2, `docs/animas/README.md` § Ecos de luz).
 
 ## The proposal (2026-10-25)
 
@@ -76,8 +77,6 @@ Not part of the base proposal; test once the base works.
   lingers, Yuki's Defensa boost lasts one more round). Changing leaves a trace.
 - **Combined skills** (`docs/animas/README.md` § Combined skills) spend points from both
   ánimas, one from each wearer: it makes wearing complementary ánimas a plan between players.
-- **Lights** from the jar (`docs/home-lights.md`) could raise every pool by 1 for a day instead
-  of (or as well as) a stat bonus.
 
 ## How it feeds exploration
 

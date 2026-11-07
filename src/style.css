@@ -130,7 +130,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .turn-dot { width: 6px; height: 6px; background: var(--battle-gold); transform: rotate(45deg); }
 .turn-label { font-size: 13px; font-weight: 600; }
 .turn-meta { margin-left: auto; color: var(--battle-gold); font-size: 8px; letter-spacing: .18em; }
-.command-deck { display: flex; align-items: start; transform: skewX(-5deg); }
+.command-deck { position: relative; display: flex; align-items: start; width: max-content; transform: skewX(-5deg); }
 .commands { display: grid; gap: 6px; width: 340px; flex-shrink: 0; align-content: start; }
 /* The chosen command is told by its colour and by stepping right, never by a frame around it. */
 .command { position: relative; background: #f0efdf; color: var(--battle-ink); box-shadow: 5px 5px 0 #071e2266; transition: background .25s, transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s, filter .3s; }
@@ -153,11 +153,31 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .command-panel[data-sheet="dual"] .command[data-command="skill"]::after { opacity: 0; }
 .battle-dock[data-dock="2"] .command[data-command="dual"]::after { right: auto; left: -16px; border-left-color: transparent; border-right-color: var(--battle-gold); }
 .command-panel[data-flyout] .command:not(.expanded) { filter: brightness(.62) saturate(.6); transform: translateX(-4px); }
-.skill-flyout { flex-shrink: 0; width: 0; margin-left: 0; margin-top: var(--flyout-top, 0); padding: 0 6px 6px 0; overflow: hidden; opacity: 0; transition: width .45s cubic-bezier(.2,.8,.2,1), margin-left .45s cubic-bezier(.2,.8,.2,1), opacity .2s; }
+/* The sheet slides out of its command and grows upwards from the command's bottom edge, over the
+   scene (battle-ui `choose` sets --flyout-bottom), so the dock never moves however long it is. */
+.skill-flyout { position: absolute; z-index: 2; left: 100%; bottom: var(--flyout-bottom, 0); width: 0; margin-left: 0; padding: 0 6px 6px 0; overflow: hidden; opacity: 0; transition: width .45s cubic-bezier(.2,.8,.2,1), margin-left .45s cubic-bezier(.2,.8,.2,1), opacity .2s; }
 .command-panel[data-flyout] .skill-flyout { width: 316px; margin-left: 22px; opacity: 1; }
 .skill-sheet { box-sizing: border-box; width: 310px; min-height: 150px; display: flex; flex-direction: column; gap: 6px; padding: 12px 12px 6px; background: var(--battle-ink); border-left: 4px solid var(--battle-gold); box-shadow: 6px 6px 0 #071e2288; }
 .skill-sheet > .battle-kicker { padding: 2px 4px 4px; transform: skewX(5deg); }
-.skill-list { display: grid; gap: 5px; }
+.skill-list { position: relative; display: grid; gap: 5px; }
+/* More skills than fit: a window of a few that slides a row at a time as the cursor moves (battle-ui
+   `fitSkills`, `keepInView`), with no scrollbar; the edges where more wait fade, under a ▲ / ▼. */
+.skill-list[data-window] { overflow: hidden; padding-inline: 12px; margin-inline: -12px; scroll-behavior: smooth; overscroll-behavior: contain; }
+.skill-list[data-above] { -webkit-mask: linear-gradient(#0004, #000 26px); mask: linear-gradient(#0004, #000 26px); }
+.skill-list[data-below] { -webkit-mask: linear-gradient(to top, #0004, #000 26px); mask: linear-gradient(to top, #0004, #000 26px); }
+.skill-list[data-above][data-below] { -webkit-mask: linear-gradient(#0004, #000 26px, #000 calc(100% - 26px), #0004); mask: linear-gradient(#0004, #000 26px, #000 calc(100% - 26px), #0004); }
+/* The rail: not a scrollbar, a quiet gauge by the sheet's thick edge (left, or right in Aitor's mirrored
+   dock). One segment per skill, dim; the ones in sight lit in the ánima's colour, sliding with the list. */
+.skill-window { position: relative; }
+.skill-rail { --gap: 3px; position: absolute; top: 0; bottom: 0; left: -8px; width: 3px; pointer-events: none; background: repeating-linear-gradient(to bottom, color-mix(in srgb, var(--battle-gold) 24%, transparent) 0 calc(100% / var(--n, 1) - var(--gap)), transparent 0 calc(100% / var(--n, 1))); }
+.skill-rail::after { content: ''; position: absolute; left: -.5px; right: -.5px; top: calc(100% * var(--start, 0) / var(--n, 1)); height: calc(100% * var(--size, 1) / var(--n, 1)); background: repeating-linear-gradient(to bottom, var(--battle-gold) 0 calc(100% / var(--size, 1) - var(--gap)), transparent 0 calc(100% / var(--size, 1))); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--battle-gold) 70%, transparent)); transition: top .35s cubic-bezier(.2,.8,.2,1); }
+.skill-rail[hidden] { display: none; }
+.battle-dock[data-dock="2"] .skill-rail { left: auto; right: -8px; }
+@media (prefers-reduced-motion: reduce) { .skill-rail::after { transition: none; } }
+.skill-more { display: block; height: 12px; margin: -3px 0; font: 700 9px/12px 'JetBrains Mono', monospace; letter-spacing: .14em; text-align: center; color: var(--battle-gold); opacity: 0; transform: skewX(5deg); transition: opacity .25s; }
+.skill-more[data-on] { opacity: .8; }
+.skill-more[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .skill-list[data-window] { scroll-behavior: auto; } }
 .skill-list button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; background: #20372f; color: var(--battle-paper); border: 1px solid #ffffff22; text-align: left; transition: background .2s, border-color .2s, transform .25s; }
 .skill-list button > * { transform: skewX(5deg); }
 .command-panel[data-flyout] .skill-list button { animation: flyout-item .4s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(.12s + var(--i) * .06s); }
@@ -647,7 +667,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
   color: var(--ui-paper); background: var(--ui-surface); border: 1px solid var(--ui-line); border-top: 3px solid var(--lamp, var(--ui-gold)); border-radius: 2px;
   box-shadow: var(--ui-shadow), 0 -18px 60px -20px var(--lamp, transparent); backdrop-filter: blur(12px); animation: encounter-right .25s ease both; outline: none; }
 #lamp-dial[data-on="false"] { --lamp: #50605a; }
-#hud[data-lamp] #interact { visibility: hidden; }
+#hud[data-lamp] #interact, #hud[data-jar] #interact { visibility: hidden; }
+#hud[data-jar] > :not(#jar-panel) { visibility: hidden; }
 #lamp-dial header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 #lamp-dial header strong { display: block; margin-top: 3px; font-size: 22px; letter-spacing: -.01em; }
 #lamp-dial [data-power] { min-width: 104px; padding: 8px 12px; border: 0; border-radius: 999px; font: 600 12px/1 inherit; color: var(--ui-ink); background: var(--lamp); box-shadow: 0 0 18px -2px var(--lamp); cursor: pointer; }
@@ -1027,6 +1048,12 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .anima-skills strong { font-size: 15px; }
 .anima-skills small { align-self: center; font-size: 9px; letter-spacing: .12em; color: var(--sheet-accent); }
 .anima-skills span { grid-column: 1 / -1; font-size: 12px; color: var(--ui-muted); }
+/* Habilidades dúo descubiertas, under the lists, for the ánima under the cursor: whom each is made with in their colour, then its two skills. */
+.anima-column { display: grid; align-content: start; gap: 14px; min-width: 0; }
+.anima-duos-card { padding: 14px 18px 8px; border: 1px solid color-mix(in srgb, var(--scarf) 35%, transparent); border-radius: 14px; background: radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--scarf) 12%, transparent), transparent 60%), #ffffff05; animation: detail-in .25s ease-out both; }
+.anima-duos-card .anima-group-head small { color: var(--scarf); }
+.anima-duos small { color: var(--chip); }
+.anima-duos .anima-duo-parts { font: 500 10px/1.4 'JetBrains Mono', monospace; letter-spacing: .04em; color: color-mix(in srgb, var(--chip) 55%, var(--ui-muted)); }
 
 /* Objetos: one bag for the whole party. */
 .items-page { display: flex; flex-direction: column; gap: 14px; }
@@ -1233,7 +1260,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-dock[data-dock="2"] .dock-wait { border-left: 0; border-right: 3px solid var(--battle-gold); text-align: right; }
 .battle-dock[data-dock="2"] .turn-heading { flex-direction: row-reverse; }
 .battle-dock[data-dock="2"] .turn-meta { margin-left: 0; margin-right: auto; }
-.battle-dock[data-dock="2"] .command-deck { flex-direction: row-reverse; transform: skewX(5deg); }
+.battle-dock[data-dock="2"] .command-deck { flex-direction: row-reverse; margin-left: auto; transform: skewX(5deg); }
+.battle-dock[data-dock="2"] .skill-flyout { left: auto; right: 100%; }
 .battle-dock[data-dock="2"] .skill-flyout { padding: 0 0 6px 6px; }
 .battle-dock[data-dock="2"] .command-panel[data-flyout] .skill-flyout { margin-left: 0; margin-right: 22px; }
 .battle-dock[data-dock="2"] .skill-sheet { border-left: 0; border-right: 4px solid var(--battle-gold); }
@@ -1247,26 +1275,18 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-dock[data-dock="2"] .skill-list button:is(:hover, :focus) { transform: translateX(-10px); }
 .battle-dock[data-dock="2"] .command-back:is(:hover, :focus) { transform: skewX(5deg) translateX(-6px); }
 .battle-dock[data-dock="2"] .command-help { text-align: right; }
-/* Each half of a split fight carries its own player's ánima: Matemágico's ∑ marks only that side. */
-.battle-side { position: absolute; top: 0; bottom: 0; width: 50%; display: none; overflow: hidden; pointer-events: none; }
-#battle[data-split] .battle-side { display: block; }
-.battle-side[data-side="1"] { left: 0; }
-.battle-side[data-side="2"] { right: 0; background: linear-gradient(to top, #ffffff1c, transparent 40%) 0 0 / 1px 100% no-repeat; }
-.battle-side[data-anima="matemagico"] { background-color: #0f1a2c33; }
-.battle-side[data-anima="matemagico"]::after { content: '∑'; position: absolute; right: 2%; bottom: -4%; transform: rotate(-8deg); font: italic 400 30vw/1 Georgia, 'Times New Roman', serif; color: #f3cf78; opacity: .07; }
-#hud[data-class="matemagico"] #battle[data-split]::after { display: none; }
 .dev-badge { position: absolute; top: 30px; left: 50%; margin: 0; padding: 6px 12px; transform: translateX(-50%); border: 1px dashed #ff8fbf; background: #1b1216b3; color: #ff8fbf; font-size: 9px; font-weight: 600; letter-spacing: .18em; }
 #battle[data-entering] .battle-dock .party-card, #battle[data-entering] .anima-switch { animation: encounter-left .55s .7s both; }
 #battle[data-entering] .battle-dock[data-dock="2"] .party-card, #battle[data-entering] .battle-dock[data-dock="2"] .anima-switch { animation-name: encounter-right; }
 /* Short screens: while a command is open, the dock folds its card so the list fits under the title. */
 @media (max-height: 820px) {
   .battle-dock .command-trigger { min-height: 40px; padding-block: 7px; }
-  .battle-dock:has(.command.expanded) .anima-switch, .battle-dock:has(.command.expanded) .turn-heading { display: none; }
-  .battle-dock:has(.command.expanded) .party-card { padding-block: 6px; }
-  .battle-dock:has(.command.expanded) .vitals { grid-template-columns: 44px minmax(0, 1fr); }
-  .battle-dock[data-dock="2"]:has(.command.expanded) .vitals { grid-template-columns: minmax(0, 1fr) 44px; }
-  .battle-dock:has(.command.expanded) .vitals-avatar { width: 44px; height: 44px; }
-  .battle-dock:has(.command.expanded) .vitals-waves { height: 18px; }
+  .battle-dock:has(.command.expanded:not([data-command="skill"], [data-command="dual"])) .anima-switch, .battle-dock:has(.command.expanded:not([data-command="skill"], [data-command="dual"])) .turn-heading { display: none; }
+  .battle-dock:has(.command.expanded:not([data-command="skill"], [data-command="dual"])) .party-card { padding-block: 6px; }
+  .battle-dock:has(.command.expanded:not([data-command="skill"], [data-command="dual"])) .vitals { grid-template-columns: 44px minmax(0, 1fr); }
+  .battle-dock[data-dock="2"]:has(.command.expanded:not([data-command="skill"], [data-command="dual"])) .vitals { grid-template-columns: minmax(0, 1fr) 44px; }
+  .battle-dock:has(.command.expanded:not([data-command="skill"], [data-command="dual"])) .vitals-avatar { width: 44px; height: 44px; }
+  .battle-dock:has(.command.expanded:not([data-command="skill"], [data-command="dual"])) .vitals-waves { height: 18px; }
 }
 
 /* ——— Chapter 2: Barcelona's network map (src/city-map.ts), the station map and the TV news ——— */
@@ -1623,7 +1643,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .dual-halves { position: relative; }
 .dual-halves::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; translate: -50% 0; background: #fff8ea; box-shadow: 0 0 16px 5px #ffd27a; opacity: 0; pointer-events: none; }
 .dual-banner[data-armed] .dual-half[data-anima="matemagico"] { animation: dual-meet .5s .05s cubic-bezier(.2,1.25,.4,1) both; --from: -80px; }
-.dual-banner[data-armed] .dual-half[data-anima="papagato"] { animation: dual-meet .5s .05s cubic-bezier(.2,1.25,.4,1) both; --from: 80px; }
+.dual-banner[data-armed] .dual-half[data-anima="papagato"], .dual-banner[data-armed] .dual-half[data-anima="tecnopata"] { animation: dual-meet .5s .05s cubic-bezier(.2,1.25,.4,1) both; --from: 80px; }
 .dual-banner[data-armed] .dual-halves::after { animation: dual-seam .55s .32s ease-out both; }
 .dual-banner[data-armed] h2 { animation: dual-shine .8s .3s ease-out both; }
 .dual-banner[data-armed] header { animation: dual-breathe 1.6s .6s ease-in-out infinite; }
@@ -1663,3 +1683,190 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .dual-half .dual-pip-group i { width: 10px; height: 10px; }
 .dual-half[data-anima="papagato"] .dual-pip-group i { box-shadow: 0 0 0 1px #2a232033; }
 .skill-info-cost .dual-pips { margin-left: 6px; vertical-align: middle; }
+
+/* Tecnópata (docs/animas/tecnopata/): Aitor's own. The fight seen through Bip's camera, a drone's HUD:
+   dark glass with cut corners and a cyan rail, monospaced readouts in capitals, scan lines, the
+   viewfinder's corner brackets round his half of the screen and a reticle where the other ánimas
+   keep their watermark. Cyan on ink: a screen's colour, never the Queen's pink or possession's violet. */
+:root {
+  --tp-cyan: #4fe0ff;
+  --tp-scan: repeating-linear-gradient(0deg, #4fe0ff0c 0 1px, transparent 1px 4px);
+  --tp-cut: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  /* The two cut corners' edges, drawn on the background (a clip path cuts any border). */
+  --tp-corners: linear-gradient(135deg, transparent 6.4px, #4fe0ffaa 6.4px 7.8px, transparent 7.8px) 0 0 / 10px 10px no-repeat, linear-gradient(315deg, transparent 6.4px, #4fe0ffaa 6.4px 7.8px, transparent 7.8px) 100% 100% / 10px 10px no-repeat;
+  --tp-reticle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%234fe0ff' stroke-width='2'%3E%3Ccircle cx='100' cy='100' r='70'/%3E%3Ccircle cx='100' cy='100' r='44' stroke-dasharray='6 8'/%3E%3Ccircle cx='100' cy='100' r='5' fill='%234fe0ff'/%3E%3Cpath d='M100 8v40M100 152v40M8 100h40M152 100h40M160 40l-12 12M40 160l12-12'/%3E%3Cpath d='M100 30v8M30 100h8' stroke-width='4'/%3E%3C/svg%3E");
+}
+.battle-dock[data-anima="tecnopata"] { --ui-gold: #4fe0ff; --battle-gold: #4fe0ff; --ui-paper: #dff7fd; --battle-paper: #dff7fd; --ui-ink: #071319; --battle-ink: #071319; --ui-muted: #86aab5; --ui-line: #4fe0ff38; }
+/* Commands: panels of dark glass with cut corners, a cyan rail on the left, labels as readouts. */
+.battle-dock[data-anima="tecnopata"] .command { clip-path: var(--tp-cut); background: var(--tp-corners), linear-gradient(90deg, #4fe0ff 0 3px, transparent 3px), var(--tp-scan), linear-gradient(100deg, #0c2430f2, #081820e0); color: #dff7fd; box-shadow: inset 0 0 0 1px #4fe0ff38; }
+.battle-dock[data-anima="tecnopata"] .command:has(.command-trigger:hover), .battle-dock[data-anima="tecnopata"] .command:has(.command-trigger:focus) { background: var(--tp-corners), linear-gradient(90deg, #4fe0ff 0 5px, transparent 5px), var(--tp-scan), linear-gradient(100deg, #13465c, #0c2c3c); box-shadow: inset 0 0 0 1px #4fe0ffaa, inset 0 0 26px #4fe0ff33; }
+.battle-dock[data-anima="tecnopata"] .command.expanded { background: var(--tp-scan), #4fe0ff; color: #071319; box-shadow: inset 0 0 0 1px #dff7fd; }
+.battle-dock[data-anima="tecnopata"] .command-trigger strong { font: 700 18px/1 'JetBrains Mono', monospace; letter-spacing: .04em; text-transform: uppercase; }
+.battle-dock[data-anima="tecnopata"] .command-number { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #4fe0ff; opacity: .85; }
+.battle-dock[data-anima="tecnopata"] .command-number::before { content: '>'; margin-right: 3px; opacity: .6; }
+.battle-dock[data-anima="tecnopata"] .command.expanded .command-number { color: #071319; }
+.battle-dock[data-anima="tecnopata"] .command-arrow { color: #4fe0ff; }
+.battle-dock[data-anima="tecnopata"] .command.expanded .command-arrow { color: #071319; }
+/* The skill sheet: a panel of the same glass, its list as rows of a readout. */
+.battle-dock[data-anima="tecnopata"] .skill-sheet { clip-path: var(--tp-cut); background: var(--tp-corners), var(--tp-scan), linear-gradient(160deg, #0c2430, #061218); border-left-color: #4fe0ff; box-shadow: inset 0 0 0 1px #4fe0ff30; }
+.battle-dock[data-anima="tecnopata"] .skill-sheet > .battle-kicker { font-family: 'JetBrains Mono', monospace; letter-spacing: .12em; color: #4fe0ff; }
+.battle-dock[data-anima="tecnopata"] .skill-list button { background: #0d2a36cc; border: 1px solid #4fe0ff30; }
+.battle-dock[data-anima="tecnopata"] .skill-list button:hover, .battle-dock[data-anima="tecnopata"] .skill-list button:focus { background: #13465c; border-color: #4fe0ffaa; box-shadow: 0 0 18px #4fe0ff33; }
+.battle-dock[data-anima="tecnopata"] .skill-key, .battle-dock[data-anima="tecnopata"] .skill-cost { font-family: 'JetBrains Mono', monospace; }
+.battle-dock[data-anima="tecnopata"] .skill-name small { color: #86aab5; }
+.battle-dock[data-anima="tecnopata"] .command-back { color: #dff7fd; font-family: 'JetBrains Mono', monospace; }
+.battle-dock[data-anima="tecnopata"] :is(.queue-panel, .queue-plate) { clip-path: var(--tp-cut); }
+.battle-dock[data-anima="tecnopata"] .queue-panel { background: var(--tp-corners), var(--tp-scan), #071319d9; }
+/* The card: scan-lined glass, and a signal readout (cyan segments) instead of the wave. */
+.party-card[data-anima="tecnopata"] { background: var(--tp-scan), linear-gradient(100deg, #071319f5, #0c243099 60%, #0c2430b0); border-color: #4fe0ff55; }
+.battle-dock[data-dock="2"] .party-card[data-anima="tecnopata"] { background: var(--tp-scan), linear-gradient(260deg, #071319f5, #0c243099 60%, #0c2430b0); }
+.party-card[data-anima="tecnopata"]::after { height: 4px; bottom: 0; opacity: .75; -webkit-mask: linear-gradient(90deg, #000 7px, transparent 7px) 0 0 / 10px 100% repeat-x; mask: linear-gradient(90deg, #000 7px, transparent 7px) 0 0 / 10px 100% repeat-x; }
+/* Choosing a target: the same glass panel, the attack's name as a readout. */
+.battle-dock[data-anima="tecnopata"] .target-picker { clip-path: var(--tp-cut); background: var(--tp-corners), var(--tp-scan), linear-gradient(160deg, #0c2430f5, #061218f5); box-shadow: inset 0 0 0 1px #4fe0ff30; }
+.battle-dock[data-anima="tecnopata"] .target-picker .battle-kicker { font-family: 'JetBrains Mono', monospace; letter-spacing: .14em; }
+.battle-dock[data-anima="tecnopata"] .target-picker h2 { font: 700 26px/1 'JetBrains Mono', monospace; letter-spacing: .02em; text-transform: uppercase; }
+.battle-dock[data-anima="tecnopata"] .target-back { border-color: #4fe0ff80; font-family: 'JetBrains Mono', monospace; }
+.battle-dock[data-anima="tecnopata"] .target-back:is(:hover, :focus) { background: #4fe0ff26; }
+/* What it learns, its half of a dual, and the status screen: the same glass and readouts. */
+.skill-reveal[data-anima="tecnopata"] .skill-reveal-card { background: var(--tp-scan), #071319f2; }
+.skill-reveal[data-anima="tecnopata"] h2 { font-family: 'JetBrains Mono', monospace; font-style: normal; font-weight: 700; letter-spacing: -.02em; text-transform: uppercase; }
+.dual-half[data-anima="tecnopata"] { background: var(--tp-scan), linear-gradient(160deg, #0c2430, #061218); box-shadow: inset 0 0 0 1px #4fe0ff44; }
+.dual-half[data-anima="tecnopata"] strong { font: 700 16px/1.1 'JetBrains Mono', monospace; text-transform: uppercase; color: #dff7fd; }
+.dual-half[data-anima="tecnopata"] .battle-kicker { color: #4fe0ff; }
+.status-sheet[data-anima="tecnopata"] { --ui-gold: #4fe0ff; --sheet-accent: #4fe0ff; --ui-paper: #dff7fd; --ui-ink: #071319; --ui-muted: #86aab5; --ui-line: #4fe0ff38; --ui-shadow: 0 0 0 1px #4fe0ff44; background: var(--tp-scan), radial-gradient(ellipse at 0 0, #0f3a4a66, transparent 60%), linear-gradient(145deg, #0b1d26fc, #061218fc); }
+.status-sheet[data-anima="tecnopata"]::after { content: ''; position: absolute; right: -6%; bottom: -10%; z-index: -1; width: 46cqi; aspect-ratio: 1; background: var(--tp-reticle) center / contain no-repeat; opacity: .05; pointer-events: none; }
+
+/* Atacar's block with elements (battle-ui `showElements`): split in one segment each, X walks them. */
+.command[data-split] .command-trigger { padding-right: 186px; }
+.attack-element-name { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .85; }
+.attack-element-name:empty { display: none; }
+.command[data-element] { --element: currentColor; box-shadow: 5px 5px 0 #071e2266, inset 0 -3px 0 var(--element); }
+.battle-dock[data-anima="matemagico"] .command[data-element] { box-shadow: 5px 5px 0 #0f1a2cb3, 0 0 0 1px #f3cf7866, inset 0 -3px 0 var(--element), 0 0 18px color-mix(in srgb, var(--element) 45%, transparent); }
+.attack-elements { position: absolute; inset: 0 8px 0 auto; display: flex; align-items: stretch; gap: 0; }
+.attack-elements button { display: grid; place-items: center; width: 40px; margin: 0; padding: 0; border: 0; border-left: 1px solid #1a2b3c33; background: transparent; color: #24344ab8; cursor: pointer; transition: background .16s, color .16s, width .2s cubic-bezier(.2,.8,.2,1); }
+.attack-elements button svg { width: 19px; height: 19px; fill: currentColor; transform: skewX(5deg); transition: transform .2s cubic-bezier(.2,1.6,.4,1); }
+.attack-elements button:hover:not(:disabled) { color: #162436; background: #ffffff55; }
+.attack-elements button[aria-pressed="true"] { width: 48px; background: var(--element, #24344a); color: #10202e; box-shadow: inset 0 0 12px #ffffff66; }
+.attack-elements button[data-element=""][aria-pressed="true"] { color: #f4efe0; }
+.attack-elements button[aria-pressed="true"] svg { transform: skewX(5deg) scale(1.16); }
+.attack-elements button:disabled { cursor: default; opacity: .5; }
+.attack-elements button:focus-visible { outline: none; }
+.attack-element-key { position: absolute; top: -9px; right: -2px; min-width: 20px; height: 18px; padding: 0 4px; border: 1px solid #f3cf7899; border-radius: 3px; background: #0f1a2c; color: #f3cf78; font-size: 10px; line-height: 16px; transform: skewX(5deg); }
+.command.expanded .attack-elements button { color: #f3cf7899; border-left-color: #f3cf7833; }
+.command.expanded .attack-elements button[aria-pressed="true"] { color: #10202e; }
+
+/* Reactions and Cegado, in the fight's words (battle.ts `react`). Smoke grey, never possession's violet. */
+.unit-statuses i[data-status="cegado"] { --status: #c7ccd4; }
+.summary-tags [data-status="cegado"] { --status: #c7ccd4; }
+.damage-pop[data-kind="status"][data-status="cegado"] { --status: #d6dae0; }
+/* Tecnópata's: Sanación a cure's green, Confusión Bip's cyan (never violet: that is fear's). */
+.unit-statuses i[data-status="sanacion"], .summary-tags [data-status="sanacion"] { --status: #7fe3a0; }
+.damage-pop[data-kind="status"][data-status="sanacion"] { --status: #8ff0b0; }
+.unit-statuses i[data-status="confusion"], .summary-tags [data-status="confusion"] { --status: #4fe0ff; }
+.damage-pop[data-kind="status"][data-status="confusion"] { --status: #7fe9ff; }
+.unit-statuses i[data-status="encogido"], .summary-tags [data-status="encogido"] { --status: #9fe8ff; }
+.damage-pop[data-kind="status"][data-status="encogido"] { --status: #b4eeff; }
+.damage-pop[data-kind="status"][data-status="cauterizado"] { --status: #ff9b5a; }
+.damage-pop[data-kind="status"][data-status="tormenta"] { --status: #ffe45c; }
+
+/* The jar at home (src/jar-ui.ts): dusk in the living room, one lit jar, the ánimas beside it. */
+#jar-panel { --amber: #ff9d1c; --amber-pale: #ffd98a; position: absolute; inset: 0; z-index: 36; display: grid; grid-template-columns: minmax(300px, 30%) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: clamp(10px, 1.6vh, 18px) clamp(14px, 2vw, 30px); padding: clamp(16px, 3vh, 34px) clamp(18px, 3vw, 44px) clamp(10px, 1.8vh, 18px); color: var(--ui-paper); pointer-events: auto; animation: jar-in .32s cubic-bezier(.16,1,.3,1) both; }
+@keyframes jar-in { from { opacity: 0; } to { opacity: 1; } }
+.jar-room { position: absolute; inset: 0; z-index: -1; background: radial-gradient(44% 62% at 16% 56%, #b4661a59, transparent 72%), radial-gradient(90% 70% at 100% 0%, #1d2c2a66, transparent 70%), linear-gradient(112deg, #120d09f7 0%, #17120df2 38%, #101410f2 100%); backdrop-filter: blur(9px) saturate(.7); }
+.jar-side { position: relative; display: flex; min-height: 0; flex-direction: column; align-items: center; text-align: center; }
+.jar-side header { align-self: stretch; text-align: left; }
+.jar-side h1 { margin: 4px 0 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(26px, 4.4vh, 44px); font-weight: 400; line-height: 1; letter-spacing: -.02em; color: #fff4dd; }
+.jar-side h1 em { display: block; color: var(--amber-pale); }
+.jar-side .battle-kicker { color: var(--amber-pale); letter-spacing: .16em; }
+.jar-vessel { position: relative; flex: 1 1 0; min-height: 0; aspect-ratio: 240 / 300; max-width: 100%; margin: clamp(4px, 1.4vh, 14px) 0 0; }
+.jar-vessel svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.jar-halo { position: absolute; inset: 14% 0 2%; border-radius: 50%; background: radial-gradient(closest-side, #ffb34c, transparent); opacity: calc(.12 + var(--glow) * .55); filter: blur(10px); animation: jar-breath 4.2s ease-in-out infinite; }
+@keyframes jar-breath { 50% { transform: scale(1.06); filter: blur(13px); } }
+.jar-marbles { position: absolute; inset: 21% 10% 3.5%; }
+.jar-marble { --size: 17.5%; position: absolute; left: var(--x); bottom: var(--y); width: var(--size); aspect-ratio: 1; border-radius: 50%; transform: translateX(-50%); }
+.jar-marble[data-free] { background: radial-gradient(circle at 34% 30%, #fff8dc, #ffc25a 34%, var(--amber) 62%, #b95a08); box-shadow: 0 0 14px 3px #ff9d1c99, 0 0 34px 8px #ff9d1c33, inset -2px -3px 6px #8a3f0088; animation: jar-marble 3.4s ease-in-out infinite; animation-delay: calc(var(--i) * -.53s); }
+.jar-marble[data-in] { background: radial-gradient(circle at 34% 30%, #ffffff40, transparent 30%), radial-gradient(circle at 50% 56%, color-mix(in srgb, var(--where) 55%, transparent), transparent 62%), #1c1a22; box-shadow: inset 0 0 0 1px #ffffff26, inset -2px -3px 6px #000a; opacity: .92; }
+@keyframes jar-marble { 50% { translate: 0 -5%; box-shadow: 0 0 20px 5px #ff9d1cbb, 0 0 44px 12px #ff9d1c44, inset -2px -3px 6px #8a3f0088; } }
+.jar-flight { position: absolute; left: 0; top: 0; z-index: 3; width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #fffbe6, #ffcf7a 40%, var(--amber)); box-shadow: 0 0 20px 6px #ffb34ccc, 0 0 50px 14px color-mix(in srgb, var(--where) 50%, transparent); pointer-events: none; }
+.jar-count { display: flex; align-items: center; gap: 12px; margin: clamp(4px, 1vh, 10px) 0 0; text-align: left; }
+.jar-count strong { font-family: Georgia, serif; font-size: clamp(34px, 5.6vh, 54px); font-weight: 400; line-height: 1; color: var(--amber-pale); text-shadow: 0 0 22px #ff9d1c88; font-variant-numeric: tabular-nums; }
+.jar-count span { font-size: 14px; font-weight: 600; color: #fff4dd; }
+.jar-count small { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; color: #cdbfa8; }
+.jar-note { margin: 5px 0 0; max-width: 34ch; font-family: 'Manrope', sans-serif; font-size: 12px; line-height: 1.4; color: #cdbfa8; }
+.jar-reset { margin-top: clamp(6px, 1.2vh, 12px); padding: 7px 14px; border: 1px solid #ffd98a55; border-radius: 999px; background: #ffffff08; color: var(--amber-pale); font-size: 12px; font-weight: 600; transition: background .15s, border-color .15s, transform .15s; }
+.jar-reset:disabled { opacity: .35; cursor: default; }
+.jar-reset:not(:disabled):is(:hover, .is-cursor) { background: #ffd98a22; border-color: var(--amber-pale); transform: translateY(-1px); }
+.jar-reset:focus-visible, .jar-tabs button:focus-visible, .jar-card:focus-visible { outline: none; }
+
+.jar-board { --anima: #f3cf78; position: relative; isolation: isolate; display: flex; align-self: center; max-height: 100%; min-height: 0; min-width: 0; flex-direction: column; gap: clamp(8px, 1.5vh, 16px); padding: clamp(12px, 2.1vh, 22px) clamp(14px, 1.9vw, 28px); overflow: hidden; border: 1px solid color-mix(in srgb, var(--anima) 34%, transparent); border-radius: 18px; background: linear-gradient(150deg, #1c1a16f2, #12130ff2); box-shadow: 0 26px 90px #000a, inset 0 1px #ffffff12, 0 0 60px color-mix(in srgb, var(--anima) 10%, transparent); animation: jar-board .34s cubic-bezier(.16,1,.3,1) both; }
+@keyframes jar-board { from { transform: translateX(26px); opacity: 0; } }
+.jar-board::before { content: ''; position: absolute; inset: 0; z-index: -1; opacity: .9; pointer-events: none; }
+.jar-board[data-anima="matemagico"]::before { background: var(--mm-grid); }
+.jar-board[data-anima="papagato"]::before { background: radial-gradient(circle, #f0954a1c 1.6px, transparent 2px) 0 0 / 22px 22px; }
+.jar-board[data-anima="tecnopata"]::before { background: repeating-linear-gradient(0deg, #4fe0ff0d 0 1px, transparent 1px 4px); }
+.jar-tabs { display: flex; align-items: center; gap: 8px; }
+.jar-tabs > kbd { flex-shrink: 0; }
+.jar-tabs button[data-page] { display: flex; align-items: center; gap: 7px; padding: 6px 14px 6px 10px; border: 1px solid #ffffff1c; border-radius: 999px; background: #ffffff08; color: #d8d3c4; font-size: 13px; font-weight: 600; transition: background .15s, color .15s, border-color .15s; }
+.jar-tabs button[data-page] > i { width: 10px; height: 10px; border-radius: 50%; background: var(--chip); box-shadow: 0 0 8px var(--chip); }
+.jar-tabs button[data-page] small { min-width: 18px; padding: 0 5px; border-radius: 9px; background: #ff9d1c33; color: var(--amber-pale); font-size: 11px; font-weight: 700; line-height: 16px; text-align: center; }
+.jar-tabs button[aria-pressed="true"] { border-color: var(--chip); background: color-mix(in srgb, var(--chip) 22%, transparent); color: #fff; }
+.jar-tabs button.is-cursor { border-color: #fff; }
+.jar-close { margin-left: auto; }
+.jar-anima { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.jar-anima .battle-kicker { color: var(--anima); letter-spacing: .14em; }
+.jar-anima h2 { margin: 1px 0 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(24px, 4.2vh, 40px); font-style: italic; font-weight: 400; line-height: 1.05; color: var(--anima); }
+.jar-board[data-anima="papagato"] .jar-anima h2 { font-family: 'Manrope', sans-serif; font-style: normal; font-weight: 800; letter-spacing: -.04em; }
+.jar-board[data-anima="tecnopata"] .jar-anima h2 { font-family: 'JetBrains Mono', monospace; font-style: normal; font-weight: 700; letter-spacing: -.03em; }
+.jar-anima p { margin: 3px 0 0; font-family: 'Manrope', sans-serif; font-size: 13px; color: #c9c3b2; }
+.jar-mana { flex-shrink: 0; text-align: right; }
+.jar-mana-pips { display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+.jar-mana-pips i { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--anima) 55%, color-mix(in srgb, var(--anima) 60%, #000)); box-shadow: 0 0 9px color-mix(in srgb, var(--anima) 60%, transparent); }
+.jar-mana-pips i[data-extra] { outline: 2px solid var(--amber); outline-offset: 2px; box-shadow: 0 0 14px #ff9d1caa; }
+
+.jar-branches { display: grid; gap: clamp(10px, 1.9vh, 20px) clamp(10px, 1.4vw, 20px); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "element element" "mana asleep"; }
+.jar-branches[data-elements="false"] { grid-template-columns: minmax(0, 1fr); grid-template-areas: "mana" "asleep"; }
+.jar-branch { display: flex; min-width: 0; flex-direction: column; gap: clamp(5px, 1vh, 9px); }
+.jar-branch[data-branch="element"] { grid-area: element; }
+.jar-branch[data-branch="mana"] { grid-area: mana; }
+.jar-branch[data-branch="asleep"] { grid-area: asleep; }
+.jar-branch h3 { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #bdb6a4; }
+.jar-branch > div { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: clamp(8px, .9vw, 14px); }
+.jar-card { --item: var(--anima); position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: clamp(7px, 1.4vh, 14px) 10px; min-height: clamp(84px, 15.5vh, 146px); padding: clamp(9px, 1.7vh, 16px) clamp(10px, 1vw, 16px); overflow: hidden; border: 1px solid color-mix(in srgb, var(--item) 30%, #ffffff1a); border-radius: 13px; background: linear-gradient(165deg, color-mix(in srgb, var(--item) 11%, #211f1a), #171612); color: #efe9d9; text-align: left; transition: transform .16s cubic-bezier(.2,.8,.2,1), border-color .16s, box-shadow .16s, filter .16s; }
+.jar-card-head { grid-column: 1 / -1; display: flex; min-width: 0; align-items: center; gap: 11px; }
+.jar-card strong { min-width: 0; font-size: clamp(14px, 2.3vh, 20px); font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+.jar-card-icon { display: grid; place-items: center; width: clamp(30px, 5vh, 42px); aspect-ratio: 1; border-radius: 50%; background: color-mix(in srgb, var(--item) 18%, transparent); color: var(--item); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--item) 40%, transparent); }
+.jar-card-icon svg { width: 62%; height: 62%; fill: currentColor; }
+.jar-card-icon b { font-family: Georgia, serif; font-size: clamp(16px, 2.6vh, 22px); font-weight: 400; }
+.jar-sockets { display: flex; gap: 5px; }
+.jar-sockets i { position: relative; width: clamp(13px, 2.2vh, 18px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffffff1f, #0009 70%); box-shadow: inset 0 1px 2px #000c, 0 0 0 1px #ffffff2e; }
+.jar-turns, .jar-pips, .jar-asleep { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.jar-turns b { padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--c) 17%, #0006); color: var(--c); font-size: clamp(11px, 1.6vh, 13px); font-weight: 600; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent); }
+.jar-turns i { font-style: normal; color: #cfc8b5; }
+.jar-pips { gap: 5px; }
+.jar-pips i { width: 12px; height: 12px; border-radius: 50%; background: color-mix(in srgb, var(--anima) 65%, #0008); }
+.jar-pips i[data-extra] { background: var(--anima); outline: 2px solid var(--amber); outline-offset: 1px; box-shadow: 0 0 10px #ff9d1c99; }
+.jar-asleep { font-family: Georgia, serif; font-size: 13px; font-style: italic; color: #8f8a7c; }
+.jar-card.is-cursor { transform: translateY(-3px); border-color: var(--item); box-shadow: 0 10px 26px #0008, 0 0 0 1px var(--item), 0 0 26px color-mix(in srgb, var(--item) 32%, transparent); }
+.jar-card[data-state="short"], .jar-card[data-state="needs"] { filter: saturate(.55) brightness(.78); }
+.jar-card[data-state="short"].is-cursor, .jar-card[data-state="needs"].is-cursor { filter: saturate(.8) brightness(.95); }
+.jar-card[data-state="on"] { border-color: var(--item); background: linear-gradient(165deg, color-mix(in srgb, var(--item) 34%, #2a2214), #1d1910); box-shadow: inset 0 0 26px color-mix(in srgb, var(--item) 22%, transparent); }
+.jar-card[data-state="on"] .jar-card-icon { background: var(--item); color: #16130d; box-shadow: 0 0 16px color-mix(in srgb, var(--item) 70%, transparent); }
+.jar-card[data-state="on"] .jar-sockets i { background: radial-gradient(circle at 34% 30%, #fff8dc, #ffc25a 36%, var(--amber) 66%, #b95a08); box-shadow: 0 0 10px 2px #ff9d1cbb; }
+.jar-card[data-landing] .jar-sockets i { animation: jar-land .46s cubic-bezier(.2,1.6,.4,1) .36s both; }
+.jar-card[data-landing] { animation: jar-card-land .7s ease-out .34s both; }
+@keyframes jar-land { from { opacity: 0; transform: scale(.2); } }
+@keyframes jar-card-land { 0% { box-shadow: 0 0 0 0 #ffb34c00; } 22% { box-shadow: 0 0 40px 6px #ffb34c88; } 100% { box-shadow: 0 0 0 0 #ffb34c00; } }
+.jar-card[data-state="veiled"] { border-style: dashed; border-color: #ffffff30; background: repeating-linear-gradient(135deg, #ffffff06 0 8px, transparent 8px 16px), #15140f; color: #8f8a7c; }
+.jar-card[data-state="veiled"] .jar-card-icon { background: transparent; color: #8f8a7c; box-shadow: inset 0 0 0 1px #ffffff26; }
+.jar-card[data-state="veiled"].is-cursor { border-color: #cfc9b8; box-shadow: 0 0 0 1px #cfc9b866; }
+.jar-card.is-stuck { animation: jar-stuck .28s ease; }
+@keyframes jar-stuck { 25% { translate: -5px 0; } 75% { translate: 5px 0; } }
+.jar-detail { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: clamp(50px, 8.4vh, 74px); padding: 9px 14px; border-radius: 11px; background: #00000047; box-shadow: inset 0 0 0 1px #ffffff12; }
+.jar-detail-text strong { font-size: 13px; font-weight: 700; color: #fff4dd; }
+.jar-detail-text p { margin: 2px 0 0; font-family: 'Manrope', sans-serif; font-size: clamp(12px, 1.7vh, 14px); line-height: 1.32; color: #d8d2c1; }
+.jar-detail-idle { margin: 0; font-family: 'Manrope', sans-serif; font-size: 13px; color: #bdb6a4; }
+.jar-detail-action { flex-shrink: 0; padding: 7px 12px; border-radius: 999px; background: var(--amber); color: #201203; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.jar-detail-why { flex-shrink: 0; font-size: 12px; font-weight: 600; color: #e7b98a; white-space: nowrap; }
+.jar-empty { margin: auto; color: #bdb6a4; }
+.jar-help { grid-column: 1 / -1; margin: 0; text-align: center; font-size: 11px; letter-spacing: .03em; color: #bcb5a4; white-space: pre-wrap; }
+@media (prefers-reduced-motion: reduce) { #jar-panel, .jar-board, .jar-halo, .jar-marble[data-free], .jar-card[data-landing], .jar-card[data-landing] .jar-sockets i { animation: none; } }

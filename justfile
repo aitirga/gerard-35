@@ -13,7 +13,7 @@ api_port := env("GERARD_API_PORT", "8035")
 default:
     @printf 'Gerard 35 — developer commands\n\n'
     @just --list --color never
-    @printf '\nLive development: just backend + just dev (two terminals).\n'
+    @printf '\nLive development: just dev (the game and its API together).\n'
 
 # Show how far the game is, from docs/progress.toml (the bar at the top of herdr's column): just progress --all lists every item
 [group('Help')]
@@ -33,10 +33,31 @@ lights-update:
     git submodule update --init --remote vendor/geraitor_domotic_house
     git -C vendor/geraitor_domotic_house log --oneline -1
 
-# Start the Vite dev server on http://127.0.0.1:5173 (no live reload: reload the page to see changes)
+# Play in development: the API (saves, battle AI) and the game together on the first free ports, and open the game (GERARD_OPEN=0 to not open it; no live reload)
 [group('Development')]
 dev:
-    npm run dev
+    #!/usr/bin/env bash
+    set -uo pipefail
+    source scripts/dev-ports.sh
+    choose_api_port {{ api_port }}
+    choose_web_port 5173
+    # A feature worktree plays on its own save, started as a copy of the main checkout's, so the
+    # game opens where it was and nothing the feature does touches the real one.
+    main=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+    if [ -z "${DATABASE_PATH:-}" ] && [ ! -f data/game.sqlite3 ] && [ "$main" != "$PWD" ] && [ -f "$main/data/game.sqlite3" ]; then
+      mkdir -p data
+      uv run --locked python -c 'import sqlite3, sys; sqlite3.connect(sys.argv[1]).backup(sqlite3.connect(sys.argv[2]))' "$main/data/game.sqlite3" data/game.sqlite3
+      printf 'Partida copiada de %s/data/game.sqlite3\n' "$main"
+    fi
+    # `kill 0` stops the whole process group (the API's reloader too), so Ctrl-C frees both ports;
+    # the traps go first, so that signal ends this script too instead of running them again.
+    trap 'trap - EXIT INT TERM; rm -f "$dev_ports_file"; kill 0' EXIT INT TERM
+    printf '▸ juego http://localhost:%s   ▸ api http://127.0.0.1:%s   Ctrl-C para los dos\n' "$GERARD_WEB_PORT" "$GERARD_API_PORT"
+    uv run --locked uvicorn server:app --host 127.0.0.1 --port "$GERARD_API_PORT" --reload &
+    open=(--open); [ "${GERARD_OPEN:-1}" = 0 ] && open=()
+    # On localhost as always: the save goes by a cookie, which is per host (whatever the port).
+    npx vite --port "$GERARD_WEB_PORT" --strictPort "${open[@]}" &
+    wait
 
 # Open a repeatable battle: just dev-battle 4 2 (foes 2–4, allies 1–2)
 [group('Development')]
@@ -85,7 +106,7 @@ dev-music track="battle" from="start" haunt="":
     @[[ "{{ track }}" =~ ^[a-z0-9-]+$ && "{{ from }}" =~ ^([a-z-]+|[0-9]+(\.[0-9]+)?)$ && "{{ haunt }}" =~ ^([01]|0?\.[0-9]+)?$ ]] || { printf 'Use a track from src/music.ts, a mark or seconds and an optional haunt from 0 to 1, e.g. just dev-music bubbaloo random .8.\n'; exit 1; }
     npm run dev -- --open '/?music={{ track }}&from={{ from }}{{ if haunt != "" { "&haunt=" + haunt } else { "" } }}'
 
-# Start the persistent API on port 8035 (GERARD_API_PORT), proxied by `just dev` under /api
+# Start the persistent API alone on port 8035 (GERARD_API_PORT); `just dev` already runs it with the game
 [group('Development')]
 backend:
     uv run --locked uvicorn server:app --host 127.0.0.1 --port {{ api_port }} --reload

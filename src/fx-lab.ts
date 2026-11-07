@@ -4,7 +4,7 @@ import { REACTIONS, STATUS_LOOKS, type ReactionId, type StatusLookId } from './s
 import { CLASSES } from './classes';
 import type { StatWay } from './stat-fx';
 import { SOUNDS, type Sfx, type SoundId } from './sfx';
-import { DUALS, FOE_ABILITIES, type BattleEffect, type DualId, type FoeAbilityId } from './battle';
+import { DUALS, FOE_ABILITIES, type BattleEffect, type DualId, type Element as AttackElement, type FoeAbilityId } from './battle';
 import { DUAL_BANNER, DUAL_SLOW } from './battle-motion';
 
 type Game = Awaited<ReturnType<typeof createGame>>;
@@ -58,6 +58,8 @@ const ABILITIES: { id: FoeAbilityId | 'ojo-roto'; name?: string; extra?: Partial
 ];
 const VERTITRON = new Set(['pisoton', 'barrido', 'grito', 'carga', 'rayo', 'ojo-roto']);
 const abilityName = (a: (typeof ABILITIES)[number]) => a.name ?? FOE_ABILITIES[a.id as FoeAbilityId].name;
+/** Matemágico's thrown Atacar (src/math-cast.ts), each way it can go. */
+const THROWN: { id: string; name: string; element?: AttackElement }[] = [{ id: 'none', name: 'Atacar · ∅' }, { id: 'agua', name: 'Atacar · Agua', element: 'agua' }, { id: 'fuego', name: 'Atacar · Fuego', element: 'fuego' }, { id: 'electrico', name: 'Atacar · Eléctrico', element: 'electrico' }];
 
 export function mountFxLab(game: Game, sfx: Sfx) {
   const panel = document.createElement('aside');
@@ -80,6 +82,8 @@ export function mountFxLab(game: Game, sfx: Sfx) {
       <div class="fx-lab-grid">${DUALS.map(d => `<button type="button" data-dual="${d.id}" title="${d.parts.join(' + ')}">${d.name}</button>`).join('')}</div>
       <h3>Habilidades de los miedos</h3>
       <div class="fx-lab-grid">${ABILITIES.map(a => `<button type="button" data-ability="${a.id}">${abilityName(a)}</button>`).join('')}</div>
+      <h3>Atacar de Matemágico</h3>
+      <div class="fx-lab-grid">${THROWN.map(a => `<button type="button" data-thrown="${a.id}">${a.name}</button>`).join('')}</div>
       <h3>Golpes de elemento</h3>
       <div class="fx-lab-grid">${Object.entries(ELEMENTS).map(([id, name]) => `<button type="button" data-element="${id}">${name}</button>`).join('')}</div>
       <h3>Sonidos</h3>
@@ -195,6 +199,14 @@ export function mountFxLab(game: Game, sfx: Sfx) {
     };
     say(game.preview(effect) ? `${abilityName(spec)} (${foe.id})` : 'Hace falta un combate.');
   }
+  /** The thrown Atacar from whoever stands first in the party, as the fight would show it. */
+  function thrown(id: string) {
+    const spec = THROWN.find(a => a.id === id)!, gerard = fighters().find(f => f.id === 'gerard') ?? fighters().find(f => f.party), foe = fighters().find(f => f.id === target.value && !f.party) ?? fighters().find(f => !f.party);
+    if (!gerard || !foe) { say('Hace falta un combate.'); return; }
+    if (!keep.checked) game.effects.clear();
+    game.frame();
+    say(game.preview({ kind: 'attack', actor: gerard.id, target: foe.id, amount: 16, spell: true, ...spec.element ? { element: spec.element } : {} }) ? spec.name : 'Hace falta un combate.');
+  }
   function hit(element: Element, id: string, k: number) {
     const at = chestOf(id), feet = game.fighterAt(id), source = from.value !== id ? chestOf(from.value) : undefined;
     const model = game.battleModel(id);
@@ -218,6 +230,7 @@ export function mountFxLab(game: Game, sfx: Sfx) {
     if (d.fx) run = () => attack(d.fx as FightFx);
     else if (d.dual) run = () => dual(d.dual as DualId);
     else if (d.ability) run = () => ability(d.ability as FoeAbilityId | 'ojo-roto');
+    else if (d.thrown) run = () => thrown(d.thrown!);
     else if (d.element) run = () => { if (!keep.checked) game.effects.clear(); frame(target.value); hit(d.element as Element, target.value, Number(strength.value)); say(`Golpe de ${ELEMENTS[d.element as Element]}`); };
     else if (d.stat) run = () => { frame(target.value); game.statChange(target.value, d.stat as StatWay); say(d.stat === 'down' ? 'Baja una característica' : 'Sube una característica'); };
     else if (d.fire !== undefined) run = () => { frame(target.value); game.ignite(target.value, (d.fire || undefined) as FireLevel | undefined); say(d.fire ? FIRES[d.fire as FireLevel] : 'Fuego apagado'); };

@@ -523,14 +523,14 @@ test('Ronroneo de Yuki cures everyone standing a little and takes away every sta
 test('dual descriptions follow the plain shape too, and each dual pairs a skill of each of two ánimas, in either order', async () => {
   const { DUALS, dualOf, dualCost } = await import('../src/battle.ts');
   const intensity = power => power <= 20 ? 'leve' : power <= 34 ? 'medi[oa]' : power <= 49 ? 'alt[oa]' : 'muy alt[oa]';
-  assert.deepEqual(DUALS.map(d => d.id), ['zarpazos-de-fuego', 'punto-debil']);
+  assert.deepEqual(DUALS.map(d => d.id), ['zarpazos-de-fuego', 'punto-debil', 'rayo-solar']);
   for (const d of DUALS) {
     const [a, b] = d.parts.map(id => SKILLS.find(s => s.id === id));
     assert.notEqual(a.class, b.class, `${d.name}: two ánimas`);
     assert.equal(dualOf(a.id, b.id), d); assert.equal(dualOf(b.id, a.id), d);
     assert.deepEqual(dualCost(d), { [a.id]: a.cost, [b.id]: b.cost });
     if (d.abstract) continue;
-    assert.match(d.description, new RegExp(`^Daño ${intensity(d.power)} ${d.kind === 'physical' ? 'físico' : 'mágico'}( de tipo [^ ]+)? a un enemigo\\.( [A-ZÁÉÍÓÚ][^.]*\\.)*$`), d.name);
+    assert.match(d.description, new RegExp(`^Daño ${intensity(d.power)} ${d.kind === 'physical' ? 'físico' : 'mágico'}( de tipo [^ ]+)? ${d.side === 'all-foes' ? 'a todos los enemigos' : 'a un enemigo'}\\.( [A-ZÁÉÍÓÚ][^.]*\\.)*$`), d.name);
   }
   assert.equal(dualOf('foc-binari', 'zarpazo'), undefined);
 });
@@ -658,7 +658,8 @@ test('a skill the later fighter queued turns the earlier one\'s matching skill i
 
 test('each dual goes off once a fight: after it, its two skills are each one\'s own again, and the other dual still can', async () => {
   const { queue, queuedDual, commit, dualOptions } = await import('../src/battle.ts');
-  const reasons = s => Object.fromEntries(dualOptions(s).map(o => [o.dual.id, o.reason ?? 'ok']));
+  // Matemágico and Papagato's duals (Rayo solar is Tecnópata's).
+  const reasons = s => Object.fromEntries(dualOptions(s).filter(o => o.dual.id !== 'rayo-solar').map(o => [o.dual.id, o.reason ?? 'ok']));
   const s = duoFight();
   queue(s, 'gerard', { action: 'skill', skill: 'foc-binari', target: 'dog-0' });
   assert.equal(commit(s, 'skill', 'dog-0', 'zarpazos').dual.id, 'zarpazos-de-fuego');
@@ -683,7 +684,8 @@ test('each dual goes off once a fight: after it, its two skills are each one\'s 
 
 test('the development Dual list says why each dual cannot happen now, and may put the active fighter\'s ánima on', async () => {
   const { dualOptions } = await import('../src/battle.ts');
-  const reasons = s => Object.fromEntries(dualOptions(s).map(o => [o.dual.id, o.reason ?? 'ok']));
+  // Matemágico and Papagato's duals (Rayo solar is Tecnópata's).
+  const reasons = s => Object.fromEntries(dualOptions(s).filter(o => o.dual.id !== 'rayo-solar').map(o => [o.dual.id, o.reason ?? 'ok']));
   assert.deepEqual(reasons(duoFight({})), { 'zarpazos-de-fuego': 'level', 'punto-debil': 'level' }, 'none at level 1');
   assert.deepEqual(reasons(duoFight({ papagato: 2 })), { 'zarpazos-de-fuego': 'ok', 'punto-debil': 'level' });
   assert.deepEqual(reasons(duoFight()), { 'zarpazos-de-fuego': 'ok', 'punto-debil': 'ok' });
@@ -700,4 +702,156 @@ test('the development Dual list says why each dual cannot happen now, and may pu
   const swap = dualOptions(bare, true)[0];
   assert.equal(swap.ok, true); assert.equal(swap.wear, 'matemagico');
   assert.equal(bare.allies[0].classId, undefined, 'only looked at: nothing put on');
+});
+
+test('Sin límites (development): cures on anyone standing, boosts and marks again while they run, every dual as often as wanted', async () => {
+  const { dualOptions } = await import('../src/battle.ts');
+  const reasons = s => Object.fromEntries(dualOptions(s).map(o => [o.dual.id, o.reason ?? 'ok']));
+  const s = duoFight();
+  s.boosts = { escondite: { amount: 4, until: s.round + 2 } };
+  assert.equal(validTargets(s, 'skill', 'escondite').length, 0, 'a boost running has nothing to add');
+  assert.equal(validTargets(s, 'skill', 'ronroneo').length, 0, 'nobody hurt: the cure has no one');
+  actDual(s, 'zarpazos-de-fuego', 'dog-0'); endRound(s);
+  assert.equal(reasons(s)['zarpazos-de-fuego'], 'used');
+  s.unbound = true;
+  s.allies.forEach(a => { a.secondary = MANA_POINTS; });
+  assert.deepEqual(validTargets(s, 'skill', 'escondite').map(a => a.id), s.allies.filter(a => a.hp > 0).map(a => a.id), 'the boost again');
+  assert.equal(validTargets(s, 'skill', 'ronroneo').length, s.allies.filter(a => a.hp > 0).length, 'the cure on anyone standing');
+  assert.equal(reasons(s)['zarpazos-de-fuego'], 'ok', 'the dual again');
+  assert.equal(actDual(s, 'zarpazos-de-fuego', 'dog-0').dual.id, 'zarpazos-de-fuego');
+});
+
+// Tecnópata's skills (docs/animas/tecnopata/): Bip's.
+const TECH = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'tecnopata' }];
+/** Gerard on Matemágico and Aitor on Tecnópata against `dogs` sturdy dogs. */
+const techFight = (dogs = 2) => {
+  const s = createBattle(TECH, dogs, false, undefined, ['matemagico']);
+  s.seed = 35;
+  s.foes.forEach(f => { f.hp = f.maxHp = 9999; });
+  return s;
+};
+const turnOf = (s, id) => { s.phase = 'player'; s.active = s.allies.indexOf(byId(s, id)); delete s.spent; delete s.queued; byId(s, id).secondary = byId(s, id).maxSecondary; };
+
+test('Rayo de energía hits with magic and makes what runs out by the clock on the foe last 5 seconds more, never a cure', () => {
+  const s = techFight();
+  assert.deepEqual(skillsFor(s, byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor'], 'all there from the start');
+  s.foes[0].timed = { quemado: { level: 2, left: 3, next: 1 }, cegado: { level: 1, left: 6, next: 6 } };
+  turnOf(s, 'aitor');
+  const ray = act(s, 'skill', 'dog-0', 'rayo-energia');
+  assert.ok(ray.amount > 0);
+  assert.deepEqual(ray.extended, { statuses: ['quemado', 'cegado'], seconds: 5 });
+  assert.equal(s.foes[0].timed.quemado.left, 8); assert.equal(s.foes[0].timed.quemado.level, 2, 'the same fire, longer');
+  assert.equal(s.foes[0].timed.cegado.left, 11);
+  turnOf(s, 'aitor');
+  assert.equal(act(s, 'skill', 'dog-1', 'rayo-energia').extended, undefined, 'nothing to stretch, only the blow');
+});
+
+test('Rayo de sanación leaves a cure on an ally that gives PV back on the clock for 15 seconds, a level up if cast again', () => {
+  const s = techFight();
+  const gerard = byId(s, 'gerard');
+  gerard.hp = 40;
+  turnOf(s, 'aitor');
+  const cure = act(s, 'skill', 'gerard', 'rayo-sanacion');
+  assert.deepEqual(cure.regen, { id: 'sanacion', level: 1 });
+  assert.equal(gerard.hp, 40, 'nothing at once');
+  assert.equal(gerard.timed.sanacion.left, 15);
+  const pulses = runClock(s, 15);
+  assert.equal(pulses.length, 5, 'one every 3 seconds');
+  assert.ok(pulses.every(p => p.heal && p.target === 'gerard' && p.amount > 0));
+  assert.equal(pulses.reduce((sum, p) => sum + p.amount, 0), 20, 'what its power says, at level I');
+  assert.equal(gerard.hp, 60); assert.equal(gerard.timed.sanacion, undefined, 'gone when its time is up');
+  turnOf(s, 'aitor'); act(s, 'skill', 'gerard', 'rayo-sanacion');
+  turnOf(s, 'aitor'); assert.equal(act(s, 'skill', 'gerard', 'rayo-sanacion').regen.level, 2);
+});
+
+test('Explosión burns every foe, blinds them until the round ends, and Aitor sits the next round out while Bip comes back', () => {
+  const s = techFight();
+  turnOf(s, 'aitor');
+  const boom = act(s, 'skill', undefined, 'explosion');
+  assert.equal(boom.hits.length, 2); assert.ok(boom.hits.every(h => h.amount > 0));
+  assert.equal(boom.exploded, true); assert.deepEqual(boom.blinded, ['dog-0', 'dog-1']);
+  assert.ok(s.foes.every(f => f.timed.cegado.level === 1 && f.timed.cegado.until === s.round));
+  assert.match(s.message, /Aitor pierde su siguiente turno/);
+  const round = s.round;
+  endRound(s);
+  assert.equal(s.round, round + 1);
+  assert.ok(s.foes.every(f => !f.timed?.cegado), 'the blinding lasted the round');
+  assert.deepEqual(s.spent, ['aitor'], 'Aitor sits this round out');
+  assert.equal(s.allies[s.active].id, 'gerard');
+  assert.match(s.message, /Aitor no actúa esta ronda/);
+  act(s, 'attack', 'dog-0');
+  assert.equal(s.phase, 'enemy', 'after Gerard the foes go');
+  endRound(s);
+  assert.equal(s.spent, undefined, 'back the round after');
+  assert.equal(byId(s, 'aitor').out, undefined);
+});
+
+test('a confused foe hits one of its own for 30 seconds (itself if alone); Rayo de energía makes it last longer', () => {
+  const s = techFight();
+  turnOf(s, 'aitor');
+  const mind = act(s, 'skill', 'dog-0', 'confusion');
+  assert.deepEqual(mind.afflicted, { id: 'confusion', level: 1 }); assert.equal(s.foes[0].timed.confusion.left, 30);
+  s.phase = 'enemy'; s.enemyActions = [];
+  const before = s.foes[1].hp, party = s.allies.map(a => a.hp);
+  const blow = enemyAct(s, 'dog-0');
+  assert.equal(blow.confused, true); assert.equal(blow.target, 'dog-1');
+  assert.equal(s.foes[1].hp, before - blow.amount); assert.deepEqual(s.allies.map(a => a.hp), party, 'nobody in the party hurt');
+  runClock(s, 30);
+  assert.equal(s.foes[0].timed?.confusion, undefined, 'over after 30 seconds');
+  const alone = techFight(1);
+  turnOf(alone, 'aitor'); act(alone, 'skill', 'dog-0', 'confusion');
+  alone.phase = 'enemy'; alone.enemyActions = [];
+  assert.equal(enemyAct(alone, 'dog-0').target, 'dog-0', 'alone, it hits itself');
+});
+
+test('Rayo solar: Rayo de energía and Foc Binari charge Bip this round, and it sweeps every foe with Quemado II as the next one starts', async () => {
+  const { commit, queue, takeNews } = await import('../src/battle.ts');
+  const s = techFight(3);
+  const first = s.allies[0], later = s.allies[1];
+  turnOf(s, first.id);
+  const skillOf = c => c.classId === 'tecnopata' ? 'rayo-energia' : 'foc-binari';
+  assert.ok(queue(s, later.id, { action: 'skill', skill: skillOf(later), target: 'dog-0' }));
+  const charge = commit(s, 'skill', 'dog-0', skillOf(first));
+  assert.equal(charge.dual.id, 'rayo-solar');
+  assert.equal(charge.charging, 'aitor', 'Bip holds it'); assert.equal(charge.amount, undefined, 'nothing lands yet');
+  assert.ok(s.foes.every(f => f.hp === f.maxHp));
+  assert.deepEqual(byId(s, 'aitor').charge, { dual: 'rayo-solar', striker: byId(s, s.allies[0].id).classId === 'tecnopata' ? 'aitor' : first.id === 'aitor' ? 'aitor' : 'gerard' });
+  assert.equal(s.phase, 'enemy', 'both turns went into it');
+  endRound(s);
+  assert.equal(s.phase, 'player', 'the round starts as usual');
+  const [sweep] = takeNews(s);
+  assert.deepEqual(sweep.release, { id: 'rayo-solar', name: 'Rayo solar' });
+  assert.equal(sweep.hits.length, 3); assert.ok(sweep.hits.every(h => h.amount > 0 && h.burn.level === 2));
+  assert.ok(s.foes.every(f => f.timed.quemado.level === 2));
+  assert.equal(byId(s, 'aitor').charge, undefined, 'spent');
+  assert.match(s.message, /¡Rayo solar!/);
+  // Bip's holder down before it goes off: it is lost.
+  const t = techFight(2);
+  turnOf(t, t.allies[0].id);
+  queue(t, t.allies[1].id, { action: 'skill', skill: skillOf(t.allies[1]), target: 'dog-0' });
+  commit(t, 'skill', 'dog-0', skillOf(t.allies[0]));
+  byId(t, 'aitor').hp = 0;
+  endRound(t);
+  assert.equal(takeNews(t).length, 0); assert.ok(t.foes.every(f => f.hp === f.maxHp));
+});
+
+test('Rayo encogedor shrinks a foe for 15 seconds: a quarter of its Defensa gone while it lasts, and Rayo de energía makes it last longer', async () => {
+  const { statShifts } = await import('../src/battle.ts');
+  const s = techFight();
+  turnOf(s, 'aitor');
+  const plain = act(structuredClone(s), 'attack', 'dog-0').amount;
+  const shrink = act(s, 'skill', 'dog-0', 'rayo-encogedor');
+  assert.deepEqual(shrink.stats, [{ target: 'dog-0', way: 'down', stats: ['defensa'] }]);
+  assert.equal(s.foes[0].timed.encogido.left, 15);
+  const quarter = Math.max(1, Math.round(s.foes[0].stats.defensa * .25));
+  assert.deepEqual(statShifts(s, s.foes[0]).map(x => [x.stat, x.way, x.amount]), [['defensa', 'down', quarter]]);
+  assert.match(s.message, /Defensa −25 % durante 15 s/);
+  turnOf(s, 'aitor');
+  const ram = act(structuredClone(s), 'attack', 'dog-0').amount;
+  assert.equal(ram, plain + quarter, 'Bip\'s ram (physical) lands as much harder as the Defensa it lost');
+  const ray = act(s, 'skill', 'dog-0', 'rayo-energia');
+  assert.deepEqual(ray.extended.statuses, ['encogido']); assert.equal(s.foes[0].timed.encogido.left, 20);
+  runClock(s, 20);
+  assert.equal(s.foes[0].timed?.encogido, undefined);
+  assert.deepEqual(statShifts(s, s.foes[0]), []);
 });

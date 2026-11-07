@@ -7,7 +7,8 @@ import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { Cell } from './movement';
 import type { ItemId } from './items';
-import { ANIMA_NAMES, ANIMA_OWNERS, SKILLS, canWear, palaceGuards, type ClassId, type PartySlot, type SkillId } from './battle.ts';
+import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
+import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
 import { award, levelFlag, levelOf } from './levels.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
@@ -33,18 +34,16 @@ export const STORY_FLAGS = [
   // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the two lights
   // that went with Gerard and Aitor (docs/quests/nuria.md).
   'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri',
-  // Lights let out of the jar at home, each one a day won back (docs/quests/nuria.md § The lights).
-  'luz-nuria-usada', 'luz-uri-usada',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 /**
  * Flags that changed name; old saves keep working (server.py has the same map). Nil's light is
  * gone (Nuria's household gives two), so a save that had it keeps Uri's.
  */
-const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-nil': 'luz-uri', 'luz-nil-usada': 'luz-uri-usada' };
+const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-nil': 'luz-uri' };
 /** Only flags this version knows, renamed ones under their new name. */
 const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENAMED_FLAGS[f] ?? f).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
-/** Whose lights can be won, in the order they are let out of the jar. */
+/** Whose lights can be won. */
 export const LIGHTS = ['nuria', 'uri'] as const;
 export type LightId = typeof LIGHTS[number];
 
@@ -121,11 +120,11 @@ export type StoryEffect =
   | { kind: 'anima'; classId: ClassId; kept?: boolean }
   /**
    * The lights of the people Gerard helped leave them and go into Gerard and Aitor, one each in turn
-   * (docs/quests/nuria.md § The lights). They are the party's ánimas to spend at home.
+   * (docs/quests/nuria.md § The lights). They are the party's Ecos de luz to spend at home.
    */
   | { kind: 'lights'; people: string[] }
-  /** A light leaves the jar at home and flies out of the window towards the castle. */
-  | { kind: 'release-light' }
+  /** The jar at home opens: its Ecos de luz are put into the ánimas (src/jar-ui.ts). */
+  | { kind: 'jar' }
   /**
    * Someone far off shouts, in a shout bubble over their head, and the game goes on, never stopped
    * (Uri from the top of his tower: going in, up each ring, onto the platform). `beat`: seconds the
@@ -136,8 +135,8 @@ export type StoryEffect =
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | FearEncounter;
 /** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
-/** The ánimas Gerard can wake (Físico is Aitor's). */
-export type GerardClass = Exclude<ClassId, 'fisico'>;
+/** The ánimas Gerard can wake (Tecnópata is Aitor's). */
+export type GerardClass = Exclude<ClassId, 'tecnopata'>;
 
 /** Someone standing in a scene: a character model, or one of the cats (`cat`). */
 export interface StoryNpc { id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki'; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId }
@@ -246,6 +245,12 @@ export class Story {
   debugAnimas?: Partial<Record<ClassId, number>>;
   /** EXP each ánima has earned (src/levels.ts). Kept in the browser by `main.ts`, like the loadout. */
   xp: Partial<Record<ClassId, number>> = {};
+  /** What the Ecos de luz are in, in the order they went in (src/ecos.ts). Kept in the browser by `main.ts`, like the loadout. */
+  private bought: string[] = [];
+  /** Development (the picker): ecos on top of the ones won. Not saved. */
+  debugEcos = 0;
+  /** The dual attacks seen go off (src/battle.ts DUALS), in the order they were found. Kept in the browser by `main.ts`, like the EXP. */
+  private found: DualId[] = [];
   /**
    * The days in Barcelona (src/days.ts): what day and hour it is, and the last mornings to come
    * back to. Saved next to the flags.
@@ -278,16 +283,51 @@ export class Story {
   get animas(): AnimaId[] { return ANIMA_IDS.filter(id => this.flags.has(`anima-${id}` as StoryFlag)); }
   get clock() { return { ...this.days.clock }; }
   /** How far La Reina Bubbaloo's power has spread this morning: 0 at first, 1 is the end. */
-  get spread() { return this.adult ? spread(this.days.clock.day, this.animas.length, this.jar.filter(l => l.used).length) : 0; }
-  /** The lights in the jar at home, in the order they were won: lit, or spent (`used`). No names on screen. */
-  get jar(): { id: LightId; used: boolean }[] {
-    return LIGHTS.filter(id => this.has(`luz-${id}`)).map(id => ({ id, used: this.has(`luz-${id}-usada`) }));
+  get spread() { return this.adult ? spread(this.days.clock.day, this.animas.length) : 0; }
+  /** The lights in the jar at home, in the order they were won. No names on screen. */
+  get jar(): LightId[] { return LIGHTS.filter(id => this.has(`luz-${id}`)); }
+  /** The party's Ecos de luz: every light won (docs/animas/README.md § Ecos de luz). */
+  get ecos() { return this.jar.length + this.debugEcos; }
+  /** What stands of what the ecos are in: a rewound day can take a light back. */
+  get improvements() { return withinEcos(this.bought, this.ecos); }
+  /** A saved list; `improvements` drops whatever does not stand. */
+  set improvements(list: readonly string[]) { this.bought = Array.isArray(list) ? list.filter(id => typeof id === 'string') : []; }
+  /** The dual attacks found so far, in the order they were found. */
+  get duals(): DualId[] { return [...this.found]; }
+  /** A saved list: whatever is not a dual (any more) is dropped. */
+  set duals(list: readonly string[]) { this.found = Array.isArray(list) ? list.filter((id, i): id is DualId => DUALS.some(d => d.id === id) && list.indexOf(id) === i) : []; }
+  /** A dual went off: it is found from now on. Returns whether it is new. */
+  discover(id: DualId) {
+    if (this.found.includes(id) || !DUALS.some(d => d.id === id)) return false;
+    this.found.push(id);
+    return true;
   }
-  /** A light has already been let out today (at most one a day): one is spent that this morning was not. */
-  get lightUsedToday() {
-    const morning = this.days.mornings.find(m => m.day === this.days.clock.day);
-    return !!morning && LIGHTS.some(id => this.has(`luz-${id}-usada`) && !morning.story.includes(`luz-${id}-usada`));
+  /** The dual attacks found that `id` brings a half of (the ánimas screen lists them), in the order they were found. */
+  dualsWith(id: ClassId): DualSpec[] {
+    return this.found.map(found => DUALS.find(d => d.id === found)!).filter(d => d.parts.some(part => SKILLS.find(s => s.id === part)?.class === id));
   }
+  /** Ecos still to put anywhere. */
+  get ecosFree() { return this.ecos - costOf(this.improvements); }
+  /** What the ecos add up to in a fight. */
+  get improved(): Improved { return improvedBy(this.improvements); }
+  /** How much maná an ánima holds with what the ecos added. */
+  manaOf(id?: ClassId) { return manaMax(this.improved, id); }
+  /** Puts ecos into `id`: only one awake, with what it needs first, and ecos enough. Returns whether it took. */
+  improve(id: string) {
+    const item = improvementOf(id), now = this.improvements;
+    if (!item || now.includes(id) || withinEcos([...now, id], this.ecos).length !== now.length + 1) return false;
+    this.bought = [...now, id];
+    return true;
+  }
+  /** Takes the ecos back from `id` and whatever needs it. Returns whether any came back. */
+  unimprove(id: string) {
+    const now = this.improvements;
+    if (!now.includes(id)) return false;
+    this.bought = without(now, id);
+    return true;
+  }
+  /** Every eco back in the jar. */
+  clearImprovements() { this.bought = []; }
   /** The flat has become part of her castle: the game is over until they go back a day. */
   get doomed() { return this.spread >= 1; }
   /** How far into the evening it is (0 by day, 1 at night): the light turns pinker. */
@@ -423,7 +463,7 @@ export class Story {
       // Lent by Nuria for her mission, or the party's for good once it is won.
       ...this.has('papagato') || this.nuria.lent ? ['papagato' as const] : [],
       // Aitor's own, from the morning he is in the party (a placeholder, still to design).
-      ...this.adult ? ['fisico' as const] : [],
+      ...this.adult ? ['tecnopata' as const] : [],
     ];
   }
   /**
@@ -440,7 +480,7 @@ export class Story {
   get gerardClass(): GerardClass | undefined { return this.classOf('gerard') as GerardClass | undefined; }
   /**
    * Each one's own ánima, always theirs and never taken off (docs/party.md): Matemágico is Gerard's
-   * (once it wakes), Físico Aitor's. Bernat has none.
+   * (once it wakes), Tecnópata Aitor's. Bernat has none.
    */
   fixedOf(member: MemberId): ClassId | undefined {
     const own = (Object.entries(ANIMA_OWNERS) as [ClassId, string][]).find(([, who]) => who === member)?.[0];
@@ -531,7 +571,7 @@ export class Story {
     // Chapter 2: Gerard at 35, and Aitor beside him from the moment he wakes up.
     if (this.adult) return [
       { id: 'gerard', name: 'Gerard', profile: 'gerard35', classId, equipment: [], note: classId ? `Treinta y cinco años. Ánima: ${ANIMA_NAMES[classId]}.` : 'Treinta y cinco años.' },
-      { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: this.classOf('aitor'), equipment: [], note: this.classOf('aitor') === 'fisico' ? 'Ánima: Físico. La suya.' : this.classOf('aitor') ? 'Lleva un ánima de Gerard. Y le queda bien.' : 'Pies en el suelo. Y un abrazo para todos.' },
+      { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: this.classOf('aitor'), equipment: [], note: this.classOf('aitor') === 'tecnopata' ? 'Ánima: Tecnópata. La suya.' : this.classOf('aitor') ? 'Lleva un ánima de Gerard. Y le queda bien.' : 'Pies en el suelo. Y un abrazo para todos.' },
     ];
     const gerard: PartyMember = { id: 'gerard', name: 'Gerard', profile: 'gerard', classId, equipment: this.items.filter(i => i !== 'pocion' && i !== 'chicle'), note };
     return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', profile: 'bernat', equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
@@ -702,8 +742,7 @@ export class Story {
       list.push({ id: 'talk-nuria', label: 'Hablar con Nuria', cell: { ...PLACES_NURIA.nuria.cell } });
     }
     if (this.adult && environment === JAR.environment && this.jar.length) {
-      const lit = this.jar.some(l => !l.used) && !this.lightUsedToday;
-      list.push({ id: 'meridiana-luces', label: lit ? 'Usar una luz' : 'Mirar las luces', hint: lit ? 'Usar una luz' : 'Mirar las luces', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });
+      list.push({ id: 'meridiana-luces', label: 'Abrir el bote', hint: 'Abrir el bote', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });
     }
     if (environment === 'maresme' && this.has('palace') && !this.adult) list.push({ id: 'enter-palace', label: 'Atravesar la pompa', cell: { x: PLACES.palace.door.x, z: PLACES.palace.door.z - 1 } });
     if (environment === 'palacio') {
@@ -858,14 +897,8 @@ export class Story {
       case 'meridiana-piano':
         if (!this.adult) return [];
         return [say(LINES_2.piano), ...this.spend('piano')];
-      case 'meridiana-luces': {
-        if (!this.adult || !this.jar.length) return [];
-        const next = this.jar.find(l => !l.used);
-        if (!next) return [say(LINES_2.jarSpent)];
-        if (this.lightUsedToday) return [say(LINES_2.jarToday)];
-        this.set(`luz-${next.id}-usada`);
-        return [{ kind: 'release-light' }, say(LINES_2.jarUsed)];
-      }
+      case 'meridiana-luces':
+        return this.adult && this.jar.length ? [{ kind: 'jar' }] : [];
       case 'meridiana-balcony':
         if (!this.adult) return [];
         return [say(LINES_2.cafe), ...this.spend('cafe')];

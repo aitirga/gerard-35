@@ -26,8 +26,8 @@ test('chapter 2 fights Gerard at 35 and Aitor, fastest first, with their ánimas
   assert.deepEqual(s.allies.map(a => a.maxHp), [120, 135]);
   const [gerard, aitor] = s.allies;
   assert.ok(skillsFor(s, gerard).some(k => k.id === 'foc-binari'), 'Gerard keeps Matemágico');
-  assert.deepEqual(s.animas, ['matemagico', 'fisico'], 'and Aitor has his own, Físico');
-  assert.deepEqual(skillsFor(s, aitor), [], 'without an ánima Aitor has no skills');
+  assert.deepEqual(s.animas, ['matemagico', 'tecnopata'], 'and Aitor has his own, Tecnópata');
+  assert.deepEqual(skillsFor(s, aitor).map(k => k.id), ['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor'], 'Tecnópata\'s are Bip\'s');
   assert.equal(createBattle(story.battleParty(false), 2).allies.length, 1, 'without his partner Gerard fights alone');
 });
 
@@ -35,10 +35,10 @@ test('each has their own ánima, fixed, and one extra slot for a shared one; two
   const { EXTRA_SLOTS } = await import('../src/story.ts');
   const story = chapter2();
   assert.equal(EXTRA_SLOTS, 1);
-  assert.deepEqual(story.classes, ['matemagico', 'fisico']);
+  assert.deepEqual(story.classes, ['matemagico', 'tecnopata']);
   assert.equal(new Story(['intro']).classOf('gerard'), undefined, 'no ánima until the palace');
-  assert.equal(story.fixedOf('gerard'), 'matemagico'); assert.equal(story.fixedOf('aitor'), 'fisico');
-  assert.deepEqual(story.party.map(m => m.classId), ['matemagico', 'fisico'], 'each wears their own');
+  assert.equal(story.fixedOf('gerard'), 'matemagico'); assert.equal(story.fixedOf('aitor'), 'tecnopata');
+  assert.deepEqual(story.party.map(m => m.classId), ['matemagico', 'tecnopata'], 'each wears their own');
   assert.equal(story.equip('aitor', 'matemagico'), false, 'Gerard\'s own is never anyone else\'s');
   assert.equal(story.unequip('gerard', 'matemagico'), false, 'and is never taken off');
   assert.equal(new Story(['bernat-joined', 'matemagico']).equip('bernat', 'matemagico'), false, 'Bernat only attacks');
@@ -52,10 +52,10 @@ test('each has their own ánima, fixed, and one extra slot for a shared one; two
   assert.equal(both.equip('aitor', 'papagato'), false, 'wearing his own does not free his extra');
   assert.ok(both.unequip('gerard', 'papagato'));
   assert.equal(both.equip('aitor', 'papagato'), true, 'once he takes it off, Aitor can');
-  assert.deepEqual(both.battleParty(true).map(p => p.kit), [['matemagico'], ['fisico', 'papagato']]);
+  assert.deepEqual(both.battleParty(true).map(p => p.kit), [['matemagico'], ['tecnopata', 'papagato']]);
   // An old save, from before extras: both chose Papagato; Gerard keeps it.
   both.loadout = { gerard: 'papagato', aitor: 'papagato' };
-  assert.deepEqual(both.kitOf('gerard'), ['matemagico', 'papagato']); assert.deepEqual(both.kitOf('aitor'), ['fisico']);
+  assert.deepEqual(both.kitOf('gerard'), ['matemagico', 'papagato']); assert.deepEqual(both.kitOf('aitor'), ['tecnopata']);
   assert.equal(new Story(['intro']).equip('gerard', 'matemagico'), false, 'locked ánimas cannot be equipped');
   const reloaded = chapter2(); reloaded.loadout = { worn: { aitor: 'nonsense', jan: 'matemagico' }, extras: { aitor: ['matemagico'] } };
   assert.deepEqual(reloaded.loadout, { worn: {}, extras: {} }, 'invalid saved choices are dropped');
@@ -63,11 +63,11 @@ test('each has their own ánima, fixed, and one extra slot for a shared one; two
 
 test('in a fight nobody puts on an ánima someone else wears, or one that is not theirs; L and R skip them', async () => {
   const { switchAnima, wearAnima } = await import('../src/battle.ts');
-  const s = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor' }], 1, false, undefined, ['matemagico', 'papagato', 'fisico']);
+  const s = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor' }], 1, false, undefined, ['matemagico', 'papagato', 'tecnopata']);
   s.active = s.allies.findIndex(a => a.id === 'aitor');
   assert.equal(wearAnima(s, 'papagato'), false, 'Gerard has it on');
   assert.equal(wearAnima(s, 'matemagico'), false, 'it is Gerard\'s');
-  assert.equal(switchAnima(s, 1), 'fisico', 'R walks to the one he can wear');
+  assert.equal(switchAnima(s, 1), 'tecnopata', 'R walks to the one he can wear');
   assert.equal(switchAnima(s, 1), undefined, 'and there is no other');
 });
 

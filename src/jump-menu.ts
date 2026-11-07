@@ -2,6 +2,7 @@ import { ANIMAS, ANIMA_IDS, type AnimaId } from './animas';
 import { canWear, STAGED_MOMENTS, type ClassId, type Encounter, type StagedMoment } from './battle';
 import type { FightMoment } from './battle-ui';
 import { CLASSES } from './classes';
+import { IMPROVEMENTS, improvementOf } from './ecos';
 import { xpFloor } from './levels';
 import type { EnvironmentId } from './environments';
 import { STORY_ARCS, isChapter2, missionParts, missionsDone, topLevel, type Arc } from './story-points';
@@ -58,17 +59,25 @@ export interface FightSetup {
   free: boolean;
   /** No blow takes the party's PV. */
   immune: boolean;
+  /**
+   * Sin límites: every ánima unlocked at its top level for whoever can wear it, maná always full in
+   * all of them, and skills with no limit of use (cures on anyone standing, boosts and marks again
+   * while they run, every dual as often as wanted).
+   */
+  unbound: boolean;
+  /** What the Ecos de luz are in for this fight (src/ecos.ts): awake improvements, whatever they would cost. */
+  improved: string[];
 }
 /** The help any fight gets in development, the story's too. */
-export type FightHelp = Pick<FightSetup, 'free' | 'immune'>;
+export type FightHelp = Pick<FightSetup, 'free' | 'immune' | 'unbound'>;
 const CLASS_IDS = Object.keys(CLASSES) as ClassId[];
-export const DEFAULT_FIGHT: FightSetup = { adult: false, partner: true, wear: { gerard: 'matemagico' }, animas: [...CLASS_IDS], friends: [], encounter: 'dogs', foes: 3, free: true, immune: false };
+export const DEFAULT_FIGHT: FightSetup = { adult: false, partner: true, wear: { gerard: 'matemagico' }, animas: [...CLASS_IDS], friends: [], encounter: 'dogs', foes: 3, free: true, immune: false, unbound: false, improved: [] };
 /** Whatever was stored or passed in a URL, as a setup the tester can start. */
 export function validFight(value: unknown): FightSetup {
   const v: Partial<FightSetup> = value && typeof value === 'object' ? value as Partial<FightSetup> : DEFAULT_FIGHT;
   const isClass = (id: unknown): id is ClassId => typeof id === 'string' && (CLASS_IDS as string[]).includes(id);
   const animas = Array.isArray(v.animas) ? CLASS_IDS.filter(id => v.animas!.includes(id)) : DEFAULT_FIGHT.animas;
-  // Each wears only what is theirs to wear (Matemágico Gerard, Físico Aitor), and never the same one.
+  // Each wears only what is theirs to wear (Matemágico Gerard, Tecnópata Aitor), and never the same one.
   const pick = (member: 'gerard' | 'aitor', id: unknown) => isClass(id) && animas.includes(id) && canWear(member, id) ? id : undefined;
   const gerard = pick('gerard', v.wear?.gerard), aitor = pick('aitor', v.wear?.aitor);
   const wear = { gerard, aitor: aitor === gerard ? undefined : aitor };
@@ -82,7 +91,8 @@ export function validFight(value: unknown): FightSetup {
     // The palace minion is chapter 1's; Uri's tower, chapter 2's.
     encounter: (adult && encounter === 'palace-minion') || (!adult && tower) ? 'dogs' : encounter,
     foes: Number.isInteger(v.foes) ? Math.max(1, Math.min(4, v.foes!)) : DEFAULT_FIGHT.foes,
-    free: v.free !== false, immune: v.immune === true,
+    free: v.free !== false, immune: v.immune === true, unbound: v.unbound === true,
+    improved: Array.isArray(v.improved) ? v.improved.filter(id => { const item = improvementOf(id); return !!item && !item.veiled && (!item.after || v.improved!.includes(item.after)); }) : [],
   };
 }
 const fightKey = 'gerard35.fight.v1';
@@ -106,6 +116,11 @@ export interface JumpMenuDev {
   giveXp: (id: ClassId, amount: number | 'level') => void;
   /** Unlocks ánimas at those levels at once, the fight on now included; `undefined` gives back the story's. */
   setAnimas: (levels: AnimaLevels | undefined) => void;
+  /** The Ecos de luz: how many there are, how many are free, and those the picker added on top of the story's. */
+  ecos: () => { total: number; free: number; extra: number };
+  /** Adds ecos on top of the story's (not saved); opens the jar's screen wherever you are. */
+  giveEcos: (count: number) => void;
+  openJar: () => void;
   fight: (setup: FightSetup) => void;
   /** The fight on now, if any: what it is and whether it can jump (only on a player's turn). */
   current: () => { encounter: Encounter; phase: string; awakened: boolean; busy: boolean } | undefined;
@@ -189,7 +204,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   }
   /** The column beside Historia and Misiones: the ánimas unlocked now and their levels, changed at once. */
   function animasColumn() {
-    const { now, story, xp, changed, adult } = dev!.animas();
+    const { now, story, xp, changed, adult } = dev!.animas(), ecos = dev!.ecos();
     const name = (id: ClassId) => adult ? CLASSES[id].name : CLASSES[id].child?.name ?? CLASSES[id].name;
     const chip = (id: ClassId, level: number, label: string) => `<button type="button" data-set-anima="${id}" data-level="${level}" aria-pressed="${(now[id] ?? 0) === level}" ${(story[id] ?? 0) === level ? 'data-story' : ''}>${label}</button>`;
     // EXP for real, as a fight would give it: only for ánimas the story has, up to the top level.
@@ -209,6 +224,10 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       ${changed ? '<button type="button" class="jump-reset" data-animas-reset>Volver a las de la historia</button>' : '<p class="jump-note jump-story-note">Las que da la historia hasta aquí.</p>'}
       <p class="jump-note">Los niveles se aplican al momento, también al combate en curso. Subrayado, lo que da la historia. No se guarda: un salto vuelve a las de la historia.</p>
       <p class="jump-note">La experiencia sí cuenta: se guarda y sube de nivel como en un combate, con su aviso. Vuelve a las ánimas de la historia.</p>
+      <h3 class="eyebrow">ECOS DE LUZ</h3>
+      <div class="fight-chips jump-xp" role="group" aria-label="Ecos de luz"><span>${ecos.total} ecos · ${ecos.free} libres${ecos.extra ? ` · ${ecos.extra} de aquí` : ''}</span>
+        <button type="button" data-give-ecos="1">+1 eco</button><button type="button" data-give-ecos="-1" ${ecos.extra ? '' : 'disabled'}>−1 eco</button><button type="button" data-open-jar>Abrir el bote</button></div>
+      <p class="jump-note">Los ecos de aquí no se guardan. El bote se abre desde cualquier sitio.</p>
     </aside>`;
   }
   /** Every fight by name (TypeScript asks for each new one). */
@@ -223,7 +242,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     return `
       <p class="jump-note jump-live">Combate en curso · ${escape(FIGHT_NAMES[now.encounter])}</p>
       <div class="fight-row"><span>Ayudas</span><div class="fight-chips">
-        <button type="button" data-help="immune" aria-pressed="${help.immune}">Inmunidad</button><button type="button" data-help="free" aria-pressed="${help.free}">PM infinitos</button></div></div>
+        <button type="button" data-help="immune" aria-pressed="${help.immune}">Inmunidad</button><button type="button" data-help="free" aria-pressed="${help.free}">PM infinitos</button><button type="button" data-help="unbound" aria-pressed="${help.unbound}">Sin límites</button></div></div>
       <div class="fight-row"><span>Saltar a</span><div class="fight-chips">
         ${moment('won', 'Victoria')}${moment('won-level', 'Victoria subiendo de nivel')}${moment('lost', 'Derrota')}${moment('foes-low', 'Enemigos a 1 PV')}${moment('party-low', 'Equipo a 1 PV')}
         ${now.encounter === 'palace-minion' ? moment('beat', 'Despierta Matemágico', now.awakened) : ''}</div></div>
@@ -253,7 +272,8 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       ${f.adult ? `<div class="fight-row"><span>Torre de Uri</span><div class="fight-chips">${TOWER_FIGHTS.map(id => chip('encounter', id, TOWER_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${dogs ? `<div class="fight-row"><span>Cuántos</span><div class="fight-chips">${[1, 2, 3, 4].map(n => chip('foes', String(n), String(n), f.foes === n)).join('')}</div></div>` : ''}
       ${guards ? '<p class="jump-note">Los guardianes son tantos y tan fuertes como dejan las ánimas de los amigos.</p>' : ''}
-      <div class="fight-row"><span>Ayudas</span><div class="fight-chips">${chip('immune', '1', 'Inmunidad', f.immune)}${chip('free', '1', 'PM infinitos', f.free)}</div></div>
+      ${f.adult ? `<div class="fight-row"><span>Ecos de luz</span><div class="fight-chips">${IMPROVEMENTS.filter(item => !item.veiled && f.animas.includes(item.anima)).map(item => chip('improve', item.id, `${CLASSES[item.anima].name} · ${item.name}`, f.improved.includes(item.id), !!item.after && !f.improved.includes(item.after))).join('')}</div></div>` : ''}
+      <div class="fight-row"><span>Ayudas</span><div class="fight-chips">${chip('immune', '1', 'Inmunidad', f.immune)}${chip('free', '1', 'PM infinitos', f.free)}${chip('unbound', '1', 'Sin límites', f.unbound)}</div></div>
       <button type="button" class="jump-go" data-start>Empezar combate</button>
       <p class="jump-note">No cuenta para la historia. Cambiar de época recarga la partida.</p>`;
   }
@@ -325,6 +345,9 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       const id = data.giveXp as ClassId, amount = data.amount === 'level' ? 'level' : Number(data.amount);
       dev!.giveXp(id, amount); render(`[data-give-xp="${id}"][data-amount="${data.amount}"]`); return;
     }
+    if (data.giveEcos) { dev!.giveEcos(Number(data.giveEcos)); render(`[data-give-ecos="${data.giveEcos}"]`); return; }
+    if (data.openJar !== undefined) { close(); dev!.openJar(); return; }
+    if (data.improve) { setFight({ improved: fight.improved.includes(data.improve) ? fight.improved.filter(id => id !== data.improve) : [...fight.improved, data.improve] }); render(`[data-improve="${data.improve}"]`); return; }
     if (data.animasReset !== undefined) { dev!.setAnimas(undefined); render('.jump-side [aria-pressed="true"]'); return; }
     if (data.folds) { dev!.setFolding(data.folds === '1'); render(`[data-folds="${data.folds}"]`); return; }
     if (data.day) { day = Number(data.day); render(`[data-day="${day}"]`); return; }
@@ -347,6 +370,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     else if (key === 'foes') setFight({ foes: Number(value) });
     else if (key === 'free') setFight({ free: !fight.free });
     else if (key === 'immune') setFight({ immune: !fight.immune });
+    else if (key === 'unbound') setFight({ unbound: !fight.unbound });
     else return;
     // Keep focus on the same chip after the page redraws.
     render(`[data-${key.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}="${value}"]`);

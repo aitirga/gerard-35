@@ -1,0 +1,109 @@
+{
+  "title": "Lista de habilidades: hacia arriba y en ventana",
+  "description": "The skill sheet (src/battle-ui.ts `fitSkills`, `keepInView`): it slides out of Habilidad and grows upwards from the command's bottom edge, over the scene, so the dock never moves. With more skills than fit (Papagato at level 3 has six) it shows four at a time; walking past the last in sight slides the list on a row, smoothly, keeping one more in sight while there are more, and the hidden ones wait faded at the edges under ▲ / ▼ with how many; a rail by the sheet's thick edge has a segment per skill, the ones in sight lit, sliding with the list. No scrollbar: arrows, the D-pad, the wheel and the number keys move through it.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]'); window.dockTop = () => Math.round(document.querySelector('.battle-dock[data-dock=\"1\"] .party-card').getBoundingClientRect().top);"
+    },
+    {
+      "until": "window.ready() && !document.querySelector('#battle[data-player=\"2\"]')",
+      "timeout": 180000
+    },
+    {
+      "eval": "ui.setAnimas(['matemagico', 'papagato', 'tecnopata'], { papagato: 3, matemagico: 3 }, { gerard: ['matemagico', 'papagato'], aitor: ['tecnopata'] });"
+    },
+    {
+      "shot": "cerrada",
+      "delay": 900,
+      "caption": "Before: Gerard's dock with Papagato at level 3"
+    },
+    {
+      "eval": "window.before = window.dockTop(); console.log('dock top before', window.before)"
+    },
+    {
+      "eval": "document.querySelector('.battle-dock[data-dock=\"1\"] [data-command=\"skill\"] .command-trigger').focus(); document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "until": "(console.log('dock top now', window.dockTop()), Math.abs(window.dockTop() - window.before) <= 1)",
+      "timeout": 3000
+    },
+    {
+      "shot": "abierta",
+      "delay": 300,
+      "caption": "Habilidad open: the sheet grows upwards from the command, four skills in sight, «▼ 2 más» and the rail by its edge (four of six segments lit, at the top); the card has not moved"
+    },
+    {
+      "eval": "document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))"
+    },
+    {
+      "shot": "bajando",
+      "delay": 700,
+      "caption": "Down to the fourth: the list and the rail's lit segments have slid on a row, «▲ 1 más» above and «▼ 1 más» below"
+    },
+    {
+      "record": "recorrer",
+      "seconds": 3.2,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame % 12 === 6 && document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: window.frame < 50 ? 'ArrowDown' : 'ArrowUp', bubbles: true }))",
+      "clip": [
+        0,
+        300,
+        1100,
+        600
+      ],
+      "caption": "Walking down to Volver and back up: the window slides a row at a time, never a scrollbar"
+    },
+    {
+      "eval": "document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))"
+    },
+    {
+      "shot": "de-nuevo-cerrada",
+      "delay": 700,
+      "caption": "Closed again: everything where it was"
+    },
+    {
+      "eval": "document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'q', bubbles: true }))"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "ui.setAnimas(['matemagico', 'papagato', 'tecnopata'], { papagato: 3, matemagico: 3 }, { gerard: ['matemagico', 'papagato'], aitor: ['tecnopata', 'papagato'] }); document.querySelector('.battle-dock[data-dock=\"1\"] [data-command=\"defend\"] .command-trigger').click()"
+    },
+    {
+      "until": "window.ready() && document.querySelector('#battle[data-player=\"2\"]')",
+      "timeout": 120000
+    },
+    {
+      "eval": "ui.control('next', 2)"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "document.querySelector('.battle-dock[data-dock=\"2\"] [data-command=\"skill\"] .command-trigger').focus(); ui.control('confirm', 2)"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "ui.control('down', 2); ui.control('down', 2); ui.control('down', 2)"
+    },
+    {
+      "shot": "aitor-espejo",
+      "delay": 800,
+      "caption": "Aitor's dock, mirrored: his sheet grows upwards and to the left, the same window of four, slid down a row"
+    }
+  ]
+}

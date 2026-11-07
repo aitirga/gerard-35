@@ -86,6 +86,10 @@ needs). The EXP is kept, a level reached sets its flag and shows its note (*ÁNI
 …*), and they give back the story's ánimas first, so what shows is the story's. Both are greyed out at
 the top level.
 
+Under them, **Ecos de luz**: how many there are and how many are free, *+1 eco* and *−1 eco* (on top
+of the story's, not saved, `story.debugEcos`) and *Abrir el bote*, which opens the jar's screen
+wherever Gerard is.
+
 During a fight, *Saltar a* also has **Victoria subiendo de nivel**: it wins with EXP enough for every
 ánima that took part to reach its next level (`BattleState.extraXp`), to see the victory screen's
 level-up.
@@ -109,8 +113,13 @@ The fight tester. Choose:
 - To try **Ángulo exacto**, **Ronroneo de Yuki** and the **duals**, the Ánimas column sets the
   levels (Matemágico and Papagato at *Nv 2* reach all of them) and *Equipo* + *Ánimas* put
   Matemágico on Gerard and Papagato on Aitor.
-- **Ayudas**: *Inmunidad* (no blow takes the party's PV) and *PM infinitos* (skills cost no
-  Ánima).
+- **Ecos de luz** (chapter 2): the improvements of the ánimas in the fight, whatever they would cost
+  (Matemágico's elements, each ánima's maná). Asleep ones (Pasiva, Definitiva) do not show.
+- **Ayudas**: *Inmunidad* (no blow takes the party's PV), *PM infinitos* (skills cost no
+  Ánima) and *Sin límites*: every ánima unlocked at its top level for whoever can wear it (each
+  can switch to all of theirs), maná always full in every one, and skills with no limit of use (a
+  cure on anyone standing, a boost or a mark again while it runs, every dual as often as wanted;
+  `BattleState.unbound`, `unboundAnimas` and `applyHelp` in `src/main.ts`).
 
 To balance fights rather than play them, `just fight-sim` plays thousands without a screen
 ([fight-sim.md](fight-sim.md)).
@@ -131,7 +140,8 @@ planta un combate), and `&pocket` sends any fight to one, wherever it starts (e.
 
 In any fight, the story's too, the Combate tab becomes the fight's own page:
 
-- **Ayudas**: *Inmunidad* and *PM infinitos*, on or off at once (a test fight starts with its setup's).
+- **Ayudas**: *Inmunidad*, *PM infinitos* and *Sin límites*, on or off at once (a test fight starts
+  with its setup's; *Sin límites* off gives back the fight's own ánimas, levels and kits).
 - **Saltar a**: *Victoria* or *Derrota* (its result screen, as if it had happened), *Enemigos a
   1 PV* or *Equipo a 1 PV* (the next blow decides), and against the palace minion *Despierta
   Matemágico*, its beat: Bernat on his knees begs Gerard to think, and Matemágico wakes. Jumps wait for a
@@ -198,6 +208,9 @@ turns it on (the `herdr-project` skill), and it looks again every 5 seconds. It 
 `just progress` prints it once and `just progress --all` lists every item.
 
 ## Effects lab
+
+*Atacar de Matemágico* plays his thrown Atacar (`src/math-cast.ts`), with no element or with each one,
+from Gerard at whoever is picked.
 
 `just dev-fx` (or `?fxlab` on any development URL, `?story=matemagico&fxlab` for a clean run) opens a
 fight with chapter 1's boys against three dogs and a panel on the right ([src/fx-lab.ts](../src/fx-lab.ts)).

@@ -621,6 +621,7 @@ dimmer than its kind, so a burst never looks flat.
 | --- | --- |
 | `emit(kind, at, count, spread)` | A plain burst of one kind (footfall dust, gum, spores). |
 | `impact(target, from, strength, { guarded, gum, feet })` | A blow: flash, sparks flying on through (white-hot to gold, never clinging) and a little dust at the feet, no ring; on Gerard or Aitor it lands mid-body; a guarded blow glints blue; gum foes spit drops that splat. Nothing in a fight reads as blood. |
+| `claw(at, { right, up }, size)` | Zarpazo sangriento: three claw lines (`clawLines`) torn across the foe's body from top right to bottom left, one a breath after another, in front of it; white to coral, as Sangrado's scratches of light (no blood). The blow under them stays small and throws coral sparks (`impact` with the claws' colour), and the foe flashes a soft coral. |
 | `binaryFire(from, to, { seconds, burn, feet, onArrive })` | Foc Binari: two braided streams of fire (orange to red, gold to orange) from the hand to one foe, shedding embers; with `burn` (a 1) they burst into fire, without it (a 0) they fizzle into smoke. |
 | `heal(feet, height)` | Light rising from a cardioid round the feet, spiralling up (no skill uses it now). |
 | `insight(head)` | Ideas circling over a head (no skill uses it now). |
@@ -835,9 +836,10 @@ In fights (`trailsFor` in src/battle-scene.ts): a blow swings an arc from the le
 (`Mano` on the first `Brazo`) for the quarter second into contact, a dog's from its nose and the
 gum minion's from its head; skills are in the wearer's ánima colour (`CLASSES[id].colour`, white
 at the head); support skills fly as comets to whoever they reach (winding round the caster when
-it is them); Foc Binari draws its own two streams of fire (`effects.binaryFire`): the caster raises
-a hand, they leave it at `CAST_LAUNCH` (0.26 s) and land `CAST_FLIGHT` (0.42 s) later, at
-`CAST_CONTACT` (0.68 s; `src/battle-motion.ts`); an ánima
+it is them); Matemágico's spells that throw something start with his circle (`src/math-cast.ts`,
+`docs/animas/matemagico/README.md` § Casting), so nothing of his swings an arc; Foc Binari draws its
+own two streams of fire (`effects.binaryFire`): they leave the circle at `CAST_LAUNCH` (0.38 s) and
+land `CAST_FLIGHT` (0.42 s) later, at `CAST_CONTACT` (0.8 s; `src/battle-motion.ts`); an ánima
 waking winds three strands up round Gerard, a swap two (`effects.anima`). Reduced motion turns
 trails off (`trails.enabled`), and `effects.clear()` ends them with the fight.
 

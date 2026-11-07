@@ -1,0 +1,205 @@
+{
+  "title": "Atacar con elementos y sus reacciones",
+  "description": "docs/combat.md § Reacciones entre elementos. Fight tester, Vertitrón, Gerard in Matemágico with the three elements bought, Aitor in Papagato (no PV lost, free maná). Atacar's block is split in one segment per element: X (the top face button on a pad, X on a Switch) walks them. An element on its own lights nothing. Aitor's Zarpazo adds Sangrado and Gerard's Atacar · Fuego cauterizes it; Foc Binari sets fire and Atacar · Agua puts it out and blinds; Atacar · Eléctrico runs through the smoke. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22matemagico%3Aagua%22%2C%22matemagico%3Afuego%22%2C%22matemagico%3Aelectrico%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]'); window.pick = id => document.querySelector(`[data-element=\"${id}\"]`).click();"
+    },
+    {
+      "until": "window.ready() && document.querySelector('.turn-label').textContent === 'Aitor'",
+      "timeout": 180000
+    },
+    {
+      "press": "Digit2",
+      "gap": 350
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 350
+    },
+    {
+      "until": "window.ready() && document.querySelector('.turn-label').textContent === 'Gerard'",
+      "timeout": 180000
+    },
+    {
+      "shot": "block",
+      "delay": 500,
+      "caption": "Gerard's turn: Atacar's block split in segments, none chosen, with its key until it is used"
+    },
+    {
+      "press": "KeyX"
+    },
+    {
+      "shot": "agua",
+      "delay": 250,
+      "caption": "X: Agua. The block takes its colour and says so"
+    },
+    {
+      "press": "KeyX"
+    },
+    {
+      "shot": "fuego",
+      "delay": 250,
+      "caption": "X again: Fuego. It stays until changed, turn after turn"
+    },
+    {
+      "press": "Digit1"
+    },
+    {
+      "shot": "aiming",
+      "delay": 350,
+      "caption": "Aiming Atacar · Fuego (X still walks them here)"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "until": "document.querySelector('.damage-pop[data-status=\"cauterizado\"]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "cauterizado",
+      "caption": "Fuego on Sangrado: ¡Cauterizado! Every stack at once, in the blow's own moment"
+    },
+    {
+      "until": "window.ready() && document.querySelector('.turn-label').textContent === 'Aitor'",
+      "timeout": 180000
+    },
+    {
+      "press": "Digit4",
+      "gap": 350
+    },
+    {
+      "until": "window.ready() && document.querySelector('.turn-label').textContent === 'Gerard'",
+      "timeout": 180000
+    },
+    {
+      "press": "Digit2",
+      "gap": 350
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "wait": 2200
+    },
+    {
+      "shot": "quemado",
+      "caption": "Foc Binari: the fire is on"
+    },
+    {
+      "until": "window.ready() && document.querySelector('.turn-label').textContent === 'Aitor'",
+      "timeout": 180000
+    },
+    {
+      "press": "Digit4",
+      "gap": 350
+    },
+    {
+      "until": "window.ready() && document.querySelector('.turn-label').textContent === 'Gerard'",
+      "timeout": 180000
+    },
+    {
+      "eval": "window.pick('agua')"
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "until": "document.querySelector('.damage-pop[data-status=\"cegado\"]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "humo",
+      "caption": "Agua on Quemado: the fire goes out in a cloud and leaves ¡Cegado!"
+    },
+    {
+      "until": "document.querySelector('.status-icon[data-status=\"cegado\"]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "cegado",
+      "delay": 500,
+      "caption": "Cegado on its plate, with its clock; the smoke clings round its head"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "summary",
+      "delay": 400,
+      "caption": "The summary says it and how long it has left"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "until": "window.ready() && document.querySelector('.turn-label').textContent === 'Aitor'",
+      "timeout": 180000
+    },
+    {
+      "press": "Digit4",
+      "gap": 350
+    },
+    {
+      "until": "window.ready() && document.querySelector('.turn-label').textContent === 'Gerard'",
+      "timeout": 180000
+    },
+    {
+      "eval": "window.pick('electrico')"
+    },
+    {
+      "shot": "electrico",
+      "delay": 200,
+      "caption": "Eléctrico chosen, on a foe in smoke"
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "until": "document.querySelector('.damage-pop[data-status=\"tormenta\"], .damage-pop[data-status=\"cegado\"]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "tormenta",
+      "caption": "Eléctrico on Cegado: ¡Tormenta! The bolt runs through the smoke and the smoke is gone"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "after",
+      "caption": "After it"
+    }
+  ]
+}

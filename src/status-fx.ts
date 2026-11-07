@@ -11,7 +11,7 @@ import type { GpuEmitter, GpuField, GpuKind } from './fight-particles.ts';
  * body and a way of moving.
  * Particles are only sparks, drops, crystals and haze, never sprites with a shape of their own.
  */
-export type StatusLookId = 'quemado' | 'mojado' | 'congelado' | 'envenenado' | 'sangrado' | 'cegado' | 'paralizado' | 'cauterizado' | 'mareo' | 'llorera';
+export type StatusLookId = 'quemado' | 'mojado' | 'congelado' | 'envenenado' | 'sangrado' | 'cegado' | 'paralizado' | 'cauterizado' | 'mareo' | 'llorera' | 'sanacion' | 'confusion' | 'encogido';
 export type ReactionId = 'humo' | 'paralisis' | 'congelar' | 'arrastre' | 'veneno-ardiente' | 'vapor' | 'anicos' | 'contagio' | 'cauterizado' | 'tormenta';
 /** How a status moves whoever carries it (battle-scene plays it). */
 export type StatusMotion = 'freeze' | 'twitch' | 'sway';
@@ -26,8 +26,8 @@ interface Stream {
 }
 export interface StatusLook {
   name: string;
-  /** Who decided it: the combat design's physical statuses, the campaign's, or what a reaction leaves. */
-  family: 'físico' | 'campaña' | 'reacción';
+  /** Who decided it: the combat design's physical statuses, the campaign's, what a reaction leaves, or Tecnópata's (Bip's). */
+  family: 'físico' | 'campaña' | 'reacción' | 'tecnópata';
   /** Seconds it lasts by default (the design's real-time statuses). */
   seconds: number;
   /** What it shows, in a sentence (the report and docs). */
@@ -169,6 +169,26 @@ export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
     shows: 'Lágrimas que le saltan de la cara, caen y dejan charquitos a sus pies.',
     streams: [{ kind: 'drip', rate: [10, 16, 26], from: 'body', above: .72, outward: .8, up: 1, speed: .25, life: [.9, 1.4], colour: '#cfeaff', size: 1.4 }],
   },
+  // Tecnópata's (Bip's): a cure on the clock, waves of the mind, and a body shrunk (battle-scene scales it).
+  sanacion: {
+    name: 'Sanación', family: 'tecnópata', seconds: 15,
+    shows: 'Lucecitas verdes que le suben despacio por el cuerpo, más con cada nivel; brilla un poco.',
+    streams: [{ kind: 'mote', rate: [8, 13, 20], from: 'body', above: .1, outward: .25, up: .6, speed: .15, life: [.9, 1.5], colour: '#8ff0b0', size: 1.3 }, { kind: 'twinkle', rate: [2, 4, 7], from: 'body', above: .4, outward: .2, up: .4, speed: .1, life: [.4, .8], colour: '#d8ffe6' }],
+    tint: [.01, .06, .02],
+  },
+  confusion: {
+    name: 'Confusión', family: 'tecnópata', seconds: 30,
+    shows: 'Lucecitas cian que le dan vueltas sobre la cabeza, de Bip, y se tambalea.',
+    streams: [{ kind: 'mote', rate: [10, 10, 10], from: 'head', spread: .32, speed: .25, life: [1, 1.6], colour: '#7fe9ff', size: 1.3 }],
+    field: { height: 1.1, swirl: -12, pull: 6, lift: 0, reach: .45 },
+    tint: [0, .03, .05],
+    motion: 'sway',
+  },
+  encogido: {
+    name: 'Encogido', family: 'tecnópata', seconds: 15,
+    shows: 'Se queda pequeño; unas chispitas cian le rodean los pies.',
+    streams: [{ kind: 'mote', rate: [5, 5, 5], from: 'feet', spread: .2, speed: .1, life: [.8, 1.3], colour: '#bff6ff', size: 1 }],
+  },
 };
 
 /** The reactions the combat design decided (docs/combat.md): which status, which element, what it leaves. */
@@ -290,6 +310,23 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
       const looks = (on.get(id) ?? []).filter(s => !s.ending).map(s => STATUS_LOOKS[s.look].motion);
       return looks.includes('freeze') ? 'freeze' : looks.includes('twitch') ? 'twitch' : looks.includes('sway') ? 'sway' : undefined;
     },
+    /** An Atacar with an element lands on `id`: a little burst of it, no status (docs/combat.md § Reacciones entre elementos). */
+    touch(element: 'agua' | 'fuego' | 'electrico', id: string) {
+      const f = find(id), g = gpu();
+      if (!f || !g) return;
+      ensureKinds();
+      const chest = { x: f.feet.x, y: f.feet.y + bodyFor(f).height * .55, z: f.feet.z };
+      if (element === 'agua') {
+        g.burst('drip', { at: chest, count: 46, shape: 'surface', fighter: f.index, above: .25, outward: 1.5, up: 1, speed: .9, life: [.45, .85] });
+        g.burst('twinkle', { at: chest, count: 12, spread: .22, speed: 1.2, life: [.2, .4], colour: '#cfeeff', size: .6 });
+      } else if (element === 'fuego') {
+        g.burst('ember', { at: chest, count: 46, spread: .16, speed: 2, life: [.35, .75], colour: '#ffb84a' });
+        g.burst('crackle', { at: chest, count: 30, shape: 'surface', fighter: f.index, outward: 1.4, up: 1.2, speed: .9, life: [.2, .45] });
+      } else {
+        g.burst('arc', { at: chest, count: 4 * 8, chain: 8, shape: 'surface', fighter: f.index, outward: 1.6, speed: 1.2, life: [.14, .28], colour: '#fff2a8', light: { intensity: 2, range: 2.2, colour: '#ffe45c' } });
+        g.burst('spark', { at: chest, count: 28, spread: .14, speed: 2.6, life: [.18, .4], colour: '#fff2a8' });
+      }
+    },
     /** A reaction on `id` (docs/combat.md): what was on them turns into what it leaves, with its moment. */
     react(reaction: ReactionId, id: string) {
       const f = find(id), g = gpu();
@@ -368,7 +405,8 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
         case 'tormenta': {
           // The bolt jumps through the smoke to everyone in it.
           const inSmoke = fighters.filter(o => o.id !== id && api.has(o.id, 'cegado'));
-          for (const o of inSmoke.length ? inSmoke : others) g?.burst('arc', { at: chest, to: chestOf(o), shape: 'line', count: 3 * 16, chain: 16, speed: .6, life: [.25, .45], colour: '#e6eeff', light: { intensity: 4, range: 3, colour: '#cfe0ff' } });
+          g?.burst('arc', { at: chest, count: 8 * 10, chain: 10, shape: 'surface', fighter: f.index, outward: 2, speed: 1.5, life: [.2, .42], colour: '#e6eeff', light: { intensity: 4, range: 3, colour: '#cfe0ff' } });
+          for (const o of inSmoke) g?.burst('arc', { at: chest, to: chestOf(o), shape: 'line', count: 3 * 16, chain: 16, speed: .6, life: [.25, .45], colour: '#e6eeff', light: { intensity: 4, range: 3, colour: '#cfe0ff' } });
           g?.burst('spark', { at: chest, count: 100, spread: .2, speed: 3, life: [.3, .6], colour: '#e6eeff' });
           break;
         }

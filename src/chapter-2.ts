@@ -150,10 +150,6 @@ export const LINES_2 = {
   /** Things to do that take time (the countdown is why they matter). */
   piano: both(gerard('Una pieza. Solo una.'), aitor('Suena bonita. Aunque se nos va la mañana…')),
   cafe: both(gerard('Un café en el balcón. Desde aquí se ve el rosa, al fondo.'), aitor('Cada día está un poco más cerca.')),
-  /** The jar of lights at home: one let out flies to the castle and wins a day back. */
-  jarUsed: both(gerard('Vuela. Hacia el castillo.'), aitor('Mira el rosa, al fondo… se ha echado atrás. Nos ha dado un día.')),
-  jarToday: both(aitor('Hoy ya ha salido una. Las otras, mejor guardarlas para cuando haga falta.')),
-  jarSpent: both(gerard('Ya no queda ninguna encendida.'), aitor('Pero el bote sigue ahí. Algo de ellos se quedó en casa.')),
   /** The end: she has covered everything. */
   doom: both(
     gerard('¡NO!'),

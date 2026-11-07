@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
-import { CAMERA, pocketCellOf, type PocketPlan } from './arena';
+import { CAMERA, pocketCellOf, pocketWorld, type PocketPlan } from './arena';
+import { BACKDROP } from './particles';
 import { createPropKit } from './props';
 import type { WorldProp } from './environments';
 
@@ -108,7 +109,9 @@ export function createPocket(app: pc.Application, source: PocketSource, random: 
   const front = (x: number, z: number) => { const p = local(x, z); return p.x * toward.x + p.z * toward.z > 1.4; };
 
   const floor = builder(), under = builder(), walls = builder();
-  const depth = 1.4;
+  const depth = 1.4, width = cells[0]?.length ?? 0, length = cells.length;
+  /** How tall each wall was built, for particles to meet (`world`). */
+  const tops = new Float32Array(width * length);
   const flatUv = (x0: number, x1: number, z0: number, z1: number) => [[x0 / metres, z1 / metres], [x1 / metres, z1 / metres], [x1 / metres, z0 / metres], [x0 / metres, z0 / metres]];
   cells.forEach((row, z) => row.forEach((c, x) => {
     const p = local(x, z), x0 = p.x - .5, x1 = p.x + .5, z0 = p.z - .5, z1 = p.z + .5;
@@ -117,6 +120,7 @@ export function createPocket(app: pc.Application, source: PocketSource, random: 
     if (c === 'floor' || c === 'prop') floor.quad([[x0, 0, z1], [x1, 0, z1], [x1, 0, z0], [x0, 0, z0]], [0, 1, 0], flatUv(x0, x1, z0, z1));
     else if (c === 'wall') {
       const top = front(x, z) ? .35 : source.wallHeight * (.94 + random() * .12);
+      tops[z * width + x] = top;
       walls.quad([[x0, top, z1], [x1, top, z1], [x1, top, z0], [x0, top, z0]], [0, 1, 0], flatUv(x0, x1, z0, z1), .9);
       // Every side a neighbour does not hide: open ground, the sky, or a neighbour cut lower.
       sides(walls, x0, x1, z0, z1, 0, top, (dx, dz) => kind(x + dx, z + dz) !== 'wall' || front(x + dx, z + dz) !== front(x, z), metres);
@@ -143,13 +147,14 @@ export function createPocket(app: pc.Application, source: PocketSource, random: 
     light.setLocalPosition(x, 4.2, z); root.addChild(light);
   }
 
-  const width = cells[0]?.length ?? 0, length = cells.length;
   return {
     root,
     /** The middle of the fight, in world space. */
     centre: POCKET_AT.clone(),
     /** How high the floor stands (it is flat). */
     floorAt: () => POCKET_AT.y,
+    /** What the fight's particles land on and bounce off while it lasts (effects `setFightStage`): its floor, its walls, its things a metre tall. */
+    world: pocketWorld(plan, POCKET_AT, (x, z) => kind(x, z) === 'prop' ? 1 : tops[z * width + x], BACKDROP),
     /** Whether a world point lies over the pocket. */
     contains: (x: number, z: number) => Math.abs(x - POCKET_AT.x) < width + 4 && Math.abs(z - POCKET_AT.z) < length + 4,
     update(dt: number, animate: boolean) { kit.update(dt, animate); },

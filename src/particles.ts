@@ -123,6 +123,8 @@ export interface AttractorOptions {
   life?: number;
 }
 export interface ParticleBody { x: number; y: number; z: number; radius: number; height: number; /** Same object every frame, to measure how fast it moves. */ key?: object }
+/** The floor past the edge of a scene's model (`ParticleWorld.outside`): the backdrop far below. */
+export const BACKDROP = -.95;
 /** The scene as particles feel it: floors sampled over a rectangle, and solid cells. */
 export interface ParticleWorld {
   x0: number; z0: number; x1: number; z1: number;

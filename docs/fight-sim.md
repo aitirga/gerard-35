@@ -44,7 +44,16 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `skill` | `SKILLS` | `skill.zarpazos.strikes` |
 | `dual` | `DUALS` | `dual.zarpazos-de-fuego.power` |
 | `vertigo` | `VERTIGO`, the final boss's whole book, as `vertigo.boss` | `vertigo.boss.pisoton`, `vertigo.boss.gritoDown` |
+| `reaction` | `REACTION_RULES`, what the elements turn | `reaction.rules.storm`, `reaction.rules.blind2` |
 | `fear` | `FEAR_RULES` as `fear.rules`, and El Plato's blow as `fear.plato` (the onions hit with `ONIONS`, Vertitrón with `VERTIGO`) | `fear.rules.escortLayers`, `fear.plato.power` |
+
+What the Ecos de luz are in is one more list, `--improved`, of `src/ecos.ts` ids joined with `/`
+(`none` for nothing). The bots may give an Atacar any element it has:
+
+```sh
+just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato --level matemagico=2/papagato=2 \
+  --improved none,matemagico:agua/matemagico:electrico,papagato:mana-1
+```
 
 Then, to decide:
 

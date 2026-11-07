@@ -104,7 +104,7 @@
       "seconds": 1.8,
       "fps": 30,
       "each": "window.frame === 2 && document.querySelector('.battle-target[data-target=\"dog-0\"]:not(:disabled)')?.click()",
-      "caption": "Zarpazo de Haru: crouched, she springs with her forelegs reaching and hind legs pushing back, lands low to swat, and hops back"
+      "caption": "Zarpazo sangriento: crouched, she springs with her forelegs reaching and hind legs pushing back, lands low to swat, and hops back"
     },
     {
       "eval": "window.gerard.game.frame()"

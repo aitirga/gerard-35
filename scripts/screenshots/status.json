@@ -32,12 +32,12 @@
       "caption": "E (or R on a controller) turns the page: Ánimas, a list for each member with the ánimas they can wear and their levels, and the one under the cursor"
     },
     {
-      "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"fisico\"]').click();"
+      "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"tecnopata\"]').click();"
     },
     {
       "shot": "animas-personalised",
       "delay": 350,
-      "caption": "Aitor's own ánima, Físico, fixed: a press on it only shakes"
+      "caption": "Aitor's own ánima, Tecnópata, fixed: a press on it only shakes"
     },
     {
       "press": "KeyE"
@@ -147,7 +147,7 @@
     {
       "shot": "duo-aitor-animas",
       "delay": 1200,
-      "caption": "Aitor's own Ánimas page, driven by his controller: his own Físico, fixed, and his extra slot, still empty"
+      "caption": "Aitor's own Ánimas page, driven by his controller: his own Tecnópata, fixed, and his extra slot, still empty"
     },
     {
       "eval": "Promise.all([tap(0, 1), tap(1, 1)])"

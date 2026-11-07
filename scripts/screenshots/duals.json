@@ -3,7 +3,7 @@
   "description": "docs/combat.md § Ataques duales, docs/quests/nuria.md § Dual attacks. Two players (two pads faked: the keyboard is Gerard, pad 2 is Aitor) against Vertitrón, Gerard in Matemágico and Aitor in Papagato, both at level 2 (the tester's help: free maná, no PV lost). Round 1: the dev-only Dual command (third in the menu) opens its sheet, each dual with its two halves and their combined cost; aiming Punto débil already puts its banner up (armed), and confirming sets it off (the banner bursts, black bars close in, gold flares from the edges, time slowed, the blueprint, the stroke) and leaves its mark on the foe's plate. Round 2: Gerard readies Foc Binari in his own dock (LUEGO · GERARD, the PREPARADO plate) while Aitor attacks, and Aitor's blow lands at ×3 and spends the mark; then the readied move plays by itself. Round 3: Gerard readies Foc Binari again and Aitor picks Zarpazos: nothing glows in the list, but the moment it is picked the Zarpazos de fuego banner comes up while he aims (its halves meeting in the middle); confirming sets it off (bars, flare, slow motion, the circle of binary marks, eight claws, the coins of fire). Round 4: each dual goes off once a fight, so the Dual sheet says «Ya usado en este combate» for both. Run it with --gpu.",
   "steps": [
     {
-      "open": "/?story=got-wrapper&solo=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22fisico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
     },
     {
       "until": "window.gerard && window.gerard.battleUI.fight",
@@ -17,7 +17,7 @@
       "timeout": 180000
     },
     {
-      "eval": "ui.setAnimas(['matemagico', 'papagato', 'fisico'], { matemagico: 2, papagato: 2 }); ui.refresh?.()"
+      "eval": "ui.setAnimas(['matemagico', 'papagato', 'tecnopata'], { matemagico: 2, papagato: 2 }); ui.refresh?.()"
     },
     {
       "wait": 1200

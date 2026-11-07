@@ -1,0 +1,186 @@
+{
+  "title": "El bote de las luces: los ecos en las ánimas",
+  "description": "docs/animas/README.md § Ecos de luz. Home after Nuria's mission, two lights in the jar on the TV unit. Abrir el bote opens its screen: the jar and its marbles on the left, the ánimas on the right, each improvement a card with as many glass sockets as ecos it costs. An eco flies from the jar to the card, and can be taken back whenever. Maná, and Pasiva and Definitiva still asleep. With more ecos (the picker's), every page. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=luz-uri&day=8"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "localStorage.removeItem('gerard35.ecos.v1'); window.gerard.story.clearImprovements()"
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        15,
+        2
+      ],
+      "settle": 1500
+    },
+    {
+      "shot": "prompt",
+      "delay": 1500,
+      "caption": "The jar on the TV unit, two ecos de luz beside the menus, and the prompt Abrir el bote"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!document.querySelector('#jar-panel').hidden",
+      "timeout": 20000
+    },
+    {
+      "shot": "two-ecos",
+      "delay": 900,
+      "caption": "The jar's screen, two ecos free. Matemágico's page: its elements for Atacar, its maná, and what still sleeps"
+    },
+    {
+      "eval": "document.querySelector('.jar-card').click(); const fly = document.querySelector('.jar-flight').getAnimations()[0]; fly.pause(); fly.currentTime = 210;"
+    },
+    {
+      "shot": "flying",
+      "delay": 200,
+      "caption": "Agua: an eco flies out of the jar to the card (held mid-flight for the picture)"
+    },
+    {
+      "eval": "document.querySelector('.jar-flight').getAnimations()[0].play()"
+    },
+    {
+      "shot": "agua",
+      "delay": 800,
+      "caption": "Agua is on: its socket lit, a dark marble in the jar tinted by where it went, one eco free"
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "shot": "electrico",
+      "delay": 300,
+      "caption": "Eléctrico under the cursor: what it does, and the eco it costs"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "shot": "mana-short",
+      "delay": 300,
+      "caption": "Maná +1 costs two: one free is not enough, and it says so"
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "shot": "asleep",
+      "delay": 300,
+      "caption": "Pasiva and Definitiva: places kept, asleep, not to be bought yet"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "until": "document.querySelector('#jar-panel').hidden",
+      "timeout": 10000
+    },
+    {
+      "shot": "jar-one-dark",
+      "delay": 800,
+      "caption": "Back in the flat: one marble dark, one lit, and the chip says 1 eco de luz free"
+    },
+    {
+      "eval": "window.gerard.story.debugEcos = 9"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "!document.querySelector('#jar-panel').hidden",
+      "timeout": 20000
+    },
+    {
+      "wait": 500
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "shot": "matemagico-full",
+      "delay": 500,
+      "caption": "With more ecos: three elements and Maná +1, a fourth pip ringed in amber"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "papagato",
+      "delay": 600,
+      "caption": "L / R (Q / E) turn to the next ánima, in its colours: Papagato has no elements, only its maná and what sleeps"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "shot": "papagato-mana",
+      "delay": 300,
+      "caption": "Maná +1 on Papagato"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "tecnopata",
+      "delay": 600,
+      "caption": "Tecnópata's page"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "until": "document.querySelector('#jar-panel').hidden",
+      "timeout": 10000
+    },
+    {
+      "eval": "window.gerard.exploration.show('animas')"
+    },
+    {
+      "shot": "status",
+      "delay": 700,
+      "caption": "The status screen's Ánimas page says what the ecos are in"
+    }
+  ]
+}

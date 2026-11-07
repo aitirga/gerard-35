@@ -67,9 +67,6 @@ export const STORY_ARCS = [
   { id: 'papagato', chapter: 2, title: 'Papagato crece', detail: 'Experiencia de combate', after: 'papagato', steps: [
     { flags: ['papagato-2'], label: 'Papagato, nivel 2' }, { flags: ['papagato-3'], label: 'Papagato, nivel 3' },
   ] },
-  { id: 'lights', chapter: 2, title: 'El bote de las luces', detail: 'Meridiana', after: 'nuria-uri', steps: [
-    { flags: ['luz-nuria-usada'], label: 'Primera luz al castillo' }, { flags: ['luz-uri-usada'], label: 'Segunda luz' },
-  ] },
 ] as const satisfies readonly Arc[];
 
 // TypeScript asks for a step for every flag in STORY_FLAGS.

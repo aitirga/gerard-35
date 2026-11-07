@@ -3,7 +3,7 @@
   "description": "docs/quests/nuria.md § Final boss. Vertitrón in the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost): a robot of roof tiles and ladders with one glass eye bulging from its chest (GPU particles turning inside it, the eyeball darting about), Uri on its head with Nil in his arms, his eyes violet. Each of its moves with Uri's shout over him: Pisotón, Barrido, Grito liberador, the eye charging and the Rayo terrorífico sweeping both. Then the picker's moments (eye charged, eye broken), the eye broken by a blow, and the win: it kneels and Uri and Nil come down. Run it with --gpu.",
   "steps": [
     {
-      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22fisico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
     },
     {
       "until": "window.gerard && window.gerard.battleUI.fight",

@@ -41,7 +41,7 @@ Opinión de Jev, solo si se pide (necesita TYPESAFE_API_KEY en .env):
 
 Los bots no son personas: sirven para comparar combinaciones, no para medir cómo se siente un combate.
 `;
-const LISTS = { '--fight': 'fights', '--party': 'parties', '--level': 'levels', '--policy': 'policies', '--ban': 'bans', '--friends': 'friends', '--animas': 'animas' };
+const LISTS = { '--fight': 'fights', '--party': 'parties', '--level': 'levels', '--policy': 'policies', '--ban': 'bans', '--friends': 'friends', '--animas': 'animas', '--improved': 'improved' };
 const NUMBERS = { '--runs': 'runs', '--seed': 'seed', '--error': 'error', '--think': 'think', '--max-rounds': 'maxRounds' };
 const FLAGS = { '--json': 'json', '--jev': 'jev', '--jev-dry-run': 'jevDryRun', '--help': 'help' };
 
@@ -84,7 +84,7 @@ function table(rows) {
     const levels = Object.entries(row.levels).map(([id, n]) => `${id.slice(0, 4)} ${n}`).join(' ') || '–';
     const ci = `${Math.round(row.winCI[0] * 100)}–${Math.round(row.winCI[1] * 100)} %`;
     const top = Object.entries(row.used).slice(0, 3).map(([id, n]) => `${id} ${n}`).join(', ');
-    lines.push(`${cell(row.fight, 12)}${cell(row.party, 36)}${cell(levels, 14)}${cell(row.ban.join('/') || '–', 12)}${cell(row.policy, 7)}${percent(row.win)} ${cell(ci, 13)}${cell(row.rounds, 8)}${cell(row.roundsWon, 10)}${cell(row.roundsLost, 11)}${cell(row.hpLeftWon === null ? null : `${Math.round(row.hpLeftWon * 100)} %`, 13)}${cell(row.kos, 6)}${cell(row.duals || null, 8)}${cell(row.peeledBy === null ? null : `r${row.peeledBy} (${Math.round(row.peeledRate * 100)} %)`, 13)}${top}${tuned ? `  [${tuningLabel(row.tuning)}]` : ''}`);
+    lines.push(`${cell(row.fight, 12)}${cell(row.party, 36)}${cell(levels, 14)}${cell(row.ban.join('/') || '–', 12)}${cell(row.policy, 7)}${percent(row.win)} ${cell(ci, 13)}${cell(row.rounds, 8)}${cell(row.roundsWon, 10)}${cell(row.roundsLost, 11)}${cell(row.hpLeftWon === null ? null : `${Math.round(row.hpLeftWon * 100)} %`, 13)}${cell(row.kos, 6)}${cell(row.duals || null, 8)}${cell(row.peeledBy === null ? null : `r${row.peeledBy} (${Math.round(row.peeledRate * 100)} %)`, 13)}${top}${row.improved.length ? `  {${row.improved.join(' ')}}` : ''}${tuned ? `  [${tuningLabel(row.tuning)}]` : ''}`);
   }
   return lines;
 }
@@ -126,6 +126,7 @@ export async function main(argv = process.argv.slice(2)) {
       policies: options.policies ?? ['casual', 'smart'],
       bans: (options.bans ?? ['none']).map(listOf),
       friends: (options.friends ?? ['none']).map(listOf),
+      improved: (options.improved ?? ['none']).map(listOf),
       tunings: tunings(options.tune),
     }, { ...shared, error: options.error, think: options.think, maxRounds: options.maxRounds, animas: options.animas });
     const conclusions = conclude(rows);

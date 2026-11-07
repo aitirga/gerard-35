@@ -1,0 +1,19 @@
+{
+  "title": "Fight effects in a pocket land on its floor",
+  "description": "A fight with no room where it starts goes on in a pocket of the place, built far from it (src/pocket.ts). Its particles land, bounce and leave marks on the pocket's own floor and walls (src/arena.ts pocketWorld, effects setFightStage), not on the place's: on the tower's third ring that floor stood almost seven metres over the fighters, and the drops, sparks and frost went there. Run it with --gpu.",
+  "steps": [
+    { "open": "/?mission=nuria&part=ring-3&solo=1" },
+    { "until": "!!window.gerard && !!document.querySelector('#battle:not([hidden]):not([data-entering])') && !!window.gerard.game.app.root.findByName('Bolsillo de combate')", "timeout": 120000 },
+    { "wait": 2500 },
+    { "eval": "const g = window.gerard.game, foes = g.fighterIds().filter(f => !f.party); window.__foe = foes[Math.floor(foes.length / 2)].id; const p = g.fighterAt(window.__foe); g.frame({ x: p.x, y: p.y + .5, z: p.z }, 2.2)" },
+    { "shot": "pocket", "delay": 1500, "caption": "The fight in a pocket of the tower's third ring, framed on the middle foe" },
+    { "eval": "window.gerard.game.statChange(window.__foe, 'down')" },
+    { "shot": "stat-down", "delay": 650, "caption": "Baja: the circle at its feet and the red drops settling on the pocket's floor round them" },
+    { "wait": 1500 },
+    { "eval": "const g = window.gerard.game, p = g.fighterAt(window.__foe); g.effects.impact({ x: p.x, y: p.y + .5, z: p.z }, { x: p.x - 3, y: p.y + .5, z: p.z }, 1.4, { feet: p })" },
+    { "shot": "sparks", "delay": 160, "caption": "A blow: the sparks fly on through the foe, level with it" },
+    { "wait": 1500 },
+    { "eval": "window.gerard.game.fx('shatter', window.__foe, {})" },
+    { "shot": "frost", "delay": 1400, "caption": "Lluvia de escarcha: the frost ring lies on the floor at its feet and the chips settle on it" }
+  ]
+}

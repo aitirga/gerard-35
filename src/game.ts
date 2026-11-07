@@ -1069,9 +1069,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   /**
    * The jar of lights on the TV unit (docs/quests/nuria.md § The lights): a glass jar with a cork,
-   * one marble of light per person helped, lit or spent (dark, like an empty marble). It shows how
-   * many are left and how many were used, never whose they are. The first time home after a win,
-   * the lights go from Gerard and Aitor into it (`settling`).
+   * one marble of light per person helped, lit while it is free, dark once it is in an ánima. It
+   * shows how many there are, never whose they are. The first time home after a win, the lights go
+   * from Gerard and Aitor into it (`settling`).
    */
   let jar: { root: pc.Entity; key: string; materials: pc.Material[] } | undefined;
   let settling: false | 'pending' | 'flying' = false;
@@ -1083,7 +1083,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   function updateJar() {
     const lights = environment.id === 'meridiana' && story.adult ? story.jar : [];
-    const key = lights.map(l => l.used ? 'o' : '*').join('') + (settling ? '…' : '');
+    // The ecos put into an ánima have left theirs dark; the free ones are lit (docs/animas/README.md § Ecos de luz).
+    const free = story.ecosFree, isLit = (i: number) => i < free;
+    const key = lights.map((_, i) => isLit(i) ? '*' : 'o').join('') + (settling ? '…' : '');
     if (settling === 'pending' && lights.length && !cutscene) { settling = 'flying'; void settleLights(); }
     if (jar?.key === key) return;
     if (jar) { jar.root.destroy(); jar.materials.forEach(m => m.destroy()); jar = undefined; }
@@ -1099,17 +1101,17 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       e.setLocalPosition(x, y, z); e.setLocalScale(sx, sy, sx); root.addChild(e); return e;
     };
     // Marbles on the bottom, in a little heap; hidden while the lights are still on their way.
-    if (!settling) lights.forEach((l, i) => {
+    if (!settling) lights.forEach((_, i) => {
       const angle = i * 2.1, r = i % 4 ? .075 : 0;
       const y = .075 + Math.floor(i / 4) * .13, x = Math.cos(angle) * r, z = Math.sin(angle) * r;
-      part(l.used ? 'Luz apagada' : 'Luz', 'sphere', l.used ? spent : lit, y, .14, .14, x, z);
+      part(isLit(i) ? 'Luz' : 'Luz apagada', 'sphere', isLit(i) ? lit : spent, y, .14, .14, x, z);
     });
     part('Bote', 'cylinder', glass, .21, .34, .42);
     part('Tapón', 'cylinder', cork, .44, .24, .06);
     const rim = new pc.StandardMaterial(); rim.diffuse.fromString('#d6ecf2'); rim.opacity = .55; rim.blendType = pc.BLEND_NORMAL; rim.depthWrite = false; rim.update();
     part('Borde del bote', 'cylinder', rim, .405, .3, .025);
     part('Fondo del bote', 'cylinder', rim, .008, .34, .016);
-    if (lights.some(l => !l.used) && !settling) {
+    if (free > 0 && !settling) {
       const glow = new pc.Entity('Brillo del bote'); glow.addComponent('light', { type: 'omni', color: new pc.Color(1, .93, .75), intensity: .8, range: 1.4, castShadows: false });
       glow.setLocalPosition(0, .15, 0); root.addChild(glow);
     }
@@ -1122,7 +1124,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const glow = new pc.StandardMaterial(); glow.diffuse.set(1, 1, 1); glow.emissive.fromString('#fff3c4'); glow.emissiveIntensity = 2.4; glow.update();
     const target = spot.clone().add(new pc.Vec3(0, .08, 0));
     const givers = [player, ...(mateHere()?.entity.enabled ? [mateHere()!.entity] : [])];
-    const orbs = story.jar.filter(l => !l.used).map((_, i) => {
+    const orbs = story.jar.map((_, i) => {
       const orb = new pc.Entity('Luz'); orb.addComponent('render', { type: 'sphere', material: glow, castShadows: false });
       orb.setLocalScale(.14, .14, .14); castRoot.addChild(orb);
       return { orb, from: givers[i % givers.length].getPosition().clone().add(new pc.Vec3(0, 1.25, 0)), delay: i * .35 };
@@ -1139,33 +1141,6 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     effects.emit('spark', target, 14, .25);
     orbs.forEach(o => o.orb.destroy()); glow.destroy();
     settling = false; updateJar();
-  }
-  /** One light leaves the jar, rises and flies out of the balcony towards the castle. */
-  async function releaseLight() {
-    const spot = jarSpot();
-    if (!spot) return;
-    cutscene = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined);
-    const glow = new pc.StandardMaterial(); glow.useLighting = false; glow.emissive.fromString('#ff9d1c'); glow.update();
-    const orb = new pc.Entity('Luz'); orb.addComponent('render', { type: 'sphere', material: glow, castShadows: false });
-    castRoot.addChild(orb);
-    const from = spot.clone().add(new pc.Vec3(0, .08, 0)), lifted = from.clone().add(new pc.Vec3(0, .7, 0));
-    const balcony = scenery.toWorld(22.5, 3); balcony.y = 1.6;
-    const away = scenery.toWorld(30, 1); away.y = 6;
-    effects.emit('spark', from, 12, .3);
-    // On the app's clock, so a slowed `app.timeScale` slows it too (the screenshot scenario).
-    const length = reducedMotion.matches ? .3 : 3;
-    for (let k = 0; k < length; k += await new Promise<number>(resolve => app.once('update', resolve))) {
-      const t = k / length;
-      const at = t < .2 ? new pc.Vec3().lerp(from, lifted, t / .2)
-        : t < .7 ? new pc.Vec3().lerp(lifted, balcony, (t - .2) / .5)
-        : new pc.Vec3().lerp(balcony, away, (t - .7) / .3);
-      const size = .28 * (1 + Math.sin(k * 12) * .1) * (t < .7 ? 1 : 1 - (t - .7) / .3 * .7);
-      orb.setPosition(at); orb.setLocalScale(size, size, size);
-      if (Math.random() < .4) effects.emit('spark', at.clone(), 1, .12);
-    }
-    orb.destroy(); glow.destroy();
-    updateJar();
-    cutscene = false; lastPrompt = ''; updatePrompt();
   }
   /** A foe far taller than the party (Vertitrón, with Uri on top): the fight's camera looks up to take it in. */
   function tallLift() { return Math.max(0, battleScene.foeTop - 4) * .75; }
@@ -1498,7 +1473,11 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     hunters.forEach(h => { h.model.enabled = !next; });
     // Vertitrón up top too: the fight has its own.
     if (summit && next) summit.enabled = false;
-    const settled = battleScene.set(next, centre ?? battleScene.anchor, effect, onImpact, fightStage); battle = next; clearInput();
+    const settled = battleScene.set(next, centre ?? battleScene.anchor, effect, onImpact, fightStage);
+    // Its particles land where it stands: on the pocket's floor in one, never on the place's far away.
+    if (next && !battle) effects.setFightStage({ centre: battleScene.anchor, world: pocket?.world });
+    if (!next && battle) effects.setFightStage();
+    battle = next; clearInput();
     if (!next) {
       movement.resolveOverlap(occupiedCells(), !reducedMotion.matches);
       lastPrompt = ''; positionPlayer(); updatePrompt();
@@ -2117,7 +2096,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     fighterAt(id: string) { const p = battleScene.modelOf(id)?.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
     /** Development (the effects lab, src/fx-lab.ts): a fighter's model, for element hits aimed at them. */
     battleModel: battleScene.modelOf,
-    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV, releaseLights, releaseLight, shout,
+    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, watchTV, releaseLights, shout,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); },
     /** Someone swapped ánima in a fight (L / R): the fight shows it, and the boy's street outfit follows. */

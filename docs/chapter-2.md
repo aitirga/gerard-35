@@ -107,19 +107,15 @@ coffees is a day closer to the end, and a day spent helping a friend pushes her 
 mission should fit in a day.
 
 **The lights** (decided 2026-10-24, first in Nuria's mission, `docs/quests/nuria.md` § The
-lights): every person Gerard helps gives a light, kept in a jar at home. Each one can be let out
-once to push her back **one more day**, so the spread becomes `(day − 1 − 3 × ánimas − lights
-used) / 6`. The jar shows how many are lit and how many were used, never whose they were, and the
-HUD counts the lit ones as the party's **Ecos de luz** (a chip beside the menus' buttons), to trade
-for improvements to the ánimas (`docs/quests/nuria.md` § The lights, idea in `docs/ideas.md`).
+lights): every person Gerard helps gives a light, kept in a jar at home: the party's **Ecos de
+luz**, which improve the ánimas (`docs/animas/README.md` § Ecos de luz). The jar shows how many
+there are, never whose they were, and the HUD counts the free ones (a chip beside the menus'
+buttons). Until 2026-11-05 a light could be let out for a day against the Queen; no more.
 
 Built: the jar stands on the west end of the TV unit in the flat (`PLACES_2.jar`), a glass jar with
-a cork and one marble per light, amber while lit and dark once spent. The first time home after a
-win, the lights fly from Gerard and Aitor into it. *"Usar una luz"* lets the next lit one out: it
-rises, flies across the living room and out of the balcony towards the castle, and Aitor sees the
-pink go back. At most one a day: after that the jar only offers *"Mirar las luces"*. Used lights
-are story flags (`luz-<person>-usada`), so going back a day puts that day's light back; a light
-counts as used today when this morning's saved flags do not have its flag yet.
+a cork and one marble per light, amber while free and dark once in an ánima. The first time home
+after a win, the lights fly from Gerard and Aitor into it. *Abrir el bote* opens its screen
+(`src/jar-ui.ts`).
 
 **The end.** On that morning the flat is already part of her castle: gum over the walls and floors,
 thorns, everything pink (`story.doomed`). Aitor: *"Hemos llegado tarde."* A screen says she has
@@ -266,8 +262,7 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
   `metro`, `rec-comtal`, `palace-tried`, `clue-r4`, and one `anima-<friend>` per friend.
   `party`, `battleParty` and `palaceGuards` read the ánimas from them. Nuria's mission adds
   `cardedeu`, `nuria-uri`, `papagato` (and its levels `papagato-2`, `papagato-3`), one
-  `luz-<person>` per light and `luz-<person>-usada` once it is let out; `jar`, `lightUsedToday` and
-  `catsAtHome` read them. The mission itself is never saved (`story.nuria`).
+  `luz-<person>` per light; `jar`, `ecos` and `catsAtHome` read them. The mission itself is never saved (`story.nuria`).
 - `src/friends/nuria.ts`: Nuria's mission (places, lines, fears); `src/tower.ts` and
   `src/tower-scene.ts`: Uri's tower; `src/chasers.ts`: the fears that hunt it; `src/fears.ts`:
   their models and Vertitrón; `src/cats.ts`: Haru and Yuki; `src/cat-wander.ts`: the cats
@@ -288,7 +283,7 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
   (the station map), `fall`, `look` (the camera turns to a scene anchor) and `doom` (the end);
   for the missions `anima` (an ánima wakes up outside a fight, as a note, or is kept for good,
   `kept`, as the big ÁNIMA DESBLOQUEADA banner), `learn` (a level reached),
-  `lights` (the people helped give their lights), `release-light` (one leaves the jar) and `shout`
+  `lights` (the people helped give their lights), `jar` (the jar's screen opens) and `shout`
   (someone far off shouts in a bubble over their head and nothing waits for it: Uri up his tower;
   its trigger is `passing`, so Gerard is not stopped either).
 - Screenshots: `just screenshots chapter-2-city`, `castle-threat`, `countdown`, and for Nuria's

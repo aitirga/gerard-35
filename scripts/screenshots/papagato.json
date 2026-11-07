@@ -1,6 +1,6 @@
 {
   "title": "Papagato · Haru and Yuki in a fight",
-  "description": "Nuria's ánima (docs/animas/papagato/): Gerard wears Papagato and the cats sit beside him, Haru ahead and Yuki behind. Zarpazo de Haru sends Haru at a foe and leaves Sangrado stacks under its nameplate; the cushion-soft orange interface with MIAU in the corner. At level 3 (papagato-3), the four skills; Las dos a la vez reaches both dogs.",
+  "description": "Nuria's ánima (docs/animas/papagato/): Gerard wears Papagato and the cats sit beside him, Haru ahead and Yuki behind. Zarpazo sangriento sends Haru at a foe and leaves Sangrado stacks under its nameplate; the cushion-soft orange interface with MIAU in the corner. At level 3 (papagato-3), the four skills; Las dos a la vez reaches both dogs.",
   "steps": [
     {
       "open": "/?story=papagato-3&solo=1"
@@ -55,7 +55,7 @@
     {
       "shot": "battle-papagato-skills",
       "delay": 1200,
-      "caption": "Papagato's skills: Zarpazo de Haru and Yuki se esconde"
+      "caption": "Papagato's skills: Zarpazo sangriento and Yuki se esconde"
     },
     {
       "press": "Digit1",
@@ -68,7 +68,7 @@
     {
       "shot": "battle-zarpazo",
       "delay": 450,
-      "caption": "Zarpazo de Haru: Haru pounces on the dog"
+      "caption": "Zarpazo sangriento: Haru pounces on the dog"
     },
     {
       "shot": "battle-sangrado",

@@ -60,7 +60,7 @@
       "seconds": 1.8,
       "fps": 30,
       "each": "window.frame === 2 && document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click()",
-      "caption": "Zarpazo de Haru: the cat who was following them pounces and hops back"
+      "caption": "Zarpazo sangriento: the cat who was following them pounces and hops back"
     },
     {
       "until": "window.borrowedPair()",

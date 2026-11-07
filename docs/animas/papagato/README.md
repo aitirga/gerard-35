@@ -48,8 +48,9 @@ Both cats share one rig (`src/cats.ts`) and one gait (`src/cat-gait.ts`, pure, t
   sways in a wave down to its tip.
 - **Where:** following the party they trot or gallop and sit when left waiting; Haru guiding
   watches the party when they fall behind; at home they stroll at a walk and sit between strolls;
-  as characters they sit; in fights Haru stands on guard and pounces (Zarpazo), Yuki sits behind
-  and slinks off to hide (Yuki se esconde).
+  as characters they sit; in fights Haru stands on guard and pounces (Zarpazo sangriento: her
+  claws tear three white-coral lines across the foe, `effects.claw`), Yuki sits behind and slinks off
+  to hide (Yuki se esconde).
 - **In a fight of Nuria's mission:** while she lends them they are already walking with the party,
   so the fight uses those two (`battleScene.borrowCats`) instead of bringing a pair: they run in
   from where they were and walk on from where it leaves them. There are only those two, even if
@@ -76,7 +77,7 @@ Proposal; names, levels and numbers open. Levels from fights won wearing it and 
 
 | Level | Skill | Cat | Cost | Base | Description |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Zarpazo de Haru | Haru | 1 | 16 physical, Sangrado 2 | `Daño leve físico a un enemigo. Añade sangrado.` |
+| 1 | Zarpazo sangriento | Haru | 1 | 16 physical, Sangrado 2 | `Daño leve físico a un enemigo. Añade sangrado.` |
 | 1 | Yuki se esconde | Yuki | 1 | +4 Defensa, party, 3 rounds | `Sube Defensa de todo el equipo durante 3 rondas.` |
 | 2 | Zarpazos | Haru | 2 | 7 physical, four claws | `Daño leve físico a un enemigo. Golpea cuatro veces.` |
 | 2 | Ronroneo de Yuki | Yuki | 2 | 14 heal, party; takes the mental statuses away | `Cura leve a todo el equipo. Quita los efectos de estado mentales.` |
@@ -107,7 +108,7 @@ it, and the blow uses the stats of whoever brings the physical half, so Papagato
 | Dual | Matemágico + Papagato | Levels | Maná | Description |
 | --- | --- | --- | --- | --- |
 | **Zarpazos de fuego** | Foc Binari + **Zarpazos** | 1 · 2 | 1 + 2 | `Daño leve físico de tipo fuego a un enemigo. Golpea ocho veces. Cada golpe puede quemarlo o subir su fuego.` |
-| **Punto débil** | Ángulo exacto + **Zarpazo de Haru** | 2 · 1 | 1 + 1 | `Daño leve físico a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
+| **Punto débil** | Ángulo exacto + **Zarpazo sangriento** | 2 · 1 | 1 + 1 | `Daño leve físico a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
 
 - **Zarpazos de fuego**: Gerard draws a circle of digits round the foe and Haru strikes it eight
   times (power 8 a claw), a layer off each. Each claw that lands on a foe with no layers left flips
@@ -137,8 +138,9 @@ saying yes gives Papagato its colour (_open_).
 
 ## Implementation
 
-Built (level 1): `papagato` in `ClassId`, `ANIMA_NAMES`, `CLASS_STATS` and the skills *Zarpazo de
-Haru* (cost 1 Ánima, power 16, two Sangrado stacks) and *Yuki se esconde* (cost 1, Defensa +4
+Built (level 1): `papagato` in `ClassId`, `ANIMA_NAMES`, `CLASS_STATS` and the skills *Zarpazo
+sangriento* (cost 1 Ánima, power 16, two Sangrado stacks; called *Zarpazo de Haru* until
+2026-11-05) and *Yuki se esconde* (cost 1, Defensa +4
 for the party for 3 rounds) in `src/battle.ts`; `CLASSES` look
 (orange shirt, cream stripes) in `src/classes.ts` and its ears, tail and collar in `src/anima-looks.ts`; the theme
 `#hud[data-class="papagato"]` in `src/style.css` (cream paper, rounded cards, MIAU); Haru and Yuki

@@ -1,4 +1,5 @@
 import { canWalk, type Cell } from './movement.ts';
+import type { ParticleWorld } from './particles.ts';
 
 /**
  * Where a fight is staged (docs/combat.md § Dónde se planta un combate). Everyone in it needs room: the
@@ -247,6 +248,25 @@ export interface PocketPlan {
 
 /** The pocket's cells as a grid for staging: only its floor is walkable. */
 export const pocketGrid = (cells: readonly PocketCell[][]) => cells.map(row => row.map(c => c === 'floor' ? '.' : '#').join(''));
+
+/**
+ * The pocket as particles feel it (src/particles.ts), built with the fight's centre at `at` in the
+ * world (src/pocket.ts): its floor flat at `at.y`, its walls and things `top(x, z)` tall, and past
+ * its torn-off edges the sky, the floor `outside` far below as past any scene's. While the fight is
+ * in it, sparks, drops and marks land on this instead of on the place, far away.
+ */
+export function pocketWorld(plan: Pick<PocketPlan, 'cells' | 'stage'>, at: { x: number; y: number; z: number }, top: (x: number, z: number) => number, outside: number): ParticleWorld {
+  const { cells } = plan, { centre } = plan.stage, cols = cells[0]?.length ?? 0, rows = cells.length;
+  // Where cell (0, 0)'s centre stands in the world.
+  const x = at.x - centre.x, z = at.z - centre.z;
+  const solid = new Float32Array(cols * rows).fill(-Infinity);
+  cells.forEach((row, j) => row.forEach((c, i) => { if (c === 'wall' || c === 'prop') solid[j * cols + i] = top(i, j); }));
+  return {
+    x0: x - .5, z0: z - .5, x1: x + cols - .5, z1: z + rows - .5, outside,
+    ground: (wx, wz) => (cells[Math.round(wz - z)]?.[Math.round(wx - x)] ?? 'void') === 'void' ? outside : at.y,
+    cells: { x, z, cols, rows, top: solid },
+  };
+}
 
 /** The place's cell a cell of the pocket copies (a widened row or column copies the one it was made from). */
 export function placeCell(plan: Pick<PocketPlan, 'origin' | 'rows' | 'columns' | 'at'>, c: Cell): Cell {

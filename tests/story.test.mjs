@@ -123,7 +123,7 @@ test('caught by the Queen, Gerard wakes up at 35 in Barcelona with Aitor and a B
   assert.deepEqual(story.resume, { environment: 'meridiana', cell: PLACES.wakeUp.cell });
   assert.deepEqual(story.npcs('meridiana'), [], 'Aitor is no NPC: he walks with Gerard');
   assert.equal(story.partner, 'aitor');
-  assert.deepEqual(story.party.map(m => [m.id, m.profile, m.classId]), [['gerard', 'gerard35', 'matemagico'], ['aitor', 'aitor', 'fisico']]);
+  assert.deepEqual(story.party.map(m => [m.id, m.profile, m.classId]), [['gerard', 'gerard35', 'matemagico'], ['aitor', 'aitor', 'tecnopata']]);
   assert.deepEqual(story.npcs('home-floor-1'), [], 'home in Sant Quirze is empty now');
   assert.match(story.party[0].note, /Matemágico/);
 
@@ -367,43 +367,61 @@ test('a level the story grants starts the EXP from its floor; development EXP pl
   assert.equal(notes.filter(e => e.kind === 'learn' && !e.quiet).length, 1, 'with its note');
 });
 
-test('the jar of lights: one light a day flies to the castle and wins a day back; spent ones stay dark', async () => {
+test('the jar at home opens its screen; the ecos go into the ánimas and come back whenever', async () => {
   const { spread, GRACE_DAYS } = await import('../src/days.ts');
-  assert.equal(spread(5, 1, 0), (5 - 1 - 3) / GRACE_DAYS);
-  assert.equal(spread(5, 1, 1), 0, 'each light used is a day won back');
-  assert.equal(spread(2, 0, 3), 0, 'never below the first morning');
+  assert.equal(spread(5, 1), (5 - 1 - 3) / GRACE_DAYS);
+  assert.equal(spread(2, 3), 0, 'never below the first morning');
 
   assert.deepEqual(new Story(upTo('castle')).interactions('meridiana').filter(i => i.id === 'meridiana-luces'), [], 'no jar before any light');
   const story = new Story([...upTo('castle'), 'anima-nuria', 'luz-nuria', 'luz-uri']);
-  story.days.clock.day = 6;
   const jar = () => story.interactions('meridiana').find(i => i.id === 'meridiana-luces');
   assert.ok(canWalk(jar().cell, ENVIRONMENTS.meridiana.grid));
-  assert.equal(jar().label, 'Usar una luz');
-  assert.deepEqual(story.jar.map(l => l.used), [false, false]);
-  const before = story.spread;
-  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-luces' })), ['release-light', 'dialogue']);
-  assert.ok(story.spread < before, 'her power goes back');
-  assert.deepEqual(story.jar.map(l => l.used), [true, false]);
-  assert.equal(jar().label, 'Mirar las luces', 'at most one a day');
-  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-luces' })), ['dialogue']);
-  assert.equal(story.jar.filter(l => l.used).length, 1);
+  assert.equal(jar().label, 'Abrir el bote');
+  assert.deepEqual(story.jar, ['nuria', 'uri']);
+  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-luces' })), ['jar']);
 
-  // The next morning another one can go; a rewind puts back the one used that day.
-  story.handle({ type: 'interact', id: 'meridiana-bed' });
-  assert.equal(jar().label, 'Usar una luz');
-  story.handle({ type: 'interact', id: 'meridiana-luces' });
-  assert.equal(story.jar.filter(l => l.used).length, 2);
-  story.days.clock.day++; story.handle({ type: 'interact', id: 'meridiana-piano' });
-  story.rewind();
-  assert.equal(story.jar.filter(l => l.used).length, 1, 'the rewound day gives its light back');
+  assert.equal(story.ecos, 2); assert.equal(story.ecosFree, 2);
+  assert.equal(story.improve('matemagico:agua'), true);
+  assert.equal(story.improve('matemagico:agua'), false, 'once');
+  assert.equal(story.ecosFree, 1);
+  assert.deepEqual(story.improved.elements.matemagico, ['agua']);
+  assert.equal(story.improve('papagato:mana-1'), false, 'not enough ecos');
+  assert.equal(story.improve('matemagico:pasiva'), false, 'asleep');
+  assert.equal(story.unimprove('matemagico:agua'), true);
+  assert.equal(story.ecosFree, 2, 'it comes back');
+  assert.equal(story.improve('papagato:mana-1'), true);
+  assert.equal(story.manaOf('papagato'), 4);
+  assert.equal(story.manaOf('matemagico'), 3);
+  story.clearImprovements();
+  assert.equal(story.ecosFree, 2);
 
-  const spent = new Story([...upTo('castle'), 'luz-nuria', 'luz-nuria-usada']);
+  // Saved, and only what stands: unknown, asleep or out of budget does not count.
+  story.improvements = ['nada', 'matemagico:pasiva', 'matemagico:fuego', 'matemagico:agua', 'matemagico:electrico'];
+  assert.deepEqual(story.improvements, ['matemagico:fuego', 'matemagico:agua']);
+
+  // A save with a light let out has it back: lights are never spent now.
+  assert.deepEqual(new Story([...upTo('castle'), 'luz-nuria', 'luz-nuria-usada']).jar, ['nuria']);
   // A save from when Nil gave a light of his own keeps two: his counts as Uri's.
-  assert.deepEqual(new Story([...upTo('castle'), 'luz-nuria', 'luz-uri', 'luz-nil', 'luz-nil-usada']).jar, [{ id: 'nuria', used: false }, { id: 'uri', used: true }]);
+  assert.deepEqual(new Story([...upTo('castle'), 'luz-nuria', 'luz-nil']).jar, ['nuria', 'uri']);
   // Its saved mornings too, so the server (which only takes known flags) still saves them.
   const old = new Story(upTo('castle'));
-  old.loadDays({ epoch: 0, clock: { day: 3, hour: 9 }, mornings: [{ day: 3, story: ['intro', 'luz-nuria', 'luz-nil', 'luz-nil-usada'] }] });
-  assert.deepEqual(old.days.mornings[0].story, ['intro', 'luz-nuria', 'luz-uri', 'luz-uri-usada']);
-  assert.equal(spent.interactions('meridiana').find(i => i.id === 'meridiana-luces').label, 'Mirar las luces');
-  assert.deepEqual(beats(spent.handle({ type: 'interact', id: 'meridiana-luces' })), ['dialogue']);
+  old.loadDays({ epoch: 0, clock: { day: 3, hour: 9 }, mornings: [{ day: 3, story: ['intro', 'luz-nuria', 'luz-nil'] }] });
+  assert.deepEqual(old.days.mornings[0].story, ['intro', 'luz-nuria', 'luz-uri']);
+});
+
+test('a dual attack is found when it goes off: each ánima lists only those it brings a half of, nothing before', () => {
+  const story = new Story();
+  assert.deepEqual(story.dualsWith('papagato'), []);
+  assert.equal(story.discover('punto-debil'), true);
+  assert.equal(story.discover('punto-debil'), false, 'found once');
+  assert.deepEqual(story.dualsWith('matemagico').map(d => d.id), ['punto-debil']);
+  assert.deepEqual(story.dualsWith('papagato').map(d => d.id), ['punto-debil']);
+  assert.deepEqual(story.dualsWith('tecnopata'), [], 'none of its own');
+  story.discover('zarpazos-de-fuego');
+  assert.deepEqual(story.dualsWith('papagato').map(d => d.id), ['punto-debil', 'zarpazos-de-fuego'], 'in the order found');
+  // What the browser kept: unknown or repeated ids are dropped.
+  story.duals = ['zarpazos-de-fuego', 'no-such-dual', 'zarpazos-de-fuego'];
+  assert.deepEqual(story.duals, ['zarpazos-de-fuego']);
+  story.duals = 'not a list';
+  assert.deepEqual(story.duals, []);
 });

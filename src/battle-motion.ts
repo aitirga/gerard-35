@@ -4,9 +4,16 @@ export const ENTRY_SECONDS = 1.05;
 export const CONTACT_SECONDS = .46;
 export const ACTION_SECONDS = 1.16;
 /** A cast (Foc Binari): the hand goes up, the fire leaves it, and it lands this long after. */
-export const CAST_LAUNCH = .26, CAST_FLIGHT = .42, CAST_CONTACT = CAST_LAUNCH + CAST_FLIGHT;
+export const CAST_LAUNCH = .38, CAST_FLIGHT = .42, CAST_CONTACT = CAST_LAUNCH + CAST_FLIGHT;
 /** Foc Binari's two braided streams, the zero and then the one, land a hair apart: a quick tac-tac. */
 export const CAST_GAP = .085;
+/**
+ * Matemágico's Atacar and Ángulo exacto (src/math-cast.ts): the hand up and the circle open, the ball
+ * leaves at SPELL_LAUNCH and lands SPELL_FLIGHT later.
+ */
+export const SPELL_LAUNCH = .44, SPELL_FLIGHT = .4, SPELL_CONTACT = SPELL_LAUNCH + SPELL_FLIGHT;
+/** Cardioide: its comet leaves the circle at CAST_LAUNCH and reaches whoever it cures here. */
+export const CURE_CONTACT = CAST_LAUNCH + .24;
 export const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 export const smooth = (t: number) => { t = clamp01(t); return t * t * (3 - 2 * t); };
 /** Off slowly, quicker and quicker, then a short brake: how things rush into a fight (cubic in-out). */
@@ -31,11 +38,11 @@ export const DUAL_FREEZE = .12, DUAL_SLOW = .35, DUAL_BANNER = 1.0, DUAL_BANNER_
  * After a dual, the time to take it in (BEAT.dual, or BEAT.dualSeen once that dual has been seen); after a foe's ability that is not a plain blow
  * (`card`, its own picture in the scene) or a move announced a turn ahead, the time to see it (BEAT.ability).
  */
-export function holdAfter(effect: { status?: unknown; burn?: unknown; bled?: number; stats?: readonly unknown[]; boosted?: readonly unknown[]; peeled?: number; melted?: boolean; hits?: readonly { status?: unknown; bled?: number }[]; dual?: unknown; ability?: { card?: boolean }; telegraph?: unknown }, down = false, seen = false) {
+export function holdAfter(effect: { status?: unknown; burn?: unknown; bled?: number; stats?: readonly unknown[]; boosted?: readonly unknown[]; peeled?: number; melted?: boolean; hits?: readonly { status?: unknown; bled?: number }[]; dual?: unknown; ability?: { card?: boolean }; telegraph?: unknown; reaction?: unknown }, down = false, seen = false) {
   let hold: number = BEAT.breath;
   if (effect.dual) hold = Math.max(hold, seen ? BEAT.dualSeen : BEAT.dual);
   if (effect.ability?.card || effect.telegraph) hold = Math.max(hold, BEAT.ability);
-  if (effect.status || effect.burn || effect.bled || effect.melted || effect.hits?.some(h => h.status || h.bled)) hold = Math.max(hold, BEAT.status);
+  if (effect.status || effect.burn || effect.bled || effect.melted || effect.reaction || effect.hits?.some(h => h.status || h.bled)) hold = Math.max(hold, BEAT.status);
   if (effect.stats?.length || effect.boosted?.length) hold = Math.max(hold, BEAT.stats);
   if (effect.peeled) hold = Math.max(hold, BEAT.peel);
   if (down) hold = Math.max(hold, BEAT.down);

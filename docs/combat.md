@@ -201,8 +201,11 @@ altos, terreno libre delante de cada uno hacia la cámara para que se les vea po
    `POCKET.spread` (1,5) veces más lejos que en el sitio, y cada uno más separado de su lado. Suelo y muros llevan los materiales del
    lugar, la luz es la más coloreada que había cerca, los muros del lado de la cámara se recortan
    hasta el zócalo para que se vea dentro, y donde acaba la copia el suelo se corta sobre el cielo
-   del lugar, lejos de todo. Al acabar, el cristal devuelve a donde estaban. Con movimiento
-   reducido solo cambia.
+   del lugar, lejos de todo. Las partículas del combate (chispas, gotas, escarcha, marcas) caen,
+   rebotan y se quedan en el suelo y los muros del bolsillo (`pocketWorld` en `src/arena.ts`,
+   `effects.setFightStage`), nunca en los del lugar, que queda lejos y a otra altura; `just
+   screenshots pocket-fx --gpu` lo muestra. Al acabar, el cristal devuelve a donde estaban. Con
+   movimiento reducido solo cambia.
 
 Así queda cada combate de la historia (`tests/arena.test.mjs`): los perros del Passatge Maresme
 en su sitio (al final de la calle, una casilla al lado para no pisar una farola); el esbirro del
@@ -290,11 +293,41 @@ reloj empezando ahí. En *Zarpazos de fuego* cada zarpazo tira su propia suerte 
 prenden o suben el fuego) y la tirada se ve, se oye y arde en ese zarpazo, nunca antes. `just screenshots
 golpes --gpu` lo enseña.
 
-**Reacciones entre elementos.** El motor lleva el elemento en cada estado temporizado
-(`TimedSpec.element`) para que una reacción (otro elemento que transforma el estado) se declare
-en el mismo punto que la escalada. Todavía no hay ninguna: solo existe el fuego.
+**Reacciones entre elementos** (2026-11-05, `react` y `REACTION_RULES` en `src/battle.ts`). El
+*Atacar* de Matemágico puede llevar un elemento, comprado con ecos de luz (`docs/animas/README.md` §
+Ecos de luz) y elegido con X (el botón superior del mando; `cycleElement`) sobre el bloque de
+Atacar, dividido en un segmento por elemento. Hace el mismo daño, no gasta nada y **no crea ningún
+estado**: no quema, no moja (el Atacar de Matemágico se lanza desde donde está, con elemento o sin él:
+`BattleEffect.spell`, `docs/animas/matemagico/README.md` § Casting). Solo transforma lo que el enemigo ya lleva, lo haya puesto quien lo haya
+puesto, y nunca sobre un enemigo al que el propio golpe ha tumbado.
+
+| Atacar con | Sobre | Reacción | Qué hace |
+| --- | --- | --- | --- |
+| Agua | Quemado | **Humo** | Apaga el fuego y deja Cegado a su nivel: sus golpes, al 70 / 50 / 30 %, 10 s |
+| Fuego | Sangrado | **Cauterizado** | El golpe no abre la herida: cada carga arde de golpe, 6 PV cada una |
+| Eléctrico | Cegado | **Tormenta** | La descarga salta por el humo: magia (24) a todos los cegados, y se acaba el humo |
+
+Cegado no pulsa (`levels` vacío en `TIMED`). Cauterizado, como Sangrado y Quemado, pasa por encima de
+las reglas de los miedos; Tormenta es magia y las respeta (`fearDamage`). Las reacciones que aún no
+se pueden dar (Mojado, Envenenado, Congelado: nadie los pone todavía) esperan su aspecto ya hecho
+en `REACTIONS` (`src/status-fx.ts`). La pantalla: el número del golpe lleva el elemento debajo, la
+reacción lo dice en su color y sus PV salen al lado; la escena suelta un destello del elemento
+(`statusFx.touch`) y su momento (`statusFx.react`) al caer el golpe. `just screenshots elementos --gpu`.
 
 `just screenshots quemado --gpu` muestra Quemado I, un pulso, el reloj casi agotado y Quemado II.
+
+**Los de Tecnópata** (2026-11-06, `docs/animas/tecnopata/`). *Sanación* (Rayo de sanación) es la
+otra cara de Quemado: sus pulsos devuelven PV en vez de quitarlos (`TimedSpec.heal`), 15 s, uno cada
+3 s, y vuelve a subir de nivel si se repite. *Confusión* (30 s) no hace daño: mientras dura, el
+enemigo gasta su turno en un golpe normal a uno de los suyos (`CONFUSED_BLOW`, a sí mismo si está
+solo) y olvida lo que había anunciado (`confusedAct`). *Encogido* (Rayo encogedor, 15 s) le quita
+un 25 % de la Defensa que tenga mientras dura (`TimedSpec.cut`, en `current` y `statShifts`) y la
+escena lo encoge. *Rayo de energía* alarga 5 s lo que el enemigo lleve con reloj, nunca una cura; el anillo
+del reloj se mide entonces contra lo que le queda. Un estado puede además acabar con la ronda
+(`Timed.until`): el *Cegado* de Explosión dura hasta que acaba el turno de los enemigos.
+**Perder un turno** (`Combatant.out`): tras Explosión, Aitor no actúa la ronda siguiente (ya cuenta
+como `spent` al empezarla) y Bip vuelve a formarse al acabar; si nadie del grupo puede elegir, los
+enemigos vuelven a actuar. `just screenshots tecnopata-skills --gpu` lo muestra todo.
 
 ## Atributos arriba o abajo, y el resumen
 
@@ -430,6 +463,13 @@ conjunto y la descripción:
 - con *movimiento reducido* no hay coreografía ni animaciones del cartel: el dual se resuelve al
   momento (las bandas aparecen sin deslizarse);
 - sus partículas, solo en la GPU; sus sonidos, los de sus dos mitades (`dualSounds`).
+
+**En dos tiempos** (`DualSpec.charge`, Rayo solar). Su turno solo carga: quien trae su primera
+mitad lo guarda (`Combatant.charge`, Bip se pone amarillo sol) y se gastan los dos turnos y el maná.
+Al empezar la ronda siguiente, antes de que nadie elija, sale solo (`nextRound` → `release`, como
+noticia que la pantalla muestra en cuanto cierra la ronda): barre a todos los enemigos con el daño
+de quien trae la mitad de su tipo y les deja Quemado II como mínimo. Si quien lo guarda cae antes,
+se pierde.
 
 **Desarrollo.** Con `import.meta.env.DEV` el menú es Atacar · Habilidad · Dual · Defender · Huir:
 *Dual* abre la lista de todos (`dualOptions`), con sus mitades, su maná y su descripción, y los que

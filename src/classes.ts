@@ -34,12 +34,13 @@ export const CLASSES: Record<ClassId, { name: string; motto: string; look: Recor
     look: { jacket: '#e9894a', navy: '#f4efe6', cream: '#f4efe6', trousers: '#5d6068' },
     scarf: '#7d7f86',
   },
-  // Aitor's own ánima: a placeholder name and colour until it is designed (no look, no skills).
-  fisico: {
-    name: ANIMA_NAMES.fisico,
-    motto: 'El ánima de Aitor. Por descubrir.',
-    colour: '#8cc6a8',
-    look: {},
+  // Aitor's own ánima: cutting-edge technology, and Bip, his little robot, does the hitting for him
+  // (src/bip.ts). Graphite with a cyan collar; his glasses become a HUD (anima-looks.ts) (docs/animas/tecnopata/).
+  tecnopata: {
+    name: ANIMA_NAMES.tecnopata,
+    motto: 'Él no pega. Para eso está Bip.',
+    colour: '#4fe0ff',
+    look: { jacket: '#25313b', navy: '#4fe0ff', cream: '#25313b', trousers: '#161c22' },
   },
 };
 /** Whether a fighter's profile is a grown-up (chapter 2 on): Gerard at 35 and Aitor. */

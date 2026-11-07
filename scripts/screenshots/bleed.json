@@ -1,6 +1,6 @@
 {
   "title": "Sangrado: herida abierta",
-  "description": "Sangrado como herida abierta (src/battle.ts `woundScale`, docs/animas/README.md § Sangrado): Zarpazo de Haru deja al perro sangrando; el siguiente golpe físico lo gasta todo y pega un 20 % más por cada sangrado, con un +% en rojo sobre los números. Ejecutar con --gpu.",
+  "description": "Sangrado como herida abierta (src/battle.ts `woundScale`, docs/animas/README.md § Sangrado): Zarpazo sangriento deja al perro sangrando; el siguiente golpe físico lo gasta todo y pega un 20 % más por cada sangrado, con un +% en rojo sobre los números. Ejecutar con --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Afalse%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -34,7 +34,7 @@
     {
       "shot": "bleeding",
       "delay": 250,
-      "caption": "Zarpazo de Haru: ¡Sangrado! × 2 sobre el perro"
+      "caption": "Zarpazo sangriento: ¡Sangrado! × 2 sobre el perro"
     },
     {
       "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",

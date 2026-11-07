@@ -23,7 +23,8 @@ character stats, and how ánimas (classes in the code) are shared. Numbers are p
   bubble ("¡Eh, espérame!"), so it reads as a person, not a wall.
 - **In battle the screen splits too.** Gerard's dock sits bottom left and Aitor's bottom right,
   each with the fighter's face, PV (a wave) and Ánima (circles), their ánima switch and, on their
-  turn, the commands, in the colours of their own ánima. Each player picks their own fighter's
+  turn, the commands, in the colours of their own ánima; the fight's backdrop stays one, Gerard's
+  ánima's, across the whole screen. Each player picks their own fighter's
   moves: on Aitor's turn the keyboard and the first controller do nothing and the turn line says
   *MANDO 2*. If no second controller is connected, the turn waits and says *CONECTA EL MANDO 2*.
 - **In battle the D-pad's left and right open the fight's summary** (R on the keyboard), for either
@@ -88,7 +89,7 @@ cannot pay says *Sin ánima*.
 | --- | --- | --- | --- | --- |
 | Foc Binari | Whoever wears **Matemágico** | 1 | 16 magic, fire | Sets the foe on fire (Quemado, timed; again while it burns raises its level); fire melts the Queen's gum (pringue) |
 | Ángulo exacto | **Matemágico**, level 2 | 1 | −3 | Defensa and Espíritu −3 on one foe for 3 rounds (a mark; not again while it lasts) |
-| Zarpazo de Haru | Whoever wears **Papagato** | 1 | 16 physical | Adds two Sangrado stacks |
+| Zarpazo sangriento | Whoever wears **Papagato** | 1 | 16 physical | Adds two Sangrado stacks |
 | Yuki se esconde | Whoever wears **Papagato** | 1 | +4 | Defensa +4 for the whole party for 3 rounds (the one it is used in included); cannot be stacked while it runs |
 | Zarpazos | **Papagato**, level 2 | 2 | 7 physical, four times | Each claw takes a layer off an onion |
 | Ronroneo de Yuki | **Papagato**, level 2 | 2 | 14 heal | Everyone standing; takes away every mental status (Mareo, Llorera) |
@@ -99,7 +100,7 @@ Costs are in circles of Ánima.
 
 **Duals** (`docs/animas/README.md` § Combined skills): a Matemágico skill and a Papagato skill, one
 from each fighter, can become one action, *Zarpazos de fuego* (Foc Binari + Zarpazos) and *Punto
-débil* (Ángulo exacto + Zarpazo de Haru). They are never listed: they happen.
+débil* (Ángulo exacto + Zarpazo sangriento). They are never listed: they happen.
 
 **Statuses** (story fights, `STATUSES` in `src/battle.ts`; `docs/animas/README.md` § Shared
 mechanics): they stack, show under the fighter's nameplate, and lose a stack at the end of each
@@ -121,12 +122,12 @@ Impulso and Abrazo are out for now.
   Matemágico at every age; at 35, in fights whoever wears it thinks out loud: two
   ghostly little birds glide round the head while light bulbs and question marks of soft light
   drift up out of it and fade (`src/thoughts.ts`). Exploring, it does not show. **Papagato**
-  comes from Nuria's mission. **Físico** is Aitor's own, his from chapter 2's first morning: a
+  comes from Nuria's mission. **Tecnópata** is Aitor's own, his from chapter 2's first morning: a
   placeholder still to design (no stats, no skills, sage `#8cc6a8`). Some ánimas are one
-  person's (`ANIMA_OWNERS`, `canWear` in `src/battle.ts`): Matemágico only Gerard, Físico only
+  person's (`ANIMA_OWNERS`, `canWear` in `src/battle.ts`): Matemágico only Gerard, Tecnópata only
   Aitor; Papagato anyone but Bernat.
 - **Own ánima and extras** (decided 2026-11-05): each has their **own** ánima, fixed, always
-  theirs and never taken off (Matemágico Gerard's once it wakes, Físico Aitor's), and **one extra
+  theirs and never taken off (Matemágico Gerard's once it wakes, Tecnópata Aitor's), and **one extra
   slot** for now (`EXTRA_SLOTS` in `src/story.ts`; more may come) where they equip one of the shared
   ánimas the party has unlocked (Papagato). Equipping only says which ánimas they can use: in a
   fight they still wear **one at a time** and switch among theirs with L / R (their kit: own, then

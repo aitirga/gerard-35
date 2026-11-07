@@ -10,11 +10,12 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, DEFEND_CHARGE, DUALS, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BROOD, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, takeNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type PartySlot, type SkillId,
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId,
 } from './battle.ts';
+import { improvedBy } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
 
 export const SIM_VERSION = 2;
@@ -58,10 +59,12 @@ export interface Setup {
    * also bans every dual it is half of, a dual id bans that dual, and `duals` bans them all.
    */
   ban?: Ban[];
-  /** The ánimas L and R walk through; Matemágico and Papagato by default, as in Nuria's mission (Físico is still a placeholder). */
+  /** The ánimas L and R walk through; Matemágico and Papagato by default, as in Nuria's mission. */
   animas?: ClassId[];
   /** Friends' ánimas already gained, whose bonus the whole party gets. */
   friends?: AnimaId[];
+  /** What the Ecos de luz are in (src/ecos.ts ids: `matemagico:agua`, `papagato:mana-1`). */
+  improved?: string[];
   /** Chance a decision is a slip: any legal action. The policy's own if missing. */
   error?: number;
   /** Seconds a player thinks per turn (fire burns meanwhile: docs/combat.md § Estados en tiempo real). */
@@ -70,7 +73,7 @@ export interface Setup {
 }
 export type Ban = SkillId | DualId | 'duals';
 /** A turn: `dual` is the active fighter and the next one together (both turns, both halves of maná). */
-export interface Choice { wear?: ClassId; action: BattleAction | 'dual'; target?: string; skill?: SkillId; dual?: DualId }
+export interface Choice { wear?: ClassId; action: BattleAction | 'dual'; target?: string; skill?: SkillId; dual?: DualId; element?: Element }
 /** Whether `ban` keeps a dual out: all of them, that one, or one of its halves. */
 export const dualBanned = (dual: DualSpec, ban: readonly Ban[] = []) => ban.includes('duals') || ban.includes(dual.id) || dual.parts.some(part => ban.includes(part));
 
@@ -86,6 +89,7 @@ const BOOKS = {
   skill: Object.fromEntries(SKILLS.map(skill => [skill.id, skill])),
   dual: Object.fromEntries(DUALS.map(dual => [dual.id, dual])),
   vertigo: { boss: VERTIGO },
+  reaction: { rules: REACTION_RULES },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
 } as unknown as Record<string, Record<string, Record<string, unknown>>>;
@@ -136,6 +140,7 @@ export function createFight(setup: Setup, random: () => number = Math.random): B
     : undefined;
   if (!state) throw new Error(`Unknown fight "${setup.fight}": use ${FIGHTS.join(', ')}.`);
   state.levels = { ...setup.levels };
+  if (setup.improved?.length) improve(state, improvedBy(setup.improved));
   // The fight's own dice (Zarpazos de fuego's coins) come from the same seed.
   state.seed = Math.floor(random() * 2 ** 32) >>> 0;
   return state;
@@ -149,8 +154,11 @@ export function createFight(setup: Setup, random: () => number = Math.random): B
 export function legalChoices(state: BattleState, setup: Pick<Setup, 'ban'>, swaps = true, duals = true): Choice[] {
   const worn = state.allies[state.active].classId;
   const out: Choice[] = [{ action: 'defend' }];
-  for (const target of validTargets(state, 'attack')) out.push({ action: 'attack', target: target.id });
   const actorNow = state.allies[state.active];
+  for (const target of validTargets(state, 'attack')) {
+    out.push({ action: 'attack', target: target.id });
+    for (const element of elementsFor(state, actorNow)) out.push({ action: 'attack', target: target.id, element });
+  }
   for (const wear of [worn, ...swaps ? kitIn(state, actorNow).filter(id => id !== worn && free(state, actorNow, id)) : []]) {
     const look = wear === worn ? state : structuredClone(state);
     if (wear !== worn) wearAnima(look, wear!);
@@ -173,6 +181,7 @@ export function legalChoices(state: BattleState, setup: Pick<Setup, 'ban'>, swap
 }
 function apply(state: BattleState, choice: Choice) {
   if (choice.wear) wearAnima(state, choice.wear);
+  if (choice.action === 'attack') state.allies[state.active].element = choice.element;
   if (choice.action === 'dual') return actDual(state, choice.dual!, choice.target);
   return act(state, choice.action, choice.target, choice.skill);
 }
@@ -234,6 +243,11 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     value += Math.max(0, after.allies[i].hp - ally.hp) * .9;
     for (const id of MENTAL_STATUSES) value += Math.max(0, (ally.statuses?.[id] ?? 0) - (after.allies[i].statuses?.[id] ?? 0)) * 4;
   });
+  // Cegado: what the foes would no longer do this turn and about half the next, the real rules on a copy.
+  if (after.foes.some((foe, i) => (foe.timed?.cegado?.level ?? 0) > (before.foes[i].timed?.cegado?.level ?? 0))) {
+    const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
+    value += (sum(threat) - sum(threatOn(after))) * 1.5;
+  }
   const skill = SKILLS.find(s => s.id === choice.skill);
   if (skill?.kind === 'boost') value += skill.power * 3 * before.foes.filter(f => f.hp > 0).length;
   value -= manaOf(choice) * 2.5;
@@ -336,6 +350,7 @@ export interface Run {
 function play(state: BattleState, choice: Choice, ban: readonly Ban[] = []) {
   if (choice.action === 'dual') return apply(state, choice);
   if (choice.wear) wearAnima(state, choice.wear);
+  if (choice.action === 'attack') state.allies[state.active].element = choice.element;
   const partner = dualPartner(state), queued = partner && state.queued?.[partner.id];
   const dual = choice.action === 'skill' && queued?.skill ? dualOf(choice.skill!, queued.skill) : undefined;
   if (dual && dualBanned(dual, ban)) return act(state, choice.action, choice.target, choice.skill);
@@ -362,6 +377,7 @@ export function playFight(setup: Setup, seed: number): Run {
     if (!effect) return;
     if (effect.kind === 'enemy' && effect.ability) count(effect.ability.id);
     if (effect.eye) count('ojo-roto');
+    if (effect.reaction) count(effect.reaction.id);
   };
   const watch = () => {
     run.firstKo ??= state.allies.some(a => a.hp <= 0) ? state.round : undefined;
@@ -419,7 +435,7 @@ export function wilson(hits: number, total: number): [number, number] {
   return [Math.max(0, (centre - spread) / d), Math.min(1, (centre + spread) / d)];
 }
 export interface Row {
-  fight: string; party: string; levels: Partial<Record<ClassId, number>>; policy: Policy; ban: Ban[]; friends: AnimaId[]; tuning: Tuning; runs: number;
+  fight: string; party: string; levels: Partial<Record<ClassId, number>>; policy: Policy; ban: Ban[]; friends: AnimaId[]; improved: string[]; tuning: Tuning; runs: number;
   /** Share of fights won, and Wilson's 95 % interval. */
   win: number; winCI: [number, number];
   /** Fights that hit the round limit: something can go on for ever. */
@@ -457,7 +473,7 @@ function tally(setup: Setup, runs: number, seed: number, tuning: Tuning): Row {
   const hasOnions = createFight(setup, seeded(seed)).foes.some(f => isOnion(f.kind));
   const peeled = list.flatMap(r => r.peeledBy === undefined ? [] : [r.peeledBy]);
   return {
-    fight: setup.fight, party: setup.party, levels: setup.levels ?? {}, policy: setup.policy, ban: setup.ban ?? [], friends: setup.friends ?? [], tuning, runs,
+    fight: setup.fight, party: setup.party, levels: setup.levels ?? {}, policy: setup.policy, ban: setup.ban ?? [], friends: setup.friends ?? [], improved: setup.improved ?? [], tuning, runs,
     win: round(won.length / runs, 3)!, winCI: wilson(won.length, runs).map(v => round(v, 3)!) as [number, number],
     draws: list.filter(r => r.outcome === 'draw').length,
     rounds: round(mean(list.map(r => r.rounds)))!, roundsWon: round(mean(won.map(r => r.rounds))), roundsLost: round(mean(lost.map(r => r.rounds))), hpLeftWon: round(mean(won.map(r => r.hpLeft)), 3),
@@ -471,10 +487,10 @@ function tally(setup: Setup, runs: number, seed: number, tuning: Tuning): Row {
   };
 }
 /** Every combination of the lists given. */
-export function sweep(grid: { fights: string[]; parties: string[]; levels: Partial<Record<ClassId, number>>[]; policies: Policy[]; bans?: Ban[][]; friends?: AnimaId[][]; tunings?: Tuning[] }, options: Pick<Setup, 'error' | 'think' | 'maxRounds' | 'animas'> & { runs?: number; seed?: number } = {}): Row[] {
+export function sweep(grid: { fights: string[]; parties: string[]; levels: Partial<Record<ClassId, number>>[]; policies: Policy[]; bans?: Ban[][]; friends?: AnimaId[][]; improved?: string[][]; tunings?: Tuning[] }, options: Pick<Setup, 'error' | 'think' | 'maxRounds' | 'animas'> & { runs?: number; seed?: number } = {}): Row[] {
   const { runs, seed, ...rest } = options, rows: Row[] = [];
-  for (const fight of grid.fights) for (const party of grid.parties) for (const levels of grid.levels) for (const policy of grid.policies) for (const ban of grid.bans ?? [[]]) for (const friends of grid.friends ?? [[]]) for (const tuning of grid.tunings ?? [{}]) {
-    rows.push(simulate({ fight, party, levels, policy, ban, friends, ...rest }, runs, seed, tuning));
+  for (const fight of grid.fights) for (const party of grid.parties) for (const levels of grid.levels) for (const policy of grid.policies) for (const ban of grid.bans ?? [[]]) for (const friends of grid.friends ?? [[]]) for (const improved of grid.improved ?? [[]]) for (const tuning of grid.tunings ?? [{}]) {
+    rows.push(simulate({ fight, party, levels, policy, ban, friends, improved, ...rest }, runs, seed, tuning));
   }
   return rows;
 }
@@ -486,7 +502,7 @@ const tuningText = (tuning: Tuning) => Object.entries(tuning).map(([path, n]) =>
 export function conclude(rows: Row[]): string[] {
   const lines: string[] = [];
   type Axis = 'levels' | 'ban' | 'party' | 'policy' | 'tuning';
-  const group = (row: Row, leaveOut: Axis) => JSON.stringify({ fight: row.fight, party: leaveOut === 'party' ? 0 : row.party, levels: leaveOut === 'levels' ? 0 : row.levels, policy: leaveOut === 'policy' ? 0 : row.policy, ban: leaveOut === 'ban' ? 0 : row.ban, friends: row.friends, tuning: leaveOut === 'tuning' ? 0 : row.tuning });
+  const group = (row: Row, leaveOut: Axis) => JSON.stringify({ fight: row.fight, party: leaveOut === 'party' ? 0 : row.party, levels: leaveOut === 'levels' ? 0 : row.levels, policy: leaveOut === 'policy' ? 0 : row.policy, ban: leaveOut === 'ban' ? 0 : row.ban, friends: row.friends, improved: row.improved, tuning: leaveOut === 'tuning' ? 0 : row.tuning });
   const compare = (leaveOut: Axis, say: (low: Row, high: Row) => string, least = .1) => {
     const groups = new Map<string, Row[]>();
     for (const row of rows) groups.set(group(row, leaveOut), [...groups.get(group(row, leaveOut)) ?? [], row]);
@@ -580,6 +596,8 @@ export const TARGETS: readonly Target[] = [
   // Grito liberador is what decides it: every shout makes the party weaker and it stronger for good, so a long fight turns on them.
   { id: 'vertigo-duo-bien', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.5, .9], roundsWon: [3.5, 8], duals: [1, 5], why: 'Con los gatos en Aitor y el fuego en Gerard, quien descubre los duales lo tumba deprisa, antes de que grite mucho.' },
   { id: 'vertigo-sin-duales', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', ban: ['duals'], win: [.85, 1], hpLeftWon: [.2, .55], roundsWon: [10, 15], why: 'Sin ataques duales también se gana: romper el ojo antes del rayo, agarrarse cuando carga. Cuesta vida y rondas, y cada grito pesa.' },
+  { id: 'vertigo-eco-mana', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', improved: ['papagato:mana-1'], win: [.55, .95], why: 'Dos ecos en más maná ayudan a quien no le da vueltas, sin regalarle el combate.' },
+  { id: 'vertigo-eco-elementos', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', improved: ['matemagico:agua', 'matemagico:fuego', 'matemagico:electrico'], hpLeftWon: [.6, .9], why: 'Los elementos son una respuesta más, no lo que decide el combate.' },
   { id: 'vertigo-sin-pensar', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', win: [.35, .8], why: 'Sin pensar, Vertitrón gana a menudo: no es un trámite.' },
   { id: 'vertigo-poco-matemagico', fight: 'uri-vertigo', party: DUO, levels: P2M1, policy: 'smart', win: [.9, 1], why: 'Con Matemágico a nivel 1 no hay Punto débil, pero basta Zarpazos de fuego.' },
   { id: 'vertigo-sin-gatos-aitor', fight: 'uri-vertigo', party: MISSION_PARTY, levels: P2M2, policy: 'smart', win: [.8, 1], hpLeftWon: [.1, .45], why: 'Si Aitor no lleva a los gatos, se puede, pero sufriendo: Gerard tiene que cambiar de ánima para todo y se gana con poca vida.' },

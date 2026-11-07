@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as pc from 'playcanvas';
-import { createParticles } from '../src/particles.ts';
-import { createEffects, sceneWorld } from '../src/effects.ts';
+import { BACKDROP, createParticles } from '../src/particles.ts';
+import { planPocket, pocketWorld } from '../src/arena.ts';
+import { clawLines, createEffects, sceneWorld } from '../src/effects.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 
 // The engine runs headless: a null graphics device on a stand-in canvas.
@@ -127,6 +128,26 @@ function effectsIn(id) {
 }
 const play = (effects, seconds, fight = false) => { for (let t = 0; t < seconds; t += 1 / 60) effects.update(1 / 60, { focus: { x: 0, y: 0, z: 0 }, reach: 30, animate: true, paused: false, fight }); };
 const lasting = effects => effects.marks.snapshot().filter(p => !['glowing'].includes(p.kind));
+
+test('a fight in a pocket lands its particles and marks on the pocket\'s floor, and the place\'s comes back when it ends', () => {
+  const effects = effectsIn('cardedeu-laberinto'), { grid } = ENVIRONMENTS['cardedeu-laberinto'];
+  const plan = planPocket(grid, { x: 30, z: 4 }, { allies: 2, foes: ['cebollita', 'platito'] });
+  // Far from the place (src/pocket.ts POCKET_AT), where its floor is only the backdrop far below.
+  const at = { x: 0, y: 0, z: -4000 };
+  assert.equal(effects.particles.groundAt(at.x, at.z), BACKDROP);
+  effects.setFightStage({ centre: at, world: pocketWorld(plan, at, () => 2.6, BACKDROP) });
+  assert.equal(effects.particles.groundAt(at.x, at.z), at.y);
+  effects.particles.define('pebble', { shape: 'puff', colour: '#ffffff', life: 10, size: .05, speed: [1, 2], rise: 2, gravity: 9, collide: true, bounce: .4, friction: .3 });
+  effects.particles.burst('pebble', { x: at.x + 1, y: 1.2, z: at.z }, 30, { spread: .3 });
+  effects.mark('scorch', { x: at.x - 1, y: at.y, z: at.z }, .6);
+  play(effects, 3, true);
+  const pebbles = effects.particles.snapshot().filter(p => p.kind === 'pebble');
+  assert.ok(pebbles.length && pebbles.every(p => p.y >= at.y - 1e-3 && p.y < at.y + .05), `pebbles rest at ${pebbles.map(p => p.y.toFixed(2))}`);
+  const scorch = effects.marks.snapshot().filter(p => Math.abs(p.z - at.z) < 2);
+  assert.ok(scorch.length && scorch.every(p => Math.abs(p.y - (at.y + .03)) < .02), `the scorch lies at ${scorch.map(p => p.y.toFixed(2))}`);
+  effects.setFightStage();
+  assert.equal(effects.particles.groundAt(at.x, at.z), BACKDROP);
+});
 
 test('marks keep to their budget, the oldest fading first', () => {
   const effects = effectsIn('patio');
@@ -336,4 +357,19 @@ test('without a GPU that renders to float textures, fights keep their particles 
   effects.impact({ x: 0, y: 1, z: 0 }, { x: -2, y: 1, z: 0 }, 1.4);
   play(effects, .05, true);
   assert.ok(effects.particles.snapshot().some(p => p.kind === 'spark'), 'a blow still throws its sparks');
+});
+
+test('Zarpazo sangriento tears three claw lines side by side, from top right to bottom left, one after another', () => {
+  const lines = clawLines(1);
+  assert.equal(lines.length, 3);
+  for (const l of lines) assert.ok(l.from.x > l.to.x && l.from.y > l.to.y, 'down and to the left');
+  // Parallel: the same direction, and apart across it.
+  const dir = l => { const dx = l.to.x - l.from.x, dy = l.to.y - l.from.y, d = Math.hypot(dx, dy); return { x: dx / d, y: dy / d }; };
+  for (const l of lines) assert.ok(Math.abs(dir(l).x - dir(lines[0]).x) < 1e-9 && Math.abs(dir(l).y - dir(lines[0]).y) < 1e-9);
+  const mid = l => ({ x: (l.from.x + l.to.x) / 2, y: (l.from.y + l.to.y) / 2 });
+  assert.ok(Math.hypot(mid(lines[0]).x - mid(lines[1]).x, mid(lines[0]).y - mid(lines[1]).y) > .1);
+  assert.ok(lines[0].delay < lines[1].delay && lines[1].delay < lines[2].delay);
+  // Twice the size, twice as long.
+  const length = l => Math.hypot(l.to.x - l.from.x, l.to.y - l.from.y);
+  assert.ok(Math.abs(length(clawLines(2)[1]) - 2 * length(lines[1])) < 1e-9);
 });

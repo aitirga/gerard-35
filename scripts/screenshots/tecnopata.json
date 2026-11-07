@@ -1,0 +1,98 @@
+{
+  "title": "Tecnópata · Bip y el HUD de dron",
+  "description": "Aitor's own ánima (docs/animas/tecnopata/): with Tecnópata on, Bip, a little floating drone, hovers by his shoulder (src/bip.ts), and his dock turns into a drone's HUD (cyan on dark glass, cut corners, scan lines) over the backdrop of Gerard's ánima. Atacar is Bip's: it darts at the dog and rams it while Aitor stays put pointing. Switching to another ánima, Bip comes apart into cyan nanites that stream into Aitor's chest; switching back, it comes out of him and forms again. Two players (the keyboard is Gerard, pad 2 Aitor), the tester's help. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]'); window.aitorTurn = () => window.ready() && document.querySelector('#battle[data-player=\"2\"]'); window.p2 = sel => { document.querySelector('.battle-dock[data-dock=\"2\"] ' + sel).focus(); ui.control('confirm', 2); }; window.bip = () => window.gerard.game.app.root.findByName('Bip'); window.bipAt = () => { const p = window.bip().getPosition(); return { x: p.x, y: p.y, z: p.z }; }; window.gerardDefends = () => { if (window.ready() && !document.querySelector('#battle[data-player=\"2\"]')) document.querySelector('.battle-dock[data-dock=\"1\"] [data-command=\"defend\"] .command-trigger')?.click(); return !!window.aitorTurn(); };"
+    },
+    {
+      "eval": "ui.setAnimas(['matemagico', 'papagato', 'tecnopata'], {}, { aitor: ['tecnopata', 'papagato'] })"
+    },
+    {
+      "until": "window.gerardDefends()",
+      "timeout": 180000
+    },
+    {
+      "shot": "fight",
+      "delay": 1500,
+      "caption": "Aitor's turn with Tecnópata: Bip floats by his shoulder and his dock is a drone's HUD"
+    },
+    {
+      "eval": "window.gerard.game.frame(window.bipAt(), 1.1)"
+    },
+    {
+      "shot": "bip",
+      "delay": 1200,
+      "caption": "Bip up close: white shell, black glass screen with its cyan eye, antenna, side pods and the thruster's halo; Aitor's glasses turned HUD"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "p2('[data-command=\"attack\"] .command-trigger')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "target",
+      "delay": 600,
+      "caption": "Atacar asks for its target in the HUD's own panel (Tecnópata has no skills yet, so Habilidad is off)"
+    },
+    {
+      "record": "bip-ataca",
+      "seconds": 1.8,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 2 && ui.control('confirm', 2)",
+      "caption": "Atacar: Bip pulls back, darts at the dog, rams it and bobs back; Aitor stays put pointing"
+    },
+    {
+      "until": "window.gerardDefends()",
+      "timeout": 120000
+    },
+    {
+      "record": "bip-entra",
+      "seconds": 1.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 2 && ui.control('next', 2)",
+      "caption": "Switching to another ánima: Bip comes apart into cyan nanites that stream into Aitor's chest",
+      "clip": [
+        360,
+        280,
+        600,
+        360
+      ]
+    },
+    {
+      "wait": 600
+    },
+    {
+      "record": "bip-sale",
+      "seconds": 1.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 2 && ui.control('prev', 2)",
+      "caption": "Back to Tecnópata: Bip comes out of Aitor as nanites, gathers by his shoulder and powers up",
+      "clip": [
+        360,
+        280,
+        600,
+        360
+      ]
+    },
+    {
+      "shot": "back",
+      "delay": 1200,
+      "caption": "Bip back in place, Tecnópata's HUD on"
+    }
+  ]
+}

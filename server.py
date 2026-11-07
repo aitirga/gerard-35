@@ -19,7 +19,7 @@ from lights import router as lights_router
 app = FastAPI()
 logger = logging.getLogger("uvicorn.error")
 # Story progress flags, in story order. Keep in sync with STORY_FLAGS in src/story.ts (a test checks it).
-STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "matemagico", "wrapper-room", "caught", "got-wrapper", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "papagato", "papagato-2", "papagato-3", "matemagico-2", "matemagico-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri", "luz-nuria-usada", "luz-uri-usada")
+STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "matemagico", "wrapper-room", "caught", "got-wrapper", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "papagato", "papagato-2", "papagato-3", "matemagico-2", "matemagico-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri")
 
 
 @contextmanager
@@ -71,7 +71,7 @@ def get_state(request: Request, response: Response):
 
 # Flags that changed name; old saves keep working (src/story.ts has the same map). Nil's light is
 # gone (Nuria's household gives two), so a save that had it keeps Uri's.
-RENAMED_FLAGS = {"noista": "matemagico", "luz-nil": "luz-uri", "luz-nil-usada": "luz-uri-usada"}
+RENAMED_FLAGS = {"noista": "matemagico", "luz-nil": "luz-uri"}
 
 
 def known_flags(flags):

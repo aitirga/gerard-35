@@ -6,11 +6,13 @@ import type { ClassId } from './battle';
  * What an ánima adds to whoever wears it, on top of its colours (classes.ts `wearClass`), so the
  * wearer feels different and not only looks recoloured. Papagato: a cat's ears (one Haru's orange,
  * one Yuki's white), a tail that sways and a collar with a bell. Matemágico: ones and zeros of gold
- * light circling the wearer, turning to whoever looks. Built from primitives on the rig, so it fits
- * every character and follows every pose; with reduced motion it holds still.
+ * light circling the wearer, turning to whoever looks. Tecnópata: the wearer's glasses turn into a
+ * HUD (a cyan film over the lenses), an earpiece with a short antenna whose tip blinks, and two thin
+ * cyan circuit lines down the shirt. Built from primitives on the rig, so it fits every character
+ * and follows every pose; with reduced motion it holds still.
  */
 const NAME = 'Atuendo de ánima';
-const HARU = '#e9894a', HARU_DARK = '#3a2c28', YUKI = '#f4efe6', INNER = '#f0a7a2', BELL = '#f3cf78', GOLD = '#f3cf78';
+const HARU = '#e9894a', HARU_DARK = '#3a2c28', YUKI = '#f4efe6', INNER = '#f0a7a2', BELL = '#f3cf78', GOLD = '#f3cf78', CYAN = '#4fe0ff', GRAPHITE = '#141b21';
 /** The binary ring: its height on the body, radius, tilt and the digits round it. */
 const RING = { y: .78, radius: .58, tilt: 12, digits: '10110' } as const;
 const reduced = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : undefined;
@@ -24,14 +26,16 @@ function solid(colour: string, gloss = .3) {
   if (!m) { m = new pc.StandardMaterial(); m.name = NAME; m.diffuse.fromString(colour); m.gloss = gloss; m.update(); solids.set(key, m); }
   return m;
 }
-let light: pc.StandardMaterial | undefined;
-/** Light, not paint: added on top of what is behind it (the digits). */
-function glow() {
+const lights = new Map<string, pc.StandardMaterial>();
+/** Light, not paint: added on top of what is behind it (the digits, the HUD on the lenses). */
+function glow(colour = GOLD, opacity = .9, intensity = .9) {
+  const key = `${colour}:${opacity}:${intensity}`;
+  let light = lights.get(key);
   if (light) return light;
   light = new pc.StandardMaterial(); light.name = NAME;
-  light.diffuse.set(0, 0, 0); light.emissive.fromString(GOLD); light.emissiveIntensity = .9; light.useLighting = false;
-  light.blendType = pc.BLEND_ADDITIVEALPHA; light.opacity = .9; light.depthWrite = false;
-  light.update();
+  light.diffuse.set(0, 0, 0); light.emissive.fromString(colour); light.emissiveIntensity = intensity; light.useLighting = false;
+  light.blendType = pc.BLEND_ADDITIVEALPHA; light.opacity = opacity; light.depthWrite = false;
+  light.update(); lights.set(key, light);
   return light;
 }
 
@@ -55,8 +59,10 @@ function ear(head: pc.Entity, side: number, colour: string) {
 }
 
 interface Tail { kind: 'tail'; segments: pc.Entity[]; bend: number[] }
-interface Ring { kind: 'ring'; root: pc.Entity; digits: pc.Entity[] }
-interface Look { root: pc.Entity; time: number; motion: Tail | Ring }
+/** `grown`: how far each digit has grown back (1 whole, 0 gone); `coming`: which of them are on their way back. */
+interface Ring { kind: 'ring'; root: pc.Entity; digits: pc.Entity[]; grown: number[]; coming: boolean[] }
+interface Blink { kind: 'blink'; tip: pc.Entity }
+interface Look { root: pc.Entity; time: number; motion: Tail | Ring | Blink }
 const looks = new Set<Look>();
 let ticking = false;
 
@@ -97,7 +103,57 @@ function digit(parent: pc.Entity, one: boolean) {
 function matemagico(body: pc.Entity): Look {
   const root = pivot(body, [0, RING.y, 0], [RING.tilt, 0, 0]);
   const digits = [...RING.digits].map(d => digit(root, d === '1'));
-  return { root, time: Math.random() * 10, motion: { kind: 'ring', root, digits } };
+  return { root, time: Math.random() * 10, motion: { kind: 'ring', root, digits, grown: digits.map(() => 1), coming: digits.map(() => false) } };
+}
+/** How long a new zero takes to come out in the ring. */
+const REGROW = .55;
+/**
+ * The zero of `model`'s ring nearest `near` leaves it, to become Matemágico's circle
+ * (src/math-cast.ts): where it was, how big, and `back`, which brings a new one out in its place.
+ * Nothing if there is no ring on the model or no zero in it.
+ */
+export function takeZero(model: pc.Entity, near: pc.Vec3) {
+  for (const look of looks) {
+    const ring = look.motion;
+    if (ring.kind !== 'ring' || !look.root.isDescendantOf(model)) continue;
+    let best = -1, bestDistance = Infinity;
+    ring.digits.forEach((d, i) => {
+      if (RING.digits[i] !== '0' || ring.grown[i] < 1) return;
+      const distance = d.getPosition().distance(near);
+      if (distance < bestDistance) { best = i; bestDistance = distance; }
+    });
+    if (best < 0) return undefined;
+    const digit = ring.digits[best], at = digit.getPosition().clone(), scale = digit.getScale().x;
+    ring.grown[best] = 0; digit.enabled = false;
+    return { at, scale, back: () => { ring.coming[best] = true; digit.enabled = true; digit.setLocalScale(0, 0, 0); } };
+  }
+  return undefined;
+}
+
+/**
+ * Tecnópata: the glasses become a HUD (a cyan film on each lens, a hair in front of the frames), an
+ * earpiece on the right ear with a short antenna whose tip blinks, and two thin circuit lines of
+ * cyan light down the front of the shirt, each ending in a little node.
+ */
+function tecnopata(body: pc.Entity, head: pc.Entity | null): Look {
+  const root = pivot(body, [0, 0, 0]);
+  let tip = root;
+  if (head) {
+    for (const side of [-1, 1]) {
+      part(head, 'box', glow(CYAN, .5, 1.2), [side * .079, .24, .19], [.078, .044, .004], [0, 0, 0], false);
+      part(head, 'box', glow(CYAN, .95, 1.6), [side * .079, .257, .193], [.06, .005, .002], [0, 0, 0], false);
+    }
+    part(head, 'box', solid(GRAPHITE, .6), [.185, .2, .005], [.035, .075, .055]);
+    part(head, 'sphere', glow(CYAN, .95, 1.4), [.204, .2, .005], [.016, .016, .016], [0, 0, 0], false);
+    part(head, 'cylinder', solid(GRAPHITE, .6), [.19, .3, -.02], [.009, .14, .009], [0, 0, -8]);
+    tip = part(head, 'sphere', glow(CYAN, 1, 2), [.2, .375, -.02], [.026, .026, .026], [0, 0, 0], false);
+  }
+  for (const side of [-1, 1]) {
+    part(root, 'box', glow(CYAN, .85, 1.1), [side * .07, .66, .152], [.01, .26, .004], [0, 0, 0], false);
+    part(root, 'box', glow(CYAN, .85, 1.1), [side * .045, .79, .152], [.05, .01, .004], [0, 0, 0], false);
+    part(root, 'box', glow(CYAN, 1, 1.5), [side * .07, .53, .153], [.026, .026, .004], [0, 0, 0], false);
+  }
+  return { root, time: Math.random() * 10, motion: { kind: 'blink', tip } };
 }
 
 /** Puts on what the ánima `id` adds (or takes it all off). Safe to call again and again. */
@@ -108,7 +164,7 @@ export function dressAnima(model: pc.Entity, id: ClassId | undefined) {
   for (const look of looks) if (!look.root.parent || look.root.parent === body) looks.delete(look);
   body.find(node => node.name === NAME && node.parent?.name !== NAME).forEach(node => (node as pc.Entity).destroy());
   const head = body.findByName(RIG.head) as pc.Entity | null;
-  const look = id === 'papagato' ? papagato(body, head) : id === 'matemagico' ? matemagico(body) : undefined;
+  const look = id === 'papagato' ? papagato(body, head) : id === 'matemagico' ? matemagico(body) : id === 'tecnopata' ? tecnopata(body, head) : undefined;
   if (!look) return;
   looks.add(look);
   if (!ticking) { ticking = true; pc.AppBase.getApplication()?.on('update', tick); }
@@ -127,6 +183,9 @@ function tick(dt: number) {
     if (motion.kind === 'tail') {
       // A lazy sway from the base, each link following a little later: the tip flicks.
       motion.segments.forEach((segment, i) => segment.setLocalEulerAngles(motion.bend[i], 0, Math.sin(t * 1.9 - i * .7) * (i ? 9 : 14)));
+    } else if (motion.kind === 'blink') {
+      // The antenna's tip blinks: on most of the time, off for a beat.
+      motion.tip.enabled = still || (t * 1.3) % 1 < .8;
     } else {
       // The ring turns slowly; each digit rides it, bobbing, and faces whoever is looking.
       const n = motion.digits.length;
@@ -134,6 +193,13 @@ function tick(dt: number) {
         const a = t * .7 + i * Math.PI * 2 / n;
         d.setLocalPosition(Math.cos(a) * RING.radius, Math.sin(t * 2.1 + i * 1.3) * .05, Math.sin(a) * RING.radius);
         d.setRotation(camera);
+        // A new zero comes out in the place of one that left, with a little overshoot.
+        if (motion.coming[i]) {
+          motion.grown[i] = still ? 1 : Math.min(1, motion.grown[i] + dt / REGROW);
+          const k = motion.grown[i] - 1, s = 1 + 2.4 * k * k * k + 1.4 * k * k;
+          d.setLocalScale(s, s, s);
+          if (motion.grown[i] >= 1) motion.coming[i] = false;
+        }
       });
     }
   }

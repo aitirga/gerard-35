@@ -1,6 +1,6 @@
 {
   "title": "Menú de ánimas",
-  "description": "The status screen's Ánimas page (src/exploration-ui.ts): the section open is a solid piece of the tab bar. For each of Gerard and Aitor, their own ánima (PROPIA: Matemágico, Físico), always theirs, apart from their extra slot (one for now) with the shared ánimas they can equip there (Papagato). Each row has its level, shared by whoever has it. The cursor shows an ánima beside the lists; confirming equips an extra (EQUIPADA) or takes it off; one the other has equipped cannot be equipped. Equipping only says which ánimas each can switch between in a fight.",
+  "description": "The status screen's Ánimas page (src/exploration-ui.ts): the section open is a solid piece of the tab bar. For each of Gerard and Aitor, their own ánima (PROPIA: Matemágico, Tecnópata), always theirs, apart from their extra slot (one for now) with the shared ánimas they can equip there (Papagato). Each row has its level, shared by whoever has it. The cursor shows an ánima beside the lists; confirming equips an extra (EQUIPADA) or takes it off; one the other has equipped cannot be equipped. Equipping only says which ánimas each can switch between in a fight. Below an ánima's skills, its HABILIDADES DÚO DESCUBIERTAS: only the dual attacks found that it brings a half of (whom with, its two skills, what it does); with none found the section is not there, and it never says how many there are.",
   "steps": [
     { "open": "/?mission=nuria&part=ring-1&solo=0" },
     { "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent === 'La torre de Uri'", "timeout": 90000 },
@@ -18,9 +18,18 @@
     { "shot": "hueco-libre", "delay": 700, "caption": "Gerard takes it off: his slot is free (0 / 1) and he wears his own; Aitor can equip it" },
     { "press": "Enter" },
     { "shot": "papagato-aitor", "delay": 350, "caption": "Aitor equips Papagato: it stamps EQUIPADA in his slot and he wears it" },
-    { "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"fisico\"]').focus()" },
-    { "shot": "fisico-propia", "delay": 700, "caption": "Físico (a placeholder) is Aitor's own: fixed, only his, never taken off" },
+    { "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"tecnopata\"]').focus()" },
+    { "shot": "tecnopata-propia", "delay": 700, "caption": "Tecnópata is Aitor's own: fixed, only his, never taken off" },
     { "press": "KeyQ" },
-    { "shot": "personaje", "delay": 1200, "caption": "Personaje: his pills are the ánimas he can switch between, his own and his extra" }
+    { "shot": "personaje", "delay": 1200, "caption": "Personaje: his pills are the ánimas he can switch between, his own and his extra" },
+    { "eval": "window.gerard.story.duals = ['zarpazos-de-fuego', 'punto-debil']" },
+    { "press": "KeyE" },
+    { "wait": 900 },
+    { "eval": "document.querySelector('[data-pick=\"gerard\"][data-class-id=\"matemagico\"]').focus()" },
+    { "shot": "duo-matemagico", "delay": 700, "caption": "Two duals found: Matemágico lists both, each with whom it is made, its two skills and what it does" },
+    { "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"papagato\"]').focus()" },
+    { "shot": "duo-papagato", "delay": 700, "caption": "Papagato brings a half of both too: its own skill first" },
+    { "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"tecnopata\"]').focus()" },
+    { "shot": "duo-tecnopata", "delay": 700, "caption": "Tecnópata has none found: no section, and nothing about how many there are" }
   ]
 }

@@ -6,7 +6,9 @@ import { renderExplorationWorldMap } from './exploration-world-map';
 import { ANIMAS, animaBonus } from './animas';
 import { ITEMS, ITEM_KIND_LABELS, itemsOfKind, type ItemKind } from './items';
 import { EXTRA_SLOTS, type MemberId, type PartyMember, type Story } from './story';
-import { ANIMA_OWNERS, MANA_POINTS, CLASS_STATS, SKILLS, canWear, type ClassId } from './battle';
+import { ANIMA_OWNERS, CLASS_STATS, SKILLS, canWear, type ClassId } from './battle';
+import { improvementOf } from './ecos';
+import { nearestButton } from './menu-nav';
 import { LEVELLED, levelProgress, MAX_LEVEL, xpFloor } from './levels';
 import { animaOf, CLASSES } from './classes';
 import { PROFILES, STAT_LABELS, withBonus, type Stats } from './stats';
@@ -89,7 +91,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   updateAvatar();
   const sheetOf = (player: PlayerId) => sheets[player - 1];
   const anyOpen = () => sheets.some(s => s.page);
-  const blocked = () => hud.hasAttribute('data-battle') || hud.hasAttribute('data-dialogue') || hud.hasAttribute('data-watching') || hud.hasAttribute('data-lamp');
+  const blocked = () => hud.hasAttribute('data-battle') || hud.hasAttribute('data-dialogue') || hud.hasAttribute('data-watching') || hud.hasAttribute('data-lamp') || hud.hasAttribute('data-jar');
   /** Ánimas appear once the story wakes the first one: a new system shows up when it is needed. */
   const pages = () => PAGES.filter(p => p.id !== 'animas' || story.classes.length);
   /** Whose sheet it is: player 2 always plays Aitor. */
@@ -103,7 +105,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   /** Out of a fight everyone is rested: full PV and the worn ánima's maná, in its colours. Bernat has none. */
   function plate(member: PartyMember) {
     const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
-    return vitalsPlate({ id: member.id, name: member.name, profile: member.profile, hp: stats.pv, maxHp: stats.pv, sec: member.id === 'bernat' || !member.classId ? 0 : MANA_POINTS, maxSec: member.id === 'bernat' || !story.classes.length ? 0 : MANA_POINTS, anima: member.classId && animaOf(member.classId, story.adult).name, colour: animaColour(member), scarf: member.classId && CLASSES[member.classId].scarf });
+    return vitalsPlate({ id: member.id, name: member.name, profile: member.profile, hp: stats.pv, maxHp: stats.pv, sec: member.id === 'bernat' || !member.classId ? 0 : story.manaOf(member.classId), maxSec: member.id === 'bernat' || !story.classes.length ? 0 : story.manaOf(member.classId), anima: member.classId && animaOf(member.classId, story.adult).name, colour: animaColour(member), scarf: member.classId && CLASSES[member.classId].scarf });
   }
   /** The shared ánimas (no one's own) that `member` could equip as an extra. */
   const shareable = (member: PartyMember) => member.id === 'bernat' ? [] : story.classes.filter(id => !ANIMA_OWNERS[id] && canWear(member.id, id));
@@ -118,7 +120,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   /** An ánima's level and how far into it its EXP is: the level is the ánima's, whoever wears it. */
   const levelOf = (id: ClassId) => {
     const level = story.levels[id] ?? 1, xp = Math.max(story.xp[id] ?? 0, xpFloor(level));
-    // One without its level table yet (Físico) shows its level and nothing more.
+    // One without its level table yet (Tecnópata) shows its level and nothing more.
     const grows = LEVELLED.includes(id), top = grows && level >= MAX_LEVEL;
     return { level, xp, fill: !grows ? 0 : top ? 1 : levelProgress(xp), top };
   };
@@ -207,7 +209,26 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
           <ul>${ordered.map(id => row(m, id, false)).join('') || '<li class="empty">Ninguna que equipar todavía.</li>'}</ul></section>
       </article>`;
     }).join('');
-    return `<div class="animas-page" data-count="${wards.length}"><section class="anima-lists">${lists}</section>${animaDetail(viewing)}</div>`;
+    return `<div class="animas-page" data-count="${wards.length}"><div class="anima-column"><section class="anima-lists">${lists}</section>${duosOf(viewing)}</div>${animaDetail(viewing)}</div>`;
+  }
+  /** What the Ecos de luz put into an ánima so far (only what it has: nothing shows before the first). */
+  function boughtFor(id: ClassId) {
+    const items = story.improvements.map(improvementOf).filter(item => item?.anima === id);
+    return items.length ? `<section><span class="battle-kicker">CON ECOS DE LUZ</span><ul class="anima-bonus">${items.map(item => `<li data-sign="up">${escape(item!.kind === 'element' ? `Atacar · ${item!.name}` : item!.name)}</li>`).join('')}</ul></section>` : '';
+  }
+  /**
+   * The dual attacks found that the ánima under the cursor (`id`) brings a half of, under the lists:
+   * each with whom it is made (in their colour), its two skills (this ánima's first) and what it
+   * does. Only those found: before the first the card is not there, and it never says how many
+   * there are.
+   */
+  function duosOf(id: ClassId) {
+    const found = story.dualsWith(id), spec = animaOf(id, story.adult);
+    if (!found.length) return '<section class="anima-duos-card" hidden></section>';
+    return `<section class="anima-duos-card" data-anima="${id}" style="--scarf:${spec.colour}"><h3 class="anima-group-head"><span>HABILIDADES DÚO DESCUBIERTAS</span><small>${escape(spec.name)}</small></h3><ul class="anima-skills anima-duos">${found.map(d => {
+      const halves = d.parts.map(part => SKILLS.find(s => s.id === part)!), mine = halves.find(s => s.class === id)!, theirs = halves.find(s => s !== mine)!;
+      return `<li style="--chip:${CLASSES[theirs.class].colour}"><strong>${escape(d.name)}</strong><small>CON ${escape(animaOf(theirs.class, story.adult).name.toUpperCase())}</small><span class="anima-duo-parts">${escape(mine.name)} + ${escape(theirs.name)}</span><span>${escape(d.description)}</span></li>`;
+    }).join('')}</ul></section>`;
   }
   /** The ánima the cursor is on: its level (shared), who can wear it and who has it on, what it changes and the skills it knows. */
   function animaDetail(id: ClassId) {
@@ -219,6 +240,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
         <section class="anima-level"><div><span class="battle-kicker">NIVEL</span><strong>${level}</strong>${top ? '<em>MÁX</em>' : ''}</div><i class="anima-level-bar" aria-hidden="true"><i></i></i><small>${LEVELLED.includes(id) ? `${xp} EXP · ` : ''}el nivel es del ánima: crece la lleve quien la lleve</small></section>
         <dl class="anima-facts"><div><dt>La pueden llevar</dt><dd>${who}</dd></div><div><dt>Ahora</dt><dd>${wearer ? `La lleva ${escape(wearer.name)}` : 'Nadie la lleva'}</dd></div></dl>
         <section><span class="battle-kicker">CAMBIA</span><ul class="anima-bonus">${bonusChips(id) || '<li data-sign="none">Nada todavía</li>'}</ul></section>
+        ${boughtFor(id)}
         <section><span class="battle-kicker">HABILIDADES</span><ul class="anima-skills">${skillsOf(id).map(s => `<li><strong>${s.name}</strong><small>${costPips(s.cost)}</small><span>${s.description}</span></li>`).join('') || '<li class="empty"><span>Ninguna todavía.</span></li>'}</ul></section>
       </article>`;
   }
@@ -324,11 +346,12 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     if (!button) return;
     sheet.el.querySelectorAll('.is-cursor').forEach(el => el.classList.remove('is-cursor'));
     button.classList.add('is-cursor'); sheet.cursor = button.dataset.key;
-    // On the Ánimas page, the one under the cursor shows beside the lists.
+    // On the Ánimas page, the one under the cursor shows beside the lists, and its duals found under them.
     const shown = button.dataset.pick && button.dataset.classId as ClassId | undefined;
     if (shown && sheet.viewing !== shown) {
       sheet.viewing = shown;
       sheet.el.querySelector('.anima-detail')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: animaDetail(shown) }).firstElementChild!);
+      sheet.el.querySelector('.anima-duos-card')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: duosOf(shown) }).firstElementChild!);
     }
     if (sheet.player === 1 || !sheetOf(1).page) button.focus({ preventScroll: true });
   }
@@ -338,20 +361,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const list = buttonsOf(sheet);
     const from = list.find(b => b.dataset.key === sheet.cursor);
     if (!from) { point(sheet, list[0]); return; }
-    const a = from.getBoundingClientRect();
-    let best: HTMLButtonElement | undefined, bestScore = Infinity, inCone = false;
-    for (const b of list) {
-      if (b === from) continue;
-      const r = b.getBoundingClientRect();
-      const dx = r.left + r.width / 2 - (a.left + a.width / 2), dy = r.top + r.height / 2 - (a.top + a.height / 2);
-      const along = direction === 'left' ? -dx : direction === 'right' ? dx : direction === 'up' ? -dy : dy;
-      const across = direction === 'left' || direction === 'right' ? Math.abs(dy) : Math.abs(dx);
-      if (along < 4) continue;
-      // Prefer buttons that really lie that way; anything else only if nothing does.
-      const cone = across <= along * 1.5, score = along + across * 2.5;
-      if ((cone && !inCone) || (cone === inCone && score < bestScore)) { best = b; bestScore = score; inCone = cone; }
-    }
-    point(sheet, best);
+    point(sheet, nearestButton(list, from, direction) as HTMLButtonElement | undefined);
   }
   function turn(sheet: Sheet, step: 1 | -1) {
     const list = pages(), index = list.findIndex(p => p.id === sheet.page);

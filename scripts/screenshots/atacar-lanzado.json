@@ -1,0 +1,311 @@
+{
+  "title": "Matemágico lanza: el círculo y lo que sale de él",
+  "description": "docs/animas/matemagico/README.md § Casting. He no longer runs up and punches: he raises a hand, one of the zeros circling him flies to his fingertip and opens there into a circle of evenly spaced ticks, spinning down (a new zero comes out in the ring as the spell leaves), and whatever the spell throws leaves its middle. Atacar and Ángulo exacto, a ball of particles with 0, 1, e and π floating round it, in the colour of the element with its touch. Foc Binari, its two streams. Cardioide, its comet. Then a real Atacar with no element bought, at 35 and as a boy in chapter 1. Run it with --gpu --scale 2.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22matemagico%3Aagua%22%2C%22matemagico%3Afuego%22%2C%22matemagico%3Aelectrico%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "until": "window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.foe = window.gerard.game.fighterIds().find(f => !f.party).id"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); window.gerard.game.preview({kind:'attack',actor:'gerard',target:window.foe,amount:16,spell:true})"
+    },
+    {
+      "record": "neutro",
+      "seconds": 1.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "∅: gold. Hand up, the dial opens spinning, the ball gathers, leaves and bursts",
+      "clip": [
+        440,
+        300,
+        620,
+        240
+      ],
+      "sheetWidth": 640
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); window.gerard.game.preview({kind:'attack',actor:'gerard',target:window.foe,amount:16,spell:true})"
+    },
+    {
+      "record": "cero",
+      "seconds": 0.8,
+      "fps": 60,
+      "tiles": 16,
+      "clip": [
+        470,
+        330,
+        300,
+        230
+      ],
+      "sheetWidth": 480,
+      "caption": "Closer and slower: the zero leaves the ring, reaches his fingertip, opens into the circle and takes its ticks; a new zero grows in the ring"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); window.gerard.game.preview({kind:'attack',actor:'gerard',target:window.foe,amount:16,spell:true,element:'agua'})"
+    },
+    {
+      "record": "agua",
+      "seconds": 1.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Agua: blue, beads dripping off the rim and the ball, a splash where it lands",
+      "clip": [
+        440,
+        300,
+        620,
+        240
+      ],
+      "sheetWidth": 640
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); window.gerard.game.preview({kind:'attack',actor:'gerard',target:window.foe,amount:16,spell:true,element:'fuego'})"
+    },
+    {
+      "record": "fuego",
+      "seconds": 1.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Fuego: orange, embers off the rim and a trail of embers and crackle",
+      "clip": [
+        440,
+        300,
+        620,
+        240
+      ],
+      "sheetWidth": 640
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); window.gerard.game.preview({kind:'attack',actor:'gerard',target:window.foe,amount:16,spell:true,element:'electrico'})"
+    },
+    {
+      "record": "electrico",
+      "seconds": 1.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Eléctrico: yellow, bolts crawling from the rim to the ball and off it as it flies",
+      "clip": [
+        440,
+        300,
+        620,
+        240
+      ],
+      "sheetWidth": 640
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); window.gerard.game.preview({kind:'skill',actor:'gerard',skill:'foc-binari',target:window.foe,amount:14,strikes:[7,7],burn:{id:'quemado',level:1}})"
+    },
+    {
+      "record": "foc-binari",
+      "seconds": 1.4,
+      "fps": 30,
+      "tiles": 12,
+      "clip": [
+        440,
+        300,
+        620,
+        240
+      ],
+      "sheetWidth": 640,
+      "caption": "Foc Binari: the circle opens orange with embers off its rim, and the two streams leave its middle"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); window.gerard.game.preview({kind:'skill',actor:'gerard',skill:'angulo',target:window.foe,spell:true,stats:[{target:window.foe,way:'down',stats:['defensa','espiritu']}]})"
+    },
+    {
+      "record": "angulo",
+      "seconds": 1.2,
+      "fps": 30,
+      "tiles": 12,
+      "clip": [
+        440,
+        300,
+        620,
+        240
+      ],
+      "sheetWidth": 640,
+      "caption": "Ángulo exacto: the gold ball, leaving its mark as it lands"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "window.gerard.game.effects.clear(); window.gerard.game.preview({kind:'skill',actor:'gerard',skill:'cardioide',target:'aitor',healed:true,amount:20})"
+    },
+    {
+      "record": "cardioide",
+      "seconds": 1.4,
+      "fps": 30,
+      "tiles": 12,
+      "clip": [
+        440,
+        300,
+        620,
+        240
+      ],
+      "sheetWidth": 640,
+      "caption": "Cardioide: the circle opens green and its comet leaves for whoever it cures, the cardioid under them"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "until": "(() => { const ui = window.gerard.battleUI, f = ui.fight; if (!f || f.phase !== 'player' || f.busy || document.querySelector('#battle[data-entering]')) return false; if (document.querySelector('.turn-label').textContent === 'Gerard') return true; document.querySelector('[data-command=\"defend\"] .command-trigger').click(); return false; })()",
+      "timeout": 120000
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "sin-elementos-comandos",
+      "caption": "Atacar with nothing bought: one whole block"
+    },
+    {
+      "press": "Digit1",
+      "gap": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "sin-elementos",
+      "seconds": 1.2,
+      "fps": 30,
+      "tiles": 12,
+      "clip": [
+        300,
+        200,
+        840,
+        420
+      ],
+      "sheetWidth": 640,
+      "caption": "A real Atacar at 35 with no element bought: Atacar is whole, not split, and he still throws it"
+    },
+    {
+      "open": "/?story=minion&solo=1&fight=%7B%22adult%22%3Afalse%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "until": "(() => { const ui = window.gerard.battleUI, f = ui.fight; if (!f || f.phase !== 'player' || f.busy || document.querySelector('#battle[data-entering]')) return false; if (document.querySelector('.turn-label').textContent === 'Gerard') return true; document.querySelector('[data-command=\"defend\"] .command-trigger').click(); return false; })()",
+      "timeout": 120000
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "capitulo-1-comandos",
+      "caption": "Atacar with nothing bought: one whole block"
+    },
+    {
+      "press": "Digit1",
+      "gap": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "capitulo-1",
+      "seconds": 1.2,
+      "fps": 30,
+      "tiles": 12,
+      "clip": [
+        300,
+        200,
+        840,
+        420
+      ],
+      "sheetWidth": 640,
+      "caption": "A real Atacar in chapter 1, as a boy: the same circle and ball"
+    },
+    {
+      "open": "/?story=matemagico&solo=1&fight=%7B%22adult%22%3Afalse%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22palace-minion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "until": "(() => { const ui = window.gerard.battleUI, f = ui.fight; if (!f || f.phase !== 'player' || f.busy || document.querySelector('#battle[data-entering]')) return false; if (document.querySelector('.turn-label').textContent === 'Gerard') return true; document.querySelector('[data-command=\"defend\"] .command-trigger').click(); return false; })()",
+      "timeout": 120000
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Digit1",
+      "gap": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "palacio",
+      "seconds": 1.0,
+      "fps": 30,
+      "tiles": 12,
+      "clip": [
+        300,
+        200,
+        700,
+        330
+      ],
+      "sheetWidth": 640,
+      "caption": "Where chapter 1 really fights as Matemágico, the palace: the boy's smaller circle over the pink floor"
+    }
+  ]
+}
