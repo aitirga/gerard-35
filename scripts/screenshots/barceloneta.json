@@ -1,6 +1,6 @@
 {
   "title": "La Barceloneta · Platja de Sant Miquel",
-  "description": "The beach of the L4 (docs/places/barceloneta.md): the Passeig Marítim with its palms, lamp masts and white parapet over the timber boardwalk, L'Estel Ferit's four rusted cubes on the sand, the sea with its lines of white water and the swash running up the wet sand, the lifeguard post, the old lookout mast, the volleyball nets, the beach bar's loungers, the old Barceloneta's blocks with washing on the balconies, the L4 entrance at the inland edge, the breakwater at the east end, the overview with the W's sail, and a greyscale check that Gerard stands out on the sand.",
+  "description": "The beach of the L4 (docs/places/barceloneta.md): the Passeig Marítim with its palms, lamp masts and white parapet over the timber boardwalk, L'Estel Ferit's four rusted cubes on the sand, the sea with its lines of white water and the swash running up the wet sand (and a clip of both rolling in), the lifeguard post, the old lookout mast, the volleyball nets, the beach bar's loungers, the old Barceloneta's blocks with washing on the balconies, the L4 entrance at the inland edge, the breakwater at the east end, the overview with the W's sail, and a greyscale check that Gerard stands out on the sand.",
   "steps": [
     {
       "open": "/?story=metro&solo=1"
@@ -63,6 +63,12 @@
       "shot": "shore-later",
       "delay": 3000,
       "caption": "Three seconds later: the wave has slid back and the next one is coming"
+    },
+    {
+      "record": "waves",
+      "seconds": 8,
+      "fps": 20,
+      "caption": "Eight seconds at the shore: the white water rolls in towards the beach and the swash runs up the wet sand, fades as it slides back, and the next one comes"
     },
     {
       "teleport": "barceloneta",

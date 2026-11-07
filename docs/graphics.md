@@ -59,6 +59,10 @@ about half as fast.
   Over Avinguda Meridiana's overview this took the draw calls from about 11,100 to 5,000 and the
   frame from 19 to 12 ms at 2× pixels, for 18 MB more vertex data. `just screenshots
   zone-overview` shows it (and checks that merged and per-part crowns look the same).
+- **Measure on a quiet GPU.** Other agents' `just screenshots --gpu` runs share the GPU: while one
+  runs, frame and GPU times in the game and in `gpu-perf` swing by 20–50 %, and the game itself
+  stutters. Compare variants by alternating them every few dozen frames in one run, or count draw
+  calls and triangles, which do not depend on it.
 - **Developing on a busy GPU.** At 2× pixels the post pass costs more than the scene (about 13–17
   ms of GPU in the city). A machine can draw fewer pixels in `just dev` only, with
   `VITE_PIXEL_RATIO=1.5` (about half the pixels) in its git-ignored `.env.development.local`.
@@ -190,7 +194,8 @@ keep him in sight, all set in `occlusion` (`?cut=`, `?silueta=0` and `?camara=fi
     Shows the most, but at 1× the stipple shimmers into moiré over a large wall: it wants TAA.
   - `ring`: the earlier cut of 5 m radius, wider towards the camera, traced by a glowing cream edge. Each
     surface opens at its own size, so roofs and walls show stacked arcs.
-  - `none`: buildings stay whole; only the silhouette shows him.
+  - `none`: buildings stay whole; only the silhouette shows him. A place whose look sets
+    `cut: false` always draws this way, whatever the style (the Sagrada Família).
 - **Silhouettes** (`occlusion.silhouettes`, `createSilhouettes`): Gerard and his partner are drawn a
   second time, flat light blue, only where something stands in front of them (depth test reversed,
   no depth write), as Torchlight and Diablo-likes show their heroes. The copies share each part's

@@ -241,8 +241,9 @@ is the crossing under the Tower of Jesus; +z the Nativity, +x the apse, −x the
   lattice), their booms high above everything.
 - **Materials**: 17 meshes, one per material (old stone, Montjuïc stone, new stone, the two bell
   tower paintings, the lattice, mosaic, white, red, dark, glass, green, star, crane lattice,
-  counterweights, scaffolding, the printed sheet), all with the see-through cut round Gerard like a
-  building.
+  counterweights, scaffolding, the printed sheet), each opening and closing with the building like
+  any other. The zone's `look.cut: false` keeps the basilica and the blocks round it whole: when they
+  hide Gerard and his partner, only their silhouettes show through.
 
 ### Draw calls (debug build, 1440 × 900, `?stats`)
 
