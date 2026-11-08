@@ -1,5 +1,5 @@
 import type { Cell } from './movement';
-import type { GeoScene } from './geo';
+import type { GeoLandmark, GeoScene } from './geo';
 import ALEGIA_SCENE from './geo/alegia.json' with { type: 'json' };
 import MERIDIANA_CALLE_SCENE from './geo/meridiana-calle.json' with { type: 'json' };
 import REC_COMTAL_SCENE from './geo/rec-comtal.json' with { type: 'json' };
@@ -8,6 +8,8 @@ import CARDEDEU_MAZE_SCENE from './geo/cardedeu-laberinto.json' with { type: 'js
 import CARDEDEU_CALLE_SCENE from './geo/cardedeu-calle.json' with { type: 'json' };
 import BUNKERS_CARMEL_SCENE from './geo/bunkers-carmel.json' with { type: 'json' };
 import BARCELONETA_SCENE from './geo/barceloneta.json' with { type: 'json' };
+import { SHALLOWS } from './friends/universidad.ts';
+import CAMPING_SCENE from './geo/camping.json' with { type: 'json' };
 import SANTS_SCENE from './geo/sants.json' with { type: 'json' };
 import POBLE_SEC_SCENE from './geo/poble-sec.json' with { type: 'json' };
 import PLACA_ESPANYA_SCENE from './geo/placa-espanya.json' with { type: 'json' };
@@ -16,7 +18,7 @@ import { towerGrid } from './tower.ts';
 import { PALACE_GYM, PALACE_OFFICE, PALACE_PATIO, PALACE_THRONE, type ZoneTheme } from './palace-zone-plans.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
-  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-calle' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta'
+  | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-calle' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta' | 'camping'
   | 'sants' | 'el-nucli' | 'poble-sec' | 'placa-espanya' | 'sagrada-familia' | 'sagrada-familia-interior'
   | 'palacio-patio' | 'palacio-gimnasio' | 'palacio-secretaria' | 'palacio-trono';
 export interface Rect { x: number; z: number; w: number; d: number }
@@ -147,6 +149,8 @@ export interface Environment {
   interactions: Interaction[];
   /** Follow-camera zoom (orthographic half-height); without it the camera frames the whole map. */
   zoom?: number;
+  /** No overview here: the camera stays on the party, so a place that hides its way on (a maze) is not seen from above. */
+  noOverview?: boolean;
   /**
    * The camera's own angle here instead of the game's (src/camera-orbit.ts), for a place the usual one
    * cannot see into. `steer`: the way "up" walks, in degrees round the vertical like `yaw`, if not
@@ -585,7 +589,42 @@ export const CARDEDEU_MAZE = { ...MAZE_GROUND, grid: towerGrid(MAZE_GROUND.grid)
 /** The Búnkers del Carmel on the Turó de la Rovira at sunset, the city below (docs/places/bunkers.md). */
 export const BUNKERS_CARMEL = geoEnvironment('bunkers-carmel', BUNKERS_CARMEL_SCENE as GeoScene);
 /** The beach of the L4: the Platja de Sant Miquel, L'Estel Ferit and the old Barceloneta (docs/places/barceloneta.md). */
-export const BARCELONETA = geoEnvironment('barceloneta', BARCELONETA_SCENE as GeoScene);
+const BARCELONETA_GROUND = geoEnvironment('barceloneta', BARCELONETA_SCENE as GeoScene);
+/**
+ * A little of the sea is walkable: the shallows round where Anna swims in the university friends'
+ * mission (docs/quests/universidad.md), so the party can wade out to her and the spiral.
+ */
+export function withShallows(grid: readonly string[], centre: { x: number; z: number }, radius: number) {
+  return grid.map((row, z) => [...row].map((c, x) => c === '#' && Math.hypot(x - centre.x, z - centre.z) <= radius ? '.' : c).join(''));
+}
+export const BARCELONETA: Environment = { ...BARCELONETA_GROUND, grid: withShallows(BARCELONETA_GROUND.grid, SHALLOWS.centre, SHALLOWS.radius) };
+/**
+ * Càmping Eurosport, past the spiral off the beach (docs/quests/universidad.md § Càmping Eurosport):
+ * the university friends' mini-dungeon, always the same summer evening. Its anchors name the cells
+ * the story uses (`entrada`, `recepcio-pizarra`, `parcela-0` … `parcela-24`, `barrera-piscina`,
+ * `campeon`, `merendero-mesa`, `foto`…).
+ */
+export const CAMPING: Environment = { ...geoEnvironment('camping', CAMPING_SCENE as GeoScene), noOverview: true };
+/** The cells under a landmark's turned footprint, as tools/geo.py (`landmark_cells`) lays it on the grid. */
+export function landmarkCells(lm: GeoLandmark): Cell[] {
+  const a = lm.angle * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), reach = Math.ceil(Math.hypot(lm.w, lm.d) / 2) + 1;
+  const cells: Cell[] = [{ x: Math.round(lm.x), z: Math.round(lm.z) }];
+  for (let z = Math.round(lm.z) - reach; z <= Math.round(lm.z) + reach; z++) for (let x = Math.round(lm.x) - reach; x <= Math.round(lm.x) + reach; x++) {
+    const dx = x - lm.x, dz = z - lm.z;
+    if (Math.abs(dx * c - dz * s) <= lm.w / 2 && Math.abs(dx * s + dz * c) <= lm.d / 2 && !cells.some(k => k.x === x && k.z === z)) cells.push({ x, z });
+  }
+  return cells.sort((p, q) => p.z - q.z || p.x - q.x);
+}
+/**
+ * The pool gate's cells: the only way from Las parcelas to the pool and the merendero. Open on the
+ * grid; the story blocks them while the gate is shut (until Las parcelas is solved).
+ */
+export const CAMPING_GATE: Cell[] = landmarkCells(CAMPING.geo!.landmarks!.find(l => l.id === 'barrera-piscina')!);
+/**
+ * The steel door's cells, in the wall between the pool and the merendero: the only way to the long
+ * table. Open on the grid; the story blocks them until El Campeón is beaten.
+ */
+export const CAMPING_DOOR: Cell[] = landmarkCells(CAMPING.geo!.landmarks!.find(l => l.id === 'porta-merendero')!);
 /** Sants (docs/places/nucli.md): from the Plaça de Sants metro up Carrer de Riego to El Nucli on Carrer de Valladolid. */
 export const SANTS = geoEnvironment('sants', SANTS_SCENE as GeoScene);
 /** Carrer de Blai in Poble Sec, where Emilie lives, under Montjuïc (docs/places/poble-sec.md); the L3 at Plaça dels Ocellets. */
@@ -676,7 +715,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   meridiana: MERIDIANA, palacio: PALACIO, alegia: ALEGIA,
   'meridiana-calle': MERIDIANA_CALLE, 'rec-comtal': REC_COMTAL, cardedeu: CARDEDEU, 'cardedeu-calle': CARDEDEU_CALLE, 'cardedeu-laberinto': CARDEDEU_MAZE,
   'bunkers-carmel': BUNKERS_CARMEL,
-  barceloneta: BARCELONETA,
+  barceloneta: BARCELONETA, camping: CAMPING,
   sants: SANTS, 'el-nucli': EL_NUCLI,
   'poble-sec': POBLE_SEC,
   'placa-espanya': PLACA_ESPANYA,

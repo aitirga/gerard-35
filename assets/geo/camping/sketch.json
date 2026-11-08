@@ -1,0 +1,539 @@
+{
+ "note": "Càmping Eurosport (docs/quests/universidad.md), invented: the ground of the campsite in metres from the anchor, written from a plan in cells (1.25 m). The woods round it, the sauló lanes between the rows of pitches, the pool and its deck, the entrance road. Its pieces (tents, signs, fence, pool, tables, bulbs) are landmarks in zone.json.",
+ "drawn": "2026-11-07",
+ "features": [
+  {
+   "id": "bosc-nord",
+   "area": "forest",
+   "rect": [
+    -43.75,
+    -31.25,
+    87.5,
+    3.75
+   ]
+  },
+  {
+   "id": "bosc-sud",
+   "area": "forest",
+   "rect": [
+    -43.75,
+    27.5,
+    87.5,
+    3.75
+   ]
+  },
+  {
+   "id": "bosc-oest",
+   "area": "forest",
+   "rect": [
+    -43.75,
+    -31.25,
+    2.5,
+    62.5
+   ]
+  },
+  {
+   "id": "bosc-est-nord",
+   "area": "forest",
+   "rect": [
+    41.25,
+    -31.25,
+    2.5,
+    23.75
+   ]
+  },
+  {
+   "id": "bosc-est-sud",
+   "area": "forest",
+   "rect": [
+    41.25,
+    5.0,
+    2.5,
+    26.25
+   ]
+  },
+  {
+   "id": "platja-piscina",
+   "area": "square",
+   "name": "Piscina",
+   "rect": [
+    -41.25,
+    -3.75,
+    20.0,
+    23.75
+   ]
+  },
+  {
+   "id": "gespa-piscina",
+   "area": "grass",
+   "rect": [
+    -41.25,
+    20.0,
+    20.0,
+    6.25
+   ]
+  },
+  {
+   "id": "piscina",
+   "area": "water",
+   "name": "Piscina",
+   "rect": [
+    -36.25,
+    5.0,
+    12.5,
+    7.5
+   ]
+  },
+  {
+   "id": "esplanada-recepcio",
+   "area": "square",
+   "rect": [
+    22.5,
+    -5.0,
+    11.25,
+    2.5
+   ]
+  },
+  {
+   "id": "carretera-entrada",
+   "highway": "service",
+   "name": "Entrada",
+   "line": [
+    [
+     43.125,
+     -1.25
+    ],
+    [
+     23.125,
+     -1.25
+    ]
+   ]
+  },
+  {
+   "id": "cami-merendero",
+   "highway": "footway",
+   "line": [
+    [
+     -39.375,
+     -4.375
+    ],
+    [
+     -39.375,
+     -10.625
+    ],
+    [
+     -23.125,
+     -10.625
+    ]
+   ]
+  },
+  {
+   "id": "laberint-0",
+   "highway": "footway",
+   "line": [
+    [
+     -19.375,
+     -26.25
+    ],
+    [
+     21.875,
+     -26.25
+    ]
+   ]
+  },
+  {
+   "id": "laberint-1",
+   "highway": "footway",
+   "line": [
+    [
+     -19.375,
+     -18.75
+    ],
+    [
+     21.875,
+     -18.75
+    ]
+   ]
+  },
+  {
+   "id": "laberint-2",
+   "highway": "footway",
+   "line": [
+    [
+     -19.375,
+     -11.25
+    ],
+    [
+     21.875,
+     -11.25
+    ]
+   ]
+  },
+  {
+   "id": "laberint-3",
+   "highway": "footway",
+   "line": [
+    [
+     -19.375,
+     11.25
+    ],
+    [
+     21.875,
+     11.25
+    ]
+   ]
+  },
+  {
+   "id": "laberint-4",
+   "highway": "footway",
+   "line": [
+    [
+     -19.375,
+     18.75
+    ],
+    [
+     21.875,
+     18.75
+    ]
+   ]
+  },
+  {
+   "id": "laberint-5",
+   "highway": "footway",
+   "line": [
+    [
+     -19.375,
+     26.25
+    ],
+    [
+     23.125,
+     26.25
+    ]
+   ]
+  },
+  {
+   "id": "laberint-6",
+   "highway": "footway",
+   "line": [
+    [
+     1.25,
+     -25.625
+    ],
+    [
+     1.25,
+     -19.375
+    ]
+   ]
+  },
+  {
+   "id": "laberint-7",
+   "highway": "footway",
+   "line": [
+    [
+     20.0,
+     -25.625
+    ],
+    [
+     20.0,
+     -19.375
+    ]
+   ]
+  },
+  {
+   "id": "laberint-8",
+   "highway": "footway",
+   "line": [
+    [
+     -18.75,
+     -18.125
+    ],
+    [
+     -18.75,
+     -11.875
+    ]
+   ]
+  },
+  {
+   "id": "laberint-9",
+   "highway": "footway",
+   "line": [
+    [
+     16.25,
+     -18.125
+    ],
+    [
+     16.25,
+     -11.875
+    ]
+   ]
+  },
+  {
+   "id": "laberint-10",
+   "highway": "footway",
+   "line": [
+    [
+     -18.75,
+     4.375
+    ],
+    [
+     -18.75,
+     10.625
+    ]
+   ]
+  },
+  {
+   "id": "laberint-11",
+   "highway": "footway",
+   "line": [
+    [
+     2.5,
+     4.375
+    ],
+    [
+     2.5,
+     10.625
+    ]
+   ]
+  },
+  {
+   "id": "laberint-12",
+   "highway": "footway",
+   "line": [
+    [
+     -18.75,
+     11.875
+    ],
+    [
+     -18.75,
+     18.125
+    ]
+   ]
+  },
+  {
+   "id": "laberint-13",
+   "highway": "footway",
+   "line": [
+    [
+     10.0,
+     11.875
+    ],
+    [
+     10.0,
+     18.125
+    ]
+   ]
+  },
+  {
+   "id": "laberint-14",
+   "highway": "footway",
+   "line": [
+    [
+     20.0,
+     11.875
+    ],
+    [
+     20.0,
+     18.125
+    ]
+   ]
+  },
+  {
+   "id": "laberint-15",
+   "highway": "footway",
+   "line": [
+    [
+     -8.75,
+     19.375
+    ],
+    [
+     -8.75,
+     25.625
+    ]
+   ]
+  },
+  {
+   "id": "laberint-16",
+   "highway": "footway",
+   "line": [
+    [
+     13.75,
+     19.375
+    ],
+    [
+     13.75,
+     25.625
+    ]
+   ]
+  },
+  {
+   "id": "laberint-17",
+   "highway": "footway",
+   "line": [
+    [
+     -18.75,
+     -10.625
+    ],
+    [
+     -18.75,
+     5.625
+    ]
+   ]
+  },
+  {
+   "id": "laberint-18",
+   "highway": "footway",
+   "line": [
+    [
+     2.5,
+     -10.625
+    ],
+    [
+     2.5,
+     5.625
+    ]
+   ]
+  },
+  {
+   "id": "laberint-19",
+   "highway": "footway",
+   "line": [
+    [
+     -4.375,
+     -1.25
+    ],
+    [
+     23.125,
+     -1.25
+    ]
+   ]
+  },
+  {
+   "id": "laberint-20",
+   "highway": "footway",
+   "line": [
+    [
+     12.5,
+     -7.5
+    ],
+    [
+     18.75,
+     -7.5
+    ],
+    [
+     18.75,
+     -10.625
+    ]
+   ]
+  },
+  {
+   "id": "laberint-21",
+   "highway": "footway",
+   "line": [
+    [
+     -15.0,
+     -6.25
+    ],
+    [
+     -6.25,
+     -6.25
+    ],
+    [
+     -6.25,
+     2.5
+    ],
+    [
+     -15.0,
+     2.5
+    ],
+    [
+     -15.0,
+     -6.25
+    ]
+   ]
+  },
+  {
+   "id": "laberint-22",
+   "highway": "footway",
+   "line": [
+    [
+     6.375,
+     -1.25
+    ],
+    [
+     6.08,
+     0.233
+    ],
+    [
+     5.24,
+     1.49
+    ],
+    [
+     3.983,
+     2.33
+    ],
+    [
+     2.5,
+     2.625
+    ],
+    [
+     1.017,
+     2.33
+    ],
+    [
+     -0.24,
+     1.49
+    ],
+    [
+     -1.08,
+     0.233
+    ],
+    [
+     -1.375,
+     -1.25
+    ],
+    [
+     -1.08,
+     -2.733
+    ],
+    [
+     -0.24,
+     -3.99
+    ],
+    [
+     1.017,
+     -4.83
+    ],
+    [
+     2.5,
+     -5.125
+    ],
+    [
+     3.983,
+     -4.83
+    ],
+    [
+     5.24,
+     -3.99
+    ],
+    [
+     6.08,
+     -2.733
+    ],
+    [
+     6.375,
+     -1.25
+    ]
+   ]
+  },
+  {
+   "id": "laberint-placa",
+   "area": "square",
+   "rect": [
+    10.0,
+    0.0,
+    11.25,
+    3.75
+   ]
+  }
+ ]
+}

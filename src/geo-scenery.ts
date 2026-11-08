@@ -1963,12 +1963,12 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         parent.addChild(e); return e;
       },
       mesh: () => new MeshBuilder(),
-      add(name, builder, material, { cut = false, building, shadows = true, parent = pivot } = {}) {
+      add(name, builder, material, { cut = false, building, shadows = true, parent = pivot, moving = false } = {}) {
         if (builder.empty) return undefined;
         const mesh = builder.mesh(device); meshes.push(mesh);
         const host = building === undefined ? undefined : buildingCuts.get(pivots.get(building)!), cuts = cut || !!host;
         const e = new pc.Entity(name), instance = new pc.MeshInstance(mesh, cuts ? cutaway(material) : material);
-        e.addComponent('render', { meshInstances: [instance], castShadows: shadows, receiveShadows: true, ...(cuts ? {} : { batchGroupId: kit.batch }) });
+        e.addComponent('render', { meshInstances: [instance], castShadows: shadows, receiveShadows: true, ...(cuts || moving ? {} : { batchGroupId: kit.batch }) });
         parent.addChild(e);
         // A piece on a building's walls or roof opens and closes with that building's cut, so it never
         // floats over the hole nor is eaten while the roof under it stays whole.

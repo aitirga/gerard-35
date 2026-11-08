@@ -87,7 +87,11 @@ export function buildSea(kit: GeoKit, water: GeoPoint[][], size: { width: number
     mesh.setPositions(positions); mesh.setNormals(normals); mesh.setUvs(0, uvs); mesh.setColors(colours); mesh.setIndices(indices); mesh.update();
     meshes.push(mesh);
     const e = new pc.Entity(name);
-    e.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, m)], castShadows: false, receiveShadows: true, ...(batched ? { batchGroupId: kit.batch } : {}) });
+    // Flat on the water and the size of the coast, their middles sort nearer the camera than what
+    // stands on them (the spiral in the shallows came out under the waves): they draw first, lowest first.
+    const instance = new pc.MeshInstance(mesh, m);
+    instance.calculateSortDistance = () => 1e8 - y * 1e6;
+    e.addComponent('render', { meshInstances: [instance], castShadows: false, receiveShadows: true, ...(batched ? { batchGroupId: kit.batch } : {}) });
     root.addChild(e);
     return e;
   }

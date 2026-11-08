@@ -1,0 +1,3066 @@
+{
+  "id": "camping",
+  "name": "Càmping Eurosport",
+  "region": "Al otro lado de la espiral",
+  "anchor": {
+    "address": "Càmping Eurosport (inventado: un camping de la costa, cerca de la playa)",
+    "lat": 41.6402,
+    "lon": 2.7473
+  },
+  "bounds_m": {
+    "west": -43.75,
+    "east": 43.75,
+    "north": -31.25,
+    "south": 31.25
+  },
+  "cell_m": 1.25,
+  "rotation_deg": 0,
+  "zoom": 11,
+  "spawn": {
+    "east_m": 39.375,
+    "south_m": -0.625
+  },
+  "storey_m": 2.8,
+  "reference": {
+    "checked": "2026-11-07",
+    "streetview_capture": "",
+    "notes": [
+      "DESIGNED: Càmping Eurosport, the university friends' mini-dungeon (docs/quests/universidad.md § Càmping Eurosport), invented: a generic campsite of the Catalan coast, not a real one. Always the same summer evening; tents pitched and empty, the bulbs lit, nobody there.",
+      "Route, one way from east to west: La entrada (the road in, the raised barrier, the reception with its blackboard, the CÀMPING EUROSPORT sign), Las parcelas (a hedge maze: five rows of pitches, each an alcove in the hedge with a tent and a sign post, opening onto lanes of sauló plugged here and there, a roundabout round a big pine in the middle, a square by the way in and a dead-end one by the wall), the tall wooden wall of the pool and its gate (`barrera-piscina`, the only way through, with a lamp per pitch to find), La piscina (still water, the lifeguard chair) and, past the hedge's open end, El merendero (long picnic tables under the pines, the melon on one).",
+      "Written from a plan in cells (1.25 m), so every anchor is a cell centre: `parcela-0` ... `parcela-24` row-major from the far row, left to right as the camera sees it, each the cell in front of its pitch's sign (landmark `rotulo-<n>`)."
+    ],
+    "viewpoints": []
+  },
+  "look": {
+    "water": "#2b6f78",
+    "materials": {
+      "ground": {
+        "texture": "pinassa",
+        "tint": "#5f664a"
+      },
+      "footway": {
+        "texture": "saulo",
+        "tint": "#a8a185"
+      },
+      "road": {
+        "texture": "asfalt",
+        "tint": "#5d5a55"
+      },
+      "square": {
+        "texture": "lloses",
+        "tint": "#bcbcb0"
+      },
+      "grass": {
+        "texture": "gespa",
+        "tint": "#7d9152"
+      },
+      "forest": {
+        "texture": "pinassa",
+        "tint": "#5f6640"
+      }
+    }
+  },
+  "trees": {
+    "forest_every_m": 4.5,
+    "riverbank_every_m": 999,
+    "species": [
+      "pine",
+      "pine",
+      "aleppo"
+    ]
+  },
+  "styles": {
+    "default": {
+      "walls": [
+        "#e8e1d0"
+      ],
+      "roof": "#a5654a",
+      "roof_kind": "flat",
+      "facade": "rendered",
+      "ground": "masonry",
+      "levels": 1
+    }
+  },
+  "buildings": {},
+  "props": [
+    {
+      "kind": "tree",
+      "east_m": 31.875,
+      "south_m": -10.625,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.41
+    },
+    {
+      "kind": "tree",
+      "east_m": 33.125,
+      "south_m": 8.125,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.33
+    },
+    {
+      "kind": "tree",
+      "east_m": 25.625,
+      "south_m": 10.625,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.49
+    },
+    {
+      "kind": "tree",
+      "east_m": 38.125,
+      "south_m": 3.125,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.25
+    },
+    {
+      "kind": "tree",
+      "east_m": -39.375,
+      "south_m": 26.875,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.41
+    },
+    {
+      "kind": "tree",
+      "east_m": -33.125,
+      "south_m": 24.375,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.57
+    },
+    {
+      "kind": "tree",
+      "east_m": -23.125,
+      "south_m": 23.125,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.33
+    },
+    {
+      "kind": "tree",
+      "east_m": -40.625,
+      "south_m": 6.875,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.49
+    },
+    {
+      "kind": "tree",
+      "east_m": -21.875,
+      "south_m": 15.625,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.25
+    },
+    {
+      "kind": "tree",
+      "east_m": -40.625,
+      "south_m": -24.375,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.41
+    },
+    {
+      "kind": "tree",
+      "east_m": -34.375,
+      "south_m": -25.625,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.57
+    },
+    {
+      "kind": "tree",
+      "east_m": -28.125,
+      "south_m": -24.375,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.33
+    },
+    {
+      "kind": "tree",
+      "east_m": -23.125,
+      "south_m": -25.625,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.49
+    },
+    {
+      "kind": "tree",
+      "east_m": -35.625,
+      "south_m": -16.875,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.25
+    },
+    {
+      "kind": "tree",
+      "east_m": -29.375,
+      "south_m": -16.875,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.41
+    },
+    {
+      "kind": "tree",
+      "east_m": -23.125,
+      "south_m": -16.875,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.57
+    },
+    {
+      "kind": "tree",
+      "east_m": -40.625,
+      "south_m": -15.625,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.33
+    },
+    {
+      "kind": "tree",
+      "east_m": -23.125,
+      "south_m": -8.125,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.49
+    },
+    {
+      "kind": "tree",
+      "east_m": -34.375,
+      "south_m": -8.125,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.25
+    },
+    {
+      "kind": "tree",
+      "east_m": 2.5,
+      "south_m": -1.25,
+      "species": "pine",
+      "base": "ground",
+      "scale": 2.0
+    },
+    {
+      "kind": "tree",
+      "east_m": -10.625,
+      "south_m": -1.875,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.6
+    },
+    {
+      "kind": "tree",
+      "east_m": 15.625,
+      "south_m": -5.625,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.5
+    },
+    {
+      "kind": "tree",
+      "east_m": -4.375,
+      "south_m": -8.125,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.2
+    },
+    {
+      "kind": "tree",
+      "east_m": 9.375,
+      "south_m": -8.125,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.3
+    },
+    {
+      "kind": "tree",
+      "east_m": -4.375,
+      "south_m": 4.375,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.4
+    },
+    {
+      "kind": "tree",
+      "east_m": 9.375,
+      "south_m": 4.375,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.5
+    },
+    {
+      "kind": "tree",
+      "east_m": -1.875,
+      "south_m": -9.375,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.2
+    },
+    {
+      "kind": "tree",
+      "east_m": 6.875,
+      "south_m": -9.375,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.3
+    },
+    {
+      "kind": "tree",
+      "east_m": -15.625,
+      "south_m": -9.375,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.4
+    },
+    {
+      "kind": "tree",
+      "east_m": 21.875,
+      "south_m": -8.125,
+      "species": "pine",
+      "base": "ground",
+      "scale": 1.5
+    }
+  ],
+  "places": [
+    {
+      "id": "recepcio-pizarra",
+      "label": "Mirar la pizarra",
+      "east_m": 26.875,
+      "south_m": -3.125,
+      "lines": []
+    },
+    {
+      "id": "piscina",
+      "label": "Mirar la piscina",
+      "east_m": -29.375,
+      "south_m": 14.375,
+      "lines": [
+        "El agua está quieta. Ni una hoja, ni una onda.",
+        "Huele a cloro y a crema de sol, como siempre."
+      ]
+    },
+    {
+      "id": "pissarra-piscina",
+      "label": "Mirar la pizarra",
+      "east_m": -34.375,
+      "south_m": -0.625,
+      "lines": []
+    },
+    {
+      "id": "candado-porton",
+      "label": "Mirar el candado",
+      "east_m": -19.375,
+      "south_m": -1.25,
+      "lines": []
+    }
+  ],
+  "labels": [],
+  "landmarks": [
+    {
+      "kind": "recepcio",
+      "id": "recepcio",
+      "east_m": 26.875,
+      "south_m": -7.5,
+      "size_m": [
+        6.23,
+        4.98
+      ],
+      "params": {}
+    },
+    {
+      "kind": "barrera",
+      "id": "barrera-entrada",
+      "east_m": 35.625,
+      "south_m": -3.125,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "rotation_deg": -90,
+      "params": {
+        "arm_m": 3.6
+      }
+    },
+    {
+      "kind": "retol-camping",
+      "id": "retol-camping",
+      "east_m": 38.75,
+      "south_m": -6.875,
+      "size_m": [
+        4.98,
+        1.23
+      ],
+      "params": {}
+    },
+    {
+      "kind": "taula-picnic",
+      "id": "taula-magos",
+      "east_m": 27.5,
+      "south_m": 3.75,
+      "size_m": [
+        2.48,
+        2.48
+      ],
+      "params": {
+        "style": "plegable"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "tanca-merendero-oest",
+      "east_m": -38.125,
+      "south_m": -5.625,
+      "size_m": [
+        9.98,
+        1.23
+      ],
+      "params": {
+        "style": "fusta"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "porta-merendero",
+      "east_m": -31.875,
+      "south_m": -5.625,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "solid": false,
+      "params": {
+        "style": "blindada",
+        "lamps": 9
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "tanca-merendero-est",
+      "east_m": -25.625,
+      "south_m": -5.625,
+      "size_m": [
+        8.73,
+        1.23
+      ],
+      "params": {
+        "style": "fusta"
+      }
+    },
+    {
+      "kind": "piscina",
+      "id": "piscina",
+      "east_m": -30.0,
+      "south_m": 8.75,
+      "size_m": [
+        12.48,
+        7.48
+      ],
+      "solid": false,
+      "params": {}
+    },
+    {
+      "kind": "cadira-socorrista",
+      "id": "cadira-socorrista",
+      "east_m": -30.625,
+      "south_m": 3.125,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {}
+    },
+    {
+      "kind": "taula-picnic",
+      "id": "taula-merendero-1",
+      "east_m": -38.125,
+      "south_m": -21.25,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "seed": 1
+      }
+    },
+    {
+      "kind": "taula-picnic",
+      "id": "taula-merendero-2",
+      "east_m": -31.875,
+      "south_m": -21.25,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "seed": 2
+      }
+    },
+    {
+      "kind": "taula-picnic",
+      "id": "taula-merendero-3",
+      "east_m": -25.625,
+      "south_m": -21.25,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "seed": 3
+      }
+    },
+    {
+      "kind": "taula-picnic",
+      "id": "taula-merendero-4",
+      "east_m": -38.125,
+      "south_m": -13.75,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "seed": 4
+      }
+    },
+    {
+      "kind": "taula-picnic",
+      "id": "taula-merendero-5",
+      "east_m": -25.625,
+      "south_m": -13.75,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "seed": 5
+      }
+    },
+    {
+      "kind": "taula-picnic",
+      "id": "taula-melo",
+      "east_m": -31.875,
+      "south_m": -13.75,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "melo": true,
+        "seed": 9
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-0",
+      "east_m": -16.875,
+      "south_m": -22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#7d8558",
+        "seed": 1
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-0",
+      "east_m": -14.375,
+      "south_m": -20.625,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 1
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-1",
+      "east_m": -10.625,
+      "south_m": -22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "canadenca",
+        "colour": "#c4a77a",
+        "seed": 2
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-1",
+      "east_m": -8.125,
+      "south_m": -20.625,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 2
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-2",
+      "east_m": -4.375,
+      "south_m": -22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "familiar",
+        "colour": "#5f7d92",
+        "seed": 3
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-2",
+      "east_m": -1.875,
+      "south_m": -20.625,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 3
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-3",
+      "east_m": 6.875,
+      "south_m": -22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#c27a45",
+        "seed": 4
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-3",
+      "east_m": 9.375,
+      "south_m": -20.625,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 4
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-4",
+      "east_m": 13.125,
+      "south_m": -22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "canadenca",
+        "colour": "#7a8a6a",
+        "seed": 5
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-4",
+      "east_m": 15.625,
+      "south_m": -20.625,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 5
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-5",
+      "east_m": -14.375,
+      "south_m": -15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "familiar",
+        "colour": "#b8ab8a",
+        "seed": 6
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-5",
+      "east_m": -11.875,
+      "south_m": -13.125,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 6
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-6",
+      "east_m": -8.125,
+      "south_m": -15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#4f6f63",
+        "seed": 7
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-6",
+      "east_m": -5.625,
+      "south_m": -13.125,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 7
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-7",
+      "east_m": -1.875,
+      "south_m": -15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "canadenca",
+        "colour": "#9a5c40",
+        "seed": 8
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-7",
+      "east_m": 0.625,
+      "south_m": -13.125,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 8
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-8",
+      "east_m": 4.375,
+      "south_m": -15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#d2c8ad",
+        "seed": 9
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-8",
+      "east_m": 6.875,
+      "south_m": -13.125,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 9
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-9",
+      "east_m": 10.625,
+      "south_m": -15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "familiar",
+        "colour": "#6f7f52",
+        "seed": 10
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-9",
+      "east_m": 13.125,
+      "south_m": -13.125,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 10
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-10",
+      "east_m": -14.375,
+      "south_m": 7.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "canadenca",
+        "colour": "#566a7c",
+        "seed": 11
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-10",
+      "east_m": -11.875,
+      "south_m": 9.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 11
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-11",
+      "east_m": -8.125,
+      "south_m": 7.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "familiar",
+        "colour": "#a8926a",
+        "seed": 12
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-11",
+      "east_m": -5.625,
+      "south_m": 9.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 12
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-12",
+      "east_m": 6.875,
+      "south_m": 7.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#8a9a6a",
+        "seed": 13
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-12",
+      "east_m": 9.375,
+      "south_m": 9.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 13
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-13",
+      "east_m": 13.125,
+      "south_m": 7.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "canadenca",
+        "colour": "#c79a55",
+        "seed": 14
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-13",
+      "east_m": 15.625,
+      "south_m": 9.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 14
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-14",
+      "east_m": 19.375,
+      "south_m": 7.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#5d7486",
+        "seed": 15
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-14",
+      "east_m": 21.875,
+      "south_m": 9.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 15
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-15",
+      "east_m": -14.375,
+      "south_m": 15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#b5643f",
+        "seed": 16
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-15",
+      "east_m": -11.875,
+      "south_m": 16.875,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 16
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-16",
+      "east_m": -8.125,
+      "south_m": 15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "familiar",
+        "colour": "#7b8462",
+        "seed": 17
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-16",
+      "east_m": -5.625,
+      "south_m": 16.875,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 17
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-17",
+      "east_m": -1.875,
+      "south_m": 15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "canadenca",
+        "colour": "#d6cdb4",
+        "seed": 18
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-17",
+      "east_m": 0.625,
+      "south_m": 16.875,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 18
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-18",
+      "east_m": 4.375,
+      "south_m": 15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#647a58",
+        "seed": 19
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-18",
+      "east_m": 6.875,
+      "south_m": 16.875,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 19
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-19",
+      "east_m": 14.375,
+      "south_m": 15.0,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "familiar",
+        "colour": "#a0784f",
+        "seed": 20
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-19",
+      "east_m": 16.875,
+      "south_m": 16.875,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 20
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-20",
+      "east_m": -16.875,
+      "south_m": 22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "familiar",
+        "colour": "#6a8296",
+        "seed": 21
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-20",
+      "east_m": -14.375,
+      "south_m": 24.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 21
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-21",
+      "east_m": -4.375,
+      "south_m": 22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#c9b68a",
+        "seed": 22
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-21",
+      "east_m": -1.875,
+      "south_m": 24.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 22
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-22",
+      "east_m": 1.875,
+      "south_m": 22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "canadenca",
+        "colour": "#7f6a4a",
+        "seed": 23
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-22",
+      "east_m": 4.375,
+      "south_m": 24.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 23
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-23",
+      "east_m": 8.125,
+      "south_m": 22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "iglu",
+        "colour": "#8d9c78",
+        "seed": 24
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-23",
+      "east_m": 10.625,
+      "south_m": 24.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 24
+      }
+    },
+    {
+      "kind": "tenda",
+      "id": "tenda-24",
+      "east_m": 18.125,
+      "south_m": 22.5,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "tent": "canadenca",
+        "colour": "#b07a50",
+        "seed": 25
+      }
+    },
+    {
+      "kind": "retol-parcela",
+      "id": "rotulo-24",
+      "east_m": 20.625,
+      "south_m": 24.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "number": 25
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-0",
+      "east_m": -10.0,
+      "south_m": -24.375,
+      "size_m": [
+        19.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-1",
+      "east_m": 10.625,
+      "south_m": -24.375,
+      "size_m": [
+        16.23,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-2",
+      "east_m": 21.875,
+      "south_m": -22.5,
+      "size_m": [
+        4.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-3",
+      "east_m": -19.375,
+      "south_m": -21.875,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-4",
+      "east_m": -13.125,
+      "south_m": -21.875,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-5",
+      "east_m": -6.875,
+      "south_m": -21.875,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-6",
+      "east_m": -0.625,
+      "south_m": -21.875,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-7",
+      "east_m": 3.75,
+      "south_m": -21.875,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-8",
+      "east_m": 10.625,
+      "south_m": -20.0,
+      "size_m": [
+        7.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-9",
+      "east_m": 17.5,
+      "south_m": -21.875,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-10",
+      "east_m": -3.75,
+      "south_m": -16.875,
+      "size_m": [
+        27.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-11",
+      "east_m": 13.125,
+      "south_m": -16.875,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-12",
+      "east_m": 20.0,
+      "south_m": -15.0,
+      "size_m": [
+        4.98,
+        4.98
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-13",
+      "east_m": -16.875,
+      "south_m": -14.375,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-14",
+      "east_m": -10.625,
+      "south_m": -11.875,
+      "size_m": [
+        8.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-15",
+      "east_m": -4.375,
+      "south_m": -14.375,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-16",
+      "east_m": 1.875,
+      "south_m": -14.375,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-17",
+      "east_m": 8.125,
+      "south_m": -11.25,
+      "size_m": [
+        9.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-18",
+      "east_m": 14.375,
+      "south_m": -14.375,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-19",
+      "east_m": -14.375,
+      "south_m": -8.75,
+      "size_m": [
+        6.23,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-20",
+      "east_m": -4.375,
+      "south_m": -9.375,
+      "size_m": [
+        11.23,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-21",
+      "east_m": 5.625,
+      "south_m": -9.375,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-22",
+      "east_m": 13.125,
+      "south_m": -9.375,
+      "size_m": [
+        8.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-23",
+      "east_m": 21.25,
+      "south_m": -6.25,
+      "size_m": [
+        7.48,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-24",
+      "east_m": -5.0,
+      "south_m": -8.125,
+      "size_m": [
+        9.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-25",
+      "east_m": 6.25,
+      "south_m": -8.125,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-26",
+      "east_m": 10.0,
+      "south_m": -6.25,
+      "size_m": [
+        4.98,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-27",
+      "east_m": -16.875,
+      "south_m": 1.25,
+      "size_m": [
+        17.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-28",
+      "east_m": -3.75,
+      "south_m": -6.875,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-29",
+      "east_m": 15.625,
+      "south_m": -6.875,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-30",
+      "east_m": -4.375,
+      "south_m": -5.0,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-31",
+      "east_m": 14.375,
+      "south_m": -5.0,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-32",
+      "east_m": 16.875,
+      "south_m": -5.0,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-33",
+      "east_m": -10.625,
+      "south_m": -3.75,
+      "size_m": [
+        6.23,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-34",
+      "east_m": 15.625,
+      "south_m": -4.375,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-35",
+      "east_m": 10.625,
+      "south_m": -3.125,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-36",
+      "east_m": -12.5,
+      "south_m": -0.625,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-37",
+      "east_m": -8.75,
+      "south_m": -0.625,
+      "size_m": [
+        3.73,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-38",
+      "east_m": -10.625,
+      "south_m": 0.0,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-39",
+      "east_m": 21.875,
+      "south_m": 3.125,
+      "size_m": [
+        6.23,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-40",
+      "east_m": -4.375,
+      "south_m": 5.625,
+      "size_m": [
+        8.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-41",
+      "east_m": 9.375,
+      "south_m": 3.75,
+      "size_m": [
+        4.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-42",
+      "east_m": -10.625,
+      "south_m": 5.0,
+      "size_m": [
+        11.23,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-43",
+      "east_m": -3.125,
+      "south_m": 6.875,
+      "size_m": [
+        6.23,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-44",
+      "east_m": 8.125,
+      "south_m": 5.0,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-45",
+      "east_m": 15.625,
+      "south_m": 5.0,
+      "size_m": [
+        11.23,
+        2.48
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-46",
+      "east_m": -0.625,
+      "south_m": 7.5,
+      "size_m": [
+        4.98,
+        3.73
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-47",
+      "east_m": 5.625,
+      "south_m": 5.625,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-48",
+      "east_m": -10.625,
+      "south_m": 11.875,
+      "size_m": [
+        11.23,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-49",
+      "east_m": 4.375,
+      "south_m": 8.125,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-50",
+      "east_m": 10.625,
+      "south_m": 8.125,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-51",
+      "east_m": 16.875,
+      "south_m": 10.0,
+      "size_m": [
+        7.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-52",
+      "east_m": -14.375,
+      "south_m": 13.125,
+      "size_m": [
+        6.23,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-53",
+      "east_m": -0.625,
+      "south_m": 13.125,
+      "size_m": [
+        18.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-54",
+      "east_m": 13.75,
+      "south_m": 13.125,
+      "size_m": [
+        4.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-55",
+      "east_m": 18.125,
+      "south_m": 15.0,
+      "size_m": [
+        4.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-56",
+      "east_m": 21.875,
+      "south_m": 15.0,
+      "size_m": [
+        4.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-57",
+      "east_m": -16.875,
+      "south_m": 15.625,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-58",
+      "east_m": -4.375,
+      "south_m": 17.5,
+      "size_m": [
+        7.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-59",
+      "east_m": 1.875,
+      "south_m": 15.625,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-60",
+      "east_m": 8.125,
+      "south_m": 15.625,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-61",
+      "east_m": 11.875,
+      "south_m": 15.625,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-62",
+      "east_m": -15.0,
+      "south_m": 20.625,
+      "size_m": [
+        9.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-63",
+      "east_m": -6.25,
+      "south_m": 20.625,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-64",
+      "east_m": 4.375,
+      "south_m": 20.625,
+      "size_m": [
+        16.23,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-65",
+      "east_m": 18.75,
+      "south_m": 20.625,
+      "size_m": [
+        7.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-66",
+      "east_m": -19.375,
+      "south_m": 23.125,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-67",
+      "east_m": -11.875,
+      "south_m": 23.125,
+      "size_m": [
+        3.73,
+        3.73
+      ],
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-68",
+      "east_m": -6.875,
+      "south_m": 23.125,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-69",
+      "east_m": -0.625,
+      "south_m": 23.125,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-70",
+      "east_m": 5.625,
+      "south_m": 23.125,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-71",
+      "east_m": 11.875,
+      "south_m": 23.125,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-72",
+      "east_m": 15.625,
+      "south_m": 23.125,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-73",
+      "east_m": 21.875,
+      "south_m": 23.125,
+      "size_m": [
+        3.73,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-recepcio-0",
+      "east_m": 23.125,
+      "south_m": -15.0,
+      "size_m": [
+        24.98,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-recepcio-1",
+      "east_m": 23.125,
+      "south_m": 13.75,
+      "size_m": [
+        27.48,
+        1.23
+      ],
+      "params": {
+        "style": "seto"
+      },
+      "rotation_deg": 90
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-1",
+      "east_m": 8.266,
+      "south_m": 0.623,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 72.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-2",
+      "east_m": 7.405,
+      "south_m": 2.313,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 54.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-3",
+      "east_m": 6.063,
+      "south_m": 3.655,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 36.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-4",
+      "east_m": 4.373,
+      "south_m": 4.516,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 18.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-6",
+      "east_m": 0.627,
+      "south_m": 4.516,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 342.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-7",
+      "east_m": -1.063,
+      "south_m": 3.655,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 324.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-8",
+      "east_m": -2.405,
+      "south_m": 2.313,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 306.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-9",
+      "east_m": -3.266,
+      "south_m": 0.623,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 288.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-11",
+      "east_m": -3.266,
+      "south_m": -3.123,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 252.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-12",
+      "east_m": -2.405,
+      "south_m": -4.813,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 234.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-13",
+      "east_m": -1.063,
+      "south_m": -6.155,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 216.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-14",
+      "east_m": 0.627,
+      "south_m": -7.016,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 198.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-16",
+      "east_m": 4.373,
+      "south_m": -7.016,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 162.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-17",
+      "east_m": 6.063,
+      "south_m": -6.155,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 144.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-18",
+      "east_m": 7.405,
+      "south_m": -4.813,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 126.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-19",
+      "east_m": 8.266,
+      "south_m": -3.123,
+      "size_m": [
+        2.15,
+        1.0
+      ],
+      "rotation_deg": 108.0,
+      "params": {
+        "style": "seto"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "seto-rotonda-illa",
+      "east_m": 2.5,
+      "south_m": -1.25,
+      "size_m": [
+        2.48,
+        2.48
+      ],
+      "params": {
+        "style": "seto",
+        "round": true
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "tanca-alta-merendero",
+      "east_m": -20.625,
+      "south_m": -16.25,
+      "size_m": [
+        22.48,
+        1.23
+      ],
+      "rotation_deg": 90,
+      "params": {
+        "style": "fusta"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "tanca-alta-nord",
+      "east_m": -20.625,
+      "south_m": -3.75,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "rotation_deg": 90,
+      "params": {
+        "style": "fusta"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "tanca-alta-sud",
+      "east_m": -20.625,
+      "south_m": 13.75,
+      "size_m": [
+        27.48,
+        1.23
+      ],
+      "rotation_deg": 90,
+      "params": {
+        "style": "fusta"
+      }
+    },
+    {
+      "kind": "tanca-camping",
+      "id": "barrera-piscina",
+      "east_m": -20.625,
+      "south_m": -1.25,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "rotation_deg": 90,
+      "solid": false,
+      "params": {
+        "style": "portalo"
+      }
+    },
+    {
+      "kind": "taula-picnic",
+      "id": "taula-placa",
+      "east_m": 15.625,
+      "south_m": 1.875,
+      "size_m": [
+        2.48,
+        1.23
+      ],
+      "params": {
+        "style": "plegable"
+      }
+    },
+    {
+      "kind": "bombetes",
+      "id": "bombetes",
+      "east_m": 0.0,
+      "south_m": 0.0,
+      "solid": false,
+      "params": {
+        "runs": [
+          [
+            [
+              -19.38,
+              2.7,
+              -26.25
+            ],
+            [
+              -5.62,
+              2.6,
+              -26.25
+            ],
+            [
+              8.12,
+              2.7,
+              -26.25
+            ],
+            [
+              21.88,
+              2.6,
+              -26.25
+            ]
+          ],
+          [
+            [
+              -19.38,
+              2.7,
+              -18.75
+            ],
+            [
+              -5.62,
+              2.6,
+              -18.75
+            ],
+            [
+              8.12,
+              2.7,
+              -18.75
+            ],
+            [
+              21.88,
+              2.6,
+              -18.75
+            ]
+          ],
+          [
+            [
+              -19.38,
+              2.7,
+              -11.25
+            ],
+            [
+              -5.62,
+              2.6,
+              -11.25
+            ],
+            [
+              8.12,
+              2.7,
+              -11.25
+            ],
+            [
+              21.88,
+              2.6,
+              -11.25
+            ]
+          ],
+          [
+            [
+              -19.38,
+              2.7,
+              11.25
+            ],
+            [
+              -5.62,
+              2.6,
+              11.25
+            ],
+            [
+              8.12,
+              2.7,
+              11.25
+            ],
+            [
+              21.88,
+              2.6,
+              11.25
+            ]
+          ],
+          [
+            [
+              -19.38,
+              2.7,
+              18.75
+            ],
+            [
+              -5.62,
+              2.6,
+              18.75
+            ],
+            [
+              8.12,
+              2.7,
+              18.75
+            ],
+            [
+              21.88,
+              2.6,
+              18.75
+            ]
+          ],
+          [
+            [
+              -19.38,
+              2.7,
+              26.25
+            ],
+            [
+              -5.62,
+              2.6,
+              26.25
+            ],
+            [
+              8.12,
+              2.7,
+              26.25
+            ],
+            [
+              21.88,
+              2.6,
+              26.25
+            ]
+          ],
+          [
+            [
+              6.5,
+              2.9,
+              -1.25
+            ],
+            [
+              5.33,
+              2.9,
+              1.58
+            ],
+            [
+              2.5,
+              2.9,
+              2.75
+            ],
+            [
+              -0.33,
+              2.9,
+              1.58
+            ],
+            [
+              -1.5,
+              2.9,
+              -1.25
+            ],
+            [
+              -0.33,
+              2.9,
+              -4.08
+            ],
+            [
+              2.5,
+              2.9,
+              -5.25
+            ],
+            [
+              5.33,
+              2.9,
+              -4.08
+            ],
+            [
+              6.5,
+              2.9,
+              -1.25
+            ]
+          ],
+          [
+            [
+              21.88,
+              2.7,
+              6.88
+            ],
+            [
+              25.62,
+              2.6,
+              10.62
+            ],
+            [
+              33.12,
+              2.7,
+              8.12
+            ],
+            [
+              38.12,
+              2.6,
+              3.12
+            ]
+          ],
+          [
+            [
+              23.12,
+              2.6,
+              -10.62
+            ],
+            [
+              31.88,
+              2.7,
+              -10.62
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kind": "pissarra",
+      "id": "pissarra-piscina",
+      "east_m": -34.375,
+      "south_m": -1.875,
+      "size_m": [
+        1.23,
+        1.23
+      ],
+      "params": {}
+    },
+    {
+      "kind": "bombetes",
+      "id": "bombetes-merendero",
+      "east_m": 0.0,
+      "south_m": 0.0,
+      "solid": false,
+      "params": {
+        "runs": [
+          [
+            [
+              -40.62,
+              2.7,
+              -15.62
+            ],
+            [
+              -35.62,
+              2.6,
+              -16.88
+            ],
+            [
+              -29.38,
+              2.7,
+              -16.88
+            ],
+            [
+              -23.12,
+              2.6,
+              -16.88
+            ]
+          ],
+          [
+            [
+              -40.62,
+              2.6,
+              -24.38
+            ],
+            [
+              -34.38,
+              2.7,
+              -25.62
+            ],
+            [
+              -28.12,
+              2.6,
+              -24.38
+            ],
+            [
+              -23.12,
+              2.7,
+              -25.62
+            ]
+          ],
+          [
+            [
+              -34.38,
+              2.6,
+              -8.12
+            ],
+            [
+              -23.12,
+              2.7,
+              -8.12
+            ]
+          ]
+        ],
+        "switched": true
+      }
+    }
+  ],
+  "osm_landmarks": {
+    "fountain": false,
+    "kiosk": false,
+    "shower": false
+  },
+  "anchors": {
+    "entrada": {
+      "east_m": 39.375,
+      "south_m": -0.625
+    },
+    "recepcio-pizarra": {
+      "east_m": 26.875,
+      "south_m": -3.125
+    },
+    "salida": {
+      "east_m": 40.625,
+      "south_m": -1.875
+    },
+    "barrera-piscina": {
+      "east_m": -20.625,
+      "south_m": -1.25
+    },
+    "campeon": {
+      "east_m": -36.875,
+      "south_m": 0.625
+    },
+    "dados-1": {
+      "east_m": -4.375,
+      "south_m": -18.125
+    },
+    "dados-2": {
+      "east_m": 5.625,
+      "south_m": 19.375
+    },
+    "foto": {
+      "east_m": -31.875,
+      "south_m": -10.625
+    },
+    "magos-1": {
+      "east_m": 29.375,
+      "south_m": 1.875
+    },
+    "magos-2": {
+      "east_m": 31.875,
+      "south_m": 5.625
+    },
+    "merendero-mesa": {
+      "east_m": -31.875,
+      "south_m": -15.625
+    },
+    "parcela-0": {
+      "east_m": -14.375,
+      "south_m": -19.375
+    },
+    "parcela-1": {
+      "east_m": -8.125,
+      "south_m": -19.375
+    },
+    "parcela-10": {
+      "east_m": -11.875,
+      "south_m": 10.625
+    },
+    "parcela-11": {
+      "east_m": -5.625,
+      "south_m": 10.625
+    },
+    "parcela-12": {
+      "east_m": 9.375,
+      "south_m": 10.625
+    },
+    "parcela-13": {
+      "east_m": 15.625,
+      "south_m": 10.625
+    },
+    "parcela-14": {
+      "east_m": 21.875,
+      "south_m": 10.625
+    },
+    "parcela-15": {
+      "east_m": -11.875,
+      "south_m": 18.125
+    },
+    "parcela-16": {
+      "east_m": -5.625,
+      "south_m": 18.125
+    },
+    "parcela-17": {
+      "east_m": 0.625,
+      "south_m": 18.125
+    },
+    "parcela-18": {
+      "east_m": 6.875,
+      "south_m": 18.125
+    },
+    "parcela-19": {
+      "east_m": 16.875,
+      "south_m": 18.125
+    },
+    "parcela-2": {
+      "east_m": -1.875,
+      "south_m": -19.375
+    },
+    "parcela-20": {
+      "east_m": -14.375,
+      "south_m": 25.625
+    },
+    "parcela-21": {
+      "east_m": -1.875,
+      "south_m": 25.625
+    },
+    "parcela-22": {
+      "east_m": 4.375,
+      "south_m": 25.625
+    },
+    "parcela-23": {
+      "east_m": 10.625,
+      "south_m": 25.625
+    },
+    "parcela-24": {
+      "east_m": 20.625,
+      "south_m": 25.625
+    },
+    "parcela-3": {
+      "east_m": 9.375,
+      "south_m": -19.375
+    },
+    "parcela-4": {
+      "east_m": 15.625,
+      "south_m": -19.375
+    },
+    "parcela-5": {
+      "east_m": -11.875,
+      "south_m": -11.875
+    },
+    "parcela-6": {
+      "east_m": -5.625,
+      "south_m": -11.875
+    },
+    "parcela-7": {
+      "east_m": 0.625,
+      "south_m": -11.875
+    },
+    "parcela-8": {
+      "east_m": 6.875,
+      "south_m": -11.875
+    },
+    "parcela-9": {
+      "east_m": 13.125,
+      "south_m": -11.875
+    },
+    "rotonda": {
+      "east_m": 2.5,
+      "south_m": -5.25
+    },
+    "porta-merendero": {
+      "east_m": -31.875,
+      "south_m": -5.625
+    },
+    "pissarra-piscina": {
+      "east_m": -34.375,
+      "south_m": -0.625
+    }
+  }
+}

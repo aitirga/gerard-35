@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Story, STORY_FLAGS } from '../src/story.ts';
-import { ENVIRONMENTS, NEIGHBORHOOD, HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2, MERIDIANA, EL_NUCLI, PLAN_GLYPHS, PROP_FOOTPRINTS, blockProps, nearbyInteraction, planGrid, propCells } from '../src/environments.ts';
+import { ENVIRONMENTS, CAMPING, CAMPING_DOOR, CAMPING_GATE, NEIGHBORHOOD, HOME_ENTRANCE, HOME_FLOOR_1, HOME_FLOOR_2, MERIDIANA, EL_NUCLI, PLAN_GLYPHS, PROP_FOOTPRINTS, blockProps, nearbyInteraction, planGrid, propCells } from '../src/environments.ts';
 import { FreeMovement, canWalk } from '../src/movement.ts';
 
 function reachable(environment) {
@@ -170,4 +170,58 @@ test('Alegia comes from map data: 95 by the spawn, real buildings are solid and 
 test('a car can park along x and blocks the two cells it covers', () => {
   assert.deepEqual(propCells({ kind: 'car', x: 4, z: 2, color: '#fff', along: 'x' }), [{ x: 4, z: 2 }, { x: 5, z: 2 }]);
   assert.deepEqual(propCells({ kind: 'car', x: 4, z: 2, color: '#fff' }), [{ x: 4, z: 2 }, { x: 4, z: 3 }]);
+});
+test('Càmping Eurosport: every anchor the story needs is walkable and reached, and the pool gate is the only way on', () => {
+  const anchors = CAMPING.geo.anchors, cell = name => ({ x: Math.round(anchors[name].x), z: Math.round(anchors[name].z) });
+  const pitches = Array.from({ length: 25 }, (_, n) => `parcela-${n}`);
+  const names = ['entrada', 'salida', 'recepcio-pizarra', ...pitches, 'barrera-piscina', 'magos-1', 'magos-2', 'dados-1', 'dados-2', 'campeon', 'merendero-mesa', 'foto'];
+  const at = c => `${c.x},${c.z}`;
+  const flood = (blocked = []) => {
+    const seen = new Set(), queue = [cell('entrada')], shut = new Set(blocked.map(at));
+    while (queue.length) {
+      const c = queue.pop();
+      if (seen.has(at(c)) || shut.has(at(c)) || !canWalk(c, CAMPING.grid)) continue;
+      seen.add(at(c));
+      queue.push({ x: c.x + 1, z: c.z }, { x: c.x - 1, z: c.z }, { x: c.x, z: c.z + 1 }, { x: c.x, z: c.z - 1 });
+    }
+    return seen;
+  };
+  const open = flood(), shut = flood(CAMPING_GATE);
+  for (const name of names) {
+    assert.ok(anchors[name], name);
+    assert.equal(canWalk(cell(name), CAMPING.grid), true, name);
+    assert.ok(open.has(at(cell(name))), name);
+  }
+  // The pitches row by row from the far one, left to right, each standing in front of its sign post.
+  pitches.forEach((name, n) => {
+    const c = cell(name), sign = CAMPING.geo.landmarks.find(l => l.id === `rotulo-${n}`);
+    assert.deepEqual({ x: Math.round(sign.x), z: Math.round(sign.z) + 1 }, c, name);
+    if (n % 5) assert.ok(c.x > cell(pitches[n - 1]).x && c.z === cell(pitches[n - 1]).z, name);
+    else if (n) assert.ok(c.z > cell(pitches[n - 5]).z, name);
+  });
+  // A maze: no lane runs straight from the way in to the gate; the shortest way is a long detour.
+  const steps = (() => {
+    const dist = new Map([[at(cell('entrada')), 0]]), queue = [cell('entrada')];
+    while (queue.length) {
+      const c = queue.shift(), d = dist.get(at(c));
+      for (const n of [{ x: c.x + 1, z: c.z }, { x: c.x - 1, z: c.z }, { x: c.x, z: c.z + 1 }, { x: c.x, z: c.z - 1 }]) {
+        if (dist.has(at(n)) || !canWalk(n, CAMPING.grid)) continue;
+        dist.set(at(n), d + 1); queue.push(n);
+      }
+    }
+    return dist.get(at(cell('barrera-piscina')));
+  })();
+  const gate = cell('barrera-piscina'), straight = Math.abs(cell('entrada').x - gate.x) + Math.abs(cell('entrada').z - gate.z);
+  assert.ok(steps > straight * 1.6, `${steps} steps to the gate, ${straight} as the crow flies`);
+  // The gate is walkable with its anchor on it; shut, it cuts off the pool and the merendero and nothing else.
+  assert.ok(CAMPING_GATE.length >= 2 && CAMPING_GATE.every(c => canWalk(c, CAMPING.grid)));
+  assert.ok(CAMPING_GATE.some(c => at(c) === at(cell('barrera-piscina'))));
+  for (const name of ['campeon', 'merendero-mesa', 'foto']) assert.equal(shut.has(at(cell(name))), false, name);
+  for (const name of ['entrada', 'recepcio-pizarra', ...pitches, 'magos-1', 'dados-2']) assert.ok(shut.has(at(cell(name))), name);
+  assert.equal(nearbyInteraction(CAMPING, cell('recepcio-pizarra'))?.id, 'recepcio-pizarra');
+  // The merendero is its own zone: its steel door is the only way in, from the pool, and shut it keeps the long table out of reach.
+  const behindDoor = flood(CAMPING_DOOR);
+  assert.ok(CAMPING_DOOR.length >= 2 && CAMPING_DOOR.every(c => canWalk(c, CAMPING.grid)));
+  for (const name of ['merendero-mesa', 'foto']) assert.equal(behindDoor.has(at(cell(name))), false, name);
+  for (const name of ['campeon', 'barrera-piscina', 'recepcio-pizarra']) assert.ok(behindDoor.has(at(cell(name))), name);
 });

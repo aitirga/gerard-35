@@ -171,24 +171,29 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const zoneLight = environment.palace?.theme?.light;
   // The Búnkers del Carmel are drawn at sunset: a golden sun (from the same side as everywhere) and lilac shade.
   const dusk = environment.id === 'bunkers-carmel';
-  const ambient = zoneLight ? new pc.Color().fromString(zoneLight.ambient) : night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : nave ? new pc.Color(0.3, 0.3, 0.33) : overcast ? new pc.Color(0.4, 0.44, 0.48) : dusk ? new pc.Color(0.36, 0.33, 0.4) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
-  const sunColor = zoneLight ? new pc.Color().fromString(zoneLight.sun) : night ? new pc.Color(0.66, 0.81, 1) : nave ? new pc.Color(1, 0.93, 0.82) : overcast ? new pc.Color(0.96, 0.97, 0.95) : dusk ? new pc.Color(1, 0.8, 0.58) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
-  const sunIntensity = zoneLight ? zoneLight.intensity : night ? 1.15 : lamplit ? 0.85 : nave ? 1.05 : overcast ? 1.3 : dusk ? 1.7 : outdoor ? 1.8 : 1.65;
-  const skyIntensity = overcast ? 0.55 : dusk ? 0.34 : 0.42;
+  // Càmping Eurosport is always the same summer evening: the sun very low and amber from the south-east,
+  // raking across the maze, so the tall walls throw the merendero into deep shade; dim blue shade, the bulbs doing the warmth.
+  const evening = environment.id === 'camping';
+  const ambient = zoneLight ? new pc.Color().fromString(zoneLight.ambient) : night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : nave ? new pc.Color(0.3, 0.3, 0.33) : overcast ? new pc.Color(0.4, 0.44, 0.48) : dusk ? new pc.Color(0.36, 0.33, 0.4) : evening ? new pc.Color(0.13, 0.16, 0.25) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
+  const sunColor = zoneLight ? new pc.Color().fromString(zoneLight.sun) : night ? new pc.Color(0.66, 0.81, 1) : nave ? new pc.Color(1, 0.93, 0.82) : overcast ? new pc.Color(0.96, 0.97, 0.95) : dusk ? new pc.Color(1, 0.8, 0.58) : evening ? new pc.Color(1, 0.62, 0.36) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
+  const sunIntensity = zoneLight ? zoneLight.intensity : night ? 1.15 : lamplit ? 0.85 : nave ? 1.05 : overcast ? 1.3 : dusk ? 1.7 : evening ? 1.55 : outdoor ? 1.8 : 1.65;
+  const skyIntensity = overcast ? 0.55 : dusk ? 0.34 : evening ? 0.16 : 0.42;
   app.scene.ambientLight = ambient.clone();
   let tone = 0, dark = 0, nightfall = 0;
   app.scene.fog.type = pc.FOG_NONE;
   // Soft shadows fitted to the view, and the sky glossy things reflect (src/lighting.ts).
   const light = lighting(app);
-  light.setSky(night ? 'night' : environment.palace ? 'palace' : nave ? 'nave' : overcast ? 'overcast' : dusk ? 'dusk' : outdoor ? 'day' : 'indoor');
+  light.setSky(night ? 'night' : environment.palace ? 'palace' : nave ? 'nave' : overcast ? 'overcast' : dusk ? 'dusk' : evening ? 'evening' : outdoor ? 'day' : 'indoor');
   const sun = new pc.Entity('Sol de la tarde');
   sun.addComponent('light', { type: 'directional', color: sunColor.clone(), intensity: sunIntensity, castShadows: true, shadowDistance: 95 });
   light.shade(sun.light!);
-  sun.setEulerAngles(48, -35, 0); root.addChild(sun);
+  // The campsite's sun stands about 14° over the horizon, behind the pool's walls as seen from the merendero.
+  if (evening) sun.setEulerAngles(76, 40, 0); else sun.setEulerAngles(48, -35, 0);
+  root.addChild(sun);
   let sky: pc.Entity | undefined;
   if (outdoor) {
     sky = new pc.Entity('Luz del cielo');
-    sky.addComponent('light', { type: 'directional', color: dusk ? new pc.Color(0.62, 0.62, 0.92) : new pc.Color(0.6, 0.72, 0.95), intensity: skyIntensity, castShadows: false });
+    sky.addComponent('light', { type: 'directional', color: dusk ? new pc.Color(0.62, 0.62, 0.92) : evening ? new pc.Color(0.45, 0.58, 0.92) : new pc.Color(0.6, 0.72, 0.95), intensity: skyIntensity, castShadows: false });
     sky.setEulerAngles(35, 150, 0); root.addChild(sky);
   }
   // Floor plans lay their own backdrop, open under a stairwell. Under Alegia's overcast the usual one
