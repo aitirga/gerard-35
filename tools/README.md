@@ -10,6 +10,8 @@ juego y la API) y pueden usar APIs de IA de pago con las claves de `.env`.
 | `just dev-character <nombre>` | Abre el juego jugando con ese personaje | — |
 | `just geo <zona>` | Descarga un lugar real (OpenStreetMap + referencias de Google Maps) y lo construye como escenario jugable; ver [docs/environment-styling.md](../docs/environment-styling.md) | OpenStreetMap, Google Maps (opcional) |
 | `just texture-fetch …` · `just texture-photo …` · `just texture-panot …` · `just textures` | Materiales reales para los lugares: descarga texturas CC0 (Poly Haven, ambientCG), endereza fachadas de fotos propias o de Wikimedia Commons con licencia libre (CC0, CC BY, CC BY-SA), dibuja el panot de Barcelona y lista la biblioteca de `public/textures/` (créditos en el `texture.json` de cada una); ver [docs/environment-styling.md § Real materials](../docs/environment-styling.md#real-materials) | Poly Haven, ambientCG, Wikimedia Commons |
+| `just parcelas prueba\|produccion` | El puzzle de palabras del Càmping Eurosport (`docs/quests/universidad.md`): uno fácil de prueba, visible, y el real, difícil y sellado sin mostrarse | Claude |
+| `just rig <modelo>` | Pone esqueleto a un modelo estático de Meshy: huesos desde `assets/models/<modelo>/rig.json` y pesos suaves por distancia, más una copia con los pesos en color para `just model-lab` | — |
 | `just music-loop <archivo>` · `just music-seam <archivo> <inicio> <fin>` | Encuentra dónde hace bucle una canción (tempo, primeras notas, uniones candidatas) y escribe la unión en `output/music/` para escucharla; ver [docs/audio.md](../docs/audio.md) | — (ffmpeg local) |
 
 ## `just character`
@@ -69,8 +71,13 @@ ninguna API. Cada ejecución queda en `output/characters/<name>/<fecha>/` (imág
 modelo y `meta.json` con prompts y referencias usadas).
 
 Claves en `.env` (ver `.env.example`): `OPENAI_API_KEY` y `ANTHROPIC_API_KEY` (o un
-perfil de `ant auth login`); `MESHY_API_KEY` solo para `--modeler meshy`. Opcionales:
-`OPENAI_IMAGE_MODEL` (por defecto `gpt-image-2.5-sunburst`) y `CLAUDE_MODEL` (por defecto
+perfil de `ant auth login`); `MESHY_API_KEY` solo para `--modeler meshy` y `rig`. El paso `rig` (solo si se pide:
+`--only rig`) pasa el modelo de Meshy por su auto-rigging: sustituye `public/models/characters/<id>.glb`
+por el mismo con esqueleto y añade `<id>-walking.glb` y `<id>-running.glb` (solo el esqueleto en
+movimiento); `--height` da la altura en metros (1,7 por defecto). Se ven en `just model-lab` con
+`?personajes`. Opcionales:
+`OPENAI_IMAGE_MODEL` (por defecto `gpt-image-2.5-sunburst`), `OPENAI_IMAGE_QUALITY` (por
+defecto `medium`; `high` cuesta varias veces más, `low` para pruebas) y `CLAUDE_MODEL` (por defecto
 `claude-opus-5-5`). Las fotos deben ser PNG, JPEG o WebP; exporta los HEIC del iPhone a JPEG.
 
 ### Expresiones en las conversaciones
@@ -157,6 +164,11 @@ una pieza con las partes de los miedos de Uri, para clonarla en un combate (`bui
   encuentra ojos y boca en el modelo, en local (guarda lo que encuentra en `rigged.face.json` y una
   imagen para comprobarlo en `rigged.face.png`): la boca lleva un hueso, y los ojos un nodo donde el
   juego pone sus párpados (`lids`).
+- La textura se rehace en un atlas nuevo (`reatlas`, con xatlas): Meshy empaqueta cientos de islas pegadas y,
+  de lejos, los mipmaps mezclaban un color con el vecino (motas de piel en el pelo). Las islas nuevas son más
+  grandes y tienen margen, la textura va a 2048 y se le quitan las motas claras que Meshy deja en la pintura
+  oscura. Un modelo hecho antes se arregla en su sitio:
+  `uv run python tools/character_rig.py reatlas public/models/characters/<id>.glb`.
 - `clean_shaven` en `figures.toml` borra de la textura un bigote con el que venía el modelo, sin pagar otro.
 - **El modelo 3D es solo para el mundo del juego.** Los retratos de conversaciones, menús y combate salen de la
   imagen generada: el paso `portrait` los dibuja desde `toy.png`, y `just character-3d <id> --expressions` añade las

@@ -5,6 +5,8 @@
   fullbody     portrait + the same references    -> front A-pose full-body image (OpenAI)
   model        full-body image + portrait        -> primitives file for the game (Claude),
                                                     or a textured GLB with --modeler meshy
+  rig          the Meshy GLB                     -> the same GLB with a skeleton, plus walking and
+                                                    running clips (Meshy auto-rigging; only on request)
 
 Every run is kept in output/characters/<name>/<timestamp>/ (prompts, references,
 results) and the results are then installed where the game and assets/ expect them.
@@ -22,7 +24,9 @@ import character_model
 import providers
 
 ROOT = Path(__file__).resolve().parent.parent
-STEPS = ("portrait", "expressions", "fullbody", "model")
+STEPS = ("portrait", "expressions", "fullbody", "model", "rig")
+DEFAULT_STEPS = STEPS[:4]  # Rigging is asked for by name: it needs a Meshy model first.
+CLIPS = ("walking", "running")
 MAX_IMAGES = 16  # OpenAI image edits accept up to 16 inputs.
 MAX_PHOTOS = 10
 STYLE_ANCHORS = 3  # Artwork of other characters, so a new character matches the game.
@@ -79,8 +83,9 @@ def parse(argv):
     parser.add_argument("--context", nargs="+", type=Path, default=[], metavar="PATH",
                         help="extra artwork for context, after the character's own assets/characters/<id>/ images")
     parser.add_argument("--description", default="", help="appearance, age, outfit, personality…")
-    parser.add_argument("--only", nargs="+", choices=STEPS, default=list(STEPS), metavar="STEP",
-                        help="run only some steps: portrait, expressions, fullbody, model (default: all)")
+    parser.add_argument("--only", nargs="+", choices=STEPS, default=list(DEFAULT_STEPS), metavar="STEP",
+                        help="run only some steps: portrait, expressions, fullbody, model, rig "
+                             "(default: all but rig)")
     parser.add_argument("--expressions", nargs="+", type=expression, metavar="NAME[=DESCRIPTION]",
                         default=[(name, EXPRESSIONS[name]) for name in DEFAULT_EXPRESSIONS],
                         help=f"conversation expressions (default: {' '.join(DEFAULT_EXPRESSIONS)}; built in: "
@@ -88,6 +93,7 @@ def parse(argv):
     parser.add_argument("--modeler", choices=("claude", "meshy"), default="claude",
                         help="claude: primitives in src/characters/ (default); meshy: GLB in public/models/characters/")
     parser.add_argument("--polycount", type=int, default=20000, help="Meshy: target triangles (default 20000)")
+    parser.add_argument("--height", type=float, default=1.7, help="rig: the character's height in metres (default 1.7)")
     parser.add_argument("--force", action="store_true", help="overwrite existing installed results")
     parser.add_argument("--dry-run", action="store_true", help="show references, prompts and targets; call no API")
     return parser.parse_args(argv)
@@ -130,12 +136,14 @@ class Character:
         self.name = args.id + suffix
         self.who = f'the character "{args.id}"' + (f" ({args.variant} version)" if args.variant else "")
         folder = root / "assets/characters" / args.id
+        self.glb = root / "public/models/characters" / f"{self.name}.glb"
         self.targets = {
             "portrait": [folder / f"portrait{suffix}-transparent.png", root / "public/portraits" / f"{self.name}.png"],
             "expressions": [path for paths in self.expression_targets(args.expressions).values() for path in paths],
             "fullbody": [folder / f"fullbody{suffix}.png"],
             "model": [root / "src/characters" / f"{self.name}.json"] if args.modeler == "claude"
-            else [root / "public/models/characters" / f"{self.name}.glb"],
+            else [self.glb],
+            "rig": [self.glb] + [self.glb.with_name(f"{self.name}-{clip}.glb") for clip in CLIPS],
         }
         missing = [p for p in args.photos or [] if not p.exists()] + [p for p in args.context if not p.exists()]
         if missing:
@@ -174,7 +182,9 @@ class Character:
         return images, " ".join(guide) or "There are no reference images; follow the notes."
 
     def check_targets(self, log=print):
-        taken = [p for step in self.args.only for p in self.targets[step] if p.exists()]
+        # Rigging is meant to replace the unrigged Meshy model, so only its clips count as taken.
+        taken = [p for step in self.args.only for p in self.targets[step]
+                 if p.exists() and not (step == "rig" and p == self.glb)]
         if taken and not self.args.force:
             message = "Already exists (pass --force to replace):\n" + "\n".join(
                 f"  {p.relative_to(self.root)}" for p in taken)
@@ -281,12 +291,41 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, claude=None, log=
             meta["model"] = {"provider": "meshy", "task": task_id, "options": options,
                              "source": rel([fullbody])[0], "credits": task.get("consumed_credits")}
 
+    if "rig" in args.only:
+        # From the image-to-3D task that made the model (this run's or the newest kept one), else its GLB.
+        task_id = meta.get("model", {}).get("task")
+        if not task_id:
+            for kept in sorted((root / "output/characters" / character.name).glob("*/meta.json"), reverse=True):
+                model = json.loads(kept.read_text()).get("model", {})
+                if model.get("provider") == "meshy":
+                    task_id = model["task"]
+                    break
+        glb = None if task_id else character.source("model", produced) if args.modeler == "meshy" else character.glb
+        if not task_id and not args.dry_run and not glb.exists():
+            raise SystemExit(f"Missing {glb.relative_to(root)}: run the model step with --modeler meshy first.")
+        log(f"\n== rig: Meshy auto-rigging from {f'task {task_id}' if task_id else rel([glb])[0]}, {args.height} m")
+        if not args.dry_run:
+            client = meshy or providers.meshy()
+            rig_id = client.rig(args.height, task_id=task_id, glb=None if task_id else glb.read_bytes())
+            log(f"  task {rig_id}")
+            result = client.wait(rig_id, log, kind="rigging").get("result", {})
+            out.mkdir(parents=True, exist_ok=True)
+            produced["rig"] = [out / "rigged.glb"] + [out / f"{clip}.glb" for clip in CLIPS]
+            produced["rig"][0].write_bytes(client.download(result["rigged_character_glb_url"]))
+            clips = result.get("basic_animations") or {}
+            for clip, path in zip(CLIPS, produced["rig"][1:]):
+                # Only the skeleton's motion: the game lays it on the rigged model.
+                path.write_bytes(client.download(clips.get(f"{clip}_armature_glb_url") or clips[f"{clip}_glb_url"]))
+            meta["rig"] = {"provider": "meshy", "task": rig_id, "source": task_id or rel([glb])[0], "height": args.height}
+
     log("\n== install")
     expression_targets = character.expression_targets(args.expressions)
     installs = [(produced.get("expressions", {}).get(name), target) for name, targets in expression_targets.items()
                 for target in targets] if "expressions" in args.only else []
-    installs += [(produced.get(step), target) for step in args.only if step != "expressions"
+    installs += [(produced.get(step), target) for step in args.only if step not in ("expressions", "rig")
                  for target in character.targets[step]]
+    if "rig" in args.only:
+        installs += list(zip(produced.get("rig") or [None] * len(character.targets["rig"]), character.targets["rig"]))
     for source, target in installs:
         log(f"  {target.relative_to(root)}")
         if not args.dry_run:

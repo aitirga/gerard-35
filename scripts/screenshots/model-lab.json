@@ -1,0 +1,92 @@
+{
+  "title": "La Sobremesa: modelo y rig",
+  "description": "docs/quests/universidad.md § Final boss. The model lab (just model-lab): Meshy's model with the rig tools/rig_glb.py adds, its attacks, its freed friends and its weights. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/model-lab.html",
+      "ready": "document.querySelector('#status')?.textContent === 'Listo'"
+    },
+    {
+      "eval": "window.modelLab.set({\"spin\": false, \"yaw\": 0, \"pitch\": 6, \"distance\": 4.4})"
+    },
+    {
+      "shot": "front",
+      "delay": 800,
+      "caption": "La Sobremesa from the front, as Meshy made it, swaying at rest"
+    },
+    {
+      "eval": "window.modelLab.set({\"yaw\": 60})"
+    },
+    {
+      "shot": "three-quarters",
+      "delay": 500,
+      "caption": "From three quarters: what Meshy invented behind the front"
+    },
+    {
+      "eval": "window.modelLab.set({\"yaw\": 180, \"pitch\": 12})"
+    },
+    {
+      "shot": "back",
+      "delay": 500,
+      "caption": "From behind"
+    },
+    {
+      "eval": "window.modelLab.set({\"yaw\": 25, \"pitch\": 6})"
+    },
+    {
+      "eval": "window.modelLab.attack('Miquel')"
+    },
+    {
+      "shot": "miquel-back",
+      "delay": 300,
+      "caption": "Miquel attacks: he draws back"
+    },
+    {
+      "shot": "miquel-lunge",
+      "delay": 300,
+      "caption": "…and lunges, his arm with him"
+    },
+    {
+      "eval": "window.modelLab.attack('Soraya')"
+    },
+    {
+      "shot": "soraya",
+      "delay": 650,
+      "caption": "Soraya screams: her head goes back and shakes"
+    },
+    {
+      "eval": "document.querySelector('[data-view=\"weights\"]').click()"
+    },
+    {
+      "until": "document.querySelector('[data-view=\"weights\"]').getAttribute('aria-pressed') === 'true'",
+      "timeout": 30000
+    },
+    {
+      "eval": "document.querySelector('[data-bones]').click()"
+    },
+    {
+      "shot": "weights",
+      "delay": 1200,
+      "caption": "The rig: every vertex in the colour of the bone that carries it (grey: the root), and the bones as crosses"
+    },
+    {
+      "eval": "window.modelLab.free('Nico'); window.modelLab.free('Sarah')"
+    },
+    {
+      "shot": "freed",
+      "delay": 1400,
+      "caption": "Nico and Sarah freed: they go limp, heads down, and the mass sinks a little"
+    },
+    {
+      "eval": "document.querySelector('[data-view=\"texture\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('[data-duo=\"Anna,Álvaro\"]').click()"
+    },
+    {
+      "shot": "duo",
+      "delay": 650,
+      "caption": "Anna and Álvaro attack together, with Nico and Sarah already freed"
+    }
+  ]
+}

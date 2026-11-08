@@ -1,0 +1,21 @@
+{
+  "id": "anna",
+  "name": "Anna",
+  "glb": "models/characters/anna.glb",
+  "materials": {
+    "jacket": {"name": "Ropa de arriba de Anna", "color": "#f6bd7b"},
+    "trousers": {"name": "Pantalón de Anna", "color": "#e0d0b8"},
+    "skin": {"name": "Anna", "color": "#ffffff"}
+  },
+  "rig": {"head": [0.0027, 0.8616, -0.0004], "headScale": [1, 1, 1], "arm": [0.167, 0.7587, 0.0162], "leg": [0.0701, 0.4878, 0.0189], "elbow": [0.0204, -0.1444, -0.0058], "knee": [0.0394, -0.17, 0.0391]},
+  "fit": {"collar": [0.2041, 0.8816, 0.1943], "chest": [0.0, 0.7209, 0.1449], "back": [0.0, 0.4878, -0.2205]},
+  "lids": {"color": "#f6bd7a", "size": [0.0539, 0.078, 0.0215]},
+  "parts": [
+    {"name": "Torso", "shape": "box", "material": "jacket", "attach": "body", "position": [-0.0032, 0.6527, -0.0418], "scale": [0.3883, 0.316, 0.3806]},
+    {"name": "Cabeza", "shape": "box", "material": "skin", "attach": "head", "position": [-0.0022, 0.167, 0.0066], "scale": [0.5182, 0.5213, 0.452]},
+    {"name": "Ojo", "shape": "box", "material": "skin", "attach": "head", "position": [0.05, 0.1732, 0.1], "scale": [0.02, 0.02, 0.02], "mirror": true},
+    {"name": "Pierna", "shape": "box", "material": "trousers", "attach": "leg", "position": [0.0279, -0.1182, -0.0566], "scale": [0.1929, 0.5132, 0.3781]},
+    {"name": "Zapatilla", "shape": "box", "material": "skin", "attach": "leg", "position": [0.0571, -0.3961, 0.0456], "scale": [0.2084, 0.1434, 0.2671]},
+    {"name": "Brazo", "shape": "box", "material": "jacket", "attach": "arm", "position": [0.0207, -0.219, -0.005], "scale": [0.1668, 0.4477, 0.1944]}
+  ]
+}

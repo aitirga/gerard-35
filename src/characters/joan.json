@@ -1,0 +1,21 @@
+{
+  "id": "joan",
+  "name": "Joan",
+  "glb": "models/characters/joan.glb",
+  "materials": {
+    "jacket": {"name": "Ropa de arriba de Joan", "color": "#2a2b32"},
+    "trousers": {"name": "Pantalón de Joan", "color": "#17171b"},
+    "skin": {"name": "Joan", "color": "#ffffff"}
+  },
+  "rig": {"head": [0.0, 0.8516, -0.0167], "headScale": [1, 1, 1], "arm": [0.1713, 0.7599, 0.0065], "leg": [0.0743, 0.4871, 0.0139], "elbow": [0.0307, -0.1458, -0.0072], "knee": [0.0418, -0.1803, 0.0265]},
+  "fit": {"collar": [0.1867, 0.8016, 0.1941], "chest": [0.0, 0.6766, 0.1116], "back": [0.0, 0.4871, -0.1003]},
+  "lids": {"color": "#fed6a3", "size": [0.059, 0.075, 0.0236]},
+  "parts": [
+    {"name": "Torso", "shape": "box", "material": "jacket", "attach": "body", "position": [-0.008, 0.6693, 0.0013], "scale": [0.3793, 0.268, 0.2318]},
+    {"name": "Cabeza", "shape": "box", "material": "skin", "attach": "head", "position": [0.0019, 0.2217, 0.0167], "scale": [0.5197, 0.5856, 0.4923]},
+    {"name": "Ojo", "shape": "box", "material": "skin", "attach": "head", "position": [0.05, 0.2351, 0.1], "scale": [0.02, 0.02, 0.02], "mirror": true},
+    {"name": "Pierna", "shape": "box", "material": "trousers", "attach": "leg", "position": [0.025, -0.1341, -0.0065], "scale": [0.1986, 0.4756, 0.2195]},
+    {"name": "Zapatilla", "shape": "box", "material": "skin", "attach": "leg", "position": [0.0527, -0.4049, 0.0304], "scale": [0.2183, 0.1244, 0.2926]},
+    {"name": "Brazo", "shape": "box", "material": "jacket", "attach": "arm", "position": [0.0265, -0.218, 0.0131], "scale": [0.1471, 0.4787, 0.2206]}
+  ]
+}

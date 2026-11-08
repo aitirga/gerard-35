@@ -37,8 +37,15 @@ class FakeMeshy:
         self.image, self.options = image, options
         return "task-1"
 
-    def wait(self, task_id, on_progress):
+    def wait(self, task_id, on_progress, kind="image-to-3d"):
+        if kind == "rigging":
+            return {"result": {"rigged_character_glb_url": "rigged-url", "basic_animations": {
+                "walking_armature_glb_url": "walk-url", "running_armature_glb_url": "run-url"}}}
         return {"model_urls": {"glb": "glb-url"}, "thumbnail_url": "thumb-url", "consumed_credits": 20}
+
+    def rig(self, height, task_id=None, glb=None):
+        self.rigged = (height, task_id, glb)
+        return "rig-1"
 
     def download(self, url):
         return url.encode()
@@ -148,6 +155,22 @@ class CharacterToolTests(unittest.TestCase):
         self.assertEqual(meshy.options["pose_mode"], "a-pose")
         self.assertEqual((self.root / "public/models/characters/bernat.glb").read_bytes(), b"glb-url")
         self.assertEqual(json.loads((out / "meta.json").read_text())["model"]["task"], "task-1")
+
+    def test_rigging_replaces_the_meshy_model_and_adds_its_clips(self):
+        fullbody = self.root / "assets/characters/bernat/fullbody.png"
+        fullbody.parent.mkdir(parents=True)
+        fullbody.write_bytes(PNG)
+        meshy = FakeMeshy()
+        self.run_tool("bernat", "--only", "model", "--modeler", "meshy", meshy=meshy)
+        out, _ = self.run_tool("bernat", "--only", "rig", "--height", "1.8", meshy=meshy)
+        self.assertEqual(meshy.rigged, (1.8, "task-1", None), "it rigs from the task that made the model")
+        models = self.root / "public/models/characters"
+        self.assertEqual((models / "bernat.glb").read_bytes(), b"rigged-url")
+        self.assertEqual((models / "bernat-walking.glb").read_bytes(), b"walk-url")
+        self.assertEqual((models / "bernat-running.glb").read_bytes(), b"run-url")
+        self.assertEqual(json.loads((out / "meta.json").read_text())["rig"]["task"], "rig-1")
+        with self.assertRaisesRegex(SystemExit, "--force"):
+            self.run_tool("bernat", "--only", "rig", meshy=meshy)
 
     def test_claude_fixes_problems_in_an_append_only_conversation(self):
         broken = gerard_spec()

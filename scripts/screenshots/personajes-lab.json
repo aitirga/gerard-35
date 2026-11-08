@@ -1,0 +1,19 @@
+{
+  "title": "Los amigos de la uni · modelos Meshy con rig",
+  "description": "The model lab's character half (just model-lab, model-lab.html?personajes, src/character-lab.ts): the seven university friends as Meshy made them (just character <id> --only model rig --modeler meshy), standing, walking and running with the clips Meshy's auto-rigging gave them, and close-ups. Run it with --gpu.",
+  "steps": [
+    { "open": "/model-lab.html?personajes", "ready": "document.querySelector('#status')?.textContent === 'Listo'" },
+    { "shot": "quietos", "delay": 1500, "caption": "The seven at rest, as the rig leaves them" },
+    { "eval": "window.modelLab.play('walking')" },
+    { "shot": "andando", "delay": 1200, "caption": "Walking: Meshy's walking clip on each one's skeleton" },
+    { "record": "andando", "seconds": 2, "caption": "Walking, in motion", "app": "window.modelLab.app", "warmup": 0.5 },
+    { "eval": "window.modelLab.play('running'); window.modelLab.set({ yaw: 35, pitch: 10 })" },
+    { "shot": "corriendo", "delay": 1200, "caption": "Running, from three quarters: the clip the beach chase will use" },
+    { "eval": "window.modelLab.look('anna'); window.modelLab.play('still'); window.modelLab.set({ yaw: 0, pitch: 6 })" },
+    { "shot": "anna", "delay": 1200, "caption": "Anna up close" },
+    { "eval": "window.modelLab.look('alvaro')" },
+    { "shot": "alvaro", "delay": 900, "caption": "Álvaro up close" },
+    { "eval": "window.modelLab.look('joan'); window.modelLab.set({ yaw: 30 })" },
+    { "shot": "joan", "delay": 900, "caption": "Joan from three quarters" }
+  ]
+}

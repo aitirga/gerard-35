@@ -1,4 +1,9 @@
+import { existsSync } from 'node:fs';
 import { defineConfig } from 'vite';
+
+// The game is played in Chrome: `--open` (just dev, herdr's Start, the dev-* recipes) opens it there,
+// whatever the default browser is. BROWSER set in the environment still wins.
+if (!process.env.BROWSER && process.platform === 'darwin' && existsSync('/Applications/Google Chrome.app')) process.env.BROWSER = 'Google Chrome';
 
 export default defineConfig({
   // Relative base so the build works both locally and under

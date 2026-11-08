@@ -1,0 +1,21 @@
+{
+  "id": "sarah",
+  "name": "Sarah",
+  "glb": "models/characters/sarah.glb",
+  "materials": {
+    "jacket": {"name": "Ropa de arriba de Sarah", "color": "#0a2044"},
+    "trousers": {"name": "Pantalón de Sarah", "color": "#294e75"},
+    "skin": {"name": "Sarah", "color": "#ffffff"}
+  },
+  "rig": {"head": [0.0, 0.8507, -0.0161], "headScale": [1, 1, 1], "arm": [0.1999, 0.7422, 0.0197], "leg": [0.0793, 0.4686, 0.0446], "elbow": [0.0227, -0.1417, 0.0097], "knee": [0.0412, -0.1809, 0.0345]},
+  "fit": {"collar": [0.2011, 0.8407, 0.2071], "chest": [0.0, 0.6897, 0.1642], "back": [0.0, 0.4686, -0.0985]},
+  "lids": {"color": "#fdbf93", "size": [0.0543, 0.0729, 0.0217]},
+  "parts": [
+    {"name": "Torso", "shape": "box", "material": "jacket", "attach": "body", "position": [-0.0203, 0.6738, -0.0352], "scale": [0.582, 0.2801, 0.4254]},
+    {"name": "Cabeza", "shape": "box", "material": "skin", "attach": "head", "position": [-0.0002, 0.1464, 0.0161], "scale": [0.625, 0.5843, 0.4958]},
+    {"name": "Ojo", "shape": "box", "material": "skin", "attach": "head", "position": [0.05, 0.1309, 0.1], "scale": [0.02, 0.02, 0.02], "mirror": true},
+    {"name": "Pierna", "shape": "box", "material": "trousers", "attach": "leg", "position": [0.0353, -0.144, -0.0025], "scale": [0.2121, 0.609, 0.2808]},
+    {"name": "Zapatilla", "shape": "box", "material": "skin", "attach": "leg", "position": [0.0525, -0.3866, 0.1093], "scale": [0.2006, 0.1238, 0.1586]},
+    {"name": "Brazo", "shape": "box", "material": "jacket", "attach": "arm", "position": [0.0234, -0.214, 0.0132], "scale": [0.1681, 0.4546, 0.2394]}
+  ]
+}

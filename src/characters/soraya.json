@@ -1,0 +1,21 @@
+{
+  "id": "soraya",
+  "name": "Soraya",
+  "glb": "models/characters/soraya.glb",
+  "materials": {
+    "jacket": {"name": "Ropa de arriba de Soraya", "color": "#1d1816"},
+    "trousers": {"name": "Pantalón de Soraya", "color": "#fbc795"},
+    "skin": {"name": "Soraya", "color": "#ffffff"}
+  },
+  "rig": {"head": [-0.0027, 0.8205, -0.0348], "headScale": [1, 1, 1], "arm": [0.1752, 0.7313, 0.0153], "leg": [0.0728, 0.473, 0.0299], "elbow": [0.0207, -0.137, 0.0027], "knee": [0.0422, -0.1853, 0.0456]},
+  "fit": {"collar": [0.2063, 0.8405, 0.2307], "chest": [0.0, 0.6917, 0.1389], "back": [0.0, 0.473, -0.1525]},
+  "lids": {"color": "#fec791", "size": [0.0555, 0.0775, 0.0222]},
+  "parts": [
+    {"name": "Torso", "shape": "box", "material": "jacket", "attach": "body", "position": [-0.0114, 0.637, -0.0414], "scale": [0.442, 0.2745, 0.4096]},
+    {"name": "Cabeza", "shape": "box", "material": "skin", "attach": "head", "position": [-0.0145, 0.1432, 0.0383], "scale": [0.5547, 0.651, 0.4854]},
+    {"name": "Ojo", "shape": "box", "material": "skin", "attach": "head", "position": [0.05, 0.1516, 0.1], "scale": [0.02, 0.02, 0.02], "mirror": true},
+    {"name": "Pierna", "shape": "box", "material": "trousers", "attach": "leg", "position": [0.0305, -0.1483, 0.0023], "scale": [0.2112, 0.6095, 0.2764]},
+    {"name": "Zapatilla", "shape": "box", "material": "skin", "attach": "leg", "position": [0.0678, -0.4051, 0.1338], "scale": [0.1619, 0.0958, 0.1248]},
+    {"name": "Brazo", "shape": "box", "material": "jacket", "attach": "arm", "position": [0.0456, -0.2232, -0.0092], "scale": [0.1958, 0.4509, 0.2163]}
+  ]
+}

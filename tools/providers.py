@@ -24,13 +24,13 @@ class OpenAIImages:
     """OpenAI Images API: edits when there are reference images, generations otherwise."""
     base = "https://api.openai.com/v1/images"
 
-    def __init__(self, api_key: str, model: str, client: httpx.Client | None = None):
-        self.model = model
+    def __init__(self, api_key: str, model: str, client: httpx.Client | None = None, quality: str = "medium"):
+        self.model, self.quality = model, quality
         # Detailed images with many references can take a couple of minutes.
         self.client = client or httpx.Client(timeout=300, headers={"Authorization": f"Bearer {api_key}"})
 
     def create(self, prompt: str, images: list[Path], size: str, background: str = "transparent") -> bytes:
-        options = {"model": self.model, "prompt": prompt, "size": size, "quality": "high",
+        options = {"model": self.model, "prompt": prompt, "size": size, "quality": self.quality,
                    "background": background, "output_format": "png"}
         if images:
             files = [("image[]", (path.name, path.read_bytes(), MIME[path.suffix.lower()])) for path in images]
@@ -43,7 +43,8 @@ class OpenAIImages:
 
 
 class Meshy:
-    """Meshy: images of a character in, a textured GLB out; a model in, the same with a skeleton."""
+    """Meshy: images of a character in, a textured GLB out; a model in, the same with a skeleton (and walking
+    and running clips)."""
     api = "https://api.meshy.ai/openapi/v1"
     base = f"{api}/image-to-3d"
 
@@ -51,26 +52,29 @@ class Meshy:
         self.poll_seconds = poll_seconds
         self.client = client or httpx.Client(timeout=120, headers={"Authorization": f"Bearer {api_key}"})
 
-    def start(self, image: bytes, **options) -> str:
-        data_uri = "data:image/png;base64," + base64.b64encode(image).decode()
-        response = self.client.post(self.base, json={"image_url": data_uri, **options})
-        if response.is_error:
-            raise SystemExit(f"Meshy failed ({response.status_code}): {response.text}")
-        return response.json()["result"]
-
     def _post(self, kind: str, body: dict) -> str:
         response = self.client.post(f"{self.api}/{kind}", json=body)
         if response.is_error:
-            raise SystemExit(f"Meshy failed ({response.status_code}): {response.text}")
+            raise SystemExit(f"Meshy {kind} failed ({response.status_code}): {response.text}")
         return response.json()["result"]
+
+    def start(self, image: bytes, **options) -> str:
+        """Image-to-3D from one character image (`just character --modeler meshy`)."""
+        return self._post("image-to-3d", {"image_url": "data:image/png;base64," + base64.b64encode(image).decode(), **options})
 
     def start_views(self, images: list[str], **options) -> str:
         """Image-to-3D from data URIs of several views of one character, the front first."""
         return self._post("multi-image-to-3d", {"image_urls": images, **options})
 
+    def rig(self, height: float, task_id: str | None = None, glb: bytes | None = None) -> str:
+        """Rigs a textured humanoid: from the image-to-3D task that made it, or from the GLB itself."""
+        source = {"input_task_id": task_id} if task_id else \
+            {"model_url": "data:application/octet-stream;base64," + base64.b64encode(glb or b"").decode()}
+        return self._post("rigging", {**source, "height_meters": height})
+
     def start_rig(self, model_task: str, height: float) -> str:
         """A skeleton for a model Meshy made, facing +z and `height` metres tall."""
-        return self._post("rigging", {"input_task_id": model_task, "height_meters": height})
+        return self.rig(height, task_id=model_task)
 
     def wait(self, task_id: str, on_progress=print, timeout: float = 1200, kind: str = "image-to-3d") -> dict:
         deadline = time.monotonic() + timeout
@@ -117,7 +121,9 @@ def image_block(path: Path) -> dict:
 
 
 def openai_images() -> OpenAIImages:
-    return OpenAIImages(require_key("OPENAI_API_KEY"), os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-2.5-sunburst"))
+    # Medium quality costs a fraction of high in output tokens and is enough for portraits and references.
+    return OpenAIImages(require_key("OPENAI_API_KEY"), os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-2.5-sunburst"),
+                        quality=os.environ.get("OPENAI_IMAGE_QUALITY", "medium"))
 
 
 def meshy() -> Meshy:

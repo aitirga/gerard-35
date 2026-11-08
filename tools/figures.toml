@@ -79,3 +79,61 @@ face_photos = ["mama/mama-01.png"]
 about = "The woman in the photo in her early forties, warm and busy on a morning at home: a soft oval face with a slightly pointed chin, shoulder-length wavy dark auburn-brown hair with a side parting and a fringe falling across her forehead, thin round metal glasses with clear lenses and red lips. A long-sleeved top in terracotta red and cream horizontal stripes, charcoal trousers, chunky rust-brown shoes."
 height = 1.66
 scale = 1.3
+
+# The university friends (docs/quests/universidad.md). Their photos are face-only and stylised, so each is
+# drawn from `about` with the face photo beside it; the couple photos were cropped to one person.
+[alvaro]
+name = "Álvaro"
+kind = "person"
+face_photos = ["alvaro/alvaro-cara.jpg"]
+about = "The man in the photo, 35, a game lover with a big easy grin: long curly dark brown hair down past his ears to his shoulders in big sculpted curls, rectangular black glasses as his strongest feature, a short dark brown beard painted as one flat patch. A plain white T-shirt, mid-blue jeans, white trainers."
+height = 1.78
+scale = 1.3
+
+[anna]
+name = "Anna"
+kind = "person"
+face_photos = ["anna/anna-cara.jpg"]
+about = "The woman in the photo, 35, daring and sporty, she loves cold water: shoulder-length straight reddish-brown hair parted to one side, black sunglasses pushed up on her head, a confident look. A white sleeveless blouse, light beige trousers, white trainers, and a red backpack on both shoulders."
+height = 1.65
+scale = 1.3
+
+[joan]
+name = "Joan"
+kind = "person"
+face_photos = ["joan/joan-1.jpg"]
+about = "The man in the photo, 35, slim, with a serious dark look: short dense near-black curly hair in big sculpted curls, thick dark straight brows, a thin dark moustache painted as one flat stripe. A dark charcoal button-up shirt, dark jeans with a brown belt, dark trainers with cream soles."
+height = 1.75
+scale = 1.3
+
+[miquel]
+name = "Miquel"
+kind = "person"
+face_photos = ["miquel/miquel-1.jpg"]
+about = "The man in the photo, 35, cheerful: short messy brown hair, rectangular thin black glasses as his strongest feature, a dark brown beard with moustache and a small goatee painted as one flat patch. A bright mid-blue hoodie with white drawstrings over a navy T-shirt, blue jeans, white trainers."
+height = 1.8
+scale = 1.3
+
+[nico]
+name = "Nico"
+kind = "person"
+face_photos = ["nico/nico-1.jpg"]
+about = "The man in the photo, 35, quiet with a half smile: thick dark near-black hair with a heavy fringe falling over his forehead in big chunks, dark brows, clean shaven. A dark brown-black T-shirt, dark trousers, dark trainers with white soles."
+height = 1.75
+scale = 1.3
+
+[sarah]
+name = "Sarah"
+kind = "person"
+face_photos = ["sarah/sarah-cara.jpg"]
+about = "The woman in the photo, 35, warm and smiling: long straight reddish-brown hair past her shoulders, blue eyes, rosy cheeks. A navy zip-up jacket open over a cream T-shirt with navy horizontal stripes, blue jeans, cream trainers."
+height = 1.65
+scale = 1.3
+
+[soraya]
+name = "Soraya"
+kind = "person"
+face_photos = ["soraya/soraya-cara.jpg"]
+about = "The woman in the photo, 35, elegant with a wide smile: very long straight dark brown hair falling past her shoulders in one big sculpted piece, dark brows, red lips. A black blazer over a white open-collar shirt, black trousers, black loafers."
+height = 1.65
+scale = 1.3

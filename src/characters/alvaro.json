@@ -1,0 +1,21 @@
+{
+  "id": "alvaro",
+  "name": "Álvaro",
+  "glb": "models/characters/alvaro.glb",
+  "materials": {
+    "jacket": {"name": "Ropa de arriba de Álvaro", "color": "#f9f7f5"},
+    "trousers": {"name": "Pantalón de Álvaro", "color": "#254e70"},
+    "skin": {"name": "Álvaro", "color": "#ffffff"}
+  },
+  "rig": {"head": [-0.0089, 0.8275, 0.0095], "headScale": [1, 1, 1], "arm": [0.195, 0.7548, 0.0344], "leg": [0.0829, 0.4715, 0.0537], "elbow": [0.0243, -0.1554, -0.001], "knee": [0.047, -0.1834, 0.0175]},
+  "fit": {"collar": [0.2118, 0.7775, 0.2107], "chest": [0.0, 0.6563, 0.1633], "back": [0.0, 0.4715, -0.1154]},
+  "lids": {"color": "#d2b890", "size": [0.0596, 0.0754, 0.0238]},
+  "parts": [
+    {"name": "Torso", "shape": "box", "material": "jacket", "attach": "body", "position": [-0.0086, 0.6798, 0.0258], "scale": [0.4185, 0.2187, 0.275]},
+    {"name": "Cabeza", "shape": "box", "material": "skin", "attach": "head", "position": [0.0061, 0.219, -0.0095], "scale": [0.7298, 0.6854, 0.5854]},
+    {"name": "Ojo", "shape": "box", "material": "skin", "attach": "head", "position": [0.05, 0.1509, 0.1], "scale": [0.02, 0.02, 0.02], "mirror": true},
+    {"name": "Pierna", "shape": "box", "material": "trousers", "attach": "leg", "position": [0.0292, -0.0999, -0.0235], "scale": [0.2014, 0.4944, 0.2913]},
+    {"name": "Zapatilla", "shape": "box", "material": "skin", "attach": "leg", "position": [0.0507, -0.3851, -0.0005], "scale": [0.241, 0.1327, 0.2997]},
+    {"name": "Brazo", "shape": "box", "material": "jacket", "attach": "arm", "position": [0.0647, -0.2257, 0.0031], "scale": [0.2408, 0.5071, 0.1982]}
+  ]
+}

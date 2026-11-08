@@ -1,0 +1,181 @@
+{
+  "title": "Los amigos de la uni · modelos",
+  "description": "The seven university friends' in-game models (src/characters/<id>.json, from `just character <id> --only fullbody model`), each loaded as the player with ?character= and framed close on the Barceloneta's sand, where the mission opens.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1&character=anna"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "barceloneta",
+      "cell": [
+        99,
+        70
+      ]
+    },
+    {
+      "eval": "{ const g = window.gerard.game, p = g.app.root.findByName('Jugador').getPosition(); document.querySelector('#hud').style.visibility = 'hidden'; g.frame({ x: p.x, y: p.y + 1.0, z: p.z }, 1.3); }"
+    },
+    {
+      "shot": "anna",
+      "delay": 2500,
+      "caption": "Anna: the model from `just character anna`, played as the player on the sand of the Barceloneta"
+    },
+    {
+      "open": "/?story=metro&solo=1&character=alvaro"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "barceloneta",
+      "cell": [
+        99,
+        70
+      ]
+    },
+    {
+      "eval": "{ const g = window.gerard.game, p = g.app.root.findByName('Jugador').getPosition(); document.querySelector('#hud').style.visibility = 'hidden'; g.frame({ x: p.x, y: p.y + 1.0, z: p.z }, 1.3); }"
+    },
+    {
+      "shot": "alvaro",
+      "delay": 2500,
+      "caption": "Álvaro: the model from `just character alvaro`, played as the player on the sand of the Barceloneta"
+    },
+    {
+      "open": "/?story=metro&solo=1&character=miquel"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "barceloneta",
+      "cell": [
+        99,
+        70
+      ]
+    },
+    {
+      "eval": "{ const g = window.gerard.game, p = g.app.root.findByName('Jugador').getPosition(); document.querySelector('#hud').style.visibility = 'hidden'; g.frame({ x: p.x, y: p.y + 1.0, z: p.z }, 1.3); }"
+    },
+    {
+      "shot": "miquel",
+      "delay": 2500,
+      "caption": "Miquel: the model from `just character miquel`, played as the player on the sand of the Barceloneta"
+    },
+    {
+      "open": "/?story=metro&solo=1&character=sarah"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "barceloneta",
+      "cell": [
+        99,
+        70
+      ]
+    },
+    {
+      "eval": "{ const g = window.gerard.game, p = g.app.root.findByName('Jugador').getPosition(); document.querySelector('#hud').style.visibility = 'hidden'; g.frame({ x: p.x, y: p.y + 1.0, z: p.z }, 1.3); }"
+    },
+    {
+      "shot": "sarah",
+      "delay": 2500,
+      "caption": "Sarah: the model from `just character sarah`, played as the player on the sand of the Barceloneta"
+    },
+    {
+      "open": "/?story=metro&solo=1&character=soraya"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "barceloneta",
+      "cell": [
+        99,
+        70
+      ]
+    },
+    {
+      "eval": "{ const g = window.gerard.game, p = g.app.root.findByName('Jugador').getPosition(); document.querySelector('#hud').style.visibility = 'hidden'; g.frame({ x: p.x, y: p.y + 1.0, z: p.z }, 1.3); }"
+    },
+    {
+      "shot": "soraya",
+      "delay": 2500,
+      "caption": "Soraya: the model from `just character soraya`, played as the player on the sand of the Barceloneta"
+    },
+    {
+      "open": "/?story=metro&solo=1&character=nico"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "barceloneta",
+      "cell": [
+        99,
+        70
+      ]
+    },
+    {
+      "eval": "{ const g = window.gerard.game, p = g.app.root.findByName('Jugador').getPosition(); document.querySelector('#hud').style.visibility = 'hidden'; g.frame({ x: p.x, y: p.y + 1.0, z: p.z }, 1.3); }"
+    },
+    {
+      "shot": "nico",
+      "delay": 2500,
+      "caption": "Nico: the model from `just character nico`, played as the player on the sand of the Barceloneta"
+    },
+    {
+      "open": "/?story=metro&solo=1&character=joan"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "barceloneta",
+      "cell": [
+        99,
+        70
+      ]
+    },
+    {
+      "eval": "{ const g = window.gerard.game, p = g.app.root.findByName('Jugador').getPosition(); document.querySelector('#hud').style.visibility = 'hidden'; g.frame({ x: p.x, y: p.y + 1.0, z: p.z }, 1.3); }"
+    },
+    {
+      "shot": "joan",
+      "delay": 2500,
+      "caption": "Joan: the model from `just character joan`, played as the player on the sand of the Barceloneta"
+    }
+  ]
+}

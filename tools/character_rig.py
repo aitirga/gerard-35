@@ -18,15 +18,26 @@ from pathlib import Path
 
 import httpx
 import numpy as np
+import xatlas
 from PIL import Image, ImageDraw, ImageFilter
 
 ARM_REST_DEGREES = 11  # How far from straight down the arms hang at rest.
 GROUND = .02  # Where the soles end, in body coordinates (character_model.py).
 TEXTURE_QUALITY = 88
-TEXTURE_SIZE = 1024  # A toy's flat colours need no more: the street camera shows 40–75 pixels a metre.
+TEXTURE_SIZE = 2048  # The new atlas (`reatlas`) spreads it evenly over the body: 2048 keeps the painted face as sharp as Meshy's.
 GUTTER_EDGE = 3  # How much of an island's edge is half gap, as a filter's size: 1 pixel. Meshy's islands are small: more eats them.
 GUTTER_REACH = 24  # How far past an island its colour spreads, in pixels at the original size.
 TEXTURE_CLEAN = 5  # Median filter, in pixels at the original size: takes off the scratches, keeps the painted edges.
+# Meshy packs hundreds of small islands touching each other, so filtering and mipmaps mix one colour into
+# the next (skin into hair, as orange flecks). The texture is painted again into a new atlas:
+ATLAS_SIZE = TEXTURE_SIZE  # painted at the size the game gets;
+ATLAS_PADDING = 12  # this many pixels between islands, each island's own colour filling half, so mipmaps reach far before they mix two;
+ATLAS_INSET = 1.5  # read this many texels inside an old island's edge, where its colour is its own.
+# Meshy leaves light warm flecks in dark paint (hair, a dark jacket): a texel this much lighter than the
+# median round it, where that median is this dark, takes the median's colour. Near-whites (eye highlights) stay.
+FLECK_AROUND = 9
+FLECK_DARK = 70
+FLECK_LIGHTER = 50
 
 # Which of the game's bones each of Meshy's bones becomes.
 MERGE = {
@@ -148,10 +159,72 @@ class GlbFile:
             "images": [{"bufferView": len(self.views) - 1, "mimeType": "image/jpeg"}],
             "accessors": self.accessors, "bufferViews": self.views, "buffers": [{"byteLength": len(self.buffer)}], **extra,
         }
-        text = json.dumps(document, separators=(",", ":")).encode()
-        text += b" " * (-len(text) % 4)
-        return struct.pack("<4sII", b"glTF", 2, 12 + 8 + len(text) + 8 + len(self.buffer)) + struct.pack("<I4s", len(text), b"JSON") + text \
-            + struct.pack("<I4s", len(self.buffer), b"BIN\0") + bytes(self.buffer)
+        return pack_glb(document, self.buffer)
+
+
+def pack_glb(document: dict, buffer: bytes) -> bytes:
+    text = json.dumps(document, separators=(",", ":")).encode()
+    text += b" " * (-len(text) % 4)
+    return struct.pack("<4sII", b"glTF", 2, 12 + 8 + len(text) + 8 + len(buffer)) + struct.pack("<I4s", len(text), b"JSON") + text \
+        + struct.pack("<I4s", len(buffer), b"BIN\0") + bytes(buffer)
+
+
+def reatlas_glb(path: Path) -> None:
+    """
+    A finished model (from this file or straight from Meshy) with its texture laid out again in place
+    (`reatlas`), the rest kept: bones, skin, animations, materials. Its texture is not cleaned again.
+    """
+    gltf, blob = read_glb(path.read_bytes())
+    mesh, = gltf["meshes"]
+    attributes = mesh["primitives"][0]["attributes"]
+    if any(p["attributes"] != attributes for p in mesh["primitives"]):
+        raise SystemExit(f"{path}: its parts do not share their vertices.")
+    faces = [accessor(gltf, blob, p["indices"]).reshape(-1, 3) for p in mesh["primitives"]]
+    triangles = np.concatenate(faces).astype(np.uint32)
+    positions, uvs = accessor(gltf, blob, attributes["POSITION"]), accessor(gltf, blob, attributes["TEXCOORD_0"])
+    vmap, new_faces, new_uvs, atlas = reatlas(positions, triangles, uvs, texture_of(gltf, blob))
+    file = GlbFile()
+
+    def again(index: int, rows=None, values=None) -> int:
+        """An accessor written again: its rows picked by `rows`, or `values` instead, as its own type."""
+        a = gltf["accessors"][index]
+        raw = accessor(gltf, blob, index) if values is None else values
+        if rows is not None:
+            raw = raw[rows]
+        kind = COMPONENTS[a["componentType"]]
+        if a.get("normalized") and kind != np.float32:
+            raw = np.round(raw * np.iinfo(kind).max)
+        written = file.put(np.ascontiguousarray(raw.astype(kind)), a["type"], a["componentType"], 34962 if rows is not None or values is not None else None,
+                           bounds="min" in a)
+        if a.get("normalized"):
+            file.accessors[written]["normalized"] = True
+        return written
+
+    # A tangent follows the old layout and nothing here uses one: it goes.
+    kept = {name: (again(i, values=new_uvs) if name == "TEXCOORD_0" else again(i, rows=vmap)) for name, i in attributes.items() if name != "TANGENT"}
+    start = 0
+    for primitive, old in zip(mesh["primitives"], faces):
+        primitive["attributes"] = kept
+        primitive["indices"] = file.put(new_faces[start:start + len(old)].reshape(-1, 1), "SCALAR", 5125, 34963)
+        start += len(old)
+    for skin in gltf.get("skins", []):
+        if "inverseBindMatrices" in skin:
+            skin["inverseBindMatrices"] = again(skin["inverseBindMatrices"])
+    for animation in gltf.get("animations", []):
+        for sampler in animation["samplers"]:
+            sampler["input"], sampler["output"] = again(sampler["input"]), again(sampler["output"])
+    image = jpeg(atlas)
+    file._align()
+    file.views.append({"buffer": 0, "byteOffset": len(file.buffer), "byteLength": len(image)})
+    file.buffer.extend(image)
+    file._align()
+    for material in gltf.get("materials", []):
+        material.get("pbrMetallicRoughness", {}).pop("metallicRoughnessTexture", None)
+        material.pop("normalTexture", None)
+    gltf.update(accessors=file.accessors, bufferViews=file.views, buffers=[{"byteLength": len(file.buffer)}],
+                images=[{"bufferView": len(file.views) - 1, "mimeType": "image/jpeg"}], textures=[{"source": 0, "sampler": 0}],
+                samplers=[{"magFilter": 9729, "minFilter": 9987, "wrapS": 10497, "wrapT": 10497}])
+    path.write_bytes(pack_glb(gltf, file.buffer))
 
 
 def fill_gutters(texture: Image.Image, uvs: np.ndarray, triangles: np.ndarray) -> Image.Image:
@@ -181,11 +254,87 @@ def fill_gutters(texture: Image.Image, uvs: np.ndarray, triangles: np.ndarray) -
     return Image.fromarray(pixels.astype(np.uint8))
 
 
-def clean_texture(texture: Image.Image, uvs: np.ndarray, triangles: np.ndarray) -> bytes:
-    """A JPEG of the texture without seams or scratches, painted edges kept, at the size the game needs."""
+def clean_texture(texture: Image.Image, uvs: np.ndarray, triangles: np.ndarray) -> Image.Image:
+    """The texture without seams or scratches, painted edges kept."""
+    return fill_gutters(texture, uvs, triangles).filter(ImageFilter.MedianFilter(TEXTURE_CLEAN))
+
+
+def despeckle(texture: Image.Image) -> Image.Image:
+    """The texture without Meshy's light flecks in its dark paint."""
+    rgb = texture.convert("RGB")
+    pixels = np.asarray(rgb).astype(np.int16)
+    around = np.asarray(rgb.filter(ImageFilter.MedianFilter(FLECK_AROUND))).astype(np.int16)
+    light, dark = pixels.mean(axis=2), around.mean(axis=2)
+    fleck = (dark < FLECK_DARK) & (light > dark + FLECK_LIGHTER) & (pixels[..., 0] > pixels[..., 2] + 20) & (pixels.min(axis=2) < 180)
+    # Their soft edges too.
+    fleck = np.asarray(Image.fromarray(fleck.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(3))) > 0
+    fleck &= dark < FLECK_DARK
+    pixels[fleck] = around[fleck]
+    return Image.fromarray(pixels.astype(np.uint8))
+
+
+def reatlas(positions: np.ndarray, triangles: np.ndarray, uvs: np.ndarray, texture: Image.Image):
+    """
+    The surface laid out again by xatlas, in fewer, larger islands with room round them, and the texture
+    painted into it: (for each new vertex, the old one it copies; the triangles, in the same order; their
+    UVs; the texture). Each texel reads the old texture a little inside its triangle, off the old seams.
+    """
+    atlas = xatlas.Atlas()
+    atlas.add_mesh(positions.astype(np.float32), triangles.astype(np.uint32))
+    pack = xatlas.PackOptions()
+    pack.resolution, pack.padding, pack.bilinear = ATLAS_SIZE, ATLAS_PADDING, True
+    atlas.generate(xatlas.ChartOptions(), pack)
+    if atlas.atlas_count != 1:
+        raise SystemExit(f"xatlas made {atlas.atlas_count} atlases; one was expected.")
+    vmap, faces, new_uvs = atlas.get_mesh(0)
+    faces = faces.reshape(-1, 3).astype(np.uint32)
+    if len(faces) != len(triangles):
+        raise SystemExit("xatlas changed the number of triangles.")
+    # Which triangle each texel of the new atlas belongs to.
+    size = ATLAS_SIZE
+    owner = Image.new("I", (size, size), 0)
+    draw = ImageDraw.Draw(owner)
+    for i, corners in enumerate(new_uvs[faces]):
+        draw.polygon([(u * size, v * size) for u, v in corners], fill=i + 1)
+    owner = np.asarray(owner) - 1
+    ys, xs = np.nonzero(owner >= 0)
+    face = owner[ys, xs]
+    # Where in its triangle each texel is, held inside it.
+    a, b, c = (new_uvs[faces[face, k]].astype(np.float64) for k in range(3))
+    p = np.c_[xs + .5, ys + .5] / size
+    v0, v1, v2 = b - a, c - a, p - a
+    d00, d01, d11 = (v0 * v0).sum(1), (v0 * v1).sum(1), (v1 * v1).sum(1)
+    d20, d21 = (v2 * v0).sum(1), (v2 * v1).sum(1)
+    det = np.where(np.abs(d00 * d11 - d01 * d01) > 1e-20, d00 * d11 - d01 * d01, 1e-20)
+    w1, w2 = (d11 * d20 - d01 * d21) / det, (d00 * d21 - d01 * d20) / det
+    weights = np.clip(np.c_[1 - w1 - w2, w1, w2], 0, None)
+    weights /= np.maximum(weights.sum(1, keepdims=True), 1e-12)
+    # The same point on the old texture, moved a little towards its triangle's middle.
+    source = np.asarray(despeckle(texture))
+    height, width = source.shape[:2]
+    old = uvs[triangles[face]] % 1
+    point = (weights[:, :, None] * old).sum(1)
+    towards = (old.mean(1) - point) * [width, height]
+    distance = np.linalg.norm(towards, axis=1)
+    point += towards / [width, height] * (np.minimum(distance, ATLAS_INSET) / np.maximum(distance, 1e-9))[:, None]
+    # Read between the four nearest texels, so painted edges stay smooth.
+    fx, fy = point[:, 0] * width - .5, point[:, 1] * height - .5
+    x0, y0 = np.floor(fx).astype(int), np.floor(fy).astype(int)
+    tx, ty = (fx - x0)[:, None], (fy - y0)[:, None]
+    texel = lambda x, y: source[y.clip(0, height - 1), x.clip(0, width - 1)].astype(np.float32)
+    colour = (texel(x0, y0) * (1 - tx) + texel(x0 + 1, y0) * tx) * (1 - ty) + (texel(x0, y0 + 1) * (1 - tx) + texel(x0 + 1, y0 + 1) * tx) * ty
+    painted = np.zeros((size, size, 3), np.uint8)
+    painted[ys, xs] = np.round(colour).astype(np.uint8)
+    filled = np.array(fill_gutters(Image.fromarray(painted), new_uvs, faces))
+    # Far from every island, the figure's average colour: the smallest mipmaps would darken it otherwise.
+    filled[(owner < 0) & (filled.sum(2) == 0)] = painted[ys, xs].mean(axis=0)
+    return vmap, faces, new_uvs.astype(np.float64), Image.fromarray(filled)
+
+
+def jpeg(texture: Image.Image) -> bytes:
+    """The texture at the size the game needs."""
     encoded = io.BytesIO()
-    clean = fill_gutters(texture, uvs, triangles).filter(ImageFilter.MedianFilter(TEXTURE_CLEAN)).resize((TEXTURE_SIZE, TEXTURE_SIZE), Image.LANCZOS)
-    clean.save(encoded, "JPEG", quality=TEXTURE_QUALITY, optimize=True)
+    texture.resize((TEXTURE_SIZE, TEXTURE_SIZE), Image.LANCZOS).save(encoded, "JPEG", quality=TEXTURE_QUALITY, optimize=True)
     return encoded.getvalue()
 
 
@@ -672,16 +821,17 @@ def convert(rigged: Path, name: str, display: str, scale: float, clean_shaven: b
     mesh_node = add("Malla", mesh=0, skin=0)
     bone_nodes["Cuerpo"] = add("Cuerpo", children=[*top, bone_nodes["Cabeza"], mesh_node])
 
+    vmap, faces, atlas_uvs, atlas = reatlas(positions, triangles, uvs, clean_texture(texture, uvs, triangles))
     file = GlbFile()
     put = file.put
-    a_pos = put(positions.astype(np.float32), "VEC3", 5126, 34962, True)
-    a_nor = put(normals.astype(np.float32), "VEC3", 5126, 34962)
-    a_uv = put(uvs.astype(np.float32), "VEC2", 5126, 34962)
-    a_joint = put(new_joints, "VEC4", 5121, 34962)
-    a_weight = put(new_weights.astype(np.float32), "VEC4", 5126, 34962)
+    a_pos = put(positions[vmap].astype(np.float32), "VEC3", 5126, 34962, True)
+    a_nor = put(normals[vmap].astype(np.float32), "VEC3", 5126, 34962)
+    a_uv = put(atlas_uvs.astype(np.float32), "VEC2", 5126, 34962)
+    a_joint = put(np.ascontiguousarray(new_joints[vmap]), "VEC4", 5121, 34962)
+    a_weight = put(new_weights[vmap].astype(np.float32), "VEC4", 5126, 34962)
     primitives, materials = [], []
     for role in ("jacket", "trousers", "skin"):
-        chosen = triangles[groups[role]].reshape(-1).astype(np.uint32)
+        chosen = faces[groups[role]].reshape(-1).astype(np.uint32)
         primitives.append({"attributes": {"POSITION": a_pos, "NORMAL": a_nor, "TEXCOORD_0": a_uv, "JOINTS_0": a_joint, "WEIGHTS_0": a_weight},
                            "indices": put(chosen.reshape(-1, 1), "SCALAR", 5125, 34963), "material": len(materials)})
         materials.append({"name": material_names[role], "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}, "metallicFactor": 0, "roughnessFactor": .82}})
@@ -690,7 +840,7 @@ def convert(rigged: Path, name: str, display: str, scale: float, clean_shaven: b
     for i, bone in enumerate(BONES):
         bind[i, :3, 3] = -joint_at[bone]
     a_bind = put(bind.transpose(0, 2, 1).reshape(-1, 16).astype(np.float32), "MAT4", 5126)
-    glb = file.finish(clean_texture(texture, uvs, triangles), bone_nodes["Cuerpo"], nodes, {"name": name, "primitives": primitives}, materials,
+    glb = file.finish(jpeg(atlas), bone_nodes["Cuerpo"], nodes, {"name": name, "primitives": primitives}, materials,
                       skins=[{"joints": [bone_nodes[b] for b in BONES], "inverseBindMatrices": a_bind, "skeleton": bone_nodes["Cuerpo"]}])
 
     # The character file: where the joints are, and boxes that stand for the body in tests.
@@ -737,11 +887,13 @@ def convert_creature(model: Path, name: str, display: str, height: float):
     normals = smooth_normals(positions, triangles)
     feet = positions[positions[:, 1] < height * CREATURE_BASE]
 
+    texture = clean_texture(texture_of(gltf, blob), uvs, triangles)
+    vmap, faces, atlas_uvs, atlas = reatlas(positions, triangles, uvs, texture)
     file = GlbFile()
-    attributes = {"POSITION": file.put(positions.astype(np.float32), "VEC3", 5126, 34962, True),
-                  "NORMAL": file.put(normals.astype(np.float32), "VEC3", 5126, 34962),
-                  "TEXCOORD_0": file.put(uvs.astype(np.float32), "VEC2", 5126, 34962)}
-    indices = file.put(triangles.reshape(-1, 1), "SCALAR", 5125, 34963)
+    attributes = {"POSITION": file.put(positions[vmap].astype(np.float32), "VEC3", 5126, 34962, True),
+                  "NORMAL": file.put(normals[vmap].astype(np.float32), "VEC3", 5126, 34962),
+                  "TEXCOORD_0": file.put(atlas_uvs.astype(np.float32), "VEC2", 5126, 34962)}
+    indices = file.put(faces.reshape(-1, 1), "SCALAR", 5125, 34963)
     material = {"name": display, "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}, "metallicFactor": 0, "roughnessFactor": .82}}
     nodes = [
         {"name": "Malla", "mesh": 0, "translation": [0, -height / 2, 0]},
@@ -749,5 +901,15 @@ def convert_creature(model: Path, name: str, display: str, height: float):
         {"name": "Charco pringoso", "translation": [0, .01, 0], "scale": [float(v) for v in [np.ptp(feet[:, 0]), .02, np.ptp(feet[:, 2])]]},
         {"name": display, "children": [1, 2]},
     ]
-    glb = file.finish(clean_texture(texture_of(gltf, blob), uvs, triangles), 3, nodes, {"name": name, "primitives": [{"attributes": attributes, "indices": indices, "material": 0}]}, [material])
+    glb = file.finish(jpeg(atlas), 3, nodes, {"name": name, "primitives": [{"attributes": attributes, "indices": indices, "material": 0}]}, [material])
     return glb, {"id": name, "name": display, "glb": f"models/creatures/{name}.glb", "height": height}
+
+
+if __name__ == "__main__":
+    import sys
+    # uv run python tools/character_rig.py reatlas public/models/characters/<id>.glb …: models made before `reatlas`.
+    if sys.argv[1:2] != ["reatlas"] or len(sys.argv) < 3:
+        raise SystemExit("Usage: character_rig.py reatlas MODEL.glb …")
+    for model in sys.argv[2:]:
+        reatlas_glb(Path(model))
+        print(f"{model}: texture laid out again")

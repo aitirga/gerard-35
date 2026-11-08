@@ -1,0 +1,21 @@
+{
+  "id": "nico",
+  "name": "Nico",
+  "glb": "models/characters/nico.glb",
+  "materials": {
+    "jacket": {"name": "Ropa de arriba de Nico", "color": "#222022"},
+    "trousers": {"name": "Pantalón de Nico", "color": "#fdcf96"},
+    "skin": {"name": "Nico", "color": "#ffffff"}
+  },
+  "rig": {"head": [0.0058, 0.8284, -0.0883], "headScale": [1, 1, 1], "arm": [0.1888, 0.7424, -0.0181], "leg": [0.0779, 0.4627, 0.0068], "elbow": [0.0264, -0.1663, -0.0007], "knee": [0.047, -0.1733, 0.0377]},
+  "fit": {"collar": [0.2097, 0.7784, 0.2875], "chest": [0.0, 0.6528, 0.1256], "back": [0.0, 0.4627, -0.1375]},
+  "lids": {"color": "#fecd92", "size": [0.0646, 0.0827, 0.0258]},
+  "parts": [
+    {"name": "Torso", "shape": "box", "material": "jacket", "attach": "body", "position": [-0.0027, 0.6836, 0.003], "scale": [0.4266, 0.2099, 0.2562]},
+    {"name": "Cabeza", "shape": "box", "material": "skin", "attach": "head", "position": [-0.0095, 0.24, 0.0883], "scale": [0.5202, 0.5956, 0.5329]},
+    {"name": "Ojo", "shape": "box", "material": "skin", "attach": "head", "position": [0.05, 0.2017, 0.1], "scale": [0.02, 0.02, 0.02], "mirror": true},
+    {"name": "Pierna", "shape": "box", "material": "trousers", "attach": "leg", "position": [0.0272, -0.0898, -0.0048], "scale": [0.207, 0.529, 0.279]},
+    {"name": "Zapatilla", "shape": "box", "material": "skin", "attach": "leg", "position": [0.0529, -0.3772, 0.0227], "scale": [0.2317, 0.131, 0.31]},
+    {"name": "Brazo", "shape": "box", "material": "jacket", "attach": "arm", "position": [0.0345, -0.2282, 0.0173], "scale": [0.1645, 0.5021, 0.1805]}
+  ]
+}

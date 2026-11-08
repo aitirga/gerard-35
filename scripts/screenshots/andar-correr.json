@@ -1,0 +1,71 @@
+{
+  "title": "Andar y correr",
+  "description": "Gerard andando y corriendo de cerca en la arena de la Barceloneta, con la cámara siguiéndole (src/walk-animation.ts): apoyo y vuelo de cada pierna, rodillas, pies y brazos.",
+  "steps": [
+    {
+      "open": "/?story=barceloneta-uni&solo=1"
+    },
+    {
+      "until": "!!window.gerard?.game?.app",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.gerard.game.frame({ x: p.x, y: p.y + .7, z: p.z }, 2.4);"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "record": "andando",
+      "seconds": 1.2,
+      "fps": 60,
+      "warmup": 0.4,
+      "keys": [
+        "KeyD"
+      ],
+      "tiles": 12,
+      "clip": [
+        420,
+        150,
+        600,
+        600
+      ],
+      "each": "const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.gerard.game.frame({ x: p.x, y: p.y + .7, z: p.z }, 2.4);",
+      "caption": "Andando: talón al apoyar, la rodilla cede, despega de la punta; los brazos un poco detrás de las piernas."
+    },
+    {
+      "eval": "const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.gerard.game.frame({ x: p.x, y: p.y + .7, z: p.z }, 2.4);"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "record": "corriendo",
+      "seconds": 1.2,
+      "fps": 60,
+      "warmup": 0.4,
+      "keys": [
+        "ShiftLeft",
+        "KeyA"
+      ],
+      "tiles": 12,
+      "clip": [
+        420,
+        150,
+        600,
+        600
+      ],
+      "each": "const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.gerard.game.frame({ x: p.x, y: p.y + .7, z: p.z }, 2.4);",
+      "caption": "Corriendo: más inclinado, en el aire entre pasos, el talón sube detrás y los brazos van doblados."
+    },
+    {
+      "eval": "window.gerard.game.frame();"
+    }
+  ]
+}
