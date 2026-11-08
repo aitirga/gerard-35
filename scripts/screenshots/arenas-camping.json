@@ -1,0 +1,51 @@
+{
+  "title": "Arenas de los jefes del camping",
+  "description": "src/boss-arena.ts: El Campeón and La Sobremesa each fight in an arena built of Càmping Eurosport's own pieces, away from their waiting figures. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22campeon%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "piscina",
+      "delay": 1800,
+      "caption": "El Campeón in its own arena: the pool deck, the water lit from inside, the wall of boards, the lifeguard chair and the TORNEO board; no second figure on its plinth"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22sobremesa%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "merendero",
+      "delay": 1800,
+      "caption": "La Sobremesa in its own arena: the merendero's long tables, the melon one behind it, the steel door open, the hard lamp over it and the bulbs lit; nobody left sitting at the table"
+    },
+    {
+      "record": "merendero-quieto",
+      "seconds": 2,
+      "fps": 20,
+      "tiles": 8,
+      "caption": "Two seconds still: La Sobremesa stays sharp and steady, the camera's focus band holds its whole body"
+    }
+  ]
+}

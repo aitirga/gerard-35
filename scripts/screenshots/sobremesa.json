@@ -1,0 +1,133 @@
+{
+  "title": "La Sobremesa: el combate",
+  "description": "docs/quests/universidad.md § Final boss. La Sobremesa in the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost): the rigged Meshy model as one body with seven friends as targets on its bones, their shouted moves, the duo's telegraph, friends freed going limp, the win. In its own arena, the merendero (src/boss-arena.ts), with each move's effect: dice, black card, chalk rule, notes, lattice. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22sobremesa%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click();"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "intro",
+      "delay": 1500,
+      "caption": "La Sobremesa in the fight: one body, seven friends, a plate over each; Joan's chip says Escala · Do"
+    },
+    {
+      "eval": "const p = window.gerard.game.fighterAt('nico'); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 3.2)"
+    },
+    {
+      "shot": "cerca",
+      "delay": 900,
+      "caption": "Up close: the faces, the violet eyes, the card skin"
+    },
+    {
+      "eval": "window.gerard.game.frame(); cmd('attack')"
+    },
+    {
+      "eval": "const b = document.querySelector('.battle-target[data-target=\"miquel\"]'); b.focus(); b.classList.add('is-targeted')"
+    },
+    {
+      "shot": "apuntar",
+      "delay": 1200,
+      "caption": "Choosing whom to hit: the camera closes in on the seven faces, and the friend picked shows their name over their head (Miquel)"
+    },
+    {
+      "eval": "document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.game.frame(); cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "!!document.querySelector('.battle-speech-line[data-speaker=\"alvaro\"]:not([data-leaving])')",
+      "timeout": 60000
+    },
+    {
+      "shot": "tirada",
+      "delay": 250,
+      "caption": "Álvaro: «¡Tirada!», the dice decide how much"
+    },
+    {
+      "until": "!!document.querySelector('.battle-speech-line[data-speaker=\"miquel\"]:not([data-leaving])')",
+      "timeout": 60000
+    },
+    {
+      "shot": "carta-negra",
+      "delay": 250,
+      "caption": "Miquel announces his Carta negra on someone"
+    },
+    {
+      "until": "!!document.querySelector('.battle-speech-line[data-speaker=\"joan\"]:not([data-leaving])')",
+      "timeout": 60000
+    },
+    {
+      "record": "escala",
+      "seconds": 1.4,
+      "fps": 20,
+      "tiles": 8,
+      "caption": "Joan sings his note: it reaches both"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "ronda-2",
+      "delay": 800,
+      "caption": "Round two: the chips say what is coming (Carta negra → who, Escala · the next note)"
+    },
+    {
+      "eval": "ui.jumpTo('sobremesa-duo-carta')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "duo-carta",
+      "delay": 1000,
+      "caption": "Picker moment «Dúo de la carta negra»: Sarah and Miquel both marked, Dúo · Regla nueva → Gerard"
+    },
+    {
+      "eval": "ui.jumpTo('sobremesa-ultimo')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "queda-uno",
+      "delay": 2000,
+      "caption": "Picker moment «Queda uno»: six freed hang limp, only Miquel still held"
+    },
+    {
+      "eval": "document.head.insertAdjacentHTML('beforeend', '<style>.battle-result{visibility:hidden!important}</style>'); ui.jumpTo('won')"
+    },
+    {
+      "record": "victoria",
+      "seconds": 2.4,
+      "fps": 20,
+      "tiles": 12,
+      "caption": "Won: the last friend goes limp too"
+    }
+  ]
+}

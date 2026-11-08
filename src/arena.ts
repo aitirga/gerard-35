@@ -42,6 +42,11 @@ export const FOE_AHEAD = 1.2;
 export const BIG_FOE = 1, FOE_DEPTH = 2;
 /** A foe's radius in cells by its kind (a dog if it has none). */
 export const foeSize = (kind?: string) => FOE_SIZE[kind ?? 'dog'] ?? FOE_SIZE.dog;
+/** The kinds that take a place in a fight: La Sobremesa's seven stand as one body (`sobremesa`). */
+export function standing(kinds: readonly (string | undefined)[]) {
+  const apart = kinds.filter(kind => !kind?.startsWith('sobremesa-'));
+  return apart.length === kinds.length ? [...kinds] : [...apart, 'sobremesa'];
+}
 /**
  * A giant (GIANT cells of radius or more: Vertitrón, Uri on top) stands GIANT_BACK cells further back
  * still, and on open ground the fight's camera turns GIANT_TURN degrees round it towards the party's
@@ -95,6 +100,10 @@ export function catSpots(layout: Layout, wearer: Point) {
 export const BODY = { party: .4, cat: .22 } as const;
 export const FOE_SIZE: Record<string, number> = {
   dog: .45, minion: .7, guardian: 1.1, cebollon: 1.15, cebolla: .85, plato: .6, vertigo: 1.6, cebollita: .42, platito: .32, fantasmita: .32,
+  // La Sobremesa's whole body (its seven friends stand in it).
+  sobremesa: 2.2,
+  // Càmping Eurosport's foes: people's size, the dice a little wider, El Campeón on its plinth.
+  mago: .45, dado: .55, agente: .42, campeon: .75,
 };
 /** Elbow room every fighter needs round them, beyond their own size. */
 export const ROOM = .35;

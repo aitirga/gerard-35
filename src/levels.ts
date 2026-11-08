@@ -26,6 +26,11 @@ export const FOE_XP: Record<FoeKind, number> = {
   cebolla: 35, cebollon: 60, plato: 45, vertigo: 90,
   // The eye is part of Vertitrón: nothing of its own.
   'vertigo-ojo': 0,
+  // La Sobremesa: each friend freed is worth the same.
+  'sobremesa-alvaro': 16, 'sobremesa-anna': 16, 'sobremesa-sarah': 16, 'sobremesa-miquel': 16,
+  'sobremesa-joan': 16, 'sobremesa-soraya': 16, 'sobremesa-nico': 16,
+  // Càmping Eurosport: the small fights of the dungeon, and its mini-boss.
+  mago: 14, dado: 10, agente: 12, campeon: 70,
 };
 export type LevelFlag = `${ClassId}-${2 | 3}`;
 export const levelFlag = (id: ClassId, level: 2 | 3): LevelFlag => `${id}-${level}`;

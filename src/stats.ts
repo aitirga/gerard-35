@@ -53,6 +53,25 @@ export const PROFILES = {
   cebollita: base(34, 11, 8, 9, 8, 11),
   platito: base(68, 13, 12, 9, 9, 10),
   fantasmita: base(54, 12, 13, 8, 9, 13),
+  /**
+   * La Sobremesa's seven (docs/quests/universidad.md § Final boss), each a target of their own. Joan
+   * and Soraya, who need each other, are the frailest; Nico, who shields the rest, the toughest.
+   */
+  'sobremesa-alvaro': base(91, 12, 10, 10, 10, 9),
+  'sobremesa-anna': base(84, 13, 10, 9, 10, 10),
+  'sobremesa-sarah': base(84, 10, 12, 10, 11, 9),
+  'sobremesa-miquel': base(95, 13, 10, 11, 10, 9),
+  'sobremesa-joan': base(72, 10, 13, 9, 9, 9),
+  'sobremesa-soraya': base(77, 10, 12, 9, 10, 9),
+  'sobremesa-nico': base(102, 10, 10, 13, 12, 8),
+  /**
+   * Càmping Eurosport's foes (docs/quests/universidad.md § Càmping Eurosport): their rules do the work
+   * (battle.ts CAMPING), so their stats stay near the average. El Campeón is the mini-boss.
+   */
+  mago: base(100, 10, 12, 9, 11, 10),
+  dado: base(44, 12, 8, 11, 9, 9),
+  agente: base(66, 12, 10, 10, 10, 10),
+  campeon: base(380, 14, 10, 12, 11, 9),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;
 

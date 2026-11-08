@@ -1,6 +1,6 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, switchAnima, takeNews, takeQueued, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
+import { attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, switchAnima, takeNews, takeQueued, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -28,8 +28,8 @@ const commandsFor = (dev: boolean): { id: Command; name: string }[] => [
   { id: 'escape', name: 'Huir' },
 ];
 /** Uri's fears (docs/quests/nuria.md): what the fight's heading says. */
-const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN' } as const;
-const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>' } as const;
+const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN', sobremesa: 'LA SOBREMESA', 'camping-magos': 'MAGOS DE CAMPING', 'camping-dados': 'DADOS', 'camping-agentes': 'AGENTES', 'camping-tienda': 'UNA TIENDA EQUIVOCADA', 'camping-negra': 'LA PARCELA NEGRA', campeon: 'EL CAMPEÓN' } as const;
+const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>', sobremesa: 'Nadie se <em>levanta.</em>', 'camping-magos': 'Huele a <em>gas.</em>', 'camping-dados': 'Cada ronda, <em>otra cara.</em>', 'camping-agentes': 'Uno da la <em>cara.</em>', 'camping-tienda': 'Esa no <em>era.</em>', 'camping-negra': 'Todo <em>apagado.</em>', campeon: 'Sobre su <em>peana.</em>' } as const;
 /** What a blow says it did to an onion's layers. */
 const peelText = (peeled: number, onion?: { layers?: number }) => !onion?.layers ? '¡Sin capas!' : peeled > 1 ? `¡${peeled} capas menos!` : '¡Una capa menos!';
 const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
@@ -281,6 +281,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // A fantasmita goes off at everyone at 0; on its last count blows go through it.
     if (c.countdown !== undefined) chips.push(['reinicio', `Game over en ${c.countdown}`]);
     if (c.transparent) chips.push(['transparente', 'Transparente']);
+    // The campsite's rules on the plate (docs/quests/universidad.md): a dado's face, an agente's side, El Campeón's form and its turns left in it.
+    if (c.face !== undefined) chips.push(['cara', `Cara ${c.face}`]);
+    if (c.faceUp !== undefined) chips.push(c.faceUp ? ['boca-arriba', 'Boca arriba'] : ['boca-abajo', 'Boca abajo']);
+    if (c.form) chips.push([c.form, `${CAMPEON_FORMS[c.form]} · ${c.formLeft ?? 0} ${c.formLeft === 1 ? 'turno' : 'turnos'}`]);
     // A move announced a turn ahead, and at whom (Carrerilla → Aitor), or what is about to happen.
     // One chip for any announced move, as `intentLabel` says it («Rayo terrorífico → todos»).
     const announced = state && c.intent ? intentLabel(state, c) : undefined;
@@ -443,8 +447,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   function startClock() { cancelAnimationFrame(clockFrame); clockLast = performance.now(); clockFrame = requestAnimationFrame(tickClock); }
   /** A line said over a fighter's head, inside the fight (the rest of the HUD is shut). */
-  async function speak(line: { speaker: keyof typeof SPEAKERS; text: string }, ms: number, shout = false) {
-    const at = positions.get(line.speaker);
+  async function speak(line: { speaker: keyof typeof SPEAKERS; text: string }, ms: number, shout = false, over: string = line.speaker) {
+    const at = positions.get(over);
     const el = document.createElement('p');
     el.className = 'battle-speech-line'; el.dataset.speaker = line.speaker; if (shout) el.dataset.shout = 'true';
     el.innerHTML = '<span></span>';
@@ -594,7 +598,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** A fighter's nameplate over their head (PV, maná for the party, statuses); a foe's is also how it is picked. */
   function plateHtml(f: Combatant, i: number, foe: boolean) {
     const colour = f.kind === 'minion' || f.kind === 'guardian' ? '#ff6fae' : f.kind === 'vertigo-ojo' ? '#b07aff' : DOG_PROFILES[i]?.collar ?? '#b9dba1';
-    return `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${foe ? `data-unit="${f.id}"` : ''} data-side="${foe ? 'foes' : 'allies'}" style="--dog-color:${colour}" aria-label="Elegir a ${f.name}" hidden disabled><span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>${foe || !f.maxSecondary ? '' : `<span class="plate-pips" aria-hidden="true">${'<i data-pip="full"></i>'.repeat(f.maxSecondary)}</span>`}</button>`;
+    return `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${foe ? `data-unit="${f.id}"` : ''} data-side="${foe ? 'foes' : 'allies'}" style="--dog-color:${colour}" aria-label="Elegir a ${f.name}" hidden disabled>${foe && isSobremesa(f.kind) ? `<span class="plate-name" aria-hidden="true">${f.name}</span>` : ''}<span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>${foe || !f.maxSecondary ? '' : `<span class="plate-pips" aria-hidden="true">${'<i data-pip="full"></i>'.repeat(f.maxSecondary)}</span>`}</button>`;
   }
   /** Every foe gets its plate, with the other foes'; one no longer in the fight loses it. */
   function ensurePlates() {
@@ -1142,7 +1146,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    */
   function shout(effect: BattleEffect) {
     const s = state;
-    if (!s || effect.kind !== 'enemy' || !effect.ability || s.foes.find(f => f.id === effect.actor)?.kind !== 'vertigo') return;
+    const kind = s?.foes.find(f => f.id === effect.actor)?.kind;
+    if (!s || effect.kind !== 'enemy' || !effect.ability) return;
+    // La Sobremesa's friends say their own move, each over themselves (a turn lost says nothing).
+    if (isSobremesa(kind)) {
+      if (effect.cancelled && effect.amount === undefined && !effect.telegraph) return;
+      const text = effect.ability.id === 'escala' ? `«${NOTES[Math.max(0, (s.foes.find(f => f.id === effect.actor)?.note ?? 1) - 1)]}…»` : `¡${effect.telegraph?.name ?? effect.ability.name}!`;
+      void speak({ speaker: effect.actor as keyof typeof SPEAKERS, text }, 1500, true);
+      return;
+    }
+    if (kind !== 'vertigo') return;
     const text = effect.telegraph ? `¡Cargando ${effect.telegraph.name.toLowerCase()}!` : `¡${effect.ability.name}!`;
     void speak({ speaker: 'uri', text }, 1500, true);
   }
@@ -1162,6 +1175,25 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (effect.kind === 'enemy' && s.foes.find(f => f.id === effect.actor)?.kind === 'plato' && s.foes.find(f => f.id === effect.actor)?.dish === 'sorpresa') say('sorpresa', 'gerard', '¿Y eso qué es? Así, uno a uno, no hay quien se lo coma.');
     if (effect.telegraph?.id === 'rayo' && ++charges === 2) say('rayo', s.allies[1]?.id, 'Ese ojo… si lo rompemos, a lo mejor deja de disparar.');
     if (effect.eye) say('ojo', 'aitor', '¡Se le ha apagado el ojo!');
+    // The campsite: the first Bombona charged, and El Campeón's first change into plain clothes.
+    if (effect.telegraph?.id === 'bombona') say('bombona', s.allies.find(a => a.hp > 0)?.id, 'Huele a gas. Eso va a explotar.');
+    if (effect.form === 'paisano') say('paisano', 'aitor', 'Se le ha ido la pintura. Así no pega.');
+  }
+  /**
+   * A foe of the campsite's maze beaten: before it comes apart it shouts its group's word
+   * (docs/quests/universidad.md § Las palabras), over its head, while it shudders.
+   */
+  let lastWord: string | undefined;
+  const wordSaid = new Set<string>();
+  function lastWords(token: number, delay: number) {
+    const s = state;
+    if (!s || !lastWord) return;
+    for (const foe of s.foes) {
+      if (foe.hp > 0 || wordSaid.has(foe.id)) continue;
+      wordSaid.add(foe.id);
+      const who = (foe.kind && foe.kind in SPEAKERS ? foe.kind : 'mago') as keyof typeof SPEAKERS;
+      setTimeout(() => { if (token === generation) void speak({ speaker: who, text: `¡${lastWord}!` }, 1700, true, foe.id); }, delay);
+    }
   }
   /** One action on screen: a dual's banner first (or Uri's shout, from up on Vertitrón), then the action itself. */
   async function play(effect: BattleEffect, token: number) {
@@ -1169,6 +1201,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!effect.dual && get('.dual-banner').dataset.armed) hideDualBanner();
     const banner = effect.dual ? showDualBanner(effect) : undefined;
     shout(effect);
+    // A blow that beats a foe of the maze: its word as the blow lands.
+    lastWords(token, 420);
     await Promise.all([present(effect, token), banner]);
     if (banner) hideDualBanner();
     if (token === generation) remark(effect);
@@ -1436,6 +1470,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         if (strikes) hurtPop(effect.target, strikes[0], label, spread(0));
         else hurtPop(effect.target, effect.amount ?? 0, say);
       }
+      // Anna's Sopeta also feeds the whole table: each friend's PV back, a beat after her blow.
+      effect.soothed?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `+${h.amount}`, 'heal', i ? '' : 'Sopeta'); }, 420 + i * 70));
       // A physical blow on someone bleeding spent it: how much harder it landed, in Sangrado's red.
       const wounds = [...effect.bled && effect.target ? [{ target: effect.target, bled: effect.bled }] : [], ...(effect.hits ?? []).flatMap(h => h.bled ? [{ target: h.target, bled: h.bled }] : [])];
       wounded = wounds.length > 0;
@@ -1770,7 +1806,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     },
     /** `party` is who fights on Gerard's side (story.battleParty), or a size for chapter 1's boys. */
     /** `animas` are the party's unlocked ánimas (story.classes); L and R walk through them. `guards` sizes the palace guards. */
-    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; animas?: ClassId[]; guards?: GuardStrength; levels?: Partial<Record<ClassId, number>>; xp?: Partial<Record<ClassId, number>>; improved?: Improved } = {}) {
+    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; lastWord?: string; animas?: ClassId[]; guards?: GuardStrength; levels?: Partial<Record<ClassId, number>>; xp?: Partial<Record<ClassId, number>>; improved?: Improved } = {}) {
       if (state) return;
       const count = foeCount;
       reopen = (): void => { ui.open(party, count, options); };
@@ -1791,6 +1827,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       get('[data-command="skill"]').classList.remove('is-new');
       get('.class-banner').hidden = true; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; get('.battle-speech').replaceChildren();
       queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; charges = 0;
+      lastWord = options.lastWord; wordSaid.clear();
       get('.battle-heading h1').innerHTML = FEAR_TITLES[encounter as keyof typeof FEAR_TITLES] ?? (encounter === 'palace-minion' ? 'Un esbirro <em>de verdad.</em>' : encounter === 'palace-guards' ? 'Los guardianes <em>de la cortina.</em>' : encounter === 'night-guard' ? 'De vuelta <em>a casa.</em>' : possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>');
       get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => plateHtml(f, i, i < foeCount)).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;

@@ -1,0 +1,12 @@
+{
+  "task": "01a1b7ae-312e-77dc-a1bc-3eb1db385d16",
+  "options": {
+    "ai_model": "latest",
+    "should_texture": true,
+    "enable_pbr": false,
+    "should_remesh": true,
+    "topology": "triangle",
+    "target_polycount": 30000
+  },
+  "concept": "output/concepts/sobremesa/sobremesa-c-carne-7b.png"
+}

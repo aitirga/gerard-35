@@ -74,6 +74,12 @@ export interface V3 { x: number; y: number; z: number }
 export const DUAL_COLOURS = { gold: '#ffd27a', cream: '#fff1cc', orange: '#ff9a2e', white: '#fff8ea', ink: '#f3cf78' } as const;
 /** Fear's colours for the tower's abilities. */
 export const FEAR_COLOURS = { violet: '#9a6cd8', pale: '#d9c8ff', tile: '#b5583a', wood: '#6e5238', dust: '#d8c49a', cream: '#f2e2b8', mud: '#a7b47a' } as const;
+/** La Sobremesa's: dice bone and table felt, chalk, the black card and old wine, Nico's pale lattice. */
+export const SOBREMESA_COLOURS = { bone: '#f1ead8', felt: '#4f7a5a', chalk: '#e8e3d3', card: '#1d1a22', wine: '#8a2f3c', ward: '#cfe3dc' } as const;
+/** Anna's Sopeta: leaf and pale green, a little steam. */
+const SOUP_COLOURS = { leaf: '#7fd67a', pale: '#c9f2b8', steam: '#e6f4dc' } as const;
+/** Joan's scale, Do to Si: warm and in tune at the bottom, sour and green at the top. */
+const NOTE_COLOURS = ['#ffe3a8', '#ffd27a', '#f7b85a', '#e8a04a', '#cfa24a', '#b2a845', '#93a83f'] as const;
 
 const add = (a: V3, b: V3, k = 1): V3 => ({ x: a.x + b.x * k, y: a.y + b.y * k, z: a.z + b.z * k });
 const norm = (v: V3): V3 => { const d = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / d, y: v.y / d, z: v.z / d }; };
@@ -295,6 +301,109 @@ export function createDualFx(effects: Effects) {
         g.burst('muck', { at: { ...p, y: p.y + 1.7 }, count: 40, spread: .35, speed: .7, life: [.7, 1.1] });
         g.burst('muckpool', { at: { ...p, y: p.y + .05 }, count: 18, shape: 'ring', spread: .4, life: [1.4, 2.2] });
       }
+    },
+
+    // ── La Sobremesa ──
+    /**
+     * Tirada: the dice leave Álvaro's hand in an arc (`count` of them: two, four in the duo), bounce
+     * at the feet of whom they land on and throw up chips of bone white.
+     */
+    dice(from: V3, to: V3, feet: V3, count: number) {
+      for (let i = 0; i < count; i++) after(i * .06, () => {
+        effects.trails.comet(from, to, [SOBREMESA_COLOURS.bone, SOBREMESA_COLOURS.felt], .34, { width: .05, life: .3, intensity: 1.4, core: .35, arc: .45 + i * .12 });
+      });
+      after(.34, () => {
+        const g = gpu();
+        if (!g) return;
+        g.burst('chip', { at: { ...feet, y: feet.y + .1 }, count: 26 * count, spread: .3, up: 3.2, speed: 1.4, life: [.6, 1.1], colour: SOBREMESA_COLOURS.bone });
+        ring({ ...feet, y: feet.y + .05 }, { x: 0, y: 1, z: 0 }, .45, SOBREMESA_COLOURS.felt, { count: 90, outward: 3.5, life: .5, size: 1.3, kind: 'mote' });
+        g.burst('flare', { at: { ...feet, y: feet.y + .4 }, count: 1, spread: .05, life: [.12, .2], colour: SOBREMESA_COLOURS.bone, light: { intensity: 2, range: 2.5, colour: SOBREMESA_COLOURS.bone } });
+      });
+    },
+    /**
+     * Sopeta: a swirl of green steam rising off Anna as she stirs, a ladleful flung in an arc at whom
+     * she hits (a green splash on them), then green drops raining softly on every friend she feeds,
+     * each with a ring of light and motes rising off them.
+     */
+    soup(from: V3, chest: V3, feet: V3, fed: readonly V3[]) {
+      const g = gpu();
+      for (let i = 0; i < 3; i++) after(i * .1, () => ring({ ...from, y: from.y - .2 + i * .15 }, { x: 0, y: 1, z: 0 }, .35 - i * .06, SOUP_COLOURS[i % 2 ? 'pale' : 'leaf'], { count: 120, around: 4, outward: .5, life: .8, size: 1.7, kind: 'mote', light: i ? 0 : 1.8 }));
+      g?.burst('rise', { at: from, count: 110, spread: .4, speed: .35, up: 1.6, life: [.8, 1.4], colour: SOUP_COLOURS.steam });
+      after(.42, () => {
+        effects.trails.comet(from, chest, [SOUP_COLOURS.pale, SOUP_COLOURS.leaf], .3, { width: .09, life: .35, intensity: 1.6, core: .35, arc: .6 });
+        after(.3, () => {
+          gpu()?.burst('goo', { at: chest, count: 90, spread: .25, speed: 2.4, up: 1.2, life: [.4, .8], colour: SOUP_COLOURS.leaf });
+          ring({ ...feet, y: feet.y + .05 }, { x: 0, y: 1, z: 0 }, .45, SOUP_COLOURS.leaf, { count: 70, outward: 2.6, life: .5, size: 1.3, kind: 'mote' });
+        });
+      });
+      fed.forEach((p, i) => after(.75 + i * .07, () => {
+        const top = { ...p, y: p.y + .9 };
+        gpu()?.burst('heal', { at: top, count: 70, spread: .45, speed: .25, life: [.8, 1.3], colour: SOUP_COLOURS.leaf });
+        gpu()?.burst('rise', { at: p, count: 60, spread: .35, speed: .25, up: 1.3, life: [.8, 1.3], colour: SOUP_COLOURS.pale });
+        ring(p, { x: 0, y: 1, z: 0 }, .42, SOUP_COLOURS.leaf, { count: 90, around: 2.5, outward: .8, life: .8, size: 1.7, light: 1.4 });
+      }));
+    },
+    /**
+     * Regla nueva: a line of chalk written on the table's skin under whom it raises, then their
+     * strength going up as specks off them. `all`: the duo's rule, everyone at once.
+     */
+    rule(under: readonly V3[], facing: V3) {
+      const { right } = screenAxes(facing);
+      under.forEach((p, i) => after(i * .08, () => {
+        const a = add({ ...p, y: p.y - .15 }, right, -.45), b = add({ ...p, y: p.y - .15 }, right, .45);
+        line(a, b, SOBREMESA_COLOURS.chalk, { count: 60, life: .9, size: 1.5 });
+        line(add(a, { x: 0, y: -.12, z: 0 }), add(b, { x: 0, y: -.12, z: 0 }, .6), SOBREMESA_COLOURS.chalk, { count: 40, life: .9, size: 1.2 });
+        gpu()?.burst('rise', { at: p, count: 30, spread: .3, speed: .3, up: 1.6, life: [.6, 1], colour: SOBREMESA_COLOURS.chalk });
+      }));
+    },
+    /** La carta negra turned and left facing whom it will fall on: a black card of dots hanging over them, with a dark ring at their feet. */
+    cardMark(over: V3, feet: V3, facing: V3) {
+      const { right, up } = screenAxes(facing);
+      const c = add(over, up, .55), w = .22, h = .32;
+      const corners = [add(add(c, right, -w), up, -h), add(add(c, right, w), up, -h), add(add(c, right, w), up, h), add(add(c, right, -w), up, h)];
+      corners.forEach((a, i) => line(a, corners[(i + 1) % 4], SOBREMESA_COLOURS.card, { count: 34, life: 1.4, size: 1.6, kind: 'veil' }));
+      ring({ ...feet, y: feet.y + .05 }, { x: 0, y: 1, z: 0 }, .55, SOBREMESA_COLOURS.card, { count: 70, around: .6, life: 1.4, size: 1.4, kind: 'veil' });
+    },
+    /** La carta negra falls: a dark streak from above onto them, a burst of black and a flash at the chest. The duo's leaves them at 1 PV: `heavy`. */
+    cardFall(chest: V3, feet: V3, heavy: boolean) {
+      const top = { ...chest, y: chest.y + 3.2 };
+      effects.trails.comet(top, chest, [SOBREMESA_COLOURS.card, SOBREMESA_COLOURS.wine], .18, { width: heavy ? .12 : .08, life: .3, intensity: 1.8, core: .25 });
+      after(.18, () => {
+        const g = gpu();
+        if (!g) return;
+        g.burst('veil', { at: chest, count: heavy ? 120 : 60, spread: .35, speed: 2.4, life: [.5, .9], colour: SOBREMESA_COLOURS.card });
+        ring({ ...feet, y: feet.y + .05 }, { x: 0, y: 1, z: 0 }, heavy ? .8 : .5, SOBREMESA_COLOURS.wine, { count: heavy ? 140 : 80, outward: heavy ? 5 : 3, life: .6, size: 1.4, kind: 'mote' });
+        g.burst('flare', { at: chest, count: 1, spread: .05, life: [.15, .25], colour: SOBREMESA_COLOURS.wine, light: { intensity: heavy ? 4 : 2.5, range: 3, colour: SOBREMESA_COLOURS.wine } });
+      });
+    },
+    /**
+     * Escala: Joan's note leaves his mouth as rings, one per step of the scale he is on (`note`, 0–6),
+     * warmer to sourer the higher it goes, and reaches everyone in the party as a ring round them.
+     */
+    note(mouth: V3, on: readonly V3[], note: number, facing: V3) {
+      const { facing: f } = screenAxes(facing), colour = NOTE_COLOURS[Math.min(NOTE_COLOURS.length - 1, note)];
+      for (let i = 0; i <= Math.min(3, 1 + Math.floor(note / 2)); i++) after(i * .09, () => ring(add(mouth, f, .2), f, .2 + i * .05, colour, { count: 70, outward: 3.5 + note * .4, life: .5, size: 1.3, light: i ? 0 : 1.5 }));
+      for (const p of on) {
+        after(.12, () => line(mouth, p, colour, { count: 40 + note * 8, life: .35, size: 1.1 }));
+        after(.3, () => ring(p, { x: 0, y: 1, z: 0 }, .45, colour, { count: 60, outward: .8, around: 2, life: .5, size: 1.3 }));
+      }
+    },
+    /** Corrección: Soraya snaps at Joan, a sharp streak from her to him and a tight ring round his mouth. */
+    correct(from: V3, to: V3, facing: V3) {
+      const { facing: f } = screenAxes(facing);
+      line(from, to, SOBREMESA_COLOURS.chalk, { count: 50, life: .35, size: 1.4 });
+      after(.15, () => ring(add(to, f, .2), f, .32, NOTE_COLOURS[4], { count: 80, outward: -1.2, life: .45, size: 1.4, light: 1.2 }));
+    },
+    /** Cortafuegos: Nico raises a pale lattice in front of the friend he shields, facing the party. */
+    firewall(on: V3, facing: V3) {
+      const { right, up } = screenAxes(facing), front = add(on, norm(facing), .35);
+      for (let k = -2; k <= 2; k++) {
+        after((k + 2) * .04, () => {
+          line(add(add(front, right, k * .14), up, -.45), add(add(front, right, k * .14), up, .45), SOBREMESA_COLOURS.ward, { count: 30, life: 1.1, size: 1.2 });
+          line(add(add(front, right, -.32), up, k * .18), add(add(front, right, .32), up, k * .18), SOBREMESA_COLOURS.ward, { count: 26, life: 1.1, size: 1.2 });
+        });
+      }
+      gpu()?.burst('flare', { at: front, count: 1, spread: .05, life: [.2, .3], colour: SOBREMESA_COLOURS.ward, light: { intensity: 2, range: 2.5, colour: SOBREMESA_COLOURS.ward } });
     },
 
     // ── Vertitrón ──

@@ -10,7 +10,7 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BROOD, CAMPING, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, takeNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId,
@@ -43,6 +43,8 @@ export const FIGHTS = ['dogs:1', 'dogs:2', 'dogs:3', 'dogs:4', 'possessed:2', 'p
 export const MISSION_PARTY = 'gerard:papagato+aitor:-';
 /** The party that can make dual attacks: Gerard on Matemágico, Aitor with Papagato equipped beforehand. */
 export const DUO = 'gerard:matemagico+aitor:papagato';
+/** Gerard on Matemágico and Aitor on his own ánima: two of magic, the party the campsite's magos ask a question of. */
+export const TECH = 'gerard:matemagico+aitor:tecnopata';
 /** The ánimas the fights are tuned with. */
 const MISSION_ANIMAS: ClassId[] = ['matemagico', 'papagato'];
 
@@ -80,7 +82,7 @@ export const dualBanned = (dual: DualSpec, ban: readonly Ban[] = []) => ban.incl
 /**
  * Numbers tried without touching the code, as `book.id.field`: `onion.cebollon.layers`,
  * `foe.cebollon.pv`, `skill.zarpazos.strikes`, `brood.platito.power`, `dual.zarpazos-de-fuego.power`,
- * `vertigo.boss.pisoton`, `fear.rules.escortLayers`, `fear.plato.power`. Runs `work` with them on and
+ * `vertigo.boss.pisoton`, `sobremesa.boss.carta`, `camping.rules.bombona`, `fear.rules.escortLayers`, `fear.plato.power`. Runs `work` with them on and
  * puts everything back. A misspelt one is an error, so it never reads as "it changed nothing".
  */
 export type Tuning = Record<string, number>;
@@ -89,6 +91,8 @@ const BOOKS = {
   skill: Object.fromEntries(SKILLS.map(skill => [skill.id, skill])),
   dual: Object.fromEntries(DUALS.map(dual => [dual.id, dual])),
   vertigo: { boss: VERTIGO },
+  sobremesa: { boss: SOBREMESA },
+  camping: { rules: CAMPING },
   reaction: { rules: REACTION_RULES },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
@@ -564,7 +568,7 @@ export interface Target extends Setup {
 }
 const L1 = { papagato: 1 }, L2 = { papagato: 2 }, L3 = { papagato: 3 };
 /** Uri's tower with both ánimas grown: Papagato at 2 (ring 1 needs it), Matemágico at 1 or 2 (2 if Gerard wears it up the tower), 3 for whoever grinds. */
-const P2M1 = { papagato: 2, matemagico: 1 }, P2M2 = { papagato: 2, matemagico: 2 }, P3M2 = { papagato: 3, matemagico: 2 };
+const P2M1 = { papagato: 2, matemagico: 1 }, P2M2 = { papagato: 2, matemagico: 2 }, P3M2 = { papagato: 3, matemagico: 2 }, P3M3 = { papagato: 3, matemagico: 3 };
 export const TARGETS: readonly Target[] = [
   { id: 'cebollitas-faciles', fight: 'crias-1', party: MISSION_PARTY, levels: L1, policy: 'casual', win: [.98, 1], hpLeftWon: [.5, 1], why: 'Las cebollas pequeñas son fáciles: con ellas sube de nivel Papagato, sin darle vueltas.' },
   { id: 'cebollitas-a-puñetazos', fight: 'crias-1', party: MISSION_PARTY, levels: L1, policy: 'attack', win: [.95, 1], why: 'Incluso solo Atacar basta contra las pequeñas.' },
@@ -609,6 +613,31 @@ export const TARGETS: readonly Target[] = [
   { id: 'vertigo-a-punetazos', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'attack', win: [0, .02], why: 'Solo Atacar no llega: sus gritos y su rayo piden algo más.' },
   { id: 'vertigo-nivel-3', fight: 'uri-vertigo', party: DUO, levels: P3M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.4, .9], why: 'Quien ha subido mucho lo nota, pero el jefe sigue pidiendo cabeza.' },
   { id: 'vertigo-pensando-despacio', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', think: 8, win: [.9, 1], hpLeftWon: [0, .9], why: 'Quien piensa despacio deja arder más el fuego, y aun así Vertitrón no se vuelve un trámite.' },
+  // La Sobremesa (docs/quests/universidad.md § Final boss): seven friends, each their own target and move. Its numbers are
+  // SOBREMESA (book sobremesa.boss) and each friend's PROFILES entry (foe.sobremesa-anna…). Many at once is what makes it:
+  // anything that reaches every foe pays, focusing one at a time pays, and Cortafuegos taxes whoever focuses.
+  // Tuned at the top level (both ánimas at 3), how the party gets there: thinking wins about half, and only just.
+  { id: 'sobremesa-duo-bien', fight: 'sobremesa', party: DUO, levels: P3M3, policy: 'smart', win: [.4, .72], hpLeftWon: [.08, .32], roundsWon: [12, 18], why: 'El jefe final, con todo al máximo: siete a la vez, la sopeta de Anna los recompone a todos, y aun pensando se gana justo la mitad de las veces.' },
+  { id: 'sobremesa-sin-pensar', fight: 'sobremesa', party: DUO, levels: P3M3, policy: 'casual', win: [0, .05], why: 'Sin pensar gana la mesa: el dúo de la carta negra deja a uno con 1 PV, Joan no para de subir y la sopeta deshace lo que se le quita a uno solo.' },
+  { id: 'sobremesa-a-punetazos', fight: 'sobremesa', party: DUO, levels: P3M3, policy: 'attack', win: [0, .02], why: 'Solo Atacar no llega: son siete.' },
+  { id: 'sobremesa-sin-gatos-aitor', fight: 'sobremesa', party: MISSION_PARTY, levels: P3M3, policy: 'smart', win: [0, .15], why: 'Con Aitor sin ánima no se puede: el jefe final pide a los dos con lo suyo.' },
+  { id: 'sobremesa-pronto', fight: 'sobremesa', party: DUO, levels: P2M2, policy: 'smart', win: [0, .2], why: 'A nivel 2 todavía no: La Sobremesa pide haber crecido por el camino.' },
+  // Càmping Eurosport (docs/quests/universidad.md § Càmping Eurosport). Its numbers are CAMPING (book camping.rules) and
+  // each foe's PROFILES entry (foe.mago…). The small fights teach one rule each and are easy for whoever reads the plate;
+  // the black pitch is the hard one, and El Campeón the mini-boss: hold on while it is a hero, spend everything when it is not.
+  { id: 'magos-entrada', fight: 'camping-magos', party: DUO, levels: P2M2, policy: 'casual', win: [.95, 1], hpLeftWon: [.45, .95], roundsWon: [2.5, 5], why: 'La entrada: a golpes caen rápido, y la bombona solo se nota si nadie se agarra.' },
+  { id: 'magos-con-magia', fight: 'camping-magos', party: TECH, levels: P2M2, policy: 'smart', win: [.95, 1], roundsWon: [3, 6.5], why: 'Con la magia por delante también se pasa, pero más largo: les hace la mitad.' },
+  { id: 'dados-faciles', fight: 'camping-dados', party: DUO, levels: P2M2, policy: 'casual', win: [.95, 1], hpLeftWon: [.35, .95], why: 'Los dados son las peleas pequeñas de la mazmorra: se ganan sin darle vueltas.' },
+  { id: 'agentes-faciles', fight: 'camping-agentes', party: DUO, levels: P2M2, policy: 'casual', win: [.95, 1], hpLeftWon: [.45, .95], why: 'Dos agentes: uno da la cara y el otro no; se ganan sin pensar, mejor pegando al que está boca arriba.' },
+  { id: 'tienda-facil', fight: 'camping-tienda', party: DUO, levels: P2M2, policy: 'casual', win: [.9, 1], why: 'Una parcela equivocada despierta su tienda: un susto, no un muro.' },
+  { id: 'tienda-sin-gatos-aitor', fight: 'camping-tienda', party: MISSION_PARTY, levels: P2M2, policy: 'smart', win: [.9, 1], why: 'También con Aitor sin ánima.' },
+  { id: 'negra-bien', fight: 'camping-negra', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.2, .65], why: 'La parcela negra es la pelea dura: agarrarse a la bombona, golpes a los magos y primero los seises. Pensando se pasa, con poca vida.' },
+  { id: 'negra-sin-pensar', fight: 'camping-negra', party: DUO, levels: P2M2, policy: 'casual', win: [.35, .85], why: 'Sin pensar, la parcela negra gana a menudo: dos bombonas a la vez y los dados.' },
+  { id: 'negra-con-magia', fight: 'camping-negra', party: TECH, levels: P2M2, policy: 'smart', win: [.3, .9], why: 'Con dos ánimas de magia contra los magos cuesta mucho más: la pregunta es pegar a golpes.' },
+  { id: 'campeon-bien', fight: 'campeon', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .85], roundsWon: [6, 12], why: 'El Campeón, pensando: agarrarse mientras es héroe y gastarlo todo cuando va de paisano.' },
+  { id: 'campeon-sin-pensar', fight: 'campeon', party: DUO, levels: P2M2, policy: 'casual', win: [.2, .75], why: 'Sin pensar, el héroe pega demasiado fuerte: es el jefe pequeño de la mazmorra.' },
+  { id: 'campeon-a-punetazos', fight: 'campeon', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: de héroe le hace la mitad y de paisano se recupera.' },
+  { id: 'campeon-con-tecnopata', fight: 'campeon', party: TECH, levels: P2M2, policy: 'smart', win: [.85, 1], why: 'Con Aitor en su propia ánima también se gana leyendo las formas.' },
 ];
 export interface TargetResult { id: string; why: string; pass: boolean; failures: string[]; row: Row; wanted: Pick<Target, 'win' | 'roundsLost' | 'hpLeftWon' | 'roundsWon' | 'duals'> }
 /** Plays every target and says which hold. */

@@ -21,6 +21,8 @@ export interface Anima {
 export const ANIMAS = {
   // Nuria and Uri's mission is one (docs/quests/nuria.md): one household, one ánima.
   nuria: { id: 'nuria', friend: 'Nuria y Uri', name: 'Ánima de Nuria y Uri', colour: '#9fb4c8', bonus: { magia: 1, espiritu: 1, pv: 10 }, note: 'Cardedeu. Por diseñar con su historia.' },
+  // The university friends (docs/quests/universidad.md): one mission, one ánima, still to design with /anima.
+  universidad: { id: 'universidad', friend: 'Los amigos de la uni', name: 'Ánima de los amigos de la uni', colour: '#a8a89a', bonus: { fuerza: 1, espiritu: 1, pv: 10 }, note: 'La Barceloneta y el Càmping Eurosport. Por diseñar.' },
 } as const satisfies Record<string, Anima>;
 export type AnimaId = keyof typeof ANIMAS;
 export const ANIMA_IDS = Object.keys(ANIMAS) as AnimaId[];

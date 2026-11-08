@@ -1,0 +1,247 @@
+{
+  "title": "Càmping Eurosport: los monstruos",
+  "description": "docs/quests/universidad.md § Càmping Eurosport. Each campsite fight from the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost): the magos and their Bombona, the dice and their faces, the agentes face up and face down, a wrong tent, the black pitch and El Campeón in both forms. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22camping-magos%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = id => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 3.4); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "magos",
+      "delay": 1500,
+      "caption": "Magos de camping: tent-canvas robes, head torches, tent poles, a gas canister each"
+    },
+    {
+      "eval": "closeUp('mago-0')"
+    },
+    {
+      "shot": "mago-cerca",
+      "delay": 900,
+      "caption": "A mago up close: the hood, the violet eyes, the head torch, the canister"
+    },
+    {
+      "eval": "window.gerard.game.frame(); ui.jumpTo('magos-bombona')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "bombona-cargada",
+      "delay": 1200,
+      "caption": "Picker moment «Bombona cargada»: the burners alight and the chip Bombona → todos on both plates"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "tras-bombona",
+      "delay": 600,
+      "caption": "After holding on: the Bombonas went off at a third, and they charge again"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22camping-dados%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = id => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 3.4); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "dados",
+      "delay": 1500,
+      "caption": "Dados: the face on top is the one on the plate (Cara N), the weight of its blow"
+    },
+    {
+      "eval": "closeUp('dado-0')"
+    },
+    {
+      "shot": "dado-cerca",
+      "delay": 900,
+      "caption": "A die up close: worn ivory, chipped corners, burnt pips"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "dados-ronda-2",
+      "delay": 1200,
+      "caption": "Round two: every die has rolled a new face, on the model and on its plate"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22camping-agentes%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = id => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 3.4); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "agentes",
+      "delay": 1500,
+      "caption": "Agentes: one face up (its printed front and word), one face down (its back), Boca arriba / Boca abajo"
+    },
+    {
+      "eval": "closeUp('agente-0')"
+    },
+    {
+      "shot": "agente-cerca",
+      "delay": 900,
+      "caption": "An agente up close: a figure of card"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "agentes-ronda-2",
+      "delay": 1400,
+      "caption": "Round two: they have turned over"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22camping-tienda%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = id => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 3.4); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "tienda",
+      "delay": 1500,
+      "caption": "A wrong pitch's tent wakes: a die and two agentes"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22camping-negra%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = id => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 3.4); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "negra",
+      "delay": 1500,
+      "caption": "The black pitch: two magos and two dice, cornered"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22campeon%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = id => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 3.4); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "campeon",
+      "delay": 1500,
+      "caption": "El Campeón as a hero: painted, fist up, tarpaulin cape; Héroe · 2 turnos"
+    },
+    {
+      "eval": "closeUp('campeon')"
+    },
+    {
+      "shot": "campeon-cerca",
+      "delay": 900,
+      "caption": "Up close: the plinth's chipped edge, the chipped paint, the grommets on the cape"
+    },
+    {
+      "eval": "window.gerard.game.frame(); ui.jumpTo('campeon-paisano')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "campeon-paisano",
+      "delay": 2000,
+      "caption": "Picker moment «De paisano»: the paint gone to primer grey, arms down; De paisano · 2 turnos"
+    },
+    {
+      "eval": "closeUp('campeon')"
+    },
+    {
+      "shot": "paisano-cerca",
+      "delay": 900,
+      "caption": "In plain clothes, up close"
+    }
+  ]
+}

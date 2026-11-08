@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
-import { STATUSES, TIMED, isOnion, markLeft, markSpent, onionSize, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type ClassId, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
+import { SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isOnion, isSobremesa, markLeft, markSpent, onionSize, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
+import { CAMPING_SIZES } from './camping-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
 import { WalkAnimation, idlePose, poseLegs, type LimbRig } from './walk-animation';
@@ -18,7 +19,8 @@ import { createStatArrows } from './stat-arrows';
 import { createStatMotes } from './stat-motes';
 import type { SoundId } from './sfx';
 import type { Fears, RobotPose } from './fears';
-import { axes, catSpots, fightCamera, formation, type Layout } from './arena';
+import { axes, catSpots, fightCamera, foeSize, formation, standing, type Layout } from './arena';
+import { bindSobremesa, type Acts, type Friend, type Move } from './sobremesa';
 
 /** How a fight is laid out round its centre (src/arena.ts), whether it was moved to a pocket (src/pocket.ts), and how far apart its sides stand (1 as always). */
 export interface FightStage { layout: Layout; pocket?: boolean; spread?: number }
@@ -172,6 +174,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     robot?: Robot; part?: Fighter;
     /** Materials no flash or tint touches (Uri, up on Vertitrón: a blow on it is not a blow on him). */
     steady?: Set<pc.Material>;
+    /** A friend in La Sobremesa: a part of its body whose place is their bone (`model`); the body flashes for them. */
+    bone?: boolean;
+    /**
+     * A Càmping Eurosport foe (src/camping-foes.ts): its model shows its rule each frame. They are canvas,
+     * bone, card and plaster: no gum splashes off them, no pink trails, and only the mago breathes.
+     */
+    camp?: CampingKind;
   }
   /**
    * What Vertitrón keeps from frame to frame: its eye (the node, its fighter, the GPU swirl and smoke in
@@ -195,6 +204,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     lens: { material: pc.StandardMaterial; lit: pc.Color; base: pc.Color }[];
   }
   const fighters = new Map<string, Fighter>();
+  /**
+   * La Sobremesa (docs/quests/universidad.md § Final boss): the model to clone (`setSobremesa`), and
+   * while it fights its one body, which belongs to no fighter: its seven friends are parts on its
+   * bones. It moves by its rig (src/sobremesa.ts): each friend's blow and each one freed.
+   */
+  let sobremesaTemplate: pc.Entity | undefined;
+  let mass: (Fighter & { rig: ReturnType<typeof bindSobremesa>; freedAt: Map<string, number> }) | undefined;
+  /** How big La Sobremesa stands (its model is about two units wide). */
+  const SOBREMESA_SCALE = 2.6;
   /** How high the tallest foe reaches above the ground, so the camera can take it in (Vertitrón, Uri on top). */
   let foeTop = 0;
   /** Haru and Yuki, beside whoever wears Papagato (docs/animas/papagato/): they act on its skills. */
@@ -784,6 +802,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const named = e.telegraph?.target ? fighters.get(e.telegraph.target) : undefined;
       if (named) dualFx.after(.3, () => dualFx.runUp(v3(chestOf(actor)), v3(chestOf(named))));
     }
+    if (actor?.bone) sobremesaFx(e, actor, target, view);
     // Vertitrón's moves (its stomp, sweep and beam land as blows too: `contactBurst`).
     if (!actor?.robot) return;
     const hit = [target, ...(e.splash ?? []).map(h => fighters.get(h.target))].filter((f): f is Fighter => !!f);
@@ -801,6 +820,50 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     if (ability === 'carga' || telegraph === 'rayo') { dualFx.charge(v3(actor.robot.eye.getPosition()), view); pulse?.(.3, .5); cue('charge'); }
     if (ability === 'rayo') { for (const f of hit) dualFx.after(beamCrossing(e, f), () => dualFx.beamHit(v3(chestOf(f)))); shake = Math.max(shake, 1); pulse?.(1, 1); zoom.x = Math.max(zoom.x, HIT.punch.size * 1.5); }
+  }
+  /**
+   * La Sobremesa's moves as they land (src/dual-fx.ts § La Sobremesa): Álvaro's dice, Anna's lunge,
+   * Sarah's chalk rule, Miquel's black card (hung over whom it marks, then falling), Joan's note on
+   * everyone, Soraya's correction, Nico's lattice. Each friend acts from their own place on the body.
+   */
+  function sobremesaFx(e: BattleEffect, actor: Fighter, target: Fighter | undefined, view: V3) {
+    const at = (f: Fighter) => f.bone ? f.model.getPosition().clone() : chestOf(f);
+    const friend = (id: string) => { const f = fighters.get(id); return f?.bone ? f : undefined; };
+    const ability = e.ability?.id, from = v3(at(actor));
+    const feet = target ? v3(floorUnder(target)) : undefined, chest = target ? v3(chestOf(target)) : undefined;
+    if (e.telegraph && (e.telegraph.id === 'carta-negra' || e.telegraph.id === 'duo-regla')) {
+      const marked = e.telegraph.target ? fighters.get(e.telegraph.target) : undefined;
+      if (marked) { dualFx.cardMark(v3(chestOf(marked).add(new pc.Vec3(0, .9, 0))), v3(floorUnder(marked)), view); cue('creak'); }
+    }
+    if (e.cancelled && e.amount === undefined) return;
+    if ((ability === 'tirada' || ability === 'duo-tirada') && chest && feet && e.dice) {
+      const anna = ability === 'duo-tirada' ? friend('anna') : undefined;
+      dualFx.dice(from, chest, feet, anna ? 2 : e.dice.length);
+      if (anna) dualFx.dice(v3(at(anna)), chest, feet, 2);
+      dualFx.after(.34, () => cue('clink'));
+      if (ability === 'duo-tirada') { shake = Math.max(shake, .4); pulse?.(.4, .3); }
+    }
+    if (ability === 'sopeta' && chest && feet) {
+      const fed = (e.soothed ?? []).map(h => friend(h.target)).filter((f): f is Fighter => !!f).map(f => v3(at(f)));
+      dualFx.soup(from, chest, feet, fed); cue('splash', { delay: .7 }); dualFx.after(.75, () => cue('heal'));
+    }
+    if (ability === 'regla-nueva' || (ability === 'duo-regla' && !e.target)) {
+      const raised = ability === 'duo-regla' ? [...fighters.values()].filter(f => f.bone && f.hp > 0) : (e.stats ?? []).filter(s => s.way === 'up').map(s => fighters.get(s.target)).filter((f): f is Fighter => !!f);
+      if (raised.length) { dualFx.rule(raised.map(f => v3(at(f))), view); cue('stat-up'); }
+    }
+    if ((ability === 'carta-negra' || (ability === 'duo-regla' && e.target)) && chest && feet) {
+      const heavy = ability === 'duo-regla' && !state?.allies.find(a => a.id === e.target)?.guarding;
+      dualFx.cardFall(chest, feet, heavy); cue('slam', { delay: .15 });
+      if (heavy) { dualFx.after(.18, () => { shake = Math.max(shake, .6); pulse?.(.6, .4); }); }
+    }
+    if (ability === 'escala') {
+      const sung = [target, ...(e.splash ?? []).map(h => fighters.get(h.target))].filter((f): f is Fighter => !!f);
+      const note = Math.max(0, (state?.foes.find(f => f.id === 'joan')?.note ?? 1) - 1);
+      dualFx.note(from, sung.map(f => v3(chestOf(f))), note, view); cue('charge');
+      shake = Math.max(shake, .15 + note * .05);
+    }
+    if (ability === 'correccion') { const joan = friend('joan'); if (joan) { dualFx.correct(from, v3(at(joan)), view); cue('zap'); } }
+    if (ability === 'cortafuegos' && e.shielded) { const shielded = fighters.get(e.shielded); if (shielded) { dualFx.firewall(v3(at(shielded)), view); cue('mana'); } }
   }
   /** Rayo terrorífico's sweep, in fight seconds from the start of its action: when it leaves the eye and how long it takes across. */
   const BEAM = { from: .3, span: .5 } as const;
@@ -1027,7 +1090,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     // as big as they stand; the blow under them stays small and takes their colour, so the claws are what reads.
     const claw = action.skill === 'zarpazo';
     // Gum is the Queen's: a fear's own stuff does not splash pink, and an onion only sheds its skin.
-    effects.impact(blow, from, claw ? .3 : action.skill ? 1.4 : 1, { guarded, gum: target.minion && !target.onion, feet: floorUnder(target), ...action.spell ? { colour: spellColour(action.element) } : claw ? { colour: CLAW_COLOURS[0] } : {} });
+    effects.impact(blow, from, claw ? .3 : action.skill ? 1.4 : 1, { guarded, gum: target.minion && !target.onion && !target.camp, feet: floorUnder(target), ...action.spell ? { colour: spellColour(action.element) } : claw ? { colour: CLAW_COLOURS[0] } : {} });
     if (claw) {
       const { right, up, facing } = screenAxes(viewDir()), body = extent(target), front = body.radius * .6 + .15;
       const at = target.part ? chestOf(target) : new pc.Vec3(target.base.x, groundHeight(target.base.x, target.base.z) + body.height * .5, target.base.z);
@@ -1159,7 +1222,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     // A fist swings an arc in the swinger's own space, from just past the hand; a dog or the gum leaves a streak along its lunge.
     if (trailStage === 1 && !support && target && t >= (arm ? .24 : .16)) {
       trailStage = 2;
-      const look = { colour: light ?? (actor.minion ? ['#ffd0e6', '#ff5fa2'] as const : ['#fff1cc', '#ffb347'] as const), width: light ? .2 : .15, intensity: light ? 3 : 1.8, core: light ? .7 : .45 };
+      const look = { colour: light ?? (actor.minion && !actor.camp ? ['#ffd0e6', '#ff5fa2'] as const : ['#fff1cc', '#ffb347'] as const), width: light ? .2 : .15, intensity: light ? 3 : 1.8, core: light ? .7 : .45 };
       if (arm) effects.trails.follow(arm, { ...look, offset: { x: 0, y: -.42, z: 0 }, space: actor.model, seconds: .26, life: .2 });
       else if (actor.head) effects.trails.follow(actor.head, { ...look, offset: actor.minion ? { x: 0, y: .35, z: .45 } : { x: 0, y: .09, z: .45 }, seconds: .32, life: .2, width: .15 });
     }
@@ -1474,6 +1537,69 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     fighters.set(unit.id, f);
     return f;
   }
+  /** La Sobremesa's body, standing at `base` and facing `towards` (the party), its feet on the ground. */
+  function buildMass(base: pc.Vec3, towards: pc.Vec3) {
+    const holder = new pc.Entity('La Sobremesa'), model = sobremesaTemplate!.clone();
+    model.enabled = true; holder.addChild(model);
+    model.setLocalScale(SOBREMESA_SCALE, SOBREMESA_SCALE, SOBREMESA_SCALE);
+    // Its mesh reaches .82 below its middle: lifted that much, it stands on the floor.
+    model.setLocalPosition(0, .82 * SOBREMESA_SCALE, 0);
+    battleRoot.addChild(holder); holder.setPosition(base);
+    const yaw = Math.atan2(towards.x - base.x, towards.z - base.z) * 180 / Math.PI;
+    holder.setEulerAngles(0, yaw, 0);
+    mass = {
+      model: holder, base, start: base.clone(), hp: 1, party: false, shrink: 1, body: null, head: null, arms: [], legs: [], yaw, turn: yaw, eyes: [], tail: null, minion: false, rigid: true, grown: false,
+      ears: [], eyeScale: 1, seed: 0, flash: 0, flashColor: white, ...ownMaterials(holder),
+      scale: new pc.Vec3(1, 1, 1), walk: new WalkAnimation(), plantFeet: () => {}, rig: bindSobremesa(model), freedAt: new Map(),
+    };
+    return mass;
+  }
+  /** A friend of La Sobremesa as a fighter: their place is their bone; whoever runs at them stops a step before the body. */
+  function buildBone(unit: Combatant, body: NonNullable<typeof mass>, i: number) {
+    const name = SOBREMESA_NAMES[unit.id as keyof typeof SOBREMESA_NAMES];
+    let node = body.model.findByName(name) as pc.Entity | null;
+    if (!node) {
+      // A friend the model does not carry yet: a point on the body, spread along it.
+      node = new pc.Entity(name); body.model.addChild(node);
+      node.setLocalPosition((i / 6 - .5) * 3.4, 2.3, .9);
+    }
+    const p = node.getPosition(), toward = new pc.Vec3(Math.sin(body.yaw * Math.PI / 180), 0, Math.cos(body.yaw * Math.PI / 180));
+    const base = new pc.Vec3(p.x + toward.x * 1.1, body.base.y, p.z + toward.z * 1.1);
+    const f: Fighter = {
+      model: node, base, start: base.clone(), hp: unit.hp, party: false, shrink: 1, body: null, head: null, arms: [], legs: [], yaw: body.yaw, turn: body.yaw, eyes: [], tail: null, minion: false, rigid: true, grown: false,
+      ears: [], eyeScale: 1, seed: i, flash: 0, flashColor: white, materials: [], glow: [],
+      scale: new pc.Vec3(1, 1, 1), walk: new WalkAnimation(), plantFeet: () => {}, part: body, bone: true,
+    };
+    fighters.set(unit.id, f);
+    return f;
+  }
+  /**
+   * La Sobremesa moves: whoever acts lunges (Álvaro and Anna together in their duo), whoever is freed
+   * goes limp and stays so; a blow on any friend flashes the whole body.
+   */
+  function sobremesaFrame(dt: number) {
+    const body = mass!, acts: Acts = {};
+    for (const [id, f] of fighters) {
+      if (!f.bone) continue;
+      const name = SOBREMESA_NAMES[id as keyof typeof SOBREMESA_NAMES] as Friend;
+      if (f.hp <= 0) {
+        if (!body.freedAt.has(id)) body.freedAt.set(id, time);
+        acts[name] = { kind: 'free', since: body.freedAt.get(id)! };
+        continue;
+      }
+      body.freedAt.delete(id);
+      if (f.flash > body.flash) { body.flash = f.flash; body.flashColor = f.flashColor; }
+    }
+    if (effect?.kind === 'enemy' && effect.ability) {
+      // A duo moves both: Álvaro and Anna throw together; Sarah writes while Miquel's card comes down.
+      for (const id of effect.ability.id === 'duo-tirada' ? ['alvaro', 'anna'] : effect.ability.id === 'duo-regla' && !effect.telegraph ? (effect.target ? ['miquel', 'sarah'] : ['sarah', 'miquel']) : [effect.actor]) {
+        const name = SOBREMESA_NAMES[id as keyof typeof SOBREMESA_NAMES] as Friend | undefined;
+        if (name && acts[name]?.kind !== 'free') acts[name] = { kind: 'attack', since: time - effectTime, move: effect.ability.id as Move, warn: !!effect.telegraph && effect.telegraph.id !== 'duo-tirada' };
+      }
+    }
+    body.rig.apply(time, acts);
+    shine('sobremesa', body, dt);
+  }
   /** The eye's lens, spiral and pupil: their materials, lit and plain, so the fight can heat them up and put them out. */
   function lensOf(eye: pc.Entity) {
     return ['Globo del ojo', 'Iris del ojo', 'Brazo de la espiral', 'Pupila del ojo', 'Cristal del ojo'].map(name => {
@@ -1493,7 +1619,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
     // Uri's fears fight in the tower's narrow corridors, so they stay nearer the party's size.
     const young = unit.kind === 'cebollita' || unit.kind === 'platito' || unit.kind === 'fantasmita';
-    if (minion) { const size = isOnion(unit.kind) ? onionSize(unit.kind, unit.layers ?? 0) : unit.kind === 'guardian' ? 2.3 : young ? .62 : unit.kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5; model.setLocalScale(size, size, size); }
+    if (minion) { const size = isOnion(unit.kind) ? onionSize(unit.kind, unit.layers ?? 0) : isCamping(unit.kind) ? CAMPING_SIZES[unit.kind] : unit.kind === 'guardian' ? 2.3 : young ? .62 : unit.kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5; model.setLocalScale(size, size, size); }
     const legs = (body?.children.filter(c => c.name === 'Pierna') ?? (minion ? [] : model.children.filter(c => c.name === 'Pata'))) as pc.Entity[];
     const yaw = party ? (source.findByName('Cuerpo') as pc.Entity).getLocalEulerAngles().y : source.getEulerAngles().y;
     if (body) body.setLocalEulerAngles(0, 0, 0);
@@ -1521,6 +1647,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     const built = fighters.get(unit.id)!;
     // A dish shows what it is on its plate; a fantasmita can go see-through, row by row.
+    if (isCamping(unit.kind)) built.camp = unit.kind;
     if (unit.kind === 'plato' || unit.kind === 'platito') built.dish = { plate: model.findByName('Plato') as pc.Entity | null, cloche: head };
     if (unit.kind === 'fantasmita') {
       const pixels = model.find(node => node.name === 'Píxel') as pc.Entity[];
@@ -1587,6 +1714,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     setMinionTemplate(model: pc.Entity) { minionTemplate = model; },
     /** Uri's fears' models (src/fears.ts). */
     setFears(models: Fears) { fears = models; },
+    /** La Sobremesa's model (src/glb.ts), once it has been fetched. */
+    setSobremesa(model: pc.Entity) { sobremesaTemplate = model; },
+    get hasSobremesa() { return !!sobremesaTemplate; },
     /**
      * An ánima wakes in Gerard (Matemágico, at the palace minion's beat): a flash and a shockwave
      * in its colour that rocks the foes, and when it fades he wears it. The story records the
@@ -1670,6 +1800,22 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
     },
     /**
+     * What the camera's sharp band (the tilt-shift, src/post.ts `focus`) must take in: everyone's
+     * body, and La Sobremesa whole, from its claws on the floor to its top and round its width,
+     * standing still: not its seven friends swaying on their bones, which made the focus breathe
+     * and the body go in and out of the blur.
+     */
+    framing(out: { x: number; y: number; z: number; height: number }[]) {
+      for (const f of fighters.values()) {
+        if (!f.model.enabled || f.part || (mass && f.bone)) continue;
+        const p = f.model.getPosition();
+        out.push({ x: p.x, y: p.y, z: p.z, height: (f.party ? 1.5 : 1) * f.scale.y });
+      }
+      if (!mass) return;
+      const p = mass.base, r = foeSize('sobremesa') * 1.2, height = Math.max(3, foeTop);
+      for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]]) out.push({ x: p.x + dx, y: p.y, z: p.z + dz, height });
+    },
+    /**
      * Where each fighter's plate and speech go on screen: over their head; Vertitrón's eye's beside the
      * eye; and `uri`, over Uri up on Vertitrón, for the moves he shouts (battle-ui `shout`).
      */
@@ -1677,7 +1823,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const { right } = screenAxes(viewDir());
       const list = [...fighters].map(([id, f]) => ({
         id, visible: f.hp > 0 && entryTime >= ENTRY_SECONDS,
-        position: f.part ? f.model.getPosition().clone().add(new pc.Vec3(right.x * 1.35, right.y * 1.35 - .25, right.z * 1.35))
+        position: f.bone ? f.model.getPosition().clone().add(new pc.Vec3(0, .85, 0))
+          : f.part ? f.model.getPosition().clone().add(new pc.Vec3(right.x * 1.35, right.y * 1.35 - .25, right.z * 1.35))
           : f.model.getPosition().clone().add(new pc.Vec3(0, f.party ? 1.65 : f.onion ? 1.6 * f.scale.y : 1.45, 0)),
       }));
       const robot = [...fighters.values()].find(f => f.robot);
@@ -1703,10 +1850,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         anchor.copy(center); entryTime = 0; celebrated = false;
         layout = stage.layout; pocketed = !!stage.pocket;
         // A part of a foe (Vertitrón's eye) stands nowhere of its own: only whole foes take a place.
-        const whole = next.foes.filter(unit => !unit.part);
-        const slots = formation(layout, next.allies.length, whole.map(unit => unit.kind), stage.spread), { ahead, side } = axes(layout);
+        // La Sobremesa's seven stand as one body, built apart once the others have their places.
+        const fused = sobremesaTemplate ? next.foes.filter(unit => isSobremesa(unit.kind)) : [];
+        const whole = next.foes.filter(unit => !unit.part && !fused.includes(unit));
+        const kinds = standing([...whole, ...fused].map(unit => unit.kind));
+        const slots = formation(layout, next.allies.length, kinds, stage.spread), { ahead, side } = axes(layout);
         {
-          foeKinds = whole.map(unit => unit.kind);
+          foeKinds = kinds;
           const view = camera(), flat = Math.hypot(view.x, view.z), right = { x: view.z / flat, z: -view.x / flat };
           const across = [...slots.allies, ...slots.foes].map(p => p.x * right.x + p.z * right.z);
           const middle = (Math.min(...across) + Math.max(...across)) / 2 - HUD_SHIFT;
@@ -1726,12 +1876,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // Then the parts, on whom they belong to (Vertitrón's eye in its chest).
         const owner = [...fighters.values()].find(f => f.robot);
         for (const unit of next.foes) if (unit.part && owner) buildPart(unit, owner);
+        if (fused.length) {
+          const slot = slots.foes[whole.length], party = slots.allies.reduce((sum, p) => ({ x: sum.x + p.x / slots.allies.length, z: sum.z + p.z / slots.allies.length }), { x: 0, z: 0 });
+          const body = buildMass(new pc.Vec3(anchor.x + slot.x, anchor.y + .15, anchor.z + slot.z), new pc.Vec3(anchor.x + party.x, 0, anchor.z + party.z));
+          fused.forEach((unit, i) => buildBone(unit, body, i));
+        }
       }
       // The picker's moments can put a broken eye back (`stageMoment`): what the effects lab broke comes back too.
       for (const f of fighters.values()) if (f.robot) f.robot.labBroken = false;
       if (next && !foeTop) {
         // Measured once per fight, in the pose it was built in.
-        for (const f of fighters.values()) if (!f.party) for (const r of f.model.findComponents('render') as pc.RenderComponent[]) for (const m of r.meshInstances) foeTop = Math.max(foeTop, m.aabb.getMax().y - f.model.getPosition().y);
+        for (const f of [...fighters.values(), ...mass ? [mass] : []]) if (!f.party && !f.bone) for (const r of f.model.findComponents('render') as pc.RenderComponent[]) for (const m of r.meshInstances) foeTop = Math.max(foeTop, m.aabb.getMax().y - f.model.getPosition().y);
       }
       if (!next) foeTop = 0;
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false; clawed = 0; fireWaits = undefined; clock.clear(!next);
@@ -1741,7 +1896,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; lensHold = 0; spotWant = spotAmount = 0; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); selectedTarget = undefined; effects.clear(); }
+      if (!next) { mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
       else [...next.allies, ...next.foes].forEach(u => { fighters.get(u.id)!.hp = u.hp; });
       player.enabled = !next;
       if (!entering && !nextEffect) return Promise.resolve();
@@ -1763,7 +1918,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const actor = effect ? fighters.get(effect.actor) : undefined;
       const target = effect?.target ? fighters.get(effect.target) : undefined;
       // Heals and boosts stay put: no run-up to anyone. Papagato's wearer stays put too: Haru goes.
-      const support = !!effect?.skill && SUPPORT.has(effect.skill);
+      // El Campeón getting its PV back is aimed at itself: it stays where it is, like a cure.
+      const support = (!!effect?.skill && SUPPORT.has(effect.skill)) || (effect?.kind === 'enemy' && !!effect.healed);
       const catStrike = effect?.skill === 'zarpazo' || effect?.skill === 'zarpazos';
       // Tecnópata's wearer stays put too: Bip goes.
       const botStrike = botStrikes(effect);
@@ -1851,7 +2007,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
       peels.update(dt);
       // Vertitrón only steps in to stomp: it sweeps and fires from where it stands.
-      const planted = !!actor?.robot && effect?.ability?.id !== 'pisoton';
+      // Nor does a mago step in to let its Bombona go: the flare reaches everyone from where it stands.
+      const planted = (!!actor?.robot && effect?.ability?.id !== 'pisoton') || (actor?.camp === 'mago' && effect?.ability?.id === 'bombona');
       const motion = actor && target && !support && !catStrike && !botStrike && !casting && !dual && !planted ? contactMotion(actor.base, target.base, t) : undefined;
       // How far the caster's hand is up: raised before the streams leave, lowered once they land.
       // Sending Bip, the wearer points it at the target until it is back.
@@ -1865,6 +2022,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const selected = selectedTarget ? fighters.get(selectedTarget) : undefined;
       marker.enabled = !!selected && selected.hp > 0 && !effect && entryTime >= ENTRY_SECONDS;
       if (selected) marker.setPosition(selected.base.x, groundHeight(selected.base.x, selected.base.z) + .025, selected.base.z);
+      if (mass) sobremesaFrame(dt);
       for (const [id, f] of fighters) {
         if (f.part) { eyeFrame(id, f, dt); continue; }
         updateOnion(id, f, dt, blows, animate, actor);
@@ -1881,12 +2039,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const lookAt = reachFor ?? ((id === effect?.actor || dualing) && target ? target.base : id === effect?.target && actor && !f.rigid && !dual ? actor.base : aiming ? selected!.base : center);
         // With nobody left to face, each side looks the way its line faces.
         const { ahead } = axes(layout), facingAhead = Math.atan2(ahead.x, ahead.z) * 180 / Math.PI;
-        // The party faces what it faces, but never with its back to the camera: side-on at most, so
-        // their faces read, and a little further only for whoever is carrying out a blow.
-        const squaring = lookAt ? face(f.base, lookAt) : f.party ? facingAhead - 10 : facingAhead + 185;
-        const facingView = Math.atan2(viewDir().x, viewDir().z) * 180 / Math.PI;
-        const offView = ((squaring - facingView + 540) % 360) - 180, furthest = id === effect?.actor || dualing ? 100 : 68;
-        const yaw = f.party ? facingView + Math.max(-furthest, Math.min(furthest, offView)) : squaring;
+        // Everyone faces what they face, the party too, even with their backs to the camera (decided:
+        // facing the foes reads better than a face turned to the viewer).
+        const squaring = lookAt ? face(f.base, lookAt) : f.party ? facingAhead : facingAhead + 185;
+        const yaw = squaring, facingView = Math.atan2(viewDir().x, viewDir().z) * 180 / Math.PI;
         const noticedYaw = opponent ? face(f.start, opponent.start) : f.yaw;
         const noticeDelta = ((noticedYaw - f.yaw + 540) % 360) - 180;
         const firstLook = f.yaw + noticeDelta * smooth(entryTime / .16);
@@ -2018,13 +2174,18 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
             f.eyes.forEach(eye => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, f.eyeScale * (lively ? idle.blink : 1), s.z); });
           }
         }
+        // A campsite foe shows its rule: what it is about to do shows when its action lands, not before.
+        if (f.camp && unit) {
+          const seen = camera(), toCamera = ((Math.atan2(seen.x, seen.z) * 180 / Math.PI - f.turn + 540) % 360) - 180;
+          fears?.camping.show(f.model, unit, time, dt, animate, effect?.actor === id && !impacted ? effect : undefined, toCamera);
+        }
         f.body?.setLocalPosition(0, 0, 0);
         // The camera supplies the battle zoom; keep fighters proportional to the street.
         const since = f.hitAt === undefined ? Infinity : time - f.hitAt;
         // Wood does not squash: the giant shudders instead, a short stiff tremor.
-        const squash = animate && since < 1 && !f.rigid ? Math.exp(-since * 7) * Math.cos(since * 30) : 0;
+        const squash = animate && since < 1 && !f.rigid && !f.camp ? Math.exp(-since * 7) * Math.cos(since * 30) : 0;
         if (f.rigid && animate && since < .4) roll += Math.exp(-since * 12) * Math.sin(since * 70) * .8;
-        const breathe = lively && down < 0 && !f.rigid ? idle.breathe * .018 + (f.minion ? Math.sin(time * 3.1 + f.seed) * .04 : 0) : 0;
+        const breathe = lively && down < 0 && !f.rigid && (!f.camp || f.camp === 'mago') ? idle.breathe * .018 + (f.minion ? Math.sin(time * 3.1 + f.seed) * .04 : 0) : 0;
         // Encogido (Rayo encogedor): smaller from when the ray lands, and back to size when it wears off.
         const shrunk = state && [...state.foes, ...state.allies].find(u => u.id === id)?.timed?.encogido && !(effect?.skill === 'rayo-encogedor' && effect.target === id && !impacted);
         f.shrink = animate ? f.shrink + ((shrunk ? SHRUNK : 1) - f.shrink) * (1 - Math.exp(-dt * 8)) : shrunk ? SHRUNK : 1;

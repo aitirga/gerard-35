@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import type { FoeKind } from './battle';
 import { buildCharacter, type CharacterSpec } from './character-model';
+import { createCampingFoes } from './camping-foes';
 
 /**
  * Uri's fears (docs/quests/nuria.md § The maze, § Final boss), built from primitives like the
@@ -187,6 +188,9 @@ export function createFears(app: pc.Application) {
 
   // Their young are the same fears, small (battle-scene.ts sizes them).
   const templates = new Map<FoeKind, pc.Entity>([['cebollon', onion], ['cebolla', onion], ['plato', dish], ['vertigo', vertigo], ['cebollita', onion], ['platito', dish], ['fantasmita', ghost]]);
+  // Càmping Eurosport's foes (src/camping-foes.ts) come with them, so the fight finds every model in one place.
+  const camping = createCampingFoes(app);
+  camping.templates.forEach((model, kind) => templates.set(kind, model));
   /** Vertitrón's joints, found once per model. */
   const rigs = new WeakMap<pc.Entity, ReturnType<typeof rigOf>>();
   function rigOf(model: pc.Entity) {
@@ -202,6 +206,8 @@ export function createFears(app: pc.Application) {
   const rig = (model: pc.Entity) => { let r = rigs.get(model); if (!r && model.findByName('Cadera')) { r = rigOf(model); rigs.set(model, r); } return r; };
   return {
     templates,
+    /** Càmping Eurosport's foes: what each one's model shows of its rule (`show`). */
+    camping,
     /**
      * Vertitrón's pose, every joint at once (the fight calls it each frame; the world too). Each move
      * is 0 to 1: `kneel` (beaten, down on both knees), `stomp` (a leg up, `stompSide` −1 left / 1 right),
@@ -245,7 +251,7 @@ export function createFears(app: pc.Application) {
       for (const crack of r.eye.find(n => n.name === 'Grieta') as pc.Entity[]) crack.enabled = broken;
     },
     uriEyes,
-    destroy() { templates.forEach(t => t.destroy()); materials.forEach(m => m.destroy()); },
+    destroy() { templates.forEach((t, kind) => { if (!camping.templates.has(kind as never)) t.destroy(); }); materials.forEach(m => m.destroy()); camping.destroy(); },
   };
 }
 /** Vertitrón's measures (model metres): its hips over the floor, how far kneeling lowers them, and its eye up its trunk. */

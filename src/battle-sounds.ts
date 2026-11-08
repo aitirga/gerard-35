@@ -49,6 +49,19 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
   vertigo: { start: [{ id: 'gust' }], impact: [{ id: 'hit' }] },
   // The eye never acts: nothing of its own.
   'vertigo-ojo': { impact: [] },
+  // La Sobremesa: dice on the table, a lunge, chalk, a card slapped down, a voice out of tune, a shield.
+  'sobremesa-alvaro': { start: [{ id: 'creak', volume: .5 }], impact: [{ id: 'thump' }] },
+  'sobremesa-anna': { impact: [{ id: 'hit' }] },
+  'sobremesa-sarah': { impact: [{ id: 'mark-set' }] },
+  'sobremesa-miquel': { impact: [{ id: 'slam' }] },
+  'sobremesa-joan': { start: [{ id: 'glitch', volume: .6 }], impact: [{ id: 'hit', volume: .8 }] },
+  'sobremesa-soraya': { impact: [{ id: 'stat-up', volume: .7 }] },
+  'sobremesa-nico': { impact: [{ id: 'guard' }] },
+  // Càmping Eurosport: gas hissing into a flare, a die falling flat, card on bone, a plaster fist.
+  mago: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'fire-hit' }] },
+  dado: { start: [{ id: 'creak', volume: .4 }], impact: [{ id: 'thump' }] },
+  agente: { impact: [{ id: 'hit' }] },
+  campeon: { impact: [{ id: 'slam' }] },
 };
 const foeOf = (effect: BattleEffect, state?: BattleState) => state?.foes.find(f => f.id === effect.actor);
 
@@ -87,10 +100,14 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
     if (effect.skill === 'foc-binari') return [...effect.melted ? [{ id: 'melt' as const }] : [], { id: effect.burn || effect.melted ? 'fire-hit' as const : 'fizzle' as const }];
     return [...SKILL_SOUNDS[effect.skill].impact, ...torn];
   }
+  // A mago charging its Bombona: the gas hisses out. El Campeón in plain clothes pulling itself together.
+  if (effect.kind === 'enemy' && effect.telegraph?.id === 'bombona') return [{ id: 'fizzle' }];
+  if (effect.kind === 'enemy' && effect.healed) return [{ id: 'heal', volume: .6 }];
   if (effect.kind !== 'enemy' || !(effect.amount || effect.splash)) return [];
   const foe = foeOf(effect, state);
   // Whoever hit everyone: a fantasmita's «GAME OVER» and Vertitrón's (Barrido; the Rayo cracks as it sweeps).
   if (effect.splash && foe?.kind === 'fantasmita') return [{ id: 'game-over' }];
+  if (effect.splash && foe?.kind === 'mago') return [{ id: 'fire-hit' }, { id: 'slam', volume: .6, delay: .06 }];
   if (effect.splash && foe?.kind === 'vertigo') return effect.ability?.id === 'rayo' ? [{ id: 'crack' }, { id: 'slam', delay: .08 }] : [{ id: 'slam' }];
   if (state?.allies.find(a => a.id === effect.target)?.guarding) return [{ id: 'hit-guarded' }];
   if (isOnion(foe?.kind) && !foe?.layers) return [{ id: 'hit', volume: .6 }];

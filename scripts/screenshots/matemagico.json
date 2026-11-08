@@ -1,6 +1,6 @@
 {
   "title": "Matemágico · Foc Binari and Ánima",
-  "description": "Matemágico, Gerard's ánima of the mind (docs/animas/matemagico/): its blueprint interface (navy graph paper, gold sums, index-card commands, a number line on the card, a ∑ watermark), the Ánima circles that replace Secundaria (five to start; a skill spends its cost, Defender gives two back), and its first spell, Foc Binari: the hand goes up, two braided streams of fire fly to one foe, and a 1 sets it on fire (Quemadura) while a 0 fizzles. At 35 the same ánima thinks out loud over his head in fights.",
+  "description": "Matemágico, Gerard's ánima of the mind (docs/animas/matemagico/): its blueprint interface (navy graph paper, gold sums, index-card commands, a number line on the card), the Ánima circles that replace Secundaria (five to start; a skill spends its cost, Defender gives two back), and its first spell, Foc Binari: the hand goes up, two braided streams of fire fly to one foe, and a 1 sets it on fire (Quemadura) while a 0 fizzles. At 35 the same ánima thinks out loud over his head in fights.",
   "steps": [
     {
       "open": "/?story=matemagico&battle=3&allies=2"
@@ -15,7 +15,7 @@
     {
       "shot": "interface",
       "delay": 1500,
-      "caption": "Matemágico's interface: graph paper round the edges, index-card commands, five Ánima circles under Gerard's PV"
+      "caption": "Matemágico's interface: index-card commands, no watermark behind the fight, five Ánima circles under Gerard's PV"
     },
     {
       "press": "Digit2"

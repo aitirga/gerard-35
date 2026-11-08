@@ -96,7 +96,32 @@ export const BOOST_ROUNDS = 3;
 export type SkillId = typeof SKILLS[number]['id'];
 type Skill = typeof SKILLS[number];
 /** `vertigo`: Vertitrón, the tower's boss; `vertigo-ojo`: its eye, a part of it (its own PV, no turns, `part`). */
-export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | 'plato' | 'vertigo' | 'vertigo-ojo' | BroodKind;
+export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | 'plato' | 'vertigo' | 'vertigo-ojo' | BroodKind | SobremesaKind | CampingKind;
+/**
+ * Càmping Eurosport's foes (docs/quests/universidad.md § Càmping Eurosport, Monsters): each asks one
+ * question, by kind of blow and never by who wears what, and shows its answer on its plate. A Mago de
+ * camping takes half from magic and more from blows, and charges its Bombona a turn ahead (the chip
+ * says so). A Dado shows its top face, the weight of its blow this round, and rolls again every round.
+ * Agentes come in pairs: one face up, who takes everything, one face down, who takes half (ticks
+ * ignore it); they turn over every round. El Campeón, the mini-boss, is a hero or a man in plain
+ * clothes, two turns each, as its plate says.
+ */
+export type CampingKind = 'mago' | 'dado' | 'agente' | 'campeon';
+export const CAMPING_KINDS = ['mago', 'dado', 'agente', 'campeon'] as const satisfies readonly CampingKind[];
+export const isCamping = (kind?: FoeKind): kind is CampingKind => !!kind && (CAMPING_KINDS as readonly string[]).includes(kind);
+/** El Campeón's two forms, as its plate names them. */
+export type CampeonForm = 'heroe' | 'paisano';
+export const CAMPEON_FORMS: Record<CampeonForm, string> = { heroe: 'Héroe', paisano: 'De paisano' };
+/**
+ * La Sobremesa's seven (docs/quests/universidad.md § Final boss): the university friends fused into
+ * one body, each a foe of their own with their own PV and move. In this order they act each round:
+ * Álvaro before Anna (their duo goes off on his turn), Sarah before Miquel, Joan before Soraya.
+ */
+export const SOBREMESA_FRIENDS = ['alvaro', 'anna', 'sarah', 'miquel', 'joan', 'soraya', 'nico'] as const;
+export type SobremesaFriend = (typeof SOBREMESA_FRIENDS)[number];
+export type SobremesaKind = `sobremesa-${SobremesaFriend}`;
+export const SOBREMESA_NAMES: Record<SobremesaFriend, string> = { alvaro: 'Álvaro', anna: 'Anna', sarah: 'Sarah', miquel: 'Miquel', joan: 'Joan', soraya: 'Soraya', nico: 'Nico' };
+export const isSobremesa = (kind?: FoeKind): kind is SobremesaKind => !!kind && kind.startsWith('sobremesa-');
 /** The fears' young (docs/quests/nuria.md § The tower). */
 export type BroodKind = 'cebollita' | 'platito' | 'fantasmita';
 /**
@@ -140,7 +165,9 @@ const DISH_ORDER: DishId[] = ['alcachofa', 'coliflor', 'sorpresa'];
 export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' | 'aplaston'
   | 'salpicon' | 'vuelta' | 'atravesar' | 'transparente' | 'game-over'
   | 'cambio-plato' | 'sorpresa' | 'puaj'
-  | 'pisoton' | 'barrido' | 'grito' | 'carga' | 'rayo';
+  | 'pisoton' | 'barrido' | 'grito' | 'carga' | 'rayo'
+  | 'tirada' | 'sopeta' | 'regla-nueva' | 'carta-negra' | 'escala' | 'correccion' | 'cortafuegos' | 'duo-tirada' | 'duo-regla'
+  | 'bombona' | 'tumbarse' | 'contrasena' | 'punetazo' | 'recuperarse';
 export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }> = {
   lagrimilla: { name: 'Lagrimilla', card: false },
   'capa-nueva': { name: 'Capa nueva', card: true },
@@ -160,6 +187,20 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   grito: { name: 'Grito liberador', card: true },
   carga: { name: 'Rayo terrorífico', card: true },
   rayo: { name: 'Rayo terrorífico', card: true },
+  tirada: { name: 'Tirada', card: true },
+  sopeta: { name: 'Sopeta', card: false },
+  'regla-nueva': { name: 'Regla nueva', card: true },
+  'carta-negra': { name: 'Carta negra', card: true },
+  escala: { name: 'Escala', card: true },
+  correccion: { name: 'Corrección', card: true },
+  cortafuegos: { name: 'Cortafuegos', card: true },
+  'duo-tirada': { name: 'Dúo · Tirada', card: true },
+  'duo-regla': { name: 'Dúo · Regla nueva', card: true },
+  bombona: { name: 'Bombona', card: true },
+  tumbarse: { name: 'Tumbarse', card: false },
+  contrasena: { name: 'Contraseña', card: false },
+  punetazo: { name: 'Puñetazo', card: false },
+  recuperarse: { name: 'Recuperarse', card: true },
 };
 const foeAbility = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} });
 /**
@@ -189,6 +230,41 @@ export const FEAR_RULES = {
 export const VERTIGO = {
   pisoton: 22, barrido: 14, rayo: 32, gritoDown: 2, gritoUp: 1,
 };
+/**
+ * La Sobremesa (docs/quests/universidad.md § Final boss), every number in one book (`sobremesa.boss`);
+ * each friend's PV are their PROFILES entry. Tirada: two dice, each pip `pip` PV in a hundred of the
+ * target's most (four dice in the duo with Anna). Sopeta: `sopeta`, `sopetaStep` more each own turn,
+ * up to `sopetaMost`, and every friend still held gets `sopetaHeal` of their PV back. Regla nueva: Fuerza +`regla` to one friend for good, up to
+ * `reglaMost` (to every friend in the duo with Miquel). Carta negra: announced, then `carta` on whom it marked; in the duo it leaves them at
+ * 1 PV unless they hold on. Escala: Joan's note (NOTES) sets his blow on both, `escala[note]`, and
+ * climbs one each turn; Soraya's Corrección climbs it one more. Every `duoEvery` own turns a couple
+ * announces its duo. Cortafuegos: the next blow on the friend Nico shields lands at `shield`.
+ */
+export const SOBREMESA = {
+  pip: 1.2, dice: 2, duoDice: 4,
+  sopeta: 5, sopetaStep: 1.5, sopetaMost: 11, sopetaHeal: .1,
+  regla: 2, reglaMost: 4, carta: 12,
+  escala: [1, 2, 3, 4, 5, 7, 9],
+  duoEvery: 4, shield: .5,
+};
+/**
+ * Càmping Eurosport's foes, every number in one book (`camping.rules`); their PV are their PROFILES
+ * entries. A Mago de camping takes `magoMagic` of a magic blow and `magoPhysical` of a physical one,
+ * and its Bombona is `bombona` of magic on everyone. A Dado's Tumbarse is `dadoBase` and `dadoPip` for
+ * each pip of the face it shows. An Agente face down takes `downTaken` of every blow; its Contraseña is
+ * `contrasena`. El Campeón as a hero takes `heroeTaken` and punches `punetazo`; in plain clothes it
+ * takes `paisanoTaken` and gets `recuperarse` of its PV back; it changes every `formTurns` own turns.
+ */
+export const CAMPING = {
+  magoMagic: .5, magoPhysical: 1.5, bombona: 26,
+  dadoBase: 4, dadoPip: 4,
+  downTaken: .5, contrasena: 18,
+  heroeTaken: .5, paisanoTaken: 2, punetazo: 44, recuperarse: .1, formTurns: 2,
+};
+/** How hard a Dado's Tumbarse is at average stats with `face` up. */
+export const dadoPower = (face: number) => CAMPING.dadoBase + CAMPING.dadoPip * face;
+/** Joan's scale, note by note: each one more out of tune. */
+export const NOTES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si'] as const;
 /** Vertitrón's turns, in order, round and round (with its eye broken it skips the charge and the Rayo). */
 export const VERTIGO_TURNS = ['pisoton', 'barrido', 'grito', 'carga', 'rayo'] as const;
 /** Punto débil's mark: the next damaging action on that foe lands this many times as hard. */
@@ -401,17 +477,42 @@ export interface Combatant {
   told?: boolean;
   /** Stats up or down for the rest of the fight (Vertitrón's Grito liberador), stat by stat; `from` names why. */
   lasting?: { shifts: Partial<Record<keyof Stats, number>>; from: string };
+  /** Joan's place on his scale (NOTES): his next note. */
+  note?: number;
+  /** Cortafuegos: the next damaging blow on this foe lands at SOBREMESA.shield, and spends it. It fades at the end of round `shielded`. */
+  shielded?: number;
+  /** A Dado: the face it shows this round (1–6), the weight of its blow. */
+  face?: number;
+  /** An Agente: face up (it takes every blow whole) or face down (half). */
+  faceUp?: boolean;
+  /** El Campeón: its form, and its own turns left in it before it changes. */
+  form?: CampeonForm; formLeft?: number;
 }
 /** Whom a move is aimed at when it is not one ally: everyone. */
 export type Aim = 'todos';
 /** Which fight this is: the street dogs, the palace minion that wakes Matemágico, or the palace guards of chapter 2. */
 /** `escolta`: ring 3's fear, La Cebolla y los suyos (La Cebolla, a fantasmita and a cebollita). */
-export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | BroodEncounter;
+export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | 'sobremesa' | BroodEncounter | CampingEncounter;
 /** The young that chase the party up each ring of Uri's tower, a few at a time. */
 export const BROOD_ENCOUNTERS = ['crias-1', 'crias-2', 'crias-3'] as const;
 export type BroodEncounter = (typeof BROOD_ENCOUNTERS)[number];
-/** Uri's maze and roof (docs/quests/nuria.md): the fears' fights. */
-export const FEAR_ENCOUNTERS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', ...BROOD_ENCOUNTERS] as const;
+/**
+ * Càmping Eurosport's fights (docs/quests/universidad.md § Càmping Eurosport): the entrance's magos,
+ * the pitches' dados and agentes, a wrong pitch's tent waking, the black pitch, and El Campeón by the pool.
+ */
+export const CAMPING_ENCOUNTERS = ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon'] as const;
+export type CampingEncounter = (typeof CAMPING_ENCOUNTERS)[number];
+/** Who comes out in each of them, in the order they stand. */
+export const CAMPING_FIGHTS: Record<CampingEncounter, readonly CampingKind[]> = {
+  'camping-magos': ['mago', 'mago'],
+  'camping-dados': ['dado', 'dado', 'dado'],
+  'camping-agentes': ['agente', 'agente'],
+  'camping-tienda': ['dado', 'agente', 'agente'],
+  'camping-negra': ['mago', 'mago', 'dado', 'dado'],
+  campeon: ['campeon'],
+};
+/** Uri's maze and roof (docs/quests/nuria.md), La Sobremesa and the campsite: the fights whose foes have rules of their own. */
+export const FEAR_ENCOUNTERS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'sobremesa', ...BROOD_ENCOUNTERS, ...CAMPING_ENCOUNTERS] as const;
 /** Bernat's HP floor in the palace fight: the hit that would cross it stops there and starts the beat. */
 export const BEAT_HP = 20;
 export interface BattleState {
@@ -481,7 +582,9 @@ export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[
   return [{ id: 'gerard', name: 'Gerard', profile: 'gerard', classId: gerardClass }, ...(allyCount === 2 ? [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }] : [])];
 }
 /** Nobody runs from possessed dogs, the palace minion or Vertitrón's roof; the palace guards and the maze's fears let them back off. */
-export const cornered = (state: BattleState) => state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo';
+export const cornered = (state: BattleState) => state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo' || state.encounter === 'sobremesa'
+  // The black pitch puts every lantern out round them, and El Campeón stands between them and the way on.
+  || state.encounter === 'camping-negra' || state.encounter === 'campeon';
 /** Gerard's ánima in this fight. */
 export const gerardClass = (state: BattleState) => state.allies.find(a => a.id === 'gerard')?.classId;
 /** Bernat wears no ánima: he only attacks. */
@@ -679,6 +782,8 @@ export interface BattleEffect {
   release?: { id: DualId; name: string };
   /** A cure for the whole party: what each one got back. */
   healedAll?: { target: string; amount: number }[];
+  /** La Sobremesa's Sopeta: besides its blow, what each friend still held got back. */
+  soothed?: { target: string; amount: number }[];
   /** Statuses a cure took away, from whom. */
   cleansed?: { target: string; statuses: StatusId[] }[];
   /** A platito's new dish; a cebollita grew a layer; a fantasmita went see-through. */
@@ -689,6 +794,10 @@ export interface BattleEffect {
    * and `markLeft`.
    */
   weakSpot?: 'set' | 'spent' | 'renewed';
+  /** La Sobremesa: the dice Álvaro threw (Tirada), and the friend Nico shielded (Cortafuegos) or a shield this blow spent. */
+  dice?: number[]; shielded?: string; shield?: 'spent';
+  /** El Campeón changed form at the end of this turn: the one it is in now. */
+  form?: CampeonForm;
 }
 /** Whether this action spent a Punto débil on its target (it landed WEAK_SPOT times as hard). */
 export const markSpent = (e: BattleEffect) => e.weakSpot === 'spent' || e.weakSpot === 'renewed';
@@ -904,6 +1013,8 @@ export function createBroodBattle(party: PartySlot[], encounter: BroodEncounter,
 /** Uri's fears (docs/quests/nuria.md): one foe each, with its own rule; their young come in packs. */
 export function createFearBattle(party: PartySlot[], encounter: (typeof FEAR_ENCOUNTERS)[number], animas?: ClassId[], random: () => number = Math.random): BattleState {
   if ((BROOD_ENCOUNTERS as readonly string[]).includes(encounter)) return createBroodBattle(party, encounter as BroodEncounter, animas, random);
+  if (encounter === 'sobremesa') return createSobremesaBattle(party, animas, random);
+  if ((CAMPING_ENCOUNTERS as readonly string[]).includes(encounter)) return createCampingBattle(party, encounter as CampingEncounter, animas, random);
   const spec = FEAR_FOES[encounter as keyof typeof FEAR_FOES];
   const one: Combatant = { ...foe(spec.id, spec.name, spec.kind), power: spec.power };
   if (isOnion(spec.kind)) one.layers = ONIONS[spec.kind].layers;
@@ -983,6 +1094,7 @@ function fearDamage(_state: BattleState, target: Combatant, damage: number, blow
   }
   if (target.layers) out /= 2;
   if (target.transparent && blow === 'physical') out *= FEAR_RULES.transparent;
+  out *= campingTaken(target, blow);
   return Math.max(1, Math.round(out));
 }
 /** What the fight says when the last foe falls. */
@@ -992,6 +1104,8 @@ function winMessage(state: BattleState) {
     : state.encounter === 'plato' ? 'La campana cae al suelo. El plato, vacío. Uri, a lo lejos: «¡Puaj!».'
     : state.encounter === 'escolta' ? 'La Cebolla rueda hasta el borde y se lleva a los suyos. Arriba, Uri ya no se ríe.'
     : state.encounter === 'uri-vertigo' ? 'Vertitrón cae de rodillas. Uri baja con Nil en brazos, y el violeta se le va de los ojos.'
+    : state.encounter === 'sobremesa' ? 'La Sobremesa se deshace sobre la hierba. Quedan siete personas tumbadas entre las sillas, mirándose como si acabaran de llegar.'
+    : isCampingFight(state) ? CAMPING_WON[state.encounter as CampingEncounter]
     : (BROOD_ENCOUNTERS as readonly string[]).includes(state.encounter) ? 'Se deshacen en humo violeta. Desde arriba, la risa de Uri. Volverán.'
     : state.encounter === 'palace-minion' ? 'El esbirro se queda tieso, se agrieta como chicle viejo… y revienta.'
     : state.encounter === 'palace-guards' ? 'Los guardianes se deshacen en charcos rosas. La cortina tiembla.'
@@ -1020,8 +1134,14 @@ function settle(state: BattleState) {
 function bare(c: Combatant) {
   if (c.kind === 'cebollita' && !c.regrown && c.hp > 0) c.intent = { ability: 'capa-nueva' };
 }
-/** Punto débil on `c` now: how many times as hard the next damaging action lands (1: none). */
-const weakScale = (state: BattleState, c: Combatant) => weakSpotRounds(state, c) ? WEAK_SPOT : 1;
+/** Rounds a Cortafuegos on `c` still lasts, this one included (0: none). */
+export const shieldRounds = (state: BattleState, c: Combatant) => c.shielded !== undefined && c.shielded >= state.round && c.hp > 0 ? c.shielded - state.round + 1 : 0;
+/** Punto débil and Cortafuegos on `c` now: how many times as hard the next damaging action lands (1: neither). */
+const weakScale = (state: BattleState, c: Combatant) => (weakSpotRounds(state, c) ? WEAK_SPOT : 1) * (shieldRounds(state, c) ? SOBREMESA.shield : 1);
+/** A blow that took PV off a shielded foe spends its Cortafuegos. */
+function spendShield(state: BattleState, c: Combatant, amount: number, effect: BattleEffect) {
+  if (amount > 0 && shieldRounds(state, c)) { delete c.shielded; effect.shield = 'spent'; }
+}
 /** An element has landed on `target` with Atacar: what it turns (`REACTION_RULES`), if it finds anything to turn. */
 function react(state: BattleState, actor: Combatant, target: Combatant, element: Element, effect: BattleEffect) {
   const fire = target.timed?.quemado, bleeding = stacks(target, 'sangrado');
@@ -1133,6 +1253,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       // Only an action that takes PV off spends the mark (one the floor swallows leaves it).
       const spends = weak > 1 && amount > 0;
       if (spends) { delete foe.weakSpot; effect.weakSpot = 'spent'; }
+      spendShield(state, foe, amount, effect);
       const peeled = foe.layers ? 1 : undefined;
       if (foe.layers && !--foe.layers) bare(foe);
       const status = 'bleed' in ability! && foe.hp > 0 ? { id: 'sangrado' as const, stacks: addStatus(foe, 'sangrado', ability.bleed) } : undefined;
@@ -1186,6 +1307,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       effect.amount = strikes.reduce((sum, amount) => sum + amount, 0);
       const spent = weak > 1 && effect.amount > 0;
       if (spent) { delete target.weakSpot; effect.weakSpot = 'spent'; }
+      spendShield(state, target, effect.amount, effect);
       // One hit's damage landed in parts (Foc Binari's zero, then its one): the same total, felt twice.
       if (action === 'skill' && ability && 'split' in ability && strikes.length === 1 && strikes[0] > 1) strikes.splice(0, 1, Math.floor(strikes[0] / 2), Math.ceil(strikes[0] / 2));
       if (times > 1 || strikes.length > 1) effect.strikes = strikes;
@@ -1335,6 +1457,7 @@ export function actDual(state: BattleState, id: DualId, targetId?: string): Batt
     effect.amount = strikes.reduce((sum, n) => sum + n, 0);
     const spent = weak > 1 && effect.amount > 0;
     if (spent) { delete target.weakSpot; effect.weakSpot = 'spent'; }
+    spendShield(state, target, effect.amount, effect);
     if (strikes.length > 1) effect.strikes = strikes;
     if (d.burn) { effect.coins = coins; effect.burns = burns; }
     if (fire) effect.burn = { id: d.burn!, level: fire.level };
@@ -1383,6 +1506,7 @@ function release(state: BattleState, holder: Combatant) {
     const amount = hurt(state, foe, fearDamage(state, foe, dualBlow(d, current(state, striker), current(state, foe)) * weak, 'dual'));
     const spends = weak > 1 && amount > 0;
     if (spends) { delete foe.weakSpot; effect.weakSpot = 'spent'; }
+    spendShield(state, foe, amount, effect);
     const peeled = foe.layers ? 1 : undefined;
     if (foe.layers && !--foe.layers) bare(foe);
     // Fire never catches on wet layers.
@@ -1528,6 +1652,260 @@ function minionAct(state: BattleState, actor: Combatant): BattleEffect | undefin
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Toca recuperar el aliento. Puedes volver a intentarlo.'; }
   return { actor: actor.id, kind: 'enemy', target: target.id, amount };
 }
+/** Càmping Eurosport's foes, by name (more than one of a kind are numbered). */
+export const CAMPING_NAMES: Record<CampingKind, string> = { mago: 'Mago de camping', dado: 'Dado', agente: 'Agente', campeon: 'El Campeón' };
+/** What each campsite fight says as it starts, and as it is won. */
+const CAMPING_MESSAGES: Record<CampingEncounter, string> = {
+  'camping-magos': 'Junto a la barrera se levantan dos figuras con túnicas de lona vieja y una linterna frontal encendida. Huele a gas.',
+  'camping-dados': 'Tres dados del tamaño de una persona ruedan por la tierra y se paran delante de vosotros. Los puntos, quemados.',
+  'camping-agentes': 'Dos figuras de cartón se despegan de la tienda. Una os enseña la cara; la otra, la espalda.',
+  'camping-tienda': 'La tienda se abre sola. Dentro no había nadie: un dado y dos agentes de cartón, esperando.',
+  'camping-negra': 'Todos los farolillos se apagan a la vez. En la oscuridad se encienden dos linternas frontales, y algo rueda hacia vosotros.',
+  campeon: 'Al borde de la piscina, sobre su peana, una figura de héroe del tamaño de un hombre. La pintura, desconchada. Se baja.',
+};
+const CAMPING_WON: Record<CampingEncounter, string> = {
+  'camping-magos': 'Las túnicas caen vacías sobre la tierra. Las linternas siguen encendidas un momento, y se apagan.',
+  'camping-dados': 'Los dados se quedan quietos, cada uno con una cara hacia arriba. Ya no cuentan nada.',
+  'camping-agentes': 'Los agentes se doblan por la mitad y se quedan boca abajo. Nadie ha dicho la contraseña.',
+  'camping-tienda': 'La tienda se cierra sola. Dentro vuelve a no haber nadie.',
+  'camping-negra': 'Los farolillos vuelven a encenderse, uno a uno. El tablero empieza otra vez.',
+  campeon: 'El Campeón vuelve a su peana y se queda quieto, con el puño en alto. Solo era una figura pintada.',
+};
+/** Whether this is one of the campsite's fights. */
+const isCampingFight = (state: BattleState) => (CAMPING_ENCOUNTERS as readonly string[]).includes(state.encounter);
+/** A campsite fight: who comes out (CAMPING_FIGHTS), each dado with a face rolled, the first agente face up, El Campeón a hero. */
+function createCampingBattle(party: PartySlot[], encounter: CampingEncounter, animas?: ClassId[], random: () => number = Math.random): BattleState {
+  const kinds = CAMPING_FIGHTS[encounter], seen: Partial<Record<CampingKind, number>> = {};
+  const foes = kinds.map((kind, i) => {
+    const n = seen[kind] = (seen[kind] ?? 0) + 1;
+    const one = foe(kind === 'campeon' ? 'campeon' : `${kind}-${i}`, kinds.filter(k => k === kind).length > 1 ? `${CAMPING_NAMES[kind]} ${n}` : CAMPING_NAMES[kind], kind);
+    if (kind === 'dado') one.face = 1 + Math.floor(random() * 6);
+    if (kind === 'agente') one.faceUp = n % 2 === 1;
+    if (kind === 'campeon') { one.form = 'heroe'; one.formLeft = CAMPING.formTurns; }
+    return one;
+  });
+  const unlocked = animas ?? wornAnimas(party);
+  return {
+    allies: lineUp(party, unlocked), foes,
+    active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
+    animas: unlocked, awakened: unlocked.includes('matemagico'), seed: seedFrom(random),
+    message: CAMPING_MESSAGES[encounter],
+  };
+}
+/**
+ * How much of a blow a campsite foe takes, by its rule and the kind of blow (a dual counts as every
+ * kind, so it takes the better): a Mago de camping, little from magic and more from blows; an Agente
+ * face down, half; El Campeón, half as a hero and double in plain clothes. Ticks and pulses never
+ * come through here, so they land whole on anyone.
+ */
+function campingTaken(target: Combatant, blow: Blow) {
+  if (target.kind === 'mago') return blow === 'dual' ? Math.max(CAMPING.magoMagic, CAMPING.magoPhysical) : blow === 'magic' ? CAMPING.magoMagic : CAMPING.magoPhysical;
+  if (target.kind === 'agente' && target.faceUp === false) return CAMPING.downTaken;
+  if (target.kind === 'campeon') return target.form === 'paisano' ? CAMPING.paisanoTaken : CAMPING.heroeTaken;
+  return 1;
+}
+/**
+ * The campsite foes' turns (docs/quests/universidad.md § Càmping Eurosport), each one named move. A
+ * Mago de camping charges its Bombona on one turn (announced: «Bombona → todos») and lets it go on the
+ * next, magic on everyone; holding on takes two thirds off. A Dado falls on one with the weight of its
+ * face (Tumbarse). An Agente strikes one (Contraseña). El Campeón punches as a hero and gets PV back
+ * in plain clothes, and changes form after `formTurns` own turns in one.
+ */
+function campingTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect, hit: Hit) {
+  actor.turns = (actor.turns ?? 0) + 1;
+  const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
+  if (actor.kind === 'mago') {
+    if (actor.intent?.ability === 'bombona') {
+      delete actor.intent;
+      const blast: Hit = (who, power) => {
+        const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+        return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
+      };
+      use('bombona'); onEveryone(state, effect, target, blast, CAMPING.bombona);
+      state.message = `${actor.name} prende la bombona. La llamarada os alcanza a todos. −${effect.amount} PV a ${target.name}.`;
+    } else {
+      actor.intent = { ability: 'bombona', at: 'todos' };
+      effect.telegraph = { id: 'bombona', name: FOE_ABILITIES.bombona.name, at: 'todos' };
+      use('bombona'); delete effect.target;
+      state.message = `${actor.name} desenrosca una bombona de gas. Se oye el silbido.`;
+    }
+  } else if (actor.kind === 'dado') {
+    const face = actor.face ?? 1;
+    use('tumbarse'); effect.amount = hit(target, dadoPower(face));
+    state.message = `${actor.name} se deja caer sobre ${target.name} con el ${face} arriba. −${effect.amount} PV.`;
+  } else if (actor.kind === 'agente') {
+    use('contrasena'); effect.amount = hit(target, CAMPING.contrasena);
+    state.message = `${actor.name} se dobla y golpea a ${target.name} con el canto. −${effect.amount} PV.`;
+  } else {
+    if (actor.form === 'paisano') {
+      // Recuperarse: it hits nobody; it gets back a share of its PV.
+      use('recuperarse');
+      effect.target = actor.id; effect.healed = true;
+      effect.amount = changeHealth(actor, Math.round(actor.maxHp * CAMPING.recuperarse));
+      state.message = `${actor.name}, de paisano, se sienta en su peana y se recompone. +${effect.amount} PV.`;
+    } else {
+      use('punetazo'); effect.amount = hit(target, CAMPING.punetazo);
+      state.message = `${actor.name} descarga un puñetazo sobre ${target.name}. −${effect.amount} PV.`;
+    }
+    actor.formLeft = (actor.formLeft ?? CAMPING.formTurns) - 1;
+    if (actor.formLeft <= 0) {
+      actor.form = actor.form === 'paisano' ? 'heroe' : 'paisano'; actor.formLeft = CAMPING.formTurns; effect.form = actor.form;
+      state.message += actor.form === 'paisano' ? ' La pintura se le apaga y baja los puños: va de paisano.' : ' Se le enciende la pintura y levanta los puños: otra vez héroe.';
+    }
+  }
+}
+/** The end of a round on the campsite: every dado standing rolls a new face, and every agente turns over. */
+function campingRoundEnd(state: BattleState) {
+  for (const f of state.foes) {
+    if (f.hp <= 0) continue;
+    if (f.kind === 'dado') f.face = 1 + Math.floor(roll(state) * 6);
+    if (f.kind === 'agente') f.faceUp = !f.faceUp;
+  }
+}
+/** La Sobremesa: the seven friends, Joan on his first note. */
+function createSobremesaBattle(party: PartySlot[], animas?: ClassId[], random: () => number = Math.random): BattleState {
+  const foes = SOBREMESA_FRIENDS.map(id => foe(id, SOBREMESA_NAMES[id], `sobremesa-${id}`));
+  const joan = foes.find(f => f.id === 'joan')!;
+  joan.note = 0; joan.intent = { ability: 'escala' };
+  const unlocked = animas ?? wornAnimas(party);
+  return {
+    allies: lineUp(party, unlocked), foes,
+    active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter: 'sobremesa',
+    animas: unlocked, awakened: unlocked.includes('matemagico'), seed: seedFrom(random),
+    message: 'Las mesas plegables crujen y se levantan. De la masa salen siete medio cuerpos que conocéis de toda la vida. Ninguno os mira a la cara.',
+  };
+}
+/** A friend of La Sobremesa still held (not freed). */
+const held = (state: BattleState, id: SobremesaFriend) => state.foes.find(c => c.id === id && c.hp > 0);
+/** Who a blow announced a turn ahead lands on: whom it marked, if still standing, or today's target. */
+const marked = (state: BattleState, intent: Combatant['intent'], fallback: Combatant) => state.allies.find(a => a.id === intent?.target && a.hp > 0) ?? fallback;
+/**
+ * La Sobremesa's turns (docs/quests/universidad.md § Final boss), each friend their own move, by
+ * kind of blow and never by who wears what. A couple announces its duo a turn ahead on both plates
+ * and it only goes off while both are held. Joan and Soraya need each other: with one freed, the other
+ * loses their turn.
+ */
+function sobremesaTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect, hit: Hit, stats: StatChange[]) {
+  const me = actor.id as SobremesaFriend;
+  actor.turns = (actor.turns ?? 0) + 1;
+  const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
+  const lose = (id: FoeAbilityId, why: string) => { use(id); effect.cancelled = id; delete effect.target; state.message = why; };
+  const announce = (id: FoeAbilityId, partner: Combatant, at: Combatant) => {
+    for (const c of [actor, partner]) c.intent = { ability: id, target: at.id };
+    effect.telegraph = { id, name: FOE_ABILITIES[id].name, target: at.id };
+    delete effect.target;
+  };
+  const throwDice = (n: number) => Array.from({ length: n }, () => 1 + Math.floor(roll(state) * 6));
+  // A share of the target's PV: as many in a hundred as the dice add up to; holding on takes two thirds off.
+  const share = (who: Combatant, dice: number[]) => {
+    const raw = sighted(actor, Math.max(1, Math.round(who.maxHp * dice.reduce((a, b) => a + b, 0) * SOBREMESA.pip / 100)));
+    return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
+  };
+  const sung: Hit = (who, power) => {
+    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
+  };
+  const raise = (c: Combatant) => {
+    const lasting = c.lasting ??= { shifts: {}, from: FOE_ABILITIES['regla-nueva'].name };
+    if ((lasting.shifts.fuerza ?? 0) >= SOBREMESA.reglaMost) return;
+    lasting.shifts.fuerza = Math.min(SOBREMESA.reglaMost, (lasting.shifts.fuerza ?? 0) + SOBREMESA.regla);
+    stats.push({ target: c.id, way: 'up', stats: ['fuerza'] });
+  };
+  const duo = actor.intent?.ability === 'duo-tirada' || actor.intent?.ability === 'duo-regla' ? actor.intent : undefined;
+  if (me === 'alvaro') {
+    const anna = held(state, 'anna');
+    if (duo) delete actor.intent;
+    if (duo && anna) {
+      // Dúo · Tirada: four dice on whom they marked; Anna's turn goes into it.
+      delete anna.intent;
+      const at = marked(state, duo, target), dice = throwDice(SOBREMESA.duoDice);
+      use('duo-tirada'); effect.target = at.id; effect.dice = dice; effect.amount = share(at, dice);
+      if (!state.enemyActions.includes(anna.id)) state.enemyActions.push(anna.id);
+      state.message = `Álvaro y Anna tiran cuatro dados a la vez: ${dice.join(' + ')}. −${effect.amount} PV a ${at.name}.`;
+    } else if (!duo && anna && actor.turns % SOBREMESA.duoEvery === 0) {
+      announce('duo-tirada', anna, target);
+      use('duo-tirada');
+      state.message = `Álvaro le pasa los dados a Anna sin mirarla. Los dos miran a ${target.name}.`;
+    } else {
+      const dice = throwDice(SOBREMESA.dice);
+      use('tirada'); effect.dice = dice; effect.amount = share(target, dice);
+      if (duo) effect.cancelled = 'duo-tirada';
+      state.message = `${duo ? 'Sin Anna no hay dúo. ' : ''}Álvaro tira los dados: ${dice.join(' + ')}. −${effect.amount} PV a ${target.name}.`;
+    }
+  } else if (me === 'anna') {
+    // Here only when Álvaro is no longer there to throw with her: their duo is over.
+    if (duo) { delete actor.intent; effect.cancelled = 'duo-tirada'; }
+    // Sopeta: she hits someone, harder each time, and the soup goes round the table: every friend still held gets some PV back.
+    const power = Math.min(SOBREMESA.sopetaMost, SOBREMESA.sopeta + SOBREMESA.sopetaStep * (actor.turns - 1));
+    use('sopeta'); effect.amount = hit(target, power);
+    effect.soothed = state.foes.filter(f => f.hp > 0 && f.hp < f.maxHp).map(f => ({ target: f.id, amount: changeHealth(f, Math.max(1, Math.round(f.maxHp * SOBREMESA.sopetaHeal))) })).filter(h => h.amount > 0);
+    state.message = `Anna reparte sopeta: −${effect.amount} PV a ${target.name}${effect.soothed.length ? ', y la mesa entera se recompone un poco' : ''}.`;
+  } else if (me === 'sarah') {
+    const miquel = held(state, 'miquel');
+    const friends = state.foes.filter(f => f.hp > 0 && f !== actor && (f.lasting?.shifts.fuerza ?? 0) < SOBREMESA.reglaMost);
+    if (duo) delete actor.intent;
+    if (duo && miquel) {
+      // Dúo · Regla nueva: every friend hits harder, and Miquel's card is about to fall.
+      use('duo-regla'); delete effect.target;
+      for (const f of state.foes.filter(c => c.hp > 0)) raise(f);
+      state.message = `Sarah escribe una regla en la mesa: «Todos valen más». Miquel le da la vuelta a su carta.`;
+    } else if (!duo && miquel && actor.turns % SOBREMESA.duoEvery === 0) {
+      announce('duo-regla', miquel, target);
+      use('duo-regla');
+      state.message = `Sarah y Miquel se miran. La carta de Miquel señala a ${target.name}.`;
+    } else if (friends.length) {
+      const one = friends[0];
+      use('regla-nueva'); delete effect.target; raise(one);
+      if (duo) effect.cancelled = 'duo-regla';
+      state.message = `${duo ? 'Sin Miquel, la regla vale para uno. ' : ''}Sarah escribe una regla nueva. ${one.name} se crece.`;
+    } else lose('regla-nueva', 'Sarah escribe una regla, pero ya no queda nadie a quien le sirva.');
+  } else if (me === 'miquel') {
+    if (duo) {
+      delete actor.intent;
+      const at = marked(state, duo, target);
+      effect.target = at.id;
+      if (held(state, 'sarah') || state.enemyActions.includes('sarah')) {
+        // The duo's blow: it leaves them at one PV, unless they hold on.
+        use('duo-regla');
+        effect.amount = at.guarding ? hit(at, SOBREMESA.carta) : changeHealth(at, -Math.max(0, at.hp - 1));
+        state.message = at.guarding ? `La carta negra cae sobre ${at.name}, que la para. −${effect.amount} PV · Protegido.` : `La carta negra cae sobre ${at.name}. Se queda con 1 PV.`;
+      } else {
+        use('carta-negra'); effect.cancelled = 'duo-regla'; effect.amount = hit(at, SOBREMESA.carta);
+        state.message = `Sin Sarah, la carta es solo una carta. −${effect.amount} PV a ${at.name}.`;
+      }
+    } else if (actor.intent?.ability === 'carta-negra') {
+      const at = marked(state, actor.intent, target);
+      delete actor.intent;
+      use('carta-negra'); effect.target = at.id; effect.amount = hit(at, SOBREMESA.carta);
+      state.message = `Miquel deja caer la carta negra sobre ${at.name}. −${effect.amount} PV.`;
+    } else {
+      actor.intent = { ability: 'carta-negra', target: target.id };
+      effect.telegraph = { id: 'carta-negra', name: FOE_ABILITIES['carta-negra'].name, target: target.id };
+      use('carta-negra'); delete effect.target;
+      state.message = `Miquel gira una carta negra y la deja mirando a ${target.name}.`;
+    }
+  } else if (me === 'joan') {
+    if (!held(state, 'soraya')) return lose('escala', 'Joan abre la boca y no le sale ninguna nota. Sin Soraya no sabe qué cantar.');
+    const note = actor.note ?? 0;
+    use('escala'); onEveryone(state, effect, target, sung, SOBREMESA.escala[note]);
+    actor.note = Math.min(NOTES.length - 1, note + 1);
+    state.message = `Joan canta un ${NOTES[note]}, más desafinado que el anterior. −${effect.amount} PV a ${target.name}.`;
+  } else if (me === 'soraya') {
+    const joan = held(state, 'joan');
+    if (!joan) return lose('correccion', 'Soraya abre la boca para corregir a Joan, pero Joan ya no está. No sabe qué hacer.');
+    joan.note = Math.min(NOTES.length - 1, (joan.note ?? 0) + 1);
+    use('correccion'); delete effect.target;
+    state.message = `Soraya corrige a Joan: «¡Más alto!». Joan salta a ${NOTES[joan.note]}.`;
+  } else {
+    // Nico: Cortafuegos on the friend most hurt who is not shielded yet.
+    const others = state.foes.filter(f => f.hp > 0 && f !== actor && !shieldRounds(state, f)).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
+    if (!others.length) return lose('cortafuegos', 'Nico mira a su alrededor. No queda nadie a quien proteger.');
+    const one = others[0];
+    one.shielded = state.round + 1;
+    use('cortafuegos'); delete effect.target; effect.shielded = one.id;
+    state.message = `Nico levanta un cortafuegos delante de ${one.name}. El próximo golpe le hará la mitad.`;
+  }
+}
 /** Vertitrón and its eye, in its fight. */
 const vertigoBody = (state: BattleState) => state.foes.find(f => f.kind === 'vertigo');
 const eyeOf = (state: BattleState) => state.foes.find(f => f.kind === 'vertigo-ojo');
@@ -1612,6 +1990,7 @@ export function intentLabel(state: BattleState, c: Combatant): string | undefine
   const intent = c.intent;
   if (!intent || c.hp <= 0) return;
   if (intent.ability === 'capa-nueva') return 'Pelada';
+  if (intent.ability === 'escala') return `${FOE_ABILITIES.escala.name} · ${NOTES[c.note ?? 0]}`;
   const name = FOE_ABILITIES[intent.ability === 'aplaston' ? 'carrerilla' : intent.ability].name;
   const who = intent.target ? state.allies.find(a => a.id === intent.target)?.name : intent.at;
   return who ? `${name} → ${who}` : name;
@@ -1638,6 +2017,8 @@ function fearAct(state: BattleState, actor: Combatant, target: Combatant): Battl
   const cry = (who: Combatant, count: number) => { addStatus(who, 'llorera', count); if (who.hp > 0) stats.push(weakened(who, 'llorera')); };
   const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
   if (actor.kind === 'vertigo') vertigoTurn(state, actor, target, effect, hit, stats);
+  else if (isSobremesa(actor.kind)) sobremesaTurn(state, actor, target, effect, hit, stats);
+  else if (isCamping(actor.kind)) campingTurn(state, actor, target, effect, hit);
   else {
     actor.turns = (actor.turns ?? 0) + 1;
     if (actor.kind === 'cebollita' && !actor.layers && !actor.regrown) {
@@ -1780,7 +2161,9 @@ export function nextRound(state: BattleState): StatusTick[] {
   for (const f of state.foes) {
     for (const [id, mark] of Object.entries(f.marks ?? {}) as [SkillId, { until: number }][]) if (mark.until <= state.round) delete f.marks![id];
     if (f.weakSpot !== undefined && f.weakSpot <= state.round) delete f.weakSpot;
+    if (f.shielded !== undefined && f.shielded <= state.round) delete f.shielded;
   }
+  campingRoundEnd(state);
   // What lasts one round whatever its clock says (Explosión's blinding) ends with it.
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) if (c.timed?.[id]?.until !== undefined && c.timed[id]!.until! <= state.round) delete c.timed[id];
   // Ánimas not worn all round get some maná back; next round counts afresh from the one worn.
@@ -1841,12 +2224,18 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
   return pulses;
 }
 /** Moments of a fight the picker can jump to that the fight itself stages (docs/dev-tools.md). */
-export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo' | 'plato-sorpresa';
+export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo' | 'plato-sorpresa' | 'sobremesa-duo-carta' | 'sobremesa-escala-alta' | 'sobremesa-ultimo' | 'magos-bombona' | 'campeon-heroe' | 'campeon-paisano';
 export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: Encounter }> = {
   'vertigo-carga': { label: 'Rayo cargado', encounter: 'uri-vertigo' },
   'vertigo-grito': { label: 'Tras dos gritos', encounter: 'uri-vertigo' },
   'vertigo-sin-ojo': { label: 'Ojo roto', encounter: 'uri-vertigo' },
   'plato-sorpresa': { label: 'Plato sorpresa', encounter: 'plato' },
+  'sobremesa-duo-carta': { label: 'Dúo de la carta negra', encounter: 'sobremesa' },
+  'sobremesa-escala-alta': { label: 'Joan en La', encounter: 'sobremesa' },
+  'sobremesa-ultimo': { label: 'Queda uno', encounter: 'sobremesa' },
+  'magos-bombona': { label: 'Bombona cargada', encounter: 'camping-magos' },
+  'campeon-heroe': { label: 'Héroe', encounter: 'campeon' },
+  'campeon-paisano': { label: 'De paisano', encounter: 'campeon' },
 };
 /**
  * Development: puts the fight at `moment`, the party to choose (pure; the picker's `jumpTo` calls
@@ -1856,7 +2245,33 @@ export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: En
  */
 export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
   if (state.phase !== 'player' && state.phase !== 'enemy') return false;
-  if (moment === 'plato-sorpresa') {
+  if (moment.startsWith('sobremesa-')) {
+    // La Sobremesa from a clean start: all seven held at full PV, nothing announced, Joan on Do.
+    if (state.encounter !== 'sobremesa') return false;
+    for (const f of state.foes) { f.hp = f.maxHp; f.turns = 0; delete f.intent; delete f.lasting; delete f.shielded; }
+    const one = (id: SobremesaFriend) => state.foes.find(f => f.id === id)!;
+    one('joan').note = 0; one('joan').intent = { ability: 'escala' };
+    const first = state.allies.find(a => a.hp > 0)!;
+    if (moment === 'sobremesa-duo-carta') {
+      for (const id of ['sarah', 'miquel'] as const) { one(id).intent = { ability: 'duo-regla', target: first.id }; one(id).turns = SOBREMESA.duoEvery; }
+    } else if (moment === 'sobremesa-escala-alta') {
+      one('joan').note = NOTES.indexOf('La'); one('joan').turns = 5;
+    } else {
+      for (const f of state.foes) if (f.id !== 'miquel') f.hp = 0;
+      one('miquel').hp = Math.ceil(one('miquel').maxHp / 2);
+    }
+  } else if (moment === 'magos-bombona') {
+    // Every mago standing, whole, with its Bombona charged (Bombona → todos).
+    const magos = state.foes.filter(f => f.kind === 'mago' && f.hp > 0);
+    if (!magos.length) return false;
+    for (const m of magos) { m.hp = m.maxHp; m.intent = { ability: 'bombona', at: 'todos' }; }
+  } else if (moment === 'campeon-heroe' || moment === 'campeon-paisano') {
+    // El Campeón at the start of a form, two turns ahead of it: whole as a hero, at half its PV in plain clothes.
+    const champion = state.foes.find(f => f.kind === 'campeon' && f.hp > 0);
+    if (!champion) return false;
+    champion.form = moment === 'campeon-paisano' ? 'paisano' : 'heroe'; champion.formLeft = CAMPING.formTurns;
+    champion.hp = moment === 'campeon-paisano' ? Math.ceil(champion.maxHp / 2) : champion.maxHp;
+  } else if (moment === 'plato-sorpresa') {
     const plato = state.foes.find(f => f.kind === 'plato' && f.hp > 0);
     if (!plato) return false;
     plato.dish = 'sorpresa';
