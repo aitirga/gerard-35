@@ -8,15 +8,16 @@ import { SPEAKERS } from './dialogue';
 import type { ProfileId } from './stats';
 
 const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
-/** A scarf over the provisional SVG portraits (same 48×48 box), in the ánima's colour. */
+/** A scarf over a portrait (a 48×48 box with the neck at its middle), in the ánima's colour. */
 const scarfArt = (colour: string) => `<svg class="portrait-scarf" viewBox="0 0 48 48" aria-hidden="true" style="--scarf:${colour}"><path d="M16.5 32.5Q24 37 31.5 32.5l.6 3.4Q24 41 15.9 35.9Z"/><circle cx="28.6" cy="36.4" r="1.7"/><path d="M27.6 37.2l2.6 6.2-2.2.5-1.7-5.9Z"/></svg>`;
+const PORTRAITS: Partial<Record<ProfileId, string>> = { gerard: SPEAKERS.gerard.portrait, bernat: SPEAKERS.bernat.portrait, gerard35: SPEAKERS.gerard35.portrait, aitor: SPEAKERS.aitor.portrait };
 
-/** Gerard as a boy has a painted portrait; the rest use their provisional dialogue art. */
+/** Who has a portrait shows it, with the scarf of the ánima they wear; the rest, their initial. */
 export function portrait(profile: ProfileId, name: string, scarf?: string) {
-  if (profile === 'gerard') return `<img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt="Retrato de ${escape(name)}"/>`;
-  const art = profile === 'gerard35' ? SPEAKERS.gerard35.art : profile === 'aitor' ? SPEAKERS.aitor.art : undefined;
-  if (!art) return `<span class="portrait-initial" aria-hidden="true">${escape(name[0])}</span>`;
-  return `<span class="portrait-art" role="img" aria-label="Retrato de ${escape(name)}">${art}${scarf ? scarfArt(scarf) : ''}</span>`;
+  const file = PORTRAITS[profile];
+  if (!file) return `<span class="portrait-initial" aria-hidden="true">${escape(name[0])}</span>`;
+  const image = `<img src="${import.meta.env.BASE_URL}portraits/${file}.png" alt="Retrato de ${escape(name)}"/>`;
+  return scarf ? `<span class="portrait-art">${image}${scarfArt(scarf)}</span>` : image;
 }
 
 /** A gentle S-curve: PV. */

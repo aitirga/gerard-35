@@ -1,0 +1,133 @@
+{
+  "title": "Gerard y Aitor · Modelos",
+  "description": "Los dos protagonistas adultos en el juego, con sus modelos hechos desde fotos (just character-3d): desde la cámara de la calle, de cerca, andando y en un combate con sus ánimas. Gerard, con la cabeza más alargada, gafas redondas, sin bigote, flequillo ladeado y sudadera verde con cordones. Aitor, un poco más alto, con la cara más redonda, barba corta, dilatación en la oreja y forro polar azul marino.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "until": "!!window.gerard?.game?.app",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "const g = window.gerard.game, app = g.app, root = app.root, me = root.findByName('Jugador'), a = root.findByName('Aitor'), p0 = me.getPosition().clone(); const f = app.systems.camera.cameras.find(c => c.entity.enabled && !c.renderTarget).entity.forward, yaw = Math.atan2(-f.x, -f.z) * 180 / Math.PI; window.people = { me, a, hold: true }; app.on('update', () => { if (!window.people.hold) return; a.setPosition(p0.x + 1.1, a.getPosition().y, p0.z - .25); me.findByName('Cuerpo').setLocalEulerAngles(0, yaw + 14, 0); a.findByName('Cuerpo').setLocalEulerAngles(0, yaw - 14, 0); });"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "shot": "calle",
+      "caption": "A la distancia de juego: se distinguen por la silueta, la talla y la ropa."
+    },
+    {
+      "eval": "const p = window.people.me.getPosition(), a = window.people.a.getPosition(); window.gerard.game.frame({ x: (p.x + a.x) / 2, y: p.y + .85, z: (p.z + a.z) / 2 }, 1.45);"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "shot": "de-cerca",
+      "caption": "De cerca, con la cámara del juego."
+    },
+    {
+      "eval": "const p = window.people.me.getPosition(); window.gerard.game.frame({ x: p.x, y: p.y + 1.45, z: p.z }, .5);"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "shot": "gerard",
+      "caption": "Gerard: cabeza alargada, gafas redondas, sin bigote, flequillo ladeado y cordones."
+    },
+    {
+      "eval": "const a = window.people.a.getPosition(); window.gerard.game.frame({ x: a.x, y: a.y + 1.6, z: a.z }, .5);"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "shot": "aitor",
+      "caption": "Aitor: cara más redonda, cejas rectas, barba corta y forro polar."
+    },
+    {
+      "wait": 800
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "window.gerard.game.frame();"
+    },
+    {
+      "eval": "window.people.hold = false;"
+    },
+    {
+      "record": "andando",
+      "seconds": 1.6,
+      "fps": 24,
+      "keys": [
+        "KeyS",
+        "KeyA"
+      ],
+      "tiles": 8,
+      "each": "const p = window.people.me.getPosition(); window.gerard.game.frame({ x: p.x, y: p.y + .85, z: p.z }, 1.3);",
+      "caption": "Andando por la calle, con el balanceo de siempre."
+    },
+    {
+      "eval": "window.gerard.game.frame();"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "combate",
+      "caption": "En combate, a la distancia de siempre: Gerard con Papagato, Aitor con Tecnópata."
+    },
+    {
+      "record": "en-guardia",
+      "seconds": 3,
+      "fps": 12,
+      "tiles": 8,
+      "clip": [
+        420,
+        120,
+        800,
+        620
+      ],
+      "caption": "En combate, esperando: de tres cuartos a la cámara, rodillas algo dobladas."
+    },
+    {
+      "eval": "const root = window.gerard.game.app.root.findByName('Escenario de combate'); window.fighterHead = (who, up) => { const models = root.children.filter(c => c.findByName && c.findByName('Pivote de cabeza')); const m = models[who]; const p = m.findByName('Pivote de cabeza').getPosition(); return { x: p.x, y: p.y + up, z: p.z }; }; window.gerard.game.frame(window.fighterHead(0, .1), .85);"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "papagato",
+      "caption": "Gerard con Papagato: el collar se ajusta al cuello y la textura se tiñe con el color del ánima."
+    },
+    {
+      "eval": "window.gerard.game.frame(window.fighterHead(1, .1), .85);"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "tecnopata",
+      "caption": "Aitor con Tecnópata: visor HUD propio, porque no lleva gafas."
+    },
+    {
+      "eval": "window.gerard.game.frame();"
+    }
+  ]
+}

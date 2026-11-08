@@ -3,7 +3,7 @@ import { ANIMA_NAMES, type ClassId } from './battle';
 import type { ProfileId } from './stats';
 import { think } from './thoughts';
 import { separateFlushFaces } from './flush-faces';
-import { MATERIAL_ROLES } from './character-model';
+import { MATERIAL_ROLES, TEXTURE_COLOURS } from './character-model';
 import { dressAnima } from './anima-looks';
 
 /**
@@ -77,7 +77,12 @@ export function wearClass(model: pc.Entity, id: ClassId | undefined, grown = fal
     seen.add(m);
     if (!ownColours.has(m)) ownColours.set(m, m.diffuse.clone());
     const role = MATERIAL_ROLES.get(m.name), colour = role ? spec?.look[role] : undefined;
-    if (colour) m.diffuse.fromString(colour); else m.diffuse.copy(ownColours.get(m)!);
+    if (colour) {
+      m.diffuse.fromString(colour);
+      // A texture keeps its folds and seams: it is tinted by how far the dye is from what it averages to.
+      const own = TEXTURE_COLOURS.get(m.name);
+      if (own) m.diffuse.set(m.diffuse.r / own.r, m.diffuse.g / own.g, m.diffuse.b / own.b);
+    } else m.diffuse.copy(ownColours.get(m)!);
     m.update();
   }));
   dressAnima(model, id);

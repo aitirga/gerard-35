@@ -250,8 +250,8 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, claude=None, log=
             images_for_claude.append(("Portrait of the character:", portrait))
         target = character.targets["model"][0]
         example = (("The character's current file: improve it to match the references", target) if target.exists()
-                   else ("Example file, the hand-built protagonist Gerard as a child: match its scale, conventions "
-                         "and level of detail, not its outfit", root / "src/characters/gerard-child.json"))
+                   else ("Example file, Uri, a character built from primitives: match its scale, conventions "
+                         "and level of detail, not its outfit", root / "src/characters/uri.json"))
         log(f"\n== model: Claude designs primitives from {', '.join(rel([p for _, p in images_for_claude]))}"
             f"\n  example: {rel([example[1]])[0]}")
         if not args.dry_run:

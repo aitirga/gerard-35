@@ -86,7 +86,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const age = story.adult ? 'adult' : 'child';
     if (avatar.dataset.age === age) return;
     avatar.dataset.age = age;
-    avatar.innerHTML = story.adult ? SPEAKERS.gerard35.art : `<img src="${import.meta.env.BASE_URL}portraits/gerard-child.png" alt=""/>`;
+    avatar.innerHTML = `<img src="${import.meta.env.BASE_URL}portraits/${(story.adult ? SPEAKERS.gerard35 : SPEAKERS.gerard).portrait}.png" alt=""/>`;
   }
   updateAvatar();
   const sheetOf = (player: PlayerId) => sheets[player - 1];

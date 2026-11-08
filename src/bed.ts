@@ -3,8 +3,9 @@ export const MERIDIANA_BED = {
   x: 10.5, z: 15.27, width: 2, length: 3, headZ: 16.77,
   duvetTop: .74,
   sleepers: {
-    gerard: { scale: 1.26, rest: { x: 11, z: 15 }, height: .93, side: { x: 12, z: 15 }, stand: { x: 12, z: 13 } },
-    aitor: { scale: 1.38, rest: { x: 10, z: 14.94 }, height: .96, side: { x: 9, z: 15 }, stand: { x: 9, z: 14 } },
+    // `hip`: how high the hips are in the model (its leg pivot): they sit up round it.
+    gerard: { scale: 1.27, hip: .5279, rest: { x: 11, z: 14.96 }, height: .9, side: { x: 12, z: 15 }, stand: { x: 12, z: 13 } },
+    aitor: { scale: 1.33, hip: .5173, rest: { x: 10, z: 14.9 }, height: .91, side: { x: 9, z: 15 }, stand: { x: 9, z: 14 } },
   },
 } as const;
 
@@ -29,7 +30,7 @@ export function wakePose(who: Sleeper, seconds: number) {
   const lower = progress(seconds, gerard ? 2.85 : 3.05, gerard ? 3.3 : 3.5);
   const walk = progress(seconds, 3.55, 4.55);
   // Sit up round the hips, keeping the legs on the mattress until they swing over its side.
-  const hip = .48 * sleeper.scale, angle = sit * Math.PI / 2;
+  const hip = sleeper.hip * sleeper.scale, angle = sit * Math.PI / 2;
   const seatedZ = sleeper.rest.z + hip * (1 - Math.cos(angle));
   return {
     x: lerp(sleeper.rest.x, sleeper.side.x, slide),

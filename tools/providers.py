@@ -43,8 +43,9 @@ class OpenAIImages:
 
 
 class Meshy:
-    """Meshy image-to-3D: one character image in, a textured GLB out."""
-    base = "https://api.meshy.ai/openapi/v1/image-to-3d"
+    """Meshy: images of a character in, a textured GLB out; a model in, the same with a skeleton."""
+    api = "https://api.meshy.ai/openapi/v1"
+    base = f"{api}/image-to-3d"
 
     def __init__(self, api_key: str, client: httpx.Client | None = None, poll_seconds: float = 5):
         self.poll_seconds = poll_seconds
@@ -57,10 +58,24 @@ class Meshy:
             raise SystemExit(f"Meshy failed ({response.status_code}): {response.text}")
         return response.json()["result"]
 
-    def wait(self, task_id: str, on_progress=print, timeout: float = 1200) -> dict:
+    def _post(self, kind: str, body: dict) -> str:
+        response = self.client.post(f"{self.api}/{kind}", json=body)
+        if response.is_error:
+            raise SystemExit(f"Meshy failed ({response.status_code}): {response.text}")
+        return response.json()["result"]
+
+    def start_views(self, images: list[str], **options) -> str:
+        """Image-to-3D from data URIs of several views of one character, the front first."""
+        return self._post("multi-image-to-3d", {"image_urls": images, **options})
+
+    def start_rig(self, model_task: str, height: float) -> str:
+        """A skeleton for a model Meshy made, facing +z and `height` metres tall."""
+        return self._post("rigging", {"input_task_id": model_task, "height_meters": height})
+
+    def wait(self, task_id: str, on_progress=print, timeout: float = 1200, kind: str = "image-to-3d") -> dict:
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
-            task = self.client.get(f"{self.base}/{task_id}").raise_for_status().json()
+            task = self.client.get(f"{self.api}/{kind}/{task_id}").raise_for_status().json()
             if task["status"] == "SUCCEEDED":
                 return task
             if task["status"] in ("FAILED", "CANCELED"):

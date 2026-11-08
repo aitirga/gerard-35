@@ -1,0 +1,81 @@
+# Who `just character-3d` can make (tools/character_3d.py, tools/README.md). One table per figure; its
+# name is the id of its files in the game.
+#
+# kind = "person"    Walks and talks with the game's rig: Gerard, a friend, an NPC.
+#   photos           Under assets/references/characters/: the ones that MAY be sent to OpenAI, clothed,
+#                    of adults. None: it is drawn from `about` alone.
+#   art              Images of the game's own that show who it is, from the project's root: another figure's
+#                    toy, say. A real child's look comes from words, art and adult photos, never a child's photo.
+#   face_photos      Of those, the best of the face. Without `photos` they go straight to the toy, with no
+#                    full-body front: for an adult drawn younger, or when one photo of the face is all there is.
+#   about            Who they are and what they wear.
+#   cues             What makes them themselves, as big shapes and colours. Only with photos.
+#   height           Metres in the game: the cast is close in size.
+#   scale            The entity's scale in the game (1 for an NPC; `scale` of a sleeper in src/bed.ts).
+#   clean_shaven     Paints a moustache the model came with off its texture, without paying for another.
+#   backpack         A school backpack the game builds on its back: { bag = "#hex", straps = "#hex" }. It is
+#                    not in the images: Meshy only makes the body, and Gerard's shows once he picks it up.
+# kind = "creature"  A foe or a monster, in one piece: Meshy only gives a skeleton to human shapes.
+#   about            What it is and what it looks like.
+#   height           Metres in the game.
+# view_notes         Optional, by view (left, right, back): something only that side shows.
+
+[gerard-adult]
+name = "Gerard"
+kind = "person"
+photos = ["gerard/gerard-adulto-01.jpg", "gerard/gerard-adulto-02.jpg", "gerard/gerard-adulto-03.jpg", "gerard/gerard-adulto-05.jpg", "gerard/gerard-adulto-06.jpg"]
+face_photos = ["gerard/gerard-adulto-01.jpg", "gerard/gerard-adulto-05.jpg"]
+about = "About him: 35, slim and athletic. A long, narrow face. Round thin dark glasses with a keyhole bridge. Dark brown short hair, short on the sides, longer on top and swept to one side with high temples. Brown eyes. Long nose. Clean shaven, no moustache and no beard.\nClothes: an olive green hoodie with its hood down and white drawstrings with metal eyelets, dark jeans, white trainers, no logos."
+cues = "a clearly long, narrow head, a long nose, round thin dark glasses as his strongest feature, dark brown hair swept to one side in big chunks, clean shaven with no moustache"
+height = 1.75
+scale = 1.27
+clean_shaven = true
+[gerard-adult.view_notes]
+back = "The hood hangs down his back, the glasses temples just visible."
+
+[aitor]
+name = "Aitor"
+kind = "person"
+photos = ["aitor/aitor-01.jpg", "aitor/aitor-02.jpg", "aitor/aitor-03.jpg"]
+face_photos = ["aitor/aitor-02.jpg", "aitor/aitor-03.jpg"]
+about = "About him: 35, a little taller and broader than average, not fat. A rounder, fuller face than a typical long face, with soft jaw. Short black slightly tousled hair with high temples. Dark, strong, fairly straight brows. Hazel green eyes. A short, light, reddish-brown beard and moustache, kept short like heavy stubble. No glasses. A small black round plug in his left earlobe.\nClothes: a dark navy zip-up fleece jacket with a stand-up collar, grey-blue jeans, dark trainers with white soles, no logos."
+cues = "a clearly rounder, wider head than a long face, thick straight dark brows, hazel green eyes, short black hair in big tousled chunks with high temples, a short reddish-brown beard painted as one flat patch along his jaw, and a small black plug in his left earlobe"
+height = 1.82
+scale = 1.33
+[aitor.view_notes]
+left = "The small black plug shows in this earlobe."
+right = "This ear has no plug."
+
+[gerard-child]
+name = "Gerard de niño"
+kind = "person"
+art = ["output/characters/3d/gerard-adult/toy.png"]
+about = "The same person as the figure in the first image, but as a boy of about ten on his birthday: the same long head, long nose and dark brown hair swept to one side in big chunks, and the same round thin dark glasses, which he already wears. A slim, short boy, a head shorter than the adult. A short-sleeved T-shirt in wide horizontal stripes of warm yellow and navy blue, dark navy trousers, chunky cream trainers. A quiet, curious look with a small smile."
+height = 1.32
+scale = 1
+backpack = { bag = "#527e6e", straps = "#355b50" }
+
+[bernat-child]
+name = "Bernat de niño"
+kind = "person"
+face_photos = ["bernat/bernat-adulto-01.png"]
+about = "The man in the photo as a boy of about ten, still recognisably him, with no facial hair: a clearly wide, rounded head with full cheeks and a big warm smile, short dark brown hair with volume on top, and rectangular dark navy glasses as his strongest feature, which he already wears. A short-sleeved T-shirt in steel blue with pale grey horizontal stripes, slate blue trousers, chunky pale grey trainers."
+height = 1.32
+scale = 1
+backpack = { bag = "#a8473f", straps = "#7a3430" }
+
+[jan-child]
+name = "Jan"
+kind = "person"
+face_photos = ["jan/jan-adulto-02.png"]
+about = "The man in the photo as a lanky teenager of about fourteen, still recognisably him, with no facial hair: a long narrow face, long wavy near-black hair parted in the middle and falling past his ears to his shoulders in one big sculpted piece, thin round metal glasses as his strongest feature, a calm, deadpan look. Slim and clearly taller than a ten-year-old. A plain black short-sleeved T-shirt over a long-sleeved black one, with one big simple shape of flame orange on the chest and no letters at all, charcoal trousers, chunky off-white trainers."
+height = 1.56
+scale = 1.12
+
+[mama]
+name = "Mamá"
+kind = "person"
+face_photos = ["mama/mama-01.png"]
+about = "The woman in the photo in her early forties, warm and busy on a morning at home: a soft oval face with a slightly pointed chin, shoulder-length wavy dark auburn-brown hair with a side parting and a fringe falling across her forehead, thin round metal glasses with clear lenses and red lips. A long-sleeved top in terracotta red and cream horizontal stripes, charcoal trousers, chunky rust-brown shoes."
+height = 1.66
+scale = 1.3

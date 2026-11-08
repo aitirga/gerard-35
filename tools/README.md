@@ -82,6 +82,24 @@ retrato normal (y en desarrollo sale un aviso en la consola):
 { speaker: 'gerard', text: '¿¡Tres perros!?', expression: 'sorprendido' }
 ```
 
+La misma línea cambia también la cara del personaje en el mundo y le mueve la boca mientras se
+escribe. El sistema está en [src/face.ts](../src/face.ts) y sirve para cualquier personaje, con lo que
+tenga: aplasta los ojos, estira la boca y mueve la cabeza. En un modelo hecho desde fotos los ojos están
+pintados: baja sobre ellos un párpado de su piel, y un hueso estira la boca pintada. Así parpadea, duerme,
+guiña y habla, pero no cambia de gesto del todo.
+
+```ts
+faceOf(model).show('sorprendido');   // hasta nuevo aviso
+faceOf(model).show('dolor', .5);     // medio segundo y vuelve
+faceOf(model).show();                // vuelve ya
+faceOf(model).talk(true);            // la boca se mueve
+faceOf(model).update(dt, { animate });  // cada fotograma, quien anime al modelo
+```
+
+Hay `neutro`, `contento`, `riendo`, `sorprendido`, `triste`, `enfadado`, `preocupado`, `pensativo`,
+`decidido`, `dolor`, `dormido` y `guino`. Para añadir una, una fila más en `EXPRESSIONS`. Para verlas
+todas: `just screenshots expresiones --gpu`.
+
 La cara del que habla cambia en cada línea y la del que escucha se queda como estaba. El
 hablante necesita `portrait: '<name>'` en `SPEAKERS` ([src/dialogue.ts](../src/dialogue.ts));
 la herramienta avisa si falta.
@@ -98,6 +116,54 @@ monta el personaje y su rig para las animaciones de andar, reposo y combate:
   `attach` `body`, `head`, `arm` o `leg`. Brazos y piernas se construyen en los dos lados;
   `mirror: true` duplica una pieza del cuerpo o la cabeza en −x. `scale` es el tamaño total.
 - +z es el frente del personaje y las suelas acaban en y = 0,02.
+- `fit` (opcional): dónde se visten las ánimas en este cuerpo (`collar`, `chest`, `back`), si no es
+  donde lo tiene el reparto de primitivas.
+
+### Figuras en 3D: `just character-3d`
+
+Gerard a los 35 y Aitor son figuras hechas desde sus fotos, porque tienen que reconocerse, y así se hace
+también a quien se invente y a los monstruos: el proceso entero lo lleva la skill `/character-3d`. Su archivo
+trae `glb` (el modelo, bajo `public/`), y sus `parts` son cajas medidas que solo representan su cuerpo en
+los tests. Lo hace [character_3d.py](character_3d.py), con una tabla por figura en
+[figures.toml](figures.toml):
+
+```sh
+just character-3d aitor --dry-run             # qué haría y qué enviaría
+just character-3d aitor --from toy --to toy   # otra imagen, para mirarla antes de pagar el modelo
+just character-3d aitor --from views          # y de ahí al juego
+just character-3d aitor                       # solo lo que falte
+```
+
+| Paso | De qué a qué | Con |
+| --- | --- | --- |
+| `front` | Fotos con ropa → cuerpo entero de frente, fiel a la persona. Solo si hay fotos | OpenAI |
+| `toy` | Ese frente, dos fotos de la cara y una captura del juego (`assets/references/characters/game-style.png`) → la misma persona como figura de juguete del juego | OpenAI |
+| `views` | `toy` → el mismo personaje de izquierda, derecha y espalda | OpenAI |
+| `model` | `toy` y las tres vistas → GLB con textura, unos 30 créditos | Meshy |
+| `rig` | El modelo → el mismo con esqueleto, unos 5 créditos. Solo personas: Meshy no riggea otra cosa | Meshy |
+| `game` | Lo convierte al rig del juego ([character_rig.py](character_rig.py)) y escribe los dos archivos | local |
+| `portrait` | `toy.png` → el retrato de conversaciones y menús, en `public/portraits/`. Solo personas | OpenAI |
+
+Con `kind = "creature"` el resultado va a `public/models/creatures/` y `src/creatures/`, sin esqueleto:
+una pieza con las partes de los miedos de Uri, para clonarla en un combate (`buildCreature`).
+
+- **Privacidad:** a OpenAI solo van las fotos listadas en `figures.toml`; a Meshy, solo las imágenes
+  estilizadas. Una foto que no deba salir de este ordenador no se lista. Las fotos no están en git.
+- **Parecido y estilo:** se deciden en `toy`, y es barato. Aprueba esa imagen antes de pagar el modelo.
+  Las formas grandes y los colores planos son lo que la integra con el reparto y el mundo; lo fotográfico,
+  no. Por eso se le pide a Meshy poca malla (12 000 triángulos) y una textura de plástico mate.
+- `character_rig.py` junta los 24 huesos de Meshy en los del juego y baja los brazos a una pose relajada.
+  Separa la ropa en materiales para que las ánimas la tiñan, y suaviza las normales. Con MediaPipe
+  encuentra ojos y boca en el modelo, en local (guarda lo que encuentra en `rigged.face.json` y una
+  imagen para comprobarlo en `rigged.face.png`): la boca lleva un hueso, y los ojos un nodo donde el
+  juego pone sus párpados (`lids`).
+- `clean_shaven` en `figures.toml` borra de la textura un bigote con el que venía el modelo, sin pagar otro.
+- **El modelo 3D es solo para el mundo del juego.** Los retratos de conversaciones, menús y combate salen de la
+  imagen generada: el paso `portrait` los dibuja desde `toy.png`, y `just character-3d <id> --expressions` añade las
+  expresiones que falten, una imagen cada una.
+- A un niño real nunca se le envían fotos: se dibuja con palabras y `art` (imágenes del juego, como la figura
+  de su yo adulto).
+- La altura de las caderas va también en `hip` de [src/bed.ts](../src/bed.ts): un test comprueba que coincidan.
 
 El juego usa `gerard-child.json` como protagonista; en desarrollo, `?character=<name>`
 (o `just dev-character <name>`) carga otro. Un test de Python valida todos los archivos.

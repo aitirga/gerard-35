@@ -126,8 +126,12 @@ def dump(spec: dict) -> str:
     line = lambda value: json.dumps(value, ensure_ascii=False)
     materials = ",\n".join(f"    {line(k)}: {line(v)}" for k, v in spec["materials"].items())
     parts = ",\n".join(f"    {line(p)}" for p in spec["parts"])
-    return (f'{{\n  "id": {line(spec["id"])},\n  "name": {line(spec["name"])},\n'
-            f'  "materials": {{\n{materials}\n  }},\n  "rig": {line(spec["rig"])},\n  "parts": [\n{parts}\n  ]\n}}\n')
+    fit = f'  "fit": {line(spec["fit"])},\n' if "fit" in spec else ""
+    fit += f'  "lids": {line(spec["lids"])},\n' if "lids" in spec else ""
+    fit += f'  "backpack": {line(spec["backpack"])},\n' if "backpack" in spec else ""
+    glb = f'  "glb": {line(spec["glb"])},\n' if "glb" in spec else ""
+    return (f'{{\n  "id": {line(spec["id"])},\n  "name": {line(spec["name"])},\n{glb}'
+            f'  "materials": {{\n{materials}\n  }},\n  "rig": {line(spec["rig"])},\n{fit}  "parts": [\n{parts}\n  ]\n}}\n')
 
 
 def request(name: str, who: str, notes: str, images: list[tuple[str, Path]], example: tuple[str, Path]) -> list:

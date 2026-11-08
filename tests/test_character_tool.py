@@ -45,7 +45,7 @@ class FakeMeshy:
 
 
 def gerard_spec() -> dict:
-    return json.loads((ROOT / "src/characters/gerard-child.json").read_text())
+    return json.loads((ROOT / "src/characters/uri.json").read_text())
 
 
 class FakeClaude:
@@ -70,9 +70,9 @@ class CharacterToolTests(unittest.TestCase):
         gerard = self.root / "assets/characters/gerard"
         gerard.mkdir(parents=True)
         (gerard / "portrait-transparent.png").write_bytes(PNG)
-        example = self.root / "src/characters/gerard-child.json"
+        example = self.root / "src/characters/uri.json"
         example.parent.mkdir(parents=True)
-        shutil.copyfile(ROOT / "src/characters/gerard-child.json", example)
+        shutil.copyfile(ROOT / "src/characters/uri.json", example)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -97,11 +97,11 @@ class CharacterToolTests(unittest.TestCase):
         # The full-body pass sees the new portrait first, then the same references.
         self.assertEqual(images.calls[2][1][0], out / "portrait.png")
         self.assertEqual(images.calls[2][2], "1024x1536")
-        # Claude sees the full body and the portrait, then Gerard's file as the example.
+        # Claude sees the full body and the portrait, then Uri's file as the example.
         content = claude.calls[0][0]["content"]
         self.assertEqual([base64.b64decode(c["source"]["data"]) for c in content if c["type"] == "image"],
                          [PNG + b"1024x1536", PNG + b"1024x1024"])
-        self.assertIn('"Gerard de niño"', content[-1]["text"])
+        self.assertIn('"Uri"', content[-1]["text"])
         self.assertIn('Use "bernat" as the id', content[-1]["text"])
 
         self.assertEqual((self.root / "public/portraits/bernat.png").read_bytes(), PNG + b"1024x1024")

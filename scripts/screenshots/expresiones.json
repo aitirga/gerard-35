@@ -1,0 +1,132 @@
+{
+  "title": "Expresiones · Sistema de caras",
+  "description": "Cada expresión de src/face.ts en Gerard y Aitor, en el juego y con su cámara. Se piden con game.speak, igual que las pide un diálogo con `expression`.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "until": "!!window.gerard?.game?.app",
+      "timeout": 60000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "eval": "const g = window.gerard.game, app = g.app, root = app.root, me = root.findByName('Jugador'), a = root.findByName('Aitor'), p0 = me.getPosition().clone(); const f = app.systems.camera.cameras.find(c => c.entity.enabled && !c.renderTarget).entity.forward, yaw = Math.atan2(-f.x, -f.z) * 180 / Math.PI; window.people = { me, a, hold: true }; app.on('update', () => { if (!window.people.hold) return; a.setPosition(p0.x + 1.1, a.getPosition().y, p0.z - .25); me.findByName('Cuerpo').setLocalEulerAngles(0, yaw + 14, 0); a.findByName('Cuerpo').setLocalEulerAngles(0, yaw - 14, 0); }); g.frame({ x: p0.x + .55, y: p0.y + 1.35, z: p0.z - .12 }, .85); window.both = id => g.showFaces(id);"
+    },
+    {
+      "eval": "window.both('neutro')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "neutro",
+      "caption": "neutro"
+    },
+    {
+      "eval": "window.both('contento')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "contento",
+      "caption": "contento"
+    },
+    {
+      "eval": "window.both('riendo')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "riendo",
+      "caption": "riendo"
+    },
+    {
+      "eval": "window.both('sorprendido')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "sorprendido",
+      "caption": "sorprendido"
+    },
+    {
+      "eval": "window.both('triste')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "triste",
+      "caption": "triste"
+    },
+    {
+      "eval": "window.both('enfadado')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "enfadado",
+      "caption": "enfadado"
+    },
+    {
+      "eval": "window.both('preocupado')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "preocupado",
+      "caption": "preocupado"
+    },
+    {
+      "eval": "window.both('pensativo')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "pensativo",
+      "caption": "pensativo"
+    },
+    {
+      "eval": "window.both('decidido')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "decidido",
+      "caption": "decidido"
+    },
+    {
+      "eval": "window.both('dolor')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "dolor",
+      "caption": "dolor"
+    },
+    {
+      "eval": "window.both('guino')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "guino",
+      "caption": "guiño"
+    },
+    {
+      "eval": "window.both(); window.gerard.game.frame();"
+    }
+  ]
+}
