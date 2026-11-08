@@ -1,4 +1,5 @@
 import * as pc from 'playcanvas';
+import { SURFACE_SAMPLES, writeSurface } from './surface-samples.ts';
 import { HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, MAX_LATTICES, MAX_MEMBERS, latticeReach, latticeSpacing, latticeWgsl, type LatticeDissolve, type LatticeShape, type Vec3Like } from './lattice.ts';
 
 /**
@@ -10,7 +11,8 @@ import { HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, MAX_LATTI
  *   D when it lets go + its colour tint · E the particle it follows, where it sits in its chain, its batch.
  * The CPU keeps a ring of slots and sends batches to spawn (`burst`, `emitter`); everything else
  * happens on the GPU:
- * - spawning in a ball, on a ring, along a line or on the surface of a fighter's parts;
+ * - spawning in a ball, on a ring, along a line or on a fighter's real surface (points on its
+ *   triangles, bent by its bones: src/surface-samples.ts), or its parts' boxes if it has none;
  * - motion: gravity or buoyancy, drag, a divergence-free turbulent flow and force `field`s
  *   (swirl round any axis, pull, lift) that can follow a fighter;
  * - particles that see each other: siblings from the same batch flock (separation, cohesion,
@@ -219,6 +221,8 @@ const W = 256, H = 128, N = W * H, BANDS = 5;
 export const MAX_KINDS = 64;
 const KIND_COLS = 12, MAX_BATCHES = 64, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
 const SPAWN_SHAPES = { ball: 0, ring: 1, surface: 2, line: 3 } as const;
+/** Frames a fighter's real surface may be old before it is written again (src/surface-samples.ts). */
+const SURFACE_EVERY = 3;
 /** Crystals and other volumes particles meet; light groups (bursts that light their surroundings), the lights they share and how many particles each samples. */
 export const MAX_VOLUMES = 8;
 const VOLUME_COLS = 9, MAX_LIGHT_GROUPS = 8, FX_LIGHTS = 4, LIGHT_SAMPLES = 64;
@@ -274,6 +278,7 @@ var uSpawns: texture_2d<uff>;
 var uFields: texture_2d<uff>;
 var uParts: texture_2d<uff>;
 var uFighters: texture_2d<uff>;
+var uSurface: texture_2d<uff>;
 var uFloorMap: texture_2d<uff>;
 uniform uDt: f32;
 uniform uTime: f32;
@@ -384,6 +389,27 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
       pos = s1.xyz + normal * s1.w;
     } else if (s3.x > 2.5) { pos = mix(s1.xyz, s7.xyz, (offset - inChain + 0.5) / s0.y) + unitVec(r2, r3) * s1.w * r4; }
     else if (textureLoad(uFighters, vec2i(1, i32(s3.y)), 0).y < 0.5) { pos = s1.xyz; }
+    else if (textureLoad(uFighters, vec2i(2, i32(s3.y)), 0).x > 0.5) {
+      // On a fighter's real surface: one of its points (src/surface-samples.ts), above a fraction of
+      // its height and within a band of it (a front eating it), drawn again until it is.
+      let g = i32(s3.y);
+      let fighter = textureLoad(uFighters, vec2i(1, g), 0);
+      let samples = i32(textureLoad(uFighters, vec2i(2, g), 0).x);
+      let s8 = spawn4(8, b);
+      let span = fighter.w - fighter.z;
+      let bandLow = max(fighter.z + span * s8.x, fighter.z + span * s4.z); let bandHigh = fighter.z + span * s8.y;
+      var pickAt = 0;
+      for (var draw = 0u; draw < 12u; draw++) {
+        pickAt = min(samples - 1, i32(select(rnd(key, 48u + draw), r2, draw == 0u) * f32(samples)));
+        let y = textureLoad(uSurface, vec2i(pickAt, g * 3), 0).y;
+        if (y >= bandLow && y <= bandHigh) { break; }
+      }
+      normal = textureLoad(uSurface, vec2i(pickAt, g * 3 + 1), 0).xyz;
+      // A little off the point, along the skin, so specks from one point never stack.
+      let side1 = anyPerp(normal); let side2 = cross(normal, side1);
+      pos = textureLoad(uSurface, vec2i(pickAt, g * 3), 0).xyz + normal * 0.006 + (side1 * (r3 - 0.5) + side2 * (r4 - 0.5)) * 0.03;
+      if (s8.z > 0.0) { tint = mix(tint, textureLoad(uSurface, vec2i(pickAt, g * 3 + 2), 0).rgb, s8.z); }
+    }
     else {
       // On a fighter: a random part (above a fraction of its height), a random face, a random point on
       // it. Within a band of its height (a front eating it), drawn again until the point is in it.
@@ -996,7 +1022,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
   const targets = states.map(colorBuffer => new pc.RenderTarget({ colorBuffer, depth: false }));
   let current = 0;
   const kindTex = data(KIND_COLS, MAX_KINDS, 'Clases de partículas'), spawnTex = data(SPAWN_COLS, MAX_BATCHES, 'Nacimientos'), fieldTex = data(FIELD_COLS, MAX_FIELDS, 'Campos');
-  const partTex = data(PART_COLS, MAX_PARTS, 'Partes de luchadores'), fighterTex = data(2, MAX_FIGHTERS, 'Luchadores'), floorTex = data(FLOOR, FLOOR, 'Suelo del combate');
+  const partTex = data(PART_COLS, MAX_PARTS, 'Partes de luchadores'), fighterTex = data(3, MAX_FIGHTERS, 'Luchadores'), surfaceTex = data(SURFACE_SAMPLES, MAX_FIGHTERS * 3, 'Superficie de luchadores'), floorTex = data(FLOOR, FLOOR, 'Suelo del combate');
   fill(floorTex, () => {});
   const volumeTex = data(VOLUME_COLS, MAX_VOLUMES, 'Volúmenes'), groupTex = data(1, MAX_LIGHT_GROUPS, 'Grupos de luz'), latticeTex = data(LATTICE_COLS, MAX_LATTICES, 'Retículas');
   const lightTex = data(MAX_LIGHT_GROUPS, 2, 'Luz de las partículas'), lightTarget = new pc.RenderTarget({ colorBuffer: lightTex, depth: false });
@@ -1050,7 +1076,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
   const scope = device.scope;
   const u = (name: string) => scope.resolve(name);
   const uniforms = {
-    state: u('uState'), kinds: u('uKinds'), spawns: u('uSpawns'), fields: u('uFields'), parts: u('uParts'), fighters: u('uFighters'), floorMap: u('uFloorMap'),
+    state: u('uState'), kinds: u('uKinds'), spawns: u('uSpawns'), fields: u('uFields'), parts: u('uParts'), fighters: u('uFighters'), surface: u('uSurface'), floorMap: u('uFloorMap'),
     dt: u('uDt'), time: u('uTime'), frame: u('uFrame'), counts: u('uCounts'), floor: u('uFloor'),
     volumes: u('uVolumes'), extra: u('uExtra'), groups: u('uGroups'), lattices: u('uLattices'),
   };
@@ -1150,15 +1176,22 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     head = (start + count) % N;
     return { start, count };
   }
+  /** Each fighter slot's real surface as last written: whose, on which frame, how many points. */
+  const written: ({ model: pc.Entity; frame: number; count: number } | undefined)[] = [];
   function writeParts() {
     let parts = 0, count = 0;
     const pd = partTex.lock() as Float32Array, fd = fighterTex.lock() as Float32Array;
     pd.fill(0); fd.fill(0);
+    // Which fighters something is born on this frame: only they get their real surface written, and
+    // a status streaming off someone every frame only every few (a frame or two late does not show).
+    const sampled = new Set(batches.filter(b => b.o.shape === 'surface').map(b => b.o.fighter ?? 0));
+    const stale = [...sampled].filter(g => { const w = written[g]; return !w || w.model !== fighters[g] || frame - w.frame >= SURFACE_EVERY; });
+    const surface = stale.length ? surfaceTex.lock() as Float32Array : undefined;
     // One slot per fighter in `setFighters` order, empty for whoever is gone, so indices stay theirs.
     for (const model of fighters) {
       if (count >= MAX_FIGHTERS) break;
       const start = parts;
-      const empty = () => { fd.set([0, -1e4, 0, -1], count * 8); fd.set([start, 0, 0, 0], count * 8 + 4); count++; };
+      const empty = () => { fd.set([0, -1e4, 0, -1], count * 12); fd.set([start, 0, 0, 0], count * 12 + 4); count++; };
       if (!model.enabled) { empty(); continue; }
       let first = true;
       for (const r of model.findComponents('render') as pc.RenderComponent[]) {
@@ -1183,12 +1216,16 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
         }
       }
       if (parts === start) { empty(); continue; }
-      const c = box.center, h = box.halfExtents, f = count * 8;
+      const c = box.center, h = box.halfExtents, f = count * 12;
       fd.set([c.x, c.y, c.z, h.length() + .3], f);
       fd.set([start, parts - start, box.getMin().y, box.getMax().y], f + 4);
+      // Its real surface, only when something is born on it this frame (it costs a little to bend).
+      if (stale.includes(count)) written[count] = { model, frame, count: writeSurface(model, surface!, count * 3 * SURFACE_SAMPLES, SURFACE_SAMPLES) };
+      if (sampled.has(count) && written[count]?.model === model) fd.set([written[count]!.count, 0, 0, 0], f + 8);
       count++;
     }
     partTex.unlock(); fighterTex.unlock();
+    if (surface) surfaceTex.unlock();
     return { parts, count };
   }
   function writeVolumes() {
@@ -1447,7 +1484,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       }));
       uniforms.state.setValue(states[current]);
       uniforms.kinds.setValue(kindTex); uniforms.spawns.setValue(spawnTex); uniforms.fields.setValue(fieldTex);
-      uniforms.parts.setValue(partTex); uniforms.fighters.setValue(fighterTex); uniforms.floorMap.setValue(floorTex);
+      uniforms.parts.setValue(partTex); uniforms.fighters.setValue(fighterTex); uniforms.surface.setValue(surfaceTex); uniforms.floorMap.setValue(floorTex);
       uniforms.dt.setValue(Math.min(dt, 1 / 20)); uniforms.time.setValue(time % 600); uniforms.frame.setValue(frame % 1e6);
       counts[0] = batches.length; counts[1] = Math.min(fields.length, MAX_FIELDS); counts[2] = count; counts[3] = parts;
       uniforms.counts.setValue(counts);
@@ -1471,7 +1508,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       batches.length = 0; emitters.length = 0; fields.length = 0; volumes.length = 0; groups.length = 0; live = 0; head = 0;
       placeLights(false);
     },
-    destroy() { destroyed = true; lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, floorTex, volumeTex, groupTex, lightTex, latticeTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
+    destroy() { destroyed = true; lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, surfaceTex, floorTex, volumeTex, groupTex, lightTex, latticeTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
   };
 }
 export type FightParticles = ReturnType<typeof createFightParticles>;
