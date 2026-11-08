@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "level": "prueba",
+  "cols": 5,
+  "rows": 5,
+  "pitches": [
+    {
+      "word": "MELÓN",
+      "role": "tent"
+    },
+    {
+      "word": "REY",
+      "role": "ours"
+    },
+    {
+      "word": "ARENA",
+      "role": "ours"
+    },
+    {
+      "word": "TREN",
+      "role": "tent"
+    },
+    {
+      "word": "HORMIGA",
+      "role": "ours"
+    },
+    {
+      "word": "LLAVE",
+      "role": "tent"
+    },
+    {
+      "word": "FAROL",
+      "role": "black"
+    },
+    {
+      "word": "GUITARRA",
+      "role": "tent"
+    },
+    {
+      "word": "PEÓN",
+      "role": "ours"
+    },
+    {
+      "word": "OLA",
+      "role": "ours"
+    },
+    {
+      "word": "TIENDA",
+      "role": "tent"
+    },
+    {
+      "word": "MOSQUITO",
+      "role": "ours"
+    },
+    {
+      "word": "FOTO",
+      "role": "tent"
+    },
+    {
+      "word": "MARTILLO",
+      "role": "tent"
+    },
+    {
+      "word": "REINA",
+      "role": "ours"
+    },
+    {
+      "word": "CARAVANA",
+      "role": "tent"
+    },
+    {
+      "word": "CONCHA",
+      "role": "ours"
+    },
+    {
+      "word": "BOMBONA",
+      "role": "tent"
+    },
+    {
+      "word": "PUENTE",
+      "role": "tent"
+    },
+    {
+      "word": "GRILLO",
+      "role": "ours"
+    },
+    {
+      "word": "RECEPCIÓN",
+      "role": "tent"
+    },
+    {
+      "word": "PULSERA",
+      "role": "tent"
+    },
+    {
+      "word": "VINO",
+      "role": "tent"
+    },
+    {
+      "word": "COCHE",
+      "role": "tent"
+    },
+    {
+      "word": "BANCO",
+      "role": "tent"
+    }
+  ],
+  "clues": [
+    {
+      "word": "PLAYA",
+      "count": 3,
+      "targets": [
+        2,
+        9,
+        16
+      ]
+    },
+    {
+      "word": "AJEDREZ",
+      "count": 3,
+      "targets": [
+        1,
+        8,
+        14
+      ]
+    },
+    {
+      "word": "INSECTO",
+      "count": 3,
+      "targets": [
+        4,
+        11,
+        19
+      ]
+    }
+  ]
+}

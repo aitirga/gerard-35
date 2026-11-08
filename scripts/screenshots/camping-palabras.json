@@ -1,0 +1,47 @@
+{
+  "title": "Càmping Eurosport · La palabra al caer",
+  "description": "docs/quests/universidad.md § Las palabras: a patrol of the maze, beaten in the fight, shouts its word over its head as it shudders, before it comes apart (the fight tester gives the magos «Empiezo»). The party now faces its foes, backs to the camera when need be. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22camping-magos%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = id => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, 3.4); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "en-guardia",
+      "delay": 1200,
+      "caption": "En guardia: Gerard y Aitor miran a los magos, aunque den la espalda a la cámara"
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(state => state.foes.forEach(f => { f.hp = 1; }))"
+    },
+    {
+      "press": "Digit1"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "shot": "grito",
+      "delay": 900,
+      "caption": "Un mago cae: antes de deshacerse grita su palabra, «¡Empiezo!»"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "despues",
+      "delay": 200,
+      "caption": "Y se deshace"
+    }
+  ]
+}

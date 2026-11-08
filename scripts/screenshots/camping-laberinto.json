@@ -1,0 +1,203 @@
+{
+  "title": "Càmping Eurosport · Palabras, candado, pizarra y puerta blindada",
+  "description": "docs/quests/universidad.md § Càmping Eurosport: the hedge maze and its patrols, each group saying a word as it falls; the pool gate's padlock of three number wheels, opened with 7, 8, 5: the letters of the words the maze's foes say (Empiezo, Continúo, Acabo); the pool, El Campeón and Las parcelas' board on an easel; the merendero behind a steel door that lights a bulb per pitch found and opens when the board is solved (La Sobremesa a dark shape in the walls' shade until then, lit at once as the door opens); the sun very low over the whole campsite. No overview in the campsite. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=universidad&part=camp&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.story.uni.beaten.push('magos-entrada', 'magos-plaza', 'agentes-norte', 'agentes-fondo', 'magos-sur', 'magos-patio')"
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        52,
+        23
+      ]
+    },
+    {
+      "shot": "entrada-laberinto",
+      "delay": 2500,
+      "caption": "La única entrada al laberinto; sin vista general: la cámara se queda con ellos"
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        30,
+        9
+      ]
+    },
+    {
+      "shot": "calle",
+      "delay": 2500,
+      "caption": "Una calle del laberinto con el sol muy bajo: setos largos en sombra, la luz rasante solo arriba"
+    },
+    {
+      "eval": "window.gerard.story.uni.fighting = 'agentes-rotonda'; window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'camping-agentes' })"
+    },
+    {
+      "shot": "palabra",
+      "delay": 1500,
+      "caption": "Al caer, cada grupo dice una palabra: los de la rotonda, en medio del laberinto, «…Continúo.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        19,
+        24
+      ]
+    },
+    {
+      "shot": "porton",
+      "delay": 2500,
+      "caption": "El portón de la piscina: al acercarse, Aitor y Gerard ven el candado de ruedas"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 800
+    },
+    {
+      "shot": "candado",
+      "delay": 600,
+      "caption": "El candado: tres ruedas de números y nada más"
+    },
+    {
+      "press": "ArrowDown",
+      "times": 7,
+      "gap": 120
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "press": "ArrowDown",
+      "times": 8,
+      "gap": 120
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "press": "ArrowDown",
+      "times": 5,
+      "gap": 120
+    },
+    {
+      "shot": "candado-codigo",
+      "delay": 300,
+      "caption": "7 · 8 · 5: las letras de «Empiezo», «Continúo» y «Acabo», lo que dicen al caer"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "porton-abriendose",
+      "delay": 1200,
+      "caption": "«Empiezo, Continúo, Acabo»: el candado cae y el portón se abre; la tapia sigue en pie"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        12,
+        24
+      ]
+    },
+    {
+      "shot": "piscina",
+      "delay": 2500,
+      "caption": "La piscina: El Campeón ante la pizarra del torneo, y al fondo la puerta de acero"
+    },
+    {
+      "eval": "window.gerard.story.uni.beaten.push('campeon'); window.gerard.storyEvent({ type: 'parcelas', outcome: 'lit', board: { lit: [0, 1, 2, 3], shown: [], darkness: 0 }, solved: false })"
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        9,
+        23
+      ]
+    },
+    {
+      "shot": "puerta-bombillas",
+      "delay": 2500,
+      "caption": "El Campeón vencido; cada parcela encontrada en la pizarra enciende una bombilla sobre la puerta de acero (4 de 9)"
+    },
+    {
+      "eval": "{ const g = window.gerard.game, s = g.app.root.findByName('Monumento porta-merendero').getPosition(); document.querySelector('#hud').style.visibility = 'hidden'; g.frame({ x: s.x, y: s.y + 2, z: s.z }, 6); }"
+    },
+    {
+      "shot": "puerta-cerca",
+      "delay": 2000,
+      "caption": "De cerca: acero remachado, la barra con su volante y las bombillas en el dintel"
+    },
+    {
+      "eval": "{ const g = window.gerard.game, s = g.app.root.findByName('Monumento taula-melo').getPosition(); g.frame({ x: s.x, y: s.y + 2, z: s.z + 2 }, 9); }"
+    },
+    {
+      "shot": "merendero-oscuro",
+      "delay": 2000,
+      "caption": "Tras la puerta, el merendero en la sombra de los muros con el sol tan bajo: algo se intuye en la mesa larga, poco más"
+    },
+    {
+      "eval": "{ const g = window.gerard.game, s = g.app.root.findByName('Monumento porta-merendero').getPosition(); g.frame({ x: s.x, y: s.y + 2, z: s.z }, 6); }"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'parcelas', outcome: 'lit', board: { lit: [0, 1, 2, 3, 4, 5, 6, 7, 8], shown: [], darkness: 0 }, solved: true })"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "puerta-abriendose",
+      "delay": 1300,
+      "caption": "Las parcelas resueltas: las nueve bombillas, el cerrojo sube y la puerta se abre"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "{ const g = window.gerard.game, s = g.app.root.findByName('Monumento taula-melo').getPosition(); g.frame({ x: s.x, y: s.y + 2, z: s.z + 2 }, 9); }"
+    },
+    {
+      "shot": "merendero-iluminado",
+      "delay": 2000,
+      "caption": "Al abrirse, las luces del merendero se encienden de golpe: La Sobremesa en la mesa larga"
+    },
+    {
+      "eval": "window.gerard.game.frame(); document.querySelector('#hud').style.visibility = ''"
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        9,
+        21
+      ]
+    },
+    {
+      "shot": "merendero",
+      "delay": 3000,
+      "caption": "Al cruzar la puerta"
+    }
+  ]
+}

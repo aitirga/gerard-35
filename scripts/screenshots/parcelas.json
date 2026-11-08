@@ -1,0 +1,117 @@
+{
+  "title": "Las parcelas: el tablero",
+  "description": "docs/quests/universidad.md § Càmping Eurosport. The word-clue board from the picker (the test puzzle): the blackboard's clue, the 25 pitches, each player's marker, a lantern lit, a tent woken, the next clue, the black pitch, and the way open. Generated against the current src/parcelas/prueba.json.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "document.querySelector('#environment').click()"
+    },
+    {
+      "eval": "document.querySelector('[data-tab=\"missions\"]').click()"
+    },
+    {
+      "shot": "picker",
+      "delay": 500,
+      "caption": "The picker's Ánimas column: LAS PARCELAS, Empezar el tablero"
+    },
+    {
+      "eval": "document.querySelector('[data-open-parcelas=\"1\"]').click()"
+    },
+    {
+      "until": "!document.querySelector('#parcelas-panel').hidden && document.querySelector('.parcela')",
+      "timeout": 20000
+    },
+    {
+      "shot": "board",
+      "delay": 700,
+      "caption": "The board opens: the reception's blackboard with the first clue in chalk, 25 pitches as wooden signs, Gerard's and Aitor's markers"
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "shot": "moved",
+      "delay": 300,
+      "caption": "Gerard's marker moves with the arrows; Aitor's stays (it is his controller's)"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"2\"]').click()"
+    },
+    {
+      "shot": "lit",
+      "delay": 250,
+      "caption": "A right pitch: its lantern lights"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"0\"]').click()"
+    },
+    {
+      "shot": "tent",
+      "delay": 250,
+      "caption": "A wrong pitch: its tent wakes (in the campsite, a fight)"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"9\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"16\"]').click()"
+    },
+    {
+      "shot": "next-clue",
+      "delay": 400,
+      "caption": "The first clue's pitches all lit: the blackboard shows the next clue"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"6\"]').click()"
+    },
+    {
+      "shot": "black",
+      "delay": 1300,
+      "caption": "The black pitch: every lantern goes out and the board starts again from the first clue"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"1\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"2\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"4\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"8\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"9\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"11\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"14\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"16\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"19\"]').click()"
+    },
+    {
+      "shot": "solved",
+      "delay": 600,
+      "caption": "Every clue lit: PASO ABIERTO"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+# Las parcelas (docs/quests/universidad.md § Càmping Eurosport): the words the puzzle's pitches can
+# carry, one per line, in Spanish. `just parcelas` picks the grid from here and writes the clues.
+# Add the group's own words (jokes, places, things from those summers) before generating the real one:
+# adding words does not show what the puzzle will be.
+
+# The campsite
+TIENDA
+PIQUETA
+SACO
+ESTERILLA
+LINTERNA
+FAROL
+BOMBONA
+NEVERA
+HAMACA
+TOLDO
+CARAVANA
+DUCHA
+RECEPCIÓN
+BARRERA
+PULSERA
+PINO
+HORMIGA
+MOSQUITO
+GRILLO
+FUEGO
+
+# The pool and the beach
+PISCINA
+TRAMPOLÍN
+CLORO
+SOCORRISTA
+FLOTADOR
+TOALLA
+SOMBRILLA
+ARENA
+OLA
+MEDUSA
+CONCHA
+GAVIOTA
+CREMA
+SAL
+HIELO
+
+# Summer evenings
+MELÓN
+SANDÍA
+FOTO
+CÁMARA
+VERBENA
+GUITARRA
+ESTRELLA
+LUNA
+SIESTA
+MÚSICA
+BAILE
+VINO
+CERVEZA
+
+# The table
+DADO
+CARTA
+TABLERO
+FICHA
+PEÓN
+REY
+REINA
+TURNO
+TRAMPA
+PUNTO
+RELOJ
+ESPÍA
+AGENTE
+HÉROE
+CAPA
+ESCUDO
+MARTILLO
+
+# Anything else
+CORONA
+LLAVE
+PUENTE
+BANCO
+COCHE
+TREN
+NIEVE
+GATO
