@@ -1,0 +1,20 @@
+{
+  "title": "La Sobremesa: el final",
+  "description": "docs/quests/universidad.md § Ending. After the fight: La Sobremesa comes apart at the long table and leaves the seven standing round it; the photo with the melon; their five lights go into Gerard and Aitor in turn, a beat apart; a spiral opens behind the table and everyone comes apart into it, born on their real surfaces (src/surface-samples.ts); out of a spiral on the November beach, each body coming together, the seven round the two of them, facing them. Run it with --gpu.",
+  "steps": [
+    { "open": "/?mission=universidad&part=won&solo=1" },
+    { "until": "!!window.gerard", "timeout": 120000 },
+    { "record": "deshace", "seconds": 4.2, "caption": "La Sobremesa comes apart at the long table; the seven are left round it" },
+    { "until": "!!document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },
+    { "shot": "libres", "delay": 400, "caption": "Free, round the melon table, facing Gerard and Aitor" },
+    { "skipDialogue": true },
+    { "until": "document.querySelector('#story-photo')?.dataset.state === 'held'", "timeout": 60000 },
+    { "shot": "foto", "delay": 300, "caption": "The photo with the melon" },
+    { "until": "document.querySelector('#story-photo').hidden", "timeout": 60000 },
+    { "record": "luces-y-portal", "seconds": 11, "tiles": 16, "caption": "Their five lights, a beat apart, into Gerard and Aitor in turn; a spiral opens behind the table and everyone comes apart into it, from their real surface" },
+    { "record": "salida", "seconds": 3.6, "caption": "Out on the November beach: each body comes together out of specks, and the spiral closes" },
+    { "shot": "playa", "delay": 100, "caption": "The seven round Gerard and Aitor, facing them" },
+    { "skipDialogue": true },
+    { "shot": "final", "delay": 1500, "caption": "Free to walk again" }
+  ]
+}

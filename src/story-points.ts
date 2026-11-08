@@ -11,7 +11,8 @@ import { ENVIRONMENTS, type EnvironmentId } from './environments.ts';
 import { FEARS, PLACES_NURIA, STREET } from './friends/nuria.ts';
 import { LEVELLED, MAX_LEVEL } from './levels.ts';
 import type { Cell } from './movement.ts';
-import { STORY_FLAGS, type NuriaRun, type StoryEvent, type StoryFlag } from './story.ts';
+import { STORY_FLAGS, type NuriaRun, type StoryEvent, type StoryFlag, type UniRun } from './story.ts';
+import { BEACH, CAMP, CAMP_HUNTERS, PLACES_CAMP, PLACES_UNI } from './friends/universidad.ts';
 import { entranceId } from './transit.ts';
 
 /** Where a jump stands Gerard; without one, where the story resumes (`story.resume`). */
@@ -59,6 +60,15 @@ export const STORY_ARCS = [
     { flags: ['cardedeu'], label: 'La R4 hasta Cardedeu', spot: { environment: 'cardedeu' } },
     // Winning at the top of the tower sets them all at once (story.ts): Papagato, the ánima and the two lights.
     { flags: ['nuria-uri', 'papagato', 'luz-nuria', 'luz-uri', 'anima-nuria'], label: 'Uri vuelve en sí' },
+  ] },
+  { id: 'universidad', chapter: 2, title: 'Misión de los amigos de la uni', detail: 'La Barceloneta · Càmping Eurosport', after: 'metro', anima: 'universidad', steps: [
+    { flags: ['clue-uni'], label: 'Aitor: los de la uni esperan en la playa' },
+    { flags: ['barceloneta-uni'], label: 'En la playa, con los siete', spot: { environment: 'barceloneta' } },
+    { flags: ['camping'], label: 'Dentro de la espiral: el camping' },
+    { flags: ['candado'], label: 'El candado del portón: las tres palabras' },
+    { flags: ['parcelas'], label: 'Las parcelas resueltas: la puerta del merendero' },
+    // Beating La Sobremesa frees the seven and gives their ánima and five lights (a couple, one; alone, one each).
+    { flags: ['sobremesa', 'anima-universidad', 'luz-anna-alvaro', 'luz-miquel-sarah', 'luz-soraya', 'luz-nico', 'luz-joan'], label: 'Libres: La Sobremesa vencida' },
   ] },
   // Ánimas grow with the EXP of fights won (src/levels.ts); Matemágico's are chapter 2's, at 35.
   { id: 'matemagico', chapter: 2, title: 'Matemágico crece', detail: 'Experiencia de combate', after: 'caught', steps: [
@@ -120,6 +130,7 @@ export interface MissionPart {
   id: string; label: string; detail: string;
   at: StoryFlag; spot?: Spot;
   nuria?: Partial<NuriaRun>;
+  uni?: Partial<UniRun>;
   event?: StoryEvent;
 }
 const maze = (cell: Cell): Spot => ({ environment: PLACES_NURIA.mazeIn.environment, cell: { ...cell } });
@@ -146,9 +157,30 @@ const NURIA_PARTS: readonly MissionPart[] = [
   { id: 'won', label: 'Uri vuelve en sí', detail: 'El final: las dos luces van con Gerard y Aitor', at: 'cardedeu', spot: maze(PLACES_NURIA.uri[2].cell), nuria: { ...lent, stage: 3, beaten: beaten(3) }, event: { type: 'battle', won: true, encounter: 'uri-vertigo' } },
   { id: 'done', label: 'Misión hecha', detail: 'A la mañana siguiente, en casa', at: 'nuria-uri' },
 ];
+const beach = (x: number, z: number): Spot => ({ environment: BEACH, cell: { x, z } });
+const camp = (cell: Cell): Spot => ({ environment: CAMP, cell: { ...cell } });
+/**
+ * The university friends' mission, part by part (docs/quests/universidad.md § Beats). The game of tag
+ * and the spiral are not saved (a fall or a new day puts the friends back on the sand), so those parts
+ * set the run itself.
+ */
+const UNI_PARTS: readonly MissionPart[] = [
+  { id: 'start', label: 'Desde el principio', detail: 'Bajan de la L4 en la Barceloneta', at: 'clue-uni', spot: { environment: BEACH }, event: { type: 'arrive', station: 'barceloneta' } },
+  { id: 'beach', label: 'Detrás de ellos', detail: 'Los seis de espaldas mirando al mar; Anna en el agua', at: 'clue-uni', spot: beach(PLACES_UNI.retry.x, PLACES_UNI.retry.z) },
+  { id: 'tag', label: 'El pilla-pilla', detail: 'Corren detrás; el paseo cerrado por los tentáculos', at: 'barceloneta-uni', spot: beach(PLACES_UNI.talk.x, PLACES_UNI.talk.z - 6), uni: { chase: true } },
+  { id: 'spiral', label: 'La espiral en el agua', detail: 'Anna se ha ido por ella; entrar lleva al camping', at: 'barceloneta-uni', spot: beach(PLACES_UNI.anna.x, PLACES_UNI.anna.z - 4), uni: { spiral: true, sunk: true } },
+  { id: 'camp', label: 'Càmping Eurosport', detail: 'Recién salidos de la espiral; los magos rondan la entrada', at: 'camping', spot: camp(PLACES_CAMP.entrada), uni: { entered: true } },
+  { id: 'lock', label: 'El candado', detail: 'Las patrullas vencidas (sus siete palabras dichas); ante el candado del portón de la piscina', at: 'camping', spot: camp({ x: PLACES_CAMP.gate.x + 1, z: PLACES_CAMP.gate.z }), uni: { entered: true, beaten: CAMP_HUNTERS.map(h => h.id), told: ['gate'] } },
+  { id: 'pool', label: 'La piscina', detail: 'El candado abierto: El Campeón ante la pizarra del torneo', at: 'candado', spot: camp({ x: PLACES_CAMP.gate.x - 3, z: PLACES_CAMP.gate.z }), uni: { entered: true, beaten: CAMP_HUNTERS.map(h => h.id), told: ['gate'] } },
+  { id: 'board', label: 'La pizarra', detail: 'El Campeón vencido; ante la pizarra de la piscina: Las parcelas', at: 'candado', spot: camp({ x: PLACES_CAMP.tablero.x, z: PLACES_CAMP.tablero.z + 1 }), uni: { entered: true, beaten: [...CAMP_HUNTERS.map(h => h.id), 'campeon'], told: ['gate', 'board', 'door'] } },
+  { id: 'sobremesa', label: 'La Sobremesa', detail: 'Las parcelas resueltas, la puerta de acero abierta; en la mesa larga del merendero', at: 'parcelas', spot: camp({ x: PLACES_CAMP.foto.x - 6, z: PLACES_CAMP.foto.z + 2 }), uni: { entered: true, beaten: [...CAMP_HUNTERS.map(h => h.id), 'campeon'], told: ['gate', 'board', 'door'] } },
+  { id: 'won', label: 'Libres', detail: 'La foto con el melón, las cinco luces y de vuelta en la playa', at: 'parcelas', spot: camp({ x: PLACES_CAMP.foto.x, z: PLACES_CAMP.foto.z + 2 }), uni: { entered: true, beaten: [...CAMP_HUNTERS.map(h => h.id), 'campeon'] }, event: { type: 'battle', won: true, encounter: 'sobremesa' } },
+  { id: 'done', label: 'Misión hecha', detail: 'Los siete, libres, en la arena', at: 'luz-joan', spot: beach(PLACES_UNI.home.x, PLACES_UNI.home.z) },
+];
 /** The parts each mission can start at; one without its own list starts at its beginning or at each step. */
 export function missionParts(anima: AnimaId): readonly MissionPart[] {
   if (anima === 'nuria') return NURIA_PARTS;
+  if (anima === 'universidad') return UNI_PARTS;
   const arc = ARCS.find(a => a.anima === anima)!;
   return [
     { id: 'start', label: 'Desde el principio', detail: arc.detail, at: arc.after!, spot: spotAt(arc.after!) },
@@ -168,7 +200,7 @@ export const topLevel = (id: ClassId) => LEVELLED.includes(id) ? MAX_LEVEL : 1;
  * Where a mission is now, as the part a jump to it would start at: the last one the flags and the
  * run have reached (`undefined` before the mission can start).
  */
-export function missionNow(anima: AnimaId, flags: readonly StoryFlag[], nuria?: NuriaRun): string | undefined {
+export function missionNow(anima: AnimaId, flags: readonly StoryFlag[], nuria?: NuriaRun, uni?: UniRun): string | undefined {
   const parts = missionParts(anima), arc = ARCS.find(a => a.anima === anima)!;
   if (arc.after && !flags.includes(arc.after)) return undefined;
   if (anima === 'nuria') {
@@ -178,6 +210,15 @@ export function missionNow(anima: AnimaId, flags: readonly StoryFlag[], nuria?: 
     if (nuria?.street) return 'street';
     if (nuria?.lent) return 'lent';
     return flags.includes('cardedeu') ? 'door' : 'start';
+  }
+  if (anima === 'universidad') {
+    if (flags.includes('sobremesa')) return 'done';
+    if (flags.includes('parcelas')) return 'sobremesa';
+    if (flags.includes('candado')) return uni?.beaten.includes('campeon') ? 'board' : 'pool';
+    if (uni?.entered) return uni.told.includes('gate') ? 'lock' : 'camp';
+    if (uni?.spiral) return 'spiral';
+    if (uni?.chase) return 'tag';
+    return flags.includes('barceloneta-uni') || flags.includes('clue-uni') ? 'beach' : 'start';
   }
   return [...parts].reverse().find(p => p.id !== 'start' && flags.includes(p.at))?.id ?? 'start';
 }

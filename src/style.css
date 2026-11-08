@@ -426,6 +426,10 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-target .plate-pips i { width: 5px; height: 5px; border-radius: 50%; background: #f3cf78; box-shadow: 0 0 4px #f3cf78aa; transition: background .3s, box-shadow .3s; }
 .battle-target .plate-pips i[data-pip="spent"] { background: transparent; box-shadow: inset 0 0 0 1px #f3cf7888; }
 .battle-target.is-down { opacity: .4; }
+/* La Sobremesa's friends stand in one body, their plates close: choosing one, its name shows over its head. */
+.battle-target .plate-name { display: none; order: -2; justify-self: center; padding: 3px 8px 2px; background: var(--battle-paper); color: var(--battle-ink); font: 800 12px/1 'Manrope', sans-serif; letter-spacing: .04em; white-space: nowrap; box-shadow: 3px 3px 0 #071e2266; }
+#battle[data-targeting] .battle-target:is(.is-targeted, :focus-visible, :hover):not(:disabled) { z-index: 2; }
+#battle[data-targeting] .battle-target:is(.is-targeted, :focus-visible, :hover):not(:disabled) .plate-name { display: block; animation: speech-in .2s cubic-bezier(.2,.9,.3,1.4) both; }
 /* Statuses ride under the health bar: small, in the status's own colour. */
 .unit-statuses { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
 .unit-statuses:empty { display: none; }
@@ -457,6 +461,14 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="pelada"], .summary-tags [data-status="pelada"] { --status: #f0e6c8; }
 .unit-statuses i[data-status="transparente"], .summary-tags [data-status="transparente"] { --status: #b8f0ff; }
 .unit-statuses i[data-status="nil"], .summary-tags [data-status="nil"] { --status: #ff9f7a; }
+/* Càmping Eurosport's rules on a plate: a dado's face, an agente's side, El Campeón's form, a Bombona charged. */
+.unit-statuses i[data-status="cara"], .summary-tags [data-status="cara"] { --status: #f2e6c8; }
+.unit-statuses i[data-status="boca-arriba"], .summary-tags [data-status="boca-arriba"] { --status: #ffe9a8; }
+.unit-statuses i[data-status="boca-abajo"], .summary-tags [data-status="boca-abajo"] { --status: #7fc4cc; }
+.unit-statuses i[data-status="heroe"], .summary-tags [data-status="heroe"] { --status: #ff8a6a; }
+.unit-statuses i[data-status="paisano"], .summary-tags [data-status="paisano"] { --status: #c8c8c0; }
+.unit-statuses i[data-status="bombona"], .summary-tags [data-status="bombona"] { --status: #ffb054; }
+.unit-statuses i[data-status="bombona"] { animation: chip-warn 1s ease-in-out infinite; }
 .unit-statuses i[data-status="punto-debil"], .summary-tags [data-status="punto-debil"] { --status: #fff1b8; }
 .unit-statuses .status-icon[data-status="punto-debil"] { animation: status-pulse 1.2s ease-out infinite; }
 @keyframes chip-warn { 50% { box-shadow: 0 0 0 1px var(--status), 0 0 10px color-mix(in srgb, var(--status) 60%, transparent); } }
@@ -803,6 +815,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-speech-line[data-speaker="uri"][data-shout] { font-size: 30px; background: #b07aff; color: #1a0f2c; box-shadow: 6px 6px 0 #1a0f2c, 0 0 36px #b07aff77; }
 .battle-speech-line[data-speaker="uri"][data-shout]::after { border-top-color: #b07aff; }
 .battle-speech-line[data-leaving] { opacity: 0; transition: opacity .25s; }
+/* La Sobremesa's friends shout over themselves, seven close together: their moves smaller than a boss's single voice. */
+.battle-speech-line[data-shout]:is([data-speaker="alvaro"], [data-speaker="anna"], [data-speaker="sarah"], [data-speaker="miquel"], [data-speaker="joan"], [data-speaker="soraya"], [data-speaker="nico"]) { padding: 7px 14px; font-size: 22px; box-shadow: 5px 5px 0 #0f1a2c, 0 0 24px #f3cf7855; }
 #battle[data-shaking] { animation: battle-shake .5s linear 3; }
 #battle[data-beat] .battle-bottom { opacity: .35; transition: opacity .4s; }
 .class-banner { position: absolute; left: 50%; top: 42%; translate: -50% -50%; rotate: -3deg; min-width: min(520px, calc(100% - 48px)); padding: 26px 34px 30px; background: var(--battle-ink); border-top: 6px solid var(--battle-gold); box-shadow: 14px 14px 0 #00000066; text-align: center; animation: banner-in .6s cubic-bezier(.16,1,.3,1) both; }
@@ -819,8 +833,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 /* Matemágico's graph paper (its interface, below): gold squares on navy, and blue squares on cards. */
 :root { --mm-grid: linear-gradient(#f3cf7814 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, #f3cf7814 1px, transparent 1px) 0 0 / 24px 24px; --mm-paper: linear-gradient(#2b4a7a17 1px, transparent 1px) 0 0 / 9px 9px, linear-gradient(90deg, #2b4a7a17 1px, transparent 1px) 0 0 / 9px 9px; }
 /* Matemágico (docs/animas/matemagico/): Gerard's own mind. The interface turns into a blueprint:
-   midnight-ink graph paper, gold sums and number lines, index cards squared like a notebook, and a
-   big ∑ watermark. Everything else is gold on paper, so it reads as thinking, not shouting. */
+   midnight-ink graph paper, gold sums and number lines, index cards squared like a notebook.
+   Everything else is gold on paper, so it reads as thinking, not shouting. */
 #hud[data-class="matemagico"] {
   --ui-ink: #0f1a2c;
   --ui-surface: #101c30ee;
@@ -831,9 +845,6 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
   --ui-shadow: 5px 5px 0 #f3cf7833;
 }
 #hud[data-class="matemagico"] #battle { background: linear-gradient(180deg, #0f1a2cb8, transparent 29%, transparent 48%, #0f1a2ce8); transition: background .6s; }
-/* The graph paper shows round the edges only: the fight in the middle stays clear. */
-#hud[data-class="matemagico"] #battle::before { border-color: #f3cf781c; background: var(--mm-grid); -webkit-mask: radial-gradient(ellipse 70% 62% at 50% 44%, transparent 55%, #000 100%); mask: radial-gradient(ellipse 70% 62% at 50% 44%, transparent 55%, #000 100%); }
-#hud[data-class="matemagico"] #battle::after { content: '∑'; inset: auto 1% -4% auto; width: auto; z-index: 0; background: none; transform: rotate(-8deg); animation: none; font: italic 400 38vw/1 Georgia, 'Times New Roman', serif; color: #f3cf78; opacity: .06; }
 #hud[data-class="matemagico"] .battle-heading .battle-kicker { font-family: 'JetBrains Mono', monospace; letter-spacing: .08em; }
 #hud[data-class="matemagico"] .battle-heading h1 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 400; letter-spacing: -.03em; text-shadow: 0 0 18px #f3cf7844, 3px 3px 0 #0f1a2c; }
 #hud[data-class="matemagico"] .battle-heading h1 em { color: var(--ui-gold); }
@@ -865,7 +876,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .class-banner[data-anima="matemagico"] p { color: #f4efe0; }
 
 /* Papagato (docs/animas/papagato/): Haru and Yuki's. Warm cream paper, cat-orange instead of gold,
-   soft rounded cards like cushions, and a big MIAU sleeping in the battle's corner. */
+   soft rounded cards like cushions. */
 #hud[data-class="papagato"] {
   --ui-ink: #2a2320;
   --ui-surface: #2a2320ee;
@@ -876,7 +887,6 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
   --ui-shadow: 0 6px 0 #f0954a55;
 }
 #hud[data-class="papagato"] #battle { background: linear-gradient(180deg, #2a2320a8, transparent 29%, transparent 48%, #2a2320e0); }
-#hud[data-class="papagato"] #battle::after { content: 'MIAU'; inset: auto -1% 5% auto; width: auto; z-index: 0; background: none; transform: rotate(-6deg); animation: none; font: 900 22vw/1 'Manrope', sans-serif; letter-spacing: -.06em; color: #f0954a; opacity: .07; }
 .battle-dock[data-anima="papagato"] .command { border-radius: 14px; background: var(--ui-paper); box-shadow: 0 6px 0 #f0954aaa; }
 .battle-dock[data-anima="papagato"] .command:has(.command-trigger:hover), .battle-dock[data-anima="papagato"] .command:has(.command-trigger:focus) { background: #ffd2ad; box-shadow: 0 6px 0 #f0954aaa; }
 .battle-dock[data-anima="papagato"] .command.expanded { background: var(--ui-gold); color: #2a2320; }
@@ -889,6 +899,16 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 /* The end of a dream: everything goes black, even the HUD, then comes back elsewhere. */
 #blackout { position: absolute; inset: 0; z-index: 50; background: #000; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
 #blackout[data-on="true"] { opacity: 1; pointer-events: auto; }
+
+/* The photo with the melon (story-ui.ts `photo`): a white flash, then a photo's border round the held scene. */
+#story-photo { position: absolute; inset: 0; z-index: 48; margin: 0; pointer-events: none; }
+#story-photo::before { content: ''; position: absolute; inset: 0; border: clamp(18px, 3.2vw, 44px) solid #f4efe4; border-bottom-width: clamp(64px, 9vw, 120px); box-shadow: inset 0 0 0 1px #0002, inset 0 0 60px #0003; opacity: 0; transition: opacity .35s ease; }
+#story-photo .story-photo-flash { position: absolute; inset: 0; background: #fff; opacity: 0; transition: opacity .5s ease-out; }
+#story-photo[data-state="flash"] .story-photo-flash { opacity: 1; transition: none; }
+#story-photo[data-state="held"]::before { opacity: 1; }
+#story-photo figcaption { position: absolute; left: 0; right: 0; bottom: clamp(18px, 3vw, 40px); text-align: center; font: 600 clamp(16px, 1.6vw, 24px)/1.2 'Caveat', 'Segoe Print', cursive; color: #2b2622; opacity: 0; transition: opacity .35s ease .15s; }
+#story-photo[data-state="held"] figcaption { opacity: 1; }
+#story-photo[data-state="out"] { opacity: 0; transition: opacity .5s ease; }
 
 /* Two players (docs/party.md): Aitor's portrait and player 2's turns. */
 #battle[data-player="2"] .turn-meta, #battle[data-player="2"] .turn-dot { color: #e7c9a1; background-color: transparent; }
@@ -906,7 +926,6 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .status-sheet[data-anima="none"] { --ui-gold: #f3cf78; --ui-paper: #f3efdc; --ui-ink: #162823; --ui-muted: #b9c8b9; --ui-line: #c6d6ad33; --ui-shadow: 5px 5px 0 #071e2266; }
 .status-sheet[data-anima="none"][data-player="2"] { --sheet-accent: #e7c9a1; }
 .status-sheet[data-anima="matemagico"] { --ui-gold: #f3cf78; --ui-paper: #f4efe0; --ui-ink: #0f1a2c; --ui-muted: #a8b5c9; --ui-line: #f3cf7838; --ui-shadow: 5px 5px 0 #f3cf7833; background: linear-gradient(#f3cf780f 1px, transparent 1px) 0 0 / 26px 26px, linear-gradient(90deg, #f3cf780f 1px, transparent 1px) 0 0 / 26px 26px, radial-gradient(ellipse at 0 0, #24406a55, transparent 60%), linear-gradient(145deg, #13223afc, #0b1424fc); }
-.status-sheet[data-anima="matemagico"]::after { content: '∑'; position: absolute; inset: 20% 0 0 30%; z-index: -1; display: flex; align-items: flex-end; justify-content: flex-end; overflow: hidden; font: italic 400 34cqi/.8 Georgia, 'Times New Roman', serif; color: #f3cf78; opacity: .05; pointer-events: none; }
 .journal-content .anima-line { font-size: 12px; font-style: italic; }
 .status-sheet { position: relative; isolation: isolate; --battle-gold: var(--sheet-accent); --battle-paper: var(--ui-paper); --battle-ink: var(--ui-ink); }
 .sheet-dev { margin-left: 12px; padding: 2px 8px; border: 1px dashed #ff8fbf; color: #ff8fbf; letter-spacing: .14em; }
@@ -1688,15 +1707,13 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 
 /* Tecnópata (docs/animas/tecnopata/): Aitor's own. The fight seen through Bip's camera, a drone's HUD:
    dark glass with cut corners and a cyan rail, monospaced readouts in capitals, scan lines, the
-   viewfinder's corner brackets round his half of the screen and a reticle where the other ánimas
-   keep their watermark. Cyan on ink: a screen's colour, never the Queen's pink or possession's violet. */
+   viewfinder's corner brackets round his half of the screen. Cyan on ink: a screen's colour, never the Queen's pink or possession's violet. */
 :root {
   --tp-cyan: #4fe0ff;
   --tp-scan: repeating-linear-gradient(0deg, #4fe0ff0c 0 1px, transparent 1px 4px);
   --tp-cut: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
   /* The two cut corners' edges, drawn on the background (a clip path cuts any border). */
   --tp-corners: linear-gradient(135deg, transparent 6.4px, #4fe0ffaa 6.4px 7.8px, transparent 7.8px) 0 0 / 10px 10px no-repeat, linear-gradient(315deg, transparent 6.4px, #4fe0ffaa 6.4px 7.8px, transparent 7.8px) 100% 100% / 10px 10px no-repeat;
-  --tp-reticle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%234fe0ff' stroke-width='2'%3E%3Ccircle cx='100' cy='100' r='70'/%3E%3Ccircle cx='100' cy='100' r='44' stroke-dasharray='6 8'/%3E%3Ccircle cx='100' cy='100' r='5' fill='%234fe0ff'/%3E%3Cpath d='M100 8v40M100 152v40M8 100h40M152 100h40M160 40l-12 12M40 160l12-12'/%3E%3Cpath d='M100 30v8M30 100h8' stroke-width='4'/%3E%3C/svg%3E");
 }
 .battle-dock[data-anima="tecnopata"] { --ui-gold: #4fe0ff; --battle-gold: #4fe0ff; --ui-paper: #dff7fd; --battle-paper: #dff7fd; --ui-ink: #071319; --battle-ink: #071319; --ui-muted: #86aab5; --ui-line: #4fe0ff38; }
 /* Commands: panels of dark glass with cut corners, a cyan rail on the left, labels as readouts. */
@@ -1736,7 +1753,6 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .dual-half[data-anima="tecnopata"] strong { font: 700 16px/1.1 'JetBrains Mono', monospace; text-transform: uppercase; color: #dff7fd; }
 .dual-half[data-anima="tecnopata"] .battle-kicker { color: #4fe0ff; }
 .status-sheet[data-anima="tecnopata"] { --ui-gold: #4fe0ff; --sheet-accent: #4fe0ff; --ui-paper: #dff7fd; --ui-ink: #071319; --ui-muted: #86aab5; --ui-line: #4fe0ff38; --ui-shadow: 0 0 0 1px #4fe0ff44; background: var(--tp-scan), radial-gradient(ellipse at 0 0, #0f3a4a66, transparent 60%), linear-gradient(145deg, #0b1d26fc, #061218fc); }
-.status-sheet[data-anima="tecnopata"]::after { content: ''; position: absolute; right: -6%; bottom: -10%; z-index: -1; width: 46cqi; aspect-ratio: 1; background: var(--tp-reticle) center / contain no-repeat; opacity: .05; pointer-events: none; }
 
 /* Atacar's block with elements (battle-ui `showElements`): split in one segment each, X walks them. */
 .command[data-split] .command-trigger { padding-right: 186px; }
@@ -1872,3 +1888,73 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .jar-empty { margin: auto; color: #bdb6a4; }
 .jar-help { grid-column: 1 / -1; margin: 0; text-align: center; font-size: 11px; letter-spacing: .03em; color: #bcb5a4; white-space: pre-wrap; }
 @media (prefers-reduced-motion: reduce) { #jar-panel, .jar-board, .jar-halo, .jar-marble[data-free], .jar-card[data-landing], .jar-card[data-landing] .jar-sockets i { animation: none; } }
+
+/* Las parcelas (src/parcelas-ui.ts): the campsite's blackboard and its pitches as wooden signs, at dusk. */
+#hud[data-parcelas] > :not(#parcelas-panel) { visibility: hidden; }
+#parcelas-panel { --wood: #d6b688; --wood-dark: #8a6440; --chalk: #f2efe4; --slate: #1e2a23; --lit: #ffcf70; --gerard: #f3cf78; --aitor: #4fe0ff;
+  position: absolute; inset: 0; z-index: 36; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; justify-items: center; gap: clamp(10px, 2vh, 22px);
+  padding: clamp(22px, 5vh, 54px) clamp(18px, 4vw, 60px) clamp(10px, 2vh, 20px); color: var(--chalk); pointer-events: auto; outline: none;
+  background: radial-gradient(70% 60% at 50% 110%, #ff9b4a33, transparent 70%), linear-gradient(#2a2340f2, #1f2a1ff5 46%, #141b14fa); animation: jar-in .32s cubic-bezier(.16,1,.3,1) both; }
+.parcelas-dusk { position: absolute; inset: 0 0 auto; height: 70px; z-index: -1; pointer-events: none; }
+.parcelas-dusk svg { position: absolute; inset: 4px 0 auto; width: 100%; height: 30px; }
+.parcelas-dusk svg path { stroke-width: 1.5px; }
+.parcelas-dusk i { position: absolute; translate: -50% 0; width: 7px; height: 9px; border-radius: 50% 50% 45% 45%; background: #ffe2a0; box-shadow: 0 0 14px 4px #ffbf5c88; animation: parcelas-bulb 3.2s ease-in-out infinite; }
+.parcelas-dusk i:nth-child(1) { left: 8%; top: 12px; } .parcelas-dusk i:nth-child(2) { left: 20%; top: 16px; animation-delay: -.4s; }
+.parcelas-dusk i:nth-child(3) { left: 32%; top: 18px; animation-delay: -.8s; } .parcelas-dusk i:nth-child(4) { left: 44%; top: 20px; animation-delay: -1.2s; }
+.parcelas-dusk i:nth-child(5) { left: 56%; top: 20px; animation-delay: -1.6s; } .parcelas-dusk i:nth-child(6) { left: 68%; top: 18px; animation-delay: -2s; }
+.parcelas-dusk i:nth-child(7) { left: 80%; top: 16px; animation-delay: -2.4s; } .parcelas-dusk i:nth-child(8) { left: 92%; top: 12px; animation-delay: -2.8s; }
+@keyframes parcelas-bulb { 50% { opacity: .78; } }
+.parcelas-board { position: relative; width: min(620px, 100%); padding: 16px 26px 14px; text-align: center; background: radial-gradient(80% 90% at 30% 20%, #2c3a31, var(--slate));
+  border: 10px solid var(--wood-dark); border-image: linear-gradient(135deg, #a07650, #6d4c2e 40%, #94693f) 1; box-shadow: 0 18px 40px -16px #000c, inset 0 0 40px #0008; }
+.parcelas-kicker { font-size: 11px; font-weight: 600; letter-spacing: .2em; color: #c9c5a8b3; }
+.parcelas-chalk { display: flex; align-items: baseline; justify-content: center; gap: 14px; flex-wrap: wrap; margin: 6px 0 2px; min-height: 1.1em;
+  font: 600 clamp(34px, 6.4vh, 60px)/1.05 'Manrope', sans-serif; letter-spacing: .08em; color: var(--chalk); text-shadow: 0 0 1px #fff, 0 0 6px #ffffff40; opacity: .94; }
+.parcelas-chalk small { flex-basis: 100%; font-size: 14px; font-weight: 500; letter-spacing: .02em; opacity: .7; }
+.parcelas-count { font-size: .62em; opacity: .8; }
+.parcelas-note { min-height: 1.3em; margin: 4px 0 0; font: 500 14px/1.3 'Manrope', sans-serif; color: #e6e1c6; }
+.parcelas-grid { align-self: start; margin-top: clamp(8px, 3vh, 34px); display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: clamp(8px, 1.5vh, 16px) clamp(8px, 1.2vw, 16px); width: min(860px, 100%); }
+.parcela { position: relative; display: grid; justify-items: center; padding: 0 0 10px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.parcela-post { position: absolute; left: 50%; bottom: 0; width: 8px; height: 26px; translate: -50% 0; background: linear-gradient(90deg, #5a3d24, #7c5833 50%, #4d331e); border-radius: 1px; }
+.parcela-sign { position: relative; z-index: 1; display: grid; place-items: center; width: 100%; min-height: clamp(48px, 8.2vh, 74px); padding: 14px 6px 10px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #0000 0 22px, #6f4f2c14 22px 23px), linear-gradient(#e2c597, var(--wood) 55%, #c4a072); color: #3b2817;
+  box-shadow: 0 5px 0 #8c6a45, 0 9px 16px -6px #000a; transition: transform .12s, box-shadow .2s, background .3s, color .3s; }
+.parcela-sign strong { font: 700 clamp(12px, 1.9vh, 17px)/1.1 'DM Sans', sans-serif; letter-spacing: .06em; overflow-wrap: anywhere; text-align: center; }
+.parcela-number { position: absolute; top: 4px; left: 6px; font: 500 9px/1 'JetBrains Mono', monospace; opacity: .55; }
+.parcela-icon { position: absolute; top: 4px; right: 5px; width: 17px; height: 17px; }
+.parcela:hover .parcela-sign { transform: translateY(-2px); }
+.parcela[data-state="lit"] .parcela-sign { background: radial-gradient(70% 90% at 50% 40%, #fff1c4, var(--lit) 70%, #e8a43e); color: #4a2a06; box-shadow: 0 5px 0 #b77a22, 0 0 28px 4px #ffb84d88; }
+.parcela[data-state="tent"] .parcela-sign { background: repeating-linear-gradient(135deg, #0000 0 5px, #ffffff08 5px 6px), linear-gradient(#66705a, #4d5644); color: #c9ccb6; box-shadow: 0 5px 0 #353b2f, 0 9px 16px -6px #000a; }
+.parcela[data-state="tent"] strong { text-decoration: line-through 1.5px #c9ccb680; }
+.parcela[data-state="black"] .parcela-sign { background: radial-gradient(80% 80% at 50% 40%, #1d1b1b, #070707); color: #5b5652; box-shadow: 0 5px 0 #000, 0 9px 16px -6px #000; }
+.parcela-marker { position: absolute; z-index: 2; top: -9px; padding: 2px 7px; border-radius: 999px; font: 700 10px/1.3 'DM Sans', sans-serif; letter-spacing: .06em; color: #10161a; }
+.parcela-marker[data-player="1"] { left: -4px; background: var(--gerard); }
+.parcela-marker[data-player="2"] { right: -4px; background: var(--aitor); }
+.parcela:has([data-player="1"]) .parcela-sign { outline: 3px solid var(--gerard); outline-offset: 3px; }
+.parcela:has([data-player="2"]) .parcela-sign { box-shadow: 0 5px 0 #8c6a45, 0 0 0 3px #10161a, 0 0 0 6px var(--aitor); }
+.parcela[data-just="lit"] .parcela-sign { animation: parcela-lit .7s ease-out; }
+.parcela[data-just="tent"] .parcela-sign { animation: parcela-tent .45s ease-in-out; }
+#parcelas-panel:has([data-just="black"]) { animation: parcelas-dark 1.1s ease-out; }
+@keyframes parcela-lit { 0% { filter: brightness(2.2); transform: scale(1.08); } 100% { filter: none; transform: none; } }
+@keyframes parcela-tent { 20%, 60% { transform: translateX(-4px) rotate(-1deg); } 40%, 80% { transform: translateX(4px) rotate(1deg); } }
+@keyframes parcelas-dark { 0% { filter: brightness(.15); } 100% { filter: none; } }
+.parcelas-help { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: min(860px, 100%); font-size: 12px; color: #c9c5a8; }
+@media (prefers-reduced-motion: reduce) { #parcelas-panel, .parcelas-dusk i, .parcela-sign { animation: none !important; } }
+/* The pool gate's padlock (src/candado-ui.ts): three brass wheels of numbers. */
+#hud[data-candado] > :not(#candado-panel) { visibility: hidden; }
+#candado-panel { position: absolute; inset: 0; z-index: 36; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; align-items: center; gap: 18px;
+  padding: clamp(22px, 5vh, 54px) clamp(18px, 4vw, 60px) clamp(10px, 2vh, 20px); color: #f2efe4; pointer-events: auto; outline: none;
+  background: radial-gradient(60% 50% at 50% 45%, #3a2e1c, transparent 75%), linear-gradient(#1c1812f2, #12100cfa); animation: jar-in .32s cubic-bezier(.16,1,.3,1) both; }
+.candado-body { display: grid; justify-items: center; gap: 14px; padding: 26px 34px 20px; border-radius: 26px 26px 18px 18px;
+  background: linear-gradient(160deg, #c9a157, #8f6a2c 55%, #6d4f1f); box-shadow: 0 24px 50px -18px #000d, inset 0 2px 0 #f1d79a88, inset 0 -6px 18px #0006; }
+.candado-kicker { font-size: 11px; font-weight: 700; letter-spacing: .2em; color: #3b2a10cc; }
+.candado-wheels { display: flex; gap: 12px; }
+.candado-wheels[data-shake] { animation: candado-shake .38s ease-in-out; }
+@keyframes candado-shake { 20%, 60% { translate: -6px 0; } 40%, 80% { translate: 6px 0; } }
+.candado-wheel { display: grid; justify-items: center; gap: 2px; min-width: 86px; padding: 10px 14px 8px; border: 2px solid #2b200e66; border-radius: 10px; cursor: pointer;
+  font: 600 13px/1.2 'Manrope', sans-serif; color: #2b2418; background: linear-gradient(#bdb39a, #ece4cc 30%, #ece4cc 70%, #bdb39a); box-shadow: inset 0 0 10px #0005; }
+.candado-wheel small { font-size: 18px; opacity: .35; font-variant-numeric: tabular-nums; }
+.candado-wheel strong { font-size: 44px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.candado-wheel[aria-current] { border-color: #ffcf70; box-shadow: inset 0 0 10px #0005, 0 0 0 3px #ffcf7066, 0 0 18px #ffcf7055; }
+.candado-note { min-height: 1.3em; margin: 0; font: 600 14px/1.3 'Manrope', sans-serif; color: #2b1d08; }
+@media (prefers-reduced-motion: reduce) { #candado-panel, .candado-wheels { animation: none !important; } }
+

@@ -9,6 +9,9 @@ import { createDialogueBanner } from './dialogue';
 import { createBattleUI } from './battle-ui';
 import { improvedBy } from './ecos';
 import { createJarUI } from './jar-ui';
+import { createParcelasUI } from './parcelas-ui';
+import { createCandadoUI } from './candado-ui';
+import { CAMP_HUNTERS } from './friends/universidad';
 import { MAX_LEVEL, toNextLevel } from './levels';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
 import { createStoryUI } from './story-ui';
@@ -60,7 +63,7 @@ const audio = createAudio();
 const music = createMusic(audio);
 const sfx = createSfx(audio);
 // Registered before the menus so Escape is heard before they take it.
-const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#controller-menu[open], #hud[data-panel], #lamp-dial:not([hidden]), #travel:not([hidden]), #jar-panel:not([hidden])'));
+const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#controller-menu[open], #hud[data-panel], #lamp-dial:not([hidden]), #travel:not([hidden]), #jar-panel:not([hidden]), #parcelas-panel:not([hidden]), #candado-panel:not([hidden])'));
 /** The fight's sounds, from their table (src/battle-sounds.ts). */
 const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.play(id, options); };
 /**
@@ -68,7 +71,7 @@ const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.p
  * a place without one fades to silence.
  * The castle's song is haunted as much as the castle is threatening right now (src/haunt.ts).
  */
-const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo' };
+const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-2', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo' };
 let place: EnvironmentId | undefined;
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
@@ -134,6 +137,7 @@ function keepLoadout() { try { localStorage.setItem(loadoutKey, JSON.stringify(s
 restoreLoadout();
 // A mission's part sets the run the story does not save (Nuria's cats lent, the tower's ring).
 if (devJump?.part?.nuria) story.startNuria(devJump.part.nuria);
+if (devJump?.part?.uni) story.startUni(devJump.part.uni);
 // Each ánima's EXP (src/levels.ts) also lives here; the levels it reaches are story flags.
 // So is what the Ecos de luz are in (src/ecos.ts): it can change at the jar whenever they are home.
 const ecosKey = 'gerard35.ecos.v1';
@@ -294,9 +298,20 @@ try {
     else if (effect.kind === 'wake') await game.wake(() => storyUI.blackout(false, 2000));
     else if (effect.kind === 'rise') await game.rise();
     else if (effect.kind === 'fall') { homeLights.moment('fall'); await storyUI.blackout(true, 1600); }
+    else if (effect.kind === 'recover') await storyUI.blackout(false, 900);
+    // The blackboard's board: the beat lasts while it is open; a woken tent closes it for its fight.
+    else if (effect.kind === 'parcelas') await parcelasUI.open(effect.board ? { board: effect.board } : undefined);
+    // The pool gate's padlock: the beat lasts while it is open.
+    else if (effect.kind === 'candado') await candadoUI.open();
+    else if (effect.kind === 'photo') { sfx.play('clink'); storyPaused = true; game.setPaused(true); await storyUI.photo(effect.caption); storyPaused = false; game.setPaused(!!exploration.active || menuOpen()); }
     else if (effect.kind === 'news') await watchNews();
     else if (effect.kind === 'metro') await ride(effect.station);
-    else if (effect.kind === 'look') await game.look(effect.anchor);
+    else if (effect.kind === 'look') await game.look(effect.anchor, effect.cell, effect.height);
+    // Into a portal: who goes comes apart into it; a person stays gone (Anna, into the spiral).
+    else if (effect.kind === 'portal') { await game.intoPortal(effect.who, effect.open); if (effect.who !== 'party' && effect.who !== 'everyone') { story.sank(effect.who); storyChanged(); } }
+    // La Sobremesa comes apart at the long table, and out of a spiral on the other side.
+    else if (effect.kind === 'unmask') await game.unmaskSobremesa();
+    else if (effect.kind === 'emerge') await game.emerge(effect.cell);
     else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
     // A level reached in a fight was shown on its victory screen.
     else if (effect.kind === 'learn') { if (!effect.quiet) { sfx.play('unlock'); storyUI.learn(effect.classId, effect.level, effect.skills); } }
@@ -402,7 +417,7 @@ try {
       const go = () => battlePhase === undefined ? game.setEnvironment(id) : requestAnimationFrame(go);
       go();
     },
-    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || jarUI.isOpen || !!exploration.active),
+    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active),
     dev: import.meta.env.DEV ? {
       flags: () => story.saved,
       day: () => story.days.clock.day,
@@ -413,7 +428,7 @@ try {
         const others = missions?.filter(id => id !== anima) ?? [];
         location.search = `?${new URLSearchParams({ mission: anima, part, ...(others.length ? { with: others.join(',') } : {}), ...(day > 1 ? { day: String(day) } : {}) })}`;
       },
-      missionNow: anima => missionNow(anima, story.saved, story.nuria),
+      missionNow: anima => missionNow(anima, story.saved, story.nuria, story.uni),
       animas: () => ({ now: story.levels, story: story.storyLevels, xp: story.xp, changed: !!story.debugAnimas, adult: story.adult }),
       giveXp: (id, amount) => {
         const levels = story.storyLevels;
@@ -431,6 +446,7 @@ try {
       ecos: () => ({ total: story.ecos, free: story.ecosFree, extra: story.debugEcos }),
       giveEcos: count => { story.debugEcos = Math.max(0, story.debugEcos + count); storyChanged(); },
       openJar: () => { void jarUI.open(); },
+      openParcelas: fresh => { if (fresh) parcelasUI.reset(); void parcelasUI.open(); },
       fight: setup => startFight(setup),
       current: () => battleUI.fight,
       help: () => help,
@@ -464,7 +480,9 @@ try {
   /** The fight tester's fight now: it touches no story flag and helps as asked. */
   let testing: FightSetup | undefined;
   /** Where each fight is staged (game.ts): the dogs in the street, the minion and the guards in the palace. */
-  const FIGHT_PLACES = { dogs: 'maresme', possessed: 'maresme', 'palace-minion': 'palacio', 'palace-guards': 'palacio', 'night-guard': 'meridiana-calle', cebollon: 'cardedeu-laberinto', cebolla: 'cardedeu-laberinto', plato: 'cardedeu-laberinto', escolta: 'cardedeu-laberinto', 'uri-vertigo': 'cardedeu-laberinto', 'crias-1': 'cardedeu-laberinto', 'crias-2': 'cardedeu-laberinto', 'crias-3': 'cardedeu-laberinto' } as const;
+  const FIGHT_PLACES = { dogs: 'maresme', possessed: 'maresme', 'palace-minion': 'palacio', 'palace-guards': 'palacio', 'night-guard': 'meridiana-calle', cebollon: 'cardedeu-laberinto', cebolla: 'cardedeu-laberinto', plato: 'cardedeu-laberinto', escolta: 'cardedeu-laberinto', 'uri-vertigo': 'cardedeu-laberinto', 'crias-1': 'cardedeu-laberinto', 'crias-2': 'cardedeu-laberinto', 'crias-3': 'cardedeu-laberinto', sobremesa: 'camping',
+    // Càmping Eurosport (docs/quests/universidad.md): its fights and La Sobremesa at the long table.
+    'camping-magos': 'camping', 'camping-dados': 'camping', 'camping-agentes': 'camping', 'camping-tienda': 'camping', 'camping-negra': 'camping', campeon: 'camping' } as const;
   /** Starts a test fight; another chapter's party needs that chapter's Gerard, so it reloads there. */
   function startFight(setup: FightSetup) {
     if (setup.adult !== story.adult) {
@@ -484,7 +502,9 @@ try {
     requestAnimationFrame(() => {
       testing = setup; help = { free: setup.free, immune: setup.immune, unbound: setup.unbound };
       game.possess(possessed);
-      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, animas: setup.animas, levels: story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0) });
+      // The maze's patrols shout their word as they fall here too (the first group of each kind's).
+      const lastWord = CAMP_HUNTERS.find(h => h.encounter === setup.encounter)?.word;
+      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0) });
       if (help.unbound) { unboundAnimas(); battleUI.tweak(applyHelp); }
     });
   }
@@ -525,7 +545,9 @@ try {
   const game = await createGame(canvas, {
     onEncounter: (withPartner, foes, options) => {
       exploration.close(); dialogue.close();
-      battleUI.open(story.battleParty(withPartner), foes, { ...options, animas: story.classes, levels: story.levels, xp: story.xp, improved: story.improved, guards: palaceGuards(story.animas.length) });
+      // A patrol of the campsite's maze: its foes shout their word as they fall (docs/quests/universidad.md § Las palabras).
+      const patrol = currentLocation === 'camping' ? CAMP_HUNTERS.find(h => h.id === story.uni.fighting && h.encounter === options.encounter) : undefined;
+      battleUI.open(story.battleParty(withPartner), foes, { ...options, lastWord: patrol?.word, animas: story.classes, levels: story.levels, xp: story.xp, improved: story.improved, guards: palaceGuards(story.animas.length) });
       if (import.meta.env.DEV && help.unbound) { unboundAnimas(); battleUI.tweak(applyHelp); }
     },
     // Backing off is neither a win nor a fall.
@@ -564,6 +586,8 @@ try {
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
         : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : zone ? 'Dentro de la escuela Rec Comtal' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
+      // A place with no overview (the campsite's maze) hides the button too.
+      (document.querySelector('#overview') as HTMLElement).hidden = !!ENVIRONMENTS[id].noOverview;
       document.title = `${ENVIRONMENTS[id].name} · Gerard 35`;
     },
     onInteraction: interactionPrompt.show,
@@ -581,6 +605,23 @@ try {
     sound: id => sfx.play(id),
     changed: () => { keepEcos(); storyChanged(); },
   });
+  const parcelasUI = createParcelasUI(hud, {
+    pause: paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); },
+    sound: id => sfx.play(id),
+    // In the campsite each choice is the story's: a lantern on the pitch, a tent's fight, the dark, the gate.
+    chose: (outcome, board, solved) => {
+      if (outcome === 'taken' || currentLocation !== 'camping') return;
+      // A tent or the black pitch: the note is read, then the board goes and the fight comes.
+      if (outcome !== 'lit') setTimeout(() => parcelasUI.close(), 900);
+      storyEvent({ type: 'parcelas', outcome, board, solved });
+    },
+  });
+  const candadoUI = createCandadoUI(hud, {
+    pause: paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); },
+    sound: id => sfx.play(id),
+    // The story judges the numbers; given, the padlock comes off and the gate opens.
+    tried: numbers => { storyEvent({ type: 'candado', numbers }); return story.has('candado'); },
+  });
   // Whoever speaks wears their line's face in the world too, not only in the portrait.
   dialogue.onSpeak = (line, talking) => game.speak(line?.speaker, line?.expression, talking);
   for (const light of HOUSE_LIGHTS) game.setLamp(light.id, homeLights.flat[light.id]);
@@ -594,7 +635,7 @@ try {
   followMood();
   const moodTimer = setInterval(followMood, 1000);
   const controllerContext = () => jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
-    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : jarUI.isOpen ? 'jar'
+    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   let restoreLightsOnResume = false;
   const controller = createControllerUI({
@@ -606,7 +647,7 @@ try {
       get: () => control.mode,
       set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
     } : undefined,
-    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || jarUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || jarUI.isOpen || !!exploration.active); },
+    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); },
     panel: id => id ? exploration.show(id) : exploration.close(),
     lights: section => mountHomeLightsPage(section, homeLights),
     sound: section => mountSoundPage(section, audio),
@@ -626,6 +667,8 @@ try {
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
       if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
       if (jarUI.isOpen) { if (action !== 'overview' && action !== 'character') jarUI.control(action); return; }
+      if (parcelasUI.isOpen) { parcelasUI.control(action, player === 2 ? 2 : 1); return; }
+      if (candadoUI.isOpen) { candadoUI.control(action, player === 2 ? 2 : 1); return; }
       if (lookAway) { if (action === 'confirm' || action === 'cancel') lookAway(); return; }
       if (storyUI.doomOpen) { if (action === 'confirm') storyUI.confirmDoom(); return; }
       // Each player opens their own half of the status screen with the top face button.
@@ -714,7 +757,7 @@ try {
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
     Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, homeLights, audio, music, sfx } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

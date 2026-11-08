@@ -53,6 +53,9 @@ dev:
     # the traps go first, so that signal ends this script too instead of running them again.
     trap 'trap - EXIT INT TERM; rm -f "$dev_ports_file"; kill 0' EXIT INT TERM
     printf '▸ juego http://localhost:%s   ▸ api http://127.0.0.1:%s   Ctrl-C para los dos\n' "$GERARD_WEB_PORT" "$GERARD_API_PORT"
+    # The API's own address (listed in herdr's Services too) sends the browser to this game, the one
+    # with the development picker, instead of serving dist/ (server.py `Game`).
+    export GERARD_GAME_URL="http://localhost:$GERARD_WEB_PORT"
     uv run --locked uvicorn server:app --host 127.0.0.1 --port "$GERARD_API_PORT" --reload &
     open=(--open); [ "${GERARD_OPEN:-1}" = 0 ] && open=()
     # On localhost as always: the save goes by a cookie, which is per host (whatever the port).
@@ -73,13 +76,13 @@ dev-fx:
 # Jump in after a story beat: just dev-chapter got-backpack, or metro for chapter 2's open city (new = from the start)
 [group('Development')]
 dev-chapter beat="new":
-    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|matemagico|wrapper-room|caught|got-wrapper|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|papagato|papagato-2|papagato-3|matemagico-2|matemagico-3)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
+    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|matemagico|wrapper-room|caught|got-wrapper|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|papagato|papagato-2|papagato-3|matemagico-2|matemagico-3|cardedeu|nuria-uri|luz-nuria|luz-uri|clue-uni|barceloneta-uni|camping|candado|parcelas|sobremesa|anima-universidad|luz-anna-alvaro|luz-miquel-sarah|luz-soraya|luz-nico|luz-joan)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
 
 # Start an ánima mission partway: just dev-mission nuria ring-2 (parts in missionParts, src/story-points.ts; start = its beginning)
 [group('Development')]
 dev-mission anima="nuria" part="start":
-    @[[ "{{ anima }}" =~ ^(nuria)$ && "{{ part }}" =~ ^[a-z0-9-]+$ ]] || { printf 'Use an ánima mission (nuria) and a part, e.g. just dev-mission nuria ring-2.\n'; exit 1; }
+    @[[ "{{ anima }}" =~ ^(nuria|universidad)$ && "{{ part }}" =~ ^[a-z0-9-]+$ ]] || { printf 'Use an ánima mission (nuria, universidad) and a part, e.g. just dev-mission nuria ring-2.\n'; exit 1; }
     npm run dev -- --open '/?mission={{ anima }}&part={{ part }}'
 
 # Wake up on a later day of chapter 2 to see the Queen's spread: just dev-day 6 (7 is the end)
@@ -127,6 +130,11 @@ run: build
 [group('Combat')]
 combat-lab:
     npm run dev -- --open /combat-lab.html
+
+# Open the model lab: La Sobremesa on a turntable, its attacks, its rig (development)
+[group('Combat')]
+model-lab:
+    npm run dev -- --open /model-lab.html
 
 # Run reproducible difficulty batches (use --help for seeds, policies and tuning)
 [group('Combat')]
@@ -320,6 +328,17 @@ music-seam file start end:
 [positional-arguments]
 character *args:
     uv run --locked python tools/character.py "$@"
+
+# Rig a Meshy model for the game: bones from assets/models/<name>/rig.json (just rig sobremesa)
+[group('Tools')]
+rig model *args:
+    uv run --locked python tools/rig_glb.py '{{ model }}' {{ args }}
+
+# Build the campsite's word puzzle: prueba (easy, shown) or produccion (hard, sealed, never shown) (--help)
+[group('Tools')]
+[positional-arguments]
+parcelas *args:
+    uv run --locked python tools/parcelas.py "$@"
 
 # Make a figure in 3D, a person or a monster, with OpenAI and Meshy (tools/figures.toml): just character-3d aitor (--help)
 [group('Tools')]

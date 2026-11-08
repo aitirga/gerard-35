@@ -32,7 +32,7 @@ export interface PocketSource {
 }
 
 /** The floor under `spot` and the wall nearest it, among the scene's meshes, and the most coloured light about. */
-function sample(roots: readonly pc.Entity[], spot: pc.Vec3) {
+export function sampleLook(roots: readonly pc.Entity[], spot: pc.Vec3) {
   let floor: pc.Material | undefined, floorArea = Infinity, wall: pc.Material | undefined, wallAway = Infinity;
   let light: pc.Color | undefined, lightSat = .12;
   for (const root of roots) {
@@ -91,7 +91,7 @@ export function createPocket(app: pc.Application, source: PocketSource, random: 
   const root = new pc.Entity('Bolsillo de combate'); root.setPosition(POCKET_AT); app.root.addChild(root);
   const owned: pc.StandardMaterial[] = [];
   const plain = (hex: string) => { const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.gloss = .2; m.useMetalness = false; m.update(); owned.push(m); return m; };
-  const place = { ...sample(source.roots, source.spot), ...source.look };
+  const place = { ...sampleLook(source.roots, source.spot), ...source.look };
   const floorMaterial = place.floor ?? plain('#8d877e'), wallMaterial = place.wall ?? place.floor ?? plain('#6f6862');
   const meshes: pc.Mesh[] = [];
   const add = (name: string, k: Builder, material: pc.Material, shadows = true) => {

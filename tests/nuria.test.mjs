@@ -54,8 +54,9 @@ test('Nuria lends the cats: Papagato on trial, the street runs straight to a bub
   assert.deepEqual(story.triggers('cardedeu-calle').map(t => t.id), ['portal-through'], 'the bubble is talked about once');
   assert.ok(!story.interactions('cardedeu-calle').some(i => i.id === 'enter-maze'), 'there is nothing to press');
   const inside = story.handle({ type: 'near', id: 'portal-through' });
-  assert.equal(inside[0].environment, 'cardedeu-laberinto');
-  assert.deepEqual(inside[1], { kind: 'shout', speaker: 'uri', text: LINES_NURIA.mazeIn }, 'going in, Uri shouts from the top: no dialogue');
+  assert.deepEqual(inside[0], { kind: 'portal', who: 'party' }, 'they come apart into the bubble');
+  assert.equal(inside[1].environment, 'cardedeu-laberinto');
+  assert.deepEqual(inside[2], { kind: 'shout', speaker: 'uri', text: LINES_NURIA.mazeIn }, 'going in, Uri shouts from the top: no dialogue');
   assert.deepEqual(story.handle({ type: 'interact', id: 'salir-laberinto' })[0], { kind: 'travel', environment: 'cardedeu-calle', cell: PLACES_NURIA.calleBack.cell }, 'out of the tower, in front of the bubble');
   assert.deepEqual(story.triggers('cardedeu-laberinto').map(t => t.id), ['uri-0']);
   assert.deepEqual(story.fears('cardedeu-laberinto').map(f => f.id), FEARS.map(f => f.id));
@@ -371,7 +372,7 @@ test('no rule of Vertitrón asks for a skill or an ánima by name', async () => 
 });
 
 test('the picker stages the boss\'s moments, and El Plato\'s surprise, each only in its own fight', () => {
-  assert.deepEqual(Object.keys(STAGED_MOMENTS), ['vertigo-carga', 'vertigo-grito', 'vertigo-sin-ojo', 'plato-sorpresa']);
+  assert.deepEqual(Object.keys(STAGED_MOMENTS), ['vertigo-carga', 'vertigo-grito', 'vertigo-sin-ojo', 'plato-sorpresa', 'sobremesa-duo-carta', 'sobremesa-escala-alta', 'sobremesa-ultimo', 'magos-bombona', 'campeon-heroe', 'campeon-paisano']);
   const carga = tough(roofFight());
   assert.ok(stageMoment(carga, 'vertigo-carga'));
   assert.equal(carga.phase, 'player'); assert.ok(eyeOpen(carga));

@@ -5,8 +5,9 @@
  */
 import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
-import type { Cell } from './movement';
+import { facingToward, type Cell } from './movement.ts';
 import type { ItemId } from './items';
+import type { CampingEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
 import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
 import { award, levelFlag, levelOf } from './levels.ts';
@@ -15,10 +16,12 @@ import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId }
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
+import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
+import type { Board } from './parcelas.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
 import { COSTS, DAY_END, DAY_START, EVENING, LATE, NIGHT, WOKE_LATE, dusk, freshDays, isNight, readDays, spread, stage, type Activity, type Days } from './days.ts';
-import { ENVIRONMENTS } from './environments.ts';
+import { CAMPING_DOOR, CAMPING_GATE, ENVIRONMENTS } from './environments.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
 export const STORY_FLAGS = [
@@ -34,6 +37,12 @@ export const STORY_FLAGS = [
   // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the two lights
   // that went with Gerard and Aitor (docs/quests/nuria.md).
   'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri',
+  // The university friends' mission (docs/quests/universidad.md): Aitor's word about the beach, the
+  // talk on the sand, into the campsite through the spiral, the pool's padlock opened with the letters
+  // of the maze's three words, Las parcelas solved by the pool (the merendero's door), La Sobremesa beaten,
+  // their ánima, and the five lights that went with Gerard and Aitor (one a couple, one each alone).
+  'clue-uni', 'barceloneta-uni', 'camping', 'candado', 'parcelas', 'sobremesa', 'anima-universidad',
+  'luz-anna-alvaro', 'luz-miquel-sarah', 'luz-soraya', 'luz-nico', 'luz-joan',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 /**
@@ -44,7 +53,7 @@ const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-ni
 /** Only flags this version knows, renamed ones under their new name. */
 const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENAMED_FLAGS[f] ?? f).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
 /** Whose lights can be won. */
-export const LIGHTS = ['nuria', 'uri'] as const;
+export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan'] as const;
 export type LightId = typeof LIGHTS[number];
 
 export type StoryEvent =
@@ -75,6 +84,10 @@ export type StoryEvent =
   | { type: 'near'; id: string }
   /** The party came up out of a station after a trip. */
   | { type: 'arrive'; station: string }
+  /** A pitch chosen on Las parcelas' board (src/parcelas-ui.ts): a lantern lit, a tent woken, the black one; `solved` when every pitch is lit. */
+  | { type: 'parcelas'; outcome: 'lit' | 'tent' | 'black'; board: Board; solved: boolean }
+  /** Words tried on the pool gate's padlock (src/candado-ui.ts). */
+  | { type: 'candado'; numbers: number[] }
   /** The party walked in through home's portal from the street (src/night.ts: at night, the day is over). */
   | { type: 'home' };
 
@@ -106,8 +119,26 @@ export type StoryEffect =
   | { kind: 'metro'; station: string }
   /** The party fell: pink, then black (chapter 2 wakes Gerard at home with everything kept). */
   | { kind: 'fall' }
-  /** The camera turns to a named anchor of the scene (the palace), or back to Gerard without one. */
-  | { kind: 'look'; anchor?: string }
+  /** Out of the black again where they now stand (caught in the friends' game of tag: back up the sand). */
+  | { kind: 'recover' }
+  /** The reception's blackboard opens as Las parcelas' board, where it was left (src/parcelas-ui.ts). */
+  | { kind: 'parcelas'; board?: Board }
+  /** The pool gate's padlock opens on screen: three wheels of numbers (src/candado-ui.ts). */
+  | { kind: 'candado' }
+  /** The photo with the melon: a flash and the scene held as a photo with its caption (docs/quests/universidad.md). */
+  | { kind: 'photo'; caption: string }
+  /** The camera turns to a named anchor of the scene (the palace) or frames `cell`, `height` metres of view; back to Gerard with neither. */
+  | { kind: 'look'; anchor?: string; cell?: Cell; height?: number }
+  /**
+   * Into the portal standing in the scene (Uri's bubble, the spiral in the sea), or one that opens at
+   * `open` first: `who` comes apart into specks the whirlpool swallows (src/disintegrate.ts `into`),
+   * `everyone` the party and all the people there. The party then travels on; a person stays gone (`sank`).
+   */
+  | { kind: 'portal'; who: 'party' | 'everyone' | UniFriend; open?: Cell }
+  /** La Sobremesa beaten: back at the long table it comes apart, and the seven are left standing round it. */
+  | { kind: 'unmask' }
+  /** Out of a spiral at `cell` on the other side: everyone there comes together out of specks, and it closes. */
+  | { kind: 'emerge'; cell: Cell }
   /** The Queen has covered everything: the end, with the way back to the morning before. */
   | { kind: 'doom' }
   /**
@@ -135,13 +166,36 @@ export type StoryEffect =
   | { kind: 'shout'; speaker: 'uri'; text: string; beat?: number };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
-export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | FearEncounter;
+export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'sobremesa' | FearEncounter
+  // Càmping Eurosport (docs/quests/universidad.md): its small fights, the black pitch and El Campeón.
+  | 'camping-magos' | 'camping-dados' | 'camping-agentes' | 'camping-tienda' | 'camping-negra' | 'campeon';
 /** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
 /** The ánimas Gerard can wake (Tecnópata is Aitor's). */
 export type GerardClass = Exclude<ClassId, 'tecnopata'>;
 
 /** Someone standing in a scene: a character model, or one of the cats (`cat`). */
-export interface StoryNpc { id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki'; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId }
+export interface StoryNpc {
+  id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki' | UniFriend; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId;
+  /** The Queen holds them: violet eyes, and they keep looking where they face. */
+  possessed?: boolean;
+  /** Standing in the sea this deep (m): Anna in the shallows. */
+  wade?: number;
+  /** Which way they face, in degrees (0 faces +z, the sea in the Barceloneta). */
+  facing?: number;
+}
+/**
+ * The university friends' mission while it runs (docs/quests/universidad.md); not saved, as Nuria's.
+ * `chase`: the game of tag is on; `caught`: how many times they were caught today; `spiral`: Anna is
+ * going into the spiral beside her, `sunk` once she has come apart into it; `entered`: in the campsite.
+ */
+export interface UniRun {
+  chase: boolean; caught: number; spiral: boolean; sunk: boolean; entered: boolean;
+  /** In the campsite: the fights won this visit (`CAMP_HUNTERS` ids, `campeon`), the hunter whose fight is on, what was already said once, and Las parcelas' board. */
+  beaten: string[]; fighting?: string; told: string[]; board?: Board;
+}
+export const freshUni = (): UniRun => ({ chase: false, caught: 0, spiral: false, sunk: false, entered: false, beaten: [], told: [] });
+/** One of the friends running after the party (src/chasers.ts); `frozen` once the spiral has opened. */
+export interface UniChaser { id: string; friend: UniFriend; patrol: Cell[]; sight: number; walk: number; run: number; relentless: true; frozen: boolean }
 /**
  * Nuria's mission while it runs (docs/quests/nuria.md). Nothing here is saved: leaving with the
  * train, falling or the day ending hands the cats back, and only winning sets flags.
@@ -200,6 +254,9 @@ const PALACE_LOOKS: { id: string; cell: Cell; label: string; dialogue: Dialogue 
 ];
 /** The wrapper room's back door into the hall: stuck with gum until the minion falls. */
 const BACK_DOOR: Cell = { x: 10, z: 16 };
+/** The beach's walkable cells across its width that the friends' tentacles close during the game of tag. */
+const TENTACLES: readonly Cell[] = ENVIRONMENTS[BEACH].grid.flatMap((row, z) => z >= PLACES_UNI.tentacles.z && z < PLACES_UNI.tentacles.z + PLACES_UNI.tentacles.depth
+  ? [...row].flatMap((c, x) => c === '#' ? [] : [{ x, z }]) : []);
 /** The room where the second minion waits. */
 export const WRAPPER_ROOM = 'Sala de los Envoltorios';
 /** A place the story watches: walking within `radius` of `cell` sends a `near` event. */
@@ -238,6 +295,8 @@ export class Story {
   private extras: Partial<Record<MemberId, ClassId[]>> = {};
   /** Nuria's mission while it runs; not saved. */
   nuria: NuriaRun = freshRun();
+  /** The university friends' mission while it runs; not saved. */
+  uni: UniRun = freshUni();
   /** Whether Nuria has lent the cats before (she says it differently the second time). Not saved. */
   private lentBefore = false;
   /**
@@ -397,7 +456,7 @@ export class Story {
     if (id === 'calle' && this.nuria.lent) return this.enterCalle();
     // The bubble at the end of the street comes into sight.
     if (id === 'portal' && this.nuria.lent && !this.nuria.portal) { this.nuria.portal = true; return [say(LINES_NURIA.portal)]; }
-    if (id === 'portal-through' && this.nuria.lent) return this.enterMaze();
+    if (id === 'portal-through' && this.nuria.lent) return [{ kind: 'portal', who: 'party' }, ...this.enterMaze()];
     const reached = /^uri-(\d)$/.exec(id);
     // Up out of a ring: Uri shouts it from the top, and the climb goes on.
     if (reached && Number(reached[1]) === this.nuria.stage) { this.nuria.stage++; return [{ kind: 'shout', speaker: 'uri', text: LINES_NURIA.shouts[Number(reached[1])] }]; }
@@ -406,6 +465,114 @@ export class Story {
     const fear = FEARS.find(f => f.id === id);
     if (fear && this.nuria.lent && !this.nuria.beaten.includes(fear.id)) return [...fear.tell ? [say(fear.tell)] : [], { kind: 'battle', encounter: fear.encounter }];
     return [];
+  }
+  /**
+   * The university friends on the beach (docs/quests/universidad.md § Beats): walking up behind them
+   * starts the talk and the game of tag; one of them reaching Gerard (or Aitor) is caught, back up
+   * the sand; near Anna the spiral takes her, and through it is the campsite.
+   */
+  private nearUni(id: string): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult || this.has('sobremesa')) return [];
+    const run = this.uni;
+    if (id === 'uni-talk' && !run.chase && !run.spiral) {
+      const first = this.set('barceloneta-uni');
+      run.chase = true;
+      // The first time the camera takes in the huddle, Anna and the spiral while they talk.
+      const { intro } = PLACES_UNI;
+      return first ? [{ kind: 'look', cell: { x: intro.x, z: intro.z }, height: intro.height }, say(LINES_UNI.beach), { kind: 'look' }] : [say(LINES_UNI.again)];
+    }
+    if (id === 'uni-spiral' && run.chase) { run.chase = false; run.spiral = true; return [say(LINES_UNI.spiral), { kind: 'portal', who: 'anna' }, say(LINES_UNI.gone)]; }
+    if (id === 'uni-through' && run.spiral && run.sunk) return [{ kind: 'portal', who: 'party' }, ...this.enterCamping()];
+    const friend = UNI_FRIENDS.find(f => id === `uni-${f}`);
+    if (friend && run.chase) {
+      run.chase = false; run.caught++;
+      const back: StoryEffect = { kind: 'travel', environment: BEACH, cell: { ...PLACES_UNI.retry } };
+      return [say(LINES_UNI.caught), { kind: 'fall' }, back, { kind: 'recover' }];
+    }
+    return [];
+  }
+  /** Through the spiral, into the campsite: the first time they say what they see, and looking for them takes its hour. */
+  private enterCamping(): StoryEffect[] {
+    const inside: StoryEffect = { kind: 'travel', environment: CAMP, cell: { ...PLACES_CAMP.entrada } };
+    const first = !this.uni.entered;
+    this.uni.entered = true; this.uni.spiral = false;
+    this.set('camping');
+    return first ? [inside, { kind: 'dialogue', dialogue: LINES_UNI.camp }, ...this.spend('cafe')] : [inside];
+  }
+  /**
+   * In the campsite (docs/quests/universidad.md § Càmping Eurosport): its foes stand up as the party
+   * comes near, the pool's gate says why it is shut, El Campeón comes down off its plinth, and at the
+   * long table La Sobremesa is waiting.
+   */
+  private nearCamp(id: string): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult || this.has('sobremesa')) return [];
+    const run = this.uni;
+    // One on its round has reached them: its fight, remembered as theirs so winning it keeps it beaten.
+    const hunter = CAMP_HUNTERS.find(h => id === `camp-${h.id}`);
+    if (hunter && !run.beaten.includes(hunter.id)) { run.fighting = hunter.id; return [{ kind: 'battle', encounter: hunter.encounter }]; }
+    if (id === 'camp-gate' && !this.has('candado') && !run.told.includes('gate')) { run.told.push('gate'); return [say(LINES_UNI.gate), { kind: 'candado' }]; }
+    if (id === 'camp-campeon' && this.has('candado') && !run.beaten.includes('campeon')) return [say(LINES_UNI.campeon), { kind: 'battle', encounter: 'campeon' }];
+    if (id === 'camp-door' && !this.has('parcelas') && !run.told.includes('door')) { run.told.push('door'); return [say(LINES_UNI.door)]; }
+    if (id === 'camp-mesa' && this.has('parcelas')) return [say(LINES_UNI.sobremesa), { kind: 'battle', encounter: 'sobremesa' }];
+    return [];
+  }
+  /** The pool gate's padlock: its wheels, until the right numbers open it. */
+  private padlock(): StoryEffect[] {
+    if (!this.adult || this.has('sobremesa') || this.has('candado')) return [];
+    const first = !this.uni.told.includes('gate');
+    if (first) this.uni.told.push('gate');
+    return [...first ? [{ kind: 'dialogue', dialogue: LINES_UNI.gate } as StoryEffect] : [], { kind: 'candado' }];
+  }
+  /** Numbers tried on the padlock: the letters of the maze's three words open the pool gate; anything else and it holds. */
+  private tryLock(numbers: number[]): StoryEffect[] {
+    if (!this.adult || this.has('candado') || !lockOpens(numbers)) return [];
+    this.set('candado');
+    return [{ kind: 'dialogue', dialogue: LINES_UNI.unlocked }];
+  }
+  /** The blackboard by the pool: Las parcelas' board, once El Campeón, standing before it, is beaten. */
+  private blackboard(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult || this.has('sobremesa')) return [say(LINES_UNI.boardIdle)];
+    if (this.has('parcelas')) return [say(LINES_UNI.boardDone)];
+    if (!this.uni.beaten.includes('campeon')) return [say(LINES_UNI.campeon), { kind: 'battle', encounter: 'campeon' }];
+    const first = !this.uni.told.includes('board');
+    if (first) this.uni.told.push('board');
+    return [...first ? [say(LINES_UNI.board)] : [], { kind: 'parcelas', ...this.uni.board ? { board: this.uni.board } : {} }];
+  }
+  /** A pitch chosen: a wrong one wakes its tent (a fight), the black one puts out every bulb (a hard fight); all lit opens the merendero's steel door. */
+  private choosePitch(event: Extract<StoryEvent, { type: 'parcelas' }>): StoryEffect[] {
+    if (!this.adult || this.has('parcelas')) return [];
+    this.uni.board = event.board;
+    if (event.solved) { this.set('parcelas'); return [{ kind: 'dialogue', dialogue: LINES_UNI.doorOpen }]; }
+    if (event.outcome === 'tent') return [{ kind: 'battle', encounter: 'camping-tienda' }];
+    if (event.outcome === 'black') return [{ kind: 'battle', encounter: 'camping-negra' }];
+    return [];
+  }
+  /**
+   * La Sobremesa beaten: it comes apart at the long table and the seven are left round it, free; the
+   * photo with the melon; their five lights go with Gerard and Aitor (one a couple, one each alone),
+   * a beat apart; a spiral opens behind the table and takes them all; and out of it on the November
+   * beach, the seven round the two of them.
+   */
+  private winUni(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.set('sobremesa')) return [];
+    for (const flag of ['anima-universidad', 'luz-anna-alvaro', 'luz-miquel-sarah', 'luz-soraya', 'luz-nico', 'luz-joan'] as const) this.set(flag);
+    const beach: StoryEffect = { kind: 'travel', environment: BEACH, cell: { ...PLACES_UNI.home } };
+    return [
+      { kind: 'unmask' }, say(LINES_UNI.won), { kind: 'look', anchor: 'merendero-mesa', height: 8.5 }, { kind: 'photo', caption: LINES_UNI.photo },
+      { kind: 'lights', people: ['anna', 'sarah', 'soraya', 'nico', 'joan'] },
+      { kind: 'portal', who: 'everyone', open: { ...PLACES_CAMP.vuelta } },
+      beach, { kind: 'emerge', cell: { ...PLACES_UNI.out } }, say(LINES_UNI.home), ...this.spend('fight'),
+    ];
+  }
+  /** Gerard's morning (and the first way down into the metro), with Aitor's word about the friends on the beach until they have been there. */
+  private withClue(morning: Dialogue): Dialogue {
+    if (!this.has('metro') || this.has('barceloneta-uni')) return morning;
+    this.set('clue-uni');
+    return { ...morning, lines: [...morning.lines, ...LINES_UNI.clue] };
   }
   /**
    * Her street has turned into La calle que no acaba before them (src/street-shift.ts walks them on
@@ -440,6 +607,16 @@ export class Story {
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (event.won && event.encounter === 'uri-vertigo') return this.winNuria();
+    if (event.won && event.encounter === 'sobremesa') return this.winUni();
+    // The campsite's fights: one waiting at a table stays beaten this visit; a woken tent or the black pitch is only a fight.
+    const waiting = event.encounter === 'campeon' ? 'campeon' : CAMP_HUNTERS.some(h => h.encounter === event.encounter) ? this.uni.fighting : undefined;
+    this.uni.fighting = undefined;
+    if (event.won && waiting) {
+      if (!this.uni.beaten.includes(waiting)) this.uni.beaten.push(waiting);
+      // Its word was shouted in the fight, as each of them fell (battle-ui `lastWords`).
+      return [];
+    }
+    if (event.won && (event.encounter === 'camping-tienda' || event.encounter === 'camping-negra')) return [];
     const fear = FEARS.find(f => f.encounter === event.encounter);
     // A fear beaten stays beaten; its young only go for a while (the game brings them back).
     if (event.won && fear) { if (!fear.respawn && !this.nuria.beaten.includes(fear.id)) this.nuria.beaten.push(fear.id); return []; }
@@ -484,6 +661,10 @@ export class Story {
     this.lentBefore = true;
     if (!this.extrasOf('gerard').length) this.equip('gerard', 'papagato');
   }
+  /** Someone went into a portal (`portal` effect) and is gone: Anna, into the spiral in the sea. */
+  sank(who: 'party' | UniFriend) { if (who === 'anna' && this.uni.spiral) this.uni.sunk = true; }
+  /** Development: starts the university friends' mission partway (the picker's Misiones tab): the game of tag on, the spiral open. */
+  startUni(run: Partial<UniRun>) { this.uni = { ...freshUni(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
   /** Gerard's active ánima, which also dresses the interface. */
   get gerardClass(): GerardClass | undefined { return this.classOf('gerard') as GerardClass | undefined; }
   /**
@@ -557,6 +738,12 @@ export class Story {
   get partner(): Partner | undefined { return this.adult ? 'aitor' : this.companion !== 'none' ? 'bernat' : undefined; }
   /** Cells the story keeps shut in a scene (the stuck back door of the wrapper room). */
   blocked(environment: EnvironmentId): Cell[] {
+    if (environment === BEACH && (this.uni.chase || this.uni.spiral)) return TENTACLES.map(c => ({ ...c }));
+    // The pool's gate stays padlocked until the numbers of the maze's three words are put on it, the merendero's steel door until every pitch is found.
+    if (environment === CAMP && !this.has('sobremesa')) return [
+      ...this.has('candado') || this.has('parcelas') ? [] : CAMPING_GATE,
+      ...this.has('parcelas') ? [] : CAMPING_DOOR,
+    ].map(c => ({ ...c }));
     return environment === 'palacio' && !this.has('wrapper-room') ? [{ ...BACK_DOOR }] : [];
   }
   get items(): ItemId[] {
@@ -623,8 +810,9 @@ export class Story {
   }
   private endDay(why: 'home' | 'sleep' | 'fall' | 'night-fall'): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
-    // Whatever Nuria's mission had reached is undone: the cats went back to her.
+    // Whatever Nuria's mission had reached is undone: the cats went back to her; the friends are on the sand again.
     this.nuria = freshRun();
+    this.uni = freshUni();
     const firstFall = why === 'fall' && this.set('palace-tried');
     // Beaten in the street at night, they sleep the morning away.
     this.days.clock = { day: this.days.clock.day + 1, hour: why === 'night-fall' ? WOKE_LATE : DAY_START };
@@ -633,7 +821,7 @@ export class Story {
     const before: StoryEffect[] = why === 'home' ? [say(LINES_2.homeSafe)] : why === 'sleep' ? [say(LINES_2.sleep)] : [];
     if (this.doomed) return [...before, { kind: 'fall' }, home, { kind: 'wake' }, say(LINES_2.doom), { kind: 'rise' }, { kind: 'doom' }];
     const morning = firstFall ? LINES_2.wakeFirst : why === 'night-fall' ? LINES_2.wokeLate : LINES_2.morning[stage(this.spread)];
-    return [...before, { kind: 'fall' }, home, { kind: 'wake' }, say(morning), { kind: 'rise' }];
+    return [...before, { kind: 'fall' }, home, { kind: 'wake' }, say(this.withClue(morning)), { kind: 'rise' }];
   }
   /** Back to the morning before the end: that day's progress is lost, everything before it kept. */
   rewind(): StoryEffect[] {
@@ -648,6 +836,8 @@ export class Story {
   triggers(environment: EnvironmentId): Trigger[] {
     const { tv } = PLACES_2;
     if (this.adult && !this.has('tv-news') && environment === tv.environment) return [{ id: 'tv', cell: { ...tv.cell }, radius: tv.radius }];
+    if (environment === BEACH) return this.uniTriggers();
+    if (environment === CAMP) return this.campTriggers();
     if (!this.adult || this.has('nuria-uri')) return [];
     const { haru, uri } = PLACES_NURIA, run = this.nuria;
     if (environment === STREET && !run.lent && !run.haru) return [{ id: 'haru', cell: { ...haru.cell }, radius: haru.radius }];
@@ -674,8 +864,46 @@ export class Story {
     if (run.led) return undefined;
     return { id: 'haru', from: { ...PLACES_NURIA.haru.cell }, to: { ...HARU_HOME }, arrive: 'haru-home' };
   }
+  /** On the beach: behind the friends, then near Anna, then the spiral where she went. */
+  private uniTriggers(): Trigger[] {
+    if (!this.adult || this.has('sobremesa')) return [];
+    const { talk, anna, spiral } = PLACES_UNI, run = this.uni;
+    if (run.spiral) return run.sunk ? [{ id: 'uni-through', cell: { ...PLACES_UNI.portal }, radius: spiral.through }] : [];
+    if (run.chase) return [{ id: 'uni-spiral', cell: { ...anna }, radius: spiral.radius }];
+    return [{ id: 'uni-talk', cell: { x: talk.x, z: talk.z }, radius: talk.radius }];
+  }
+  /** In the campsite: the padlocked gate, then El Campeón by the pool and the steel door, then the long table once the door is open. */
+  private campTriggers(): Trigger[] {
+    if (!this.adult || this.has('sobremesa')) return [];
+    const run = this.uni, list: Trigger[] = [];
+    const { gate, campeon, mesa, door } = PLACES_CAMP;
+    if (!this.has('candado')) { if (!run.told.includes('gate')) list.push({ id: 'camp-gate', cell: { x: gate.x, z: gate.z }, radius: gate.radius }); return list; }
+    if (!run.beaten.includes('campeon')) list.push({ id: 'camp-campeon', cell: { x: campeon.x, z: campeon.z }, radius: campeon.radius });
+    if (!this.has('parcelas')) { if (!run.told.includes('door')) list.push({ id: 'camp-door', cell: { x: door.x, z: door.z }, radius: door.radius }); }
+    else list.push({ id: 'camp-mesa', cell: { x: mesa.x, z: mesa.z }, radius: mesa.radius });
+    return list;
+  }
+  /** The campsite's foes still waiting this visit, for the game to stand at their places (src/camping-foes.ts models). */
+  campFoes(environment: EnvironmentId): { id: string; encounter: string; cell: Cell }[] {
+    if (environment !== CAMP || !this.adult || this.has('sobremesa')) return [];
+    const run = this.uni;
+    return [
+      // Behind the tall wall: nobody sees El Campeón until the padlock opens its gate.
+      ...run.beaten.includes('campeon') || !this.has('candado') ? [] : [{ id: 'campeon', encounter: 'campeon', cell: { x: PLACES_CAMP.campeon.x, z: PLACES_CAMP.campeon.z } }],
+    ];
+  }
+  /** The friends playing tag on the beach (src/chasers.ts moves them; reaching Gerard is a `near` with their id). */
+  uniChasers(environment: EnvironmentId): UniChaser[] {
+    const run = this.uni;
+    if (environment !== BEACH || !this.adult || this.has('sobremesa') || !(run.chase || run.spiral)) return [];
+    return (Object.entries(PLACES_UNI.friends) as [UniFriend, Cell][]).map(([friend, cell]) => ({
+      id: `uni-${friend}`, friend, patrol: [{ ...cell }], sight: 99, walk: 0, run: TAG.run, relentless: true, frozen: run.spiral,
+    }));
+  }
   /** Uri's fears still hunting the ramp (src/chasers.ts moves them; reaching Gerard is a `near` with their id). */
-  fears(environment: EnvironmentId) {
+  fears(environment: EnvironmentId): { id: string; encounter: FearEncounter | CampingEncounter; patrol: readonly Cell[]; sight: number; walk: number; run: number; respawn?: boolean }[] {
+    // Càmping Eurosport's magos and agentes on their rounds (docs/quests/universidad.md), until beaten this visit.
+    if (environment === CAMP) return !this.adult || this.has('sobremesa') ? [] : CAMP_HUNTERS.filter(h => !this.uni.beaten.includes(h.id)).map(h => ({ ...h, id: `camp-${h.id}` }));
     if (environment !== MAZE || !this.adult || !this.nuria.lent || this.has('nuria-uri')) return [];
     return FEARS.filter(f => !this.nuria.beaten.includes(f.id));
   }
@@ -713,7 +941,7 @@ export class Story {
       { id: 'jan', character: 'jan-child', environment: PLACES.jan.environment, cell: PLACES.jan.cell, scale: 1.12 },
     ];
     // Chapter 1 is a dream: once Gerard wakes, home in Sant Quirze is empty, and Aitor walks with him (the partner, not an NPC).
-    if (this.adult) return this.nuriaNpcs().filter(npc => npc.environment === environment);
+    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs()].filter(npc => npc.environment === environment);
     return all.filter(npc => npc.environment === environment);
   }
   /** Nuria at her door, the cats with her until she lends them, and Uri ahead in his maze. */
@@ -728,6 +956,25 @@ export class Story {
       if (!run.haru || run.led) list.push({ id: 'haru', character: '', cat: 'haru', environment: STREET, cell: run.led ? { ...HARU_HOME } : { ...haru.cell }, scale: 1.35 });
     }
     // In the tower Uri is up at the top all along, on Vertitrón (src/fears.ts), not on the ramp.
+    return list;
+  }
+  /**
+   * The friends on the sand with their backs to the town, facing the sea, and Anna out in the water
+   * facing them; during the game of tag they are chasers instead (`uniChasers`), and Anna goes with
+   * the spiral.
+   */
+  private uniNpcs(): StoryNpc[] {
+    const run = this.uni, list: StoryNpc[] = [];
+    // Free: round the melon table in the campsite for the photo, then back on the beach round Gerard
+    // and Aitor, themselves again; each facing the two of them.
+    const toward = (from: Cell, to: Cell) => facingToward(to.x - from.x, to.z - from.z);
+    if (this.has('sobremesa')) return UNI_FRIENDS.flatMap(id => [
+      { id, character: id, facing: toward(PLACES_UNI.freed[id], PLACES_UNI.home), environment: BEACH, cell: { ...PLACES_UNI.freed[id] }, scale: UNI_SCALE },
+      ...run.entered ? [{ id, character: id, facing: toward(CAMP_FREED[id], PLACES_CAMP.foto), environment: CAMP, cell: { ...CAMP_FREED[id] }, scale: UNI_SCALE }] : [],
+    ]);
+    const friend = (id: UniFriend, cell: Cell, facing: number): StoryNpc => ({ id, character: id, possessed: true, facing, environment: BEACH, cell: { ...cell }, scale: UNI_SCALE });
+    if (!run.chase && !run.spiral) for (const [id, cell] of Object.entries(PLACES_UNI.friends) as [UniFriend, Cell][]) list.push(friend(id, cell, 0));
+    if (!run.sunk) list.push({ ...friend('anna', PLACES_UNI.anna, 0), wade: PLACES_UNI.wade });
     return list;
   }
   /** Haru and Yuki, home in the Meridiana flat once Uri is himself again (src/cat-wander.ts walks them). */
@@ -839,6 +1086,8 @@ export class Story {
         // In from the street at night: they made it, and the day is over.
         return this.night ? this.endDay('home') : [];
       case 'near':
+        if (event.id.startsWith('uni-')) return this.nearUni(event.id);
+        if (event.id.startsWith('camp-')) return this.nearCamp(event.id);
         // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
         if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard' }] : [];
         if (event.id !== 'tv') return this.nearNuria(event.id);
@@ -851,6 +1100,10 @@ export class Story {
         if (event.station === 'trinitat-vella' && this.set('rec-comtal')) return [{ kind: 'look', anchor: 'palace' }, say(LINES_2.recComtalFirst), { kind: 'look' }, ...this.spend('metro')];
         if (event.station === 'cardedeu' && this.set('cardedeu')) return [say(LINES_NURIA.arrive), ...this.spend('metro')];
         return this.spend('metro');
+      case 'parcelas':
+        return this.choosePitch(event);
+      case 'candado':
+        return this.tryLock(event.numbers);
       case 'south':
         if (this.companion !== 'follow' || this.has('dejavu') || !this.set('bernat-stalled')) return [];
         this.tugs = 0;
@@ -872,6 +1125,12 @@ export class Story {
         if (!this.extrasOf('gerard').length) this.equip('gerard', 'papagato');
         return [say(again ? LINES_NURIA.nuriaAgain : LINES_NURIA.nuriaFirst), { kind: 'anima', classId: 'papagato' }];
       }
+      case 'recepcio-pizarra':
+        return [{ kind: 'dialogue', dialogue: LINES_UNI.boardIdle }];
+      case 'pissarra-piscina':
+        return this.blackboard();
+      case 'candado-porton':
+        return this.padlock();
       case 'calle-tornar':
         return [{ kind: 'travel', environment: STREET, cell: { ...PLACES_NURIA.streetBack.cell } }];
       case 'salir-laberinto':
@@ -953,7 +1212,7 @@ export class Story {
       if (!this.nuria.warned) { this.nuria.warned = true; return [say(LINES_NURIA.leaveWarn)]; }
       this.nuria = freshRun();
     }
-    if (station && this.adult) return [...(this.set('metro') ? [say(LINES_2.metroFirst)] : []), { kind: 'metro', station }];
+    if (station && this.adult) return [...(this.set('metro') ? [say(this.withClue(LINES_2.metroFirst))] : []), { kind: 'metro', station }];
     if (event.id === 'look-curtain' && this.adult) return [say(LINES_2.curtain)];
     const look = PALACE_LOOKS.find(l => l.id === event.id);
     return look ? [say(look.dialogue)] : [];

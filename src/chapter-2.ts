@@ -79,7 +79,7 @@ export const LINES_2 = {
   /** The first time they come down into the metro: the city opens. */
   metroFirst: both(
     gerard('Fabra i Puig. Cuántas mañanas habré bajado estas escaleras medio dormido.'),
-    aitor('Hoy vas bien despierto. Venga, la L1 hasta Trinitat Vella son tres paradas.'),
+    aitor('Hoy vas bien despierto. Menudo cumpleaños te ha tocado. Venga, la L1 hasta Trinitat Vella son tres paradas.'),
   ),
   /** Coming up at Trinitat Vella the first time: the castle over the school. */
   recComtalFirst: both(
@@ -114,6 +114,7 @@ export const LINES_2 = {
     gerard('El castillo… los guardianes… nos han aplastado.'),
     aitor('¿Nos? Yo también lo he soñado. El puño de chicle, y luego todo rosa.'),
     aitor('Si hemos soñado lo mismo, no ha sido un sueño.'),
+    aitor('Y mira el móvil. Veintidós de noviembre. Hoy vuelve a ser tu cumpleaños.'),
     gerard('Son demasiado fuertes. Así no podemos.'),
     aitor('Pues no vayamos así. Busquemos ayuda. Tú tienes amigos para dar y regalar.'),
   ),
@@ -133,10 +134,10 @@ export const LINES_2 = {
    * the Queen has spread (days.ts `stage`).
    */
   morning: [
-    both(gerard('¡NO!'), aitor('Buenos días… Otra vez gritando. ¿Mismo sueño?'), aitor('La tele lleva toda la mañana encendida. Sigue ahí, el castillo.')),
-    both(gerard('¡NO!'), aitor('Ey. Despierta.'), aitor('Dicen en la tele que ha crecido esta noche. Ya ocupa media Trinitat Vella.')),
-    both(gerard('¡NO!'), aitor('Gerard… mira por la ventana. El cielo tiene otro color.'), aitor('Ya ha llegado a Sant Andreu. No podemos seguir así.')),
-    both(gerard('¡NO!'), aitor('He dormido fatal. Se oía crujir la Meridiana, como un envoltorio.'), aitor('Está casi aquí. Hoy tiene que servir para algo.')),
+    both(gerard('¡NO!'), aitor('Buenos días… Otra vez gritando. ¿Mismo sueño?'), aitor('Felicidades otra vez. El móvil sigue diciendo veintidós de noviembre.'), aitor('La tele lleva toda la mañana encendida. Sigue ahí, el castillo.')),
+    both(gerard('¡NO!'), aitor('Ey. Despierta. Felicidades… supongo.'), aitor('Dicen en la tele que ha crecido esta noche. Ya ocupa media Trinitat Vella.')),
+    both(gerard('¡NO!'), aitor('Gerard… mira por la ventana. El cielo tiene otro color.'), aitor('Otro veintidós de noviembre, y ya ha llegado a Sant Andreu. No podemos seguir así.')),
+    both(gerard('¡NO!'), aitor('He dormido fatal. Se oía crujir la Meridiana, como un envoltorio.'), aitor('Tu cumpleaños otra vez, y está casi aquí. Hoy tiene que servir para algo.')),
     both(gerard('¡NO!'), aitor('Gerard. La escalera huele a fresa.'), aitor('Si hoy no la paramos, mañana no habrá casa a la que volver.')),
   ],
   /** As the day goes, Aitor notices it. */

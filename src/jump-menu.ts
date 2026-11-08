@@ -30,6 +30,7 @@ const PLACES: Place[] = [
   { id: 'cardedeu-laberinto', name: 'La torre de Uri', detail: 'Al otro lado de la pompa', group: 'Cardedeu', open: false },
   { id: 'bunkers-carmel', name: 'Búnkers del Carmel', detail: 'Turó de la Rovira', group: 'Barcelona', open: false },
   { id: 'barceloneta', name: 'La Barceloneta', detail: 'La playa · L4', group: 'Barcelona', open: true },
+  { id: 'camping', name: 'Càmping Eurosport', detail: 'Al otro lado de la espiral', group: 'Barcelona', open: false },
   { id: 'sants', name: 'Sants · Carrer de Valladolid', detail: 'De la Plaça de Sants a El Nucli', group: 'Barcelona', open: true },
   { id: 'el-nucli', name: 'El Nucli', detail: 'La tienda de juegos, Sants', group: 'Barcelona', open: true },
   { id: 'poble-sec', name: 'Poble Sec · Carrer de Blai', detail: 'Donde vive Emilie', group: 'Barcelona', open: false },
@@ -53,7 +54,11 @@ const TIER_NAMES: Record<string, string> = { calma: 'calma', tensa: 'tensa', dur
 
 /** Uri's tower (chapter 2): his fears, Vertitrón and the young of each ring. */
 const TOWER_FIGHTS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'crias-1', 'crias-2', 'crias-3'] as const;
-export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number];
+/** The university friends' mission (docs/quests/universidad.md): La Sobremesa. */
+const UNI_FIGHTS = ['sobremesa'] as const;
+/** Càmping Eurosport, the university friends' dungeon (docs/quests/universidad.md): its small fights, the black pitch and El Campeón. */
+const CAMPING_FIGHTS = ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon'] as const;
+export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number] | (typeof UNI_FIGHTS)[number] | (typeof CAMPING_FIGHTS)[number];
 /** What the fight tester starts: who fights, wearing what, against whom, and the help it gives. */
 export interface FightSetup {
   adult: boolean; partner: boolean;
@@ -88,9 +93,8 @@ export function validFight(value: unknown): FightSetup {
   const wear = { gerard, aitor: aitor === gerard ? undefined : aitor };
   const adult = v.adult === true;
   // The palace minion is chapter 1's fight: the boys, always together.
-  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
-  // The way home at night is chapter 2's too.
-  const tower = (TOWER_FIGHTS as readonly string[]).includes(encounter);
+  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
+  const tower = ([...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS] as readonly string[]).includes(encounter);
   return {
     adult, partner: encounter === 'palace-minion' ? true : v.partner !== false,
     wear, animas, friends: Array.isArray(v.friends) ? ANIMA_IDS.filter(id => v.friends!.includes(id)) : [],
@@ -137,6 +141,8 @@ export interface JumpMenuDev {
   /** Adds ecos on top of the story's (not saved); opens the jar's screen wherever you are. */
   giveEcos: (count: number) => void;
   openJar: () => void;
+  /** Opens Las parcelas' board (docs/quests/universidad.md): the test puzzle, from the start or where it was left. */
+  openParcelas: (fresh: boolean) => void;
   fight: (setup: FightSetup) => void;
   /** The fight on now, if any: what it is and whether it can jump (only on a player's turn). */
   current: () => { encounter: Encounter; phase: string; awakened: boolean; busy: boolean } | undefined;
@@ -265,10 +271,14 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       <div class="fight-chips jump-xp" role="group" aria-label="Ecos de luz"><span>${ecos.total} ecos · ${ecos.free} libres${ecos.extra ? ` · ${ecos.extra} de aquí` : ''}</span>
         <button type="button" data-give-ecos="1">+1 eco</button><button type="button" data-give-ecos="-1" ${ecos.extra ? '' : 'disabled'}>−1 eco</button><button type="button" data-open-jar>Abrir el bote</button></div>
       <p class="jump-note">Los ecos de aquí no se guardan. El bote se abre desde cualquier sitio.</p>
+      <h3 class="eyebrow">LAS PARCELAS</h3>
+      <div class="fight-chips jump-xp" role="group" aria-label="Las parcelas"><button type="button" data-open-parcelas="1">Empezar el tablero</button><button type="button" data-open-parcelas="0">Seguir donde estaba</button></div>
+      <p class="jump-note">El puzzle de prueba (just parcelas prueba). El de verdad solo lo abre la versión final.</p>
     </aside>`;
   }
   /** Every fight by name (TypeScript asks for each new one). */
-  const FIGHT_NAMES: Record<Encounter, string> = { dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle', 'night-guard': 'un guardián en la Meridiana', cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'cebollitas', 'crias-2': 'crías del segundo anillo', 'crias-3': 'crías del tercer anillo' };
+  const FIGHT_NAMES: Record<Encounter, string> = { dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle', 'night-guard': 'un guardián en la Meridiana', cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'cebollitas', 'crias-2': 'crías del segundo anillo', 'crias-3': 'crías del tercer anillo', sobremesa: 'La Sobremesa',
+    'camping-magos': 'magos de camping', 'camping-dados': 'dados', 'camping-agentes': 'agentes', 'camping-tienda': 'una tienda equivocada', 'camping-negra': 'la parcela negra', campeon: 'El Campeón' };
   /** During a fight: the help it gets, the moments it can jump to, and the way out. */
   function livePage() {
     const now = dev!.current()!, help = dev!.help();
@@ -289,6 +299,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       <p class="jump-note">Salir no cuenta para la historia. Un lugar de «Lugares» también sale del combate.</p>`;
   }
   const TOWER_LABELS: Record<(typeof TOWER_FIGHTS)[number], string> = { cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'Crías · anillo 1', 'crias-2': 'Crías · anillo 2', 'crias-3': 'Crías · anillo 3' };
+  const CAMPING_LABELS: Record<(typeof CAMPING_FIGHTS)[number], string> = { 'camping-magos': 'Magos', 'camping-dados': 'Dados', 'camping-agentes': 'Agentes', 'camping-tienda': 'Tienda equivocada', 'camping-negra': 'Parcela negra', campeon: 'El Campeón' };
   function fightPage() {
     if (dev!.current()) return livePage();
     const f = fight;
@@ -306,6 +317,8 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       <div class="fight-row"><span>Contra</span><div class="fight-chips">
         ${chip('encounter', 'dogs', 'Perros', f.encounter === 'dogs')}${chip('encounter', 'possessed', 'Perros poseídos', f.encounter === 'possessed')}
         ${chip('encounter', 'palace-minion', 'El esbirro', f.encounter === 'palace-minion', f.adult)}${chip('encounter', 'palace-guards', 'Guardianes de chicle', f.encounter === 'palace-guards')}${f.adult ? chip('encounter', 'night-guard', 'De noche en la Meridiana', f.encounter === 'night-guard') : ''}</div></div>
+      ${f.adult ? `<div class="fight-row"><span>Amigos de la uni</span><div class="fight-chips">${chip('encounter', 'sobremesa', 'La Sobremesa', f.encounter === 'sobremesa')}</div></div>` : ''}
+      ${f.adult ? `<div class="fight-row"><span>Camping Eurosport</span><div class="fight-chips">${CAMPING_FIGHTS.map(id => chip('encounter', id, CAMPING_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Torre de Uri</span><div class="fight-chips">${TOWER_FIGHTS.map(id => chip('encounter', id, TOWER_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${dogs ? `<div class="fight-row"><span>Cuántos</span><div class="fight-chips">${[1, 2, 3, 4].map(n => chip('foes', String(n), String(n), f.foes === n)).join('')}</div></div>` : ''}
       ${guards ? `<p class="jump-note">${f.encounter === 'night-guard' ? 'Uno solo, tan fuerte como los del castillo con las ánimas de los amigos.' : 'Los guardianes son tantos y tan fuertes como dejan las ánimas de los amigos.'}</p>` : ''}
@@ -386,6 +399,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     }
     if (data.giveEcos) { dev!.giveEcos(Number(data.giveEcos)); render(`[data-give-ecos="${data.giveEcos}"]`); return; }
     if (data.openJar !== undefined) { close(); dev!.openJar(); return; }
+    if (data.openParcelas !== undefined) { close(); dev!.openParcelas(data.openParcelas === '1'); return; }
     if (data.improve) { setFight({ improved: fight.improved.includes(data.improve) ? fight.improved.filter(id => id !== data.improve) : [...fight.improved, data.improve] }); render(`[data-improve="${data.improve}"]`); return; }
     if (data.animasReset !== undefined) { dev!.setAnimas(undefined); render('.jump-side [aria-pressed="true"]'); return; }
     if (data.folds) { dev!.setFolding(data.folds === '1'); render(`[data-folds="${data.folds}"]`); return; }

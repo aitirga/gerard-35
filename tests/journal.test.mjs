@@ -9,7 +9,7 @@ const upTo = flag => new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf(flag) + 
 test('the clock moves with the story, and at 35 it is always the same birthday', () => {
   assert.deepEqual(storyClock(new Story()), { time: '07:30', day: 'DÍA DE COLE' });
   assert.equal(storyClock(upTo('got-backpack')).time, '07:48');
-  assert.deepEqual(storyClock(upTo('caught')), { time: '08:00', day: 'JUE · 15 OCT' });
+  assert.deepEqual(storyClock(upTo('caught')), { time: '08:00', day: 'JUE · 22 NOV' });
   assert.equal(storyClock(upTo('got-wrapper')).time, '08:06');
   // Never backwards within a chapter.
   let last = 0;

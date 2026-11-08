@@ -1,0 +1,163 @@
+{
+  "title": "Misión de los amigos de la uni · el camping",
+  "description": "docs/quests/universidad.md § Càmping Eurosport, in the mission: the magos and agentes patrolling the paths and running at the party, the blackboard opening Las parcelas, each pitch's word on its sign, the pool's gate open once solved with El Campeón waiting, La Sobremesa at the long table, and the photo with the melon. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=universidad&part=camp&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "entrada",
+      "delay": 1500,
+      "caption": "Out of the spiral: the road in, the reception, and two magos on their round"
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        40,
+        23
+      ]
+    },
+    {
+      "shot": "patrulla",
+      "delay": 2500,
+      "caption": "Dos agentes dando vueltas a la rotonda, en medio del laberinto"
+    },
+    {
+      "wait": 3500
+    },
+    {
+      "shot": "persecucion",
+      "delay": 200,
+      "caption": "They have seen Gerard: they run at him (the dados only come out of a wrong pitch)"
+    },
+    {
+      "open": "/?mission=universidad&part=board&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "pizarra",
+      "delay": 2500,
+      "caption": "The reception's blackboard opens as Las parcelas' board (the test puzzle in development)"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        40,
+        24
+      ]
+    },
+    {
+      "eval": "{ const g = window.gerard.game, s = g.app.root.findByName('Monumento rotulo-12').getPosition(); document.querySelector('#hud').style.visibility = 'hidden'; g.frame({ x: s.x, y: s.y + 1, z: s.z }, 2.4); }"
+    },
+    {
+      "shot": "carteles",
+      "delay": 2500,
+      "caption": "Each pitch's word written on its sign, the same as on the board"
+    },
+    {
+      "eval": "window.gerard.game.frame(); document.querySelector('#hud').style.visibility = ''"
+    },
+    {
+      "open": "/?mission=universidad&part=gate&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "barrera",
+      "delay": 1500,
+      "caption": "Las parcelas resueltas: la tapia hundida, El Campeón esperando junto al agua"
+    },
+    {
+      "open": "/?mission=universidad&part=sobremesa&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        9,
+        17
+      ]
+    },
+    {
+      "shot": "mesa",
+      "delay": 2200,
+      "caption": "At the long table: La Sobremesa's friends speak, and the fight comes"
+    },
+    {
+      "open": "/?mission=universidad&part=won&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "libres",
+      "delay": 500,
+      "caption": "Free on the grass, round the melon table"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "shot": "foto",
+      "delay": 300,
+      "caption": "The photo with the melon"
+    },
+    {
+      "wait": 4500
+    },
+    {
+      "shot": "luces",
+      "delay": 300,
+      "caption": "Their five lights go with Gerard and Aitor"
+    }
+  ]
+}

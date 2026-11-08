@@ -64,6 +64,8 @@ export const LIGHTING = {
       night: { zenith: '#0e1a2f', horizon: '#3a4a5c', ground: '#16191a' },
       /** Sunset on the Búnkers del Carmel: the sky over the sea, pale blue above a pink band, warm dry ground. */
       dusk: { zenith: '#8fa3c8', horizon: '#e6b9a2', ground: '#7a6450' },
+      /** Càmping Eurosport's endless summer evening: deep blue above, amber low down through the pines, dark needle ground. */
+      evening: { zenith: '#4f6f9a', horizon: '#e0a970', ground: '#4a4632' },
       /** Inside her palace: a dark plum vault over a deep pink glow, which rims her gum without washing her walls out. */
       palace: { zenith: '#2a0a26', horizon: '#9c3f7c', ground: '#2a0820' },
       /** Alegia's thin overcast: a pale grey lid of cloud, and low down the wooded hills that close the valley, so the river mirrors green, not blue. */
@@ -90,7 +92,7 @@ export const LIGHTING = {
 };
 
 export type ShadowKind = 'pcss' | 'vsm' | 'pcf5' | 'pcf3';
-export type SkyKind = 'day' | 'indoor' | 'night' | 'palace' | 'overcast' | 'dusk' | 'nave';
+export type SkyKind = 'day' | 'indoor' | 'night' | 'palace' | 'overcast' | 'dusk' | 'evening' | 'nave';
 type SkyColours = { zenith: string; horizon: string; ground: string };
 type Shine = keyof typeof LIGHTING.shine;
 

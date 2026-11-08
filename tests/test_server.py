@@ -11,6 +11,16 @@ from ai import JevProvider
 from server import STORY_FLAGS, app, known_flags
 
 
+class DevGameTests(unittest.TestCase):
+    def test_api_address_sends_to_the_vite_game_during_just_dev(self):
+        with mock.patch.dict(os.environ, {'GERARD_GAME_URL': 'http://localhost:5173'}), TestClient(app) as client:
+            response = client.get('/?story=metro&day=3', follow_redirects=False)
+            self.assertEqual(response.status_code, 307)
+            self.assertEqual(response.headers['location'], 'http://localhost:5173/?story=metro&day=3')
+            self.assertEqual(client.get('/combat-lab.html', follow_redirects=False).headers['location'], 'http://localhost:5173/combat-lab.html')
+            self.assertEqual(client.get('/openapi.json').status_code, 200)
+
+
 class PersistenceTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

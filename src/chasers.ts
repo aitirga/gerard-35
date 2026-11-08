@@ -15,6 +15,11 @@ export interface ChaserSpec {
   /** Cells per second walking its round, and running after Gerard. */
   walk: number;
   run: number;
+  /**
+   * Never gives up and needs no sight of him: it runs at Gerard from the start until it catches him
+   * (the university friends' game of tag, docs/quests/universidad.md). Walls still stop it.
+   */
+  relentless?: boolean;
 }
 export type ChaserMode = 'patrol' | 'chase' | 'return' | 'resting';
 export interface Chaser {
@@ -78,7 +83,7 @@ export function updateChaser(chaser: Chaser, dt: number, player: Cell, grid: rea
     if (chaser.timer <= 0) chaser.mode = 'return';
     return undefined;
   }
-  const seen = sees(chaser, player, grid, hidden, sight);
+  const seen = spec.relentless || sees(chaser, player, grid, hidden, sight);
   if (chaser.mode !== 'chase' && seen) { chaser.mode = 'chase'; chaser.timer = 0; return 'spotted'; }
   if (chaser.mode === 'chase') {
     chaser.timer = seen ? 0 : chaser.timer + dt;

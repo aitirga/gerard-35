@@ -55,7 +55,11 @@ export function createStoryUI(hud: HTMLElement) {
   const doom = document.createElement('section');
   doom.id = 'doom'; doom.hidden = true; doom.setAttribute('role', 'alertdialog'); doom.setAttribute('aria-labelledby', 'doom-title');
   doom.innerHTML = `<span class="battle-kicker">LA REINA BUBBALOO</span><h1 id="doom-title">Lo ha cubierto todo.</h1><p>Barcelona es su castillo. Ya no queda casa a la que volver.</p><button type="button">Volver al día anterior</button><small>Se pierde lo que hicisteis ayer.</small>`;
-  hud.append(notes, hint, bubble, shout, card, banner, black, doom);
+  // The photo with the melon (docs/quests/universidad.md): a flash, then the scene held in a photo's border with its caption.
+  const photo = document.createElement('figure');
+  photo.id = 'story-photo'; photo.hidden = true; photo.setAttribute('role', 'status');
+  photo.innerHTML = `<i class="story-photo-flash" aria-hidden="true"></i><figcaption></figcaption>`;
+  hud.append(notes, hint, bubble, shout, card, banner, black, doom, photo);
   let endDoom: (() => void) | undefined;
   doom.querySelector('button')!.addEventListener('click', () => endDoom?.());
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -181,6 +185,17 @@ export function createStoryUI(hud: HTMLElement) {
       shout.style.transform = `translate(${x - w / 2}px, ${y}px)`;
     },
     /** Fades the whole screen to black (`on`) or back; resolves when the fade ends. */
+    /** The camera's flash, then the frame held as a photo with `caption` for a few seconds; resolves when it is put away. */
+    photo(caption: string) {
+      photo.querySelector('figcaption')!.textContent = caption;
+      photo.hidden = false; photo.dataset.state = 'flash';
+      const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, reducedMotion.matches ? 0 : ms));
+      return (async () => {
+        await wait(260); photo.dataset.state = 'held';
+        await wait(3200); photo.dataset.state = 'out';
+        await wait(500); photo.hidden = true; delete photo.dataset.state;
+      })();
+    },
     blackout(on: boolean, ms = 900) {
       black.style.transitionDuration = `${reducedMotion.matches ? 0 : ms}ms`;
       black.dataset.on = String(on);

@@ -25,6 +25,20 @@ export const SPEAKERS = {
   nuria: { name: 'Nuria', portrait: 'nuria', skin: '#e9bf9c', hair: '#3b2a22', top: '#f1e8da', accent: '#c8423b' },
   /** Uri (docs/quests/nuria.md); `crio` is his face while the Queen holds him. */
   uri: { name: 'Uri', portrait: 'uri', skin: '#e3b38f', hair: '#2e2420', top: '#f5f3ef', accent: '#9a6cd8' },
+  /**
+   * The university friends (docs/quests/universidad.md), portraits from `just character`: the accent
+   * is their light while the Queen holds them, her violet for all.
+   */
+  alvaro: { name: 'Álvaro', portrait: 'alvaro', skin: '#e2b48e', hair: '#4a3324', top: '#5d6b4a', accent: '#b07aff' },
+  anna: { name: 'Anna', portrait: 'anna', skin: '#ecc3a0', hair: '#7a3f2a', top: '#f1ece2', accent: '#b07aff' },
+  miquel: { name: 'Miquel', portrait: 'miquel', skin: '#e3b591', hair: '#4b3426', top: '#4c5d6e', accent: '#b07aff' },
+  sarah: { name: 'Sarah', portrait: 'sarah', skin: '#efc9a8', hair: '#8a4a30', top: '#7d8fa3', accent: '#b07aff' },
+  soraya: { name: 'Soraya', portrait: 'soraya', skin: '#e0b089', hair: '#231a17', top: '#2e2e33', accent: '#b07aff' },
+  nico: { name: 'Nico', portrait: 'nico', skin: '#e6b892', hair: '#2a1e18', top: '#3c3f44', accent: '#b07aff' },
+  joan: { name: 'Joan', portrait: 'joan', skin: '#e4b48d', hair: '#22181a', top: '#4a4350', accent: '#b07aff' },
+  /** The campsite's foes (docs/quests/universidad.md § Càmping Eurosport), for the word each of them shouts as it falls in a fight; no portrait. */
+  mago: { name: 'Mago de camping', skin: '#c9b89a', hair: '#3a3428', top: '#7d7a5a', accent: '#e8b04a' },
+  agente: { name: 'Agente', skin: '#d8cfb8', hair: '#2a2622', top: '#c9bfa4', accent: '#e8b04a' },
 } satisfies Record<string, Speaker>;
 
 export type SpeakerId = keyof typeof SPEAKERS;
@@ -35,6 +49,9 @@ export interface Dialogue {
   right?: SpeakerId;    // whoever he is talking to, if anyone
   lines: DialogueLine[];
 }
+
+/** Who talks from Gerard's side when they are not the one on it. */
+const PARTY = new Set<SpeakerId>(['gerard', 'gerard35', 'bernat', 'aitor']);
 
 const TYPE_SPEED_MS = 16;      // per character; 0 disables the typewriter
 const AUTO_ADVANCE_MS = 4200;  // after a line finishes typing; 0 waits for input
@@ -88,8 +105,11 @@ export function createDialogueBanner(hud: HTMLElement) {
   /** Who is speaking, with what face, and whether their line is still coming out; nothing when it closes. */
   let onSpeak: ((line?: DialogueLine, talking?: boolean) => void) | undefined;
 
+  /** Who each side shows now: in a conversation with many, the side changes face and name with the speaker. */
+  const onSide: Record<'left' | 'right', SpeakerId | undefined> = { left: undefined, right: undefined };
   function renderSide(slot: 'left' | 'right', id: SpeakerId | undefined) {
     const el = sides[slot];
+    onSide[slot] = id;
     el.hidden = !id;
     if (!id) return;
     const s = SPEAKERS[id];
@@ -109,7 +129,9 @@ export function createDialogueBanner(hud: HTMLElement) {
   function showLine() {
     if (!current) return;
     const line = current.lines[index];
-    const side = line.speaker === current.right ? 'right' : 'left';
+    // Gerard's side is the party's; anyone else talks from the other side (a group: one after another).
+    const side = line.speaker === current.left ? 'left' : line.speaker === current.right || !PARTY.has(line.speaker) ? 'right' : 'left';
+    if (onSide[side] !== line.speaker && (side === 'right' || line.speaker !== current.left)) renderSide(side, line.speaker);
     root.dataset.speaking = side;
     // The speaker's face follows each line; the listener keeps the last one.
     const face = sides[side].querySelector('img');

@@ -26,7 +26,7 @@ export function storyClock(story: Story): { time: string; day: string } {
   for (const [flag, at] of CLOCK) if (story.has(flag)) minutes = at;
   const time = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
   // Chapter 1 is a childhood morning with no date; at 35 it is always the same birthday.
-  return { time, day: story.adult ? 'JUE · 15 OCT' : 'DÍA DE COLE' };
+  return { time, day: story.adult ? 'JUE · 22 NOV' : 'DÍA DE COLE' };
 }
 
 /** What Gerard remembers, one line per beat, in the order they can happen. */

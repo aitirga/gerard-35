@@ -168,7 +168,7 @@ export const LINES = {
     aitor('Estabas gritando «¡no!» en sueños. Llevándome la contraria hasta dormido.'),
     gerard35('He soñado con Bernat. Con la calle de mis padres… y unas manos de chicle enormes.'),
     aitor('¿Manos de chicle? Eso te pasa por cenar pizza a las once.'),
-    aitor('Venga, despierta del todo. Que hoy es tu cumpleaños: treinta y cinco, ¿eh?'),
+    aitor('Venga, despierta del todo. Felicidades, Gerard. Treinta y cinco, ¿eh?'),
     gerard35('…Treinta y cinco. Sí.'),
     aitor('Y hoy no me despego de ti. Donde vayas tú, voy yo.'),
   ),

@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 
 import httpx
 from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -19,7 +20,7 @@ from lights import router as lights_router
 app = FastAPI()
 logger = logging.getLogger("uvicorn.error")
 # Story progress flags, in story order. Keep in sync with STORY_FLAGS in src/story.ts (a test checks it).
-STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "matemagico", "wrapper-room", "caught", "got-wrapper", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "papagato", "papagato-2", "papagato-3", "matemagico-2", "matemagico-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri")
+STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "matemagico", "wrapper-room", "caught", "got-wrapper", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "papagato", "papagato-2", "papagato-3", "matemagico-2", "matemagico-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri", "clue-uni", "barceloneta-uni", "camping", "candado", "parcelas", "sobremesa", "anima-universidad", "luz-anna-alvaro", "luz-miquel-sarah", "luz-soraya", "luz-nico", "luz-joan")
 
 
 @contextmanager
@@ -170,4 +171,22 @@ def enemy_turn(turn: EnemyTurn, request: Request):
 
 
 app.include_router(lights_router)
-app.mount("/",StaticFiles(directory="dist", html=True, check_dir=False), name="game")
+class Game:
+    """The built game in dist/. While `just dev` runs, the game is Vite's (with the development
+    picker) and GERARD_GAME_URL says where: this address then sends the browser there, path and
+    query kept, instead of serving dist/, which is an old build or none."""
+
+    def __init__(self):
+        self.files = StaticFiles(directory="dist", html=True, check_dir=False)
+
+    async def __call__(self, scope, receive, send):
+        dev_game = os.environ.get("GERARD_GAME_URL")
+        if dev_game and scope["type"] == "http":
+            query = scope.get("query_string", b"").decode()
+            target = dev_game.rstrip("/") + scope["path"] + (f"?{query}" if query else "")
+            await RedirectResponse(target, status_code=307)(scope, receive, send)
+            return
+        await self.files(scope, receive, send)
+
+
+app.mount("/", Game(), name="game")
