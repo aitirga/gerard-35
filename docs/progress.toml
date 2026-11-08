@@ -153,6 +153,17 @@ file = "src/travel-ui.ts"
 
 [[block.item]]
 title = "Portal real de casa en la Meridiana"
+file = "src/landmarks/portal-casa.ts"
+
+[[block.item]]
+title = "La Meridiana real: casa en el 335 de cara a la cámara, del Pg. de Fabra i Puig a casa, metro en Concepció Arenal"
+grep = "way/644309392"
+in = "assets/geo/meridiana-calle/zone.json"
+
+[[block.item]]
+title = "La noche y la vuelta a casa por la Meridiana"
+weight = 3
+file = "src/night.ts"
 
 # ——— Escenarios ———
 [[block]]

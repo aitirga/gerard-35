@@ -36,6 +36,17 @@ jump keeps its own flags.
   (`&day=<n>`, as `just dev-day`) and which other missions it starts with done (`&with=nuria`),
   so any mix can be tried. *Con ánimas* starts with the missions the story has done; a mission only
   joins jumps that reach where it starts.
+- **Hora** (*Mañana*, *Noche*) starts a chapter 2 jump at 21:00 (`&hour=21`): night outside, and a
+  jump onto the Meridiana starts at the Fabra i Puig station, for the way home with the palace's
+  guards out (docs/chapter-2.md § Night and the way home).
+- **De noche · La vuelta a casa**, under chapter 2's arcs, starts the way home at night on the
+  Meridiana, out of the Fabra i Puig station, with a level chosen by **El castillo**: her castle's
+  stage, 0 (*Aparece*) to 4 (*En la Meridiana*), the TV's headlines (`stage` in src/days.ts). The
+  jump wakes on the first day the castle is at that stage with the ánimas of *Con ánimas*
+  (`dayForStage`), so the castle, the pink and the hunt all match: stages 0–1 are a calm night,
+  2 tense, 3 hard and 4 the last (`NIGHT_TIERS` in src/night.ts). The line under it says how many
+  guards come out and, if they catch the party, how strong the fight is (by the ánimas alone).
+  Same as `just dev-night <castle> [<ánimas>]`, i.e. `/?story=metro&night=<0–4>&with=nuria`.
 
 The step the story has reached is marked, and those behind it are brighter. The ánima missions
 are in their own tab.

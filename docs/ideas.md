@@ -24,3 +24,18 @@ Designed and built: `docs/animas/README.md` § Ecos de luz. What is still open:
 and open a portal to it, to get ready: reassign their Ecos de luz at the jar without walking back.
 Today the jar can only be reached by being in the flat.
 
+
+## Growing an ánima by giving it things (2026-11-07)
+
+**Noted (Aitor), not designed:** ánimas could also improve by having things assigned to them, not only
+by EXP from fights (`docs/animas/README.md` § Levels).
+
+- Assigning something to an ánima might teach it a new spell.
+- Levelling an ánima up might also give lights (Ecos de luz) or some other reward, besides the skill
+  the level already teaches.
+- Using the same skill again and again might make it grow too.
+- Some way in might unlock a special, secret skill, found by surprise, not shown beforehand.
+
+Open: what "things" are (Ecos de luz, gear, objects from missions…) and where they are assigned (the
+jar?); how this sits with EXP levels and the "never everything" rule; whether the secret skill is
+`abstract: true`.

@@ -17,7 +17,7 @@ src/game.ts ── camera ──► src/post.ts       CameraFrame: HDR + 4× MSA
 src/battle-scene.ts ─────► effects.impact / binaryFire / anima / element / comet / trails …
             └─ hit feel ► src/hit-feel.ts   hit-stop, camera lurch and punch-in; post.pulse for fringe + bloom
                                │                               weather and ground marks
-src/scenery.ts ── sun, sky ─► src/lighting.ts   shadows fitted to the view (PCSS / PCF), sky reflections
+src/scenery.ts ── sun, sky ─► src/lighting.ts   shadows fitted to the view (PCF 5×5), sky reflections
 ```
 
 Check visual changes with `just screenshots graphics` (the same five views every time: street,
@@ -927,7 +927,14 @@ the camera moves, so edges do not shimmer. Only the shadow changes: what is draw
 `shadowSlice` is the maths (`tests/lighting.test.mjs`). The backdrop under the diorama no longer
 casts: as a 200 m caster it stretched the shadow depth range, which PCSS uses to size its search.
 
-**Soft where it should be.** The sun uses PCSS (`SHADOW_PCSS_32F`): it looks for the
+**Soft enough, and cheap.** The sun uses PCF 5×5 (`SHADOW_PCF5_32F`) since 2026-11-07: an even,
+soft edge for well under a millisecond. PCSS looked a little better (below) but its 32 samples a
+pixel scale with the canvas: at Aitor's 2592×1575 (pixel ratio 1.5) it cost some 8–10 ms of GPU a
+frame following Gerard, over the whole 120 Hz budget, and Chrome then stalled the main thread for
+150–250 ms several times a second waiting on the GPU. The overview was cheaper on the GPU, so
+zooming out felt smooth and zooming back in suddenly choppy.
+
+PCSS (`'pcss'`, kept for comparisons) looks for the
 casters round each point and widens the penumbra with their distance, so a house's shadow is crisp
 at the wall and soft at its far edge, a tree's trunk sharp and its crown blurred. `penumbra` is the
 width per metre between caster and receiver; `samples` and `blockerSamples` trade grain in wide
@@ -962,6 +969,17 @@ Measured with `--perf` on an Apple GPU at 1440×900 (GPU ms a frame, street foll
 | Fit + sky, PCF | 1.0 |
 | Fit + sky, PCSS 20/12 | 2.2 (1.6 in the overview) |
 | Fit + sky, VSM | 2.6 |
+
+And at Aitor's canvas (`--perf --gpu --size 1728x1050 --scale 1.5`, the Meridiana by day following
+Gerard; frame ms uncapped, average and frames over 60 ms in 4 s):
+
+| | Frame ms | Stalls |
+| --- | --- | --- |
+| PCSS 20/12 | 13–15 | 16–32 |
+| PCSS 12/6 | 9.2 | 30 |
+| PCF 5×5 | 5.9 | 0 |
+| PCF 3×3 | 5.8 | 0 |
+| No sun shadows | 4.6 | 0 |
 
 ## What next
 

@@ -15,8 +15,8 @@ left out is listed in [Approximate and open](#approximate-and-open).
 
 - **What it is.** Barcelona's long avenue to the north-east, here in Sant Andreu, between the
   Fabra i Puig crossing (L1, the Rodalies station under the avenue, the intercity coaches) and
-  Hipercor (Meridiana 350–356). About 345 m of it is played, from the even side, where the shops
-  are, to the odd side across six lanes.
+  past Meridiana 335, home. About 525 m of it is played (since 2026-11-07), home's odd side
+  facing the camera and the even side, with the shops and Hipercor (350–356), across six lanes.
 - **The works.** This stretch is the Felip II–Fabra i Puig phase of the Meridiana reform, begun in
   April 2025 for 18 months (€26 M): two general lanes and a bus lane each way, a two-way bike lane
   in a central planted median with a double row of trees, sidewalks widened with planted beds,
@@ -108,6 +108,7 @@ only a few closed shops. No other place has a mall box or slab towers.
 
 ## Layout
 
+(2026-10-30; since 2026-11-07 the zone is turned round and longer, see [Home at Meridiana 335](#home-at-meridiana-335-the-avenue-turned-round).)
 The zone stays as it is: 345 × 130 m around the anchor (41.429, 2.1841), turned −62° with
 `bounds_turned` so the avenue runs left to right, Fabra i Puig on the left and Hipercor on the
 right, the even side's fronts facing the camera; 1.5 m cells (230 × 87); spawn by home's portal;
@@ -223,7 +224,7 @@ that any real place can switch on.
 | Shop fronts | A new ground kind, `shopfronts`: glass in aluminium frames with the lit shop seen through (a warm ceiling, shelves of goods), teal or grey canvas awnings over about half, a rare shutter down with its tags; the real shop names stay as signs | `facade()` in `src/geo-scenery.ts` |
 | Roofs | Flat `rajola` terraces crowded with stair and lift housings, water tanks, aerials, satellite dishes and air conditioners, seeded per building, in one mesh per building | `rooftop` |
 | Hipercor | The OSM box at four retail storeys in `formigo` panels with thin blue stripes, the blue HIPERCOR letters, and the canopy as a landmark: a row of shallow concrete vaults 6.5 m wide along 78 m of front, 1.4 m deep with its underside at 3.3 m so the high camera still sees the lit glass doors under it (the real one is deeper) | `src/landmarks/vaulted-canopy.ts`, `landmarks` |
-| The slab | A 16-storey residential slab, 62 × 19 m, at the map's back edge behind Hipercor: brown spandrels and white ribbon windows (`slab` facade), its terrace crowded like the others | `sketch.json` `bloc-hipercor`, style `slab` |
+| The slab | (Off the map since the avenue turned round, 2026-11-07.) A 16-storey residential slab, 62 × 19 m, at the map's back edge behind Hipercor: brown spandrels and white ribbon windows (`slab` facade), its terrace crowded like the others | `sketch.json` `bloc-hipercor`, style `slab` |
 | Furniture | Four rows of five-colour recycling containers, a Bicing dock, parked scooters in twos and threes, café tables outside Café Entrepans, single chairs and benches on the wider sidewalk, vent grates on the median | `containers`, `bicing`, `moto`, `terrace`, `grate` in `src/props.ts` |
 | The edge | Instead of wooded hills, the city goes on past the far sides: three rows of plain blocks with storeys of windows in dulled render, brick and grey, on a skirt of street | `look.edge: "city"` |
 | Effects | Rain darkens and glosses the asphalt and the panot and leaves ragged puddles in the gutters, which dry slowly after; at dusk the open shops' windows glow and spill warm light on the panot, the LED lamps a cold one (decals, not lights); dry plane leaves drift down the avenue on a light wind and lie a while; scooters in the traffic; cyclists ride the bike lane both ways and brake for Gerard; now and then a train runs under the median and its draught puffs out of the grates one after another | `setStreet` in `src/geo-scenery.ts`, `dryleaf` and `draught` in `src/effects.ts`, `src/traffic.ts`, the train in `src/game.ts` |
@@ -235,6 +236,57 @@ M1 Pro, other builds running alongside, so the times are noisy): following Gerar
 2485 after (+29 %), overview 9896 before and 11677 after (+18 %); the follow camera ran at about
 150 fps after.
 
+## Home at Meridiana 335, the avenue turned round
+
+Redone 2026-11-07 with Aitor, from OpenStreetMap (`osm.json` fetched again that day); it replaces
+the same day's first try, which kept home on the even side 120 m from a station moved onto the
+Rodalies plaza.
+
+**Where things really are.** In OSM, Meridiana 335 (portal `node/6060053860`, Bluespace's storage in
+its basement) is the 11-storey block `way/644309392` on the **odd** side, some 300 m south-east of
+the Passeig de Fabra i Puig crossing and past Hipercor, which stands across the avenue (even side,
+350–356). VivaGym is next door at 333 (`way/644309322`). The L1 station lies under the even side
+between the Fabra i Puig crossing and Escòcia: its entrances are *Pg. Fabra i Puig* and *Av.
+Meridiana* at the crossing, *Concepció Arenal* (and its lift) by the Escòcia crossing, and *Renfe*
+and *Sòcrates* on Plaça de Josep Benet i Morell. From home the nearest is Concepció Arenal.
+
+**The avenue turned round.** Home's side has to face the camera, so the zone is turned 118° instead
+of −62°: the avenue still runs left to right, now from past home (left) to the Fabra i Puig crossing
+(right). The odd side is the far one, its fronts to the camera; the even side, with Hipercor, is
+nearest the camera and seen from behind (its canopy and doors face the avenue). Every hand-placed
+thing kept its real place: in metres the new frame is x′ = −x, z′ = −z, and a cell (x, z) of the
+old map is (409 − x, 117 − z) of the new one (the scenarios and tests moved with it; those next to
+the old home went next to the new one). `edge_buildings` keeps the near blocks cut at the map's
+edge, so Hipercor stands as the strip of its back nearest the avenue.
+
+**What is played.** From x′ −345 m (past VivaGym) to 180 m (the Fabra i Puig crossing and the
+first metres of the bend round the plaza, `revolt-*`), and from 105 m behind the odd fronts to
+28.5 m behind the even ones: 350 × 89 cells. Home's door is about 200 cells (300 m) and one crossing
+from the station's stair. The plaza, the Rodalies building and the slab behind Hipercor are off the
+map.
+
+**The cross-section follows the avenue's turn.** East of the Escòcia crossing OSM's carriageways
+drift about 7 m across by Meridiana 335 (the avenue turns about 1.4°), so every bed, carriageway,
+lamp row and kerbside thing there bends with it (0.024 m across for every metre along, from x′ = 0
+westwards). Zebras at the six real crossings, x′ −247 (Plaça de la Tolerància), −163 (Riera
+d'Horta), −104 (Hipercor), −30 (Escòcia and Dublín), 67 (Carrer de la Jota) and 140 (Fabra i
+Puig), each with its traffic lights and a gap in the beds; the west bed is also paved through at
+the Riera d'Horta bus stop, which has a shelter.
+
+**The station: L1 Fabra i Puig, Concepció Arenal entrance** (`node/4449336726`), the stair and its
+totem on the even sidewalk by the Escòcia crossing: the game's *Bajar al metro*, with a vent grate
+of the station beside it.
+
+**Home's door.** The portal landmark (`src/landmarks/portal-casa.ts`, `portal-335`) stands on the
+block's own front, parallel to the avenue (−1.53°): coming out of the portal, **VivaGym** on
+Gerard's right (its lit window runs on into the next block, where 333 really is), the **portal**
+(stone jambs, the bronze-framed glass door with the lobby lit behind it, the intercom, the canopy
+with *335*), and on his left **Bluespace**'s ramp down into the basement. At night the portal has
+its own warm light and is the brightest thing on the street. The way home at night now crosses
+the avenue: out of the stair on the even side, along under the near blocks (seen through their
+window), over a zebra and along the odd side to the door, past containers, the Riera d'Horta
+shelter and the median's vents.
+
 ## Approximate and open
 
 - **Proportions.** Storeys stay at 3 m and the ground floor at 3.45 m (1.15 storeys), the bay at
@@ -243,9 +295,8 @@ M1 Pro, other builds running alongside, so the times are noisy): following Gerar
 - **No set-back top floors**, and the carriageways are not a step down from the sidewalks: the
   scene has no ground heights, so the kerb is a raised granite strip with the same level on both
   sides.
-- **The slab's place.** OSM puts the nearest slab some 30 m further back (z −109 … −84); it stands
-  at the map's back edge, rising out of the back of Hipercor's footprint, so it reads as "behind
-  Hipercor" from the camera. Only one of the three slabs is built.
+- **The slabs behind Hipercor** are off the map since the avenue turned round (2026-11-07): they
+  would stand behind the camera.
 - **Textures left as candidates.** No wet twin (`asfalt-moll`: rain darkens and glosses the dry
   materials instead), no fallen-leaf ground (`fulles`: the leaves are particles that settle), no
   `persiana` (shutters are painted), no tiled-facade block.

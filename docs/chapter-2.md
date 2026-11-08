@@ -77,7 +77,7 @@ replaced by **open progression**, as decided on 2026-10-18:
 If Gerard and Aitor do nothing to stop her, La Reina Bubbaloo's power keeps spreading, and one day
 they wake up and there is no flat any more. Nothing on screen counts it; the world shows it.
 
-**Days and hours.** Each day runs from 08:00 to 22:00 (`src/days.ts`). Looking, talking and walking
+**Days and hours.** Each day runs from 08:00 into the night; the clock stops at 22:00 (`src/days.ts`). Looking, talking and walking
 are free; doing things takes hours:
 
 | Activity | Hours |
@@ -88,9 +88,11 @@ are free; doing things takes hours:
 | A coffee on the balcony | 1 |
 | A friend's mission (Nuria's: 1 going into Uri's tower, 2 more when it is won) | 2–4 |
 
-The day ends at 22:00 wherever they are (Aitor: *"Ya está. Es de noche"*), when they go to bed
-(*"Dormir"* at the bed, once the news has been seen), or when they fall in a fight. Black, and they
-wake up the next morning in bed, "¡NO!", with everything done kept.
+At 21:00 night falls (Aitor: *"Ya es de noche, Gerard. Vámonos a casa."*), and a friend's mission
+won or a milestone in her palace brings it at once (see [Night and the way home](#night-and-the-way-home)).
+The day ends when they get home at night (through the portal), when they go to bed (*"Dormir"* at
+the bed, once the news has been seen), or when they fall in a fight. Black, and they wake up the
+next morning in bed, "¡NO!", with everything done kept.
 
 **How it is told, never counted:**
 - The light: from 18:00 the evening turns pinker, and Aitor says so (at 18:00 and at 20:00).
@@ -127,6 +129,64 @@ back.
 **Saving.** The day, the hour and the last two mornings are saved with the story. Going back a day
 is the only thing that takes flags away, so the save carries an `epoch` that grows with each
 rewind: the server lets a newer epoch replace the flags, and ignores tabs still on an older one.
+
+## Night and the way home
+
+Decided 2026-11-07 with Aitor; built in `src/night.ts` (rules), `src/night-lights.ts` (light),
+`src/game.ts` (the hunt), `src/story.ts` (`nightfall`, `home`, `night-guard`).
+
+**When night falls.** At once after a friend's mission is won (Nuria's: Vertitrón beaten) or a
+milestone in her palace (today: the guards beaten; each palace zone finished will be one), with
+Aitor's line; otherwise when the clock reaches 21:00. One list of triggers: `nightfall()` in
+`src/story.ts`. At night the day no longer ends by itself: the clock stops at 22:00, and the day
+ends through home's portal (Aitor: *"Ya está. Dentro."*), in bed, or with a fall.
+
+**How night looks, outdoors only.** Every street scene (`scenery.outdoor`) fades to `NIGHT_LIGHT`
+(`src/scenery.ts`): a low cold moon, a deep blue ambient, the sky's reflections a street night
+(`LIGHTING.sky.streetNight`), a dark city blue past the map. Lit flats and shop windows glow (the
+dusk's own glow, at full), the lamps' heads glow, and the ten lamps nearest Gerard light the
+pavement for real (a pool of lights handed from lamp to lamp, so the frame never pays for more);
+home's portal, the station halls and VivaGym's window keep their own lights. Moving cars carry
+head and tail lights. Her pink stays low in the haze, more as she spreads.
+
+**The way home.** The Meridiana's station is the L1's real Fabra i Puig, at its Concepció Arenal
+entrance on the even side, about 300 m and one crossing from home's portal at Meridiana 335 on the
+odd side ([places/meridiana.md](places/meridiana.md#home-at-meridiana-335-the-avenue-turned-round)).
+Coming out onto the avenue at night, the palace's monsters climb out of the vent grates (the
+station's under the plaza, the median's over the trains) and hunt the party (`src/chasers.ts`):
+
+- **Light gives you away.** In a lamp's light they see Gerard from far off; in the dark between
+  lamps only up close, a little further once they are after him.
+- **Cover hides.** Standing still behind the containers, the bus shelter or a café terrace, out of
+  the light, is out of sight. Aitor says it once, the first time they are chased near cover:
+  *"¡Ahí detrás! Y ni te muevas."*
+- **The portal is safe.** Its warm light is the brightest on the street, and they never step into it.
+- **Each train brings more.** A train under the median puffs out of the grates and, at night, more
+  of them climb out after it, never in the party's face.
+- **The hint.** Aitor sizes them up the first time they show, by the friends' ánimas
+  (`sizeUp`). The one that catches the party brings the palace's whole guard, as many and as
+  strong as the palace has them now (`createGuardBattle` with `night-guard`): what happens in the
+  street is what would happen inside. Escaping is allowed. Beaten, they wake at 11:00 the next day
+  (*"Las once…"*); winning melts the guard and the hunt goes on.
+
+How hard it is goes with her spread (`NIGHT_TIERS`, by `stage`):
+
+| Tier | Stage | At first | Per train | Walk / run (cells/s) | Sight lit / dark / chasing | Trains every | Lamps out |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| calma | 0–1 | 2 | 0 | 1.4 / 4.4 | 8 / 3 / 5 | 40 s | none |
+| tensa | 2 | 3 | 1 | 1.6 / 5.2 | 9 / 3 / 6 | 28 s | none |
+| dura | 3 | 4 | 1 | 1.8 / 6.2 | 10 / 4 / 7 | 22 s | none |
+| última | 4 | 5 | 2 | 2.0 / 7.2 | 12 / 4 / 8 | 18 s | one in three |
+
+Gerard walks at 5.2 cells/s and runs at 7.8: at first they are slower than a walk; on the last night
+only running keeps ahead. No more than twice the first count are ever out. The fight sim holds the
+street fight to the palace (`noche-sin-amigos`, `noche-con-nuria` in `TARGETS`). Development:
+`just dev-night <castle stage 0–4> [<ánimas>]`, the picker's *De noche · La vuelta a casa* (its
+level is the castle's stage), Hora (Noche), the fight tester's *De noche en la Meridiana*,
+and `just screenshots camino-a-casa`.
+
+For later: the palace's other stages (each zone's own monsters walking the street once the zone is
+built and won); cars flattening a guard that steps onto a lane (proposed, not built).
 
 ## Getting around
 
@@ -332,9 +392,9 @@ Next:
 1. **Who are the friends?** Names, where they live, what the Queen's bubble did to them, what
    ánima each gives. Nuria and Uri (Cardedeu) are the first. Is this Nuria the Nuria Mendoza behind
    La Reina Bubbaloo (`docs/lore.md`)? That would put the reveal in Cardedeu.
-2. **Which metro is home?** The flat is on the Meridiana; the scene assumes the L1 at Fabra i Puig,
-   and home is the corner block by its Av. Meridiana entrance (`meridiana-calle`, `Casa`). The real
-   portal is not known yet: moving home is one override in `assets/geo/meridiana-calle/zone.json`.
+2. ~~**Which metro is home?**~~ Settled (2026-11-07): home is Meridiana 335 (`meridiana-calle`,
+   `Casa`, OSM `way/644309392`), and its metro the L1 at Fabra i Puig, by the Concepció Arenal
+   entrance ([places/meridiana.md](places/meridiana.md#home-at-meridiana-335-the-avenue-turned-round)).
 3. ~~**What is the Rec Comtal school to Gerard?**~~ Settled (2026-10-30): **his workplace; he is a
    teacher and the school's secretary** (`docs/story-outline.md`).
 4. **How many ánimas** open the throne: all of them, or enough (e.g. four of six)?

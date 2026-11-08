@@ -70,8 +70,10 @@ Status: designing (round <n>) · Last updated: <date>
 
 ## Assets
 
-| Who / what | Photos | Description | Portrait | Expressions | 3D | SPEAKERS |
-| --- | --- | --- | --- | --- | --- | --- |
+Figures come from `/character-3d`: `about` and `cues` written here, ready for `tools/figures.toml`.
+
+| Who / what | Kind (person, creature) | Photos it may send | `about` and `cues` | Toy image approved | 3D in game | Portrait | Expressions | SPEAKERS |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
 Commands:
 

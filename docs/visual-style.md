@@ -137,7 +137,7 @@ is fine, the cartoon look is never the general dynamic.
 | Real proportions, materials and light everywhere, her palace included: her gum is heavy, glossy, translucent; it sags and drips like the real thing | Outlines, cel shading, rubbery architecture, bouncy props |
 | At most one wink per place, small and found rather than shown: a nod to Bernat's notebook, a gum stuck under a bench | Faces on objects, googly eyes, joke or food monsters, candy-land rainbows |
 | Her intrusion in an ordinary place looks wrong, not cute: a skin of gum that breathes, a bubble that warps the street seen through it | Her pink spread over a whole real place, except as her tint |
-| People keep the game's block figures: that is the game's style, not a joke | Kiddy signage or comic lettering in the world (Bernat's felt-tip drawing is a child's on purpose) |
+| People are the game's toy figures, in blocks or, made with `/character-3d`, rounded: that is the game's style, not a joke | Kiddy signage or comic lettering in the world (Bernat's felt-tip drawing is a child's on purpose) |
 
 ### Performance budget
 

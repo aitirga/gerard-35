@@ -26,6 +26,8 @@ Read these, quietly; don't summarise them back:
 - `docs/quests/`: missions already designed. Reuse nothing that another mission already owns
   (a mechanic, a boss gimmick, a place) and note links between friends.
 - `docs/barcelona.md` § places and transit if the mission is in the city.
+- `.claude/skills/character-3d/SKILL.md` and `tools/figures.toml`: how every new person and monster
+  gets made, and who already exists.
 
 If the user names a friend that already has `docs/quests/<id>.md`, **resume** it: read it, say in
 two lines what is decided and what is open, and continue from the first open topic.
@@ -53,7 +55,9 @@ tell the user in one line what changed. The doc, not the chat, is the memory.
 **Topics, in order**
 
 1. **Protagonista**: who (the real friend, their relation to Gerard and Aitor), their job and
-   routine, a phrase or habit that is unmistakably them. One person or a pair (Nuria and Uri).
+   routine, a phrase or habit that is unmistakably them. One person or a pair (Nuria and Uri). Ask
+   for their photos here, and what makes them recognisable at a glance: it goes in their figure's
+   `cues` (§ Assets).
 2. **Lugar**: where they are (a real place: city district, town, house, workplace), how the party
    gets there (metro line, Rodalies, on foot), and whether the scene exists or needs `just geo`.
 3. **Problema**: what the Queen's bubble popped in their routine (the office vanished, the alarm
@@ -71,7 +75,9 @@ tell the user in one line what changed. The doc, not the chat, is the memory.
 7. **Jefe final**: who or what (a possessed animal, an object of their routine turned monster, a
    minion in person only inside the palace), its look, its gimmick (like the pringue that only
    No-ta breaks), its phases, how the friend helps, and what the new or existing ánimas do against
-   it. Name an `Encounter` id and any new `FoeKind`.
+   it. Name an `Encounter` id and any new `FoeKind`. Describe its look as a figure: its silhouette,
+   main colour and what it is made of, ready for its `about` (§ Assets). If its limbs must move on
+   their own, say so: a creature from a file moves as one piece.
 8. **Ánima**: name, colour (grey in the first round, its colour in the second), party stat bonus
    (`ANIMAS`), and what it brings into Gerard: a wearable ánima (`ClassId` with `CLASS_STATS`,
    look, motto, interface theme) with 1–2 `SKILLS`, or a single skill, and the world key it opens
@@ -129,8 +135,8 @@ Add an **Implementation plan** section to the doc: ordered, small steps, each on
 3. **Story**: lines and triggers in `src/chapter-2.ts` and rules in `src/story.ts`; hours spent
    (`src/days.ts`).
 4. **Mechanic**: its own module, pure logic separate from rendering, with a test.
-5. **Boss**: `Encounter`, `FoeKind`, AI in `src/battle-ai.ts`, model; balance with
-   `just combat-sim`.
+5. **Boss**: `Encounter`, `FoeKind`, AI in `src/battle-ai.ts`, its figure with `/character-3d`;
+   balance with `just fight-sim`.
 6. **Tests**: `tests/battle.test.mjs` (skill description shape), story rules, the mechanic.
 7. **Screenshots**: a scenario in `scripts/screenshots/<id>.json` covering arrival, the mechanic,
    the boss and the ánima unlock (`just screenshots <id>`), each run added to herdr's assets
@@ -169,23 +175,31 @@ fill or drop sections, so all reports look alike.
 ## Assets
 
 Build a checklist in the doc for every new character (the friend, the boss if it is a person or
-creature, any NPC with lines), checking what already exists:
+creature, any NPC with lines), checking what already exists in `tools/figures.toml`:
 
-- Reference photos: `assets/references/characters/<id>/` (PNG, JPEG or WebP; export HEIC). Ask
-  the user to drop them; they stay local and untracked.
-- A `--description` for `just character <id>`: age, build, hair, glasses, beard, usual clothes,
-  colours. Draft it with the user and write it in the doc ready to paste.
-- Portrait and expressions the dialogue needs (default set: `sorprendido`, `riendo`, `triste`,
-  `enfadado`, `pensativo`, `preocupado`; list any custom `nombre=descripción`), in
-  `public/portraits/` and `src/portraits.json`.
-- Full body and 3D model: `src/characters/<name>.json`.
+- **Its 3D figure, with the `/character-3d` skill.** Follow it for every person and monster: it
+  is how the game's figures are made, a toy of the game's world, recognisable without being
+  realistic. Don't design them in primitives or by hand. The doc holds what the skill needs:
+  - `kind`: `person` (walks and talks: the friend, an NPC) or `creature` (a foe, in one piece).
+  - Reference photos of real people: `assets/references/characters/<id>/` (PNG, JPEG or WebP; export
+    HEIC). Ask the user to drop them; they stay local and untracked. Say which ones may be sent:
+    only those go in `photos`.
+  - `about` and, for a real person, `cues`: drafted with the user and written in the doc, ready to
+    paste into the figure's table. Age, build, clothes and colours; then two or three big features
+    that make them themselves.
+  - Whether the user approved its toy image, which comes before any Meshy credit.
+- **When to make them:** a toy image is cheap and shows a design better than words, so offer one as
+  soon as a friend or a boss has its look settled, during the rounds if it helps decide; the model
+  waits for the plan's step. A mission's figures are one step of the plan.
+- Portrait and expressions the dialogue needs (`sorprendido`, `riendo`, `triste`, `enfadado`,
+  `pensativo`, `preocupado`), in `public/portraits/` and `src/portraits.json`: generated from the figure's
+  approved image, never from its 3D model: `just character-3d <id> --from portrait`, then `--expressions`.
 - `SPEAKERS` entry with `portrait`.
 - Places: reference photos in `assets/references/environments/<place>/`, and whether the zone
   needs `just geo`.
-- Props or creatures that are procedural (like `src/minion.ts`) rather than character JSON.
 
 Give the exact commands to run, in order, and say which steps cost API credits (`--dry-run`
-first).
+first). A figure costs about 35 Meshy credits and four images.
 
 ## Showing the work
 

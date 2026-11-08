@@ -88,6 +88,13 @@ dev-day day="4":
     @[[ "{{ day }}" =~ ^[0-9]+$ && "{{ day }}" -ge 2 ]] || { printf 'Use a day from 2 on (7 is the end without ánimas).\n'; exit 1; }
     npm run dev -- --open '/?story=castle&day={{ day }}'
 
+# Come back to the Meridiana at night from Fabra i Puig, her castle at a stage 0-4 (harder each stage): just dev-night 4 nuria
+[group('Development')]
+dev-night castle="2" with="":
+    @[[ "{{ castle }}" =~ ^[0-4]$ ]] || { printf 'Use a castle stage from 0 (just appeared) to 4 (on the Meridiana).\n'; exit 1; }
+    @[[ "{{ with }}" =~ ^[a-z,]*$ ]] || { printf 'Use ánima missions done as a list, e.g. nuria.\n'; exit 1; }
+    npm run dev -- --open '/?story=metro&night={{ castle }}{{ if with != "" { "&with=" + with } else { "" } }}'
+
 # Debug chapter 2 with one player: Gerard's controls also drive Aitor in battle (just dev-solo off to undo)
 [group('Development')]
 dev-solo state="on":
@@ -313,3 +320,10 @@ music-seam file start end:
 [positional-arguments]
 character *args:
     uv run --locked python tools/character.py "$@"
+
+# Make a figure in 3D, a person or a monster, with OpenAI and Meshy (tools/figures.toml): just character-3d aitor (--help)
+[group('Tools')]
+[positional-arguments]
+character-3d *args:
+    uv run --locked --with mediapipe python tools/character_3d.py "$@"
+

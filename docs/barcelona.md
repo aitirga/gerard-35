@@ -214,8 +214,8 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   bed. Blocks with balcony slabs, cornices, brick party walls and crowded terraces, glass shop
   fronts with the real signs (Granier, 365, Vision-Prix, General Óptica, Al Meu BB, Café Entrepans
   and its tables, Zamora Floristas' kiosk…), Hipercor's vaulted canopy and blue letters under a
-  brown-banded slab, the graffiti hoarding in front of it, home's corner block (Casa) and the L1
-  entrance; the city goes on past the far sides. Rain wets the street; at dusk the shops light it.
+  brown-banded slab, the graffiti hoarding in front of it, home at Meridiana 335 (Casa) and the L1
+  entrance at Concepció Arenal; the city goes on past the far sides. Rain wets the street; at dusk the shops light it.
 - **`cardedeu`**: Nuria's street in Cardedeu (`docs/quests/nuria.md`), a real-data zone like
   Alegia: OpenStreetMap (`osm.json`) from Carrer del Doctor Daurella down to the railway, with the
   R4 station on Avinguda del Rei En Jaume, plus what the map lacks drawn in `sketch.json` from the
