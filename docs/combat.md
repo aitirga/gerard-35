@@ -294,6 +294,15 @@ objetivos derrotados.
 
 ## Dónde se planta un combate
 
+**Arenas de jefe** (`src/boss-arena.ts`, `BOSS_ARENAS`): El Campeón y La Sobremesa no pelean
+donde empiezan, entre su propio decorado (su figura esperando en la peana, la masa sentada a la mesa
+del melón), sino que, por el mismo cristal que un bolsillo, pasan a un escenario hecho con las
+piezas del camping: sus constructores de monumentos, sus pinos con bombillas, su suelo, su agua y
+su luz, con sitio para el combate (`ARENA_SPREAD`). La piscina: el agua iluminada por dentro detrás,
+el muro de tablas, la silla del socorrista y la pizarra del TORNEO. El merendero: las mesas largas, la
+del melón detrás del jefe, la puerta blindada abierta, el foco cálido duro sobre él y todas las
+bombillas encendidas.
+
 Un combate necesita sitio: el grupo a un lado, los enemigos al otro, uno al lado del otro con
 espacio entre ellos y cada segundo un paso atrás (la cámara mira desde el sur: así Gerard y Aitor
 se separan también en pantalla, no uno delante del otro; ante un gigante, abajo, al otro lado), Haru y Yuki junto a quien lleva Papagato, holgura alrededor de cada uno según su tamaño (`BODY`, `FOE_SIZE` y `ROOM` en

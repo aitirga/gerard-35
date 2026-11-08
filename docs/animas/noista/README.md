@@ -18,7 +18,7 @@ follows is the design as it was.
 - Colour: crimson `#e2483d`.
 - Look: the mustard shirt with navy stripes turns crimson with charcoal stripes, charcoal
   trousers, red glasses, a short crimson scarf at the neck.
-- Interface: protest-poster style (slanted cards, hard crimson shadow, a faint **NO** watermark,
+- Interface: protest-poster style (slanted cards, hard crimson shadow,
   stamped heavy italics). The full spec lived in `docs/bubbaloo-palace.md` (in git history).
 
 ## Stats

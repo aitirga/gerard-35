@@ -78,6 +78,21 @@ Uri is back), so a part also sets the mission's run and may play a moment on arr
 | `won` | Vertitrón beaten: Uri comes back to himself, the two lights go into Gerard and Aitor and Papagato's banner shows |
 | `done` | The mission won, the next morning at home |
 
+The university friends' (`docs/quests/universidad.md`):
+
+| Part | Starts |
+| --- | --- |
+| `start` | Coming up from the L4 at the Barceloneta |
+| `beach` | Up the sand behind the six, who face the sea; Anna in the water |
+| `tag` | The game of tag on: the friends running, the promenade shut by tentacles |
+| `spiral` | Anna gone into the spiral in the shallows: wading in goes to the campsite |
+| `camp` | Càmping Eurosport, just out of the spiral; the magos wait at the entrance |
+| `board` | In front of the reception's blackboard: Las parcelas |
+| `gate` | Las parcelas solved, every waiting foe beaten: the gate open, El Campeón by the pool |
+| `sobremesa` | El Campeón beaten: walking up to the long table starts La Sobremesa |
+| `won` | La Sobremesa beaten: free round the melon table, the photo, the five lights, back on the beach |
+| `done` | The mission won: the seven, free, on the sand |
+
 A mission without its own list offers its beginning and each of its steps.
 
 ## Ánimas
@@ -120,6 +135,9 @@ The fight tester. Choose:
   the gum guards. In chapter 2, **Torre de Uri** adds Uri's fears (El Cebollón, La Cebolla, El Plato
   Misterioso, ring 3's **La Cebolla y los suyos**), Vertitrón and a pack of each ring's young (a
   random mix each time; ring 3's sometimes with a cebolla), fought in the tower where Gerard stands.
+  **Camping Eurosport** has the university friends' dungeon (docs/quests/universidad.md): *Magos*,
+  *Dados*, *Agentes*, a *Tienda equivocada* (a die and two agentes), the *Parcela negra* (two magos
+  and two dice) and *El Campeón*; on the Barceloneta's sand until the campsite has a place of its own.
   Dogs come 1 to 4; the guards are as many and as strong as the friends' ánimas leave them.
 - To try **Ángulo exacto**, **Ronroneo de Yuki** and the **duals**, the Ánimas column sets the
   levels (Matemágico and Papagato at *Nv 2* reach all of them) and *Equipo* + *Ánimas* put
@@ -166,6 +184,9 @@ In any fight, the story's too, the Combate tab becomes the fight's own page:
   | Vertitrón | *Tras dos gritos* (`vertigo-grito`) | Half its PV, two Gritos liberadores already on (Fuerza and Magia down), the third next |
   | Vertitrón | *Ojo roto* (`vertigo-sin-ojo`) | Full PV, its eye broken: no more Rayo |
   | El Plato Misterioso | *Plato sorpresa* (`plato-sorpresa`) | The surprise dish under the cloche |
+  | Magos de camping | *Bombona cargada* (`magos-bombona`) | Every mago whole with its Bombona charged: their next turn blasts both |
+  | El Campeón | *Héroe* (`campeon-heroe`) | Full PV, a hero with its two turns ahead: it punches and takes half |
+  | El Campeón | *De paisano* (`campeon-paisano`) | Half its PV, in plain clothes with its two turns ahead: it gets PV back and takes double |
 
   To try a dual with full maná, *PM infinitos*.
 - **Dual** (a command, in development only): in every fight of `just dev` the fight's menu is
@@ -222,6 +243,8 @@ turns it on (the `herdr-project` skill), and it looks again every 5 seconds. It 
 
 *Atacar de Matemágico* plays his thrown Atacar (`src/math-cast.ts`), with no element or with each one,
 from Gerard at whoever is picked.
+
+**The model lab** (`just model-lab`, `model-lab.html`, [src/model-lab.ts](../src/model-lab.ts)) shows La Sobremesa (docs/quests/universidad.md) on a turntable: drag to turn, wheel to come closer; each friend's attack and freeing, the couples' duos, and its rig as bones or as weights in colour. `just screenshots model-lab --gpu`. With `?personajes` (`model-lab.html?personajes`, [src/character-lab.ts](../src/character-lab.ts)) it shows the Meshy characters instead (the university friends), standing, walking and running with the clips Meshy's auto-rigging gave them, and up close one by one. `just screenshots personajes-lab --gpu`.
 
 `just dev-fx` (or `?fxlab` on any development URL, `?story=matemagico&fxlab` for a clean run) opens a
 fight with chapter 1's boys against three dogs and a panel on the right ([src/fx-lab.ts](../src/fx-lab.ts)).

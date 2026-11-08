@@ -231,6 +231,7 @@ material, light and landmark, which the last column names.
 | La Barceloneta | `#e6d0a2` | sand and sea | sand (`sorra`, `sorra-humida`), rusted iron (`acer-corten`) | four stacked rusted cubes | `barceloneta` cool | Casa de Gerard (ΔE 7): open sea vs a room |
 | Poble Sec (built) | `#b08c58` | sienna-ochre and pine green | render bays with iron balconies (`poble-sec-bays`), Blai's slabs | the slope and its stairs | `poble-sec` warm | Búnkers (ΔE 7): dense streets with balconies and terraces vs an open hilltop |
 | Búnkers del Carmel | `#c09a5e` | dry gold grass, war concrete, golden light | board-marked concrete (`formigo-encofrat`), rock (`roca`), dry grass (`herba-seca`) | round gun pits on a bare crest above the city | `bunkers-carmel` warm, dusk sky | Sants (ΔE 5): open hill at sunset vs a shaded street |
+| Càmping Eurosport | `#4f4a36` | pine-needle olive in evening shade | tent canvas (`lona`), pine needles on packed earth (`pinassa`) | a still pool with its lifeguard chair in the trees | `camping` warm light, cool shade, `evening` sky | El Nucli (ΔE 15): an open campsite under pines at evening vs felt and boxes indoors |
 | Palace · entrance | `#c95a8d` | her pink | gum, wrapper paper | El Corazón Líquido | `palacio` | Palace outside (ΔE 17): the same building, inside |
 | Palace · el patio | `#3f7d58` | court green | painted resin court (`pista-pintada`), its lines as kerbs | the court's raised lines | `palacio-patio` cool | El Nucli (ΔE 25): a painted court under the sky vs felt indoors |
 | Palace · el gimnasio | `#2d5a9e` | mat blue | vinyl mats, pine wall bars, grey sports floor | the stacked vaulting box | `palacio-gimnasio` cold | Throne room (ΔE 23): blue under tubes vs indigo in the dark |
@@ -268,6 +269,7 @@ share a landmark kind.
 | Plaça d'Espanya · Poble Sec | L3, one stop; one district | 22 | colour, material, ground | ✓ (both warm: Espanya golden afternoon, Poble Sec evening) |
 | Sants · Poble Sec | One district | 21 | colour, material, ground, light | ✓, the closest: keep Sants cool and in shade |
 | Sagrada outside · Búnkers del Carmel | Seen from the hilltop | 23 | colour, material, ground, light | ✓ |
+| La Barceloneta · Càmping Eurosport | Through the spiral in the sea | 55 | all four: sand and sea at a bright midday vs pine olive, canvas and needles at evening | ✓ |
 | Palace zones, door to door | Doors | 55–92 | all four | ✓ |
 
 ## 3. Cards
@@ -438,6 +440,33 @@ Built to this card on 2026-10-31; the brief, sources and credits are in [places/
 | Sound | A heartbeat when a fear gives chase, wind growing with the height, Uri's voice ahead |
 | Only here | The screen's edges beating like a heart |
 | Text | None: it is fear, not a street |
+
+#### Càmping Eurosport (`camping`)
+
+Built (2026-11-07) from the proposal in `docs/quests/universidad.md` § Càmping Eurosport; the
+dominant was measured on the follow camera's screenshots (`just screenshots camping --gpu`): the
+proposal's olive `#6a6b45` is the daylight colour, and the place is always at evening.
+
+| | |
+| --- | --- |
+| Dominant | Pine-needle olive in the evening shade `#4f4a36` |
+| Secondary | Stone pine crowns `#52703f`, sauló lanes `#a8a185`, the pool's still teal `#2b6f78`, the bulbs' amber `#ffad4a`; tents in faded canvas (olive, sand, rust, slate blue, cream) |
+| Material | Tent canvas (`lona`, plain faded colours painted in code), pine needles on packed earth (`pinassa`) |
+| Ground | Pine needles (`pinassa`), sauló lanes between the rows of pitches (`saulo`), the pool's pale stone deck (`lloses`) and its lawn |
+| Landmark | The pool with its lifeguard chair: a still rectangle of water in the trees (kind: a still pool) |
+| Light | `camping`: a low amber sun over cool blue-green shade, an `evening` sky (deep blue above, amber low down); the same summer evening, always |
+| Props | Tents of three kinds (dome, ridge, tunnel), pitch sign posts with an unlit lantern, stone pines, picnic tables, a folding table and chairs, the raised barrier, the green mesh fence and its white gate, a clipped hedge |
+| Air | A few fireflies over the pitches and motes round the bulbs, no wind |
+| Sound | Cicadas, a pool filter, the bulbs' faint hum, no voices (not built: no place has its own ambience yet) |
+| Only here | The strings of bulbs tied pine to pine over the pitches (long swags on the trunks, not Carrer de Blai's zigzag over a street), and a melon on a picnic table |
+| Text | Catalan, as on a Catalan campsite: *CÀMPING EUROSPORT*, *RECEPCIÓ*, the blackboard's *AVISOS · Piscina: de 10 a 20 h · Silenci a partir de les 24 h*, *PISCINA* on the gate, the depths *1,20 m* and *2,00 m*, pitch numbers; nothing points the way |
+| Reserved | No pink or violet in the place: violet is the friends' eyes and the spiral, pink what the Queen touches (the story's) |
+
+Through the checklist (§ 5): the matrix (nearest El Nucli, ΔE 15, told apart by open ground and
+pines against felt indoors; the landmark kind is new); its one neighbour, the beach through the
+spiral, differs in all four; one glow, the bulbs' amber; world text in Catalan; Gerard is found at
+once among low tents (the pines turn see-through round him); about 75 landmarks in the static batch,
+no real lights; reachable from the picker (*Càmping Eurosport*).
 
 ### New places (proposals)
 

@@ -45,6 +45,7 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `dual` | `DUALS` | `dual.zarpazos-de-fuego.power` |
 | `vertigo` | `VERTIGO`, the final boss's whole book, as `vertigo.boss` | `vertigo.boss.pisoton`, `vertigo.boss.gritoDown` |
 | `reaction` | `REACTION_RULES`, what the elements turn | `reaction.rules.storm`, `reaction.rules.blind2` |
+| `camping` | `CAMPING`, Càmping Eurosport's foes, as `camping.rules` | `camping.rules.bombona`, `camping.rules.punetazo` |
 | `fear` | `FEAR_RULES` as `fear.rules`, and El Plato's blow as `fear.plato` (the onions hit with `ONIONS`, Vertitrón with `VERTIGO`) | `fear.rules.escortLayers`, `fear.plato.power` |
 
 What the Ecos de luz are in is one more list, `--improved`, of `src/ecos.ts` ids joined with `/`
@@ -192,3 +193,36 @@ What the numbers say:
 - La Cebolla's layers are the escort's cliff for casual (4 % with four, 0 % with five).
 - The biggest single action on Vertitrón (360 PV) is about 220, at most 240: Zarpazos de fuego on a
   Punto débil, the reward for finding both duals. Nothing else comes near.
+
+## Càmping Eurosport, as tuned
+
+Measured with `just fight-sim` (200 fights, seed 35), Papagato 2 and Matemágico 2. `DUO` is the dual
+party; `TECH` is Gerard on Matemágico and Aitor on Tecnópata, two ánimas of magic, the party the
+magos ask a question of. Its numbers are `CAMPING` (book `camping.rules`) and each foe's `PROFILES`.
+
+| Fight | Party, bot | Wins | Rounds won | PV left |
+| --- | --- | --- | --- | --- |
+| Magos | duo, casual | 100 % | 3.2 | 72 % |
+| Magos | tech, smart | 100 % | 5.0 | 60 % |
+| Dados | duo, casual | 100 % | 3.7 | 58 % |
+| Agentes | duo, casual | 100 % | 3.3 | 79 % |
+| Tienda equivocada | duo, casual / mission party, smart | 100 % / 100 % | 4.3 / 5.6 | 53 % / 42 % |
+| Parcela negra | duo, smart | 97 % | 5.8 | 40 % |
+| Parcela negra | duo, casual | 54 % | 5.4 | 19 % |
+| Parcela negra | tech, smart | 52 % | 7.3 | 7 % |
+| El Campeón | duo, smart | 100 % | 8.4 | 71 % |
+| El Campeón | duo, casual | 43 % | 9.4 | 18 % |
+| El Campeón | tech, smart | 100 % | 12.4 | 39 % |
+| El Campeón | duo, only Atacar | 0 % | – | – |
+
+What the numbers say:
+
+- The small fights teach one rule each and are won without thinking; reading the plate (the sixes
+  first, the agente face up) only saves PV.
+- The black pitch is the hard one: both magos charge on the same turn, so two Bombonas land
+  together; holding on that round and hitting the magos with blows is the way through. Two ánimas
+  of magic against them halve their own damage, which is the question.
+- El Campeón: `smart` holds on (Defender, which also gathers maná) while it is a hero and spends it
+  all while it is in plain clothes; `casual` hits it as a hero at half and loses as often as not;
+  Atacar alone never wins, since in plain clothes it gets its PV back.
+- `smart` knows whom the Puñetazo will hit, a person does not: people will hold on with both.

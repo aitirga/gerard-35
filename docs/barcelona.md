@@ -235,6 +235,30 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   lookout, the Passeig Marítim's parapet and palms, the blocks behind with washing on the
   balconies; the L4 stair at the end of a street on the back edge (the real station is 700 m
   inland), the breakwater where the beach ends to the NNE and the W's sail past the SSW end.
+- **`camping`**: *Càmping Eurosport* (`docs/quests/universidad.md` § Càmping Eurosport), the
+  university friends' mini-dungeon past the spiral in the sea off the beach, on no line: a designed
+  zone with no map data, an invented campsite of the coast written from a plan in 1.25 m cells
+  (`sketch.json` holds its ground: the pine woods round it, the sauló lanes, the pool and its deck,
+  the road in; every piece is a landmark). One way from east to west: the road in under the raised
+  barrier, the reception with its notice blackboard and the *CÀMPING EUROSPORT* sign; Las parcelas as
+  a hedge maze behind one way in: 25 pitches, each an alcove in the hedge with a tent and a sign post
+  (`rotulo-<n>`, the board Las parcelas writes its word on, an unlit lantern on its arm), plugged
+  lanes, a roundabout round a big pine, two squares, strings of bulbs over the lanes; the tall wall of
+  boards round the pool and the merendero (`tanca-alta-*`, `tanca-camping` style `fusta`), its gate
+  the only way through (`barrera-piscina`, style `portalo`, padlocked with word wheels; `CAMPING_GATE`
+  in `src/environments.ts`: open on the grid, the story shuts it; once Las parcelas is solved its
+  leaves, `Hoja del portón`, swing open); the still pool, its lifeguard chair and Las parcelas' blackboard on an easel (`pissarra-piscina`);
+  past a second wall of boards (`tanca-merendero-*`, `tanca-alta-merendero`) and its steel door (`porta-merendero`, style `blindada`; `CAMPING_DOOR`, shut by the story
+  until El Campeón is beaten), the merendero's long tables under the pines, a melon on one. Always the
+  same summer evening (the `evening` sky), and no overview (`noOverview`). Its `anchors` name every cell the story uses: `entrada`,
+  `salida`, `recepcio-pizarra`, `parcela-0` … `parcela-24` (row by row from the far one, left to
+  right, each in front of its sign), `rotonda`, `barrera-piscina`, `magos-1`, `magos-2`, `dados-1`,
+  `dados-2`, `campeon`, `porta-merendero`, `merendero-mesa` and `foto`. The maze was written once from a plan in cells
+  (hedge, path, tent, sign) as landmarks: rectangles of hedge (`seto-<n>`, as thick as their
+  footprint), the roundabout's ring in short turned pieces (`seto-rotonda-<n>`) round its round bed
+  (`seto-rotonda-illa`). Change it in `zone.json`, then check `output/geo/camping/preview.png` and
+  `tests/environments.test.mjs` (every anchor reached, the gate the only way on, the way to the gate
+  a long detour).
 - **`rec-comtal`**: Trinitat Vella round the Institut Escola Rec Comtal (Via de Bàrcino 90, Mare
   de Déu de Lorda 25): the school's two buildings and playground, Via de Bàrcino in front facing
   the camera, blocks of flats, the L1 entrance and the castle on the roof. Inside the castle, the

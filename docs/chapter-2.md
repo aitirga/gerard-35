@@ -98,7 +98,9 @@ next morning in bed, "¡NO!", with everything done kept.
 - The light: from 18:00 the evening turns pinker, and Aitor says so (at 18:00 and at 20:00).
 - The TV at home: the headline gets worse each morning (`NEWS.stages`): it grows over Trinitat
   Vella, reaches Sant Andreu, the Meridiana…
-- Aitor every morning: more worried each day (`LINES_2.morning`).
+- Aitor every morning: more worried each day (`LINES_2.morning`). It is Gerard's birthday every
+  morning (decided 2026-11-07): the date stays on 22 November while everything else moves on, and
+  Aitor says so.
 - The castle: bigger each day on the school (up to 1.6 times), the streets pinker (Trinitat Vella,
   then the Meridiana outside the flat, then the flat).
 - The network map: the pink halo round the castle widens over the city.
@@ -279,6 +281,7 @@ Friends so far:
 | Friend | Where | Mission | Ánima | Lights | Status |
 | --- | --- | --- | --- | --- | --- |
 | **Nuria and Uri** (one mission), with Nil | Carrer de Jacint Verdaguer, Cardedeu (R4 from La Sagrera) | *La calle que no acaba*, then through a bubble *La torre de Uri*: Uri, a kid again, climbs a dark tower; his fears hunt the ramp and Vertitrón waits on top (`docs/quests/nuria.md`) | **Papagato** (Haru and Yuki fight with the party) | Nuria, Uri | Playable on `feat/nuria-mission`; Nuria's and Uri's portraits to come |
+| **The university friends** (seven: Anna and Álvaro, Miquel and Sarah, Soraya, Nico, Joan) | The beach of the Barceloneta (L4), then **Càmping Eurosport** through a spiral in the sea | On Gerard's birthday, with violet eyes, they want to play tag (pink tentacles; caught is back up the sand); past the spiral, their old campsite: Las parcelas (a word-clue puzzle), El Campeón, and **La Sobremesa**, all seven fused at the long table (`docs/quests/universidad.md`) | Provisional (`ANIMAS.universidad`); its skills to design | Five: Anna and Álvaro, Miquel and Sarah, Soraya, Nico, Joan | Playable on `feature/side-mission-uni` |
 | **Pedro** | _open_ | _open_ | _open_ | Pedro | Idea (2026-11-05): a gay friend Gerard and Aitor see a lot; Aitor wants him in the game. To design with `/side-quest` (mission, `docs/quests/pedro.md`) and `/anima` |
 
 Each friend's mission is a small, hand-made piece: its own scene or two, its own lines, often one
@@ -300,6 +303,7 @@ notification, graffiti, a menu on a bar's board. A clue:
 
 | Clue | Where | Points to |
 | --- | --- | --- |
+| Aitor: the university group has written all morning, they wait on the Barceloneta's beach for his birthday (`clue-uni`) | The first time down into the metro; every morning after until they have been | The Barceloneta (L4): the seven friends |
 | *"La R4 se amplía desde La Sagrera hasta Cardedeu"* (`clue-r4`) | TV ticker; the lit R4 poster of a bus shelter; later La Sagrera's platform | Cardedeu: Nuria and Uri; at Cardedeu station Haru waits and trots off to Nuria's street |
 
 ## The Queen and the second round (blocks 4 and 5)

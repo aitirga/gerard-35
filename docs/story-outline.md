@@ -114,11 +114,29 @@ cartoonish.)
 | --- | --- | --- | --- | --- | --- |
 | **Nuria and Uri** (+ Nil, Haru, Yuki) | Old flatmates; a pack | Cardedeu | R4 from La Sagrera | Uri turned kid, the maze of fears, El Vértigo; ánima **Papagato** | Designed, `docs/quests/nuria.md`; can be an early one |
 | **Bernat** | Gerard's childhood best friend; invented the Queen; a father (Leia, ~3; wife Jessica); publishes board games beside another job; lives outside Barcelona | A hidden board-game bar in Barcelona | Gerard **phones** him and they meet | A spy feel: the city's people act strangely; Bernat seems immune (her creator); Jessica has gone mad; he **finds out part of the story** | Designing, `docs/quests/bernat.md` |
-| **Marta** | Aitor's best friend, Gerard's friend too; **a singer** | **Basque Country** | Needs a **train ticket**: one of the hardest places to reach | _open_ | Idea |
+| **Marta** | Aitor's best friend, Gerard's friend too; **a singer** | **Basque Country** | Needs a **train ticket**: one of the hardest places to reach | Combat idea (2026-11-07, § Marta's fight) | Idea |
 | **Luca** | A very close friend, gay like Gerard and Aitor, **very eccentric**; lives with his partner and their daughter | _open_ | _open_ | _open_ | Idea |
 | **Emilie** | Friend of Aitor and Gerard; **very clever** | **Poble Sec** | _open_ (L3 Poble Sec / Paral·lel are not on the map yet) | **Helps with a technical problem** | Idea |
-| **University friends**: Anna and Álvaro, Miquel and Sarah, Guillem and Soraya | Three couples from university | _open_ | _open_ | **An original mission**, all six together | Idea |
+| **University friends**: Anna and Álvaro, Miquel and Sarah, Guillem and Soraya | Three couples from university (Guillem does not appear) | **La Barceloneta**, the beach | L4 | They come for Gerard's birthday, held by the Queen: a game of tag into the sea and the spiral | Designing, `docs/quests/universidad.md` |
 | **Jan and Gerard's parents** | Jan, the older brother (chapter 1), lives in Barcelona near **Entença** (L5); the parents | Jan: Entença. Parents: _open_ (Sant Quirze?) | L5 to Entença | _open_ | Idea |
+
+### Marta's fight (idea, 2026-11-07)
+
+From the user, to remember when her side mission is designed:
+
+- **Her mission's final boss sings** (decided): **the real Marta will record songs of single notes**
+  for the game, and they are the boss's **cyclic, endless attack**: a buff that comes round with the
+  song and an attack on every tick.
+- **The window to hurt it is the note** (decided): while a note is being sung, the boss can be
+  attacked and takes damage; between notes it is **immune**. The party has to time its attacks to
+  her singing.
+- **Her ánima gives skills like hers** (decided): song and timing, in the same spirit.
+- Proposals, open: the note shows on screen as well as sounding (a ring or a pulse, never a hidden
+  counter), so it can be played with the sound off; Defender pays between notes; the window runs on
+  the fight's clock like the timed statuses (`docs/combat.md` § Estados en tiempo real). It must not
+  repeat Joan's *Escala* in La Sobremesa (a note that climbs turn by turn), nor the artilugio's
+  melody of the ending (`§ El artilugio`), which is Aitor's.
+- Asset: Marta's recordings, one file per note, to ask her for.
 
 ### The school: Gerard's colleagues (not a mission)
 

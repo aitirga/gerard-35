@@ -14,7 +14,7 @@ Status: designing · Comes from: Nuria's mission, `docs/quests/nuria.md`
 - Look (in fights, decided 2026-11-05): Haru's orange shirt with Yuki's white at the collar and
   sleeves, grey trousers, cat ears (one orange, one white, pink inside), a thin ringed tail that
   sways, and a white collar with a gold bell (`src/anima-looks.ts`). Interface: cream paper, rounded
-  cards, MIAU.
+  cards.
 - Off Papagato in a fight, the cats go in a puff of smoke (and come back in one when someone wears
   it again); lent by Nuria in Uri's tower they cannot go home, so they step aside behind the party,
   on the side away from the others, and sit it out (`updateCats` in `src/battle-scene.ts`).
@@ -144,7 +144,7 @@ sangriento* (cost 1 Ánima, power 16, two Sangrado stacks; called *Zarpazo de Ha
 2026-11-05) and *Yuki se esconde* (cost 1, Defensa +4
 for the party for 3 rounds) in `src/battle.ts`; `CLASSES` look
 (orange shirt, cream stripes) in `src/classes.ts` and its ears, tail and collar in `src/anima-looks.ts`; the theme
-`#hud[data-class="papagato"]` in `src/style.css` (cream paper, rounded cards, MIAU); Haru and Yuki
+`#hud[data-class="papagato"]` in `src/style.css` (cream paper, rounded cards); Haru and Yuki
 as procedural cats (`src/cats.ts`) beside the wearer in fights (`src/battle-scene.ts`): Haru
 pounces on Zarpazo, Yuki hides on her skill. Unlocked by the `papagato` story flag. Screenshots:
 `just screenshots papagato`, `just screenshots onions`. Level 2 (`src/levels.ts`): *Zarpazos* (cost 2,

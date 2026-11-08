@@ -392,10 +392,15 @@ everywhere else, in reduced motion and in the headless tests, effects stay on th
   link to the link ahead, so a chain draws as one line).
 - **Spawning** happens on the GPU: the CPU keeps a ring of slots and sends batches (`burst`,
   `emitter`, up to 64 a frame): in a ball, on a ring round any axis (spinning with `around`), along a
-  line (`to`), or on the **surface of a fighter**: a random part above a fraction of their height, a
-  random face, a random point on it, thrown off along its normal; with `band` only within that band of
-  their height (drawn again until the point is in it), and with `fromPart` in the colour of the part it
-  leaves (each part's diffuse colour rides with its box). A burst may tint the kind
+  line (`to`), or on the **surface of a fighter**: a point on its real geometry above a fraction of
+  their height, thrown off along its normal; with `band` only within that band of their height (drawn
+  again until the point is in it), and with `fromPart` in the colour of what it leaves. The points come
+  from `src/surface-samples.ts`: each mesh is sampled once, by area, on its triangles (with the four
+  heaviest bones and weights of each point when it is skinned, as the 3D figures are); on a frame a
+  `surface` burst is born on a fighter, `SURFACE_SAMPLES` (1024) of them are carried to where its meshes
+  are now, bent by their bones, into a texture of their positions, normals and colours, shared out among
+  its meshes by area. Only those fighters are written, so it costs nothing on other frames. A model
+  whose meshes cannot be read falls back on its parts' boxes (a random part, face and point on it). A burst may tint the kind
   (`colour`) and cut itself into **chains** (`chain`): every link starts where its leader does, and
   followers close in on the link ahead (lagging, so a chain draws a curve as its head moves). A
   particle born this frame waits a frame to move, so it never reads its leader before it exists.
@@ -541,8 +546,9 @@ moment, drift up a little with a short trail and fade (the crumbling under half 
 about a second and a half). Violet is fear's and possession's (docs/visual-style.md): what held it
 leaving. In a fight each foe does as it is beaten; on the street, what stood for it does once the
 place shows again: a fear on the tower's ramp where it caught the party, and El Vértigo on the top,
-while Uri talks. `effects.disintegrate(model, { colour, delay, own, done })` runs one (`colour` in
-place of the violet and purple) and returns its `progress` and whether it is `finished`.
+while Uri talks. `effects.disintegrate(model, { colour, delay, own, done, seconds, into, appear })` runs one
+(`colour` in place of the violet and purple, `seconds` slower than the usual, `into` a portal, `appear`
+the other way round) and returns its `progress` and whether it is `finished`.
 
 - **The crumbling is a shader on its own materials** (`dissolvable`: WGSL chunks of the lit shader).
   A front sweeps from below its feet to above its head (`DISINTEGRATE.seconds`, 0.42 s), so ragged
@@ -568,6 +574,15 @@ place of the violet and purple) and returns its `progress` and whether it is `fi
   a pack of young beaten goes away whole and comes back later as before. El Vértigo on the top does
   the same while Uri talks, and lets Uri and Nil down to the platform. While anything comes apart or
   its specks still drift, the GPU engine runs outside the fight too.
+- **La Sobremesa at the long table** (`unmaskSobremesa`): back from its fight, the whole body comes apart
+  slowly (2.2 s) in the place, and the seven friends it was made of show round the table as it goes.
+- **Into a portal** (`into`): the specks are thrown at the portal's middle and a field there pulls and
+  swirls them in. A story `portal` with `who: 'everyone'` takes the party and everyone in the scene, nearest
+  first, one a moment after the other; with `open` the spiral grows out of a point first.
+- **Coming together** (`appear`, story `emerge`): the other way round, out of a spiral on the other side.
+  The body is hidden until it starts; the front goes back down it, so it comes together from the head down,
+  and the specks born where it is closing are drawn in and gone almost as they land. Then the spiral shrinks
+  and is gone.
 - **Reduced motion**: the crumbling alone, nothing thrown, nothing rising.
 
 `just screenshots disintegrate --gpu --scale 2` records three dogs beaten at once, El Cebollón beaten

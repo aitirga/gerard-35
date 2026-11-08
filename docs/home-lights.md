@@ -17,7 +17,9 @@ latest `main`); the cloud takes up to a second.
    fallback put `LIFX_TOKEN` in `.env` (https://cloud.lifx.com/settings).
 2. `just backend` and `just dev`, open the game and choose **Esc → Configuración → Luces de casa**.
 3. **Conectar las luces de casa.** The choice is remembered in this browser. The page says whether
-   they go *por la red de casa, al instante* or *por la nube*.
+   they go *por la red de casa, al instante* or *por la nube*. In development (`just dev`, herdr's
+   Start, the `dev-*` recipes) the game never connects them by itself on load, whatever was chosen
+   before: they stay off until connected here, for that session.
 
 If the lights are not there the page says why, and they keep trying by themselves: within a few
 seconds when the game's server does not answer (not started, restarting, or another app on its

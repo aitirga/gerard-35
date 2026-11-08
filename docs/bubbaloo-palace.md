@@ -265,7 +265,7 @@ later in the palace, *"Matemágico. Así te voy a llamar. El que hace magia con 
   journal and hints change together): a blueprint.
   - colours: midnight-ink navy `#0f1a2c`, gold `#f3cf78` accents, paper `#f4efe0`;
   - shapes: graph paper round the edges of the screen only, commands as index cards on squared
-    paper with a gold margin line and numbers `x01`…`x05`, a big ∑ watermark, the party card with
+    paper with a gold margin line and numbers `x01`…`x05`, the party card with
     a number line instead of the wave;
   - type: Georgia italic for headings and skill names, JetBrains Mono for numbers.
 - **Status screen**: Gerard's sheet in the same blueprint, with its own ∑, showing Matemágico and

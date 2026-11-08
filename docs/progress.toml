@@ -195,6 +195,10 @@ title = "Sants"
 file = "src/geo/sants.json"
 
 [[block.item]]
+title = "Càmping Eurosport"
+file = "src/geo/camping.json"
+
+[[block.item]]
 title = "El Nucli"
 file = "src/nucli-scenery.ts"
 
@@ -312,7 +316,43 @@ file = "docs/quests/universidad.md"
 [[block.item]]
 title = "Amigos de la universidad: jugable"
 weight = 3
-file = "src/friends/universidad.ts"
+# Playable once the story answers the beach (story.ts nearUni), not when its data file exists.
+grep = "nearUni"
+in = ["src/story.ts"]
+
+[[block.item]]
+title = "Amigos de la universidad: monstruos del càmping"
+# The campsite's foes and their fights (docs/quests/universidad.md § Càmping Eurosport).
+grep = "camping-negra"
+in = ["src/battle.ts"]
+
+[[block.item]]
+title = "Amigos de la universidad: La Sobremesa y el final"
+# The boss at the long table comes apart and frees the seven, the photo with the melon, their five lights, the spiral home for everyone (story.ts winUni).
+grep = "winUni"
+in = ["src/story.ts"]
+
+[[block.item]]
+title = "Amigos de la universidad: arenas propias de El Campeón y La Sobremesa"
+# Each boss fights in a stage built of the campsite's own pieces (src/boss-arena.ts), away from its waiting figure.
+grep = "BOSS_ARENAS"
+in = ["src/game.ts"]
+
+[[block.item]]
+title = "Amigos de la universidad: efectos de los movimientos de La Sobremesa"
+# Dice, black card, chalk rule, notes, correction, lattice (src/dual-fx.ts § La Sobremesa).
+grep = "sobremesaFx"
+in = ["src/battle-scene.ts"]
+
+[[block.item]]
+title = "Amigos de la universidad: los siete en 3D (figuras de juguete, just character-3d)"
+grep = "models/characters/joan.glb"
+in = ["src/characters/joan.json"]
+
+[[block.item]]
+title = "Amigos de la universidad: su ánima (diseño con /anima)"
+# Provisional in ANIMAS; the proposals wait in docs/quests/universidad.md § Ánima.
+done = false
 
 [[block.item]]
 title = "Jan y los padres: diseño"

@@ -123,6 +123,9 @@ friends' stories and the second round carry it.
   gives two, one for Gerard and one for Aitor: Nuria's and Uri's (Nil goes in his arms). The
   party counts them as its **Ecos de luz**, which improve its ánimas, put in and taken back only
   at the jar (`docs/animas/README.md` § Ecos de luz).
+- **The university friends' ánima** (`ANIMAS.universidad`) is theirs once La Sobremesa is beaten;
+  their household gives **five lights**, one for each couple (Anna and Álvaro, Miquel and Sarah,
+  Soraya and Guillem) and one each for Nico and Joan. What else it brings is still to design.
 - **Papagato** is Nuria's ánima (Cardedeu): it brings Haru and Yuki, the cats, to fight beside the
   party. In design (`docs/quests/nuria.md`, `docs/animas/papagato/`).
 - First round: Gerard restores what the Queen popped, and the ánimas he collects are **grey**:
@@ -142,6 +145,7 @@ friends' stories and the second round carry it.
 | **Nuria and Uri** | Friends of Gerard and Aitor who live in **Cardedeu**, reached by Rodalies from La Sagrera (chapter 2). Nuria, Gerard and Aitor once shared a flat; she has just become a mother. Not Nuria Mendoza. |
 | **Nil** | Nuria and Uri's baby (under a year old). In Nuria's mission Uri runs off down the street with him (`docs/quests/nuria.md`). |
 | **Haru and Yuki** | The cats who live with Nuria (both female: one white, one tricolour); they are Gerard's cats too, from when Nuria, Gerard and Aitor lived together. Nuria's ánima, **Papagato**, brings them into the party's fights. |
+| **The university friends** | Seven friends from university: the couples **Anna and Álvaro** and **Miquel and Sarah**, **Soraya** (her partner Guillem stays out of it), **Nico** and **Joan**. For years they went camping together at the Càmping Eurosport, with a photo of all of them with a melon every summer; many have children now. On Gerard's birthday the Queen holds them on the beach of the Barceloneta (`docs/quests/universidad.md`). |
 | **Pedro** | A gay friend of Gerard and Aitor; they see each other a lot. To be integrated with his own mission and ánima (idea, 2026-11-05: details to come from Aitor). |
 
 ## Places
@@ -154,6 +158,9 @@ friends' stories and the second round carry it.
   de Lorda 25; named after the medieval Rec Comtal canal that runs through the neighbourhood).
   La Reina Bubbaloo's palace appears on top of it in chapter 2, with every pupil inside.
 - **Cardedeu** (Vallès Oriental): Nuria and Uri's town, by train.
+- **La Barceloneta** (the L4's beach): where the university friends wait for Gerard's birthday.
+- **Càmping Eurosport**: the campsite of the friends' summers, through the spiral in the sea; always
+  the same summer evening, with nobody in it.
 - **Barcelona** as a whole is the chapter 2 world map: sea, Collserola, avenues, landmarks, metro
   (`docs/barcelona.md`).
 
@@ -193,6 +200,9 @@ friends' stories and the second round carry it.
   storm; it loses towers as Gerard and Aitor give people back what they had lost.
 - **Falling is waking up.** When they lose, Gerard wakes in bed shouting "¡NO!" the next morning,
   with everything he has done kept (no time loop: that earlier idea is dropped).
+- **Every morning is his birthday** (decided 2026-11-07): the date stays on 22 November, *el día que
+  se repite*. Nothing that was done is undone and the Queen keeps advancing; only the calendar does
+  not move, and people keep congratulating him.
 - **Her power spreads every day** they do not push it back: the castle grows, the pink reaches Sant
   Andreu, the Meridiana, the flat. If it gets there, the flat is her castle and the only way on is
   back to the day before (the countdown of `docs/chapter-2.md`). Time matters; routine wastes it.

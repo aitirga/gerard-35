@@ -81,7 +81,7 @@ status sheet and the class banner in `src/style.css`:
 - Commands are index cards on squared paper with a gold margin line, numbered `x01`…`x05` in
   JetBrains Mono; the open command and the skill sheet turn navy with gold squares.
 - Headings and skill names in Georgia italic; numbers and kickers monospaced.
-- A big ∑ watermark in the corner of the fight (and on each half of a split fight).
+- No watermark or background pattern behind the fight: the ánima dresses the interface only.
 - The party card: squared navy, with a number line (a tick every step) instead of the wave.
 - The status sheet in the same blueprint, with its own ∑.
 - The unlock banner as a notebook page, with *1 + 1 = 10* above the name.

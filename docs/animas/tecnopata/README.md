@@ -41,7 +41,7 @@ first morning (it replaces the placeholder *Físico*, `fisico` in old saves)
   a short antenna on his right ear, and two thin cyan circuit lines down the front of his shirt
   (`src/anima-looks.ts`). In the street he keeps his own clothes.
 - **Interface: a drone's HUD** (decided 2026-11-05). The fight seen through Bip's camera: dark
-  glass, cut corners, scan lines, a reticle as the watermark (on the status screen),
+  glass, cut corners, scan lines,
   monospaced data, cyan on ink. It dresses Aitor's dock; the fight's backdrop is always Gerard's
   ánima's, with two players too. Commands are panels with cut corners numbered `01`…; the open one
   lights up cyan.
