@@ -4,6 +4,7 @@ import { createExplorationUI } from './exploration-ui';
 import { createGame } from './game';
 import { type Direction } from './movement';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
+import { DAY_END, DAY_START, NIGHT, dayForStage, stage } from './days';
 import { createDialogueBanner } from './dialogue';
 import { createBattleUI } from './battle-ui';
 import { improvedBy } from './ecos';
@@ -112,10 +113,19 @@ const devJump = ((): { flags: StoryFlag[]; spot?: Spot; part?: MissionPart } | u
 })();
 const devStory = devJump?.flags;
 const story = new Story(devStory ?? []);
-// Development: ?day=<n> starts chapter 2 on that day, to see the Queen's spread (just dev-day).
+// Development: ?day=<n> starts chapter 2 on that day, to see the Queen's spread (just dev-day);
+// ?hour=<h> at that hour: 21 is night, and on the Meridiana the way home starts at the station.
+// ?night=<0–4>: the way home at night with her castle at that stage (`stage` in days.ts), the day
+// following from it and the ánimas gathered (just dev-night, the picker's «La vuelta a casa»).
+let nightJump: Spot | undefined;
 if (import.meta.env.DEV) {
-  const day = Number(new URLSearchParams(location.search).get('day'));
+  const query = new URLSearchParams(location.search), day = Number(query.get('day')), hour = Number(query.get('hour'));
+  const castle = query.get('night') === null ? NaN : Number(query.get('night'));
   if (Number.isInteger(day) && day > 1) story.days.clock.day = day;
+  if (Number.isInteger(hour) && hour >= DAY_START && hour <= DAY_END) story.days.clock.hour = hour;
+  if (story.adult && Number.isInteger(castle) && castle >= 0 && castle <= 4) story.days.clock = { day: dayForStage(castle, story.animas.length), hour: NIGHT };
+  const station = ENVIRONMENTS['meridiana-calle'].interactions.find(i => i.id === 'station-fabra-i-puig')!.cell;
+  if (story.night && (devJump?.spot?.environment === 'meridiana-calle' || Number.isInteger(castle))) nightJump = { environment: 'meridiana-calle', cell: { x: station.x + 1, z: station.z + 1 } };
 }
 // Who wears which class is a choice that comes and goes, so it lives in this browser, not in the story flags.
 const loadoutKey = 'gerard35.loadout.v1';
@@ -396,7 +406,9 @@ try {
     dev: import.meta.env.DEV ? {
       flags: () => story.saved,
       day: () => story.days.clock.day,
-      story: (at, day, missions) => { location.search = `?${new URLSearchParams({ story: at, ...(missions?.length ? { with: missions.join(',') } : {}), ...(day && day > 1 ? { day: String(day) } : {}) })}`; },
+      story: (at, day, missions, hour) => { location.search = `?${new URLSearchParams({ story: at, ...(missions?.length ? { with: missions.join(',') } : {}), ...(day && day > 1 ? { day: String(day) } : {}), ...(hour && hour !== DAY_START ? { hour: String(hour) } : {}) })}`; },
+      night: (castle, missions) => { location.search = `?${new URLSearchParams({ story: 'metro', night: String(castle), ...(missions?.length ? { with: missions.join(',') } : {}) })}`; },
+      nightNow: () => story.night ? stage(story.spread) : undefined,
       mission: (anima, part, day, missions) => {
         const others = missions?.filter(id => id !== anima) ?? [];
         location.search = `?${new URLSearchParams({ mission: anima, part, ...(others.length ? { with: others.join(',') } : {}), ...(day > 1 ? { day: String(day) } : {}) })}`;
@@ -452,7 +464,7 @@ try {
   /** The fight tester's fight now: it touches no story flag and helps as asked. */
   let testing: FightSetup | undefined;
   /** Where each fight is staged (game.ts): the dogs in the street, the minion and the guards in the palace. */
-  const FIGHT_PLACES = { dogs: 'maresme', possessed: 'maresme', 'palace-minion': 'palacio', 'palace-guards': 'palacio', cebollon: 'cardedeu-laberinto', cebolla: 'cardedeu-laberinto', plato: 'cardedeu-laberinto', escolta: 'cardedeu-laberinto', 'uri-vertigo': 'cardedeu-laberinto', 'crias-1': 'cardedeu-laberinto', 'crias-2': 'cardedeu-laberinto', 'crias-3': 'cardedeu-laberinto' } as const;
+  const FIGHT_PLACES = { dogs: 'maresme', possessed: 'maresme', 'palace-minion': 'palacio', 'palace-guards': 'palacio', 'night-guard': 'meridiana-calle', cebollon: 'cardedeu-laberinto', cebolla: 'cardedeu-laberinto', plato: 'cardedeu-laberinto', escolta: 'cardedeu-laberinto', 'uri-vertigo': 'cardedeu-laberinto', 'crias-1': 'cardedeu-laberinto', 'crias-2': 'cardedeu-laberinto', 'crias-3': 'cardedeu-laberinto' } as const;
   /** Starts a test fight; another chapter's party needs that chapter's Gerard, so it reloads there. */
   function startFight(setup: FightSetup) {
     if (setup.adult !== story.adult) {
@@ -569,6 +581,8 @@ try {
     sound: id => sfx.play(id),
     changed: () => { keepEcos(); storyChanged(); },
   });
+  // Whoever speaks wears their line's face in the world too, not only in the portrait.
+  dialogue.onSpeak = (line, talking) => game.speak(line?.speaker, line?.expression, talking);
   for (const light of HOUSE_LIGHTS) game.setLamp(light.id, homeLights.flat[light.id]);
   homeLights.onFlat((id, lamp) => game.setLamp(id, lamp));
   game.setLampLabels(id => {
@@ -656,7 +670,7 @@ try {
     // Development: the fight tester reloaded into the other chapter to start its fight (?fight=…).
     const fight = import.meta.env.DEV ? new URLSearchParams(location.search).get('fight') : null;
     // A story point stands Gerard where it happened (story-points.ts); the tester takes him to its own stage.
-    const { environment, cell } = (!fight && devJump?.spot) || story.resume;
+    const { environment, cell } = (!fight && (nightJump ?? devJump?.spot)) || story.resume;
     if (story.started && environment !== currentLocation) game.setEnvironment(environment, cell);
     storyChanged();
     storyEvent({ type: 'start' });

@@ -185,6 +185,8 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   possessed: [hex('#ff5fa8', .7, .7), hex('#a05ae0', .55, .7), hex('#ff8a6a', .6, .6), hex('#e04a9a', .6, .75)],
   'palace-minion': [hex('#e0409a', .65, .75), hex('#8a4ad6', .55, .75), hex('#ff7fc0', .6, .55), hex('#c03a8a', .6, .8)],
   'palace-guards': [hex('#c8306e', .65, .8), hex('#7a3ad6', .5, .8), hex('#ff5a4a', .55, .75), hex('#e0409a', .6, .8)],
+  // One of them in the street at night: her pink under the cold LED lamps.
+  'night-guard': [hex('#c8306e', .65, .8), white(5000, .45), hex('#2a4a8a', .5, .7), hex('#e0409a', .6, .8)],
   // Uri's fears: onion gold and tears, a dinner-table white, arcade neon, and the roof's violet dusk.
   cebollon: [hex('#e8c25a', .7, .7), hex('#8fd3ff', .55, .6), white(3000, .6), hex('#c89a3a', .6, .7)],
   cebolla: [hex('#e8c25a', .7, .7), hex('#8fd3ff', .55, .6), white(3000, .6), hex('#c89a3a', .6, .7)],

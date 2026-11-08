@@ -17,7 +17,7 @@ import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
-import { COSTS, DAY_END, DAY_START, EVENING, LATE, dusk, freshDays, readDays, spread, stage, type Activity, type Days } from './days.ts';
+import { COSTS, DAY_END, DAY_START, EVENING, LATE, NIGHT, WOKE_LATE, dusk, freshDays, isNight, readDays, spread, stage, type Activity, type Days } from './days.ts';
 import { ENVIRONMENTS } from './environments.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
@@ -74,7 +74,9 @@ export type StoryEvent =
   /** Gerard walked up to one of the story's triggers (`story.triggers`). */
   | { type: 'near'; id: string }
   /** The party came up out of a station after a trip. */
-  | { type: 'arrive'; station: string };
+  | { type: 'arrive'; station: string }
+  /** The party walked in through home's portal from the street (src/night.ts: at night, the day is over). */
+  | { type: 'home' };
 
 export type StoryEffect =
   | { kind: 'dialogue'; dialogue: Dialogue }
@@ -133,7 +135,7 @@ export type StoryEffect =
   | { kind: 'shout'; speaker: 'uri'; text: string; beat?: number };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
-export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | FearEncounter;
+export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | FearEncounter;
 /** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
 /** The ánimas Gerard can wake (Tecnópata is Aitor's). */
 export type GerardClass = Exclude<ClassId, 'tecnopata'>;
@@ -332,6 +334,8 @@ export class Story {
   get doomed() { return this.spread >= 1; }
   /** How far into the evening it is (0 by day, 1 at night): the light turns pinker. */
   get dusk() { return this.adult ? dusk(this.days.clock.hour) : 0; }
+  /** Night outside (docs/chapter-2.md § Night and the way home): the palace's monsters are out on the Meridiana. */
+  get night() { return this.adult && isNight(this.days.clock.hour); }
   /** Days loaded from the server: a newer epoch (a rewind elsewhere) replaces the flags too. */
   loadDays(value: unknown, story?: Iterable<string>) {
     const days = readDays(value);
@@ -430,7 +434,7 @@ export class Story {
     for (const flag of ['papagato', 'anima-nuria', 'luz-nuria', 'luz-uri'] as const) this.set(flag);
     this.nuria = freshRun();
     const door: StoryEffect = { kind: 'travel', environment: STREET, cell: { x: PLACES_NURIA.nuria.cell.x - 1, z: PLACES_NURIA.nuria.cell.z + 2 } };
-    return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), { kind: 'lights', people: ['nuria', 'uri'] }, { kind: 'anima', classId: 'papagato', kept: true }, ...this.spend('fight')];
+    return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), { kind: 'lights', people: ['nuria', 'uri'] }, { kind: 'anima', classId: 'papagato', kept: true }, ...this.spend('fight'), ...this.nightfall()];
   }
   /** What a fight's end means for the story, before any ánima grows. */
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
@@ -441,10 +445,14 @@ export class Story {
     if (event.won && fear) { if (!fear.respawn && !this.nuria.beaten.includes(fear.id)) this.nuria.beaten.push(fear.id); return []; }
     if (!event.won) {
       if (!this.adult) return [];
-      // Chapter 2: falling is waking up at home the next morning, with everything done kept.
-      return this.endDay('fall');
+      // Chapter 2: falling is waking up at home the next morning, with everything done kept;
+      // caught on the way home at night, late in the morning.
+      return this.endDay(event.encounter === 'night-guard' ? 'night-fall' : 'fall');
     }
-    if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten), ...this.spend('fight')];
+    // One of them beaten in the street: it melts where it stood (the game), the hunt goes on.
+    if (event.encounter === 'night-guard') return [];
+    // Through the guards is a milestone in her palace: night falls outside.
+    if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten), ...this.spend('fight'), ...this.nightfall()];
     if (event.encounter === 'palace-minion') {
       if (!this.set('wrapper-room')) return [];
       return [say(LINES.afterMatemagico), { kind: 'ambush' }];
@@ -587,11 +595,14 @@ export class Story {
     if (!this.adult || this.days.mornings.some(m => m.day === this.days.clock.day)) return;
     this.days.mornings = [...this.days.mornings, { day: this.days.clock.day, story: this.saved }].slice(-2);
   }
-  /** Hours go by: Aitor notices the evening, and at DAY_END the day is over wherever they are. */
+  /**
+   * Hours go by: Aitor notices the evening, then the night. The clock stops at DAY_END: at night the
+   * day only ends at home (through the portal, or in bed) or with a fall.
+   */
   private spend(activity: Activity): StoryEffect[] {
     const before = this.days.clock.hour, after = Math.min(DAY_END, before + COSTS[activity]);
     this.days.clock = { ...this.days.clock, hour: after };
-    if (after >= DAY_END) return this.endDay('night');
+    if (!isNight(before) && isNight(after)) return [{ kind: 'dialogue', dialogue: LINES_2.night }];
     if (before < LATE && after >= LATE) return [{ kind: 'dialogue', dialogue: LINES_2.late }];
     if (before < EVENING && after >= EVENING) return [{ kind: 'dialogue', dialogue: LINES_2.evening }];
     return [];
@@ -601,17 +612,27 @@ export class Story {
    * morning, when her power has spread a little more. If it has spread all the way, the flat
    * they wake up in is hers and the game is over.
    */
-  private endDay(why: 'night' | 'sleep' | 'fall'): StoryEffect[] {
+  /**
+   * Night falls at once, wherever they are: a friend's mission won, a milestone in her palace
+   * reached (docs/chapter-2.md § Night and the way home). Aitor says so, unless it already was.
+   */
+  private nightfall(): StoryEffect[] {
+    if (!this.adult || isNight(this.days.clock.hour)) return [];
+    this.days.clock = { ...this.days.clock, hour: NIGHT };
+    return [{ kind: 'dialogue', dialogue: LINES_2.night }];
+  }
+  private endDay(why: 'home' | 'sleep' | 'fall' | 'night-fall'): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     // Whatever Nuria's mission had reached is undone: the cats went back to her.
     this.nuria = freshRun();
     const firstFall = why === 'fall' && this.set('palace-tried');
-    this.days.clock = { day: this.days.clock.day + 1, hour: DAY_START };
+    // Beaten in the street at night, they sleep the morning away.
+    this.days.clock = { day: this.days.clock.day + 1, hour: why === 'night-fall' ? WOKE_LATE : DAY_START };
     this.remember();
     const home: StoryEffect = { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } };
-    const before: StoryEffect[] = why === 'night' ? [say(LINES_2.night)] : why === 'sleep' ? [say(LINES_2.sleep)] : [];
+    const before: StoryEffect[] = why === 'home' ? [say(LINES_2.homeSafe)] : why === 'sleep' ? [say(LINES_2.sleep)] : [];
     if (this.doomed) return [...before, { kind: 'fall' }, home, { kind: 'wake' }, say(LINES_2.doom), { kind: 'rise' }, { kind: 'doom' }];
-    const morning = firstFall ? LINES_2.wakeFirst : LINES_2.morning[stage(this.spread)];
+    const morning = firstFall ? LINES_2.wakeFirst : why === 'night-fall' ? LINES_2.wokeLate : LINES_2.morning[stage(this.spread)];
     return [...before, { kind: 'fall' }, home, { kind: 'wake' }, say(morning), { kind: 'rise' }];
   }
   /** Back to the morning before the end: that day's progress is lost, everything before it kept. */
@@ -814,7 +835,12 @@ export class Story {
         // Aitor is in the party from here on: a second player can take him (the hint shows only when that is new).
         return [home, { kind: 'wake' }, say(LINES.waking), { kind: 'rise' }, { kind: 'hint', id: 'duo' }];
       }
+      case 'home':
+        // In from the street at night: they made it, and the day is over.
+        return this.night ? this.endDay('home') : [];
       case 'near':
+        // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
+        if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard' }] : [];
         if (event.id !== 'tv') return this.nearNuria(event.id);
         if (!this.adult || !this.set('tv-news')) return [];
         // The ticker carries the R4 clue: seen on the TV, it is known.

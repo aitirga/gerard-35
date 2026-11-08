@@ -1,6 +1,6 @@
 /**
  * Days in Barcelona (docs/chapter-2.md § The Queen's advance): an unspoken countdown. Each day runs
- * from 08:00 to 22:00 and what the party does spends hours (a trip, a fight, a piano piece). Every
+ * from 08:00 into the night (the clock stops at 22:00) and what the party does spends hours (a trip, a fight, a piano piece). Every
  * morning La Reina Bubbaloo's power has spread a little further; each friend's ánima pushes it
  * back. If it reaches the end, Gerard wakes up in a flat that is already part of her castle, and
  * the only way on is back to the morning before. Nothing on screen counts: the light, the TV,
@@ -10,6 +10,15 @@
 export const DAY_START = 8, DAY_END = 22;
 /** When Aitor notices the evening, and when he wants to go home. */
 export const EVENING = 18, LATE = 20;
+/**
+ * When night has fallen (docs/chapter-2.md § Night and the way home): a friend's mission won or a
+ * milestone in her palace brings it at once; otherwise the clock gets there. At night the day no
+ * longer ends wherever they are: it ends when they get home, or fall.
+ */
+export const NIGHT = 21;
+export const isNight = (hour: number) => hour >= NIGHT;
+/** When they wake after being beaten on the way home at night: the morning is gone. */
+export const WOKE_LATE = 11;
 /** Hours each kind of thing takes. */
 export const COSTS = { metro: 1, fight: 2, piano: 2, cafe: 1 } as const;
 export type Activity = keyof typeof COSTS;
@@ -34,6 +43,16 @@ export function spread(day: number, animas: number) {
 }
 /** The same, as a stage for lines and headlines: 0 (it has just appeared) to 4 (the last day). */
 export function stage(value: number) { return Math.max(0, Math.min(4, Math.floor(value * 5))); }
+/**
+ * The first day her castle is at `wanted` stage with `animas` gathered (development: the picker's
+ * way home at night chooses the castle's stage, and the day follows).
+ */
+export function dayForStage(wanted: number, animas: number) {
+  const target = Math.max(0, Math.min(4, Math.round(wanted)));
+  let day = 1;
+  while (stage(spread(day, animas)) < target) day++;
+  return day;
+}
 /** How far into the evening it is: 0 until EVENING, 1 at DAY_END. */
 export function dusk(hour: number) { return Math.max(0, Math.min(1, (hour - EVENING) / (DAY_END - EVENING))); }
 

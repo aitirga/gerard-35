@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Story, STORY_FLAGS } from '../src/story.ts';
 import { PLACES, LEASH } from '../src/chapter-1.ts';
+import { LINES_2 } from '../src/chapter-2.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { canWalk } from '../src/movement.ts';
 
@@ -264,7 +265,7 @@ test('ánimas strengthen the party and thin out the palace guards', () => {
   assert.deepEqual(new Story(upTo('wrapper-room')).guarded, [], 'no guards in the dream');
 });
 
-test('days: things take hours, the evening is noticed, and at night the day is over', () => {
+test('days: things take hours, the evening is noticed, and night falls without ending the day', () => {
   const story = new Story(upTo('tv-news'));
   assert.deepEqual(story.clock, { day: 1, hour: 8 });
   story.handle({ type: 'interact', id: 'meridiana-piano' });
@@ -276,10 +277,46 @@ test('days: things take hours, the evening is noticed, and at night the day is o
   assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-balcony' })), ['dialogue', 'dialogue'], 'Aitor notices the evening');
   assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-piano' })), ['dialogue', 'dialogue'], 'and wants to go home late');
   assert.ok(story.dusk > 0 && story.dusk < 1, 'the light turns with the evening');
+  assert.equal(story.night, false);
+  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-balcony' })), ['dialogue', 'dialogue'], 'at 21:00 Aitor says night has fallen');
+  assert.equal(story.night, true);
   story.handle({ type: 'interact', id: 'meridiana-balcony' });
-  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-balcony' })), ['dialogue', 'dialogue', 'fall', 'travel', 'wake', 'dialogue', 'rise'], 'at 22:00 night falls wherever they are');
+  assert.deepEqual(story.clock, { day: 1, hour: 22 }, 'the clock stops at 22:00: the day only ends at home');
+  assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-balcony' })), ['dialogue']);
+  assert.deepEqual(story.clock, { day: 1, hour: 22 });
+});
+
+test('night: through the portal from the street the day is over; by day it is just home', () => {
+  const day = new Story(upTo('tv-news'));
+  assert.deepEqual(day.handle({ type: 'home' }), [], 'by day, coming home is nothing');
+  const story = new Story(upTo('tv-news'));
+  story.days.clock.hour = 21;
+  assert.deepEqual(beats(story.handle({ type: 'home' })), ['dialogue', 'fall', 'travel', 'wake', 'dialogue', 'rise']);
   assert.deepEqual(story.clock, { day: 2, hour: 8 });
-  assert.equal(story.dusk, 0);
+  assert.equal(story.night, false);
+});
+
+test('night: a guard in the street catches them; beaten, they wake late; winning lets the hunt go on', () => {
+  const story = new Story(upTo('tv-news'));
+  assert.deepEqual(story.handle({ type: 'near', id: 'night-1' }), [], 'no guards by day');
+  story.days.clock.hour = 21;
+  const caught = story.handle({ type: 'near', id: 'night-1' });
+  assert.deepEqual(beats(caught), ['dialogue', 'battle:night-guard']);
+  assert.deepEqual(story.handle({ type: 'battle', won: true, encounter: 'night-guard' }), []);
+  assert.equal(story.clock.day, 1);
+  assert.deepEqual(beats(story.handle({ type: 'battle', won: false, encounter: 'night-guard' })), ['fall', 'travel', 'wake', 'dialogue', 'rise']);
+  assert.deepEqual(story.clock, { day: 2, hour: 11 }, 'they sleep the morning away');
+});
+
+test('night falls after a milestone in her palace: the guards beaten', () => {
+  const story = new Story([...upTo('castle'), 'anima-nuria']);
+  assert.equal(story.night, false);
+  const won = story.handle({ type: 'battle', won: true, encounter: 'palace-guards' });
+  assert.equal(story.night, true);
+  assert.equal(won.at(-1).dialogue, LINES_2.night, 'Aitor says so');
+  const later = new Story([...upTo('castle'), 'anima-nuria']);
+  later.days.clock.hour = 21;
+  assert.ok(!later.handle({ type: 'battle', won: true, encounter: 'palace-guards' }).some(e => e.dialogue === LINES_2.night), 'not twice');
 });
 
 test('days: going to bed ends the day, and Aitor will not sleep before the news', () => {

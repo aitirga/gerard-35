@@ -142,8 +142,14 @@ export const LINES_2 = {
   /** As the day goes, Aitor notices it. */
   evening: both(aitor('Se está haciendo tarde. Mira qué luz… cada vez más rosa.')),
   late: both(aitor('Gerard, deberíamos ir volviendo. De noche no me fío de nada.')),
-  /** At 22:00, wherever they are, the day is over. */
-  night: both(aitor('Ya está. Es de noche y no puedo más.'), gerard('Mañana. Mañana seguimos.')),
+  /** Night falls: after a friend's mission or a milestone in her palace, or when the clock gets there. */
+  night: both(aitor('Ya es de noche, Gerard. Vámonos a casa.'), gerard('Y con cuidado. De noche ella no duerme.')),
+  /** Through home's portal at night: the day is over. */
+  homeSafe: both(aitor('Ya está. Dentro.'), gerard('Mañana. Mañana seguimos.')),
+  /** Caught on the way home and beaten: they wake late. */
+  wokeLate: both(gerard('¡NO!'), aitor('Las once… Nos han dejado KO en la Meridiana y no sé ni cómo llegamos a la cama.')),
+  /** One of the palace's monsters has caught them in the street. */
+  nightCaught: both(aitor('¡Gerard! ¡Lo tenemos encima!')),
   /** Going to bed early. */
   sleep: both(gerard('Me voy a dormir. A ver si mañana…'), aitor('Mañana. Descansa.')),
   sleepNotYet: both(aitor('¿A dormir? Si acabamos de levantarnos. Primero, la tele: no para de pitar.')),

@@ -49,8 +49,8 @@ export function clearLine(grid: readonly string[], a: Cell, b: Cell) {
   }
   return true;
 }
-export function sees(chaser: Chaser, player: Cell, grid: readonly string[], hidden: boolean) {
-  return !hidden && dist(chaser.position, player) <= chaser.spec.sight && clearLine(grid, chaser.position, player);
+export function sees(chaser: Chaser, player: Cell, grid: readonly string[], hidden: boolean, sight = chaser.spec.sight) {
+  return !hidden && dist(chaser.position, player) <= sight && clearLine(grid, chaser.position, player);
 }
 /** One step towards `target`, sliding along walls rather than stopping dead. */
 function step(chaser: Chaser, target: Cell, speed: number, dt: number, grid: readonly string[]) {
@@ -67,16 +67,18 @@ function step(chaser: Chaser, target: Cell, speed: number, dt: number, grid: rea
 
 /**
  * Moves a chaser one frame. `hidden`: Gerard stands somewhere it cannot see him (the onion leaves,
- * under the tablecloth). Returns what changed, if anything.
+ * under the tablecloth). `sight`: how far it sees right now, when that changes with where Gerard
+ * stands (in a lamp's light or in the dark, src/night.ts); its spec's otherwise. Returns what
+ * changed, if anything.
  */
-export function updateChaser(chaser: Chaser, dt: number, player: Cell, grid: readonly string[], hidden = false): ChaserEvent {
+export function updateChaser(chaser: Chaser, dt: number, player: Cell, grid: readonly string[], hidden = false, sight?: number): ChaserEvent {
   const spec = chaser.spec;
   if (chaser.mode === 'resting') {
     chaser.timer -= dt;
     if (chaser.timer <= 0) chaser.mode = 'return';
     return undefined;
   }
-  const seen = sees(chaser, player, grid, hidden);
+  const seen = sees(chaser, player, grid, hidden, sight);
   if (chaser.mode !== 'chase' && seen) { chaser.mode = 'chase'; chaser.timer = 0; return 'spotted'; }
   if (chaser.mode === 'chase') {
     chaser.timer = seen ? 0 : chaser.timer + dt;

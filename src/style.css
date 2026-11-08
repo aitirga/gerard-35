@@ -946,7 +946,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .status-hero { display: flex; flex-direction: column; min-height: 0; gap: 12px; }
 .status-portrait { position: relative; flex: 1; min-height: 120px; background: linear-gradient(155deg, #f3cf7828, transparent); border-bottom: 3px solid var(--sheet-accent); }
 .status-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(5px 0 0 #f3cf7830); }
-.portrait-art, .portrait-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.portrait-art, .portrait-art svg, .portrait-art img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .portrait-scarf path, .portrait-scarf circle { fill: var(--scarf); stroke: #0003; stroke-width: .3; }
 .portrait-initial { position: absolute; inset: 0; display: grid; place-content: center; font: italic 900 38px 'Manrope', sans-serif; color: #9fc3d9; background: #9fc3d91a; }
 .status-name h2 { font-size: clamp(28px, 3.4cqi, 40px); }
@@ -1503,6 +1503,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .jump-arc h4 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 6px 1px 12px; padding: 4px 0 3px; border-bottom: 1px solid var(--ui-line); font-size: 11px; font-weight: 700; color: var(--ui-paper); }
 .jump-arc h4 small { font-size: 9.5px; font-weight: 500; color: var(--ui-muted); }
 .jump-row span { margin-right: 4px; }
+/* The way home at night's castle stages: long names, so they wrap. */
+.jump-castle { flex-wrap: wrap; row-gap: 4px; }
 .jump-row button, .fight-chips button { padding: 4px 9px; border: 1px solid var(--ui-line); border-radius: 2px; background: none; font-size: 11px; font-weight: 500; transition: background .12s, border-color .12s; }
 .jump-row button:hover, .fight-chips button:hover { border-color: #f3efdc55; }
 .jump-row button[aria-pressed="true"], .fight-chips button[aria-pressed="true"] { background: var(--ui-paper); border-color: var(--ui-paper); color: var(--ui-ink); }

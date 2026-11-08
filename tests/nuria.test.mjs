@@ -132,6 +132,8 @@ test('beating Vertitrón keeps Papagato, the cats and two lights, one for Gerard
   assert.deepEqual(won.find(e => e.kind === 'anima'), { kind: 'anima', classId: 'papagato', kept: true });
   assert.ok(!story.nuria.lent && story.classes.includes('papagato'));
   assert.ok(story.npcs('cardedeu').some(n => n.id === 'uri'), 'Uri is home with Nuria');
+  // A friend's mission won: night falls, and the way home is in the dark (src/night.ts).
+  assert.ok(story.night, 'night falls after the mission');
 });
 
 test('giving up hands the cats back: Aitor asks first at the station, and falling counts too', () => {

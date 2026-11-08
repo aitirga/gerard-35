@@ -1,7 +1,8 @@
 import * as pc from 'playcanvas';
 import { FreeMovement, SCREEN_VECTORS, canWalk, facingToward, screenToGrid, type Cell, type Direction, type Stick } from './movement';
 import { ENVIRONMENTS, INTERACTION_REACH, propCells, type EnvironmentId, type Interaction } from './environments';
-import { BUBBALOO, buildScenery } from './scenery';
+import { BUBBALOO, NIGHT_LIGHT, buildScenery } from './scenery';
+import { createNightLights, type FixedLight, type NightLights } from './night-lights';
 import { type Dialogue } from './dialogue';
 import { createBattleScene, type FightStage } from './battle-scene';
 import { type BattleEffect, type BattlePhase, type BattleState, type ClassId, type Encounter } from './battle';
@@ -10,7 +11,8 @@ import { createPalace, createPalaceApproach, footingOf, type PalaceApproach } fr
 import { createQueenHands } from './queen-hands';
 import { STREET_END_AREA, WanderingPack } from './encounters';
 import { createMinion } from './minion';
-import { WalkAnimation, idlePose } from './walk-animation';
+import { WalkAnimation, carriage, idlePose, poseLimbs } from './walk-animation';
+import { faceOf } from './face';
 import { createEffects, type FightFx } from './effects';
 import type { Disintegration } from './disintegrate';
 import type { ParticleBody } from './particles';
@@ -19,7 +21,7 @@ import { createSilhouettes, occlusion } from './occlusion';
 import { cameraOffset, createCameraOrbit, towardCamera } from './camera-orbit';
 import { lighting } from './lighting';
 import { createGroundContact } from './ground-contact';
-import { buildCharacter, type CharacterSpec } from './character-model';
+import { CREATURES, buildCharacter, loadCharacterModels, showFeet, type CharacterModel, type CharacterSpec } from './character-model';
 import { onTrigger, type Partner, type Story, type StoryEvent } from './story';
 import type { ItemId } from './items';
 import { Follower, pathTo } from './follower';
@@ -33,7 +35,8 @@ import { createFears } from './fears';
 import { mergeParts } from './props';
 import { buildTower, type Tower } from './tower-scene';
 import { ringOf } from './tower';
-import { createChaser, rest, updateChaser, type Chaser } from './chasers';
+import { createChaser, rest, updateChaser, type Chaser, type ChaserSpec } from './chasers';
+import { CLIMB, FIRST_CLEAR, HIDING_KINDS, RISE_CLEAR, hiddenAt, hunterSpec, huntersGrid, isLit, litLamps, nightTier, risingAt, sightOf, sizeUp, type NightTier } from './night';
 import { BODIES, createCrowd } from './crowd';
 import { dueMark, streetProgress, streetTone } from './street-unease';
 import { buildPortal, type Portal } from './fear-portal';
@@ -57,12 +60,10 @@ function playerCharacter(adult = false) {
   const requested = import.meta.env.DEV ? new URLSearchParams(location.search).get('character') : null;
   return CHARACTERS[`./characters/${requested}.json`] ?? CHARACTERS[adult ? './characters/gerard-adult.json' : './characters/gerard-child.json'];
 }
-/** Gerard at 35 is drawn taller than the boy (provisional model, docs/lore.md). */
+/** Gerard at 35 is drawn taller than the boy (docs/lore.md). */
 const ADULT_SCALE = MERIDIANA_BED.sleepers.gerard.scale;
 /** Aitor is a little taller than Gerard. */
 const AITOR_SCALE = MERIDIANA_BED.sleepers.aitor.scale;
-/** Hip height in the character rigs (`rig.leg`): lying down and sitting up pivot on it. */
-const LEG_PIVOT = .48;
 /** How far Aitor's hand sits above Gerard's when it rests on the back of it. */
 const HAND_STACK = .17;
 /** How far apart two players may walk before the one ahead is held back, so both stay on screen. */
@@ -181,6 +182,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   const player = new pc.Entity('Jugador');
   app.root.addChild(player);
   // Gerard's model: the boy in chapter 1, the man at 35 once he wakes up (`dress`).
+  await loadCharacterModels(app, [...Object.values(CHARACTERS), ...Object.values(CREATURES)]);
   let rig = buildCharacter(playerCharacter(), player), grownUp = false;
   player.setPosition(0, 0.06, 0);
   let plantFeet = createGroundContact(player, rig.feet);
@@ -467,6 +469,80 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   /** How long a pack of young stays away once beaten, and how far from Gerard it comes back. */
   const RESPAWN = 40, RESPAWN_CLEAR = 10;
+  /**
+   * The way home at night (src/night.ts, docs/chapter-2.md § Night and the way home): out on the
+   * Meridiana after dark, the palace's guards come up out of the vent grates and hunt the party,
+   * more with each train under the median. Their grid has the portal's light as a wall; `still` is
+   * how long Gerard has stood still; `seen` and `hinted`, Aitor's two lines said.
+   */
+  let nightHunt: {
+    scene: string; tier: NightTier; specs: ChaserSpec[]; next: number; lamps: Cell[]; hides: Cell[]; portal: Cell; grid: string[];
+    grates: Cell[]; seen: boolean; hinted: boolean; still: number;
+  } | undefined;
+  /**
+   * Night outside (src/night-lights.ts): how far it has fallen on screen (it fades in over a few
+   * seconds when it falls with the party outdoors), and the lamps lit for real near Gerard.
+   */
+  let nightShown = 0, nightLights: NightLights | undefined;
+  /** Lights that never move at night, beyond the lamps: home's portal, the station halls, VivaGym's window. */
+  function fixedNightLights(): FixedLight[] {
+    const out: FixedLight[] = environment.interactions.filter(i => i.id.startsWith('station-')).map(i => ({ cell: i.cell, height: 1.2, colour: '#ffe1ad', intensity: 1.4, range: 5 }));
+    const portal = environment.interactions.find(i => i.id === 'meridiana-portal');
+    if (portal) out.push({ cell: { x: portal.cell.x, z: portal.cell.z - .6 }, height: 3, colour: '#ffcf8f', intensity: 2.6, range: 6.5 },
+      { cell: { x: portal.cell.x - 4, z: portal.cell.z - 1.6 }, height: 2.2, colour: '#dcecff', intensity: 1.2, range: 6 });
+    return out;
+  }
+  function lightNight(dt: number, animate: boolean) {
+    const wanted = story.night && scenery.outdoor ? 1 : 0;
+    if (nightShown !== wanted) {
+      nightShown = animate ? nightShown + Math.sign(wanted - nightShown) * Math.min(Math.abs(wanted - nightShown), dt / 3) : wanted;
+      scenery.setNight(nightShown);
+    }
+    if (nightShown > 0 && !nightLights && environment.geo) {
+      const height = (style?: string) => style === 'mast' ? 7.8 : style === 'seafront' ? 8.5 : style === 'led' ? 4.3 : 3.1;
+      nightLights = createNightLights(app, (x, z) => scenery.toWorld(x, z), environment.props.filter(p => p.kind === 'lamp').map(p => ({ cell: { x: p.x, z: p.z }, height: height(p.style) })), fixedNightLights());
+    }
+    if (nightShown === 0 && nightLights) { nightLights.destroy(); nightLights = undefined; }
+    nightLights?.update(scenery.toWorld(movement.position.x, movement.position.z), nightShown);
+  }
+  /** The guards out in the street are smaller than the palace's: a wardrobe still, a narrower one. */
+  const NIGHT_GUARD_SCALE = 1.35;
+  function huntAtNight(dt: number) {
+    if (environment.id !== 'meridiana-calle' || !story.night) { nightHunt = undefined; return; }
+    if (nightHunt?.scene === environment.id) { nightHunt.still = movement.walking ? 0 : nightHunt.still + dt; return; }
+    const tier = nightTier(stage(story.spread));
+    const cellOf = (p: { x: number; z: number }) => ({ x: p.x, z: p.z });
+    const portal = environment.interactions.find(i => i.id === 'meridiana-portal')?.cell ?? environment.spawn;
+    const grates = environment.props.filter(p => p.kind === 'grate').map(cellOf);
+    nightHunt = {
+      scene: environment.id, tier, specs: [], next: 1, portal, grates, seen: false, hinted: false, still: 0,
+      lamps: litLamps(environment.props.filter(p => p.kind === 'lamp').map(cellOf), tier),
+      hides: environment.props.filter(p => (HIDING_KINDS as readonly string[]).includes(p.kind)).map(cellOf),
+      grid: huntersGrid(environment.grid, portal),
+    };
+    riseAt(risingAt(grates, movement.cell, tier.hunters, FIRST_CLEAR));
+  }
+  /** Guards climb out of these grates, each in a puff of the trains' draught. */
+  function riseAt(cells: Cell[]) {
+    if (!nightHunt) return;
+    for (const cell of cells) {
+      if (nightHunt.specs.length >= nightHunt.tier.hunters * 2) return;
+      nightHunt.specs.push(hunterSpec(nightHunt.next++, cell, nightHunt.grid, nightHunt.tier));
+      const at = scenery.toWorld(cell.x, cell.z);
+      effects.emit('draught', at, 9, .5);
+      effects.emit('poof', new pc.Vec3(at.x, scenery.groundHeight(at.x, at.z) + .5, at.z), 14, .4);
+    }
+  }
+  /** Aitor sizes them up the first time they show, and once, chased near cover, says where to hide. */
+  function nightLines(h: { chaser: Chaser }) {
+    if (!nightHunt || !mateHere()) return;
+    const near = Math.hypot(h.chaser.position.x - movement.position.x, h.chaser.position.z - movement.position.z);
+    if (!nightHunt.seen && (h.chaser.mode === 'chase' || near < 14)) { nightHunt.seen = true; tetherLine = { text: sizeUp(story.animas.length), until: clock + 4 }; return; }
+    if (nightHunt.seen && !nightHunt.hinted && h.chaser.mode === 'chase' && (!tetherLine || tetherLine.until < clock)
+      && nightHunt.hides.some(c => Math.hypot(c.x - movement.position.x, c.z - movement.position.z) < 7)) {
+      nightHunt.hinted = true; tetherLine = { text: '¡Ahí detrás! Y ni te muevas.', until: clock + 3 };
+    }
+  }
   function dressScene() {
     tower?.destroy(); tower = undefined; summit?.destroy(); summit = undefined; summitKneel = undefined;
     portal?.destroy(); portal = undefined; streetSaid.clear(); streetLine = undefined;
@@ -518,8 +594,16 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     return model;
   }
   function huntFears(dt: number) {
-    const wanted = story.fears(environment.id);
-    hunters = hunters.filter(h => { const keep = wanted.some(f => f.id === h.id); if (!keep) { partFrom(h.model); h.model.destroy(); } return keep; });
+    huntAtNight(dt);
+    const wanted = story.fears(environment.id), night = nightHunt?.specs ?? [];
+    hunters = hunters.filter(h => { const keep = wanted.some(f => f.id === h.id) || night.some(s => s.id === h.id); if (!keep) { partFrom(h.model); h.model.destroy(); } return keep; });
+    for (const spec of night) if (!hunters.some(h => h.id === spec.id)) {
+      const model = minion.root.clone(); model.enabled = true; model.setLocalScale(NIGHT_GUARD_SCALE, NIGHT_GUARD_SCALE, NIGHT_GUARD_SCALE);
+      castRoot.addChild(model);
+      // Climbing out of the grate, it sees nothing yet.
+      const chaser = createChaser(spec); chaser.mode = 'resting'; chaser.timer = CLIMB;
+      hunters.push({ id: spec.id, model, respawn: false, away: 0, chaser });
+    }
     for (const spec of wanted) if (!hunters.some(h => h.id === spec.id)) {
       const model = huntingModel(spec.encounter);
       castRoot.addChild(model); mergeHunter(model);
@@ -540,9 +624,17 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       }
       if (!battle && !cutscene && !paused) {
         // In small steps, so a slow frame never carries a fear through a wall.
+        // At night in the street: the dark hides, a lamp's light gives Gerard away, cover hides him still.
+        const nightly = nightHunt && h.id.startsWith('night-') ? nightHunt : undefined;
+        const lit = !!nightly && isLit(movement.position, nightly.lamps);
+        const hidden = !!nightly && hiddenAt(movement.position, nightly.still > .4, lit, nightly.hides, nightly.portal);
+        const grid = nightly ? nightly.grid : environment.grid;
         let event: ReturnType<typeof updateChaser>;
-        for (let left = Math.min(dt, .5); left > 0 && !event; left -= .05) event = updateChaser(h.chaser, Math.min(.05, left), movement.position, environment.grid);
+        for (let left = Math.min(dt, .5); left > 0 && !event; left -= .05) {
+          event = updateChaser(h.chaser, Math.min(.05, left), movement.position, grid, hidden, nightly && sightOf(nightly.tier, lit, h.chaser.mode === 'chase'));
+        }
         if (event === 'spotted') { effects.emit('spark', h.model.getPosition().clone().add(new pc.Vec3(0, 2, 0)), 16, .35); }
+        if (nightly) nightLines(h);
         if (event === 'caught') { rest(h.chaser); fightingHunter = h.id; clearInput(); movement.walking = false; callbacks.onStory({ type: 'near', id: h.id }); }
       }
       chased ||= h.chaser.mode === 'chase';
@@ -840,7 +932,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       : environment.id === 'meridiana' ? (story.doomed ? 1 : spread * .25) : 0;
     // Inside her palace in chapter 2, each zone of the school says how far she has crept in.
     if (environment.palace?.theme) toneTarget = environment.palace.theme.her;
-    if (story.adult && !environment.palace) toneTarget = Math.min(1, Math.max(toneTarget, story.dusk * .6));
+    // At night the dusk's pink gives way to the dark: only a little of her stays in the haze, more as she spreads.
+    if (story.adult && !environment.palace) toneTarget = Math.min(1, Math.max(toneTarget, story.night ? .1 + spread * .3 : story.dusk * .6));
     sceneTone = toneTarget;
     updateTV(); updateJar(); settleHomeCats(); overgrow(); schoolDoorway();
     // Bernat first steps out of his own front door; scene changes place a partner beside Gerard instead.
@@ -1194,7 +1287,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   function sleeperDuvet(material: pc.StandardMaterial, who: Sleeper, edge: number) {
     const sleeper = MERIDIANA_BED.sleepers[who], half = new pc.Entity('Nórdico sobre el durmiente'); app.root.addChild(half);
     half.addComponent('render', { type: 'box', material, castShadows: true, receiveShadows: true });
-    const foot = MERIDIANA_BED.z - MERIDIANA_BED.length / 2 + .09, top = sleeper.rest.z + LEG_PIVOT * sleeper.scale - .02;
+    const foot = MERIDIANA_BED.z - MERIDIANA_BED.length / 2 + .09, top = sleeper.rest.z + sleeper.hip * sleeper.scale - .02;
     const at = scenery.toWorld((edge + MERIDIANA_BED.x) / 2, (foot + top) / 2);
     half.setPosition(at.x, MERIDIANA_BED.duvetTop, at.z); half.setLocalScale(Math.abs(edge - MERIDIANA_BED.x) + .02, 1, top - foot);
     return half;
@@ -1248,7 +1341,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (axis.length() < 1e-5) return;
     arm.setLocalRotation(new pc.Quat().slerp(pc.Quat.IDENTITY, new pc.Quat().setFromAxisAngle(axis.normalize(), angle), reach));
   }
-  function poseSleeper(entity: pc.Entity, model: ReturnType<typeof buildCharacter>, who: Sleeper) {
+  function poseSleeper(entity: pc.Entity, model: CharacterModel, who: Sleeper) {
     const pose = wakePose(who, waking!);
     const p = scenery.toWorld(pose.x, pose.z);
     entity.setLocalEulerAngles(pose.pitch, 0, 0);
@@ -1259,9 +1352,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     model.head.setLocalEulerAngles(0, 0, 0);
     const stride = pose.walking && !reducedMotion.matches ? Math.sin((waking! - 3.55) * Math.PI * 8) * 22 : 0;
     model.limbs.forEach((limb, i) => limb.setLocalEulerAngles(i % 2 === 0 ? pose.leg + stride * (i === 0 ? 1 : -1) : stride * (i === 1 ? -1 : 1) * .8, 0, 0));
-    model.eyes.forEach((eye, i) => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, model.eyeHeights[i] * Math.max(.05, pose.eyes), s.z); });
     // Barefoot under the duvet: the shoes come back as the legs swing out.
-    model.feet.forEach(foot => { foot.enabled = waking! >= SLIDE_START[who]; });
+    showFeet(model, waking! >= SLIDE_START[who]);
     if (who === 'gerard') {
       // Asleep: his hand out towards Aitor, a bad dream turning his head.
       const asleep = 1 - since(.9, .6);
@@ -1314,7 +1406,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     waking = undefined; bedroom = undefined;
     room.duvets.gerard.destroy(); room.duvets.aitor.destroy(); room.material.destroy(); room.daylight.destroy();
     player.setLocalEulerAngles(0, 0, 0); mates.aitor.entity.setLocalEulerAngles(0, 0, 0);
-    for (const foot of [...rig.feet, ...mates.aitor.rig.feet]) foot.enabled = true;
+    showFeet(rig, true); showFeet(mates.aitor.rig, true);
     positionPlayer();
     setPartnerFree(partnerWanted);
     mates.aitor.follower.seed(pathTo(environment.grid, mates.aitor.follower.position, movement.cell, sceneCells()));
@@ -1340,7 +1432,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   /** A fight inside the palace: the minion of chapter 1, or the guards before the curtain in chapter 2. */
   function startPalaceFight(encounter: Exclude<Encounter, 'dogs'> = 'palace-minion') {
-    const fear = (FEAR_ENCOUNTERS as readonly string[]).includes(encounter);
+    // Uri's fears and the guards loose on the Meridiana at night fight where they caught the party.
+    const fear = (FEAR_ENCOUNTERS as readonly string[]).includes(encounter) || encounter === 'night-guard';
     if (battle || (!fear && environment.id !== 'palacio')) return;
     clearInput();
     movement.teleport(environment.grid, movement.cell);
@@ -1373,7 +1466,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (fight === 'palace-minion') return PALACE_STAGE;
     if (fight === 'palace-guards') return PLACES_2.guardStage;
     if (fight === 'uri-vertigo') return PLACES_NURIA.summit.stage;
-    if ((FEAR_ENCOUNTERS as readonly string[]).includes(fight)) return fearStage ?? movement.cell;
+    if ((FEAR_ENCOUNTERS as readonly string[]).includes(fight) || fight === 'night-guard') return fearStage ?? movement.cell;
     // The street dogs at their end of the street; the fight tester anywhere else, where Gerard stands.
     return environment.id === 'maresme' ? pack.area.stage : movement.cell;
   }
@@ -1464,6 +1557,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       // A pack of young beaten goes away for a while, then comes back to its round.
       const caught = hunters.find(h => h.id === fightingHunter);
       if (caught?.respawn && battle.phase === 'won') { caught.away = RESPAWN; partFrom(caught.model); }
+      // A guard beaten in the street melts where it stood (huntFears takes it apart); the others hunt on.
+      if (caught && nightHunt && caught.id.startsWith('night-') && battle.phase === 'won') nightHunt.specs = nightHunt.specs.filter(s => s.id !== caught.id);
       if (battle.encounter === 'uri-vertigo' && battle.phase === 'won' && summit) summitKneel = { t: 0 };
       // A fall keeps where the fight stood and who started it, so fighting it again stages it there.
       if (battle.phase !== 'lost') { fightingHunter = undefined; fearStage = undefined; }
@@ -1596,11 +1691,16 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   function setEnvironment(id: EnvironmentId, destination?: Cell, exact?: { x: number; z: number }) {
     if (battle) return;
     clearInput();
+    // In through home's portal from the street: at night that is the day over (story `home`), once the flat is there.
+    if (environment.id === 'meridiana-calle' && id === 'meridiana') queueMicrotask(() => callbacks.onStory({ type: 'home' }));
     const from = movement.position, was = scenery.toWorld(from.x, from.z);
     const along = exact ? { mate: mateHere() && { ...mateHere()!.follower.position }, aitor: free?.position, cats: catWalk && [{ ...catWalk.lead.position }, { ...catWalk.back.position }] } : undefined;
     const said = exact ? new Set(streetSaid) : undefined;
     shift = undefined;
     tv?.destroy(); tv = undefined; overgrowth?.destroy(); overgrowth = undefined;
+    nightLights?.destroy(); nightLights = undefined;
+    // Each time they come out onto the street at night is a new hunt, round where they come out.
+    nightHunt = undefined;
     scenery.destroy();
     environment = ENVIRONMENTS[id];
     scenery = buildScenery(app, environment);
@@ -1619,6 +1719,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     refreshStory();
     // A new scene opens in its final light; only the story's turn fades. Its colour look cross-fades.
     tone = toneTarget; scenery.setTone(tone); post.setScene(id);
+    // Night is already there when they arrive.
+    nightShown = story.night && scenery.outdoor ? 1 : 0; scenery.setNight(nightShown);
     const mate = mateHere();
     if (mate) placeMate(mate);
     overview = false;
@@ -1708,7 +1810,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    */
   const battleLook = new pc.Vec2(), battleAim = new pc.Vec2();
   /** A train under the street (the Meridiana's median): whether it runs, where it is along x in cells, its way and the wait for the next. */
-  const train = { running: false, x: 0, way: 1, wait: 6, scene: '', grates: [] as { x: number; z: number }[] };
+  const train = { running: false, x: 0, way: 1, wait: 6, scene: '', risen: 0, grates: [] as { x: number; z: number }[] };
   app.on('update', (dt: number) => {
     const delta = Math.min(dt, 0.05);
     stepDiffusion(dt);
@@ -1801,7 +1903,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const animate = !reducedMotion.matches;
     portal?.update(paused ? 0 : delta, streetNear, animate);
     hiss();
-    const pose = walk.update(delta * (running() && walking ? 2 : 1), !!walking, animate);
+    const pose = walk.update(delta * (running() && walking ? 2 : 1), !!walking, animate, .38, running() && !!walking);
     clock += delta;
     // Each footfall kicks up a small puff under the planted shoe.
     if (walking && animate && Math.sign(pose.stride) !== Math.sign(lastStride) && Math.abs(pose.stride) > 1) {
@@ -1814,12 +1916,18 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const turn = ((facing - visualFacing + 540) % 360) - 180;
     visualFacing += turn * (reducedMotion.matches ? 1 : 1 - Math.exp(-delta / .065));
     visualFacing = ((visualFacing + 180) % 360 + 360) % 360 - 180;
-    rig.body.setLocalEulerAngles(0, visualFacing, pose.sway);
-    rig.limbs.forEach((limb, i) => limb.setLocalEulerAngles(pose.stride * (i === 0 || i === 3 ? 1 : -1) * (i % 2 ? .8 : 1), 0, 0));
-    rig.body.setLocalPosition(0, 0, 0);
+    // They carry themselves into the walk; at rest their weight shifts slowly from one foot to the other.
+    const carried = carriage(pose, turn), settle = animate ? Math.sin(clock * .55) * 1.1 * resting : 0;
+    rig.body.setLocalEulerAngles(carried.pitch, visualFacing + carried.twist, carried.roll + settle);
+    poseLimbs(rig, pose, idle.breathe, resting);
+    const across = visualFacing * pc.math.DEG_TO_RAD, hips = carried.shift + settle * .006;
+    rig.body.setLocalPosition(Math.cos(across) * hips, 0, -Math.sin(across) * hips);
     rig.body.setLocalScale(1, 1 + idle.breathe * .016 * resting, 1);
-    rig.head.setLocalEulerAngles(-idle.breathe * 2 * resting, idle.look * 16 * resting, 0);
-    rig.eyes.forEach((eye, i) => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, rig.eyeHeights[i] * (animate ? idle.blink : 1), s.z); });
+    faceOf(rig.body).update(delta, {
+      animate, resting, awake: waking === undefined ? 1 : wakePose('gerard', waking).eyes,
+      // The head goes into a turn first and stays level as the body leans and sways under it.
+      turn: Math.max(-28, Math.min(28, turn * .45)) * pose.weight - carried.twist, level: carried.pitch * .7, steady: carried.roll * .6,
+    });
     if (waking !== undefined) poseSleeper(player, rig, 'gerard');
     else {
       player.setLocalEulerAngles(0, 0, 0);
@@ -1834,20 +1942,28 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const at = matePosition(mate);
       const moving = driven ? free!.walking && !stopped() && !document.querySelector('#hud[data-dialogue]') : mate.follower.walking || nudged(mate.follower);
       const fast = driven ? partnerRunning && story.canRun : running();
-      const matePose = mate.walk.update(delta * (fast && moving ? 2 : 1), moving && !paused, animate);
+      const matePose = mate.walk.update(delta * (fast && moving ? 2 : 1), moving && !paused, animate, .38, fast);
       const p = scenery.toWorld(at.x, at.z);
       const hop = driven && free!.bouncing && animate ? Math.sin(free!.progress * Math.PI) * .18 : 0;
       mate.entity.setPosition(p.x, 0.09 + hop, p.z);
       const facingGerard = !driven && !mate.follower.walking && story.companion !== 'stalled';
       const yaw = driven ? partnerFacing : facingGerard ? facingToward(movement.position.x - at.x, movement.position.z - at.z) : mate.follower.facing;
-      mate.rig.body.setLocalEulerAngles(0, yaw, matePose.sway);
-      mate.rig.limbs.forEach((limb, i) => limb.setLocalEulerAngles(matePose.stride * (i === 0 || i === 3 ? 1 : -1) * (i % 2 ? .8 : 1), 0, 0));
+      const mateIdle = idlePose(clock, 1.7), mateRest = animate && !battle ? 1 - matePose.weight : 0;
+      const mateCarried = carriage(matePose), mateSettle = animate ? Math.sin(clock * .47 + 2) * 1.1 * mateRest : 0;
+      mate.rig.body.setLocalEulerAngles(mateCarried.pitch, yaw + mateCarried.twist, mateCarried.roll + mateSettle);
+      poseLimbs(mate.rig, matePose, mateIdle.breathe, mateRest);
+      const mateAcross = yaw * pc.math.DEG_TO_RAD, mateHips = mateCarried.shift + mateSettle * .006;
+      mate.rig.body.setLocalPosition(Math.cos(mateAcross) * mateHips, 0, -Math.sin(mateAcross) * mateHips);
+      // Alive too: they breathe, look about, blink and feel on their own time, not Gerard's.
+      mate.rig.body.setLocalScale(1, 1 + mateIdle.breathe * .016 * mateRest, 1);
+      faceOf(mate.rig.body).update(delta, { animate, resting: mateRest, awake: waking !== undefined && mate.id === 'aitor' ? wakePose('aitor', waking).eyes : 1, turn: -mateCarried.twist, level: mateCarried.pitch * .7, steady: mateCarried.roll * .6 });
       if (waking !== undefined && mate.id === 'aitor') poseSleeper(mate.entity, mate.rig, 'aitor');
       else { mate.entity.setLocalEulerAngles(0, 0, 0); mate.plant(scenery.groundHeight, hop); }
     }
     for (const npc of npcs) {
       const dx = movement.position.x - npc.cell.x, dz = movement.position.z - npc.cell.z;
       if (Math.hypot(dx, dz) < 4) npc.body.setLocalEulerAngles(0, facingToward(dx, dz), 0);
+      if (!npc.cat) faceOf(npc.body).update(delta, { animate });
       // A cat waiting as a character sits and breathes; turning to Gerard it shifts its paws.
       npc.cat?.animate(delta, { animate, sit: 1 });
     }
@@ -1898,11 +2014,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       tone = animate ? tone + Math.sign(toneTarget - tone) * Math.min(Math.abs(toneTarget - tone), delta / 3.5) : toneTarget;
       scenery.setTone(tone);
     }
-    camera.camera!.clearColor = post.clear(clear.lerp(dayClear, BUBBALOO.clear, tone));
+    lightNight(delta, animate);
+    camera.camera!.clearColor = post.clear(clear.lerp(dayClear, BUBBALOO.clear, tone).lerp(clear, NIGHT_LIGHT.clear, scenery.night));
     battleScene.update(shown, animate);
     // Traffic waits out fights and the pause menu; otherwise it stops for Gerard and his partner.
     const partner = mateHere();
-    scenery.setStreet(effects.weather.rain, story.dusk);
+    scenery.setStreet(effects.weather.rain, Math.max(story.dusk, scenery.night));
     // Now and then a train runs under the street: its draught puffs out of the vent grates one after
     // another as it passes beneath them (the Meridiana's median, over the L1 and the Rodalies).
     if (train.scene !== environment.id) { train.scene = environment.id; train.grates = environment.props.filter(p => p.kind === 'grate'); train.running = false; train.wait = 6; }
@@ -1911,12 +2028,17 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       if (!train.running) { train.running = true; train.x = train.way > 0 ? start : end; }
       const from = train.x;
       train.x += train.way * 11 * delta;
-      for (const g of train.grates) if ((g.x - from) * (g.x - train.x) <= 0) effects.emit('draught', scenery.toWorld(g.x, g.z), 9, .5);
-      if (train.x < start || train.x > end) { train.running = false; train.way = -train.way; train.wait = 30 + Math.random() * 40; }
+      for (const g of train.grates) if ((g.x - from) * (g.x - train.x) <= 0) {
+        effects.emit('draught', scenery.toWorld(g.x, g.z), 9, .5);
+        // At night each train brings up more of them, never in the party's face.
+        if (nightHunt && train.risen < nightHunt.tier.perTrain && Math.hypot(g.x - movement.position.x, g.z - movement.position.z) >= RISE_CLEAR) { train.risen++; riseAt([{ x: g.x, z: g.z }]); }
+      }
+      if (train.x < start || train.x > end) { train.running = false; train.way = -train.way; train.risen = 0; train.wait = nightHunt ? nightHunt.tier.trainEvery : 30 + Math.random() * 40; }
     }
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
       battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
-    silhouettes.update(partner ? [player, partner.entity] : [player]);
+    // In bed nothing needs finding: under the duvet is where their legs belong.
+    silhouettes.update(bedroom ? [] : partner ? [player, partner.entity] : [player]);
     // Particles part around everyone standing in the scene, and the air fills what the camera sees.
     bodies.length = 0;
     if (player.enabled) bodies.push(bodyOf(player, .3, 1.5));
@@ -1967,7 +2089,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const lens = battleScene.lens;
       const yaw = (-battleLook.x * 45 + lens.yaw) * pc.math.DEG_TO_RAD, length = offset.length();
       offset.set(offset.x * Math.cos(yaw) + offset.z * Math.sin(yaw), offset.y, offset.z * Math.cos(yaw) - offset.x * Math.sin(yaw));
-      const pitch = Math.asin(offset.y / length) + (battleLook.y * 15 + lens.pitch) * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
+      // A little lower than the street's camera, so faces read.
+      const pitch = Math.asin(offset.y / length) + (battleLook.y * 15 + lens.pitch - 7) * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
       offset.set(offset.x / flat * Math.cos(pitch) * length, Math.sin(pitch) * length, offset.z / flat * Math.cos(pitch) * length);
     } else { battleLook.set(0, 0); battleAim.set(0, 0); }
     // The view is orthographic, so how far back the camera stands only decides what its clip planes
@@ -1998,7 +2121,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     camera.translate(cameraKick);
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
-    const height = battle && framed && cinematic ? cinematic.height : battle ? Math.max(5.7, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .97) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
+    const height = battle && framed && cinematic ? cinematic.height : battle ? Math.max(4.9, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .97) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
     viewHeight = pc.math.lerp(viewHeight, height, reducedMotion.matches || cut ? 1 : ease);
     // Heavy blows punch the frame in for a moment (battle-scene `punch`).
     camera.camera!.orthoHeight = viewHeight * (1 - (battle ? battleScene.punch : 0));
@@ -2044,6 +2167,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   else if (environment.id === 'rec-comtal') placePalaceOnSchool();
   refreshStory(); dressScene();
   tone = toneTarget; scenery.setTone(tone); post.setScene(environment.id);
+  nightShown = story.night && scenery.outdoor ? 1 : 0; scenery.setNight(nightShown);
   app.start();
   return {
     app, effects, post, setEnvironment,
@@ -2087,6 +2211,21 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const model = battleScene.modelOf(id), from = options.from ? battleScene.modelOf(options.from)?.getPosition() : undefined;
       return model ? effects.fightFx(name, { model, colour: options.colour, strength: options.strength, from: from && { x: from.x, y: from.y + .9, z: from.z } }) : false;
     },
+    /**
+     * Someone's face takes an expression (src/face.ts), by their dialogue speaker: `talking` moves
+     * their mouth. With no `id`, everyone goes back to their own face.
+     */
+    speak(id?: string, expression?: string, talking = false) {
+      const present = [rig.body, mates.aitor.rig.body, mates.bernat.rig.body, ...npcs.filter(n => !n.cat).map(n => n.body)];
+      for (const body of present) faceOf(body).talk(false);
+      if (!id) { for (const body of present) faceOf(body).show(); return; }
+      const body = id === 'gerard' || id === 'gerard35' ? rig.body : id === 'aitor' ? mates.aitor.rig.body : id === 'bernat' ? mates.bernat.rig.body : npcs.find(n => n.entity.name === id && !n.cat)?.body;
+      if (!body) return;
+      faceOf(body).talk(talking);
+      faceOf(body).show(expression);
+    },
+    /** Development (the expresiones scenario): everyone in the party wears this expression, or goes back with none. */
+    showFaces(expression?: string) { for (const body of [rig.body, mates.aitor.rig.body]) faceOf(body).show(expression); },
     /** Development (screenshots and clips): the camera frames `target`, `height` metres tall (in a fight too), until `frame()` gives it back. */
     frame(target?: { x: number; y: number; z: number }, height = 4) {
       cinematic = target ? { target: new pc.Vec3(target.x, target.y, target.z), height } : undefined;
@@ -2123,6 +2262,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     get lightTone() { return toneTarget; },
     setPaused(value: boolean) { paused = value; if (value) callbacks.onInteractionScreen(undefined); clearInput(); controllerDirection = null; controllerStick = null; controllerRunning = false; partnerDirection = null; partnerStick = null; partnerRunning = false; },
     get position() { return movement.position; },
+    /** The scene Gerard is in. */
+    get environmentId() { return environment.id; },
+    /** Where a cell of this scene stands in the world (for `frame`). */
+    world(x: number, z: number) { return scenery.toWorld(x, z); },
+    /** The palace's guards out at night (src/night.ts): where each is and what it is doing. */
+    get nightHunters() { return hunters.filter(h => h.id.startsWith('night-')).map(h => ({ id: h.id, x: h.chaser.position.x, z: h.chaser.position.z, mode: h.chaser.mode })); },
     get companionPosition() { return follower.position; },
     /** Whether player 2 is walking Aitor right now. */
     get partnerFree() { return !!free; },
