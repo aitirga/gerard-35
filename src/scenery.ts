@@ -26,6 +26,18 @@ export const BUBBALOO = {
 } as const;
 /** A cloudy morning with the lights off: a bright, white, even sky light and a soft sun. */
 const DAWN = { ambient: new pc.Color(0.52, 0.54, 0.57), sun: new pc.Color(0.94, 0.96, 1), sunIntensity: 0.8 } as const;
+/**
+ * Night in the street (docs/chapter-2.md § Night and the way home): a low cold moon, a deep blue
+ * ambient and the sky's own light nearly out, so the lamps, the shop windows and the lit flats
+ * light the place; out of the map, a dark city blue.
+ */
+export const NIGHT_LIGHT = {
+  ambient: new pc.Color(0.09, 0.11, 0.19),
+  sun: new pc.Color(0.56, 0.66, 0.98),
+  sunIntensity: 0.32,
+  backdrop: new pc.Color(0.035, 0.045, 0.08),
+  clear: new pc.Color(0.025, 0.035, 0.07),
+} as const;
 
 /** Visual-only builder. Gameplay uses Environment.grid and interactions. */
 /**
@@ -164,7 +176,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const sunIntensity = zoneLight ? zoneLight.intensity : night ? 1.15 : lamplit ? 0.85 : nave ? 1.05 : overcast ? 1.3 : dusk ? 1.7 : outdoor ? 1.8 : 1.65;
   const skyIntensity = overcast ? 0.55 : dusk ? 0.34 : 0.42;
   app.scene.ambientLight = ambient.clone();
-  let tone = 0, dark = 0;
+  let tone = 0, dark = 0, nightfall = 0;
   app.scene.fog.type = pc.FOG_NONE;
   // Soft shadows fitted to the view, and the sky glossy things reflect (src/lighting.ts).
   const light = lighting(app);
@@ -457,19 +469,29 @@ export function buildScenery(app: pc.Application, environment: Environment) {
      */
     setTone(k: number) {
       tone = k;
-      app.scene.ambientLight.lerp(ambient, BUBBALOO.ambient, k).lerp(app.scene.ambientLight, DAWN.ambient, dark);
+      app.scene.ambientLight.lerp(ambient, BUBBALOO.ambient, k).lerp(app.scene.ambientLight, DAWN.ambient, dark).lerp(app.scene.ambientLight, NIGHT_LIGHT.ambient, nightfall);
       const color = new pc.Color().lerp(sunColor, BUBBALOO.sun, k);
-      sun.light!.color = color.lerp(color, DAWN.sun, dark);
-      sun.light!.intensity = pc.math.lerp(pc.math.lerp(sunIntensity, BUBBALOO.sunIntensity, k), DAWN.sunIntensity, dark);
-      if (sky) sky.light!.intensity = skyIntensity * (1 - k * 0.8);
-      backdrop.diffuse.lerp(backdropColor, BUBBALOO.backdrop, k); backdrop.update();
+      color.lerp(color, DAWN.sun, dark);
+      sun.light!.color = color.lerp(color, NIGHT_LIGHT.sun, nightfall);
+      sun.light!.intensity = pc.math.lerp(pc.math.lerp(pc.math.lerp(sunIntensity, BUBBALOO.sunIntensity, k), DAWN.sunIntensity, dark), NIGHT_LIGHT.sunIntensity, nightfall);
+      if (sky) sky.light!.intensity = skyIntensity * (1 - k * 0.8) * (1 - nightfall * 0.9);
+      backdrop.diffuse.lerp(backdropColor, BUBBALOO.backdrop, k).lerp(backdrop.diffuse, NIGHT_LIGHT.backdrop, nightfall); backdrop.update();
       const fog = app.scene.fog;
       fog.type = k > 0.001 ? pc.FOG_LINEAR : pc.FOG_NONE;
       fog.color.copy(BUBBALOO.fog);
       fog.start = pc.math.lerp(400, BUBBALOO.fogStart, k);
       fog.end = pc.math.lerp(520, BUBBALOO.fogEnd, k);
-      light.setTone(k, dark);
+      light.setTone(k, dark, nightfall);
     },
+    /** Whether night can fall here: an open-air place (a street, a square), not a room, a plan or her palace. */
+    outdoor,
+    /** Night outside (0 by day, 1 at night): see NIGHT_LIGHT. */
+    setNight(k: number) {
+      const next = outdoor ? k : 0;
+      if (next === nightfall) return;
+      nightfall = next; this.setTone(tone);
+    },
+    get night() { return nightfall; },
     /** Before anyone is up (1): the lamps are off and only a little daylight comes in; 0 is the scene's normal light. */
     setDark(k: number) {
       dark = k; home?.setLamps(1 - k); this.setTone(tone);

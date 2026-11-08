@@ -32,22 +32,23 @@ test('the avenue and its side streets fill with traffic that never drives into i
   }
   const all = cars();
   assert.ok(all.length > 25, `only ${all.length} vehicles`);
-  assert.ok(all.some(c => c.z < 40 || c.z > 70), 'no traffic on the side streets');
+  assert.ok(all.some(c => c.z < 36 || c.z > 74), 'no traffic on the side streets');
   assert.ok(closest > 1, `two vehicles came within ${closest.toFixed(2)} of the room they need`);
 });
 
 test('cars stop for someone standing in their lane', () => {
   const { traffic, cars } = street();
-  // The middle lane of the east carriageway (z 4.75 m in the turned frame), which drives towards -x.
-  const lane = { x: 100, z: (4.75 + 72) / 1.5 - 0.5 };
+  // The middle lane of the east carriageway (z −4.75 m in the turned frame, x −345 m at the map's
+  // west edge), which drives towards +x, to Fabra i Puig.
+  const lane = { x: 260, z: (-4.75 + 105) / 1.5 - 0.5 };
   for (let frame = 0; frame < 900; frame++) {
     traffic.update(1 / 20, [lane]);
     for (const c of cars()) assert.ok(Math.hypot(c.x - lane.x, c.z - lane.z) > 1.2, `a car reached the walker at frame ${frame}`);
   }
   // A queue has formed behind the walker, its first car standing still a couple of cells away.
-  const first = () => cars().filter(c => Math.abs(c.z - lane.z) < 0.5 && c.x > lane.x).sort((a, b) => a.x - b.x)[0];
+  const first = () => cars().filter(c => Math.abs(c.z - lane.z) < 0.5 && c.x < lane.x).sort((a, b) => b.x - a.x)[0];
   const before = first();
-  assert.ok(before && before.x < lane.x + 4, 'no car waits just upstream');
+  assert.ok(before && before.x > lane.x - 4, 'no car waits just upstream');
   traffic.update(1, [lane]);
   assert.equal(first().x, before.x, 'the first car keeps creeping on');
 });

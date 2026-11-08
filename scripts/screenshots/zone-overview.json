@@ -3,7 +3,7 @@
   "description": "Avinguda Meridiana, the zone with the most trees: following Gerard, the same frame frozen with every tree's crown drawn merged and then part by part (the two must match), Gerard standing behind a tree so its crown fades and its parts take over, and the overview (R) of the whole place. Each view notes its draw calls; run it with --gpu --perf --scale 2 for Retina-sized timings in the frame notes.",
   "steps": [
     { "open": "/?story=metro" },
-    { "teleport": "meridiana-calle", "cell": [50, 40], "settle": 3000 },
+    { "teleport": "meridiana-calle", "cell": [29, 44], "settle": 3000 },
     { "eval": "window.note = (text) => { let el = document.getElementById('zone-note'); if (!el) { el = document.createElement('pre'); el.id = 'zone-note'; el.style.cssText = 'position:fixed;left:24px;bottom:24px;z-index:99999;margin:0;padding:10px 14px;background:#101f25ee;color:#eeeade;font:14px/1.4 ui-monospace,monospace;border:1px solid #c6d6ad55'; document.body.append(el); } el.textContent = text; }; window.trees = () => window.gerard.game.app.root.find(n => n.name === 'Árbol').map(pivot => { const parts = pivot.find(c => c !== pivot && !!c.render && !c.name.startsWith('Piezas:')), crown = new Set(parts.map(c => c.render.material)); return { pivot, parts, merged: pivot.children.filter(c => c.name.startsWith('Piezas:') && crown.has(c.render.meshInstances[0].material)) }; }); window.frameNote = (label) => new Promise(done => { const app = window.gerard.game.app, s = []; const end = () => s.push([app.stats.frame.ms, app.stats.drawCalls.total]); app.on('frameend', end); setTimeout(() => { app.off('frameend', end); s.splice(0, 3); const mean = i => s.reduce((a, x) => a + x[i], 0) / Math.max(1, s.length); window.note(`${label} · ${Math.round(mean(1))} draw calls · ${mean(0).toFixed(1)} ms a frame`); done(); }, 2000); })" },
     { "eval": "frameNote('Following Gerard')" },
     { "shot": "follow", "caption": "Avinguda Meridiana following Gerard: each tree draws as its trunk and three crown colours, the moving cars as one mesh per paint" },
@@ -17,7 +17,7 @@
     { "eval": "(async () => { const g = window.gerard.game, app = g.app, cam = app.root.findByName('Cámara isométrica'), player = app.root.findByName('Jugador'); const at = player.getPosition(), cell = g.position, ox = at.x - cell.x, oz = at.z - cell.z; const away = cam.forward.clone(); away.y = 0; away.normalize(); const near = trees().map(t => ({ t, d: t.pivot.getPosition().distance(at) })).sort((a, b) => a.d - b.d).slice(0, 12); for (const { t } of near) for (const k of [1.2, 1.8, 2.4]) { const p = t.pivot.getPosition(), want = { x: Math.round(p.x + away.x * k - ox), z: Math.round(p.z + away.z * k - oz) }; g.standAt(want); await new Promise(r => setTimeout(r, 900)); if (g.position.x === want.x && g.position.z === want.z && t.parts.some(e => e.enabled)) { window.behind = true; return; } } throw new Error('No tree near Gerard could hide him'); })()" },
     { "wait": 600 },
     { "shot": "behind-tree", "caption": "Gerard behind a tree: its crown fades, drawn by its own parts so the lobes still sort one by one" },
-    { "teleport": "meridiana-calle", "cell": [50, 40], "settle": 1500 },
+    { "teleport": "meridiana-calle", "cell": [29, 44], "settle": 1500 },
     { "eval": "window.gerard.game.toggleOverview()" },
     { "wait": 2500 },
     { "eval": "frameNote('Overview (R)')" },

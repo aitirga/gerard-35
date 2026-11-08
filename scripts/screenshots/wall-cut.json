@@ -1,0 +1,14 @@
+{
+  "title": "City · A wall behind Gerard stays whole",
+  "description": "Pressed right against a facade that doesn't hide him, the building keeps its wall: only a surface really between him and the camera may open.",
+  "steps": [
+    { "open": "/?story=metro&solo=1&camara=fija" },
+    { "until": "!!window.gerard", "timeout": 60000 },
+    { "skipDialogue": true },
+    { "teleport": "meridiana-calle", "cell": [30, 40] },
+    { "hold": ["KeyW", "KeyD"], "ms": 1200 },
+    { "shot": "pegado-a-la-fachada", "delay": 1500, "caption": "Empujando contra la fachada de casa: el muro queda detrás de él y sigue entero" },
+    { "teleport": "meridiana-calle", "cell": [148, 19] },
+    { "shot": "detras-de-un-bloque", "delay": 2500, "caption": "Detrás de un bloque de verdad, el hueco sigue abriéndose" }
+  ]
+}

@@ -162,12 +162,12 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        55,
-        38
+        34,
+        42
       ]
     },
     {
-      "eval": "window.gerard.game.standAt({x: 142, z: 16})"
+      "eval": "window.gerard.game.standAt({x: 148, z: 19})"
     },
     {
       "wait": 2500

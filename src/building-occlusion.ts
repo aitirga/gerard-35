@@ -3,11 +3,19 @@ export type Point3 = { x: number; y: number; z: number };
 
 /** Only surfaces in front of the player may open; shared with the cutaway shader. */
 export const BUILDING_CUT_NEAR = 0.05;
+/**
+ * A surface whose plane passes this close to the focus is the wall he is leaning on, not one hiding
+ * him: the walkable grid lets him stand up to about this far inside a real footprint, whose lines don't
+ * follow the cells. Also shared with the cutaway shader.
+ */
+export const BUILDING_CUT_LEAN = 0.35;
 
 interface Triangle {
   a: Point3;
   ab: Point3;
   ac: Point3;
+  /** Unit normal of the triangle's plane; its sign doesn't matter. */
+  normal: Point3;
 }
 
 /** Compile the actual drawn triangles, including their roof shape, once per building. */
@@ -24,7 +32,10 @@ export function createBuildingOccluder(vertices: readonly number[]) {
       min.x = Math.min(min.x, p.x); min.y = Math.min(min.y, p.y); min.z = Math.min(min.z, p.z);
       max.x = Math.max(max.x, p.x); max.y = Math.max(max.y, p.y); max.z = Math.max(max.z, p.z);
     }
-    triangles.push({ a, ab: { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z }, ac: { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z } });
+    const ab = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z }, ac = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
+    const nx = ab.y * ac.z - ab.z * ac.y, ny = ab.z * ac.x - ab.x * ac.z, nz = ab.x * ac.y - ab.y * ac.x;
+    const area = Math.hypot(nx, ny, nz) || 1;
+    triangles.push({ a, ab, ac, normal: { x: nx / area, y: ny / area, z: nz / area } });
   }
   return { min, max, triangles };
 }
@@ -67,6 +78,10 @@ function hitsTriangle(triangle: Triangle, origin: Point3, direction: Point3) {
   return (ac.x * qx + ac.y * qy + ac.z * qz) * inverse > BUILDING_CUT_NEAR;
 }
 
+function leansOn({ a, normal }: Triangle, focus: Point3) {
+  return Math.abs((a.x - focus.x) * normal.x + (a.y - focus.y) * normal.y + (a.z - focus.z) * normal.z) < BUILDING_CUT_LEAN;
+}
+
 /** A building opens only when its visible geometry overlaps the player's narrow silhouette. */
 export function buildingHidesPlayer(shape: BuildingOccluder, focus: Point3, toCamera: Point3): boolean {
   if (!shape.triangles.length) return false;
@@ -78,7 +93,7 @@ export function buildingHidesPlayer(shape: BuildingOccluder, focus: Point3, toCa
   for (const lift of [-0.35, 0.1, 0.6]) {
     for (const side of [0, -0.18, 0.18]) {
       const origin = { x: focus.x + right.x * side, y: focus.y + lift, z: focus.z + right.z * side };
-      if (hitsBounds(shape, origin, direction) && shape.triangles.some(triangle => hitsTriangle(triangle, origin, direction))) return true;
+      if (hitsBounds(shape, origin, direction) && shape.triangles.some(triangle => !leansOn(triangle, focus) && hitsTriangle(triangle, origin, direction))) return true;
     }
   }
   return false;

@@ -58,7 +58,8 @@ export function createSilhouettes(app: pc.AppBase) {
   const parts = new Map<pc.MeshInstance, pc.MeshInstance | undefined>();
   const present = new Set<pc.MeshInstance>();
   function drop(source: pc.MeshInstance, copy: pc.MeshInstance | undefined) {
-    if (copy) { world.removeMeshInstances([copy], true); copy.destroy(); }
+    // The skin is the part's: destroying the copy must not take it along.
+    if (copy) { world.removeMeshInstances([copy], true); copy.skinInstance = null; copy.destroy(); }
     parts.delete(source);
     source.stencilFront = source.stencilBack = null;
   }
@@ -67,6 +68,7 @@ export function createSilhouettes(app: pc.AppBase) {
     const { x, y, z } = source.aabb.halfExtents;
     if (!source.mesh || Math.max(x, y, z) < SILHOUETTE_MIN_PART) return undefined;
     const copy = new pc.MeshInstance(source.mesh, material, source.node);
+    copy.skinInstance = source.skinInstance;
     copy.castShadow = false;
     world.addMeshInstances([copy], true);
     return copy;

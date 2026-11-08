@@ -10,7 +10,7 @@
     { "until": "window.gerard.music.playing === 'triste' && window.gerard.music.position() > 1", "timeout": 30000 },
     { "eval": "window.showMusic()" },
     { "shot": "maresme-triste", "delay": 1500, "caption": "Passatge Maresme: song-triste, looping whole (0.001 → 95.999 s)" },
-    { "teleport": "meridiana-calle", "cell": [55, 38] },
+    { "teleport": "meridiana-calle", "cell": [34, 42] },
     { "until": "window.gerard.music.playing === 'concrete' && window.gerard.music.position() > 1", "timeout": 30000 },
     { "eval": "window.showMusic()" },
     { "shot": "meridiana-concrete", "delay": 1500, "caption": "Meridiana street: song-concrete from bar 1" },

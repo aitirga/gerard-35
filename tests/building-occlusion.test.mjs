@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from '../src/building-occlusion.ts';
+import { BUILDING_CUT_LEAN, BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from '../src/building-occlusion.ts';
 import meridiana from '../src/geo/meridiana-calle.json' with { type: 'json' };
 
 const focus = { x: 0, y: 0.7, z: 0 };
@@ -28,7 +28,8 @@ test('walls behind the player and geometry at the focus never open', () => {
   assert.equal(hides(wall(-2, 2, -1)), false);
   assert.equal(buildingHidesPlayer(createBuildingOccluder(wall(-2, 2, 0)), focus, { x: 0, y: 0, z: 1 }), false);
   assert.equal(buildingHidesPlayer(createBuildingOccluder(wall(-2, 2, BUILDING_CUT_NEAR / 2)), focus, { x: 0, y: 0, z: 1 }), false);
-  assert.equal(buildingHidesPlayer(createBuildingOccluder(wall(-2, 2, BUILDING_CUT_NEAR * 2)), focus, { x: 0, y: 0, z: 1 }), true);
+  assert.equal(buildingHidesPlayer(createBuildingOccluder(wall(-2, 2, BUILDING_CUT_NEAR * 2)), focus, { x: 0, y: 0, z: 1 }), false);
+  assert.equal(buildingHidesPlayer(createBuildingOccluder(wall(-2, 2, BUILDING_CUT_LEAN * 2)), focus, { x: 0, y: 0, z: 1 }), true);
 });
 
 test('an opening in a concave footprint stays visible despite overlapping building bounds', () => {
@@ -62,21 +63,31 @@ test('separate buildings retain independent visibility and empty geometry stays 
   assert.equal(buildingHidesPlayer(obscuring, focus, { x: 0, y: 0, z: 0 }), false);
 });
 
-test('Meridiana fruit-shop corner stays whole while its far-side facade still opens', () => {
-  const building = meridiana.buildings.find(building => building.id === 'way/614237380');
-  const vertices = building.poly.flatMap(([x, z], i) => {
+const occluderOf = id => {
+  const building = meridiana.buildings.find(building => building.id === id);
+  return createBuildingOccluder(building.poly.flatMap(([x, z], i) => {
     const [nextX, nextZ] = building.poly[(i + 1) % building.poly.length];
     return quad([x, 0, z], [nextX, 0, nextZ], [nextX, building.height, nextZ], [x, building.height, z]);
-  });
-  const shape = createBuildingOccluder(vertices);
-  const camera = { x: 40, y: 52, z: 40 };
-  // These walkable pavement cells previously intersected the one-cell inflated footprint.
-  for (const [x, z] of [[50, 36], [52, 37], [53, 37], [55, 38]]) {
+  }));
+};
+// The street camera's own angle (src/camera-orbit.ts HOME_POSE).
+const streetCamera = { x: 40, y: 52, z: 40 };
+
+test('home on the Meridiana stays whole from its pavement while the block behind it still opens', () => {
+  // Meridiana 335 (docs/places/meridiana.md): on the far side of the avenue, its front to the camera.
+  const shape = occluderOf('way/644309392');
+  for (const [x, z] of [[26, 41], [28, 41], [31, 41], [34, 41], [28, 42]]) {
     assert.notEqual(meridiana.grid[z][x], '#');
-    assert.equal(buildingHidesPlayer(shape, { x, y: 0.7, z }, camera), false, `${x},${z}`);
+    assert.equal(buildingHidesPlayer(shape, { x, y: 0.7, z }, streetCamera), false, `${x},${z}`);
   }
-  // At the lip of the facade it really covers a sliver of the character's silhouette.
-  assert.equal(buildingHidesPlayer(shape, { x: 51, y: 0.7, z: 36 }, camera), true);
-  assert.notEqual(meridiana.grid[30][40], '#');
-  assert.equal(buildingHidesPlayer(shape, { x: 40, y: 0.7, z: 30 }, camera), true);
+  // Round the back of the block, away from the camera, it opens.
+  assert.equal(buildingHidesPlayer(shape, { x: 22, y: 0.7, z: 24 }, streetCamera), true);
+});
+
+test('pressed against a facade he stands in front of, the building stays closed', () => {
+  const shape = occluderOf('way/644309392');
+  // Against home's wall, the closest the walkable grid lets him: the footprint's line runs through him.
+  for (const x of [27, 30, 33]) assert.equal(buildingHidesPlayer(shape, { x, y: 0.7, z: 39.7 }, streetCamera), false, `${x}`);
+  // Round the back of the same block it still opens.
+  assert.equal(buildingHidesPlayer(shape, { x: 20, y: 0.7, z: 24 }, streetCamera), true);
 });

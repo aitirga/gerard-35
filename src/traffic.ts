@@ -239,7 +239,7 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
     // The models' fronts face -z, centred on the entity.
     if (bus) kit.place({ kind: 'bus', x: 0, z: 0, color: colour, livery: 'tmb' }, entity, new pc.Vec3(0, 0, 2)).setLocalEulerAngles(0, 90, 0);
     else if (moto) kit.place({ kind: 'moto', x: 0, z: 0, color: colour, rider: true }, entity, new pc.Vec3(0, 0, 0));
-    else kit.place({ kind: 'car', x: 0, z: 0, color: colour }, entity, new pc.Vec3(0, 0, -0.5));
+    else kit.place({ kind: 'car', x: 0, z: 0, color: colour, lit: true }, entity, new pc.Vec3(0, 0, -0.5));
     const v: Vehicle = {
       entity, bus, length: bus ? 4.9 : moto ? 1.1 : 1.85, width: bus ? 1.02 : moto ? 0.5 : 0.84, cruise: (bus ? 0.75 : 1) * (CRUISE[0] + random() * (CRUISE[1] - CRUISE[0])),
       edge: e, s: 0, lane, offset: laneOffset(e, lane), v: 0, x: 0, z: 0, hx: 1, hz: 0, yaw: 0, slip: [0, 0], held: 0, squeeze: 0, seen: new Set([e]),
@@ -257,7 +257,7 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
     if (along <= (shift ? -v.length : 0) || along > LOOK_AHEAD) return Infinity;
     const lat = Math.min(Math.abs(side), Math.abs(side - shift));
     const dot = Math.abs(o.hx * v.hx + o.hz * v.hz), cross = Math.abs(o.hx * v.hz - o.hz * v.hx);
-    if (lat > v.width / 2 + cross * o.length / 2 + dot * o.width / 2 + 0.12) return Infinity;
+    if (lat > v.width / 2 + cross * o.length / 2 + dot * o.width / 2 + 0.16) return Infinity;
     return along - v.length / 2 - (dot * o.length / 2 + cross * o.width / 2);
   }
   let time = 0;

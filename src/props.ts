@@ -327,7 +327,9 @@ export function createPropKit(device: pc.GraphicsDevice) {
       opacity: 1,
     });
   }
-  function car(holder: pc.Entity, color: string) {
+  // Cars on the move have their lights on (they read at night); parked ones keep them dark.
+  const headlight = mat('Faros encendidos', '#fff4d8', 0.3, 1.6), taillight = mat('Pilotos encendidos', '#d0202a', 0.3, 1.2);
+  function car(holder: pc.Entity, color: string, lit = false) {
     let body = paint.get(color);
     if (!body) { body = shine(mat('Carrocería', color, 0.65), 'paint'); paint.set(color, body); }
     // The body spans the anchor cell and the next one along +z, like its footprint.
@@ -338,6 +340,11 @@ export function createPropKit(device: pc.GraphicsDevice) {
       part(holder, 'Rueda', 'cylinder', metal, [side * 0.41, 0.2, 0.5 + end * 0.59], [0.32, 0.13, 0.32], [0, 0, 90]);
     }
     part(holder, 'Faros coche', 'box', stone, [0, 0.36, -0.44], [0.6, 0.1, 0.03]);
+    if (!lit) return;
+    for (const side of [-1, 1]) {
+      part(holder, 'Faro', 'box', headlight, [side * 0.27, 0.37, -0.457], [0.16, 0.08, 0.02]);
+      part(holder, 'Piloto', 'box', taillight, [side * 0.3, 0.42, 1.43], [0.14, 0.07, 0.02]);
+    }
   }
   function lamp(holder: pc.Entity) {
     part(holder, 'Base de farola', 'cylinder', metal, [0, 0.06, 0], [0.2, 0.12, 0.2]);
@@ -754,7 +761,7 @@ export function createPropKit(device: pc.GraphicsDevice) {
       batchGroupId = batch; placed.length = 0;
       if (prop.kind === 'tree') tree(holder, prop.x, prop.z, prop.species ?? 'plane', prop.scale ?? 1, prop.base ?? 'pit', prop.stakes, prop.trunk);
       else if (prop.kind === 'car') {
-        car(holder, prop.color);
+        car(holder, prop.color, prop.lit);
         // Turned a quarter so the body runs along +x over its footprint; the anchor stays on its cell.
         if (prop.along === 'x') holder.children.forEach(c => { const p = c.getLocalPosition(); c.setLocalPosition(p.z, p.y, -p.x); c.setLocalRotation(QUARTER_TURN.clone().mul(c.getLocalRotation())); });
       }

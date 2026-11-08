@@ -15,20 +15,20 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        50,
-        40
+        29,
+        44
       ]
     },
     {
       "shot": "portal",
       "delay": 2500,
-      "caption": "Out of the portal: home's corner block, its 1 € shop and fruit shop, the Fabra i Puig metro on the left"
+      "caption": "Out of the portal at Meridiana 335: VivaGym on Gerard's right, the canopy with 335, Bluespace's ramp on his left, the gym's window running on into the next block"
     },
     {
       "teleport": "meridiana-calle",
       "cell": [
-        78,
-        40
+        271,
+        77
       ]
     },
     {
@@ -39,8 +39,8 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        70,
-        56
+        279,
+        61
       ]
     },
     {
@@ -51,26 +51,26 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        195,
-        40
+        154,
+        77
       ]
     },
     {
       "shot": "hipercor",
       "delay": 2500,
-      "caption": "Hipercor: the vaulted white canopy, the blue letters, the brown-banded slab behind and the graffiti hoarding"
+      "caption": "Hipercor from its own pavement, its back to the camera: the vaulted white canopy over the doors, seen through the box's window, and the graffiti hoarding"
     },
     {
       "teleport": "meridiana-calle",
       "cell": [
-        39,
-        42
+        223,
+        76
       ]
     },
     {
       "shot": "metro",
       "delay": 2500,
-      "caption": "The Fabra i Puig entrance: the totem with the M, L1 and the name, the stair going down between granite and glass"
+      "caption": "The L1's Concepció Arenal entrance to Fabra i Puig, on the even pavement by the Escòcia crossing: the totem with the M, L1 and the name, the stair going down between granite and glass"
     },
     {
       "hold": [
@@ -105,8 +105,8 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        120,
-        40
+        229,
+        77
       ]
     },
     {
@@ -115,7 +115,7 @@
     {
       "shot": "overview",
       "delay": 3000,
-      "caption": "The avenue from above, Fabra i Puig to Hipercor: six lanes and the median, the blocks' terraces, the city going on in the haze"
+      "caption": "The avenue from above, from home (left) to the Fabra i Puig crossing (right), Hipercor nearest the camera: six lanes and the median, the blocks' terraces, the city going on in the haze"
     },
     {
       "press": "KeyR"
@@ -123,8 +123,8 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        126,
-        44
+        223,
+        73
       ]
     },
     {
@@ -138,8 +138,8 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        78,
-        44
+        271,
+        73
       ]
     },
     {
@@ -160,8 +160,8 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        78,
-        44
+        271,
+        73
       ]
     },
     {

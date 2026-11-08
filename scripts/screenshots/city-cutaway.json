@@ -15,8 +15,8 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        50,
-        40
+        29,
+        44
       ]
     },
     {
@@ -27,8 +27,8 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        142,
-        16
+        148,
+        19
       ],
       "caption": "Deep in the passage between two blocks: the block in front opens a window round Gerard and keeps its height"
     },
@@ -40,15 +40,15 @@
     {
       "teleport": "meridiana-calle",
       "cell": [
-        148,
-        72
+        248,
+        74
       ],
-      "caption": "Behind the blocks across the avenue: only the window round Gerard, the rest of the facade and its roof stay"
+      "caption": "On the near pavement, behind the blocks by the camera: only the window round Gerard, the rest of the facade and its roof stay"
     },
     {
       "shot": "south-block",
       "delay": 2500,
-      "caption": "Behind the blocks across the avenue: only the hole, the rest of the facade and its roof stay"
+      "caption": "On the near pavement, behind the blocks by the camera: only the hole, the rest of the facade and its roof stay"
     }
   ]
 }

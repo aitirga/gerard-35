@@ -36,7 +36,7 @@ export type WorldProp =
   /** `stakes`: a young tree held by three wooden stakes; `trunk`: bark colour (Barcelona's pale plane trees). */
   | { kind: 'tree'; x: number; z: number; species?: TreeSpecies; scale?: number; base?: TreeBase; stakes?: boolean; trunk?: string }
   /** A car spans its anchor and the next cell along +z, or along +x with `along: 'x'`. */
-  | { kind: 'car'; x: number; z: number; color: string; along?: 'x' | 'z' }
+  | { kind: 'car'; x: number; z: number; color: string; along?: 'x' | 'z'; lit?: boolean }
   /**
    * `led`: a tall, slim grey pole with a small white LED head, as on the renewed Meridiana; `mast`: a
    * square's tall mast with three heads on short arms, as round Plaça d'Espanya; `seafront`: the
@@ -418,7 +418,7 @@ export const MERIDIANA = house({
   // The yucca beside the TV; every other plant is furniture.
   props: [{ kind: 'tree', x: 15, z: 1, species: 'yucca', scale: 0.9, base: 'pot' }],
   interactions: [
-    { id: 'meridiana-door', cell: { x: 6, z: 1 }, label: 'Salir a la Meridiana', to: { environment: 'meridiana-calle', cell: { x: 50, z: 40 } } },
+    { id: 'meridiana-door', cell: { x: 6, z: 1 }, label: 'Salir a la Meridiana', to: { environment: 'meridiana-calle', cell: { x: 28, z: 42 } } },
     // The piano and the balcony take time in chapter 2 (the story answers them, src/days.ts).
     { id: 'meridiana-piano', cell: { x: 2, z: 5 }, label: 'Tocar el piano', hint: 'Tocar el piano' },
     { id: 'meridiana-kitchen', cell: { x: 10, z: 2 }, label: 'Mirar la cocina', lines: ['Encimera de madera, azulejos blancos… y alguien tiene que fregar.'] },

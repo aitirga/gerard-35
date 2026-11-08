@@ -19,9 +19,11 @@ export const LIGHTING = {
   shadow: {
     /**
      * `pcss` soft shadows that harden at contact, `vsm` blurred variance shadows, `pcf5` and `pcf3`
-     * fixed 5×5 and 3×3 filters (3×3 is what the game had). PCSS costs about 1 ms more.
+     * fixed 5×5 and 3×3 filters (3×3 is what the game had). PCF 5×5: PCSS samples 32 times a pixel,
+     * which at a 2592×1575 canvas cost some 8–10 ms of GPU a frame following Gerard (and stalled the
+     * frame for 150–250 ms several times a second) against well under 1 ms for PCF (docs/graphics.md).
      */
-    type: 'pcss' as ShadowKind,
+    type: 'pcf5' as ShadowKind,
     resolution: 2048,
     /** Against acne: the PCSS disk reaches past one texel, so receivers are pushed out along their normal more than PCF needed (.04). */
     bias: .4,
@@ -73,6 +75,8 @@ export const LIGHTING = {
     bubbaloo: { zenith: '#2a0a26', horizon: '#9c3f7c', ground: '#220a1c' } satisfies SkyColours,
     /** Before anyone is up (`setDark` 1): a pale, dim morning. */
     dawn: { zenith: '#b8bfc6', horizon: '#8c8f92', ground: '#3d3b38' } satisfies SkyColours,
+    /** Night in the street (`setNight` 1): deep blue above, the city's sodium and LED glow low down, dark pavement. */
+    streetNight: { zenith: '#08101f', horizon: '#3a3f4f', ground: '#121418' } satisfies SkyColours,
   },
   /** What glossy materials reflect: the specular colour (F0, sRGB) and how much of the sky they show. */
   shine: {
@@ -219,16 +223,19 @@ function createLighting(app: pc.AppBase) {
     pc.EnvLighting.generateAtlas(source, { target, numReflectionSamples: LIGHTING.sky.samples, numAmbientSamples: 1 });
     writeAmbient(target);
   }
-  let tone = 0, dark = 0;
+  let tone = 0, dark = 0, night = 0;
   function show() {
     if (!kind) return;
-    const steps = LIGHTING.sky.steps, t = Math.round(tone * steps) / steps, d = Math.round(dark * steps) / steps;
+    const steps = LIGHTING.sky.steps, t = Math.round(tone * steps) / steps, d = Math.round(dark * steps) / steps, n = Math.round(night * steps) / steps;
     const own = LIGHTING.sky.kinds[kind];
     let target: pc.Texture;
-    if (d === 0 && (t === 0 || t === 1)) target = ends[t];
+    if (d === 0 && n === 0 && (t === 0 || t === 1)) target = ends[t];
     else {
-      const key = `${kind}|${t}|${d}`;
-      if (key !== betweenKey) { build(between, [own, LIGHTING.sky.bubbaloo, LIGHTING.sky.dawn], [(1 - t) * (1 - d), t * (1 - d), d]); betweenKey = key; }
+      const key = `${kind}|${t}|${d}|${n}`;
+      if (key !== betweenKey) {
+        build(between, [own, LIGHTING.sky.bubbaloo, LIGHTING.sky.dawn, LIGHTING.sky.streetNight], [(1 - t) * (1 - d) * (1 - n), t * (1 - d) * (1 - n), d * (1 - n), n]);
+        betweenKey = key;
+      }
       target = between;
     }
     if (target !== current || !ambientWritten.equals(app.scene.ambientLight)) writeAmbient(target);
@@ -247,8 +254,8 @@ function createLighting(app: pc.AppBase) {
       build(ends[1], [LIGHTING.sky.bubbaloo], [1]);
       show();
     },
-    /** Her light (0–1) and the morning dark (0–1), after scenery.ts has set the ambient for them. */
-    setTone(k: number, d = 0) { tone = k; dark = d; show(); },
+    /** Her light (0–1), the morning dark (0–1) and the street's night (0–1), after scenery.ts has set the ambient for them. */
+    setTone(k: number, d = 0, n = 0) { tone = k; dark = d; night = n; show(); },
     /** Development toggles for side-by-side captures (window.gerard.game.lighting). */
     get shadows() { return shadows; },
     set shadows(next: ShadowKind) { shadows = next; reshade(); },

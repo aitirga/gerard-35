@@ -1,7 +1,7 @@
 import * as pc from 'playcanvas';
 import { flankRun, type GeoBuilding, type GeoPoint, type GeoRoad, type GeoScene, type GeoShop } from './geo';
 import { shine } from './lighting';
-import { BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder, type Point3 } from './building-occlusion';
+import { BUILDING_CUT_LEAN, BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder, type Point3 } from './building-occlusion';
 import { HOME_POSE } from './camera-orbit';
 import { occlusion, type OcclusionStyle } from './occlusion';
 import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
@@ -47,7 +47,8 @@ const SLOPE = 1 / Math.cos(30 * Math.PI / 180);
  *
  * In every style the foot of the wall stays, up to `CUT_STUB` from the focus (0.7 above his feet),
  * so the building's edge still shows where Gerard can't pass, and only what stands in front of him
- * opens. Shadows are left whole. Each building opens at `CUT_RATE` while it hides him.
+ * opens: a surface he isn't clearly behind (the facade at his back) stays, whatever else of its
+ * building hides him. Shadows are left whole. Each building opens at `CUT_RATE` while it hides him.
  */
 const CUT_DITHER = { radius: 3.3, band: 1.1, shade: 0.6, dark: 0.25, foot: 0.3 };
 const CUT_GHOST = 0.32;
@@ -63,7 +64,7 @@ interface BuildingCut { triangles: number[]; instances: pc.MeshInstance[]; open:
 
 const f = (n: number) => n.toFixed(3);
 const CUT = {
-  near: f(BUILDING_CUT_NEAR), stub: f(CUT_STUB),
+  near: f(BUILDING_CUT_NEAR), lean: f(BUILDING_CUT_LEAN), stub: f(CUT_STUB),
   dither: { radius: f(CUT_DITHER.radius), band: f(CUT_DITHER.band), shade: f(CUT_DITHER.shade), dark: f(CUT_DITHER.dark), foot: f(CUT_DITHER.foot) },
   ghost: f(1 - CUT_GHOST),
   ring: { radius: f(CUT_RING.radius), edge: f(CUT_RING.edge), halfEdge: f(CUT_RING.edge / 2), halo: f(CUT_RING.halo), flare: f(CUT_RING.flare) },
@@ -83,7 +84,10 @@ const CUTAWAY_MAIN = `
 if (uniform.geoCutOpen > 0.0) {
   let cutOffset = vPositionW - uniform.geoCutFocus;
   let cutAlong = dot(cutOffset, uniform.geoCutToCamera);
-  if (cutAlong > ${CUT.near}) {
+  // This surface's own plane, turned to the camera: Gerard must be behind it for it to hide him.
+  let cutFace = normalize(cross(dpdx(vPositionW), dpdy(vPositionW)));
+  let cutBehind = dot(cutOffset, cutFace) * sign(dot(cutFace, uniform.geoCutToCamera));
+  if (cutAlong > ${CUT.near} && cutBehind > ${CUT.lean}) {
     let cutAcross = length(cutOffset - uniform.geoCutToCamera * cutAlong);
     let cutStub = vPositionW.y - (uniform.geoCutFocus.y + ${CUT.stub});
     let cutNoise = fract(52.9829189 * fract(dot(pcPosition.xy, vec2f(0.06711056, 0.00583715))));
