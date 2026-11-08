@@ -2,7 +2,9 @@ import * as pc from 'playcanvas';
 import { STATUSES, TIMED, isOnion, markLeft, markSpent, onionSize, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type ClassId, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
-import { WalkAnimation, idlePose } from './walk-animation';
+import { WalkAnimation, idlePose, poseLegs, type LimbRig } from './walk-animation';
+import { MATERIAL_ROLES, RIG } from './character-model';
+import { faceOf } from './face';
 import { createGroundContact, type GroundHeight } from './ground-contact';
 import { DOG_PROFILES } from './encounters';
 import { CLAW_COLOURS, tint, type Effects, type FireLevel } from './effects';
@@ -26,6 +28,7 @@ import { DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, type V3 } from '.
 import { takeZero } from './anima-looks';
 import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { spellLaunch } from './battle-sounds';
+import { cometPath } from './trails';
 
 /** How fast a cat already with the party runs to its place in a fight, and from how far it lands there instead (a jump). */
 const CAT_RUN = 7, CAT_LANDS = 14;
@@ -71,7 +74,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   function mat(hex: string) {
     const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.update(); materials.push(m); return m;
   }
-  const allyJacket = mat('#6f8fa8');
   const fur = mat('#c49464'), cream = mat('#f1dfb8'), dark = mat('#3c302a'), collar = mat('#a64d43');
   // Eyes have their own materials so La Reina Bubbaloo's minion can turn them dark pink and glowing.
   const eyeDark = mat('#3c302a'), eyePink = mat('#7a1240');
@@ -139,6 +141,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     /** When they fell, and (the party) when they started getting back up; `landed` once they hit the floor. */
     downAt?: number; upAt?: number; landed?: boolean; dissolve?: Disintegration; freed?: { node: pc.Entity; from: pc.Vec3; to: pc.Vec3; at: number }; hitAt?: number; flashColor: pc.Color; flash: number; materials: pc.StandardMaterial[]; glow: pc.Color[];
     body: pc.Entity | null; head: pc.Entity | null; tail: pc.Entity | null; ears: pc.Entity[]; eyes: pc.Entity[]; eyeScale: number; seed: number;
+    /** Knees, elbows and ankles, on a sculpted fighter. */
+    limbRig?: LimbRig;
     /** Foes that are not dogs (the palace minion) wobble instead of sniffing. */
     minion: boolean;
     /**
@@ -270,6 +274,18 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const e = new pc.Entity('Haz'); e.addComponent('render', { type: 'cylinder', material: m, castShadows: false, receiveShadows: false });
     e.setLocalEulerAngles(-90, 0, 0); e.setLocalScale(w, 1, w); beam.addChild(e);
   }
+  /** Rayo solar's beam: Bip's sun, a white-hot core in a gold glow and an orange haze round it. */
+  const sunCore = mat('#000000'), sunGlow = mat('#000000'), sunHaze = mat('#000000');
+  for (const [m, colour, k] of [[sunCore, '#fffbe8', 3.6], [sunGlow, '#ffc23a', 2], [sunHaze, '#ff7a1a', .9]] as const) {
+    m.emissive.fromString(colour); m.emissiveIntensity = k; m.useLighting = false; m.blendType = pc.BLEND_ADDITIVE; m.depthWrite = false; m.update();
+  }
+  const sunBeam = new pc.Entity('Rayo solar'); battleRoot.addChild(sunBeam); sunBeam.enabled = false;
+  for (const [m, w] of [[sunCore, .14], [sunGlow, .34], [sunHaze, .7]] as const) {
+    const e = new pc.Entity('Haz'); e.addComponent('render', { type: 'cylinder', material: m, castShadows: false, receiveShadows: false });
+    e.setLocalEulerAngles(-90, 0, 0); e.setLocalScale(w, 1, w); sunBeam.addChild(e);
+  }
+  /** Where Rayo solar's beam is aimed as it sweeps, and the floor under it (a trail of fire follows it). */
+  const sunAim = new pc.Vec3(), sunFloor = new pc.Vec3();
   /** Where the beam burns the roof as it sweeps (a trail follows it). */
   const beamFloor = new pc.Vec3();
   let beamOf: BattleEffect | undefined;
@@ -296,6 +312,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const HUD_SHIFT = .8;
   const cameraKick = new pc.Vec3();
   const focus = new pc.Vec3();
+  /** How far the camera leans in on whoever's turn it is (0–1), and where they stand. */
+  let turnPush = 0;
+  const turnAt = new pc.Vec3();
   const targetMaterial = mat('#f3cf78');
   targetMaterial.emissive.fromString('#f3cf78'); targetMaterial.emissiveIntensity = .3; targetMaterial.update();
   const marker = part(battleRoot, 'Objetivo', 'cylinder', targetMaterial, [0, .03, 0], [1.1, .025, 1.1]);
@@ -371,12 +390,20 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
   }
   // Each fighter owns its material copies, so a flash never lights up the whole pack.
-  function ownMaterials(model: pc.Entity) {
+  function ownMaterials(model: pc.Entity, party = false) {
     const copies = new Map<pc.Material, pc.StandardMaterial>();
     model.findComponents('render').forEach(component => (component as pc.RenderComponent).meshInstances.forEach(mesh => {
       const source = mesh.material as pc.StandardMaterial;
       let copy = copies.get(source);
-      if (!copy) { copy = source.clone(); copies.set(source, copy); inheritColour(source, copy); }
+      if (!copy) {
+        copy = source.clone(); copies.set(source, copy); inheritColour(source, copy);
+        // Fights happen in moody light: a textured face keeps a little light of its own, so it reads.
+        if (party && copy.diffuseMap && MATERIAL_ROLES.get(source.name) === 'skin') {
+          copy.emissiveMap = copy.diffuseMap; copy.emissive.set(.2, .2, .2); copy.update();
+        }
+        // And the lids over its eyes, the same.
+        if (party && MATERIAL_ROLES.get(source.name) === 'lid') { copy.emissive.copy(copy.diffuse).mulScalar(.2); copy.update(); }
+      }
       mesh.material = copy;
     }));
     const materials = [...copies.values()];
@@ -410,8 +437,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   /** Atacar by whoever wears Tecnópata: Bip goes and rams the target, the wearer stays put with a hand up. */
   /** Tecnópata's skills are Bip's too: it fires them, or blows itself up among the foes (Explosión), while its wearer points. */
   const BIP_SKILLS: ReadonlySet<string> = new Set(['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor']);
-  /** Seconds between Rayo solar's rays, one foe after another. */
-  const SWEEP_GAP = .1;
   /** How much of its size someone Encogido keeps (Rayo encogedor). */
   const SHRUNK = .62;
   /** Whether an action is Bip's, decided once for it (Explosión's Bip is gone before the action ends). */
@@ -424,6 +449,192 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   };
   /** Where Bip is when its wearer's blow is Bip's (`botStrikes`). */
   const botAt = (action: BattleEffect) => botStrikes(action) ? bips.get(action.actor)!.bip.entity.getPosition().clone() : undefined;
+  /**
+   * Bip's rays, each its own shape: when it lands (fight seconds into the action) and how long it
+   * flies before, so it leaves Bip after a charge and travels, shedding light, into the blow.
+   * Rayo de energía is a fast crackling bolt; Rayo encogedor a train of rings that shrink as they
+   * go; Rayo de sanación a slow green arc that sheds motes rising like pollen.
+   */
+  const BIP_RAYS: Record<string, { contact: number; flight: number; hold: number }> = {
+    'rayo-energia': { contact: .66, flight: .2, hold: .8 },
+    'rayo-encogedor': { contact: .7, flight: .32, hold: .8 },
+    'rayo-sanacion': { contact: .74, flight: .4, hold: .75 },
+  };
+  /**
+   * Rayo solar letting go, in fight seconds from its start: Bip rises gathering the sun until
+   * `ignite`, then one beam sweeps along the foes for `span` (it burns each as it crosses them), and
+   * `tail` more to cool down.
+   */
+  const SOLAR = { ignite: .78, span: 1, tail: .55 } as const;
+  /** Rayo solar's sweep, worked out once: from beyond the first foe to beyond the last, and when it crosses each. */
+  const solarPlans = new WeakMap<BattleEffect, { start: pc.Vec3; end: pc.Vec3; crossings: { f: Fighter; id: string; blow: number; at: number }[]; contact: number }>();
+  function solarPlan(e: BattleEffect) {
+    let plan = solarPlans.get(e);
+    if (plan) return plan;
+    const hitIds = e.hits?.length ? e.hits.map(h => h.target) : e.target ? [e.target] : [];
+    const reached = hitIds.flatMap((id, i) => { const f = fighters.get(id); return f ? [{ f, id, blow: i + 1 }] : []; }), foes = reached.map(r => r.f);
+    const bip = bips.get(e.actor)?.bip.entity.getPosition() ?? fighters.get(e.actor)?.base ?? new pc.Vec3();
+    const centre = foes.length ? foes.reduce((sum, f) => sum.add(floorUnder(f)), new pc.Vec3()).mulScalar(1 / foes.length) : new pc.Vec3(bip.x + 3, 0, bip.z);
+    // Across the line from Bip to them, on the floor: it sweeps from one side of them to the other.
+    const toward = new pc.Vec3(centre.x - bip.x, 0, centre.z - bip.z).normalize(), way = new pc.Vec3(-toward.z, 0, toward.x);
+    const along = foes.map(f => new pc.Vec3().sub2(floorUnder(f), centre).dot(way));
+    const lo = Math.min(-1.2, ...along.map(a => a - 1.1)), hi = Math.max(1.2, ...along.map(a => a + 1.1));
+    const start = centre.clone().add(way.clone().mulScalar(lo)), end = centre.clone().add(way.clone().mulScalar(hi));
+    const crossings = reached.map((r, i) => ({ ...r, at: SOLAR.ignite + (along[i] - lo) / (hi - lo) * SOLAR.span })).sort((a, b) => a.at - b.at);
+    plan = { start, end, crossings, contact: crossings[0]?.at ?? SOLAR.ignite + .2 };
+    solarPlans.set(e, plan);
+    return plan;
+  }
+  /** When Bip's skill lands, in fight seconds from its start (CONTACT_SECONDS for the rest of its moves). */
+  function bipContact(e: BattleEffect) {
+    if (e.release) return solarPlan(e).contact;
+    return (e.skill && BIP_RAYS[e.skill]?.contact) || CONTACT_SECONDS;
+  }
+  /** When Bip's skill is over, in fight seconds from its start. */
+  function bipEnd(e: BattleEffect) {
+    if (e.release) return SOLAR.ignite + SOLAR.span + SOLAR.tail;
+    const ray = e.skill ? BIP_RAYS[e.skill] : undefined;
+    return ray ? ray.contact + ray.hold : ACTION_SECONDS;
+  }
+  /** Which of Bip's actions have started their charge, fired their ray, and how far Rayo solar's sweep has burned. */
+  const bipCharged = new WeakSet<BattleEffect>(), bipFired = new WeakSet<BattleEffect>();
+  const solarBurned = new WeakMap<BattleEffect, number>();
+  /**
+   * Rayo solar's beam reaches the next foe: the fight screen lands that one's blow (its number, its
+   * fire: `impact` with 1 + its place in `hits`). `quiet` only tells the screen (no motion, or the action ended first).
+   */
+  function solarCross(e: BattleEffect, quiet = false) {
+    const plan = solarPlan(e), burned = solarBurned.get(e) ?? 0, next = plan.crossings[burned];
+    if (!next) return;
+    solarBurned.set(e, burned + 1);
+    impact?.(next.blow);
+    if (quiet) return;
+    const { f } = next, chest = chestOf(f), at = bips.get(e.actor)?.bip.entity.getPosition() ?? f.base;
+    effects.element('fire', v3(chest), { from: v3(at), strength: 1.5, feet: v3(floorUnder(f)) });
+    dualFx.ring(v3(chest), viewDir(), .55, BIP.solar, { count: 70, outward: 3.5, life: .4, size: 1.3, light: 3 });
+    dualFx.burst('sunspark', { at: v3(chest), count: 40, speed: 4, up: 1, life: [.3, .7] });
+    hit(f, flame, 1.5); shake = Math.max(shake, .4);
+  }
+  /** The foes Rayo solar's beam has yet to reach: their fire waits for it. */
+  function solarAhead(e: BattleEffect) {
+    const plan = solarPlan(e);
+    return new Set(plan.crossings.slice(solarBurned.get(e) ?? 0).map(c => c.id));
+  }
+  let sunOf: BattleEffect | undefined;
+  /** Where Bip's ray leaves it: a little ahead of it, towards `to`. */
+  function bipMuzzle(at: pc.Vec3, to: pc.Vec3) { return at.clone().add(new pc.Vec3().sub2(to, at).normalize().mulScalar(.18)); }
+  /** Bip charges a ray: its colour gathering into its front out of the air round it. */
+  function bipCharge(e: BattleEffect, at: pc.Vec3, to: pc.Vec3) {
+    const ray = e.skill ? BIP_RAYS[e.skill] : undefined;
+    if (!ray) return;
+    const dir = v3(new pc.Vec3().sub2(to, at).normalize()), muzzle = v3(bipMuzzle(at, to)), lead = ray.contact - ray.flight;
+    if (e.skill === 'rayo-sanacion') {
+      // Soft: motes drifting in from all round it, and a green ring that breathes in.
+      dualFx.burst('mote', { at: muzzle, count: 70, spread: .7, speed: .3, outward: -1.4, life: [lead * .7, lead], colour: '#7dffb0', size: 1.1 });
+      dualFx.after(lead * .45, () => dualFx.ring(muzzle, dir, .32, '#9dffc4', { count: 40, outward: -.8, life: lead * .5, size: 1, light: 1.2 }));
+      return;
+    }
+    const colour = e.skill === 'rayo-encogedor' ? '#e8fbff' : BIP.cyan;
+    // Two rings of nanites closing in on its eye, the second tighter, and sparks crackling into it.
+    dualFx.ring(muzzle, dir, .6, colour, { kind: 'nanite', count: 70, outward: -2.6, around: 2, life: lead * .55 });
+    dualFx.after(lead * .4, () => dualFx.ring(muzzle, dir, .38, colour, { kind: 'nanite', count: 50, outward: -2.2, around: -3, life: lead * .45, light: 1.5 }));
+    dualFx.after(lead * .3, () => dualFx.burst('bipzap', { at: muzzle, count: 26, spread: .45, speed: .6, outward: -2, life: [.15, lead * .6], colour }));
+  }
+  /** Bip fires its ray at `to`: it flies `flight` seconds, shedding light, and lands as the action's contact. */
+  function bipFire(e: BattleEffect, at: pc.Vec3, to: pc.Vec3, ray: { flight: number }) {
+    const from = v3(bipMuzzle(at, to)), dest = v3(to), dir = v3(new pc.Vec3().sub2(to, at).normalize()), steps = 9;
+    /** Bursts at the head of the ray, `steps` times as it flies. */
+    const shed = (path: (f: number, out: pc.Vec3) => pc.Vec3, each: (p: V3, f: number) => void) => {
+      for (let k = 1; k <= steps; k++) dualFx.after(ray.flight * k / steps, () => each(v3(path(k / steps, new pc.Vec3())), k / steps));
+    };
+    if (e.skill === 'rayo-energia') {
+      // A fast bolt: a fat white-cyan head, two crackling strands braided round it, sparks thrown off all the way.
+      effects.trails.comet(from, dest, ['#ffffff', BIP.cyan], ray.flight, { arc: 0, width: .2, life: .42, intensity: 3.6, core: .75, additive: .95, taper: .7 });
+      for (const phase of [0, Math.PI]) effects.trails.comet(from, dest, ['#e8fdff', '#2a9cff'], ray.flight, { arc: 0, width: .045, life: .3, intensity: 3, core: .5, additive: 1, twist: { turns: 3.5, radius: .14, phase } });
+      dualFx.ring(from, dir, .22, BIP.cyan, { count: 40, outward: 3, life: .3, size: 1.2, light: 2.5 });
+      dualFx.burst('bipzap', { at: from, count: 30, velocity: { x: dir.x * 3, y: dir.y * 3, z: dir.z * 3 }, cone: .9, speed: 2, life: [.2, .4] });
+      shed(cometPath(from, dest, { arc: 0 }), p => {
+        dualFx.burst('bipzap', { at: p, count: 16, speed: 3.2, up: .6, life: [.25, .55] });
+        dualFx.burst('glyph', { at: p, count: 6, spread: .08, speed: .3, life: [.3, .5], colour: BIP.cyan, size: 1.4 });
+      });
+      return;
+    }
+    if (e.skill === 'rayo-encogedor') {
+      // A thin white line and a train of rings riding it that spin and shrink as they reach the foe.
+      effects.trails.comet(from, dest, ['#ffffff', '#bff6ff'], ray.flight, { arc: 0, width: .06, life: .5, intensity: 3, core: .8, additive: .95, taper: .3 });
+      const path = cometPath(from, dest, { arc: 0 });
+      shed(path, (p, f) => {
+        dualFx.ring(p, dir, .36 * (1 - .65 * f), '#e8fbff', { count: 42, around: f < .5 ? 4 : -4, life: .4, size: 1.2 });
+        dualFx.burst('bipzap', { at: p, count: 6, speed: 1.2, life: [.2, .4], colour: '#ffffff' });
+      });
+      dualFx.ring(from, dir, .3, '#e8fbff', { count: 36, outward: 1.6, life: .3, light: 1.5 });
+      return;
+    }
+    if (e.skill === 'rayo-sanacion') {
+      // Slow and gentle: an arc of green with two strands winding round it; motes come loose and float up.
+      const arc = .35;
+      effects.trails.comet(from, dest, ['#b8ffd2', '#2fcf72'], ray.flight, { arc, width: .12, life: .55, intensity: 1.9, core: .25, additive: .9, taper: .9 });
+      for (const phase of [0, Math.PI]) effects.trails.comet(from, dest, ['#9dffbe', '#22b860'], ray.flight, { arc, width: .04, life: .45, intensity: 1.8, core: .2, additive: 1, twist: { turns: 2, radius: .17, phase } });
+      shed(cometPath(from, dest, { arc }), p => dualFx.burst('mote', { at: p, count: 9, spread: .1, speed: .35, up: .5, life: [.6, 1.1], colour: '#8dffb8', size: 1.2 }));
+    }
+  }
+  /**
+   * Rayo solar letting go, each frame of it (`t` fight seconds in): the sun gathering into Bip, then
+   * the beam sweeping along the foes, molten light dripping off it and fire where it crosses each.
+   * Returns where Bip looks.
+   */
+  function solarFrame(e: BattleEffect, at: pc.Vec3, t: number, dt: number): pc.Vec3 {
+    const plan = solarPlan(e), k = Math.min(1.5, dt * 60);
+    const u = clamp01((t - SOLAR.ignite) / SOLAR.span), sweep = smooth(u) * .85 + u * .15;
+    sunFloor.lerp(plan.start, plan.end, sweep); sunFloor.y = groundHeight(sunFloor.x, sunFloor.z);
+    sunAim.set(sunFloor.x, sunFloor.y + .75, sunFloor.z);
+    if (!bipCharged.has(e)) {
+      bipCharged.add(e);
+      // The sun gathers: streams of gold winding into Bip from all round it, a halo turning.
+      const to = v3(at);
+      for (let i = 0; i < 7; i++) {
+        const a = i / 7 * Math.PI * 2, from = { x: at.x + Math.cos(a) * 1.6, y: at.y + .4 + Math.sin(a * 2) * .5, z: at.z + Math.sin(a) * 1.6 };
+        effects.trails.comet(from, to, ['#fff6c8', '#ff9a2e'], .45, { arc: .3, width: .07, life: .3, intensity: 2.8, core: .5, delay: i * .05, twist: { turns: 1.2, radius: .12, phase: a } });
+      }
+      dualFx.burst('mote', { at: to, count: 120, spread: 1.4, speed: .2, outward: -2.2, life: [.45, .7], colour: BIP.solar, size: 1.2 });
+      dualFx.after(.3, () => dualFx.ring(to, { x: 0, y: 1, z: 0 }, .55, BIP.solar, { count: 80, around: 4, outward: -.6, life: .5, size: 1.2, light: 2.5 }));
+      pulse?.(.25, .4);
+    }
+    // Hotter and hotter as it gathers.
+    if (t < SOLAR.ignite) dualFx.burst('sunglow', { at: v3(at), count: Math.round((2 + 6 * smooth(t / SOLAR.ignite)) * k), spread: .25, speed: .4, life: [.15, .3], size: .8 });
+    const on = t >= SOLAR.ignite && t < SOLAR.ignite + SOLAR.span + .12;
+    sunBeam.enabled = on;
+    if (on) {
+      const from = bipMuzzle(at, sunAim), length = from.distance(sunAim);
+      if (sunOf !== e) {
+        sunOf = e;
+        // It lets go: a flash and a ring off Bip, and a trail of fire left along the floor under the beam.
+        dualFx.ring(v3(from), v3(new pc.Vec3().sub2(sunAim, from).normalize()), .4, BIP.solar, { count: 90, outward: 4, life: .4, size: 1.4, light: 4 });
+        dualFx.burst('sunspark', { at: v3(from), count: 50, speed: 4, life: [.3, .6] });
+        effects.trails.follow(sunFloor, { colour: ['#fff2b8', '#ff6a1f'], width: .5, intensity: 2.8, core: .55, seconds: SOLAR.span + .1, life: .7 });
+        shake = Math.max(shake, .5); pulse?.(.7, .6);
+      }
+      sunBeam.setPosition(from); sunBeam.lookAt(sunAim);
+      // It flares as it lets go, its core flickers, and it thins out as it ends.
+      const swell = 1 + .7 * (1 - smooth((t - SOLAR.ignite) / .12)), fade = 1 - smooth((t - SOLAR.ignite - SOLAR.span + .1) / .2);
+      const flicker = swell * fade * (.85 + Math.random() * .3);
+      for (const [i, child] of (sunBeam.children as pc.Entity[]).entries()) { const w = [.14, .34, .7][i] * flicker; child.setLocalPosition(0, 0, -length / 2); child.setLocalScale(w, length, w); }
+      // Hot glow along it, molten drops off it, and where it burns: sparks up off the floor and embers.
+      dualFx.burst('sunglow', { at: v3(from), to: v3(sunAim), shape: 'line', count: Math.round(26 * k), spread: .08, speed: .5, life: [.15, .35] });
+      dualFx.burst('sunspark', { at: v3(from), to: v3(sunAim), shape: 'line', count: Math.round(5 * k), spread: .06, speed: 1.5, life: [.5, .9] });
+      dualFx.burst('sunspark', { at: v3(sunFloor), count: Math.round(7 * k), velocity: { x: 0, y: 3, z: 0 }, cone: .9, speed: 1.5, life: [.3, .6] });
+      dualFx.burst('ember', { at: v3(sunAim), count: Math.round(3 * k), spread: .2, speed: 1, life: [.5, 1] });
+    }
+    // Whoever it crosses catches fire, and only then (their number and fire land with it).
+    while (impacted && (solarBurned.get(e) ?? 0) < plan.crossings.length && t >= plan.crossings[solarBurned.get(e) ?? 0].at) solarCross(e);
+    // Spent, Bip lets off what is left: a last ring, and gold drizzling down.
+    if (t >= SOLAR.ignite + SOLAR.span && !bipFired.has(e)) {
+      bipFired.add(e);
+      dualFx.ring(v3(at), { x: 0, y: 1, z: 0 }, .3, BIP.solar, { count: 60, outward: 2.5, life: .5, size: 1.1 });
+      dualFx.burst('ember', { at: v3(at), count: 40, spread: .3, speed: 1.2, life: [.6, 1.2] });
+    }
+    return t < SOLAR.ignite ? (plan.crossings[0] ? chestOf(plan.crossings[0].f) : sunAim.clone()) : sunAim.clone();
+  }
   /** Who of a dual's two draws (wears Matemágico) and who brings the claws (Papagato), by id. */
   function dualRoles(e: BattleEffect) {
     const [a, b] = e.dual!.actors;
@@ -835,8 +1046,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   function bipBurst(action: BattleEffect, target: Fighter, from: pc.Vec3, felt: Blow, ax: number, az: number) {
     const chest = chestOf(target), up = { x: 0, y: 1, z: 0 };
-    const ray = (to: pc.Vec3, colours: readonly [string, string], width: number, at = from) => effects.trails.comet(v3(at), v3(to), colours, .06, { arc: 0, width, life: .3, intensity: 2.6, core: .5, additive: .9 });
-    if (action.skill === 'rayo-sanacion') { ray(chest, ['#e6fff0', '#5fe39a'], .07); pulse?.(0, .25); hit(target, green, .9); effects.fightFx('heal', { model: target.model }); return; }
+    // Bip's rays have flown already (`bipFire`): here they land.
+    if (action.skill === 'rayo-sanacion') {
+      pulse?.(0, .25); hit(target, green, 1); effects.fightFx('heal', { model: target.model });
+      const feet = floorUnder(target);
+      dualFx.ring({ x: feet.x, y: feet.y + .1, z: feet.z }, up, Math.max(.5, extent(target).radius * .8), '#8dffb8', { count: 60, life: .8, size: 1.1, light: 1.5 });
+      dualFx.burst('mote', { at: v3(chest), count: 40, spread: .35, speed: .6, up: .8, life: [.6, 1.2], colour: '#8dffb8', size: 1.2 });
+      return;
+    }
     if (action.skill === 'confusion') {
       const head = v3(chest.clone().add(new pc.Vec3(0, .45 * target.scale.y, 0)));
       for (const phase of [0, 2.1, 4.2]) effects.trails.comet(v3(from), head, ['#dffbff', BIP.cyan], .22, { arc: .1, width: .045, life: .35, intensity: 2, core: .4, twist: { turns: 2.5, radius: .14, phase } });
@@ -844,9 +1061,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       hit(target, cyanFlash, .7); return;
     }
     if (action.skill === 'rayo-encogedor') {
-      ray(chest, ['#ffffff', '#9fe8ff'], .05); hit(target, cyanFlash, .8);
-      const feet = floorUnder(target);
-      dualFx.ring({ x: feet.x, y: feet.y + .1, z: feet.z }, up, Math.max(.5, extent(target).radius), '#bff6ff', { count: 70, outward: -1.2, life: .6, size: 1.1 });
+      hit(target, cyanFlash, .9);
+      const feet = floorUnder(target), { height, radius } = extent(target);
+      // Rings round them from head to feet, closing in one after another: it squeezes them down.
+      [.9, .6, .3, .1].forEach((h, i) => dualFx.after(i * .06, () => dualFx.ring({ x: feet.x, y: feet.y + Math.max(.1, height * h), z: feet.z }, up, Math.max(.5, radius * 1.1), '#e8fbff', { count: 70, outward: -1.6, around: 2, life: .55, size: 1.2, ...i === 0 ? { light: 2 } : {} })));
+      dualFx.burst('bipzap', { at: v3(chest), count: 30, speed: 2.5, life: [.2, .5], colour: '#ffffff' });
       return;
     }
     if (action.exploded) {
@@ -859,22 +1078,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       return land({ ...felt, share: Math.max(felt.share, .2) }, ax, 0, az);
     }
     if (action.release) {
-      // Rayo solar: sun-yellow rays from Bip, one foe after another, each catching fire.
-      (action.hits ?? []).forEach((h, i) => dualFx.after(i * SWEEP_GAP, () => {
-        const f = fighters.get(h.target), at = bips.get(action.actor)?.bip.entity.getPosition().clone() ?? from;
-        if (!f) return;
-        const to = chestOf(f);
-        ray(to, ['#fff6c8', '#ff9a2e'], .13, at);
-        effects.element('fire', v3(to), { from: v3(at), strength: 1.2, feet: v3(floorUnder(f)) });
-        hit(f, flame, 1.3);
-      }));
-      shake = Math.max(shake, .45); pulse?.(.6, .5);
+      // Rayo solar: its beam reaches the first of them; the sweep burns the rest (`solarFrame`).
+      shake = Math.max(shake, .6); pulse?.(.8, .6); zoom.x = Math.max(zoom.x, HIT.punch.size * 1.2);
       return land(felt, ax, 0, az);
     }
-    // Rayo de energía: a cyan ray and its hit; what it made last longer flares in a ring round them.
-    ray(chest, ['#e8fdff', BIP.cyan], .07);
-    effects.impact(v3(chest), v3(from), 1, { colour: BIP.cyan, feet: floorUnder(target) });
-    hit(target, cyanFlash, 1);
+    // Rayo de energía: the bolt bursts on them, sparks everywhere; what it made last longer flares in a ring round them.
+    effects.impact(v3(chest), v3(from), 1.3, { colour: BIP.cyan, feet: floorUnder(target) });
+    const way = { x: ax, y: 0, z: az };
+    dualFx.ring(v3(chest), way, .3, BIP.cyan, { count: 60, outward: 4, life: .35, size: 1.3, light: 3 });
+    dualFx.burst('bipzap', { at: v3(chest), count: 60, velocity: { x: ax * 2, y: 1, z: az * 2 }, speed: 4, life: [.3, .7] });
+    // The path it burned stays a moment, crackling.
+    dualFx.line(v3(bipMuzzle(from, chest)), v3(chest), BIP.cyan, { count: Math.round(from.distance(chest) * 45), life: .4, size: 1.4 });
+    dualFx.after(.08, () => dualFx.burst('bipzap', { at: v3(bipMuzzle(from, chest)), to: v3(chest), shape: 'line', count: 40, speed: 1.5, life: [.2, .45] }));
+    hit(target, cyanFlash, 1.2);
     if (action.extended) {
       const { height, radius } = extent(target), feet = floorUnder(target);
       dualFx.ring({ x: feet.x, y: feet.y + height * .5, z: feet.z }, up, Math.max(.55, radius * .8), BIP.cyan, { count: 90, life: .9, size: 1.2, light: 2 });
@@ -889,7 +1105,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const to = v3(b.bip.entity.getPosition());
     if (giver) {
       const from = v3(chestOf(giver).add(new pc.Vec3(0, .35, 0)));
-      [0, 2.1, 4.2].forEach((phase, k) => dualFx.after(k * .06, () => effects.trails.comet(from, to, ['#ffe9a0', '#ff8a1e'], .3, { arc: .5, width: .08, life: .3, intensity: 2.6, core: .5, twist: { turns: 1.5, radius: .14, phase } })));
+      [0, 2.1, 4.2].forEach((phase, k) => dualFx.after(k * .06, () => {
+        const twist = { turns: 1.5, radius: .14, phase };
+        effects.trails.comet(from, to, ['#ffe9a0', '#ff8a1e'], .3, { arc: .5, width: .08, life: .3, intensity: 2.6, core: .5, twist });
+        // Drops of sun come loose off each stream as it flies.
+        const path = cometPath(from, to, { arc: .5, twist });
+        for (let i = 1; i <= 6; i++) dualFx.after(.3 * i / 6, () => dualFx.burst('sunspark', { at: v3(path(i / 6, new pc.Vec3())), count: 6, speed: 1.6, life: [.3, .6] }));
+      }));
     }
     dualFx.after(.34, () => { effects.element('fire', to, { strength: .7 }); dualFx.ring(to, { x: 0, y: 1, z: 0 }, .35, BIP.solar, { count: 60, outward: 1.5, life: .5, light: 2 }); });
     pulse?.(.2, .3);
@@ -1119,6 +1341,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * taking it off, or falling, it comes apart into nanites that go back into the wearer's chest.
    */
   function updateBips(dt: number, t: number, animate: boolean, target?: Fighter) {
+    // Rayo solar's beam only shines while it is being let go (`solarFrame`).
+    if (!(animate && effect?.release)) sunBeam.enabled = false;
     const { ahead } = axes(layout);
     // Beside the wearer as the camera sees them, never in front of them: across the view, a touch towards the camera.
     const c = camera(), flat = Math.hypot(c.x, c.z) || 1, toCamera = { x: c.x / flat, z: c.z / flat }, across = { x: toCamera.z, z: -toCamera.x };
@@ -1164,14 +1388,21 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const over = new pc.Vec3(center.x, floor + 1.1, center.z), u = clamp01(t / CONTACT_SECONDS);
         b.at.lerp(rest, over, u * u); lean = 1; look = over;
       } else if (acting && effect!.kind === 'skill') {
-        // A ray, or Rayo solar's sweep: it turns to whoever it is for, draws back a little and kicks back as it fires.
-        const sweep = effect!.release ? effect!.hits ?? [] : [];
-        const k = Math.min(Math.max(0, sweep.length - 1), Math.max(0, Math.floor((t - CONTACT_SECONDS) / SWEEP_GAP)));
-        const aim = (sweep[k] && fighters.get(sweep[k].target)) || target!;
-        const rise = effect!.release ? .35 * smooth(t / CONTACT_SECONDS) * (1 - smooth((t - CONTACT_SECONDS - sweep.length * SWEEP_GAP) / .4)) : 0;
-        const kick = smooth((t - CONTACT_SECONDS) / .06) * (1 - smooth((t - CONTACT_SECONDS - .06) / .3));
-        b.at.lerp(b.at, new pc.Vec3(rest.x, rest.y + rise, rest.z), 1 - Math.exp(-dt * 10));
-        look = chestOf(aim); lean = t < CONTACT_SECONDS ? -.25 * smooth(t / .2) : -.7 * kick;
+        // A ray, or Rayo solar's sweep: it turns to whoever it is for, charges drawing back a little,
+        // and kicks back as the ray leaves it (`bipFire`); letting Rayo solar go it rises and follows its beam.
+        const solar = !!effect!.release, ray = effect!.skill ? BIP_RAYS[effect!.skill] : undefined;
+        const fires = solar ? SOLAR.ignite : ray ? ray.contact - ray.flight : CONTACT_SECONDS;
+        const rise = solar ? .55 * smooth(t / SOLAR.ignite) * (1 - smooth((t - SOLAR.ignite - SOLAR.span) / .45)) : ray ? .12 * smooth(t / fires) * (1 - smooth((t - fires) / .3)) : 0;
+        const kick = smooth((t - fires) / .06) * (1 - smooth((t - fires - .06) / (solar ? .5 : .3)));
+        // Charging, it trembles with what it holds.
+        const tremble = t < fires && (solar || ray) ? smooth(t / fires) * .02 : 0;
+        b.at.lerp(b.at, new pc.Vec3(rest.x + (Math.random() - .5) * tremble, rest.y + rise + (Math.random() - .5) * tremble, rest.z + (Math.random() - .5) * tremble), 1 - Math.exp(-dt * 10));
+        look = solar ? solarFrame(effect!, b.at, t, dt) : chestOf(target!);
+        lean = t < fires ? -.25 * smooth(t / .2) : -(solar ? .5 : .7) * kick;
+        if (ray) {
+          if (!bipCharged.has(effect!)) { bipCharged.add(effect!); bipCharge(effect!, b.at, chestOf(target!)); }
+          if (t >= fires && !bipFired.has(effect!)) { bipFired.add(effect!); bipFire(effect!, b.at, chestOf(target!), ray); }
+        }
       } else if (acting) {
         // The ram: back a little, a dart at the target's chest, a bounce off it, and home.
         const chest = chestOf(target), away = new pc.Vec3(rest.x - chest.x, 0, rest.z - chest.z);
@@ -1197,7 +1428,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const size = BIP.scale * Math.max(.001, grow) * f.scale.y;
       entity.setLocalScale(size, size, size);
       // Charged with Gerard's fire (Rayo solar) it glows sun yellow from when the fire reaches it until it lets go.
-      const releasing = !!effect?.release && effect.actor === id && t < CONTACT_SECONDS + (effect.hits?.length ?? 1) * SWEEP_GAP + .2;
+      const releasing = !!effect?.release && effect.actor === id && t < SOLAR.ignite + SOLAR.span + .3;
       const solar = releasing || (!!unit?.charge && !(effect?.charging === id && t < .5)) ? 1 : 0;
       b.solar = animate ? b.solar + (solar - b.solar) * (1 - Math.exp(-dt * 6)) : solar;
       b.bip.animate(dt, { look, lean, power: b.power, animate, solar: b.solar });
@@ -1257,11 +1488,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const minion = !party && (!!fear || ((unit.kind === 'minion' || unit.kind === 'guardian') && !!minionTemplate));
     const source = sourceOf(unit, i, party);
     const model = source.clone(); model.enabled = true;
-    if (unit.id === 'bernat') model.findComponents('render').forEach(component => {
-      (component as pc.RenderComponent).meshInstances.forEach(mesh => {
-        if (mesh.material?.name === 'Camiseta mostaza') mesh.material = allyJacket;
-      });
-    });
     battleRoot.addChild(model); model.setPosition(start);
     const body = party ? model.findByName('Cuerpo') as pc.Entity : null;
     const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
@@ -1278,8 +1504,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     fighters.set(unit.id, {
       model, base, start, hp: unit.hp, party, shrink: 1, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null, minion, rigid: unit.kind === 'vertigo', grown: party && grownUp(unit.profile),
       ears: model.find(node => node.name === 'Oreja') as pc.Entity[], eyeScale: eyes[0]?.getLocalScale().y ?? 1, seed: party ? i * 3.1 + .4 : i,
-      flash: 0, flashColor: white, ...ownMaterials(model),
+      flash: 0, flashColor: white, ...ownMaterials(model, party),
       scale: model.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
+      limbRig: party && legs[0]?.findByName('Espinilla') ? {
+        limbs: [legs[0], arms[0], legs[1], arms[1]], feet,
+        ankles: legs.map(leg => leg.findByName(RIG.ankle) as pc.Entity | null).filter(ankle => !!ankle),
+        joints: [legs[0], arms[0], legs[1], arms[1]].map((limb, k) => limb.findByName(k % 2 ? 'Antebrazo' : 'Espinilla') as pc.Entity | null),
+      } : undefined,
     });
     // A foe can come apart when beaten: its shader is ready from the start, so nothing stalls then (Vertitrón kneels instead).
     if (!party && unit.kind !== 'vertigo') fighters.get(unit.id)!.materials.forEach(dissolvable);
@@ -1316,7 +1547,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     /** How high the tallest foe of this fight reaches (0 outside a fight). */
     get foeTop() { return foeTop; },
     /** How much of the ortho height the frame is punched in by a heavy blow right now. */
-    get punch() { return Math.max(-.2, zoom.x + lens.zoom); },
+    get punch() { return Math.max(-.2, zoom.x + lens.zoom + turnPush * .14); },
     /**
      * How the big moments turn the fight's camera (game.ts adds it): degrees round the fight and
      * up or down (negative lower), on top of the players' own lean.
@@ -1505,7 +1736,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (!next) foeTop = 0;
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false; clawed = 0; fireWaits = undefined; clock.clear(!next);
       if (!next) {
-        dualFx.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined;
+        dualFx.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
         for (const f of fighters.values()) if (f.robot?.swirl) { f.robot.swirl.stream.remove(); f.robot.swirl.field.remove(); f.robot.swirl.glass.remove(); f.robot.swirl = undefined; }
         dualStarted = dualPlan = worldDone = undefined; lensHold = 0; spotWant = spotAmount = 0; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
@@ -1547,9 +1778,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const roles = dual ? dualRoles(effect!) : undefined;
       const times = dual ? dualTimes(effect!) : undefined;
       if (dual && dualStarted !== effect) startDual(effect!, target!, animate);
-      const contact = times ? times[0] : casting ? castContact : effect?.target && !support ? CONTACT_SECONDS : .2;
+      // Bip's skills land when its ray does (`bipContact`).
+      const bipSkill = botStrike && effect!.kind === 'skill';
+      const contact = times ? times[0] : casting ? castContact : bipSkill ? bipContact(effect!) : effect?.target && !support ? CONTACT_SECONDS : .2;
       if (effect && !dual && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.(0);
+        // Without motion Rayo solar reaches everyone at once.
+        if (effect.release && !animate) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);
         worldFx(effect, actor, target, animate);
         if (effect.spell) mathCast.land();
         const landed = animate && effect ? contactBurst(effect, actor, target) : undefined;
@@ -1621,7 +1856,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // How far the caster's hand is up: raised before the streams leave, lowered once they land.
       // Sending Bip, the wearer points it at the target until it is back.
       const raise = casting && animate ? smooth(t / (castLaunch * .85)) * (1 - smooth((t - castContact - .12) / .35))
-        : botStrike && animate ? smooth(t / .2) * (1 - smooth((t - CONTACT_SECONDS - .25) / .35)) : 0;
+        : botStrike && animate ? smooth(t / .2) * (1 - smooth((t - (effect!.kind === 'skill' ? bipContact(effect!) : CONTACT_SECONDS) - .25) / .35)) : 0;
       // A dual: Gerard's hand goes up while he draws, and comes down as the last strike lands.
       const drawing = dual && animate ? smooth(t / .18) * (1 - smooth((t - times!.at(-1)! - .1) / .35)) : 0;
       const dualEnd = times ? times.at(-1)! + dualPace(effect!).tail : 0;
@@ -1646,7 +1881,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const lookAt = reachFor ?? ((id === effect?.actor || dualing) && target ? target.base : id === effect?.target && actor && !f.rigid && !dual ? actor.base : aiming ? selected!.base : center);
         // With nobody left to face, each side looks the way its line faces.
         const { ahead } = axes(layout), facingAhead = Math.atan2(ahead.x, ahead.z) * 180 / Math.PI;
-        const yaw = lookAt ? face(f.base, lookAt) : f.party ? facingAhead - 10 : facingAhead + 185;
+        // The party faces what it faces, but never with its back to the camera: side-on at most, so
+        // their faces read, and a little further only for whoever is carrying out a blow.
+        const squaring = lookAt ? face(f.base, lookAt) : f.party ? facingAhead - 10 : facingAhead + 185;
+        const facingView = Math.atan2(viewDir().x, viewDir().z) * 180 / Math.PI;
+        const offView = ((squaring - facingView + 540) % 360) - 180, furthest = id === effect?.actor || dualing ? 100 : 68;
+        const yaw = f.party ? facingView + Math.max(-furthest, Math.min(furthest, offView)) : squaring;
         const noticedYaw = opponent ? face(f.start, opponent.start) : f.yaw;
         const noticeDelta = ((noticedYaw - f.yaw + 540) % 360) - 180;
         const firstLook = f.yaw + noticeDelta * smooth(entryTime / .16);
@@ -1733,7 +1973,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // Lying down, their arms rest along the floor.
         if (fall && f.party) f.arms.forEach((arm, i) => arm.setLocalEulerAngles(-20 * fall, 0, (i ? 1 : -1) * 25 * fall));
         else f.arms.forEach((arm, i) => arm.setLocalEulerAngles(celebrating ? -165 + Math.sin(time * 11 + i * Math.PI) * 12 : guarding ? -60 : -notice * 25 - strike * (i === 0 ? 85 : 35) - lifted * (i === 0 ? 150 : 12) - stride * (i === 0 ? 1 : -1), 0, guarding ? (i === 0 ? -20 : 20) : 0));
-        f.legs.forEach((leg, i) => leg.setLocalEulerAngles(stride * (i % 2 ? -1 : 1), 0, 0));
+        if (f.limbRig) {
+          // Ready: knees a little bent, weight forward; elbows bent, straightening to reach or strike.
+          poseLegs(f.limbRig, gait, lively && down < 0 && !celebrating ? 12 + idle.breathe * 4 : 0);
+          const bend = guarding ? -100 : -36 - idle.breathe * 4 + 30 * clamp01(Math.max(strike, lifted, celebrating ? 1 : 0, fall));
+          f.limbRig.joints[1]?.setLocalEulerAngles(bend, 0, 0); f.limbRig.joints[3]?.setLocalEulerAngles(bend, 0, 0);
+          if (lively && down < 0) { roll += Math.sin(time * 1.15 + f.seed) * 1.3; lean += 2.5; }
+        } else f.legs.forEach((leg, i) => leg.setLocalEulerAngles(stride * (i % 2 ? -1 : 1), 0, 0));
         f.tail?.setLocalEulerAngles(38 + strike * 20, lively ? Math.sin(time * (attacking ? 16 : 7) + f.seed) * 22 : 0, 0);
         // Vertitrón is posed joint by joint (`robotFrame`).
         if (f.robot) { /* posed */ }
@@ -1756,9 +2002,21 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           else if (showing === 'sorpresa' && lively) d.cloche?.setLocalEulerAngles(0, 0, Math.sin(time * 38) * 4 * (Math.sin(time * 2.3) > .2 ? 1 : 0));
         }
         else if (!f.robot) {
-          f.head?.setLocalEulerAngles(lively ? -idle.breathe * 2 : 0, lively && id !== effect?.actor ? idle.look * 12 : 0, 0);
-          // Out cold, their eyes stay shut.
-          f.eyes.forEach(eye => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, f.eyeScale * (fall > .5 ? .12 : lively ? idle.blink : 1), s.z); });
+          if (f.party && f.body) {
+            // A fighter's face follows the fight: laughing when it is won, pain when hit or down.
+            const face = faceOf(f.body);
+            if (celebrating) face.show('riendo', .3);
+            else if (fall > .5 || (f.flash > .25 && f.hp > 0 && time - (f.hitAt ?? -9) < .4)) face.show('dolor', .5);
+            else if (notice > .1) face.show('sorprendido', .3);
+            else if (id === effect?.actor || (state?.phase === 'player' && state.allies[state.active]?.id === id)) face.show('decidido', .3);
+            else if (unit && unit.hp < unit.maxHp * .3) face.show('preocupado', .3);
+            // The head comes round a little to the camera, chin up, without staring at it.
+            const toView = ((facingView - f.turn + 540) % 360) - 180;
+            face.update(dt, { animate, resting: lively && id !== effect?.actor ? 1 : 0, awake: 1, turn: lively && id !== effect?.actor ? Math.max(-24, Math.min(24, toView * .4)) : 0, level: lively ? 3 : 0 });
+          } else {
+            f.head?.setLocalEulerAngles(lively ? -idle.breathe * 2 : 0, lively && id !== effect?.actor ? idle.look * 12 : 0, 0);
+            f.eyes.forEach(eye => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, f.eyeScale * (lively ? idle.blink : 1), s.z); });
+          }
         }
         f.body?.setLocalPosition(0, 0, 0);
         // The camera supplies the battle zoom; keep fighters proportional to the street.
@@ -1805,6 +2063,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       statusFx.setFighters(fighterOrder().map(id => [id, fighters.get(id)!] as const).map(([id, f], index) => { const p = f.model.getPosition(); return { id, model: f.model, index, party: f.party, feet: new pc.Vec3(p.x, groundHeight(p.x, p.z), p.z) }; }));
       // A fire Foc Binari is still carrying waits for the streams to land (the one, when they land apart): until then, the fire shown stays.
       const inFlight = casting && (!impacted || blows < claws) ? effect?.target : fireWaits;
+      // Rayo solar's fire waits on each foe for its beam to cross them.
+      const sweepAhead = effect?.release && animate ? solarAhead(effect) : undefined;
       // A dual that sets fire claw by claw (Zarpazos de fuego): the fire rises with each one that lands.
       const dualBurn = dual && dualPlan && effect?.burns && blows < claws ? Math.max(dualPlan.burnBefore, ...effect.burns.slice(0, blows)) : undefined;
       // An element's reaction settled but not landed: whoever it turns still shows what they carried.
@@ -1813,7 +2073,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (turning?.has(unit.id)) continue;
         const shown = shownStacks.get(`${unit.id}:quemado`) ?? 0;
         if (dualBurn !== undefined && unit.id === effect?.target && unit.timed?.quemado) { syncStatuses(unit.id, unit.statuses, { ...unit.timed, quemado: dualBurn ? { ...unit.timed.quemado, level: dualBurn } : undefined }); continue; }
-        syncStatuses(unit.id, unit.statuses, unit.id === inFlight && unit.timed?.quemado?.level !== shown
+        syncStatuses(unit.id, unit.statuses, (unit.id === inFlight || !!sweepAhead?.has(unit.id)) && unit.timed?.quemado?.level !== shown
           ? { ...unit.timed, quemado: shown ? { ...unit.timed!.quemado!, level: shown } : undefined } : unit.timed);
       }
       statusFx.update(dt, time);
@@ -1895,8 +2155,16 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (spotAmount < .002) spotAmount = 0;
       if (spot && was && !spotAmount) spot(0, []);
       focus.add(new pc.Vec3(lens.x, lens.y, lens.z));
+      // On someone's turn the camera leans in on them, so their face reads.
+      const onTurn = !effect && state?.phase === 'player' && entryTime >= ENTRY_SECONDS ? fighters.get(state.allies[state.active]?.id ?? '') : undefined;
+      turnPush += ((onTurn ? 1 : 0) - turnPush) * (animate ? 1 - Math.exp(-elapsed * 2.6) : 1);
+      if (onTurn) turnAt.copy(onTurn.base);
+      focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      if (complete && (effect ? !animate || t >= (dual ? dualEnd : casting ? castContact + CAST_GAP + .42 : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS)) {
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : casting ? castContact + CAST_GAP + .42 : bipSkill ? bipEnd(effect) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      if (over) {
+        // Any foe Rayo solar's beam never reached still takes its blow.
+        if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);
         settle(); effect = undefined; impact = undefined;
       }
     },

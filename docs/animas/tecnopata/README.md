@@ -36,9 +36,9 @@ first morning (it replaces the placeholder *Físico*, `fisico` in old saves)
 
 ## Look and interface
 
-- Look (in fights, proposal): his T-shirt turns graphite with a cyan collar, dark trousers; his
-  own glasses become a HUD (a cyan film on the lenses), with an earpiece and a short antenna on
-  his right ear, and two thin cyan circuit lines down the front of his shirt
+- Look (in fights, proposal): his fleece turns graphite with a cyan zip, dark trousers; a thin
+  HUD visor (a cyan film on a graphite frame: he wears no glasses of his own), with an earpiece and
+  a short antenna on his right ear, and two thin cyan circuit lines down the front of his shirt
   (`src/anima-looks.ts`). In the street he keeps his own clothes.
 - **Interface: a drone's HUD** (decided 2026-11-05). The fight seen through Bip's camera: dark
   glass, cut corners, scan lines, a reticle as the watermark (on the status screen),

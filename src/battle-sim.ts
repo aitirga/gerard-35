@@ -38,7 +38,7 @@ const MEMBERS: Record<string, { name: string; profile: ProfileId }> = {
   gerard: { name: 'Gerard', profile: 'gerard35' },
   aitor: { name: 'Aitor', profile: 'aitor' },
 };
-export const FIGHTS = ['dogs:1', 'dogs:2', 'dogs:3', 'dogs:4', 'possessed:2', 'palace-guards', ...FEAR_ENCOUNTERS] as const;
+export const FIGHTS = ['dogs:1', 'dogs:2', 'dogs:3', 'dogs:4', 'possessed:2', 'palace-guards', 'night-guard', ...FEAR_ENCOUNTERS] as const;
 /** The party of Nuria's mission as she lends the cats, Aitor wearing nothing until someone chooses: what her fights are tuned for. */
 export const MISSION_PARTY = 'gerard:papagato+aitor:-';
 /** The party that can make dual attacks: Gerard on Matemágico, Aitor with Papagato equipped beforehand. */
@@ -135,6 +135,7 @@ export function createFight(setup: Setup, random: () => number = Math.random): B
   const [kind, count] = setup.fight.split(':');
   const state = kind === 'dogs' || kind === 'possessed' ? createBattle(party, Number(count ?? 1), kind === 'possessed', undefined, animas)
     : kind === 'palace-guards' ? createGuardBattle(party, palaceGuards(animas.length), animas)
+    : kind === 'night-guard' ? createGuardBattle(party, palaceGuards(setup.friends?.length ?? 0), animas, 'night-guard')
     : (BROOD_ENCOUNTERS as readonly string[]).includes(kind) ? createBroodBattle(party, kind as BroodEncounter, animas, random)
     : (FEAR_ENCOUNTERS as readonly string[]).includes(kind) ? createFearBattle(party, kind as (typeof FEAR_ENCOUNTERS)[number], animas, random)
     : undefined;
@@ -592,6 +593,10 @@ export const TARGETS: readonly Target[] = [
   { id: 'escolta-mision-bien', fight: 'escolta', party: MISSION_PARTY, levels: P2M1, policy: 'smart', win: [.8, 1], why: 'Con los gatos en Gerard también se pasa pensando el orden: el fantasmita, luego pelar.' },
   // Casual is the escort's cliff (4 % with four layers, 0 % with five): the floor is 0, since 80 fights (the tests) often see none of those wins.
   { id: 'escolta-sin-pensar', fight: 'escolta', party: MISSION_PARTY, levels: P2M1, policy: 'casual', win: [0, .15], why: 'A lo loco, la Cebolla y los suyos ganan casi siempre.' },
+  // The way home at night (src/night.ts): the one that catches them brings the palace's whole guard, as the palace has it now,
+  // so the street tells the truth about the palace. Without friends' ánimas there is no winning it: get home unseen.
+  { id: 'noche-sin-amigos', fight: 'night-guard', party: 'gerard:matemagico+aitor:tecnopata', animas: ['matemagico', 'tecnopata'], policy: 'smart', win: [0, .05], roundsLost: [3, 8], why: 'Sin ánimas de amigos, la guardia del castillo que sale de noche no se gana ni pensando: hay que llegar a casa sin que te pillen.' },
+  { id: 'noche-con-nuria', fight: 'night-guard', party: DUO, friends: ['nuria'], levels: P2M2, policy: 'smart', win: [0, .2], why: 'Con el ánima de Nuria aún son demasiados, como en el castillo: Aitor ya lo dice, mejor no probarlo.' },
   // Vertitrón, the final boss. Its numbers are VERTIGO (book vertigo.boss), PROFILES.vertigo and its eye's (foe.vertigo-ojo).
   // Grito liberador is what decides it: every shout makes the party weaker and it stronger for good, so a long fight turns on them.
   { id: 'vertigo-duo-bien', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.5, .9], roundsWon: [3.5, 8], duals: [1, 5], why: 'Con los gatos en Aitor y el fuego en Gerard, quien descubre los duales lo tumba deprisa, antes de que grite mucho.' },

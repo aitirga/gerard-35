@@ -1,15 +1,15 @@
 import * as pc from 'playcanvas';
-import { RIG } from './character-model';
+import { BODY_FIT, RIG, bodyFit } from './character-model';
 import type { ClassId } from './battle';
 
 /**
  * What an ánima adds to whoever wears it, on top of its colours (classes.ts `wearClass`), so the
  * wearer feels different and not only looks recoloured. Papagato: a cat's ears (one Haru's orange,
  * one Yuki's white), a tail that sways and a collar with a bell. Matemágico: ones and zeros of gold
- * light circling the wearer, turning to whoever looks. Tecnópata: the wearer's glasses turn into a
- * HUD (a cyan film over the lenses), an earpiece with a short antenna whose tip blinks, and two thin
- * cyan circuit lines down the shirt. Built from primitives on the rig, so it fits every character
- * and follows every pose; with reduced motion it holds still.
+ * light circling the wearer, turning to whoever looks. Tecnópata: a thin HUD visor (a cyan film on
+ * a graphite frame), an earpiece with a short antenna whose tip blinks, and two thin cyan circuit
+ * lines down the shirt. Built from primitives on the rig and the body's fit (`bodyFit`), so it fits
+ * every character and follows every pose; with reduced motion it holds still.
  */
 const NAME = 'Atuendo de ánima';
 const HARU = '#e9894a', HARU_DARK = '#3a2c28', YUKI = '#f4efe6', INNER = '#f0a7a2', BELL = '#f3cf78', GOLD = '#f3cf78', CYAN = '#4fe0ff', GRAPHITE = '#141b21';
@@ -54,6 +54,8 @@ function pivot(parent: pc.Entity, p: number[], r: number[] = [0, 0, 0]) {
 /** A cat's ear: a flat triangle (a squashed cone) leaning out, its pink inside a step in front. */
 function ear(head: pc.Entity, side: number, colour: string) {
   const root = pivot(head, [side * .12, .44, 0], [-12, 0, -side * 22]);
+  // A taller head than the cast's stretches what it holds: an ear keeps its shape, or it is a horn.
+  if (head.name === RIG.mount) { const { x, y } = head.getLocalScale(); root.setLocalScale(1, x / y, 1); }
   part(root, 'cone', solid(colour), [0, .06, 0], [.17, .15, .045]);
   part(root, 'cone', solid(INNER, .2), [0, .05, .02], [.1, .1, .015]);
 }
@@ -72,13 +74,16 @@ function papagato(body: pc.Entity, head: pc.Entity | null): Look {
   const root = pivot(body, [0, 0, 0]);
   // The collar: a soft band round the neck, a touch wider than the shirt so no face lies on it,
   // and a little gold bell hanging at the front.
-  part(root, 'box', solid(YUKI, .15), [0, .93, 0], [.4, .06, .335]);
-  part(root, 'sphere', solid(BELL, .8), [0, .88, .185], [.065, .065, .065]);
-  part(root, 'box', solid('#8a6a2a', .5), [0, .866, .214], [.03, .008, .01]);
+  const fit = bodyFit(body, 'collar'), [wide, neck, deep] = fit, [, small, spine] = bodyFit(body, 'back');
+  // A sculpted body gets a round one: a box would stand out from its rounded shoulders.
+  if (fit === BODY_FIT.collar) part(root, 'box', solid(YUKI, .15), [0, neck, 0], [wide * 2, .06, deep * 2]);
+  else part(root, 'torus', solid(YUKI, .15), [0, neck, 0], [wide * 2, .14, deep * 2]);
+  part(root, 'sphere', solid(BELL, .8), [0, neck - .05, deep + .0175], [.065, .065, .065]);
+  part(root, 'box', solid('#8a6a2a', .5), [0, neck - .064, deep + .0465], [.03, .008, .01]);
   // The tail: thin, from the small of the back, out and down, then curling up; ringed in Haru's
   // orange and dark, with Yuki's white at the tip.
   const segments: pc.Entity[] = [], bend = [-158, 32, 36, 38, 34];
-  let holder = root, at = [0, .44, -.165];
+  let holder = root, at = [0, small, spine];
   for (let i = 0; i < bend.length; i++) {
     holder = pivot(holder, at, [bend[i], 0, 0]);
     segments.push(holder);
@@ -131,27 +136,30 @@ export function takeZero(model: pc.Entity, near: pc.Vec3) {
 }
 
 /**
- * Tecnópata: the glasses become a HUD (a cyan film on each lens, a hair in front of the frames), an
- * earpiece on the right ear with a short antenna whose tip blinks, and two thin circuit lines of
- * cyan light down the front of the shirt, each ending in a little node.
+ * Tecnópata: a thin HUD visor (a cyan film on each eye, on a graphite frame), an earpiece on the
+ * right ear with a short antenna whose tip blinks, and two thin circuit lines of cyan light down
+ * the front of the shirt, each ending in a little node.
  */
 function tecnopata(body: pc.Entity, head: pc.Entity | null): Look {
   const root = pivot(body, [0, 0, 0]);
   let tip = root;
   if (head) {
+    part(head, 'box', solid(GRAPHITE, .6), [0, .27, .235], [.24, .012, .012]);
     for (const side of [-1, 1]) {
-      part(head, 'box', glow(CYAN, .5, 1.2), [side * .079, .24, .19], [.078, .044, .004], [0, 0, 0], false);
-      part(head, 'box', glow(CYAN, .95, 1.6), [side * .079, .257, .193], [.06, .005, .002], [0, 0, 0], false);
+      part(head, 'box', solid(GRAPHITE, .6), [side * .163, .264, .11], [.009, .01, .24], [0, 0, 0]);
+      part(head, 'box', glow(CYAN, .5, 1.2), [side * .079, .24, .235], [.078, .044, .004], [0, 0, 0], false);
+      part(head, 'box', glow(CYAN, .95, 1.6), [side * .079, .257, .238], [.06, .005, .002], [0, 0, 0], false);
     }
     part(head, 'box', solid(GRAPHITE, .6), [.185, .2, .005], [.035, .075, .055]);
     part(head, 'sphere', glow(CYAN, .95, 1.4), [.204, .2, .005], [.016, .016, .016], [0, 0, 0], false);
     part(head, 'cylinder', solid(GRAPHITE, .6), [.19, .3, -.02], [.009, .14, .009], [0, 0, -8]);
     tip = part(head, 'sphere', glow(CYAN, 1, 2), [.2, .375, -.02], [.026, .026, .026], [0, 0, 0], false);
   }
+  const [, chest, front] = bodyFit(body, 'chest');
   for (const side of [-1, 1]) {
-    part(root, 'box', glow(CYAN, .85, 1.1), [side * .07, .66, .152], [.01, .26, .004], [0, 0, 0], false);
-    part(root, 'box', glow(CYAN, .85, 1.1), [side * .045, .79, .152], [.05, .01, .004], [0, 0, 0], false);
-    part(root, 'box', glow(CYAN, 1, 1.5), [side * .07, .53, .153], [.026, .026, .004], [0, 0, 0], false);
+    part(root, 'box', glow(CYAN, .85, 1.1), [side * .07, chest, front], [.01, .26, .004], [0, 0, 0], false);
+    part(root, 'box', glow(CYAN, .85, 1.1), [side * .045, chest + .13, front], [.05, .01, .004], [0, 0, 0], false);
+    part(root, 'box', glow(CYAN, 1, 1.5), [side * .07, chest - .13, front + .001], [.026, .026, .004], [0, 0, 0], false);
   }
   return { root, time: Math.random() * 10, motion: { kind: 'blink', tip } };
 }
@@ -163,7 +171,7 @@ export function dressAnima(model: pc.Entity, id: ClassId | undefined) {
   // What the last ánima put on, and anything a cloned model brought along that nobody moves.
   for (const look of looks) if (!look.root.parent || look.root.parent === body) looks.delete(look);
   body.find(node => node.name === NAME && node.parent?.name !== NAME).forEach(node => (node as pc.Entity).destroy());
-  const head = body.findByName(RIG.head) as pc.Entity | null;
+  const head = (body.findByName(RIG.mount) ?? body.findByName(RIG.head)) as pc.Entity | null;
   const look = id === 'papagato' ? papagato(body, head) : id === 'matemagico' ? matemagico(body) : id === 'tecnopata' ? tecnopata(body, head) : undefined;
   if (!look) return;
   looks.add(look);

@@ -406,7 +406,7 @@ export interface Combatant {
 export type Aim = 'todos';
 /** Which fight this is: the street dogs, the palace minion that wakes Matemágico, or the palace guards of chapter 2. */
 /** `escolta`: ring 3's fear, La Cebolla y los suyos (La Cebolla, a fantasmita and a cebollita). */
-export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | BroodEncounter;
+export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | BroodEncounter;
 /** The young that chase the party up each ring of Uri's tower, a few at a time. */
 export const BROOD_ENCOUNTERS = ['crias-1', 'crias-2', 'crias-3'] as const;
 export type BroodEncounter = (typeof BROOD_ENCOUNTERS)[number];
@@ -813,15 +813,22 @@ export function palaceGuards(animas: number) {
   return { count: Math.max(1, 3 - Math.floor(animas / 2)), hp: Math.max(40, 220 - 30 * animas), power: Math.max(8, 30 - 3 * animas) };
 }
 export type GuardStrength = ReturnType<typeof palaceGuards>;
-/** Chapter 2: the party against the palace guards, as strong as the party's ánimas leave them. */
-export function createGuardBattle(party: PartySlot[], guards: GuardStrength, animas?: ClassId[]): BattleState {
+/**
+ * Chapter 2: the party against the palace guards, as strong as the party's ánimas leave them.
+ * `night-guard`: they are loose on the Meridiana at night (src/night.ts); the one that catches the
+ * party brings the others, as many and as strong as the palace has now, so the way home says
+ * honestly how ready the party is for her.
+ */
+export function createGuardBattle(party: PartySlot[], guards: GuardStrength, animas?: ClassId[], encounter: 'palace-guards' | 'night-guard' = 'palace-guards'): BattleState {
   const unlocked = animas ?? wornAnimas(party);
+  const count = guards.count;
   return {
     allies: lineUp(party, unlocked),
-    foes: Array.from({ length: guards.count }, (_, i) => ({ ...foe(`guard-${i}`, guards.count > 1 ? `Guardián de chicle ${i + 1}` : 'Guardián de chicle', 'guardian', guards.hp), power: guards.power })),
-    active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter: 'palace-guards',
+    foes: Array.from({ length: count }, (_, i) => ({ ...foe(`guard-${i}`, count > 1 ? `Guardián de chicle ${i + 1}` : 'Guardián de chicle', 'guardian', guards.hp), power: guards.power })),
+    active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
     animas: unlocked, awakened: unlocked.includes('matemagico'),
-    message: guards.count > 1 ? `${guards.count} guardianes de chicle se despegan de la cortina. Son enormes.` : 'Un guardián de chicle se despega de la cortina.',
+    message: encounter === 'night-guard' ? count > 1 ? `${count} guardianes de chicle os rodean, chorreando de las rejillas.` : 'Un guardián de chicle os corta el paso, chorreando de la rejilla.'
+      : count > 1 ? `${count} guardianes de chicle se despegan de la cortina. Son enormes.` : 'Un guardián de chicle se despega de la cortina.',
   };
 }
 /** Uri's fears, one foe each (ring 3's comes with company: `createFearBattle`). `power` is tunable (book `fear`). */
@@ -988,6 +995,7 @@ function winMessage(state: BattleState) {
     : (BROOD_ENCOUNTERS as readonly string[]).includes(state.encounter) ? 'Se deshacen en humo violeta. Desde arriba, la risa de Uri. Volverán.'
     : state.encounter === 'palace-minion' ? 'El esbirro se queda tieso, se agrieta como chicle viejo… y revienta.'
     : state.encounter === 'palace-guards' ? 'Los guardianes se deshacen en charcos rosas. La cortina tiembla.'
+    : state.encounter === 'night-guard' ? 'El guardián se deshace en un charco rosa sobre las baldosas.'
     : state.possessed ? `El rosa se les va de los ojos. ${state.foes.length === 1 ? 'El perro sale corriendo' : 'Los perros salen corriendo'}, con el rabo entre las patas.`
     : `${state.foes.length === 1 ? 'El perro se tranquiliza' : 'Los perros se tranquilizan'}. ¡Camino despejado!`;
 }
@@ -1052,7 +1060,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (action !== 'escape') took(state, actor);
   if (action === 'escape') {
     state.phase = 'escaped'; endFight(state);
-    state.message = state.encounter === 'palace-guards' ? 'Retrocedéis hasta el vestíbulo. Los guardianes vuelven a pegarse a la cortina.' : 'Te alejas con calma. La aventura sigue.';
+    state.message = state.encounter === 'palace-guards' ? 'Retrocedéis hasta el vestíbulo. Los guardianes vuelven a pegarse a la cortina.'
+      : state.encounter === 'night-guard' ? 'Echáis a correr. El guardián se queda un momento pegado a la acera.' : 'Te alejas con calma. La aventura sigue.';
     return effect;
   }
   if (action === 'defend') {

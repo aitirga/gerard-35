@@ -615,6 +615,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.battle-heading .battle-kicker').textContent = fear ? `ENCUENTRO / ${fear}`
       : state.encounter === 'palace-minion' ? 'ENCUENTRO / ESBIRRO DE LA REINA'
       : state.encounter === 'palace-guards' ? `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} ${state.foes.length === 1 ? 'GUARDIÁN' : 'GUARDIANES'} DE CHICLE`
+      : state.encounter === 'night-guard' ? 'ENCUENTRO / UN GUARDIÁN DE CHICLE EN LA MERIDIANA'
       : state.encounter.startsWith('crias-') ? `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} CRÍAS DEL MIEDO`
       : `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} PERROS${state.possessed ? ' POSEÍDOS' : ''}`;
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
@@ -719,7 +720,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.battle-bottom').hidden = ended;
     get('.battle-result').hidden = !ended;
     if (ended) {
-      get('.battle-result h2').textContent = state.phase === 'won' ? '¡Camino libre!' : state.phase === 'escaped' ? 'Seguimos.' : state.encounter === 'palace-guards' ? 'Demasiado fuertes.' : 'Un respiro.';
+      get('.battle-result h2').textContent = state.phase === 'won' ? '¡Camino libre!' : state.phase === 'escaped' ? 'Seguimos.' : state.encounter === 'palace-guards' || state.encounter === 'night-guard' ? 'Demasiado fuertes.' : 'Un respiro.';
       // A fall can be fought again or stepped back from, except in chapter 2's castle, where it wakes Gerard up at home.
       const again = state.phase === 'lost' && !!callbacks.forgiving?.();
       const leave = get<HTMLButtonElement>('.battle-result [data-after="close"]');
@@ -1324,7 +1325,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     root.dataset.targeting = cure ? 'allies' : 'foes';
     get('.target-picker h2').textContent = skill ? SKILLS.find(s => s.id === skill)!.name : selected === 'dual' ? DUALS.find(d => d.id === selectedDual)?.name ?? 'Dual' : attackName(state.allies[state.active]);
     const standing = state.foes.filter(f => f.hp > 0);
-    get('.target-picker p').textContent = cure ? 'Elige a quién curar.' : FEAR_KICKERS[state.encounter as keyof typeof FEAR_KICKERS] ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : state.encounter === 'palace-minion' ? 'Elige al esbirro.' : state.encounter === 'palace-guards' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
+    get('.target-picker p').textContent = cure ? 'Elige a quién curar.' : FEAR_KICKERS[state.encounter as keyof typeof FEAR_KICKERS] ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : state.encounter === 'palace-minion' ? 'Elige al esbirro.' : state.encounter === 'palace-guards' || state.encounter === 'night-guard' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
     render();
     targetButtons()[0]?.focus({ preventScroll: true });
   }
@@ -1355,6 +1356,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // What the action is called on its numbers: the party's skill or dual. A foe's ability is never named.
     const label = effect.kind === 'enemy' ? '' : effect.release?.name ?? effect.dual?.name ?? SKILLS.find(s => s.id === effect.skill)?.name ?? (effect.element ? ELEMENTS[effect.element].name : '');
     const spread = (blow: number) => strikes ? (blow / (strikes.length - 1) - .5) * 48 : 0;
+    // Rayo solar's beam sweeps along the foes: each one's blow (its number, its PV, its fire) lands
+    // as the beam crosses them, blow 1 + its place in `hits` (the scene's `solarCross`).
+    const sweep = effect.release && effect.hits?.length ? effect.hits : undefined;
+    const sweepOwed = new Map(sweep?.map(h => [h.target, owed.get(h.target) ?? 0] as const));
     // Statuses that landed show a beat after the last blow.
     const landed: { target: string; id: string; text: string; detail: string }[] = [];
     // After a wound opened (its own pop comes first), a little later.
@@ -1383,6 +1388,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     };
     await callbacks.change(state, effect, blow => {
       if (token !== generation || !state) return;
+      if (blow && sweep) {
+        const h = sweep[blow - 1];
+        if (!h) return;
+        owed.delete(h.target); heldFire.delete(h.target);
+        render();
+        pop(h.target, `−${h.amount}`, 'damage', label);
+        const says = [...h.burn ? [{ id: h.burn.id, text: `¡${TIMED[h.burn.id].name} ${roman(h.burn.level)}!`, detail: '' }] : [], ...h.status ? [{ id: h.status.id, text: `¡${STATUSES[h.status.id].name}!`, detail: `× ${h.status.stacks}` }] : []];
+        says.forEach(l => setTimeout(() => { if (token === generation) pop(h.target, l.text, 'status', l.detail, l.id); }, 170));
+        return;
+      }
       if (blow) {
         if (strikes?.[blow] === undefined) return;
         owed.set(effect.target!, Math.max(0, (owed.get(effect.target!) ?? 0) - strikes[blow]));
@@ -1396,8 +1411,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Its first blow lands: everything comes off but a flurry's other blows.
       unlanded = false;
       owed.clear();
+      // Rayo solar: the foes its beam has yet to cross keep their PV and fire on screen until it does.
+      sweepOwed.forEach((amount, id) => { if (amount) owed.set(id, amount); });
       if (strikes) owed.set(effect.target!, strikes.slice(1).reduce((sum, amount) => sum + amount, 0));
-      landFire(0);
+      if (!sweep) landFire(0);
       render(); knock();
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
       // What went up or down, a moment after the blow's own number (a boost already says it).
@@ -1409,6 +1426,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else if (effect.healed && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', label);
       // A skill that only leaves a status (Rayo de sanación, Confusión, Rayo encogedor) says so below, with no number.
       else if (effect.regen || effect.afflicted) { /* its status pops below */ }
+      else if (sweep) { /* each foe's number comes as the beam crosses them (above) */ }
       else if (effect.hits) effect.hits.forEach(h => pop(h.target, `−${h.amount}`, 'damage', h.peeled ? peelText(h.peeled, state!.foes.find(f => f.id === h.target)) : label));
       else if (effect.target && target) {
         // A big onion's weight falls on the others as well.
@@ -1429,10 +1447,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       for (const on of [effect.regen, effect.afflicted]) if (on && effect.target) landed.push({ target: effect.target, id: on.id, text: `¡${TIMED[on.id].name}${on.level > 1 ? ` ${roman(on.level)}` : ''}!`, detail: `${TIMED[on.id].seconds} s` });
       if (effect.extended && effect.target) effect.extended.statuses.forEach(id => landed.push({ target: effect.target!, id, text: `+${effect.extended!.seconds} s`, detail: TIMED[id].name }));
       effect.blinded?.forEach(id => landed.push({ target: id, id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: '1 ronda' }));
-      effect.hits?.forEach(h => { if (h.burn) landed.push({ target: h.target, id: h.burn.id, text: `¡${TIMED[h.burn.id].name} ${roman(h.burn.level)}!`, detail: '' }); });
+      if (!sweep) effect.hits?.forEach(h => { if (h.burn) landed.push({ target: h.target, id: h.burn.id, text: `¡${TIMED[h.burn.id].name} ${roman(h.burn.level)}!`, detail: '' }); });
       if (effect.exploded) landed.push({ target: effect.actor, id: 'explosion', text: 'Pierde su turno', detail: 'Bip se recompone' });
       if (effect.charging) landed.push({ target: effect.charging, id: 'carga', text: '¡Cargado!', detail: 'Sale al empezar la ronda' });
-      effect.hits?.forEach(h => { if (h.status) landed.push({ target: h.target, id: h.status.id, text: `¡${STATUSES[h.status.id].name}!`, detail: `× ${h.status.stacks}` }); });
+      if (!sweep) effect.hits?.forEach(h => { if (h.status) landed.push({ target: h.target, id: h.status.id, text: `¡${STATUSES[h.status.id].name}!`, detail: `× ${h.status.stacks}` }); });
       // What the element turned: what it leaves, in its colour, and any PV it takes, on top of the blow's own number.
       const reaction = effect.reaction;
       if (reaction && effect.target) {
@@ -1762,7 +1780,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const slots = typeof party === 'number' ? childParty(party, options.animas?.at(-1)) : party;
       state = (FEAR_ENCOUNTERS as readonly string[]).includes(encounter) ? createFearBattle(slots, encounter as (typeof FEAR_ENCOUNTERS)[number], options.animas)
         : encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId, options.animas)
-        : encounter === 'palace-guards' ? createGuardBattle(slots, options.guards ?? palaceGuards(0), options.animas)
+        : encounter === 'palace-guards' || encounter === 'night-guard' ? createGuardBattle(slots, options.guards ?? palaceGuards(0), options.animas, encounter)
         : createBattle(slots, foeCount, possessed, undefined, options.animas); busy = true;
       state.levels = options.levels;
       if (options.improved) improve(state, options.improved);
@@ -1773,7 +1791,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       get('[data-command="skill"]').classList.remove('is-new');
       get('.class-banner').hidden = true; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; get('.battle-speech').replaceChildren();
       queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; charges = 0;
-      get('.battle-heading h1').innerHTML = FEAR_TITLES[encounter as keyof typeof FEAR_TITLES] ?? (encounter === 'palace-minion' ? 'Un esbirro <em>de verdad.</em>' : encounter === 'palace-guards' ? 'Los guardianes <em>de la cortina.</em>' : possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>');
+      get('.battle-heading h1').innerHTML = FEAR_TITLES[encounter as keyof typeof FEAR_TITLES] ?? (encounter === 'palace-minion' ? 'Un esbirro <em>de verdad.</em>' : encounter === 'palace-guards' ? 'Los guardianes <em>de la cortina.</em>' : encounter === 'night-guard' ? 'De vuelta <em>a casa.</em>' : possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>');
       get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => plateHtml(f, i, i < foeCount)).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;
       root.querySelectorAll('.party-card').forEach(card => card.remove()); root.querySelectorAll('.anima-chips').forEach(chips => chips.removeAttribute('data-for'));

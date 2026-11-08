@@ -1,5 +1,5 @@
 import type { Effects } from './effects';
-import type { GpuKind } from './fight-particles';
+import type { GpuBurst, GpuKind } from './fight-particles';
 
 /**
  * What dual attacks and the tower's fears draw in a fight (docs/graphics.md § Ataques duales y
@@ -50,6 +50,22 @@ export const DUAL_KINDS = {
   scorch: {
     drag: .6, gravity: 8, curl: .2, response: .3, collide: true, bounce: .4, friction: .3, size: [.018, .01], sizeJitter: .6, stretch: .06, shape: 'streak',
     colours: ['#ffffff', '#d9c8ff', '#7a3ad8'], intensity: [7, 4, 2], middle: .3, fadeOut: .35, additive: 1, flicker: .2,
+  },
+  // Bip's rays (Tecnópata): crackling cyan sparks that jitter off a ray as it flies and skitter on
+  // the floor (white tinted, the shrinking ray's)…
+  bipzap: {
+    drag: 1.6, gravity: 3, curl: 1.4, response: .6, collide: true, bounce: .5, friction: .3, size: [.02, .008], sizeJitter: .6, stretch: .06, aspect: .2, shape: 'streak',
+    colours: ['#ffffff', '#9ff0ff', '#1f8fe0'], intensity: [7, 4.5, 2], middle: .25, fadeOut: .35, additive: 1, flicker: .5,
+  },
+  // …and Rayo solar's beam: molten drops of sun that drip off it, fall and bounce on the floor,
+  sunspark: {
+    drag: .5, gravity: 8, curl: .25, response: .3, collide: true, bounce: .4, friction: .3, size: [.022, .01], sizeJitter: .6, stretch: .08, shape: 'streak',
+    colours: ['#ffffff', '#ffd27a', '#ff6a1f'], intensity: [8, 5, 2.2], middle: .3, fadeOut: .35, additive: 1, flicker: .2,
+  },
+  // and the hot glow along it.
+  sunglow: {
+    drag: 2, gravity: -.4, curl: .4, response: .2, size: [.06, .02], sizeJitter: .5, shape: 'glow',
+    colours: ['#ffffff', '#ffe08a', '#ff8a1e'], intensity: [7, 4.5, 2], middle: .3, fadeOut: .5, additive: 1, flicker: .25, core: .8,
   },
 } satisfies Record<string, GpuKind>;
 
@@ -118,6 +134,8 @@ export function createDualFx(effects: Effects) {
     /** Runs `run` `seconds` of fight time from now. */
     after,
     line, ring, digit,
+    /** Any burst of the fight's GPU particles (nothing without the GPU engine). */
+    burst(kind: string, o: GpuBurst) { gpu()?.burst(kind, o); },
     /** Whether the GPU engine is running (nothing is drawn otherwise). */
     get on() { return !!gpu(); },
     /**
