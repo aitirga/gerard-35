@@ -149,7 +149,6 @@ just character-3d aitor                       # solo lo que falte
 | `model` | `toy` y las tres vistas → GLB con textura, unos 30 créditos | Meshy |
 | `rig` | El modelo → el mismo con esqueleto, unos 5 créditos. Solo personas: Meshy no riggea otra cosa | Meshy |
 | `game` | Lo convierte al rig del juego ([character_rig.py](character_rig.py)) y escribe los dos archivos | local |
-| `portrait` | `toy.png` → el retrato de conversaciones y menús, en `public/portraits/`. Solo personas | OpenAI |
 
 Con `kind = "creature"` el resultado va a `public/models/creatures/` y `src/creatures/`, sin esqueleto:
 una pieza con las partes de los miedos de Uri, para clonarla en un combate (`buildCreature`).
@@ -170,9 +169,10 @@ una pieza con las partes de los miedos de Uri, para clonarla en un combate (`bui
   oscura. Un modelo hecho antes se arregla en su sitio:
   `uv run python tools/character_rig.py reatlas public/models/characters/<id>.glb`.
 - `clean_shaven` en `figures.toml` borra de la textura un bigote con el que venía el modelo, sin pagar otro.
-- **El modelo 3D es solo para el mundo del juego.** Los retratos de conversaciones, menús y combate salen de la
-  imagen generada: el paso `portrait` los dibuja desde `toy.png`, y `just character-3d <id> --expressions` añade las
-  expresiones que falten, una imagen cada una.
+- **El modelo 3D es solo para el mundo del juego.** Los retratos de conversaciones, menús y combate son pinturas
+  low-poly hechas con `just character <id> --only portrait` (y `--only expressions`), con
+  `assets/characters/gerard/portrait-child-transparent.png` en `--context` para el estilo. Ni se sacan del modelo
+  ni se dibujan desde `toy.png`.
 - A un niño real nunca se le envían fotos: se dibuja con palabras y `art` (imágenes del juego, como la figura
   de su yo adulto).
 - La altura de las caderas va también en `hip` de [src/bed.ts](../src/bed.ts): un test comprueba que coincidan.

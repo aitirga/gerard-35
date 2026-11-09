@@ -101,11 +101,20 @@ The files land in `public/models/` and `src/characters/` or `src/creatures/`. Th
 entity's scale in `scale` of its table. They need a `SPEAKERS` entry to speak, with `portrait`. Only a figure in the bed (`src/bed.ts`) needs
 its `hip`.
 
-**Portraits never come from the model: the 3D figure is for the game's world only.** Aitor rejected
-portraits rendered from it ("no me gustan nada"). What people see of a face in a conversation, a menu or
-a fight's plate is the generated image: the `portrait` step draws it from `toy.png`, and
-`just character-3d <id> --expressions` adds the expressions still missing (one image each, so get the
-plain portrait approved first). Either command only draws: it never pays for a model.
+**Portraits are not this figure: the 3D figure is for the game's world only.** Aitor rejected both
+portraits rendered from the model and portraits drawn from `toy.png`. What people see of a face in a
+conversation, a menu or a fight's plate is a low-poly painting in the style of `gerard-child.png`, Nil and
+Nuria, made with `just character` (tools/README.md):
+
+```bash
+just character <id> [--variant child] --only portrait --force \
+  --photos <only the photos listed for it in figures.toml> \
+  --context assets/characters/gerard/portrait-child-transparent.png \
+  --description "Drawn in exactly the same cute, warm, polished low-poly style and framing as the boy's portrait in the first artwork image. <its about>"
+just character <id> [--variant child] --only expressions --expressions riendo sorprendido   # one image each, once the plain one is approved
+```
+
+It only draws, never pays for a model. A child is drawn from an adult's photo and words, as in `toy`.
 
 **A creature.** It is a template for a foe, with the part names of the minion and Uri's fears:
 

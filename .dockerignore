@@ -16,3 +16,4 @@
 !lifx_lan.py
 !vendor/geraitor_domotic_house/geraitor_domotic_house/
 !vendor/geraitor_domotic_house/geraitor_domotic_house/**
+.env

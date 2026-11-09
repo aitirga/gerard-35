@@ -68,8 +68,8 @@ class CharacterThreeDTool(unittest.TestCase):
         self.run_tool()
         self.assertEqual(self.images.calls[0], [Path(photo).name for photo in character_3d.FIGURES["aitor"].photos])
         self.assertEqual(self.images.calls[1][0], "front.png")
-        self.assertEqual(self.images.calls[2:], [["toy.png"]] * 4, "three views and the portrait")
-        self.assertTrue((self.root / "public" / "portraits" / "aitor.png").exists())
+        self.assertEqual(self.images.calls[2:], [["toy.png"]] * 3, "the three views")
+        self.assertFalse((self.root / "public" / "portraits").exists(), "portraits are low-poly paintings from just character")
         self.assertEqual(len(self.meshy.views[0]), 4)
         for image in self.meshy.views[0]:
             self.assertEqual(image, "data:image/png;base64,aW1hZ2U=", "only the images it drew")
@@ -92,30 +92,6 @@ class CharacterThreeDTool(unittest.TestCase):
         self.assertEqual(len(self.images.calls), calls)
         self.assertEqual(len(self.meshy.views), 2)
         self.assertEqual(len(self.meshy.rigs), 2)
-
-    def test_a_portrait_comes_from_the_image_and_never_pays_for_a_model(self):
-        self.run_tool("--to", "toy")
-        self.images.calls.clear()
-        self.run_tool("--from", "portrait")
-        self.assertEqual(self.images.calls, [["toy.png"]])
-        self.assertEqual(self.meshy.views, [])
-
-    def test_expressions_are_only_the_missing_ones_drawn_from_the_portrait(self):
-        self.run_tool("--to", "toy")
-        self.run_tool("--from", "portrait")
-        self.images.calls.clear()
-        self.run_tool("--expressions", "riendo")
-        self.assertEqual(self.images.calls, [["aitor.png"]])
-        self.run_tool("--expressions", "riendo")
-        self.assertEqual(self.images.calls, [["aitor.png"]], "already made")
-        self.assertEqual(self.meshy.views, [])
-        self.assertEqual(json.loads((self.root / "src" / "portraits.json").read_text()), {"aitor": ["riendo"]})
-
-    def test_a_new_model_makes_no_new_portrait(self):
-        self.run_tool()
-        calls = len(self.images.calls)
-        self.run_tool("--from", "views")
-        self.assertEqual(len(self.images.calls), calls + 3, "only the views")
 
     def test_to_stops_before_paying_for_the_model(self):
         self.run_tool("--to", "toy")

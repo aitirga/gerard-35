@@ -4,7 +4,7 @@ import PORTRAIT_EXPRESSIONS from './portraits.json';
 
 export interface Speaker {
   name: string;
-  /** Portrait in public/portraits/ without .png; `just character-3d` draws it from a figure's image, `just character` from photos. */
+  /** Portrait in public/portraits/ without .png; low-poly painting made with `just character` (never from the 3D figure). */
   portrait?: string;
   skin: string;
   hair: string;

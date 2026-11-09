@@ -192,8 +192,9 @@ creature, any NPC with lines), checking what already exists in `tools/figures.to
   soon as a friend or a boss has its look settled, during the rounds if it helps decide; the model
   waits for the plan's step. A mission's figures are one step of the plan.
 - Portrait and expressions the dialogue needs (`sorprendido`, `riendo`, `triste`, `enfadado`,
-  `pensativo`, `preocupado`), in `public/portraits/` and `src/portraits.json`: generated from the figure's
-  approved image, never from its 3D model: `just character-3d <id> --from portrait`, then `--expressions`.
+  `pensativo`, `preocupado`), in `public/portraits/` and `src/portraits.json`: low-poly paintings made
+  with `just character <id> --only portrait`, then `--only expressions`, never from the toy image or the 3D
+  model (see `character-3d`).
 - `SPEAKERS` entry with `portrait`.
 - Places: reference photos in `assets/references/environments/<place>/`, and whether the zone
   needs `just geo`.

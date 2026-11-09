@@ -6,10 +6,9 @@
   model  toy + views                            -> textured GLB (Meshy multi-image-to-3d)
   rig    model                                  -> the same with a skeleton (Meshy rigging). Only people.
   game   rigged or plain model                  -> public/models/<characters|creatures>/<id>.glb and src/<characters|creatures>/<id>.json
-  portrait  toy                                 -> public/portraits/<id>.png for conversations and menus (OpenAI). Only people.
 
-The 3D model is for the game's world only: what people see of a face in a conversation, a menu or a fight's plate
-is the generated image. --expressions adds a portrait's expressions, each one image.
+The 3D model is for the game's world only. Portraits for conversations, menus and fight plates are low-poly
+paintings made with `just character <id> --only portrait`, never drawn from this figure or rendered from its model.
 
 Who can be made is in tools/figures.toml. The photos only go to OpenAI, and only those listed there.
 Meshy sees the stylised images alone. A step whose result exists is kept, so nothing is paid for
@@ -23,16 +22,14 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import character
 import character_model
 import character_rig
 import providers
 
 ROOT = Path(__file__).resolve().parent.parent
-STEPS = ("front", "toy", "views", "model", "rig", "game", "portrait")
+STEPS = ("front", "toy", "views", "model", "rig", "game")
 VIEWS = ("left", "right", "back")
 SIZE = "1024x1536"
-PORTRAIT_SIZE = "1024x1024"
 # Few polygons and flat colour: a toy figure, like the game's cast, not a scan of someone.
 MESHY_OPTIONS = {"ai_model": "latest", "should_texture": True, "enable_pbr": False, "should_remesh": True,
                  "topology": "triangle", "target_polycount": 12000, "texture_resolution": "2k", "target_formats": ["glb"],
@@ -116,18 +113,6 @@ VIEW_ANGLES = {
     "back": "exact back view: the camera is 180 degrees round, we see its back and the back of its head",
 }
 
-PORTRAIT_PROMPT = """The image is the approved figure of a character in a game. Draw its portrait, for the game's conversations and menus: exactly this same figure, the same image style and finish, seen closer.
-
-Framing: head and shoulders, a slight three-quarter view, filling the frame: the face in the upper half and the shoulders cut by the bottom edge.
-Keep exactly the same face, head shape, hair, glasses if any, clothes, colours, matte moulded finish and soft even light.
-Background: fully transparent. No shadow, frame or text."""
-
-EXPRESSION_PROMPT = """The image is the approved portrait of a character in a game. Draw the same portrait with another expression.
-
-Keep exactly the same figure, head shape, hair, glasses if any, clothes, colours, finish, light, framing and size. Change only the painted face and, a little, the tilt of the head.
-Expression: {expression}. Clear at a small size, serious enough for a game for adults, never a cartoon grimace.
-Background: fully transparent. No shadow, frame or text."""
-
 FIGURES = {key: Figure(**row) for key, row in tomllib.loads((ROOT / "tools" / "figures.toml").read_text()).items()}
 
 
@@ -137,8 +122,6 @@ def parse(argv):
     parser.add_argument("id", choices=sorted(FIGURES), help="who: a table of tools/figures.toml")
     parser.add_argument("--from", dest="start", choices=STEPS, help="make this step and the ones after it again")
     parser.add_argument("--to", dest="stop", choices=STEPS, help="stop after this step: look at the image before paying for the model")
-    parser.add_argument("--expressions", nargs="*", metavar="NAME", choices=sorted(character.EXPRESSIONS),
-                        help=f"only the portrait's expressions not made yet: these, or all ({', '.join(character.EXPRESSIONS)})")
     parser.add_argument("--dry-run", action="store_true", help="show what would be made and sent; call no API")
     return parser.parse_args(argv)
 
@@ -156,12 +139,8 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Pat
     style = photos / GAME_STYLE
     tasks_file = out / "tasks.json"
     tasks = json.loads(tasks_file.read_text()) if tasks_file.exists() else {}
-    # A portrait comes from the toy, so a new model alone doesn't make another one.
-    redo = tuple(s for s in STEPS[STEPS.index(args.start):] if s != "portrait" or args.start in ("front", "toy", "portrait")) if args.start else ()
+    redo = STEPS[STEPS.index(args.start):] if args.start else ()
     allowed = STEPS[:STEPS.index(args.stop) + 1] if args.stop else STEPS
-    # Asking for a portrait never pays for a model that isn't there.
-    if args.start == "portrait" or args.expressions is not None:
-        allowed = ("portrait",)
 
     def pending(step: str, *results: Path) -> bool:
         """Whether a step has to run, saying so; with --dry-run it never does."""
@@ -173,11 +152,11 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Pat
         log(f"== {step}: {', '.join(path.name for path in results)}")
         return not args.dry_run
 
-    def draw(prompt: str, references: list[Path], target: Path, size: str = SIZE, background: str = "opaque"):
+    def draw(prompt: str, references: list[Path], target: Path):
         client = images or providers.openai_images()
         log(f"  OpenAI: {', '.join(path.name for path in references) or 'no images'}")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(client.create(prompt, references, size, background=background))
+        target.write_bytes(client.create(prompt, references, SIZE, background="opaque"))
 
     front, toy = out / "front.png", out / "toy.png"
     if figure.photos and pending("front", front):
@@ -221,21 +200,6 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Pat
         target.write_bytes(glb)
         described.write_text(character_model.dump(spec) if person else json.dumps(spec, ensure_ascii=False, indent=2) + "\n")
         log(f"  {target.relative_to(root)} ({len(glb) / 1e6:.1f} MB), {described.relative_to(root)}")
-    portrait = root / "public" / "portraits" / f"{args.id}.png"
-    if person and pending("portrait", portrait):
-        if not toy.exists():
-            raise SystemExit(f"{args.id} has no toy image yet: just character-3d {args.id} --to toy")
-        shaven = " One change from the image: remove the moustache. The skin between the nose and the mouth is plain and clean, with no facial hair at all." if figure.clean_shaven else ""
-        draw(PORTRAIT_PROMPT + shaven, [toy], portrait, PORTRAIT_SIZE, "transparent")
-    if person and args.expressions is not None:
-        names = args.expressions or list(character.EXPRESSIONS)
-        wanted = {name: portrait.with_name(f"{args.id}-{name}.png") for name in names}
-        for name, file in wanted.items():
-            if not file.exists() and not args.dry_run:
-                log(f"== expression: {file.name}")
-                draw(EXPRESSION_PROMPT.format(expression=character.EXPRESSIONS[name]), [portrait], file, PORTRAIT_SIZE, "transparent")
-        if not args.dry_run:
-            character.update_manifest(root / "src" / "portraits.json", args.id, names)
     return out
 
 
