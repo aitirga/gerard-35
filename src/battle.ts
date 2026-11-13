@@ -2,6 +2,7 @@
 import { adjustResource } from './combat/engine.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
+import { PHRASES, TONES, onsets, songAt, type Moment, type PhraseId, type ToneId } from './song.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
 export type BattlePhase = 'player' | 'enemy' | 'beat' | 'won' | 'lost' | 'escaped';
@@ -96,7 +97,17 @@ export const BOOST_ROUNDS = 3;
 export type SkillId = typeof SKILLS[number]['id'];
 type Skill = typeof SKILLS[number];
 /** `vertigo`: Vertitrón, the tower's boss; `vertigo-ojo`: its eye, a part of it (its own PV, no turns, `part`). */
-export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | 'plato' | 'vertigo' | 'vertigo-ojo' | BroodKind | SobremesaKind | CampingKind;
+export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | 'plato' | 'vertigo' | 'vertigo-ojo' | BroodKind | SobremesaKind | CampingKind | CuerdasKind;
+/**
+ * Las cuerdas' foes (docs/quests/marta.md § The qualities, § Final boss): what makes Marta herself,
+ * loose with nobody to govern it. Each asks one question, by kind of blow and never by who wears what,
+ * and shows its answer on its plate. La Lealtad takes the blows aimed at whoever stands with her. Lo
+ * Cristalino sends magic back and breaks under a blow. Lo Directo says whom it will hit, and hits very
+ * hard. An Eco's blow grows every turn. La Voz, all of them together, can only be hurt while she sings.
+ */
+export type CuerdasKind = 'lealtad' | 'cristalino' | 'directo' | 'eco' | 'voz';
+export const CUERDAS_KINDS = ['lealtad', 'cristalino', 'directo', 'eco', 'voz'] as const satisfies readonly CuerdasKind[];
+export const isCuerdas = (kind?: FoeKind): kind is CuerdasKind => !!kind && (CUERDAS_KINDS as readonly string[]).includes(kind);
 /**
  * Càmping Eurosport's foes (docs/quests/universidad.md § Càmping Eurosport, Monsters): each asks one
  * question, by kind of blow and never by who wears what, and shows its answer on its plate. A Mago de
@@ -167,7 +178,8 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'cambio-plato' | 'sorpresa' | 'puaj'
   | 'pisoton' | 'barrido' | 'grito' | 'carga' | 'rayo'
   | 'tirada' | 'sopeta' | 'regla-nueva' | 'carta-negra' | 'escala' | 'correccion' | 'cortafuegos' | 'duo-tirada' | 'duo-regla'
-  | 'bombona' | 'tumbarse' | 'contrasena' | 'punetazo' | 'recuperarse';
+  | 'bombona' | 'tumbarse' | 'contrasena' | 'punetazo' | 'recuperarse'
+  | 'juramento' | 'resonancia' | 'destello' | 'golpe-directo' | 'en-linea' | 'guardia' | 'nota-clara';
 export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }> = {
   lagrimilla: { name: 'Lagrimilla', card: false },
   'capa-nueva': { name: 'Capa nueva', card: true },
@@ -201,6 +213,13 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   contrasena: { name: 'Contraseña', card: false },
   punetazo: { name: 'Puñetazo', card: false },
   recuperarse: { name: 'Recuperarse', card: true },
+  juramento: { name: 'Juramento', card: false },
+  resonancia: { name: 'Resonancia', card: false },
+  destello: { name: 'Destello', card: true },
+  'golpe-directo': { name: 'Golpe directo', card: true },
+  'en-linea': { name: 'En línea recta', card: true },
+  guardia: { name: 'Guardia', card: true },
+  'nota-clara': { name: 'Nota clara', card: true },
 };
 const foeAbility = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} });
 /**
@@ -261,6 +280,29 @@ export const CAMPING = {
   downTaken: .5, contrasena: 18,
   heroeTaken: .5, paisanoTaken: 2, punetazo: 44, recuperarse: .1, formTurns: 2,
 };
+/**
+ * Las cuerdas' foes and La Voz (docs/quests/marta.md), every number in one book (`marta.rules`); their
+ * PV are their PROFILES entries. La Lealtad's Juramento is `juramento`. An Eco's Resonancia starts at
+ * `resonancia` and grows `resonanciaStep` each own turn, up to `resonanciaMost`. Lo Cristalino takes
+ * `cristalPhysical` of a physical blow and none of a magic one, `reflect` of which goes back to whoever
+ * cast it; its Destello is `destello`. Lo Directo's Golpe directo is `directo`; every `lineaEvery` own
+ * turns it goes En línea recta, `linea` on everyone.
+ * La Voz: a blow only lands while a note sounds. Every note that starts is an Eco on the whole party,
+ * `eco` PV and `ecoStep` more for each Crescendo; every time the phrase comes round, a Crescendo: her
+ * Magia up `crescendo`. A second blow by the other fighter inside the same note is an Acorde, `acorde`
+ * times as hard. Her Guardia halves the next blow on her (SOBREMESA.shield), her Nota clara sends magic
+ * back as Lo Cristalino does, and her Golpe directo is `vozDirecto`. From `allegro` of her PV down she
+ * sings Allegro, from `capela` down A capela (src/song.ts).
+ */
+export const MARTA = {
+  juramento: 20, resonancia: 12, resonanciaStep: 6, resonanciaMost: 36,
+  cristalPhysical: 1.5, reflect: .5, destello: 34,
+  directo: 44, linea: 26, lineaEvery: 3,
+  eco: 1, ecoStep: .5, crescendo: 1, acorde: 1.5, vozDirecto: 36,
+  allegro: .6, capela: .25,
+};
+/** La Voz's turns, in order, round and round: one from each of the qualities she is made of. */
+export const VOZ_TURNS = ['guardia', 'nota-clara', 'golpe-directo'] as const;
 /** How hard a Dado's Tumbarse is at average stats with `face` up. */
 export const dadoPower = (face: number) => CAMPING.dadoBase + CAMPING.dadoPip * face;
 /** Joan's scale, note by note: each one more out of tune. */
@@ -487,12 +529,16 @@ export interface Combatant {
   faceUp?: boolean;
   /** El Campeón: its form, and its own turns left in it before it changes. */
   form?: CampeonForm; formLeft?: number;
+  /** La Voz's Nota clara: until her next turn magic comes back at whoever cast it, as off Lo Cristalino. */
+  clear?: boolean;
+  /** La Voz: how many times her phrase has come round (Crescendo), and whether she is silent now (kept by the fight's clock for whoever draws her). */
+  crescendo?: number; silent?: boolean;
 }
 /** Whom a move is aimed at when it is not one ally: everyone. */
 export type Aim = 'todos';
 /** Which fight this is: the street dogs, the palace minion that wakes Matemágico, or the palace guards of chapter 2. */
 /** `escolta`: ring 3's fear, La Cebolla y los suyos (La Cebolla, a fantasmita and a cebollita). */
-export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | 'sobremesa' | BroodEncounter | CampingEncounter;
+export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | 'sobremesa' | BroodEncounter | CampingEncounter | CuerdasEncounter;
 /** The young that chase the party up each ring of Uri's tower, a few at a time. */
 export const BROOD_ENCOUNTERS = ['crias-1', 'crias-2', 'crias-3'] as const;
 export type BroodEncounter = (typeof BROOD_ENCOUNTERS)[number];
@@ -511,8 +557,18 @@ export const CAMPING_FIGHTS: Record<CampingEncounter, readonly CampingKind[]> = 
   'camping-negra': ['mago', 'mago', 'dado', 'dado'],
   campeon: ['campeon'],
 };
-/** Uri's maze and roof (docs/quests/nuria.md), La Sobremesa and the campsite: the fights whose foes have rules of their own. */
-export const FEAR_ENCOUNTERS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'sobremesa', ...BROOD_ENCOUNTERS, ...CAMPING_ENCOUNTERS] as const;
+/** Las cuerdas' fights (docs/quests/marta.md): a quality on each platform after a maze, and La Voz where every string meets. */
+export const CUERDAS_ENCOUNTERS = ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'] as const;
+export type CuerdasEncounter = (typeof CUERDAS_ENCOUNTERS)[number];
+/** Who comes out in each of them, in the order they stand. */
+export const CUERDAS_FIGHTS: Record<CuerdasEncounter, readonly CuerdasKind[]> = {
+  'cuerdas-lealtad': ['lealtad', 'eco'],
+  'cuerdas-cristalino': ['cristalino'],
+  'cuerdas-directo': ['directo'],
+  voz: ['voz'],
+};
+/** Uri's maze and roof (docs/quests/nuria.md), La Sobremesa, the campsite and Las cuerdas: the fights whose foes have rules of their own. */
+export const FEAR_ENCOUNTERS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'sobremesa', ...BROOD_ENCOUNTERS, ...CAMPING_ENCOUNTERS, ...CUERDAS_ENCOUNTERS] as const;
 /** Bernat's HP floor in the palace fight: the hit that would cross it stops there and starts the beat. */
 export const BEAT_HP = 20;
 export interface BattleState {
@@ -556,7 +612,19 @@ export interface BattleState {
   fought?: Partial<Record<ClassId, string[]>>;
   /** Development: EXP added to what the foes are worth (the picker's «Victoria subiendo de nivel»). */
   extraXp?: number;
+  /**
+   * La Voz's song (docs/quests/marta.md § Final boss): the phrase she sings, seconds into it on the
+   * fight's clock, and who last landed a blow on her and in which note (`struck`, for the Acorde).
+   */
+  song?: { phrase: PhraseId; t: number; struck?: { loop: number; index: number; by: string } };
+  /** What the song did since it was last asked (`takeSongNews`): an Eco, a Crescendo, a new phrase. */
+  songNews?: SongNews[];
 }
+/** Something the song did on its own, for the fight to show. */
+export type SongNews =
+  | { kind: 'eco'; tone: ToneId; hits: { target: string; amount: number }[] }
+  | { kind: 'crescendo'; level: number }
+  | { kind: 'phrase'; phrase: PhraseId };
 /** A choice queued ahead by an ally later in the round (`queue`). */
 export interface Queued { action: 'attack' | 'defend' | 'skill'; skill?: SkillId; target?: string }
 /**
@@ -584,7 +652,9 @@ export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[
 /** Nobody runs from possessed dogs, the palace minion or Vertitrón's roof; the palace guards and the maze's fears let them back off. */
 export const cornered = (state: BattleState) => state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo' || state.encounter === 'sobremesa'
   // The black pitch puts every lantern out round them, and El Campeón stands between them and the way on.
-  || state.encounter === 'camping-negra' || state.encounter === 'campeon';
+  || state.encounter === 'camping-negra' || state.encounter === 'campeon'
+  // Where every string meets there is nowhere to back off to.
+  || state.encounter === 'voz';
 /** Gerard's ánima in this fight. */
 export const gerardClass = (state: BattleState) => state.allies.find(a => a.id === 'gerard')?.classId;
 /** Bernat wears no ánima: he only attacks. */
@@ -798,6 +868,16 @@ export interface BattleEffect {
   dice?: number[]; shielded?: string; shield?: 'spent';
   /** El Campeón changed form at the end of this turn: the one it is in now. */
   form?: CampeonForm;
+  /** La Lealtad stepped in: the foe the blow was aimed at (`target` is her). */
+  interposed?: string;
+  /** Magic sent back (Lo Cristalino, La Voz's Nota clara): the PV it took off whoever cast it. */
+  reflected?: number;
+  /** A blow on La Voz between two notes: it went through her. */
+  silent?: true;
+  /** A second blow on La Voz inside the same note, by the other fighter: an Acorde. */
+  chord?: true;
+  /** La Voz's Nota clara: magic comes back until her next turn. */
+  clear?: true;
 }
 /** Whether this action spent a Punto débil on its target (it landed WEAK_SPOT times as hard). */
 export const markSpent = (e: BattleEffect) => e.weakSpot === 'spent' || e.weakSpot === 'renewed';
@@ -822,8 +902,38 @@ function changeHealth(target: Combatant, delta: number) {
   return Math.abs(result.amount);
 }
 /** Damage on a foe, from anything (a blow, a tick, a pulse). */
-function hurt(_state: BattleState, c: Combatant, amount: number) {
+function hurt(state: BattleState, c: Combatant, amount: number) {
+  // La Voz is only there while she sings: between two notes nothing reaches her, not even a fire already on her.
+  if (silenced(state, c)) return 0;
   return changeHealth(c, -Math.max(0, Math.min(amount, c.hp)));
+}
+/** What La Voz's song is on now (`undefined` in any other fight). */
+export const songNow = (state: BattleState): Moment | undefined => state.song ? songAt(PHRASES[state.song.phrase], state.song.t) : undefined;
+/** Whether `c` is La Voz between two notes: nothing hurts her then. */
+export const silenced = (state: BattleState, c: Combatant) => c.kind === 'voz' && !!state.song && !songNow(state)!.sounding;
+/** Whether magic comes back off `c`: Lo Cristalino always, La Voz while her Nota clara lasts. */
+export const reflects = (c: Combatant) => c.hp > 0 && (c.kind === 'cristalino' || (c.kind === 'voz' && !!c.clear));
+/** La Lealtad, if she stands and `target` is another foe: she takes the blow aimed at it. */
+const guardOf = (state: BattleState, target: Combatant) => target.kind === 'lealtad' ? undefined : state.foes.find(f => f.kind === 'lealtad' && f.hp > 0);
+/**
+ * A blow on La Voz inside a note someone else already struck her in is an Acorde: `acorde` times as
+ * hard, once a note. Returns the scale; `landed` (after the blow) remembers who struck, or spends it.
+ */
+function chordScale(state: BattleState, actor: Combatant, target: Combatant) {
+  const now = target.kind === 'voz' ? songNow(state) : undefined, struck = state.song?.struck;
+  return now?.sounding && struck && struck.loop === now.loop && struck.index === now.index && struck.by !== actor.id ? MARTA.acorde : 1;
+}
+function landed(state: BattleState, actor: Combatant, target: Combatant, amount: number, chord: number, effect: BattleEffect) {
+  const now = target.kind === 'voz' ? songNow(state) : undefined;
+  if (!now?.sounding || !state.song || amount <= 0) return;
+  if (chord > 1) { effect.chord = true; delete state.song.struck; }
+  else state.song.struck = { loop: now.loop, index: now.index, by: actor.id };
+}
+/** The whole party down ends the fight (magic sent back can do it on the party's own turn). */
+function fallen(state: BattleState) {
+  if (!state.allies.every(a => a.hp === 0)) return false;
+  state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; endFight(state);
+  return true;
 }
 /** Rounds a Punto débil on `c` still lasts, this one included (0: none). */
 export const weakSpotRounds = (state: BattleState, c: Combatant) => c.weakSpot !== undefined && c.weakSpot >= state.round && c.hp > 0 ? c.weakSpot - state.round + 1 : 0;
@@ -1015,6 +1125,7 @@ export function createFearBattle(party: PartySlot[], encounter: (typeof FEAR_ENC
   if ((BROOD_ENCOUNTERS as readonly string[]).includes(encounter)) return createBroodBattle(party, encounter as BroodEncounter, animas, random);
   if (encounter === 'sobremesa') return createSobremesaBattle(party, animas, random);
   if ((CAMPING_ENCOUNTERS as readonly string[]).includes(encounter)) return createCampingBattle(party, encounter as CampingEncounter, animas, random);
+  if ((CUERDAS_ENCOUNTERS as readonly string[]).includes(encounter)) return createCuerdasBattle(party, encounter as CuerdasEncounter, animas, random);
   const spec = FEAR_FOES[encounter as keyof typeof FEAR_FOES];
   const one: Combatant = { ...foe(spec.id, spec.name, spec.kind), power: spec.power };
   if (isOnion(spec.kind)) one.layers = ONIONS[spec.kind].layers;
@@ -1094,8 +1205,9 @@ function fearDamage(_state: BattleState, target: Combatant, damage: number, blow
   }
   if (target.layers) out /= 2;
   if (target.transparent && blow === 'physical') out *= FEAR_RULES.transparent;
-  out *= campingTaken(target, blow);
-  return Math.max(1, Math.round(out));
+  out *= campingTaken(target, blow) * cuerdasTaken(target, blow);
+  // Magic off glass does nothing at all (Lo Cristalino, La Voz's Nota clara).
+  return out <= 0 ? 0 : Math.max(1, Math.round(out));
 }
 /** What the fight says when the last foe falls. */
 function winMessage(state: BattleState) {
@@ -1106,6 +1218,7 @@ function winMessage(state: BattleState) {
     : state.encounter === 'uri-vertigo' ? 'Vertitrón cae de rodillas. Uri baja con Nil en brazos, y el violeta se le va de los ojos.'
     : state.encounter === 'sobremesa' ? 'La Sobremesa se deshace sobre la hierba. Quedan siete personas tumbadas entre las sillas, mirándose como si acabaran de llegar.'
     : isCampingFight(state) ? CAMPING_WON[state.encounter as CampingEncounter]
+    : isCuerdasFight(state) ? CUERDAS_WON[state.encounter as CuerdasEncounter]
     : (BROOD_ENCOUNTERS as readonly string[]).includes(state.encounter) ? 'Se deshacen en humo violeta. Desde arriba, la risa de Uri. Volverán.'
     : state.encounter === 'palace-minion' ? 'El esbirro se queda tieso, se agrieta como chicle viejo… y revienta.'
     : state.encounter === 'palace-guards' ? 'Los guardianes se deshacen en charcos rosas. La cortina tiembla.'
@@ -1178,10 +1291,13 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   const targets = validTargets(state, action, skill);
   const party = action === 'skill' && ability?.side === 'party';
   const everyone = action === 'skill' && ability?.side === 'all-foes';
-  const target = party ? undefined : everyone ? targets[0] : targets.find(f => f.id === targetId);
+  let target = party ? undefined : everyone ? targets[0] : targets.find(f => f.id === targetId);
   if ((action === 'attack' || action === 'skill') && !target && !(party && targets.length)) return;
   if (action === 'skill' && (!ability || actor.secondary < ability.cost || !skillsFor(state, actor).includes(ability))) return;
   const effect: BattleEffect = { actor: actor.id, kind: action };
+  // La Lealtad steps in front of whoever a blow is aimed at (one that reaches every foe gets past her).
+  const aimedAt = target, guard = target && !everyone && state.foes.includes(target) ? guardOf(state, target) : undefined;
+  if (guard && aimedAt) { target = guard; effect.interposed = aimedAt.id; }
   if (action === 'escape' && cornered(state)) return;
   if (action !== 'escape') took(state, actor);
   if (action === 'escape') {
@@ -1295,6 +1411,15 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       // The gum swallows the blow whole.
       effect.amount = 0; effect.swallowed = true;
       state.message = `${actor.name} golpea a ${target.name}… y el chicle se lo traga. Ni un rasguño.`;
+    } else if (silenced(state, target)) {
+      // Between two notes La Voz is not there: the blow goes through her.
+      effect.amount = 0; effect.silent = true;
+      state.message = `${actor.name} golpea donde estaba ${target.name}. Entre nota y nota no hay nadie.`;
+    } else if (action === 'skill' && ability!.kind === 'magic' && reflects(target)) {
+      // Magic off glass: nothing for the target, and a share of it back at whoever cast it.
+      effect.amount = 0;
+      effect.reflected = changeHealth(actor, -Math.max(1, Math.round(strike(state, actor, target, ability) * MARTA.reflect)));
+      state.message = `${actor.name} usa ${ability!.name} contra ${target.name}. La magia rebota y vuelve. −${effect.reflected} PV para ${actor.name}.`;
     } else {
       if (melts && target.shell) { target.shell = false; effect.melted = true; }
       // Each hit is measured on its own, since the layers it finds change the next one's weight.
@@ -1305,12 +1430,14 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       const element = action === 'attack' ? attackElement(state, actor) : undefined;
       if (element) effect.element = element;
       const { bled, scale } = wound(target, !magic && element !== 'fuego', action === 'skill' ? skill : undefined), weak = weakScale(state, target);
+      const chord = chordScale(state, actor, target);
       for (let i = 0; i < times && target.hp > 0; i++) {
-        strikes.push(hurt(state, target, fearDamage(state, target, strike(state, actor, target, action === 'skill' ? ability : undefined) * scale * weak, magic ? 'magic' : 'physical')));
+        strikes.push(hurt(state, target, fearDamage(state, target, strike(state, actor, target, action === 'skill' ? ability : undefined) * scale * weak * chord, magic ? 'magic' : 'physical')));
         if (target.layers && !--target.layers) bare(target);
       }
       if (bled) { delete target.statuses!.sangrado; effect.bled = bled; }
       effect.amount = strikes.reduce((sum, amount) => sum + amount, 0);
+      landed(state, actor, target, effect.amount, chord, effect);
       const spent = weak > 1 && effect.amount > 0;
       if (spent) { delete target.weakSpot; effect.weakSpot = 'spent'; }
       spendShield(state, target, effect.amount, effect);
@@ -1322,6 +1449,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       const name = action !== 'skill' ? 'Atacar' : ability!.name;
       state.message = effect.melted ? `${actor.name} usa ${name}. El pringue se derrite. −${effect.amount} PV.` : `${actor.name} usa ${name} contra ${target.name}. −${effect.amount} PV.`;
       if (spent) state.message += ' ¡Punto débil: el triple de daño!';
+      if (effect.chord) state.message += ' ¡Acorde!';
+      if (effect.interposed) state.message += ` ${target.name} se ha puesto delante.`;
       if (peeled && !target.layers && target.hp > 0) effect.stats = [{ target: target.id, way: 'down', stats: ['defensa'] }];
       if (peeled) state.message += !target.layers ? ' ¡Sin capas!' : peeled > 1 ? ` ${peeled} capas menos: quedan ${target.layers}.` : ` Una capa menos: quedan ${target.layers}.`;
       if (bled) state.message += ` La herida se abre: +${Math.round((scale - 1) * 100)} %.`;
@@ -1349,6 +1478,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     }
   }
   checkEye(state, effect);
+  if (fallen(state)) return effect;
   settle(state);
   return effect;
 }
@@ -1705,6 +1835,166 @@ function createCampingBattle(party: PartySlot[], encounter: CampingEncounter, an
     message: CAMPING_MESSAGES[encounter],
   };
 }
+/** Las cuerdas' foes, by name. */
+export const CUERDAS_NAMES: Record<CuerdasKind, string> = { lealtad: 'La Lealtad', cristalino: 'Lo Cristalino', directo: 'Lo Directo', eco: 'Eco', voz: 'La Voz' };
+const CUERDAS_MESSAGES: Record<CuerdasEncounter, string> = {
+  'cuerdas-lealtad': 'En el nudo de cuerdas hay dos luces. La grande se pone delante de la pequeña, de espaldas a ella, y no se mueve.',
+  'cuerdas-cristalino': 'Una figura de vidrio fino os espera en el nudo. Se ve a través de ella todo lo que hay detrás.',
+  'cuerdas-directo': 'Una sola línea de luz, recta, sin una curva. Apunta a uno de vosotros.',
+  voz: 'Donde se juntan todas las cuerdas hay alguien. Tiene la forma de Marta y no pesa nada. Canta una nota, y calla.',
+};
+const CUERDAS_WON: Record<CuerdasEncounter, string> = {
+  'cuerdas-lealtad': 'La Lealtad se deshace en un hilo de luz que corre por las cuerdas hacia el centro.',
+  'cuerdas-cristalino': 'El vidrio se raja sin ruido. Lo que había dentro se va por las cuerdas, hacia el centro.',
+  'cuerdas-directo': 'La línea se afloja, se curva por primera vez y se suelta. Va hacia el centro, como las otras.',
+  voz: 'La última nota se queda sonando. La figura se deshace despacio, hilo a hilo, y todos los hilos van hacia Marta.',
+};
+const isCuerdasFight = (state: BattleState) => (CUERDAS_ENCOUNTERS as readonly string[]).includes(state.encounter);
+/** One of Las cuerdas' fights: who comes out (CUERDAS_FIGHTS), each with what it has already said it will do; La Voz with her song. */
+function createCuerdasBattle(party: PartySlot[], encounter: CuerdasEncounter, animas?: ClassId[], random: () => number = Math.random): BattleState {
+  const unlocked = animas ?? wornAnimas(party), allies = lineUp(party, unlocked);
+  const first = allies[Math.floor(random() * allies.length)]?.id;
+  const foes = CUERDAS_FIGHTS[encounter].map(kind => {
+    const one = foe(kind, CUERDAS_NAMES[kind], kind);
+    // What says whom it will hit comes in having said it.
+    if (kind === 'cristalino') one.intent = { ability: 'destello', target: first };
+    if (kind === 'directo') one.intent = { ability: 'golpe-directo', target: first };
+    return one;
+  });
+  return {
+    allies, foes,
+    active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
+    animas: unlocked, awakened: unlocked.includes('matemagico'), seed: seedFrom(random),
+    message: CUERDAS_MESSAGES[encounter],
+    ...encounter === 'voz' ? { song: { phrase: 'andante' as PhraseId, t: 0 } } : {},
+  };
+}
+/** How much of a blow one of Las cuerdas' foes takes, by the kind of blow (a dual counts as every kind): glass takes no magic, and more of a blow. */
+function cuerdasTaken(target: Combatant, blow: Blow) {
+  // A dual is half magic: it lands whole, neither sent back nor harder.
+  if (target.kind === 'cristalino') return blow === 'magic' ? 0 : blow === 'dual' ? 1 : MARTA.cristalPhysical;
+  if (target.kind === 'voz' && target.clear && blow === 'magic') return 0;
+  return 1;
+}
+/** How hard an Eco's Resonancia is now: more each of its own turns. */
+export const resonancia = (c: Combatant) => Math.min(MARTA.resonanciaMost, MARTA.resonancia + MARTA.resonanciaStep * (c.turns ?? 0));
+/** The phrase La Voz sings at this much of her PV. */
+export const phraseFor = (share: number): PhraseId => share <= MARTA.capela ? 'a-capela' : share <= MARTA.allegro ? 'allegro' : 'andante';
+/**
+ * Las cuerdas' foes' turns (docs/quests/marta.md), each one named move. La Lealtad strikes one
+ * (Juramento). An Eco strikes one, harder every turn (Resonancia). Lo Cristalino flashes at whom it
+ * said (Destello, magic) and says who is next. Lo Directo strikes whom it said, very hard, and says
+ * who is next; every `lineaEvery` turns it says everyone, and goes En línea recta. La Voz goes round
+ * VOZ_TURNS: Guardia, Nota clara (and whom she will hit), Golpe directo.
+ */
+function cuerdasTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect, hit: Hit) {
+  const turn = actor.turns ?? 0;
+  actor.turns = turn + 1;
+  const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
+  const alive = state.allies.filter(a => a.hp > 0);
+  const zap: Hit = (who, power) => {
+    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
+  };
+  /** Whom it said, if still standing; and who is next (next round's turn order). */
+  const named = () => alive.find(a => a.id === actor.intent?.target) ?? target;
+  const next = () => alive[(state.round + state.foes.indexOf(actor)) % alive.length];
+  const announce = (ability: 'destello' | 'golpe-directo' | 'en-linea') => {
+    const who = next();
+    if (!who) return;
+    actor.intent = ability === 'en-linea' ? { ability, at: 'todos' } : { ability, target: who.id };
+    effect.telegraph = { id: ability, name: FOE_ABILITIES[ability].name, ...ability === 'en-linea' ? { at: 'todos' as const } : { target: who.id } };
+    state.message += ability === 'en-linea' ? ' Se pone recta del todo: os mira a los dos.' : ` Ahora mira a ${who.name}.`;
+  };
+  if (actor.kind === 'lealtad') {
+    use('juramento'); effect.amount = hit(target, MARTA.juramento);
+    state.message = `${actor.name} carga contra ${target.name} sin apartarse de su sitio. −${effect.amount} PV.`;
+  } else if (actor.kind === 'eco') {
+    const power = Math.min(MARTA.resonanciaMost, MARTA.resonancia + MARTA.resonanciaStep * turn);
+    use('resonancia'); effect.amount = hit(target, power);
+    state.message = `El Eco repite el golpe contra ${target.name}, más fuerte que antes. −${effect.amount} PV.`;
+  } else if (actor.kind === 'cristalino') {
+    const who = named();
+    use('destello'); effect.target = who.id; effect.amount = zap(who, MARTA.destello);
+    state.message = `${actor.name} devuelve la luz que le llega sobre ${who.name}. −${effect.amount} PV.`;
+    announce('destello');
+  } else if (actor.kind === 'directo') {
+    if (actor.intent?.ability === 'en-linea') {
+      use('en-linea'); onEveryone(state, effect, target, hit, MARTA.linea);
+      state.message = `${actor.name} os atraviesa a los dos de un solo trazo. −${effect.amount} PV a ${target.name}.`;
+    } else {
+      const who = named();
+      use('golpe-directo'); effect.target = who.id; effect.amount = hit(who, MARTA.directo);
+      state.message = `${actor.name} va recto a ${who.name}. −${effect.amount} PV${who.guarding ? ' · Protegido' : ''}.`;
+    }
+    announce(actor.turns % MARTA.lineaEvery === MARTA.lineaEvery - 1 ? 'en-linea' : 'golpe-directo');
+  } else {
+    const move = VOZ_TURNS[turn % VOZ_TURNS.length];
+    use(move);
+    if (move === 'guardia') {
+      // Guardia: the next blow on her lands at half, and spends it (it fades with the round after this one).
+      delete effect.target; delete actor.intent;
+      actor.shielded = state.round + 1; effect.shielded = actor.id;
+      state.message = `${actor.name} cruza los brazos, como quien no piensa moverse de ahí. El siguiente golpe le llegará a medias.`;
+    } else if (move === 'nota-clara') {
+      // Nota clara: glass until her next turn, and she says whom the next one is for.
+      delete effect.target;
+      actor.clear = true; effect.clear = true;
+      state.message = `${actor.name} canta una nota tan limpia que se ve a través de ella. La magia rebotará.`;
+      const who = next();
+      if (who) {
+        actor.intent = { ability: 'golpe-directo', target: who.id };
+        effect.telegraph = { id: 'golpe-directo', name: FOE_ABILITIES['golpe-directo'].name, target: who.id };
+        state.message += ` Y mira a ${who.name}.`;
+      }
+    } else {
+      const who = named();
+      delete actor.intent; delete actor.clear;
+      effect.target = who.id; effect.amount = zap(who, MARTA.vozDirecto);
+      state.message = `${actor.name} le dice a ${who.name} una sola cosa, sin rodeos. −${effect.amount} PV${who.guarding ? ' · Protegido' : ''}.`;
+    }
+  }
+}
+/**
+ * La Voz's song goes on (the fight's clock, `runClock`): `seconds` more of it. Every note that starts
+ * is an Eco on the whole party; the phrase coming round is a Crescendo; and her PV say which phrase
+ * she sings (a new one starts on its first note). Returns whether anything happened to tell.
+ */
+function runSong(state: BattleState, seconds: number) {
+  const song = state.song, voz = state.foes.find(f => f.kind === 'voz' && f.hp > 0);
+  if (!song || !voz) return false;
+  const news = state.songNews ??= [], before = news.length;
+  const wanted = phraseFor(voz.hp / voz.maxHp);
+  if (wanted !== song.phrase) {
+    song.phrase = wanted; song.t = 0; delete song.struck;
+    news.push({ kind: 'phrase', phrase: wanted });
+  }
+  for (const onset of onsets(PHRASES[song.phrase], song.t, song.t + seconds)) {
+    if (onset.round) {
+      voz.crescendo = (voz.crescendo ?? 0) + 1;
+      const lasting = voz.lasting ??= { shifts: {}, from: 'Crescendo' };
+      lasting.shifts.magia = (lasting.shifts.magia ?? 0) + MARTA.crescendo;
+      news.push({ kind: 'crescendo', level: voz.crescendo });
+    }
+    const raw = Math.round(MARTA.eco + MARTA.ecoStep * (voz.crescendo ?? 0));
+    const hits = state.allies.filter(a => a.hp > 0).map(ally => ({ target: ally.id, amount: changeHealth(ally, -(ally.guarding ? Math.ceil(raw / 3) : raw)) }));
+    news.push({ kind: 'eco', tone: onset.tone, hits });
+  }
+  song.t += seconds;
+  voz.silent = !songAt(PHRASES[song.phrase], song.t).sounding;
+  return news.length > before;
+}
+/** What the song did since it was last asked, in order. */
+export function takeSongNews(state: BattleState): SongNews[] {
+  const news = state.songNews ?? [];
+  delete state.songNews;
+  return news;
+}
+/** How La Voz's plate says what she sings now: «Nota · Mi», or «Silencio». */
+export function songLabel(state: BattleState) {
+  const now = songNow(state);
+  return now ? now.sounding ? `Nota · ${TONES[now.tone].name}` : 'Silencio' : undefined;
+}
 /**
  * How much of a blow a campsite foe takes, by its rule and the kind of blow (a dual counts as every
  * kind, so it takes the better): a Mago de camping, little from magic and more from blows; an Agente
@@ -2032,6 +2322,7 @@ function fearAct(state: BattleState, actor: Combatant, target: Combatant): Battl
   if (actor.kind === 'vertigo') vertigoTurn(state, actor, target, effect, hit, stats);
   else if (isSobremesa(actor.kind)) sobremesaTurn(state, actor, target, effect, hit, stats);
   else if (isCamping(actor.kind)) campingTurn(state, actor, target, effect, hit);
+  else if (isCuerdas(actor.kind)) cuerdasTurn(state, actor, target, effect, hit);
   else {
     actor.turns = (actor.turns ?? 0) + 1;
     if (actor.kind === 'cebollita' && !actor.layers && !actor.regrown) {
@@ -2213,6 +2504,8 @@ export function nextRound(state: BattleState): StatusTick[] {
 export function runClock(state: BattleState, seconds: number, waiting?: (c: Combatant) => boolean): TimedPulse[] {
   if (!(seconds > 0) || (state.phase !== 'player' && state.phase !== 'enemy')) return [];
   const pulses: TimedPulse[] = [];
+  // La Voz's song first: what sounds now decides whether a fire on her hurts this frame.
+  const sung = runSong(state, seconds);
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) {
     const on = c.timed?.[id];
     // A fire settled but still on its way (`waiting`): its clock starts when it lands.
@@ -2224,20 +2517,27 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       const amount = pulseDamage(id, on.level, c.maxHp);
       // A cure's pulse (Sanación) gives PV back, never past the most.
       if (TIMED[id].heal) pulses.push({ target: c.id, status: id, level: on.level, amount: changeHealth(c, amount), heal: true });
-      else pulses.push({ target: c.id, status: id, level: on.level, amount: foeSide ? hurt(state, c, amount) : changeHealth(c, -amount) });
+      // A fire on La Voz burns on, but between two notes it takes nothing: no pulse to show.
+      else if (!(foeSide && silenced(state, c))) pulses.push({ target: c.id, status: id, level: on.level, amount: foeSide ? hurt(state, c, amount) : changeHealth(c, -amount) });
       // Vertitrón's eye burnt out: no more Rayo.
       if (c.kind === 'vertigo-ojo') checkEye(state);
     }
     on.left -= dt; on.next -= dt;
     if ((c.hp <= 0 || on.left <= 1e-6) && c.timed) delete c.timed[id];
   }
-  if (!pulses.length) return pulses;
+  if (!pulses.length && !sung) return pulses;
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; endFight(state); }
+  // Whoever was choosing fell to the song (an Eco): the turn passes to the next one standing, or to the foes.
+  else if (state.phase === 'player' && (state.allies[state.active]?.hp ?? 0) <= 0) {
+    const next = state.allies.findIndex(a => a.hp > 0 && !state.spent?.includes(a.id) && state.allies.indexOf(a) > state.active);
+    if (next >= 0) state.active = next; else { state.phase = 'enemy'; delete state.queued; }
+  }
   return pulses;
 }
 /** Moments of a fight the picker can jump to that the fight itself stages (docs/dev-tools.md). */
-export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo' | 'plato-sorpresa' | 'sobremesa-duo-carta' | 'sobremesa-escala-alta' | 'sobremesa-ultimo' | 'magos-bombona' | 'campeon-heroe' | 'campeon-paisano';
+export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo' | 'plato-sorpresa' | 'sobremesa-duo-carta' | 'sobremesa-escala-alta' | 'sobremesa-ultimo' | 'magos-bombona' | 'campeon-heroe' | 'campeon-paisano'
+  | 'directo-linea' | 'voz-andante' | 'voz-allegro' | 'voz-a-capela' | 'voz-nota-clara';
 export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: Encounter }> = {
   'vertigo-carga': { label: 'Rayo cargado', encounter: 'uri-vertigo' },
   'vertigo-grito': { label: 'Tras dos gritos', encounter: 'uri-vertigo' },
@@ -2249,6 +2549,11 @@ export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: En
   'magos-bombona': { label: 'Bombona cargada', encounter: 'camping-magos' },
   'campeon-heroe': { label: 'Héroe', encounter: 'campeon' },
   'campeon-paisano': { label: 'De paisano', encounter: 'campeon' },
+  'directo-linea': { label: 'En línea recta', encounter: 'cuerdas-directo' },
+  'voz-andante': { label: 'Andante', encounter: 'voz' },
+  'voz-allegro': { label: 'Allegro', encounter: 'voz' },
+  'voz-a-capela': { label: 'A capela', encounter: 'voz' },
+  'voz-nota-clara': { label: 'Nota clara', encounter: 'voz' },
 };
 /**
  * Development: puts the fight at `moment`, the party to choose (pure; the picker's `jumpTo` calls
@@ -2272,6 +2577,23 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
     } else {
       for (const f of state.foes) if (f.id !== 'miquel') f.hp = 0;
       one('miquel').hp = Math.ceil(one('miquel').maxHp / 2);
+    }
+  } else if (moment === 'directo-linea') {
+    // Lo Directo whole, about to go through everyone.
+    const line = state.foes.find(f => f.kind === 'directo' && f.hp > 0);
+    if (!line) return false;
+    line.hp = line.maxHp; line.turns = MARTA.lineaEvery - 1; line.intent = { ability: 'en-linea', at: 'todos' };
+  } else if (moment.startsWith('voz-')) {
+    // La Voz at the start of a phrase, nothing announced, no Crescendo yet: whole in Andante, at its mark in the others.
+    const voz = state.foes.find(f => f.kind === 'voz');
+    if (!voz || !state.song) return false;
+    delete voz.intent; delete voz.clear; delete voz.shielded; delete voz.lasting; delete voz.crescendo; voz.turns = 0;
+    const share = moment === 'voz-allegro' ? MARTA.allegro : moment === 'voz-a-capela' ? MARTA.capela : 1;
+    voz.hp = Math.max(1, Math.floor(voz.maxHp * share));
+    state.song = { phrase: phraseFor(voz.hp / voz.maxHp), t: 0 }; delete state.songNews;
+    if (moment === 'voz-nota-clara') {
+      const first = state.allies.find(a => a.hp > 0)!;
+      voz.clear = true; voz.turns = VOZ_TURNS.indexOf('golpe-directo'); voz.intent = { ability: 'golpe-directo', target: first.id };
     }
   } else if (moment === 'magos-bombona') {
     // Every mago standing, whole, with its Bombona charged (Bombona → todos).

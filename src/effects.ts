@@ -352,6 +352,8 @@ const AIR: Partial<Record<string, Air>> = {
   barceloneta: { kinds: [{ kind: 'sand', density: 5, low: .03, high: .45 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.5, 0, -.9], turbulence: 1.2 },
   // Càmping Eurosport: a still summer evening, a few fireflies over the pitches and motes round the bulbs.
   camping: { kinds: [{ kind: 'firefly', density: 3, low: .3, high: 2.2 }, { kind: 'mote', density: 3, low: .5, high: 3 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.04, 0, .02], turbulence: .5 },
+  // Las cuerdas: specks of light rising slowly through the void, none of her gloom.
+  cuerdas: { kinds: [{ kind: 'mote', density: 9, low: -1.5, high: 6 }, { kind: 'firefly', density: 2.5, low: -1, high: 5 }], wind: [0, .12, 0], turbulence: .35 },
   // Carrer de Blai: warm motes hanging in the still air under the terraces' bulbs.
   'poble-sec': { kinds: [{ kind: 'mote', density: 5, low: .4, high: 4 }, { kind: 'gloom', density: 7, low: .1, high: 2.6, bubbaloo: true }], wind: [.05, 0, .02], turbulence: .5 },
   // The Sagrada Família inside: dust hanging high in the light from the glass.

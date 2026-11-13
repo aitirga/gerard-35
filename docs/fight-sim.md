@@ -46,6 +46,7 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `vertigo` | `VERTIGO`, the final boss's whole book, as `vertigo.boss` | `vertigo.boss.pisoton`, `vertigo.boss.gritoDown` |
 | `reaction` | `REACTION_RULES`, what the elements turn | `reaction.rules.storm`, `reaction.rules.blind2` |
 | `camping` | `CAMPING`, Càmping Eurosport's foes, as `camping.rules` | `camping.rules.bombona`, `camping.rules.punetazo` |
+| `marta` | `MARTA`, Las cuerdas' foes and La Voz, as `marta.rules` | `marta.rules.eco`, `marta.rules.acorde`, `marta.rules.directo` |
 | `fear` | `FEAR_RULES` as `fear.rules`, and El Plato's blow as `fear.plato` (the onions hit with `ONIONS`, Vertitrón with `VERTIGO`) | `fear.rules.escortLayers`, `fear.plato.power` |
 
 What the Ecos de luz are in is one more list, `--improved`, of `src/ecos.ts` ids joined with `/`
@@ -226,3 +227,31 @@ What the numbers say:
   all while it is in plain clothes; `casual` hits it as a hero at half and loses as often as not;
   Atacar alone never wins, since in plain clothes it gets its PV back.
 - `smart` knows whom the Puñetazo will hit, a person does not: people will hold on with both.
+
+## Las cuerdas, as tuned
+
+Measured with `just fight-sim` (200 fights, seed 35). Its numbers are `MARTA` (book `marta.rules`) and
+each foe's `PROFILES`. The qualities are played with Papagato 2 and Matemágico 2, La Voz with both at 3.
+
+| Fight | Party, bot | Wins | Rounds won | PV left |
+| --- | --- | --- | --- | --- |
+| La Lealtad | duo, smart | 100 % | 6.3 | 65 % |
+| La Lealtad | duo, casual | 83 % | 5.6 | 35 % |
+| La Lealtad | duo, attack only | 0 % | – | – |
+| Lo Cristalino | duo, attack only | 100 % | 5.0 | 45 % |
+| Lo Cristalino | tech, random | 38 % | 10.5 | 40 % |
+| Lo Directo | duo, smart | 100 % | 5.0 | 53 % |
+| Lo Directo | duo, casual | 92 % | 4.3 | 39 % |
+| Lo Directo | duo, attack only | 0 % | – | – |
+| La Voz | duo, smart | 100 % | 12.7 | 39 % |
+| La Voz | duo, smart, no duals | 98 % | 15.7 | 27 % |
+| La Voz | duo, casual | 19 % | 14.8 | 8 % |
+| La Voz | tech, smart | 69 % | 18.8 | 15 % |
+| La Voz | duo, attack only | 0 % | – | – |
+
+La Voz runs on the fight's clock, so the bots play it in time: `smart` waits for a note before
+choosing and has the second fighter's blow ready to land inside the same note (the Acorde) four times
+in five; `casual` waits half the time and chains one in seven; `attack` and `random` never look at
+the song (`TIMED`, `CHORD` in `src/battle-sim.ts`). Her fight is steep on purpose and narrow to tune:
+Eco and Crescendo punish length, so 80 PV more or less moves `smart` from always to rarely
+(`--tune foe.voz.pv=400:480:560`). Change her PV, `eco` or `ecoStep` one at a time.

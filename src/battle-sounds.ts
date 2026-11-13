@@ -62,6 +62,12 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
   dado: { start: [{ id: 'creak', volume: .4 }], impact: [{ id: 'thump' }] },
   agente: { impact: [{ id: 'hit' }] },
   campeon: { impact: [{ id: 'slam' }] },
+  // Las cuerdas: a body thrown in the way, a blow repeated, light off glass, a line drawn, a voice.
+  lealtad: { impact: [{ id: 'slam', volume: .8 }] },
+  eco: { impact: [{ id: 'hit', volume: .7 }] },
+  cristalino: { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'crack', volume: .7 }] },
+  directo: { start: [{ id: 'gust', volume: .5 }], impact: [{ id: 'slam' }] },
+  voz: { impact: [{ id: 'hit', volume: .8 }] },
 };
 const foeOf = (effect: BattleEffect, state?: BattleState) => state?.foes.find(f => f.id === effect.actor);
 
@@ -103,6 +109,9 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   // A mago charging its Bombona: the gas hisses out. El Campeón in plain clothes pulling itself together.
   if (effect.kind === 'enemy' && effect.telegraph?.id === 'bombona') return [{ id: 'fizzle' }];
   if (effect.kind === 'enemy' && effect.healed) return [{ id: 'heal', volume: .6 }];
+  // La Voz crossing her arms (Guardia) and turning to glass (Nota clara): no blow, but each is heard.
+  if (effect.kind === 'enemy' && effect.ability?.id === 'guardia') return [{ id: 'guard' }];
+  if (effect.kind === 'enemy' && effect.clear) return [{ id: 'mark-set' }, { id: 'stat-up', volume: .5, delay: .1 }];
   if (effect.kind !== 'enemy' || !(effect.amount || effect.splash)) return [];
   const foe = foeOf(effect, state);
   // Whoever hit everyone: a fantasmita's «GAME OVER» and Vertitrón's (Barrido; the Rayo cracks as it sweeps).

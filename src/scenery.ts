@@ -166,7 +166,9 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   // Outdoors by day: a near-white sun, and a blue sky that tints the shade and lights it from the other side.
   // Inside the Sagrada Família: dim stone, the light comes in colour through the glass (src/basilica-scenery.ts).
   const nave = !!environment.basilica;
-  const outdoor = !night && !lamplit && !environment.plan && !environment.palace && !nave;
+  // Las cuerdas: no ground and no horizon, a cold low light from above and the strings' own (src/cuerdas-scene.ts).
+  const hollow = !!environment.hollow;
+  const outdoor = !night && !lamplit && !environment.plan && !environment.palace && !nave && !hollow;
   // A zone of the palace in chapter 2 brings its own light (src/palace-zone-plans.ts).
   const zoneLight = environment.palace?.theme?.light;
   // The Búnkers del Carmel are drawn at sunset: a golden sun (from the same side as everywhere) and lilac shade.
@@ -174,16 +176,16 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   // Càmping Eurosport is always the same summer evening: the sun very low and amber from the south-east,
   // raking across the maze, so the tall walls throw the merendero into deep shade; dim blue shade, the bulbs doing the warmth.
   const evening = environment.id === 'camping';
-  const ambient = zoneLight ? new pc.Color().fromString(zoneLight.ambient) : night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : nave ? new pc.Color(0.3, 0.3, 0.33) : overcast ? new pc.Color(0.4, 0.44, 0.48) : dusk ? new pc.Color(0.36, 0.33, 0.4) : evening ? new pc.Color(0.13, 0.16, 0.25) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
-  const sunColor = zoneLight ? new pc.Color().fromString(zoneLight.sun) : night ? new pc.Color(0.66, 0.81, 1) : nave ? new pc.Color(1, 0.93, 0.82) : overcast ? new pc.Color(0.96, 0.97, 0.95) : dusk ? new pc.Color(1, 0.8, 0.58) : evening ? new pc.Color(1, 0.62, 0.36) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
-  const sunIntensity = zoneLight ? zoneLight.intensity : night ? 1.15 : lamplit ? 0.85 : nave ? 1.05 : overcast ? 1.3 : dusk ? 1.7 : evening ? 1.55 : outdoor ? 1.8 : 1.65;
+  const ambient = zoneLight ? new pc.Color().fromString(zoneLight.ambient) : hollow ? new pc.Color(0.1, 0.17, 0.19) : night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : nave ? new pc.Color(0.3, 0.3, 0.33) : overcast ? new pc.Color(0.4, 0.44, 0.48) : dusk ? new pc.Color(0.36, 0.33, 0.4) : evening ? new pc.Color(0.13, 0.16, 0.25) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);
+  const sunColor = zoneLight ? new pc.Color().fromString(zoneLight.sun) : hollow ? new pc.Color(0.7, 0.9, 0.94) : night ? new pc.Color(0.66, 0.81, 1) : nave ? new pc.Color(1, 0.93, 0.82) : overcast ? new pc.Color(0.96, 0.97, 0.95) : dusk ? new pc.Color(1, 0.8, 0.58) : evening ? new pc.Color(1, 0.62, 0.36) : outdoor ? new pc.Color(1, 0.95, 0.86) : new pc.Color(1, 0.87, 0.68);
+  const sunIntensity = zoneLight ? zoneLight.intensity : hollow ? 0.55 : night ? 1.15 : lamplit ? 0.85 : nave ? 1.05 : overcast ? 1.3 : dusk ? 1.7 : evening ? 1.55 : outdoor ? 1.8 : 1.65;
   const skyIntensity = overcast ? 0.55 : dusk ? 0.34 : evening ? 0.16 : 0.42;
   app.scene.ambientLight = ambient.clone();
   let tone = 0, dark = 0, nightfall = 0;
   app.scene.fog.type = pc.FOG_NONE;
   // Soft shadows fitted to the view, and the sky glossy things reflect (src/lighting.ts).
   const light = lighting(app);
-  light.setSky(night ? 'night' : environment.palace ? 'palace' : nave ? 'nave' : overcast ? 'overcast' : dusk ? 'dusk' : evening ? 'evening' : outdoor ? 'day' : 'indoor');
+  light.setSky(night || hollow ? 'night' : environment.palace ? 'palace' : nave ? 'nave' : overcast ? 'overcast' : dusk ? 'dusk' : evening ? 'evening' : outdoor ? 'day' : 'indoor');
   const sun = new pc.Entity('Sol de la tarde');
   sun.addComponent('light', { type: 'directional', color: sunColor.clone(), intensity: sunIntensity, castShadows: true, shadowDistance: 95 });
   light.shade(sun.light!);
@@ -205,7 +207,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   // The backdrop only receives shadows: as a caster it would stretch the sun's shadow depth over 200 m.
   // A hilltop (`drop`) stands on no plinth, and its backdrop lies under the city it looks down on.
   const below = environment.geo?.drop?.depth ?? 0;
-  if (!environment.plan) box('Fondo', backdrop, cx, -1.05 - drop - below, cz, 200, 0.2, 200).render!.castShadows = false;
+  if (!environment.plan && !hollow) box('Fondo', backdrop, cx, -1.05 - drop - below, cz, 200, 0.2, 200).render!.castShadows = false;
   // Floor plans build their own plinth, with room for a stairwell going down; under a sunk river it is
   // hollow, four sides and a floor below the water, so the river shows through the street.
   if (drop > 0) {
@@ -213,7 +215,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     box('Maqueta', concrete, cx, -0.02 - deep + 0.05, cz, w + 0.2, 0.1, d + 0.2);
     for (const pz of [-0.55, d - 0.45]) box('Maqueta', concrete, cx, y, pz, w + 0.2, deep, 0.1);
     for (const px of [-0.55, w - 0.45]) box('Maqueta', concrete, px, y, cz, 0.1, deep, d + 0.2);
-  } else if (!environment.plan && !environment.palace && !nave && !below) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
+  } else if (!environment.plan && !environment.palace && !nave && !below && !hollow) box('Maqueta', concrete, cx, -0.42, cz, w + 0.2, 0.8, d + 0.2);
 
   function pointLight(px: number, y: number, pz: number) {
     const light = new pc.Entity('Luz cálida');

@@ -482,7 +482,9 @@ try {
   /** Where each fight is staged (game.ts): the dogs in the street, the minion and the guards in the palace. */
   const FIGHT_PLACES = { dogs: 'maresme', possessed: 'maresme', 'palace-minion': 'palacio', 'palace-guards': 'palacio', 'night-guard': 'meridiana-calle', cebollon: 'cardedeu-laberinto', cebolla: 'cardedeu-laberinto', plato: 'cardedeu-laberinto', escolta: 'cardedeu-laberinto', 'uri-vertigo': 'cardedeu-laberinto', 'crias-1': 'cardedeu-laberinto', 'crias-2': 'cardedeu-laberinto', 'crias-3': 'cardedeu-laberinto', sobremesa: 'camping',
     // Càmping Eurosport (docs/quests/universidad.md): its fights and La Sobremesa at the long table.
-    'camping-magos': 'camping', 'camping-dados': 'camping', 'camping-agentes': 'camping', 'camping-tienda': 'camping', 'camping-negra': 'camping', campeon: 'camping' } as const;
+    'camping-magos': 'camping', 'camping-dados': 'camping', 'camping-agentes': 'camping', 'camping-tienda': 'camping', 'camping-negra': 'camping', campeon: 'camping',
+    // Las cuerdas (docs/quests/marta.md): its three qualities and La Voz.
+    'cuerdas-lealtad': 'cuerdas', 'cuerdas-cristalino': 'cuerdas', 'cuerdas-directo': 'cuerdas', voz: 'cuerdas' } as const;
   /** Starts a test fight; another chapter's party needs that chapter's Gerard, so it reloads there. */
   function startFight(setup: FightSetup) {
     if (setup.adult !== story.adult) {

@@ -41,7 +41,8 @@ const PLACES: Place[] = [
   { id: 'palacio-gimnasio', name: 'Palacio · El gimnasio', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
   { id: 'palacio-secretaria', name: 'Palacio · La secretaría', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
   { id: 'palacio-trono', name: 'Palacio · El salón del trono', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
-  { id: 'alegia', name: 'Alegia · San Juan kalea', detail: 'Según el mapa', group: 'Otros lugares', open: true },
+  { id: 'alegia', name: 'Alegia · San Juan kalea', detail: 'Donde está Marta', group: 'Alegia', open: true },
+  { id: 'cuerdas', name: 'Las cuerdas', detail: 'Al otro lado de la pompa', group: 'Alegia', open: false },
   { id: 'patio', name: 'El patio', detail: 'Prueba de movimiento', group: 'Otros lugares', open: true },
 ];
 export const placeName = (id: EnvironmentId) => PLACES.find(p => p.id === id)?.name ?? id;
@@ -58,7 +59,9 @@ const TOWER_FIGHTS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 
 const UNI_FIGHTS = ['sobremesa'] as const;
 /** Càmping Eurosport, the university friends' dungeon (docs/quests/universidad.md): its small fights, the black pitch and El Campeón. */
 const CAMPING_FIGHTS = ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon'] as const;
-export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number] | (typeof UNI_FIGHTS)[number] | (typeof CAMPING_FIGHTS)[number];
+/** Las cuerdas, Marta's dungeon (docs/quests/marta.md): a quality after each maze, and La Voz. */
+const CUERDAS_FIGHTS = ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'] as const;
+export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number] | (typeof UNI_FIGHTS)[number] | (typeof CAMPING_FIGHTS)[number] | (typeof CUERDAS_FIGHTS)[number];
 /** What the fight tester starts: who fights, wearing what, against whom, and the help it gives. */
 export interface FightSetup {
   adult: boolean; partner: boolean;
@@ -93,8 +96,8 @@ export function validFight(value: unknown): FightSetup {
   const wear = { gerard, aitor: aitor === gerard ? undefined : aitor };
   const adult = v.adult === true;
   // The palace minion is chapter 1's fight: the boys, always together.
-  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
-  const tower = ([...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS] as readonly string[]).includes(encounter);
+  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
+  const tower = ([...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS] as readonly string[]).includes(encounter);
   return {
     adult, partner: encounter === 'palace-minion' ? true : v.partner !== false,
     wear, animas, friends: Array.isArray(v.friends) ? ANIMA_IDS.filter(id => v.friends!.includes(id)) : [],
@@ -278,7 +281,8 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   }
   /** Every fight by name (TypeScript asks for each new one). */
   const FIGHT_NAMES: Record<Encounter, string> = { dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle', 'night-guard': 'un guardián en la Meridiana', cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'cebollitas', 'crias-2': 'crías del segundo anillo', 'crias-3': 'crías del tercer anillo', sobremesa: 'La Sobremesa',
-    'camping-magos': 'magos de camping', 'camping-dados': 'dados', 'camping-agentes': 'agentes', 'camping-tienda': 'una tienda equivocada', 'camping-negra': 'la parcela negra', campeon: 'El Campeón' };
+    'camping-magos': 'magos de camping', 'camping-dados': 'dados', 'camping-agentes': 'agentes', 'camping-tienda': 'una tienda equivocada', 'camping-negra': 'la parcela negra', campeon: 'El Campeón',
+    'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz' };
   /** During a fight: the help it gets, the moments it can jump to, and the way out. */
   function livePage() {
     const now = dev!.current()!, help = dev!.help();
@@ -300,6 +304,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   }
   const TOWER_LABELS: Record<(typeof TOWER_FIGHTS)[number], string> = { cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'Crías · anillo 1', 'crias-2': 'Crías · anillo 2', 'crias-3': 'Crías · anillo 3' };
   const CAMPING_LABELS: Record<(typeof CAMPING_FIGHTS)[number], string> = { 'camping-magos': 'Magos', 'camping-dados': 'Dados', 'camping-agentes': 'Agentes', 'camping-tienda': 'Tienda equivocada', 'camping-negra': 'Parcela negra', campeon: 'El Campeón' };
+  const CUERDAS_LABELS: Record<(typeof CUERDAS_FIGHTS)[number], string> = { 'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz' };
   function fightPage() {
     if (dev!.current()) return livePage();
     const f = fight;
@@ -318,6 +323,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
         ${chip('encounter', 'dogs', 'Perros', f.encounter === 'dogs')}${chip('encounter', 'possessed', 'Perros poseídos', f.encounter === 'possessed')}
         ${chip('encounter', 'palace-minion', 'El esbirro', f.encounter === 'palace-minion', f.adult)}${chip('encounter', 'palace-guards', 'Guardianes de chicle', f.encounter === 'palace-guards')}${f.adult ? chip('encounter', 'night-guard', 'De noche en la Meridiana', f.encounter === 'night-guard') : ''}</div></div>
       ${f.adult ? `<div class="fight-row"><span>Amigos de la uni</span><div class="fight-chips">${chip('encounter', 'sobremesa', 'La Sobremesa', f.encounter === 'sobremesa')}</div></div>` : ''}
+      ${f.adult ? `<div class="fight-row"><span>Las cuerdas</span><div class="fight-chips">${CUERDAS_FIGHTS.map(id => chip('encounter', id, CUERDAS_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Camping Eurosport</span><div class="fight-chips">${CAMPING_FIGHTS.map(id => chip('encounter', id, CAMPING_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Torre de Uri</span><div class="fight-chips">${TOWER_FIGHTS.map(id => chip('encounter', id, TOWER_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${dogs ? `<div class="fight-row"><span>Cuántos</span><div class="fight-chips">${[1, 2, 3, 4].map(n => chip('foes', String(n), String(n), f.foes === n)).join('')}</div></div>` : ''}

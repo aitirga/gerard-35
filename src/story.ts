@@ -7,7 +7,7 @@ import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import { facingToward, type Cell } from './movement.ts';
 import type { ItemId } from './items';
-import type { CampingEncounter } from './battle.ts';
+import type { CampingEncounter, CuerdasEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
 import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
 import { award, levelFlag, levelOf } from './levels.ts';
@@ -168,7 +168,9 @@ export type StoryEffect =
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'sobremesa' | FearEncounter
   // Càmping Eurosport (docs/quests/universidad.md): its small fights, the black pitch and El Campeón.
-  | 'camping-magos' | 'camping-dados' | 'camping-agentes' | 'camping-tienda' | 'camping-negra' | 'campeon';
+  | 'camping-magos' | 'camping-dados' | 'camping-agentes' | 'camping-tienda' | 'camping-negra' | 'campeon'
+  // Las cuerdas (docs/quests/marta.md): a quality after each maze, and La Voz.
+  | CuerdasEncounter;
 /** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
 /** The ánimas Gerard can wake (Tecnópata is Aitor's). */
 export type GerardClass = Exclude<ClassId, 'tecnopata'>;

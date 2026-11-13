@@ -98,6 +98,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   // A Basque village: green hills, grey stone, a soft overcast sky.
   alegia: { salon: [white(3600, .7), hex('#5f9a5a', .55, .55), hex('#8aa0b5', .5, .4), white(3000, .6)], rest: white(3400, .3) },
   // Cardedeu: a quiet Vallès street, white render, terracotta roofs and gardens.
+  // Las cuerdas: a dark room in petrol blue, one lamp left silver and a little amber for the first note.
+  cuerdas: { salon: [hex('#1f5f6b', .45, .8), white(5600, .35), hex('#49d3c2', .35, .7), hex('#f2b45a', .3, .6)], rest: hex('#16454e', .15, .8) },
   // Uri's maze: hedge green and garden walls, a little strange.
   'cardedeu-laberinto': { salon: [hex('#5f8f4e', .6, .5), hex('#9a6cd8', .45, .45), white(3000, .6), hex('#c98d6a', .5, .5)], rest: hex('#7da86a', .25, .35) },
   cardedeu: { salon: [white(2900, .8), hex('#c8693f', .55, .5), hex('#79a86a', .5, .5), white(3300, .6)], rest: white(3000, .3) },
@@ -210,6 +212,11 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   // The black pitch: every lantern out, two head torches and the friends' violet in the dark.
   'camping-negra': [hex('#3a3050', .4, .8), hex('#9a6cd8', .5, .8), hex('#fff1cc', .35, .5), hex('#ff8a3a', .45, .8)],
   campeon: [hex('#ffc46a', .65, .75), hex('#c8423b', .6, .8), hex('#5ab8c8', .5, .6), hex('#c9a23a', .55, .7)],
+  // Las cuerdas: the void's petrol blue and the strings' silver, and each fight's own note on top.
+  'cuerdas-lealtad': [hex('#1f5f6b', .5, .8), white(5200, .5), hex('#f2b45a', .55, .7), hex('#49d3c2', .45, .7)],
+  'cuerdas-cristalino': [hex('#1f5f6b', .5, .8), white(6000, .6), hex('#49d3c2', .55, .7), hex('#eef3ff', .5, .3)],
+  'cuerdas-directo': [hex('#1f5f6b', .5, .8), white(5200, .5), hex('#5b8cff', .55, .75), hex('#eef3ff', .5, .3)],
+  voz: [hex('#1f5f6b', .55, .8), hex('#f2b45a', .55, .7), hex('#49d3c2', .55, .7), hex('#5b8cff', .5, .75)],
 };
 const ALARM = hex('#ff2a1a', .75, 1);
 /** 0 with everyone healthy, 1 when someone still standing is about to fall. */

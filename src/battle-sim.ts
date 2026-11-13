@@ -10,13 +10,14 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, CAMPING, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
-  createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, takeNews,
+  ANIMA_NAMES, BROOD, CAMPING, MARTA, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, songNow, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId,
 } from './battle.ts';
 import { improvedBy } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
+import { PHRASES, untilNote } from './song.ts';
 
 export const SIM_VERSION = 2;
 export const POLICIES = {
@@ -93,6 +94,7 @@ const BOOKS = {
   vertigo: { boss: VERTIGO },
   sobremesa: { boss: SOBREMESA },
   camping: { rules: CAMPING },
+  marta: { rules: MARTA },
   reaction: { rules: REACTION_RULES },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
@@ -371,6 +373,11 @@ function ahead(state: BattleState, partnerId: string, setup: Setup, random: () =
   const choice = setup.policy === 'casual' && random() >= (setup.error ?? ERRORS.casual) ? best(options, c => damageNow(look, c))[0] : options[Math.floor(random() * options.length)];
   return { action: choice.action as 'attack' | 'defend' | 'skill', ...choice.skill ? { skill: choice.skill } : {}, ...choice.target ? { target: choice.target } : {} };
 }
+/** How often each kind of player waits for La Voz's note before a blow, and how far into it the blow comes (seconds). */
+const TIMED: Record<Policy, number> = { attack: 0, random: 0, casual: .5, smart: 1 };
+const NOTE_LAG = .25;
+/** How often the second fighter has their blow ready to land inside the note the first one struck in. */
+const CHORD: Record<Policy, number> = { attack: 0, random: 0, casual: .15, smart: .8 };
 /** One fight, from its first turn to its end. */
 export function playFight(setup: Setup, seed: number): Run {
   const random = seeded(seed), state = createFight(setup, random), think = setup.think ?? 3, maxRounds = setup.maxRounds ?? 60;
@@ -388,13 +395,29 @@ export function playFight(setup: Setup, seed: number): Run {
     run.firstKo ??= state.allies.some(a => a.hp <= 0) ? state.round : undefined;
     if (hadOnion) run.peeledBy ??= state.foes.every(f => !isOnion(f.kind) || !f.layers || f.hp <= 0) ? state.round : undefined;
     takeNews(state).forEach(note);
+    // La Voz's song: its Ecos and Crescendos are counted, and nothing of it is left behind.
+    for (const news of takeSongNews(state)) count(news.kind === 'phrase' ? `frase:${news.phrase}` : news.kind);
   };
   while (!over() && state.round <= maxRounds) {
     if (state.phase === 'player') {
       // A choice queued ahead plays on its own after a short flash; anyone else thinks first.
       const waiting = !!state.queued?.[state.allies[state.active].id];
-      runClock(state, waiting ? BEAT.queue / 1000 : think); watch();
+      // La Voz: two who read her song have the second blow ready before the first lands, to strike inside
+      // the same note (the Acorde); the second one's thinking overlapped the first one's.
+      const struck = state.song?.struck, sung = state.song && songNow(state)!;
+      const ready = !!struck && !!sung && sung.sounding && struck.loop === sung.loop && struck.index === sung.index && struck.by !== state.allies[state.active].id && random() < CHORD[setup.policy];
+      runClock(state, waiting ? BEAT.queue / 1000 : ready ? NOTE_LAG : think); watch();
       if (over()) break;
+      // The song took whoever was choosing (an Eco) and nobody else is left to: the foes go.
+      if (state.phase !== 'player') continue;
+      // La Voz (docs/quests/marta.md): whoever reads her song waits for a note before choosing (`TIMED`), and the
+      // song goes on meanwhile, Ecos and all. If it takes the one choosing, the turn has moved on.
+      if (state.song && !songNow(state)!.sounding && random() < TIMED[setup.policy]) {
+        const chooser = state.allies[state.active].id;
+        runClock(state, untilNote(PHRASES[state.song.phrase], state.song.t) + NOTE_LAG); watch();
+        if (over()) break;
+        if (state.phase !== 'player' || state.allies[state.active].id !== chooser) continue;
+      }
       const queued = takeQueued(state);
       const choice: Choice = queued ? { ...queued } : decide(state, setup, random);
       // Someone in no hurry queues their own choice while the first one chooses (`QUEUE`): their dual, if any, comes by chance.
@@ -637,7 +660,25 @@ export const TARGETS: readonly Target[] = [
   { id: 'campeon-bien', fight: 'campeon', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .85], roundsWon: [6, 12], why: 'El Campeón, pensando: agarrarse mientras es héroe y gastarlo todo cuando va de paisano.' },
   { id: 'campeon-sin-pensar', fight: 'campeon', party: DUO, levels: P2M2, policy: 'casual', win: [.2, .75], why: 'Sin pensar, el héroe pega demasiado fuerte: es el jefe pequeño de la mazmorra.' },
   { id: 'campeon-a-punetazos', fight: 'campeon', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: de héroe le hace la mitad y de paisano se recupera.' },
-  { id: 'campeon-con-tecnopata', fight: 'campeon', party: TECH, levels: P2M2, policy: 'smart', win: [.85, 1], why: 'Con Aitor en su propia ánima también se gana leyendo las formas.' },
+  { id: 'campeon-con-tecnopata', fight: 'campeon', party: TECH, levels: P2M2, policy: 'smart', win: [.85, 1], why: 'Con Aitor en su propia ánima también se gana leyendo las formas.' },  // Las cuerdas (docs/quests/marta.md). Its numbers are MARTA (book marta.rules) and each foe's PROFILES entry
+  // (foe.lealtad…). Each quality asks one question, answered by whoever reads its plate.
+  { id: 'lealtad-bien', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.45, .85], roundsWon: [5, 8], why: 'La Lealtad, pensando: romperla antes de que el Eco pese demasiado, o pasarle por encima con lo que alcanza a todos.' },
+  { id: 'lealtad-sin-pensar', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'casual', win: [.6, .97], why: 'Sin pensar se pasa a menudo, con mucha menos vida: el Eco ha tenido tiempo de crecer.' },
+  { id: 'lealtad-a-punetazos', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: ella lo para todo y el Eco, detrás, no deja de crecer.' },
+  { id: 'cristalino-a-golpes', fight: 'cuerdas-cristalino', party: DUO, levels: P2M2, policy: 'attack', win: [.95, 1], hpLeftWon: [.25, .65], why: 'Lo Cristalino se rompe a golpes: quien lee la placa y no lanza magia lo pasa, pagando sus destellos.' },
+  { id: 'cristalino-bien', fight: 'cuerdas-cristalino', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], why: 'Con los gatos y un dual, que no rebota, cae deprisa.' },
+  { id: 'cristalino-a-lo-loco', fight: 'cuerdas-cristalino', party: TECH, levels: P2M2, policy: 'random', win: [.1, .7], why: 'Con dos ánimas de magia y sin mirar, la magia vuelve: se pierde a menudo.' },
+  { id: 'directo-bien', fight: 'cuerdas-directo', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.35, .7], why: 'Lo Directo, pensando: agarrarse cuando te mira y pegar cuando mira al otro.' },
+  { id: 'directo-sin-pensar', fight: 'cuerdas-directo', party: DUO, levels: P2M2, policy: 'casual', win: [.7, .99], why: 'Sin agarrarse, cada golpe directo es casi media vida.' },
+  { id: 'directo-a-punetazos', fight: 'cuerdas-directo', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: pega demasiado fuerte para aguantarlo sin Defender.' },
+  { id: 'directo-con-tecnopata', fight: 'cuerdas-directo', party: TECH, levels: P2M2, policy: 'smart', win: [.75, 1], why: 'Con Aitor en su propia ánima también, más justo.' },
+  // La Voz, the mission's boss. A blow only lands on a note, so who does not wait for one loses turns; her Eco and its
+  // Crescendo make a long fight a lost one; the Acorde (the second fighter striking inside the same note) is what shortens it.
+  { id: 'voz-bien', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', win: [.93, 1], hpLeftWon: [.22, .58], roundsWon: [10, 16], why: 'La Voz, leyendo la canción: esperar la nota, pegar los dos dentro de ella y agarrarse al golpe directo.' },
+  { id: 'voz-sin-duales', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', ban: ['duals'], win: [.85, 1], hpLeftWon: [.12, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
+  { id: 'voz-sin-pensar', fight: 'voz', party: DUO, levels: P3M3, policy: 'casual', win: [.03, .45], why: 'Quien pega a destiempo pierde la mitad de sus golpes en los silencios, y el Eco no espera.' },
+  { id: 'voz-a-punetazos', fight: 'voz', party: DUO, levels: P3M3, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
+  { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, levels: P3M3, policy: 'smart', win: [.4, .92], why: 'Con dos ánimas de magia cuesta más: su Nota clara la devuelve, y hay que guardarse los rayos para cuando no es de vidrio.' },
 ];
 export interface TargetResult { id: string; why: string; pass: boolean; failures: string[]; row: Row; wanted: Pick<Target, 'win' | 'roundsLost' | 'hpLeftWon' | 'roundsWon' | 'duals'> }
 /** Plays every target and says which hold. */

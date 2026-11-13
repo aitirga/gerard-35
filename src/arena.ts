@@ -104,6 +104,8 @@ export const FOE_SIZE: Record<string, number> = {
   sobremesa: 2.2,
   // Càmping Eurosport's foes: people's size, the dice a little wider, El Campeón on its plinth.
   mago: .45, dado: .55, agente: .42, campeon: .75,
+  // Las cuerdas' foes: La Lealtad broad, an Eco small, La Voz a person's width with room for her rings.
+  lealtad: .7, eco: .35, cristalino: .5, directo: .6, voz: .8,
 };
 /** Elbow room every fighter needs round them, beyond their own size. */
 export const ROOM = .35;

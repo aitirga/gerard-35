@@ -372,7 +372,7 @@ test('no rule of Vertitrón asks for a skill or an ánima by name', async () => 
 });
 
 test('the picker stages the boss\'s moments, and El Plato\'s surprise, each only in its own fight', () => {
-  assert.deepEqual(Object.keys(STAGED_MOMENTS), ['vertigo-carga', 'vertigo-grito', 'vertigo-sin-ojo', 'plato-sorpresa', 'sobremesa-duo-carta', 'sobremesa-escala-alta', 'sobremesa-ultimo', 'magos-bombona', 'campeon-heroe', 'campeon-paisano']);
+  assert.deepEqual(Object.keys(STAGED_MOMENTS), ['vertigo-carga', 'vertigo-grito', 'vertigo-sin-ojo', 'plato-sorpresa', 'sobremesa-duo-carta', 'sobremesa-escala-alta', 'sobremesa-ultimo', 'magos-bombona', 'campeon-heroe', 'campeon-paisano', 'directo-linea', 'voz-andante', 'voz-allegro', 'voz-a-capela', 'voz-nota-clara']);
   const carga = tough(roofFight());
   assert.ok(stageMoment(carga, 'vertigo-carga'));
   assert.equal(carga.phase, 'player'); assert.ok(eyeOpen(carga));

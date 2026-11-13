@@ -15,12 +15,14 @@ import POBLE_SEC_SCENE from './geo/poble-sec.json' with { type: 'json' };
 import PLACA_ESPANYA_SCENE from './geo/placa-espanya.json' with { type: 'json' };
 import SAGRADA_FAMILIA_SCENE from './geo/sagrada-familia.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
+import { CUERDAS as CUERDAS_PLAN } from './cuerdas.ts';
 import { PALACE_GYM, PALACE_OFFICE, PALACE_PATIO, PALACE_THRONE, type ZoneTheme } from './palace-zone-plans.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
   | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-calle' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta' | 'camping'
   | 'sants' | 'el-nucli' | 'poble-sec' | 'placa-espanya' | 'sagrada-familia' | 'sagrada-familia-interior'
-  | 'palacio-patio' | 'palacio-gimnasio' | 'palacio-secretaria' | 'palacio-trono';
+  | 'palacio-patio' | 'palacio-gimnasio' | 'palacio-secretaria' | 'palacio-trono'
+  | 'cuerdas';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /**
@@ -177,6 +179,11 @@ export interface Environment {
    * much more room towards the camera, or moves to a pocket (src/arena.ts `viewRoom`).
    */
   walls?: number;
+  /**
+   * A place with no ground and no horizon: whatever can be stood on hangs in a dark void, and the
+   * place's own builder draws all of it (Las cuerdas, src/cuerdas-scene.ts).
+   */
+  hollow?: boolean;
 }
 
 export const COURTYARD_ROWS = [
@@ -709,6 +716,15 @@ export const SAGRADA_FAMILIA_INTERIOR: Environment = {
     { id: 'sagrada-interior-visitantes', cell: { x: 35, z: 21 }, label: 'Mirar a la gente', lines: ['Todo el mundo mira hacia arriba. Yo también.'] },
   ],
 };
+/**
+ * Las cuerdas, past the bubble a wrong note opens in Alegia (docs/quests/marta.md): Marta's own place,
+ * strings of light across a void. Its grid comes from its plan (src/cuerdas.ts); every piece of a maze
+ * is open on it, and the game drops whoever stands on one that is down.
+ */
+export const CUERDAS: Environment = {
+  id: 'cuerdas', name: 'Las cuerdas', grid: CUERDAS_PLAN.grid, spawn: { ...CUERDAS_PLAN.spawn }, zoom: 10.5,
+  houses: [], props: [], interactions: [], noOverview: true, hollow: true,
+};
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
@@ -721,6 +737,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   'placa-espanya': PLACA_ESPANYA,
   'sagrada-familia': SAGRADA_FAMILIA, 'sagrada-familia-interior': SAGRADA_FAMILIA_INTERIOR,
   'palacio-patio': PALACE_PATIO, 'palacio-gimnasio': PALACE_GYM, 'palacio-secretaria': PALACE_OFFICE, 'palacio-trono': PALACE_THRONE,
+  cuerdas: CUERDAS,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;
