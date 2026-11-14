@@ -21,6 +21,24 @@
       "caption": "Alegia: Marta beside the upright piano under the pergola (provisional place, stand-in figure)"
     },
     {
+      "open": "/?mission=marta&part=piano"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Alegia · San Juan kalea'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "piano",
+      "delay": 600,
+      "caption": "Before the piano: Aitor's seat, Marta beside it"
+    },
+    {
       "open": "/?mission=marta&part=inside"
     },
     {
@@ -120,6 +138,42 @@
       "shot": "centro",
       "delay": 600,
       "caption": "The centre, where every string meets: La Voz waiting"
+    },
+    {
+      "open": "/?mission=marta&part=won"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Alegia · San Juan kalea'",
+      "timeout": 120000
+    },
+    {
+      "wait": 3500
+    },
+    {
+      "shot": "final",
+      "delay": 900,
+      "caption": "La Voz beaten: back in Alegia, the song as it should sound"
+    },
+    {
+      "open": "/?mission=marta&part=done"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Alegia · San Juan kalea'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "hecha",
+      "delay": 600,
+      "caption": "Mission done: Marta, herself again, by the piano"
     }
   ]
 }

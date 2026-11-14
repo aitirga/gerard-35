@@ -70,7 +70,8 @@ one of the hardest places to reach. Her mission ends against a boss that sings w
   piano seen from inside, or huge vocal cords. The party walks on them; they all meet at one point,
   where the boss is. Identity card (proposal, to take through `docs/visual-style.md`'s checklist):
   dominant a dark petrol blue-green, no place has it; signature material silver strings of light;
-  no pink, no violet.
+  no pink, no violet. **Built to it** (`docs/visual-style.md` § Las cuerdas, `docs/places/cuerdas.md`), with
+  one exception the guide asks for: the bubble they came in by is the Queen's pink.
 - **Three rectangular spaces with a puzzle each** (decided round 4): three mazes that **change and
   evolve with Marta's voice singing**. **A progressive puzzle, on the map** (decided round 5):
   **pieces that fall, and moving in time with the voice.** Round 6's proposal is **built as a
@@ -147,15 +148,19 @@ boss is everything she lost, together.
   every tick.
 - **The window to hurt it is the note** (decided): while a note sounds it can be attacked and takes
   damage; between notes it is **immune**. The party times its attacks to her singing.
-- Proposals, open: the note also shows on screen (a ring or a pulse, never a hidden counter), so it
-  can be played with the sound off; Defender pays between notes; the window runs on the fight's
-  clock like the timed statuses (`docs/combat.md` § Estados en tiempo real).
+- Decided and built: the note shows on screen as that status ring, so it can be played with the
+  sound off, and the window runs on the fight's clock like the timed statuses (`docs/combat.md`
+  § Estados en tiempo real). Still a proposal: Defender pays between notes.
 - Must not repeat: Joan's *Escala* in La Sobremesa (a note that climbs turn by turn,
   `docs/quests/universidad.md`), nor the artilugio's melody of the ending, which is Aitor's.
 - **Name** (proposal, built): **La Voz**. `Encounter` `voz`, `FoeKind` `voz`.
 - **Built as a base** (`MARTA` in `src/battle.ts`, the phrase in `src/song.ts`):
-  - The phrase runs on the fight's clock, in both phases, and shows as a track over the fight with
-    a playhead (notes as blocks, silences as gaps) and on her plate («Nota · Mi», «Silencio»). Her
+  - The phrase runs on the fight's clock, in both phases. **It shows as a status on her plate and
+    nowhere else** (decided 2026-11-13: «un status effect como de quemado, la bola que gira… algo
+    más sutil, tipo un status effect continuo»): one icon like a fire's clock that never runs out.
+    Its ring is the phrase, an arc per note in the note's colour and a gap per silence; its hand
+    goes round once a phrase; it is lit while a note sounds and flashes as each starts; its corner
+    is her Crescendo. A first version drew a track of notes across the top of the fight: cut. Her
     body is there while she sings and almost gone in the silences.
   - **A blow chosen while a note sounds lands; in a silence it goes through her** (nothing, and the
     maná is spent). Fire and bleeding on her only hurt on a note too.
@@ -196,8 +201,9 @@ Figures come from `/character-3d`: `about` and `cues` written here, ready for `t
 
 | Who / what | Kind (person, creature) | Photos it may send | `about` and `cues` | Toy image approved | 3D in game | Portrait | Expressions | SPEAKERS |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Marta | person | _to ask_: `assets/references/characters/marta/` | _open_ | — | — | — | — | — |
-| The boss | creature | — | _open_ | — | — | — | — | — |
+| Marta | person | _to ask_: `assets/references/characters/marta/` | _open_ | — | **stand-in**: `src/characters/marta.json`, Nuria's hand-built figure in other colours; it does not look like her | — | — | name only, no portrait |
+| The qualities, the Eco, La Voz | built by hand | — | — | — | `src/cuerdas-foes.ts`: string, glass and light, each part moving on its own (a figure from a file moves as one piece) | — | — | — |
+| The piano in Alegia | prop, by hand | — | — | — | `buildPiano` in `src/cuerdas-scene.ts` | — | — | — |
 
 - **Marta's recordings** (decided): one file per note, to ask her for. Which notes, how long, what
   format: _open_
@@ -209,19 +215,28 @@ Commands:
 
 ## Open
 
-- Everything marked _open_ above; next round: what each maze adds, then the boss.
+- Everything marked _open_ above.
+- **Provisional, to settle with Aitor**: where the piano and Marta stand (now under the pergola of
+  the square by the town hall, `PLACES_MARTA`); her figure (a stand-in); the bonus of her ánima in
+  `ANIMAS` (Magia +1, Velocidad +1, 10 PV, as the others'); every line in `LINES_MARTA`.
+- **Not built**: the trip to Alegia (it is reached from the picker only); the clues; a second player
+  driving Aitor never falls in a maze (only Gerard is checked); what is beaten inside is one visit's
+  and is not saved; the song played well at the end is a line, not yet music.
 
 ## Implementation plan
 
 The user asked for a base to try (round 7), so the converge check was skipped: the gaps it would
 have found are in *Open*. Each step is a commit and playable from the picker.
 
+**Status (2026-11-14): steps 1 to 9 built**, playable part by part with `just dev-mission marta
+<part>` (start, piano, inside, maze-1, lealtad, maze-2, cristalino, maze-3, directo, voz, won, done).
+
 | # | Step | Files | Blocked by |
 | --- | --- | --- | --- |
 | 1 | **The song's clock**: phrases, what sounds at a moment, onsets crossed. Pure, tested | `src/song.ts`, `tests/song.test.mjs` | — |
 | 2 | **Fights**: the three qualities, the Eco and La Voz; their profiles, EXP, sizes, sounds, moments; the fight tester; `just fight-sim` targets | `src/battle.ts`, `src/stats.ts`, `src/levels.ts`, `src/arena.ts`, `src/battle-sim.ts`, `src/battle-sounds.ts`, `src/jump-menu.ts`, `tests/cuerdas-fight.test.mjs` | — |
 | 3 | **Their bodies**, of light and string, showing their rule (La Voz there on a note, gone in a silence) | `src/cuerdas-foes.ts`, `src/fears.ts`, `src/battle-scene.ts` | Design choice: built by hand, not `/character-3d` (§ Assets) |
-| 4 | **The fight's song on screen**: the track and playhead, her plate, the notes' sound | `src/battle-ui.ts`, `src/style.css`, `src/sfx.ts` | Marta's recordings (placeholder synth) |
+| 4 | **The fight's song on screen**: a continuous status on her plate (ring, hand, colour), the notes' sound | `src/battle-ui.ts`, `src/style.css`, `src/sfx.ts` | Marta's recordings (placeholder synth) |
 | 5 | **Las cuerdas**: the place's plan, its mazes' rules, the scene (strings, pieces, platforms, the centre, light and air) | `src/cuerdas.ts`, `src/cuerdas-scene.ts`, `src/environments.ts`, `src/scenery.ts`, `src/grading.ts`, `src/effects.ts`, `tests/cuerdas.test.mjs`, `docs/visual-style.md` | — |
 | 6 | **The story**: Marta in Alegia, the piano, the bubble, the mazes, the four fights, the way back; flags, the picker's arc and parts, the ánima and its light | `src/friends/marta.ts`, `src/story.ts`, `src/story-points.ts`, `src/animas.ts`, `src/dialogue.ts`, `src/game.ts`, `src/main.ts`, `server.py`, `justfile`, `tests/marta.test.mjs` | Marta's figure (a stand-in until her photos); the trip to Alegia (the game has no money yet) |
 | 7 | **Screenshots**: arrival, each maze, each fight, La Voz's phases, the ánima | `scripts/screenshots/marta*.json` | — |

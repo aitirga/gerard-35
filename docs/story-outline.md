@@ -114,7 +114,7 @@ cartoonish.)
 | --- | --- | --- | --- | --- | --- |
 | **Nuria and Uri** (+ Nil, Haru, Yuki) | Old flatmates; a pack | Cardedeu | R4 from La Sagrera | Uri turned kid, the maze of fears, El Vértigo; ánima **Papagato** | Designed, `docs/quests/nuria.md`; can be an early one |
 | **Bernat** | Gerard's childhood best friend; invented the Queen; a father (Leia, ~3; wife Jessica); publishes board games beside another job; lives outside Barcelona | A hidden board-game bar in Barcelona | Gerard **phones** him and they meet | A spy feel: the city's people act strangely; Bernat seems immune (her creator); Jessica has gone mad; he **finds out part of the story** | Designing, `docs/quests/bernat.md` |
-| **Marta** | Aitor's best friend, Gerard's friend too; **a singer** | **Basque Country** | Needs a **train ticket**: one of the hardest places to reach | Combat idea (2026-11-07, § Marta's fight) | Idea |
+| **Marta** | Aitor's best friend, Gerard's friend too; **a singer** | **Alegia**, Basque Country | Needs a **train ticket**: one of the hardest places to reach | Her voice taken; the piano, Las cuerdas, her three qualities and La Voz, hurt only while a note sounds | Base playable, `docs/quests/marta.md`; the trip, the clues and her recordings open |
 | **Luca** | A very close friend, gay like Gerard and Aitor, **very eccentric**; lives with his partner and their daughter | _open_ | _open_ | _open_ | Idea |
 | **Emilie** | Friend of Aitor and Gerard; **very clever** | **Poble Sec** | _open_ (L3 Poble Sec / Paral·lel are not on the map yet) | **Helps with a technical problem** | Idea |
 | **University friends**: Anna and Álvaro, Miquel and Sarah, Guillem and Soraya | Three couples from university (Guillem does not appear) | **La Barceloneta**, the beach | L4 | They come for Gerard's birthday, held by the Queen: a game of tag into the sea and the spiral | Designing, `docs/quests/universidad.md` |
@@ -122,7 +122,8 @@ cartoonish.)
 
 ### Marta's fight (idea, 2026-11-07)
 
-From the user, to remember when her side mission is designed:
+Designed and built as a base since (2026-11-14): `docs/quests/marta.md` § Final boss is the
+current word; these are the notes it started from.
 
 - **Her mission's final boss sings** (decided): **the real Marta will record songs of single notes**
   for the game, and they are the boss's **cyclic, endless attack**: a buff that comes round with the

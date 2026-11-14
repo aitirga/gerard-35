@@ -126,6 +126,8 @@ friends' stories and the second round carry it.
 - **The university friends' ánima** (`ANIMAS.universidad`) is theirs once La Sobremesa is beaten;
   their household gives **five lights**, one for each couple (Anna and Álvaro, Miquel and Sarah,
   Soraya and Guillem) and one each for Nico and Joan. What else it brings is still to design.
+- **Marta's ánima** (`ANIMAS.marta`) is theirs once La Voz is beaten, with **one light**, hers. Its
+  bonus is provisional and its wearable form (song and timing) is still to design.
 - **Papagato** is Nuria's ánima (Cardedeu): it brings Haru and Yuki, the cats, to fight beside the
   party. In design (`docs/quests/nuria.md`, `docs/animas/papagato/`).
 - First round: Gerard restores what the Queen popped, and the ánimas he collects are **grey**:
@@ -146,6 +148,7 @@ friends' stories and the second round carry it.
 | **Nil** | Nuria and Uri's baby (under a year old). In Nuria's mission Uri runs off down the street with him (`docs/quests/nuria.md`). |
 | **Haru and Yuki** | The cats who live with Nuria (both female: one white, one tricolour); they are Gerard's cats too, from when Nuria, Gerard and Aitor lived together. Nuria's ánima, **Papagato**, brings them into the party's fights. |
 | **The university friends** | Seven friends from university: the couples **Anna and Álvaro** and **Miquel and Sarah**, **Soraya** (her partner Guillem stays out of it), **Nico** and **Joan**. For years they went camping together at the Càmping Eurosport, with a photo of all of them with a melon every summer; many have children now. On Gerard's birthday the Queen holds them on the beach of the Barceloneta (`docs/quests/universidad.md`). |
+| **Marta** | Aitor's best friend, and Gerard's friend too. A singer (she and Aitor, on piano, played together in Keiran; she also sang in Mindtrap) and a dentist. Direct, crystal-clear and loyal. In the game she is in Alegia, and the Queen has taken her voice (`docs/quests/marta.md`). |
 | **Pedro** | A gay friend of Gerard and Aitor; they see each other a lot. To be integrated with his own mission and ánima (idea, 2026-11-05: details to come from Aitor). |
 
 ## Places
@@ -161,6 +164,8 @@ friends' stories and the second round carry it.
 - **La Barceloneta** (the L4's beach): where the university friends wait for Gerard's birthday.
 - **Càmping Eurosport**: the campsite of the friends' summers, through the spiral in the sea; always
   the same summer evening, with nobody in it.
+- **Las cuerdas**: Marta's own place, through the bubble a wrong note opens by a piano in Alegia: a
+  void crossed by strings of silver light that all meet at one point, where her voice is.
 - **Barcelona** as a whole is the chapter 2 world map: sea, Collserola, avenues, landmarks, metro
   (`docs/barcelona.md`).
 

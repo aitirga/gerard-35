@@ -10,7 +10,8 @@ import { PHRASES, TONES, TONE_IDS, songAt, type ToneId } from './song';
  * A maze's pieces are lit in their note's colour: there while it sounds, trembling before it ends,
  * dropped into the void after, with a faint frame left where each will come back. The third maze's
  * rows answer to the tuning pegs standing beside them, found nowhere else in the game.
- * No pink and no violet: this place is Marta's, not the Queen's.
+ * No violet, and no pink but the bubble they came in by: the place is Marta's, the way in the Queen's
+ * (docs/visual-style.md § Reserved colours).
  */
 const VOID = '#04151b';
 /** How high over the centre every string meets (m), and how far a dropped piece falls before it is gone. */
@@ -153,9 +154,9 @@ export function buildCuerdas(app: pc.Application, toWorld: (x: number, z: number
   lamp('Luz del centro', new pc.Vec3(centre.x, 6, centre.z), '#eef3ff', 3, 22);
   const near = lamp('Luz de Gerard', new pc.Vec3(), '#dff3f5', 1.5, 8);
 
-  // The bubble they came in by, behind where they arrive: pale, never pink.
+  // The bubble they came in by, behind where they arrive: the Queen's, so her pink, the only pink here.
   const door = toWorld(plan.spawn.x, plan.spawn.z + 2);
-  const bubble = part(root, 'Pompa de entrada', 'sphere', mat('Pompa de entrada', '#bfe9ee', { gloss: .95, glow: .35, opacity: .22 }), [door.x, 1.25, door.z], [2.3, 2.3, 2.3]);
+  const bubble = part(root, 'Pompa de entrada', 'sphere', mat('Pompa de entrada', '#ff8cc4', { gloss: .95, glow: .3, opacity: .4 }), [door.x, 1.25, door.z], [2.3, 2.3, 2.3]);
 
   // The mazes' pieces. One slab each, in its note's colour (a material per maze and note, so each
   // maze pulses with its own phrase), and under it a faint frame that stays when it has dropped.

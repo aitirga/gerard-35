@@ -223,6 +223,7 @@ material, light and landmark, which the last column names.
 | Cardedeu | `#b66e43` | terracotta and garden green | hipped clay roofs (`teula`), lawns (`gespa`) | a long hipped roof | `cardedeu` warm | Poble Sec (ΔE 3, the same colour): low roofs, lawns and garden trees seen from above vs render and stone stairs at evening |
 | La calle que no acaba | `#9c93a0` → `#5e5266` | drained grey to violet dusk | one house repeated (Nuria's block, `estuc`), closing in | a straight street ending in a violet whirlpool | `cardedeu-calle` cold, desaturated | Cardedeu (ΔE 30): the same street drained of colour, walls closing vs warm roofs and gardens |
 | La torre de Uri | `#1f0f22` | violet-black | dark stone walls | spiral tower | `cardedeu-laberinto` cool | Throne room (ΔE 25): violet vs indigo and gold |
+| Las cuerdas | `#1b3844` | dark petrol blue-green | strings of silver light, dark glass edged in silver | every string meeting at one point over the centre | `cuerdas` cold, no sky | La torre de Uri (ΔE 24): a void with no walls and no ground, crossed by silver vs dark stone always higher than you |
 | El Nucli (built) | `#2f4a3a` | bottle green | board-game boxes, felt | the wall of boxes | `el-nucli` warm | Palace patio (ΔE 25): indoor felt vs painted court |
 | Sants street (built) | `#cfa463` | ochre | painted roller shutters, old render scored as ashlar (`estuc`) | a lit shopfront in a row of shutters | `sants` cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
 | Sagrada Família, outside | `#8a7764` | weathered sandstone | carved sandstone | spires | `sagrada-familia` warm | Avinguda Meridiana (ΔE 18): carved stone and park vs panot and blocks |
@@ -262,6 +263,7 @@ share a landmark kind.
 | Palace outside · entrance | Door | 17 | ground, light (palace sky) | ✓ (her own building) |
 | Cardedeu · La calle que no acaba | Past Nuria's block | 30 | colour, ground (no gardens), light (warm against cold) | ✓ |
 | La calle que no acaba · La torre de Uri | Through the bubble | 38 | colour, material, ground | ✓ |
+| Alegia · Las cuerdas | Through the bubble by the piano | 74 | all four: whitewash, timber and wet green under an overcast vs a petrol void with no ground and silver strings | ✓ |
 | Avinguda Meridiana · Rec Comtal | L1, three stops | 37 | colour, material, light | ✓ |
 | El Nucli · Sants street | Door | 57 | all four | ✓ |
 | Sagrada inside · outside | Door | 32 | colour, ground, light (coloured nave) | ✓ |
@@ -392,6 +394,35 @@ Built to this card on 2026-10-31; the brief, sources and credits are in [places/
 | Sound | The weir, church bells, rain on the arcade, a train on the line, cowbells up the hill (not built: places have no ambiences yet) |
 | Only here | The giant stone cowbell of Txintxarri plaza, and every old house wearing its name on a tile |
 | Text | Basque: *San Juan kalea*, *Udaletxea*, *Eliza*, house names, *Bazkideak bakarrik* |
+
+#### Las cuerdas (`cuerdas`)
+
+Built (2026-11-14) from the proposal in `docs/quests/marta.md` § Beats; the page is
+[places/cuerdas.md](places/cuerdas.md). The dominant was measured on the follow camera's
+screenshots (`just screenshots marta --gpu`, the centre).
+
+| | |
+| --- | --- |
+| Dominant | Dark petrol blue-green `#1b3844` on screen: the way's glass `#0f2f3a` over the void `#04151b` |
+| Secondary | Silver light `#dfe9ee` (strings, edges, posts); the four notes' colours on the mazes' pieces only: amber, pale blue, green, coral |
+| Material | Strings of silver light, taut and straight; slabs of dark glass edged in silver |
+| Ground | None: the way is glass hung over nothing, and a maze's pieces are there only while their note sounds |
+| Landmark | The point high over the centre where every string meets, with its rings and the shaft under it (kind: lines converging on one point) |
+| Light | `cuerdas`: cold, no sun and no sky; the void is the clear colour, one white lamp at the centre and a small one that goes with Gerard |
+| Props | A lamp post at each platform's corners, the tuning pegs, the frames left where a fallen piece will come back |
+| Air | Specks of light rising slowly, a few fireflies, no wind |
+| Sound | Her voice, far off, one note at a time (placeholder synth until Marta's recordings); nothing else |
+| Only here | The tuning pegs beside the third maze's rows, each with its bead and its row's string |
+| Text | None: no map reaches it |
+| Reserved | No violet. One pink thing: the bubble they came in by, behind where they arrive, because the way in is the Queen's; nothing else in the place is hers |
+
+Through the checklist (§ 5): invented, so no real place to read; the matrix (nearest La torre de
+Uri, ΔE 24, told apart by material, ground and landmark; nobody has the petrol family nor a
+landmark of converging lines); its one neighbour, Alegia through the bubble, differs in all four
+(ΔE 74); one glow, the strings' silver; no world text; Gerard and Aitor read at once against the
+dark glass, and the strings rise toward the centre, so the place itself says which way is on;
+strings, edges, posts and pieces are instanced, two real lights; reachable from the picker (*Las
+cuerdas*, group Alegia).
 
 #### Cardedeu · Carrer de Jacint Verdaguer (`cardedeu`)
 
