@@ -104,6 +104,8 @@ export function createControllerUI(callbacks: {
   const able = (s: string, on: boolean) => { const el = get<HTMLButtonElement>(s); if (el.disabled === on) el.disabled = !on; };
   const select = get<HTMLSelectElement>('select');
   let selected = -1, identity = '', padList = '\0', latest: PadSnapshot | undefined;
+  /** Whether the player picked the pad in the list; otherwise the first playable one is taken. */
+  let chosen = false;
   let mapping: Partial<ControllerProfile> | undefined, step = 0, released = false;
   let baseline: readonly number[] = [];
   let previousButtons: boolean[] = [];
@@ -175,7 +177,7 @@ export function createControllerUI(callbacks: {
   }
   window.addEventListener('keydown', keydown, { capture: true });
   root.addEventListener('cancel', event => { event.preventDefault(); back(); });
-  select.onchange = () => { selected = Number(select.value); identity = ''; abort(); };
+  select.onchange = () => { selected = Number(select.value); chosen = true; identity = ''; abort(); };
   get('[data-remap]').onclick = () => {
     if (!latest) return;
     mapping = {}; step = 0; released = false; baseline = [...latest.axes]; previousButtons = latest.buttons.map(b => b.pressed);
@@ -192,7 +194,11 @@ export function createControllerUI(callbacks: {
       for (const pad of pads) { const option = document.createElement('option'); option.value = String(pad.index); option.textContent = pad.id; select.append(option); }
       if (!pads.length) { const option = document.createElement('option'); option.textContent = 'Ningún mando detectado'; select.append(option); }
     }
-    latest = pads.find(p => p.index === selected) ?? pads[0];
+    // Unless the player picked one, the first pad that can be played: one the browser cannot map (and nobody has
+    // assigned) would take player 1's place and do nothing, while a working pad beside it drove Aitor.
+    const playable = (p: PadSnapshot) => !!(profiles[p.id] ?? defaultProfile(p));
+    const current = pads.find(p => p.index === selected);
+    latest = (current && (chosen || playable(current)) ? current : undefined) ?? pads.find(playable) ?? current ?? pads[0];
     selected = latest?.index ?? -1; if (select.value !== String(selected)) select.value = String(selected);
     const nextIdentity = latest ? `${latest.index}:${latest.id}` : '';
     if (nextIdentity !== identity) { identity = nextIdentity; previousDirection = null; abort(); }
