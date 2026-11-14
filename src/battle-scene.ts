@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
-import { SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isOnion, isSobremesa, markLeft, markSpent, onionSize, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
+import { SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
+import { CUERDAS_SIZES } from './cuerdas-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
 import { WalkAnimation, idlePose, poseLegs, type LimbRig } from './walk-animation';
@@ -181,6 +182,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
      * bone, card and plaster: no gum splashes off them, no pink trails, and only the mago breathes.
      */
     camp?: CampingKind;
+    /** One of Las cuerdas' (src/cuerdas-foes.ts): string, glass and light, showing its rule each frame. No gum on it either. */
+    strings?: CuerdasKind;
   }
   /**
    * What Vertitrón keeps from frame to frame: its eye (the node, its fighter, the GPU swirl and smoke in
@@ -1090,7 +1093,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     // as big as they stand; the blow under them stays small and takes their colour, so the claws are what reads.
     const claw = action.skill === 'zarpazo';
     // Gum is the Queen's: a fear's own stuff does not splash pink, and an onion only sheds its skin.
-    effects.impact(blow, from, claw ? .3 : action.skill ? 1.4 : 1, { guarded, gum: target.minion && !target.onion && !target.camp, feet: floorUnder(target), ...action.spell ? { colour: spellColour(action.element) } : claw ? { colour: CLAW_COLOURS[0] } : {} });
+    effects.impact(blow, from, claw ? .3 : action.skill ? 1.4 : 1, { guarded, gum: target.minion && !target.onion && !target.camp && !target.strings, feet: floorUnder(target), ...action.spell ? { colour: spellColour(action.element) } : claw ? { colour: CLAW_COLOURS[0] } : {} });
     if (claw) {
       const { right, up, facing } = screenAxes(viewDir()), body = extent(target), front = body.radius * .6 + .15;
       const at = target.part ? chestOf(target) : new pc.Vec3(target.base.x, groundHeight(target.base.x, target.base.z) + body.height * .5, target.base.z);
@@ -1222,7 +1225,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     // A fist swings an arc in the swinger's own space, from just past the hand; a dog or the gum leaves a streak along its lunge.
     if (trailStage === 1 && !support && target && t >= (arm ? .24 : .16)) {
       trailStage = 2;
-      const look = { colour: light ?? (actor.minion && !actor.camp ? ['#ffd0e6', '#ff5fa2'] as const : ['#fff1cc', '#ffb347'] as const), width: light ? .2 : .15, intensity: light ? 3 : 1.8, core: light ? .7 : .45 };
+      const look = { colour: light ?? (actor.strings ? ['#eef3ff', '#49d3c2'] as const : actor.minion && !actor.camp ? ['#ffd0e6', '#ff5fa2'] as const : ['#fff1cc', '#ffb347'] as const), width: light ? .2 : .15, intensity: light ? 3 : 1.8, core: light ? .7 : .45 };
       if (arm) effects.trails.follow(arm, { ...look, offset: { x: 0, y: -.42, z: 0 }, space: actor.model, seconds: .26, life: .2 });
       else if (actor.head) effects.trails.follow(actor.head, { ...look, offset: actor.minion ? { x: 0, y: .35, z: .45 } : { x: 0, y: .09, z: .45 }, seconds: .32, life: .2, width: .15 });
     }
@@ -1619,7 +1622,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
     // Uri's fears fight in the tower's narrow corridors, so they stay nearer the party's size.
     const young = unit.kind === 'cebollita' || unit.kind === 'platito' || unit.kind === 'fantasmita';
-    if (minion) { const size = isOnion(unit.kind) ? onionSize(unit.kind, unit.layers ?? 0) : isCamping(unit.kind) ? CAMPING_SIZES[unit.kind] : unit.kind === 'guardian' ? 2.3 : young ? .62 : unit.kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5; model.setLocalScale(size, size, size); }
+    if (minion) { const size = isOnion(unit.kind) ? onionSize(unit.kind, unit.layers ?? 0) : isCamping(unit.kind) ? CAMPING_SIZES[unit.kind] : isCuerdas(unit.kind) ? CUERDAS_SIZES[unit.kind] : unit.kind === 'guardian' ? 2.3 : young ? .62 : unit.kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5; model.setLocalScale(size, size, size); }
     const legs = (body?.children.filter(c => c.name === 'Pierna') ?? (minion ? [] : model.children.filter(c => c.name === 'Pata'))) as pc.Entity[];
     const yaw = party ? (source.findByName('Cuerpo') as pc.Entity).getLocalEulerAngles().y : source.getEulerAngles().y;
     if (body) body.setLocalEulerAngles(0, 0, 0);
@@ -1648,6 +1651,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const built = fighters.get(unit.id)!;
     // A dish shows what it is on its plate; a fantasmita can go see-through, row by row.
     if (isCamping(unit.kind)) built.camp = unit.kind;
+    if (isCuerdas(unit.kind)) built.strings = unit.kind;
     if (unit.kind === 'plato' || unit.kind === 'platito') built.dish = { plate: model.findByName('Plato') as pc.Entity | null, cloche: head };
     if (unit.kind === 'fantasmita') {
       const pixels = model.find(node => node.name === 'Píxel') as pc.Entity[];
@@ -2139,7 +2143,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         f.tail?.setLocalEulerAngles(38 + strike * 20, lively ? Math.sin(time * (attacking ? 16 : 7) + f.seed) * 22 : 0, 0);
         // Vertitrón is posed joint by joint (`robotFrame`).
         if (f.robot) { /* posed */ }
-        else if (f.minion && f.head) f.head.setLocalEulerAngles(lively ? Math.sin(time * 2.2 + f.seed) * 6 - strike * 20 : 0, lively ? idle.look * 10 : 0, lively ? Math.sin(time * 1.7) * 5 : 0);
+        else if (f.minion && f.head && !f.strings) f.head.setLocalEulerAngles(lively ? Math.sin(time * 2.2 + f.seed) * 6 - strike * 20 : 0, lively ? idle.look * 10 : 0, lively ? Math.sin(time * 1.7) * 5 : 0);
         else if (!f.party && f.head) animateDogHead(f.head, f.ears, f.eyes, f.seed, stepping, lively, strike);
         // A dish shows what it is on its plate; turned over (Darle la vuelta) it spins on its rim and
         // shows the other once it is half way; El Plato's surprise rattles under its cloche.
@@ -2179,13 +2183,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const seen = camera(), toCamera = ((Math.atan2(seen.x, seen.z) * 180 / Math.PI - f.turn + 540) % 360) - 180;
           fears?.camping.show(f.model, unit, time, dt, animate, effect?.actor === id && !impacted ? effect : undefined, toCamera);
         }
+        if (f.strings && unit) {
+          const seen = camera(), toCamera = ((Math.atan2(seen.x, seen.z) * 180 / Math.PI - f.turn + 540) % 360) - 180;
+          fears?.cuerdas.show(f.model, unit, time, dt, animate, effect?.actor === id && !impacted ? effect : undefined, toCamera, state ? songNow(state) : undefined, state?.round ?? 0);
+        }
         f.body?.setLocalPosition(0, 0, 0);
         // The camera supplies the battle zoom; keep fighters proportional to the street.
         const since = f.hitAt === undefined ? Infinity : time - f.hitAt;
         // Wood does not squash: the giant shudders instead, a short stiff tremor.
-        const squash = animate && since < 1 && !f.rigid && !f.camp ? Math.exp(-since * 7) * Math.cos(since * 30) : 0;
+        const squash = animate && since < 1 && !f.rigid && !f.camp && !f.strings ? Math.exp(-since * 7) * Math.cos(since * 30) : 0;
         if (f.rigid && animate && since < .4) roll += Math.exp(-since * 12) * Math.sin(since * 70) * .8;
-        const breathe = lively && down < 0 && !f.rigid && (!f.camp || f.camp === 'mago') ? idle.breathe * .018 + (f.minion ? Math.sin(time * 3.1 + f.seed) * .04 : 0) : 0;
+        const breathe = lively && down < 0 && !f.rigid && !f.strings && (!f.camp || f.camp === 'mago') ? idle.breathe * .018 + (f.minion ? Math.sin(time * 3.1 + f.seed) * .04 : 0) : 0;
         // Encogido (Rayo encogedor): smaller from when the ray lands, and back to size when it wears off.
         const shrunk = state && [...state.foes, ...state.allies].find(u => u.id === id)?.timed?.encogido && !(effect?.skill === 'rayo-encogedor' && effect.target === id && !impacted);
         f.shrink = animate ? f.shrink + ((shrunk ? SHRUNK : 1) - f.shrink) * (1 - Math.exp(-dt * 8)) : shrunk ? SHRUNK : 1;

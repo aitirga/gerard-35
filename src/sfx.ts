@@ -64,6 +64,13 @@ function meow(context: AudioContext, out: AudioNode, at: number, { pitch, length
   osc.onended = () => env.disconnect();
 }
 
+/** A sung note, for now: the note, a little of its octave and fifth, in softly and out slowly. */
+function sung(context: AudioContext, out: AudioNode, at: number, hz: number) {
+  tone(context, out, at, { type: 'triangle', from: hz, attack: .09, hold: .5, length: 1.5, gain: .16 });
+  tone(context, out, at, { from: hz * 2, attack: .12, hold: .3, length: 1.1, gain: .05 });
+  tone(context, out, at, { from: hz * 3, attack: .15, hold: .2, length: .8, gain: .018 });
+  return 1.6;
+}
 export const SOUNDS = {
   // Menus: a soft tick to move, a rising pair to confirm, a falling note to go back.
   'ui-move': { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 1320 * p, length: .045, gain: .12 }); return .05; }, jitter: 15, gap: .03, voices: 2 },
@@ -71,6 +78,11 @@ export const SOUNDS = {
   'ui-back': { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 620 * p, to: 360 * p, length: .11, gain: .14 }); return .12; }, gap: .06, voices: 2 },
   // Fights: a thump with a burst of grit for a blow, a rising sparkle for a cure or a boost.
   hit: { synth: (c, out, at, p) => { tone(c, out, at, { from: 150 * p, to: 48 * p, length: .16, gain: .5 }); noise(c, out, at, { cutoff: 2400, length: .12, gain: .35 }); return .17; }, jitter: 120, gap: .04, voices: 4 },
+  // La Voz's four notes (src/song.ts), each as it starts: a held, plain voice until Marta's own recordings take their place.
+  'nota-la': { synth: (c, out, at) => sung(c, out, at, 220), gap: .2, voices: 2 },
+  'nota-do': { synth: (c, out, at) => sung(c, out, at, 261.63), gap: .2, voices: 2 },
+  'nota-mi': { synth: (c, out, at) => sung(c, out, at, 329.63), gap: .2, voices: 2 },
+  'nota-sol': { synth: (c, out, at) => sung(c, out, at, 392), gap: .2, voices: 2 },
   heal: { synth: (c, out, at, p) => { [660, 880, 1320].forEach((from, i) => tone(c, out, at + i * .06, { from: from * p, length: .28, gain: .12 })); return .42; }, jitter: 30, gap: .1, voices: 2 },
   // Holding on: a knock taken on the guard, the stance itself, and maná coming back.
   'hit-guarded': { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 170 * p, to: 90 * p, length: .1, gain: .32 }); noise(c, out, at, { cutoff: 900, length: .07, gain: .14 }); return .12; }, jitter: 80, gap: .04, voices: 3 },

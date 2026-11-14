@@ -36,6 +36,8 @@ export const SPEAKERS = {
   soraya: { name: 'Soraya', portrait: 'soraya', skin: '#e0b089', hair: '#231a17', top: '#2e2e33', accent: '#b07aff' },
   nico: { name: 'Nico', portrait: 'nico', skin: '#e6b892', hair: '#2a1e18', top: '#3c3f44', accent: '#b07aff' },
   joan: { name: 'Joan', portrait: 'joan', skin: '#e4b48d', hair: '#22181a', top: '#4a4350', accent: '#b07aff' },
+  /** Marta (docs/quests/marta.md); no portrait yet: her figure and photos are still to come. */
+  marta: { name: 'Marta', skin: '#e6b892', hair: '#3a2a22', top: '#2f5d62', accent: '#49d3c2' },
   /** The campsite's foes (docs/quests/universidad.md § Càmping Eurosport), for the word each of them shouts as it falls in a fight; no portrait. */
   mago: { name: 'Mago de camping', skin: '#c9b89a', hair: '#3a3428', top: '#7d7a5a', accent: '#e8b04a' },
   agente: { name: 'Agente', skin: '#d8cfb8', hair: '#2a2622', top: '#c9bfa4', accent: '#e8b04a' },

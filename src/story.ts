@@ -16,6 +16,7 @@ import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId }
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
+import { ALEGIA, CUERDAS_PLACE, LINES_MARTA, MARTA_SCALE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
@@ -43,6 +44,9 @@ export const STORY_FLAGS = [
   // their ánima, and the five lights that went with Gerard and Aitor (one a couple, one each alone).
   'clue-uni', 'barceloneta-uni', 'camping', 'candado', 'parcelas', 'sobremesa', 'anima-universidad',
   'luz-anna-alvaro', 'luz-miquel-sarah', 'luz-soraya', 'luz-nico', 'luz-joan',
+  // Marta's mission (docs/quests/marta.md): spoken to in Alegia, into Las cuerdas through the note
+  // the piano left in the air, La Voz beaten, her ánima and the light that went with them.
+  'alegia-marta', 'cuerdas', 'voz', 'anima-marta', 'luz-marta',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 /**
@@ -53,7 +57,7 @@ const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-ni
 /** Only flags this version knows, renamed ones under their new name. */
 const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENAMED_FLAGS[f] ?? f).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
 /** Whose lights can be won. */
-export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan'] as const;
+export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta'] as const;
 export type LightId = typeof LIGHTS[number];
 
 export type StoryEvent =
@@ -177,7 +181,7 @@ export type GerardClass = Exclude<ClassId, 'tecnopata'>;
 
 /** Someone standing in a scene: a character model, or one of the cats (`cat`). */
 export interface StoryNpc {
-  id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki' | UniFriend; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId;
+  id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki' | 'marta' | UniFriend; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId;
   /** The Queen holds them: violet eyes, and they keep looking where they face. */
   possessed?: boolean;
   /** Standing in the sea this deep (m): Anna in the shallows. */
@@ -195,6 +199,12 @@ export interface UniRun {
   /** In the campsite: the fights won this visit (`CAMP_HUNTERS` ids, `campeon`), the hunter whose fight is on, what was already said once, and Las parcelas' board. */
   beaten: string[]; fighting?: string; told: string[]; board?: Board;
 }
+/**
+ * Marta's mission while it runs (docs/quests/marta.md); not saved, as the others. `beaten`: the
+ * qualities beaten this visit (QUALITIES ids); `told`: what was already said once.
+ */
+export interface MartaRun { beaten: string[]; told: string[] }
+export const freshMarta = (): MartaRun => ({ beaten: [], told: [] });
 export const freshUni = (): UniRun => ({ chase: false, caught: 0, spiral: false, sunk: false, entered: false, beaten: [], told: [] });
 /** One of the friends running after the party (src/chasers.ts); `frozen` once the spiral has opened. */
 export interface UniChaser { id: string; friend: UniFriend; patrol: Cell[]; sight: number; walk: number; run: number; relentless: true; frozen: boolean }
@@ -299,6 +309,9 @@ export class Story {
   nuria: NuriaRun = freshRun();
   /** The university friends' mission while it runs; not saved. */
   uni: UniRun = freshUni();
+  marta: MartaRun = freshMarta();
+  /** Where the party is now, when the game has said (`enter`): Marta answers differently inside Las cuerdas. */
+  inside?: EnvironmentId;
   /** Whether Nuria has lent the cats before (she says it differently the second time). Not saved. */
   private lentBefore = false;
   /**
@@ -570,6 +583,64 @@ export class Story {
       beach, { kind: 'emerge', cell: { ...PLACES_UNI.out } }, say(LINES_UNI.home), ...this.spend('fight'),
     ];
   }
+  /**
+   * In Las cuerdas (docs/quests/marta.md): before each maze Aitor says what its floor does, once; on
+   * each platform the quality standing there is the fight; at the centre, with the three beaten, La Voz.
+   */
+  private nearMarta(id: string): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult || this.has('voz')) return [];
+    const run = this.marta;
+    const maze = PLACES_CUERDAS.mazes.findIndex((_, i) => id === `cuerdas-laberinto-${i}`);
+    if (maze >= 0 && !run.told.includes(id)) { run.told.push(id); return [say(LINES_MARTA.mazes[maze])]; }
+    const quality = QUALITIES.find(q => id === `cuerdas-${q.id}`);
+    if (quality && !run.beaten.includes(quality.id)) return [say(LINES_MARTA[quality.id]), { kind: 'battle', encounter: quality.encounter }];
+    if (id === 'cuerdas-voz' && QUALITIES.every(q => run.beaten.includes(q.id))) return [say(LINES_MARTA.voz), { kind: 'battle', encounter: 'voz' }];
+    return [];
+  }
+  /** The piano in Alegia: once she has been spoken to, Aitor plays, her note stays in the air and takes the three of them in. */
+  private playPiano(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult) return [];
+    if (this.has('voz')) return [say(LINES_MARTA.after)];
+    if (!this.has('alegia-marta')) return [say(LINES_MARTA.pianoBefore)];
+    const first = this.set('cuerdas');
+    const inside: StoryEffect = { kind: 'travel', environment: CUERDAS_PLACE, cell: { ...PLACES_CUERDAS.spawn } };
+    return [
+      ...first ? [say(LINES_MARTA.piano)] : [],
+      { kind: 'portal', who: 'everyone', open: { ...PLACES_MARTA.bubble } }, inside,
+      say(first ? LINES_MARTA.inside : LINES_MARTA.insideAgain), ...first ? this.spend('cafe') : [],
+    ];
+  }
+  /**
+   * La Voz beaten: all Marta lost comes back to her at once, and she is herself; back in Alegia at
+   * the piano the song sounds as it should, her light goes with them, and the day is spent.
+   */
+  private winMarta(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.set('voz')) return [];
+    for (const flag of ['anima-marta', 'luz-marta'] as const) this.set(flag);
+    this.marta = freshMarta();
+    const home: StoryEffect = { kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } };
+    return [say(LINES_MARTA.won), home, say(LINES_MARTA.home), { kind: 'lights', people: ['marta'] }, ...this.spend('fight'), ...this.nightfall()];
+  }
+  /** Marta: by the piano in Alegia, and inside Las cuerdas a step behind the party, further in as each quality is beaten. */
+  private martaNpcs(): StoryNpc[] {
+    const at = PLACES_CUERDAS.marta[Math.min(this.marta.beaten.length, PLACES_CUERDAS.marta.length - 1)];
+    return [
+      { id: 'marta', character: 'marta', environment: ALEGIA, cell: { ...PLACES_MARTA.marta }, scale: MARTA_SCALE, facing: 200 },
+      ...this.has('voz') ? [] : [{ id: 'marta' as const, character: 'marta', environment: CUERDAS_PLACE, cell: { ...at }, scale: MARTA_SCALE, facing: 180 }],
+    ];
+  }
+  /** What stands waiting in Las cuerdas, for the game to put there (src/cuerdas-foes.ts models): each quality not yet beaten on its platform, and La Voz at the centre. */
+  cuerdasFoes(environment: EnvironmentId): { id: string; encounter: CuerdasEncounter; cell: Cell; beaten: boolean }[] {
+    if (environment !== CUERDAS_PLACE) return [];
+    const done = this.has('voz');
+    return [
+      ...QUALITIES.map(q => ({ id: q.id, encounter: q.encounter, cell: { ...q.cell }, beaten: done || this.marta.beaten.includes(q.id) })),
+      { id: 'voz', encounter: 'voz' as const, cell: { x: PLACES_CUERDAS.voz.x, z: PLACES_CUERDAS.voz.z }, beaten: done },
+    ];
+  }
   /** Gerard's morning (and the first way down into the metro), with Aitor's word about the friends on the beach until they have been there. */
   private withClue(morning: Dialogue): Dialogue {
     if (!this.has('metro') || this.has('barceloneta-uni')) return morning;
@@ -610,6 +681,14 @@ export class Story {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (event.won && event.encounter === 'uri-vertigo') return this.winNuria();
     if (event.won && event.encounter === 'sobremesa') return this.winUni();
+    if (event.won && event.encounter === 'voz') return this.winMarta();
+    // One of what Marta lost, beaten: it stays beaten this visit, and she says she feels nothing yet.
+    const quality = QUALITIES.find(q => q.encounter === event.encounter);
+    if (event.won && quality) {
+      if (this.has('voz') || this.marta.beaten.includes(quality.id)) return [];
+      this.marta.beaten.push(quality.id);
+      return [say(LINES_MARTA.beside[this.marta.beaten.length])];
+    }
     // The campsite's fights: one waiting at a table stays beaten this visit; a woken tent or the black pitch is only a fight.
     const waiting = event.encounter === 'campeon' ? 'campeon' : CAMP_HUNTERS.some(h => h.encounter === event.encounter) ? this.uni.fighting : undefined;
     this.uni.fighting = undefined;
@@ -666,6 +745,7 @@ export class Story {
   /** Someone went into a portal (`portal` effect) and is gone: Anna, into the spiral in the sea. */
   sank(who: 'party' | UniFriend) { if (who === 'anna' && this.uni.spiral) this.uni.sunk = true; }
   /** Development: starts the university friends' mission partway (the picker's Misiones tab): the game of tag on, the spiral open. */
+  startMarta(run: Partial<MartaRun>) { this.marta = { ...freshMarta(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
   startUni(run: Partial<UniRun>) { this.uni = { ...freshUni(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
   /** Gerard's active ánima, which also dresses the interface. */
   get gerardClass(): GerardClass | undefined { return this.classOf('gerard') as GerardClass | undefined; }
@@ -742,6 +822,7 @@ export class Story {
   blocked(environment: EnvironmentId): Cell[] {
     if (environment === BEACH && (this.uni.chase || this.uni.spiral)) return TENTACLES.map(c => ({ ...c }));
     // The pool's gate stays padlocked until the numbers of the maze's three words are put on it, the merendero's steel door until every pitch is found.
+    if (environment === ALEGIA) return PLACES_MARTA.piano.cells.map(c => ({ ...c }));
     if (environment === CAMP && !this.has('sobremesa')) return [
       ...this.has('candado') || this.has('parcelas') ? [] : CAMPING_GATE,
       ...this.has('parcelas') ? [] : CAMPING_DOOR,
@@ -815,6 +896,7 @@ export class Story {
     // Whatever Nuria's mission had reached is undone: the cats went back to her; the friends are on the sand again.
     this.nuria = freshRun();
     this.uni = freshUni();
+    this.marta = freshMarta();
     const firstFall = why === 'fall' && this.set('palace-tried');
     // Beaten in the street at night, they sleep the morning away.
     this.days.clock = { day: this.days.clock.day + 1, hour: why === 'night-fall' ? WOKE_LATE : DAY_START };
@@ -840,6 +922,15 @@ export class Story {
     if (this.adult && !this.has('tv-news') && environment === tv.environment) return [{ id: 'tv', cell: { ...tv.cell }, radius: tv.radius }];
     if (environment === BEACH) return this.uniTriggers();
     if (environment === CAMP) return this.campTriggers();
+    if (environment === CUERDAS_PLACE) {
+      if (!this.adult || this.has('voz')) return [];
+      const run = this.marta, { voz } = PLACES_CUERDAS;
+      return [
+        ...PLACES_CUERDAS.mazes.flatMap((m, i) => run.told.includes(`cuerdas-laberinto-${i}`) ? [] : [{ id: `cuerdas-laberinto-${i}`, cell: { ...m.cell }, radius: m.radius }]),
+        ...QUALITIES.filter(q => !run.beaten.includes(q.id)).map(q => ({ id: `cuerdas-${q.id}`, cell: { ...q.cell }, radius: q.radius })),
+        ...QUALITIES.every(q => run.beaten.includes(q.id)) ? [{ id: 'cuerdas-voz', cell: { x: voz.x, z: voz.z }, radius: voz.radius }] : [],
+      ];
+    }
     if (!this.adult || this.has('nuria-uri')) return [];
     const { haru, uri } = PLACES_NURIA, run = this.nuria;
     if (environment === STREET && !run.lent && !run.haru) return [{ id: 'haru', cell: { ...haru.cell }, radius: haru.radius }];
@@ -943,7 +1034,7 @@ export class Story {
       { id: 'jan', character: 'jan-child', environment: PLACES.jan.environment, cell: PLACES.jan.cell, scale: 1.12 },
     ];
     // Chapter 1 is a dream: once Gerard wakes, home in Sant Quirze is empty, and Aitor walks with him (the partner, not an NPC).
-    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs()].filter(npc => npc.environment === environment);
+    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs(), ...this.martaNpcs()].filter(npc => npc.environment === environment);
     return all.filter(npc => npc.environment === environment);
   }
   /** Nuria at her door, the cats with her until she lends them, and Uri ahead in his maze. */
@@ -1010,6 +1101,14 @@ export class Story {
     }
     if (this.adult && environment === STREET) {
       list.push({ id: 'talk-nuria', label: 'Hablar con Nuria', cell: { ...PLACES_NURIA.nuria.cell } });
+    }
+    if (this.adult && environment === ALEGIA) {
+      list.push({ id: 'talk-marta', label: 'Hablar con Marta', cell: { ...PLACES_MARTA.marta } });
+      list.push({ id: 'piano-marta', label: 'Tocar el piano', hint: 'Tocar el piano', cell: { ...PLACES_MARTA.piano.seat } });
+    }
+    if (this.adult && environment === CUERDAS_PLACE) {
+      if (!this.has('voz')) list.push({ id: 'talk-marta', label: 'Hablar con Marta', cell: { ...PLACES_CUERDAS.marta[Math.min(this.marta.beaten.length, PLACES_CUERDAS.marta.length - 1)] } });
+      list.push({ id: 'salir-cuerdas', label: 'Volver por la pompa', hint: 'Volver', cell: { ...PLACES_CUERDAS.exit } });
     }
     if (this.adult && environment === JAR.environment && this.jar.length) {
       list.push({ id: 'meridiana-luces', label: 'Abrir el bote', hint: 'Abrir el bote', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });
@@ -1090,6 +1189,7 @@ export class Story {
       case 'near':
         if (event.id.startsWith('uni-')) return this.nearUni(event.id);
         if (event.id.startsWith('camp-')) return this.nearCamp(event.id);
+        if (event.id.startsWith('cuerdas-')) return this.nearMarta(event.id);
         // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
         if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard' }] : [];
         if (event.id !== 'tv') return this.nearNuria(event.id);
@@ -1127,6 +1227,16 @@ export class Story {
         if (!this.extrasOf('gerard').length) this.equip('gerard', 'papagato');
         return [say(again ? LINES_NURIA.nuriaAgain : LINES_NURIA.nuriaFirst), { kind: 'anima', classId: 'papagato' }];
       }
+      case 'talk-marta': {
+        if (!this.adult) return [];
+        if (this.has('voz')) return [say(LINES_MARTA.after)];
+        if (this.inside === CUERDAS_PLACE) return [say(LINES_MARTA.beside[Math.min(this.marta.beaten.length, LINES_MARTA.beside.length - 1)])];
+        return [say(this.set('alegia-marta') ? LINES_MARTA.arrive : LINES_MARTA.waiting)];
+      }
+      case 'piano-marta':
+        return this.playPiano();
+      case 'salir-cuerdas':
+        return [{ kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } }];
       case 'recepcio-pizarra':
         return [{ kind: 'dialogue', dialogue: LINES_UNI.boardIdle }];
       case 'pissarra-piscina':

@@ -1,6 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, switchAnima, takeNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
+import { PHRASES, TONES, phraseLength } from './song';
+import { attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -28,17 +29,19 @@ const commandsFor = (dev: boolean): { id: Command; name: string }[] => [
   { id: 'escape', name: 'Huir' },
 ];
 /** Uri's fears (docs/quests/nuria.md): what the fight's heading says. */
-const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN', sobremesa: 'LA SOBREMESA', 'camping-magos': 'MAGOS DE CAMPING', 'camping-dados': 'DADOS', 'camping-agentes': 'AGENTES', 'camping-tienda': 'UNA TIENDA EQUIVOCADA', 'camping-negra': 'LA PARCELA NEGRA', campeon: 'EL CAMPEÓN' } as const;
-const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>', sobremesa: 'Nadie se <em>levanta.</em>', 'camping-magos': 'Huele a <em>gas.</em>', 'camping-dados': 'Cada ronda, <em>otra cara.</em>', 'camping-agentes': 'Uno da la <em>cara.</em>', 'camping-tienda': 'Esa no <em>era.</em>', 'camping-negra': 'Todo <em>apagado.</em>', campeon: 'Sobre su <em>peana.</em>' } as const;
+const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN', sobremesa: 'LA SOBREMESA', 'camping-magos': 'MAGOS DE CAMPING', 'camping-dados': 'DADOS', 'camping-agentes': 'AGENTES', 'camping-tienda': 'UNA TIENDA EQUIVOCADA', 'camping-negra': 'LA PARCELA NEGRA', campeon: 'EL CAMPEÓN', 'cuerdas-lealtad': 'LA LEALTAD', 'cuerdas-cristalino': 'LO CRISTALINO', 'cuerdas-directo': 'LO DIRECTO', voz: 'LA VOZ' } as const;
+const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>', sobremesa: 'Nadie se <em>levanta.</em>', 'camping-magos': 'Huele a <em>gas.</em>', 'camping-dados': 'Cada ronda, <em>otra cara.</em>', 'camping-agentes': 'Uno da la <em>cara.</em>', 'camping-tienda': 'Esa no <em>era.</em>', 'camping-negra': 'Todo <em>apagado.</em>', campeon: 'Sobre su <em>peana.</em>', 'cuerdas-lealtad': 'No se <em>aparta.</em>', 'cuerdas-cristalino': 'Se ve <em>a través.</em>', 'cuerdas-directo': 'Sin <em>rodeos.</em>', voz: 'Lo que <em>falta.</em>' } as const;
 /** What a blow says it did to an onion's layers. */
 const peelText = (peeled: number, onion?: { layers?: number }) => !onion?.layers ? '¡Sin capas!' : peeled > 1 ? `¡${peeled} capas menos!` : '¡Una capa menos!';
 const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'punto-debil';
+type IconId = StatusId | TimedId | 'punto-debil' | 'cancion';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 const STATUS_ICONS: Record<IconId, string> = {
+  // La Voz's song: a sung note, the same mark for every note (its colour says which).
+  cancion: '<path d="M6 2.2v8.1a2.3 2 0 1 1-1.4-1.8V3.6l6.8-1.5v6.6a2.3 2 0 1 1-1.4-1.8V4.1L6 5" fill="currentColor"/>',
   'punto-debil': '<path d="M8 1.5v3.2M8 11.3v3.2M1.5 8h3.2M11.3 8h3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="1.5"/>',
   quemado: '<path d="M8 1.2c.6 2.6 3.8 4 3.8 7.9a3.8 3.8 0 0 1-7.6 0c0-2 1-3.3 2-4.2-.1 1.6.5 2.6 1.3 2.9C7 6 7 3.4 8 1.2z"/>',
   cegado: '<path d="M1.5 8S4 3.8 8 3.8 14.5 8 14.5 8 12 12.2 8 12.2 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="1.9"/><path d="M2.6 13.4 13.4 2.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
@@ -278,7 +281,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** The statuses on someone, in the order the plate and the summary show them: stacks or level, and how long they last. */
   function statusList(c: Combatant): { id: IconId; name: string; mark: string; timed: boolean; lasts: string }[] {
     const weak = state ? weakSpotRounds(state, c) : 0;
+    const song = c.kind === 'voz' && state?.song ? songNow(state) : undefined;
     return shownHp(c) > 0 ? [
+      // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
+      ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño mientras suena una nota.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: PHRASES[state!.song!.phrase].name }] : [],
       ...weak ? [{ id: 'punto-debil' as const, name: `Punto débil: el siguiente golpe hace el triple`, mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weak) }] : [],
       ...(Object.entries(c.statuses ?? {}).filter(([, n]) => n) as [StatusId, number][]).map(([id, n]) => ({ id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) })),
       ...(Object.entries(shownTimed(c)).filter(([, on]) => on) as [TimedId, Timed][]).map(([id, on]) => ({ id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` })),
@@ -297,6 +303,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (c.face !== undefined) chips.push(['cara', `Cara ${c.face}`]);
     if (c.faceUp !== undefined) chips.push(c.faceUp ? ['boca-arriba', 'Boca arriba'] : ['boca-abajo', 'Boca abajo']);
     if (c.form) chips.push([c.form, `${CAMPEON_FORMS[c.form]} · ${c.formLeft ?? 0} ${c.formLeft === 1 ? 'turno' : 'turnos'}`]);
+    // Las cuerdas' rules (docs/quests/marta.md): glass sends magic back; La Voz's note or her silence, her Crescendo, her Guardia.
+    if (c.kind === 'cristalino') chips.push(['cristal', 'Cristal']);
+    if (c.kind === 'voz' && state?.song) {
+      if ((c.shielded ?? -1) >= state.round) chips.push(['guardia', 'Guardia']);
+      if (c.clear) chips.push(['cristal', 'Nota clara']);
+    }
     // A move announced a turn ahead, and at whom (Carrerilla → Aitor), or what is about to happen.
     // One chip for any announced move, as `intentLabel` says it («Rayo terrorífico → todos»).
     const announced = state && c.intent ? intentLabel(state, c) : undefined;
@@ -353,6 +365,24 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * marks each pulse still to come, where the hand will be when it hurts (`--ticks`).
    */
   function drain(plate: Element, c: Combatant) {
+    const tune = c.kind === 'voz' && state?.song ? plate.querySelector<HTMLElement>('.status-icon[data-status="cancion"]') : null;
+    if (tune && state?.song) {
+      // The ring is the whole phrase, each note an arc in its colour and each silence a gap; the hand goes round once a phrase.
+      const phrase = PHRASES[state.song.phrase], length = phraseLength(phrase), now = songNow(state)!;
+      tune.style.setProperty('--left', (1 - (state.song.t % length) / length).toFixed(4));
+      tune.style.setProperty('--status', now.sounding ? TONES[now.tone].colour : '#7f97a3');
+      tune.toggleAttribute('data-sounding', now.sounding);
+      if (tune.dataset.ticks !== state.song.phrase) {
+        tune.dataset.ticks = state.song.phrase;
+        let at = 0;
+        const arcs = phrase.beats.map(beat => {
+          const from = at / length * 360, to = (at + beat.sing) / length * 360;
+          at += beat.sing + beat.rest;
+          return `#1b1216 ${from}deg, ${TONES[beat.tone].colour} ${from}deg ${to}deg, #1b1216 ${to}deg ${at / length * 360}deg`;
+        });
+        tune.style.setProperty('--ticks', `conic-gradient(${arcs.join(', ')})`);
+      }
+    }
     for (const [id, on] of Object.entries(shownTimed(c)).filter(([, on]) => on) as [TimedId, Timed][]) {
       const icon = plate.querySelector<HTMLElement>(`.status-icon[data-status="${id}"]`);
       if (!icon) continue;
@@ -440,11 +470,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const seconds = Math.min(.1, Math.max(0, (now - clockLast) / 1000)) * (callbacks.speed?.() ?? clockScale(now)); clockLast = now;
     if (!state || root.dataset.entering || root.dataset.beat || callbacks.paused()) return;
     const pulses = runClock(state, seconds, c => heldFire.has(c.id));
+    const sung = showSong();
     // What a pulse brought on (Vertitrón's eye burnt out) plays once nothing else is.
     if (state.news?.length && !busy) void showNews();
     for (const c of [...state.foes, ...state.allies]) { const plate = root.querySelector(`.battle-target[data-target="${c.id}"]`); if (plate) drain(plate, c); }
     if (summaryOpen && now - summaryAt > 250) { summaryAt = now; renderSummary(); }
-    if (!pulses.length) return;
+    if (!pulses.length) { if (sung) render(); return; }
     if (pulses.some(p => !p.heal)) callbacks.sound('burn');
     if (pulses.some(p => p.heal)) callbacks.sound('heal');
     for (const p of pulses) {
@@ -456,6 +487,30 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     }
     // A fire can end the fight on its own: the result shows once nothing is being played.
     render();
+  }
+  /**
+   * La Voz's song is a status on her, continuous, drawn like a fire's clock (`statusList`, `drain`):
+   * nothing else on screen tells it. Here, what the song did since the last frame: an Eco's number on
+   * everyone as each note starts, a Crescendo over her. Returns whether the plates have something new to say.
+   */
+  let songSaid = '';
+  function showSong() {
+    if (!state?.song || ['won', 'lost', 'escaped'].includes(state.phase)) return false;
+    const voz = state.foes.find(f => f.kind === 'voz');
+    const news = takeSongNews(state);
+    for (const item of news) {
+      if (item.kind === 'eco') {
+        callbacks.sound(`nota-${item.tone}`);
+        for (const hit of item.hits) if (hit.amount) pop(hit.target, `−${hit.amount}`, 'damage', 'Eco');
+        // Her icon flashes as the note starts, as a fire's does when it burns.
+        root.querySelectorAll<HTMLElement>('.status-icon[data-status="cancion"]').forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
+      } else if (item.kind === 'crescendo' && voz) pop(voz.id, 'Crescendo', 'status', roman(item.level), 'crescendo');
+    }
+    // The plate says it again when the note changes (the icon's colour is set every frame, `drain`).
+    const said = `${songLabel(state) ?? ''}${state.song.phrase}${voz?.crescendo ?? 0}`;
+    const changed = said !== songSaid || news.length > 0;
+    songSaid = said;
+    return changed;
   }
   function startClock() { cancelAnimationFrame(clockFrame); clockLast = performance.now(); clockFrame = requestAnimationFrame(tickClock); }
   /** A line said over a fighter's head, inside the fight (the rest of the HUD is shut). */
@@ -1847,7 +1902,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   const ui = {
     /** Development: what the picker needs to offer this fight's moments. */
-    get fight() { return state && { encounter: state.encounter, phase: state.phase, awakened: state.awakened, busy }; },
+    get fight() { return state && { encounter: state.encounter, phase: state.phase, awakened: state.awakened, busy, song: songLabel(state) }; },
     jumpTo,
     /** Development (the picker's Ánimas column): the ánimas L and R walk through and their levels, changed mid-fight. */
     setAnimas(animas: ClassId[], levels: Partial<Record<ClassId, number>>, kits: Partial<Record<string, ClassId[]>> = {}) {

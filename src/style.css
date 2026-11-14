@@ -1294,6 +1294,13 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-dock[data-dock="2"] .skill-list button:is(:hover, :focus, .is-cursor-2) { transform: translateX(-10px); }
 .battle-dock[data-dock="2"] .command-back:is(:hover, :focus, .is-cursor-2) { transform: skewX(5deg) translateX(-6px); }
 .battle-dock[data-dock="2"] .command-help { text-align: right; }
+/* La Voz's song, a status that never runs out (battle-ui `drain`): the ring is the phrase, an arc per note in its colour; lit while one sounds. */
+.unit-statuses .status-icon[data-status="cancion"] { --status: #7f97a3; opacity: .7; transition: opacity .12s; }
+.unit-statuses .status-icon[data-status="cancion"][data-sounding] { opacity: 1; background: color-mix(in srgb, var(--status) 26%, #1b1216); }
+.status-icon[data-status="cancion"]::before { background: var(--ticks, none); }
+.unit-statuses i[data-status="crescendo"], .summary-tags [data-status="crescendo"], .damage-pop[data-status="crescendo"] { --status: #f2b45a; }
+.unit-statuses i[data-status="guardia"], .summary-tags [data-status="guardia"] { --status: #cfdde6; }
+.unit-statuses i[data-status="cristal"], .summary-tags [data-status="cristal"] { --status: #8fe6da; }
 .dev-badge { position: absolute; top: 30px; left: 50%; margin: 0; padding: 6px 12px; transform: translateX(-50%); border: 1px dashed #ff8fbf; background: #1b1216b3; color: #ff8fbf; font-size: 9px; font-weight: 600; letter-spacing: .18em; }
 #battle[data-entering] .battle-dock .party-card, #battle[data-entering] .anima-switch { animation: encounter-left .55s .7s both; }
 #battle[data-entering] .battle-dock[data-dock="2"] .party-card, #battle[data-entering] .battle-dock[data-dock="2"] .anima-switch { animation-name: encounter-right; }

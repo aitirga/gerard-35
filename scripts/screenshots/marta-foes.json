@@ -1,0 +1,201 @@
+{
+  "title": "Las cuerdas: lo que Marta perdió y La Voz",
+  "description": "docs/quests/marta.md § Monsters, § La Voz. Each of Las cuerdas' fights from the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost). Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22cuerdas-lealtad%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = (id, d = 3.4) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + .4, z: p.z }, d); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "lealtad",
+      "delay": 1500,
+      "caption": "La Lealtad and her Eco: the strung shield with its amber knot, the ring and its bead"
+    },
+    {
+      "eval": "closeUp('lealtad')"
+    },
+    {
+      "shot": "lealtad-cerca",
+      "delay": 900,
+      "caption": "La Lealtad up close"
+    },
+    {
+      "eval": "closeUp('eco', 2.6)"
+    },
+    {
+      "shot": "eco-cerca",
+      "delay": 900,
+      "caption": "An Eco up close"
+    },
+    {
+      "eval": "window.gerard.game.frame(); cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "lealtad-ronda-2",
+      "delay": 1200,
+      "caption": "A round later: the Eco has a ring more and its bead goes faster"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22cuerdas-cristalino%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = (id, d = 3.4) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + .4, z: p.z }, d); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "cristalino",
+      "delay": 1500,
+      "caption": "Lo Cristalino: an obelisk of aqua glass, saying whom its Destello is for"
+    },
+    {
+      "eval": "closeUp('cristalino')"
+    },
+    {
+      "shot": "cristalino-cerca",
+      "delay": 900,
+      "caption": "Lo Cristalino up close: the string of light through it, the shards"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22cuerdas-directo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = (id, d = 3.4) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + .4, z: p.z }, d); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "directo",
+      "delay": 1500,
+      "caption": "Lo Directo: the standing blade, its lance drawn back at whom it said"
+    },
+    {
+      "eval": "closeUp('directo')"
+    },
+    {
+      "shot": "directo-cerca",
+      "delay": 900,
+      "caption": "Lo Directo up close"
+    },
+    {
+      "eval": "window.gerard.game.frame(); ui.jumpTo('directo-linea')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "directo-linea",
+      "delay": 1200,
+      "caption": "Picker moment «En línea recta»: the crossbar out, it means everyone"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22voz%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = (id, d = 3.4) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + .4, z: p.z }, d); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "voz",
+      "delay": 900,
+      "caption": "La Voz, Andante: the note alight in her throat"
+    },
+    {
+      "eval": "closeUp('voz', 4.2)"
+    },
+    {
+      "shot": "voz-cerca",
+      "delay": 600,
+      "caption": "La Voz up close: the gown of strings, the halo behind her"
+    },
+    {
+      "until": "window.gerard.battleUI.fight.song === 'Silencio'",
+      "timeout": 20000
+    },
+    {
+      "shot": "voz-silencio",
+      "delay": 300,
+      "caption": "In a silence she is almost gone: nothing lands on her now"
+    },
+    {
+      "eval": "window.gerard.game.frame(); ui.jumpTo('voz-allegro')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "voz-allegro",
+      "delay": 700,
+      "caption": "Picker moment «Allegro»: shorter notes, more of them"
+    },
+    {
+      "eval": "ui.jumpTo('voz-nota-clara')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "closeUp('voz', 4.2)"
+    },
+    {
+      "shot": "voz-nota-clara",
+      "delay": 500,
+      "caption": "Picker moment «Nota clara»: glass, magic comes back"
+    },
+    {
+      "eval": "window.gerard.game.frame(); ui.jumpTo('voz-a-capela')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "voz-a-capela",
+      "delay": 700,
+      "caption": "Picker moment «A capela»: the long note is the last of the phrase"
+    }
+  ]
+}

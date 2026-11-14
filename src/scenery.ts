@@ -433,6 +433,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
       app, root, props, mat, texture, x, z, batch: batch.id,
       surface: (px, pz, w, d, top) => { surfaces.push({ x: x(px), z: z(pz), w, d, y: top }); },
     }, environment);
+  } else if (hollow) {
+    // Las cuerdas has no ground of its own: the game hangs its way over the void (src/cuerdas-scene.ts).
   } else {
     const stone = mat('Muros del patio', '#536e79');
     const tile = mat('Baldosas del patio', '#58726d');

@@ -723,7 +723,9 @@ export const SAGRADA_FAMILIA_INTERIOR: Environment = {
  */
 export const CUERDAS: Environment = {
   id: 'cuerdas', name: 'Las cuerdas', grid: CUERDAS_PLAN.grid, spawn: { ...CUERDAS_PLAN.spawn }, zoom: 10.5,
-  houses: [], props: [], interactions: [], noOverview: true, hollow: true,
+  houses: [], props: [], noOverview: true, hollow: true,
+  // The third maze's tuning pegs, each beside its row (the game turns them, src/game.ts).
+  interactions: CUERDAS_PLAN.mazes.flatMap(maze => maze.pegs.map((cell, row) => ({ id: `clavija-${row}`, cell: { ...cell }, label: 'Girar la clavija', hint: 'Girar la clavija' }))),
 };
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,

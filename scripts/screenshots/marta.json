@@ -1,0 +1,125 @@
+{
+  "title": "Misión de Marta: Alegia y Las cuerdas",
+  "description": "docs/quests/marta.md. The mission part by part from the picker (just dev-mission marta <part>): Alegia and the piano, Las cuerdas' way, its mazes, a quality waiting, the pegs and the centre. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=marta&part=start"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Alegia · San Juan kalea'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "alegia",
+      "delay": 600,
+      "caption": "Alegia: Marta beside the upright piano under the pergola (provisional place, stand-in figure)"
+    },
+    {
+      "open": "/?mission=marta&part=inside"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Las cuerdas'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "entrada",
+      "delay": 600,
+      "caption": "Just in: the way of dark glass over the void, the bubble behind, every string rising north"
+    },
+    {
+      "eval": "window.gerard.game.frame({ x: 0, y: 0, z: -8 }, 30)"
+    },
+    {
+      "shot": "entrada-lejos",
+      "delay": 900,
+      "caption": "From further back: the first maze ahead, its pieces lit by note"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?mission=marta&part=maze-1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Las cuerdas'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "laberinto-1-aviso",
+      "delay": 600,
+      "caption": "Before the first maze, Aitor says what the floor does"
+    },
+    {
+      "open": "/?mission=marta&part=lealtad"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Las cuerdas'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "lealtad",
+      "delay": 600,
+      "caption": "La Lealtad and her Eco waiting on their platform"
+    },
+    {
+      "open": "/?mission=marta&part=maze-3"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Las cuerdas'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "clavijas",
+      "delay": 600,
+      "caption": "The third maze: the tuning pegs beside their rows"
+    },
+    {
+      "open": "/?mission=marta&part=voz"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Las cuerdas'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "centro",
+      "delay": 600,
+      "caption": "The centre, where every string meets: La Voz waiting"
+    }
+  ]
+}

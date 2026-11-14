@@ -11,8 +11,9 @@ import { ENVIRONMENTS, type EnvironmentId } from './environments.ts';
 import { FEARS, PLACES_NURIA, STREET } from './friends/nuria.ts';
 import { LEVELLED, MAX_LEVEL } from './levels.ts';
 import type { Cell } from './movement.ts';
-import { STORY_FLAGS, type NuriaRun, type StoryEvent, type StoryFlag, type UniRun } from './story.ts';
+import { STORY_FLAGS, type MartaRun, type NuriaRun, type StoryEvent, type StoryFlag, type UniRun } from './story.ts';
 import { BEACH, CAMP, CAMP_HUNTERS, PLACES_CAMP, PLACES_UNI } from './friends/universidad.ts';
+import { CUERDAS_PLACE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
 import { entranceId } from './transit.ts';
 
 /** Where a jump stands Gerard; without one, where the story resumes (`story.resume`). */
@@ -69,6 +70,12 @@ export const STORY_ARCS = [
     { flags: ['parcelas'], label: 'Las parcelas resueltas: la puerta del merendero' },
     // Beating La Sobremesa frees the seven and gives their ánima and five lights (a couple, one; alone, one each).
     { flags: ['sobremesa', 'anima-universidad', 'luz-anna-alvaro', 'luz-miquel-sarah', 'luz-soraya', 'luz-nico', 'luz-joan'], label: 'Libres: La Sobremesa vencida' },
+  ] },
+  { id: 'marta', chapter: 2, title: 'Misión de Marta', detail: 'Alegia · Las cuerdas', after: 'metro', anima: 'marta', steps: [
+    { flags: ['alegia-marta'], label: 'Marta en Alegia: no le sale la voz', spot: { environment: 'alegia', cell: { ...PLACES_MARTA.back } } },
+    { flags: ['cuerdas'], label: 'El piano: dentro de Las cuerdas' },
+    // Beating La Voz gives her everything back at once, and her ánima and light with it.
+    { flags: ['voz', 'anima-marta', 'luz-marta'], label: 'La Voz vencida: Marta vuelve a cantar' },
   ] },
   // Ánimas grow with the EXP of fights won (src/levels.ts); Matemágico's are chapter 2's, at 35.
   { id: 'matemagico', chapter: 2, title: 'Matemágico crece', detail: 'Experiencia de combate', after: 'caught', steps: [
@@ -131,6 +138,7 @@ export interface MissionPart {
   at: StoryFlag; spot?: Spot;
   nuria?: Partial<NuriaRun>;
   uni?: Partial<UniRun>;
+  marta?: Partial<MartaRun>;
   event?: StoryEvent;
 }
 const maze = (cell: Cell): Spot => ({ environment: PLACES_NURIA.mazeIn.environment, cell: { ...cell } });
@@ -177,10 +185,31 @@ const UNI_PARTS: readonly MissionPart[] = [
   { id: 'won', label: 'Libres', detail: 'La foto con el melón, las cinco luces y de vuelta en la playa', at: 'parcelas', spot: camp({ x: PLACES_CAMP.foto.x, z: PLACES_CAMP.foto.z + 2 }), uni: { entered: true, beaten: [...CAMP_HUNTERS.map(h => h.id), 'campeon'] }, event: { type: 'battle', won: true, encounter: 'sobremesa' } },
   { id: 'done', label: 'Misión hecha', detail: 'Los siete, libres, en la arena', at: 'luz-joan', spot: beach(PLACES_UNI.home.x, PLACES_UNI.home.z) },
 ];
+const cuerdas = (cell: Cell, dz = 0): Spot => ({ environment: CUERDAS_PLACE, cell: { x: cell.x, z: cell.z + dz } });
+const qualities = (n: number) => QUALITIES.slice(0, n).map(q => q.id);
+/**
+ * Marta's mission, part by part (docs/quests/marta.md § Beats). What is beaten inside Las cuerdas is
+ * not saved (it is all one visit), so those parts set the run itself.
+ */
+const MARTA_PARTS: readonly MissionPart[] = [
+  { id: 'start', label: 'Desde el principio', detail: 'En la plaza de Alegia; Marta junto al piano', at: 'metro', spot: { environment: 'alegia', cell: { x: PLACES_MARTA.back.x + 4, z: PLACES_MARTA.back.z + 2 } } },
+  { id: 'piano', label: 'El piano', detail: 'Ya han hablado con ella; tocar el piano abre la pompa', at: 'alegia-marta', spot: { environment: 'alegia', cell: { ...PLACES_MARTA.back } } },
+  { id: 'inside', label: 'Las cuerdas', detail: 'Recién entrados; el primer laberinto delante', at: 'cuerdas', spot: cuerdas(PLACES_CUERDAS.spawn) },
+  { id: 'maze-1', label: 'Dos notas', detail: 'Ante el primer laberinto', at: 'cuerdas', spot: cuerdas(PLACES_CUERDAS.mazes[0].cell, 1) },
+  { id: 'lealtad', label: 'La Lealtad', detail: 'Cruzado el primer laberinto; ella y su Eco en la plataforma', at: 'cuerdas', spot: cuerdas(QUALITIES[0].cell, 5) },
+  { id: 'maze-2', label: 'Una pasada', detail: 'La Lealtad vencida; ante las piezas rajadas', at: 'cuerdas', spot: cuerdas(PLACES_CUERDAS.mazes[1].cell, 1), marta: { beaten: qualities(1) } },
+  { id: 'cristalino', label: 'Lo Cristalino', detail: 'Cruzado el segundo laberinto', at: 'cuerdas', spot: cuerdas(QUALITIES[1].cell, 5), marta: { beaten: qualities(1) } },
+  { id: 'maze-3', label: 'Las clavijas', detail: 'Lo Cristalino vencido; las filas por afinar', at: 'cuerdas', spot: cuerdas(PLACES_CUERDAS.mazes[2].cell, 1), marta: { beaten: qualities(2) } },
+  { id: 'directo', label: 'Lo Directo', detail: 'Cruzado el tercer laberinto', at: 'cuerdas', spot: cuerdas(QUALITIES[2].cell, 5), marta: { beaten: qualities(2) } },
+  { id: 'voz', label: 'La Voz', detail: 'Las tres vencidas; el centro, donde se juntan todas las cuerdas', at: 'cuerdas', spot: cuerdas(PLACES_CUERDAS.voz, 10), marta: { beaten: qualities(3) } },
+  { id: 'won', label: 'Marta vuelve a cantar', detail: 'El final: su luz va con Gerard y Aitor, de vuelta en Alegia', at: 'cuerdas', spot: cuerdas(PLACES_CUERDAS.voz, 10), marta: { beaten: qualities(3) }, event: { type: 'battle', won: true, encounter: 'voz' } },
+  { id: 'done', label: 'Misión hecha', detail: 'Marta, ella otra vez, junto al piano', at: 'luz-marta', spot: { environment: 'alegia', cell: { ...PLACES_MARTA.back } } },
+];
 /** The parts each mission can start at; one without its own list starts at its beginning or at each step. */
 export function missionParts(anima: AnimaId): readonly MissionPart[] {
   if (anima === 'nuria') return NURIA_PARTS;
   if (anima === 'universidad') return UNI_PARTS;
+  if (anima === 'marta') return MARTA_PARTS;
   const arc = ARCS.find(a => a.anima === anima)!;
   return [
     { id: 'start', label: 'Desde el principio', detail: arc.detail, at: arc.after!, spot: spotAt(arc.after!) },

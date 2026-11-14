@@ -41,6 +41,12 @@ import { ARENA_SPREAD, BOSS_ARENAS, createBossArena, type BossArena } from './bo
 import { createFears } from './fears';
 import { mergeParts } from './props';
 import { buildTower, type Tower } from './tower-scene';
+import { buildCuerdas, buildPiano, type CuerdasScene } from './cuerdas-scene';
+import { CUERDAS as CUERDAS_PLAN, freshCuerdas, holds, leave, mazeAt, mend, pieceAt, turnPeg, type Piece } from './cuerdas';
+import { CUERDAS_SIZES } from './cuerdas-foes';
+import { CUERDAS_FIGHTS } from './battle';
+import { PHRASES, onsets } from './song';
+import { PLACES_MARTA } from './friends/marta';
 import { ringOf } from './tower';
 import { createChaser, rest, updateChaser, type Chaser, type ChaserSpec } from './chasers';
 import { CLIMB, FIRST_CLEAR, HIDING_KINDS, RISE_CLEAR, hiddenAt, hunterSpec, huntersGrid, isLit, litLamps, nightTier, risingAt, sightOf, sizeUp, type NightTier } from './night';
@@ -613,7 +619,88 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       nightHunt.hinted = true; tetherLine = { text: '¡Ahí detrás! Y ni te muevas.', until: clock + 3 };
     }
   }
+  /**
+   * Las cuerdas (src/cuerdas.ts, src/cuerdas-scene.ts): the place itself, what is tuned and broken
+   * this visit, how far into the song it is, the piece Gerard stands on, and a fall into the void
+   * (`fall`: seconds into it and the maze it puts back). `waiting`: what stands on the platforms.
+   */
+  let cuerdas: CuerdasScene | undefined;
+  const strung = { run: freshCuerdas(), t: 0, on: undefined as Piece | undefined, fall: undefined as { since: number; maze: number } | undefined, sink: 0, waiting: undefined as pc.Entity | undefined, key: '' };
+  let piano: ReturnType<typeof buildPiano> | undefined;
+  /** Each quality not yet beaten stands on its platform, and La Voz at the centre: the same bodies as in their fights. */
+  function standCuerdas() {
+    const list = story.cuerdasFoes(environment.id), key = JSON.stringify(list.map(w => w.beaten));
+    if (strung.key === key && strung.waiting) return;
+    strung.key = key;
+    strung.waiting?.destroy();
+    strung.waiting = new pc.Entity('Lo que espera en Las cuerdas'); castRoot.addChild(strung.waiting);
+    for (const w of list) {
+      cuerdas?.quiet(w.id, w.beaten);
+      if (w.beaten) continue;
+      const kinds = CUERDAS_FIGHTS[w.encounter];
+      kinds.forEach((kind, i) => {
+        const model = fears.templates.get(kind)?.clone(); if (!model) return;
+        model.enabled = true; model.name = `${w.id} ${i}`;
+        const size = CUERDAS_SIZES[kind]; model.setLocalScale(size, size, size);
+        const at = scenery.toWorld(w.cell.x + (i - (kinds.length - 1) / 2) * 2.4, w.cell.z - 2);
+        model.setPosition(at.x, 0, at.z);
+        strung.waiting!.addChild(model);
+      });
+    }
+  }
+  /**
+   * Las cuerdas each frame: the song goes on (not in a fight or a pause), a cracked piece left
+   * breaks, and whoever stands where nothing holds falls into the void and is put back before that
+   * maze, which is whole again. The notes of the maze they are at are heard as they start.
+   */
+  function stepCuerdas(dt: number, animate: boolean) {
+    if (!cuerdas) return;
+    const live = !battle && !paused;
+    standCuerdas();
+    if (strung.waiting) strung.waiting.enabled = !battle;
+    if (live) {
+      const before = strung.t;
+      strung.t += dt;
+      const here = { x: Math.round(movement.position.x), z: Math.round(movement.position.z) };
+      // The maze nearest ahead or underfoot is the one heard.
+      const heard = CUERDAS_PLAN.mazes.find(m => here.z >= m.rect.z - 6 && here.z <= m.rect.z + m.rect.d + 4);
+      if (heard) for (const note of onsets(PHRASES[heard.spec.phrase], before, strung.t)) callbacks.onSound(`nota-${note.tone}`, { volume: .32 });
+      if (!strung.fall && !cutscene) {
+        const piece = pieceAt(here);
+        if (strung.on && piece !== strung.on && leave(strung.on, strung.run)) callbacks.onSound('crack', { volume: .5 });
+        strung.on = piece;
+        const maze = mazeAt(here);
+        if (maze && !movement.bouncing && !holds(here, strung.run, strung.t)) {
+          strung.fall = { since: 0, maze: CUERDAS_PLAN.mazes.indexOf(maze) };
+          holdStill();
+          callbacks.onSound('fizzle');
+        }
+      }
+      if (strung.fall) {
+        strung.fall.since += dt;
+        strung.sink = strung.fall.since * strung.fall.since * 14;
+        if (strung.fall.since > .75) {
+          const maze = CUERDAS_PLAN.mazes[strung.fall.maze];
+          mend(strung.run, strung.fall.maze);
+          movement.teleport(environment.grid, { ...maze.start });
+          const mate = mateHere(); if (mate) placeMate(mate);
+          strung.fall = undefined; strung.sink = 0; strung.on = undefined;
+          cameraTarget.copy(scenery.toWorld(movement.cell.x, movement.cell.z));
+          positionPlayer(); release();
+          const at = player.getPosition(); effects.emit('poof', new pc.Vec3(at.x, .5, at.z), 10, .4);
+        }
+      }
+    }
+    cuerdas.update(dt, strung.t, strung.run, player.getPosition(), animate);
+  }
   function dressScene() {
+    cuerdas?.destroy(); cuerdas = undefined; strung.waiting?.destroy(); strung.waiting = undefined; strung.key = ''; strung.fall = undefined; strung.sink = 0; strung.on = undefined;
+    piano?.destroy(); piano = undefined;
+    if (environment.id === 'cuerdas') { cuerdas = buildCuerdas(app, scenery.toWorld); strung.run = freshCuerdas(); standCuerdas(); }
+    if (environment.id === 'alegia') {
+      const at = scenery.toWorld(PLACES_MARTA.piano.centre.x, PLACES_MARTA.piano.centre.z);
+      piano = buildPiano(app, new pc.Vec3(at.x, scenery.groundHeight(at.x, at.z), at.z), PLACES_MARTA.piano.facing);
+    }
     tower?.destroy(); tower = undefined; summit?.destroy(); summit = undefined; summitKneel = undefined;
     portal?.destroy(); portal = undefined; streetSaid.clear(); streetLine = undefined;
     if (environment.id === CALLE) {
@@ -2192,7 +2279,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   function positionPlayer() {
     const p = scenery.toWorld(movement.position.x, movement.position.z);
     const hop = movement.bouncing && !reducedMotion.matches ? Math.sin(movement.progress * Math.PI) * .18 : 0;
-    player.setPosition(p.x, 0.09 + hop, p.z);
+    player.setPosition(p.x, 0.09 + hop - strung.sink, p.z);
   }
   /**
    * `exact`: the spot in the new place where Gerard already stands, on its look-alike laid into the
@@ -2274,6 +2361,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   function use(target: Interaction) {
     clearInput();
     // The story may hold a door shut; doors and stairs travel; lines are Gerard's own comments.
+    // A tuning peg of Las cuerdas: its row answers to the next note.
+    if (cuerdas && target.id.startsWith('clavija-')) {
+      const row = Number(target.id.slice('clavija-'.length));
+      turnPeg(strung.run, row); cuerdas.turned(row); callbacks.onSound('ui-confirm');
+      return;
+    }
     const gate = story.gate(target.id);
     const to = story.redirect(target.id) ?? target.to;
     if (gate) callbacks.onDialogue(gate);
@@ -2538,7 +2631,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       scenery.setTone(tone);
     }
     lightNight(delta, animate);
-    camera.camera!.clearColor = post.clear(clear.lerp(dayClear, BUBBALOO.clear, tone).lerp(clear, NIGHT_LIGHT.clear, scenery.night));
+    camera.camera!.clearColor = post.clear(cuerdas ? clear.copy(cuerdas.clear) : clear.lerp(dayClear, BUBBALOO.clear, tone).lerp(clear, NIGHT_LIGHT.clear, scenery.night));
     battleScene.update(shown, animate);
     // Traffic waits out fights and the pause menu; otherwise it stops for Gerard and his partner.
     const partner = mateHere();
@@ -2558,6 +2651,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       }
       if (train.x < start || train.x > end) { train.running = false; train.way = -train.way; train.risen = 0; train.wait = nightHunt ? nightHunt.tier.trainEvery : 30 + Math.random() * 40; }
     }
+    stepCuerdas(delta, animate);
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
       battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
     // In bed nothing needs finding: under the duvet is where their legs belong.
@@ -2755,6 +2849,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       framed = !!target;
     },
     /** Development: where a fighter stands (the lattice and fight-fx scenarios frame them). */
+    /** Development and screenshots: Las cuerdas' song and what is tuned, to set a moment of a maze. */
+    get cuerdas() { return strung; },
     fighterAt(id: string) { const p = battleScene.modelOf(id)?.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
     /** Development (the effects lab, src/fx-lab.ts): a fighter's model, for element hits aimed at them. */
     battleModel: battleScene.modelOf,
