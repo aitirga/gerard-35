@@ -86,6 +86,49 @@
       "caption": "Before the first maze, Aitor says what the floor does"
     },
     {
+      "eval": "(() => { const c = window.gerard.game.world(21, 101); window.gerard.game.frame({ x: c.x, y: 0, z: c.z }, 16); window.gerard.game.cuerdas.t = 2.6 - .05; window.gerard.game.setPaused(true); })()"
+    },
+    {
+      "shot": "laberinto-1-cambio",
+      "delay": 900,
+      "caption": "Dos notas as one note gives way to the next: both colours are there a moment, the time to step across"
+    },
+    {
+      "eval": "(() => { window.gerard.game.cuerdas.t = 1.2; })()"
+    },
+    {
+      "shot": "laberinto-1-la",
+      "delay": 600,
+      "caption": "Mid-La: only the amber pieces and the knots hold"
+    },
+    {
+      "eval": "(() => { window.gerard.game.frame(); const s = window.gerard.game.cuerdas; s.fall = { since: .32, maze: 0 }; s.sink = (.32 - .16) ** 2 * 18; })()"
+    },
+    {
+      "shot": "caida-borde",
+      "delay": 600,
+      "caption": "A fall: teetering where the floor went, arms thrown up"
+    },
+    {
+      "eval": "(() => { const s = window.gerard.game.cuerdas; s.fall = { since: .62, maze: 0 }; s.sink = (.62 - .16) ** 2 * 18; })()"
+    },
+    {
+      "shot": "caida-vacio",
+      "delay": 600,
+      "caption": "Tumbling down into the void"
+    },
+    {
+      "eval": "(() => { const s = window.gerard.game.cuerdas; s.fall = undefined; s.land = .26; s.sink = -3.2 * (1 - (.26 / .42) ** 2); })()"
+    },
+    {
+      "shot": "caida-vuelta",
+      "delay": 600,
+      "caption": "Back before the maze, dropping onto the landing, arms out"
+    },
+    {
+      "eval": "(() => { const s = window.gerard.game.cuerdas; s.land = undefined; s.sink = 0; window.gerard.game.setPaused(false); })()"
+    },
+    {
       "open": "/?mission=marta&part=lealtad"
     },
     {
@@ -104,6 +147,44 @@
       "caption": "La Lealtad and her Eco waiting on their platform"
     },
     {
+      "open": "/?mission=marta&part=maze-2"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Las cuerdas'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "eval": "(() => { const r = window.gerard.game; const c = r.world(21, 72); r.frame({ x: c.x, y: 0, z: c.z }, 13); })()"
+    },
+    {
+      "shot": "pasada-hueco",
+      "delay": 900,
+      "caption": "Una pasada: cracked pieces, the switch on the right, and over the far gap only the bridge's frame"
+    },
+    {
+      "eval": "(() => { const s = window.gerard.game.cuerdas; s.run.laid = [1]; s.run.broken = ['1:4:2']; })()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "eval": "window.gerard.game.setPaused(true)"
+    },
+    {
+      "shot": "pasada-puente",
+      "delay": 500,
+      "caption": "Up the right and onto the switch: its string lights and the bridge comes up over the gap"
+    },
+    {
+      "eval": "(() => { window.gerard.game.setPaused(false); window.gerard.game.frame(); })()"
+    },
+    {
       "open": "/?mission=marta&part=maze-3"
     },
     {
@@ -119,7 +200,20 @@
     {
       "shot": "clavijas",
       "delay": 600,
-      "caption": "The third maze: the tuning pegs beside their rows"
+      "caption": "The third maze: the tuning pegs beside their rows, their walkway closed by a wall at the far end"
+    },
+    {
+      "teleport": "cuerdas",
+      "cell": [
+        14,
+        39
+      ],
+      "settle": 1500
+    },
+    {
+      "shot": "clavijas-muro",
+      "delay": 600,
+      "caption": "Up the pegs' walkway: a wall of dark glass ends it short of the platform beyond, so the rows are the only way across"
     },
     {
       "open": "/?mission=marta&part=voz"

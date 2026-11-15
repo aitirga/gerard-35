@@ -10,20 +10,22 @@
  * src/cuerdas-scene.ts.
  */
 import type { Cell } from './movement.ts';
-import { PHRASES, TONE_IDS, phraseLength, songAt, type PhraseId, type ToneId } from './song.ts';
+import { PHRASES, TONE_IDS, phraseLength, type PhraseId, type ToneId } from './song.ts';
 
 /** A piece is this many cells on a side. */
 export const TILE = 2;
 /** Seconds before it falls that a piece trembles. */
 export const TREMBLE = .7;
-/** Seconds a piece takes to drop out from under whoever stands on it once its note ends: a step's grace. */
-export const GRACE = .18;
+/** Seconds a piece is there before its note starts, and after its note ends. */
+export const EARLY = .3, LATE = .3;
+/** Seconds a piece takes to drop out from under whoever stands on it once it is gone: a step's grace. */
+export const GRACE = .12;
 
 export type MazeId = 'dos-notas' | 'una-pasada' | 'clavijas';
 /**
  * A maze as drawn: rows of pieces, the far (north) one first. `a` `d` `m` `s` are pieces of La, Do, Mi
  * and Sol; a capital is cracked (it falls for good once stepped off); `K` is a knot, always there;
- * `.` is nothing. With `pegs`, every piece of a row answers to its row's peg instead (`r` is a piece
+ * `I` is a switch, always there, that lays the maze's bridge (`=`) once stood on; `.` is nothing. With `pegs`, every piece of a row answers to its row's peg instead (`r` is a piece
  * of its row's note), each peg starting on the note given, the near (south) row first.
  */
 export interface MazeSpec { id: MazeId; name: string; phrase: PhraseId; rows: readonly string[]; pegs?: readonly ToneId[] }
@@ -39,14 +41,17 @@ export const MAZES: readonly MazeSpec[] = [
     '. a m a m .',
     '. . K a . .',
   ] },
-  // Three notes, and cracked pieces that only hold once: the way is planned before setting out.
+  // Cracked pieces that only hold once, and no way off the far side until the switch lays its bridge.
+  // The switch is reached from below or from the far row, each over a cracked piece, and the far row
+  // from below over a third: whoever goes up first and over to the switch cannot get back to the far
+  // row. Up the right, over the switch, along the far row to the bridge.
   { id: 'una-pasada', name: 'Una pasada', phrase: 'una-pasada', rows: [
-    '. . M a . .',
-    '. a D . d .',
-    '. M . m A .',
-    '. d a D . .',
-    '. . K a m .',
-    '. . a d . .',
+    '. . = = .',
+    'd m a K D',
+    'A . . . I',
+    'm . . . A',
+    'd K a d m',
+    '. . a . .',
   ] },
   // Six rows, each answering to its peg: turned into the song's order, the rows light one after another.
   { id: 'clavijas', name: 'Las clavijas', phrase: 'clavijas', pegs: ['do', 'la', 'mi', 'mi', 'la', 'do'], rows: [
@@ -66,6 +71,8 @@ export interface Piece {
   x: number; z: number;
   /** The note it answers to; none for a knot, which is always there, and for a pegged row's piece (`toneOf`). */
   tone?: ToneId; knot: boolean; cracked: boolean;
+  /** A switch, always there, that lays the maze's bridge; a piece of that bridge, there once it is laid. */
+  switch: boolean; bridge: boolean;
 }
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface Maze {
@@ -80,6 +87,8 @@ export interface Platform { id: PlatformId; rect: Rect; centre: Cell }
 export interface CuerdasPlan {
   width: number; depth: number; grid: string[]; spawn: Cell;
   mazes: Maze[]; platforms: Platform[]; bridges: Rect[];
+  /** Walls standing on the way: closed cells, drawn as a block (the pegs' walkway meets the platform beyond its maze at one). */
+  walls: Rect[];
   /** Where every string meets: La Voz's place. */
   centre: { x: number; z: number; radius: number };
 }
@@ -88,7 +97,7 @@ const WIDTH = 41, MID = 20;
 const span = (cols: number) => MID - Math.floor(cols * TILE / 2) + 1;
 /** The whole place, laid out from the far end (north, z = 0) to the way in. */
 export function buildPlan(): CuerdasPlan {
-  const rects: Rect[] = [], bridges: Rect[] = [], platforms: Platform[] = [], mazes: Maze[] = [];
+  const rects: Rect[] = [], bridges: Rect[] = [], platforms: Platform[] = [], mazes: Maze[] = [], walls: Rect[] = [];
   const centre = { x: MID, z: 10, radius: 8 };
   let z = centre.z + centre.radius + 1;
   const bridge = (d: number, x = MID - 1, w = 3) => { const r = { x, z, w, d }; bridges.push(r); rects.push(r); z += d; return r; };
@@ -100,11 +109,12 @@ export function buildPlan(): CuerdasPlan {
     const spec = MAZES[index], tokens = spec.rows.map(row => row.split(' '));
     const cols = tokens[0].length, rows = tokens.length, x0 = span(cols), z0 = z;
     // A pegged maze has a walkway down its west side, where the pegs are, reached from the landing before it.
+    // Its far end is a wall: the walkway would otherwise run straight onto the platform beyond, round the maze.
     const pegs: Cell[] = [];
     if (spec.pegs) {
-      const walk = { x: x0 - 3, z: z0, w: 2, d: rows * TILE + 2 };
-      rects.push(walk); bridges.push(walk);
-      for (let row = 0; row < rows; row++) pegs.push({ x: walk.x + 1, z: z0 + (rows - 1 - row) * TILE });
+      const walk = { x: x0 - 3, z: z0 + 1, w: 2, d: rows * TILE + 1 };
+      rects.push(walk); bridges.push(walk); walls.push({ x: walk.x, z: z0, w: walk.w, d: 1 });
+      for (let row = 0; row < rows; row++) pegs.push({ x: walk.x + 1, z: z0 + (rows - 1 - row) * TILE + 1 });
     }
     const pieces: Piece[] = [];
     tokens.forEach((line, k) => line.forEach((glyph, col) => {
@@ -112,7 +122,8 @@ export function buildPlan(): CuerdasPlan {
       const row = rows - 1 - k, lower = glyph.toLowerCase();
       pieces.push({
         id: `${index}:${col}:${row}`, maze: index, col, row, x: x0 + col * TILE, z: z0 + k * TILE,
-        tone: GLYPH[lower], knot: glyph === 'K', cracked: glyph !== lower && glyph !== 'K',
+        tone: GLYPH[lower], knot: glyph === 'K', cracked: glyph !== lower && !'KI='.includes(glyph),
+        switch: glyph === 'I', bridge: glyph === '=',
       });
     }));
     z += rows * TILE;
@@ -137,14 +148,14 @@ export function buildPlan(): CuerdasPlan {
   const entrada = platforms.find(p => p.id === 'entrada')!;
   return {
     width: WIDTH, depth, grid: cells.map(row => row.join('')), spawn: { x: MID, z: entrada.rect.z + entrada.rect.d - 3 },
-    mazes, platforms, bridges, centre,
+    mazes, platforms, bridges, walls, centre,
   };
 }
 export const CUERDAS = buildPlan();
 
-/** The maze's puzzle while it runs: what each pegged row is tuned to, and the cracked pieces gone. Not saved. */
-export interface CuerdasRun { tuning: ToneId[]; broken: string[] }
-export const freshCuerdas = (): CuerdasRun => ({ tuning: [...MAZES.find(m => m.pegs)!.pegs!], broken: [] });
+/** The maze's puzzle while it runs: what each pegged row is tuned to, the cracked pieces gone, the mazes whose bridge is laid. Not saved. */
+export interface CuerdasRun { tuning: ToneId[]; broken: string[]; laid?: number[] }
+export const freshCuerdas = (): CuerdasRun => ({ tuning: [...MAZES.find(m => m.pegs)!.pegs!], broken: [], laid: [] });
 
 /** The piece under a cell, if any. */
 export function pieceAt(cell: Cell, plan: CuerdasPlan = CUERDAS): Piece | undefined {
@@ -160,28 +171,41 @@ export const mazeAt = (cell: Cell, plan: CuerdasPlan = CUERDAS) =>
   plan.mazes.find(({ rect: r }) => Math.round(cell.x) >= r.x && Math.round(cell.z) >= r.z && Math.round(cell.x) < r.x + r.w && Math.round(cell.z) < r.z + r.d);
 /** The note a piece answers to now: its own, or its row's peg. */
 export function toneOf(piece: Piece, run: CuerdasRun, plan: CuerdasPlan = CUERDAS): ToneId | undefined {
-  if (piece.knot) return undefined;
+  if (piece.knot || piece.switch || piece.bridge) return undefined;
   return plan.mazes[piece.maze].spec.pegs ? run.tuning[piece.row] : piece.tone;
 }
 export type Hold = 'up' | 'trembling' | 'down';
 /**
- * How a piece is `t` seconds into the song: up while its note sounds (trembling in its last TREMBLE
- * seconds), down otherwise; a knot is always up, a cracked piece already stepped off always down.
- * `sinceDown` is how long it has been down (for the grace of a step, and to draw it falling).
+ * How a piece is `t` seconds into the song: up from EARLY before its note until LATE after it
+ * (trembling in its last TREMBLE seconds), down otherwise; a knot is always up, a cracked piece
+ * already stepped off always down. Two notes that follow each other overlap EARLY + LATE seconds:
+ * the moment to step from one to the other. `sinceDown` is how long it has been down (to draw it
+ * falling, and a step's grace), `untilUp` how long until it holds again (to draw it coming up).
  */
 export function hold(piece: Piece, run: CuerdasRun, t: number, plan: CuerdasPlan = CUERDAS): { state: Hold; sinceDown: number; untilUp: number } {
-  if (piece.knot) return { state: 'up', sinceDown: 0, untilUp: 0 };
+  if (piece.knot || piece.switch) return { state: 'up', sinceDown: 0, untilUp: 0 };
+  if (piece.bridge) return run.laid?.includes(piece.maze) ? { state: 'up', sinceDown: 0, untilUp: 0 } : { state: 'down', sinceDown: Infinity, untilUp: Infinity };
   if (run.broken.includes(piece.id)) return { state: 'down', sinceDown: Infinity, untilUp: Infinity };
-  const phrase = PHRASES[plan.mazes[piece.maze].spec.phrase], tone = toneOf(piece, run, plan), now = songAt(phrase, t);
-  if (now.tone === tone) return { state: now.left <= TREMBLE ? 'trembling' : 'up', sinceDown: 0, untilUp: 0 };
-  // How long ago its note ended, and how long until it sounds again, walking the phrase both ways.
-  const beats = phrase.beats, n = beats.length;
-  let since = now.into, until = now.left;
-  for (let k = 1; k < n && beats[(now.index - k + n) % n].tone !== tone; k++) since += beats[(now.index - k + n) % n].sing;
-  for (let k = 1; k < n && beats[(now.index + k) % n].tone !== tone; k++) until += beats[(now.index + k) % n].sing;
+  const phrase = PHRASES[plan.mazes[piece.maze].spec.phrase], tone = toneOf(piece, run, plan), length = phraseLength(phrase);
+  // When it holds within a turn of the phrase, and the turns either side.
+  const spans: [number, number][] = [];
+  let start = 0;
+  for (const beat of phrase.beats) {
+    if (beat.tone === tone) for (const k of [-1, 0, 1]) spans.push([start - EARLY + k * length, start + beat.sing + LATE + k * length]);
+    start += beat.sing + beat.rest;
+  }
   // A note no beat of the phrase sings never comes.
-  if (!beats.some(b => b.tone === tone)) return { state: 'down', sinceDown: Infinity, untilUp: Infinity };
-  return { state: 'down', sinceDown: since, untilUp: until };
+  if (!spans.length) return { state: 'down', sinceDown: Infinity, untilUp: Infinity };
+  spans.sort((a, b) => a[0] - b[0]);
+  const u = Math.max(0, t) % length, merged: [number, number][] = [];
+  for (const span of spans) {
+    const last = merged[merged.length - 1];
+    if (last && span[0] <= last[1]) last[1] = Math.max(last[1], span[1]); else merged.push([...span]);
+  }
+  const on = merged.find(([a, b]) => u >= a && u < b);
+  if (on) return { state: on[1] - u <= TREMBLE ? 'trembling' : 'up', sinceDown: 0, untilUp: 0 };
+  const before = merged.filter(([, b]) => b <= u).pop()!, after = merged.find(([a]) => a > u)!;
+  return { state: 'down', sinceDown: u - before[1], untilUp: after[0] - u };
 }
 /** Whether whoever stands on `cell` is held there `t` seconds into the song: solid ground, or a piece that is up (or only just gone, GRACE). */
 export function holds(cell: Cell, run: CuerdasRun, t: number, plan: CuerdasPlan = CUERDAS) {
@@ -204,37 +228,57 @@ export function turnPeg(run: CuerdasRun, row: number, plan: CuerdasPlan = CUERDA
   run.tuning[row] = next;
   return next;
 }
-/** A fall puts back what broke in that maze: its cracked pieces hang again. */
-export function mend(run: CuerdasRun, maze: number) { run.broken = run.broken.filter(id => !id.startsWith(`${maze}:`)); }
+/** Standing on a switch lays its maze's bridge. Returns whether it was laid now. */
+export function press(piece: Piece | undefined, run: CuerdasRun) {
+  if (!piece?.switch || run.laid?.includes(piece.maze)) return false;
+  (run.laid ??= []).push(piece.maze);
+  return true;
+}
+/** A fall, or walking back out before it, puts that maze back as it was: its cracked pieces hang again and its bridge is taken up. */
+export function mend(run: CuerdasRun, maze: number) {
+  run.broken = run.broken.filter(id => !id.startsWith(`${maze}:`));
+  run.laid = (run.laid ?? []).filter(m => m !== maze);
+}
 
 /**
  * Whether a maze can be crossed at `speed` cells a second, from its near edge to its far one, never
  * standing on a piece that is down: a search over (piece, moment of the phrase, cracked pieces
- * gone), a step taking the time to walk a piece's width. For the tests, so no maze ships unbeatable.
+ * gone), a step taking the time to walk a piece's width. A step only counts if setting out up to
+ * `slack` seconds earlier or later works too: a person presses a key, not a frame. For the tests,
+ * so no maze ships unbeatable.
  */
-export function crossable(index: number, run: CuerdasRun = freshCuerdas(), speed = 5.2, plan: CuerdasPlan = CUERDAS) {
-  const maze = plan.mazes[index], phrase = PHRASES[maze.spec.phrase], length = phraseLength(phrase);
+export function crossable(index: number, run: CuerdasRun = freshCuerdas(), speed = 5.2, plan: CuerdasPlan = CUERDAS, slack = .2) {
+  const maze = plan.mazes[index], phrase = PHRASES[maze.spec.phrase], length = phraseLength(phrase), pieces = maze.pieces, n = pieces.length;
   const step = TILE / speed, ticks = Math.round(length / step) * 8, tick = length / ticks, stride = Math.max(1, Math.round(step / tick));
-  const at = (col: number, row: number) => maze.pieces.find(p => p.col === col && p.row === row);
-  const safe = (p: Piece, time: number, broken: readonly string[]) => holds({ x: p.x, z: p.z }, { tuning: run.tuning, broken: [...broken] }, time * tick, plan);
-  type State = { piece: Piece; time: number; broken: string[] };
-  const key = (s: State) => `${s.piece.id}|${s.time % ticks}|${s.broken.join(',')}`;
-  const queue: State[] = [], seen = new Set<string>();
-  const push = (s: State) => { const k = key(s); if (!seen.has(k)) { seen.add(k); queue.push(s); } };
+  const give = Math.round(slack / tick), edge = Math.floor(stride / 2);
+  // Whether each piece holds at each tick of the phrase, before anything breaks and with the bridge laid.
+  const up = pieces.map(p => Array.from({ length: ticks }, (_, k) => holds({ x: p.x, z: p.z }, { tuning: run.tuning, broken: [], laid: [index] }, k * tick, plan)));
+  const next = pieces.map(p => [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dc, dr]) => pieces.findIndex(q => q.col === p.col + dc && q.row === p.row + dr)).filter(i => i >= 0));
+  // The cracked pieces are bits of a mask; a state is (piece, tick, cracked gone, bridge laid).
+  const bit = pieces.map(p => p.cracked ? 1 << pieces.filter(q => q.cracked).indexOf(p) : 0), masks = 1 << pieces.filter(p => p.cracked).length;
+  const safe = (i: number, time: number, gone: number, laid: number) => !(bit[i] & gone) && (!pieces[i].bridge || !!laid) && up[i][((time % ticks) + ticks) % ticks];
+  const code = (i: number, time: number, gone: number, laid: number) => ((gone * 2 + laid) * n + i) * ticks + time % ticks;
+  const seen = new Uint8Array(masks * 2 * n * ticks), queue: number[] = [];
+  const push = (i: number, time: number, gone: number, laid: number) => { const c = code(i, time, gone, laid); if (!seen[c]) { seen[c] = 1; queue.push(c); } };
+  const gone0 = pieces.reduce((m, p, i) => run.broken.includes(p.id) ? m | bit[i] : m, 0), laid0 = run.laid?.includes(index) ? 1 : 0;
   // Onto any piece of the near row, at any moment it is up (they wait on the landing).
-  const gone = [...run.broken].sort();
-  for (const piece of maze.pieces.filter(p => p.row === 0)) for (let time = 0; time < ticks; time++) if (safe(piece, time, gone)) push({ piece, time, broken: gone });
-  for (let i = 0; i < queue.length && i < 400000; i++) {
-    const { piece, time, broken } = queue[i];
-    if (piece.row === maze.rows - 1 && safe(piece, time + stride, broken)) return true;
+  pieces.forEach((p, i) => { if (p.row === 0) for (let t = 0; t < ticks; t++) if (safe(i, t, gone0, laid0)) push(i, t, gone0, laid0 | (p.switch ? 1 : 0)); });
+  for (let q = 0; q < queue.length; q++) {
+    let c = queue[q];
+    const time = c % ticks; c = (c - time) / ticks;
+    const i = c % n; c = (c - i) / n;
+    const laid = c % 2, gone = (c - laid) / 2;
+    if (pieces[i].row === maze.rows - 1 && safe(i, time + stride, gone, laid)) return true;
     // Wait a moment where they stand, if it still holds.
-    if (safe(piece, time + 1, broken)) push({ piece, time: time + 1, broken });
-    for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const to = at(piece.col + dc, piece.row + dr);
-      if (!to || broken.includes(to.id)) continue;
-      const left = piece.cracked ? [...broken, piece.id].sort() : broken;
-      // Both hold while they cross from one to the other.
-      if (safe(piece, time + Math.floor(stride / 2), broken) && safe(to, time + stride, left)) push({ piece: to, time: time + stride, broken: left });
+    if (safe(i, time + 1, gone, laid)) push(i, time + 1, gone, laid);
+    const left = gone | bit[i];
+    for (const j of next[i]) {
+      if (bit[j] & gone) continue;
+      // Both hold at the moment they cross from one to the other (halfway, at the edge between them),
+      // and the new one still as they reach its middle: setting out a little sooner or later too.
+      let ok = true;
+      for (let d = -give; d <= give && ok; d++) ok = safe(i, time + d + edge, gone, laid) && safe(j, time + d + edge, left, laid) && safe(j, time + d + stride, left, laid);
+      if (ok) push(j, time + stride, left, laid | (pieces[j].switch ? 1 : 0));
     }
   }
   return false;

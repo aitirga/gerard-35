@@ -28,12 +28,13 @@ where to go.
 
 | Maze | What its floor does |
 | --- | --- |
-| *Dos notas* | Each piece is there while its note sounds, trembles before the note ends and drops after; a faint frame stays where it will come back. |
-| *Una pasada* | The same, and some pieces are cracked: they hold one crossing and break when left. |
-| *Las clavijas* | The rows do not sound when they should; a peg beside each row retunes it (interaction «Girar la clavija»). |
+| *Dos notas* | Each piece is there while its note sounds and a moment either side (`EARLY`, `LATE`), so as one note gives way to the next both are up for about half a second, the time to step across; it trembles before it goes and drops after, and a faint frame stays where it will come back. `crossable` only passes a maze whose every step works setting out a little sooner or later too. |
+| *Una pasada* | The same, and some pieces are cracked: they hold one crossing and break when left. The far side is a gap with only a bridge's silver frame over it; a switch (a knot with a round key) on the east side lays the bridge, and a string under the floor lights from one to the other. The switch is reached from below or from the far row, each over a cracked piece, and the far row from below over a third: up the left first and over to the switch, the far row is out of reach. A fall, or walking back out the near side, puts the cracks back and takes the bridge up. |
+| *Las clavijas* | The rows do not sound when they should; a peg beside each row retunes it (interaction «Girar la clavija»). The pegs stand on a walkway down its west side, closed at the far end by a wall of dark glass so the rows are the only way across. |
 
-Falling is not a defeat: the party is back at the maze's start and the broken pieces are whole
-again.
+Falling is not a defeat, and neither is getting stuck: walking back out onto the landing puts the
+maze back as it was. Gerard, falling, teeters with his arms up, tumbles down into the void and drops back
+out of the dark onto the landing before the maze, whose broken pieces are whole again.
 
 ## What is left
 

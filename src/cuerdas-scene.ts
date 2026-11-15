@@ -98,6 +98,14 @@ export function buildCuerdas(app: pc.Application, toWorld: (x: number, z: number
   const silver = mat('Borde de plata', '#cfdde6', { glow: 1.5, unlit: true });
   instance(glass, slab, 'Camino', true);
   instance(edges, silver, 'Borde del camino');
+  // Walls on the way: a block of the same dark glass, as tall as a person, edged in silver on top.
+  const wall = mat('Muro de vidrio', '#0e3a44', { gloss: .45, glow: .1 }), TALL = 1.4;
+  for (const r of plan.walls) {
+    const a = toWorld(r.x, r.z), b = toWorld(r.x + r.w - 1, r.z + r.d - 1), w = Math.abs(b.x - a.x) + 1, d = Math.abs(b.z - a.z) + 1;
+    const at = [(a.x + b.x) / 2, 0, (a.z + b.z) / 2];
+    part(root, 'Muro', 'box', wall, [at[0], (TALL - THICK) / 2, at[2]], [w, TALL + THICK, d]);
+    part(root, 'Borde del muro', 'box', silver, [at[0], TALL, at[2]], [w + .04, .05, d + .04]);
+  }
 
   // The strings. Every one ends at the same point over the centre: from far out on both sides of the
   // way (a harp as long as the place), from under each maze, and in a cone round the centre itself.
@@ -164,24 +172,50 @@ export function buildCuerdas(app: pc.Application, toWorld: (x: number, z: number
   const toneMats = plan.mazes.map((_, i) => Object.fromEntries(TONE_IDS.map(id => [id, mat(`Pieza ${i} ${id}`, TONES[id].colour, { gloss: .7, glow: 1 })])) as Record<ToneId, pc.StandardMaterial>);
   const ghostMats = Object.fromEntries(TONE_IDS.map(id => [id, mat(`Hueco ${id}`, TONES[id].colour, { glow: .5, unlit: true, add: true, opacity: .35 })])) as Record<ToneId, pc.StandardMaterial>;
   const knotMat = mat('Nudo', '#b9cbd4', { gloss: .85, glow: .35 }), crackMat = mat('Grieta', '#04151b', { gloss: .1 });
+  // A switch is a knot with a round key set in it that sinks when stood on; the bridge it lays is
+  // strung silver, and until then only its frame shows over the gap. A string under the floor runs
+  // from one to the other and lights as the bridge comes up.
+  const bridgeMat = mat('Puente de cuerdas', '#cfdde6', { gloss: .8, glow: .55 }), strandMat = mat('Cuerda del puente', '#eef3ff', { glow: 2, unlit: true });
+  const keyMat = mat('Interruptor', '#eef3ff', { gloss: .9, glow: .9 }), bridgeGhost = mat('Hueco del puente', '#eef3ff', { glow: 1.2, unlit: true, add: true, opacity: .7 });
+  const pullMat = mat('Cuerda del interruptor', '#cfdde6', { glow: .8, unlit: true, add: true, opacity: .6 });
   interface Shown { piece: Piece; slab: pc.Entity; body: pc.Entity; ghost?: pc.Entity; at: pc.Vec3; tone?: ToneId; y: number }
   const pieces: Shown[] = [];
+  const keys: { maze: number; key: pc.Entity; sunk: number }[] = [];
   for (const maze of plan.mazes) for (const piece of maze.pieces) {
     const a = toWorld(piece.x, piece.z), at = new pc.Vec3(a.x + (TILE - 1) / 2, 0, a.z + (TILE - 1) / 2);
     const holder = new pc.Entity(`Pieza ${piece.id}`); holder.setPosition(at); root.addChild(holder);
     const tone = piece.tone;
-    const body = part(holder, 'Losa', 'box', piece.knot ? knotMat : toneMats[piece.maze][tone ?? 'la'], [0, -THICK / 2, 0], [SIZE, THICK, SIZE]);
+    const body = part(holder, 'Losa', 'box', piece.knot || piece.switch ? knotMat : piece.bridge ? bridgeMat : toneMats[piece.maze][tone ?? 'la'], [0, -THICK / 2, 0], [SIZE, THICK, SIZE]);
     body.render!.receiveShadows = true;
     if (piece.knot) ring(holder, 'Lazo', silver, .5, .03, [0, .02, 0]);
+    if (piece.switch) {
+      ring(holder, 'Lazo', silver, .7, .04, [0, .02, 0]);
+      ring(holder, 'Lazo', silver, .5, .03, [0, .02, 0]);
+      const key = part(holder, 'Tecla', 'cylinder', keyMat, [0, .14, 0], [.7, .28, .7]);
+      keys.push({ maze: piece.maze, key, sunk: 0 });
+    }
+    if (piece.bridge) for (let k = 0; k < 5; k++) part(holder, 'Cuerda', 'box', strandMat, [(k - 2) * SIZE / 5, .01, 0], [.03, .02, SIZE]);
     // A cracked one shows it: three dark lines across it.
     if (piece.cracked) for (const [x, z, r, l] of [[-.2, .1, 24, 1.5], [.3, -.3, -38, 1], [.1, .5, 70, .7]]) part(holder, 'Grieta', 'box', crackMat, [x, .006, z], [l, .012, .05], [0, r, 0]);
     let ghost: pc.Entity | undefined;
-    if (!piece.knot) {
+    if (!piece.knot && !piece.switch) {
       ghost = new pc.Entity('Hueco'); ghost.setPosition(at.x, -.02, at.z); root.addChild(ghost);
-      for (const [x, z, w, d] of [[0, SIZE / 2, SIZE, .04], [0, -SIZE / 2, SIZE, .04], [SIZE / 2, 0, .04, SIZE], [-SIZE / 2, 0, .04, SIZE]]) part(ghost, 'Marco', 'box', ghostMats[tone ?? 'la'], [x, 0, z], [w, .02, d]);
+      for (const [x, z, w, d] of [[0, SIZE / 2, SIZE, .04], [0, -SIZE / 2, SIZE, .04], [SIZE / 2, 0, .04, SIZE], [-SIZE / 2, 0, .04, SIZE]]) part(ghost, 'Marco', 'box', piece.bridge ? bridgeGhost : ghostMats[tone ?? 'la'], [x, 0, z], [w, .02, d]);
     }
     pieces.push({ piece, slab: holder, body, ghost, at, tone, y: 0 });
   }
+  // Under each maze with a switch, the string from it to its bridge.
+  const pulls = new Map<number, pc.Entity>();
+  for (const [i, maze] of plan.mazes.entries()) {
+    const key = maze.pieces.find(p => p.switch), span = maze.pieces.filter(p => p.bridge);
+    if (!key || !span.length) continue;
+    const centreOf = (p: Piece) => { const w = toWorld(p.x, p.z); return new pc.Vec3(w.x + (TILE - 1) / 2, -THICK - .12, w.z + (TILE - 1) / 2); };
+    const from = centreOf(key), to = span.map(centreOf).reduce((sum, v) => sum.add(v), new pc.Vec3()).mulScalar(1 / span.length);
+    const along = new pc.Vec3().sub2(to, from), length = along.length();
+    const pull = part(root, 'Cuerda del interruptor', 'box', pullMat, [(from.x + to.x) / 2, from.y, (from.z + to.z) / 2], [.06, .06, length], [0, Math.atan2(along.x, along.z) * pc.math.RAD_TO_DEG, 0]);
+    pulls.set(i, pull);
+  }
+  const laidAt = new Map<number, number>();
   // The tuning pegs of the third maze: a post with a flat head, a bead in its row's note, and a string to its row.
   interface Peg { row: number; head: pc.Entity; bead: pc.StandardMaterial; turn: number; shown: number }
   const pegs: Peg[] = [];
@@ -227,8 +261,26 @@ export function buildCuerdas(app: pc.Application, toWorld: (x: number, z: number
       light.emissiveIntensity = 1 + (animate ? Math.sin(t * .7) * .12 : 0) + pulse * .7; light.update();
       shaft.setLocalScale(.28 + pulse * .14, APEX, .28 + pulse * .14);
       if (animate) bubble.setLocalScale(2.3 + Math.sin(t * 1.3) * .05, 2.3 + Math.sin(t * 1.7 + 1) * .07, 2.3 + Math.sin(t * 1.1 + 2) * .05);
+      // A bridge comes up from below over RISE seconds from when its switch was stood on, and goes when the maze is put back.
+      for (const i of plan.mazes.keys()) {
+        const laid = !!run.laid?.includes(i);
+        if (laid && !laidAt.has(i)) laidAt.set(i, t); else if (!laid) laidAt.delete(i);
+        const pull = pulls.get(i)?.render?.meshInstances[0];
+        if (pull) pull.material = laid ? strandMat : pullMat;
+      }
+      for (const k of keys) {
+        k.sunk += ((run.laid?.includes(k.maze) ? 1 : 0) - k.sunk) * (animate ? 1 - Math.exp(-dt * 14) : 1);
+        k.key.setLocalPosition(0, .14 - k.sunk * .15, 0);
+      }
       for (const p of pieces) {
-        if (p.piece.knot) continue;
+        if (p.piece.knot || p.piece.switch) continue;
+        if (p.piece.bridge) {
+          const since = laidAt.get(p.piece.maze), up = since === undefined ? 0 : animate ? Math.min(1, (t - since) / (RISE * 2)) : 1;
+          const y = -DROP * (1 - up * up * (3 - 2 * up));
+          p.slab.enabled = up > 0; p.ghost!.enabled = up < 1;
+          p.slab.setPosition(p.at.x, y, p.at.z);
+          continue;
+        }
         const tone = toneOf(p.piece, run, plan);
         if (tone && tone !== p.tone) {
           p.tone = tone;

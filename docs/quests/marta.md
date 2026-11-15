@@ -114,13 +114,14 @@ one of the hardest places to reach. Her mission ends against a boss that sings w
 One rule in all three (`src/cuerdas.ts`, pure; `src/song.ts` is the phrase's clock): a rectangle of
 pieces hung between strings. The voice sings a short phrase in a loop; **each piece answers to one
 note, has its colour, and falls when the note is not its own.** A piece about to fall trembles
-first. Falling takes whoever fell back to the rectangle's near edge, nothing else. It reads with the
+first. Consecutive notes overlap a moment (both pieces up), so stepping across never asks for a
+frame-perfect press. Falling takes whoever fell back to the rectangle's near edge, nothing else. It reads with the
 sound off: colour, height and the tremble.
 
 | Maze | New | Asks for |
 | --- | --- | --- |
 | 1 · *Dos notas* | Two notes taking turns: half the floor is there, half is not | Reading the rhythm, crossing in time |
-| 2 · *Una pasada* | Three notes, and cracked pieces that **fall for good** once stepped on (until the maze is left) | Planning the way before setting out |
+| 2 · *Una pasada* | Three notes, cracked pieces that **fall for good** once stepped on, and a **switch** that lays a bridge off the far side (decided round 8: the user, «que las losas que caen tengan sentido… un interruptor que abra un puente»). Up the left first, the switch strands them; up the right, over the switch and back along the far row. A fall or walking back out puts it back | Planning the way before setting out: not cutting off the way back |
 | 3 · *Las clavijas* | Three notes; a **peg** beside each row changes the note the whole row answers to | Building the way: the rows in the song's order |
 
 After each maze, a wide platform (a knot of strings) and the quality that waits on it. Steps are
@@ -147,7 +148,7 @@ bodies in `src/cuerdas-foes.ts`).
 
 | Foe | Move | What it does | What the party can do |
 | --- | --- | --- | --- |
-| La Lealtad | ***Juramento*** | Her shield's strings sound and the blow goes at **whoever struck her last** | Choose who touches her: the one who can hold on |
+| La Lealtad | ***Juramento*** | Her shield's strings sound and the blow goes at whoever she swore on: **the last one who struck her in the round before**. Her plate names them all round, and blows inside the round do not move it | The one she names holds on; the other strikes, and becomes the next one named. And her Eco first, with what reaches everyone |
 | La Lealtad | ***Lazo*** | Every fourth turn, if her Eco is hurt or gone: ties it back, whole (a fallen one returns, its Resonancia from the start) | Killing the Eco first does not last while she stands: go through her, or hit both at once |
 | Eco | ***Resonancia*** | Repeats the Juramento on the same one, harder each turn it has had (up to a ceiling) | The longer the fight, the worse: it is the clock of this fight |
 | Lo Cristalino | ***Destello*** | A thin beam of magic on whom it said | Defender on that one |
@@ -219,7 +220,8 @@ bodies in `src/cuerdas-foes.ts`).
 - Look, motto, interface theme: _open_
 - Skills: _open_
 - World key it opens: _open_
-- Design of the wearable ánima: `docs/animas/<id>/README.md`, with `/anima`.
+- Design of the wearable ánima: **Sincopante** (name decided 2026-11-14),
+  [`docs/animas/sincopante/README.md`](../animas/sincopante/README.md): an eco that plays behind the fight.
 
 ## Second round
 

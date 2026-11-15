@@ -62,18 +62,20 @@ test('an Eco\'s blow grows every turn of its own, up to a ceiling', () => {
   assert.equal(turn(s, 'eco', 'gerard').ability.id, 'resonancia');
 });
 
-test('La Lealtad\'s Juramento, and her Eco\'s Resonancia after it, go to whoever struck her last; her plate says who', () => {
-  const s = fight('cuerdas-lealtad'), lealtad = s.foes[0];
-  assert.equal(intentLabel(s, lealtad), `Juramento → ${firstOf(s).name}`);
+test('La Lealtad swears at the start of a round, on whoever struck her last in the one before; her Eco repeats it on the same one', () => {
+  const s = fight('cuerdas-lealtad'), lealtad = s.foes[0], first = firstOf(s);
+  assert.equal(intentLabel(s, lealtad), `Juramento → ${first.name}`);
+  // Blows inside the round do not move her oath: whoever it names can still hold on.
   as(s, 'aitor'); act(s, 'attack', 'lealtad');
-  assert.equal(intentLabel(s, lealtad), 'Juramento → Aitor');
   // A blow aimed at the Eco lands on her, so it counts too.
   as(s, 'gerard'); act(s, 'attack', 'eco');
-  assert.equal(intentLabel(s, lealtad), 'Juramento → Gerard');
-  // Whoever the turn order would have given them, both go for him.
+  assert.equal(intentLabel(s, lealtad), `Juramento → ${first.name}`);
   const oath = turn(s, 'lealtad', 'aitor');
-  assert.equal(oath.ability.id, 'juramento'); assert.equal(oath.target, 'gerard');
-  assert.equal(enemyAct(s, 'eco', 'aitor').target, 'gerard');
+  assert.equal(oath.ability.id, 'juramento'); assert.equal(oath.target, first.id);
+  assert.equal(enemyAct(s, 'eco', 'aitor').target, first.id);
+  // The round over, she swears on the last one who struck her.
+  round(s);
+  assert.equal(intentLabel(s, lealtad), 'Juramento → Gerard');
   // He falls: she turns to whoever is left.
   ally(s, 'gerard').hp = 0; as(s, 'aitor'); act(s, 'defend');
   assert.equal(intentLabel(s, lealtad), 'Juramento → Aitor');
