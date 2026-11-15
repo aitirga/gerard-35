@@ -598,7 +598,7 @@ Steps 1–13 are built and tested (`tests/nuria.test.mjs`, `tests/story.test.mjs
   platform, not on the roof of Nuria's block. Its fight frames the whole boss, eye and Uri on top
   (`battleScene.foeTop` lifts and widens the camera for foes far taller than the party).
 - **Step 11**: the light animation lives in `game.releaseLights` (not a module of its own yet);
-  the jar sits on the west end of the TV unit in the living room, built by `updateJar` in
+  the jar sits on the round dining table in the comedor, built by `updateJar` in
   `src/game.ts` from `story.jar`. Screenshots: `just screenshots lights`.
 - **Step 12**: the first time home after the win the lights fly from Gerard and Aitor into the
   jar (not saved: after a reload they are simply there). Haru and Yuki stroll the flat

@@ -1,6 +1,6 @@
 {
   "title": "Las luces y las gatas · home after Nuria's mission",
-  "description": "After Nuria's mission (docs/quests/nuria.md § The lights, § Beats): Haru and Yuki stroll about the Meridiana flat, and the two lights (the party's Ecos de luz) sit in a glass jar on the TV unit, with the prompt Abrir el bote. `just screenshots ecos` opens it.",
+  "description": "After Nuria's mission (docs/quests/nuria.md § The lights, § Beats): Haru and Yuki stroll about the Meridiana flat, and the two lights (the party's Ecos de luz) sit in a glass jar on the round dining table, with the prompt Abrir el bote. `just screenshots ecos` opens it.",
   "steps": [
     {
       "open": "/?story=luz-uri&day=8"
@@ -28,15 +28,15 @@
     {
       "teleport": "meridiana",
       "cell": [
-        15,
-        2
+        20,
+        11
       ],
       "settle": 1500
     },
     {
       "shot": "jar",
       "delay": 1500,
-      "caption": "The jar on the TV unit, two lights lit (2 ecos de luz beside the menus), and the prompt Abrir el bote"
+      "caption": "The jar on the dining table, two lights lit (2 ecos de luz beside the menus), and the prompt Abrir el bote"
     }
   ]
 }

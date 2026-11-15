@@ -116,7 +116,7 @@ luz**, which improve the ánimas (`docs/animas/README.md` § Ecos de luz). The j
 there are, never whose they were, and the HUD counts the free ones (a chip beside the menus'
 buttons). Until 2026-11-05 a light could be let out for a day against the Queen; no more.
 
-Built: the jar stands on the west end of the TV unit in the flat (`PLACES_2.jar`), a glass jar with
+Built: the jar stands on the round dining table in the comedor, opened from its east side (`PLACES_2.jar`), a glass jar with
 a cork and one marble per light, amber while free and dark once in an ánima. The first time home
 after a win, the lights fly from Gerard and Aitor into it. *Abrir el bote* opens its screen
 (`src/jar-ui.ts`).

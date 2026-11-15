@@ -28,7 +28,7 @@ const KIND_ICONS = {
   ulti: '<path d="M8 1.2 9.9 6l5 .4-3.8 3.2 1.2 5L8 11.9l-4.3 2.7 1.2-5L1.1 6.400l5-.4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
 };
 const iconOf = (item: Improvement) => item.element ? ELEMENT_ICONS[item.element] : KIND_ICONS[item.kind as keyof typeof KIND_ICONS];
-const colourOf = (item: Improvement) => item.element ? ELEMENTS[item.element].colour : item.line ? LINES[item.line].colour : CLASSES[item.anima].colour;
+export const colourOf = (item: Improvement) => item.element ? ELEMENTS[item.element].colour : item.line ? LINES[item.line].colour : CLASSES[item.anima].colour;
 const ecoWord = (n: number) => n === 1 ? 'eco' : 'ecos';
 
 type Player = 1 | 2;
@@ -281,7 +281,7 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     const list = pages(), at = (key: string) => spots.find(s => s.key === key)!;
     root.innerHTML = `<div class="jar-veil" aria-hidden="true"></div>
       <div class="jar-window"><div class="jar-sky">
-        <header class="jar-title"><span class="battle-kicker">EN CASA · EL SALÓN</span><h1>El bote <em>de las luces</em></h1></header>
+        <header class="jar-title"><span class="battle-kicker">EN CASA · EL COMEDOR</span><h1>El bote <em>de las luces</em></h1></header>
         <svg class="jar-threads" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${PLAYERS.map(p => `<line class="jar-tether" data-player="${p}"/>`).join('')}</svg>
         ${trees.map(constellation).join('')}
         <div class="jar-jar" style="${pct(...JAR_AT)}"></div>

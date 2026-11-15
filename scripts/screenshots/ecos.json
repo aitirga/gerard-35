@@ -15,15 +15,15 @@
     {
       "teleport": "meridiana",
       "cell": [
-        15,
-        2
+        21,
+        9
       ],
       "settle": 1500
     },
     {
       "shot": "prompt",
       "delay": 1500,
-      "caption": "The jar on the TV unit and the prompt Abrir el bote"
+      "caption": "The jar on the dining table and the prompt Abrir el bote"
     },
     {
       "record": "abrir",

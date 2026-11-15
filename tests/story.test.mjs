@@ -415,6 +415,8 @@ test('the jar at home opens its screen; the ecos go into the ánimas and come ba
   const story = new Story([...upTo('castle'), 'anima-nuria', 'luz-nuria', 'luz-uri']);
   const jar = () => story.interactions('meridiana').find(i => i.id === 'meridiana-luces');
   assert.ok(canWalk(jar().cell, ENVIRONMENTS.meridiana.grid));
+  const others = [...ENVIRONMENTS.meridiana.interactions, ...story.interactions('meridiana')].filter(i => i.id !== 'meridiana-luces');
+  assert.ok(others.every(i => Math.hypot(i.cell.x - jar().cell.x, i.cell.z - jar().cell.z) >= 1), 'nothing else in the flat is reached from where the jar is (the painting, the table\'s lamp)');
   assert.equal(jar().label, 'Abrir el bote');
   assert.deepEqual(story.jar, ['nuria', 'uri']);
   assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-luces' })), ['jar']);

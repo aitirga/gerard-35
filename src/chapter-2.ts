@@ -22,8 +22,8 @@ export const PLACES_2 = {
   school: { environment: 'rec-comtal' as EnvironmentId, door: 'enter-school' },
   /** Where Haru and Yuki start their day in the flat once they live there (docs/quests/nuria.md § Beats). */
   cats: { environment: 'meridiana' as EnvironmentId, haru: { x: 19, z: 3 }, yuki: { x: 20, z: 7 } },
-  /** The jar of lights on the west end of the TV unit (docs/quests/nuria.md § The lights). */
-  jar: { environment: 'meridiana' as EnvironmentId, cell: { x: 15, z: 2 }, anchor: { x: 15.3, z: 1.4, y: 2.1 } },
+  /** The jar of lights on the round dining table, reached from any free side of it (docs/quests/nuria.md § The lights). */
+  jar: { environment: 'meridiana' as EnvironmentId, cell: { x: 21, z: 9 }, anchor: { x: 19.77, z: 9.78, y: 1.5 } },
   /** The snow globe on the TV unit, between the controller and the east speaker (§ The snow globe), and where shaking it sets the party down: inside the front door. */
   bola: { environment: 'meridiana' as EnvironmentId, cell: { x: 17, z: 2 }, spot: { x: 17.45, z: .43, y: .75 }, land: { x: 6, z: 2 } },
 } as const;
