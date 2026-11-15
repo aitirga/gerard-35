@@ -73,13 +73,13 @@ export function createNewsTV(app: pc.Application, effects: Effects, screen: pc.E
   const size = screen.getLocalScale();
   const front = screen.getPosition().clone().add(new pc.Vec3(0, 0, size.z / 2 + .004));
   glass.setPosition(front);
-  // A plane faces +y; turned a quarter it faces the room (+z). The camera's picture comes out of its
-  // render target upside down and the canvas does not, so the canvas is flipped back to stand upright.
-  const faces = [['Imagen', picture, 0, 1], ['Rótulos', overlay, .004, -1]] as const;
-  const [image] = faces.map(([name, m, dz, flip]) => {
+  // A plane faces +y; turned a quarter it faces the room (+z), flipped so its texture stands upright.
+  // On WebGPU the camera's render target and the canvas come out the same way up, so both turn alike.
+  const faces = [['Imagen', picture, 0], ['Rótulos', overlay, .004]] as const;
+  const [image] = faces.map(([name, m, dz]) => {
     const e = new pc.Entity(name);
     e.addComponent('render', { type: 'plane', material: m, castShadows: false, receiveShadows: false });
-    e.setLocalPosition(0, 0, dz); e.setLocalEulerAngles(90, 0, 0); e.setLocalScale(size.x, 1, -size.y * flip);
+    e.setLocalPosition(0, 0, dz); e.setLocalEulerAngles(90, 0, 0); e.setLocalScale(size.x, 1, size.y);
     glass.addChild(e);
     return e.render!.meshInstances[0];
   });
