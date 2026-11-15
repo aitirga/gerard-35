@@ -1,0 +1,188 @@
+{
+  "title": "Dadaísta · los dados",
+  "description": "Dadaísta (docs/animas/dadaista/), the university friends' ánima: its maná is dice, floating beside whoever wears it and shown on the plate. Golpe de dados lands by the face of the die spent; Doble o nada rolls it again for a double blow or nothing. Gerard wears it in the fight tester beside Aitor's Matemágico, against two sturdy dogs. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22dadaista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22dadaista%22%2C%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Afalse%2C%22immune%22%3Afalse%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => s.foes.forEach(f => { f.hp = f.maxHp = 400; }));"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { const g = s.allies.find(a => a.id === 'gerard'); g.dice = [6, 3, 1]; g.secondary = 3; });"
+    },
+    {
+      "wait": 1400
+    },
+    {
+      "shot": "mano",
+      "delay": 300,
+      "caption": "Dadaísta: its maná is dice. Three points, three dice floating beside Gerard, the same faces on his plate"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 300,
+      "caption": "Its two skills at level 1, each spending a die: Golpe de dados and Doble o nada"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"golpe-dados\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "elige-dado",
+      "delay": 300,
+      "caption": "Golpe de dados: the sheet turns into the hand. The die under the cursor comes forward beside Gerard"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-die=\"0\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "shot": "objetivo",
+      "delay": 200,
+      "caption": "Then whom: the six, at the first dog"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "golpe-dados",
+      "seconds": 1.5,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Golpe de dados with the six: the hand goes up, the die flies tumbling, lands and bounces off. The higher the face, the harder it lands"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 400
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"doble-o-nada\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "shot": "apuesta",
+      "delay": 200,
+      "caption": "Doble o nada: which die to bet. A one cannot lose; a three wins with three or more"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-die=\"1\"]').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "doble",
+      "seconds": 2.4,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Doble o nada on the one: the die goes up, comes down showing what it rolled, and the bet won it lands twice"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { const g = s.allies.find(a => a.id === 'gerard'); g.dice = [6, 2]; g.secondary = 2; s.seed = 9; });"
+    },
+    {
+      "press": "Digit2",
+      "gap": 400
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"doble-o-nada\"]').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-die=\"0\"]').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "nada",
+      "seconds": 1.7,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Doble o nada on the six, lost: it rolls a two. No blow, and the die goes back to the hand as a two, the maná not spent"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { const g = s.allies.find(a => a.id === 'gerard'); g.dice = [2]; g.secondary = 1; });"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "record": "defender",
+      "seconds": 1.3,
+      "fps": 30,
+      "tiles": 8,
+      "caption": "Defender: two points of maná back, two new dice dropping into the hand"
+    }
+  ]
+}

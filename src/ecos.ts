@@ -4,9 +4,20 @@
  * back and put somewhere else whenever they are at the jar. What is bought lives in the browser,
  * like the loadout. Pure.
  */
-import { ANIMA_NAMES, type ClassId, type Element, type Improved } from './battle.ts';
+import { ANIMA_NAMES, ANIMA_OWNERS, PASSIVES, SKILLS, type ClassId, type Element, type Improved, type PassiveId, type SkillId } from './battle.ts';
 
-export type ImprovementKind = 'mana' | 'element' | 'passive' | 'ulti';
+export type ImprovementKind = 'mana' | 'element' | 'skill' | 'passive' | 'ulti';
+/** The lines of a tree (docs/animas/README.md § The jar): Matemágico's three elements and its trunk, Tecnópata's three. */
+export type LineId = 'fuego' | 'agua' | 'electrico' | 'calculo' | 'bip' | 'mente' | 'taller';
+export const LINES: Record<LineId, { name: string; note: string; colour: string }> = {
+  fuego: { name: 'Fuego', note: 'se acumula', colour: '#ff8f3f' },
+  agua: { name: 'Agua', note: 'prepara', colour: '#6cc8f2' },
+  electrico: { name: 'Eléctrico', note: 'cobra', colour: '#ffe45c' },
+  calculo: { name: 'Cálculo', note: '', colour: '#f3cf78' },
+  bip: { name: 'Bip', note: '', colour: '#4fe0ff' },
+  mente: { name: 'Mente', note: '', colour: '#9be7ff' },
+  taller: { name: 'Taller', note: '', colour: '#7df0b5' },
+};
 export interface Improvement {
   id: string; anima: ClassId; kind: ImprovementKind; name: string; cost: number; description: string;
   /** What has to be there first. */
@@ -15,6 +26,8 @@ export interface Improvement {
   mana?: number;
   /** The element it lets the ánima's Atacar carry. */
   element?: Element;
+  /** A node of a tree: its line, and the skill or the passive it gives. */
+  line?: LineId; skill?: SkillId; passive?: PassiveId;
   /** A place kept for what is still to design: it shows, asleep, and cannot be bought. */
   veiled?: true;
 }
@@ -26,20 +39,50 @@ export const ELEMENT_ICONS: Record<Element | 'none', string> = {
   fuego: '<path d="M8 1.2c.6 2.6 3.8 4 3.8 7.9a3.8 3.8 0 0 1-7.6 0c0-2 1-3.3 2-4.2-.1 1.6.5 2.6 1.3 2.9C7 6 7 3.4 8 1.2z"/>',
   electrico: '<path d="M9.4 1 3.6 9h3.6l-1 6 6.2-8.4H8.6z"/>',
 };
-/** What every ánima can get: more maná, and the places kept for its passive and its ultimate. */
-const common = (anima: ClassId): Improvement[] => [
-  { id: `${anima}:mana-1`, anima, kind: 'mana', name: 'Maná +1', cost: 2, mana: 1, description: `Sube en 1 el maná de ${ANIMA_NAMES[anima]}.` },
-  { id: `${anima}:mana-2`, anima, kind: 'mana', name: 'Maná +2', cost: 3, mana: 1, after: `${anima}:mana-1`, description: `Sube en 1 más el maná de ${ANIMA_NAMES[anima]}.` },
-  { id: `${anima}:pasiva`, anima, kind: 'passive', name: 'Pasiva', cost: 2, veiled: true, description: 'Todavía duerme.' },
-  { id: `${anima}:definitiva`, anima, kind: 'ulti', name: 'Definitiva', cost: 3, veiled: true, description: 'Todavía duerme.' },
+/** The ánimas that grow by a tree at the jar and never by level: the ones that are someone's own. */
+export const TREE_ANIMAS = Object.keys(ANIMA_OWNERS) as ClassId[];
+const skillNode = (anima: ClassId, line: LineId, skill: SkillId, cost: number, after?: string): Improvement => {
+  const spec = SKILLS.find(s => s.id === skill)!;
+  return { id: `${anima}:${skill}`, anima, kind: 'skill', line, skill, name: spec.name, cost, description: spec.description, ...after ? { after: `${anima}:${after}` } : {} };
+};
+const passiveNode = (anima: ClassId, line: LineId, passive: PassiveId, cost: number, after: string, description: string): Improvement =>
+  ({ id: `${anima}:${passive}`, anima, kind: 'passive', line, passive, name: PASSIVES[passive].name, cost, description, after: `${anima}:${after}` });
+const manaNode = (anima: ClassId, line?: LineId, after?: string): Improvement =>
+  ({ id: `${anima}:mana-1`, anima, kind: 'mana', name: 'Maná +1', cost: 2, mana: 1, description: `Sube en 1 el maná de ${ANIMA_NAMES[anima]}.`, ...line ? { line } : {}, ...after ? { after: `${anima}:${after}` } : {} });
+/** The definitiva: a place kept, asleep, on every ánima (docs/animas/README.md § Definitivas). */
+const ulti = (anima: ClassId): Improvement => ({ id: `${anima}:definitiva`, anima, kind: 'ulti', name: 'Definitiva', cost: 3, veiled: true, description: 'Todavía duerme.' });
+/**
+ * Matemágico's tree: a line per element (the element on Atacar, the skill that lays or cashes it,
+ * its passive) and the trunk, Cálculo. Each node needs the one before it on its line.
+ */
+const MATEMAGICO: Improvement[] = [
+  { id: 'matemagico:fuego', anima: 'matemagico', kind: 'element', line: 'fuego', element: 'fuego', name: 'Fuego', cost: 1, description: 'Atacar puede llevar fuego. No quema. Sobre un enemigo con sangrado, cauteriza: gasta el sangrado de golpe y le hace más daño. Sobre uno mojado, lo ciega con el vapor.' },
+  skillNode('matemagico', 'fuego', 'factor-comun', 1, 'fuego'),
+  passiveNode('matemagico', 'fuego', 'rescoldo', 2, 'factor-comun', 'Pasiva. Los fuegos que prende Matemágico duran 15 segundos en vez de 10.'),
+  { id: 'matemagico:agua', anima: 'matemagico', kind: 'element', line: 'agua', element: 'agua', name: 'Agua', cost: 1, description: 'Atacar puede llevar agua. No moja. Sobre un enemigo quemado, apaga el fuego y lo ciega: sus golpes pierden fuerza.' },
+  skillNode('matemagico', 'agua', 'vasos', 1, 'agua'),
+  passiveNode('matemagico', 'agua', 'capilaridad', 2, 'vasos', 'Pasiva. Atacar con agua deja mojado al enemigo si no apaga ningún fuego.'),
+  { id: 'matemagico:electrico', anima: 'matemagico', kind: 'element', line: 'electrico', element: 'electrico', name: 'Eléctrico', cost: 1, description: 'Atacar puede llevar electricidad. No paraliza. Sobre un enemigo cegado, salta por el humo: daño medio mágico a todos los cegados. Sobre uno mojado, corre por el agua a todos los mojados.' },
+  skillNode('matemagico', 'electrico', 'descarga', 1, 'electrico'),
+  passiveNode('matemagico', 'electrico', 'toma-de-tierra', 2, 'descarga', 'Pasiva. Una reacción entre elementos que provoque Matemágico le devuelve 1 de maná, una vez por ronda.'),
+  skillNode('matemagico', 'calculo', 'angulo', 1),
+  skillNode('matemagico', 'calculo', 'analisis', 1, 'angulo'),
+  skillNode('matemagico', 'calculo', 'cardioide', 1, 'analisis'),
+  manaNode('matemagico', 'calculo', 'cardioide'),
 ];
-/** Elements for Atacar (battle.ts `react`): Gerard's mind can dress a plain blow with them. */
-const ELEMENTS_OF_MATEMAGICO: Improvement[] = [
-  { id: 'matemagico:agua', anima: 'matemagico', kind: 'element', element: 'agua', name: 'Agua', cost: 1, description: 'Atacar puede llevar agua. No moja. Sobre un enemigo quemado, apaga el fuego y lo ciega: sus golpes pierden fuerza.' },
-  { id: 'matemagico:fuego', anima: 'matemagico', kind: 'element', element: 'fuego', name: 'Fuego', cost: 1, description: 'Atacar puede llevar fuego. No quema. Sobre un enemigo con sangrado, cauteriza: gasta el sangrado de golpe y le hace más daño.' },
-  { id: 'matemagico:electrico', anima: 'matemagico', kind: 'element', element: 'electrico', name: 'Eléctrico', cost: 1, description: 'Atacar puede llevar electricidad. No paraliza. Sobre un enemigo cegado, salta por el humo: daño medio mágico a todos los cegados.' },
+/** Tecnópata's tree: Bip, Mente and Taller, and a maná on its own. */
+const TECNOPATA: Improvement[] = [
+  skillNode('tecnopata', 'bip', 'explosion', 1),
+  passiveNode('tecnopata', 'bip', 'telemetria', 2, 'explosion', 'Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.'),
+  skillNode('tecnopata', 'mente', 'confusion', 1),
+  skillNode('tecnopata', 'mente', 'control-remoto', 2, 'confusion'),
+  skillNode('tecnopata', 'taller', 'rayo-encogedor', 1),
+  passiveNode('tecnopata', 'taller', 'nanitos', 2, 'rayo-encogedor', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
+  manaNode('tecnopata'),
 ];
-export const IMPROVEMENTS: readonly Improvement[] = (Object.keys(ANIMA_NAMES) as ClassId[]).flatMap(anima => [...anima === 'matemagico' ? ELEMENTS_OF_MATEMAGICO : [], ...common(anima)]);
+const TREES: Partial<Record<ClassId, Improvement[]>> = { matemagico: MATEMAGICO, tecnopata: TECNOPATA };
+/** What the jar offers each ánima: its tree if it has one, or one more maná; and the definitiva, asleep. */
+export const IMPROVEMENTS: readonly Improvement[] = (Object.keys(ANIMA_NAMES) as ClassId[]).flatMap(anima => [...TREES[anima] ?? [manaNode(anima)], ulti(anima)]);
 export const improvementOf = (id: string) => IMPROVEMENTS.find(item => item.id === id);
 /** What `list` costs, in ecos. */
 export const costOf = (list: readonly string[]) => list.reduce((sum, id) => sum + (improvementOf(id)?.cost ?? 0), 0);
@@ -65,12 +108,14 @@ export function without(list: readonly string[], id: string): string[] {
 }
 /** What `list` adds up to in a fight. */
 export function improvedBy(list: readonly string[]): Improved {
-  const improved: { mana: Partial<Record<ClassId, number>>; elements: Partial<Record<ClassId, Element[]>> } = { mana: {}, elements: {} };
+  const improved: { mana: Partial<Record<ClassId, number>>; elements: Partial<Record<ClassId, Element[]>>; skills: SkillId[]; passives: PassiveId[] } = { mana: {}, elements: {}, skills: [], passives: [] };
   for (const id of list) {
     const item = improvementOf(id);
     if (!item) continue;
     if (item.mana) improved.mana[item.anima] = (improved.mana[item.anima] ?? 0) + item.mana;
     if (item.element) (improved.elements[item.anima] ??= []).push(item.element);
+    if (item.skill) improved.skills.push(item.skill);
+    if (item.passive) improved.passives.push(item.passive);
   }
   return improved;
 }

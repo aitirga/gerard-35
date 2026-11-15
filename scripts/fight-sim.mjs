@@ -1,16 +1,30 @@
 #!/usr/bin/env -S node --experimental-strip-types
 /** The campaign's fight simulator from a terminal: see docs/fight-sim.md and src/battle-sim.ts. */
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { DUO, MISSION_PARTY, POLICIES, SIM_VERSION, catalogue, checkTargets, conclude, sweep } from '../src/battle-sim.ts';
+import { BUILDS, DUO, MISSIONS, MISSION_IDS, MISSION_PARTY, POLICIES, SIM_VERSION, catalogue, checkTargets, conclude, storyPoint, storyRows, sweep } from '../src/battle-sim.ts';
 import { DEFAULT_INTENT, askJev, jevLines, jevRequest } from './fight-sim-jev.mjs';
+import { balanceData, balancePage } from './fight-sim-report.mjs';
 
 const HELP = `Simulador de combates de la campaña: las reglas reales del juego, sin pantalla.
 
   just fight-sim list                     Qué se puede simular, en JSON (combates, habilidades, políticas, objetivos)
   just fight-sim check                    Comprueba que los combates siguen siendo lo que deben ser; sale con 1 si no
   just fight-sim run [opciones]           Prueba todas las combinaciones de las listas dadas
+  just fight-sim story [opciones]         Cada combate con el equipo que llega a él según la historia
+  just fight-sim report [opciones]        La página de balance: todo lo anterior junto, en output/reports/balance/index.html
+                                          --build, --party, --runs (120), --seed, --tune (un valor por número) y
+                                          --baseline, que la guarda además como referencia con la que comparar las siguientes
+
+Opciones de story (listas separadas por comas):
+  --at a,b           Puntos de la historia: nuria (la introducción) · marta:first (solo la introducción detrás) ·
+                     marta:last (todas las demás detrás) · marta:universidad (las hechas, con /).
+                     Por defecto, cada misión abierta como primera y como última. Misiones: ${MISSION_IDS.join(', ')}
+  --build a,b        En qué se gastan los ecos: ${Object.keys(BUILDS).join(', ')} (por defecto nada,mixto)
+  --fight a,b        Solo estos combates (por defecto, todos los de cada misión)
+  --party p          El equipo de partida (${DUO}); las ánimas, amigos, ecos y nivel los pone el punto
+  --policy p,q       Por defecto casual,smart
 
 Opciones de run (cada una acepta una lista separada por comas: se prueban todas las combinaciones):
   --fight a,b        Combates (por defecto, las tres cebollas: crias-1,cebolla,cebollon)
@@ -41,9 +55,9 @@ Opinión de Jev, solo si se pide (necesita TYPESAFE_API_KEY en .env):
 
 Los bots no son personas: sirven para comparar combinaciones, no para medir cómo se siente un combate.
 `;
-const LISTS = { '--fight': 'fights', '--party': 'parties', '--level': 'levels', '--policy': 'policies', '--ban': 'bans', '--friends': 'friends', '--animas': 'animas', '--improved': 'improved' };
+const LISTS = { '--at': 'at', '--build': 'builds', '--fight': 'fights', '--party': 'parties', '--level': 'levels', '--policy': 'policies', '--ban': 'bans', '--friends': 'friends', '--animas': 'animas', '--improved': 'improved' };
 const NUMBERS = { '--runs': 'runs', '--seed': 'seed', '--error': 'error', '--think': 'think', '--max-rounds': 'maxRounds' };
-const FLAGS = { '--json': 'json', '--jev': 'jev', '--jev-dry-run': 'jevDryRun', '--help': 'help' };
+const FLAGS = { '--baseline': 'baseline', '--json': 'json', '--jev': 'jev', '--jev-dry-run': 'jevDryRun', '--help': 'help' };
 
 /** Words to options; anything unknown is an error, so a typo never reads as a result. */
 export function parseArguments(argv) {
@@ -133,7 +147,30 @@ export async function main(argv = process.argv.slice(2)) {
     report = { version: SIM_VERSION, ...shared, rows, conclusions };
     say(table(rows).join('\n'));
     if (conclusions.length) say(`\nConclusiones:\n${conclusions.map(line => `- ${line}`).join('\n')}`);
-  } else throw new Error(`Orden desconocida: ${options.command}. Usa run, check, list o help.`);
+  } else if (options.command === 'report') {
+    const folder = resolve('output/reports/balance'), basePath = resolve(folder, 'baseline.json');
+    const data = balanceData({ runs: options.runs ?? 120, seed: shared.seed, tuning: tunings(options.tune)[0], builds: options.builds, party: options.parties?.[0], label: options.intent });
+    let baseline = null;
+    try { baseline = JSON.parse(await readFile(basePath, 'utf8')); } catch { /* No reference yet. */ }
+    await mkdir(folder, { recursive: true });
+    if (options.baseline) { await writeFile(basePath, `${JSON.stringify(data)}\n`, 'utf8'); baseline = null; }
+    await writeFile(resolve(folder, 'data.json'), `${JSON.stringify(data, null, 1)}\n`, 'utf8');
+    await writeFile(resolve(folder, 'index.html'), balancePage(data, baseline), 'utf8');
+    const asked = data.cells.filter(c => !c.teaching);
+    say(`Parejas que se cumplen: ${asked.filter(c => c.holds).length}/${asked.length} · objetivos: ${data.targets.filter(t => t.pass).length}/${data.targets.length}${options.baseline ? ' · guardada como referencia' : baseline ? ' · comparada con la referencia' : ''}`);
+    say(`Página: ${resolve(folder, 'index.html')}`);
+    report = data;
+    if (options.json) { process.stdout.write(`${JSON.stringify(data)}\n`); } 
+    return 0;
+  } else if (options.command === 'story') {
+    const open = MISSION_IDS.filter(id => !MISSIONS[id].intro);
+    const points = (options.at ?? open.flatMap(id => [`${id}:first`, `${id}:last`])).flatMap(at => (options.builds ?? ['nada', 'mixto']).map(build => storyPoint(at, build)));
+    const rows = storyRows(points, options.policies ?? ['casual', 'smart'], { fights: options.fights, party: options.parties?.[0], ...shared, tuning: tunings(options.tune)[0] });
+    report = { version: SIM_VERSION, ...shared, points, rows: rows.map(r => ({ ...r.row, at: r.at, build: r.build, ecos: r.ecos })) };
+    say(`${cell('combate', 20)}${cell('punto', 22)}${cell('ecos', 10)}${cell('gasto', 11)}${cell('bot', 8)}gana   PV al ganar  rondas`);
+    for (const r of rows) say(`${cell(r.row.fight, 20)}${cell(r.at, 22)}${cell(`${r.spent}/${r.ecos}`, 10)}${cell(r.build, 11)}${cell(r.row.policy, 8)}${percent(r.row.win)}  ${cell(r.row.hpLeftWon === null ? '–' : `${Math.round(r.row.hpLeftWon * 100)} %`, 11)}  ${r.row.roundsWon ?? '–'}`);
+    for (const point of points) say(`\n${point.at} · ${point.build}: amigos ${point.setup.friends.join(', ') || 'ninguno'}; Papagato ${point.setup.levels.papagato}; ${point.ecos} ecos en ${point.setup.improved.join(', ') || 'nada'}`);
+  } else throw new Error(`Orden desconocida: ${options.command}. Usa run, check, story, report, list o help.`);
   await jevStep(options, report, say);
   if (options.out) {
     await mkdir(dirname(resolve(options.out)), { recursive: true });

@@ -96,7 +96,7 @@ cannot pay says *Sin ánima*.
 | Skill | Who | Cost | Base | Does |
 | --- | --- | --- | --- | --- |
 | Foc Binari | Whoever wears **Matemágico** | 1 | 16 magic, fire | Sets the foe on fire (Quemado, timed; again while it burns raises its level); fire melts the Queen's gum (pringue) |
-| Ángulo exacto | **Matemágico**, level 2 | 1 | −3 | Defensa and Espíritu −3 on one foe for 3 rounds (a mark; not again while it lasts) |
+| Ángulo exacto | **Matemágico**, a node bought at the jar | 1 | −3 | Defensa and Espíritu −3 on one foe for 3 rounds (a mark; not again while it lasts) |
 | Zarpazo sangriento | Whoever wears **Papagato** | 1 | 16 physical | Adds two Sangrado stacks |
 | Yuki se esconde | Whoever wears **Papagato** | 1 | +4 | Defensa +4 for the whole party for 3 rounds (the one it is used in included); cannot be stacked while it runs |
 | Zarpazos | **Papagato**, level 2 | 2 | 7 physical, four times | Each claw takes a layer off an onion |
@@ -118,7 +118,7 @@ lowers Velocidad, Defensa and Espíritu; **Llorera** (up to 5, El Cebollón) low
 again before it goes out raises it to II and III (`docs/animas/README.md` § Quemado).
 
 **Levels** (`src/levels.ts`): fights won wearing an ánima make it grow; 3 wins give level 2 and 8
-level 3, each a story flag. Only Papagato has levels so far.
+level 3, each a story flag. Only Papagato levels: Matemágico and Tecnópata grow by a tree at the jar (`docs/animas/README.md` § The jar).
 
 Every skill comes with an ánima: whoever wears none has none. Bernat never wears one and only
 attacks (Habilidad is greyed out on his turn); Aitor has skills only while he wears an ánima.
@@ -133,7 +133,9 @@ Impulso and Abrazo are out for now.
   comes from Nuria's mission. **Tecnópata** is Aitor's own, his from chapter 2's first morning: a
   placeholder still to design (no stats, no skills, sage `#8cc6a8`). Some ánimas are one
   person's (`ANIMA_OWNERS`, `canWear` in `src/battle.ts`): Matemágico only Gerard, Tecnópata only
-  Aitor; Papagato anyone but Bernat.
+  Aitor; Papagato anyone but Bernat. **Dadaísta**, the university friends', is the one whose
+  maná is dice: each point a die with its face in view, and the die a skill spends says how hard
+  it lands (`docs/animas/dadaista/README.md`; level 1 built).
 - **Own ánima and extras** (decided 2026-11-05): each has their **own** ánima, fixed, always
   theirs and never taken off (Matemágico Gerard's once it wakes, Tecnópata Aitor's), and **one extra
   slot** for now (`EXTRA_SLOTS` in `src/story.ts`; more may come) where they equip one of the shared

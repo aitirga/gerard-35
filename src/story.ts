@@ -29,6 +29,8 @@ export const STORY_FLAGS = [
   'intro', 'met-jan', 'got-shoes', 'got-potion', 'got-backpack', 'bernat-joined', 'bernat-stalled', 'dejavu',
   'minion', 'first-fight', 'palace', 'in-palace', 'got-chicle', 'matemagico', 'wrapper-room',
   'caught', 'got-wrapper',
+  // The snow globe on the flat's TV unit (docs/chapter-2.md § The snow globe).
+  'got-bola',
   // Chapter 2 (docs/chapter-2.md): open progression, so these are never cleared.
   'tv-news', 'metro', 'rec-comtal', 'castle', 'palace-tried', 'clue-r4', 'anima-nuria',
   // Nuria's mission (docs/quests/nuria.md): Papagato is the party's for good.
@@ -81,7 +83,7 @@ export type StoryEvent =
   /** Gerard stepped into a named room of the scene. */
   | { type: 'room'; id: string }
   /** An ánima woke up in Gerard, mid-fight (Matemágico, in the palace). */
-  | { type: 'class'; id: GerardClass }
+  | { type: 'class'; id: Exclude<GerardClass, 'dadaista'> }
   /** The Queen's hands have caught Gerard and Bernat: the screen is black. */
   | { type: 'caught' }
   /** Gerard walked up to one of the story's triggers (`story.triggers`). */
@@ -93,7 +95,9 @@ export type StoryEvent =
   /** Words tried on the pool gate's padlock (src/candado-ui.ts). */
   | { type: 'candado'; numbers: number[] }
   /** The party walked in through home's portal from the street (src/night.ts: at night, the day is over). */
-  | { type: 'home' };
+  | { type: 'home' }
+  /** Something used from the Objetos panel (src/items.ts `use`). */
+  | { type: 'use'; item: ItemId };
 
 export type StoryEffect =
   | { kind: 'dialogue'; dialogue: Dialogue }
@@ -110,6 +114,8 @@ export type StoryEffect =
   | { kind: 'gate' }
   /** The story moves Gerard (and Bernat) to another scene. */
   | { kind: 'travel'; environment: EnvironmentId; cell: Cell }
+  /** The snow globe's white comes over the picture (`on`) or clears. */
+  | { kind: 'snow'; on: boolean }
   /** The second minion rises from the drain in the wrapper room. */
   | { kind: 'drain' }
   /** Minions everywhere, the Queen's gelatine hands catch them both, and all goes black. */
@@ -205,6 +211,11 @@ export interface UniRun {
  */
 export interface MartaRun { beaten: string[]; told: string[] }
 export const freshMarta = (): MartaRun => ({ beaten: [], told: [] });
+/**
+ * What the snow globe keeps (docs/chapter-2.md § The snow globe): each mission's run as it was the
+ * last time the globe was shaken. A day's end, a fall or a reload puts the missions back to this.
+ */
+export interface Kept { nuria?: NuriaRun; uni?: UniRun; marta?: MartaRun }
 export const freshUni = (): UniRun => ({ chase: false, caught: 0, spiral: false, sunk: false, entered: false, beaten: [], told: [] });
 /** One of the friends running after the party (src/chasers.ts); `frozen` once the spiral has opened. */
 export interface UniChaser { id: string; friend: UniFriend; patrol: Cell[]; sight: number; walk: number; run: number; relentless: true; frozen: boolean }
@@ -253,6 +264,7 @@ const STORY_INTERACTIONS = {
   'take-mochila': { place: PLACES.mochila, label: 'Coger la mochila' },
   'take-chicle': { place: PLACES.chicle, label: 'Mirar el bol de chicles' },
   'take-envoltorio': { place: PLACES.envoltorio, label: 'Mirar la mesilla' },
+  'take-bola': { place: PLACES_2.bola, label: 'Mirar la bola de nieve' },
   'meridiana-bed': { place: { environment: 'meridiana', cell: { x: 10, z: 13 } }, label: 'Dormir', hint: 'Dormir', anchor: { x: 10.5, z: 14.5, y: .95 } },
 } as const;
 /** Looking at things inside the palace that answer with Bernat's voice too. */
@@ -310,6 +322,8 @@ export class Story {
   /** The university friends' mission while it runs; not saved. */
   uni: UniRun = freshUni();
   marta: MartaRun = freshMarta();
+  /** What the snow globe keeps of the missions (`Kept`). Kept in the browser by `main.ts`, like the loadout. */
+  private globe: Kept = {};
   /** Where the party is now, when the game has said (`enter`): Marta answers differently inside Las cuerdas. */
   inside?: EnvironmentId;
   /** Whether Nuria has lent the cats before (she says it differently the second time). Not saved. */
@@ -620,7 +634,7 @@ export class Story {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (!this.set('voz')) return [];
     for (const flag of ['anima-marta', 'luz-marta'] as const) this.set(flag);
-    this.marta = freshMarta();
+    this.marta = freshMarta(); delete this.globe.marta;
     const home: StoryEffect = { kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } };
     return [say(LINES_MARTA.won), home, say(LINES_MARTA.home), { kind: 'lights', people: ['marta'] }, ...this.spend('fight'), ...this.nightfall()];
   }
@@ -672,7 +686,7 @@ export class Story {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (!this.set('nuria-uri')) return [];
     for (const flag of ['papagato', 'anima-nuria', 'luz-nuria', 'luz-uri'] as const) this.set(flag);
-    this.nuria = freshRun();
+    this.nuria = freshRun(); delete this.globe.nuria;
     const door: StoryEffect = { kind: 'travel', environment: STREET, cell: { x: PLACES_NURIA.nuria.cell.x - 1, z: PLACES_NURIA.nuria.cell.z + 2 } };
     return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), { kind: 'lights', people: ['nuria', 'uri'] }, { kind: 'anima', classId: 'papagato', kept: true }, ...this.spend('fight'), ...this.nightfall()];
   }
@@ -730,6 +744,8 @@ export class Story {
       ...this.has('papagato') || this.nuria.lent ? ['papagato' as const] : [],
       // Aitor's own, from the morning he is in the party (a placeholder, still to design).
       ...this.adult ? ['tecnopata' as const] : [],
+      // The university friends', once the photo with the melon is taken (docs/animas/dadaista/).
+      ...this.has('anima-universidad') ? ['dadaista' as const] : [],
     ];
   }
   /**
@@ -741,6 +757,40 @@ export class Story {
     if (!this.nuria.lent) return;
     this.lentBefore = true;
     if (!this.extrasOf('gerard').length) this.equip('gerard', 'papagato');
+  }
+  /** What the snow globe keeps; setting it (a reload) puts the missions back to it, anything invalid dropped. */
+  get kept(): Kept { return structuredClone(this.globe); }
+  set kept(value: Kept | Record<string, unknown>) {
+    const run = <T extends object>(fresh: T, saved: unknown): T | undefined => {
+      if (!saved || typeof saved !== 'object') return undefined;
+      const known = Object.entries(saved).filter(([k, v]) => k in fresh && typeof v === typeof (fresh as Record<string, unknown>)[k] && Array.isArray(v) === Array.isArray((fresh as Record<string, unknown>)[k]));
+      return { ...fresh, ...structuredClone(Object.fromEntries(known)) };
+    };
+    const v = value as Kept, board = v?.uni?.board;
+    const uni = run(freshUni(), v?.uni);
+    if (uni && board && typeof board === 'object') uni.board = structuredClone(board);
+    this.globe = Object.fromEntries(Object.entries({ nuria: run(freshRun(), v?.nuria), uni, marta: run(freshMarta(), v?.marta) }).filter(([, r]) => r));
+    this.recall();
+  }
+  /** The missions as the snow globe keeps them, or not begun. */
+  private recall() {
+    const { nuria, uni, marta } = this.kept;
+    this.nuria = nuria ?? freshRun(); this.uni = uni ?? freshUni(); this.marta = marta ?? freshMarta();
+  }
+  /**
+   * The snow globe shaken: the missions are kept as they are and the party is home. The cats do
+   * not come along (Nuria lends them again, and the tower stays as far as they got); a game of tag
+   * on the sand is not kept running. At night it does nothing: the way home is the street's.
+   */
+  private shake(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult || !this.has('got-bola')) return [];
+    if (this.night) return [say(LINES_2.bolaNight)];
+    this.nuria = { ...this.nuria, lent: false, warned: false };
+    this.uni = { ...this.uni, chase: false };
+    this.globe = structuredClone({ nuria: this.nuria, uni: this.uni, marta: this.marta });
+    if (this.inside === PLACES_2.bola.environment) return [say(LINES_2.bolaHome)];
+    return [{ kind: 'snow', on: true }, { kind: 'travel', environment: PLACES_2.bola.environment, cell: { ...PLACES_2.bola.land } }, { kind: 'snow', on: false }];
   }
   /** Someone went into a portal (`portal` effect) and is gone: Anna, into the spiral in the sea. */
   sank(who: 'party' | UniFriend) { if (who === 'anna' && this.uni.spiral) this.uni.sunk = true; }
@@ -831,7 +881,7 @@ export class Story {
   }
   get items(): ItemId[] {
     // Waking up at 35, the dream's things stay in the dream; only the wrapper came back.
-    if (this.adult) return this.has('got-wrapper') ? ['envoltorio'] : [];
+    if (this.adult) return [...this.has('got-wrapper') ? ['envoltorio' as const] : [], ...this.has('got-bola') ? ['bola' as const] : []];
     const items: ItemId[] = [];
     if (this.has('got-shoes')) items.push('zapatillas');
     if (this.has('got-backpack')) items.push('mochila');
@@ -893,10 +943,8 @@ export class Story {
   }
   private endDay(why: 'home' | 'sleep' | 'fall' | 'night-fall'): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
-    // Whatever Nuria's mission had reached is undone: the cats went back to her; the friends are on the sand again.
-    this.nuria = freshRun();
-    this.uni = freshUni();
-    this.marta = freshMarta();
+    // Whatever the missions had reached is undone (the cats went back to Nuria; the friends are on the sand again), back to what the snow globe keeps.
+    this.recall();
     const firstFall = why === 'fall' && this.set('palace-tried');
     // Beaten in the street at night, they sleep the morning away.
     this.days.clock = { day: this.days.clock.day + 1, hour: why === 'night-fall' ? WOKE_LATE : DAY_START };
@@ -912,6 +960,7 @@ export class Story {
     const target = this.days.mornings.find(m => m.day === this.days.clock.day - 1);
     if (!target) return [];
     this.flags.clear(); this.merge(target.story);
+    this.globe = {}; this.recall();
     this.days = { epoch: this.days.epoch + 1, clock: { day: target.day, hour: DAY_START }, mornings: this.days.mornings.filter(m => m.day <= target.day) };
     const home: StoryEffect = { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } };
     return [home, { kind: 'wake' }, { kind: 'dialogue', dialogue: LINES_2.rewound }, { kind: 'rise' }];
@@ -1083,6 +1132,7 @@ export class Story {
       { id: 'mochila' as const, place: PLACES.mochila, taken: this.has('got-backpack') },
       { id: 'chicle' as const, place: PLACES.chicle, taken: this.has('got-chicle') },
       { id: 'envoltorio' as const, place: PLACES.envoltorio, taken: this.has('got-wrapper') || !this.adult },
+      { id: 'bola' as const, place: PLACES_2.bola, taken: this.has('got-bola') || !this.adult },
     ];
     return all.filter(p => !p.taken && p.place.environment === environment)
       .map(p => ({ id: p.id, cell: p.place.cell, spot: 'spot' in p.place ? p.place.spot : undefined }));
@@ -1096,6 +1146,7 @@ export class Story {
       if (id === 'take-mochila' && this.has('got-backpack')) continue;
       if (id === 'take-chicle' && this.has('got-chicle')) continue;
       if (id === 'take-envoltorio' && (this.has('got-wrapper') || !this.adult)) continue;
+      if (id === 'take-bola' && (this.has('got-bola') || !this.adult)) continue;
       if (id === 'meridiana-bed' && !this.adult) continue;
       list.push({ id, label, ...prompt, cell: { ...place.cell } });
     }
@@ -1183,6 +1234,8 @@ export class Story {
         // Aitor is in the party from here on: a second player can take him (the hint shows only when that is new).
         return [home, { kind: 'wake' }, say(LINES.waking), { kind: 'rise' }, { kind: 'hint', id: 'duo' }];
       }
+      case 'use':
+        return event.item === 'bola' ? this.shake() : [];
       case 'home':
         // In from the street at night: they made it, and the day is over.
         return this.night ? this.endDay('home') : [];
@@ -1222,7 +1275,8 @@ export class Story {
         if (this.nuria.lent) return [say(LINES_NURIA.nuriaWaiting)];
         // She lends them the cats: Papagato wakes up, on trial until Uri is back.
         const again = this.nuria.haru && this.has('papagato-2' as StoryFlag) ? false : this.lentBefore;
-        this.nuria = { ...freshRun(), lent: true, haru: true };
+        // What the snow globe kept of the tower stays: only the cats went back to her.
+        this.nuria = { ...this.nuria, lent: true, haru: true, warned: false };
         this.lentBefore = true;
         if (!this.extrasOf('gerard').length) this.equip('gerard', 'papagato');
         return [say(again ? LINES_NURIA.nuriaAgain : LINES_NURIA.nuriaFirst), { kind: 'anima', classId: 'papagato' }];
@@ -1275,6 +1329,9 @@ export class Story {
       case 'take-envoltorio':
         if (!this.adult || !this.set('got-wrapper')) return [];
         return [say(LINES.envoltorio), { kind: 'item', item: 'envoltorio' }];
+      case 'take-bola':
+        if (!this.adult || !this.set('got-bola')) return [];
+        return [say(LINES_2.bola), { kind: 'item', item: 'bola' }, { kind: 'hint', id: 'items' }];
       case 'meridiana-tv':
         if (!this.adult) return [];
         if (this.set('tv-news')) { this.set('clue-r4'); return [{ kind: 'news' }, say(LINES_2.news)]; }

@@ -24,6 +24,8 @@ export const PLACES_2 = {
   cats: { environment: 'meridiana' as EnvironmentId, haru: { x: 19, z: 3 }, yuki: { x: 20, z: 7 } },
   /** The jar of lights on the west end of the TV unit (docs/quests/nuria.md § The lights). */
   jar: { environment: 'meridiana' as EnvironmentId, cell: { x: 15, z: 2 }, anchor: { x: 15.3, z: 1.4, y: 2.1 } },
+  /** The snow globe on the TV unit, between the controller and the east speaker (§ The snow globe), and where shaking it sets the party down: inside the front door. */
+  bola: { environment: 'meridiana' as EnvironmentId, cell: { x: 17, z: 2 }, spot: { x: 17.45, z: .43, y: .75 }, land: { x: 6, z: 2 } },
 } as const;
 
 /** The broadcast (src/news-ui.ts). The ticker hides the chapter's first clue among ordinary news. */
@@ -146,6 +148,13 @@ export const LINES_2 = {
   /** Night falls: after a friend's mission or a milestone in her palace, or when the clock gets there. */
   night: both(aitor('Ya es de noche, Gerard. Vámonos a casa.'), gerard('Y con cuidado. De noche ella no duerme.')),
   /** Through home's portal at night: the day is over. */
+  bola: both(
+    gerard('La bola de nieve. Está nevando dentro, y nadie la ha tocado.'),
+    aitor('Dentro había un pueblo con su iglesia. Eso de ahí es nuestro portal.'),
+    gerard('Me la llevo.'),
+  ),
+  bolaHome: both(gerard('Ya estamos en casa. Nieva igual.'), aitor('Pues que se acuerde de por dónde íbamos.')),
+  bolaNight: both(gerard('La agito y no cae nada. De noche se queda quieta.'), aitor('Pues andando.')),
   homeSafe: both(aitor('Ya está. Dentro.'), gerard('Mañana. Mañana seguimos.')),
   /** Caught on the way home and beaten: they wake late. */
   wokeLate: both(gerard('¡NO!'), aitor('Las once… Nos han dejado KO en la Meridiana y no sé ni cómo llegamos a la cama.')),

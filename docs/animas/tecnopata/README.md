@@ -46,6 +46,13 @@ first morning (it replaces the placeholder *Físico*, `fisico` in old saves)
   ánima's, with two players too. Commands are panels with cut corners numbered `01`…; the open one
   lights up cyan.
 
+## Growth (decided 2026-11-14)
+
+Tecnópata **does not level** and cannot be taken off: it grows by a skill tree opened at home,
+paid with ecos de luz (`../README.md` § The jar, built 2026-11-15). The two rays are his from
+the start; Explosión, Confusión and Rayo encogedor open the lines Bip, Mente and Taller, each
+with a second node (Telemetría, Control remoto, Nanitos), and a Maná +1 stands apart.
+
 ## Stats
 
 _Open_ (round 3 of `/anima`). Today none (`CLASS_STATS.tecnopata = {}`).
@@ -56,19 +63,20 @@ _Open_. Directions given: Bip does the attacking; mind control; technology as bo
 magical damage. What the skills share: much of it runs **on the fight's clock** (Sanación,
 Confusión, Encogido) and Rayo de energía stretches whatever is running out on a foe.
 
-## Skills per level
+## Skills
 
-Built 2026-11-06, all at level 1: Tecnópata does not grow yet (`LEVELLED` in `src/levels.ts`), so
-each of them is there from the start until its levels are designed. All are Bip's: Aitor points,
+Built 2026-11-06; since 2026-11-15 the two rays are the root and the rest are nodes of the tree
+(the first column). All are Bip's: Aitor points,
 Bip fires (`BIP_SKILLS` in `src/battle-scene.ts`).
 
-| Level | Skill | Cost | Base | Description |
+| From | Skill | Cost | Base | Description |
 | --- | --- | --- | --- | --- |
-| 1 | Rayo de energía | 2 | 18 magic | `Daño leve mágico a un enemigo. Sus estados con reloj duran 5 segundos más.` |
-| 1 | Rayo de sanación | 1 | 20 over 15 s | `Cura leve a un aliado herido. La cura llega poco a poco durante 15 segundos.` |
-| 1 | Explosión | 2 | 32 magic, all | `Daño medio mágico de tipo fuego a todos los enemigos. Los ciega durante 1 ronda. Pierdes tu siguiente turno.` |
-| 1 | Confusión | 2 | — | *Abstract*: `Ondas mentales confunden a un enemigo durante 30 segundos: golpea a los suyos.` |
-| 1 | Rayo encogedor | 1 | Defensa −25 % | *Abstract*: `Encoge a un enemigo durante 15 segundos: su Defensa baja un 25 %.` |
+| Root | Rayo de energía | 2 | 18 magic | `Daño leve mágico a un enemigo. Sus estados con reloj duran 5 segundos más.` |
+| Root | Rayo de sanación | 1 | 20 over 15 s | `Cura leve a un aliado herido. La cura llega poco a poco durante 15 segundos.` |
+| Bip | Explosión | 2 | 32 magic, all | `Daño medio mágico de tipo fuego a todos los enemigos. Los ciega durante 1 ronda. Pierdes tu siguiente turno.` |
+| Mente | Confusión | 2 | — | *Abstract*: `Ondas mentales confunden a un enemigo durante 30 segundos: golpea a los suyos.` |
+| Taller | Rayo encogedor | 1 | Defensa −25 % | *Abstract*: `Encoge a un enemigo durante 15 segundos: su Defensa baja un 25 %.` |
+| Mente | Control remoto | 2 | 34 physical, the foe's own | *Abstract*: `Bip toma el mando de un enemigo: golpea con fuerza a uno de los suyos y olvida lo que iba a hacer.` |
 
 - **Rayo de energía**: a cyan ray. Quemado, Cegado, Confusión and Encogido on its target last 5 s
   more (`extend`); a cure never. Its target's clock shows it (+5 s, the ring refilling).
@@ -82,6 +90,12 @@ Bip fires (`BIP_SKILLS` in `src/battle-scene.ts`).
 - **Rayo encogedor**: a white ray; the foe shrinks to about two thirds and loses a quarter of its
   Defensa for 15 s, of whatever it has then (`TimedSpec.cut`; at least 1 point). Only physical blows
   feel it (Bip's ram): magic goes against Espíritu.
+- **Control remoto** (2026-11-15): a white-cyan beam from Bip to the foe and a ring over its
+  head; it turns at once on the strongest of its own standing (on itself if alone) and loses its
+  announced move. Confusión lasts and is a plain blow; this is one hard blow, now.
+- Passives (`../README.md` § The jar): **Telemetría** (Bip's Atacar gives 3 s more to every clock
+  status on its target) and **Nanitos** (Rayo de sanación also takes a harmful clock status off
+  whoever it cures). Each says so on a plate over Aitor when it does something.
 - Confusión and Rayo encogedor are `abstract`: the fixed shape only knows rounds, and these last
   seconds.
 
@@ -119,12 +133,14 @@ Built (2026-11-05):
   `src/status-fx.ts`; their icons, pops and the plate's clock in `src/battle-ui.ts`.
   `just screenshots tecnopata-skills --gpu` plays each one.
 
-Next: the `/anima` rounds still open (motto, role, stats, signature, levels for the skills, in the
-world). The numbers are first guesses: no `just fight-sim` target holds a party with Tecnópata yet.
+- The tree (2026-11-15): `TECNOPATA` in `src/ecos.ts`, `control-remoto` in `SKILLS` and
+  `BIP_SKILLS`, `PASSIVES`; `just screenshots arbol-combate --gpu`.
+
+Next: the `/anima` rounds still open (motto, role, stats, signature, in the world). The numbers are first guesses: no `just fight-sim` target holds a party with Tecnópata yet.
 
 ## Open
 
-- Motto, unlock moment, stats, signature mechanic, at which level each skill comes once Tecnópata grows.
+- Motto, unlock moment, stats, signature mechanic.
 - Whether Bip also shows in the street (today only in fights, like the ánimas' looks).
 - Bip's sounds (its bip, the dash, coming out and going in).
 - Whether Defender puts Bip in front of him as a shield.

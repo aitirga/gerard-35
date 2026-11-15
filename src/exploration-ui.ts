@@ -4,9 +4,9 @@ import type { Cell, Direction } from './movement';
 import { renderWorldMap } from './world-map';
 import { renderExplorationWorldMap } from './exploration-world-map';
 import { ANIMAS, animaBonus } from './animas';
-import { ITEMS, ITEM_KIND_LABELS, itemsOfKind, type ItemKind } from './items';
+import { ITEMS, ITEM_KIND_LABELS, sortItems, type ItemId } from './items';
 import { EXTRA_SLOTS, type MemberId, type PartyMember, type Story } from './story';
-import { ANIMA_OWNERS, CLASS_STATS, SKILLS, canWear, type ClassId } from './battle';
+import { ANIMA_OWNERS, CLASS_STATS, SKILLS, canWear, skillKnown, type ClassId } from './battle';
 import { improvementOf } from './ecos';
 import { nearestButton } from './menu-nav';
 import { LEVELLED, levelProgress, MAX_LEVEL, xpFloor } from './levels';
@@ -48,6 +48,8 @@ export interface StatusCallbacks {
   wear: (member: MemberId, classId: ClassId) => void;
   /** Equips an extra ánima on a member (`on`), or takes it off their slot. */
   equip: (member: MemberId, classId: ClassId, on: boolean) => void;
+  /** Uses something from the Objetos page (src/items.ts `use`): the screen closes and the story answers. */
+  use: (item: ItemId) => void;
   /** Whether a second player plays Aitor right now: then each player gets their own half. */
   split: () => boolean;
   /** Where the partner (Aitor, Bernat) stands, for the map. */
@@ -56,7 +58,7 @@ export interface StatusCallbacks {
   solo: () => boolean;
 }
 /** `world`: the map page shows Barcelona (Shift + M) instead of the local map. */
-interface Sheet { player: PlayerId; el: HTMLElement; page?: PanelId; cursor?: string; viewing?: ClassId; world?: boolean; equipped?: string }
+interface Sheet { player: PlayerId; el: HTMLElement; page?: PanelId; cursor?: string; viewing?: ClassId; item?: ItemId; world?: boolean; equipped?: string }
 type Seen = Map<MemberId, ClassId | undefined>;
 
 export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: StatusCallbacks) {
@@ -127,7 +129,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   const bonusChips = (classId: ClassId) => (Object.entries(CLASS_STATS[classId]) as [keyof Stats, number][])
     .map(([key, value]) => `<li data-sign="${value > 0 ? 'up' : 'down'}">${STAT_LABELS[key]} ${value > 0 ? '+' : '−'}${Math.abs(value)}</li>`).join('');
   /** What an ánima knows so far: skills it has not learned yet are never shown (AGENTS.md: only what the party has). */
-  const skillsOf = (classId: ClassId) => SKILLS.filter(s => s.class === classId && (!('level' in s) || (story.levels[classId] ?? 1) >= s.level));
+  const skillsOf = (classId: ClassId) => SKILLS.filter(s => s.class === classId && skillKnown(s.id, story.levels, story.improved));
   function statRows(member: PartyMember) {
     const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
     return `<dl class="status-bars">${STAT_ORDER.map(key => {
@@ -213,8 +215,9 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   }
   /** What the Ecos de luz put into an ánima so far (only what it has: nothing shows before the first). */
   function boughtFor(id: ClassId) {
-    const items = story.improvements.map(improvementOf).filter(item => item?.anima === id);
-    return items.length ? `<section><span class="battle-kicker">CON ECOS DE LUZ</span><ul class="anima-bonus">${items.map(item => `<li data-sign="up">${escape(item!.kind === 'element' ? `Atacar · ${item!.name}` : item!.name)}</li>`).join('')}</ul></section>` : '';
+    // A skill bought as a node is in the skills list below; here, what else the ecos gave it.
+    const items = story.improvements.map(improvementOf).filter(item => item?.anima === id && item.kind !== 'skill');
+    return items.length ? `<section><span class="battle-kicker">CON ECOS DE LUZ</span><ul class="anima-bonus">${items.map(item => `<li data-sign="up">${escape(item!.kind === 'passive' ? `Pasiva · ${item!.name}` : item!.kind === 'element' ? `Atacar · ${item!.name}` : item!.name)}</li>`).join('')}</ul></section>` : '';
   }
   /**
    * The dual attacks found that the ánima under the cursor (`id`) brings a half of, under the lists:
@@ -237,23 +240,36 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const who = owner ? `Solo ${owner === 'gerard' ? 'Gerard' : 'Aitor'}` : 'Cualquiera del equipo';
     return `<article class="anima-detail" data-anima="${id}" style="--scarf:${spec.colour};--fill:${fill.toFixed(3)}">
         <header><span class="battle-kicker">ÁNIMA</span><h2>${spec.name}</h2><p class="anima-motto">${spec.motto}</p></header>
-        <section class="anima-level"><div><span class="battle-kicker">NIVEL</span><strong>${level}</strong>${top ? '<em>MÁX</em>' : ''}</div><i class="anima-level-bar" aria-hidden="true"><i></i></i><small>${LEVELLED.includes(id) ? `${xp} EXP · ` : ''}el nivel es del ánima: crece la lleve quien la lleve</small></section>
+        ${LEVELLED.includes(id) ? `<section class="anima-level"><div><span class="battle-kicker">NIVEL</span><strong>${level}</strong>${top ? '<em>MÁX</em>' : ''}</div><i class="anima-level-bar" aria-hidden="true"><i></i></i><small>${xp} EXP · el nivel es del ánima: crece la lleve quien la lleve</small></section>` : ''}
         <dl class="anima-facts"><div><dt>La pueden llevar</dt><dd>${who}</dd></div><div><dt>Ahora</dt><dd>${wearer ? `La lleva ${escape(wearer.name)}` : 'Nadie la lleva'}</dd></div></dl>
         <section><span class="battle-kicker">CAMBIA</span><ul class="anima-bonus">${bonusChips(id) || '<li data-sign="none">Nada todavía</li>'}</ul></section>
         ${boughtFor(id)}
         <section><span class="battle-kicker">HABILIDADES</span><ul class="anima-skills">${skillsOf(id).map(s => `<li><strong>${s.name}</strong><small>${costPips(s.cost)}</small><span>${s.description}</span></li>`).join('') || '<li class="empty"><span>Ninguna todavía.</span></li>'}</ul></section>
       </article>`;
   }
-  function itemsPage() {
-    const equipped = new Map(story.party.flatMap(m => m.equipment.map(id => [id, m.name] as const)));
-    const column = (kind: ItemKind) => {
-      const items = itemsOfKind(story.items, kind);
-      return `<section class="item-column" data-kind="${kind}"><span class="battle-kicker">${ITEM_KIND_LABELS[kind].toUpperCase()}</span><p class="journal-muted">${kind === 'common' ? 'Se gastan al usarlos.' : 'Para la historia. No se pierden.'}</p><ul>${items.length
-        ? items.map(item => `<li><strong>${escape(item.name)}${equipped.has(item.id) ? `<em>${SLOT_LABELS[item.equip ?? 'back']} · ${escape(equipped.get(item.id)!)}</em>` : ''}</strong><span>${escape(item.description)}</span></li>`).join('')
-        : '<li class="empty">Nada por aquí todavía.</li>'}</ul></section>`;
-    };
-    const shared = story.partner === 'aitor' ? '<p class="items-shared"><b>Compartido con Aitor.</b> Lo que lleva uno lo lleva el otro.</p>' : '';
-    return `<div class="items-page">${shared}<div class="item-columns">${column('common')}${column('key')}</div></div>`;
+  /** The object the cursor is on: what it is, who has it on, and what it does when used from here. */
+  function itemDetail(id: ItemId) {
+    const item = ITEMS[id], wearer = story.party.find(m => m.equipment.includes(id));
+    return `<article class="item-detail" data-item="${id}" style="--tint:${item.tint}">
+        <svg class="item-detail-icon" viewBox="0 0 24 24" aria-hidden="true">${item.icon}</svg>
+        <header><span class="battle-kicker">${ITEM_KIND_LABELS[item.kind].toUpperCase()}</span><h2>${escape(item.name)}</h2></header>
+        <p class="item-detail-text">${escape(item.description)}</p>
+        ${wearer ? `<dl class="anima-facts"><div><dt>${SLOT_LABELS[item.equip ?? 'back']}</dt><dd>Lo lleva ${escape(wearer.name)}</dd></div></dl>` : ''}
+        ${item.use ? `<p class="item-detail-use" data-glyph-template="{confirm} ${item.use}"></p>` : ''}
+      </article>`;
+  }
+  /** Objetos: what the party carries, one list (nearly all key objects), and the one under the cursor beside it. */
+  function itemsPage(sheet: Sheet) {
+    const items = sortItems(story.items);
+    if (!items.length) return '<div class="items-page" data-empty><p class="items-none">Nada todavía.</p></div>';
+    const viewing = items.find(i => i.id === sheet.item) ?? items[0];
+    const rows = items.map(item => `<li><button type="button" class="item-row" data-key="item:${item.id}" data-item="${item.id}" ${item.use ? 'data-use' : 'aria-disabled="true"'} style="--chip:${item.tint}">
+        <svg class="item-row-icon" viewBox="0 0 24 24" aria-hidden="true">${item.icon}</svg>
+        <span class="item-row-name"><strong>${escape(item.name)}</strong><small>${ITEM_KIND_LABELS[item.kind]}</small></span>
+        ${item.use ? `<span class="item-row-hint" data-glyph-template="{confirm} ${item.use}"></span>` : ''}
+      </button></li>`).join('');
+    const shared = story.partner === 'aitor' ? '<small>Lo lleváis entre los dos</small>' : '';
+    return `<div class="items-page"><section class="item-list"><h3 class="anima-group-head"><span>OBJETOS · ${items.length}</span>${shared}</h3><ul>${rows}</ul></section>${itemDetail(viewing.id)}</div>`;
   }
   /** M: the map on its own, centred in the sheet; Shift + M widens it to the Mapa del mundo. */
   function mapPage(sheet: Sheet) {
@@ -312,7 +328,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
       if (page === 'map') root.dataset.mapLevel = sheet.world ? 'world' : 'local'; else delete root.dataset.mapLevel;
     }
     const dev = sheet.player === 1 && callbacks.solo() && story.partner === 'aitor' ? '<span class="sheet-dev">DEPURACIÓN · UN JUGADOR LLEVA A LOS DOS</span>' : '';
-    const content = page === 'character' ? statusPage(sheet) : page === 'animas' ? animasPage(sheet) : page === 'items' ? itemsPage() : page === 'diary' ? diaryPage(sheet) : helpPage();
+    const content = page === 'character' ? statusPage(sheet) : page === 'animas' ? animasPage(sheet) : page === 'items' ? itemsPage(sheet) : page === 'diary' ? diaryPage(sheet) : helpPage();
     sheet.el.innerHTML = page === 'map' ? mapPage(sheet) : `<header class="sheet-head">
         <div><span class="battle-kicker">MENÚ DE USUARIO · ${escape(own.name.toUpperCase())}${dev}</span><div class="journal-identity"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 8 10-8 10L4 12 12 2Z"/><path d="m8 12 4-5 4 5-4 5-4-5Z"/></svg><h1 id="status-title-${sheet.player}">${page === 'items' && story.partner !== 'aitor' ? 'Lo que llevas.' : TITLES[page]}</h1></div><p class="journal-context">${escape(ENVIRONMENTS[location].name)}</p></div>
         <div class="sheet-clock" role="img" aria-label="Son las ${time}"><strong>${time}</strong><span>${day}</span></div>
@@ -352,6 +368,12 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
       sheet.viewing = shown;
       sheet.el.querySelector('.anima-detail')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: animaDetail(shown) }).firstElementChild!);
       sheet.el.querySelector('.anima-duos-card')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: duosOf(shown) }).firstElementChild!);
+    }
+    // On the Objetos page, the one under the cursor shows beside the list.
+    const item = button.dataset.item as ItemId | undefined;
+    if (item && sheet.item !== item) {
+      sheet.item = item;
+      sheet.el.querySelector('.item-detail')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: itemDetail(item) }).firstElementChild!);
     }
     if (sheet.player === 1 || !sheetOf(1).page) button.focus({ preventScroll: true });
   }
@@ -408,7 +430,8 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const sheet = sheets.find(s => button && s.el.contains(button));
     if (!button || !sheet) return;
     sheet.cursor = button.dataset.key;
-    const { wear, pick, classId, panel, mapLevel } = button.dataset;
+    const { wear, pick, classId, panel, mapLevel, item } = button.dataset;
+    if (item) { if (ITEMS[item as ItemId].use) callbacks.use(item as ItemId); return; }
     if ((wear || pick) && classId) sheet.viewing = classId as ClassId;
     if (pick && classId) {
       // An extra: equipped if it is not, taken off if it is; their own and someone else's say no with a shake.

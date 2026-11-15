@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, attackElement, createBattle, cycleElement, elementsFor, enemyAct, improve, inflict, manaMax, nextRound, REACTION_RULES, runClock, TIMED, wearAnima, addStatus, stacks, MANA_POINTS } from '../src/battle.ts';
+import { PASSIVES, SKILLS, act, attackElement, createBattle, cycleElement, elementsFor, enemyAct, improve, inflict, manaMax, nextRound, REACTION_RULES, runClock, TIMED, wearAnima, addStatus, stacks, MANA_POINTS } from '../src/battle.ts';
 import { CAST_CONTACT, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT } from '../src/battle-motion.ts';
 import { spellLaunch, startSounds } from '../src/battle-sounds.ts';
 import { impactSeconds } from '../src/home-lights.ts';
-import { IMPROVEMENTS, costOf, improvedBy, withinEcos, without } from '../src/ecos.ts';
+import { IMPROVEMENTS, LINES, TREE_ANIMAS, costOf, improvedBy, withinEcos, without } from '../src/ecos.ts';
 
 const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico', kit: ['matemagico', 'papagato'] }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
 function fight(elements = ['agua', 'fuego', 'electrico']) {
@@ -18,20 +18,35 @@ const dog = (s, i = 0) => s.foes[i];
 /** Gerard's Atacar on the first dog with `element`. */
 function strike(s, element, target = dog(s).id) { gerard(s).element = element; s.phase = 'player'; s.active = s.allies.indexOf(gerard(s)); return act(s, 'attack', target); }
 
-test('the jar\'s list: elements only on Matemágico, every ánima its maná and two places asleep', () => {
-  assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'element').map(i => `${i.anima}:${i.element}`), ['matemagico:agua', 'matemagico:fuego', 'matemagico:electrico']);
+test('the jar\'s list: a tree for each own ánima, one more maná for a shared one, and the definitiva asleep on all', () => {
+  assert.deepEqual(TREE_ANIMAS, ['matemagico', 'tecnopata']);
+  assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'element').map(i => `${i.anima}:${i.element}`), ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico']);
   for (const anima of ['matemagico', 'papagato', 'tecnopata']) {
-    assert.equal(IMPROVEMENTS.filter(i => i.anima === anima && i.kind === 'mana').length, 2, anima);
-    assert.ok(IMPROVEMENTS.some(i => i.anima === anima && i.kind === 'passive' && i.veiled), anima);
+    assert.equal(IMPROVEMENTS.filter(i => i.anima === anima && i.kind === 'mana').length, 1, anima);
     assert.ok(IMPROVEMENTS.some(i => i.anima === anima && i.kind === 'ulti' && i.veiled), anima);
   }
+  assert.deepEqual(IMPROVEMENTS.filter(i => i.anima === 'papagato').map(i => i.id), ['papagato:mana-1', 'papagato:definitiva'], 'a shared ánima: its skills come by level');
+  // Every skill marked `node` is a node of its ánima's tree, and only those; each line is a chain.
+  assert.deepEqual(IMPROVEMENTS.flatMap(i => i.skill ? [i.skill] : []).sort(), SKILLS.filter(s => s.node).map(s => s.id).sort());
+  assert.deepEqual(IMPROVEMENTS.flatMap(i => i.passive ? [i.passive] : []).sort(), Object.keys(PASSIVES).sort());
+  for (const item of IMPROVEMENTS) {
+    if (item.skill) assert.equal(SKILLS.find(s => s.id === item.skill).class, item.anima, item.id);
+    if (item.passive) assert.equal(PASSIVES[item.passive].anima, item.anima, item.id);
+    if (item.after) { const before = IMPROVEMENTS.find(i => i.id === item.after); assert.ok(before && before.anima === item.anima && before.line === item.line, `${item.id} needs one of its own line`); }
+    if (item.line) assert.ok(LINES[item.line], item.id);
+  }
+  // Nobody can have everything: both trees cost far more than a few lights.
+  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 17);
+  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 11);
 });
 test('what stands: in order, within the ecos, and what needs something goes with it', () => {
-  assert.deepEqual(withinEcos(['papagato:mana-2', 'papagato:mana-1', 'papagato:mana-2'], 5), ['papagato:mana-1', 'papagato:mana-2']);
+  assert.deepEqual(withinEcos(['matemagico:vasos', 'matemagico:agua', 'matemagico:vasos'], 5), ['matemagico:agua', 'matemagico:vasos']);
   assert.deepEqual(withinEcos(['papagato:mana-1', 'matemagico:agua'], 2), ['papagato:mana-1']);
-  assert.deepEqual(without(['papagato:mana-1', 'papagato:mana-2', 'matemagico:agua'], 'papagato:mana-1'), ['matemagico:agua']);
+  assert.deepEqual(withinEcos(['papagato:mana-2', 'papagato:pasiva', 'papagato:definitiva'], 9), [], 'what the jar no longer has, or keeps asleep, is not there');
+  assert.deepEqual(without(['matemagico:agua', 'matemagico:vasos', 'matemagico:capilaridad', 'matemagico:fuego'], 'matemagico:agua'), ['matemagico:fuego'], 'a node goes with everything after it on its line');
   assert.equal(costOf(['papagato:mana-1', 'matemagico:agua']), 3);
-  assert.deepEqual(improvedBy(['papagato:mana-1', 'papagato:mana-2', 'matemagico:agua']), { mana: { papagato: 2 }, elements: { matemagico: ['agua'] } });
+  assert.deepEqual(improvedBy(['papagato:mana-1', 'matemagico:agua', 'matemagico:vasos', 'matemagico:capilaridad', 'tecnopata:explosion']),
+    { mana: { papagato: 1 }, elements: { matemagico: ['agua'] }, skills: ['vasos', 'explosion'], passives: ['capilaridad'] });
 });
 test('more maná: the ánima holds more, starts full, rests up to it, and goes with the ánima', () => {
   const s = createBattle(party, 1, false, undefined, ['matemagico', 'papagato']);

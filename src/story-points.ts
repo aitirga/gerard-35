@@ -47,7 +47,7 @@ export const STORY_ARCS = [
     { flags: ['wrapper-room'], label: 'Sala de los Envoltorios' },
   ] },
   { id: 'waking', chapter: 2, title: 'El despertar', detail: 'Meridiana', after: 'wrapper-room', steps: [
-    { flags: ['caught'], label: 'Atrapados: despierta a los 35' }, { flags: ['got-wrapper'], label: 'El envoltorio' },
+    { flags: ['caught'], label: 'Atrapados: despierta a los 35' }, { flags: ['got-wrapper'], label: 'El envoltorio' }, { flags: ['got-bola'], label: 'La bola de nieve' },
     // The ticker carries the R4 clue: seeing the news is knowing it.
     { flags: ['tv-news', 'clue-r4'], label: 'Las noticias y la pista del R4' },
   ] },

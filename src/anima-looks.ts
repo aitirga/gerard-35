@@ -8,11 +8,11 @@ import type { ClassId } from './battle';
  * one Yuki's white), a tail that sways and a collar with a bell. Matemágico: ones and zeros of gold
  * light circling the wearer, turning to whoever looks. Tecnópata: a thin HUD visor (a cyan film on
  * a graphite frame), an earpiece with a short antenna whose tip blinks, and two thin cyan circuit
- * lines down the shirt. Built from primitives on the rig and the body's fit (`bodyFit`), so it fits
+ * lines down the shirt. Dadaísta: a red bow tie at the throat and a monocle on a cord. Built from primitives on the rig and the body's fit (`bodyFit`), so it fits
  * every character and follows every pose; with reduced motion it holds still.
  */
 const NAME = 'Atuendo de ánima';
-const HARU = '#e9894a', HARU_DARK = '#3a2c28', YUKI = '#f4efe6', INNER = '#f0a7a2', BELL = '#f3cf78', GOLD = '#f3cf78', CYAN = '#4fe0ff', GRAPHITE = '#141b21';
+const HARU = '#e9894a', HARU_DARK = '#3a2c28', YUKI = '#f4efe6', INNER = '#f0a7a2', BELL = '#f3cf78', GOLD = '#f3cf78', CYAN = '#4fe0ff', GRAPHITE = '#141b21', BOW = '#d9422b', BRASS = '#c9a24a', IVORY = '#efe6cf';
 /** The binary ring: its height on the body, radius, tilt and the digits round it. */
 const RING = { y: .78, radius: .58, tilt: 12, digits: '10110' } as const;
 const reduced = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : undefined;
@@ -64,7 +64,9 @@ interface Tail { kind: 'tail'; segments: pc.Entity[]; bend: number[] }
 /** `grown`: how far each digit has grown back (1 whole, 0 gone); `coming`: which of them are on their way back. */
 interface Ring { kind: 'ring'; root: pc.Entity; digits: pc.Entity[]; grown: number[]; coming: boolean[] }
 interface Blink { kind: 'blink'; tip: pc.Entity }
-interface Look { root: pc.Entity; time: number; motion: Tail | Ring | Blink }
+/** Nothing of it moves on its own. */
+interface Still { kind: 'still' }
+interface Look { root: pc.Entity; time: number; motion: Tail | Ring | Blink | Still }
 const looks = new Set<Look>();
 let ticking = false;
 
@@ -164,6 +166,23 @@ function tecnopata(body: pc.Entity, head: pc.Entity | null): Look {
   return { root, time: Math.random() * 10, motion: { kind: 'blink', tip } };
 }
 
+/**
+ * Dadaísta: a red bow tie at the throat (two wings and a knot), and a brass monocle over the right
+ * eye, its lens a faint ivory glint, on a thin cord down to the collar. A dada soirée, or a croupier.
+ */
+function dadaista(body: pc.Entity, head: pc.Entity | null): Look {
+  const root = pivot(body, [0, 0, 0]);
+  const [, neck, deep] = bodyFit(body, 'collar'), y = neck - .035, z = deep + .03;
+  for (const side of [-1, 1]) part(root, 'cone', solid(BOW, .45), [side * .062, y, z], [.085, .1, .04], [0, 0, side * 90]);
+  part(root, 'box', solid('#a52e1d', .45), [0, y, z + .012], [.034, .05, .03]);
+  if (head) {
+    part(head, 'torus', solid(BRASS, .85), [.079, .24, .242], [.11, .05, .11], [90, 0, 0]);
+    part(head, 'cylinder', glow(IVORY, .28, .8), [.079, .24, .244], [.074, .003, .074], [90, 0, 0], false);
+    part(head, 'box', solid(BRASS, .7), [.142, .15, .2], [.006, .2, .006], [14, 0, -22]);
+  }
+  return { root, time: 0, motion: { kind: 'still' } };
+}
+
 /** Puts on what the ánima `id` adds (or takes it all off). Safe to call again and again. */
 export function dressAnima(model: pc.Entity, id: ClassId | undefined) {
   const body = model.findByName(RIG.body) as pc.Entity | null;
@@ -172,7 +191,7 @@ export function dressAnima(model: pc.Entity, id: ClassId | undefined) {
   for (const look of looks) if (!look.root.parent || look.root.parent === body) looks.delete(look);
   body.find(node => node.name === NAME && node.parent?.name !== NAME).forEach(node => (node as pc.Entity).destroy());
   const head = (body.findByName(RIG.mount) ?? body.findByName(RIG.head)) as pc.Entity | null;
-  const look = id === 'papagato' ? papagato(body, head) : id === 'matemagico' ? matemagico(body) : id === 'tecnopata' ? tecnopata(body, head) : undefined;
+  const look = id === 'papagato' ? papagato(body, head) : id === 'matemagico' ? matemagico(body) : id === 'tecnopata' ? tecnopata(body, head) : id === 'dadaista' ? dadaista(body, head) : undefined;
   if (!look) return;
   looks.add(look);
   if (!ticking) { ticking = true; pc.AppBase.getApplication()?.on('update', tick); }
@@ -191,6 +210,8 @@ function tick(dt: number) {
     if (motion.kind === 'tail') {
       // A lazy sway from the base, each link following a little later: the tip flicks.
       motion.segments.forEach((segment, i) => segment.setLocalEulerAngles(motion.bend[i], 0, Math.sin(t * 1.9 - i * .7) * (i ? 9 : 14)));
+    } else if (motion.kind === 'still') {
+      continue;
     } else if (motion.kind === 'blink') {
       // The antenna's tip blinks: on most of the time, off for a beat.
       motion.tip.enabled = still || (t * 1.3) % 1 < .8;

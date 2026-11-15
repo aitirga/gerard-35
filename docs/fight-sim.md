@@ -137,6 +137,93 @@ ranges; a target with any fight left unfinished at the round limit always fails.
 with both parties: the mission party for the onions and the young, the dual party (`DUO`) for the
 duals, at the levels the tower reaches (Papagato 2, Matemágico 1 or 2; 3 for whoever grinds).
 
+**Every fight keeps a pair** (`docs/combat.md` § La respuesta de cada combate): one target that plays
+the fight's answer and one that does not. Name the answer in both `why`s.
+
+| Target | How to play it | Holds |
+| --- | --- | --- |
+| With the answer | `smart`, with the party the fight is met with | `win` from .9 up (a final boss may sit lower on purpose), and `roundsWon` or `hpLeftWon` clearly better than without |
+| Without the answer | `smart` with the answer banned (`ban`) when it is a skill, a dual or a kind of blow; `casual` when it is an order or a moment, which a ban cannot take away | `win` up to .2 |
+
+`attack` alone is not the pair's second half: a fight that only asks for "something other than Atacar"
+asks nothing. See § The pair, as retuned on 2026-11-15 for where each fight stands.
+
+Matemágico and Tecnópata no longer level (2026-11-15: their skills are nodes bought at the jar,
+`docs/animas/README.md` § The jar). The sim keeps the old shorthand so the targets still mean
+what they meant: `matemagico: 2` gives the Cálculo nodes its level 2 had (Ángulo exacto,
+Análisis Parálisis), `3` adds Cardioide, and Tecnópata always has Explosión, Confusión and Rayo
+encogedor (`nodesFor` in `src/battle-sim.ts`). No target plays the new nodes yet (Factor común,
+Vasos comunicantes, Descarga, Control remoto, the passives): their numbers are first guesses.
+
+## The pair, as retuned on 2026-11-15
+
+| Fight | With the answer (`smart`) | Without (`casual`) | What changed |
+| --- | --- | --- | --- |
+| El Plato Misterioso | 100 % | 2 % | Its blow 38 and ¡Puaj! 38 |
+| Vertitrón | 100 % (99 % with no duals) | 12 % | 415 PV; weak to Agua, resists Eléctrico |
+| Parcela negra | 95 % | 11 % (5 % with two magic ánimas) | Magos 130 PV; weak to Agua, resist Fuego |
+| El Campeón | 100 % | 7 % | Puñetazo 56 |
+| La Lealtad | 93 % | 20 % | See Las cuerdas below |
+| Lo Directo | 99 % | 14 % | See Las cuerdas below |
+| La Voz | 98 % | 17 % | See Las cuerdas below |
+
+Left easy on purpose, as the fights that teach: the cebollitas, the platitos, the campsite's entrance,
+dice, agentes and tent. Not done: La Cebolla at level 1 (its question is the level, not the play),
+the third ring's packs (57 % `casual`) and Lo Cristalino.
+
+## Story points
+
+`just fight-sim story` plays each fight with the party that reaches it in the story, instead of a
+party and levels chosen by hand. The story is Nuria and Uri's mission as the introduction and then the
+rest in whatever order the player likes (`MISSIONS` in `src/battle-sim.ts`), so an open mission is
+measured from being the first one done to being the last.
+
+```sh
+just fight-sim story                                   # every open mission, first and last, builds nada and mixto
+just fight-sim story --at marta:first,marta:last --build elementos --fight cuerdas-directo,voz
+just fight-sim story --at marta:universidad --policy smart
+```
+
+| A point has | From |
+| --- | --- |
+| The friends' ánimas of what is behind it (their bonus) | `MISSIONS[id].friend` |
+| The ecos of what is behind it | `MISSIONS[id].lights` (Nuria and Uri 2, the uni friends 5, Marta 1) |
+| What those ecos bought | `--build`, a shopping list in order (`BUILDS`): `nada`, `mixto`, `elementos`, `tronco`; only what the ecos pay for is bought (`withinEcos`), and nothing is given for free on top (`Setup.exact`) |
+| Papagato's level | 2 after the introduction, one more per open mission behind (up to 3) |
+| Ánimas to switch between | Matemágico, Papagato and Tecnópata (the introduction: the first two) |
+
+The party itself is `--party` (the dual party by default). The `TARGETS` still play their hand-picked
+setups; the final balance is to be done against these points once every mission is in. A new mission
+is one more entry in `MISSIONS`; a new way of spending, one more list in `BUILDS`.
+
+## The balance report
+
+`just fight-sim report` puts everything on one page, `output/reports/balance/index.html` (untracked,
+about a minute): the story-point matrix with each fight's pair (`smart` and `casual`, and whether it
+holds: `PAIR` in `src/battle-sim.ts`), a detail per cell (rounds, PV left, damage by action, what the
+foes did), the `TARGETS`, what each foe is made of, and every number `--tune` takes with its path.
+`scripts/fight-sim-report.mjs` builds it (`balanceData`, `balancePage`); its data is also saved
+beside it as `data.json`.
+
+```sh
+just fight-sim report --baseline                       # measure, and keep it as the reference
+just fight-sim report --tune marta.rules.clavado=3     # try a number: the page shows what moved (▲▼, in points)
+just fight-sim report --build nada,mixto,elementos,tronco --runs 300
+```
+
+The loop for the fine balance, once every mission is in: add the mission to `MISSIONS` (its fights,
+the ones that teach, its lights and its friend's ánima), keep a reference, try numbers with `--tune`
+until the pairs hold at the first and the last point, write the numbers into the code, move the
+`TARGETS` to those points, and keep a new reference. Fights that teach are shown but not asked the pair.
+
+## Jev on both sides
+
+A curiosity, not a measure: `node --experimental-strip-types scripts/fight-sim-duel.mjs <fight> [party] [seed]`
+plays one real fight with Jev choosing for both sides, the party's action among the legal ones and
+whom each foe goes for. It sees what a player sees (PV, maná, announced moves, skill descriptions,
+what just happened) and nobody's real name. About two calls a round and one per foe; it needs
+`TYPESAFE_API_KEY`.
+
 ## From code
 
 `src/battle-sim.ts` is pure: `simulate`, `sweep`, `conclude`, `checkTargets`, `playFight`, `withTuning`.
@@ -235,25 +322,29 @@ each foe's `PROFILES`. The qualities are played with Papagato 2 and Matemágico 
 
 | Fight | Party, bot | Wins | Rounds won | PV left |
 | --- | --- | --- | --- | --- |
-| La Lealtad | duo, smart | 97 % | 7.1 | 62 % |
-| La Lealtad | duo, casual | 85 % | 5.3 | 46 % |
+| La Lealtad | duo, smart | 93 % | 3.3 | 54 % |
+| La Lealtad | duo, casual | 20 % | 5.2 | 19 % |
 | La Lealtad | duo, attack only | 0 % | – | – |
 | Lo Cristalino | duo, attack only | 100 % | 5.0 | 35 % |
 | Lo Cristalino | duo, smart | 100 % | 2.3 | 82 % |
 | Lo Cristalino | tech, random | 41 % | 10.8 | 35 % |
-| Lo Directo | duo, smart | 100 % | 5.0 | 51 % |
-| Lo Directo | duo, casual | 90 % | 4.2 | 38 % |
+| Lo Directo | duo, smart | 99 % | 5.2 | 45 % |
+| Lo Directo | duo, casual | 14 % | 6.1 | 11 % |
 | Lo Directo | duo, attack only | 0 % | – | – |
-| Lo Directo | tech, smart | 89 % | 7.0 | 31 % |
-| La Voz | duo, smart | 100 % | 10.9 | 47 % |
-| La Voz | duo, smart, no duals | 97 % | 13.3 | 27 % |
-| La Voz | duo, casual | 36 % | 13.3 | 14 % |
-| La Voz | tech, smart | 50 % | 17.1 | 30 % |
+| Lo Directo | tech, smart | 16 % | 9.1 | 14 % |
+| Lo Directo | tech, smart, Eléctrico on Atacar | 77 % | 8.9 | 13 % |
+| La Voz | duo, smart | 98 % | 10.8 | 41 % |
+| La Voz | duo, smart, no duals | 80 % | 13.0 | 23 % |
+| La Voz | duo, casual | 17 % | 12.4 | 12 % |
+| La Voz | tech, smart | 42 % | 15.3 | 26 % |
 | La Voz | duo, attack only | 0 % | – | – |
 
-Measured 2026-11-15, after the foes got their moves (Juramento on whoever struck her and Lazo; Estallido
-and Prisma; Estocada and Clavado; Coro, «Toma aire» and Calderón). Measure again whenever what the
-party's ánimas can do changes.
+Measured 2026-11-15, after every fight was held to its pair (`docs/combat.md` § La respuesta de cada
+combate). What changed for it: La Lealtad's Juramento is sworn when the round starts and does not
+move inside it (36, so whoever she names holds on), her Eco is frailer (50 PV) and grows faster
+(12 a turn, up to 48); Lo Directo has 420 PV and takes ×3.5 while Clavado, and is weak to Eléctrico;
+La Voz's Golpe directo is 54. Lo Cristalino is the one left to do: two magic ánimas playing at
+random still win 41 %. Measure again whenever what the party's ánimas can do changes.
 
 La Voz runs on the fight's clock, so the bots play it in time: `smart` waits for a note before
 choosing and has the second fighter's blow ready to land inside the same note (the Acorde) four times

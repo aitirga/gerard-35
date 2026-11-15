@@ -190,6 +190,30 @@ and `just screenshots camino-a-casa`.
 For later: the palace's other stages (each zone's own monsters walking the street once the zone is
 built and won); cars flattening a guard that steps onto a lane (proposed, not built).
 
+## The snow globe
+
+Asked for by Aitor 2026-11-14; built in `src/story.ts` (`shake`, `Kept`, `recall`), `src/items.ts`
+(`bola`), `src/main.ts` (kept in the browser, `gerard35.bola.v1`).
+
+A snow globe stands on the TV unit in the flat from the morning Gerard wakes at 35 (`PLACES_2.bola`,
+flag `got-bola`): it is snowing inside with nobody having touched it, and what is under the snow is
+their own portal. Taking it is a key object; the note shows the Objetos key.
+
+**Shaking it** (Objetos, *Agitar*) does two things:
+
+- **It keeps the missions.** Each friend's mission as it is at that moment (what was beaten, how far
+  up the tower, what was said) is what the globe keeps. From then on a day's end, a fall or a reload
+  puts the missions back to the last shake instead of to nothing, so a mission no longer has to fit
+  in one day. A mission won drops out of it; rewinding a day empties it.
+- **It brings the party home**, inside the front door, through a white of falling snow. No hours spent.
+
+What does not come along: Nuria's cats (she lends them again at her door, and the tower stays as
+far as they got) and a game of tag in progress on the sand. Shaken at home it only keeps. **At
+night it does nothing** (*"De noche se queda quieta"*): the way home at night is the street's
+(§ Night and the way home).
+
+Try it: `just dev-chapter got-bola`, `just screenshots bola --gpu`.
+
 ## Getting around
 
 - **On foot** inside each place (a playable scene: a street, a square, a friend's house).

@@ -11,8 +11,8 @@ export type BattlePhase = 'player' | 'enemy' | 'beat' | 'won' | 'lost' | 'escape
  * person: once unlocked, anyone in the party but Bernat can wear one, and it adds its stats and
  * its skills to whoever wears it. In a fight the active fighter swaps them with L and R.
  */
-export type ClassId = 'matemagico' | 'papagato' | 'tecnopata';
-export const ANIMA_NAMES: Record<ClassId, string> = { matemagico: 'Matemágico', papagato: 'Papagato', tecnopata: 'Tecnópata' };
+export type ClassId = 'matemagico' | 'papagato' | 'tecnopata' | 'dadaista';
+export const ANIMA_NAMES: Record<ClassId, string> = { matemagico: 'Matemágico', papagato: 'Papagato', tecnopata: 'Tecnópata', dadaista: 'Dadaísta' };
 export const CLASS_STATS: Record<ClassId, StatBonus> = {
   // Counting everything twice sharpens the mind a little.
   matemagico: { magia: 1, espiritu: 1 },
@@ -20,6 +20,8 @@ export const CLASS_STATS: Record<ClassId, StatBonus> = {
   papagato: { velocidad: 2, fuerza: 1, espiritu: -1 },
   // Aitor's own ánima: a placeholder, still to design (no stats, no skills).
   tecnopata: {},
+  // The university friends' ánima: it throws dice, and hard; it thinks less (docs/animas/dadaista/).
+  dadaista: { fuerza: 3, defensa: 2, magia: -1 },
 };
 /**
  * Ánimas bound to one person: Matemágico is Gerard's own mind, Tecnópata is Aitor's. The rest (Papagato)
@@ -40,13 +42,20 @@ export const SKILLS = [
   // again while it burns, the fire goes up a level); fire also melts the palace minion's gum.
   // Foc Binari: a zero and a one, two streams that land one after the other (`split`).
   { id: 'foc-binari', name: 'Foc Binari', cost: 1, side: 'foes', power: 16, kind: 'magic', burn: 'quemado', melts: true, split: 2, description: 'Daño leve mágico de tipo fuego a un enemigo. Golpea dos veces. Lo quema durante unos segundos. Si ya arde, el fuego sube de nivel. Derrite el pringue.', class: 'matemagico' },
-  // Learned as Matemágico grows (src/levels.ts; docs/animas/matemagico/): Gerard works out how
-  // everyone should hit (a boost), and later draws a cardioid of light under a friend (a cure).
-  { id: 'analisis', name: 'Análisis Parálisis', cost: 2, side: 'party', power: 3, kind: 'boost', stats: ['fuerza', 'magia'], level: 2, description: 'Sube Fuerza y Magia de todo el equipo durante 3 rondas.', class: 'matemagico' },
+  // The rest of Matemágico comes from its tree at the jar (`node`, src/ecos.ts; docs/animas/README.md
+  // § The jar), never from levels. The trunk, Cálculo: Gerard works out how everyone should hit (a
+  // boost), the angle a foe is open at, and draws a cardioid of light under a friend (a cure).
+  { id: 'analisis', name: 'Análisis Parálisis', cost: 2, side: 'party', power: 3, kind: 'boost', stats: ['fuerza', 'magia'], node: true, description: 'Sube Fuerza y Magia de todo el equipo durante 3 rondas.', class: 'matemagico' },
   // Ángulo exacto: Gerard works out the angle a foe is open at (a `debuff`: a mark on that foe,
   // `marks`, for BOOST_ROUNDS). Damage is flat, so every point off adds a point to every hit.
-  { id: 'angulo', name: 'Ángulo exacto', cost: 1, side: 'foes', power: 3, kind: 'debuff', stats: ['defensa', 'espiritu'], level: 2, description: 'Baja Defensa y Espíritu de un enemigo durante 3 rondas.', class: 'matemagico' },
-  { id: 'cardioide', name: 'Cardioide', cost: 2, side: 'allies', power: 30, kind: 'heal', level: 3, description: 'Cura media a un aliado herido.', class: 'matemagico' },
+  { id: 'angulo', name: 'Ángulo exacto', cost: 1, side: 'foes', power: 3, kind: 'debuff', stats: ['defensa', 'espiritu'], node: true, description: 'Baja Defensa y Espíritu de un enemigo durante 3 rondas.', class: 'matemagico' },
+  { id: 'cardioide', name: 'Cardioide', cost: 2, side: 'allies', power: 30, kind: 'heal', node: true, description: 'Cura media a un aliado herido.', class: 'matemagico' },
+  // The elements' lines. Fire piles up: Factor común takes the highest fire among the foes to all of
+  // them (`evens`). Water sets up: Vasos comunicantes leaves them Mojado (`wets`), or puts a fire
+  // out into smoke. Electricity cashes in: Descarga jumps to everyone wet (`react`, Conducción).
+  { id: 'factor-comun', name: 'Factor común', cost: 2, side: 'all-foes', power: 24, kind: 'magic', element: 'fuego', melts: true, evens: 'quemado', node: true, description: 'Daño medio mágico de tipo fuego a todos los enemigos. El fuego de todos sube al más alto.', class: 'matemagico' },
+  { id: 'vasos', name: 'Vasos comunicantes', cost: 2, side: 'all-foes', power: 16, kind: 'magic', element: 'agua', wets: 'mojado', node: true, description: 'Daño leve mágico de tipo agua a todos los enemigos. Los moja.', class: 'matemagico' },
+  { id: 'descarga', name: 'Descarga', cost: 2, side: 'foes', power: 26, kind: 'magic', element: 'electrico', node: true, description: 'Daño medio mágico de tipo eléctrico a un enemigo. Salta a todos los mojados.', class: 'matemagico' },
   // Papagato's skills are Haru's and Yuki's: the wearer only asks.
   { id: 'zarpazo', name: 'Zarpazo sangriento', cost: 1, side: 'foes', power: 16, kind: 'physical', bleed: 2, description: 'Daño leve físico a un enemigo. Añade sangrado.', class: 'papagato' },
   { id: 'escondite', name: 'Yuki se esconde', cost: 1, side: 'party', power: 4, kind: 'boost', stats: ['defensa'], description: 'Sube Defensa de todo el equipo durante 3 rondas.', class: 'papagato' },
@@ -60,7 +69,7 @@ export const SKILLS = [
   { id: 'llaga', name: 'Zarpa en la llaga', cost: 2, side: 'foes', power: 26, kind: 'physical', deep: true, level: 3, description: 'Daño medio físico a un enemigo. Gasta el sangrado: cada uno suma el doble de daño.', class: 'papagato' },
   { id: 'a-la-vez', name: 'Las dos a la vez', cost: 2, side: 'all-foes', power: 24, kind: 'physical', bleed: 1, level: 3, description: 'Daño medio físico a todos los enemigos. Añade sangrado.', class: 'papagato' },
   // Tecnópata's skills are Bip's: Aitor points, Bip does it (docs/animas/tecnopata/). Its ánima does
-  // not grow yet (src/levels.ts LEVELLED), so they are all there from the start.
+  // not level: the two rays are there from the start, the rest are nodes of its tree (`node`).
   // Rayo de energía: a beam; what is running out on the foe by the clock (TIMED: a fire, the smoke,
   // Confusión; never a cure) lasts `extend` seconds longer.
   { id: 'rayo-energia', name: 'Rayo de energía', cost: 2, side: 'foes', power: 18, kind: 'magic', extend: 5, description: 'Daño leve mágico a un enemigo. Sus estados con reloj duran 5 segundos más.', class: 'tecnopata' },
@@ -70,13 +79,23 @@ export const SKILLS = [
   // Explosión: Bip blows itself up among the foes (fire: it melts the pringue), blinds them until
   // their turn is over (`blind`: Cegado until the round ends), and its wearer loses their next turn
   // while it puts itself back together (`spends`, `Combatant.out`).
-  { id: 'explosion', name: 'Explosión', cost: 2, side: 'all-foes', power: 32, kind: 'magic', melts: true, blind: true, spends: true, description: 'Daño medio mágico de tipo fuego a todos los enemigos. Los ciega durante 1 ronda. Pierdes tu siguiente turno.', class: 'tecnopata' },
+  { id: 'explosion', name: 'Explosión', cost: 2, side: 'all-foes', power: 32, kind: 'magic', melts: true, blind: true, spends: true, node: true, description: 'Daño medio mágico de tipo fuego a todos los enemigos. Los ciega durante 1 ronda. Pierdes tu siguiente turno.', class: 'tecnopata' },
   // Confusión: waves of the mind off Bip; for a while the foe does not know whose side it is on
   // (`confuse`: the timed status Confusión), and its blows go to its own (`enemyAct`).
-  { id: 'confusion', name: 'Confusión', cost: 2, side: 'foes', power: 0, kind: 'debuff', stats: [], confuse: true, abstract: true, description: 'Ondas mentales confunden a un enemigo durante 30 segundos: golpea a los suyos.', class: 'tecnopata' },
+  { id: 'confusion', name: 'Confusión', cost: 2, side: 'foes', power: 0, kind: 'debuff', stats: [], confuse: true, abstract: true, node: true, description: 'Ondas mentales confunden a un enemigo durante 30 segundos: golpea a los suyos.', class: 'tecnopata' },
   // Rayo encogedor: the foe shrinks for a while (`shrink`: the timed status Encogido), a quarter of
   // its Defensa gone. In seconds, not rounds, so it skips the fixed shape (`abstract`).
-  { id: 'rayo-encogedor', name: 'Rayo encogedor', cost: 1, side: 'foes', power: 0, kind: 'debuff', stats: ['defensa'], shrink: true, abstract: true, description: 'Encoge a un enemigo durante 15 segundos: su Defensa baja un 25 %.', class: 'tecnopata' },
+  { id: 'rayo-encogedor', name: 'Rayo encogedor', cost: 1, side: 'foes', power: 0, kind: 'debuff', stats: ['defensa'], shrink: true, abstract: true, node: true, description: 'Encoge a un enemigo durante 15 segundos: su Defensa baja un 25 %.', class: 'tecnopata' },
+  // Control remoto: Bip takes a foe over for a moment. It turns on one of its own right now, with its
+  // own strength (`control`, `power` the blow at average stats), and forgets what it had announced.
+  { id: 'control-remoto', name: 'Control remoto', cost: 2, side: 'foes', power: 34, kind: 'debuff', stats: [], control: true, abstract: true, node: true, description: 'Bip toma el mando de un enemigo: golpea con fuerza a uno de los suyos y olvida lo que iba a hacer.', class: 'tecnopata' },
+  // Dadaísta's skills are dice thrown (docs/animas/dadaista/): its maná is dice, each with its face in
+  // view, and a skill with `die` spends the one chosen. Golpe de dados lands `power`, and `pip` more
+  // for each pip of that die. Their strength changes with the die, so they skip the fixed shape.
+  { id: 'golpe-dados', name: 'Golpe de dados', cost: 1, side: 'foes', power: 6, pip: 5, kind: 'physical', die: 'face', abstract: true, description: 'Daño variable físico a un enemigo. Más fuerte cuanto más alta la cara del dado.', class: 'dadaista' },
+  // Doble o nada: the die bet is rolled again. The same or higher, the blow lands twice; lower, there
+  // is no blow and the die stays in the hand with its new face (the turn goes, the maná does not).
+  { id: 'doble-o-nada', name: 'Doble o nada', cost: 1, side: 'foes', power: 6, pip: 5, kind: 'physical', die: 'bet', abstract: true, description: 'Daño variable físico a un enemigo. Vuelve a tirar el dado: si sale igual o más alto, golpe doble. Si sale más bajo, no hay golpe y el dado se queda con esa cara.', class: 'dadaista' },
 ] as const;
 /**
  * Maná (docs/combat.md § Maná): what skills spend, shown as circles. Every ánima has its own, for
@@ -85,7 +104,28 @@ export const SKILLS = [
  */
 export const MANA_POINTS = 3;
 /** What Ecos de luz (src/ecos.ts) added to each ánima: more maná, the elements its Atacar can carry. */
-export interface Improved { mana?: Partial<Record<ClassId, number>>; elements?: Partial<Record<ClassId, readonly Element[]>> }
+export interface Improved {
+  mana?: Partial<Record<ClassId, number>>; elements?: Partial<Record<ClassId, readonly Element[]>>;
+  /** The skills bought as nodes of a tree (`node` in SKILLS), and the passives. */
+  skills?: readonly SkillId[]; passives?: readonly PassiveId[];
+}
+/**
+ * Passives (docs/animas/README.md § The jar): bought as nodes, always on while their ánima is worn,
+ * no cost and no button. Each time one does something the fight says so (`BattleEffect.passives`).
+ * Rescoldo: Matemágico's fires last RESCOLDO seconds. Capilaridad: his Atacar with water wets a foe
+ * it turns nothing on. Toma de tierra: a reaction he sets off gives a maná back, once a round.
+ * Telemetría: Bip's Atacar gives TELEMETRIA seconds more to what runs out on its target. Nanitos:
+ * Rayo de sanación also takes one harmful status off whoever it cures.
+ */
+export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'telemetria' | 'nanitos';
+export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId }> = {
+  rescoldo: { name: 'Rescoldo', anima: 'matemagico' },
+  capilaridad: { name: 'Capilaridad', anima: 'matemagico' },
+  'toma-de-tierra': { name: 'Toma de tierra', anima: 'matemagico' },
+  telemetria: { name: 'Telemetría', anima: 'tecnopata' },
+  nanitos: { name: 'Nanitos', anima: 'tecnopata' },
+};
+export const RESCOLDO = 15, TELEMETRIA = 3;
 /** How much maná `id` holds: MANA_POINTS and what Ecos de luz added. */
 export const manaMax = (improved: Improved | undefined, id?: ClassId) => MANA_POINTS + (id ? improved?.mana?.[id] ?? 0 : 0);
 /** What Defender gives back to the ánima worn (only that one). */
@@ -244,7 +284,7 @@ const foeAbility = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ..
  */
 export const FEAR_RULES = {
   aplastonEvery: 4, aplastonFirst: 3, aplaston: 1.5, escortAplastonFirst: 3,
-  flipAt: .5, transparent: .5, sorpresaSingle: .5, sorpresaDual: 1, puaj: 26,
+  flipAt: .5, transparent: .5, sorpresaSingle: .5, sorpresaDual: 1, puaj: 38,
   escortLayers: 4, mixChance: .35, mixLayers: 3,
 };
 /**
@@ -288,7 +328,7 @@ export const CAMPING = {
   magoMagic: .5, magoPhysical: 1.5, bombona: 26,
   dadoBase: 4, dadoPip: 4,
   downTaken: .5, contrasena: 18,
-  heroeTaken: .5, paisanoTaken: 2, punetazo: 44, recuperarse: .1, formTurns: 2,
+  heroeTaken: .5, paisanoTaken: 2, punetazo: 56, recuperarse: .1, formTurns: 2,
 };
 /**
  * Las cuerdas' foes and La Voz (docs/quests/marta.md), every number in one book (`marta.rules`); their
@@ -313,10 +353,10 @@ export const CAMPING = {
  * and holds a Calderón on everyone (`calderon`) unless an Acorde breaks it first (src/song.ts).
  */
 export const MARTA = {
-  juramento: 17, lazoEvery: 4, resonancia: 12, resonanciaStep: 6, resonanciaMost: 36,
+  juramento: 36, lazoEvery: 4, resonancia: 12, resonanciaStep: 12, resonanciaMost: 48,
   cristalPhysical: 1.5, reflect: .5, destello: 34, crack: .5, estallido: 14, prisma: 16,
-  directo: 44, linea: 26, estocada: 60, clavado: 1.5,
-  eco: 1, ecoStep: .5, crescendo: 1, acorde: 1.5, vozDirecto: 36, coro: 32, calderon: 20,
+  directo: 44, linea: 26, estocada: 60, clavado: 3.5,
+  eco: 1, ecoStep: .5, crescendo: 1, acorde: 1.5, vozDirecto: 54, coro: 32, calderon: 20,
   allegro: .6, capela: .25,
 };
 /** Lo Directo's turns, in order, round and round; each is said a turn ahead. */
@@ -419,7 +459,7 @@ export const ELEMENTS: Record<Element, { name: string; colour: string }> = {
   electrico: { name: 'Eléctrico', colour: '#ffe45c' },
 };
 export const ELEMENT_ORDER = Object.keys(ELEMENTS) as Element[];
-export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido';
+export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado';
 export interface TimedSpec {
   /** `element`: the one that lights it, for the reactions; `heal`: its pulses give PV back instead of taking it. */
   name: string; element?: Element; heal?: boolean; seconds: number; every: number;
@@ -440,6 +480,8 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   confusion: { name: 'Confusión', seconds: 30, every: 30, levels: [], flat: 0, share: 0, cap: 0 },
   // Encogido (Rayo encogedor): smaller, and a quarter of its guard gone while it lasts.
   encogido: { name: 'Encogido', seconds: 15, every: 15, levels: [], flat: 0, share: 0, cap: 0, cut: { defensa: .25 } },
+  // Mojado (Vasos comunicantes, Capilaridad): it hurts nobody; it waits for electricity (Conducción) or fire (Vapor).
+  mojado: { name: 'Mojado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
 };
 const TIMED_IDS = Object.keys(TIMED) as TimedId[];
 /**
@@ -450,8 +492,45 @@ const TIMED_IDS = Object.keys(TIMED) as TimedId[];
  * burns away at once for `cauterize` PV. Eléctrico on Cegado is Tormenta: the bolt runs through the
  * smoke, `storm` of magic on everyone blinded, and the smoke is gone. Tunable (`just fight-sim`, book `reaction`).
  */
-export type ElementReaction = 'humo' | 'cauterizado' | 'tormenta';
-export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6, storm: 24 };
+export type ElementReaction = 'humo' | 'cauterizado' | 'tormenta' | 'vapor' | 'conduccion';
+/**
+ * With Mojado: Fuego on it is Vapor (the water goes up and leaves Cegado I), and Eléctrico on it is
+ * Conducción (`conduct` of magic on everyone wet, who are left dry).
+ */
+export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6, storm: 24, conduct: 20 };
+/**
+ * What a foe is made of (docs/combat.md § Debilidades por elemento): a blow carrying an element it is
+ * weak to lands `weak` times as hard, one it resists `resist`. By kind of foe and by element, never by
+ * who strikes or with which skill: Atacar with an element, a skill of that element and a dual made
+ * with one all count. Nothing says it beforehand; the first blow that finds it does (`BattleEffect.affinity`),
+ * and from then on the foe's plate keeps it. Few foes have one, and only where it is part of the
+ * fight's answer. Tunable (`just fight-sim`, book `element`).
+ */
+export const ELEMENT_RULES = { weak: 1.5, resist: .5 };
+export type Affinity = 'weak' | 'resist';
+export const AFFINITIES: Partial<Record<FoeKind, Partial<Record<Element, Affinity>>>> = {
+  // Onions fry: fire goes through every layer's worth of them.
+  cebollita: { fuego: 'weak' }, cebolla: { fuego: 'weak' }, cebollon: { fuego: 'weak' },
+  // A fantasmita is a screen's ghost: a spark undoes it, water goes straight through.
+  fantasmita: { electrico: 'weak', agua: 'resist' },
+  // Vertitrón is a machine: water gets in, and its own lightning does little to it.
+  vertigo: { agua: 'weak', electrico: 'resist' },
+  // The Queen's gum softens with heat.
+  minion: { fuego: 'weak' }, guardian: { fuego: 'weak' },
+  // A mago de camping lives by its gas flame: fire is its own, water puts it out.
+  mago: { agua: 'weak', fuego: 'resist' },
+  // Lo Directo is a lance, a rod in a storm; an Eco is air, and fire eats it.
+  directo: { electrico: 'weak' }, eco: { fuego: 'weak' },
+};
+/** What `element` finds in `c`: a weakness, a resistance or nothing. */
+export const affinityOf = (c: Pick<Combatant, 'kind'>, element?: Element): Affinity | undefined => element && c.kind ? AFFINITIES[c.kind]?.[element] : undefined;
+const affinityScale = (c: Combatant, element?: Element) => { const a = affinityOf(c, element); return a ? ELEMENT_RULES[a] : 1; };
+/** The element a skill or a dual lands with: its own, or the one of what it lights (Foc Binari burns, Explosión melts: fire). */
+export function elementOf(spec?: object): Element | undefined {
+  if (!spec) return undefined;
+  const s = spec as { element?: Element; burn?: TimedId; melts?: boolean };
+  return s.element ?? (s.burn ? TIMED[s.burn].element : undefined) ?? (s.melts ? 'fuego' : undefined);
+}
 /** A foe's blow as a blinded foe lands it: lighter the higher its Cegado. */
 function sighted(actor: Combatant, raw: number) {
   const level = actor.timed?.cegado?.level;
@@ -488,6 +567,8 @@ export interface Combatant {
   secondary: number; maxSecondary: number; guarding: boolean;
   /** Maná of each ánima not worn now, kept until it is worn again (missing: full). */
   mana?: Partial<Record<ClassId, number>>;
+  /** Dadaísta's maná as dice: the face of each point it holds, worn or resting (`diceOf` keeps them in step). */
+  dice?: number[];
   /** Ánimas worn at some moment of this round: they do not rest at its end. */
   worn?: ClassId[];
   /** The ánimas this fighter can switch between (L / R): their own and the extras they equipped (docs/party.md). */
@@ -507,6 +588,8 @@ export interface Combatant {
   power?: number;
   /** Stacks of each status the fighter carries. */
   statuses?: Partial<Record<StatusId, number>>;
+  /** The round Toma de tierra last gave this fighter a maná back. */
+  grounded?: number;
   /** Timed statuses on the fighter (TIMED), running on the fight's clock. */
   timed?: Partial<Record<TimedId, Timed>>;
   /** An onion's layers (ONIONS): while it has any, each hit only peels one off and lands at half. */
@@ -565,6 +648,8 @@ export interface Combatant {
   crescendo?: number; silent?: boolean;
   /** La Lealtad: who struck her last (an ally's id): whom her Juramento, and her Eco's Resonancia, are for. */
   sworn?: string;
+  /** La Lealtad: who struck her last this round. Her oath moves to them when the round ends, never inside it, so whoever it names can hold on. */
+  struck?: string;
   /** Lo Cristalino has cracked: magic goes in, and its light comes out on everyone (Prisma). */
   cracked?: boolean;
   /** Lo Directo after its Estocada: stuck until its next turn, every blow on it lands MARTA.clavado times as hard. */
@@ -664,7 +749,7 @@ export type SongNews =
   | { kind: 'crescendo'; level: number }
   | { kind: 'phrase'; phrase: PhraseId };
 /** A choice queued ahead by an ally later in the round (`queue`). */
-export interface Queued { action: 'attack' | 'defend' | 'skill'; skill?: SkillId; target?: string }
+export interface Queued { action: 'attack' | 'defend' | 'skill'; skill?: SkillId; target?: string; die?: number }
 /**
  * Someone who fights on the party's side: `id` names them in the fight, `profile` gives their
  * stats, `bonus` adds what the party has gathered (chapter 2's ánimas).
@@ -729,7 +814,7 @@ export function switchAnima(state: BattleState, step: -1 | 1): ClassId | undefin
 const wornAnimas = (slots: PartySlot[]) => [...new Set(slots.flatMap(s => s.classId ? [s.classId] : []))];
 /** The skills `actor` can use: their ánima's, as far as it has grown. */
 export function skillsFor(state: BattleState, actor: Combatant) {
-  return SKILLS.filter(skill => actor.classId === skill.class && (!('level' in skill) || (state.levels?.[skill.class] ?? 1) >= skill.level));
+  return SKILLS.filter(skill => actor.classId === skill.class && learned(state, skill.id));
 }
 /** Rounds a party boost has left, this one included (0 when it is not running); without `skill`, the longest. */
 export function boostRounds(state: BattleState, skill?: SkillId): number {
@@ -840,6 +925,13 @@ export interface BattleEffect {
   burn?: { id: TimedId; level: number };
   /** Maná Defender gave back. */
   charged?: number;
+  /** Dadaísta defending: the faces of the dice that maná came as. */
+  dealt?: number[];
+  /**
+   * A skill that spent a die (Dadaísta): its `face`; for a bet (Doble o nada), what it `rolled` when
+   * thrown again and whether that `won` (lost: no blow, and the die stays in the hand as `rolled`).
+   */
+  die?: { face: number; at: number; rolled?: number; won?: boolean };
   /** Fire melted the palace minion's gum. */
   melted?: boolean;
   /** A skill of several little hits (Zarpazos), or one hit landed in parts (Foc Binari): the PV each one took, in order. `amount` is their sum. */
@@ -851,7 +943,7 @@ export interface BattleEffect {
   /** Whose stats this action changed, and which (the last layer off an onion breaks its defence). */
   stats?: StatChange[];
   /** A skill that reaches every foe: what it did to each one (`target` is the first). */
-  hits?: { target: string; amount: number; status?: { id: StatusId; stacks: number }; peeled?: number; bled?: number; weakSpot?: true; burn?: { id: TimedId; level: number } }[];
+  hits?: { target: string; amount: number; status?: { id: StatusId; stacks: number }; peeled?: number; bled?: number; weakSpot?: true; burn?: { id: TimedId; level: number }; smoked?: true; affinity?: Affinity }[];
   /** Sangrado stacks a physical blow spent on its target, each one making it land harder (`woundScale`). */
   bled?: number;
   /** A dual attack: its two halves (by skill), who brought each, and the maná each one spent. */
@@ -873,6 +965,8 @@ export interface BattleEffect {
   /** Atacar carried an element: the little burst it lands with. It lights nothing of its own. */
   element?: Element;
   /** What that element turned on its target: Humo at the fire's `level`, Cauterizado's `stacks`, and the PV it took from whom. */
+  /** The blow's element found what the foe is made of: its weakness or its resistance (`AFFINITIES`). In `hits` when it reaches several. */
+  affinity?: Affinity;
   reaction?: { id: ElementReaction; level?: number; stacks?: number; hits?: { target: string; amount: number }[] };
   /** Rayo de energía: the timed statuses it made last longer on its target, and by how many seconds. */
   extended?: { statuses: TimedId[]; seconds: number };
@@ -924,6 +1018,14 @@ export interface BattleEffect {
   stuck?: true;
   /** La Voz's Coro: the second voice it called (a foe's id). */
   summoned?: string;
+  /** Passives that did something in this action (PASSIVES), and over whom to say so. */
+  passives?: { id: PassiveId; name: string; who: string }[];
+  /** Maná a passive gave back to the actor (Toma de tierra). */
+  mana?: number;
+  /** Control remoto: the foe `target` turned on, and the PV it took from it. */
+  controlled?: { victim: string; amount: number };
+  /** Nanitos: the timed statuses a cure took off its target. */
+  cleared?: TimedId[];
 }
 /** Whether this action spent a Punto débil on its target (it landed WEAK_SPOT times as hard). */
 export const markSpent = (e: BattleEffect) => e.weakSpot === 'spent' || e.weakSpot === 'renewed';
@@ -986,6 +1088,55 @@ function fallen(state: BattleState) {
 }
 /** Rounds a Punto débil on `c` still lasts, this one included (0: none). */
 export const weakSpotRounds = (state: BattleState, c: Combatant) => c.weakSpot !== undefined && c.weakSpot >= state.round && c.hp > 0 ? c.weakSpot - state.round + 1 : 0;
+/**
+ * Dadaísta's maná is dice (docs/animas/dadaista/): each point is a die with its face in view, rolled
+ * when the maná comes (the fight's start, Defender, a round's rest). A skill with `die` spends the
+ * one chosen, and that face says how hard it lands.
+ */
+export const DICED: ClassId = 'dadaista';
+/** One roll of the fight's dice, 1 to 6. */
+export const d6 = (state: BattleState) => 1 + Math.floor(roll(state) * 6);
+/**
+ * `c`'s dice, in the order they came: as many as their Dadaísta holds maná now, whether they wear it
+ * or it rests. Maná that came since the last look is rolled here, so the hand is always in step.
+ */
+export function diceOf(state: BattleState, c: Combatant): number[] {
+  if (!state.allies.includes(c) || (c.classId !== DICED && !kitIn(state, c).includes(DICED))) return [];
+  const most = manaMax(state.improved, DICED), count = c.classId === DICED ? c.secondary : Math.min(most, c.mana?.[DICED] ?? most);
+  const hand = c.dice ??= [];
+  while (hand.length < count) hand.push(d6(state));
+  hand.length = Math.min(hand.length, count);
+  return hand;
+}
+/** Whether `skill` spends a die, and how it reads it: its `face` as its strength, or as a `bet`. */
+export const dieUse = (skill?: SkillId): 'face' | 'bet' | undefined => { const spec = SKILLS.find(s => s.id === skill); return spec && 'die' in spec ? spec.die : undefined; };
+/** The die a skill takes when nobody chose: the highest for a blow by its face; for a bet the highest of the sure ones (3 or less), else the lowest. */
+export function bestDie(skill: SkillId, hand: readonly number[]) {
+  if (!dieUse(skill) || !hand.length) return -1;
+  const sure = hand.filter(face => face <= 3);
+  return hand.indexOf(dieUse(skill) === 'bet' ? sure.length ? Math.max(...sure) : Math.min(...hand) : Math.max(...hand));
+}
+/** What `skill` lands with a die of `face` at average stats, before a bet doubles it. */
+export const diePower = (skill: SkillId, face: number) => { const spec = SKILLS.find(s => s.id === skill); return spec && 'pip' in spec ? spec.power + spec.pip * face : 0; };
+/**
+ * The die a Dadaísta skill spends: `index` in the hand (or the one `bestDie` would take). A blow by
+ * its face spends it. A bet rolls it again: the same or higher and it is spent on a blow that lands
+ * twice; lower, and it stays in the hand with what it rolled, no blow and no maná gone.
+ */
+function castDie(state: BattleState, actor: Combatant, skill: SkillId, index: number | undefined, effect: BattleEffect) {
+  const hand = diceOf(state, actor), at = index !== undefined && hand[index] ? index : bestDie(skill, hand), face = hand[at];
+  const power = diePower(skill, face);
+  if (dieUse(skill) === 'bet') {
+    const rolled = d6(state), won = rolled >= face;
+    effect.die = { face, at, rolled, won };
+    if (!won) { hand[at] = rolled; return { power, times: 0, lost: true }; }
+    hand.splice(at, 1); actor.secondary--;
+    return { power, times: 2, lost: false };
+  }
+  effect.die = { face, at };
+  hand.splice(at, 1); actor.secondary--;
+  return { power, times: 1, lost: false };
+}
 /** The action is validated before payment, just as it is in the generic command resolver. */
 function spendSecondary(actor: Combatant, cost: number) {
   actor.secondary = adjustResource({ current: actor.secondary, max: actor.maxSecondary }, -cost).resource.current;
@@ -1103,7 +1254,7 @@ export function createGuardBattle(party: PartySlot[], guards: GuardStrength, ani
 export const FEAR_FOES = {
   cebollon: { id: 'cebollon', name: 'El Cebollón', kind: 'cebollon' as const, power: ONIONS.cebollon.power, message: 'El contenedor salta. Dentro hay una cebolla enorme, capa sobre capa. Ya pica en los ojos.' },
   cebolla: { id: 'cebolla', name: 'La Cebolla', kind: 'cebolla' as const, power: ONIONS.cebolla.power, message: 'Una cebolla grande os corta el paso. Cuantas más capas le quedan, más pesa.' },
-  plato: { id: 'plato', name: 'El Plato Misterioso', kind: 'plato' as const, power: 28, message: 'La campana tiembla sobre el plato. Algo dentro se mueve.' },
+  plato: { id: 'plato', name: 'El Plato Misterioso', kind: 'plato' as const, power: 38, message: 'La campana tiembla sobre el plato. Algo dentro se mueve.' },
   escolta: { id: 'cebolla', name: 'La Cebolla', kind: 'cebolla' as const, power: ONIONS.cebolla.power, message: 'La Cebolla sube por la rampa, y no viene sola: un fantasmita y una cebollita le abren paso.' },
   'uri-vertigo': { id: 'vertigo', name: 'Vertitrón', kind: 'vertigo' as const, power: 10, message: 'Del borde del tejado se levanta un robot de escaleras y tejas, con un ojo en el pecho que no para de girar. Arriba, Uri, con Nil en brazos.' },
 };
@@ -1221,10 +1372,10 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
 /** Whether a skill needs a target picked, or simply happens (Yuki se esconde reaches the whole party, Las dos a la vez every foe). */
 export const aimed = (skill: SkillId) => { const side = SKILLS.find(s => s.id === skill)?.side; return side !== 'party' && side !== 'all-foes'; };
 /** What `skill` (or a plain attack) does to `target` before it is clamped to what is left. */
-function strike(state: BattleState, actor: Combatant, target: Combatant, skill?: Skill) {
+function strike(state: BattleState, actor: Combatant, target: Combatant, skill?: Skill, power: number = skill?.power ?? 18) {
   const stats = current(state, actor), guard = current(state, target);
   if (!skill) return physical(18, stats, guard);
-  return skill.kind === 'magic' ? magical(skill.power, stats, guard) : physical(skill.power, stats, guard);
+  return skill.kind === 'magic' ? magical(power, stats, guard) : physical(power, stats, guard);
 }
 /**
  * Sangrado is an open wound: the next physical blow on someone bleeding (Atacar or a physical
@@ -1311,28 +1462,70 @@ function spendShield(state: BattleState, c: Combatant, amount: number, effect: B
   if (amount > 0 && shieldRounds(state, c)) { delete c.shielded; effect.shield = 'spent'; }
 }
 /** An element has landed on `target` with Atacar: what it turns (`REACTION_RULES`), if it finds anything to turn. */
-function react(state: BattleState, actor: Combatant, target: Combatant, element: Element, effect: BattleEffect) {
+function react(state: BattleState, actor: Combatant, target: Combatant, element: Element, effect: BattleEffect, reach = false) {
   const fire = target.timed?.quemado, bleeding = stacks(target, 'sangrado');
-  if (element === 'agua' && fire) {
-    const { quemado: _out, ...rest } = target.timed!;
-    target.timed = { ...rest, cegado: { level: fire.level, left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
-    effect.reaction = { id: 'humo', level: fire.level };
+  const wet = state.foes.filter(f => f.hp > 0 && f.timed?.mojado);
+  if (target.hp > 0 && element === 'agua' && fire) {
+    effect.reaction = { id: 'humo', level: smoke(target) };
     state.message += ` ¡El agua apaga el fuego! ${TIMED.cegado.name} ${roman(fire.level)}.`;
-  } else if (element === 'fuego' && bleeding) {
+  } else if (target.hp > 0 && element === 'fuego' && bleeding) {
     delete target.statuses!.sangrado;
     const amount = hurt(state, target, bleeding * REACTION_RULES.cauterize);
     effect.reaction = { id: 'cauterizado', stacks: bleeding, hits: [{ target: target.id, amount }] };
     state.message += ` ¡Cauteriza la herida! −${amount} PV.`;
-  } else if (element === 'electrico' && target.timed?.cegado) {
+  } else if (target.hp > 0 && element === 'fuego' && target.timed?.mojado) {
+    effect.reaction = { id: 'vapor', level: steam(target) };
+    state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} I.`;
+  } else if (target.hp > 0 && element === 'electrico' && target.timed?.cegado) {
     const hits = state.foes.filter(f => f.hp > 0 && f.timed?.cegado).map(f => {
       delete f.timed!.cegado;
-      return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.storm, current(state, actor), current(state, f)), 'magic')) };
+      return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.storm, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic')) };
     });
     effect.reaction = { id: 'tormenta', hits };
     state.message += ` ¡La descarga salta por el humo! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
+  } else if (element === 'electrico' && wet.length && (reach || (target.hp > 0 && target.timed?.mojado))) {
+    // Conducción: the water carries it to everyone wet (a skill's reaches them wherever it landed), and dries.
+    const hits = wet.map(f => {
+      delete f.timed!.mojado;
+      return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.conduct, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic')) };
+    });
+    effect.reaction = { id: 'conduccion', hits };
+    state.message += ` ¡La corriente corre por el agua! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
   }
+  if (effect.reaction) ground(state, actor, effect);
 }
-export function act(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId): BattleEffect | undefined {
+/** Humo: the fire on `c` goes out and leaves Cegado at its level. Returns that level. */
+function smoke(c: Combatant) {
+  const { quemado: fire, ...rest } = c.timed!;
+  c.timed = { ...rest, cegado: { level: fire!.level, left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
+  return fire!.level;
+}
+/** Vapor: the water on `c` goes up and leaves Cegado I (a longer or higher smoke stays). Returns its level. */
+function steam(c: Combatant) {
+  const { mojado: _out, ...rest } = c.timed!;
+  const on = rest.cegado && rest.cegado.until === undefined ? rest.cegado : undefined;
+  c.timed = { ...rest, cegado: { level: Math.max(1, on?.level ?? 0), left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
+  return c.timed.cegado!.level;
+}
+/** Whether `actor` wears the ánima of the passive `id` and has it. */
+const passive = (state: BattleState, actor: Combatant, id: PassiveId) => actor.classId === PASSIVES[id].anima && !!state.improved?.passives?.includes(id);
+/** A passive did something: the fight shows it over whoever has it. */
+function note(effect: BattleEffect, id: PassiveId, who: Combatant) {
+  if (!effect.passives?.some(p => p.id === id)) effect.passives = [...effect.passives ?? [], { id, name: PASSIVES[id].name, who: who.id }];
+}
+/** Toma de tierra: a reaction its wearer set off gives a maná back, once a round. */
+function ground(state: BattleState, actor: Combatant, effect: BattleEffect) {
+  if (!passive(state, actor, 'toma-de-tierra') || actor.grounded === state.round || actor.secondary >= actor.maxSecondary) return;
+  actor.grounded = state.round; actor.secondary++;
+  effect.mana = 1; note(effect, 'toma-de-tierra', actor);
+  state.message += ' Toma de tierra: maná +1.';
+}
+/** A fire `actor` lit on `c`: with Rescoldo it lasts longer. */
+function bank(state: BattleState, actor: Combatant, c: Combatant, effect: BattleEffect) {
+  if (!passive(state, actor, 'rescoldo') || !c.timed?.quemado) return;
+  c.timed.quemado.left = RESCOLDO; note(effect, 'rescoldo', actor);
+}
+export function act(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId, die?: number): BattleEffect | undefined {
   if (state.phase !== 'player') return;
   const actor = state.allies[state.active];
   if (!actor || actor.hp <= 0) return;
@@ -1360,6 +1553,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     // Holding still gathers maná back into the ánima worn.
     effect.charged = adjustResource({ current: actor.secondary, max: actor.maxSecondary }, DEFEND_CHARGE).amount;
     actor.secondary += effect.charged;
+    // Dadaísta's maná comes as dice, rolled in view.
+    if (actor.classId === DICED && effect.charged) effect.dealt = diceOf(state, actor).slice(-effect.charged);
     state.message = `${actor.name} se prepara para el siguiente golpe.${effect.charged ? ` Maná +${effect.charged}.` : ''}`;
   } else if (party && ability!.kind === 'heal') {
     // Ronroneo de Yuki: a cure for everyone standing, and it takes away the statuses it calms.
@@ -1390,7 +1585,14 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id;
     const on = inflict(target, ability.regen);
     effect.regen = { id: ability.regen, level: on.level };
-    state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. ¡${TIMED[ability.regen].name}${on.level > 1 ? ` ${roman(on.level)}` : ''}!`;
+    // Nanitos: the cure also takes one harmful status off them (a stacking one first, then one on the clock).
+    if (passive(state, actor, 'nanitos')) {
+      const stacked = STATUS_IDS.find(id => stacks(target, id) > 0), clocked = TIMED_IDS.find(id => !TIMED[id].heal && target.timed?.[id]);
+      if (stacked) { delete target.statuses![stacked]; effect.cleansed = [{ target: target.id, statuses: [stacked] }]; }
+      else if (clocked) { delete target.timed![clocked]; effect.cleared = [clocked]; }
+      if (stacked || clocked) note(effect, 'nanitos', actor);
+    }
+    state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. ¡${TIMED[ability.regen].name}${on.level > 1 ? ` ${roman(on.level)}` : ''}!${effect.cleansed ? ` Nanitos: fuera ${STATUSES[effect.cleansed[0].statuses[0]].name}.` : effect.cleared ? ` Nanitos: fuera ${TIMED[effect.cleared[0]].name}.` : ''}`;
   } else if (ability?.kind === 'heal' && target) {
     // Cardioide: a curve of light under a friend gives back PV, more with Magia.
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.healed = true;
@@ -1407,6 +1609,15 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.afflicted = { id: 'confusion', level: 1 };
     target.timed = { ...target.timed, confusion: { level: 1, left: TIMED.confusion.seconds, next: TIMED.confusion.every } };
     state.message = `${actor.name} usa ${ability.name} contra ${target.name}. ¡No sabe de qué lado está!`;
+  } else if (ability && 'control' in ability && target) {
+    // Control remoto: it turns on the strongest of its own standing (on itself if alone), now, and forgets its plan.
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id;
+    delete target.intent;
+    const others = state.foes.filter(f => f !== target && f.hp > 0 && !f.part);
+    const victim = others.length ? others.reduce((most, f) => f.hp > most.hp ? f : most) : target;
+    const amount = hurt(state, victim, fearDamage(state, victim, physical(ability.power, current(state, target), current(state, victim)), 'physical'));
+    effect.controlled = { victim: victim.id, amount };
+    state.message = victim === target ? `${actor.name} usa ${ability.name}. ${target.name} se golpea a sí mismo. −${amount} PV.` : `${actor.name} usa ${ability.name}. ${target.name} golpea a ${victim.name}. −${amount} PV.`;
   } else if (ability?.kind === 'debuff' && target) {
     // Ángulo exacto: a mark on the foe, its stats down for a few rounds (every hit on it lands harder).
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.spell = true;
@@ -1416,10 +1627,12 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   } else if (everyone) {
     // Las dos a la vez: Haru and Yuki go for every foe at once.
     spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = target!.id;
+    if ('element' in ability!) effect.element = ability.element;
     const blow: Blow = ability!.kind === 'physical' ? 'physical' : 'magic';
     effect.hits = targets.map(foe => {
       const { bled, scale } = wound(foe, blow === 'physical', skill), weak = weakScale(state, foe);
-      const amount = hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability) * scale * weak, blow));
+      const found = affinityOf(foe, elementOf(ability));
+      const amount = hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability) * scale * weak * affinityScale(foe, elementOf(ability)), blow));
       if (bled) delete foe.statuses!.sangrado;
       // Only an action that takes PV off spends the mark (one the floor swallows leaves it).
       const spends = weak > 1 && amount > 0;
@@ -1430,7 +1643,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       const status = 'bleed' in ability! && foe.hp > 0 ? { id: 'sangrado' as const, stacks: addStatus(foe, 'sangrado', ability.bleed) } : undefined;
       // Fire melts the pringue (Explosión).
       if ('melts' in ability! && foe.shell) { foe.shell = false; effect.melted = true; }
-      return { target: foe.id, amount, status, peeled, ...bled ? { bled } : {}, ...spends ? { weakSpot: true as const } : {} };
+      return { target: foe.id, amount, status, peeled, ...bled ? { bled } : {}, ...spends ? { weakSpot: true as const } : {}, ...found && amount > 0 ? { affinity: found } : {} };
     });
     // Explosión: the flash blinds whoever is still standing until the round is over (a longer smoke stays as it is).
     if ('blind' in ability!) {
@@ -1443,6 +1656,30 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     }
     // …and Bip has to put itself back together: its wearer sits the next round out.
     if ('spends' in ability!) actor.out = state.round + 1;
+    const hitOf = (foe: Combatant) => effect.hits!.find(h => h.target === foe.id)!;
+    // Vasos comunicantes: water on everyone standing. On a fire it is Humo; otherwise they are left Mojado.
+    if ('wets' in ability!) {
+      let smoked = 0;
+      for (const foe of targets.filter(f => f.hp > 0)) {
+        if (foe.timed?.quemado) { const level = smoke(foe); smoked = Math.max(smoked, level); Object.assign(hitOf(foe), { burn: { id: 'cegado', level }, smoked: true }); }
+        else { foe.timed = { ...foe.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } }; hitOf(foe).burn = { id: 'mojado', level: 1 }; }
+      }
+      if (smoked) { effect.reaction = { id: 'humo', level: smoked }; ground(state, actor, effect); }
+    }
+    // Factor común: the highest fire among them is everyone's (wet layers never catch; on water it is Vapor).
+    if ('evens' in ability!) {
+      const standing = targets.filter(f => f.hp > 0), top = Math.max(0, ...standing.map(f => f.timed?.quemado?.level ?? 0));
+      let steamed = 0;
+      for (const foe of standing) {
+        if (foe.timed?.mojado) { steamed = steam(foe); Object.assign(hitOf(foe), { burn: { id: 'cegado', level: steamed }, smoked: true }); }
+        else if (top && !foe.layers) {
+          foe.timed = { ...foe.timed, quemado: { level: top, left: TIMED.quemado.seconds, next: foe.timed?.quemado?.next ?? TIMED.quemado.every } };
+          bank(state, actor, foe, effect);
+          hitOf(foe).burn = { id: 'quemado', level: top };
+        }
+      }
+      if (steamed) { effect.reaction = { id: 'vapor', level: steamed }; ground(state, actor, effect); }
+    }
     effect.amount = effect.hits[0]?.amount;
     // The last layer off breaks an onion's defence.
     const broken = effect.hits.filter(h => h.peeled && !targets.find(foe => foe.id === h.target)?.layers && targets.find(foe => foe.id === h.target)!.hp > 0);
@@ -1450,13 +1687,21 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     state.message = `${actor.name} usa ${ability!.name}. ${effect.hits.length === 1 ? `−${effect.amount} PV.` : `Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`}`;
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
     if (effect.blinded?.length) state.message += ' ¡Cegados hasta que acabe la ronda!';
+    if ('wets' in ability!) state.message += effect.reaction ? ' El agua apaga los fuegos y moja al resto.' : ' ¡Mojados!';
+    if ('evens' in ability! && effect.hits.some(h => h.burn?.id === 'quemado')) state.message += ` El fuego de todos: ${TIMED.quemado.name} ${roman(Math.max(...effect.hits.map(h => h.burn?.id === 'quemado' ? h.burn.level : 0)))}.`;
+    if (effect.mana) state.message += ' Toma de tierra: maná +1.';
     if (actor.out !== undefined && actor.out > state.round) state.message += ` ${actor.name} pierde su siguiente turno.`;
   } else if (target) {
-    if (action === 'skill') { spendSecondary(actor, ability!.cost); effect.skill = skill; }
+    // Dadaísta: the die spent says how hard the blow is; a bet lost is no blow at all (`castDie`).
+    const cast = action === 'skill' && dieUse(skill) ? castDie(state, actor, skill!, die, effect) : undefined;
+    if (action === 'skill') { if (!cast) spendSecondary(actor, ability!.cost); effect.skill = skill; }
     effect.target = target.id;
     if (action === 'attack' && actor.classId === 'matemagico') effect.spell = true;
     const melts = action === 'skill' && !!ability && 'melts' in ability;
-    if (target.shell && !melts) {
+    if (cast?.lost) {
+      effect.amount = 0;
+      state.message = `${actor.name} usa ${ability!.name}: apostaba un ${effect.die!.face} y sale un ${effect.die!.rolled}. Nada. El dado se queda así.`;
+    } else if (target.shell && !melts) {
       // The gum swallows the blow whole.
       effect.amount = 0; effect.swallowed = true;
       state.message = `${actor.name} golpea a ${target.name}… y el chicle se lo traga. Ni un rasguño.`;
@@ -1473,19 +1718,22 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       if (melts && target.shell) { target.shell = false; effect.melted = true; }
       // Each hit is measured on its own, since the layers it finds change the next one's weight.
       // A physical blow on someone bleeding opens the wound: every claw of it lands harder.
-      const times = action === 'skill' && ability && 'strikes' in ability ? ability.strikes : 1, layered = target.layers ?? 0, strikes: number[] = [];
+      const times = cast?.times ?? (action === 'skill' && ability && 'strikes' in ability ? ability.strikes : 1), layered = target.layers ?? 0, strikes: number[] = [];
       const magic = action === 'skill' && ability!.kind === 'magic';
       // The element Atacar carries; fire seals a wound instead of opening it (`react`).
-      const element = action === 'attack' ? attackElement(state, actor) : undefined;
+      const element = action === 'attack' ? attackElement(state, actor) : ability && 'element' in ability ? ability.element : undefined;
       if (element) effect.element = element;
       const { bled, scale } = wound(target, !magic && element !== 'fuego', action === 'skill' ? skill : undefined), weak = weakScale(state, target);
       const chord = chordScale(state, actor, target);
+      // What the blow lands with, for what the foe is made of: Atacar's element, or the skill's own (Foc Binari is fire).
+      const landing = element ?? (action === 'skill' ? elementOf(ability) : undefined), found = affinityOf(target, landing);
       for (let i = 0; i < times && target.hp > 0; i++) {
-        strikes.push(hurt(state, target, fearDamage(state, target, strike(state, actor, target, action === 'skill' ? ability : undefined) * scale * weak * chord, magic ? 'magic' : 'physical')));
+        strikes.push(hurt(state, target, fearDamage(state, target, strike(state, actor, target, action === 'skill' ? ability : undefined, cast?.power) * scale * weak * chord * affinityScale(target, landing), magic ? 'magic' : 'physical')));
         if (target.layers && !--target.layers) bare(target);
       }
       if (bled) { delete target.statuses!.sangrado; effect.bled = bled; }
       effect.amount = strikes.reduce((sum, amount) => sum + amount, 0);
+      if (found && effect.amount > 0) effect.affinity = found;
       landed(state, actor, target, effect.amount, chord, effect);
       const spent = weak > 1 && effect.amount > 0;
       if (spent) { delete target.weakSpot; effect.weakSpot = 'spent'; }
@@ -1509,21 +1757,33 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       }
       // Foc Binari sets them on fire; on someone already burning, the fire goes up a level. An onion's wet layers do not catch.
       if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.layers) state.message += ' Las capas, húmedas, no prenden.';
+      else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.timed?.mojado) react(state, actor, target, 'fuego', effect);
       else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0) {
         const fire = inflict(target, ability.burn);
+        bank(state, actor, target, effect);
         effect.burn = { id: ability.burn, level: fire.level };
         state.message += fire.level > 1 ? ` ¡El fuego sube: ${TIMED[ability.burn].name} ${roman(fire.level)}!` : ' ¡Se quema!';
       }
       // Rayo de energía: whatever is running out on them by the clock (never a cure) lasts longer.
-      if (action === 'skill' && ability && 'extend' in ability && target.hp > 0) {
+      // Telemetría gives Bip's own Atacar a little of the same.
+      const telemetry = action === 'attack' && effect.amount > 0 && passive(state, actor, 'telemetria');
+      const extend = action === 'skill' && ability && 'extend' in ability ? ability.extend : telemetry ? TELEMETRIA : 0;
+      if (extend && target.hp > 0) {
         const longer = TIMED_IDS.filter(id => !TIMED[id].heal && target.timed?.[id]);
-        for (const id of longer) target.timed![id]!.left += ability.extend;
+        for (const id of longer) target.timed![id]!.left += extend;
         if (longer.length) {
-          effect.extended = { statuses: longer, seconds: ability.extend };
-          state.message += ` ${longer.map(id => TIMED[id].name).join(' y ')}: ${ability.extend} s más.`;
+          effect.extended = { statuses: longer, seconds: extend };
+          if (telemetry) note(effect, 'telemetria', actor);
+          state.message += ` ${longer.map(id => TIMED[id].name).join(' y ')}: ${extend} s más.`;
         }
       }
-      if (element && target.hp > 0) react(state, actor, target, element, effect);
+      if (element) react(state, actor, target, element, effect, action === 'skill');
+      // Capilaridad: his Atacar with water leaves a foe it turned nothing on Mojado.
+      if (action === 'attack' && element === 'agua' && !effect.reaction && target.hp > 0 && effect.amount > 0 && passive(state, actor, 'capilaridad')) {
+        target.timed = { ...target.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } };
+        effect.afflicted = { id: 'mojado', level: 1 }; note(effect, 'capilaridad', actor);
+        state.message += ' ¡Mojado!';
+      }
     }
   }
   checkEye(state, effect);
@@ -1531,11 +1791,14 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   settle(state);
   return effect;
 }
-/** Whether `skill` is learned at the levels the fight has (wearing it aside). */
-function learned(state: BattleState, skill: SkillId) {
+/** Whether `skill` is known: a node of a tree is bought at the jar (`improved`); the rest come with the ánima's level. */
+export function skillKnown(skill: SkillId, levels: Partial<Record<ClassId, number>> | undefined, improved: Improved | undefined) {
   const spec = SKILLS.find(s => s.id === skill)!;
-  return (state.levels?.[spec.class] ?? 1) >= ('level' in spec ? spec.level : 1);
+  if ('node' in spec) return !!improved?.skills?.includes(skill);
+  return (levels?.[spec.class] ?? 1) >= ('level' in spec ? spec.level : 1);
 }
+/** Whether `skill` is learned in this fight (wearing it aside). */
+const learned = (state: BattleState, skill: SkillId) => skillKnown(skill, state.levels, state.improved);
 /** Which half each one brings, `a`'s first: each wears the ánima of their half. */
 function halvesOf(d: DualSpec, a: Combatant, b: Combatant): [SkillId, SkillId] | undefined {
   const owner = (id: SkillId) => SKILLS.find(s => s.id === id)!.class;
@@ -1636,8 +1899,9 @@ export function actDual(state: BattleState, id: DualId, targetId?: string): Batt
     const { bled, scale } = wound(target, d.kind === 'physical'), weak = weakScale(state, target), chance = d.burnChance ?? 1;
     let fire: Timed | undefined;
     for (let i = 0; i < (d.strikes ?? 1) && target.hp > 0; i++) {
-      const dealt = hurt(state, target, fearDamage(state, target, dualBlow(d, current(state, striker), current(state, target)) * scale * weak, 'dual'));
+      const dealt = hurt(state, target, fearDamage(state, target, dualBlow(d, current(state, striker), current(state, target)) * scale * weak * affinityScale(target, elementOf(d)), 'dual'));
       strikes.push(dealt);
+      if (dealt > 0 && affinityOf(target, elementOf(d))) effect.affinity = affinityOf(target, elementOf(d));
       if (target.layers && !--target.layers) bare(target);
       if (!d.burn) continue;
       // Fire never catches on wet layers; each strike checks after its own peel.
@@ -1695,7 +1959,8 @@ function release(state: BattleState, holder: Combatant) {
   effect.hits = state.foes.filter(f => f.hp > 0).map(foe => {
     if (foe.shell && melts) { foe.shell = false; effect.melted = true; }
     const weak = weakScale(state, foe);
-    const amount = hurt(state, foe, fearDamage(state, foe, dualBlow(d, current(state, striker), current(state, foe)) * weak, 'dual'));
+    const found = affinityOf(foe, elementOf(d));
+    const amount = hurt(state, foe, fearDamage(state, foe, dualBlow(d, current(state, striker), current(state, foe)) * weak * affinityScale(foe, elementOf(d)), 'dual'));
     const spends = weak > 1 && amount > 0;
     if (spends) { delete foe.weakSpot; effect.weakSpot = 'spent'; }
     spendShield(state, foe, amount, effect);
@@ -1703,7 +1968,7 @@ function release(state: BattleState, holder: Combatant) {
     if (foe.layers && !--foe.layers) bare(foe);
     // Fire never catches on wet layers.
     const burn = d.burn && foe.hp > 0 && !foe.layers ? { id: d.burn, level: kindle(foe, d.burn, d.burnLevel ?? 1).level } : undefined;
-    return { target: foe.id, amount, ...peeled ? { peeled } : {}, ...spends ? { weakSpot: true as const } : {}, ...burn ? { burn } : {} };
+    return { target: foe.id, amount, ...peeled ? { peeled } : {}, ...spends ? { weakSpot: true as const } : {}, ...burn ? { burn } : {}, ...found && amount > 0 ? { affinity: found } : {} };
   });
   effect.target = effect.hits[0]?.target; effect.amount = effect.hits[0]?.amount;
   const said = `¡${d.name}! ${holder.name} barre a todos: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.${effect.hits.some(h => h.burn) ? ` ¡${TIMED[d.burn!].name} ${roman(d.burnLevel ?? 1)}!` : ''}`;
@@ -1746,9 +2011,9 @@ export function queuedDual(state: BattleState, skill: SkillId): DualSpec | undef
  * where the one confirming aims it, else where the queued one was, else the first foe standing);
  * anything else is `act`.
  */
-export function commit(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId): BattleEffect | undefined {
+export function commit(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId, die?: number): BattleEffect | undefined {
   const d = action === 'skill' && skill ? queuedDual(state, skill) : undefined;
-  if (!d) return act(state, action, targetId, skill);
+  if (!d) return act(state, action, targetId, skill, die);
   const queued = state.queued![dualPartner(state)!.id]!;
   const foes = validTargets(state, 'attack').map(f => f.id);
   return actDual(state, d.id, [aimed(skill!) ? targetId : undefined, queued.target].find(t => t && foes.includes(t)));
@@ -1758,7 +2023,7 @@ export function takeQueued(state: BattleState): Queued | undefined {
   const actor = state.allies[state.active], queued = actor && state.queued?.[actor.id];
   if (!queued) return;
   delete state.queued![actor.id];
-  return act(structuredClone(state), queued.action, queued.target, queued.skill) ? queued : undefined;
+  return act(structuredClone(state), queued.action, queued.target, queued.skill, queued.die) ? queued : undefined;
 }
 /** The fight's dice: a mulberry32 step on `state.seed` (set from the `random` the fight was made with). */
 export function roll(state: BattleState) {
@@ -1969,7 +2234,7 @@ function checkCuerdas(state: BattleState, effect?: BattleEffect) {
   if (!isCuerdasFight(state)) return;
   const lealtad = state.foes.find(f => f.kind === 'lealtad' && f.hp > 0);
   if (lealtad && effect && effect.kind !== 'enemy' && state.allies.some(a => a.id === effect.actor && a.hp > 0)
-    && ((effect.target === lealtad.id && (effect.amount ?? 0) > 0) || effect.hits?.some(h => h.target === lealtad.id && h.amount > 0))) lealtad.sworn = effect.actor;
+    && ((effect.target === lealtad.id && (effect.amount ?? 0) > 0) || effect.hits?.some(h => h.target === lealtad.id && h.amount > 0))) lealtad.struck = effect.actor;
   swear(state);
   const glass = state.foes.find(f => f.kind === 'cristalino' && f.hp > 0 && !f.cracked);
   if (glass && glass.hp <= glass.maxHp * MARTA.crack) crack(state, glass);
@@ -2645,6 +2910,9 @@ export function nextRound(state: BattleState): StatusTick[] {
   }
   state.round++;
   state.allies.forEach(a => { a.guarding = false; });
+  // La Lealtad swears for the round that starts: on whoever struck her last in the one that ended.
+  for (const f of state.foes) if (f.kind === 'lealtad' && f.struck) { f.sworn = f.struck; delete f.struck; }
+  if (isCuerdasFight(state)) swear(state);
   state.enemyActions = []; delete state.queued; delete state.spent;
   // Whoever sits this round out (Explosión: Bip is putting itself back together) is through already.
   const out = state.allies.filter(a => a.out === state.round && a.hp > 0);

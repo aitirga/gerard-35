@@ -10,12 +10,11 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, CAMPING, MARTA, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BROOD, CAMPING, MARTA, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, songNow, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId,
-} from './battle.ts';
-import { improvedBy } from './ecos.ts';
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId, skillKnown } from './battle.ts';
+import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
 import { PHRASES, untilNote } from './song.ts';
 
@@ -68,11 +67,87 @@ export interface Setup {
   friends?: AnimaId[];
   /** What the Ecos de luz are in (src/ecos.ts ids: `matemagico:agua`, `papagato:mana-1`). */
   improved?: string[];
+  /** `improved` is everything bought, nothing taken for granted on top (`nodesFor`): how a story point plays (`storyPoint`). */
+  exact?: boolean;
   /** Chance a decision is a slip: any legal action. The policy's own if missing. */
   error?: number;
   /** Seconds a player thinks per turn (fire burns meanwhile: docs/combat.md § Estados en tiempo real). */
   think?: number;
   maxRounds?: number;
+}
+/**
+ * Matemágico and Tecnópata grow by their tree at the jar, not by level (docs/animas/README.md § Two
+ * ways to grow). The tables still say "matemagico 2" for short: here that is the first nodes of its
+ * trunk (2: Ángulo exacto and Análisis Parálisis; 3: Cardioide too). Tecnópata fights with the three
+ * skills of its tree, as it did when they came with it. Whatever `improved` names is added.
+ */
+export function nodesFor(levels: Partial<Record<ClassId, number>> | undefined, improved: readonly string[] = []) {
+  const m = levels?.matemagico ?? 1;
+  return [...new Set([...m >= 2 ? ['matemagico:angulo', 'matemagico:analisis'] : [], ...m >= 3 ? ['matemagico:cardioide'] : [], 'tecnopata:explosion', 'tecnopata:confusion', 'tecnopata:rayo-encogedor', ...improved])];
+}
+/**
+ * The story's missions, for playing a fight as the party reaches it (docs/fight-sim.md § Story points).
+ * Nuria and Uri's is the introduction; the rest can be done in any order, so each is met with anything
+ * from none to all of the others behind it. `lights`: the Ecos de luz it gives (LIGHTS in src/story.ts);
+ * `friend`: the ánima whose bonus the whole party gets from then on; `teaching`: its fights left easy
+ * on purpose, the ones that teach, which the pair is not asked of. A new mission is one more entry.
+ */
+/** The pair every fight is held to (docs/combat.md § La respuesta de cada combate): `smart` wins at least `with`, `casual` at most `without`. */
+export const PAIR = { with: .9, without: .2 };
+export const MISSIONS = {
+  nuria: { name: 'Nuria y Uri', intro: true, lights: 2, friend: 'nuria', fights: ['crias-1', 'crias-2', 'crias-3', 'cebolla', 'cebollon', 'plato', 'escolta', 'uri-vertigo'], teaching: ['crias-1', 'crias-2', 'crias-3', 'cebolla'] },
+  universidad: { name: 'Los amigos de la uni', intro: false, lights: 5, friend: 'universidad', fights: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon', 'sobremesa'], teaching: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda'] },
+  marta: { name: 'Marta', intro: false, lights: 1, friend: 'marta', fights: ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'], teaching: [] },
+} as const satisfies Record<string, { name: string; intro: boolean; lights: number; friend: AnimaId; fights: readonly string[]; teaching: readonly string[] }>;
+export type MissionId = keyof typeof MISSIONS;
+export const MISSION_IDS = Object.keys(MISSIONS) as MissionId[];
+/** The mission a fight belongs to, if any. */
+export const missionOf = (fight: string) => MISSION_IDS.find(id => (MISSIONS[id].fights as readonly string[]).includes(fight));
+/**
+ * Ways of spending the ecos at the jar, each a shopping list in order: what the ecos of a story point
+ * pay for is bought, the rest is not (`withinEcos`). `nada`: whoever never opened the jar.
+ */
+export const BUILDS: Record<string, readonly string[]> = {
+  nada: [],
+  // A bit of everything: the trunk first, then an element and its skill, then Aitor's.
+  mixto: ['matemagico:angulo', 'tecnopata:explosion', 'matemagico:fuego', 'matemagico:analisis', 'tecnopata:rayo-encogedor', 'matemagico:factor-comun', 'matemagico:agua', 'tecnopata:confusion', 'matemagico:electrico', 'matemagico:cardioide', 'matemagico:vasos', 'matemagico:descarga'],
+  // Everything into the elements: Atacar's three, then what lays and cashes them.
+  elementos: ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'matemagico:vasos', 'matemagico:descarga', 'matemagico:factor-comun', 'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo'],
+  // Skills and maná, no element.
+  tronco: ['matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'tecnopata:explosion', 'tecnopata:confusion', 'tecnopata:rayo-encogedor', 'matemagico:mana-1', 'tecnopata:control-remoto', 'papagato:mana-1'],
+};
+export interface StoryPoint { at: string; mission: MissionId; done: MissionId[]; ecos: number; build: string; setup: Pick<Setup, 'animas' | 'friends' | 'levels' | 'improved' | 'exact'> }
+/**
+ * The party as it stands when it reaches `mission`: `nuria` (the introduction: nothing behind it),
+ * `marta:first` (only the introduction behind), `marta:last` (every other mission too) or the ones
+ * done by name, `marta:universidad`. It has the friends' ánimas and the ecos of what is behind it,
+ * spent as `build` says, and Papagato a level up for each mission done after the introduction.
+ */
+export function storyPoint(at: string, build = 'mixto'): StoryPoint {
+  const [id, order = 'first'] = at.split(':'), mission = MISSIONS[id as MissionId];
+  if (!mission) throw new Error(`Unknown mission "${id}": use ${MISSION_IDS.join(', ')}.`);
+  if (!(build in BUILDS)) throw new Error(`Unknown build "${build}": use ${Object.keys(BUILDS).join(', ')}.`);
+  const open = MISSION_IDS.filter(other => !MISSIONS[other].intro && other !== id);
+  const named = order === 'first' ? [] : order === 'last' ? open : order.split('/') as MissionId[];
+  for (const other of named) if (!open.includes(other)) throw new Error(`"${other}" cannot be behind "${id}": use first, last or ${open.join('/')}.`);
+  const done = mission.intro ? [] : [...MISSION_IDS.filter(other => MISSIONS[other].intro), ...named];
+  const ecos = done.reduce((sum, other) => sum + MISSIONS[other].lights, 0), improved = withinEcos(BUILDS[build], ecos);
+  return {
+    at: mission.intro ? id : `${id}:${order}`, mission: id as MissionId, done, ecos, build,
+    setup: {
+      animas: mission.intro ? MISSION_ANIMAS : ['matemagico', 'papagato', 'tecnopata'],
+      friends: done.map(other => MISSIONS[other].friend),
+      levels: { papagato: mission.intro ? 2 : Math.min(3, 2 + named.length) },
+      improved, exact: true,
+    },
+  };
+}
+/** Every fight of `points`' missions (or `fights`), as each point's party meets it, with each bot. */
+export function storyRows(points: StoryPoint[], policies: Policy[], options: { fights?: string[]; party?: string; runs?: number; seed?: number; tuning?: Tuning } = {}) {
+  return points.flatMap(point => (options.fights?.filter(f => missionOf(f) === point.mission) ?? MISSIONS[point.mission].fights).flatMap(fight => policies.map(policy => ({
+    at: point.at, build: point.build, ecos: point.ecos, spent: costOf(point.setup.improved ?? []),
+    row: simulate({ fight, party: options.party ?? DUO, policy, ...point.setup }, options.runs ?? 200, options.seed ?? 35, options.tuning ?? {}),
+  }))));
 }
 export type Ban = SkillId | DualId | 'duals';
 /** A turn: `dual` is the active fighter and the next one together (both turns, both halves of maná). */
@@ -96,9 +171,16 @@ const BOOKS = {
   camping: { rules: CAMPING },
   marta: { rules: MARTA },
   reaction: { rules: REACTION_RULES },
+  element: { rules: ELEMENT_RULES },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
 } as unknown as Record<string, Record<string, Record<string, unknown>>>;
+/** Every number that can be tuned, as `book.id.field` and what it is now: what a balance report shows and `--tune` takes. */
+export function tunables(): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [book, entries] of Object.entries(BOOKS)) for (const [id, entry] of Object.entries(entries)) for (const [field, value] of Object.entries(entry)) if (typeof value === 'number') out[`${book}.${id}.${field}`] = value;
+  return out;
+}
 export function withTuning<T>(tuning: Tuning, work: () => T): T {
   const undo: (() => void)[] = [];
   try {
@@ -147,7 +229,7 @@ export function createFight(setup: Setup, random: () => number = Math.random): B
     : undefined;
   if (!state) throw new Error(`Unknown fight "${setup.fight}": use ${FIGHTS.join(', ')}.`);
   state.levels = { ...setup.levels };
-  if (setup.improved?.length) improve(state, improvedBy(setup.improved));
+  improve(state, improvedBy(setup.exact ? setup.improved ?? [] : nodesFor(setup.levels, setup.improved)));
   // The fight's own dice (Zarpazos de fuego's coins) come from the same seed.
   state.seed = Math.floor(random() * 2 ** 32) >>> 0;
   return state;
@@ -560,8 +642,7 @@ export function conclude(rows: Row[]): string[] {
   for (const row of rows) {
     if (row.policy !== 'smart') continue;
     for (const skill of SKILLS) {
-      const level = 'level' in skill ? skill.level : 1;
-      if ((row.levels[skill.class] ?? 1) >= level && !row.ban.includes(skill.id) && !row.used[skill.id]) unused.add(skill.name);
+      if (skillKnown(skill.id, row.levels, improvedBy(nodesFor(row.levels, row.improved))) && !row.ban.includes(skill.id) && !row.used[skill.id]) unused.add(skill.name);
     }
   }
   const everUsed = new Set(rows.filter(r => r.policy === 'smart').flatMap(r => Object.keys(r.used)));
@@ -570,7 +651,7 @@ export function conclude(rows: Row[]): string[] {
   // A dual the best bot could make (each half learned and worn by someone from the start) and never does.
   const worn = (party: string) => party.split('+').map(entry => entry.split(':')[1]);
   const noDual = DUALS.filter(dual => rows.some(row => row.policy === 'smart' && !dualBanned(dual, row.ban)
-    && dual.parts.every(part => { const skill = SKILLS.find(s => s.id === part)!; return worn(row.party).includes(skill.class) && (row.levels[skill.class] ?? 1) >= ('level' in skill ? skill.level : 1); }))
+    && dual.parts.every(part => { const skill = SKILLS.find(s => s.id === part)!; return worn(row.party).includes(skill.class) && skillKnown(skill.id, row.levels, improvedBy(nodesFor(row.levels, row.improved))); }))
     && !rows.some(row => row.policy === 'smart' && row.used[dual.id]));
   if (noDual.length) lines.push(`AVISO smart nunca hace, en toda esta tabla: ${noDual.map(d => d.name).join(', ')}. Puede no compensar, o puede que el bot no sepa valorarlo.`);
   return lines;
@@ -617,7 +698,7 @@ export const TARGETS: readonly Target[] = [
   // El Plato Misterioso (ring 2's fear): fast to read, and a dual always takes the dish's weakness.
   { id: 'plato-bien', fight: 'plato', party: DUO, levels: P2M1, policy: 'smart', win: [.95, 1], hpLeftWon: [.35, .84], roundsWon: [3, 6], why: 'Leer el plato: golpes, fuego y, con la sorpresa, los dos a la vez o agarrarse. Un dual siempre acierta con el plato, así que es rápido.' },
   { id: 'plato-sin-duales', fight: 'plato', party: DUO, levels: P2M1, policy: 'smart', ban: ['duals'], win: [.9, 1], roundsWon: [4, 7], why: 'Sin duales también cae: en la sorpresa se aguanta y se recarga. Una o dos rondas más.' },
-  { id: 'plato-sin-pensar', fight: 'plato', party: MISSION_PARTY, levels: L2, policy: 'casual', win: [.6, .98], roundsWon: [5, 8], why: 'Sin pensar se gana, pero ¡Puaj! salpica y la sorpresa no deja entrar nada: se llega con poca vida.' },
+  { id: 'plato-sin-pensar', fight: 'plato', party: MISSION_PARTY, levels: L2, policy: 'casual', win: [0, .2], roundsWon: [4, 10], why: 'Sin leer el plato se pierde: ¡Puaj! salpica, la sorpresa no deja entrar nada y cada golpe que no acierta con el plato es una ronda regalada.' },
   // Ring 3's fear: La Cebolla y los suyos.
   { id: 'escolta-bien', fight: 'escolta', party: DUO, levels: P2M2, policy: 'smart', win: [.85, 1], hpLeftWon: [.25, .65], roundsWon: [3.5, 6], why: 'El último anillo es la prueba: primero el fantasmita, pelar la cebolla, agarrarse al Aplastón. Pensando, ágil.' },
   { id: 'escolta-sin-duales', fight: 'escolta', party: DUO, levels: P2M2, policy: 'smart', ban: ['duals'], win: [.75, .98], roundsWon: [5, 7.5], why: 'Sin duales también se pasa, con orden, pero más largo y más justo.' },
@@ -632,11 +713,11 @@ export const TARGETS: readonly Target[] = [
   // Grito liberador is what decides it: every shout makes the party weaker and it stronger for good, so a long fight turns on them.
   { id: 'vertigo-duo-bien', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.5, .9], roundsWon: [3.5, 8], duals: [1, 5], why: 'Con los gatos en Aitor y el fuego en Gerard, quien descubre los duales lo tumba deprisa, antes de que grite mucho.' },
   { id: 'vertigo-sin-duales', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', ban: ['duals'], win: [.85, 1], hpLeftWon: [.2, .55], roundsWon: [10, 15], why: 'Sin ataques duales también se gana: romper el ojo antes del rayo, agarrarse cuando carga. Cuesta vida y rondas, y cada grito pesa.' },
-  { id: 'vertigo-eco-mana', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', improved: ['papagato:mana-1'], win: [.55, .95], why: 'Dos ecos en más maná ayudan a quien no le da vueltas, sin regalarle el combate.' },
+  { id: 'vertigo-eco-mana', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', improved: ['papagato:mana-1'], win: [.05, .5], why: 'Dos ecos en más maná ayudan a quien no le da vueltas, pero no le dan el combate: sin romper el ojo ni agarrarse, pierde más de la mitad.' },
   { id: 'vertigo-eco-elementos', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', improved: ['matemagico:agua', 'matemagico:fuego', 'matemagico:electrico'], hpLeftWon: [.6, .9], why: 'Los elementos son una respuesta más, no lo que decide el combate.' },
-  { id: 'vertigo-sin-pensar', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', win: [.35, .8], why: 'Sin pensar, Vertitrón gana a menudo: no es un trámite.' },
+  { id: 'vertigo-sin-pensar', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin pensar, Vertitrón gana: quien no rompe el ojo ni se agarra al rayo llega al final sin fuerzas, grito a grito.' },
   { id: 'vertigo-poco-matemagico', fight: 'uri-vertigo', party: DUO, levels: P2M1, policy: 'smart', win: [.9, 1], why: 'Con Matemágico a nivel 1 no hay Punto débil, pero basta Zarpazos de fuego.' },
-  { id: 'vertigo-sin-gatos-aitor', fight: 'uri-vertigo', party: MISSION_PARTY, levels: P2M2, policy: 'smart', win: [.8, 1], hpLeftWon: [.1, .45], why: 'Si Aitor no lleva a los gatos, se puede, pero sufriendo: Gerard tiene que cambiar de ánima para todo y se gana con poca vida.' },
+  { id: 'vertigo-sin-gatos-aitor', fight: 'uri-vertigo', party: MISSION_PARTY, levels: P2M2, policy: 'smart', win: [.55, 1], hpLeftWon: [0, .45], why: 'Si Aitor no lleva a los gatos, se puede, pero sufriendo y no siempre: Gerard tiene que cambiar de ánima para todo y se gana con muy poca vida.' },
   { id: 'vertigo-a-punetazos', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'attack', win: [0, .02], why: 'Solo Atacar no llega: sus gritos y su rayo piden algo más.' },
   { id: 'vertigo-nivel-3', fight: 'uri-vertigo', party: DUO, levels: P3M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.4, .9], why: 'Quien ha subido mucho lo nota, pero el jefe sigue pidiendo cabeza.' },
   { id: 'vertigo-pensando-despacio', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', think: 8, win: [.9, 1], hpLeftWon: [0, .9], why: 'Quien piensa despacio deja arder más el fuego, y aun así Vertitrón no se vuelve un trámite.' },
@@ -659,30 +740,31 @@ export const TARGETS: readonly Target[] = [
   { id: 'tienda-facil', fight: 'camping-tienda', party: DUO, levels: P2M2, policy: 'casual', win: [.9, 1], why: 'Una parcela equivocada despierta su tienda: un susto, no un muro.' },
   { id: 'tienda-sin-gatos-aitor', fight: 'camping-tienda', party: MISSION_PARTY, levels: P2M2, policy: 'smart', win: [.9, 1], why: 'También con Aitor sin ánima.' },
   { id: 'negra-bien', fight: 'camping-negra', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.2, .65], why: 'La parcela negra es la pelea dura: agarrarse a la bombona, golpes a los magos y primero los seises. Pensando se pasa, con poca vida.' },
-  { id: 'negra-sin-pensar', fight: 'camping-negra', party: DUO, levels: P2M2, policy: 'casual', win: [.35, .85], why: 'Sin pensar, la parcela negra gana a menudo: dos bombonas a la vez y los dados.' },
-  { id: 'negra-con-magia', fight: 'camping-negra', party: TECH, levels: P2M2, policy: 'smart', win: [.3, .9], why: 'Con dos ánimas de magia contra los magos cuesta mucho más: la pregunta es pegar a golpes.' },
+  { id: 'negra-sin-pensar', fight: 'camping-negra', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin pensar, la parcela negra gana: dos bombonas a la vez sin agarrarse y los dados cayendo.' },
+  { id: 'negra-con-magia', fight: 'camping-negra', party: TECH, levels: P2M2, policy: 'smart', win: [0, .2], why: 'Con dos ánimas de magia contra los magos se pierde: la respuesta es pegarles a golpes.' },
   { id: 'campeon-bien', fight: 'campeon', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .85], roundsWon: [6, 12], why: 'El Campeón, pensando: agarrarse mientras es héroe y gastarlo todo cuando va de paisano.' },
-  { id: 'campeon-sin-pensar', fight: 'campeon', party: DUO, levels: P2M2, policy: 'casual', win: [.2, .75], why: 'Sin pensar, el héroe pega demasiado fuerte: es el jefe pequeño de la mazmorra.' },
+  { id: 'campeon-sin-pensar', fight: 'campeon', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin pensar, el héroe gana: quien no se agarra a sus puñetazos ni espera al paisano no llega.' },
   { id: 'campeon-a-punetazos', fight: 'campeon', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: de héroe le hace la mitad y de paisano se recupera.' },
   { id: 'campeon-con-tecnopata', fight: 'campeon', party: TECH, levels: P2M2, policy: 'smart', win: [.85, 1], why: 'Con Aitor en su propia ánima también se gana leyendo las formas.' },  // Las cuerdas (docs/quests/marta.md). Its numbers are MARTA (book marta.rules) and each foe's PROFILES entry
   // (foe.lealtad…). Each quality asks one question, answered by whoever reads its plate.
-  { id: 'lealtad-bien', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.45, .85], roundsWon: [5, 8], why: 'La Lealtad, pensando: romperla antes de que el Eco pese demasiado, o pasarle por encima con lo que alcanza a todos.' },
-  { id: 'lealtad-sin-pensar', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'casual', win: [.6, .97], why: 'Sin pensar se pasa a menudo, con mucha menos vida: el Eco ha tenido tiempo de crecer.' },
+  { id: 'lealtad-bien', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .85], roundsWon: [2.5, 8], why: 'La Lealtad, pensando: callar primero a su Eco con lo que alcanza a todos, y que se agarre quien ella ha jurado golpear.' },
+  { id: 'lealtad-sin-pensar', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'casual', win: [0, .3], why: 'Sin pensar se pierde: su Juramento cae entero sobre quien no se agarra, y el Eco lo repite cada vez más fuerte.' },
   { id: 'lealtad-a-punetazos', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: ella lo para todo y el Eco, detrás, no deja de crecer.' },
   { id: 'cristalino-a-golpes', fight: 'cuerdas-cristalino', party: DUO, levels: P2M2, policy: 'attack', win: [.95, 1], hpLeftWon: [.25, .65], why: 'Lo Cristalino se rompe a golpes: quien lee la placa y no lanza magia lo pasa, pagando sus destellos.' },
   { id: 'cristalino-bien', fight: 'cuerdas-cristalino', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], why: 'Con los gatos y un dual, que no rebota, cae deprisa.' },
   { id: 'cristalino-a-lo-loco', fight: 'cuerdas-cristalino', party: TECH, levels: P2M2, policy: 'random', win: [.1, .7], why: 'Con dos ánimas de magia y sin mirar, la magia vuelve: se pierde a menudo.' },
   { id: 'directo-bien', fight: 'cuerdas-directo', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.35, .7], why: 'Lo Directo, pensando: agarrarse cuando te mira y pegar cuando mira al otro.' },
-  { id: 'directo-sin-pensar', fight: 'cuerdas-directo', party: DUO, levels: P2M2, policy: 'casual', win: [.7, .99], why: 'Sin agarrarse, cada golpe directo es casi media vida.' },
+  { id: 'directo-sin-pensar', fight: 'cuerdas-directo', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin agarrarse a la Estocada ni guardarse para cuando se queda clavado, pega demasiado y aguanta demasiado.' },
   { id: 'directo-a-punetazos', fight: 'cuerdas-directo', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: pega demasiado fuerte para aguantarlo sin Defender.' },
-  { id: 'directo-con-tecnopata', fight: 'cuerdas-directo', party: TECH, levels: P2M2, policy: 'smart', win: [.75, 1], why: 'Con Aitor en su propia ánima también, más justo.' },
+  { id: 'directo-con-tecnopata', fight: 'cuerdas-directo', party: TECH, levels: P2M2, policy: 'smart', win: [0, .35], why: 'Con dos ánimas de magia y sin nada que le duela de verdad, la ventana de Clavado no basta.' },
+  { id: 'directo-electrico', fight: 'cuerdas-directo', party: TECH, levels: P2M2, policy: 'smart', improved: ['matemagico:electrico'], win: [.65, 1], why: 'Lo Directo es una lanza: es débil a lo eléctrico. Con ese elemento en Atacar, las dos ánimas de magia que sin él perdían, ganan.' },
   // La Voz, the mission's boss. A blow only lands on a note, so who does not wait for one loses turns; her Eco and its
   // Crescendo make a long fight a lost one; the Acorde (the second fighter striking inside the same note) is what shortens it.
   { id: 'voz-bien', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', win: [.93, 1], hpLeftWon: [.22, .58], roundsWon: [10, 16], why: 'La Voz, leyendo la canción: esperar la nota, pegar los dos dentro de ella y agarrarse al golpe directo.' },
-  { id: 'voz-sin-duales', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', ban: ['duals'], win: [.85, 1], hpLeftWon: [.12, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
-  { id: 'voz-sin-pensar', fight: 'voz', party: DUO, levels: P3M3, policy: 'casual', win: [.03, .45], why: 'Quien pega a destiempo pierde la mitad de sus golpes en los silencios, y el Eco no espera.' },
+  { id: 'voz-sin-duales', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', ban: ['duals'], win: [.7, 1], hpLeftWon: [.1, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
+  { id: 'voz-sin-pensar', fight: 'voz', party: DUO, levels: P3M3, policy: 'casual', win: [0, .25], why: 'Quien pega a destiempo pierde la mitad de sus golpes en los silencios, y el Eco no espera.' },
   { id: 'voz-a-punetazos', fight: 'voz', party: DUO, levels: P3M3, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
-  { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, levels: P3M3, policy: 'smart', win: [.4, .92], why: 'Con dos ánimas de magia cuesta más: su Nota clara la devuelve, y hay que guardarse los rayos para cuando no es de vidrio.' },
+  { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, levels: P3M3, policy: 'smart', win: [.25, .92], why: 'Con dos ánimas de magia cuesta más: su Nota clara la devuelve, y hay que guardarse los rayos para cuando no es de vidrio.' },
 ];
 export interface TargetResult { id: string; why: string; pass: boolean; failures: string[]; row: Row; wanted: Pick<Target, 'win' | 'roundsLost' | 'hpLeftWon' | 'roundsWon' | 'duals'> }
 /** Plays every target and says which hold. */

@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
-import { SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
+import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
+import { DIE, createDie, faceUp } from './dice';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
@@ -38,6 +39,13 @@ import { cometPath } from './trails';
 const CAT_RUN = 7, CAT_LANDS = 14;
 /** How long after the first the next of a flurry's little claws lands (Zarpazos). */
 const CLAW_SECONDS = .12;
+/**
+ * Dadaísta's throw, in fight seconds (docs/animas/dadaista/). A blow by its face: the die leaves the
+ * hand at `launch` and lands at `contact`. A bet first goes up and comes down showing what it rolled
+ * (`shown`), held to be read until `read`: lost, it says so at `lost` and goes back to the hand; won,
+ * it is thrown then (`flight` later it lands) and comes down on the target again `gap` after.
+ */
+const DICE = { launch: .2, contact: .56, tail: .6, toss: .14, shown: .74, lost: .8, read: 1, flight: .32, gap: .34, back: .34 } as const;
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
@@ -248,6 +256,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   /** The effect whose streams have already left the hand. */
   let cast: BattleEffect | undefined;
+  /** Dadaísta's dice beside whoever wears it: the hand in view, and the one in the air. */
+  interface HandDie { entity: pc.Entity; face: number; at: pc.Vec3; turn: pc.Quat; size: number; age: number; tumble: pc.Vec3 }
+  const dice = new Map<string, { hand: HandDie[]; shown: number; thrown?: { die: HandDie; action: BattleEffect; from: pc.Vec3; kept: boolean }; seen?: BattleEffect }>();
+  /** The die the fight screen's cursor is on while one is being picked: it comes forward. */
+  let aimedDie: { unit: string; index: number } | undefined;
   let state: BattleState | undefined;
   let effect: BattleEffect | undefined;
   let effectTime = 0;
@@ -404,7 +417,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (n <= 0) statusFx.remove(id, look);
       else statusFx.apply(id, look, { level: Math.ceil(n / most * 3), seconds: most, left: n, held: true });
     }
-    for (const look of ['quemado', 'cegado', 'sanacion', 'confusion', 'encogido'] as const) {
+    for (const look of ['quemado', 'cegado', 'sanacion', 'confusion', 'encogido', 'mojado'] as const) {
       const on = timed?.[look], level = on?.level ?? 0, key = `${id}:${look}`;
       if ((shownStacks.get(key) ?? 0) !== level) {
         shownStacks.set(key, level);
@@ -460,7 +473,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const classOf = (id: string) => state?.allies.find(a => a.id === id)?.classId;
   /** Atacar by whoever wears Tecnópata: Bip goes and rams the target, the wearer stays put with a hand up. */
   /** Tecnópata's skills are Bip's too: it fires them, or blows itself up among the foes (Explosión), while its wearer points. */
-  const BIP_SKILLS: ReadonlySet<string> = new Set(['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor']);
+  const BIP_SKILLS: ReadonlySet<string> = new Set(['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor', 'control-remoto']);
   /** How much of its size someone Encogido keeps (Rayo encogedor). */
   const SHRUNK = .62;
   /** Whether an action is Bip's, decided once for it (Explosión's Bip is gone before the action ends). */
@@ -509,6 +522,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     solarPlans.set(e, plan);
     return plan;
   }
+  /** When Dadaísta's die lands (a bet lost: when it says so), and when its throw is over. */
+  const diceContact = (e: BattleEffect) => e.die?.rolled === undefined ? DICE.contact : e.die.won ? DICE.read + DICE.flight : DICE.lost;
+  const diceEnd = (e: BattleEffect) => e.die?.rolled === undefined ? DICE.contact + DICE.tail : e.die.won ? DICE.read + DICE.flight + DICE.gap + DICE.tail : DICE.read + DICE.back + .1;
   /** When Bip's skill lands, in fight seconds from its start (CONTACT_SECONDS for the rest of its moves). */
   function bipContact(e: BattleEffect) {
     if (e.release) return solarPlan(e).contact;
@@ -1101,6 +1117,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
+    // Dadaísta's bet, lost: nothing lands (the die goes back to the hand, `updateDice`).
+    if (action.die?.won === false) return;
     // Vertitrón's shout, its charge, and news of its eye breaking draw their own picture (`worldFx`).
     if (actor.robot && !target) return;
     // Rayo solar charging up: Gerard's fire streams into Bip.
@@ -1130,6 +1148,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // The zero barely holds the picture, so the one lands right on its heels: tac-tac.
       return split ? { ...landed, stop: Math.min(landed.stop, .025) } : landed;
     }
+    // Matemágico's elements: their own pictures (the streams and comets left his circle in `castElement`).
+    if (action.skill && ELEMENTAL.has(action.skill)) { elementBurst(action, actor, target); return land(felt, dx / d, 0, dz / d); }
     const reach = target.party ? .15 : .6;
     // On Vertitrón's eye, the blow lands on the eye, just in front of it; on Gerard or Aitor, on the
     // middle of the body (their heads are big: higher, it reads as a blow over them).
@@ -1150,6 +1170,116 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     // A blow that opened a wound (it spent Sangrado) flares brighter; never red, nothing here reads as blood.
     hit(target, action.element ? ELEMENT_FLASH[action.element] : action.spell ? gold : claw ? clawFlash : white, action.bled ? 1.4 : guarded ? .4 : claw ? .7 : 1);
     return land(felt, dx / d, 0, dz / d);
+  }
+  /** Matemágico's skills of the elements (docs/animas/README.md § The jar): thrown from his circle, like Foc Binari. */
+  const ELEMENTAL: ReadonlySet<string> = new Set(['factor-comun', 'vasos', 'descarga']);
+  const WATER = '#6cc8f2', WATER_PALE = '#dff4ff', BOLT = '#ffe45c', BOLT_HOT = '#fffbe0';
+  /** Who a skill on everyone reached, with what it did to each. */
+  const reachedBy = (e: BattleEffect) => (e.hits ?? []).flatMap(h => { const f = fighters.get(h.target); return f ? [{ f, h }] : []; });
+  /** Where Descarga's bolt comes down from: well over its target, a little to one side. */
+  const boltSky = (target: Fighter) => { const c = chestOf(target); return { x: c.x + .35, y: c.y + 4.4, z: c.z - .2 }; };
+  /**
+   * What leaves his circle as the hand comes down. Factor común: a pair of binary streams forking to
+   * every foe at once. Vasos comunicantes: an arc of water to each, two strands winding round it.
+   * Descarga: a thin crackle straight up, out of sight; the bolt comes down as it lands (`elementBurst`).
+   */
+  function castElement(e: BattleEffect, from: pc.Vec3, target: Fighter) {
+    const hand = v3(from);
+    if (e.skill === 'descarga') {
+      const sky = boltSky(target);
+      effects.trails.comet(hand, sky, [BOLT_HOT, BOLT], CAST_FLIGHT * .7, { arc: .25, width: .05, life: .3, intensity: 3, core: .6, additive: 1, taper: .4 });
+      dualFx.burst('bipzap', { at: hand, count: 22, speed: 2.2, up: 1.4, life: [.15, .35], colour: BOLT });
+      return;
+    }
+    for (const { f } of reachedBy(e)) {
+      const chest = v3(chestOf(f));
+      if (e.skill === 'factor-comun') effects.binaryFire(hand, chest, { seconds: CAST_FLIGHT, gap: 0, burn: true, feet: floorUnder(f) });
+      else {
+        effects.trails.comet(hand, chest, [WATER_PALE, WATER], CAST_FLIGHT, { arc: .55, width: .15, life: .5, intensity: 2.4, core: .5, additive: .9, taper: .8 });
+        for (const phase of [0, Math.PI]) effects.trails.comet(hand, chest, ['#ffffff', '#3f9fe0'], CAST_FLIGHT, { arc: .55, width: .04, life: .4, intensity: 2.2, core: .4, additive: 1, twist: { turns: 2.5, radius: .13, phase } });
+      }
+    }
+  }
+  /**
+   * They land. Vasos comunicantes: water climbs every foe in rings to one and the same height, and a
+   * level line of pale light joins them there: communicating vessels. Factor común: every foe flares,
+   * the fire on each rises to one height, and a gold line over their heads ties them with the digit
+   * of the fire they now share. Descarga: a jagged bolt out of the sky, a ring thrown along the floor.
+   */
+  function elementBurst(e: BattleEffect, actor: Fighter, target: Fighter) {
+    const up = { x: 0, y: 1, z: 0 }, reached = reachedBy(e), facing = screenAxes(viewDir()).facing;
+    if (e.skill === 'descarga') {
+      const chest = v3(chestOf(target)), feet = floorUnder(target), sky = boltSky(target);
+      // Five strokes, each knocked a little off the straight line: it reads as lightning, not as a ray.
+      let a = sky;
+      for (let k = 1; k <= 5; k++) {
+        const f = k / 5, off = k === 5 ? 0 : Math.sin(k * 2.4) * .34;
+        const b = { x: sky.x + (chest.x - sky.x) * f + off, y: sky.y + (chest.y - sky.y) * f, z: sky.z + (chest.z - sky.z) * f - off * .5 };
+        dualFx.line(a, b, k % 2 ? BOLT_HOT : BOLT, { count: 46, life: .32, size: 1.7 });
+        a = b;
+      }
+      effects.trails.comet(sky, chest, [BOLT_HOT, BOLT], .07, { arc: 0, width: .24, life: .32, intensity: 4.2, core: .85, additive: 1, taper: .5 });
+      effects.element('energy', chest, { strength: 1.2, feet: v3(feet) });
+      dualFx.ring({ x: feet.x, y: feet.y + .06, z: feet.z }, up, .5, BOLT, { count: 110, outward: 5, life: .45, size: 1.4, light: 3 });
+      dualFx.burst('bipzap', { at: chest, count: 40, speed: 3.4, up: .8, life: [.25, .6], colour: BOLT });
+      statusFx.touch('electrico', e.target!);
+      hit(target, ELEMENT_FLASH.electrico, 1.4); shake = Math.max(shake, .5); pulse?.(.6, .35);
+      return;
+    }
+    if (!reached.length) return;
+    const top = Math.max(...reached.map(({ f }) => floorUnder(f).y + Math.min(1.5, extent(f).height * .8)));
+    const marks = reached.map(({ f }) => { const feet = floorUnder(f); return { x: feet.x, y: top, z: feet.z }; });
+    if (e.skill === 'vasos') {
+      reached.forEach(({ f, h }, i) => dualFx.after(i * .07, () => {
+        const feet = floorUnder(f), r = Math.max(.45, extent(f).radius * .9);
+        effects.element('water', v3(chestOf(f)), { from: v3(actor.base), strength: .8, feet: v3(feet) });
+        // The water climbs them: four rings, the last one at the level all of them share.
+        [0, 1, 2, 3].forEach(k => dualFx.after(k * .06, () => dualFx.ring({ x: feet.x, y: feet.y + .1 + (top - feet.y - .1) * k / 3, z: feet.z }, up, r, k === 3 ? WATER_PALE : WATER, { kind: 'mote', count: 64, around: 2.6, life: .85 - k * .1, size: 1.25, ...k === 3 ? { light: 1.6 } : {} })));
+        statusFx.touch('agua', h.target); hit(f, ELEMENT_FLASH.agua, 1);
+        if (h.smoked) dualFx.after(.2, () => statusFx.react('humo', h.target));
+      }));
+      // The level line, drawn from one to the next once the water is up.
+      for (let i = 1; i < marks.length; i++) dualFx.after(.24 + i * .07, () => {
+        const n = Math.round(Math.hypot(marks[i].x - marks[i - 1].x, marks[i].z - marks[i - 1].z) * 46);
+        dualFx.line(marks[i - 1], marks[i], WATER_PALE, { count: n, life: .9, size: 1.35 });
+        dualFx.line({ ...marks[i - 1], y: top - .07 }, { ...marks[i], y: top - .07 }, WATER, { kind: 'mote', count: n, life: .8, size: 1.1 });
+      });
+      shake = Math.max(shake, .25); pulse?.(.2, .35);
+      return;
+    }
+    // Factor común.
+    const level = Math.max(0, ...reached.map(({ h }) => h.burn?.id === 'quemado' ? h.burn.level : 0));
+    reached.forEach(({ f, h }, i) => dualFx.after(i * .05, () => {
+      const feet = floorUnder(f), r = Math.max(.45, extent(f).radius * .9), mark = marks[i];
+      hit(f, flame, h.burn?.id === 'quemado' ? 1.4 : 1);
+      if (h.smoked) { dualFx.after(.15, () => statusFx.react('vapor', h.target)); return; }
+      if (h.burn?.id !== 'quemado') return;
+      // Its fire climbs to the height they all share, and the digit of that fire stands over it.
+      [0, 1, 2].forEach(k => dualFx.after(.1 + k * .06, () => dualFx.ring({ x: feet.x, y: feet.y + .15 + (top - feet.y - .15) * k / 2, z: feet.z }, up, r * (1 - k * .15), k === 2 ? '#fff0b0' : '#ff9a2e', { count: 56, around: -3, outward: .3, life: .6, size: 1.25, ...k === 2 ? { light: 2 } : {} })));
+      dualFx.after(.3, () => dualFx.digit({ x: mark.x, y: mark.y + .42, z: mark.z }, level > 1 ? 1 : 0, .34, '#f3cf78', facing, 1));
+    }));
+    const burning = marks.filter((_, i) => reached[i].h.burn?.id === 'quemado');
+    // The common factor: one gold line over all of them, then brackets closing it at each end.
+    for (let i = 1; i < burning.length; i++) dualFx.after(.26 + i * .06, () => dualFx.line(burning[i - 1], burning[i], '#f3cf78', { count: Math.round(Math.hypot(burning[i].x - burning[i - 1].x, burning[i].z - burning[i - 1].z) * 44), life: 1, size: 1.4 }));
+    if (burning.length > 1) dualFx.after(.3 + burning.length * .06, () => { for (const end of [burning[0], burning[burning.length - 1]]) dualFx.line({ ...end, y: end.y - .22 }, { ...end, y: end.y + .22 }, '#fff0b0', { count: 22, life: .9, size: 1.5 }); });
+    shake = Math.max(shake, .4); pulse?.(.5, .4);
+  }
+  /**
+   * An element's reaction as it lands (docs/combat.md § Reacciones entre elementos). A skill on
+   * everyone shows each foe's own (`elementBurst`); Conducción runs from one wet foe to the next.
+   */
+  function reactFx(e: BattleEffect) {
+    const reaction = e.reaction!;
+    if (e.hits?.some(h => h.smoked)) return;
+    if (reaction.id === 'conduccion') {
+      const wet = (reaction.hits ?? []).flatMap(h => { const f = fighters.get(h.target); return f ? [{ f, id: h.target }] : []; });
+      wet.forEach(({ f, id }, i) => dualFx.after(i * .09, () => {
+        statusFx.react('conduccion', id); hit(f, ELEMENT_FLASH.electrico, 1.2);
+        if (i) dualFx.line(v3(chestOf(wet[i - 1].f)), v3(chestOf(f)), BOLT, { count: Math.round(chestOf(wet[i - 1].f).distance(chestOf(f)) * 50), life: .35, size: 1.5 });
+      }));
+      return;
+    }
+    if (e.target) statusFx.react(reaction.id, e.target);
   }
   /**
    * Bip's skill lands (`botStrikes`): a ray from where it floats (energy cyan, a cure's green, the
@@ -1178,6 +1308,29 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // Rings round them from head to feet, closing in one after another: it squeezes them down.
       [.9, .6, .3, .1].forEach((h, i) => dualFx.after(i * .06, () => dualFx.ring({ x: feet.x, y: feet.y + Math.max(.1, height * h), z: feet.z }, up, Math.max(.5, radius * 1.1), '#e8fbff', { count: 70, outward: -1.6, around: 2, life: .55, size: 1.2, ...i === 0 ? { light: 2 } : {} })));
       dualFx.burst('bipzap', { at: v3(chest), count: 30, speed: 2.5, life: [.2, .5], colour: '#ffffff' });
+      return;
+    }
+    if (action.controlled) {
+      // Control remoto: Bip's signal threads to its head and holds it, rings of nanites closing round
+      // it; then its own blow goes, in Bip's cyan, to one of its own (or back into itself).
+      const head = v3(chest.clone().add(new pc.Vec3(0, .45 * target.scale.y, 0))), victim = fighters.get(action.controlled.victim);
+      for (const phase of [0, Math.PI]) effects.trails.comet(v3(from), head, ['#ffffff', BIP.cyan], .16, { arc: .05, width: .05, life: .55, intensity: 2.6, core: .6, twist: { turns: 4, radius: .1, phase } });
+      dualFx.line(v3(from), head, BIP.cyan, { count: Math.round(from.distance(chest) * 40), life: .75, size: 1.2 });
+      [0, 1, 2].forEach(i => dualFx.after(.16 + i * .08, () => dualFx.ring(head, up, .44 - i * .1, BIP.cyan, { kind: 'nanite', count: 60, outward: -1.4, around: i % 2 ? -4 : 4, life: .5, size: 1.1, ...i === 0 ? { light: 2 } : {} })));
+      hit(target, cyanFlash, 1);
+      if (victim) dualFx.after(.42, () => {
+        const at = v3(chestOf(target)), to = v3(chestOf(victim)), own = victim === target;
+        if (!own) {
+          effects.trails.comet(at, to, ['#ffffff', BIP.cyan], .12, { arc: .15, width: .17, life: .35, intensity: 3.2, core: .7, additive: .95, taper: .7 });
+          dualFx.burst('bipzap', { at, count: 24, speed: 2.4, life: [.2, .4] });
+        }
+        dualFx.after(own ? 0 : .12, () => {
+          effects.impact(to, own ? v3(from) : at, 1.4, { colour: BIP.cyan, feet: floorUnder(victim) });
+          dualFx.ring(to, up, .35, '#ffffff', { count: 70, outward: 4, life: .35, size: 1.3, light: 2.5 });
+          dualFx.burst('bipzap', { at: to, count: 36, speed: 3, up: .6, life: [.25, .55] });
+          hit(victim, white, 1.2); shake = Math.max(shake, .45); cue('hit');
+        });
+      });
       return;
     }
     if (action.exploded) {
@@ -1443,6 +1596,128 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const hide = mine && effect?.skill === 'escondite' ? (animate ? Math.sin(clamp01(t / .85) * Math.PI) : 0) : 0;
       const spot = new pc.Vec3().lerp(shelter, new pc.Vec3(spots.hidden.x, 0, spots.hidden.z), hide);
       placeCat(pair.yuki, dt, spot, 0, center, animate, { sit: hide > .02 ? 0 : 1, fear: Math.min(1, hide * 2) }, walks);
+    }
+  }
+  /**
+   * Dadaísta's dice (src/dice.ts): its maná, floating in a column beside whoever wears it, on the side
+   * away from the others, each with its face turned to the camera. New ones (Defender, a round's
+   * rest, the fight starting) drop in tumbling. The one a skill spends leaves the hand, flies at the
+   * target tumbling, lands on it (twice, a bet won) and bounces off; a bet goes up first and comes
+   * down showing what it rolled, and one lost goes back to its place with that face.
+   */
+  function updateDice(dt: number, t: number, animate: boolean, target?: Fighter) {
+    if (!state || (!dice.size && !state.allies.some(a => a.classId === DICED))) return;
+    const c = camera(), flat = Math.hypot(c.x, c.z) || 1, toCamera = { x: c.x / flat, z: c.z / flat }, across = { x: toCamera.z, z: -toCamera.x };
+    // The turn that brings a die's top face round to the camera, most of the way: its number reads, and it is still a cube.
+    const view = viewDir(), facing = new pc.Vec3(view.x * .82, view.y * .82 + .18, view.z * .82).normalize();
+    const tiltAxis = new pc.Vec3().cross(pc.Vec3.UP, facing).normalize(), tilt = new pc.Quat().setFromAxisAngle(tiltAxis, Math.acos(clamp01(facing.y)) * 180 / Math.PI);
+    const party = [...fighters].filter(([, f]) => f.party);
+    const spin = new pc.Quat(), want = new pc.Quat(), place = new pc.Vec3();
+    /** A die at rest: its face to the camera, turned `yaw` degrees about it. */
+    const settle = (face: number, yaw: number) => want.mul2(tilt, spin.setFromAxisAngle(pc.Vec3.UP, yaw).mul(faceUp(face)));
+    for (const [id, f] of party) {
+      const unit = state.allies.find(a => a.id === id);
+      const wearing = !!unit && f.hp > 0 && unit.classId === DICED && entryTime >= ENTRY_SECONDS * .6;
+      let d = dice.get(id);
+      if (!d && !wearing) continue;
+      if (!d) { d = { hand: [], shown: 0 }; dice.set(id, d); }
+      const others = party.filter(([other, o]) => other !== id && o.hp > 0).reduce((sum, [, o]) => sum + (f.base.x - o.base.x) * across.x + (f.base.z - o.base.z) * across.z, 0);
+      const out = Math.sign(others) || 1, floor = groundHeight(f.base.x, f.base.z), size = DIE.size * f.scale.y;
+      const make = (face: number): HandDie => {
+        const entity = createDie(app); battleRoot.addChild(entity);
+        return { entity, face, at: new pc.Vec3(f.base.x, floor + 2.6 * f.scale.y, f.base.z), turn: new pc.Quat(), size: 0, age: 0, tumble: new pc.Vec3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize() };
+      };
+      // The die this action spends leaves the hand as the action starts; a bet's stays in its place if it is lost.
+      const acting = effect?.actor === id && effect.die ? effect : undefined;
+      if (acting && d.seen !== acting) {
+        d.seen = acting;
+        const kept = acting.die!.won === false, die = kept ? d.hand[acting.die!.at] : d.hand.splice(acting.die!.at, 1)[0];
+        if (d.thrown && !d.thrown.kept) d.thrown.die.entity.destroy();
+        d.thrown = die && animate ? { die, action: acting, from: die.at.clone(), kept } : undefined;
+        if (die && !animate && !kept) die.entity.destroy();
+      }
+      if (d.thrown && d.thrown.action !== effect) { if (!d.thrown.kept) d.thrown.die.entity.destroy(); d.thrown = undefined; }
+      // The hand, in step with the fight's: as many as there is maná, each with its face.
+      const hand = wearing ? diceOf(state, unit!) : unit && d.hand.length ? unit.dice ?? [] : [];
+      while (d.hand.length > hand.length) d.hand.pop()!.entity.destroy();
+      for (const had = d.hand.length; d.hand.length < hand.length;) { const die = make(hand[d.hand.length]); die.age = animate ? -.09 * (d.hand.length - had) : 1; d.hand.push(die); }
+      d.shown = animate ? Math.max(0, Math.min(1, d.shown + (wearing ? dt : -dt) / .25)) : wearing ? 1 : 0;
+      d.hand.forEach((die, i) => {
+        const tossing = d!.thrown?.kept && d!.thrown.die === die;
+        if (!tossing) die.face = hand[i];
+        die.age += dt;
+        // A column by the shoulder, the first die lowest, each a little off the line and bobbing on its own.
+        const aimed = aimedDie?.unit === id && aimedDie.index === i && !effect ? 1 : 0;
+        const reach = (.56 + (i % 2) * .09 + aimed * .16) * f.scale.x, bob = animate ? Math.sin(performance.now() / 620 + i * 1.7) * .018 : 0;
+        place.set(f.base.x + across.x * reach * out + toCamera.x * (.16 + aimed * .2), floor + (.62 + i * .3 + aimed * .05) * f.scale.y + bob, f.base.z + across.z * reach * out + toCamera.z * (.16 + aimed * .2));
+        if (tossing) return;
+        // Dealt: it drops in from above tumbling and settles; then it only sways.
+        const land = animate ? smooth(die.age / .42) : 1;
+        if (land < 1) {
+          die.at.set(place.x, place.y + (1 - land) * (1 - land) * 1.5, place.z);
+          die.turn.slerp(spin.setFromAxisAngle(die.tumble, die.age * 900), settle(die.face, 0), land * land);
+        } else {
+          die.at.lerp(die.at, place, animate ? 1 - Math.exp(-dt * 12) : 1);
+          die.turn.slerp(die.turn, settle(die.face, animate ? Math.sin(performance.now() / 900 + i * 2.3) * 9 : 0), animate ? 1 - Math.exp(-dt * 10) : 1);
+        }
+        die.size = size * (die.age < 0 ? 0 : 1) * d!.shown * (1 + aimed * .22 + (land < 1 ? Math.sin(land * Math.PI) * .2 : 0));
+        die.entity.enabled = die.size > .001;
+        die.entity.setPosition(die.at); die.entity.setRotation(die.turn); die.entity.setLocalScale(die.size, die.size, die.size);
+      });
+      const thrown = d.thrown;
+      if (!thrown) continue;
+      const { die, action } = thrown, bet = action.die!.rolled !== undefined, won = !!action.die!.won;
+      // Where it is held before it goes: over the wearer's raised hand.
+      const held = new pc.Vec3(f.base.x + across.x * .3 * out + toCamera.x * .2, floor + 1.72 * f.scale.y, f.base.z + across.z * .3 * out + toCamera.z * .2);
+      const chest = target ? chestOf(target) : held;
+      const launch = bet ? DICE.read : DICE.launch, contact = diceContact(action);
+      let grow = 1;
+      if (bet && t < DICE.read) {
+        // The bet: up out of the hand, over and over, and down again showing what it rolled, big enough to read.
+        const up = clamp01((t - DICE.toss) / (DICE.shown - DICE.toss)), lift = smooth(t / DICE.toss), shown = smooth((t - DICE.shown + .1) / .12);
+        die.at.lerp(thrown.from, held, lift); die.at.y += Math.sin(up * Math.PI) * 1.25;
+        die.turn.slerp(spin.setFromAxisAngle(die.tumble, t * 1250), settle(action.die!.rolled!, 0), shown);
+        if (t >= DICE.shown - .1) die.face = action.die!.rolled!;
+        grow = 1 + shown * .75 + Math.sin(clamp01((t - DICE.shown) / .16) * Math.PI) * .25;
+      } else if (bet && !won) {
+        // Lost: it goes back to its place in the hand with the face it rolled.
+        const back = smooth((t - DICE.read) / DICE.back), i = d.hand.indexOf(die);
+        const reach = (.56 + (i % 2) * .09) * f.scale.x;
+        place.set(f.base.x + across.x * reach * out + toCamera.x * .16, floor + (.62 + i * .3) * f.scale.y, f.base.z + across.z * reach * out + toCamera.z * .16);
+        die.at.lerp(held, place, back); die.turn.copy(settle(die.face, 0));
+        grow = 1.75 - back * .75;
+        if (back >= 1) d.thrown = undefined;
+      } else if (t < launch) {
+        // Drawn back over the hand, face to the camera.
+        const lift = smooth(t / launch);
+        die.at.lerp(thrown.from, held, lift); die.turn.slerp(die.turn, settle(die.face, 0), 1 - Math.exp(-dt * 14));
+        grow = 1 + lift * .25;
+      } else {
+        // Thrown: a low arc to the target's chest, tumbling; it lands, jumps back off it and, a bet won, comes down on it again.
+        const blows = won ? 2 : 1, last = contact + (blows - 1) * DICE.gap;
+        const away = new pc.Vec3(held.x - chest.x, 0, held.z - chest.z).normalize();
+        if (t < contact) {
+          const u = clamp01((t - launch) / (contact - launch));
+          die.at.lerp(held, chest, u * u * .35 + u * .65); die.at.y += Math.sin(u * Math.PI) * .32;
+          grow = bet ? 1.75 - u * .6 : 1.25;
+        } else if (t < last) {
+          // Between its two blows: up off the target and down on it again.
+          const u = clamp01((t - contact) / DICE.gap);
+          die.at.copy(chest).add(place.copy(away).mulScalar(Math.sin(u * Math.PI) * .45)); die.at.y += Math.sin(u * Math.PI) * .7;
+          grow = 1.15;
+        } else {
+          // Off it for good: a hop away and down to the floor, gone as it comes to rest.
+          const u = clamp01((t - last) / (DICE.tail - .08)), ground = groundHeight(chest.x, chest.z) + size * .5;
+          die.at.copy(chest).add(place.copy(away).mulScalar(u * .95));
+          die.at.y = chest.y + (ground - chest.y) * u * u + Math.sin(Math.min(1, u * 1.6) * Math.PI) * .42;
+          grow = 1.15 * (1 - smooth((u - .6) / .4));
+        }
+        die.turn.copy(spin.setFromAxisAngle(die.tumble, (t - launch) * 1400)).mul(faceUp(die.face));
+      }
+      die.size = size * grow;
+      die.entity.enabled = die.size > .001;
+      die.entity.setPosition(die.at); die.entity.setRotation(die.turn); die.entity.setLocalScale(die.size, die.size, die.size);
+      if (!thrown.kept && t >= diceEnd(action)) { die.entity.destroy(); d.thrown = undefined; }
     }
   }
   /**
@@ -1805,6 +2080,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
     },
     selectTarget(id?: string) { selectedTarget = id; },
+    /** Dadaísta: the die of `unit`'s hand the cursor is on while one is being picked (none: back in line). */
+    aimDie(unit?: string, index?: number) { aimedDie = unit !== undefined && index !== undefined ? { unit, index } : undefined; },
     /**
      * Sets a fighter alight at `level` (or changes how hard they burn), or lets the fire die down
      * with no level. The fire is sized to their model and wraps it: their body burns, flames rise
@@ -1946,7 +2223,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
+      if (!next) { mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); if (d.thrown && !d.thrown.kept) d.thrown.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -1991,7 +2268,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const focBinari = effect?.skill === 'foc-binari' && !!target;
       // So is Matemágico's Atacar: the hand up, his circle and a ball (src/math-cast.ts). Cardioide's comet leaves the circle too.
       const spelling = !!effect?.spell && !!target, curing = effect?.skill === 'cardioide' && !!target;
-      const casting = focBinari || spelling || curing;
+      // His skills of the elements too: Factor común, Vasos comunicantes, Descarga.
+      const elemental = !!effect?.skill && ELEMENTAL.has(effect.skill) && !!target;
+      const casting = focBinari || spelling || curing || elemental;
+      // Dadaísta throws its die from where it stands.
+      const dicing = !!effect?.die && !!target;
       const castLaunch = spelling ? SPELL_LAUNCH : CAST_LAUNCH, castContact = spelling ? SPELL_CONTACT : curing ? CURE_CONTACT : CAST_CONTACT;
       // A dual attack: both its fighters stay where they are; Gerard draws and Haru strikes (`DUAL`).
       const dual = effect?.dual && target ? effect.dual : undefined;
@@ -2000,7 +2281,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (dual && dualStarted !== effect) startDual(effect!, target!, animate);
       // Bip's skills land when its ray does (`bipContact`).
       const bipSkill = botStrike && effect!.kind === 'skill';
-      const contact = times ? times[0] : casting ? castContact : bipSkill ? bipContact(effect!) : effect?.target && !support ? CONTACT_SECONDS : .2;
+      const contact = times ? times[0] : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.target && !support ? CONTACT_SECONDS : .2;
       if (effect && !dual && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.(0);
         // Without motion Rayo solar reaches everyone at once.
@@ -2009,7 +2290,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (effect.spell) mathCast.land();
         const landed = animate && effect ? contactBurst(effect, actor, target) : undefined;
         // What the blow's element turned: its moment, as it lands (docs/combat.md § Reacciones entre elementos).
-        if (animate && effect.reaction && effect.target) statusFx.react(effect.reaction.id, effect.target);
+        if (animate && effect.reaction) reactFx(effect);
         // Punto débil spent: its mark bursts and the blow lands bigger (three times as hard).
         const spent = markSpent(effect) ? [effect.target] : effect.hits?.filter(h => h.weakSpot).map(h => h.target) ?? [];
         if (spent.length) {
@@ -2041,7 +2322,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const t = animate ? effectTime : ACTION_SECONDS;
       // The blows landed so far: one at contact, and a flurry's others a moment after each other
       // (Foc Binari's one a little later than a claw: tac, tac).
-      const spacing = casting ? CAST_GAP : CLAW_SECONDS;
+      const spacing = dicing ? DICE.gap : casting ? CAST_GAP : CLAW_SECONDS;
       const claws = effect?.strikes?.length ?? 1;
       const blows = times ? (!animate ? claws : times.filter(at => t >= at).length) : !impacted ? 0 : !animate ? claws : Math.min(claws, 1 + Math.floor(Math.max(0, t - contact) / spacing));
       if (dual && target && blows > clawed) {
@@ -2075,11 +2356,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // Nor do Las cuerdas leave their place: what they do reaches from where they stand. Only Lo Directo goes, with its Golpe directo and its Estocada.
       const planted = (!!actor?.robot && effect?.ability?.id !== 'pisoton') || (actor?.camp === 'mago' && effect?.ability?.id === 'bombona')
         || (!!actor?.strings && !(actor.strings === 'directo' && (effect?.ability?.id === 'golpe-directo' || effect?.ability?.id === 'estocada')));
-      const motion = actor && target && !support && !catStrike && !botStrike && !casting && !dual && !planted ? contactMotion(actor.base, target.base, t) : undefined;
+      const motion = actor && target && !support && !catStrike && !botStrike && !casting && !dicing && !dual && !planted ? contactMotion(actor.base, target.base, t) : undefined;
       // How far the caster's hand is up: raised before the streams leave, lowered once they land.
       // Sending Bip, the wearer points it at the target until it is back.
       const raise = casting && animate ? smooth(t / (castLaunch * .85)) * (1 - smooth((t - castContact - .12) / .35))
-        : botStrike && animate ? smooth(t / .2) * (1 - smooth((t - (effect!.kind === 'skill' ? bipContact(effect!) : CONTACT_SECONDS) - .25) / .35)) : 0;
+        : botStrike && animate ? smooth(t / .2) * (1 - smooth((t - (effect!.kind === 'skill' ? bipContact(effect!) : CONTACT_SECONDS) - .25) / .35))
+        // The hand goes up with the die and comes down as it leaves (a bet: up for the toss, and again to throw).
+        : dicing && animate ? smooth(t / .14) * (1 - smooth((t - (effect!.die!.rolled === undefined ? DICE.launch : effect!.die!.won ? DICE.read : DICE.shown) - .06) / .3)) : 0;
       // A dual: Gerard's hand goes up while he draws, and comes down as the last strike lands.
       const drawing = dual && animate ? smooth(t / .18) * (1 - smooth((t - times!.at(-1)! - .1) / .35)) : 0;
       const dualEnd = times ? times.at(-1)! + dualPace(effect!).tail : 0;
@@ -2329,6 +2612,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       motes.update(dt, moteAnchor, animate);
       updateCats(dt, t, animate, target);
       updateBips(dt, t, animate, target);
+      updateDice(dt, t, animate, target);
       // Foc Binari: once the hand is up, the two streams leave it for the target's chest.
       if (casting && animate && actor && target && spelled !== effect) {
         spelled = effect;
@@ -2346,8 +2630,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // No `model`: the burn on them is the Quemadura status's (syncStatuses), lit once the streams land.
         effects.binaryFire(hand, chest, { seconds: CAST_FLIGHT, gap: (effect!.strikes?.length ?? 1) > 1 ? CAST_GAP : 0, burn: !!effect!.burn, feet: floorUnder(target) });
       }
+      if (elemental && animate && actor && target && cast !== effect && t >= CAST_LAUNCH) {
+        cast = effect;
+        castElement(effect!, (mathCast.centre ?? (actor.arms[0]?.findByName('Mano') as pc.Entity | null ?? actor.model).getPosition()).clone(), target);
+      }
       // Zarpazo sangriento: the cat pounces, the wearer's fist leaves no arc.
-      if (animate && effect && actor && !catStrike && !botStrike && !dual && !spelling) trailsFor(effect, actor, target, t, support);
+      if (animate && effect && actor && !catStrike && !botStrike && !dicing && !dual && !spelling) trailsFor(effect, actor, target, t, support);
       // The lurch springs back and shakes keep going through a hit-stop: they run on real time.
       shake = Math.max(0, shake - elapsed);
       sway.forEach(s => spring(s, elapsed, HIT.spring.omega, HIT.spring.zeta));
@@ -2404,7 +2692,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : casting ? castContact + CAST_GAP + .42 : bipSkill ? bipEnd(effect) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : casting ? castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);

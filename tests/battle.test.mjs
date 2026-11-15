@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima, SKILLS, STATUSES, addStatus, stacks, MANA_POINTS, DEFEND_CHARGE, REST_CHARGE, TIMED, pulseDamage, runClock, actDual } from '../src/battle.ts';
+import { improve, createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima, SKILLS, STATUSES, addStatus, stacks, MANA_POINTS, DEFEND_CHARGE, REST_CHARGE, TIMED, pulseDamage, runClock, actDual } from '../src/battle.ts';
 
 test('single ally completes a round and takes damage only during enemy turn', () => {
   const s = createBattle();
@@ -466,9 +466,11 @@ test('Sangrado is an open wound: the next physical blow spends it all, +20% for 
 // Ángulo exacto, Ronroneo de Yuki and the dual attacks (docs/animas/README.md § Combined skills).
 const DUO = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
 /** Gerard on Matemágico and Aitor on Papagato against `dogs` sturdy dogs: Aitor (quicker) acts first. */
+/** Matemágico grows by its tree, not by level: "matemagico 2" here is its trunk's first nodes, 3 its cure too. */
+const trunk = (levels = {}) => ({ skills: (levels.matemagico ?? 1) >= 3 ? ['angulo', 'analisis', 'cardioide'] : (levels.matemagico ?? 1) >= 2 ? ['angulo', 'analisis'] : [] });
 const duoFight = (levels = { papagato: 2, matemagico: 2 }, dogs = 2) => {
   const s = createBattle(DUO, dogs, false, undefined, ['matemagico', 'papagato']);
-  s.levels = { ...levels }; s.seed = 35;
+  s.levels = { ...levels }; s.seed = 35; improve(s, trunk(levels));
   s.foes.forEach(f => { f.hp = f.maxHp = 9999; });
   return s;
 };
@@ -696,7 +698,7 @@ test('the development Dual list says why each dual cannot happen now, and may pu
   const late = duoFight(); act(late, 'defend');
   assert.deepEqual(reasons(late), { 'zarpazos-de-fuego': 'acted', 'punto-debil': 'acted' }, 'from the later fighter: the earlier one is through');
   const bare = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', kit: ['matemagico'] }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }], 1, false, undefined, ['matemagico', 'papagato']);
-  bare.levels = { papagato: 2, matemagico: 2 };
+  bare.levels = { papagato: 2, matemagico: 2 }; improve(bare, trunk(bare.levels));
   bare.allies.sort((a, b) => (a.id === 'gerard' ? -1 : 1) - (b.id === 'gerard' ? -1 : 1)); bare.active = 0;
   assert.equal(dualOptions(bare)[0].reason, 'wear');
   const swap = dualOptions(bare, true)[0];
@@ -726,7 +728,7 @@ const TECH = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'mat
 /** Gerard on Matemágico and Aitor on Tecnópata against `dogs` sturdy dogs. */
 const techFight = (dogs = 2) => {
   const s = createBattle(TECH, dogs, false, undefined, ['matemagico']);
-  s.seed = 35;
+  s.seed = 35; improve(s, { skills: ['explosion', 'confusion', 'rayo-encogedor'] });
   s.foes.forEach(f => { f.hp = f.maxHp = 9999; });
   return s;
 };
@@ -734,7 +736,8 @@ const turnOf = (s, id) => { s.phase = 'player'; s.active = s.allies.indexOf(byId
 
 test('Rayo de energía hits with magic and makes what runs out by the clock on the foe last 5 seconds more, never a cure', () => {
   const s = techFight();
-  assert.deepEqual(skillsFor(s, byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor'], 'all there from the start');
+  assert.deepEqual(skillsFor(s, byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor'], 'the two rays, and the nodes bought');
+  assert.deepEqual(skillsFor(createBattle(TECH, 1, false, undefined, ['matemagico']), byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'rayo-sanacion'], 'only the two rays from the start');
   s.foes[0].timed = { quemado: { level: 2, left: 3, next: 1 }, cegado: { level: 1, left: 6, next: 6 } };
   turnOf(s, 'aitor');
   const ray = act(s, 'skill', 'dog-0', 'rayo-energia');

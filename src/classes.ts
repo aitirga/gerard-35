@@ -42,6 +42,16 @@ export const CLASSES: Record<ClassId, { name: string; motto: string; look: Recor
     colour: '#4fe0ff',
     look: { jacket: '#25313b', navy: '#4fe0ff', cream: '#25313b', trousers: '#161c22' },
   },
+  // The university friends' ánima: it fights with dice, its maná (src/dice.ts). A black waistcoat over
+  // ivory shirtsleeves, a red bow tie and a monocle (anima-looks.ts): a dada soirée, or a croupier
+  // (docs/animas/dadaista/).
+  dadaista: {
+    name: ANIMA_NAMES.dadaista,
+    motto: 'Primero se tira. Luego se piensa.',
+    colour: '#efe6cf',
+    look: { jacket: '#211e1d', navy: '#efe6cf', cream: '#efe6cf', trousers: '#2d2a2e' },
+    scarf: '#d9422b',
+  },
 };
 /** Whether a fighter's profile is a grown-up (chapter 2 on): Gerard at 35 and Aitor. */
 export const grownUp = (profile: ProfileId) => profile === 'gerard35' || profile === 'aitor';

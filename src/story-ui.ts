@@ -44,6 +44,9 @@ export function createStoryUI(hud: HTMLElement) {
   // A full-screen black for the end of a dream: everything fades out, then back in elsewhere.
   const black = document.createElement('div');
   black.id = 'blackout'; black.setAttribute('aria-hidden', 'true');
+  // The snow globe shaken (docs/chapter-2.md § The snow globe): the picture goes white with snow, and clears somewhere else.
+  const white = document.createElement('div');
+  white.id = 'snowfall'; white.setAttribute('aria-hidden', 'true');
   // An ánima the party keeps for good: big, in the middle, in its own look (Papagato's has a cat's trail).
   const banner = document.createElement('section');
   banner.className = 'anima-banner'; banner.hidden = true; banner.setAttribute('role', 'status');
@@ -62,7 +65,7 @@ export function createStoryUI(hud: HTMLElement) {
   const photo = document.createElement('figure');
   photo.id = 'story-photo'; photo.hidden = true; photo.setAttribute('role', 'status');
   photo.innerHTML = `<i class="story-photo-flash" aria-hidden="true"></i><figcaption></figcaption>`;
-  hud.append(notes, hint, bubble, shout, card, banner, black, doom, photo);
+  hud.append(notes, hint, bubble, shout, card, banner, black, white, doom, photo);
   let endDoom: (() => void) | undefined;
   doom.querySelector('button')!.addEventListener('click', () => endDoom?.());
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -73,7 +76,8 @@ export function createStoryUI(hud: HTMLElement) {
       const item = ITEMS[id];
       const el = document.createElement('article');
       el.className = 'story-note';
-      el.innerHTML = `<span class="battle-kicker"></span><strong></strong><p></p>`;
+      el.style.setProperty('--note-accent', item.tint);
+      el.innerHTML = `<svg class="story-note-icon" viewBox="0 0 24 24" aria-hidden="true">${item.icon}</svg><span class="battle-kicker"></span><strong></strong><p></p>`;
       el.querySelector('span')!.textContent = `HAS CONSEGUIDO · ${ITEM_KIND_LABELS[item.kind].toUpperCase()}`;
       el.querySelector('strong')!.textContent = item.name;
       el.querySelector('p')!.textContent = item.description;
@@ -202,6 +206,18 @@ export function createStoryUI(hud: HTMLElement) {
         await wait(3200); photo.dataset.state = 'out';
         await wait(500); photo.hidden = true; delete photo.dataset.state;
       })();
+    },
+    snow(on: boolean, ms = on ? 700 : 1100) {
+      white.style.transitionDuration = `${reducedMotion.matches ? 0 : ms}ms`;
+      // Flakes of every size, each falling at its own pace; gone once the white has cleared.
+      if (on) white.replaceChildren(...Array.from({ length: 90 }, () => {
+        const flake = document.createElement('i'), size = 2 + Math.random() ** 2 * 9;
+        flake.style.cssText = `left:${Math.random() * 100}%;top:${Math.random() * 110 - 10}%;width:${size}px;height:${size}px;opacity:${.55 + Math.random() * .45};animation-duration:${9 - size * .6}s`;
+        return flake;
+      }));
+      else setTimeout(() => { if (white.dataset.on !== 'true') white.replaceChildren(); }, ms + 50);
+      white.dataset.on = String(on);
+      return new Promise<void>(resolve => setTimeout(resolve, reducedMotion.matches ? 0 : ms));
     },
     blackout(on: boolean, ms = 900) {
       black.style.transitionDuration = `${reducedMotion.matches ? 0 : ms}ms`;

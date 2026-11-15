@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { PHRASES, TONES, phraseLength } from './song';
-import { isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -51,6 +51,8 @@ const STATUS_ICONS: Record<IconId, string> = {
   // A cross of cure (Rayo de sanación), and a question mark (Confusión).
   sanacion: '<path d="M6.5 2h3v4.5H14v3H9.5V14h-3V9.5H2v-3h4.5z"/>',
   confusion: '<path d="M5.3 5.7a2.7 2.7 0 1 1 4 2.4c-.8.5-1.3 1-1.3 2v.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="13.2" r="1.15"/>',
+  // A drop over two ripples (Mojado).
+  mojado: '<path d="M8 1.2C6.4 3.8 4.9 5.6 4.9 7.6a3.1 3.1 0 0 0 6.2 0C11.1 5.6 9.6 3.8 8 1.2z"/><path d="M2 12.2c1.5-1.2 3-1.2 4.5 0s3 1.2 4.5 0 2-1.1 3-.3M3.2 14.8c1.2-.8 2.4-.8 3.6 0s2.4.8 3.6 0" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
   // Four arrows pointing in (Encogido).
   encogido: '<path d="M2 2l4 4M14 2l-4 4M2 14l4-4M14 14l-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3.5 6H6V3.5M12.5 6H10V3.5M3.5 10H6v2.5M12.5 10H10v2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
 };
@@ -68,6 +70,8 @@ let detailsLearned = false;
 let elementLearned = false;
 /** So does the summary's (the D-pad's left or right, R on the keyboard). */
 let summaryLearned = false;
+/** What the player's blows have found each kind of foe to be made of, for as long as the page lives: its plate keeps it. */
+const foundAffinities = new Map<FoeKind, Set<AttackElement>>();
 /** "1 ronda", "3 rondas". */
 const rounds = (n: number) => `${n} ${n === 1 ? 'ronda' : 'rondas'}`;
 const escapeHtml = (text: string) => text.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -93,6 +97,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** `onImpact` runs as each blow lands: 0 at contact, then a flurry's others (`BattleEffect.strikes`). */
   change: (state: BattleState | undefined, effect?: BattleEffect, onImpact?: (blow: number) => void) => Promise<void>;
   target: (id?: string) => void;
+  /** Dadaísta: the die of `unit`'s hand the cursor is on while one is being picked (none: nobody is picking). */
+  aimDie?: (unit?: string, index?: number) => void;
   /** A moment only this screen knows of that makes a sound (a burn's pulse, a bleed, changing ánima). */
   sound: (id: SoundId) => void;
   /** An ánima woke up in Gerard mid-fight (the palace minion's beat). */
@@ -190,9 +196,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const get = <T extends HTMLElement>(selector: string) => (scope().querySelector<T>(selector) ?? root.querySelector<T>(selector))!;
   /** At most this many skills in sight on the sheet, which never rises above `SHEET_TOP` px from the top of the screen. */
   const SKILL_ROWS = 4, SHEET_TOP = 96;
+  /** What a die of each face is called on Dadaísta's hand. */
+  const DIE_NAMES: Record<number, string> = { 1: 'Uno', 2: 'Dos', 3: 'Tres', 4: 'Cuatro', 5: 'Cinco', 6: 'Seis' };
   let state: BattleState | undefined;
   let selected: Command | undefined;
   let selectedSkill: SkillId | undefined;
+  /** Dadaísta: the skill whose die is being picked on the sheet, and the die picked (its place in the hand). */
+  let pickingDie: SkillId | undefined;
+  let selectedDie: number | undefined;
   /** Development: the dual the Dual command is aiming. */
   let selectedDual: DualId | undefined;
   let targeting = false;
@@ -248,7 +259,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const articles = () => [...scope().querySelectorAll<HTMLElement>('.command')];
   function focusFirst() { focusOn(get<HTMLButtonElement>('.command-trigger')); }
   const panelEl = () => get('.command-panel');
-  const skillButtons = () => [...scope().querySelectorAll<HTMLButtonElement>('.skill-list [data-skill], .skill-list [data-dual]')];
+  const skillButtons = () => [...scope().querySelectorAll<HTMLButtonElement>('.skill-list [data-skill], .skill-list [data-dual], .skill-list [data-die]')];
   /** Why a command can't be used now, if it can't. Bernat has no skills: he only attacks. */
   function blocked(command: Command) {
     if (!state || locked() || state.phase !== 'player' || callbacks.waiting(state.allies[state.active].id)) return true;
@@ -263,7 +274,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Each fighter's plate over the fight and where `positionTargets` last put it. */
   const plates = new Map<string, HTMLElement>(), plateAt = new WeakMap<HTMLElement, string>();
   /** A number or a word flying off a fighter. A `status` one (its id in `status`) is stamped on in its colour, above where the blow's numbers rise. */
-  function pop(id: string, text: string, kind: 'damage' | 'heal' | 'guard' | 'stat-up' | 'stat-down' | 'status', detail = '', status?: string, dx = 0) {
+  function pop(id: string, text: string, kind: 'damage' | 'heal' | 'guard' | 'stat-up' | 'stat-down' | 'status' | 'passive', detail = '', status?: string, dx = 0) {
     const at = positions.get(id);
     if (!at) return;
     const el = document.createElement('span');
@@ -272,9 +283,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     el.innerHTML = `<strong></strong>${detail ? '<small></small>' : ''}`;
     el.querySelector('strong')!.textContent = text;
     if (detail) el.querySelector('small')!.textContent = detail;
-    el.style.transform = `translate(${at.x + dx + (Math.random() - .5) * (kind === 'status' ? 8 : 26)}px, ${at.y - (kind === 'status' ? 96 : 18)}px) translate(-50%, -100%)`;
+    // A passive's plate sits higher still, and stays a little longer: it is the ánima speaking, not the blow.
+    el.style.transform = `translate(${at.x + dx + (kind === 'passive' ? 0 : (Math.random() - .5) * (kind === 'status' ? 8 : 26))}px, ${at.y - (kind === 'passive' ? 150 : kind === 'status' ? 96 : 18)}px) translate(-50%, -100%)`;
     get('.battle-pops').append(el);
-    setTimeout(() => el.remove(), kind === 'status' ? 1350 : 1100);
+    setTimeout(() => el.remove(), kind === 'passive' ? 1900 : kind === 'status' ? 1350 : 1100);
     return el;
   }
   const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -293,6 +305,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** The fears' own rules, where the player can read them (docs/quests/nuria.md). */
   function ruleChips(c: Combatant): [string, string][] {
     const chips: [string, string][] = [];
+    // What a blow has already found this kind of foe to be made of (docs/combat.md § Debilidades por elemento): never shown before it is found.
+    if (c.hp > 0 && c.kind) for (const element of foundAffinities.get(c.kind) ?? []) {
+      const a = AFFINITIES[c.kind]?.[element];
+      if (a) chips.push([`${a === 'weak' ? 'debil' : 'resiste'}-${element}`, `${a === 'weak' ? 'Débil' : 'Resiste'}: ${ELEMENTS[element].name}`]);
+    }
     if (c.hp > 0 && c.layers) chips.push(['capas', `Capas ${c.layers}`]);
     if (c.hp > 0 && c.dish) chips.push(['plato', DISHES[c.dish].name.replace(/^una /, '')]);
     if (c.hp <= 0) return chips;
@@ -483,7 +500,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (pulses.some(p => p.heal)) callbacks.sound('heal');
     for (const p of pulses) {
       // A cure's pulse (Sanación) gives PV back: its number in green, no flare on the body.
-      if (p.heal) pop(p.target, `+${p.amount}`, 'heal', `${TIMED[p.status].name} ${roman(p.level)}`);
+      if (p.heal) { if (p.amount) pop(p.target, `+${p.amount}`, 'heal', `${TIMED[p.status].name} ${roman(p.level)}`); }
       else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target); }
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
@@ -617,6 +634,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const box = button.querySelector<HTMLElement>('.chip-mana');
     if (!box) return;
     box.hidden = !most;
+    box.toggleAttribute('data-dice', id === DICED);
     if (box.childElementCount !== most) { box.innerHTML = '<i></i>'.repeat(most); box.style.setProperty('--columns', String(Math.min(3, most))); }
     box.querySelectorAll('i').forEach((pip, i) => {
       const next = i < left ? 'full' : 'spent';
@@ -669,13 +687,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * picked, the skill, the dual, whether they are aiming — and their own cursor. `withPlayer` puts
    * one player's menu in the working variables (and their fighter in the turn) while it runs.
    */
-  interface Menu { selected?: Command; selectedSkill?: SkillId; selectedDual?: DualId; targeting: boolean }
+  interface Menu { selected?: Command; selectedSkill?: SkillId; selectedDual?: DualId; targeting: boolean; pickingDie?: SkillId; selectedDie?: number }
   const menus: Record<PlayerId, Menu> = { 1: { targeting: false }, 2: { targeting: false } };
-  const keepMenu = () => { menus[ctx] = { selected, selectedSkill, selectedDual, targeting }; };
-  const loadMenu = (p: PlayerId) => { ctx = p; ({ selected, selectedSkill, selectedDual, targeting } = menus[p]); };
+  const keepMenu = () => { menus[ctx] = { selected, selectedSkill, selectedDual, targeting, pickingDie, selectedDie }; };
+  const loadMenu = (p: PlayerId) => { ctx = p; ({ selected, selectedSkill, selectedDual, targeting, pickingDie, selectedDie } = menus[p]); };
   const allyOf = (p: PlayerId) => state?.allies.find(a => callbacks.driver(a.id) === p);
   /** An action confirmed while another one plays: it goes off as soon as that one is over, in the order confirmed. */
-  interface Job { player: PlayerId; ally: string; command: Command; skill?: SkillId; dual?: DualId; target?: string; text: string }
+  interface Job { player: PlayerId; ally: string; command: Command; skill?: SkillId; die?: number; dual?: DualId; target?: string; text: string }
   const pending: Job[] = [];
   /** Whether `ally` can still choose this round: standing, not through yet, nothing confirmed waiting to go off. */
   const canAct = (ally: Combatant | undefined) => !!state && !!ally && state.phase === 'player' && ally.hp > 0 && !state.spent?.includes(ally.id) && !pending.some(j => j.ally === ally.id) && !callbacks.waiting(ally.id);
@@ -835,12 +853,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       boost.textContent = `▲ ${boostRounds(state)}`;
       boost.title = SKILLS.filter(skill => boostRounds(state!, skill.id)).map(skill => `${skill.name}: ${boostedStats(skill.id)} +${state!.boosts![skill.id]!.amount}`).join(' · ');
       card.querySelector('.unit-status')!.textContent = c.hp === 0 ? 'FUERA' : c.guarding ? 'EN GUARDIA' : choosing ? 'ACTIVO' : '';
-      setVitals(card.querySelector('.vitals')!, shownHp(c), c.maxHp, c.secondary, animaMax(c));
+      setVitals(card.querySelector('.vitals')!, shownHp(c), c.maxHp, c.secondary, animaMax(c), c.classId === DICED ? diceOf(state, c) : undefined);
       const plate = root.querySelector(`.battle-target[data-target="${c.id}"]`);
       if (plate) fill(plate.querySelector('.enemy-health')!, shownHp(c) / c.maxHp);
       const platePips = plate?.querySelector<HTMLElement>('.plate-pips');
       if (platePips && platePips.childElementCount !== c.maxSecondary) platePips.innerHTML = '<i data-pip="full"></i>'.repeat(c.maxSecondary);
       platePips?.toggleAttribute('hidden', !animaMax(c));
+      platePips?.toggleAttribute('data-dice', c.classId === DICED);
       plate?.querySelectorAll<HTMLElement>('.plate-pips i').forEach((pip, i) => { pip.dataset.pip = i < c.secondary ? 'full' : 'spent'; });
       if (plate && !unlanded) showStatuses(plate, c);
     }
@@ -996,7 +1015,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!revealing) nextReveal(token);
   }
   function collapse(restoreFocus = false) {
-    const old = selected; selected = undefined; selectedSkill = undefined; selectedDual = undefined; targeting = false;
+    const old = selected; selected = undefined; selectedSkill = undefined; selectedDual = undefined; pickingDie = undefined; selectedDie = undefined; targeting = false;
+    callbacks.aimDie?.();
     highlight(); delete root.dataset.targeting;
     root.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
       button.disabled = true;
@@ -1351,6 +1371,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** The flyout's sheet: the active fighter's skills right now (an ánima swap refills it). */
   function fillSkills() {
     if (!state) return;
+    pickingDie = undefined; selectedDie = undefined; delete get('.skill-list').dataset.dice; callbacks.aimDie?.();
     const actor = state.allies[state.active];
     get('.skill-flyout .battle-kicker').textContent = `HABILIDADES · ${actor.name.toUpperCase()}${actor.classId ? ` · ${animaOf(actor.classId, grownUp(actor.profile)).name.toUpperCase()}` : ''}`;
     // Unaffordable skills stay focusable so their details can still be read.
@@ -1361,6 +1382,21 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
     }).join('') || '<p class="skill-empty">Sin habilidades con esta ánima.</p>';
     fitSkills();
+  }
+  /**
+   * Dadaísta: the sheet turns into its hand, one row a die, to pick which one `skill` spends
+   * (docs/animas/dadaista/). The cursor starts on the one that would go if nobody chose.
+   */
+  function fillDice(skill: SkillId, at?: number) {
+    if (!state) return;
+    const actor = state.allies[state.active], hand = diceOf(state, actor), spec = SKILLS.find(s => s.id === skill)!, bet = dieUse(skill) === 'bet';
+    pickingDie = skill;
+    const list = get('.skill-list');
+    list.dataset.dice = bet ? 'bet' : 'face';
+    get('.skill-flyout .battle-kicker').textContent = `${spec.name.toUpperCase()} · ELIGE UN DADO`;
+    list.innerHTML = hand.map((face, i) => `<button type="button" data-die="${i}" data-class="${spec.class}" style="--i:${i}" aria-label="Dado ${i + 1}: un ${face}"><span class="skill-key">${i + 1}</span><i class="die-face" data-face="${face}" aria-hidden="true"></i><span class="skill-name"><strong>${DIE_NAMES[face]}</strong><small>${bet ? face === 1 ? 'Sale seguro' : `Sale con ${face} o más` : 'Golpea por lo que marca'}</small></span></button>`).join('');
+    fitSkills();
+    focusOn(list.querySelector<HTMLButtonElement>(`[data-die="${at ?? bestDie(skill, hand)}"]`) ?? skillButtons()[0]);
   }
   /**
    * The sheet shows a few skills at a time (`SKILL_ROWS`, fewer if the screen has no room above the
@@ -1494,6 +1530,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (skill && (state.allies[state.active].secondary < SKILLS.find(s => s.id === skill)!.cost || !validTargets(state, 'skill', skill).length)) return;
     if (skill && joinDual(skill)) return;
     showDetails(false);
+    // Dadaísta: first the die it spends, then whom. A hand of one has nothing to pick.
+    if (skill && dieUse(skill) && selectedDie === undefined) {
+      if (diceOf(state, state.allies[state.active]).length > 1) { callbacks.sound('ui-confirm'); fillDice(skill); return; }
+      selectedDie = 0;
+    }
+    pickingDie = undefined;
     // A skill that reaches the whole party has nobody to pick: it happens at once.
     if (skill && !aimed(skill)) { selectedSkill = skill; void execute(); return; }
     selectedSkill = skill; targeting = true;
@@ -1504,10 +1546,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (locked()) return;
     if (details) { showDetails(false); return; }
     if (duo && targeting && selected === 'dual') { leaveDual(); return; }
-    if (targeting && selected === 'skill') {
-      const oldSkill = selectedSkill;
-      collapse(); choose('skill');
+    if (pickingDie && !targeting) {
+      // From the hand back to the skills.
+      const oldSkill = pickingDie;
+      fillSkills();
       focusOn(scope().querySelector<HTMLButtonElement>(`[data-skill="${oldSkill}"]`));
+    } else if (targeting && selected === 'skill') {
+      const oldSkill = selectedSkill, oldDie = selectedDie, hand = oldSkill && dieUse(oldSkill) && state ? diceOf(state, state.allies[state.active]).length : 0;
+      collapse(); choose('skill');
+      if (oldSkill && hand > 1) fillDice(oldSkill, oldDie);
+      else focusOn(scope().querySelector<HTMLButtonElement>(`[data-skill="${oldSkill}"]`));
     } else if (targeting && selected === 'dual') {
       const oldDual = selectedDual;
       collapse(); choose('dual');
@@ -1614,8 +1662,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         effect.splash?.forEach(other => pop(other.target, `−${other.amount}`, 'damage', isOnion(state!.foes.find(f => f.id === effect.actor)?.kind) ? '¡Qué peso!' : ''));
         say = target.hp === 0 ? '¡Fuera!' : effect.confused ? 'Confundido' : effect.melted ? '¡Se derrite!' : effect.peeled ? peelText(effect.peeled, target) : target.guarding ? 'Protegido' : label;
         // A flurry's first blow carries the skill's name; the others follow as they land (above).
-        if (strikes) hurtPop(effect.target, strikes[0], label, spread(0));
-        else hurtPop(effect.target, effect.amount ?? 0, say);
+        // Dadaísta's bet: lost, the die says so over whoever threw it and nothing lands; won, it lands twice.
+        if (effect.die?.won === false) pop(effect.actor, 'Nada', 'guard', `Sale un ${effect.die.rolled}`);
+        else if (strikes) hurtPop(effect.target, strikes[0], label, spread(0));
+        else if (!effect.controlled) hurtPop(effect.target, effect.amount ?? 0, say);
+        if (effect.die?.won) pop(effect.actor, '¡Doble!', 'stat-up', `Sale un ${effect.die.rolled}`);
       }
       // Anna's Sopeta also feeds the whole table: each friend's PV back, a beat after her blow.
       effect.soothed?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `+${h.amount}`, 'heal', i ? '' : 'Sopeta'); }, 420 + i * 70));
@@ -1630,16 +1681,39 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       for (const on of [effect.regen, effect.afflicted]) if (on && effect.target) landed.push({ target: effect.target, id: on.id, text: `¡${TIMED[on.id].name}${on.level > 1 ? ` ${roman(on.level)}` : ''}!`, detail: `${TIMED[on.id].seconds} s` });
       if (effect.extended && effect.target) effect.extended.statuses.forEach(id => landed.push({ target: effect.target!, id, text: `+${effect.extended!.seconds} s`, detail: TIMED[id].name }));
       effect.blinded?.forEach(id => landed.push({ target: id, id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: '1 ronda' }));
-      if (!sweep) effect.hits?.forEach(h => { if (h.burn) landed.push({ target: h.target, id: h.burn.id, text: `¡${TIMED[h.burn.id].name} ${roman(h.burn.level)}!`, detail: '' }); });
+      if (!sweep) effect.hits?.forEach(h => { if (h.burn) landed.push({ target: h.target, id: h.burn.id, text: `¡${TIMED[h.burn.id].name}${TIMED[h.burn.id].levels.length ? ` ${roman(h.burn.level)}` : ''}!`, detail: h.smoked ? h.burn.id === 'cegado' && effect.reaction?.id === 'vapor' ? 'El agua se va en vapor' : 'Se apaga el fuego' : '' }); });
       if (effect.exploded) landed.push({ target: effect.actor, id: 'explosion', text: 'Pierde su turno', detail: 'Bip se recompone' });
       if (effect.charging) landed.push({ target: effect.charging, id: 'carga', text: '¡Cargado!', detail: 'Sale al empezar la ronda' });
       if (!sweep) effect.hits?.forEach(h => { if (h.status) landed.push({ target: h.target, id: h.status.id, text: `¡${STATUSES[h.status.id].name}!`, detail: `× ${h.status.stacks}` }); });
       // What the element turned: what it leaves, in its colour, and any PV it takes, on top of the blow's own number.
       const reaction = effect.reaction;
-      if (reaction && effect.target) {
-        const says = { humo: { id: 'cegado', text: `¡${TIMED.cegado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'Se apaga el fuego' }, cauterizado: { id: 'cauterizado', text: '¡Cauterizado!', detail: `Sangrado × ${reaction.stacks ?? 0}` }, tormenta: { id: 'tormenta', text: '¡Tormenta!', detail: 'Salta por el humo' } }[reaction.id];
+      // A skill on everyone says each foe's own (above): only a reaction on one target says it here.
+      if (reaction && effect.target && !effect.hits?.some(h => h.smoked)) {
+        const says = { humo: { id: 'cegado', text: `¡${TIMED.cegado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'Se apaga el fuego' }, cauterizado: { id: 'cauterizado', text: '¡Cauterizado!', detail: `Sangrado × ${reaction.stacks ?? 0}` }, tormenta: { id: 'tormenta', text: '¡Tormenta!', detail: 'Salta por el humo' }, vapor: { id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'El agua se va en vapor' }, conduccion: { id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' } }[reaction.id];
         landed.push({ target: effect.target, ...says });
         reaction.hits?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', says.text.replace(/[¡!]/g, ''), undefined, 58); }, 140 + i * 90));
+      }
+      // Control remoto: the foe it took says so, and the one it turned on takes the blow a moment later.
+      if (effect.controlled && effect.target) {
+        const { victim, amount } = effect.controlled;
+        landed.push({ target: effect.target, id: 'confusion', text: '¡Controlado!', detail: 'Olvida su plan' });
+        setTimeout(() => { if (token === generation) pop(victim, `−${amount}`, 'damage', 'Control remoto'); }, 540);
+      }
+      effect.cleared?.forEach(id => landed.push({ target: effect.target!, id, text: `Sin ${TIMED[id].name}`, detail: '' }));
+      // A passive that did something: its name on a plate over whoever has it, in their ánima's colour.
+      effect.passives?.forEach((p, i) => setTimeout(() => {
+        if (token !== generation) return;
+        const el = pop(p.who, p.name, 'passive', effect.mana && p.id === 'toma-de-tierra' ? `Pasiva · Maná +${effect.mana}` : 'Pasiva');
+        el?.style.setProperty('--anima', CLASSES[PASSIVES[p.id].anima].colour);
+        callbacks.sound('mark-set');
+      }, 380 + i * 260));
+      // The blow's element found what the foe is made of: said on the blow, and kept on the plate from now on.
+      const element = effect.element ?? elementOf(effect.skill ? SKILLS.find(sk => sk.id === effect.skill) : undefined) ?? elementOf(DUALS.find(d => d.id === (effect.dual?.id ?? effect.release?.id)));
+      const affinities: [string, Affinity][] = [...effect.affinity && effect.target ? [[effect.target, effect.affinity] as [string, Affinity]] : [], ...(effect.hits ?? []).filter(h => h.affinity).map(h => [h.target, h.affinity!] as [string, Affinity])];
+      if (element) for (const [id, a] of affinities) {
+        const kind = state!.foes.find(f => f.id === id)?.kind;
+        if (kind) foundAffinities.set(kind, new Set([...foundAffinities.get(kind) ?? [], element]));
+        landed.push({ target: id, id: `${a === 'weak' ? 'debil' : 'resiste'}-${element}`, text: a === 'weak' ? '¡Débil!' : 'Resiste', detail: `${ELEMENTS[element].name} ×${ELEMENT_RULES[a]}` });
       }
       // Punto débil: left on the target, or spent by this blow (it landed WEAK_SPOT times as hard).
       const spentOn = [...markSpent(effect) && effect.target && !effect.hits ? [effect.target] : [], ...(effect.hits ?? []).filter(h => h.weakSpot).map(h => h.target)];
@@ -1677,7 +1751,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (!spec) return;
       job = { player: ctx, ally: me.id, command: 'dual', dual: spec.id, target, text: `${spec.name} → ${named(target) ?? ''}` };
     } else {
-      job = { player: ctx, ally: me.id, command: selected, skill: selectedSkill, target, text: queuedText({ action: selected as Queued['action'], skill: selectedSkill, target }, me) };
+      job = { player: ctx, ally: me.id, command: selected, skill: selectedSkill, die: selectedDie, target, text: queuedText({ action: selected as Queued['action'], skill: selectedSkill, target }, me) };
     }
     pending.push(job);
     collapse(); render();
@@ -1698,7 +1772,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const job = pending.shift()!;
       const effect = holdBack(() => !takeTurn(state!, job.ally) ? undefined
         : job.command === 'dual' ? actDual(state!, job.dual!, job.target)
-        : split() ? act(state!, job.command as BattleAction, job.target, job.skill) : commit(state!, job.command as BattleAction, job.target, job.skill));
+        : split() ? act(state!, job.command as BattleAction, job.target, job.skill, job.die) : commit(state!, job.command as BattleAction, job.target, job.skill, job.die));
       // It could no longer be (its target fell, no maná): that player chooses again.
       if (!effect) { stale = job.ally; render(); continue; }
       render();
@@ -1788,6 +1862,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (target.matches('.anima-key')) { changeAnima(Number(target.dataset.step) as -1 | 1); return; }
     if (target.dataset.anima) { changeAnima(target.dataset.anima as ClassId); return; }
     if (target.dataset.skill) { beginTargeting(target.dataset.skill as SkillId); return; }
+    if (target.dataset.die !== undefined && pickingDie) { selectedDie = Number(target.dataset.die); beginTargeting(pickingDie); return; }
     if (target.dataset.dual) { chooseDual(target.dataset.dual as DualId); return; }
     if (target.dataset.element !== undefined) {
       if (state && chooseElement(state, state.allies[state.active], (target.dataset.element || undefined) as AttackElement | undefined)) { elementLearned = true; callbacks.sound('ui-move'); render(); }
@@ -1798,6 +1873,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   root.addEventListener('focusin', event => {
     if (event.target instanceof HTMLElement && event.target.parentElement?.classList.contains('skill-list')) keepInView(event.target);
+    // Dadaísta: the die under the cursor comes forward beside its wearer.
+    if (event.target instanceof HTMLElement && event.target.dataset.die !== undefined && state) callbacks.aimDie?.(state.allies[state.active].id, Number(event.target.dataset.die));
     if (details) placeDetails();
   });
   {
@@ -1937,7 +2014,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
      * Where the fight's input is; its third part names an open sub-menu (a command, the summary, or
      * the keyboard player's move ready ahead), so Escape backs out of it (or takes it back) before pausing.
      */
-    get controllerContext() { return !state ? 'world' : `battle:${busy ? 'busy' : state.phase}:${selected ?? (summaryOpen ? 'summary' : queueContext())}:${selectedSkill ?? ''}:${targeting}`; },
+    get controllerContext() { return !state ? 'world' : `battle:${busy ? 'busy' : state.phase}:${selected ?? (summaryOpen ? 'summary' : queueContext())}:${selectedSkill ?? pickingDie ?? ''}:${targeting}`; },
     /** △ / Y (X on a Switch pad): the details window beside the focused skill; on the commands, or aiming Atacar, its next element. */
     details(player: PlayerId = 1) {
       if (!state) return;

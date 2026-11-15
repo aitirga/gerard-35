@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, createBattle, createFearBattle, validTargets, SKILLS } from '../src/battle.ts';
+import { act, createBattle, createFearBattle, validTargets, SKILLS, improve } from '../src/battle.ts';
 import { FOE_XP, LEVEL_XP, LEVELLED, MAX_LEVEL, award, fightXp, levelForXp, levelProgress, participants, skillsAt, toNextLevel, xpFloor } from '../src/levels.ts';
 
 const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
@@ -18,8 +18,9 @@ test('EXP reaches each level at its threshold, and the bar runs from one to the 
 
 test('every ánima has its level table: one skill or more at each level past the first', () => {
   for (const id of LEVELLED) for (let level = 2; level <= MAX_LEVEL; level++) assert.ok(skillsAt(id, level).length, `${id} ${level}`);
-  assert.deepEqual(skillsAt('matemagico', 2), ['analisis', 'angulo']);
-  assert.deepEqual(skillsAt('matemagico', 3), ['cardioide']);
+  assert.deepEqual(LEVELLED, ['papagato'], 'the own ánimas grow by their tree at the jar');
+  assert.deepEqual(skillsAt('papagato', 2), ['zarpazos', 'ronroneo']);
+  assert.deepEqual(skillsAt('matemagico', 2), []);
 });
 
 test('a fight is worth its foes; bigger fears are worth more', () => {
@@ -47,7 +48,9 @@ test('the ánimas that took part: whoever acted wearing one, and whoever ends st
 });
 
 test('award: EXP whole to each, levels crossed and what they teach; the top level keeps still', () => {
-  const [p, m] = award(['papagato', 'matemagico'], LEVEL_XP[0], { papagato: 10 }, { papagato: 1, matemagico: 3 });
+  const [p, none] = award(['papagato', 'matemagico'], LEVEL_XP[0], { papagato: 10 }, { papagato: 1 });
+  assert.equal(none, undefined, 'Matemágico earns none: it grows by its tree');
+  const [m] = award(['papagato'], LEVEL_XP[0], {}, { papagato: 3 });
   assert.deepEqual(p, { id: 'papagato', xpBefore: 10, xpAfter: 10 + LEVEL_XP[0], levelBefore: 1, levelAfter: 2, learned: ['zarpazos', 'ronroneo'] });
   assert.equal(m.xpBefore, xpFloor(3), 'from the floor of a level the story gave');
   assert.equal(m.xpAfter, m.xpBefore); assert.equal(m.levelAfter, 3); assert.deepEqual(m.learned, []);
@@ -60,7 +63,7 @@ test('award: EXP whole to each, levels crossed and what they teach; the top leve
 
 test('Cardioide cures someone hurt and standing, never the fallen; Análisis Parálisis raises the party', () => {
   const s = createFearBattle(party, 'cebolla', ['matemagico', 'papagato']);
-  s.levels = { matemagico: 3 };
+  improve(s, { skills: ['cardioide'] });
   const aitor = s.allies.find(a => a.id === 'aitor'), gerard = s.allies.find(a => a.id === 'gerard');
   s.active = s.allies.indexOf(gerard);
   assert.deepEqual(validTargets(s, 'skill', 'cardioide'), [], 'nobody hurt');
@@ -70,9 +73,9 @@ test('Cardioide cures someone hurt and standing, never the fallen; Análisis Par
   assert.ok(cure.healed && cure.amount > 20 && cure.amount <= 50);
   assert.equal(aitor.hp, 0, 'still down');
   const b = createBattle(party, 1, false, undefined, ['matemagico', 'papagato']);
-  b.levels = { matemagico: 2 };
+  improve(b, { skills: ['analisis'] });
   b.active = b.allies.findIndex(a => a.id === 'gerard');
   const boost = act(b, 'skill', undefined, 'analisis');
   assert.deepEqual(boost.stats.map(c => c.stats), [['fuerza', 'magia'], ['fuerza', 'magia']]);
-  assert.ok(SKILLS.find(skill => skill.id === 'cardioide').level === 3);
+  assert.ok(SKILLS.find(skill => skill.id === 'cardioide').node, 'a node of its tree');
 });

@@ -165,6 +165,12 @@ title = "La noche y la vuelta a casa por la Meridiana"
 weight = 3
 file = "src/night.ts"
 
+[[block.item]]
+title = "La bola de nieve: volver a casa guardando la misión"
+weight = 2
+grep = "'got-bola'"
+in = "src/story-points.ts"
+
 # ——— Escenarios ———
 [[block]]
 title = "Escenarios"
@@ -350,9 +356,16 @@ grep = "models/characters/joan.glb"
 in = ["src/characters/joan.json"]
 
 [[block.item]]
-title = "Amigos de la universidad: su ánima (diseño con /anima)"
-# Provisional in ANIMAS; the proposals wait in docs/quests/universidad.md § Ánima.
-done = false
+title = "Amigos de la universidad: su ánima, Dadaísta (dados como maná, nivel 1)"
+# docs/animas/dadaista/README.md: its dice, Golpe de dados and Doble o nada, its look and its throw.
+grep = "dadaista"
+in = "src/classes.ts"
+
+[[block.item]]
+title = "Dadaísta: Agitar, niveles 2 a 7 y su línea en el bote"
+# Designed, not built (docs/animas/dadaista/README.md § Skills per level): Agitar is a fixed command.
+grep = "agitar"
+in = "src/battle.ts"
 
 [[block.item]]
 title = "Jan y los padres: diseño"
@@ -382,6 +395,16 @@ in = "src/classes.ts"
 title = "Tecnópata, la de Aitor"
 priority = "aitor"
 grep = "tecnopata"
+in = "src/classes.ts"
+
+[[block.item]]
+title = "El bote: árboles de Matemágico y Tecnópata"
+grep = "TREE_ANIMAS"
+in = "src/ecos.ts"
+
+[[block.item]]
+title = "Sincopante, la de Marta"
+grep = "sincopante"
 in = "src/classes.ts"
 
 [[block.item]]

@@ -42,7 +42,7 @@ import { createFears } from './fears';
 import { mergeParts } from './props';
 import { buildTower, type Tower } from './tower-scene';
 import { buildCuerdas, buildPiano, type CuerdasScene } from './cuerdas-scene';
-import { CUERDAS as CUERDAS_PLAN, freshCuerdas, holds, leave, mazeAt, mend, pieceAt, turnPeg, type Piece } from './cuerdas';
+import { CUERDAS as CUERDAS_PLAN, freshCuerdas, holds, leave, mazeAt, mend, pieceAt, press, turnPeg, type Piece } from './cuerdas';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { CUERDAS_FIGHTS } from './battle';
 import { PHRASES, onsets } from './song';
@@ -124,7 +124,7 @@ const SHOW_STEP = 0.25;
 const SCHOOL_PALACE_SCALE = 1.3;
 /** The palace guards are minions grown to the size of a wardrobe. */
 const GUARD_SCALE = 1.9;
-const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'] };
+const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'], bola: ['#3a2c22', '#e7c9a1'] };
 
 /**
  * The right sticks of every standard pad, either player's (x right, y down), past a small dead
@@ -625,8 +625,33 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * (`fall`: seconds into it and the maze it puts back). `waiting`: what stands on the platforms.
    */
   let cuerdas: CuerdasScene | undefined;
-  const strung = { run: freshCuerdas(), t: 0, on: undefined as Piece | undefined, fall: undefined as { since: number; maze: number } | undefined, sink: 0, waiting: undefined as pc.Entity | undefined, key: '' };
+  const strung = { run: freshCuerdas(), t: 0, on: undefined as Piece | undefined, fall: undefined as { since: number; maze: number } | undefined, land: undefined as number | undefined, sink: 0, waiting: undefined as pc.Entity | undefined, key: '' };
   let piano: ReturnType<typeof buildPiano> | undefined;
+  /** A fall in Las cuerdas, seconds: teetering on the edge, the whole drop, and coming back down onto the landing from this high (m). */
+  const CUERDAS_TEETER = .16, CUERDAS_FALL = 1, CUERDAS_LAND = .42, CUERDAS_DROP_IN = 3.2;
+  /**
+   * Gerard as he falls (`fall`) or drops back onto the landing (`land`): his feet are not planted.
+   * Falling, he teeters with his arms thrown up, then tips over and tumbles down, limbs flailing;
+   * dropping in, arms out for balance, knees giving as he lands.
+   */
+  function poseCuerdasFall(animate: boolean) {
+    const wave = (speed: number, phase = 0) => animate ? Math.sin(clock * speed + phase) : 0;
+    if (strung.fall) {
+      const k = strung.fall.since, into = Math.min(1, k / CUERDAS_TEETER), tip = Math.max(0, k - CUERDAS_TEETER);
+      rig.body.setLocalEulerAngles(animate ? 8 * into + tip * 150 : 20, visualFacing + (animate ? tip * 70 : 0), wave(7) * 12 * into);
+      rig.limbs[1].setLocalEulerAngles(150 * into + wave(19) * 22, 0, -28 * into);
+      rig.limbs[3].setLocalEulerAngles(150 * into + wave(19, 2) * 22, 0, 28 * into);
+      rig.limbs[0].setLocalEulerAngles(30 * into + wave(13) * 22, 0, -8 * into);
+      rig.limbs[2].setLocalEulerAngles(-10 * into + wave(13, 3) * 22, 0, 8 * into);
+      rig.joints[0]?.setLocalEulerAngles(50 * into, 0, 0); rig.joints[2]?.setLocalEulerAngles(70 * into, 0, 0);
+      rig.joints[1]?.setLocalEulerAngles(-30 * into, 0, 0); rig.joints[3]?.setLocalEulerAngles(-30 * into, 0, 0);
+    } else if (strung.land !== undefined) {
+      const k = Math.min(1, strung.land / CUERDAS_LAND), give = Math.max(0, (k - .8) / .2);
+      rig.body.setLocalEulerAngles(6 * give, visualFacing, 0);
+      rig.limbs[1].setLocalEulerAngles(20, 0, -70 + 30 * give); rig.limbs[3].setLocalEulerAngles(20, 0, 70 - 30 * give);
+      for (const i of [0, 2]) { rig.limbs[i].setLocalEulerAngles(18 + 20 * give, 0, 0); rig.joints[i]?.setLocalEulerAngles(20 + 40 * give, 0, 0); }
+    }
+  }
   /** Each quality not yet beaten stands on its platform, and La Voz at the centre: the same bodies as in their fights. */
   function standCuerdas() {
     const list = story.cuerdasFoes(environment.id), key = JSON.stringify(list.map(w => w.beaten));
@@ -666,8 +691,15 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const heard = CUERDAS_PLAN.mazes.find(m => here.z >= m.rect.z - 6 && here.z <= m.rect.z + m.rect.d + 4);
       if (heard) for (const note of onsets(PHRASES[heard.spec.phrase], before, strung.t)) callbacks.onSound(`nota-${note.tone}`, { volume: .32 });
       if (!strung.fall && !cutscene) {
-        const piece = pieceAt(here);
+        const piece = pieceAt(here), was = strung.on && CUERDAS_PLAN.mazes[strung.on.maze];
         if (strung.on && piece !== strung.on && leave(strung.on, strung.run)) callbacks.onSound('crack', { volume: .5 });
+        // A switch underfoot lays its maze's bridge across the gap on the far side.
+        if (press(piece, strung.run)) {
+          callbacks.onSound('clink', { volume: .7 }); callbacks.onSound('creak', { volume: .45 });
+          const at = player.getPosition(); effects.emit('poof', new pc.Vec3(at.x, .2, at.z), 8, .3);
+        }
+        // Walking back out the near side puts the maze back as it was, to try another way.
+        if (was && !piece && !mazeAt(here) && here.z >= was.rect.z + was.rect.d) mend(strung.run, CUERDAS_PLAN.mazes.indexOf(was));
         strung.on = piece;
         const maze = mazeAt(here);
         if (maze && !movement.bouncing && !holds(here, strung.run, strung.t)) {
@@ -677,24 +709,34 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
         }
       }
       if (strung.fall) {
-        strung.fall.since += dt;
-        strung.sink = strung.fall.since * strung.fall.since * 14;
-        if (strung.fall.since > .75) {
+        // A moment teetering where the floor went, then down into the void, faster and faster.
+        const k = strung.fall.since += dt;
+        strung.sink = k < CUERDAS_TEETER ? 0 : (k - CUERDAS_TEETER) ** 2 * 18;
+        if (k > CUERDAS_FALL) {
           const maze = CUERDAS_PLAN.mazes[strung.fall.maze];
           mend(strung.run, strung.fall.maze);
           movement.teleport(environment.grid, { ...maze.start });
           const mate = mateHere(); if (mate) placeMate(mate);
-          strung.fall = undefined; strung.sink = 0; strung.on = undefined;
+          strung.fall = undefined; strung.on = undefined; strung.land = 0;
           cameraTarget.copy(scenery.toWorld(movement.cell.x, movement.cell.z));
-          positionPlayer(); release();
-          const at = player.getPosition(); effects.emit('poof', new pc.Vec3(at.x, .5, at.z), 10, .4);
+        }
+      }
+      if (strung.land !== undefined) {
+        // Back before the maze, dropping out of the dark onto the landing.
+        const k = Math.min(1, (strung.land += dt) / CUERDAS_LAND);
+        strung.sink = -CUERDAS_DROP_IN * (1 - k * k);
+        if (k >= 1) {
+          strung.land = undefined; strung.sink = 0; positionPlayer(); release();
+          const at = player.getPosition(); effects.emit('poof', new pc.Vec3(at.x, .3, at.z), 10, .4);
         }
       }
     }
+    // Falling or dropping back in, nothing walks him: he is placed where the fall has him.
+    if (strung.fall || strung.land !== undefined || strung.sink) positionPlayer();
     cuerdas.update(dt, strung.t, strung.run, player.getPosition(), animate);
   }
   function dressScene() {
-    cuerdas?.destroy(); cuerdas = undefined; strung.waiting?.destroy(); strung.waiting = undefined; strung.key = ''; strung.fall = undefined; strung.sink = 0; strung.on = undefined;
+    cuerdas?.destroy(); cuerdas = undefined; strung.waiting?.destroy(); strung.waiting = undefined; strung.key = ''; strung.fall = undefined; strung.land = undefined; strung.sink = 0; strung.on = undefined;
     piano?.destroy(); piano = undefined;
     if (environment.id === 'cuerdas') { cuerdas = buildCuerdas(app, scenery.toWorld); strung.run = freshCuerdas(); standCuerdas(); }
     if (environment.id === 'alegia') {
@@ -1438,6 +1480,21 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       part('box', main, [0, 0, 0], [.2, .05, .13]);
       part('box', trim, [0, .03, 0], [.12, .02, .135]);
       for (const side of [-1, 1]) part('cone', main, [side * .14, 0, 0], [.09, .1, .09]);
+    } else if (id === 'bola') {
+      // The snow globe: a dark wooden foot, the block of flats and its lit portal inside, snow on the ground, under glass.
+      const glass = new pc.StandardMaterial();
+      glass.diffuse.set(.78, .9, .96); glass.emissive.set(.62, .8, .9); glass.emissiveIntensity = .25; glass.gloss = .95;
+      glass.opacity = .32; glass.blendType = pc.BLEND_NORMAL; glass.depthWrite = false; glass.update();
+      const snow = new pc.StandardMaterial(); snow.diffuse.set(.95, .97, .98); snow.emissive.set(.8, .86, .9); snow.emissiveIntensity = .5; snow.update();
+      part('cylinder', main, [0, .03, 0], [.2, .06, .2]);
+      part('cylinder', main, [0, .075, 0], [.16, .03, .16]);
+      part('cylinder', snow, [0, .1, 0], [.14, .02, .14]);
+      part('box', trim, [0, .16, 0], [.06, .11, .05]);
+      part('box', main, [0, .125, .026], [.018, .03, .004]);
+      part('sphere', glass, [0, .17, 0], [.2, .2, .2]);
+      holder.setLocalScale(1.5, 1.5, 1.5);
+      separateFlushFaces(holder);
+      return [main, trim, glass, snow];
     } else if (id === 'pocion') {
       part('sphere', main, [0, 0, 0], [.26, .26, .26]);
       part('cylinder', main, [0, .17, 0], [.09, .12, .09]);
@@ -2542,7 +2599,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     else {
       player.setLocalEulerAngles(0, 0, 0);
       const separationHop = movement.bouncing && !reducedMotion.matches ? Math.sin(movement.progress * Math.PI) * .18 : 0;
-      plantFeet(scenery.groundHeight, separationHop + pose.air);
+      if (strung.fall || strung.land !== undefined) poseCuerdasFall(animate);
+      else plantFeet(scenery.groundHeight, separationHop + pose.air);
     }
     // Story cast: the partner walks their own gait; people at home turn to face Gerard when he is near.
     const mate = mateHere();
@@ -2874,6 +2932,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     /** Morning animation stage, also used by repeatable screenshot scenarios. */
     get wakePhase() { return waking === undefined ? undefined : wakePhase(waking); },
     selectTarget: aimAt,
+    aimDie: (unit?: string, index?: number) => battleScene.aimDie(unit, index),
     /** A lamp in the Meridiana flat turned on, off or another colour; its prompt says what is next. */
     setLamp(id: LightId, lamp: Lamp) { lamps[id] = lamp; scenery.setLamp(id, lamp); lastPrompt = ''; updatePrompt(); },
     setLampLabels(label: (id: string) => string | undefined) { lampLabel = label; lastPrompt = ''; updatePrompt(); },

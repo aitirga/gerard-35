@@ -135,6 +135,17 @@ const loadoutKey = 'gerard35.loadout.v1';
 function restoreLoadout() { try { story.loadout = JSON.parse(localStorage.getItem(loadoutKey) ?? '{}'); } catch { /* Storage is optional. */ } }
 function keepLoadout() { try { localStorage.setItem(loadoutKey, JSON.stringify(story.loadout)); } catch { /* Storage is optional. */ } }
 restoreLoadout();
+// What the snow globe keeps of the missions (src/story.ts `Kept`) lives here too: a reload finds them as it left them.
+const keptKey = 'gerard35.bola.v1';
+let keptStored = '{}';
+function restoreKept() { try { keptStored = localStorage.getItem(keptKey) ?? '{}'; story.kept = JSON.parse(keptStored); } catch { /* Storage is optional. */ } }
+function keepKept() {
+  const kept = JSON.stringify(story.kept);
+  if (devStory || kept === keptStored) return;
+  keptStored = kept;
+  try { localStorage.setItem(keptKey, kept); } catch { /* Storage is optional. */ }
+}
+if (!devStory) restoreKept();
 // A mission's part sets the run the story does not save (Nuria's cats lent, the tower's ring).
 if (devJump?.part?.nuria) story.startNuria(devJump.part.nuria);
 if (devJump?.part?.uni) story.startUni(devJump.part.uni);
@@ -235,8 +246,9 @@ try {
       return game.setBattle(state, effect, effect ? blow => { if (state && !blow) playCues(impactSounds(effect, state)); onImpact?.(blow); } : onImpact);
     },
     target: id => game.selectTarget(id),
+    aimDie: (unit, index) => game.aimDie(unit, index),
     sound: id => sfx.play(id),
-    awaken: id => { sfx.play('awaken'); game.awaken(id); if (!testing) storyEvent({ type: 'class', id: id as Exclude<ClassId, 'tecnopata'> }); },
+    awaken: id => { sfx.play('awaken'); game.awaken(id); if (!testing) storyEvent({ type: 'class', id: id as Exclude<ClassId, 'tecnopata' | 'dadaista'> }); },
     driver: id => battleDriver(playing(), id),
     waiting: id => waitingForPlayer2(playing(), id),
     // Each fighter's pick in the fight is their pick for the adventure too.
@@ -268,6 +280,7 @@ try {
     openMenu: () => controller.open(),
     wear: (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } },
     equip: (member, classId, on) => { if (on ? story.equip(member, classId) : story.unequip(member, classId)) { keepLoadout(); storyChanged(); } },
+    use: item => { exploration.close(); storyEvent({ type: 'use', item }); },
     // With a second player on Aitor, each player gets their own half of the status screen.
     split: () => partnerDriven(control, story.partner),
     partner: () => game.partnerPosition,
@@ -294,6 +307,7 @@ try {
     else if (effect.kind === 'palace') { await game.raisePalace(); storyEvent({ type: 'palace' }); }
     else if (effect.kind === 'gate') await game.popGate();
     else if (effect.kind === 'travel') game.setEnvironment(effect.environment, effect.cell);
+    else if (effect.kind === 'snow') { if (effect.on) sfx.play('pickup'); await storyUI.snow(effect.on); }
     else if (effect.kind === 'drain') await game.riseFromDrain();
     else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }
     else if (effect.kind === 'wake') await game.wake(() => storyUI.blackout(false, 2000));
@@ -362,6 +376,7 @@ try {
     storyPaused = true; game.setPaused(true);
     await storyUI.doom();
     const effects = story.rewind();
+    keepKept();
     storyChanged();
     for (const effect of effects) await play(effect);
     storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
@@ -402,6 +417,7 @@ try {
   }
   function storyEvent(event: StoryEvent) {
     const effects = story.handle(event);
+    keepKept();
     for (const effect of effects) if (effect.kind === 'lights') lightsFlying += effect.people.length;
     storyChanged();
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
@@ -670,7 +686,7 @@ try {
       if (isDpad(action)) { battleUI.toggleSummary(); return; }
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
       if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
-      if (jarUI.isOpen) { if (action !== 'overview' && action !== 'character') jarUI.control(action); return; }
+      if (jarUI.isOpen) { if (action !== 'overview' && action !== 'character') jarUI.control(action, player === 2 ? 2 : 1); return; }
       if (parcelasUI.isOpen) { parcelasUI.control(action, player === 2 ? 2 : 1); return; }
       if (candadoUI.isOpen) { candadoUI.control(action, player === 2 ? 2 : 1); return; }
       if (lookAway) { if (action === 'confirm' || action === 'cancel') lookAway(); return; }
@@ -759,7 +775,7 @@ try {
     const weather = params.get('weather'), intensity = Number(params.get('intensity') ?? 1);
     if (weather === 'rain' || weather === 'snow') game.effects.setWeather(weather, Number.isFinite(intensity) ? intensity : 1, true);
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, homeLights, audio, music, sfx } });
+    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx } });
   }
   if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {

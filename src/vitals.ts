@@ -39,9 +39,10 @@ export function vitalsPlate(v: Vitals) {
 }
 /**
  * Moves the wave and numbers of an existing plate (the trail lags behind, so each hit shows) and
- * lights or empties the maná circles; a circle that changes plays its spend or charge.
+ * lights or empties the maná circles; a circle that changes plays its spend or charge. With `dice`
+ * (Dadaísta's hand) each point held is a die showing its face.
  */
-export function setVitals(plate: Element, hp: number, maxHp: number, sec: number, maxSec: number) {
+export function setVitals(plate: Element, hp: number, maxHp: number, sec: number, maxSec: number, dice?: readonly number[]) {
   const ratio = maxHp ? hp / maxHp : 0;
   plate.querySelectorAll<SVGPathElement>('[data-bar="hp"]').forEach(path => { path.style.strokeDasharray = `${(ratio * 100).toFixed(1)} 1000`; });
   const label = plate.querySelector('[data-value="hp"]');
@@ -58,11 +59,15 @@ export function setVitals(plate: Element, hp: number, maxHp: number, sec: number
   if (row.children.length !== maxSec) row.innerHTML = pips(sec, maxSec);
   [...row.children].forEach((pip, i) => {
     const next = i < sec ? 'full' : 'spent', el = pip as HTMLElement;
-    if (el.dataset.pip === next) return;
+    // Dadaísta's maná is dice: each point it holds shows its face (`diceOf`), and a face that changes turns over.
+    const face = dice && i < sec && dice[i] ? String(dice[i]) : undefined, turned = !!face && !!el.dataset.face && el.dataset.face !== face;
+    if (face) el.dataset.face = face; else delete el.dataset.face;
+    if (el.dataset.pip === next && !turned) return;
     el.dataset.pip = next;
     el.classList.remove('is-changing'); void el.offsetWidth; el.classList.add('is-changing');
   });
   plate.classList.toggle('is-empty-sec', !!maxSec && sec === 0);
+  plate.classList.toggle('has-dice', !!dice);
 }
 /** Lights an avatar up in the ánima's colour (or plain light when it is taken off). */
 export function flashAnima(el: Element | null, colour?: string) {

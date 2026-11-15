@@ -12,7 +12,7 @@ import type { GpuEmitter, GpuField, GpuKind } from './fight-particles.ts';
  * Particles are only sparks, drops, crystals and haze, never sprites with a shape of their own.
  */
 export type StatusLookId = 'quemado' | 'mojado' | 'congelado' | 'envenenado' | 'sangrado' | 'cegado' | 'paralizado' | 'cauterizado' | 'mareo' | 'llorera' | 'sanacion' | 'confusion' | 'encogido';
-export type ReactionId = 'humo' | 'paralisis' | 'congelar' | 'arrastre' | 'veneno-ardiente' | 'vapor' | 'anicos' | 'contagio' | 'cauterizado' | 'tormenta';
+export type ReactionId = 'humo' | 'conduccion' | 'paralisis' | 'congelar' | 'arrastre' | 'veneno-ardiente' | 'vapor' | 'anicos' | 'contagio' | 'cauterizado' | 'tormenta';
 /** How a status moves whoever carries it (battle-scene plays it). */
 export type StatusMotion = 'freeze' | 'twitch' | 'sway';
 
@@ -194,11 +194,12 @@ export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
 /** The reactions the combat design decided (docs/combat.md): which status, which element, what it leaves. */
 export const REACTIONS: Record<ReactionId, { name: string; status: StatusLookId; element: string; leaves: string; shows: string }> = {
   humo: { name: 'Humo', status: 'quemado', element: 'Agua', leaves: 'Cegado', shows: 'El agua apaga la llama de golpe en una nube de vapor y humo oscuro que se le queda en la cabeza.' },
+  conduccion: { name: 'Conducción', status: 'mojado', element: 'Eléctrico', leaves: 'Daño a todos los mojados; se secan', shows: 'La corriente corre por el agua que llevan encima: arcos por todo el cuerpo, chispas y el agua saltando en gotas.' },
   paralisis: { name: 'Parálisis', status: 'mojado', element: 'Eléctrico', leaves: 'Paralizado', shows: 'La descarga corre por el agua de su cuerpo: arcos que lo envuelven entero, chispas y un fogonazo.' },
   congelar: { name: 'Congelado', status: 'mojado', element: 'Frío', leaves: 'Congelado', shows: 'Las gotas se hielan en el sitio: una costra de escarcha le cubre de golpe y el frío cae.' },
   arrastre: { name: 'Arrastra el humo', status: 'cegado', element: 'Viento', leaves: 'Cegado en el otro bando', shows: 'Una ráfaga le arranca el humo de la cabeza y lo lleva al otro bando.' },
   'veneno-ardiente': { name: 'Veneno ardiente', status: 'envenenado', element: 'Fuego', leaves: 'Daño a los adyacentes', shows: 'El veneno estalla en llamas verdes y naranjas: chispas a los lados que alcanzan a quien tenga al lado.' },
-  vapor: { name: 'Vapor', status: 'mojado', element: 'Fuego', leaves: 'Daño leve a todos los enemigos', shows: 'El agua hierve: una columna de vapor que sube y se extiende sobre todos los enemigos un rato.' },
+  vapor: { name: 'Vapor', status: 'mojado', element: 'Fuego', leaves: 'Cegado', shows: 'El agua hierve de golpe: una columna de vapor que sube y se le queda en la cabeza.' },
   anicos: { name: 'Añicos', status: 'congelado', element: 'Golpe físico fuerte', leaves: 'Daño extra; se acaba Congelado', shows: 'El hielo revienta en esquirlas que salen girando y rebotan, y deja escarcha en el suelo.' },
   contagio: { name: 'Contagio', status: 'envenenado', element: 'Agua', leaves: 'Envenenado más débil en los adyacentes', shows: 'El veneno se diluye en un vaho verde que fluye hasta quien tiene al lado y le prende.' },
   cauterizado: { name: 'Cauterizado', status: 'sangrado', element: 'Fuego', leaves: 'Cauterizado (no puede curarse)', shows: 'Un fogonazo sella las heridas: chisporroteo, una voluta de humo y las heridas brillando al rojo.' },
@@ -346,6 +347,11 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
           g?.burst('smog', { at: head, count: 220, spread: .3, up: .8, speed: 1, life: [1.5, 2.5] });
           api.apply(id, 'cegado', { level });
           break;
+        case 'conduccion':
+          g?.burst('arc', { at: chest, count: 12 * 10, chain: 10, shape: 'surface', fighter: f.index, outward: 2, speed: 1.5, life: [.22, .46], colour: '#fff2a8', light: { intensity: 4, range: 3, colour: '#ffe45c' } });
+          g?.burst('spark', { at: chest, count: 110, shape: 'surface', fighter: f.index, outward: 2.5, speed: 1.5, life: [.3, .7], colour: '#fff6c4' });
+          g?.burst('drip', { at: chest, count: 80, shape: 'surface', fighter: f.index, outward: 2.2, up: 1.6, speed: 1.2, life: [.5, .9] });
+          break;
         case 'paralisis':
           g?.burst('arc', { at: chest, count: 14 * 10, chain: 10, shape: 'surface', fighter: f.index, outward: 2, speed: 1.5, life: [.25, .5], colour: '#cfe4ff', light: { intensity: 4, range: 3, colour: '#cfe4ff' } });
           g?.burst('spark', { at: chest, count: 120, shape: 'surface', fighter: f.index, outward: 2.5, speed: 1.5, life: [.3, .7], colour: '#d8ecff' });
@@ -375,11 +381,8 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
           break;
         case 'vapor':
           g?.burst('steam', { at: chest, count: 320, spread: body.radius, up: 3, speed: 1.5, life: [1, 2] });
-          // Then it hangs over the other side a while, scalding.
-          for (const o of others) {
-            const e = g?.emitter('steam', { at: { x: o.feet.x, y: o.feet.y + .1, z: o.feet.z }, shape: 'ring', spread: .45, rate: 40, up: 1.2, speed: .3, life: [1, 1.8] });
-            if (e) timed.push({ left: 4, end: () => e.remove() });
-          }
+          g?.burst('steam', { at: head, count: 140, spread: .3, up: .6, speed: .6, life: [1.4, 2.4] });
+          api.apply(id, 'cegado', { level });
           break;
         case 'anicos':
           // The ice bursts into fine splinters that fly off spinning and skitter, glittering, and frost the floor.

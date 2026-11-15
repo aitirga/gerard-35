@@ -14,8 +14,11 @@ import { SKILLS, type BattleState, type ClassId, type FoeKind, type SkillId } fr
 export const MAX_LEVEL = 3;
 /** EXP to reach level 2 and level 3, counted from zero: three times the first tuning (2026-11-05), so an ánima grows slowly. */
 export const LEVEL_XP = [180, 660] as const;
-/** Ánimas that grow; one without its own level table would stay at level 1. */
-export const LEVELLED: readonly ClassId[] = ['matemagico', 'papagato'];
+/**
+ * Ánimas that grow by level: the shared ones. Matemágico and Tecnópata are someone's own and grow by
+ * their tree at the jar instead (src/ecos.ts; docs/animas/README.md § Two ways to grow).
+ */
+export const LEVELLED: readonly ClassId[] = ['papagato'];
 /**
  * What each foe is worth when it is beaten. Roughly how long it takes to bring down: some seven packs
  * of cebollitas (20 to 30 EXP each), or El Cebollón and five packs, teach Papagato Zarpazos.

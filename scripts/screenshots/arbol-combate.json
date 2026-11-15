@@ -1,0 +1,281 @@
+{
+  "title": "Los árboles en combate: elementos, Control remoto y pasivas",
+  "description": "docs/animas/README.md § The jar. The skills and passives bought as nodes of Matemágico's and Tecnópata's trees, in the fight tester against three sturdy dogs, one player leading both: Vasos comunicantes (Mojado), Descarga (Conducción), Factor común, Control remoto, Vapor, and each passive saying so on a plate over whoever has it (Telemetría, Toma de tierra, Rescoldo, Capilaridad, Nanitos). Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Afactor-comun%22%2C%22matemagico%3Arescoldo%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Avasos%22%2C%22matemagico%3Acapilaridad%22%2C%22matemagico%3Aelectrico%22%2C%22matemagico%3Adescarga%22%2C%22matemagico%3Atoma-de-tierra%22%2C%22tecnopata%3Aexplosion%22%2C%22tecnopata%3Atelemetria%22%2C%22tecnopata%3Aconfusion%22%2C%22tecnopata%3Acontrol-remoto%22%2C%22tecnopata%3Arayo-encogedor%22%2C%22tecnopata%3Ananitos%22%5D%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => s.foes.forEach(f => { f.hp = f.maxHp = 600; }));"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades-matemagico",
+      "delay": 300,
+      "caption": "Matemágico with its three element lines bought: Foc Binari, Factor común, Vasos comunicantes and Descarga"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"vasos\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "vasos",
+      "seconds": 1.9,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Vasos comunicantes: an arc of water leaves his circle for every dog; the water climbs each in rings to one and the same height and a level line joins them there. ¡Mojado! on all three"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "telemetria",
+      "seconds": 1.8,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Telemetría (passive): Bip rams a wet dog and its Mojado lasts 3 s more; the plate PASIVA · Telemetría comes up over Aitor in cyan"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.find(a => a.id === 'gerard').secondary = 2; })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"descarga\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "descarga",
+      "seconds": 2.1,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Descarga: a crackle goes up from his circle and a jagged bolt comes down on the first dog; Conducción runs through the water to every wet dog and leaves them dry. Toma de tierra (passive) gives him a maná back"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"control-remoto\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "control-remoto",
+      "seconds": 2.0,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Control remoto: Bip's signal threads to a dog's head, rings of nanites close round it, and it turns on one of its own in Bip's cyan"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"foc-binari\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "rescoldo",
+      "seconds": 1.9,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Rescoldo (passive): Foc Binari's fire lasts 15 s; its plate comes up over Gerard in gold"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"foc-binari\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"factor-comun\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "factor-comun",
+      "seconds": 2.1,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Factor común: a pair of binary streams forks to every dog; the fire on each climbs to one height, a gold line ties them and the digit of the fire they now share stands over each: Quemado II on all"
+    },
+    {
+      "shot": "quemado-todos",
+      "delay": 900,
+      "caption": "All three burning at the level of the highest"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { delete f.timed; }); s.allies.find(a => a.id === 'gerard').element = 'agua'; })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "capilaridad",
+      "seconds": 1.9,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Capilaridad (passive): Atacar with water on a dog with no fire leaves it Mojado"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { const g = s.allies.find(a => a.id === 'gerard'); g.hp = Math.max(1, g.hp - 50); g.statuses = { llorera: 2 }; })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"rayo-sanacion\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "nanitos",
+      "seconds": 2.0,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Nanitos (passive): Rayo de sanación on Gerard also takes his Llorera away"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.find(a => a.id === 'gerard').element = 'fuego'; s.foes.forEach(f => { f.timed = { ...f.timed, mojado: { level: 1, left: 20, next: 20 } }; }); })"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "vapor",
+      "seconds": 1.9,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Vapor: Atacar with fire on the wet dog; the water goes up and leaves it Cegado"
+    }
+  ]
+}

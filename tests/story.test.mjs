@@ -128,7 +128,7 @@ test('caught by the Queen, Gerard wakes up at 35 in Barcelona with Aitor and a B
   assert.deepEqual(story.npcs('home-floor-1'), [], 'home in Sant Quirze is empty now');
   assert.match(story.party[0].note, /Matemágico/);
 
-  assert.deepEqual(story.pickups('meridiana').map(p => p.id), ['envoltorio']);
+  assert.deepEqual(story.pickups('meridiana').map(p => p.id), ['envoltorio', 'bola']);
   assert.ok(story.pickups('meridiana')[0].spot, 'the wrapper lies on the bedside shelf');
   assert.ok(!story.interactions('meridiana', { x: 9.4, z: 13.6 }).some(i => i.id === 'talk-aitor'), 'Aitor is player 2: nobody talks to him through a prompt');
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-envoltorio' })), ['dialogue', 'item:envoltorio']);
@@ -379,17 +379,18 @@ test('ánimas grow with the EXP of fights won, every ánima in the fight earns i
   const story = new Story(['matemagico', 'papagato']);
   const first = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['papagato', 'matemagico'], xp: LEVEL_XP[0] - 1 });
   assert.equal(first.some(e => e.kind === 'learn'), false);
-  assert.deepEqual(story.xp, { papagato: LEVEL_XP[0] - 1, matemagico: LEVEL_XP[0] - 1 }, 'not split between them');
+  assert.deepEqual(story.xp, { papagato: LEVEL_XP[0] - 1 }, 'whole to the one that levels: Matemágico grows by its tree and earns none');
   const learned = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['papagato'], xp: 1 });
   assert.equal(story.levels.papagato, 2); assert.ok(story.has('papagato-2'));
   assert.deepEqual(learned.find(e => e.kind === 'learn'), { kind: 'learn', classId: 'papagato', level: 2, skills: ['zarpazos', 'ronroneo'], quiet: true }, 'the victory screen showed it');
-  assert.equal(story.levels.matemagico, 1, 'it did not take part');
+  assert.equal(story.levels.matemagico, 1);
   story.handle({ type: 'battle', won: false, encounter: 'dogs', worn: ['papagato'], xp: 500 });
   assert.equal(story.xp.papagato, LEVEL_XP[0], 'a lost fight teaches nothing');
   // A big win can go up two levels at once, each with its note.
-  const both = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['matemagico'], xp: 500 });
-  assert.deepEqual(both.filter(e => e.kind === 'learn').map(e => [e.level, e.skills]), [[2, ['analisis', 'angulo']], [3, ['cardioide']]]);
-  assert.equal(story.levels.matemagico, 3);
+  const both = new Story(['matemagico', 'papagato']).handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['papagato'], xp: 9999 });
+  assert.deepEqual(both.filter(e => e.kind === 'learn').map(e => [e.level, e.skills]), [[2, ['zarpazos', 'ronroneo']], [3, ['llaga', 'a-la-vez']]]);
+  const own = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['matemagico'], xp: 500 });
+  assert.equal(own.some(e => e.kind === 'learn'), false); assert.equal(story.levels.matemagico, 1, 'no level from fights');
 });
 
 test('a level the story grants starts the EXP from its floor; development EXP plays out like a fight', async () => {
@@ -462,4 +463,47 @@ test('a dual attack is found when it goes off: each ánima lists only those it b
   assert.deepEqual(story.duals, ['zarpazos-de-fuego']);
   story.duals = 'not a list';
   assert.deepEqual(story.duals, []);
+});
+
+test('the snow globe: taken in the hall, shaking it keeps the missions and brings the party home, except at night', () => {
+  const story = new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('clue-r4') + 1).filter(f => f !== 'got-bola'));
+  assert.deepEqual(story.handle({ type: 'use', item: 'bola' }), [], 'nothing to shake yet');
+  assert.ok(story.interactions('meridiana').some(i => i.id === 'take-bola'));
+  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-bola' })), ['dialogue', 'item:bola', 'hint:items']);
+  assert.ok(story.items.includes('bola') && !story.pickups('meridiana').some(p => p.id === 'bola'));
+
+  // Marta's mission partway, and Nuria's cats lent with the tower begun.
+  story.startMarta({ beaten: ['lealtad'] });
+  story.startNuria({ lent: true, haru: true, stage: 2, beaten: ['cebollon'] });
+  story.inside = 'cuerdas';
+  const home = story.handle({ type: 'use', item: 'bola' });
+  assert.deepEqual(home.map(e => e.kind), ['snow', 'travel', 'snow']);
+  assert.equal(home[1].environment, 'meridiana');
+  assert.deepEqual(story.marta.beaten, ['lealtad']);
+  assert.ok(!story.nuria.lent && !story.classes.includes('papagato'), 'the cats do not come along');
+  assert.equal(story.nuria.stage, 2);
+
+  // More done and not kept: going to bed puts the missions back to what the globe keeps.
+  story.marta.beaten.push('cristalino');
+  story.handle({ type: 'interact', id: 'meridiana-bed' });
+  assert.deepEqual(story.marta.beaten, ['lealtad'], 'back to the last shake');
+  assert.equal(story.nuria.stage, 2);
+  // Nuria lends the cats again, and the tower is as far as they got.
+  story.handle({ type: 'interact', id: 'talk-nuria' });
+  assert.ok(story.nuria.lent && story.nuria.stage === 2 && story.nuria.beaten.includes('cebollon'));
+
+  // A reload: what the globe keeps goes through the browser and comes back.
+  const again = new Story(story.saved);
+  again.kept = JSON.parse(JSON.stringify(story.kept));
+  assert.deepEqual(again.marta.beaten, ['lealtad']);
+  assert.equal(again.nuria.stage, 2);
+  again.kept = { marta: { beaten: 'no', told: [] }, nuria: 7, other: {} };
+  assert.deepEqual(again.kept, { marta: { beaten: [], told: [] } }, 'anything invalid is dropped');
+
+  // At home it only keeps; at night it does nothing.
+  story.inside = 'meridiana';
+  assert.deepEqual(kinds(story.handle({ type: 'use', item: 'bola' })), ['dialogue']);
+  story.inside = 'alegia';
+  story.days.clock = { ...story.days.clock, hour: 21 };
+  assert.deepEqual(kinds(story.handle({ type: 'use', item: 'bola' })), ['dialogue'], 'the way home at night is the street');
 });

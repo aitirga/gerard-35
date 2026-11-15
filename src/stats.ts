@@ -47,7 +47,7 @@ export const PROFILES = {
   /**
    * Vertitrón and its eye (a part of it, an optional target: broken, no more Rayo; battle.ts VERTIGO).
    */
-  vertigo: base(360, 13, 13, 12, 12, 9),
+  vertigo: base(415, 13, 13, 12, 12, 9),
   'vertigo-ojo': base(100, 10, 10, 9, 9, 1),
   /** Their young, in twos and threes up the tower (docs/quests/nuria.md § The tower): little PV and quick. The cebollitas are the easy ones. */
   cebollita: base(34, 11, 8, 9, 8, 11),
@@ -68,7 +68,7 @@ export const PROFILES = {
    * Càmping Eurosport's foes (docs/quests/universidad.md § Càmping Eurosport): their rules do the work
    * (battle.ts CAMPING), so their stats stay near the average. El Campeón is the mini-boss.
    */
-  mago: base(100, 10, 12, 9, 11, 10),
+  mago: base(130, 10, 12, 9, 11, 10),
   dado: base(44, 12, 8, 11, 9, 9),
   agente: base(66, 12, 10, 10, 10, 10),
   campeon: base(380, 14, 10, 12, 11, 9),
@@ -77,10 +77,10 @@ export const PROFILES = {
    * a wall, an Eco frail and quick, Lo Cristalino has spirit to spare (magic does nothing to it anyway),
    * Lo Directo hits. La Voz is all of them.
    */
-  lealtad: base(180, 12, 9, 14, 12, 7),
-  eco: base(64, 12, 12, 8, 8, 12),
+  lealtad: base(225, 12, 9, 14, 12, 7),
+  eco: base(50, 12, 12, 8, 8, 12),
   cristalino: base(300, 10, 13, 10, 14, 10),
-  directo: base(240, 14, 10, 11, 10, 11),
+  directo: base(420, 14, 10, 11, 10, 11),
   voz: base(400, 12, 13, 12, 12, 10),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;

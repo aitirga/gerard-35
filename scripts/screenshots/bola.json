@@ -1,0 +1,30 @@
+{
+  "title": "La bola de nieve y el panel de Objetos",
+  "description": "The snow globe on the TV unit in the Meridiana flat (docs/chapter-2.md § The snow globe): taken, shown in the new Objetos page (one list of key objects, the one under the cursor beside it), and shaken in Alegia to come home with the mission kept.",
+  "steps": [
+    { "open": "/?story=got-wrapper&solo=1" },
+    { "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },
+    { "eval": "window.gerard.story.merge(['tv-news', 'clue-r4', 'metro']); window.gerard.game.refreshStory()" },
+    { "teleport": "meridiana", "cell": [17, 3], "settle": 1500 },
+    { "shot": "salon", "delay": 1200, "caption": "El salón: la bola de nieve sobre el mueble de la tele" },
+    { "eval": "window.gerard.storyEvent({ type: 'interact', id: 'take-bola' })" },
+    { "until": "!!document.querySelector('#hud[data-dialogue]')", "timeout": 10000 },
+    { "shot": "cogerla", "delay": 900, "caption": "«Está nevando dentro, y nadie la ha tocado.»" },
+    { "skipDialogue": true },
+    { "shot": "nota", "delay": 900, "caption": "La nota del objeto, con su icono, y la tecla de Objetos" },
+    { "press": "KeyI" },
+    { "shot": "objetos", "delay": 900, "caption": "Objetos: una sola lista de objetos clave, y la ficha del que está bajo el cursor" },
+    { "eval": "document.querySelector('[data-item=\"bola\"]').focus()" },
+    { "shot": "objetos-bola", "delay": 700, "caption": "La bola bajo el cursor: qué hace, y «Agitar»" },
+    { "press": "Escape" },
+    { "eval": "window.gerard.story.startMarta({ beaten: ['lealtad'] })" },
+    { "teleport": "alegia", "cell": [233, 64], "settle": 2500 },
+    { "shot": "alegia", "delay": 1200, "caption": "En Alegia, a media misión de Marta" },
+    { "press": "KeyI" },
+    { "eval": "document.querySelector('[data-item=\"bola\"]').focus()" },
+    { "press": "Enter", "gap": 650 },
+    { "shot": "nieve", "delay": 0, "caption": "Agitada: la imagen se va en nieve" },
+    { "until": "document.title.startsWith('Meridiana')", "timeout": 20000 },
+    { "shot": "en-casa", "delay": 2200, "caption": "En casa, dentro de la puerta; lo hecho con Marta sigue como estaba" }
+  ]
+}

@@ -23,8 +23,8 @@ infantil.
 
 **Qué está construido** (2026-11-07): parte de esta dirección ya está en el juego y se describe en
 § *Estados en tiempo real*, que manda donde no coincidan: el reloj, Quemado (10 s, un pulso cada
-2 s, niveles I → III), Cegado y las reacciones Humo, Cauterizado y Tormenta, con sus reglas
-propias. Sigue sin construir: el turno aliado en paralelo, las fases separadas, quitar la
+2 s, niveles I → III), Cegado, Mojado y las reacciones Humo, Cauterizado, Tormenta, Vapor y
+Conducción, con sus reglas propias. Sigue sin construir: el turno aliado en paralelo, las fases separadas, quitar la
 Velocidad, las barreras, las posiciones y el resto de reacciones.
 
 **Decidido como dirección:** el combate mezcla **turnos y tiempo real**. Algunos estados no duran
@@ -443,10 +443,16 @@ puesto, y nunca sobre un enemigo al que el propio golpe ha tumbado.
 | Agua | Quemado | **Humo** | Apaga el fuego y deja Cegado a su nivel: sus golpes, al 70 / 50 / 30 %, 10 s |
 | Fuego | Sangrado | **Cauterizado** | El golpe no abre la herida: cada carga arde de golpe, 6 PV cada una |
 | Eléctrico | Cegado | **Tormenta** | La descarga salta por el humo: magia (24) a todos los cegados, y se acaba el humo |
+| Fuego | Mojado | **Vapor** | El agua se va y deja Cegado I; mojado, no prende |
+| Eléctrico | Mojado | **Conducción** | Corre por el agua: magia (20) a todos los mojados, y se secan |
 
 Cegado no pulsa (`levels` vacío en `TIMED`). Cauterizado, como Sangrado y Quemado, pasa por encima de
-las reglas de los miedos; Tormenta es magia y las respeta (`fearDamage`). Las reacciones que aún no
-se pueden dar (Mojado, Envenenado, Congelado: nadie los pone todavía) esperan su aspecto ya hecho
+las reglas de los miedos; Tormenta es magia y las respeta (`fearDamage`). **Mojado**
+(2026-11-15, 20 s, sin pulsos ni niveles) lo ponen Vasos comunicantes y, con la pasiva Capilaridad,
+el Atacar con agua; Vapor y Conducción las provoca también una habilidad con ese elemento (Foc
+Binari, Factor común, Descarga), no solo Atacar. Una **pasiva** que hace algo lo dice con una placa
+*PASIVA · nombre* sobre quien la tiene (`docs/animas/README.md` § The jar). Las reacciones que aún no
+se pueden dar (Envenenado, Congelado: nadie los pone todavía) esperan su aspecto ya hecho
 en `REACTIONS` (`src/status-fx.ts`). La pantalla: el número del golpe lleva el elemento debajo, la
 reacción lo dice en su color y sus PV salen al lado; la escena suelta un destello del elemento
 (`statusFx.touch`) y su momento (`statusFx.react`) al caer el golpe. `just screenshots elementos --gpu`.
@@ -674,7 +680,62 @@ Un procedimiento útil para un encuentro nuevo:
 5. Probar con personas en el juego. Las políticas automáticas son heurísticas; sus resultados
    no son una medición directa de la dificultad humana.
 
-No se prescribe todavía un porcentaje de victorias universal. Depende del lugar del
+### La respuesta de cada combate (regla, 2026-11-15)
+
+Cada combate hace **una pregunta** y tiene **una respuesta** con nombre. Vale para todos los que
+se diseñen a partir de ahora y es con lo que se revisan los que ya existen.
+
+- **La pregunta es de una de estas clases**, las que el motor ya sabe jugar:
+  - *orden*: a quién se neutraliza primero (el fantasmita antes de que se vuelva transparente,
+    La Lealtad antes de que su Eco crezca);
+  - *clase de golpe*: físico, mágico o dual (los platos, los magos, Lo Cristalino);
+  - *elemento o estado*: lo que hay que encender, mojar, cortar o apagar (§ Estados en tiempo real);
+  - *momento*: cuándo agarrarse y cuándo gastarlo todo (El Campeón, la Estocada de Lo Directo);
+  - *pieza*: qué hay que romper antes de que dispare (el ojo de Vertitrón, el Calderón de La Voz).
+  Un jefe puede encadenar dos o tres, una por fase. Un combate pequeño hace una sola.
+- **Sin la respuesta se pierde.** El combate es duro por sí mismo: quien pega a lo que más daño
+  hace ahora, sin leer, cae. No basta con que gane «con menos vida».
+- **Con la respuesta se nota.** Acertar tiene su propia imagen y su propio número, y el jugador
+  los ve en el momento: la reacción del enemigo (se raja, se queda clavado, pierde el turno), un
+  rótulo con nombre sobre el golpe, una cifra claramente mayor, y un combate más corto. Si la
+  única diferencia es que la barra baja algo más deprisa, no está premiado.
+- **La respuesta se aprende dentro del combate.** Está en la placa (un chip, el aviso del
+  siguiente gesto) o se descubre probando: el primer golpe que acierta lo dice. Nunca la da un
+  panel ni un texto de ayuda (`AGENTS.md` § Game philosophy). Una derrota tiene que dejar ver qué
+  ha pasado: el gesto que mató al equipo tiene nombre y se avisó.
+- **La respuesta está al alcance.** Un combate nunca pide un elemento, un ánima o un dual que el
+  equipo pueda no tener al llegar a él. Si lo pide, la puerta que lleva a ese combate lo dice en
+  el mundo, o el combate ofrece una segunda respuesta, más cara.
+- **Reglas por clase de golpe, nunca por ánima**: la respuesta es «fuego», «un golpe físico» o
+  «lo que alcanza a todos», no «la habilidad X».
+
+#### Debilidades por elemento (2026-11-15)
+
+Algunos enemigos están hechos de algo (`AFFINITIES` en `src/battle.ts`): un golpe con el elemento
+al que son débiles entra ×1,5 y uno que resisten ×0,5 (`ELEMENT_RULES`, libro `element.rules` del
+simulador). Cuenta el elemento del golpe, venga de donde venga: Atacar con un elemento, una
+habilidad de ese elemento (Foc Binari y Explosión son fuego), un dual hecho con ella (Zarpazos de
+fuego, Rayo solar) o una reacción eléctrica (Tormenta, Conducción). Nunca depende del ánima.
+
+| Enemigo | Débil a | Resiste |
+| --- | --- | --- |
+| Cebollita, La Cebolla, El Cebollón | Fuego | – |
+| Fantasmita | Eléctrico | Agua |
+| Vertitrón | Agua | Eléctrico |
+| Esbirro y guardianes de la Reina | Fuego | – |
+| Mago de camping | Agua | Fuego |
+| Lo Directo | Eléctrico | – |
+| Eco | Fuego | – |
+
+Nada lo dice de antemano. El primer golpe que lo encuentra suelta «¡Débil!» o «Resiste» con su
+multiplicador, y desde entonces la placa de ese tipo de enemigo lleva el chip («Débil: Fuego»)
+mientras dure la sesión. Son pocas a propósito: una debilidad se añade cuando es parte de la
+respuesta de un combate, no para rellenar una tabla.
+
+Se mide con dos objetivos por combate en `TARGETS` (`src/battle-sim.ts`,
+[fight-sim.md](fight-sim.md) § Targets): uno que juega la respuesta y otro que no.
+
+No se prescribe un porcentaje de victorias universal más allá de esa pareja. Depende del lugar del
 encuentro, la información que el mundo ofrece, las opciones del grupo y el coste de perder.
 Los combates con condiciones guionizadas deben analizarse por separado.
 

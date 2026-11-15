@@ -30,9 +30,19 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   explosion: { start: [{ id: 'charge', volume: .6 }], impact: [{ id: 'fire-hit' }, { id: 'slam' }, { id: 'crack', volume: .5, delay: .05 }] },
   confusion: { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }] },
   'rayo-encogedor': { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'zap', volume: .6 }, { id: 'sink' }] },
+  // Matemágico's elements: fire forking to everyone, water rising to one level, a bolt out of the sky.
+  'factor-comun': { start: [{ id: 'fire-cast' }], impact: [{ id: 'fire-hit' }, { id: 'burn', delay: .08 }] },
+  vasos: { start: [{ id: 'cast-soft' }], impact: [{ id: 'splash' }, { id: 'splash', volume: .6, delay: .12 }] },
+  descarga: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'zap' }, { id: 'crack', volume: .6 }, { id: 'hit', volume: .4, delay: .03 }] },
+  // Bip's signal takes; the foe's own blow lands from the scene.
+  'control-remoto': { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }, { id: 'zap', volume: .4, delay: .1 }] },
+  // Dadaísta's are dice thrown: they click as they leave the hand and land with their weight. A bet
+  // clicks again as it is rolled; lost, it only sinks (`impactSounds`).
+  'golpe-dados': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .5 }] },
+  'doble-o-nada': { start: [{ id: 'clink', volume: .6 }, { id: 'clink', volume: .8, delay: .34 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .6 }] },
 };
 const ELEMENT_SOUNDS: Record<Element, Cue> = { agua: { id: 'splash', volume: .5 }, fuego: { id: 'fire-hit', volume: .45 }, electrico: { id: 'zap', volume: .6 } };
-const REACTION_SOUNDS: Record<ElementReaction, Cue[]> = { humo: [{ id: 'fizzle', delay: .04 }], cauterizado: [{ id: 'burn', delay: .04 }], tormenta: [{ id: 'zap', delay: .05 }, { id: 'zap', delay: .13 }] };
+const REACTION_SOUNDS: Record<ElementReaction, Cue[]> = { humo: [{ id: 'fizzle', delay: .04 }], cauterizado: [{ id: 'burn', delay: .04 }], tormenta: [{ id: 'zap', delay: .05 }, { id: 'zap', delay: .13 }], vapor: [{ id: 'fizzle', delay: .04 }], conduccion: [{ id: 'zap', delay: .05 }, { id: 'zap', volume: .7, delay: .14 }] };
 /** A dual sounds like both its halves: the first one's start, both impacts. */
 export const dualSounds = (parts: readonly SkillId[]): Sounds => ({ start: parts.flatMap(id => SKILL_SOUNDS[id].start ?? []).slice(0, 2), impact: parts.flatMap(id => SKILL_SOUNDS[id].impact) });
 export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
@@ -92,6 +102,8 @@ export function startSounds(effect: BattleEffect, state?: BattleState): Cue[] {
 export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   if (effect.kind === 'defend') return [{ id: 'guard' }, ...effect.charged ? [{ id: 'mana' as const, delay: .12 }] : []];
   if (effect.swallowed) return [{ id: 'swallowed' }];
+  // A bet lost (Doble o nada): no blow, the die sinks back into the hand.
+  if (effect.die?.won === false) return [{ id: 'sink', volume: .7 }];
   // A blow that opens a wound (it spent Sangrado) tears as it lands.
   const torn: Cue[] = effect.bled || effect.hits?.some(h => h.bled) ? [{ id: 'bleed', delay: .04 }] : [];
   // Atacar with an element sounds of it, and what it turned on top.

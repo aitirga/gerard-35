@@ -27,7 +27,7 @@ test('chapter 2 fights Gerard at 35 and Aitor, fastest first, with their ánimas
   const [gerard, aitor] = s.allies;
   assert.ok(skillsFor(s, gerard).some(k => k.id === 'foc-binari'), 'Gerard keeps Matemágico');
   assert.deepEqual(s.animas, ['matemagico', 'tecnopata'], 'and Aitor has his own, Tecnópata');
-  assert.deepEqual(skillsFor(s, aitor).map(k => k.id), ['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor'], 'Tecnópata\'s are Bip\'s');
+  assert.deepEqual(skillsFor(s, aitor).map(k => k.id), ['rayo-energia', 'rayo-sanacion'], 'Tecnópata\'s are Bip\'s: the two rays from the start, the rest from its tree');
   assert.equal(createBattle(story.battleParty(false), 2).allies.length, 1, 'without his partner Gerard fights alone');
 });
 

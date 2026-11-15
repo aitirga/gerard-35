@@ -46,6 +46,8 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 | [**Noísta**](noista/README.md) | Was chapter 1's palace: Gerard shouts "¡NO!" | `#e2483d` red | Magia +2, Espíritu +2, Defensa −1 | No-ta | Hidden: retired (2026-11-01), replaced by Matemágico |
 | [**Papagato**](papagato/README.md) | Nuria's mission (Cardedeu), `docs/quests/nuria.md` | `#f0954a` orange | Velocidad +2, Fuerza +1, Espíritu −1 | Haru and Yuki | Playable |
 | [**Tecnópata**](tecnopata/README.md) | Aitor's own, from chapter 2's first morning (was the placeholder Físico) | `#4fe0ff` cyan | — | — | Designing (2026-11-05): look, drone-HUD interface and Bip, his robot, first |
+| [**Sincopante**](sincopante/README.md) | Marta's mission (Alegia, Las cuerdas), `docs/quests/marta.md` | _open_ | Proposal: Magia +2, Espíritu +2, Defensa +1, Fuerza −1 | Eco de guerra, Eco curativo; proposal up to level 7 | Designing (2026-11-14): an eco on the field that acts on the clock and repeats what it is fed |
+| [**Dadaísta**](dadaista/README.md) | The university friends' mission (Barceloneta, Càmping Eurosport), `docs/quests/universidad.md` | _open_ | Proposal: Fuerza +3, Defensa +2, Magia −1 | Golpe de dados, Doble o nada; proposal up to level 7 | Level 1 built (2026-11-15: its dice as maná, its two skills, look, throw and interface); the rest designing. Physical damage with dice. Decided: its maná is dice with their faces in view, and *Agitar*, a fixed command that does not spend the turn, spends one to roll the others again and is improved at the jar |
 | _Pedro's_ | Pedro's mission (`docs/quests/pedro.md`, to write) | _open_ | _open_ | _open_ | Idea (2026-11-05): a shared ánima from Pedro, a gay friend of Gerard and Aitor they see a lot |
 
 **Who has what** (2026-11-05): Matemágico is Gerard's own and Tecnópata Aitor's (`ANIMA_OWNERS`),
@@ -53,25 +55,141 @@ fixed, never taken off. Besides their own, each equips the shared ánimas (Papag
 extra slots (one for now, `EXTRA_SLOTS`); two never equip the same one. In a fight they switch
 among their own and their extras, one at a time (`docs/party.md`).
 
-## Passives (decided 2026-10-31)
+## Two ways to grow (decided 2026-11-14)
 
-Every ánima has **passive abilities**: **few, but influential**, and they **define how that ánima
-is played**. A passive is always on while the ánima is worn (no cost, no button) and changes the
-wearer's decisions, not just their numbers: e.g. it makes an element's reactions stronger, rewards
-standing in front or behind, or changes what happens when the wearer is hit. One or two per ánima;
-a level may unlock or upgrade one. Each ánima's folder lists them under *Signature*.
+| | Own ánimas: Matemágico (Gerard), Tecnópata (Aitor) | Shared ánimas: Papagato, Sincopante… |
+| --- | --- | --- |
+| Worn | Always: they cannot be taken off | Equipped in a slot |
+| Levels | **None.** They earn no EXP | Seven, by EXP (§ Levels) |
+| Grow by | **A skill tree, opened at home** (the jar), paid with ecos de luz | Levels; at home only **the definitiva** is added (§ Definitivas) |
 
-## Progression: ánimas and gear, not characters (decided 2026-10-31)
+**Slots** (decided 2026-11-14): each of them starts with **two ánimas** (their own and one shared)
+and ends with **four**. The power to wear one more comes with progress through La Reina
+Bubbaloo's castle, which has two bosses and then the final one: a slot after each of the two
+(reading of Aitor's words; `EXTRA_SLOTS` is 1 today).
 
-**Gerard and Aitor do not level up.** Their base stats (`docs/party.md`) stay as they are all game;
-everything that changes them comes from **the ánimas they wear** (stats, skills, passives, and the
-ánima's own levels) and **the equipment they put on**.
+**Built 2026-11-15** (the own ánimas' half): Matemágico is out of `LEVELLED` (`src/levels.ts`,
+only Papagato levels today) and its old level-2 and level-3 skills are nodes of its tree; so are
+three of Tecnópata's five. The jar's Maná +2 and sleeping Pasiva are gone. Not built: the seven
+levels, the slots growing from two to four, the definitiva's waking. No save is migrated: a save
+that had those skills by level has them again once their nodes are bought. To settle: how many
+ecos the whole game gives against what two trees and the definitivas cost (the fights were tuned
+with those skills in hand), and whether the victory screen shows a card for an ánima that earns
+nothing (today it does not).
 
-**Gear comes from people** (decided 2026-10-31): the people Gerard helps give him something of
-theirs, and **the player chooses what each of them wears**. It is never bought: shops sell food.
-So gear also tells the story of who was helped. Still to design: the slots, what each piece does,
-how it reads in the status screen. Chapter 1's shoes and backpack already use `equip` slots in
-`src/items.ts`.
+### The jar: where it is all done (designed 2026-11-14, built 2026-11-15)
+
+Decided by Aitor: the trees and the shared ánimas' maná and definitiva are all bought with ecos
+de luz at home; **nobody can have everything**; taking out and putting in is free; the definitiva
+is not there from the start, it **wakes after the castle's first boss**. The rest is a proposal.
+Sketch: `output/mockups/bote/index.html`.
+
+- **The place stays the jar in the living room** (`src/jar-ui.ts`): the lights are kept there, so
+  that is where they are spent.
+- **A window, not the whole screen** (built 2026-11-15): it rises out of the jar over the living
+  room, which stays in sight round it, dimmed, and folds back down into it on closing.
+- **One sky, a constellation per ánima** (decided by Aitor 2026-11-15, over a page per ánima
+  with tabs). The jar below keeps every eco in sight: lit while free, dark and tinted by where
+  it went once it is in an ánima. A light flies from the jar to the node it turns on, and back.
+- **Folded, a constellation is its own tree made small and soft**: joins and all, what is lit
+  brighter, its name under it. They are **scattered over the sky, never in a row or a grid**
+  (decided by Aitor 2026-11-15: the sky must not say how many ánimas there will be; `SEATS`
+  holds ten places, the game will have about eight). One sharpens a little under a cursor, and
+  steps back, faint, while another is unfolded over it.
+- **A player opens the one they choose**: it comes down from the row onto their side (player 1
+  left, player 2 right: `STAGES`), growing to full size, each ring of nodes coming up after the
+  one before (a little over a second). They work inside it (their cursor moves only there)
+  until they step back out; it goes back to the row when nobody is in it. Each player can be
+  in a different one, or both in the same. `inside`, `stages`, `enter`, `leave`, `settle`.
+- **A node** is a disc with its drawing and its name (a passive a rounded square); lit, a flat
+  pane of glass in its line's colour, never a ball. A node needs the one before it on its line;
+  taking one out takes out what hangs from it (`without`).
+- **Two cursors**, with no shape of their own: what a player points at takes their colour on its
+  own border (Gerard gold, Aitor cyan, a dashed cyan outline round the gold when both are on the
+  same thing) and breathes slowly (`jar-pick`); a folded constellation has no ring and does not beat: it comes into
+  focus and its name is underlined in that colour. Nothing
+  jumps from one thing to the next. Aitor's comes in on his own ánima
+  the first time player 2 touches the pad. Each has a floating note threaded to what it is on
+  (what it is, what it does, what it costs, what pressing would do or why it cannot be done);
+  either can turn anything on or off. `cursors`, `place`, `tipSide`.
+- **A shared ánima's constellation** has two nodes: **Maná +1** (2 ecos) and **the Definitiva**
+  (3). What it has learned fighting (its levels reached, never the ones to come) is in its
+  core's note. **Dadaísta** (decided 2026-11-15) also has there a short line
+  for its fixed command, *Agitar* ([its folder](dadaista/README.md) § Agitar; proposal: three
+  nodes, 4 ecos): the first shared ánima with a line of its own. Its skills still come by level.
+- **Maná**: 3 from the start; a shared ánima gets +1 at level 4 and +1 at the jar; an own ánima
+  +1 in its tree. Five is the top, and only for a shared one. Today's Maná +2 goes.
+- **The definitiva sleeps** on every page (*Todavía duerme*, as today) until the castle's first
+  boss is beaten. Back home that day the jar is different: a line from Gerard or Aitor, and the
+  cards are awake. Its use in a fight: § Definitivas.
+- **One jar for both**: the ecos are the party's, not each player's. What goes into Tecnópata
+  does not go into Matemágico; with two players that is a conversation at home.
+- **Not here**: who wears which shared ánima stays where it is (the status screen).
+
+**What it all costs** against what there is. The game gives a light per person helped: with the
+friends listed in `docs/story-outline.md`, some 12 to 16 by the end, 3 to 5 around the middle.
+
+| Where | Everything in it |
+| --- | --- |
+| Matemágico's tree | 17, and 3 for the definitiva |
+| Tecnópata's tree | 11, and 3 for the definitiva |
+| Each shared ánima | 2 for maná, 3 for the definitiva |
+| All of it, with three shared ánimas | 49 |
+
+So at the end the party holds about a third of it, and re-does the split before a hard fight.
+If that feels too tight in play, lower the passives from 2 to 1 before adding lights.
+
+**Matemágico's tree: the elements** (decided 2026-11-14: not fire alone). Root: Foc Binari.
+
+| Line | 1 eco | 1 eco | 2 ecos |
+| --- | --- | --- | --- |
+| **Fuego**, which piles up | Atacar · Fuego (built) | *Factor común*: `Daño medio mágico de tipo fuego a todos los enemigos. El fuego de todos sube al más alto.` | Passive · *Rescoldo*: his fires last 15 s, not 10 |
+| **Agua**, which sets up | Atacar · Agua (built) | *Vasos comunicantes*: `Daño leve mágico de tipo agua a todos los enemigos. Los moja.` | Passive · *Capilaridad*: Atacar with water leaves the foe Mojado |
+| **Eléctrico**, which cashes in | Atacar · Eléctrico (built) | *Descarga*: `Daño medio mágico de tipo eléctrico a un enemigo. Salta a todos los mojados.` | Passive · *Toma de tierra*: a reaction he sets off gives him 1 maná back, once a round |
+| **Cálculo** | Ángulo exacto | Análisis Parálisis, then Cardioide (1 each) | Maná +1 |
+
+- **Mojado** (20 s, § Shared mechanics): it hurts nobody; electricity on it reaches every wet
+  foe (Conducción), fire on it makes Vapor (Cegado). Electricity lays no status of its own: it
+  is the trigger.
+- Three lines that need each other (a reaction takes two elements), and never the ecos for all
+  three whole: deep in one or wide in two is the choice.
+
+**Tecnópata's tree.** Root: Rayo de energía and Rayo de sanación.
+
+| Line | 1 eco | 2 ecos |
+| --- | --- | --- |
+| **Bip** | Explosión | Passive · *Telemetría*: Bip's Atacar gives 3 s more to whatever runs on its target's clock |
+| **Mente** | Confusión | *Control remoto*: a foe hits one of its own, now, and forgets its plan |
+| **Taller** | Rayo encogedor | Passive · *Nanitos*: Sanación on an ally also takes one clock status off them |
+| — | | Maná +1 |
+
+**How it is built.** A node is an `Improvement` in `src/ecos.ts` with its `line` (`LINES`) and
+what it gives: an `element`, a `skill` (a `SkillId` marked `node: true` in `SKILLS`: known only
+if bought, `skillKnown`), a `passive` (`PASSIVES` in `src/battle.ts`) or `mana`. `TREE_ANIMAS`
+are the ánimas with a tree (the owned ones); every other ánima's page offers Maná +1 and the
+sleeping definitiva. `improvedBy` turns what is bought into the fight's `Improved` (`elements`,
+`mana`, `skills`, `passives`). The screen is `src/jar-ui.ts` (`layout` places each constellation, `SHAPES` says which way each line grows); the
+status screen's Ánimas page lists a tree ánima's bought passives under *Con ecos de luz* and no
+level. The fight tester's *Ecos de luz* chips and `"improved"` in a `?fight=` link give any node.
+
+**A passive that does something says so in the fight**: a plate *PASIVA · name* over whoever
+has it, in their ánima's colour, with a sound (`BattleEffect.passives`, `pop` kind `passive` in
+`src/battle-ui.ts`). The five built:
+
+| Passive | Ánima | What it does (as built) |
+| --- | --- | --- |
+| **Rescoldo** | Matemágico | A fire he lights lasts 15 s, not 10 (`RESCOLDO`) |
+| **Capilaridad** | Matemágico | Atacar with water leaves the foe Mojado, unless it put a fire out (changed from the sketch, which spread Mojado between foes: this one makes the water line work without spending maná) |
+| **Toma de tierra** | Matemágico | A reaction he sets off gives him 1 maná back, once a round, if his pool is not full |
+| **Telemetría** | Tecnópata | Bip's Atacar gives 3 s more to every clock status on its target (`TELEMETRIA`) |
+| **Nanitos** | Tecnópata | Rayo de sanación also takes one harmful clock status off whoever it cures |
+
+*Control remoto* as built: Bip takes a foe, which at once hits the strongest of its own standing
+(itself if alone; power 34, with its own Fuerza) and forgets what it had announced. `abstract`.
+The new skills' numbers are first guesses: no `just fight-sim` target holds them yet.
+
+Screenshots: `just screenshots ecos --gpu` (the jar, both kinds of page) and
+`just screenshots arbol-combate --gpu` (every new skill, reaction and passive in a fight).
 
 ## Levels
 
@@ -86,39 +204,41 @@ one stronger.
   get the next one, per the HUD rule in `AGENTS.md`); a note when a skill is learned.
 - Every ánima has its level table in its own folder.
 
-Built (`src/levels.ts`, 2026-11-05):
+Built today: three levels, for Papagato only (`LEVELLED` in `src/levels.ts`); Matemágico and
+Tecnópata grow at the jar.
 
-- **EXP per foe** (`FOE_XP`): a dog 8, a cebollita 10, a platito or fantasmita 14, the palace minion
-  30, La Cebolla 35, a gum guard 40, El Plato Misterioso 45, El Cebollón 60, Vertitrón 90 (its
-  eye nothing). A won fight is worth all its foes (`fightXp`; La Cebolla y los suyos 35 + 14 + 10);
-  a lost or fled one, nothing.
-- **Who earns it**: every ánima that **took part** (`participants`): someone acted wearing it
-  (`BattleState.fought`, recorded in `act`), or someone still standing wears it at the end. Each
-  earns the fight's **whole** EXP, never a share, so changing ánima mid-fight costs nothing.
-- **Levels** (`LEVEL_XP`): 180 EXP for level 2, 660 for level 3 (`MAX_LEVEL`), three times the
-  first tuning (decided 2026-11-05: ánimas grew too fast). In Uri's tower a pack of cebollitas is
-  worth 20 to 30 EXP and El Cebollón 60, so Papagato learns Zarpazos after some seven packs (two or
-  three before). Each level reached is a story flag (`papagato-2`, `matemagico-3`…) so it is saved and
-  a story event can grant it; the EXP then counts from that level's floor. EXP lives in the browser
-  (`gerard35.xp.v1`, like the loadout). A skill with `level` in `SKILLS` is hidden until then, in
-  fights and on the Ánimas page (*ÁNIMA · NIVEL n*).
-- **The victory screen** (`showRewards`, `src/battle-ui.ts`): *+N EXP* for the fight, then a card
-  per ánima that took part, in its colour, with who wore it, its level and its EXP bar filling from
-  where it was. A level reached stamps *¡NIVEL 2!* on the card, flashes it with a sweep of light
-  (sound `level-up`) and says *Aprende …*. Then what each level taught takes the screen
-  (`revealSkill`): one band across it per ánima and level, in its colour and type, *HABILIDAD
-  NUEVA* (or *HABILIDADES NUEVAS*), *MATEMÁGICO · NIVEL 2 · GERARD*, each skill's name landing with a
-  glint, side by side, with its description and maná, rays turning behind and the result stepping
-  back (sound `skill-learned`; 2,1 s, 0,7 s more for each skill past the first). **A level reached
-  holds the screen** (`data-holding`): *Seguir* stays dim and no press (Enter, click, a pad's A or B)
-  leaves until every bar has filled, every band has shown and 0,9 s more have passed (`LEVEL_HOLD`);
-  then it lights up. A fight with no level reached can be left at once, as always.
-  The bar shows how far into its level an ánima is; no number says what is missing. A level
-  reached in a fight was seen there, so its note does not show again afterwards (`quiet`); one
-  granted any other way still shows *ÁNIMA · PAPAGATO · NIVEL 2 · Aprende Zarpazos*.
-- Development: the picker's *+25 EXP* and *Subir de nivel*, and *Victoria subiendo de nivel* in a
-  fight (`docs/dev-tools.md`). `just screenshots levels` shows the victory screen in a real fight,
-  `just screenshots level-up` the hold and the bands from the fight tester.
+**Proposal: seven levels, for shared ánimas only** (2026-11-14, Aitor's direction; not built;
+Matemágico and Tecnópata do not level, § Two ways to grow). A level gives one of three
+things: skills, a **passive**, or **Maná +1**. Each level costs more than the one before.
+
+| Level | EXP (from zero) | To reach it | Gives |
+| --- | --- | --- | --- |
+| 1 | 0 | — | One or two skills: what the ánima is |
+| 2 | 180 | 180 | Skills |
+| 3 | 660 | 480 | Skills, or the first passive |
+| 4 | 1400 | 740 | Maná +1 |
+| 5 | 2500 | 1100 | A skill or a passive |
+| 6 | 4100 | 1600 | A passive or a skill |
+| 7 | 6400 | 2300 | A strong skill (never the definitiva, which comes from the jar) |
+
+- Levels 2 and 3 keep today's EXP and flags (`matemagico-2`…), so no save changes meaning.
+- The totals wait on a count of the EXP the whole game hands out: level 7 should be reached in the
+  ánimas worn most, not in all of them.
+- **Against Ecos de luz**: the jar already sells Maná +1, Maná +2, and keeps a Pasiva and a
+  Definitiva asleep. Decided 2026-11-14: for a shared ánima the jar adds only **the Definitiva**
+  (never learned by level); its Maná and its sleeping Pasiva there go, levels give them. The
+  own ánimas' trees keep the rest. § Definitivas, § Two ways to grow.
+- Proposed tables: [Sincopante](sincopante/README.md) § Skills per level; Papagato below.
+
+| Level | Papagato |
+| --- | --- |
+| 1 | Zarpazo sangriento, Yuki se esconde |
+| 2 | Zarpazos, Ronroneo de Yuki |
+| 3 | Zarpa en la llaga, Las dos a la vez |
+| 4 | Maná +1 |
+| 5 | Passive · *Olor a sangre*: Sangrado no longer loses a stack each round |
+| 6 | New · *Acecho*: Haru crouches; a high physical blow as the next round starts |
+| 7 | New · *Cacería*: one claw for each Sangrado stack on the field |
 
 ## Ecos de luz
 
@@ -139,13 +259,11 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
 
 | Improvement | Ánima | Ecos | What it does |
 | --- | --- | --- | --- |
-| **Agua** | Matemágico | 1 | Atacar can carry water. On Quemado: Humo, it leaves Cegado |
-| **Fuego** | Matemágico | 1 | Atacar can carry fire. On Sangrado: Cauterizado, every stack at once |
-| **Eléctrico** | Matemágico | 1 | Atacar can carry electricity. On Cegado: Tormenta, magic on all in smoke |
+| **A tree's node** | Matemágico, Tecnópata | 1 or 2 | An element for Atacar, a skill, a passive or Maná +1 (§ The jar) |
 | **Maná +1** | Each | 2 | Its pool goes from 3 to 4 (`manaMax`, for whoever wears it) |
-| **Maná +2** | Each | 3 | From 4 to 5; needs Maná +1 |
-| **Pasiva** | Each | 2 | A place kept, asleep (`veiled`): shows, cannot be bought. To design |
-| **Definitiva** | Each | 3 | A place kept, asleep. To design |
+| **Definitiva** | Each | 3 | A place kept, asleep (`veiled`): shows, cannot be bought. § Definitivas |
+
+Maná +2 and the sleeping Pasiva went on 2026-11-15 (§ Two ways to grow).
 
 Prices from `just fight-sim` (2026-11-05): a Maná +1 is the strongest of them (Vertitrón for a player
 who does not think it through, `casual`: wins 54 % without it, about 72 % with one); elements change
@@ -156,6 +274,26 @@ a real choice: one more maná, or two elements. Targets `vertigo-eco-mana`, `ver
 A new improvement is an entry in `IMPROVEMENTS` (`src/ecos.ts`); the screen and the fight tester
 read it from there. What it does in a fight comes through `Improved` (`BattleState.improved`,
 `improve`). Screenshots: `just screenshots ecos --gpu`, `just screenshots elementos --gpu`.
+
+## Definitivas
+
+Decided 2026-11-14 (Aitor): the definitiva is **bought at the jar** (3 ecos, `<ánima>:definitiva`),
+and each ánima has **a condition that, met in a fight, unlocks it** there. The rest is a proposal.
+
+- **The condition is the ánima played well**: its own mechanic taken to its end, something seen on
+  the field (a level, stacks, clocks), never a hidden count.
+- **Per fight**: met, the definitiva can be used once, for the turn and no maná; the next fight
+  starts over. It is met while the ánima is worn, by whoever wears it.
+- **How it reads**: until it is met, nothing (the HUD shows what can be pressed). Met, the command
+  appears in the wearer's dock and a continuous status icon sits on their plate. The jar says the
+  condition in one line when it is bought (_open_: or it is found by playing).
+
+| Ánima | Condition | Definitiva |
+| --- | --- | --- |
+| Matemágico | Three different reactions between elements in one fight | *Q.E.D.*: very high magic on every foe, of every element he has: each lays its status |
+| Papagato | A wound of five stacks or more is opened in one blow | *Siete vidas* (Yuki): the fallen get up and the whole party is cured |
+| Tecnópata | Three different clock statuses running on the field at once | *Enjambre*: Bip comes apart over the foes: high magic on all, and every clock on the field starts over |
+| Sincopante | The eco stays alive 60 s without fading | *Da capo*: every ánima's maná back to full and the party's clocks start over |
 
 ## Combined skills
 
@@ -198,6 +336,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Matemágico + Papagato | **Zarpazos de fuego** | Foc Binari + Zarpazos | 1 · 2 | Built |
 | Matemágico + Papagato | **Punto débil** | Ángulo exacto + Zarpazo sangriento | 2 · 1 | Built |
 | Matemágico + Tecnópata | **Rayo solar** | Foc Binari + Rayo de energía | 1 · 1 | Built (2026-11-06): charges a turn, sweeps every foe with Quemado II as the next round starts |
+| Tecnópata + Sincopante | *Bombardeo orbital* | Explosión + Redoble | 2 · 2 | Proposal (2026-11-14): the eco takes Bip up; three volleys on every foe as the next round starts, Cegado II for 20 s |
 | Matemágico + Papagato | *Cortina de fuego*, a burning shield | Foc Binari + Yuki se esconde | 1 · 1 | Idea, parked for later |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
@@ -288,6 +427,34 @@ second ánima.
   came from. The foe's blows land at 70 % / 50 % / 30 % (`REACTION_RULES`, `sighted`), whatever they are.
 - Left by Humo (Atacar · Agua on Quemado). Atacar · Eléctrico spends it (Tormenta). Details in
   `docs/combat.md` § Reacciones entre elementos.
+
+### Mojado (wet, timed)
+
+Built 2026-11-15 (`TIMED.mojado`, `react` in `src/battle.ts`). 20 s on the clock, no levels, no
+pulses: it hurts nobody and waits for an element. Laid by Vasos comunicantes (every foe) and by
+Atacar with water once Capilaridad is bought.
+
+| On Mojado | Reaction | What happens |
+| --- | --- | --- |
+| Fire (Atacar · Fuego, Foc Binari, Factor común) | **Vapor** | The water goes and leaves Cegado I; a wet foe does not catch fire |
+| Electricity (Atacar · Eléctrico, Descarga) | **Conducción** | Mojado goes from every wet foe and each takes magic damage (20, `REACTION_RULES.conduct`) |
+
+Water on a burning foe is still Humo (it puts the fire out, it does not wet). By kind of blow,
+never by who wears what: any fire and any electricity do it.
+
+### How long a clock status lasts (proposal, 2026-11-14)
+
+A turn's animation is 1.16 s (`ACTION_SECONDS`) and a player thinks 3 to 8 s, so a round with two
+allies and two or three foes is about **10 s** quick and up to 20 s slow. From when the first ally
+acts to when the foes do: 6 to 18 s. Three lengths, by what the status is for:
+
+| Length | For | Today |
+| --- | --- | --- |
+| **10 s** (a round) | Something that pulses and is meant to be fed every round | Quemado |
+| **20 s** (two rounds) | Something that only counts when the foe acts, so it must reach the foes' turn: a blind, a cut to a stat, the eco | Cegado is 10 s and Encogido 15 s: both can run out before the foe they were for has acted. To raise to 20 s and check with `just fight-sim` (`think: 8`) |
+| **30 s** | Control of one foe, paid dear | Confusión |
+
+Sanación (15 s, a cure in five pulses) stays: it pulses, it does not wait for anyone's turn.
 
 | Mechanic | Applied by | Exploited by |
 | --- | --- | --- |

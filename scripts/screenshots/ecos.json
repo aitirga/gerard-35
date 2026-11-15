@@ -1,6 +1,6 @@
 {
-  "title": "El bote de las luces: los ecos en las ánimas",
-  "description": "docs/animas/README.md § Ecos de luz. Home after Nuria's mission, two lights in the jar on the TV unit. Abrir el bote opens its screen: the jar and its marbles on the left, the ánimas on the right, each improvement a card with as many glass sockets as ecos it costs. An eco flies from the jar to the card, and can be taken back whenever. Maná, and Pasiva and Definitiva still asleep. With more ecos (the picker's), every page. Run it with --gpu.",
+  "title": "El bote de las luces: el cielo de las ánimas",
+  "description": "docs/animas/README.md § The jar, src/jar-ui.ts. The jar at home opens as a window over the living room: one sky with a constellation per ánima, folded small and scattered until a player opens it onto their side and works inside; the jar below with every eco. Lights fly from the jar to the node they turn on and back; Gerard and Aitor each have their own cursor and floating note. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=luz-uri&day=8"
@@ -10,7 +10,7 @@
       "timeout": 60000
     },
     {
-      "eval": "localStorage.removeItem('gerard35.ecos.v1'); window.gerard.story.clearImprovements()"
+      "eval": "localStorage.removeItem('gerard35.ecos.v1'); window.gerard.story.clearImprovements(); window.gerard.story.debugEcos = 14; window.jar = window.gerard.jarUI; window.node = id => document.querySelector(`[data-improve=\"${id}\"]`)"
     },
     {
       "teleport": "meridiana",
@@ -23,90 +23,53 @@
     {
       "shot": "prompt",
       "delay": 1500,
-      "caption": "The jar on the TV unit, two ecos de luz beside the menus, and the prompt Abrir el bote"
+      "caption": "The jar on the TV unit and the prompt Abrir el bote"
     },
     {
-      "press": "KeyE"
+      "record": "abrir",
+      "seconds": 1.6,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 3 && void window.gerard.jarUI.open()",
+      "caption": "Opening: the window rises out of the jar over the living room (it never takes the whole screen)"
     },
     {
-      "until": "!document.querySelector('#jar-panel').hidden",
+      "until": "document.querySelector('#jar-panel').dataset.phase === 'open'",
       "timeout": 20000
     },
     {
-      "shot": "two-ecos",
-      "delay": 900,
-      "caption": "The jar's screen, two ecos free. Matemágico's page: its elements for Atacar, its maná, and what still sleeps"
-    },
-    {
-      "eval": "document.querySelector('.jar-card').click(); const fly = document.querySelector('.jar-flight').getAnimations()[0]; fly.pause(); fly.currentTime = 210;"
-    },
-    {
-      "shot": "flying",
-      "delay": 200,
-      "caption": "Agua: an eco flies out of the jar to the card (held mid-flight for the picture)"
-    },
-    {
-      "eval": "document.querySelector('.jar-flight').getAnimations()[0].play()"
-    },
-    {
-      "shot": "agua",
-      "delay": 800,
-      "caption": "Agua is on: its socket lit, a dark marble in the jar tinted by where it went, one eco free"
-    },
-    {
-      "press": "ArrowRight"
-    },
-    {
-      "press": "ArrowRight"
-    },
-    {
-      "shot": "electrico",
+      "shot": "cielo",
       "delay": 300,
-      "caption": "Eléctrico under the cursor: what it does, and the eco it costs"
+      "caption": "The sky, every constellation folded: each ánima's own tree, joins and all, small and soft, scattered over the sky (never a row: nothing says how many there will be), its name under it; the jar below with the ecos. Gerard points at his: it comes into focus and its name is underlined in gold"
     },
     {
-      "press": "ArrowDown"
+      "record": "desplegar",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 3 && void jar.control('confirm', 1)",
+      "caption": "Gerard opens Matemágico: it leaves its place in the sky for his side, growing and sharpening, each ring of nodes coming up after the one before"
     },
     {
-      "shot": "mana-short",
+      "shot": "matemagico-abierta",
       "delay": 300,
-      "caption": "Maná +1 costs two: one free is not enough, and it says so"
+      "caption": "Matemágico unfolded: Cálculo, Fuego, Eléctrico, Agua and the definitiva asleep. He now moves only inside it"
     },
     {
       "press": "ArrowRight"
     },
     {
-      "press": "ArrowRight"
+      "shot": "nota-nodo",
+      "delay": 350,
+      "caption": "On a node: the floating note says what it is, what it does, what it costs and what pressing would do"
     },
     {
-      "shot": "asleep",
-      "delay": 300,
-      "caption": "Pasiva and Definitiva: places kept, asleep, not to be bought yet"
-    },
-    {
-      "press": "Escape"
-    },
-    {
-      "until": "document.querySelector('#jar-panel').hidden",
-      "timeout": 10000
-    },
-    {
-      "shot": "jar-one-dark",
-      "delay": 800,
-      "caption": "Back in the flat: one marble dark, one lit, and the chip says 1 eco de luz free"
-    },
-    {
-      "eval": "window.gerard.story.debugEcos = 9"
-    },
-    {
-      "press": "KeyE"
-    },
-    {
-      "until": "!document.querySelector('#jar-panel').hidden",
-      "timeout": 20000
-    },
-    {
-      "wait": 500
+      "record": "encender",
+      "seconds": 1.5,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 3 && void jar.control('confirm', 1)",
+      "caption": "Turning a node on: a light leaves the jar, crosses the sky and lands; the node becomes a pane of lit glass, a ring runs out of it and its join lights"
     },
     {
       "press": "ArrowRight"
@@ -115,60 +78,116 @@
       "press": "Enter"
     },
     {
-      "wait": 700
+      "wait": 900
     },
     {
-      "press": "ArrowRight"
+      "eval": "jar.control('confirm', 2)"
     },
     {
-      "press": "Enter"
+      "wait": 300
     },
     {
-      "wait": 700
+      "shot": "llega-aitor",
+      "delay": 400,
+      "caption": "Player 2 touches the pad: Aitor comes in pointing at Tecnópata (its name underlined in cyan), still folded, while Gerard works inside Matemágico"
     },
     {
-      "press": "ArrowDown"
+      "record": "desplegar-aitor",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 3 && void jar.control('confirm', 2)",
+      "caption": "Aitor opens his own onto the right side: each player in a different constellation at once"
     },
     {
-      "press": "Enter"
+      "eval": "jar.control('right', 2); jar.control('confirm', 2)"
     },
     {
-      "wait": 700
+      "wait": 900
     },
     {
-      "shot": "matemagico-full",
-      "delay": 500,
-      "caption": "With more ecos: three elements and Maná +1, a fourth pip ringed in amber"
+      "eval": "jar.control('right', 2); jar.control('confirm', 2)"
     },
     {
-      "press": "KeyE"
+      "wait": 900
     },
     {
-      "shot": "papagato",
-      "delay": 600,
-      "caption": "L / R (Q / E) turn to the next ánima, in its colours: Papagato has no elements, only its maná and what sleeps"
-    },
-    {
-      "press": "Enter"
-    },
-    {
-      "wait": 700
-    },
-    {
-      "shot": "papagato-mana",
+      "shot": "los-dos",
       "delay": 300,
-      "caption": "Maná +1 on Papagato"
+      "caption": "Both unfolded, both at work: Gerard electricity as far as Descarga, Aitor Mente whole. Two notes, each edged in its player's colour and threaded to its node"
     },
     {
-      "press": "KeyE"
+      "eval": "node('matemagico:fuego').click()"
     },
     {
-      "shot": "tecnopata",
-      "delay": 600,
-      "caption": "Tecnópata's page"
+      "wait": 700
     },
     {
-      "press": "Escape"
+      "eval": "node('matemagico:agua').click()"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "node('matemagico:vasos').click()"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "node('matemagico:capilaridad').click()"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "node('matemagico:toma-de-tierra').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+    },
+    {
+      "shot": "muchas-luces",
+      "delay": 400,
+      "caption": "More lights in: lit nodes are flat panes of glass in their line's colour, a passive a rounded square; the jar keeps every eco, the ones in an ánima dark and tinted by where they went"
+    },
+    {
+      "record": "plegar",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 3 && void jar.control('cancel', 1)",
+      "caption": "Gerard steps back out: Matemágico shrinks back to its place in the sky; what is lit stays brighter in the small tree"
+    },
+    {
+      "eval": "jar.control('cancel', 2)"
+    },
+    {
+      "shot": "cielo-con-luces",
+      "delay": 1500,
+      "caption": "The sky again, both folded: each small constellation shows its lit stars and lit joins"
+    },
+    {
+      "eval": "jar.control('confirm', 1); jar.control('down', 1)"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "node('matemagico:agua').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+    },
+    {
+      "record": "apagar",
+      "seconds": 1.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 3 && void jar.control('confirm', 1)",
+      "caption": "Turning Atacar · Agua off takes everything after it on its line too: each light flies back to the jar, nothing is lost"
+    },
+    {
+      "record": "cerrar",
+      "seconds": 0.8,
+      "fps": 30,
+      "tiles": 8,
+      "each": "window.frame === 3 && void jar.close()",
+      "caption": "Closing: the window folds back down into the jar and the room is theirs again"
     },
     {
       "until": "document.querySelector('#jar-panel').hidden",
@@ -180,7 +199,7 @@
     {
       "shot": "status",
       "delay": 700,
-      "caption": "The status screen's Ánimas page says what the ecos are in"
+      "caption": "The status screen's Ánimas page: Matemágico shows no level, its bought skills in the list and its passives under Con ecos de luz"
     }
   ]
 }

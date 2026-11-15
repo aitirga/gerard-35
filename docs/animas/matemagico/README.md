@@ -19,6 +19,12 @@ Matemágico)
   also shows his thoughts. In the street everyone keeps their own clothes.
 - Interface: a blueprint (below).
 
+## Growth (decided 2026-11-14)
+
+Matemágico **does not level** and cannot be taken off: it grows by a skill tree opened at home,
+paid with ecos de luz, and it is about **the elements**, not fire alone (`../README.md` § Two ways
+to grow). The level table below is what is built today and moves to the tree.
+
 ## Stats
 
 Magia +1, Espíritu +1.
@@ -35,14 +41,30 @@ Fire that comes from a calculation, and a calculation is a one or a zero.
   other hit. That is why it wakes right there.
 - Its fire keeps burning Vertitrón's eye or body while the party does something else (`docs/quests/nuria.md` § Final boss).
 
-## Skills per level
+## Skills
 
-| Level | Skill | Cost | Base | Description |
+Foc Binari is his from the start; every other skill is a node of his tree, bought at the jar
+(`../README.md` § The jar, built 2026-11-15). He does not level.
+
+| Line | Skill | Cost | Base | Description |
 | --- | --- | --- | --- | --- |
-| 1 | Foc Binari | 1 | 16 magic, fire, two streams | `Daño leve mágico de tipo fuego a un enemigo. Golpea dos veces. Lo quema durante unos segundos. Si ya arde, el fuego sube de nivel. Derrite el pringue.` |
-| 2 | Análisis Parálisis | 2 | +3 Fuerza and Magia, party, 3 rounds | `Sube Fuerza y Magia de todo el equipo durante 3 rondas.` |
-| 2 | Ángulo exacto | 1 | −3 Defensa and Espíritu, one foe, 3 rounds | `Baja Defensa y Espíritu de un enemigo durante 3 rondas.` |
-| 3 | Cardioide | 2 | 30 heal | `Cura media a un aliado herido.` |
+| Root | Foc Binari | 1 | 16 magic, fire, two streams | `Daño leve mágico de tipo fuego a un enemigo. Golpea dos veces. Lo quema durante unos segundos. Si ya arde, el fuego sube de nivel. Derrite el pringue.` |
+| Fuego | Factor común | 2 | 24 magic, fire, all | `Daño medio mágico de tipo fuego a todos los enemigos. El fuego de todos sube al más alto.` |
+| Agua | Vasos comunicantes | 2 | 16 magic, water, all | `Daño leve mágico de tipo agua a todos los enemigos. Los moja.` |
+| Eléctrico | Descarga | 2 | 26 magic, electric | `Daño medio mágico de tipo eléctrico a un enemigo. Salta a todos los mojados.` |
+| Cálculo | Ángulo exacto | 1 | −3 Defensa and Espíritu, one foe, 3 rounds | `Baja Defensa y Espíritu de un enemigo durante 3 rondas.` |
+| Cálculo | Análisis Parálisis | 2 | +3 Fuerza and Magia, party, 3 rounds | `Sube Fuerza y Magia de todo el equipo durante 3 rondas.` |
+| Cálculo | Cardioide | 2 | 30 heal | `Cura media a un aliado herido.` |
+
+- **Factor común**: binary fire in a stream to every foe, then a gold line joining them: every
+  fire on the field goes up to the highest one's level (it lights none where there is none).
+- **Vasos comunicantes**: water climbs each foe in rings to one and the same height, a level
+  line across them. All Mojado.
+- **Descarga**: a jagged bolt from the sky. On a wet foe it runs to every wet one (Conducción).
+- Passives, one at the end of each element line: Rescoldo, Capilaridad, Toma de tierra
+  (`../README.md` § The jar).
+- The three elemental skills are cast from his circle (`castElement`, `elementBurst` in
+  `src/battle-scene.ts`), GPU particles only.
 
 Cost is in maná (`docs/combat.md` § Maná, `docs/action-points.md`).
 
@@ -53,7 +75,7 @@ hit on it, from anyone: +12 on Zarpazos, +24 on Zarpazos de fuego. The set-up fo
 and half of *Punto débil*. A foe that already carries the mark cannot take it again until it fades.
 
 **Earlier skills**, removed when Matemágico moved to the palace (2026-11-01), back at levels 2 and
-3 (2026-11-05) with new numbers; as they were:
+3 (2026-11-05) with new numbers, nodes of the Cálculo line since 2026-11-15; as they were:
 
 - *Análisis Parálisis*: `Sube Fuerza y Magia de todo el equipo durante 3 rondas.` (+3, a party
   boost; it used to cost 10 Secundaria).
@@ -158,13 +180,13 @@ Journal: *"Pensé en unos y ceros. Y de la mano me salió fuego."*
 Screenshots: `just screenshots matemagico` (Foc Binari, Ánima, the interface) and `palace` (the
 beat). The fx lab has a *Foc Binari* entry (`just dev-fx`).
 
-Level table (2026-11-05, `src/levels.ts`): *Análisis Parálisis* at level 2 (`analisis`, a party
-boost: Gerard works it out in a flash of gold and the stats-rising animation runs on everyone) and
-*Cardioide* at level 3 (`cardioide`, `kind: 'heal'`, `side: 'allies'`: a cardioid of green light drawn
+The Cálculo line's skills (by level from 2026-11-05, nodes of the tree since 2026-11-15):
+*Análisis Parálisis* (`analisis`, a party boost: Gerard works it out in a flash of gold and the stats-rising animation runs on everyone) and
+*Cardioide* (`cardioide`, `kind: 'heal'`, `side: 'allies'`: a cardioid of green light drawn
 on the floor under whoever it cures, `effects.cardioid`, then the cure rising up them; it never gets
 the fallen back up). `just screenshots levels` shows both.
 
-Level 2 also teaches *Ángulo exacto* (`angulo`, a foe `debuff`: its mark in `Combatant.marks`, read by
+The line starts with *Ángulo exacto* (`angulo`, a foe `debuff`: its mark in `Combatant.marks`, read by
 `current`, gone at the end of its last round in `nextRound`; the sound is `think`). Its look and the
 duals' look come with the duals' cinematic (`docs/animas/README.md` § Combined skills).
 
