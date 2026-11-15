@@ -72,7 +72,8 @@ tell the user in one line what changed. The doc, not the chat, is the memory.
 6. **Desarrollo y mecánica propia**: the beats from arrival to the boss, in one day (2–4 hours of
    game time). The mission's **one mechanic nobody else uses** (`docs/chapter-2.md`) and how it is
    taught by doing. Any diegetic gate (a person or thing saying why). Where Aitor speaks.
-7. **Jefe final**: who or what (a possessed animal, an object of their routine turned monster, a
+7. **Jefe final**: its question and its answer first (`docs/combat.md` § La respuesta de cada combate:
+   without the answer the party loses, with it the player sees the fight turn), then who or what (a possessed animal, an object of their routine turned monster, a
    minion in person only inside the palace), its look, its gimmick (like the pringue that only
    No-ta breaks), its phases, how the friend helps, and what the new or existing ánimas do against
    it. Name an `Encounter` id and any new `FoeKind`. Describe its look as a figure: its silhouette,

@@ -374,7 +374,10 @@ party gets `ANIMAS.universidad` (grey `#a8a89a`, +1 Fuerza, +1 Espíritu, +10 PV
 the five lights. What it brings beyond that is **waiting for the user's choice** (a design round with
 `/anima`); nothing below is in the game.
 
-**Proposals** (the user picks one, or none, in the next round):
+**The design round started 2026-11-14**: [`docs/animas/dadaista/README.md`](../animas/dadaista/README.md)
+has four directions grown from the proposals below, waiting for a choice.
+
+**First proposals** (round 8 of this doc, kept as the source):
 
 | | A · *La partida* (wearable ánima) | B · *Foto de grupo* (one skill) | C · *A ver si quedamos* (one skill, abstract) |
 | --- | --- | --- | --- |
