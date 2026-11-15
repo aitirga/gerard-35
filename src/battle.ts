@@ -1123,10 +1123,16 @@ function took(state: BattleState, actor: Combatant) {
 const beaten = (state: BattleState) => state.foes.every(f => f.hp <= 0 || f.part);
 /** A fight over: nothing queued or spent is left behind. */
 function endFight(state: BattleState) { delete state.queued; delete state.spent; }
-/** After an action: the fight is won, or the next ally still to act (a dual's partner has already) chooses, or the foes' turn comes. */
+/**
+ * After an action: the fight is won, or an ally still to act chooses, or the foes' turn comes. The
+ * one who acted is through for the round (`spent`); allies may act in any order (two players choose
+ * at once, docs/combat.md), so the next is whoever is left, the first in party order.
+ */
 function settle(state: BattleState) {
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); return; }
-  const next = state.allies.findIndex((a, i) => i > state.active && a.hp > 0 && !state.spent?.includes(a.id));
+  const actor = state.allies[state.active];
+  if (actor && !state.spent?.includes(actor.id)) (state.spent ??= []).push(actor.id);
+  const next = state.allies.findIndex(a => a.hp > 0 && !state.spent?.includes(a.id));
   if (next >= 0) state.active = next;
   else { state.phase = 'enemy'; delete state.queued; }
 }
@@ -1363,7 +1369,7 @@ export type DualBlock = 'level' | 'used' | 'wear' | 'down' | 'acted' | 'mana' | 
 /**
  * What stops `d` between `a` (the active fighter) and `b`: a half not learned yet, `d` already
  * played this fight (once each), someone not wearing the ánima of their half, `b` fallen, `b`
- * already through this round (or before `a` in it: only the earlier fighter completes a dual), the
+ * already through this round (either may complete it, in any order), the
  * maná of a half, or nobody to aim it at.
  */
 export function dualBlock(state: BattleState, d: DualSpec, a: Combatant, b?: Combatant): DualBlock | undefined {
@@ -1373,15 +1379,22 @@ export function dualBlock(state: BattleState, d: DualSpec, a: Combatant, b?: Com
   if (b.hp <= 0) return 'down';
   const halves = halvesOf(d, a, b);
   if (!halves) return 'wear';
-  if (state.phase !== 'player' || state.allies[state.active] !== a || state.allies.indexOf(b) <= state.allies.indexOf(a) || state.spent?.includes(b.id)) return 'acted';
+  if (state.phase !== 'player' || state.allies[state.active] !== a || a === b || state.spent?.includes(a.id) || state.spent?.includes(b.id)) return 'acted';
   const cost = dualCost(d);
   if (!state.unbound && (a.secondary < cost[halves[0]]! || b.secondary < cost[halves[1]]!)) return 'mana';
   if (!validTargets(state, 'attack').length) return 'target';
 }
 export const dualReady = (state: BattleState, d: DualSpec, a: Combatant, b: Combatant) => !dualBlock(state, d, a, b);
-/** The ally a dual (or a queue) from the active fighter pairs with: later this round, standing, not spent, wearing ánimas. */
+/** The ally a dual (or a queue) from the active fighter pairs with: another one still to act this round, standing, wearing ánimas. */
 export function dualPartner(state: BattleState): Combatant | undefined {
-  return state.allies.find((x, i) => i > state.active && x.hp > 0 && !state.spent?.includes(x.id) && wearsAnimas(x));
+  return state.allies.find((x, i) => i !== state.active && x.hp > 0 && !state.spent?.includes(x.id) && wearsAnimas(x));
+}
+/** Two players choose at once: `allyId` takes the turn now if they are still to act this round. Returns whether they did. */
+export function takeTurn(state: BattleState, allyId: string): boolean {
+  const index = state.allies.findIndex(a => a.id === allyId), ally = state.allies[index];
+  if (state.phase !== 'player' || !ally || ally.hp <= 0 || state.spent?.includes(ally.id)) return false;
+  state.active = index;
+  return true;
 }
 /**
  * Development (the Dual command): every dual, whether it can happen now and why not. With `swaps`,
@@ -1526,7 +1539,7 @@ function release(state: BattleState, holder: Combatant) {
  */
 export function queue(state: BattleState, allyId: string, choice: Queued | null): boolean {
   const index = state.allies.findIndex(a => a.id === allyId), ally = state.allies[index];
-  if (state.phase !== 'player' || !ally || index <= state.active || ally.hp <= 0 || state.spent?.includes(ally.id) || !wearsAnimas(ally)) return false;
+  if (state.phase !== 'player' || !ally || index === state.active || ally.hp <= 0 || state.spent?.includes(ally.id) || !wearsAnimas(ally)) return false;
   if (!choice) { if (state.queued) delete state.queued[ally.id]; return true; }
   if (choice.action === 'skill') {
     const ability = SKILLS.find(s => s.id === choice.skill);

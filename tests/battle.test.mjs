@@ -485,7 +485,7 @@ test('Ángulo exacto marks a foe: Defensa and Espíritu down for three rounds, e
   assert.equal(markRounds(s, s.foes[0], 'angulo'), BOOST_ROUNDS);
   assert.match(s.message, /Defensa y Espíritu −3 durante 3 rondas/);
   assert.deepEqual(statShifts(s, s.foes[0]).map(x => [x.stat, x.way, x.amount, x.rounds, x.from]), [['defensa', 'down', 3, 3, ['Ángulo exacto']], ['espiritu', 'down', 3, 3, ['Ángulo exacto']]]);
-  s.phase = 'player';
+  s.phase = 'player'; delete s.spent; s.active = s.allies.indexOf(byId(s, 'gerard'));
   assert.deepEqual(validTargets(s, 'skill', 'angulo').map(f => f.id), ['dog-1'], 'not on a foe already marked');
   assert.equal(act(s, 'attack', 'dog-0').amount, plain + 3, 'damage is flat: three points off, three more a hit');
   for (let round = 0; round < BOOST_ROUNDS; round++) endRound(s);
