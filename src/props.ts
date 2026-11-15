@@ -12,7 +12,11 @@ const QUARTER_TURN = new pc.Quat().setFromEulerAngles(0, 90, 0);
 interface Tree {
   pivot: pc.Entity; yaw: number; phase: number; sway: number;
   /** The crown's parts (drawn only while it fades) and the crown merged per material (drawn while solid). */
-  crowns: pc.RenderComponent[]; merged: pc.Entity[]; solid: pc.Material[]; ghosts: pc.StandardMaterial[];
+  crowns: pc.RenderComponent[]; merged: pc.Entity[]; solid: pc.Material[];
+  /** The crown's see-through materials, one per part: made the first time it fades (most trees never do). */
+  ghosts?: pc.StandardMaterial[];
+  /** Everything of it that draws (trunk, crown merged and in parts), gathered once it is in the scene. */
+  parts?: pc.MeshInstance[];
   /** Crown as a vertical capsule in world space: bottom and top centres plus radius. */
   bottom: pc.Vec3; top: pc.Vec3; radius: number;
   opacity: number;
@@ -37,7 +41,7 @@ const shapes = new Map<string, pc.Geometry>();
 const shape = (type: string) => shapes.get(type) ?? shapes.set(type, SHAPES[type]()).get(type)!;
 /** A merged mesh keeps texture coordinates only for materials that read a map. */
 const MAPS = ['diffuseMap', 'emissiveMap', 'opacityMap', 'aoMap', 'glossMap', 'specularMap', 'metalnessMap'] as const;
-const inverse = new pc.Mat4(), normalMatrix = new pc.Mat3(), point = new pc.Vec3();
+const inverse = new pc.Mat4(), normalMatrix = new pc.Mat3();
 
 /**
  * Draws opaque `parts` (fixed under `parent`, made with a render `type`) as one mesh per material in
@@ -60,7 +64,7 @@ export function mergeParts(device: pc.GraphicsDevice, parent: pc.Entity, parts: 
   const out: pc.Entity[] = [];
   for (const [material, group] of groups) {
     const textured = MAPS.some(k => (material as pc.StandardMaterial)[k]);
-    const key = cache && `${textured}|${group.map(({ part, local }) => `${part.render!.type}:${Array.from(local.data, v => v.toFixed(5))}`).join('|')}`;
+    const key = cache && `${textured}|${group.map(({ part, local }) => `${part.render!.type}:${Array.from(local.data, v => Math.round(v * 1e5))}`).join('|')}`;
     let mesh = key ? cache!.get(key) : undefined;
     if (!mesh) {
       let vertices = 0, length = 0;
@@ -73,14 +77,18 @@ export function mergeParts(device: pc.GraphicsDevice, parent: pc.Entity, parts: 
         normalMatrix.invertMat4(local).transpose();
         // A mirrored part turns its triangles inside out: wind them the other way.
         const flip = d[0] * (d[5] * d[10] - d[6] * d[9]) - d[4] * (d[1] * d[10] - d[2] * d[9]) + d[8] * (d[1] * d[6] - d[2] * d[5]) < 0;
+        // The matrices written out: this runs for every vertex of every tree and car of a street.
+        const m = normalMatrix.data;
         for (let i = 0; i < p.length; i += 3) {
-          const o = base * 3 + i;
-          local.transformPoint(point.set(p[i], p[i + 1], p[i + 2]), point);
-          positions[o] = point.x; positions[o + 1] = point.y; positions[o + 2] = point.z;
-          normalMatrix.transformVector(point.set(n[i], n[i + 1], n[i + 2]), point).normalize();
-          normals[o] = point.x; normals[o + 1] = point.y; normals[o + 2] = point.z;
+          const o = base * 3 + i, x = p[i], y = p[i + 1], z = p[i + 2], nx = n[i], ny = n[i + 1], nz = n[i + 2];
+          positions[o] = d[0] * x + d[4] * y + d[8] * z + d[12];
+          positions[o + 1] = d[1] * x + d[5] * y + d[9] * z + d[13];
+          positions[o + 2] = d[2] * x + d[6] * y + d[10] * z + d[14];
+          const tx = m[0] * nx + m[3] * ny + m[6] * nz, ty = m[1] * nx + m[4] * ny + m[7] * nz, tz = m[2] * nx + m[5] * ny + m[8] * nz;
+          const length = Math.sqrt(tx * tx + ty * ty + tz * tz) || 1;
+          normals[o] = tx / length; normals[o + 1] = ty / length; normals[o + 2] = tz / length;
         }
-        if (uvs) uvs.set(Array.from(g.uvs!), base * 2);
+        if (uvs) uvs.set(g.uvs!, base * 2);
         for (let i = 0; i < ix.length; i += 3) {
           indices[at++] = base + ix[i]; indices[at++] = base + ix[flip ? i + 2 : i + 1]; indices[at++] = base + ix[flip ? i + 1 : i + 2];
         }
@@ -316,13 +324,8 @@ export function createPropKit(device: pc.GraphicsDevice) {
     // Swap materials on the render component: mesh instances only exist once the parent is in the scene.
     const meshes = crowns.map(c => c.render!);
     const solid = meshes.map(r => r.material);
-    const ghosts = [...new Set(solid)].map(m => {
-      const g = m.clone() as pc.StandardMaterial;
-      g.blendType = pc.BLEND_NORMAL; g.update(); materials.push(g); return [m, g] as const;
-    });
-    const ghostOf = new Map(ghosts);
     trees.push({
-      pivot, yaw, phase: x * .7 + z * .31, sway, crowns: meshes, merged, solid, ghosts: solid.map(m => ghostOf.get(m)!),
+      pivot, yaw, phase: x * .7 + z * .31, sway, crowns: meshes, merged, solid,
       bottom: new pc.Vec3(world.x, world.y + lift + low, world.z), top: new pc.Vec3(world.x, world.y + lift + high, world.z), radius,
       opacity: 1,
     });
@@ -723,13 +726,25 @@ export function createPropKit(device: pc.GraphicsDevice) {
     for (let i = 0; i < 12; i++) part(holder, 'Lama', 'box', iron, [-0.74 + i * 0.135, 0.04, 0], [0.05, 0.014, 0.75]);
   }
 
+  /** A tree's own see-through copies of its crown's materials (each tree fades by itself). */
+  function ghostsOf(t: Tree) {
+    if (t.ghosts) return t.ghosts;
+    const made = new Map<pc.Material, pc.StandardMaterial>();
+    for (const m of t.solid) {
+      if (made.has(m)) continue;
+      const g = m.clone() as pc.StandardMaterial;
+      g.blendType = pc.BLEND_NORMAL; g.update(); materials.push(g); made.set(m, g);
+    }
+    return t.ghosts = t.solid.map(m => made.get(m)!);
+  }
   function setOpacity(t: Tree, opacity: number) {
     t.opacity = opacity;
     const opaque = opacity >= 0.999;
     // Solid, the crown draws merged; fading, its own parts take over in their see-through materials.
+    const ghosts = opaque ? undefined : ghostsOf(t);
     t.merged.forEach(e => { e.enabled = opaque; });
-    t.crowns.forEach((r, i) => { r.entity.enabled = !opaque || !t.merged.length; r.material = opaque ? t.solid[i] : t.ghosts[i]; });
-    if (!opaque) for (const g of new Set(t.ghosts)) { g.opacity = opacity; g.update(); }
+    t.crowns.forEach((r, i) => { r.entity.enabled = !opaque || !t.merged.length; r.material = ghosts ? ghosts[i] : t.solid[i]; });
+    if (ghosts) for (const g of new Set(ghosts)) { g.opacity = opacity; g.update(); }
   }
   const ray = new pc.Vec3();
   /** Whether any part of the crown capsule lies between the focus and the camera. */
@@ -740,6 +755,16 @@ export function createPropKit(device: pc.GraphicsDevice) {
       const along = ray.dot(toCamera);
       if (along > 0 && ray.lengthSq() - along * along < reach * reach) return true;
     }
+    return false;
+  }
+
+  /**
+   * Whether any of the tree was drawn last frame, in the picture or casting its shadow into it. A tree
+   * nobody sees stands still: swaying it moves a dozen nodes and their bounds, and a street has hundreds.
+   */
+  function drawn(t: Tree) {
+    if (!t.parts?.length) t.parts = (t.pivot.findComponents('render') as pc.RenderComponent[]).flatMap(r => r.meshInstances);
+    for (const part of t.parts) if (part.visibleThisFrame) return true;
     return false;
   }
 
@@ -788,11 +813,11 @@ export function createPropKit(device: pc.GraphicsDevice) {
       placed.length = 0;
       return holder;
     },
-    /** Sways trees and fades crowns that stand between `focus` and the camera direction. */
+    /** Sways the trees in sight and fades crowns that stand between `focus` and the camera direction. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       time += dt;
       for (const t of trees) {
-        if (animate) t.pivot.setLocalEulerAngles(Math.sin(time * 1.1 + t.phase) * 1.1 * t.sway, t.yaw, Math.sin(time * .83 + t.phase * 1.3) * 1.4 * t.sway);
+        if (animate && drawn(t)) t.pivot.setLocalEulerAngles(Math.sin(time * 1.1 + t.phase) * 1.1 * t.sway, t.yaw, Math.sin(time * .83 + t.phase * 1.3) * 1.4 * t.sway);
         const target = focus && toCamera && hides(t, focus, toCamera) ? GHOST_OPACITY : 1;
         if (t.opacity === target) continue;
         const next = animate ? t.opacity + (target - t.opacity) * (1 - Math.exp(-dt * FADE_RATE)) : target;

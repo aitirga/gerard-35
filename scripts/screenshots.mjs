@@ -33,10 +33,11 @@ if (!base) {
   const { createServer } = await import('vite');
   // Screenshots keep the game's full pixel ratio, whatever this machine's .env.development.local lowers it to.
   process.env.VITE_PIXEL_RATIO = '';
-  // --perf serves the engine's profiler build (release code with timings): the debug build that
-  // development uses validates every WebGPU call and costs several milliseconds a frame.
-  const engine = options.perf ? { resolve: { alias: [{ find: /^playcanvas$/, replacement: resolve('node_modules/playcanvas/build/playcanvas.prf/src/index.js') }] } } : {};
-  vite = await createServer({ logLevel: process.env.SCREENSHOT_DEBUG ? 'info' : 'silent', server: { port: 5199, strictPort: false, open: false, hmr: false, watch: null }, ...engine });
+  // Scenarios run on the engine's debug build (vite.config.ts), which validates every WebGPU call and
+  // logs what is wrong, so a mistake fails the run; it costs several milliseconds a frame, so --perf
+  // serves the profiler build (release code with timings), the one `just dev` plays on.
+  process.env.GERARD_ENGINE = options.perf ? 'profiler' : 'debug';
+  vite = await createServer({ logLevel: process.env.SCREENSHOT_DEBUG ? 'info' : 'silent', server: { port: 5199, strictPort: false, open: false, hmr: false, watch: null } });
   await vite.listen();
   base = vite.resolvedUrls.local[0];
 }

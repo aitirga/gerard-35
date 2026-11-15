@@ -35,6 +35,9 @@ export function createStoryUI(hud: HTMLElement) {
   let shoutLeaving: ReturnType<typeof setTimeout> | undefined;
   /** Measured once per line, not every frame. */
   let shoutSize = { w: 0, h: 0 };
+  /** What `bubble` and `shout` last wrote, so a frame that moves nothing writes nothing. */
+  let bubbleAt = '';
+  const shoutAt = { tail: '', transform: '' };
   const card = document.createElement('section');
   card.id = 'story-card'; card.hidden = true; card.setAttribute('role', 'status');
   card.innerHTML = `<span class="battle-kicker"></span><h1></h1><p></p>`;
@@ -152,10 +155,13 @@ export function createStoryUI(hud: HTMLElement) {
     },
     /** Places what Bernat says above his head; `at` is his screen position, or nothing to hide it. */
     bubble(text: string | undefined, at: { x: number; y: number } | undefined) {
-      bubble.hidden = !text || !at;
+      // Every frame: only what changed is written (a write of the same value still costs a style pass).
+      const hidden = !text || !at;
+      if (bubble.hidden !== hidden) bubble.hidden = hidden;
       if (!text || !at) return;
       if (bubble.textContent !== text) bubble.textContent = text;
-      bubble.style.transform = `translate(${at.x}px, ${at.y}px) translate(-50%, -100%)`;
+      const transform = `translate(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px) translate(-50%, -100%)`;
+      if (transform !== bubbleAt) { bubbleAt = transform; bubble.style.transform = transform; }
     },
     /**
      * A shout from afar over the shouter's head (`at`, in CSS pixels), every frame; nothing to let it
@@ -180,9 +186,10 @@ export function createStoryUI(hud: HTMLElement) {
       const x = Math.min(Math.max(line.x, margin + w / 2), innerWidth - margin - w / 2);
       const above = line.y - tail - h < margin;
       const y = above ? margin + tail : Math.min(line.y - tail - h, innerHeight - margin - h);
-      shout.dataset.tail = above ? 'up' : 'down';
-      shout.style.setProperty('--tail-x', `${Math.min(Math.max(line.x - (x - w / 2), 22), w - 22)}px`);
-      shout.style.transform = `translate(${x - w / 2}px, ${y}px)`;
+      const tailSide = above ? 'up' : 'down', tailX = `${Math.min(Math.max(line.x - (x - w / 2), 22), w - 22)}px`, transform = `translate(${(x - w / 2).toFixed(1)}px, ${y.toFixed(1)}px)`;
+      if (shout.dataset.tail !== tailSide) shout.dataset.tail = tailSide;
+      if (tailX !== shoutAt.tail) { shoutAt.tail = tailX; shout.style.setProperty('--tail-x', tailX); }
+      if (transform !== shoutAt.transform) { shoutAt.transform = transform; shout.style.transform = transform; }
     },
     /** Fades the whole screen to black (`on`) or back; resolves when the fade ends. */
     /** The camera's flash, then the frame held as a photo with `caption` for a few seconds; resolves when it is put away. */

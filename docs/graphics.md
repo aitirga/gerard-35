@@ -42,10 +42,20 @@ PlayCanvas **2.23.3** (latest stable, October 2026) on **WebGPU** only. It stays
   HDR post (`CameraFrame`), bloom, SSAO, depth of field, colour grading, TAA, WebGPU, compute.
 ## Performance
 
-The cost is the CPU submitting draw calls; the GPU has room. Aim for under ~8 ms of `app.render`
-per frame, so a 120 Hz screen keeps an even pace (above it, frames alternate 8 and 16 ms and walking
-looks choppy). Measure on the release engine: `npm run dev` serves PlayCanvas's debug build, which is
-about half as fast.
+Two budgets, both under 8.3 ms a frame so a 120 Hz screen keeps an even pace (above it, frames
+alternate 8 and 16 ms and walking looks choppy): the CPU submitting draw calls, and the GPU filling
+a Retina screen's pixels, most of them in the post pass.
+
+- **`just perf`** (scripts/perf-probe.mjs) times every place on this machine's GPU, at a 16" MacBook's
+  size drawing 1.5 device pixels a point: frame, update and render time, draw calls and the
+  functions that cost most. `just perf sants meridiana-calle --walk` does two places while walking,
+  `--engine debug` the validating engine, `--fight '<fight tester query>'` a fight. It keeps the
+  screen's pace, so read `cpu`; `--uncapped` shows how fast it could go, but Chromium then stalls
+  50–70 ms a few times a second as frames queue up, so read its medians and never its worst frames.
+- **The dev server plays on the profiler engine** (vite.config.ts, `GERARD_ENGINE`): release code
+  with timings. PlayCanvas's debug build validates every call, which on Avinguda Meridiana costs
+  14.3 ms of render a frame against 3.8, so it cannot hold even 60 fps there. The screenshot runner
+  still uses it, so a mistake fails a scenario; `GERARD_ENGINE=debug just dev` plays on it.
 
 - **Batch what stands still.** Scenery parts go into the scene's group `Estático: <id>`
   (`scenery.ts`, props, geo, and the house's parts that never fold). In the Meridiana flat this took
@@ -59,6 +69,19 @@ about half as fast.
   Over Avinguda Meridiana's overview this took the draw calls from about 11,100 to 5,000 and the
   frame from 19 to 12 ms at 2× pixels, for 18 MB more vertex data. `just screenshots
   zone-overview` shows it (and checks that merged and per-part crowns look the same).
+- **Trees nobody sees stand still** (`drawn` in src/props.ts). Swaying a tree moves a dozen nodes
+  and their bounds, and a street has hundreds: only the ones drawn last frame, in the picture or
+  casting a shadow into it, sway. A fifth of the frame's CPU on tree-lined streets (Sagrada Família
+  4.6 to 3.6 ms, Plaça d'Espanya 3.8 to 3.0).
+- **The HUD writes only what changed.** What follows the world every frame (the prompt next to
+  something in reach, a companion's bubble, the fighters' plates) used to set its attributes each
+  frame, and a write of the same value still makes the browser work out styles and layout again:
+  one of each a frame in the street, two style passes in a fight. Positions are rounded to a tenth
+  of a pixel, since the camera's easing never quite stops.
+- **A place builds in one go** when Gerard walks in (0.03–0.4 s, the first frame after it as much
+  again for the static batch and the textures). Trees were half of it: each one's see-through
+  crown materials are now made the first time it fades (`ghostsOf`), and `mergeParts` writes its
+  matrices out. Avinguda Meridiana went from 0.85 to 0.64 s, Sagrada Família from 0.57 to 0.42.
 - **Measure on a quiet GPU.** Other agents' `just screenshots --gpu` runs share the GPU: while one
   runs, frame and GPU times in the game and in `gpu-perf` swing by 20–50 %, and the game itself
   stutters. Compare variants by alternating them every few dozen frames in one run, or count draw
@@ -71,8 +94,12 @@ about half as fast.
   Comtal set, so it films 15 pictures a second (30 while watching it up close), only while the
   screen is in view, and the set casts no shadows. Before that it was two thirds of the flat's cost.
 
-Reference, M1 Pro, 1440×900 at 2×, walking: the flat about 5 ms of render CPU, Avinguda Meridiana
-about 6 ms, Maresme and Rec Comtal 3–5 ms.
+Reference, M1 Pro, 1728×1050 at 1.5× (2592×1575), standing, profiler engine, update + render
+(`just perf`): Avinguda Meridiana 4.0 ms, Sagrada Família 3.6, the flat and Sants 3.4, Poble Sec 3.2,
+Passatge Maresme 2.6, the palace 2.4, the houses and palace rooms 1.5–2. The GPU keeps up with
+that even at a full Retina 3456×2234: with no frame cap Passatge Maresme takes 2.7 ms a frame and
+Avinguda Meridiana 4.2, the CPU's time (Maresme took 8.8 ms while the tilt-shift's blur was drawn
+at full size).
 
 2.23 changed two typings: a render component's `type` is a union (`pc.RenderComponent['type']`, not
 `string`) and `meshInstance.material` may be `null`.
@@ -100,8 +127,8 @@ street:
 | Fight with every element going off | 416–469 · 1.7–2.0 · 2.8–3.1 |
 
 At the usual 60 fps cap it holds 16.7 ms frames on this machine; the rest is the headroom left
-for weaker computers. In the development build the engine's debug checks make WebGPU *slower* (8 ms of CPU a frame
-against 5.6), so always time with `--perf`, never with `just dev`.
+for weaker computers. The engine's debug build is several times slower on the CPU (see above), so
+time scenarios with `--perf`.
 
 **Burning fighters** (`gpu-perf` also times a fight at rest, its three dogs burning at the three
 levels, and all five fighters burning at the highest). Measured on a MacBook with Chromium at
@@ -250,6 +277,11 @@ by both, and by anything else that wants `uSceneDepthMap` (soft particles, decal
   far floor and the dark behind blurs). A screen-space blur by height on screen would also have
   worked, but it would need our own pass and would blur a tall house next to Gerard; the depth
   one is the engine's.
+  The blur itself is drawn at half the picture's size (`LOOK.tiltShift.halfBlur`): the engine's high
+  quality draws it at full size, but from a half-size picture of the scene, at 51 samples a pixel
+  twice over. At 3456×2234 that took Passatge Maresme's frame from 2.7 ms to 8.8 (3 ms more on a
+  busy GPU, 6 on a quiet one; at 2592×1575 only 0.3), for a picture that reads the same at four
+  times the zoom. `setupDepthLook` sets the blur pass's scale after every rebuild of the frame's passes.
 - **Contact shadows** are the engine's SSAO (`CameraFrame.ssao`), multiplied into the final
   colour: creases where walls meet floors, under furniture, cars and feet. The engine's shader
   rebuilds positions for a perspective camera, which under ours stretches the scene about five

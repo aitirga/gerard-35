@@ -26,6 +26,14 @@ export const LOOK = {
    */
   tiltShift: {
     enabled: true,
+    /**
+     * The blur is drawn at half the picture's size and stretched back by the compose pass. The
+     * engine's high quality draws it at full size, but from a half-size picture of the scene, so
+     * that only cost four times the pixels at 51 samples each: on a Retina screen (3456×2234) a
+     * frame of Passatge Maresme took 8.8 ms with it against 2.7, for a picture that reads the same
+     * (docs/graphics.md).
+     */
+    halfBlur: true,
     follow: { band: .55, blur: 2.4 },
     overview: { band: .42, blur: 3 },
     fight: { band: .55, blur: 2.4, margin: 1.2 },
@@ -343,13 +351,16 @@ export interface FocusPoint { x: number; y: number; z: number; height: number }
 function setupDepthLook(app: pc.AppBase, frame: pc.CameraFrame, camera: pc.CameraComponent) {
   const device = app.graphicsDevice;
   /** The frame's live passes (private in the typings): rebuilt whenever its options change. */
-  const passes = () => (frame as unknown as { renderPassCamera: { dofPass?: pc.FramePassDof | null; ssaoPass?: pc.RenderPassSsao | null } | null }).renderPassCamera;
+  const passes = () => (frame as unknown as { renderPassCamera: { dofPass?: pc.FramePassDof & { blurPass?: pc.RenderPass | null } | null; ssaoPass?: pc.RenderPassSsao | null } | null }).renderPassCamera;
   // The engine rebuilds its passes on any option change (and when layers change, mid-frame), so
   // the orthographic SSAO goes back in after every update.
   const update = frame.update.bind(frame);
   frame.update = () => {
     update();
     if (!orthoSsao(device, camera, passes()?.ssaoPass)) { state.ssao = false; state.apply(); }
+    // The blur's size is twice its half-size source (the full picture) unless told otherwise.
+    const blur = passes()?.dofPass?.blurPass;
+    if (blur && LOOK.tiltShift.halfBlur && blur.scaleX !== 1) blur.scaleX = blur.scaleY = 1;
   };
   const forward = new pc.Vec3(), at = new pc.Vec3();
   const state = {

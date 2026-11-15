@@ -8,8 +8,9 @@ to use a running `just dev`, with or without `just backend`). Other options: `--
 `--headed` to watch it play, `--out <dir>`. The game draws only on WebGPU, and the runner passes
 the flags headless Chromium needs to expose it. On a desktop with a GPU, `--gpu` uses this
 machine's GPU for faster captures; without it the game draws on the SwiftShader software WebGPU
-adapter (slow, but it runs anywhere). `--perf` serves PlayCanvas's profiler build instead of the debug one and lifts the
-60 fps cap, for timing runs such as `gpu-perf`. Playwright's Chromium cannot decode AAC, so a scenario that plays
+adapter (slow, but it runs anywhere). Scenarios run on PlayCanvas's debug build, which validates every call, so a
+mistake fails the run; `--perf` serves the profiler build instead (the one `just dev` plays on) and lifts the
+60 fps cap, for timing runs such as `gpu-perf`. `just perf` times every place (docs/graphics.md § Performance). Playwright's Chromium cannot decode AAC, so a scenario that plays
 music (`.m4a`) needs `--chrome`, which runs the installed Google Chrome instead. The private server ignores source
 changes during a run so another development session cannot reset the scenario.
 

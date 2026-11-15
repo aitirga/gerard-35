@@ -181,6 +181,12 @@ test:
 [group('Quality')]
 check: typecheck test
 
+# Time every place on this machine's GPU (frame, CPU, draw calls, costliest functions): just perf sants meridiana-calle --walk (docs/graphics.md § Performance)
+[group('Quality')]
+[positional-arguments]
+perf *args:
+    node scripts/perf-probe.mjs "$@"
+
 # Create the production bundle in dist/
 [group('Build')]
 build:
