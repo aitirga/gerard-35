@@ -23,6 +23,25 @@ export interface PadSnapshot {
   axes: readonly number[];
 }
 /**
+ * Pads the browser reports without the standard layout but whose layout is known, rewritten as
+ * standard ones. The Switch 2 Pro Controller by USB (after `just wake-pad`) comes as raw HID: its
+ * buttons in report order (B A Y X R ZR + RS ↓ → ← ↑ L ZL − LS Home Capture GR GL C) and its sticks
+ * as X, Y, Rx, Rz (axes 0, 1, 3, 5), up positive.
+ */
+const SWITCH2_BUTTONS = [0, 1, 2, 3, 12, 4, 13, 5, 14, 6, 15, 7, 11, 8, 10, 9, 16];
+export function normalizePad(pad: PadSnapshot): PadSnapshot {
+  if (pad.mapping === 'standard' || !/057e.*2069/i.test(pad.id)) return pad;
+  const none = { pressed: false, value: 0 };
+  return { id: pad.id, index: pad.index, connected: pad.connected, mapping: 'standard',
+    buttons: SWITCH2_BUTTONS.map(i => pad.buttons[i] ?? none),
+    axes: [pad.axes[0] ?? 0, -(pad.axes[1] ?? 0), pad.axes[3] ?? 0, -(pad.axes[5] ?? 0)] };
+}
+/** The connected pads, each in the standard layout when it is known (`normalizePad`). */
+export function readPads(): PadSnapshot[] {
+  try { return [...(navigator.getGamepads?.() ?? [])].filter((p): p is Gamepad => !!p?.connected).map(normalizePad); }
+  catch { return []; } // Restricted browser contexts may deny the API.
+}
+/**
  * `stick` is the analog vector (screen space, y down) when the stick, not the D-pad, drives `direction`.
  * `dpad` is the D-pad's side when it stands apart from walking (`readController`'s `apart`); otherwise null.
  */

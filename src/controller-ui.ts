@@ -1,4 +1,4 @@
-import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isDpad, isNintendo, readController, validProfile, type Binding, type ControlAction, type ControllerEvent, type ControllerProfile, type PadSnapshot } from './controller';
+import { CONTROL_ACTIONS, ControllerEdges, defaultProfile, idleController, isDpad, isNintendo, readController, readPads, validProfile, type Binding, type ControlAction, type ControllerEvent, type ControllerProfile, type PadSnapshot } from './controller';
 import type { Direction, Stick } from './movement';
 import type { PanelId } from './exploration-ui';
 import type { ControlMode, PlayerId } from './party';
@@ -185,8 +185,7 @@ export function createControllerUI(callbacks: {
   get('[data-abort]').onclick = abort;
   get('[data-reset]').onclick = () => { if (latest) { delete profiles[latest.id]; const persisted = save(); abort(); get('[data-calibration]').textContent = persisted ? 'Controles restablecidos.' : 'Restablecidos para esta sesión; no se pudo guardar.'; } };
   function poll(now: number) {
-    let pads: PadSnapshot[] = [];
-    try { pads = [...(navigator.getGamepads?.() ?? [])].filter((p): p is Gamepad => !!p?.connected); } catch { /* Restricted browser contexts may deny the API. */ }
+    const pads = readPads();
     const signature = pads.map(p => `${p.index}:${p.id}`).join('|');
     if (signature !== padList) {
       padList = signature; select.replaceChildren();

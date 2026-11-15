@@ -1,3 +1,4 @@
+import { readPads } from './controller';
 import * as pc from 'playcanvas';
 import { FreeMovement, SCREEN_VECTORS, canWalk, facingToward, screenToGrid, type Cell, type Direction, type Stick } from './movement';
 import { ENVIRONMENTS, INTERACTION_REACH, propCells, type EnvironmentId, type Interaction } from './environments';
@@ -125,9 +126,8 @@ const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '
  */
 function rightStick() {
   const out = new pc.Vec2();
-  let pads: (Gamepad | null)[] = [], click = false;
-  try { pads = [...(navigator.getGamepads?.() ?? [])]; } catch { /* Restricted browser contexts may deny the API. */ }
-  for (const pad of pads) {
+  let click = false;
+  for (const pad of readPads()) {
     if (!pad?.connected || pad.mapping !== 'standard') continue;
     const x = pad.axes[2] ?? 0, y = pad.axes[3] ?? 0, size = Math.hypot(x, y);
     if (size > .2) out.add(new pc.Vec2(x, y).mulScalar(Math.min(1, (size - .2) / .75) / size));

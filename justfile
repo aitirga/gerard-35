@@ -49,6 +49,8 @@ dev:
       uv run --locked python -c 'import sqlite3, sys; sqlite3.connect(sys.argv[1]).backup(sqlite3.connect(sys.argv[2]))' "$main/data/game.sqlite3" data/game.sqlite3
       printf 'Partida copiada de %s/data/game.sqlite3\n' "$main"
     fi
+    # A Switch 2 controller plugged in by USB boots asleep; wake it so the game sees it (`just wake-pad` after a replug).
+    just wake-pad 2>/dev/null | grep -v '^No Switch 2' || true
     # `kill 0` stops the whole process group (the API's reloader too), so Ctrl-C frees both ports;
     # the traps go first, so that signal ends this script too instead of running them again.
     trap 'trap - EXIT INT TERM; rm -f "$dev_ports_file"; kill 0' EXIT INT TERM
@@ -103,6 +105,11 @@ dev-night castle="2" with="":
 dev-solo state="on":
     @[[ "{{ state }}" =~ ^(on|off)$ ]] || { printf 'Use on or off.\n'; exit 1; }
     npm run dev -- --open '/?story=got-wrapper&solo={{ if state == "on" { "1" } else { "0" } }}'
+
+# Wake a Switch 2 controller plugged in by USB so the game sees it (needs `brew install libusb`; again after each replug)
+[group('Development')]
+wake-pad:
+    @DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix 2>/dev/null || echo /opt/homebrew)/lib" uv run scripts/wake-switch2-pad.py
 
 # Play as a generated character: just dev-character bernat (file in src/characters/)
 [group('Development')]
