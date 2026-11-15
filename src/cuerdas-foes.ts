@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import type { BattleEffect, Combatant, CuerdasKind } from './battle';
+import type { BattleEffect, Combatant, CuerdasKind, FoeAbilityId } from './battle';
 import { TONES, type Moment } from './song';
 
 /**
@@ -155,7 +155,7 @@ export function createCuerdasFoes(app: pc.Application) {
   for (let k = 0; k < 4; k++) ring(halo, `Aro ${k + 1}`, halfLit.clone(), .44 + k * .2, .011, [0, 0, -k * .03], [90, 0, 0]);
   halo.findComponents('render').forEach(r => materials.push((r as pc.RenderComponent).meshInstances[0].material as pc.StandardMaterial));
   // What she hangs from: four strings going up out of sight.
-  for (const [x, z] of [[-.3, 0], [.3, 0], [0, -.12], [0, .1]]) string(singer, 'Cuerda de arriba', strand, [x, x ? 1.8 : 2.36, z], [x * 1.6, 9, z * 3], .009);
+  for (const [x, z] of [[-.3, 0], [.3, 0], [0, -.12], [0, .1]]) string(singer, 'Cuerda de arriba', strand, [x, x ? 1.8 : 2.36, z], [x * 1.6, 9, z * 3], .009).tags.add('overhead');
 
   const templates = new Map<CuerdasKind, pc.Entity>([['lealtad', lealtad], ['eco', eco], ['cristalino', cristalino], ['directo', directo], ['voz', voz]]);
   interface Shown {
@@ -163,6 +163,8 @@ export function createCuerdasFoes(app: pc.Application) {
     there?: number; guard?: number; glass?: number; lit?: number; colour?: pc.Color;
     voz?: { body: pc.StandardMaterial[]; strand: pc.StandardMaterial; note: pc.StandardMaterial; rings: pc.StandardMaterial[]; arms: pc.Entity[]; fores: pc.Entity[]; float: pc.Entity; halo: pc.Entity; base: pc.Color[] };
     spin?: number; bar?: number; draw?: number;
+    /** A move under way, eased: wound up before it lands (−1 to 0) and let go after (0 to 1); and the looks that stay. */
+    act?: number; tie?: number; crack?: number; stuck?: number; air?: number; winded?: number; reach?: number;
   }
   const shown = new WeakMap<pc.Entity, Shown>();
   const material = (model: pc.Entity, name: string) => (model.findByName(name) as pc.Entity).render!.meshInstances[0].material as pc.StandardMaterial;
@@ -175,18 +177,34 @@ export function createCuerdasFoes(app: pc.Application) {
      * said and shows its crossbar for En línea recta; La Voz is there while `song` sounds (in the
      * note's colour) and nearly gone in a silence, crosses her arms on Guardia, turns to glass on Nota
      * clara, and has a ring lit behind her for each Crescendo. `animate` false snaps to it.
+     *
+     * `move` is its own move under way (`pending` until it lands), and each body makes it: La Lealtad
+     * draws her shield back and thrusts it (Juramento) or her knot swells (Lazo); an Eco's rings open;
+     * Lo Cristalino's string flares (Destello), and cracked it leans, its shards fly wide and fast;
+     * Lo Directo draws further back for an Estocada, thrusts, and leaves its lance in the floor
+     * (`stuck`); La Voz lifts her arms to take air, throws them forward on the Calderón, points at
+     * where her second voice comes, and hangs low when out of air (`winded`).
      */
-    show(model: pc.Entity, unit: Combatant, time: number, dt: number, animate: boolean, pending?: BattleEffect, toCamera = 0, song?: Moment, round = 0) {
+    show(model: pc.Entity, unit: Combatant, time: number, dt: number, animate: boolean, pending?: BattleEffect, toCamera = 0, song?: Moment, round = 0, move?: FoeAbilityId) {
       const s = shown.get(model) ?? {};
       shown.set(model, s);
       const ease = (k: number) => animate ? 1 - Math.exp(-dt * k) : 1;
       const kind = unit.kind as CuerdasKind;
       (model.findByName('Vista') as pc.Entity | null)?.setLocalEulerAngles(0, toCamera * TO_CAMERA[kind], 0);
       const float = model.findByName('Flota') as pc.Entity | null;
+      const to = (now: number | undefined, want: number, k: number) => (now ?? want) + (want - (now ?? want)) * ease(k);
+      // Wound up while its move has yet to land, let go once it has, at rest otherwise.
+      s.act = to(s.act, !move || unit.hp <= 0 ? 0 : pending ? -1 : 1, pending ? 9 : 16);
+      const wind = Math.max(0, -s.act), go = Math.max(0, s.act);
       if (kind === 'lealtad') {
         const beat = animate ? Math.sin(time * 2.2) : 0;
-        (model.findByName('Nudo') as pc.Entity).setLocalScale(1 + beat * .06, 1 + beat * .06, 1 + beat * .06);
-        (model.findByName('Nudo') as pc.Entity).setLocalEulerAngles(0, 0, animate ? time * 14 : 0);
+        const oath = move === 'juramento' ? 1 : 0;
+        s.tie = to(s.tie, move === 'lazo' ? 1 : 0, 8);
+        const size = 1 + beat * .06 + s.tie * .7;
+        (model.findByName('Nudo') as pc.Entity).setLocalScale(size, size, size);
+        (model.findByName('Nudo') as pc.Entity).setLocalEulerAngles(0, 0, animate ? time * (14 + s.tie * 260) : 0);
+        // Juramento: the shield back against her, then out at arm's length, its strings still shaking.
+        (model.findByName('Escudo') as pc.Entity).setLocalPosition(animate ? Math.sin(time * 95) * .012 * go * oath : 0, 0, .36 + oath * (go * .42 - wind * .14));
       } else if (kind === 'eco') {
         const turns = unit.turns ?? 0;
         s.spin = (s.spin ?? 0) + (animate ? dt : 0) * (110 + turns * 70);
@@ -195,21 +213,40 @@ export function createCuerdasFoes(app: pc.Application) {
         (model.findByName('Anillo tercero') as pc.Entity).enabled = turns >= 2;
         float?.setLocalPosition(0, 1.15 + (animate ? Math.sin(time * 1.9 + 1) * .07 : 0), 0);
         float?.setLocalEulerAngles(animate ? Math.sin(time * .9) * 10 : 0, animate ? time * 20 : 0, 0);
+        // Resonancia: its rings close a little, then open wide.
+        const open = 1 + go * .55 - wind * .25;
+        float?.setLocalScale(open, open, open);
       } else if (kind === 'cristalino') {
-        s.spin = (s.spin ?? 0) + (animate ? dt : 0) * 26;
-        (model.findByName('Esquirlas') as pc.Entity).setLocalEulerAngles(0, s.spin, 0);
+        // Cracked (once its Estallido has landed): it leans, its point slips, its shards fly wide and fast.
+        s.crack = to(s.crack, unit.cracked && !pending?.cracked && unit.hp > 0 ? 1 : 0, 7);
+        const c = s.crack, flare = move === 'destello' || move === 'prisma' ? wind + go * .5 : 0;
+        s.spin = (s.spin ?? 0) + (animate ? dt : 0) * (26 + c * 120 + (move === 'prisma' ? go * 520 : 0));
+        const shards = model.findByName('Esquirlas') as pc.Entity;
+        shards.setLocalEulerAngles(c * 14, s.spin, 0);
+        shards.setLocalScale(1 + c * .5, 1 + c * .25, 1 + c * .5);
         float?.setLocalPosition(0, .12 + (animate ? Math.sin(time * 1.2) * .05 : 0), 0);
+        float?.setLocalEulerAngles(0, 0, c * (7 + (animate ? Math.sin(time * 23) * .5 : 0)));
+        (model.findByName('Punta') as pc.Entity).setLocalPosition(c * .1, 1.96 - c * .05, c * .05);
+        // Its string of light: thicker as it gathers a Destello, and flickering once cracked.
+        const cord = 1 + flare * 2.2 + c * (animate ? .5 + Math.sin(time * 31) * .4 : .5);
+        (model.findByName('Cuerda de dentro') as pc.Entity).setLocalScale(.03 * cord, 2.05, .03 * cord);
       } else if (kind === 'directo') {
         // What it is about to do shows once the turn that says it lands.
         const intent = pending?.telegraph ? undefined : unit.intent?.ability;
-        const wide = intent === 'en-linea' && unit.hp > 0 ? 1 : 0, drawn = intent === 'golpe-directo' && unit.hp > 0 ? 1 : 0;
+        // An Estocada is drawn from further back than a Golpe directo.
+        const wide = intent === 'en-linea' && unit.hp > 0 ? 1 : 0, drawn = unit.hp <= 0 ? 0 : intent === 'estocada' ? 1.9 : intent === 'golpe-directo' ? 1 : 0;
+        // After it, the lance stays in the floor in front of it, and it leans on it, until its next turn.
+        s.stuck = to(s.stuck, unit.stuck && !pending?.stuck && unit.hp > 0 ? 1 : 0, 10);
         s.bar = (s.bar ?? wide) + (wide - (s.bar ?? wide)) * ease(7);
         s.draw = (s.draw ?? drawn) + (drawn - (s.draw ?? drawn)) * ease(5);
         const bar = model.findByName('Barra') as pc.Entity;
         bar.enabled = s.bar > .02;
         bar.setLocalScale(2.6 * s.bar, .035, .035);
         const lance = model.findByName('Lanza') as pc.Entity;
-        lance.setLocalPosition(.36 * (1 - s.bar), 1.3, -.34 * s.draw + (animate ? Math.sin(time * 38) * .006 * s.draw : 0));
+        const thrust = move === 'golpe-directo' || move === 'estocada' ? go : 0, k = s.stuck;
+        lance.setLocalPosition(.36 * (1 - s.bar) * (1 - k), 1.3 - .62 * k, (-.34 * s.draw + thrust * .55) * (1 - k) + .8 * k + (animate ? Math.sin(time * 38) * .006 * s.draw : 0));
+        lance.setLocalEulerAngles(58 * k, 0, 0);
+        (model.findByName('Vista') as pc.Entity).setLocalEulerAngles(11 * k, toCamera * TO_CAMERA[kind], 0);
       } else if (kind === 'voz') {
         if (!s.voz) {
           const body = ['Vestido', 'Talle', 'Melena'].map(n => material(model, n));
@@ -226,6 +263,11 @@ export function createCuerdasFoes(app: pc.Application) {
         s.there = (s.there ?? there) + (there - (s.there ?? there)) * ease(9);
         s.guard = (s.guard ?? guard) + (guard - (s.guard ?? guard)) * ease(6);
         s.glass = (s.glass ?? glass) + (glass - (s.glass ?? glass)) * ease(5);
+        // Taking air for her Calderón (from the turn that says it until she lets it go or it breaks); out of air after it broke.
+        s.air = to(s.air, alive && unit.intent?.ability === 'calderon' && !pending?.telegraph ? 1 : 0, 5);
+        s.winded = to(s.winded, alive && unit.winded ? 1 : 0, 6);
+        s.reach = to(s.reach, move === 'coro' ? 1 : 0, 8);
+        const air = s.air, low = s.winded, release = move === 'calderon' ? go : 0;
         const want = new pc.Color().fromString(song ? TONES[song.tone].colour : '#dfeaf2');
         s.colour ??= want.clone();
         s.colour.lerp(s.colour, want, ease(10));
@@ -240,21 +282,32 @@ export function createCuerdasFoes(app: pc.Application) {
           m.gloss = .7 + .28 * s.glass!;
           m.update();
         });
-        v.strand.opacity = .22 + .7 * t; v.strand.emissive.set(c.r, c.g, c.b); v.strand.emissiveIntensity = .5 + 1.6 * swell; v.strand.update();
+        v.strand.opacity = .22 + .7 * t; v.strand.emissive.set(c.r, c.g, c.b); v.strand.emissiveIntensity = (.5 + 1.6 * swell + 1.4 * air + 2.4 * release) * (1 - .6 * low); v.strand.update();
         v.note.emissive.set(c.r, c.g, c.b); v.note.emissiveIntensity = .15 + 4.2 * swell; v.note.diffuse.set(c.r * t, c.g * t, c.b * t); v.note.update();
         const level = unit.crescendo ?? 0;
         v.rings.forEach((m, k) => {
           const on = k < level ? 1 : 0;
           m.opacity = (.07 + .7 * on) * (.35 + .65 * t); m.emissive.set(c.r, c.g, c.b); m.emissiveIntensity = .2 + on * (1.2 + swell * 1.4); m.update();
         });
-        v.halo.setLocalEulerAngles(0, 0, animate ? time * 9 : 0);
-        v.float.setLocalPosition(0, .32 + (animate ? Math.sin(time * 1.1) * .06 : 0) + swell * .05, 0);
+        v.halo.setLocalEulerAngles(0, 0, animate ? time * (9 + air * 60) : 0);
+        const wide = 1 + air * .3 + release * .5 - low * .12;
+        v.halo.setLocalScale(wide, wide, 1);
+        v.float.setLocalPosition(0, .32 + (animate ? Math.sin(time * 1.1) * .06 : 0) + swell * .05 + air * .22 - low * .24, 0);
+        (model.findByName('Cabeza de chicle') as pc.Entity).setLocalEulerAngles(-16 * air + 26 * low + 8 * release, 0, 0);
         // Open at her sides singing; crossed over her chest on Guardia.
         const g = s.guard, sway = animate ? Math.sin(time * 1.3) * 2 : 0, lift = swell * 6;
         v.arms.forEach((arm, k) => {
           const side = k ? 1 : -1;
-          arm.setLocalEulerAngles(-(8 + lift) * (1 - g) - 62 * g, 0, side * ((14 + lift + sway) * (1 - g) - 22 * g));
-          v.fores[k]?.setLocalEulerAngles(-(10 + lift * .6) * (1 - g) - 86 * g, 0, side * (-4 * (1 - g) - 58 * g));
+          // Up and out to take air, thrown forward as she lets it go, hanging when she has none; one arm out at where her second voice comes.
+          const blend = (from: number, want: number, k: number) => from + (want - from) * k;
+          const point = k ? s.reach! : 0;
+          let x = -(8 + lift) * (1 - g) - 62 * g, z = (14 + lift + sway) * (1 - g) - 22 * g, fx = -(10 + lift * .6) * (1 - g) - 86 * g, fz = -4 * (1 - g) - 58 * g;
+          x = blend(x, -12, air); z = blend(z, 122, air); fx = blend(fx, -14, air); fz = blend(fz, 10, air);
+          x = blend(x, -84, release); z = blend(z, 24, release); fx = blend(fx, -8, release); fz = blend(fz, 0, release);
+          x = blend(x, 14, low); z = blend(z, 4, low); fx = blend(fx, -6, low); fz = blend(fz, 0, low);
+          x = blend(x, -20, point); z = blend(z, 84, point); fx = blend(fx, -6, point); fz = blend(fz, 0, point);
+          arm.setLocalEulerAngles(x, 0, side * z);
+          v.fores[k]?.setLocalEulerAngles(fx, 0, side * fz);
         });
       }
     },

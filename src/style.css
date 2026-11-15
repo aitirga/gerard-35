@@ -1300,7 +1300,10 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .status-icon[data-status="cancion"]::before { background: var(--ticks, none); }
 .unit-statuses i[data-status="crescendo"], .summary-tags [data-status="crescendo"], .damage-pop[data-status="crescendo"] { --status: #f2b45a; }
 .unit-statuses i[data-status="guardia"], .summary-tags [data-status="guardia"] { --status: #cfdde6; }
-.unit-statuses i[data-status="cristal"], .summary-tags [data-status="cristal"] { --status: #8fe6da; }
+.unit-statuses i[data-status="cristal"], .summary-tags [data-status="cristal"], .damage-pop[data-status="cristal"] { --status: #8fe6da; }
+.unit-statuses i[data-status="rajado"], .summary-tags [data-status="rajado"], .damage-pop[data-status="rajado"] { --status: #eafffb; }
+.unit-statuses i[data-status="clavado"], .summary-tags [data-status="clavado"], .damage-pop[data-status="clavado"] { --status: #8fb0ff; }
+.unit-statuses i[data-status="sin-aire"], .summary-tags [data-status="sin-aire"], .damage-pop[data-status="sin-aire"] { --status: #9fb3bd; }
 .dev-badge { position: absolute; top: 30px; left: 50%; margin: 0; padding: 6px 12px; transform: translateX(-50%); border: 1px dashed #ff8fbf; background: #1b1216b3; color: #ff8fbf; font-size: 9px; font-weight: 600; letter-spacing: .18em; }
 #battle[data-entering] .battle-dock .party-card, #battle[data-entering] .anima-switch { animation: encounter-left .55s .7s both; }
 #battle[data-entering] .battle-dock[data-dock="2"] .party-card, #battle[data-entering] .battle-dock[data-dock="2"] .anima-switch { animation-name: encounter-right; }

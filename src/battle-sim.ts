@@ -242,6 +242,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     // A debuff's mark on a foe that will stand a while: every later hit on it lands harder, about a
     // hit per ally standing for each of its rounds.
     if (foe.hp > 60) for (const [id, mark] of Object.entries(now.marks ?? {})) if (!foe.marks?.[id as SkillId] && mark) value += mark.amount * MARK_HITS * after.allies.filter(a => a.hp > 0).length;
+    // La Voz's Calderón broken by an Acorde: everything it was about to do to everyone.
+    if (foe.intent?.ability === 'calderon' && now.hp > 0 && !now.intent) value += [...threat.hp.values()].reduce((total, hp) => total + hp, 0);
     // Punto débil: what the next blow on it will add.
     if (now.hp > 0 && now.weakSpot !== undefined && foe.weakSpot === undefined) value += weakSpotWorth(after, now.id, ban);
   });
@@ -412,7 +414,9 @@ export function playFight(setup: Setup, seed: number): Run {
       if (state.phase !== 'player') continue;
       // La Voz (docs/quests/marta.md): whoever reads her song waits for a note before choosing (`TIMED`), and the
       // song goes on meanwhile, Ecos and all. If it takes the one choosing, the turn has moved on.
-      if (state.song && !songNow(state)!.sounding && random() < TIMED[setup.policy]) {
+      // With her second voice standing there is someone to strike in a silence: nobody waits.
+      const idle = !state.foes.some(f => f.hp > 0 && f.kind !== 'voz');
+      if (state.song && idle && !songNow(state)!.sounding && random() < TIMED[setup.policy]) {
         const chooser = state.allies[state.active].id;
         runClock(state, untilNote(PHRASES[state.song.phrase], state.song.t) + NOTE_LAG); watch();
         if (over()) break;

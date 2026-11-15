@@ -235,23 +235,33 @@ each foe's `PROFILES`. The qualities are played with Papagato 2 and Matemágico 
 
 | Fight | Party, bot | Wins | Rounds won | PV left |
 | --- | --- | --- | --- | --- |
-| La Lealtad | duo, smart | 100 % | 6.3 | 65 % |
-| La Lealtad | duo, casual | 83 % | 5.6 | 35 % |
+| La Lealtad | duo, smart | 97 % | 7.1 | 62 % |
+| La Lealtad | duo, casual | 85 % | 5.3 | 46 % |
 | La Lealtad | duo, attack only | 0 % | – | – |
-| Lo Cristalino | duo, attack only | 100 % | 5.0 | 45 % |
-| Lo Cristalino | tech, random | 38 % | 10.5 | 40 % |
-| Lo Directo | duo, smart | 100 % | 5.0 | 53 % |
-| Lo Directo | duo, casual | 92 % | 4.3 | 39 % |
+| Lo Cristalino | duo, attack only | 100 % | 5.0 | 35 % |
+| Lo Cristalino | duo, smart | 100 % | 2.3 | 82 % |
+| Lo Cristalino | tech, random | 41 % | 10.8 | 35 % |
+| Lo Directo | duo, smart | 100 % | 5.0 | 51 % |
+| Lo Directo | duo, casual | 90 % | 4.2 | 38 % |
 | Lo Directo | duo, attack only | 0 % | – | – |
-| La Voz | duo, smart | 100 % | 12.7 | 39 % |
-| La Voz | duo, smart, no duals | 98 % | 15.7 | 27 % |
-| La Voz | duo, casual | 19 % | 14.8 | 8 % |
-| La Voz | tech, smart | 69 % | 18.8 | 15 % |
+| Lo Directo | tech, smart | 89 % | 7.0 | 31 % |
+| La Voz | duo, smart | 100 % | 10.9 | 47 % |
+| La Voz | duo, smart, no duals | 97 % | 13.3 | 27 % |
+| La Voz | duo, casual | 36 % | 13.3 | 14 % |
+| La Voz | tech, smart | 50 % | 17.1 | 30 % |
 | La Voz | duo, attack only | 0 % | – | – |
+
+Measured 2026-11-15, after the foes got their moves (Juramento on whoever struck her and Lazo; Estallido
+and Prisma; Estocada and Clavado; Coro, «Toma aire» and Calderón). Measure again whenever what the
+party's ánimas can do changes.
 
 La Voz runs on the fight's clock, so the bots play it in time: `smart` waits for a note before
 choosing and has the second fighter's blow ready to land inside the same note (the Acorde) four times
 in five; `casual` waits half the time and chains one in seven; `attack` and `random` never look at
 the song (`TIMED`, `CHORD` in `src/battle-sim.ts`). Her fight is steep on purpose and narrow to tune:
 Eco and Crescendo punish length, so 80 PV more or less moves `smart` from always to rarely
-(`--tune foe.voz.pv=400:480:560`). Change her PV, `eco` or `ecoStep` one at a time.
+(`--tune foe.voz.pv=360:400:440`). Change her PV, `eco` or `ecoStep` one at a time. Her second voice
+(`marta.rules.coro`, its PV) is the other steep one: at 64 a party of two magic ánimas almost never
+wins, at 32 it does four times in five. `smart` counts breaking the Calderón (an Acorde while she
+holds her breath) as the damage it saves, and does not wait for a note while her second voice
+stands, since that one can be hit in a silence.

@@ -81,6 +81,12 @@ const SOUP_COLOURS = { leaf: '#7fd67a', pale: '#c9f2b8', steam: '#e6f4dc' } as c
 /** Joan's scale, Do to Si: warm and in tune at the bottom, sour and green at the top. */
 const NOTE_COLOURS = ['#ffe3a8', '#ffd27a', '#f7b85a', '#e8a04a', '#cfa24a', '#b2a845', '#93a83f'] as const;
 
+/** Las cuerdas (docs/quests/marta.md): the four notes, string and glass. Never pink, never violet. */
+export const CUERDAS_COLOURS = { la: '#f2b45a', do: '#49d3c2', mi: '#eef3ff', sol: '#5b8cff', string: '#cfdde6', glass: '#8fe6da', white: '#ffffff' } as const;
+const CUERDAS_TONES = [CUERDAS_COLOURS.la, CUERDAS_COLOURS.do, CUERDAS_COLOURS.mi, CUERDAS_COLOURS.sol] as const;
+const UP: V3 = { x: 0, y: 1, z: 0 };
+const sub = (a: V3, b: V3): V3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+const mix = (a: V3, b: V3, k: number): V3 => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k });
 const add = (a: V3, b: V3, k = 1): V3 => ({ x: a.x + b.x * k, y: a.y + b.y * k, z: a.z + b.z * k });
 const norm = (v: V3): V3 => { const d = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / d, y: v.y / d, z: v.z / d }; };
 const cross = (a: V3, b: V3): V3 => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
@@ -395,15 +401,138 @@ export function createDualFx(effects: Effects) {
       after(.15, () => ring(add(to, f, .2), f, .32, NOTE_COLOURS[4], { count: 80, outward: -1.2, life: .45, size: 1.4, light: 1.2 }));
     },
     /** Cortafuegos: Nico raises a pale lattice in front of the friend he shields, facing the party. */
-    firewall(on: V3, facing: V3) {
+    firewall(on: V3, facing: V3, colour: string = SOBREMESA_COLOURS.ward) {
       const { right, up } = screenAxes(facing), front = add(on, norm(facing), .35);
       for (let k = -2; k <= 2; k++) {
         after((k + 2) * .04, () => {
-          line(add(add(front, right, k * .14), up, -.45), add(add(front, right, k * .14), up, .45), SOBREMESA_COLOURS.ward, { count: 30, life: 1.1, size: 1.2 });
-          line(add(add(front, right, -.32), up, k * .18), add(add(front, right, .32), up, k * .18), SOBREMESA_COLOURS.ward, { count: 26, life: 1.1, size: 1.2 });
+          line(add(add(front, right, k * .14), up, -.45), add(add(front, right, k * .14), up, .45), colour, { count: 30, life: 1.1, size: 1.2 });
+          line(add(add(front, right, -.32), up, k * .18), add(add(front, right, .32), up, k * .18), colour, { count: 26, life: 1.1, size: 1.2 });
         });
       }
-      gpu()?.burst('flare', { at: front, count: 1, spread: .05, life: [.2, .3], colour: SOBREMESA_COLOURS.ward, light: { intensity: 2, range: 2.5, colour: SOBREMESA_COLOURS.ward } });
+      gpu()?.burst('flare', { at: front, count: 1, spread: .05, life: [.2, .3], colour: colour, light: { intensity: 2, range: 2.5, colour: colour } });
+    },
+
+    // ── Las cuerdas (docs/quests/marta.md § The qualities, § Final boss) ──
+    /** Juramento: her shield's strings sound one after another, and the blow goes straight at whoever touched her. */
+    oath(shield: V3, to: V3, facing: V3) {
+      const { right, up } = screenAxes(facing), c = CUERDAS_COLOURS, dir = norm(sub(to, shield));
+      for (let k = -2; k <= 2; k++) after((k + 2) * .035, () => line(add(add(shield, right, k * .17), up, -.85), add(add(shield, right, k * .17), up, .85), k ? c.string : c.la, { count: 46, life: .5, size: 1.3 }));
+      after(.16, () => line(shield, to, c.la, { count: 80, life: .35, size: 1.5 }));
+      after(.22, () => ring(to, dir, .4, c.la, { count: 80, outward: 2.4, life: .45, size: 1.4, light: 1.6 }));
+    },
+    /** Lazo: an amber cord from her knot to her Eco, and rings closing on it: whole again, or back from nothing. */
+    tie(knot: V3, eco: V3, back: boolean) {
+      const c = CUERDAS_COLOURS;
+      line(knot, eco, c.la, { count: 100, life: .9, size: 1.5 });
+      ring(knot, UP, .3, c.la, { count: 60, around: 3, life: .6, size: 1.3, light: 1.4 });
+      for (let i = 0; i < (back ? 4 : 2); i++) after(.12 + i * .1, () => ring(eco, UP, .95 - i * .14, i % 2 ? c.mi : c.la, { count: 90, outward: -2.4, around: 2.5, life: .5, size: 1.3, light: i ? 0 : 1.8 }));
+      if (back) after(.32, () => gpu()?.burst('flare', { at: eco, count: 2, spread: .08, life: [.25, .4], colour: c.mi, light: { intensity: 3, range: 4, colour: c.la } }));
+    },
+    /** Resonancia: the same blow again, a ring wider for each turn it has had, rolling off the Eco onto whom it repeats it. */
+    resonance(from: V3, to: V3, rings: number) {
+      const dir = norm(sub(to, from)), c = CUERDAS_COLOURS;
+      for (let i = 0; i < rings; i++) after(i * .07, () => ring(add(from, dir, .2), dir, .3 + i * .17, c.mi, { count: 70 + i * 20, outward: 4.5, life: .45, size: 1.2 + i * .15, light: i ? 0 : 1.2 }));
+      after(.18 + rings * .05, () => ring(to, dir, .32 + rings * .09, c.mi, { count: 80, outward: 1.6, life: .45, size: 1.4 }));
+    },
+    /** Destello: the light it holds, sent back in one thin beam. */
+    glint(from: V3, to: V3) {
+      const c = CUERDAS_COLOURS;
+      line(from, to, c.glass, { count: 120, life: .3, size: 1.3 }); line(from, to, c.white, { count: 60, life: .22, size: .8 });
+      gpu()?.burst('flare', { at: from, count: 1, spread: .04, life: [.15, .25], colour: '#eafffb', light: { intensity: 3, range: 4, colour: c.do } });
+      after(.06, () => gpu()?.burst('gale', { at: to, count: 50, spread: .15, speed: 4, life: [.25, .45], colour: c.glass }));
+    },
+    /** Estallido: it cracks from top to bottom, and what comes off it flies at everyone. */
+    shatter(at: V3, on: readonly V3[], facing: V3) {
+      const { facing: f, right, up } = screenAxes(facing), c = CUERDAS_COLOURS;
+      ring(at, f, .3, c.white, { count: 130, outward: 8, life: .4, size: 1.5, light: 3.5 });
+      ring(at, UP, .4, c.glass, { count: 150, outward: 6, life: .6, size: 1.4 });
+      gpu()?.burst('gale', { at, count: 260, spread: .4, speed: 9, life: [.35, .8], colour: c.glass });
+      // The crack itself: a jagged white line down its front, that stays a moment.
+      for (let k = 0; k < 6; k++) line(add(add(at, right, (k % 2 ? .2 : -.2) * (1 - k * .08)), up, .95 - k * .34), add(add(at, right, (k % 2 ? -.18 : .2) * (1 - k * .08)), up, .95 - (k + 1) * .34), c.white, { count: 24, life: 1, size: 1.3 });
+      for (const p of on) after(.1, () => { line(at, p, c.glass, { count: 36, life: .3, size: 1.1 }); gpu()?.burst('gale', { at: p, count: 30, spread: .12, speed: 3, life: [.2, .4], colour: '#eafffb' }); });
+    },
+    /** Prisma: cracked, its light comes out split into the four notes' colours, a fan onto everyone. */
+    prism(from: V3, on: readonly V3[], facing: V3) {
+      const { up } = screenAxes(facing);
+      gpu()?.burst('flare', { at: from, count: 1, spread: .05, life: [.2, .3], colour: CUERDAS_COLOURS.white, light: { intensity: 3.5, range: 5, colour: CUERDAS_COLOURS.do } });
+      for (const p of on) CUERDAS_TONES.forEach((colour, k) => after(k * .05, () => {
+        const end = add(p, up, (k - 1.5) * .22);
+        line(add(from, up, (k - 1.5) * .07), end, colour, { count: 64, life: .4, size: 1.2 });
+        ring(end, norm(sub(end, from)), .16, colour, { count: 30, outward: 1.4, life: .35, size: 1.2 });
+      }));
+    },
+    /** Golpe directo: the shortest way between two points, drawn once. */
+    straight(from: V3, to: V3, colour: string = CUERDAS_COLOURS.sol) {
+      const dir = norm(sub(to, from));
+      line(from, to, CUERDAS_COLOURS.white, { count: 90, life: .22, size: 1.3 });
+      line(add(from, dir, -.5), add(to, dir, .5), colour, { count: 120, life: .4, size: 1.5 });
+      ring(to, dir, .28, colour, { count: 60, outward: 3, life: .35, size: 1.3, light: 1.5 });
+    },
+    /** En línea recta: one stroke from beyond one end of the party to beyond the other, through everyone on it. */
+    through(from: V3, on: readonly V3[]) {
+      if (!on.length) return;
+      const c = CUERDAS_COLOURS, a = on[0], b = on[on.length - 1], dir = on.length > 1 ? norm(sub(b, a)) : norm(cross(UP, sub(a, from)));
+      const start = add(a, dir, -2.4), end = add(b, dir, 2.4);
+      for (let k = 0; k < 12; k++) after(k * .014, () => line(mix(start, end, k / 12), mix(start, end, (k + 1) / 12), k % 2 ? c.white : c.sol, { count: 30, life: .5, size: 1.6 }));
+      on.forEach((p, i) => after(.04 + i * .07, () => ring(p, dir, .3, c.sol, { count: 60, outward: 2.6, life: .4, size: 1.3, light: i ? 0 : 1.8 })));
+    },
+    /** Estocada: everything it has, in one thick stroke that goes on past whom it hits and into the floor. */
+    lunge(from: V3, to: V3, feet: V3) {
+      const dir = norm(sub(to, from)), c = CUERDAS_COLOURS;
+      for (const k of [-.06, 0, .06]) line(add(from, UP, k), add(add(to, dir, .9), UP, k), k ? c.sol : c.white, { count: 150, life: .5, size: 1.7 });
+      ring(to, dir, .35, c.white, { count: 110, outward: 6, life: .4, size: 1.6, light: 3 });
+      after(.05, () => ring({ ...feet, y: feet.y + .06 }, UP, .5, c.sol, { count: 120, outward: 4.5, life: .6, size: 1.4 }));
+      gpu()?.burst('gale', { at: to, count: 140, spread: .25, speed: 7, life: [.3, .6], colour: c.sol });
+    },
+    /** Nota clara: one clean ring round her that stays. She is glass until it goes. */
+    clearNote(at: V3, facing: V3) {
+      const { facing: f } = screenAxes(facing), c = CUERDAS_COLOURS;
+      ring(at, f, 1.1, c.glass, { count: 170, around: 1.2, life: 1.3, size: 1.3, light: 1.6 });
+      after(.12, () => ring(at, f, .7, '#eafffb', { count: 110, around: -1.6, life: 1.1, size: 1.1 }));
+    },
+    /** Coro: a ring of her own leaves her throat and closes where her second voice comes together. */
+    choir(mouth: V3, at: V3, facing: V3) {
+      const { facing: f } = screenAxes(facing), c = CUERDAS_COLOURS;
+      ring(add(mouth, f, .2), f, .35, c.mi, { count: 90, outward: 2, life: .5, size: 1.3, light: 1.5 });
+      after(.1, () => line(mouth, at, c.mi, { count: 80, life: .55, size: 1.2 }));
+      for (let i = 0; i < 3; i++) after(.25 + i * .12, () => ring(at, UP, 1 - i * .25, i === 1 ? c.do : c.mi, { count: 90, outward: -2.2, around: 3, life: .55, size: 1.3 }));
+    },
+    /** «Toma aire»: the four notes' light drawn into her throat, ring after ring closing on it. */
+    inhale(mouth: V3, facing: V3) {
+      const { facing: f } = screenAxes(facing);
+      CUERDAS_TONES.forEach((colour, k) => after(k * .11, () => ring(add(mouth, f, .2), f, 2.2 - k * .3, colour, { count: 130, outward: -3.4, around: 2 + k, life: .6, size: 1.4, light: k ? 0 : 2 })));
+      gpu()?.burst('mote', { at: add(mouth, f, .3), count: 280, spread: 2.6, outward: -4, speed: .2, life: [.5, .7], colour: CUERDAS_COLOURS.string });
+    },
+    /** Calderón: the note she held, let go. Four great rings, one of each colour, over everyone. */
+    fermata(mouth: V3, on: readonly V3[], facing: V3) {
+      const { facing: f } = screenAxes(facing);
+      CUERDAS_TONES.forEach((colour, k) => after(k * .09, () => ring(add(mouth, f, .3), f, .5 + k * .15, colour, { count: 200, outward: 9 - k, life: .8, size: 1.9, light: k ? 0 : 4 })));
+      gpu()?.burst('gale', { at: mouth, count: 260, spread: .5, speed: 11, life: [.4, .9], colour: CUERDAS_COLOURS.mi });
+      for (const p of on) after(.25, () => CUERDAS_TONES.forEach((colour, k) => ring(p, UP, .3 + k * .14, colour, { count: 50, outward: 1.5, around: 2, life: .5, size: 1.2 })));
+    },
+    /** Her Calderón broken (an Acorde on her while she held it): the ring closes on nothing, cracks, and falls in pieces. */
+    fermataBreak(mouth: V3, facing: V3) {
+      const { facing: f, right, up } = screenAxes(facing), c = CUERDAS_COLOURS;
+      ring(add(mouth, f, .2), f, 1.3, c.white, { count: 130, outward: -5, life: .3, size: 1.4, light: 2.5 });
+      after(.2, () => {
+        CUERDAS_TONES.forEach((colour, k) => {
+          const a = add(add(mouth, right, (k - 1.5) * .34), up, .25 - (k % 2) * .2);
+          line(a, add(add(a, right, (k % 2 ? .16 : -.16)), up, -.9), colour, { count: 30, life: .8, size: 1.3, kind: 'mote' });
+        });
+        gpu()?.burst('gale', { at: mouth, count: 120, spread: .3, speed: 4, life: [.3, .7], colour: c.string });
+      });
+    },
+    /** A note of her song as it starts: a ring of its colour off her throat, wider with each Crescendo (her Eco). */
+    songNote(mouth: V3, colour: string, facing: V3, level = 0) {
+      const { facing: f } = screenAxes(facing);
+      ring(add(mouth, f, .15), f, .25, colour, { count: 70 + level * 20, outward: 3 + level * .6, life: .55, size: 1.2 + level * .1, light: 1 });
+    },
+    /** Acorde: two blows inside one note. Two rings cross on her, the note's colour and white. */
+    chord(at: V3, colour: string, facing: V3) {
+      const { facing: f, right, up } = screenAxes(facing);
+      ring(at, norm(add(f, right, .5)), .45, colour, { count: 110, outward: 4, life: .5, size: 1.5, light: 2.5 });
+      after(.04, () => ring(at, norm(add(f, right, -.5)), .45, CUERDAS_COLOURS.white, { count: 110, outward: 4, life: .5, size: 1.5 }));
+      for (const k of [-1, 1]) line(add(add(at, right, -.5), up, k * .12), add(add(at, right, .5), up, k * .12), colour, { count: 40, life: .5, size: 1.2 });
     },
 
     // ── Vertitrón ──

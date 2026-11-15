@@ -1,0 +1,386 @@
+{
+  "title": "Las cuerdas: las habilidades de cada combate",
+  "description": "docs/quests/marta.md § The qualities, § Final boss. Every named move of Las cuerdas' foes and La Voz, frozen as it lands (fight tester: Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost). Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22cuerdas-lealtad%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.hitFoe = id => { cmd('attack'); setTimeout(() => document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(), 500); }; const st = document.createElement('style'); st.textContent = '.shot-frozen * { animation-play-state: paused !important; }'; document.head.append(st); window.sleep = ms => new Promise(r => setTimeout(r, ms)); window.round = async (id, what = 'attack') => { for (let i = 0; i < 2; i++) { while (!ready()) await sleep(100); cmd(what); await sleep(450); document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(); await sleep(500); } }; window.frozen = ''; window.catchPop = (text, after = 140) => { window.frozen = ''; const o = new MutationObserver(() => { if ([...document.querySelectorAll('.damage-pop')].some(p => p.textContent.includes(text))) { o.disconnect(); setTimeout(() => { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = text; }, after); } }); o.observe(document.body, { childList: true, subtree: true }); }; window.thaw = () => { window.gerard.game.app.timeScale = 1; document.documentElement.classList.remove('shot-frozen'); window.frozen = ''; };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "catchPop('Juramento', 140); round('lealtad'); 0"
+    },
+    {
+      "until": "window.frozen === 'Juramento'",
+      "timeout": 60000
+    },
+    {
+      "shot": "juramento",
+      "delay": 250,
+      "caption": "Juramento: the shield out at arm's length, its strings sounding, the blow straight at whoever touched her last"
+    },
+    {
+      "eval": "thaw(); catchPop('Resonancia', 140)"
+    },
+    {
+      "until": "window.frozen === 'Resonancia'",
+      "timeout": 60000
+    },
+    {
+      "shot": "resonancia",
+      "delay": 250,
+      "caption": "Resonancia: the Eco's rings open and roll onto the same one"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "thaw(); ui.jumpTo('lealtad-lazo')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "lazo-antes",
+      "delay": 900,
+      "caption": "Picker moment «Lazo: el Eco caído»: the chip says «Lazo → Eco»"
+    },
+    {
+      "eval": "catchPop('Lazo', 260); round('lealtad'); 0"
+    },
+    {
+      "until": "window.frozen === 'Lazo'",
+      "timeout": 60000
+    },
+    {
+      "shot": "lazo",
+      "delay": 250,
+      "caption": "Lazo: the amber cord from her knot, rings closing where the Eco comes back"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "lazo-despues",
+      "delay": 600,
+      "caption": "The Eco back, whole, its Resonancia from the start"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22cuerdas-cristalino%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.hitFoe = id => { cmd('attack'); setTimeout(() => document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(), 500); }; const st = document.createElement('style'); st.textContent = '.shot-frozen * { animation-play-state: paused !important; }'; document.head.append(st); window.sleep = ms => new Promise(r => setTimeout(r, ms)); window.round = async (id, what = 'attack') => { for (let i = 0; i < 2; i++) { while (!ready()) await sleep(100); cmd(what); await sleep(450); document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(); await sleep(500); } }; window.frozen = ''; window.catchPop = (text, after = 140) => { window.frozen = ''; const o = new MutationObserver(() => { if ([...document.querySelectorAll('.damage-pop')].some(p => p.textContent.includes(text))) { o.disconnect(); setTimeout(() => { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = text; }, after); } }); o.observe(document.body, { childList: true, subtree: true }); }; window.thaw = () => { window.gerard.game.app.timeScale = 1; document.documentElement.classList.remove('shot-frozen'); window.frozen = ''; };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "catchPop('Destello', 140); round('cristalino'); 0"
+    },
+    {
+      "until": "window.frozen === 'Destello'",
+      "timeout": 60000
+    },
+    {
+      "shot": "destello",
+      "delay": 250,
+      "caption": "Destello: the string inside the glass, sent back in one thin beam"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "thaw(); ui.jumpTo('cristalino-casi')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "catchPop('Rajado', 0); round('cristalino'); 0"
+    },
+    {
+      "until": "window.frozen === 'Rajado'",
+      "timeout": 60000
+    },
+    {
+      "shot": "estallido",
+      "delay": 250,
+      "caption": "Estallido: one blow more and it cracks, and what comes off reaches everyone"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "rajado",
+      "delay": 600,
+      "caption": "Cracked: it leans, its shards fly wide, the chip says «Rajado» and «Prisma → todos»"
+    },
+    {
+      "eval": "catchPop('Prisma', 140); round('cristalino'); 0"
+    },
+    {
+      "until": "window.frozen === 'Prisma'",
+      "timeout": 60000
+    },
+    {
+      "shot": "prisma",
+      "delay": 250,
+      "caption": "Prisma: its light split into the four notes' colours, onto everyone"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22cuerdas-directo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.hitFoe = id => { cmd('attack'); setTimeout(() => document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(), 500); }; const st = document.createElement('style'); st.textContent = '.shot-frozen * { animation-play-state: paused !important; }'; document.head.append(st); window.sleep = ms => new Promise(r => setTimeout(r, ms)); window.round = async (id, what = 'attack') => { for (let i = 0; i < 2; i++) { while (!ready()) await sleep(100); cmd(what); await sleep(450); document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(); await sleep(500); } }; window.frozen = ''; window.catchPop = (text, after = 140) => { window.frozen = ''; const o = new MutationObserver(() => { if ([...document.querySelectorAll('.damage-pop')].some(p => p.textContent.includes(text))) { o.disconnect(); setTimeout(() => { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = text; }, after); } }); o.observe(document.body, { childList: true, subtree: true }); }; window.thaw = () => { window.gerard.game.app.timeScale = 1; document.documentElement.classList.remove('shot-frozen'); window.frozen = ''; };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "catchPop('Golpe directo', 140); round('directo'); 0"
+    },
+    {
+      "until": "window.frozen === 'Golpe directo'",
+      "timeout": 60000
+    },
+    {
+      "shot": "golpe-directo",
+      "delay": 250,
+      "caption": "Golpe directo: the shortest way between two points"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "thaw(); ui.jumpTo('directo-linea')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "catchPop('En línea recta', 140); round('directo'); 0"
+    },
+    {
+      "until": "window.frozen === 'En línea recta'",
+      "timeout": 60000
+    },
+    {
+      "shot": "en-linea",
+      "delay": 250,
+      "caption": "En línea recta: one stroke through everyone"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "thaw(); ui.jumpTo('directo-estocada')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "estocada-antes",
+      "delay": 900,
+      "caption": "Picker moment «Estocada»: the lance drawn from further back"
+    },
+    {
+      "eval": "catchPop('Estocada', 140); round('directo'); 0"
+    },
+    {
+      "until": "window.frozen === 'Estocada'",
+      "timeout": 60000
+    },
+    {
+      "shot": "estocada",
+      "delay": 250,
+      "caption": "Estocada: everything it has, in one thick stroke"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "clavado",
+      "delay": 600,
+      "caption": "Clavado: the lance stays in the floor until its next turn, and it takes more"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22voz%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.hitFoe = id => { cmd('attack'); setTimeout(() => document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(), 500); }; const st = document.createElement('style'); st.textContent = '.shot-frozen * { animation-play-state: paused !important; }'; document.head.append(st); window.sleep = ms => new Promise(r => setTimeout(r, ms)); window.round = async (id, what = 'attack') => { for (let i = 0; i < 2; i++) { while (!ready()) await sleep(100); cmd(what); await sleep(450); document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(); await sleep(500); } }; window.frozen = ''; window.catchPop = (text, after = 140) => { window.frozen = ''; const o = new MutationObserver(() => { if ([...document.querySelectorAll('.damage-pop')].some(p => p.textContent.includes(text))) { o.disconnect(); setTimeout(() => { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = text; }, after); } }); o.observe(document.body, { childList: true, subtree: true }); }; window.thaw = () => { window.gerard.game.app.timeScale = 1; document.documentElement.classList.remove('shot-frozen'); window.frozen = ''; };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "catchPop('Guardia', 140); round('voz'); 0"
+    },
+    {
+      "until": "window.frozen === 'Guardia'",
+      "timeout": 60000
+    },
+    {
+      "shot": "guardia",
+      "delay": 250,
+      "caption": "Guardia: a lattice of strings in front of her"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "thaw(); ui.jumpTo('voz-nota-clara')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "thaw(); ui.jumpTo('voz-allegro')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "catchPop('Segunda voz', 450); round('voz'); 0"
+    },
+    {
+      "until": "window.frozen === 'Segunda voz'",
+      "timeout": 60000
+    },
+    {
+      "shot": "coro",
+      "delay": 250,
+      "caption": "Coro (Allegro): a ring leaves her throat and her second voice comes together beside her"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "segunda-voz",
+      "delay": 600,
+      "caption": "The second voice, standing: an Eco of her own"
+    },
+    {
+      "eval": "thaw(); ui.jumpTo('voz-a-capela')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "catchPop('Toma aire', 140); round('voz'); 0"
+    },
+    {
+      "until": "window.frozen === 'Toma aire'",
+      "timeout": 60000
+    },
+    {
+      "shot": "toma-aire",
+      "delay": 250,
+      "caption": "«Toma aire» (A capela): the four notes' light drawn into her throat"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "aire",
+      "delay": 700,
+      "caption": "Holding it: arms up, her rings wide, the chip says «Calderón → todos»"
+    },
+    {
+      "eval": "catchPop('Protegido', 220); round('voz', 'defend'); 0"
+    },
+    {
+      "until": "window.frozen === 'Protegido'",
+      "timeout": 60000
+    },
+    {
+      "shot": "calderon",
+      "delay": 250,
+      "caption": "Calderón: the held note let go, four great rings over everyone (both holding on)"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    }
+  ]
+}

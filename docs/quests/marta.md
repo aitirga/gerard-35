@@ -136,7 +136,26 @@ boss is everything she lost, together.
 | --- | --- | --- |
 | `cuerdas-lealtad` | **La Lealtad** and an **Eco** | A blow aimed at the Eco lands on La Lealtad while she stands (blows on every foe get past her). The Eco's own blow grows each turn: how long to spend on her is the decision |
 | `cuerdas-cristalino` | **Lo Cristalino** | Magic comes back at whoever cast it and does nothing to it; a physical blow lands half as hard again. It says whom it will hit a turn ahead |
-| `cuerdas-directo` | **Lo Directo** | Says whom it will hit and hits very hard; every third turn, everyone. Defender is the answer, and costs the turn |
+| `cuerdas-directo` | **Lo Directo** | Says whom it will hit and hits very hard. Defender is the answer, and costs the turn |
+
+**Their moves** (reworked 2026-11-15, the user: «repiénsalos un poco más… habilidades que usen, no
+solo la pasiva y ataques normales»; a base to play, names and numbers are proposals). Each foe has a
+few named moves, said on its plate a turn ahead, and one thing the party can do about each. None
+leaves its place except Lo Directo: what they do reaches from where they stand, drawn in the notes'
+colours (`cuerdasFx` in `src/battle-scene.ts`, the pictures in `src/dual-fx.ts` § Las cuerdas, the
+bodies in `src/cuerdas-foes.ts`).
+
+| Foe | Move | What it does | What the party can do |
+| --- | --- | --- | --- |
+| La Lealtad | ***Juramento*** | Her shield's strings sound and the blow goes at **whoever struck her last** | Choose who touches her: the one who can hold on |
+| La Lealtad | ***Lazo*** | Every fourth turn, if her Eco is hurt or gone: ties it back, whole (a fallen one returns, its Resonancia from the start) | Killing the Eco first does not last while she stands: go through her, or hit both at once |
+| Eco | ***Resonancia*** | Repeats the Juramento on the same one, harder each turn it has had (up to a ceiling) | The longer the fight, the worse: it is the clock of this fight |
+| Lo Cristalino | ***Destello*** | A thin beam of magic on whom it said | Defender on that one |
+| Lo Cristalino | ***Estallido*** | At half its PV it **cracks**: shards on everyone, once (it never brings anyone down) | From here on it is «Rajado»: it sends no magic back and magic lands on it as on anyone |
+| Lo Cristalino | ***Prisma*** | Cracked, its light comes out split in four colours, on everyone, every turn | Finish it: the second half is a race, and now magic helps |
+| Lo Directo | ***Golpe directo*** ×2 | Very hard, on whom it said | Defender on that one |
+| Lo Directo | ***En línea recta*** | Its crossbar out: through everyone, less hard | Both hold on, or take it |
+| Lo Directo | ***Estocada*** | Draws from further back: its hardest blow, on whom it said. Its lance **stays in the floor** until its next turn («Clavado»): blows on it land half as hard again | The window: hold on, then spend everything while it is stuck |
 
 ## Final boss
 
@@ -169,9 +188,20 @@ boss is everything she lost, together.
     No ceiling: the fight cannot be sat out.
   - ***Acorde*** (the players' side of it): a second blow from **the other** fighter inside the same
     note lands half as hard again. This is where the two players time each other.
-  - Her own turns go round three moves, one from each quality: ***Guardia*** (the next blow on her
-    lands at half, and is spent), ***Nota clara*** (until her next turn magic comes back; she says
-    whom she will hit) and ***Golpe directo*** (very hard, on whom she said).
+  - Her own turns go round three moves, and each phrase has its own three (reworked 2026-11-15,
+    `VOZ_TURNS`; a base to play):
+    - *Andante*: ***Guardia*** (the next blow on her lands at half, and is spent), ***Nota clara***
+      (until her next turn magic comes back; she says whom she will hit) and ***Golpe directo***
+      (very hard, on whom she said). One move from each quality.
+    - *Allegro*: ***Coro*** instead of Guardia, once: a ring leaves her throat and a **second
+      voice** comes together beside her, an Eco of her own (few PV, its Resonancia growing). It
+      takes blows in the silences too, so there is something to do between notes; left alone it is
+      a second clock. It goes when she does.
+    - *A capela*: ***«Toma aire»*** (she lifts her arms and draws the four notes' light in: the
+      plate says «Calderón → todos»), then ***Calderón*** (the held note let go on everyone), then
+      Golpe directo. **An Acorde on her while she holds her breath breaks it**: the Calderón is
+      lost, she is «Sin aire» and her next turn does nothing. It is the Acorde's reason to exist
+      in the last phase: the two players have to land inside the same note, on purpose.
   - **Phases**, by her PV, each a `FightMoment`: *Andante* (long notes, long silences), *Allegro*
     (from 60 %: short notes) and *A capela* (from 25 %: very short notes and one long one a phrase).
 - How the friend helps: _open_ (she is beside them and gets nothing back until it is over).

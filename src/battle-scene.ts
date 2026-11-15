@@ -27,7 +27,8 @@ import { bindSobremesa, type Acts, type Friend, type Move } from './sobremesa';
 export interface FightStage { layout: Layout; pocket?: boolean; spread?: number }
 import { createStatusFx, type ReactionId, type StatusLookId } from './status-fx';
 import { DISINTEGRATE, dissolvable, type Disintegration } from './disintegrate';
-import { DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, type V3 } from './dual-fx';
+import { CUERDAS_COLOURS, DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, type V3 } from './dual-fx';
+import { TONES } from './song';
 import { takeZero } from './anima-looks';
 import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { spellLaunch } from './battle-sounds';
@@ -142,7 +143,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     /** How much of its size it has now (Encogido eases it down to SHRUNK and back). */
     shrink: number;
     /** When they fell, and (the party) when they started getting back up; `landed` once they hit the floor. */
-    downAt?: number; upAt?: number; landed?: boolean; dissolve?: Disintegration; freed?: { node: pc.Entity; from: pc.Vec3; to: pc.Vec3; at: number }; hitAt?: number; flashColor: pc.Color; flash: number; materials: pc.StandardMaterial[]; glow: pc.Color[];
+    downAt?: number; upAt?: number; landed?: boolean; dissolve?: Disintegration;
+    /** Called in mid-fight and not there yet (La Voz's second voice), and its coming together out of specks, or back (an Eco tied again). */
+    unborn?: boolean; arriving?: Disintegration; freed?: { node: pc.Entity; from: pc.Vec3; to: pc.Vec3; at: number }; hitAt?: number; flashColor: pc.Color; flash: number; materials: pc.StandardMaterial[]; glow: pc.Color[];
     body: pc.Entity | null; head: pc.Entity | null; tail: pc.Entity | null; ears: pc.Entity[]; eyes: pc.Entity[]; eyeScale: number; seed: number;
     /** Knees, elbows and ankles, on a sculpted fighter. */
     limbRig?: LimbRig;
@@ -776,6 +779,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * What an action changes in the world of Uri's tower, as it lands (any action: a blow, a dual or a
    * fire that breaks Vertitrón's eye, a foe's ability): each foe ability's own picture.
    */
+  /** The note of La Voz's song whose ring was last drawn. */
+  let sungNote: string | undefined;
   function worldFx(e: BattleEffect, actor: Fighter | undefined, target: Fighter | undefined, animate: boolean) {
     if (worldDone === e) return;
     worldDone = e;
@@ -806,6 +811,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (named) dualFx.after(.3, () => dualFx.runUp(v3(chestOf(actor)), v3(chestOf(named))));
     }
     if (actor?.bone) sobremesaFx(e, actor, target, view);
+    if (actor?.strings) cuerdasFx(e, actor, target, view);
+    // An Acorde on La Voz (two blows inside one note): two rings cross on her; and her Calderón, if she held one, breaks.
+    if (e.chord && target?.strings) {
+      const tone = state ? songNow(state)?.tone : undefined;
+      dualFx.chord(v3(chestOf(target)), tone ? TONES[tone].colour : CUERDAS_COLOURS.mi, view); cue('clink');
+      if (e.cancelled === 'calderon') { dualFx.after(.12, () => dualFx.fermataBreak(v3(partOf(target, 'Garganta')), view)); cue('crack', { delay: .12 }); shake = Math.max(shake, .4); pulse?.(.5, .5); }
+    }
     // Vertitrón's moves (its stomp, sweep and beam land as blows too: `contactBurst`).
     if (!actor?.robot) return;
     const hit = [target, ...(e.splash ?? []).map(h => fighters.get(h.target))].filter((f): f is Fighter => !!f);
@@ -823,6 +835,40 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     if (ability === 'carga' || telegraph === 'rayo') { dualFx.charge(v3(actor.robot.eye.getPosition()), view); pulse?.(.3, .5); cue('charge'); }
     if (ability === 'rayo') { for (const f of hit) dualFx.after(beamCrossing(e, f), () => dualFx.beamHit(v3(chestOf(f)))); shake = Math.max(shake, 1); pulse?.(1, 1); zoom.x = Math.max(zoom.x, HIT.punch.size * 1.5); }
+  }
+  /** Where a named piece of a hand-built foe is now (its chest if it has none). */
+  const partOf = (f: Fighter, name: string) => (f.model.findByName(name) as pc.Entity | null)?.getPosition().clone() ?? chestOf(f);
+  /** What each of Las cuerdas leaves in when beaten, and comes together out of: its note's colour, never violet. */
+  const CUERDAS_SPECKS: Record<CuerdasKind, string> = { lealtad: CUERDAS_COLOURS.la, eco: CUERDAS_COLOURS.mi, cristalino: CUERDAS_COLOURS.do, directo: CUERDAS_COLOURS.sol, voz: CUERDAS_COLOURS.string };
+  /**
+   * Las cuerdas' moves as they land (src/dual-fx.ts § Las cuerdas, docs/quests/marta.md): each from
+   * the piece of the body that makes it (the shield's knot, the Eco's ring, the string inside the
+   * glass, the lance, her throat), in the notes' colours.
+   */
+  /** Where a foe called in mid-fight stands from its caller: metres to its side, and towards the party. */
+  const SUMMON = { side: 2, ahead: .7 } as const;
+  function cuerdasFx(e: BattleEffect, actor: Fighter, target: Fighter | undefined, view: V3) {
+    const ability = e.ability?.id, kind = actor.strings!;
+    const chest = target ? v3(chestOf(target)) : undefined, feet = target ? v3(floorUnder(target)) : undefined;
+    const everyone = [target, ...(e.splash ?? []).map(h => fighters.get(h.target))].filter((f): f is Fighter => !!f).map(f => v3(chestOf(f)));
+    const mouth = v3(partOf(actor, 'Garganta'));
+    if (ability === 'juramento' && chest) dualFx.oath(v3(partOf(actor, 'Nudo')), chest, view);
+    if (ability === 'lazo' && e.lazo) { const eco = fighters.get(e.lazo.target); if (eco) { dualFx.tie(v3(partOf(actor, 'Nudo')), v3(eco.base.clone().add(new pc.Vec3(0, 1.1 * eco.scale.y, 0))), e.lazo.back); cue('heal'); } }
+    if (ability === 'resonancia' && chest) dualFx.resonance(v3(partOf(actor, 'Flota')), chest, 1 + Math.min(3, (state?.foes.find(u => u.id === e.actor)?.turns ?? 1) - 1));
+    if (ability === 'destello' && chest) dualFx.glint(v3(partOf(actor, 'Cuerda de dentro')), chest);
+    if (ability === 'estallido') { dualFx.shatter(v3(partOf(actor, 'Fuste')), everyone, view); shake = Math.max(shake, .6); pulse?.(.6, .5); cue('crack'); cue('clink', { delay: .12 }); }
+    if (ability === 'prisma') { dualFx.prism(v3(partOf(actor, 'Fuste')), everyone, view); shake = Math.max(shake, .3); cue('zap'); }
+    if (ability === 'golpe-directo' && chest) dualFx.straight(kind === 'voz' ? mouth : v3(chestOf(actor)), chest, kind === 'voz' ? CUERDAS_COLOURS.mi : CUERDAS_COLOURS.sol);
+    if (ability === 'en-linea') { dualFx.through(v3(partOf(actor, 'Lanza')), everyone); shake = Math.max(shake, .4); pulse?.(.4, .3); }
+    if (ability === 'estocada' && chest && feet) { dualFx.lunge(v3(chestOf(actor)), chest, feet); shake = Math.max(shake, .7); pulse?.(.7, .5); zoom.x = Math.max(zoom.x, HIT.punch.size); }
+    if (ability === 'guardia') { dualFx.firewall(v3(partOf(actor, 'Talle')), view, CUERDAS_COLOURS.string); cue('mana'); }
+    if (ability === 'nota-clara') { dualFx.clearNote(v3(partOf(actor, 'Talle')), view); cue('clink'); }
+    if (ability === 'coro' && e.summoned) { const second = fighters.get(e.summoned); if (second) { dualFx.choir(mouth, v3(second.base.clone().add(new pc.Vec3(0, 1.1 * second.scale.y, 0))), view); cue('charge'); } }
+    if (ability === 'aliento') { dualFx.inhale(mouth, view); pulse?.(.3, .5); cue('charge'); }
+    if (ability === 'calderon') {
+      if (e.cancelled) cue('fizzle');
+      else { dualFx.fermata(mouth, everyone, view); shake = Math.max(shake, .8); pulse?.(.8, .6); zoom.x = Math.max(zoom.x, HIT.punch.size); cue('roar'); }
+    }
   }
   /**
    * La Sobremesa's moves as they land (src/dual-fx.ts § La Sobremesa): Álvaro's dice, Anna's lunge,
@@ -1889,19 +1935,33 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // The picker's moments can put a broken eye back (`stageMoment`): what the effects lab broke comes back too.
       for (const f of fighters.values()) if (f.robot) f.robot.labBroken = false;
       if (next && !foeTop) {
-        // Measured once per fight, in the pose it was built in.
-        for (const f of [...fighters.values(), ...mass ? [mass] : []]) if (!f.party && !f.bone) for (const r of f.model.findComponents('render') as pc.RenderComponent[]) for (const m of r.meshInstances) foeTop = Math.max(foeTop, m.aabb.getMax().y - f.model.getPosition().y);
+        // Measured once per fight, in the pose it was built in. What a foe hangs from (La Voz's strings, going up out of sight) is not its height.
+        for (const f of [...fighters.values(), ...mass ? [mass] : []]) if (!f.party && !f.bone) for (const r of f.model.findComponents('render') as pc.RenderComponent[]) if (!r.entity.tags.has('overhead')) for (const m of r.meshInstances) foeTop = Math.max(foeTop, m.aabb.getMax().y - f.model.getPosition().y);
       }
       if (!next) foeTop = 0;
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false; clawed = 0; fireWaits = undefined; clock.clear(!next);
       if (!next) {
         dualFx.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
         for (const f of fighters.values()) if (f.robot?.swirl) { f.robot.swirl.stream.remove(); f.robot.swirl.field.remove(); f.robot.swirl.glass.remove(); f.robot.swirl = undefined; }
-        dualStarted = dualPlan = worldDone = undefined; lensHold = 0; spotWant = spotAmount = 0; spot?.(0, []);
+        dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
       if (!next) { mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
-      else [...next.allies, ...next.foes].forEach(u => { fighters.get(u.id)!.hp = u.hp; });
+      else {
+        // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
+        // the party, and waits there unseen until the call lands (`unborn`).
+        for (const unit of next.foes) if (!fighters.has(unit.id) && !unit.part) {
+          const caller = (nextEffect?.summoned === unit.id ? fighters.get(nextEffect.actor) : undefined) ?? [...fighters.values()].find(f => !f.party && !f.part);
+          const { ahead, side } = axes(layout), from = caller?.base ?? anchor;
+          const base = new pc.Vec3(from.x + side.x * SUMMON.side - ahead.x * SUMMON.ahead, from.y, from.z + side.z * SUMMON.side - ahead.z * SUMMON.ahead);
+          build(unit, next.foes.indexOf(unit), false, base, base.clone());
+          const f = fighters.get(unit.id)!; f.model.enabled = false; f.unborn = true;
+          if (caller) f.turn = f.yaw = caller.yaw;
+        }
+        // And one that is no longer in the fight (the picker took the second voice away) is gone, until it is called again.
+        for (const [id, f] of fighters) if (f.strings && !next.foes.some(u => u.id === id)) { f.model.enabled = false; f.unborn = true; f.downAt = f.upAt = undefined; f.dissolve = undefined; }
+        [...next.allies, ...next.foes].forEach(u => { fighters.get(u.id)!.hp = u.hp; });
+      }
       player.enabled = !next;
       if (!entering && !nextEffect) return Promise.resolve();
       return new Promise(resolve => { complete = resolve; });
@@ -2012,7 +2072,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       peels.update(dt);
       // Vertitrón only steps in to stomp: it sweeps and fires from where it stands.
       // Nor does a mago step in to let its Bombona go: the flare reaches everyone from where it stands.
-      const planted = (!!actor?.robot && effect?.ability?.id !== 'pisoton') || (actor?.camp === 'mago' && effect?.ability?.id === 'bombona');
+      // Nor do Las cuerdas leave their place: what they do reaches from where they stand. Only Lo Directo goes, with its Golpe directo and its Estocada.
+      const planted = (!!actor?.robot && effect?.ability?.id !== 'pisoton') || (actor?.camp === 'mago' && effect?.ability?.id === 'bombona')
+        || (!!actor?.strings && !(actor.strings === 'directo' && (effect?.ability?.id === 'golpe-directo' || effect?.ability?.id === 'estocada')));
       const motion = actor && target && !support && !catStrike && !botStrike && !casting && !dual && !planted ? contactMotion(actor.base, target.base, t) : undefined;
       // How far the caster's hand is up: raised before the streams leave, lowered once they land.
       // Sending Bip, the wearer points it at the target until it is back.
@@ -2105,6 +2167,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // ends or something brings them round: then they get back up. A beaten foe does not fall: it
         // shudders, then crumbles at once into violet specks that hang and drift up, rising a touch
         // itself as it goes (src/disintegrate.ts). Under a flurry, it goes on the last blow.
+        // One of Las cuerdas called in mid-fight (the second voice) or tied back (an Eco, by a Lazo) comes together out of
+        // specks of its own colour as the move that brings it lands; with no such move (the picker), at once.
+        if (f.strings && unit && (f.unborn || (f.downAt !== undefined && f.hp > 0)) && (!f.dissolve || f.dissolve.finished) && !((effect?.summoned === id || effect?.lazo?.target === id) && !impacted)) {
+          f.unborn = false; f.downAt = f.upAt = undefined; f.dissolve = undefined; f.model.enabled = true;
+          f.arriving = effects.disintegrate(f.model, { own: true, appear: true, colour: CUERDAS_SPECKS[f.strings] });
+        }
         const defeated = f.hp <= 0 && (id !== effect?.target || (impacted && blows >= claws));
         if (defeated) { if (f.downAt === undefined) cue('ko'); f.downAt ??= time; f.upAt = undefined; }
         else if (f.party && f.downAt !== undefined && f.hp > 0) f.upAt ??= time;
@@ -2123,7 +2191,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         }
         // Vertitrón does not come apart: it kneels (`robotFrame`).
         if (!f.party && !f.robot && down >= 0) {
-          if (!f.dissolve && (down >= DISINTEGRATE.shudder || !animate)) { f.dissolve = effects.disintegrate(f.model, { own: true }); cue('dissolve'); }
+          if (!f.dissolve && (!f.arriving || f.arriving.finished) && (down >= DISINTEGRATE.shudder || !animate)) { f.dissolve = effects.disintegrate(f.model, { own: true, ...f.strings ? { colour: CUERDAS_SPECKS[f.strings] } : {} }); cue('dissolve'); }
           if (animate) {
             const shudder = 1 - clamp01(down / DISINTEGRATE.shudder), up = smooth(f.dissolve?.progress ?? 0);
             roll += Math.sin(down * 60) * 6 * shudder;
@@ -2185,7 +2253,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         }
         if (f.strings && unit) {
           const seen = camera(), toCamera = ((Math.atan2(seen.x, seen.z) * 180 / Math.PI - f.turn + 540) % 360) - 180;
-          fears?.cuerdas.show(f.model, unit, time, dt, animate, effect?.actor === id && !impacted ? effect : undefined, toCamera, state ? songNow(state) : undefined, state?.round ?? 0);
+          const song = state ? songNow(state) : undefined;
+          fears?.cuerdas.show(f.model, unit, time, dt, animate, effect?.actor === id && !impacted ? effect : undefined, toCamera, song, state?.round ?? 0, effect?.actor === id && !effect.cancelled ? effect.ability?.id : undefined);
+          // Each note of La Voz's song, as it starts: a ring of its colour off her throat (her Eco reaching everyone).
+          if (f.strings === 'voz' && song?.sounding && unit.hp > 0 && animate) {
+            const key = `${song.loop}:${song.index}`;
+            if (sungNote !== key) { if (sungNote !== undefined) dualFx.songNote(v3(partOf(f, 'Garganta')), TONES[song.tone].colour, viewDir(), unit.crescendo ?? 0); sungNote = key; }
+          }
         }
         f.body?.setLocalPosition(0, 0, 0);
         // The camera supplies the battle zoom; keep fighters proportional to the street.
@@ -2203,7 +2277,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (fall) f.model.setPosition(position.x, groundHeight(position.x, position.z) + hop + fall * .22, position.z);
         else { f.model.setPosition(position); f.plantFeet(groundHeight, hop); }
         if (stance === 'twitch' && animate && down < 0 && Math.random() < .4) f.model.translate((Math.random() - .5) * .05, Math.random() * .02, (Math.random() - .5) * .05);
-        f.model.enabled = !f.dissolve?.finished;
+        f.model.enabled = !f.unborn && !f.dissolve?.finished;
         // Burning, they glow from within, warm and flickering with the fire on them.
         if (f.fire) {
           f.fire.at.set(position.x, groundHeight(position.x, position.z), position.z);

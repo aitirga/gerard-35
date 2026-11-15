@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { PHRASES, TONES, phraseLength } from './song';
-import { attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
+import { isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -304,10 +304,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (c.faceUp !== undefined) chips.push(c.faceUp ? ['boca-arriba', 'Boca arriba'] : ['boca-abajo', 'Boca abajo']);
     if (c.form) chips.push([c.form, `${CAMPEON_FORMS[c.form]} · ${c.formLeft ?? 0} ${c.formLeft === 1 ? 'turno' : 'turnos'}`]);
     // Las cuerdas' rules (docs/quests/marta.md): glass sends magic back; La Voz's note or her silence, her Crescendo, her Guardia.
-    if (c.kind === 'cristalino') chips.push(['cristal', 'Cristal']);
+    // Cracked, the glass sends nothing back; Lo Directo with its lance in the floor takes more; La Voz out of air after her Calderón broke.
+    if (c.kind === 'cristalino') chips.push(c.cracked ? ['rajado', 'Rajado'] : ['cristal', 'Cristal']);
+    if (c.stuck) chips.push(['clavado', 'Clavado']);
     if (c.kind === 'voz' && state?.song) {
       if ((c.shielded ?? -1) >= state.round) chips.push(['guardia', 'Guardia']);
       if (c.clear) chips.push(['cristal', 'Nota clara']);
+      if (c.winded) chips.push(['sin-aire', 'Sin aire']);
     }
     // A move announced a turn ahead, and at whom (Carrerilla → Aitor), or what is about to happen.
     // One chip for any announced move, as `intentLabel` says it («Rayo terrorífico → todos»).
@@ -1269,6 +1272,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // The campsite: the first Bombona charged, and El Campeón's first change into plain clothes.
     if (effect.telegraph?.id === 'bombona') say('bombona', s.allies.find(a => a.hp > 0)?.id, 'Huele a gas. Eso va a explotar.');
     if (effect.form === 'paisano') say('paisano', 'aitor', 'Se le ha ido la pintura. Así no pega.');
+    // Las cuerdas: the first Lazo, the glass cracking, the lance left in the floor, the breath before the Calderón and its break.
+    if (effect.lazo) say('lazo', 'aitor', effect.lazo.back ? 'Lo ha vuelto a atar. Mientras ella siga en pie, vuelve.' : 'Lo ha dejado como nuevo.');
+    if (effect.cracked) say('rajado', 'gerard', 'Se ha rajado. Ya no devuelve nada.');
+    if (effect.stuck) say('clavado', s.allies.find(a => a.id !== effect.target && a.hp > 0)?.id ?? s.allies.find(a => a.hp > 0)?.id, 'Se le ha quedado la lanza clavada.');
+    if (effect.telegraph?.id === 'calderon') say('aliento', 'gerard', 'Está cogiendo aire. Esto no va a ser una nota corta.');
+    if (effect.cancelled === 'calderon' && effect.kind !== 'enemy') say('calderon-roto', 'aitor', 'Se ha quedado sin aire.');
   }
   /**
    * A foe of the campsite's maze beaten: before it comes apart it shouts its group's word
@@ -1517,7 +1526,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // that lit it; whatever else it says comes with the last one.
     const strikes = effect.target && !effect.hits && (effect.strikes?.length ?? 1) > 1 ? effect.strikes! : undefined;
     // What the action is called on its numbers: the party's skill or dual. A foe's ability is never named.
-    const label = effect.kind === 'enemy' ? '' : effect.release?.name ?? effect.dual?.name ?? SKILLS.find(s => s.id === effect.skill)?.name ?? (effect.element ? ELEMENTS[effect.element].name : '');
+    const label = effect.kind === 'enemy' ? (isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind) && !effect.cancelled ? effect.ability?.name ?? '' : '') : effect.release?.name ?? effect.dual?.name ?? SKILLS.find(s => s.id === effect.skill)?.name ?? (effect.element ? ELEMENTS[effect.element].name : '');
     const spread = (blow: number) => strikes ? (blow / (strikes.length - 1) - .5) * 48 : 0;
     // Rayo solar's beam sweeps along the foes: each one's blow (its number, its PV, its fire) lands
     // as the beam crosses them, blow 1 + its place in `hits` (the scene's `solarCross`).
@@ -1582,6 +1591,15 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
       // What went up or down, a moment after the blow's own number (a boost already says it).
       if (!effect.boosted) effect.stats?.forEach(change => setTimeout(() => pop(change.target, `${statNames(change.stats)} ${change.way === 'down' ? '▼' : '▲'}`, change.way === 'down' ? 'stat-down' : 'stat-up'), 420));
+      // Las cuerdas' moves that are not a blow say so over whoever they change (docs/quests/marta.md).
+      if (effect.lazo) pop(effect.lazo.target, `+${effect.lazo.amount}`, 'heal', effect.lazo.back ? 'Lazo · vuelve' : 'Lazo');
+      if (effect.cracked) setTimeout(() => { if (token === generation) pop(effect.actor, '¡Rajado!', 'status', 'Ya no devuelve la magia', 'rajado'); }, 420);
+      if (effect.stuck) setTimeout(() => { if (token === generation) pop(effect.actor, 'Clavado', 'status', 'Recibe más daño', 'clavado'); }, 420);
+      if (effect.summoned) pop(effect.summoned, 'Segunda voz', 'status', 'Coro', 'cristal');
+      if (effect.kind === 'enemy' && effect.shielded && isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind)) pop(effect.actor, 'Guardia', 'guard');
+      if (effect.kind === 'enemy' && effect.clear) pop(effect.actor, 'Nota clara', 'status', 'Devuelve la magia', 'cristal');
+      if (effect.kind === 'enemy' && effect.telegraph?.id === 'calderon') pop(effect.actor, 'Toma aire', 'status', 'Calderón en su próximo turno', 'crescendo');
+      if (effect.cancelled === 'calderon') pop(effect.kind === 'enemy' ? effect.actor : effect.target ?? effect.actor, effect.kind === 'enemy' ? 'Sin aire' : '¡Calderón roto!', 'status', effect.kind === 'enemy' ? 'Pierde el turno' : 'Acorde', 'sin-aire');
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard', effect.charged ? `Maná +${effect.charged}` : '');
       else if (effect.boosted && effect.skill) { const skill = effect.skill; effect.boosted.forEach(id => pop(id, SKILLS.find(s => s.id === skill)!.name.split(' ')[0], 'guard', `${boostedStats(skill)} +${state!.boosts?.[skill]?.amount ?? 0}`)); }
       else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
