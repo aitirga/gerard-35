@@ -752,8 +752,9 @@ se diseñen a partir de ahora y es con lo que se revisan los que ya existen.
 #### La luz que camina (2026-11-16, la peluquería de Fran)
 
 En los combates de la misión de Luca (`docs/quests/luca.md`) la luz de las vidrieras recorre sus
-colores en tiempo real (`src/vidrieras.ts`): azul, verde, naranja, rojo, oro, unos 7 s cada uno, y
-vuelta. **Mientras un color está encendido, los golpes del equipo de su elemento no hacen nada**: el
+colores en tiempo real (`src/vidrieras.ts`), unos 6–8 s cada uno, y vuelta. Cada lado del templo
+tiene su recorrido (`WALKS`): la nave y el crucero, todos; el Nacimiento, azul, verde y naranja; la
+Pasión, naranja, rojo, verde, oro y azul; el ábside, oro, naranja, oro y verde. **Mientras un color está encendido, los golpes del equipo de su elemento no hacen nada**: el
 azul se come el agua, el naranja y el rojo el fuego, el oro lo eléctrico, el verde nada. Solo al
 equipo; los enemigos golpean igual con cualquier luz. El golpe anulado dice *Anulado · Luz naranja*
 sobre su objetivo; un reloj en la placa de cada uno del equipo (como la canción de La Voz) enseña la

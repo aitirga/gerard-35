@@ -108,7 +108,7 @@
     {
       "shot": "recepcion",
       "delay": 900,
-      "caption": "La recepción: Fran's desk by the door, the moths waiting, the light walking through the windows"
+      "caption": "La recepción by the door; behind, the queue across the nave keeps the way"
     },
     {
       "open": "/?mission=luca&part=sillones"
@@ -127,6 +127,74 @@
       "shot": "sillones",
       "delay": 900,
       "caption": "Los sillones: salon chairs and mirrors in the nave, the chaplains and La Laca"
+    },
+    {
+      "open": "/?mission=luca&part=espejos"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família · Interior'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "espejos-inicio",
+      "delay": 900,
+      "caption": "The nave's mirrors as the salon opens: the window's light goes off against a wall"
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        9,
+        11
+      ],
+      "settle": 1200
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        21,
+        12
+      ],
+      "settle": 1200
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        21,
+        20
+      ],
+      "settle": 1200
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "espejos-resuelto",
+      "delay": 900,
+      "caption": "The three mirrors turned: the light reaches the chaplains' chairs (they will start dazzled)"
+    },
+    {
+      "skipDialogue": true
     },
     {
       "open": "/?mission=luca&part=carta"

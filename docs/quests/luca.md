@@ -113,8 +113,8 @@ steal light; not Luca's own traits (that is Marta's). Each asks one question.
 | --- | --- | --- | --- | --- |
 | **Las Polillas** | Grey moths, many and frail, drawn to light: they swarm whoever struck with an element and leave them Cegado | Lo que alcanza a todos | An all-target blow clears the swarm | Fuego / – |
 | **Los Estampados** (rojo, azul, oro) | Luca's loud colours, stolen: patches of pattern | Orden, by the light | Each resists its colour's element, and **fills in again (*Se recolorea*) when the light of its own colour comes on**: down first the one whose light comes next | By colour |
-| **El Telescopio** | Luca's looking at the sky turned on them: *Enfocar* a turn (the plate says at whom), then a burning beam | Momento | Hit it while it focuses: **the lens cracks** (*¡Lente rajada!*) and the beam is lost. (A blow there does not land harder: that would make anyone greedy find the answer by chance.) | – / Fuego |
-| **La Laca** | A cloud of hairspray that lacquers the party (*Lacado*: fire hurts them double) | Elemento, with a risk | Fire on La Laca makes it **explode** over every foe | Fuego / – |
+| **El Telescopio** | Luca's looking at the sky turned on them: *Enfocar* a turn (the plate says at whom), then a burning beam, then its brass | Momento | Hit it while it focuses: **the lens cracks** (*¡Lente rajada!*) and the beam is lost. (A blow there does not land harder: that would make anyone greedy find the answer by chance.) | – / Fuego |
+| **La Laca** | A cloud of hairspray that lacquers the party (*Lacado*: fire hurts them double) | Elemento, with a risk | Brought down by fire, it **bursts** over every other foe | Fuego / – |
 | **Los capellanes** | The basilica's chaplains, restyled by Fran, each with hair of another shape and colour. People under the Queen, unsettling, not a joke | Orden | The freshly styled one (*Recién peinado*) repeats the last gesture next round; down it first and the copy stops | – |
 
 Not used: El Secador (Aitor: no hairdryer monster), El Decolorante.
@@ -187,6 +187,90 @@ Figures come from `/character-3d`; until then, primitive stand-ins in `src/chara
 | Luca | person | none yet | Loud shirts, bright colours; cues to come with photos | – | stand-in | – | – | SVG fallback |
 | Fran | person (and boss model) | none (invented) | Tall and very thin, sculpted high quiff, black fitted clothes, white cutting cape | pending Aitor's OK (API credits) | stand-in / procedural boss | – | – | SVG fallback |
 | Capellán | person | – | A chaplain in black with a white collar, hair restyled in an odd shape and colour | – | procedural | – | – | SVG fallback |
+
+## Review of the inside (2026-11-16, proposals for Aitor)
+
+What is there: in through the door, four zones open at once (recepción, sillones, carta, ábside),
+each a group of foes waiting that starts its fight when walked up to; then the chaplain lets them
+through to Fran. Between fights there is nothing to do: the walking light only tints the floor.
+
+What does not hold up yet:
+
+1. **No route and no curve.** The four zones are open in any order, so neither the light's lesson
+   (recepción) nor the lessons Fran tests come first for sure. The fights do not get harder: the
+   ábside, which should be the last step before the boss, is the easiest one with the answer (smart
+   wins with 84 % of its PV), sillones the hardest (25 %).
+2. **Nothing but fights.** Nuria's tower has the fears hunting the ramp, the campsite its padlock and
+   pitches, Las cuerdas its mazes; here the salon is scenery. The light, the mission's own mechanic,
+   is never used outside a fight.
+3. **The zones look alike.** The light walks the same through all of them, and the salon's props are
+   small: the arms, the nave and the apse read as one place.
+4. **Fran is long**: about 19 rounds playing well (La Voz, the longest so far, 10–16).
+5. **Moths twice** (recepción, ábside) and nothing new learned between the third zone and the boss.
+
+Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D and F are left for later):
+
+- **A · A route round the crossing, held by a queue.** Grey visitors queue in the aisles *esperando
+  turno*, and the queue is what blocks the way: each zone won, the queue moves on a step and opens the
+  next. The way goes round the crossing as the building does: Nativity arm (recepción) → nave
+  (sillones) → Passion arm (carta) → apse (ábside) → the crossing (Fran). A diegetic gate, the salon's
+  own (a queue is routine itself), and it gives the fights a curve, each harder than the last.
+- **B · Each zone in its own windows' light.** The walk is the same, but each zone's windows colour
+  it: the Nativity arm cold (blue, green, then the sun comes in orange: the first fire eaten), the
+  Passion arm warm (orange and red most of the time: fire is useless against the Estampados there),
+  the apse gold, the crossing every colour. Zones become recognisable, and each fight a different
+  problem.
+- **C · Puzzle: the mirrors in the nave (sillones).** The salon's mirrors stand in the light; turning
+  them (one interaction each, a quarter turn) sends the window's beam from mirror to mirror. Brought
+  to the chaplains' chairs, it wakes the freshly styled one and the fight starts with him known
+  (*Recién peinado* on his plate before he acts); brought to the queue, it moves on. A light puzzle,
+  top-down and readable; nobody else uses one.
+- **D · Puzzle: Luca's colours at the dye bar (carta).** The colour chart has a gap the shape of a
+  shirt. The bowls on the bar are mixed two at a time under the light; the answer is outside: his
+  reflection in the pond shows the orange shirt and the teal trousers (orange = red + gold). Mixed
+  right, the Estampados come off the chart to fight, and that colour goes back to Luca. It ties the
+  pond's reflection to the inside.
+- **E · The apse as the climax.** El Telescopio with a Laca instead of moths (its beam is fire: the
+  lacquered take it double), or a second lens: the last zone asks two of the lessons at once.
+- **F · Prismático on trial inside.** At the door Luca gives Gerard his old binoculars (*prismáticos*)
+  and Prismático wakes on trial, as Papagato does at Nuria's door, with one skill that plays with the
+  light (a prism barrier, or holding an element for the next turn while the light eats it). Kept at
+  the win. Needs a `/anima` round first.
+- **G · Fran shorter**, about 14 rounds: fewer PV in the lamps' phase, the lamps' Brillo capped lower.
+
+### What was built from the review (2026-11-16)
+
+- **The way (A)**: zones in a fixed order round the crossing (recepción → sillones → carta → ábside →
+  Fran). Only the next zone's fight starts; the others' foes wait where they stand. Three queues of
+  grey visitors behind black belts block the nave (x 23), the Passion arm (row 5) and the apse (x 50),
+  each moving on when the zone before is won (`QUEUES` in `src/friends/luca.ts`, `story.blocked`).
+  The recepción's fight is across the Nativity arm's mouth: nobody gets in without it. *Mirar la
+  cola* says why they block.
+- **Each side's light (B)**: `WALKS` in `src/vidrieras.ts`, a walk per side (nacimiento: blue,
+  green, orange; nave: every colour; pasión: orange, red, green, gold, blue; ábside: gold, orange,
+  gold, green). Each fight walks its side's (`LUCA_WALKS`), and the basilica's floor takes the light
+  of the side Gerard is on.
+- **The mirrors (C)**: three of the nave's mirrors turn a quarter at a time (`src/espejos.ts`, pure
+  and tested). Only one way of the eight brings the north window's light down the aisle, along row
+  12, down x 20 and along row 20 to the chaplains' chairs, three turns from how they start. Aitor
+  notices the light the first time near them. Solved, the chaplains start their fight Cegado II
+  (`dazzle`): the same fight with more PV left. Optional, and rewarded.
+- **The apse as the climax (E)**: El Telescopio and a thicker La Laca (`lacaAbside`), which now bursts
+  over the others **when fire brings it down** (no longer at the first touch of fire).
+- **Fran shorter (G)**: about 14 rounds playing well (was 19).
+- **The curve** (`just fight-sim check`, P2M2, Fran P3M3), smart wins with PV left · casual wins:
+
+  | Fight | With the answer | Without |
+  | --- | --- | --- |
+  | Recepción (teaches) | 97 % · 53 % PV | 97 % |
+  | Sillones | 94 % · 38 % (dazzled 97 % · 50 %) | 10 % |
+  | Carta | 92 % · 30 % | 33 % |
+  | Ábside | 95 % · 42 % | 5 % |
+  | Fran | 100 % · 50 %, 14 rounds | 14 % |
+
+  New numbers: Estampados 75 PV, Estampar 9, Recolor 80 %; capellanes 92 PV; Tubo 54; Chispa 22;
+  Fran 180 PV, acolytes 55, lamps 30. The carta stays the least clear pair (casual 33 %): the Passion
+  light leaves fire useless for a long stretch, so it is partly a fight of endurance.
 
 ## Built (2026-11-16, `feat/side-mission-luca`)
 
