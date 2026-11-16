@@ -291,6 +291,35 @@ What changed from the proposal below, and why:
 - **Known and left**: Mojado lasts 20 s on the fight's clock, so a party that waits them out before
   a Descarga takes the dry one (half). It is slow and it is a choice; to decide if it should stay.
 
+## The section, as built (round 10)
+
+The side view holds. The model is its own place, `modelo` (`MODELO` in `src/environments.ts`, picker:
+*El modelo de Emilie*, group Barcelona), drawn by `src/modelo-scene.ts` over the rules of
+`src/modelo.ts`, and the game steps it in `src/game.ts` (`stepModelo`, `useStake`).
+
+- **One gallery, four depths.** The party walks a single strip, 36 m long and three cells deep,
+  under a camera that looks from the side (`view: { yaw: 0, pitch: 14 }`). Going down, nobody
+  changes cell: the whole section rises past the party, a gallery every 5 m, so the borehole they
+  went in by is seen overhead from the zone below. Fights are staged in the gallery itself, whose
+  camera already looks from that side.
+- **Guess and real.** Unmeasured ground is black with the model's mesh in phosphor green (finer the
+  deeper), the clay between galleries hatched, the houses of Poble Sec in outline over the street,
+  a tunnel's ring under the city. A stake measured turns the ground 3.2 m each side of it into what
+  it is (earth, gravel, wet concrete), lit, with the piezometer's steel tube and its water level
+  running down the clay.
+- **One prompt per stake.** Wood with orange flagging tape. It offers «Medir», then «Entrar», then,
+  inside, «Bajar»; walking away from it leaves the borehole. Only the stakes of the party's zone
+  answer, and none once the piezometers are spent.
+- **Patrols.** Each walks as the foes it fights as. One that reaches the party starts its fight;
+  beaten it is gone, run from it stands still five seconds. At the bottom El que no converge stands
+  at 24 m and its fight starts within 3.5 m; what was measured beyond one stake a zone has already
+  taken marks of Error off it (`calibrate`).
+
+Not there yet: Emilie's voice in the section, the way in from her laptop and the way out, the
+party hidden from view inside a borehole (they stand in a column of light for now), a fall in a
+fight inside the model, and its sound. The scene is some 450 separate pieces: to merge into a few
+meshes before it is measured against the 120 Hz budget.
+
 ## Fights (round 9, the proposal)
 
 What exists and is used (`src/battle.ts`): *Mojado* (20 s, hurts nobody), **Conducción**

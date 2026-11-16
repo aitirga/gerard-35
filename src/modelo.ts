@@ -173,3 +173,31 @@ export function shake(state: ModeloState, id: string) {
 }
 /** The patrols roaming `zone`, for whoever draws them. */
 export const roaming = (state: ModeloState, zone: ZoneId = state.zone) => PATROLS.filter(p => p.zone === zone && state.patrols[p.id]).map(p => ({ ...p, ...state.patrols[p.id] }));
+/**
+ * The section as a place to walk (src/environments.ts `MODELO`, src/modelo-scene.ts): seen from the
+ * side, one gallery `depth` cells deep and `length` long. The party never changes cells to go down:
+ * the section itself rises past them, a gallery every `drop` metres, each `height` tall under the clay.
+ * A metre along a zone is a cell of the grid. El que no converge stands at `boss` in the bottom one and
+ * its fight starts within `bossReach` of it.
+ */
+export const GALLERY = { depth: 3, row: 2, drop: 5, height: 3.2, boss: 24, bossReach: 3.5 };
+/** The gallery's grid: a wall behind, the way, a wall before, closed at both ends. */
+export const MODELO_GRID: string[] = [
+  '#'.repeat(SECTION.length + 2),
+  ...Array.from({ length: GALLERY.depth }, () => `#${'.'.repeat(SECTION.length)}#`),
+  '#'.repeat(SECTION.length + 2),
+];
+/** The interaction of a stake (`estaca-<stake id>`), and the stake of an interaction. */
+export const stakeInteraction = (id: string) => `estaca-${id}`;
+export const interactionStake = (id: string) => id.startsWith('estaca-') ? stakeOf(id.slice('estaca-'.length)) : undefined;
+/**
+ * What the party can do at the stake they stand by: «Medir» it, go into its borehole («Entrar») or,
+ * inside it, go down («Bajar»; at the bottom there is no further down).
+ */
+export function stakeVerb(state: ModeloState, id: string): 'Medir' | 'Entrar' | 'Bajar' | undefined {
+  const stake = stakeOf(id);
+  if (!stake || stake.zone !== state.zone) return;
+  if (state.inside === id) return below(stake.zone) ? 'Bajar' : undefined;
+  const action = stakeAction(state, id);
+  return action === 'medir' ? 'Medir' : action === 'entrar' ? 'Entrar' : undefined;
+}

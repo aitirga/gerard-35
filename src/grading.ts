@@ -124,6 +124,11 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: -.1, lift: [0, .008, .012], shadows: [-.012, .012, .018], highlights: [.004, .012, .01], contrast: 1.1, saturation: 1.04 },
     enhance: { shadows: -.06, vibrance: .08 },
   },
+  /** Emilie's model: a terminal's black with its phosphor green kept clean, nothing warm but what has been measured. */
+  modelo: {
+    grade: { temperature: -.04, lift: [0, .008, .004], shadows: [-.01, .014, .002], highlights: [.002, .012, .004], contrast: 1.12, saturation: 1.02 },
+    enhance: { shadows: -.08, vibrance: .06 },
+  },
   /** La torre de Uri: fear, violet-black shade that stays deep and a cold, unsure light. */
   'cardedeu-laberinto': {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },

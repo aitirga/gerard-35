@@ -16,6 +16,7 @@ import PLACA_ESPANYA_SCENE from './geo/placa-espanya.json' with { type: 'json' }
 import SAGRADA_FAMILIA_SCENE from './geo/sagrada-familia.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
 import { CUERDAS as CUERDAS_PLAN } from './cuerdas.ts';
+import { GALLERY, MODELO_GRID, SECTION, STAKES, stakeInteraction } from './modelo.ts';
 import { PALACE_GYM, PALACE_OFFICE, PALACE_PATIO, PALACE_THRONE, type ZoneTheme } from './palace-zone-plans.ts';
 import type { CastleFloor } from './castle.ts';
 import { CASTLE_ENVIRONMENTS } from './castle-floor.ts';
@@ -26,7 +27,8 @@ export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-
   | 'palacio-patio' | 'palacio-gimnasio' | 'palacio-secretaria' | 'palacio-trono'
   // The castle's three generated floors (src/castle-floor.ts): another every day.
   | 'castillo-1' | 'castillo-2' | 'castillo-3'
-  | 'cuerdas';
+  | 'cuerdas'
+  | 'modelo';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /**
@@ -731,6 +733,17 @@ export const CUERDAS: Environment = {
   // The third maze's tuning pegs, each beside its row (the game turns them, src/game.ts).
   interactions: CUERDAS_PLAN.mazes.flatMap(maze => maze.pegs.map((cell, row) => ({ id: `clavija-${row}`, cell: { ...cell }, label: 'Girar la clavija', hint: 'Girar la clavija' }))),
 };
+/**
+ * Emilie's model (docs/quests/emilie.md § In the section, src/modelo.ts): the ground under Poble Sec
+ * in section, seen from the side. One gallery to walk; the section rises past the party as they go
+ * down (src/modelo-scene.ts). Every stake of every zone is here, and the game offers only those of the
+ * zone the party is in (src/game.ts).
+ */
+export const MODELO: Environment = {
+  id: 'modelo', name: 'El modelo de Emilie', grid: MODELO_GRID, spawn: { x: SECTION.landing, z: GALLERY.row }, zoom: 7.5,
+  houses: [], props: [], noOverview: true, hollow: true, view: { yaw: 0, pitch: 14, steer: 0 },
+  interactions: STAKES.map(stake => ({ id: stakeInteraction(stake.id), cell: { x: stake.x, z: GALLERY.row }, label: 'Estaca de Emilie', hint: 'Medir' })),
+};
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,
   'home-entrance': HOME_ENTRANCE, 'home-floor-1': HOME_FLOOR_1, 'home-floor-2': HOME_FLOOR_2,
@@ -746,6 +759,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   // As they are on a save's first day; the game puts the day's in their place on the way in (src/game.ts).
   ...CASTLE_ENVIRONMENTS,
   cuerdas: CUERDAS,
+  modelo: MODELO,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

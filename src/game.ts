@@ -44,6 +44,10 @@ import { buildTower, type Tower } from './tower-scene';
 import { buildCuerdas, buildPiano, type CuerdasScene } from './cuerdas-scene';
 import { CUERDAS as CUERDAS_PLAN, freshCuerdas, holds, leave, mazeAt, mend, pieceAt, press, turnPeg, type Piece } from './cuerdas';
 import { CUERDAS_SIZES } from './cuerdas-foes';
+import { buildModelo, type ModeloScene } from './modelo-scene';
+import { GALLERY, PATROLS, ZONE_IDS, beat, calibration, createModelo, descend, enter, interactionStake, leave as leaveBorehole, measure, shake as shakePatrol, stakeOf, stakeVerb, tick as tickModelo } from './modelo';
+import { MODELO_SIZES } from './modelo-foes';
+import { MODELO_FIGHTS, calibrate } from './battle';
 import { CUERDAS_FIGHTS } from './battle';
 import { PLACES_MARTA } from './friends/marta';
 import { ringOf } from './tower';
@@ -742,7 +746,71 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (strung.fall || strung.land !== undefined || strung.sink) positionPlayer();
     cuerdas.update(dt, strung.t, strung.run, player.getPosition(), animate);
   }
+  /**
+   * Emilie's model (src/modelo.ts, src/modelo-scene.ts): the section, the run through it (what is
+   * measured, where its patrols are), the figures of those patrols and which one's fight is on.
+   */
+  let modelo: ModeloScene | undefined;
+  const section = { run: createModelo(), figures: new Map<string, pc.Entity>(), fighting: undefined as string | undefined };
+  /** What stands in the section: each patrol as the foes it fights as, or El que no converge. */
+  function modeloFigure(id: string, kinds: readonly (keyof typeof MODELO_SIZES)[]) {
+    const group = new pc.Entity(id);
+    kinds.forEach((kind, i) => {
+      const one = fears.templates.get(kind)?.clone(); if (!one) return;
+      one.enabled = true;
+      const size = MODELO_SIZES[kind] * (kinds.length > 1 ? .8 : 1); one.setLocalScale(size, size, size);
+      one.setLocalPosition((i - (kinds.length - 1) / 2) * .9, 0, i % 2 ? -.35 : .35);
+      group.addChild(one);
+    });
+    modelo!.root.addChild(group); section.figures.set(id, group);
+    return group;
+  }
+  /**
+   * The section each frame: its patrols walk and come for whoever they see (not in a fight, a pause
+   * or while someone talks), the party leaves a borehole by walking away from it, and at the bottom
+   * El que no converge starts its fight when they come near.
+   */
+  function stepModelo(dt: number, animate: boolean) {
+    if (!modelo) return;
+    const run = section.run, x = movement.position.x;
+    if (!battle && !cutscene && !paused && !section.fighting && !document.querySelector('#hud[data-dialogue]')) {
+      const inside = run.inside && stakeOf(run.inside);
+      if (inside && Math.abs(inside.x - x) > INTERACTION_REACH) { leaveBorehole(run); lastPrompt = '\0'; }
+      let hit: ReturnType<typeof tickModelo>;
+      for (let left = Math.min(dt, .5); left > 0 && !hit; left -= .05) hit = tickModelo(run, Math.min(.05, left), x);
+      const boss = run.zone === 'fondo' && !run.won && Math.abs(x - GALLERY.boss) <= GALLERY.bossReach;
+      if (hit || boss) {
+        section.fighting = hit ? hit.id : 'jefe';
+        clearInput(); movement.walking = false;
+        callbacks.onStory({ type: 'near', id: `modelo-${section.fighting}` });
+      }
+    }
+    for (const spec of PATROLS) {
+      const patrol = run.patrols[spec.id], figure = section.figures.get(spec.id);
+      if (!patrol) { if (figure) { figure.destroy(); section.figures.delete(spec.id); } continue; }
+      const model = figure ?? modeloFigure(spec.id, MODELO_FIGHTS[spec.encounter]);
+      const bob = animate ? Math.abs(Math.sin(clock * (patrol.chasing ? 13 : 4) + spec.start)) * (patrol.chasing ? .16 : .05) : 0;
+      model.setLocalPosition(patrol.x, -ZONE_IDS.indexOf(spec.zone) * GALLERY.drop + bob, GALLERY.row);
+      model.enabled = !(battle && spec.zone === run.zone);
+    }
+    const boss = section.figures.get('jefe') ?? modeloFigure('jefe', ['no-converge']);
+    boss.setLocalPosition(GALLERY.boss, -ZONE_IDS.indexOf('fondo') * GALLERY.drop, GALLERY.row);
+    boss.enabled = !run.won && !(battle && run.zone === 'fondo');
+    modelo.update(dt, run, animate);
+  }
+  /** A stake of the section used: measured, gone into, or gone down by. */
+  function useStake(id: string) {
+    const run = section.run, verb = stakeVerb(run, id);
+    if (verb === 'Medir' && measure(run, id)) { callbacks.onSound('ui-confirm'); const at = player.getPosition(); effects.emit('spark', new pc.Vec3(at.x, at.y + .6, at.z), 14, .4); }
+    else if (verb === 'Entrar' && enter(run, id)) callbacks.onSound('ui-confirm');
+    else if (verb === 'Bajar' && descend(run)) callbacks.onSound('ui-confirm');
+    // The same stake offers something else now: the prompt is asked again.
+    lastPrompt = '\0';
+  }
   function dressScene() {
+    section.figures.clear(); section.fighting = undefined;
+    modelo?.destroy(); modelo = undefined;
+    if (environment.id === 'modelo') { modelo = buildModelo(app, scenery.toWorld); section.run = createModelo(); }
     cuerdas?.destroy(); cuerdas = undefined; strung.waiting?.destroy(); strung.waiting = undefined; strung.key = ''; strung.fall = undefined; strung.land = undefined; strung.sink = 0; strung.on = undefined;
     piano?.destroy(); piano = undefined;
     if (environment.id === 'cuerdas') { cuerdas = buildCuerdas(app, scenery.toWorld); strung.run = freshCuerdas(); standCuerdas(); }
@@ -1477,7 +1545,14 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   /** The closest thing within reach, so a pickup next to a door still gets picked. */
   function nearby(position: Cell): Interaction | undefined {
-    const inReach = interactions().map(i => ({ i, d: Math.hypot(i.cell.x - position.x, i.cell.z - position.z) })).filter(({ d }) => d <= INTERACTION_REACH);
+    // In Emilie's section a stake offers what can be done at it now, and only those of the zone the party is in.
+    const here = !modelo ? interactions() : interactions().flatMap(i => {
+      const stake = interactionStake(i.id);
+      if (!stake) return [i];
+      const verb = stakeVerb(section.run, stake.id);
+      return verb ? [{ ...i, hint: verb }] : [];
+    });
+    const inReach = here.map(i => ({ i, d: Math.hypot(i.cell.x - position.x, i.cell.z - position.z) })).filter(({ d }) => d <= INTERACTION_REACH);
     // The partner walks right behind Gerard: talking to them only wins when nothing else is in reach.
     // The jar of lights shares the dining table with the lamp's switch: the jar wins wherever both are in reach.
     const last = ({ i }: { i: Interaction }) => i.id === 'meridiana-luces' ? -1 : Number(i.id === 'talk-bernat');
@@ -2167,6 +2242,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       return loadGlb(app, SOBREMESA_URL).then(model => battleScene.setSobremesa(model), error => console.warn('La Sobremesa:', error)).then(() => setBattle(next, effect, onImpact));
     }
     if (next && !battle) {
+      // What was measured on the way down has calibrated the model before its fight (src/modelo.ts).
+      if (modelo && next.encounter === 'no-converge') calibrate(next, calibration(section.run));
       const fight = next.encounter ?? encounterId;
       const wearers = next.allies.flatMap((a, i) => a.classId === 'papagato' ? [i] : []);
       const cast = { allies: next.allies.length, foes: standing(next.foes.map(f => f.kind)), cats: wearers.length ? wearers : catWalk ? [0] : [] };
@@ -2185,8 +2262,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
         const things = new Set(environment.props.flatMap(propCells).map(c => `${c.x},${c.z}`));
         const plan = planPocket(environment.grid, fightSpot(fight), cast, things);
         pocket = createPocket(app, {
-          roots: [scenery.root, ...tower ? [tower.root] : []], spot: player.getPosition().clone(), plan,
-          props: environment.props, wallHeight: environment.walls ?? 2.6, metres: environment.geo?.cell_m, look: tower?.pocket,
+          roots: [scenery.root, ...tower ? [tower.root] : [], ...modelo ? [modelo.root] : []], spot: player.getPosition().clone(), plan,
+          props: environment.props, wallHeight: environment.walls ?? 2.6, metres: environment.geo?.cell_m, look: tower?.pocket ?? modelo?.pocket,
         });
         fightStage = { layout: plan.stage.layout, pocket: true, spread: POCKET.spread };
         return applyBattle(next, effect, onImpact, pocket.centre);
@@ -2259,6 +2336,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       if (caught && nightHunt && caught.id.startsWith('night-') && battle.phase === 'won') nightHunt.specs = nightHunt.specs.filter(s => s.id !== caught.id);
       if (battle.encounter === 'uri-vertigo' && battle.phase === 'won' && summit) summitKneel = { t: 0 };
       // A fall keeps where the fight stood and who started it, so fighting it again stages it there.
+      // In Emilie's section: a patrol beaten is gone, one run from stands still a while; the boss falls once.
+      if (section.fighting) {
+        if (battle.phase === 'won') { if (section.fighting === 'jefe') section.run.won = true; else beat(section.run, section.fighting); }
+        else if (battle.phase === 'escaped') shakePatrol(section.run, section.fighting);
+        if (battle.phase !== 'lost') section.fighting = undefined;
+      }
       if (battle.phase !== 'lost') { fightingHunter = undefined; fearStage = undefined; }
       callbacks.onBattleEnd(battle.phase, battle.encounter, participants(battle).map(p => p.id), fightXp(battle), aitorTaken(battle));
     }
@@ -2470,6 +2553,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       turnPeg(strung.run, row); cuerdas.turned(row); callbacks.onSound('ui-confirm');
       return;
     }
+    const stake = modelo && interactionStake(target.id);
+    if (stake) { useStake(stake.id); return; }
     const gate = story.gate(target.id);
     const to = story.redirect(target.id) ?? target.to;
     if (gate) callbacks.onDialogue(gate);
@@ -2735,7 +2820,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       scenery.setTone(tone);
     }
     lightNight(delta, animate);
-    camera.camera!.clearColor = post.clear(cuerdas ? clear.copy(cuerdas.clear) : clear.lerp(dayClear, BUBBALOO.clear, tone).lerp(clear, NIGHT_LIGHT.clear, scenery.night));
+    camera.camera!.clearColor = post.clear(cuerdas ? clear.copy(cuerdas.clear) : modelo ? clear.copy(modelo.clear) : clear.lerp(dayClear, BUBBALOO.clear, tone).lerp(clear, NIGHT_LIGHT.clear, scenery.night));
     battleScene.update(shown, animate);
     // Traffic waits out fights and the pause menu; otherwise it stops for Gerard and his partner.
     const partner = mateHere();
@@ -2756,6 +2841,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       if (train.x < start || train.x > end) { train.running = false; train.way = -train.way; train.risen = 0; train.wait = nightHunt ? nightHunt.tier.trainEvery : 30 + Math.random() * 40; }
     }
     stepCuerdas(delta, animate);
+    stepModelo(delta, animate);
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
       battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
     // In bed nothing needs finding: under the duvet is where their legs belong.
@@ -2955,6 +3041,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     /** Development: where a fighter stands (the lattice and fight-fx scenarios frame them). */
     /** Development and screenshots: Las cuerdas' song and what is tuned, to set a moment of a maze. */
     get cuerdas() { return strung; },
+    /** Development and screenshots: the run through Emilie's section, to set a moment of it. */
+    get modelo() { return { ...section, walk(x: number) { movement.teleport(environment.grid, { x, z: GALLERY.row }); positionPlayer(); } }; },
     fighterAt(id: string) { const p = battleScene.modelOf(id)?.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
     /** Development (the effects lab, src/fx-lab.ts): a fighter's model, for element hits aimed at them. */
     battleModel: battleScene.modelOf,

@@ -224,6 +224,7 @@ material, light and landmark, which the last column names.
 | La calle que no acaba | `#9c93a0` → `#5e5266` | drained grey to violet dusk | one house repeated (Nuria's block, `estuc`), closing in | a straight street ending in a violet whirlpool | `cardedeu-calle` cold, desaturated | Cardedeu (ΔE 30): the same street drained of colour, walls closing vs warm roofs and gardens |
 | La torre de Uri | `#1f0f22` | violet-black | dark stone walls | spiral tower | `cardedeu-laberinto` cool | Throne room (ΔE 25): violet vs indigo and gold |
 | Las cuerdas | `#1b3844` | dark petrol blue-green | strings of silver light, dark glass edged in silver | every string meeting at one point over the centre | `cuerdas` cold, no sky | La torre de Uri (ΔE 24): a void with no walls and no ground, crossed by silver vs dark stone always higher than you |
+| El modelo de Emilie | `#07130c` | black with phosphor green `#3fe07a` lines | a mesh of thin lit lines over black; real ground only where it has been measured | the section itself: four galleries one under another, cut open and seen from the side | `modelo` no sky, a screen's own light | Las cuerdas (dark, no sky): green lines on black and a side view vs petrol glass and silver strings seen from above |
 | El Nucli (built) | `#2f4a3a` | bottle green | board-game boxes, felt | the wall of boxes | `el-nucli` warm | Palace patio (ΔE 25): indoor felt vs painted court |
 | Sants street (built) | `#cfa463` | ochre | painted roller shutters, old render scored as ashlar (`estuc`) | a lit shopfront in a row of shutters | `sants` cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
 | Sagrada Família, outside | `#8a7764` | weathered sandstone | carved sandstone | spires | `sagrada-familia` warm | Avinguda Meridiana (ΔE 18): carved stone and park vs panot and blocks |
@@ -264,6 +265,7 @@ share a landmark kind.
 | Cardedeu · La calle que no acaba | Past Nuria's block | 30 | colour, ground (no gardens), light (warm against cold) | ✓ |
 | La calle que no acaba · La torre de Uri | Through the bubble | 38 | colour, material, ground | ✓ |
 | Alegia · Las cuerdas | Through the bubble by the piano | 74 | all four: whitewash, timber and wet green under an overcast vs a petrol void with no ground and silver strings | ✓ |
+| Poble Sec · El modelo de Emilie | Through her laptop | — (to measure once the way in exists) | all four: ochre streets in daylight vs a black section in green lines, seen from the side | ✓ |
 | Avinguda Meridiana · Rec Comtal | L1, three stops | 37 | colour, material, light | ✓ |
 | El Nucli · Sants street | Door | 57 | all four | ✓ |
 | Sagrada inside · outside | Door | 32 | colour, ground, light (coloured nave) | ✓ |
@@ -423,6 +425,33 @@ landmark of converging lines); its one neighbour, Alegia through the bubble, dif
 dark glass, and the strings rise toward the centre, so the place itself says which way is on;
 strings, edges, posts and pieces are instanced, two real lights; reachable from the picker (*Las
 cuerdas*, group Alegia).
+
+#### El modelo de Emilie (`modelo`)
+
+Built (2026-11-16) from `docs/quests/emilie.md` § In the section, as a first pass to prove the
+side view (`just screenshots emilie-seccion --gpu`). The dominant is its black, to be measured
+again on the screenshots once the section is dressed.
+
+| | |
+| --- | --- |
+| Dominant | Black `#040a06`, with the mesh's phosphor green `#3fe07a` over it |
+| Secondary | Measured ground in its own colours: earth `#6e4c31`, gravel `#8c8168`, wet concrete `#4f5d66`; the borehole's steel and its water level in blue |
+| Material | A model's mesh: thin lit lines over black, finer the deeper it goes; hatching for the clay |
+| Ground | The gallery's floor, a guess like the rest until a stake is measured |
+| Landmark | The section itself, cut open and seen from the side: four galleries one under another (kind: a cross-section; nobody else is seen from the side) |
+| Light | `modelo`: no sun and no sky, the light of a screen from where it is looked at |
+| Props | The houses of Poble Sec in outline over the street, a tunnel's ring under the city |
+| Air | None yet |
+| Sound | None yet |
+| Only here | Emilie's survey stakes: wood with a strip of orange flagging tape |
+| Text | None in the world; the place panel reads *Bajo Poble Sec · Corte A–A′ · sin calibrar* |
+| Reserved | No pink and no violet: the Queen did this from far away and nothing of hers is in it |
+
+Through the checklist (§ 5): invented, but of a real thing (a hydrogeologist's section); nobody
+else has phosphor green on black nor a side view; its one neighbour, Poble Sec through her laptop,
+differs in all four; one glow, the mesh; Gerard and Aitor are lit by the screen's light against the
+black; its pieces are still separate boxes, to merge before measuring it at 120 Hz; reachable from
+the picker (*El modelo de Emilie*, group Barcelona).
 
 #### Cardedeu · Carrer de Jacint Verdaguer (`cardedeu`)
 

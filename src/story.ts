@@ -5,6 +5,7 @@
  */
 import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
+import { PATROLS } from './modelo.ts';
 import { facingToward, type Cell } from './movement.ts';
 import type { ItemId } from './items';
 import type { CampingEncounter, CuerdasEncounter, ModeloEncounter } from './battle.ts';
@@ -1310,6 +1311,11 @@ export class Story {
         if (event.id.startsWith('camp-')) return this.nearCamp(event.id);
         if (event.id.startsWith('cuerdas-')) return this.nearMarta(event.id);
         if (event.id.startsWith('castillo-')) return castleNear(this.castleHost, event.id);
+        // Emilie's section (src/modelo.ts): a patrol reached them, or they came up to El que no converge.
+        if (event.id.startsWith('modelo-')) {
+          const patrol = PATROLS.find(p => `modelo-${p.id}` === event.id);
+          return this.adult ? [{ kind: 'battle', encounter: patrol ? patrol.encounter : 'no-converge' }] : [];
+        }
         // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
         if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard' }] : [];
         if (event.id !== 'tv') return this.nearNuria(event.id);

@@ -113,3 +113,27 @@ test('every piezometer beyond the one a zone needs calibrates the model', () => 
   assert.equal(calibration(s), 2);
   assert.equal(measure(s, 'gravas-3'), false, 'two for each zone, never the third');
 });
+
+test('the section is a place: one gallery the party walks, a stake offers what can be done at it now', async () => {
+  const { GALLERY, MODELO_GRID, interactionStake, stakeInteraction, stakeVerb } = await import('../src/modelo.ts');
+  const { MODELO } = await import('../src/environments.ts');
+  assert.equal(MODELO_GRID.length, GALLERY.depth + 2);
+  assert.equal(MODELO_GRID[GALLERY.row].length, SECTION.length + 2);
+  assert.ok(MODELO.view && MODELO.hollow, 'seen from the side, drawn by its own builder');
+  // Every stake is an interaction on the way, and every patrol's stretch is inside the gallery.
+  for (const stake of STAKES) {
+    const i = MODELO.interactions.find(i => i.id === stakeInteraction(stake.id));
+    assert.deepEqual(i?.cell, { x: stake.x, z: GALLERY.row }, stake.id);
+    assert.equal(interactionStake(i.id)?.id, stake.id);
+  }
+  for (const p of PATROLS) assert.ok(p.from >= 1 && p.to <= SECTION.length, p.id);
+  assert.ok(GALLERY.boss - GALLERY.bossReach > 1 && GALLERY.boss + GALLERY.bossReach < SECTION.length);
+  const s = createModelo();
+  assert.equal(stakeVerb(s, 'suelo-1'), 'Medir');
+  assert.equal(stakeVerb(s, 'gravas-1'), undefined, 'not a stake of another zone');
+  measure(s, 'suelo-1'); assert.equal(stakeVerb(s, 'suelo-1'), 'Entrar');
+  enter(s, 'suelo-1'); assert.equal(stakeVerb(s, 'suelo-1'), 'Bajar');
+  assert.equal(stakeVerb(s, 'suelo-2'), undefined, 'nothing at another stake from inside');
+  leave(s); measure(s, 'suelo-2');
+  assert.equal(stakeVerb(s, 'suelo-3'), undefined, 'no piezometer left for the third');
+});

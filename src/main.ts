@@ -535,8 +535,8 @@ try {
     'cuerdas-lealtad': 'cuerdas', 'cuerdas-cristalino': 'cuerdas', 'cuerdas-directo': 'cuerdas', voz: 'cuerdas',
     // The castle (docs/castle.md): a room's pupils on their phase's floor, each boss in its own room.
     ...Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, id === 'aurelia' || id === 'direccion' || id === 'reina' || id === 'reina-vuelta' ? castlePhase(castlePhaseOf(id)).into.environment : castlePhase(castlePhaseOf(id)).environment])) as Record<(typeof CASTLE_ENCOUNTERS)[number], EnvironmentId>,
-    // Emilie's model (docs/quests/emilie.md): until its section exists, its fights are tested at her corner.
-    'modelo-celdas': 'poble-sec', 'modelo-oscilacion': 'poble-sec', 'modelo-pluma': 'poble-sec', 'no-converge': 'poble-sec' } as const;
+    // Emilie's model (docs/quests/emilie.md): its patrols and El que no converge, in the section.
+    'modelo-celdas': 'modelo', 'modelo-oscilacion': 'modelo', 'modelo-pluma': 'modelo', 'no-converge': 'modelo' } as const;
   /** Starts a test fight; another chapter's party needs that chapter's Gerard, so it reloads there. */
   function startFight(setup: FightSetup) {
     if (setup.adult !== story.adult) {
@@ -637,8 +637,8 @@ try {
       // Chapter 2's palace stands on the Rec Comtal school, not at the end of Passatge Maresme.
       // Its zones (chapter 2 only) are the school itself.
       const zone = !!ENVIRONMENTS[id].palace?.theme, school = (id === 'palacio' && story.adult) || zone;
-      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'cuerdas' ? 'DENTRO DE UNA NOTA' : id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : basilica ? 'EIXAMPLE, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
-      document.querySelector('#location-detail')!.textContent = id === 'cuerdas' ? 'Ningún mapa llega hasta aquí' : geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Según las fotos de 2026' : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
+      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'cuerdas' ? 'DENTRO DE UNA NOTA' : id === 'modelo' ? 'BAJO POBLE SEC' : id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : basilica ? 'EIXAMPLE, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
+      document.querySelector('#location-detail')!.textContent = id === 'cuerdas' ? 'Ningún mapa llega hasta aquí' : id === 'modelo' ? 'Corte A–A′ · sin calibrar' : geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Según las fotos de 2026' : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
         : id === 'el-nucli' ? 'Carrer de Valladolid, 41 · Tienda de juegos'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
         : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : zone ? 'Dentro de la escuela Rec Comtal' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';

@@ -299,6 +299,15 @@ title = "Emilie: diseño"
 file = "docs/quests/emilie.md"
 
 [[block.item]]
+title = "Emilie: combates del modelo"
+grep = "MODELO_ENCOUNTERS"
+in = "src/battle.ts"
+
+[[block.item]]
+title = "Emilie: la sección"
+file = "src/modelo-scene.ts"
+
+[[block.item]]
 title = "Emilie: jugable"
 weight = 3
 file = "src/friends/emilie.ts"
