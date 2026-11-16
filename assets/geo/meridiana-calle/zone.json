@@ -853,7 +853,8 @@
     {
       "kind": "shelter",
       "x_m": -193,
-      "z_m": -32.83
+      "z_m": -32.83,
+      "poster": "sagrada"
     },
     {
       "kind": "bench",
@@ -937,6 +938,12 @@
       "label": "Mirar la marquesina",
       "x_m": 41,
       "z_m": 3.6
+    },
+    {
+      "id": "clue-sagrada-cartel",
+      "label": "Mirar la marquesina",
+      "x_m": -196,
+      "z_m": -31.4
     },
     {
       "id": "meridiana-granier",

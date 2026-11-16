@@ -290,11 +290,13 @@ const LUCA_PARTS: readonly MissionPart[] = [
   { id: 'start', label: 'Desde el principio', detail: 'Salen del metro en la Sagrada Família', at: 'metro', spot: { environment: SAGRADA, ...sagradaStation ? { cell: { ...sagradaStation } } : {} }, event: { type: 'arrive', station: 'sagrada-familia' } },
   { id: 'luca', label: 'Luca junto al estanque', detail: 'Gris, frente a la fachada del Nacimiento; aún no han hablado', at: 'metro', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
   { id: 'door', label: 'La puerta del Nacimiento', detail: 'Ya han hablado con Luca; entrar lleva a la peluquería', at: 'sagrada-luca', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.outside } } },
-  { id: 'recepcion', label: 'La recepción', detail: 'Recién entrados; las polillas delante', at: 'peluqueria', spot: salon(36, 36), luca: { entered: true } },
-  { id: 'sillones', label: 'Los sillones', detail: 'La recepción ganada; los capellanes y La Laca en la nave', at: 'peluqueria', spot: salon(21, 20), luca: { entered: true, beaten: zones(1) } },
-  { id: 'carta', label: 'La carta de colores', detail: 'Dos zonas ganadas; los Estampados en el brazo de la Pasión', at: 'peluqueria', spot: salon(36, 9), luca: { entered: true, beaten: zones(2) } },
-  { id: 'abside', label: 'El ábside', detail: 'Tres zonas ganadas; el Telescopio entre las lentes', at: 'peluqueria', spot: salon(50, 21), luca: { entered: true, beaten: zones(3) } },
-  { id: 'crucero', label: 'El crucero', detail: 'Las cuatro ganadas; el capellán deja pasar a Fran', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(4) } },
+  { id: 'recepcion', label: 'La recepción', detail: 'Recién entrados; las polillas delante', at: 'peluqueria', spot: salon(36, 36), luca: { entered: true, told: ['dentro'] } },
+  { id: 'sillones', label: 'Los sillones', detail: 'La recepción ganada; los capellanes y La Laca en la nave', at: 'peluqueria', spot: salon(21, 20), luca: { entered: true, beaten: zones(1), told: ['dentro'] } },
+  { id: 'carta', label: 'La carta de colores', detail: 'Dos zonas ganadas; los Estampados en el brazo de la Pasión', at: 'peluqueria', spot: salon(36, 9), luca: { entered: true, beaten: zones(2), told: ['dentro'] } },
+  { id: 'abside', label: 'El ábside', detail: 'Tres zonas ganadas; el Telescopio entre las lentes', at: 'peluqueria', spot: salon(50, 21), luca: { entered: true, beaten: zones(3), told: ['dentro'] } },
+  { id: 'crucero', label: 'El crucero', detail: 'Las cuatro ganadas; el capellán deja pasar a Fran', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(4), told: ['dentro'] } },
+  { id: 'fran', label: 'Fran', detail: 'El capellán deja pasar: el combate empieza en cuanto llegan', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(4), told: ['dentro'] }, event: { type: 'interact', id: 'talk-capellan' } },
+  { id: 'won', label: 'Luca, a todo color', detail: 'El final: Fran se va, y fuera la luz de Luca va con Gerard y Aitor', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(4), told: ['dentro'] }, event: { type: 'battle', won: true, encounter: 'fran' } },
   { id: 'done', label: 'Misión hecha', detail: 'Luca, a todo color, junto al estanque', at: 'luz-luca', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
 ];
 /** The parts each mission can start at; one without its own list starts at its beginning or at each step. */

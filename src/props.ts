@@ -617,7 +617,17 @@ export function createPropKit(device: pc.GraphicsDevice) {
     const signal: Signal = { holder, show(vehicle, walker) { cars(vehicle); walk(walker); } };
     signal.show('red', 'red'); signals.push(signal);
   }
-  function shelter(holder: pc.Entity) {
+  // The Sagrada Família's tour poster (docs/quests/luca.md § Clues): «La luz de las vidrieras», its stained glass in colour but for one grey strip.
+  const sagradaPoster = painted('Cartel de la Sagrada Família', 64, 128, ctx => {
+    ctx.fillStyle = '#f4f1ea'; ctx.fillRect(0, 0, 64, 128);
+    const strips = ['#4f9fe8', '#4fbf7a', '#9a9890', '#ff8f3f', '#e8503a', '#ffd84f'];
+    strips.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(8 + i * 8, 10, 8, 62); });
+    ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(8, 72); ctx.lineTo(8, 30); ctx.quadraticCurveTo(32, 2, 56, 30); ctx.lineTo(56, 72); ctx.stroke();
+    ctx.fillStyle = '#3a3a3a'; ctx.font = '700 8px Arial, sans-serif'; ctx.textAlign = 'center';
+    ['LA LUZ DE', 'LAS VIDRIERAS', 'SAGRADA FAMÍLIA'].forEach((line, i) => ctx.fillText(line, 32, 88 + i * 12));
+  }, 0.3);
+  sagradaPoster.emissive.set(1, 1, 1); sagradaPoster.emissiveMap = sagradaPoster.diffuseMap; sagradaPoster.emissiveIntensity = 0.7; sagradaPoster.update();
+  function shelter(holder: pc.Entity, which: 'r4' | 'sagrada' = 'r4') {
     // Along +x over three cells: a yellow roof and seat, a glass back, and a lit poster at the end.
     part(holder, 'Techo de marquesina', 'box', yellow, [1, 1.75, 0], [2.9, 0.08, 0.95]);
     for (const dx of [-0.4, 2.4]) part(holder, 'Pilar de marquesina', 'box', frame, [dx, 0.87, -0.35], [0.06, 1.75, 0.06]);
@@ -625,7 +635,7 @@ export function createPropKit(device: pc.GraphicsDevice) {
     part(holder, 'Asiento de marquesina', 'box', yellow, [1.1, 0.42, -0.22], [1.6, 0.05, 0.24]);
     part(holder, 'Soporte del asiento', 'box', frame, [1.1, 0.2, -0.3], [0.05, 0.4, 0.05]);
     part(holder, 'Panel del cartel', 'box', frame, [2.45, 0.95, 0], [0.1, 1.45, 0.75]);
-    part(holder, 'Cartel', 'box', poster, [2.51, 1.0, 0], [0.02, 1.2, 0.62]);
+    part(holder, 'Cartel', 'box', which === 'sagrada' ? sagradaPoster : poster, [2.51, 1.0, 0], [0.02, 1.2, 0.62]);
   }
   function bus(holder: pc.Entity, color: string, livery: 'tmb' | 'sagales') {
     let body = busPaint.get(color);
@@ -798,7 +808,7 @@ export function createPropKit(device: pc.GraphicsDevice) {
       else if (prop.kind === 'bin') bin(holder);
       else if (prop.kind === 'bike-rack') bikeRack(holder);
       else if (prop.kind === 'traffic-light') trafficLight(holder);
-      else if (prop.kind === 'shelter') shelter(holder);
+      else if (prop.kind === 'shelter') shelter(holder, prop.poster);
       else if (prop.kind === 'bus') bus(holder, prop.color, prop.livery ?? 'tmb');
       else if (prop.kind === 'hoarding') hoarding(holder, prop.length);
       else if (prop.kind === 'containers') containers(holder);

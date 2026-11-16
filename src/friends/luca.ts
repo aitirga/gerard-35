@@ -24,7 +24,7 @@ export const LUCA_SCALE = 1.12;
 /** Where things are outside, by the pond of Plaça de Gaudí, and in the salon inside. */
 export const PLACES_LUCA = {
   /** Luca, grey, at the pond's north tip, facing the Nativity facade. */
-  luca: { x: 72, z: 153 },
+  luca: { x: 71, z: 152 },
   /** Where his reflection is looked at, and where it stands in the water (in colour). */
   reflejo: { x: 69, z: 154 },
   water: { x: 67, z: 157.5 },

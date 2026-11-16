@@ -31,7 +31,7 @@ import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './j
 import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById } from './home-lights';
 import { mountHomeLightsPage } from './home-lights-ui';
 import { createLampPicker } from './lamp-picker';
-import { setWallFolding } from './home-scenery';
+import { setLucaColour, setWallFolding } from './home-scenery';
 import { createInteractionPrompt } from './interaction-prompt';
 import { createAudio } from './audio';
 import { createMusic, isTrack, type TrackId } from './music';
@@ -451,6 +451,7 @@ try {
   function storyEvent(event: StoryEvent) {
     const effects = story.handle(event);
     keepKept();
+    setLucaColour(story.has('fran'));
     for (const effect of effects) if (effect.kind === 'lights') lightsFlying += effect.people.length;
     storyChanged();
     beats = beats.then(async () => { for (const effect of effects) await play(effect); });
@@ -520,6 +521,7 @@ try {
   let folding = false;
   if (import.meta.env.DEV) try { folding = localStorage.getItem(foldingKey) === '1'; } catch { /* Storage is optional. */ }
   setWallFolding(folding);
+  setLucaColour(story.has('fran'));
   /** Development: the help every fight gets (the picker's Combate page, or the tester's setup). */
   let help: FightHelp = { free: false, immune: false, unbound: false };
   /** A fight left from the picker: no result reaches the story. */

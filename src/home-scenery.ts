@@ -46,6 +46,9 @@ const MANA = ['#f4efdc', '#3a7fc0', '#433b3b', '#d4492f', '#3f8a4f'];
  */
 let folding = false;
 export function setWallFolding(on: boolean) { folding = on; }
+/** Whether Luca has his colours back (docs/quests/luca.md): the photo in the dining corner shows him grey until then. */
+let lucaColour = false;
+export function setLucaColour(on: boolean) { lucaColour = on; }
 
 type Along = 'x' | 'z';
 export type Face = 'south' | 'east';
@@ -1344,6 +1347,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
 
     // ——— Dining corner: round oak table, white folding chairs, open shelving, arc lamp, Barcelona at night ———
     framed(barcelonaNight(), 'east', 18 + FACE, 10.4, 1.55, 1.9, 1.2, steel);
+    // Gerard and Luca, their first year at the school: Luca's loud shirt, grey while the Queen holds his colours.
+    framed(lucaPhoto(), 'east', 18 + FACE, 12.35, 1.45, 0.5, 0.38, oak);
     cyl('Mesa redonda', paleOak, 19.55, 9.5, 0.72, 1.35, 0.04, 1.35);
     for (const dz of [-0.36, 0.36]) {
       box('Pata de la mesa', black, 19.55, 9.5 + dz, 0.02, 0.05, 0.7, 0.05);
@@ -1654,6 +1659,28 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   }
 
   /** Barcelona from above at night: the sea, the lit Eixample grid, the Diagonal and a glowing tower. */
+  /** A photo of Gerard and Luca: two figures in a school yard, Luca in a loud orange shirt, or all in grey. */
+  function lucaPhoto() {
+    const [c, ctx] = canvas(256, 192);
+    const grey = (hex: string) => { const n = parseInt(hex.slice(1), 16), y = Math.round(.3 * (n >> 16) + .59 * ((n >> 8) & 255) + .11 * (n & 255)); return `rgb(${y},${y},${y})`; };
+    const luca = (hex: string) => lucaColour ? hex : grey(hex);
+    ctx.fillStyle = '#b9d3e6'; ctx.fillRect(0, 0, 256, 110);
+    ctx.fillStyle = '#c9a98a'; ctx.fillRect(0, 110, 256, 82);
+    ctx.fillStyle = '#e6d8c0'; ctx.fillRect(0, 70, 256, 40);
+    const figure = (x: number, shirt: string, skin: string, hair: string, tint: (h: string) => string) => {
+      ctx.fillStyle = tint(shirt); ctx.fillRect(x - 26, 96, 52, 70);
+      ctx.fillStyle = tint('#3a3f4a'); ctx.fillRect(x - 22, 166, 44, 26);
+      ctx.fillStyle = tint(skin); ctx.beginPath(); ctx.arc(x, 76, 20, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = tint(hair); ctx.beginPath(); ctx.arc(x, 68, 20, Math.PI, 0); ctx.fill();
+    };
+    figure(92, '#5f6b45', '#e6b58b', '#342a28', h => h);
+    figure(164, '#f08a2c', '#e4b18c', '#3a2c24', luca);
+    // His shirt's print, if it still has any colour.
+    for (let i = 0; i < 6; i++) { ctx.fillStyle = luca(i % 2 ? '#2f8f7a' : '#ffd84f'); ctx.beginPath(); ctx.arc(150 + (i % 3) * 14, 110 + Math.floor(i / 3) * 22, 4, 0, Math.PI * 2); ctx.fill(); }
+    // His arm round Gerard's shoulders: he always does.
+    ctx.fillStyle = luca('#f08a2c'); ctx.fillRect(100, 98, 64, 12);
+    return painted(lucaColour ? 'Foto con Luca' : 'Foto con Luca gris', c, 0.3);
+  }
   function barcelonaNight() {
     const [c, ctx] = canvas(512, 324);
     const sky = ctx.createLinearGradient(0, 0, 0, 324);

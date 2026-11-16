@@ -71,7 +71,8 @@ export type WorldProp =
   /** A traffic light with yellow housings on a curved pole, and a pedestrian light lower down. */
   | { kind: 'traffic-light'; x: number; z: number; yaw?: number }
   /** A bus shelter with a yellow roof and seat; three cells along +x. */
-  | { kind: 'shelter'; x: number; z: number }
+  /** `poster`: what its lit poster shows (the R4's extension by default; `sagrada` the Sagrada Família's tour with a grey strip, Luca's clue). */
+  | { kind: 'shelter'; x: number; z: number; poster?: 'r4' | 'sagrada' }
   /** A city bus (TMB red, Sagalés white) stopped along +x, five cells long. */
   | { kind: 'bus'; x: number; z: number; color: string; livery?: 'tmb' | 'sagales' }
   /** A works hoarding of corrugated metal covered in graffiti, `length` cells along +x. */
@@ -442,6 +443,8 @@ export const MERIDIANA = house({
     // The story turns the TV on (chapter 2's news); before that it is just the TV.
     { id: 'meridiana-tv', cell: { x: 16, z: 2 }, label: 'Mirar la tele', anchor: { x: 16.75, z: 1.8, y: 1.65 } },
     { id: 'meridiana-painting', cell: { x: 19, z: 11 }, label: 'Mirar el cuadro', lines: ['Barcelona de noche, con la torre encendida. Nuestra ciudad, en la pared.'] },
+    // Gerard and Luca's photo: the story answers it (docs/quests/luca.md § Clues).
+    { id: 'meridiana-foto-luca', cell: { x: 20, z: 11 }, label: 'Mirar la foto' },
     { id: 'meridiana-balcony', cell: { x: 22, z: 3 }, label: 'Tomar un café en el balcón', hint: 'Tomar café' },
     // The lamps are the bulbs at home (src/home-lights.ts): pressing one changes both. The game
     // writes their labels as what the next press does.

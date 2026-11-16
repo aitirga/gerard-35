@@ -19,6 +19,7 @@ import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
 import { ALEGIA, CUERDAS_PLACE, LINES_MARTA, MARTA_SCALE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
+import { DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LUCA_SCALE, PLACES_LUCA, SAGRADA, ZONES } from './friends/luca.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
 import { castleEntry, extraSlots, isCastlePlace, type CastleEncounter } from './castle.ts';
@@ -215,13 +216,17 @@ export type GerardClass = Exclude<ClassId, 'tecnopata'>;
 
 /** Someone standing in a scene: a character model, or one of the cats (`cat`). */
 export interface StoryNpc {
-  id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki' | 'marta' | 'emilie' | UniFriend; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId;
+  id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki' | 'marta' | 'emilie' | 'luca' | 'fran' | 'capellan' | UniFriend; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId;
   /** The Queen holds them: violet eyes, and they keep looking where they face. */
   possessed?: boolean;
   /** Standing in the sea this deep (m): Anna in the shallows. */
   wade?: number;
   /** Which way they face, in degrees (0 faces +z, the sea in the Barceloneta). */
   facing?: number;
+  /** How much of their colour is gone, 0 to 1 (Luca, docs/quests/luca.md): the game greys their figure that much. */
+  faded?: number;
+  /** Where their reflection stands in water, in full colour whatever they look like (Luca in the pond). */
+  reflection?: Cell;
 }
 /**
  * The university friends' mission while it runs (docs/quests/universidad.md); not saved, as Nuria's.
@@ -810,6 +815,61 @@ export class Story {
     this.remember();
     return [{ kind: 'fall' }, { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } }, { kind: 'wake' }, { kind: 'rise' }];
   }
+  /**
+   * Luca's mission (docs/quests/luca.md) runs while he has been met and Fran is not beaten; the salon
+   * is dressed inside the basilica only then.
+   */
+  get salon() { return this.adult && this.has('sagrada-luca') && !this.has('fran'); }
+  /** By the pond, Luca; inside, while the salon stands, the chaplain who keeps the presbytery and Fran under the canopy. */
+  private lucaNpcs(): StoryNpc[] {
+    const won = this.has('fran'), lost = won ? 0 : 1 - this.luca.beaten.length / (ZONES.length + 1);
+    const list: StoryNpc[] = [{ id: 'luca', character: 'luca', environment: SAGRADA, cell: { ...PLACES_LUCA.luca }, scale: LUCA_SCALE, facing: 180, faded: lost, reflection: { ...PLACES_LUCA.water } }];
+    if (this.salon) list.push(
+      { id: 'capellan', character: 'capellan', environment: INTERIOR, cell: { ...PLACES_LUCA.capellan }, scale: LUCA_SCALE, facing: 270, possessed: true },
+      { id: 'fran', character: 'fran', environment: INTERIOR, cell: { ...PLACES_LUCA.fran }, scale: LUCA_SCALE * 1.08, facing: 90, possessed: true },
+    );
+    return list;
+  }
+  /** What stands waiting in each zone of the salon, for the game to put there (src/luca-foes.ts models). */
+  lucaFoes(environment: EnvironmentId): { id: string; encounter: string; kind: string; cell: Cell }[] {
+    if (environment !== INTERIOR || !this.salon) return [];
+    const first = { 'luca-recepcion': 'polilla', 'luca-sillones': 'capellan', 'luca-carta': 'estampado-rojo', 'luca-abside': 'telescopio' } as const;
+    return ZONES.filter(z => !this.luca.beaten.includes(z.id)).map(z => ({ id: z.id, encounter: z.encounter, kind: first[z.encounter], cell: { ...z.cell } }));
+  }
+  /** Aitor puts the two clues together, once: the photo gone grey, and the Sagrada Família on the TV or on the poster. */
+  private lucaLink(by: 'tv' | 'poster'): Dialogue[] {
+    if (!this.has('clue-luca-foto') || this.has('sagrada-luca')) return [];
+    const other = by === 'tv' ? this.has('clue-sagrada-cartel') : this.has('clue-sagrada');
+    return other ? [] : [by === 'tv' ? LINES_LUCA.linkTv : LINES_LUCA.linkPoster];
+  }
+  /** In the salon: in through the door, then each zone's foes as they are walked up to. */
+  private nearLuca(id: string): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.salon) return [];
+    const run = this.luca;
+    if (id === 'luca-dentro') {
+      if (run.told.includes('dentro')) return [];
+      run.told.push('dentro');
+      // Going in takes its hour; the rest is paid when Fran is beaten.
+      const first = !run.entered;
+      run.entered = true; this.set('peluqueria');
+      return [say(first ? LINES_LUCA.inside : LINES_LUCA.insideAgain), ...first ? this.spend('cafe') : []];
+    }
+    const zone = ZONES.find(z => id === `luca-${z.id}`);
+    if (!zone || run.beaten.includes(zone.id)) return [];
+    const told = run.told.includes(zone.id);
+    if (!told) run.told.push(zone.id);
+    return [...told ? [] : [say(LINES_LUCA.zones[zone.id])], { kind: 'battle', encounter: zone.encounter }];
+  }
+  /** Fran beaten: his eyes clear, he walks out; outside, Luca in full colour, and his light goes with them. */
+  private winLuca(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.set('fran')) return [];
+    for (const flag of ['anima-luca', 'luz-luca', 'peluqueria'] as const) this.set(flag);
+    this.luca = freshLuca(); delete this.globe.luca;
+    const out: StoryEffect = { kind: 'travel', environment: SAGRADA, cell: { ...PLACES_LUCA.won } };
+    return [say(LINES_LUCA.won), out, say(LINES_LUCA.home), { kind: 'lights', people: ['luca'] }, ...this.spend('fight'), ...this.nightfall()];
+  }
   /** What a fight's end means for the story, before any ánima grows. */
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
@@ -820,6 +880,14 @@ export class Story {
     if (event.won && event.encounter === 'sobremesa') return this.winUni();
     if (event.won && event.encounter === 'voz') return this.winMarta();
     if (event.won && event.encounter === 'no-converge' && this.inside === MODELO_PLACE) return this.winEmilie();
+    if (event.won && event.encounter === 'fran') return this.winLuca();
+    // A zone of Fran's salon won: it stays won this visit, and a colour goes out of the door to Luca.
+    const zone = ZONES.find(z => z.encounter === event.encounter);
+    if (event.won && zone) {
+      if (!this.salon || this.luca.beaten.includes(zone.id)) return [];
+      this.luca.beaten.push(zone.id);
+      return [say(LINES_LUCA.zoneWon[Math.min(this.luca.beaten.length, LINES_LUCA.zoneWon.length) - 1])];
+    }
     // One of what Marta lost, beaten: it stays beaten this visit, and she says she feels nothing yet.
     const quality = QUALITIES.find(q => q.encounter === event.encounter);
     if (event.won && quality) {
@@ -1107,6 +1175,14 @@ export class Story {
     const { tv } = PLACES_2;
     if (this.adult && !this.has('tv-news') && environment === tv.environment) return [{ id: 'tv', cell: { ...tv.cell }, radius: tv.radius }];
     if (environment === BEACH) return this.uniTriggers();
+    if (environment === INTERIOR) {
+      if (!this.salon) return [];
+      const run = this.luca;
+      return [
+        ...run.told.includes('dentro') ? [] : [{ id: 'luca-dentro', cell: { x: PLACES_LUCA.inside.x, z: PLACES_LUCA.inside.z - 2 }, radius: 1.5 }],
+        ...ZONES.filter(z => !run.beaten.includes(z.id)).map(z => ({ id: `luca-${z.id}`, cell: { ...z.cell }, radius: z.radius })),
+      ];
+    }
     if (environment === CAMP) return this.campTriggers();
     if (environment === CUERDAS_PLACE) {
       if (!this.adult || this.has('voz')) return [];
@@ -1229,7 +1305,7 @@ export class Story {
       { id: 'jan', character: 'jan-child', environment: PLACES.jan.environment, cell: PLACES.jan.cell, scale: 1.12 },
     ];
     // Chapter 1 is a dream: once Gerard wakes, home in Sant Quirze is empty, and Aitor walks with him (the partner, not an NPC).
-    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs(), ...this.martaNpcs(), ...this.emilieNpcs()].filter(npc => npc.environment === environment);
+    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs(), ...this.martaNpcs(), ...this.emilieNpcs(), ...this.lucaNpcs()].filter(npc => npc.environment === environment);
     return all.filter(npc => npc.environment === environment);
   }
   /** Nuria at her door, the cats with her until she lends them, and Uri ahead in his maze. */
@@ -1314,6 +1390,11 @@ export class Story {
       if (!this.has('voz')) list.push({ id: 'talk-marta', label: 'Hablar con Marta', cell: { ...PLACES_CUERDAS.marta[Math.min(this.marta.beaten.length, PLACES_CUERDAS.marta.length - 1)] } });
       list.push({ id: 'salir-cuerdas', label: 'Volver por la pompa', hint: 'Volver', cell: { ...PLACES_CUERDAS.exit } });
     }
+    if (this.adult && environment === SAGRADA) {
+      list.push({ id: 'talk-luca', label: 'Hablar con Luca', cell: { ...PLACES_LUCA.luca } });
+      list.push({ id: 'luca-reflejo', label: 'Mirar el reflejo', cell: { ...PLACES_LUCA.reflejo } });
+    }
+    if (environment === INTERIOR && this.salon) list.push({ id: 'talk-capellan', label: 'Hablar con el capellán', cell: { ...PLACES_LUCA.capellan } });
     if (this.adult && environment === JAR.environment && this.jar.length) {
       list.push({ id: 'meridiana-luces', label: 'Abrir el bote', hint: 'Abrir el bote', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });
     }
@@ -1338,6 +1419,8 @@ export class Story {
     if (shut) return shut;
     // The TV switched itself on when Gerard woke: Aitor will not go out before seeing it.
     if (interactionId === 'meridiana-door' && this.adult && !this.has('tv-news')) return LINES_2.doorBeforeNews;
+    // Luca by the pond: Aitor sees him before they go in (docs/quests/luca.md § Beats).
+    if (interactionId === LUCA_DOOR && this.adult && !this.has('sagrada-luca') && !this.has('fran')) return LINES_LUCA.doorBefore;
     if (!HOUSE_EXITS.has(interactionId)) return undefined;
     if (!this.has('got-shoes')) return LINES.leaveBeforeBreakfast;
     if (!this.has('got-backpack')) return LINES.leaveWithoutBackpack;
@@ -1401,13 +1484,14 @@ export class Story {
         if (event.id.startsWith('castillo-')) return castleNear(this.castleHost, event.id);
         // Emilie's section (src/modelo.ts): a patrol reached them, or they came up to El que no converge.
         if (event.id.startsWith('modelo-')) return this.nearModelo(event.id);
+        if (event.id.startsWith('luca-')) return this.nearLuca(event.id);
         // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
         if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard' }] : [];
         if (event.id !== 'tv') return this.nearNuria(event.id);
         if (!this.adult || !this.set('tv-news')) return [];
-        // The ticker carries the R4 clue: seen on the TV, it is known.
+        // The ticker carries the R4 clue, and the Sagrada Família's: seen on the TV, they are known.
         this.set('clue-r4');
-        return [{ kind: 'news' }, say(LINES_2.news)];
+        { const link = this.lucaLink('tv'); this.set('clue-sagrada'); return [{ kind: 'news' }, say(LINES_2.news), ...link.map(say)]; }
       case 'arrive':
         // Every trip takes its hour.
         if (event.station === 'trinitat-vella' && this.set('rec-comtal')) return [{ kind: 'look', anchor: 'palace' }, say(LINES_2.recComtalFirst), { kind: 'look' }, ...this.spend('metro')];
@@ -1468,6 +1552,33 @@ export class Story {
       }
       case 'salir-modelo':
         return [{ kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.laptop } }];
+      case 'talk-luca': {
+        if (!this.adult) return [];
+        if (this.has('fran')) return [say(LINES_LUCA.after)];
+        if (this.set('sagrada-luca')) return [say(LINES_LUCA.arrive)];
+        return [say(LINES_LUCA.waiting[Math.min(this.luca.beaten.length, LINES_LUCA.waiting.length - 1)])];
+      }
+      case 'luca-reflejo':
+        if (!this.adult) return [];
+        return [say(this.has('fran') ? LINES_LUCA.reflejoAfter : LINES_LUCA.reflejo)];
+      case 'talk-capellan': {
+        if (!this.salon) return [];
+        const won = this.luca.beaten.length;
+        if (won < ZONES.length) return [say(LINES_LUCA.capellan[Math.min(won, LINES_LUCA.capellan.length - 1)])];
+        return [say(LINES_LUCA.ready), say(LINES_LUCA.fran), { kind: 'battle', encounter: 'fran' }];
+      }
+      case 'meridiana-foto-luca': {
+        if (!this.adult) return [];
+        if (this.has('fran')) return [say(LINES_LUCA.photoAfter)];
+        if (!this.set('clue-luca-foto')) return [say(LINES_LUCA.photoAgain)];
+        const seen = this.has('clue-sagrada') ? LINES_LUCA.linkTv : this.has('clue-sagrada-cartel') ? LINES_LUCA.linkPoster : undefined;
+        return [say(LINES_LUCA.photo), ...seen && !this.has('sagrada-luca') ? [say(seen)] : []];
+      }
+      case 'clue-sagrada-cartel': {
+        const link = this.lucaLink('poster');
+        this.set('clue-sagrada-cartel');
+        return [say(LINES_LUCA.poster), ...link.map(say)];
+      }
       case 'salir-cuerdas':
         return [{ kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } }];
       case 'recepcio-pizarra':
@@ -1513,7 +1624,7 @@ export class Story {
         return [say(LINES_2.bola), { kind: 'item', item: 'bola' }, { kind: 'hint', id: 'items' }];
       case 'meridiana-tv':
         if (!this.adult) return [];
-        if (this.set('tv-news')) { this.set('clue-r4'); return [{ kind: 'news' }, say(LINES_2.news)]; }
+        if (this.set('tv-news')) { this.set('clue-r4'); const link = this.lucaLink('tv'); this.set('clue-sagrada'); return [{ kind: 'news' }, say(LINES_2.news), ...link.map(say)]; }
         return [{ kind: 'news' }, say(LINES_2.newsAgain)];
       case 'enter-school': {
         if (!this.adult) return [];

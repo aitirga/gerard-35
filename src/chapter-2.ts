@@ -56,6 +56,8 @@ export const NEWS = {
     'Rodalies: la R4 se amplía desde La Sagrera hasta Cardedeu, primer tren esta mañana',
     'Tráfico: colas en la Meridiana en dirección norte; los conductores paran a mirar',
     'El tiempo: cielo despejado, con nubes de color rosa sobre Sant Andreu',
+    // Luca's clue (docs/quests/luca.md): the man who will not leave the basilica is Fran.
+    'Un hombre lleva días dentro de la Sagrada Família midiendo las columnas; los vigilantes no consiguen que se vaya',
     'Los quioscos de la ciudad agotan los chicles de fresa',
   ],
 } as const;
