@@ -363,6 +363,8 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
   `src/tower-scene.ts`: Uri's tower; `src/chasers.ts`: the fears that hunt it; `src/fears.ts`:
   their models and Vertitrón; `src/cats.ts`: Haru and Yuki; `src/cat-wander.ts`: the cats
   strolling about the flat; `src/levels.ts`: ánima levels.
+- `src/friends/luca.ts`: Luca's mission; `src/vidrieras.ts`: the salon's walking light;
+  `src/luca-foes.ts` and `src/peluqueria-scenery.ts`: its foes and the salon over the basilica.
 - `src/chapter-2.ts`: chapter 2's lines, places, triggers, the news broadcast and the clues.
 - `src/animas.ts`: the ánimas: who they come from, colour, stat bonus.
 - `src/days.ts`: days, hours, the Queen's spread, saved mornings.

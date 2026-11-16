@@ -147,3 +147,19 @@ about = "About her: 35, a singer and a dentist, average build, soft and strong r
 cues = "a rounded, fairly wide head with full cheeks, long wavy hair in big sculpted chunks that is dark brown at the roots and golden blonde from the ears down, big thin gold hoop earrings as her strongest accessory, a thin black choker, an oversized charcoal grey jumper"
 height = 1.66
 scale = 1.3
+
+[fran]
+name = "Fran"
+kind = "person"
+about = "An invented man of about forty, a hairdresser, with no likeness to anyone real (docs/quests/luca.md). Very tall and very thin, with a long neck and long hands. Dark hair sculpted into a high, sharp quiff, the sides shaved short, not one hair out of place. A long face, clean shaven, a cool, distant look. A black, fitted shirt buttoned to the collar and black slim trousers, black boots; a pair of silver scissors and a comb in a black holster at his hip. A white hairdresser's cutting cape over his shoulders, worn like a priest's chasuble, with a few chalk curves drawn on it."
+height = 1.92
+scale = 1.36
+[fran.view_notes]
+back = "The white cape hangs down his back to the knees, the chalk curves on it too."
+
+[capellan]
+name = "Capellán"
+kind = "person"
+about = "An invented chaplain of the Sagrada Família, about fifty, ordinary build, no likeness to anyone real (docs/quests/luca.md). A plain black cassock to the ankles with a white clerical collar, black shoes. His hair has been restyled by a hairdresser into something that is not his: a tall, stiff quiff sculpted upwards, dyed a flat cold blue. A serious, slightly lost face, clean shaven."
+height = 1.74
+scale = 1.3

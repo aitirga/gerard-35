@@ -749,6 +749,17 @@ se diseñen a partir de ahora y es con lo que se revisan los que ya existen.
 - **Reglas por clase de golpe, nunca por ánima**: la respuesta es «fuego», «un golpe físico» o
   «lo que alcanza a todos», no «la habilidad X».
 
+#### La luz que camina (2026-11-16, la peluquería de Fran)
+
+En los combates de la misión de Luca (`docs/quests/luca.md`) la luz de las vidrieras recorre sus
+colores en tiempo real (`src/vidrieras.ts`): azul, verde, naranja, rojo, oro, unos 7 s cada uno, y
+vuelta. **Mientras un color está encendido, los golpes del equipo de su elemento no hacen nada**: el
+azul se come el agua, el naranja y el rojo el fuego, el oro lo eléctrico, el verde nada. Solo al
+equipo; los enemigos golpean igual con cualquier luz. El golpe anulado dice *Anulado · Luz naranja*
+sobre su objetivo; un reloj en la placa de cada uno del equipo (como la canción de La Voz) enseña la
+luz de ahora y las que vienen. Lo que ya arde sigue ardiendo: la luz se come el golpe, no el fuego
+encendido antes. `annulled` en `src/battle.ts`, `just fight-sim` lo juega (los bots lo ven en la copia).
+
 #### Debilidades por elemento (2026-11-15)
 
 Algunos enemigos están hechos de algo (`AFFINITIES` en `src/battle.ts`): un golpe con el elemento
@@ -766,6 +777,9 @@ fuego, Rayo solar) o una reacción eléctrica (Tormenta, Conducción). Nunca dep
 | Mago de camping | Agua | Fuego |
 | Lo Directo | Eléctrico | – |
 | Eco | Fuego | – |
+| Polilla, La Laca | Fuego | – |
+| Estampado rojo / azul / oro | – | Fuego / Agua / Eléctrico |
+| El Telescopio | – | Fuego |
 
 Nada lo dice de antemano. El primer golpe que lo encuentra suelta «¡Débil!» o «Resiste» con su
 multiplicador, y desde entonces la placa de ese tipo de enemigo lleva el chip («Débil: Fuego»)

@@ -112,8 +112,8 @@ steal light; not Luca's own traits (that is Marta's). Each asks one question.
 | Foe | What it is | Question | Answer and how it shows | Weak / resists |
 | --- | --- | --- | --- | --- |
 | **Las Polillas** | Grey moths, many and frail, drawn to light: they swarm whoever struck with an element and leave them Cegado | Lo que alcanza a todos | An all-target blow clears the swarm | Fuego / – |
-| **Los Estampados** (rojo, azul, oro) | Luca's loud colours, stolen: patches of pattern | Not its own colour | Each resists its colour's element (rojo fuego, azul agua, oro eléctrico) and takes everything else, physical too | By colour |
-| **El Telescopio** | Luca's looking at the sky turned on them: *Enfocando* a turn, then a burning beam | Momento | Hit it while it focuses: **the lens cracks**, the beam is lost and the blow does double | – / Fuego |
+| **Los Estampados** (rojo, azul, oro) | Luca's loud colours, stolen: patches of pattern | Orden, by the light | Each resists its colour's element, and **fills in again (*Se recolorea*) when the light of its own colour comes on**: down first the one whose light comes next | By colour |
+| **El Telescopio** | Luca's looking at the sky turned on them: *Enfocar* a turn (the plate says at whom), then a burning beam | Momento | Hit it while it focuses: **the lens cracks** (*¡Lente rajada!*) and the beam is lost. (A blow there does not land harder: that would make anyone greedy find the answer by chance.) | – / Fuego |
 | **La Laca** | A cloud of hairspray that lacquers the party (*Lacado*: fire hurts them double) | Elemento, with a risk | Fire on La Laca makes it **explode** over every foe | Fuego / – |
 | **Los capellanes** | The basilica's chaplains, restyled by Fran, each with hair of another shape and colour. People under the Queen, unsettling, not a joke | Orden | The freshly styled one (*Recién peinado*) repeats the last gesture next round; down it first and the copy stops | – |
 
@@ -187,6 +187,28 @@ Figures come from `/character-3d`; until then, primitive stand-ins in `src/chara
 | Luca | person | none yet | Loud shirts, bright colours; cues to come with photos | – | stand-in | – | – | SVG fallback |
 | Fran | person (and boss model) | none (invented) | Tall and very thin, sculpted high quiff, black fitted clothes, white cutting cape | pending Aitor's OK (API credits) | stand-in / procedural boss | – | – | SVG fallback |
 | Capellán | person | – | A chaplain in black with a white collar, hair restyled in an odd shape and colour | – | procedural | – | – | SVG fallback |
+
+## Built (2026-11-16, `feat/side-mission-luca`)
+
+- **Data**: `src/friends/luca.ts` (places, zones, every line), `ANIMAS.luca`, the flags, the `luca`
+  arc and its picker parts (`just dev-mission luca <part>`: start, luca, door, recepcion, sillones,
+  carta, abside, crucero, fran, won, done).
+- **The light**: `src/vidrieras.ts`; `annulled` and `runLight` in `src/battle.ts`; the window icon and
+  *Anulado* in `src/battle-ui.ts`; the basilica's floor and lights take the same colour while the
+  salon stands (`setLight` in `src/basilica-scenery.ts`).
+- **Foes and Fran**: the `LucaKind` group and the `LUCA` book in `src/battle.ts`, procedural models in
+  `src/luca-foes.ts`, fight tester row *La peluquería*, `STAGED_MOMENTS` `fran-acolitos`,
+  `fran-baldaquino`, `fran-aspersion`, `TARGETS` for every fight (all hold, `just fight-sim check`).
+  Zone numbers: Polillas 28 PV, Estampados 100, Telescopio 300, La Laca 120, capellanes 100; Fran 260,
+  his acolytes 70, his lamps 40.
+- **The place**: Luca by the pond (grey by the colours still missing, his reflection in colour lying
+  on the water), the door gated until he is met, the salon dressed zone by zone
+  (`src/peluqueria-scenery.ts`), each zone's foes waiting, the chaplain before the presbytery.
+- **Clues**: the photo in the dining corner (`meridiana-foto-luca`, grey until the win), the ticker
+  item, the tour poster on the Meridiana's second bus shelter (`clue-sagrada-cartel`).
+- **Stand-in figures**: `src/characters/luca.json`, `fran.json`, `capellan.json` (from Uri's).
+- **Tests**: `tests/luca.test.mjs`, `tests/luca-fight.test.mjs`, `tests/vidrieras.test.mjs`.
+- **Screenshots**: `just screenshots luca --gpu`.
 
 ## Open
 
