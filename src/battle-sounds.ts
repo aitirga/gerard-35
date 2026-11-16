@@ -95,6 +95,13 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
   oscilacion: { start: [{ id: 'glitch', volume: .5 }], impact: [{ id: 'zap', volume: .6 }] },
   pluma: { impact: [{ id: 'splash', volume: .8 }] },
   'no-converge': { start: [{ id: 'glitch', volume: .6 }], impact: [{ id: 'zap' }] },
+  polilla: { impact: [{ id: 'hit', volume: .5 }] },
+  'estampado-rojo': { impact: [{ id: 'hit', volume: .75 }] },
+  'estampado-azul': { impact: [{ id: 'hit', volume: .75 }] },
+  'estampado-oro': { impact: [{ id: 'hit', volume: .75 }] },
+  telescopio: { impact: [{ id: 'slam', volume: .8 }] },
+  laca: { impact: [{ id: 'hit', volume: .6 }] },
+  capellan: { impact: [{ id: 'hit', volume: .8 }] },
 };
 const foeOf = (effect: BattleEffect, state?: BattleState) => state?.foes.find(f => f.id === effect.actor);
 
@@ -119,6 +126,8 @@ export function startSounds(effect: BattleEffect, state?: BattleState): Cue[] {
 export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   if (effect.kind === 'defend') return [{ id: 'guard' }, ...effect.charged ? [{ id: 'mana' as const, delay: .12 }] : []];
   if (effect.swallowed) return [{ id: 'swallowed' }];
+  // Fran's salon: a blow the light ate fizzles out (docs/quests/luca.md).
+  if (effect.annulled) return [{ id: 'fizzle' }];
   // A bet lost (Doble o nada): no blow, the die sinks back into the hand.
   if (effect.die?.won === false) return [{ id: 'sink', volume: .7 }];
   // A blow that opens a wound (it spent Sangrado) tears as it lands.
@@ -138,6 +147,10 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   // A mago charging its Bombona: the gas hisses out. El Campeón in plain clothes pulling itself together.
   if (effect.kind === 'enemy' && effect.telegraph?.id === 'bombona') return [{ id: 'fizzle' }];
   if (effect.kind === 'enemy' && effect.healed) return [{ id: 'heal', volume: .6 }];
+  // Fran's salon: El Telescopio focusing, La Laca's fixer hissing, a chaplain left mid-gesture.
+  if (effect.kind === 'enemy' && effect.telegraph?.id === 'rayo-lente') return [{ id: 'mark-set' }];
+  if (effect.kind === 'enemy' && effect.lacquered) return [{ id: 'fizzle' }];
+  if (effect.kind === 'enemy' && effect.cancelled && !effect.amount) return [{ id: 'sink', volume: .6 }];
   // La Voz crossing her arms (Guardia) and turning to glass (Nota clara): no blow, but each is heard.
   if (effect.kind === 'enemy' && effect.ability?.id === 'guardia') return [{ id: 'guard' }];
   if (effect.kind === 'enemy' && effect.clear) return [{ id: 'mark-set' }, { id: 'stat-up', volume: .5, delay: .1 }];

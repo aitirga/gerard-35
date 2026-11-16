@@ -1,10 +1,11 @@
 import * as pc from 'playcanvas';
-import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
+import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type OnionKind, type StatusId, isLuca } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { DIE, createDie, dressDie, faceUp } from './dice';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { MODELO_SIZES, PHOSPHOR } from './modelo-foes';
+import { LUCA_SIZES } from './luca-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
 import { WalkAnimation, idlePose, poseLegs, type LimbRig } from './walk-animation';
@@ -1952,7 +1953,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
     // Uri's fears fight in the tower's narrow corridors, so they stay nearer the party's size.
     const young = unit.kind === 'cebollita' || unit.kind === 'platito' || unit.kind === 'fantasmita';
-    if (minion) { const size = isCastle(unit.kind) ? CASTLE_SIZES[unit.kind] : isOnion(unit.kind) ? onionSize(unit.kind, unit.layers ?? 0) : isCamping(unit.kind) ? CAMPING_SIZES[unit.kind] : isCuerdas(unit.kind) ? CUERDAS_SIZES[unit.kind] : isModelo(unit.kind) ? MODELO_SIZES[unit.kind] : unit.kind === 'guardian' ? 2.3 : young ? .62 : unit.kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5; model.setLocalScale(size, size, size); }
+    if (minion) { const size = isCastle(unit.kind) ? CASTLE_SIZES[unit.kind] : isOnion(unit.kind) ? onionSize(unit.kind, unit.layers ?? 0) : isCamping(unit.kind) ? CAMPING_SIZES[unit.kind] : isCuerdas(unit.kind) ? CUERDAS_SIZES[unit.kind] : isModelo(unit.kind) ? MODELO_SIZES[unit.kind] : isLuca(unit.kind) ? LUCA_SIZES[unit.kind] : unit.kind === 'guardian' ? 2.3 : young ? .62 : unit.kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5; model.setLocalScale(size, size, size); }
     const legs = (body?.children.filter(c => c.name === 'Pierna') ?? (minion ? [] : model.children.filter(c => c.name === 'Pata'))) as pc.Entity[];
     const yaw = party ? (source.findByName('Cuerpo') as pc.Entity).getLocalEulerAngles().y : source.getEulerAngles().y;
     if (body) body.setLocalEulerAngles(0, 0, 0);

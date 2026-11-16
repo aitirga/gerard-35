@@ -10,15 +10,17 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, songNow, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId, skillKnown } from './battle.ts';
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId, skillKnown, lightNow, type Combatant,
+} from './battle.ts';
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, untilNote } from './song.ts';
 import { ARTILUGIO_BUTTONS, CASTLE } from './castle.ts';
 import { artilugioLive, castleNote, castleProp, nextNote } from './castle-fight.ts';
+import { upcoming } from './vidrieras.ts';
 
 export const SIM_VERSION = 2;
 export const POLICIES = {
@@ -101,7 +103,7 @@ export const MISSIONS = {
   universidad: { name: 'Los amigos de la uni', intro: false, lights: 5, friend: 'universidad', fights: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon', 'sobremesa'], teaching: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda'] },
   marta: { name: 'Marta', intro: false, lights: 1, friend: 'marta', fights: ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'], teaching: [] },
   emilie: { name: 'Emilie', intro: false, lights: 1, friend: 'emilie', fights: ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'], teaching: [] },
-  luca: { name: 'Luca', intro: false, lights: 1, friend: 'luca', fights: [], teaching: [] },
+  luca: { name: 'Luca', intro: false, lights: 1, friend: 'luca', fights: ['luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside'], teaching: ['luca-recepcion'] },
 } as const satisfies Record<string, { name: string; intro: boolean; lights: number; friend: AnimaId; fights: readonly string[]; teaching: readonly string[] }>;
 export type MissionId = keyof typeof MISSIONS;
 export const MISSION_IDS = Object.keys(MISSIONS) as MissionId[];
@@ -176,6 +178,7 @@ const BOOKS = {
   marta: { rules: MARTA },
   castle: { rules: CASTLE },
   modelo: { rules: MODELO },
+  luca: { rules: LUCA },
   reaction: { rules: REACTION_RULES },
   element: { rules: ELEMENT_RULES },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
@@ -307,6 +310,12 @@ function threatOn(state: BattleState): Threat {
     mareo: new Map(look.allies.map(a => [a.id, Math.max(0, (a.statuses?.mareo ?? 0) - before.get(a.id)!.mareo)])),
   };
 }
+/** What a fallen Estampado will not take back: its Recolor, sooner the nearer its own light. */
+function recolorWorth(state: BattleState, foe: Combatant) {
+  const own = foe.kind!.replace('estampado-', '');
+  const wait = state.light ? [0, 1, 2, 3, 4].map(n => n === 0 ? lightNow(state) : upcoming(state.light!.t, n).at(-1)).indexOf(own as never) : -1;
+  return wait < 0 ? 0 : foe.maxHp * LUCA.recolor * (wait <= 1 ? 1 : .5);
+}
 /** What a choice costs in maná, both halves for a dual. */
 function manaOf(choice: Choice) {
   if (choice.action === 'dual') return DUALS.find(d => d.id === choice.dual)!.parts.reduce((sum, id) => sum + SKILLS.find(s => s.id === id)!.cost, 0);
@@ -356,6 +365,16 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
+  // Fran's salon (docs/quests/luca.md): the freshly styled chaplain down leaves the others still, a
+  // cracked lens calls its beam off; what the foes would no longer do, the real rules on a copy.
+  const stilled = after.foes.some((foe, i) => foe.still === after.round && before.foes[i].still !== before.round);
+  const cracked = before.foes.some((foe, i) => foe.intent?.ability === 'rayo-lente' && !after.foes[i].intent && after.foes[i].hp > 0);
+  if (stilled || cracked) {
+    const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
+    value += (sum(threat) - sum(threatOn(after))) * 1.5;
+  }
+  // An Estampado down before its own light comes back is PV it will not get back.
+  before.foes.forEach((foe, i) => { if (foe.kind?.startsWith('estampado') && foe.hp > 0 && after.foes[i].hp <= 0 && after.light) value += recolorWorth(after, foe); });
   const skill = SKILLS.find(s => s.id === choice.skill);
   if (skill?.kind === 'boost') value += skill.power * 3 * before.foes.filter(f => f.hp > 0).length;
   value -= manaOf(choice) * 2.5;
@@ -829,6 +848,16 @@ export const TARGETS: readonly Target[] = [
   { id: 'no-converge-a-punetazos', fight: 'no-converge', party: DUO, levels: P2M2, policy: 'attack', win: [0, .02], why: 'Sin elementos no converge nunca.' },
   { id: 'no-converge-primer-dia', fight: 'no-converge', party: 'gerard:matemagico+aitor:-', levels: L1, improved: [], exact: true, policy: 'smart', win: [.85, 1], why: 'Al alcance de quien llega el primer día, sin tarro ni niveles y con Aitor sin ánima: el modelo presta el agua y la electricidad.' },
   { id: 'no-converge-con-tecnopata', fight: 'no-converge', party: TECH, levels: P2M2, policy: 'smart', win: [.85, 1], why: 'Con dos ánimas de magia también: la respuesta está en Atacar, no en lo que se lleve puesto.' },
+  // Fran's salon (docs/quests/luca.md). Its numbers are LUCA (book luca.rules) and each foe's PROFILES entry
+  // (foe.polilla…). The light walks through every fight: the party's blows of its element do nothing.
+  { id: 'recepcion-ensena', fight: 'luca-recepcion', party: DUO, levels: P2M2, policy: 'casual', win: [.85, 1], why: 'La recepción enseña la luz: el fuego deja de servir a mitad de combate. Se pasa igual, pero se nota.' },
+  { id: 'sillones-bien', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.1, .6], why: 'Los capellanes, pensando: primero el recién peinado, y los demás se quedan a medio gesto; La Laca, con fuego cuando la luz lo deja.' },
+  { id: 'sillones-sin-pensar', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin mirar quién lleva el peinado nuevo, cada gesto se repite y el fijador dobla las chispas.' },
+  { id: 'sillones-a-punetazos', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
+  { id: 'carta-bien', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.15, .7], why: 'Los estampados, pensando: tumbar primero al que le toca la luz siguiente, antes de que se recoloree, y nunca con su propio elemento.' },
+  { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'casual', win: [0, .25], why: 'Repartiendo golpes, cada luz devuelve el color a uno de ellos y el combate no se acaba.' },
+  { id: 'abside-bien', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .9], why: 'El Telescopio, pensando: pegarle mientras enfoca, que se le raja la lente y el rayo no sale.' },
+  { id: 'abside-sin-pensar', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'casual', win: [0, .3], why: 'Sin aprovechar el enfoque, el rayo de lente cae entero cada tres turnos.' },
 ];
 export interface TargetResult { id: string; why: string; pass: boolean; failures: string[]; row: Row; wanted: Pick<Target, 'win' | 'roundsLost' | 'hpLeftWon' | 'roundsWon' | 'duals'> }
 /** Plays every target and says which hold. */

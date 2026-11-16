@@ -538,7 +538,8 @@ try {
     // The castle (docs/castle.md): a room's pupils on their phase's floor, each boss in its own room.
     ...Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, id === 'aurelia' || id === 'direccion' || id === 'reina' || id === 'reina-vuelta' ? castlePhase(castlePhaseOf(id)).into.environment : castlePhase(castlePhaseOf(id)).environment])) as Record<(typeof CASTLE_ENCOUNTERS)[number], EnvironmentId>,
     // Emilie's model (docs/quests/emilie.md): its patrols and El que no converge, in the section.
-    'modelo-celdas': 'modelo', 'modelo-oscilacion': 'modelo', 'modelo-pluma': 'modelo', 'no-converge': 'modelo' } as const;
+    'modelo-celdas': 'modelo', 'modelo-oscilacion': 'modelo', 'modelo-pluma': 'modelo', 'no-converge': 'modelo',
+    'luca-recepcion': 'sagrada-familia-interior', 'luca-sillones': 'sagrada-familia-interior', 'luca-carta': 'sagrada-familia-interior', 'luca-abside': 'sagrada-familia-interior' } as const;
   /** Starts a test fight; another chapter's party needs that chapter's Gerard, so it reloads there. */
   function startFight(setup: FightSetup) {
     if (setup.adult !== story.adult) {

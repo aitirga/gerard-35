@@ -106,6 +106,15 @@ export const PROFILES = {
   oscilacion: base(110, 10, 12, 9, 10, 12),
   pluma: base(90, 9, 11, 9, 11, 10),
   'no-converge': base(520, 12, 13, 11, 12, 10),
+  // Fran's salon (docs/quests/luca.md § Monsters): frail moths, patches of pattern, a brass telescope,
+  // a cloud of hairspray and the restyled chaplains.
+  polilla: base(28, 10, 8, 8, 8, 13),
+  'estampado-rojo': base(100, 12, 10, 11, 11, 9),
+  'estampado-azul': base(100, 12, 10, 11, 11, 9),
+  'estampado-oro': base(100, 12, 10, 11, 11, 9),
+  telescopio: base(300, 10, 13, 12, 12, 8),
+  laca: base(120, 8, 12, 8, 10, 9),
+  capellan: base(100, 12, 9, 10, 10, 10),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;
 

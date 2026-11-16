@@ -4,6 +4,7 @@ import { buildCharacter, type CharacterSpec } from './character-model';
 import { createCampingFoes } from './camping-foes';
 import { createCuerdasFoes } from './cuerdas-foes';
 import { createModeloFoes } from './modelo-foes';
+import { createLucaFoes } from './luca-foes';
 
 /**
  * Uri's fears (docs/quests/nuria.md § The maze, § Final boss), built from primitives like the
@@ -199,6 +200,10 @@ export function createFears(app: pc.Application) {
   // And the foes of Emilie's model (src/modelo-foes.ts).
   const modelo = createModeloFoes(app);
   modelo.templates.forEach((model, kind) => templates.set(kind, model));
+  // And Fran's salon's (src/luca-foes.ts): what is eating Luca's colour.
+  const luca = createLucaFoes();
+  luca.attach(app.root);
+  luca.templates.forEach((model, kind) => templates.set(kind, model));
   /** Vertitrón's joints, found once per model. */
   const rigs = new WeakMap<pc.Entity, ReturnType<typeof rigOf>>();
   function rigOf(model: pc.Entity) {
@@ -263,7 +268,7 @@ export function createFears(app: pc.Application) {
       for (const crack of r.eye.find(n => n.name === 'Grieta') as pc.Entity[]) crack.enabled = broken;
     },
     uriEyes,
-    destroy() { templates.forEach((t, kind) => { if (!camping.templates.has(kind as never) && !cuerdas.templates.has(kind as never) && !modelo.templates.has(kind as never)) t.destroy(); }); materials.forEach(m => m.destroy()); camping.destroy(); cuerdas.destroy(); modelo.destroy(); },
+    destroy() { templates.forEach((t, kind) => { if (!camping.templates.has(kind as never) && !cuerdas.templates.has(kind as never) && !modelo.templates.has(kind as never) && !luca.templates.has(kind as never)) t.destroy(); }); materials.forEach(m => m.destroy()); camping.destroy(); cuerdas.destroy(); modelo.destroy(); luca.destroy(); },
   };
 }
 /** Vertitrón's measures (model metres): its hips over the floor, how far kneeling lowers them, and its eye up its trunk. */

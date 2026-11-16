@@ -355,6 +355,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // Cracked, the glass sends nothing back; Lo Directo with its lance in the floor takes more; La Voz out of air after her Calderón broke.
     if (c.kind === 'cristalino') chips.push(c.cracked ? ['rajado', 'Rajado'] : ['cristal', 'Cristal']);
     if (c.stuck) chips.push(['clavado', 'Clavado']);
+    // Fran's salon (docs/quests/luca.md): the chaplain the others copy, and the party lacquered (fire hurts them double).
+    if (c.peinado) chips.push(['peinado', 'Recién peinado']);
+    if (state && (c.lacado ?? -1) >= state.round) chips.push(['lacado', 'Lacado']);
     if (c.kind === 'voz' && state?.song) {
       if ((c.shielded ?? -1) >= state.round) chips.push(['guardia', 'Guardia']);
       if (c.clear) chips.push(['cristal', 'Nota clara']);
@@ -1777,9 +1780,15 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.lazo) pop(effect.lazo.target, `+${effect.lazo.amount}`, 'heal', effect.lazo.back ? 'Lazo · vuelve' : 'Lazo');
       if (effect.cracked) setTimeout(() => { if (token === generation) pop(effect.actor, '¡Rajado!', 'status', 'Ya no devuelve la magia', 'rajado'); }, 420);
       if (effect.stuck) setTimeout(() => { if (token === generation) pop(effect.actor, 'Clavado', 'status', 'Recibe más daño', 'clavado'); }, 420);
-      if (effect.summoned) pop(effect.summoned, 'Segunda voz', 'status', 'Coro', 'cristal');
+      if (effect.summoned) pop(effect.summoned, effect.summoned.startsWith('polilla') ? 'Otra polilla' : 'Segunda voz', 'status', effect.summoned.startsWith('polilla') ? 'Atraída por la luz' : 'Coro', 'cristal');
       // The castle's rules turning (src/castle-fight.ts): «Se lo aprende», «Sin atril», «Tropiezo», «Suyo», «Libre»…
       effect.called?.forEach((call, i) => setTimeout(() => { if (token === generation) pop(call.target, call.text, 'status', call.detail ?? ''); }, 420 + i * 240));
+      // Fran's salon's moves that are not a blow (docs/quests/luca.md).
+      if (effect.recolored) pop(effect.recolored.target, `+${effect.recolored.amount}`, 'heal', 'Se recolorea');
+      if (effect.lacquered) effect.lacquered.forEach(id => pop(id, 'Lacado', 'status', 'El fuego hace el doble', 'lacado'));
+      if (effect.lens) setTimeout(() => { if (token === generation) pop(effect.lens!, '¡Lente rajada!', 'status', 'El rayo no sale', 'rajado'); }, 420);
+      if (effect.stopped) setTimeout(() => { if (token === generation) effect.stopped!.forEach(id => pop(id, 'Quieto', 'status', 'Sin nadie a quien copiar', 'clavado')); }, 420);
+      if (effect.burst) setTimeout(() => { if (token !== generation) return; pop(effect.burst!.actor, '¡Estalla!', 'status', 'Fuego en la laca', 'quemado'); effect.burst!.hits.forEach(h => pop(h.target, `−${h.amount}`, 'damage', 'Estallido')); }, 420);
       if (effect.kind === 'enemy' && effect.shielded && isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind)) pop(effect.actor, 'Guardia', 'guard');
       if (effect.kind === 'enemy' && effect.clear) pop(effect.actor, 'Nota clara', 'status', 'Devuelve la magia', 'cristal');
       if (effect.kind === 'enemy' && effect.telegraph?.id === 'calderon') pop(effect.actor, 'Toma aire', 'status', 'Calderón en su próximo turno', 'crescendo');

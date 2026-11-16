@@ -240,6 +240,11 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   'modelo-oscilacion': [hex('#3fe07a', .5, .8), hex('#6cc8f2', .55, .7), hex('#ffe45c', .55, .7), hex('#12301c', .3, .8)],
   'modelo-pluma': [hex('#3fe07a', .45, .8), hex('#6cc8f2', .6, .75), hex('#12301c', .3, .8), hex('#c9a45a', .45, .6)],
   'no-converge': [hex('#3fe07a', .6, .85), hex('#6cc8f2', .5, .75), hex('#ffe45c', .5, .75), hex('#0c2014', .25, .8)],
+  // Fran's salon: the basilica's pale stone light and each zone's own window colour.
+  'luca-recepcion': [white(5600, .6), hex('#4f9fe8', .55, .75), hex('#4fbf7a', .5, .7), hex('#e9e4d8', .5, .3)],
+  'luca-sillones': [white(5000, .6), hex('#e8503a', .55, .75), hex('#4f9fe8', .5, .7), hex('#e9e4d8', .5, .3)],
+  'luca-carta': [white(4600, .6), hex('#ff8f3f', .6, .75), hex('#e8503a', .55, .75), hex('#ffd84f', .5, .7)],
+  'luca-abside': [white(4200, .6), hex('#ffd84f', .6, .75), hex('#c89a3a', .55, .7), hex('#e9e4d8', .5, .3)],
 };
 const ALARM = hex('#ff2a1a', .75, 1);
 /** 0 with everyone healthy, 1 when someone still standing is about to fall. */
