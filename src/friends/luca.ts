@@ -12,6 +12,7 @@
 import type { Dialogue, DialogueLine, SpeakerId } from '../dialogue';
 import type { EnvironmentId } from '../environments';
 import type { Cell } from '../movement';
+import type { WalkId } from '../vidrieras';
 
 export const SAGRADA: EnvironmentId = 'sagrada-familia';
 export const INTERIOR: EnvironmentId = 'sagrada-familia-interior';
@@ -39,23 +40,53 @@ export const PLACES_LUCA = {
   fran: { x: 43, z: 20 },
 } as const;
 
-/** The salon's zones (docs/quests/luca.md § La Sagrada peluquería), from the door in. */
+/**
+ * The salon's zones (docs/quests/luca.md § La Sagrada peluquería), in the order the way goes round
+ * the crossing: the Nativity arm by the door, the nave, the Passion arm, the apse; then the crossing.
+ */
 export type ZoneId = 'recepcion' | 'sillones' | 'carta' | 'abside';
 export interface Zone {
   id: ZoneId; name: string;
-  /** Its fight, where its foes stand waiting, and how near walking up to them starts it. */
-  encounter: `luca-${ZoneId}`; cell: Cell; radius: number;
-  /** Its rect on the plan, for the salon's dressing and the walk-in line. */
+  /** Its fight, where its foes stand waiting, and how near walking up to them starts it (`trip`: crossing that rect starts it). */
+  encounter: `luca-${ZoneId}`; cell: Cell; radius: number; trip?: { x: number; z: number; w: number; d: number };
+  /** Its rect on the plan, for the walk-in light and the salon's dressing. */
   area: { x: number; z: number; w: number; d: number };
-  /** The colour it gives back to Luca. */
-  colour: string;
+  /** Which windows light it (src/vidrieras.ts), and the colour it gives back to Luca. */
+  walk: WalkId; colour: string;
 }
 export const ZONES: readonly Zone[] = [
-  { id: 'recepcion', name: 'La recepción', encounter: 'luca-recepcion', cell: { x: 36, z: 31 }, radius: 3, area: { x: 27, z: 29, w: 19, d: 10 }, colour: '#3f8fe0' },
-  { id: 'sillones', name: 'Los sillones', encounter: 'luca-sillones', cell: { x: 12, z: 20 }, radius: 3.5, area: { x: 1, z: 6, w: 22, d: 29 }, colour: '#e0503a' },
-  { id: 'carta', name: 'La carta de colores', encounter: 'luca-carta', cell: { x: 36, z: 6 }, radius: 3, area: { x: 27, z: 1, w: 19, d: 9 }, colour: '#f08a2c' },
-  { id: 'abside', name: 'El ábside', encounter: 'luca-abside', cell: { x: 56, z: 20 }, radius: 3.5, area: { x: 50, z: 6, w: 11, d: 29 }, colour: '#f2c94c' },
+  // Across the Nativity arm's mouth: nobody gets into the basilica without meeting them.
+  { id: 'recepcion', name: 'La recepción', encounter: 'luca-recepcion', cell: { x: 36, z: 32 }, radius: 3, trip: { x: 27, z: 33, w: 19, d: 2 }, area: { x: 27, z: 29, w: 19, d: 11 }, walk: 'nacimiento', colour: '#3f8fe0' },
+  { id: 'sillones', name: 'Los sillones', encounter: 'luca-sillones', cell: { x: 12, z: 20 }, radius: 3.5, area: { x: 1, z: 6, w: 22, d: 29 }, walk: 'nave', colour: '#e0503a' },
+  { id: 'carta', name: 'La carta de colores', encounter: 'luca-carta', cell: { x: 36, z: 4 }, radius: 3, area: { x: 27, z: 1, w: 19, d: 4 }, walk: 'pasion', colour: '#f08a2c' },
+  { id: 'abside', name: 'El ábside', encounter: 'luca-abside', cell: { x: 56, z: 20 }, radius: 3.5, area: { x: 51, z: 6, w: 10, d: 29 }, walk: 'abside', colour: '#f2c94c' },
 ];
+/** The zone whose windows light `cell`, if any (the crossing and the hall are the nave's light). */
+export const zoneAt = (cell: Cell) => ZONES.find(z => cell.x >= z.area.x && cell.x < z.area.x + z.area.w && cell.z >= z.area.z && cell.z < z.area.z + z.area.d);
+const column = (x: number, zs: number[]) => zs.map(z => ({ x, z }));
+const row = (z: number, xs: number[]) => xs.map(x => ({ x, z }));
+const span = (a: number, b: number, skip: number[] = []) => Array.from({ length: b - a + 1 }, (_, i) => a + i).filter(n => !skip.includes(n));
+/**
+ * The queues that keep the way (docs/quests/luca.md § Review A): grey visitors behind queue belts,
+ * *esperando turno*, across the nave, the Passion arm and the apse. Each moves on when the zone
+ * before it is won. `look`: where the queue is looked at from.
+ */
+export const QUEUES: readonly { id: string; after: ZoneId; cells: Cell[]; look: Cell }[] = [
+  { id: 'nave', after: 'recepcion', cells: column(23, span(6, 34)), look: { x: 24, z: 22 } },
+  { id: 'pasion', after: 'sillones', cells: row(5, span(27, 45, [31, 41])), look: { x: 36, z: 6 } },
+  { id: 'abside', after: 'carta', cells: column(50, span(7, 33, [15, 25])), look: { x: 50, z: 26 } },
+];
+/**
+ * The mirrors in the nave (docs/quests/luca.md § Review C): three of the salon's mirrors, each
+ * turned a quarter at a time (`\` 0, `/` 1). The light of a north window comes down the aisle at
+ * x 8; brought to the chaplains' chairs it dazzles them before their fight. The beam's rules are in
+ * src/espejos.ts.
+ */
+export const MIRRORS: readonly Cell[] = [{ x: 8, z: 12 }, { x: 20, z: 12 }, { x: 20, z: 20 }];
+/** How they stand when the salon opens: every one sends the light somewhere else. */
+export const MIRRORS_START: readonly (0 | 1)[] = [1, 1, 0];
+/** Where the window's beam comes in, which way, and the chaplains' chairs it is for. */
+export const BEAM = { from: { x: 8, z: 6 }, dir: { x: 0, z: 1 }, target: { x: 12, z: 20 } } as const;
 /** Luca's own colours, back once Fran is beaten: the loud shirt, the trousers. */
 export const LUCA_COLOURS = { shirt: '#f08a2c', trousers: '#2f8f7a' } as const;
 
@@ -140,13 +171,28 @@ export const LINES_LUCA = {
     carta: group('aitor', gerard('Las vidrieras son una carta de colores.'), aitor('Le faltan los de Luca. Los tienen esas cosas.')),
     abside: group('aitor', gerard('Lentes. Cartas de estrellas. Esto es de Luca.'), aitor('Y lo están usando contra él.')),
   } satisfies Record<ZoneId, Dialogue>,
-  /** A zone won: a colour goes out of the door, by how many are won. */
+  /** A zone won: a colour goes out of the door, and the queue in front moves on a step; by how many are won. */
   zoneWon: [
-    group('aitor', aitor('¿Lo has visto? Algo ha salido por la puerta. Un color.')),
-    group('aitor', aitor('Otro. Hacia fuera, hacia el estanque.')),
-    group('aitor', gerard('Ya van tres.')),
-    group('aitor', aitor('El último. El cura de la entrada ya no está tan tranquilo.')),
+    group('aitor', aitor('¿Lo has visto? Algo ha salido por la puerta. Un color.'), gerard('Y la cola de la nave se ha movido. Ha pasado uno.')),
+    group('aitor', aitor('Otro color, hacia fuera.'), aitor('La cola de la Pasión avanza. Nos toca.')),
+    group('aitor', gerard('Ya van tres.'), aitor('La del ábside también se mueve. Es la última.')),
+    group('aitor', aitor('El último. El capellán de la entrada ya no está tan tranquilo.')),
   ] as Dialogue[],
+  /** A queue looked at while it still keeps the way. */
+  queue: group('aitor',
+    gerard('Gente gris, en fila, detrás de una cinta. Esperan turno.'),
+    aitor('Y no se mueven hasta que pase el de delante.'),
+  ),
+  /** The nave's mirrors, walked up to the first time: the window's light lands on one and goes nowhere. */
+  mirrors: group('aitor',
+    aitor('La luz de esa vidriera cae en un espejo. Y rebota contra la pared.'),
+    gerard('Estos espejos giran. Son de peluquería.'),
+  ),
+  /** The light brought to the chaplains' chairs. */
+  dazzled: group('aitor',
+    aitor('Ahí. La luz les cae en la cara, en los sillones.'),
+    gerard('Se tapan los ojos. Ahora no nos van a ver venir.'),
+  ),
   /** The chaplain before the presbytery, by how many zones are won; and once all four are. */
   capellan: [
     group('capellan', capellan('El señor está atendiendo. Hay que esperar turno.')),

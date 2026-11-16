@@ -19,7 +19,8 @@ import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
 import { ALEGIA, CUERDAS_PLACE, LINES_MARTA, MARTA_SCALE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
-import { DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LUCA_SCALE, PLACES_LUCA, SAGRADA, ZONES } from './friends/luca.ts';
+import { BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LUCA_SCALE, MIRRORS, MIRRORS_START, PLACES_LUCA, QUEUES, SAGRADA, ZONES } from './friends/luca.ts';
+import { trace, turned, type Facing } from './espejos.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
 import { castleEntry, extraSlots, isCastlePlace, type CastleEncounter } from './castle.ts';
@@ -253,11 +254,11 @@ export interface EmilieRun { told: string[]; section?: ModeloState }
 export const freshEmilie = (): EmilieRun => ({ told: [] });
 /**
  * Luca's mission while it runs (docs/quests/luca.md); not saved, as the others. `entered`: in Fran's
- * salon once (that hour is spent); `beaten`: the zones won this visit (ZONES ids); `told`: what was
- * already said once.
+ * salon once (that hour is spent); `beaten`: the zones won this visit (ZONES ids), in the order the
+ * way goes; `told`: what was already said once; `mirrors`: how the nave's mirrors stand (MIRRORS).
  */
-export interface LucaRun { entered: boolean; beaten: string[]; told: string[] }
-export const freshLuca = (): LucaRun => ({ entered: false, beaten: [], told: [] });
+export interface LucaRun { entered: boolean; beaten: string[]; told: string[]; mirrors: number[] }
+export const freshLuca = (): LucaRun => ({ entered: false, beaten: [], told: [], mirrors: [...MIRRORS_START] });
 /**
  * What the snow globe keeps (docs/chapter-2.md § The snow globe): each mission's run as it was the
  * last time the globe was shaken. A day's end, a fall or a reload puts the missions back to this.
@@ -836,6 +837,12 @@ export class Story {
     const first = { 'luca-recepcion': 'polilla', 'luca-sillones': 'capellan', 'luca-carta': 'estampado-rojo', 'luca-abside': 'telescopio' } as const;
     return ZONES.filter(z => !this.luca.beaten.includes(z.id)).map(z => ({ id: z.id, encounter: z.encounter, kind: first[z.encounter], cell: { ...z.cell } }));
   }
+  /** The next zone of the salon on the way round the crossing, if any is left. */
+  get lucaNext() { return ZONES.find(z => !this.luca.beaten.includes(z.id)); }
+  /** Where the window's light goes in the nave, with its mirrors as they stand now (src/espejos.ts). */
+  get beam() { return trace(ENVIRONMENTS[INTERIOR].grid, MIRRORS, this.luca.mirrors as Facing[], BEAM); }
+  /** Whether a fight starts with its foes dazzled: the chaplains, once the light reaches their chairs. */
+  dazzled(encounter?: string) { return encounter === 'luca-sillones' && this.salon && this.beam.hit; }
   /** Aitor puts the two clues together, once: the photo gone grey, and the Sagrada Família on the TV or on the poster. */
   private lucaLink(by: 'tv' | 'poster'): Dialogue[] {
     if (!this.has('clue-luca-foto') || this.has('sagrada-luca')) return [];
@@ -855,8 +862,14 @@ export class Story {
       run.entered = true; this.set('peluqueria');
       return [say(first ? LINES_LUCA.inside : LINES_LUCA.insideAgain), ...first ? this.spend('cafe') : []];
     }
+    if (id === 'luca-espejos') {
+      if (run.told.includes('espejos')) return [];
+      run.told.push('espejos');
+      return [say(LINES_LUCA.mirrors)];
+    }
     const zone = ZONES.find(z => id === `luca-${z.id}`);
-    if (!zone || run.beaten.includes(zone.id)) return [];
+    // Only the next one on the way: the queues keep the rest.
+    if (!zone || run.beaten.includes(zone.id) || zone !== this.lucaNext) return [];
     const told = run.told.includes(zone.id);
     if (!told) run.told.push(zone.id);
     return [...told ? [] : [say(LINES_LUCA.zones[zone.id])], { kind: 'battle', encounter: zone.encounter }];
@@ -995,7 +1008,7 @@ export class Story {
   modeloRun(): ModeloState { return this.emilie.section ??= createModelo(); }
   startMarta(run: Partial<MartaRun>) { this.marta = { ...freshMarta(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
   /** Development: starts Luca's mission partway (the picker's Misiones tab): in the salon, some zones won. */
-  startLuca(run: Partial<LucaRun>) { this.luca = { ...freshLuca(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
+  startLuca(run: Partial<LucaRun>) { this.luca = { ...freshLuca(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []], mirrors: [...run.mirrors ?? MIRRORS_START] }; }
   startUni(run: Partial<UniRun>) { this.uni = { ...freshUni(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
   /** Gerard's active ánima, which also dresses the interface. */
   get gerardClass(): GerardClass | undefined { return this.classOf('gerard') as GerardClass | undefined; }
@@ -1073,6 +1086,11 @@ export class Story {
     if (environment === BEACH && (this.uni.chase || this.uni.spiral)) return TENTACLES.map(c => ({ ...c }));
     // The pool's gate stays padlocked until the numbers of the maze's three words are put on it, the merendero's steel door until every pitch is found.
     if (environment === ALEGIA) return PLACES_MARTA.piano.cells.map(c => ({ ...c }));
+    // Fran's salon: the queues not yet moved on keep the way, and the nave's mirrors stand where they are.
+    if (environment === INTERIOR && this.salon) return [
+      ...QUEUES.filter(q => !this.luca.beaten.includes(q.after)).flatMap(q => q.cells),
+      ...MIRRORS,
+    ].map(c => ({ ...c }));
     if (environment === CAMP && !this.has('sobremesa')) return [
       ...this.has('candado') || this.has('parcelas') ? [] : CAMPING_GATE,
       ...this.has('parcelas') ? [] : CAMPING_DOOR,
@@ -1178,9 +1196,12 @@ export class Story {
     if (environment === INTERIOR) {
       if (!this.salon) return [];
       const run = this.luca;
+      const next = this.lucaNext;
       return [
-        ...run.told.includes('dentro') ? [] : [{ id: 'luca-dentro', cell: { x: PLACES_LUCA.inside.x, z: PLACES_LUCA.inside.z - 2 }, radius: 1.5 }],
-        ...ZONES.filter(z => !run.beaten.includes(z.id)).map(z => ({ id: `luca-${z.id}`, cell: { ...z.cell }, radius: z.radius })),
+        ...run.told.includes('dentro') ? [] : [{ id: 'luca-dentro', cell: { x: PLACES_LUCA.inside.x, z: PLACES_LUCA.inside.z - 1 }, radius: 1.2 }],
+        ...next ? [{ id: `luca-${next.id}`, cell: { ...next.cell }, radius: next.radius, ...next.trip ? { area: { ...next.trip } } : {} }] : [],
+        // The nave's mirrors, the first time near them while the chaplains still wait.
+        ...next?.id === 'sillones' && !run.told.includes('espejos') ? [{ id: 'luca-espejos', cell: { ...MIRRORS[0] }, radius: 3.5, passing: true }] : [],
       ];
     }
     if (environment === CAMP) return this.campTriggers();
@@ -1394,7 +1415,11 @@ export class Story {
       list.push({ id: 'talk-luca', label: 'Hablar con Luca', cell: { ...PLACES_LUCA.luca } });
       list.push({ id: 'luca-reflejo', label: 'Mirar el reflejo', cell: { ...PLACES_LUCA.reflejo } });
     }
-    if (environment === INTERIOR && this.salon) list.push({ id: 'talk-capellan', label: 'Hablar con el capellán', cell: { ...PLACES_LUCA.capellan } });
+    if (environment === INTERIOR && this.salon) {
+      list.push({ id: 'talk-capellan', label: 'Hablar con el capellán', cell: { ...PLACES_LUCA.capellan } });
+      for (const q of QUEUES) if (!this.luca.beaten.includes(q.after)) list.push({ id: `luca-cola-${q.id}`, label: 'Mirar la cola', cell: { ...q.look } });
+      if (!this.luca.beaten.includes('sillones')) MIRRORS.forEach((m, i) => list.push({ id: `luca-espejo-${i}`, label: 'Girar el espejo', hint: 'Girar', cell: { ...m } }));
+    }
     if (this.adult && environment === JAR.environment && this.jar.length) {
       list.push({ id: 'meridiana-luces', label: 'Abrir el bote', hint: 'Abrir el bote', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });
     }
@@ -1557,6 +1582,15 @@ export class Story {
         if (this.has('fran')) return [say(LINES_LUCA.after)];
         if (this.set('sagrada-luca')) return [say(LINES_LUCA.arrive)];
         return [say(LINES_LUCA.waiting[Math.min(this.luca.beaten.length, LINES_LUCA.waiting.length - 1)])];
+      }
+      case 'luca-cola-nave': case 'luca-cola-pasion': case 'luca-cola-abside':
+        return this.salon ? [say(LINES_LUCA.queue)] : [];
+      case 'luca-espejo-0': case 'luca-espejo-1': case 'luca-espejo-2': {
+        if (!this.salon) return [];
+        const before = this.beam.hit;
+        this.luca.mirrors = turned(this.luca.mirrors as Facing[], Number(event.id.slice(-1)));
+        if (this.beam.hit && !before && !this.luca.told.includes('deslumbrados')) { this.luca.told.push('deslumbrados'); return [say(LINES_LUCA.dazzled)]; }
+        return [];
       }
       case 'luca-reflejo':
         if (!this.adult) return [];

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Story } from '../src/story.ts';
 import { flagsAt, missionJump, missionNow, missionParts } from '../src/story-points.ts';
-import { DOOR, INTERIOR, LINES_LUCA, PLACES_LUCA, SAGRADA, ZONES } from '../src/friends/luca.ts';
+import { DOOR, INTERIOR, LINES_LUCA, MIRRORS, PLACES_LUCA, QUEUES, SAGRADA, ZONES, zoneAt } from '../src/friends/luca.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { NEWS } from '../src/chapter-2.ts';
 import { canWalk } from '../src/movement.ts';
@@ -59,22 +59,57 @@ test('the door waits for Luca; once he has been spoken to, inside is Fran\'s sal
   assert.deepEqual(story.handle({ type: 'near', id: 'luca-dentro' }), []);
 });
 
-test('each zone is its fight once; the chaplain keeps the presbytery until all four are won, then Fran', () => {
+test('the way goes round the crossing: each zone is its fight once, in order, and the queue ahead moves on as each is won', () => {
   const story = inSalon();
-  assert.equal(story.lucaFoes(INTERIOR).length, 4);
+  assert.equal(story.lucaFoes(INTERIOR).length, 4, 'all four wait where they stand');
+  const ids = () => story.triggers(INTERIOR).map(t => t.id).filter(id => ZONES.some(z => id === `luca-${z.id}`));
+  assert.deepEqual(ids(), ['luca-recepcion'], 'only the next one starts');
+  assert.deepEqual(story.handle({ type: 'near', id: 'luca-carta' }), [], 'one further on does nothing');
+  const blocked = () => story.blocked(INTERIOR).map(c => `${c.x},${c.z}`);
+  for (const q of QUEUES) assert.ok(q.cells.every(c => blocked().includes(`${c.x},${c.z}`)), q.id);
   const first = story.handle({ type: 'near', id: 'luca-recepcion' });
   assert.deepEqual(beats(first), ['dialogue', 'battle']);
   assert.equal(first[1].encounter, 'luca-recepcion');
   assert.deepEqual(beats(story.handle({ type: 'near', id: 'luca-recepcion' })), ['battle'], 'its line only once');
   assert.deepEqual(say(story.handle({ type: 'interact', id: 'talk-capellan' })), [LINES_LUCA.capellan[0]]);
   for (const [i, zone] of ZONES.entries()) {
+    assert.deepEqual(ids(), [`luca-${zone.id}`]);
     assert.deepEqual(say(story.handle({ type: 'battle', won: true, encounter: zone.encounter })), [LINES_LUCA.zoneWon[i]]);
-    assert.ok(!story.triggers(INTERIOR).some(t => t.id === `luca-${zone.id}`));
+    const freed = QUEUES.find(q => q.after === zone.id);
+    if (freed) assert.ok(!freed.cells.some(c => blocked().includes(`${c.x},${c.z}`)), `${freed.id} moves on`);
   }
+  assert.deepEqual(blocked(), MIRRORS.map(m => `${m.x},${m.z}`), 'only the mirrors stand in the way now');
   assert.equal(story.npcs(SAGRADA).find(n => n.id === 'luca').faded, 1 - 4 / 5, 'a colour back for each zone');
   const boss = story.handle({ type: 'interact', id: 'talk-capellan' });
   assert.deepEqual(say(boss), [LINES_LUCA.ready, LINES_LUCA.fran]);
   assert.equal(boss.at(-1).encounter, 'fran');
+});
+
+test('each zone is lit by its own windows, and the queues keep the way whole', () => {
+  assert.deepEqual(ZONES.map(z => z.walk), ['nacimiento', 'nave', 'pasion', 'abside']);
+  for (const z of ZONES) assert.equal(zoneAt(z.cell)?.id, z.id, z.id);
+  assert.equal(zoneAt(PLACES_LUCA.capellan), undefined, 'the crossing has the nave\'s light');
+  const grid = ENVIRONMENTS[INTERIOR].grid;
+  for (const q of QUEUES) {
+    for (const c of q.cells) assert.equal(grid[c.z][c.x], '.', `${q.id} ${c.x},${c.z}`);
+    assert.ok(canWalk(q.look, grid), q.id);
+  }
+});
+
+test('turning the nave\'s mirrors brings the light to the chaplains\' chairs; they start their fight dazzled', () => {
+  const story = inSalon(['recepcion']);
+  assert.deepEqual(story.interactions(INTERIOR).map(i => i.id).filter(id => id.startsWith('luca-espejo')), ['luca-espejo-0', 'luca-espejo-1', 'luca-espejo-2']);
+  assert.equal(story.dazzled('luca-sillones'), false);
+  assert.deepEqual(say(story.handle({ type: 'near', id: 'luca-espejos' })), [LINES_LUCA.mirrors]);
+  assert.deepEqual(story.handle({ type: 'interact', id: 'luca-espejo-0' }), []);
+  assert.deepEqual(story.handle({ type: 'interact', id: 'luca-espejo-1' }), []);
+  assert.deepEqual(say(story.handle({ type: 'interact', id: 'luca-espejo-2' })), [LINES_LUCA.dazzled]);
+  assert.ok(story.beam.hit && story.dazzled('luca-sillones'));
+  assert.equal(story.dazzled('luca-carta'), false);
+  // Turned away again and back: said once.
+  story.handle({ type: 'interact', id: 'luca-espejo-2' });
+  assert.equal(story.dazzled('luca-sillones'), false);
+  assert.deepEqual(story.handle({ type: 'interact', id: 'luca-espejo-2' }), []);
 });
 
 test('Fran beaten: Luca in full colour by the pond, his ánima and light, the day spent, the plain church again', () => {
@@ -101,7 +136,11 @@ test('he talks little and half of it while grey, never names a real problem, and
 
 test('the picker can start the mission at every part, and knows where the story is', () => {
   const parts = missionParts('luca');
-  assert.deepEqual(parts.map(p => p.id), ['start', 'luca', 'door', 'recepcion', 'sillones', 'carta', 'abside', 'crucero', 'fran', 'won', 'done']);
+  assert.deepEqual(parts.map(p => p.id), ['start', 'luca', 'door', 'recepcion', 'sillones', 'espejos', 'carta', 'abside', 'crucero', 'fran', 'won', 'done']);
+  for (const part of parts) if (part.spot?.environment === INTERIOR && part.luca) {
+    const story = new Story(missionJump('luca', part.id).flags); story.startLuca(part.luca);
+    assert.ok(!story.blocked(INTERIOR).some(c => c.x === part.spot.cell.x && c.z === part.spot.cell.z), `${part.id} stands clear of the queues`);
+  }
   for (const part of parts) {
     const jump = missionJump('luca', part.id);
     assert.ok(jump.flags.includes('metro'), part.id);

@@ -10,7 +10,7 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, songNow, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId, skillKnown, lightNow, type Combatant,
@@ -55,6 +55,8 @@ const MISSION_ANIMAS: ClassId[] = ['matemagico', 'papagato'];
 export interface Setup {
   /** One of FIGHTS. */
   fight: string;
+  /** Fran's salon: the chaplains start dazzled, the nave's mirrors solved (`dazzle`). */
+  dazzled?: boolean;
   /** `gerard:papagato+aitor:matemagico`; `-` wears nothing, and `gerard:papagato` goes alone. */
   party: string;
   /** Each ánima's level (1 if missing). */
@@ -237,6 +239,7 @@ export function createFight(setup: Setup, random: () => number = Math.random): B
     : (FEAR_ENCOUNTERS as readonly string[]).includes(kind) ? createFearBattle(party, kind as (typeof FEAR_ENCOUNTERS)[number], animas, random)
     : undefined;
   if (!state) throw new Error(`Unknown fight "${setup.fight}": use ${FIGHTS.join(', ')}.`);
+  if (setup.dazzled) dazzle(state);
   state.levels = { ...setup.levels };
   improve(state, improvedBy(setup.exact ? setup.improved ?? [] : nodesFor(setup.levels, setup.improved)));
   // The fight's own dice (Zarpazos de fuego's coins) come from the same seed.
@@ -315,7 +318,7 @@ function threatOn(state: BattleState): Threat {
 /** What a fallen Estampado will not take back: its Recolor, sooner the nearer its own light. */
 function recolorWorth(state: BattleState, foe: Combatant) {
   const own = foe.kind!.replace('estampado-', '');
-  const wait = state.light ? [0, 1, 2, 3, 4].map(n => n === 0 ? lightNow(state) : upcoming(state.light!.t, n).at(-1)).indexOf(own as never) : -1;
+  const wait = state.light ? [0, 1, 2, 3, 4].map(n => n === 0 ? lightNow(state) : upcoming(state.light!.t, n, state.light!.walk).at(-1)).indexOf(own as never) : -1;
   return wait < 0 ? 0 : foe.maxHp * LUCA.recolor * (wait <= 1 ? 1 : .5);
 }
 /** What a choice costs in maná, both halves for a dual. */
@@ -855,14 +858,15 @@ export const TARGETS: readonly Target[] = [
   // Fran's salon (docs/quests/luca.md). Its numbers are LUCA (book luca.rules) and each foe's PROFILES entry
   // (foe.polilla…). The light walks through every fight: the party's blows of its element do nothing.
   { id: 'recepcion-ensena', fight: 'luca-recepcion', party: DUO, levels: P2M2, policy: 'casual', win: [.85, 1], why: 'La recepción enseña la luz: el fuego deja de servir a mitad de combate. Se pasa igual, pero se nota.' },
-  { id: 'sillones-bien', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.1, .6], why: 'Los capellanes, pensando: primero el recién peinado, y los demás se quedan a medio gesto; La Laca, con fuego cuando la luz lo deja.' },
+  { id: 'sillones-bien', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'smart', win: [.88, 1], hpLeftWon: [.25, .6], why: 'Los capellanes, pensando: primero el recién peinado, y los demás se quedan a medio gesto; La Laca, con fuego cuando la luz lo deja.' },
+  { id: 'sillones-deslumbrados', fight: 'luca-sillones', dazzled: true, party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .75], why: 'Con los espejos de la nave resueltos los capellanes empiezan deslumbrados: el mismo combate, con más vida al acabar.' },
   { id: 'sillones-sin-pensar', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin mirar quién lleva el peinado nuevo, cada gesto se repite y el fijador dobla las chispas.' },
   { id: 'sillones-a-punetazos', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
-  { id: 'carta-bien', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.15, .7], why: 'Los estampados, pensando: tumbar primero al que le toca la luz siguiente, antes de que se recoloree, y nunca con su propio elemento.' },
-  { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'casual', win: [0, .25], why: 'Repartiendo golpes, cada luz devuelve el color a uno de ellos y el combate no se acaba.' },
-  { id: 'abside-bien', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .9], why: 'El Telescopio, pensando: pegarle mientras enfoca, que se le raja la lente y el rayo no sale.' },
-  { id: 'abside-sin-pensar', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'casual', win: [0, .3], why: 'Sin aprovechar el enfoque, el rayo de lente cae entero cada tres turnos.' },
-  { id: 'fran-bien', fight: 'fran', party: DUO, levels: P3M3, policy: 'smart', win: [.9, 1], hpLeftWon: [.25, .8], roundsWon: [11, 20], why: 'Fran, pensando: primero el acólito recién peinado; luego romper cada lámpara en su propia luz, que se le apaga el brillo; y agarrarse a la Aspersión.' },
+  { id: 'carta-bien', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'smart', win: [.88, 1], hpLeftWon: [.15, .55], why: 'Los estampados, pensando: tumbar primero al que le toca la luz siguiente, antes de que se recoloree, y nunca con su propio elemento.' },
+  { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'casual', win: [0, .35], why: 'Repartiendo golpes, cada luz devuelve el color a uno de ellos y el combate no se acaba.' },
+  { id: 'abside-bien', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.25, .6], why: 'El ábside, la zona más dura antes de Fran: pegarle al Telescopio mientras enfoca, que se le raja la lente, y rematar a La Laca con fuego cuando la luz lo deja, que estalla sobre él.' },
+  { id: 'abside-sin-pensar', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'casual', win: [0, .15], why: 'Sin leer el enfoque ni la luz, el rayo cae entero, doble sobre los lacados, y la nube no estalla.' },
+  { id: 'fran-bien', fight: 'fran', party: DUO, levels: P3M3, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .7], roundsWon: [10, 16], why: 'Fran, pensando: primero el acólito recién peinado; luego romper cada lámpara en su propia luz, que se le apaga el brillo; y agarrarse a la Aspersión.' },
   { id: 'fran-sin-pensar', fight: 'fran', party: DUO, levels: P3M3, policy: 'casual', win: [0, .25], why: 'Sin mirar a las lámparas, cada luz le da más brillo y los golpes le llegan a medias; la Aspersión cae entera.' },
   { id: 'fran-a-punetazos', fight: 'fran', party: DUO, levels: P3M3, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
 ];

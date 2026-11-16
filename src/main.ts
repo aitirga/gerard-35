@@ -24,7 +24,7 @@ import type { MemberId } from './story';
 import { createTravelUI } from './travel-ui';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
-import { ANIMA_NAMES, CLASS_STATS, canWear, kitOf, manaMax, palaceGuards, type BattleState, type ClassId, type PartySlot } from './battle';
+import { ANIMA_NAMES, CLASS_STATS, canWear, dazzle, kitOf, manaMax, palaceGuards, type BattleState, type ClassId, type PartySlot } from './battle';
 import { ANIMA_IDS, animaBonus, type AnimaId } from './animas';
 import { flagsAt, missionJump, missionNow, spotAt, type MissionPart, type Spot } from './story-points';
 import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './jump-menu';
@@ -607,6 +607,8 @@ try {
       // A patrol of the campsite's maze: its foes shout their word as they fall (docs/quests/universidad.md § Las palabras).
       const patrol = currentLocation === 'camping' ? CAMP_HUNTERS.find(h => h.id === story.uni.fighting && h.encounter === options.encounter) : undefined;
       battleUI.open(story.battleParty(withPartner), foes, { ...options, lastWord: patrol?.word, animas: story.classes, levels: story.levels, xp: story.xp, improved: story.improved, guards: palaceGuards(story.animas.length) });
+      // Fran's salon: the light the nave's mirrors brought to the chaplains' chairs (docs/quests/luca.md).
+      if (story.dazzled(options.encounter)) battleUI.tweak(dazzle);
       if (import.meta.env.DEV && help.unbound) { unboundAnimas(); battleUI.tweak(applyHelp); }
     },
     // Backing off is neither a win nor a fall.

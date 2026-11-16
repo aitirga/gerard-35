@@ -5,7 +5,7 @@ import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type S
 import { TONES, VOZ_SONG, onsets, songAt, type Moment, type ToneId } from './song.ts';
 import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment } from './castle.ts';
 import { castleAfter, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
-import { LIGHTS, cancels, changes, lightAt, type LightId } from './vidrieras.ts';
+import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
 export type BattlePhase = 'player' | 'enemy' | 'beat' | 'won' | 'lost' | 'escaped';
@@ -851,7 +851,7 @@ export const LUCA_FIGHTS: Record<LucaEncounter, readonly LucaKind[]> = {
   'luca-recepcion': ['polilla', 'polilla', 'polilla'],
   'luca-sillones': ['capellan', 'capellan', 'capellan', 'laca'],
   'luca-carta': ['estampado-rojo', 'estampado-azul', 'estampado-oro'],
-  'luca-abside': ['telescopio', 'polilla', 'polilla'],
+  'luca-abside': ['telescopio', 'laca'],
   // Fran under the canopy with two acolytes; the canopy's three lamps (parts) are added by createLucaBattle.
   fran: ['fran', 'capellan', 'capellan'],
 };
@@ -919,7 +919,7 @@ export interface BattleState {
    * The light through the windows in Fran's salon (docs/quests/luca.md, src/vidrieras.ts): seconds
    * into its walk on the fight's clock. While a colour is on, the party's blows of its element do nothing.
    */
-  light?: { t: number };
+  light?: { t: number; walk?: WalkId };
   /** The lights that came on since it was last asked (`takeLightNews`). */
   lightNews?: LightId[];
   /** Fran's salon: the last gesture a foe made, for the freshly styled chaplain to copy. */
@@ -1277,7 +1277,7 @@ export const songNow = (state: BattleState): Moment | undefined => state.song ? 
 /** Whether `c` is La Voz between two notes: nothing hurts her then. */
 export const silenced = (state: BattleState, c: Combatant) => c.kind === 'voz' && !!state.song && !songNow(state)!.sounding;
 /** The light on now in Fran's salon (`undefined` in any other fight). */
-export const lightNow = (state: BattleState): LightId | undefined => state.light ? lightAt(state.light.t).light : undefined;
+export const lightNow = (state: BattleState): LightId | undefined => state.light ? lightAt(state.light.t, state.light.walk).light : undefined;
 /**
  * Whether the light on now eats `actor`'s blow of `element`: only the party's, only in Fran's salon
  * (docs/quests/luca.md). Returns the light, to say which.
@@ -2949,7 +2949,7 @@ export function takeSongNews(state: BattleState): SongNews[] {
 /** The light walks on (the fight's clock, `runClock`): `seconds` more of it. Returns whether a new one came on. */
 function runLight(state: BattleState, seconds: number) {
   if (!state.light) return false;
-  const came = changes(state.light.t, state.light.t + seconds);
+  const came = changes(state.light.t, state.light.t + seconds, state.light.walk);
   state.light.t += seconds;
   if (came.length) (state.lightNews ??= []).push(...came);
   // Fran drinks every light whose lamp still hangs: one more Brillo each time.
@@ -2984,8 +2984,8 @@ export function songLabel(state: BattleState) {
  * round TELESCOPIO_TURNS: it focuses on someone (said a turn ahead), fires its lens at them
  * (`rayoLente`, fire) and swings its brass (`tubo`); a blow while it focuses lands `lente` times as
  * hard and cracks the lens, calling the beam off. La Laca lacquers the party (*Lacado*, fire on them
- * lands `lacado` times as hard) and then sparks over everyone (`chispa`, fire); fire on La Laca bursts
- * it over every other foe (`estallido`). A chaplain cuts (`tijeretazo`); the freshly styled one
+ * lands `lacado` times as hard) and then sparks over everyone (`chispa`, fire); brought down by fire,
+ * La Laca bursts over every other foe (`estallido`). A chaplain cuts (`tijeretazo`); the freshly styled one
  * repeats the last gesture made, whole, and its fall leaves the others still for the round. An
  * Estampado gets `recolor` of its PV back each time the light of its own colour comes on.
  * Fran (§ Final boss): a Corte a medida (`corte`) on one, his acolytes copying it. From `standAt` of
@@ -2997,12 +2997,13 @@ export function songLabel(state: BattleState) {
  */
 export const LUCA = {
   aleteo: 12, polillasMost: 5,
-  estampar: 13,
-  rayoLente: 66, tubo: 26, lente: 1,
-  chispa: 16, lacado: 2, estallido: 40,
+  estampar: 9,
+  rayoLente: 66, tubo: 54, lente: 1,
+  chispa: 22, lacado: 2, estallido: 40,
   tijeretazo: 23,
-  recolor: .35,
-  corte: 18, acolito: 70, acolitoCorte: 16, aspersion: 26, aspersionDown: 2, brilloStep: .5, brilloMost: 3, standAt: .66, hisopoAt: .33,
+  recolor: .8,
+  deslumbre: 14, lacaAbside: 260,
+  corte: 18, acolito: 55, acolitoCorte: 16, aspersion: 26, aspersionDown: 2, brilloStep: .5, brilloMost: 3, standAt: .66, hisopoAt: .33,
 };
 /** The canopy's three lamps (Fran's fight): each drinks the lights of one side of the day. */
 export type LampId = 'frio' | 'calido' | 'oro';
@@ -3038,6 +3039,8 @@ const LUCA_WON: Record<LucaEncounter, string> = {
   'luca-abside': 'La lente se apaga. Las cartas de estrellas vuelven a ser solo papel. Un dorado se escapa hacia la puerta.',
   fran: 'Fran se queda quieto bajo el baldaquino. La luz deja de correr y se queda blanca, de mediodía.',
 };
+/** Which windows light each of the salon's fights (src/vidrieras.ts WALKS): the side of the basilica it is fought in. */
+export const LUCA_WALKS: Record<LucaEncounter, WalkId> = { 'luca-recepcion': 'nacimiento', 'luca-sillones': 'nave', 'luca-carta': 'pasion', 'luca-abside': 'abside', fran: 'nave' };
 const isLucaFight = (state: BattleState) => (LUCA_ENCOUNTERS as readonly string[]).includes(state.encounter);
 /** One of the salon's fights: who comes out (LUCA_FIGHTS), the first chaplain freshly styled, and the light walking from the cold morning. */
 function createLucaBattle(party: PartySlot[], encounter: LucaEncounter, animas?: ClassId[], random: () => number = Math.random): BattleState {
@@ -3048,6 +3051,8 @@ function createLucaBattle(party: PartySlot[], encounter: LucaEncounter, animas?:
     if (kind === 'capellan' && n === 1) one.peinado = true;
     // Fran's acolytes: chaplains by another name, so the zone's are not taken for them.
     if (encounter === 'fran' && kind === 'capellan') { one.name = `Acólito ${n}`; one.hp = one.maxHp = one.stats.pv = LUCA.acolito; }
+    // The apse's Laca is the thick cloud by the telescope: it takes more wearing down before fire brings it down.
+    if (encounter === 'luca-abside' && kind === 'laca') one.hp = one.maxHp = one.stats.pv = LUCA.lacaAbside;
     if (kind === 'fran') { one.stage = 1; one.brillo = 0; }
     return one;
   });
@@ -3058,8 +3063,17 @@ function createLucaBattle(party: PartySlot[], encounter: LucaEncounter, animas?:
     allies: lineUp(party, unlocked), foes,
     active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
     animas: unlocked, awakened: unlocked.includes('matemagico'), seed: seedFrom(random),
-    message: LUCA_MESSAGES[encounter], light: { t: 0 },
+    message: LUCA_MESSAGES[encounter], light: { t: 0, walk: LUCA_WALKS[encounter] },
   };
+}
+/**
+ * The chaplains dazzled (docs/quests/luca.md § Review C): the light the nave's mirrors bring to their
+ * chairs is in their eyes as the fight starts, Cegado II for `deslumbre` seconds (their blows lighter).
+ */
+export function dazzle(state: BattleState) {
+  const blind = state.foes.filter(f => f.kind === 'capellan' && f.hp > 0);
+  for (const f of blind) f.timed = { ...f.timed, cegado: { level: 2, left: LUCA.deslumbre, next: TIMED.cegado.every } };
+  if (blind.length) state.message = `${state.message} La luz de los espejos les da en la cara: casi no ven.`;
 }
 /** How much of a blow one of the salon's foes takes: El Telescopio while it focuses, its lens bare; Fran through his Brillo; a lamp only in its own light. */
 function lucaTaken(state: BattleState, target: Combatant) {
@@ -3090,11 +3104,11 @@ function checkLuca(state: BattleState, effect?: BattleEffect) {
   const landing = ally && effect ? landingOf(effect) : undefined;
   if (ally && landing) state.flash = ally.id;
   const struck = (id: string) => !!effect && ((effect.target === id && (effect.amount ?? 0) > 0) || !!effect.hits?.some(h => h.target === id && h.amount > 0));
-  // La Laca at the touch of fire: it goes up, and takes something off every other foe standing.
+  // La Laca brought down by fire: it goes up, and takes something off every other foe standing.
   const laca = state.foes.find(f => f.kind === 'laca');
-  if (laca && ally && landing === 'fuego' && struck(laca.id) && !effect!.burst) {
+  if (laca && laca.hp <= 0 && !laca.told && ally && landing === 'fuego' && struck(laca.id) && !effect!.burst) {
+    laca.told = true;
     const hits = state.foes.filter(f => f !== laca && f.hp > 0 && !f.part).map(f => ({ target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(LUCA.estallido, current(state, laca), current(state, f)), 'magic')) }));
-    laca.hp = 0;
     effect!.burst = { actor: laca.id, hits };
     state.message += ` ¡La Laca prende y estalla! ${hits.length ? `Alcanza a todos: ${hits.map(h => `−${h.amount}`).join(', ')} PV.` : ''}`.trimEnd();
   }

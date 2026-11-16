@@ -2,7 +2,7 @@ import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
 import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow, lampLit } from './battle';
-import { CYCLE, CYCLE_LENGTH, LIGHTS, cancels, lightAt, upcoming } from './vidrieras';
+import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -322,7 +322,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // Fran's salon: the light on now, on each of the party's plates (it only touches them).
     const light = state?.light && state.allies.includes(c) ? lightNow(state) : undefined;
     return shownHp(c) > 0 ? [
-      ...light ? [{ id: 'luz' as const, name: lightText(light), mark: '', timed: true, lasts: upcoming(state!.light!.t).map(id => LIGHTS[id].name).join(', ') }] : [],
+      ...light ? [{ id: 'luz' as const, name: lightText(light), mark: '', timed: true, lasts: upcoming(state!.light!.t, 2, state!.light!.walk).map(id => LIGHTS[id].name).join(', ') }] : [],
       // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
       ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño mientras suena una nota.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
       // El que no converge, converged: it takes every blow whole for the turns in its corner.
@@ -430,13 +430,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const pane = state?.light ? plate.querySelector<HTMLElement>('.status-icon[data-status="luz"]') : null;
     if (pane && state?.light) {
       // The ring is the whole walk, each light an arc in its colour; the hand goes round once a walk.
-      const now = lightAt(state.light.t);
-      pane.style.setProperty('--left', (1 - (state.light.t % CYCLE_LENGTH) / CYCLE_LENGTH).toFixed(4));
+      const walk = state.light.walk ?? 'nave', length = walkLength(walk), now = lightAt(state.light.t, walk);
+      pane.style.setProperty('--left', (1 - (state.light.t % length) / length).toFixed(4));
       pane.style.setProperty('--status', LIGHTS[now.light].colour);
-      if (pane.dataset.ticks !== 'walk') {
-        pane.dataset.ticks = 'walk';
+      if (pane.dataset.ticks !== walk) {
+        pane.dataset.ticks = walk;
         let at = 0;
-        const arcs = CYCLE.map(step => { const from = at / CYCLE_LENGTH * 360; at += step.seconds; return `${LIGHTS[step.light].colour} ${from}deg ${at / CYCLE_LENGTH * 360}deg`; });
+        const arcs = WALKS[walk].map(step => { const from = at / length * 360; at += step.seconds; return `${LIGHTS[step.light].colour} ${from}deg ${at / length * 360}deg`; });
         pane.style.setProperty('--ticks', `conic-gradient(${arcs.join(', ')})`);
       }
     }

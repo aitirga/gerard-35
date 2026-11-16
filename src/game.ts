@@ -51,6 +51,7 @@ import { MODELO_SIZES } from './modelo-foes';
 import { MODELO_FIGHTS, calibrate, LUCA_FIGHTS, type LucaEncounter } from './battle';
 import { LUCA_SIZES } from './luca-foes';
 import { buildSalon } from './peluqueria-scenery';
+import { MIRRORS, QUEUES, zoneAt } from './friends/luca';
 import { LIGHTS as SALON_LIGHTS, lightAt } from './vidrieras';
 import { CUERDAS_FIGHTS } from './battle';
 import { PLACES_MARTA } from './friends/marta';
@@ -707,12 +708,24 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /** Fran's salon (docs/quests/luca.md): each zone's foes waiting where they stand until it is won, the same bodies as in their fights. */
   let salonFoes: pc.Entity | undefined;
   /** The salon itself over the basilica (src/peluqueria-scenery.ts), and the light walking through its windows. */
-  let salon: ReturnType<typeof buildSalon> | undefined, salonLight = { t: 0, on: '' };
+  let salon: ReturnType<typeof buildSalon> | undefined, salonKey = '', salonLight = { t: 0, on: '' };
   function standSalon() {
     salonFoes?.destroy(); salonFoes = undefined;
     const dressed = environment.id === 'sagrada-familia-interior' && story.salon;
-    if (dressed && !salon) { salon = buildSalon(castRoot, (px, pz) => scenery.toWorld(px, pz)); salonLight.on = ''; }
-    if (!dressed && salon) { salon.destroy(); salon = undefined; }
+    // Rebuilt when the run changes it: a queue moving on, a mirror turned.
+    const key = dressed ? JSON.stringify([story.luca.beaten, story.luca.mirrors]) : '';
+    if (salon && key !== salonKey) { salon.destroy(); salon = undefined; }
+    if (dressed && !salon) {
+      const beam = story.beam;
+      salon = buildSalon(castRoot, (px, pz) => scenery.toWorld(px, pz), {
+        queues: QUEUES.filter(q => !story.luca.beaten.includes(q.after)).map(q => q.cells),
+        mirrors: MIRRORS.map((cell, i) => ({ cell, facing: (story.luca.mirrors[i] ?? 0) as 0 | 1 })),
+        beam: { path: beam.path, hit: beam.hit },
+      });
+      if (!salonKey) salonLight.on = '';
+      salonKey = key;
+    }
+    if (!dressed) salonKey = '';
     if (!dressed && salonLight.on) { scenery.salonLight(); salonLight = { t: 0, on: '' }; }
     const list = story.lucaFoes(environment.id);
     if (!list.length) return;
@@ -2913,7 +2926,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     // The salon's light walks through its colours outside the fights too, as in them (src/vidrieras.ts).
     if (salon && !paused) {
       salonLight.t += delta;
-      const colour = SALON_LIGHTS[lightAt(salonLight.t).light].colour;
+      // The light of the windows of the side Gerard is on (src/vidrieras.ts WALKS): the hall and the crossing see the nave's.
+      const walk = zoneAt({ x: Math.round(movement.position.x), z: Math.round(movement.position.z) })?.walk ?? 'nave';
+      const colour = SALON_LIGHTS[lightAt(salonLight.t, walk).light].colour;
       if (colour !== salonLight.on) { salonLight.on = colour; scenery.salonLight(colour); }
     }
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),

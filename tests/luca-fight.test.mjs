@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AFFINITIES, FEAR_ENCOUNTERS, LUCA, LUCA_ENCOUNTERS, LUCA_FIGHTS, act, cornered, createFearBattle, enemyAct, intentLabel, nextRound, runClock, takeNews } from '../src/battle.ts';
+import { AFFINITIES, FEAR_ENCOUNTERS, LUCA, LUCA_ENCOUNTERS, LUCA_FIGHTS, LUCA_WALKS, dazzle, act, cornered, createFearBattle, enemyAct, intentLabel, nextRound, runClock, takeNews } from '../src/battle.ts';
 import { FOE_XP } from '../src/levels.ts';
 import { LUCA_SIZES } from '../src/luca-foes.ts';
 
@@ -20,7 +20,7 @@ test('the salon\'s fights are fears\' fights, each with the foes it says, under 
     assert.ok(FEAR_ENCOUNTERS.includes(encounter));
     const s = createFearBattle(party, encounter);
     assert.deepEqual(s.foes.map(f => f.kind), [...LUCA_FIGHTS[encounter], ...encounter === 'fran' ? ['lampara', 'lampara', 'lampara'] : []], encounter);
-    assert.deepEqual(s.light, { t: 0 }, 'it starts in the cold morning');
+    assert.deepEqual(s.light, { t: 0, walk: LUCA_WALKS[encounter] }, 'it starts at the start of its side\'s walk');
     assert.equal(cornered(s), encounter === 'fran');
     for (const f of s.foes) { assert.ok(FOE_XP[f.kind] > 0 || f.part, f.kind); assert.ok(LUCA_SIZES[f.kind] > 0, f.kind); }
   }
@@ -47,10 +47,11 @@ test('an Estampado keeps its own colour\'s element off, and fills in again when 
   const red = s.foes.find(f => f.kind === 'estampado-rojo');
   red.hp = 5000;
   s.phase = 'player';
-  runClock(s, 14.5);
+  assert.equal(s.light.walk, 'pasion');
+  runClock(s, 5);
   assert.equal(red.hp, 5000, 'not yet: orange is not its light');
-  runClock(s, 7);
-  assert.equal(red.hp, 5000 + Math.round(9999 * LUCA.recolor));
+  runClock(s, 2);
+  assert.equal(red.hp, Math.min(9999, 5000 + Math.round(9999 * LUCA.recolor)));
   assert.ok(takeNews(s).some(n => n.recolored?.target === red.id));
 });
 
@@ -83,9 +84,12 @@ test('the beam lands whole when nobody cracks the lens, and La Laca\'s fixer mak
   assert.ok(doubled.amount >= beam.amount * LUCA.lacado - 2, `${doubled.amount} against ${beam.amount}`);
 });
 
-test('fire on La Laca bursts it over every other foe, unless the light eats the fire', () => {
+test('La Laca brought down by fire bursts over every other foe; not by another blow, nor when the light eats the fire', () => {
   const s = fight('luca-sillones');
   const laca = s.foes.find(f => f.kind === 'laca');
+  as(s, 'gerard');
+  assert.equal(act(s, 'skill', laca.id, 'foc-binari').burst, undefined, 'standing, it only burns');
+  laca.hp = 1;
   as(s, 'gerard');
   const fire = act(s, 'skill', laca.id, 'foc-binari');
   assert.equal(laca.hp, 0);
@@ -93,6 +97,7 @@ test('fire on La Laca bursts it over every other foe, unless the light eats the 
   assert.ok(fire.burst.hits.length >= 3 && fire.burst.hits.every(h => h.amount > 0));
   const t = fight('luca-sillones');
   t.light.t = 15;
+  t.foes.find(f => f.kind === 'laca').hp = 1;
   as(t, 'gerard');
   const eaten = act(t, 'skill', t.foes.find(f => f.kind === 'laca').id, 'foc-binari');
   assert.equal(eaten.annulled, 'naranja');
@@ -170,4 +175,19 @@ test('the Aspersión is said a turn ahead and takes Fuerza and Magia for the res
   act(s, 'attack', fran.id);
   assert.ok(s.foes.filter(f => f.kind === 'capellan').every(f => f.hp === 0));
   assert.equal(s.phase, 'won');
+});
+
+test('the chaplains dazzled by the nave\'s mirrors start the fight Cegado II', () => {
+  const s = fight('luca-sillones');
+  dazzle(s);
+  for (const f of s.foes) assert.equal(f.timed?.cegado?.level, f.kind === 'capellan' ? 2 : undefined, f.id);
+  assert.match(s.message, /espejos/);
+});
+
+test('each side of the basilica fights under its own windows: the apse\'s Laca is the thicker cloud', () => {
+  assert.deepEqual(LUCA_FIGHTS['luca-abside'], ['telescopio', 'laca']);
+  const apse = fight('luca-abside');
+  assert.equal(apse.light.walk, 'abside');
+  const fresh = createFearBattle(party, 'luca-abside');
+  assert.equal(fresh.foes.find(f => f.kind === 'laca').maxHp, LUCA.lacaAbside);
 });
