@@ -22,7 +22,7 @@ test('each ánima mission stands on its own', () => {
 
 test('Nuria and Uri are one mission with one ánima, and so are the university friends', async () => {
   const { ANIMA_IDS } = await import('../src/animas.ts');
-  assert.deepEqual(ANIMA_IDS, ['nuria', 'universidad', 'marta', 'emilie']);
+  assert.deepEqual(ANIMA_IDS, ['nuria', 'universidad', 'marta', 'emilie', 'luca']);
   assert.ok(!STORY_FLAGS.includes('anima-uri'));
   assert.equal(STORY_ARCS.find(a => a.anima === 'nuria').title, 'Misión de Nuria y Uri');
 });

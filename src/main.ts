@@ -171,6 +171,7 @@ if (devJump?.part?.nuria) story.startNuria(devJump.part.nuria);
 if (devJump?.part?.uni) story.startUni(devJump.part.uni);
 if (devJump?.part?.marta) story.startMarta(devJump.part.marta);
 if (devJump?.part?.emilie) story.startEmilie(devJump.part.emilie);
+if (devJump?.part?.luca) story.startLuca(devJump.part.luca);
 // Each ánima's EXP (src/levels.ts) also lives here; the levels it reaches are story flags.
 // So is what the Ecos de luz are in (src/ecos.ts): it can change at the jar whenever they are home.
 const ecosKey = 'gerard35.ecos.v1';
@@ -477,7 +478,7 @@ try {
         const others = missions?.filter(id => id !== anima) ?? [];
         location.search = `?${new URLSearchParams({ mission: anima, part, ...(others.length ? { with: others.join(',') } : {}), ...(day > 1 ? { day: String(day) } : {}) })}`;
       },
-      missionNow: anima => missionNow(anima, story.saved, story.nuria, story.uni),
+      missionNow: anima => missionNow(anima, story.saved, story.nuria, story.uni, story.luca),
       animas: () => ({ now: story.levels, story: story.storyLevels, xp: story.xp, changed: !!story.debugAnimas, adult: story.adult }),
       giveXp: (id, amount) => {
         const levels = story.storyLevels;

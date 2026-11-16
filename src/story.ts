@@ -57,6 +57,9 @@ export const STORY_FLAGS = [
   // Emilie's mission (docs/quests/emilie.md): spoken to in her flooded flat in Poble Sec, into her model
   // through her laptop, El que no converge beaten, her ánima and the light that went with them.
   'poble-sec-emilie', 'modelo', 'converge', 'anima-emilie', 'luz-emilie',
+  // Luca's mission (docs/quests/luca.md): the photo gone grey at home, the Sagrada Família on the TV's
+  // ticker and on a poster, Luca met by the pond, into Fran's salon, Fran beaten, his ánima and light.
+  'clue-luca-foto', 'clue-sagrada', 'clue-sagrada-cartel', 'sagrada-luca', 'peluqueria', 'fran', 'anima-luca', 'luz-luca',
   // The castle (docs/castle.md, docs/castle-bosses.md): Aurelià beaten and his light, the management team and
   // theirs, Gerard fallen to Aitor's hand, the artilugio, the Queen beaten, and which of the two endings.
   'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
@@ -70,7 +73,7 @@ const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-ni
 /** Only flags this version knows, renamed ones under their new name. */
 const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENAMED_FLAGS[f] ?? f).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
 /** Whose lights can be won. */
-export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'emilie', 'aurelia', 'mar', 'montse', 'pilar'] as const;
+export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'emilie', 'luca', 'aurelia', 'mar', 'montse', 'pilar'] as const;
 export type LightId = typeof LIGHTS[number];
 
 export type StoryEvent =
@@ -242,10 +245,17 @@ export const freshMarta = (): MartaRun => ({ beaten: [], told: [] });
 export interface EmilieRun { told: string[]; section?: ModeloState }
 export const freshEmilie = (): EmilieRun => ({ told: [] });
 /**
+ * Luca's mission while it runs (docs/quests/luca.md); not saved, as the others. `entered`: in Fran's
+ * salon once (that hour is spent); `beaten`: the zones won this visit (ZONES ids); `told`: what was
+ * already said once.
+ */
+export interface LucaRun { entered: boolean; beaten: string[]; told: string[] }
+export const freshLuca = (): LucaRun => ({ entered: false, beaten: [], told: [] });
+/**
  * What the snow globe keeps (docs/chapter-2.md § The snow globe): each mission's run as it was the
  * last time the globe was shaken. A day's end, a fall or a reload puts the missions back to this.
  */
-export interface Kept { nuria?: NuriaRun; uni?: UniRun; marta?: MartaRun; emilie?: EmilieRun }
+export interface Kept { nuria?: NuriaRun; uni?: UniRun; marta?: MartaRun; emilie?: EmilieRun; luca?: LucaRun }
 export const freshUni = (): UniRun => ({ chase: false, caught: 0, spiral: false, sunk: false, entered: false, beaten: [], told: [] });
 /** One of the friends running after the party (src/chasers.ts); `frozen` once the spiral has opened. */
 export interface UniChaser { id: string; friend: UniFriend; patrol: Cell[]; sight: number; walk: number; run: number; relentless: true; frozen: boolean }
@@ -355,6 +365,7 @@ export class Story {
   /** The castle's rooms cleared today (src/castle-story.ts); not saved, and another day is another floor. */
   castle: CastleRun = freshCastle();
   emilie: EmilieRun = freshEmilie();
+  luca: LucaRun = freshLuca();
   /** What the snow globe keeps of the missions (`Kept`). Kept in the browser by `main.ts`, like the loadout. */
   private globe: Kept = {};
   /** Where the party is now, when the game has said (`enter`): Marta answers differently inside Las cuerdas. */
@@ -882,13 +893,13 @@ export class Story {
     if (uni && board && typeof board === 'object') uni.board = structuredClone(board);
     const emilie = run(freshEmilie(), v?.emilie), section = (v?.emilie as { section?: unknown } | undefined)?.section;
     if (emilie && section && typeof section === 'object') emilie.section = { ...createModelo(), ...structuredClone(section) as ModeloState };
-    this.globe = Object.fromEntries(Object.entries({ nuria: run(freshRun(), v?.nuria), uni, marta: run(freshMarta(), v?.marta), emilie }).filter(([, r]) => r));
+    this.globe = Object.fromEntries(Object.entries({ nuria: run(freshRun(), v?.nuria), uni, marta: run(freshMarta(), v?.marta), emilie, luca: run(freshLuca(), v?.luca) }).filter(([, r]) => r));
     this.recall();
   }
   /** The missions as the snow globe keeps them, or not begun. */
   private recall() {
-    const { nuria, uni, marta, emilie } = this.kept;
-    this.nuria = nuria ?? freshRun(); this.uni = uni ?? freshUni(); this.marta = marta ?? freshMarta(); this.emilie = emilie ?? freshEmilie();
+    const { nuria, uni, marta, emilie, luca } = this.kept;
+    this.nuria = nuria ?? freshRun(); this.uni = uni ?? freshUni(); this.marta = marta ?? freshMarta(); this.emilie = emilie ?? freshEmilie(); this.luca = luca ?? freshLuca();
   }
   /**
    * The snow globe shaken: the missions are kept as they are and the party is home. The cats do
@@ -901,7 +912,7 @@ export class Story {
     if (this.night) return [say(LINES_2.bolaNight)];
     this.nuria = { ...this.nuria, lent: false, warned: false };
     this.uni = { ...this.uni, chase: false };
-    this.globe = structuredClone({ nuria: this.nuria, uni: this.uni, marta: this.marta, emilie: this.emilie });
+    this.globe = structuredClone({ nuria: this.nuria, uni: this.uni, marta: this.marta, emilie: this.emilie, luca: this.luca });
     if (this.inside === PLACES_2.bola.environment) return [say(LINES_2.bolaHome)];
     return [{ kind: 'snow', on: true }, { kind: 'travel', environment: PLACES_2.bola.environment, cell: { ...PLACES_2.bola.land } }, { kind: 'snow', on: false }];
   }
@@ -913,6 +924,8 @@ export class Story {
   /** The run through Emilie's model: the one under way, or a new one from where they land. */
   modeloRun(): ModeloState { return this.emilie.section ??= createModelo(); }
   startMarta(run: Partial<MartaRun>) { this.marta = { ...freshMarta(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
+  /** Development: starts Luca's mission partway (the picker's Misiones tab): in the salon, some zones won. */
+  startLuca(run: Partial<LucaRun>) { this.luca = { ...freshLuca(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
   startUni(run: Partial<UniRun>) { this.uni = { ...freshUni(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
   /** Gerard's active ánima, which also dresses the interface. */
   get gerardClass(): GerardClass | undefined { return this.classOf('gerard') as GerardClass | undefined; }

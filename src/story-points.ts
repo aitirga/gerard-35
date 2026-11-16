@@ -12,11 +12,12 @@ import { ENVIRONMENTS, type EnvironmentId } from './environments.ts';
 import { FEARS, PLACES_NURIA, STREET } from './friends/nuria.ts';
 import { LEVELLED, MAX_LEVEL } from './levels.ts';
 import type { Cell } from './movement.ts';
-import { STORY_FLAGS, type EmilieRun, type MartaRun, type NuriaRun, type StoryEvent, type StoryFlag, type UniRun } from './story.ts';
+import { STORY_FLAGS, type EmilieRun, type LucaRun, type MartaRun, type NuriaRun, type StoryEvent, type StoryFlag, type UniRun } from './story.ts';
 import { BEACH, CAMP, CAMP_HUNTERS, PLACES_CAMP, PLACES_UNI } from './friends/universidad.ts';
 import { CUERDAS_PLACE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
 import { MODELO_PLACE, PISO, PLACES_EMILIE, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
 import { GALLERY, ZONE_IDS, arrival, beat, createModelo, patrolsIn, type ModeloState, type ZoneId } from './modelo.ts';
+import { INTERIOR, PLACES_LUCA, SAGRADA, ZONES } from './friends/luca.ts';
 import { entranceId } from './transit.ts';
 
 /** Where a jump stands Gerard; without one, where the story resumes (`story.resume`). */
@@ -52,7 +53,7 @@ export const STORY_ARCS = [
   { id: 'waking', chapter: 2, title: 'El despertar', detail: 'Meridiana', after: 'wrapper-room', steps: [
     { flags: ['caught'], label: 'Atrapados: despierta a los 35' }, { flags: ['got-wrapper'], label: 'El envoltorio' }, { flags: ['got-bola'], label: 'La bola de nieve' },
     // The ticker carries the R4 clue: seeing the news is knowing it.
-    { flags: ['tv-news', 'clue-r4'], label: 'Las noticias y la pista del R4' },
+    { flags: ['tv-news', 'clue-r4', 'clue-sagrada'], label: 'Las noticias: las pistas del R4 y de la Sagrada Família' },
   ] },
   { id: 'city', chapter: 2, title: 'La ciudad', detail: 'Tras las noticias', after: 'tv-news', steps: [
     { flags: ['metro'], label: 'Primer metro', spot: { environment: 'meridiana-calle' } },
@@ -85,6 +86,14 @@ export const STORY_ARCS = [
     { flags: ['modelo'], label: 'El portátil: dentro de su modelo' },
     // Beating El que no converge gives her the why back at once, and her ánima and light with it.
     { flags: ['converge', 'anima-emilie', 'luz-emilie'], label: 'El que no converge vencido: Emilie entiende otra vez' },
+  ] },
+  { id: 'luca', chapter: 2, title: 'Misión de Luca', detail: 'La Sagrada Família · La peluquería de Fran', after: 'metro', anima: 'luca', steps: [
+    { flags: ['clue-luca-foto'], label: 'La foto: Luca se ha quedado gris', spot: { environment: 'meridiana' } },
+    { flags: ['clue-sagrada-cartel'], label: 'El cartel de la Sagrada Família', spot: { environment: 'meridiana-calle' } },
+    { flags: ['sagrada-luca'], label: 'Luca, gris, junto al estanque', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
+    { flags: ['peluqueria'], label: 'Dentro: la peluquería de Fran', spot: { environment: INTERIOR, cell: { ...PLACES_LUCA.inside } } },
+    // Beating Fran gives Luca everything back at once, and his ánima and light with it.
+    { flags: ['fran', 'anima-luca', 'luz-luca'], label: 'Fran vencido: Luca, a todo color', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
   ] },
   // The castle's three phases and its end (docs/castle.md): each boss beaten moves the way in to its room.
   { id: 'castillo', chapter: 2, title: 'El castillo', detail: 'Tres plantas, tres jefes y el final', after: 'castle', steps: [
@@ -176,6 +185,7 @@ export interface MissionPart {
   uni?: Partial<UniRun>;
   marta?: Partial<MartaRun>;
   emilie?: Partial<EmilieRun>;
+  luca?: Partial<LucaRun>;
   event?: StoryEvent;
 }
 const maze = (cell: Cell): Spot => ({ environment: PLACES_NURIA.mazeIn.environment, cell: { ...cell } });
@@ -269,12 +279,31 @@ const EMILIE_PARTS: readonly MissionPart[] = [
   { id: 'won', label: 'Emilie entiende otra vez', detail: 'El final: su luz va con Gerard y Aitor, de vuelta en su piso', at: 'modelo', spot: modelo(arrival('fondo')), emilie: { told: [...told('gravas', 'ciudad', 'fondo'), 'modelo-jefe'], section: cameDown('fondo') }, event: { type: 'battle', won: true, encounter: 'no-converge' } },
   { id: 'done', label: 'Misión hecha', detail: 'Emilie, ella otra vez, en su piso', at: 'luz-emilie', spot: { environment: PISO, cell: { ...PLACES_PISO.laptop } } },
 ];
+const salon = (x: number, z: number): Spot => ({ environment: INTERIOR, cell: { x, z } });
+const zones = (n: number) => ZONES.slice(0, n).map(z => z.id);
+const sagradaStation = ENVIRONMENTS[SAGRADA].interactions.find(i => i.id === entranceId('sagrada-familia'))?.cell;
+/**
+ * Luca's mission, part by part (docs/quests/luca.md § Beats). What is won inside the salon is not
+ * saved (it is all one visit), so those parts set the run itself.
+ */
+const LUCA_PARTS: readonly MissionPart[] = [
+  { id: 'start', label: 'Desde el principio', detail: 'Salen del metro en la Sagrada Família', at: 'metro', spot: { environment: SAGRADA, ...sagradaStation ? { cell: { ...sagradaStation } } : {} }, event: { type: 'arrive', station: 'sagrada-familia' } },
+  { id: 'luca', label: 'Luca junto al estanque', detail: 'Gris, frente a la fachada del Nacimiento; aún no han hablado', at: 'metro', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
+  { id: 'door', label: 'La puerta del Nacimiento', detail: 'Ya han hablado con Luca; entrar lleva a la peluquería', at: 'sagrada-luca', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.outside } } },
+  { id: 'recepcion', label: 'La recepción', detail: 'Recién entrados; las polillas delante', at: 'peluqueria', spot: salon(36, 36), luca: { entered: true } },
+  { id: 'sillones', label: 'Los sillones', detail: 'La recepción ganada; los capellanes y La Laca en la nave', at: 'peluqueria', spot: salon(21, 20), luca: { entered: true, beaten: zones(1) } },
+  { id: 'carta', label: 'La carta de colores', detail: 'Dos zonas ganadas; los Estampados en el brazo de la Pasión', at: 'peluqueria', spot: salon(36, 9), luca: { entered: true, beaten: zones(2) } },
+  { id: 'abside', label: 'El ábside', detail: 'Tres zonas ganadas; el Telescopio entre las lentes', at: 'peluqueria', spot: salon(50, 21), luca: { entered: true, beaten: zones(3) } },
+  { id: 'crucero', label: 'El crucero', detail: 'Las cuatro ganadas; el capellán deja pasar a Fran', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(4) } },
+  { id: 'done', label: 'Misión hecha', detail: 'Luca, a todo color, junto al estanque', at: 'luz-luca', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
+];
 /** The parts each mission can start at; one without its own list starts at its beginning or at each step. */
 export function missionParts(anima: AnimaId): readonly MissionPart[] {
   if (anima === 'nuria') return NURIA_PARTS;
   if (anima === 'universidad') return UNI_PARTS;
   if (anima === 'marta') return MARTA_PARTS;
   if (anima === 'emilie') return EMILIE_PARTS;
+  if (anima === 'luca') return LUCA_PARTS;
   const arc = ARCS.find(a => a.anima === anima)!;
   return [
     { id: 'start', label: 'Desde el principio', detail: arc.detail, at: arc.after!, spot: spotAt(arc.after!) },
@@ -294,7 +323,7 @@ export const topLevel = (id: ClassId) => LEVELLED.includes(id) ? MAX_LEVEL : 1;
  * Where a mission is now, as the part a jump to it would start at: the last one the flags and the
  * run have reached (`undefined` before the mission can start).
  */
-export function missionNow(anima: AnimaId, flags: readonly StoryFlag[], nuria?: NuriaRun, uni?: UniRun): string | undefined {
+export function missionNow(anima: AnimaId, flags: readonly StoryFlag[], nuria?: NuriaRun, uni?: UniRun, luca?: LucaRun): string | undefined {
   const parts = missionParts(anima), arc = ARCS.find(a => a.anima === anima)!;
   if (arc.after && !flags.includes(arc.after)) return undefined;
   if (anima === 'nuria') {
@@ -314,6 +343,11 @@ export function missionNow(anima: AnimaId, flags: readonly StoryFlag[], nuria?: 
     if (uni?.spiral) return 'spiral';
     if (uni?.chase) return 'tag';
     return flags.includes('barceloneta-uni') || flags.includes('clue-uni') ? 'beach' : 'start';
+  }
+  if (anima === 'luca') {
+    if (flags.includes('fran')) return 'done';
+    if (luca?.entered || flags.includes('peluqueria')) return ['recepcion', 'sillones', 'carta', 'abside', 'crucero'][Math.min(4, luca?.beaten.length ?? 0)];
+    return flags.includes('sagrada-luca') ? 'door' : 'luca';
   }
   return [...parts].reverse().find(p => p.id !== 'start' && flags.includes(p.at))?.id ?? 'start';
 }

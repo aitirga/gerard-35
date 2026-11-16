@@ -101,6 +101,7 @@ export const MISSIONS = {
   universidad: { name: 'Los amigos de la uni', intro: false, lights: 5, friend: 'universidad', fights: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon', 'sobremesa'], teaching: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda'] },
   marta: { name: 'Marta', intro: false, lights: 1, friend: 'marta', fights: ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'], teaching: [] },
   emilie: { name: 'Emilie', intro: false, lights: 1, friend: 'emilie', fights: ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'], teaching: [] },
+  luca: { name: 'Luca', intro: false, lights: 1, friend: 'luca', fights: [], teaching: [] },
 } as const satisfies Record<string, { name: string; intro: boolean; lights: number; friend: AnimaId; fights: readonly string[]; teaching: readonly string[] }>;
 export type MissionId = keyof typeof MISSIONS;
 export const MISSION_IDS = Object.keys(MISSIONS) as MissionId[];

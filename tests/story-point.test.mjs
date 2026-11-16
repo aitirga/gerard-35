@@ -15,9 +15,9 @@ test('every mission fight is a real fight, and the missions give every light the
 test('the introduction has nothing behind it; an open mission has the introduction and whatever was done before', () => {
   const intro = storyPoint('nuria');
   assert.deepEqual([intro.done, intro.ecos, intro.setup.friends, intro.setup.improved], [[], 0, [], []]);
-  const first = storyPoint('marta:first'), last = storyPoint('marta:last'), named = storyPoint('marta:universidad/emilie');
+  const first = storyPoint('marta:first'), last = storyPoint('marta:last'), named = storyPoint('marta:universidad/emilie/luca');
   assert.deepEqual(first.setup.friends, ['nuria']); assert.equal(first.ecos, 2); assert.equal(first.setup.levels.papagato, 2);
-  assert.deepEqual(last.setup.friends, ['nuria', 'universidad', 'emilie']); assert.equal(last.ecos, 8); assert.equal(last.setup.levels.papagato, 3);
+  assert.deepEqual(last.setup.friends, ['nuria', 'universidad', 'emilie', 'luca']); assert.equal(last.ecos, 9); assert.equal(last.setup.levels.papagato, 3);
   assert.deepEqual(named.setup, last.setup);
   assert.throws(() => storyPoint('marta:marta'), /cannot be behind/);
   assert.throws(() => storyPoint('nadie'), /Unknown mission/);

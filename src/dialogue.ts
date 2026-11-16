@@ -40,6 +40,12 @@ export const SPEAKERS = {
   marta: { name: 'Marta', portrait: 'marta', skin: '#ecbf98', hair: '#d9b46a', top: '#3d3c40', accent: '#49d3c2' },
   /** Emilie (docs/quests/emilie.md); no portrait yet: her figure and photos are still to come. */
   emilie: { name: 'Emilie', skin: '#ecc4a2', hair: '#7a5536', top: '#2c3d57', accent: '#3fe07a' },
+  /** Luca (docs/quests/luca.md): his loud colours, which the Queen's hold takes out of him; no portrait yet. */
+  luca: { name: 'Luca', skin: '#e4b18c', hair: '#3a2c24', top: '#f08a2c', accent: '#2f8f7a' },
+  /** Fran, Luca's partner, under the Queen's hold: black and white, cold; no portrait. */
+  fran: { name: 'Fran', skin: '#e2b896', hair: '#1d1a1a', top: '#1c1c20', accent: '#d9dde4' },
+  /** The chaplains Fran has restyled in the Sagrada Família; no portrait. */
+  capellan: { name: 'Capellán', skin: '#dcb594', hair: '#3e7fc4', top: '#18181c', accent: '#e9e6dc' },
   /** The campsite's foes (docs/quests/universidad.md § Càmping Eurosport), for the word each of them shouts as it falls in a fight; no portrait. */
   mago: { name: 'Mago de camping', skin: '#c9b89a', hair: '#3a3428', top: '#7d7a5a', accent: '#e8b04a' },
   agente: { name: 'Agente', skin: '#d8cfb8', hair: '#2a2622', top: '#c9bfa4', accent: '#e8b04a' },
