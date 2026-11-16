@@ -852,7 +852,7 @@ export const LUCA_FIGHTS: Record<LucaEncounter, readonly LucaKind[]> = {
   'luca-sillones': ['capellan', 'capellan', 'capellan', 'laca'],
   'luca-carta': ['estampado-rojo', 'estampado-azul', 'estampado-oro'],
   'luca-abside': ['telescopio', 'polilla', 'polilla'],
-  // Fran under the canopy with two acolytes; the canopy's lamps come down when he stands.
+  // Fran under the canopy with two acolytes; the canopy's three lamps (parts) are added by createLucaBattle.
   fran: ['fran', 'capellan', 'capellan'],
 };
 /** Uri's maze and roof (docs/quests/nuria.md), La Sobremesa, the campsite, Las cuerdas, the castle, Emilie's model and Fran's salon: the fights whose foes have rules of their own. */
@@ -2989,7 +2989,7 @@ export function songLabel(state: BattleState) {
  * repeats the last gesture made, whole, and its fall leaves the others still for the round. An
  * Estampado gets `recolor` of its PV back each time the light of its own colour comes on.
  * Fran (§ Final boss): a Corte a medida (`corte`) on one, his acolytes copying it. From `standAt` of
- * his PV he stands and the canopy's three lamps come down: every light whose lamp still hangs gives
+ * his PV he stands and the canopy's three lamps light up: every light whose lamp still hangs gives
  * him a Brillo (up to `brilloMost`), each one taking `brilloStep` more off a blow on him; only the lamp
  * of the light on now can be broken, and breaking one takes all his Brillo. From `hisopoAt` he takes
  * the aspergillum: a turn to load it (said a turn ahead), then the Aspersión on everyone (`aspersion`),
@@ -3051,6 +3051,8 @@ function createLucaBattle(party: PartySlot[], encounter: LucaEncounter, animas?:
     if (kind === 'fran') { one.stage = 1; one.brillo = 0; }
     return one;
   });
+  // Fran's canopy: its three lamps hang there from the start, parts of his fight; they only drink the light, and break, once he stands.
+  if (encounter === 'fran') for (const id of Object.keys(LAMPS) as LampId[]) foes.push({ ...foe(`lampara-${id}`, LAMPS[id].name, 'lampara'), part: true, lamp: id });
   const unlocked = animas ?? wornAnimas(party);
   return {
     allies: lineUp(party, unlocked), foes,
@@ -3067,7 +3069,7 @@ function lucaTaken(state: BattleState, target: Combatant) {
   return 1;
 }
 /** Whether a lamp of the canopy hangs in the light on now: the only one that can be broken. */
-export const lampLit = (state: BattleState, lamp: Combatant) => { const light = lightNow(state); return !!light && !!lamp.lamp && LAMPS[lamp.lamp].lights.includes(light); };
+export const lampLit = (state: BattleState, lamp: Combatant) => { const light = lightNow(state); return !!light && !!lamp.lamp && LAMPS[lamp.lamp].lights.includes(light) && (state.foes.find(f => f.kind === 'fran')?.stage ?? 1) >= 2; };
 /** Fran, in his fight. */
 const franOf = (state: BattleState) => state.foes.find(f => f.kind === 'fran');
 /** The element a party's action landed with, if any: Atacar's, a skill's, a dual's. */
@@ -3139,10 +3141,9 @@ function checkFran(state: BattleState, effect?: BattleEffect) {
   const share = fran.hp / fran.maxHp;
   if (fran.stage === 1 && share <= LUCA.standAt) {
     fran.stage = 2; fran.turns = 0; delete fran.intent;
-    for (const id of Object.keys(LAMPS) as LampId[]) state.foes.push({ ...foe(`lampara-${id}`, LAMPS[id].name, 'lampara'), part: true, lamp: id });
     const news = effect ?? { kind: 'enemy', actor: fran.id };
     news.stage = 2;
-    say(news, 'Fran se levanta. Del baldaquino bajan tres lámparas, y cada una bebe una luz.');
+    say(news, 'Fran se levanta. Las tres lámparas del baldaquino se encienden, y cada una bebe una luz.');
   }
   if (fran.stage === 2 && share <= LUCA.hisopoAt) {
     fran.stage = 3; fran.turns = 0; delete fran.intent;
@@ -3996,14 +3997,12 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
     // Fran at the start of a phase: whole with his acolytes, at his mark with the lamps down, or with the aspergillum loaded.
     const fran = state.foes.find(f => f.kind === 'fran'), first = state.allies.find(a => a.hp > 0);
     if (!fran || !first) return false;
-    state.foes = state.foes.filter(f => f.kind !== 'lampara');
-    for (const f of state.foes) { f.hp = f.maxHp; delete f.intent; delete f.still; }
+    for (const f of state.foes) { f.hp = f.maxHp; delete f.intent; delete f.still; delete f.told; }
     fran.turns = 0; fran.brillo = 0; delete fran.lasting;
     if (moment === 'fran-acolitos') { fran.stage = 1; }
     else {
       fran.stage = moment === 'fran-baldaquino' ? 2 : 3;
       fran.hp = Math.floor(fran.maxHp * (moment === 'fran-baldaquino' ? LUCA.standAt : LUCA.hisopoAt));
-      for (const id of Object.keys(LAMPS) as LampId[]) state.foes.push({ ...foe(`lampara-${id}`, LAMPS[id].name, 'lampara'), part: true, lamp: id });
       if (moment === 'fran-aspersion') { fran.turns = 1; fran.intent = { ability: 'aspersion', at: 'todos' }; }
     }
   } else if (moment === 'magos-bombona') {

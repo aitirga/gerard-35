@@ -129,6 +129,7 @@ export function createLucaFoes() {
 
   // A lamp of the canopy: a hanging glass lamp in the colours of the lights it drinks.
   const lamp = root('Lámpara');
+  pool(lamp, '#fff1cc', .9);
   const hanger = pivot(lamp, 'Vista', [0, 0, 0]);
   const chain = mat('Cadena', '#7d6128', .7), glass = mat('Cristal de lámpara', '#f6f0dc', .9, .9, .85);
   part(hanger, 'Cadena', 'cylinder', chain, [0, 2.2, 0], [.03, 1.2, .03], [0, 0, 0], false);

@@ -1,0 +1,332 @@
+{
+  "title": "Misión de Luca: la Sagrada peluquería",
+  "description": "docs/quests/luca.md. The clues at home and on the Meridiana, Luca by the pond, the salon zone by zone, its fights under the walking light, Fran's three phases and Luca in colour. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Avinguda Meridiana'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        20,
+        11
+      ],
+      "settle": 1500
+    },
+    {
+      "shot": "foto",
+      "delay": 600,
+      "caption": "The dining corner: the photo of Gerard and Luca beside the Barcelona painting"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "foto-dialogo",
+      "delay": 900,
+      "caption": "Looking at the photo: Luca has gone grey in it"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        99,
+        50
+      ],
+      "settle": 2500
+    },
+    {
+      "shot": "cartel",
+      "delay": 800,
+      "caption": "The second bus shelter on the Meridiana: the Sagrada Família's tour poster with one grey strip"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "cartel-dialogo",
+      "delay": 900,
+      "caption": "Looking at the poster"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "open": "/?mission=luca&part=luca"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "luca-gris",
+      "delay": 800,
+      "caption": "Luca by the pond, grey, facing the Nativity facade; his reflection in the water still in colour (stand-in figure)"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "luca-dialogo",
+      "delay": 900,
+      "caption": "Luca, the first time: he fades each time he crosses the door"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "open": "/?mission=luca&part=recepcion"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família · Interior'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "recepcion",
+      "delay": 900,
+      "caption": "La recepción: Fran's desk by the door, the moths waiting, the light walking through the windows"
+    },
+    {
+      "open": "/?mission=luca&part=sillones"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família · Interior'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "sillones",
+      "delay": 900,
+      "caption": "Los sillones: salon chairs and mirrors in the nave, the chaplains and La Laca"
+    },
+    {
+      "open": "/?mission=luca&part=carta"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família · Interior'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "carta",
+      "delay": 900,
+      "caption": "La carta de colores: the dye bar along the Passion arm, the Estampados"
+    },
+    {
+      "open": "/?mission=luca&part=abside"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família · Interior'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "abside",
+      "delay": 900,
+      "caption": "El ábside: Luca's lenses and star charts, El Telescopio"
+    },
+    {
+      "open": "/?mission=luca&part=crucero"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família · Interior'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "crucero",
+      "delay": 900,
+      "caption": "El crucero: the chaplain at the presbytery, Fran under the hood dryer hung from the canopy"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22luca-recepcion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "combate-recepcion",
+      "delay": 600,
+      "caption": "The first fight: the moths, and the light's window on each of the party's plates"
+    },
+    {
+      "wait": 14500
+    },
+    {
+      "shot": "luz-naranja",
+      "delay": 200,
+      "caption": "The light turns orange: from now on the party's fire does nothing"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22luca-sillones%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "combate-sillones",
+      "delay": 600,
+      "caption": "The chaplains and La Laca: one freshly styled"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22luca-carta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "combate-carta",
+      "delay": 600,
+      "caption": "The three Estampados"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22luca-abside%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "combate-abside",
+      "delay": 600,
+      "caption": "El Telescopio and its moths"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22fran%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "fran-acolitos",
+      "delay": 600,
+      "caption": "Fran, phase 1: his two acolytes, one freshly styled"
+    },
+    {
+      "eval": "void window.ui.jumpTo('fran-baldaquino')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 30000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "fran-baldaquino",
+      "delay": 600,
+      "caption": "Phase 2: the canopy's three lamps, only the one in its own light can be broken"
+    },
+    {
+      "eval": "void window.ui.jumpTo('fran-aspersion')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 30000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "fran-aspersion",
+      "delay": 600,
+      "caption": "Phase 3: the aspergillum loaded, Aspersión said a turn ahead"
+    },
+    {
+      "open": "/?mission=luca&part=done"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "luca-color",
+      "delay": 900,
+      "caption": "After Fran: Luca in full colour by the pond"
+    }
+  ]
+}

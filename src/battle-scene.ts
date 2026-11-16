@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type OnionKind, type StatusId, isLuca } from './battle';
+import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { DIE, createDie, dressDie, faceUp } from './dice';
@@ -1846,6 +1846,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * The model a fighter is cloned from: their street model, a fear, the minion or a dog. Only a dog
    * is ever drawn as a dog: a foe with no model of its own (Vertitrón's eye) is drawn by its owner.
    */
+  /** A foe with a body of its own: not a part of another (Vertitrón's eye), though Fran's canopy lamps, parts of his fight, hang on their own. */
+  const standsAlone = (unit: Combatant) => !unit.part || unit.kind === 'lampara';
   function sourceOf(unit: Combatant, i: number, party: boolean) {
     const fear = !party && unit.kind ? fears?.templates.get(unit.kind) : undefined;
     // The castle's foes are gum, hers: the minion's model at their own size, until each has one.
@@ -1958,7 +1960,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const yaw = party ? (source.findByName('Cuerpo') as pc.Entity).getLocalEulerAngles().y : source.getEulerAngles().y;
     if (body) body.setLocalEulerAngles(0, 0, 0);
     model.setLocalEulerAngles(0, yaw, 0);
-    const feet = party ? legs.map(leg => leg.findByName('Zapatilla') as pc.Entity) : minion ? [model.findByName('Charco pringoso') as pc.Entity] : legs;
+    // A model with nothing to stand on (no shoe, no pool under it) is not planted rather than breaking every frame.
+    const feet = (party ? legs.map(leg => leg.findByName('Zapatilla') as pc.Entity) : minion ? [model.findByName('Charco pringoso') as pc.Entity] : legs).filter(Boolean);
     const head = model.findByName(party ? 'Pivote de cabeza' : minion ? 'Cabeza de chicle' : 'Cabeza de perro') as pc.Entity | null;
     const eyes = model.find(node => node.name === 'Ojo') as pc.Entity[];
     fighters.set(unit.id, {
@@ -2190,7 +2193,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // A part of a foe (Vertitrón's eye) stands nowhere of its own: only whole foes take a place.
         // La Sobremesa's seven stand as one body, built apart once the others have their places.
         const fused = sobremesaTemplate ? next.foes.filter(unit => isSobremesa(unit.kind)) : [];
-        const whole = next.foes.filter(unit => !unit.part && !fused.includes(unit));
+        const whole = next.foes.filter(unit => standsAlone(unit) && !fused.includes(unit));
         const kinds = standing([...whole, ...fused].map(unit => unit.kind));
         const slots = formation(layout, next.allies.length, kinds, stage.spread), { ahead, side } = axes(layout);
         {
@@ -2213,7 +2216,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         });
         // Then the parts, on whom they belong to (Vertitrón's eye in its chest).
         const owner = [...fighters.values()].find(f => f.robot);
-        for (const unit of next.foes) if (unit.part && owner) buildPart(unit, owner);
+        for (const unit of next.foes) if (!standsAlone(unit) && owner) buildPart(unit, owner);
         if (fused.length) {
           const slot = slots.foes[whole.length], party = slots.allies.reduce((sum, p) => ({ x: sum.x + p.x / slots.allies.length, z: sum.z + p.z / slots.allies.length }), { x: 0, z: 0 });
           const body = buildMass(new pc.Vec3(anchor.x + slot.x, anchor.y + .15, anchor.z + slot.z), new pc.Vec3(anchor.x + party.x, 0, anchor.z + party.z));
@@ -2238,20 +2241,21 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
-        for (const unit of next.foes) if (!fighters.has(unit.id) && !unit.part) {
+        for (const unit of next.foes) if (!fighters.has(unit.id) && standsAlone(unit)) {
           const caller = (nextEffect?.summoned === unit.id ? fighters.get(nextEffect.actor) : undefined) ?? [...fighters.values()].find(f => !f.party && !f.part);
           const { ahead, side } = axes(layout), from = caller?.base ?? anchor;
           // The Queen's hands come up one on each side of her, and are there at once.
           const hers = isCastle(unit.kind), across = hers && unit.id.endsWith('-2') ? -1.6 : hers ? 1.6 : 1;
           const base = new pc.Vec3(from.x + side.x * SUMMON.side * across - ahead.x * SUMMON.ahead, from.y, from.z + side.z * SUMMON.side * across - ahead.z * SUMMON.ahead);
           build(unit, next.foes.indexOf(unit), false, base, base.clone());
+          // Only one called in waits unseen for its call; one the fight puts there (Fran's lamps coming down, the Queen's hands) is there at once.
           const f = fighters.get(unit.id)!;
-          if (!hers) { f.model.enabled = false; f.unborn = true; }
+          if (!hers && (nextEffect?.summoned === unit.id || unit.id === SECOND_VOICE_ID)) { f.model.enabled = false; f.unborn = true; }
           if (caller) f.turn = f.yaw = caller.yaw;
         }
         // And one that is no longer in the fight (the picker took the second voice away) is gone, until it is called again.
         for (const [id, f] of fighters) if (f.strings && !next.foes.some(u => u.id === id)) { f.model.enabled = false; f.unborn = true; f.downAt = f.upAt = undefined; f.dissolve = undefined; }
-        [...next.allies, ...next.foes].forEach(u => { fighters.get(u.id)!.hp = u.hp; });
+        [...next.allies, ...next.foes].forEach(u => { const f = fighters.get(u.id); if (f) f.hp = u.hp; });
       }
       player.enabled = !next;
       if (!entering && !nextEffect) return Promise.resolve();

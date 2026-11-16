@@ -48,7 +48,10 @@ import { buildModelo, type ModeloScene } from './modelo-scene';
 import { FLOOD } from './emilie-flat-scenery';
 import { GALLERY, PATROLS, ZONE_IDS, beat, calibration, charged, createModelo, descend, interactionStake, interactionWell, measure, shake as shakePatrol, stakeVerb, tick as tickModelo } from './modelo';
 import { MODELO_SIZES } from './modelo-foes';
-import { MODELO_FIGHTS, calibrate } from './battle';
+import { MODELO_FIGHTS, calibrate, LUCA_FIGHTS, type LucaEncounter } from './battle';
+import { LUCA_SIZES } from './luca-foes';
+import { buildSalon } from './peluqueria-scenery';
+import { LIGHTS as SALON_LIGHTS, lightAt } from './vidrieras';
 import { CUERDAS_FIGHTS } from './battle';
 import { PLACES_MARTA } from './friends/marta';
 import { ringOf } from './tower';
@@ -309,6 +312,14 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * The Queen holds them: violet eyes (docs/lore.md). A figure of primitives wears them on its own
    * eyes; a figure from a file (its eyes painted on) gets a glowing bead over each, under its lids.
    */
+  /** Takes `k` (0–1) of the colour out of a figure's materials, towards their own grey. */
+  function fade(materials: pc.StandardMaterial[], k: number) {
+    for (const m of materials) {
+      const c = m.diffuse, y = .3 * c.r + .59 * c.g + .11 * c.b;
+      m.diffuse.set(c.r + (y - c.r) * k, c.g + (y - c.g) * k, c.b + (y - c.b) * k);
+      m.update();
+    }
+  }
   function possessEyes(rig: CharacterModel, spec: CharacterSpec) {
     for (const eye of rig.eyes) {
       if (eye.render) { eye.render.meshInstances.forEach(mesh => { mesh.material = violetEyes; }); continue; }
@@ -693,6 +704,31 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * maze, which is whole again. What they hear is Marta's voice far off (`onCuerdasSong`), on the
    * pieces' own clock: nothing else marks the notes.
    */
+  /** Fran's salon (docs/quests/luca.md): each zone's foes waiting where they stand until it is won, the same bodies as in their fights. */
+  let salonFoes: pc.Entity | undefined;
+  /** The salon itself over the basilica (src/peluqueria-scenery.ts), and the light walking through its windows. */
+  let salon: ReturnType<typeof buildSalon> | undefined, salonLight = { t: 0, on: '' };
+  function standSalon() {
+    salonFoes?.destroy(); salonFoes = undefined;
+    const dressed = environment.id === 'sagrada-familia-interior' && story.salon;
+    if (dressed && !salon) { salon = buildSalon(castRoot, (px, pz) => scenery.toWorld(px, pz)); salonLight.on = ''; }
+    if (!dressed && salon) { salon.destroy(); salon = undefined; }
+    if (!dressed && salonLight.on) { scenery.salonLight(); salonLight = { t: 0, on: '' }; }
+    const list = story.lucaFoes(environment.id);
+    if (!list.length) return;
+    salonFoes = new pc.Entity('Lo que espera en la peluquería'); castRoot.addChild(salonFoes);
+    for (const w of list) {
+      const kinds = LUCA_FIGHTS[w.encounter as LucaEncounter];
+      kinds.forEach((kind, i) => {
+        const model = fears.templates.get(kind)?.clone(); if (!model) return;
+        model.enabled = true; model.name = `${w.id} ${i}`;
+        const size = LUCA_SIZES[kind]; model.setLocalScale(size, size, size);
+        const at = scenery.toWorld(w.cell.x + (i - (kinds.length - 1) / 2) * 1.6, w.cell.z - 1.5);
+        model.setPosition(at.x, 0, at.z);
+        salonFoes!.addChild(model);
+      });
+    }
+  }
   function stepCuerdas(dt: number, animate: boolean) {
     if (!cuerdas) return;
     const live = !battle && !paused;
@@ -1635,6 +1671,19 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       entity.setLocalScale(npc.scale, npc.scale, npc.scale);
       placeOnGround(entity, npc.cell, .06 - (npc.wade ?? 0));
       if (npc.facing !== undefined) rig.body.setLocalEulerAngles(0, npc.facing, 0);
+      // Luca (docs/quests/luca.md): as grey as the colours he has lost; his reflection in the pond keeps them all.
+      if (npc.faded) fade(rig.materials, npc.faded);
+      if (npc.reflection) {
+        const mirror = new pc.Entity(`${npc.id}: reflejo`); entity.addChild(mirror);
+        const copy = buildCharacter(spec, mirror);
+        for (const m of copy.materials) { m.opacity = .62; m.blendType = pc.BLEND_NORMAL; m.depthWrite = false; m.update(); }
+        rig.materials.push(...copy.materials);
+        // Lying on the water from his feet out, as the pond paints the facade: soft, in colour, never a mark to walk to.
+        const at = scenery.toWorld(npc.reflection.x, npc.reflection.z), here = scenery.toWorld(npc.cell.x, npc.cell.z);
+        mirror.setPosition(at.x, .09, at.z);
+        mirror.setEulerAngles(90, Math.atan2(at.x - here.x, at.z - here.z) * 180 / Math.PI, 0);
+        mirror.setLocalScale(1, 1, 1);
+      }
       // In the sea, the water at their waist foams round them.
       let ripple: pc.Entity | undefined;
       if (npc.wade) { ripple = rippleRing(castRoot); placeOnGround(ripple, npc.cell, .045); }
@@ -1648,7 +1697,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       placeOnGround(entity, p.cell, .75);
       return { entity, cell: p.cell, spot: p.spot, materials: pickupModel(p.id, entity) };
     });
-    spiralInWater(); dressCamp();
+    spiralInWater(); dressCamp(); standSalon();
     dress(story.adult);
     backpack.forEach(part => { part.enabled = story.has('got-backpack'); });
     if (!cutscene) {
@@ -2860,6 +2909,13 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     stepCuerdas(delta, animate);
     stepModelo(delta, animate);
+    if (salonFoes) salonFoes.enabled = !battle;
+    // The salon's light walks through its colours outside the fights too, as in them (src/vidrieras.ts).
+    if (salon && !paused) {
+      salonLight.t += delta;
+      const colour = SALON_LIGHTS[lightAt(salonLight.t).light].colour;
+      if (colour !== salonLight.on) { salonLight.on = colour; scenery.salonLight(colour); }
+    }
     scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
       battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
     // In bed nothing needs finding: under the duvet is where their legs belong.

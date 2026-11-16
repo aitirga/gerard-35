@@ -470,6 +470,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     /** Where a geo place sinks its river, the water's surface (rain falls into it); elsewhere nothing. */
     waterHeight(px: number, pz: number) { return geo?.waterAt(px, pz); },
     toWorld(px: number, pz: number) { return new pc.Vec3(x(px), 0, z(pz)); },
+    /** Inside the Sagrada Família, the light through its windows in one colour (Fran's salon), or its own. */
+    salonLight(hex?: string) { basilica?.setLight(hex); },
     /** A raised surface that feet follow (`top` high over the `w` × `d` cells centred on px, pz): Uri's tower ramp. */
     addSurface(px: number, pz: number, w: number, d: number, top: number) { surfaces.push({ x: x(px), z: z(pz), w, d, y: top }); },
     /**

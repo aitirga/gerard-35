@@ -27,7 +27,7 @@ export const PLACES_LUCA = {
   luca: { x: 71, z: 152 },
   /** Where his reflection is looked at, and where it stands in the water (in colour). */
   reflejo: { x: 69, z: 154 },
-  water: { x: 67, z: 157.5 },
+  water: { x: 69.4, z: 155.6 },
   /** Back out of the basilica, in front of the door. */
   outside: { x: 73, z: 119 },
   /** The party comes out here after Fran: by Luca. */
@@ -53,7 +53,7 @@ export interface Zone {
 export const ZONES: readonly Zone[] = [
   { id: 'recepcion', name: 'La recepción', encounter: 'luca-recepcion', cell: { x: 36, z: 31 }, radius: 3, area: { x: 27, z: 29, w: 19, d: 10 }, colour: '#3f8fe0' },
   { id: 'sillones', name: 'Los sillones', encounter: 'luca-sillones', cell: { x: 12, z: 20 }, radius: 3.5, area: { x: 1, z: 6, w: 22, d: 29 }, colour: '#e0503a' },
-  { id: 'carta', name: 'La carta de colores', encounter: 'luca-carta', cell: { x: 36, z: 3 }, radius: 3, area: { x: 27, z: 1, w: 19, d: 9 }, colour: '#f08a2c' },
+  { id: 'carta', name: 'La carta de colores', encounter: 'luca-carta', cell: { x: 36, z: 6 }, radius: 3, area: { x: 27, z: 1, w: 19, d: 9 }, colour: '#f08a2c' },
   { id: 'abside', name: 'El ábside', encounter: 'luca-abside', cell: { x: 56, z: 20 }, radius: 3.5, area: { x: 50, z: 6, w: 11, d: 29 }, colour: '#f2c94c' },
 ];
 /** Luca's own colours, back once Fran is beaten: the loud shirt, the trousers. */

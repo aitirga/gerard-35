@@ -481,7 +481,16 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   const crossing = new pc.Vec3(x(CROSSING.x), 0, z(CROSSING.z)), zoom = environment.zoom ?? 11;
 
   let time = 0;
+  /** Fran's salon (docs/quests/luca.md): the light through every window in one colour, walking; none, the glass's own. */
+  let tint: pc.Color | undefined;
+  const lightColours = lights.map(l => l.light!.color.clone());
   return {
+    /** The pools and the glass's lights take `hex`, the colour of the light on now; `undefined` gives them back their own. */
+    setLight(hex?: string) {
+      tint = hex ? new pc.Color().fromString(hex) : undefined;
+      for (const p of drifting) { const m = p.entity.render!.meshInstances[0].material as pc.StandardMaterial; m.emissive.copy(tint ?? pc.Color.WHITE); m.update(); }
+      lights.forEach((l, i) => { l.light!.color = tint ?? lightColours[i]; });
+    },
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
       if (focus && toCamera) {
         const d = toCamera.clone().normalize();

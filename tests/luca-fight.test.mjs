@@ -19,10 +19,10 @@ test('the salon\'s fights are fears\' fights, each with the foes it says, under 
   for (const encounter of LUCA_ENCOUNTERS) {
     assert.ok(FEAR_ENCOUNTERS.includes(encounter));
     const s = createFearBattle(party, encounter);
-    assert.deepEqual(s.foes.map(f => f.kind), [...LUCA_FIGHTS[encounter]], encounter);
+    assert.deepEqual(s.foes.map(f => f.kind), [...LUCA_FIGHTS[encounter], ...encounter === 'fran' ? ['lampara', 'lampara', 'lampara'] : []], encounter);
     assert.deepEqual(s.light, { t: 0 }, 'it starts in the cold morning');
     assert.equal(cornered(s), encounter === 'fran');
-    for (const f of s.foes) { assert.ok(FOE_XP[f.kind] > 0, f.kind); assert.ok(LUCA_SIZES[f.kind] > 0, f.kind); }
+    for (const f of s.foes) { assert.ok(FOE_XP[f.kind] > 0 || f.part, f.kind); assert.ok(LUCA_SIZES[f.kind] > 0, f.kind); }
   }
 });
 
@@ -118,12 +118,17 @@ test('the freshly styled chaplain repeats the last gesture; down, the others sto
   assert.ok(s.foes.some(f => f.kind === 'capellan' && f.peinado && f.hp > 0), 'Fran restyles the next one');
 });
 
-test('Fran stands at his mark and the canopy\'s lamps come down; each light whose lamp hangs gives him Brillo', async () => {
+test('Fran stands at his mark and the canopy\'s lamps light up; each light whose lamp hangs gives him Brillo', async () => {
   const { LAMPS, lampLit, stageMoment, STAGED_MOMENTS } = await import('../src/battle.ts');
   const s = fight('fran');
   assert.equal(cornered(s), true);
   const fran = s.foes.find(f => f.kind === 'fran');
   assert.equal(fran.stage, 1);
+  s.phase = 'player';
+  runClock(s, 8.5);
+  assert.equal(fran.brillo, 0, 'sitting, he drinks nothing yet');
+  assert.ok(s.foes.filter(f => f.kind === 'lampara').every(l => !lampLit(s, l)));
+  s.light.t = 0;
   fran.hp = Math.floor(fran.maxHp * LUCA.standAt);
   as(s, 'aitor');
   const blow = act(s, 'attack', fran.id);
