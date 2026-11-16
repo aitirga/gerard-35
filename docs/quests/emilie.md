@@ -259,7 +259,39 @@ Aitor asked to rethink it. What does not hold, and what replaces it:
 - Emilie comes back **zone by zone**: after each one she says a little more, and what she says is
   how the fights are read (a person, never a panel).
 
-## Fights (round 9, proposals)
+## Fights, as built (round 10)
+
+In `src/battle.ts` (`MODELO`, `MODELO_FIGHTS`, `modeloTurn`), figures in `src/modelo-foes.ts`, tests in
+`tests/modelo-fight.test.mjs`, measured in `docs/fight-sim.md` § Emilie's model. Playable from the
+fight tester (*El modelo de Emilie*), the boss with a moment for each phase (*Itera*, *Converge*,
+*Diverge*). `just screenshots emilie-foes --gpu`.
+
+| Fight (`Encounter`) | Who | The plate says | Moves |
+| --- | --- | --- | --- |
+| `modelo-celdas` | three Celdas secas | «Seca» / «Encendida» | *Chispa*: a spark on one; on someone wet it runs through everyone wet |
+| `modelo-oscilacion` | two Oscilaciones, on different values | «Agua» / «Eléctrico», the other one every round | *Ola* on «Agua» (wets one), *Chispa* on «Eléctrico» |
+| `modelo-pluma` | La pluma and two Celdas secas | – | *Empapa*: wets whoever is still dry |
+| `no-converge` | El que no converge | its value, `Error ▮▮▮`, `Converge · N turnos` | *Inunda* on «Agua», *Descarga* on «Eléctrico», *Converge* (none) |
+
+What changed from the proposal below, and why:
+
+- **On the boss the right blow takes no more PV than a plain one.** While it iterates it takes half
+  of everything and nothing of its own element; a blow of the other element only takes a mark of Error
+  off. The number comes when it converges (double, for two of its turns). Otherwise whoever only
+  looks at the number would find the answer without reading anything (`casual` in the sim won), and
+  the fight would have no pair.
+- **Its value changes with the round**, not with each blow: both players hit with the same element
+  in a round, the other one in the next.
+- **In *Diverge* it starts with four marks** and comes out of the blow that converges it Mojado, so
+  the next bolt is Conducción on it.
+- **The dungeon's part**: `calibrate(state, n)` takes a mark off before the fight for each piezometer
+  placed beyond the one each zone needs to go down, never the last mark.
+- Figures are built by hand from primitives, as the campsite's and Las cuerdas' are (lines of light,
+  not characters): first pass, to judge in the gallery. La pluma is amber, low, never pink.
+- **Known and left**: Mojado lasts 20 s on the fight's clock, so a party that waits them out before
+  a Descarga takes the dry one (half). It is slow and it is a choice; to decide if it should stay.
+
+## Fights (round 9, the proposal)
 
 What exists and is used (`src/battle.ts`): *Mojado* (20 s, hurts nobody), **Conducción**
 (electricity on someone wet: magic on everyone wet, who are left dry), Atacar with an element
