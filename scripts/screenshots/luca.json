@@ -139,59 +139,35 @@
       "timeout": 120000
     },
     {
-      "wait": 1800
+      "wait": 1500
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        14,
+        15
+      ],
+      "settle": 1000
     },
     {
       "shot": "espejos-inicio",
-      "delay": 900,
-      "caption": "The nave's mirrors as the salon opens: the window's light goes off against a wall"
+      "delay": 1200,
+      "caption": "The nave's mirrors as the salon opens: the window's light comes down the aisle and goes off against a wall"
     },
     {
-      "teleport": "sagrada-familia-interior",
-      "cell": [
-        9,
-        11
-      ],
-      "settle": 1200
+      "eval": "['luca-espejo-0','luca-espejo-1','luca-espejo-2'].forEach(id => window.gerard.storyEvent({ type: 'interact', id }))"
     },
     {
-      "press": "KeyE"
+      "until": "window.gerard.story.beam.hit",
+      "timeout": 5000
     },
     {
-      "skipDialogue": true
-    },
-    {
-      "teleport": "sagrada-familia-interior",
-      "cell": [
-        21,
-        12
-      ],
-      "settle": 1200
-    },
-    {
-      "press": "KeyE"
-    },
-    {
-      "skipDialogue": true
-    },
-    {
-      "teleport": "sagrada-familia-interior",
-      "cell": [
-        21,
-        20
-      ],
-      "settle": 1200
-    },
-    {
-      "press": "KeyE"
-    },
-    {
-      "wait": 600
+      "wait": 800
     },
     {
       "shot": "espejos-resuelto",
       "delay": 900,
-      "caption": "The three mirrors turned: the light reaches the chaplains' chairs (they will start dazzled)"
+      "caption": "The three mirrors turned: the light reaches the chaplains' chairs, and Aitor says so (they start their fight dazzled)"
     },
     {
       "skipDialogue": true

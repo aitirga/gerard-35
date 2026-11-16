@@ -91,12 +91,14 @@ export function buildSalon(parent: pc.Entity, toWorld: (px: number, pz: number) 
     }
   }
   // The window's light, from mirror to mirror: a bright shaft at chest height, warm on the chairs it reaches.
-  const shaft = mat('Rayo de la vidriera', '#fff4d6', .2, 2.4, .7);
+  const shaft = mat('Rayo de la vidriera', '#fff4d6', .2, 2.4, .7), stripe = mat('Luz del rayo en el suelo', '#ffe7a8', .1, 1.6, .55);
   const path = state.beam.path;
   const corners = path.filter((c, i) => i === 0 || i === path.length - 1 || ((path[i + 1].x - c.x) !== (c.x - path[i - 1].x) || (path[i + 1].z - c.z) !== (c.z - path[i - 1].z)));
   for (let i = 0; i + 1 < corners.length; i++) {
     const a = corners[i], b = corners[i + 1], dx = b.x - a.x, dz = b.z - a.z, len = Math.hypot(dx, dz);
-    part('Rayo', 'box', shaft, (a.x + b.x) / 2, (a.z + b.z) / 2, 1.0, [dx ? len : .08, .08, dz ? len : .08]).render!.castShadows = false;
+    part('Rayo', 'box', shaft, (a.x + b.x) / 2, (a.z + b.z) / 2, 1.0, [dx ? len : .2, .2, dz ? len : .2]).render!.castShadows = false;
+    // And where it runs, a stripe of its light on the floor: what reads from the high camera, under the vault.
+    part('Franja de luz', 'box', stripe, (a.x + b.x) / 2, (a.z + b.z) / 2, .04, [dx ? len : .6, .02, dz ? len : .6]).render!.castShadows = false;
   }
   const end = path.at(-1);
   if (end) part(state.beam.hit ? 'Luz en los sillones' : 'Luz en la pared', 'sphere', mat('Destello', state.beam.hit ? '#ffd84f' : '#fff4d6', .2, state.beam.hit ? 3 : 1.2, .8), end.x, end.z, 1.0, state.beam.hit ? [1.4, .8, 1.4] : [.4, .4, .4]).render!.castShadows = false;
