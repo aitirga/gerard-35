@@ -48,6 +48,7 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `camping` | `CAMPING`, Càmping Eurosport's foes, as `camping.rules` | `camping.rules.bombona`, `camping.rules.punetazo` |
 | `marta` | `MARTA`, Las cuerdas' foes and La Voz, as `marta.rules` | `marta.rules.eco`, `marta.rules.acorde`, `marta.rules.directo` |
 | `castle` | `CASTLE` (`src/castle.ts`), the castle's pupils, Aurelià, Dirección and the Queen, as `castle.rules` | `castle.rules.resolucion`, `castle.rules.year3`, `castle.rules.reinaVuelta` |
+| `modelo` | `MODELO`, the foes of Emilie's model and El que no converge, as `modelo.rules` | `modelo.rules.seca`, `modelo.rules.descargaStep`, `modelo.rules.convergeTurns` |
 | `fear` | `FEAR_RULES` as `fear.rules`, and El Plato's blow as `fear.plato` (the onions hit with `ONIONS`, Vertitrón with `VERTIGO`) | `fear.rules.escortLayers`, `fear.plato.power` |
 
 What the Ecos de luz are in is one more list, `--improved`, of `src/ecos.ts` ids joined with `/`
@@ -385,3 +386,36 @@ third year hits ×1.25, not ×1.5; La Delegada's third room is her and the twins
 (`TECH`), Aurelià and Dirección are still almost never won: the whole-game simulator
 (docs/game-sim.md) says whether a real party reaches them that way. In `playOut` the smart bot plays
 the artilugio's melody (two notes a turn) and casual presses random buttons.
+
+## Emilie's model, as tuned
+
+Measured with `just fight-sim` (200 fights, seed 35). Its numbers are `MODELO` (book `modelo.rules`)
+and each foe's `PROFILES`. Inside the model every Atacar can carry water or electricity
+(`BattleState.lent`), so nothing here depends on what the jar gave. Played with Papagato 2 and
+Matemágico 2, and the boss also as the first day's party meets it (no jar, no levels, Aitor wearing
+nothing).
+
+| Fight | Party, bot | Wins | Rounds won | PV left |
+| --- | --- | --- | --- | --- |
+| Celdas secas | duo, smart | 100 % | 5.3 | 54 % |
+| Celdas secas | duo, attack only | 0 % | – | – |
+| Oscilaciones | duo, casual | 100 % | 5.1 | 59 % |
+| Oscilaciones | duo, attack only | 100 % | 10.0 | 21 % |
+| La pluma | duo, smart | 100 % | 5.3 | 60 % |
+| La pluma | duo, attack only | 0 % | – | – |
+| El que no converge | duo, smart | 94 % | 11.1 | 53 % |
+| El que no converge | duo, casual | 0 % | – | – |
+| El que no converge | duo, attack only | 0 % | – | – |
+| El que no converge | first day, smart | 100 % | 11.4 | 55 % |
+| El que no converge | tech, smart | 94 % | 13.2 | 47 % |
+
+- The oscilaciones are the boss's rule made loud: the right element lands three times as hard as a
+  plain blow, so `casual`, which only looks at the number, finds it. They are the fight that teaches.
+- On the boss the right blow takes **no more PV than a plain one**: what it buys is a mark of Error,
+  and at none the turns it stands solid and takes double. `casual` never clears a mark and loses to a
+  Descarga that grows with them; that is the fight's pair. `smart` values a mark off, a cell wet and
+  the boss converged (`ERROR_WORTH`, `MODELO_WET`, `CONVERGED_WORTH` in `src/battle-sim.ts`).
+- Its PV and `descargaStep` are the two numbers that move it: at 620 PV and a step of 8, two magic
+  ánimas win four times in five and the first day's party one in three. Change one at a time.
+- Not simulated: the marks the dungeon takes off before the fight (`calibrate`), and waiting out the
+  20 s of Mojado before a Descarga, which a person can do and a bot does not.

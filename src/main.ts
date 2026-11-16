@@ -534,7 +534,9 @@ try {
     // Las cuerdas (docs/quests/marta.md): its three qualities and La Voz.
     'cuerdas-lealtad': 'cuerdas', 'cuerdas-cristalino': 'cuerdas', 'cuerdas-directo': 'cuerdas', voz: 'cuerdas',
     // The castle (docs/castle.md): a room's pupils on their phase's floor, each boss in its own room.
-    ...Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, id === 'aurelia' || id === 'direccion' || id === 'reina' || id === 'reina-vuelta' ? castlePhase(castlePhaseOf(id)).into.environment : castlePhase(castlePhaseOf(id)).environment])) as Record<(typeof CASTLE_ENCOUNTERS)[number], EnvironmentId> } as const;
+    ...Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, id === 'aurelia' || id === 'direccion' || id === 'reina' || id === 'reina-vuelta' ? castlePhase(castlePhaseOf(id)).into.environment : castlePhase(castlePhaseOf(id)).environment])) as Record<(typeof CASTLE_ENCOUNTERS)[number], EnvironmentId>,
+    // Emilie's model (docs/quests/emilie.md): until its section exists, its fights are tested at her corner.
+    'modelo-celdas': 'poble-sec', 'modelo-oscilacion': 'poble-sec', 'modelo-pluma': 'poble-sec', 'no-converge': 'poble-sec' } as const;
   /** Starts a test fight; another chapter's party needs that chapter's Gerard, so it reloads there. */
   function startFight(setup: FightSetup) {
     if (setup.adult !== story.adult) {

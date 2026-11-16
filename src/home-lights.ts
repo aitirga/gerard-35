@@ -231,6 +231,11 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   voz: [hex('#1f5f6b', .55, .8), hex('#f2b45a', .55, .7), hex('#49d3c2', .55, .7), hex('#5b8cff', .5, .75)],
   // The castle: her pink, gone old, over the place each phase walks towards (mat blue, manila, night indigo); violet for whoever she holds.
   ...Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, CASTLE_LAMPS[id === 'aurelia' || id === 'direccion' ? id : castlePhaseOf(id)]])) as Record<CastleEncounter, [Lamp, Lamp, Lamp, Lamp]>,
+  // Emilie's model: a terminal's phosphor green in the dark, with water's blue and a spark's yellow on top.
+  'modelo-celdas': [hex('#3fe07a', .45, .8), hex('#12301c', .3, .8), hex('#6cc8f2', .5, .7), hex('#ffe45c', .45, .7)],
+  'modelo-oscilacion': [hex('#3fe07a', .5, .8), hex('#6cc8f2', .55, .7), hex('#ffe45c', .55, .7), hex('#12301c', .3, .8)],
+  'modelo-pluma': [hex('#3fe07a', .45, .8), hex('#6cc8f2', .6, .75), hex('#12301c', .3, .8), hex('#c9a45a', .45, .6)],
+  'no-converge': [hex('#3fe07a', .6, .85), hex('#6cc8f2', .5, .75), hex('#ffe45c', .5, .75), hex('#0c2014', .25, .8)],
 };
 const ALARM = hex('#ff2a1a', .75, 1);
 /** 0 with everyone healthy, 1 when someone still standing is about to fall. */

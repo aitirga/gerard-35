@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS } from './battle';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -38,8 +38,8 @@ const commandsFor = (dev: boolean): { id: Command; name: string }[] => [
   { id: 'escape', name: 'Huir' },
 ];
 /** Uri's fears (docs/quests/nuria.md): what the fight's heading says. */
-const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN', sobremesa: 'LA SOBREMESA', 'camping-magos': 'MAGOS DE CAMPING', 'camping-dados': 'DADOS', 'camping-agentes': 'AGENTES', 'camping-tienda': 'UNA TIENDA EQUIVOCADA', 'camping-negra': 'LA PARCELA NEGRA', campeon: 'EL CAMPEÓN', 'cuerdas-lealtad': 'LA LEALTAD', 'cuerdas-cristalino': 'LO CRISTALINO', 'cuerdas-directo': 'LO DIRECTO', voz: 'LA VOZ', ...CASTLE_KICKERS } as const;
-const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>', sobremesa: 'Nadie se <em>levanta.</em>', 'camping-magos': 'Huele a <em>gas.</em>', 'camping-dados': 'Cada ronda, <em>otra cara.</em>', 'camping-agentes': 'Uno da la <em>cara.</em>', 'camping-tienda': 'Esa no <em>era.</em>', 'camping-negra': 'Todo <em>apagado.</em>', campeon: 'Sobre su <em>peana.</em>', 'cuerdas-lealtad': 'No se <em>aparta.</em>', 'cuerdas-cristalino': 'Se ve <em>a través.</em>', 'cuerdas-directo': 'Sin <em>rodeos.</em>', voz: 'Lo que <em>falta.</em>', ...CASTLE_TITLES } as const;
+const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN', sobremesa: 'LA SOBREMESA', 'camping-magos': 'MAGOS DE CAMPING', 'camping-dados': 'DADOS', 'camping-agentes': 'AGENTES', 'camping-tienda': 'UNA TIENDA EQUIVOCADA', 'camping-negra': 'LA PARCELA NEGRA', campeon: 'EL CAMPEÓN', 'cuerdas-lealtad': 'LA LEALTAD', 'cuerdas-cristalino': 'LO CRISTALINO', 'cuerdas-directo': 'LO DIRECTO', voz: 'LA VOZ', ...CASTLE_KICKERS, 'modelo-celdas': 'CELDAS SECAS', 'modelo-oscilacion': 'OSCILACIONES', 'modelo-pluma': 'LA PLUMA', 'no-converge': 'EL QUE NO CONVERGE' } as const;
+const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>', sobremesa: 'Nadie se <em>levanta.</em>', 'camping-magos': 'Huele a <em>gas.</em>', 'camping-dados': 'Cada ronda, <em>otra cara.</em>', 'camping-agentes': 'Uno da la <em>cara.</em>', 'camping-tienda': 'Esa no <em>era.</em>', 'camping-negra': 'Todo <em>apagado.</em>', campeon: 'Sobre su <em>peana.</em>', 'cuerdas-lealtad': 'No se <em>aparta.</em>', 'cuerdas-cristalino': 'Se ve <em>a través.</em>', 'cuerdas-directo': 'Sin <em>rodeos.</em>', voz: 'Lo que <em>falta.</em>', ...CASTLE_TITLES, 'modelo-celdas': 'Sin <em>valor.</em>', 'modelo-oscilacion': 'Ni uno <em>ni otro.</em>', 'modelo-pluma': 'Corriente <em>abajo.</em>', 'no-converge': 'Nunca se <em>queda.</em>' } as const;
 /** What a blow says it did to an onion's layers. */
 const peelText = (peeled: number, onion?: { layers?: number }) => !onion?.layers ? '¡Sin capas!' : peeled > 1 ? `¡${peeled} capas menos!` : '¡Una capa menos!';
 const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
@@ -345,6 +345,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     }
     // The castle's rules (src/castle-fight.ts): what a pupil learned, the lectern, the Acta, the Queen's gum and Aitor's marks.
     if (state && c.castle) chips.push(...castleChips(state, c));
+    // The model's rules (docs/quests/emilie.md): a cell dry or switched on, the value an Oscilación or the boss is on,
+    // its marks of Error, and the turns it stays solid once converged.
+    if (c.kind === 'celda-seca') chips.push(c.timed?.mojado ? ['encendida', 'Encendida'] : ['seca', 'Seca']);
+    if (c.converged) chips.push(['converge', `Converge · ${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}`]);
+    else if (c.sign) chips.push([`valor-${c.sign}`, SIGNS[c.sign]]);
+    if (c.kind === 'no-converge' && !c.converged) chips.push(['error', `Error ${'▮'.repeat(c.error ?? 0)}`]);
     // A move announced a turn ahead, and at whom (Carrerilla → Aitor), or what is about to happen.
     // One chip for any announced move, as `intentLabel` says it («Rayo terrorífico → todos»).
     const announced = state && c.intent ? intentLabel(state, c) : undefined;
@@ -1717,6 +1723,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         landed.push({ target: effect.target, ...says });
         reaction.hits?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', says.text.replace(/[¡!]/g, ''), undefined, 58); }, 140 + i * 90));
       }
+      // The model: water that leaves someone Mojado, a spark that ran through the wet, and what a blow did to the boss's Error.
+      effect.wetted?.forEach(id => landed.push({ target: id, id: 'mojado', text: `¡${TIMED.mojado.name}!`, detail: state!.foes.some(f => f.id === id) ? 'Se enciende' : '' }));
+      if (effect.conducted && effect.target) landed.push({ target: effect.target, id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' });
+      const boss = effect.error || effect.converged || effect.diverged ? state.foes.find(f => f.kind === 'no-converge') : undefined;
+      if (boss && effect.converged) setTimeout(() => { if (token === generation) pop(boss.id, '¡Converge!', 'status', 'Sólido: recibe el doble', 'converge'); }, 420);
+      else if (boss && effect.diverged) setTimeout(() => { if (token === generation) pop(boss.id, 'Diverge', 'status', `Error ${effect.error?.left ?? boss.error ?? 0}`, 'error'); }, 420);
+      else if (boss && effect.error) setTimeout(() => { if (token === generation) pop(boss.id, effect.error!.mark === 'off' ? 'Error −1' : 'Error +1', 'status', effect.error!.mark === 'off' ? `Quedan ${effect.error!.left}` : 'Se lo traga', 'error'); }, 420);
       // Control remoto: the foe it took says so, and the one it turned on takes the blow a moment later.
       if (effect.controlled && effect.target) {
         const { victim, amount } = effect.controlled;

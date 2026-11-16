@@ -97,6 +97,15 @@ export const PROFILES = {
   directiva: base(160, 10, 13, 10, 12, 10),
   reina: base(620, 14, 14, 12, 13, 10),
   mano: base(110, 12, 10, 11, 10, 8),
+  /**
+   * The foes of Emilie's model (docs/quests/emilie.md § Fights): their rules do the work (battle.ts
+   * MODELO). A Celda seca is a block, slow; an Oscilación quick and frail; La pluma only wets. El que
+   * no converge is the boss.
+   */
+  'celda-seca': base(70, 10, 11, 11, 10, 8),
+  oscilacion: base(110, 10, 12, 9, 10, 12),
+  pluma: base(90, 9, 11, 9, 11, 10),
+  'no-converge': base(520, 12, 13, 11, 12, 10),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;
 

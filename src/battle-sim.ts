@@ -10,7 +10,7 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, CAMPING, MARTA, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, songNow, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId, skillKnown } from './battle.ts';
@@ -173,6 +173,7 @@ const BOOKS = {
   camping: { rules: CAMPING },
   marta: { rules: MARTA },
   castle: { rules: CASTLE },
+  modelo: { rules: MODELO },
   reaction: { rules: REACTION_RULES },
   element: { rules: ELEMENT_RULES },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
@@ -287,6 +288,8 @@ function copy(state: BattleState) {
 const MARK_HITS = 3;
 /** What `smart` thinks a point of maná gathered (Defender) is worth: a little more than it costs to spend (2.5), since it is what skills wait on. */
 const MANA_WORTH = 5;
+/** What `smart` thinks of the model's set-ups: a cell wet, a mark of Error off, El que no converge converged. */
+const MODELO_WET = 14, ERROR_WORTH = 16, CONVERGED_WORTH = 30;
 /** What `smart` thinks a PV off Vertitrón's eye is worth (it brings no win closer, but every Rayo it has left), and breaking it. */
 const EYE_WORTH = .8, EYE_BROKEN = 30;
 /** A thing with PV that is part of a fight's answer and never its win: Vertitrón's eye, Aurelià's lectern, the Queen's hands. */
@@ -331,6 +334,13 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     if (foe.hp > 60) for (const [id, mark] of Object.entries(now.marks ?? {})) if (!foe.marks?.[id as SkillId] && mark) value += mark.amount * MARK_HITS * after.allies.filter(a => a.hp > 0).length;
     // La Voz's Calderón broken by an Acorde: everything it was about to do to everyone.
     if (foe.intent?.ability === 'calderon' && now.hp > 0 && !now.intent) value += [...threat.hp.values()].reduce((total, hp) => total + hp, 0);
+    // Emilie's model: a cell wet is a cell switched on (and a bolt away from Conducción); a mark of Error off El que no
+    // converge is a step towards the turns it stands solid, and one on is a step back.
+    if (isModelo(foe.kind) && now.hp > 0) {
+      if (foe.kind === 'celda-seca' && now.timed?.mojado && !foe.timed?.mojado) value += MODELO_WET;
+      value += ((foe.error ?? 0) - (now.error ?? 0)) * (foe.converged || now.converged && !foe.converged && (foe.error ?? 0) > 1 ? 0 : ERROR_WORTH);
+      if (now.converged && !foe.converged) value += CONVERGED_WORTH;
+    }
     // Punto débil: what the next blow on it will add.
     if (now.hp > 0 && now.weakSpot !== undefined && foe.weakSpot === undefined) value += weakSpotWorth(after, now.id, ban);
   });
@@ -802,6 +812,21 @@ export const TARGETS: readonly Target[] = [
   { id: 'reina-toma-a-aitor', fight: 'reina', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [0, 0], why: 'La primera vez no se gana: al décimo de sus PV toma a Aitor, y sin el artilugio Gerard cae.' },
   { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.9, 1], why: 'Con el artilugio: romper la pompa o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
+  // Emilie's model (docs/quests/emilie.md § Fights). Its numbers are MODELO (book modelo.rules) and each foe's PROFILES entry
+  // (foe.celda-seca…). Inside it every Atacar can carry water or electricity, so the answer never depends on the jar. The
+  // small fights teach one piece each; the boss asks for all of it, and a blow of the right element takes nothing more off
+  // it than a plain one: what it buys is a mark of Error, and the turns it stands solid.
+  { id: 'celdas-bien', fight: 'modelo-celdas', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.35, .8], roundsWon: [3.5, 7], why: 'Las celdas secas, leyendo la placa: primero agua, luego la electricidad corre por todas las mojadas.' },
+  { id: 'celdas-a-punetazos', fight: 'modelo-celdas', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Secas, todo les entra a la mitad: a puñetazos no da tiempo.' },
+  { id: 'oscilacion-probando', fight: 'modelo-oscilacion', party: DUO, levels: P2M2, policy: 'casual', win: [.95, 1], roundsWon: [3.5, 7], why: 'La oscilación enseña la regla del jefe en pequeño: probando elementos se encuentra, y se nota en el número.' },
+  { id: 'oscilacion-a-punetazos', fight: 'modelo-oscilacion', party: DUO, levels: P2M2, policy: 'attack', roundsWon: [8, 14], hpLeftWon: [0, .35], why: 'Sin elemento también cae, pero el doble de largo y por los pelos: la diferencia se ve.' },
+  { id: 'pluma-bien', fight: 'modelo-pluma', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.4, .85], why: 'La pluma primero: sin nadie mojado, las chispas de las celdas son solo chispas.' },
+  { id: 'pluma-a-punetazos', fight: 'modelo-pluma', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Mojados y electrocutados cada ronda, y las celdas secas no caen a puñetazos.' },
+  { id: 'no-converge-bien', fight: 'no-converge', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .7], roundsWon: [8, 15], why: 'El que no converge, leyendo la placa: el elemento en el que no está le quita Error, y convergido se le pega con todo.' },
+  { id: 'no-converge-sin-pensar', fight: 'no-converge', party: DUO, levels: P2M2, policy: 'casual', win: [0, .05], roundsLost: [4, 9], why: 'El golpe acertado no quita más PV que uno cualquiera: quien solo mira el número nunca lo hace converger, y su Descarga crece.' },
+  { id: 'no-converge-a-punetazos', fight: 'no-converge', party: DUO, levels: P2M2, policy: 'attack', win: [0, .02], why: 'Sin elementos no converge nunca.' },
+  { id: 'no-converge-primer-dia', fight: 'no-converge', party: 'gerard:matemagico+aitor:-', levels: L1, improved: [], exact: true, policy: 'smart', win: [.85, 1], why: 'Al alcance de quien llega el primer día, sin tarro ni niveles y con Aitor sin ánima: el modelo presta el agua y la electricidad.' },
+  { id: 'no-converge-con-tecnopata', fight: 'no-converge', party: TECH, levels: P2M2, policy: 'smart', win: [.85, 1], why: 'Con dos ánimas de magia también: la respuesta está en Atacar, no en lo que se lleve puesto.' },
 ];
 export interface TargetResult { id: string; why: string; pass: boolean; failures: string[]; row: Row; wanted: Pick<Target, 'win' | 'roundsLost' | 'hpLeftWon' | 'roundsWon' | 'duals'> }
 /** Plays every target and says which hold. */

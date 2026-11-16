@@ -90,6 +90,11 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
   directiva: { impact: [{ id: 'thump' }] },
   reina: { impact: [{ id: 'spit' }, { id: 'slam', volume: .7 }] },
   mano: { impact: [] },
+  // Emilie's model: a spark off a dead cell, a value flickering, water spreading, figures falling.
+  'celda-seca': { impact: [{ id: 'zap', volume: .6 }] },
+  oscilacion: { start: [{ id: 'glitch', volume: .5 }], impact: [{ id: 'zap', volume: .6 }] },
+  pluma: { impact: [{ id: 'splash', volume: .8 }] },
+  'no-converge': { start: [{ id: 'glitch', volume: .6 }], impact: [{ id: 'zap' }] },
 };
 const foeOf = (effect: BattleEffect, state?: BattleState) => state?.foes.find(f => f.id === effect.actor);
 

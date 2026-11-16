@@ -139,7 +139,24 @@ export const BOOST_ROUNDS = 3;
 export type SkillId = typeof SKILLS[number]['id'];
 type Skill = typeof SKILLS[number];
 /** `vertigo`: Vertitrón, the tower's boss; `vertigo-ojo`: its eye, a part of it (its own PV, no turns, `part`). */
-export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | 'plato' | 'vertigo' | 'vertigo-ojo' | BroodKind | SobremesaKind | CampingKind | CuerdasKind | CastleKind;
+export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | 'plato' | 'vertigo' | 'vertigo-ojo' | BroodKind | SobremesaKind | CampingKind | CuerdasKind | CastleKind | ModeloKind;
+/**
+ * The foes of Emilie's model (docs/quests/emilie.md § Fights): what goes wrong in a groundwater model.
+ * Each asks one question with water and electricity, by kind of blow and never by who wears what, and
+ * shows its answer on its plate. A Celda seca takes half while dry; water wets it, and then
+ * electricity is Conducción. An Oscilación shows the value it is on («Agua» or «Eléctrico», the other
+ * one every round): a blow of that element is absorbed, one of the other lands hard. La pluma wets
+ * one of the party every turn, and the cells that come with it shock whoever is wet. El que no
+ * converge, the boss, is all of it: it wets and shocks the party by turns, and only blows of the
+ * element it is not on take its Error away, until it converges.
+ */
+export type ModeloKind = 'celda-seca' | 'oscilacion' | 'pluma' | 'no-converge';
+export const MODELO_KINDS = ['celda-seca', 'oscilacion', 'pluma', 'no-converge'] as const satisfies readonly ModeloKind[];
+export const isModelo = (kind?: FoeKind): kind is ModeloKind => !!kind && (MODELO_KINDS as readonly string[]).includes(kind);
+/** The value an Oscilación or El que no converge is on, as its plate names it. */
+export type Sign = 'agua' | 'electrico';
+export const SIGNS: Record<Sign, string> = { agua: 'Agua', electrico: 'Eléctrico' };
+const otherSign = (sign: Sign): Sign => sign === 'agua' ? 'electrico' : 'agua';
 /**
  * Las cuerdas' foes (docs/quests/marta.md § The qualities, § Final boss): what makes Marta herself,
  * loose with nobody to govern it. Each asks one question, by kind of blow and never by who wears what,
@@ -229,7 +246,8 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'empujon' | 'repaso' | 'chivatazo' | 'pellizco' | 'codazo' | 'orden'
   | 'dictado' | 'pregunta' | 'castigo' | 'sprint' | 'expulsion' | 'record'
   | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo'
-  | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo';
+  | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo'
+  | 'chispa' | 'ola' | 'empapa' | 'inunda' | 'descarga-modelo' | 'converge';
 export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }> = {
   lagrimilla: { name: 'Lagrimilla', card: false },
   'capa-nueva': { name: 'Capa nueva', card: true },
@@ -302,6 +320,12 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   aplastar: { name: 'Aplastar', card: false },
   pompa: { name: 'La Pompa', card: true },
   suyo: { name: 'Suyo', card: true },
+  chispa: { name: 'Chispa', card: false },
+  ola: { name: 'Ola', card: false },
+  empapa: { name: 'Empapa', card: false },
+  inunda: { name: 'Inunda', card: true },
+  'descarga-modelo': { name: 'Descarga', card: true },
+  converge: { name: 'Converge', card: true },
 };
 const foeAbility = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} });
 /**
@@ -392,6 +416,24 @@ export const MARTA = {
   // PV every ten Crescendos, and each Crescendo is half a point of Magia (2026-11-19, `just fight-sim`).
   eco: 0, ecoStep: .1, crescendo: .5, acorde: 1.5, vozDirecto: 64, coro: 32, calderon: 20,
   allegro: .6, capela: .25,
+};
+/**
+ * Emilie's model (docs/quests/emilie.md § Fights), every number in one book (`modelo.rules`); PV are
+ * each foe's PROFILES entry. A Celda seca takes `seca` of every blow while dry. An Oscilación takes
+ * `contra` of a blow of the element it is not on, `plano` of one with no element (or fire), nothing
+ * of its own. Chispa, Ola and Empapa are the small foes' blows; `conduce` is what runs through
+ * everyone wet in the party when a spark finds one of them. El que no converge: while it iterates it
+ * takes `itera` of every blow and nothing of its own element; it starts with `error` marks (`errorDiverge`
+ * from `diverge` of its PV, never more than `errorMost`); at none it is solid for `convergeTurns` of
+ * its own turns and takes `converge`. Inunda takes `inunda` and wets everyone; its Descarga is
+ * `descarga` plus `descargaStep` for each mark of Error, on everyone wet. Holding on takes two thirds off.
+ */
+export const MODELO = {
+  seca: .5, contra: 1.5, plano: .5,
+  chispa: 16, ola: 14, empapa: 10, conduce: 22,
+  itera: .5, converge: 2, convergeTurns: 2,
+  error: 3, errorDiverge: 4, errorMost: 6, diverge: .5,
+  inunda: 10, descarga: 20, descargaStep: 7,
 };
 /** Lo Directo's turns, in order, round and round; each is said a turn ahead. */
 export const DIRECTO_TURNS = ['golpe-directo', 'golpe-directo', 'en-linea', 'estocada'] as const;
@@ -699,12 +741,20 @@ export interface Combatant {
   castle?: CastleMark;
   /** What this one is weak to or resists, when it is its own and not its kind's (`AFFINITIES`): a pupil's year, a directiva's element, the Queen's gum. */
   affinities?: Partial<Record<Element, Affinity>>;
+  /** An Oscilación, El que no converge: the value it is on now, on its plate; the other one next round. */
+  sign?: Sign;
+  /** El que no converge: its marks of Error, on its plate. */
+  error?: number;
+  /** El que no converge has converged: its own turns left as a solid body (no move, every blow harder). */
+  converged?: number;
+  /** El que no converge is past its mark: Diverge, its second phase. */
+  diverged?: boolean;
 }
 /** Whom a move is aimed at when it is not one ally: everyone. */
 export type Aim = 'todos';
 /** Which fight this is: the street dogs, the palace minion that wakes Matemágico, or the palace guards of chapter 2. */
 /** `escolta`: ring 3's fear, La Cebolla y los suyos (La Cebolla, a fantasmita and a cebollita). */
-export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | 'sobremesa' | BroodEncounter | CampingEncounter | CuerdasEncounter | CastleEncounter;
+export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | 'sobremesa' | BroodEncounter | CampingEncounter | CuerdasEncounter | CastleEncounter | ModeloEncounter;
 /** The young that chase the party up each ring of Uri's tower, a few at a time. */
 export const BROOD_ENCOUNTERS = ['crias-1', 'crias-2', 'crias-3'] as const;
 export type BroodEncounter = (typeof BROOD_ENCOUNTERS)[number];
@@ -733,8 +783,18 @@ export const CUERDAS_FIGHTS: Record<CuerdasEncounter, readonly CuerdasKind[]> = 
   'cuerdas-directo': ['directo'],
   voz: ['voz'],
 };
-/** Uri's maze and roof (docs/quests/nuria.md), La Sobremesa, the campsite and Las cuerdas: the fights whose foes have rules of their own. */
-export const FEAR_ENCOUNTERS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'sobremesa', ...BROOD_ENCOUNTERS, ...CAMPING_ENCOUNTERS, ...CUERDAS_ENCOUNTERS, ...CASTLE_ENCOUNTERS] as const;
+/** The fights inside Emilie's model (docs/quests/emilie.md): one for each zone of the section, and El que no converge at the bottom. */
+export const MODELO_ENCOUNTERS = ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'] as const;
+export type ModeloEncounter = (typeof MODELO_ENCOUNTERS)[number];
+/** Who comes out in each of them, in the order they stand. */
+export const MODELO_FIGHTS: Record<ModeloEncounter, readonly ModeloKind[]> = {
+  'modelo-celdas': ['celda-seca', 'celda-seca', 'celda-seca'],
+  'modelo-oscilacion': ['oscilacion', 'oscilacion'],
+  'modelo-pluma': ['pluma', 'celda-seca', 'celda-seca'],
+  'no-converge': ['no-converge'],
+};
+/** Uri's maze and roof (docs/quests/nuria.md), La Sobremesa, the campsite, Las cuerdas, the castle and Emilie's model: the fights whose foes have rules of their own. */
+export const FEAR_ENCOUNTERS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'sobremesa', ...BROOD_ENCOUNTERS, ...CAMPING_ENCOUNTERS, ...CUERDAS_ENCOUNTERS, ...CASTLE_ENCOUNTERS, ...MODELO_ENCOUNTERS] as const;
 /** Bernat's HP floor in the palace fight: the hit that would cross it stops there and starts the beat. */
 export const BEAT_HP = 20;
 export interface BattleState {
@@ -774,6 +834,11 @@ export interface BattleState {
   levels?: Partial<Record<ClassId, number>>;
   /** What Ecos de luz added to the party's ánimas (`improve`). */
   improved?: Improved;
+  /**
+   * Elements the place lends to everyone's Atacar for this fight, whatever they wear and whatever the
+   * jar has given (inside Emilie's model: its two variables, water and electricity).
+   */
+  lent?: Element[];
   /** Who acted wearing each ánima this fight (src/levels.ts `participants`: the ánimas a win teaches). */
   fought?: Partial<Record<ClassId, string[]>>;
   /** Development: EXP added to what the foes are worth (the picker's «Victoria subiendo de nivel»). */
@@ -823,7 +888,7 @@ export const cornered = (state: BattleState) => state.possessed || state.encount
   // The black pitch puts every lantern out round them, and El Campeón stands between them and the way on.
   || state.encounter === 'camping-negra' || state.encounter === 'campeon'
   // Where every string meets there is nowhere to back off to.
-  || state.encounter === 'voz'
+  || state.encounter === 'voz' || state.encounter === 'no-converge'
   // Nobody walks out of Aurelià's class, of Direcció or of the throne room.
   || state.encounter === 'aurelia' || state.encounter === 'direccion' || state.encounter === 'reina' || state.encounter === 'reina-vuelta';
 /** Gerard's ánima in this fight. */
@@ -1077,6 +1142,14 @@ export interface BattleEffect {
   cleared?: TimedId[];
   /** Things a rule of the fight says by name over someone (the castle's: «Respuesta correcta», «Tropiezo», «No firma»). */
   called?: { target: string; text: string; detail?: string }[];
+  /** Water left these Mojado: a foe's on the party (Ola, Empapa, Inunda), or anyone's on a Celda seca, which switches on. */
+  wetted?: string[];
+  /** A foe's spark ran through everyone wet in the party (their PV are `amount` and `splash`), and left them dry. */
+  conducted?: true;
+  /** El que no converge: its marks of Error after this blow, when it changed them (`mark`: one fewer or one more). */
+  error?: { left: number; mark: 'off' | 'on' };
+  /** El que no converge converged with this blow, or diverged again; an Oscilación or the boss is now on `sign`. */
+  converged?: true; diverged?: true; sign?: Sign;
 }
 /** Whether this action spent a Punto débil on its target (it landed WEAK_SPOT times as hard). */
 export const markSpent = (e: BattleEffect) => e.weakSpot === 'spent' || e.weakSpot === 'renewed';
@@ -1235,8 +1308,8 @@ export function improve(state: BattleState, improved: Improved | undefined) {
 }
 /** The elements `actor`'s Atacar can carry now: those the ánima worn has, in the order X walks through them. */
 export function elementsFor(state: BattleState, actor: Combatant): Element[] {
-  const have = actor.classId ? state.improved?.elements?.[actor.classId] : undefined;
-  return have?.length ? ELEMENT_ORDER.filter(id => have.includes(id)) : [];
+  const have = [...actor.classId ? state.improved?.elements?.[actor.classId] ?? [] : [], ...state.lent ?? []];
+  return have.length ? ELEMENT_ORDER.filter(id => have.includes(id)) : [];
 }
 /** The element `actor`'s next Atacar carries, if any: the one chosen, while the ánima worn has it. */
 export function attackElement(state: BattleState, actor: Combatant) {
@@ -1403,6 +1476,7 @@ export function createFearBattle(party: PartySlot[], encounter: (typeof FEAR_ENC
   if (encounter === 'sobremesa') return createSobremesaBattle(party, animas, random);
   if ((CAMPING_ENCOUNTERS as readonly string[]).includes(encounter)) return createCampingBattle(party, encounter as CampingEncounter, animas, random);
   if ((CUERDAS_ENCOUNTERS as readonly string[]).includes(encounter)) return createCuerdasBattle(party, encounter as CuerdasEncounter, animas, random);
+  if ((MODELO_ENCOUNTERS as readonly string[]).includes(encounter)) return createModeloBattle(party, encounter as ModeloEncounter, animas, random);
   const spec = FEAR_FOES[encounter as keyof typeof FEAR_FOES];
   const one: Combatant = { ...foe(spec.id, spec.name, spec.kind), power: spec.power };
   if (isOnion(spec.kind)) one.layers = ONIONS[spec.kind].layers;
@@ -1473,7 +1547,7 @@ type Blow = 'physical' | 'magic' | 'dual';
  * What a fear's own rule does to a hit that lands on it: the dish's weakness (the surprise dish lets
  * single blows in at half, a dual whole), the onion's layers, a fantasmita gone see-through.
  */
-function fearDamage(state: BattleState, target: Combatant, damage: number, blow: Blow) {
+function fearDamage(state: BattleState, target: Combatant, damage: number, blow: Blow, element?: Element) {
   let out = damage;
   if (target.dish) {
     const dish = DISHES[target.dish];
@@ -1482,7 +1556,7 @@ function fearDamage(state: BattleState, target: Combatant, damage: number, blow:
   }
   if (target.layers) out /= 2;
   if (target.transparent && blow === 'physical') out *= FEAR_RULES.transparent;
-  out *= campingTaken(target, blow) * cuerdasTaken(target, blow) * castleTaken(state, target, blow);
+  out *= campingTaken(target, blow) * cuerdasTaken(target, blow) * castleTaken(state, target, blow) * modeloTaken(target, element);
   // Magic off glass does nothing at all (Lo Cristalino, La Voz's Nota clara).
   return out <= 0 ? 0 : Math.max(1, Math.round(out));
 }
@@ -1497,6 +1571,7 @@ function winMessage(state: BattleState) {
     : isCampingFight(state) ? CAMPING_WON[state.encounter as CampingEncounter]
     : isCuerdasFight(state) ? CUERDAS_WON[state.encounter as CuerdasEncounter]
     : isCastleEncounter(state.encounter) ? castleWinMessage(state)
+    : isModeloFight(state) ? MODELO_WON[state.encounter as ModeloEncounter]
     : (BROOD_ENCOUNTERS as readonly string[]).includes(state.encounter) ? 'Se deshacen en humo violeta. Desde arriba, la risa de Uri. Volverán.'
     : state.encounter === 'palace-minion' ? 'El esbirro se queda tieso, se agrieta como chicle viejo… y revienta.'
     : state.encounter === 'palace-guards' ? 'Los guardianes se deshacen en charcos rosas. La cortina tiembla.'
@@ -1563,7 +1638,7 @@ function react(state: BattleState, actor: Combatant, target: Combatant, element:
   } else if (target.hp > 0 && element === 'electrico' && target.timed?.cegado) {
     const hits = state.foes.filter(f => f.hp > 0 && f.timed?.cegado).map(f => {
       delete f.timed!.cegado;
-      return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.storm, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic')) };
+      return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.storm, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic', 'electrico')) };
     });
     effect.reaction = { id: 'tormenta', hits };
     state.message += ` ¡La descarga salta por el humo! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
@@ -1571,7 +1646,7 @@ function react(state: BattleState, actor: Combatant, target: Combatant, element:
     // Conducción: the water carries it to everyone wet (a skill's reaches them wherever it landed), and dries.
     const hits = wet.map(f => {
       delete f.timed!.mojado;
-      return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.conduct, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic')) };
+      return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.conduct, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic', 'electrico')) };
     });
     effect.reaction = { id: 'conduccion', hits };
     state.message += ` ¡La corriente corre por el agua! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
@@ -1716,7 +1791,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     effect.hits = targets.map(foe => {
       const { bled, scale } = wound(foe, blow === 'physical', skill), weak = weakScale(state, foe);
       const found = affinityOf(foe, elementOf(ability));
-      const amount = hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability) * scale * weak * affinityScale(foe, elementOf(ability)), blow));
+      const amount = hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability) * scale * weak * affinityScale(foe, elementOf(ability)), blow, elementOf(ability)));
+      iterate(state, foe, elementOf(ability), effect);
       if (bled) delete foe.statuses!.sangrado;
       // Only an action that takes PV off spends the mark (one the floor swallows leaves it).
       const spends = weak > 1 && amount > 0;
@@ -1812,7 +1888,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       // What the blow lands with, for what the foe is made of: Atacar's element, or the skill's own (Foc Binari is fire).
       const landing = element ?? (action === 'skill' ? elementOf(ability) : undefined), found = affinityOf(target, landing);
       for (let i = 0; i < times && target.hp > 0; i++) {
-        strikes.push(hurt(state, target, fearDamage(state, target, strike(state, actor, target, action === 'skill' ? ability : undefined, cast?.power) * scale * weak * chord * affinityScale(target, landing), magic ? 'magic' : 'physical')));
+        strikes.push(hurt(state, target, fearDamage(state, target, strike(state, actor, target, action === 'skill' ? ability : undefined, cast?.power) * scale * weak * chord * affinityScale(target, landing), magic ? 'magic' : 'physical', landing)));
         if (target.layers && !--target.layers) bare(target);
       }
       if (bled) { delete target.statuses!.sangrado; effect.bled = bled; }
@@ -1861,7 +1937,15 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
           state.message += ` ${longer.map(id => TIMED[id].name).join(' y ')}: ${extend} s más.`;
         }
       }
+      // An absorbed bolt still finds the water (Conducción), and a blow that took nothing still counts for El que no converge's Error.
+      iterate(state, target, landing, effect);
       if (element) react(state, actor, target, element, effect, action === 'skill');
+      // A Celda seca takes water in by its own rule, whoever throws it: Mojado, and switched on.
+      if (target.kind === 'celda-seca' && landing === 'agua' && !effect.reaction && target.hp > 0 && !target.timed?.mojado) {
+        target.timed = { ...target.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } };
+        effect.wetted = [target.id];
+        state.message += ' La celda se moja y se enciende.';
+      }
       // Capilaridad: his Atacar with water leaves a foe it turned nothing on Mojado.
       if (action === 'attack' && element === 'agua' && !effect.reaction && target.hp > 0 && effect.amount > 0 && passive(state, actor, 'capilaridad')) {
         target.timed = { ...target.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } };
@@ -1883,6 +1967,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       if (splash.length) { effect.splash = splash; state.message += ' ¡Joker! Cae sobre todos.'; }
     }
   }
+  // In Diverge, El que no converge comes out of the blow that converged it soaked: the next bolt is Conducción.
+  if (effect.converged) for (const f of state.foes) if (f.kind === 'no-converge' && f.diverged && f.hp > 0) soak(f);
   checkEye(state, effect);
   if (fallen(state)) return effect;
   settle(state);
@@ -2207,6 +2293,184 @@ function minionAct(state: BattleState, actor: Combatant): BattleEffect | undefin
   if (awakening) { state.phase = 'beat'; state.message = `${target.name} cae de rodillas. El esbirro se infla para el último golpe…`; }
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Toca recuperar el aliento. Puedes volver a intentarlo.'; }
   return { actor: actor.id, kind: 'enemy', target: target.id, amount };
+}
+/** The foes of Emilie's model, by name (more than one of a kind are numbered). */
+export const MODELO_NAMES: Record<ModeloKind, string> = { 'celda-seca': 'Celda seca', oscilacion: 'Oscilación', pluma: 'La pluma', 'no-converge': 'El que no converge' };
+/** What each fight in the model says as it starts, and as it is won. */
+const MODELO_MESSAGES: Record<ModeloEncounter, string> = {
+  'modelo-celdas': 'Tres celdas de la malla se desprenden del corte. Están apagadas: huecas, grises, secas.',
+  'modelo-oscilacion': 'Dos figuras parpadean entre dos valores, sin quedarse en ninguno. Una está en el que la otra acaba de dejar.',
+  'modelo-pluma': 'Una mancha se extiende por el agua hacia vosotros. Detrás, dos celdas apagadas, esperando.',
+  'no-converge': 'Al fondo del modelo, columnas de cifras que caen sin parar. Tienen forma de alguien. No se quedan quietas en ningún valor.',
+};
+const MODELO_WON: Record<ModeloEncounter, string> = {
+  'modelo-celdas': 'Las celdas se apagan del todo y vuelven a su sitio en la malla. Ahora tienen un valor.',
+  'modelo-oscilacion': 'Las dos figuras se quedan quietas, cada una en su valor. Luego ya no están.',
+  'modelo-pluma': 'La mancha se diluye corriente abajo. El agua vuelve a no tener color.',
+  'no-converge': 'Las cifras dejan de caer. Se quedan todas quietas un instante, y son un solo número.',
+};
+const isModeloFight = (state: BattleState) => (MODELO_ENCOUNTERS as readonly string[]).includes(state.encounter);
+/**
+ * A fight in the model: who comes out (MODELO_FIGHTS). Two oscilaciones start on different values; the
+ * boss on «Agua», with all its Error. The place lends water and electricity to everyone's Atacar.
+ */
+function createModeloBattle(party: PartySlot[], encounter: ModeloEncounter, animas?: ClassId[], random: () => number = Math.random): BattleState {
+  const kinds = MODELO_FIGHTS[encounter], seen: Partial<Record<ModeloKind, number>> = {};
+  const foes = kinds.map((kind, i) => {
+    const n = seen[kind] = (seen[kind] ?? 0) + 1;
+    const one = foe(kind === 'no-converge' || kind === 'pluma' ? kind : `${kind}-${i}`, kinds.filter(k => k === kind).length > 1 ? `${MODELO_NAMES[kind]} ${n}` : MODELO_NAMES[kind], kind);
+    if (kind === 'oscilacion') one.sign = n % 2 === 1 ? 'agua' : 'electrico';
+    if (kind === 'no-converge') { one.sign = 'agua'; one.error = MODELO.error; }
+    return one;
+  });
+  const unlocked = animas ?? wornAnimas(party);
+  return {
+    allies: lineUp(party, unlocked), foes,
+    active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
+    animas: unlocked, awakened: unlocked.includes('matemagico'), seed: seedFrom(random),
+    lent: ['agua', 'electrico'],
+    message: MODELO_MESSAGES[encounter],
+  };
+}
+/**
+ * What the dungeon did before the fight (docs/quests/emilie.md § Final boss): El que no converge
+ * starts with one mark of Error fewer for each piezometer placed on the way down, never fewer than one.
+ */
+export function calibrate(state: BattleState, piezometers: number) {
+  const boss = state.foes.find(f => f.kind === 'no-converge');
+  if (boss && !boss.converged) boss.error = Math.max(1, (boss.error ?? MODELO.error) - Math.max(0, Math.floor(piezometers)));
+}
+/**
+ * How much of a blow a foe of the model takes, by the element it carries (a dual carries none): a
+ * Celda seca, half while dry; an Oscilación, nothing of the element it is on and more of the other;
+ * El que no converge, nothing of its own while it iterates, little of anything else, and more of
+ * everything once converged. Ticks and pulses never come through here.
+ */
+function modeloTaken(target: Combatant, element?: Element) {
+  if (target.kind === 'celda-seca') return target.timed?.mojado ? 1 : MODELO.seca;
+  if (target.kind === 'oscilacion') return element === target.sign ? 0 : element && element === otherSign(target.sign ?? 'agua') ? MODELO.contra : MODELO.plano;
+  if (target.kind === 'no-converge') return target.converged ? MODELO.converge : element === target.sign ? 0 : MODELO.itera;
+  return 1;
+}
+/**
+ * A blow has landed on El que no converge while it iterates: one of the element it is not on takes a
+ * mark of Error away, one of its own adds one. At none it converges: a solid body for `convergeTurns`
+ * of its own turns (in Diverge, soaked too once the blow is over, so the next bolt runs through it: `act`).
+ */
+function iterate(state: BattleState, target: Combatant, element: Element | undefined, effect: BattleEffect) {
+  if (target.kind !== 'no-converge' || target.hp <= 0 || target.converged || !target.sign || (element !== 'agua' && element !== 'electrico')) return;
+  const before = target.error ?? 0;
+  target.error = element === target.sign ? Math.min(MODELO.errorMost, before + 1) : Math.max(0, before - 1);
+  if (target.error === before) return;
+  effect.error = { left: target.error, mark: target.error < before ? 'off' : 'on' };
+  if (target.error > before) { state.message += ` ${target.name} se lo traga: su Error crece.`; return; }
+  if (target.error > 0) { state.message += ` Una marca de Error menos: quedan ${target.error}.`; return; }
+  target.converged = MODELO.convergeTurns; effect.converged = true;
+  state.message += ` ¡Converge! Las cifras dejan de caer: ${target.name} es un cuerpo sólido.`;
+}
+/** After anything that may have hurt El que no converge: past its mark it diverges for good, with more Error (once converged, when that ends). */
+function checkModelo(state: BattleState, effect?: BattleEffect) {
+  const boss = state.foes.find(f => f.kind === 'no-converge' && f.hp > 0);
+  if (!boss || boss.diverged || boss.hp > boss.maxHp * MODELO.diverge) return;
+  boss.diverged = true;
+  if (boss.converged) return;
+  boss.error = Math.max(boss.error ?? 0, MODELO.errorDiverge);
+  const news: BattleEffect = effect ?? { kind: 'enemy', actor: boss.id };
+  news.diverged = true; news.error = { left: boss.error, mark: 'on' };
+  const said = ` ${boss.name} diverge: las cifras caen más deprisa. Error ${boss.error}.`;
+  if (effect) state.message += said; else { state.message = state.message.trim() || said.trim(); (state.news ??= []).push(news); }
+}
+/** A foe's water on `who`: Mojado, its clock started over. */
+function soak(who: Combatant) {
+  who.timed = { ...who.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } };
+}
+/**
+ * A foe's spark has found someone wet: `power` of magic through everyone wet in the party, who are
+ * left dry (Conducción, turned on them). Holding on takes two thirds off.
+ */
+function conduct(state: BattleState, actor: Combatant, target: Combatant, power: number, effect: BattleEffect) {
+  const wet = state.allies.filter(a => a.hp > 0 && a.timed?.mojado);
+  const hits = wet.map(who => {
+    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    const { mojado: _dry, ...rest } = who.timed!;
+    who.timed = rest;
+    return { target: who.id, amount: changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw)) };
+  });
+  const main = hits.find(h => h.target === target.id) ?? hits[0];
+  effect.target = main.target; effect.amount = main.amount; effect.conducted = true;
+  effect.splash = hits.filter(h => h !== main);
+  return hits;
+}
+/**
+ * The model's foes' turns (docs/quests/emilie.md § Fights), each a named move. A Celda seca throws a
+ * spark at one (Chispa): on someone wet it runs through everyone wet. An Oscilación on «Agua» breaks
+ * over one and leaves them wet (Ola); on «Eléctrico» it is a Chispa. La pluma soaks whoever is still
+ * dry (Empapa). El que no converge floods everyone on «Agua» (Inunda) and shocks everyone wet on
+ * «Eléctrico» (Descarga), harder for each mark of Error; converged, it does nothing at all.
+ */
+function modeloTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect) {
+  actor.turns = (actor.turns ?? 0) + 1;
+  const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
+  const magic = (who: Combatant, power: number) => {
+    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
+  };
+  const alive = state.allies.filter(a => a.hp > 0);
+  const spark = () => {
+    use('chispa');
+    if (target.timed?.mojado) {
+      const hits = conduct(state, actor, target, MODELO.conduce, effect);
+      state.message = `${actor.name} suelta una chispa sobre ${target.name}, y corre por el agua. ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
+    } else {
+      effect.amount = magic(target, MODELO.chispa);
+      state.message = `${actor.name} suelta una chispa sobre ${target.name}. −${effect.amount} PV.`;
+    }
+  };
+  if (actor.kind === 'celda-seca') spark();
+  else if (actor.kind === 'oscilacion') {
+    if (actor.sign === 'electrico') spark();
+    else {
+      use('ola'); effect.amount = magic(target, MODELO.ola);
+      if (target.hp > 0) { soak(target); effect.wetted = [target.id]; }
+      state.message = `${actor.name} rompe sobre ${target.name}. −${effect.amount} PV.${effect.wetted ? ' ¡Mojado!' : ''}`;
+    }
+  } else if (actor.kind === 'pluma') {
+    // It goes for whoever is still dry: the cells behind it need them wet.
+    const dry = alive.find(a => !a.timed?.mojado) ?? target;
+    use('empapa'); effect.target = dry.id; effect.amount = magic(dry, MODELO.empapa);
+    if (dry.hp > 0) { soak(dry); effect.wetted = [dry.id]; }
+    state.message = `${actor.name} alcanza a ${dry.name} y lo empapa. −${effect.amount} PV.${effect.wetted ? ' ¡Mojado!' : ''}`;
+  } else if (actor.converged) {
+    use('converge'); delete effect.target;
+    actor.converged--;
+    if (actor.converged > 0) state.message = `${actor.name} sigue quieto: un solo valor, sólido.`;
+    else {
+      delete actor.converged;
+      actor.error = actor.diverged ? MODELO.errorDiverge : MODELO.error;
+      effect.diverged = true; effect.error = { left: actor.error, mark: 'on' };
+      state.message = `Las cifras de ${actor.name} vuelven a caer. Diverge otra vez: Error ${actor.error}.`;
+    }
+  } else if (actor.sign === 'electrico') {
+    use('descarga-modelo');
+    const power = MODELO.descarga + MODELO.descargaStep * (actor.error ?? 0);
+    if (alive.some(a => a.timed?.mojado)) {
+      const hits = conduct(state, actor, target, power, effect);
+      state.message = `${actor.name} descarga, y la corriente corre por el agua. ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
+    } else {
+      effect.amount = magic(target, Math.round(power / 2));
+      state.message = `${actor.name} descarga sobre ${target.name}, que está seco. −${effect.amount} PV.`;
+    }
+  } else {
+    use('inunda');
+    effect.amount = magic(target, MODELO.inunda);
+    effect.splash = alive.filter(a => a !== target).map(a => ({ target: a.id, amount: magic(a, MODELO.inunda) }));
+    effect.wetted = alive.filter(a => a.hp > 0).map(a => { soak(a); return a.id; });
+    state.message = `${actor.name} inunda el corte. Todos mojados. −${effect.amount} PV a ${target.name}.`;
+  }
+}
+/** The end of a round in the model: every Oscilación standing, and El que no converge while it iterates, goes to its other value. */
+function modeloRoundEnd(state: BattleState) {
+  for (const f of state.foes) if (f.hp > 0 && f.sign && (f.kind === 'oscilacion' || (f.kind === 'no-converge' && !f.converged))) f.sign = otherSign(f.sign);
 }
 /** Càmping Eurosport's foes, by name (more than one of a kind are numbered). */
 export const CAMPING_NAMES: Record<CampingKind, string> = { mago: 'Mago de camping', dado: 'Dado', agente: 'Agente', campeon: 'El Campeón' };
@@ -2754,6 +3018,7 @@ export const eyeOpen = (state: BattleState) => { const eye = eyeOf(state); retur
 function checkEye(state: BattleState, effect?: BattleEffect) {
   checkCuerdas(state, effect);
   castleAfter(castleKit, state, effect);
+  checkModelo(state, effect);
   const eye = eyeOf(state), body = vertigoBody(state);
   if (!eye || !body || eye.hp > 0 || eye.told) return;
   eye.told = true;
@@ -2857,6 +3122,7 @@ function fearAct(state: BattleState, actor: Combatant, target: Combatant): Battl
   else if (isCamping(actor.kind)) campingTurn(state, actor, target, effect, hit);
   else if (isCuerdas(actor.kind)) cuerdasTurn(state, actor, target, effect, hit);
   else if (isCastle(actor.kind)) castleTurn(castleKit, state, actor, target, effect, hit);
+  else if (isModelo(actor.kind)) modeloTurn(state, actor, target, effect);
   else {
     actor.turns = (actor.turns ?? 0) + 1;
     if (actor.kind === 'cebollita' && !actor.layers && !actor.regrown) {
@@ -3003,6 +3269,7 @@ export function nextRound(state: BattleState): StatusTick[] {
   }
   campingRoundEnd(state);
   castleRoundEnd(state);
+  modeloRoundEnd(state);
   // What lasts one round whatever its clock says (Explosión's blinding) ends with it.
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) if (c.timed?.[id]?.until !== undefined && c.timed[id]!.until! <= state.round) delete c.timed[id];
   // Ánimas not worn all round get some maná back; next round counts afresh from the one worn.
@@ -3080,7 +3347,8 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
 export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo' | 'plato-sorpresa' | 'sobremesa-duo-carta' | 'sobremesa-escala-alta' | 'sobremesa-ultimo' | 'magos-bombona' | 'campeon-heroe' | 'campeon-paisano'
   | 'lealtad-lazo' | 'cristalino-casi' | 'cristalino-rajado' | 'directo-linea' | 'directo-estocada' | 'directo-clavado'
   | 'voz-andante' | 'voz-nota-clara' | 'voz-allegro' | 'voz-coro' | 'voz-a-capela' | 'voz-calderon'
-  | CastleMoment;
+  | CastleMoment
+  | 'modelo-itera' | 'modelo-converge' | 'modelo-diverge';
 export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: Encounter }> = {
   'vertigo-carga': { label: 'Rayo cargado', encounter: 'uri-vertigo' },
   'vertigo-grito': { label: 'Tras dos gritos', encounter: 'uri-vertigo' },
@@ -3105,6 +3373,9 @@ export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: En
   'voz-a-capela': { label: 'A capela', encounter: 'voz' },
   'voz-calderon': { label: 'Calderón tomado', encounter: 'voz' },
   ...CASTLE_MOMENTS,
+  'modelo-itera': { label: 'Itera', encounter: 'no-converge' },
+  'modelo-converge': { label: 'Converge', encounter: 'no-converge' },
+  'modelo-diverge': { label: 'Diverge', encounter: 'no-converge' },
 };
 /**
  * Development: puts the fight at `moment`, the party to choose (pure; the picker's `jumpTo` calls
@@ -3156,6 +3427,16 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
     if (moment === 'directo-linea') { line.turns = DIRECTO_TURNS.indexOf('en-linea'); line.intent = { ability: 'en-linea', at: 'todos' }; }
     else if (moment === 'directo-estocada') { line.turns = DIRECTO_TURNS.indexOf('estocada'); line.intent = { ability: 'estocada', target: first.id }; }
     else { line.turns = 0; line.stuck = true; line.intent = { ability: 'golpe-directo', target: first.id }; }
+  } else if (moment.startsWith('modelo-')) {
+    // El que no converge at the start of a phase, on «Agua», the party dry: whole and iterating, one blow past
+    // converging (solid), or at its mark, diverging with all its Error.
+    const boss = state.foes.find(f => f.kind === 'no-converge');
+    if (!boss) return false;
+    for (const a of state.allies) if (a.timed?.mojado) { const { mojado: _dry, ...rest } = a.timed; a.timed = rest; }
+    delete boss.converged; delete boss.diverged; delete boss.timed; boss.turns = 0; boss.sign = 'agua';
+    boss.hp = boss.maxHp; boss.error = MODELO.error;
+    if (moment === 'modelo-converge') { boss.error = 0; boss.converged = MODELO.convergeTurns; }
+    else if (moment === 'modelo-diverge') { boss.hp = Math.floor(boss.maxHp * MODELO.diverge); boss.diverged = true; boss.error = MODELO.errorDiverge; }
   } else if (moment.startsWith('voz-')) {
     // La Voz at the start of her song, nothing announced, no Crescendo yet: whole in Andante, at its mark in the others.
     const voz = state.foes.find(f => f.kind === 'voz'), first = state.allies.find(a => a.hp > 0);

@@ -69,7 +69,9 @@ const CAMPING_FIGHTS = ['camping-magos', 'camping-dados', 'camping-agentes', 'ca
 const CUERDAS_FIGHTS = ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'] as const;
 /** The castle (docs/castle.md): each room's pupils by year, La Delegada, Aurelià, the management team and the Queen. */
 const CASTLE_FIGHTS = CASTLE_ENCOUNTERS;
-export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number] | (typeof UNI_FIGHTS)[number] | (typeof CAMPING_FIGHTS)[number] | (typeof CUERDAS_FIGHTS)[number] | (typeof CASTLE_FIGHTS)[number];
+/** Emilie's model (docs/quests/emilie.md): a fight in each zone of the section, and El que no converge. */
+const MODELO_FIGHTS = ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'] as const;
+export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number] | (typeof UNI_FIGHTS)[number] | (typeof CAMPING_FIGHTS)[number] | (typeof CUERDAS_FIGHTS)[number] | (typeof CASTLE_FIGHTS)[number] | (typeof MODELO_FIGHTS)[number];
 /** What the fight tester starts: who fights, wearing what, against whom, and the help it gives. */
 export interface FightSetup {
   adult: boolean; partner: boolean;
@@ -104,8 +106,8 @@ export function validFight(value: unknown): FightSetup {
   const wear = { gerard, aitor: aitor === gerard ? undefined : aitor };
   const adult = v.adult === true;
   // The palace minion is chapter 1's fight: the boys, always together.
-  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
-  const tower = ([...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS] as readonly string[]).includes(encounter);
+  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS, ...MODELO_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
+  const tower = ([...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS, ...MODELO_FIGHTS] as readonly string[]).includes(encounter);
   return {
     adult, partner: encounter === 'palace-minion' ? true : v.partner !== false,
     wear, animas, friends: Array.isArray(v.friends) ? ANIMA_IDS.filter(id => v.friends!.includes(id)) : [],
@@ -339,7 +341,9 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   /** Every fight by name (TypeScript asks for each new one). */
   const FIGHT_NAMES: Record<Encounter, string> = { dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle', 'night-guard': 'un guardián en la Meridiana', cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'cebollitas', 'crias-2': 'crías del segundo anillo', 'crias-3': 'crías del tercer anillo', sobremesa: 'La Sobremesa',
     'camping-magos': 'magos de camping', 'camping-dados': 'dados', 'camping-agentes': 'agentes', 'camping-tienda': 'una tienda equivocada', 'camping-negra': 'la parcela negra', campeon: 'El Campeón',
-    'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz', ...CASTLE_FIGHT_NAMES };
+    'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz', ...CASTLE_FIGHT_NAMES,
+
+    'modelo-celdas': 'celdas secas', 'modelo-oscilacion': 'oscilaciones', 'modelo-pluma': 'La pluma', 'no-converge': 'El que no converge' };
   /** During a fight: the help it gets, the moments it can jump to, and the way out. */
   function livePage() {
     const now = dev!.current()!, help = dev!.help();
@@ -362,6 +366,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   const TOWER_LABELS: Record<(typeof TOWER_FIGHTS)[number], string> = { cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'Crías · anillo 1', 'crias-2': 'Crías · anillo 2', 'crias-3': 'Crías · anillo 3' };
   const CAMPING_LABELS: Record<(typeof CAMPING_FIGHTS)[number], string> = { 'camping-magos': 'Magos', 'camping-dados': 'Dados', 'camping-agentes': 'Agentes', 'camping-tienda': 'Tienda equivocada', 'camping-negra': 'Parcela negra', campeon: 'El Campeón' };
   const CUERDAS_LABELS: Record<(typeof CUERDAS_FIGHTS)[number], string> = { 'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz' };
+  const MODELO_LABELS: Record<(typeof MODELO_FIGHTS)[number], string> = { 'modelo-celdas': 'Celdas secas', 'modelo-oscilacion': 'Oscilaciones', 'modelo-pluma': 'La pluma', 'no-converge': 'El que no converge' };
   function fightPage() {
     if (dev!.current()) return livePage();
     const f = fight;
@@ -381,6 +386,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
         ${chip('encounter', 'palace-minion', 'El esbirro', f.encounter === 'palace-minion', f.adult)}${chip('encounter', 'palace-guards', 'Guardianes de chicle', f.encounter === 'palace-guards')}${f.adult ? chip('encounter', 'night-guard', 'De noche en la Meridiana', f.encounter === 'night-guard') : ''}</div></div>
       ${f.adult ? `<div class="fight-row"><span>Amigos de la uni</span><div class="fight-chips">${chip('encounter', 'sobremesa', 'La Sobremesa', f.encounter === 'sobremesa')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Las cuerdas</span><div class="fight-chips">${CUERDAS_FIGHTS.map(id => chip('encounter', id, CUERDAS_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
+      ${f.adult ? `<div class="fight-row"><span>El modelo de Emilie</span><div class="fight-chips">${MODELO_FIGHTS.map(id => chip('encounter', id, MODELO_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Camping Eurosport</span><div class="fight-chips">${CAMPING_FIGHTS.map(id => chip('encounter', id, CAMPING_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Castillo</span><div class="fight-chips">${CASTLE_FIGHTS.map(id => chip('encounter', id, CASTLE_FIGHT_NAMES[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Torre de Uri</span><div class="fight-chips">${TOWER_FIGHTS.map(id => chip('encounter', id, TOWER_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}

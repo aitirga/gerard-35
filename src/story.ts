@@ -7,7 +7,7 @@ import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import { facingToward, type Cell } from './movement.ts';
 import type { ItemId } from './items';
-import type { CampingEncounter, CuerdasEncounter } from './battle.ts';
+import type { CampingEncounter, CuerdasEncounter, ModeloEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
 import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
 import { award, levelFlag, levelOf } from './levels.ts';
@@ -196,7 +196,9 @@ export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-gu
   // Las cuerdas (docs/quests/marta.md): a quality after each maze, and La Voz.
   | CuerdasEncounter
   // The castle (docs/castle.md): its rooms' pupils, Aurelià, Dirección and the Queen.
-  | CastleEncounter;
+  | CastleEncounter
+  // Emilie's model (docs/quests/emilie.md): a fight in each zone of the section, and El que no converge.
+  | ModeloEncounter;
 /** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
 /** The ánimas Gerard can wake (Tecnópata is Aitor's). */
 export type GerardClass = Exclude<ClassId, 'tecnopata'>;
