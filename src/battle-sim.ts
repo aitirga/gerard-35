@@ -103,7 +103,7 @@ export const MISSIONS = {
   universidad: { name: 'Los amigos de la uni', intro: false, lights: 5, friend: 'universidad', fights: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon', 'sobremesa'], teaching: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda'] },
   marta: { name: 'Marta', intro: false, lights: 1, friend: 'marta', fights: ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'], teaching: [] },
   emilie: { name: 'Emilie', intro: false, lights: 1, friend: 'emilie', fights: ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'], teaching: [] },
-  luca: { name: 'Luca', intro: false, lights: 1, friend: 'luca', fights: ['luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside'], teaching: ['luca-recepcion'] },
+  luca: { name: 'Luca', intro: false, lights: 1, friend: 'luca', fights: ['luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside', 'fran'], teaching: ['luca-recepcion'] },
 } as const satisfies Record<string, { name: string; intro: boolean; lights: number; friend: AnimaId; fights: readonly string[]; teaching: readonly string[] }>;
 export type MissionId = keyof typeof MISSIONS;
 export const MISSION_IDS = Object.keys(MISSIONS) as MissionId[];
@@ -299,6 +299,8 @@ const MODELO_WET = 14, ERROR_WORTH = 16, CONVERGED_WORTH = 30;
 const EYE_WORTH = .8, EYE_BROKEN = 30;
 /** A thing with PV that is part of a fight's answer and never its win: Vertitrón's eye, Aurelià's lectern, the Queen's hands. */
 const isPiece = (foe: BattleState['foes'][number]) => foe.kind === 'vertigo-ojo' || castleProp(foe);
+/** Fran's canopy: a lamp broken is a Brillo he will never drink again; each Brillo off, the blows that land whole. */
+const LAMP_BROKEN = 40, BRILLO_WORTH = 30;
 interface Threat { hp: Map<string, number>; mareo: Map<string, number> }
 /** What the foes would do to each ally if their turn came now (PV, and Mareo stacks): the real rules, on a copy. */
 function threatOn(state: BattleState): Threat {
@@ -337,7 +339,9 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     value += (foe.hp - now.hp) * (isPiece(foe) ? EYE_WORTH : 1);
     // A layer off makes its blows lighter for the rest of the fight and the hits behind it land whole.
     if (isOnion(foe.kind)) value += ((foe.layers ?? 0) - (now.layers ?? 0)) * (ONIONS[foe.kind].perLayer * (2 + 2 * ONIONS[foe.kind].splash) + 3);
-    if (foe.hp > 0 && now.hp <= 0) value += isPiece(foe) ? EYE_BROKEN : 20;
+    if (foe.hp > 0 && now.hp <= 0) value += isPiece(foe) ? EYE_BROKEN : foe.kind === 'lampara' ? LAMP_BROKEN : 20;
+    // Fran's Brillo taken away (a lamp broken): every blow on him from now on lands whole again.
+    if (foe.kind === 'fran') value += ((foe.brillo ?? 0) - (now.brillo ?? 0)) * BRILLO_WORTH;
     value += ((now.statuses?.sangrado ?? 0) - (foe.statuses?.sangrado ?? 0)) * 3;
     value += ((now.timed?.quemado?.level ?? 0) - (foe.timed?.quemado?.level ?? 0)) * 10;
     // A debuff's mark on a foe that will stand a while: every later hit on it lands harder, about a
@@ -361,13 +365,13 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     for (const id of MENTAL_STATUSES) value += Math.max(0, (ally.statuses?.[id] ?? 0) - (after.allies[i].statuses?.[id] ?? 0)) * 4;
   });
   // Cegado: what the foes would no longer do this turn and about half the next, the real rules on a copy.
-  if (after.foes.some((foe, i) => (foe.timed?.cegado?.level ?? 0) > (before.foes[i].timed?.cegado?.level ?? 0))) {
+  if (after.foes.some((foe, i) => (foe.timed?.cegado?.level ?? 0) > (before.foes[i]?.timed?.cegado?.level ?? 0))) {
     const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
   // Fran's salon (docs/quests/luca.md): the freshly styled chaplain down leaves the others still, a
   // cracked lens calls its beam off; what the foes would no longer do, the real rules on a copy.
-  const stilled = after.foes.some((foe, i) => foe.still === after.round && before.foes[i].still !== before.round);
+  const stilled = after.foes.some((foe, i) => foe.still === after.round && before.foes[i]?.still !== before.round);
   const cracked = before.foes.some((foe, i) => foe.intent?.ability === 'rayo-lente' && !after.foes[i].intent && after.foes[i].hp > 0);
   if (stilled || cracked) {
     const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
@@ -858,6 +862,9 @@ export const TARGETS: readonly Target[] = [
   { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'casual', win: [0, .25], why: 'Repartiendo golpes, cada luz devuelve el color a uno de ellos y el combate no se acaba.' },
   { id: 'abside-bien', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .9], why: 'El Telescopio, pensando: pegarle mientras enfoca, que se le raja la lente y el rayo no sale.' },
   { id: 'abside-sin-pensar', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'casual', win: [0, .3], why: 'Sin aprovechar el enfoque, el rayo de lente cae entero cada tres turnos.' },
+  { id: 'fran-bien', fight: 'fran', party: DUO, levels: P3M3, policy: 'smart', win: [.9, 1], hpLeftWon: [.25, .8], roundsWon: [11, 20], why: 'Fran, pensando: primero el acólito recién peinado; luego romper cada lámpara en su propia luz, que se le apaga el brillo; y agarrarse a la Aspersión.' },
+  { id: 'fran-sin-pensar', fight: 'fran', party: DUO, levels: P3M3, policy: 'casual', win: [0, .25], why: 'Sin mirar a las lámparas, cada luz le da más brillo y los golpes le llegan a medias; la Aspersión cae entera.' },
+  { id: 'fran-a-punetazos', fight: 'fran', party: DUO, levels: P3M3, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
 ];
 export interface TargetResult { id: string; why: string; pass: boolean; failures: string[]; row: Row; wanted: Pick<Target, 'win' | 'roundsLost' | 'hpLeftWon' | 'roundsWon' | 'duals'> }
 /** Plays every target and says which hold. */

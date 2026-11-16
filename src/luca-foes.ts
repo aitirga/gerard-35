@@ -109,7 +109,35 @@ export function createLucaFoes() {
   part(priestHead, 'Tupé', 'cone', hair, [0, .26, .04], [.26, .42, .22], [-18, 0, 0]);
   part(priestHead, 'Sienes rapadas', 'sphere', mat('Sombra de pelo', '#2a2a2e', .3), [0, .06, -.04], [.31, .22, .28], [0, 0, 0], false);
 
+  // Fran: very tall and thin, in a hairdresser's black, a high sculpted quiff, the white cutting cape
+  // worn like a chasuble with chalk curves on it, and the violet eyes of whoever the Queen holds.
+  const fran = root('Fran');
+  pool(fran, '#e9e4d8', 1.4);
+  const man = pivot(fran, 'Vista');
+  const black = mat('Ropa negra', '#1c1c20', .45), cape = mat('Capa de corte', '#f4f2ec', .35), chalk = mat('Tiza', '#9aa3ad', .2), steel = mat('Tijeras', '#d9dde4', .9, .2);
+  const franSkin = mat('Piel de Fran', '#e2b896', .3), franHair = mat('Pelo de Fran', '#1d1a1a', .7), eyes = mat('Ojos poseídos', '#c9a2ff', .6, 2.2);
+  for (const side of [-1, 1]) part(man, 'Pierna', 'cylinder', black, [side * .12, .62, 0], [.13, 1.24, .13]);
+  part(man, 'Torso', 'cylinder', black, [0, 1.6, 0], [.34, .8, .26]);
+  part(man, 'Capa', 'cone', cape, [0, 1.45, 0], [.95, 1.15, .7]);
+  for (let k = 0; k < 3; k++) part(man, 'Curva de tiza', 'box', chalk, [-.18 + k * .18, 1.4 - k * .06, .37], [.03, .5, .01], [0, 0, -20 + k * 20], false);
+  part(man, 'Cuello', 'cylinder', franSkin, [0, 2.12, 0], [.12, .22, .12]);
+  const franHead = pivot(man, 'Cabeza de chicle', [0, 2.38, 0]);
+  part(franHead, 'Cabeza', 'sphere', franSkin, [0, 0, 0], [.3, .36, .3]);
+  part(franHead, 'Tupé', 'cone', franHair, [0, .26, .05], [.24, .36, .2], [-24, 0, 0]);
+  for (const side of [-1, 1]) part(franHead, 'Ojo', 'sphere', eyes, [side * .07, .02, .14], [.05, .04, .03], [0, 0, 0], false);
+  part(man, 'Tijeras', 'box', steel, [.34, 1.0, .1], [.03, .32, .08], [0, 0, 12]);
+
+  // A lamp of the canopy: a hanging glass lamp in the colours of the lights it drinks.
+  const lamp = root('Lámpara');
+  const hanger = pivot(lamp, 'Vista', [0, 0, 0]);
+  const chain = mat('Cadena', '#7d6128', .7), glass = mat('Cristal de lámpara', '#f6f0dc', .9, .9, .85);
+  part(hanger, 'Cadena', 'cylinder', chain, [0, 2.2, 0], [.03, 1.2, .03], [0, 0, 0], false);
+  part(hanger, 'Lámpara', 'sphere', glass, [0, 1.45, 0], [.42, .5, .42]);
+  part(hanger, 'Corona', 'cylinder', chain, [0, 1.72, 0], [.3, .06, .3]);
+  pivot(hanger, 'Cabeza de chicle', [0, 1.45, 0]);
+
   const templates = new Map<LucaKind, pc.Entity>([
+    ['fran', fran], ['lampara', lamp],
     ['polilla', moth], ['estampado-rojo', red], ['estampado-azul', blue], ['estampado-oro', gold],
     ['telescopio', scope], ['laca', laca], ['capellan', chaplain],
   ]);
@@ -122,5 +150,5 @@ export function createLucaFoes() {
 }
 /** How big each one stands in the fight. */
 export const LUCA_SIZES: Record<LucaKind, number> = {
-  polilla: .9, 'estampado-rojo': 1, 'estampado-azul': 1, 'estampado-oro': 1, telescopio: 1.1, laca: 1, capellan: 1.05,
+  polilla: .9, 'estampado-rojo': 1, 'estampado-azul': 1, 'estampado-oro': 1, telescopio: 1.1, laca: 1, capellan: 1.05, fran: 1.2, lampara: .8,
 };

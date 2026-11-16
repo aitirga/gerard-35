@@ -74,7 +74,7 @@ const CASTLE_FIGHTS = CASTLE_ENCOUNTERS;
 /** Emilie's model (docs/quests/emilie.md): a fight in each zone of the section, and El que no converge. */
 const MODELO_FIGHTS = ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'] as const;
 /** Fran's salon, Luca's dungeon (docs/quests/luca.md): a fight in each zone, under the walking light. */
-const LUCA_FIGHTS = ['luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside'] as const;
+const LUCA_FIGHTS = ['luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside', 'fran'] as const;
 export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number] | (typeof UNI_FIGHTS)[number] | (typeof CAMPING_FIGHTS)[number] | (typeof CUERDAS_FIGHTS)[number] | (typeof CASTLE_FIGHTS)[number] | (typeof MODELO_FIGHTS)[number] | (typeof LUCA_FIGHTS)[number];
 /** What the fight tester starts: who fights, wearing what, against whom, and the help it gives. */
 export interface FightSetup {
@@ -347,8 +347,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     'camping-magos': 'magos de camping', 'camping-dados': 'dados', 'camping-agentes': 'agentes', 'camping-tienda': 'una tienda equivocada', 'camping-negra': 'la parcela negra', campeon: 'El Campeón',
     'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz', ...CASTLE_FIGHT_NAMES,
     'modelo-celdas': 'celdas secas', 'modelo-oscilacion': 'oscilaciones', 'modelo-pluma': 'La pluma', 'no-converge': 'El que no converge',
-
-    'luca-recepcion': 'las polillas de la recepción', 'luca-sillones': 'los capellanes y La Laca', 'luca-carta': 'los estampados', 'luca-abside': 'El Telescopio' };
+    'luca-recepcion': 'las polillas de la recepción', 'luca-sillones': 'los capellanes y La Laca', 'luca-carta': 'los estampados', 'luca-abside': 'El Telescopio', fran: 'Fran' };
   /** During a fight: the help it gets, the moments it can jump to, and the way out. */
   function livePage() {
     const now = dev!.current()!, help = dev!.help();
@@ -372,7 +371,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   const CAMPING_LABELS: Record<(typeof CAMPING_FIGHTS)[number], string> = { 'camping-magos': 'Magos', 'camping-dados': 'Dados', 'camping-agentes': 'Agentes', 'camping-tienda': 'Tienda equivocada', 'camping-negra': 'Parcela negra', campeon: 'El Campeón' };
   const CUERDAS_LABELS: Record<(typeof CUERDAS_FIGHTS)[number], string> = { 'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz' };
   const MODELO_LABELS: Record<(typeof MODELO_FIGHTS)[number], string> = { 'modelo-celdas': 'Celdas secas', 'modelo-oscilacion': 'Oscilaciones', 'modelo-pluma': 'La pluma', 'no-converge': 'El que no converge' };
-  const LUCA_LABELS: Record<(typeof LUCA_FIGHTS)[number], string> = { 'luca-recepcion': 'Recepción', 'luca-sillones': 'Los sillones', 'luca-carta': 'La carta de colores', 'luca-abside': 'El ábside' };
+  const LUCA_LABELS: Record<(typeof LUCA_FIGHTS)[number], string> = { 'luca-recepcion': 'Recepción', 'luca-sillones': 'Los sillones', 'luca-carta': 'La carta de colores', 'luca-abside': 'El ábside', fran: 'Fran' };
   function fightPage() {
     if (dev!.current()) return livePage();
     const f = fight;

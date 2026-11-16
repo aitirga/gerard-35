@@ -102,6 +102,8 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
   telescopio: { impact: [{ id: 'slam', volume: .8 }] },
   laca: { impact: [{ id: 'hit', volume: .6 }] },
   capellan: { impact: [{ id: 'hit', volume: .8 }] },
+  fran: { impact: [{ id: 'slam', volume: .85 }] },
+  lampara: { impact: [{ id: 'hit', volume: .5 }] },
 };
 const foeOf = (effect: BattleEffect, state?: BattleState) => state?.foes.find(f => f.id === effect.actor);
 

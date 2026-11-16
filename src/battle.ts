@@ -176,8 +176,8 @@ export type CuerdasKind = 'lealtad' | 'cristalino' | 'directo' | 'eco' | 'voz';
  * hurts them double) and bursts over every foe at the touch of fire; the chaplains copy what was done
  * last, the freshly styled one (*Recién peinado*) leading, and stop mid-gesture when it falls.
  */
-export type LucaKind = 'polilla' | 'estampado-rojo' | 'estampado-azul' | 'estampado-oro' | 'telescopio' | 'laca' | 'capellan';
-export const LUCA_KINDS = ['polilla', 'estampado-rojo', 'estampado-azul', 'estampado-oro', 'telescopio', 'laca', 'capellan'] as const satisfies readonly LucaKind[];
+export type LucaKind = 'polilla' | 'estampado-rojo' | 'estampado-azul' | 'estampado-oro' | 'telescopio' | 'laca' | 'capellan' | 'fran' | 'lampara';
+export const LUCA_KINDS = ['polilla', 'estampado-rojo', 'estampado-azul', 'estampado-oro', 'telescopio', 'laca', 'capellan', 'fran', 'lampara'] as const satisfies readonly LucaKind[];
 export const isLuca = (kind?: FoeKind): kind is LucaKind => !!kind && (LUCA_KINDS as readonly string[]).includes(kind);
 export const CUERDAS_KINDS = ['lealtad', 'cristalino', 'directo', 'eco', 'voz'] as const satisfies readonly CuerdasKind[];
 export const isCuerdas = (kind?: FoeKind): kind is CuerdasKind => !!kind && (CUERDAS_KINDS as readonly string[]).includes(kind);
@@ -260,7 +260,8 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo'
   | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo'
   | 'chispa' | 'ola' | 'empapa' | 'inunda' | 'descarga-modelo' | 'converge'
-  | 'aleteo' | 'estampar' | 'enfocar' | 'rayo-lente' | 'tubo' | 'lacar' | 'chispa-laca' | 'tijeretazo' | 'imitacion';
+  | 'aleteo' | 'estampar' | 'enfocar' | 'rayo-lente' | 'tubo' | 'lacar' | 'chispa-laca' | 'tijeretazo' | 'imitacion'
+  | 'corte' | 'repeinar' | 'brillo' | 'tomar-hisopo' | 'aspersion';
 export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }> = {
   lagrimilla: { name: 'Lagrimilla', card: false },
   'capa-nueva': { name: 'Capa nueva', card: true },
@@ -348,6 +349,11 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   'chispa-laca': { name: 'Chispa', card: true },
   tijeretazo: { name: 'Tijeretazo', card: false },
   imitacion: { name: 'Imitación', card: true },
+  corte: { name: 'Corte a medida', card: false },
+  repeinar: { name: 'Repeinar', card: true },
+  brillo: { name: 'Brillo', card: true },
+  'tomar-hisopo': { name: 'Toma el hisopo', card: true },
+  aspersion: { name: 'Aspersión', card: true },
 };
 const foeAbility = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} });
 /**
@@ -789,6 +795,10 @@ export interface Combatant {
   still?: number;
   /** One of the party lacquered by La Laca (*Lacado*) until the end of this round: fire hurts them double. */
   lacado?: number;
+  /** Fran: the phase he is in (1 acolytes, 2 the canopy, 3 the aspergillum), and his Brillo, a shield that grows with every light. */
+  stage?: 1 | 2 | 3; brillo?: number;
+  /** One of the canopy's lamps (a part of Fran's fight): the lights it drinks. */
+  lamp?: LampId;
 }
 /** Whom a move is aimed at when it is not one ally: everyone. */
 export type Aim = 'todos';
@@ -834,7 +844,7 @@ export const MODELO_FIGHTS: Record<ModeloEncounter, readonly ModeloKind[]> = {
   'no-converge': ['no-converge'],
 };
 /** Fran's salon in the Sagrada Família (docs/quests/luca.md): a fight in each zone, the light walking through all of them. */
-export const LUCA_ENCOUNTERS = ['luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside'] as const;
+export const LUCA_ENCOUNTERS = ['luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside', 'fran'] as const;
 export type LucaEncounter = (typeof LUCA_ENCOUNTERS)[number];
 /** Who comes out in each of them, in the order they stand. */
 export const LUCA_FIGHTS: Record<LucaEncounter, readonly LucaKind[]> = {
@@ -842,6 +852,8 @@ export const LUCA_FIGHTS: Record<LucaEncounter, readonly LucaKind[]> = {
   'luca-sillones': ['capellan', 'capellan', 'capellan', 'laca'],
   'luca-carta': ['estampado-rojo', 'estampado-azul', 'estampado-oro'],
   'luca-abside': ['telescopio', 'polilla', 'polilla'],
+  // Fran under the canopy with two acolytes; the canopy's lamps come down when he stands.
+  fran: ['fran', 'capellan', 'capellan'],
 };
 /** Uri's maze and roof (docs/quests/nuria.md), La Sobremesa, the campsite, Las cuerdas, the castle, Emilie's model and Fran's salon: the fights whose foes have rules of their own. */
 export const FEAR_ENCOUNTERS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'sobremesa', ...BROOD_ENCOUNTERS, ...CAMPING_ENCOUNTERS, ...CUERDAS_ENCOUNTERS, ...CASTLE_ENCOUNTERS, ...MODELO_ENCOUNTERS, ...LUCA_ENCOUNTERS] as const;
@@ -945,7 +957,7 @@ export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[
   return [{ id: 'gerard', name: 'Gerard', profile: 'gerard', classId: gerardClass }, ...(allyCount === 2 ? [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }] : [])];
 }
 /** Nobody runs from possessed dogs, the palace minion or Vertitrón's roof; the palace guards and the maze's fears let them back off. */
-export const cornered = (state: BattleState) => state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo' || state.encounter === 'sobremesa'
+export const cornered = (state: BattleState) => state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo' || state.encounter === 'sobremesa' || state.encounter === 'fran'
   // The black pitch puts every lantern out round them, and El Campeón stands between them and the way on.
   || state.encounter === 'camping-negra' || state.encounter === 'campeon'
   // Where every string meets there is nowhere to back off to.
@@ -1193,6 +1205,8 @@ export interface BattleEffect {
   lacquered?: string[];
   /** Fran's salon: an Estampado took back PV in the light of its own colour. */
   recolored?: { target: string; amount: number };
+  /** Fran: his Brillo now (it grew with a light, or a lamp breaking took it away), his new phase, a lamp broken. */
+  brillo?: number; stage?: 2 | 3; lampBroken?: string;
   /** A second blow on La Voz inside the same note, by the other fighter: an Acorde. */
   chord?: true;
   /** La Voz's Nota clara: magic comes back until her next turn. */
@@ -1648,7 +1662,7 @@ function fearDamage(state: BattleState, target: Combatant, damage: number, blow:
   }
   if (target.layers) out /= 2;
   if (target.transparent && blow === 'physical') out *= FEAR_RULES.transparent;
-  out *= campingTaken(target, blow) * cuerdasTaken(target, blow) * castleTaken(state, target, blow) * modeloTaken(target, element) * lucaTaken(target);
+  out *= campingTaken(target, blow) * cuerdasTaken(target, blow) * castleTaken(state, target, blow) * modeloTaken(target, element) * lucaTaken(state, target);
   // Magic off glass does nothing at all (Lo Cristalino, La Voz's Nota clara).
   return out <= 0 ? 0 : Math.max(1, Math.round(out));
 }
@@ -2938,6 +2952,13 @@ function runLight(state: BattleState, seconds: number) {
   const came = changes(state.light.t, state.light.t + seconds);
   state.light.t += seconds;
   if (came.length) (state.lightNews ??= []).push(...came);
+  // Fran drinks every light whose lamp still hangs: one more Brillo each time.
+  const fran = state.foes.find(f => f.kind === 'fran' && f.hp > 0 && (f.stage ?? 1) >= 2);
+  if (fran) for (const light of came) {
+    if (!state.foes.some(f => f.kind === 'lampara' && f.hp > 0 && f.lamp === lampOf(light)) || (fran.brillo ?? 0) >= LUCA.brilloMost) continue;
+    fran.brillo = (fran.brillo ?? 0) + 1;
+    (state.news ??= []).push({ kind: 'enemy', actor: fran.id, ability: foeAbility('brillo'), brillo: fran.brillo });
+  }
   // An Estampado in the light of its own colour fills in again.
   for (const light of came) for (const f of state.foes.filter(f => f.kind === `estampado-${light}` && f.hp > 0 && f.hp < f.maxHp)) {
     const amount = changeHealth(f, Math.round(f.maxHp * LUCA.recolor));
@@ -2967,6 +2988,12 @@ export function songLabel(state: BattleState) {
  * it over every other foe (`estallido`). A chaplain cuts (`tijeretazo`); the freshly styled one
  * repeats the last gesture made, whole, and its fall leaves the others still for the round. An
  * Estampado gets `recolor` of its PV back each time the light of its own colour comes on.
+ * Fran (§ Final boss): a Corte a medida (`corte`) on one, his acolytes copying it. From `standAt` of
+ * his PV he stands and the canopy's three lamps come down: every light whose lamp still hangs gives
+ * him a Brillo (up to `brilloMost`), each one taking `brilloStep` more off a blow on him; only the lamp
+ * of the light on now can be broken, and breaking one takes all his Brillo. From `hisopoAt` he takes
+ * the aspergillum: a turn to load it (said a turn ahead), then the Aspersión on everyone (`aspersion`),
+ * their Fuerza and Magia down by `aspersionDown` for the rest of the fight.
  */
 export const LUCA = {
   aleteo: 12, polillasMost: 5,
@@ -2975,7 +3002,19 @@ export const LUCA = {
   chispa: 16, lacado: 2, estallido: 40,
   tijeretazo: 23,
   recolor: .35,
+  corte: 18, acolito: 70, acolitoCorte: 16, aspersion: 26, aspersionDown: 2, brilloStep: .5, brilloMost: 3, standAt: .66, hisopoAt: .33,
 };
+/** The canopy's three lamps (Fran's fight): each drinks the lights of one side of the day. */
+export type LampId = 'frio' | 'calido' | 'oro';
+export const LAMPS: Record<LampId, { name: string; lights: readonly LightId[] }> = {
+  frio: { name: 'Lámpara fría', lights: ['azul', 'verde'] },
+  calido: { name: 'Lámpara cálida', lights: ['naranja', 'rojo'] },
+  oro: { name: 'Lámpara de oro', lights: ['oro'] },
+};
+/** The lamp a light belongs to. */
+export const lampOf = (light: LightId) => (Object.keys(LAMPS) as LampId[]).find(id => LAMPS[id].lights.includes(light))!;
+/** Fran's turns in each phase, in order, round and round. */
+export const FRAN_TURNS = { 1: ['corte', 'repeinar'], 2: ['corte', 'corte', 'repeinar'], 3: ['tomar-hisopo', 'aspersion', 'corte'] } as const satisfies Record<1 | 2 | 3, readonly FoeAbilityId[]>;
 /** El Telescopio's turns, in order, round and round; its beam is said a turn ahead. */
 export const TELESCOPIO_TURNS = ['enfocar', 'rayo-lente', 'tubo'] as const;
 /** La Laca's turns, in order, round and round. */
@@ -2983,19 +3022,21 @@ export const LACA_TURNS = ['lacar', 'chispa-laca'] as const;
 /** Fran's salon's foes, by name. */
 export const LUCA_NAMES: Record<LucaKind, string> = {
   polilla: 'Polilla', 'estampado-rojo': 'Estampado rojo', 'estampado-azul': 'Estampado azul', 'estampado-oro': 'Estampado oro',
-  telescopio: 'El Telescopio', laca: 'La Laca', capellan: 'Capellán',
+  telescopio: 'El Telescopio', laca: 'La Laca', capellan: 'Capellán', fran: 'Fran', lampara: 'Lámpara',
 };
 const LUCA_MESSAGES: Record<LucaEncounter, string> = {
   'luca-recepcion': 'Polillas grises salen de detrás del mostrador. Van hacia la luz, y la luz sois vosotros.',
   'luca-sillones': 'Los capellanes se levantan de los sillones a la vez, cada uno con un peinado que no es suyo. Detrás, una nube de laca.',
   'luca-carta': 'Tres manchas de estampado se despegan de la carta de colores. Tienen los colores de Luca.',
   'luca-abside': 'Un telescopio de latón gira sobre su trípode y os busca. Las polillas ya están aquí.',
+  fran: 'Fran no levanta la vista de sus papeles. A cada lado, un capellán con el peinado recién hecho. La luz cambia de color sobre los tres.',
 };
 const LUCA_WON: Record<LucaEncounter, string> = {
   'luca-recepcion': 'La última polilla se deshace en polvo gris. Por la puerta sale un poco de azul.',
   'luca-sillones': 'Los capellanes se sientan, despeinados, y se miran como si se acabaran de despertar. Un rojo se va hacia la puerta.',
   'luca-carta': 'Los estampados se sueltan de la carta y salen volando hacia fuera, en fila, como pájaros.',
   'luca-abside': 'La lente se apaga. Las cartas de estrellas vuelven a ser solo papel. Un dorado se escapa hacia la puerta.',
+  fran: 'Fran se queda quieto bajo el baldaquino. La luz deja de correr y se queda blanca, de mediodía.',
 };
 const isLucaFight = (state: BattleState) => (LUCA_ENCOUNTERS as readonly string[]).includes(state.encounter);
 /** One of the salon's fights: who comes out (LUCA_FIGHTS), the first chaplain freshly styled, and the light walking from the cold morning. */
@@ -3005,6 +3046,9 @@ function createLucaBattle(party: PartySlot[], encounter: LucaEncounter, animas?:
     const n = seen[kind] = (seen[kind] ?? 0) + 1, many = kinds.filter(k => k === kind).length > 1;
     const one = foe(many ? `${kind}-${i}` : kind, many ? `${LUCA_NAMES[kind]} ${n}` : LUCA_NAMES[kind], kind);
     if (kind === 'capellan' && n === 1) one.peinado = true;
+    // Fran's acolytes: chaplains by another name, so the zone's are not taken for them.
+    if (encounter === 'fran' && kind === 'capellan') { one.name = `Acólito ${n}`; one.hp = one.maxHp = one.stats.pv = LUCA.acolito; }
+    if (kind === 'fran') { one.stage = 1; one.brillo = 0; }
     return one;
   });
   const unlocked = animas ?? wornAnimas(party);
@@ -3015,10 +3059,17 @@ function createLucaBattle(party: PartySlot[], encounter: LucaEncounter, animas?:
     message: LUCA_MESSAGES[encounter], light: { t: 0 },
   };
 }
-/** How much of a blow one of the salon's foes takes: El Telescopio while it focuses, its lens bare. */
-function lucaTaken(target: Combatant) {
-  return target.kind === 'telescopio' && target.intent?.ability === 'rayo-lente' ? LUCA.lente : 1;
+/** How much of a blow one of the salon's foes takes: El Telescopio while it focuses, its lens bare; Fran through his Brillo; a lamp only in its own light. */
+function lucaTaken(state: BattleState, target: Combatant) {
+  if (target.kind === 'telescopio' && target.intent?.ability === 'rayo-lente') return LUCA.lente;
+  if (target.kind === 'fran') return 1 / (1 + LUCA.brilloStep * (target.brillo ?? 0));
+  if (target.kind === 'lampara') return lampLit(state, target) ? 1 : 0;
+  return 1;
 }
+/** Whether a lamp of the canopy hangs in the light on now: the only one that can be broken. */
+export const lampLit = (state: BattleState, lamp: Combatant) => { const light = lightNow(state); return !!light && !!lamp.lamp && LAMPS[lamp.lamp].lights.includes(light); };
+/** Fran, in his fight. */
+const franOf = (state: BattleState) => state.foes.find(f => f.kind === 'fran');
 /** The element a party's action landed with, if any: Atacar's, a skill's, a dual's. */
 function landingOf(effect: BattleEffect): Element | undefined {
   if (effect.annulled) return undefined;
@@ -3066,6 +3117,39 @@ function checkLuca(state: BattleState, effect?: BattleEffect) {
       if (!effect) (state.news ??= []).push(news);
     }
   }
+  checkFran(state, effect);
+}
+/**
+ * Fran's fight (docs/quests/luca.md § Final boss): a lamp broken takes all his Brillo; at `standAt`
+ * of his PV he stands and the canopy's lamps come down; at `hisopoAt` he takes the aspergillum; and
+ * his acolytes go down with him.
+ */
+function checkFran(state: BattleState, effect?: BattleEffect) {
+  const fran = franOf(state);
+  if (!fran) return;
+  const say = (news: BattleEffect, text: string) => { state.message = `${state.message} ${text}`.trim(); if (news !== effect) (state.news ??= []).push(news); };
+  const broken = state.foes.find(f => f.kind === 'lampara' && f.hp <= 0 && !f.told);
+  if (broken) {
+    broken.told = true; fran.brillo = 0;
+    const news = effect ?? { kind: 'enemy', actor: fran.id };
+    news.lampBroken = broken.id; news.brillo = 0;
+    say(news, `¡La ${broken.name.toLowerCase()} estalla! Llueve color, y a Fran se le apaga el brillo.`);
+  }
+  if (fran.hp <= 0) { for (const f of state.foes) if (f.kind === 'capellan') f.hp = 0; return; }
+  const share = fran.hp / fran.maxHp;
+  if (fran.stage === 1 && share <= LUCA.standAt) {
+    fran.stage = 2; fran.turns = 0; delete fran.intent;
+    for (const id of Object.keys(LAMPS) as LampId[]) state.foes.push({ ...foe(`lampara-${id}`, LAMPS[id].name, 'lampara'), part: true, lamp: id });
+    const news = effect ?? { kind: 'enemy', actor: fran.id };
+    news.stage = 2;
+    say(news, 'Fran se levanta. Del baldaquino bajan tres lámparas, y cada una bebe una luz.');
+  }
+  if (fran.stage === 2 && share <= LUCA.hisopoAt) {
+    fran.stage = 3; fran.turns = 0; delete fran.intent;
+    const news = effect ?? { kind: 'enemy', actor: fran.id };
+    news.stage = 3;
+    say(news, 'Fran deja las tijeras sobre el altar y coge el hisopo. Lo moja en un cuenco que huele a decolorante.');
+  }
 }
 /**
  * The salon's foes' turns (docs/quests/luca.md § Monsters), each a named move. A moth flutters at the
@@ -3087,7 +3171,50 @@ function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effec
     return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   const remember = (ability: FoeAbilityId, power: number, all: boolean, magic: boolean, burn: boolean) => { state.copied = { ability, power, all, magic, fire: burn, by: actor.name }; };
-  if (actor.kind === 'polilla') {
+  if (actor.kind === 'fran') {
+    const cycle: readonly FoeAbilityId[] = FRAN_TURNS[actor.stage ?? 1];
+    const move = cycle[turn % cycle.length];
+    if (move === 'repeinar') {
+      // He restyles an acolyte from where he stands: that one leads the copying now.
+      const chaplains = state.foes.filter(f => f.kind === 'capellan' && f.hp > 0);
+      use('repeinar'); delete effect.target;
+      if (chaplains.length) {
+        const next = chaplains.find(f => !f.peinado) ?? chaplains[0];
+        for (const f of chaplains) delete f.peinado;
+        next.peinado = true;
+        state.message = `${actor.name} chasquea las tijeras sin mirar. ${next.name} se toca el pelo: es otro.`;
+      } else {
+        effect.amount = undefined; use('corte'); effect.target = target.id; effect.amount = hit(target, LUCA.corte);
+        remember('corte', LUCA.corte, false, false, false);
+        state.message = `${actor.name} se gira hacia ${target.name}, sin prisa, y corta. −${effect.amount} PV.`;
+      }
+    } else if (move === 'tomar-hisopo') {
+      // He loads the aspergillum: the Aspersión comes on his next turn, on everyone.
+      use('tomar-hisopo'); delete effect.target;
+      actor.intent = { ability: 'aspersion', at: 'todos' };
+      effect.telegraph = { id: 'aspersion', name: FOE_ABILITIES.aspersion.name, at: 'todos' };
+      state.message = `${actor.name} hunde el hisopo en el cuenco y lo levanta despacio. Gotea.`;
+    } else if (move === 'aspersion') {
+      // Bleach over everyone: it hurts, and it takes the colour out of their Fuerza and Magia for good.
+      use('aspersion');
+      onEveryone(state, effect, target, zap, LUCA.aspersion);
+      const stat: (keyof Stats)[] = ['fuerza', 'magia'], changes: StatChange[] = [];
+      for (const ally of alive) {
+        const lasting = ally.lasting ??= { shifts: {}, from: FOE_ABILITIES.aspersion.name };
+        for (const s of stat) lasting.shifts[s] = (lasting.shifts[s] ?? 0) - LUCA.aspersionDown;
+        changes.push({ target: ally.id, way: 'down', stats: stat });
+      }
+      effect.stats = changes;
+      delete actor.intent;
+      state.message = `${actor.name} sacude el hisopo sobre vosotros. Donde cae, el color se va. −${effect.amount} PV a ${target.name}.`;
+    } else {
+      use('corte'); effect.target = target.id; effect.amount = hit(target, LUCA.corte);
+      remember('corte', LUCA.corte, false, false, false);
+      state.message = `${actor.name} os mira por fin a uno: a ${target.name}. Y corta. −${effect.amount} PV.`;
+    }
+  } else if (actor.kind === 'lampara') {
+    delete effect.target;
+  } else if (actor.kind === 'polilla') {
     const who = alive.find(a => a.id === state.flash) ?? target;
     use('aleteo'); effect.target = who.id; effect.amount = hit(who, LUCA.aleteo);
     state.message = `${actor.name} va a por ${who.name}${who.id === state.flash ? ', atraída por el destello' : ''}. −${effect.amount} PV.`;
@@ -3154,8 +3281,9 @@ function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effec
       state.message = `${actor.name}, recién peinado, repite lo que hizo ${copy.by}. −${effect.amount} PV a ${target.name}.`;
     }
   } else {
-    use('tijeretazo'); effect.target = target.id; effect.amount = hit(target, LUCA.tijeretazo);
-    remember('tijeretazo', LUCA.tijeretazo, false, false, false);
+    const cut = state.encounter === 'fran' ? LUCA.acolitoCorte : LUCA.tijeretazo;
+    use('tijeretazo'); effect.target = target.id; effect.amount = hit(target, cut);
+    remember('tijeretazo', cut, false, false, false);
     state.message = `${actor.name} corta el aire delante de ${target.name}, muy cerca. −${effect.amount} PV.`;
   }
 }
@@ -3750,7 +3878,8 @@ export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo'
   | 'lealtad-lazo' | 'cristalino-casi' | 'cristalino-rajado' | 'directo-linea' | 'directo-estocada' | 'directo-clavado'
   | 'voz-andante' | 'voz-nota-clara' | 'voz-allegro' | 'voz-coro' | 'voz-a-capela' | 'voz-calderon'
   | CastleMoment
-  | 'modelo-itera' | 'modelo-converge' | 'modelo-diverge' | 'modelo-sobre-aviso';
+  | 'modelo-itera' | 'modelo-converge' | 'modelo-diverge' | 'modelo-sobre-aviso'
+  | 'fran-acolitos' | 'fran-baldaquino' | 'fran-aspersion';
 export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: Encounter }> = {
   'vertigo-carga': { label: 'Rayo cargado', encounter: 'uri-vertigo' },
   'vertigo-grito': { label: 'Tras dos gritos', encounter: 'uri-vertigo' },
@@ -3779,6 +3908,9 @@ export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: En
   'modelo-converge': { label: 'Converge', encounter: 'no-converge' },
   'modelo-diverge': { label: 'Diverge', encounter: 'no-converge' },
   'modelo-sobre-aviso': { label: 'Ya vio la espera', encounter: 'no-converge' },
+  'fran-acolitos': { label: 'Los acólitos', encounter: 'fran' },
+  'fran-baldaquino': { label: 'El baldaquino', encounter: 'fran' },
+  'fran-aspersion': { label: 'Aspersión tomada', encounter: 'fran' },
 };
 /**
  * Development: puts the fight at `moment`, the party to choose (pure; the picker's `jumpTo` calls
@@ -3859,6 +3991,20 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
       state.foes.push(second); voz.turns = 1;
     } else if (moment === 'voz-calderon') {
       voz.turns = VOZ_TURNS['a-capela'].indexOf('calderon'); voz.intent = { ability: 'calderon', at: 'todos' };
+    }
+  } else if (moment.startsWith('fran-')) {
+    // Fran at the start of a phase: whole with his acolytes, at his mark with the lamps down, or with the aspergillum loaded.
+    const fran = state.foes.find(f => f.kind === 'fran'), first = state.allies.find(a => a.hp > 0);
+    if (!fran || !first) return false;
+    state.foes = state.foes.filter(f => f.kind !== 'lampara');
+    for (const f of state.foes) { f.hp = f.maxHp; delete f.intent; delete f.still; }
+    fran.turns = 0; fran.brillo = 0; delete fran.lasting;
+    if (moment === 'fran-acolitos') { fran.stage = 1; }
+    else {
+      fran.stage = moment === 'fran-baldaquino' ? 2 : 3;
+      fran.hp = Math.floor(fran.maxHp * (moment === 'fran-baldaquino' ? LUCA.standAt : LUCA.hisopoAt));
+      for (const id of Object.keys(LAMPS) as LampId[]) state.foes.push({ ...foe(`lampara-${id}`, LAMPS[id].name, 'lampara'), part: true, lamp: id });
+      if (moment === 'fran-aspersion') { fran.turns = 1; fran.intent = { ability: 'aspersion', at: 'todos' }; }
     }
   } else if (moment === 'magos-bombona') {
     // Every mago standing, whole, with its Bombona charged (Bombona → todos).

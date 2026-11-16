@@ -1322,6 +1322,9 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .status-icon[data-status="luz"]::before { background: var(--ticks, none); opacity: .85; }
 .damage-pop[data-kind="status"][data-status="anulado"] strong { letter-spacing: .02em; }
 .unit-statuses i[data-status="peinado"] { --status: #8fd3ff; }
+.unit-statuses i[data-status="brillo"], .damage-pop[data-status="brillo"] { --status: #fff6d8; }
+.unit-statuses i[data-status="en-su-luz"] { --status: #ffd84f; }
+.unit-statuses i[data-status="apagada"] { --status: #8a8f96; }
 .unit-statuses i[data-status="lacado"], .damage-pop[data-status="lacado"] { --status: #f2e2a8; }
 .unit-statuses i[data-status="crescendo"], .summary-tags [data-status="crescendo"], .damage-pop[data-status="crescendo"] { --status: #f2b45a; }
 .unit-statuses i[data-status="guardia"], .summary-tags [data-status="guardia"] { --status: #cfdde6; }

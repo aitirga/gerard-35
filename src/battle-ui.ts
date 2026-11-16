@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow, lampLit } from './battle';
 import { CYCLE, CYCLE_LENGTH, LIGHTS, cancels, lightAt, upcoming } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -357,6 +357,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (c.stuck) chips.push(['clavado', 'Clavado']);
     // Fran's salon (docs/quests/luca.md): the chaplain the others copy, and the party lacquered (fire hurts them double).
     if (c.peinado) chips.push(['peinado', 'Recién peinado']);
+    if (c.kind === 'fran' && c.brillo) chips.push(['brillo', `Brillo ${c.brillo}`]);
+    if (c.kind === 'lampara' && state) chips.push(lampLit(state, c) ? ['en-su-luz', 'En su luz'] : ['apagada', 'Fuera de su luz']);
     if (state && (c.lacado ?? -1) >= state.round) chips.push(['lacado', 'Lacado']);
     if (c.kind === 'voz' && state?.song) {
       if ((c.shielded ?? -1) >= state.round) chips.push(['guardia', 'Guardia']);
@@ -1784,6 +1786,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // The castle's rules turning (src/castle-fight.ts): «Se lo aprende», «Sin atril», «Tropiezo», «Suyo», «Libre»…
       effect.called?.forEach((call, i) => setTimeout(() => { if (token === generation) pop(call.target, call.text, 'status', call.detail ?? ''); }, 420 + i * 240));
       // Fran's salon's moves that are not a blow (docs/quests/luca.md).
+      if (effect.brillo !== undefined && effect.kind === 'enemy' && !effect.lampBroken) pop(effect.actor, `Brillo ${effect.brillo}`, 'status', 'Bebe la luz', 'brillo');
+      if (effect.lampBroken) setTimeout(() => { if (token === generation) pop(effect.lampBroken!, '¡Estalla!', 'status', 'Fran pierde el brillo', 'rajado'); }, 420);
+      if (effect.stage) setTimeout(() => { if (token !== generation || !state) return; const fran = state.foes.find(f => f.kind === 'fran'); if (fran) pop(fran.id, effect.stage === 2 ? 'Se levanta' : 'El hisopo', 'status', effect.stage === 2 ? 'Bajan las lámparas' : 'Aspersión en su próximo turno', 'crescendo'); }, 600);
       if (effect.recolored) pop(effect.recolored.target, `+${effect.recolored.amount}`, 'heal', 'Se recolorea');
       if (effect.lacquered) effect.lacquered.forEach(id => pop(id, 'Lacado', 'status', 'El fuego hace el doble', 'lacado'));
       if (effect.lens) setTimeout(() => { if (token === generation) pop(effect.lens!, '¡Lente rajada!', 'status', 'El rayo no sale', 'rajado'); }, 420);

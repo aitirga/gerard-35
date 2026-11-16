@@ -245,6 +245,8 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   'luca-sillones': [white(5000, .6), hex('#e8503a', .55, .75), hex('#4f9fe8', .5, .7), hex('#e9e4d8', .5, .3)],
   'luca-carta': [white(4600, .6), hex('#ff8f3f', .6, .75), hex('#e8503a', .55, .75), hex('#ffd84f', .5, .7)],
   'luca-abside': [white(4200, .6), hex('#ffd84f', .6, .75), hex('#c89a3a', .55, .7), hex('#e9e4d8', .5, .3)],
+  // Fran under the canopy: every window's colour at once, and the cold white of his cape.
+  fran: [white(6200, .6), hex('#4f9fe8', .55, .75), hex('#e8503a', .55, .75), hex('#ffd84f', .55, .7)],
 };
 const ALARM = hex('#ff2a1a', .75, 1);
 /** 0 with everyone healthy, 1 when someone still standing is about to fall. */

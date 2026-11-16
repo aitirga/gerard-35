@@ -115,6 +115,9 @@ export const PROFILES = {
   telescopio: base(300, 10, 13, 12, 12, 8),
   laca: base(120, 8, 12, 8, 10, 9),
   capellan: base(100, 12, 9, 10, 10, 10),
+  // Fran, under the Queen's hold, and the three lamps of the canopy he has made his chair's.
+  fran: base(260, 13, 13, 12, 12, 10),
+  lampara: base(40, 8, 8, 8, 8, 1),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;
 
