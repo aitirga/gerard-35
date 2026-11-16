@@ -5,6 +5,7 @@ import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type S
 import { TONES, VOZ_SONG, onsets, songAt, type Moment, type ToneId } from './song.ts';
 import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment } from './castle.ts';
 import { castleAfter, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
+import { LIGHTS, cancels, changes, lightAt, type LightId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
 export type BattlePhase = 'player' | 'enemy' | 'beat' | 'won' | 'lost' | 'escaped';
@@ -861,6 +862,13 @@ export interface BattleState {
   songNews?: SongNews[];
   /** The castle's rules on this fight (src/castle.ts `CastleFight`). */
   castle?: CastleFight;
+  /**
+   * The light through the windows in Fran's salon (docs/quests/luca.md, src/vidrieras.ts): seconds
+   * into its walk on the fight's clock. While a colour is on, the party's blows of its element do nothing.
+   */
+  light?: { t: number };
+  /** The lights that came on since it was last asked (`takeLightNews`). */
+  lightNews?: LightId[];
 }
 /** Something the song did on its own, for the fight to show. */
 export type SongNews =
@@ -1128,6 +1136,8 @@ export interface BattleEffect {
   reflected?: number;
   /** A blow on La Voz between two notes: it went through her. */
   silent?: true;
+  /** A blow of the element the light on now cancels (Fran's salon): it did nothing. */
+  annulled?: LightId;
   /** A second blow on La Voz inside the same note, by the other fighter: an Acorde. */
   chord?: true;
   /** La Voz's Nota clara: magic comes back until her next turn. */
@@ -1197,6 +1207,18 @@ function hurt(state: BattleState, c: Combatant, amount: number) {
 export const songNow = (state: BattleState): Moment | undefined => state.song ? songAt(VOZ_SONG, state.song.t) : undefined;
 /** Whether `c` is La Voz between two notes: nothing hurts her then. */
 export const silenced = (state: BattleState, c: Combatant) => c.kind === 'voz' && !!state.song && !songNow(state)!.sounding;
+/** The light on now in Fran's salon (`undefined` in any other fight). */
+export const lightNow = (state: BattleState): LightId | undefined => state.light ? lightAt(state.light.t).light : undefined;
+/**
+ * Whether the light on now eats `actor`'s blow of `element`: only the party's, only in Fran's salon
+ * (docs/quests/luca.md). Returns the light, to say which.
+ */
+export function annulled(state: BattleState, actor: Combatant, element?: Element): LightId | undefined {
+  const light = lightNow(state);
+  return light && element && cancels(light) === element && state.allies.includes(actor) ? light : undefined;
+}
+/** How the fight says a blow the light ate. */
+const annulledText = (light: LightId) => `La luz ${LIGHTS[light].name.toLowerCase()} se lo come: nada.`;
 /** Whether magic comes back off `c`: Lo Cristalino until it cracks, La Voz while her Nota clara lasts. */
 export const reflects = (c: Combatant) => c.hp > 0 && ((c.kind === 'cristalino' && !c.cracked) || (c.kind === 'voz' && !!c.clear));
 /** La Lealtad, if she stands and `target` is another foe: she takes the blow aimed at it. */
@@ -1809,6 +1831,13 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     target.marks = { ...target.marks, [ability.id]: { amount: ability.power, stats: [...ability.stats], until: state.round + BOOST_ROUNDS - 1 } };
     effect.stats = [{ target: target.id, way: 'down', stats: [...ability.stats] }];
     state.message = `${actor.name} usa ${ability.name} contra ${target.name}. ${statNames(ability.stats)} −${ability.power} durante ${BOOST_ROUNDS} rondas.`;
+  } else if (everyone && annulled(state, actor, elementOf(ability))) {
+    // Fran's salon: the light eats a blow on everyone of its element too.
+    spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = target!.id;
+    const light = annulled(state, actor, elementOf(ability))!;
+    effect.annulled = light; effect.amount = 0;
+    effect.hits = targets.map(foe => ({ target: foe.id, amount: 0 }));
+    state.message = `${actor.name} usa ${ability!.name}. ${annulledText(light)}`;
   } else if (everyone) {
     // Las dos a la vez: Haru and Yuki go for every foe at once.
     spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = target!.id;
@@ -1887,6 +1916,11 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (cast?.lost) {
       effect.amount = 0;
       state.message = `${actor.name} usa ${ability!.name}: apostaba un ${effect.die!.face} y sale un ${effect.die!.rolled}. Nada. El dado se pierde.`;
+    } else if (annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability))) {
+      // Fran's salon: the light on now eats a blow of its own element, whole.
+      const light = annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability))!;
+      effect.amount = 0; effect.annulled = light;
+      state.message = `${actor.name} usa ${action === 'skill' ? ability!.name : 'Atacar'} contra ${target.name}. ${annulledText(light)}`;
     } else if (target.shell && !melts) {
       // The gum swallows the blow whole.
       effect.amount = 0; effect.swallowed = true;
@@ -2101,7 +2135,11 @@ export function actDual(state: BattleState, id: DualId, targetId?: string): Batt
     return effect;
   }
   state.message = `¡Ataque dual! ${d.name} contra ${target.name}.`;
-  if (target.shell && !melts) {
+  const eaten = annulled(state, a, elementOf(d));
+  if (eaten) {
+    effect.amount = 0; effect.annulled = eaten;
+    state.message += ` ${annulledText(eaten)}`;
+  } else if (target.shell && !melts) {
     effect.amount = 0; effect.swallowed = true;
     state.message += ' El chicle se lo traga. Ni un rasguño.';
   } else {
@@ -2167,6 +2205,14 @@ function release(state: BattleState, holder: Combatant) {
   if (!d || holder.hp <= 0) return;
   const melts = d.parts.some(id => SKILLS.some(s => s.id === id && 'melts' in s));
   const effect: BattleEffect = { kind: 'skill', actor: holder.id, release: { id: d.id, name: d.name } };
+  const eaten = annulled(state, holder, elementOf(d));
+  if (eaten) {
+    effect.annulled = eaten;
+    effect.hits = state.foes.filter(f => f.hp > 0).map(foe => ({ target: foe.id, amount: 0 }));
+    effect.target = effect.hits[0]?.target; effect.amount = 0;
+    (state.news ??= []).push(effect);
+    return `¡${d.name}! ${annulledText(eaten)}`;
+  }
   effect.hits = state.foes.filter(f => f.hp > 0).map(foe => {
     if (foe.shell && melts) { foe.shell = false; effect.melted = true; }
     const weak = weakScale(state, foe);
@@ -2829,6 +2875,20 @@ export function takeSongNews(state: BattleState): SongNews[] {
   delete state.songNews;
   return news;
 }
+/** The light walks on (the fight's clock, `runClock`): `seconds` more of it. Returns whether a new one came on. */
+function runLight(state: BattleState, seconds: number) {
+  if (!state.light) return false;
+  const came = changes(state.light.t, state.light.t + seconds);
+  state.light.t += seconds;
+  if (came.length) (state.lightNews ??= []).push(...came);
+  return came.length > 0;
+}
+/** The lights that came on since it was last asked, in order. */
+export function takeLightNews(state: BattleState): LightId[] {
+  const news = state.lightNews ?? [];
+  delete state.lightNews;
+  return news;
+}
 /** How La Voz's plate says what she sings now: «Nota · Mi», or «Silencio». */
 export function songLabel(state: BattleState) {
   const now = songNow(state);
@@ -3361,7 +3421,7 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
   if (!(seconds > 0) || (state.phase !== 'player' && state.phase !== 'enemy')) return [];
   const pulses: TimedPulse[] = [];
   // La Voz's song first: what sounds now decides whether a fire on her hurts this frame.
-  const sung = runSong(state, seconds), lapped = runCastle(castleKit, state, seconds);
+  const lit = runLight(state, seconds), sung = runSong(state, seconds) || lit, lapped = runCastle(castleKit, state, seconds);
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) {
     const on = c.timed?.[id];
     // A fire settled but still on its way (`waiting`): its clock starts when it lands.

@@ -1,7 +1,8 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow } from './battle';
+import { CYCLE, CYCLE_LENGTH, LIGHTS, cancels, lightAt, upcoming } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -46,7 +47,7 @@ const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'punto-debil' | 'cancion' | 'shock' | 'converge';
+type IconId = StatusId | TimedId | 'punto-debil' | 'cancion' | 'shock' | 'converge' | 'luz';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 const STATUS_ICONS: Record<IconId, string> = {
   // Converge: a wave that settles into a flat line.
@@ -55,6 +56,8 @@ const STATUS_ICONS: Record<IconId, string> = {
   shock: '<path d="M9.6 1 3.4 9.1h3.5L5.9 15l6.7-8.7H8.9z" fill="currentColor"/>',
   // La Voz's song: a sung note, the same mark for every note (its colour says which).
   cancion: '<path d="M6 2.2v8.1a2.3 2 0 1 1-1.4-1.8V3.6l6.8-1.5v6.6a2.3 2 0 1 1-1.4-1.8V4.1L6 5" fill="currentColor"/>',
+  // The light through the salon's windows (docs/quests/luca.md): a pointed window, its colour the light on now.
+  luz: '<path d="M8 1.6C5.5 1.6 3.6 3.8 3.6 6.6v7.8h8.8V6.6c0-2.8-1.9-5-4.4-5z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2.2v12.2M3.8 8.6h8.4" stroke="currentColor" stroke-width="1.1"/>',
   'punto-debil': '<path d="M8 1.5v3.2M8 11.3v3.2M1.5 8h3.2M11.3 8h3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="1.5"/>',
   quemado: '<path d="M8 1.2c.6 2.6 3.8 4 3.8 7.9a3.8 3.8 0 0 1-7.6 0c0-2 1-3.3 2-4.2-.1 1.6.5 2.6 1.3 2.9C7 6 7 3.4 8 1.2z"/>',
   cegado: '<path d="M1.5 8S4 3.8 8 3.8 14.5 8 14.5 8 12 12.2 8 12.2 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="1.9"/><path d="M2.6 13.4 13.4 2.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
@@ -88,6 +91,9 @@ const foundAffinities = new Map<FoeKind, Set<AttackElement>>();
 /** "1 ronda", "3 rondas". */
 const rounds = (n: number) => `${n} ${n === 1 ? 'ronda' : 'rondas'}`;
 const escapeHtml = (text: string) => text.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+/** What a light eats, as the party's window says it. */
+const lightEats = (light: keyof typeof LIGHTS) => { const element = cancels(light); return element ? `Anula ${ELEMENTS[element].name.toLowerCase()}` : 'No anula nada'; };
+const lightText = (light: keyof typeof LIGHTS) => `Luz ${LIGHTS[light].name.toLowerCase()}: ${lightEats(light).toLowerCase()} del equipo.`;
 const statusSvg = (id: IconId) => `<svg viewBox="0 0 16 16" aria-hidden="true">${STATUS_ICONS[id]}</svg>`;
 /** A stat up or down in words: «Defensa +4», or «Defensa ▼» for an onion's broken defence, which has no number. */
 const shiftText = (shift: StatShift) => `${statNames([shift.stat])} ${shift.amount ? `${shift.way === 'up' ? '+' : '−'}${shift.amount}` : shift.way === 'up' ? '▲' : '▼'}`;
@@ -313,7 +319,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function statusList(c: Combatant): { id: IconId; name: string; mark: string; timed: boolean; lasts: string }[] {
     const weak = state ? weakSpotRounds(state, c) : 0;
     const song = c.kind === 'voz' && state?.song ? songNow(state) : undefined;
+    // Fran's salon: the light on now, on each of the party's plates (it only touches them).
+    const light = state?.light && state.allies.includes(c) ? lightNow(state) : undefined;
     return shownHp(c) > 0 ? [
+      ...light ? [{ id: 'luz' as const, name: lightText(light), mark: '', timed: true, lasts: upcoming(state!.light!.t).map(id => LIGHTS[id].name).join(', ') }] : [],
       // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
       ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño mientras suena una nota.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
       // El que no converge, converged: it takes every blow whole for the turns in its corner.
@@ -413,6 +422,19 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * marks each pulse still to come, where the hand will be when it hurts (`--ticks`).
    */
   function drain(plate: Element, c: Combatant) {
+    const pane = state?.light ? plate.querySelector<HTMLElement>('.status-icon[data-status="luz"]') : null;
+    if (pane && state?.light) {
+      // The ring is the whole walk, each light an arc in its colour; the hand goes round once a walk.
+      const now = lightAt(state.light.t);
+      pane.style.setProperty('--left', (1 - (state.light.t % CYCLE_LENGTH) / CYCLE_LENGTH).toFixed(4));
+      pane.style.setProperty('--status', LIGHTS[now.light].colour);
+      if (pane.dataset.ticks !== 'walk') {
+        pane.dataset.ticks = 'walk';
+        let at = 0;
+        const arcs = CYCLE.map(step => { const from = at / CYCLE_LENGTH * 360; at += step.seconds; return `${LIGHTS[step.light].colour} ${from}deg ${at / CYCLE_LENGTH * 360}deg`; });
+        pane.style.setProperty('--ticks', `conic-gradient(${arcs.join(', ')})`);
+      }
+    }
     const tune = c.kind === 'voz' && state?.song ? plate.querySelector<HTMLElement>('.status-icon[data-status="cancion"]') : null;
     if (tune && state?.song) {
       // The ring is the turn of her phrase she is singing, each note an arc in its colour and each
@@ -521,7 +543,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (state?.song && !['won', 'lost', 'escaped'].includes(state.phase)) callbacks.song?.(state.song.t, stopped ? 0 : rate);
     if (!state || stopped) return;
     const pulses = runClock(state, seconds, c => heldFire.has(c.id));
-    const sung = showSong();
+    const sung = showSong() || showLight();
     // What a pulse brought on (Vertitrón's eye burnt out) plays once nothing else is.
     if (state.news?.length && !busy) void showNews();
     for (const c of [...state.foes, ...state.allies]) { const plate = root.querySelector(`.battle-target[data-target="${c.id}"]`); if (plate) drain(plate, c); }
@@ -562,6 +584,22 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const changed = said !== songSaid || news.length > 0;
     songSaid = said;
     return changed;
+  }
+  /**
+   * Fran's salon: the light came round to a new colour. Over each of the party, what it is and what
+   * it eats now, and their window flashes (its colour is set every frame, `drain`).
+   */
+  function showLight() {
+    if (!state?.light || ['won', 'lost', 'escaped'].includes(state.phase)) return false;
+    const news = takeLightNews(state);
+    const light = news.at(-1);
+    if (!light) return false;
+    for (const ally of state.allies.filter(a => a.hp > 0)) {
+      const el = pop(ally.id, `Luz ${LIGHTS[light].name.toLowerCase()}`, 'status', lightEats(light), 'luz');
+      el?.style.setProperty('--status', LIGHTS[light].colour);
+    }
+    root.querySelectorAll<HTMLElement>('.status-icon[data-status="luz"]').forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
+    return true;
   }
   function startClock() { cancelAnimationFrame(clockFrame); clockLast = performance.now(); clockFrame = requestAnimationFrame(tickClock); }
   /** A line said over a fighter's head, inside the fight (the rest of the HUD is shut). */
@@ -1748,6 +1786,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.cancelled === 'calderon') pop(effect.kind === 'enemy' ? effect.actor : effect.target ?? effect.actor, effect.kind === 'enemy' ? 'Sin aire' : '¡Calderón roto!', 'status', effect.kind === 'enemy' ? 'Pierde el turno' : 'Acorde', 'sin-aire');
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard', effect.charged ? `Maná +${effect.charged}` : '');
       else if (effect.boosted && effect.skill) { const skill = effect.skill; effect.boosted.forEach(id => pop(id, SKILLS.find(s => s.id === skill)!.name.split(' ')[0], 'guard', `${boostedStats(skill)} +${state!.boosts?.[skill]?.amount ?? 0}`)); }
+      else if (effect.annulled) {
+        // Fran's salon: the light ate the blow. Said over whoever it was aimed at, in the light's colour.
+        const light = effect.annulled;
+        for (const id of effect.hits?.map(h => h.target) ?? (effect.target ? [effect.target] : [])) pop(id, 'Anulado', 'status', `Luz ${LIGHTS[light].name.toLowerCase()}`, 'anulado')?.style.setProperty('--status', LIGHTS[light].colour);
+      }
       else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
       else if (effect.healedAll) effect.healedAll.forEach(h => pop(h.target, `+${h.amount}`, 'heal', label));
       else if (effect.healed && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', label);
@@ -2117,7 +2160,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   const ui = {
     /** Development: what the picker needs to offer this fight's moments. */
-    get fight() { return state && { encounter: state.encounter, phase: state.phase, awakened: state.awakened, busy, song: songLabel(state) }; },
+    get fight() { return state && { encounter: state.encounter, phase: state.phase, awakened: state.awakened, busy, song: songLabel(state), light: lightNow(state) }; },
     /** Development and screenshots: the fight itself, to set a moment no picker entry stages (it shows on the next thing drawn). */
     get live() { return state; },
     jumpTo,
