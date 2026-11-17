@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Story } from '../src/story.ts';
 import { flagsAt, missionJump, missionNow, missionParts } from '../src/story-points.ts';
-import { DOOR, INTERIOR, LINES_LUCA, MIRRORS, PLACES_LUCA, QUEUES, SAGRADA, ZONES, zoneAt } from '../src/friends/luca.ts';
+import { DOOR, FURNITURE, INTERIOR, LINES_LUCA, LOOKS, MIRRORS, PLACES_LUCA, QUEUES, QUEUE_LEFT, SAGRADA, SALON_SOLID, SALON_VIEW, ZONES, queueCells, zoneAt } from '../src/friends/luca.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { NEWS } from '../src/chapter-2.ts';
 import { canWalk } from '../src/movement.ts';
@@ -55,6 +55,7 @@ test('the door waits for Luca; once he has been spoken to, inside is Fran\'s sal
   const hour = story.clock.hour;
   const enter = story.handle({ type: 'near', id: 'luca-dentro' });
   assert.deepEqual(say(enter), [LINES_LUCA.inside]);
+  assert.deepEqual(enter.filter(e => e.kind === 'look'), [{ kind: 'look', cell: { ...SALON_VIEW.cell }, height: SALON_VIEW.height }, { kind: 'look' }], 'the camera turns to the crossing meanwhile');
   assert.ok(story.has('peluqueria') && story.clock.hour > hour);
   assert.deepEqual(story.handle({ type: 'near', id: 'luca-dentro' }), []);
 });
@@ -74,11 +75,19 @@ test('the way goes round the crossing: each zone is its fight once, in order, an
   assert.deepEqual(say(story.handle({ type: 'interact', id: 'talk-capellan' })), [LINES_LUCA.capellan[0]]);
   for (const [i, zone] of ZONES.entries()) {
     assert.deepEqual(ids(), [`luca-${zone.id}`]);
-    assert.deepEqual(say(story.handle({ type: 'battle', won: true, encounter: zone.encounter })), [LINES_LUCA.zoneWon[i]]);
+    const won = story.handle({ type: 'battle', won: true, encounter: zone.encounter });
+    assert.deepEqual(say(won), [LINES_LUCA.zoneWon[i]]);
     const freed = QUEUES.find(q => q.after === zone.id);
-    if (freed) assert.ok(!freed.cells.some(c => blocked().includes(`${c.x},${c.z}`)), `${freed.id} moves on`);
+    assert.deepEqual(won[0], { kind: 'look', cell: { ...freed?.look ?? PLACES_LUCA.capellan }, height: freed ? 11 : 9 }, 'the camera turns to the queue that moved on');
+    assert.deepEqual(won.at(-1), { kind: 'look' });
+    if (freed) {
+      assert.ok(!freed.cells.slice(QUEUE_LEFT, -QUEUE_LEFT).some(c => blocked().includes(`${c.x},${c.z}`)), `${freed.id} moves on: the way opens through its middle`);
+      assert.ok(queueCells(freed, true).every(c => blocked().includes(`${c.x},${c.z}`)), `${freed.id}: its ends wait on by the walls`);
+      assert.ok(!queueCells(freed, true).some(c => c.x === freed.look.x && c.z === freed.look.z));
+      assert.ok(!story.interactions(INTERIOR).some(i => i.id === `luca-cola-${freed.id}`));
+    }
   }
-  assert.deepEqual(blocked(), MIRRORS.map(m => `${m.x},${m.z}`), 'only the mirrors stand in the way now');
+  assert.deepEqual(blocked(), [...QUEUES.flatMap(q => queueCells(q, true)), ...MIRRORS, ...SALON_SOLID].map(m => `${m.x},${m.z}`), 'only the queues\' ends, the mirrors and the salon\'s furniture stand in the way now');
   assert.equal(story.npcs(SAGRADA).find(n => n.id === 'luca').faded, 1 - 4 / 5, 'a colour back for each zone');
   const boss = story.handle({ type: 'interact', id: 'talk-capellan' });
   assert.deepEqual(say(boss), [LINES_LUCA.ready, LINES_LUCA.fran]);
@@ -100,8 +109,14 @@ test('turning the nave\'s mirrors brings the light to the chaplains\' chairs; th
   const story = inSalon(['recepcion']);
   assert.deepEqual(story.interactions(INTERIOR).map(i => i.id).filter(id => id.startsWith('luca-espejo')), ['luca-espejo-0', 'luca-espejo-1', 'luca-espejo-2']);
   assert.equal(story.dazzled('luca-sillones'), false);
-  assert.deepEqual(say(story.handle({ type: 'near', id: 'luca-espejos' })), [LINES_LUCA.mirrors]);
-  assert.deepEqual(story.handle({ type: 'interact', id: 'luca-espejo-0' }), []);
+  // Coming into the nave anywhere across its mouth, the camera follows the light to the wall it ends on.
+  const mouth = story.triggers(INTERIOR).find(t => t.id === 'luca-espejos');
+  assert.deepEqual(mouth.area, { x: 20, z: 6, w: 3, d: 29 });
+  const seen = story.handle({ type: 'near', id: 'luca-espejos' });
+  assert.deepEqual(say(seen), [LINES_LUCA.mirrors]);
+  assert.deepEqual(seen.map(e => e.kind), ['look', 'dialogue', 'look']);
+  assert.ok(Math.hypot(seen[0].cell.x - MIRRORS[1].x, seen[0].cell.z - 9) < 3, 'between the second mirror and the wall');
+  assert.deepEqual(story.handle({ type: 'near', id: 'luca-espejos' }), []);
   assert.deepEqual(story.handle({ type: 'interact', id: 'luca-espejo-1' }), []);
   assert.deepEqual(say(story.handle({ type: 'interact', id: 'luca-espejo-2' })), [LINES_LUCA.dazzled]);
   assert.ok(story.beam.hit && story.dazzled('luca-sillones'));
@@ -110,6 +125,25 @@ test('turning the nave\'s mirrors brings the light to the chaplains\' chairs; th
   story.handle({ type: 'interact', id: 'luca-espejo-2' });
   assert.equal(story.dazzled('luca-sillones'), false);
   assert.deepEqual(story.handle({ type: 'interact', id: 'luca-espejo-2' }), []);
+});
+
+test('the salon\'s furniture stands on the floor and keeps Gerard out; one thing in each zone can be looked at', () => {
+  const grid = ENVIRONMENTS[INTERIOR].grid, story = inSalon();
+  const blocked = story.blocked(INTERIOR).map(c => `${c.x},${c.z}`);
+  for (const c of SALON_SOLID) { assert.equal(grid[c.z][c.x], '.', `${c.x},${c.z}`); assert.ok(blocked.includes(`${c.x},${c.z}`)); }
+  assert.equal(SALON_SOLID.length, 3 + (FURNITURE.bar.to - FURNITURE.bar.from + 1) + FURNITURE.lenses.length + FURNITURE.charts.length);
+  // Nothing of it in a queue, on a mirror, where a zone's foes wait or where anything is looked at from.
+  const taken = [...QUEUES.flatMap(q => [...q.cells, q.look]), ...MIRRORS, ...ZONES.map(z => z.cell), ...LOOKS.map(l => l.cell), PLACES_LUCA.inside, PLACES_LUCA.capellan].map(c => `${c.x},${c.z}`);
+  for (const c of SALON_SOLID) assert.ok(!taken.includes(`${c.x},${c.z}`), `${c.x},${c.z}`);
+  const ids = story.interactions(INTERIOR).map(i => i.id);
+  for (const look of LOOKS) {
+    assert.ok(canWalk(look.cell, grid) && !blocked.includes(`${look.cell.x},${look.cell.z}`), look.id);
+    assert.ok(ids.includes(look.id));
+    assert.deepEqual(say(story.handle({ type: 'interact', id: look.id })), [LINES_LUCA.looks[look.id]]);
+  }
+  const after = new Story(flagsAt('luz-luca'));
+  assert.ok(!after.interactions(INTERIOR).some(i => i.id.startsWith('luca-')), 'gone with the salon');
+  assert.deepEqual(after.blocked(INTERIOR), []);
 });
 
 test('Fran beaten: Luca in full colour by the pond, his ánima and light, the day spent, the plain church again', () => {

@@ -19,7 +19,7 @@ import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
 import { ALEGIA, CUERDAS_PLACE, LINES_MARTA, MARTA_SCALE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
-import { BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LUCA_SCALE, MIRRORS, MIRRORS_START, PLACES_LUCA, QUEUES, SAGRADA, ZONES } from './friends/luca.ts';
+import { BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE, MIRRORS, MIRRORS_SEEN, MIRRORS_START, PLACES_LUCA, QUEUES, SAGRADA, SALON_SOLID, SALON_VIEW, ZONES, queueCells, type LookId } from './friends/luca.ts';
 import { trace, turned, type Facing } from './espejos.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
@@ -228,6 +228,8 @@ export interface StoryNpc {
   faded?: number;
   /** Where their reflection stands in water, in full colour whatever they look like (Luca in the pond). */
   reflection?: Cell;
+  /** How far above the floor they stand (Fran, up the presbytery's steps). */
+  lift?: number;
 }
 /**
  * The university friends' mission while it runs (docs/quests/universidad.md); not saved, as Nuria's.
@@ -827,7 +829,7 @@ export class Story {
     const list: StoryNpc[] = [{ id: 'luca', character: 'luca', environment: SAGRADA, cell: { ...PLACES_LUCA.luca }, scale: LUCA_SCALE, facing: 180, faded: lost, reflection: { ...PLACES_LUCA.water } }];
     if (this.salon) list.push(
       { id: 'capellan', character: 'capellan', environment: INTERIOR, cell: { ...PLACES_LUCA.capellan }, scale: LUCA_SCALE, facing: 270, possessed: true },
-      { id: 'fran', character: 'fran', environment: INTERIOR, cell: { ...PLACES_LUCA.fran }, scale: LUCA_SCALE * 1.08, facing: 90, possessed: true },
+      { id: 'fran', character: 'fran', environment: INTERIOR, cell: { ...PLACES_LUCA.fran }, scale: LUCA_SCALE * 1.08, facing: 90, possessed: true, lift: .4 },
     );
     return list;
   }
@@ -860,12 +862,16 @@ export class Story {
       // Going in takes its hour; the rest is paid when Fran is beaten.
       const first = !run.entered;
       run.entered = true; this.set('peluqueria');
-      return [say(first ? LINES_LUCA.inside : LINES_LUCA.insideAgain), ...first ? this.spend('cafe') : []];
+      // The first time the camera turns down the transept to the crossing: the church here, the salon beyond.
+      if (!first) return [say(LINES_LUCA.insideAgain)];
+      return [{ kind: 'look', cell: { ...SALON_VIEW.cell }, height: SALON_VIEW.height }, say(LINES_LUCA.inside), { kind: 'look' }, ...this.spend('cafe')];
     }
     if (id === 'luca-espejos') {
       if (run.told.includes('espejos')) return [];
       run.told.push('espejos');
-      return [say(LINES_LUCA.mirrors)];
+      // The camera follows the window's light from mirror to mirror, to where it ends.
+      const beam = this.beam, turn = beam.turns.at(-1) ?? beam.end;
+      return [{ kind: 'look', cell: { x: Math.round((turn.x + beam.end.x) / 2), z: Math.round((turn.z + beam.end.z) / 2) + 2 }, height: 9 }, say(LINES_LUCA.mirrors), { kind: 'look' }];
     }
     const zone = ZONES.find(z => id === `luca-${z.id}`);
     // Only the next one on the way: the queues keep the rest.
@@ -899,7 +905,10 @@ export class Story {
     if (event.won && zone) {
       if (!this.salon || this.luca.beaten.includes(zone.id)) return [];
       this.luca.beaten.push(zone.id);
-      return [say(LINES_LUCA.zoneWon[Math.min(this.luca.beaten.length, LINES_LUCA.zoneWon.length) - 1])];
+      const line = say(LINES_LUCA.zoneWon[Math.min(this.luca.beaten.length, LINES_LUCA.zoneWon.length) - 1]);
+      // The camera turns to the queue that has moved on, so the way it opens is seen; after the last zone, to the chaplain.
+      const freed = QUEUES.find(q => q.after === zone.id);
+      return [{ kind: 'look', cell: { ...freed?.look ?? PLACES_LUCA.capellan }, height: freed ? 11 : 9 }, line, { kind: 'look' }];
     }
     // One of what Marta lost, beaten: it stays beaten this visit, and she says she feels nothing yet.
     const quality = QUALITIES.find(q => q.encounter === event.encounter);
@@ -1086,10 +1095,10 @@ export class Story {
     if (environment === BEACH && (this.uni.chase || this.uni.spiral)) return TENTACLES.map(c => ({ ...c }));
     // The pool's gate stays padlocked until the numbers of the maze's three words are put on it, the merendero's steel door until every pitch is found.
     if (environment === ALEGIA) return PLACES_MARTA.piano.cells.map(c => ({ ...c }));
-    // Fran's salon: the queues not yet moved on keep the way, and the nave's mirrors stand where they are.
+    // Fran's salon: the queues keep the way (only their ends once they have moved on), and the nave's mirrors and the furniture stand where they are.
     if (environment === INTERIOR && this.salon) return [
-      ...QUEUES.filter(q => !this.luca.beaten.includes(q.after)).flatMap(q => q.cells),
-      ...MIRRORS,
+      ...QUEUES.flatMap(q => queueCells(q, this.luca.beaten.includes(q.after))),
+      ...MIRRORS, ...SALON_SOLID,
     ].map(c => ({ ...c }));
     if (environment === CAMP && !this.has('sobremesa')) return [
       ...this.has('candado') || this.has('parcelas') ? [] : CAMPING_GATE,
@@ -1200,8 +1209,8 @@ export class Story {
       return [
         ...run.told.includes('dentro') ? [] : [{ id: 'luca-dentro', cell: { x: PLACES_LUCA.inside.x, z: PLACES_LUCA.inside.z - 1 }, radius: 1.2 }],
         ...next ? [{ id: `luca-${next.id}`, cell: { ...next.cell }, radius: next.radius, ...next.trip ? { area: { ...next.trip } } : {} }] : [],
-        // The nave's mirrors, the first time near them while the chaplains still wait.
-        ...next?.id === 'sillones' && !run.told.includes('espejos') ? [{ id: 'luca-espejos', cell: { ...MIRRORS[0] }, radius: 3.5, passing: true }] : [],
+        // The nave's mirrors, as the nave is come into while the chaplains still wait: its whole mouth, from wall to wall.
+        ...next?.id === 'sillones' && !run.told.includes('espejos') ? [{ id: 'luca-espejos', cell: { ...MIRRORS_SEEN }, radius: 2, area: { x: 20, z: 6, w: 3, d: 29 } }] : [],
       ];
     }
     if (environment === CAMP) return this.campTriggers();
@@ -1419,6 +1428,7 @@ export class Story {
       list.push({ id: 'talk-capellan', label: 'Hablar con el capellán', cell: { ...PLACES_LUCA.capellan } });
       for (const q of QUEUES) if (!this.luca.beaten.includes(q.after)) list.push({ id: `luca-cola-${q.id}`, label: 'Mirar la cola', cell: { ...q.look } });
       if (!this.luca.beaten.includes('sillones')) MIRRORS.forEach((m, i) => list.push({ id: `luca-espejo-${i}`, label: 'Girar el espejo', hint: 'Girar', cell: { ...m } }));
+      for (const look of LOOKS) list.push({ id: look.id, label: look.label, cell: { ...look.cell } });
     }
     if (this.adult && environment === JAR.environment && this.jar.length) {
       list.push({ id: 'meridiana-luces', label: 'Abrir el bote', hint: 'Abrir el bote', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });
@@ -1585,6 +1595,8 @@ export class Story {
       }
       case 'luca-cola-nave': case 'luca-cola-pasion': case 'luca-cola-abside':
         return this.salon ? [say(LINES_LUCA.queue)] : [];
+      case 'luca-agenda': case 'luca-tintes': case 'luca-lente':
+        return this.salon ? [say(LINES_LUCA.looks[event.id as LookId])] : [];
       case 'luca-espejo-0': case 'luca-espejo-1': case 'luca-espejo-2': {
         if (!this.salon) return [];
         const before = this.beam.hit;

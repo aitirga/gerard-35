@@ -24,15 +24,15 @@ export const LUCA_SCALE = 1.12;
 
 /** Where things are outside, by the pond of Plaça de Gaudí, and in the salon inside. */
 export const PLACES_LUCA = {
-  /** Luca, grey, at the pond's north tip, facing the Nativity facade. */
-  luca: { x: 71, z: 152 },
+  /** Luca, grey, on the pond's north bank where no tree stands over him, facing the Nativity facade. */
+  luca: { x: 75, z: 158 },
   /** Where his reflection is looked at, and where it stands in the water (in colour). */
-  reflejo: { x: 69, z: 154 },
-  water: { x: 69.4, z: 155.6 },
+  reflejo: { x: 76, z: 158 },
+  water: { x: 74.6, z: 158.9 },
   /** Back out of the basilica, in front of the door. */
   outside: { x: 73, z: 119 },
   /** The party comes out here after Fran: by Luca. */
-  won: { x: 72, z: 151 },
+  won: { x: 75, z: 157 },
   /** In through the door. */
   inside: { x: 36, z: 37 },
   /** The chaplain who keeps the presbytery, beside the guard, and Fran up its steps under the canopy. */
@@ -76,6 +76,10 @@ export const QUEUES: readonly { id: string; after: ZoneId; cells: Cell[]; look: 
   { id: 'pasion', after: 'sillones', cells: row(5, span(27, 45, [31, 41])), look: { x: 36, z: 6 } },
   { id: 'abside', after: 'carta', cells: column(50, span(7, 33, [15, 25])), look: { x: 50, z: 26 } },
 ];
+/** How many of a queue's cells still stand at each end once it has moved on: the way opens in the middle, the rest wait on by the walls. */
+export const QUEUE_LEFT = 3;
+/** The cells of a queue that still keep Gerard out: all of them, or only its two ends once it has moved on. */
+export const queueCells = (queue: { cells: Cell[] }, moved: boolean): Cell[] => moved ? [...queue.cells.slice(0, QUEUE_LEFT), ...queue.cells.slice(-QUEUE_LEFT)] : queue.cells;
 /**
  * The mirrors in the nave (docs/quests/luca.md § Review C): three of the salon's mirrors, each
  * turned a quarter at a time (`\` 0, `/` 1). The light of a north window comes down the aisle at
@@ -83,8 +87,44 @@ export const QUEUES: readonly { id: string; after: ZoneId; cells: Cell[]; look: 
  * src/espejos.ts.
  */
 export const MIRRORS: readonly Cell[] = [{ x: 8, z: 12 }, { x: 20, z: 12 }, { x: 20, z: 20 }];
-/** How they stand when the salon opens: every one sends the light somewhere else. */
-export const MIRRORS_START: readonly (0 | 1)[] = [1, 1, 0];
+/**
+ * How they stand when the salon opens: the first already sends the light along the north aisle, the
+ * second throws it against the wall by the nave's mouth (where whoever comes in from the crossing
+ * sees it), the third would send it out to the crossing. Two turns bring it to the chairs, each one
+ * moving the light in sight of who turned it.
+ */
+export const MIRRORS_START: readonly (0 | 1)[] = [0, 1, 0];
+/** Where the nave is come into from the crossing: the light against the wall is seen from here. */
+export const MIRRORS_SEEN: Cell = { x: 22, z: 16 };
+/**
+ * The salon's furniture that stands on the floor (src/peluqueria-scenery.ts draws it at these cells;
+ * the story keeps Gerard out of them): the reception desk by the Nativity door, three cells along x
+ * with its front to the door; the dye bar along the Passion arm's end wall; Luca's lenses on brass
+ * stands and his star charts on easels, in the apse.
+ */
+export const FURNITURE = {
+  desk: { x: 41, z: 36 },
+  bar: { from: 30, to: 42, z: 1 },
+  lenses: [{ x: 53, z: 12 }, { x: 57, z: 16 }, { x: 57, z: 24 }, { x: 53, z: 28 }],
+  charts: [{ x: 55, z: 9 }, { x: 59, z: 20 }, { x: 55, z: 31 }],
+} as const;
+export const SALON_SOLID: readonly Cell[] = [
+  ...row(FURNITURE.desk.z, span(FURNITURE.desk.x - 1, FURNITURE.desk.x + 1)),
+  ...row(FURNITURE.bar.z, span(FURNITURE.bar.from, FURNITURE.bar.to)),
+  ...FURNITURE.lenses, ...FURNITURE.charts,
+];
+/**
+ * What can be looked at in the salon, one thing a zone: the appointment book on the desk, the dye
+ * bowls on the bar, one of Luca's lenses. Each says a little of what Fran has done with what was Luca's.
+ */
+export const LOOKS = [
+  { id: 'luca-agenda', label: 'Mirar la agenda', cell: { x: 41, z: 37 } },
+  { id: 'luca-tintes', label: 'Mirar los tintes', cell: { x: 32, z: 2 } },
+  { id: 'luca-lente', label: 'Mirar la lente', cell: { x: 52, z: 28 } },
+] as const;
+export type LookId = typeof LOOKS[number]['id'];
+/** Where the camera turns as they come in: down the transept to the crossing, where the salon is. */
+export const SALON_VIEW = { cell: { x: 38, z: 26 }, height: 12 } as const;
 /** Where the window's beam comes in, which way, and the chaplains' chairs it is for. */
 export const BEAM = { from: { x: 8, z: 6 }, dir: { x: 0, z: 1 }, target: { x: 12, z: 20 } } as const;
 /** Luca's own colours, back once Fran is beaten: the loud shirt, the trousers. */
@@ -183,11 +223,17 @@ export const LINES_LUCA = {
     gerard('Gente gris, en fila, detrás de una cinta. Esperan turno.'),
     aitor('Y no se mueven hasta que pase el de delante.'),
   ),
-  /** The nave's mirrors, walked up to the first time: the window's light lands on one and goes nowhere. */
+  /** The nave come into, the first time: the window's light goes from mirror to mirror and ends on a wall. */
   mirrors: group('aitor',
-    aitor('La luz de esa vidriera cae en un espejo. Y rebota contra la pared.'),
+    aitor('La luz de esa vidriera va de espejo en espejo. Y acaba en la pared.'),
     gerard('Estos espejos giran. Son de peluquería.'),
   ),
+  /** What is looked at in the salon (LOOKS). */
+  looks: {
+    'luca-agenda': group('aitor', gerard('La agenda de Fran. «Fran», «Fran», «Fran». Todas las horas, él.'), aitor('Ni un hueco para nadie más.')),
+    'luca-tintes': group('aitor', gerard('Cuencos de tinte. Naranja, verde, azul. Sin estrenar.'), aitor('Los colores de Luca. Guardados como si fueran género.')),
+    'luca-lente': group('aitor', gerard('Una lente de Luca. Apunta a las columnas, no al cielo.'), aitor('Para medir. Ya no para mirar.')),
+  } satisfies Record<LookId, Dialogue>,
   /** The light brought to the chaplains' chairs. */
   dazzled: group('aitor',
     aitor('Ahí. La luz les cae en la cara, en los sillones.'),

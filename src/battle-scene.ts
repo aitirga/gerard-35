@@ -5,7 +5,7 @@ import { CASTLE_SIZES, isCastle } from './castle';
 import { DIE, createDie, dressDie, faceUp } from './dice';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { MODELO_SIZES, PHOSPHOR } from './modelo-foes';
-import { LUCA_SIZES } from './luca-foes';
+import { LUCA_SIZES, styleChaplain } from './luca-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
 import { WalkAnimation, idlePose, poseLegs, type LimbRig } from './walk-animation';
@@ -1950,6 +1950,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const minion = !party && (!!fear || ((unit.kind === 'minion' || unit.kind === 'guardian' || isCastle(unit.kind)) && !!minionTemplate));
     const source = sourceOf(unit, i, party);
     const model = source.clone(); model.enabled = true;
+    // Fran's chaplains (docs/quests/luca.md): each one's hair done his own way.
+    if (unit.kind === 'capellan') styleChaplain(model, i);
     battleRoot.addChild(model); model.setPosition(start);
     const body = party ? model.findByName('Cuerpo') as pc.Entity : null;
     const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];

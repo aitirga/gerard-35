@@ -252,8 +252,8 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
   of the side Gerard is on.
 - **The mirrors (C)**: three of the nave's mirrors turn a quarter at a time (`src/espejos.ts`, pure
   and tested). Only one way of the eight brings the north window's light down the aisle, along row
-  12, down x 20 and along row 20 to the chaplains' chairs, three turns from how they start. Aitor
-  notices the light the first time near them. Solved, the chaplains start their fight Cegado II
+  12, down x 20 and along row 20 to the chaplains' chairs, two turns from how they start (three
+  until the walk through it, below). Aitor notices the light coming into the nave. Solved, the chaplains start their fight Cegado II
   (`dazzle`): the same fight with more PV left. Optional, and rewarded.
 - **The apse as the climax (E)**: El Telescopio and a thicker La Laca (`lacaAbside`), which now bursts
   over the others **when fire brings it down** (no longer at the first touch of fire).
@@ -271,6 +271,29 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
   New numbers: Estampados 75 PV, Estampar 9, Recolor 80 %; capellanes 92 PV; Tubo 54; Chispa 22;
   Fran 180 PV, acolytes 55, lamps 30. The carta stays the least clear pair (casual 33 %): the Passion
   light leaves fire useless for a long stretch, so it is partly a fight of endurance.
+
+### The walk through it (2026-11-17)
+
+Walked from the pond to Fran, fights aside, and looked at each place as the player sees it
+(`just screenshots luca-exploracion --gpu`). What was wrong, and what was done:
+
+| Walking it | What was done |
+| --- | --- |
+| Luca stood under a tree's crown, half hidden | He stands on the pond's north bank, clear of the trees (`PLACES_LUCA.luca`), his reflection on the water at his feet |
+| Coming in, nothing said there was a salon further in | The camera turns down the transept to the crossing while Aitor and Gerard take it in (`SALON_VIEW`) |
+| The reception desk read as a black bench | A desk with its front to the door before a black wall with his name and the turn's number (nobody's), the appointment book, a bell, the turns' dispenser |
+| The nave kept the church's wooden chairs, though Gerard says the salon's stand where they were | The basilica takes them away while the salon stands (`setPews`); in their blocks, mirrors back to back with a salon chair before each glass, a clearing left where the chaplains wait |
+| The chaplains' hair was a cone, a party hat | Three ways of doing it, each in a colour of Luca's: a tall quiff in blue, lacquered spikes in orange, a hard parting in teal (`styleChaplain`), in the salon and in their fights |
+| The queues were thin posts and skittles | Grey visitors in the game's block figures behind a belt, every one looking at Fran. A queue that has moved on keeps its two ends by the walls (`queueCells`): the way opens through its middle, and the camera turns to it as Aitor says so |
+| The turning mirrors read as whiteboards, and nobody coming in from the crossing ever saw them or the light | Chrome frames, blue glass, a streak of light. The light now starts along the north aisle and ends against the wall by the nave's mouth (`MIRRORS_START`), and coming into the nave anywhere the camera follows it there. Two turns bring it to the chairs, each one moving the light in sight of who turned it: the second mirror sends it down to the third and out along the middle aisle to the presbytery's rope, the third to the chaplains |
+| The light's shaft could not be seen under the vault | A thicker shaft, its stripe on the floor, a flare at each mirror, and its fall from the glass |
+| The apse's lenses were lollipops, its charts specks | Lenses in brass rings on tripods, turned on the presbytery; painted star charts on easels |
+| Fran stood sunk in the presbytery's steps, his chair and dryer hidden | He stands on it (`lift`), back to everyone; beside him his chair under a hood dryer of sixteen straight rods between two rings (a hyperboloid: *solo rectas, y sale una curva*) and his slate with the same curve in chalk |
+| Gerard walked through the furniture | The desk, the dye bar, the lenses and the easels keep him out (`SALON_SOLID`) |
+| Nothing to look at but the queues | One thing a zone (`LOOKS`): the appointment book (every hour, *Fran*), the dye bowls (Luca's colours, unused), one of his lenses (turned on the columns, not the sky) |
+
+The salon is batched by material (one batch group), so its several hundred pieces cost a handful of
+draw calls. No fight, foe or number changed.
 
 ## Built (2026-11-16, `feat/side-mission-luca`)
 
@@ -292,7 +315,8 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
   item, the tour poster on the Meridiana's second bus shelter (`clue-sagrada-cartel`).
 - **Stand-in figures**: `src/characters/luca.json`, `fran.json`, `capellan.json` (from Uri's).
 - **Tests**: `tests/luca.test.mjs`, `tests/luca-fight.test.mjs`, `tests/vidrieras.test.mjs`.
-- **Screenshots**: `just screenshots luca --gpu`.
+- **Screenshots**: `just screenshots luca --gpu` (the story and its fights) and
+  `just screenshots luca-exploracion --gpu` (the walk, fights aside).
 
 ## Open
 

@@ -472,6 +472,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     toWorld(px: number, pz: number) { return new pc.Vec3(x(px), 0, z(pz)); },
     /** Inside the Sagrada Família, the light through its windows in one colour (Fran's salon), or its own. */
     salonLight(hex?: string) { basilica?.setLight(hex); },
+    /** Inside the Sagrada Família: the nave's wooden chairs, there or taken away while Fran's salon stands. */
+    salonPews(on: boolean) { basilica?.setPews(on); },
     /** A raised surface that feet follow (`top` high over the `w` × `d` cells centred on px, pz): Uri's tower ramp. */
     addSurface(px: number, pz: number, w: number, d: number, top: number) { surfaces.push({ x: x(px), z: z(pz), w, d, y: top }); },
     /**

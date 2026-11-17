@@ -49,9 +49,9 @@ import { FLOOD } from './emilie-flat-scenery';
 import { GALLERY, PATROLS, ZONE_IDS, beat, calibration, charged, createModelo, descend, interactionStake, interactionWell, measure, shake as shakePatrol, stakeVerb, tick as tickModelo } from './modelo';
 import { MODELO_SIZES } from './modelo-foes';
 import { MODELO_FIGHTS, calibrate, LUCA_FIGHTS, type LucaEncounter } from './battle';
-import { LUCA_SIZES } from './luca-foes';
+import { LUCA_SIZES, styleChaplain } from './luca-foes';
 import { buildSalon } from './peluqueria-scenery';
-import { MIRRORS, QUEUES, zoneAt } from './friends/luca';
+import { BEAM, MIRRORS, QUEUES, queueCells, zoneAt } from './friends/luca';
 import { LIGHTS as SALON_LIGHTS, lightAt } from './vidrieras';
 import { CUERDAS_FIGHTS } from './battle';
 import { PLACES_MARTA } from './friends/marta';
@@ -717,15 +717,17 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (salon && key !== salonKey) { salon.destroy(); salon = undefined; }
     if (dressed && !salon) {
       const beam = story.beam;
-      salon = buildSalon(castRoot, (px, pz) => scenery.toWorld(px, pz), {
-        queues: QUEUES.filter(q => !story.luca.beaten.includes(q.after)).map(q => q.cells),
+      salon = buildSalon(app, castRoot, (px, pz) => scenery.toWorld(px, pz), {
+        queues: QUEUES.map(q => { const moved = story.luca.beaten.includes(q.after); return { cells: queueCells(q, moved), moved }; }),
         mirrors: MIRRORS.map((cell, i) => ({ cell, facing: (story.luca.mirrors[i] ?? 0) as 0 | 1 })),
-        beam: { path: beam.path, hit: beam.hit },
+        beam: { path: beam.path, hit: beam.hit, dir: BEAM.dir },
       });
       if (!salonKey) salonLight.on = '';
       salonKey = key;
     }
     if (!dressed) salonKey = '';
+    // The nave's wooden chairs give way to the salon's while it stands.
+    scenery.salonPews(!dressed);
     if (!dressed && salonLight.on) { scenery.salonLight(); salonLight = { t: 0, on: '' }; }
     const list = story.lucaFoes(environment.id);
     if (!list.length) return;
@@ -735,6 +737,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       kinds.forEach((kind, i) => {
         const model = fears.templates.get(kind)?.clone(); if (!model) return;
         model.enabled = true; model.name = `${w.id} ${i}`;
+        if (kind === 'capellan') styleChaplain(model, i);
         const size = LUCA_SIZES[kind]; model.setLocalScale(size, size, size);
         const at = scenery.toWorld(w.cell.x + (i - (kinds.length - 1) / 2) * 1.6, w.cell.z - 1.5);
         model.setPosition(at.x, 0, at.z);
@@ -1682,7 +1685,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       // In the Queen's hold: violet eyes (docs/lore.md), Uri until he is himself again.
       if (npc.possessed || (npc.id === 'uri' && !story.has('nuria-uri'))) possessEyes(rig, spec);
       entity.setLocalScale(npc.scale, npc.scale, npc.scale);
-      placeOnGround(entity, npc.cell, .06 - (npc.wade ?? 0));
+      placeOnGround(entity, npc.cell, .06 - (npc.wade ?? 0) + (npc.lift ?? 0));
       if (npc.facing !== undefined) rig.body.setLocalEulerAngles(0, npc.facing, 0);
       // Luca (docs/quests/luca.md): as grey as the colours he has lost; his reflection in the pond keeps them all.
       if (npc.faded) fade(rig.materials, npc.faded);
@@ -2931,7 +2934,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const colour = SALON_LIGHTS[lightAt(salonLight.t, walk).light].colour;
       if (colour !== salonLight.on) { salonLight.on = colour; scenery.salonLight(colour); }
     }
-    scenery.update(delta, animate, new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
+    // Inside the Sagrada Família the vault opens where the story's camera looks, not only round Gerard.
+    scenery.update(delta, animate, environment.basilica && cinematic && !battle ? cinematic.target.clone() : new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
       battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
     // In bed nothing needs finding: under the duvet is where their legs belong.
     silhouettes.update(bedroom ? [] : partner ? [player, partner.entity] : [player]);

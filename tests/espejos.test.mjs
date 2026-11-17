@@ -25,8 +25,17 @@ test('the nave\'s mirrors have one way to bring the window\'s light to the chapl
   for (const f of all) assert.ok(trace(grid, MIRRORS, f, BEAM).path.length > 2, 'the light always comes in somewhere');
 });
 
-test('three turns from how they start are enough, never one or two', () => {
+test('two turns from how they start are enough, never one, and each moves the light where it is seen', () => {
   const near = (from, n) => n === 0 ? [from] : [0, 1, 2].flatMap(i => near(turned(from, i), n - 1));
-  for (const n of [1, 2]) assert.ok(!near([...MIRRORS_START], n).some(f => trace(grid, MIRRORS, f, BEAM).hit), `${n}`);
-  assert.ok(near([...MIRRORS_START], 3).some(f => trace(grid, MIRRORS, f, BEAM).hit));
+  assert.ok(!near([...MIRRORS_START], 1).some(f => trace(grid, MIRRORS, f, BEAM).hit));
+  assert.ok(near([...MIRRORS_START], 2).some(f => trace(grid, MIRRORS, f, BEAM).hit));
+  // As the salon opens: along the north aisle and against the wall by the nave's mouth.
+  const start = trace(grid, MIRRORS, MIRRORS_START, BEAM);
+  assert.deepEqual(start.turns, [MIRRORS[0], MIRRORS[1]]);
+  assert.deepEqual(start.end, { x: MIRRORS[1].x, z: 6 });
+  // The second turned: down to the third and out along the middle aisle, through the crossing to the presbytery's rope.
+  const second = trace(grid, MIRRORS, turned(MIRRORS_START, 1), BEAM);
+  assert.deepEqual(second.turns, MIRRORS);
+  assert.deepEqual(second.end, { x: 40, z: MIRRORS[2].z });
+  assert.ok(trace(grid, MIRRORS, turned(turned(MIRRORS_START, 1), 2), BEAM).hit);
 });

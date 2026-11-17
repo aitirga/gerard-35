@@ -91,12 +91,13 @@ export function createLucaFoes() {
     part(can, 'Nube', 'sphere', cloud, [Math.sin(a) * .5, .9 + (k % 3) * .25, Math.cos(a) * .4], [.55, .45, .55], [0, 0, 0], false);
   }
 
-  // A Capellán: a chaplain in black with a white collar; his hair, restyled by Fran, a tall sculpted
-  // quiff in an odd colour.
+  // A Capellán: a chaplain in black with a white collar; his hair restyled by Fran, each one's in a
+  // shape and a colour of Luca's that are not his (`styleChaplain` shows one of them): a tall quiff
+  // swept up and forward in blue, a row of lacquered spikes in orange, a hard side parting in teal.
   const chaplain = root('Capellán');
   pool(chaplain, '#e9e4d8', 1);
   const priest = pivot(chaplain, 'Vista');
-  const cassock = mat('Sotana', '#18181c', .35), collar = mat('Alzacuellos', '#f4f2ec', .5), skin = mat('Piel', '#dcb594', .3), hair = mat('Pelo de capellán', '#3e7fc4', .6, .15);
+  const cassock = mat('Sotana', '#18181c', .35), collar = mat('Alzacuellos', '#f4f2ec', .5), skin = mat('Piel', '#dcb594', .3), shaved = mat('Sombra de pelo', '#2a2a2e', .3);
   part(priest, 'Sotana', 'cone', cassock, [0, .6, 0], [.68, 1.2, .55]);
   part(priest, 'Torso', 'cylinder', cassock, [0, 1.35, 0], [.38, .6, .3]);
   part(priest, 'Alzacuellos', 'cylinder', collar, [0, 1.66, 0], [.2, .06, .2]);
@@ -106,8 +107,20 @@ export function createLucaFoes() {
   }
   const priestHead = pivot(priest, 'Cabeza de chicle', [0, 1.86, 0]);
   part(priestHead, 'Cabeza', 'sphere', skin, [0, 0, 0], [.3, .34, .3]);
-  part(priestHead, 'Tupé', 'cone', hair, [0, .26, .04], [.26, .42, .22], [-18, 0, 0]);
-  part(priestHead, 'Sienes rapadas', 'sphere', mat('Sombra de pelo', '#2a2a2e', .3), [0, .06, -.04], [.31, .22, .28], [0, 0, 0], false);
+  part(priestHead, 'Sienes rapadas', 'sphere', shaved, [0, .06, -.04], [.31, .22, .28], [0, 0, 0], false);
+  const quiff = pivot(priestHead, 'Peinado 0'), blueHair = mat('Tupé azul', '#3e7fc4', .7, .18);
+  part(quiff, 'Tupé', 'sphere', blueHair, [0, .2, -.02], [.3, .2, .3]);
+  part(quiff, 'Tupé', 'sphere', blueHair, [0, .32, .05], [.27, .24, .27]);
+  part(quiff, 'Tupé', 'sphere', blueHair, [0, .43, .13], [.22, .2, .24]);
+  part(quiff, 'Rizo del tupé', 'sphere', blueHair, [0, .46, .24], [.15, .13, .16]);
+  const spikes = pivot(priestHead, 'Peinado 1'), orangeHair = mat('Púas naranjas', '#f08a2c', .75, .18);
+  part(spikes, 'Base de las púas', 'sphere', orangeHair, [0, .16, 0], [.3, .14, .3]);
+  for (let k = 0; k < 5; k++) part(spikes, 'Púa', 'cone', orangeHair, [0, .3 + Math.sin(k / 4 * Math.PI) * .05, -.14 + k * .07], [.09, .26, .09], [-28 + k * 14, 0, 0]);
+  const parting = pivot(priestHead, 'Peinado 2'), tealHair = mat('Raya verde', '#2f8f7a', .85, .15);
+  part(parting, 'Casco de pelo', 'sphere', tealHair, [0, .14, -.01], [.33, .2, .32]);
+  part(parting, 'Onda', 'sphere', tealHair, [.09, .2, .1], [.2, .13, .2], [0, 0, -20]);
+  part(parting, 'Raya', 'box', shaved, [-.08, .235, 0], [.015, .02, .26], [0, 0, 0], false);
+  spikes.enabled = parting.enabled = false;
 
   // Fran: very tall and thin, in a hairdresser's black, a high sculpted quiff, the white cutting cape
   // worn like a chasuble with chalk curves on it, and the violet eyes of whoever the Queen holds.
@@ -148,6 +161,12 @@ export function createLucaFoes() {
     attach(parent: pc.Entity) { for (const e of roots) parent.addChild(e); },
     destroy() { roots.forEach(e => e.destroy()); materials.forEach(m => m.destroy()); },
   };
+}
+/** How many ways Fran has done the chaplains' hair. */
+export const CHAPLAIN_STYLES = 3;
+/** Shows the `n`th of them on a chaplain cloned from the template (the others hidden): each chaplain his own. */
+export function styleChaplain(model: pc.Entity, n: number) {
+  for (let k = 0; k < CHAPLAIN_STYLES; k++) { const hair = model.findByName(`Peinado ${k}`); if (hair) hair.enabled = k === n % CHAPLAIN_STYLES; }
 }
 /** How big each one stands in the fight. */
 export const LUCA_SIZES: Record<LucaKind, number> = {

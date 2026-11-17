@@ -1,0 +1,394 @@
+{
+  "title": "Misión de Luca: explorar la Sagrada peluquería",
+  "description": "docs/quests/luca.md. What is seen walking the mission, fights aside: Luca by the pond, in through the door, each zone of the salon, the queues and how they move on, the nave's mirrors turned one by one, what can be looked at, Fran on the presbytery. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=luca&part=luca"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "luca-gris",
+      "delay": 900,
+      "caption": "Luca on the pond's north bank, grey, clear of the trees, facing the Nativity facade; in the water, his reflection still in colour (stand-in figure)"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "luca-habla",
+      "delay": 900,
+      "caption": "The first time: he fades each time he crosses the door"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "teleport": "sagrada-familia",
+      "cell": [
+        76,
+        158
+      ],
+      "settle": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "reflejo",
+      "delay": 900,
+      "caption": "Looking at his reflection"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "open": "/?mission=luca&part=door"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        36,
+        38
+      ],
+      "settle": 900
+    },
+    {
+      "hold": [
+        "KeyW",
+        "KeyD"
+      ],
+      "ms": 700
+    },
+    {
+      "shot": "entrada-mirada",
+      "delay": 1800,
+      "caption": "Just in: the camera turns down the transept to the crossing, where the salon is (Fran under his hood dryer, the queues, the lenses in the apse)"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        41,
+        37
+      ],
+      "settle": 900
+    },
+    {
+      "eval": "window.gerard.game.frame({ x: 10, y: 0.6, z: 16.4 }, 4.5)"
+    },
+    {
+      "shot": "mostrador",
+      "delay": 900,
+      "caption": "La recepción: the desk before its black wall with his name and the turn's number, nobody's"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "agenda",
+      "delay": 900,
+      "caption": "Looking at the appointment book"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        24,
+        22
+      ],
+      "settle": 900
+    },
+    {
+      "shot": "cola-nave",
+      "delay": 900,
+      "caption": "The nave's queue keeps the way: grey visitors behind a belt, every one looking at Fran"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "cola-nave-mirada",
+      "delay": 900,
+      "caption": "Looking at the queue"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-recepcion' })"
+    },
+    {
+      "shot": "cola-avanza",
+      "delay": 1800,
+      "caption": "The reception won: the camera turns to the nave's queue, moved on (its end posts left), while Aitor says so"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "hold": [
+        "KeyW",
+        "KeyA"
+      ],
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 15000
+    },
+    {
+      "shot": "nave-luz",
+      "delay": 1800,
+      "caption": "Coming into the nave: the camera follows the window's light from mirror to mirror to the wall it ends on"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "eval": "window.gerard.game.frame({ x: -19.5, y: 0.6, z: 0 }, 11)"
+    },
+    {
+      "shot": "nave",
+      "delay": 900,
+      "caption": "Los sillones: where the church's wooden chairs were, rows of salon chairs back to back with their mirrors; the chaplains, each with his hair done his own way, and La Laca"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        21,
+        12
+      ],
+      "settle": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "window.gerard.game.frame({ x: -12.5, y: 0.6, z: -4 }, 8)"
+    },
+    {
+      "shot": "espejo-1",
+      "delay": 900,
+      "caption": "The second mirror turned: the light goes down to the third and out along the middle aisle, to the crossing"
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        21,
+        20
+      ],
+      "settle": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "window.gerard.game.frame({ x: -16.5, y: 0.6, z: -0.5 }, 7)"
+    },
+    {
+      "shot": "espejo-2",
+      "delay": 900,
+      "caption": "The third turned: the light reaches the chaplains' chairs (they start their fight dazzled)"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-sillones' })"
+    },
+    {
+      "shot": "cola-pasion-avanza",
+      "delay": 1800,
+      "caption": "The nave won: the Passion arm's queue moves on"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        32,
+        2
+      ],
+      "settle": 900
+    },
+    {
+      "eval": "window.gerard.game.frame({ x: 4.5, y: 0.6, z: -17.5 }, 5.5)"
+    },
+    {
+      "shot": "carta",
+      "delay": 900,
+      "caption": "La carta de colores: the dye bar, the Estampados waiting before it"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "tintes",
+      "delay": 900,
+      "caption": "Looking at the dye bowls"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-carta' })"
+    },
+    {
+      "shot": "cola-abside-avanza",
+      "delay": 1800,
+      "caption": "The Passion arm won: the apse's queue moves on"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        52,
+        28
+      ],
+      "settle": 900
+    },
+    {
+      "eval": "window.gerard.game.frame({ x: 24.5, y: 0.6, z: 2 }, 9)"
+    },
+    {
+      "shot": "abside",
+      "delay": 900,
+      "caption": "El ábside: Luca's lenses in brass rings, turned on the columns, and his star charts; El Telescopio and La Laca waiting"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "lente",
+      "delay": 900,
+      "caption": "Looking at one of his lenses"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-abside' })"
+    },
+    {
+      "shot": "capellan",
+      "delay": 1800,
+      "caption": "The apse won: the camera turns to the chaplain who keeps the presbytery"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        39,
+        21
+      ],
+      "settle": 900
+    },
+    {
+      "eval": "window.gerard.game.frame({ x: 12.899999999999999, y: 0.6, z: 0.8000000000000007 }, 5)"
+    },
+    {
+      "shot": "fran",
+      "delay": 900,
+      "caption": "El crucero: Fran on the presbytery with his back to everyone, his chair under a hood dryer of straight rods that make a hyperboloid, his slate with the same curve in chalk (stand-in figures)"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "vista-general",
+      "delay": 1800,
+      "caption": "The whole basilica from above, every queue moved on"
+    },
+    {
+      "press": "KeyR"
+    }
+  ]
+}

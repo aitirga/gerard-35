@@ -322,11 +322,13 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
 
   // ------------------------------------------------------------ chairs, the crypt's grilles, a sign
   // Rows of plain wooden chairs facing the altar in the central nave, four to a cell.
+  // Their own meshes, so Fran's salon can take them away and put its chairs there (`setPews`).
+  const pewParts = { wood: new MeshBuilder(), woodDark: new MeshBuilder() };
   for (const { i, j } of findAll(plan, 'h')) for (const du of [-0.38, 0.38]) for (const dv of [-0.36, 0.36]) {
     const cx = X(i) + du, cz = Z(j) + dv;
-    box(parts.woodDark, cx - 0.2, 0, cz - 0.2, cx + 0.2, 0.42, cz + 0.2);
-    box(parts.wood, cx - 0.24, 0.42, cz - 0.25, cx + 0.22, 0.48, cz + 0.25);
-    box(parts.wood, cx - 0.26, 0.48, cz - 0.25, cx - 0.2, 0.95, cz + 0.25);
+    box(pewParts.woodDark, cx - 0.2, 0, cz - 0.2, cx + 0.2, 0.42, cz + 0.2);
+    box(pewParts.wood, cx - 0.24, 0.42, cz - 0.25, cx + 0.22, 0.48, cz + 0.25);
+    box(pewParts.wood, cx - 0.26, 0.48, cz - 0.25, cx - 0.2, 0.95, cz + 0.25);
   }
   // Openings in the ambulatory's floor over the crypt, where Gaudí lies: warm light below, a brass rail round.
   for (const { i, j } of findAll(plan, 'c')) {
@@ -446,6 +448,7 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
     if (key === 'vaultWarm' || key === 'vaultCool') add('Bóveda', builder, looks[key], pivot, { batched: false, shadows: false });
     else add(`Basílica: ${key}`, builder, looks[key], pivot, { shadows: key !== 'floor' && key !== 'daylight' });
   }
+  const pews = [add('Sillas de la nave', pewParts.wood, wood, pivot, { batched: false }), add('Patas de las sillas de la nave', pewParts.woodDark, woodDark, pivot, { batched: false })];
   const gloryLooks: Record<keyof typeof gloryParts, pc.Material> = { wall: wallStone, white, dark, rose: glass.rose, cool: glass.cool, bronze };
   for (const [key, builder] of Object.entries(gloryParts) as [keyof typeof gloryParts, Mesh][]) add(`Gloria: ${key}`, builder, gloryLooks[key], glory);
   add('Brazo de la Pasión: dark', armParts.dark, dark, arm); add('Brazo de la Pasión: warm', armParts.warm, glass.warm, arm);
@@ -485,6 +488,8 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   let tint: pc.Color | undefined;
   const lightColours = lights.map(l => l.light!.color.clone());
   return {
+    /** The nave's wooden chairs, there or taken away (Fran's salon stands its own in their place). */
+    setPews(on: boolean) { for (const e of pews) if (e) e.enabled = on; },
     /** The pools and the glass's lights take `hex`, the colour of the light on now; `undefined` gives them back their own. */
     setLight(hex?: string) {
       tint = hex ? new pc.Color().fromString(hex) : undefined;
