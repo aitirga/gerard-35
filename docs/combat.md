@@ -444,7 +444,16 @@ puesto, y nunca sobre un enemigo al que el propio golpe ha tumbado.
 | Fuego | Sangrado | **Cauterizado** | El golpe no abre la herida: cada carga arde de golpe, 6 PV cada una |
 | Eléctrico | Cegado | **Tormenta** | La descarga salta por el humo: magia (24) a todos los cegados, y se acaba el humo |
 | Fuego | Mojado | **Vapor** | El agua se va y deja Cegado I; mojado, no prende |
-| Eléctrico | Mojado | **Conducción** | Corre por el agua: magia (20) a todos los mojados, y se secan |
+| Eléctrico | Mojado | **Conducción** | Corre por el agua: magia (20) a todos los mojados, y se secan. A quien recibió el golpe estando mojado, **Shock** la mitad de las veces: pierde su siguiente turno |
+
+**Shock** (2026-11-17, `REACTION_RULES.shock`, `Combatant.shock`): un rayo sobre alguien mojado lo
+deja en Shock con un 50 %. Vale para los dos bandos y para cualquier golpe eléctrico (Atacar, una
+habilidad, el movimiento de un enemigo), nunca por ánima. Quien lo tiene pierde su siguiente turno
+y con él se va: un enemigo pasa el turno sin hacer nada (lo que hubiera anunciado espera al
+siguiente); uno del equipo no elige en la ronda que empieza. Se ve como un estado, un rayo sobre la
+placa, y al caer lo dice un «¡Shock!». Solo lo recibe quien fue golpeado, no aquellos a quienes
+salta la corriente; una parte de un jefe no lo recibe. Cuando el rayo es de un enemigo, cae entero
+sobre quien golpea y la mitad (`REACTION_RULES.share`) sobre los demás mojados.
 
 Cegado no pulsa (`levels` vacío en `TIMED`). Cauterizado, como Sangrado y Quemado, pasa por encima de
 las reglas de los miedos; Tormenta es magia y las respeta (`fearDamage`). **Mojado**

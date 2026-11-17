@@ -478,6 +478,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="converge"], .summary-tags [data-status="converge"], .damage-pop[data-kind="status"][data-status="converge"] { --status: #eafff0; }
 .unit-statuses i[data-status="bombona"] { animation: chip-warn 1s ease-in-out infinite; }
 .unit-statuses i[data-status="punto-debil"], .summary-tags [data-status="punto-debil"] { --status: #fff1b8; }
+.unit-statuses i[data-status="shock"], .summary-tags [data-status="shock"], .damage-pop[data-kind="status"][data-status="shock"] { --status: #ffe45c; }
 .unit-statuses .status-icon[data-status="punto-debil"] { animation: status-pulse 1.2s ease-out infinite; }
 @keyframes chip-warn { 50% { box-shadow: 0 0 0 1px var(--status), 0 0 10px color-mix(in srgb, var(--status) 60%, transparent); } }
 /* Several over one head stay in one row: closer and a little smaller (battle-ui `showStatuses`). */

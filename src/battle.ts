@@ -574,9 +574,11 @@ const TIMED_IDS = Object.keys(TIMED) as TimedId[];
 export type ElementReaction = 'humo' | 'cauterizado' | 'tormenta' | 'vapor' | 'conduccion';
 /**
  * With Mojado: Fuego on it is Vapor (the water goes up and leaves Cegado I), and Eléctrico on it is
- * Conducción (`conduct` of magic on everyone wet, who are left dry).
+ * Conducción (`conduct` of magic on everyone wet, who are left dry). A foe's bolt on the party lands
+ * whole on the one it struck and `share` of it on the others wet. Either way, whoever was struck wet
+ * is left in Shock with a chance of `shock`: their next turn is lost (`Combatant.shock`).
  */
-export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6, storm: 24, conduct: 20 };
+export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6, storm: 24, conduct: 20, shock: .5, share: .5 };
 /**
  * What a foe is made of (docs/combat.md § Debilidades por elemento): a blow carrying an element it is
  * weak to lands `weak` times as hard, one it resists `resist`. By kind of foe and by element, never by
@@ -693,6 +695,8 @@ export interface Combatant {
   charge?: { dual: DualId; striker: string };
   /** The round this fighter sits out (Explosión: Bip is putting itself back together). */
   out?: number;
+  /** In Shock (a bolt found them wet): their next turn is lost, and it is gone with it. Shown as a status. */
+  shock?: boolean;
   /** Marks a debuff left on a foe (Ángulo exacto), by skill: its stats down by `amount` until the end of round `until`. */
   marks?: Partial<Record<SkillId, { amount: number; stats: (keyof Stats)[]; until: number }>>;
   /**
@@ -1154,6 +1158,10 @@ export interface BattleEffect {
   error?: { left: number; mark: 'off' | 'on' };
   /** El que no converge converged with this blow, or diverged again; an Oscilación or the boss is now on `sign`. */
   converged?: true; diverged?: true; sign?: Sign;
+  /** Left in Shock by this blow (a bolt on someone wet): their next turn is lost. */
+  shocked?: string[];
+  /** This foe's turn, lost to Shock: nothing else happened in it. */
+  stunned?: true;
   /** El que no converge saw the party wait its water out, the first time: its figures stop for a moment (src/modelo-foes.ts). */
   wary?: true;
 }
@@ -1626,6 +1634,16 @@ const weakScale = (state: BattleState, c: Combatant) => (weakSpotRounds(state, c
 function spendShield(state: BattleState, c: Combatant, amount: number, effect: BattleEffect) {
   if (amount > 0 && shieldRounds(state, c)) { delete c.shielded; effect.shield = 'spent'; }
 }
+/**
+ * Shock: a bolt found `who` wet. Half the time (`REACTION_RULES.shock`) it leaves them unable to act:
+ * their next turn is lost. Whoever has no turn of their own (a part), or has fallen, takes none.
+ */
+function shock(state: BattleState, who: Combatant, effect: BattleEffect) {
+  if (who.hp <= 0 || who.part || who.shock || roll(state) >= REACTION_RULES.shock) return;
+  who.shock = true;
+  effect.shocked = [...effect.shocked ?? [], who.id];
+  state.message += ` ¡${who.name} queda en shock!`;
+}
 /** An element has landed on `target` with Atacar: what it turns (`REACTION_RULES`), if it finds anything to turn. */
 function react(state: BattleState, actor: Combatant, target: Combatant, element: Element, effect: BattleEffect, reach = false) {
   const fire = target.timed?.quemado, bleeding = stacks(target, 'sangrado');
@@ -1650,12 +1668,14 @@ function react(state: BattleState, actor: Combatant, target: Combatant, element:
     state.message += ` ¡La descarga salta por el humo! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
   } else if (element === 'electrico' && wet.length && (reach || (target.hp > 0 && target.timed?.mojado))) {
     // Conducción: the water carries it to everyone wet (a skill's reaches them wherever it landed), and dries.
+    const struck = target.hp > 0 && !!target.timed?.mojado;
     const hits = wet.map(f => {
       delete f.timed!.mojado;
       return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.conduct, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic', 'electrico')) };
     });
     effect.reaction = { id: 'conduccion', hits };
     state.message += ` ¡La corriente corre por el agua! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
+    if (struck) shock(state, target, effect);
   }
   if (effect.reaction) ground(state, actor, effect);
 }
@@ -2241,6 +2261,12 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   if (!actor || !target) return;
   // A part (Vertitrón's eye) has no turn of its own: it is through at once, with nothing to show.
   if (actor.part || castleIdle(actor)) { state.enemyActions.push(id); return; }
+  // In Shock: this turn is lost, whatever it had announced waits for the next one.
+  if (actor.shock) {
+    delete actor.shock; state.enemyActions.push(id);
+    state.message = `${actor.name} sigue en shock: pierde el turno.`;
+    return { actor: actor.id, kind: 'enemy', stunned: true };
+  }
   if (actor.timed?.confusion) return confusedAct(state, actor);
   if (state.encounter === 'palace-minion') return minionAct(state, actor);
   if ((FEAR_ENCOUNTERS as readonly string[]).includes(state.encounter)) return fearAct(state, actor, target);
@@ -2396,8 +2422,10 @@ function soak(who: Combatant) {
  */
 function conduct(state: BattleState, actor: Combatant, target: Combatant, power: number, effect: BattleEffect) {
   const wet = state.allies.filter(a => a.hp > 0 && a.timed?.mojado);
+  // It lands whole on the one it struck (the first one wet, if that one is dry) and part of it on the others.
+  const struck = wet.find(a => a === target) ?? wet[0];
   const hits = wet.map(who => {
-    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    const raw = sighted(actor, magical(who === struck ? power : Math.round(power * REACTION_RULES.share), current(state, actor), current(state, who)));
     const { mojado: _dry, ...rest } = who.timed!;
     who.timed = rest;
     return { target: who.id, amount: changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw)) };
@@ -2405,6 +2433,7 @@ function conduct(state: BattleState, actor: Combatant, target: Combatant, power:
   const main = hits.find(h => h.target === target.id) ?? hits[0];
   effect.target = main.target; effect.amount = main.amount; effect.conducted = true;
   effect.splash = hits.filter(h => h !== main);
+  if (struck) shock(state, struck, effect);
   return hits;
 }
 /**
@@ -3304,8 +3333,10 @@ export function nextRound(state: BattleState): StatusTick[] {
   state.enemyActions = []; delete state.queued; delete state.spent;
   // Whoever sits this round out (Explosión: Bip is putting itself back together) is through already.
   // The castle: whoever a hand or the Queen holds, or Aurelià sent out, sits it out too.
+  // So is whoever a bolt left in Shock: this is the turn they lose.
   const kept = castleRoundStart(state);
-  const out = state.allies.filter(a => (a.out === state.round || kept.out.includes(a.id)) && a.hp > 0);
+  const out = state.allies.filter(a => (a.out === state.round || kept.out.includes(a.id) || a.shock) && a.hp > 0);
+  for (const a of state.allies) delete a.shock;
   // Kept through the round they sit out (Bip shows nowhere until it is over), gone after it.
   for (const a of state.allies) if (a.out !== undefined && a.out < state.round) delete a.out;
   if (out.length) state.spent = out.map(a => a.id);

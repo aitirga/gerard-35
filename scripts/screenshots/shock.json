@@ -1,0 +1,60 @@
+{
+  "title": "Shock: un rayo sobre alguien mojado",
+  "description": "docs/combat.md § Reacciones. A bolt on someone wet is Conducción and, half the time, Shock: their next turn is lost. Staged from the fight tester by setting the state. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22modelo-celdas%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 3.4); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "ui.live.foes[0].shock = true; ui.live.allies[1].shock = true; cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "closeUp('celda-seca-0', 3.6)"
+    },
+    {
+      "shot": "shock-enemigo",
+      "delay": 1200,
+      "caption": "A cell in Shock: the bolt over its plate, until its next turn is lost"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "shot": "shock-aliado",
+      "delay": 700,
+      "caption": "And one of the party in Shock, on their plate"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "shot": "turno-perdido",
+      "delay": 1300,
+      "caption": "The cell's turn comes and passes: «sigue en shock: pierde el turno»"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "ronda-perdida",
+      "delay": 700,
+      "caption": "Next round: whoever of the party was in Shock sits it out, the other chooses"
+    }
+  ]
+}

@@ -303,6 +303,13 @@ What changed from the proposal below, and why:
   Picker moment: *Ya vio la espera* (`modelo-sobre-aviso`).
   The first idea, an attack that drops the whole party (*Desbordamiento*), was built and taken out
   the same day.
+- **Shock** (Aitor, 2026-11-17: «que atacar eléctricamente sobre alguien mojado tenga un 50 % de
+  probabilidad de aplicar shock y pierda un turno»). A general rule of Conducción, written in
+  `docs/combat.md` § reactions, not the model's own: a bolt on someone wet leaves them in Shock half
+  the time and their next turn is lost, on both sides. In here it is what makes the water matter
+  twice: a cell switched on can be made to lose its spark, and a Descarga on a wet party may cost
+  one of them the round. A foe's bolt now lands whole on the one it strikes and half on the others
+  wet (it was whole on all). The fights still hold their targets (`just fight-sim check`).
 
 ## The section, as built (round 10)
 

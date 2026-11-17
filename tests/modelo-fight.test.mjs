@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FEAR_ENCOUNTERS, MODELO, MODELO_ENCOUNTERS, MODELO_FIGHTS, SKILLS, STAGED_MOMENTS, act, calibrate, cornered, createFearBattle, elementsFor, enemyAct, nextRound, runClock, stageMoment, TIMED } from '../src/battle.ts';
+import { FEAR_ENCOUNTERS, MODELO, REACTION_RULES, MODELO_ENCOUNTERS, MODELO_FIGHTS, SKILLS, STAGED_MOMENTS, act, calibrate, cornered, createFearBattle, elementsFor, enemyAct, nextRound, runClock, stageMoment, TIMED } from '../src/battle.ts';
 import { FOE_XP } from '../src/levels.ts';
 
 // The party of the first day: Gerard on Matemágico, Aitor wearing nothing, nothing bought at the jar.
@@ -69,6 +69,52 @@ test('a Celda seca\'s Chispa is a spark on one, and runs through everyone wet in
   assert.ok(run.conducted); assert.equal(run.target, 'gerard'); assert.equal(run.splash.length, 1);
   assert.ok(run.amount > plain.amount, 'through the water it is harder');
   assert.ok(s.allies.every(a => !wet(a)), 'and it leaves them dry');
+});
+
+/** The same fight with its dice set, so a roll can be tried many ways. */
+const seeded = (s, seed) => { const copy = structuredClone(s); copy.seed = seed; return copy; };
+
+test('a bolt on a foe that is wet leaves it in Shock half the time, and its next turn is lost', () => {
+  const s = fight('modelo-celdas');
+  strike(s, 'gerard', 'celda-seca-0', 'agua');
+  let shocked = 0, lost;
+  for (let seed = 1; seed <= 200; seed++) {
+    const one = seeded(s, seed), bolt = strike(one, 'aitor', 'celda-seca-0', 'electrico');
+    assert.equal(bolt.reaction?.id, 'conduccion');
+    if (!bolt.shocked) { assert.ok(!one.foes[0].shock); continue; }
+    assert.deepEqual(bolt.shocked, ['celda-seca-0']); assert.ok(one.foes[0].shock);
+    shocked++; lost ??= one;
+  }
+  assert.ok(Math.abs(shocked / 200 - REACTION_RULES.shock) < .12, `${shocked} of 200`);
+  // Its turn passes with nothing done, and the one after is its own again.
+  const before = lost.allies.map(a => a.hp);
+  const none = turn(lost, 'celda-seca-0', 'gerard');
+  assert.ok(none.stunned); assert.equal(none.ability, undefined); assert.equal(none.amount, undefined);
+  assert.deepEqual(lost.allies.map(a => a.hp), before); assert.ok(!lost.foes[0].shock);
+  assert.equal(turn(lost, 'celda-seca-0', 'gerard').ability.id, 'chispa');
+  // A bolt on a dry one is only a bolt.
+  for (let seed = 1; seed <= 40; seed++) assert.ok(!strike(seeded(s, seed), 'aitor', 'celda-seca-1', 'electrico').shocked);
+});
+
+test('a foe\'s bolt lands whole on the one it strikes wet and part of it on the others, and may leave that one in Shock: they sit the next round out', () => {
+  const s = fight('modelo-celdas');
+  for (const a of s.allies) a.timed = { mojado: { level: 1, left: 20, next: 20 } };
+  let shocked = 0, lost;
+  for (let seed = 1; seed <= 200; seed++) {
+    const one = seeded(s, seed), run = turn(one, 'celda-seca-0', 'gerard');
+    assert.ok(run.conducted); assert.equal(run.target, 'gerard');
+    assert.ok(run.splash[0].amount < run.amount * (REACTION_RULES.share + .2), `${run.splash[0].amount} of ${run.amount}`);
+    if (!run.shocked) continue;
+    assert.deepEqual(run.shocked, ['gerard']); assert.ok(one.allies[0].shock); assert.ok(!one.allies[1].shock);
+    shocked++; lost ??= one;
+  }
+  assert.ok(Math.abs(shocked / 200 - REACTION_RULES.shock) < .12, `${shocked} of 200`);
+  round(lost);
+  assert.equal(lost.phase, 'player'); assert.deepEqual(lost.spent, ['gerard']);
+  assert.equal(lost.allies[lost.active].id, 'aitor', 'the other one chooses');
+  assert.ok(!lost.allies[0].shock, 'and it is gone with the turn');
+  round(lost);
+  assert.equal(lost.allies[lost.active].id, 'gerard');
 });
 
 test('an Oscilación absorbs the element it is on, takes the other hard, and goes to its other value every round', () => {

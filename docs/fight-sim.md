@@ -417,6 +417,9 @@ nothing).
   the boss converged (`ERROR_WORTH`, `MODELO_WET`, `CONVERGED_WORTH` in `src/battle-sim.ts`).
 - Its PV and `descargaStep` are the two numbers that move it: at 620 PV and a step of 8, two magic
   ánimas win four times in five and the first day's party one in three. Change one at a time.
+- Shock (a bolt on someone wet, half the time, a turn lost) is in the rules the bots play, on both
+  sides; they do not go looking for it. With it, and a foe's bolt landing half on the others wet,
+  the boss reads 96 % for two magic ánimas played well (62 % PV, 10.7 rounds) and 0 % unplayed.
 - Not simulated: the marks the dungeon takes off before the fight (`calibrate`), and waiting out the
   20 s of Mojado before a Descarga, which a person can do and a bot does not. It works once: from the
   second time it floods and discharges in the one move (`wary`). The bots never let the clock run

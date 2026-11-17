@@ -194,7 +194,7 @@ export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
 /** The reactions the combat design decided (docs/combat.md): which status, which element, what it leaves. */
 export const REACTIONS: Record<ReactionId, { name: string; status: StatusLookId; element: string; leaves: string; shows: string }> = {
   humo: { name: 'Humo', status: 'quemado', element: 'Agua', leaves: 'Cegado', shows: 'El agua apaga la llama de golpe en una nube de vapor y humo oscuro que se le queda en la cabeza.' },
-  conduccion: { name: 'Conducción', status: 'mojado', element: 'Eléctrico', leaves: 'Daño a todos los mojados; se secan', shows: 'La corriente corre por el agua que llevan encima: arcos por todo el cuerpo, chispas y el agua saltando en gotas.' },
+  conduccion: { name: 'Conducción', status: 'mojado', element: 'Eléctrico', leaves: 'Daño a todos los mojados; se secan. Al que recibió el golpe, 50 % de Shock: pierde su siguiente turno', shows: 'La corriente corre por el agua que llevan encima: arcos por todo el cuerpo, chispas y el agua saltando en gotas.' },
   paralisis: { name: 'Parálisis', status: 'mojado', element: 'Eléctrico', leaves: 'Paralizado', shows: 'La descarga corre por el agua de su cuerpo: arcos que lo envuelven entero, chispas y un fogonazo.' },
   congelar: { name: 'Congelado', status: 'mojado', element: 'Frío', leaves: 'Congelado', shows: 'Las gotas se hielan en el sitio: una costra de escarcha le cubre de golpe y el frío cae.' },
   arrastre: { name: 'Arrastra el humo', status: 'cegado', element: 'Viento', leaves: 'Cegado en el otro bando', shows: 'Una ráfaga le arranca el humo de la cabeza y lo lleva al otro bando.' },
