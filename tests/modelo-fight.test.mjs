@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FEAR_ENCOUNTERS, MODELO, MODELO_ENCOUNTERS, MODELO_FIGHTS, SKILLS, STAGED_MOMENTS, act, calibrate, cornered, createFearBattle, elementsFor, enemyAct, nextRound, stageMoment } from '../src/battle.ts';
+import { FEAR_ENCOUNTERS, MODELO, MODELO_ENCOUNTERS, MODELO_FIGHTS, SKILLS, STAGED_MOMENTS, act, calibrate, cornered, createFearBattle, elementsFor, enemyAct, nextRound, runClock, stageMoment, TIMED } from '../src/battle.ts';
 import { FOE_XP } from '../src/levels.ts';
 
 // The party of the first day: Gerard on Matemágico, Aitor wearing nothing, nothing bought at the jar.
@@ -150,6 +150,47 @@ test('past its mark it diverges: more Error, and converging then leaves it wet t
   assert.equal(strike(s, 'gerard', boss.id, 'electrico').reaction?.id, 'conduccion');
 });
 
+/** Real time passes on the party's turn. */
+const wait = (s, seconds) => { s.phase = 'player'; runClock(s, seconds); };
+
+test('waiting its water out works once: it sees it, and the next time it overflows and nobody is left standing', () => {
+  const s = fight('no-converge'), boss = s.foes[0];
+  turn(s, boss.id, 'gerard'); assert.ok(s.allies.every(wet));
+  wait(s, TIMED.mojado.seconds + 1);
+  assert.ok(s.allies.every(a => !wet(a))); assert.ok(boss.drained);
+  round(s);
+  const first = turn(s, boss.id, 'gerard');
+  assert.equal(first.ability.id, 'descarga-modelo'); assert.ok(!first.conducted);
+  assert.ok(first.wary && boss.wary, 'it has seen it'); assert.ok(!boss.drained);
+  assert.ok(s.allies.every(a => a.hp > 0));
+  // Played straight after that, nothing changes: wet, its Descarga runs through them as ever.
+  round(s); turn(s, boss.id, 'gerard'); round(s);
+  const straight = turn(s, boss.id, 'gerard');
+  assert.equal(straight.ability.id, 'descarga-modelo'); assert.ok(straight.conducted); assert.ok(!straight.overflow);
+  // Waited out again: Desbordamiento, whatever PV they have and whoever holds on.
+  round(s); turn(s, boss.id, 'gerard');
+  s.allies.forEach(a => { a.guarding = true; });
+  wait(s, TIMED.mojado.seconds + 1);
+  round(s);
+  const again = turn(s, boss.id, 'gerard');
+  assert.equal(again.ability.id, 'desbordamiento'); assert.ok(again.overflow);
+  assert.ok(s.allies.every(a => a.hp === 0)); assert.equal(s.phase, 'lost');
+});
+
+test('water that dries while it stands converged is not held against the party', () => {
+  const s = fight('no-converge'), boss = s.foes[0];
+  boss.wary = true;
+  turn(s, boss.id, 'gerard');
+  for (let i = 0; i < MODELO.error; i++) strike(s, i % 2 ? 'aitor' : 'gerard', boss.id, 'electrico');
+  assert.ok(boss.converged);
+  wait(s, TIMED.mojado.seconds + 1);
+  assert.ok(!boss.drained);
+  for (let i = 0; i < MODELO.convergeTurns; i++) turn(s, boss.id, 'gerard');
+  boss.sign = 'electrico';
+  const bolt = turn(s, boss.id, 'gerard');
+  assert.equal(bolt.ability.id, 'descarga-modelo'); assert.ok(s.allies.every(a => a.hp > 0));
+});
+
 test('each piezometer placed on the way down takes a mark of Error off before the fight, never the last one', () => {
   const s = fight('no-converge');
   calibrate(s, 1); assert.equal(s.foes[0].error, MODELO.error - 1);
@@ -157,7 +198,7 @@ test('each piezometer placed on the way down takes a mark of Error off before th
 });
 
 test('the boss has a moment for each of its phases', () => {
-  for (const moment of ['modelo-itera', 'modelo-converge', 'modelo-diverge']) {
+  for (const moment of ['modelo-itera', 'modelo-converge', 'modelo-diverge', 'modelo-sobre-aviso']) {
     assert.equal(STAGED_MOMENTS[moment].encounter, 'no-converge');
     const s = fight('no-converge');
     assert.ok(stageMoment(s, moment), moment);
@@ -166,6 +207,7 @@ test('the boss has a moment for each of its phases', () => {
   const s = fight('no-converge');
   stageMoment(s, 'modelo-converge'); assert.ok(s.foes[0].converged);
   stageMoment(s, 'modelo-diverge'); assert.ok(s.foes[0].diverged); assert.equal(s.foes[0].error, MODELO.errorDiverge);
+  stageMoment(s, 'modelo-sobre-aviso'); assert.ok(s.foes[0].wary); assert.ok(!s.foes[0].diverged);
   assert.equal(stageMoment(fight('modelo-celdas'), 'modelo-itera'), false);
 });
 

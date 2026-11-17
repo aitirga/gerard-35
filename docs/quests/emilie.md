@@ -288,8 +288,18 @@ What changed from the proposal below, and why:
   placed beyond the one each zone needs to go down, never the last mark.
 - Figures are built by hand from primitives, as the campsite's and Las cuerdas' are (lines of light,
   not characters): first pass, to judge in the gallery. La pluma is amber, low, never pink.
-- **Known and left**: Mojado lasts 20 s on the fight's clock, so a party that waits them out before
-  a Descarga takes the dry one (half). It is slow and it is a choice; to decide if it should stay.
+- **Waiting the water out works once** (Aitor, 2026-11-17: «la primera vez funciona pero si lo
+  hacemos de nuevo se da cuenta y emite un ataque muy poderoso que mata sí o sí al equipo»). Mojado
+  lasts 20 s on the fight's clock, so a party that lets it run off before a Descarga takes the dry
+  one (half). The first time it does, El que no converge sees it: a pop, «Se ha dado cuenta», and
+  «Sobre aviso» stays on its plate for the rest of the fight. The next time its water has run off
+  on the clock when its Descarga comes, it uses *Desbordamiento* instead: everyone falls, whatever
+  their PV and whoever holds on. Water that dries while it stands converged does not count (it is
+  not waiting for it), nor does water its own bolt took. Picker moment: *Sobre aviso*
+  (`modelo-sobre-aviso`); `just screenshots emilie-espera --gpu`.
+  To confirm: the names (*Desbordamiento*, «Sobre aviso») are proposals; and the clock does not
+  tell a slow turn from a wait on purpose, so once on notice the 20 s of Mojado are a deadline for
+  the round.
 
 ## The section, as built (round 10)
 

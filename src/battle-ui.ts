@@ -351,6 +351,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (c.converged) chips.push(['converge', `Converge · ${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}`]);
     else if (c.sign) chips.push([`valor-${c.sign}`, SIGNS[c.sign]]);
     if (c.kind === 'no-converge' && !c.converged) chips.push(['error', `Error ${'▮'.repeat(c.error ?? 0)}`]);
+    if (c.wary) chips.push(['sobre-aviso', 'Sobre aviso']);
     // A move announced a turn ahead, and at whom (Carrerilla → Aitor), or what is about to happen.
     // One chip for any announced move, as `intentLabel` says it («Rayo terrorífico → todos»).
     const announced = state && c.intent ? intentLabel(state, c) : undefined;
@@ -1726,7 +1727,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // The model: water that leaves someone Mojado, a spark that ran through the wet, and what a blow did to the boss's Error.
       effect.wetted?.forEach(id => landed.push({ target: id, id: 'mojado', text: `¡${TIMED.mojado.name}!`, detail: state!.foes.some(f => f.id === id) ? 'Se enciende' : '' }));
       if (effect.conducted && effect.target) landed.push({ target: effect.target, id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' });
-      const boss = effect.error || effect.converged || effect.diverged ? state.foes.find(f => f.kind === 'no-converge') : undefined;
+      const boss = effect.error || effect.converged || effect.diverged || effect.wary || effect.overflow ? state.foes.find(f => f.kind === 'no-converge') : undefined;
+      if (boss && effect.wary) setTimeout(() => { if (token === generation) pop(boss.id, 'Se ha dado cuenta', 'status', 'No lo dejará pasar otra vez', 'sobre-aviso'); }, 420);
+      if (boss && effect.overflow) setTimeout(() => { if (token === generation) pop(boss.id, 'Desbordamiento', 'status', 'Ya había visto esa espera', 'sobre-aviso'); }, 120);
       if (boss && effect.converged) setTimeout(() => { if (token === generation) pop(boss.id, '¡Converge!', 'status', 'Sólido: recibe el doble', 'converge'); }, 420);
       else if (boss && effect.diverged) setTimeout(() => { if (token === generation) pop(boss.id, 'Diverge', 'status', `Error ${effect.error?.left ?? boss.error ?? 0}`, 'error'); }, 420);
       else if (boss && effect.error) setTimeout(() => { if (token === generation) pop(boss.id, effect.error!.mark === 'off' ? 'Error −1' : 'Error +1', 'status', effect.error!.mark === 'off' ? `Quedan ${effect.error!.left}` : 'Se lo traga', 'error'); }, 420);

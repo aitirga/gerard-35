@@ -476,6 +476,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="valor-electrico"], .summary-tags [data-status="valor-electrico"] { --status: #ffe45c; }
 .unit-statuses i[data-status="error"], .summary-tags [data-status="error"], .damage-pop[data-kind="status"][data-status="error"] { --status: #3fe07a; }
 .unit-statuses i[data-status="converge"], .summary-tags [data-status="converge"], .damage-pop[data-kind="status"][data-status="converge"] { --status: #eafff0; }
+.unit-statuses i[data-status="sobre-aviso"], .summary-tags [data-status="sobre-aviso"], .damage-pop[data-kind="status"][data-status="sobre-aviso"] { --status: #ffb347; }
 .unit-statuses i[data-status="bombona"] { animation: chip-warn 1s ease-in-out infinite; }
 .unit-statuses i[data-status="punto-debil"], .summary-tags [data-status="punto-debil"] { --status: #fff1b8; }
 .unit-statuses .status-icon[data-status="punto-debil"] { animation: status-pulse 1.2s ease-out infinite; }

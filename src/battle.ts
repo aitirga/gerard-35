@@ -247,7 +247,7 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'dictado' | 'pregunta' | 'castigo' | 'sprint' | 'expulsion' | 'record'
   | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo'
   | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo'
-  | 'chispa' | 'ola' | 'empapa' | 'inunda' | 'descarga-modelo' | 'converge';
+  | 'chispa' | 'ola' | 'empapa' | 'inunda' | 'descarga-modelo' | 'converge' | 'desbordamiento';
 export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }> = {
   lagrimilla: { name: 'Lagrimilla', card: false },
   'capa-nueva': { name: 'Capa nueva', card: true },
@@ -326,6 +326,7 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   inunda: { name: 'Inunda', card: true },
   'descarga-modelo': { name: 'Descarga', card: true },
   converge: { name: 'Converge', card: true },
+  desbordamiento: { name: 'Desbordamiento', card: true },
 };
 const foeAbility = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} });
 /**
@@ -749,6 +750,10 @@ export interface Combatant {
   converged?: number;
   /** El que no converge is past its mark: Diverge, its second phase. */
   diverged?: boolean;
+  /** El que no converge: the water of its Inunda ran off the party on the fight's clock, before its Descarga came. */
+  drained?: boolean;
+  /** El que no converge has seen the party wait its water out once, on its plate: the next time it overflows. */
+  wary?: boolean;
 }
 /** Whom a move is aimed at when it is not one ally: everyone. */
 export type Aim = 'todos';
@@ -1150,6 +1155,8 @@ export interface BattleEffect {
   error?: { left: number; mark: 'off' | 'on' };
   /** El que no converge converged with this blow, or diverged again; an Oscilación or the boss is now on `sign`. */
   converged?: true; diverged?: true; sign?: Sign;
+  /** El que no converge saw the party wait its water out (the first time), or overflowed on them for doing it again. */
+  wary?: true; overflow?: true;
 }
 /** Whether this action spent a Punto débil on its target (it landed WEAK_SPOT times as hard). */
 export const markSpent = (e: BattleEffect) => e.weakSpot === 'spent' || e.weakSpot === 'renewed';
@@ -2442,7 +2449,8 @@ function modeloTurn(state: BattleState, actor: Combatant, target: Combatant, eff
     state.message = `${actor.name} alcanza a ${dry.name} y lo empapa. −${effect.amount} PV.${effect.wetted ? ' ¡Mojado!' : ''}`;
   } else if (actor.converged) {
     use('converge'); delete effect.target;
-    actor.converged--;
+    // Solid, it is not waiting for its water: what dries meanwhile is not held against the party.
+    actor.converged--; delete actor.drained;
     if (actor.converged > 0) state.message = `${actor.name} sigue quieto: un solo valor, sólido.`;
     else {
       delete actor.converged;
@@ -2451,6 +2459,17 @@ function modeloTurn(state: BattleState, actor: Combatant, target: Combatant, eff
       state.message = `Las cifras de ${actor.name} vuelven a caer. Diverge otra vez: Error ${actor.error}.`;
     }
   } else if (actor.sign === 'electrico') {
+    // Its water waited out on the clock: once it works, and it sees it; again, and it overflows (nobody is left standing).
+    const waited = !!actor.drained && !alive.some(a => a.timed?.mojado);
+    delete actor.drained;
+    if (waited && actor.wary) {
+      use('desbordamiento'); effect.overflow = true;
+      const fall = (who: Combatant) => changeHealth(who, -who.hp);
+      effect.amount = fall(target);
+      effect.splash = alive.filter(a => a !== target).map(a => ({ target: a.id, amount: fall(a) }));
+      state.message = `${actor.name} ya había visto esa espera. Se desborda: el corte entero se llena y nadie queda en pie.`;
+      return;
+    }
     use('descarga-modelo');
     const power = MODELO.descarga + MODELO.descargaStep * (actor.error ?? 0);
     if (alive.some(a => a.timed?.mojado)) {
@@ -2459,12 +2478,14 @@ function modeloTurn(state: BattleState, actor: Combatant, target: Combatant, eff
     } else {
       effect.amount = magic(target, Math.round(power / 2));
       state.message = `${actor.name} descarga sobre ${target.name}, que está seco. −${effect.amount} PV.`;
+      if (waited) { actor.wary = true; effect.wary = true; state.message += ' Se ha dado cuenta de la espera.'; }
     }
   } else {
     use('inunda');
     effect.amount = magic(target, MODELO.inunda);
     effect.splash = alive.filter(a => a !== target).map(a => ({ target: a.id, amount: magic(a, MODELO.inunda) }));
     effect.wetted = alive.filter(a => a.hp > 0).map(a => { soak(a); return a.id; });
+    delete actor.drained;
     state.message = `${actor.name} inunda el corte. Todos mojados. −${effect.amount} PV a ${target.name}.`;
   }
 }
@@ -3331,7 +3352,11 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       if (c.kind === 'vertigo-ojo' || isCuerdas(c.kind) || isCastle(c.kind)) checkEye(state);
     }
     on.left -= dt; on.next -= dt;
-    if ((c.hp <= 0 || on.left <= 1e-6) && c.timed) delete c.timed[id];
+    if ((c.hp <= 0 || on.left <= 1e-6) && c.timed) {
+      // The party's water ran off on the clock while El que no converge iterates: it will know at its Descarga.
+      if (id === 'mojado' && !foeSide && c.hp > 0) for (const f of state.foes) if (f.kind === 'no-converge' && f.hp > 0 && !f.converged) f.drained = true;
+      delete c.timed[id];
+    }
   }
   if (!pulses.length && !sung && !lapped) return pulses;
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
@@ -3348,7 +3373,7 @@ export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo'
   | 'lealtad-lazo' | 'cristalino-casi' | 'cristalino-rajado' | 'directo-linea' | 'directo-estocada' | 'directo-clavado'
   | 'voz-andante' | 'voz-nota-clara' | 'voz-allegro' | 'voz-coro' | 'voz-a-capela' | 'voz-calderon'
   | CastleMoment
-  | 'modelo-itera' | 'modelo-converge' | 'modelo-diverge';
+  | 'modelo-itera' | 'modelo-converge' | 'modelo-diverge' | 'modelo-sobre-aviso';
 export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: Encounter }> = {
   'vertigo-carga': { label: 'Rayo cargado', encounter: 'uri-vertigo' },
   'vertigo-grito': { label: 'Tras dos gritos', encounter: 'uri-vertigo' },
@@ -3376,6 +3401,7 @@ export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: En
   'modelo-itera': { label: 'Itera', encounter: 'no-converge' },
   'modelo-converge': { label: 'Converge', encounter: 'no-converge' },
   'modelo-diverge': { label: 'Diverge', encounter: 'no-converge' },
+  'modelo-sobre-aviso': { label: 'Sobre aviso', encounter: 'no-converge' },
 };
 /**
  * Development: puts the fight at `moment`, the party to choose (pure; the picker's `jumpTo` calls
@@ -3433,10 +3459,12 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
     const boss = state.foes.find(f => f.kind === 'no-converge');
     if (!boss) return false;
     for (const a of state.allies) if (a.timed?.mojado) { const { mojado: _dry, ...rest } = a.timed; a.timed = rest; }
-    delete boss.converged; delete boss.diverged; delete boss.timed; boss.turns = 0; boss.sign = 'agua';
+    delete boss.converged; delete boss.diverged; delete boss.timed; delete boss.drained; delete boss.wary; boss.turns = 0; boss.sign = 'agua';
     boss.hp = boss.maxHp; boss.error = MODELO.error;
     if (moment === 'modelo-converge') { boss.error = 0; boss.converged = MODELO.convergeTurns; }
     else if (moment === 'modelo-diverge') { boss.hp = Math.floor(boss.maxHp * MODELO.diverge); boss.diverged = true; boss.error = MODELO.errorDiverge; }
+    // It has already seen its water waited out once: wait it out again and it overflows.
+    else if (moment === 'modelo-sobre-aviso') boss.wary = true;
   } else if (moment.startsWith('voz-')) {
     // La Voz at the start of her song, nothing announced, no Crescendo yet: whole in Andante, at its mark in the others.
     const voz = state.foes.find(f => f.kind === 'voz'), first = state.allies.find(a => a.hp > 0);

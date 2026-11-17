@@ -1,0 +1,38 @@
+{
+  "title": "El que no converge: la espera",
+  "description": "docs/quests/emilie.md § Waiting the water out. Waiting for Mojado to run off before its Descarga works once; it sees it («Sobre aviso» on its plate) and the next time it overflows. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22no-converge%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 3.4); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "ui.jumpTo('modelo-sobre-aviso')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "closeUp('no-converge', 4.2)"
+    },
+    {
+      "shot": "sobre-aviso",
+      "delay": 1200,
+      "caption": "After the first wait: «Sobre aviso» on its plate, beside its value and its Error"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    }
+  ]
+}
