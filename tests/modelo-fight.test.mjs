@@ -153,7 +153,7 @@ test('past its mark it diverges: more Error, and converging then leaves it wet t
 /** Real time passes on the party's turn. */
 const wait = (s, seconds) => { s.phase = 'player'; runClock(s, seconds); };
 
-test('waiting its water out works once: it sees it, and the next time it overflows and nobody is left standing', () => {
+test('waiting its water out works once: it sees it, and the next time it floods and discharges in one move', () => {
   const s = fight('no-converge'), boss = s.foes[0];
   turn(s, boss.id, 'gerard'); assert.ok(s.allies.every(wet));
   wait(s, TIMED.mojado.seconds + 1);
@@ -162,19 +162,21 @@ test('waiting its water out works once: it sees it, and the next time it overflo
   const first = turn(s, boss.id, 'gerard');
   assert.equal(first.ability.id, 'descarga-modelo'); assert.ok(!first.conducted);
   assert.ok(first.wary && boss.wary, 'it has seen it'); assert.ok(!boss.drained);
-  assert.ok(s.allies.every(a => a.hp > 0));
   // Played straight after that, nothing changes: wet, its Descarga runs through them as ever.
   round(s); turn(s, boss.id, 'gerard'); round(s);
   const straight = turn(s, boss.id, 'gerard');
-  assert.equal(straight.ability.id, 'descarga-modelo'); assert.ok(straight.conducted); assert.ok(!straight.overflow);
-  // Waited out again: Desbordamiento, whatever PV they have and whoever holds on.
+  assert.equal(straight.ability.id, 'descarga-modelo'); assert.ok(straight.conducted); assert.ok(!straight.wetted && !straight.wary);
+  // Waited out again: it wets them both itself and the bolt runs through the two, as hard as if they had never dried.
   round(s); turn(s, boss.id, 'gerard');
-  s.allies.forEach(a => { a.guarding = true; });
   wait(s, TIMED.mojado.seconds + 1);
+  assert.ok(s.allies.every(a => !wet(a)));
   round(s);
   const again = turn(s, boss.id, 'gerard');
-  assert.equal(again.ability.id, 'desbordamiento'); assert.ok(again.overflow);
-  assert.ok(s.allies.every(a => a.hp === 0)); assert.equal(s.phase, 'lost');
+  assert.equal(again.ability.id, 'descarga-modelo'); assert.ok(again.conducted); assert.ok(!again.wary);
+  assert.deepEqual([...again.wetted].sort(), ['aitor', 'gerard']);
+  assert.equal(again.splash.length, 1);
+  assert.ok(again.amount >= straight.amount && again.amount > first.amount * 1.5, `${again.amount} against ${first.amount} dry`);
+  assert.ok(s.allies.every(a => !wet(a) && a.hp > 0), 'left dry, and standing: it is its Descarga, no more');
 });
 
 test('water that dries while it stands converged is not held against the party', () => {

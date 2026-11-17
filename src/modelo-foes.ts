@@ -128,7 +128,7 @@ export function createModeloFoes(app: pc.Application) {
     cell?: { dry: pc.Entity; lit: pc.Entity; node: pc.Entity };
     poses?: Record<'agua' | 'electrico', pc.Entity>;
     blobs?: { node: pc.Entity; at: pc.Vec3 }[];
-    boss?: { digits: { node: pc.Entity; column: number; offset: number }[]; ghost: pc.Entity; rain: pc.Entity; solid: pc.Entity; core: Record<'agua' | 'electrico', pc.Entity>; marks: pc.Entity[]; fall: number; still: number };
+    boss?: { digits: { node: pc.Entity; column: number; offset: number }[]; ghost: pc.Entity; rain: pc.Entity; solid: pc.Entity; core: Record<'agua' | 'electrico', pc.Entity>; marks: pc.Entity[]; fall: number; still: number; held: number };
   }
   const shown = new WeakMap<pc.Entity, Shown>();
   const node = (model: pc.Entity, name: string) => model.findByName(name) as pc.Entity;
@@ -171,7 +171,7 @@ export function createModeloFoes(app: pc.Application) {
             digits: columns.flatMap((column, c) => (column.children as pc.Entity[]).map((n, k) => ({ node: n, column: c, offset: k * .26 }))),
             ghost: node(model, 'Segunda pose'), rain: node(model, 'Cifras'), solid: node(model, 'Cuerpo sólido'),
             core: { agua: node(node(model, 'Valor'), 'Valor agua'), electrico: node(node(model, 'Valor'), 'Valor eléctrico') },
-            marks: model.find(n => n.name === 'Marca de error') as pc.Entity[], fall: 0, still: 0,
+            marks: model.find(n => n.name === 'Marca de error') as pc.Entity[], fall: 0, still: 0, held: 0,
           };
         }
         const b = s.boss;
@@ -180,7 +180,9 @@ export function createModeloFoes(app: pc.Application) {
         const want = converged ? 1 : 0;
         b.still = animate ? b.still + (want - b.still) * (1 - Math.exp(-dt * 5)) : want;
         // The figures fall, faster in Diverge, and slow to a stop as it converges.
-        b.fall += dt * (unit.diverged ? 1.5 : .95) * (1 - b.still);
+        // It has just seen its water waited out: for a moment every figure stops and its second pose is gone, one thing looking at them.
+        b.held = animate ? b.held + ((pending?.wary ? 1 : 0) - b.held) * (1 - Math.exp(-dt * (pending?.wary ? 14 : 2.2))) : 0;
+        b.fall += dt * (unit.diverged ? 1.5 : .95) * (1 - b.still) * (1 - b.held);
         for (const { node: n, column, offset } of b.digits) {
           const [, bottom, top] = COLUMNS[column], height = top - bottom;
           const y = top - ((offset + b.fall * (.8 + (column * 37 % 10) / 14)) % height);
@@ -188,7 +190,7 @@ export function createModeloFoes(app: pc.Application) {
         }
         // Converged, the figures stay where they stopped, over a body that is now there.
         b.solid.enabled = b.still > .5;
-        b.ghost.enabled = alive && !converged && animate && Math.sin(time * 17) * Math.sin(time * 5.1) > .2;
+        b.ghost.enabled = alive && !converged && animate && b.held < .3 && Math.sin(time * 17) * Math.sin(time * 5.1) > .2;
         b.ghost.setLocalPosition(.16 + (animate ? Math.sin(time * 3.3) * .05 : 0), 0, .04);
         const sign = unit.sign ?? 'agua';
         b.core.agua.enabled = alive && !converged && sign === 'agua'; b.core.electrico.enabled = alive && !converged && sign === 'electrico';

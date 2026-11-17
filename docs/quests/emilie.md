@@ -288,18 +288,21 @@ What changed from the proposal below, and why:
   placed beyond the one each zone needs to go down, never the last mark.
 - Figures are built by hand from primitives, as the campsite's and Las cuerdas' are (lines of light,
   not characters): first pass, to judge in the gallery. La pluma is amber, low, never pink.
-- **Waiting the water out works once** (Aitor, 2026-11-17: «la primera vez funciona pero si lo
-  hacemos de nuevo se da cuenta y emite un ataque muy poderoso que mata sí o sí al equipo»). Mojado
-  lasts 20 s on the fight's clock, so a party that lets it run off before a Descarga takes the dry
-  one (half). The first time it does, El que no converge sees it: a pop, «Se ha dado cuenta», and
-  «Sobre aviso» stays on its plate for the rest of the fight. The next time its water has run off
-  on the clock when its Descarga comes, it uses *Desbordamiento* instead: everyone falls, whatever
-  their PV and whoever holds on. Water that dries while it stands converged does not count (it is
-  not waiting for it), nor does water its own bolt took. Picker moment: *Sobre aviso*
-  (`modelo-sobre-aviso`); `just screenshots emilie-espera --gpu`.
-  To confirm: the names (*Desbordamiento*, «Sobre aviso») are proposals; and the clock does not
-  tell a slow turn from a wait on purpose, so once on notice the 20 s of Mojado are a deadline for
-  the round.
+- **Waiting the water out is learned in the model's fights and works once on the boss** (Aitor,
+  2026-11-17: «que la mecánica de esperar a quitarse el efecto la aprendamos durante los combates
+  pero que el jefe final nos lo deje hacer solo una vez, puede hacer un mini guiño como que "se da
+  cuenta", pero sutil, no explícito»). Mojado lasts 20 s on the fight's clock. Against the celdas,
+  the oscilaciones and La pluma, letting it run off before a spark always works: that is where it
+  is found. Against El que no converge it works the first time (its Descarga lands on a dry party,
+  half). It sees it, and says so only with a look: its figures stop falling for a moment and its
+  second pose is gone, and the line reads «Sus cifras se detienen un instante.» No pop, nothing on
+  its plate. From then on, when its water has run off on the clock again by its Descarga, it does
+  its whole strategy in the one move: it wets everyone and discharges, and the bolt runs through
+  them all (Conducción), as hard as if they had never dried. It is its Descarga, no more: not a
+  sure fall. Water that dries while it stands converged does not count (it is not waiting for it).
+  Picker moment: *Ya vio la espera* (`modelo-sobre-aviso`).
+  The first idea, an attack that drops the whole party (*Desbordamiento*), was built and taken out
+  the same day.
 
 ## The section, as built (round 10)
 

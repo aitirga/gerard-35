@@ -418,6 +418,6 @@ nothing).
 - Its PV and `descargaStep` are the two numbers that move it: at 620 PV and a step of 8, two magic
   ánimas win four times in five and the first day's party one in three. Change one at a time.
 - Not simulated: the marks the dungeon takes off before the fight (`calibrate`), and waiting out the
-  20 s of Mojado before a Descarga, which a person can do and a bot does not. It works once: the
-  second time it overflows and the fight is lost (`wary`, *Desbordamiento*). The bots never let
-  the clock run that long, so their numbers do not move.
+  20 s of Mojado before a Descarga, which a person can do and a bot does not. It works once: from the
+  second time it floods and discharges in the one move (`wary`). The bots never let the clock run
+  that long, so their numbers do not move.
