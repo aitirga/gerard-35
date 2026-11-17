@@ -19,7 +19,7 @@
     {
       "shot": "celdas",
       "delay": 1500,
-      "caption": "Celdas secas: three cells of the mesh, off. «Seca» on each plate"
+      "caption": "Celdas secas: three cells of the mesh, off. Nothing written on the plates"
     },
     {
       "eval": "closeUp('celda-seca-0')"
@@ -27,7 +27,15 @@
     {
       "shot": "celda-cerca",
       "delay": 900,
-      "caption": "A cell up close: grey edges, a dark core"
+      "caption": "A dry cell up close: grey edges around nothing"
+    },
+    {
+      "eval": "ui.live.foes[0].timed = { mojado: { level: 1, left: 20, next: 2 } }"
+    },
+    {
+      "shot": "celda-mojada",
+      "delay": 900,
+      "caption": "The same cell wet: green edges, water in it"
     },
     {
       "eval": "window.gerard.game.frame()"
@@ -128,7 +136,7 @@
     {
       "shot": "jefe-itera",
       "delay": 1500,
-      "caption": "El que no converge, Itera: on «Agua», three marks of Error over its head and on its plate"
+      "caption": "El que no converge, Itera: its value in its chest, three marks of Error over its head, nothing written on its plate"
     },
     {
       "eval": "closeUp('no-converge', 5)"
@@ -158,7 +166,7 @@
     {
       "shot": "jefe-inunda",
       "delay": 600,
-      "caption": "After Inunda: the party Mojado, and the boss now on «Eléctrico»"
+      "caption": "After Inunda: the party Mojado, and the boss now on «Eléctrico» (yellow in its chest)"
     },
     {
       "eval": "ui.jumpTo('modelo-converge')"
@@ -170,7 +178,7 @@
     {
       "shot": "jefe-converge",
       "delay": 1500,
-      "caption": "Picker moment «Converge»: the figures stopped, a solid body, the chip Converge · 2 turnos"
+      "caption": "Picker moment «Converge»: the figures stopped, a solid body, the Converge icon with its turns"
     },
     {
       "eval": "ui.jumpTo('modelo-diverge')"

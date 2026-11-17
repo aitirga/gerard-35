@@ -46,9 +46,11 @@ const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'punto-debil' | 'cancion' | 'shock';
+type IconId = StatusId | TimedId | 'punto-debil' | 'cancion' | 'shock' | 'converge';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 const STATUS_ICONS: Record<IconId, string> = {
+  // Converge: a wave that settles into a flat line.
+  converge: '<path d="M1.2 8c1.3-5.6 2.6-5.6 3.6 0s2-2.6 2.8 0 1.2 0 1.6 0h5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
   // Shock: a bolt.
   shock: '<path d="M9.6 1 3.4 9.1h3.5L5.9 15l6.7-8.7H8.9z" fill="currentColor"/>',
   // La Voz's song: a sung note, the same mark for every note (its colour says which).
@@ -313,6 +315,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     return shownHp(c) > 0 ? [
       // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
       ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño mientras suena una nota.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
+      // El que no converge, converged: it takes every blow whole for the turns in its corner.
+      ...c.converged ? [{ id: 'converge' as const, name: 'Converge: recibe el golpe entero', mark: String(c.converged), timed: false, lasts: `${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}` }] : [],
       ...c.shock ? [{ id: 'shock' as const, name: 'Shock: pierde su siguiente turno', mark: '', timed: false, lasts: 'su siguiente turno' }] : [],
       ...weak ? [{ id: 'punto-debil' as const, name: `Punto débil: el siguiente golpe hace el triple`, mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weak) }] : [],
       ...(Object.entries(c.statuses ?? {}).filter(([, n]) => n) as [StatusId, number][]).map(([id, n]) => ({ id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) })),
@@ -320,7 +324,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     ] : [];
   }
   /** The fears' own rules, where the player can read them (docs/quests/nuria.md). */
-  function ruleChips(c: Combatant): [string, string][] {
+  function ruleChips(c: Combatant, summary = false): [string, string][] {
     const chips: [string, string][] = [];
     // What a blow has already found this kind of foe to be made of (docs/combat.md § Debilidades por elemento): never shown before it is found.
     if (c.hp > 0 && c.kind) for (const element of foundAffinities.get(c.kind) ?? []) {
@@ -348,12 +352,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     }
     // The castle's rules (src/castle-fight.ts): what a pupil learned, the lectern, the Acta, the Queen's gum and Aitor's marks.
     if (state && c.castle) chips.push(...castleChips(state, c));
-    // The model's rules (docs/quests/emilie.md): a cell dry or switched on, the value an Oscilación or the boss is on,
-    // its marks of Error, and the turns it stays solid once converged.
-    if (c.kind === 'celda-seca') chips.push(c.timed?.mojado ? ['encendida', 'Encendida'] : ['seca', 'Seca']);
-    if (c.converged) chips.push(['converge', `Converge · ${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}`]);
-    else if (c.sign) chips.push([`valor-${c.sign}`, SIGNS[c.sign]]);
-    if (c.kind === 'no-converge' && !c.converged) chips.push(['error', `Error ${'▮'.repeat(c.error ?? 0)}`]);
+    // The model's rules (docs/quests/emilie.md), only in the summary: over the fight its figures say them
+    // (a cell grey or lit, the value's colour, the marks of Error over the boss's head). Converged is an icon.
+    if (summary && !c.converged && c.sign) chips.push([`valor-${c.sign}`, `Valor: ${SIGNS[c.sign]}`]);
+    if (summary && c.kind === 'no-converge' && !c.converged) chips.push(['error', `Error ${c.error ?? 0}`]);
     // A move announced a turn ahead, and at whom (Carrerilla → Aitor), or what is about to happen.
     // One chip for any announced move, as `intentLabel` says it («Rayo terrorífico → todos»).
     const announced = state && c.intent ? intentLabel(state, c) : undefined;
@@ -465,7 +467,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const most = ally ? animaMax(c) : 0;
     const mana = most ? `<span class="summary-mana" role="img" aria-label="Maná ${c.secondary} de ${most}">${Array.from({ length: most }, (_, i) => `<i data-pip="${i < c.secondary ? 'full' : 'spent'}"></i>`).join('')}</span>` : '';
     const statuses = statusList(c).map(st => `<li class="summary-status" data-status="${st.id}">${statusSvg(st.id)}<b>${st.name}</b><small>${st.lasts}</small></li>`);
-    const rules = ruleChips(c).map(([id, text]) => `<li class="summary-rule" data-status="${id}"><b>${escapeHtml(text)}</b></li>`);
+    const rules = ruleChips(c, true).map(([id, text]) => `<li class="summary-rule" data-status="${id}"><b>${escapeHtml(text)}</b></li>`);
     const shifts = statShifts(s, c).map(shift => `<li class="summary-shift" data-way="${shift.way}"><b>${shift.way === 'up' ? '▲' : '▼'} ${shiftText(shift)}</b><small>${escapeHtml([...(shift.rounds ? [rounds(shift.rounds)] : []), ...shift.from].join(' · '))}</small></li>`);
     const colour = ally && c.classId ? CLASSES[c.classId].colour : '';
     return `<article class="summary-unit" data-side="${ally ? 'allies' : 'foes'}"${down ? ' data-down' : ''}${colour ? ` style="--chip:${colour}"` : ''}>

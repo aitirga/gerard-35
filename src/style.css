@@ -432,9 +432,10 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 #battle[data-targeting] .battle-target:is(.is-targeted, :focus-visible, .is-cursor-2, :hover):not(:disabled) { z-index: 2; }
 #battle[data-targeting] .battle-target:is(.is-targeted, :focus-visible, .is-cursor-2, :hover):not(:disabled) .plate-name { display: block; animation: speech-in .2s cubic-bezier(.2,.9,.3,1.4) both; }
 /* Statuses ride under the health bar: small, in the status's own colour. */
-.unit-statuses { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
+.unit-statuses { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; }
 .unit-statuses:empty { display: none; }
-.unit-statuses i { padding: 1px 4px; border-radius: 2px; background: #1b1216cc; color: var(--status, var(--battle-paper)); font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+/* A rule in words is a pill in the icons' own dark and ring, its caps centred (the trailing letter-spacing given back on the left). */
+.unit-statuses i:not(.status-icon) { display: inline-flex; align-items: center; height: 18px; padding: 0 8px 0 calc(8px + .08em); border-radius: 9px; background: #1b1216d9; box-shadow: 0 0 0 1px color-mix(in srgb, var(--status, var(--battle-paper)) 45%, transparent); color: var(--status, var(--battle-paper)); font: normal 800 9px/1 'Manrope', sans-serif; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; text-box: trim-both cap alphabetic; }
 .unit-statuses i[data-status="sangrado"] { --status: #ff6b6b; }
 .unit-statuses i[data-status="mareo"] { --status: #b9a4ff; }
 .unit-statuses i[data-status="llorera"] { --status: #8fd3ff; }
@@ -469,9 +470,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="heroe"], .summary-tags [data-status="heroe"] { --status: #ff8a6a; }
 .unit-statuses i[data-status="paisano"], .summary-tags [data-status="paisano"] { --status: #c8c8c0; }
 .unit-statuses i[data-status="bombona"], .summary-tags [data-status="bombona"] { --status: #ffb054; }
-/* Emilie's model on a plate: a cell dry or switched on, the value a foe is on, the boss's Error and its turns solid. */
-.unit-statuses i[data-status="seca"], .summary-tags [data-status="seca"] { --status: #8a948c; }
-.unit-statuses i[data-status="encendida"], .summary-tags [data-status="encendida"] { --status: #3fe07a; }
+/* Emilie's model in the summary: the value a foe is on, the boss's Error; on a plate, its turns converged. */
 .unit-statuses i[data-status="valor-agua"], .summary-tags [data-status="valor-agua"] { --status: #6cc8f2; }
 .unit-statuses i[data-status="valor-electrico"], .summary-tags [data-status="valor-electrico"] { --status: #ffe45c; }
 .unit-statuses i[data-status="error"], .summary-tags [data-status="error"], .damage-pop[data-kind="status"][data-status="error"] { --status: #3fe07a; }
@@ -488,7 +487,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses[data-many] .status-icon svg { width: 13px; height: 13px; }
 .unit-statuses[data-many] .status-icon b { right: -3px; bottom: -3px; min-width: 10px; font-size: 8px; line-height: 11px; }
 .unit-statuses[data-many] .status-icon[data-timed]::after { transform-origin: 50% 15px; }
-.unit-statuses[data-many] i:not(.status-icon) { padding: 1px 3px; font-size: 7px; }
+.unit-statuses[data-many] i:not(.status-icon) { height: 16px; padding: 0 6px 0 calc(6px + .08em); font-size: 8px; }
 /* Stats up or down are secondary: quieter, apart under the bars, in their halo's blue or red. */
 .unit-shifts { display: flex; justify-content: center; gap: 4px; }
 .unit-shifts:empty { display: none; }

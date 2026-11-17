@@ -266,12 +266,16 @@ In `src/battle.ts` (`MODELO`, `MODELO_FIGHTS`, `modeloTurn`), figures in `src/mo
 fight tester (*El modelo de Emilie*), the boss with a moment for each phase (*Itera*, *Converge*,
 *Diverge*). `just screenshots emilie-foes --gpu`.
 
-| Fight (`Encounter`) | Who | The plate says | Moves |
+| Fight (`Encounter`) | Who | What shows it | Moves |
 | --- | --- | --- | --- |
-| `modelo-celdas` | three Celdas secas | «Seca» / «Encendida» | *Chispa*: a spark on one; on someone wet it runs through everyone wet |
-| `modelo-oscilacion` | two Oscilaciones, on different values | «Agua» / «Eléctrico», the other one every round | *Ola* on «Agua» (wets one), *Chispa* on «Eléctrico» |
+| `modelo-celdas` | three Celdas secas | the figure: grey edges around nothing while dry; wet, green and full of water | *Chispa*: a spark on one; on someone wet it runs through everyone wet |
+| `modelo-oscilacion` | two Oscilaciones, on different values | the figure's colour and lean (blue «Agua», yellow «Eléctrico»), the other one every round | *Ola* on «Agua» (wets one), *Chispa* on «Eléctrico» |
 | `modelo-pluma` | La pluma and two Celdas secas | – | *Empapa*: wets whoever is still dry |
-| `no-converge` | El que no converge | its value, `Error ▮▮▮`, `Converge · N turnos` | *Inunda* on «Agua», *Descarga* on «Eléctrico», *Converge* (none) |
+| `no-converge` | El que no converge | its value in its chest, its marks of Error over its head; converged, a solid body and the *Converge* icon with its turns | *Inunda* on «Agua», *Descarga* on «Eléctrico», *Converge* (none) |
+
+No rule is written on a plate (Aitor: «no me gusta que ponga el status explícito, que gráficamente se vea es
+suficiente»): the figures carry them, and the summary (R) names the value and the Error count for whoever
+wants it in words.
 
 What changed from the proposal below, and why:
 
@@ -349,7 +353,7 @@ New here: **foes can wet and shock the party**, by the same rules.
 
 | Foe | Zone | What it is | Its question | Without / with the answer |
 | --- | --- | --- | --- | --- |
-| **La celda seca** | The soil | A model cell that has dried out and switched off: a hollow block of mesh | *Which first?* While «Seca» every blow lands at half. Water wets it and it switches on; then electricity is Conducción | A long fight of small numbers / wet it, then one bolt through all of them |
+| **La celda seca** | The soil | A model cell that has dried out and switched off: a hollow block of mesh | *Which first?* While dry every blow lands at half. Water wets it and it switches on; then electricity is Conducción | A long fight of small numbers / wet it, then one bolt through all of them |
 | **La oscilación** | The gravels | A figure flickering between two values, never still. Its plate says which it is on now: «Agua» or «Eléctrico», and it flips every turn | *When, and with what?* A blow of the element it is on is absorbed; the other one lands hard | Half the blows wasted / every blow the right one. It is the boss's rule, small |
 | **La pluma** | Under the city | The pink trace in the water, drifting; it wets one of the party each turn and grows downstream | *Who first?* It comes with celdas secas that shock whoever is wet | The party soaked and shocked / the plume down first, then the rest |
 

@@ -30,7 +30,8 @@ export function createModeloFoes(app: pc.Application) {
   const root = (name: string) => { const e = new pc.Entity(name); e.enabled = false; app.root.addChild(e); return e; };
   const shadow = mat('#101613', .2, 0, false, .4);
   const green = mat(PHOSPHOR, .4, 2.4, true), dim = mat('#1c7a42', .3, 1.1, true), pale = mat('#d8ffe6', .5, 2.8, true);
-  const off = mat('#7d8780', .25), offDark = mat('#4f5752', .2), black = mat('#07100b', .15);
+  // Off is unlit grey, so the screen's green light never makes a dry cell look switched on.
+  const off = mat('#8e9692', .25, .55, true), black = mat('#07100b', .15);
   const water = mat(WATER, .6, 2.2, true), spark = mat(SPARK, .6, 2.6, true);
   const waterGlass = mat(WATER, .7, 1.2, true, .45);
 
@@ -44,17 +45,15 @@ export function createModeloFoes(app: pc.Application) {
     }
   }
 
-  // Celda seca: one cell of the mesh, a hollow cube standing on a corner of nothing. Off, its edges
-  // are grey and there is only a dark core in it. Wet, the edges light up green and the core is water.
+  // Celda seca: one cell of the mesh, a hollow cube standing on a corner of nothing. Off, it is only
+  // grey edges around nothing. Wet, the edges light up green and water fills it.
   const celda = root('Celda seca');
   part(celda, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.3, .02, 1.3]);
   const cell = pivot(celda, 'Celda', [0, CELL / 2 + .28, 0]);
   const dry = pivot(cell, 'Celda apagada'), lit = pivot(cell, 'Celda encendida');
   frame(dry, 'Arista apagada', off, [0, 0, 0], CELL, .06);
-  part(dry, 'Núcleo apagado', 'box', offDark, [0, 0, 0], [CELL * .34, CELL * .34, CELL * .34], [0, 45, 0]);
   frame(lit, 'Arista encendida', green, [0, 0, 0], CELL, .07);
   part(lit, 'Agua de la celda', 'box', waterGlass, [0, -CELL * .12, 0], [CELL * .9, CELL * .7, CELL * .9], [0, 0, 0], false);
-  part(lit, 'Núcleo encendido', 'box', water, [0, 0, 0], [CELL * .34, CELL * .34, CELL * .34], [0, 45, 0], false);
   // The node of the mesh it hangs from: four short lines going off to cells that are not there.
   for (const [x, z] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) part(celda, 'Línea de malla', 'box', dim, [x * (CELL / 2 + .22), .29, z * (CELL / 2 + .22)], [x ? .4 : .03, .03, z ? .4 : .03], [0, 0, 0], false);
 
