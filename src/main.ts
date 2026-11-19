@@ -42,7 +42,6 @@ import { CUERDAS_PLACE, QUALITIES } from './friends/marta';
 import { castleHaunt } from './haunt';
 import { createSfx, watchMenuSounds, type SoundId } from './sfx';
 import { createArtilugio, type ArtilugioMode } from './artilugio';
-import { createArtilugioView } from './artilugio-ui';
 import { impactSounds, startSounds, type Cue } from './battle-sounds';
 import { mountSoundPage } from './sound-ui';
 
@@ -325,21 +324,21 @@ try {
   const artilugio = createArtilugio(() => battleUI.controllerContext !== 'world' ? battleUI.artilugioLive : story.has('artilugio') && controllerContext() === 'world');
   /** Whether the party has it: the story's flag, or a fight that brings it (the fight tester's `reina-vuelta`). */
   const carried = () => story.has('artilugio') || battleUI.artilugioLive;
-  const artilugioView = createArtilugioView(hud);
+  /** Gerard holding it (src/artilugio-held.ts): his copy in a fight, his figure anywhere else. */
+  const heldNow = () => game.battleArtilugio ?? game.artilugio;
   artilugio.onNote(({ note }) => {
     if (!carried()) return;
     sfx.play(`artilugio-${note}` as SoundId);
-    artilugioView.play(note);
+    heldNow().play(note);
     battleUI.note(note);
     syncArtilugio();
   });
-  artilugio.onMotion(() => { if (carried()) artilugioView.takeOut(); });
+  artilugio.onMotion(() => { if (carried()) heldNow().takeOut(); });
   /** What the story says the board is: asleep until it has it, awake while the Queen holds Aitor and it is in the fight, free after. */
   function syncArtilugio() {
     const mode: ArtilugioMode = !carried() ? 'asleep' : story.has('reina') || battleUI.live?.castle?.freed ? 'free' : battleUI.artilugioLive ? 'awake' : 'alive';
     artilugio.setMode(mode);
-    artilugioView.setAwake(mode === 'awake');
-    artilugioView.hold(mode === 'awake');
+    for (const held of [game.artilugio, game.battleArtilugio]) { held?.setAwake(mode === 'awake'); held?.hold(mode === 'awake'); }
   }
   /** Re-applies who drives Aitor after the mode or the second controller changes. */
   function controlChanged() {
@@ -891,9 +890,9 @@ try {
     const weather = params.get('weather'), intensity = Number(params.get('intensity') ?? 1);
     if (weather === 'rain' || weather === 'snow') game.effects.setWeather(weather, Number.isFinite(intensity) ? intensity : 1, true);
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, artilugio, artilugioView, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong } });
+    Object.assign(window, { gerard: { game, story, battleUI, artilugio, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); artilugioView.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

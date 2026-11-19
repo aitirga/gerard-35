@@ -1,4 +1,5 @@
 import * as pc from 'playcanvas';
+import { HeldArtilugio, PROP } from './artilugio-held';
 import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
@@ -168,6 +169,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     rigid: boolean;
     /** Gerard at 35 or Aitor: a grown-up's Matemágico thinks out loud (thoughts.ts). */
     grown: boolean;
+    /** Gerard's copy carries the artilugio (src/artilugio-held.ts): held out in the Queen's last fight. */
+    held?: HeldArtilugio;
     arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
     plantFeet: ReturnType<typeof createGroundContact>;
@@ -1993,6 +1996,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       fighters.get(unit.id)!.onion = { kind: unit.kind, shown: unit.layers ?? 0, size: model.getLocalScale().x, skin };
     }
     const built = fighters.get(unit.id)!;
+    if (party && unit.id === 'gerard' && body?.findByName(PROP)) built.held = new HeldArtilugio(body);
     // A dish shows what it is on its plate; a fantasmita can go see-through, row by row.
     if (isCamping(unit.kind)) built.camp = unit.kind;
     if (isCuerdas(unit.kind)) built.strings = unit.kind;
@@ -2142,6 +2146,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     fighterIds() { return [...fighters].map(([id, f]) => ({ id, party: f.party, hp: f.hp })); },
     /** A fighter's model, for effects aimed at them. */
     modelOf(id: string) { return fighters.get(id)?.model; },
+    /** Gerard's artilugio in the fight, if he is fighting. */
+    get artilugio() { return fighters.get('gerard')?.held; },
     /** Adds whoever is standing in the fight to `out`, so particles flow around them. */
     bodies(out: ParticleBody[]) {
       for (const f of fighters.values()) {
@@ -2520,6 +2526,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           poseLegs(f.limbRig, gait, lively && down < 0 && !celebrating ? 12 + idle.breathe * 4 : 0);
           const bend = guarding ? -100 : -36 - idle.breathe * 4 + 30 * clamp01(Math.max(strike, lifted, celebrating ? 1 : 0, fall));
           f.limbRig.joints[1]?.setLocalEulerAngles(bend, 0, 0); f.limbRig.joints[3]?.setLocalEulerAngles(bend, 0, 0);
+          // Holding the artilugio, his arms are its, over whatever the fight gave them.
+          if (down < 0) f.held?.update(dt, animate);
           if (lively && down < 0) { roll += Math.sin(time * 1.15 + f.seed) * 1.3; lean += 2.5; }
         } else f.legs.forEach((leg, i) => leg.setLocalEulerAngles(stride * (i % 2 ? -1 : 1), 0, 0));
         f.tail?.setLocalEulerAngles(38 + strike * 20, lively ? Math.sin(time * (attacking ? 16 : 7) + f.seed) * 22 : 0, 0);

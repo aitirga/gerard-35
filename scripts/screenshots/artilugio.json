@@ -1,6 +1,6 @@
 {
   "title": "Chapter 2 · The artilugio in Gerard's hands",
-  "description": "Once Bernat has sent it, the real board's notes (or the 1–4 keys standing in) have Gerard take the artilugio out in the Meridiana flat: its four coloured buttons light as they are pressed, a pair lights two at once, and its little LCD draws a bar for each note that has sounded. Untouched, he puts it away. In the Queen's last fight it is awake, held out while she has Aitor, and the melody's notes light Aitor's marks.",
+  "description": "Once Bernat has sent it, the real board's notes (or the 1–4 keys standing in) have Gerard take the artilugio out of his pocket and hold it in both hands in the Meridiana flat: his thumbs press its four coloured buttons (both at once for a pair), its LEDs light with them and its little screen draws a bar for each note. Untouched, he puts it away. In the Queen's last fight it is awake, held out while she has Aitor. Run with --gpu --scale 2.",
   "steps": [
     {
       "open": "/?story=artilugio&at=home&solo=1"
@@ -13,55 +13,48 @@
       "skipDialogue": true
     },
     {
-      "wait": 2500
+      "wait": 2000
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.gerard.game.frame({ x: p.x, y: p.y + .7, z: p.z }, 1.1); })()"
+    },
+    {
+      "wait": 1500
     },
     {
       "shot": "before",
-      "caption": "At home, the artilugio put away: nothing on screen says it is there"
+      "caption": "At home, the artilugio in his pocket: nothing on screen says it is there"
     },
     {
-      "eval": "(() => { const key = k => window.dispatchEvent(new KeyboardEvent('keydown', { key: String(k) })); key(1); setTimeout(() => key(3), 300); setTimeout(() => key(4), 600); setTimeout(() => key(2), 900); })()"
+      "record": "take-out",
+      "seconds": 3.2,
+      "caption": "A key pressed: he takes it out of his pocket and plays Sol, Re, then the pair red + yellow (La♭)",
+      "each": "if (frame === 2) window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' })); if (frame === 40) window.dispatchEvent(new KeyboardEvent('keydown', { key: '3' })); if (frame === 64) { window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' })); window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' })); }"
     },
     {
-      "wait": 1300
+      "shot": "held",
+      "delay": 600,
+      "caption": "Held in both hands: the screen has drawn a bar for each note"
     },
     {
-      "shot": "notes",
-      "caption": "A key pressed: Gerard takes it out, and each note draws a bar on its screen (Sol, Re, Fa, Si)"
-    },
-    {
-      "eval": "(() => { const key = k => window.dispatchEvent(new KeyboardEvent('keydown', { key: String(k) })); key(1); key(2); setTimeout(() => document.querySelectorAll('.artilugio [data-key=\"0\"], .artilugio [data-key=\"1\"], .artilugio [data-led=\"0\"], .artilugio [data-led=\"1\"]').forEach(e => { e.dataset.lit = ''; }), 320); })()"
-    },
-    {
-      "wait": 400
-    },
-    {
-      "shot": "pair",
-      "caption": "Red and yellow at once: a note no single button plays (La♭), both buttons lit"
-    },
-    {
-      "eval": "window.gerard.artilugioView.setAwake(true)"
-    },
-    {
-      "wait": 700
+      "eval": "window.gerard.game.artilugio.setAwake(true)"
     },
     {
       "shot": "awake",
+      "delay": 700,
       "caption": "Awake (the Queen's last fight): its four lights go round on their own"
     },
     {
-      "eval": "window.gerard.artilugioView.setAwake(false)"
+      "eval": "window.gerard.game.artilugio.setAwake(false)"
     },
     {
-      "until": "!window.gerard.artilugioView.out",
-      "timeout": 15000
+      "record": "put-away",
+      "seconds": 2,
+      "warmup": 5,
+      "caption": "Six seconds untouched: he puts it back in his pocket"
     },
     {
-      "wait": 800
-    },
-    {
-      "shot": "away",
-      "caption": "Six seconds untouched: he puts it away"
+      "eval": "window.gerard.game.frame()"
     },
     {
       "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina-vuelta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -81,21 +74,25 @@
       "eval": "window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }))"
     },
     {
-      "wait": 900
+      "wait": 1500
     },
     {
       "shot": "fight-awake",
-      "caption": "The Queen has Aitor: the first note (Sol) and Gerard holds it out, awake, while she turns"
+      "caption": "The Queen has Aitor: at the first note Gerard holds it out, awake, and she turns"
     },
     {
-      "eval": "(() => { const key = k => window.dispatchEvent(new KeyboardEvent('keydown', { key: String(k) })); key(1); key(2); setTimeout(() => { key(2); key(3); }, 500); })()"
+      "eval": "(() => { const p = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: p.x, y: p.y + .7, z: p.z }, 1.2); })()"
     },
     {
-      "wait": 1300
+      "record": "fight-pairs",
+      "seconds": 2.4,
+      "caption": "La♭ and Do, two pairs, both thumbs down for each: three of Aitor's six marks lit",
+      "each": "if (frame === 4) { window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' })); window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' })); } if (frame === 34) { window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' })); window.dispatchEvent(new KeyboardEvent('keydown', { key: '3' })); }"
     },
     {
-      "shot": "fight-pairs",
-      "caption": "La♭ and Do, two pairs: three of Aitor's six marks lit"
+      "shot": "fight-close",
+      "delay": 400,
+      "caption": "Close: the artilugio in his hands in the fight"
     }
   ]
 }

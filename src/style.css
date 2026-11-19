@@ -112,7 +112,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 }
 
 /* Battle: the same warm street, with a sharper, graphic rhythm. */
-#hud[data-battle] > :not(#battle, .artilugio) { visibility: hidden; }
+#hud[data-battle] > :not(#battle) { visibility: hidden; }
 #battle { --battle-ink: #162823; --battle-gold: #f3cf78; --battle-paper: #f3efdc; position: absolute; inset: 0; pointer-events: auto; color: var(--battle-paper); background: linear-gradient(180deg, #10271f9c, transparent 29%, transparent 48%, #10201bde); overflow: hidden; animation: battle-in .55s ease both; }
 #battle::before { content: ''; position: absolute; inset: 0; pointer-events: none; border: 8px solid #e8c57718; }
 .battle-heading { position: absolute; top: 30px; left: 36px; transform: rotate(-2deg); }
@@ -2237,30 +2237,3 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 /* Five tabs in the picker's 360 px since Partida: a little less room round each. */
 .jump-tabs button { padding-inline: 9px; }
 
-/* The artilugio in Gerard's hands (src/artilugio-ui.ts): the real board's four coloured buttons and LEDs,
-   its little LCD drawing what has sounded. It rises from the right edge when taken out. */
-.artilugio { position: absolute; right: 30px; bottom: 34vh; width: 214px; transform: translateX(calc(100% + 44px)) rotate(6deg); opacity: 0; transition: transform .45s cubic-bezier(.2, .8, .25, 1), opacity .3s; z-index: 3; }
-.artilugio[data-out] { transform: translateX(0) rotate(-3deg); opacity: 1; }
-.artilugio-board { position: relative; display: grid; gap: 12px; padding: 14px 14px 16px; border-radius: 9px; background: linear-gradient(160deg, #24363a, #152427 70%); border: 1px solid #8fae9e40; box-shadow: 6px 8px 0 #050f1180, inset 0 1px 0 #ffffff14; }
-.artilugio-board::before, .artilugio-board::after { content: ''; position: absolute; top: 7px; width: 5px; height: 5px; border-radius: 50%; background: #c7b98a55; }
-.artilugio-board::before { left: 7px; } .artilugio-board::after { right: 7px; }
-.artilugio-screen { height: 46px; padding: 5px 7px; border-radius: 3px; background: #94ad3c; box-shadow: inset 0 0 0 2px #2c3a14, inset 0 0 14px #5f7a1c; overflow: hidden; }
-.artilugio-bars { display: flex; align-items: flex-end; gap: 4px; height: 100%; }
-.artilugio-bars i { flex: none; width: 9px; height: calc(var(--h) * 100%); background: #263510d9; animation: artilugio-bar .18s ease-out both; }
-@keyframes artilugio-bar { from { scale: 1 0; transform-origin: bottom; } }
-.artilugio-leds, .artilugio-keys { display: grid; grid-template-columns: repeat(4, 1fr); justify-items: center; }
-.artilugio-leds i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); opacity: .22; transition: opacity .25s, box-shadow .25s; }
-.artilugio-keys b { width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, color-mix(in srgb, var(--c) 70%, white), var(--c) 55%, color-mix(in srgb, var(--c) 60%, black)); box-shadow: 0 4px 0 color-mix(in srgb, var(--c) 45%, black), 0 6px 0 #050f1166; transition: transform .06s, box-shadow .06s, filter .2s; }
-.artilugio [data-colour="rojo"] { --c: #d9483b; } .artilugio [data-colour="amarillo"] { --c: #f2c230; }
-.artilugio [data-colour="verde"] { --c: #45b35a; } .artilugio [data-colour="azul"] { --c: #3a7bd5; }
-.artilugio-keys b[data-lit] { transform: translateY(4px); box-shadow: 0 0 0 color-mix(in srgb, var(--c) 45%, black), 0 2px 0 #050f1166, 0 0 0 3px #fff6, 0 0 26px 6px var(--c); filter: brightness(1.45); }
-.artilugio-leds i[data-lit] { opacity: 1; box-shadow: 0 0 10px 2px var(--c); }
-/* Awake: the board is not the same any more, its four lights going round on their own. */
-.artilugio[data-awake] .artilugio-board { border-color: #f3cf7899; }
-.artilugio[data-awake] .artilugio-leds i { animation: artilugio-awake 1.2s steps(1) infinite; }
-.artilugio[data-awake] .artilugio-leds i:nth-child(2) { animation-delay: .3s; } .artilugio[data-awake] .artilugio-leds i:nth-child(3) { animation-delay: .6s; } .artilugio[data-awake] .artilugio-leds i:nth-child(4) { animation-delay: .9s; }
-@keyframes artilugio-awake { 0% { opacity: 1; box-shadow: 0 0 10px 2px var(--c); } 25% { opacity: .22; box-shadow: none; } }
-@media (prefers-reduced-motion: reduce) { .artilugio { transition: opacity .3s; } .artilugio[data-awake] .artilugio-leds i { animation: none; opacity: 1; } }
-/* In a fight it rises from the bottom, between Gerard's commands and Aitor's card, clear of the foes. */
-#hud[data-battle] .artilugio { right: auto; left: calc(50% - 107px); bottom: 36px; transform: translateY(calc(100% + 60px)) rotate(4deg); }
-#hud[data-battle] .artilugio[data-out] { transform: translateY(0) rotate(-2deg); }

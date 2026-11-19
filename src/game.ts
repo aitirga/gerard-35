@@ -1,4 +1,5 @@
 import { readPads } from './controller';
+import { HeldArtilugio, fitArtilugio } from './artilugio-held';
 import * as pc from 'playcanvas';
 import { FreeMovement, SCREEN_VECTORS, canWalk, facingToward, screenToGrid, type Cell, type Direction, type Stick } from './movement';
 import { ENVIRONMENTS, INTERACTION_REACH, propCells, type EnvironmentId, type Interaction } from './environments';
@@ -219,6 +220,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   // Gerard's model: the boy in chapter 1, the man at 35 once he wakes up (`dress`).
   await loadCharacterModels(app, [...Object.values(CHARACTERS), ...Object.values(CREATURES)]);
   let rig = buildCharacter(playerCharacter(), player), grownUp = false;
+  /** The artilugio on Gerard's figure (src/artilugio-held.ts): built hidden on him, so a fight's copy of him carries it too. */
+  const fitHeld = () => { fitArtilugio(rig.body, playerCharacter(grownUp).lids?.color ?? '#f2b98a'); return new HeldArtilugio(rig.body); };
+  let heldArtilugio = fitHeld();
   player.setPosition(0, 0.06, 0);
   let plantFeet = createGroundContact(player, rig.feet);
   const effects = createEffects(app);
@@ -298,6 +302,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     grownUp = adult;
     rig.body.destroy(); rig.materials.forEach(m => m.destroy());
     rig = buildCharacter(playerCharacter(adult), player);
+    heldArtilugio = fitHeld();
     const s = adult ? ADULT_SCALE : 1; player.setLocalScale(s, s, s);
     plantFeet = createGroundContact(player, rig.feet);
     backpack = rig.body.find(node => BACKPACK_PARTS.has(node.name)) as pc.Entity[];
@@ -2838,6 +2843,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const carried = carriage(pose, turn), settle = animate ? Math.sin(clock * .55) * 1.1 * resting : 0;
     rig.body.setLocalEulerAngles(carried.pitch, visualFacing + carried.twist, carried.roll + settle);
     poseLimbs(rig, pose, idle.breathe, resting);
+    if (!battle) heldArtilugio.update(delta, animate);
     const across = visualFacing * pc.math.DEG_TO_RAD, hips = carried.shift + settle * .006;
     rig.body.setLocalPosition(Math.cos(across) * hips, 0, -Math.sin(across) * hips);
     rig.body.setLocalScale(1, 1 + idle.breathe * .016 * resting, 1);
@@ -3116,6 +3122,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     lighting: lighting(app),
     /** Development and screenshots: whoever is leading the party now (Haru to Nuria's door), if anyone. */
     get guide(): Readonly<Guide> | undefined { return guiding?.walk; },
+    /** The artilugio in Gerard's hands: his figure's in the street, his copy's in a fight (src/artilugio-held.ts). */
+    get artilugio(): HeldArtilugio { return heldArtilugio; },
+    get battleArtilugio(): HeldArtilugio | undefined { return battle ? battleScene.artilugio : undefined; },
     /** Puts Gerard (and whoever is with him) back on `cell` of this scene, e.g. up a station's stair. */
     standAt(cell: Cell) {
       movement.teleport(environment.grid, cell);

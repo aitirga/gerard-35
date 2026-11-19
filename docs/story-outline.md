@@ -299,7 +299,9 @@ a mic. It has no colour screen, so *the colours that burst* are its four LEDs.
 - **Gerard takes it out by himself** (decided 2026-11-19): when its PIR sees movement (someone picks
   it up, or walks in front of it) or a button is pressed, Gerard in the game takes the artilugio out
   and the player sees him pressing its buttons, the same ones, as they are pressed for real. It is
-  learnt little by little: nothing explains it.
+  learnt little by little: nothing explains it. **It is in his hands, not on screen** (Aitor,
+  2026-11-19): he takes it out of his pocket and holds it like a pad, his thumbs going down on its
+  buttons (`src/artilugio-held.ts`), in the street and in the fight.
 - **Where the game runs** (decided 2026-11-19): Gerard plays on the **Windows PC at home**, with the
   game's server on the home network. The device talks to that server over Wi-Fi; the game never
   connects to the device.
