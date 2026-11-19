@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, act, diceOf, dieUse, bestDie, diePower, skillsFor, MANA_POINTS, DEFEND_CHARGE, DICED, SKILLS, CLASS_STATS } from '../src/battle.ts';
+import { createBattle, act, diceOf, dieUse, bestDie, diePower, skillsFor, MANA_POINTS, DEFEND_CHARGE, DICED, JOKER, JOKER_CHANCE, JOKER_AFTER_DUAL, actDual, improve, SKILLS, CLASS_STATS } from '../src/battle.ts';
 
 // Dadaísta (docs/animas/dadaista/): its maná is dice, and the die spent says how hard the blow is.
 const fight = (seed = 7) => { const s = createBattle(1, 1, false, 'dadaista'); s.seed = seed; s.foes[0].hp = s.foes[0].maxHp = 999; return s; };
@@ -10,7 +10,7 @@ test('Dadaísta holds one die for each point of maná, each with a face from 1 t
   const s = fight(), hand = diceOf(s, gerard(s));
   assert.equal(DICED, 'dadaista');
   assert.equal(hand.length, MANA_POINTS);
-  assert.ok(hand.every(face => Number.isInteger(face) && face >= 1 && face <= 6));
+  assert.ok(hand.every(face => Number.isInteger(face) && face >= 1 && face <= JOKER));
   assert.equal(diceOf(s, gerard(s)), hand, 'looking again does not roll again');
   assert.deepEqual(diceOf(createBattle(1, 1, false, 'matemagico'), gerard(createBattle(1, 1, false, 'matemagico'))), [], 'nobody else has dice');
   assert.deepEqual(skillsFor(s, gerard(s)).map(skill => skill.id), ['golpe-dados', 'doble-o-nada']);
@@ -41,7 +41,7 @@ test('with no die chosen a blow takes the highest, and a bet the highest of the 
   assert.equal(act(s, 'skill', 'dog-0', 'golpe-dados').die.face, 6);
 });
 
-test('Doble o nada rolls the die again: the same or more lands twice, less is no blow and the die stays', () => {
+test('Doble o nada rolls the die again: the same or more lands twice, less is no blow and the die is gone all the same', () => {
   // A bet on a one cannot be lost.
   const sure = fight(); gerard(sure).dice = [1, 4, 4];
   const single = (() => { const s = fight(); gerard(s).dice = [1, 4, 4]; return act(s, 'skill', 'dog-0', 'golpe-dados', 0).amount; })();
@@ -59,10 +59,61 @@ test('Doble o nada rolls the die again: the same or more lands twice, less is no
   assert.ok(lost, 'some bet on a six is lost');
   assert.equal(lost.effect.amount, 0);
   assert.equal(lost.s.foes[0].hp, 999);
-  assert.deepEqual(gerard(lost.s).dice, [lost.effect.die.rolled, 2, 2], 'the die stays in the hand with what it rolled');
   assert.ok(lost.effect.die.rolled < 6);
-  assert.equal(gerard(lost.s).secondary, MANA_POINTS, 'no maná gone');
-  assert.equal(lost.s.phase, 'enemy', 'the turn is gone all the same');
+  assert.deepEqual(gerard(lost.s).dice, [2, 2], 'the die bet is spent, as any skill spends its die');
+  assert.equal(gerard(lost.s).secondary, MANA_POINTS - 1, 'and its maná with it');
+  assert.equal(lost.s.phase, 'enemy', 'the turn is gone as well');
+});
+
+test('the Joker lands as a six on every foe standing, and its bet cannot be lost', () => {
+  const pack = () => { const s = createBattle(1, 3, false, 'dadaista'); s.seed = 7; s.foes.forEach(f => { f.hp = f.maxHp = 999; }); return s; };
+  assert.ok(pack().foes.length > 1, 'more than one foe to fall on');
+  const six = pack(); gerard(six).dice = [6, 1, 1];
+  const plain = act(six, 'skill', six.foes[0].id, 'golpe-dados', 0);
+  assert.equal(plain.splash, undefined, 'a six is on one foe');
+  const s = pack(); gerard(s).dice = [2, JOKER, 1];
+  assert.equal(bestDie('golpe-dados', gerard(s).dice), 1); assert.equal(bestDie('doble-o-nada', gerard(s).dice), 1);
+  assert.equal(diePower('golpe-dados', JOKER), diePower('golpe-dados', 6));
+  const blow = act(s, 'skill', s.foes[0].id, 'golpe-dados', 1);
+  assert.equal(blow.die.face, JOKER); assert.equal(blow.amount, plain.amount, 'a six on whom it was aimed at');
+  assert.deepEqual(blow.splash.map(h => h.target), s.foes.slice(1).map(f => f.id), 'and on everyone else');
+  for (const hit of blow.splash) assert.ok(hit.amount > 0);
+  for (const foe of s.foes) assert.ok(foe.hp < 999);
+  assert.deepEqual(gerard(s).dice, [2, 1], 'the Joker is spent');
+  // Bet: never rolled, always won, twice on everyone.
+  for (let seed = 1; seed < 20; seed++) {
+    const b = pack(); b.seed = seed; gerard(b).dice = [JOKER, 3, 3];
+    const bet = act(b, 'skill', b.foes[0].id, 'doble-o-nada', 0);
+    assert.equal(bet.die.won, true); assert.equal(bet.amount, plain.amount * 2);
+    assert.ok(bet.splash.every(h => h.amount > plain.amount));
+  }
+});
+
+test('a Joker is dealt rarely, and a dual attack calls it: the next die dealt to whoever took part is far likelier one', () => {
+  assert.equal(JOKER_CHANCE, .02); assert.equal(JOKER_AFTER_DUAL, .2);
+  let jokers = 0, dealt = 0;
+  for (let seed = 1; seed <= 1500; seed++) {
+    const s = fight(seed * 7919);
+    for (const face of diceOf(s, gerard(s))) { assert.ok(face === JOKER || (face >= 1 && face <= 6)); dealt++; if (face === JOKER) jokers++; }
+  }
+  assert.ok(jokers > 0 && jokers / dealt < .05, `${jokers} of ${dealt}`);
+  // Gerard and Aitor do Zarpazos de fuego; Gerard's Dadaísta rests, and its next die is the one called.
+  let called = 0, after = 0, runs = 600;
+  for (let seed = 1; seed <= runs; seed++) {
+    const s = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico', kit: ['matemagico', 'dadaista'] }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }], 1, false, undefined, ['matemagico', 'papagato', 'dadaista']);
+    s.seed = seed * 104729; s.levels = { papagato: 2, matemagico: 2 }; improve(s, { skills: ['angulo', 'analisis'] }); s.foes[0].hp = s.foes[0].maxHp = 9999;
+    const g = s.allies.find(a => a.id === 'gerard');
+    g.mana = { ...g.mana, dadaista: 1 }; g.dice = [3];
+    assert.ok(actDual(s, 'zarpazos-de-fuego', s.foes[0].id), 'the dual happens');
+    assert.equal(g.jokerDue, true); assert.deepEqual(g.dice, [3], 'the dice held are not touched');
+    g.mana.dadaista = 3;
+    const hand = diceOf(s, g);
+    assert.equal(hand.length, 3); assert.equal(g.jokerDue, undefined, 'only the next die');
+    if (hand[1] === JOKER) called++;
+    if (hand[2] === JOKER) after++;
+  }
+  assert.ok(called / runs > .14 && called / runs < .27, `${called} of ${runs} right after a dual`);
+  assert.ok(after / runs < .06, `${after} of ${runs} on the die after that one`);
 });
 
 test('Defender deals Dadaísta new dice, and a hand with none left cannot throw', () => {

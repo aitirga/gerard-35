@@ -8,7 +8,9 @@ Status: designing (round 4, 2026-11-15) · Comes from: the university friends' m
 what the maná has rolled and decides from that), and that it has **a skill that spends a die and
 rolls the others again**, called **Agitar**: it **does not spend the turn**, it is a **fixed
 command** once unlocked, with **×1**, and it **is improved at home**, at the jar (§ Agitar).
-Everything else here is a proposal.
+Also decided (Aitor, 2026-11-15, after playing level 1): **a skill always spends its die**, as any
+maná (a bet lost in *Doble o nada* loses the die too; more dice come from Defender, as for
+everyone), and there is a **Joker** die (§ The Joker). Everything else here is a proposal.
 
 ## Identity
 
@@ -66,7 +68,26 @@ Maná +1 is a fourth die.
 the fight, faces up. On their turn the player (1) looks at them, (2) chooses a skill, (3) chooses
 which die to spend on it, and (4) the action happens, by that die's face. Nothing is rolled in
 between, except *Doble o nada* (which rolls the die bet) and *Agitar* (which rolls the ones left).
-New dice are rolled only when maná comes back: Defender, a round's rest.
+New dice are rolled only when maná comes back: Defender, a round's rest. Every skill spends the
+die it took, whatever comes of it, so the hand only gets shorter until the wearer holds on.
+
+### The Joker
+
+Built (`JOKER`, `JOKER_CHANCE`, `JOKER_AFTER_DUAL` in `src/battle.ts`). Now and then a die dealt
+to the hand is not a face but the **Joker**: black lacquer with a vermilion star.
+
+- **How often** (Aitor, 2026-11-15): 2 % of the dice dealt. **A dual attack calls it**: the next
+  die dealt to whoever took part in one (Defender, a round's rest) is the Joker 20 % of the
+  times; only that one die. Dadaísta has no dual of its own yet, so today that means changing
+  ánima for the dual and coming back to the dice. Nothing on screen says the die is called.
+
+- It **always meets the good condition of the skill it is spent on**: a six for a blow by its
+  face (*Golpe de dados*), a bet that cannot be lost (*Doble o nada*, never rolled).
+- Its blow **falls on every foe standing**, each one measured on its own.
+- Nothing announces it: it is in the hand or it is not. The die picker names it and says what it
+  does; the skills' descriptions do not mention it.
+- For the skills not built yet, the same rule: the best case of each (the most strikes for
+  *Collage*, both effects for *Pares o nones*), on everyone.
 
 ## Skills per level
 
@@ -76,7 +97,7 @@ and takes the foe's Defensa, once per strike.
 | Level | What it gives | Cost | Base | Description |
 | --- | --- | --- | --- | --- |
 | 1 | **Golpe de dados** | 1 die | 6 + 5 a pip (11 to 36) | `Daño variable físico a un enemigo. Más fuerte cuanto más alta la cara del dado.` |
-| 1 | **Doble o nada** | 1 die, bet | twice Golpe de dados (22 to 72), or nothing | `Daño variable físico a un enemigo. Vuelve a tirar el dado: si sale igual o más alto, golpe doble. Si sale más bajo, no hay golpe y el dado se queda con esa cara.` |
+| 1 | **Doble o nada** | 1 die, bet | twice Golpe de dados (22 to 72), or nothing | `Daño variable físico a un enemigo. Vuelve a tirar el dado: si sale igual o más alto, golpe doble. Si sale más bajo, no hay golpe y el dado se pierde.` |
 | 2 | Command · **Agitar** | 1 die, ×1 | — | *Abstract*: `Gasta un dado y vuelve a tirar los demás. No gasta el turno.` |
 | 2 | **Collage** | 1 die | 4 a strike, 7 minus the face strikes (six with a 1, one with a 6) | `Daño leve físico a enemigos al azar. Golpea más veces cuanto más baja la cara del dado.` |
 | 3 | Passive · **Racha** | — | — | A 6 that is spent comes back to the hand, rolled again |
@@ -90,7 +111,7 @@ and takes the foe's Defensa, once per strike.
 - **Doble o nada**: the random part of the damage, and always a choice. The lower the die bet,
   the surer: a 1 always wins (22), a 3 wins two times in three (42), a 6 one in six (72). On
   average it beats Golpe de dados with a 1, 2 or 3, ties with a 4 and loses with a 5 or 6. A
-  lost bet costs the turn, never the die: it stays, lower, so the next bet is surer.
+  lost bet costs the turn and the die: the hand is maná, and a skill spends it.
 - **Collage**: the same die as a different shape of damage. Many small strikes peel layers and
   spread over a group; against one foe with high Defensa they are worth little. Where they land
   is not chosen.
@@ -196,7 +217,9 @@ Built in a first version (2026-11-15), to be judged in play; screenshots with
 - **The dice** (`src/dice.ts`): ivory cubes with black pips, the one in red, a touch bigger than
   life. They float in a column beside whoever wears it, on the side away from the others, each
   with its face turned to the camera, the first of the hand lowest. A new one (Defender, a round's
-  rest, the fight starting) drops in tumbling.
+  rest, the fight starting) drops in tumbling. At rest they are never still: each drifts, bobs
+  and turns a little at a pace of its own, and the ones on the plate rock with them. The Joker
+  is the same cube in black lacquer with a vermilion star on every face.
 - **The throw** (`updateDice`, `DICE` in `src/battle-scene.ts`): the wearer stays put and raises a
   hand; the die leaves the column, flies at the target tumbling, lands and bounces off to the
   floor. A bet goes straight up first and comes down large over the wearer's head showing what it

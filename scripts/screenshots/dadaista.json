@@ -1,6 +1,6 @@
 {
   "title": "Dadaísta · los dados",
-  "description": "Dadaísta (docs/animas/dadaista/), the university friends' ánima: its maná is dice, floating beside whoever wears it and shown on the plate. Golpe de dados lands by the face of the die spent; Doble o nada rolls it again for a double blow or nothing. Gerard wears it in the fight tester beside Aitor's Matemágico, against two sturdy dogs. Run it with --gpu.",
+  "description": "Dadaísta (docs/animas/dadaista/), the university friends' ánima: its maná is dice, floating beside whoever wears it and shown on the plate. Golpe de dados lands by the face of the die spent; Doble o nada rolls it again for a double blow or nothing. A skill always spends its die, and the rare Joker lands as the best case on every foe. Gerard wears it in the fight tester beside Aitor's Matemágico, against two sturdy dogs. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22dadaista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22dadaista%22%2C%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Afalse%2C%22immune%22%3Afalse%7D"
@@ -25,7 +25,14 @@
     {
       "shot": "mano",
       "delay": 300,
-      "caption": "Dadaísta: its maná is dice. Three points, three dice floating beside Gerard, the same faces on his plate"
+      "caption": "Dadaísta: its maná is dice. Three points, three dice floating beside Gerard, the same faces on his plate. At rest each one sways on its own"
+    },
+    {
+      "record": "vaiven",
+      "seconds": 3,
+      "fps": 20,
+      "tiles": 10,
+      "caption": "Idle: nobody is doing anything and the dice drift, bob and turn a little, each at its own pace"
     },
     {
       "press": "Digit2",
@@ -153,7 +160,62 @@
       "seconds": 1.7,
       "fps": 30,
       "tiles": 12,
-      "caption": "Doble o nada on the six, lost: it rolls a two. No blow, and the die goes back to the hand as a two, the maná not spent"
+      "caption": "Doble o nada on the six, lost: it rolls a two. No blow, and the die drops and is gone: a skill always spends its die"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { const g = s.allies.find(a => a.id === 'gerard'); g.dice = [4, 7, 2]; g.secondary = 3; });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "joker-mano",
+      "delay": 300,
+      "caption": "The Joker: now and then a die comes as black lacquer with a vermilion star, in the hand and on the plate"
+    },
+    {
+      "press": "Digit2",
+      "gap": 400
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"golpe-dados\"]').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "shot": "joker-elegir",
+      "delay": 200,
+      "caption": "The die picker names it: it lands as a six, on everyone"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-die=\"1\"]').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "joker",
+      "seconds": 1.5,
+      "fps": 30,
+      "tiles": 10,
+      "caption": "Golpe de dados with the Joker: a six's blow, and it falls on both dogs"
     },
     {
       "until": "window.turn && window.turn('aitor')",

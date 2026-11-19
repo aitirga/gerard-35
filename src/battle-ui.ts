@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { PHRASES, TONES, phraseLength } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -197,7 +197,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** At most this many skills in sight on the sheet, which never rises above `SHEET_TOP` px from the top of the screen. */
   const SKILL_ROWS = 4, SHEET_TOP = 96;
   /** What a die of each face is called on Dadaísta's hand. */
-  const DIE_NAMES: Record<number, string> = { 1: 'Uno', 2: 'Dos', 3: 'Tres', 4: 'Cuatro', 5: 'Cinco', 6: 'Seis' };
+  const DIE_NAMES: Record<number, string> = { 1: 'Uno', 2: 'Dos', 3: 'Tres', 4: 'Cuatro', 5: 'Cinco', 6: 'Seis', [JOKER]: 'Joker' };
   let state: BattleState | undefined;
   let selected: Command | undefined;
   let selectedSkill: SkillId | undefined;
@@ -1394,7 +1394,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const list = get('.skill-list');
     list.dataset.dice = bet ? 'bet' : 'face';
     get('.skill-flyout .battle-kicker').textContent = `${spec.name.toUpperCase()} · ELIGE UN DADO`;
-    list.innerHTML = hand.map((face, i) => `<button type="button" data-die="${i}" data-class="${spec.class}" style="--i:${i}" aria-label="Dado ${i + 1}: un ${face}"><span class="skill-key">${i + 1}</span><i class="die-face" data-face="${face}" aria-hidden="true"></i><span class="skill-name"><strong>${DIE_NAMES[face]}</strong><small>${bet ? face === 1 ? 'Sale seguro' : `Sale con ${face} o más` : 'Golpea por lo que marca'}</small></span></button>`).join('');
+    list.innerHTML = hand.map((face, i) => `<button type="button" data-die="${i}" data-class="${spec.class}" style="--i:${i}" aria-label="Dado ${i + 1}: ${face === JOKER ? 'el Joker' : `un ${face}`}"><span class="skill-key">${i + 1}</span><i class="die-face" data-face="${face}" aria-hidden="true"></i><span class="skill-name"><strong>${DIE_NAMES[face]}</strong><small>${face === JOKER ? bet ? 'Sale seguro. Golpea a todos' : 'Golpea como un seis, a todos' : bet ? face === 1 ? 'Sale seguro' : `Sale con ${face} o más` : 'Golpea por lo que marca'}</small></span></button>`).join('');
     fitSkills();
     focusOn(list.querySelector<HTMLButtonElement>(`[data-die="${at ?? bestDie(skill, hand)}"]`) ?? skillButtons()[0]);
   }
@@ -1666,7 +1666,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         if (effect.die?.won === false) pop(effect.actor, 'Nada', 'guard', `Sale un ${effect.die.rolled}`);
         else if (strikes) hurtPop(effect.target, strikes[0], label, spread(0));
         else if (!effect.controlled) hurtPop(effect.target, effect.amount ?? 0, say);
-        if (effect.die?.won) pop(effect.actor, '¡Doble!', 'stat-up', `Sale un ${effect.die.rolled}`);
+        if (effect.die?.face === JOKER) pop(effect.actor, '¡Joker!', 'stat-up', effect.die.won ? 'Doble, a todos' : 'A todos');
+        else if (effect.die?.won) pop(effect.actor, '¡Doble!', 'stat-up', `Sale un ${effect.die.rolled}`);
       }
       // Anna's Sopeta also feeds the whole table: each friend's PV back, a beat after her blow.
       effect.soothed?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `+${h.amount}`, 'heal', i ? '' : 'Sopeta'); }, 420 + i * 70));

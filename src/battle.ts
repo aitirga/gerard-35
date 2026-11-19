@@ -94,8 +94,8 @@ export const SKILLS = [
   // for each pip of that die. Their strength changes with the die, so they skip the fixed shape.
   { id: 'golpe-dados', name: 'Golpe de dados', cost: 1, side: 'foes', power: 6, pip: 5, kind: 'physical', die: 'face', abstract: true, description: 'Daño variable físico a un enemigo. Más fuerte cuanto más alta la cara del dado.', class: 'dadaista' },
   // Doble o nada: the die bet is rolled again. The same or higher, the blow lands twice; lower, there
-  // is no blow and the die stays in the hand with its new face (the turn goes, the maná does not).
-  { id: 'doble-o-nada', name: 'Doble o nada', cost: 1, side: 'foes', power: 6, pip: 5, kind: 'physical', die: 'bet', abstract: true, description: 'Daño variable físico a un enemigo. Vuelve a tirar el dado: si sale igual o más alto, golpe doble. Si sale más bajo, no hay golpe y el dado se queda con esa cara.', class: 'dadaista' },
+  // is no blow and the die is gone all the same: a skill always spends its die, as any maná.
+  { id: 'doble-o-nada', name: 'Doble o nada', cost: 1, side: 'foes', power: 6, pip: 5, kind: 'physical', die: 'bet', abstract: true, description: 'Daño variable físico a un enemigo. Vuelve a tirar el dado: si sale igual o más alto, golpe doble. Si sale más bajo, no hay golpe y el dado se pierde.', class: 'dadaista' },
 ] as const;
 /**
  * Maná (docs/combat.md § Maná): what skills spend, shown as circles. Every ánima has its own, for
@@ -569,6 +569,8 @@ export interface Combatant {
   mana?: Partial<Record<ClassId, number>>;
   /** Dadaísta's maná as dice: the face of each point it holds, worn or resting (`diceOf` keeps them in step). */
   dice?: number[];
+  /** Dadaísta: they took part in a dual attack, and the next die dealt to them is likelier the Joker (`JOKER_AFTER_DUAL`). */
+  jokerDue?: boolean;
   /** Ánimas worn at some moment of this round: they do not rest at its end. */
   worn?: ClassId[];
   /** The ánimas this fighter can switch between (L / R): their own and the extras they equipped (docs/party.md). */
@@ -928,8 +930,9 @@ export interface BattleEffect {
   /** Dadaísta defending: the faces of the dice that maná came as. */
   dealt?: number[];
   /**
-   * A skill that spent a die (Dadaísta): its `face`; for a bet (Doble o nada), what it `rolled` when
-   * thrown again and whether that `won` (lost: no blow, and the die stays in the hand as `rolled`).
+   * A skill that spent a die (Dadaísta): its `face` (`JOKER`: the blow is on every foe, the others in
+   * `splash`); for a bet (Doble o nada), what it `rolled` when thrown again and whether that `won`
+   * (lost: no blow, and the die is gone all the same).
    */
   die?: { face: number; at: number; rolled?: number; won?: boolean };
   /** Fire melted the palace minion's gum. */
@@ -1091,9 +1094,22 @@ export const weakSpotRounds = (state: BattleState, c: Combatant) => c.weakSpot !
 /**
  * Dadaísta's maná is dice (docs/animas/dadaista/): each point is a die with its face in view, rolled
  * when the maná comes (the fight's start, Defender, a round's rest). A skill with `die` spends the
- * one chosen, and that face says how hard it lands.
+ * one chosen, whatever comes of it, and that face says how hard it lands.
  */
 export const DICED: ClassId = 'dadaista';
+/**
+ * The Joker: a die that now and then comes in place of a face (`JOKER_CHANCE` of the dice dealt). It
+ * is the best a skill can ask of a die (a six for a blow by its face, a bet that cannot be lost), and
+ * its blow falls on every foe standing. A dual attack calls it: the next die dealt to whoever took
+ * part in one (`Combatant.jokerDue`) is the Joker `JOKER_AFTER_DUAL` of the times.
+ */
+export const JOKER = 7, JOKER_CHANCE = .02, JOKER_AFTER_DUAL = .2;
+/** A die dealt to `c`'s hand: a face from 1 to 6 or, rarely, the Joker (less rarely on the first die after a dual). */
+function dealDie(state: BattleState, c: Combatant) {
+  const chance = c.jokerDue ? JOKER_AFTER_DUAL : JOKER_CHANCE, r = roll(state);
+  delete c.jokerDue;
+  return r < chance ? JOKER : 1 + Math.floor((r - chance) / (1 - chance) * 6);
+}
 /** One roll of the fight's dice, 1 to 6. */
 export const d6 = (state: BattleState) => 1 + Math.floor(roll(state) * 6);
 /**
@@ -1104,38 +1120,38 @@ export function diceOf(state: BattleState, c: Combatant): number[] {
   if (!state.allies.includes(c) || (c.classId !== DICED && !kitIn(state, c).includes(DICED))) return [];
   const most = manaMax(state.improved, DICED), count = c.classId === DICED ? c.secondary : Math.min(most, c.mana?.[DICED] ?? most);
   const hand = c.dice ??= [];
-  while (hand.length < count) hand.push(d6(state));
+  while (hand.length < count) hand.push(dealDie(state, c));
   hand.length = Math.min(hand.length, count);
   return hand;
 }
 /** Whether `skill` spends a die, and how it reads it: its `face` as its strength, or as a `bet`. */
 export const dieUse = (skill?: SkillId): 'face' | 'bet' | undefined => { const spec = SKILLS.find(s => s.id === skill); return spec && 'die' in spec ? spec.die : undefined; };
-/** The die a skill takes when nobody chose: the highest for a blow by its face; for a bet the highest of the sure ones (3 or less), else the lowest. */
+/** The die a skill takes when nobody chose: the Joker if there is one; else the highest for a blow by its face; for a bet the highest of the sure ones (3 or less), else the lowest. */
 export function bestDie(skill: SkillId, hand: readonly number[]) {
   if (!dieUse(skill) || !hand.length) return -1;
+  if (hand.includes(JOKER)) return hand.indexOf(JOKER);
   const sure = hand.filter(face => face <= 3);
   return hand.indexOf(dieUse(skill) === 'bet' ? sure.length ? Math.max(...sure) : Math.min(...hand) : Math.max(...hand));
 }
-/** What `skill` lands with a die of `face` at average stats, before a bet doubles it. */
-export const diePower = (skill: SkillId, face: number) => { const spec = SKILLS.find(s => s.id === skill); return spec && 'pip' in spec ? spec.power + spec.pip * face : 0; };
+/** What `skill` lands with a die of `face` at average stats, before a bet doubles it (the Joker lands as a six). */
+export const diePower = (skill: SkillId, face: number) => { const spec = SKILLS.find(s => s.id === skill); return spec && 'pip' in spec ? spec.power + spec.pip * Math.min(face, 6) : 0; };
 /**
- * The die a Dadaísta skill spends: `index` in the hand (or the one `bestDie` would take). A blow by
- * its face spends it. A bet rolls it again: the same or higher and it is spent on a blow that lands
- * twice; lower, and it stays in the hand with what it rolled, no blow and no maná gone.
+ * The die a Dadaísta skill spends: `index` in the hand (or the one `bestDie` would take). It is gone
+ * from the hand whatever happens. A bet rolls it again: the same or higher and the blow lands twice;
+ * lower, and there is no blow. The Joker is never rolled: its bet is won, and its blow is on `all`.
  */
 function castDie(state: BattleState, actor: Combatant, skill: SkillId, index: number | undefined, effect: BattleEffect) {
   const hand = diceOf(state, actor), at = index !== undefined && hand[index] ? index : bestDie(skill, hand), face = hand[at];
   const power = diePower(skill, face);
+  const all = face === JOKER;
+  hand.splice(at, 1); actor.secondary--;
   if (dieUse(skill) === 'bet') {
-    const rolled = d6(state), won = rolled >= face;
+    const rolled = all ? JOKER : d6(state), won = rolled >= face;
     effect.die = { face, at, rolled, won };
-    if (!won) { hand[at] = rolled; return { power, times: 0, lost: true }; }
-    hand.splice(at, 1); actor.secondary--;
-    return { power, times: 2, lost: false };
+    return { power, times: won ? 2 : 0, lost: !won, all };
   }
   effect.die = { face, at };
-  hand.splice(at, 1); actor.secondary--;
-  return { power, times: 1, lost: false };
+  return { power, times: 1, lost: false, all };
 }
 /** The action is validated before payment, just as it is in the generic command resolver. */
 function spendSecondary(actor: Combatant, cost: number) {
@@ -1700,7 +1716,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     const melts = action === 'skill' && !!ability && 'melts' in ability;
     if (cast?.lost) {
       effect.amount = 0;
-      state.message = `${actor.name} usa ${ability!.name}: apostaba un ${effect.die!.face} y sale un ${effect.die!.rolled}. Nada. El dado se queda así.`;
+      state.message = `${actor.name} usa ${ability!.name}: apostaba un ${effect.die!.face} y sale un ${effect.die!.rolled}. Nada. El dado se pierde.`;
     } else if (target.shell && !melts) {
       // The gum swallows the blow whole.
       effect.amount = 0; effect.swallowed = true;
@@ -1784,6 +1800,19 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         effect.afflicted = { id: 'mojado', level: 1 }; note(effect, 'capilaridad', actor);
         state.message += ' ¡Mojado!';
       }
+    }
+    // The Joker's blow falls on every other foe standing as well, each strike measured on its own.
+    if (cast?.all) {
+      const others = state.foes.filter(foe => foe !== target && foe.hp > 0 && !foe.shell);
+      const splash = others.map(foe => {
+        let amount = 0;
+        for (let i = 0; i < cast.times && foe.hp > 0; i++) {
+          amount += hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability, cast.power) * weakScale(state, foe), 'physical'));
+          if (foe.layers && !--foe.layers) bare(foe);
+        }
+        return { target: foe.id, amount };
+      });
+      if (splash.length) { effect.splash = splash; state.message += ' ¡Joker! Cae sobre todos.'; }
     }
   }
   checkEye(state, effect);
@@ -1874,6 +1903,8 @@ export function actDual(state: BattleState, id: DualId, targetId?: string): Batt
   took(state, a); took(state, b);
   (state.spent ??= []).push(b.id);
   (state.usedDuals ??= []).push(d.id);
+  // A dual calls the Joker: the next die dealt to either of them (the hand is brought in step first, so it is a die still to come).
+  for (const c of [a, b]) if (kitIn(state, c).includes(DICED)) { diceOf(state, c); c.jokerDue = true; }
   if (state.queued) delete state.queued[b.id];
   const parts = halves.map(h => SKILLS.find(s => s.id === h)!);
   const striker = [a, b][Math.max(0, parts.findIndex(p => p.kind === d.kind))];

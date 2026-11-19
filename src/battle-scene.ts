@@ -1,7 +1,7 @@
 import * as pc from 'playcanvas';
 import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
-import { DIE, createDie, faceUp } from './dice';
+import { DIE, createDie, dressDie, faceUp } from './dice';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
 import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
@@ -257,8 +257,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   /** The effect whose streams have already left the hand. */
   let cast: BattleEffect | undefined;
   /** Dadaísta's dice beside whoever wears it: the hand in view, and the one in the air. */
-  interface HandDie { entity: pc.Entity; face: number; at: pc.Vec3; turn: pc.Quat; size: number; age: number; tumble: pc.Vec3 }
-  const dice = new Map<string, { hand: HandDie[]; shown: number; thrown?: { die: HandDie; action: BattleEffect; from: pc.Vec3; kept: boolean }; seen?: BattleEffect }>();
+  interface HandDie { entity: pc.Entity; face: number; at: pc.Vec3; turn: pc.Quat; size: number; age: number; tumble: pc.Vec3; /** Its own idle sway: where in it this die starts, and how fast it goes (× the common pace). */ sway: number; pace: number }
+  const dice = new Map<string, { hand: HandDie[]; shown: number; thrown?: { die: HandDie; action: BattleEffect; from: pc.Vec3 }; seen?: BattleEffect }>();
   /** The die the fight screen's cursor is on while one is being picked: it comes forward. */
   let aimedDie: { unit: string; index: number } | undefined;
   let state: BattleState | undefined;
@@ -1117,7 +1117,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
-    // Dadaísta's bet, lost: nothing lands (the die goes back to the hand, `updateDice`).
+    // Dadaísta's bet, lost: nothing lands (the die drops and is gone, `updateDice`).
     if (action.die?.won === false) return;
     // Vertitrón's shout, its charge, and news of its eye breaking draw their own picture (`worldFx`).
     if (actor.robot && !target) return;
@@ -1600,10 +1600,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   /**
    * Dadaísta's dice (src/dice.ts): its maná, floating in a column beside whoever wears it, on the side
-   * away from the others, each with its face turned to the camera. New ones (Defender, a round's
-   * rest, the fight starting) drop in tumbling. The one a skill spends leaves the hand, flies at the
-   * target tumbling, lands on it (twice, a bet won) and bounces off; a bet goes up first and comes
-   * down showing what it rolled, and one lost goes back to its place with that face.
+   * away from the others, each with its face turned to the camera, never quite still: each drifts,
+   * bobs and turns a little on a pace of its own. New ones (Defender, a round's rest, the fight
+   * starting) drop in tumbling. The one a skill spends leaves the hand, flies at the target tumbling,
+   * lands on it (twice, a bet won) and bounces off; a bet goes up first and comes down showing what
+   * it rolled, and one lost drops to the floor and is gone. The Joker is the black one with the star.
    */
   function updateDice(dt: number, t: number, animate: boolean, target?: Fighter) {
     if (!state || (!dice.size && !state.allies.some(a => a.classId === DICED))) return;
@@ -1612,9 +1613,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const view = viewDir(), facing = new pc.Vec3(view.x * .82, view.y * .82 + .18, view.z * .82).normalize();
     const tiltAxis = new pc.Vec3().cross(pc.Vec3.UP, facing).normalize(), tilt = new pc.Quat().setFromAxisAngle(tiltAxis, Math.acos(clamp01(facing.y)) * 180 / Math.PI);
     const party = [...fighters].filter(([, f]) => f.party);
-    const spin = new pc.Quat(), want = new pc.Quat(), place = new pc.Vec3();
-    /** A die at rest: its face to the camera, turned `yaw` degrees about it. */
-    const settle = (face: number, yaw: number) => want.mul2(tilt, spin.setFromAxisAngle(pc.Vec3.UP, yaw).mul(faceUp(face)));
+    const spin = new pc.Quat(), want = new pc.Quat(), rock = new pc.Quat(), place = new pc.Vec3(), now = performance.now() / 1000;
+    /** A die at rest: its face to the camera, turned `yaw` degrees about it and leaning `lean` to one side. */
+    const settle = (face: number, yaw: number, lean = 0) => {
+      want.mul2(tilt, spin.setFromAxisAngle(pc.Vec3.UP, yaw).mul(faceUp(face)));
+      return lean ? want.mul2(rock.setFromAxisAngle(facing, lean), want) : want;
+    };
     for (const [id, f] of party) {
       const unit = state.allies.find(a => a.id === id);
       const wearing = !!unit && f.hp > 0 && unit.classId === DICED && entryTime >= ENTRY_SECONDS * .6;
@@ -1625,32 +1629,33 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const out = Math.sign(others) || 1, floor = groundHeight(f.base.x, f.base.z), size = DIE.size * f.scale.y;
       const make = (face: number): HandDie => {
         const entity = createDie(app); battleRoot.addChild(entity);
-        return { entity, face, at: new pc.Vec3(f.base.x, floor + 2.6 * f.scale.y, f.base.z), turn: new pc.Quat(), size: 0, age: 0, tumble: new pc.Vec3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize() };
+        return { entity, face, at: new pc.Vec3(f.base.x, floor + 2.6 * f.scale.y, f.base.z), turn: new pc.Quat(), size: 0, age: 0, tumble: new pc.Vec3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize(), sway: Math.random() * 60, pace: .75 + Math.random() * .5 };
       };
-      // The die this action spends leaves the hand as the action starts; a bet's stays in its place if it is lost.
+      // The die this action spends leaves the hand as the action starts, a bet's too, won or lost.
       const acting = effect?.actor === id && effect.die ? effect : undefined;
       if (acting && d.seen !== acting) {
         d.seen = acting;
-        const kept = acting.die!.won === false, die = kept ? d.hand[acting.die!.at] : d.hand.splice(acting.die!.at, 1)[0];
-        if (d.thrown && !d.thrown.kept) d.thrown.die.entity.destroy();
-        d.thrown = die && animate ? { die, action: acting, from: die.at.clone(), kept } : undefined;
-        if (die && !animate && !kept) die.entity.destroy();
+        const die = d.hand.splice(acting.die!.at, 1)[0];
+        d.thrown?.die.entity.destroy();
+        d.thrown = die && animate ? { die, action: acting, from: die.at.clone() } : undefined;
+        if (die && !animate) die.entity.destroy();
       }
-      if (d.thrown && d.thrown.action !== effect) { if (!d.thrown.kept) d.thrown.die.entity.destroy(); d.thrown = undefined; }
+      if (d.thrown && d.thrown.action !== effect) { d.thrown.die.entity.destroy(); d.thrown = undefined; }
       // The hand, in step with the fight's: as many as there is maná, each with its face.
       const hand = wearing ? diceOf(state, unit!) : unit && d.hand.length ? unit.dice ?? [] : [];
       while (d.hand.length > hand.length) d.hand.pop()!.entity.destroy();
       for (const had = d.hand.length; d.hand.length < hand.length;) { const die = make(hand[d.hand.length]); die.age = animate ? -.09 * (d.hand.length - had) : 1; d.hand.push(die); }
       d.shown = animate ? Math.max(0, Math.min(1, d.shown + (wearing ? dt : -dt) / .25)) : wearing ? 1 : 0;
       d.hand.forEach((die, i) => {
-        const tossing = d!.thrown?.kept && d!.thrown.die === die;
-        if (!tossing) die.face = hand[i];
+        die.face = hand[i]; dressDie(app, die.entity, die.face);
         die.age += dt;
-        // A column by the shoulder, the first die lowest, each a little off the line and bobbing on its own.
+        // A column by the shoulder, the first die lowest, each a little off the line. Idle, each one
+        // wanders on its own: two slow waves that never line up, so it is a sway and not a loop.
         const aimed = aimedDie?.unit === id && aimedDie.index === i && !effect ? 1 : 0;
-        const reach = (.56 + (i % 2) * .09 + aimed * .16) * f.scale.x, bob = animate ? Math.sin(performance.now() / 620 + i * 1.7) * .018 : 0;
-        place.set(f.base.x + across.x * reach * out + toCamera.x * (.16 + aimed * .2), floor + (.62 + i * .3 + aimed * .05) * f.scale.y + bob, f.base.z + across.z * reach * out + toCamera.z * (.16 + aimed * .2));
-        if (tossing) return;
+        const s = animate ? die.sway + now * die.pace : 0, calm = animate ? 1 - aimed * .7 : 0;
+        const bob = (Math.sin(s * 1.9) * .03 + Math.sin(s * 3.1 + 1.3) * .012) * calm, drift = (Math.sin(s * 1.3 + 2.1) * .024 + Math.sin(s * 2.3) * .01) * calm, near = Math.sin(s * 1.1 + .7) * .018 * calm;
+        const reach = (.56 + (i % 2) * .09 + aimed * .16) * f.scale.x + drift * out;
+        place.set(f.base.x + across.x * reach * out + toCamera.x * (.16 + aimed * .2 + near), floor + (.62 + i * .3 + aimed * .05) * f.scale.y + bob, f.base.z + across.z * reach * out + toCamera.z * (.16 + aimed * .2 + near));
         // Dealt: it drops in from above tumbling and settles; then it only sways.
         const land = animate ? smooth(die.age / .42) : 1;
         if (land < 1) {
@@ -1658,7 +1663,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           die.turn.slerp(spin.setFromAxisAngle(die.tumble, die.age * 900), settle(die.face, 0), land * land);
         } else {
           die.at.lerp(die.at, place, animate ? 1 - Math.exp(-dt * 12) : 1);
-          die.turn.slerp(die.turn, settle(die.face, animate ? Math.sin(performance.now() / 900 + i * 2.3) * 9 : 0), animate ? 1 - Math.exp(-dt * 10) : 1);
+          die.turn.slerp(die.turn, settle(die.face, (Math.sin(s * 1.5 + .4) * 12 + Math.sin(s * .7) * 6) * calm, (Math.sin(s * 1.7 + 2.6) * 7 + Math.sin(s * 2.9) * 3) * calm), animate ? 1 - Math.exp(-dt * 10) : 1);
         }
         die.size = size * (die.age < 0 ? 0 : 1) * d!.shown * (1 + aimed * .22 + (land < 1 ? Math.sin(land * Math.PI) * .2 : 0));
         die.entity.enabled = die.size > .001;
@@ -1667,6 +1672,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const thrown = d.thrown;
       if (!thrown) continue;
       const { die, action } = thrown, bet = action.die!.rolled !== undefined, won = !!action.die!.won;
+      dressDie(app, die.entity, die.face);
       // Where it is held before it goes: over the wearer's raised hand.
       const held = new pc.Vec3(f.base.x + across.x * .3 * out + toCamera.x * .2, floor + 1.72 * f.scale.y, f.base.z + across.z * .3 * out + toCamera.z * .2);
       const chest = target ? chestOf(target) : held;
@@ -1680,13 +1686,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (t >= DICE.shown - .1) die.face = action.die!.rolled!;
         grow = 1 + shown * .75 + Math.sin(clamp01((t - DICE.shown) / .16) * Math.PI) * .25;
       } else if (bet && !won) {
-        // Lost: it goes back to its place in the hand with the face it rolled.
-        const back = smooth((t - DICE.read) / DICE.back), i = d.hand.indexOf(die);
-        const reach = (.56 + (i % 2) * .09) * f.scale.x;
-        place.set(f.base.x + across.x * reach * out + toCamera.x * .16, floor + (.62 + i * .3) * f.scale.y, f.base.z + across.z * reach * out + toCamera.z * .16);
-        die.at.lerp(held, place, back); die.turn.copy(settle(die.face, 0));
-        grow = 1.75 - back * .75;
-        if (back >= 1) d.thrown = undefined;
+        // Lost: it drops out of the hand to the floor with the face it rolled, and is gone as it lands.
+        const fall = clamp01((t - DICE.read) / DICE.back);
+        die.at.copy(held); die.at.y = held.y + (floor + size * .5 - held.y) * fall * fall;
+        die.turn.copy(spin.setFromAxisAngle(die.tumble, fall * 160)).mul(settle(die.face, 0));
+        grow = 1.75 * (1 - smooth((fall - .45) / .55));
       } else if (t < launch) {
         // Drawn back over the hand, face to the camera.
         const lift = smooth(t / launch);
@@ -1717,7 +1721,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       die.size = size * grow;
       die.entity.enabled = die.size > .001;
       die.entity.setPosition(die.at); die.entity.setRotation(die.turn); die.entity.setLocalScale(die.size, die.size, die.size);
-      if (!thrown.kept && t >= diceEnd(action)) { die.entity.destroy(); d.thrown = undefined; }
+      if (t >= diceEnd(action)) { die.entity.destroy(); d.thrown = undefined; }
     }
   }
   /**
@@ -2223,7 +2227,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); if (d.thrown && !d.thrown.kept) d.thrown.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
+      if (!next) { mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
