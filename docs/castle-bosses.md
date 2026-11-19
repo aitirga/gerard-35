@@ -111,7 +111,13 @@ order).
   fall, with no call from Bernat; at her tenth she takes him even if he is down, and no blow can
   take her past it (`beaten` looks at her first).
 - Built so far: his blow on Gerard comes on her turn (`CASTLE.aitor`, growing each turn she has
-  him); player 2 driving him and the motif are to come. Then Bernat calls, the salón de juegos is played, and they come back with it.
+  him). **Player 2 plays that turn** (built 2026-11-19, a full turn on her side): his commands
+  cross to the right of the fight in possession's violet, Atacar, his skills aimed at a foe that he
+  can pay for, or Defender, and what he picks runs as his own action against Gerard (`heldAct` in
+  `src/battle.ts`), growing as hers did; picked something that does not hurt Gerard, the thread of
+  gum pulls his arm anyway, so the first time there is still no way out. His eyes go violet in the
+  fight. Without a choice (the simulators) she moves him herself, as before. Still to come: the
+  motif in the music, and his card crossing too. Then Bernat calls, the salón de juegos is played, and they come back with it.
 - **The artilugio survives a rewind** (decided 2026-11-19): her castle covering everything takes the
   day back, but not the artilugio once Bernat has brought it, nor the night she took Aitor
   (`rewind` in `src/story.ts`). Otherwise a fall to her on the last day sends the party to a doomed

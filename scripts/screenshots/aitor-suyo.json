@@ -1,0 +1,55 @@
+{
+  "title": "Chapter 2 · Aitor held: player 2 plays her side",
+  "description": "The first Queen at a tenth of her PV takes Aitor: his eyes go violet and, on her turn, his commands cross to her side of the fight for player 2 to play against Gerard (Atacar, his skills aimed at a foe, Defender). Whatever he picks, the thread of gum makes it hurt. Played alone here, so the keyboard drives him.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 180000
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => { window.bs = s; }); window.gerard.battleUI.jumpTo('reina-suyo')"
+    },
+    {
+      "until": "window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && window.bs.foes.find(f => f.kind === 'reina')?.castle?.stage === 'aitor'",
+      "timeout": 30000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "suyo",
+      "caption": "At her tenth she has Aitor: «Suyo», his eyes violet"
+    },
+    {
+      "eval": "(() => { const b = [...document.querySelectorAll('#battle button')].find(x => /Defender/.test(x.textContent)); b?.click(); })()"
+    },
+    {
+      "until": "!!document.querySelector('.held-menu')",
+      "timeout": 30000
+    },
+    {
+      "shot": "held-menu",
+      "delay": 600,
+      "caption": "Her turn is his: his commands cross to her side, for player 2 to play against Gerard"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "shot": "held-pick",
+      "delay": 300,
+      "caption": "One of his own skills, aimed at Gerard now"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "shot": "held-blow",
+      "delay": 1400,
+      "caption": "Aitor's blow lands on Gerard: without the artilugio this only ends one way"
+    }
+  ]
+}

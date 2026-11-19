@@ -3,7 +3,7 @@ import { adjustResource } from './combat/engine.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, onsets, songAt, type Moment, type ToneId } from './song.ts';
-import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment } from './castle.ts';
+import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove } from './castle.ts';
 import { castleAfter, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
@@ -1727,7 +1727,30 @@ const beaten = (state: BattleState) => {
   return state.foes.every(f => f.hp <= 0 || f.part);
 };
 /** What src/castle-fight.ts borrows from here: this file's own stats, PV and line-up. */
-const castleKit: CastleKit = { current: (state, c) => current(state, c), changeHealth: (target, delta) => changeHealth(target, delta), sighted: (actor, raw) => sighted(actor, raw), foe: (id, name, kind, hp) => foe(id, name, kind, hp), lineUp: (party, unlocked) => lineUp(party, unlocked), seedFrom: random => seedFrom(random) };
+const castleKit: CastleKit = { current: (state, c) => current(state, c), changeHealth: (target, delta) => changeHealth(target, delta), sighted: (actor, raw) => sighted(actor, raw), foe: (id, name, kind, hp) => foe(id, name, kind, hp), lineUp: (party, unlocked) => lineUp(party, unlocked), seedFrom: random => seedFrom(random), heldAct: (state, held, move) => heldAct(state, held, move) };
+/**
+ * Someone the Queen holds acting on her side (docs/castle-bosses.md § Aitor, held): their own turn,
+ * driven by player 2, with their own kit against the rest of the party. The same `act` runs on a
+ * view of the fight where they are the only ally and the party standing are their foes, with nobody's
+ * boosts: what it does to people and to the fight's message is real; the turn order and the outcome
+ * it would settle are the view's, and the caller (the Queen's turn) settles those.
+ */
+export function heldAct(state: BattleState, held: Combatant, move: HeldMove): BattleEffect | undefined {
+  const local: Record<string | symbol, unknown> = { allies: [held], foes: state.allies.filter(a => a !== held && a.hp > 0), active: 0, phase: 'player', boosts: undefined };
+  const view = new Proxy(state, {
+    get: (real, key) => key in local ? local[key] : Reflect.get(real, key),
+    set: (real, key, value) => { if (key in local) { local[key] = value; return true; } return Reflect.set(real, key, value); },
+    // Settling the view (its foes all down, or its one ally through) must not end the real fight.
+    deleteProperty: (real, key) => key === 'queued' || key === 'spent' ? true : Reflect.deleteProperty(real, key),
+  });
+  const foes = local.foes as Combatant[];
+  return act(view, move.action, foes[0]?.id, move.skill as SkillId | undefined);
+}
+/** What someone the Queen holds can do on her side: Atacar, each skill of theirs aimed at a foe that they can pay for, Defender. */
+export function heldMoves(state: BattleState, held: Combatant): HeldMove[] {
+  const aimedAtFoes = skillsFor(state, held).filter(s => (s.side === 'foes' || s.side === 'all-foes') && held.secondary >= s.cost && !dieUse(s.id));
+  return [{ action: 'attack' }, ...aimedAtFoes.map(s => ({ action: 'skill' as const, skill: s.id })), { action: 'defend' }];
+}
 /** A fight over: nothing queued or spent is left behind. */
 function endFight(state: BattleState) { delete state.queued; delete state.spent; }
 /**

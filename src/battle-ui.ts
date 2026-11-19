@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -16,7 +16,7 @@ import { award, fightXp, levelForXp, levelProgress, MAX_LEVEL, participants, toN
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
 import type { SoundId } from './sfx';
-import { CASTLE_ENCOUNTERS, MELODY, isCastle, yearOf, type CastleEncounter } from './castle';
+import { CASTLE_ENCOUNTERS, MELODY, isCastle, yearOf, type CastleEncounter, type HeldMove } from './castle';
 import { artilugioLive, castleChips, castleNote } from './castle-fight';
 
 /** The castle's fights on the kicker and the heading (docs/castle.md, docs/castle-bosses.md). */
@@ -1988,6 +1988,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         const foe = state.foes.find(f => f.hp > 0 && !tried.has(f.id) && !state!.enemyActions.includes(f.id));
         if (!foe) break;
         tried.add(foe.id);
+        // Holding Aitor, her turn is his: player 2 picks what he does to Gerard (docs/castle-bosses.md § Aitor, held).
+        const held = heldAitor(foe);
+        if (held) {
+          const move = await chooseHeld(held, token);
+          if (token !== generation || !state) return;
+          state.castle!.aitorMove = move;
+        }
         const response = holdBack(() => enemyAct(state!, foe.id, plan[foe.id]));
         if (response) await play(response, token);
         if (token !== generation || !state) return;
@@ -2102,6 +2109,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   let pointerPlayer: PlayerId = 1;
   function keydown(event: KeyboardEvent) {
     if (!state || event.metaKey || event.ctrlKey || event.altKey) return;
+    // Aitor held, played from the keyboard (alone, or with no second pad): its arrows and Enter.
+    if (heldChoice && heldDriver() === 1) {
+      const action = ({ ArrowUp: 'up', ArrowDown: 'down', Enter: 'confirm', ' ': 'confirm' } as Record<string, ControlAction>)[event.key];
+      if (action) { event.preventDefault(); event.stopPropagation(); heldControl(action); }
+      return;
+    }
     // The summary is anyone's to open and close, at any moment (R, or Esc while it is open).
     if ((event.code === 'KeyR' && !event.repeat) || (event.key === 'Escape' && summaryOpen)) { event.preventDefault(); event.stopPropagation(); toggleSummary(event.code === 'KeyR' ? undefined : false); return; }
     const over = ['won', 'lost', 'escaped'].includes(state.phase);
@@ -2109,6 +2122,56 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!over && split()) { withPlayer(1, () => { if (!locked()) keyIn(event); }); event.preventDefault(); event.stopPropagation(); return; }
     if (!over && (turnDriver() !== 1 || busy)) { event.preventDefault(); event.stopPropagation(); return; }
     keyIn(event);
+  }
+  // ——— Aitor held: player 2 plays her side ————————————————————————————————————————————
+  /** Whom the Queen holds, if this foe is her and her turn is theirs to play now (not lost to the artilugio's first note). */
+  function heldAitor(foe: Combatant) {
+    if (!state || foe.kind !== 'reina' || foe.castle?.stage !== 'aitor' || foe.castle?.stunned) return undefined;
+    return state.allies.find(a => a.castle?.held === 'reina' && a.hp > 0);
+  }
+  let heldChoice: { moves: HeldMove[]; at: number; done: (move: HeldMove) => void; panel: HTMLElement } | undefined;
+  /** Who plays him: his own driver (player 2), or player 1 alone or while player 2 has no pad. */
+  const heldDriver = (): PlayerId => callbacks.waiting('aitor') ? 1 : callbacks.driver('aitor');
+  /**
+   * Aitor's commands on her side, on the right of the screen, in possession's violet: Atacar, his
+   * skills aimed at a foe (Gerard, for him now) that he can pay for, Defender. Whatever he picks, the
+   * thread makes him hurt Gerard (src/castle-fight.ts).
+   */
+  function chooseHeld(held: Combatant, token: number) {
+    return new Promise<HeldMove>(resolve => {
+      const moves = heldMoves(state!, held);
+      const panel = document.createElement('section');
+      panel.className = 'held-menu';
+      panel.dataset.glyphPlayer = String(heldDriver());
+      const label = (move: HeldMove) => move.action === 'attack' ? 'Atacar' : move.action === 'defend' ? 'Defender' : SKILLS.find(s => s.id === move.skill)?.name ?? move.skill!;
+      panel.innerHTML = `<p class="held-kicker">AITOR · SUYO</p><h2>Contra ${escapeHtml(state!.allies.find(a => a !== held && a.hp > 0)?.name ?? 'Gerard')}</h2>`
+        + `<ol>${moves.map((move, i) => `<li><button type="button" data-held="${i}">${escapeHtml(label(move))}${move.action === 'skill' ? `<small>${SKILLS.find(s => s.id === move.skill)?.cost ?? ''} maná</small>` : ''}</button></li>`).join('')}</ol>`
+        + `<p class="held-hint" data-glyph-template="{updown} Elegir · {confirm} Confirmar"></p>`;
+      root.append(panel);
+      const finish = (move: HeldMove) => { panel.remove(); heldChoice = undefined; render(); resolve(move); };
+      heldChoice = { moves, at: 0, done: finish, panel };
+      panel.addEventListener('click', event => {
+        const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-held]');
+        if (button && heldChoice) finish(heldChoice.moves[Number(button.dataset.held)]);
+      });
+      showHeld();
+      // A fight closed meanwhile leaves nobody to choose: let the turn go.
+      const watch = () => { if (token !== generation && heldChoice?.panel === panel) finish(moves[0]); else if (heldChoice?.panel === panel) requestAnimationFrame(watch); };
+      requestAnimationFrame(watch);
+    });
+  }
+  function showHeld() {
+    if (!heldChoice) return;
+    heldChoice.panel.querySelectorAll<HTMLButtonElement>('[data-held]').forEach((b, i) => {
+      b.classList.toggle('is-cursor', i === heldChoice!.at);
+      // The keys reach the fight through its focus: the cursor holds it.
+      if (i === heldChoice!.at) b.focus({ preventScroll: true });
+    });
+  }
+  function heldControl(action: ControlAction) {
+    if (!heldChoice) return;
+    if (action === 'up' || action === 'down') { heldChoice.at = (heldChoice.at + (action === 'up' ? -1 : 1) + heldChoice.moves.length) % heldChoice.moves.length; showHeld(); }
+    else if (action === 'confirm') heldChoice.done(heldChoice.moves[heldChoice.at]);
   }
   /** A note of the artilugio (src/artilugio.ts, which also sounds it): what it did over Aitor and her. */
   function note(n: number) {
@@ -2242,6 +2305,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     /** A controller press; `player` is whose controller it is. Only the turn's own player is heard. */
     control(action: ControlAction | 'prev' | 'next', player: PlayerId = 1) {
       if (!state) return;
+      if (heldChoice) { if (player === heldDriver() && action !== 'prev' && action !== 'next') heldControl(action); return; }
       if (action === 'cancel' && summaryOpen) { toggleSummary(false); return; }
       const ended = ['won', 'lost', 'escaped'].includes(state.phase);
       if (ended) {

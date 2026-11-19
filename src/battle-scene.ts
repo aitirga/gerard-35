@@ -92,6 +92,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const fur = mat('#c49464'), cream = mat('#f1dfb8'), dark = mat('#3c302a'), collar = mat('#a64d43');
   // Eyes have their own materials so La Reina Bubbaloo's minion can turn them dark pink and glowing.
   const eyeDark = mat('#3c302a'), eyePink = mat('#7a1240');
+  // Someone the Queen holds looks out of violet eyes (docs/lore.md), as in the street.
+  const possessedEyes = mat('#5a2a8a'); possessedEyes.emissive.fromString('#b07aff'); possessedEyes.emissiveIntensity = 1.4; possessedEyes.update();
   eyePink.emissive.fromString('#ff2d86'); eyePink.emissiveIntensity = 1.6; eyePink.gloss = .8; eyePink.update();
   function part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], material: pc.StandardMaterial, p: number[], s: number[]) {
     const e = new pc.Entity(name); e.addComponent('render', { type, material, castShadows: true });
@@ -171,6 +173,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     grown: boolean;
     /** Gerard's copy carries the artilugio (src/artilugio-held.ts): held out in the Queen's last fight. */
     held?: HeldArtilugio;
+    /** The Queen holds them (Aitor at her tenth): a violet bead glows over each eye while she does. */
+    possessed?: pc.Entity[];
     arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
     plantFeet: ReturnType<typeof createGroundContact>;
@@ -2553,6 +2557,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         }
         else if (!f.robot) {
           if (f.party && f.body) {
+            // Held by the Queen, their eyes go violet (docs/castle-bosses.md § Aitor, held); freed, they are theirs again.
+            const held = !!unit?.castle?.held && unit.hp > 0;
+            if (held && !f.possessed) f.possessed = f.eyes.map(eye => { const glow = new pc.Entity('Ojo poseído'); glow.addComponent('render', { type: 'sphere', material: possessedEyes, castShadows: false, receiveShadows: false }); glow.setLocalPosition(0, 0, .004); glow.setLocalScale(.027, .036, .009); eye.addChild(glow); return glow; });
+            f.possessed?.forEach(glow => { glow.enabled = held; });
             // A fighter's face follows the fight: laughing when it is won, pain when hit or down.
             const face = faceOf(f.body);
             if (celebrating) face.show('riendo', .3);

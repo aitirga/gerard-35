@@ -213,6 +213,7 @@ In any fight, the story's too, the Combate tab becomes the fight's own page:
   | Aurelià | *La lección*, *La carrera*, *La última recta* (`aurelia-*`) | Each phase from its start: behind the lectern; running his lap; the lectern gone |
   | El Equipo de dirección | *Las tres: Acta* (`direccion-tres`), *Quedan dos*, *Voto de calidad* | The three on an Acta round; two without quorum; the last with every element |
   | La Reina (with the artilugio) | *El chicle*, *Las manos*, *La pompa*, *Tiene a Aitor* (`reina-*`) | Each stage from its start; the last with Aitor already hers, so the artilugio's keys (1–4, two at once for a pair) can be tried |
+  | La Reina (the first time) | *Suyo: Aitor contra Gerard* (`reina-suyo`) | At her tenth with Aitor already hers and no artilugio: on her turn player 2 picks his blow against Gerard |
 
   To try a dual with full maná, *PM infinitos*.
 - **Dual** (a command, in development only): in every fight of `just dev` the fight's menu is

@@ -395,7 +395,16 @@ export interface CastleMark {
  * right so far (`notes`), whether its first note has startled her (`startled`), whether she took
  * Aitor (`taken`: what the story reads when the fight is lost) and whether he is free again (`freed`).
  */
-export interface CastleFight { focus?: string; firmas?: number; cargo?: number; artilugio?: boolean; notes?: number; startled?: boolean; taken?: boolean; freed?: boolean; /** What the round's end had to say, for the next round's message. */ said?: string }
+/**
+ * What Aitor does while the Queen holds him, chosen by player 2 on her turn (docs/castle-bosses.md
+ * § Aitor, held): Atacar, one of his skills aimed at a foe (the party, for him now) or Defender.
+ */
+export interface HeldMove { action: 'attack' | 'skill' | 'defend'; skill?: string }
+export interface CastleFight {
+  focus?: string; firmas?: number; cargo?: number; artilugio?: boolean; notes?: number; startled?: boolean; taken?: boolean; freed?: boolean;
+  /** What the round's end had to say, for the next round's message. */ said?: string;
+  /** Player 2's choice for Aitor on her next turn; without one (the simulators), she moves him herself. */ aitorMove?: HeldMove;
+}
 
 /** Moments of the castle's fights the picker can jump to (docs/dev-tools.md), a `FightMoment` each. */
 export const CASTLE_MOMENTS = {
@@ -409,6 +418,8 @@ export const CASTLE_MOMENTS = {
   'reina-manos': { label: 'Las manos', encounter: 'reina-vuelta' },
   'reina-pompa': { label: 'La pompa', encounter: 'reina-vuelta' },
   'reina-aitor': { label: 'Tiene a Aitor', encounter: 'reina-vuelta' },
+  // The first time, without the artilugio: player 2 plays Aitor against Gerard, and there is no way out.
+  'reina-suyo': { label: 'Suyo: Aitor contra Gerard', encounter: 'reina' },
 } as const satisfies Record<string, { label: string; encounter: CastleEncounter }>;
 export type CastleMoment = keyof typeof CASTLE_MOMENTS;
 export const isCastleMoment = (id: string): id is CastleMoment => id in CASTLE_MOMENTS;

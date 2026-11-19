@@ -597,6 +597,8 @@ in = ["src/battle.ts", "src/story.ts"]
 [[block.item]]
 title = "El jugador 2 maneja a Aitor poseído, contra Gerard"
 priority = "final"
+grep = "export function heldAct"
+in = "src/battle.ts"
 
 # The artilugio is the Bomba-G board of July 2026 (Keyestudio FKS0001): 4 buttons, 4 pairs, a PIR
 # (docs/story-outline.md § The device).

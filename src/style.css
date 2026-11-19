@@ -2237,3 +2237,14 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 /* Five tabs in the picker's 360 px since Partida: a little less room round each. */
 .jump-tabs button { padding-inline: 9px; }
 
+/* Aitor held (battle-ui `chooseHeld`): his commands cross to her side of the fight, in possession's
+   violet, for player 2 to play against Gerard. */
+.held-menu { position: absolute; right: 40px; bottom: 140px; z-index: 6; width: 280px; padding: 16px 18px 14px; border: 1px solid #b07aff88; border-radius: 3px; background: linear-gradient(160deg, #2a1544f2, #170c29f2); box-shadow: 6px 6px 0 #0b0414aa, 0 0 34px #7d3fd855; color: #efe6ff; animation: held-in .35s cubic-bezier(.2, .8, .25, 1) both; }
+@keyframes held-in { from { opacity: 0; transform: translateX(40px); } }
+.held-menu .held-kicker { margin: 0; font-size: 9px; font-weight: 600; letter-spacing: .2em; color: #c9a8ff; }
+.held-menu h2 { margin: 2px 0 10px; font-size: 22px; font-weight: 600; }
+.held-menu ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.held-menu button { width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 8px 12px; border: 1px solid #b07aff44; border-radius: 2px; background: #b07aff12; color: inherit; font-size: 15px; font-weight: 600; text-align: left; pointer-events: auto; }
+.held-menu button small { font-size: 11px; font-weight: 500; color: #c9a8ffbb; }
+.held-menu button.is-cursor, .held-menu button:hover { background: #b07aff3d; border-color: #d4b8ff; box-shadow: inset 3px 0 0 #d4b8ff; }
+.held-menu .held-hint { margin: 10px 0 0; font-size: 11px; color: #c9a8ffcc; }

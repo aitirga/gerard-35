@@ -135,3 +135,27 @@ test('each castle boss beaten holds her back as an ánima does, so a castle begu
   assert.ok(story.spread < before, 'Aurelià beaten: her spread goes back');
   assert.equal(story.heldBack, story.animas.length + 1);
 });
+
+test('held, Aitor plays her side: player 2 picks his blow from his own kit, and whatever he picks the thread makes it hurt', async () => {
+  const { enemyAct, heldMoves } = await import('../src/battle.ts');
+  const state = createFearBattle(party, 'reina'), queen = state.foes.find(f => f.kind === 'reina');
+  queen.hp = 0; castleAfter(undefined, state);
+  const aitor = state.allies.find(a => a.id === 'aitor'), gerard = state.allies.find(a => a.id === 'gerard');
+  assert.equal(aitor.castle?.held, 'reina');
+  const moves = heldMoves(state, aitor);
+  assert.deepEqual([moves[0].action, moves.at(-1).action], ['attack', 'defend'], 'Atacar first, Defender last, his skills between');
+  // His own blow, on her turn: it lands on Gerard and the fight goes on, hers.
+  state.phase = 'enemy'; state.enemyActions = [];
+  state.castle.aitorMove = { action: 'attack' };
+  const before = gerard.hp, blow = enemyAct(state, queen.id);
+  assert.equal(blow.actor, 'aitor');
+  assert.ok(gerard.hp < before && blow.amount === before - gerard.hp);
+  assert.ok(state.phase === 'enemy' || state.phase === 'lost', 'the view he acted in never ends the real fight as won');
+  assert.equal(state.castle.aitorMove, undefined, 'a choice is spent on the turn it was for');
+  // Defender hurts nobody: the thread of gum pulls his arm anyway.
+  gerard.hp = gerard.maxHp; state.phase = 'enemy'; state.enemyActions = [];
+  state.castle.aitorMove = { action: 'defend' };
+  enemyAct(state, queen.id);
+  assert.ok(gerard.hp < gerard.maxHp, 'there is no way out the first time');
+  assert.match(state.message, /hilo de chicle/);
+});

@@ -10,7 +10,7 @@
 import { ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, TIMED, inflict,
   type Affinity, type BattleEffect, type BattleState, type ClassId, type Combatant, type Element, type FoeAbilityId, type PartySlot, type TimedId } from './battle.ts';
 import { magical, physical, type Stats } from './stats.ts';
-import { AURELIA_PHASES, CASTLE, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, MELODY, REINA_PHASES, UNDOES, isCastle, yearOf,
+import { type HeldMove, AURELIA_PHASES, CASTLE, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, MELODY, REINA_PHASES, UNDOES, isCastle, yearOf,
   type AureliaPhase, type CastleEncounter, type CastleKind, type CastleMark, type CastleMoment, type Gum, type PupilKind, type RoomEncounter, type Year } from './castle.ts';
 
 /** What src/battle.ts lends: its own stats, PV and line-up, so a castle fight is measured as any other. */
@@ -21,6 +21,8 @@ export interface CastleKit {
   foe(id: string, name: string, kind: CastleKind, hp?: number): Combatant;
   lineUp(party: PartySlot[], unlocked: readonly ClassId[]): Combatant[];
   seedFrom(random: () => number): number;
+  /** Someone the Queen holds acting on her side, with their own kit against the party (src/battle.ts `heldAct`). */
+  heldAct(state: BattleState, held: Combatant, move: HeldMove): BattleEffect | undefined;
 }
 type Blow = 'physical' | 'magic' | 'dual';
 type Hit = (who: Combatant, power: number) => number;
@@ -349,9 +351,26 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       if (!aitor || !gerard) { delete effect.target; state.message = `${actor.name} espera.`; return; }
       use('suyo'); effect.target = gerard.id;
       // Every turn she has him he hits harder: without the artilugio this only ends one way.
-      const raw = physical(Math.round(CASTLE.aitor * (1 + CASTLE.aitorGrows * (actor.turns! - 1))), kit.current(state, aitor), kit.current(state, gerard));
+      const grows = 1 + CASTLE.aitorGrows * (actor.turns! - 1);
+      const move = state.castle?.aitorMove; if (state.castle) delete state.castle.aitorMove;
+      // Player 2 plays him, on her side, with his own kit (docs/castle-bosses.md § Aitor, held).
+      if (move) {
+        const before = gerard.hp, done = kit.heldAct(state, aitor, move), hurt = before - gerard.hp;
+        if (done && hurt > 0) {
+          const extra = gerard.hp > 0 ? kit.changeHealth(gerard, -Math.round(hurt * (grows - 1))) : 0;
+          effect.actor = aitor.id; effect.amount = hurt - extra;
+          if (done.skill) effect.skill = done.skill;
+          state.message = `Aitor, con los ojos violeta, ${move.action === 'skill' && done.skill ? `usa ${SKILLS.find(s => s.id === done.skill)?.name ?? 'lo que sabe'} contra` : 'golpea a'} ${gerard.name}. −${effect.amount} PV.`;
+          forsaken(state);
+          return;
+        }
+        // Whatever he chose that does not hurt Gerard, the thread of gum pulls his arm anyway.
+        if (done) state.message = 'Aitor duda. ';
+      }
+      const raw = physical(Math.round(CASTLE.aitor * grows), kit.current(state, aitor), kit.current(state, gerard));
       effect.amount = kit.changeHealth(gerard, -(gerard.guarding ? Math.ceil(raw / 3) : raw));
-      state.message = `Aitor, con los ojos violeta, golpea a ${gerard.name} con todo lo que sabe. −${effect.amount} PV.`;
+      state.message = `${move ? 'Aitor duda. El hilo de chicle tira de su brazo y' : 'Aitor, con los ojos violeta,'} golpea a ${gerard.name} con todo lo que sabe. −${effect.amount} PV.`;
+      forsaken(state);
       return;
     }
     if (stage === 'manos' && !hands.length) {
@@ -786,14 +805,15 @@ export function stageCastle(kit: CastleKit, state: BattleState, moment: CastleMo
     if (!queen) return false;
     state.foes = state.foes.filter(c => c.kind !== 'mano');
     delete queen.intent; delete queen.timed; delete queen.statuses; delete queen.affinities; queen.turns = 0;
-    state.castle = { artilugio: state.castle?.artilugio ?? true };
+    // The first fight's moment has no artilugio; the rest are the second fight's.
+    state.castle = { artilugio: moment === 'reina-suyo' ? false : state.castle?.artilugio ?? true };
     if (moment === 'reina-chicle') { queen.hp = queen.maxHp; queen.castle = { stage: 'chicle', seen: queen.hp }; wrap(queen, 'fresco'); }
     else if (moment === 'reina-manos') {
       queen.hp = Math.floor(queen.maxHp * CASTLE.manos); queen.castle = { stage: 'manos', seen: queen.hp };
       for (const n of [1, 2]) { const hand = kit.foe(`mano-${n}`, `Mano ${n === 1 ? 'izquierda' : 'derecha'}`, 'mano'); hand.castle = { seen: hand.hp }; state.foes.push(hand); }
     } else if (moment === 'reina-pompa') { queen.hp = Math.floor(queen.maxHp * CASTLE.pompa); queen.castle = { stage: 'pompa', seen: queen.hp }; }
     else {
-      // At a tenth of her PV: she has just taken Aitor (the artilugio's moment).
+      // At a tenth of her PV: she has just taken Aitor (the artilugio's moment, or the first time's with none).
       queen.hp = Math.ceil(queen.maxHp * CASTLE.toma); queen.castle = { stage: 'pompa', seen: queen.hp + 1 };
       castleAfter(kit, state);
       delete state.news;
