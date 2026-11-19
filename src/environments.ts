@@ -517,7 +517,7 @@ export const EL_NUCLI = house({
  * docs/places/poble-sec.md), after Aitor's sketch: the bathroom and the terrace along the top, the
  * desk with her computer against the west wall right over the sofa, the kitchen in the north-east
  * corner with its bar below, the bedroom in the south-east behind the wall the projector throws onto,
- * and the way in in the south-west corner. Hydraulic tiles, wood and concrete, under a hand's depth
+ * and the door in the south-west corner, straight into the living room. Hydraulic tiles, wood and concrete, under a hand's depth
  * of water. The door is at the bottom, as Poble Sec's street is, so the back wall stands for the
  * camera. `src/emilie-flat-scenery.ts` furnishes and floods it.
  */
@@ -536,9 +536,9 @@ export const PISO_EMILIE = house({
     '#oo.......#####',
     '#oo.......#ooo#',
     '#oo.......#ooo#',
-    '####......+...#',
-    '#..#......#..o#',
-    '#..+......#...#',
+    '#.........+...#',
+    '#.........#..o#',
+    '#.........#...#',
     '##D############',
   ],
   rooms: [
@@ -547,11 +547,10 @@ export const PISO_EMILIE = house({
     { name: 'Salón', x: 1, z: 5, w: 6, d: 4, floor: 'hydraulic' },
     { name: 'Cocina', x: 7, z: 5, w: 7, d: 4, floor: 'concrete' },
     { name: 'Salón', x: 1, z: 9, w: 9, d: 3, floor: 'hydraulic' },
-    { name: 'Salón', x: 4, z: 12, w: 6, d: 3, floor: 'hydraulic' },
-    { name: 'Entrada', x: 1, z: 13, w: 2, d: 2, floor: 'hydraulic' },
+    { name: 'Salón', x: 1, z: 12, w: 9, d: 3, floor: 'hydraulic' },
     { name: 'Habitación', x: 11, z: 10, w: 3, d: 5, floor: 'laminate' },
   ],
-  // A yucca in a pot by the door, where you come in.
+  // A yucca in a pot by the door.
   props: [{ kind: 'tree', x: 1, z: 13, species: 'yucca', scale: 0.7, base: 'pot' }],
   interactions: [
     { id: 'piso-emilie-salida', cell: { x: 2, z: 14 }, label: 'Bajar a la calle', to: { environment: 'poble-sec', cell: { x: 145, z: 79 } } },

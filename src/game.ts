@@ -45,6 +45,7 @@ import { buildCuerdas, buildPiano, type CuerdasScene } from './cuerdas-scene';
 import { CUERDAS as CUERDAS_PLAN, freshCuerdas, holds, leave, mazeAt, mend, pieceAt, press, turnPeg, type Piece } from './cuerdas';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { buildModelo, type ModeloScene } from './modelo-scene';
+import { FLOOD } from './emilie-flat-scenery';
 import { GALLERY, PATROLS, ZONE_IDS, beat, calibration, createModelo, descend, enter, interactionStake, leave as leaveBorehole, measure, shake as shakePatrol, stakeOf, stakeVerb, tick as tickModelo } from './modelo';
 import { MODELO_SIZES } from './modelo-foes';
 import { MODELO_FIGHTS, calibrate } from './battle';
@@ -1633,6 +1634,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       // In the sea, the water at their waist foams round them.
       let ripple: pc.Entity | undefined;
       if (npc.wade) { ripple = rippleRing(castRoot); placeOnGround(ripple, npc.cell, .045); }
+      // Standing in Emilie's flooded flat: the same rings, on its water.
+      else if (environment.id === 'piso-emilie') { ripple = rippleRing(castRoot); placeOnGround(ripple, npc.cell, FLOOD + .005); }
       // Held by the Queen they keep staring where they stare; Anna, out in the sea, turns to them as they wade near.
       return { entity, cell: npc.cell, body: rig.body, materials: rig.materials, still: npc.possessed && !npc.wade, ripple };
     });
@@ -2713,7 +2716,11 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     // Each footfall kicks up a small puff under the shoe that lands.
     if (walking && animate && pose.landed >= 0) {
       const foot = rig.feet[pose.landed].getPosition();
-      effects.emit('dust', new pc.Vec3(foot.x, scenery.groundHeight(foot.x, foot.z) + .05, foot.z), 2, .08);
+      // In Emilie's flooded flat the foot goes into water instead: a ring on the surface and a few drops.
+      if (environment.id === 'piso-emilie') {
+        const at = new pc.Vec3(foot.x, scenery.groundHeight(foot.x, foot.z) + FLOOD, foot.z);
+        effects.emit('wake', at, 1, .02); effects.emit('wade', at, 5, .06);
+      } else effects.emit('dust', new pc.Vec3(foot.x, scenery.groundHeight(foot.x, foot.z) + .05, foot.z), 2, .08);
     }
     const idle = idlePose(clock);
     const resting = animate && !walking && !battle ? 1 - pose.weight : 0;

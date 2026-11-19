@@ -2,7 +2,7 @@ import * as pc from 'playcanvas';
 import type { RoomKit } from './home-scenery';
 
 /**
- * Emilie's flat inside (docs/quests/emilie.md, `PISO_EMILIE`, after Aitor's sketch): hydraulic tiles,
+ * Emilie's flat inside (docs/quests/emilie.md, `PISO_EMILIE`, after Aitor's sketch): brown hydraulic tiles,
  * wood and concrete. The desk with her laptop against the west wall, right over the sofa, her model of
  * the water under Poble Sec still running on it in phosphor green; the sofa facing the projector's
  * screen on the bedroom wall; the kitchen in the north-east corner with a concrete bar below it; the
@@ -10,6 +10,9 @@ import type { RoomKit } from './home-scenery';
  * floor, papers floating on it. The terrace's drain is buried under leaves against its glass door:
  * whoever looks can see why the flat flooded; she cannot. No pink anywhere: this mission has none.
  */
+/** How deep the water stands over her floor (m): the surface the party wades through. */
+export const FLOOD = .16;
+
 export function furnishEmilie(r: RoomKit) {
   const { box, cyl, ball, canvas, painted, jitter, light, standing, face: FACE } = r;
   const made = new Map<string, pc.StandardMaterial>();
@@ -110,9 +113,9 @@ export function furnishEmilie(r: RoomKit) {
   for (let i = 0; i < 10; i++) box('Hoja seca', dead[i % 2], 5.6 + jitter(i + 90) * 7.5, 1.6 + jitter(i + 120) * 1.8, .01, .12, .01, .08).setEulerAngles(0, jitter(i + 7) * 180, 0);
 
   // ——— The water: a hand's depth over every room below the terrace, still, with papers floating on it ———
-  const water = r.mat('Agua del piso', '#3c7189', 1, .12);
-  water.opacity = .68; water.blendType = pc.BLEND_NORMAL; water.depthWrite = false; water.update();
-  const sheet = box('Agua', water, 7, 9.5, .02, 13.9, .14, 9.9);
+  const water = r.mat('Agua del piso', '#4a6d74', 1, .1);
+  water.opacity = .55; water.blendType = pc.BLEND_NORMAL; water.depthWrite = false; water.update();
+  const sheet = box('Agua', water, 7, 9.5, .02, 13.9, FLOOD - .02, 9.9);
   // Where it meets the walls and the legs of things, a pale line: the water's edge, so it reads as water.
   const edge = r.mat('Orilla del agua', '#cfe6ee', .9, .3);
   edge.opacity = .55; edge.blendType = pc.BLEND_NORMAL; edge.depthWrite = false; edge.update();

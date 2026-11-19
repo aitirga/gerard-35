@@ -44,12 +44,15 @@ test('the laptop does nothing until they have spoken to her; then they connect a
   assert.equal(story.handle({ type: 'interact', id: 'talk-emilie' })[0].dialogue, LINES_EMILIE.arrive);
   assert.ok(story.has('poble-sec-emilie'));
   assert.equal(story.handle({ type: 'interact', id: 'talk-emilie' })[0].dialogue, LINES_EMILIE.waiting);
-  assert.equal(story.interactions(PISO).find(i => i.id === 'portatil-emilie').hint, 'Conectarse');
+  assert.equal(story.interactions(PISO).find(i => i.id === 'portatil-emilie').hint, 'Mirar');
   const hour = story.clock.hour;
   const connect = story.handle({ type: 'interact', id: 'portatil-emilie' });
-  assert.deepEqual(beats(connect).slice(0, 3), ['dialogue', 'travel', 'dialogue']);
-  assert.deepEqual(connect[1], { kind: 'travel', environment: MODELO_PLACE, cell: PLACES_MODELO.spawn });
-  assert.equal(connect[2].dialogue, LINES_EMILIE.inside);
+  // The Queen's whirlpool swells out of the screen and takes the two of them; Emilie stays.
+  assert.deepEqual(beats(connect).slice(0, 4), ['dialogue', 'portal', 'travel', 'dialogue']);
+  assert.deepEqual(connect[1], { kind: 'portal', who: 'party', open: { ...PLACES_PISO.portal } });
+  assert.deepEqual(connect[2], { kind: 'travel', environment: MODELO_PLACE, cell: PLACES_MODELO.spawn });
+  assert.equal(connect[3].dialogue, LINES_EMILIE.inside);
+  assert.equal(story.interactions(PISO).find(i => i.id === 'portatil-emilie').hint, 'Entrar');
   assert.ok(story.has('modelo') && story.clock.hour > hour, 'going in takes its hour');
   // Back out by the laptop and in again: no talk over, no second hour, and the run is where they left it.
   story.inside = MODELO_PLACE;
@@ -58,8 +61,8 @@ test('the laptop does nothing until they have spoken to her; then they connect a
   assert.deepEqual(story.handle({ type: 'interact', id: 'salir-modelo' }), [{ kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.laptop } }]);
   const later = story.clock.hour;
   const again = story.handle({ type: 'interact', id: 'portatil-emilie' });
-  assert.deepEqual(beats(again), ['travel', 'dialogue']);
-  assert.equal(again[1].dialogue, LINES_EMILIE.insideAgain);
+  assert.deepEqual(beats(again), ['dialogue', 'portal', 'travel', 'dialogue']);
+  assert.equal(again[3].dialogue, LINES_EMILIE.insideAgain);
   assert.equal(story.clock.hour, later);
   assert.deepEqual(story.modeloRun().placed, ['suelo-1']);
 });

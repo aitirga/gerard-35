@@ -341,7 +341,9 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       // An old Sants shop floor: cement tiles at their real 25 cm, four to a cell's side, on a cream
       // ground. Each carries a slate four-petal flower in the middle and a terracotta quarter circle
       // at every corner, so four tiles meet in a small disc: a quiet carpet, never louder than Gerard.
-      const n = 4, t = size / n, terracotta = '#b4654e', cream = '#e6dcc6', slate = '#5a636a';
+      // Emilie's flat (after Aitor): the same pattern in browns, an old Poble Sec floor of ochre, rust and dark umber.
+      const brown = environment.id === 'piso-emilie';
+      const n = 4, t = size / n, terracotta = brown ? '#9a5534' : '#b4654e', cream = brown ? '#c9a77c' : '#e6dcc6', slate = brown ? '#5c3a24' : '#5a636a';
       for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) {
         const x0 = k * t, y0 = r * t, cx = x0 + t / 2, cy = y0 + t / 2, shade = 0.95 + jitter(r * 4 + k + 70) * 0.08;
         ctx.fillStyle = cream; ctx.fillRect(x0, y0, t, t);
@@ -352,7 +354,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
         ctx.fillStyle = terracotta; ctx.beginPath(); ctx.arc(cx, cy, t * 0.05, 0, Math.PI * 2); ctx.fill();
         // Worn cement: each tile a little lighter or darker, and the grout lines.
         ctx.fillStyle = `rgba(${shade > 1 ? '255,255,255' : '0,0,0'},${Math.abs(shade - 1) * 0.9})`; ctx.fillRect(x0, y0, t, t);
-        ctx.strokeStyle = '#a39888'; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y0 + 0.5, t - 1, t - 1);
+        ctx.strokeStyle = brown ? '#8a6a4a' : '#a39888'; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y0 + 0.5, t - 1, t - 1);
       }
       speckle('#00000010', 500, 2, 21); speckle('#ffffff12', 300, 2, 23);
     } else if (kind === 'terrazzo') {

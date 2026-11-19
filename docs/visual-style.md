@@ -225,7 +225,7 @@ material, light and landmark, which the last column names.
 | La torre de Uri | `#1f0f22` | violet-black | dark stone walls | spiral tower | `cardedeu-laberinto` cool | Throne room (ΔE 25): violet vs indigo and gold |
 | Las cuerdas | `#1b3844` | dark petrol blue-green | strings of silver light, dark glass edged in silver | every string meeting at one point over the centre | `cuerdas` cold, no sky | La torre de Uri (ΔE 24): a void with no walls and no ground, crossed by silver vs dark stone always higher than you |
 | El modelo de Emilie | `#07130c` | black with phosphor green `#3fe07a` lines | a mesh of thin lit lines over black; real ground only where it has been measured | the section itself: four galleries one under another, cut open and seen from the side | `modelo` no sky, a screen's own light | Las cuerdas (dark, no sky): green lines on black and a side view vs petrol glass and silver strings seen from above |
-| Casa de Emilie (built) | `#cfc6b4` | pale hydraulic tile under water | hydraulic tiles, oak and concrete, a hand's depth of still water | her desk with the laptop on, the model glowing green on it | `piso-emilie` cool grey daylight | Poble Sec (ΔE to measure): a white room under water vs sienna render at evening |
+| Casa de Emilie (built) | `#a8875f` | brown hydraulic tile under water | hydraulic tiles, oak and concrete, a hand's depth of still water | her desk with the laptop on, the model glowing green on it | `piso-emilie` cool grey daylight | Poble Sec (ΔE to measure): a white room under water vs sienna render at evening |
 | El Nucli (built) | `#2f4a3a` | bottle green | board-game boxes, felt | the wall of boxes | `el-nucli` warm | Palace patio (ΔE 25): indoor felt vs painted court |
 | Sants street (built) | `#cfa463` | ochre | painted roller shutters, old render scored as ashlar (`estuc`) | a lit shopfront in a row of shutters | `sants` cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
 | Sagrada Família, outside | `#8a7764` | weathered sandstone | carved sandstone | spires | `sagrada-familia` warm | Avinguda Meridiana (ΔE 18): carved stone and park vs panot and blocks |
@@ -460,11 +460,11 @@ the picker (*El modelo de Emilie*, group Barcelona).
 Built (2026-11-19) from Aitor's sketch of her flat (`docs/quests/emilie.md` § The mission, as built):
 the bathroom and the terrace along the top, the desk with her computer against the west wall right
 over the sofa, the kitchen in the north-east corner with its bar below, the bedroom behind the wall
-the projector throws onto, the door in the south-west corner. `just screenshots emilie --gpu`.
+the projector throws onto, the door in the south-west corner, straight into the living room. `just screenshots emilie --gpu`.
 
 | | |
 | --- | --- |
-| Dominant | Pale hydraulic tile `#cfc6b4` seen through still water `#3c7189` |
+| Dominant | Brown hydraulic tile (ochre `#c9a77c`, rust `#9a5534`, umber `#5c3a24`) seen through still water `#4a6d74` |
 | Secondary | Oak `#b98d5f`, polished concrete `#9d9a93`, the terrace's terracotta |
 | Material | Hydraulic tiles, oak and concrete; a hand's depth of water over every room below the terrace |
 | Ground | The water itself, a pale line where it meets the walls, papers floating on it |

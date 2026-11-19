@@ -395,7 +395,7 @@ picker's *Misiones* tab has it part by part (`just dev-mission emilie <part>`; `
 - **Her flat** (`piso-emilie`, `PISO_EMILIE`, `src/emilie-flat-scenery.ts`), after **Aitor's sketch**: the
   bathroom and the terrace along the top; the desk with her computer against the west wall, right over the
   sofa; the kitchen in the north-east corner with its bar below; the bedroom in the south-east behind the wall
-  the projector throws onto; the door in the south-west corner. Hydraulic tiles, wood and concrete, a hand's
+  the projector throws onto; the door in the south-west corner, straight into the living room (no hall). Brown hydraulic tiles, wood and concrete, a hand's
   depth of water over it. Emilie stands in the water; her laptop shows her model running.
 - **The laptop** does nothing until they have spoken to her (Aitor: «Luego. Primero ella»). Then *Conectarse*
   takes them into `modelo` (an hour the first time); *Desconectarse*, behind where they land in El suelo,

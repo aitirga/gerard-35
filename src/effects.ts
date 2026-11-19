@@ -59,6 +59,9 @@ const KINDS = {
   // …water…
   drop: { shape: 'puff', colour: ['#cdeeff', '#5fb6e8'], glow: .3, opacity: .9, life: [.8, 1.4], size: [.04, .07], speed: [1.5, 3], rise: [2, 3.5], gravity: 9, drag: .3, collide: true, pop: true, onLand: { kind: 'ripple', count: 1, inherit: true }, bodies: 1, front: .5 },
   ripple: { shape: 'ring', orient: 'ground', colour: '#cdeeff', additive: .5, glow: .6, life: [.5, .7], size: [.06, .1], sizeEnd: 4, fadeOut: 1, gravity: 30, collide: true, stick: true },
+  // Wading through standing water (Emilie's flat): each step throws a few low drops, and a ring spreads on the surface where the foot went in.
+  wade: { shape: 'puff', colour: ['#e6f6ff', '#8cc4dc'], glow: .25, opacity: .85, life: [.35, .55], size: [.022, .036], speed: [.35, .8], rise: [.7, 1.2], gravity: 9, drag: .4 },
+  wake: { shape: 'ring', orient: 'ground', colour: '#e3f4fb', additive: .35, glow: .4, opacity: .85, life: [.8, 1.1], size: [.12, .16], sizeEnd: 5.5, fadeOut: 1 },
   // …earth…
   rock: { shape: 'splat', colour: ['#8a7560', '#6b5a4a'], life: [1.2, 2], size: [.05, .1], fadeOut: .2, speed: [2, 3.5], rise: [2, 4], gravity: 12, drag: .3, spin: [90, 360], collide: true, bounce: .35, friction: .5, bodies: 1, front: .4 },
   // …light and shadow.

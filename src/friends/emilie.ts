@@ -38,6 +38,8 @@ export const PLACES_PISO = {
   laptop: { x: 3, z: 5 },
   /** The laptop's screen, for the prompt to sit on. */
   screen: { x: 1.6, z: 5.5, y: 1.05 },
+  /** Where the Queen's whirlpool swells out of the screen and takes the two of them in. */
+  portal: { x: 2, z: 5 },
 } as const;
 /** Where things are in her model: the way back out to the laptop, at the far end of El suelo behind where they land. */
 export const PLACES_MODELO = {
@@ -80,18 +82,23 @@ export const LINES_EMILIE = {
   ),
   /** The laptop before they have spoken to her. */
   laptopBefore: group('aitor', aitor('Luego. Primero ella: está empapada y ni se ha sentado.')),
-  /** The laptop, the first time: her model of the water under Poble Sec, and they connect to it. */
+  /** The laptop, the first time: her model of the water under Poble Sec, and the Queen's whirlpool swelling out of it. */
   laptop: group('emilie',
     aitor('El agua bajo Poble Sec, en corte. Lo tenía a medias.'),
     gerard('Abajo pone «no converge». Una línea detrás de otra.'),
     emilie('Eso lo hice yo. Sé que lo hice yo.'),
     aitor('Y esas estacas naranjas son suyas: donde quería medir.'),
     emilie('Medir. Sé que eso es importante. No sé por qué.'),
-    aitor('Conéctate conmigo, Gerard. Vamos a verlo desde dentro.'),
+    gerard('Aitor. La pantalla se está poniendo rosa.'),
+    emilie('Eso no lo he hecho yo.'),
+    aitor('Es suyo. Gerard, apártate…'),
   ),
+  /** Back in by the whirlpool, which stays in her screen. */
+  laptopAgain: group('aitor', aitor('Sigue ahí, en la pantalla. Vamos.')),
   /** Inside the model, the first time. */
   inside: group('emilie',
-    gerard('Estamos dentro. Es el suelo, cortado. Como un dibujo.'),
+    gerard('Nos ha tragado. Estamos dentro de su modelo.'),
+    gerard('Es el suelo, cortado. Como un dibujo.'),
     aitor('Todo lo verde es lo que el modelo se inventa. No lo ha medido nadie.'),
     emilie('¿Me oís? Os veo en la pantalla. Sois dos puntos.'),
     aitor('La estaca de ahí. Era su plan.'),

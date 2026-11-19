@@ -44,7 +44,18 @@
     {
       "shot": "piso",
       "delay": 700,
-      "caption": "Up in her flat, just in by the door: a hand's depth of water over the hydraulic tiles; Emilie standing in it"
+      "caption": "Up in her flat, straight into the living room: brown hydraulic tiles under a hand's depth of water; Emilie standing in it, rings round her"
+    },
+    {
+      "hold": [
+        "KeyD"
+      ],
+      "ms": 900
+    },
+    {
+      "shot": "vadeando",
+      "delay": 60,
+      "caption": "Wading: each step throws a few drops and leaves a ring spreading on the water"
     },
     {
       "eval": "(() => { const c = window.gerard.game.world(7, 8); window.gerard.game.frame({ x: c.x, y: 0, z: c.z }, 11); })()"
@@ -52,7 +63,7 @@
     {
       "shot": "piso-entero",
       "delay": 1100,
-      "caption": "The flat after Aitor's sketch: bathroom and terrace along the top, the desk over the sofa, the kitchen and its bar, the bedroom behind the projector's wall"
+      "caption": "The flat after Aitor's sketch: bathroom and terrace along the top, the desk over the sofa, the kitchen and its bar, the bedroom behind the projector's wall, the door straight into the living room"
     },
     {
       "eval": "(() => { const c = window.gerard.game.world(7, 2); window.gerard.game.frame({ x: c.x, y: 0, z: c.z }, 6); })()"
@@ -89,7 +100,7 @@
     {
       "shot": "portatil",
       "delay": 700,
-      "caption": "By the desk: her laptop, the model still running in phosphor green; «Conectarse»"
+      "caption": "By the desk: her laptop, the model still running in phosphor green"
     },
     {
       "eval": "(() => { const c = window.gerard.game.world(1.6, 5.5); window.gerard.game.frame({ x: c.x, y: .8, z: c.z }, 2.6); })()"
@@ -108,7 +119,71 @@
     {
       "shot": "conectarse",
       "delay": 900,
-      "caption": "Aitor reads her model; they connect"
+      "caption": "Aitor reads her model, and the screen starts turning pink"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "shot": "portal-rosa",
+      "delay": 1600,
+      "caption": "The Queen's whirlpool swells out of her laptop and takes Gerard and Aitor; Emilie stays"
+    },
+    {
+      "shot": "atrapados",
+      "delay": 1600,
+      "caption": "Swallowed into her model"
     },
     {
       "open": "/?mission=emilie&part=suelo"
@@ -134,7 +209,7 @@
     {
       "shot": "salir",
       "delay": 1100,
-      "caption": "Behind where they land, the way back to her laptop («Desconectarse»)"
+      "caption": "Behind where they land, the way back to her flat («Volver»)"
     },
     {
       "open": "/?mission=emilie&part=gravas"

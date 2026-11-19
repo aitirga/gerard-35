@@ -684,7 +684,11 @@ export class Story {
     const home: StoryEffect = { kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.laptop } };
     return [say(LINES_EMILIE.won), home, say(LINES_EMILIE.home), { kind: 'lights', people: ['emilie'] }, ...this.spend('fight'), ...this.nightfall()];
   }
-  /** The laptop on her desk: once she has been spoken to, they connect to her model and are inside it. */
+  /**
+   * The laptop on her desk: once she has been spoken to, the Queen's whirlpool swells out of the screen
+   * and takes Gerard and Aitor into her model (Emilie stays, and watches them on it). It stays in the
+   * screen: going back in is through it.
+   */
   private useLaptop(): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (!this.adult) return [];
@@ -692,7 +696,7 @@ export class Story {
     if (!this.has('poble-sec-emilie')) return [say(LINES_EMILIE.laptopBefore)];
     const first = this.set('modelo');
     const inside: StoryEffect = { kind: 'travel', environment: MODELO_PLACE, cell: { ...PLACES_MODELO.spawn } };
-    return [...first ? [say(LINES_EMILIE.laptop)] : [], inside, say(first ? LINES_EMILIE.inside : LINES_EMILIE.insideAgain), ...first ? this.spend('cafe') : []];
+    return [say(first ? LINES_EMILIE.laptop : LINES_EMILIE.laptopAgain), { kind: 'portal', who: 'party', open: { ...PLACES_PISO.portal } }, inside, say(first ? LINES_EMILIE.inside : LINES_EMILIE.insideAgain), ...first ? this.spend('cafe') : []];
   }
   /**
    * In her model (src/modelo.ts): a patrol that reaches them is its fight; the first time they reach a zone
@@ -1288,9 +1292,9 @@ export class Story {
     if (this.adult && this.has('metro') && environment === POBLE_SEC) list.push({ id: 'poble-sec-emilie', label: 'Llamar al portal', hint: 'Llamar', cell: { ...PLACES_EMILIE.door } });
     if (this.adult && environment === PISO) {
       list.push({ id: 'talk-emilie', label: 'Hablar con Emilie', cell: { ...PLACES_PISO.emilie } });
-      list.push({ id: 'portatil-emilie', label: 'Su portátil', hint: this.has('poble-sec-emilie') && !this.has('converge') ? 'Conectarse' : 'Mirar', cell: { ...PLACES_PISO.laptop }, anchor: { ...PLACES_PISO.screen } });
+      list.push({ id: 'portatil-emilie', label: 'Su portátil', hint: this.has('modelo') && !this.has('converge') ? 'Entrar' : 'Mirar', cell: { ...PLACES_PISO.laptop }, anchor: { ...PLACES_PISO.screen } });
     }
-    if (this.adult && environment === MODELO_PLACE) list.push({ id: 'salir-modelo', label: 'Volver al portátil', hint: 'Desconectarse', cell: { ...PLACES_MODELO.exit } });
+    if (this.adult && environment === MODELO_PLACE) list.push({ id: 'salir-modelo', label: 'Volver al piso', hint: 'Volver', cell: { ...PLACES_MODELO.exit } });
     if (this.adult && environment === CUERDAS_PLACE) {
       if (!this.has('voz')) list.push({ id: 'talk-marta', label: 'Hablar con Marta', cell: { ...PLACES_CUERDAS.marta[Math.min(this.marta.beaten.length, PLACES_CUERDAS.marta.length - 1)] } });
       list.push({ id: 'salir-cuerdas', label: 'Volver por la pompa', hint: 'Volver', cell: { ...PLACES_CUERDAS.exit } });
