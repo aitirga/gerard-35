@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
 import { TONES, VOZ_SONG, turnAt } from './song';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -2114,10 +2114,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const token = ++generation;
       const { possessed = false, encounter = 'dogs' } = options;
       const slots = typeof party === 'number' ? childParty(party, options.animas?.at(-1)) : party;
-      state = (FEAR_ENCOUNTERS as readonly string[]).includes(encounter) ? createFearBattle(slots, encounter as (typeof FEAR_ENCOUNTERS)[number], options.animas)
-        : encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId, options.animas)
-        : encounter === 'palace-guards' || encounter === 'night-guard' ? createGuardBattle(slots, options.guards ?? palaceGuards(0), options.animas, encounter)
-        : createBattle(slots, foeCount, possessed, undefined, options.animas); busy = true;
+      state = createEncounter(slots, encounter, { foeCount, possessed, animas: options.animas, guards: options.guards }); busy = true;
       state.levels = options.levels;
       if (options.improved) improve(state, options.improved);
       xpBefore = { ...options.xp }; rewarded = false; resetRewards();

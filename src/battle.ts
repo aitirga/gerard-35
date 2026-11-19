@@ -1297,6 +1297,18 @@ export function palaceGuards(animas: number) {
 }
 export type GuardStrength = ReturnType<typeof palaceGuards>;
 /**
+ * Any story encounter as a fight starts: what the fight screen opens (src/battle-ui.ts) and what the
+ * whole-game simulator plays (src/game-sim.ts), one dispatch for both, so an encounter added here is
+ * met the same on screen and headless.
+ */
+export function createEncounter(slots: PartySlot[], encounter: Encounter, options: { foeCount?: number; possessed?: boolean; animas?: ClassId[]; guards?: GuardStrength; random?: () => number } = {}): BattleState {
+  const { foeCount = 1, possessed = false, animas, guards = palaceGuards(0), random } = options;
+  return (FEAR_ENCOUNTERS as readonly string[]).includes(encounter) ? createFearBattle(slots, encounter as (typeof FEAR_ENCOUNTERS)[number], animas, random)
+    : encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId, animas)
+    : encounter === 'palace-guards' || encounter === 'night-guard' ? createGuardBattle(slots, guards, animas, encounter)
+    : createBattle(slots, foeCount, possessed, undefined, animas);
+}
+/**
  * Chapter 2: the party against the palace guards, as strong as the party's ánimas leave them.
  * `night-guard`: they are loose on the Meridiana at night (src/night.ts); the one that catches the
  * party brings the others, as many and as strong as the palace has now, so the way home says

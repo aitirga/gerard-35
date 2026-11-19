@@ -419,6 +419,8 @@ export function decide(state: BattleState, setup: Setup, random: () => number): 
 export interface Run {
   outcome: 'won' | 'lost' | 'draw';
   rounds: number;
+  /** Seconds on the fight's clock from the first turn to the end: thinking, blows, the foes' turns. */
+  seconds: number;
   /** The party's PV left, as a share of its full PV. */
   hpLeft: number;
   /** How many of the party fell. */
@@ -469,8 +471,19 @@ const NOTE_LAG = .25;
 const CHORD: Record<Policy, number> = { attack: 0, random: 0, casual: .15, smart: .8 };
 /** One fight, from its first turn to its end. */
 export function playFight(setup: Setup, seed: number): Run {
-  const random = seeded(seed), state = createFight(setup, random), think = setup.think ?? 3, maxRounds = setup.maxRounds ?? 60;
-  const run: Run = { outcome: 'draw', rounds: 0, hpLeft: 0, kos: 0, used: {}, damage: {}, duals: 0, events: {}, biggest: 0 };
+  const random = seeded(seed);
+  return playOut(createFight(setup, random), setup, random);
+}
+/**
+ * A fight already created, played to its end by `setup`'s bot (only its policy, ban, error, think and
+ * maxRounds are read): how the whole-game simulator (src/game-sim.ts) plays a story's fight with the
+ * party exactly as the story has it. `state` is played in place, so it holds the end afterwards.
+ */
+export function playOut(state: BattleState, setup: Setup, random: () => number): Run {
+  const think = setup.think ?? 3, maxRounds = setup.maxRounds ?? 60;
+  const run: Run = { outcome: 'draw', rounds: 0, hpLeft: 0, kos: 0, used: {}, damage: {}, duals: 0, events: {}, biggest: 0, seconds: 0 };
+  // The fight's own clock, counted: how long it lasts at the table (thinking, blows, foes' turns).
+  const tick = (seconds: number) => { run.seconds += seconds; runClock(state, seconds); };
   const over = () => state.phase === 'won' || state.phase === 'lost';
   const hadOnion = state.foes.some(f => isOnion(f.kind));
   const count = (key: string) => { run.events[key] = (run.events[key] ?? 0) + 1; };
@@ -495,7 +508,7 @@ export function playFight(setup: Setup, seed: number): Run {
       // the same note (the Acorde); the second one's thinking overlapped the first one's.
       const struck = state.song?.struck, sung = state.song && songNow(state)!;
       const ready = !!struck && !!sung && sung.sounding && struck.loop === sung.loop && struck.index === sung.index && struck.by !== state.allies[state.active].id && random() < CHORD[setup.policy];
-      runClock(state, waiting ? BEAT.queue / 1000 : ready ? NOTE_LAG : think); watch();
+      tick(waiting ? BEAT.queue / 1000 : ready ? NOTE_LAG : think); watch();
       if (over()) break;
       // The song took whoever was choosing (an Eco) and nobody else is left to: the foes go.
       if (state.phase !== 'player') continue;
@@ -505,7 +518,7 @@ export function playFight(setup: Setup, seed: number): Run {
       const idle = !state.foes.some(f => f.hp > 0 && f.kind !== 'voz');
       if (state.song && idle && !songNow(state)!.sounding && random() < TIMED[setup.policy]) {
         const chooser = state.allies[state.active].id;
-        runClock(state, untilNote(VOZ_SONG, state.song.t) + NOTE_LAG); watch();
+        tick(untilNote(VOZ_SONG, state.song.t) + NOTE_LAG); watch();
         if (over()) break;
         if (state.phase !== 'player' || state.allies[state.active].id !== chooser) continue;
       }
@@ -528,13 +541,13 @@ export function playFight(setup: Setup, seed: number): Run {
       if (markSpent(effect) || effect.hits?.some(h => h.weakSpot)) count(`triple:${key}`);
       note(effect); watch();
       // A dual's cinematic runs the fight's clock a little longer; the partner's thinking overlapped the first one's.
-      runClock(state, effect.dual ? DUAL_CLOCK : ACTION_SECONDS); watch();
+      tick(effect.dual ? DUAL_CLOCK : ACTION_SECONDS); watch();
     } else if (state.phase === 'enemy') {
       for (const foe of state.foes.filter(f => f.hp > 0)) {
         if (state.phase !== 'enemy') break;
         note(enemyAct(state, foe.id));
         watch();
-        if (state.phase === 'enemy') runClock(state, ACTION_SECONDS);
+        if (state.phase === 'enemy') tick(ACTION_SECONDS);
         watch();
       }
       if (state.phase === 'enemy') nextRound(state);
