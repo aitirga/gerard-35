@@ -56,7 +56,7 @@ import { createChaser, rest, updateChaser, type Chaser, type ChaserSpec } from '
 import { CLIMB, FIRST_CLEAR, HIDING_KINDS, RISE_CLEAR, hiddenAt, hunterSpec, huntersGrid, isLit, litLamps, nightTier, risingAt, sightOf, sizeUp, type NightTier } from './night';
 import { BODIES, createCrowd } from './crowd';
 import { dueMark, streetProgress, streetTone } from './street-unease';
-import { buildPortal, type Portal } from './fear-portal';
+import { buildPortal, type Portal, type PortalLook } from './fear-portal';
 import { CALLE, PLACES_NURIA, SHIFT, STREET as NURIA_STREET, STREET_MARKS } from './friends/nuria';
 import { BEACH, CAMP, LINES_UNI, PLACES_UNI, PLACES_CAMP, TAG, UNI_FRIENDS, UNI_SCALE } from './friends/universidad';
 import { CAMPING_SIZES } from './camping-foes';
@@ -1058,10 +1058,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * A spiral opening where nobody stood (story `portal` with `open`): it grows out of a point, turning,
    * the camera on it and on whoever is about to go.
    */
-  async function openPortal(cell: Cell) {
+  async function openPortal(cell: Cell, look: PortalLook = 'fear') {
     portal?.destroy();
     const at = scenery.toWorld(cell.x, cell.z);
-    portal = buildPortal(app, new pc.Vec3(at.x, scenery.groundHeight(at.x, at.z), at.z));
+    portal = buildPortal(app, new pc.Vec3(at.x, scenery.groundHeight(at.x, at.z), at.z), look);
     const opening = portal;
     opening.root.setLocalScale(.01, .01, .01);
     callbacks.onSound('awaken');
@@ -1108,8 +1108,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * into specks that the whirlpool draws in and swallows (src/disintegrate.ts `into`). The party's
    * bodies come back on the other side (`setEnvironment`).
    */
-  async function intoPortal(who: string, open?: Cell) {
-    if (open) { holdStill(); await openPortal(open); }
+  async function intoPortal(who: string, open?: Cell, look?: PortalLook) {
+    if (open) { holdStill(); await openPortal(open, look); }
     if (!portal) return;
     holdStill();
     const mouth = portal.root.getPosition().clone(); mouth.y += 2.4;

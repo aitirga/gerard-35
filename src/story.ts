@@ -157,7 +157,7 @@ export type StoryEffect =
    * `open` first: `who` comes apart into specks the whirlpool swallows (src/disintegrate.ts `into`),
    * `everyone` the party and all the people there. The party then travels on; a person stays gone (`sank`).
    */
-  | { kind: 'portal'; who: 'party' | 'everyone' | UniFriend; open?: Cell }
+  | { kind: 'portal'; who: 'party' | 'everyone' | UniFriend; open?: Cell; queen?: true }
   /** La Sobremesa beaten: back at the long table it comes apart, and the seven are left standing round it. */
   | { kind: 'unmask' }
   /** Out of a spiral at `cell` on the other side: everyone there comes together out of specks, and it closes. */
@@ -696,7 +696,7 @@ export class Story {
     if (!this.has('poble-sec-emilie')) return [say(LINES_EMILIE.laptopBefore)];
     const first = this.set('modelo');
     const inside: StoryEffect = { kind: 'travel', environment: MODELO_PLACE, cell: { ...PLACES_MODELO.spawn } };
-    return [say(first ? LINES_EMILIE.laptop : LINES_EMILIE.laptopAgain), { kind: 'portal', who: 'party', open: { ...PLACES_PISO.portal } }, inside, say(first ? LINES_EMILIE.inside : LINES_EMILIE.insideAgain), ...first ? this.spend('cafe') : []];
+    return [say(first ? LINES_EMILIE.laptop : LINES_EMILIE.laptopAgain), { kind: 'portal', who: 'party', open: { ...PLACES_PISO.portal }, queen: true }, inside, say(first ? LINES_EMILIE.inside : LINES_EMILIE.insideAgain), ...first ? this.spend('cafe') : []];
   }
   /**
    * In her model (src/modelo.ts): a patrol that reaches them is its fight; the first time they reach a zone

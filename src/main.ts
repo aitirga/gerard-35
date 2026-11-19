@@ -347,7 +347,7 @@ try {
     else if (effect.kind === 'metro') await ride(effect.station);
     else if (effect.kind === 'look') await game.look(effect.anchor, effect.cell, effect.height);
     // Into a portal: who goes comes apart into it; a person stays gone (Anna, into the spiral).
-    else if (effect.kind === 'portal') { await game.intoPortal(effect.who, effect.open); if (effect.who !== 'party' && effect.who !== 'everyone') { story.sank(effect.who); storyChanged(); } }
+    else if (effect.kind === 'portal') { await game.intoPortal(effect.who, effect.open, effect.queen ? 'queen' : undefined); if (effect.who !== 'party' && effect.who !== 'everyone') { story.sank(effect.who); storyChanged(); } }
     // La Sobremesa comes apart at the long table, and out of a spiral on the other side.
     else if (effect.kind === 'unmask') await game.unmaskSobremesa();
     else if (effect.kind === 'emerge') await game.emerge(effect.cell);

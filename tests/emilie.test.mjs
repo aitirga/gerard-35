@@ -49,7 +49,7 @@ test('the laptop does nothing until they have spoken to her; then they connect a
   const connect = story.handle({ type: 'interact', id: 'portatil-emilie' });
   // The Queen's whirlpool swells out of the screen and takes the two of them; Emilie stays.
   assert.deepEqual(beats(connect).slice(0, 4), ['dialogue', 'portal', 'travel', 'dialogue']);
-  assert.deepEqual(connect[1], { kind: 'portal', who: 'party', open: { ...PLACES_PISO.portal } });
+  assert.deepEqual(connect[1], { kind: 'portal', who: 'party', open: { ...PLACES_PISO.portal }, queen: true });
   assert.deepEqual(connect[2], { kind: 'travel', environment: MODELO_PLACE, cell: PLACES_MODELO.spawn });
   assert.equal(connect[3].dialogue, LINES_EMILIE.inside);
   assert.equal(story.interactions(PISO).find(i => i.id === 'portatil-emilie').hint, 'Entrar');

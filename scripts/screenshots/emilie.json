@@ -201,7 +201,7 @@
     {
       "shot": "dentro",
       "delay": 700,
-      "caption": "Inside her model, where they land: the first stake ahead"
+      "caption": "Inside her model, where they land: a patrol coming, the well at the far end"
     },
     {
       "eval": "window.gerard.game.modelo.walk(2)"
@@ -227,7 +227,7 @@
     {
       "shot": "gravas",
       "delay": 700,
-      "caption": "Las gravas, gone down by a stake of El suelo: an Oscilación sees them land, and it is a fight at once"
+      "caption": "Las gravas: out of the cage under the well they came down; the next well at the other end"
     },
     {
       "open": "/?mission=emilie&part=fondo"
@@ -245,10 +245,10 @@
     {
       "shot": "fondo",
       "delay": 700,
-      "caption": "El fondo: El que no converge ahead"
+      "caption": "El fondo: the cage that brought them, El que no converge half the gallery away"
     },
     {
-      "eval": "window.gerard.game.modelo.walk(21)"
+      "eval": "window.gerard.game.modelo.walk(20)"
     },
     {
       "wait": 1500

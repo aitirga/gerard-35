@@ -226,7 +226,22 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
 }`;
 
 /** The portal standing on the street at `at`, turned to the camera. */
-export function buildPortal(app: pc.AppBase, at: pc.Vec3) {
+/**
+ * The Queen's own whirlpool (Emilie's laptop, docs/quests/emilie.md): the same one in her pink instead of
+ * fear's violet, each colour of the shaders swapped for its pink twin.
+ */
+const QUEEN_PINK: [string, string][] = [
+  ['vec3f(0.02, 0.004, 0.04)', 'vec3f(0.04, 0.004, 0.02)'], ['vec3f(0.15, 0.04, 0.33)', 'vec3f(0.33, 0.04, 0.17)'],
+  ['vec3f(0.36, 0.12, 0.85)', 'vec3f(0.85, 0.12, 0.42)'], ['vec3f(0.6, 0.38, 1.0)', 'vec3f(1.0, 0.38, 0.66)'],
+  ['vec3f(0.42, 0.16, 1.0)', 'vec3f(1.0, 0.16, 0.55)'], ['vec3f(0.36, 0.12, 1.0)', 'vec3f(1.0, 0.12, 0.5)'],
+  ['vec3f(0.62, 0.36, 1.0)', 'vec3f(1.0, 0.42, 0.72)'], ['vec3f(0.9, 0.8, 1.0)', 'vec3f(1.0, 0.85, 0.92)'],
+  ['vec3f(0.42, 0.18, 0.95)', 'vec3f(0.95, 0.18, 0.52)'],
+];
+const pinked = (wgsl: string) => QUEEN_PINK.reduce((code, [from, to]) => code.split(from).join(to), wgsl);
+/** Whose whirlpool: fear's violet (the default), or the Queen's pink. */
+export type PortalLook = 'fear' | 'queen';
+export function buildPortal(app: pc.AppBase, at: pc.Vec3, look: PortalLook = 'fear') {
+  const queen = look === 'queen';
   const device = app.graphicsDevice;
   const root = new pc.Entity('Portal de Uri'); app.root.addChild(root);
   root.setPosition(at);
@@ -242,8 +257,9 @@ export function buildPortal(app: pc.AppBase, at: pc.Vec3) {
     m.update();
     return m;
   };
-  const whirlMaterial = material('Remolino del portal', 'gerard-portal', WHIRL_VERTEX_WGSL, WHIRL_FRAGMENT_WGSL, { vertex_position: pc.SEMANTIC_POSITION });
-  const motesMaterial = material('Chispas del portal', 'gerard-portal-motes', MOTES_VERTEX_WGSL, MOTES_FRAGMENT_WGSL, { vertex_position: pc.SEMANTIC_POSITION, aSeed: pc.SEMANTIC_ATTR10 });
+  const tint = queen ? pinked : (code: string) => code, suffix = queen ? '-queen' : '';
+  const whirlMaterial = material('Remolino del portal', `gerard-portal${suffix}`, WHIRL_VERTEX_WGSL, tint(WHIRL_FRAGMENT_WGSL), { vertex_position: pc.SEMANTIC_POSITION });
+  const motesMaterial = material('Chispas del portal', `gerard-portal-motes${suffix}`, tint(MOTES_VERTEX_WGSL), tint(MOTES_FRAGMENT_WGSL), { vertex_position: pc.SEMANTIC_POSITION, aSeed: pc.SEMANTIC_ATTR10 });
   const total = INFLOW + RIM + MOTES;
   const seeds = new Float32Array(total * 4);
   for (let i = 0; i < total; i++) {
@@ -251,9 +267,9 @@ export function buildPortal(app: pc.AppBase, at: pc.Vec3) {
   }
   const format = new pc.VertexFormat(device, [{ semantic: pc.SEMANTIC_ATTR10, components: 4, type: pc.TYPE_FLOAT32 }]);
   const buffer = new pc.VertexBuffer(device, format, total, { usage: pc.BUFFER_STATIC, data: seeds.buffer });
-  const look = new pc.Entity('Remolino'); root.addChild(look);
-  const whirl = new pc.MeshInstance(quad, whirlMaterial, look);
-  const motes = new pc.MeshInstance(quad, motesMaterial, look);
+  const whirlpool = new pc.Entity('Remolino'); root.addChild(whirlpool);
+  const whirl = new pc.MeshInstance(quad, whirlMaterial, whirlpool);
+  const motes = new pc.MeshInstance(quad, motesMaterial, whirlpool);
   motes.setInstancing(buffer);
   motes.instancingCount = total;
   // Their bounds are worked out in the shaders, so neither is culled; the particles sort just in
@@ -264,9 +280,9 @@ export function buildPortal(app: pc.AppBase, at: pc.Vec3) {
     return (middle.x - camera.x) * forward.x + (middle.y - camera.y) * forward.y + (middle.z - camera.z) * forward.z - nearer;
   };
   for (const [instance, nearer] of [[whirl, 0], [motes, .5]] as const) { instance.cull = false; instance.calculateSortDistance = depth(nearer); }
-  look.addComponent('render', { meshInstances: [whirl, motes], castShadows: false, receiveShadows: false });
+  whirlpool.addComponent('render', { meshInstances: [whirl, motes], castShadows: false, receiveShadows: false });
   const glow = new pc.Entity('Luz del portal');
-  glow.addComponent('light', { type: 'omni', color: new pc.Color(.6, .38, 1), intensity: 1.4, range: 10, castShadows: false });
+  glow.addComponent('light', { type: 'omni', color: queen ? new pc.Color(1, .44, .7) : new pc.Color(.6, .38, 1), intensity: 1.4, range: 10, castShadows: false });
   glow.setLocalPosition(0, 2.6, 1.8);
   root.addChild(glow);
   let time = 0, near = Number.NaN;
