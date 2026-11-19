@@ -120,6 +120,12 @@ weight = 3
 file = "src/jump-menu.ts"
 
 [[block.item]]
+title = "Simulador del juego entero: partidas sin pantalla, estadísticas y pestaña Partida"
+weight = 2
+grep = "simPage"
+in = "src/jump-menu.ts"
+
+[[block.item]]
 title = "Versión final publicada y a 120 Hz"
 weight = 2
 

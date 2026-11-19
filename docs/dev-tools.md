@@ -7,7 +7,7 @@ In development F2 opens it from anywhere, fights included, where it also has a *
 over the fight.
 
 In production it only lists the places the old dropdown offered. In development (`just dev`) it
-has four tabs and lists every place. Historia and Misiones are wide, with the **Ánimas** column
+has five tabs and lists every place. Historia and Misiones are wide, with the **Ánimas** column
 on their right.
 
 ## Lugares
@@ -262,6 +262,18 @@ or deleting one makes it grow. The file's header explains the checks.
 the blocks. herdr opens it at the top of every tab's column in this project, because having the script is what
 turns it on (the `herdr-project` skill), and it looks again every 5 seconds. It measures its own checkout, so a feature's workspace shows that branch.
 `just progress` prints it once and `just progress --all` lists every item.
+
+## Partida
+
+The last whole-game report (`just game-sim`, [game-sim.md](game-sim.md)), small: the difficulty
+curve of every simulated player, and for the one picked (*Jugador*) its median length, days,
+fights, where the game saturates, when each ánima grows and which fights are walls. Under it, **Una
+partida típica**: the key moments of that player's median game (the timeline's events and each
+mission's end) with the minute, the day and the fights so far. Picking one jumps the real game there
+as Historia does, on the day the simulated player was on and with the missions it had done
+(`simMoments` in [src/game-sim-panel.ts](../src/game-sim-panel.ts)). It reads
+`output/reports/game/data.json` each time the tab opens, and links to the whole page. Without a
+report it says to run `just game-sim`. `just screenshots game-sim` shows it.
 
 ## Effects lab
 

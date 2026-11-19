@@ -10,6 +10,8 @@ import { dayForStage } from './days';
 import { nightTier } from './night';
 import { STORY_ARCS, TIMELINE, isChapter2, missionParts, missionsDone, topLevel, type Arc } from './story-points';
 import type { StoryFlag } from './story';
+import type { GameSummary } from './game-sim';
+import { GAME_REPORT, simPage, type SimJump } from './game-sim-panel';
 
 /**
  * The place panel's picker: the places to go to and, in development, story points to jump to and
@@ -116,7 +118,7 @@ export function validFight(value: unknown): FightSetup {
 }
 const fightKey = 'gerard35.fight.v1';
 
-type Tab = 'places' | 'story' | 'missions' | 'fight';
+type Tab = 'places' | 'story' | 'missions' | 'fight' | 'sim';
 /** The ánimas unlocked, each at its level (absent: locked). */
 export type AnimaLevels = Partial<Record<ClassId, number>>;
 export interface JumpMenuDev {
@@ -190,6 +192,16 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   /** Whether the timeline's jump starts at home instead of where its point happened. */
   let atHome = true;
   let returnFocus: HTMLElement | undefined;
+  /** Partida: the last whole-game report (`just game-sim`), once fetched, and the simulated player shown. */
+  let simData: GameSummary | null | 'missing' = null;
+  let simPlayer: string | undefined;
+  function loadSim() {
+    simData = null;
+    const load = async (): Promise<GameSummary | 'missing'> => {
+      try { const r = await fetch(GAME_REPORT, { cache: 'no-store' }); return r.ok ? await r.json() as GameSummary : 'missing'; } catch { return 'missing'; }
+    };
+    void load().then(data => { simData = data; if (root.open && tab === 'sim') render(); });
+  }
   const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 
   function placesPage(filter: string) {
@@ -387,10 +399,10 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     // A chip changed on the same page keeps both columns where they were.
     const keep = focus && !focus.startsWith('[data-tab') ? [...root.querySelectorAll<HTMLElement>('.jump-body, .jump-side')].map(el => el.scrollTop) : undefined;
     root.innerHTML = `
-      ${dev ? `<nav class="jump-tabs" role="tablist">${([['places', 'Lugares'], ['story', 'Historia'], ['missions', 'Misiones'], ['fight', 'Combate']] as const).map(([id, label]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="${tab === id}">${label}</button>`).join('')}</nav>` : ''}
+      ${dev ? `<nav class="jump-tabs" role="tablist">${([['places', 'Lugares'], ['story', 'Historia'], ['missions', 'Misiones'], ['fight', 'Combate'], ['sim', 'Partida']] as const).map(([id, label]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="${tab === id}">${label}</button>`).join('')}</nav>` : ''}
       ${tab === 'places' ? `<input class="jump-search" type="search" placeholder="Buscar lugar" aria-label="Buscar lugar" value="${escape(filter)}" autocomplete="off">` : ''}
       ${split ? `<div class="jump-split"><div class="jump-body" data-page="${tab}">${tab === 'story' ? storyPage() : missionsPage()}</div>${animasColumn()}</div>`
-        : `<div class="jump-body" data-page="${tab}">${tab === 'places' ? placesPage(filter) : fightPage()}</div>`}`;
+        : `<div class="jump-body" data-page="${tab}">${tab === 'places' ? placesPage(filter) : tab === 'sim' ? simPage(simData, simPlayer) : fightPage()}</div>`}`;
     if (keep) root.querySelectorAll<HTMLElement>('.jump-body, .jump-side').forEach((el, i) => { el.scrollTop = keep[i] ?? 0; });
     if (focus) root.querySelector<HTMLElement>(focus)?.focus({ preventScroll: true });
   }
@@ -428,7 +440,9 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!button || button.disabled) return;
     const data = button.dataset;
-    if (data.tab) { tab = data.tab as Tab; render(`[data-tab="${tab}"]`); return; }
+    if (data.tab) { tab = data.tab as Tab; if (tab === 'sim') loadSim(); render(`[data-tab="${tab}"]`); return; }
+    if (data.simPlayer) { simPlayer = data.simPlayer; render(`[data-sim-player="${simPlayer}"]`); return; }
+    if (data.simJump) { close(); const jump = JSON.parse(data.simJump) as SimJump; dev!.story(jump.flag, jump.day, jump.missions, undefined, false); return; }
     if (data.place) { close(); if (data.place !== place) callbacks.travel(data.place as EnvironmentId); return; }
     if (data.beat) {
       close();

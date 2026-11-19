@@ -1,0 +1,51 @@
+{
+  "title": "Selector · Partida (el juego entero simulado)",
+  "description": "The development picker's Partida tab (docs/dev-tools.md § Partida): the last whole-game report (just game-sim) drawn small, each simulated player's numbers, and the key moments of a typical game to jump the real game to. Needs output/reports/game/data.json (just game-sim).",
+  "steps": [
+    {
+      "open": "/?story=tv-news"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "document.querySelector('#environment').click(); document.querySelector('[data-tab=\"sim\"]').click()"
+    },
+    {
+      "until": "document.querySelector('.sim-curve') || document.querySelector('.jump-body[data-page=\"sim\"] code')",
+      "timeout": 15000
+    },
+    {
+      "shot": "partida",
+      "delay": 500,
+      "caption": "Partida: the difficulty curve of the three simulated players and the thinking one's numbers and typical game, each moment a jump"
+    },
+    {
+      "eval": "document.querySelector('[data-sim-player=\"casual\"]').click()"
+    },
+    {
+      "shot": "partida-casual",
+      "delay": 500,
+      "caption": "The careless player: hours longer, its walls listed, the same moments much later"
+    },
+    {
+      "eval": "document.querySelector('[data-sim-player=\"pensando\"]').click(); [...document.querySelectorAll('[data-sim-jump]')].find(b => b.dataset.simJump.includes('nuria-uri')).click()"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "until": "window.gerard && window.gerard.story.has('nuria-uri')",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "saltado",
+      "delay": 4000,
+      "caption": "Jumped to where the thinking player had Uri back: on its day, with what it had done"
+    }
+  ]
+}
