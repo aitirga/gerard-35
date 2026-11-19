@@ -76,6 +76,9 @@ function kitFor(device: pc.GraphicsDevice): Kit {
   const mesh = new pc.Mesh(device);
   mesh.setPositions(positions); mesh.setNormals(normals); mesh.setUvs(0, uvs); mesh.setIndices(indices);
   mesh.update();
+  // Every die shares this mesh, and a mesh instance destroyed with its die destroys the mesh once
+  // none holds it: the kit holds it too, so a hand gone empty never leaves the next die without one.
+  mesh.incRefCount();
   const canvas = picture();
   const texture = new pc.Texture(device, { name: 'Dado', width: canvas.width, height: canvas.height, mipmaps: true, anisotropy: 4, addressU: pc.ADDRESS_CLAMP_TO_EDGE, addressV: pc.ADDRESS_CLAMP_TO_EDGE });
   texture.setSource(canvas);
