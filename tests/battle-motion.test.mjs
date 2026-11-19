@@ -54,3 +54,7 @@ test('a dual gets its moment, and so does a foe\'s ability that is not a plain b
   assert.ok(DUAL_SLOW > 0 && DUAL_SLOW < 1 && DUAL_BANNER_SEEN < DUAL_BANNER && DUAL_SECONDS < DUAL_CLOCK);
   assert.ok(BEAT.queue < BEAT.ability && BEAT.ability < BEAT.dual);
 });
+test('a foe\'s move has its name up a moment before it moves: read in a glance, never a wait', async () => {
+  const { BEAT } = await import('../src/battle-motion.ts');
+  assert.ok(BEAT.announce > BEAT.breath && BEAT.announce < BEAT.ability);
+});

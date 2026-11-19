@@ -230,9 +230,9 @@ const DISH_ORDER: DishId[] = ['alcachofa', 'coliflor', 'sorpresa'];
 /**
  * Uri's fears' abilities (docs/quests/nuria.md § Monsters): every foe action in the tower carries one
  * (`BattleEffect.ability`), and one announced a turn ahead also comes as `telegraph` and sets the
- * foe's `intent` (`intentLabel` reads it: «Carrerilla → Aitor», «Rayo terrorífico → todos»). The fight
- * never shows an ability's name when it is used; its picture says what it does. `card`: not a plain
- * blow, so the fight holds a beat after it for that picture to be seen (BEAT.ability).
+ * foe's `intent` (`intentLabel` reads it: «Carrerilla → Aitor», «Rayo terrorífico → todos»). When it
+ * is used its name is up top, in the foe's callout (src/battle-ui.ts `showCallout`), never on its
+ * numbers. `card`: not a plain blow, so the fight holds a beat after it for its picture to be seen (BEAT.ability).
  */
 export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' | 'aplaston'
   | 'salpicon' | 'vuelta' | 'atravesar' | 'transparente' | 'game-over'

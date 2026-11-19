@@ -1,0 +1,56 @@
+{
+  "title": "El nombre de lo que hace el enemigo",
+  "description": "docs/combat.md § El nombre de lo que hace el enemigo. A foe's move named up top while it plays, on ink with a coral edge: it drops in a moment before the foe moves (the fight's clock still), says what the foe announces for its next turn and at whom, and goes once the party acts. The party's own moves are not named there. Fight tester against Lo Directo (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost), frozen as each name is up. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22cuerdas-directo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.sleep = ms => new Promise(r => setTimeout(r, ms)); const st = document.createElement('style'); st.textContent = '.shot-frozen * { animation-play-state: paused !important; }'; document.head.append(st); window.frozen = ''; window.catchMove = after => { window.frozen = ''; const el = document.querySelector('.move-callout'); const o = new MutationObserver(() => { if (!el.hidden && !el.dataset.leaving && true) { o.disconnect(); const name = el.querySelector('strong').textContent; setTimeout(() => { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = name; }, after); } }); o.observe(el, { attributes: true }); }; window.thaw = () => { window.gerard.game.app.timeScale = 1; document.documentElement.classList.remove('shot-frozen'); window.frozen = ''; }; window.aim = async what => { while (!ready()) await sleep(100); cmd(what); await sleep(450); document.querySelector('.battle-target[data-target=\"directo\"]')?.click(); }; window.bothAttack = async () => { await aim('attack'); await sleep(800); await aim('attack'); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "catchMove(200); bothAttack(); 0"
+    },
+    {
+      "until": "!!window.frozen",
+      "timeout": 90000
+    },
+    {
+      "shot": "antes-de-moverse",
+      "delay": 300,
+      "caption": "Lo Directo's turn: its move's name drops in a moment before it moves, whose over it, and what it announces for its next turn and at whom"
+    },
+    {
+      "eval": "thaw(); catchMove(1000); bothAttack(); 0"
+    },
+    {
+      "until": "!!window.frozen",
+      "timeout": 90000
+    },
+    {
+      "shot": "golpe",
+      "delay": 300,
+      "caption": "Next round, the blow it announced lands under its name"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "shot": "tu-turno",
+      "delay": 1500,
+      "caption": "The party's turn again: the name has gone"
+    }
+  ]
+}

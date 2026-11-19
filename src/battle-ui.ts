@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS } from './battle';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -9,7 +9,7 @@ import { ELEMENT_ICONS } from './ecos';
 import { costPips, flashAnima, setVitals, vitalsPlate } from './vitals';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
-import { DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_SLOW, holdAfter } from './battle-motion';
+import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_SLOW, holdAfter } from './battle-motion';
 import { award, fightXp, levelForXp, levelProgress, MAX_LEVEL, participants, toNextLevel, type Growth } from './levels';
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
@@ -177,6 +177,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     <div class="battle-pops" aria-hidden="true"></div>
     <div class="battle-speech" aria-live="assertive"></div>
     <section class="class-banner" hidden><span class="battle-kicker">ÁNIMA DESBLOQUEADA</span><h2></h2><p></p></section>
+    <section class="move-callout" aria-live="polite" hidden><span class="battle-kicker"></span><strong></strong><small></small></section>
     <section class="dual-banner" aria-live="polite" hidden><header><span class="battle-kicker">ATAQUE DUAL</span><h2></h2></header><div class="dual-halves"></div><footer><strong class="dual-total"></strong><p></p></footer></section>
     <section class="skill-reveal" aria-live="polite" hidden><i class="skill-reveal-rays" aria-hidden="true"></i><div class="skill-reveal-card"><span class="battle-kicker"></span><small class="skill-reveal-who"></small><div class="skill-reveal-skills"></div></div></section>
     <p class="dev-badge" hidden>DEPURACIÓN · UN JUGADOR LLEVA A LOS DOS</p>
@@ -497,7 +498,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /**
    * The fight's clock (docs/combat.md § Estados en tiempo real): real time, while the players
    * choose and while everyone acts. It stands still while the fight comes in, through the story's
-   * own moments (the palace beat), once it is over and while the pause menu is open.
+   * own moments (the palace beat), while a foe's move is named before it moves (BEAT.announce),
+   * once it is over and while the pause menu is open.
    */
   let clockFrame = 0, clockLast = 0;
   /**
@@ -515,7 +517,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // A hidden tab or a long frame never burns a fight away at once.
     // As fast as the 3D fight runs (a dual's banner, Punto débil's aim slowing it further), or the banner's own slow.
     const rate = callbacks.speed?.() ?? clockScale(now), seconds = Math.min(.1, Math.max(0, (now - clockLast) / 1000)) * rate; clockLast = now;
-    const stopped = !state || !!root.dataset.entering || !!root.dataset.beat || callbacks.paused();
+    const stopped = !state || !!root.dataset.entering || !!root.dataset.beat || !!root.dataset.announcing || callbacks.paused();
     if (state?.song && !['won', 'lost', 'escaped'].includes(state.phase)) callbacks.song?.(state.song.t, stopped ? 0 : rate);
     if (!state || stopped) return;
     const pulses = runClock(state, seconds, c => heldFire.has(c.id));
@@ -1347,17 +1349,79 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       setTimeout(() => { if (token === generation) void speak({ speaker: who, text: `¡${lastWord}!` }, 1700, true, foe.id); }, delay);
     }
   }
-  /** One action on screen: a dual's banner first (or Uri's shout, from up on Vertitrón), then the action itself. */
+  /**
+   * What a foe's move is called, and whose it is, for the callout up top (docs/combat.md § El nombre
+   * de lo que hace el enemigo). The party's own is said under its numbers; news that is not a move (an
+   * eye going out) has none.
+   */
+  function foeMoveOf(effect: BattleEffect): { who: Combatant; name: string; detail: string } | undefined {
+    const s = state;
+    if (!s || effect.kind !== 'enemy') return;
+    const everyone = [...s.allies, ...s.foes], who = s.foes.find(c => c.id === effect.actor);
+    if (!who) return;
+    const named = (id?: string) => everyone.find(c => c.id === id)?.name ?? '';
+    if (effect.stunned) return { who, name: 'Shock', detail: 'Pierde el turno' };
+    if (effect.confused) return { who, name: 'Confundido', detail: effect.target === who.id ? 'Se golpea a sí mismo' : `Golpea a ${named(effect.target)}` };
+    if (effect.ability) {
+      // A move announced for its next turn says what and at whom, as its plate's chip does: being got
+      // ready (a turn with no blow), or coming after this one's blow. One that came to nothing loses the turn.
+      const t = effect.telegraph, aim = t ? `→ ${t.target ? named(t.target) : t.at ?? ''}` : '';
+      const blow = effect.amount !== undefined || !!effect.hits?.length;
+      const detail = t ? !blow ? t.name === effect.ability.name ? `Preparando ${aim}` : `Prepara ${t.name} ${aim}` : `Después: ${t.name} ${aim}`
+        : effect.cancelled && !blow ? 'Pierde el turno' : '';
+      return { who, name: effect.ability.name, detail };
+    }
+    // The fights outside the fears' (the dogs, the palace's gum): their one blow.
+    if (FEAR_ENCOUNTERS.includes(s.encounter as typeof FEAR_ENCOUNTERS[number]) || !effect.target || effect.amount === undefined) return;
+    return { who, name: who.kind === 'minion' ? 'Escupitajo' : who.power !== undefined ? 'Puño de chicle' : 'Empujón', detail: '' };
+  }
+  /**
+   * A foe's move named up top while it plays: whose, over the move, and what it announces. Up a
+   * moment before the foe moves (BEAT.announce), it stays through the breath after, until the next
+   * foe's takes its place or the party acts.
+   */
+  let calloutTimer: ReturnType<typeof setTimeout> | undefined;
+  function showCallout(effect: BattleEffect) {
+    const move = foeMoveOf(effect), el = get('.move-callout');
+    clearTimeout(calloutTimer);
+    if (!move) { hideCallout(); return false; }
+    el.querySelector('.battle-kicker')!.textContent = move.who.name.toUpperCase();
+    el.querySelector('strong')!.textContent = move.name;
+    const small = el.querySelector('small')!;
+    small.textContent = move.detail; small.hidden = !move.detail;
+    // Restart its entrance for each move, the same foe twice in a row too.
+    delete el.dataset.leaving; el.hidden = true; void el.offsetWidth; el.hidden = false;
+    return true;
+  }
+  function hideCallout(after = 0) {
+    const el = get('.move-callout');
+    clearTimeout(calloutTimer);
+    if (el.hidden) return;
+    calloutTimer = setTimeout(() => {
+      el.dataset.leaving = 'true';
+      calloutTimer = setTimeout(() => { el.hidden = true; delete el.dataset.leaving; }, 200);
+    }, after);
+  }
+  /** One action on screen: a dual's banner or a foe's move named up top, Uri's shout from up on Vertitrón, then the action itself. */
   async function play(effect: BattleEffect, token: number) {
     // A banner aimed for a dual that did not happen (its half no longer there) goes.
     if (!effect.dual && get('.dual-banner').dataset.armed) hideDualBanner();
     const banner = effect.dual ? showDualBanner(effect) : undefined;
+    const called = showCallout(effect);
     shout(effect);
+    // A foe's move: its name is read a moment before it moves, with the fight's clock still.
+    if (called) {
+      root.dataset.announcing = 'true';
+      try { await wait(BEAT.announce); } finally { delete root.dataset.announcing; }
+      if (token !== generation) return;
+    }
     // A blow that beats a foe of the maze: its word as the blow lands.
     lastWords(token, 420);
     await Promise.all([present(effect, token), banner]);
     if (banner) hideDualBanner();
-    if (token === generation) remark(effect);
+    if (token !== generation) return;
+    if (called) hideCallout(BEAT.breath + 700);
+    remark(effect);
   }
   /** What happened between actions (a pulse that burnt out Vertitrón's eye). */
   async function flushNews(token: number) {
@@ -1605,7 +1669,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // off the bar and shows its own number as it lands, and a fire it carries catches with the blow
     // that lit it; whatever else it says comes with the last one.
     const strikes = effect.target && !effect.hits && (effect.strikes?.length ?? 1) > 1 ? effect.strikes! : undefined;
-    // What the action is called on its numbers: the party's skill or dual. A foe's ability is never named.
+    // What the action is called on its numbers: the party's skill or dual. A foe's is named up top (`showCallout`) instead.
     const label = effect.kind === 'enemy' ? (isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind) && !effect.cancelled ? effect.ability?.name ?? '' : '') : effect.release?.name ?? effect.dual?.name ?? SKILLS.find(s => s.id === effect.skill)?.name ?? (effect.element ? ELEMENTS[effect.element].name : '');
     const spread = (blow: number) => strikes ? (blow / (strikes.length - 1) - .5) * 48 : 0;
     // Rayo solar's beam sweeps along the foes: each one's blow (its number, its PV, its fire) lands
@@ -1873,7 +1937,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function close(after?: 'retry' | 'rewind') {
     const again = after === 'retry' ? reopen : undefined;
     if (after) callbacks.fallen?.(after);
-    generation++; state = undefined; busy = false; summaryOpen = false; queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; renderSummary(); collapse(); root.hidden = true; cancelAnimationFrame(clockFrame); resetRewards();
+    generation++; state = undefined; busy = false; summaryOpen = false; queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; clearTimeout(calloutTimer); get('.move-callout').hidden = true; renderSummary(); collapse(); root.hidden = true; cancelAnimationFrame(clockFrame); resetRewards();
     outside().forEach(el => { el.inert = false; }); delete hud.dataset.battle;
     const ended = callbacks.change(undefined);
     if (again) void ended.then(again);
@@ -2143,7 +2207,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       root.toggleAttribute('data-possessed', possessed);
       root.dataset.encounter = encounter;
       get('[data-command="skill"]').classList.remove('is-new');
-      get('.class-banner').hidden = true; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; get('.battle-speech').replaceChildren();
+      get('.class-banner').hidden = true; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; clearTimeout(calloutTimer); get('.move-callout').hidden = true; get('.battle-speech').replaceChildren();
       queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; charges = 0;
       pending.length = 0; duo = undefined; ctx = 1; menus[1] = { targeting: false }; menus[2] = { targeting: false }; loadMenu(1);
       lastWord = options.lastWord; wordSaid.clear();

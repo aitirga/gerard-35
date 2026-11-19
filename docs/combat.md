@@ -389,7 +389,8 @@ diseño completo, con las ideas aún por probar, está en `docs/action-points.md
 En la campaña algunos estados no duran rondas sino **segundos** (`TIMED` en `src/battle.ts`).
 El reloj corre siempre durante el combate: mientras los jugadores eligen y mientras todos
 actúan. Solo lo paran el menú de pausa, la entrada del combate, los momentos de historia (el
-despertar de Matemágico) y el final. `runClock` lo avanza cada fotograma desde
+despertar de Matemágico), el instante en que sale el nombre de lo que va a hacer un enemigo
+(`BEAT.announce`, § *El nombre de lo que hace el enemigo*) y el final. `runClock` lo avanza cada fotograma desde
 `src/battle-ui.ts`; cada pulso se ve como un número de daño y un destello en el combatiente, y
 puede terminar el combate por sí solo.
 
@@ -518,10 +519,10 @@ cuatro estados y el resumen con el teclado y con el mando.
 ## Habilidades de los miedos
 
 En la torre de Uri cada acción de un enemigo **es una habilidad** (`FOE_ABILITIES` en `src/battle.ts`,
-`BattleEffect.ability`), pero **el combate nunca muestra su nombre** al usarla: ni una etiqueta sobre
-el enemigo ni bajo el número del golpe. Lo que hace se ve en la escena. La que no es un golpe sin
-más (`card`) se deja ver un momento antes de seguir (`BEAT.ability`); un golpe sencillo (*Peso*,
-*Salpicón*, *Atravesar*, *Pisotón*, *Manotazo*) no espera, para no frenar los combates de varios.
+`BattleEffect.ability`). Su nombre sale **arriba**, en el rótulo del enemigo (§ siguiente), y no bajo
+el número del golpe; lo que hace se ve en la escena. La que no es un golpe sin más (`card`) se deja
+ver un momento antes de seguir (`BEAT.ability`); un golpe sencillo (*Peso*, *Salpicón*, *Atravesar*,
+*Pisotón*, *Manotazo*) no espera, para no frenar los combates de varios.
 
 - **Anunciar.** Lo que un enemigo prepara para su turno siguiente llega como `telegraph` y queda en
   su `intent`: una ficha en su placa, junto a *Capas n* y el plato, que **dice a quién mira**
@@ -543,6 +544,36 @@ más (`card`) se deja ver un momento antes de seguir (`BEAT.ability`); un golpe 
 
 Las de cada miedo y las de Vertitrón están en `docs/quests/nuria.md` § Monsters y §
 Final boss.
+
+## El nombre de lo que hace el enemigo
+
+(Decidido 2026-11-19.) Cuando un enemigo actúa, **el nombre de lo que hace sale arriba, en el
+centro**, para que el grupo sepa qué le está pasando (`showCallout` en `src/battle-ui.ts`): en
+versalitas de quién es (*LO DIRECTO*), debajo el movimiento en grande (*Golpe directo*) y, si lo
+hay, lo que anuncia, con la misma flecha que la ficha de su placa:
+
+- *Preparando → todos*: un turno que no golpea y prepara ese movimiento (*Bombona*, *Rayo terrorífico*);
+- *Prepara Calderón → todos*: un turno que no golpea y prepara otro (*Toma aire*);
+- *Después: En línea recta → todos*: golpea ahora y anuncia lo del turno siguiente;
+- *Pierde el turno*: lo que intentó se quedó en nada (una regla sin nadie a quien sirva), o el *Shock*.
+
+Los combates que no son de miedos dicen su golpe (*Empujón*, *Escupitajo*, *Puño de chicle*), y un
+enemigo confundido, *Confundido* y a quién golpea. Las noticias que no son un movimiento (el ojo de
+Vertitrón que se apaga) no sacan rótulo.
+
+Es tinta con un borde coral (nunca rosa ni violeta), y cae **un momento antes de que el enemigo se
+mueva** (`BEAT.announce`, 0,34 s): se lee antes de que llegue el golpe. Ese momento es de lectura,
+así que **el reloj del combate se para** mientras dura; los estados en segundos no lo notan. Se
+queda mientras el golpe cae y el respiro de después, hasta que lo cambia el del siguiente enemigo o
+actúa el grupo. **Las acciones del grupo no salen ahí**: su nombre va bajo su número.
+
+El ritmo sigue siendo rápido: entre una acción y la siguiente hay un respiro de 0,25 s
+(`BEAT.breath`), algo más largo que antes. El simulador no cuenta ni ese respiro ni el rótulo
+(cuenta `ACTION_SECONDS` por acción, como siempre): probado al contar el respiro entero, La Voz y
+Vertitrón sin duales salen de sus objetivos, así que su balance depende de ese modelo.
+
+`just screenshots nombres-accion --gpu` lo muestra contra Lo Directo: el rótulo antes de moverse,
+el golpe bajo él y el turno del grupo ya sin él.
 
 ## Ataques duales
 

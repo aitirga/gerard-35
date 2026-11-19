@@ -24,8 +24,10 @@ export const surge = (t: number) => { t = clamp01(t); return t < .5 ? 4 * t * t 
  * always, a short breath between actors, but whatever changed gets its moment to be read before
  * anyone moves again: a status put on or spent (a fire lit or raised, bleeding, a wound opened), stats going up or down
  * (their number comes a moment after the blow's), a layer off an onion, someone going down.
+ * `announce`: a foe's move has its name up top this long before the foe moves (the party's own
+ * goes at once: they chose it). It is a moment to read, so the fight's clock stands still through it.
  */
-export const BEAT = { breath: 170, status: 640, stats: 720, peel: 420, down: 460, dual: 900, dualSeen: 450, queue: 350, ability: 520 } as const;
+export const BEAT = { breath: 250, status: 640, stats: 720, peel: 420, down: 460, dual: 900, dualSeen: 450, queue: 350, ability: 520, announce: 340 } as const;
 /**
  * A dual attack's cinematic (docs/combat.md § Ataques duales), in seconds: a hit-stop freeze, then
  * the banner while the scene and the fight's clock run at DUAL_SLOW (DUAL_BANNER real seconds, or
