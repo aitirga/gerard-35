@@ -116,5 +116,6 @@ test('the picker\'s ánimas replace the story\'s until given back, and nothing g
   story.debugAnimas = undefined;
   assert.deepEqual(story.classes, given);
   assert.equal(topLevel('papagato'), 3);
+  assert.equal(topLevel('dadaista'), 3);
   assert.equal(topLevel('matemagico'), 1, 'Matemágico grows by its tree, not by level');
 });

@@ -204,7 +204,8 @@ one stronger.
   get the next one, per the HUD rule in `AGENTS.md`); a note when a skill is learned.
 - Every ánima has its level table in its own folder.
 
-Built today: three levels, for Papagato only (`LEVELLED` in `src/levels.ts`); Matemágico and
+Built today: three levels, for Papagato and Dadaísta (`LEVELLED` in `src/levels.ts`; Dadaísta's
+levels teach nothing yet, its table is designed and not built); Matemágico and
 Tecnópata grow at the jar.
 
 **Proposal: seven levels, for shared ánimas only** (2026-11-14, Aitor's direction; not built;

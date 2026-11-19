@@ -124,9 +124,11 @@ tester's too. *Volver a las de la historia* gives back what the story has unlock
 It is not saved and sets no flag (`story.debugAnimas`), and no ánima earns EXP from fights while it
 is set; a jump starts again with what the story gives at that point.
 
-Under each ánima the story has unlocked, its EXP and two buttons that make it grow **for real**, as a
-won fight would (`story.giveXp`): *+25 EXP*, and *Subir de nivel* (exactly the EXP its next level
-needs). The EXP is kept, a level reached sets its flag and shows its note (*ÁNIMA · NIVEL 2 · Aprende
+At the top of the column, **Subir de nivel**: each shared ánima that levels (`LEVELLED` in
+`src/levels.ts`: Papagato and Dadaísta), with its level and EXP and two buttons that make it grow
+**for real**, as a won fight would (`story.giveXp`): *Subir a Nv N* (exactly the EXP its next level
+needs, the gold one), and *+25 EXP*. Both need the ánima unlocked in the story (a jump to after its
+mission gives it); Matemágico and Tecnópata are not there, they grow at the jar. The EXP is kept, a level reached sets its flag and shows its note (*ÁNIMA · NIVEL 2 · Aprende
 …*), and they give back the story's ánimas first, so what shows is the story's. Both are greyed out at
 the top level.
 

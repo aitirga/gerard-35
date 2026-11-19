@@ -4,7 +4,7 @@ import type { FightMoment } from './battle-ui';
 import { CASTLE_ENCOUNTERS, CASTLE_FIGHT_NAMES } from './castle.ts';
 import { CLASSES } from './classes';
 import { IMPROVEMENTS, TREE_ANIMAS, improvementOf } from './ecos';
-import { xpFloor } from './levels';
+import { xpFloor, LEVELLED } from './levels';
 import type { EnvironmentId } from './environments';
 import { dayForStage } from './days';
 import { nightTier } from './night';
@@ -303,17 +303,18 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     const { now, story, xp, changed, adult } = dev!.animas(), ecos = dev!.ecos();
     const name = (id: ClassId) => adult ? CLASSES[id].name : CLASSES[id].child?.name ?? CLASSES[id].name;
     const chip = (id: ClassId, level: number, label: string) => `<button type="button" data-set-anima="${id}" data-level="${level}" aria-pressed="${(now[id] ?? 0) === level}" ${(story[id] ?? 0) === level ? 'data-story' : ''}>${label}</button>`;
-    // EXP for real, as a fight would give it: only for ánimas the story has, up to the top level.
-    const grow = (id: ClassId) => {
-      const level = story[id], top = !level || level >= topLevel(id);
-      const earned = level ? Math.max(xp[id] ?? 0, xpFloor(level)) : 0;
-      return `<div class="fight-chips jump-xp" role="group" aria-label="Experiencia de ${escape(name(id))}">
-        <span>${level ? `${earned} EXP` : 'Sin desbloquear'}</span>
-        <button type="button" data-give-xp="${id}" data-amount="25" ${!level || top ? 'disabled' : ''}>+25 EXP</button>
-        <button type="button" data-give-xp="${id}" data-amount="level" ${!level || top ? 'disabled' : ''}>Subir de nivel</button></div>`;
-    };
     const row = (id: ClassId) => `<div class="jump-anima"><strong style="--chip:${CLASSES[id].colour}">${escape(name(id))}</strong><div class="fight-chips" role="group" aria-label="${escape(name(id))}">
-      ${chip(id, 0, 'No')}${Array.from({ length: topLevel(id) }, (_, i) => chip(id, i + 1, `Nv ${i + 1}`)).join('')}</div>${grow(id)}</div>`;
+      ${chip(id, 0, 'No')}${Array.from({ length: topLevel(id) }, (_, i) => chip(id, i + 1, `Nv ${i + 1}`)).join('')}</div></div>`;
+    // EXP for real, as a fight would give it: the shared ánimas (LEVELLED), once the story has them, up to the top level.
+    const grow = (id: ClassId) => {
+      const level = story[id], top = !!level && level >= topLevel(id);
+      const earned = level ? Math.max(xp[id] ?? 0, xpFloor(level)) : 0;
+      const state = !level ? 'Sin desbloquear' : top ? `Nv ${level} · máx · ${earned} EXP` : `Nv ${level} · ${earned} EXP`;
+      return `<div class="jump-anima jump-grow"><strong style="--chip:${CLASSES[id].colour}">${escape(name(id))}<small>${state}</small></strong>
+        <div class="fight-chips jump-xp" role="group" aria-label="Subir de nivel a ${escape(name(id))}">
+        <button type="button" class="jump-level-up" data-give-xp="${id}" data-amount="level" ${!level || top ? 'disabled' : ''}>${level && !top ? `Subir a Nv ${level + 1}` : 'Subir de nivel'}</button>
+        <button type="button" data-give-xp="${id}" data-amount="25" ${!level || top ? 'disabled' : ''}>+25 EXP</button></div></div>`;
+    };
     // The own ánimas (Matemágico, Tecnópata) have no levels and earn no EXP: at 35 they are always
     // worn and grow at the jar, so their row says how far their constellation is. As a child they
     // are only had or not (Matemágico wakes in the palace).
@@ -325,6 +326,9 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     };
     const shared = CLASS_IDS.filter(id => !TREE_ANIMAS.includes(id));
     return `<aside class="jump-side" aria-label="Ánimas">
+      <h3 class="eyebrow">SUBIR DE NIVEL</h3>
+      ${LEVELLED.map(grow).join('')}
+      <p class="jump-note">De verdad, como un combate ganado: se guarda, pone su marca de nivel y sale su aviso. Matemágico y Tecnópata no suben de nivel: crecen en el bote.</p>
       <h3 class="eyebrow">ÁNIMAS PROPIAS</h3>
       ${TREE_ANIMAS.map(own).join('')}
       ${adult ? '<div class="fight-chips jump-xp"><button type="button" data-open-jar>Abrir el bote</button></div>' : ''}
@@ -332,7 +336,6 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       ${shared.map(row).join('')}
       ${changed ? '<button type="button" class="jump-reset" data-animas-reset>Volver a las de la historia</button>' : '<p class="jump-note jump-story-note">Las que da la historia hasta aquí.</p>'}
       <p class="jump-note">Los niveles se aplican al momento, también al combate en curso. Subrayado, lo que da la historia. No se guarda: un salto vuelve a las de la historia.</p>
-      <p class="jump-note">La experiencia sí cuenta: se guarda y sube de nivel como en un combate, con su aviso. Vuelve a las ánimas de la historia.</p>
       <h3 class="eyebrow">ECOS DE LUZ</h3>
       <div class="fight-chips jump-xp" role="group" aria-label="Ecos de luz"><span>${ecos.total} ecos · ${ecos.free} libres${ecos.extra ? ` · ${ecos.extra} de aquí` : ''}</span>
         <button type="button" data-give-ecos="1">+1 eco</button><button type="button" data-give-ecos="-1" ${ecos.extra ? '' : 'disabled'}>−1 eco</button><button type="button" data-open-jar>Abrir el bote</button></div>

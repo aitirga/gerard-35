@@ -44,7 +44,7 @@ export const STORY_FLAGS = [
   // Nuria's mission (docs/quests/nuria.md): Papagato is the party's for good.
   'papagato',
   // Ánima levels reached (src/levels.ts).
-  'papagato-2', 'papagato-3', 'matemagico-2', 'matemagico-3',
+  'papagato-2', 'papagato-3', 'matemagico-2', 'matemagico-3', 'dadaista-2', 'dadaista-3',
   // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the two lights
   // that went with Gerard and Aitor (docs/quests/nuria.md).
   'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri',

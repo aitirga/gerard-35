@@ -1,0 +1,52 @@
+{
+  "title": "Subir de nivel en el selector",
+  "description": "The picker's Ánimas column opens with Subir de nivel: each shared ánima that levels (Papagato and Dadaísta, LEVELLED in src/levels.ts) with its level, its EXP and a gold «Subir a Nv N» that grows it for real, as a won fight would, with its note (docs/dev-tools.md).",
+  "steps": [
+    {
+      "open": "/?story=anima-universidad&with=nuria"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 90000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "document.querySelector('#environment').click()"
+    },
+    {
+      "eval": "document.querySelector('[data-tab=\"missions\"]').click()"
+    },
+    {
+      "eval": "document.querySelector('.jump-side').scrollIntoView({ block: 'start' })"
+    },
+    {
+      "shot": "column",
+      "delay": 500,
+      "caption": "Subir de nivel, first in the Ánimas column: Papagato and Dadaísta at level 1, each with its gold button"
+    },
+    {
+      "eval": "document.querySelector('[data-give-xp=\"dadaista\"][data-amount=\"level\"]').click()"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "dadaista-2",
+      "delay": 300,
+      "caption": "Dadaísta reaches level 2 for real: its note, and the button now offers level 3"
+    },
+    {
+      "eval": "document.querySelector('[data-give-xp=\"dadaista\"][data-amount=\"level\"]').click(); document.querySelector('[data-give-xp=\"papagato\"][data-amount=\"level\"]').click()"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "both-up",
+      "delay": 300,
+      "caption": "Dadaísta at its top level (the button greys out) and Papagato at level 2, with what it learns"
+    }
+  ]
+}

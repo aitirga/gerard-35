@@ -16,9 +16,11 @@ export const MAX_LEVEL = 3;
 export const LEVEL_XP = [180, 660] as const;
 /**
  * Ánimas that grow by level: the shared ones. Matemágico and Tecnópata are someone's own and grow by
- * their tree at the jar instead (src/ecos.ts; docs/animas/README.md § Two ways to grow).
+ * their tree at the jar instead (src/ecos.ts; docs/animas/README.md § Two ways to grow). Dadaísta
+ * earns EXP and levels like Papagato, but its level-2 and level-3 skills (Agitar, Collage, Racha:
+ * docs/animas/dadaista/README.md § Skills per level) are not built yet, so a level teaches it nothing.
  */
-export const LEVELLED: readonly ClassId[] = ['papagato'];
+export const LEVELLED: readonly ClassId[] = ['papagato', 'dadaista'];
 /**
  * What each foe is worth when it is beaten. Roughly how long it takes to bring down: some seven packs
  * of cebollitas (20 to 30 EXP each), or El Cebollón and five packs, teach Papagato Zarpazos.

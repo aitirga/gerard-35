@@ -127,6 +127,9 @@ export const STORY_ARCS = [
   { id: 'papagato', chapter: 2, title: 'Papagato crece', detail: 'Experiencia de combate', after: 'papagato', steps: [
     { flags: ['papagato-2'], label: 'Papagato, nivel 2' }, { flags: ['papagato-3'], label: 'Papagato, nivel 3' },
   ] },
+  { id: 'dadaista', chapter: 2, title: 'Dadaísta crece', detail: 'Experiencia de combate', after: 'anima-universidad', steps: [
+    { flags: ['dadaista-2'], label: 'Dadaísta, nivel 2' }, { flags: ['dadaista-3'], label: 'Dadaísta, nivel 3' },
+  ] },
 ] as const satisfies readonly Arc[];
 
 /**
