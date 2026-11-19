@@ -1445,6 +1445,12 @@ export class Story {
       }
       case 'portatil-emilie':
         return this.useLaptop();
+      case 'modelo-pozo-apagado': {
+        if (!this.adult) return [];
+        const first = !this.emilie.told.includes('pozo');
+        if (first) this.emilie.told.push('pozo');
+        return [say(first ? LINES_EMILIE.wellDead : LINES_EMILIE.wellDeadAgain)];
+      }
       case 'salir-modelo':
         return [{ kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.laptop } }];
       case 'salir-cuerdas':

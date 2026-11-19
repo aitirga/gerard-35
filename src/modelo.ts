@@ -3,12 +3,13 @@
  * cross-section of the ground under Poble Sec, three zones one under the other and the bottom, where
  * El que no converge waits. The party walks along a zone; positions are metres along it (`x`).
  *
- * One verb, *Medir*: driving a piezometer at one of Emilie's survey stakes makes the ground round it
- * real. The model's foes live in what is still a guess: they patrol their zone in sight, go for the
- * party when they see it, and cannot enter measured ground. Inside a borehole the party is out of the
- * model and they pass by; and a borehole is the only way down through the clay. There are fewer
- * piezometers than stakes, so where to measure is each zone's decision, and every piezometer placed
- * beyond the one a zone needs to go down takes a mark of Error off the boss (`calibration`).
+ * Each zone ends in a well (`WELLS`), a shaft through the clay with a lift in it, at the far end from
+ * where the party came in: the wells alternate sides, so every zone is crossed. The lift has no power
+ * of its own: the model's foes are what runs in it, and it only goes down once at least one of the
+ * zone's patrols has been beaten (`charged`). Patrols walk their stretch in sight and go for the party
+ * when they see it; nowhere is safe from them. Emilie's survey stakes are on the way, one a zone:
+ * measuring one (*Medir*) makes the ground round it real and takes a mark of Error off the boss
+ * (`calibration`), for whoever stops to do it with patrols about.
  */
 import type { ModeloEncounter } from './battle.ts';
 
@@ -20,37 +21,35 @@ export interface Stake { id: string; zone: ZoneId; x: number }
 export interface PatrolSpec { id: string; zone: ZoneId; encounter: ModeloEncounter; from: number; to: number; start: number; dir: -1 | 1 }
 /**
  * The section, tunable. A zone is `length` metres long and the party lands at `landing` in the first
- * one. Measured ground reaches `safe` metres each side of a borehole. A patrol walks at `walk` and,
- * seeing the party within `sight` metres, comes at `chase`; it reaches them at `touch`. One that the
- * party got away from (a fight run from) stands still for `rest` seconds. The party starts with
- * `piezometers` and finds as many again on landing in each zone below.
+ * one. A patrol walks at `walk` and, seeing the party within `sight` metres, comes at `chase`; it
+ * reaches them at `touch`. One that the party got away from (a fight run from) stands still for `rest`
+ * seconds. The well's lift is used within `reach` of it.
  */
-export const SECTION = { length: 36, landing: 4, safe: 3.2, sight: 8, walk: 1.5, chase: 2.7, touch: .9, rest: 5, piezometers: 2 };
-/** Emilie's survey stakes: three in each zone, never one right under another, so each way down lands somewhere new. */
+export const SECTION = { length: 36, landing: 4, sight: 8, walk: 1.5, chase: 2.7, touch: .9, rest: 5, reach: 1.2 };
+/** Where each zone's well is: at the far end from where the party came in, so the sides alternate. */
+export const WELLS: Record<Exclude<ZoneId, 'fondo'>, number> = { suelo: 34, gravas: 3, ciudad: 34 };
+/** Emilie's survey stakes: one a zone, on the way across, never where a lift comes down. */
 export const STAKES: readonly Stake[] = [
-  { id: 'suelo-1', zone: 'suelo', x: 7 }, { id: 'suelo-2', zone: 'suelo', x: 19 }, { id: 'suelo-3', zone: 'suelo', x: 31 },
-  { id: 'gravas-1', zone: 'gravas', x: 3 }, { id: 'gravas-2', zone: 'gravas', x: 13 }, { id: 'gravas-3', zone: 'gravas', x: 25 },
-  { id: 'ciudad-1', zone: 'ciudad', x: 8 }, { id: 'ciudad-2', zone: 'ciudad', x: 19 }, { id: 'ciudad-3', zone: 'ciudad', x: 31 },
+  { id: 'suelo-1', zone: 'suelo', x: 24 }, { id: 'gravas-1', zone: 'gravas', x: 12 }, { id: 'ciudad-1', zone: 'ciudad', x: 25 },
 ];
-/** What roams each zone: its fight, the stretch it walks, and where and which way it starts. The first one is already coming when the party lands. */
+/**
+ * What roams each zone: its fight, the stretch it walks, and where and which way it starts. Two to a
+ * zone, between where the party comes in and the well; the first one is already coming when they land.
+ */
 export const PATROLS: readonly PatrolSpec[] = [
-  { id: 'celdas-1', zone: 'suelo', encounter: 'modelo-celdas', from: 2, to: 22, start: 16, dir: -1 },
-  { id: 'celdas-2', zone: 'suelo', encounter: 'modelo-celdas', from: 16, to: 34, start: 30, dir: 1 },
-  { id: 'oscilacion-1', zone: 'gravas', encounter: 'modelo-oscilacion', from: 2, to: 20, start: 12, dir: 1 },
-  { id: 'oscilacion-2', zone: 'gravas', encounter: 'modelo-oscilacion', from: 15, to: 34, start: 24, dir: -1 },
-  { id: 'pluma-1', zone: 'ciudad', encounter: 'modelo-pluma', from: 2, to: 18, start: 6, dir: 1 },
-  { id: 'pluma-2', zone: 'ciudad', encounter: 'modelo-pluma', from: 14, to: 34, start: 28, dir: -1 },
+  { id: 'celdas-1', zone: 'suelo', encounter: 'modelo-celdas', from: 6, to: 22, start: 16, dir: -1 },
+  { id: 'celdas-2', zone: 'suelo', encounter: 'modelo-celdas', from: 18, to: 33, start: 28, dir: 1 },
+  { id: 'oscilacion-1', zone: 'gravas', encounter: 'modelo-oscilacion', from: 14, to: 31, start: 22, dir: -1 },
+  { id: 'oscilacion-2', zone: 'gravas', encounter: 'modelo-oscilacion', from: 4, to: 18, start: 9, dir: 1 },
+  { id: 'pluma-1', zone: 'ciudad', encounter: 'modelo-pluma', from: 6, to: 20, start: 14, dir: 1 },
+  { id: 'pluma-2', zone: 'ciudad', encounter: 'modelo-pluma', from: 16, to: 33, start: 26, dir: -1 },
 ];
 export interface Patrol { x: number; dir: -1 | 1; chasing?: boolean; rest?: number }
 export interface ModeloState {
   zone: ZoneId;
-  /** Piezometers in hand. */
-  piezometers: number;
-  /** Stakes measured, in the order they were (each one a borehole). */
+  /** Stakes measured, in the order they were. */
   placed: string[];
-  /** The borehole the party is inside, if it is: out of the model, unseen. */
-  inside?: string;
-  /** Patrols beaten: gone for good. */
+  /** Patrols beaten: gone for good, and their power in their zone's lift. */
   beaten: string[];
   /** Where each patrol still roaming is. */
   patrols: Record<string, Patrol>;
@@ -58,89 +57,52 @@ export interface ModeloState {
   won?: boolean;
 }
 export function createModelo(): ModeloState {
-  return { zone: 'suelo', piezometers: SECTION.piezometers, placed: [], beaten: [], patrols: Object.fromEntries(PATROLS.map(p => [p.id, { x: p.start, dir: p.dir }])) };
+  return { zone: 'suelo', placed: [], beaten: [], patrols: Object.fromEntries(PATROLS.map(p => [p.id, { x: p.start, dir: p.dir }])) };
 }
 export const stakeOf = (id: string) => STAKES.find(s => s.id === id);
 export const stakesIn = (zone: ZoneId) => STAKES.filter(s => s.zone === zone);
-/** The boreholes of `zone`: its stakes already measured. */
-export const boreholes = (state: ModeloState, zone: ZoneId = state.zone) => stakesIn(zone).filter(s => state.placed.includes(s.id));
-/** Whether `x` in `zone` is measured ground: real, and no foe of the model can stand on it. */
-export const measured = (state: ModeloState, zone: ZoneId, x: number) => boreholes(state, zone).some(s => Math.abs(s.x - x) <= SECTION.safe);
-/** The zone under `zone`, if there is one. */
+/** The zone under `zone`, if there is one; and the one over it. */
 export const below = (zone: ZoneId): ZoneId | undefined => ZONE_IDS[ZONE_IDS.indexOf(zone) + 1];
+export const above = (zone: ZoneId): ZoneId | undefined => ZONE_IDS[ZONE_IDS.indexOf(zone) - 1];
+/** Where the party is when it comes into `zone`: where it landed, or under the well it came down. */
+export const arrival = (zone: ZoneId) => { const up = above(zone); return up ? WELLS[up as keyof typeof WELLS] : SECTION.landing; };
 /** The stake of the party's zone within reach of `x`, if any. */
 export const stakeAt = (state: ModeloState, x: number, reach = 1.2) => stakesIn(state.zone).find(s => Math.abs(s.x - x) <= reach);
-/** What can be done at a stake now: measure it, or (measured) go into its borehole; nothing if there is no piezometer left for it. */
-export function stakeAction(state: ModeloState, id: string): 'medir' | 'entrar' | undefined {
-  const stake = stakeOf(id);
-  if (!stake || stake.zone !== state.zone || state.inside) return;
-  return state.placed.includes(id) ? 'entrar' : state.piezometers > 0 ? 'medir' : undefined;
-}
-/**
- * Medir: a piezometer driven at `id`. The ground round it is real from now on: any patrol standing
- * there is put at its edge, on the side it was. Returns whether it could be.
- */
+/** The patrols of `zone`, and how many of them are beaten: the power in its lift. */
+export const patrolsIn = (zone: ZoneId) => PATROLS.filter(p => p.zone === zone);
+export const energy = (state: ModeloState, zone: ZoneId = state.zone) => patrolsIn(zone).filter(p => state.beaten.includes(p.id)).length;
+/** Whether the lift of the party's zone can go down: one of its patrols beaten is enough. */
+export const charged = (state: ModeloState, zone: ZoneId = state.zone) => energy(state, zone) > 0;
+/** Medir: Emilie's stake at `id` measured; the ground round it is real from now on. Returns whether it could be. */
 export function measure(state: ModeloState, id: string): boolean {
-  if (stakeAction(state, id) !== 'medir') return false;
-  const stake = stakeOf(id)!;
-  state.piezometers--; state.placed.push(id);
-  for (const spec of PATROLS) {
-    const patrol = state.patrols[spec.id];
-    if (!patrol || spec.zone !== stake.zone || Math.abs(patrol.x - stake.x) > SECTION.safe) continue;
-    const side = patrol.x >= stake.x ? 1 : -1;
-    patrol.x = stake.x + side * (SECTION.safe + .01); patrol.dir = side; delete patrol.chasing;
-  }
+  const stake = stakeOf(id);
+  if (!stake || stake.zone !== state.zone || state.placed.includes(id)) return false;
+  state.placed.push(id);
   return true;
 }
-/** Into the borehole at `id`: out of the model. */
-export function enter(state: ModeloState, id: string): boolean {
-  if (stakeAction(state, id) !== 'entrar') return false;
-  state.inside = id;
-  return true;
-}
-/** Back out of the borehole, where it stands. Returns its `x`. */
-export function leave(state: ModeloState): number | undefined {
-  const stake = state.inside ? stakeOf(state.inside) : undefined;
-  delete state.inside;
-  return stake?.x;
-}
+/** Whether the party at `x` stands at its zone's well. */
+export const atWell = (state: ModeloState, x: number) => state.zone !== 'fondo' && Math.abs(WELLS[state.zone as keyof typeof WELLS] - x) <= SECTION.reach;
 /**
- * Down the borehole the party is in, through the clay, to the zone below: out at the same `x`, with
- * the piezometers left there. Returns where it lands, or nothing if it is not in a borehole.
+ * Down the lift of the party's zone, through the clay, to the zone below: out at the same `x`. Only
+ * with power in it. Returns where it lands, or nothing if it cannot go.
  */
 export function descend(state: ModeloState): { zone: ZoneId; x: number } | undefined {
-  const stake = state.inside ? stakeOf(state.inside) : undefined, next = stake && below(stake.zone);
-  if (!stake || !next) return;
-  delete state.inside;
+  const next = below(state.zone);
+  if (!next || !charged(state)) return;
+  const x = WELLS[state.zone as keyof typeof WELLS];
   state.zone = next;
-  if (next !== 'fondo') state.piezometers += SECTION.piezometers;
-  return { zone: next, x: stake.x };
+  return { zone: next, x };
 }
-/**
- * How well the model is calibrated when the party reaches the bottom: the piezometers placed beyond
- * the one each zone needs to go down. Each takes a mark of Error off El que no converge (`calibrate`
- * in src/battle.ts keeps its last one).
- */
-export function calibration(state: ModeloState) {
-  return (['suelo', 'gravas', 'ciudad'] as const).reduce((sum, zone) => sum + Math.max(0, boreholes(state, zone).length - 1), 0);
-}
-/** Whether the party at `x` can be seen by the patrol: in its zone, outside any borehole and off measured ground, within sight. */
-function sees(state: ModeloState, spec: PatrolSpec, patrol: Patrol, x: number) {
-  return spec.zone === state.zone && !state.inside && !measured(state, state.zone, x) && Math.abs(patrol.x - x) <= SECTION.sight;
-}
-/** How far a patrol at `x` going `dir` can get before measured ground or the end of its stretch (while chasing, the whole zone is its stretch). */
-function limit(state: ModeloState, spec: PatrolSpec, x: number, dir: -1 | 1, chasing: boolean) {
-  let end = chasing ? (dir > 0 ? SECTION.length - 1 : 1) : dir > 0 ? spec.to : spec.from;
-  for (const s of boreholes(state, spec.zone)) {
-    const edge = s.x - dir * SECTION.safe;
-    if (dir > 0 ? edge >= x - 1e-6 && edge < end : edge <= x + 1e-6 && edge > end) end = edge;
-  }
-  return end;
-}
+/** How well the model is calibrated when the party reaches the bottom: each stake measured takes a mark of Error off El que no converge (`calibrate` in src/battle.ts keeps its last one). */
+export const calibration = (state: ModeloState) => state.placed.length;
+/** Whether the party at `x` can be seen by the patrol: in its zone, within sight. */
+const sees = (state: ModeloState, spec: PatrolSpec, patrol: Patrol, x: number) => spec.zone === state.zone && Math.abs(patrol.x - x) <= SECTION.sight;
+/** How far a patrol going `dir` can get: the end of its stretch (while chasing, the whole zone is its stretch). */
+const limit = (spec: PatrolSpec, dir: -1 | 1, chasing: boolean) => chasing ? (dir > 0 ? SECTION.length - 1 : 1) : dir > 0 ? spec.to : spec.from;
 /**
  * `seconds` pass in the section with the party at `x` in its zone. Every patrol walks its stretch and
- * turns at its ends and at the edge of measured ground; one that sees the party comes for it. Returns
- * the patrol that reached the party, if one did: its fight starts.
+ * turns at its ends; one that sees the party comes for it. Returns the patrol that reached the party,
+ * if one did: its fight starts.
  */
 export function tick(state: ModeloState, seconds: number, x: number): PatrolSpec | undefined {
   if (!(seconds > 0)) return;
@@ -151,7 +113,7 @@ export function tick(state: ModeloState, seconds: number, x: number): PatrolSpec
     if (patrol.rest) { patrol.rest = Math.max(0, patrol.rest - seconds); if (!patrol.rest) delete patrol.rest; delete patrol.chasing; continue; }
     const seen = sees(state, spec, patrol, x);
     if (seen) { patrol.chasing = true; if (Math.abs(x - patrol.x) > 1e-6) patrol.dir = x > patrol.x ? 1 : -1; } else delete patrol.chasing;
-    const speed = seen ? SECTION.chase : SECTION.walk, end = limit(state, spec, patrol.x, patrol.dir, seen);
+    const speed = seen ? SECTION.chase : SECTION.walk, end = limit(spec, patrol.dir, seen);
     const step = speed * seconds, left = (end - patrol.x) * patrol.dir;
     // While it chases it never overshoots the party; walking, it turns where its way ends.
     if (seen) patrol.x += patrol.dir * Math.max(0, Math.min(step, left, Math.abs(x - patrol.x)));
@@ -161,12 +123,12 @@ export function tick(state: ModeloState, seconds: number, x: number): PatrolSpec
   }
   return reached;
 }
-/** A patrol's fight was won: it is gone. */
+/** A patrol's fight was won: it is gone, and its power is in its zone's lift. */
 export function beat(state: ModeloState, id: string) {
   if (!state.beaten.includes(id)) state.beaten.push(id);
   delete state.patrols[id];
 }
-/** A patrol's fight was run from: it stands still a while, so the party can get to measured ground. */
+/** A patrol's fight was run from: it stands still a while. */
 export function shake(state: ModeloState, id: string) {
   const patrol = state.patrols[id];
   if (patrol) { patrol.rest = SECTION.rest; delete patrol.chasing; }
@@ -177,10 +139,10 @@ export const roaming = (state: ModeloState, zone: ZoneId = state.zone) => PATROL
  * The section as a place to walk (src/environments.ts `MODELO`, src/modelo-scene.ts): seen from the
  * side, one gallery `depth` cells deep and `length` long. The party never changes cells to go down:
  * the section itself rises past them, a gallery every `drop` metres, each `height` tall under the clay.
- * A metre along a zone is a cell of the grid. El que no converge stands at `boss` in the bottom one and
- * its fight starts within `bossReach` of it.
+ * A metre along a zone is a cell of the grid. El que no converge stands at `boss` in the bottom one, half
+ * the gallery away from the lift that brings the party down, and its fight starts within `bossReach` of it.
  */
-export const GALLERY = { depth: 3, row: 2, drop: 5, height: 3.2, boss: 24, bossReach: 3.5 };
+export const GALLERY = { depth: 3, row: 2, drop: 5, height: 3.2, boss: 18, bossReach: 3.5 };
 /** The gallery's grid: a wall behind, the way, a wall before, closed at both ends. */
 export const MODELO_GRID: string[] = [
   '#'.repeat(SECTION.length + 2),
@@ -190,14 +152,11 @@ export const MODELO_GRID: string[] = [
 /** The interaction of a stake (`estaca-<stake id>`), and the stake of an interaction. */
 export const stakeInteraction = (id: string) => `estaca-${id}`;
 export const interactionStake = (id: string) => id.startsWith('estaca-') ? stakeOf(id.slice('estaca-'.length)) : undefined;
-/**
- * What the party can do at the stake they stand by: «Medir» it, go into its borehole («Entrar») or,
- * inside it, go down («Bajar»; at the bottom there is no further down).
- */
-export function stakeVerb(state: ModeloState, id: string): 'Medir' | 'Entrar' | 'Bajar' | undefined {
+/** The interaction of a zone's well (`pozo-<zone>`), and the zone of an interaction. */
+export const wellInteraction = (zone: ZoneId) => `pozo-${zone}`;
+export const interactionWell = (id: string) => id.startsWith('pozo-') ? id.slice('pozo-'.length) as ZoneId : undefined;
+/** What the party can do at the stake they stand by: «Medir» it, if it is of their zone and still a guess. */
+export function stakeVerb(state: ModeloState, id: string): 'Medir' | undefined {
   const stake = stakeOf(id);
-  if (!stake || stake.zone !== state.zone) return;
-  if (state.inside === id) return below(stake.zone) ? 'Bajar' : undefined;
-  const action = stakeAction(state, id);
-  return action === 'medir' ? 'Medir' : action === 'entrar' ? 'Entrar' : undefined;
+  return stake && stake.zone === state.zone && !state.placed.includes(id) ? 'Medir' : undefined;
 }

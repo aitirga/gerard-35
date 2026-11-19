@@ -122,6 +122,12 @@ export const LINES_EMILIE = {
       gerard('Pues hemos medido.'),
     ),
   } as Record<Exclude<ZoneId, 'suelo'>, Dialogue>,
+  /** A zone's lift before any of its patrols is beaten: no power, the first time said out, then just noticed. */
+  wellDead: group('aitor',
+    gerard('El ascensor no se mueve. El panel está apagado.'),
+    aitor('Dos pilotos. Y por aquí rondan dos de esas cosas.'),
+  ),
+  wellDeadAgain: group('aitor', gerard('Sigue sin corriente.')),
   /** At the bottom, the first time they come near it, before its fight. */
   jefe: group('emilie',
     gerard('Ahí está. No se queda quieto.'),

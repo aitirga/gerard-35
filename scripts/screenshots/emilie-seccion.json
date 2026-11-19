@@ -1,35 +1,190 @@
 {
   "title": "El modelo de Emilie: la sección",
-  "description": "docs/quests/emilie.md § In the section. The side view of the ground under Poble Sec: landing in El suelo, a stake measured (the ground round it turns real), inside its borehole, down to Las gravas and Bajo la ciudad, and El fondo with El que no converge. Run it with --gpu.",
+  "description": "docs/quests/emilie.md § The section, as built. The side view of the ground under Poble Sec: landing in El suelo, a stake measured, the well at the far end without power, a patrol beaten and its lamp lit, the lift going down, Las gravas and Bajo la ciudad crossed the other way, and El fondo with El que no converge. Run it with --gpu.",
   "steps": [
-    { "open": "/?story=got-wrapper&solo=1" },
-    { "until": "window.gerard && window.gerard.game", "timeout": 180000 },
-    { "eval": "navigator.getGamepads = () => []; window.g = window.gerard.game; window.at = x => g.modelo.walk(x);" },
-    { "teleport": "modelo", "cell": [4, 2], "settle": 1500 },
-    { "eval": "for (const p of Object.values(g.modelo.run.patrols)) p.rest = 999; g.modelo.run.patrols['celdas-1'].x = 12;" },
-    { "shot": "llegada", "delay": 1200, "caption": "Landing in El suelo: all of it a guess, the mesh in phosphor green, a patrol of celdas secas ahead" },
-    { "eval": "at(7)" },
-    { "shot": "estaca", "delay": 900, "caption": "At one of Emilie's stakes: «Medir»" },
-    { "press": "KeyE" },
-    { "shot": "medido", "delay": 900, "caption": "Measured: the ground round the borehole is real, and the patrol cannot step on it. The stake now offers «Entrar»" },
-    { "press": "KeyE" },
-    { "shot": "dentro", "delay": 900, "caption": "Inside the borehole: out of the model. «Bajar»" },
-    { "press": "KeyE" },
-    { "shot": "bajando", "delay": 350, "caption": "Going down: the section rises past the party" },
-    { "shot": "gravas", "delay": 1800, "caption": "Las gravas: a finer mesh, the oscilaciones, and the borehole they came down by above" },
-    { "eval": "const r = g.modelo.run; at(13);" },
-    { "press": "KeyE" },
-    { "press": "KeyE" },
-    { "press": "KeyE" },
-    { "eval": "at(19)" },
-    { "press": "KeyE" },
-    { "shot": "ciudad", "delay": 1800, "caption": "Bajo la ciudad: tunnels the model was told about, La pluma; two stakes measured here calibrate the model" },
-    { "press": "KeyE" },
-    { "press": "KeyE" },
-    { "eval": "at(14)" },
-    { "shot": "fondo", "delay": 1800, "caption": "El fondo: El que no converge waits" },
-    { "eval": "at(21)" },
-    { "until": "window.gerard.battleUI.fight", "timeout": 20000 },
-    { "shot": "jefe", "delay": 3500, "caption": "Its fight, staged in the gallery" }
+    {
+      "open": "/?story=got-wrapper&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.game",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.g = window.gerard.game; window.at = x => g.modelo.walk(x);"
+    },
+    {
+      "teleport": "modelo",
+      "cell": [
+        4,
+        2
+      ],
+      "settle": 1500
+    },
+    {
+      "eval": "for (const p of Object.values(g.modelo.run.patrols)) p.rest = 999; g.modelo.run.patrols['celdas-1'].x = 12;"
+    },
+    {
+      "shot": "llegada",
+      "delay": 1200,
+      "caption": "Landing in El suelo: all of it a guess, the mesh in phosphor green, a patrol of celdas secas ahead; nowhere to hide"
+    },
+    {
+      "eval": "at(24)"
+    },
+    {
+      "shot": "estaca",
+      "delay": 900,
+      "caption": "One of Emilie's stakes on the way: «Medir»"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "medido",
+      "delay": 900,
+      "caption": "Measured: the ground round it is real, and the boss will have a mark of Error less. No longer a safe place"
+    },
+    {
+      "eval": "at(34)"
+    },
+    {
+      "shot": "pozo-apagado",
+      "delay": 1200,
+      "caption": "The well at the far end: headframe, pulley, the shaft down through the clay, the cage at the bottom. Its panel's two lamps are off: «Sin corriente»"
+    },
+    {
+      "eval": "(() => { const c = g.world(34, 2); g.frame({ x: c.x, y: 1.4, z: c.z }, 4.2); })()"
+    },
+    {
+      "shot": "pozo-cerca",
+      "delay": 1100,
+      "caption": "Up close: the cage, the cable, and the panel with a lamp for each patrol of the zone"
+    },
+    {
+      "eval": "(() => { const r = g.modelo.run; delete r.patrols['celdas-2']; if (!r.beaten.includes('celdas-2')) r.beaten.push('celdas-2'); })()"
+    },
+    {
+      "shot": "pozo-encendido",
+      "delay": 1300,
+      "caption": "A patrol beaten: one lamp lit, and the cage and the shaft light up"
+    },
+    {
+      "eval": "g.frame()"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "bajando",
+      "delay": 350,
+      "caption": "Going down: the cage stays with them while the section rises past"
+    },
+    {
+      "shot": "gravas",
+      "delay": 1800,
+      "caption": "Las gravas: they come out under the well they came down; the next one is at the other end"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "(() => { const r = g.modelo.run; delete r.patrols['oscilacion-1']; if (!r.beaten.includes('oscilacion-1')) r.beaten.push('oscilacion-1'); })()"
+    },
+    {
+      "eval": "at(3)"
+    },
+    {
+      "shot": "gravas-pozo",
+      "delay": 1200,
+      "caption": "The well of Las gravas, at the left end, lit by an Oscilación beaten"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "ciudad",
+      "delay": 1800,
+      "caption": "Bajo la ciudad: the tunnels the model was told about, and La pluma"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "(() => { const r = g.modelo.run; delete r.patrols['pluma-1']; if (!r.beaten.includes('pluma-1')) r.beaten.push('pluma-1'); })()"
+    },
+    {
+      "eval": "at(34)"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "fondo",
+      "delay": 1800,
+      "caption": "El fondo: the cage that brought them, and El que no converge half the gallery away"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "at(20)"
+    },
+    {
+      "until": "window.gerard.battleUI.fight",
+      "timeout": 20000
+    },
+    {
+      "shot": "jefe",
+      "delay": 3500,
+      "caption": "Its fight, staged in the gallery"
+    }
   ]
 }

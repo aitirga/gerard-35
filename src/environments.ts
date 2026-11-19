@@ -16,7 +16,7 @@ import PLACA_ESPANYA_SCENE from './geo/placa-espanya.json' with { type: 'json' }
 import SAGRADA_FAMILIA_SCENE from './geo/sagrada-familia.json' with { type: 'json' };
 import { towerGrid } from './tower.ts';
 import { CUERDAS as CUERDAS_PLAN } from './cuerdas.ts';
-import { GALLERY, MODELO_GRID, SECTION, STAKES, stakeInteraction } from './modelo.ts';
+import { GALLERY, MODELO_GRID, SECTION, STAKES, WELLS, stakeInteraction, wellInteraction } from './modelo.ts';
 import { PALACE_GYM, PALACE_OFFICE, PALACE_PATIO, PALACE_THRONE, type ZoneTheme } from './palace-zone-plans.ts';
 import type { CastleFloor } from './castle.ts';
 import { CASTLE_ENVIRONMENTS } from './castle-floor.ts';
@@ -788,7 +788,11 @@ export const CUERDAS: Environment = {
 export const MODELO: Environment = {
   id: 'modelo', name: 'El modelo de Emilie', grid: MODELO_GRID, spawn: { x: SECTION.landing, z: GALLERY.row }, zoom: 7.5,
   houses: [], props: [], noOverview: true, hollow: true, view: { yaw: 0, pitch: 14, steer: 0 },
-  interactions: STAKES.map(stake => ({ id: stakeInteraction(stake.id), cell: { x: stake.x, z: GALLERY.row }, label: 'Estaca de Emilie', hint: 'Medir' })),
+  interactions: [
+    ...STAKES.map(stake => ({ id: stakeInteraction(stake.id), cell: { x: stake.x, z: GALLERY.row }, label: 'Estaca de Emilie', hint: 'Medir' })),
+    // Each zone's well at its far end, its lift the way down (src/modelo.ts `WELLS`).
+    ...(Object.entries(WELLS) as [keyof typeof WELLS, number][]).map(([zone, x]) => ({ id: wellInteraction(zone), cell: { x, z: GALLERY.row }, label: 'El pozo', hint: 'Bajar' })),
+  ],
 };
 export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   patio: COURTYARD, maresme: NEIGHBORHOOD,

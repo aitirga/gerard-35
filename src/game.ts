@@ -46,7 +46,7 @@ import { CUERDAS as CUERDAS_PLAN, freshCuerdas, holds, leave, mazeAt, mend, piec
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { buildModelo, type ModeloScene } from './modelo-scene';
 import { FLOOD } from './emilie-flat-scenery';
-import { GALLERY, PATROLS, ZONE_IDS, beat, calibration, createModelo, descend, enter, interactionStake, leave as leaveBorehole, measure, shake as shakePatrol, stakeOf, stakeVerb, tick as tickModelo } from './modelo';
+import { GALLERY, PATROLS, ZONE_IDS, beat, calibration, charged, createModelo, descend, interactionStake, interactionWell, measure, shake as shakePatrol, stakeVerb, tick as tickModelo } from './modelo';
 import { MODELO_SIZES } from './modelo-foes';
 import { MODELO_FIGHTS, calibrate } from './battle';
 import { CUERDAS_FIGHTS } from './battle';
@@ -768,15 +768,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   /**
    * The section each frame: its patrols walk and come for whoever they see (not in a fight, a pause
-   * or while someone talks), the party leaves a borehole by walking away from it, and at the bottom
-   * El que no converge starts its fight when they come near.
+   * or while someone talks), and at the bottom El que no converge starts its fight when they come near.
    */
   function stepModelo(dt: number, animate: boolean) {
     if (!modelo) return;
     const run = section.run, x = movement.position.x;
     if (!battle && !cutscene && !paused && !section.fighting && !document.querySelector('#hud[data-dialogue]')) {
-      const inside = run.inside && stakeOf(run.inside);
-      if (inside && Math.abs(inside.x - x) > INTERACTION_REACH) { leaveBorehole(run); lastPrompt = '\0'; }
       let hit: ReturnType<typeof tickModelo>;
       for (let left = Math.min(dt, .5); left > 0 && !hit; left -= .05) hit = tickModelo(run, Math.min(.05, left), x);
       const boss = run.zone === 'fondo' && !run.won && Math.abs(x - GALLERY.boss) <= GALLERY.bossReach;
@@ -799,17 +796,21 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     boss.enabled = !run.won && !(battle && run.zone === 'fondo');
     modelo.update(dt, run, animate);
   }
-  /** A stake of the section used: measured, gone into, or gone down by. */
+  /** A stake of the section measured: the ground round it is real, and the boss will have a mark of Error less. */
   function useStake(id: string) {
-    const run = section.run, verb = stakeVerb(run, id);
-    if (verb === 'Medir' && measure(run, id)) { callbacks.onSound('ui-confirm'); const at = player.getPosition(); effects.emit('spark', new pc.Vec3(at.x, at.y + .6, at.z), 14, .4); }
-    else if (verb === 'Entrar' && enter(run, id)) callbacks.onSound('ui-confirm');
-    else if (verb === 'Bajar' && descend(run)) {
-      callbacks.onSound('ui-confirm');
-      // Emilie says a little more of the why, from outside, the first time they reach each zone.
-      callbacks.onStory({ type: 'near', id: `modelo-zona-${run.zone}` });
-    }
-    // The same stake offers something else now: the prompt is asked again.
+    const run = section.run;
+    if (stakeVerb(run, id) === 'Medir' && measure(run, id)) { callbacks.onSound('ui-confirm'); const at = player.getPosition(); effects.emit('spark', new pc.Vec3(at.x, at.y + .6, at.z), 14, .4); }
+    // Measured, the stake has nothing more to offer: the prompt is asked again.
+    lastPrompt = '\0';
+  }
+  /** The lift at the end of the zone: down, if a beaten patrol has put power in it; if not, the story says why it will not go. */
+  function useWell() {
+    const run = section.run;
+    if (!charged(run)) { callbacks.onStory({ type: 'interact', id: 'modelo-pozo-apagado' }); return; }
+    if (!descend(run)) return;
+    callbacks.onSound('ui-confirm');
+    // Emilie says a little more of the why, from outside, the first time they reach each zone.
+    callbacks.onStory({ type: 'near', id: `modelo-zona-${run.zone}` });
     lastPrompt = '\0';
   }
   function dressScene() {
@@ -1553,7 +1554,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     // In Emilie's section a stake offers what can be done at it now, and only those of the zone the party is in.
     const here = !modelo ? interactions() : interactions().flatMap(i => {
       // The way back out to her laptop is behind where they landed, in El suelo, and not from inside a borehole.
-      if (i.id === 'salir-modelo') return section.run.zone === 'suelo' && !section.run.inside ? [i] : [];
+      if (i.id === 'salir-modelo') return section.run.zone === 'suelo' ? [i] : [];
+      // Only the well of the zone they are in; it says, as they come to it, whether it has power.
+      const well = interactionWell(i.id);
+      if (well) return well === section.run.zone ? [{ ...i, hint: charged(section.run) ? 'Bajar' : 'Sin corriente' }] : [];
       const stake = interactionStake(i.id);
       if (!stake) return [i];
       const verb = stakeVerb(section.run, stake.id);
@@ -2564,6 +2568,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     const stake = modelo && interactionStake(target.id);
     if (stake) { useStake(stake.id); return; }
+    if (modelo && interactionWell(target.id)) { useWell(); return; }
     const gate = story.gate(target.id);
     const to = story.redirect(target.id) ?? target.to;
     if (gate) callbacks.onDialogue(gate);

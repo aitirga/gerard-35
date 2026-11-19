@@ -16,7 +16,7 @@ import { STORY_FLAGS, type EmilieRun, type MartaRun, type NuriaRun, type StoryEv
 import { BEACH, CAMP, CAMP_HUNTERS, PLACES_CAMP, PLACES_UNI } from './friends/universidad.ts';
 import { CUERDAS_PLACE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
 import { MODELO_PLACE, PISO, PLACES_EMILIE, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
-import { GALLERY, SECTION, createModelo, stakeOf, type ModeloState } from './modelo.ts';
+import { GALLERY, ZONE_IDS, arrival, beat, createModelo, patrolsIn, type ModeloState, type ZoneId } from './modelo.ts';
 import { entranceId } from './transit.ts';
 
 /** Where a jump stands Gerard; without one, where the story resumes (`story.resume`). */
@@ -243,17 +243,13 @@ const MARTA_PARTS: readonly MissionPart[] = [
   { id: 'done', label: 'Misión hecha', detail: 'Marta, ella otra vez, junto al piano', at: 'luz-marta', spot: { environment: 'alegia', cell: { ...PLACES_MARTA.back } } },
 ];
 /**
- * The run through Emilie's model having gone down by the stakes `by` (one per zone, src/modelo.ts):
- * each measured and gone down, the piezometers as many as are left, standing in the zone below the last.
+ * The run through Emilie's model having come down into `zone`: in each zone above, its first patrol
+ * beaten (the power its lift needed) and nothing measured.
  */
-function wentDown(...by: string[]): ModeloState {
+function cameDown(zone: ZoneId): ModeloState {
   const run = createModelo();
-  for (const id of by) {
-    const stake = stakeOf(id)!;
-    run.placed.push(id); run.piezometers -= 1;
-    run.zone = ({ suelo: 'gravas', gravas: 'ciudad', ciudad: 'fondo' } as const)[stake.zone as 'suelo' | 'gravas' | 'ciudad'];
-    if (run.zone !== 'fondo') run.piezometers += SECTION.piezometers;
-  }
+  for (const up of ZONE_IDS.slice(0, ZONE_IDS.indexOf(zone))) beat(run, patrolsIn(up)[0].id);
+  run.zone = zone;
   return run;
 }
 const modelo = (x: number): Spot => ({ environment: MODELO_PLACE, cell: { x, z: GALLERY.row } });
@@ -266,11 +262,11 @@ const EMILIE_PARTS: readonly MissionPart[] = [
   { id: 'start', label: 'Desde el principio', detail: 'En Poble Sec, ante su portal; sale agua por debajo', at: 'metro', spot: { environment: POBLE_SEC, cell: { x: PLACES_EMILIE.door.x, z: PLACES_EMILIE.door.z + 1 } } },
   { id: 'piso', label: 'Su piso', detail: 'Recién subidos; Emilie de pie en el agua', at: 'metro', spot: { environment: PISO, cell: { ...PLACES_PISO.spawn } }, emilie: { told: told() } },
   { id: 'laptop', label: 'El portátil', detail: 'Ya han hablado con ella; su modelo abierto en la mesa', at: 'poble-sec-emilie', spot: { environment: PISO, cell: { ...PLACES_PISO.laptop } }, emilie: { told: told() } },
-  { id: 'suelo', label: 'El suelo', detail: 'Recién entrados en el modelo; la primera estaca y una patrulla que viene', at: 'modelo', spot: modelo(PLACES_MODELO.spawn.x), emilie: { told: told() } },
-  { id: 'gravas', label: 'Las gravas', detail: 'Medida una estaca de El suelo y bajado por ella', at: 'modelo', spot: modelo(stakeOf('suelo-1')!.x), emilie: { told: told(), section: wentDown('suelo-1') } },
-  { id: 'ciudad', label: 'Bajo la ciudad', detail: 'El túnel de la L3 y sus bombas', at: 'modelo', spot: modelo(stakeOf('gravas-2')!.x), emilie: { told: told('gravas'), section: wentDown('suelo-1', 'gravas-2') } },
-  { id: 'fondo', label: 'El fondo', detail: 'El que no converge delante; el combate empieza al acercarse', at: 'modelo', spot: modelo(stakeOf('ciudad-2')!.x), emilie: { told: told('gravas', 'ciudad'), section: wentDown('suelo-1', 'gravas-2', 'ciudad-2') } },
-  { id: 'won', label: 'Emilie entiende otra vez', detail: 'El final: su luz va con Gerard y Aitor, de vuelta en su piso', at: 'modelo', spot: modelo(stakeOf('ciudad-2')!.x), emilie: { told: [...told('gravas', 'ciudad', 'fondo'), 'modelo-jefe'], section: wentDown('suelo-1', 'gravas-2', 'ciudad-2') }, event: { type: 'battle', won: true, encounter: 'no-converge' } },
+  { id: 'suelo', label: 'El suelo', detail: 'Recién entrados en el modelo; una patrulla que viene y el pozo al fondo', at: 'modelo', spot: modelo(PLACES_MODELO.spawn.x), emilie: { told: told() } },
+  { id: 'gravas', label: 'Las gravas', detail: 'Bajados en el ascensor de El suelo; el pozo siguiente, al otro lado', at: 'modelo', spot: modelo(arrival('gravas')), emilie: { told: told(), section: cameDown('gravas') } },
+  { id: 'ciudad', label: 'Bajo la ciudad', detail: 'El túnel de la L3 y sus bombas', at: 'modelo', spot: modelo(arrival('ciudad')), emilie: { told: told('gravas'), section: cameDown('ciudad') } },
+  { id: 'fondo', label: 'El fondo', detail: 'El que no converge delante; el combate empieza al acercarse', at: 'modelo', spot: modelo(arrival('fondo')), emilie: { told: told('gravas', 'ciudad'), section: cameDown('fondo') } },
+  { id: 'won', label: 'Emilie entiende otra vez', detail: 'El final: su luz va con Gerard y Aitor, de vuelta en su piso', at: 'modelo', spot: modelo(arrival('fondo')), emilie: { told: [...told('gravas', 'ciudad', 'fondo'), 'modelo-jefe'], section: cameDown('fondo') }, event: { type: 'battle', won: true, encounter: 'no-converge' } },
   { id: 'done', label: 'Misión hecha', detail: 'Emilie, ella otra vez, en su piso', at: 'luz-emilie', spot: { environment: PISO, cell: { ...PLACES_PISO.laptop } } },
 ];
 /** The parts each mission can start at; one without its own list starts at its beginning or at each step. */

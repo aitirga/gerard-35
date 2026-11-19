@@ -1,79 +1,65 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PATROLS, SECTION, STAKES, beat, below, boreholes, calibration, createModelo, descend, enter, leave, measure, measured, roaming, shake, stakeAction, stakeAt, stakesIn, tick } from '../src/modelo.ts';
+import { GALLERY, PATROLS, SECTION, STAKES, WELLS, ZONE_IDS, arrival, atWell, beat, below, calibration, charged, createModelo, descend, energy, measure, patrolsIn, roaming, shake, stakeVerb, stakesIn, tick } from '../src/modelo.ts';
 import { MODELO_ENCOUNTERS } from '../src/battle.ts';
 
 /** Runs the section for `seconds` in small steps with the party standing at `x`; returns the first patrol to reach it. */
 const run = (s, seconds, x, dt = .05) => { for (let t = 0; t < seconds; t += dt) { const hit = tick(s, dt, x); if (hit) return hit; } };
 
-test('the section has three zones of three stakes, fewer piezometers than stakes, and fights the game knows', () => {
+test('three zones and the bottom: each zone with its patrols, one stake and a well at the far end, the sides alternating', () => {
+  assert.deepEqual([below('suelo'), below('gravas'), below('ciudad'), below('fondo')], ['gravas', 'ciudad', 'fondo', undefined]);
   for (const zone of ['suelo', 'gravas', 'ciudad']) {
-    assert.equal(stakesIn(zone).length, 3, zone);
-    assert.ok(SECTION.piezometers < stakesIn(zone).length);
-    assert.ok(PATROLS.some(p => p.zone === zone), zone);
+    assert.equal(patrolsIn(zone).length, 2, zone);
+    assert.equal(stakesIn(zone).length, 1, zone);
+    // The well is at the other end from where the party comes in: the whole zone is crossed.
+    assert.ok(Math.abs(WELLS[zone] - arrival(zone)) > SECTION.length * .7, zone);
+    for (const p of patrolsIn(zone)) assert.ok(Math.min(p.from, p.to) > Math.min(arrival(zone), WELLS[zone]) && Math.max(p.from, p.to) < Math.max(arrival(zone), WELLS[zone]), `${p.id} walks between the way in and the well`);
   }
   assert.equal(stakesIn('fondo').length, 0);
+  assert.deepEqual(ZONE_IDS.map(arrival), [SECTION.landing, WELLS.suelo, WELLS.gravas, WELLS.ciudad]);
   for (const p of PATROLS) assert.ok(MODELO_ENCOUNTERS.includes(p.encounter), p.id);
-  // No stake stands right under another: each way down lands on ground still to measure.
-  for (const a of STAKES) for (const b of STAKES) if (below(a.zone) === b.zone) assert.ok(Math.abs(a.x - b.x) > SECTION.safe, `${a.id} over ${b.id}`);
-  assert.deepEqual([below('suelo'), below('gravas'), below('ciudad'), below('fondo')], ['gravas', 'ciudad', 'fondo', undefined]);
+  // At the bottom the boss is half the gallery away from the lift that brings them down.
+  assert.ok(Math.abs(GALLERY.boss - arrival('fondo')) - GALLERY.bossReach > 8);
 });
 
-test('Medir spends a piezometer, makes a borehole and the ground round it real', () => {
+test('the lift has no power until one of its zone\'s patrols is beaten; then it goes down to the same place a zone below', () => {
   const s = createModelo();
-  assert.equal(stakeAt(s, 7.5)?.id, 'suelo-1'); assert.equal(stakeAt(s, 12), undefined);
-  assert.equal(stakeAction(s, 'suelo-1'), 'medir');
-  assert.ok(!measured(s, 'suelo', 7));
-  assert.ok(measure(s, 'suelo-1'));
-  assert.equal(s.piezometers, SECTION.piezometers - 1);
-  assert.ok(measured(s, 'suelo', 7 + SECTION.safe)); assert.ok(!measured(s, 'suelo', 7 + SECTION.safe + .5));
-  assert.ok(!measured(s, 'gravas', 7), 'only its own zone');
-  assert.equal(stakeAction(s, 'suelo-1'), 'entrar');
-  assert.equal(measure(s, 'suelo-1'), false, 'not twice');
-  assert.equal(measure(s, 'gravas-1'), false, 'not from another zone');
-  assert.ok(measure(s, 'suelo-2'));
-  assert.equal(stakeAction(s, 'suelo-3'), undefined, 'none left for the third');
-  assert.equal(measure(s, 'suelo-3'), false);
+  assert.ok(!charged(s)); assert.equal(energy(s), 0);
+  assert.equal(descend(s), undefined, 'no power, no lift');
+  assert.equal(s.zone, 'suelo');
+  // A patrol of another zone puts nothing in this one's lift.
+  beat(s, 'pluma-2');
+  assert.ok(!charged(s));
+  beat(s, 'celdas-2');
+  assert.ok(charged(s)); assert.equal(energy(s), 1);
+  assert.ok(atWell(s, WELLS.suelo) && !atWell(s, WELLS.suelo - 3));
+  assert.deepEqual(descend(s), { zone: 'gravas', x: WELLS.suelo });
+  assert.ok(!charged(s), 'each lift needs its own');
+  beat(s, 'oscilacion-2'); assert.deepEqual(descend(s), { zone: 'ciudad', x: WELLS.gravas });
+  beat(s, 'pluma-1'); assert.deepEqual(descend(s), { zone: 'fondo', x: WELLS.ciudad });
+  assert.equal(descend(s), undefined, 'the bottom has no lift');
+  assert.ok(!atWell(s, WELLS.ciudad));
 });
 
-test('a patrol walks its stretch, turns at its ends and never steps on measured ground', () => {
-  const s = createModelo(), spec = PATROLS.find(p => p.id === 'celdas-1');
-  measure(s, 'suelo-1');
-  // The party far away on measured ground: nothing sees it.
+test('nowhere is safe: a patrol that sees the party comes for it, wherever it stands, and its fight starts', () => {
+  for (const x of [11, 24]) {
+    const s = createModelo();
+    measure(s, 'suelo-1');
+    const hit = run(s, 30, x);
+    assert.ok(hit, `at ${x}`); assert.equal(hit.encounter, 'modelo-celdas');
+  }
+});
+
+test('a patrol walks its stretch and turns at its ends while it sees nobody', () => {
+  const s = createModelo(), spec = PATROLS.find(p => p.id === 'oscilacion-1');
+  s.zone = 'fondo';
   let low = Infinity, high = -Infinity;
   for (let t = 0; t < 60; t += .05) {
-    assert.equal(tick(s, .05, 7), undefined);
-    const x = s.patrols['celdas-1'].x;
+    assert.equal(tick(s, .05, 20), undefined, 'the party is in another zone');
+    const x = s.patrols['oscilacion-1'].x;
     low = Math.min(low, x); high = Math.max(high, x);
-    assert.ok(!measured(s, 'suelo', x) || Math.abs(Math.abs(x - 7) - SECTION.safe) < 1e-6, `at ${x}`);
   }
-  assert.ok(Math.abs(low - (7 + SECTION.safe)) < 1e-6, `turns at the edge of the measured ground, ${low}`);
-  assert.ok(Math.abs(high - spec.to) < 1e-6, `and at the end of its stretch, ${high}`);
-});
-
-test('a patrol that sees the party comes for it and its fight starts; measured ground and a borehole stop it', () => {
-  const open = createModelo();
-  const hit = run(open, 20, 11);
-  assert.equal(hit?.id, 'celdas-1'); assert.equal(hit.encounter, 'modelo-celdas');
-  // On measured ground it is not seen: the patrol keeps to its walk and stays out.
-  const safe = createModelo();
-  measure(safe, 'suelo-1');
-  assert.equal(run(safe, 40, 8), undefined);
-  // Inside the borehole, the same.
-  const hidden = createModelo();
-  measure(hidden, 'suelo-2');
-  assert.ok(enter(hidden, 'suelo-2'));
-  assert.equal(stakeAction(hidden, 'suelo-2'), undefined, 'nothing to do at a stake from inside');
-  assert.equal(run(hidden, 40, 19), undefined);
-  assert.equal(leave(hidden), 19); assert.equal(hidden.inside, undefined);
-});
-
-test('measuring under a patrol puts it at the edge of the new ground', () => {
-  const s = createModelo();
-  s.patrols['celdas-1'].x = 8;
-  measure(s, 'suelo-1');
-  assert.ok(Math.abs(s.patrols['celdas-1'].x - (7 + SECTION.safe)) < .1);
-  assert.ok(!measured(s, 'suelo', s.patrols['celdas-1'].x));
+  assert.ok(Math.abs(low - spec.from) < 1e-6 && Math.abs(high - spec.to) < 1e-6, `${low}..${high}`);
 });
 
 test('a patrol beaten is gone, and one run from stands still a while', () => {
@@ -86,54 +72,32 @@ test('a patrol beaten is gone, and one run from stands still a while', () => {
   assert.deepEqual(s.beaten, ['celdas-1']);
 });
 
-test('a borehole is the way down: out at the same place a zone below, with new piezometers', () => {
+test('each stake measured, once and only in its zone, takes a mark of Error off the boss', () => {
   const s = createModelo();
-  assert.equal(descend(s), undefined, 'not from the open');
-  measure(s, 'suelo-2'); enter(s, 'suelo-2');
-  assert.deepEqual(descend(s), { zone: 'gravas', x: 19 });
-  assert.equal(s.zone, 'gravas'); assert.equal(s.inside, undefined);
-  assert.equal(s.piezometers, 2 * SECTION.piezometers - 1);
-  assert.ok(!measured(s, 'gravas', 19), 'it lands on ground still to measure');
-  assert.deepEqual(roaming(s).map(p => p.id), ['oscilacion-1', 'oscilacion-2']);
-  measure(s, 'gravas-2'); enter(s, 'gravas-2'); descend(s);
-  measure(s, 'ciudad-1'); enter(s, 'ciudad-1');
-  const before = s.piezometers;
-  assert.deepEqual(descend(s), { zone: 'fondo', x: 8 });
-  assert.equal(s.piezometers, before, 'none at the bottom');
+  assert.equal(stakeVerb(s, 'suelo-1'), 'Medir');
+  assert.equal(stakeVerb(s, 'gravas-1'), undefined, 'not a stake of another zone');
+  assert.ok(!measure(s, 'gravas-1'));
+  assert.ok(measure(s, 'suelo-1')); assert.ok(!measure(s, 'suelo-1'));
+  assert.equal(stakeVerb(s, 'suelo-1'), undefined, 'measured, nothing more to do there');
+  assert.equal(calibration(s), 1);
 });
 
-test('every piezometer beyond the one a zone needs calibrates the model', () => {
-  const s = createModelo();
-  assert.equal(calibration(s), 0);
-  measure(s, 'suelo-1'); assert.equal(calibration(s), 0);
-  measure(s, 'suelo-2'); assert.equal(calibration(s), 1);
-  assert.equal(boreholes(s, 'suelo').length, 2);
-  enter(s, 'suelo-2'); descend(s);
-  measure(s, 'gravas-1'); measure(s, 'gravas-2');
-  assert.equal(calibration(s), 2);
-  assert.equal(measure(s, 'gravas-3'), false, 'two for each zone, never the third');
-});
-
-test('the section is a place: one gallery the party walks, a stake offers what can be done at it now', async () => {
-  const { GALLERY, MODELO_GRID, interactionStake, stakeInteraction, stakeVerb } = await import('../src/modelo.ts');
+test('the section is a place: one gallery the party walks, with its stakes and its wells on the way', async () => {
+  const { MODELO_GRID, interactionStake, stakeInteraction, interactionWell, wellInteraction } = await import('../src/modelo.ts');
   const { MODELO } = await import('../src/environments.ts');
   assert.equal(MODELO_GRID.length, GALLERY.depth + 2);
   assert.equal(MODELO_GRID[GALLERY.row].length, SECTION.length + 2);
   assert.ok(MODELO.view && MODELO.hollow, 'seen from the side, drawn by its own builder');
-  // Every stake is an interaction on the way, and every patrol's stretch is inside the gallery.
   for (const stake of STAKES) {
     const i = MODELO.interactions.find(i => i.id === stakeInteraction(stake.id));
     assert.deepEqual(i?.cell, { x: stake.x, z: GALLERY.row }, stake.id);
     assert.equal(interactionStake(i.id)?.id, stake.id);
+    assert.ok(Math.abs(stake.x - WELLS[stake.zone]) > 3 && Math.abs(stake.x - arrival(stake.zone)) > 3, `${stake.id} is on the way, not at a lift`);
+  }
+  for (const [zone, x] of Object.entries(WELLS)) {
+    const i = MODELO.interactions.find(i => i.id === wellInteraction(zone));
+    assert.deepEqual(i?.cell, { x, z: GALLERY.row }, zone);
+    assert.equal(interactionWell(i.id), zone);
   }
   for (const p of PATROLS) assert.ok(p.from >= 1 && p.to <= SECTION.length, p.id);
-  assert.ok(GALLERY.boss - GALLERY.bossReach > 1 && GALLERY.boss + GALLERY.bossReach < SECTION.length);
-  const s = createModelo();
-  assert.equal(stakeVerb(s, 'suelo-1'), 'Medir');
-  assert.equal(stakeVerb(s, 'gravas-1'), undefined, 'not a stake of another zone');
-  measure(s, 'suelo-1'); assert.equal(stakeVerb(s, 'suelo-1'), 'Entrar');
-  enter(s, 'suelo-1'); assert.equal(stakeVerb(s, 'suelo-1'), 'Bajar');
-  assert.equal(stakeVerb(s, 'suelo-2'), undefined, 'nothing at another stake from inside');
-  leave(s); measure(s, 'suelo-2');
-  assert.equal(stakeVerb(s, 'suelo-3'), undefined, 'no piezometer left for the third');
 });

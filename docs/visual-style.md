@@ -442,7 +442,7 @@ again on the screenshots once the section is dressed.
 | Ground | The gallery's floor, a guess like the rest until a stake is measured |
 | Landmark | The section itself, cut open and seen from the side: four galleries one under another (kind: a cross-section; nobody else is seen from the side) |
 | Light | `modelo`: no sun and no sky, the light of a screen from where it is looked at |
-| Props | The houses of Poble Sec in outline over the street, a tunnel's ring under the city |
+| Props | The houses of Poble Sec in outline over the street, a tunnel's ring under the city; at the end of each zone its well: a steel headframe and pulley, the shaft through the clay, the lift's cage and a panel of lamps that light as the zone's patrols fall |
 | Air | None yet |
 | Sound | None yet |
 | Only here | Emilie's survey stakes: wood with a strip of orange flagging tape |
@@ -475,7 +475,7 @@ the projector throws onto, the door in the south-west corner, straight into the 
 | Sound | None yet |
 | Only here | The terrace's drain buried under dead leaves against the glass door: why the flat flooded |
 | Text | None in the world but the laptop's screen; the place panel reads *Poble Sec, Barcelona · Carrer de Margarit · Casa de Emilie* |
-| Reserved | No pink and no violet |
+| Reserved | No violet; the only pink is the Queen's: her whirlpool swelling out of the laptop as the way in |
 
 Through the checklist (§ 5): an invented home on a real lot, laid out by Aitor; no other place is
 an interior under water; its neighbours differ in all four (Poble Sec's evening outside, her

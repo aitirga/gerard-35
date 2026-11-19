@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import { GALLERY, SECTION, STAKES, ZONE_IDS, type ModeloState, type ZoneId } from './modelo';
+import { GALLERY, SECTION, STAKES, WELLS, ZONE_IDS, arrival, patrolsIn, type ModeloState, type ZoneId } from './modelo';
 import { PHOSPHOR } from './modelo-foes';
 
 /**
@@ -10,7 +10,10 @@ import { PHOSPHOR } from './modelo-foes';
  *
  * What nobody has measured is a guess: black, with the model's mesh in phosphor green lines. Round
  * every stake Emilie's piezometer has been driven at, the ground is real: earth, gravel, the wet
- * concrete under the city, lit, with the borehole's steel tube running down through the clay.
+ * concrete under the city, lit. At the far end of each zone, its well: a steel headframe with its
+ * pulley, the shaft cut down through the clay, the lift's cage waiting at the bottom of it and a
+ * panel with a lamp for each of the zone's patrols, lit as each is beaten; with one lit, the cage and
+ * the shaft light up. Going down, the cage they stand in stays with them as the section rises.
  * Its one detail found nowhere else: the survey stakes, wood with a strip of orange flagging tape.
  * Nothing here is pink or violet (docs/visual-style.md § Reserved colours).
  */
@@ -24,6 +27,8 @@ const REAL: Record<ZoneId, { face: string; floor: string; speck: string }> = {
 };
 /** How far apart the mesh's lines stand in each zone (m across, m up): finer the deeper it goes. */
 const MESH: Record<ZoneId, [number, number]> = { suelo: [2, .8], gravas: [1.5, .64], ciudad: [1, .8], fondo: [3, 1.6] };
+/** How far each side of a measured stake the ground is real (m). */
+const MEASURED = 3.2;
 const rnd = (n: number) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
 
 export function buildModelo(app: pc.Application, toWorld: (x: number, z: number) => pc.Vec3) {
@@ -46,7 +51,9 @@ export function buildModelo(app: pc.Application, toWorld: (x: number, z: number)
   const dark = mat('Suposición', BLACK), clay = mat('Arcilla supuesta', '#0b1a10');
   const line = mat('Malla', PHOSPHOR, { glow: 1.1, unlit: true }), faint = mat('Malla tenue', '#1d7a40', { glow: .55, unlit: true });
   const wood = mat('Estaca', '#b08d5c'), tape = mat('Cinta de balizar', '#ff7a1a', { glow: .5 }), steel = mat('Tubo', '#aab4ba', { gloss: .7 });
-  const water = mat('Nivel', '#6cc8f2', { glow: .9, unlit: true }), shell = mat('Dentro del sondeo', '#9fe9ff', { glow: .7, unlit: true, opacity: .32 });
+  const lampOff = mat('Piloto apagado', '#16301f', { gloss: .5 }), lampOn = mat('Piloto encendido', PHOSPHOR, { glow: 2.4, unlit: true });
+  const cageOff = mat('Cabina sin corriente', '#3a4a42', { gloss: .5 }), cageOn = mat('Cabina con corriente', '#7dffb0', { glow: 1.6, unlit: true });
+  const shaftDark = mat('Pozo', '#010402', { unlit: true });
   const L = SECTION.length, D = GALLERY.depth, H = GALLERY.height, DROP = GALLERY.drop, back = .5, front = back + D, mid = (L + 1) / 2;
   const floorOf = (zone: ZoneId) => -ZONE_IDS.indexOf(zone) * DROP;
   const real = Object.fromEntries(ZONE_IDS.map(z => [z, { face: mat(`${z} medido`, REAL[z].face, { glow: .32 }), floor: mat(`Piso de ${z}`, REAL[z].floor, { glow: .3 }), speck: mat(`Grano de ${z}`, REAL[z].speck, { glow: .3 }) }])) as Record<ZoneId, Record<'face' | 'floor' | 'speck', pc.StandardMaterial>>;
@@ -86,7 +93,7 @@ export function buildModelo(app: pc.Application, toWorld: (x: number, z: number)
   }
   // Each stake, and what measuring it makes real (shown once it is).
   const stakes = STAKES.map(stake => {
-    const y = floorOf(stake.zone), m = real[stake.zone], wide = SECTION.safe * 2;
+    const y = floorOf(stake.zone), m = real[stake.zone], wide = MEASURED * 2;
     const post = new pc.Entity(`Estaca ${stake.id}`); post.setLocalPosition(stake.x, y, back + .55); root.addChild(post);
     part(post, 'Palo', 'box', wood, [0, .45, 0], [.09, .9, .09], true);
     part(post, 'Cinta', 'box', tape, [.09, .78, 0], [.2, .12, .02]);
@@ -100,17 +107,51 @@ export function buildModelo(app: pc.Application, toWorld: (x: number, z: number)
       const s = .06 + rnd(stake.x + k * 7) * .12;
       part(ground, 'Grano', 'sphere', m.speck, [(rnd(stake.x * 5 + k) - .5) * (wide - .3), .15 + rnd(stake.x * 11 + k) * (H - .3), back + .07], [s, s * .7, .04]);
     }
-    // The piezometer: its head over the stake, its tube down through the clay to the gallery below.
-    const down = DROP - H;
+    // The piezometer: its head over the stake, its tube into the ground.
     part(ground, 'Cabeza', 'cylinder', steel, [0, 1.05, back + .55], [.2, .3, .2], true);
     part(ground, 'Tubo', 'cylinder', steel, [0, .1, back + .55], [.1, 1.9, .1]);
-    part(ground, 'Tubo en la arcilla', 'box', steel, [0, -.3 - (down - .3) / 2, front + .03], [.12, down - .3, .03]);
-    part(ground, 'Nivel', 'box', water, [0, -.3 - (down - .3) * .62, front + .05], [.07, (down - .3) * .7, .02]);
-    const inside = part(ground, 'Dentro', 'cylinder', shell, [0, H / 2, back + D / 2], [2.2, H, 2.6]); inside.enabled = false;
-    return { stake, ground, inside, shown: false };
+    return { stake, ground, shown: false };
   });
+  /** A lift's cage: a steel floor, four posts, a roof and its light; `lit` is the light's part. */
+  function cage(parent: pc.Entity, name: string) {
+    const c = new pc.Entity(name); parent.addChild(c);
+    const W = 1.5, Dp = 1.7, top = 2.3, z = back + D / 2;
+    part(c, 'Piso de la cabina', 'box', steel, [0, .04, z], [W, .08, Dp], true);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) part(c, 'Montante', 'box', steel, [sx * (W / 2 - .04), top / 2, z + sz * (Dp / 2 - .04)], [.06, top, .06], true);
+    for (const sz of [-1, 1]) part(c, 'Barandilla', 'box', steel, [0, 1.05, z + sz * (Dp / 2 - .04)], [W, .05, .05]);
+    part(c, 'Barandilla', 'box', steel, [-W / 2 + .04, 1.05, z], [.05, .05, Dp]);
+    part(c, 'Techo de la cabina', 'box', steel, [0, top, z], [W + .06, .08, Dp + .06], true);
+    const lit = part(c, 'Luz de la cabina', 'box', cageOff, [0, top - .07, z], [W * .7, .04, Dp * .7]);
+    part(c, 'Cable', 'box', steel, [0, top + (H - top) / 2, z], [.03, H - top, .03]);
+    return { root: c, lit };
+  }
+  // Each zone's well at its far end: headframe, pulley, the shaft down through the clay, its cage and its panel.
+  const wells = (Object.entries(WELLS) as [Exclude<ZoneId, 'fondo'>, number][]).map(([zone, x]) => {
+    const y = floorOf(zone), down = DROP - H, side = x > mid ? 1 : -1, z = back + D / 2;
+    const well = new pc.Entity(`Pozo de ${zone}`); well.setLocalPosition(x, y, 0); root.addChild(well);
+    // The headframe: two legs, a beam across and the pulley the cable runs over.
+    for (const sx of [-1, 1]) part(well, 'Pata del castillete', 'box', steel, [sx * .95, H / 2, z], [.12, H, .12], true);
+    part(well, 'Viga del castillete', 'box', steel, [0, H - .08, z], [2.1, .16, .16], true);
+    const pulley = part(well, 'Polea', 'cylinder', steel, [0, H - .3, z], [.5, .08, .5], true); pulley.setLocalEulerAngles(90, 0, 0);
+    // The shaft: cut down through the clay to the gallery below, its two guide rails all the way.
+    part(well, 'Boca del pozo', 'box', shaftDark, [0, -.3 - (down - .3) / 2, front + .015], [1.7, down - .25, .03]);
+    for (const sx of [-1, 1]) part(well, 'Guía', 'box', steel, [sx * .8, (H - down) / 2 - .15, front + .04], [.06, H + down - .3, .04]);
+    // With power, a thin line of light runs down each rail into the clay.
+    const light = new pc.Entity('Luz del pozo'); well.addChild(light);
+    for (const sx of [-1, 1]) part(light, 'Raíl encendido', 'box', lampOn, [sx * .8, (H - down) / 2 - .15, front + .065], [.025, H + down - .3, .01]);
+    // The panel on the back wall beside it: a lamp for each of the zone's patrols.
+    const panel = new pc.Entity('Panel del pozo'); panel.setLocalPosition(-side * 1.6, 1.3, back + .06); well.addChild(panel);
+    part(panel, 'Caja del panel', 'box', steel, [0, 0, 0], [.6, .8, .06]);
+    part(panel, 'Fondo del panel', 'box', shaftDark, [0, 0, .035], [.5, .7, .01]);
+    const lamps = patrolsIn(zone).map((_, k, all) => part(panel, 'Piloto', 'sphere', lampOff, [0, (k - (all.length - 1) / 2) * -.28, .06], [.16, .16, .08]));
+    const waiting = cage(well, 'Cabina');
+    return { zone, well, lamps, light, waiting, pulley, lit: -1 };
+  });
+  // The cage they ride down in: not part of the section, so it stays with the party as the section rises past.
+  const fixed = new pc.Entity('Con el grupo'); fixed.setPosition(origin); fixed.setLocalScale(unit, 1, unit); app.root.addChild(fixed);
+  const riding = cage(fixed, 'Cabina en la que bajan'); riding.root.enabled = false;
   // The mesh breathes a little, as a screen left on does.
-  let rise = 0, t = 0;
+  let rise = 0, t = 0, flash = 0;
   return {
     root,
     clear: new pc.Color().fromString(BLACK),
@@ -128,14 +169,35 @@ export function buildModelo(app: pc.Application, toWorld: (x: number, z: number)
       for (const s of stakes) {
         const placed = run.placed.includes(s.stake.id);
         if (placed !== s.shown) { s.ground.enabled = s.shown = placed; }
-        s.inside.enabled = run.inside === s.stake.id;
       }
+      // Each well's lamps by its beaten patrols; with one lit the cage and the shaft light up, a flash as each comes on.
+      const here = ZONE_IDS.indexOf(run.zone);
+      for (const w of wells) {
+        const lit = patrolsIn(w.zone).map(p => run.beaten.includes(p.id));
+        const count = lit.filter(Boolean).length;
+        if (count !== w.lit) {
+          w.lamps.forEach((lamp, k) => { lamp.render!.material = lit[k] ? lampOn : lampOff; });
+          w.waiting.lit.render!.material = count ? cageOn : cageOff;
+          if (w.lit >= 0 && count > w.lit) flash = 1;
+          w.lit = count;
+        }
+        w.light.enabled = count > 0;
+        // The cage that has gone down is no longer waiting at the top of its shaft.
+        w.waiting.root.enabled = ZONE_IDS.indexOf(w.zone) >= here;
+        if (animate && count) w.pulley.setLocalEulerAngles(90, t * 40 % 360, 0);
+      }
+      // The cage they came down in, under them while the section rises and where it stopped after.
+      riding.root.enabled = run.zone !== 'suelo';
+      if (riding.root.enabled) { riding.root.setLocalPosition(arrival(run.zone), 0, 0); riding.lit.render!.material = cageOn; }
+      flash = Math.max(0, flash - dt * 1.6);
+      const pilot = 2.4 + flash * 6;
+      if (Math.abs(lampOn.emissiveIntensity - pilot) > .01) { lampOn.emissiveIntensity = pilot; lampOn.update(); }
       const glow = animate ? .5 + Math.sin(t * 1.7) * .06 : .5;
       if (Math.abs(faint.emissiveIntensity - glow) > .01) { faint.emissiveIntensity = glow; faint.update(); }
     },
     /** Whether the section is still rising to the party's zone. */
     get moving() { return Math.abs(rise - Math.round(rise / DROP) * DROP) > .05; },
-    destroy() { root.destroy(); materials.forEach(m => m.destroy()); },
+    destroy() { root.destroy(); fixed.destroy(); materials.forEach(m => m.destroy()); },
   };
 }
 export type ModeloScene = ReturnType<typeof buildModelo>;

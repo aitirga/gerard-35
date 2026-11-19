@@ -315,34 +315,36 @@ What changed from the proposal below, and why:
   one of them the round. A foe's bolt now lands whole on the one it strikes and half on the others
   wet (it was whole on all). The fights still hold their targets (`just fight-sim check`).
 
-## The section, as built (round 10)
+## The section, as built (round 12: wells and power)
 
-The side view holds. The model is its own place, `modelo` (`MODELO` in `src/environments.ts`, picker:
-*El modelo de Emilie*, group Barcelona), drawn by `src/modelo-scene.ts` over the rules of
-`src/modelo.ts`, and the game steps it in `src/game.ts` (`stepModelo`, `useStake`).
+Aitor, round 12: «es demasiado sencillo avanzar sin hacer nada. Digamos que en cada nivel necesitamos matar al
+menos a un monstruo para que nos dé "energía" para usar el ascensor, quita la zona de seguridad y pon el pozo
+más explícito y al final». The model is its own place, `modelo` (`MODELO` in `src/environments.ts`), drawn by
+`src/modelo-scene.ts` over the rules of `src/modelo.ts`; the game steps it in `src/game.ts` (`stepModelo`,
+`useStake`, `useWell`). `just screenshots emilie-seccion --gpu`.
 
-- **One gallery, four depths.** The party walks a single strip, 36 m long and three cells deep,
-  under a camera that looks from the side (`view: { yaw: 0, pitch: 14 }`). Going down, nobody
-  changes cell: the whole section rises past the party, a gallery every 5 m, so the borehole they
-  went in by is seen overhead from the zone below. Fights are staged in the gallery itself, whose
-  camera already looks from that side.
-- **Guess and real.** Unmeasured ground is black with the model's mesh in phosphor green (finer the
-  deeper), the clay between galleries hatched, the houses of Poble Sec in outline over the street,
-  a tunnel's ring under the city. A stake measured turns the ground 3.2 m each side of it into what
-  it is (earth, gravel, wet concrete), lit, with the piezometer's steel tube and its water level
-  running down the clay.
-- **One prompt per stake.** Wood with orange flagging tape. It offers «Medir», then «Entrar», then,
-  inside, «Bajar»; walking away from it leaves the borehole. Only the stakes of the party's zone
-  answer, and none once the piezometers are spent.
-- **Patrols.** Each walks as the foes it fights as. One that reaches the party starts its fight;
-  beaten it is gone, run from it stands still five seconds. At the bottom El que no converge stands
-  at 24 m and its fight starts within 3.5 m; what was measured beyond one stake a zone has already
-  taken marks of Error off it (`calibrate`).
+- **One gallery, four depths.** The party walks a single strip, 36 m long and three cells deep, under a camera
+  that looks from the side. Going down, nobody changes cell: the section rises past the party, a gallery every
+  5 m. Fights are staged in the gallery itself.
+- **A well at the end of each zone** (`WELLS`), on alternate sides, so every zone is crossed: El suelo's at the
+  right, Las gravas' at the left, Bajo la ciudad's at the right; El fondo ends at the boss. Each is a steel
+  headframe with its pulley, the shaft cut down through the clay with its two rails, the lift's cage waiting
+  at the bottom, and a panel on the back wall with **a lamp for each of the zone's patrols**.
+- **The lift runs on what roams the zone.** It has no power until at least one of the zone's patrols is beaten
+  (`charged`): its lamp lights, the cage and the rails light up, and the prompt goes from «Sin corriente» to
+  «Bajar». Used without power, Gerard says the panel is dead and Aitor notices two lamps and two of those things
+  about (`LINES_EMILIE.wellDead`), once; then only «Sigue sin corriente». Going down, the cage stays with the
+  party while the section rises, and stays where it stopped: they come out under the well they came down.
+- **Nowhere is safe.** No measured ground that keeps patrols off, no borehole to hide in. A patrol that sees the
+  party comes for it; beaten it is gone (and its power is in the lift), run from it stands still five seconds.
+- **Emilie's stakes stay, one a zone, on the way** («Medir»): the ground round one turns real (earth, gravel,
+  wet concrete) and **each takes a mark of Error off El que no converge** (`calibration`, the boss keeps its
+  last). Measuring is optional and costs stopping with patrols about.
+- **El fondo**: the cage at the right; El que no converge half the gallery away, at 18 m; its fight starts
+  within 3.5 m.
 
-Not there yet: Emilie's voice in the section, the way in from her laptop and the way out, the
-party hidden from view inside a borehole (they stand in a column of light for now), a fall in a
-fight inside the model, and its sound. The scene is some 450 separate pieces: to merge into a few
-meshes before it is measured against the 120 Hz budget.
+Not there yet: the party's fall in a fight inside the model, its sound, and merging the scene's pieces before
+measuring it against the 120 Hz budget.
 
 ## Fights (round 9, the proposal)
 
@@ -397,10 +399,16 @@ picker's *Misiones* tab has it part by part (`just dev-mission emilie <part>`; `
   sofa; the kitchen in the north-east corner with its bar below; the bedroom in the south-east behind the wall
   the projector throws onto; the door in the south-west corner, straight into the living room (no hall). Brown hydraulic tiles, wood and concrete, a hand's
   depth of water over it. Emilie stands in the water; her laptop shows her model running.
-- **The laptop** does nothing until they have spoken to her (Aitor: «Luego. Primero ella»). Then *Conectarse*
-  takes them into `modelo` (an hour the first time); *Desconectarse*, behind where they land in El suelo,
-  brings them back to the desk. The run through the section is kept while they come and go
+- **The laptop** does nothing until they have spoken to her (Aitor: «Luego. Primero ella»). Then looking at it
+  is the way in (an hour the first time); *Volver*, behind where they land in El suelo, brings them back to the
+  desk, and the whirlpool in her screen takes them in again. The run through the section is kept while they come and go
   (`EmilieRun.section`, kept by the snow globe like the other missions' runs); a fall or a day's end undoes it.
+- **The way in** (round 11, Aitor: «al entrar en el ordenador, nace desde el ordenador el portal rosado de la
+  reina y nos atrapa»): while Aitor reads her model the screen turns pink and **the Queen's whirlpool swells out
+  of the laptop and takes Gerard and Aitor** (Emilie stays, and watches them on it). It is the one pink thing in
+  the mission, and it is the Queen's; nothing inside the model is pink.
+- **Her flat floods for real**: a hand's depth of water over brown hydraulic tiles; each step throws drops and a
+  ring spreads on the surface (`wade`, `wake` in `src/effects.ts`), rings round her as she stands in it.
 - **Her voice in the section**: from outside, the first time they reach each zone below (`modelo-zona-*`),
   a little more of the why comes back to her; at the bottom she sees El que no converge once before its fight.
   El fondo's line says what calibration does («cada estaca que medís es una cosa menos que tiene que adivinar»).
