@@ -261,7 +261,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   /** The effect whose streams have already left the hand. */
   let cast: BattleEffect | undefined;
   /** Dadaísta's dice beside whoever wears it: the hand in view, and the one in the air. */
-  interface HandDie { entity: pc.Entity; face: DieFace; at: pc.Vec3; turn: pc.Quat; size: number; age: number; tumble: pc.Vec3 }
+  interface HandDie { entity: pc.Entity; face: DieFace; at: pc.Vec3; turn: pc.Quat; size: number; age: number; tumble: pc.Vec3; /** Its own idle sway: where in it this die starts, and how fast it goes (× the common pace). */ sway: number; pace: number }
   const dice = new Map<string, { hand: HandDie[]; shown: number; thrown?: { die: HandDie; action: BattleEffect; from: pc.Vec3 }; seen?: BattleEffect }>();
   /** The die the fight screen's cursor is on while one is being picked: it comes forward. */
   let aimedDie: { unit: string; index: number } | undefined;
@@ -1626,9 +1626,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   /**
    * Dadaísta's dice (src/dice.ts): its maná, floating in a column beside whoever wears it, on the side
-   * away from the others, each with its face turned to the camera. New ones (Defender, a round's
-   * rest, the fight starting) drop in tumbling. The one Tirar dado spends leaves the hand, flies at
-   * whom its face reaches tumbling (a foe; an ally, Corchete), lands on them and bounces off.
+   * away from the others, each with its face turned to the camera, never quite still: each drifts,
+   * bobs and turns a little on a pace of its own. New ones (Defender, a round's rest, the fight
+   * starting) drop in tumbling. The one Tirar dado spends leaves the hand, flies at whom its face
+   * reaches tumbling (a foe; an ally, Corchete), lands on them and bounces off.
    */
   function updateDice(dt: number, t: number, animate: boolean, target?: Fighter) {
     if (!state || (!dice.size && !state.allies.some(a => a.classId === DICED))) return;
@@ -1637,9 +1638,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const view = viewDir(), facing = new pc.Vec3(view.x * .82, view.y * .82 + .18, view.z * .82).normalize();
     const tiltAxis = new pc.Vec3().cross(pc.Vec3.UP, facing).normalize(), tilt = new pc.Quat().setFromAxisAngle(tiltAxis, Math.acos(clamp01(facing.y)) * 180 / Math.PI);
     const party = [...fighters].filter(([, f]) => f.party);
-    const spin = new pc.Quat(), want = new pc.Quat(), place = new pc.Vec3();
-    /** A die at rest: its face to the camera, turned `yaw` degrees about it. */
-    const settle = (face: DieFace, yaw: number) => want.mul2(tilt, spin.setFromAxisAngle(pc.Vec3.UP, yaw).mul(faceUp(face)));
+    const spin = new pc.Quat(), want = new pc.Quat(), rock = new pc.Quat(), place = new pc.Vec3(), now = performance.now() / 1000;
+    /** A die at rest: its face to the camera, turned `yaw` degrees about it and leaning `lean` to one side. */
+    const settle = (face: DieFace, yaw: number, lean = 0) => {
+      want.mul2(tilt, spin.setFromAxisAngle(pc.Vec3.UP, yaw).mul(faceUp(face)));
+      return lean ? want.mul2(rock.setFromAxisAngle(facing, lean), want) : want;
+    };
     for (const [id, f] of party) {
       const unit = state.allies.find(a => a.id === id);
       const wearing = !!unit && f.hp > 0 && unit.classId === DICED && entryTime >= ENTRY_SECONDS * .6;
@@ -1650,7 +1654,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const out = Math.sign(others) || 1, floor = groundHeight(f.base.x, f.base.z), size = DIE.size * f.scale.y;
       const make = (face: DieFace): HandDie => {
         const entity = createDie(app); battleRoot.addChild(entity);
-        return { entity, face, at: new pc.Vec3(f.base.x, floor + 2.6 * f.scale.y, f.base.z), turn: new pc.Quat(), size: 0, age: 0, tumble: new pc.Vec3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize() };
+        return { entity, face, at: new pc.Vec3(f.base.x, floor + 2.6 * f.scale.y, f.base.z), turn: new pc.Quat(), size: 0, age: 0, tumble: new pc.Vec3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize(), sway: Math.random() * 60, pace: .75 + Math.random() * .5 };
       };
       // The die this action spends leaves the hand as the action starts.
       const acting = effect?.actor === id && effect.die ? effect : undefined;
@@ -1673,8 +1677,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // A column by the shoulder, the first die lowest, each a little off the line. Idle, each one
         // wanders on its own: two slow waves that never line up, so it is a sway and not a loop.
         const aimed = aimedDie?.unit === id && aimedDie.index === i && !effect ? 1 : 0;
-        const reach = (.56 + (i % 2) * .09 + aimed * .16) * f.scale.x, bob = animate ? Math.sin(performance.now() / 620 + i * 1.7) * .018 : 0;
-        place.set(f.base.x + across.x * reach * out + toCamera.x * (.16 + aimed * .2), floor + (.62 + i * .3 + aimed * .05) * f.scale.y + bob, f.base.z + across.z * reach * out + toCamera.z * (.16 + aimed * .2));
+        const s = animate ? die.sway + now * die.pace : 0, calm = animate ? 1 - aimed * .7 : 0;
+        const bob = (Math.sin(s * 1.9) * .03 + Math.sin(s * 3.1 + 1.3) * .012) * calm, drift = (Math.sin(s * 1.3 + 2.1) * .024 + Math.sin(s * 2.3) * .01) * calm, near = Math.sin(s * 1.1 + .7) * .018 * calm;
+        const reach = (.56 + (i % 2) * .09 + aimed * .16) * f.scale.x + drift * out;
+        place.set(f.base.x + across.x * reach * out + toCamera.x * (.16 + aimed * .2 + near), floor + (.62 + i * .3 + aimed * .05) * f.scale.y + bob, f.base.z + across.z * reach * out + toCamera.z * (.16 + aimed * .2 + near));
         // Dealt: it drops in from above tumbling and settles; then it only sways.
         const land = animate ? smooth(die.age / .42) : 1;
         if (land < 1) {
@@ -1682,7 +1688,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           die.turn.slerp(spin.setFromAxisAngle(die.tumble, die.age * 900), settle(die.face, 0), land * land);
         } else {
           die.at.lerp(die.at, place, animate ? 1 - Math.exp(-dt * 12) : 1);
-          die.turn.slerp(die.turn, settle(die.face, animate ? Math.sin(performance.now() / 900 + i * 2.3) * 9 : 0), animate ? 1 - Math.exp(-dt * 10) : 1);
+          die.turn.slerp(die.turn, settle(die.face, (Math.sin(s * 1.5 + .4) * 12 + Math.sin(s * .7) * 6) * calm, (Math.sin(s * 1.7 + 2.6) * 7 + Math.sin(s * 2.9) * 3) * calm), animate ? 1 - Math.exp(-dt * 10) : 1);
         }
         die.size = size * (die.age < 0 ? 0 : 1) * d!.shown * (1 + aimed * .22 + (land < 1 ? Math.sin(land * Math.PI) * .2 : 0));
         die.entity.enabled = die.size > .001;
