@@ -57,10 +57,10 @@ def is_done(item, root, read):
     if "file" in item:
         checks.append(bool(glob.glob(item["file"], root_dir=root, recursive=True)))
     if "grep" in item:
-        checks.append(any(re.search(item["grep"], text) for text in read(item["in"])))
+        checks.append(any(re.search(item["grep"], text, re.MULTILINE) for text in read(item["in"])))
     if "absent" in item:
         texts = read(item["in"])
-        checks.append(bool(texts) and not any(re.search(item["absent"], text) for text in texts))
+        checks.append(bool(texts) and not any(re.search(item["absent"], text, re.MULTILINE) for text in texts))
     return bool(checks) and all(checks)
 
 

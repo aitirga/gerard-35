@@ -205,12 +205,15 @@ cartoonish.)
 | Friend | Who | Where | How it is reached | Mission | Status |
 | --- | --- | --- | --- | --- | --- |
 | **Nuria and Uri** (+ Nil, Haru, Yuki) | Old flatmates; a pack | Cardedeu | R4 from La Sagrera | Uri turned kid, the maze of fears, El Vértigo; ánima **Papagato** | Designed, `docs/quests/nuria.md`; can be an early one |
-| **Bernat** | Gerard's childhood best friend; invented the Queen; a father (Leia, ~3; wife Jessica); publishes board games beside another job; lives outside Barcelona | A hidden board-game bar in Barcelona | Gerard **phones** him and they meet | A spy feel: the city's people act strangely; Bernat seems immune (her creator); Jessica has gone mad; he **finds out part of the story** | Designing, `docs/quests/bernat.md` |
+| **Bernat** | Gerard's childhood best friend; invented the Queen; a father (Leia, ~3); publishes board games beside another job; lives outside Barcelona | **El Nucli**, the hidden board-game bar by Sants (`docs/places/nucli.md`) | The Sants ticket; after the first fall at the Queen, **he calls** | **The confidant** (decided 2026-11-19): he realises this is the game he made up as a kid, and knows (how, still open) that what beats her is at home, **in the physical world**: he breaks the fourth wall. His portal sends the artilugio to the real flat. **No ánima, no Jessica** | Designing, `docs/quests/bernat.md` |
 | **Marta** | Aitor's best friend, Gerard's friend too; **a singer** | **Alegia**, Basque Country | Needs a **train ticket** (a memory, § Getting there): one of the hardest places to reach | Her voice taken; the piano, Las cuerdas, her three qualities and La Voz, hurt only while a note sounds | Base playable, `docs/quests/marta.md`; the trip, the clues and her recordings open |
-| **Luca** | A very close friend, gay like Gerard and Aitor, **very eccentric**; lives with his partner and their daughter | _open_ | _open_ | _open_ | Idea |
-| **Emilie** | Friend of Aitor and Gerard; **very clever** | **Poble Sec** | _open_ (L3 Poble Sec / Paral·lel are not on the map yet) | **Helps with a technical problem** | Idea |
+| **Luca** | A very close friend, gay like Gerard and Aitor, **very eccentric**; lives with his partner and their daughter | **La Sagrada Família** | L5, its ticket | Gone grey while Fran turns the basilica into his hair salon; ánima **Prismático** | Playable, `docs/quests/luca.md`; the wearable ánima to design |
+| **Emilie** | Friend of Aitor and Gerard; **very clever** | **Poble Sec** | L3, its ticket; no clue leads there yet | Her flat, the model and its section | Playable, `docs/quests/emilie.md`; a clue and the wearable ánima to design |
 | **University friends**: Anna and Álvaro, Miquel and Sarah, Guillem and Soraya | Three couples from university (Guillem does not appear) | **La Barceloneta**, the beach | L4 | They come for Gerard's birthday, held by the Queen: a game of tag into the sea and the spiral | Designing, `docs/quests/universidad.md` |
-| **Jan and Gerard's parents** | Jan, the older brother (chapter 1), lives in Barcelona near **Entença** (L5); the parents | Jan: Entença. Parents: _open_ (Sant Quirze?) | L5 to Entença | _open_ | Idea |
+| **Jan and Gerard's parents** | Jan, the older brother (chapter 1), lives in Barcelona near **Entença** (L5); the parents | Jan: Entença. Parents: _open_ (Sant Quirze?) | L5 to Entença | _open_ | Idea; **left out of the base** (2026-11-19), maybe later |
+
+**The base** (decided 2026-11-19): Nuria and Uri, the university friends, Marta, Emilie and Luca,
+each with a wearable ánima, and Bernat without one. Pedro and Jan stay out for now.
 
 ### Marta's fight (idea, 2026-11-07)
 
@@ -272,6 +275,36 @@ that the user owns and will hide in the real flat.
    reaching the person behind the whole game.
 
 ### The device (decided)
+
+**The board is the Bomba-G** (decided 2026-11-19): the surprise Aitor built in July 2026 on a
+Keyestudio FKS0001 ESP32 board, reused as far as it goes. Its firmware lives in
+`firmware/artilugio/`, grown from the Bomba-G's (`geraitor_domotic_house`,
+`gere_mini_surprise-270726`). What that board has: **4 coloured buttons, each with its LED** (red,
+yellow, green, blue), a **buzzer**, a **16×2 LCD**, a **4-digit display**, a **PIR** motion sensor and
+a mic. It has no colour screen, so *the colours that burst* are its four LEDs.
+
+- **8 notes** (decided 2026-11-19, replaces the 10 below): the 4 buttons alone and **4 pairs**
+  pressed together, the eight notes of a **G Phrygian dominant scale** from G to G (Aitor):
+  *Sol, La♭, Si, Do, Re, Mi♭, Fa, Sol*.
+  - **The buttons alone** play the G7 chord: red **Sol**, yellow **Si**, green **Re**, blue **Fa**.
+  - **Each pair** (the neighbours on the ring of colours) plays the scale's note **between its two
+    buttons**: red + yellow **La♭**, yellow + green **Do**, green + blue **Mi♭**, blue + red
+    **Sol** an octave up. (The assignment is a proposal, easy to change in one table.)
+- **The melody** (Aitor, 2026-11-19): **Sol · La♭ · Do · Sol (up) · Fa · Re**. Three of its notes
+  are pairs, so it cannot be played without discovering them. It is also the motif hidden in every
+  song.
+- **It is alive from the moment Bernat sends it** (decided 2026-11-19). Hidden in the flat all along,
+  it stays mute and the game ignores it until the portal at El Nucli sends it across. From then on it
+  **always sounds** when pressed, anywhere in the game.
+- **Gerard takes it out by himself** (decided 2026-11-19): when its PIR sees movement (someone picks
+  it up, or walks in front of it) or a button is pressed, Gerard in the game takes the artilugio out
+  and the player sees him pressing its buttons, the same ones, as they are pressed for real. It is
+  learnt little by little: nothing explains it.
+- **Where the game runs** (decided 2026-11-19): Gerard plays on the **Windows PC at home**, with the
+  game's server on the home network. The device talks to that server over Wi-Fi; the game never
+  connects to the device.
+
+What follows is the design before the board was chosen; where it disagrees, the lines above win.
 
 - An **ESP32** board with a **screen** and a **speaker** (and more), **4 buttons**, on Wi-Fi.
 - **Opaque, no instructions** (decided round 10). Nobody explains it and nobody mentions a hidden

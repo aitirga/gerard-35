@@ -1,10 +1,19 @@
 # Bernat · (working title)
 
-Status: designing (round 3), paused · Last updated: 2026-10-29
+Status: designing (round 4: the confidant), paused · Last updated: 2026-11-19
 
 ## Summary
 
-<Two or three sentences once it converges: who, what popped, what Gerard does, what ánima.>
+<Two or three sentences once it converges: who, what popped, what Gerard does.>
+
+**Round 4 (Aitor, 2026-11-19): the confidant.** Bernat's part is not a friend's mission like the
+others: **no ánima, and Jessica is left out**. He is the confidant who **realises that all this is
+the game he made up as a kid**, and who knows (how, still open) that **what can beat her is at home,
+in the physical world**: the artilugio. Through him the game **breaks the fourth wall**. He is met at
+**El Nucli** (`docs/places/nucli.md`, his seat at the back room's round table), and after the first
+fall at the Queen he calls and the portal there sends the artilugio to the real flat
+(`docs/story-outline.md` § From the salón de juegos to the real flat). Where the lines below speak
+of Jessica, his ánima or a boss, round 4 replaces them.
 
 ## Protagonist
 
