@@ -112,6 +112,10 @@ order).
   take her past it (`beaten` looks at her first).
 - Built so far: his blow on Gerard comes on her turn (`CASTLE.aitor`, growing each turn she has
   him); player 2 driving him and the motif are to come. Then Bernat calls, the salón de juegos is played, and they come back with it.
+- **The artilugio survives a rewind** (decided 2026-11-19): her castle covering everything takes the
+  day back, but not the artilugio once Bernat has brought it, nor the night she took Aitor
+  (`rewind` in `src/story.ts`). Otherwise a fall to her on the last day sends the party to a doomed
+  morning and the death that has to happen once happens again.
 - To settle: how much PV she has on the way back (proposal: 40 %, the wounds showing).
 
 ### With the artilugio

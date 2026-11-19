@@ -363,6 +363,20 @@ test("the Queen's advance: without help she covers everything on the seventh mor
   assert.equal(helped.doomed, true);
 });
 
+test('going back a day keeps the artilugio once Bernat has brought it, and the night the Queen took Aitor', () => {
+  const story = new Story(upTo('castle'));
+  const sleep = () => story.handle({ type: 'interact', id: 'meridiana-bed' });
+  for (let day = 1; day < 6; day++) sleep();
+  // The last day: she takes Aitor, Gerard falls, and the morning after (hers) Bernat's artilugio is in his hands.
+  sleep();
+  story.flags.add('aitor-poseido'); story.flags.add('artilugio'); story.flags.add('palace-tried');
+  assert.equal(story.doomed, true);
+  story.rewind();
+  assert.equal(story.has('artilugio'), true, 'the artilugio is not taken back');
+  assert.equal(story.has('aitor-poseido'), true);
+  assert.equal(story.has('palace-tried'), false, 'the rest of that day is');
+});
+
 test('days saved elsewhere: later clocks win, and a rewind (newer epoch) replaces the flags', () => {
   const story = new Story(upTo('castle'));
   story.loadDays({ epoch: 0, clock: { day: 3, hour: 12 }, mornings: [] });

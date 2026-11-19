@@ -1007,7 +1007,10 @@ export class Story {
   rewind(): StoryEffect[] {
     const target = this.days.mornings.find(m => m.day === this.days.clock.day - 1);
     if (!target) return [];
-    this.flags.clear(); this.merge(target.story);
+    // The artilugio, once Bernat has put it in Gerard's hands, is not taken back by going back a day
+    // (decided 2026-11-19), nor is the night that brought it: the Queen is met again with it.
+    const kept = (['aitor-poseido', 'artilugio'] as const).filter(flag => this.has(flag));
+    this.flags.clear(); this.merge(target.story); this.merge(kept);
     this.globe = {}; this.recall();
     this.days = { epoch: this.days.epoch + 1, clock: { day: target.day, hour: DAY_START }, mornings: this.days.mornings.filter(m => m.day <= target.day) };
     const home: StoryEffect = { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } };
