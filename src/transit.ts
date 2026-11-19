@@ -47,6 +47,8 @@ export const STATION_PLACES: Readonly<Record<string, { environment: EnvironmentI
   'poble-sec': { environment: 'poble-sec' },
   espanya: { environment: 'placa-espanya' },
   'sagrada-familia': { environment: 'sagrada-familia' },
+  // Marta's town, by the long-distance train from Sants (decided 2026-11-19): its way up from the station.
+  alegia: { environment: 'alegia' },
 };
 /** The interaction in a place that is the station's entrance. */
 export const entranceId = (station: string) => `station-${station}`;

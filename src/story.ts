@@ -64,7 +64,7 @@ export const STORY_FLAGS = [
   // ticker and on a poster, Luca met by the pond, into Fran's salon, Fran beaten, his ánima and light.
   'clue-luca-foto', 'clue-sagrada', 'clue-sagrada-cartel', 'sagrada-luca', 'peluqueria', 'fran', 'anima-luca', 'luz-luca',
   // Memory tickets (src/tickets.ts): a station opens once Gerard writes its person in its place.
-  'ticket-cardedeu', 'ticket-barceloneta', 'ticket-sagrada-familia', 'ticket-placa-de-sants', 'ticket-poble-sec', 'ticket-el-carmel', 'ticket-espanya',
+  'ticket-cardedeu', 'ticket-barceloneta', 'ticket-sagrada-familia', 'ticket-placa-de-sants', 'ticket-poble-sec', 'ticket-el-carmel', 'ticket-alegia', 'ticket-espanya',
   // The castle (docs/castle.md, docs/castle-bosses.md): Aurelià beaten and his light, the management team and
   // theirs, Gerard fallen to Aitor's hand, the artilugio, the Queen beaten, and which of the two endings.
   'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
@@ -108,7 +108,7 @@ export type StoryEvent =
   /** Gerard walked up to one of the story's triggers (`story.triggers`). */
   | { type: 'near'; id: string }
   /** The party came up out of a station after a trip. */
-  | { type: 'arrive'; station: string }
+  | { type: 'arrive'; station: string; from?: string }
   /** A memory written on a station's tablet printed this station's ticket (src/tickets.ts). */
   | { type: 'ticket'; station: TicketStation }
   /** A pitch chosen on Las parcelas' board (src/parcelas-ui.ts): a lantern lit, a tent woken, the black one; `solved` when every pitch is lit. */
@@ -1557,6 +1557,8 @@ export class Story {
         // Every trip takes its hour.
         if (event.station === 'trinitat-vella' && this.set('rec-comtal')) return [{ kind: 'look', anchor: 'palace' }, say(LINES_2.recComtalFirst), { kind: 'look' }, ...this.spend('metro')];
         if (event.station === 'cardedeu' && this.set('cardedeu')) return [say(LINES_NURIA.arrive), ...this.spend('metro')];
+        // Marta's town is hours away by the long-distance train, there and back.
+        if (event.station === 'alegia' || event.from === 'alegia') return this.spend('tren');
         return this.spend('metro');
       case 'parcelas':
         return this.choosePitch(event);

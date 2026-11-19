@@ -69,6 +69,7 @@ export const STORY_ARCS = [
     { flags: ['ticket-placa-de-sants'], label: 'Bernat en El Nucli (Sants)', spot: { environment: 'meridiana-calle' } },
     { flags: ['ticket-poble-sec'], label: 'Emilie en Poble Sec', spot: { environment: 'meridiana-calle' } },
     { flags: ['ticket-el-carmel'], label: 'Aitor en los Búnkers del Carmel', spot: { environment: 'meridiana-calle' } },
+    { flags: ['ticket-alegia'], label: 'Marta cantando en Alegia (el tren largo)', spot: { environment: 'meridiana-calle' } },
     { flags: ['ticket-espanya'], label: "Aitor en Plaça d'Espanya", spot: { environment: 'meridiana-calle' } },
   ] },
   { id: 'nuria', chapter: 2, title: 'Misión de Nuria y Uri', detail: 'Cardedeu', after: 'metro', anima: 'nuria', steps: [

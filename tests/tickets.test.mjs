@@ -32,3 +32,11 @@ test('the machine prints a ticket only for someone somewhere, and never says mor
     assert.doesNotMatch(answer(verdict), /Barceloneta|Anna|playa/);
   }
 });
+
+test('Alegia is far: Marta and her town are not enough without a moment with her, and the machine does not say which', () => {
+  assert.equal(opens({ station: 'alegia', person: true, place: true, moment: false }), undefined);
+  assert.equal(opens({ station: 'alegia', person: true, place: true, moment: true }), 'alegia');
+  const far = answer({ station: 'alegia', person: true, place: true, moment: false });
+  assert.equal(far, 'Tan lejos no llega un recuerdo así. Tiene que estar más vivo.');
+  assert.doesNotMatch(far, /cant|canci|piano|voz|Marta|Alegia/i);
+});

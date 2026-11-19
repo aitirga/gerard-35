@@ -1408,6 +1408,15 @@
     2.3569
    ],
    "edge": true
+  },
+  {
+   "id": "alegia",
+   "name": "Alegia",
+   "at": [
+    43.1018803,
+    -2.0972226
+   ],
+   "edge": true
   }
  ],
  "lines": [
@@ -1513,6 +1522,16 @@
     "la-sagrera",
     "sant-andreu-comtal",
     "cardedeu"
+   ]
+  },
+  {
+   "id": "ld",
+   "name": "Larga distancia",
+   "kind": "rodalies",
+   "colour": "#4a8f8a",
+   "stations": [
+    "sants-estacio",
+    "alegia"
    ]
   }
  ]

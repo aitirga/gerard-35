@@ -179,7 +179,9 @@
     { "id": "alegia-bulebarra", "label": "Mirar Bulebarra", "east_m": 247.1, "south_m": 12.5,
       "lines": ["Bulebarra: un paseo sobre el río a la sombra de los plátanos."] },
     { "id": "alegia-toka", "label": "Mirar la toka", "east_m": 255.0, "south_m": 7.4,
-      "lines": ["Una toka: una caja de madera con una chapa de hierro en medio.", "Los mayores tiran los tejos desde la raya y discuten cada punto como si fuera una final."] }
+      "lines": ["Una toka: una caja de madera con una chapa de hierro en medio.", "Los mayores tiran los tejos desde la raya y discuten cada punto como si fuera una final."] },
+    { "id": "station-alegia", "label": "Ir a la estación", "east_m": 251.9, "south_m": -91.9, "lines": [],
+      "note": "The real station (Adif, node/6856255945, 43.10188 -2.09722) is about 100 m north up this street, past the zone's edge: this is the way to it." }
   ],
   "labels": [
     { "text": "SAN JUAN KALEA", "east_m": 60, "south_m": -11, "width": 7 },

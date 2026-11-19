@@ -440,7 +440,9 @@ Open:
   change when someone is tied to them.
 - Whether the answers come from Gerard's own life (he is the player and knows his friends) or
   from what the game shows; proposal: both, the world filling in when he is stuck.
-- Marta's long-distance train: the same tablet, or a harder memory.
+- ~~Marta's long-distance train: the same tablet, or a harder memory.~~ Decided 2026-11-19: the same
+  tablet, a harder memory (Marta in Alegia and a moment of her singing), from Sants Estació
+  (docs/quests/marta.md).
 - The landmarks' cards (Sagrada Família, Búnkers del Carmel…) still name famous places on the
   map before their station is remembered.
 

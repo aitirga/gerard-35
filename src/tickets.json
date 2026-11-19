@@ -1,5 +1,5 @@
 {
-  "about": "Memory tickets (docs/story-outline.md § Getting there): the stations open from the start, and for every other one the memory that opens it, a person and a place. Read by src/tickets.ts and by tickets.py, which judges what Gerard writes.",
+  "about": "Memory tickets (docs/story-outline.md § Getting there): the stations open from the start, and for every other one the memory that opens it, a person and a place; a faraway one (Alegia) also a moment with them. Read by src/tickets.ts and by tickets.py, which judges what Gerard writes.",
   "open": ["fabra-i-puig", "trinitat-vella"],
   "memories": {
     "cardedeu": {
@@ -37,6 +37,14 @@
       "people": ["Aitor"],
       "where": "the Búnkers del Carmel, on the Turó de la Rovira above the city",
       "places": ["Carmel", "bunkers", "Turo de la Rovira", "la Rovira"]
+    },
+    "alegia": {
+      "who": "Marta, Aitor's best friend and Gerard's friend too, a singer",
+      "people": ["Marta"],
+      "where": "Alegia, her town in Gipuzkoa, in the Basque Country, far from Barcelona",
+      "places": ["Alegia", "Alegria", "Alegria de Oria", "Gipuzkoa", "Guipuzcoa", "Euskadi", "Pais Vasco"],
+      "moment": "her singing: a song, a concert, a choir, the piano, her voice",
+      "moments": ["canta", "cantaba", "cantando", "cantar", "cancion", "canciones", "concierto", "coro", "piano", "voz", "Izana", "kanta", "abesten"]
     },
     "espanya": {
       "who": "Aitor, Gerard's partner (provisional: nobody else is tied to this place yet)",

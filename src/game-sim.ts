@@ -609,16 +609,13 @@ export class Playing {
     this.spend('travel', RIDE);
     if (!to || to === from) return;
     this.moveTo({ environment: STATION_PLACES[to].environment, cell: this.entrance(to) });
-    this.send({ type: 'arrive', station: to });
+    this.send({ type: 'arrive', station: to, from });
   }
   /** Home from wherever: the metro to Fabra i Puig and the walk to the portal (at night, hunted). */
   private goHome() {
     if (this.at.environment === 'meridiana') return;
-    if (this.at.environment === ALEGIA || this.at.environment === CUERDAS_PLACE) {
-      this.gap('No hay viaje de Alegia a Barcelona: se le pone en Fabra i Puig');
-      this.spend('travel', RIDE * 3);
-      this.moveTo({ environment: 'meridiana-calle', cell: this.entrance('fabra-i-puig') });
-    }
+    // Out of Las cuerdas the party is back in Alegia's street; the long-distance train brings it home.
+    if (this.at.environment === CUERDAS_PLACE) this.moveTo({ environment: ALEGIA, cell: { x: PLACES_MARTA.back.x + 4, z: PLACES_MARTA.back.z + 2 } });
     if (this.at.environment !== 'meridiana-calle') this.travelTo('fabra-i-puig');
     if (this.at.environment !== 'meridiana-calle') { this.gap('Sin camino a casa: se le pone en casa'); this.moveTo({ environment: 'meridiana', cell: { ...PLACES.wakeUp.cell } }); return; }
     const environment = this.at.environment, day = this.story.clock.day;
@@ -829,12 +826,8 @@ export class Playing {
   }
   private marta() {
     const run = this.story.marta;
-    if (this.at.environment !== ALEGIA && this.at.environment !== CUERDAS_PLACE) {
-      // Alegia is only reached from the picker for now (docs/quests/marta.md § Not built).
-      this.gap('No hay viaje a Alegia: se le pone allí');
-      this.spend('travel', RIDE * 3);
-      this.moveTo({ environment: ALEGIA, cell: { x: PLACES_MARTA.back.x + 4, z: PLACES_MARTA.back.z + 2 } });
-    }
+    // The long-distance train from Sants Estació (src/transit.ts), its station's way at the edge of the town.
+    if (this.at.environment !== ALEGIA && this.at.environment !== CUERDAS_PLACE) { this.travelTo('alegia'); return; }
     if (this.at.environment === ALEGIA) {
       if (!this.has('alegia-marta')) { this.interact('talk-marta'); return; }
       this.interact('piano-marta');

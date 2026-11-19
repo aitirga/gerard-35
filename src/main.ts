@@ -492,7 +492,7 @@ try {
       if (back) game.standAt(back.cell);
     }
     storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
-    if (to) storyEvent({ type: 'arrive', station: to });
+    if (to) storyEvent({ type: 'arrive', station: to, from });
   }
   /** The Ecos de luz the party has free to put into an ánima at home, from the first one that goes in. */
   function showAnimas(gained = false) {

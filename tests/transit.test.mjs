@@ -9,7 +9,7 @@ import { canWalk } from '../src/movement.ts';
 
 test('the cartoon map has its hand-drawn layers, the metro lines in their colours and the R4 to Cardedeu', () => {
   assert.deepEqual(LINES.map(l => [l.id, l.colour, l.kind]), [
-    ['l1', '#e1393e', 'metro'], ['l3', '#3aa83e', 'metro'], ['l4', '#fcbe00', 'metro'], ['l5', '#1f78c0', 'metro'], ['r4', '#f2a900', 'rodalies'],
+    ['l1', '#e1393e', 'metro'], ['l3', '#3aa83e', 'metro'], ['l4', '#fcbe00', 'metro'], ['l5', '#1f78c0', 'metro'], ['r4', '#f2a900', 'rodalies'], ['ld', '#4a8f8a', 'rodalies'],
   ]);
   for (const line of LINES) {
     assert.ok(line.stations.length > 1, line.id);
@@ -96,4 +96,12 @@ test('the R4 leaves from La Sagrera for Cardedeu, a town waiting at the map\'s e
   const { x0, x1, y0, y1 } = CITY_MAP.extent;
   assert.ok(STATIONS.cardedeu.x > x0 && STATIONS.cardedeu.x < x1 && STATIONS.cardedeu.y > y0 && STATIONS.cardedeu.y < y1, 'drawn inside the map');
   assert.match(renderCityMap(), /Cardedeu →/);
+});
+
+test('the long-distance train leaves Sants Estació for Alegia, a town at the other edge of the map', () => {
+  assert.deepEqual(route('fabra-i-puig', 'alegia').map(l => l.line).at(-1), 'ld');
+  assert.deepEqual(route('fabra-i-puig', 'alegia').at(-1).stations, ['sants-estacio', 'alegia']);
+  assert.ok(STATIONS.alegia.edge);
+  assert.ok(STATIONS.alegia.x < (CITY_MAP.extent.x0 + CITY_MAP.extent.x1) / 2, 'Alegia lies west, the other way from Cardedeu');
+  assert.match(renderCityMap(), /← Alegia/);
 });

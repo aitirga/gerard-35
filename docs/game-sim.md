@@ -85,7 +85,7 @@ Walking in Las cuerdas is as the crow flies (its strings change as the song play
 | Levels | When each shared ánima reaches each level (minute, share of the game, fight number, share of games), and the EXP earned already at the top level, lost |
 | Fights | Per fight: times met per game, won the first time, won overall, tries until the first win, PV left when won, rounds, trivial. A **wall** is won the first time in under 35 % of the games (`WALL`); «aprendido», played understood after losing to it |
 | A typical game | The game nearest the median: each fight (higher, more PV it cost; a cross, lost) and each level |
-| What is missing | What the route had to bridge (the trip to Alegia, a stuck walk), and in how many games |
+| What is missing | What the route had to bridge (a stuck walk; the trip to Alegia until 2026-11-19), and in how many games |
 
 ## As measured on 2026-11-19
 

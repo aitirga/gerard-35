@@ -101,8 +101,11 @@ export function renderCityMap(options: CityMapOptions = {}): string {
     parts.push(`<g class="city-station${pickable ? ' is-pickable' : ''}${here ? ' is-here' : ''}${chosen ? ' is-selected' : ''}${big || NAMED.has(s.id) ? '' : ' is-minor'}" data-station="${s.id}">`
       + `${pickable ? `<circle class="city-station-glow" cx="${s.x}" cy="${s.y}" r="${r * 2.2}"/>` : ''}`
       + `<circle cx="${s.x}" cy="${s.y}" r="${r}" stroke-width="${unit * .45}"/>`
-      // A town beyond the map is named inwards, with an arrow pointing on to it.
-      + (s.edge ? `<text x="${s.x - r * 1.5}" y="${s.y + unit * .55}" font-size="${size}" text-anchor="end">${escape(s.name)} →</text>` : `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${size}">${escape(s.name)}</text>`)
+      // A town beyond the map is named inwards, with an arrow pointing on to it (Cardedeu at the
+      // right edge, Alegia at the left).
+      + (s.edge && s.x > (CITY_MAP.extent.x0 + CITY_MAP.extent.x1) / 2 ? `<text x="${s.x - r * 1.5}" y="${s.y + unit * .55}" font-size="${size}" text-anchor="end">${escape(s.name)} →</text>`
+        : s.edge ? `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${size}">← ${escape(s.name)}</text>`
+        : `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${size}">${escape(s.name)}</text>`)
       + `<title>${escape(s.name)}</title></g>`);
   }
   if (options.current) {

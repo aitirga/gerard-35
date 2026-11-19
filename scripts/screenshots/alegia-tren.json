@@ -1,0 +1,25 @@
+{
+  "title": "Chapter 2 · The long train to Alegia",
+  "description": "Marta's town is far: on the station tablet, Marta and Alegia are not enough; a memory of her singing prints the ticket, and the long-distance line runs from Sants Estació to Alegia at the map's west edge. In Alegia, the way up to the real station is the street at the edge of the town. The judge is faked here so the scenario never calls the API.",
+  "steps": [
+    { "open": "/?story=metro&solo=1" },
+    { "until": "!!window.gerard", "timeout": 60000 },
+    { "skipDialogue": true },
+    { "eval": "Promise.all([import('/src/map-markers.ts'), import('/src/tickets.ts')]).then(([m, t]) => { const g = window.gerard; const verdicts = { far: { station: 'alegia', person: true, place: true, moment: false }, full: { station: 'alegia', person: true, place: true, moment: true } }; window.ticketMemory = { locked: g.story.lockedStations, remember: text => new Promise(done => setTimeout(() => done(/cant/i.test(text) ? verdicts.full : verdicts.far), 600)), opened: station => g.storyEvent({ type: 'ticket', station }) }; void g.travelUI.show('fabra-i-puig', {}, m.cityMarkers({ castle: true, threat: .8, spread: .3 }), window.ticketMemory) }) && undefined" },
+    { "until": "window.gerard.travelUI.open", "timeout": 20000 },
+    { "eval": "(() => { const f = document.querySelector('#travel-memory'); f.focus(); f.value = 'Marta en Alegia'; })()" },
+    { "press": "Enter" },
+    { "shot": "tablet-far", "delay": 9000, "caption": "Marta and Alegia, but far: «Tan lejos no llega un recuerdo así. Tiene que estar más vivo.»" },
+    { "eval": "(() => { const f = document.querySelector('#travel-memory'); f.focus(); f.value = 'Marta cantando Izana en la plaza de Alegia'; })()" },
+    { "press": "Enter" },
+    { "shot": "tablet-ticket", "delay": 4000, "caption": "Marta singing in Alegia: the ticket prints, and the long-distance line runs from Sants Estació to Alegia at the map's west edge" },
+    { "eval": "(() => window.gerard.story.has('ticket-alegia') ? 1 : Promise.reject(new Error('the ticket flag was not set')))()" },
+    { "open": "/?story=ticket-alegia&solo=1" },
+    { "until": "!!window.gerard && window.gerard.story.has('ticket-alegia')", "timeout": 60000 },
+    { "skipDialogue": true },
+    { "eval": "(() => { const g = window.gerard; const at = g.game; at.setEnvironment('alegia', { x: 30, z: 119 }); })()" },
+    { "until": "document.title.startsWith('Alegia')", "timeout": 60000 },
+    { "skipDialogue": true },
+    { "shot": "alegia-station", "delay": 3500, "caption": "Off the train: in Alegia, up the street from the real station at the edge of the town" }
+  ]
+}

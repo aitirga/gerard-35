@@ -21,17 +21,20 @@ export function lockedStations(has: (flag: ReturnType<typeof ticketFlag>) => boo
   return TICKET_STATIONS.filter(station => !has(ticketFlag(station)));
 }
 
-/** What the server made of a memory: the station it points to, and whether its person and place are right. */
-export interface Verdict { station: string | null; person: boolean; place: boolean }
+/**
+ * What the server made of a memory: the station it points to, and whether its person and place are
+ * right; a faraway station (Alegia) also asks for a moment with them (`moment`, true elsewhere).
+ */
+export interface Verdict { station: string | null; person: boolean; place: boolean; moment?: boolean }
 /** A ticket printed: the station, or nothing yet. */
-export const opens = (verdict: Verdict) => verdict.station && verdict.person && verdict.place && isTicketStation(verdict.station) ? verdict.station : undefined;
+export const opens = (verdict: Verdict) => verdict.station && verdict.person && verdict.place && verdict.moment !== false && isTicketStation(verdict.station) ? verdict.station : undefined;
 
 /** Asks the server; throws when it cannot be reached, so the tablet can say it reads nothing. */
 export async function remember(text: string): Promise<Verdict> {
   const response = await fetch('/api/transit/ticket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
   if (!response.ok) throw new Error(`ticket ${response.status}`);
-  const { station, person, place } = await response.json() as Verdict;
-  return { station, person, place };
+  const { station, person, place, moment } = await response.json() as Verdict;
+  return { station, person, place, ...moment === false ? { moment } : {} };
 }
 
 /**
@@ -42,6 +45,8 @@ export function answer(verdict: Verdict | undefined, already = false): string {
   if (!verdict) return 'La pantalla parpadea. Ahora mismo no lee nada.';
   const station = opens(verdict);
   if (station) return already ? `Ese recuerdo ya es un billete: ${STATIONS[station].name}.` : `Billete impreso: ${STATIONS[station].name}.`;
+  // Someone and somewhere, but a faraway place asks for more of that day.
+  if (verdict.person && verdict.place && verdict.moment === false) return 'Tan lejos no llega un recuerdo así. Tiene que estar más vivo.';
   if (verdict.person) return 'Te acuerdas de quién. No de dónde.';
   if (verdict.place) return 'Un sitio sin nadie no lleva a ningún sitio.';
   return 'El billete sale en blanco.';
