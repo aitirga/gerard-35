@@ -58,6 +58,12 @@ export interface GeoBuilding {
   poly: GeoPoint[];
   /** Minimum-area rectangle around the footprint; the roof sits on it. `angle` is the `w` axis. */
   box: { cx: number; cz: number; w: number; d: number; angle: number };
+  /**
+   * How it gets out of Gerard's way when it hides him: by default a window opens in it round him
+   * (src/geo-scenery.ts); `foundations` brings it down to them instead, for a building right in front
+   * of a place the story uses.
+   */
+  cut?: 'foundations';
 }
 export interface GeoRoad {
   id: string;

@@ -55,12 +55,32 @@ const CUT_GHOST = 0.32;
 const CUT_RING = { radius: 5, edge: 0.14, halo: 0.5, flare: 0.25, glow: '1.0, 0.86, 0.6' };
 const CUT_STUB = -0.25;
 const CUT_RATE = 8;
+/**
+ * A building marked `cut: "foundations"` in its zone (docs/environment-styling.md § Buildings) opens
+ * no window: while it hides Gerard it comes down to its foundations, `floor` metres of it left and
+ * capped in its stone, its shadow with it. It sinks at `rate` and rises again only once he has been
+ * clear of it for `hold` seconds, so walking along its edge never bobs it up and down. For the few that
+ * stand right in front of a place the story uses (Alegia's town hall, before Marta's piano).
+ */
+const SINK = { floor: 0.8, rate: 2.2, hold: 1.4 };
+/**
+ * What a building down to its foundations shows on top (`foundationCap`): its outer walls' stumps,
+ * `wall` metres thick in its plinth's stone made `stone` times darker, round a floor of packed earth in
+ * `earth`, `drop` metres lower.
+ */
+const CAP = { wall: 0.45, drop: 0.45, stone: 0.82, earth: '#4f483f' };
+/** A colour `k` times as bright. */
+const darker = (hex: string, k: number) => { const c = new pc.Color().fromString(hex); return new pc.Color(c.r * k, c.g * k, c.b * k).toString(false); };
+/** Where a building is cut while it stands whole: above anything. */
+const NO_PLANE = 1e9;
 /** `geoCutStyle` in the shader, by style; `none` never opens. */
 export const CUT_STYLE_INDEX: Record<Exclude<OcclusionStyle, 'none'>, number> = { dither: 0, ghost: 1, ring: 2 };
 /** What wet asphalt and panot reflect, at full wetness. */
 const WET_SHEEN = new pc.Color(0.14, 0.14, 0.14);
 type V3 = [number, number, number];
-interface BuildingCut { triangles: number[]; instances: pc.MeshInstance[]; open: number }
+interface BuildingCut { triangles: number[]; instances: pc.MeshInstance[]; open: number; foundations?: Foundations }
+/** A building that comes down to its foundations: how far down (0–1), seconds he has been clear of it, its stone cap, and what stands loose on top (a landmark's bell, its weather vane) that goes with the top. */
+interface Foundations { sink: number; clear: number; cap?: pc.Entity; loose: pc.Entity[] }
 
 const f = (n: number) => n.toFixed(3);
 const CUT = {
@@ -74,12 +94,15 @@ uniform geoCutFocus: vec3f;
 uniform geoCutToCamera: vec3f;
 uniform geoCutStyle: f32;
 uniform geoCutOpen: f32;
+uniform geoCutPlane: f32;
 var<private> geoCutGlow: f32 = 0.0;
 var<private> geoCutShade: f32 = 0.0;
 `;
 const CUTAWAY_MAIN = `
 // The depth prepass (soft particles, tilt-shift and contact shadows in src/post.ts) must see the same
 // hole, or they'd read a wall that isn't there; the stipple is fixed to the screen, so it matches too.
+// A building down to its foundations: nothing of it above the plane, in every pass (its shadow and depth too).
+if (vPositionW.y > uniform.geoCutPlane) { discard; }
 #if defined(FORWARD_PASS) || defined(PREPASS_PASS)
 if (uniform.geoCutOpen > 0.0) {
   let cutOffset = vPositionW - uniform.geoCutFocus;
@@ -1578,7 +1601,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   function building(b: GeoBuilding) {
     const pivot = new pc.Entity(`Edificio ${b.number ?? b.name ?? b.id}`);
     root.addChild(pivot); pivots.set(b.id, pivot);
-    buildingCuts.set(pivot, { triangles: [], instances: [], open: 0 });
+    buildingCuts.set(pivot, { triangles: [], instances: [], open: 0, ...b.cut === 'foundations' ? { foundations: { sink: 0, clear: 0, loose: [] } } : {} });
     if (b.facade === 'parapet') { lowWall(b, pivot); return; }
     const poly = b.poly, H = b.height, storey = scene.storey;
     const groundTop = Math.min(H, storey * 1.15);
@@ -1635,6 +1658,42 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     // A Vallès house's gable is plain render; elsewhere it gets a window with shutters.
     if (b.roof !== 'flat') add('Hastial', gableEnds(b, H), facade(b.facade === 'vila' ? 'plain' : 'rendered', b.walls, trim, baseColour, grain), pivot, false);
     if (b.terrat) terrat(b, H, pivot);
+    if (b.cut === 'foundations') foundationCap(b, pivot);
+  }
+  /**
+   * The top of a building's foundations, seen once it comes down to them, like a plan cut through it:
+   * the stumps of its outer walls `CAP.wall` thick in its plinth's stone round its footprint, and inside
+   * them, `CAP.drop` lower, a floor of packed earth. It goes down with the cut (`sinkTo`), so the
+   * building never shows hollow.
+   */
+  function foundationCap(b: GeoBuilding, pivot: pc.Entity) {
+    const poly = b.poly, ccw = signedArea(poly) > 0, sign = ccw ? 1 : -1;
+    const wall = CAP.wall / cellM, drop = CAP.drop / cellM;
+    const at = (p: GeoPoint, y: number): V3 => P(p, y), flat = (p: GeoPoint) => [p[0] * cellM, p[1] * cellM];
+    const rim = new MeshBuilder(), floor = new MeshBuilder();
+    for (const [i, j, k] of triangulate(poly)) floor.tri(at(poly[i], -drop), at(poly[j], -drop), at(poly[k], -drop), [0, 1, 0], flat(poly[i]), flat(poly[j]), flat(poly[k]));
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], c = poly[(i + 1) % poly.length], len = Math.hypot(c[0] - a[0], c[1] - a[1]);
+      if (len < 1e-3) continue;
+      // Inwards, in grid space (the outward normal of the walls, turned round).
+      const inX = -(c[1] - a[1]) / len * sign, inZ = (c[0] - a[0]) / len * sign;
+      const a2: GeoPoint = [a[0] + inX * wall, a[1] + inZ * wall], c2: GeoPoint = [c[0] + inX * wall, c[1] + inZ * wall];
+      rim.quad(at(a, 0), at(c, 0), at(c2, 0), at(a2, 0), [0, 1, 0], flat(a), flat(c), flat(c2), flat(a2));
+      // The stump's inner face, down to the floor.
+      const run = len * cellM;
+      rim.quad(at(a2, 0), at(c2, 0), at(c2, -drop), at(a2, -drop), [inX, 0, inZ], [0, 0], [run, 0], [run, -CAP.drop], [0, -CAP.drop]);
+    }
+    if (floor.empty) return;
+    const stone = mat(`Cimientos ${b.id}`, darker(b.base ?? '#a69a86', CAP.stone), 0.05), texture = b.materials?.base;
+    if (texture) onLoad.push(() => dress(stone, texture, darker(b.base ?? '#a69a86', CAP.stone)));
+    const earth = mat('Suelo de los cimientos', CAP.earth, 0.02);
+    if (scene.textures?.terra) onLoad.push(() => dress(earth, 'terra', CAP.earth));
+    const cap = new pc.Entity('Cimientos');
+    const instances = [[rim, stone], [floor, earth]].map(([builder, m]) => { const mesh = (builder as MeshBuilder).mesh(device); meshes.push(mesh); return new pc.MeshInstance(mesh, m as pc.Material); });
+    cap.addComponent('render', { meshInstances: instances, castShadows: false, receiveShadows: true });
+    cap.enabled = false;
+    pivot.addChild(cap);
+    buildingCuts.get(pivot)!.foundations!.cap = cap;
   }
   /**
    * What stands on a lived-in terrat, read from above: each house of the row has its stair head
@@ -1956,10 +2015,13 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         return m;
       },
       part(name, type, material, position, scale, rotation, parent = pivot) {
+        // On a building that comes down to its foundations, a loose piece goes with its top (and is not batched, so it can).
+        const down = owner && buildingCuts.get(owner)?.foundations;
         const e = new pc.Entity(name);
-        e.addComponent('render', { type, material, castShadows: true, receiveShadows: true, batchGroupId: kit.batch });
+        e.addComponent('render', { type, material, castShadows: true, receiveShadows: true, ...down ? {} : { batchGroupId: kit.batch } });
         e.setLocalPosition(position[0], position[1], position[2]); e.setLocalScale(scale[0], scale[1], scale[2]);
         if (rotation) e.setLocalEulerAngles(rotation[0], rotation[1], rotation[2]);
+        down?.loose.push(e);
         parent.addChild(e); return e;
       },
       mesh: () => new MeshBuilder(),
@@ -2221,7 +2283,16 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   const uniform = (name: string) => device.scope.resolve(name);
   const cutFocus = uniform('geoCutFocus'), cutToCamera = uniform('geoCutToCamera'), cutStyle = uniform('geoCutStyle'), cutOpen = uniform('geoCutOpen');
   // Every pass binds the declared uniforms (WebGPU fills a buffer for the shadow pass too), so give them a value up front.
-  cutOpen.setValue(0); cutStyle.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]);
+  const cutPlane = uniform('geoCutPlane');
+  cutOpen.setValue(0); cutStyle.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]); cutPlane.setValue(NO_PLANE);
+  /** A building coming down to its foundations or rising again: the plane its cut stands at, its cap there, its loose pieces gone while it is down. */
+  function sinkTo(cut: BuildingCut, down: Foundations, top: number, sink: number) {
+    down.sink = sink;
+    const k = sink * sink * (3 - 2 * sink), plane = sink > 0 ? top + (SINK.floor / cellM - top) * k : NO_PLANE;
+    for (const instance of cut.instances) instance.setParameter('geoCutPlane', plane);
+    if (down.cap) { down.cap.enabled = sink > 0; down.cap.setLocalPosition(0, Math.min(plane, top), 0); }
+    for (const e of down.loose) e.enabled = sink < 0.04;
+  }
 
   // Which cells the sunk river fills, so rain and drizzle fall into it instead of onto the street's level.
   const riverCells = new Uint8Array(W * D);
@@ -2240,7 +2311,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
      */
     sight(people: Point3[]) {
       const reach = 1.2 / Math.tan(HOME_POSE.pitch * Math.PI / 180);
-      const near = occluders.filter(({ pivot, shape }) => pivot.enabled && people.some(p => {
+      // One that comes down to its foundations never asks the camera to move: it gets out of the way itself.
+      const near = occluders.filter(({ pivot, cut, shape }) => pivot.enabled && !cut.foundations && people.some(p => {
         const dx = Math.max(shape.min.x - p.x, 0, p.x - shape.max.x), dz = Math.max(shape.min.z - p.z, 0, p.z - shape.max.z);
         return shape.max.y > p.y && Math.hypot(dx, dz) <= (shape.max.y - p.y) * reach + 1;
       }));
@@ -2255,7 +2327,18 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       const style = look.cut === false ? 'none' : occlusion.style;
       if (style !== 'none') cutStyle.setValue(CUT_STYLE_INDEX[style]);
       for (const { pivot, cut, shape } of occluders) {
-        const target = style !== 'none' && pivot.enabled && focus && toCamera && buildingHidesPlayer(shape, focus, toCamera) ? 1 : 0;
+        const hides = pivot.enabled && !!focus && !!toCamera && buildingHidesPlayer(shape, focus, toCamera);
+        const down = cut.foundations;
+        if (down) {
+          // Down while it hides him, and a moment after; it comes back up once he has been clear of it a while.
+          down.clear = hides ? 0 : down.clear + dt;
+          const want = hides || (down.sink > 0 && down.clear < SINK.hold) ? 1 : 0;
+          const eased = animate ? down.sink + (want - down.sink) * (1 - Math.exp(-dt * SINK.rate)) : want;
+          const sink = Math.abs(eased - want) < 0.003 ? want : eased;
+          if (sink !== down.sink) sinkTo(cut, down, shape.max.y + 0.1, sink);
+          continue;
+        }
+        const target = style !== 'none' && hides ? 1 : 0;
         const open = animate ? cut.open + (target - cut.open) * (1 - Math.exp(-dt * CUT_RATE)) : target;
         const next = Math.abs(open - target) < 0.004 ? target : open;
         if (cut.open === next) continue;

@@ -955,7 +955,8 @@ def make_building(zone: dict, e: dict, poly: list, cell: float) -> dict:
         "poly": rounded(poly), "box": oriented_box(poly),
         "materials": building_materials(style.get("materials", {}) | chosen.get("materials", {}), facade, ground, roof, "party" in style),
     } | relief(style | chosen) | ({"sign": chosen["sign"]} if "sign" in chosen else {}) | ({"signature": chosen["signature"]} if "signature" in chosen else {}) \
-      | ({"terrat": True} if roof == "flat" and chosen.get("terrat", style.get("terrat")) else {})
+      | ({"terrat": True} if roof == "flat" and chosen.get("terrat", style.get("terrat")) else {}) \
+      | ({"cut": chosen["cut"]} if "cut" in chosen else {})
 
 
 def relief(style: dict) -> dict:

@@ -223,6 +223,17 @@ keep him in sight, all set in `occlusion` (`?cut=`, `?silueta=0` and `?camara=fi
     surface opens at its own size, so roofs and walls show stacked arcs.
   - `none`: buildings stay whole; only the silhouette shows him. A place whose look sets
     `cut: false` always draws this way, whatever the style (the Sagrada Família).
+
+  A building whose zone marks it `"cut": "foundations"` opens no window in any style: while it hides
+  him it **comes down to its foundations** (`SINK` and `foundationCap` in src/geo-scenery.ts). A plane
+  descends from its top to 0.8 m above the ground and nothing of it above the plane is drawn, in
+  every pass, so its shadow goes too; a cap carried down with the plane shows the stumps of its outer
+  walls, 0.45 m thick in its plinth's stone, round a floor of packed earth 0.45 m lower, so it never
+  shows hollow. Loose pieces on top of it (a landmark's bell and weathervane) go with the top. It
+  sinks in about a second and rises again once he has been clear of it for 1.4 s, so walking along its
+  edge never bobs it; the camera never tilts for it. It is for the few buildings standing right in
+  front of a place the story uses: Alegia's town hall and its neighbour, behind which Marta waits at
+  the piano (`just screenshots alegia-cimientos --gpu`).
 - **Silhouettes** (`occlusion.silhouettes`, `createSilhouettes`): Gerard and his partner are drawn a
   second time, flat light blue, only where something stands in front of them (depth test reversed,
   no depth write), as Torchlight and Diablo-likes show their heroes. The copies share each part's

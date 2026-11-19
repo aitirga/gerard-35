@@ -164,6 +164,13 @@ pelota wall, Bulebarra and the toka.
 - The `overcast` sky (`src/lighting.ts`) and an overcast sun for Alegia (`src/scenery.ts`).
 - `params.building` lets a landmark join its building's cut; `MeshBuilder.box()` for landmarks.
 - The `drizzle` and `mist` particles and Alegia's air (`src/effects.ts`).
+- `cut: "foundations"` on a building (`src/geo-scenery.ts`, docs/graphics.md): the town hall (63)
+  and its neighbour at 61 (`way/48893677`, it hides the cowbell) come down to their foundations
+  while they hide Gerard.
+  Txintxarri plaza, where Marta waits at the piano (docs/quests/marta.md), lies right behind them
+  from the camera, and the round window only showed a hole in a roof there (2026-11-19, the user:
+  «los edificios tapan gran parte de la escena… hacer que se vean solo los cimientos»). From the
+  street in front they stand whole. `just screenshots alegia-cimientos --gpu`.
 - `tools/geo.py`: two shops or name tiles on one wall closer than a sign's width now move apart;
   the second one used to move towards the first, so Goxotegia's sign covered Konfiteroenea's tile
   and the txoko's tile covered Mokoenea's.

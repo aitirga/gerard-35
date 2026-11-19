@@ -1,0 +1,52 @@
+{
+  "title": "Alegia: el ayuntamiento baja a sus cimientos",
+  "description": "docs/graphics.md § Seeing Gerard behind things, src/geo-scenery.ts `SINK`. Behind the town hall, where Marta's piano is, it and its neighbour come down to their foundations instead of opening a window; out in front on San Juan kalea they stand whole. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=marta&part=start"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Alegia · San Juan kalea'",
+      "timeout": 120000
+    },
+    {
+      "wait": 700
+    },
+    {
+      "shot": "bajando",
+      "caption": "Just arrived behind the town hall: it is coming down"
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "shot": "cimientos",
+      "delay": 300,
+      "caption": "Down to its foundations: the square, the pergola, the piano and Marta in full view"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 100, z: 67 })"
+    },
+    {
+      "wait": 5000
+    },
+    {
+      "shot": "delante",
+      "delay": 300,
+      "caption": "Out in front on San Juan kalea: the town hall stands whole, its arches and clock"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 82, z: 54 })"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "otra-vez",
+      "caption": "Back behind it: down again"
+    }
+  ]
+}
