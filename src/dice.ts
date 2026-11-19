@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { DIE_FACES, type DieFace } from './battle';
-import { FACE_ICONS, faceInk } from './die-faces';
+import { FACE_ICONS, FACE_INK, faceInk } from './die-faces';
 
 /**
  * Dadaísta's dice (docs/animas/dadaista/): its maná, as things. A clean ivory cube printed with its
@@ -13,6 +13,8 @@ export const DIE = {
   /** Its edge in metres, × its wearer's height scale. */
   size: .21,
   ivory: '#efe6cf',
+  /** The Comodín's black lacquer (its star is the die's red, `FACE_INK.red`). */
+  lacquer: '#1c1917',
 } as const;
 /**
  * The cube's six cells (cell `n` prints `DIE_FACES[n - 1]`): each one's normal and the two edges that
@@ -57,7 +59,27 @@ function picture() {
   return canvas;
 }
 
-interface Kit { mesh: pc.Mesh; material: pc.StandardMaterial; texture: pc.Texture }
+/** The Comodín's six faces, all the same: black lacquer, a lighter rim, its red star with a glint. */
+function comodinPicture() {
+  const cell = 128, canvas = document.createElement('canvas');
+  canvas.width = cell * 6; canvas.height = cell;
+  const ctx = canvas.getContext('2d')!, star = new Path2D(FACE_ICONS.comodin);
+  for (let n = 0; n < 6; n++) {
+    const x = n * cell;
+    ctx.fillStyle = DIE.lacquer; ctx.fillRect(x, 0, cell, cell);
+    const rim = ctx.createRadialGradient(x + cell / 2, cell / 2, cell * .4, x + cell / 2, cell / 2, cell * .76);
+    rim.addColorStop(0, 'rgba(239,230,207,0)'); rim.addColorStop(1, 'rgba(239,230,207,.42)');
+    ctx.fillStyle = rim; ctx.fillRect(x, 0, cell, cell);
+    const inset = cell * .12, k = (cell - inset * 2) / 100;
+    ctx.save(); ctx.translate(x + inset, inset); ctx.scale(k, k);
+    ctx.fillStyle = FACE_INK.red; ctx.fill(star);
+    ctx.translate(47, 47); ctx.scale(.3, .3); ctx.translate(-50, -50); ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fill(star);
+    ctx.restore();
+  }
+  return canvas;
+}
+
+interface Kit { mesh: pc.Mesh; material: pc.StandardMaterial; comodin: pc.StandardMaterial }
 const kits = new WeakMap<pc.GraphicsDevice, Kit>();
 function kitFor(device: pc.GraphicsDevice): Kit {
   let kit = kits.get(device);
@@ -79,15 +101,18 @@ function kitFor(device: pc.GraphicsDevice): Kit {
   // Every die shares this mesh, and a mesh instance destroyed with its die destroys the mesh once
   // none holds it: the kit holds it too, so a hand gone empty never leaves the next die without one.
   mesh.incRefCount();
-  const canvas = picture();
-  const texture = new pc.Texture(device, { name: 'Dado', width: canvas.width, height: canvas.height, mipmaps: true, anisotropy: 4, addressU: pc.ADDRESS_CLAMP_TO_EDGE, addressV: pc.ADDRESS_CLAMP_TO_EDGE });
-  texture.setSource(canvas);
-  const material = new pc.StandardMaterial(); material.name = 'Dado';
-  material.diffuseMap = texture; material.gloss = .6;
-  // A little light of its own, so the faces read in any place (the campsite's dusk, the Queen's pink evening).
-  material.emissive.set(.2, .19, .17); material.emissiveMap = texture;
-  material.update();
-  kit = { mesh, material, texture };
+  const paint = (name: string, canvas: HTMLCanvasElement, glow: [number, number, number]) => {
+    const texture = new pc.Texture(device, { name, width: canvas.width, height: canvas.height, mipmaps: true, anisotropy: 4, addressU: pc.ADDRESS_CLAMP_TO_EDGE, addressV: pc.ADDRESS_CLAMP_TO_EDGE });
+    texture.setSource(canvas);
+    const material = new pc.StandardMaterial(); material.name = name;
+    material.diffuseMap = texture; material.gloss = .6;
+    // A little light of its own, so the faces read in any place (the campsite's dusk, the Queen's pink evening).
+    material.emissive.set(...glow); material.emissiveMap = texture;
+    material.update();
+    return material;
+  };
+  // The Comodín's star glows a little more than an ornament: it is the one die to spot at a glance.
+  kit = { mesh, material: paint('Dado', picture(), [.2, .19, .17]), comodin: paint('Dado Comodín', comodinPicture(), [.55, .5, .45]) };
   kits.set(device, kit);
   return kit;
 }
@@ -98,4 +123,9 @@ export function createDie(app: pc.AppBase) {
   const entity = new pc.Entity('Dado de Dadaísta');
   entity.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, material)], castShadows: true, receiveShadows: false });
   return entity;
+}
+/** Dresses a die for the face it shows: the Comodín's black lacquer, or ivory for any other. */
+export function dressDie(app: pc.AppBase, entity: pc.Entity, face: DieFace) {
+  const kit = kitFor(app.graphicsDevice), want = face === 'comodin' ? kit.comodin : kit.material, instance = entity.render!.meshInstances[0];
+  if (instance.material !== want) instance.material = want;
 }

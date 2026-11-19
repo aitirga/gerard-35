@@ -16,6 +16,7 @@ import { FACE_STROKES, type Stroke } from './die-faces.ts';
  * - **Ojo**: an eye opens on the foe from its corners, its pupil narrows in red to a mark that stays a moment.
  * - **Corchete**: two brackets close in round the ally from either side and hold.
  * - **En blanco**: a red empty frame is stamped first; the face it repeats is drawn inside it.
+ * - **Comodín**: its red star is stamped big on each foe, and a hand lands there as Mano's does.
  *
  * Never pink, never violet (docs/visual-style.md); the red is only ever lines of light, never specks
  * left on someone.
@@ -75,7 +76,7 @@ export function createDiceFx(effects: Effects, dualFx: DualFx) {
   }
   const flareAt = (at: V3, colour: string, intensity = 2.4, range = 2.6) => burst('flare', { at, count: 1, spread: .03, life: [.14, .22], colour, light: { intensity, range, colour } });
 
-  const faces: Record<Exclude<DieFace, 'blanco'>, (spot: FaceSpot) => void> = {
+  const faces: Record<Exclude<DieFace, 'blanco' | 'comodin'>, (spot: FaceSpot) => void> = {
     mano(spot) {
       const c = DICE_COLOURS, flip = spot.side > 0, toward = -spot.side;
       // Two quick jabs from the side it came from, nearer each time…
@@ -141,6 +142,14 @@ export function createDiceFx(effects: Effects, dualFx: DualFx) {
      */
     land(spot: FaceSpot, face: DieFace, as: Exclude<DieFace, 'blanco'>) {
       if (!dualFx.on) return 0;
+      if (as === 'comodin') {
+        // The star first, big and red, then the hand it plays as.
+        draw(FACE_STROKES.comodin, spot, DICE_COLOURS.red, { seconds: .05, life: .5, scale: 1.25, size: 1.8 });
+        flareAt(spot.centre, DICE_COLOURS.red, 2.2, 2.4);
+        burst('twinkle', { at: spot.centre, count: 12, spread: spot.size * .3, speed: .6, life: [.3, .6], colour: DICE_COLOURS.ivory });
+        after(.12, () => faces.mano(spot));
+        return .12;
+      }
       if (face !== 'blanco') { faces[as](spot); return 0; }
       draw(FACE_STROKES.blanco, spot, DICE_COLOURS.red, { life: .55, scale: 1.1, size: 1.6 });
       flareAt(spot.centre, DICE_COLOURS.red, 1.6, 2);

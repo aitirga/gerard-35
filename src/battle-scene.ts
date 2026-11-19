@@ -2,7 +2,7 @@ import * as pc from 'playcanvas';
 import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
-import { DIE, createDie, faceUp } from './dice';
+import { DIE, createDie, dressDie, faceUp } from './dice';
 import { createDiceFx } from './dice-fx';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { MODELO_SIZES, PHOSPHOR } from './modelo-foes';
@@ -1189,12 +1189,18 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const side = Math.sign((actor.base.x - target.base.x) * right.x + (actor.base.z - target.base.z) * right.z) || -1;
     const delay = diceFx.land({ centre, feet: floorUnder(target), right, up, size: Math.min(1.6, Math.max(1, body.height * .7)), side, radius: body.radius }, die.face, die.as);
     if (die.as === 'corchete') { pulse?.(0, .25); hit(target, white, .7); return; }
+    // The Comodín: its star and a hand on every other foe it reached too, one after another so each reads.
+    if (die.as === 'comodin') reachedBy(action).filter(({ f }) => f !== target).forEach(({ f }, i) => dualFx.after(.07 * (i + 1), () => {
+      const b = extent(f), at = f.part ? chestOf(f) : new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + b.height * .55, f.base.z), ahead = b.radius * .6 + .2;
+      const lag = diceFx.land({ centre: { x: at.x + facing.x * ahead, y: at.y + facing.y * ahead, z: at.z + facing.z * ahead }, feet: floorUnder(f), right, up, size: Math.min(1.6, Math.max(1, b.height * .7)), side, radius: b.radius }, die.face, die.as);
+      dualFx.after(lag, () => hit(f, white, .9));
+    }));
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
     const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
     const felt: Blow = { share: unit ? (action.amount ?? 0) / unit.maxHp : 0, skill: true, guarded, ko: target.hp <= 0, swallowed: action.swallowed, beat: state?.phase === 'beat' };
     const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
     // A blank's red frame comes first: the blow's flash waits for the face it repeats.
-    dualFx.after(delay, () => hit(target, white, die.as === 'mano' ? .9 : die.as === 'tijeras' ? .8 : .55));
+    dualFx.after(delay, () => hit(target, white, die.as === 'mano' || die.as === 'comodin' ? .9 : die.as === 'tijeras' ? .8 : .55));
     return land(felt, dx / d, 0, dz / d);
   }
   /** Matemágico's skills of the elements (docs/animas/README.md § The jar): thrown from his circle, like Foc Binari. */
@@ -1629,7 +1635,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * away from the others, each with its face turned to the camera, never quite still: each drifts,
    * bobs and turns a little on a pace of its own. New ones (Defender, a round's rest, the fight
    * starting) drop in tumbling. The one Tirar dado spends leaves the hand, flies at whom its face
-   * reaches tumbling (a foe; an ally, Corchete), lands on them and bounces off.
+   * reaches tumbling (a foe; an ally, Corchete), lands on them and bounces off. The Comodín is the
+   * black one with the star.
    */
   function updateDice(dt: number, t: number, animate: boolean, target?: Fighter) {
     if (!state || (!dice.size && !state.allies.some(a => a.classId === DICED))) return;
@@ -1672,7 +1679,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       for (const had = d.hand.length; d.hand.length < hand.length;) { const die = make(hand[d.hand.length]); die.age = animate ? -.09 * (d.hand.length - had) : 1; d.hand.push(die); }
       d.shown = animate ? Math.max(0, Math.min(1, d.shown + (wearing ? dt : -dt) / .25)) : wearing ? 1 : 0;
       d.hand.forEach((die, i) => {
-        die.face = hand[i];
+        die.face = hand[i]; dressDie(app, die.entity, die.face);
         die.age += dt;
         // A column by the shoulder, the first die lowest, each a little off the line. Idle, each one
         // wanders on its own: two slow waves that never line up, so it is a sway and not a loop.
@@ -1697,6 +1704,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const thrown = d.thrown;
       if (!thrown) continue;
       const { die, action } = thrown;
+      dressDie(app, die.entity, die.face);
       // Where it is held before it goes: over the wearer's raised hand.
       const held = new pc.Vec3(f.base.x + across.x * .3 * out + toCamera.x * .2, floor + 1.72 * f.scale.y, f.base.z + across.z * .3 * out + toCamera.z * .2);
       const chest = target ? chestOf(target) : held;

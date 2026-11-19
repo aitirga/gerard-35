@@ -42,6 +42,8 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   // Tirar dado itself never lands: its die's face does (`effect.skill` is the face's move).
   'tirar-dado': { start: [], impact: [] },
   'cara-mano': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .6 }] },
+  // The Comodín: a brighter clink, and the blow on everyone.
+  'cara-comodin': { start: [{ id: 'clink', volume: .9 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .8 }] },
   'cara-tijeras': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .4 }] },
   'cara-ojo': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit', volume: .7 }] },
   'cara-corchete': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'guard' }] },

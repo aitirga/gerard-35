@@ -10,7 +10,8 @@ rolls the others again**, called **Agitar**: it **does not spend the turn**, it 
 command** once unlocked, with **×1**, and it **is improved at home**, at the jar (§ Agitar).
 Also decided (Aitor, 2026-11-15, after playing level 1): **a skill always spends its die**, as any
 maná (a bet lost in *Doble o nada* loses the die too; more dice come from Defender, as for
-everyone), and there is a **Joker** die (§ The Joker). Everything else here is a proposal.
+everyone), and there is a **Joker** die (§ The Joker, the **Comodín** in the game since the faces
+of round 5). Everything else here is a proposal.
 
 ## Identity
 
@@ -71,10 +72,17 @@ between, except *Doble o nada* (which rolls the die bet) and *Agitar* (which rol
 New dice are rolled only when maná comes back: Defender, a round's rest. Every skill spends the
 die it took, whatever comes of it, so the hand only gets shorter until the wearer holds on.
 
-### The Joker
+### The Joker (Comodín)
 
-Built (`JOKER`, `JOKER_CHANCE`, `JOKER_AFTER_DUAL` in `src/battle.ts`). Now and then a die dealt
-to the hand is not a face but the **Joker**: black lacquer with a vermilion star.
+Built (`COMODIN_CHANCE`, `COMODIN_AFTER_DUAL`, `dealDie` in `src/battle.ts`). Now and then a die
+dealt to the hand is not a face but the **Comodín**: black lacquer with a vermilion star.
+
+**On the faces** (Aitor, 2026-11-19, when the numbers went): it is a hand on everyone. Spent, it
+does **Mano** (`cara-comodin`: `Daño alto físico a todos los enemigos.`, power 38, the hand's) **on
+every foe standing**, each measured on its own; it goes first when nobody chose; a blank after it
+repeats a plain hand on one foe (the star is not repeated). Its landing stamps its red star big on
+each foe it reached, one after another, and a hand lands there as Mano's does. What follows below
+is how it was decided over the numbers (2026-11-15), kept for its chances and its spirit.
 
 - **How often** (Aitor, 2026-11-15): 2 % of the dice dealt. **A dual attack calls it**: the next
   die dealt to whoever took part in one (Defender, a round's rest) is the Joker 20 % of the
@@ -82,7 +90,8 @@ to the hand is not a face but the **Joker**: black lacquer with a vermilion star
   ánima for the dual and coming back to the dice. Nothing on screen says the die is called.
 
 - It **always meets the good condition of the skill it is spent on**: a six for a blow by its
-  face (*Golpe de dados*), a bet that cannot be lost (*Doble o nada*, never rolled).
+  face (*Golpe de dados*), a bet that cannot be lost (*Doble o nada*, never rolled). On the faces,
+  that is the hand, the strongest blow.
 - Its blow **falls on every foe standing**, each one measured on its own.
 - Nothing announces it: it is in the hand or it is not. The die picker names it and says what it
   does; the skills' descriptions do not mention it.
@@ -258,8 +267,9 @@ Built in a first version (2026-11-15), to be judged in play; screenshots with
   life. They float in a column beside whoever wears it, on the side away from the others, each
   with its face turned to the camera, the first of the hand lowest. A new one (Defender, a round's
   rest, the fight starting) drops in tumbling. At rest they are never still: each drifts, bobs
-  and turns a little at a pace of its own, and the ones on the plate rock with them. The Joker
-  is the same cube in black lacquer with a vermilion star on every face.
+  and turns a little at a pace of its own (`HandDie.sway`, `pace`), and the ones on the plate rock
+  with them. The Comodín is the same cube in black lacquer with a vermilion star on every face
+  (`dressDie`), on the plate and in the hand too.
 - **The throw** (`updateDice`, `DICE` in `src/battle-scene.ts`): the wearer stays put and raises a
   hand; the die leaves the column, flies at the target tumbling, lands and bounces off to the
   floor. A bet goes straight up first and comes down large over the wearer's head showing what it
@@ -306,6 +316,9 @@ Built (2026-11-15), level 1 only:
   wearer's `lastFace`. Targets follow the die (`validTargets(…, die)`, `dieSkill`); `bestDie` picks
   hand, scissors, eye, brackets, skipping what can do nothing. `BattleEffect.die` says the face, its
   place and what it did (`as`); `BattleEffect.dealt` the dice Defender brought.
+- **Comodín** (2026-11-19): `dealDie` deals it instead of a face `COMODIN_CHANCE` of the times, or
+  `COMODIN_AFTER_DUAL` for the first die after a dual (`Combatant.comodinDue`, set in `actDual`);
+  its move is `cara-comodin`, on every foe (the `all-foes` path), first in `bestDie`.
 - **Look**: the ornaments are one SVG path each (`src/die-faces.ts`), printed on the 3D die's
   texture (`src/dice.ts`) and drawn in the hand, on the plate and in the picker, where each row
   says what the die does and greys out if it can do nothing now.

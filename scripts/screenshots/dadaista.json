@@ -1,6 +1,6 @@
 {
   "title": "Dadaísta · los dados",
-  "description": "Dadaísta (docs/animas/dadaista/), the university friends' ánima: its maná is dice, floating beside whoever wears it and shown on the plate, each face a move (a hand, scissors, an eye, brackets, a red blank). Tirar dado spends the die chosen and does what its face says. Gerard wears it in the fight tester beside Aitor's Matemágico, against two sturdy dogs. Run it with --gpu.",
+  "description": "Dadaísta (docs/animas/dadaista/), the university friends' ánima: its maná is dice, floating beside whoever wears it and shown on the plate, each face a move (a hand, scissors, an eye, brackets, a red blank), and now and then the Comodín, a black die with a red star that lands a hand on every foe. Tirar dado spends the die chosen and does what its face says. Gerard wears it in the fight tester beside Aitor's Matemágico, against two sturdy dogs. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22dadaista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22dadaista%22%2C%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Afalse%2C%22immune%22%3Afalse%7D"
@@ -237,6 +237,61 @@
       "fps": 30,
       "tiles": 12,
       "caption": "En blanco repeating Tijeras: its red empty frame is stamped first, then the cut is drawn inside it"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 400; }); const g = s.allies.find(a => a.id === 'gerard'); g.dice = ['comodin', 'mano']; g.secondary = 2; });"
+    },
+    {
+      "wait": 1400
+    },
+    {
+      "shot": "comodin",
+      "delay": 300,
+      "caption": "The Comodín: now and then a die dealt is the black one with the red star, beside Gerard and on his plate"
+    },
+    {
+      "press": "Digit2",
+      "gap": 400
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"tirar-dado\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "shot": "elige-comodin",
+      "delay": 300,
+      "caption": "In the hand it goes first: «Comodín · Golpe fuerte a todos»"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-die=\"0\"]').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "comodin",
+      "seconds": 2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "The Comodín: its red star stamped on each dog, one after the other, and a hand lands on each"
     },
     {
       "until": "window.turn && window.turn('aitor')",

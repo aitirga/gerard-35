@@ -16,14 +16,16 @@ export const FACE_ICONS: Record<DieFace, string> = {
   corchete: 'M22 18H44V27H32V73H44V82H22Z M78 18H56V27H68V73H56V82H78Z',
   // Nothing printed: an empty red frame.
   blanco: 'M20 20H80V80H20Z M28 28V72H72V28Z',
+  // The Comodín: a four-pointed star, in red on its black lacquer.
+  comodin: 'M50 8L60 40L92 50L60 60L50 92L40 60L8 50L40 40Z',
 };
-/** The ink each face is printed in: the blank is the die's red. */
+/** The ink each face is printed in: the blank is the die's red, and so is the Comodín's star on its black. */
 export const FACE_INK = { ink: '#1c1917', red: '#d9422b' } as const;
-export const faceInk = (face: DieFace) => face === 'blanco' ? FACE_INK.red : FACE_INK.ink;
+export const faceInk = (face: DieFace) => face === 'blanco' || face === 'comodin' ? FACE_INK.red : FACE_INK.ink;
 /** Each face's name in the hand and what it does there, in plain words. */
-export const FACE_NAMES: Record<DieFace, string> = { mano: 'Mano', tijeras: 'Tijeras', ojo: 'Ojo', corchete: 'Corchete', blanco: 'En blanco' };
+export const FACE_NAMES: Record<DieFace, string> = { mano: 'Mano', tijeras: 'Tijeras', ojo: 'Ojo', corchete: 'Corchete', blanco: 'En blanco', comodin: 'Comodín' };
 /** What each face does when its die is spent, in a few words for the hand (the moves' own descriptions are in `SKILLS`). */
-export const FACE_LINES: Record<Exclude<DieFace, 'blanco'>, string> = { mano: 'Golpe fuerte', tijeras: 'Golpe y sangrado', ojo: 'Punto débil', corchete: 'Protege a un aliado' };
+export const FACE_LINES: Record<Exclude<DieFace, 'blanco'>, string> = { mano: 'Golpe fuerte', tijeras: 'Golpe y sangrado', ojo: 'Punto débil', corchete: 'Protege a un aliado', comodin: 'Golpe fuerte a todos' };
 /** A face as inline SVG, for the hand and the plates. */
 export const faceSvg = (face: DieFace) => `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill="${faceInk(face)}" d="${FACE_ICONS[face]}"/></svg>`;
 
@@ -51,4 +53,5 @@ export const FACE_STROKES: Record<DieFace, readonly Stroke[]> = {
   ojo: [curve([8, 50], [50, 14], [92, 50]), curve([8, 50], [50, 86], [92, 50]), circle(50, 50, 12, 16)],
   corchete: [[[44, 18], [22, 18], [22, 82], [44, 82]], [[56, 18], [78, 18], [78, 82], [56, 82]]],
   blanco: [[[20, 20], [80, 20], [80, 80], [20, 80], [20, 20]]],
+  comodin: [[[50, 8], [60, 40], [92, 50], [60, 60], [50, 92], [40, 60], [8, 50], [40, 40], [50, 8]]],
 };

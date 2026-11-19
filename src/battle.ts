@@ -103,6 +103,8 @@ export const SKILLS = [
   { id: 'cara-ojo', name: 'Ojo', cost: 1, side: 'foes', power: 10, kind: 'physical', mark: true, face: 'ojo', description: 'Daño leve físico a un enemigo. El siguiente ataque que reciba hace el triple de daño.', class: 'dadaista' },
   // Corchete: an ally held between brackets takes a third of every blow until the round ends, as Defender.
   { id: 'cara-corchete', name: 'Corchete', cost: 1, side: 'allies', power: 0, kind: 'guard', face: 'corchete', description: 'Protege a un aliado hasta el final de la ronda.', class: 'dadaista' },
+  // Comodín: the rare die with the star (`COMODIN_CHANCE`), a hand's blow on every foe standing.
+  { id: 'cara-comodin', name: 'Comodín', cost: 1, side: 'all-foes', power: 38, kind: 'physical', face: 'comodin', description: 'Daño alto físico a todos los enemigos.', class: 'dadaista' },
 ] as const;
 /**
  * Maná (docs/combat.md § Maná): what skills spend, shown as circles. Every ánima has its own, for
@@ -688,6 +690,8 @@ export interface Combatant {
   dice?: DieFace[];
   /** Dadaísta: the last face spent this fight, the one a blank die repeats. */
   lastFace?: Exclude<DieFace, 'blanco'>;
+  /** Dadaísta: they took part in a dual attack, and the next die dealt to them is likelier the Comodín (`COMODIN_AFTER_DUAL`). */
+  comodinDue?: boolean;
   /** Ánimas worn at some moment of this round: they do not rest at its end. */
   worn?: ClassId[];
   /** The ánimas this fighter can switch between (L / R): their own and the extras they equipped (docs/party.md). */
@@ -1336,14 +1340,30 @@ export const weakSpotRounds = (state: BattleState, c: Combatant) => c.weakSpot !
  * Tirar dado spends the die chosen and does what its face says (`FACE_SKILLS`).
  */
 export const DICED: ClassId = 'dadaista';
-/** What a face can show. Blanco does nothing of its own: it repeats the last face spent (`lastFace`). */
-export type DieFace = 'mano' | 'tijeras' | 'ojo' | 'corchete' | 'blanco';
+/**
+ * What a face can show. Blanco does nothing of its own: it repeats the last face spent (`lastFace`).
+ * The Comodín is not a face of the die but a die of its own (black lacquer, a vermilion star).
+ */
+export type DieFace = 'mano' | 'tijeras' | 'ojo' | 'corchete' | 'blanco' | 'comodin';
 /** The die's six faces: two hands, and one of each of the rest. */
 export const DIE_FACES: readonly DieFace[] = ['mano', 'mano', 'tijeras', 'ojo', 'corchete', 'blanco'];
 /** The move each face does when its die is spent. */
-export const FACE_SKILLS: Record<Exclude<DieFace, 'blanco'>, SkillId> = { mano: 'cara-mano', tijeras: 'cara-tijeras', ojo: 'cara-ojo', corchete: 'cara-corchete' };
+export const FACE_SKILLS: Record<Exclude<DieFace, 'blanco'>, SkillId> = { mano: 'cara-mano', tijeras: 'cara-tijeras', ojo: 'cara-ojo', corchete: 'cara-corchete', comodin: 'cara-comodin' };
 /** One roll of the fight's dice: a face. */
 export const rollFace = (state: BattleState): DieFace => DIE_FACES[Math.floor(roll(state) * DIE_FACES.length)];
+/**
+ * The Comodín (Aitor, 2026-11-15; on the faces since 2026-11-19): now and then a die dealt is not a
+ * face but the Comodín, `COMODIN_CHANCE` of them, and a hand's blow on every foe standing. A dual
+ * attack calls it: the next die dealt to whoever took part in one (`Combatant.comodinDue`) is the
+ * Comodín `COMODIN_AFTER_DUAL` of the times.
+ */
+export const COMODIN_CHANCE = .02, COMODIN_AFTER_DUAL = .2;
+/** A die dealt to `c`'s hand: a face of the die or, rarely, the Comodín (less rarely on the first die after a dual). */
+function dealDie(state: BattleState, c: Combatant): DieFace {
+  const chance = c.comodinDue ? COMODIN_AFTER_DUAL : COMODIN_CHANCE, r = roll(state);
+  delete c.comodinDue;
+  return r < chance ? 'comodin' : DIE_FACES[Math.min(DIE_FACES.length - 1, Math.floor((r - chance) / (1 - chance) * DIE_FACES.length))];
+}
 /**
  * `c`'s dice, in the order they came: as many as their Dadaísta holds maná now, whether they wear it
  * or it rests. Maná that came since the last look is rolled here, so the hand is always in step.
@@ -1352,7 +1372,7 @@ export function diceOf(state: BattleState, c: Combatant): DieFace[] {
   if (!state.allies.includes(c) || (c.classId !== DICED && !kitIn(state, c).includes(DICED))) return [];
   const most = manaMax(state.improved, DICED), count = c.classId === DICED ? c.secondary : Math.min(most, c.mana?.[DICED] ?? most);
   const hand = c.dice ??= [];
-  while (hand.length < count) hand.push(rollFace(state));
+  while (hand.length < count) hand.push(dealDie(state, c));
   hand.length = Math.min(hand.length, count);
   return hand;
 }
@@ -1365,8 +1385,8 @@ export function dieSkill(state: BattleState, at: number): SkillId | undefined {
   const actor = state.allies[state.active], face = actor && diceOf(state, actor)[at], as = actor && face ? faceAs(actor, face) : undefined;
   return as && FACE_SKILLS[as];
 }
-/** Which faces go first when nobody chose: a blow, a wound, an eye (on a foe not marked yet), then the rest. */
-const FACE_ORDER: readonly Exclude<DieFace, 'blanco'>[] = ['mano', 'tijeras', 'ojo', 'corchete'];
+/** Which faces go first when nobody chose: the Comodín, a blow, a wound, an eye (on a foe not marked yet), then the rest. */
+const FACE_ORDER: readonly Exclude<DieFace, 'blanco'>[] = ['comodin', 'mano', 'tijeras', 'ojo', 'corchete'];
 /** The die the active ally spends when nobody chose: by `FACE_ORDER`, a blank after the face it repeats; −1 when no die can do anything. */
 export function bestDie(state: BattleState) {
   const actor = state.allies[state.active], hand = actor ? diceOf(state, actor) : [];
@@ -1380,7 +1400,8 @@ function spendDie(actor: Combatant, hand: DieFace[], at: number, effect: BattleE
   const face = hand[at], as = faceAs(actor, face)!;
   effect.die = { face, at, as };
   hand.splice(at, 1); actor.secondary--;
-  actor.lastFace = as;
+  // A blank after the Comodín repeats its hand, on one foe: the star is not repeated.
+  actor.lastFace = as === 'comodin' ? 'mano' : as;
 }
 /** The action is validated before payment, just as it is in the generic command resolver. */
 function spendSecondary(actor: Combatant, cost: number) {
@@ -1928,14 +1949,16 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     state.message = `${actor.name} usa ${ability.name} contra ${target.name}. ${statNames(ability.stats)} −${ability.power} durante ${BOOST_ROUNDS} rondas.`;
   } else if (everyone && annulled(state, actor, elementOf(ability), ability?.kind)) {
     // Fran's salon: the light eats a blow on everyone of its element too.
-    spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = target!.id;
+    if (cast === undefined) spendSecondary(actor, ability!.cost);
+    effect.skill = skill; effect.target = target!.id;
     const light = annulled(state, actor, elementOf(ability), ability?.kind)!;
     effect.annulled = light; effect.amount = 0;
     effect.hits = targets.map(foe => ({ target: foe.id, amount: 0 }));
     state.message = `${actor.name} usa ${ability!.name}. ${annulledText(light)}`;
   } else if (everyone) {
-    // Las dos a la vez: Haru and Yuki go for every foe at once.
-    spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = target!.id;
+    // Las dos a la vez: Haru and Yuki go for every foe at once; the Comodín, a hand on each (its die paid already).
+    if (cast === undefined) spendSecondary(actor, ability!.cost);
+    effect.skill = skill; effect.target = target!.id;
     if ('element' in ability!) effect.element = ability.element;
     const blow: Blow = ability!.kind === 'physical' ? 'physical' : 'magic';
     effect.hits = targets.map(foe => {
@@ -2198,6 +2221,8 @@ export function actDual(state: BattleState, id: DualId, targetId?: string): Batt
   const target = targets.find(f => f.id === targetId) ?? targets[0];
   spendSecondary(a, cost[halves[0]]!); spendSecondary(b, cost[halves[1]]!);
   took(state, a); took(state, b);
+  // A dual calls the Comodín: the next die dealt to either of them (the hand is brought in step first, so it is a die still to come).
+  for (const c of [a, b]) if (kitIn(state, c).includes(DICED)) { diceOf(state, c); c.comodinDue = true; }
   (state.spent ??= []).push(b.id);
   (state.usedDuals ??= []).push(d.id);
   if (state.queued) delete state.queued[b.id];

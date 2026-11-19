@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, act, diceOf, dieUse, dieSkill, bestDie, validTargets, skillsFor, enemyAct, MANA_POINTS, DEFEND_CHARGE, DICED, DIE_FACES, FACE_SKILLS, SKILLS, CLASS_STATS } from '../src/battle.ts';
+import { createBattle, act, diceOf, dieUse, dieSkill, bestDie, validTargets, skillsFor, enemyAct, MANA_POINTS, DEFEND_CHARGE, DICED, DIE_FACES, FACE_SKILLS, SKILLS, CLASS_STATS, COMODIN_CHANCE, COMODIN_AFTER_DUAL } from '../src/battle.ts';
 
 // Dadaísta (docs/animas/dadaista/): its maná is dice, and each face is a move of its own.
 const fight = (seed = 7) => { const s = createBattle(1, 1, false, 'dadaista'); s.seed = seed; s.foes[0].hp = s.foes[0].maxHp = 999; return s; };
@@ -11,7 +11,7 @@ test('Dadaísta holds one die for each point of maná, each showing one of its s
   const s = fight(), hand = diceOf(s, gerard(s));
   assert.equal(DICED, 'dadaista');
   assert.equal(hand.length, MANA_POINTS);
-  assert.ok(hand.every(face => DIE_FACES.includes(face)));
+  assert.ok(hand.every(face => DIE_FACES.includes(face) || face === 'comodin'));
   assert.deepEqual([...DIE_FACES].sort(), ['blanco', 'corchete', 'mano', 'mano', 'ojo', 'tijeras']);
   assert.equal(diceOf(s, gerard(s)), hand, 'looking again does not roll again');
   assert.deepEqual(diceOf(createBattle(1, 1, false, 'matemagico'), gerard(createBattle(1, 1, false, 'matemagico'))), [], 'nobody else has dice');
@@ -100,4 +100,37 @@ test('Tirar dado is abstract (it does what its die says); every face has a move 
   assert.equal(SKILLS.find(skill => skill.id === 'tirar-dado').abstract, true);
   for (const id of Object.values(FACE_SKILLS)) { const skill = SKILLS.find(s => s.id === id); assert.ok(skill && !skill.abstract && 'face' in skill, id); }
   assert.equal(SKILLS.some(skill => skill.id === 'doble-o-nada'), false, 'Doble o nada is gone');
+});
+
+test('the Comodín lands a hand on every foe standing, goes first, and a blank after it repeats a hand on one', () => {
+  const s = createBattle(1, 3, false, 'dadaista'); s.seed = 7;
+  for (const foe of s.foes) foe.hp = foe.maxHp = 999;
+  gerard(s).dice = ['mano', 'comodin', 'blanco']; gerard(s).secondary = 3;
+  assert.equal(bestDie(s), 1, 'the Comodín before a hand');
+  assert.equal(dieSkill(s, 1), 'cara-comodin');
+  assert.deepEqual(validTargets(s, 'skill', 'tirar-dado', 1).map(c => c.id).sort(), s.foes.map(f => f.id).sort());
+  const effect = act(s, 'skill', 'dog-0', 'tirar-dado', 1);
+  assert.deepEqual(effect.die, { face: 'comodin', at: 1, as: 'comodin' });
+  assert.equal(effect.hits.length, 3, 'every foe standing');
+  assert.ok(effect.hits.every(h => h.amount > 30), `a hand's blow on each: ${effect.hits.map(h => h.amount)}`);
+  assert.equal(gerard(s).secondary, 2, 'one die, one point of maná');
+  assert.equal(gerard(s).lastFace, 'mano', 'the star is not repeated');
+  s.phase = 'player'; s.active = 0;
+  assert.equal(dieSkill(s, 1), 'cara-mano', 'the blank repeats a hand');
+});
+
+test('the Comodín comes rarely, and more often in the first die after a dual', () => {
+  const share = due => {
+    let comodin = 0;
+    for (let seed = 1; seed <= 3000; seed++) {
+      const s = fight(seed); gerard(s).dice = []; gerard(s).secondary = 1; if (due) gerard(s).comodinDue = true;
+      if (diceOf(s, gerard(s))[0] === 'comodin') comodin++;
+      assert.equal(gerard(s).comodinDue, undefined, 'only the next die is called');
+    }
+    return comodin / 3000;
+  };
+  const plain = share(false), called = share(true);
+  assert.ok(Math.abs(plain - COMODIN_CHANCE) < .015, `plain ${plain}`);
+  assert.ok(Math.abs(called - COMODIN_AFTER_DUAL) < .04, `after a dual ${called}`);
+  assert.ok(!DIE_FACES.includes('comodin'), 'it is not a face of the die');
 });

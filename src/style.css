@@ -2157,6 +2157,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
   box-shadow: inset 0 0 0 1px #1c191733, inset 0 -2px 3px #7a603c66, 0 1px 3px #000a;
 }
 :is(.die-face, .vitals-pips i[data-face]) svg { width: 78%; height: 78%; display: block; }
+/* The Comodín: black lacquer, its red star glowing a little, the one die to spot at a glance. */
+:is(.die-face, .vitals-pips i)[data-face="comodin"] { background: #1c1917; box-shadow: inset 0 0 0 1px #efe6cf66, 0 0 6px #d9422b99, 0 1px 3px #000a; }
 /* The hand on the plate: each point of maná a die with its face up; a spent one, the empty place it left. */
 .vitals.has-dice .vitals-pips { gap: 6px; align-items: center; }
 .vitals.has-dice .vitals-pips i { width: 21px; height: 21px; border-radius: 5px; }
