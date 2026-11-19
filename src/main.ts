@@ -32,6 +32,8 @@ import { setWallFolding } from './home-scenery';
 import { createInteractionPrompt } from './interaction-prompt';
 import { createAudio } from './audio';
 import { createMusic, isTrack, type TrackId } from './music';
+import { createVozSong } from './voz-song';
+import { CUERDAS_PLACE, QUALITIES } from './friends/marta';
 import { castleHaunt } from './haunt';
 import { createSfx, watchMenuSounds } from './sfx';
 import { impactSounds, startSounds, type Cue } from './battle-sounds';
@@ -62,6 +64,8 @@ const homeLights = createHomeLights();
 const audio = createAudio();
 const music = createMusic(audio);
 const sfx = createSfx(audio);
+// La Voz's song: Marta's recording, held to her fight's clock (src/voz-song.ts).
+const vozSong = createVozSong(audio);
 // Registered before the menus so Escape is heard before they take it.
 const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#controller-menu[open], #hud[data-panel], #lamp-dial:not([hidden]), #travel:not([hidden]), #jar-panel:not([hidden]), #parcelas-panel:not([hidden]), #candado-panel:not([hidden])'));
 /** The fight's sounds, from their table (src/battle-sounds.ts). */
@@ -78,21 +82,30 @@ const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has(
 function scorePlace(id: EnvironmentId) {
   place = id;
   if (battlePhase || devSong) return;
+  // Marta's song is only Las cuerdas' (its clock is the mazes', `onCuerdasSong`): anywhere else it fades.
+  if (id !== CUERDAS_PLACE) vozSong.stop(1.5);
   const song = PLACE_SONGS[id];
   music.haunt(castleHaunt(story));
   // A streamed take can only start after the first key or click.
   if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase) void music.play(song, { from: 'random', fade: 4 }); });
   else if (music.playing && Object.values(PLACE_SONGS).includes(music.playing)) music.stop({ fade: 2 });
 }
-/** The fight's song: it comes in with the fight, plays its ending on a win and fades on a fall, an escape or leaving. */
+/**
+ * The fight's song: it comes in with the fight, plays its ending on a win and fades on a fall, an
+ * escape or leaving. La Voz sings her own (src/voz-song.ts), with nothing under it.
+ */
 let battlePhase: BattleState['phase'] | undefined;
 function scoreBattle(state: BattleState | undefined) {
   const was = battlePhase;
   battlePhase = state?.phase;
   if (battlePhase === was) return;
+  const sung = !!state?.song;
+  // A fight that is not hers takes over from her song far off; it comes back where it left off after.
+  if (state && was === undefined && !sung) vozSong.stop(.8);
+  if (!state || battlePhase === 'won' || battlePhase === 'lost' || battlePhase === 'escaped') vozSong.stop(battlePhase === 'won' ? 2 : 1);
   if (!state) { if (music.playing === 'battle') music.stop({ fade: 1.5 }); if (place) scorePlace(place); }
-  else if (was === undefined) void music.play('battle', { restart: true, fade: .4 });
-  if (battlePhase === 'won') void music.jump('ending', { at: 'bar', loop: false });
+  else if (was === undefined) { if (sung) music.stop({ fade: .4 }); else void music.play('battle', { restart: true, fade: .4 }); }
+  if (battlePhase === 'won' && !sung) void music.jump('ending', { at: 'bar', loop: false });
   else if (battlePhase === 'lost') music.stop({ fade: 2.5 });
   else if (battlePhase === 'escaped') music.stop({ fade: 1 });
 }
@@ -266,6 +279,8 @@ try {
     slowmo: (scale, seconds) => game.slowmo(scale, seconds),
     // …and its clock follows the scene's, whatever slows it (the choreography slows itself further).
     speed: () => game.fightSpeed(),
+    // La Voz's recording plays where her fight's clock is.
+    song: (t, rate) => vozSong.follow(t, rate),
   });
   /** Re-applies who drives Aitor after the mode or the second controller changes. */
   function controlChanged() {
@@ -307,6 +322,7 @@ try {
     else if (effect.kind === 'palace') { await game.raisePalace(); storyEvent({ type: 'palace' }); }
     else if (effect.kind === 'gate') await game.popGate();
     else if (effect.kind === 'travel') game.setEnvironment(effect.environment, effect.cell);
+    else if (effect.kind === 'song') void audio.unlocked.then(() => music.play(effect.track, { restart: true, fade: 0 }));
     else if (effect.kind === 'snow') { if (effect.on) sfx.play('pickup'); await storyUI.snow(effect.on); }
     else if (effect.kind === 'drain') await game.riseFromDrain();
     else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }
@@ -572,6 +588,8 @@ try {
     // Backing off is neither a win nor a fall.
     onSound: (id, options) => sfx.play(id, options),
     onBed: (id, level) => sfx.bed(id, level),
+    // Las cuerdas: Marta's voice far off on the mazes' clock, nearer with each quality beaten (docs/quests/marta.md).
+    onCuerdasSong: (t, rate) => vozSong.far(t, story.has('voz') ? 0 : rate, story.marta.beaten.length / QUALITIES.length),
     onBattleEnd: (phase, encounter, worn, xp) => {
       // Fought again or stepped back from, a fall never reaches the story; a test fight fought again stays a test.
       if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.refreshStory(); } return; }

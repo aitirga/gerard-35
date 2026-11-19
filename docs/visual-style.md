@@ -404,7 +404,7 @@ screenshots (`just screenshots marta --gpu`, the centre).
 | | |
 | --- | --- |
 | Dominant | Dark petrol blue-green `#1b3844` on screen: the way's glass `#0f2f3a` over the void `#04151b` |
-| Secondary | Silver light `#dfe9ee` (strings, edges, posts); the four notes' colours on the mazes' pieces only: amber, pale blue, green, coral |
+| Secondary | Silver light `#dfe9ee` (strings, edges, posts); the six notes Marta sings, on the mazes' pieces and La Voz's ring only (`TONES` in `src/song.ts`): Do teal, Re green, Fa silver, Sol blue, La amber, Si♭ coral |
 | Material | Strings of silver light, taut and straight; slabs of dark glass edged in silver |
 | Ground | None: the way is glass hung over nothing, and a maze's pieces are there only while their note sounds |
 | Landmark | The point high over the centre where every string meets, with its rings and the shaft under it (kind: lines converging on one point) |

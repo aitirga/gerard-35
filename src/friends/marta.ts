@@ -110,7 +110,7 @@ export const LINES_MARTA = {
   ] as Dialogue[],
   /** What Aitor notices before each maze: what the floor does, never what to do. */
   mazes: [
-    group('aitor', aitor('Las losas van y vienen con la voz. La ámbar está mientras suena la nota grave.'), gerard('Y cuando calla, se cae.')),
+    group('aitor', aitor('Las losas van y vienen con su voz. La de lejos.'), gerard('La ámbar está mientras canta la nota alta. La plateada, con la otra.'), aitor('Y cuando cambia de nota, se caen.')),
     group('aitor', aitor('Estas están rajadas.'), gerard('No aguantarán que pasemos dos veces.'), aitor('Y al otro lado no hay nada. Solo el marco de algo.')),
     group('aitor', gerard('Aquí las filas no suenan cuando toca. No hay por dónde pasar.'), aitor('Clavijas. Como las del piano. Cada una afina su fila.')),
   ] as Dialogue[],

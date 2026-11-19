@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
-import { PHRASES, TONES, phraseLength } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, FEAR_ENCOUNTERS, createFearBattle, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, createBattle, createGuardBattle, createMinionBattle, enemyAct, nextRound, palaceGuards, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId } from './battle';
+import { TONES, VOZ_SONG, turnAt } from './song';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
@@ -125,6 +125,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   slowmo?: (scale: number, seconds: number) => void;
   /** How fast the 3D fight runs now (1: full speed), all its slow motions together: the fight's clock follows it. */
   speed?: () => number;
+  /**
+   * La Voz's song, every frame of her fight: seconds into it on the fight's clock, and how fast that
+   * clock runs now (0 while it is stopped), so her recording plays exactly where the fight is.
+   */
+  song?: (t: number, rate: number) => void;
 }) {
   const COMMANDS = commandsFor(!!callbacks.dev?.());
   /** The commands, one set in each dock: with two players both choose at once, each in their own. */
@@ -296,7 +301,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const song = c.kind === 'voz' && state?.song ? songNow(state) : undefined;
     return shownHp(c) > 0 ? [
       // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
-      ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño mientras suena una nota.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: PHRASES[state!.song!.phrase].name }] : [],
+      ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño mientras suena una nota.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
       ...weak ? [{ id: 'punto-debil' as const, name: `Punto débil: el siguiente golpe hace el triple`, mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weak) }] : [],
       ...(Object.entries(c.statuses ?? {}).filter(([, n]) => n) as [StatusId, number][]).map(([id, n]) => ({ id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) })),
       ...(Object.entries(shownTimed(c)).filter(([, on]) => on) as [TimedId, Timed][]).map(([id, on]) => ({ id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` })),
@@ -387,18 +392,18 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function drain(plate: Element, c: Combatant) {
     const tune = c.kind === 'voz' && state?.song ? plate.querySelector<HTMLElement>('.status-icon[data-status="cancion"]') : null;
     if (tune && state?.song) {
-      // The ring is the whole phrase, each note an arc in its colour and each silence a gap; the hand goes round once a phrase.
-      const phrase = PHRASES[state.song.phrase], length = phraseLength(phrase), now = songNow(state)!;
-      tune.style.setProperty('--left', (1 - (state.song.t % length) / length).toFixed(4));
+      // The ring is the turn of her phrase she is singing, each note an arc in its colour and each
+      // silence a gap, in her recording's rhythm; the hand goes round once a turn.
+      const turn = turnAt(VOZ_SONG, state.song.t), { length } = turn, now = songNow(state)!;
+      tune.style.setProperty('--left', (1 - (state.song.t - turn.start) / length).toFixed(4));
       tune.style.setProperty('--status', now.sounding ? TONES[now.tone].colour : '#7f97a3');
       tune.toggleAttribute('data-sounding', now.sounding);
-      if (tune.dataset.ticks !== state.song.phrase) {
-        tune.dataset.ticks = state.song.phrase;
-        let at = 0;
-        const arcs = phrase.beats.map(beat => {
-          const from = at / length * 360, to = (at + beat.sing) / length * 360;
-          at += beat.sing + beat.rest;
-          return `#1b1216 ${from}deg, ${TONES[beat.tone].colour} ${from}deg ${to}deg, #1b1216 ${to}deg ${at / length * 360}deg`;
+      const key = turn.start.toFixed(3);
+      if (tune.dataset.ticks !== key) {
+        tune.dataset.ticks = key;
+        const arcs = turn.beats.map((beat, i) => {
+          const from = beat.at / length * 360, to = (beat.at + beat.sing) / length * 360, next = (turn.beats[i + 1]?.at ?? length) / length * 360;
+          return `#1b1216 ${from}deg, ${TONES[beat.tone].colour} ${from}deg ${to}deg, #1b1216 ${to}deg ${next}deg`;
         });
         tune.style.setProperty('--ticks', `conic-gradient(${arcs.join(', ')})`);
       }
@@ -487,8 +492,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     clockFrame = requestAnimationFrame(tickClock);
     // A hidden tab or a long frame never burns a fight away at once.
     // As fast as the 3D fight runs (a dual's banner, Punto débil's aim slowing it further), or the banner's own slow.
-    const seconds = Math.min(.1, Math.max(0, (now - clockLast) / 1000)) * (callbacks.speed?.() ?? clockScale(now)); clockLast = now;
-    if (!state || root.dataset.entering || root.dataset.beat || callbacks.paused()) return;
+    const rate = callbacks.speed?.() ?? clockScale(now), seconds = Math.min(.1, Math.max(0, (now - clockLast) / 1000)) * rate; clockLast = now;
+    const stopped = !state || !!root.dataset.entering || !!root.dataset.beat || callbacks.paused();
+    if (state?.song && !['won', 'lost', 'escaped'].includes(state.phase)) callbacks.song?.(state.song.t, stopped ? 0 : rate);
+    if (!state || stopped) return;
     const pulses = runClock(state, seconds, c => heldFire.has(c.id));
     const sung = showSong();
     // What a pulse brought on (Vertitrón's eye burnt out) plays once nothing else is.
@@ -520,14 +527,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const news = takeSongNews(state);
     for (const item of news) {
       if (item.kind === 'eco') {
-        callbacks.sound(`nota-${item.tone}`);
+        // No note is played here: her recording is the song, and it is playing (`callbacks.song`).
         for (const hit of item.hits) if (hit.amount) pop(hit.target, `−${hit.amount}`, 'damage', 'Eco');
         // Her icon flashes as the note starts, as a fire's does when it burns.
         root.querySelectorAll<HTMLElement>('.status-icon[data-status="cancion"]').forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
       } else if (item.kind === 'crescendo' && voz) pop(voz.id, 'Crescendo', 'status', roman(item.level), 'crescendo');
     }
     // The plate says it again when the note changes (the icon's colour is set every frame, `drain`).
-    const said = `${songLabel(state) ?? ''}${state.song.phrase}${voz?.crescendo ?? 0}`;
+    const said = `${songLabel(state) ?? ''}${state.song.part}${voz?.crescendo ?? 0}`;
     const changed = said !== songSaid || news.length > 0;
     songSaid = said;
     return changed;

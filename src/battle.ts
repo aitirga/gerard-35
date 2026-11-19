@@ -2,7 +2,7 @@
 import { adjustResource } from './combat/engine.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
-import { PHRASES, TONES, onsets, songAt, type Moment, type PhraseId, type ToneId } from './song.ts';
+import { TONES, VOZ_SONG, onsets, songAt, type Moment, type ToneId } from './song.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
 export type BattlePhase = 'player' | 'enemy' | 'beat' | 'won' | 'lost' | 'escaped';
@@ -356,7 +356,9 @@ export const MARTA = {
   juramento: 36, lazoEvery: 4, resonancia: 12, resonanciaStep: 12, resonanciaMost: 48,
   cristalPhysical: 1.5, reflect: .5, destello: 34, crack: .5, estallido: 14, prisma: 16,
   directo: 44, linea: 26, estocada: 60, clavado: 3.5,
-  eco: 1, ecoStep: .5, crescendo: 1, acorde: 1.5, vozDirecto: 54, coro: 32, calderon: 20,
+  // Her song is Marta's recording (src/song.ts): some 64 notes in 87 s, so each Eco starts at nothing and grows a
+  // PV every ten Crescendos, and each Crescendo is half a point of Magia (2026-11-19, `just fight-sim`).
+  eco: 0, ecoStep: .1, crescendo: .5, acorde: 1.5, vozDirecto: 64, coro: 32, calderon: 20,
   allegro: .6, capela: .25,
 };
 /** Lo Directo's turns, in order, round and round; each is said a turn ahead. */
@@ -371,6 +373,9 @@ export const VOZ_TURNS = {
   allegro: ['coro', 'nota-clara', 'golpe-directo'],
   'a-capela': ['aliento', 'calderon', 'golpe-directo'],
 } as const satisfies Record<'andante' | 'allegro' | 'a-capela', readonly FoeAbilityId[]>;
+/** La Voz's three parts, by her PV: each its own round of turns, over the same song. */
+export type VozPart = keyof typeof VOZ_TURNS;
+export const VOZ_PARTS: Record<VozPart, string> = { andante: 'Andante', allegro: 'Allegro', 'a-capela': 'A capela' };
 /** The second voice La Voz calls in Allegro: an Eco by another name, so it is not taken for her song's. */
 export const SECOND_VOICE = 'segunda-voz';
 /** How hard a Dado's Tumbarse is at average stats with `face` up. */
@@ -738,18 +743,19 @@ export interface BattleState {
   /** Development: EXP added to what the foes are worth (the picker's «Victoria subiendo de nivel»). */
   extraXp?: number;
   /**
-   * La Voz's song (docs/quests/marta.md § Final boss): the phrase she sings, seconds into it on the
-   * fight's clock, and who last landed a blow on her and in which note (`struck`, for the Acorde).
+   * La Voz's song (docs/quests/marta.md § Final boss): the part she is in (by her PV), seconds into
+   * her recording on the fight's clock (`VOZ_SONG`, the same in every part), and who last landed a
+   * blow on her and in which note (`struck`, for the Acorde).
    */
-  song?: { phrase: PhraseId; t: number; struck?: { loop: number; index: number; by: string } };
-  /** What the song did since it was last asked (`takeSongNews`): an Eco, a Crescendo, a new phrase. */
+  song?: { part: VozPart; t: number; struck?: { loop: number; index: number; by: string } };
+  /** What the song did since it was last asked (`takeSongNews`): an Eco, a Crescendo, a new part. */
   songNews?: SongNews[];
 }
 /** Something the song did on its own, for the fight to show. */
 export type SongNews =
   | { kind: 'eco'; tone: ToneId; hits: { target: string; amount: number }[] }
   | { kind: 'crescendo'; level: number }
-  | { kind: 'phrase'; phrase: PhraseId };
+  | { kind: 'part'; part: VozPart };
 /** A choice queued ahead by an ally later in the round (`queue`). */
 export interface Queued { action: 'attack' | 'defend' | 'skill'; skill?: SkillId; target?: string; die?: number }
 /**
@@ -1059,7 +1065,7 @@ function hurt(state: BattleState, c: Combatant, amount: number) {
   return changeHealth(c, -Math.max(0, Math.min(amount, c.hp)));
 }
 /** What La Voz's song is on now (`undefined` in any other fight). */
-export const songNow = (state: BattleState): Moment | undefined => state.song ? songAt(PHRASES[state.song.phrase], state.song.t) : undefined;
+export const songNow = (state: BattleState): Moment | undefined => state.song ? songAt(VOZ_SONG, state.song.t) : undefined;
 /** Whether `c` is La Voz between two notes: nothing hurts her then. */
 export const silenced = (state: BattleState, c: Combatant) => c.kind === 'voz' && !!state.song && !songNow(state)!.sounding;
 /** Whether magic comes back off `c`: Lo Cristalino until it cracks, La Voz while her Nota clara lasts. */
@@ -2212,7 +2218,7 @@ function createCuerdasBattle(party: PartySlot[], encounter: CuerdasEncounter, an
     active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
     animas: unlocked, awakened: unlocked.includes('matemagico'), seed: seedFrom(random),
     message: CUERDAS_MESSAGES[encounter],
-    ...encounter === 'voz' ? { song: { phrase: 'andante' as PhraseId, t: 0 } } : {},
+    ...encounter === 'voz' ? { song: { part: 'andante' as VozPart, t: 0 } } : {},
   };
 }
 /** How much of a blow one of Las cuerdas' foes takes, by the kind of blow (a dual counts as every kind): glass takes no magic, and more of a blow. */
@@ -2273,8 +2279,8 @@ function checkCuerdas(state: BattleState, effect?: BattleEffect) {
 }
 /** How hard an Eco's Resonancia is now: more each of its own turns. */
 export const resonancia = (c: Combatant) => Math.min(MARTA.resonanciaMost, MARTA.resonancia + MARTA.resonanciaStep * (c.turns ?? 0));
-/** The phrase La Voz sings at this much of her PV. */
-export const phraseFor = (share: number): PhraseId => share <= MARTA.capela ? 'a-capela' : share <= MARTA.allegro ? 'allegro' : 'andante';
+/** The part La Voz is in at this much of her PV. */
+export const partFor = (share: number): VozPart => share <= MARTA.capela ? 'a-capela' : share <= MARTA.allegro ? 'allegro' : 'andante';
 /**
  * Las cuerdas' foes' turns (docs/quests/marta.md), each a named move. La Lealtad strikes whoever
  * struck her last (Juramento); every `lazoEvery` turns, if her Eco is hurt or gone, she ties it back
@@ -2358,7 +2364,7 @@ function cuerdasTurn(state: BattleState, actor: Combatant, target: Combatant, ef
     }
     announce(DIRECTO_TURNS[actor.turns % DIRECTO_TURNS.length]);
   } else {
-    const cycle: readonly FoeAbilityId[] = (VOZ_TURNS as Record<string, readonly FoeAbilityId[]>)[state.song?.phrase ?? 'andante'] ?? VOZ_TURNS.andante;
+    const cycle: readonly FoeAbilityId[] = VOZ_TURNS[state.song?.part ?? 'andante'];
     const voice = state.foes.find(f => f.id === SECOND_VOICE);
     // She calls her second voice once: after that, standing or fallen, the turn is her Guardia.
     const move = cycle[turn % cycle.length] === 'coro' && voice ? 'guardia' : cycle[turn % cycle.length];
@@ -2414,22 +2420,23 @@ function cuerdasTurn(state: BattleState, actor: Combatant, target: Combatant, ef
   }
 }
 /**
- * La Voz's song goes on (the fight's clock, `runClock`): `seconds` more of it. Every note that starts
- * is an Eco on the whole party; the phrase coming round is a Crescendo; and her PV say which phrase
- * she sings (a new one starts on its first note). Returns whether anything happened to tell.
+ * La Voz's song goes on (the fight's clock, `runClock`): `seconds` more of her recording, which never
+ * stops or starts over. Every note that starts is an Eco on the whole party; her phrase coming round
+ * is a Crescendo; and her PV say which part she is in (a new one starts her turns over). Returns
+ * whether anything happened to tell.
  */
 function runSong(state: BattleState, seconds: number) {
   const song = state.song, voz = state.foes.find(f => f.kind === 'voz' && f.hp > 0);
   if (!song || !voz) return false;
   const news = state.songNews ??= [], before = news.length;
-  const wanted = phraseFor(voz.hp / voz.maxHp);
-  if (wanted !== song.phrase) {
-    song.phrase = wanted; song.t = 0; delete song.struck;
-    // A new phrase, a new round of turns: whatever she had said is called off.
+  const wanted = partFor(voz.hp / voz.maxHp);
+  if (wanted !== song.part) {
+    song.part = wanted;
+    // A new part, a new round of turns: whatever she had said is called off. The song goes on.
     voz.turns = 0; delete voz.intent; delete voz.clear; delete voz.winded;
-    news.push({ kind: 'phrase', phrase: wanted });
+    news.push({ kind: 'part', part: wanted });
   }
-  for (const onset of onsets(PHRASES[song.phrase], song.t, song.t + seconds)) {
+  for (const onset of onsets(VOZ_SONG, song.t, song.t + seconds)) {
     if (onset.round) {
       voz.crescendo = (voz.crescendo ?? 0) + 1;
       const lasting = voz.lasting ??= { shifts: {}, from: 'Crescendo' };
@@ -2441,7 +2448,7 @@ function runSong(state: BattleState, seconds: number) {
     news.push({ kind: 'eco', tone: onset.tone, hits });
   }
   song.t += seconds;
-  voz.silent = !songAt(PHRASES[song.phrase], song.t).sounding;
+  voz.silent = !songAt(VOZ_SONG, song.t).sounding;
   return news.length > before;
 }
 /** What the song did since it was last asked, in order. */
@@ -3076,14 +3083,14 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
     else if (moment === 'directo-estocada') { line.turns = DIRECTO_TURNS.indexOf('estocada'); line.intent = { ability: 'estocada', target: first.id }; }
     else { line.turns = 0; line.stuck = true; line.intent = { ability: 'golpe-directo', target: first.id }; }
   } else if (moment.startsWith('voz-')) {
-    // La Voz at the start of a phrase, nothing announced, no Crescendo yet: whole in Andante, at its mark in the others.
+    // La Voz at the start of her song, nothing announced, no Crescendo yet: whole in Andante, at its mark in the others.
     const voz = state.foes.find(f => f.kind === 'voz'), first = state.allies.find(a => a.hp > 0);
     if (!voz || !state.song || !first) return false;
     delete voz.intent; delete voz.clear; delete voz.shielded; delete voz.lasting; delete voz.crescendo; delete voz.winded; voz.turns = 0;
     state.foes = state.foes.filter(f => f.id !== SECOND_VOICE);
     const share = moment === 'voz-allegro' || moment === 'voz-coro' ? MARTA.allegro : moment === 'voz-a-capela' || moment === 'voz-calderon' ? MARTA.capela : 1;
     voz.hp = Math.max(1, Math.floor(voz.maxHp * share));
-    state.song = { phrase: phraseFor(voz.hp / voz.maxHp), t: 0 }; delete state.songNews;
+    state.song = { part: partFor(voz.hp / voz.maxHp), t: 0 }; delete state.songNews;
     if (moment === 'voz-nota-clara') {
       voz.clear = true; voz.turns = VOZ_TURNS.andante.indexOf('golpe-directo'); voz.intent = { ability: 'golpe-directo', target: first.id };
     } else if (moment === 'voz-coro') {

@@ -30,9 +30,11 @@ test('the piano does nothing until they have spoken to her; then her note takes 
   assert.equal(story.handle({ type: 'interact', id: 'talk-marta' })[0].dialogue, LINES_MARTA.waiting);
   const hour = story.clock.hour;
   const play = story.handle({ type: 'interact', id: 'piano-marta' });
-  assert.deepEqual(beats(play).slice(0, 4), ['dialogue', 'portal', 'travel', 'dialogue']);
-  assert.equal(play[1].who, 'everyone');
-  assert.deepEqual(play[2], { kind: 'travel', environment: CUERDAS_PLACE, cell: PLACES_CUERDAS.spawn });
+  // Her recording of «Izana dena geroa» comes out as Aitor plays, the first time only.
+  assert.deepEqual(beats(play).slice(0, 5), ['song', 'dialogue', 'portal', 'travel', 'dialogue']);
+  assert.equal(play[0].track, 'izana');
+  assert.equal(play[2].who, 'everyone');
+  assert.deepEqual(play[3], { kind: 'travel', environment: CUERDAS_PLACE, cell: PLACES_CUERDAS.spawn });
   assert.ok(story.has('cuerdas') && story.clock.hour > hour, 'going in takes its hour');
   // Out through the bubble and in again: no talk over, no second hour.
   assert.deepEqual(story.handle({ type: 'interact', id: 'salir-cuerdas' }), [{ kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } }]);

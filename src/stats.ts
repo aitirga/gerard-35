@@ -81,7 +81,7 @@ export const PROFILES = {
   eco: base(50, 12, 12, 8, 8, 12),
   cristalino: base(300, 10, 13, 10, 14, 10),
   directo: base(420, 14, 10, 11, 10, 11),
-  voz: base(400, 12, 13, 12, 12, 10),
+  voz: base(430, 12, 13, 12, 12, 10),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;
 

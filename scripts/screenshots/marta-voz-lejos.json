@@ -1,0 +1,87 @@
+{
+  "title": "Las cuerdas: la voz de Marta, de lejos a cerca",
+  "description": "docs/quests/marta.md § Final boss, docs/audio.md § La Voz. Marta's recording heard far off in Las cuerdas on the mazes' clock (low, muffled, mostly echo), nearer with each quality beaten, then whole and held to the fight's clock against La Voz. The box on the right reads what src/voz-song.ts is playing. Needs --chrome (Playwright's Chromium cannot decode AAC).",
+  "steps": [
+    {
+      "open": "/?mission=marta&part=maze-1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showVoice = () => { let el = document.querySelector('#voice-check'); if (!el) { el = document.createElement('div'); el.id = 'voice-check'; el.style.cssText = 'position:fixed;right:16px;top:100px;z-index:9999;padding:10px 14px;background:#101410f2;color:#e8f0e0;font:14px/1.4 ui-monospace,monospace;white-space:pre'; document.body.append(el); } const v = window.gerard.vozSong.state; el.textContent = v.at !== undefined && v.near === undefined ? `en el combate\\nsuena en ${v.at.toFixed(2)} s del archivo\\ncanción en ${(window.gerard.battleUI.fight?.song ?? '')}` : v.near !== undefined ? `de lejos: ${(v.near * 100).toFixed(0)} % cerca\\nlaberintos en ${window.gerard.game.cuerdas.t.toFixed(2)} s · archivo en ${v.at.toFixed(2)} s\\nvolumen ${v.gain.toFixed(2)}\\nfiltro ${v.cutoff.toFixed(0)} Hz` : 'nada'; return true; }; window.inSync = () => { const v = window.gerard.vozSong.state, t = window.gerard.game.cuerdas.t, want = ((1.033 + t) % 87.236); return v.at !== undefined && Math.min(Math.abs(v.at - want), 87.236 - Math.abs(v.at - want)) < .15; };"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')",
+      "timeout": 120000
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "until": "window.gerard.vozSong.state.near === 0 && window.gerard.vozSong.state.gain > .09 && window.inSync() && window.showVoice()",
+      "timeout": 30000
+    },
+    {
+      "shot": "lejos",
+      "delay": 300,
+      "caption": "First maze, nothing beaten: her song far off, low and muffled"
+    },
+    {
+      "open": "/?mission=marta&part=maze-3"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showVoice = () => { let el = document.querySelector('#voice-check'); if (!el) { el = document.createElement('div'); el.id = 'voice-check'; el.style.cssText = 'position:fixed;right:16px;top:100px;z-index:9999;padding:10px 14px;background:#101410f2;color:#e8f0e0;font:14px/1.4 ui-monospace,monospace;white-space:pre'; document.body.append(el); } const v = window.gerard.vozSong.state; el.textContent = v.at !== undefined && v.near === undefined ? `en el combate\\nsuena en ${v.at.toFixed(2)} s del archivo\\ncanción en ${(window.gerard.battleUI.fight?.song ?? '')}` : v.near !== undefined ? `de lejos: ${(v.near * 100).toFixed(0)} % cerca\\nlaberintos en ${window.gerard.game.cuerdas.t.toFixed(2)} s · archivo en ${v.at.toFixed(2)} s\\nvolumen ${v.gain.toFixed(2)}\\nfiltro ${v.cutoff.toFixed(0)} Hz` : 'nada'; return true; }; window.inSync = () => { const v = window.gerard.vozSong.state, t = window.gerard.game.cuerdas.t, want = ((1.033 + t) % 87.236); return v.at !== undefined && Math.min(Math.abs(v.at - want), 87.236 - Math.abs(v.at - want)) < .15; };"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')",
+      "timeout": 120000
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "until": "Math.abs((window.gerard.vozSong.state.near ?? -1) - 2 / 3) < .01 && window.gerard.vozSong.state.gain > .35 && window.inSync() && window.showVoice()",
+      "timeout": 30000
+    },
+    {
+      "shot": "mas-cerca",
+      "delay": 300,
+      "caption": "Two qualities beaten: nearer, louder and clearer"
+    },
+    {
+      "open": "/?mission=marta&part=voz"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showVoice = () => { let el = document.querySelector('#voice-check'); if (!el) { el = document.createElement('div'); el.id = 'voice-check'; el.style.cssText = 'position:fixed;right:16px;top:100px;z-index:9999;padding:10px 14px;background:#101410f2;color:#e8f0e0;font:14px/1.4 ui-monospace,monospace;white-space:pre'; document.body.append(el); } const v = window.gerard.vozSong.state; el.textContent = v.at !== undefined && v.near === undefined ? `en el combate\\nsuena en ${v.at.toFixed(2)} s del archivo\\ncanción en ${(window.gerard.battleUI.fight?.song ?? '')}` : v.near !== undefined ? `de lejos: ${(v.near * 100).toFixed(0)} % cerca\\nlaberintos en ${window.gerard.game.cuerdas.t.toFixed(2)} s · archivo en ${v.at.toFixed(2)} s\\nvolumen ${v.gain.toFixed(2)}\\nfiltro ${v.cutoff.toFixed(0)} Hz` : 'nada'; return true; }; window.inSync = () => { const v = window.gerard.vozSong.state, t = window.gerard.game.cuerdas.t, want = ((1.033 + t) % 87.236); return v.at !== undefined && Math.min(Math.abs(v.at - want), 87.236 - Math.abs(v.at - want)) < .15; };"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')",
+      "timeout": 120000
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "until": "window.gerard.vozSong.state.near === 1 && window.gerard.vozSong.state.gain > .45 && window.inSync() && window.showVoice()",
+      "timeout": 30000
+    },
+    {
+      "shot": "cerca",
+      "delay": 300,
+      "caption": "The three beaten, at the centre: as near as it gets before her fight"
+    },
+    {
+      "eval": "window.gerard.game.startPalaceFight('voz')"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && window.gerard.vozSong.state.at > 2 && window.gerard.vozSong.state.near === undefined && window.showVoice()",
+      "timeout": 60000
+    },
+    {
+      "shot": "combate",
+      "delay": 200,
+      "caption": "Her fight: the far song gone, the recording whole, where the fight's clock is (file second = song second + 1.03)"
+    }
+  ]
+}

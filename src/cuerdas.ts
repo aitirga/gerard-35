@@ -4,13 +4,13 @@
  * a wide knot of strings after each where one of her qualities waits, and at the far end the round
  * place where every string meets and La Voz sings.
  *
- * Each rectangle is a maze of pieces. The voice sings a phrase in a loop (src/song.ts) and every
- * piece answers to one note: it is there while its note sounds and falls when it does not. Pure: the
+ * Each rectangle is a maze of pieces. Marta's voice is heard far off, her recording in a loop
+ * (`VOZ_SONG`, src/song.ts), and every piece answers to one of her notes: it is there while its note sounds and falls when it does not. Pure: the
  * plan and its grid, what holds at a moment, and whether a maze can be crossed. The look is
  * src/cuerdas-scene.ts.
  */
 import type { Cell } from './movement.ts';
-import { PHRASES, TONE_IDS, phraseLength, type PhraseId, type ToneId } from './song.ts';
+import { TONE_IDS, VOZ_SONG, phraseLength, type ToneId } from './song.ts';
 
 /** A piece is this many cells on a side. */
 export const TILE = 2;
@@ -23,40 +23,49 @@ export const GRACE = .12;
 
 export type MazeId = 'dos-notas' | 'una-pasada' | 'clavijas';
 /**
- * A maze as drawn: rows of pieces, the far (north) one first. `a` `d` `m` `s` are pieces of La, Do, Mi
- * and Sol; a capital is cracked (it falls for good once stepped off); `K` is a knot, always there;
- * `I` is a switch, always there, that lays the maze's bridge (`=`) once stood on; `.` is nothing. With `pegs`, every piece of a row answers to its row's peg instead (`r` is a piece
- * of its row's note), each peg starting on the note given, the near (south) row first.
+ * A maze as drawn: rows of pieces, the far (north) one first. `d` `e` `f` `s` `l` `b` are pieces of
+ * Do, Re, Fa, Sol, La and Si♭, the notes Marta sings far off (`VOZ_SONG`, src/song.ts); a capital is
+ * cracked (it falls for good once stepped off); `K` is a knot, always there; `I` is a switch, always
+ * there, that lays the maze's bridge (`=`) once stood on; `.` is nothing. With `pegs`, every piece of
+ * a row answers to its row's peg instead (`r` is a piece of its row's note), each peg starting on the
+ * note given, the near (south) row first.
+ *
+ * Her song decides what can be walked: two pieces side by side are both there only as she goes from
+ * one note to the next (Do→Sol, Sol→Fa, Fa→Re, Do→Si♭, Si♭→La, La→Fa, each a few times a turn of the
+ * recording), so a way across follows her melody, and a knot is where to wait for it.
  */
-export interface MazeSpec { id: MazeId; name: string; phrase: PhraseId; rows: readonly string[]; pegs?: readonly ToneId[] }
-const GLYPH: Record<string, ToneId> = { a: 'la', d: 'do', m: 'mi', s: 'sol' };
+export interface MazeSpec { id: MazeId; name: string; rows: readonly string[]; pegs?: readonly ToneId[] }
+const GLYPH: Record<string, ToneId> = { d: 'do', e: 're', f: 'fa', s: 'sol', l: 'la', b: 'sib' };
 
 export const MAZES: readonly MazeSpec[] = [
-  // Two notes taking turns: half the floor is there, half is not. Knots to stop and listen on.
-  { id: 'dos-notas', name: 'Dos notas', phrase: 'dos-notas', rows: [
-    '. a m a . .',
-    'a m . m a .',
-    'm K a . m a',
-    'a m . a K m',
-    '. a m a m .',
-    '. . K a . .',
+  // Two notes, La and Fa, how each turn of her phrase ends: one piece is there while she sings its
+  // note, and from La she goes straight to Fa. Knots to stop and listen on.
+  { id: 'dos-notas', name: 'Dos notas', rows: [
+    '. l f . . .',
+    '. K l . f .',
+    'f l K f l .',
+    'K . f . K .',
+    'l f l K f .',
+    '. . K l . .',
   ] },
   // Cracked pieces that only hold once, and no way off the far side until the switch lays its bridge.
   // The switch is reached from below or from the far row, each over a cracked piece, and the far row
   // from below over a third: whoever goes up first and over to the switch cannot get back to the far
-  // row. Up the right, over the switch, along the far row to the bridge.
-  { id: 'una-pasada', name: 'Una pasada', phrase: 'una-pasada', rows: [
+  // row. Up the right, over the switch, along the far row to the bridge. The right way up is the start
+  // of her phrase (Do, Sol, Fa, Re), the left the end of it (Si♭, La, Fa).
+  { id: 'una-pasada', name: 'Una pasada', rows: [
     '. . = = .',
-    'd m a K D',
-    'A . . . I',
-    'm . . . A',
-    'd K a d m',
-    '. . a . .',
+    'f e e K D',
+    'F . . . I',
+    'l . . . E',
+    'b K d s f',
+    '. . d . .',
   ] },
-  // Six rows, each answering to its peg: turned into the song's order, the rows light one after another.
-  { id: 'clavijas', name: 'Las clavijas', phrase: 'clavijas', pegs: ['do', 'la', 'mi', 'mi', 'la', 'do'], rows: [
+  // Six rows, each answering to its peg: turned into the order she sings, the rows light one after
+  // another as she goes from note to note; the knot is where she takes a breath, between Re and Do.
+  { id: 'clavijas', name: 'Las clavijas', pegs: ['fa', 'do', 're', 'sol', 'la', 'sib'], rows: [
     '. r r . .',
-    'r r . r .',
+    'r K . r .',
     '. r r r .',
     'r r . r .',
     '. r r r r',
@@ -186,7 +195,7 @@ export function hold(piece: Piece, run: CuerdasRun, t: number, plan: CuerdasPlan
   if (piece.knot || piece.switch) return { state: 'up', sinceDown: 0, untilUp: 0 };
   if (piece.bridge) return run.laid?.includes(piece.maze) ? { state: 'up', sinceDown: 0, untilUp: 0 } : { state: 'down', sinceDown: Infinity, untilUp: Infinity };
   if (run.broken.includes(piece.id)) return { state: 'down', sinceDown: Infinity, untilUp: Infinity };
-  const phrase = PHRASES[plan.mazes[piece.maze].spec.phrase], tone = toneOf(piece, run, plan), length = phraseLength(phrase);
+  const phrase = VOZ_SONG, tone = toneOf(piece, run, plan), length = phraseLength(phrase);
   // When it holds within a turn of the phrase, and the turns either side.
   const spans: [number, number][] = [];
   let start = 0;
@@ -221,9 +230,9 @@ export function leave(piece: Piece | undefined, run: CuerdasRun) {
   run.broken.push(piece.id);
   return true;
 }
-/** Turns a row's peg one note on, round the notes its maze's phrase sings. */
-export function turnPeg(run: CuerdasRun, row: number, plan: CuerdasPlan = CUERDAS): ToneId {
-  const maze = plan.mazes.find(m => m.spec.pegs)!, sung = TONE_IDS.filter(t => PHRASES[maze.spec.phrase].beats.some(b => b.tone === t));
+/** Turns a row's peg one note on, round the notes she sings. */
+export function turnPeg(run: CuerdasRun, row: number): ToneId {
+  const sung = TONE_IDS.filter(t => VOZ_SONG.beats.some(b => b.tone === t));
   const next = sung[(sung.indexOf(run.tuning[row]) + 1) % sung.length];
   run.tuning[row] = next;
   return next;
@@ -248,7 +257,7 @@ export function mend(run: CuerdasRun, maze: number) {
  * so no maze ships unbeatable.
  */
 export function crossable(index: number, run: CuerdasRun = freshCuerdas(), speed = 5.2, plan: CuerdasPlan = CUERDAS, slack = .2) {
-  const maze = plan.mazes[index], phrase = PHRASES[maze.spec.phrase], length = phraseLength(phrase), pieces = maze.pieces, n = pieces.length;
+  const maze = plan.mazes[index], phrase = VOZ_SONG, length = phraseLength(phrase), pieces = maze.pieces, n = pieces.length;
   const step = TILE / speed, ticks = Math.round(length / step) * 8, tick = length / ticks, stride = Math.max(1, Math.round(step / tick));
   const give = Math.round(slack / tick), edge = Math.floor(stride / 2);
   // Whether each piece holds at each tick of the phrase, before anything breaks and with the bridge laid.
@@ -285,6 +294,6 @@ export function crossable(index: number, run: CuerdasRun = freshCuerdas(), speed
 }
 /** The tuning that puts a pegged maze's rows in the song's order, starting on its first note. */
 export function inOrder(plan: CuerdasPlan = CUERDAS): ToneId[] {
-  const maze = plan.mazes.find(m => m.spec.pegs)!, beats = PHRASES[maze.spec.phrase].beats;
+  const maze = plan.mazes.find(m => m.spec.pegs)!, beats = VOZ_SONG.beats;
   return Array.from({ length: maze.rows }, (_, row) => beats[row % beats.length].tone);
 }

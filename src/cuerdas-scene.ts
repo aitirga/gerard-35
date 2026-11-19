@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { CUERDAS, TILE, hold, toneOf, type CuerdasPlan, type CuerdasRun, type Piece } from './cuerdas';
-import { PHRASES, TONES, TONE_IDS, songAt, type ToneId } from './song';
+import { TONES, TONE_IDS, VOZ_SONG, songAt, type ToneId } from './song';
 
 /**
  * How Las cuerdas looks (docs/quests/marta.md § Las cuerdas, docs/places/cuerdas.md; src/cuerdas.ts
@@ -247,14 +247,14 @@ export function buildCuerdas(app: pc.Application, toWorld: (x: number, z: number
      */
     update(dt: number, t: number, run: CuerdasRun, focus: pc.Vec3, animate: boolean) {
       near.setPosition(focus.x, focus.y + 2.4, focus.z);
-      // Which note each maze sings now, and how long ago it started.
-      const now = plan.mazes.map(maze => songAt(PHRASES[maze.spec.phrase], t));
-      const key = now.map(m => `${m.loop}:${m.index}`).join();
+      // Which note she sings now (every maze listens to the same voice), and how long ago it started.
+      const sung = songAt(VOZ_SONG, t), now = plan.mazes.map(() => sung);
+      const key = `${sung.loop}:${sung.index}`;
       if (key !== last) { last = key; pulse = 1; }
       pulse = Math.max(0, pulse - dt * 1.8);
       plan.mazes.forEach((_, i) => {
         for (const id of TONE_IDS) {
-          const m = toneMats[i][id], on = now[i].tone === id;
+          const m = toneMats[i][id], on = now[i].sounding && now[i].tone === id;
           m.emissiveIntensity = on ? .75 + .9 * Math.exp(-now[i].into * 2.4) : .3; m.update();
         }
       });

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CUERDAS, EARLY, GRACE, LATE, MAZES, TILE, TREMBLE, crossable, freshCuerdas, hold, holds, inOrder, leave, mazeAt, mend, pieceAt, press, turnPeg } from '../src/cuerdas.ts';
-import { PHRASES } from '../src/song.ts';
+import { VOZ_SONG } from '../src/song.ts';
 import { stageFight } from '../src/arena.ts';
 
 const walkable = (x, z) => CUERDAS.grid[z]?.[x] === '.';
@@ -40,31 +40,35 @@ test('every piece is whole cells of the grid, and nothing else in a maze can be 
 });
 
 test('a piece is there while its note sounds and a moment either side, trembles before it goes, and a step\'s grace after', () => {
-  const run = freshCuerdas(), maze = CUERDAS.mazes[0], sing = PHRASES['dos-notas'].beats[0].sing;
-  const la = maze.pieces.find(p => p.tone === 'la'), mi = maze.pieces.find(p => p.tone === 'mi'), knot = maze.pieces.find(p => p.knot);
-  assert.equal(hold(la, run, .5).state, 'up');
-  assert.equal(hold(mi, run, .5).state, 'down');
-  assert.equal(hold(la, run, sing + LATE - TREMBLE / 2).state, 'trembling');
-  assert.equal(hold(la, run, sing + LATE + .05).state, 'down');
-  assert.equal(hold(mi, run, sing + LATE + .05).state, 'up');
+  const run = freshCuerdas(), maze = CUERDAS.mazes[0], beats = VOZ_SONG.beats;
+  const starts = []; beats.reduce((t, b) => (starts.push(t), t + b.sing + b.rest), 0);
+  // Her first La, and the Fa she goes straight on to.
+  const i = beats.findIndex(b => b.tone === 'la'), laStart = starts[i], laEnd = laStart + beats[i].sing, faStart = starts[i + 1];
+  assert.equal(beats[i + 1].tone, 'fa');
+  const la = maze.pieces.find(p => p.tone === 'la'), fa = maze.pieces.find(p => p.tone === 'fa'), knot = maze.pieces.find(p => p.knot);
+  assert.equal(hold(la, run, laStart + .5).state, 'up');
+  assert.equal(hold(fa, run, laStart + .5).state, 'down');
+  assert.equal(hold(la, run, laEnd + LATE - TREMBLE / 2).state, 'trembling');
+  assert.equal(hold(la, run, laEnd + LATE + .05).state, 'down');
+  assert.equal(hold(fa, run, laEnd + LATE + .05).state, 'up');
   assert.equal(hold(knot, run, 1.7).state, 'up');
   // As one note gives way to the next, both are there for a moment: the time to step across.
-  for (const t of [sing - EARLY + .02, sing, sing + LATE - .02]) {
+  for (const t of [faStart - EARLY + .02, faStart, laEnd + LATE - .02]) {
     assert.notEqual(hold(la, run, t).state, 'down', `la at ${t}`);
-    assert.notEqual(hold(mi, run, t).state, 'down', `mi at ${t}`);
+    assert.notEqual(hold(fa, run, t).state, 'down', `fa at ${t}`);
   }
-  assert.equal(hold(mi, run, sing - EARLY - .05).state, 'down');
+  assert.equal(hold(fa, run, faStart - EARLY - .05).state, 'down');
   // Standing on it once it goes: held for a step, then not.
-  assert.ok(holds({ x: la.x, z: la.z }, run, sing + LATE + GRACE / 2));
-  assert.ok(!holds({ x: la.x, z: la.z }, run, sing + LATE + GRACE * 2));
+  assert.ok(holds({ x: la.x, z: la.z }, run, laEnd + LATE + GRACE / 2));
+  assert.ok(!holds({ x: la.x, z: la.z }, run, laEnd + LATE + GRACE * 2));
   // Solid ground always holds; a gap in a maze never does.
   assert.ok(holds(CUERDAS.spawn, run, 3));
   const gap = { x: maze.rect.x, z: maze.rect.z + maze.rect.d - 1 };
   assert.equal(pieceAt(gap), undefined);
   assert.ok(!holds(gap, run, 0));
-  // How long it has been gone and how long until it holds again, for whoever draws it falling and coming up.
-  const down = hold(la, run, sing + LATE + .5);
-  assert.ok(Math.abs(down.sinceDown - .5) < 1e-9 && Math.abs(down.untilUp - (sing - EARLY - LATE - .5)) < 1e-9);
+  // How long it has been gone and how long until it holds again (her next La), for whoever draws it falling and coming up.
+  const next = beats.findIndex((b, k) => k > i && b.tone === 'la'), down = hold(la, run, laEnd + LATE + .5);
+  assert.ok(Math.abs(down.sinceDown - .5) < 1e-9 && Math.abs(down.untilUp - (starts[next] - EARLY - (laEnd + LATE + .5))) < 1e-9);
 });
 
 test('a cracked piece holds once: stepped off, it is gone until a fall puts the maze back', () => {
@@ -110,16 +114,20 @@ test('Una pasada: up the right to the switch and back along the far row; up the 
   assert.ok(!crossable(1, freshCuerdas(), 5.2, unswitched));
 });
 
-test('a peg turns its whole row to the next note the phrase sings', () => {
+test('a peg turns its whole row to the next note she sings', () => {
   const run = freshCuerdas(), maze = CUERDAS.mazes[2];
   assert.equal(maze.pegs.length, maze.rows);
   assert.deepEqual(run.tuning, [...MAZES[2].pegs]);
-  const row = maze.pieces.filter(p => p.row === 0);
+  // Her first note is Do: the near row, on Fa, is not there.
+  const row = maze.pieces.filter(p => p.row === 0 && !p.knot);
   assert.equal(hold(row[0], run, .1).state, 'down');
-  assert.equal(turnPeg(run, 0), 'mi');
+  // Round the six she sings, low to high: Fa, Sol, Si♭, La, Do, Re.
+  assert.equal(turnPeg(run, 0), 'sol');
+  assert.equal(turnPeg(run, 0), 'sib');
   assert.equal(turnPeg(run, 0), 'la');
-  for (const p of row) assert.equal(hold(p, run, .1).state, 'up');
   assert.equal(turnPeg(run, 0), 'do');
+  for (const p of row) assert.equal(hold(p, run, .1).state, 'up');
+  assert.equal(turnPeg(run, 0), 're');
   // Each peg is beside its own row, on the walkway, never on a piece.
   maze.pegs.forEach((cell, r) => {
     assert.ok(walkable(cell.x, cell.z) && !mazeAt(cell));

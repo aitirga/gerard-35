@@ -42,6 +42,9 @@ export const TRACKS = {
   // A friend's mission: six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23),
   // each starting on its downbeat, so any can follow any.
   'mazmorra-2': { src: 'music/song-mazmorra-2.m4a', marks: { start: 0 }, cycle: 48, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
+  // Marta's mission (docs/quests/marta.md § The way in): «Izana dena geroa», recorded by her, as it
+  // comes out at the piano in Alegia the first time. 21 s, played once, never looped.
+  izana: { src: 'music/marta-izana.m4a', marks: { start: 0 } },
 } satisfies Record<string, Track>;
 export type TrackId = keyof typeof TRACKS;
 export const isTrack = (id: string): id is TrackId => Object.hasOwn(TRACKS, id);

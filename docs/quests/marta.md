@@ -111,21 +111,25 @@ one of the hardest places to reach. Her mission ends against a boss that sings w
 
 ## The three mazes (base built, to change by playing)
 
-One rule in all three (`src/cuerdas.ts`, pure; `src/song.ts` is the phrase's clock): a rectangle of
-pieces hung between strings. The voice sings a short phrase in a loop; **each piece answers to one
-note, has its colour, and falls when the note is not its own.** A piece about to fall trembles
-first. Consecutive notes overlap a moment (both pieces up), so stepping across never asks for a
-frame-perfect press. Falling takes whoever fell back to the rectangle's near edge, nothing else. It reads with the
-sound off: colour, height and the tremble.
+One rule in all three (`src/cuerdas.ts`, pure; `src/song.ts` is the song's clock): a rectangle of
+pieces hung between strings. **Marta's voice is heard far off, her own recording in a loop, and it
+is what guides** (decided 2026-11-19: «quiero que los puzzles no usen lo que se escucha ahora, quiero
+que el eco de fondo sea lo que vaya guiando»): **each piece answers to one of her notes, has its
+colour, and is there while she sings it.** No synthesised note marks anything: the sound is her
+voice, on the mazes' own clock (`onCuerdasSong` in `src/game.ts`, `far` in `src/voz-song.ts`), so
+a piece rises exactly as its note is heard. A piece about to fall trembles first. As she goes from
+one note to the next both pieces are up a moment, so stepping across never asks for a frame-perfect
+press; and since that only happens between notes she sings one after the other (Do→Sol, Sol→Fa,
+Fa→Re, Do→Si♭, Si♭→La, La→Fa, a few times in each turn of the recording), **a way across follows
+her melody**, with knots to wait on. Falling takes whoever fell back to the rectangle's near edge,
+nothing else. It reads with the sound off: colour, height and the tremble. `crossable` (a search
+over pieces, moments of the song and cracked pieces) holds each maze to being crossable on foot.
 
 | Maze | New | Asks for |
 | --- | --- | --- |
-| 1 · *Dos notas* | Two notes taking turns: half the floor is there, half is not | Reading the rhythm, crossing in time |
-| 2 · *Una pasada* | Three notes, cracked pieces that **fall for good** once stepped on, and a **switch** that lays a bridge off the far side (decided round 8: the user, «que las losas que caen tengan sentido… un interruptor que abra un puente»). Up the left first, the switch strands them; up the right, over the switch and back along the far row. A fall or walking back out puts it back | Planning the way before setting out: not cutting off the way back |
-| 3 · *Las clavijas* | Three notes; a **peg** beside each row changes the note the whole row answers to | Building the way: the rows in the song's order |
-
-After each maze, a wide platform (a knot of strings) and the quality that waits on it. Steps are
-timed on the map, never blows: nothing here says the last fight will be about that.
+| 1 · *Dos notas* | La (amber) and Fa (silver), how each turn of her phrase ends, and knots to listen on | Reading the rhythm, crossing in time: from La she goes straight to Fa |
+| 2 · *Una pasada* | Cracked pieces that **fall for good** once stepped on, and a **switch** that lays a bridge off the far side (decided round 8: the user, «que las losas que caen tengan sentido… un interruptor que abra un puente»). Up the left first (Si♭, La, Fa: the end of her phrase), the switch strands them; up the right (Do, Sol, Fa, Re: its start), over the switch and back along the far row. A fall or walking back out puts it back | Planning the way before setting out: not cutting off the way back |
+| 3 · *Las clavijas* | A **peg** beside each row changes the note the whole row answers to; a knot where she takes a breath, between Re and Do | Building the way: the rows in the order she sings (Do Sol Fa Re · Do Si♭) |
 
 ## The qualities (base built)
 
@@ -175,11 +179,31 @@ bodies in `src/cuerdas-foes.ts`).
   `docs/quests/universidad.md`), nor the artilugio's melody of the ending, which is Aitor's.
 - **Name** (proposal, built): **La Voz**. `Encounter` `voz`, `FoeKind` `voz`.
 - **Built as a base** (`MARTA` in `src/battle.ts`, the phrase in `src/song.ts`):
-  - The phrase runs on the fight's clock, in both phases. **It shows as a status on her plate and
+  - **Her song is Marta's recording** (decided 2026-11-19: «que suenen en bucle todo el rato… que
+    el boss las use en el ritmo que plantea»): `public/music/marta-voz.m4a`, 87 s, one eight-note
+    phrase (*Do Sol Fa Re · Do Si♭ La Fa*) sung eight times, slow, bound, short and fast. It loops for
+    the whole fight with no battle song under it, and every note change in it was found by pitch
+    (`VOZ_SONG` in `src/song.ts`): each note heard is a window open, each silence one shut, each start
+    an Eco, and each time the phrase starts over a Crescendo. **Her cycle is always eight notes**
+    (decided 2026-11-19: «el ciclo del boss debería ser también de 8»): a passing note she sings on
+    the way is part of the note it leads from. Notes bound with less than 0.15 s between them count as
+    one window. `src/voz-song.ts` holds the sound to the fight's clock (it stops, slows and catches up
+    with it).
+  - **Her song is heard all through Las cuerdas** (decided 2026-11-19: «al principio se escuche
+    bajito, lejano y que a medida que avancemos en la misión se amplifique»): the same recording,
+    looping from anywhere in it, far off at first (quiet, muffled, mostly the echo of a big room) and
+    nearer with each quality beaten (`distance` in `src/voz-song.ts`, from `scorePlace` in
+    `src/main.ts`). It gives way to the battle song in the qualities' fights, and in hers it is whole
+    and dry. This is «Alguien canta. Muy lejos.» made sound.
+  - Numbers for her recording (`just fight-sim`, 2026-11-19): some 64 notes in 87 s, a note sounding
+    78 % of the time, so each Eco starts at nothing and grows a PV every ten Crescendos, a Crescendo
+    is half a point of Magia, her Golpe directo is 64 and her PV 430. Striking out of time loses less
+    than with the old phrase: `voz-sin-pensar` wins 35 % (its target went from 25 % to 40 %).
+  - The song runs on the fight's clock, in every part, and never starts over when the part changes. **It shows as a status on her plate and
     nowhere else** (decided 2026-11-13: «un status effect como de quemado, la bola que gira… algo
     más sutil, tipo un status effect continuo»): one icon like a fire's clock that never runs out.
-    Its ring is the phrase, an arc per note in the note's colour and a gap per silence; its hand
-    goes round once a phrase; it is lit while a note sounds and flashes as each starts; its corner
+    Its ring is the turn of the phrase she is on, an arc per note in the note's colour and a gap per
+    silence, in the recording's rhythm; its hand goes round once a turn; it is lit while a note sounds and flashes as each starts; its corner
     is her Crescendo. A first version drew a track of notes across the top of the fight: cut. Her
     body is there while she sings and almost gone in the silences.
   - **A blow chosen while a note sounds lands; in a silence it goes through her** (nothing, and the
@@ -203,13 +227,13 @@ bodies in `src/cuerdas-foes.ts`).
       Golpe directo. **An Acorde on her while she holds her breath breaks it**: the Calderón is
       lost, she is «Sin aire» and her next turn does nothing. It is the Acorde's reason to exist
       in the last phase: the two players have to land inside the same note, on purpose.
-  - **Phases**, by her PV, each a `FightMoment`: *Andante* (long notes, long silences), *Allegro*
-    (from 60 %: short notes) and *A capela* (from 25 %: very short notes and one long one a phrase).
+  - **Parts**, by her PV, each a `FightMoment`: *Andante*, *Allegro* (from 60 %) and *A capela* (from
+    25 %). Each is its own round of her turns (`VOZ_TURNS`); the song is the same recording in all
+    three (before 2026-11-19 each part was a synthesised phrase, shorter notes each time).
 - How the friend helps: _open_ (she is beside them and gets nothing back until it is over).
 - What the party's ánimas do against it: nothing special by ánima (rules by kind): fire keeps
   burning on the notes, a mark (Ángulo exacto, Punto débil) waits for one.
-- **Marta's recordings replace the placeholder**: the notes are synthesised until her files exist
-  (§ Assets).
+- **Marta's recordings are in** (2026-11-19, § Assets): nothing in her fight is synthesised now.
 
 ## Ánima
 
@@ -233,12 +257,15 @@ Figures come from `/character-3d`: `about` and `cues` written here, ready for `t
 
 | Who / what | Kind (person, creature) | Photos it may send | `about` and `cues` | Toy image approved | 3D in game | Portrait | Expressions | SPEAKERS |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Marta | person | _to ask_: `assets/references/characters/marta/` | _open_ | — | **stand-in**: `src/characters/marta.json`, Nuria's hand-built figure in other colours; it does not look like her | — | — | name only, no portrait |
+| Marta | person | 4 sent 2026-11-19, in `assets/references/characters/marta/` (local); 3 listed, the one with a cap and headphones left out as a weak likeness | `[marta]` in `tools/figures.toml`: round face, long wavy hair dark at the roots and blonde from the ears down, big gold hoops, black choker, charcoal jumper | yes, 2026-11-19 | `public/models/characters/marta.glb`, `src/characters/marta.json`, scale 1.3 (`MARTA_SCALE`); its left eye was found on the brow and set by hand in `rigged.face.json` | `public/portraits/marta.png`, the third try (the first two came out nearly photographic) | — | `marta`, with portrait |
 | The qualities, the Eco, La Voz | built by hand | — | — | — | `src/cuerdas-foes.ts`: string, glass and light, each part moving on its own (a figure from a file moves as one piece) | — | — | — |
 | The piano in Alegia | prop, by hand | — | — | — | `buildPiano` in `src/cuerdas-scene.ts` | — | — | — |
 
-- **Marta's recordings** (decided): one file per note, to ask her for. Which notes, how long, what
-  format: _open_
+- **Marta's recordings** (2026-11-19, from WhatsApp, exported at −16 LUFS to `public/music/`):
+  - `marta-izana.m4a`, 21 s: «Izana dena geroa», played once the first time Aitor plays the piano
+    in Alegia (`izana` in `src/music.ts`, the `song` story effect).
+  - `marta-voz.m4a`, 87 s: La Voz's notes, in a loop all through her fight (§ Final boss). Not one
+    file per note, as first planned: one take, and its own rhythm is the fight's.
 
 Commands:
 

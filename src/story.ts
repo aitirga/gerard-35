@@ -173,7 +173,9 @@ export type StoryEffect =
    * (Uri from the top of his tower: going in, up each ring, onto the platform). `beat`: seconds the
    * next story beat waits so the shout is seen first (Vertitrón's fight after Uri calls for it).
    */
-  | { kind: 'shout'; speaker: 'uri'; text: string; beat?: number };
+  | { kind: 'shout'; speaker: 'uri'; text: string; beat?: number }
+  /** A recording plays once over what follows, without stopping the game (src/music.ts `TRACKS`): Marta's «Izana dena geroa» at the piano. */
+  | { kind: 'song'; track: 'izana' };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'sobremesa' | FearEncounter
@@ -621,7 +623,8 @@ export class Story {
     const first = this.set('cuerdas');
     const inside: StoryEffect = { kind: 'travel', environment: CUERDAS_PLACE, cell: { ...PLACES_CUERDAS.spawn } };
     return [
-      ...first ? [say(LINES_MARTA.piano)] : [],
+      // The first time, her recording of the song comes out as Aitor plays, and goes on under what they say.
+      ...first ? [{ kind: 'song', track: 'izana' } as const, say(LINES_MARTA.piano)] : [],
       { kind: 'portal', who: 'everyone', open: { ...PLACES_MARTA.bubble } }, inside,
       say(first ? LINES_MARTA.inside : LINES_MARTA.insideAgain), ...first ? this.spend('cafe') : [],
     ];

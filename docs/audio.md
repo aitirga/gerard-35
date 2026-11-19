@@ -87,6 +87,17 @@ The director, `music` in [src/main.ts](../src/main.ts):
 - **Fights**: the battle song comes in with the fight from its intro. On a win it jumps to its
   ending on the next bar and plays it out; on a fall it fades over 2.5 s; on an escape over 1 s;
   leaving the result screen fades whatever is left.
+- **Las cuerdas and La Voz** (docs/quests/marta.md § Final boss): Marta's own recording
+  (`public/music/marta-voz.m4a`, 87 s, her eight-note phrase sung eight times). In Las cuerdas it
+  loops far off, from a random point: quiet, low-passed at 650 Hz and mostly a 3 s room echo with no
+  quality beaten, louder, brighter (5.2 kHz) and drier with each one (`distance` in
+  `src/voz-song.ts`); the battle song takes over in the qualities' fights. In La Voz's fight there is
+  no battle song: the recording loops whole and dry, held to the fight's clock: it stops with the
+  pause menu and the fight's entrance, slows with a dual's banner, and jumps back if it drifts more
+  than 80 ms. Its notes and their rhythm are the fight's (`VOZ_SONG` in `src/song.ts`, found by
+  pitch). It fades on the result. `just screenshots marta-voz-lejos --chrome` checks all of it.
+- **Marta at the piano**: `izana` (`marta-izana`, 21 s, her «Izana dena geroa») plays once the first
+  time Aitor plays the piano in Alegia, under the dialogue, and plays out into Las cuerdas.
 - **Menus**: the pause menu, the user menu and the lamp dial duck the music while open.
 
 ### The mazmorra, concrete and triste songs

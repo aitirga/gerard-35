@@ -16,7 +16,7 @@ import {
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId, skillKnown } from './battle.ts';
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
-import { PHRASES, untilNote } from './song.ts';
+import { VOZ_SONG, untilNote } from './song.ts';
 
 export const SIM_VERSION = 2;
 export const POLICIES = {
@@ -480,7 +480,7 @@ export function playFight(setup: Setup, seed: number): Run {
     if (hadOnion) run.peeledBy ??= state.foes.every(f => !isOnion(f.kind) || !f.layers || f.hp <= 0) ? state.round : undefined;
     takeNews(state).forEach(note);
     // La Voz's song: its Ecos and Crescendos are counted, and nothing of it is left behind.
-    for (const news of takeSongNews(state)) count(news.kind === 'phrase' ? `frase:${news.phrase}` : news.kind);
+    for (const news of takeSongNews(state)) count(news.kind === 'part' ? `parte:${news.part}` : news.kind);
   };
   while (!over() && state.round <= maxRounds) {
     if (state.phase === 'player') {
@@ -500,7 +500,7 @@ export function playFight(setup: Setup, seed: number): Run {
       const idle = !state.foes.some(f => f.hp > 0 && f.kind !== 'voz');
       if (state.song && idle && !songNow(state)!.sounding && random() < TIMED[setup.policy]) {
         const chooser = state.allies[state.active].id;
-        runClock(state, untilNote(PHRASES[state.song.phrase], state.song.t) + NOTE_LAG); watch();
+        runClock(state, untilNote(VOZ_SONG, state.song.t) + NOTE_LAG); watch();
         if (over()) break;
         if (state.phase !== 'player' || state.allies[state.active].id !== chooser) continue;
       }
@@ -762,7 +762,8 @@ export const TARGETS: readonly Target[] = [
   // Crescendo make a long fight a lost one; the Acorde (the second fighter striking inside the same note) is what shortens it.
   { id: 'voz-bien', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', win: [.93, 1], hpLeftWon: [.22, .58], roundsWon: [10, 16], why: 'La Voz, leyendo la canción: esperar la nota, pegar los dos dentro de ella y agarrarse al golpe directo.' },
   { id: 'voz-sin-duales', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', ban: ['duals'], win: [.7, 1], hpLeftWon: [.1, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
-  { id: 'voz-sin-pensar', fight: 'voz', party: DUO, levels: P3M3, policy: 'casual', win: [0, .25], why: 'Quien pega a destiempo pierde la mitad de sus golpes en los silencios, y el Eco no espera.' },
+  // Since 2026-11-19 her song is Marta's recording, a note sounding most of the time: striking out of time loses less than with the old phrase.
+  { id: 'voz-sin-pensar', fight: 'voz', party: DUO, levels: P3M3, policy: 'casual', win: [0, .4], why: 'Quien pega a destiempo pierde golpes en los silencios y no se agarra al golpe directo: gana pocas veces, y el Eco crece sin esperar.' },
   { id: 'voz-a-punetazos', fight: 'voz', party: DUO, levels: P3M3, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
   { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, levels: P3M3, policy: 'smart', win: [.25, .92], why: 'Con dos ánimas de magia cuesta más: su Nota clara la devuelve, y hay que guardarse los rayos para cuando no es de vidrio.' },
 ];

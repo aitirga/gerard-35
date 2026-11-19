@@ -86,15 +86,15 @@
       "caption": "Before the first maze, Aitor says what the floor does"
     },
     {
-      "eval": "(() => { const c = window.gerard.game.world(21, 101); window.gerard.game.frame({ x: c.x, y: 0, z: c.z }, 16); window.gerard.game.cuerdas.t = 2.6 - .05; window.gerard.game.setPaused(true); })()"
+      "eval": "(() => { const c = window.gerard.game.world(21, 101); window.gerard.game.frame({ x: c.x, y: 0, z: c.z }, 16); window.gerard.game.cuerdas.t = 12.11 - .05; window.gerard.game.setPaused(true); })()"
     },
     {
       "shot": "laberinto-1-cambio",
       "delay": 900,
-      "caption": "Dos notas as one note gives way to the next: both colours are there a moment, the time to step across"
+      "caption": "Dos notas as she goes from La to Fa: amber and silver are there a moment, the time to step across"
     },
     {
-      "eval": "(() => { window.gerard.game.cuerdas.t = 1.2; })()"
+      "eval": "(() => { window.gerard.game.cuerdas.t = 11.3; })()"
     },
     {
       "shot": "laberinto-1-la",

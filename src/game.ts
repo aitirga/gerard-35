@@ -45,7 +45,6 @@ import { buildCuerdas, buildPiano, type CuerdasScene } from './cuerdas-scene';
 import { CUERDAS as CUERDAS_PLAN, freshCuerdas, holds, leave, mazeAt, mend, pieceAt, press, turnPeg, type Piece } from './cuerdas';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { CUERDAS_FIGHTS } from './battle';
-import { PHRASES, onsets } from './song';
 import { PLACES_MARTA } from './friends/marta';
 import { ringOf } from './tower';
 import { createChaser, rest, updateChaser, type Chaser, type ChaserSpec } from './chasers';
@@ -99,6 +98,11 @@ export interface GameCallbacks {
   onSound: (id: SoundId, options?: { delay?: number; volume?: number; pan?: number }) => void;
   /** A sound that goes on while something is near (the bubble's hiss), every frame; none fades it out. */
   onBed: (id: BedId, level?: BedLevel) => void;
+  /**
+   * Las cuerdas, every frame out of a fight: seconds into Marta's song on its clock, which the mazes'
+   * pieces follow, and how fast it runs (0 in a pause), so her voice far off is heard exactly there.
+   */
+  onCuerdasSong?: (t: number, rate: number) => void;
   onBattleTargets: (targets: { id: string; x: number; y: number; visible: boolean }[]) => void;
   /** Where the companion's head is on screen, for speech bubbles; undefined when he is not shown. */
   onCompanionScreen: (at: { x: number; y: number } | undefined) => void;
@@ -678,20 +682,18 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /**
    * Las cuerdas each frame: the song goes on (not in a fight or a pause), a cracked piece left
    * breaks, and whoever stands where nothing holds falls into the void and is put back before that
-   * maze, which is whole again. The notes of the maze they are at are heard as they start.
+   * maze, which is whole again. What they hear is Marta's voice far off (`onCuerdasSong`), on the
+   * pieces' own clock: nothing else marks the notes.
    */
   function stepCuerdas(dt: number, animate: boolean) {
     if (!cuerdas) return;
     const live = !battle && !paused;
     standCuerdas();
     if (strung.waiting) strung.waiting.enabled = !battle;
+    if (!battle) callbacks.onCuerdasSong?.(strung.t, live ? 1 : 0);
     if (live) {
-      const before = strung.t;
       strung.t += dt;
       const here = { x: Math.round(movement.position.x), z: Math.round(movement.position.z) };
-      // The maze nearest ahead or underfoot is the one heard.
-      const heard = CUERDAS_PLAN.mazes.find(m => here.z >= m.rect.z - 6 && here.z <= m.rect.z + m.rect.d + 4);
-      if (heard) for (const note of onsets(PHRASES[heard.spec.phrase], before, strung.t)) callbacks.onSound(`nota-${note.tone}`, { volume: .32 });
       if (!strung.fall && !cutscene) {
         const piece = pieceAt(here), was = strung.on && CUERDAS_PLAN.mazes[strung.on.maze];
         if (strung.on && piece !== strung.on && leave(strung.on, strung.run)) callbacks.onSound('crack', { volume: .5 });
