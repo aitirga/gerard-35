@@ -24,7 +24,7 @@ import { BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE, MIRRO
 import { trace, turned, type Facing } from './espejos.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
-import { castleEntry, extraSlots, isCastlePlace, type CastleEncounter } from './castle.ts';
+import { CASTLE_BOSSES, castleEntry, extraSlots, isCastlePlace, type CastleEncounter } from './castle.ts';
 import { castleEnvironmentFor } from './castle-floor.ts';
 import { castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
@@ -433,8 +433,13 @@ export class Story {
   /** Ánimas the party has gathered from friends (chapter 2). */
   get animas(): AnimaId[] { return ANIMA_IDS.filter(id => this.flags.has(`anima-${id}` as StoryFlag)); }
   get clock() { return { ...this.days.clock }; }
+  /**
+   * What holds her back: each friend's ánima, and each boss of her castle beaten (Aurelià, the
+   * Equipo de dirección; decided 2026-11-19), so the castle can always be finished once begun.
+   */
+  get heldBack() { return this.animas.length + CASTLE_BOSSES.filter(flag => this.has(flag)).length; }
   /** How far La Reina Bubbaloo's power has spread this morning: 0 at first, 1 is the end. */
-  get spread() { return this.adult && !this.has('reina') ? spread(this.days.clock.day, this.animas.length) : 0; }
+  get spread() { return this.adult && !this.has('reina') ? spread(this.days.clock.day, this.heldBack) : 0; }
   /** The lights in the jar at home, in the order they were won. No names on screen. */
   get jar(): LightId[] { return LIGHTS.filter(id => this.has(`luz-${id}`)); }
   /** The party's Ecos de luz: every light won (docs/animas/README.md § Ecos de luz). */

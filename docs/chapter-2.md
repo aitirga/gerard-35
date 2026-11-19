@@ -106,7 +106,9 @@ next morning in bed, "¡NO!", with everything done kept.
 - The network map: the pink halo round the castle widens over the city.
 
 **Her spread** is `(day − 1 − 3 × ánimas) / 6`: six days without any help and on the seventh
-morning it reaches the end; **each ánima wins three days back**. So a day spent on the piano and
+morning it reaches the end; **each ánima wins three days back**, and so does **each boss of her
+castle beaten** (Aurelià, the Equipo de dirección; decided 2026-11-19), so a castle begun late can
+still be finished. So a day spent on the piano and
 coffees is a day closer to the end, and a day spent helping a friend pushes her back. Each friend's
 mission should fit in a day.
 

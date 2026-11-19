@@ -117,10 +117,10 @@ With the castle as tuned the same day (36 games, 12 per player, seed 35 on):
   are lost every time.
 - **The first Queen kills the party before she takes Aitor two times in three**: the possession comes
   in 32 % of the meetings, so a day or two go before the fall the story asks for.
-- **Late in her countdown the castle cannot be finished**: each boss beaten brings the night, so a
-  boss won on the eve of her last day leads to a doomed morning and the rewind takes the win back.
-  `casual` meets Aurelià 49 times a game and wins nine in ten, and never gets past him. Whoever reaches
-  the castle with fewer days left than bosses still standing is stuck for good.
+- **Late in her countdown the castle could not be finished** (fixed 2026-11-19): each boss beaten
+  brings the night, so a boss won on the eve of her last day led to a doomed morning and the rewind
+  took the win back. Now each castle boss beaten holds her back three days, as an ánima does
+  (`Story.heldBack`).
 - **The party stops growing before the castle**: Papagato reaches its top level (3) at a third of the
   game for `pensando`; every fight's EXP after that is lost (1,800 a game, 13,000 for `casual`). The
   castle's caps (4, 6, 7 in `CASTLE_UNLOCKS`) have no levels to open yet (`LEVEL_XP` ends at 3).

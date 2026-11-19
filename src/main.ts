@@ -159,7 +159,7 @@ if (import.meta.env.DEV) {
   const castle = query.get('night') === null ? NaN : Number(query.get('night'));
   if (Number.isInteger(day) && day > 1) story.days.clock.day = day;
   if (Number.isInteger(hour) && hour >= DAY_START && hour <= DAY_END) story.days.clock.hour = hour;
-  if (story.adult && Number.isInteger(castle) && castle >= 0 && castle <= 4) story.days.clock = { day: dayForStage(castle, story.animas.length), hour: NIGHT };
+  if (story.adult && Number.isInteger(castle) && castle >= 0 && castle <= 4) story.days.clock = { day: dayForStage(castle, story.heldBack), hour: NIGHT };
   const station = ENVIRONMENTS['meridiana-calle'].interactions.find(i => i.id === 'station-fabra-i-puig')!.cell;
   if (story.night && (devJump?.spot?.environment === 'meridiana-calle' || Number.isInteger(castle))) nightJump = { environment: 'meridiana-calle', cell: { x: station.x + 1, z: station.z + 1 } };
 }

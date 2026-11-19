@@ -125,3 +125,13 @@ test('the castle in the story: the gym leads into the floor, each boss moves the
   assert.equal(story.redirect('patio-gimnasio'), undefined, 'after her, the school is a school');
   assert.equal(extraSlots(new Set()), 1);
 });
+
+test('each castle boss beaten holds her back as an ánima does, so a castle begun late can be finished', () => {
+  const story = new Story(flagsAt('castle'));
+  story.days.clock = { day: 6, hour: 9 };
+  const before = story.spread;
+  story.handle({ type: 'battle', won: true, encounter: 'aurelia' });
+  story.days.clock = { day: 6, hour: 9 };
+  assert.ok(story.spread < before, 'Aurelià beaten: her spread goes back');
+  assert.equal(story.heldBack, story.animas.length + 1);
+});

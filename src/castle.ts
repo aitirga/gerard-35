@@ -22,6 +22,8 @@ export type CastlePlace = (typeof CASTLE_PLACES)[number];
 export const isCastlePlace = (id?: string): id is CastlePlace => !!id && (CASTLE_PLACES as readonly string[]).includes(id);
 /** The flags the castle sets, in the order the story reaches them. */
 export const CASTLE_FLAGS = ['aurelia', 'direccion', 'aitor-poseido', 'artilugio', 'reina', 'final-acabar', 'final-bajar'] as const;
+/** The castle's bosses: each one beaten holds her back as an ánima does (src/days.ts, `Story.heldBack`). */
+export const CASTLE_BOSSES = ['aurelia', 'direccion'] as const;
 export type CastleFlag = (typeof CASTLE_FLAGS)[number];
 
 /** Its fights: each room's pupils by phase (their year), La Delegada's, the two bosses and the Queen, before and after the artilugio. */

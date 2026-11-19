@@ -1,8 +1,8 @@
 /**
  * Days in Barcelona (docs/chapter-2.md § The Queen's advance): an unspoken countdown. Each day runs
  * from 08:00 into the night (the clock stops at 22:00) and what the party does spends hours (a trip, a fight, a piano piece). Every
- * morning La Reina Bubbaloo's power has spread a little further; each friend's ánima pushes it
- * back. If it reaches the end, Gerard wakes up in a flat that is already part of her castle, and
+ * morning La Reina Bubbaloo's power has spread a little further; each friend's ánima, and each boss
+ * of her castle beaten, pushes it back. If it reaches the end, Gerard wakes up in a flat that is already part of her castle, and
  * the only way on is back to the morning before. Nothing on screen counts: the light, the TV,
  * Aitor and the castle tell it. Pure: no DOM, no engine.
  */
@@ -23,7 +23,7 @@ export const WOKE_LATE = 11;
 /** `castle`: a fight inside the castle, or a rest in its staff room (docs/castle.md § To settle: one hour, proposed). */
 export const COSTS = { metro: 1, fight: 2, piano: 2, cafe: 1, castle: 1 } as const;
 export type Activity = keyof typeof COSTS;
-/** Days without any help before the Queen covers everything, and how many days each ánima wins back. */
+/** Days without any help before the Queen covers everything, and how many days each ánima (or castle boss beaten) wins back. */
 export const GRACE_DAYS = 6, DAYS_PER_ANIMA = 3;
 
 export interface Clock { day: number; hour: number }
