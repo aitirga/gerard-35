@@ -1,0 +1,57 @@
+{
+  "title": "Marta: su figura y su retrato",
+  "description": "docs/quests/marta.md § Assets. Marta's toy figure (just character-3d, tools/figures.toml [marta]) in Alegia beside Gerard and Aitor, close up from the game's camera, and her low-poly portrait in a conversation. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=marta&part=start"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Alegia · San Juan kalea'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "alegia",
+      "delay": 600,
+      "caption": "Alegia at the street camera's distance: Marta beside the piano, Gerard and Aitor in front"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.game.world(84, 53); window.gerard.game.frame({ x: c.x, y: 1.1, z: c.z }, 4.2); })()"
+    },
+    {
+      "shot": "cerca",
+      "delay": 900,
+      "caption": "Up close with the game's camera, looking down: her face, the gold hoops, the hair dark at the roots"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.game.world(83, 54); window.gerard.game.frame({ x: c.x, y: 1, z: c.z }, 7); })()"
+    },
+    {
+      "shot": "con-ellos",
+      "delay": 900,
+      "caption": "Beside Gerard and Aitor: close in size, her own silhouette and colours"
+    },
+    {
+      "eval": "window.gerard.game.frame(); window.gerard.storyEvent({ type: 'interact', id: 'talk-marta' })"
+    },
+    {
+      "until": "document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
+    },
+    {
+      "press": "Enter",
+      "times": 1,
+      "gap": 900
+    },
+    {
+      "shot": "retrato",
+      "delay": 900,
+      "caption": "Her portrait in a conversation"
+    }
+  ]
+}

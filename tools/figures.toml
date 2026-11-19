@@ -137,3 +137,13 @@ face_photos = ["soraya/soraya-cara.jpg"]
 about = "The woman in the photo, 35, elegant with a wide smile: very long straight dark brown hair falling past her shoulders in one big sculpted piece, dark brows, red lips. A black blazer over a white open-collar shirt, black trousers, black loafers."
 height = 1.65
 scale = 1.3
+
+[marta]
+name = "Marta"
+kind = "person"
+photos = ["marta/marta-01.jpg", "marta/marta-03.jpg", "marta/marta-04.jpg"]
+face_photos = ["marta/marta-04.jpg", "marta/marta-03.jpg"]
+about = "About her: 35, a singer and a dentist, average build, soft and strong rather than slim. A rounded, fairly wide face with full cheeks, a straight nose and a calm, direct half smile. Long wavy hair past her chest: dark brown at the roots, turning golden honey blonde from the ears down, parted slightly off centre. Grey-green eyes, light brown brows, a few light freckles. Big thin gold hoop earrings and a thin black beaded choker.\nClothes: an oversized, soft charcoal grey knitted crew-neck jumper with long sleeves, black jeans, chunky white trainers, no logos."
+cues = "a rounded, fairly wide head with full cheeks, long wavy hair in big sculpted chunks that is dark brown at the roots and golden blonde from the ears down, big thin gold hoop earrings as her strongest accessory, a thin black choker, an oversized charcoal grey jumper"
+height = 1.66
+scale = 1.3

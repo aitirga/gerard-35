@@ -16,8 +16,8 @@ import { CUERDAS, type PlatformId } from '../cuerdas.ts';
 
 export const ALEGIA: EnvironmentId = 'alegia';
 export const CUERDAS_PLACE: EnvironmentId = 'cuerdas';
-/** Her figure's scale in the world: the cast's adults are all close to it. */
-export const MARTA_SCALE = 1.12;
+/** Her figure's scale in the world (`scale` of `[marta]` in tools/figures.toml, as the other friends made with Meshy). */
+export const MARTA_SCALE = 1.3;
 
 /**
  * Where things are in Alegia. Provisional (docs/quests/marta.md § Open): under the pergola of the

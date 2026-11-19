@@ -298,6 +298,22 @@ weight = 3
 file = "src/friends/marta.ts"
 
 [[block.item]]
+title = "Marta en 3D (figura de juguete, just character-3d)"
+grep = "models/characters/marta.glb"
+in = ["src/characters/marta.json"]
+
+[[block.item]]
+title = "Marta: su retrato (just character)"
+file = "public/portraits/marta.png"
+
+[[block.item]]
+title = "Marta: su voz grabada (Izana dena geroa en el piano, la canción de La Voz)"
+# public/music/marta-izana.m4a plays at the piano; La Voz's notes and rhythm are her recording (VOZ_SONG).
+file = "public/music/marta-izana.m4a"
+grep = "music/marta-voz.m4a"
+in = "src/song.ts"
+
+[[block.item]]
 title = "Luca: diseño"
 file = "docs/quests/luca.md"
 
