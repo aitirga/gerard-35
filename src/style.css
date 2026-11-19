@@ -1633,7 +1633,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .timeline-missions li { flex: 0 1 auto; }
 .timeline-missions li + li { margin-left: 10px; }
 .jump-row .timeline-go { margin-left: auto; padding: 5px 12px; border-color: var(--ui-gold); background: var(--ui-gold); color: var(--ui-ink, #0d1b24); font-weight: 700; }
-.jump-split { display: grid; grid-template-columns: minmax(0, 1fr) 240px; flex: 1; min-height: 0; }
+/* `flex: auto`, not `flex: 1`: Safari gives a 0 basis no height in a picker that only has a max-height, and the columns came out empty. */
+.jump-split { display: grid; grid-template-columns: minmax(0, 1fr) 240px; flex: auto; min-height: 0; }
 .jump-split > .jump-body, .jump-side { min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #f3efdc33 transparent; }
 .jump-side { display: grid; align-content: start; gap: 9px; padding: 14px 12px 12px; border-left: 1px solid var(--ui-line); background: #0a192214; }
 .jump-side h3 { margin: 0; font-size: 8px; }
