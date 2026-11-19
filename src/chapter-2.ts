@@ -59,6 +59,8 @@ export const NEWS = {
     // Luca's clue (docs/quests/luca.md): the man who will not leave the basilica is Fran.
     'Un hombre lleva días dentro de la Sagrada Família midiendo las columnas; los vigilantes no consiguen que se vaya',
     'Los quioscos de la ciudad agotan los chicles de fresa',
+    // Emilie's clue (decided 2026-11-19): her flat is flooding (docs/quests/emilie.md).
+    'Fuga de agua masiva en el Poble Sec: varias calles inundadas alrededor de Blai; los bomberos no encuentran de dónde sale',
   ],
 } as const;
 

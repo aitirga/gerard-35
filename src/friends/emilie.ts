@@ -53,6 +53,15 @@ const emilie = (text: string): DialogueLine => ({ speaker: 'emilie', text });
 const group = (right: SpeakerId, ...lines: DialogueLine[]): Dialogue => ({ left: 'gerard35', right, lines });
 
 export const LINES_EMILIE = {
+  /**
+   * Her clue (decided 2026-11-19), on a morning at home: Aitor has not heard from her since the
+   * castle came out, and the news speak of a flood in her streets (the TV's ticker, src/chapter-2.ts).
+   */
+  missed: group('emilie',
+    aitor('Emilie no ha vuelto a escribir en el grupo del coro desde que salió el castillo. A mí tampoco me contesta.'),
+    gerard('¿Nada?'),
+    aitor('Nada. Y en las noticias hablaban de una fuga de agua enorme en el Poble Sec. Por Blai. Es su calle.'),
+  ),
   /** At her door on Margarit, the first time: water runs out under it. */
   door: group('emilie',
     gerard('Sale agua por debajo del portal.'),

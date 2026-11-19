@@ -59,7 +59,7 @@ export const STORY_FLAGS = [
   'alegia-marta', 'cuerdas', 'voz', 'anima-marta', 'luz-marta',
   // Emilie's mission (docs/quests/emilie.md): spoken to in her flooded flat in Poble Sec, into her model
   // through her laptop, El que no converge beaten, her ánima and the light that went with them.
-  'poble-sec-emilie', 'modelo', 'converge', 'anima-emilie', 'luz-emilie',
+  'clue-emilie', 'poble-sec-emilie', 'modelo', 'converge', 'anima-emilie', 'luz-emilie',
   // Luca's mission (docs/quests/luca.md): the photo gone grey at home, the Sagrada Família on the TV's
   // ticker and on a poster, Luca met by the pond, into Fran's salon, Fran beaten, his ánima and light.
   'clue-luca-foto', 'clue-sagrada', 'clue-sagrada-cartel', 'sagrada-luca', 'peluqueria', 'fran', 'anima-luca', 'luz-luca',
@@ -771,9 +771,13 @@ export class Story {
   }
   /** Gerard's morning (and the first way down into the metro), with Aitor's word about the friends on the beach until they have been there. */
   private withClue(morning: Dialogue): Dialogue {
-    if (!this.has('metro') || this.has('barceloneta-uni')) return morning;
-    this.set('clue-uni');
-    return { ...morning, lines: [...morning.lines, ...LINES_UNI.clue] };
+    if (!this.has('metro')) return morning;
+    const lines = [...morning.lines];
+    if (!this.has('barceloneta-uni')) { this.set('clue-uni'); lines.push(...LINES_UNI.clue); }
+    // Emilie has said nothing since the castle came out (decided 2026-11-19): Aitor notices, once, and
+    // puts it next to the flood in the Poble Sec the news talks of.
+    if (!this.has('poble-sec-emilie') && this.set('clue-emilie')) lines.push(...LINES_EMILIE.missed.lines);
+    return { ...morning, lines };
   }
   /**
    * Her street has turned into La calle que no acaba before them (src/street-shift.ts walks them on

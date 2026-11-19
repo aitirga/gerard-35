@@ -22,6 +22,10 @@ for a yes.
 
 ## How the player finds her (decided)
 
+- **Built (decided 2026-11-19), while the choir is not**: one morning at home Aitor says she has not
+  written in the choir's group since the castle came out, and that the news speak of a flood in the
+  Poble Sec, round Blai, her street (`LINES_EMILIE.missed`, flag `clue-emilie`). The TV's ticker
+  carries the flood too (`NEWS.ticker`, src/chapter-2.ts).
 - **Her mission starts at the choir**: the player finds out there, when they discover she is
   missing from rehearsal (`docs/quests/coro.md` § The choir room).
 
@@ -427,8 +431,8 @@ Proposals filed with it, to confirm (all invented, none of them a fact about the
 - **Her figure is a stand-in** (Marta's toy figure in her own colours, `src/characters/emilie.json`): her photos,
   her cues and `/character-3d` are still to do, and her portrait.
 - **Her ánima is a placeholder** (`ANIMAS.emilie`: Magia +1, Defensa +1, PV +10, grey `#a3aea2`), to design with `/anima`.
-- **The choir clue** is not there: the choir is not built (`docs/quests/coro.md`). Until then the mission starts at
-  her door, as review point 7 asks anyway.
+- **The choir clue** is not there: the choir is not built (`docs/quests/coro.md`). Until then Aitor's word
+  one morning and the flood on the news lead to her (above), and the mission starts at her door.
 
 ## Decided in round 10 (Aitor: «me parece bien, empieza con la implementación»)
 

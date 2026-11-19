@@ -92,6 +92,8 @@ export const STORY_ARCS = [
     { flags: ['voz', 'anima-marta', 'luz-marta'], label: 'La Voz vencida: Marta vuelve a cantar' },
   ] },
   { id: 'emilie', chapter: 2, title: 'Misión de Emilie', detail: 'Poble Sec · Su modelo', after: 'metro', anima: 'emilie', steps: [
+    // Aitor, one morning: she has not written since the castle came out, and her streets are flooding.
+    { flags: ['clue-emilie'], label: 'Aitor: Emilie no contesta, y hay una fuga en el Poble Sec' },
     { flags: ['poble-sec-emilie'], label: 'Emilie en su piso inundado: ha perdido el porqué', spot: { environment: PISO, cell: { ...PLACES_PISO.laptop } } },
     { flags: ['modelo'], label: 'El portátil: dentro de su modelo' },
     // Beating El que no converge gives her the why back at once, and her ánima and light with it.

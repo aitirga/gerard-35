@@ -245,8 +245,9 @@ test('chapter 2: falling wakes Gerard at home and keeps everything', () => {
   const fall = story.handle({ type: 'battle', won: false, encounter: 'palace-guards' });
   assert.deepEqual(beats(fall), ['fall', 'travel', 'wake', 'dialogue', 'rise']);
   assert.deepEqual(fall[1], { kind: 'travel', environment: PLACES.wakeUp.environment, cell: PLACES.wakeUp.cell });
-  // The morning after also carries Aitor's word about the friends on the beach (docs/quests/universidad.md).
-  assert.deepEqual(story.saved, STORY_FLAGS.filter(f => before.includes(f) || f === 'palace-tried' || f === 'clue-uni'), 'nothing is lost, the try is remembered');
+  // The morning after also carries Aitor's word about the friends on the beach (docs/quests/universidad.md),
+  // and about Emilie, who has not written since the castle came out (docs/quests/emilie.md).
+  assert.deepEqual(story.saved, STORY_FLAGS.filter(f => before.includes(f) || ['palace-tried', 'clue-uni', 'clue-emilie'].includes(f)), 'nothing is lost, the try is remembered');
   const again = story.handle({ type: 'battle', won: false, encounter: 'palace-guards' });
   assert.notEqual(again[3].dialogue, fall[3].dialogue, 'Aitor reacts differently the next time');
   // Chapter 1's fights are simply tried again.
