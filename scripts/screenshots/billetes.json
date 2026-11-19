@@ -1,0 +1,20 @@
+{
+  "title": "Chapter 2 · Memory tickets on the station tablet",
+  "description": "Down into the L1 at Fabra i Puig with nothing remembered yet: the network map is a tablet on the station's tiles, and only Trinitat Vella is marked as somewhere to go. Under the map Gerard writes a memory of someone somewhere. Half a memory gets half an answer; Luca at the Sagrada Família prints its ticket and the station lights up. The judge is faked here so the scenario never calls the API.",
+  "steps": [
+    { "open": "/?story=metro&solo=1" },
+    { "until": "!!window.gerard", "timeout": 60000 },
+    { "skipDialogue": true },
+    { "eval": "Promise.all([import('/src/map-markers.ts'), import('/src/tickets.ts')]).then(([m, t]) => { const g = window.gerard; const verdicts = { luca: { station: 'sagrada-familia', person: true, place: false }, full: { station: 'sagrada-familia', person: true, place: true } }; window.ticketMemory = { locked: g.story.lockedStations, remember: text => new Promise(done => setTimeout(() => done(/sagrada/i.test(text) ? verdicts.full : verdicts.luca), 600)), opened: station => g.storyEvent({ type: 'ticket', station }) }; void g.travelUI.show('fabra-i-puig', {}, m.cityMarkers({ castle: true, threat: .8, spread: .3 }), window.ticketMemory) }) && undefined" },
+    { "until": "window.gerard.travelUI.open", "timeout": 20000 },
+    { "shot": "tablet-locked", "delay": 8000, "caption": "Nothing remembered yet: the map is a tablet on the station wall, only Trinitat Vella marked; the memory field waits under it" },
+    { "eval": "(() => { const f = document.querySelector('#travel-memory'); f.focus(); f.value = 'Luca, hablando sin parar'; })()" },
+    { "press": "Enter" },
+    { "shot": "tablet-reading", "delay": 200, "caption": "The memory goes to the judge: the tablet reads" },
+    { "shot": "tablet-half", "delay": 1400, "caption": "Someone but nowhere: «Te acuerdas de quién. No de dónde.» Nothing opens" },
+    { "eval": "(() => { const f = document.querySelector('#travel-memory'); f.focus(); f.value = 'Luca abrazándome a la salida de la Sagrada Família'; })()" },
+    { "press": "Enter" },
+    { "shot": "tablet-ticket", "delay": 4000, "caption": "Luca at the Sagrada Família: the ticket prints, the station is marked and picked, the trip drawn" },
+    { "eval": "(() => window.gerard.story.has('ticket-sagrada-familia') ? 1 : Promise.reject(new Error('the ticket flag was not set')))()" }
+  ]
+}

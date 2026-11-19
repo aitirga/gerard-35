@@ -104,10 +104,14 @@ what to do next (`AGENTS.md`).
 1. A station entrance in a place is a totem (the red M, the line and the station's name) beside a
    stair going down between granite kerbs and glass, lit from the hall. Walking into the stair goes
    down (the place's `step` cells); pressing E beside it (*"Bajar al metro"*) does the same.
-2. The network plan opens on the station wall: white tiles, the station's name on a dark sign in
-   its line's colour, the plan framed on where Gerard is (*Estás aquí*) and where he can go, every
-   station named. Selectable stations are the ones that lead to a
-   place (bigger, glowing); the rest are drawn but cannot be picked. Arrows, the stick, the mouse
+2. The network plan opens on a tablet on the station wall: white tiles behind a dark bezel, the
+   station's name on a dark sign in its line's colour, the plan framed on where Gerard is (*Estás
+   aquí*) and where he can go, every station named. Selectable stations are the ones that lead to a
+   place **and have their ticket** (bigger, glowing); the rest are drawn but cannot be picked.
+   Under the plan, a field asks *"¿A quién recuerdas, y dónde?"*: typing a memory of a station's
+   person in its place and pressing Enter prints its ticket and marks it (`src/tickets.ts`,
+   docs/story-outline.md § Getting there). Home's station and Trinitat Vella are open from the
+   start. Arrows, the stick, the mouse
    or the D-pad move between them, and the trip to the one picked is dashed on the plan with its
    stops and changes; Enter/A travels. The wheel or +/− zoom, dragging pans, dragging with the
    right button (or Shift) turns and tilts the model, 0 shows the whole city. Esc/B goes back up:

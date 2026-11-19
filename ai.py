@@ -85,3 +85,19 @@ def plan_enemy_turn(provider: JevProvider, allies: list, foes: list) -> dict[str
     answers = provider.decide(state, questions)
     return {foe: answer["choice"] for foe, answer in answers.items()
             if foe in questions and answer.get("choice") in criteria}
+
+
+_claude = None
+
+
+def claude():
+    """One Anthropic client while ANTHROPIC_API_KEY stays the same, or None without it: the station
+    tablet's judge (tickets.py) and the day log's summaries (daylog.py)."""
+    global _claude
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if not key:
+        return None
+    if _claude is None or _claude.api_key != key:
+        import anthropic
+        _claude = anthropic.Anthropic(api_key=key, timeout=60.0, max_retries=1)
+    return _claude

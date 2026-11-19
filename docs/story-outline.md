@@ -50,8 +50,8 @@ What exists or is designed with a cartoon look, to judge one by one (keep, tone 
   reach), but missions can be done **in any order**, and **difficulty adjusts** to what the party
   already has. The Queen can be challenged **at any time**.
 - **Every mission is available, but reaching it takes doing things** (decided round 13):
-  **unlocking transport, earning some money**, and so on. Nothing is locked by a list; the way
-  there is what has to be earned. See *Getting there* below.
+  **remembering someone to open a trip** (decided 2026-11-15: no money). Nothing is locked by a
+  list; the way there is what has to be earned. See *Getting there* below.
 - **A mission's dungeon starts at a pink bubble** (decided round 19): somewhere in the friend's
   place a **Bubbaloo bubble** appears; walking up to it takes the party into **an alternate
   reality**, the mission's dungeon. Proposals: it is the one clear sign of the Queen in an
@@ -206,7 +206,7 @@ cartoonish.)
 | --- | --- | --- | --- | --- | --- |
 | **Nuria and Uri** (+ Nil, Haru, Yuki) | Old flatmates; a pack | Cardedeu | R4 from La Sagrera | Uri turned kid, the maze of fears, El Vértigo; ánima **Papagato** | Designed, `docs/quests/nuria.md`; can be an early one |
 | **Bernat** | Gerard's childhood best friend; invented the Queen; a father (Leia, ~3; wife Jessica); publishes board games beside another job; lives outside Barcelona | A hidden board-game bar in Barcelona | Gerard **phones** him and they meet | A spy feel: the city's people act strangely; Bernat seems immune (her creator); Jessica has gone mad; he **finds out part of the story** | Designing, `docs/quests/bernat.md` |
-| **Marta** | Aitor's best friend, Gerard's friend too; **a singer** | **Alegia**, Basque Country | Needs a **train ticket**: one of the hardest places to reach | Her voice taken; the piano, Las cuerdas, her three qualities and La Voz, hurt only while a note sounds | Base playable, `docs/quests/marta.md`; the trip, the clues and her recordings open |
+| **Marta** | Aitor's best friend, Gerard's friend too; **a singer** | **Alegia**, Basque Country | Needs a **train ticket** (a memory, § Getting there): one of the hardest places to reach | Her voice taken; the piano, Las cuerdas, her three qualities and La Voz, hurt only while a note sounds | Base playable, `docs/quests/marta.md`; the trip, the clues and her recordings open |
 | **Luca** | A very close friend, gay like Gerard and Aitor, **very eccentric**; lives with his partner and their daughter | _open_ | _open_ | _open_ | Idea |
 | **Emilie** | Friend of Aitor and Gerard; **very clever** | **Poble Sec** | _open_ (L3 Poble Sec / Paral·lel are not on the map yet) | **Helps with a technical problem** | Idea |
 | **University friends**: Anna and Álvaro, Miquel and Sarah, Guillem and Soraya | Three couples from university (Guillem does not appear) | **La Barceloneta**, the beach | L4 | They come for Gerard's birthday, held by the Queen: a game of tag into the sea and the spiral | Designing, `docs/quests/universidad.md` |
@@ -365,33 +365,49 @@ Proposals and things to check:
 - **Fit with the lore** (check): people the Queen holds get violet eyes and turn into kids (Uri);
   Aitor possessed could follow the same rule.
 
-## Getting there: transport and money (decided round 13, details open)
+## Getting there: memory tickets (decided 2026-11-15, replaces round 13's money)
 
 All missions can be done from the start in principle; what stands between Gerard and a friend is
-**getting there**: a transport to unlock, money to earn, and similar.
+**getting there**. **There is no money in the game** (decided 2026-11-15): euros, jobs, prices
+and shops added complexity for nothing. What opens a trip is **remembering someone**.
 
-Open, with proposals:
+- **The ticket is a memory** (built 2026-11-17). The network map in a station is **a tablet on
+  the station's tiles**, and under the map is a field where Gerard **types on the keyboard**, under
+  the tablet's own question, *"¿A quién recuerdas, y dónde?"*. If what he writes is right, the
+  ticket prints and that station is marked on the map for good; if not, nothing opens. The gate
+  stays diegetic: the tablet will not take him where he does not remember anyone.
+- **What has to be written: Persona + Lugar** (decided 2026-11-17: enough, since it is not
+  always obvious), a memory of someone in a place (*"Luca abrazándome a la salida de la Sagrada
+  Família"*). The theme as a mechanic: remembering people, not paying, is what opens the way.
+- **Places are not marked until they are remembered** (decided 2026-11-17): a station without its
+  ticket is drawn and named like any other stop, with no glow, and cannot be picked.
+- **A model judges it**: the text goes to the game server (`POST /api/transit/ticket`,
+  `tickets.py`), which asks Claude (`ANTHROPIC_API_KEY`, `TICKET_MODEL`) with a structured answer
+  (`station`, `person`, `place`); nicknames, descriptions and typos count. What opens each station
+  lives in `src/tickets.json` and never reaches the browser's question, and only a known station
+  comes back, so "ábrelo todo" opens nothing. Without a key, or if the model fails, the names in
+  `tickets.json` judge by rule, so the game never breaks and tests never call the API.
+- **The tablet answers in the world, never with a hint** (`src/tickets.ts`): *"Billete impreso:
+  Sagrada Família."*; *"Te acuerdas de quién. No de dónde."* when only the person is right; *"Un
+  sitio sin nadie no lleva a ningún sitio."* when only the place is; *"El billete sale en
+  blanco."* otherwise.
+- **Clues live in the world** (`AGENTS.md`): photos and objects at home, people who mention
+  someone, old messages on the phone, a cryptic line in the Diario. Never a list of what is missing.
+- **Open from the start**: Fabra i Puig (home) and Trinitat Vella (the school under the castle,
+  open from the start, § The frame). Every other station opens with a memory; each one is a story
+  flag (`ticket-<station>`), in the *Billetes-recuerdo* arc of `STORY_ARCS`.
+- **Food without shops**: healing items are food that people give and the party finds (a
+  friend's tupper, a bakery bag left on a bench), each place's food its own; nothing is bought.
 
-- **How money is earned.** Proposal: small jobs in the city that **cost hours of the day**, so
-  earning the train fare is literally giving time to routine while the Queen advances. The theme
-  as a mechanic: work buys access, and time is what it costs.
-- **What each transport needs.** Proposal, as a first sketch: the metro from the start (playable);
-  **Rodalies** (Cardedeu) with a ticket bought at the station; the **long-distance train to the
-  Basque Country** (Marta) with an expensive ticket, the main money goal of the game; other
-  unlocks (a bike, a car, a lift from a friend) as rewards of missions.
-- **Money is euros** (decided round 17), a real part of the game, not only for tickets.
-- **Healing items are food, bought in shops** (decided round 17): different establishments sell
-  different things. Proposals: each place's food is its own (a bakery on the Meridiana, the bar
-  where Bernat meets Gerard, something local in Cardedeu, pintxos in the Basque Country), so
-  shopping is also a way of being somewhere; the Meridiana already has real shop signs (Granier,
-  Café Entrepans…) that could open; prices and what each food heals as data next to the existing
-  items (`src/items.ts`, today's *Poción* and *Chicle de fresa*).
-- **Foods with characteristics** (round 18, to confirm what the user meant): beyond healing, a
-  food could raise a stat for a while (Fuerza, Defensa…), so what you eat and where is a choice.
-- **Where money shows**: it is something the party has, so it can show in the status screen; the
-  HUD rule (`AGENTS.md`) still forbids showing what is missing for a ticket.
-- **Who sells and tells**: ticket machines and people at stations say what a trip costs, in the
-  world.
+Open:
+
+- **El Carmel and Espanya have no person yet**: both take *Aitor* for now (`tickets.json`), to
+  change when someone is tied to them.
+- Whether the answers come from Gerard's own life (he is the player and knows his friends) or
+  from what the game shows; proposal: both, the world filling in when he is stuck.
+- Marta's long-distance train: the same tablet, or a harder memory.
+- The landmarks' cards (Sagrada Família, Búnkers del Carmel…) still name famous places on the
+  map before their station is remembered.
 
 ## Recreating Barcelona (round 18: direction decided; method proposed and kept, round 19)
 
@@ -454,13 +470,14 @@ Decided then (a sketch):
 
 Proposals:
 
-- **Kept after falling**: everything, as anywhere else (ánimas, levels, lights, money, won
-  zones); only a zone half done starts again from its beginning.
+- **Kept after falling**: everything, as anywhere else (ánimas, levels, lights, tickets,
+  won zones); only a zone half done starts again from its beginning.
 - **The general danger level** joins the castle's threat (`castleThreat`, today lowered only by
   ánimas): each zone won lowers it too, and the castle shows it from the street.
 - **The artilugio's room order**: a fixed sequence of rooms across the zones, hinted in the world.
 - **La secretaría last** before the throne: Gerard's own office (he is the school's secretary),
-  his own routine as the last zone.
+  his own routine as the last zone. Its material is being kept: each day played, what Gerard did
+  and a summary of it (`docs/day-log.md`), for a boss made of his own habits and words.
 - The cultural zones (the user's idea; what they mean is still open), and the possessed pupils,
   could live in el patio.
 
@@ -470,7 +487,7 @@ Who mentions whom, which ánima opens which place, where each clue lives. Fixed 
 
 - The TV ticker → the R4 → Cardedeu (Nuria and Uri).
 - Bernat → the artilugio → the palace's room puzzle.
-- Marta's train ticket: who or what gives it (_open_).
+- Marta's train ticket: which memory opens it (_open_).
 - Emilie → a technical problem (which, and who sends the party to her: _open_).
 
 ## To reconcile with existing docs
@@ -504,7 +521,7 @@ Who mentions whom, which ánima opens which place, where each clue lives. Fixed 
   **Pedro** is in `docs/lore.md` § People and needs a row in *People* and a mission; Nuria's
   mission is **built** (Uri's tower, Vertitrón), so the bubble and falling items above apply to
   the built version; ánimas already level with EXP and take **ecos de luz** at the jar
-  (`docs/animas/README.md`), to fit with money, food and gear.
+  (`docs/animas/README.md`), to fit with food and gear.
 
 ## Open (tracker)
 
@@ -525,8 +542,8 @@ The order they will be asked in:
    pupils.
 5. **Each friend in three lines**: Marta, Luca, Emilie, the university friends, Jan and the
    parents (where, what the Queen did, a mechanic name, the ánima).
-6. **The order graph and getting there**: who leads to whom; transport unlocks and money (how it
-   is earned, what each trip costs, Marta's ticket).
+6. **The order graph and getting there**: who leads to whom; which memory opens each
+   station, Marta's ticket.
 7. **Falling in a mission**: going back to the block's start: does it cost hours, is it a menu or a
    diegetic moment?
 8. **The second round**: same city or a time jump; how it fits the ending.

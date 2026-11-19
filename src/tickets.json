@@ -1,0 +1,48 @@
+{
+  "about": "Memory tickets (docs/story-outline.md § Getting there): the stations open from the start, and for every other one the memory that opens it, a person and a place. Read by src/tickets.ts and by tickets.py, which judges what Gerard writes.",
+  "open": ["fabra-i-puig", "trinitat-vella"],
+  "memories": {
+    "cardedeu": {
+      "who": "Nuria and Uri, Gerard's old flatmates, with their cats Haru and Yuki and Nil",
+      "people": ["Nuria", "Uri", "Nil", "Haru", "Yuki"],
+      "where": "Cardedeu, a town beyond Barcelona on the R4 train line",
+      "places": ["Cardedeu"]
+    },
+    "barceloneta": {
+      "who": "the friends from university: Anna and Álvaro, Miquel and Sarah, Soraya, Nico and Joan",
+      "people": ["Anna", "Alvaro", "Miquel", "Sarah", "Soraya", "Nico", "Joan", "los de la uni", "amigos de la uni", "amigos de la universidad", "los de la universidad"],
+      "where": "La Barceloneta, the beach of Barcelona",
+      "places": ["Barceloneta", "la playa", "platja", "Sant Miquel"]
+    },
+    "sagrada-familia": {
+      "who": "Luca, a very eccentric maths teacher in loud colours, with his partner Fran and their daughter Yadelin",
+      "people": ["Luca", "Fran", "Yadelin"],
+      "where": "the Sagrada Família, Gaudí's temple",
+      "places": ["Sagrada Familia", "la Sagrada", "templo de Gaudi"]
+    },
+    "placa-de-sants": {
+      "who": "Bernat, Gerard's best friend since childhood, who makes board games",
+      "people": ["Bernat"],
+      "where": "Sants, Carrer de Valladolid and El Nucli, the board-game shop where they meet",
+      "places": ["Sants", "El Nucli", "Nucli", "Valladolid", "tienda de juegos", "juegos de mesa"]
+    },
+    "poble-sec": {
+      "who": "Emilie, a very clever friend of Gerard and Aitor",
+      "people": ["Emilie", "Emily"],
+      "where": "Poble Sec, Carrer de Blai",
+      "places": ["Poble Sec", "Poblesec", "Blai", "Paral·lel", "Parallel"]
+    },
+    "el-carmel": {
+      "who": "Aitor, Gerard's partner (provisional: nobody else is tied to this place yet)",
+      "people": ["Aitor"],
+      "where": "the Búnkers del Carmel, on the Turó de la Rovira above the city",
+      "places": ["Carmel", "bunkers", "Turo de la Rovira", "la Rovira"]
+    },
+    "espanya": {
+      "who": "Aitor, Gerard's partner (provisional: nobody else is tied to this place yet)",
+      "people": ["Aitor"],
+      "where": "Plaça d'Espanya, at the foot of Montjuïc, with Las Arenas and the Venetian towers",
+      "places": ["Espanya", "Plaza España", "Plaza de España", "Montjuic", "Las Arenas", "Arenas", "torres venecianas"]
+    }
+  }
+}

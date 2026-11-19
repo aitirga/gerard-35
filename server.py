@@ -9,18 +9,20 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 import httpx
-from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi import BackgroundTasks, FastAPI, Request, Response, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from ai import decision_provider, plan_enemy_turn
+import daylog
+from ai import claude, decision_provider, plan_enemy_turn
 from lights import router as lights_router
+from tickets import judge as judge_memory
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn.error")
 # Story progress flags, in story order. Keep in sync with STORY_FLAGS in src/story.ts (a test checks it).
-STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "matemagico", "wrapper-room", "caught", "got-wrapper", "got-bola", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "papagato", "papagato-2", "papagato-3", "matemagico-2", "matemagico-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri", "clue-uni", "barceloneta-uni", "camping", "candado", "parcelas", "sobremesa", "anima-universidad", "luz-anna-alvaro", "luz-miquel-sarah", "luz-soraya", "luz-nico", "luz-joan", "alegia-marta", "cuerdas", "voz", "anima-marta", "luz-marta", "poble-sec-emilie", "modelo", "converge", "anima-emilie", "luz-emilie", "clue-luca-foto", "clue-sagrada", "clue-sagrada-cartel", "sagrada-luca", "peluqueria", "fran", "anima-luca", "luz-luca", "aurelia", "luz-aurelia", "direccion", "luz-mar", "luz-montse", "luz-pilar", "aitor-poseido", "artilugio", "reina", "final-acabar", "final-bajar")
+STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "matemagico", "wrapper-room", "caught", "got-wrapper", "got-bola", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "papagato", "papagato-2", "papagato-3", "matemagico-2", "matemagico-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri", "clue-uni", "barceloneta-uni", "camping", "candado", "parcelas", "sobremesa", "anima-universidad", "luz-anna-alvaro", "luz-miquel-sarah", "luz-soraya", "luz-nico", "luz-joan", "alegia-marta", "cuerdas", "voz", "anima-marta", "luz-marta", "poble-sec-emilie", "modelo", "converge", "anima-emilie", "luz-emilie", "clue-luca-foto", "clue-sagrada", "clue-sagrada-cartel", "sagrada-luca", "peluqueria", "fran", "anima-luca", "luz-luca", "ticket-cardedeu", "ticket-barceloneta", "ticket-sagrada-familia", "ticket-placa-de-sants", "ticket-poble-sec", "ticket-el-carmel", "ticket-espanya", "aurelia", "luz-aurelia", "direccion", "luz-mar", "luz-montse", "luz-pilar", "aitor-poseido", "artilugio", "reina", "final-acabar", "final-bajar")
 
 
 @contextmanager
@@ -38,6 +40,7 @@ def connect():
             # Chapter 2's days (src/days.ts): the day, the hour and the mornings to go back to.
             if "days" not in columns:
                 db.execute("ALTER TABLE players ADD COLUMN days TEXT NOT NULL DEFAULT 'null'")
+            daylog.ensure(db)
             yield db
     finally:
         db.close()
@@ -168,6 +171,43 @@ def enemy_turn(turn: EnemyTurn, request: Request):
         logger.warning("Battle AI failed: %r", error)
         raise HTTPException(502, "Battle AI is unavailable")
     return {"provider": provider.name, "targets": targets}
+
+
+class Memory(BaseModel):
+    text: str = Field(min_length=1, max_length=280)
+
+
+@app.post("/api/transit/ticket")
+def ticket(memory: Memory, request: Request):
+    """The station tablet (src/travel-ui.ts): which station the memory opens, if any (tickets.py)."""
+    if request.headers.get("sec-fetch-site") == "cross-site":
+        raise HTTPException(403, "Cross-site requests are not allowed")
+    verdict, judge = judge_memory(memory.text)
+    return {**verdict.model_dump(), "judge": judge}
+
+
+@app.post("/api/log")
+def log_day(batch: daylog.Batch, request: Request, response: Response, background: BackgroundTasks):
+    """What the player did (src/day-log.ts), kept for a future boss; each day over gets its summary
+    after the response (daylog.py, docs/day-log.md)."""
+    if request.headers.get("sec-fetch-site") == "cross-site":
+        raise HTTPException(403, "Cross-site writes are not allowed")
+    token = player(request, response)
+    with connect() as db:
+        daylog.record(db, token, batch.events)
+        finished = daylog.claim_finished(db, token)
+    for epoch, day in finished:
+        background.add_task(summarize_day, token, epoch, day)
+    return {"logged": len(batch.events)}
+
+
+def summarize_day(token: str, epoch: int, day: int):
+    """The model is asked outside the database's lock, which a summary can take seconds to write."""
+    with connect() as db:
+        events = daylog.events_of(db, token, epoch, day)
+    facts, reading = daylog.summarize(events, claude())
+    with connect() as db:
+        daylog.store(db, token, epoch, day, facts, reading)
 
 
 app.include_router(lights_router)

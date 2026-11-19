@@ -115,6 +115,11 @@ weight = 3
 file = "src/days.ts"
 
 [[block.item]]
+title = "Registro de los días y su resumen con IA"
+weight = 2
+file = "daylog.py"
+
+[[block.item]]
 title = "Selector de desarrollo"
 weight = 3
 file = "src/jump-menu.ts"
@@ -563,6 +568,12 @@ title = "Definitivas en el bote tras Dirección"
 priority = "palacio"
 
 [[block.item]]
+title = "La secretaría usa los días de Gerard (docs/day-log.md)"
+priority = "palacio"
+grep = "day_summaries"
+in = "server.py"
+
+[[block.item]]
 title = "Subida al trono tras Dirección"
 priority = "palacio"
 grep = "palacio-trono"
@@ -650,21 +661,9 @@ grep = "anima-count"
 in = "src/story-ui.ts"
 
 [[block.item]]
-title = "Euros y trabajos"
+title = "Billetes-recuerdo: escribir para abrir estaciones"
 weight = 4
-grep = '\beuros\b'
-in = ["src/story.ts", "src/items.ts"]
-
-[[block.item]]
-title = "Tiendas de comida"
-weight = 4
-file = "src/shop*.ts"
-
-[[block.item]]
-title = "Billetes de tren"
-weight = 4
-grep = "billete"
-in = "src/transit.ts"
+file = "src/tickets.ts"
 
 [[block.item]]
 title = "Gastar Ecos de luz: más maná y ultis"

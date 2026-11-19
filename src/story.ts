@@ -18,6 +18,7 @@ import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId }
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
 import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
+import { lockedStations, ticketFlag, type TicketStation } from './tickets.ts';
 import { ALEGIA, CUERDAS_PLACE, LINES_MARTA, MARTA_SCALE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
 import { BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE, MIRRORS, MIRRORS_SEEN, MIRRORS_START, PLACES_LUCA, QUEUES, SAGRADA, SALON_SOLID, SALON_VIEW, ZONES, queueCells, type LookId } from './friends/luca.ts';
 import { trace, turned, type Facing } from './espejos.ts';
@@ -62,6 +63,8 @@ export const STORY_FLAGS = [
   // Luca's mission (docs/quests/luca.md): the photo gone grey at home, the Sagrada Família on the TV's
   // ticker and on a poster, Luca met by the pond, into Fran's salon, Fran beaten, his ánima and light.
   'clue-luca-foto', 'clue-sagrada', 'clue-sagrada-cartel', 'sagrada-luca', 'peluqueria', 'fran', 'anima-luca', 'luz-luca',
+  // Memory tickets (src/tickets.ts): a station opens once Gerard writes its person in its place.
+  'ticket-cardedeu', 'ticket-barceloneta', 'ticket-sagrada-familia', 'ticket-placa-de-sants', 'ticket-poble-sec', 'ticket-el-carmel', 'ticket-espanya',
   // The castle (docs/castle.md, docs/castle-bosses.md): Aurelià beaten and his light, the management team and
   // theirs, Gerard fallen to Aitor's hand, the artilugio, the Queen beaten, and which of the two endings.
   'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
@@ -106,6 +109,8 @@ export type StoryEvent =
   | { type: 'near'; id: string }
   /** The party came up out of a station after a trip. */
   | { type: 'arrive'; station: string }
+  /** A memory written on a station's tablet printed this station's ticket (src/tickets.ts). */
+  | { type: 'ticket'; station: TicketStation }
   /** A pitch chosen on Las parcelas' board (src/parcelas-ui.ts): a lantern lit, a tent woken, the black one; `solved` when every pitch is lit. */
   | { type: 'parcelas'; outcome: 'lit' | 'tent' | 'black'; board: Board; solved: boolean }
   /** Words tried on the pool gate's padlock (src/candado-ui.ts). */
@@ -1465,6 +1470,8 @@ export class Story {
   withinLeash(cell: Cell, bernat: Cell) {
     return this.companion !== 'stalled' || Math.hypot(cell.x - bernat.x, cell.z - bernat.z) <= LEASH;
   }
+  /** Stations on the map that no memory has opened yet: not destinations, and not marked. */
+  get lockedStations() { return lockedStations(flag => this.has(flag)); }
   private set(flag: StoryFlag) { const fresh = !this.flags.has(flag); this.flags.add(flag); return fresh; }
 
   /** Applies one event; returns what the player should see, in order. Unknown events do nothing. */
@@ -1527,6 +1534,9 @@ export class Story {
         // The ticker carries the R4 clue, and the Sagrada Família's: seen on the TV, they are known.
         this.set('clue-r4');
         { const link = this.lucaLink('tv'); this.set('clue-sagrada'); return [{ kind: 'news' }, say(LINES_2.news), ...link.map(say)]; }
+      case 'ticket':
+        this.set(ticketFlag(event.station));
+        return [];
       case 'arrive':
         // Every trip takes its hour.
         if (event.station === 'trinitat-vella' && this.set('rec-comtal')) return [{ kind: 'look', anchor: 'palace' }, say(LINES_2.recComtalFirst), { kind: 'look' }, ...this.spend('metro')];

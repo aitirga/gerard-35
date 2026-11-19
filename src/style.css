@@ -1389,7 +1389,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 /* Down the stair: the station wall, white tiles under the hall's light, the name on a dark sign
    with the line's colour, and the network plan framed on the wall. Opaque, over the whole HUD. */
 #travel { position: absolute; inset: 0; z-index: 35; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; color: var(--ui-paper); pointer-events: auto; }
-#travel { display: grid; grid-template-rows: auto 1fr auto; gap: 14px; padding: 22px 32px 18px;
+#travel { display: grid; grid-template-rows: 1fr auto; gap: 14px; padding: 22px 32px 18px;
   background:
     radial-gradient(ellipse at 50% 0%, #fff7e600, #00000055 85%),
     linear-gradient(#0000 calc(100% - 2px), #bdb8ad 0) 0 0 / 56px 28px,
@@ -1397,11 +1397,29 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
     #e8e5dd; }
 #travel[open] { animation: travel-down .7s cubic-bezier(.2, .7, .2, 1) both; }
 #travel[open] > * { animation: travel-rise .7s cubic-bezier(.2, .7, .2, 1) both; }
-#travel[open] > .travel-map { animation-delay: .06s; }
+#travel[open] > .travel-tablet { animation-delay: .06s; }
 #travel[open] > .travel-foot { animation-delay: .12s; }
 @keyframes travel-down { from { filter: brightness(.15); } }
 @keyframes travel-rise { from { transform: translateY(-38px); opacity: 0; } }
 #travel:not([open]) { display: none; }
+/* A tablet screwed to the station's tiles: a dark bezel, a camera dot, the screen inside (heading, map, memory). */
+.travel-tablet { position: relative; min-height: 0; display: grid; grid-template-rows: auto 1fr; gap: 10px; padding: 26px 30px 22px; border-radius: 34px; background: linear-gradient(160deg, #2c3138, #15181c 60%); box-shadow: 0 0 0 2px #4a525c, 0 0 0 7px #0d0f12, 0 18px 30px #00000059; }
+.travel-tablet::before { content: ''; position: absolute; top: 10px; left: 50%; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #3d4a5a, #07090b 70%); }
+#travel.has-memory .travel-tablet { grid-template-rows: auto 1fr auto; }
+.travel-tablet > .travel-heading, .travel-tablet > .travel-map { border-radius: 10px; }
+.travel-memory { display: none; gap: 6px; padding: 10px 16px 12px; border-radius: 10px; background: #1f2a36; }
+#travel.has-memory .travel-memory { display: grid; }
+.travel-memory label { color: #c9d3dd; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.travel-memory-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 38%); gap: 16px; align-items: center; }
+.travel-memory input { width: 100%; padding: 10px 14px; border: 0; border-radius: 6px; background: #fffdf8; color: #27303a; font: inherit; font-size: 18px; box-shadow: inset 0 2px 0 #27303a22; caret-color: #ff8f3a; }
+.travel-memory input:focus-visible { outline: 3px solid var(--line, #d6252f); outline-offset: 2px; }
+.travel-memory input:disabled { opacity: .7; }
+.travel-ticket { margin: 0; color: #c9d3dd; font-size: 15px; font-weight: 600; }
+.travel-ticket[data-outcome="ticket"] { color: #ffd27a; }
+.travel-ticket[data-outcome="half"] { color: #fff; }
+.travel-ticket[data-outcome="blank"] { color: #9fb0bf; font-style: italic; }
+#travel.is-reading .travel-ticket { animation: travel-reading 1s ease-in-out infinite alternate; }
+@keyframes travel-reading { from { opacity: .45; } }
 .travel-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 12px 20px 12px 18px; border-radius: 6px; background: #1f2a36; border-bottom: 6px solid var(--line, #d6252f); box-shadow: 0 6px 0 #0000001f; }
 .travel-heading .battle-kicker { color: #c9d3dd; }
 .travel-heading h1 { margin: 2px 0 6px; font-size: 32px; letter-spacing: -.01em; color: #fff; }

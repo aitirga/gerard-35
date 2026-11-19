@@ -22,6 +22,8 @@ import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type Cont
 import { watchGlyphs } from './input-glyphs';
 import type { MemberId } from './story';
 import { createTravelUI } from './travel-ui';
+import { isTicketStation, remember } from './tickets';
+import { createDayLog, sendLog } from './day-log';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
 import { ANIMA_NAMES, CLASS_STATS, canWear, dazzle, kitOf, manaMax, palaceGuards, type BattleState, type ClassId, type PartySlot } from './battle';
@@ -100,6 +102,8 @@ function scorePlace(id: EnvironmentId) {
  * escape or leaving. La Voz sings her own (src/voz-song.ts), with nothing under it.
  */
 let battlePhase: BattleState['phase'] | undefined;
+/** The fight going on, for the day log: the party's moves (skill or action → times) and its round. */
+let fightMoves: Record<string, number> = {}, fightRounds = 0;
 function scoreBattle(state: BattleState | undefined) {
   const was = battlePhase;
   battlePhase = state?.phase;
@@ -211,6 +215,13 @@ const playing = (): Control => !waitsForPad && !control.secondPad ? { ...control
 const progress = () => JSON.stringify([story.saved, story.days]);
 let savedStory = progress();
 let startStory: (() => void) | undefined;
+/**
+ * What Gerard does each day, kept on the server for a future boss (src/day-log.ts,
+ * docs/day-log.md). Development jumps log too, into the local save, to check it while building.
+ */
+const dayLog = createDayLog(() => ({ epoch: story.days.epoch, ...story.days.clock }), sendLog);
+/** The flags already in the log: those loaded, and each one the story sets after. */
+let loggedFlags = new Set<string>(story.saved);
 async function load() {
   if (loading || loaded) return;
   loading = true;
@@ -221,7 +232,7 @@ async function load() {
     if (!Number.isInteger(state.score) || state.score < 0) throw new Error('state');
     previousScore = state.score;
     // A development jump keeps its own flags instead of the saved progress.
-    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); story.loadDays(state.days, state.story); savedStory = progress(); restoreLoadout(); }
+    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); story.loadDays(state.days, state.story); savedStory = progress(); restoreLoadout(); loggedFlags = new Set(story.saved); dayLog.tick(); }
     loaded = true;
     if (dirty) void save();
   } catch {
@@ -250,8 +261,8 @@ async function save() {
   } finally { saving = false; }
 }
 window.addEventListener('online', () => { void (loaded ? save() : load()); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) void save(); });
-window.addEventListener('pagehide', () => { void save(); });
+document.addEventListener('visibilitychange', () => { dayLog.visible(!document.hidden); if (document.hidden) { void save(); void dayLog.flush(true); } });
+window.addEventListener('pagehide', () => { void save(); dayLog.visible(false); void dayLog.flush(true); });
 
 try {
   const battleUI = createBattleUI(document.querySelector<HTMLElement>('#hud')!, {
@@ -261,6 +272,10 @@ try {
       // Meanwhile the fire it carries, already settled, does not show on whoever it is coming for.
       if (hold) { game.holdFire(effect?.target); await new Promise(resolve => setTimeout(resolve, hold)); }
       if (import.meta.env.DEV && state) applyHelp(state);
+      // The day log's account of the fight: its rounds and what the party did, move by move.
+      if (state && battlePhase === undefined) fightMoves = {};
+      if (state) fightRounds = state.round;
+      if (effect && effect.kind !== 'enemy') { const move = effect.dual?.id ?? effect.skill ?? effect.kind; fightMoves[move] = (fightMoves[move] ?? 0) + 1; }
       scoreBattle(state);
       if (effect) playCues(startSounds(effect, state));
       // A dual that goes off is found: the ánimas screen lists it from now on (not the tester's).
@@ -409,6 +424,8 @@ try {
     storyPaused = true; game.setPaused(true);
     await storyUI.doom();
     const effects = story.rewind();
+    // A day lived again is another day in the log (a new epoch), its flags won again.
+    dayLog.tick(); loggedFlags = new Set(story.saved);
     keepKept();
     storyChanged();
     for (const effect of effects) await play(effect);
@@ -417,7 +434,17 @@ try {
   /** Down into a station: pick a destination on the network map, ride, and come up its entrance. */
   async function ride(from: string) {
     exploration.close(); storyPaused = true; game.setPaused(true);
-    const to = await travelUI.show(from, {}, cityMarkers({ castle: story.has('tv-news'), threat: story.castleThreat, spread: Math.min(1, story.spread) }));
+    // A memory typed under the map prints a station's ticket for good (src/tickets.ts).
+    const memory = {
+      locked: story.lockedStations,
+      remember: async (text: string) => {
+        const verdict = await remember(text);
+        dayLog.add({ kind: 'memory', text, ...verdict });
+        return verdict;
+      },
+      opened: (station: string) => { if (isTicketStation(station)) storyEvent({ type: 'ticket', station }); } };
+    const to = await travelUI.show(from, {}, cityMarkers({ castle: story.has('tv-news'), threat: story.castleThreat, spread: Math.min(1, story.spread) }), memory);
+    dayLog.add({ kind: 'ride', start: from, to: to ?? null });
     const place = to ? STATION_PLACES[to] : undefined;
     const entrance = place && ENVIRONMENTS[place.environment].interactions.find(i => i.id === entranceId(to!));
     if (place && entrance) {
@@ -449,7 +476,12 @@ try {
     if (saved !== savedStory) { savedStory = saved; dirty = true; clearTimeout(saveTimer); void save(); }
   }
   function storyEvent(event: StoryEvent) {
+    // Flags are logged on the day they were won, before the event may have ended it.
+    const before = dayLog.stamp();
     const effects = story.handle(event);
+    for (const flag of story.saved) if (!loggedFlags.has(flag)) dayLog.add({ kind: 'flag', flag }, before);
+    loggedFlags = new Set(story.saved);
+    dayLog.tick();
     keepKept();
     setLucaColour(story.has('fran'));
     for (const effect of effects) if (effect.kind === 'lights') lightsFlying += effect.people.length;
@@ -617,6 +649,7 @@ try {
     // Las cuerdas: Marta's voice far off on the mazes' clock, nearer with each quality beaten (docs/quests/marta.md).
     onCuerdasSong: (t, rate) => vozSong.far(t, story.has('voz') ? 0 : rate, story.marta.beaten.length / QUALITIES.length),
     onBattleEnd: (phase, encounter, worn, xp, taken) => {
+      if (!testing && !leaving && (phase === 'won' || phase === 'lost' || phase === 'escaped')) dayLog.add({ kind: 'fight', encounter, outcome: phase, rounds: fightRounds, moves: fightMoves, worn });
       // Fought again or stepped back from, a fall never reaches the story; a test fight fought again stays a test.
       if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.refreshStory(); } return; }
       // A test fight, or one left from the picker, leaves the story as it was, and the street as the story has it.
@@ -635,6 +668,7 @@ try {
     },
     onLocation: (id, cell) => {
       currentLocation = id;
+      dayLog.enter(id);
       homeLights.setPlace(id);
       story.inside = id;
       scorePlace(id);

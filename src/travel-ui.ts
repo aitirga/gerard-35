@@ -1,7 +1,9 @@
 /**
- * Going down into a station (docs/barcelona.md): the network map on the station wall, where
- * Gerard picks a destination, and the trip, a small train running along the line on the map.
- * It only shows where he is and where the lines go; it never marks what to do.
+ * Going down into a station (docs/barcelona.md): a tablet on the station wall with the network
+ * map, where Gerard picks a destination, and the trip, a small train running along the line on
+ * the map. Under the map he types a memory of someone somewhere: it prints that station's ticket
+ * (src/tickets.ts) and only then is the station marked as a place to go. It only shows where he is
+ * and where the lines go; it never marks what to do.
  * Looks live in style.css (#travel, .city-*).
  */
 import type { ControlAction } from './controller';
@@ -9,6 +11,10 @@ import { CITY_VIEW, renderCityMap, type View } from './city-map';
 import { createCity3D, type City3D } from './city-3d';
 import type { MapMarker } from './map-markers';
 import { LINES, STATIONS, destinations, linesAt, route, type Closures, type Leg } from './transit';
+import { answer, opens, type Verdict } from './tickets';
+
+/** The tablet's memory field: stations without a ticket, and who judges a memory (`tickets.remember`). */
+export interface Tickets { locked: readonly string[]; remember: (text: string) => Promise<Verdict>; opened: (station: string) => void }
 
 const escape = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 /** Seconds per stop on the map, and the shortest and longest trip. */
@@ -21,11 +27,15 @@ export function createTravelUI(hud: HTMLElement) {
   const root = document.createElement('dialog');
   root.id = 'travel';
   root.setAttribute('aria-labelledby', 'travel-title');
-  root.innerHTML = `<header class="travel-heading"><div><span class="battle-kicker">METRO · ESTACIÓN</span><h1 id="travel-title"></h1><p class="travel-lines"></p></div><p class="travel-status" aria-live="polite"></p></header>`
-    + `<div class="travel-map"></div><footer class="travel-foot"><p class="travel-help"><span><kbd>←</kbd><kbd>→</kbd> Elegir</span><span><kbd>Enter</kbd> Viajar</span><span><kbd>+</kbd><kbd>−</kbd> Acercar</span><span class="travel-rotate"><kbd>Clic dcho.</kbd> Girar</span><span><kbd>Esc</kbd> Volver arriba</span></p></footer>`;
+  root.innerHTML = `<div class="travel-tablet"><header class="travel-heading"><div><span class="battle-kicker">METRO · ESTACIÓN</span><h1 id="travel-title"></h1><p class="travel-lines"></p></div><p class="travel-status" aria-live="polite"></p></header>`
+    + `<div class="travel-map"></div>`
+    + `<form class="travel-memory" autocomplete="off"><label for="travel-memory">¿A quién recuerdas, y dónde?</label><div class="travel-memory-row"><input id="travel-memory" maxlength="280" spellcheck="false"><p class="travel-ticket" aria-live="polite"></p></div></form></div>`
+    + `<footer class="travel-foot"><p class="travel-help"><span><kbd>↑</kbd><kbd>↓</kbd> Elegir</span><span><kbd>Enter</kbd> Viajar · Recordar</span><span><kbd>+</kbd><kbd>−</kbd> Acercar</span><span class="travel-rotate"><kbd>Clic dcho.</kbd> Girar</span><span><kbd>Esc</kbd> Volver arriba</span></p></footer>`;
   hud.append(root);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let from = '', options: Closures = {}, markers: readonly MapMarker[] = [];
+  let from = '', options: Closures = {}, markers: readonly MapMarker[] = [], tickets: Tickets | undefined;
+  /** A memory on its way to the server: the field waits. */
+  let reading = false;
   let choices: string[] = [], selected: string | undefined;
   let finish: ((to: string | undefined) => void) | undefined;
   let travelling = false;
@@ -35,6 +45,9 @@ export function createTravelUI(hud: HTMLElement) {
   /** The city as a 3D model (city-3d.ts), made the first time the map opens; the flat plan without it. */
   let city: City3D | undefined, tried = false;
   const get = <T extends Element = HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
+  const field = get<HTMLInputElement>('#travel-memory'), ticket = get('.travel-ticket');
+  /** Where the train can go from here: open, reachable and with a ticket. */
+  const reachable = () => destinations(from, options).filter(id => !tickets?.locked.includes(id));
   const badge = (id: string) => { const l = LINES.find(line => line.id === id)!; return `<b class="line-badge" data-kind="${l.kind}" style="--line:${l.colour}">${l.name}</b>`; };
 
   function render(trip?: readonly Leg[]) {
@@ -47,7 +60,7 @@ export function createTravelUI(hud: HTMLElement) {
     const stops = legs?.reduce((n, l) => n + l.stations.length - 1, 0) ?? 0;
     get('.travel-status').innerHTML = trip ? '' : selected && legs
       ? `${escape(STATIONS[selected].name)} · ${legs.map(l => badge(l.line)).join('<i>›</i>')} <small>${stops} ${stops === 1 ? 'parada' : 'paradas'}${legs.length > 1 ? ` · ${legs.length - 1} transbordo${legs.length > 2 ? 's' : ''}` : ''}</small>`
-      : 'Desde aquí no hay a dónde ir.';
+      : 'Aún no hay a dónde ir.';
   }
   /** Keeps a view inside the city and at a sane size; `w`/`h` follow the city's own shape. */
   function clampView(cx: number, cy: number, zoom: number): View {
@@ -135,6 +148,28 @@ export function createTravelUI(hud: HTMLElement) {
     });
     close(to);
   }
+  /** The memory typed under the map goes to the server; a printed ticket marks its station and picks it. */
+  async function submit() {
+    const text = field.value.trim();
+    if (!tickets || reading || travelling || !text) return;
+    reading = true; field.disabled = true;
+    root.classList.add('is-reading'); ticket.textContent = 'Leyendo…'; ticket.dataset.outcome = '';
+    let verdict: Verdict | undefined;
+    try { verdict = await tickets.remember(text); } catch { verdict = undefined; }
+    reading = false; field.disabled = false; root.classList.remove('is-reading');
+    if (!root.open) return;
+    const station = verdict && opens(verdict), already = !!station && !tickets.locked.includes(station);
+    ticket.textContent = answer(verdict, already);
+    ticket.dataset.outcome = station ? 'ticket' : verdict?.person || verdict?.place ? 'half' : 'blank';
+    if (station) {
+      if (!already) { tickets = { ...tickets, locked: tickets.locked.filter(id => id !== station) }; tickets.opened(station); }
+      field.value = '';
+      choices = reachable();
+      if (choices.includes(station)) { selected = station; frame(); }
+      render();
+    }
+    field.focus();
+  }
   function close(to?: string) {
     if (!root.open) return;
     root.open = false; travelling = false;
@@ -146,14 +181,23 @@ export function createTravelUI(hud: HTMLElement) {
     if (!root.open) return;
     event.stopPropagation();
     if (travelling) { event.preventDefault(); return; }
+    // Typing goes to the memory field; with it empty, the keys move round the map as before.
+    const typing = !!tickets && document.activeElement === field, written = typing && field.value.length > 0;
+    if (written && event.code === 'Escape') { event.preventDefault(); field.value = ''; return; }
+    if (written && ['Enter', 'NumpadEnter'].includes(event.code)) { event.preventDefault(); if (!event.repeat) void submit(); return; }
+    if (written && !['ArrowUp', 'ArrowDown', 'Tab'].includes(event.code)) return;
+    if (typing && !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'NumpadEnter', 'Escape', 'Equal', 'NumpadAdd', 'BracketRight', 'Minus', 'NumpadSubtract', 'Slash', 'Numpad0'].includes(event.code)) return;
     if (['ArrowRight', 'ArrowDown', 'KeyD', 'KeyS', 'Tab'].includes(event.code)) { event.preventDefault(); select(event.shiftKey && event.code === 'Tab' ? -1 : 1); }
     else if (['ArrowLeft', 'ArrowUp', 'KeyA', 'KeyW'].includes(event.code)) { event.preventDefault(); select(-1); }
-    else if (['Enter', 'Space', 'KeyE'].includes(event.code)) { event.preventDefault(); if (!event.repeat && selected) void travel(selected); }
+    else if (['Enter', 'NumpadEnter', 'Space', 'KeyE'].includes(event.code)) { event.preventDefault(); if (!event.repeat && selected) void travel(selected); }
     else if (['Equal', 'NumpadAdd', 'BracketRight'].includes(event.code) || event.key === '+') { event.preventDefault(); zoom(1 / 1.35); }
     else if (['Minus', 'NumpadSubtract', 'Slash'].includes(event.code) || event.key === '-') { event.preventDefault(); zoom(1.35); }
     else if (event.code === 'Digit0' || event.code === 'Numpad0') { event.preventDefault(); if (city) city.orbit = city.whole; else { view = { ...CITY_VIEW }; render(); } }
     else if (event.code === 'Escape') { event.preventDefault(); close(); }
   }
+  root.addEventListener('submit', event => { event.preventDefault(); void submit(); });
+  // Clicks on the map leave the keys with the field, so typing never needs a click first.
+  root.addEventListener('pointerup', () => { if (tickets && root.open && !travelling) requestAnimationFrame(() => field.focus({ preventScroll: true })); });
   root.addEventListener('click', event => {
     if (drag?.moved) return;
     const station = (event.target as Element).closest<SVGGElement>('[data-station]')?.dataset.station;
@@ -197,16 +241,23 @@ export function createTravelUI(hud: HTMLElement) {
     get open() { return root.open; },
     /** The 3D model, when there is one (screenshot scenarios move its camera). */
     get city() { return city; },
-    /** Shows the map from `station` with the story's `icons`; resolves with the destination, or nothing if they go back up. */
-    async show(station: string, closures: Closures = {}, icons: readonly MapMarker[] = []): Promise<string | undefined> {
+    /**
+     * Shows the map from `station` with the story's `icons`; resolves with the destination, or
+     * nothing if they go back up. With `memory`, stations without a ticket are not destinations
+     * and a field under the map takes memories; without it (scenarios), every station is open.
+     */
+    async show(station: string, closures: Closures = {}, icons: readonly MapMarker[] = [], memory?: Tickets): Promise<string | undefined> {
       close();
-      from = station; options = closures; markers = icons;
-      choices = destinations(from, closures); selected = choices[0];
+      from = station; options = closures; markers = icons; tickets = memory;
+      root.classList.toggle('has-memory', !!tickets);
+      field.value = ''; ticket.textContent = ''; ticket.dataset.outcome = '';
+      choices = reachable(); selected = choices[0];
       // The model's WebGPU device comes up asynchronously the first time; the panel waits for it.
       if (!tried) { tried = true; city = await createCity3D(get('.travel-map')); root.classList.toggle('is-3d', !!city); }
       // Open first: the model takes the panel's size and frames itself on it.
       root.open = true; city?.pause(false); frame(); render();
       window.addEventListener('keydown', keydown, { capture: true });
+      if (tickets) field.focus({ preventScroll: true });
       return new Promise(resolve => { finish = resolve; });
     },
     /** A controller drives it like the keyboard: directions choose, confirm travels, cancel goes back. */

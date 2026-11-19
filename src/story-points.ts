@@ -61,6 +61,16 @@ export const STORY_ARCS = [
     { flags: ['castle'], label: 'Dentro del castillo', spot: castle },
     { flags: ['palace-tried'], label: 'Primera caída en el castillo' },
   ] },
+  // Memory tickets (src/tickets.ts): each step opens one more station on the map, in this order.
+  { id: 'billetes', chapter: 2, title: 'Billetes-recuerdo', detail: 'La tableta de la estación', after: 'metro', steps: [
+    { flags: ['ticket-cardedeu'], label: 'Nuria y Uri en Cardedeu', spot: { environment: 'meridiana-calle' } },
+    { flags: ['ticket-barceloneta'], label: 'Los de la uni en la Barceloneta', spot: { environment: 'meridiana-calle' } },
+    { flags: ['ticket-sagrada-familia'], label: 'Luca en la Sagrada Família', spot: { environment: 'meridiana-calle' } },
+    { flags: ['ticket-placa-de-sants'], label: 'Bernat en El Nucli (Sants)', spot: { environment: 'meridiana-calle' } },
+    { flags: ['ticket-poble-sec'], label: 'Emilie en Poble Sec', spot: { environment: 'meridiana-calle' } },
+    { flags: ['ticket-el-carmel'], label: 'Aitor en los Búnkers del Carmel', spot: { environment: 'meridiana-calle' } },
+    { flags: ['ticket-espanya'], label: "Aitor en Plaça d'Espanya", spot: { environment: 'meridiana-calle' } },
+  ] },
   { id: 'nuria', chapter: 2, title: 'Misión de Nuria y Uri', detail: 'Cardedeu', after: 'metro', anima: 'nuria', steps: [
     { flags: ['cardedeu'], label: 'La R4 hasta Cardedeu', spot: { environment: 'cardedeu' } },
     // Winning at the top of the tower sets them all at once (story.ts): Papagato, the ánima and the two lights.
