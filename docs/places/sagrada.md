@@ -102,7 +102,7 @@ has the four viewpoints); nothing from them is saved or shipped.
 | Accents | Mosaic red `#b8322a`, Venetian gold `#d6a428`, the white cross, crane yellow `#e6b31e` | Porphyry `#8a6a62`, basalt `#534d47`, vault gold `#c48f4e` |
 | Signature material | Carved sandstone in two ages, side by side | Polished column stone and stained glass |
 | Ground | Grey panot sidewalks, granite slabs on the pedestrian Marina, *sauló* (pale sand) in both squares, the pond | Pale limestone slabs, crypt grilles in the ambulatory |
-| Silhouette | The cluster of honeycomb spires rising to the white cross, Mary's star, the cranes; nothing else in the city is as tall | Trunks that split at a knot into branches holding hexagonal vault "umbrellas" |
+| Silhouette | The cluster of honeycomb spires rising to the white cross, Mary's star, the cranes; nothing else in the city is as tall | Trunks that split at a knot into branches holding hexagonal vault "umbrellas", whole at the back and in the overview; before and beside Gerard, their star-shaped stumps (§ The cut) |
 | Light and mood | Strong Mediterranean sun from the south-west, long spire shadows across Plaça de Gaudí and the pond; busy, touristic, a little overwhelming. At night the cross and the star glow | Hushed; light comes in colour, cool on the near side, warm on the far side, and moves slowly over the floor |
 | Props kit | Grey crowd barriers and the queue, tour groups behind a raised umbrella, the entrance signs, souvenir kiosks and terraces, stone pines and palms, reeds in the pond, tower cranes, scaffolding and hoarding on the Glory, Falqués lamps, the L2/L5 entrance | Rows of wooden chairs, the canopy, the organ, *silencio* signs, rope barriers, the Evangelists' medallions, visitors looking up |
 | Ambient sound | Crowd murmur in many languages, a guide's voice, pigeons, a crane's beep and a distant drill | A long reverberant hush, footsteps, a whispered *silencio*, an organ note now and then |
@@ -359,6 +359,21 @@ G..hhhhh.hhhhh.hhhhh......................^^^^^^^^...........y  21
   the trunks, knots and medallions a narrower one (1.4 units), so a column standing between him and
   the camera opens round him instead of hiding him.
   Each material sets its own clearing: a value left in the shared uniform scope would carry over.
+- **The cut** (2026-11-19, Aitor: the columns and everything over them kept the place and the way
+  from being seen; then: the ones at the back whole, sinking as the flat's walls do as Gerard comes
+  up to them): walking, the forest sinks before Gerard. The columns between him and the camera and
+  those beside him are stumps 2.6 units high (`CUT`, about 4 m), nothing over them; behind him, where
+  a column hides only what is further back, each one stands taller the further back it is (from
+  `CUT_REACH` 2.5 units behind him, `CUT_SLOPE` 1.8 of height a unit), so the back of the forest is
+  whole, with its branches and its cells of the vault, and a column sinks as he walks up to it and
+  grows again behind him. Each column is cut level, at the height of its own cell of the 7.5 m grid
+  they stand on (the shader snaps to it: `CUT_GRID`). It is the same shader chunk that opens the
+  clearing, in the shadow pass too, so a stump casts a stump's shadow; the trunks and branches are
+  drawn two-sided and their inside, seen through the cut, is painted as the section: the stone's
+  pale heart under the cut's warm rim. The story's looks sink the forest before what the camera
+  looks at; in a fight the columns behind the fighters stand whole. Pulling back to the overview (R)
+  every column grows up again (the cut rises to 19 units, over everything), and the model reads cut
+  in two as before.
 - **Glass**: Vila-Grau's two palettes painted as leaded panes (own procedural painting), glowing:
   warm (reds, oranges, yellows) on the Passion side's tall walls (a pair of lancets and a rose in each
   nave bay, three tall windows and a rose over the Passion's bronze door at the arm's end), cool
@@ -460,6 +475,9 @@ Glory, the apse, the nave, the overview, walking back out, the draw calls).
   real ring. The canopy is cream, not the real white with lettering; Christ is a simple figure.
 - The light pools are painted, not cast: they drift as one and do not follow the windows exactly.
   The low sun lights the floor through the vault (it casts no shadow), which a real nave would not.
+- Walking, the columns before and beside Gerard are stumps (§ The cut): the forest overhead is seen
+  at the back and in the overview. The canopy's and the hood dryer's wires go up into nothing. A
+  vault cell's rim reaches a little over its neighbours' cells and is cut square there.
 - The Nativity portal opens for anyone; the mission that uses the inside will decide whether the
   guard's lines come back as a gate (`story.gate`).
 - No sound of its own yet (the hush, an organ note): `PLACE_SONGS` has nothing for either place.

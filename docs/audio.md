@@ -268,6 +268,7 @@ the fight's screen knows, the screen does (`sound`).
 | `unlock`, `pickup` | A new ánima or a skill learned; an item gained. Out of fights too. |
 | `level-up`, `skill-learned` | On a fight's victory screen: an ánima's level stamping in; a skill it learned taking the screen. |
 | `rise`, `sink`, `stretch` | Nuria's street turning into La calle que no acaba (src/street-shift.ts): a house born out of the ground (a rumble, stone grinding and cracking up, a thud as it settles), what stood beyond the corner going down, and the corner stretching out into the street's start. |
+| `luz-azul`, `luz-verde`, `luz-naranja`, `luz-rojo`, `luz-oro`, `luz-blanca` | Fran's salon: the windows' light turns to that colour in a fight. A pane of stained glass rings once, quiet and short; the cold lights higher than the warm, the white one plain. |
 
 A sound from somewhere in the street (the shift's houses) comes from where it stands: quieter the
 further from Gerard (down to a fifth at 45 m) and panned to its side of the screen (`heard` in

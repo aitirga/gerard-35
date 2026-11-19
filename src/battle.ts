@@ -171,7 +171,7 @@ export type CuerdasKind = 'lealtad' | 'cristalino' | 'directo' | 'eco' | 'voz';
 /**
  * Fran's salon's foes (docs/quests/luca.md § Monsters): what is eating Luca's colour, each asking one
  * question and showing its answer on its plate. Polillas come in more while two of them stand (a blow
- * on everyone, fire best); Estampados each resist their own colour's element; El Telescopio says
+ * on everyone, fire best); a shirt of Luca's (`estampado-*`) is only hurt in the light of its own colour; El Telescopio says
  * a turn ahead that it is focusing, and a blow then cracks its lens; La Laca lacquers the party (fire
  * hurts them double) and bursts over every foe at the touch of fire; the chaplains copy what was done
  * last, the freshly styled one (*Recién peinado*) leading, and stop mid-gesture when it falls.
@@ -630,9 +630,9 @@ export const AFFINITIES: Partial<Record<FoeKind, Partial<Record<Element, Affinit
   mago: { agua: 'weak', fuego: 'resist' },
   // Lo Directo is a lance, a rod in a storm; an Eco is air, and fire eats it.
   directo: { electrico: 'weak' }, eco: { fuego: 'weak' },
-  // Fran's salon (docs/quests/luca.md): a moth to the flame, a cloud of hairspray; each patch keeps its own colour's element off; a brass lens is used to heat.
+  // Fran's salon (docs/quests/luca.md): a moth to the flame, a cloud of hairspray; a brass lens is used to heat.
+  // (Luca's shirts keep nothing off: the light of their colour already eats that element while they can be hurt.)
   polilla: { fuego: 'weak' }, laca: { fuego: 'weak' },
-  'estampado-rojo': { fuego: 'resist' }, 'estampado-azul': { agua: 'resist' }, 'estampado-oro': { electrico: 'resist' },
   telescopio: { fuego: 'resist' },
 };
 /** What `element` finds in `c`: a weakness, a resistance or nothing. */
@@ -1203,8 +1203,8 @@ export interface BattleEffect {
   lens?: string;
   /** Fran's salon: the party lacquered by La Laca. */
   lacquered?: string[];
-  /** Fran's salon: an Estampado took back PV in the light of its own colour. */
-  recolored?: { target: string; amount: number };
+  /** Fran's salon: shirts of Luca's a blow found out of their light (nothing done to them), and the light of one that fell, gone for good. */
+  unlit?: string[]; lightOut?: LightId;
   /** Fran: his Brillo now (it grew with a light, or a lamp breaking took it away), his new phase, a lamp broken. */
   brillo?: number; stage?: 2 | 3; lampBroken?: string;
   /** A second blow on La Voz inside the same note, by the other fighter: an Acorde. */
@@ -1282,10 +1282,20 @@ export const lightNow = (state: BattleState): LightId | undefined => state.light
  * Whether the light on now eats `actor`'s blow of `element`: only the party's, only in Fran's salon
  * (docs/quests/luca.md). Returns the light, to say which.
  */
-export function annulled(state: BattleState, actor: Combatant, element?: Element): LightId | undefined {
+export function annulled(state: BattleState, actor: Combatant, element?: Element, kind?: string): LightId | undefined {
   const light = lightNow(state);
-  return light && element && cancels(light) === element && state.allies.includes(actor) ? light : undefined;
+  if (!light || !state.allies.includes(actor)) return undefined;
+  // The white light carries no element: it eats the physical blows, whatever element Atacar carries.
+  const eats = lightEats(state, light);
+  return (eats === 'fisico' ? kind === 'physical' : !!element && eats === element) ? light : undefined;
 }
+/**
+ * Fran's fight (docs/quests/luca.md § Final boss): whether the canopy's lamp that drinks `light` lies
+ * broken, its colour rained back on the party, so that light eats nothing of theirs any more.
+ */
+export const lightFreed = (state: BattleState, light: LightId) => state.encounter === 'fran' && state.foes.some(f => f.kind === 'lampara' && f.hp <= 0 && !!f.lamp && LAMPS[f.lamp].lights.includes(light));
+/** What `light` eats of the party's blows now: its element, `fisico` for the white one, nothing once its lamp is broken. */
+export const lightEats = (state: BattleState, light: LightId) => lightFreed(state, light) ? undefined : cancels(light);
 /** How the fight says a blow the light ate. */
 const annulledText = (light: LightId) => `La luz ${LIGHTS[light].name.toLowerCase()} se lo come: nada.`;
 /** Whether magic comes back off `c`: Lo Cristalino until it cracks, La Voz while her Nota clara lasts. */
@@ -1902,10 +1912,10 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     target.marks = { ...target.marks, [ability.id]: { amount: ability.power, stats: [...ability.stats], until: state.round + BOOST_ROUNDS - 1 } };
     effect.stats = [{ target: target.id, way: 'down', stats: [...ability.stats] }];
     state.message = `${actor.name} usa ${ability.name} contra ${target.name}. ${statNames(ability.stats)} −${ability.power} durante ${BOOST_ROUNDS} rondas.`;
-  } else if (everyone && annulled(state, actor, elementOf(ability))) {
+  } else if (everyone && annulled(state, actor, elementOf(ability), ability?.kind)) {
     // Fran's salon: the light eats a blow on everyone of its element too.
     spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = target!.id;
-    const light = annulled(state, actor, elementOf(ability))!;
+    const light = annulled(state, actor, elementOf(ability), ability?.kind)!;
     effect.annulled = light; effect.amount = 0;
     effect.hits = targets.map(foe => ({ target: foe.id, amount: 0 }));
     state.message = `${actor.name} usa ${ability!.name}. ${annulledText(light)}`;
@@ -1987,9 +1997,9 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (cast?.lost) {
       effect.amount = 0;
       state.message = `${actor.name} usa ${ability!.name}: apostaba un ${effect.die!.face} y sale un ${effect.die!.rolled}. Nada. El dado se pierde.`;
-    } else if (annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability))) {
-      // Fran's salon: the light on now eats a blow of its own element, whole.
-      const light = annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability))!;
+    } else if (annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'attack' ? 'physical' : ability?.kind)) {
+      const light = annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'attack' ? 'physical' : ability?.kind)!;
+      // Fran's salon: the light on now eats a blow of its own element (the white one, a physical blow), whole.
       effect.amount = 0; effect.annulled = light;
       state.message = `${actor.name} usa ${action === 'skill' ? ability!.name : 'Atacar'} contra ${target.name}. ${annulledText(light)}`;
     } else if (target.shell && !melts) {
@@ -2206,7 +2216,7 @@ export function actDual(state: BattleState, id: DualId, targetId?: string): Batt
     return effect;
   }
   state.message = `¡Ataque dual! ${d.name} contra ${target.name}.`;
-  const eaten = annulled(state, a, elementOf(d));
+  const eaten = annulled(state, a, elementOf(d), d.kind);
   if (eaten) {
     effect.amount = 0; effect.annulled = eaten;
     state.message += ` ${annulledText(eaten)}`;
@@ -2276,7 +2286,7 @@ function release(state: BattleState, holder: Combatant) {
   if (!d || holder.hp <= 0) return;
   const melts = d.parts.some(id => SKILLS.some(s => s.id === id && 'melts' in s));
   const effect: BattleEffect = { kind: 'skill', actor: holder.id, release: { id: d.id, name: d.name } };
-  const eaten = annulled(state, holder, elementOf(d));
+  const eaten = annulled(state, holder, elementOf(d), d.kind);
   if (eaten) {
     effect.annulled = eaten;
     effect.hits = state.foes.filter(f => f.hp > 0).map(foe => ({ target: foe.id, amount: 0 }));
@@ -2959,12 +2969,29 @@ function runLight(state: BattleState, seconds: number) {
     fran.brillo = (fran.brillo ?? 0) + 1;
     (state.news ??= []).push({ kind: 'enemy', actor: fran.id, ability: foeAbility('brillo'), brillo: fran.brillo });
   }
-  // An Estampado in the light of its own colour fills in again.
-  for (const light of came) for (const f of state.foes.filter(f => f.kind === `estampado-${light}` && f.hp > 0 && f.hp < f.maxHp)) {
-    const amount = changeHealth(f, Math.round(f.maxHp * LUCA.recolor));
-    (state.news ??= []).push({ kind: 'enemy', actor: f.id, recolored: { target: f.id, amount } });
+  // A fallen shirt's light does not come on again.
+  return passFallenLights(state) || came.length > 0;
+}
+/** The light a shirt of Luca's hangs in: its own colour's. */
+const shirtLight = (c: Combatant): LightId | undefined => c.kind?.startsWith('estampado-') ? c.kind.slice('estampado-'.length) as LightId : undefined;
+/** Whether a shirt hangs in the light of its own colour now: the only one a blow can hurt (La carta de colores). */
+export const shirtLit = (state: BattleState, shirt: Combatant) => !state.light || lightNow(state) === shirtLight(shirt);
+/**
+ * La carta de colores: the light of a shirt that has fallen is gone for good. If it is the one on,
+ * the walk goes straight on to the next light that still has its shirt. Returns whether it moved.
+ */
+function passFallenLights(state: BattleState) {
+  if (!state.light) return false;
+  const standing = state.foes.filter(f => f.hp > 0).map(shirtLight), fallen = state.foes.filter(f => f.hp <= 0).map(shirtLight).filter(light => light && !standing.includes(light));
+  if (!fallen.length || !standing.some(Boolean)) return false;
+  let moved = false;
+  for (let step = 0; step < 8; step++) {
+    const now = lightAt(state.light.t, state.light.walk);
+    if (!fallen.includes(now.light)) break;
+    state.light.t += now.left + 1e-3; moved = true;
   }
-  return came.length > 0;
+  if (moved) (state.lightNews ??= []).push(lightNow(state)!);
+  return moved;
 }
 /** The lights that came on since it was last asked, in order. */
 export function takeLightNews(state: BattleState): LightId[] {
@@ -2986,24 +3013,25 @@ export function songLabel(state: BattleState) {
  * hard and cracks the lens, calling the beam off. La Laca lacquers the party (*Lacado*, fire on them
  * lands `lacado` times as hard) and then sparks over everyone (`chispa`, fire); brought down by fire,
  * La Laca bursts over every other foe (`estallido`). A chaplain cuts (`tijeretazo`); the freshly styled one
- * repeats the last gesture made, whole, and its fall leaves the others still for the round. An
- * Estampado gets `recolor` of its PV back each time the light of its own colour comes on.
+ * repeats the last gesture made, whole, and its fall leaves the others still for the round. A
+ * shirt of Luca's is only hurt in the light of its own colour (`shirtLit`); fallen, its light is gone.
  * Fran (§ Final boss): a Corte a medida (`corte`) on one, his acolytes copying it. From `standAt` of
  * his PV he stands and the canopy's three lamps light up: every light whose lamp still hangs gives
  * him a Brillo (up to `brilloMost`), each one taking `brilloStep` more off a blow on him; only the lamp
  * of the light on now can be broken, and breaking one takes all his Brillo. From `hisopoAt` he takes
- * the aspergillum: a turn to load it (said a turn ahead), then the Aspersión on everyone (`aspersion`),
- * their Fuerza and Magia down by `aspersionDown` for the rest of the fight.
+ * the aspergillum: a turn to load it (said a turn ahead), then the Aspersión on everyone (`aspersion`,
+ * `aspersionLamp` more for each lamp still hanging), their Fuerza and Magia down by `aspersionDown`
+ * for each lamp still hanging, for the rest of the fight. A lamp broken rains its colour back: its
+ * lights no longer eat the party's blows (`lightFreed`).
  */
 export const LUCA = {
   aleteo: 12, polillasMost: 5,
-  estampar: 9,
+  estampar: 18,
   rayoLente: 66, tubo: 54, lente: 1,
   chispa: 22, lacado: 2, estallido: 40,
   tijeretazo: 23,
-  recolor: .8,
   deslumbre: 14, lacaAbside: 260,
-  corte: 18, acolito: 55, acolitoCorte: 16, aspersion: 26, aspersionDown: 2, brilloStep: .5, brilloMost: 3, standAt: .66, hisopoAt: .33,
+  corte: 22, acolito: 55, acolitoCorte: 16, aspersion: 16, aspersionLamp: 12, aspersionDown: 1, brilloStep: .5, brilloMost: 3, standAt: .75, hisopoAt: .33,
 };
 /** The canopy's three lamps (Fran's fight): each drinks the lights of one side of the day. */
 export type LampId = 'frio' | 'calido' | 'oro';
@@ -3022,20 +3050,20 @@ export const TELESCOPIO_TURNS = ['enfocar', 'rayo-lente', 'tubo'] as const;
 export const LACA_TURNS = ['lacar', 'chispa-laca'] as const;
 /** Fran's salon's foes, by name. */
 export const LUCA_NAMES: Record<LucaKind, string> = {
-  polilla: 'Polilla', 'estampado-rojo': 'Estampado rojo', 'estampado-azul': 'Estampado azul', 'estampado-oro': 'Estampado oro',
+  polilla: 'Polilla', 'estampado-rojo': 'Camisa roja', 'estampado-azul': 'Camisa azul', 'estampado-oro': 'Camisa dorada',
   telescopio: 'El Telescopio', laca: 'La Laca', capellan: 'Capellán', fran: 'Fran', lampara: 'Lámpara',
 };
 const LUCA_MESSAGES: Record<LucaEncounter, string> = {
   'luca-recepcion': 'Polillas grises salen de detrás del mostrador. Van hacia la luz, y la luz sois vosotros.',
   'luca-sillones': 'Los capellanes se levantan de los sillones a la vez, cada uno con un peinado que no es suyo. Detrás, una nube de laca.',
-  'luca-carta': 'Tres manchas de estampado se despegan de la carta de colores. Tienen los colores de Luca.',
+  'luca-carta': 'Tres camisas de Luca cuelgan de sus perchas delante de la carta de colores: roja, azul, dorada. Sin nadie dentro.',
   'luca-abside': 'Un telescopio de latón gira sobre su trípode y os busca. Las polillas ya están aquí.',
   fran: 'Fran no levanta la vista de sus papeles. A cada lado, un capellán con el peinado recién hecho. La luz cambia de color sobre los tres.',
 };
 const LUCA_WON: Record<LucaEncounter, string> = {
   'luca-recepcion': 'La última polilla se deshace en polvo gris. Por la puerta sale un poco de azul.',
   'luca-sillones': 'Los capellanes se sientan, despeinados, y se miran como si se acabaran de despertar. Un rojo se va hacia la puerta.',
-  'luca-carta': 'Los estampados se sueltan de la carta y salen volando hacia fuera, en fila, como pájaros.',
+  'luca-carta': 'La última camisa cae de su percha, vacía. Un naranja se va hacia la puerta.',
   'luca-abside': 'La lente se apaga. Las cartas de estrellas vuelven a ser solo papel. Un dorado se escapa hacia la puerta.',
   fran: 'Fran se queda quieto bajo el baldaquino. La luz deja de correr y se queda blanca, de mediodía.',
 };
@@ -3075,8 +3103,9 @@ export function dazzle(state: BattleState) {
   for (const f of blind) f.timed = { ...f.timed, cegado: { level: 2, left: LUCA.deslumbre, next: TIMED.cegado.every } };
   if (blind.length) state.message = `${state.message} La luz de los espejos les da en la cara: casi no ven.`;
 }
-/** How much of a blow one of the salon's foes takes: El Telescopio while it focuses, its lens bare; Fran through his Brillo; a lamp only in its own light. */
+/** How much of a blow one of the salon's foes takes: El Telescopio while it focuses, its lens bare; Fran through his Brillo; a lamp and a shirt of Luca's only in their own light. */
 function lucaTaken(state: BattleState, target: Combatant) {
+  if (shirtLight(target)) return shirtLit(state, target) ? 1 : 0;
   if (target.kind === 'telescopio' && target.intent?.ability === 'rayo-lente') return LUCA.lente;
   if (target.kind === 'fran') return 1 / (1 + LUCA.brilloStep * (target.brillo ?? 0));
   if (target.kind === 'lampara') return lampLit(state, target) ? 1 : 0;
@@ -3084,6 +3113,8 @@ function lucaTaken(state: BattleState, target: Combatant) {
 }
 /** Whether a lamp of the canopy hangs in the light on now: the only one that can be broken. */
 export const lampLit = (state: BattleState, lamp: Combatant) => { const light = lightNow(state); return !!light && !!lamp.lamp && LAMPS[lamp.lamp].lights.includes(light) && (state.foes.find(f => f.kind === 'fran')?.stage ?? 1) >= 2; };
+/** The canopy's lamps still hanging: each one gives Fran a Brillo with its light and dyes his Aspersión. */
+const lampsHanging = (state: BattleState) => state.foes.filter(f => f.kind === 'lampara' && f.hp > 0).length;
 /** Fran, in his fight. */
 const franOf = (state: BattleState) => state.foes.find(f => f.kind === 'fran');
 /** The element a party's action landed with, if any: Atacar's, a skill's, a dual's. */
@@ -3104,6 +3135,19 @@ function checkLuca(state: BattleState, effect?: BattleEffect) {
   const landing = ally && effect ? landingOf(effect) : undefined;
   if (ally && landing) state.flash = ally.id;
   const struck = (id: string) => !!effect && ((effect.target === id && (effect.amount ?? 0) > 0) || !!effect.hits?.some(h => h.target === id && h.amount > 0));
+  // A shirt of Luca's struck out of its light: nothing done to it, and the fight says so. One fallen: its light goes out for good.
+  if (ally && effect && !effect.annulled) {
+    const missed = [effect.target, ...effect.hits?.map(h => h.target) ?? []].filter((id, i, all) => id && all.indexOf(id) === i && !struck(id)).map(id => state.foes.find(f => f.id === id)).filter(f => f && f.hp > 0 && shirtLight(f) && !shirtLit(state, f)) as Combatant[];
+    if (missed.length) { effect.unlit = missed.map(f => f.id); state.message += ` ${missed.length > 1 ? 'Están' : `${missed[0].name} está`} fuera de su luz: nada.`; }
+  }
+  const out = state.foes.find(f => f.hp <= 0 && !f.told && shirtLight(f));
+  if (out) {
+    out.told = true;
+    const light = shirtLight(out)!, left = state.foes.some(f => f.hp > 0 && shirtLight(f));
+    if (effect) effect.lightOut = light;
+    if (left) state.message += ` La luz ${LIGHTS[light].name.toLowerCase()} se apaga con ella.`;
+    passFallenLights(state);
+  }
   // La Laca brought down by fire: it goes up, and takes something off every other foe standing.
   const laca = state.foes.find(f => f.kind === 'laca');
   if (laca && laca.hp <= 0 && !laca.told && ally && landing === 'fuego' && struck(laca.id) && !effect!.burst) {
@@ -3149,7 +3193,8 @@ function checkFran(state: BattleState, effect?: BattleEffect) {
     broken.told = true; fran.brillo = 0;
     const news = effect ?? { kind: 'enemy', actor: fran.id };
     news.lampBroken = broken.id; news.brillo = 0;
-    say(news, `¡La ${broken.name.toLowerCase()} estalla! Llueve color, y a Fran se le apaga el brillo.`);
+    const colours = LAMPS[broken.lamp!].lights.map(id => LIGHTS[id].name.toLowerCase()).join(' y ');
+    say(news, `¡La ${broken.name.toLowerCase()} estalla! Llueve ${colours} sobre vosotros, y a Fran se le apaga el brillo. Esa luz ya no se come nada vuestro.`);
   }
   if (fran.hp <= 0) { for (const f of state.foes) if (f.kind === 'capellan') f.hp = 0; return; }
   const share = fran.hp / fran.maxHp;
@@ -3208,20 +3253,25 @@ function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effec
       use('tomar-hisopo'); delete effect.target;
       actor.intent = { ability: 'aspersion', at: 'todos' };
       effect.telegraph = { id: 'aspersion', name: FOE_ABILITIES.aspersion.name, at: 'todos' };
-      state.message = `${actor.name} hunde el hisopo en el cuenco y lo levanta despacio. Gotea.`;
+      const hanging = lampsHanging(state);
+      state.message = `${actor.name} hunde el hisopo en el cuenco y lo levanta despacio. ${hanging ? `Gotea del color de ${hanging === 1 ? 'la lámpara que queda' : `las ${hanging} lámparas que quedan`}.` : 'Gotea claro: ya no queda luz que beber.'}`;
     } else if (move === 'aspersion') {
       // Bleach over everyone: it hurts, and it takes the colour out of their Fuerza and Magia for good.
+      // Each lamp still hanging dyes it: it hurts more and takes more colour out.
       use('aspersion');
-      onEveryone(state, effect, target, zap, LUCA.aspersion);
-      const stat: (keyof Stats)[] = ['fuerza', 'magia'], changes: StatChange[] = [];
-      for (const ally of alive) {
+      const hanging = lampsHanging(state);
+      onEveryone(state, effect, target, zap, LUCA.aspersion + LUCA.aspersionLamp * hanging);
+      const stat: (keyof Stats)[] = ['fuerza', 'magia'], changes: StatChange[] = [], down = LUCA.aspersionDown * hanging;
+      if (down) for (const ally of alive) {
         const lasting = ally.lasting ??= { shifts: {}, from: FOE_ABILITIES.aspersion.name };
-        for (const s of stat) lasting.shifts[s] = (lasting.shifts[s] ?? 0) - LUCA.aspersionDown;
+        for (const s of stat) lasting.shifts[s] = (lasting.shifts[s] ?? 0) - down;
         changes.push({ target: ally.id, way: 'down', stats: stat });
       }
-      effect.stats = changes;
+      if (changes.length) effect.stats = changes;
       delete actor.intent;
-      state.message = `${actor.name} sacude el hisopo sobre vosotros. Donde cae, el color se va. −${effect.amount} PV a ${target.name}.`;
+      state.message = hanging
+        ? `${actor.name} sacude el hisopo sobre vosotros. Donde cae, el color se va. −${effect.amount} PV a ${target.name}.`
+        : `${actor.name} sacude el hisopo sobre vosotros. Moja, y nada más: no os quita el color. −${effect.amount} PV a ${target.name}.`;
     } else {
       use('corte'); effect.target = target.id; effect.amount = hit(target, LUCA.corte);
       remember('corte', LUCA.corte, false, false, false);

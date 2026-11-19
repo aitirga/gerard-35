@@ -123,8 +123,20 @@ export const LOOKS = [
   { id: 'luca-lente', label: 'Mirar la lente', cell: { x: 52, z: 28 } },
 ] as const;
 export type LookId = typeof LOOKS[number]['id'];
-/** Where the camera turns as they come in: down the transept to the crossing, where the salon is. */
-export const SALON_VIEW = { cell: { x: 38, z: 26 }, height: 12 } as const;
+/**
+ * Coming in the first time, the mission in three looks, each held while its lines are said
+ * (`LINES_LUCA.inside`, one dialogue a look): Fran under the canopy with his back to everyone, the
+ * queue of grey visitors that keeps the way to him, and the moths by the desk, eating a colour.
+ */
+export const SALON_VIEWS = [
+  { cell: { x: 42, z: 21 }, height: 7 },
+  { cell: { x: 24, z: 22 }, height: 11 },
+  { cell: { x: 36, z: 31 }, height: 5 },
+] as const;
+/** How close the camera comes to a zone's foes as its lines are said, before its fight. */
+export const ZONE_VIEW = 6.5;
+/** Where a colour won back leaves the basilica: the Nativity door, on its way to Luca. */
+export const COLOUR_OUT: Cell = { x: 36, z: 39 };
 /** Where the window's beam comes in, which way, and the chaplains' chairs it is for. */
 export const BEAM = { from: { x: 8, z: 6 }, dir: { x: 0, z: 1 }, target: { x: 12, z: 20 } } as const;
 /** Luca's own colours, back once Fran is beaten: the loud shirt, the trousers. */
@@ -193,30 +205,40 @@ export const LINES_LUCA = {
     aitor('Fuera del agua, el mismo Luca. Gris. Quieto.'),
   ),
   reflejoAfter: group('aitor', gerard('En el agua y fuera de ella, el mismo color.')),
-  /** In through the door, the first time. */
-  inside: group('aitor',
-    aitor('Huele a laca.'),
-    gerard('Aquí todavía es una iglesia. Al fondo, no.'),
-    aitor('Y la luz… no se está quieta.'),
-  ),
+  /**
+   * In through the door, the first time: what is going on, said in few words over three looks
+   * (SALON_VIEWS): who, what keeps the way, and what there is to take back.
+   */
+  inside: [
+    group('aitor', gerard('Fran. Bajo el baldaquino, de espaldas a todo.'), aitor('Huele a laca. Ha hecho de la basílica su peluquería.')),
+    group('aitor', aitor('Y toda esa gente gris hace cola para él. Por ahí no se pasa.')),
+    group('aitor',
+      gerard('Polillas. Grises, como Luca.'),
+      aitor('Se le están comiendo el color. Lo que le falta está aquí dentro, a trozos.'),
+      gerard('Pues se lo sacamos. Trozo a trozo, hasta llegar a Fran.'),
+    ),
+  ] as Dialogue[],
   insideAgain: group('aitor', aitor('La luz sigue cambiando.')),
   /** Walking up to each zone's foes, what is there. */
   zones: {
-    recepcion: group('aitor', aitor('Un mostrador de peluquería, aquí. Y una agenda: «Fran. Todo el día ocupado».'), gerard('Polillas. Grises, como Luca.')),
+    recepcion: group('aitor', aitor('Vienen hacia nosotros. Y la luz… no se está quieta.')),
     sillones: group('capellan',
       gerard('Sillones de peluquería, en fila, donde estaban las sillas. Y espejos.'),
       capellan('Siéntense. El señor estará con ustedes enseguida.'),
       aitor('Ese cura lleva el pelo azul. Y ese otro, de punta.'),
     ),
-    carta: group('aitor', gerard('Las vidrieras son una carta de colores.'), aitor('Le faltan los de Luca. Los tienen esas cosas.')),
+    carta: group('aitor', gerard('Esas camisas son de Luca.'), aitor('Sin nadie dentro. Y solo una tiene color: la de la luz que hay ahora.')),
     abside: group('aitor', gerard('Lentes. Cartas de estrellas. Esto es de Luca.'), aitor('Y lo están usando contra él.')),
   } satisfies Record<ZoneId, Dialogue>,
-  /** A zone won: a colour goes out of the door, and the queue in front moves on a step; by how many are won. */
+  /**
+   * A zone won: its colour has just gone out of the door, seen (COLOUR_OUT), and the queue in front
+   * moves on a step; by how many are won.
+   */
   zoneWon: [
-    group('aitor', aitor('¿Lo has visto? Algo ha salido por la puerta. Un color.'), gerard('Y la cola de la nave se ha movido. Ha pasado uno.')),
-    group('aitor', aitor('Otro color, hacia fuera.'), aitor('La cola de la Pasión avanza. Nos toca.')),
+    group('aitor', aitor('Azul. Ha salido por la puerta, hacia Luca.'), gerard('Y la cola de la nave se ha movido. Ha pasado uno.')),
+    group('aitor', aitor('Otro color para Luca.'), aitor('La cola de la Pasión avanza. Nos toca.')),
     group('aitor', gerard('Ya van tres.'), aitor('La del ábside también se mueve. Es la última.')),
-    group('aitor', aitor('El último. El capellán de la entrada ya no está tan tranquilo.')),
+    group('aitor', aitor('El último. El capellán que guarda a Fran ya no está tan tranquilo.')),
   ] as Dialogue[],
   /** A queue looked at while it still keeps the way. */
   queue: group('aitor',

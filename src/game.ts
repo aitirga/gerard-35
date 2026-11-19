@@ -49,7 +49,7 @@ import { FLOOD } from './emilie-flat-scenery';
 import { GALLERY, PATROLS, ZONE_IDS, beat, calibration, charged, createModelo, descend, interactionStake, interactionWell, measure, shake as shakePatrol, stakeVerb, tick as tickModelo } from './modelo';
 import { MODELO_SIZES } from './modelo-foes';
 import { MODELO_FIGHTS, calibrate, LUCA_FIGHTS, type LucaEncounter } from './battle';
-import { LUCA_SIZES, styleChaplain } from './luca-foes';
+import { LUCA_SIZES, styleChaplain, lightShirt } from './luca-foes';
 import { buildSalon } from './peluqueria-scenery';
 import { BEAM, MIRRORS, QUEUES, queueCells, zoneAt } from './friends/luca';
 import { LIGHTS as SALON_LIGHTS, lightAt } from './vidrieras';
@@ -738,6 +738,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
         const model = fears.templates.get(kind)?.clone(); if (!model) return;
         model.enabled = true; model.name = `${w.id} ${i}`;
         if (kind === 'capellan') styleChaplain(model, i);
+        // Waiting, the shirts are as the fight starts: under the Passion arm's red, only the red one in colour.
+        if (kind.startsWith('estampado')) lightShirt(model, kind === 'estampado-rojo');
         const size = LUCA_SIZES[kind]; model.setLocalScale(size, size, size);
         const at = scenery.toWorld(w.cell.x + (i - (kinds.length - 1) / 2) * 1.6, w.cell.z - 1.5);
         model.setPosition(at.x, 0, at.z);
@@ -2268,6 +2270,41 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     cinematic = { target: at, height };
     await play(1.4, () => {});
   }
+  /**
+   * A colour of Luca's won back in Fran's salon (docs/quests/luca.md): a light of that colour rises
+   * where the zone's foes stood, hangs for a breath and flies down the basilica and out of the door,
+   * the camera with it. What the story says next (the queue moving on) is then seen to follow from it.
+   */
+  async function flyColour(from: Cell, to: Cell, colour: string) {
+    holdStill();
+    const glow = new pc.StandardMaterial(); glow.diffuse.set(0, 0, 0); glow.emissive.fromString(colour); glow.emissiveIntensity = 3.4; glow.useLighting = false; glow.update();
+    const haze = new pc.StandardMaterial(); haze.diffuse.set(0, 0, 0); haze.emissive.fromString(colour); haze.emissiveIntensity = 1.4; haze.opacity = .3;
+    haze.blendType = pc.BLEND_ADDITIVE; haze.depthWrite = false; haze.useLighting = false; haze.update();
+    // The colour itself, its halo, and its light on the floor and the columns it passes.
+    const orb = new pc.Entity('Color de Luca'); orb.addComponent('render', { type: 'sphere', material: glow, castShadows: false });
+    const halo = new pc.Entity('Halo'); halo.addComponent('render', { type: 'sphere', material: haze, castShadows: false }); halo.setLocalScale(2.6, 2.6, 2.6); orb.addChild(halo);
+    const lamp = new pc.Entity('Luz del color'); lamp.addComponent('light', { type: 'omni', color: new pc.Color().fromString(colour), intensity: 0, range: 9, castShadows: false }); orb.addChild(lamp);
+    castRoot.addChild(orb);
+    const a = scenery.toWorld(from.x, from.z), b = scenery.toWorld(to.x, to.z);
+    const start = new pc.Vec3(a.x, scenery.groundHeight(a.x, a.z) + .5, a.z), end = new pc.Vec3(b.x, scenery.groundHeight(b.x, b.z) + 1.3, b.z);
+    const at = start.clone();
+    cinematic = { target: at.clone(), height: 7 };
+    effects.emit('spark', start.clone(), 16, .4);
+    const seconds = reducedMotion.matches ? .3 : Math.max(2.8, Math.min(4.2, start.distance(end) / 8));
+    await play(seconds, t => {
+      // A third of it rising and hanging where it was kept, the rest on its way out.
+      const rise = Math.min(1, t / .3), fly = Math.max(0, (t - .3) / .7), eased = fly * fly * (3 - 2 * fly);
+      at.lerp(start, end, eased); at.y += 1.6 * rise * (1 - eased * .6);
+      // It grows as it comes out of them, and goes thin as it leaves through the door.
+      const size = .6 * Math.min(1, t / .12) * (1 + Math.sin(t * seconds * 12) * .08) * (1 - Math.max(0, fly - .88) * 7);
+      orb.setPosition(at); orb.setLocalScale(size, size, size);
+      lamp.light!.intensity = 2.6 * Math.min(1, t / .12) * (1 - Math.max(0, fly - .88) * 8);
+      cinematic!.target.copy(at);
+      if (fly > 0 && fly < 1 && Math.random() < .6) effects.emit('spark', at.clone(), 1, .12);
+    });
+    effects.emit('spark', end.clone(), 14, .35);
+    orb.destroy(); glow.destroy(); haze.destroy();
+  }
   /** A fight inside the palace: the minion of chapter 1, or the guards before the curtain in chapter 2. */
   function startPalaceFight(encounter: Exclude<Encounter, 'dogs'> = 'palace-minion') {
     // Uri's fears and the guards loose on the Meridiana at night fight where they caught the party.
@@ -3139,7 +3176,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     fighterAt(id: string) { const p = battleScene.modelOf(id)?.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
     /** Development (the effects lab, src/fx-lab.ts): a fighter's model, for element hits aimed at them. */
     battleModel: battleScene.modelOf,
-    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, intoPortal, unmaskSobremesa, emerge, watchTV, releaseLights, shout,
+    raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, flyColour, intoPortal, unmaskSobremesa, emerge, watchTV, releaseLights, shout,
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); },
     /** Someone swapped ánima in a fight (L / R): the fight shows it, and the boy's street outfit follows. */

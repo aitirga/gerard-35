@@ -1,0 +1,156 @@
+{
+  "title": "Sagrada Família · Interior: el bosque cortado",
+  "description": "docs/places/sagrada.md § The cut. Walking, the columns before and beside Gerard are stumps with their sections lit, and behind him each stands taller the further back it is, whole at the back; the overview grows them all back. Fran's salon standing, to see the queues, the mirrors and Fran from each zone. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=luca&part=sillones"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent.startsWith('Sagrada Família')",
+      "timeout": 120000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        36,
+        36
+      ],
+      "settle": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "puerta",
+      "delay": 900,
+      "caption": "Just in by the Nativity door: the reception desk, the arm's mouth, the crossing beyond"
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        36,
+        26
+      ],
+      "settle": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "crucero",
+      "delay": 900,
+      "caption": "At the crossing: Fran on the presbytery, the queues to each side; stumps before Gerard, the columns rising step by step behind him"
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        26,
+        20
+      ],
+      "settle": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "boca-nave",
+      "delay": 900,
+      "caption": "At the nave's mouth: the way into the nave, its mirrors and chairs"
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        16,
+        14
+      ],
+      "settle": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "nave",
+      "delay": 900,
+      "caption": "In the nave among the salon's chairs and mirrors"
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        15,
+        9
+      ],
+      "settle": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "tras-columna",
+      "delay": 900,
+      "caption": "Up to the columns he was behind a moment ago: they have sunk to stumps, the far ones still whole"
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        40,
+        22
+      ],
+      "settle": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "presbiterio",
+      "delay": 900,
+      "caption": "Before the presbytery: the chaplain, Fran under the canopy"
+    },
+    {
+      "eval": "window.gerard.game.toggleOverview()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "creciendo",
+      "caption": "Pulling back to the overview: every column grown up again"
+    },
+    {
+      "wait": 3000
+    },
+    {
+      "shot": "vista-general",
+      "caption": "The overview (R): the whole forest and its vault, as before"
+    },
+    {
+      "eval": "window.gerard.game.toggleOverview()"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22luca-sillones%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "combate",
+      "delay": 1200,
+      "caption": "A fight inside: the columns behind the fighters stand whole"
+    }
+  ]
+}

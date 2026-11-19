@@ -1,0 +1,164 @@
+{
+  "title": "Misión de Luca: la entrada, contada",
+  "description": "docs/quests/luca.md § Told coming in. What the mission is, said as they come into the basilica in three looks of the camera and six short lines (Fran, the queue, the moths); a colour won back seen going out of the door; the camera coming close to a zone's foes. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=luca&part=door"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Sagrada Família'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        36,
+        38
+      ],
+      "settle": 900
+    },
+    {
+      "hold": [
+        "KeyW",
+        "KeyD"
+      ],
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 15000
+    },
+    {
+      "shot": "entrada-fran",
+      "delay": 1800,
+      "caption": "Just in, first look: the camera goes to Fran under the canopy, his back to everyone, the chaplain before him. Gerard names him"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "entrada-fran-2",
+      "delay": 700,
+      "caption": "…and Aitor says what he has done with the basilica"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 15000
+    },
+    {
+      "shot": "entrada-cola",
+      "delay": 1200,
+      "caption": "Second look: the queue of grey visitors that keeps the way to him"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 15000
+    },
+    {
+      "shot": "entrada-polillas",
+      "delay": 1200,
+      "caption": "Third look: the moths by the reception desk, eating a colour"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "entrada-polillas-2",
+      "delay": 700,
+      "caption": "Aitor: what Luca is missing is in here, in pieces"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "entrada-polillas-3",
+      "delay": 700,
+      "caption": "Gerard: piece by piece, up to Fran. The mission, said by them in six short lines"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "entrada-fin",
+      "delay": 400,
+      "caption": "The camera back on Gerard, the moths three steps ahead"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-recepcion' })"
+    },
+    {
+      "record": "color-sale",
+      "seconds": 3.4,
+      "fps": 20,
+      "tiles": 8,
+      "caption": "The reception won: its colour, blue, rises where the moths were and goes out of the Nativity door to Luca, the camera with it"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 15000
+    },
+    {
+      "shot": "cola-avanza",
+      "delay": 1500,
+      "caption": "Then the camera turns to the nave's queue, moved on, while Aitor says where the colour went"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-sillones' })"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "teleport": "sagrada-familia-interior",
+      "cell": [
+        36,
+        8
+      ],
+      "settle": 900
+    },
+    {
+      "hold": [
+        "KeyW",
+        "KeyD"
+      ],
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 15000
+    },
+    {
+      "shot": "carta-zoom",
+      "delay": 1800,
+      "caption": "Walking up to a zone's foes the camera comes close while they are named: La carta de colores and Luca's shirts"
+    }
+  ]
+}

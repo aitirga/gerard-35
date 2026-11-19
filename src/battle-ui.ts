@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow, lampLit } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -92,8 +92,8 @@ const foundAffinities = new Map<FoeKind, Set<AttackElement>>();
 const rounds = (n: number) => `${n} ${n === 1 ? 'ronda' : 'rondas'}`;
 const escapeHtml = (text: string) => text.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 /** What a light eats, as the party's window says it. */
-const lightEats = (light: keyof typeof LIGHTS) => { const element = cancels(light); return element ? `Anula ${ELEMENTS[element].name.toLowerCase()}` : 'No anula nada'; };
-const lightText = (light: keyof typeof LIGHTS) => `Luz ${LIGHTS[light].name.toLowerCase()}: ${lightEats(light).toLowerCase()} del equipo.`;
+const lightEats = (state: BattleState, light: keyof typeof LIGHTS) => { const element = lightEatsNow(state, light); return element === 'fisico' ? 'Anula los golpes físicos' : element ? `Anula ${ELEMENTS[element].name.toLowerCase()}` : cancels(light) ? 'Ya no anula nada' : 'No anula nada'; };
+const lightText = (state: BattleState, light: keyof typeof LIGHTS) => `Luz ${LIGHTS[light].name.toLowerCase()}: ${lightEats(state, light).toLowerCase()} del equipo.`;
 const statusSvg = (id: IconId) => `<svg viewBox="0 0 16 16" aria-hidden="true">${STATUS_ICONS[id]}</svg>`;
 /** A stat up or down in words: «Defensa +4», or «Defensa ▼» for an onion's broken defence, which has no number. */
 const shiftText = (shift: StatShift) => `${statNames([shift.stat])} ${shift.amount ? `${shift.way === 'up' ? '+' : '−'}${shift.amount}` : shift.way === 'up' ? '▲' : '▼'}`;
@@ -322,7 +322,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // Fran's salon: the light on now, on each of the party's plates (it only touches them).
     const light = state?.light && state.allies.includes(c) ? lightNow(state) : undefined;
     return shownHp(c) > 0 ? [
-      ...light ? [{ id: 'luz' as const, name: lightText(light), mark: '', timed: true, lasts: upcoming(state!.light!.t, 2, state!.light!.walk).map(id => LIGHTS[id].name).join(', ') }] : [],
+      ...light ? [{ id: 'luz' as const, name: lightText(state!, light), mark: '', timed: true, lasts: upcoming(state!.light!.t, 2, state!.light!.walk).map(id => LIGHTS[id].name).join(', ') }] : [],
       // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
       ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño mientras suena una nota.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
       // El que no converge, converged: it takes every blow whole for the turns in its corner.
@@ -359,6 +359,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (c.peinado) chips.push(['peinado', 'Recién peinado']);
     if (c.kind === 'fran' && c.brillo) chips.push(['brillo', `Brillo ${c.brillo}`]);
     if (c.kind === 'lampara' && state) chips.push(lampLit(state, c) ? ['en-su-luz', 'En su luz'] : ['apagada', 'Fuera de su luz']);
+    // La carta de colores: a shirt of Luca's, in the light of its own colour or out of it (only then can it be hurt).
+    if (c.kind?.startsWith('estampado') && c.hp > 0 && state?.light) chips.push(shirtLit(state, c) ? ['en-su-luz', 'En su luz'] : ['apagada', 'Fuera de su luz']);
     if (state && (c.lacado ?? -1) >= state.round) chips.push(['lacado', 'Lacado']);
     if (c.kind === 'voz' && state?.song) {
       if ((c.shielded ?? -1) >= state.round) chips.push(['guardia', 'Guardia']);
@@ -599,11 +601,15 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const news = takeLightNews(state);
     const light = news.at(-1);
     if (!light) return false;
+    // A pane of the window rings, its own note for each colour (src/sfx.ts `pane`).
+    callbacks.sound(`luz-${light}`);
     for (const ally of state.allies.filter(a => a.hp > 0)) {
-      const el = pop(ally.id, `Luz ${LIGHTS[light].name.toLowerCase()}`, 'status', lightEats(light), 'luz');
+      const el = pop(ally.id, `Luz ${LIGHTS[light].name.toLowerCase()}`, 'status', lightEats(state, light), 'luz');
       el?.style.setProperty('--status', LIGHTS[light].colour);
     }
     root.querySelectorAll<HTMLElement>('.status-icon[data-status="luz"]').forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
+    // La carta de colores: the shirt of that colour is in its light now.
+    for (const foe of state.foes) if (foe.hp > 0 && foe.kind === `estampado-${light}`) pop(foe.id, 'En su luz', 'status', '', 'en-su-luz');
     return true;
   }
   function startClock() { cancelAnimationFrame(clockFrame); clockLast = performance.now(); clockFrame = requestAnimationFrame(tickClock); }
@@ -1787,9 +1793,22 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       effect.called?.forEach((call, i) => setTimeout(() => { if (token === generation) pop(call.target, call.text, 'status', call.detail ?? ''); }, 420 + i * 240));
       // Fran's salon's moves that are not a blow (docs/quests/luca.md).
       if (effect.brillo !== undefined && effect.kind === 'enemy' && !effect.lampBroken) pop(effect.actor, `Brillo ${effect.brillo}`, 'status', 'Bebe la luz', 'brillo');
-      if (effect.lampBroken) setTimeout(() => { if (token === generation) pop(effect.lampBroken!, '¡Estalla!', 'status', 'Fran pierde el brillo', 'rajado'); }, 420);
+      if (effect.lampBroken) setTimeout(() => {
+        if (token !== generation || !state) return;
+        pop(effect.lampBroken!, '¡Estalla!', 'status', 'Fran pierde el brillo', 'rajado');
+        // Its colour rains back on the party: what that light ate, back in their hands.
+        const lamp = state.foes.find(f => f.id === effect.lampBroken)?.lamp;
+        const back = lamp ? [...new Set(LAMPS[lamp].lights.map(cancels).filter((e): e is AttackElement => !!e && e !== 'fisico'))] : [];
+        if (back.length) for (const ally of state.allies.filter(a => a.hp > 0)) pop(ally.id, `Vuelve ${back.map(e => ELEMENTS[e].name.toLowerCase()).join(' y ')}`, 'status', 'La luz ya no lo anula', 'luz')?.style.setProperty('--status', LIGHTS[LAMPS[lamp!].lights[0]].colour);
+      }, 420);
       if (effect.stage) setTimeout(() => { if (token !== generation || !state) return; const fran = state.foes.find(f => f.kind === 'fran'); if (fran) pop(fran.id, effect.stage === 2 ? 'Se levanta' : 'El hisopo', 'status', effect.stage === 2 ? 'Bajan las lámparas' : 'Aspersión en su próximo turno', 'crescendo'); }, 600);
-      if (effect.recolored) pop(effect.recolored.target, `+${effect.recolored.amount}`, 'heal', 'Se recolorea');
+      // La carta de colores: a blow on a shirt out of its light does nothing; one fallen takes its light with it, and what that light ate comes back.
+      if (effect.unlit) effect.unlit.forEach(id => pop(id, 'Nada', 'status', 'Fuera de su luz', 'apagada'));
+      if (effect.lightOut && state.foes.some(f => f.hp > 0)) setTimeout(() => {
+        if (token !== generation || !state) return;
+        const light = effect.lightOut!, back = cancels(light);
+        if (back && back !== 'fisico') for (const ally of state.allies.filter(a => a.hp > 0)) pop(ally.id, `Vuelve ${ELEMENTS[back].name.toLowerCase()}`, 'status', `La luz ${LIGHTS[light].name.toLowerCase()} se apaga`, 'luz')?.style.setProperty('--status', LIGHTS[light].colour);
+      }, 420);
       if (effect.lacquered) effect.lacquered.forEach(id => pop(id, 'Lacado', 'status', 'El fuego hace el doble', 'lacado'));
       if (effect.lens) setTimeout(() => { if (token === generation) pop(effect.lens!, '¡Lente rajada!', 'status', 'El rayo no sale', 'rajado'); }, 420);
       if (effect.stopped) setTimeout(() => { if (token === generation) effect.stopped!.forEach(id => pop(id, 'Quieto', 'status', 'Sin nadie a quien copiar', 'clavado')); }, 420);

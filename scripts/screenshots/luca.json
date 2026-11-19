@@ -289,7 +289,7 @@
     {
       "shot": "combate-carta",
       "delay": 600,
-      "caption": "The three Estampados"
+      "caption": "Luca's three shirts on their hangers: only the one in its light keeps its colour"
     },
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22luca-abside%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -341,6 +341,21 @@
       "shot": "fran-baldaquino",
       "delay": 600,
       "caption": "Phase 2: the canopy's three lamps, only the one in its own light can be broken"
+    },
+    {
+      "eval": "window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.sleep = ms => new Promise(r => setTimeout(r, ms)); const st = document.createElement('style'); st.textContent = '.shot-frozen * { animation-play-state: paused !important; }'; document.head.append(st); window.frozen = ''; window.catchPop = (text, after = 160) => { window.frozen = ''; const o = new MutationObserver(() => { if ([...document.querySelectorAll('.damage-pop')].some(p => p.textContent.includes(text))) { o.disconnect(); setTimeout(() => { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = text; }, after); } }); o.observe(document.body, { childList: true, subtree: true }); }; window.thaw = () => { window.gerard.game.app.timeScale = 1; document.documentElement.classList.remove('shot-frozen'); window.frozen = ''; }; ui.tweak(s => { s.light.t = 17; s.foes.find(f => f.lamp === 'calido').hp = 1; }); catchPop('Vuelve'); (async () => { cmd('attack'); await sleep(450); document.querySelector('.battle-target[data-target=\"lampara-calido\"]')?.click(); })();"
+    },
+    {
+      "until": "window.frozen === 'Vuelve'",
+      "timeout": 30000
+    },
+    {
+      "shot": "fran-lampara-rota",
+      "delay": 100,
+      "caption": "The warm lamp broken in its own orange light: Fran loses his Brillo and fire comes back to the party (Vuelve fuego)"
+    },
+    {
+      "eval": "thaw()"
     },
     {
       "eval": "void window.ui.jumpTo('fran-aspersion')"

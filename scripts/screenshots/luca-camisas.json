@@ -1,0 +1,69 @@
+{
+  "title": "Misión de Luca: las camisas de la carta de colores",
+  "description": "docs/quests/luca.md § La carta de colores, rebuilt. The third zone's foes are three of Luca's shirts on hangers; only the one in the light of its own colour can be hurt, and its light goes out with it. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22luca-carta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "luz-roja",
+      "delay": 600,
+      "caption": "Red light: the red shirt is in colour and can be hurt (En su luz), the blue and the gold are grey cloth"
+    },
+    {
+      "eval": "window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.sleep = ms => new Promise(r => setTimeout(r, ms)); const st = document.createElement('style'); st.textContent = '.shot-frozen * { animation-play-state: paused !important; }'; document.head.append(st); window.frozen = ''; window.catchPop = (text, after = 160) => { window.frozen = ''; const o = new MutationObserver(() => { if ([...document.querySelectorAll('.damage-pop')].some(p => p.textContent.includes(text))) { o.disconnect(); setTimeout(() => { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = text; }, after); } }); o.observe(document.body, { childList: true, subtree: true }); }; ui.tweak(s => { window.ids = Object.fromEntries(s.foes.map(f => [f.kind, f.id])); }); window.thaw = () => { window.gerard.game.app.timeScale = 1; document.documentElement.classList.remove('shot-frozen'); window.frozen = ''; }; window.hit = kind => (async () => { cmd('attack'); await sleep(450); document.querySelector('.battle-target[data-target=\"' + window.ids[kind] + '\"]')?.click(); })(); catchPop('Nada'); hit('estampado-azul');"
+    },
+    {
+      "until": "window.frozen === 'Nada'",
+      "timeout": 30000
+    },
+    {
+      "shot": "fuera-de-su-luz",
+      "delay": 100,
+      "caption": "A blow on a shirt out of its light does nothing: Nada, Fuera de su luz"
+    },
+    {
+      "eval": "thaw()"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 30000
+    },
+    {
+      "eval": "ui.tweak(s => { s.light.t = 8; })"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "luz-dorada",
+      "delay": 300,
+      "caption": "The light turns gold: now it is the gold shirt's turn, the red one goes grey"
+    },
+    {
+      "eval": "ui.tweak(s => { s.light.t = 8; s.foes.find(f => f.kind === 'estampado-oro').hp = 1; }); catchPop('Vuelve'); hit('estampado-oro');"
+    },
+    {
+      "until": "window.frozen === 'Vuelve'",
+      "timeout": 30000
+    },
+    {
+      "shot": "luz-apagada",
+      "delay": 100,
+      "caption": "The gold shirt down in its own light: that light goes out with it and its element is back for the party"
+    },
+    {
+      "eval": "thaw()"
+    }
+  ]
+}

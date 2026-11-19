@@ -20,7 +20,7 @@ import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
 import { lockedStations, ticketFlag, type TicketStation } from './tickets.ts';
 import { ALEGIA, CUERDAS_PLACE, LINES_MARTA, MARTA_SCALE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
-import { BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE, MIRRORS, MIRRORS_SEEN, MIRRORS_START, PLACES_LUCA, QUEUES, SAGRADA, SALON_SOLID, SALON_VIEW, ZONES, queueCells, type LookId } from './friends/luca.ts';
+import { BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE, MIRRORS, MIRRORS_SEEN, MIRRORS_START, PLACES_LUCA, QUEUES, SAGRADA, SALON_SOLID, SALON_VIEWS, ZONES, ZONE_VIEW, COLOUR_OUT, queueCells, type LookId } from './friends/luca.ts';
 import { trace, turned, type Facing } from './espejos.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
@@ -162,6 +162,8 @@ export type StoryEffect =
   | { kind: 'photo'; caption: string }
   /** The camera turns to a named anchor of the scene (the palace) or frames `cell`, `height` metres of view; back to Gerard with neither. */
   | { kind: 'look'; anchor?: string; cell?: Cell; height?: number }
+  /** A light of `colour` rises at `from` and flies out at `to`, the camera with it (a colour of Luca's won back, on its way to him). */
+  | { kind: 'colour'; from: Cell; to: Cell; colour: string }
   /**
    * Into the portal standing in the scene (Uri's bubble, the spiral in the sea), or one that opens at
    * `open` first: `who` comes apart into specks the whirlpool swallows (src/disintegrate.ts `into`),
@@ -867,9 +869,10 @@ export class Story {
       // Going in takes its hour; the rest is paid when Fran is beaten.
       const first = !run.entered;
       run.entered = true; this.set('peluqueria');
-      // The first time the camera turns down the transept to the crossing: the church here, the salon beyond.
       if (!first) return [say(LINES_LUCA.insideAgain)];
-      return [{ kind: 'look', cell: { ...SALON_VIEW.cell }, height: SALON_VIEW.height }, say(LINES_LUCA.inside), { kind: 'look' }, ...this.spend('cafe')];
+      // The first time, the mission in three looks: Fran, the queue that keeps the way to him, the moths eating a colour.
+      const looks = SALON_VIEWS.flatMap((view, i): StoryEffect[] => [{ kind: 'look', cell: { ...view.cell }, height: view.height }, say(LINES_LUCA.inside[i])]);
+      return [...looks, { kind: 'look' }, ...this.spend('cafe')];
     }
     if (id === 'luca-espejos') {
       if (run.told.includes('espejos')) return [];
@@ -883,7 +886,10 @@ export class Story {
     if (!zone || run.beaten.includes(zone.id) || zone !== this.lucaNext) return [];
     const told = run.told.includes(zone.id);
     if (!told) run.told.push(zone.id);
-    return [...told ? [] : [say(LINES_LUCA.zones[zone.id])], { kind: 'battle', encounter: zone.encounter }];
+    // The first time the camera comes close to what waits there while it is named (the moths were shown coming in).
+    const close: StoryEffect[] = zone.id === 'recepcion' ? [say(LINES_LUCA.zones[zone.id])]
+      : [{ kind: 'look', cell: { ...zone.cell }, height: ZONE_VIEW }, say(LINES_LUCA.zones[zone.id]), { kind: 'look' }];
+    return [...told ? [] : close, { kind: 'battle', encounter: zone.encounter }];
   }
   /** Fran beaten: his eyes clear, he walks out; outside, Luca in full colour, and his light goes with them. */
   private winLuca(): StoryEffect[] {
@@ -911,9 +917,10 @@ export class Story {
       if (!this.salon || this.luca.beaten.includes(zone.id)) return [];
       this.luca.beaten.push(zone.id);
       const line = say(LINES_LUCA.zoneWon[Math.min(this.luca.beaten.length, LINES_LUCA.zoneWon.length) - 1]);
-      // The camera turns to the queue that has moved on, so the way it opens is seen; after the last zone, to the chaplain.
+      // Its colour rises where its foes stood and goes out of the door to Luca, the camera with it. Then the camera
+      // turns to the queue that has moved on, so the way it opens is seen; after the last zone, to the chaplain.
       const freed = QUEUES.find(q => q.after === zone.id);
-      return [{ kind: 'look', cell: { ...freed?.look ?? PLACES_LUCA.capellan }, height: freed ? 11 : 9 }, line, { kind: 'look' }];
+      return [{ kind: 'colour', from: { ...zone.cell }, to: { ...COLOUR_OUT }, colour: zone.colour }, { kind: 'look', cell: { ...freed?.look ?? PLACES_LUCA.capellan }, height: freed ? 11 : 9 }, line, { kind: 'look' }];
     }
     // One of what Marta lost, beaten: it stays beaten this visit, and she says she feels nothing yet.
     const quality = QUALITIES.find(q => q.encounter === event.encounter);

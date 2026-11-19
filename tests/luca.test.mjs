@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Story } from '../src/story.ts';
 import { flagsAt, missionJump, missionNow, missionParts } from '../src/story-points.ts';
-import { DOOR, FURNITURE, INTERIOR, LINES_LUCA, LOOKS, MIRRORS, PLACES_LUCA, QUEUES, QUEUE_LEFT, SAGRADA, SALON_SOLID, SALON_VIEW, ZONES, queueCells, zoneAt } from '../src/friends/luca.ts';
+import { DOOR, FURNITURE, INTERIOR, LINES_LUCA, LOOKS, MIRRORS, PLACES_LUCA, QUEUES, QUEUE_LEFT, SAGRADA, COLOUR_OUT, SALON_SOLID, SALON_VIEWS, ZONES, ZONE_VIEW, queueCells, zoneAt } from '../src/friends/luca.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { NEWS } from '../src/chapter-2.ts';
 import { canWalk } from '../src/movement.ts';
@@ -54,8 +54,11 @@ test('the door waits for Luca; once he has been spoken to, inside is Fran\'s sal
   story.inside = INTERIOR;
   const hour = story.clock.hour;
   const enter = story.handle({ type: 'near', id: 'luca-dentro' });
-  assert.deepEqual(say(enter), [LINES_LUCA.inside]);
-  assert.deepEqual(enter.filter(e => e.kind === 'look'), [{ kind: 'look', cell: { ...SALON_VIEW.cell }, height: SALON_VIEW.height }, { kind: 'look' }], 'the camera turns to the crossing meanwhile');
+  assert.deepEqual(say(enter), LINES_LUCA.inside);
+  assert.equal(LINES_LUCA.inside.length, SALON_VIEWS.length, 'a few words over each look');
+  assert.ok(LINES_LUCA.inside.flatMap(d => d.lines).length <= 6, 'the mission in few words');
+  assert.deepEqual(beats(enter).slice(0, 7), ['look', 'dialogue', 'look', 'dialogue', 'look', 'dialogue', 'look'], 'the camera goes to Fran, to the queue and to the moths, each while its lines are said');
+  assert.deepEqual(enter.filter(e => e.kind === 'look'), [...SALON_VIEWS.map(v => ({ kind: 'look', cell: { ...v.cell }, height: v.height })), { kind: 'look' }]);
   assert.ok(story.has('peluqueria') && story.clock.hour > hour);
   assert.deepEqual(story.handle({ type: 'near', id: 'luca-dentro' }), []);
 });
@@ -69,16 +72,22 @@ test('the way goes round the crossing: each zone is its fight once, in order, an
   const blocked = () => story.blocked(INTERIOR).map(c => `${c.x},${c.z}`);
   for (const q of QUEUES) assert.ok(q.cells.every(c => blocked().includes(`${c.x},${c.z}`)), q.id);
   const first = story.handle({ type: 'near', id: 'luca-recepcion' });
-  assert.deepEqual(beats(first), ['dialogue', 'battle']);
+  assert.deepEqual(beats(first), ['dialogue', 'battle'], 'the moths were shown coming in');
   assert.equal(first[1].encounter, 'luca-recepcion');
   assert.deepEqual(beats(story.handle({ type: 'near', id: 'luca-recepcion' })), ['battle'], 'its line only once');
   assert.deepEqual(say(story.handle({ type: 'interact', id: 'talk-capellan' })), [LINES_LUCA.capellan[0]]);
   for (const [i, zone] of ZONES.entries()) {
     assert.deepEqual(ids(), [`luca-${zone.id}`]);
+    if (i) {
+      const near = story.handle({ type: 'near', id: `luca-${zone.id}` });
+      assert.deepEqual(beats(near), ['look', 'dialogue', 'look', 'battle'], `${zone.id}: the camera comes close to what waits there while it is named`);
+      assert.deepEqual(near[0], { kind: 'look', cell: { ...zone.cell }, height: ZONE_VIEW });
+    }
     const won = story.handle({ type: 'battle', won: true, encounter: zone.encounter });
     assert.deepEqual(say(won), [LINES_LUCA.zoneWon[i]]);
     const freed = QUEUES.find(q => q.after === zone.id);
-    assert.deepEqual(won[0], { kind: 'look', cell: { ...freed?.look ?? PLACES_LUCA.capellan }, height: freed ? 11 : 9 }, 'the camera turns to the queue that moved on');
+    assert.deepEqual(won[0], { kind: 'colour', from: { ...zone.cell }, to: { ...COLOUR_OUT }, colour: zone.colour }, 'its colour goes out of the door, seen');
+    assert.deepEqual(won[1], { kind: 'look', cell: { ...freed?.look ?? PLACES_LUCA.capellan }, height: freed ? 11 : 9 }, 'the camera turns to the queue that moved on');
     assert.deepEqual(won.at(-1), { kind: 'look' });
     if (freed) {
       assert.ok(!freed.cells.slice(QUEUE_LEFT, -QUEUE_LEFT).some(c => blocked().includes(`${c.x},${c.z}`)), `${freed.id} moves on: the way opens through its middle`);

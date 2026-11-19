@@ -347,7 +347,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     'camping-magos': 'magos de camping', 'camping-dados': 'dados', 'camping-agentes': 'agentes', 'camping-tienda': 'una tienda equivocada', 'camping-negra': 'la parcela negra', campeon: 'El Campeón',
     'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz', ...CASTLE_FIGHT_NAMES,
     'modelo-celdas': 'celdas secas', 'modelo-oscilacion': 'oscilaciones', 'modelo-pluma': 'La pluma', 'no-converge': 'El que no converge',
-    'luca-recepcion': 'las polillas de la recepción', 'luca-sillones': 'los capellanes y La Laca', 'luca-carta': 'los estampados', 'luca-abside': 'El Telescopio', fran: 'Fran' };
+    'luca-recepcion': 'las polillas de la recepción', 'luca-sillones': 'los capellanes y La Laca', 'luca-carta': 'las camisas de Luca', 'luca-abside': 'El Telescopio', fran: 'Fran' };
   /** During a fight: the help it gets, the moments it can jump to, and the way out. */
   function livePage() {
     const now = dev!.current()!, help = dev!.help();

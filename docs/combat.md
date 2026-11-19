@@ -779,7 +779,6 @@ fuego, Rayo solar) o una reacción eléctrica (Tormenta, Conducción). Nunca dep
 | Lo Directo | Eléctrico | – |
 | Eco | Fuego | – |
 | Polilla, La Laca | Fuego | – |
-| Estampado rojo / azul / oro | – | Fuego / Agua / Eléctrico |
 | El Telescopio | – | Fuego |
 
 Nada lo dice de antemano. El primer golpe que lo encuentra suelta «¡Débil!» o «Resiste» con su

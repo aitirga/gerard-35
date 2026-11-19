@@ -1,6 +1,6 @@
 # Luca · La Sagrada peluquería
 
-Status: designed, being built on `feat/side-mission-luca` · Last updated: 2026-11-16
+Status: designed, being built on `feat/side-mission-luca` · Last updated: 2026-11-19
 
 ## Summary
 
@@ -88,6 +88,7 @@ church near the door and more and more salon deeper in. After the win it is the 
   | Naranja | Fuego |
   | Rojo | Fuego |
   | Oro | Eléctrico |
+  | Blanca (grey-white, clear glass) | Physical blows, Atacar included: it carries no element |
 
   A cancelled blow does nothing and says so (*Anulado · Luz naranja*). A clock icon on each
   ally's plate shows the light now and the colours coming, like La Voz's song: a subtle
@@ -98,7 +99,7 @@ church near the door and more and more salon deeper in. After the win it is the 
   | --- | --- | --- | --- |
   | **La recepción** | The Nativity arm, by the door | Still the church; a salon desk with Fran's appointment book; grey visitors queue. The light is taught here | Las Polillas |
   | **Los sillones** | The nave and its rows of chairs | Salon chairs and mirrors in rows | Los capellanes, La Laca |
-  | **La carta de colores** | The Passion arm | The dye bar: the windows as a colour chart | Los Estampados |
+  | **La carta de colores** | The Passion arm | The dye bar: the windows as a colour chart | Las camisas de Luca |
   | **El ábside** | The apse and its ambulatory | Where Luca used to look up: lenses, star charts | El Telescopio, Polillas |
   | **El crucero** | Under the Tower of Jesus, the presbytery steps | The canopy over the altar as the canopy of Fran's chair | **Fran** |
 
@@ -112,7 +113,7 @@ steal light; not Luca's own traits (that is Marta's). Each asks one question.
 | Foe | What it is | Question | Answer and how it shows | Weak / resists |
 | --- | --- | --- | --- | --- |
 | **Las Polillas** | Grey moths, many and frail, drawn to light: they swarm whoever struck with an element and leave them Cegado | Lo que alcanza a todos | An all-target blow clears the swarm | Fuego / – |
-| **Los Estampados** (rojo, azul, oro) | Luca's loud colours, stolen: patches of pattern | Orden, by the light | Each resists its colour's element, and **fills in again (*Se recolorea*) when the light of its own colour comes on**: down first the one whose light comes next | By colour |
+| **Las camisas de Luca** (roja, azul, dorada; `estampado-*` in code) | Three of his loud shirts on wire hangers, nobody in them | A cuál, by the light | **Only the shirt in the light of its own colour can be hurt** (it is in colour, the others grey; *En su luz* / *Fuera de su luz* on the plate, *Nada* on a wasted blow). That light eats the party's element of that colour, so it is hit with anything else. Fallen, **its light goes out with it** and that element comes back | – / – |
 | **El Telescopio** | Luca's looking at the sky turned on them: *Enfocar* a turn (the plate says at whom), then a burning beam, then its brass | Momento | Hit it while it focuses: **the lens cracks** (*¡Lente rajada!*) and the beam is lost. (A blow there does not land harder: that would make anyone greedy find the answer by chance.) | – / Fuego |
 | **La Laca** | A cloud of hairspray that lacquers the party (*Lacado*: fire hurts them double) | Elemento, with a risk | Brought down by fire, it **bursts** over every other foe | Fuego / – |
 | **Los capellanes** | The basilica's chaplains, restyled by Fran, each with hair of another shape and colour. People under the Queen, unsettling, not a joke | Orden | The freshly styled one (*Recién peinado*) repeats the last gesture next round; down it first and the copy stops | – |
@@ -151,16 +152,28 @@ tall and thin**, long neck and hands; hair **sculpted** into a high, sharp quiff
 sides; a hairdresser's black, fitted clothes; scissors and comb at the hip. Under the Queen: the
 **violet eyes**, and the white **cutting cape worn like a chasuble**, chalk hyperboloids on it.
 
-- **Phase 1 · Los acólitos** (*orden*). Two restyled chaplains serve him. Each round Fran restyles
-  one (*Recién peinado*), and that one repeats Fran's gesture after him. Down the freshly styled
-  one each time and Fran's gesture lands alone.
-- **Phase 2 · El baldaquino** (*pieza* with the light). Three lamps hang from the canopy, one per
-  light (cold, warm, gold). Each time the light changes Fran gains **Brillo**, a shield. Only the
-  lamp of the light shining now can be broken, and that colour's element is cancelled right then,
-  so it is broken with something else. A lamp bursting takes the Brillo away.
+**The question: what do you do with the lamps?** (Aitor, 2026-11-19: *tenemos que entender y
+jugar con las lámparas para ganarlo*.) The three lamps of the canopy are the thread of the whole fight,
+not one phase's chore: every one still hanging feeds Fran and keeps a colour from the party, every
+one broken gives a colour back to Luca and, in the fight, back to the party's hands.
+
+- **Phase 1 · Los acólitos** (*orden*, short: until 75 % of his PV). Two restyled chaplains serve
+  him. Each round Fran restyles one (*Recién peinado*), and that one repeats Fran's gesture after
+  him. Down the freshly styled one each time and Fran's gesture lands alone. His Corte a medida is
+  the hardest blow of the salon's people (22, the chaplains' 16).
+- **Phase 2 · El baldaquino** (*pieza* with the light). Fran stands and the three lamps light up,
+  one per side of the day (cold: blue and green; warm: orange and red; gold). Each time a light
+  comes on and its lamp still hangs, Fran gains **Brillo**, a shield (up to 3: a blow reaches him at
+  40 %). Only the lamp of the light shining now can be broken, and that colour's element is cancelled
+  right then, so it is broken with something else. **A lamp bursting rains its colour back**: Fran
+  loses all his Brillo, and its lights eat nothing of the party's for the rest of the fight (the
+  plates say *Vuelve fuego*, the light's window *Ya no anula nada*). Lamps are 40 PV: a light's
+  window, not one blow.
 - **Phase 3 · La aspersión** (*momento*). Fran charges **Aspersión** for a round (the plate says
-  so): bleach over the whole party, everyone hurt and weakened. Hold that round, then spend
-  everything.
+  so, and the line says whose colour drips from it): bleach over the whole party, **dyed by every
+  lamp still hanging**. Each one adds damage and takes one more point of Fuerza and Magia for the
+  rest of the fight; with all three broken it only wets (*no os quita el color*). Hold that round,
+  then spend everything. The lamps still drink light in this phase, so it is not too late.
 - Code: `Encounter` `fran`; `FoeKind` `fran`, `capellan`, `lampara`.
 
 ## Ánima
@@ -247,7 +260,7 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
   The recepción's fight is across the Nativity arm's mouth: nobody gets in without it. *Mirar la
   cola* says why they block.
 - **Each side's light (B)**: `WALKS` in `src/vidrieras.ts`, a walk per side (nacimiento: blue,
-  green, orange; nave: every colour; pasión: orange, red, green, gold, blue; ábside: gold, orange,
+  green, orange, white; nave: every colour; pasión: orange, red, green, gold, blue; ábside: gold, orange,
   gold, green). Each fight walks its side's (`LUCA_WALKS`), and the basilica's floor takes the light
   of the side Gerard is on.
 - **The mirrors (C)**: three of the nave's mirrors turn a quarter at a time (`src/espejos.ts`, pure
@@ -266,7 +279,7 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
   | Sillones | 94 % · 38 % (dazzled 97 % · 50 %) | 10 % |
   | Carta | 92 % · 30 % | 33 % |
   | Ábside | 95 % · 42 % | 5 % |
-  | Fran | 100 % · 50 %, 14 rounds | 14 % |
+  | Fran | 100 % · 50 %, 14 rounds (2026-11-19: 95 % · 52 %, 16 rounds) | 14 % (2026-11-19: 19 %) |
 
   New numbers: Estampados 75 PV, Estampar 9, Recolor 80 %; capellanes 92 PV; Tubo 54; Chispa 22;
   Fran 180 PV, acolytes 55, lamps 30. The carta stays the least clear pair (casual 33 %): the Passion
@@ -280,7 +293,7 @@ Walked from the pond to Fran, fights aside, and looked at each place as the play
 | Walking it | What was done |
 | --- | --- |
 | Luca stood under a tree's crown, half hidden | He stands on the pond's north bank, clear of the trees (`PLACES_LUCA.luca`), his reflection on the water at his feet |
-| Coming in, nothing said there was a salon further in | The camera turns down the transept to the crossing while Aitor and Gerard take it in (`SALON_VIEW`) |
+| Coming in, nothing said there was a salon further in | The camera turns down the transept to the crossing while Aitor and Gerard take it in (since 2026-11-19 three looks, `SALON_VIEWS`: § Told coming in) |
 | The reception desk read as a black bench | A desk with its front to the door before a black wall with his name and the turn's number (nobody's), the appointment book, a bell, the turns' dispenser |
 | The nave kept the church's wooden chairs, though Gerard says the salon's stand where they were | The basilica takes them away while the salon stands (`setPews`); in their blocks, mirrors back to back with a salon chair before each glass, a clearing left where the chaplains wait |
 | The chaplains' hair was a cone, a party hat | Three ways of doing it, each in a colour of Luca's: a tall quiff in blue, lacquered spikes in orange, a hard parting in teal (`styleChaplain`), in the salon and in their fights |
@@ -295,6 +308,56 @@ Walked from the pond to Fran, fights aside, and looked at each place as the play
 The salon is batched by material (one batch group), so its several hundred pieces cost a handful of
 draw calls. No fight, foe or number changed.
 
+### Told coming in (2026-11-19)
+
+Aitor, playing it: coming into the basilica it was not clear what the mission is. The camera made one
+wide turn over three lines of mood (*Huele a laca*), and none of them said who is in there, what the
+queues are or what there is to take back. Now it is said by the two of them, in few words, with the
+camera on what each line is about:
+
+| Moment | The camera | What is said |
+| --- | --- | --- |
+| In through the door, the first time (`SALON_VIEWS`, `LINES_LUCA.inside`) | Close on Fran under the canopy | *Fran. Bajo el baldaquino, de espaldas a todo.* / *Huele a laca. Ha hecho de la basílica su peluquería.* |
+| | The nave's queue | *Y toda esa gente gris hace cola para él. Por ahí no se pasa.* |
+| | Close on the moths by the desk | *Polillas. Grises, como Luca.* / *Se le están comiendo el color. Lo que le falta está aquí dentro, a trozos.* / *Pues se lo sacamos. Trozo a trozo, hasta llegar a Fran.* |
+| Walking up to a zone's foes, the first time (`ZONE_VIEW`) | Comes close to them while they are named | The zone's lines, as before (the reception's is now one, the light: the moths were shown coming in) |
+| A zone won (`flyColour` in `src/game.ts`, the `colour` story effect) | Follows a light of the zone's colour as it rises where its foes stood and goes out of the Nativity door (`COLOUR_OUT`), then turns to the queue that moves on | *Azul. Ha salido por la puerta, hacia Luca.* It was said before and never seen |
+
+Six short lines coming in, said by Gerard and Aitor: no panel, no objective. `just screenshots
+luca-entrada --gpu`.
+
+### Fran, the lamps as the question (2026-11-19)
+
+Aitor found Fran's fight bland: three phases each repeating a zone's lesson, Fran the softest blow in
+it (Corte 18 against a chaplain's 23), lamps of 30 PV that fell to one blow and then mattered no
+more, and nothing in the rules about Luca's colour. Smart play won it with Atacar (43 % of the
+damage) and Defender. Now the lamps carry the fight (§ Final boss): a lamp broken frees its light
+(`lightFreed`, `lightEats` in `src/battle.ts`) and the Aspersión grows with every lamp still hanging
+(`aspersionLamp`, `aspersionDown` per lamp). Numbers: Fran 150 PV (was 180), lamps 40 (was 30), Corte
+22, he stands at 75 % (was 66 %). `just fight-sim` (P3M3): smart wins 95 % with half its PV in about
+16 rounds, breaking all three lamps; casual 19 %. The sim counts `lampara-rota` and `anulado`.
+
+**La carta de colores, rebuilt (2026-11-19, option B, Aitor's pick).** The Estampados read as
+playing cards and the fight asked three things of colour at once. Now the foes are **three of Luca's
+shirts on hangers** (red, blue, gold) and the fight asks one thing: *which one, now*.
+
+- **Rule.** A shirt is hurt only in the light of its own colour (`shirtLit`, `lucaTaken` in
+  `src/battle.ts`); out of it a blow does nothing (*Nada · Fuera de su luz*). The lit shirt wears its
+  colour and print, the others are grey cloth (`lightShirt`, `src/luca-foes.ts`), and each plate
+  carries *En su luz* or *Fuera de su luz*. Since that same light eats the party's element of that
+  colour, the lit shirt is hit with something else. Gone: each shirt resisting its own element, and
+  *Se recolorea*.
+- **Reward.** A fallen shirt takes its light with it: the walk skips that colour from then on
+  (`passFallenLights`), the element it ate is back for good (*Vuelve Fuego*), and the lights left come
+  round faster, so the fight speeds up as it is solved.
+- **Light.** The Passion walk is now red, gold, blue, 7 s each (`WALKS.pasion`): only the three
+  shirts' colours, none wasted.
+- **Told by.** Gerard and Aitor on walking in: «Esas camisas son de Luca.» / «Sin nadie dentro. Y solo
+  una tiene color: la de la luz que hay ahora.»
+- **Numbers.** 75 PV each, Estampar 18 (was 9, the fight no longer lasts on healing). `just fight-sim`
+  (P2M2): reading the light wins 94 % with 29 % of its PV in 6.5 rounds; not reading it (the casual
+  looks at the light three times in ten, `LIGHT_READ`) 22 %.
+
 ## Built (2026-11-16, `feat/side-mission-luca`)
 
 - **Data**: `src/friends/luca.ts` (places, zones, every line), `ANIMAS.luca`, the flags, the `luca`
@@ -306,8 +369,8 @@ draw calls. No fight, foe or number changed.
 - **Foes and Fran**: the `LucaKind` group and the `LUCA` book in `src/battle.ts`, procedural models in
   `src/luca-foes.ts`, fight tester row *La peluquería*, `STAGED_MOMENTS` `fran-acolitos`,
   `fran-baldaquino`, `fran-aspersion`, `TARGETS` for every fight (all hold, `just fight-sim check`).
-  Zone numbers: Polillas 28 PV, Estampados 100, Telescopio 300, La Laca 120, capellanes 100; Fran 260,
-  his acolytes 70, his lamps 40.
+  Zone numbers: Polillas 28 PV, Estampados 100, Telescopio 300, La Laca 120, capellanes 100; Fran 150,
+  his acolytes 55, his lamps 40 (2026-11-19).
 - **The place**: Luca by the pond (grey by the colours still missing, his reflection in colour lying
   on the water), the door gated until he is met, the salon dressed zone by zone
   (`src/peluqueria-scenery.ts`), each zone's foes waiting, the chaplain before the presbytery.
@@ -315,8 +378,9 @@ draw calls. No fight, foe or number changed.
   item, the tour poster on the Meridiana's second bus shelter (`clue-sagrada-cartel`).
 - **Stand-in figures**: `src/characters/luca.json`, `fran.json`, `capellan.json` (from Uri's).
 - **Tests**: `tests/luca.test.mjs`, `tests/luca-fight.test.mjs`, `tests/vidrieras.test.mjs`.
-- **Screenshots**: `just screenshots luca --gpu` (the story and its fights) and
-  `just screenshots luca-exploracion --gpu` (the walk, fights aside).
+- **Screenshots**: `just screenshots luca --gpu` (the story and its fights),
+  `just screenshots luca-exploracion --gpu` (the walk, fights aside) and
+  `just screenshots luca-entrada --gpu` (the mission told coming in, a colour going out).
 
 ## Open
 

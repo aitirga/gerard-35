@@ -71,6 +71,19 @@ const artilugio = (button: number): Sound => ({ synth: (c, out, at) => {
   tone(c, out, at, { type: 'triangle', from: hz, attack: .01, length: .7, gain: .2 }); tone(c, out, at, { from: hz * 2, length: .35, gain: .04 });
   return .7;
 }, gap: .05, voices: 3 });
+/**
+ * Fran's salon: the windows' light turning to a new colour in a fight (src/vidrieras.ts), a pane of
+ * stained glass ringing once. Glass partials (a bell's 2.76 over the note, a breath of air on top),
+ * quiet and short, so a light every round never tires; the cold lights ring higher than the warm, and
+ * the white one plain, without the bell's colour.
+ */
+function pane(context: AudioContext, out: AudioNode, at: number, hz: number, bell = 1) {
+  tone(context, out, at, { type: 'triangle', from: hz, length: .55, gain: .07 });
+  tone(context, out, at, { from: hz * 2.76, length: .32, gain: .022 * bell });
+  tone(context, out, at + .045, { from: hz * 1.5, length: .4, gain: .028 });
+  noise(context, out, at, { cutoff: 7000, to: 11000, type: 'highpass', q: .7, attack: .01, length: .18, gain: .03 });
+  return .6;
+}
 export const SOUNDS = {
   // Menus: a soft tick to move, a rising pair to confirm, a falling note to go back.
   'ui-move': { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 1320 * p, length: .045, gain: .12 }); return .05; }, jitter: 15, gap: .03, voices: 2 },
@@ -78,6 +91,13 @@ export const SOUNDS = {
   'ui-back': { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 620 * p, to: 360 * p, length: .11, gain: .14 }); return .12; }, gap: .06, voices: 2 },
   // Fights: a thump with a burst of grit for a blow, a rising sparkle for a cure or a boost.
   hit: { synth: (c, out, at, p) => { tone(c, out, at, { from: 150 * p, to: 48 * p, length: .16, gain: .5 }); noise(c, out, at, { cutoff: 2400, length: .12, gain: .35 }); return .17; }, jitter: 120, gap: .04, voices: 4 },
+  // Fran's salon: the light changing in a fight, one pane per colour (`pane`), from the cold morning to the warm afternoon.
+  'luz-azul': { synth: (c, out, at, p) => pane(c, out, at, 1318.5 * p), jitter: 12, gap: .3, voices: 1 },
+  'luz-verde': { synth: (c, out, at, p) => pane(c, out, at, 1174.7 * p), jitter: 12, gap: .3, voices: 1 },
+  'luz-naranja': { synth: (c, out, at, p) => pane(c, out, at, 987.8 * p), jitter: 12, gap: .3, voices: 1 },
+  'luz-rojo': { synth: (c, out, at, p) => pane(c, out, at, 880 * p), jitter: 12, gap: .3, voices: 1 },
+  'luz-oro': { synth: (c, out, at, p) => pane(c, out, at, 784 * p), jitter: 12, gap: .3, voices: 1 },
+  'luz-blanca': { synth: (c, out, at, p) => pane(c, out, at, 1568 * p, 0), jitter: 8, gap: .3, voices: 1 },
   heal: { synth: (c, out, at, p) => { [660, 880, 1320].forEach((from, i) => tone(c, out, at + i * .06, { from: from * p, length: .28, gain: .12 })); return .42; }, jitter: 30, gap: .1, voices: 2 },
   // Holding on: a knock taken on the guard, the stance itself, and maná coming back.
   'hit-guarded': { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 170 * p, to: 90 * p, length: .1, gain: .32 }); noise(c, out, at, { cutoff: 900, length: .07, gain: .14 }); return .12; }, jitter: 80, gap: .04, voices: 3 },

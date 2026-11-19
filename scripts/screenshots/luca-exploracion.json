@@ -87,7 +87,7 @@
     {
       "shot": "entrada-mirada",
       "delay": 1800,
-      "caption": "Just in: the camera turns down the transept to the crossing, where the salon is (Fran under his hood dryer, the queues, the lenses in the apse)"
+      "caption": "Just in: the first of three looks, the camera on Fran under the canopy while Gerard names him (the whole of it: just screenshots luca-entrada)"
     },
     {
       "skipDialogue": true
@@ -157,6 +157,10 @@
     },
     {
       "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-recepcion' })"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
     },
     {
       "shot": "cola-avanza",
@@ -256,6 +260,10 @@
       "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-sillones' })"
     },
     {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
+    },
+    {
       "shot": "cola-pasion-avanza",
       "delay": 1800,
       "caption": "The nave won: the Passion arm's queue moves on"
@@ -303,6 +311,10 @@
       "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-carta' })"
     },
     {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
+    },
+    {
       "shot": "cola-abside-avanza",
       "delay": 1800,
       "caption": "The Passion arm won: the apse's queue moves on"
@@ -348,6 +360,10 @@
     },
     {
       "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-abside' })"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
     },
     {
       "shot": "capellan",

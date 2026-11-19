@@ -123,20 +123,27 @@ function scoreBattle(state: BattleState | undefined) {
  * happened; ?story=new from scratch. ?mission=<ánima>&part=<part> starts an ánima mission partway
  * (just dev-mission, `missionParts`). In chapter 2, &with=nuria,uri adds those ánima missions as done;
  * &at=home starts at home instead of where the step happened.
+ * &levels=papagato:2 starts an ánima at that level.
  */
 const devJump = ((): { flags: StoryFlag[]; spot?: Spot; part?: MissionPart; home?: boolean } | undefined => {
   if (!import.meta.env.DEV) return undefined;
   const params = new URLSearchParams(location.search);
   const at = params.get('story'), mission = params.get('mission');
   const missions = (params.get('with') ?? '').split(',').filter((id): id is AnimaId => (ANIMA_IDS as string[]).includes(id));
+  // &levels=matemagico:2,papagato:3 starts those ánimas at that level (their level flags, src/levels.ts).
+  const levels = (params.get('levels') ?? '').split(',').flatMap(pair => {
+    const [id, n] = pair.split(':');
+    return [2, 3].filter(l => l <= Number(n)).map(l => `${id}-${l}`);
+  }).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f));
+  const add = (flags: StoryFlag[]) => STORY_FLAGS.filter(f => flags.includes(f) || levels.includes(f));
   if (mission !== null) {
     const jump = (ANIMA_IDS as string[]).includes(mission) ? missionJump(mission as AnimaId, params.get('part') ?? 'start', missions) : undefined;
-    return jump ?? { flags: [] };
+    return jump ? { ...jump, flags: add(jump.flags) } : { flags: [] };
   }
   if (at === null) return undefined;
   if (!(STORY_FLAGS as readonly string[]).includes(at)) return { flags: [] };
   // &at=home stands Gerard at home instead of where the step happened (the picker's «En casa»).
-  return { flags: flagsAt(at as StoryFlag, missions), spot: spotAt(at as StoryFlag), home: params.get('at') === 'home' };
+  return { flags: add(flagsAt(at as StoryFlag, missions)), spot: spotAt(at as StoryFlag), home: params.get('at') === 'home' };
 })();
 const devStory = devJump?.flags;
 const story = new Story(devStory ?? []);
@@ -362,6 +369,7 @@ try {
     else if (effect.kind === 'news') await watchNews();
     else if (effect.kind === 'metro') await ride(effect.station);
     else if (effect.kind === 'look') await game.look(effect.anchor, effect.cell, effect.height);
+    else if (effect.kind === 'colour') { sfx.play('luz-azul'); await game.flyColour(effect.from, effect.to, effect.colour); }
     // Into a portal: who goes comes apart into it; a person stays gone (Anna, into the spiral).
     else if (effect.kind === 'portal') { await game.intoPortal(effect.who, effect.open, effect.queen ? 'queen' : undefined); if (effect.who !== 'party' && effect.who !== 'everyone') { story.sank(effect.who); storyChanged(); } }
     // La Sobremesa comes apart at the long table, and out of a spiral on the other side.

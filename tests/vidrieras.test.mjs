@@ -21,7 +21,8 @@ test('each light eats one of the elements, in its own colour; green eats none', 
   assert.equal(cancels('rojo'), 'fuego');
   assert.equal(cancels('oro'), 'electrico');
   assert.equal(cancels('verde'), undefined);
-  for (const id of LIGHT_IDS) { const element = cancels(id); if (element) assert.ok(element in ELEMENTS, id); }
+  assert.equal(cancels('blanca'), 'fisico', 'white carries no element: it eats the physical blows');
+  for (const id of LIGHT_IDS) { const element = cancels(id); if (element && element !== 'fisico') assert.ok(element in ELEMENTS, id); }
   // No pink and no violet: those are the Queen's and fear's (docs/visual-style.md).
   for (const id of LIGHT_IDS) assert.ok(!/^#(ff6fae|d94a8c|c9a2ff)$/i.test(LIGHTS[id].colour), id);
   assert.equal(untilFree(14, 'fuego'), 7 + 7, 'orange and red both eat fire: free again in gold');
@@ -79,4 +80,18 @@ test('the fight\'s clock walks the light and tells each new one once', () => {
   assert.equal(lightNow(s), 'verde');
   assert.deepEqual(takeLightNews(s), ['verde']);
   assert.deepEqual(takeLightNews(s), []);
+});
+
+test('the white light eats the party\'s physical blows, Atacar and a physical skill, and lets magic through', () => {
+  const s = fight();
+  s.light = { t: 22, walk: 'nacimiento' };
+  assert.equal(lightNow(s), 'blanca', 'the Nativity side: blue, green, orange, then white');
+  s.phase = 'player'; s.active = 0;
+  const fist = act(s, 'attack', s.foes[0].id);
+  assert.equal(fist.amount, 0);
+  assert.equal(fist.annulled, 'blanca');
+  assert.match(s.message, /luz blanca/);
+  assert.equal(annulled(s, s.allies[1], undefined, 'physical'), 'blanca');
+  assert.equal(annulled(s, s.allies[1], 'fuego', 'magic'), undefined, 'magic goes through, fire too');
+  assert.equal(annulled(s, s.foes[0], undefined, 'physical'), undefined, 'the foes are never touched');
 });

@@ -65,6 +65,18 @@ const CLEARING_EDGE = 1.2;
  */
 const BRANCH_CLEARING = 2.4;
 const TRUNK_CLEARING = 1.4;
+/**
+ * Walking, the forest sinks before Gerard as the flat's walls do (docs/places/sagrada.md § The cut),
+ * in world units (a cell, 1.5 m). The columns between him and the camera and those beside him are
+ * stumps `CUT` high with their section lit, nothing over them, so the floor, who stands on it and
+ * the ways out of where he is are seen. Behind him (away from the camera) a column hides only what
+ * is further back, so the back of the forest stands whole: from `CUT_REACH` behind him each column
+ * gains `CUT_SLOPE` of height for every unit further, and sinks again as he walks up to it. Each
+ * column is cut level, at the height of its own cell of the `CUT_GRID` they stand on. As the view
+ * pulls back to the overview every one grows back up to `CUT_FULL`.
+ */
+const CUT = 2.6, CUT_FULL = 19, CUT_RIM = 0.3;
+const CUT_REACH = 2.5, CUT_SLOPE = 1.8, CUT_GRID = 7.5 / CELL;
 /** The low walls on the camera's side, and the band of glass along them. */
 const LOW = 1.5, GLASS_FROM = 0.45, GLASS_TO = 1.25;
 /** The four Evangelists on the crossing's porphyry columns, as they stand: Mark and Luke towards the apse. */
@@ -152,6 +164,9 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   // The columns' stone and their medallions open a narrow clearing round Gerard (`setClearing`).
   const stones = Object.fromEntries((Object.keys(STONES) as Stone[]).map(k => [k, clearing(painted(`Columna de ${STONES[k].name.toLowerCase()}`, speckles(random, STONES[k].colour), [1.2, 1.2], { gloss: STONES[k].gloss }))])) as Record<Stone, pc.StandardMaterial>;
   const medallions = clearing(painted('Medallones de los evangelistas', evangelists(), [1, 1], { glow: 0.9, gloss: 0.6 }));
+  // A column cut for the walking view (`CUT`) shows its inside through the cut: drawn as its section, the stone's lit heart.
+  for (const m of Object.values(stones)) { m.cull = pc.CULLFACE_NONE; m.setParameter('naveCutFill', 1); m.update(); }
+  medallions.setParameter('naveCutFill', 0);
   const trunks = [...Object.values(stones), medallions];
   const wood = kit.mat('Sillas de madera', '#9a6a3e', 0.25), woodDark = kit.mat('Patas de las sillas', '#4a3626', 0.2);
   const brass = kit.mat('Latón', '#c9a24a', 0.7), rope = kit.mat('Cordón rojo', '#a52a2a', 0.2);
@@ -438,6 +453,8 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
   // Each material that opens sets its own clearing (a value left in the shared scope would carry over to the next).
   const vaults = [vaultMaterial('Bóveda (lado de la Pasión)', '#fff0e2'), vaultMaterial('Bóveda (lado del Nacimiento)', '#eef3fa')];
   const branches = clearing(kit.mat('Ramas de piedra blanca', '#ece6db', 0.25));
+  branches.cull = pc.CULLFACE_NONE; branches.setParameter('naveCutFill', 1); branches.update();
+  for (const m of vaults) m.setParameter('naveCutFill', 0);
   const looks: Record<keyof typeof parts, pc.Material> = {
     floor: floorStone, base, wall: wallStone, white, dark, warm: glass.warm, cool: glass.cool, gold: glass.gold, bronze,
     P: stones.P, B: stones.B, g: stones.g, s: stones.s, branches, vaultWarm: vaults[0], vaultCool: vaults[1], medallions,
@@ -469,14 +486,20 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
     m.update(); return m;
   }
   const cutFocus = device.scope.resolve('naveCutFocus'), cutToCamera = device.scope.resolve('naveCutToCamera'), cutRadius = device.scope.resolve('naveCutRadius');
-  const cutPlane = device.scope.resolve('naveCutPlane');
+  const cutPlane = device.scope.resolve('naveCutPlane'), cutTop = device.scope.resolve('naveCutTop');
   // Every pass binds the declared uniforms, so they get a value up front.
-  cutRadius.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]); cutPlane.setValue([0, 0, 0, 1e5]);
-  /** The vault: the clearing and, in the overview, the plane; the branches and trunks: only a narrow clearing right round Gerard. */
-  function setClearing(radius: number, plane: number[]) {
-    for (const m of vaults) { m.setParameter('naveCutRadius', radius); m.setParameter('naveCutPlane', plane); }
-    branches.setParameter('naveCutRadius', radius ? BRANCH_CLEARING : 0); branches.setParameter('naveCutPlane', [0, 0, 0, 1e5]);
-    for (const m of trunks) { m.setParameter('naveCutRadius', radius ? TRUNK_CLEARING : 0); m.setParameter('naveCutPlane', [0, 0, 0, 1e5]); }
+  cutRadius.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]); cutPlane.setValue([0, 0, 0, 1e5]); cutTop.setValue(1e5);
+  device.scope.resolve('naveCutFill').setValue(0);
+  // The columns' grid is measured from the crossing.
+  device.scope.resolve('naveCutGrid').setValue([x(CROSSING.x), z(CROSSING.z)]);
+  /**
+   * The vault: the clearing and, in the overview, the plane; the branches and trunks: only a narrow
+   * clearing right round Gerard. All of them: nothing above the cut, `top` high before and beside Gerard and rising behind him.
+   */
+  function setClearing(radius: number, plane: number[], top = 1e5) {
+    for (const m of vaults) { m.setParameter('naveCutRadius', radius); m.setParameter('naveCutPlane', plane); m.setParameter('naveCutTop', top); }
+    branches.setParameter('naveCutRadius', radius ? BRANCH_CLEARING : 0); branches.setParameter('naveCutPlane', [0, 0, 0, 1e5]); branches.setParameter('naveCutTop', top);
+    for (const m of trunks) { m.setParameter('naveCutRadius', radius ? TRUNK_CLEARING : 0); m.setParameter('naveCutPlane', [0, 0, 0, 1e5]); m.setParameter('naveCutTop', top); }
   }
   setClearing(0, [0, 0, 0, 1e5]);
   /** The game's camera, whose pulled-back view (the overview) opens the vault's near half like a model cut in two. */
@@ -503,7 +526,8 @@ export function buildBasilica(kit: BasilicaKit, environment: Environment) {
         // The cut's plane faces the camera across the ground and sweeps in to the crossing as the view pulls back.
         const across = new pc.Vec3(d.x, 0, d.z).normalize(), height = view()?.orthoHeight ?? zoom;
         const t = Math.min(1, Math.max(0, (height - zoom * 1.25) / (zoom * 0.6)));
-        setClearing(CLEARING, [across.x, 0, across.z, across.dot(crossing) + (1 - t) * 80]);
+        // Walking, the forest sinks to `CUT` before Gerard; pulling back, every column grows up again into its branches and the vault.
+        setClearing(CLEARING, [across.x, 0, across.z, across.dot(crossing) + (1 - t) * 80], CUT + (CUT_FULL - CUT) * t * t * (3 - 2 * t));
       } else setClearing(0, [0, 0, 0, 1e5]);
       if (!animate) return;
       time += dt;
@@ -524,9 +548,19 @@ uniform naveCutFocus: vec3f;
 uniform naveCutToCamera: vec3f;
 uniform naveCutRadius: f32;
 uniform naveCutPlane: vec4f;
+uniform naveCutTop: f32;
+uniform naveCutFill: f32;
+uniform naveCutGrid: vec2f;
 var<private> naveCutGlow: f32 = 0.0;
 `;
 const CLEARING_MAIN = `
+// The forest sinks before Gerard and stands behind him: each column cut level, by how far behind him its cell is.
+// The cut is the forest's own: what is not drawn above it casts no shadow either.
+let naveCutCell = floor((vPositionW.xz - uniform.naveCutGrid) / ${CUT_GRID.toFixed(2)} + 0.5) * ${CUT_GRID.toFixed(2)} + uniform.naveCutGrid;
+let naveCutSide = uniform.naveCutToCamera.xz / max(length(uniform.naveCutToCamera.xz), 0.001);
+let naveCutBehind = -dot(naveCutCell - uniform.naveCutFocus.xz, naveCutSide);
+let naveCutAt = uniform.naveCutTop + max(0.0, naveCutBehind - ${CUT_REACH.toFixed(2)}) * ${CUT_SLOPE.toFixed(2)};
+if (vPositionW.y > naveCutAt) { discard; }
 #if defined(FORWARD_PASS) || defined(PREPASS_PASS)
 if (dot(uniform.naveCutPlane.xyz, vPositionW) > uniform.naveCutPlane.w) { discard; }
 if (uniform.naveCutRadius > 0.0) {
@@ -536,10 +570,14 @@ if (uniform.naveCutRadius > 0.0) {
   if (cutAlong > 0.0 && cutAcross < uniform.naveCutRadius) { discard; }
   naveCutGlow = step(0.0, cutAlong) * (1.0 - smoothstep(uniform.naveCutRadius, uniform.naveCutRadius + ${CLEARING_EDGE.toFixed(2)}, cutAcross));
 }
+// The cut's lit rim, and the section just under it.
+naveCutGlow = max(naveCutGlow, smoothstep(naveCutAt - ${CUT_RIM.toFixed(2)}, naveCutAt, vPositionW.y));
 #endif
 `;
 const CLEARING_END = `
 #ifdef FORWARD_PASS
+// Seen through its cut, a column's inside is its section: the stone's pale heart, lit.
+if (uniform.naveCutFill > 0.5 && !pcFrontFacing) { output.color = vec4f(0.92, 0.84, 0.66, output.color.a); naveCutGlow = max(naveCutGlow, 0.5); }
 output.color = vec4f(mix(output.color.rgb, vec3f(1.0, 0.88, 0.62), naveCutGlow * 0.55), output.color.a);
 #endif
 `;

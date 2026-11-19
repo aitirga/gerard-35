@@ -13,14 +13,13 @@ import {
   ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, songNow, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId, skillKnown, lightNow, type Combatant,
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId, skillKnown,
 } from './battle.ts';
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, untilNote } from './song.ts';
 import { ARTILUGIO_BUTTONS, CASTLE } from './castle.ts';
 import { artilugioLive, castleNote, castleProp, nextNote } from './castle-fight.ts';
-import { upcoming } from './vidrieras.ts';
 
 export const SIM_VERSION = 2;
 export const POLICIES = {
@@ -302,7 +301,7 @@ const MODELO_WET = 14, ERROR_WORTH = 16, CONVERGED_WORTH = 30;
 const EYE_WORTH = .8, EYE_BROKEN = 30;
 /** A thing with PV that is part of a fight's answer and never its win: Vertitrón's eye, Aurelià's lectern, the Queen's hands. */
 const isPiece = (foe: BattleState['foes'][number]) => foe.kind === 'vertigo-ojo' || castleProp(foe);
-/** Fran's canopy: a lamp broken is a Brillo he will never drink again; each Brillo off, the blows that land whole. */
+/** Fran's canopy: a lamp broken is a Brillo he will never drink again, a light that eats nothing more and a lighter Aspersión; each Brillo off, the blows that land whole. */
 const LAMP_BROKEN = 40, BRILLO_WORTH = 30;
 interface Threat { hp: Map<string, number>; mareo: Map<string, number> }
 /** What the foes would do to each ally if their turn came now (PV, and Mareo stacks): the real rules, on a copy. */
@@ -314,12 +313,6 @@ function threatOn(state: BattleState): Threat {
     hp: new Map(look.allies.map(a => [a.id, before.get(a.id)!.hp - a.hp])),
     mareo: new Map(look.allies.map(a => [a.id, Math.max(0, (a.statuses?.mareo ?? 0) - before.get(a.id)!.mareo)])),
   };
-}
-/** What a fallen Estampado will not take back: its Recolor, sooner the nearer its own light. */
-function recolorWorth(state: BattleState, foe: Combatant) {
-  const own = foe.kind!.replace('estampado-', '');
-  const wait = state.light ? [0, 1, 2, 3, 4].map(n => n === 0 ? lightNow(state) : upcoming(state.light!.t, n, state.light!.walk).at(-1)).indexOf(own as never) : -1;
-  return wait < 0 ? 0 : foe.maxHp * LUCA.recolor * (wait <= 1 ? 1 : .5);
 }
 /** What a choice costs in maná, both halves for a dual. */
 function manaOf(choice: Choice) {
@@ -380,8 +373,6 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
-  // An Estampado down before its own light comes back is PV it will not get back.
-  before.foes.forEach((foe, i) => { if (foe.kind?.startsWith('estampado') && foe.hp > 0 && after.foes[i].hp <= 0 && after.light) value += recolorWorth(after, foe); });
   const skill = SKILLS.find(s => s.id === choice.skill);
   if (skill?.kind === 'boost') value += skill.power * 3 * before.foes.filter(f => f.hp > 0).length;
   value -= manaOf(choice) * 2.5;
@@ -417,6 +408,19 @@ const damageOn = (state: BattleState, choice: Choice, foeId: string) => {
   apply(after, choice);
   return before - after.foes.find(f => f.id === foeId)!.hp;
 };
+/**
+ * La carta de colores (docs/quests/luca.md): how often each kind of player looks at which of Luca's
+ * shirts hangs in its own light before choosing. Who does not look chooses as if the light were not
+ * there: any shirt, any element.
+ */
+const LIGHT_READ: Record<Policy, number> = { attack: 0, random: 0, casual: .3, smart: 1 };
+/** The fight as a player who has not looked at the light sees it this turn (a copy without it), or the fight itself. */
+function unread(state: BattleState, policy: Policy, random: () => number) {
+  if (!state.light || !state.foes.some(f => f.hp > 0 && f.kind?.startsWith('estampado')) || random() < LIGHT_READ[policy]) return state;
+  const blind = copy(state);
+  delete blind.light;
+  return blind;
+}
 /** The PV a choice takes off right now: all `casual` looks at. */
 function damageNow(before: BattleState, choice: Choice) {
   const after = copy(before);
@@ -439,7 +443,7 @@ export function decide(state: BattleState, setup: Setup, random: () => number): 
   const options = legalChoices(state, setup, policy === 'smart' || policy === 'random', policy === 'smart' || policy === 'random');
   if (policy === 'attack') return options.find(o => o.action === 'attack') ?? options[0];
   if (policy === 'random' || random() < (setup.error ?? ERRORS[policy])) return options[Math.floor(random() * options.length)];
-  if (policy === 'casual') return best(options, choice => damageNow(state, choice))[0];
+  if (policy === 'casual') { const seen = unread(state, policy, random); return best(options, choice => damageNow(seen, choice))[0]; }
   const threat = threatOn(state);
   const singles = options.filter(o => o.action !== 'dual'), duals = options.filter(o => o.action === 'dual');
   const [alone, aloneWorth] = best(singles, choice => worth(state, choice, threat, setup.ban));
@@ -475,7 +479,8 @@ export interface Run {
   duals: number;
   /**
    * What happened on the foes' side, counted: each foe ability by id (`vacio`, `aplaston`, `puaj`…),
-   * `ojo-roto` (Vertitrón's eye broken, no more Rayo); and on the party's side `triple:<action>`,
+   * `ojo-roto` (Vertitrón's eye broken, no more Rayo), `lampara-rota` (a lamp of Fran's canopy broken),
+   * `anulado` (a party's blow the salon's light ate); and on the party's side `triple:<action>`,
    * the action that spent a Punto débil (×3).
    */
   events: Record<string, number>;
@@ -529,6 +534,9 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     if (!effect) return;
     if (effect.kind === 'enemy' && effect.ability) count(effect.ability.id);
     if (effect.eye) count('ojo-roto');
+    // Fran's salon: a lamp of the canopy broken, and a blow the light ate.
+    if (effect.lampBroken) count('lampara-rota');
+    if (effect.annulled) count('anulado');
     if (effect.reaction) count(effect.reaction.id);
   };
   const watch = () => {
@@ -862,12 +870,12 @@ export const TARGETS: readonly Target[] = [
   { id: 'sillones-deslumbrados', fight: 'luca-sillones', dazzled: true, party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .75], why: 'Con los espejos de la nave resueltos los capellanes empiezan deslumbrados: el mismo combate, con más vida al acabar.' },
   { id: 'sillones-sin-pensar', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin mirar quién lleva el peinado nuevo, cada gesto se repite y el fijador dobla las chispas.' },
   { id: 'sillones-a-punetazos', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
-  { id: 'carta-bien', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'smart', win: [.88, 1], hpLeftWon: [.15, .55], why: 'Los estampados, pensando: tumbar primero al que le toca la luz siguiente, antes de que se recoloree, y nunca con su propio elemento.' },
-  { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'casual', win: [0, .35], why: 'Repartiendo golpes, cada luz devuelve el color a uno de ellos y el combate no se acaba.' },
+  { id: 'carta-bien', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'smart', win: [.88, 1], hpLeftWon: [.15, .55], why: 'Las camisas de Luca, pensando: pegar solo a la que está en su luz, y con otra cosa que el elemento que esa luz se come.' },
+  { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'casual', win: [0, .35], why: 'Repartiendo golpes sin mirar la luz, la mayoría caen sobre una camisa apagada y no hacen nada.' },
   { id: 'abside-bien', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.25, .6], why: 'El ábside, la zona más dura antes de Fran: pegarle al Telescopio mientras enfoca, que se le raja la lente, y rematar a La Laca con fuego cuando la luz lo deja, que estalla sobre él.' },
   { id: 'abside-sin-pensar', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'casual', win: [0, .15], why: 'Sin leer el enfoque ni la luz, el rayo cae entero, doble sobre los lacados, y la nube no estalla.' },
-  { id: 'fran-bien', fight: 'fran', party: DUO, levels: P3M3, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .7], roundsWon: [10, 16], why: 'Fran, pensando: primero el acólito recién peinado; luego romper cada lámpara en su propia luz, que se le apaga el brillo; y agarrarse a la Aspersión.' },
-  { id: 'fran-sin-pensar', fight: 'fran', party: DUO, levels: P3M3, policy: 'casual', win: [0, .25], why: 'Sin mirar a las lámparas, cada luz le da más brillo y los golpes le llegan a medias; la Aspersión cae entera.' },
+  { id: 'fran-bien', fight: 'fran', party: DUO, levels: P3M3, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .7], roundsWon: [10, 16], why: 'Fran, pensando: romper cada lámpara en su propia luz, con otro elemento: se le apaga el brillo, esa luz ya no se come nada y la Aspersión cae casi limpia.' },
+  { id: 'fran-sin-pensar', fight: 'fran', party: DUO, levels: P3M3, policy: 'casual', win: [0, .25], why: 'Sin mirar a las lámparas, cada luz le da más brillo, sigue comiéndose los elementos y la Aspersión llega teñida de todas.' },
   { id: 'fran-a-punetazos', fight: 'fran', party: DUO, levels: P3M3, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
 ];
 export interface TargetResult { id: string; why: string; pass: boolean; failures: string[]; row: Row; wanted: Pick<Target, 'win' | 'roundsLost' | 'hpLeftWon' | 'roundsWon' | 'duals'> }

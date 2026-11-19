@@ -2,6 +2,7 @@
  * The light through the Sagrada Família's windows in Fran's salon (docs/quests/luca.md § La Sagrada
  * peluquería): it walks through its colours in a loop, a sun that goes too fast, from the cold morning
  * to the warm afternoon. While a colour is on, the party's blows of the element it carries do nothing
+ * (white carries no element: it eats the physical blows, Atacar too)
  * (src/battle.ts `annulled`); the foes are not touched by it. The salon's floor shows the same light
  * (src/basilica-scenery.ts). Pure: what is on at a moment, what is coming, what changed between two.
  */
@@ -12,10 +13,12 @@ export const LIGHTS = {
   naranja: { name: 'Naranja', colour: '#ff8f3f', cancels: 'fuego' },
   rojo: { name: 'Roja', colour: '#e8503a', cancels: 'fuego' },
   oro: { name: 'Oro', colour: '#ffd84f', cancels: 'electrico' },
-} as const satisfies Record<string, { name: string; colour: string; cancels: 'fuego' | 'agua' | 'electrico' | undefined }>;
+  // Grey-white, the stone's own light through clear glass: no element, so it eats the blows that have none.
+  blanca: { name: 'Blanca', colour: '#d9dde2', cancels: 'fisico' },
+} as const satisfies Record<string, { name: string; colour: string; cancels: 'fuego' | 'agua' | 'electrico' | 'fisico' | undefined }>;
 export type LightId = keyof typeof LIGHTS;
 export const LIGHT_IDS = Object.keys(LIGHTS) as LightId[];
-/** The element each light cancels, if any. */
+/** The element each light cancels, if any; `fisico` for the white one, which eats the physical blows. */
 export const cancels = (light: LightId) => LIGHTS[light].cancels;
 
 /** One light of a walk and how long it stays, in seconds of fight. */
@@ -25,13 +28,14 @@ export interface Step { light: LightId; seconds: number }
  * changes as the party plans, and the clock on their plates says what comes next. Each side of the
  * basilica walks through its own windows (docs/quests/luca.md § Review B): the nave and the crossing
  * see every colour; the Nativity arm its cold glass, until the sun comes in orange (the first fire
- * eaten, partway through the first fight, as a surprise); the Passion arm its warm glass, fire
- * eaten for a long stretch, then a green breath and a cold glimpse from the rose window; the apse its gold.
+ * eaten, partway through the first fight, as a surprise) and then white (the fists eaten); the Passion arm the three
+ * colours of Luca's shirts and no other, red, gold and blue, so every light there is one shirt's (La carta de colores:
+ * only the shirt in its own light can be hurt); the apse its gold.
  */
 export const WALKS = {
   nave: [{ light: 'azul', seconds: 8 }, { light: 'verde', seconds: 6 }, { light: 'naranja', seconds: 7 }, { light: 'rojo', seconds: 7 }, { light: 'oro', seconds: 7 }],
-  nacimiento: [{ light: 'azul', seconds: 8 }, { light: 'verde', seconds: 6 }, { light: 'naranja', seconds: 7 }],
-  pasion: [{ light: 'naranja', seconds: 6 }, { light: 'rojo', seconds: 6 }, { light: 'verde', seconds: 6 }, { light: 'oro', seconds: 6 }, { light: 'azul', seconds: 5 }],
+  nacimiento: [{ light: 'azul', seconds: 8 }, { light: 'verde', seconds: 6 }, { light: 'naranja', seconds: 7 }, { light: 'blanca', seconds: 6 }],
+  pasion: [{ light: 'rojo', seconds: 7 }, { light: 'oro', seconds: 7 }, { light: 'azul', seconds: 7 }],
   abside: [{ light: 'oro', seconds: 8 }, { light: 'naranja', seconds: 6 }, { light: 'oro', seconds: 7 }, { light: 'verde', seconds: 5 }],
 } as const satisfies Record<string, readonly Step[]>;
 export type WalkId = keyof typeof WALKS;

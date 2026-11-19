@@ -45,20 +45,38 @@ export function createLucaFoes() {
     part(mothBody, 'Mancha', 'cylinder', vein, [side * .34, .06, .06], [.1, .01, .1], [0, 0, side * 18], false);
   }
 
-  // An Estampado: a stiff patch of loud pattern standing on its edge, its colour its own.
-  const patch = (name: string, hex: string, accent: string) => {
+  // A shirt of Luca's (`estampado-*`): one of his loud shirts on a wire hanger, nobody in it, hanging in the
+  // air. It is dressed twice over the same hanger: in its own colour and print (`Encendida`), as it is
+  // in the light of that colour, and as grey cloth (`Apagada`), out of it (`lightShirt` shows one).
+  const wire = mat('Percha', '#c9ccd2', .85), dullCloth = mat('Tela apagada', '#a9acb2', .15), dullPrint = mat('Estampado apagado', '#c2c4c9', .15), dullEdge = mat('Costura apagada', '#d3d5d9', .15);
+  const shirt = (name: string, hex: string, accent: string) => {
     const e = root(name);
     pool(e, hex, 1.1);
-    const face = pivot(e, 'Vista', [0, 0, 0]);
-    const cloth = mat(`Tela ${name}`, hex, .3, .15), print = mat(`Estampado ${name}`, accent, .3, .25), edge = mat('Costura', '#f1ece2', .2);
-    part(face, 'Tela', 'box', cloth, [0, .95, 0], [1.05, 1.5, .06], [0, 0, 4]);
-    part(face, 'Costura', 'box', edge, [0, .95, -.035], [1.12, 1.57, .02], [0, 0, 4], false);
-    for (let i = 0; i < 6; i++) part(face, 'Lunar', 'cylinder', print, [-.3 + (i % 3) * .3, .55 + Math.floor(i / 3) * .55 + (i % 2) * .12, .04], [.2, .02, .2], [90, 0, 0], false);
-    part(face, 'Flor', 'sphere', print, [.18, 1.42, .05], [.24, .24, .06], [0, 0, 0], false);
-    pivot(face, 'Cabeza de chicle', [0, 1.55, .05]);
+    // Hung three-quarters to the camera: face on to the party it would be seen by its edge.
+    const face = pivot(e, 'Vista', [0, .25, 0]);
+    face.setLocalEulerAngles(0, 60, 0);
+    part(face, 'Gancho', 'cylinder', wire, [0, 1.98, 0], [.025, .34, .025], [0, 0, 0], false);
+    part(face, 'Percha', 'box', wire, [0, 1.76, 0], [.86, .03, .03], [0, 0, 0], false);
+    const dress = (group: string, cloth: pc.Material, print: pc.Material, edge: pc.Material) => {
+      const g = pivot(face, group);
+      part(g, 'Cuerpo', 'box', cloth, [0, 1.12, 0], [.8, 1.2, .1]);
+      for (const side of [-1, 1]) {
+        part(g, 'Manga', 'box', cloth, [side * .54, 1.52, 0], [.42, .34, .09], [0, 0, side * -32]);
+        part(g, 'Cuello', 'box', edge, [side * .12, 1.74, .06], [.22, .1, .04], [0, 0, side * 24], false);
+      }
+      part(g, 'Tapeta', 'box', edge, [0, 1.12, .056], [.05, 1.16, .01], [0, 0, 0], false);
+      for (let k = 0; k < 4; k++) part(g, 'Botón', 'sphere', print, [0, .72 + k * .27, .066], [.05, .05, .03], [0, 0, 0], false);
+      // His prints: big dots down one side, a flower on the chest.
+      for (let i = 0; i < 6; i++) part(g, 'Lunar', 'cylinder', print, [(i % 2 ? -.24 : .22) + (i % 3 - 1) * .05, .66 + i * .17, .056], [.14, .012, .14], [90, 0, 0], false);
+      part(g, 'Flor', 'sphere', print, [-.2, 1.5, .06], [.2, .2, .04], [0, 0, 0], false);
+      return g;
+    };
+    dress('Encendida', mat(`Tela ${name}`, hex, .3, .3), mat(`Estampado ${name}`, accent, .3, .35), mat(`Costura ${name}`, '#f1ece2', .2));
+    dress('Apagada', dullCloth, dullPrint, dullEdge).enabled = false;
+    pivot(face, 'Cabeza de chicle', [0, 1.7, .05]);
     return e;
   };
-  const red = patch('Estampado rojo', '#e8503a', '#ffd84f'), blue = patch('Estampado azul', '#4f9fe8', '#f1ece2'), gold = patch('Estampado oro', '#ffd84f', '#2f8f7a');
+  const red = shirt('Camisa roja', '#e8503a', '#ffd84f'), blue = shirt('Camisa azul', '#4f9fe8', '#f1ece2'), gold = shirt('Camisa dorada', '#ffd84f', '#2f8f7a');
 
   // El Telescopio: a brass tube on a tripod, its lens a disc of glass that lights up when it focuses.
   const scope = root('El Telescopio');
@@ -167,6 +185,12 @@ export const CHAPLAIN_STYLES = 3;
 /** Shows the `n`th of them on a chaplain cloned from the template (the others hidden): each chaplain his own. */
 export function styleChaplain(model: pc.Entity, n: number) {
   for (let k = 0; k < CHAPLAIN_STYLES; k++) { const hair = model.findByName(`Peinado ${k}`); if (hair) hair.enabled = k === n % CHAPLAIN_STYLES; }
+}
+/** A shirt of Luca's in the light of its own colour (its colour and print), or out of it (grey cloth). */
+export function lightShirt(model: pc.Entity, on: boolean) {
+  const lit = model.findByName('Encendida'), dull = model.findByName('Apagada');
+  // Set outright: out of the hierarchy `enabled` reads false whatever it was set to.
+  if (lit && dull) { lit.enabled = on; dull.enabled = !on; }
 }
 /** How big each one stands in the fight. */
 export const LUCA_SIZES: Record<LucaKind, number> = {

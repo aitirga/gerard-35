@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AFFINITIES, FEAR_ENCOUNTERS, LUCA, LUCA_ENCOUNTERS, LUCA_FIGHTS, LUCA_WALKS, dazzle, act, cornered, createFearBattle, enemyAct, intentLabel, nextRound, runClock, takeNews } from '../src/battle.ts';
+import { AFFINITIES, FEAR_ENCOUNTERS, LUCA, LUCA_ENCOUNTERS, LUCA_FIGHTS, LUCA_WALKS, dazzle, act, cornered, createFearBattle, enemyAct, intentLabel, lightNow, nextRound, runClock, shirtLit, takeNews } from '../src/battle.ts';
 import { FOE_XP } from '../src/levels.ts';
 import { LUCA_SIZES } from '../src/luca-foes.ts';
 
@@ -41,18 +41,30 @@ test('the moths go for whoever struck with an element, and one more comes in whi
   assert.ok(takeNews(s).some(n => n.summoned?.startsWith('polilla')));
 });
 
-test('an Estampado keeps its own colour\'s element off, and fills in again when its light comes on', () => {
-  for (const [kind, element] of [['estampado-rojo', 'fuego'], ['estampado-azul', 'agua'], ['estampado-oro', 'electrico']]) assert.equal(AFFINITIES[kind][element], 'resist', kind);
+test('a shirt of Luca\'s is only hurt in the light of its own colour, and its light goes out with it', () => {
+  for (const kind of ['estampado-rojo', 'estampado-azul', 'estampado-oro']) assert.equal(AFFINITIES[kind], undefined, `${kind} resists nothing of its own: the light already eats that element`);
   const s = fight('luca-carta');
-  const red = s.foes.find(f => f.kind === 'estampado-rojo');
-  red.hp = 5000;
-  s.phase = 'player';
+  const red = s.foes.find(f => f.kind === 'estampado-rojo'), blue = s.foes.find(f => f.kind === 'estampado-azul');
   assert.equal(s.light.walk, 'pasion');
-  runClock(s, 5);
-  assert.equal(red.hp, 5000, 'not yet: orange is not its light');
-  runClock(s, 2);
-  assert.equal(red.hp, Math.min(9999, 5000 + Math.round(9999 * LUCA.recolor)));
-  assert.ok(takeNews(s).some(n => n.recolored?.target === red.id));
+  as(s, 'gerard');
+  assert.equal(lightNow(s), 'rojo');
+  assert.ok(shirtLit(s, red) && !shirtLit(s, blue));
+  const off = act(s, 'attack', blue.id);
+  assert.equal(off.amount, 0);
+  assert.deepEqual(off.unlit, [blue.id]);
+  assert.equal(blue.hp, 9999);
+  as(s, 'gerard');
+  assert.ok(act(s, 'attack', red.id).amount > 0, 'in its light, a blow lands');
+  // Fire is what red light eats: the lit shirt has to be hit with something else.
+  as(s, 'gerard');
+  assert.equal(act(s, 'skill', red.id, 'foc-binari').amount, 0);
+  red.hp = 1;
+  as(s, 'gerard');
+  const down = act(s, 'attack', red.id);
+  assert.equal(down.lightOut, 'rojo');
+  assert.notEqual(lightNow(s), 'rojo', 'its light does not stay on over nobody');
+  s.phase = 'player';
+  for (let i = 0; i < 60; i++) { runClock(s, 1); assert.notEqual(lightNow(s), 'rojo'); }
 });
 
 test('El Telescopio says whom it focuses on; a blow then cracks its lens and calls its beam off', () => {
@@ -169,7 +181,7 @@ test('the Aspersión is said a turn ahead and takes Fuerza and Magia for the res
   const wash = turn(s, fran.id, 'gerard');
   assert.equal(wash.ability.id, 'aspersion');
   assert.ok(wash.amount > 0 && wash.splash.length === 1);
-  assert.equal(s.allies[0].lasting.shifts.fuerza, -LUCA.aspersionDown);
+  assert.equal(s.allies[0].lasting.shifts.fuerza, -LUCA.aspersionDown * 3, 'every lamp still hangs: it takes the most');
   fran.hp = 1;
   as(s, 'aitor');
   act(s, 'attack', fran.id);
@@ -190,4 +202,49 @@ test('each side of the basilica fights under its own windows: the apse\'s Laca i
   assert.equal(apse.light.walk, 'abside');
   const fresh = createFearBattle(party, 'luca-abside');
   assert.equal(fresh.foes.find(f => f.kind === 'laca').maxHp, LUCA.lacaAbside);
+});
+
+test('a lamp broken rains its colour back: its light eats nothing of the party\'s for the rest of the fight', async () => {
+  const { lightFreed } = await import('../src/battle.ts');
+  const s = fight('fran');
+  const fran = s.foes.find(f => f.kind === 'fran'), gerard = s.allies.find(a => a.id === 'gerard');
+  fran.stage = 2;
+  s.light.t = 15; // naranja: fire is eaten
+  as(s, 'gerard');
+  assert.equal(act(s, 'skill', fran.id, 'foc-binari').annulled, 'naranja');
+  const warm = s.foes.find(f => f.lamp === 'calido');
+  warm.hp = 1;
+  as(s, 'aitor');
+  const broke = act(s, 'attack', warm.id);
+  assert.equal(broke.lampBroken, warm.id);
+  assert.match(s.message, /naranja y roja/);
+  assert.ok(lightFreed(s, 'naranja') && lightFreed(s, 'rojo') && !lightFreed(s, 'oro'));
+  gerard.secondary = 99;
+  as(s, 'gerard');
+  const fire = act(s, 'skill', fran.id, 'foc-binari');
+  assert.equal(fire.annulled, undefined);
+  assert.ok(fire.amount > 0, 'fire lands again');
+  s.light.t = 22; // roja, the same lamp's
+  gerard.secondary = 99;
+  as(s, 'gerard');
+  assert.equal(act(s, 'skill', fran.id, 'foc-binari').annulled, undefined);
+});
+
+test('the Aspersión is dyed by every lamp still hanging: with all of them broken it only wets', () => {
+  const wash = broken => {
+    const s = fight('fran');
+    const fran = s.foes.find(f => f.kind === 'fran');
+    fran.stage = 3; fran.turns = 0;
+    for (const lamp of s.foes.filter(f => f.kind === 'lampara').slice(0, broken)) lamp.hp = 0;
+    const load = turn(s, fran.id, 'gerard');
+    const effect = turn(s, fran.id, 'gerard');
+    return { s, load, effect };
+  };
+  const full = wash(0), clean = wash(3);
+  assert.match(full.s.message, /color se va/);
+  assert.ok(full.effect.amount > clean.effect.amount, 'three lamps hanging hurt more than none');
+  assert.equal(clean.s.allies[0].lasting, undefined, 'none hanging: it takes no colour');
+  assert.equal(clean.effect.stats, undefined);
+  assert.match(clean.s.message, /no os quita el color/);
+  assert.equal(wash(1).s.allies[0].lasting.shifts.magia, -LUCA.aspersionDown * 2);
 });
