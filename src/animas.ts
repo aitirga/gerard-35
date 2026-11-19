@@ -25,6 +25,8 @@ export const ANIMAS = {
   universidad: { id: 'universidad', friend: 'Los amigos de la uni', name: 'Ánima de los amigos de la uni', colour: '#a8a89a', bonus: { fuerza: 1, espiritu: 1, pv: 10 }, note: 'La Barceloneta y el Càmping Eurosport. Por diseñar.' },
   // Marta (docs/quests/marta.md): her voice back. The wearable ánima is still to design with /anima.
   marta: { id: 'marta', friend: 'Marta', name: 'Ánima de Marta', colour: '#9fb8b4', bonus: { magia: 1, velocidad: 1, pv: 10 }, note: 'Alegia y Las cuerdas. Por diseñar.' },
+  // Emilie (docs/quests/emilie.md): the why back. The wearable ánima is still to design with /anima.
+  emilie: { id: 'emilie', friend: 'Emilie', name: 'Ánima de Emilie', colour: '#a3aea2', bonus: { magia: 1, defensa: 1, pv: 10 }, note: 'Poble Sec y su modelo. Por diseñar.' },
 } as const satisfies Record<string, Anima>;
 export type AnimaId = keyof typeof ANIMAS;
 export const ANIMA_IDS = Object.keys(ANIMAS) as AnimaId[];

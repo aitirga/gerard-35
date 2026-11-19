@@ -102,6 +102,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   // Las cuerdas: a dark room in petrol blue, one lamp left silver and a little amber for the first note.
   // Emilie's model: the dark of a screen, phosphor green, and the two values its foes run on.
   modelo: { salon: [hex('#3fe07a', .4, .8), hex('#12301c', .3, .8), hex('#6cc8f2', .35, .7), hex('#ffe45c', .3, .6)], rest: hex('#12301c', .15, .8) },
+  // Emilie's flat: grey daylight on water, wet terracotta, the laptop's green.
+  'piso-emilie': { salon: [white(5200, .6), hex('#5d8a99', .5, .5), hex('#b5643c', .45, .45), hex('#3fe07a', .35, .6)], rest: white(5000, .25) },
   cuerdas: { salon: [hex('#1f5f6b', .45, .8), white(5600, .35), hex('#49d3c2', .35, .7), hex('#f2b45a', .3, .6)], rest: hex('#16454e', .15, .8) },
   // Uri's maze: hedge green and garden walls, a little strange.
   'cardedeu-laberinto': { salon: [hex('#5f8f4e', .6, .5), hex('#9a6cd8', .45, .45), white(3000, .6), hex('#c98d6a', .5, .5)], rest: hex('#7da86a', .25, .35) },

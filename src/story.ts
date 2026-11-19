@@ -5,7 +5,8 @@
  */
 import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
-import { PATROLS } from './modelo.ts';
+import { PATROLS, createModelo, type ModeloState, type ZoneId } from './modelo.ts';
+import { EMILIE_SCALE, LINES_EMILIE, MODELO_PLACE, PISO, PLACES_EMILIE, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
 import { facingToward, type Cell } from './movement.ts';
 import type { ItemId } from './items';
 import type { CampingEncounter, CuerdasEncounter, ModeloEncounter } from './battle.ts';
@@ -53,6 +54,9 @@ export const STORY_FLAGS = [
   // Marta's mission (docs/quests/marta.md): spoken to in Alegia, into Las cuerdas through the note
   // the piano left in the air, La Voz beaten, her ánima and the light that went with them.
   'alegia-marta', 'cuerdas', 'voz', 'anima-marta', 'luz-marta',
+  // Emilie's mission (docs/quests/emilie.md): spoken to in her flooded flat in Poble Sec, into her model
+  // through her laptop, El que no converge beaten, her ánima and the light that went with them.
+  'poble-sec-emilie', 'modelo', 'converge', 'anima-emilie', 'luz-emilie',
   // The castle (docs/castle.md, docs/castle-bosses.md): Aurelià beaten and his light, the management team and
   // theirs, Gerard fallen to Aitor's hand, the artilugio, the Queen beaten, and which of the two endings.
   'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
@@ -66,7 +70,7 @@ const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-ni
 /** Only flags this version knows, renamed ones under their new name. */
 const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENAMED_FLAGS[f] ?? f).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
 /** Whose lights can be won. */
-export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'aurelia', 'mar', 'montse', 'pilar'] as const;
+export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'emilie', 'aurelia', 'mar', 'montse', 'pilar'] as const;
 export type LightId = typeof LIGHTS[number];
 
 export type StoryEvent =
@@ -206,7 +210,7 @@ export type GerardClass = Exclude<ClassId, 'tecnopata'>;
 
 /** Someone standing in a scene: a character model, or one of the cats (`cat`). */
 export interface StoryNpc {
-  id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki' | 'marta' | UniFriend; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId;
+  id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki' | 'marta' | 'emilie' | UniFriend; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId;
   /** The Queen holds them: violet eyes, and they keep looking where they face. */
   possessed?: boolean;
   /** Standing in the sea this deep (m): Anna in the shallows. */
@@ -231,10 +235,17 @@ export interface UniRun {
 export interface MartaRun { beaten: string[]; told: string[] }
 export const freshMarta = (): MartaRun => ({ beaten: [], told: [] });
 /**
+ * Emilie's mission while it runs (docs/quests/emilie.md); not saved, as the others. `section`: the run
+ * through her model (src/modelo.ts: the zone, what was measured, the patrols), kept while they come and
+ * go by her laptop; `told`: what was already said once.
+ */
+export interface EmilieRun { told: string[]; section?: ModeloState }
+export const freshEmilie = (): EmilieRun => ({ told: [] });
+/**
  * What the snow globe keeps (docs/chapter-2.md § The snow globe): each mission's run as it was the
  * last time the globe was shaken. A day's end, a fall or a reload puts the missions back to this.
  */
-export interface Kept { nuria?: NuriaRun; uni?: UniRun; marta?: MartaRun }
+export interface Kept { nuria?: NuriaRun; uni?: UniRun; marta?: MartaRun; emilie?: EmilieRun }
 export const freshUni = (): UniRun => ({ chase: false, caught: 0, spiral: false, sunk: false, entered: false, beaten: [], told: [] });
 /** One of the friends running after the party (src/chasers.ts); `frozen` once the spiral has opened. */
 export interface UniChaser { id: string; friend: UniFriend; patrol: Cell[]; sight: number; walk: number; run: number; relentless: true; frozen: boolean }
@@ -343,6 +354,7 @@ export class Story {
   marta: MartaRun = freshMarta();
   /** The castle's rooms cleared today (src/castle-story.ts); not saved, and another day is another floor. */
   castle: CastleRun = freshCastle();
+  emilie: EmilieRun = freshEmilie();
   /** What the snow globe keeps of the missions (`Kept`). Kept in the browser by `main.ts`, like the loadout. */
   private globe: Kept = {};
   /** Where the party is now, when the game has said (`enter`): Marta answers differently inside Las cuerdas. */
@@ -660,6 +672,49 @@ export class Story {
     const home: StoryEffect = { kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } };
     return [say(LINES_MARTA.won), home, say(LINES_MARTA.home), { kind: 'lights', people: ['marta'] }, ...this.spend('fight'), ...this.nightfall()];
   }
+  /**
+   * El que no converge beaten: the why comes back to Emilie all at once; they come back out through her
+   * laptop to the flat, she says why it flooded, her light goes with them, and the day is spent.
+   */
+  private winEmilie(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.set('converge')) return [];
+    for (const flag of ['anima-emilie', 'luz-emilie'] as const) this.set(flag);
+    this.emilie = freshEmilie(); delete this.globe.emilie;
+    const home: StoryEffect = { kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.laptop } };
+    return [say(LINES_EMILIE.won), home, say(LINES_EMILIE.home), { kind: 'lights', people: ['emilie'] }, ...this.spend('fight'), ...this.nightfall()];
+  }
+  /** The laptop on her desk: once she has been spoken to, they connect to her model and are inside it. */
+  private useLaptop(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult) return [];
+    if (this.has('converge')) return [say(LINES_EMILIE.laptopAfter)];
+    if (!this.has('poble-sec-emilie')) return [say(LINES_EMILIE.laptopBefore)];
+    const first = this.set('modelo');
+    const inside: StoryEffect = { kind: 'travel', environment: MODELO_PLACE, cell: { ...PLACES_MODELO.spawn } };
+    return [...first ? [say(LINES_EMILIE.laptop)] : [], inside, say(first ? LINES_EMILIE.inside : LINES_EMILIE.insideAgain), ...first ? this.spend('cafe') : []];
+  }
+  /**
+   * In her model (src/modelo.ts): a patrol that reaches them is its fight; the first time they reach a zone
+   * below, Emilie says a little more of the why from outside; at the bottom, once, she sees El que no converge.
+   */
+  private nearModelo(id: string): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult) return [];
+    const run = this.emilie, tellOnce = (key: string, dialogue: Dialogue): StoryEffect[] => {
+      if (this.has('converge') || run.told.includes(key)) return [];
+      run.told.push(key); return [say(dialogue)];
+    };
+    const zone = id.startsWith('modelo-zona-') ? id.slice('modelo-zona-'.length) as Exclude<ZoneId, 'suelo'> : undefined;
+    if (zone) return LINES_EMILIE.zones[zone] ? tellOnce(id, LINES_EMILIE.zones[zone]) : [];
+    const patrol = PATROLS.find(p => `modelo-${p.id}` === id);
+    if (patrol) return [{ kind: 'battle', encounter: patrol.encounter }];
+    return [...tellOnce('modelo-jefe', LINES_EMILIE.jefe), { kind: 'battle', encounter: 'no-converge' }];
+  }
+  /** Emilie: in her flat, standing in the water. */
+  private emilieNpcs(): StoryNpc[] {
+    return [{ id: 'emilie', character: 'emilie', environment: PISO, cell: { ...PLACES_PISO.emilie }, scale: EMILIE_SCALE, facing: 250 }];
+  }
   /** Marta: by the piano in Alegia, and inside Las cuerdas a step behind the party, further in as each quality is beaten. */
   private martaNpcs(): StoryNpc[] {
     const at = PLACES_CUERDAS.marta[Math.min(this.marta.beaten.length, PLACES_CUERDAS.marta.length - 1)];
@@ -747,6 +802,7 @@ export class Story {
     if (event.won && event.encounter === 'uri-vertigo') return this.winNuria();
     if (event.won && event.encounter === 'sobremesa') return this.winUni();
     if (event.won && event.encounter === 'voz') return this.winMarta();
+    if (event.won && event.encounter === 'no-converge' && this.inside === MODELO_PLACE) return this.winEmilie();
     // One of what Marta lost, beaten: it stays beaten this visit, and she says she feels nothing yet.
     const quality = QUALITIES.find(q => q.encounter === event.encounter);
     if (event.won && quality) {
@@ -820,13 +876,15 @@ export class Story {
     const v = value as Kept, board = v?.uni?.board;
     const uni = run(freshUni(), v?.uni);
     if (uni && board && typeof board === 'object') uni.board = structuredClone(board);
-    this.globe = Object.fromEntries(Object.entries({ nuria: run(freshRun(), v?.nuria), uni, marta: run(freshMarta(), v?.marta) }).filter(([, r]) => r));
+    const emilie = run(freshEmilie(), v?.emilie), section = (v?.emilie as { section?: unknown } | undefined)?.section;
+    if (emilie && section && typeof section === 'object') emilie.section = { ...createModelo(), ...structuredClone(section) as ModeloState };
+    this.globe = Object.fromEntries(Object.entries({ nuria: run(freshRun(), v?.nuria), uni, marta: run(freshMarta(), v?.marta), emilie }).filter(([, r]) => r));
     this.recall();
   }
   /** The missions as the snow globe keeps them, or not begun. */
   private recall() {
-    const { nuria, uni, marta } = this.kept;
-    this.nuria = nuria ?? freshRun(); this.uni = uni ?? freshUni(); this.marta = marta ?? freshMarta();
+    const { nuria, uni, marta, emilie } = this.kept;
+    this.nuria = nuria ?? freshRun(); this.uni = uni ?? freshUni(); this.marta = marta ?? freshMarta(); this.emilie = emilie ?? freshEmilie();
   }
   /**
    * The snow globe shaken: the missions are kept as they are and the party is home. The cats do
@@ -839,13 +897,17 @@ export class Story {
     if (this.night) return [say(LINES_2.bolaNight)];
     this.nuria = { ...this.nuria, lent: false, warned: false };
     this.uni = { ...this.uni, chase: false };
-    this.globe = structuredClone({ nuria: this.nuria, uni: this.uni, marta: this.marta });
+    this.globe = structuredClone({ nuria: this.nuria, uni: this.uni, marta: this.marta, emilie: this.emilie });
     if (this.inside === PLACES_2.bola.environment) return [say(LINES_2.bolaHome)];
     return [{ kind: 'snow', on: true }, { kind: 'travel', environment: PLACES_2.bola.environment, cell: { ...PLACES_2.bola.land } }, { kind: 'snow', on: false }];
   }
   /** Someone went into a portal (`portal` effect) and is gone: Anna, into the spiral in the sea. */
   sank(who: 'party' | UniFriend) { if (who === 'anna' && this.uni.spiral) this.uni.sunk = true; }
   /** Development: starts the university friends' mission partway (the picker's Misiones tab): the game of tag on, the spiral open. */
+  /** Development: starts Emilie's mission partway (the picker's Misiones tab): the section's zone and what was measured on the way down. */
+  startEmilie(run: Partial<EmilieRun>) { this.emilie = { ...freshEmilie(), ...structuredClone(run), told: [...run.told ?? []] }; }
+  /** The run through Emilie's model: the one under way, or a new one from where they land. */
+  modeloRun(): ModeloState { return this.emilie.section ??= createModelo(); }
   startMarta(run: Partial<MartaRun>) { this.marta = { ...freshMarta(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
   startUni(run: Partial<UniRun>) { this.uni = { ...freshUni(), ...run, beaten: [...run.beaten ?? []], told: [...run.told ?? []] }; }
   /** Gerard's active ánima, which also dresses the interface. */
@@ -1148,7 +1210,7 @@ export class Story {
       { id: 'jan', character: 'jan-child', environment: PLACES.jan.environment, cell: PLACES.jan.cell, scale: 1.12 },
     ];
     // Chapter 1 is a dream: once Gerard wakes, home in Sant Quirze is empty, and Aitor walks with him (the partner, not an NPC).
-    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs(), ...this.martaNpcs()].filter(npc => npc.environment === environment);
+    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs(), ...this.martaNpcs(), ...this.emilieNpcs()].filter(npc => npc.environment === environment);
     return all.filter(npc => npc.environment === environment);
   }
   /** Nuria at her door, the cats with her until she lends them, and Uri ahead in his maze. */
@@ -1222,6 +1284,13 @@ export class Story {
       list.push({ id: 'talk-marta', label: 'Hablar con Marta', cell: { ...PLACES_MARTA.marta } });
       list.push({ id: 'piano-marta', label: 'Tocar el piano', hint: 'Tocar el piano', cell: { ...PLACES_MARTA.piano.seat } });
     }
+    // Emilie's door rings in chapter 2 instead of being looked at; in her flat, her and her laptop; in her model, the way back out.
+    if (this.adult && this.has('metro') && environment === POBLE_SEC) list.push({ id: 'poble-sec-emilie', label: 'Llamar al portal', hint: 'Llamar', cell: { ...PLACES_EMILIE.door } });
+    if (this.adult && environment === PISO) {
+      list.push({ id: 'talk-emilie', label: 'Hablar con Emilie', cell: { ...PLACES_PISO.emilie } });
+      list.push({ id: 'portatil-emilie', label: 'Su portátil', hint: this.has('poble-sec-emilie') && !this.has('converge') ? 'Conectarse' : 'Mirar', cell: { ...PLACES_PISO.laptop }, anchor: { ...PLACES_PISO.screen } });
+    }
+    if (this.adult && environment === MODELO_PLACE) list.push({ id: 'salir-modelo', label: 'Volver al portátil', hint: 'Desconectarse', cell: { ...PLACES_MODELO.exit } });
     if (this.adult && environment === CUERDAS_PLACE) {
       if (!this.has('voz')) list.push({ id: 'talk-marta', label: 'Hablar con Marta', cell: { ...PLACES_CUERDAS.marta[Math.min(this.marta.beaten.length, PLACES_CUERDAS.marta.length - 1)] } });
       list.push({ id: 'salir-cuerdas', label: 'Volver por la pompa', hint: 'Volver', cell: { ...PLACES_CUERDAS.exit } });
@@ -1312,10 +1381,7 @@ export class Story {
         if (event.id.startsWith('cuerdas-')) return this.nearMarta(event.id);
         if (event.id.startsWith('castillo-')) return castleNear(this.castleHost, event.id);
         // Emilie's section (src/modelo.ts): a patrol reached them, or they came up to El que no converge.
-        if (event.id.startsWith('modelo-')) {
-          const patrol = PATROLS.find(p => `modelo-${p.id}` === event.id);
-          return this.adult ? [{ kind: 'battle', encounter: patrol ? patrol.encounter : 'no-converge' }] : [];
-        }
+        if (event.id.startsWith('modelo-')) return this.nearModelo(event.id);
         // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
         if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard' }] : [];
         if (event.id !== 'tv') return this.nearNuria(event.id);
@@ -1362,6 +1428,21 @@ export class Story {
       }
       case 'piano-marta':
         return this.playPiano();
+      case 'poble-sec-emilie': {
+        if (!this.adult || !this.has('metro')) return [];
+        const inside: StoryEffect = { kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.spawn } };
+        if (this.has('converge')) return [say(LINES_EMILIE.doorAfter), inside];
+        return [say(this.emilie.told.includes('door') ? LINES_EMILIE.doorAgain : (this.emilie.told.push('door'), LINES_EMILIE.door)), inside];
+      }
+      case 'talk-emilie': {
+        if (!this.adult) return [];
+        if (this.has('converge')) return [say(LINES_EMILIE.after)];
+        return [say(this.set('poble-sec-emilie') ? LINES_EMILIE.arrive : LINES_EMILIE.waiting)];
+      }
+      case 'portatil-emilie':
+        return this.useLaptop();
+      case 'salir-modelo':
+        return [{ kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.laptop } }];
       case 'salir-cuerdas':
         return [{ kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } }];
       case 'recepcio-pizarra':

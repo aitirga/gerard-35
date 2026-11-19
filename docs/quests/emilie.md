@@ -1,6 +1,6 @@
 # Emilie · (working title)
 
-Status: building (round 10: fights first) · Last updated: 2026-11-16
+Status: playable end to end (round 11: the mission wired in) · Last updated: 2026-11-19
 
 **Decided** means the user said so. **Proposal** means it came from the design side and is waiting
 for a yes.
@@ -382,6 +382,46 @@ New here: **foes can wet and shock the party**, by the same rules.
 - Code: `Encounter` `no-converge`, `FoeKind` `celda-seca`, `oscilacion`, `pluma`, `no-converge`.
   `TARGETS`: one alternating the elements, one attacking flat.
 
+## The mission, as built (round 11)
+
+Aitor: «integralo como misión, hazlo todo». It plays from her door to her light, like Marta's, and the
+picker's *Misiones* tab has it part by part (`just dev-mission emilie <part>`; `just screenshots emilie --gpu`).
+
+- **Flags** (`STORY_FLAGS`, `server.py`, `STORY_ARCS` *Misión de Emilie*, `dev-chapter`): `poble-sec-emilie`
+  (spoken to in her flat), `modelo` (connected to her model), `converge` (El que no converge beaten),
+  `anima-emilie`, `luz-emilie`. It opens with the city (`after: 'metro'`).
+- **Her door** (`poble-sec`): in chapter 2 *Mirar el portal* becomes *Llamar al portal*; water runs out under
+  it, she answers, and it takes the party up into her flat.
+- **Her flat** (`piso-emilie`, `PISO_EMILIE`, `src/emilie-flat-scenery.ts`), after **Aitor's sketch**: the
+  bathroom and the terrace along the top; the desk with her computer against the west wall, right over the
+  sofa; the kitchen in the north-east corner with its bar below; the bedroom in the south-east behind the wall
+  the projector throws onto; the door in the south-west corner. Hydraulic tiles, wood and concrete, a hand's
+  depth of water over it. Emilie stands in the water; her laptop shows her model running.
+- **The laptop** does nothing until they have spoken to her (Aitor: «Luego. Primero ella»). Then *Conectarse*
+  takes them into `modelo` (an hour the first time); *Desconectarse*, behind where they land in El suelo,
+  brings them back to the desk. The run through the section is kept while they come and go
+  (`EmilieRun.section`, kept by the snow globe like the other missions' runs); a fall or a day's end undoes it.
+- **Her voice in the section**: from outside, the first time they reach each zone below (`modelo-zona-*`),
+  a little more of the why comes back to her; at the bottom she sees El que no converge once before its fight.
+  El fondo's line says what calibration does («cada estaca que medís es una cosa menos que tiene que adivinar»).
+- **The end**: beaten inside her model (not in the fight tester), El que no converge gives the why back all at
+  once: she says why the flat flooded, they are back at her desk, her ánima and her light go with them, the day
+  is spent (`winEmilie`).
+- In `MISSIONS` (`src/battle-sim.ts`) with its four fights, so story points play it; `just fight-sim check` holds.
+- Tests: `tests/emilie.test.mjs`.
+
+Proposals filed with it, to confirm (all invented, none of them a fact about the real Emilie):
+
+- **Every line** (`LINES_EMILIE` in `src/friends/emilie.ts`): she keeps the facts and cannot join them; it comes
+  back zone by zone. To read with Aitor, and worth showing the real Emilie before friends play it.
+- **Why the flat flooded**: the terrace's drain buried under leaves after a night of rain. The player can see it
+  (*Mirar la terraza*) before she can say it.
+- **Her figure is a stand-in** (Marta's toy figure in her own colours, `src/characters/emilie.json`): her photos,
+  her cues and `/character-3d` are still to do, and her portrait.
+- **Her ánima is a placeholder** (`ANIMAS.emilie`: Magia +1, Defensa +1, PV +10, grey `#a3aea2`), to design with `/anima`.
+- **The choir clue** is not there: the choir is not built (`docs/quests/coro.md`). Until then the mission starts at
+  her door, as review point 7 asks anyway.
+
 ## Decided in round 10 (Aitor: «me parece bien, empieza con la implementación»)
 
 - **Measured ground is safe ground**, the borehole hides the party, and measuring is done at
@@ -411,4 +451,9 @@ New here: **foes can wet and shock the party**, by the same rules.
 
 ## Open
 
-- Everything: the problem, the place, the mechanic, the boss, the ánima, her look and photos.
+- Her lines, and why the flat flooded (§ The mission, as built): to confirm.
+- Her photos and cues, her figure with `/character-3d`, her portrait.
+- Her ánima (`/anima`) and the second round (the kid's *why?*).
+- The choir clue, once the choir exists.
+- Landing in Las gravas by El suelo's first stake puts the party in an Oscilación's sight at once: whether that
+  is the dodge the zone asks for or a stake to move.

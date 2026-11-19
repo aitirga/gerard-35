@@ -5,6 +5,7 @@ import { lampRgb, type Lamp, type LightId } from './home-lights';
 import { MERIDIANA_BED } from './bed';
 import { shine } from './lighting';
 import { furnishNucli } from './nucli-scenery';
+import { furnishEmilie } from './emilie-flat-scenery';
 
 /** What `buildScenery` lends the house, so everything is tracked and destroyed with the scene. */
 export interface HomeKit {
@@ -623,6 +624,10 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   else if (environment.id === 'home-floor-2') floorTwo();
   else if (apartment) meridiana();
   else if (shop) furnishNucli({
+    kit, wallHeight, face: FACE, box, cyl, ball, cone, solid, d20: d20Mesh, mat,
+    light, pool, canvas, painted, picture, onWall, standing, chair, jitter, glass, root,
+  });
+  else if (environment.id === 'piso-emilie') furnishEmilie({
     kit, wallHeight, face: FACE, box, cyl, ball, cone, solid, d20: d20Mesh, mat,
     light, pool, canvas, painted, picture, onWall, standing, chair, jitter, glass, root,
   });

@@ -313,6 +313,20 @@ weight = 3
 file = "src/friends/emilie.ts"
 
 [[block.item]]
+title = "Emilie: su piso"
+grep = "furnishEmilie"
+in = "src/emilie-flat-scenery.ts"
+
+[[block.item]]
+title = "Emilie: su figura y su retrato (fotos, just character)"
+file = "public/portraits/emilie*"
+
+[[block.item]]
+title = "Emilie: la pista en el coro"
+grep = "clue-emilie"
+in = "src/story.ts"
+
+[[block.item]]
 title = "Marta: diseño"
 file = "docs/quests/marta.md"
 

@@ -49,6 +49,7 @@ const PLACES: Place[] = [
   { id: 'castillo-3', name: 'Castillo · Tercer curso', detail: 'De Direcció al trono; cambia cada día', group: 'Palacio de la Reina', open: false },
   { id: 'alegia', name: 'Alegia · San Juan kalea', detail: 'Donde está Marta', group: 'Alegia', open: true },
   { id: 'cuerdas', name: 'Las cuerdas', detail: 'Al otro lado de la pompa', group: 'Alegia', open: false },
+  { id: 'piso-emilie', name: 'Casa de Emilie', detail: 'Carrer de Margarit, Poble Sec', group: 'Barcelona', open: false },
   { id: 'modelo', name: 'El modelo de Emilie', detail: 'Dentro de su portátil', group: 'Barcelona', open: false },
   { id: 'patio', name: 'El patio', detail: 'Prueba de movimiento', group: 'Otros lugares', open: true },
 ];

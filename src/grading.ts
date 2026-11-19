@@ -129,6 +129,11 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: -.04, lift: [0, .008, .004], shadows: [-.01, .014, .002], highlights: [.002, .012, .004], contrast: 1.12, saturation: 1.02 },
     enhance: { shadows: -.08, vibrance: .06 },
   },
+  /** Emilie's flat: grey daylight off the balcony on wet tiles, cool and a little flat, the laptop's green the only glow. */
+  'piso-emilie': {
+    grade: { temperature: -.06, lift: [.004, .008, .012], shadows: [-.004, .004, .016], highlights: [.008, .01, .008], contrast: 1.03, saturation: .92 },
+    enhance: { shadows: .08, highlights: -.06 },
+  },
   /** La torre de Uri: fear, violet-black shade that stays deep and a cold, unsure light. */
   'cardedeu-laberinto': {
     grade: { temperature: -.08, lift: [.006, 0, .012], shadows: [.008, -.006, .026], highlights: [.004, .002, .016], contrast: 1.06, saturation: .92 },

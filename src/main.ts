@@ -170,6 +170,7 @@ if (!devStory) restoreKept();
 if (devJump?.part?.nuria) story.startNuria(devJump.part.nuria);
 if (devJump?.part?.uni) story.startUni(devJump.part.uni);
 if (devJump?.part?.marta) story.startMarta(devJump.part.marta);
+if (devJump?.part?.emilie) story.startEmilie(devJump.part.emilie);
 // Each ánima's EXP (src/levels.ts) also lives here; the levels it reaches are story flags.
 // So is what the Ecos de luz are in (src/ecos.ts): it can change at the jar whenever they are home.
 const ecosKey = 'gerard35.ecos.v1';
@@ -637,8 +638,8 @@ try {
       // Chapter 2's palace stands on the Rec Comtal school, not at the end of Passatge Maresme.
       // Its zones (chapter 2 only) are the school itself.
       const zone = !!ENVIRONMENTS[id].palace?.theme, school = (id === 'palacio' && story.adult) || zone;
-      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'cuerdas' ? 'DENTRO DE UNA NOTA' : id === 'modelo' ? 'BAJO POBLE SEC' : id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : basilica ? 'EIXAMPLE, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
-      document.querySelector('#location-detail')!.textContent = id === 'cuerdas' ? 'Ningún mapa llega hasta aquí' : id === 'modelo' ? 'Corte A–A′ · sin calibrar' : geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Según las fotos de 2026' : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
+      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'cuerdas' ? 'DENTRO DE UNA NOTA' : id === 'modelo' ? 'BAJO POBLE SEC' : id === 'piso-emilie' ? 'POBLE SEC, BARCELONA' : id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : basilica ? 'EIXAMPLE, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
+      document.querySelector('#location-detail')!.textContent = id === 'cuerdas' ? 'Ningún mapa llega hasta aquí' : id === 'modelo' ? 'Corte A–A′ · sin calibrar' : id === 'piso-emilie' ? 'Carrer de Margarit · Casa de Emilie' : geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Según las fotos de 2026' : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
         : id === 'el-nucli' ? 'Carrer de Valladolid, 41 · Tienda de juegos'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
         : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : zone ? 'Dentro de la escuela Rec Comtal' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';

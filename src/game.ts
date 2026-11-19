@@ -803,14 +803,18 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const run = section.run, verb = stakeVerb(run, id);
     if (verb === 'Medir' && measure(run, id)) { callbacks.onSound('ui-confirm'); const at = player.getPosition(); effects.emit('spark', new pc.Vec3(at.x, at.y + .6, at.z), 14, .4); }
     else if (verb === 'Entrar' && enter(run, id)) callbacks.onSound('ui-confirm');
-    else if (verb === 'Bajar' && descend(run)) callbacks.onSound('ui-confirm');
+    else if (verb === 'Bajar' && descend(run)) {
+      callbacks.onSound('ui-confirm');
+      // Emilie says a little more of the why, from outside, the first time they reach each zone.
+      callbacks.onStory({ type: 'near', id: `modelo-zona-${run.zone}` });
+    }
     // The same stake offers something else now: the prompt is asked again.
     lastPrompt = '\0';
   }
   function dressScene() {
     section.figures.clear(); section.fighting = undefined;
     modelo?.destroy(); modelo = undefined;
-    if (environment.id === 'modelo') { modelo = buildModelo(app, scenery.toWorld); section.run = createModelo(); }
+    if (environment.id === 'modelo') { modelo = buildModelo(app, scenery.toWorld); section.run = story.modeloRun(); }
     cuerdas?.destroy(); cuerdas = undefined; strung.waiting?.destroy(); strung.waiting = undefined; strung.key = ''; strung.fall = undefined; strung.land = undefined; strung.sink = 0; strung.on = undefined;
     piano?.destroy(); piano = undefined;
     if (environment.id === 'cuerdas') { cuerdas = buildCuerdas(app, scenery.toWorld); strung.run = freshCuerdas(); standCuerdas(); }
@@ -1547,6 +1551,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   function nearby(position: Cell): Interaction | undefined {
     // In Emilie's section a stake offers what can be done at it now, and only those of the zone the party is in.
     const here = !modelo ? interactions() : interactions().flatMap(i => {
+      // The way back out to her laptop is behind where they landed, in El suelo, and not from inside a borehole.
+      if (i.id === 'salir-modelo') return section.run.zone === 'suelo' && !section.run.inside ? [i] : [];
       const stake = interactionStake(i.id);
       if (!stake) return [i];
       const verb = stakeVerb(section.run, stake.id);

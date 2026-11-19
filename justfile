@@ -78,13 +78,13 @@ dev-fx:
 # Jump in after a story beat: just dev-chapter got-backpack, or metro for chapter 2's open city (new = from the start)
 [group('Development')]
 dev-chapter beat="new":
-    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|matemagico|wrapper-room|caught|got-wrapper|got-bola|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|papagato|papagato-2|papagato-3|matemagico-2|matemagico-3|cardedeu|nuria-uri|luz-nuria|luz-uri|clue-uni|barceloneta-uni|camping|candado|parcelas|sobremesa|anima-universidad|luz-anna-alvaro|luz-miquel-sarah|luz-soraya|luz-nico|luz-joan|alegia-marta|cuerdas|voz|anima-marta|luz-marta|aurelia|luz-aurelia|direccion|luz-mar|luz-montse|luz-pilar|aitor-poseido|artilugio|reina|final-acabar|final-bajar)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
+    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|matemagico|wrapper-room|caught|got-wrapper|got-bola|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|papagato|papagato-2|papagato-3|matemagico-2|matemagico-3|cardedeu|nuria-uri|luz-nuria|luz-uri|clue-uni|barceloneta-uni|camping|candado|parcelas|sobremesa|anima-universidad|luz-anna-alvaro|luz-miquel-sarah|luz-soraya|luz-nico|luz-joan|alegia-marta|cuerdas|voz|anima-marta|luz-marta|poble-sec-emilie|modelo|converge|anima-emilie|luz-emilie|aurelia|luz-aurelia|direccion|luz-mar|luz-montse|luz-pilar|aitor-poseido|artilugio|reina|final-acabar|final-bajar)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
 
 # Start an ánima mission partway: just dev-mission nuria ring-2 (parts in missionParts, src/story-points.ts; start = its beginning)
 [group('Development')]
 dev-mission anima="nuria" part="start":
-    @[[ "{{ anima }}" =~ ^(nuria|universidad|marta)$ && "{{ part }}" =~ ^[a-z0-9-]+$ ]] || { printf 'Use an ánima mission (nuria, universidad, marta) and a part, e.g. just dev-mission nuria ring-2.\n'; exit 1; }
+    @[[ "{{ anima }}" =~ ^(nuria|universidad|marta|emilie)$ && "{{ part }}" =~ ^[a-z0-9-]+$ ]] || { printf 'Use an ánima mission (nuria, universidad, marta, emilie) and a part, e.g. just dev-mission nuria ring-2.\n'; exit 1; }
     npm run dev -- --open '/?mission={{ anima }}&part={{ part }}'
 
 # Wake up on a later day of chapter 2 to see the Queen's spread: just dev-day 6 (7 is the end)

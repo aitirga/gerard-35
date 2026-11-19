@@ -12,9 +12,11 @@ import { ENVIRONMENTS, type EnvironmentId } from './environments.ts';
 import { FEARS, PLACES_NURIA, STREET } from './friends/nuria.ts';
 import { LEVELLED, MAX_LEVEL } from './levels.ts';
 import type { Cell } from './movement.ts';
-import { STORY_FLAGS, type MartaRun, type NuriaRun, type StoryEvent, type StoryFlag, type UniRun } from './story.ts';
+import { STORY_FLAGS, type EmilieRun, type MartaRun, type NuriaRun, type StoryEvent, type StoryFlag, type UniRun } from './story.ts';
 import { BEACH, CAMP, CAMP_HUNTERS, PLACES_CAMP, PLACES_UNI } from './friends/universidad.ts';
 import { CUERDAS_PLACE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
+import { MODELO_PLACE, PISO, PLACES_EMILIE, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
+import { GALLERY, SECTION, createModelo, stakeOf, type ModeloState } from './modelo.ts';
 import { entranceId } from './transit.ts';
 
 /** Where a jump stands Gerard; without one, where the story resumes (`story.resume`). */
@@ -77,6 +79,12 @@ export const STORY_ARCS = [
     { flags: ['cuerdas'], label: 'El piano: dentro de Las cuerdas' },
     // Beating La Voz gives her everything back at once, and her ánima and light with it.
     { flags: ['voz', 'anima-marta', 'luz-marta'], label: 'La Voz vencida: Marta vuelve a cantar' },
+  ] },
+  { id: 'emilie', chapter: 2, title: 'Misión de Emilie', detail: 'Poble Sec · Su modelo', after: 'metro', anima: 'emilie', steps: [
+    { flags: ['poble-sec-emilie'], label: 'Emilie en su piso inundado: ha perdido el porqué', spot: { environment: PISO, cell: { ...PLACES_PISO.laptop } } },
+    { flags: ['modelo'], label: 'El portátil: dentro de su modelo' },
+    // Beating El que no converge gives her the why back at once, and her ánima and light with it.
+    { flags: ['converge', 'anima-emilie', 'luz-emilie'], label: 'El que no converge vencido: Emilie entiende otra vez' },
   ] },
   // The castle's three phases and its end (docs/castle.md): each boss beaten moves the way in to its room.
   { id: 'castillo', chapter: 2, title: 'El castillo', detail: 'Tres plantas, tres jefes y el final', after: 'castle', steps: [
@@ -167,6 +175,7 @@ export interface MissionPart {
   nuria?: Partial<NuriaRun>;
   uni?: Partial<UniRun>;
   marta?: Partial<MartaRun>;
+  emilie?: Partial<EmilieRun>;
   event?: StoryEvent;
 }
 const maze = (cell: Cell): Spot => ({ environment: PLACES_NURIA.mazeIn.environment, cell: { ...cell } });
@@ -233,11 +242,43 @@ const MARTA_PARTS: readonly MissionPart[] = [
   { id: 'won', label: 'Marta vuelve a cantar', detail: 'El final: su luz va con Gerard y Aitor, de vuelta en Alegia', at: 'cuerdas', spot: cuerdas(PLACES_CUERDAS.voz, 10), marta: { beaten: qualities(3) }, event: { type: 'battle', won: true, encounter: 'voz' } },
   { id: 'done', label: 'Misión hecha', detail: 'Marta, ella otra vez, junto al piano', at: 'luz-marta', spot: { environment: 'alegia', cell: { ...PLACES_MARTA.back } } },
 ];
+/**
+ * The run through Emilie's model having gone down by the stakes `by` (one per zone, src/modelo.ts):
+ * each measured and gone down, the piezometers as many as are left, standing in the zone below the last.
+ */
+function wentDown(...by: string[]): ModeloState {
+  const run = createModelo();
+  for (const id of by) {
+    const stake = stakeOf(id)!;
+    run.placed.push(id); run.piezometers -= 1;
+    run.zone = ({ suelo: 'gravas', gravas: 'ciudad', ciudad: 'fondo' } as const)[stake.zone as 'suelo' | 'gravas' | 'ciudad'];
+    if (run.zone !== 'fondo') run.piezometers += SECTION.piezometers;
+  }
+  return run;
+}
+const modelo = (x: number): Spot => ({ environment: MODELO_PLACE, cell: { x, z: GALLERY.row } });
+const told = (...zones: string[]) => ['door', ...zones.map(z => `modelo-zona-${z}`)];
+/**
+ * Emilie's mission, part by part (docs/quests/emilie.md). The run through her model is not saved (it is
+ * one visit, kept while they come and go by her laptop), so the parts inside it set the run itself.
+ */
+const EMILIE_PARTS: readonly MissionPart[] = [
+  { id: 'start', label: 'Desde el principio', detail: 'En Poble Sec, ante su portal; sale agua por debajo', at: 'metro', spot: { environment: POBLE_SEC, cell: { x: PLACES_EMILIE.door.x, z: PLACES_EMILIE.door.z + 1 } } },
+  { id: 'piso', label: 'Su piso', detail: 'Recién subidos; Emilie de pie en el agua', at: 'metro', spot: { environment: PISO, cell: { ...PLACES_PISO.spawn } }, emilie: { told: told() } },
+  { id: 'laptop', label: 'El portátil', detail: 'Ya han hablado con ella; su modelo abierto en la mesa', at: 'poble-sec-emilie', spot: { environment: PISO, cell: { ...PLACES_PISO.laptop } }, emilie: { told: told() } },
+  { id: 'suelo', label: 'El suelo', detail: 'Recién entrados en el modelo; la primera estaca y una patrulla que viene', at: 'modelo', spot: modelo(PLACES_MODELO.spawn.x), emilie: { told: told() } },
+  { id: 'gravas', label: 'Las gravas', detail: 'Medida una estaca de El suelo y bajado por ella', at: 'modelo', spot: modelo(stakeOf('suelo-1')!.x), emilie: { told: told(), section: wentDown('suelo-1') } },
+  { id: 'ciudad', label: 'Bajo la ciudad', detail: 'El túnel de la L3 y sus bombas', at: 'modelo', spot: modelo(stakeOf('gravas-2')!.x), emilie: { told: told('gravas'), section: wentDown('suelo-1', 'gravas-2') } },
+  { id: 'fondo', label: 'El fondo', detail: 'El que no converge delante; el combate empieza al acercarse', at: 'modelo', spot: modelo(stakeOf('ciudad-2')!.x), emilie: { told: told('gravas', 'ciudad'), section: wentDown('suelo-1', 'gravas-2', 'ciudad-2') } },
+  { id: 'won', label: 'Emilie entiende otra vez', detail: 'El final: su luz va con Gerard y Aitor, de vuelta en su piso', at: 'modelo', spot: modelo(stakeOf('ciudad-2')!.x), emilie: { told: [...told('gravas', 'ciudad', 'fondo'), 'modelo-jefe'], section: wentDown('suelo-1', 'gravas-2', 'ciudad-2') }, event: { type: 'battle', won: true, encounter: 'no-converge' } },
+  { id: 'done', label: 'Misión hecha', detail: 'Emilie, ella otra vez, en su piso', at: 'luz-emilie', spot: { environment: PISO, cell: { ...PLACES_PISO.laptop } } },
+];
 /** The parts each mission can start at; one without its own list starts at its beginning or at each step. */
 export function missionParts(anima: AnimaId): readonly MissionPart[] {
   if (anima === 'nuria') return NURIA_PARTS;
   if (anima === 'universidad') return UNI_PARTS;
   if (anima === 'marta') return MARTA_PARTS;
+  if (anima === 'emilie') return EMILIE_PARTS;
   const arc = ARCS.find(a => a.anima === anima)!;
   return [
     { id: 'start', label: 'Desde el principio', detail: arc.detail, at: arc.after!, spot: spotAt(arc.after!) },
@@ -268,6 +309,7 @@ export function missionNow(anima: AnimaId, flags: readonly StoryFlag[], nuria?: 
     if (nuria?.lent) return 'lent';
     return flags.includes('cardedeu') ? 'door' : 'start';
   }
+  if (anima === 'emilie') return flags.includes('converge') ? 'done' : flags.includes('modelo') ? 'suelo' : flags.includes('poble-sec-emilie') ? 'laptop' : 'start';
   if (anima === 'universidad') {
     if (flags.includes('sobremesa')) return 'done';
     if (flags.includes('parcelas')) return 'sobremesa';

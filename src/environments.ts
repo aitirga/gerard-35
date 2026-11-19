@@ -28,7 +28,7 @@ export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-
   // The castle's three generated floors (src/castle-floor.ts): another every day.
   | 'castillo-1' | 'castillo-2' | 'castillo-3'
   | 'cuerdas'
-  | 'modelo';
+  | 'modelo' | 'piso-emilie';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /**
@@ -512,6 +512,53 @@ export const EL_NUCLI = house({
     { id: 'nucli-mesa', cell: { x: 8, z: 4 }, label: 'Mirar la mesa', lines: ['Una mesa redonda entre cajas sin abrir, y dos sillas.', 'Desde aquí no se ve la calle. Y desde la calle no se ve esto.'] },
   ],
 });
+/**
+ * Emilie's flat, the top floor of the wedge where Carrer de Margarit leaves Blai (docs/quests/emilie.md,
+ * docs/places/poble-sec.md), after Aitor's sketch: the bathroom and the terrace along the top, the
+ * desk with her computer against the west wall right over the sofa, the kitchen in the north-east
+ * corner with its bar below, the bedroom in the south-east behind the wall the projector throws onto,
+ * and the way in in the south-west corner. Hydraulic tiles, wood and concrete, under a hand's depth
+ * of water. The door is at the bottom, as Poble Sec's street is, so the back wall stands for the
+ * camera. `src/emilie-flat-scenery.ts` furnishes and floods it.
+ */
+export const PISO_EMILIE = house({
+  id: 'piso-emilie', name: 'Casa de Emilie', spawn: { x: 2, z: 14 }, zoom: HOME_ZOOM,
+  plan: [
+    '###############',
+    '#o.o#oo.....oo#',
+    '#o..#.........#',
+    '#...#.........#',
+    '###+#G+GGGGGGG#',
+    '#oo.....oooooo#',
+    '#oo..........o#',
+    '#.............#',
+    '#......oooooo.#',
+    '#oo.......#####',
+    '#oo.......#ooo#',
+    '#oo.......#ooo#',
+    '####......+...#',
+    '#..#......#..o#',
+    '#..+......#...#',
+    '##D############',
+  ],
+  rooms: [
+    { name: 'Baño', x: 1, z: 1, w: 3, d: 3, floor: 'tile' },
+    { name: 'Terraza', x: 5, z: 1, w: 9, d: 3, floor: 'terracotta' },
+    { name: 'Salón', x: 1, z: 5, w: 6, d: 4, floor: 'hydraulic' },
+    { name: 'Cocina', x: 7, z: 5, w: 7, d: 4, floor: 'concrete' },
+    { name: 'Salón', x: 1, z: 9, w: 9, d: 3, floor: 'hydraulic' },
+    { name: 'Salón', x: 4, z: 12, w: 6, d: 3, floor: 'hydraulic' },
+    { name: 'Entrada', x: 1, z: 13, w: 2, d: 2, floor: 'hydraulic' },
+    { name: 'Habitación', x: 11, z: 10, w: 3, d: 5, floor: 'laminate' },
+  ],
+  // A yucca in a pot by the door, where you come in.
+  props: [{ kind: 'tree', x: 1, z: 13, species: 'yucca', scale: 0.7, base: 'pot' }],
+  interactions: [
+    { id: 'piso-emilie-salida', cell: { x: 2, z: 14 }, label: 'Bajar a la calle', to: { environment: 'poble-sec', cell: { x: 145, z: 79 } } },
+    { id: 'piso-emilie-proyector', cell: { x: 8, z: 11 }, label: 'Mirar el proyector', lines: ['El proyector sigue encendido contra la pared de la habitación. Una película en pausa, a medio fotograma.', 'El agua le llega a los cables de la regleta. Nadie la ha subido al sofá.'] },
+    { id: 'piso-emilie-terraza', cell: { x: 10, z: 3 }, label: 'Mirar la terraza', lines: ['Macetas, geranios y hojas. Muchas hojas, amontonadas contra la puerta y encima del desagüe.', 'El agua entra por debajo del cristal.'] },
+  ],
+});
 /** Where Bernat sits in El Nucli's back room: the round table's west chair, his back to the cartons and the curtain in sight. His mission puts him here. */
 export const NUCLI_BERNAT_SEAT: Cell = { x: 4, z: 3 };
 /** What each character of the palace plan stands for (docs/bubbaloo-palace.md). */
@@ -759,7 +806,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   // As they are on a save's first day; the game puts the day's in their place on the way in (src/game.ts).
   ...CASTLE_ENVIRONMENTS,
   cuerdas: CUERDAS,
-  modelo: MODELO,
+  modelo: MODELO, 'piso-emilie': PISO_EMILIE,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

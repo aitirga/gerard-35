@@ -1,0 +1,223 @@
+{
+  "title": "Misión de Emilie: Poble Sec y su modelo",
+  "description": "docs/quests/emilie.md. The mission part by part from the picker (just dev-mission emilie <part>): her door, her flooded flat after Aitor's sketch, the laptop, inside her model zone by zone, El que no converge and the way back. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=emilie&part=start"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Poble Sec · Carrer de Blai'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "portal",
+      "delay": 700,
+      "caption": "Poble Sec in chapter 2: her door on Margarit rings («Llamar al portal») instead of being looked at"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'interact', id: 'poble-sec-emilie' })"
+    },
+    {
+      "shot": "portal-agua",
+      "delay": 900,
+      "caption": "Water runs out under the door; Emilie answers, polite and wrong"
+    },
+    {
+      "open": "/?mission=emilie&part=piso"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Casa de Emilie'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "piso",
+      "delay": 700,
+      "caption": "Up in her flat, just in by the door: a hand's depth of water over the hydraulic tiles; Emilie standing in it"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.game.world(7, 8); window.gerard.game.frame({ x: c.x, y: 0, z: c.z }, 11); })()"
+    },
+    {
+      "shot": "piso-entero",
+      "delay": 1100,
+      "caption": "The flat after Aitor's sketch: bathroom and terrace along the top, the desk over the sofa, the kitchen and its bar, the bedroom behind the projector's wall"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.game.world(7, 2); window.gerard.game.frame({ x: c.x, y: 0, z: c.z }, 6); })()"
+    },
+    {
+      "shot": "terraza",
+      "delay": 1100,
+      "caption": "The terrace: geraniums, and the leaves piled over the drain against the glass door. The why, for whoever looks"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'interact', id: 'talk-emilie' })"
+    },
+    {
+      "shot": "emilie",
+      "delay": 900,
+      "caption": "Talking to her: she keeps every fact and cannot join them"
+    },
+    {
+      "open": "/?mission=emilie&part=laptop"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Casa de Emilie'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "portatil",
+      "delay": 700,
+      "caption": "By the desk: her laptop, the model still running in phosphor green; «Conectarse»"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.game.world(1.6, 5.5); window.gerard.game.frame({ x: c.x, y: .8, z: c.z }, 2.6); })()"
+    },
+    {
+      "shot": "pantalla",
+      "delay": 1100,
+      "caption": "The screen up close: the section's mesh, its water line, the orange stakes, «no converge» line after line"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'interact', id: 'portatil-emilie' })"
+    },
+    {
+      "shot": "conectarse",
+      "delay": 900,
+      "caption": "Aitor reads her model; they connect"
+    },
+    {
+      "open": "/?mission=emilie&part=suelo"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'El modelo de Emilie'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "dentro",
+      "delay": 700,
+      "caption": "Inside her model, where they land: the first stake ahead"
+    },
+    {
+      "eval": "window.gerard.game.modelo.walk(2)"
+    },
+    {
+      "shot": "salir",
+      "delay": 1100,
+      "caption": "Behind where they land, the way back to her laptop («Desconectarse»)"
+    },
+    {
+      "open": "/?mission=emilie&part=gravas"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'El modelo de Emilie'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "gravas",
+      "delay": 700,
+      "caption": "Las gravas, gone down by a stake of El suelo: an Oscilación sees them land, and it is a fight at once"
+    },
+    {
+      "open": "/?mission=emilie&part=fondo"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'El modelo de Emilie'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "fondo",
+      "delay": 700,
+      "caption": "El fondo: El que no converge ahead"
+    },
+    {
+      "eval": "window.gerard.game.modelo.walk(21)"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "jefe",
+      "delay": 900,
+      "caption": "Coming up to it: Emilie sees it from outside, then the fight"
+    },
+    {
+      "open": "/?mission=emilie&part=won"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Casa de Emilie'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "vuelta",
+      "delay": 1200,
+      "caption": "El que no converge beaten: back in the flat, and Emilie understands again"
+    },
+    {
+      "open": "/?mission=emilie&part=done"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Casa de Emilie'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "hecha",
+      "delay": 700,
+      "caption": "The mission done: Emilie, herself, in her flat"
+    }
+  ]
+}

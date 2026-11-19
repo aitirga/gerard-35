@@ -119,7 +119,9 @@ test('every door and stair lands on a walkable cell, and there is always a way b
       });
       // A floor's last door opens into its boss's room, the end of the floor: that room's doors are the school's own.
       const bossRoom = environment.id.startsWith('castillo-') && id === 'castillo-salir';
-      assert.ok(storyWay || schoolWay || curtainWay || castleWay || bossRoom || destination.interactions.some(i => i.to?.environment === environment.id), `${to.environment} leads back to ${environment.id}`);
+      // Emilie's flat is entered by ringing her door on Margarit, which the story makes a door in chapter 2.
+      const doorbell = to.environment === 'poble-sec' && environment.id === 'piso-emilie' && new Story(['caught', 'metro']).interactions('poble-sec').some(i => i.id === 'poble-sec-emilie');
+      assert.ok(storyWay || schoolWay || curtainWay || castleWay || bossRoom || doorbell || destination.interactions.some(i => i.to?.environment === environment.id), `${to.environment} leads back to ${environment.id}`);
     }
   }
   assert.equal(nearbyInteraction(NEIGHBORHOOD, { x:21,z:23 })?.to?.environment, 'home-entrance');
