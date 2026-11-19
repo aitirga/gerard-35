@@ -145,17 +145,17 @@
     },
     {
       "shot": "reina-aitor",
-      "caption": "The Queen at a tenth has Aitor: his plate says «Suyo»; the heading shows the artilugio's keys"
+      "caption": "The Queen at a tenth has Aitor: his plate says «Suyo»; the heading shows the artilugio's keys, and Gerard takes it out, awake"
     },
     {
-      "eval": "(() => { const press = k => document.querySelector('#battle').dispatchEvent(new KeyboardEvent('keydown', { key: String(k), bubbles: true })); press(1); setTimeout(() => press(3), 500); setTimeout(() => press(2), 1000); })()"
+      "eval": "(() => { const press = k => document.querySelector('#battle').dispatchEvent(new KeyboardEvent('keydown', { key: String(k), bubbles: true })); press(1); setTimeout(() => { press(1); press(2); }, 500); setTimeout(() => { press(2); press(3); }, 1000); })()"
     },
     {
       "wait": 1300
     },
     {
       "shot": "notas",
-      "caption": "Three notes of the melody: she turned at the first, and three of Aitor's six marks are lit"
+      "caption": "Three notes of the melody (Sol, then the pairs La♭ and Do): she turned at the first, three of Aitor's six marks are lit, and Gerard holds the artilugio, awake"
     },
     {
       "open": "/?story=artilugio&solo=1"

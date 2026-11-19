@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 import daylog
 from ai import claude, decision_provider, plan_enemy_turn
+from artilugio import router as artilugio_router
 from lights import router as lights_router
 from tickets import judge as judge_memory
 
@@ -211,6 +212,9 @@ def summarize_day(token: str, epoch: int, day: int):
 
 
 app.include_router(lights_router)
+app.include_router(artilugio_router)
+
+
 class Game:
     """The built game in dist/. While `just dev` runs, the game is Vite's (with the development
     picker) and GERARD_GAME_URL says where: this address then sends the browser there, path and

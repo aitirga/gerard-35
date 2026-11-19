@@ -675,21 +675,22 @@ export function runCastle(kit: CastleKit, state: BattleState, seconds: number): 
 // ——— The artilugio ——————————————————————————————————————————————————————————————————————
 /** Whether the artilugio's buttons do anything now: the party carries it, and she has Aitor. */
 export const artilugioLive = (state: BattleState) => !!state.castle?.artilugio && one(state, 'reina')?.castle?.stage === 'aitor' && (state.phase === 'player' || state.phase === 'enemy');
-/** The button the melody wants next. */
+/** The note the melody wants next (0–7: a button alone or a pair, `artilugioNote`). */
 export const nextNote = (state: BattleState) => MELODY[state.castle?.notes ?? 0];
 /**
- * A button of the artilugio pressed (docs/castle-bosses.md § With the artilugio). It takes nobody's
+ * A note of the artilugio played (docs/castle-bosses.md § With the artilugio). It takes nobody's
  * turn. The first note ever startles her: she loses her next turn. A note in the right order lights
- * one more mark; a wrong one puts them out. All six: Aitor is free, every ánima's maná is full, and
- * she can be finished. Returns what happened, or nothing if the buttons do nothing now.
+ * one more mark; a wrong one puts them out, unless it is the melody's first, which starts it again.
+ * All six: Aitor is free, every ánima's maná is full, and she can be finished. Returns what
+ * happened, or nothing if the artilugio does nothing now.
  */
-export function castleNote(state: BattleState, button: number): { right: boolean; notes: number; startled?: boolean; freed?: boolean } | undefined {
+export function castleNote(state: BattleState, note: number): { right: boolean; notes: number; startled?: boolean; freed?: boolean } | undefined {
   if (!artilugioLive(state)) return undefined;
   const f = fight(state), queen = one(state, 'reina')!, m = mark(queen);
   const startled = !f.startled;
   if (startled) { f.startled = true; m.stunned = true; delete queen.intent; }
-  const right = button === nextNote(state);
-  f.notes = right ? (f.notes ?? 0) + 1 : 0;
+  const right = note === nextNote(state);
+  f.notes = right ? (f.notes ?? 0) + 1 : note === MELODY[0] ? 1 : 0;
   if (f.notes < MELODY.length) {
     state.message = startled ? 'Suena una nota. Ella se gira de golpe, como si la hubieran llamado por un nombre.' : right ? 'Otra nota, y otra marca se enciende sobre Aitor.' : 'Esa no era. Las marcas se apagan.';
     return { right, notes: f.notes, ...startled ? { startled } : {} };

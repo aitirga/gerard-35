@@ -1,0 +1,101 @@
+{
+  "title": "Chapter 2 · The artilugio in Gerard's hands",
+  "description": "Once Bernat has sent it, the real board's notes (or the 1–4 keys standing in) have Gerard take the artilugio out in the Meridiana flat: its four coloured buttons light as they are pressed, a pair lights two at once, and its little LCD draws a bar for each note that has sounded. Untouched, he puts it away. In the Queen's last fight it is awake, held out while she has Aitor, and the melody's notes light Aitor's marks.",
+  "steps": [
+    {
+      "open": "/?story=artilugio&at=home&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && window.gerard && window.gerard.story.has('artilugio')",
+      "timeout": 90000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "before",
+      "caption": "At home, the artilugio put away: nothing on screen says it is there"
+    },
+    {
+      "eval": "(() => { const key = k => window.dispatchEvent(new KeyboardEvent('keydown', { key: String(k) })); key(1); setTimeout(() => key(3), 300); setTimeout(() => key(4), 600); setTimeout(() => key(2), 900); })()"
+    },
+    {
+      "wait": 1300
+    },
+    {
+      "shot": "notes",
+      "caption": "A key pressed: Gerard takes it out, and each note draws a bar on its screen (Sol, Re, Fa, Si)"
+    },
+    {
+      "eval": "(() => { const key = k => window.dispatchEvent(new KeyboardEvent('keydown', { key: String(k) })); key(1); key(2); setTimeout(() => document.querySelectorAll('.artilugio [data-key=\"0\"], .artilugio [data-key=\"1\"], .artilugio [data-led=\"0\"], .artilugio [data-led=\"1\"]').forEach(e => { e.dataset.lit = ''; }), 320); })()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "shot": "pair",
+      "caption": "Red and yellow at once: a note no single button plays (La♭), both buttons lit"
+    },
+    {
+      "eval": "window.gerard.artilugioView.setAwake(true)"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "shot": "awake",
+      "caption": "Awake (the Queen's last fight): its four lights go round on their own"
+    },
+    {
+      "eval": "window.gerard.artilugioView.setAwake(false)"
+    },
+    {
+      "until": "!window.gerard.artilugioView.out",
+      "timeout": 15000
+    },
+    {
+      "wait": 800
+    },
+    {
+      "shot": "away",
+      "caption": "Six seconds untouched: he puts it away"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina-vuelta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 180000
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => { window.bs = s; }); window.gerard.battleUI.jumpTo('reina-aitor')"
+    },
+    {
+      "until": "window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && window.bs.foes.find(f => f.kind === 'reina')?.castle?.stage === 'aitor'",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }))"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "fight-awake",
+      "caption": "The Queen has Aitor: the first note (Sol) and Gerard holds it out, awake, while she turns"
+    },
+    {
+      "eval": "(() => { const key = k => window.dispatchEvent(new KeyboardEvent('keydown', { key: String(k) })); key(1); key(2); setTimeout(() => { key(2); key(3); }, 500); })()"
+    },
+    {
+      "wait": 1300
+    },
+    {
+      "shot": "fight-pairs",
+      "caption": "La♭ and Do, two pairs: three of Aitor's six marks lit"
+    }
+  ]
+}

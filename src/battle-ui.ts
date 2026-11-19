@@ -139,6 +139,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   forgiving?: () => boolean;
   /** On the lost screen the players chose to fight again or go back to just before the fight: the end that follows is no fall. */
   fallen?: (choice: 'retry' | 'rewind') => void;
+  /** Whether the real artilugio is there (src/artilugio.ts): its keys only show while it is not. */
+  board?: () => boolean;
   /** Development build (`import.meta.env.DEV`): the Dual command takes its place in the menu. */
   dev?: () => boolean;
   /** A dual's banner: the 3D fight runs at `scale` for `seconds` of real time, then eases back (the scene's FightClock). */
@@ -176,7 +178,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Combate por turnos');
   root.innerHTML = `
     <div class="dual-cinema" aria-hidden="true" hidden><i></i><b></b></div>
-    <header class="battle-heading"><span class="battle-kicker">ENCUENTRO / PASSATGE MARESME</span><h1>Un pequeño <em>contratiempo.</em></h1><p class="battle-notes" data-device="keyboard" data-glyph-template="{notes} · El artilugio" hidden></p></header>
+    <header class="battle-heading"><span class="battle-kicker">ENCUENTRO / PASSATGE MARESME</span><h1>Un pequeño <em>contratiempo.</em></h1><p class="battle-notes" data-glyph-template="{notes} · El artilugio" hidden></p></header>
     <div class="round-badge"><span>RONDA</span><strong>01</strong></div>
     <button class="summary-key" type="button" tabindex="-1" aria-controls="battle-summary" hidden><kbd data-glyph="summary"></kbd> Resumen</button>
     <section class="battle-summary" id="battle-summary" aria-label="Resumen del combate" hidden></section>
@@ -874,8 +876,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       : state.encounter.startsWith('crias-') ? `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} CRÍAS DEL MIEDO`
       : `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} PERROS${state.possessed ? ' POSEÍDOS' : ''}`;
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
-    // The artilugio's keys, shown the moment they can do something and until the first note sounds.
-    get('.battle-notes').hidden = !artilugioLive(state) || !!state.castle?.startled;
+    // The artilugio's stand-in keys, shown the moment they can do something and until the first note
+    // sounds, unless the real one is in Gerard's hands.
+    get('.battle-notes').hidden = !artilugioLive(state) || !!state.castle?.startled || !!callbacks.board?.();
     // Cards are kept (and moved between docks) so the waves glide instead of snapping.
     const roster = get('.party-roster');
     if (!root.querySelector('.party-card')) roster.innerHTML = state.allies.map(c => `<article class="party-card" data-unit="${c.id}" data-anima="${c.classId ?? 'none'}">${plate(c)}<span class="unit-boost" hidden></span><span class="unit-status"></span><button class="roster-target" type="button" data-target="${c.id}" aria-label="Elegir a ${c.name}" hidden></button></article>`).join('');
@@ -2099,8 +2102,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   let pointerPlayer: PlayerId = 1;
   function keydown(event: KeyboardEvent) {
     if (!state || event.metaKey || event.ctrlKey || event.altKey) return;
-    // The artilugio's four buttons (docs/castle-bosses.md § With the artilugio): the keyboard stands in for the real one, at any moment, on nobody's turn.
-    if (/^[1-4]$/.test(event.key) && artilugioLive(state)) { event.preventDefault(); event.stopPropagation(); if (!event.repeat) note(Number(event.key) - 1); return; }
     // The summary is anyone's to open and close, at any moment (R, or Esc while it is open).
     if ((event.code === 'KeyR' && !event.repeat) || (event.key === 'Escape' && summaryOpen)) { event.preventDefault(); event.stopPropagation(); toggleSummary(event.code === 'KeyR' ? undefined : false); return; }
     const over = ['won', 'lost', 'escaped'].includes(state.phase);
@@ -2109,12 +2110,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!over && (turnDriver() !== 1 || busy)) { event.preventDefault(); event.stopPropagation(); return; }
     keyIn(event);
   }
-  /** A button of the artilugio: its tone, and what it did over Aitor and her. */
-  function note(button: number) {
+  /** A note of the artilugio (src/artilugio.ts, which also sounds it): what it did over Aitor and her. */
+  function note(n: number) {
     if (!state) return;
-    const done = castleNote(state, button);
+    const done = castleNote(state, n);
     if (!done) return;
-    callbacks.sound(`artilugio-${button}` as SoundId);
     const queen = state.foes.find(f => f.kind === 'reina'), aitor = state.allies.find(a => a.id === 'aitor');
     if (done.startled && queen) pop(queen.id, 'Se gira', 'status', 'Pierde su turno');
     if (aitor) pop(aitor.id, done.freed ? 'Libre' : done.right ? `${done.notes} de ${MELODY.length}` : 'Se apagan', done.freed ? 'heal' : done.right ? 'stat-up' : 'stat-down', done.freed ? 'Maná lleno' : '');
@@ -2209,6 +2209,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     /** Development and screenshots: the fight itself, to set a moment no picker entry stages (it shows on the next thing drawn). */
     get live() { return state; },
     jumpTo,
+    /** Whether the artilugio does anything in this fight now (she has Aitor and the party carries it). */
+    get artilugioLive() { return !!state && artilugioLive(state); },
+    /** A note of the artilugio, at any moment, on nobody's turn (docs/castle-bosses.md § With the artilugio). */
+    note,
     /** Development (the picker's Ánimas column): the ánimas L and R walk through and their levels, changed mid-fight. */
     setAnimas(animas: ClassId[], levels: Partial<Record<ClassId, number>>, kits: Partial<Record<string, ClassId[]>> = {}) {
       if (!state) return;

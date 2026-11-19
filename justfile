@@ -7,6 +7,8 @@ set dotenv-load := true
 site_url := "https://gerard-35-aitirga.fly.dev/"
 # The local API's port, its own so another project's server on 8080 never answers for it.
 api_port := env("GERARD_API_PORT", "8035")
+# Where the API listens: 127.0.0.1, or 0.0.0.0 at home so the artilugio reaches it over the Wi-Fi.
+api_host := env("GERARD_HOST", "127.0.0.1")
 
 # Show the command menu
 [group('Help')]
@@ -58,7 +60,7 @@ dev:
     # The API's own address (listed in herdr's Services too) sends the browser to this game, the one
     # with the development picker, instead of serving dist/ (server.py `Game`).
     export GERARD_GAME_URL="http://localhost:$GERARD_WEB_PORT"
-    uv run --locked uvicorn server:app --host 127.0.0.1 --port "$GERARD_API_PORT" --reload &
+    uv run --locked uvicorn server:app --host "{{ api_host }}" --port "$GERARD_API_PORT" --reload &
     open=(--open); [ "${GERARD_OPEN:-1}" = 0 ] && open=()
     # On localhost as always: the save goes by a cookie, which is per host (whatever the port).
     npx vite --port "$GERARD_WEB_PORT" --strictPort "${open[@]}" &
@@ -126,12 +128,18 @@ dev-music track="battle" from="start" haunt="":
 # Start the persistent API alone on port 8035 (GERARD_API_PORT); `just dev` already runs it with the game
 [group('Development')]
 backend:
-    uv run --locked uvicorn server:app --host 127.0.0.1 --port {{ api_port }} --reload
+    uv run --locked uvicorn server:app --host {{ api_host }} --port {{ api_port }} --reload
 
-# Build, then serve game + API together on http://127.0.0.1:8035
+# Build, then serve game + API together on http://127.0.0.1:8035 (GERARD_HOST=0.0.0.0 at home, for the artilugio)
 [group('Development')]
 run: build
-    uv run --locked uvicorn server:app --host 127.0.0.1 --port {{ api_port }}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "{{ api_host }}" != 127.0.0.1 ]; then
+      ip=$(uv run --locked python -c 'import socket; s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(("10.255.255.255", 1)); print(s.getsockname()[0])' 2>/dev/null || true)
+      printf '▸ juego http://localhost:%s   ▸ el artilugio: SERVER_URL "http://%s:%s"\n' "{{ api_port }}" "${ip:-<ip de este equipo>}" "{{ api_port }}"
+    fi
+    uv run --locked uvicorn server:app --host {{ api_host }} --port {{ api_port }}
 
 # Open the desktop combat lab: tune encounters, compare policies and replay a seed
 [group('Combat')]
@@ -192,6 +200,50 @@ check: typecheck test
 [positional-arguments]
 perf *args:
     node scripts/perf-probe.mjs "$@"
+
+# The artilugio (docs/story-outline.md § The device): the Bomba-G board, built and flashed with the Arduino IDE's own arduino-cli
+arduino_cli := `command -v arduino-cli 2>/dev/null || for c in "/Applications/Arduino IDE.app/Contents/Resources/app/lib/backend/resources/arduino-cli" "/c/Program Files/Arduino IDE/resources/app/lib/backend/resources/arduino-cli.exe" "$HOME/AppData/Local/Programs/Arduino IDE/resources/app/lib/backend/resources/arduino-cli.exe"; do [ -x "$c" ] && { echo "$c"; break; }; done; true`
+artilugio_fqbn := "esp32:esp32:esp32"
+
+# Install what the artilugio's firmware needs: the ESP32 boards and the LCD's library
+[group('Artilugio')]
+artilugio-setup:
+    @[ -n "{{ arduino_cli }}" ] || { printf 'Install the Arduino IDE (or arduino-cli) first.\n'; exit 1; }
+    "{{ arduino_cli }}" core update-index
+    "{{ arduino_cli }}" core install esp32:esp32
+    "{{ arduino_cli }}" lib install "LiquidCrystal I2C"
+
+# Compile the artilugio's firmware (firmware/artilugio/), with the example secrets if secrets.h is missing
+[group('Artilugio')]
+artilugio-build sketch="artilugio":
+    @[ -n "{{ arduino_cli }}" ] || { printf 'Install the Arduino IDE (or arduino-cli) first.\n'; exit 1; }
+    "{{ arduino_cli }}" compile --fqbn {{ artilugio_fqbn }} firmware/{{ sketch }}
+
+# Flash the board plugged in by USB (port: /dev/cu.usbserial-0001 on a Mac, COM3 on Windows; found if only one)
+[group('Artilugio')]
+artilugio-flash port="" sketch="artilugio":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -n "{{ arduino_cli }}" ] || { printf 'Install the Arduino IDE (or arduino-cli) first.\n'; exit 1; }
+    if [ "{{ sketch }}" = artilugio ] && [ ! -f firmware/artilugio/secrets.h ]; then
+      printf 'Falta firmware/artilugio/secrets.h: copia secrets.example.h y pon la Wi-Fi, la IP del servidor y la clave.\n'; exit 1
+    fi
+    port="{{ port }}"
+    if [ -z "$port" ]; then
+      ports=$("{{ arduino_cli }}" board list | awk 'NR > 1 && $1 ~ /usbserial|USB|COM|ttyUSB/ { print $1 }')
+      [ "$(printf '%s\n' "$ports" | grep -c .)" = 1 ] || { printf 'Choose the port: just artilugio-flash <port>\n%s\n' "$ports"; exit 1; }
+      port=$ports
+    fi
+    "{{ arduino_cli }}" compile --fqbn {{ artilugio_fqbn }} --upload --port "$port" firmware/{{ sketch }}
+
+# Watch what the board says over USB (115200 baud): notes, modes, Wi-Fi
+[group('Artilugio')]
+artilugio-monitor port="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    port="{{ port }}"
+    [ -n "$port" ] || port=$("{{ arduino_cli }}" board list | awk 'NR > 1 && $1 ~ /usbserial|USB|COM|ttyUSB/ { print $1; exit }')
+    "{{ arduino_cli }}" monitor --port "$port" --config baudrate=115200
 
 # Create the production bundle in dist/
 [group('Build')]

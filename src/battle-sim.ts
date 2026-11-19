@@ -18,7 +18,7 @@ import {
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, untilNote } from './song.ts';
-import { ARTILUGIO_BUTTONS, CASTLE } from './castle.ts';
+import { ARTILUGIO_NOTES, CASTLE } from './castle.ts';
 import { artilugioLive, castleNote, castleProp, nextNote } from './castle-fight.ts';
 
 export const SIM_VERSION = 2;
@@ -569,8 +569,8 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
         if (state.phase !== 'player' || state.allies[state.active].id !== chooser) continue;
       }
       // The artilugio (docs/castle-bosses.md § With the artilugio): while she has Aitor, whoever reads the fight plays
-      // the melody's next notes, two a turn; anyone else presses any button. It takes nobody's turn.
-      if (artilugioLive(state)) for (let n = 0; n < (setup.policy === 'smart' ? 2 : 1) && artilugioLive(state); n++) { castleNote(state, setup.policy === 'smart' ? nextNote(state) : Math.floor(random() * ARTILUGIO_BUTTONS)); count('nota'); }
+      // the melody's next notes, two a turn; anyone else plays any of its eight notes. It takes nobody's turn.
+      if (artilugioLive(state)) for (let n = 0; n < (setup.policy === 'smart' ? 2 : 1) && artilugioLive(state); n++) { castleNote(state, setup.policy === 'smart' ? nextNote(state) : Math.floor(random() * ARTILUGIO_NOTES.length)); count('nota'); }
       const queued = takeQueued(state);
       const choice: Choice = queued ? { ...queued } : decide(state, setup, random);
       // Someone in no hurry queues their own choice while the first one chooses (`QUEUE`): their dual, if any, comes by chance.

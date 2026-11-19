@@ -38,3 +38,6 @@ data/
 
 # Scratch/generated outputs (approved artwork is copied into assets/ and public/)
 output/
+
+# The artilugio's Wi-Fi and key (firmware/artilugio/secrets.example.h)
+firmware/**/secrets.h

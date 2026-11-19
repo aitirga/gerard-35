@@ -10,7 +10,7 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
-COPY server.py ai.py lights.py lifx_lan.py tickets.py daylog.py ./
+COPY server.py ai.py lights.py lifx_lan.py tickets.py daylog.py artilugio.py ./
 # What opens each station, shared with the game (src/tickets.ts).
 COPY src/tickets.json ./src/tickets.json
 # The house's lights library (a git submodule): only the package, not its scripts.

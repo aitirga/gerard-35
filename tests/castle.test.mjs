@@ -90,7 +90,8 @@ test('with the artilugio, the melody in order frees Aitor; a wrong note puts the
   assert.ok(artilugioLive(state));
   const first = castleNote(state, nextNote(state));
   assert.ok(first.right && first.startled && first.notes === 1);
-  assert.equal(castleNote(state, (nextNote(state) + 1) % 4).notes, 0, 'a wrong one, and back to nothing');
+  assert.equal(castleNote(state, MELODY[0]).notes, 1, 'the first note again starts the melody again');
+  assert.equal(castleNote(state, 6).notes, 0, 'a wrong one, and back to nothing');
   let last;
   for (let i = 0; i < MELODY.length; i++) last = castleNote(state, nextNote(state));
   assert.ok(last.freed);

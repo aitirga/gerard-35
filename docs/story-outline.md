@@ -313,8 +313,8 @@ What follows is the design before the board was chosen; where it disagrees, the 
 - **It wakes in the final battle** (decided): colours burst on its screen and **the machine
   visibly changes**; that change is the only sign that now it matters.
 - **The melody has 6 notes.** With 4 buttons that is not enough: Gerard **discovers that pressing
-  two buttons at once sounds different**. Four buttons alone give 4 sounds and the six pairs give
-  6 more, 10 in all; the melody needs at least some of the pairs. Discovering the pairs is the
+  two buttons at once sounds different**. ~~Four buttons alone give 4 sounds and the six pairs give
+  6 more, 10 in all~~ (8 since 2026-11-19, above); the melody needs at least some of the pairs. Discovering the pairs is the
   device's own puzzle, taught by doing (a note in the melody that no single button plays).
 - Proposals:
   - **The screen** shows what is played (the note's shape or its waveform), never the answer:

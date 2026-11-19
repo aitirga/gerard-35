@@ -332,13 +332,30 @@ export const CASTLE = {
 /** How much of her PV the Queen has when the party comes back with the artilugio (docs/castle-bosses.md: 40 %, proposed). */
 export const QUEEN_RETURN_HP = CASTLE.reinaVuelta;
 /**
- * The artilugio's melody (docs/castle-bosses.md § With the artilugio): six notes on its four
- * buttons (0–3), the motif the whole game has been humming. Provisional: Aitor writes the real one.
+ * The artilugio (docs/story-outline.md § The device): four buttons, red, yellow, green and blue
+ * (0–3), and four pairs pressed together (notes 4–7), the eight notes of G Phrygian dominant from G
+ * to G. Alone the buttons play the G7 chord; each pair, two neighbours on the ring, plays the scale's
+ * note between its two buttons. firmware/artilugio/notes.h holds the same table (a test checks it).
  */
-export const MELODY: readonly number[] = [0, 2, 1, 3, 2, 0];
 export const ARTILUGIO_BUTTONS = 4;
-/** The four buttons' notes, as the game sounds them (Hz): D, F♯, A, B. */
-export const ARTILUGIO_NOTES: readonly number[] = [293.66, 369.99, 440, 493.88];
+/** The pairs that play a note of their own, in note order from 4: red + yellow, yellow + green, green + blue, blue + red. */
+export const ARTILUGIO_PAIRS: readonly (readonly [number, number])[] = [[0, 1], [1, 2], [2, 3], [3, 0]];
+/** The eight notes (Hz): Sol, Si, Re, Fa alone; La♭, Do, Mi♭ and the Sol above in pairs. */
+export const ARTILUGIO_NOTES: readonly number[] = [392.00, 493.88, 587.33, 698.46, 415.30, 523.25, 622.25, 783.99];
+/** The note one press plays: a button alone, or a pair of the table; any other two sound the first one. */
+export function artilugioNote(buttons: readonly number[]): number {
+  const [a, b] = buttons;
+  if (b === undefined || a === b) return a;
+  const pair = ARTILUGIO_PAIRS.findIndex(([x, y]) => (x === a && y === b) || (x === b && y === a));
+  return pair < 0 ? a : ARTILUGIO_BUTTONS + pair;
+}
+/** The buttons that light for a note: one alone, two for a pair. */
+export const artilugioButtons = (note: number): readonly number[] => note < ARTILUGIO_BUTTONS ? [note] : ARTILUGIO_PAIRS[note - ARTILUGIO_BUTTONS];
+/**
+ * The melody (Aitor, 2026-11-19): Sol · La♭ · Do · Sol (up) · Fa · Re, the motif the whole game has
+ * been humming. Three of its notes are pairs, so it cannot be played without finding them.
+ */
+export const MELODY: readonly number[] = [0, 4, 5, 7, 3, 2];
 
 /** Aurelià's three phases and the Queen's four, as their plates name them. */
 export const AURELIA_PHASES = { leccion: 'La lección', carrera: 'La carrera', recta: 'La última recta' } as const;

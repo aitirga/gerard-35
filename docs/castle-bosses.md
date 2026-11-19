@@ -120,19 +120,22 @@ order).
 
 ### With the artilugio
 
-The real one, in Gerard's hands: the ESP32 with four buttons (story-outline.md § El artilugio).
-Nobody says what it is for.
+The real one, in Gerard's hands: the Bomba-G board, four buttons and four pairs, eight notes
+(story-outline.md § The device). Nobody says what it is for. It wakes as she takes Aitor: its four
+lights go round on their own, on the real board and on the one in Gerard's hands on screen.
 
 - **Every button sounds in the game.** At the first note she starts: her intent clears. That is
   how Gerard learns it does something.
 - **Notes in the right order** light six marks on Aitor's plate, from violet to his cyan. A wrong
-  one puts them out. Aitor keeps attacking all the while.
+  one puts them out (the melody's first starts it again). Aitor keeps attacking all the while.
 - **All six**: the final boss's song comes in whole, Aitor is free, his dock comes back, every
   ánima's maná is full. What is left is to finish her.
 - It does **not calm her**. It takes Aitor from her. (Rejected already: a melody that soothes a
   tantrum.)
-- To settle: how a press reaches the game (proposal: Wi-Fi → the API → an event), and what stands
-  in if the device is not there (the flat's piano, already proposed).
+- How a press reaches the game (built 2026-11-19): the board sends each note over Wi-Fi to the
+  game's server (`artilugio.py`), which passes it to the browser as an event (`src/artilugio.ts`).
+  Without the board, the keyboard's 1–4 (two at once for a pair) or player 1's pad (left trigger
+  held, the face buttons) stand in; the flat's piano is still a proposal.
 
 Code, when built: Aitor on the enemy side is new (no party member fights for the other side
 today); `aitor-poseido` in `src/battle.ts` and `src/story.ts`, as docs/progress.toml checks.

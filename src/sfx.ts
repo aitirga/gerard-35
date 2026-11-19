@@ -65,9 +65,9 @@ function meow(context: AudioContext, out: AudioNode, at: number, { pitch, length
   osc.onended = () => env.disconnect();
 }
 
-/** One of the artilugio's four buttons: a held, clean note of her melody. */
-const artilugio = (button: number): Sound => ({ synth: (c, out, at) => {
-  const hz = ARTILUGIO_NOTES[button];
+/** One of the artilugio's eight notes (its four buttons and four pairs): a held, clean note of the melody's scale. */
+const artilugio = (note: number): Sound => ({ synth: (c, out, at) => {
+  const hz = ARTILUGIO_NOTES[note];
   tone(c, out, at, { type: 'triangle', from: hz, attack: .01, length: .7, gain: .2 }); tone(c, out, at, { from: hz * 2, length: .35, gain: .04 });
   return .7;
 }, gap: .05, voices: 3 });
@@ -245,8 +245,9 @@ export const SOUNDS = {
     tone(c, out, at + .1, { type: 'square', from: 41 * p, to: 22 * p, attack: .4, hold: .8, length: 1.8, gain: .05 });
     return 1.95;
   }, jitter: 30, gap: 1, voices: 1 },
-  // The artilugio's four buttons (docs/castle-bosses.md): a held, clean note each, the notes of her melody.
+  // The artilugio's eight notes (docs/story-outline.md § The device): its four buttons alone, then its four pairs.
   'artilugio-0': artilugio(0), 'artilugio-1': artilugio(1), 'artilugio-2': artilugio(2), 'artilugio-3': artilugio(3),
+  'artilugio-4': artilugio(4), 'artilugio-5': artilugio(5), 'artilugio-6': artilugio(6), 'artilugio-7': artilugio(7),
 } satisfies Record<string, Sound>;
 export type SoundId = keyof typeof SOUNDS;
 

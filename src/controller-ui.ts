@@ -41,6 +41,8 @@ export function createControllerUI(callbacks: {
   dpadApart?: () => boolean;
   /** The second controller connected (its name) or left (undefined). */
   secondPad: (id: string | undefined) => void;
+  /** Player 1's pad, every frame, for the artilugio (src/artilugio.ts): true while it plays, so its face buttons do nothing else. */
+  notes?: (pad: PadSnapshot | undefined) => boolean;
   /** Development only: whether player 1 also drives Aitor (`solo`) or player 2 does (`duo`). */
   mode?: { get: () => ControlMode; set: (mode: ControlMode) => void };
   pause: (value: boolean) => void;
@@ -248,7 +250,10 @@ export function createControllerUI(callbacks: {
     callbacks.partnerDirection(input2.direction, input2.stick, input2.running);
     // Player 2 plays, talks and has their own half of the status screen; the menu and camera stay with player 1.
     for (const action of input2.events) if (action !== 'menu' && action !== 'overview') callbacks.action(action, 2);
-    const state = latest ? readController(latest, custom, previousDirection, apart) : idleController();
+    // Holding the trigger to play the artilugio, the face buttons are its four and nothing else.
+    const playing = !mapping && !root.open && !!callbacks.notes?.(latest);
+    const own = latest && playing ? { ...latest, buttons: latest.buttons.map((b, i) => i <= 3 ? { pressed: false, value: 0 } : b) } : latest;
+    const state = own ? readController(own, custom, previousDirection, apart) : idleController();
     previousDirection = focused ? state.direction : null;
     const context = `${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}`;
     const input = edges.update(state, context, now, focused && !mapping);

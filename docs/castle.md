@@ -149,7 +149,7 @@ in the fight tester's Castillo row, the arc «El castillo» and the two endings 
 | A floor as a place | `src/castle-floor.ts`, `dressCastillo` in `src/palace-zones.ts` | Floors painted along the way, low walls in front, gum in the fight rooms, a lamp; no drifting props yet |
 | The fights | `src/castle-fight.ts`, hooks in `src/battle.ts` | Five pupils (Repetidor, Empollón, Chivata, Gemelos, Delegada) in three years, Aurelià, Dirección, the Queen; El Ausente, El Castigado and El Nuevo are to come |
 | The story | `src/castle-story.ts`, hooks in `src/story.ts` | Pupils patrol their rooms, a room won stays won today, an hour a fight, a boss beaten brings nightfall and moves the way in, lights for the jar, the third slot after Aurelià |
-| Aitor held, the artilugio | `src/castle-fight.ts`, `src/battle-ui.ts` | She takes him at a tenth (down or not); lost, the next morning Bernat calls and the artilugio is had; the keyboard's 1–4 stand in for its four buttons |
+| Aitor held, the artilugio | `src/castle-fight.ts`, `src/battle-ui.ts` | She takes him at a tenth (down or not); lost, the next morning Bernat calls and the artilugio is had; its notes come from the real board (`artilugio.py`, `src/artilugio.ts`), or the keyboard's 1–4 and the pad stand in |
 | The last scene | `src/endings.ts` | Acabar or Bajar la mano, an epilogue over black, the Monday after |
 
 Placeholders and decisions taken for now (each one Aitor's to change):
