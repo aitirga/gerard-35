@@ -92,13 +92,17 @@ export const SKILLS = [
   // Control remoto: Bip takes a foe over for a moment. It turns on one of its own right now, with its
   // own strength (`control`, `power` the blow at average stats), and forgets what it had announced.
   { id: 'control-remoto', name: 'Control remoto', cost: 2, side: 'foes', power: 34, kind: 'debuff', stats: [], control: true, abstract: true, node: true, description: 'Bip toma el mando de un enemigo: golpea con fuerza a uno de los suyos y olvida lo que iba a hacer.', class: 'tecnopata' },
-  // Dadaísta's skills are dice thrown (docs/animas/dadaista/): its maná is dice, each with its face in
-  // view, and a skill with `die` spends the one chosen. Golpe de dados lands `power`, and `pip` more
-  // for each pip of that die. Their strength changes with the die, so they skip the fixed shape.
-  { id: 'golpe-dados', name: 'Golpe de dados', cost: 1, side: 'foes', power: 6, pip: 5, kind: 'physical', die: 'face', abstract: true, description: 'Daño variable físico a un enemigo. Más fuerte cuanto más alta la cara del dado.', class: 'dadaista' },
-  // Doble o nada: the die bet is rolled again. The same or higher, the blow lands twice; lower, there
-  // is no blow and the die is gone all the same: a skill always spends its die, as any maná.
-  { id: 'doble-o-nada', name: 'Doble o nada', cost: 1, side: 'foes', power: 6, pip: 5, kind: 'physical', die: 'bet', abstract: true, description: 'Daño variable físico a un enemigo. Vuelve a tirar el dado: si sale igual o más alto, golpe doble. Si sale más bajo, no hay golpe y el dado se pierde.', class: 'dadaista' },
+  // Dadaísta's skill is a die thrown (docs/animas/dadaista/): its maná is dice, each with a face in
+  // view that is a move of its own. Tirar dado (`die`) spends the die chosen and does what its face
+  // says, so what it does depends on the die: it skips the fixed shape.
+  { id: 'tirar-dado', name: 'Tirar dado', cost: 1, side: 'foes', power: 0, kind: 'physical', die: true, abstract: true, description: 'Gasta un dado y hace lo que marca su cara.', class: 'dadaista' },
+  // The faces' moves (`face`): never in the skill list, reached only by a die (`FACE_SKILLS`).
+  { id: 'cara-mano', name: 'Mano', cost: 1, side: 'foes', power: 38, kind: 'physical', face: 'mano', description: 'Daño alto físico a un enemigo.', class: 'dadaista' },
+  { id: 'cara-tijeras', name: 'Tijeras', cost: 1, side: 'foes', power: 16, kind: 'physical', bleed: 2, face: 'tijeras', description: 'Daño leve físico a un enemigo. Añade sangrado.', class: 'dadaista' },
+  // Ojo: the blow that lands after it, from anyone, does triple (Punto débil, as the dual's).
+  { id: 'cara-ojo', name: 'Ojo', cost: 1, side: 'foes', power: 10, kind: 'physical', mark: true, face: 'ojo', description: 'Daño leve físico a un enemigo. El siguiente ataque que reciba hace el triple de daño.', class: 'dadaista' },
+  // Corchete: an ally held between brackets takes a third of every blow until the round ends, as Defender.
+  { id: 'cara-corchete', name: 'Corchete', cost: 1, side: 'allies', power: 0, kind: 'guard', face: 'corchete', description: 'Protege a un aliado hasta el final de la ronda.', class: 'dadaista' },
 ] as const;
 /**
  * Maná (docs/combat.md § Maná): what skills spend, shown as circles. Every ánima has its own, for
@@ -681,9 +685,9 @@ export interface Combatant {
   /** Maná of each ánima not worn now, kept until it is worn again (missing: full). */
   mana?: Partial<Record<ClassId, number>>;
   /** Dadaísta's maná as dice: the face of each point it holds, worn or resting (`diceOf` keeps them in step). */
-  dice?: number[];
-  /** Dadaísta: they took part in a dual attack, and the next die dealt to them is likelier the Joker (`JOKER_AFTER_DUAL`). */
-  jokerDue?: boolean;
+  dice?: DieFace[];
+  /** Dadaísta: the last face spent this fight, the one a blank die repeats. */
+  lastFace?: Exclude<DieFace, 'blanco'>;
   /** Ánimas worn at some moment of this round: they do not rest at its end. */
   worn?: ClassId[];
   /** The ánimas this fighter can switch between (L / R): their own and the extras they equipped (docs/party.md). */
@@ -1000,7 +1004,8 @@ export function switchAnima(state: BattleState, step: -1 | 1): ClassId | undefin
 const wornAnimas = (slots: PartySlot[]) => [...new Set(slots.flatMap(s => s.classId ? [s.classId] : []))];
 /** The skills `actor` can use: their ánima's, as far as it has grown. */
 export function skillsFor(state: BattleState, actor: Combatant) {
-  return SKILLS.filter(skill => actor.classId === skill.class && learned(state, skill.id));
+  // A die's faces are not skills of the list: Tirar dado reaches them (`FACE_SKILLS`).
+  return SKILLS.filter(skill => actor.classId === skill.class && !('face' in skill) && learned(state, skill.id));
 }
 /** Rounds a party boost has left, this one included (0 when it is not running); without `skill`, the longest. */
 export function boostRounds(state: BattleState, skill?: SkillId): number {
@@ -1112,13 +1117,11 @@ export interface BattleEffect {
   /** Maná Defender gave back. */
   charged?: number;
   /** Dadaísta defending: the faces of the dice that maná came as. */
-  dealt?: number[];
-  /**
-   * A skill that spent a die (Dadaísta): its `face` (`JOKER`: the blow is on every foe, the others in
-   * `splash`); for a bet (Doble o nada), what it `rolled` when thrown again and whether that `won`
-   * (lost: no blow, and the die is gone all the same).
-   */
-  die?: { face: number; at: number; rolled?: number; won?: boolean };
+  dealt?: DieFace[];
+  /** A die spent (Dadaísta): its `face`, its place in the hand, and the face it did (`as`: a blank repeats another). */
+  die?: { face: DieFace; at: number; as: Exclude<DieFace, 'blanco'> };
+  /** Corchete: the ally it now protects until the round ends. */
+  guarded?: boolean;
   /** Fire melted the palace minion's gum. */
   melted?: boolean;
   /** A skill of several little hits (Zarpazos), or one hit landed in parts (Foc Binari): the PV each one took, in order. `amount` is their sum. */
@@ -1329,65 +1332,55 @@ function fallen(state: BattleState) {
 export const weakSpotRounds = (state: BattleState, c: Combatant) => c.weakSpot !== undefined && c.weakSpot >= state.round && c.hp > 0 ? c.weakSpot - state.round + 1 : 0;
 /**
  * Dadaísta's maná is dice (docs/animas/dadaista/): each point is a die with its face in view, rolled
- * when the maná comes (the fight's start, Defender, a round's rest). A skill with `die` spends the
- * one chosen, whatever comes of it, and that face says how hard it lands.
+ * when the maná comes (the fight's start, Defender, a round's rest). Each face is a move of its own:
+ * Tirar dado spends the die chosen and does what its face says (`FACE_SKILLS`).
  */
 export const DICED: ClassId = 'dadaista';
-/**
- * The Joker: a die that now and then comes in place of a face (`JOKER_CHANCE` of the dice dealt). It
- * is the best a skill can ask of a die (a six for a blow by its face, a bet that cannot be lost), and
- * its blow falls on every foe standing. A dual attack calls it: the next die dealt to whoever took
- * part in one (`Combatant.jokerDue`) is the Joker `JOKER_AFTER_DUAL` of the times.
- */
-export const JOKER = 7, JOKER_CHANCE = .02, JOKER_AFTER_DUAL = .2;
-/** A die dealt to `c`'s hand: a face from 1 to 6 or, rarely, the Joker (less rarely on the first die after a dual). */
-function dealDie(state: BattleState, c: Combatant) {
-  const chance = c.jokerDue ? JOKER_AFTER_DUAL : JOKER_CHANCE, r = roll(state);
-  delete c.jokerDue;
-  return r < chance ? JOKER : 1 + Math.floor((r - chance) / (1 - chance) * 6);
-}
-/** One roll of the fight's dice, 1 to 6. */
-export const d6 = (state: BattleState) => 1 + Math.floor(roll(state) * 6);
+/** What a face can show. Blanco does nothing of its own: it repeats the last face spent (`lastFace`). */
+export type DieFace = 'mano' | 'tijeras' | 'ojo' | 'corchete' | 'blanco';
+/** The die's six faces: two hands, and one of each of the rest. */
+export const DIE_FACES: readonly DieFace[] = ['mano', 'mano', 'tijeras', 'ojo', 'corchete', 'blanco'];
+/** The move each face does when its die is spent. */
+export const FACE_SKILLS: Record<Exclude<DieFace, 'blanco'>, SkillId> = { mano: 'cara-mano', tijeras: 'cara-tijeras', ojo: 'cara-ojo', corchete: 'cara-corchete' };
+/** One roll of the fight's dice: a face. */
+export const rollFace = (state: BattleState): DieFace => DIE_FACES[Math.floor(roll(state) * DIE_FACES.length)];
 /**
  * `c`'s dice, in the order they came: as many as their Dadaísta holds maná now, whether they wear it
  * or it rests. Maná that came since the last look is rolled here, so the hand is always in step.
  */
-export function diceOf(state: BattleState, c: Combatant): number[] {
+export function diceOf(state: BattleState, c: Combatant): DieFace[] {
   if (!state.allies.includes(c) || (c.classId !== DICED && !kitIn(state, c).includes(DICED))) return [];
   const most = manaMax(state.improved, DICED), count = c.classId === DICED ? c.secondary : Math.min(most, c.mana?.[DICED] ?? most);
   const hand = c.dice ??= [];
-  while (hand.length < count) hand.push(dealDie(state, c));
+  while (hand.length < count) hand.push(rollFace(state));
   hand.length = Math.min(hand.length, count);
   return hand;
 }
-/** Whether `skill` spends a die, and how it reads it: its `face` as its strength, or as a `bet`. */
-export const dieUse = (skill?: SkillId): 'face' | 'bet' | undefined => { const spec = SKILLS.find(s => s.id === skill); return spec && 'die' in spec ? spec.die : undefined; };
-/** The die a skill takes when nobody chose: the Joker if there is one; else the highest for a blow by its face; for a bet the highest of the sure ones (3 or less), else the lowest. */
-export function bestDie(skill: SkillId, hand: readonly number[]) {
-  if (!dieUse(skill) || !hand.length) return -1;
-  if (hand.includes(JOKER)) return hand.indexOf(JOKER);
-  const sure = hand.filter(face => face <= 3);
-  return hand.indexOf(dieUse(skill) === 'bet' ? sure.length ? Math.max(...sure) : Math.min(...hand) : Math.max(...hand));
+/** Whether `skill` spends a die (Tirar dado). */
+export const dieUse = (skill?: SkillId): boolean => { const spec = SKILLS.find(s => s.id === skill); return !!spec && 'die' in spec; };
+/** The face a die of `face` does for `c`: its own, or for a blank the last one spent (none yet: nothing). */
+export const faceAs = (c: Combatant, face: DieFace): Exclude<DieFace, 'blanco'> | undefined => face === 'blanco' ? c.lastFace : face;
+/** The move the die at `at` in the active ally's hand does, if it can do one. */
+export function dieSkill(state: BattleState, at: number): SkillId | undefined {
+  const actor = state.allies[state.active], face = actor && diceOf(state, actor)[at], as = actor && face ? faceAs(actor, face) : undefined;
+  return as && FACE_SKILLS[as];
 }
-/** What `skill` lands with a die of `face` at average stats, before a bet doubles it (the Joker lands as a six). */
-export const diePower = (skill: SkillId, face: number) => { const spec = SKILLS.find(s => s.id === skill); return spec && 'pip' in spec ? spec.power + spec.pip * Math.min(face, 6) : 0; };
-/**
- * The die a Dadaísta skill spends: `index` in the hand (or the one `bestDie` would take). It is gone
- * from the hand whatever happens. A bet rolls it again: the same or higher and the blow lands twice;
- * lower, and there is no blow. The Joker is never rolled: its bet is won, and its blow is on `all`.
- */
-function castDie(state: BattleState, actor: Combatant, skill: SkillId, index: number | undefined, effect: BattleEffect) {
-  const hand = diceOf(state, actor), at = index !== undefined && hand[index] ? index : bestDie(skill, hand), face = hand[at];
-  const power = diePower(skill, face);
-  const all = face === JOKER;
+/** Which faces go first when nobody chose: a blow, a wound, an eye (on a foe not marked yet), then the rest. */
+const FACE_ORDER: readonly Exclude<DieFace, 'blanco'>[] = ['mano', 'tijeras', 'ojo', 'corchete'];
+/** The die the active ally spends when nobody chose: by `FACE_ORDER`, a blank after the face it repeats; −1 when no die can do anything. */
+export function bestDie(state: BattleState) {
+  const actor = state.allies[state.active], hand = actor ? diceOf(state, actor) : [];
+  const usable = hand.map((_, at) => at).filter(at => { const skill = dieSkill(state, at); return !!skill && validTargets(state, 'skill', skill).length > 0; });
+  const rank = (at: number) => FACE_ORDER.indexOf(faceAs(actor!, hand[at])!) * 2 + (hand[at] === 'blanco' ? 1 : 0)
+    + (hand[at] !== 'blanco' && faceAs(actor!, hand[at]) === 'ojo' && state.foes.every(f => f.hp <= 0 || weakSpotRounds(state, f)) ? 10 : 0);
+  return usable.sort((a, b) => rank(a) - rank(b))[0] ?? -1;
+}
+/** Tirar dado: spends the die at `at`, and says on `effect` which face it was and what it did. */
+function spendDie(actor: Combatant, hand: DieFace[], at: number, effect: BattleEffect) {
+  const face = hand[at], as = faceAs(actor, face)!;
+  effect.die = { face, at, as };
   hand.splice(at, 1); actor.secondary--;
-  if (dieUse(skill) === 'bet') {
-    const rolled = all ? JOKER : d6(state), won = rolled >= face;
-    effect.die = { face, at, rolled, won };
-    return { power, times: won ? 2 : 0, lost: !won, all };
-  }
-  effect.die = { face, at };
-  return { power, times: 1, lost: false, all };
+  actor.lastFace = as;
 }
 /** The action is validated before payment, just as it is in the generic command resolver. */
 function spendSecondary(actor: Combatant, cost: number) {
@@ -1619,11 +1612,15 @@ export function markRounds(state: BattleState, c: Combatant, skill: SkillId) {
   return mark && mark.until >= state.round ? mark.until - state.round + 1 : 0;
 }
 /** Who an action can be aimed at. A party skill is not aimed: these are who it would reach. */
-export function validTargets(state: BattleState, action: BattleAction, skill: SkillId = 'foc-binari'): Combatant[] {
+export function validTargets(state: BattleState, action: BattleAction, skill: SkillId = 'foc-binari', die?: number): Combatant[] {
   if (action === 'attack') return state.foes.filter(f => f.hp > 0);
   if (action !== 'skill') return [];
+  // Tirar dado: whom the face of the die it spends reaches (the one `bestDie` picks if none was chosen).
+  if (dieUse(skill)) { const at = die ?? bestDie(state), face = at >= 0 ? dieSkill(state, at) : undefined; return face ? validTargets(state, action, face) : []; }
   const ability = SKILLS.find(s => s.id === skill);
   if (!ability) return [];
+  // Corchete: anyone standing who is not protected already.
+  if (ability.kind === 'guard') return state.allies.filter(a => a.hp > 0 && !a.guarding);
   // A cure for everyone is worth it while someone standing is hurt, or carries a status it takes away.
   if (state.unbound && (ability.kind === 'heal' || ability.kind === 'boost')) return state.allies.filter(a => a.hp > 0);
   if (state.unbound && ability.kind === 'debuff') return state.foes.filter(f => f.hp > 0);
@@ -1817,14 +1814,25 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (state.phase !== 'player') return;
   const actor = state.allies[state.active];
   if (!actor || actor.hp <= 0) return;
+  // Tirar dado: the die spent decides the move, its face's own (`FACE_SKILLS`); a blank repeats the last face spent.
+  let cast: number | undefined;
+  if (action === 'skill' && dieUse(skill)) {
+    if (!skillsFor(state, actor).some(s => s.id === skill)) return;
+    const hand = diceOf(state, actor);
+    cast = die !== undefined && hand[die] ? die : bestDie(state);
+    const as = cast >= 0 ? dieSkill(state, cast) : undefined;
+    if (!as) return;
+    skill = as;
+  }
   const ability = SKILLS.find(s => s.id === skill);
   const targets = validTargets(state, action, skill);
   const party = action === 'skill' && ability?.side === 'party';
   const everyone = action === 'skill' && ability?.side === 'all-foes';
   let target = party ? undefined : everyone ? targets[0] : targets.find(f => f.id === targetId);
   if ((action === 'attack' || action === 'skill') && !target && !(party && targets.length)) return;
-  if (action === 'skill' && (!ability || actor.secondary < ability.cost || !skillsFor(state, actor).includes(ability))) return;
+  if (action === 'skill' && (!ability || actor.secondary < ability.cost || (cast === undefined && !skillsFor(state, actor).includes(ability)))) return;
   const effect: BattleEffect = { actor: actor.id, kind: action };
+  if (cast !== undefined) spendDie(actor, diceOf(state, actor), cast, effect);
   // La Lealtad steps in front of whoever a blow is aimed at (one that reaches every foe gets past her).
   const aimedAt = target, guard = target && !everyone && state.foes.includes(target) ? guardOf(state, target) : undefined;
   if (guard && aimedAt) { target = guard; effect.interposed = aimedAt.id; }
@@ -1881,6 +1889,12 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       if (stacked || clocked) note(effect, 'nanitos', actor);
     }
     state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. ¡${TIMED[ability.regen].name}${on.level > 1 ? ` ${roman(on.level)}` : ''}!${effect.cleansed ? ` Nanitos: fuera ${STATUSES[effect.cleansed[0].statuses[0]].name}.` : effect.cleared ? ` Nanitos: fuera ${TIMED[effect.cleared[0]].name}.` : ''}`;
+  } else if (ability?.kind === 'guard' && target) {
+    // Corchete: the ally between brackets takes a third of each blow until the round ends, as if Defending.
+    if (cast === undefined) spendSecondary(actor, ability.cost);
+    effect.skill = skill; effect.target = target.id; effect.guarded = true;
+    target.guarding = true;
+    state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. Protegido hasta el final de la ronda.`;
   } else if (ability?.kind === 'heal' && target) {
     // Cardioide: a curve of light under a friend gives back PV, more with Magia.
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.healed = true;
@@ -1988,18 +2002,14 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (effect.mana) state.message += ' Toma de tierra: maná +1.';
     if (actor.out !== undefined && actor.out > state.round) state.message += ` ${actor.name} pierde su siguiente turno.`;
   } else if (target) {
-    // Dadaísta: the die spent says how hard the blow is; a bet lost is no blow at all (`castDie`).
-    const cast = action === 'skill' && dieUse(skill) ? castDie(state, actor, skill!, die, effect) : undefined;
-    if (action === 'skill') { if (!cast) spendSecondary(actor, ability!.cost); effect.skill = skill; }
+    // Dadaísta's die was spent already (`spendDie`): its maná with it.
+    if (action === 'skill') { if (cast === undefined) spendSecondary(actor, ability!.cost); effect.skill = skill; }
     effect.target = target.id;
     if (action === 'attack' && actor.classId === 'matemagico') effect.spell = true;
     const melts = action === 'skill' && !!ability && 'melts' in ability;
-    if (cast?.lost) {
-      effect.amount = 0;
-      state.message = `${actor.name} usa ${ability!.name}: apostaba un ${effect.die!.face} y sale un ${effect.die!.rolled}. Nada. El dado se pierde.`;
-    } else if (annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'attack' ? 'physical' : ability?.kind)) {
-      const light = annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'attack' ? 'physical' : ability?.kind)!;
+    if (annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'attack' ? 'physical' : ability?.kind)) {
       // Fran's salon: the light on now eats a blow of its own element (the white one, a physical blow), whole.
+      const light = annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'attack' ? 'physical' : ability?.kind)!;
       effect.amount = 0; effect.annulled = light;
       state.message = `${actor.name} usa ${action === 'skill' ? ability!.name : 'Atacar'} contra ${target.name}. ${annulledText(light)}`;
     } else if (target.shell && !melts) {
@@ -2019,7 +2029,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       if (melts && target.shell) { target.shell = false; effect.melted = true; }
       // Each hit is measured on its own, since the layers it finds change the next one's weight.
       // A physical blow on someone bleeding opens the wound: every claw of it lands harder.
-      const times = cast?.times ?? (action === 'skill' && ability && 'strikes' in ability ? ability.strikes : 1), layered = target.layers ?? 0, strikes: number[] = [];
+      const times = (action === 'skill' && ability && 'strikes' in ability ? ability.strikes : 1), layered = target.layers ?? 0, strikes: number[] = [];
       const magic = action === 'skill' && ability!.kind === 'magic';
       // The element Atacar carries; fire seals a wound instead of opening it (`react`).
       const element = action === 'attack' ? attackElement(state, actor) : ability && 'element' in ability ? ability.element : undefined;
@@ -2029,7 +2039,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       // What the blow lands with, for what the foe is made of: Atacar's element, or the skill's own (Foc Binari is fire).
       const landing = element ?? (action === 'skill' ? elementOf(ability) : undefined), found = affinityOf(target, landing);
       for (let i = 0; i < times && target.hp > 0; i++) {
-        strikes.push(hurt(state, target, fearDamage(state, target, strike(state, actor, target, action === 'skill' ? ability : undefined, cast?.power) * scale * weak * chord * affinityScale(target, landing), magic ? 'magic' : 'physical', landing)));
+        strikes.push(hurt(state, target, fearDamage(state, target, strike(state, actor, target, action === 'skill' ? ability : undefined) * scale * weak * chord * affinityScale(target, landing), magic ? 'magic' : 'physical', landing)));
         if (target.layers && !--target.layers) bare(target);
       }
       if (bled) { delete target.statuses!.sangrado; effect.bled = bled; }
@@ -2055,6 +2065,11 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       if (action === 'skill' && ability && 'bleed' in ability && target.hp > 0) {
         effect.status = { id: 'sangrado', stacks: addStatus(target, 'sangrado', ability.bleed) };
         state.message += ` Sangrado ${effect.status.stacks}.`;
+      }
+      // Ojo: it finds where the foe gives, and the next blow there does triple (Punto débil).
+      if (action === 'skill' && ability && 'mark' in ability && target.hp > 0) {
+        target.weakSpot = state.round + 1; effect.weakSpot = spent ? 'renewed' : 'set';
+        state.message += ' Punto débil: el siguiente ataque hace el triple.';
       }
       // Foc Binari sets them on fire; on someone already burning, the fire goes up a level. An onion's wet layers do not catch.
       if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.layers) state.message += ' Las capas, húmedas, no prenden.';
@@ -2093,19 +2108,6 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         effect.afflicted = { id: 'mojado', level: 1 }; note(effect, 'capilaridad', actor);
         state.message += ' ¡Mojado!';
       }
-    }
-    // The Joker's blow falls on every other foe standing as well, each strike measured on its own.
-    if (cast?.all) {
-      const others = state.foes.filter(foe => foe !== target && foe.hp > 0 && !foe.shell);
-      const splash = others.map(foe => {
-        let amount = 0;
-        for (let i = 0; i < cast.times && foe.hp > 0; i++) {
-          amount += hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability, cast.power) * weakScale(state, foe), 'physical'));
-          if (foe.layers && !--foe.layers) bare(foe);
-        }
-        return { target: foe.id, amount };
-      });
-      if (splash.length) { effect.splash = splash; state.message += ' ¡Joker! Cae sobre todos.'; }
     }
   }
   // In Diverge, El que no converge comes out of the blow that converged it soaked: the next bolt is Conducción.
@@ -2198,8 +2200,6 @@ export function actDual(state: BattleState, id: DualId, targetId?: string): Batt
   took(state, a); took(state, b);
   (state.spent ??= []).push(b.id);
   (state.usedDuals ??= []).push(d.id);
-  // A dual calls the Joker: the next die dealt to either of them (the hand is brought in step first, so it is a die still to come).
-  for (const c of [a, b]) if (kitIn(state, c).includes(DICED)) { diceOf(state, c); c.jokerDue = true; }
   if (state.queued) delete state.queued[b.id];
   const parts = halves.map(h => SKILLS.find(s => s.id === h)!);
   const striker = [a, b][Math.max(0, parts.findIndex(p => p.kind === d.kind))];

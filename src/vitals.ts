@@ -6,6 +6,8 @@
  */
 import { SPEAKERS } from './dialogue';
 import type { ProfileId } from './stats';
+import type { DieFace } from './battle';
+import { faceSvg } from './die-faces';
 
 const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 /** A scarf over a portrait (a 48×48 box with the neck at its middle), in the ánima's colour. */
@@ -42,7 +44,7 @@ export function vitalsPlate(v: Vitals) {
  * lights or empties the maná circles; a circle that changes plays its spend or charge. With `dice`
  * (Dadaísta's hand) each point held is a die showing its face.
  */
-export function setVitals(plate: Element, hp: number, maxHp: number, sec: number, maxSec: number, dice?: readonly number[]) {
+export function setVitals(plate: Element, hp: number, maxHp: number, sec: number, maxSec: number, dice?: readonly DieFace[]) {
   const ratio = maxHp ? hp / maxHp : 0;
   plate.querySelectorAll<SVGPathElement>('[data-bar="hp"]').forEach(path => { path.style.strokeDasharray = `${(ratio * 100).toFixed(1)} 1000`; });
   const label = plate.querySelector('[data-value="hp"]');
@@ -61,7 +63,8 @@ export function setVitals(plate: Element, hp: number, maxHp: number, sec: number
     const next = i < sec ? 'full' : 'spent', el = pip as HTMLElement;
     // Dadaísta's maná is dice: each point it holds shows its face (`diceOf`), and a face that changes turns over.
     const face = dice && i < sec && dice[i] ? String(dice[i]) : undefined, turned = !!face && !!el.dataset.face && el.dataset.face !== face;
-    if (face) el.dataset.face = face; else delete el.dataset.face;
+    if (face && el.dataset.face !== face) el.innerHTML = faceSvg(face as DieFace);
+    if (face) el.dataset.face = face; else if (el.dataset.face) { delete el.dataset.face; el.innerHTML = ''; }
     if (el.dataset.pip === next && !turned) return;
     el.dataset.pip = next;
     el.classList.remove('is-changing'); void el.offsetWidth; el.classList.add('is-changing');

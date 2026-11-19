@@ -1,6 +1,6 @@
 # Dadaísta
 
-Status: designing (round 4, 2026-11-15) · Comes from: the university friends' mission,
+Status: designing (round 5, 2026-11-19: faces with icons, built) · Comes from: the university friends' mission,
 [`docs/quests/universidad.md`](../../quests/universidad.md)
 
 **Decided** (Aitor, 2026-11-15): this direction, the working name *Dadaísta*, that it deals
@@ -181,6 +181,46 @@ Definitiva; each node needs the one before it):
 **Atacar** (to decide): plain, as with every ánima, or itself a throw with a small spread (the
 *Mano caliente* row). Proposal: plain. The free action stays the sure one.
 
+## Round 5 · Faces with icons instead of numbers (decided and built, 2026-11-19)
+
+**Decided by Aitor (2026-11-19): A, and Doble o nada is gone.** The dice show **small icons that
+do things** instead of 1–6. La mano stays (dice as maná, faces in view, the player picks the die);
+what changes is what a face *means*. Everything above that reads faces as numbers (high and low,
+even and odd, three in a row, Racha's six, Collage and Cubilete by pips, Dado cargado) is from
+before this round and is to be redone in icons.
+
+| | How | For | Against |
+| --- | --- | --- | --- |
+| **A · Each face is an action** | Spending a die does what its face shows, on the target chosen. Six faces, each tied to a system the game already has | The most to decide (which die, on whom, now or later); combines with the other ánimas; levels can carve faces | Damage is no longer a sliding number: a balance pass, and the bet needs a new rule |
+| **B · Numbers with marks** | Faces keep 1–6 for strength; the 1 and the 6 also carry an icon (an extra effect) | Smallest change; today's balance holds | Barely changes how it plays |
+| **C · Icons that make phrases** | Icons combine in the hand (two of a kind, an eye and a fist…) into stronger moves | The most dadaist (a cut-up poem) | Rules the player must memorise; against readable systems |
+
+Recommended: **A**. A first face set, drawn as old printer's ornaments in ink on ivory (not
+cartoon icons), the red one being the die's red face:
+
+| Face | Icon | What it does when spent |
+| --- | --- | --- |
+| ×2 | **Manicule** ☞ | A strong physical blow to a foe |
+| ×1 | **Scissors** | A light physical blow and Sangrado (Papagato's wound, cashed by Zarpa en la llaga) |
+| ×1 | **Eye** | Leaves Punto débil on a foe |
+| ×1 | **Bracket** | Protects an ally (Protegido) |
+| ×1 | **Blank** (red) | Repeats the last face this wearer spent in the fight; with none yet, it can do nothing |
+
+- **Levels** get content for free: each level **carves a face** (level 2: the blank becomes a
+  wildcard that copies without spending its twin; level 3: a manicule becomes a double one).
+- **Agitar, Dobles** keep working (a pair is two equal icons). **Racha** becomes "a manicule
+  spent comes back rolled"; the definitiva's "three in a row" becomes **three different faces**.
+- **Doble o nada**: removed (Aitor, 2026-11-19).
+- **The blank** changed while building: it repeats the last face spent rather than copying one
+  held, so it needs no second pick and asks when to spend it (after a good face).
+- **Code**: the hand already holds one face per die (`Combatant.dice`, `diceOf`, `castDie` in
+  `src/battle.ts`); faces become ids instead of numbers, `src/dice.ts` draws ornaments instead of
+  pips, the hand sheet names faces, `bestDie` and the simulator learn them. Nothing new in the
+  status engine: every face uses one that exists.
+
+_Open_: whether the faces differ by level (the carving above), and how Agitar, Racha, Dobles,
+Collage and the definitiva read in icons.
+
 ## Check, so far
 
 - **Against Papagato**: a die spent well is worth about 26 on average for one maná and brings
@@ -230,6 +270,16 @@ Built in a first version (2026-11-15), to be judged in play; screenshots with
   that spends a die turns the sheet into the hand, one row a die (*Seis · Golpea por lo que marca*,
   *Tres · Sale con 3 o más*), the cursor starting on the one that would go by default, and the die
   under the cursor comes forward in the scene; then the target. A hand of one skips the step.
+- **Each face's landing** (`src/dice-fx.ts`, built 2026-11-19): the face draws its own ornament in
+  the air where the die lands, dot by dot as a pen would (`FACE_STROKES` in `src/die-faces.ts`, the
+  die's own drawing), in ivory with the die's red, on the GPU engine. **Mano**: two jabs of the
+  manicule from the side it came from, the blow shaking the floor, and the hand left pointing at
+  the foe over it. **Tijeras**: two cuts crossing in an X, the scissors snapping shut in red where
+  they meet, strips of cut paper falling (`scrap`, `DICE_KINDS`). **Ojo**: the lids open from both
+  corners, the pupil narrows in red to a small cross where the next blow goes. **Corchete**: two
+  brackets close in round the ally in steps and hold, a ring of light at their feet. **En blanco**:
+  its red empty frame is stamped first, and the face it repeats is drawn inside it. The clips are in
+  `just screenshots dadaista --gpu`.
 - **Theme** (`.battle-dock[data-anima="dadaista"]`): strips of ivory paper pasted on ink, none of
   them quite straight, one red rule, a high-contrast serif for names and typewriter for the small
   print.
@@ -248,17 +298,26 @@ Built (2026-11-15), level 1 only:
   Defender and a round's rest deal dice with no code of their own. `act(…, die)` and `commit(…,
   die)` take the die's place in the hand; with none, `bestDie` picks (the highest for a blow, the
   highest sure one for a bet), which is what the simulator and a move left ready use.
-- **Skills**: `golpe-dados` (power 6 + 5 a pip) and `doble-o-nada` (the same blow twice, or none
-  and the die stays with what it rolled), both `abstract: true` until the description shape has a
-  word for a strength that varies. `BattleEffect.die` says which die, what a bet rolled and
-  whether it won; `BattleEffect.dealt` the dice Defender brought.
+- **Faces** (round 5, 2026-11-19): a die is a `DieFace` (`DIE_FACES`: mano, mano, tijeras, ojo,
+  corchete, blanco), rolled with `rollFace`. **Tirar dado** (`tirar-dado`, `abstract: true`) is the
+  only skill in the list: `act` swaps it for the move of the face spent (`FACE_SKILLS`: `cara-mano`
+  38 physical, `cara-tijeras` 16 and Sangrado 2, `cara-ojo` 10 and Punto débil, `cara-corchete`
+  Protegido on an ally until the round ends, a new `guard` kind), and a blank does the
+  wearer's `lastFace`. Targets follow the die (`validTargets(…, die)`, `dieSkill`); `bestDie` picks
+  hand, scissors, eye, brackets, skipping what can do nothing. `BattleEffect.die` says the face, its
+  place and what it did (`as`); `BattleEffect.dealt` the dice Defender brought.
+- **Look**: the ornaments are one SVG path each (`src/die-faces.ts`), printed on the 3D die's
+  texture (`src/dice.ts`) and drawn in the hand, on the plate and in the picker, where each row
+  says what the die does and greys out if it can do nothing now.
 - Tests in `tests/dice.test.mjs`; the scenario `scripts/screenshots/dadaista.json`.
 - **Reached from** the fight tester (wear Dadaísta on Gerard or Aitor). In the story it is worn
   once `anima-universidad` is set (`storyClasses`), with no flag of its own.
 
-Not built: Agitar, levels 2 to 7 and their passives, its line at the jar, its EXP and levels
-(`LEVELLED`), combined skills, a `TARGETS` pair in the simulator, sounds of its own (it borrows
-the clink, the hit and the sink), and the banner when the mission gives it.
+Its EXP and levels are built (`LEVELLED`, 2026-11-19), but levels 2 and 3 teach nothing yet.
+
+Not built: Agitar, what levels 2 to 7 give (the faces carved, the passives), its line at the jar,
+combined skills, a `TARGETS` pair in the simulator, sounds of its own (it borrows the clink, the
+hit and the guard), and the banner when the mission gives it.
 
 ## Open
 

@@ -320,6 +320,7 @@ test('skill descriptions follow the plain shape in AGENTS.md, with the intensity
     const extra = '( [A-ZÁÉÍÓÚ][^.]*\\.)*';
     const shape = skill.kind === 'boost' || skill.kind === 'debuff' ? `^(Sube|Baja) [^.]+ de ${targets[skill.side].slice(2)} durante ${BOOST_ROUNDS} rondas\\.${extra}$`
       : skill.kind === 'heal' ? `^Cura ${intensity(skill.power)} ${targets[skill.side]}\\.${extra}$`
+      : skill.kind === 'guard' ? `^Protege a un aliado hasta el final de la ronda\\.${extra}$`
       : `^Daño ${intensity(skill.power)} ${skill.kind === 'magic' ? 'mágico' : 'físico'}( de tipo [^ ]+)? ${targets[skill.side]}\\.${extra}$`;
     assert.match(skill.description, new RegExp(shape), skill.name);
   }

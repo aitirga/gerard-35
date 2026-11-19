@@ -1,132 +1,103 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, act, diceOf, dieUse, bestDie, diePower, skillsFor, MANA_POINTS, DEFEND_CHARGE, DICED, JOKER, JOKER_CHANCE, JOKER_AFTER_DUAL, actDual, improve, SKILLS, CLASS_STATS } from '../src/battle.ts';
+import { createBattle, act, diceOf, dieUse, dieSkill, bestDie, validTargets, skillsFor, enemyAct, MANA_POINTS, DEFEND_CHARGE, DICED, DIE_FACES, FACE_SKILLS, SKILLS, CLASS_STATS } from '../src/battle.ts';
 
-// Dadaísta (docs/animas/dadaista/): its maná is dice, and the die spent says how hard the blow is.
+// Dadaísta (docs/animas/dadaista/): its maná is dice, and each face is a move of its own.
 const fight = (seed = 7) => { const s = createBattle(1, 1, false, 'dadaista'); s.seed = seed; s.foes[0].hp = s.foes[0].maxHp = 999; return s; };
 const gerard = s => s.allies[0];
+const throwDie = (hand, at, target = 'dog-0', seed) => { const s = fight(seed); gerard(s).dice = hand; const effect = act(s, 'skill', target, 'tirar-dado', at); return { s, effect }; };
 
-test('Dadaísta holds one die for each point of maná, each with a face from 1 to 6', () => {
+test('Dadaísta holds one die for each point of maná, each showing one of its six faces', () => {
   const s = fight(), hand = diceOf(s, gerard(s));
   assert.equal(DICED, 'dadaista');
   assert.equal(hand.length, MANA_POINTS);
-  assert.ok(hand.every(face => Number.isInteger(face) && face >= 1 && face <= JOKER));
+  assert.ok(hand.every(face => DIE_FACES.includes(face)));
+  assert.deepEqual([...DIE_FACES].sort(), ['blanco', 'corchete', 'mano', 'mano', 'ojo', 'tijeras']);
   assert.equal(diceOf(s, gerard(s)), hand, 'looking again does not roll again');
   assert.deepEqual(diceOf(createBattle(1, 1, false, 'matemagico'), gerard(createBattle(1, 1, false, 'matemagico'))), [], 'nobody else has dice');
-  assert.deepEqual(skillsFor(s, gerard(s)).map(skill => skill.id), ['golpe-dados', 'doble-o-nada']);
+  assert.deepEqual(skillsFor(s, gerard(s)).map(skill => skill.id), ['tirar-dado'], 'one skill: the faces are reached by the die, never listed');
   assert.equal(Object.values(CLASS_STATS.dadaista).reduce((sum, n) => sum + n, 0), 4);
 });
 
-test('Golpe de dados spends the die chosen, and a higher face lands harder', () => {
-  const blow = face => { const s = fight(); gerard(s).dice = [face, 1, 1]; const effect = act(s, 'skill', 'dog-0', 'golpe-dados', 0); return { s, effect }; };
-  const low = blow(1), high = blow(6);
-  assert.deepEqual(low.effect.die, { face: 1, at: 0 });
-  assert.deepEqual(high.effect.die, { face: 6, at: 0 });
-  assert.ok(high.effect.amount > low.effect.amount * 2, `${high.effect.amount} against ${low.effect.amount}`);
-  assert.deepEqual(gerard(high.s).dice, [1, 1], 'the die spent is gone, the others keep their faces');
-  assert.equal(gerard(high.s).secondary, MANA_POINTS - 1);
-  // The second die of the hand, not the first.
-  const s = fight(); gerard(s).dice = [2, 5, 3];
-  assert.deepEqual(act(s, 'skill', 'dog-0', 'golpe-dados', 1).die, { face: 5, at: 1 });
-  assert.deepEqual(gerard(s).dice, [2, 3]);
-  assert.equal(diePower('golpe-dados', 6), 36); assert.equal(diePower('golpe-dados', 1), 11);
+test('Tirar dado spends the die chosen and does what its face says', () => {
+  const hand = throwDie(['mano', 'tijeras', 'ojo'], 0);
+  assert.deepEqual(hand.effect.die, { face: 'mano', at: 0, as: 'mano' });
+  assert.equal(hand.effect.skill, 'cara-mano');
+  assert.ok(hand.effect.amount > 30, `a hand lands hard: ${hand.effect.amount}`);
+  assert.deepEqual(gerard(hand.s).dice, ['tijeras', 'ojo'], 'the die spent is gone, the others keep their faces');
+  assert.equal(gerard(hand.s).secondary, MANA_POINTS - 1);
+  // Scissors: a lighter blow that leaves Sangrado.
+  const cut = throwDie(['mano', 'tijeras', 'ojo'], 1);
+  assert.equal(cut.effect.skill, 'cara-tijeras');
+  assert.equal(cut.effect.status.id, 'sangrado');
+  assert.ok(cut.effect.amount < hand.effect.amount);
+  assert.deepEqual(gerard(cut.s).dice, ['mano', 'ojo']);
 });
 
-test('with no die chosen a blow takes the highest, and a bet the highest of the sure ones', () => {
-  assert.equal(dieUse('golpe-dados'), 'face'); assert.equal(dieUse('doble-o-nada'), 'bet'); assert.equal(dieUse('foc-binari'), undefined);
-  assert.equal(bestDie('golpe-dados', [2, 6, 4]), 1);
-  assert.equal(bestDie('doble-o-nada', [6, 3, 2]), 1);
-  assert.equal(bestDie('doble-o-nada', [6, 5, 4]), 2);
-  const s = fight(); gerard(s).dice = [2, 6, 4];
-  assert.equal(act(s, 'skill', 'dog-0', 'golpe-dados').die.face, 6);
+test('the eye leaves Punto débil: the next blow on that foe does triple', () => {
+  const { s, effect } = throwDie(['ojo', 'mano', 'mano'], 0);
+  assert.equal(effect.weakSpot, 'set');
+  assert.ok(s.foes[0].weakSpot >= s.round);
+  const plain = throwDie(['mano', 'mano', 'mano'], 0).effect.amount;
+  // The next turn, a hand on the marked foe.
+  s.phase = 'player'; s.active = 0;
+  const marked = act(s, 'skill', 'dog-0', 'tirar-dado', 0);
+  assert.equal(marked.weakSpot, 'spent');
+  assert.ok(marked.amount >= plain * 2.5, `${marked.amount} against ${plain}`);
 });
 
-test('Doble o nada rolls the die again: the same or more lands twice, less is no blow and the die is gone all the same', () => {
-  // A bet on a one cannot be lost.
-  const sure = fight(); gerard(sure).dice = [1, 4, 4];
-  const single = (() => { const s = fight(); gerard(s).dice = [1, 4, 4]; return act(s, 'skill', 'dog-0', 'golpe-dados', 0).amount; })();
-  const won = act(sure, 'skill', 'dog-0', 'doble-o-nada', 0);
-  assert.equal(won.die.won, true); assert.equal(won.die.face, 1); assert.ok(won.die.rolled >= 1);
-  assert.equal(won.amount, single * 2, 'the blow of that face, twice');
-  assert.deepEqual(gerard(sure).dice, [4, 4]); assert.equal(gerard(sure).secondary, MANA_POINTS - 1);
-  // A bet on a six is lost five times in six: find a seed that loses it.
-  let lost;
-  for (let seed = 1; seed < 40 && !lost; seed++) {
-    const s = fight(seed); gerard(s).dice = [6, 2, 2];
-    const effect = act(s, 'skill', 'dog-0', 'doble-o-nada', 0);
-    if (!effect.die.won) lost = { s, effect };
-  }
-  assert.ok(lost, 'some bet on a six is lost');
-  assert.equal(lost.effect.amount, 0);
-  assert.equal(lost.s.foes[0].hp, 999);
-  assert.ok(lost.effect.die.rolled < 6);
-  assert.deepEqual(gerard(lost.s).dice, [2, 2], 'the die bet is spent, as any skill spends its die');
-  assert.equal(gerard(lost.s).secondary, MANA_POINTS - 1, 'and its maná with it');
-  assert.equal(lost.s.phase, 'enemy', 'the turn is gone as well');
+test('the brackets protect an ally until the round ends, and aim at the party, not the foes', () => {
+  const s = fight(); gerard(s).dice = ['corchete', 'mano', 'mano'];
+  assert.equal(dieSkill(s, 0), 'cara-corchete');
+  assert.deepEqual(validTargets(s, 'skill', 'tirar-dado', 0).map(c => c.id), ['gerard']);
+  assert.deepEqual(validTargets(s, 'skill', 'tirar-dado', 1).map(c => c.id), ['dog-0']);
+  assert.equal(act(s, 'skill', 'dog-0', 'tirar-dado', 0), undefined, 'not on a foe');
+  const effect = act(s, 'skill', 'gerard', 'tirar-dado', 0);
+  assert.equal(effect.guarded, true);
+  assert.equal(gerard(s).guarding, true);
+  // A foe's blow on a protected ally takes a third.
+  const before = gerard(s).hp;
+  enemyAct(s, 'dog-0');
+  assert.ok(before - gerard(s).hp <= Math.ceil(s.foes[0].stats.fuerza), 'the blow is cut down');
 });
 
-test('the Joker lands as a six on every foe standing, and its bet cannot be lost', () => {
-  const pack = () => { const s = createBattle(1, 3, false, 'dadaista'); s.seed = 7; s.foes.forEach(f => { f.hp = f.maxHp = 999; }); return s; };
-  assert.ok(pack().foes.length > 1, 'more than one foe to fall on');
-  const six = pack(); gerard(six).dice = [6, 1, 1];
-  const plain = act(six, 'skill', six.foes[0].id, 'golpe-dados', 0);
-  assert.equal(plain.splash, undefined, 'a six is on one foe');
-  const s = pack(); gerard(s).dice = [2, JOKER, 1];
-  assert.equal(bestDie('golpe-dados', gerard(s).dice), 1); assert.equal(bestDie('doble-o-nada', gerard(s).dice), 1);
-  assert.equal(diePower('golpe-dados', JOKER), diePower('golpe-dados', 6));
-  const blow = act(s, 'skill', s.foes[0].id, 'golpe-dados', 1);
-  assert.equal(blow.die.face, JOKER); assert.equal(blow.amount, plain.amount, 'a six on whom it was aimed at');
-  assert.deepEqual(blow.splash.map(h => h.target), s.foes.slice(1).map(f => f.id), 'and on everyone else');
-  for (const hit of blow.splash) assert.ok(hit.amount > 0);
-  for (const foe of s.foes) assert.ok(foe.hp < 999);
-  assert.deepEqual(gerard(s).dice, [2, 1], 'the Joker is spent');
-  // Bet: never rolled, always won, twice on everyone.
-  for (let seed = 1; seed < 20; seed++) {
-    const b = pack(); b.seed = seed; gerard(b).dice = [JOKER, 3, 3];
-    const bet = act(b, 'skill', b.foes[0].id, 'doble-o-nada', 0);
-    assert.equal(bet.die.won, true); assert.equal(bet.amount, plain.amount * 2);
-    assert.ok(bet.splash.every(h => h.amount > plain.amount));
-  }
+test('a blank repeats the last face spent; with none spent yet it can do nothing', () => {
+  const s = fight(); gerard(s).dice = ['blanco', 'tijeras', 'mano'];
+  assert.equal(dieSkill(s, 0), undefined);
+  assert.deepEqual(validTargets(s, 'skill', 'tirar-dado', 0), []);
+  assert.equal(act(s, 'skill', 'dog-0', 'tirar-dado', 0), undefined, 'a blank with nothing to repeat stays in the hand');
+  act(s, 'skill', 'dog-0', 'tirar-dado', 1);
+  assert.equal(gerard(s).lastFace, 'tijeras');
+  s.phase = 'player'; s.active = 0;
+  assert.equal(dieSkill(s, 0), 'cara-tijeras');
+  const again = act(s, 'skill', 'dog-0', 'tirar-dado', 0);
+  assert.deepEqual(again.die, { face: 'blanco', at: 0, as: 'tijeras' });
+  assert.equal(again.status.id, 'sangrado');
 });
 
-test('a Joker is dealt rarely, and a dual attack calls it: the next die dealt to whoever took part is far likelier one', () => {
-  assert.equal(JOKER_CHANCE, .02); assert.equal(JOKER_AFTER_DUAL, .2);
-  let jokers = 0, dealt = 0;
-  for (let seed = 1; seed <= 1500; seed++) {
-    const s = fight(seed * 7919);
-    for (const face of diceOf(s, gerard(s))) { assert.ok(face === JOKER || (face >= 1 && face <= 6)); dealt++; if (face === JOKER) jokers++; }
-  }
-  assert.ok(jokers > 0 && jokers / dealt < .05, `${jokers} of ${dealt}`);
-  // Gerard and Aitor do Zarpazos de fuego; Gerard's Dadaísta rests, and its next die is the one called.
-  let called = 0, after = 0, runs = 600;
-  for (let seed = 1; seed <= runs; seed++) {
-    const s = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico', kit: ['matemagico', 'dadaista'] }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }], 1, false, undefined, ['matemagico', 'papagato', 'dadaista']);
-    s.seed = seed * 104729; s.levels = { papagato: 2, matemagico: 2 }; improve(s, { skills: ['angulo', 'analisis'] }); s.foes[0].hp = s.foes[0].maxHp = 9999;
-    const g = s.allies.find(a => a.id === 'gerard');
-    g.mana = { ...g.mana, dadaista: 1 }; g.dice = [3];
-    assert.ok(actDual(s, 'zarpazos-de-fuego', s.foes[0].id), 'the dual happens');
-    assert.equal(g.jokerDue, true); assert.deepEqual(g.dice, [3], 'the dice held are not touched');
-    g.mana.dadaista = 3;
-    const hand = diceOf(s, g);
-    assert.equal(hand.length, 3); assert.equal(g.jokerDue, undefined, 'only the next die');
-    if (hand[1] === JOKER) called++;
-    if (hand[2] === JOKER) after++;
-  }
-  assert.ok(called / runs > .14 && called / runs < .27, `${called} of ${runs} right after a dual`);
-  assert.ok(after / runs < .06, `${after} of ${runs} on the die after that one`);
+test('with no die chosen it takes a hand first, then scissors, then the eye, and skips what can do nothing', () => {
+  assert.equal(dieUse('tirar-dado'), true); assert.equal(dieUse('foc-binari'), false);
+  const pick = hand => { const s = fight(); gerard(s).dice = hand; gerard(s).secondary = hand.length; return bestDie(s); };
+  assert.equal(pick(['ojo', 'tijeras', 'mano']), 2);
+  assert.equal(pick(['corchete', 'ojo', 'tijeras']), 2);
+  assert.equal(pick(['blanco', 'corchete']), 1, 'a blank with nothing to repeat is never taken');
+  const s = fight(); gerard(s).dice = ['ojo', 'mano', 'tijeras'];
+  assert.equal(act(s, 'skill', 'dog-0', 'tirar-dado').die.face, 'mano');
 });
 
 test('Defender deals Dadaísta new dice, and a hand with none left cannot throw', () => {
-  const s = fight(); gerard(s).dice = [3]; gerard(s).secondary = 1;
+  const s = fight(); gerard(s).dice = ['ojo']; gerard(s).secondary = 1;
   const effect = act(s, 'defend');
   assert.equal(effect.charged, DEFEND_CHARGE);
   assert.equal(effect.dealt.length, DEFEND_CHARGE);
-  assert.deepEqual(gerard(s).dice, [3, ...effect.dealt], 'the die held keeps its face');
+  assert.deepEqual(gerard(s).dice, ['ojo', ...effect.dealt], 'the die held keeps its face');
   const empty = fight(); gerard(empty).dice = []; gerard(empty).secondary = 0;
-  assert.equal(act(empty, 'skill', 'dog-0', 'golpe-dados'), undefined);
+  assert.equal(act(empty, 'skill', 'dog-0', 'tirar-dado'), undefined);
   assert.equal(empty.phase, 'player');
 });
 
-test('both of Dadaísta\'s skills are marked abstract: what they land depends on the die', () => {
-  for (const id of ['golpe-dados', 'doble-o-nada']) assert.equal(SKILLS.find(skill => skill.id === id).abstract, true);
+test('Tirar dado is abstract (it does what its die says); every face has a move with a plain description', () => {
+  assert.equal(SKILLS.find(skill => skill.id === 'tirar-dado').abstract, true);
+  for (const id of Object.values(FACE_SKILLS)) { const skill = SKILLS.find(s => s.id === id); assert.ok(skill && !skill.abstract && 'face' in skill, id); }
+  assert.equal(SKILLS.some(skill => skill.id === 'doble-o-nada'), false, 'Doble o nada is gone');
 });

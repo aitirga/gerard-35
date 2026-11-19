@@ -37,10 +37,14 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   descarga: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'zap' }, { id: 'crack', volume: .6 }, { id: 'hit', volume: .4, delay: .03 }] },
   // Bip's signal takes; the foe's own blow lands from the scene.
   'control-remoto': { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }, { id: 'zap', volume: .4, delay: .1 }] },
-  // Dadaísta's are dice thrown: they click as they leave the hand and land with their weight. A bet
-  // clicks again as it is rolled; lost, it only sinks (`impactSounds`).
-  'golpe-dados': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .5 }] },
-  'doble-o-nada': { start: [{ id: 'clink', volume: .6 }, { id: 'clink', volume: .8, delay: .34 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .6 }] },
+  // Dadaísta's faces are dice thrown: they click as they leave the hand and land with their weight
+  // (the brackets more softly: they land on a friend).
+  // Tirar dado itself never lands: its die's face does (`effect.skill` is the face's move).
+  'tirar-dado': { start: [], impact: [] },
+  'cara-mano': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .6 }] },
+  'cara-tijeras': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .4 }] },
+  'cara-ojo': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit', volume: .7 }] },
+  'cara-corchete': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'guard' }] },
 };
 const ELEMENT_SOUNDS: Record<Element, Cue> = { agua: { id: 'splash', volume: .5 }, fuego: { id: 'fire-hit', volume: .45 }, electrico: { id: 'zap', volume: .6 } };
 const REACTION_SOUNDS: Record<ElementReaction, Cue[]> = { humo: [{ id: 'fizzle', delay: .04 }], cauterizado: [{ id: 'burn', delay: .04 }], tormenta: [{ id: 'zap', delay: .05 }, { id: 'zap', delay: .13 }], vapor: [{ id: 'fizzle', delay: .04 }], conduccion: [{ id: 'zap', delay: .05 }, { id: 'zap', volume: .7, delay: .14 }] };
@@ -130,8 +134,6 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   if (effect.swallowed) return [{ id: 'swallowed' }];
   // Fran's salon: a blow the light ate fizzles out (docs/quests/luca.md).
   if (effect.annulled) return [{ id: 'fizzle' }];
-  // A bet lost (Doble o nada): no blow, the die sinks back into the hand.
-  if (effect.die?.won === false) return [{ id: 'sink', volume: .7 }];
   // A blow that opens a wound (it spent Sangrado) tears as it lands.
   const torn: Cue[] = effect.bled || effect.hits?.some(h => h.bled) ? [{ id: 'bleed', delay: .04 }] : [];
   // Atacar with an element sounds of it, and what it turned on top.

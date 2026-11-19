@@ -2151,21 +2151,12 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 #battle[data-split] .skill-list button { padding: 6px 12px; }
 
 /* ── Dadaísta (docs/animas/dadaista/): its maná is dice. Ink, ivory and one vermilion, cut paper pasted a little askew. ── */
-/* A die's face, at any size: ivory, black pips on a grid of thirds, the one in red. */
+/* A die's face, at any size: ivory, its printer's ornament inked on it (src/die-faces.ts), the blank's frame in red. */
 .die-face, .vitals-pips i[data-face] {
-  --pip: radial-gradient(circle closest-side, #1c1917 0 76%, transparent 84%);
-  --one: radial-gradient(circle closest-side, #d9422b 0 88%, transparent 96%);
-  display: inline-block; background-color: #efe6cf; background-repeat: no-repeat; background-size: 30% 30%; border-radius: 22%;
+  display: inline-grid; place-items: center; background-color: #efe6cf; border-radius: 22%;
   box-shadow: inset 0 0 0 1px #1c191733, inset 0 -2px 3px #7a603c66, 0 1px 3px #000a;
 }
-:is(.die-face, .vitals-pips i)[data-face="1"] { background-image: var(--one); background-size: 46% 46%; background-position: 50% 50%; }
-:is(.die-face, .vitals-pips i)[data-face="2"] { background-image: var(--pip), var(--pip); background-position: 12% 12%, 88% 88%; }
-:is(.die-face, .vitals-pips i)[data-face="3"] { background-image: var(--pip), var(--pip), var(--pip); background-position: 12% 12%, 50% 50%, 88% 88%; }
-:is(.die-face, .vitals-pips i)[data-face="4"] { background-image: var(--pip), var(--pip), var(--pip), var(--pip); background-position: 12% 12%, 88% 12%, 12% 88%, 88% 88%; }
-:is(.die-face, .vitals-pips i)[data-face="5"] { background-image: var(--pip), var(--pip), var(--pip), var(--pip), var(--pip); background-position: 12% 12%, 88% 12%, 50% 50%, 12% 88%, 88% 88%; }
-:is(.die-face, .vitals-pips i)[data-face="6"] { background-image: var(--pip), var(--pip), var(--pip), var(--pip), var(--pip), var(--pip); background-position: 12% 12%, 12% 50%, 12% 88%, 88% 12%, 88% 50%, 88% 88%; }
-/* The Joker: black lacquer, one vermilion star. */
-:is(.die-face, .vitals-pips i)[data-face="7"] { background-color: #1c1917; background-size: 78% 78%; background-position: 50% 50%; box-shadow: inset 0 0 0 1px #efe6cf66, 0 0 6px #d9422b99, 0 1px 3px #000a; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath fill='%23d9422b' d='M0-10 2.4-2.4 10 0 2.4 2.4 0 10-2.4 2.4-10 0-2.4-2.4z'/%3E%3C/svg%3E"); }
+:is(.die-face, .vitals-pips i[data-face]) svg { width: 78%; height: 78%; display: block; }
 /* The hand on the plate: each point of maná a die with its face up; a spent one, the empty place it left. */
 .vitals.has-dice .vitals-pips { gap: 6px; align-items: center; }
 .vitals.has-dice .vitals-pips i { width: 21px; height: 21px; border-radius: 5px; }

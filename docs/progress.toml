@@ -421,6 +421,12 @@ grep = "dadaista"
 in = "src/classes.ts"
 
 [[block.item]]
+title = "Dadaísta: caras con iconos (Mano, Tijeras, Ojo, Corchete, En blanco) en vez de números"
+# docs/animas/dadaista/README.md § Round 5: each face is a move; Doble o nada removed.
+grep = "cara-corchete"
+in = "src/battle.ts"
+
+[[block.item]]
 title = "Dadaísta: Agitar, niveles 2 a 7 y su línea en el bote"
 # Designed, not built (docs/animas/dadaista/README.md § Skills per level): Agitar is a fixed command.
 grep = "agitar"

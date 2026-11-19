@@ -1,13 +1,14 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, JOKER, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, CAMPEON_FORMS, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
 import { SPEAKERS } from './dialogue';
 import { ELEMENT_ICONS } from './ecos';
 import { costPips, flashAnima, setVitals, vitalsPlate } from './vitals';
+import { FACE_LINES, FACE_NAMES, faceSvg } from './die-faces';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
 import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_SLOW, holdAfter } from './battle-motion';
@@ -221,8 +222,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const get = <T extends HTMLElement>(selector: string) => (scope().querySelector<T>(selector) ?? root.querySelector<T>(selector))!;
   /** At most this many skills in sight on the sheet, which never rises above `SHEET_TOP` px from the top of the screen. */
   const SKILL_ROWS = 4, SHEET_TOP = 96;
-  /** What a die of each face is called on Dadaísta's hand. */
-  const DIE_NAMES: Record<number, string> = { 1: 'Uno', 2: 'Dos', 3: 'Tres', 4: 'Cuatro', 5: 'Cinco', 6: 'Seis', [JOKER]: 'Joker' };
   let state: BattleState | undefined;
   let selected: Command | undefined;
   let selectedSkill: SkillId | undefined;
@@ -850,8 +849,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     articles().forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = blocked(article.dataset.command as Command); });
     showElements();
     const aiming = targeting && !locked() && s.phase === 'player';
-    const eligible = aiming ? validTargets(s, selected === 'dual' ? 'attack' : selected!, selectedSkill).map(c => c.id) : [];
-    const cure = aiming && selected === 'skill' && !!selectedSkill && SKILLS.find(x => x.id === selectedSkill)!.side === 'allies';
+    const eligible = aiming ? validTargets(s, selected === 'dual' ? 'attack' : selected!, aimSkill()).map(c => c.id) : [];
+    const cure = aiming && selected === 'skill' && !!aimSkill() && SKILLS.find(x => x.id === aimSkill())!.side === 'allies';
     get('.command-deck').hidden = targeting;
     get('.target-picker').hidden = !targeting;
     if (targeting) pickerText();
@@ -1529,19 +1528,29 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     fitSkills();
   }
   /**
-   * Dadaísta: the sheet turns into its hand, one row a die, to pick which one `skill` spends
-   * (docs/animas/dadaista/). The cursor starts on the one that would go if nobody chose.
+   * Dadaísta: the sheet turns into its hand, one row a die, each showing its face and what it does,
+   * to pick which one Tirar dado spends (docs/animas/dadaista/). A die that can do nothing now (a
+   * blank with nothing to repeat, brackets with nobody left to protect) is greyed out. The cursor
+   * starts on the one that would go if nobody chose.
    */
   function fillDice(skill: SkillId, at?: number) {
     if (!state) return;
-    const actor = state.allies[state.active], hand = diceOf(state, actor), spec = SKILLS.find(s => s.id === skill)!, bet = dieUse(skill) === 'bet';
+    const s = state, actor = s.allies[s.active], hand = diceOf(s, actor), spec = SKILLS.find(x => x.id === skill)!;
     pickingDie = skill;
     const list = get('.skill-list');
-    list.dataset.dice = bet ? 'bet' : 'face';
+    list.dataset.dice = 'face';
     get('.skill-flyout .battle-kicker').textContent = `${spec.name.toUpperCase()} · ELIGE UN DADO`;
-    list.innerHTML = hand.map((face, i) => `<button type="button" data-die="${i}" data-class="${spec.class}" style="--i:${i}" aria-label="Dado ${i + 1}: ${face === JOKER ? 'el Joker' : `un ${face}`}"><span class="skill-key">${i + 1}</span><i class="die-face" data-face="${face}" aria-hidden="true"></i><span class="skill-name"><strong>${DIE_NAMES[face]}</strong><small>${face === JOKER ? bet ? 'Sale seguro. Golpea a todos' : 'Golpea como un seis, a todos' : bet ? face === 1 ? 'Sale seguro' : `Sale con ${face} o más` : 'Golpea por lo que marca'}</small></span></button>`).join('');
+    list.innerHTML = hand.map((face, i) => {
+      const move = dieSkill(s, i), usable = !!move && validTargets(s, 'skill', skill, i).length > 0, as = faceAs(actor, face);
+      const line = face === 'blanco' ? as ? `Repite ${FACE_NAMES[as]}: ${FACE_LINES[as]}` : 'Nada que repetir todavía' : FACE_LINES[face];
+      return `<button type="button" data-die="${i}" data-class="${spec.class}" ${usable ? '' : 'aria-disabled="true"'} style="--i:${i}" aria-label="Dado ${i + 1}: ${FACE_NAMES[face]}. ${line}"><span class="skill-key">${i + 1}</span><i class="die-face" data-face="${face}" aria-hidden="true">${faceSvg(face)}</i><span class="skill-name"><strong>${FACE_NAMES[face]}</strong><small>${line}</small></span></button>`;
+    }).join('');
     fitSkills();
-    focusOn(list.querySelector<HTMLButtonElement>(`[data-die="${at ?? bestDie(skill, hand)}"]`) ?? skillButtons()[0]);
+    focusOn(list.querySelector<HTMLButtonElement>(`[data-die="${at ?? bestDie(s)}"]`) ?? skillButtons()[0]);
+  }
+  /** The move being aimed: for Tirar dado once its die is picked, that die's face (`dieSkill`). */
+  function aimSkill(): SkillId | undefined {
+    return state && selectedSkill && dieUse(selectedSkill) && selectedDie !== undefined ? dieSkill(state, selectedDie) ?? selectedSkill : selectedSkill;
   }
   /**
    * The sheet shows a few skills at a time (`SKILL_ROWS`, fewer if the screen has no room above the
@@ -1662,17 +1671,18 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   /** The target picker's title and line for what the menu being worked on is aiming. */
   function pickerText() {
-    const s = state!, skill = selectedSkill;
+    const s = state!, skill = aimSkill();
     const cure = selected === 'skill' && !!skill && SKILLS.find(x => x.id === skill)!.side === 'allies';
+    const guard = cure && SKILLS.find(x => x.id === skill)!.kind === 'guard';
     get('.target-picker h2').textContent = selected === 'skill' && skill ? SKILLS.find(x => x.id === skill)!.name : selected === 'dual' ? DUALS.find(d => d.id === selectedDual)?.name ?? 'Dual' : attackName(s.allies[s.active]);
     const standing = s.foes.filter(f => f.hp > 0);
     const mine = duo?.aims[ctx], theirs = duo?.aims[other(ctx)];
     get('.target-picker p').textContent = duo ? mine && theirs && mine !== theirs ? 'Elegid el mismo objetivo.' : mine ? 'Esperando al otro…' : 'Los dos, al mismo objetivo.'
-      : cure ? 'Elige a quién curar.' : FEAR_KICKERS[s.encounter as keyof typeof FEAR_KICKERS] ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-minion' ? 'Elige al esbirro.' : s.encounter === 'palace-guards' || s.encounter === 'night-guard' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
+      : guard ? 'Elige a quién proteger.' : cure ? 'Elige a quién curar.' : FEAR_KICKERS[s.encounter as keyof typeof FEAR_KICKERS] ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-minion' ? 'Elige al esbirro.' : s.encounter === 'palace-guards' || s.encounter === 'night-guard' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
   }
   function beginTargeting(skill?: SkillId) {
     if (!state || locked() || !selected) return;
-    if (skill && (state.allies[state.active].secondary < SKILLS.find(s => s.id === skill)!.cost || !validTargets(state, 'skill', skill).length)) return;
+    if (skill && (state.allies[state.active].secondary < SKILLS.find(s => s.id === skill)!.cost || !validTargets(state, 'skill', skill, dieUse(skill) ? selectedDie : undefined).length)) return;
     if (skill && joinDual(skill)) return;
     showDetails(false);
     // Dadaísta: first the die it spends, then whom. A hand of one has nothing to pick.
@@ -1836,12 +1846,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         effect.splash?.forEach(other => pop(other.target, `−${other.amount}`, 'damage', isOnion(state!.foes.find(f => f.id === effect.actor)?.kind) ? '¡Qué peso!' : ''));
         say = target.hp === 0 ? '¡Fuera!' : effect.confused ? 'Confundido' : effect.melted ? '¡Se derrite!' : effect.peeled ? peelText(effect.peeled, target) : target.guarding ? 'Protegido' : label;
         // A flurry's first blow carries the skill's name; the others follow as they land (above).
-        // Dadaísta's bet: lost, the die says so over whoever threw it and nothing lands; won, it lands twice.
-        if (effect.die?.won === false) pop(effect.actor, 'Nada', 'guard', `Sale un ${effect.die.rolled}`);
+        // Corchete: no number, the ally between brackets says so.
+        if (effect.guarded) pop(effect.target, 'Protegido', 'guard', label);
         else if (strikes) hurtPop(effect.target, strikes[0], label, spread(0));
         else if (!effect.controlled) hurtPop(effect.target, effect.amount ?? 0, say);
-        if (effect.die?.face === JOKER) pop(effect.actor, '¡Joker!', 'stat-up', effect.die.won ? 'Doble, a todos' : 'A todos');
-        else if (effect.die?.won) pop(effect.actor, '¡Doble!', 'stat-up', `Sale un ${effect.die.rolled}`);
       }
       // Anna's Sopeta also feeds the whole table: each friend's PV back, a beat after her blow.
       effect.soothed?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `+${h.amount}`, 'heal', i ? '' : 'Sopeta'); }, 420 + i * 70));
@@ -2045,7 +2053,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (target.matches('.anima-key')) { changeAnima(Number(target.dataset.step) as -1 | 1); return; }
     if (target.dataset.anima) { changeAnima(target.dataset.anima as ClassId); return; }
     if (target.dataset.skill) { beginTargeting(target.dataset.skill as SkillId); return; }
-    if (target.dataset.die !== undefined && pickingDie) { selectedDie = Number(target.dataset.die); beginTargeting(pickingDie); return; }
+    if (target.dataset.die !== undefined && pickingDie) {
+      // A die that can do nothing now stays in the hand.
+      if (target.getAttribute('aria-disabled') === 'true') { callbacks.sound('ui-back'); return; }
+      selectedDie = Number(target.dataset.die); beginTargeting(pickingDie); return;
+    }
     if (target.dataset.dual) { chooseDual(target.dataset.dual as DualId); return; }
     if (target.dataset.element !== undefined) {
       if (state && chooseElement(state, state.allies[state.active], (target.dataset.element || undefined) as AttackElement | undefined)) { elementLearned = true; callbacks.sound('ui-move'); render(); }

@@ -1,8 +1,9 @@
 import * as pc from 'playcanvas';
-import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit } from './battle';
+import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
-import { DIE, createDie, dressDie, faceUp } from './dice';
+import { DIE, createDie, faceUp } from './dice';
+import { createDiceFx } from './dice-fx';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { MODELO_SIZES, PHOSPHOR } from './modelo-foes';
 import { LUCA_SIZES, styleChaplain, lightShirt } from './luca-foes';
@@ -43,12 +44,10 @@ const CAT_RUN = 7, CAT_LANDS = 14;
 /** How long after the first the next of a flurry's little claws lands (Zarpazos). */
 const CLAW_SECONDS = .12;
 /**
- * Dadaísta's throw, in fight seconds (docs/animas/dadaista/). A blow by its face: the die leaves the
- * hand at `launch` and lands at `contact`. A bet first goes up and comes down showing what it rolled
- * (`shown`), held to be read until `read`: lost, it says so at `lost` and goes back to the hand; won,
- * it is thrown then (`flight` later it lands) and comes down on the target again `gap` after.
+ * Dadaísta's throw, in fight seconds (docs/animas/dadaista/): the die leaves the hand at `launch`,
+ * lands on whom its face reaches at `contact`, and bounces off to the floor over `tail`.
  */
-const DICE = { launch: .2, contact: .56, tail: .6, toss: .14, shown: .74, lost: .8, read: 1, flight: .32, gap: .34, back: .34 } as const;
+const DICE = { launch: .2, contact: .56, tail: .6 } as const;
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
@@ -262,7 +261,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   /** The effect whose streams have already left the hand. */
   let cast: BattleEffect | undefined;
   /** Dadaísta's dice beside whoever wears it: the hand in view, and the one in the air. */
-  interface HandDie { entity: pc.Entity; face: number; at: pc.Vec3; turn: pc.Quat; size: number; age: number; tumble: pc.Vec3; /** Its own idle sway: where in it this die starts, and how fast it goes (× the common pace). */ sway: number; pace: number }
+  interface HandDie { entity: pc.Entity; face: DieFace; at: pc.Vec3; turn: pc.Quat; size: number; age: number; tumble: pc.Vec3 }
   const dice = new Map<string, { hand: HandDie[]; shown: number; thrown?: { die: HandDie; action: BattleEffect; from: pc.Vec3 }; seen?: BattleEffect }>();
   /** The die the fight screen's cursor is on while one is being picked: it comes forward. */
   let aimedDie: { unit: string; index: number } | undefined;
@@ -281,6 +280,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let pulse: ((fringe: number, bloom: number) => void) | undefined;
   /** What duals and the tower's fears draw (src/dual-fx.ts), on the fight's clock. */
   const dualFx = createDualFx(effects);
+  /** What Dadaísta's faces draw where their die lands (src/dice-fx.ts). */
+  const diceFx = createDiceFx(effects, dualFx);
   const mathCast = createMathCast(app, battleRoot, effects);
   /** The thrown Atacar already started (src/math-cast.ts). */
   let spelled: BattleEffect | undefined;
@@ -527,9 +528,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     solarPlans.set(e, plan);
     return plan;
   }
-  /** When Dadaísta's die lands (a bet lost: when it says so), and when its throw is over. */
-  const diceContact = (e: BattleEffect) => e.die?.rolled === undefined ? DICE.contact : e.die.won ? DICE.read + DICE.flight : DICE.lost;
-  const diceEnd = (e: BattleEffect) => e.die?.rolled === undefined ? DICE.contact + DICE.tail : e.die.won ? DICE.read + DICE.flight + DICE.gap + DICE.tail : DICE.read + DICE.back + .1;
+  /** When Dadaísta's die lands, and when its throw is over. */
+  const diceContact = (_e: BattleEffect) => DICE.contact;
+  const diceEnd = (_e: BattleEffect) => DICE.contact + DICE.tail;
   /** When Bip's skill lands, in fight seconds from its start (CONTACT_SECONDS for the rest of its moves). */
   function bipContact(e: BattleEffect) {
     if (e.release) return solarPlan(e).contact;
@@ -1122,8 +1123,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
-    // Dadaísta's bet, lost: nothing lands (the die drops and is gone, `updateDice`).
-    if (action.die?.won === false) return;
     // Vertitrón's shout, its charge, and news of its eye breaking draw their own picture (`worldFx`).
     if (actor.robot && !target) return;
     // Rayo solar charging up: Gerard's fire streams into Bip.
@@ -1135,6 +1134,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (action.skill === 'cardioide') { pulse?.(0, .3); hit(target, green, 1); effects.cardioid(target.model); return; }
     // Yuki se esconde: a soft white shimmer over everyone she shelters.
     if (action.skill === 'escondite') { pulse?.(0, .25); for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, white, .5); effects.emit('poof', new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + .3, f.base.z), 5, .3); } return; }
+    // Dadaísta: the face of the die draws itself where it lands (src/dice-fx.ts).
+    if (action.die) return dieBurst(action, actor, target);
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
     const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
     const felt: Blow = { share: unit ? (action.amount ?? 0) / unit.maxHp : 0, skill: !!action.skill, guarded, ko: target.hp <= 0, swallowed: action.swallowed, beat: state?.phase === 'beat' };
@@ -1174,6 +1175,26 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (action.element) statusFx.touch(action.element, action.target!);
     // A blow that opened a wound (it spent Sangrado) flares brighter; never red, nothing here reads as blood.
     hit(target, action.element ? ELEMENT_FLASH[action.element] : action.spell ? gold : claw ? clawFlash : white, action.bled ? 1.4 : guarded ? .4 : claw ? .7 : 1);
+    return land(felt, dx / d, 0, dz / d);
+  }
+  /**
+   * Dadaísta's die landing: its face drawn in the air in front of whom it lands on (src/dice-fx.ts),
+   * as big as they stand, the hand pointing away from the side it came from. Corchete only shelters
+   * (a soft ivory glow, no blow); the rest land as blows, a hand the hardest.
+   */
+  function dieBurst(action: BattleEffect, actor: Fighter, target: Fighter) {
+    const { right, up, facing } = screenAxes(viewDir()), body = extent(target), die = action.die!;
+    const mid = target.part ? chestOf(target) : new pc.Vec3(target.base.x, groundHeight(target.base.x, target.base.z) + body.height * .55, target.base.z);
+    const front = body.radius * .6 + .2, centre = { x: mid.x + facing.x * front, y: mid.y + facing.y * front, z: mid.z + facing.z * front };
+    const side = Math.sign((actor.base.x - target.base.x) * right.x + (actor.base.z - target.base.z) * right.z) || -1;
+    const delay = diceFx.land({ centre, feet: floorUnder(target), right, up, size: Math.min(1.6, Math.max(1, body.height * .7)), side, radius: body.radius }, die.face, die.as);
+    if (die.as === 'corchete') { pulse?.(0, .25); hit(target, white, .7); return; }
+    const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
+    const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
+    const felt: Blow = { share: unit ? (action.amount ?? 0) / unit.maxHp : 0, skill: true, guarded, ko: target.hp <= 0, swallowed: action.swallowed, beat: state?.phase === 'beat' };
+    const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
+    // A blank's red frame comes first: the blow's flash waits for the face it repeats.
+    dualFx.after(delay, () => hit(target, white, die.as === 'mano' ? .9 : die.as === 'tijeras' ? .8 : .55));
     return land(felt, dx / d, 0, dz / d);
   }
   /** Matemágico's skills of the elements (docs/animas/README.md § The jar): thrown from his circle, like Foc Binari. */
@@ -1605,11 +1626,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   /**
    * Dadaísta's dice (src/dice.ts): its maná, floating in a column beside whoever wears it, on the side
-   * away from the others, each with its face turned to the camera, never quite still: each drifts,
-   * bobs and turns a little on a pace of its own. New ones (Defender, a round's rest, the fight
-   * starting) drop in tumbling. The one a skill spends leaves the hand, flies at the target tumbling,
-   * lands on it (twice, a bet won) and bounces off; a bet goes up first and comes down showing what
-   * it rolled, and one lost drops to the floor and is gone. The Joker is the black one with the star.
+   * away from the others, each with its face turned to the camera. New ones (Defender, a round's
+   * rest, the fight starting) drop in tumbling. The one Tirar dado spends leaves the hand, flies at
+   * whom its face reaches tumbling (a foe; an ally, Corchete), lands on them and bounces off.
    */
   function updateDice(dt: number, t: number, animate: boolean, target?: Fighter) {
     if (!state || (!dice.size && !state.allies.some(a => a.classId === DICED))) return;
@@ -1618,12 +1637,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const view = viewDir(), facing = new pc.Vec3(view.x * .82, view.y * .82 + .18, view.z * .82).normalize();
     const tiltAxis = new pc.Vec3().cross(pc.Vec3.UP, facing).normalize(), tilt = new pc.Quat().setFromAxisAngle(tiltAxis, Math.acos(clamp01(facing.y)) * 180 / Math.PI);
     const party = [...fighters].filter(([, f]) => f.party);
-    const spin = new pc.Quat(), want = new pc.Quat(), rock = new pc.Quat(), place = new pc.Vec3(), now = performance.now() / 1000;
-    /** A die at rest: its face to the camera, turned `yaw` degrees about it and leaning `lean` to one side. */
-    const settle = (face: number, yaw: number, lean = 0) => {
-      want.mul2(tilt, spin.setFromAxisAngle(pc.Vec3.UP, yaw).mul(faceUp(face)));
-      return lean ? want.mul2(rock.setFromAxisAngle(facing, lean), want) : want;
-    };
+    const spin = new pc.Quat(), want = new pc.Quat(), place = new pc.Vec3();
+    /** A die at rest: its face to the camera, turned `yaw` degrees about it. */
+    const settle = (face: DieFace, yaw: number) => want.mul2(tilt, spin.setFromAxisAngle(pc.Vec3.UP, yaw).mul(faceUp(face)));
     for (const [id, f] of party) {
       const unit = state.allies.find(a => a.id === id);
       const wearing = !!unit && f.hp > 0 && unit.classId === DICED && entryTime >= ENTRY_SECONDS * .6;
@@ -1632,11 +1648,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (!d) { d = { hand: [], shown: 0 }; dice.set(id, d); }
       const others = party.filter(([other, o]) => other !== id && o.hp > 0).reduce((sum, [, o]) => sum + (f.base.x - o.base.x) * across.x + (f.base.z - o.base.z) * across.z, 0);
       const out = Math.sign(others) || 1, floor = groundHeight(f.base.x, f.base.z), size = DIE.size * f.scale.y;
-      const make = (face: number): HandDie => {
+      const make = (face: DieFace): HandDie => {
         const entity = createDie(app); battleRoot.addChild(entity);
-        return { entity, face, at: new pc.Vec3(f.base.x, floor + 2.6 * f.scale.y, f.base.z), turn: new pc.Quat(), size: 0, age: 0, tumble: new pc.Vec3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize(), sway: Math.random() * 60, pace: .75 + Math.random() * .5 };
+        return { entity, face, at: new pc.Vec3(f.base.x, floor + 2.6 * f.scale.y, f.base.z), turn: new pc.Quat(), size: 0, age: 0, tumble: new pc.Vec3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize() };
       };
-      // The die this action spends leaves the hand as the action starts, a bet's too, won or lost.
+      // The die this action spends leaves the hand as the action starts.
       const acting = effect?.actor === id && effect.die ? effect : undefined;
       if (acting && d.seen !== acting) {
         d.seen = acting;
@@ -1652,15 +1668,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       for (const had = d.hand.length; d.hand.length < hand.length;) { const die = make(hand[d.hand.length]); die.age = animate ? -.09 * (d.hand.length - had) : 1; d.hand.push(die); }
       d.shown = animate ? Math.max(0, Math.min(1, d.shown + (wearing ? dt : -dt) / .25)) : wearing ? 1 : 0;
       d.hand.forEach((die, i) => {
-        die.face = hand[i]; dressDie(app, die.entity, die.face);
+        die.face = hand[i];
         die.age += dt;
         // A column by the shoulder, the first die lowest, each a little off the line. Idle, each one
         // wanders on its own: two slow waves that never line up, so it is a sway and not a loop.
         const aimed = aimedDie?.unit === id && aimedDie.index === i && !effect ? 1 : 0;
-        const s = animate ? die.sway + now * die.pace : 0, calm = animate ? 1 - aimed * .7 : 0;
-        const bob = (Math.sin(s * 1.9) * .03 + Math.sin(s * 3.1 + 1.3) * .012) * calm, drift = (Math.sin(s * 1.3 + 2.1) * .024 + Math.sin(s * 2.3) * .01) * calm, near = Math.sin(s * 1.1 + .7) * .018 * calm;
-        const reach = (.56 + (i % 2) * .09 + aimed * .16) * f.scale.x + drift * out;
-        place.set(f.base.x + across.x * reach * out + toCamera.x * (.16 + aimed * .2 + near), floor + (.62 + i * .3 + aimed * .05) * f.scale.y + bob, f.base.z + across.z * reach * out + toCamera.z * (.16 + aimed * .2 + near));
+        const reach = (.56 + (i % 2) * .09 + aimed * .16) * f.scale.x, bob = animate ? Math.sin(performance.now() / 620 + i * 1.7) * .018 : 0;
+        place.set(f.base.x + across.x * reach * out + toCamera.x * (.16 + aimed * .2), floor + (.62 + i * .3 + aimed * .05) * f.scale.y + bob, f.base.z + across.z * reach * out + toCamera.z * (.16 + aimed * .2));
         // Dealt: it drops in from above tumbling and settles; then it only sways.
         const land = animate ? smooth(die.age / .42) : 1;
         if (land < 1) {
@@ -1668,7 +1682,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           die.turn.slerp(spin.setFromAxisAngle(die.tumble, die.age * 900), settle(die.face, 0), land * land);
         } else {
           die.at.lerp(die.at, place, animate ? 1 - Math.exp(-dt * 12) : 1);
-          die.turn.slerp(die.turn, settle(die.face, (Math.sin(s * 1.5 + .4) * 12 + Math.sin(s * .7) * 6) * calm, (Math.sin(s * 1.7 + 2.6) * 7 + Math.sin(s * 2.9) * 3) * calm), animate ? 1 - Math.exp(-dt * 10) : 1);
+          die.turn.slerp(die.turn, settle(die.face, animate ? Math.sin(performance.now() / 900 + i * 2.3) * 9 : 0), animate ? 1 - Math.exp(-dt * 10) : 1);
         }
         die.size = size * (die.age < 0 ? 0 : 1) * d!.shown * (1 + aimed * .22 + (land < 1 ? Math.sin(land * Math.PI) * .2 : 0));
         die.entity.enabled = die.size > .001;
@@ -1676,47 +1690,27 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       });
       const thrown = d.thrown;
       if (!thrown) continue;
-      const { die, action } = thrown, bet = action.die!.rolled !== undefined, won = !!action.die!.won;
-      dressDie(app, die.entity, die.face);
+      const { die, action } = thrown;
       // Where it is held before it goes: over the wearer's raised hand.
       const held = new pc.Vec3(f.base.x + across.x * .3 * out + toCamera.x * .2, floor + 1.72 * f.scale.y, f.base.z + across.z * .3 * out + toCamera.z * .2);
       const chest = target ? chestOf(target) : held;
-      const launch = bet ? DICE.read : DICE.launch, contact = diceContact(action);
+      const launch = DICE.launch, contact = diceContact(action);
       let grow = 1;
-      if (bet && t < DICE.read) {
-        // The bet: up out of the hand, over and over, and down again showing what it rolled, big enough to read.
-        const up = clamp01((t - DICE.toss) / (DICE.shown - DICE.toss)), lift = smooth(t / DICE.toss), shown = smooth((t - DICE.shown + .1) / .12);
-        die.at.lerp(thrown.from, held, lift); die.at.y += Math.sin(up * Math.PI) * 1.25;
-        die.turn.slerp(spin.setFromAxisAngle(die.tumble, t * 1250), settle(action.die!.rolled!, 0), shown);
-        if (t >= DICE.shown - .1) die.face = action.die!.rolled!;
-        grow = 1 + shown * .75 + Math.sin(clamp01((t - DICE.shown) / .16) * Math.PI) * .25;
-      } else if (bet && !won) {
-        // Lost: it drops out of the hand to the floor with the face it rolled, and is gone as it lands.
-        const fall = clamp01((t - DICE.read) / DICE.back);
-        die.at.copy(held); die.at.y = held.y + (floor + size * .5 - held.y) * fall * fall;
-        die.turn.copy(spin.setFromAxisAngle(die.tumble, fall * 160)).mul(settle(die.face, 0));
-        grow = 1.75 * (1 - smooth((fall - .45) / .55));
-      } else if (t < launch) {
+      if (t < launch) {
         // Drawn back over the hand, face to the camera.
         const lift = smooth(t / launch);
         die.at.lerp(thrown.from, held, lift); die.turn.slerp(die.turn, settle(die.face, 0), 1 - Math.exp(-dt * 14));
         grow = 1 + lift * .25;
       } else {
-        // Thrown: a low arc to the target's chest, tumbling; it lands, jumps back off it and, a bet won, comes down on it again.
-        const blows = won ? 2 : 1, last = contact + (blows - 1) * DICE.gap;
+        // Thrown: a low arc to the chest of whom its face reaches, tumbling; it lands and jumps back off it.
         const away = new pc.Vec3(held.x - chest.x, 0, held.z - chest.z).normalize();
         if (t < contact) {
           const u = clamp01((t - launch) / (contact - launch));
           die.at.lerp(held, chest, u * u * .35 + u * .65); die.at.y += Math.sin(u * Math.PI) * .32;
-          grow = bet ? 1.75 - u * .6 : 1.25;
-        } else if (t < last) {
-          // Between its two blows: up off the target and down on it again.
-          const u = clamp01((t - contact) / DICE.gap);
-          die.at.copy(chest).add(place.copy(away).mulScalar(Math.sin(u * Math.PI) * .45)); die.at.y += Math.sin(u * Math.PI) * .7;
-          grow = 1.15;
+          grow = 1.25;
         } else {
           // Off it for good: a hop away and down to the floor, gone as it comes to rest.
-          const u = clamp01((t - last) / (DICE.tail - .08)), ground = groundHeight(chest.x, chest.z) + size * .5;
+          const u = clamp01((t - contact) / (DICE.tail - .08)), ground = groundHeight(chest.x, chest.z) + size * .5;
           die.at.copy(chest).add(place.copy(away).mulScalar(u * .95));
           die.at.y = chest.y + (ground - chest.y) * u * u + Math.sin(Math.min(1, u * 1.6) * Math.PI) * .42;
           grow = 1.15 * (1 - smooth((u - .6) / .4));
@@ -2344,7 +2338,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const t = animate ? effectTime : ACTION_SECONDS;
       // The blows landed so far: one at contact, and a flurry's others a moment after each other
       // (Foc Binari's one a little later than a claw: tac, tac).
-      const spacing = dicing ? DICE.gap : casting ? CAST_GAP : CLAW_SECONDS;
+      const spacing = casting ? CAST_GAP : CLAW_SECONDS;
       const claws = effect?.strikes?.length ?? 1;
       const blows = times ? (!animate ? claws : times.filter(at => t >= at).length) : !impacted ? 0 : !animate ? claws : Math.min(claws, 1 + Math.floor(Math.max(0, t - contact) / spacing));
       if (dual && target && blows > clawed) {
@@ -2384,8 +2378,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // Sending Bip, the wearer points it at the target until it is back.
       const raise = casting && animate ? smooth(t / (castLaunch * .85)) * (1 - smooth((t - castContact - .12) / .35))
         : botStrike && animate ? smooth(t / .2) * (1 - smooth((t - (effect!.kind === 'skill' ? bipContact(effect!) : CONTACT_SECONDS) - .25) / .35))
-        // The hand goes up with the die and comes down as it leaves (a bet: up for the toss, and again to throw).
-        : dicing && animate ? smooth(t / .14) * (1 - smooth((t - (effect!.die!.rolled === undefined ? DICE.launch : effect!.die!.won ? DICE.read : DICE.shown) - .06) / .3)) : 0;
+        // The hand goes up with the die and comes down as it leaves.
+        : dicing && animate ? smooth(t / .14) * (1 - smooth((t - DICE.launch - .06) / .3)) : 0;
       // A dual: Gerard's hand goes up while he draws, and comes down as the last strike lands.
       const drawing = dual && animate ? smooth(t / .18) * (1 - smooth((t - times!.at(-1)! - .1) / .35)) : 0;
       const dualEnd = times ? times.at(-1)! + dualPace(effect!).tail : 0;

@@ -33,6 +33,7 @@
   - Damage: `Daño <intensidad> <físico|mágico>[ de tipo <X>] a <objetivo>. <Efecto extra>.`, e.g. `Daño alto mágico a un enemigo. Rompe el pringue.`
   - Healing: `Cura <intensidad> a <objetivo>.`, e.g. `Cura leve a todo el equipo.`
   - Buffs and debuffs: `Sube|Baja <stats> de <objetivo> durante <N> rondas.`, e.g. `Sube Fuerza y Magia de todo el equipo durante 3 rondas.`
+  - Protection: `Protege a un aliado hasta el final de la ronda.` (the ally takes a third of each blow, as with Defender).
   - Intensity from the skill's base power, against Atacar's 18: `leve` up to 20, `media` / `medio` 21–34, `alta` / `alto` 35–49, `muy alta` / `muy alto` 50 or more.
   - Targets: `a un enemigo`, `a todos los enemigos`, `a un aliado herido`, `a todo el equipo`.
   - Exception: a skill may skip this nomenclature on purpose and be more abstract or less defined (a mysterious, strange or story-driven skill whose effect the player should discover by using it). Mark it `abstract: true` in `SKILLS` (`src/battle.ts`); its description can then be evocative instead of exact, but still short, clear Spanish. Keep these rare: the default is the fixed shape.
