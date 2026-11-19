@@ -37,6 +37,10 @@ Status: designing (round 3), paused · Last updated: 2026-10-29
   strange things at random, so Gerard and Bernat meet where nobody is watching.
 - How they meet: **Gerard calls him on the phone** and they agree on a place (decided). How the
   call is triggered and taught: _open_ (topic 4).
+- **Bernat calls too** (Aitor, 2026-11-15): after Gerard and Aitor fall at the Queen the first
+  time (she takes Aitor), Bernat phones them and asks to meet at **the salón de juegos**, where
+  the mission for the device is played (`docs/story-outline.md` § The end, in order). Whether
+  that is this mission or another one of his: _open_.
 - How to get there: _open_
 - Scene: _open_
 

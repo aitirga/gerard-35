@@ -63,15 +63,15 @@ among their own and their extras, one at a time (`docs/party.md`).
 | Levels | **None.** They earn no EXP | Seven, by EXP (§ Levels) |
 | Grow by | **A skill tree, opened at home** (the jar), paid with ecos de luz | Levels; at home only **the definitiva** is added (§ Definitivas) |
 
-**Slots** (decided 2026-11-14): each of them starts with **two ánimas** (their own and one shared)
-and ends with **four**. The power to wear one more comes with progress through La Reina
-Bubbaloo's castle, which has two bosses and then the final one: a slot after each of the two
-(reading of Aitor's words; `EXTRA_SLOTS` is 1 today).
+**Slots** (decided 2026-11-14, corrected by Aitor 2026-11-15): each of them starts with **two
+ánimas** (their own and one shared) and ends with **three, the most worn in a fight at once**. The
+third slot comes with the castle's **first boss**; the second boss gives no slot, it opens the
+definitivas (§ Growth opens with the castle). `EXTRA_SLOTS` is 1 today.
 
 **Built 2026-11-15** (the own ánimas' half): Matemágico is out of `LEVELLED` (`src/levels.ts`,
 only Papagato levels today) and its old level-2 and level-3 skills are nodes of its tree; so are
 three of Tecnópata's five. The jar's Maná +2 and sleeping Pasiva are gone. Not built: the seven
-levels, the slots growing from two to four, the definitiva's waking. No save is migrated: a save
+levels, the slot growing from two to three, the definitiva's waking. No save is migrated: a save
 that had those skills by level has them again once their nodes are bought. To settle: how many
 ecos the whole game gives against what two trees and the definitivas cost (the fights were tuned
 with those skills in hand), and whether the victory screen shows a card for an ánima that earns
@@ -274,6 +274,37 @@ a real choice: one more maná, or two elements. Targets `vertigo-eco-mana`, `ver
 A new improvement is an entry in `IMPROVEMENTS` (`src/ecos.ts`); the screen and the fight tester
 read it from there. What it does in a fight comes through `Improved` (`BattleState.improved`,
 `improve`). Screenshots: `just screenshots ecos --gpu`, `just screenshots elementos --gpu`.
+
+## Growth opens with the castle (idea, 2026-11-15)
+
+Aitor's idea, written down to keep; **not built, numbers to settle**. How far an ánima can grow is
+not open from the start: it **opens in three stages, with progress through La Reina Bubbaloo's
+castle**. Both ways to grow follow it: the own ánimas' constellations at the jar show and sell more
+nodes, and the shared ánimas' level cap rises.
+
+| Stage | Opens when | Constellations (own ánimas) | Levels (shared ánimas) | Also |
+| --- | --- | --- | --- | --- |
+| 1 | From the start | A few skills only: the inner nodes | Up to level 3–4 | Two ánimas each |
+| 2 | The castle's first great boss is beaten (Aurelià) | They expand: new nodes | Up to level 6 or so | **A slot for one more ánima: three each, the most in a fight at once.** New ways to travel, etc. |
+| 3 | The second boss is beaten (el Equipo de dirección) | **The definitivas** (the supreme skills) | Up to the top (7) | — |
+
+- **The definitivas** only exist from the second boss on. Even then each one **costs to unlock**
+  (ecos at the jar) and has **its own special requirement to fire** in a fight (§ Definitivas).
+The castle these stages belong to, and what each boss opens in full: [castle.md](../castle.md).
+
+- **Why**: growth is paced by the story, the castle's bosses are felt as steps up, and it gives
+  **control over balance**: a fight before a boss can be tuned knowing the most the party can have.
+- **How it shows** (to settle, within the HUD rule: what the player has, never what is missing): at
+  the jar a constellation simply has fewer stars until it expands; the expansion is seen happening
+  the first time the jar is opened after the boss. A level cap reached says nothing about the next.
+- It fits what is already decided: the definitiva bought at the jar with its condition
+  (§ Definitivas), which this places after the second boss. It corrects the slots: one more after
+  the first boss only, three at most, not four (§ Two ways to grow).
+- **To settle**: which nodes are in each stage of each tree; the exact caps (3 or 4, then 6); what
+  EXP earned over a cap does (kept and applied when it rises, or lost); what "new ways to travel"
+  are; whether ecos already put in a node can outrun a stage (they cannot if the node is not shown).
+- For the tools when built: `TARGETS` (`src/battle-sim.ts`) and the picker should take the stage,
+  so a fight is balanced and tried at the growth it will be met with.
 
 ## Definitivas
 

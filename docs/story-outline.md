@@ -1,6 +1,6 @@
 # Story map · the whole game, shallow
 
-Status: mapping (round 19), paused · Last updated: 2026-11-07
+Status: mapping (round 20), paused · Last updated: 2026-11-15
 
 The whole story at a glance, before any mission is designed in depth: the main arc, every friend
 in a few lines, how they connect, and what is still open. Each mission is then designed on its own
@@ -63,8 +63,9 @@ What exists or is designed with a cartoon look, to judge one by one (keep, tone 
   **some changes are kept**.
   - **In a friend's mission**, falling offers to go back **to the start of the block** the party
     was in, so nothing has to be repeated from the beginning.
-  - **The Queen's palace** is a regular dungeon (the roguelike idea was dropped in round 16):
-    falling there wakes Gerard at home, and won zones stay won (see *The palace: zones*).
+  - **The Queen's castle** is generated between fixed rooms (2026-11-19, docs/castle.md; the
+    fixed dungeon of round 16 is replaced): falling there wakes Gerard at home, and a boss beaten
+    stays beaten (see *The palace: zones*).
 - **A real object ends the game** (see *El artilugio*): a programmable button controller,
   hidden in the real flat, that talks to the game over Wi-Fi and is needed to beat the Queen.
 
@@ -73,15 +74,105 @@ What exists or is designed with a cartoon look, to judge one by one (keep, tone 
 | # | Beat | Status |
 | --- | --- | --- |
 | 1 | Gerard wakes at 35, the castle on the Rec Comtal school, the city opens (playable) | Decided |
-| 2 | First try at the palace: far too strong; falling is waking up (playable). **Nothing is required to enter or to reach the throne**: only difficulty stands in the way, and it is open from the start. The first outing **leans towards the palace** by inertia (the news, the metro), though Gerard may go anywhere | Decided |
+| 2 | First try at the palace: far too strong; falling is waking up (playable). **Nothing is required to enter**: only difficulty stands in the way. **The throne is reached only after the castle's two bosses** (2026-11-19, docs/castle.md; before, it was open from the start). The first outing **leans towards the palace** by inertia (the news, the metro), though Gerard may go anywhere | Decided |
 | 3 | Friends, in any order: their missions, ánimas and lights | Decided (list below) |
 | 4 | **Bernat finds out part of the story** and tells Gerard about **el artilugio** | Decided that he does; *what* he finds out is open |
-| 5 | **The artilugio inside the palace**: a puzzle of rooms in a set order | Decided |
+| 5 | ~~**The artilugio inside the palace**: a puzzle of rooms in a set order~~ **The artilugio at the salón de juegos**: Bernat brings it and sends it across to the real flat through a portal (2026-11-15) | Decided |
 | 6 | **The artilugio at home**: found physically in the real flat, connected to the game | Decided |
 | 7 | **The final fight**: the Queen possesses Aitor; without the song she always wins; the hidden melody, played on the artilugio, breaks her hold and weakens her hard | Decided |
 | 8 | **The reveal at the end**: the Queen is **not Nuria Mendoza**; she is nobody, a product of imagination who **personifies being a kid**. Not all bad: her motive is good (that we be kids again as responsibilities pile up); the game leans into her human side | Decided |
-| 9 | **The final choice: three endings**: **kill her, wound her, or let her live** | Decided; what each shows is open |
-| — | The second round: where it fits now that there are three endings | Open |
+| 9 | **The final choice: two endings** (2026-11-19, before three): **kill her, or let her live, weakened** | Decided; designed in docs/castle-bosses.md § The last scene |
+| — | The second round: where it fits now that the ending is a choice | Open |
+
+Beats 4 to 7 happen **in the order of § The end, in order** (decided 2026-11-15): the first fall
+at the Queen comes *before* Bernat speaks of the artilugio, not after.
+
+### The end, in order (decided 2026-11-15)
+
+Aitor's idea for how the story closes. It sets the order of things already decided (the
+possession, Bernat, the artilugio) and where the artilugio comes from.
+
+1. **The Queen, the first time.** Gerard and Aitor reach La Reina Bubbaloo and fight her for
+   real. It can be won, up to a point: when she has **about a tenth of her PV left**, at the last
+   moment, she **takes control of Aitor**.
+2. **Aitor plays against Gerard.** The real Aitor keeps his controller and now fights on her
+   side, all out (round 12). **They kill Gerard.** This happens **once, and it has to happen**:
+   the first time there is nothing that stops it, however well the fight was played.
+3. **Bernat calls.** Falling there is not just waking up again: Gerard and Aitor **get a phone
+   call from Bernat**, who asks them to meet him at **the salón de juegos**.
+4. **The mission at the salón de juegos.** There the mission is played to get **the device that
+   blocks that spell** (el artilugio, § El artilugio). They come out with it: § From the salón
+   de juegos to the real flat, below.
+5. **Back at the Queen.** The fight is met again, and when she reaches for Aitor **the device can
+   be used right then: the real one, in Gerard's hands**.
+6. **Nobody says what it is for.** Gerard has to work that out himself (opaque, round 10). What
+   the mission guarantees is only that when the moment comes **he is holding the piece of the
+   puzzle that is needed**.
+
+### From the salón de juegos to the real flat (decided 2026-11-15)
+
+How the artilugio is won, in Aitor's words: the real device **is physically inside our home**
+the whole time. In the story it is **Bernat who brings it**, physically, but he cannot just hand
+it over: he has to **transport it to the real world, the one where we are playing**.
+
+- **Where**: at the salón de juegos, where Bernat is.
+- **A mini portal** opens there, and **through it the flat is seen**. It is something in the
+  world to walk up to and **interact with**, not a screen or a menu.
+- **The puzzle** is played from there and has to do with **the flat's lights and the artilugio
+  itself**: the real bulbs (`docs/home-lights.md`) and the real device are its pieces.
+- **Solved, the artilugio crosses over**: it leaves Bernat's side and is in the real flat, for
+  Gerard to pick up with his hands.
+
+This **replaces the artilugio's old origin** (§ El artilugio, point 2: inside the palace, at the
+end of the room-order puzzle, and the light that flew home from there). What § Finding it at
+home worked out still serves, moved here: the lights say which room, a clue says where in it,
+and the safety nets (*Escuchar*, the game's own flat if the bulbs are off, the piano if the
+device will not connect) hold just the same.
+
+Still to design (proposals wait for a yes):
+
+- **The puzzle itself**: what Gerard does at the portal and what the lights answer. A direction
+  that fits what exists: what is done on the game's side of the portal changes the real lamps,
+  the device answers with its own sound or screen, and the last step lights the room where it
+  is hidden. The lights are the clue; nobody says "go and look".
+- **What is seen through the portal**: the game's Meridiana flat (already built), in the state
+  the real one is in.
+- **Why Bernat has it and why it must cross**: he invented her as a kid, so the thing that
+  answers her being his is natural; that the game knows there is a world outside it is new for
+  the story and should be said once, plainly, in his voice, without winking.
+- **The portal's look**: violet is possession's and saturated pink the Queen's
+  (`docs/visual-style.md`), so it takes neither; the artilugio's own colour (the one the lit
+  room has "never had") is the candidate.
+- **Without the bulbs or on a bad day**: the puzzle must be solvable on the game's flat alone.
+- **The palace's room-order puzzle**: it no longer guards the artilugio. Whether it stays in the
+  palace for something else or is cut.
+
+What this settles:
+
+- **How the possession "always wins"** (tracker 3): the first time it simply does, and the party
+  dies. It is a scripted loss inside a real fight, placed where the fight looked won.
+- **What sends Gerard to Bernat** (beat 4): the defeat itself. He does not go looking for the
+  artilugio; Bernat's call comes because of what just happened.
+- **When the device matters**: only from the second visit on, at the moment she takes Aitor.
+
+Still to design (proposals wait for a yes):
+
+- **The threshold**: "about 10 %". Whether it is a fixed share of her PV or the blow that would
+  have finished her.
+- **How long the turned fight lasts**: Aitor fighting to win against a Gerard alone should be
+  short and felt, not a second boss. In the game's tone it is the worst moment of the story, not
+  a gag: no joke line over it.
+- **The salón de juegos**: which one (a real arcade in Barcelona, from OSM, or the one from the
+  childhood street), its identity card (`docs/visual-style.md`), what the mission asks, and
+  whether it gives an ánima or only the device. It needs its entry in `PLACES` and its arc in
+  `STORY_ARCS` when built.
+- **What Bernat knows** when he calls, and how he knows they fell (he made her up as a kid:
+  `docs/quests/bernat.md`).
+- **After the first time**: if Gerard goes back without the device, or with it and without
+  understanding it, she takes Aitor again and they fall again (*losing is learning*, § Finding
+  it at home). Whether Bernat calls again then, or says something different.
+- **What using it does on screen**: decided before (it frees Aitor and weakens her hard); how
+  that reads is still open, and so is how it leads into the three endings.
 
 ### The Queen's identity and the false lead (decided)
 
@@ -99,11 +190,12 @@ What exists or is designed with a cartoon look, to judge one by one (keep, tone 
 - Proposal: Gerard can phone her too (the same phone as Bernat's call) and always gets her
   voicemail, a holiday-sounding message nobody takes seriously until the credits.
 
-### The endings (open)
+### The endings
 
-Three endings (decided): **kill her, wound her, or let her live**. What each one shows, and how
-the possession of Aitor and the melody lead into the choice, is to design again in the serious
-tone below. (The round-3 proposals, a tantrum the melody calms down, were rejected as too
+**Two endings** (decided 2026-11-19; they replace the three of before, kill, wound or let live):
+**kill her**, or **let her live, weakened**. What each one shows, and how the possession of Aitor
+and the melody lead into the choice, is designed in [castle-bosses.md](castle-bosses.md) § Aitor,
+held and § The last scene, in the serious tone below. (The round-3 proposals, a tantrum the melody calms down, were rejected as too
 cartoonish.)
 
 ## People
@@ -141,11 +233,13 @@ current word; these are the notes it started from.
 
 ### The school: Gerard's colleagues (not a mission)
 
-- **Aurelia, Montse, Pilar, …** work at the **Institut Escola Rec Comtal**, the same school the
-  castle grows out of (decided). The Rec Comtal is **Gerard's workplace: he is a teacher and the
+- **Aurelià** (history teacher, once an athlete), **Mar** (the head), **Montse** and **Pilar** (the
+  heads of studies) work at the **Institut Escola Rec Comtal**, the same school the castle grows
+  out of (decided). The Rec Comtal is **Gerard's workplace: he is a teacher and the
   school's secretary** (decided round 14), so the school matters a lot to him.
-- They are **not a mission**: they appear **inside the school/palace**, possibly as
-  **the zone bosses** (decided round 15; each one's special trait to define).
+- They are **not a mission**: they appear **inside the school/palace** as **its bosses**
+  (decided 2026-11-19): Aurelià first, then Mar, Montse and Pilar together
+  ([castle-bosses.md](castle-bosses.md)).
 - The school is **de alta complejidad**: the **pupils are possessed too**, and the palace has
   **different zones with cultural differences** (decided as a direction; what that means in play:
   open).
@@ -161,8 +255,9 @@ The game's last key is **real**: a small **controller with buttons, programmable
 that the user owns and will hide in the real flat.
 
 1. **The story tells of it**: probably Bernat talks about it (decided as likely).
-2. **It is inside the Queen's palace**, reached by a **puzzle: going from room to room in a
-   specific order**.
+2. ~~**It is inside the Queen's palace**, reached by a **puzzle: going from room to room in a
+   specific order**.~~ Replaced (2026-11-15): **Bernat brings it**, and it crosses to the real
+   flat from the salón de juegos (§ From the salón de juegos to the real flat).
 3. **At home, a puzzle activates physically**: Gerard has to **find the real device in the real
    flat**; it connects to the game **over Wi-Fi**.
 4. **It plays notes.** Gerard must play **the sequence that repeats, hidden in every song** of the
@@ -207,7 +302,8 @@ device. The steps below are the working proposal; how the lights play exactly is
 
 The user chose a mix: the lights say **which room**, a clue says **where in it**.
 
-1. **In the palace it slips away.** At the end of the room-order puzzle the artilugio is there, on
+1. *(Replaced 2026-11-15: it no longer starts in the palace but at the portal in the salón de
+   juegos; the rest of these steps still serve.)* **In the palace it slips away.** At the end of the room-order puzzle the artilugio is there, on
    its own, in the game. When Gerard reaches for it, it turns into light and flies off the way the
    friends' lights do, out of the palace and towards home. Aitor: *"Va hacia casa."*
 2. **At home, one room is lit.** Back in the Meridiana flat, every lamp is off but one: the room
@@ -339,13 +435,17 @@ Zones Barcelona will need (from the people above): the Meridiana (exists), Trini
 
 ## The palace: zones (rounds 14–16)
 
-Decided (a sketch, to think through properly):
+**Replaced on 2026-11-19 by [castle.md](castle.md)**: three generated phases between the built
+zones, two bosses (Aurelià; Mar, Montse and Pilar) and the Queen, the throne only after both. What
+follows is the earlier sketch, kept for the record.
 
-- **A regular dungeon** (round 16): fixed rooms, the same every time. The roguelike idea
-  (rooms reshuffled every run) was dropped.
-- **Zones**, each with its **characteristic elements and puzzles** and **a boss** at the end.
-  The zone bosses are **teachers the user knows** (Aurelia, Montse, Pilar, …), each with a
-  special trait to define.
+Decided then (a sketch):
+
+- ~~**A regular dungeon** (round 16): fixed rooms, the same every time. The roguelike idea
+  (rooms reshuffled every run) was dropped.~~ Generated again, between fixed rooms.
+- **Zones**, each with its **characteristic elements and puzzles** and ~~**a boss** at the end.
+  The zone bosses are **teachers the user knows** (Aurelià, Montse, Pilar, …), each with a
+  special trait to define.~~ The zones are the bosses' fixed rooms.
 - **Beating a zone keeps it won**: the general danger level drops, that part stays beaten, and a
   **shortcut** opens to the next zone, so the next visit starts from there. The game nudges the party
   forward zone by zone.
@@ -375,6 +475,14 @@ Who mentions whom, which ánima opens which place, where each clue lives. Fixed 
 
 ## To reconcile with existing docs
 
+- ~~Where the artilugio comes from~~ Decided (2026-11-15): Bernat brings it and sends it across
+  to the real flat from the salón de juegos, through a portal and a puzzle with the flat's lights
+  (§ From the salón de juegos to the real flat). § El artilugio point 2 and § Finding it at home
+  step 1 are marked as replaced; `docs/bubbaloo-palace.md` and beat 5 of the main arc still
+  mention the room-order puzzle as the artilugio's, to fix when the palace is picked up.
+- `docs/quests/bernat.md` has Gerard phoning Bernat to meet; now **Bernat is the one who
+  calls**, after the fall at the Queen. Whether that is Bernat's own mission or a second one.
+
 - ~~`docs/lore.md`: the Queen is Nuria Mendoza~~ Updated (round 2): she is nobody, Nuria Mendoza
   has disappeared, three endings. `docs/chapter-2.md` § The choice and `docs/quests/nuria.md`
   updated too.
@@ -382,8 +490,8 @@ Who mentions whom, which ánima opens which place, where each clue lives. Fixed 
   the new rule it starts at a pink bubble in Jacint Verdaguer.
 - **`docs/quests/nuria.md` needs a redesign for the tone** (decided): see its *Tone review*
   section for what conflicts.
-- `docs/chapter-2.md` § The Queen and the second round says the Queen **does not fight** at the
-  throne; the final fight (Aitor possessed, the melody) replaces that.
+- ~~`docs/chapter-2.md` § The Queen and the second round said the Queen did not fight at the
+  throne.~~ Corrected 2026-11-19: the final fight is designed in `docs/castle-bosses.md`.
 - `docs/quests/nuria.md` says falling in the mini-dungeon wakes Gerard at home with the mission
   undone; the new rule offers going back to the start of the block.
 - `docs/chapter-2.md` § The palace says "the palace remembers nothing" and has one guard fight;
@@ -408,8 +516,10 @@ The order they will be asked in:
 2. **El artilugio, the real one**: board, buttons, Wi-Fi, LEDs or sound; where it will be hidden;
    whether the melody exists yet.
 3. **The final fight**: ~~Aitor possessed and player 2; what opens the throne~~ (decided round 12:
-   Aitor plays against Gerard; nothing required, difficulty only). Still open: how the possession
-   always wins, and when the melody can be played.
+   Aitor plays against Gerard; nothing required, difficulty only; and 2026-11-15: she takes him
+   at about 10 % of her PV, the first time it kills Gerard, and the device is used at that very
+   moment from the second visit on, § The end, in order). Still open: how the turned fight
+   plays, and what happens on later visits without the answer.
 4. **The palace's zones**: ~~regular dungeon, zones with a teacher boss, shortcuts~~ (decided
    rounds 14–16). Still open: the zones' order; each teacher's trait; the cultural zones; the
    pupils.

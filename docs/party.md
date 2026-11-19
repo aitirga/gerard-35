@@ -138,7 +138,7 @@ Impulso and Abrazo are out for now.
   it lands (`docs/animas/dadaista/README.md`; level 1 built).
 - **Own ánima and extras** (decided 2026-11-05): each has their **own** ánima, fixed, always
   theirs and never taken off (Matemágico Gerard's once it wakes, Tecnópata Aitor's), and **one extra
-  slot** for now (`EXTRA_SLOTS` in `src/story.ts`; more may come) where they equip one of the shared
+  slot** for now (`EXTRA_SLOTS` in `src/story.ts`; a second one comes with the castle's first boss, three ánimas at most, docs/animas/README.md § Growth opens with the castle) where they equip one of the shared
   ánimas the party has unlocked (Papagato). Equipping only says which ánimas they can use: in a
   fight they still wear **one at a time** and switch among theirs with L / R (their kit: own, then
   extras; `kitOf` in `src/story.ts` and `src/battle.ts`). Two never equip the same extra: one the
