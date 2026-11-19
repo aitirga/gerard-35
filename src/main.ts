@@ -15,6 +15,9 @@ import { CAMP_HUNTERS } from './friends/universidad';
 import { MAX_LEVEL, toNextLevel } from './levels';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
 import { createStoryUI } from './story-ui';
+import { createEndings } from './endings';
+import { LINES_CASTLE } from './castle-story';
+import { CASTLE_ENCOUNTERS, castlePhase, castlePhaseOf } from './castle';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
 import { watchGlyphs } from './input-glyphs';
 import type { MemberId } from './story';
@@ -56,6 +59,8 @@ const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
 // Chapter 2: the station map (metro and Rodalies) and the TV news.
 const travelUI = createTravelUI(document.querySelector<HTMLElement>('#hud')!);
 const hud = document.querySelector<HTMLElement>('#hud')!;
+/** The last scene's two commands, and what each does told over black (src/endings.ts). */
+const endings = createEndings(hud);
 // Every key shown in the HUD follows the device in use: keyboard and mouse, or the last pad touched.
 const stopGlyphs = watchGlyphs();
 // The bulbs at home (docs/home-lights.md): they follow the place and the fights once connected in the menu.
@@ -75,7 +80,7 @@ const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.p
  * a place without one fades to silence.
  * The castle's song is haunted as much as the castle is threatening right now (src/haunt.ts).
  */
-const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-2', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo' };
+const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-2', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo' };
 let place: EnvironmentId | undefined;
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
@@ -112,9 +117,10 @@ function scoreBattle(state: BattleState | undefined) {
 /**
  * Development: ?story=<flag> starts with that flag and what it needs (just dev-chapter), where it
  * happened; ?story=new from scratch. ?mission=<ánima>&part=<part> starts an ánima mission partway
- * (just dev-mission, `missionParts`). In chapter 2, &with=nuria,uri adds those ánima missions as done.
+ * (just dev-mission, `missionParts`). In chapter 2, &with=nuria,uri adds those ánima missions as done;
+ * &at=home starts at home instead of where the step happened.
  */
-const devJump = ((): { flags: StoryFlag[]; spot?: Spot; part?: MissionPart } | undefined => {
+const devJump = ((): { flags: StoryFlag[]; spot?: Spot; part?: MissionPart; home?: boolean } | undefined => {
   if (!import.meta.env.DEV) return undefined;
   const params = new URLSearchParams(location.search);
   const at = params.get('story'), mission = params.get('mission');
@@ -125,7 +131,8 @@ const devJump = ((): { flags: StoryFlag[]; spot?: Spot; part?: MissionPart } | u
   }
   if (at === null) return undefined;
   if (!(STORY_FLAGS as readonly string[]).includes(at)) return { flags: [] };
-  return { flags: flagsAt(at as StoryFlag, missions), spot: spotAt(at as StoryFlag) };
+  // &at=home stands Gerard at home instead of where the step happened (the picker's «En casa»).
+  return { flags: flagsAt(at as StoryFlag, missions), spot: spotAt(at as StoryFlag), home: params.get('at') === 'home' };
 })();
 const devStory = devJump?.flags;
 const story = new Story(devStory ?? []);
@@ -271,7 +278,7 @@ try {
     paused: () => menuOpen(),
     pulse: id => game.statusPulse(id),
     // A fall wakes Gerard up at home only in chapter 2's castle; anywhere else it can be fought again or stepped back from.
-    forgiving: () => !(story.adult && currentLocation.startsWith('palacio')),
+    forgiving: () => !(story.adult && (currentLocation.startsWith('palacio') || currentLocation.startsWith('castillo'))),
     fallen: choice => { fallen = choice; },
     // The development build puts the Dual command in the fight's menu (docs/dev-tools.md).
     dev: () => import.meta.env.DEV,
@@ -344,6 +351,14 @@ try {
     else if (effect.kind === 'unmask') await game.unmaskSobremesa();
     else if (effect.kind === 'emerge') await game.emerge(effect.cell);
     else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
+    // The last scene: the game holds still until Gerard chooses, and the story hears which.
+    else if (effect.kind === 'ending') {
+      exploration.close(); storyPaused = true; game.setPaused(true);
+      const choice = await endings.choose(LINES_CASTLE.lastScene);
+      storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
+      storyEvent({ type: 'ending', choice });
+    }
+    else if (effect.kind === 'epilogue') { await storyUI.blackout(true, 1600); await endings.tell(effect.text); }
     // A level reached in a fight was shown on its victory screen.
     else if (effect.kind === 'learn') { if (!effect.quiet) { sfx.play('unlock'); storyUI.learn(effect.classId, effect.level, effect.skills); } }
     else if (effect.kind === 'anima' && effect.kept) { sfx.play('unlock'); await storyUI.kept(effect.classId); }
@@ -454,7 +469,7 @@ try {
     dev: import.meta.env.DEV ? {
       flags: () => story.saved,
       day: () => story.days.clock.day,
-      story: (at, day, missions, hour) => { location.search = `?${new URLSearchParams({ story: at, ...(missions?.length ? { with: missions.join(',') } : {}), ...(day && day > 1 ? { day: String(day) } : {}), ...(hour && hour !== DAY_START ? { hour: String(hour) } : {}) })}`; },
+      story: (at, day, missions, hour, home) => { location.search = `?${new URLSearchParams({ story: at, ...(home ? { at: 'home' } : {}), ...(missions?.length ? { with: missions.join(',') } : {}), ...(day && day > 1 ? { day: String(day) } : {}), ...(hour && hour !== DAY_START ? { hour: String(hour) } : {}) })}`; },
       night: (castle, missions) => { location.search = `?${new URLSearchParams({ story: 'metro', night: String(castle), ...(missions?.length ? { with: missions.join(',') } : {}) })}`; },
       nightNow: () => story.night ? stage(story.spread) : undefined,
       mission: (anima, part, day, missions) => {
@@ -476,7 +491,7 @@ try {
         storyChanged();
         battleUI.setAnimas(story.classes, story.levels, { gerard: story.kitOf('gerard'), aitor: story.kitOf('aitor') });
       },
-      ecos: () => ({ total: story.ecos, free: story.ecosFree, extra: story.debugEcos }),
+      ecos: () => ({ total: story.ecos, free: story.ecosFree, extra: story.debugEcos, improved: story.improvements }),
       giveEcos: count => { story.debugEcos = Math.max(0, story.debugEcos + count); storyChanged(); },
       openJar: () => { void jarUI.open(); },
       openParcelas: fresh => { if (fresh) parcelasUI.reset(); void parcelasUI.open(); },
@@ -517,7 +532,9 @@ try {
     // Càmping Eurosport (docs/quests/universidad.md): its fights and La Sobremesa at the long table.
     'camping-magos': 'camping', 'camping-dados': 'camping', 'camping-agentes': 'camping', 'camping-tienda': 'camping', 'camping-negra': 'camping', campeon: 'camping',
     // Las cuerdas (docs/quests/marta.md): its three qualities and La Voz.
-    'cuerdas-lealtad': 'cuerdas', 'cuerdas-cristalino': 'cuerdas', 'cuerdas-directo': 'cuerdas', voz: 'cuerdas' } as const;
+    'cuerdas-lealtad': 'cuerdas', 'cuerdas-cristalino': 'cuerdas', 'cuerdas-directo': 'cuerdas', voz: 'cuerdas',
+    // The castle (docs/castle.md): a room's pupils on their phase's floor, each boss in its own room.
+    ...Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, id === 'aurelia' || id === 'direccion' || id === 'reina' || id === 'reina-vuelta' ? castlePhase(castlePhaseOf(id)).into.environment : castlePhase(castlePhaseOf(id)).environment])) as Record<(typeof CASTLE_ENCOUNTERS)[number], EnvironmentId> } as const;
   /** Starts a test fight; another chapter's party needs that chapter's Gerard, so it reloads there. */
   function startFight(setup: FightSetup) {
     if (setup.adult !== story.adult) {
@@ -590,12 +607,12 @@ try {
     onBed: (id, level) => sfx.bed(id, level),
     // Las cuerdas: Marta's voice far off on the mazes' clock, nearer with each quality beaten (docs/quests/marta.md).
     onCuerdasSong: (t, rate) => vozSong.far(t, story.has('voz') ? 0 : rate, story.marta.beaten.length / QUALITIES.length),
-    onBattleEnd: (phase, encounter, worn, xp) => {
+    onBattleEnd: (phase, encounter, worn, xp, taken) => {
       // Fought again or stepped back from, a fall never reaches the story; a test fight fought again stays a test.
       if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.refreshStory(); } return; }
       // A test fight, or one left from the picker, leaves the story as it was, and the street as the story has it.
       if (testing || leaving) { testing = undefined; leaving = false; game.refreshStory(); return; }
-      if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn, xp }); keepXp(); }
+      if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn, xp, taken }); keepXp(); }
     },
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
@@ -751,7 +768,7 @@ try {
     // Development: the fight tester reloaded into the other chapter to start its fight (?fight=…).
     const fight = import.meta.env.DEV ? new URLSearchParams(location.search).get('fight') : null;
     // A story point stands Gerard where it happened (story-points.ts); the tester takes him to its own stage.
-    const { environment, cell } = (!fight && (nightJump ?? devJump?.spot)) || story.resume;
+    const { environment, cell } = (!fight && (nightJump ?? (devJump?.home ? story.home : devJump?.spot))) || story.resume;
     if (story.started && environment !== currentLocation) game.setEnvironment(environment, cell);
     storyChanged();
     storyEvent({ type: 'start' });
@@ -793,7 +810,7 @@ try {
     const weather = params.get('weather'), intensity = Number(params.get('intensity') ?? 1);
     if (weather === 'rain' || weather === 'snow') game.effects.setWeather(weather, Number.isFinite(intensity) ? intensity : 1, true);
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx } });
+    Object.assign(window, { gerard: { game, story, battleUI, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong } });
   }
   if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {

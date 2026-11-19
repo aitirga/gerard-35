@@ -5,7 +5,7 @@ import { renderWorldMap } from './world-map';
 import { renderExplorationWorldMap } from './exploration-world-map';
 import { ANIMAS, animaBonus } from './animas';
 import { ITEMS, ITEM_KIND_LABELS, sortItems, type ItemId } from './items';
-import { EXTRA_SLOTS, type MemberId, type PartyMember, type Story } from './story';
+import { type MemberId, type PartyMember, type Story } from './story';
 import { ANIMA_OWNERS, CLASS_STATS, SKILLS, canWear, skillKnown, type ClassId } from './battle';
 import { improvementOf } from './ecos';
 import { nearestButton } from './menu-nav';
@@ -178,7 +178,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   }
   /**
    * Ánimas: for each member, their own ánima (fixed: always theirs, never taken off) and their extra
-   * slots (EXTRA_SLOTS), with the shared ánimas they can equip there. Equipping one only says it is
+   * slots (`story.extraSlots`: two after Aurelià), with the shared ánimas they can equip there. Equipping one only says it is
    * among theirs: in a fight they still wear one at a time and switch with L / R. Every row has its
    * level (the ánima's, shared by whoever has it). Moving over one shows it beside the lists;
    * confirming an extra equips it (EQUIPADA) or, equipped, takes it off; one the other has equipped
@@ -190,7 +190,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const viewing = sheet.viewing && classes.includes(sheet.viewing) ? sheet.viewing : own?.classId ?? classes[0];
     const row = (member: PartyMember, id: ClassId, fixed: boolean) => {
       const spec = animaOf(id, story.adult), other = fixed ? undefined : takenBy(member, id), equipped = fixed || story.extrasOf(member.id).includes(id);
-      const full = story.extrasOf(member.id).length >= EXTRA_SLOTS, { level, fill, top } = levelOf(id), worn = member.classId === id;
+      const full = story.extrasOf(member.id).length >= story.extraSlots, { level, fill, top } = levelOf(id), worn = member.classId === id;
       const state = fixed ? 'fixed' : equipped ? 'on' : other ? 'taken' : 'off';
       const key = `pick:${member.id}:${id}`, hint = fixed ? '' : equipped ? 'Quitar' : full ? 'Cambiar' : 'Equipar';
       return `<li><button type="button" class="anima-row" data-key="${key}" data-pick="${member.id}" data-class-id="${id}" data-state="${state}" aria-pressed="${equipped}" ${other || fixed ? 'aria-disabled="true"' : ''} ${sheet.equipped === key ? 'data-just' : ''} style="--chip:${spec.colour};--fill:${fill.toFixed(3)}">
@@ -207,7 +207,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
         <header class="anima-list-head"><div class="vitals-avatar anima-list-face" style="--anima:${animaColour(m) ?? 'var(--ui-line)'}">${portrait(m)}</div><div><span class="battle-kicker">${escape(m.name.toUpperCase())}</span><strong>${m.classId ? animaOf(m.classId, story.adult).name : 'Sin ánima'}</strong></div></header>
         <section class="anima-group" data-group="fixed"><h3 class="anima-group-head"><span>PROPIA</span><small>Siempre suya</small></h3>
           <ul>${fixed ? row(m, fixed, true) : '<li class="empty">Todavía no ha despertado.</li>'}</ul></section>
-        <section class="anima-group" data-group="extra"><h3 class="anima-group-head"><span>EXTRA</span><small class="anima-slots" aria-label="${used} de ${EXTRA_SLOTS} huecos">${Array.from({ length: EXTRA_SLOTS }, (_, i) => `<i data-used="${i < used}"></i>`).join('')}${used} / ${EXTRA_SLOTS}</small></h3>
+        <section class="anima-group" data-group="extra"><h3 class="anima-group-head"><span>EXTRA</span><small class="anima-slots" aria-label="${used} de ${story.extraSlots} huecos">${Array.from({ length: story.extraSlots }, (_, i) => `<i data-used="${i < used}"></i>`).join('')}${used} / ${story.extraSlots}</small></h3>
           <ul>${ordered.map(id => row(m, id, false)).join('') || '<li class="empty">Ninguna que equipar todavía.</li>'}</ul></section>
       </article>`;
     }).join('');

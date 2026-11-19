@@ -20,7 +20,7 @@ from lights import router as lights_router
 app = FastAPI()
 logger = logging.getLogger("uvicorn.error")
 # Story progress flags, in story order. Keep in sync with STORY_FLAGS in src/story.ts (a test checks it).
-STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "matemagico", "wrapper-room", "caught", "got-wrapper", "got-bola", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "papagato", "papagato-2", "papagato-3", "matemagico-2", "matemagico-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri", "clue-uni", "barceloneta-uni", "camping", "candado", "parcelas", "sobremesa", "anima-universidad", "luz-anna-alvaro", "luz-miquel-sarah", "luz-soraya", "luz-nico", "luz-joan", "alegia-marta", "cuerdas", "voz", "anima-marta", "luz-marta")
+STORY_FLAGS = ("intro", "met-jan", "got-shoes", "got-potion", "got-backpack", "bernat-joined", "bernat-stalled", "dejavu", "minion", "first-fight", "palace", "in-palace", "got-chicle", "matemagico", "wrapper-room", "caught", "got-wrapper", "got-bola", "tv-news", "metro", "rec-comtal", "castle", "palace-tried", "clue-r4", "anima-nuria", "papagato", "papagato-2", "papagato-3", "matemagico-2", "matemagico-3", "cardedeu", "nuria-uri", "luz-nuria", "luz-uri", "clue-uni", "barceloneta-uni", "camping", "candado", "parcelas", "sobremesa", "anima-universidad", "luz-anna-alvaro", "luz-miquel-sarah", "luz-soraya", "luz-nico", "luz-joan", "alegia-marta", "cuerdas", "voz", "anima-marta", "luz-marta", "aurelia", "luz-aurelia", "direccion", "luz-mar", "luz-montse", "luz-pilar", "aitor-poseido", "artilugio", "reina", "final-acabar", "final-bajar")
 
 
 @contextmanager

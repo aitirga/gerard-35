@@ -82,6 +82,21 @@ export const PROFILES = {
   cristalino: base(300, 10, 13, 10, 14, 10),
   directo: base(420, 14, 10, 11, 10, 11),
   voz: base(430, 12, 13, 12, 12, 10),
+  /**
+   * The castle (docs/castle.md § Bestiary, docs/castle-bosses.md): the Queen's pupils in their first
+   * year (src/castle.ts `CASTLE` scales the others), Aurelià and his lectern, one of Dirección, the
+   * Queen and one of her hands. Their rules do the work (src/castle-fight.ts). First guesses.
+   */
+  repetidor: base(110, 14, 8, 12, 9, 6),
+  empollon: base(85, 11, 12, 10, 12, 10),
+  chivata: base(48, 9, 10, 8, 9, 13),
+  gemelo: base(62, 12, 9, 10, 10, 10),
+  delegada: base(130, 12, 12, 11, 12, 10),
+  aurelia: base(420, 14, 11, 12, 12, 10),
+  atril: base(90, 1, 1, 10, 8, 1),
+  directiva: base(160, 10, 13, 10, 12, 10),
+  reina: base(620, 14, 14, 12, 13, 10),
+  mano: base(110, 12, 10, 11, 10, 8),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;
 

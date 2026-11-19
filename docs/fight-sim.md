@@ -47,6 +47,7 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `reaction` | `REACTION_RULES`, what the elements turn | `reaction.rules.storm`, `reaction.rules.blind2` |
 | `camping` | `CAMPING`, Càmping Eurosport's foes, as `camping.rules` | `camping.rules.bombona`, `camping.rules.punetazo` |
 | `marta` | `MARTA`, Las cuerdas' foes and La Voz, as `marta.rules` | `marta.rules.eco`, `marta.rules.acorde`, `marta.rules.directo` |
+| `castle` | `CASTLE` (`src/castle.ts`), the castle's pupils, Aurelià, Dirección and the Queen, as `castle.rules` | `castle.rules.resolucion`, `castle.rules.year3`, `castle.rules.reinaVuelta` |
 | `fear` | `FEAR_RULES` as `fear.rules`, and El Plato's blow as `fear.plato` (the onions hit with `ONIONS`, Vertitrón with `VERTIGO`) | `fear.rules.escortLayers`, `fear.plato.power` |
 
 What the Ecos de luz are in is one more list, `--improved`, of `src/ecos.ts` ids joined with `/`
@@ -356,3 +357,31 @@ Eco and Crescendo punish length, so 80 PV more or less moves `smart` from always
 wins, at 32 it does four times in five. `smart` counts breaking the Calderón (an Acorde while she
 holds her breath) as the damage it saves, and does not wait for a note while her second voice
 stands, since that one can be hit in a silence.
+
+## The castle, as tuned
+
+Preliminary (docs/castle.md § Built so far). Measured with `just fight-sim check` (200 fights, seed
+35): the dual party, Papagato 3, and Atacar's three elements with Vasos and Descarga (`ELEMENTAL`
+in `src/battle-sim.ts`). Its numbers are `CASTLE` (book `castle.rules`) and each kind's `PROFILES`.
+
+| Fight | Bot | Wins | Rounds won | PV left |
+| --- | --- | --- | --- | --- |
+| Primer curso · Chivata y Repetidor | casual | 100 % | 3.2 | 84 % |
+| Tercer curso · Empollón, Repetidor y Chivata | smart | 91 % | 10.9 | 43 % |
+| Tercer curso · Empollón, Repetidor y Chivata | casual | 0 % | – | – |
+| La Delegada · 3.º | smart | 83 % | 8.2 | 18 % |
+| La Delegada · 3.º | casual | 0 % | – | – |
+| Aurelià | smart | 82 % | 12.9 | 6 % |
+| Aurelià | casual | 0 % | – | – |
+| Dirección | smart | 92 % | 6.3 | 10 % |
+| Dirección | casual | 0 % | – | – |
+| La Reina, first meeting | smart | 0 % | – | – |
+| La Reina, with the artilugio | smart (plays the melody) | 100 % | 7.0 | 74 % |
+| La Reina, with the artilugio | casual (random buttons) | 0 % | – | – |
+
+Measured 2026-11-19. What changed for it: Dirección has 160 PV each and hits softer (Expediente 18,
+Horario 6, Circular 12, ×1.8 on the wet), and its Acta announces the Resolución a turn ahead; the
+third year hits ×1.25, not ×1.5; La Delegada's third room is her and the twins. Without Papagato
+(`TECH`), Aurelià and Dirección are still almost never won: the whole-game simulator
+(docs/game-sim.md) says whether a real party reaches them that way. In `playOut` the smart bot plays
+the artilugio's melody (two notes a turn) and casual presses random buttons.

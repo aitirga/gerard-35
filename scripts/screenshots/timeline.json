@@ -1,0 +1,48 @@
+{
+  "title": "Selector · línea temporal",
+  "description": "The development picker's timeline over Historia (docs/dev-tools.md § Historia): the main line's key events as dots, the ánima missions under it, and Empezar aquí, at home or where it happened.",
+  "steps": [
+    {
+      "open": "/?story=tv-news"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "document.querySelector('#environment').click(); document.querySelector('[data-tab=\"story\"]').click()"
+    },
+    {
+      "shot": "timeline",
+      "delay": 600,
+      "caption": "The timeline over Historia: done up to Las noticias, where the game is (the ring)"
+    },
+    {
+      "eval": "document.querySelector('[data-point=\"metro\"]').click(); document.querySelector('.timeline-mission[data-mission=\"nuria\"]').click()",
+      "caption": "The timeline over Historia: done up to Noticias, where the game is (the ring). On the right, the own ánimas without levels and the shared ones with theirs"
+    },
+    {
+      "shot": "timeline-marked",
+      "delay": 600,
+      "caption": "Primer metro marked and Nuria y Uri's mission ticked as done, to start at home"
+    },
+    {
+      "eval": "document.querySelector('[data-go]').click()"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "until": "window.gerard && window.gerard.game.environmentId === 'meridiana' && window.gerard.story.jar.length === 2",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "en-casa",
+      "delay": 4000,
+      "caption": "Reloaded at home with that done: the first metro taken and Nuria's two lights in the jar"
+    }
+  ]
+}

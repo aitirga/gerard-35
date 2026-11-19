@@ -1,3 +1,4 @@
+import { ARTILUGIO_NOTES } from './castle.ts';
 import type { GameAudio } from './audio';
 
 /**
@@ -64,6 +65,12 @@ function meow(context: AudioContext, out: AudioNode, at: number, { pitch, length
   osc.onended = () => env.disconnect();
 }
 
+/** One of the artilugio's four buttons: a held, clean note of her melody. */
+const artilugio = (button: number): Sound => ({ synth: (c, out, at) => {
+  const hz = ARTILUGIO_NOTES[button];
+  tone(c, out, at, { type: 'triangle', from: hz, attack: .01, length: .7, gain: .2 }); tone(c, out, at, { from: hz * 2, length: .35, gain: .04 });
+  return .7;
+}, gap: .05, voices: 3 });
 export const SOUNDS = {
   // Menus: a soft tick to move, a rising pair to confirm, a falling note to go back.
   'ui-move': { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 1320 * p, length: .045, gain: .12 }); return .05; }, jitter: 15, gap: .03, voices: 2 },
@@ -218,6 +225,8 @@ export const SOUNDS = {
     tone(c, out, at + .1, { type: 'square', from: 41 * p, to: 22 * p, attack: .4, hold: .8, length: 1.8, gain: .05 });
     return 1.95;
   }, jitter: 30, gap: 1, voices: 1 },
+  // The artilugio's four buttons (docs/castle-bosses.md): a held, clean note each, the notes of her melody.
+  'artilugio-0': artilugio(0), 'artilugio-1': artilugio(1), 'artilugio-2': artilugio(2), 'artilugio-3': artilugio(3),
 } satisfies Record<string, Sound>;
 export type SoundId = keyof typeof SOUNDS;
 

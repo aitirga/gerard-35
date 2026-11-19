@@ -1,13 +1,14 @@
 import { ANIMAS, ANIMA_IDS, type AnimaId } from './animas';
 import { canWear, palaceGuards, STAGED_MOMENTS, type ClassId, type Encounter, type StagedMoment } from './battle';
 import type { FightMoment } from './battle-ui';
+import { CASTLE_ENCOUNTERS, CASTLE_FIGHT_NAMES } from './castle.ts';
 import { CLASSES } from './classes';
-import { IMPROVEMENTS, improvementOf } from './ecos';
+import { IMPROVEMENTS, TREE_ANIMAS, improvementOf } from './ecos';
 import { xpFloor } from './levels';
 import type { EnvironmentId } from './environments';
 import { dayForStage } from './days';
 import { nightTier } from './night';
-import { STORY_ARCS, isChapter2, missionParts, missionsDone, topLevel, type Arc } from './story-points';
+import { STORY_ARCS, TIMELINE, isChapter2, missionParts, missionsDone, topLevel, type Arc } from './story-points';
 import type { StoryFlag } from './story';
 
 /**
@@ -41,6 +42,9 @@ const PLACES: Place[] = [
   { id: 'palacio-gimnasio', name: 'Palacio · El gimnasio', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
   { id: 'palacio-secretaria', name: 'Palacio · La secretaría', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
   { id: 'palacio-trono', name: 'Palacio · El salón del trono', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
+  { id: 'castillo-1', name: 'Castillo · Primer curso', detail: 'Del patio al gimnasio; cambia cada día', group: 'Palacio de la Reina', open: false },
+  { id: 'castillo-2', name: 'Castillo · Segundo curso', detail: 'Del gimnasio a la secretaría; cambia cada día', group: 'Palacio de la Reina', open: false },
+  { id: 'castillo-3', name: 'Castillo · Tercer curso', detail: 'De Direcció al trono; cambia cada día', group: 'Palacio de la Reina', open: false },
   { id: 'alegia', name: 'Alegia · San Juan kalea', detail: 'Donde está Marta', group: 'Alegia', open: true },
   { id: 'cuerdas', name: 'Las cuerdas', detail: 'Al otro lado de la pompa', group: 'Alegia', open: false },
   { id: 'patio', name: 'El patio', detail: 'Prueba de movimiento', group: 'Otros lugares', open: true },
@@ -61,7 +65,9 @@ const UNI_FIGHTS = ['sobremesa'] as const;
 const CAMPING_FIGHTS = ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon'] as const;
 /** Las cuerdas, Marta's dungeon (docs/quests/marta.md): a quality after each maze, and La Voz. */
 const CUERDAS_FIGHTS = ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'] as const;
-export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number] | (typeof UNI_FIGHTS)[number] | (typeof CAMPING_FIGHTS)[number] | (typeof CUERDAS_FIGHTS)[number];
+/** The castle (docs/castle.md): each room's pupils by year, La Delegada, Aurelià, the management team and the Queen. */
+const CASTLE_FIGHTS = CASTLE_ENCOUNTERS;
+export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number] | (typeof UNI_FIGHTS)[number] | (typeof CAMPING_FIGHTS)[number] | (typeof CUERDAS_FIGHTS)[number] | (typeof CASTLE_FIGHTS)[number];
 /** What the fight tester starts: who fights, wearing what, against whom, and the help it gives. */
 export interface FightSetup {
   adult: boolean; partner: boolean;
@@ -96,8 +102,8 @@ export function validFight(value: unknown): FightSetup {
   const wear = { gerard, aitor: aitor === gerard ? undefined : aitor };
   const adult = v.adult === true;
   // The palace minion is chapter 1's fight: the boys, always together.
-  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
-  const tower = ([...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS] as readonly string[]).includes(encounter);
+  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
+  const tower = ([...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS] as readonly string[]).includes(encounter);
   return {
     adult, partner: encounter === 'palace-minion' ? true : v.partner !== false,
     wear, animas, friends: Array.isArray(v.friends) ? ANIMA_IDS.filter(id => v.friends!.includes(id)) : [],
@@ -119,9 +125,10 @@ export interface JumpMenuDev {
   day: () => number;
   /**
    * Starts over at a story point (`new` for the very beginning); in chapter 2, on a day and with
-   * those ánima missions done, and at an hour (21: night, the way home from Fabra i Puig).
+   * those ánima missions done, and at an hour (21: night, the way home from Fabra i Puig); `home`
+   * stands Gerard at home instead of where the point happened.
    */
-  story: (at: StoryFlag | 'new', day?: number, missions?: AnimaId[], hour?: number) => void;
+  story: (at: StoryFlag | 'new', day?: number, missions?: AnimaId[], hour?: number, home?: boolean) => void;
   /**
    * Starts the way home at night (src/night.ts) on the Meridiana from Fabra i Puig, with her castle
    * at that stage (0–4): the day follows from it and the ánima missions done.
@@ -139,8 +146,8 @@ export interface JumpMenuDev {
   giveXp: (id: ClassId, amount: number | 'level') => void;
   /** Unlocks ánimas at those levels at once, the fight on now included; `undefined` gives back the story's. */
   setAnimas: (levels: AnimaLevels | undefined) => void;
-  /** The Ecos de luz: how many there are, how many are free, and those the picker added on top of the story's. */
-  ecos: () => { total: number; free: number; extra: number };
+  /** The Ecos de luz: how many there are, how many are free, those the picker added on top of the story's, and the improvements they are in. */
+  ecos: () => { total: number; free: number; extra: number; improved: readonly string[] };
   /** Adds ecos on top of the story's (not saved); opens the jar's screen wherever you are. */
   giveEcos: (count: number) => void;
   openJar: () => void;
@@ -178,6 +185,10 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   let missions: AnimaId[] | undefined;
   /** The mission whose parts Misiones shows; until chosen, the first one. */
   let mission: AnimaId = ANIMA_IDS[0];
+  /** The timeline's point: every key event up to it is done; until chosen, the last one the story has. */
+  let point: StoryFlag | 'new' | undefined;
+  /** Whether the timeline's jump starts at home instead of where its point happened. */
+  let atHome = true;
   let returnFocus: HTMLElement | undefined;
   const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 
@@ -191,6 +202,27 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
         <strong>${escape(p.name)}</strong><small>${escape(p.detail)}${dev && !p.open ? ' · solo depuración' : ''}</small>
       </button>`).join('')}</section>`).join('') : '<p class="jump-empty">Ningún lugar se llama así.</p>');
   }
+  /**
+   * The timeline over Historia: the main line's key events in a row and the ánima missions after
+   * it. Clicking an event marks it and all before it as done; a mission is ticked on its own once
+   * the line reaches the first metro. «Empezar» reloads the game with exactly that done.
+   */
+  function timeline() {
+    const flags = dev!.flags(), done = missions ??= missionsDone(flags);
+    const reached = TIMELINE.map(t => t.at === 'new' || flags.includes(t.at)).lastIndexOf(true);
+    const at = TIMELINE.findIndex(t => t.at === (point ??= TIMELINE[reached].at));
+    const open = at >= TIMELINE.findIndex(t => t.at === 'metro');
+    const event = (t: (typeof TIMELINE)[number], i: number) => `<li ${t.at === 'caught' ? 'data-chapter="2"' : ''}><button type="button" class="timeline-event" data-point="${t.at}" aria-pressed="${i === at}" ${i <= at ? 'data-done' : ''} ${i === reached ? 'data-now' : ''} title="${t.at}"><i></i><span>${escape(t.label)}</span></button></li>`;
+    const friend = (id: AnimaId) => `<li><button type="button" class="timeline-event timeline-mission" data-mission="${id}" aria-pressed="${open && done.includes(id)}" ${open && done.includes(id) ? 'data-done' : ''} ${open ? '' : 'disabled'} style="--chip:${ANIMAS[id].colour}"><i></i><span>${escape(ANIMAS[id].friend)}</span></button></li>`;
+    const count = open ? done.length : 0;
+    return `<section class="jump-group jump-timeline" aria-label="Línea temporal"><h3 class="eyebrow">LÍNEA TEMPORAL</h3>
+      <ol class="timeline-track">${TIMELINE.map(event).join('')}</ol>
+      <ol class="timeline-track timeline-missions" aria-label="Misiones de ánima hechas"><li class="timeline-label">Misiones</li>${ANIMA_IDS.map(friend).join('')}</ol>
+      <div class="jump-row" role="group" aria-label="Dónde empezar"><span>Empezar</span>${([['1', 'En casa'], ['0', 'Donde pasa']] as const).map(([v, label]) => `<button type="button" data-home="${v}" aria-pressed="${atHome === (v === '1')}">${label}</button>`).join('')}
+        <button type="button" class="timeline-go" data-go>Empezar aquí${count ? ` · ${count} ${count > 1 ? 'misiones' : 'misión'}` : ''}</button></div>
+      <p class="jump-note">Pulsa un evento: queda hecho con todo lo anterior. Las misiones se marcan aparte, desde el primer metro. El aro es donde está la partida ahora.</p>
+    </section>`;
+  }
   function storyPage() {
     const flags = dev!.flags(), last = flags.at(-1);
     const beat = (flag: StoryFlag, label: string, n: number, all: readonly StoryFlag[]) => `<button type="button" class="jump-item jump-beat" data-beat="${flag}" ${last && all.includes(last) ? 'aria-current="true"' : ''} ${all.every(f => flags.includes(f)) ? 'data-done' : ''}>
@@ -199,7 +231,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       <h4><span>${escape(a.title)}</span><small>${escape(a.detail)}</small></h4>
       ${a.steps.map((s, i) => beat(s.flags[0], s.label, i + 1, s.flags)).join('')}</div>`;
     const chapter = (n: 1 | 2, missions: boolean) => STORY_ARCS.filter(a => a.chapter === n && 'anima' in a === missions).map(arc).join('');
-    return `
+    return `${timeline()}
       <section class="jump-group"><h3 class="eyebrow">CAPÍTULO 1 · SANT QUIRZE</h3>
         <button type="button" class="jump-item jump-beat" data-beat="new" ${!flags.length ? 'aria-current="true"' : ''}><span class="jump-step">0</span><strong>Desde el principio</strong><code>new</code></button>
         ${chapter(1, false)}</section>
@@ -264,9 +296,22 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     };
     const row = (id: ClassId) => `<div class="jump-anima"><strong style="--chip:${CLASSES[id].colour}">${escape(name(id))}</strong><div class="fight-chips" role="group" aria-label="${escape(name(id))}">
       ${chip(id, 0, 'No')}${Array.from({ length: topLevel(id) }, (_, i) => chip(id, i + 1, `Nv ${i + 1}`)).join('')}</div>${grow(id)}</div>`;
+    // The own ánimas (Matemágico, Tecnópata) have no levels and earn no EXP: at 35 they are always
+    // worn and grow at the jar, so their row says how far their constellation is. As a child they
+    // are only had or not (Matemágico wakes in the palace).
+    const own = (id: ClassId) => {
+      const nodes = IMPROVEMENTS.filter(item => item.anima === id), bought = nodes.filter(item => ecos.improved.includes(item.id)).length;
+      return `<div class="jump-anima"><strong style="--chip:${CLASSES[id].colour}">${escape(name(id))}</strong>${adult
+        ? `<p class="jump-note jump-own">Siempre puesta, sin niveles. Constelación: ${bought} de ${nodes.length} mejoras.</p>`
+        : `<div class="fight-chips" role="group" aria-label="${escape(name(id))}">${chip(id, 0, 'No')}${chip(id, 1, 'Despierta')}</div>`}</div>`;
+    };
+    const shared = CLASS_IDS.filter(id => !TREE_ANIMAS.includes(id));
     return `<aside class="jump-side" aria-label="Ánimas">
-      <h3 class="eyebrow">ÁNIMAS</h3>
-      ${CLASS_IDS.map(row).join('')}
+      <h3 class="eyebrow">ÁNIMAS PROPIAS</h3>
+      ${TREE_ANIMAS.map(own).join('')}
+      ${adult ? '<div class="fight-chips jump-xp"><button type="button" data-open-jar>Abrir el bote</button></div>' : ''}
+      <h3 class="eyebrow">ÁNIMAS COMPARTIDAS</h3>
+      ${shared.map(row).join('')}
       ${changed ? '<button type="button" class="jump-reset" data-animas-reset>Volver a las de la historia</button>' : '<p class="jump-note jump-story-note">Las que da la historia hasta aquí.</p>'}
       <p class="jump-note">Los niveles se aplican al momento, también al combate en curso. Subrayado, lo que da la historia. No se guarda: un salto vuelve a las de la historia.</p>
       <p class="jump-note">La experiencia sí cuenta: se guarda y sube de nivel como en un combate, con su aviso. Vuelve a las ánimas de la historia.</p>
@@ -282,7 +327,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   /** Every fight by name (TypeScript asks for each new one). */
   const FIGHT_NAMES: Record<Encounter, string> = { dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle', 'night-guard': 'un guardián en la Meridiana', cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'cebollitas', 'crias-2': 'crías del segundo anillo', 'crias-3': 'crías del tercer anillo', sobremesa: 'La Sobremesa',
     'camping-magos': 'magos de camping', 'camping-dados': 'dados', 'camping-agentes': 'agentes', 'camping-tienda': 'una tienda equivocada', 'camping-negra': 'la parcela negra', campeon: 'El Campeón',
-    'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz' };
+    'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz', ...CASTLE_FIGHT_NAMES };
   /** During a fight: the help it gets, the moments it can jump to, and the way out. */
   function livePage() {
     const now = dev!.current()!, help = dev!.help();
@@ -325,6 +370,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       ${f.adult ? `<div class="fight-row"><span>Amigos de la uni</span><div class="fight-chips">${chip('encounter', 'sobremesa', 'La Sobremesa', f.encounter === 'sobremesa')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Las cuerdas</span><div class="fight-chips">${CUERDAS_FIGHTS.map(id => chip('encounter', id, CUERDAS_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Camping Eurosport</span><div class="fight-chips">${CAMPING_FIGHTS.map(id => chip('encounter', id, CAMPING_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
+      ${f.adult ? `<div class="fight-row"><span>Castillo</span><div class="fight-chips">${CASTLE_FIGHTS.map(id => chip('encounter', id, CASTLE_FIGHT_NAMES[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Torre de Uri</span><div class="fight-chips">${TOWER_FIGHTS.map(id => chip('encounter', id, TOWER_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${dogs ? `<div class="fight-row"><span>Cuántos</span><div class="fight-chips">${[1, 2, 3, 4].map(n => chip('foes', String(n), String(n), f.foes === n)).join('')}</div></div>` : ''}
       ${guards ? `<p class="jump-note">${f.encounter === 'night-guard' ? 'Uno solo, tan fuerte como los del castillo con las ánimas de los amigos.' : 'Los guardianes son tantos y tan fuertes como dejan las ánimas de los amigos.'}</p>` : ''}
@@ -388,6 +434,14 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       close();
       const at = data.beat as StoryFlag | 'new', later = at !== 'new' && isChapter2(at);
       dev!.story(at, later ? day : undefined, later ? missions : undefined, later ? hour : undefined);
+      return;
+    }
+    if (data.point) { point = data.point as StoryFlag | 'new'; render(`[data-point="${point}"]`); return; }
+    if (data.home) { atHome = data.home === '1'; render(`[data-home="${data.home}"]`); return; }
+    if (data.go !== undefined) {
+      close();
+      const at = point ?? 'new', later = at !== 'new' && isChapter2(at);
+      dev!.story(at, later ? day : undefined, later ? missions : undefined, later ? hour : undefined, atHome);
       return;
     }
     if (data.part) { close(); dev!.mission(mission, data.part, day, missions); return; }

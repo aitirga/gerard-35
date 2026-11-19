@@ -246,11 +246,12 @@ can walk through them. Each day it grows taller, never wider than the roof (`sea
   hides the throne stair. Crossing it means a fight that, without ánimas, cannot be won. That is
   the first lesson of the chapter: go and see, lose, wake up, go and find the friends.
 - **Each ánima weakens them** (and strengthens the party), so every return is visibly different:
-  fewer guards, smaller, slower. With enough ánimas the fight is fair, and the curtain parts.
+  fewer guards, smaller, slower. With enough ánimas the fight is fair, and the curtain parts onto
+  the castle's first phase (docs/castle.md), not the throne.
 - **Escape is allowed** from the guards (back to the hall), unlike the dream's fights: it is a
   place to probe, not a trap.
-- **Losing** wakes Gerard at home (see above). The palace remembers nothing; the party remembers
-  everything.
+- **Losing** wakes Gerard at home (see above). The palace remembers only its bosses beaten
+  (docs/castle.md § Structure); the party remembers everything.
 - **Behind the hall's east door, the school.** At 35 the door shows the school's orange frame
   under her gum and opens onto the yard: the palace's zones (el patio, el gimnasio, la
   secretaría, el salón del trono), each with its own colour, the school transformed
@@ -335,8 +336,9 @@ notification, graffiti, a menu on a bar's board. A clue:
 
 A proposal, to be decided with the story (`docs/lore.md` has the theme):
 
-1. With enough ánimas the curtain parts and Gerard climbs to the throne. La Reina Bubbaloo does not
-   fight; she **shows** him: the ánimas he carries are grey. He gave his friends their routine
+1. Past the castle's two bosses Gerard climbs to the throne. (She fights: the final fight is
+   designed in docs/castle-bosses.md, 2026-11-19. What follows is the earlier proposal for what
+   she shows.) La Reina Bubbaloo **shows** him: the ánimas he carries are grey. He gave his friends their routine
    back, and with it the sadness underneath it. She was not stealing their childhood: she was
    trying to give it back, and doing it badly, by popping their lives.
 2. **La segunda vuelta**: Gerard goes back to each friend, now looking for the kid they were (a

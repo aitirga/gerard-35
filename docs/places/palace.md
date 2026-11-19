@@ -20,12 +20,12 @@ Gerard's workplace: he teaches there and is the school's secretary. From the str
 palace of chapter 1 (`palacio`): the hall, the portrait gallery and the wrapper room, with the
 guards before the gum curtain.
 
-What the story decided (rounds 14–16): the palace is **a regular dungeon of zones**, each with its
-own characteristic elements, puzzles and **a boss**, the bosses being teachers Gerard works with
-(Aurelia, Montse, Pilar…). A zone won stays won and **opens a shortcut** to the next one. The zones
-are **el patio, el gimnasio, la secretaría** (his own office, his routine, last) and then **the
-throne room**. Nothing is required to reach the throne: the curtain and its guards stay open from
-day one, only difficulty stands in the way.
+What the story decided (2026-11-19, [castle.md](../castle.md); it replaces rounds 14–16's fixed
+dungeon with a boss per zone): the zones are **the fixed rooms of a castle generated between
+them**. The patio is where phase 1 starts, **el gimnasio** is Aurelià's room, **la secretaría**'s
+Direcció is where Mar, Montse and Pilar are, and then **the throne room**. A boss beaten stays
+beaten and the next visit starts in its room. **The throne is reached only after both bosses**:
+the hall's curtain and its guards lead into phase 1.
 
 Aitor's direction for this place: **not everything pink**. The entrance stays hers (her gum, her
 wrappers) and pink appears in details, her creeping in; **each zone has its own main colour** so a
@@ -220,8 +220,8 @@ own environment (its own look, air, sky and music), joined by doors.
                          ┌────────────────── EL SALÓN DEL TRONO ──────────────────┐
                          │ stage + her throne · balcony on the night city (north)  │
                          └───────────▲────────────────────────────────▲───────────┘
-                                     │ the stair (behind the curtain:  │ Direcció's stair: the last
-                                     │ the guards, open from day one)  │ shortcut, once la secretaría is won
+                                     │ (the hall's curtain now leads   │ Direcció's stair: the way up,
+                                     │ into phase 1: docs/castle.md)   │ past phase 3, once Direcció is won
  ENTRANCE (pink, built) ─────────────┘                                 │
  vestíbulo ── east door (ch2 only) ──> EL PATIO: its porch is the hub ─┤
                                         ├── door GIMNÀS ──> EL GIMNASIO│   (opens when el patio is won)
@@ -229,10 +229,10 @@ own environment (its own look, air, sky and music), joined by doors.
                                                                 (Gerard's key turns when el gimnasio is won)
 ```
 
-Order and shortcuts: **patio → gimnasio → secretaría → throne**. Each won zone opens the door to
-the next **in the patio's porch**, a few steps from the hall, so the next visit starts there; the
-secretaría's *Direcció* door is the last shortcut, up a stair into the throne room's west door,
-past the guards. A zone half done starts again from its door; won zones stay won (falling wakes
+Order: **patio → gimnasio → secretaría → throne**, with a generated floor between each pair
+([castle.md](../castle.md) § Structure). A boss beaten moves the entry to its room (the gym, then
+Direcció); the *Direcció* door leads on to phase 3 and, at its end, up into the throne room's
+west door. A zone half done starts again from its door; won zones stay won (falling wakes
 Gerard at home as anywhere).
 
 Chapter 1 stays untouched: `palacio`'s plan, rooms and lines do not change. In chapter 2 only
@@ -240,7 +240,8 @@ Chapter 1 stays untouched: `palacio`'s plan, rooms and lines do not change. In c
 adult-only interaction, as `challenge-guards` is today), arriving at the patio's porch.
 
 Proposed flags (story arc *El palacio por dentro*): `palacio-escuela` (first time through the east
-door), `zona-patio`, `zona-gimnasio`, `zona-secretaria` (each zone won).
+door), `aurelia` and `direccion` (each boss beaten; they replace `zona-patio`, `zona-gimnasio`
+and `zona-secretaria`).
 
 ### El patio · `palacio-patio` (35 × 25)
 
@@ -524,7 +525,8 @@ maze, the circuit, the archive), the possessed pupils, the artilugio's room orde
 
 ## Open
 
-1. Which teacher is the boss of which zone, and what each one's trait is (the story's decision).
+1. ~~Which teacher is the boss of which zone.~~ Settled 2026-11-19: Aurelià in the gym, Mar,
+   Montse and Pilar in Direcció ([castle-bosses.md](../castle-bosses.md)).
 2. The cultural zones (the user's idea): the *Benvinguts* mural and games of many places in the
    patio are a respectful start; what they mean in play is open.
 3. The real inside of Gerard's school: if Aitor has photos of the empty spaces (no pupils, no

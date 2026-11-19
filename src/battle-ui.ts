@@ -14,6 +14,15 @@ import { award, fightXp, levelForXp, levelProgress, MAX_LEVEL, participants, toN
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
 import type { SoundId } from './sfx';
+import { CASTLE_ENCOUNTERS, MELODY, isCastle, yearOf, type CastleEncounter } from './castle';
+import { artilugioLive, castleChips, castleNote } from './castle-fight';
+
+/** The castle's fights on the kicker and the heading (docs/castle.md, docs/castle-bosses.md). */
+const YEAR_WORDS = { 1: 'PRIMERO', 2: 'SEGUNDO', 3: 'TERCERO' } as const;
+const CASTLE_KICKERS = Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, id === 'aurelia' ? 'AURELIÀ' : id === 'direccion' ? 'EL EQUIPO DE DIRECCIÓN' : id.startsWith('reina') ? 'LA REINA BUBBALOO'
+  : `${id.startsWith('delegada') ? 'LA DELEGADA' : 'ALUMNOS DE LA REINA'} · ${YEAR_WORDS[yearOf(id)]}`])) as Record<CastleEncounter, string>;
+const CASTLE_TITLES = Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, id === 'aurelia' ? 'Nadie sale <em>hasta el timbre.</em>' : id === 'direccion' ? 'Consta <em>en acta.</em>' : id === 'reina' ? 'Lo que <em>queda.</em>' : id === 'reina-vuelta' ? 'Otra vez, <em>con música.</em>'
+  : id.startsWith('delegada') ? 'La que <em>manda.</em>' : ['Chicle <em>fresco.</em>', 'Con algo <em>dentro.</em>', 'Chicle <em>rancio.</em>'][yearOf(id) - 1]])) as Record<CastleEncounter, string>;
 
 /**
  * The commands, in order (the number keys follow it). In development the Dual command sits third:
@@ -29,8 +38,8 @@ const commandsFor = (dev: boolean): { id: Command; name: string }[] => [
   { id: 'escape', name: 'Huir' },
 ];
 /** Uri's fears (docs/quests/nuria.md): what the fight's heading says. */
-const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN', sobremesa: 'LA SOBREMESA', 'camping-magos': 'MAGOS DE CAMPING', 'camping-dados': 'DADOS', 'camping-agentes': 'AGENTES', 'camping-tienda': 'UNA TIENDA EQUIVOCADA', 'camping-negra': 'LA PARCELA NEGRA', campeon: 'EL CAMPEÓN', 'cuerdas-lealtad': 'LA LEALTAD', 'cuerdas-cristalino': 'LO CRISTALINO', 'cuerdas-directo': 'LO DIRECTO', voz: 'LA VOZ' } as const;
-const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>', sobremesa: 'Nadie se <em>levanta.</em>', 'camping-magos': 'Huele a <em>gas.</em>', 'camping-dados': 'Cada ronda, <em>otra cara.</em>', 'camping-agentes': 'Uno da la <em>cara.</em>', 'camping-tienda': 'Esa no <em>era.</em>', 'camping-negra': 'Todo <em>apagado.</em>', campeon: 'Sobre su <em>peana.</em>', 'cuerdas-lealtad': 'No se <em>aparta.</em>', 'cuerdas-cristalino': 'Se ve <em>a través.</em>', 'cuerdas-directo': 'Sin <em>rodeos.</em>', voz: 'Lo que <em>falta.</em>' } as const;
+const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN', sobremesa: 'LA SOBREMESA', 'camping-magos': 'MAGOS DE CAMPING', 'camping-dados': 'DADOS', 'camping-agentes': 'AGENTES', 'camping-tienda': 'UNA TIENDA EQUIVOCADA', 'camping-negra': 'LA PARCELA NEGRA', campeon: 'EL CAMPEÓN', 'cuerdas-lealtad': 'LA LEALTAD', 'cuerdas-cristalino': 'LO CRISTALINO', 'cuerdas-directo': 'LO DIRECTO', voz: 'LA VOZ', ...CASTLE_KICKERS } as const;
+const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>', sobremesa: 'Nadie se <em>levanta.</em>', 'camping-magos': 'Huele a <em>gas.</em>', 'camping-dados': 'Cada ronda, <em>otra cara.</em>', 'camping-agentes': 'Uno da la <em>cara.</em>', 'camping-tienda': 'Esa no <em>era.</em>', 'camping-negra': 'Todo <em>apagado.</em>', campeon: 'Sobre su <em>peana.</em>', 'cuerdas-lealtad': 'No se <em>aparta.</em>', 'cuerdas-cristalino': 'Se ve <em>a través.</em>', 'cuerdas-directo': 'Sin <em>rodeos.</em>', voz: 'Lo que <em>falta.</em>', ...CASTLE_TITLES } as const;
 /** What a blow says it did to an onion's layers. */
 const peelText = (peeled: number, onion?: { layers?: number }) => !onion?.layers ? '¡Sin capas!' : peeled > 1 ? `¡${peeled} capas menos!` : '¡Una capa menos!';
 const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
@@ -156,7 +165,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Combate por turnos');
   root.innerHTML = `
     <div class="dual-cinema" aria-hidden="true" hidden><i></i><b></b></div>
-    <header class="battle-heading"><span class="battle-kicker">ENCUENTRO / PASSATGE MARESME</span><h1>Un pequeño <em>contratiempo.</em></h1></header>
+    <header class="battle-heading"><span class="battle-kicker">ENCUENTRO / PASSATGE MARESME</span><h1>Un pequeño <em>contratiempo.</em></h1><p class="battle-notes" data-device="keyboard" data-glyph-template="{notes} · El artilugio" hidden></p></header>
     <div class="round-badge"><span>RONDA</span><strong>01</strong></div>
     <button class="summary-key" type="button" tabindex="-1" aria-controls="battle-summary" hidden><kbd data-glyph="summary"></kbd> Resumen</button>
     <section class="battle-summary" id="battle-summary" aria-label="Resumen del combate" hidden></section>
@@ -334,6 +343,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (c.clear) chips.push(['cristal', 'Nota clara']);
       if (c.winded) chips.push(['sin-aire', 'Sin aire']);
     }
+    // The castle's rules (src/castle-fight.ts): what a pupil learned, the lectern, the Acta, the Queen's gum and Aitor's marks.
+    if (state && c.castle) chips.push(...castleChips(state, c));
     // A move announced a turn ahead, and at whom (Carrerilla → Aitor), or what is about to happen.
     // One chip for any announced move, as `intentLabel` says it («Rayo terrorífico → todos»).
     const announced = state && c.intent ? intentLabel(state, c) : undefined;
@@ -733,8 +744,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const targetButtons = () => [...root.querySelectorAll<HTMLButtonElement>('.roster-target:not(:disabled), .battle-target[data-side="foes"]:not(:disabled)')].filter(button => !button.hidden);
   /** A fighter's nameplate over their head (PV, maná for the party, statuses); a foe's is also how it is picked. */
   function plateHtml(f: Combatant, i: number, foe: boolean) {
-    const colour = f.kind === 'minion' || f.kind === 'guardian' ? '#ff6fae' : f.kind === 'vertigo-ojo' ? '#b07aff' : DOG_PROFILES[i]?.collar ?? '#b9dba1';
-    return `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${foe ? `data-unit="${f.id}"` : ''} data-side="${foe ? 'foes' : 'allies'}" style="--dog-color:${colour}" aria-label="Elegir a ${f.name}" hidden disabled>${foe && isSobremesa(f.kind) ? `<span class="plate-name" aria-hidden="true">${f.name}</span>` : ''}<span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>${foe || !f.maxSecondary ? '' : `<span class="plate-pips" aria-hidden="true">${'<i data-pip="full"></i>'.repeat(f.maxSecondary)}</span>`}</button>`;
+    // Her pupils and she are her pink; those she holds (Aurelià, Dirección), possession's violet.
+    const colour = f.kind === 'minion' || f.kind === 'guardian' ? '#ff6fae' : f.kind === 'vertigo-ojo' || f.kind === 'aurelia' || f.kind === 'directiva' ? '#b07aff' : isCastle(f.kind) ? '#ff6fae' : DOG_PROFILES[i]?.collar ?? '#b9dba1';
+    return `<button class="battle-target" type="button" tabindex="-1" data-target="${f.id}" ${foe ? `data-unit="${f.id}"` : ''} data-side="${foe ? 'foes' : 'allies'}" style="--dog-color:${colour}" aria-label="Elegir a ${f.name}" hidden disabled>${foe && (isSobremesa(f.kind) || isCastle(f.kind)) ? `<span class="plate-name" aria-hidden="true">${f.name}</span>` : ''}<span class="enemy-health" aria-hidden="true"><b style="width:100%"></b><i style="width:100%"></i></span>${foe || !f.maxSecondary ? '' : `<span class="plate-pips" aria-hidden="true">${'<i data-pip="full"></i>'.repeat(f.maxSecondary)}</span>`}</button>`;
   }
   /** Every foe gets its plate, with the other foes'; one no longer in the fight loses it. */
   function ensurePlates() {
@@ -801,6 +813,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       : state.encounter.startsWith('crias-') ? `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} CRÍAS DEL MIEDO`
       : `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} PERROS${state.possessed ? ' POSEÍDOS' : ''}`;
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
+    // The artilugio's keys, shown the moment they can do something and until the first note sounds.
+    get('.battle-notes').hidden = !artilugioLive(state) || !!state.castle?.startled;
     // Cards are kept (and moved between docks) so the waves glide instead of snapping.
     const roster = get('.party-roster');
     if (!root.querySelector('.party-card')) roster.innerHTML = state.allies.map(c => `<article class="party-card" data-unit="${c.id}" data-anima="${c.classId ?? 'none'}">${plate(c)}<span class="unit-boost" hidden></span><span class="unit-status"></span><button class="roster-target" type="button" data-target="${c.id}" aria-label="Elegir a ${c.name}" hidden></button></article>`).join('');
@@ -1651,6 +1665,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.cracked) setTimeout(() => { if (token === generation) pop(effect.actor, '¡Rajado!', 'status', 'Ya no devuelve la magia', 'rajado'); }, 420);
       if (effect.stuck) setTimeout(() => { if (token === generation) pop(effect.actor, 'Clavado', 'status', 'Recibe más daño', 'clavado'); }, 420);
       if (effect.summoned) pop(effect.summoned, 'Segunda voz', 'status', 'Coro', 'cristal');
+      // The castle's rules turning (src/castle-fight.ts): «Se lo aprende», «Sin atril», «Tropiezo», «Suyo», «Libre»…
+      effect.called?.forEach((call, i) => setTimeout(() => { if (token === generation) pop(call.target, call.text, 'status', call.detail ?? ''); }, 420 + i * 240));
       if (effect.kind === 'enemy' && effect.shielded && isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind)) pop(effect.actor, 'Guardia', 'guard');
       if (effect.kind === 'enemy' && effect.clear) pop(effect.actor, 'Nota clara', 'status', 'Devuelve la magia', 'cristal');
       if (effect.kind === 'enemy' && effect.telegraph?.id === 'calderon') pop(effect.actor, 'Toma aire', 'status', 'Calderón en su próximo turno', 'crescendo');
@@ -1912,6 +1928,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   let pointerPlayer: PlayerId = 1;
   function keydown(event: KeyboardEvent) {
     if (!state || event.metaKey || event.ctrlKey || event.altKey) return;
+    // The artilugio's four buttons (docs/castle-bosses.md § With the artilugio): the keyboard stands in for the real one, at any moment, on nobody's turn.
+    if (/^[1-4]$/.test(event.key) && artilugioLive(state)) { event.preventDefault(); event.stopPropagation(); if (!event.repeat) note(Number(event.key) - 1); return; }
     // The summary is anyone's to open and close, at any moment (R, or Esc while it is open).
     if ((event.code === 'KeyR' && !event.repeat) || (event.key === 'Escape' && summaryOpen)) { event.preventDefault(); event.stopPropagation(); toggleSummary(event.code === 'KeyR' ? undefined : false); return; }
     const over = ['won', 'lost', 'escaped'].includes(state.phase);
@@ -1919,6 +1937,17 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!over && split()) { withPlayer(1, () => { if (!locked()) keyIn(event); }); event.preventDefault(); event.stopPropagation(); return; }
     if (!over && (turnDriver() !== 1 || busy)) { event.preventDefault(); event.stopPropagation(); return; }
     keyIn(event);
+  }
+  /** A button of the artilugio: its tone, and what it did over Aitor and her. */
+  function note(button: number) {
+    if (!state) return;
+    const done = castleNote(state, button);
+    if (!done) return;
+    callbacks.sound(`artilugio-${button}` as SoundId);
+    const queen = state.foes.find(f => f.kind === 'reina'), aitor = state.allies.find(a => a.id === 'aitor');
+    if (done.startled && queen) pop(queen.id, 'Se gira', 'status', 'Pierde su turno');
+    if (aitor) pop(aitor.id, done.freed ? 'Libre' : done.right ? `${done.notes} de ${MELODY.length}` : 'Se apagan', done.freed ? 'heal' : done.right ? 'stat-up' : 'stat-down', done.freed ? 'Maná lleno' : '');
+    render();
   }
   function keyIn(event: KeyboardEvent) {
     if (!state) return;

@@ -17,11 +17,15 @@ import SAGRADA_FAMILIA_SCENE from './geo/sagrada-familia.json' with { type: 'jso
 import { towerGrid } from './tower.ts';
 import { CUERDAS as CUERDAS_PLAN } from './cuerdas.ts';
 import { PALACE_GYM, PALACE_OFFICE, PALACE_PATIO, PALACE_THRONE, type ZoneTheme } from './palace-zone-plans.ts';
+import type { CastleFloor } from './castle.ts';
+import { CASTLE_ENVIRONMENTS } from './castle-floor.ts';
 
 export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-1' | 'home-floor-2' | 'meridiana' | 'palacio' | 'alegia'
   | 'meridiana-calle' | 'rec-comtal' | 'cardedeu' | 'cardedeu-calle' | 'cardedeu-laberinto' | 'bunkers-carmel' | 'barceloneta' | 'camping'
   | 'sants' | 'el-nucli' | 'poble-sec' | 'placa-espanya' | 'sagrada-familia' | 'sagrada-familia-interior'
   | 'palacio-patio' | 'palacio-gimnasio' | 'palacio-secretaria' | 'palacio-trono'
+  // The castle's three generated floors (src/castle-floor.ts): another every day.
+  | 'castillo-1' | 'castillo-2' | 'castillo-3'
   | 'cuerdas';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
@@ -168,7 +172,7 @@ export interface Environment {
    * `theme`, one of chapter 2's zones (ZONE_GLYPHS), built by `src/palace-zones.ts`, with named
    * `anchors` where its boss and set-pieces go.
    */
-  palace?: { plan: string[]; rooms: Room[]; theme?: ZoneTheme; anchors?: Record<string, Cell> };
+  palace?: { plan: string[]; rooms: Room[]; theme?: ZoneTheme; anchors?: Record<string, Cell>; /** A generated floor of the castle (src/castle-floor.ts): its rooms by kind, for the builder to dress. */ floor?: CastleFloor };
   /** A real place generated from map data (tools/geo.py), drawn by `src/geo-scenery.ts`. */
   geo?: GeoScene;
   /** Inside the Sagrada Família: a plan in BASILICA_GLYPHS, built by `src/basilica-scenery.ts`. */
@@ -739,6 +743,8 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   'placa-espanya': PLACA_ESPANYA,
   'sagrada-familia': SAGRADA_FAMILIA, 'sagrada-familia-interior': SAGRADA_FAMILIA_INTERIOR,
   'palacio-patio': PALACE_PATIO, 'palacio-gimnasio': PALACE_GYM, 'palacio-secretaria': PALACE_OFFICE, 'palacio-trono': PALACE_THRONE,
+  // As they are on a save's first day; the game puts the day's in their place on the way in (src/game.ts).
+  ...CASTLE_ENVIRONMENTS,
   cuerdas: CUERDAS,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */

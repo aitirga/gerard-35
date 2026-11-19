@@ -1,0 +1,185 @@
+{
+  "title": "El castillo: plantas, combates y el final",
+  "description": "docs/castle.md, docs/castle-bosses.md. Preliminary castle: the three generated floors of the day, a pupils' room, Aurelià, Dirección, the Queen holding Aitor with the artilugio's notes, and the last scene. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "eval": "window.gerard.game.setEnvironment('castillo-1');"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Castillo · Primer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "planta-1",
+      "caption": "Phase 1's floor of the day: rooms painted from the patio's green towards the gym's blue, low walls in front, her gum in the fight rooms"
+    },
+    {
+      "eval": "(() => { const floor = window.gerard.story.place('castillo-1').palace.floor, room = floor.rooms.find(r => r.encounter); window.gerard.game.setEnvironment('castillo-1', { ...room.cell }); setTimeout(() => window.gerard.storyEvent({ type: 'near', id: `castillo-sala-1-${room.id}` }), 1500); })()"
+    },
+    {
+      "until": "window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "sala",
+      "caption": "A room's pupils caught up with the party: the fight is staged on the day's floor itself"
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "document.querySelector('.battle-result button')?.click()"
+    },
+    {
+      "until": "!window.gerard.battleUI.fight && window.gerard.story.castle.beaten[1]?.length === 1",
+      "timeout": 30000
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "window.gerard.game.setEnvironment('castillo-2');"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Castillo · Segundo curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "planta-2",
+      "caption": "Phase 2, emergency light: from the gym's blue to the secretaría's manila"
+    },
+    {
+      "eval": "window.gerard.game.setEnvironment('castillo-3');"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Castillo · Tercer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "planta-3",
+      "caption": "Phase 3, almost dark: towards the throne's indigo, her pink old and dull"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-1a%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 180000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "alumnos",
+      "caption": "First year: La Chivata and El Repetidor, her pink plates with their names"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22aurelia%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 180000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "aurelia",
+      "caption": "Aurelià behind his lectern (violet: he is held), the lectern with its own PV"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22direccion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 180000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "direccion",
+      "caption": "Mar, Montse and Pilar, each plate with the element she holds"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina-vuelta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 180000
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => { window.bs = s; }); window.gerard.battleUI.jumpTo('reina-aitor')"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]') && window.bs.foes.find(f => f.kind === 'reina')?.castle?.stage === 'aitor'",
+      "timeout": 30000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "reina-aitor",
+      "caption": "The Queen at a tenth has Aitor: his plate says «Suyo»; the heading shows the artilugio's keys"
+    },
+    {
+      "eval": "(() => { const press = k => document.querySelector('#battle').dispatchEvent(new KeyboardEvent('keydown', { key: String(k), bubbles: true })); press(1); setTimeout(() => press(3), 500); setTimeout(() => press(2), 1000); })()"
+    },
+    {
+      "wait": 1300
+    },
+    {
+      "shot": "notas",
+      "caption": "Three notes of the melody: she turned at the first, and three of Aitor's six marks are lit"
+    },
+    {
+      "open": "/?story=artilugio&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.game.setEnvironment('palacio-trono', { x: 13, z: 12 }); setTimeout(() => window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'reina-vuelta' }), 2500)"
+    },
+    {
+      "until": "!document.querySelector('#ending')?.hidden && document.querySelector('#ending')?.dataset.on === 'true'",
+      "timeout": 30000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "shot": "final",
+      "caption": "The last scene: Gerard's two commands, Acabar and Bajar la mano, and no clock"
+    }
+  ]
+}

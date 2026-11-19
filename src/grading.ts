@@ -178,6 +178,10 @@ export const LOOKS: Record<LookId, Look> = {
     enhance: { shadows: -.08, vibrance: .05 },
     her: .2,
   },
+  /** The castle's floors: each on its way between two rooms' looks (day, emergency light, almost none); her pink stays hers. */
+  'castillo-1': { grade: { temperature: -.01, lift: [.004, .004, .008], shadows: [-.004, .004, .02], highlights: [.016, .012, 0], contrast: 1.04, saturation: .98 }, enhance: { shadows: .04, vibrance: .06 }, her: .18 },
+  'castillo-2': { grade: { temperature: .02, lift: [.004, .002, 0], shadows: [.006, -.002, .012], highlights: [.02, .012, -.01], contrast: 1.08, saturation: .9 }, enhance: { shadows: -.06, vibrance: .04 }, her: .25 },
+  'castillo-3': { grade: { temperature: -.04, lift: [.002, .002, .012], shadows: [-.004, -.004, .028], highlights: [.018, .01, -.004], contrast: 1.1, saturation: .84 }, enhance: { shadows: -.1, vibrance: .03 }, her: .35 },
   /** La Reina Bubbaloo's light: magenta in the shade, pink in the light, a little darker and stranger. */
   bubbaloo: {
     grade: { lift: [.012, 0, .01], gamma: [.98, .95, .97], gain: [1, .96, .98], shadows: [.024, -.008, .02], highlights: [.02, -.002, .01], contrast: 1.05, saturation: 1 },

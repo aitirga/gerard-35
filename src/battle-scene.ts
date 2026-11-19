@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type Combatant, type DishId, type OnionKind, type StatusId } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
+import { CASTLE_SIZES, isCastle } from './castle';
 import { DIE, createDie, dressDie, faceUp } from './dice';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
@@ -1843,7 +1844,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   function sourceOf(unit: Combatant, i: number, party: boolean) {
     const fear = !party && unit.kind ? fears?.templates.get(unit.kind) : undefined;
-    const minion = !party && (!!fear || ((unit.kind === 'minion' || unit.kind === 'guardian') && !!minionTemplate));
+    // The castle's foes are gum, hers: the minion's model at their own size, until each has one.
+    const minion = !party && (!!fear || ((unit.kind === 'minion' || unit.kind === 'guardian' || isCastle(unit.kind)) && !!minionTemplate));
     return party ? partyModel(unit.id) : fear ?? (minion ? minionTemplate! : dogs[i % dogs.length]);
   }
   /**
@@ -1939,7 +1941,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   function build(unit: Combatant, i: number, party: boolean, base: pc.Vec3, start: pc.Vec3) {
     // The palace guards (chapter 2) are minions grown to the size of a wardrobe.
     const fear = !party && unit.kind ? fears?.templates.get(unit.kind) : undefined;
-    const minion = !party && (!!fear || ((unit.kind === 'minion' || unit.kind === 'guardian') && !!minionTemplate));
+    const minion = !party && (!!fear || ((unit.kind === 'minion' || unit.kind === 'guardian' || isCastle(unit.kind)) && !!minionTemplate));
     const source = sourceOf(unit, i, party);
     const model = source.clone(); model.enabled = true;
     battleRoot.addChild(model); model.setPosition(start);
@@ -1947,7 +1949,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
     // Uri's fears fight in the tower's narrow corridors, so they stay nearer the party's size.
     const young = unit.kind === 'cebollita' || unit.kind === 'platito' || unit.kind === 'fantasmita';
-    if (minion) { const size = isOnion(unit.kind) ? onionSize(unit.kind, unit.layers ?? 0) : isCamping(unit.kind) ? CAMPING_SIZES[unit.kind] : isCuerdas(unit.kind) ? CUERDAS_SIZES[unit.kind] : unit.kind === 'guardian' ? 2.3 : young ? .62 : unit.kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5; model.setLocalScale(size, size, size); }
+    if (minion) { const size = isCastle(unit.kind) ? CASTLE_SIZES[unit.kind] : isOnion(unit.kind) ? onionSize(unit.kind, unit.layers ?? 0) : isCamping(unit.kind) ? CAMPING_SIZES[unit.kind] : isCuerdas(unit.kind) ? CUERDAS_SIZES[unit.kind] : unit.kind === 'guardian' ? 2.3 : young ? .62 : unit.kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5; model.setLocalScale(size, size, size); }
     const legs = (body?.children.filter(c => c.name === 'Pierna') ?? (minion ? [] : model.children.filter(c => c.name === 'Pata'))) as pc.Entity[];
     const yaw = party ? (source.findByName('Cuerpo') as pc.Entity).getLocalEulerAngles().y : source.getEulerAngles().y;
     if (body) body.setLocalEulerAngles(0, 0, 0);
@@ -2234,9 +2236,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         for (const unit of next.foes) if (!fighters.has(unit.id) && !unit.part) {
           const caller = (nextEffect?.summoned === unit.id ? fighters.get(nextEffect.actor) : undefined) ?? [...fighters.values()].find(f => !f.party && !f.part);
           const { ahead, side } = axes(layout), from = caller?.base ?? anchor;
-          const base = new pc.Vec3(from.x + side.x * SUMMON.side - ahead.x * SUMMON.ahead, from.y, from.z + side.z * SUMMON.side - ahead.z * SUMMON.ahead);
+          // The Queen's hands come up one on each side of her, and are there at once.
+          const hers = isCastle(unit.kind), across = hers && unit.id.endsWith('-2') ? -1.6 : hers ? 1.6 : 1;
+          const base = new pc.Vec3(from.x + side.x * SUMMON.side * across - ahead.x * SUMMON.ahead, from.y, from.z + side.z * SUMMON.side * across - ahead.z * SUMMON.ahead);
           build(unit, next.foes.indexOf(unit), false, base, base.clone());
-          const f = fighters.get(unit.id)!; f.model.enabled = false; f.unborn = true;
+          const f = fighters.get(unit.id)!;
+          if (!hers) { f.model.enabled = false; f.unborn = true; }
           if (caller) f.turn = f.yaw = caller.yaw;
         }
         // And one that is no longer in the fight (the picker took the second voice away) is gone, until it is called again.

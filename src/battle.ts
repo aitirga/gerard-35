@@ -3,6 +3,8 @@ import { adjustResource } from './combat/engine.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, onsets, songAt, type Moment, type ToneId } from './song.ts';
+import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment } from './castle.ts';
+import { castleAfter, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
 export type BattlePhase = 'player' | 'enemy' | 'beat' | 'won' | 'lost' | 'escaped';
@@ -137,7 +139,7 @@ export const BOOST_ROUNDS = 3;
 export type SkillId = typeof SKILLS[number]['id'];
 type Skill = typeof SKILLS[number];
 /** `vertigo`: Vertitrón, the tower's boss; `vertigo-ojo`: its eye, a part of it (its own PV, no turns, `part`). */
-export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | 'plato' | 'vertigo' | 'vertigo-ojo' | BroodKind | SobremesaKind | CampingKind | CuerdasKind;
+export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | 'plato' | 'vertigo' | 'vertigo-ojo' | BroodKind | SobremesaKind | CampingKind | CuerdasKind | CastleKind;
 /**
  * Las cuerdas' foes (docs/quests/marta.md § The qualities, § Final boss): what makes Marta herself,
  * loose with nobody to govern it. Each asks one question, by kind of blow and never by who wears what,
@@ -222,7 +224,12 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'tirada' | 'sopeta' | 'regla-nueva' | 'carta-negra' | 'escala' | 'correccion' | 'cortafuegos' | 'duo-tirada' | 'duo-regla'
   | 'bombona' | 'tumbarse' | 'contrasena' | 'punetazo' | 'recuperarse'
   | 'juramento' | 'lazo' | 'resonancia' | 'destello' | 'estallido' | 'prisma' | 'golpe-directo' | 'en-linea' | 'estocada'
-  | 'guardia' | 'nota-clara' | 'coro' | 'aliento' | 'calderon';
+  | 'guardia' | 'nota-clara' | 'coro' | 'aliento' | 'calderon'
+  // The castle (src/castle-fight.ts): the pupils, Aurelià, Dirección and the Queen.
+  | 'empujon' | 'repaso' | 'chivatazo' | 'pellizco' | 'codazo' | 'orden'
+  | 'dictado' | 'pregunta' | 'castigo' | 'sprint' | 'expulsion' | 'record'
+  | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo'
+  | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo';
 export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }> = {
   lagrimilla: { name: 'Lagrimilla', card: false },
   'capa-nueva': { name: 'Capa nueva', card: true },
@@ -270,6 +277,31 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   coro: { name: 'Coro', card: true },
   aliento: { name: 'Toma aire', card: true },
   calderon: { name: 'Calderón', card: true },
+  empujon: { name: 'Empujón', card: true },
+  repaso: { name: 'Repaso', card: false },
+  chivatazo: { name: 'Chivatazo', card: true },
+  pellizco: { name: 'Pellizco', card: false },
+  codazo: { name: 'Codazo', card: false },
+  orden: { name: 'Orden', card: true },
+  dictado: { name: 'Dictado', card: true },
+  pregunta: { name: 'Pregunta', card: true },
+  castigo: { name: 'Castigo', card: true },
+  sprint: { name: 'Sprint', card: true },
+  expulsion: { name: 'Expulsión', card: true },
+  record: { name: 'Récord', card: true },
+  expediente: { name: 'Expediente', card: true },
+  horario: { name: 'Horario', card: true },
+  circular: { name: 'Circular', card: true },
+  firma: { name: 'Acta', card: true },
+  resolucion: { name: 'Resolución', card: true },
+  'cambio-cargo': { name: 'Cambio de cargo', card: true },
+  pegote: { name: 'Pegote', card: false },
+  envolver: { name: 'Otra capa', card: true },
+  manos: { name: 'Las manos', card: true },
+  atrapar: { name: 'Atrapar', card: true },
+  aplastar: { name: 'Aplastar', card: false },
+  pompa: { name: 'La Pompa', card: true },
+  suyo: { name: 'Suyo', card: true },
 };
 const foeAbility = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} });
 /**
@@ -528,7 +560,7 @@ export const AFFINITIES: Partial<Record<FoeKind, Partial<Record<Element, Affinit
   directo: { electrico: 'weak' }, eco: { fuego: 'weak' },
 };
 /** What `element` finds in `c`: a weakness, a resistance or nothing. */
-export const affinityOf = (c: Pick<Combatant, 'kind'>, element?: Element): Affinity | undefined => element && c.kind ? AFFINITIES[c.kind]?.[element] : undefined;
+export const affinityOf = (c: Pick<Combatant, 'kind' | 'affinities'>, element?: Element): Affinity | undefined => element && c.kind ? (c.affinities ? c.affinities[element] : AFFINITIES[c.kind]?.[element]) : undefined;
 const affinityScale = (c: Combatant, element?: Element) => { const a = affinityOf(c, element); return a ? ELEMENT_RULES[a] : 1; };
 /** The element a skill or a dual lands with: its own, or the one of what it lights (Foc Binari burns, Explosión melts: fire). */
 export function elementOf(spec?: object): Element | undefined {
@@ -663,12 +695,16 @@ export interface Combatant {
   stuck?: boolean;
   /** La Voz: an Acorde broke the Calderón she was holding her breath for; her next turn is lost to it. */
   winded?: boolean;
+  /** The castle's rules on this fighter (src/castle.ts `CastleMark`). */
+  castle?: CastleMark;
+  /** What this one is weak to or resists, when it is its own and not its kind's (`AFFINITIES`): a pupil's year, a directiva's element, the Queen's gum. */
+  affinities?: Partial<Record<Element, Affinity>>;
 }
 /** Whom a move is aimed at when it is not one ally: everyone. */
 export type Aim = 'todos';
 /** Which fight this is: the street dogs, the palace minion that wakes Matemágico, or the palace guards of chapter 2. */
 /** `escolta`: ring 3's fear, La Cebolla y los suyos (La Cebolla, a fantasmita and a cebollita). */
-export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | 'sobremesa' | BroodEncounter | CampingEncounter | CuerdasEncounter;
+export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | 'sobremesa' | BroodEncounter | CampingEncounter | CuerdasEncounter | CastleEncounter;
 /** The young that chase the party up each ring of Uri's tower, a few at a time. */
 export const BROOD_ENCOUNTERS = ['crias-1', 'crias-2', 'crias-3'] as const;
 export type BroodEncounter = (typeof BROOD_ENCOUNTERS)[number];
@@ -698,7 +734,7 @@ export const CUERDAS_FIGHTS: Record<CuerdasEncounter, readonly CuerdasKind[]> = 
   voz: ['voz'],
 };
 /** Uri's maze and roof (docs/quests/nuria.md), La Sobremesa, the campsite and Las cuerdas: the fights whose foes have rules of their own. */
-export const FEAR_ENCOUNTERS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'sobremesa', ...BROOD_ENCOUNTERS, ...CAMPING_ENCOUNTERS, ...CUERDAS_ENCOUNTERS] as const;
+export const FEAR_ENCOUNTERS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'sobremesa', ...BROOD_ENCOUNTERS, ...CAMPING_ENCOUNTERS, ...CUERDAS_ENCOUNTERS, ...CASTLE_ENCOUNTERS] as const;
 /** Bernat's HP floor in the palace fight: the hit that would cross it stops there and starts the beat. */
 export const BEAT_HP = 20;
 export interface BattleState {
@@ -750,6 +786,8 @@ export interface BattleState {
   song?: { part: VozPart; t: number; struck?: { loop: number; index: number; by: string } };
   /** What the song did since it was last asked (`takeSongNews`): an Eco, a Crescendo, a new part. */
   songNews?: SongNews[];
+  /** The castle's rules on this fight (src/castle.ts `CastleFight`). */
+  castle?: CastleFight;
 }
 /** Something the song did on its own, for the fight to show. */
 export type SongNews =
@@ -785,7 +823,9 @@ export const cornered = (state: BattleState) => state.possessed || state.encount
   // The black pitch puts every lantern out round them, and El Campeón stands between them and the way on.
   || state.encounter === 'camping-negra' || state.encounter === 'campeon'
   // Where every string meets there is nowhere to back off to.
-  || state.encounter === 'voz';
+  || state.encounter === 'voz'
+  // Nobody walks out of Aurelià's class, of Direcció or of the throne room.
+  || state.encounter === 'aurelia' || state.encounter === 'direccion' || state.encounter === 'reina' || state.encounter === 'reina-vuelta';
 /** Gerard's ánima in this fight. */
 export const gerardClass = (state: BattleState) => state.allies.find(a => a.id === 'gerard')?.classId;
 /** Bernat wears no ánima: he only attacks. */
@@ -1035,6 +1075,8 @@ export interface BattleEffect {
   controlled?: { victim: string; amount: number };
   /** Nanitos: the timed statuses a cure took off its target. */
   cleared?: TimedId[];
+  /** Things a rule of the fight says by name over someone (the castle's: «Respuesta correcta», «Tropiezo», «No firma»). */
+  called?: { target: string; text: string; detail?: string }[];
 }
 /** Whether this action spent a Punto débil on its target (it landed WEAK_SPOT times as hard). */
 export const markSpent = (e: BattleEffect) => e.weakSpot === 'spent' || e.weakSpot === 'renewed';
@@ -1345,6 +1387,7 @@ export function createBroodBattle(party: PartySlot[], encounter: BroodEncounter,
 /** Uri's fears (docs/quests/nuria.md): one foe each, with its own rule; their young come in packs. */
 export function createFearBattle(party: PartySlot[], encounter: (typeof FEAR_ENCOUNTERS)[number], animas?: ClassId[], random: () => number = Math.random): BattleState {
   if ((BROOD_ENCOUNTERS as readonly string[]).includes(encounter)) return createBroodBattle(party, encounter as BroodEncounter, animas, random);
+  if (isCastleEncounter(encounter)) return createCastleBattle(castleKit, party, encounter, animas, random);
   if (encounter === 'sobremesa') return createSobremesaBattle(party, animas, random);
   if ((CAMPING_ENCOUNTERS as readonly string[]).includes(encounter)) return createCampingBattle(party, encounter as CampingEncounter, animas, random);
   if ((CUERDAS_ENCOUNTERS as readonly string[]).includes(encounter)) return createCuerdasBattle(party, encounter as CuerdasEncounter, animas, random);
@@ -1418,7 +1461,7 @@ type Blow = 'physical' | 'magic' | 'dual';
  * What a fear's own rule does to a hit that lands on it: the dish's weakness (the surprise dish lets
  * single blows in at half, a dual whole), the onion's layers, a fantasmita gone see-through.
  */
-function fearDamage(_state: BattleState, target: Combatant, damage: number, blow: Blow) {
+function fearDamage(state: BattleState, target: Combatant, damage: number, blow: Blow) {
   let out = damage;
   if (target.dish) {
     const dish = DISHES[target.dish];
@@ -1427,7 +1470,7 @@ function fearDamage(_state: BattleState, target: Combatant, damage: number, blow
   }
   if (target.layers) out /= 2;
   if (target.transparent && blow === 'physical') out *= FEAR_RULES.transparent;
-  out *= campingTaken(target, blow) * cuerdasTaken(target, blow);
+  out *= campingTaken(target, blow) * cuerdasTaken(target, blow) * castleTaken(state, target, blow);
   // Magic off glass does nothing at all (Lo Cristalino, La Voz's Nota clara).
   return out <= 0 ? 0 : Math.max(1, Math.round(out));
 }
@@ -1441,6 +1484,7 @@ function winMessage(state: BattleState) {
     : state.encounter === 'sobremesa' ? 'La Sobremesa se deshace sobre la hierba. Quedan siete personas tumbadas entre las sillas, mirándose como si acabaran de llegar.'
     : isCampingFight(state) ? CAMPING_WON[state.encounter as CampingEncounter]
     : isCuerdasFight(state) ? CUERDAS_WON[state.encounter as CuerdasEncounter]
+    : isCastleEncounter(state.encounter) ? castleWinMessage(state)
     : (BROOD_ENCOUNTERS as readonly string[]).includes(state.encounter) ? 'Se deshacen en humo violeta. Desde arriba, la risa de Uri. Volverán.'
     : state.encounter === 'palace-minion' ? 'El esbirro se queda tieso, se agrieta como chicle viejo… y revienta.'
     : state.encounter === 'palace-guards' ? 'Los guardianes se deshacen en charcos rosas. La cortina tiembla.'
@@ -1455,7 +1499,13 @@ function took(state: BattleState, actor: Combatant) {
   if (!who.includes(actor.id)) who.push(actor.id);
 }
 /** Every foe down: a part (Vertitrón's eye) never holds up the win. */
-const beaten = (state: BattleState) => state.foes.every(f => f.hp <= 0 || f.part);
+/** Every foe down. The Queen is looked at first: whatever brings her below a tenth, she takes Aitor instead of falling (src/castle-fight.ts). */
+const beaten = (state: BattleState) => {
+  if (state.foes.some(f => f.kind === 'reina')) checkEye(state);
+  return state.foes.every(f => f.hp <= 0 || f.part);
+};
+/** What src/castle-fight.ts borrows from here: this file's own stats, PV and line-up. */
+const castleKit: CastleKit = { current: (state, c) => current(state, c), changeHealth: (target, delta) => changeHealth(target, delta), sighted: (actor, raw) => sighted(actor, raw), foe: (id, name, kind, hp) => foe(id, name, kind, hp), lineUp: (party, unlocked) => lineUp(party, unlocked), seedFrom: random => seedFrom(random) };
 /** A fight over: nothing queued or spent is left behind. */
 function endFight(state: BattleState) { delete state.queued; delete state.spent; }
 /**
@@ -2086,7 +2136,7 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   const target = alive.find(a => a.id === targetId) ?? alive[(state.round + state.foes.findIndex(f => f.id === id) - 1) % alive.length];
   if (!actor || !target) return;
   // A part (Vertitrón's eye) has no turn of its own: it is through at once, with nothing to show.
-  if (actor.part) { state.enemyActions.push(id); return; }
+  if (actor.part || castleIdle(actor)) { state.enemyActions.push(id); return; }
   if (actor.timed?.confusion) return confusedAct(state, actor);
   if (state.encounter === 'palace-minion') return minionAct(state, actor);
   if ((FEAR_ENCOUNTERS as readonly string[]).includes(state.encounter)) return fearAct(state, actor, target);
@@ -2691,6 +2741,7 @@ export const eyeOpen = (state: BattleState) => { const eye = eyeOf(state); retur
  */
 function checkEye(state: BattleState, effect?: BattleEffect) {
   checkCuerdas(state, effect);
+  castleAfter(castleKit, state, effect);
   const eye = eyeOf(state), body = vertigoBody(state);
   if (!eye || !body || eye.hp > 0 || eye.told) return;
   eye.told = true;
@@ -2760,6 +2811,7 @@ function vertigoTurn(state: BattleState, actor: Combatant, target: Combatant, ef
 export function intentLabel(state: BattleState, c: Combatant): string | undefined {
   const intent = c.intent;
   if (!intent || c.hp <= 0) return;
+  if (isCastle(c.kind)) return castleIntent(state, c);
   if (intent.ability === 'capa-nueva') return 'Pelada';
   if (intent.ability === 'lazo') return `${FOE_ABILITIES.lazo.name} → Eco`;
   if (intent.ability === 'escala') return `${FOE_ABILITIES.escala.name} · ${NOTES[c.note ?? 0]}`;
@@ -2792,6 +2844,7 @@ function fearAct(state: BattleState, actor: Combatant, target: Combatant): Battl
   else if (isSobremesa(actor.kind)) sobremesaTurn(state, actor, target, effect, hit, stats);
   else if (isCamping(actor.kind)) campingTurn(state, actor, target, effect, hit);
   else if (isCuerdas(actor.kind)) cuerdasTurn(state, actor, target, effect, hit);
+  else if (isCastle(actor.kind)) castleTurn(castleKit, state, actor, target, effect, hit);
   else {
     actor.turns = (actor.turns ?? 0) + 1;
     if (actor.kind === 'cebollita' && !actor.layers && !actor.regrown) {
@@ -2914,7 +2967,7 @@ export function awaken(state: BattleState, classId: ClassId) {
  */
 export function nextRound(state: BattleState): StatusTick[] {
   // A part (Vertitrón's eye) takes no turn, so the round never waits for it.
-  if (state.phase !== 'enemy' || state.foes.some(f => f.hp > 0 && !f.part && !state.enemyActions.includes(f.id))) return [];
+  if (state.phase !== 'enemy' || state.foes.some(f => f.hp > 0 && !f.part && !castleIdle(f) && !state.enemyActions.includes(f.id))) return [];
   const ticks: StatusTick[] = [];
   for (const c of [...state.foes, ...state.allies]) {
     if (!c.statuses) continue;
@@ -2937,6 +2990,7 @@ export function nextRound(state: BattleState): StatusTick[] {
     if (f.shielded !== undefined && f.shielded <= state.round) delete f.shielded;
   }
   campingRoundEnd(state);
+  castleRoundEnd(state);
   // What lasts one round whatever its clock says (Explosión's blinding) ends with it.
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) if (c.timed?.[id]?.until !== undefined && c.timed[id]!.until! <= state.round) delete c.timed[id];
   // Ánimas not worn all round get some maná back; next round counts afresh from the one worn.
@@ -2953,13 +3007,16 @@ export function nextRound(state: BattleState): StatusTick[] {
   if (isCuerdasFight(state)) swear(state);
   state.enemyActions = []; delete state.queued; delete state.spent;
   // Whoever sits this round out (Explosión: Bip is putting itself back together) is through already.
-  const out = state.allies.filter(a => a.out === state.round && a.hp > 0);
+  // The castle: whoever a hand or the Queen holds, or Aurelià sent out, sits it out too.
+  const kept = castleRoundStart(state);
+  const out = state.allies.filter(a => (a.out === state.round || kept.out.includes(a.id)) && a.hp > 0);
   // Kept through the round they sit out (Bip shows nowhere until it is over), gone after it.
   for (const a of state.allies) if (a.out !== undefined && a.out < state.round) delete a.out;
   if (out.length) state.spent = out.map(a => a.id);
   state.active = state.allies.findIndex(a => a.hp > 0 && !state.spent?.includes(a.id));
   state.phase = 'player'; state.message = 'Tu turno. Elige tu siguiente movimiento.';
   if (out.length) state.message += ` ${out.map(a => a.name).join(' y ')} no ${out.length > 1 ? 'actúan' : 'actúa'} esta ronda.`;
+  if (kept.said) state.message = `${kept.said} ${state.message}`;
   // A dual charged last round goes off now, before anyone chooses (Rayo solar).
   const released = state.allies.filter(a => a.charge).map(a => release(state, a)).filter(Boolean);
   if (released.length) state.message = `${released.join(' ')} ${state.message}`;
@@ -2977,7 +3034,7 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
   if (!(seconds > 0) || (state.phase !== 'player' && state.phase !== 'enemy')) return [];
   const pulses: TimedPulse[] = [];
   // La Voz's song first: what sounds now decides whether a fire on her hurts this frame.
-  const sung = runSong(state, seconds);
+  const sung = runSong(state, seconds), lapped = runCastle(castleKit, state, seconds);
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) {
     const on = c.timed?.[id];
     // A fire settled but still on its way (`waiting`): its clock starts when it lands.
@@ -2992,12 +3049,12 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       // A fire on La Voz burns on, but between two notes it takes nothing: no pulse to show.
       else if (!(foeSide && silenced(state, c))) pulses.push({ target: c.id, status: id, level: on.level, amount: foeSide ? hurt(state, c, amount) : changeHealth(c, -amount) });
       // Vertitrón's eye burnt out: no more Rayo.
-      if (c.kind === 'vertigo-ojo' || isCuerdas(c.kind)) checkEye(state);
+      if (c.kind === 'vertigo-ojo' || isCuerdas(c.kind) || isCastle(c.kind)) checkEye(state);
     }
     on.left -= dt; on.next -= dt;
     if ((c.hp <= 0 || on.left <= 1e-6) && c.timed) delete c.timed[id];
   }
-  if (!pulses.length && !sung) return pulses;
+  if (!pulses.length && !sung && !lapped) return pulses;
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; endFight(state); }
   // Whoever was choosing fell to the song (an Eco): the turn passes to the next one standing, or to the foes.
@@ -3010,7 +3067,8 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
 /** Moments of a fight the picker can jump to that the fight itself stages (docs/dev-tools.md). */
 export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo' | 'plato-sorpresa' | 'sobremesa-duo-carta' | 'sobremesa-escala-alta' | 'sobremesa-ultimo' | 'magos-bombona' | 'campeon-heroe' | 'campeon-paisano'
   | 'lealtad-lazo' | 'cristalino-casi' | 'cristalino-rajado' | 'directo-linea' | 'directo-estocada' | 'directo-clavado'
-  | 'voz-andante' | 'voz-nota-clara' | 'voz-allegro' | 'voz-coro' | 'voz-a-capela' | 'voz-calderon';
+  | 'voz-andante' | 'voz-nota-clara' | 'voz-allegro' | 'voz-coro' | 'voz-a-capela' | 'voz-calderon'
+  | CastleMoment;
 export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: Encounter }> = {
   'vertigo-carga': { label: 'Rayo cargado', encounter: 'uri-vertigo' },
   'vertigo-grito': { label: 'Tras dos gritos', encounter: 'uri-vertigo' },
@@ -3034,6 +3092,7 @@ export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: En
   'voz-coro': { label: 'Allegro, con segunda voz', encounter: 'voz' },
   'voz-a-capela': { label: 'A capela', encounter: 'voz' },
   'voz-calderon': { label: 'Calderón tomado', encounter: 'voz' },
+  ...CASTLE_MOMENTS,
 };
 /**
  * Development: puts the fight at `moment`, the party to choose (pure; the picker's `jumpTo` calls
@@ -3043,7 +3102,10 @@ export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: En
  */
 export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
   if (state.phase !== 'player' && state.phase !== 'enemy') return false;
-  if (moment.startsWith('sobremesa-')) {
+  if (isCastleMoment(moment)) {
+    // The castle's bosses, phase by phase (src/castle-fight.ts).
+    if (!stageCastle(castleKit, state, moment)) return false;
+  } else if (moment.startsWith('sobremesa-')) {
     // La Sobremesa from a clean start: all seven held at full PV, nothing announced, Joan on Do.
     if (state.encounter !== 'sobremesa') return false;
     for (const f of state.foes) { f.hp = f.maxHp; f.turns = 0; delete f.intent; delete f.lasting; delete f.shielded; }
@@ -3136,8 +3198,11 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
       eye.hp = 0; eye.told = true;
     }
   }
-  state.phase = 'player'; state.enemyActions = []; state.active = Math.max(0, state.allies.findIndex(a => a.hp > 0));
   delete state.queued; delete state.spent; delete state.news;
+  // Whoever the castle holds (Aitor, hers) sits the round out.
+  const held = state.allies.filter(a => a.castle?.held).map(a => a.id);
+  if (held.length) state.spent = held;
+  state.phase = 'player'; state.enemyActions = []; state.active = Math.max(0, state.allies.findIndex(a => a.hp > 0 && !held.includes(a.id)));
   state.message = `Depuración: ${STAGED_MOMENTS[moment].label}.`;
   return true;
 }

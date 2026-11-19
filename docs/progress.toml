@@ -69,8 +69,11 @@ title = "Decidir qué descubre Bernat"
 priority = "guion"
 
 [[block.item]]
-title = "Decidir qué muestra cada uno de los tres finales"
+title = "Decidir qué muestra cada uno de los dos finales"
 priority = "guion"
+# Designed 2026-11-19: docs/castle-bosses.md § The last scene.
+grep = "Bajar la mano"
+in = "docs/castle-bosses.md"
 
 [[block.item]]
 title = "Lista final de misiones"
@@ -79,6 +82,12 @@ priority = "alcance"
 [[block.item]]
 title = "Número de ánimas y reajuste del avance de la Reina"
 priority = "alcance"
+
+# Idea (docs/animas/README.md § Growth opens with the castle): constellations and level caps open in
+# three stages: Aurelià gives the third ánima slot (three at most), el Equipo de dirección the definitivas. Not built.
+[[block.item]]
+title = "El crecimiento de las ánimas se abre con el castillo (tres etapas)"
+priority = "palacio"
 
 # ——— Motor ———
 [[block]]
@@ -461,35 +470,74 @@ weight = 3
 grep = "palacio-trono"
 in = "src/environments.ts"
 
+# The castle's block (docs/castle.md, docs/castle-bosses.md), designed 2026-11-19; a preliminary version
+# built the same day (src/castle*.ts, src/endings.ts): the dynamics end to end, placeholder models and dressing.
 [[block.item]]
-title = "Boss y puerta del patio"
+title = "Diseño del bloque del castillo"
 priority = "palacio"
-grep = "zona-patio"
+file = "docs/castle.md"
+
+[[block.item]]
+title = "Planta procedural: salas y pasillos por semilla"
+weight = 3
+priority = "palacio"
+file = "src/castle-floor.ts"
+
+[[block.item]]
+title = "Las tres fases, con el arte que deriva hacia el jefe"
+weight = 2
+priority = "palacio"
+grep = "castillo-3"
+in = "src/environments.ts"
+
+[[block.item]]
+title = "Los alumnos de la Reina: los cinco primeros y sus tres cursos"
+weight = 2
+priority = "palacio"
+grep = "'empollon'"
+in = "src/castle.ts"
+
+[[block.item]]
+title = "El Ausente, el Castigado y el Nuevo"
+priority = "palacio"
+grep = "'ausente'"
+in = "src/castle.ts"
+
+[[block.item]]
+title = "Modelos propios de los alumnos, Aurelià y Dirección"
+weight = 2
+priority = "palacio"
+file = "public/models/characters/aurelia.glb"
+
+[[block.item]]
+title = "Aurelià: combate y sala"
+weight = 2
+priority = "palacio"
+grep = "'aurelia'"
+in = ["src/battle.ts", "src/story.ts"]
+
+[[block.item]]
+title = "Mar, Montse y Pilar: el Equipo de dirección"
+weight = 2
+priority = "palacio"
+grep = "'direccion'"
+in = ["src/battle.ts", "src/story.ts"]
+
+[[block.item]]
+title = "Tercer hueco de ánima tras Aurelià"
+priority = "palacio"
+grep = "EXTRA_SLOTS = 2|extraSlots"
 in = "src/story.ts"
 
 [[block.item]]
-title = "Boss y puerta del gimnasio"
+title = "Definitivas en el bote tras Dirección"
 priority = "palacio"
-grep = "zona-gimnasio"
-in = "src/story.ts"
 
 [[block.item]]
-title = "Boss y puerta de la secretaría"
-priority = "palacio"
-grep = "zona-secretaria"
-in = "src/story.ts"
-
-[[block.item]]
-title = "Subida al trono tras los guardianes"
+title = "Subida al trono tras Dirección"
 priority = "palacio"
 grep = "palacio-trono"
-in = "src/story.ts"
-
-[[block.item]]
-title = "Puzle de salas del artilugio"
-priority = "palacio"
-grep = "artilugio"
-in = ["src/story.ts", "src/chapter-2.ts"]
+in = "src/castle.ts"
 
 [[block.item]]
 title = "Zonas ganadas que cambian de aspecto"
@@ -511,18 +559,27 @@ title = "Las manos de la Reina"
 file = "src/queen-hands.ts"
 
 [[block.item]]
-title = "Modelo y combate de la Reina"
-weight = 4
+title = "Combate de la Reina"
+weight = 3
 priority = "final"
 grep = "'reina'"
 in = "src/battle.ts"
 
 [[block.item]]
-title = "Aitor poseído, con el jugador 2 en contra"
-weight = 3
+title = "Modelo de la Reina"
+priority = "final"
+file = "public/models/characters/reina.glb"
+
+[[block.item]]
+title = "Aitor poseído: la Reina lo toma al décimo y golpea a Gerard"
+weight = 2
 priority = "final"
 grep = "aitor-poseido"
 in = ["src/battle.ts", "src/story.ts"]
+
+[[block.item]]
+title = "El jugador 2 maneja a Aitor poseído, contra Gerard"
+priority = "final"
 
 [[block.item]]
 title = "Artilugio físico: ESP32 y firmware"
@@ -543,7 +600,7 @@ weight = 2
 priority = "final"
 
 [[block.item]]
-title = "Los tres finales"
+title = "Escena final y los dos finales"
 weight = 2
 priority = "final"
 file = "src/endings.ts"

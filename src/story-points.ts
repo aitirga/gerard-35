@@ -6,6 +6,7 @@
  */
 import { ANIMA_IDS, type AnimaId } from './animas.ts';
 import type { ClassId } from './battle.ts';
+import { castleEntry } from './castle.ts';
 import { PLACES } from './chapter-1.ts';
 import { ENVIRONMENTS, type EnvironmentId } from './environments.ts';
 import { FEARS, PLACES_NURIA, STREET } from './friends/nuria.ts';
@@ -77,6 +78,21 @@ export const STORY_ARCS = [
     // Beating La Voz gives her everything back at once, and her ánima and light with it.
     { flags: ['voz', 'anima-marta', 'luz-marta'], label: 'La Voz vencida: Marta vuelve a cantar' },
   ] },
+  // The castle's three phases and its end (docs/castle.md): each boss beaten moves the way in to its room.
+  { id: 'castillo', chapter: 2, title: 'El castillo', detail: 'Tres plantas, tres jefes y el final', after: 'castle', steps: [
+    { flags: ['aurelia', 'luz-aurelia'], label: 'Aurelià vencido: la entrada pasa al gimnasio', spot: castleEntry(new Set(['aurelia'])) },
+    { flags: ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'], label: 'Dirección vencida: la entrada pasa a Direcció', spot: castleEntry(new Set(['direccion'])) },
+    { flags: ['aitor-poseido'], label: 'La Reina toma a Aitor: Gerard cae' },
+    { flags: ['artilugio'], label: 'El artilugio: llama Bernat', spot: castleEntry(new Set(['direccion'])) },
+    { flags: ['reina'], label: 'La Reina, vencida' },
+  ] },
+  // Only one of the two is ever set: each ending hangs from her fall on its own.
+  { id: 'final-acabar', chapter: 2, title: 'Final · Acabar', detail: 'El lunes después', after: 'reina', steps: [
+    { flags: ['final-acabar'], label: 'Gerard acaba: todo en orden, un poco más gris' },
+  ] },
+  { id: 'final-bajar', chapter: 2, title: 'Final · Bajar la mano', detail: 'El lunes después', after: 'reina', steps: [
+    { flags: ['final-bajar'], label: 'Gerard baja la mano: queda algo de rosa' },
+  ] },
   // Ánimas grow with the EXP of fights won (src/levels.ts); Matemágico's are chapter 2's, at 35.
   { id: 'matemagico', chapter: 2, title: 'Matemágico crece', detail: 'Experiencia de combate', after: 'caught', steps: [
     { flags: ['matemagico-2'], label: 'Matemágico, nivel 2' }, { flags: ['matemagico-3'], label: 'Matemágico, nivel 3' },
@@ -85,6 +101,18 @@ export const STORY_ARCS = [
     { flags: ['papagato-2'], label: 'Papagato, nivel 2' }, { flags: ['papagato-3'], label: 'Papagato, nivel 3' },
   ] },
 ] as const satisfies readonly Arc[];
+
+/**
+ * The main line's key events, in order: the picker's timeline (src/jump-menu.ts). Marking one marks
+ * everything before it; the ánima missions hang from `metro` and are ticked on their own.
+ */
+export const TIMELINE: readonly { at: StoryFlag | 'new'; label: string }[] = [
+  { at: 'new', label: 'Inicio' }, { at: 'got-backpack', label: 'Mochila' }, { at: 'bernat-joined', label: 'Bernat' },
+  { at: 'first-fight', label: 'Primer combate' }, { at: 'in-palace', label: 'Palacio' }, { at: 'matemagico', label: 'Mate\u00admágico' },
+  { at: 'caught', label: '35 años' }, { at: 'got-bola', label: 'Bola de nieve' }, { at: 'tv-news', label: 'Noticias' },
+  { at: 'metro', label: 'Primer metro' }, { at: 'castle', label: 'Castillo' },
+  { at: 'aurelia', label: 'Aurelià' }, { at: 'direccion', label: 'Dirección' }, { at: 'artilugio', label: 'Artilugio' }, { at: 'reina', label: 'La Reina' },
+];
 
 // TypeScript asks for a step for every flag in STORY_FLAGS.
 type Placed = (typeof STORY_ARCS)[number]['steps'][number]['flags'][number];

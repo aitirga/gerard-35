@@ -9,7 +9,8 @@ import type { Environment, WorldProp } from './environments';
  * west walls stand tall and the south and east ones are cut low.
  */
 
-export type PalaceZoneId = 'patio' | 'gimnasio' | 'secretaria' | 'trono';
+/** `castillo`: a generated floor between two of them (src/castle-floor.ts). */
+export type PalaceZoneId = 'patio' | 'gimnasio' | 'secretaria' | 'trono' | 'castillo';
 
 /**
  * A real material from public/textures/<texture>/, tinted to `tint` (its own colours without one);

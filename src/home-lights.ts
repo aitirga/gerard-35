@@ -7,6 +7,7 @@
  */
 import type { EnvironmentId } from './environments.ts';
 import type { BattleEffect, BattleState } from './battle.ts';
+import { CASTLE_ENCOUNTERS, castlePhaseOf, type CastleEncounter } from './castle.ts';
 import { CAST_CONTACT, CONTACT_SECONDS, CURE_CONTACT, DUAL_BANNER_SEEN, DUAL_FREEZE, SPELL_CONTACT } from './battle-motion.ts';
 
 export type LightId = 'cocina' | 'sofa' | 'luna' | 'mesa' | 'dormitorio' | 'terraza' | 'estudio' | 'galeria';
@@ -115,6 +116,10 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   'palacio-secretaria': { salon: [white(5000, .75), hex('#d6b46a', .55, .5), hex('#a8b8a6', .45, .45), hex('#f2c27a', .6, .5)], rest: white(4800, .25) },
   // The throne room: night indigo, old gold, one warm spotlight and her pink.
   'palacio-trono': { salon: [hex('#3a4590', .55, .4), hex('#c9a046', .5, .45), hex('#ff6fae', .4, .3), white(2900, .55)], rest: hex('#2a3170', .2, .3) },
+  // The castle's floors: on the way from one room's colours to the next's.
+  'castillo-1': { salon: [white(5000, .7), hex('#3f7d58', .55, .5), hex('#2d5a9e', .6, .5), hex('#ff6fae', .4, .3)], rest: white(4800, .25) },
+  'castillo-2': { salon: [hex('#2d5a9e', .55, .45), hex('#d6b46a', .5, .45), hex('#ff5a3a', .4, .4), white(3800, .4)], rest: white(4000, .2) },
+  'castillo-3': { salon: [hex('#c9a85e', .4, .35), hex('#27306b', .55, .4), hex('#b8708e', .35, .3), white(2700, .35)], rest: hex('#2a3170', .2, .25) },
   // The Rec Comtal school: brick and a pale sky (the castle's pink comes with the tone).
   'rec-comtal': { salon: [hex('#d98b5f', .7, .55), hex('#9cc6e6', .55, .45), white(3400, .65), hex('#e7a77a', .6, .45)], rest: white(3300, .3) },
   // The Búnkers del Carmel at sunset: golden grass, the pink band over the sea, a pale blue sky.
@@ -184,6 +189,13 @@ export function switchedOn(lamp: Lamp): Lamp {
 }
 
 // ——— Fights ———
+const CASTLE_LAMPS: Record<1 | 2 | 3 | 'aurelia' | 'direccion', [Lamp, Lamp, Lamp, Lamp]> = {
+  1: [hex('#c86a8e', .5, .75), hex('#3f6fb8', .5, .7), white(4600, .6), hex('#4f8a5a', .45, .65)],
+  2: [hex('#b0607e', .45, .7), hex('#c9a35a', .5, .6), hex('#7f8a96', .35, .6), hex('#ff5a3a', .35, .7)],
+  3: [hex('#8a5a6c', .4, .6), hex('#27306b', .55, .75), hex('#c9a23a', .45, .55), hex('#ff5fa8', .45, .7)],
+  aurelia: [hex('#9a5bff', .6, .75), hex('#3f6fb8', .5, .75), white(4200, .65), hex('#d8d2c4', .4, .5)],
+  direccion: [hex('#9a5bff', .6, .75), hex('#c9a35a', .5, .6), hex('#ff5a3a', .4, .7), hex('#5aa8ff', .4, .7)],
+};
 const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp, Lamp]> = {
   dogs: [hex('#ffa040', .8, .8), white(4200, .75), hex('#ff7a2a', .6, .85), hex('#ffd27a', .7, .6)],
   possessed: [hex('#ff5fa8', .7, .7), hex('#a05ae0', .55, .7), hex('#ff8a6a', .6, .6), hex('#e04a9a', .6, .75)],
@@ -217,6 +229,8 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   'cuerdas-cristalino': [hex('#1f5f6b', .5, .8), white(6000, .6), hex('#49d3c2', .55, .7), hex('#eef3ff', .5, .3)],
   'cuerdas-directo': [hex('#1f5f6b', .5, .8), white(5200, .5), hex('#5b8cff', .55, .75), hex('#eef3ff', .5, .3)],
   voz: [hex('#1f5f6b', .55, .8), hex('#f2b45a', .55, .7), hex('#49d3c2', .55, .7), hex('#5b8cff', .5, .75)],
+  // The castle: her pink, gone old, over the place each phase walks towards (mat blue, manila, night indigo); violet for whoever she holds.
+  ...Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, CASTLE_LAMPS[id === 'aurelia' || id === 'direccion' ? id : castlePhaseOf(id)]])) as Record<CastleEncounter, [Lamp, Lamp, Lamp, Lamp]>,
 };
 const ALARM = hex('#ff2a1a', .75, 1);
 /** 0 with everyone healthy, 1 when someone still standing is about to fall. */

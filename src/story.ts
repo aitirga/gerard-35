@@ -19,10 +19,13 @@ import { stationOf } from './transit.ts';
 import { ALEGIA, CUERDAS_PLACE, LINES_MARTA, MARTA_SCALE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
+import { castleEntry, extraSlots, isCastlePlace, type CastleEncounter } from './castle.ts';
+import { castleEnvironmentFor } from './castle-floor.ts';
+import { castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
 import { COSTS, DAY_END, DAY_START, EVENING, LATE, NIGHT, WOKE_LATE, dusk, freshDays, isNight, readDays, spread, stage, type Activity, type Days } from './days.ts';
-import { CAMPING_DOOR, CAMPING_GATE, ENVIRONMENTS } from './environments.ts';
+import { CAMPING_DOOR, CAMPING_GATE, ENVIRONMENTS, type Environment } from './environments.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
 export const STORY_FLAGS = [
@@ -49,6 +52,9 @@ export const STORY_FLAGS = [
   // Marta's mission (docs/quests/marta.md): spoken to in Alegia, into Las cuerdas through the note
   // the piano left in the air, La Voz beaten, her ánima and the light that went with them.
   'alegia-marta', 'cuerdas', 'voz', 'anima-marta', 'luz-marta',
+  // The castle (docs/castle.md, docs/castle-bosses.md): Aurelià beaten and his light, the management team and
+  // theirs, Gerard fallen to Aitor's hand, the artilugio, the Queen beaten, and which of the two endings.
+  'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 /**
@@ -59,7 +65,7 @@ const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-ni
 /** Only flags this version knows, renamed ones under their new name. */
 const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENAMED_FLAGS[f] ?? f).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
 /** Whose lights can be won. */
-export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta'] as const;
+export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'aurelia', 'mar', 'montse', 'pilar'] as const;
 export type LightId = typeof LIGHTS[number];
 
 export type StoryEvent =
@@ -75,7 +81,7 @@ export type StoryEvent =
    * A fight ended; `encounter` says which one (the street dogs if missing), `worn` the ánimas that
    * took part (src/levels.ts `participants`) and `xp` what the fight was worth to each of them.
    */
-  | { type: 'battle'; won: boolean; encounter?: EncounterId; worn?: ClassId[]; xp?: number }
+  | { type: 'battle'; won: boolean; encounter?: EncounterId; worn?: ClassId[]; xp?: number; /** The Queen had Aitor when it ended (src/castle-fight.ts `aitorTaken`). */ taken?: boolean }
   /** The palace has finished rising over the north end of the street. */
   | { type: 'palace' }
   /** Gerard is (or is no longer) heading back south, away from the palace. */
@@ -97,7 +103,9 @@ export type StoryEvent =
   /** The party walked in through home's portal from the street (src/night.ts: at night, the day is over). */
   | { type: 'home' }
   /** Something used from the Objetos panel (src/items.ts `use`). */
-  | { type: 'use'; item: ItemId };
+  | { type: 'use'; item: ItemId }
+  /** The last scene: Gerard chose what to do with her (src/endings.ts). */
+  | { type: 'ending'; choice: EndingChoice };
 
 export type StoryEffect =
   | { kind: 'dialogue'; dialogue: Dialogue }
@@ -175,14 +183,20 @@ export type StoryEffect =
    */
   | { kind: 'shout'; speaker: 'uri'; text: string; beat?: number }
   /** A recording plays once over what follows, without stopping the game (src/music.ts `TRACKS`): Marta's «Izana dena geroa» at the piano. */
-  | { kind: 'song'; track: 'izana' };
+  | { kind: 'song'; track: 'izana' }
+  /** The last scene (docs/castle-bosses.md): she is on the floor, and Gerard's dock has two commands (src/endings.ts). Answered with an `ending` event. */
+  | { kind: 'ending' }
+  /** What the choice does, told over black before the Monday after. */
+  | { kind: 'epilogue'; choice: EndingChoice; text: string };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'sobremesa' | FearEncounter
   // Càmping Eurosport (docs/quests/universidad.md): its small fights, the black pitch and El Campeón.
   | 'camping-magos' | 'camping-dados' | 'camping-agentes' | 'camping-tienda' | 'camping-negra' | 'campeon'
   // Las cuerdas (docs/quests/marta.md): a quality after each maze, and La Voz.
-  | CuerdasEncounter;
+  | CuerdasEncounter
+  // The castle (docs/castle.md): its rooms' pupils, Aurelià, Dirección and the Queen.
+  | CastleEncounter;
 /** Classes (docs/party.md): unlocked by the story, shared by the whole party. */
 /** The ánimas Gerard can wake (Tecnópata is Aitor's). */
 export type GerardClass = Exclude<ClassId, 'tecnopata'>;
@@ -324,6 +338,8 @@ export class Story {
   /** The university friends' mission while it runs; not saved. */
   uni: UniRun = freshUni();
   marta: MartaRun = freshMarta();
+  /** The castle's rooms cleared today (src/castle-story.ts); not saved, and another day is another floor. */
+  castle: CastleRun = freshCastle();
   /** What the snow globe keeps of the missions (`Kept`). Kept in the browser by `main.ts`, like the loadout. */
   private globe: Kept = {};
   /** Where the party is now, when the game has said (`enter`): Marta answers differently inside Las cuerdas. */
@@ -375,7 +391,7 @@ export class Story {
   get animas(): AnimaId[] { return ANIMA_IDS.filter(id => this.flags.has(`anima-${id}` as StoryFlag)); }
   get clock() { return { ...this.days.clock }; }
   /** How far La Reina Bubbaloo's power has spread this morning: 0 at first, 1 is the end. */
-  get spread() { return this.adult ? spread(this.days.clock.day, this.animas.length) : 0; }
+  get spread() { return this.adult && !this.has('reina') ? spread(this.days.clock.day, this.animas.length) : 0; }
   /** The lights in the jar at home, in the order they were won. No names on screen. */
   get jar(): LightId[] { return LIGHTS.filter(id => this.has(`luz-${id}`)); }
   /** The party's Ecos de luz: every light won (docs/animas/README.md § Ecos de luz). */
@@ -693,9 +709,38 @@ export class Story {
     const door: StoryEffect = { kind: 'travel', environment: STREET, cell: { x: PLACES_NURIA.nuria.cell.x - 1, z: PLACES_NURIA.nuria.cell.z + 2 } };
     return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), { kind: 'lights', people: ['nuria', 'uri'] }, { kind: 'anima', classId: 'papagato', kept: true }, ...this.spend('fight'), ...this.nightfall()];
   }
+  /** What src/castle-story.ts reads and does of the story: its flags, its days, and how it spends them. */
+  private get castleHost(): CastleHost {
+    const story = this;
+    return {
+      has: flag => story.flags.has(flag as StoryFlag), raise: flag => story.set(flag as StoryFlag),
+      adult: story.adult, seed: story.days.epoch, day: story.days.clock.day,
+      get castle() { return story.castle; }, set castle(run: CastleRun) { story.castle = run; },
+      hour: () => story.spend('castle'), nightfall: () => story.nightfall(), fall: () => story.endDay('fall'), morning: () => story.newMorning(),
+    };
+  }
+  /** How many extra ánimas each can equip besides their own: one, and one more once Aurelià has fallen (docs/castle.md § What each boss opens). */
+  get extraSlots() { return extraSlots(this.flags); }
+  /**
+   * A place as it is today: a castle floor is generated from the save and the day (src/castle-floor.ts),
+   * any other place is its own. The game builds what this says, and a simulator walks its grid and its doors.
+   */
+  place(environment: EnvironmentId): Environment {
+    return isCastlePlace(environment) ? castleEnvironmentFor(environment, this.days.epoch, this.days.clock.day) : ENVIRONMENTS[environment];
+  }
+  /** The next morning at home with nothing said yet (the Monday after the end). */
+  private newMorning(): StoryEffect[] {
+    this.recall();
+    this.days.clock = { day: this.days.clock.day + 1, hour: DAY_START };
+    this.remember();
+    return [{ kind: 'fall' }, { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } }, { kind: 'wake' }, { kind: 'rise' }];
+  }
   /** What a fight's end means for the story, before any ánima grows. */
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    // The castle's fights: a room cleared, a boss beaten, the Queen (src/castle-story.ts). A fall there is a fall like any other.
+    const castle = castleBattle(this.castleHost, event);
+    if (castle) return castle;
     if (event.won && event.encounter === 'uri-vertigo') return this.winNuria();
     if (event.won && event.encounter === 'sobremesa') return this.winUni();
     if (event.won && event.encounter === 'voz') return this.winMarta();
@@ -812,7 +857,7 @@ export class Story {
   }
   /** The extra ánimas `member` has equipped, still unlocked. */
   extrasOf(member: MemberId): ClassId[] {
-    return (this.extras[member] ?? []).filter(id => this.classes.includes(id) && canWear(member, id) && this.fixedOf(member) !== id).slice(0, EXTRA_SLOTS);
+    return (this.extras[member] ?? []).filter(id => this.classes.includes(id) && canWear(member, id) && this.fixedOf(member) !== id).slice(0, this.extraSlots);
   }
   /** What `member` can switch between in a fight (L / R): their own ánima, then the extras equipped. */
   kitOf(member: MemberId): ClassId[] {
@@ -838,7 +883,7 @@ export class Story {
     const other = this.wearerOf(classId);
     if (other && other !== member) return false;
     const kept = this.extrasOf(member).filter(id => id !== classId);
-    this.extras[member] = [...kept.slice(0, EXTRA_SLOTS - 1), classId];
+    this.extras[member] = [...kept.slice(0, this.extraSlots - 1), classId];
     this.worn[member] = classId;
     return true;
   }
@@ -970,6 +1015,8 @@ export class Story {
   }
   /** Places the story watches in this scene (the TV that turned itself on). */
   triggers(environment: EnvironmentId): Trigger[] {
+    const castle = castleTriggers(this.castleHost, environment);
+    if (castle.length) return castle;
     const { tv } = PLACES_2;
     if (this.adult && !this.has('tv-news') && environment === tv.environment) return [{ id: 'tv', cell: { ...tv.cell }, radius: tv.radius }];
     if (environment === BEACH) return this.uniTriggers();
@@ -1046,7 +1093,10 @@ export class Story {
     }));
   }
   /** Uri's fears still hunting the ramp (src/chasers.ts moves them; reaching Gerard is a `near` with their id). */
-  fears(environment: EnvironmentId): { id: string; encounter: FearEncounter | CampingEncounter; patrol: readonly Cell[]; sight: number; walk: number; run: number; respawn?: boolean }[] {
+  fears(environment: EnvironmentId): { id: string; encounter: FearEncounter | CampingEncounter | CastleEncounter; patrol: readonly Cell[]; sight: number; walk: number; run: number; respawn?: boolean }[] {
+    // The castle: the Queen's pupils round their rooms, and each boss standing where it waits (src/castle-story.ts).
+    const pupils = castleFears(this.castleHost, environment);
+    if (pupils.length) return pupils;
     // Càmping Eurosport's magos and agentes on their rounds (docs/quests/universidad.md), until beaten this visit.
     if (environment === CAMP) return !this.adult || this.has('sobremesa') ? [] : CAMP_HUNTERS.filter(h => !this.uni.beaten.includes(h.id)).map(h => ({ ...h, id: `camp-${h.id}` }));
     if (environment !== MAZE || !this.adult || !this.nuria.lent || this.has('nuria-uri')) return [];
@@ -1056,7 +1106,8 @@ export class Story {
   redirect(interactionId: string): { environment: EnvironmentId; cell: Cell } | undefined {
     if (interactionId === PALACE_EXIT && this.adult) return { environment: PLACES_2.school.environment, cell: { x: SCHOOL_DOOR.x, z: SCHOOL_DOOR.z + 1 } };
     if (interactionId === SCHOOL_WAY && this.adult) return { environment: 'palacio-patio', cell: { x: 17, z: 2 } };
-    return undefined;
+    // The school's doors open onto the castle's floors while their boss stands (docs/castle.md § Structure).
+    return castleRedirect(this.castleHost, interactionId);
   }
   /** Cells the guards stand on in the palace hall (chapter 2): fewer as the party gathers ánimas. */
   get guarded(): Cell[] {
@@ -1073,6 +1124,11 @@ export class Story {
     if (this.has('palace')) return { environment: 'maresme', cell: { x: 16, z: 8 } };
     if (this.has('got-backpack')) return { environment: 'maresme', cell: this.has('bernat-joined') ? { x: 10, z: 25 } : { x: 20, z: 23 } };
     return { environment: PLACES.wake.environment, cell: { ...PLACES.wake.cell } };
+  }
+  /** Home at this point of the story: the flat on the Meridiana at 35, the house in Sant Quirze before (the picker's «En casa»). */
+  get home(): { environment: EnvironmentId; cell: Cell } {
+    const at = this.adult ? PLACES.wakeUp : PLACES.wake;
+    return { environment: at.environment, cell: { ...at.cell } };
   }
   /** What Bernat says over his head right now, if anything. */
   get bubble(): string | undefined {
@@ -1176,16 +1232,16 @@ export class Story {
       // At 35 the east door opens: the school is behind it (src/palace-zone-plans.ts).
       if (this.adult) list.push({ id: SCHOOL_WAY, label: 'Abrir la puerta', cell: { x: 21, z: 13 } });
     }
+    list.push(...castleInteractions(this.castleHost, environment));
     if (partner && this.partner === 'bernat') list.push({ id: 'talk-bernat', label: this.companion === 'stalled' ? 'Preguntarle a Bernat qué pasa' : 'Hablar con Bernat', hint: this.companion === 'stalled' ? 'Preguntar qué pasa' : undefined, cell: { x: Math.round(partner.x), z: Math.round(partner.z) } });
     return list;
   }
   /** A dialogue that stops a door from working, if the story is not ready for it. */
   gate(interactionId: string): Dialogue | undefined {
     if (interactionId === PALACE_EXIT) return this.has('wrapper-room') ? undefined : LINES.leaveLocked;
-    // Inside the palace the school's doors open zone by zone; none of the zones can be won yet.
-    if (interactionId === 'patio-gimnasio') return LINES_2.gymShut;
-    if (interactionId === 'patio-secretaria') return LINES_2.officeShut;
-    if (interactionId === 'secretaria-direccio') return LINES_2.directionShut;
+    // Inside the palace the school's doors open boss by boss: the secretaría and Direcció once the management team has fallen.
+    const shut = castleGate(this.castleHost, interactionId, { office: LINES_2.officeShut, direction: LINES_2.directionShut });
+    if (shut) return shut;
     // The TV switched itself on when Gerard woke: Aitor will not go out before seeing it.
     if (interactionId === 'meridiana-door' && this.adult && !this.has('tv-news')) return LINES_2.doorBeforeNews;
     if (!HOUSE_EXITS.has(interactionId)) return undefined;
@@ -1239,6 +1295,8 @@ export class Story {
       }
       case 'use':
         return event.item === 'bola' ? this.shake() : [];
+      case 'ending':
+        return castleEnding(this.castleHost, event.choice);
       case 'home':
         // In from the street at night: they made it, and the day is over.
         return this.night ? this.endDay('home') : [];
@@ -1246,6 +1304,7 @@ export class Story {
         if (event.id.startsWith('uni-')) return this.nearUni(event.id);
         if (event.id.startsWith('camp-')) return this.nearCamp(event.id);
         if (event.id.startsWith('cuerdas-')) return this.nearMarta(event.id);
+        if (event.id.startsWith('castillo-')) return castleNear(this.castleHost, event.id);
         // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
         if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard' }] : [];
         if (event.id !== 'tv') return this.nearNuria(event.id);
@@ -1341,7 +1400,11 @@ export class Story {
         return [{ kind: 'news' }, say(LINES_2.newsAgain)];
       case 'enter-school': {
         if (!this.adult) return [];
-        const inside: StoryEffect = { kind: 'travel', environment: PLACES.palaceEntry.environment, cell: { ...PLACES.palaceEntry.cell } };
+        const after = castleInteract(this.castleHost, event.id);
+        if (after) return after;
+        // A boss beaten is a checkpoint: from then on the way in starts in its room (docs/castle.md § Structure).
+        const at = castleEntry(this.flags) ?? PLACES.palaceEntry;
+        const inside: StoryEffect = { kind: 'travel', environment: at.environment, cell: { ...at.cell } };
         return [{ kind: 'gate' }, inside, ...(this.set('castle') ? [say(LINES_2.castleFirst)] : [])];
       }
       case 'challenge-guards':
@@ -1377,6 +1440,8 @@ export class Story {
         if (this.has('dejavu')) return [say(LINES.bernatAfter)];
         return this.companion === 'follow' ? [say(LINES.bernatHere)] : [];
     }
+    const castle = castleInteract(this.castleHost, event.id);
+    if (castle) return castle;
     // Down into a station: the first time, the city opens (the `metro` flag).
     const station = stationOf(event.id);
     // Leaving Cardedeu with Nuria's cats: Aitor asks first, and going hands them back.

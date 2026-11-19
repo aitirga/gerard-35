@@ -14,7 +14,8 @@ on their right.
 
 Every place, grouped by area, with a search box. Picking one moves Gerard there, as walking
 through a door would, without touching the story. The places the game only reaches through a
-door (the house's floors, the palace) say "solo depuración".
+door (the house's floors, the palace) say "solo depuración". The castle's three floors
+(*Castillo · Primer, Segundo, Tercer curso*) are the floors of the day the save is on.
 
 Over the list, **Paredes que se pliegan** turns the house's folding walls on or off: walls and tall
 furniture folding down to a skirting while they stand between Gerard and the camera
@@ -30,8 +31,19 @@ standing where it happened (the station street, the school, inside the castle; o
 story resumes). The same as `just dev-chapter <flag>`, i.e. `/?story=<flag>`. Nothing is saved: a
 jump keeps its own flags.
 
+Over the list, the **Línea temporal**: the main line's key events as dots on a line (`TIMELINE` in
+[src/story-points.ts](../src/story-points.ts)), from *Inicio* through *Castillo*, *Aurelià*, *Dirección* and *Artilugio* to *La Reina*. Clicking an event marks
+it done with everything before it; under it, each ánima mission is ticked as done on its own, once
+the line reaches *Primer metro* (the same choice as *Con ánimas*). The ring is where the game is
+now. **Empezar aquí** reloads with exactly that done, **En casa** (the flat on the Meridiana at 35,
+the house in Sant Quirze before; `&at=home`) or **Donde pasa** (where the step happened). It is the
+quick way home with part of the story done, e.g. to open the jar with Nuria's lights in it.
+`just screenshots timeline` shows it.
+
 - **Chapter 1** runs in one line: *En casa*, *Con Bernat*, *El palacio*, each arc after the one before.
-- **Chapter 2** is open: *El despertar*, then *La ciudad* from the news on.
+- **Chapter 2** is open: *El despertar*, then *La ciudad* from the news on, then **El castillo**
+  (docs/castle.md): Aurelià beaten, Dirección beaten, the Queen taking Aitor, the artilugio, the
+  Queen beaten; and the two endings, **Final · Acabar** and **Final · Bajar la mano**, each its own arc.
 - **Día** and **Con ánimas**, over chapter 2, choose the day a chapter 2 jump wakes up on
   (`&day=<n>`, as `just dev-day`) and which other missions it starts with done (`&with=nuria`),
   so any mix can be tried. *Con ánimas* starts with the missions the story has done; a mission only
@@ -97,8 +109,14 @@ A mission without its own list offers its beginning and each of its steps.
 
 ## Ánimas
 
-The column on the right of Historia and Misiones: every ánima, with *No* and each level it can
-reach (*Nv 1* to *Nv 3*). It shows the ánimas unlocked now; the story's own level is
+The column on the right of Historia and Misiones, in two groups.
+
+**Ánimas propias** (Matemágico, Tecnópata) have no levels and earn no EXP
+(docs/animas/README.md § Two ways to grow), so they have no level chips: at 35 each says it is
+always worn and how many of its constellation's improvements are bought, with *Abrir el bote*
+under them; in the childhood chapter they are only *No* or *Despierta*.
+
+**Ánimas compartidas**: each one with *No* and each level it can reach (*Nv 1* to *Nv 3*). It shows the ánimas unlocked now; the story's own level is
 underlined in gold, so a change shows against it. A pick applies at once: the status screen, the
 interface's colours, L and R in the fight on now and its skills, and the next fights, the
 tester's too. *Volver a las de la historia* gives back what the story has unlocked up to here.
@@ -138,6 +156,9 @@ The fight tester. Choose:
   **Camping Eurosport** has the university friends' dungeon (docs/quests/universidad.md): *Magos*,
   *Dados*, *Agentes*, a *Tienda equivocada* (a die and two agentes), the *Parcela negra* (two magos
   and two dice) and *El Campeón*; on the Barceloneta's sand until the campsite has a place of its own.
+  **Castillo** has every fight of the castle (docs/castle.md): each room's pupils by year, La
+  Delegada, Aurelià, El Equipo de dirección, La Reina Bubbaloo (the first meeting, which cannot be
+  won) and La Reina with the artilugio; rooms on their floor, bosses in their own room.
   Dogs come 1 to 4; the guards are as many and as strong as the friends' ánimas leave them.
 - To try **Ángulo exacto**, **Ronroneo de Yuki** and the **duals**, the Ánimas column sets the
   levels (Matemágico and Papagato at *Nv 2* reach all of them) and *Equipo* + *Ánimas* put
@@ -187,6 +208,9 @@ In any fight, the story's too, the Combate tab becomes the fight's own page:
   | Magos de camping | *Bombona cargada* (`magos-bombona`) | Every mago whole with its Bombona charged: their next turn blasts both |
   | El Campeón | *Héroe* (`campeon-heroe`) | Full PV, a hero with its two turns ahead: it punches and takes half |
   | El Campeón | *De paisano* (`campeon-paisano`) | Half its PV, in plain clothes with its two turns ahead: it gets PV back and takes double |
+  | Aurelià | *La lección*, *La carrera*, *La última recta* (`aurelia-*`) | Each phase from its start: behind the lectern; running his lap; the lectern gone |
+  | El Equipo de dirección | *Las tres: Acta* (`direccion-tres`), *Quedan dos*, *Voto de calidad* | The three on an Acta round; two without quorum; the last with every element |
+  | La Reina (with the artilugio) | *El chicle*, *Las manos*, *La pompa*, *Tiene a Aitor* (`reina-*`) | Each stage from its start; the last with Aitor already hers, so the artilugio's keys (1–4) can be tried |
 
   To try a dual with full maná, *PM infinitos*.
 - **Dual** (a command, in development only): in every fight of `just dev` the fight's menu is

@@ -17,6 +17,8 @@ import {
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, untilNote } from './song.ts';
+import { ARTILUGIO_BUTTONS, CASTLE } from './castle.ts';
+import { artilugioLive, castleNote, castleProp, nextNote } from './castle-fight.ts';
 
 export const SIM_VERSION = 2;
 export const POLICIES = {
@@ -170,6 +172,7 @@ const BOOKS = {
   sobremesa: { boss: SOBREMESA },
   camping: { rules: CAMPING },
   marta: { rules: MARTA },
+  castle: { rules: CASTLE },
   reaction: { rules: REACTION_RULES },
   element: { rules: ELEMENT_RULES },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
@@ -286,6 +289,8 @@ const MARK_HITS = 3;
 const MANA_WORTH = 5;
 /** What `smart` thinks a PV off Vertitrón's eye is worth (it brings no win closer, but every Rayo it has left), and breaking it. */
 const EYE_WORTH = .8, EYE_BROKEN = 30;
+/** A thing with PV that is part of a fight's answer and never its win: Vertitrón's eye, Aurelià's lectern, the Queen's hands. */
+const isPiece = (foe: BattleState['foes'][number]) => foe.kind === 'vertigo-ojo' || castleProp(foe);
 interface Threat { hp: Map<string, number>; mareo: Map<string, number> }
 /** What the foes would do to each ally if their turn came now (PV, and Mareo stacks): the real rules, on a copy. */
 function threatOn(state: BattleState): Threat {
@@ -315,10 +320,10 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   before.foes.forEach((foe, i) => {
     const now = after.foes[i];
     // Vertitrón's eye: PV off it count while its Rayo is still to come (breaking it ends the Rayo for good).
-    value += (foe.hp - now.hp) * (foe.kind === 'vertigo-ojo' ? EYE_WORTH : 1);
+    value += (foe.hp - now.hp) * (isPiece(foe) ? EYE_WORTH : 1);
     // A layer off makes its blows lighter for the rest of the fight and the hits behind it land whole.
     if (isOnion(foe.kind)) value += ((foe.layers ?? 0) - (now.layers ?? 0)) * (ONIONS[foe.kind].perLayer * (2 + 2 * ONIONS[foe.kind].splash) + 3);
-    if (foe.hp > 0 && now.hp <= 0) value += foe.kind === 'vertigo-ojo' ? EYE_BROKEN : 20;
+    if (foe.hp > 0 && now.hp <= 0) value += isPiece(foe) ? EYE_BROKEN : 20;
     value += ((now.statuses?.sangrado ?? 0) - (foe.statuses?.sangrado ?? 0)) * 3;
     value += ((now.timed?.quemado?.level ?? 0) - (foe.timed?.quemado?.level ?? 0)) * 10;
     // A debuff's mark on a foe that will stand a while: every later hit on it lands harder, about a
@@ -504,6 +509,9 @@ export function playFight(setup: Setup, seed: number): Run {
         if (over()) break;
         if (state.phase !== 'player' || state.allies[state.active].id !== chooser) continue;
       }
+      // The artilugio (docs/castle-bosses.md § With the artilugio): while she has Aitor, whoever reads the fight plays
+      // the melody's next notes, two a turn; anyone else presses any button. It takes nobody's turn.
+      if (artilugioLive(state)) for (let n = 0; n < (setup.policy === 'smart' ? 2 : 1) && artilugioLive(state); n++) { castleNote(state, setup.policy === 'smart' ? nextNote(state) : Math.floor(random() * ARTILUGIO_BUTTONS)); count('nota'); }
       const queued = takeQueued(state);
       const choice: Choice = queued ? { ...queued } : decide(state, setup, random);
       // Someone in no hurry queues their own choice while the first one chooses (`QUEUE`): their dual, if any, comes by chance.
@@ -675,6 +683,8 @@ export interface Target extends Setup {
   duals?: readonly [number, number];
 }
 const L1 = { papagato: 1 }, L2 = { papagato: 2 }, L3 = { papagato: 3 };
+/** Atacar's three elements and what lays and cashes them: the jar as a party reaching the castle may have it. */
+const ELEMENTAL = ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'matemagico:vasos', 'matemagico:descarga'];
 /** Uri's tower with both ánimas grown: Papagato at 2 (ring 1 needs it), Matemágico at 1 or 2 (2 if Gerard wears it up the tower), 3 for whoever grinds. */
 const P2M1 = { papagato: 2, matemagico: 1 }, P2M2 = { papagato: 2, matemagico: 2 }, P3M2 = { papagato: 3, matemagico: 2 }, P3M3 = { papagato: 3, matemagico: 3 };
 export const TARGETS: readonly Target[] = [
@@ -766,6 +776,19 @@ export const TARGETS: readonly Target[] = [
   { id: 'voz-sin-pensar', fight: 'voz', party: DUO, levels: P3M3, policy: 'casual', win: [0, .4], why: 'Quien pega a destiempo pierde golpes en los silencios y no se agarra al golpe directo: gana pocas veces, y el Eco crece sin esperar.' },
   { id: 'voz-a-punetazos', fight: 'voz', party: DUO, levels: P3M3, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
   { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, levels: P3M3, policy: 'smart', win: [.25, .92], why: 'Con dos ánimas de magia cuesta más: su Nota clara la devuelve, y hay que guardarse los rayos para cuando no es de vidrio.' },
+  // The castle (docs/castle.md, docs/castle-bosses.md), preliminary: measured 2026-11-19 with the dual party at Papagato 3 and Atacar's three elements bought.
+  { id: 'alumnos-primero', fight: 'alumnos-1a', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [.9, 1], why: 'Primer curso: chicle fresco, la primera lección del juego. Se gana sin pensar mucho.' },
+  { id: 'alumnos-tercero-bien', fight: 'alumnos-3b', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.8, 1], why: 'Tercer curso: el Empollón se aprende el golpe y el Repetidor lleva costra; alternar físico y mágico, y tumbar a la Chivata antes.' },
+  { id: 'alumnos-tercero-sin-pensar', fight: 'alumnos-3b', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Repetir el mismo golpe contra el Empollón y dejar a la Chivata marcar: se pierde.' },
+  { id: 'delegada-bien', fight: 'delegada-3', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.7, 1], why: 'La Delegada: callarla o tumbarla primero, y bajar a los Gemelos a la par.' },
+  { id: 'delegada-sin-pensar', fight: 'delegada-3', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Con ella mandando, todos al mismo: sin orden se pierde.' },
+  { id: 'aurelia-bien', fight: 'aurelia', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.6, 1], why: 'Aurelià: romper el atril, defender la Pregunta, cambiar de estado de reloj en la carrera y gastar lo guardado antes del Récord.' },
+  { id: 'aurelia-sin-pensar', fight: 'aurelia', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Pegándole tras el atril, a mitad de daño, y sin tropiezos: las vueltas se acumulan.' },
+  { id: 'direccion-bien', fight: 'direccion', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.7, 1], why: 'Dirección: primero la del agua, a cada una su debilidad, y Defender cuando el acta está cerrada.' },
+  { id: 'direccion-sin-pensar', fight: 'direccion', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .05], why: 'Mojados y sin orden, la Circular y la Resolución acaban con el grupo.' },
+  { id: 'reina-toma-a-aitor', fight: 'reina', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [0, 0], why: 'La primera vez no se gana: al décimo de sus PV toma a Aitor, y sin el artilugio Gerard cae.' },
+  { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.9, 1], why: 'Con el artilugio: romper la pompa o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
+  { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
 ];
 export interface TargetResult { id: string; why: string; pass: boolean; failures: string[]; row: Row; wanted: Pick<Target, 'win' | 'roundsLost' | 'hpLeftWon' | 'roundsWon' | 'duals'> }
 /** Plays every target and says which hold. */

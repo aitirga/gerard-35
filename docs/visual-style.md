@@ -672,7 +672,14 @@ Gerard's colleagues at the school (`docs/story-outline.md` § The palace: zones)
 - **A won zone comes back** (proposal): when its boss falls, its pink dries and greys, its look
   drifts towards the real school's morning (`rec-comtal`), and the shortcut door opens.
 
-The zones' order is open; the story outline proposes la secretaría last before the throne.
+The zones' order is patio → gimnasio → secretaría → throne (decided 2026-11-19), and between each
+pair lies a generated floor that **drifts from one zone's card to the next's**
+([castle.md](castle.md) § The art drifts towards the boss): court green to mat blue, marble and
+laurel (Aurelià); mat blue to manila and steel, in the dark (the management team); manila to night
+indigo and gold, in decay (her). A floor has no card of its own: every room is a mix of two cards
+that exist, so the matrix and the contrast rule hold. Her pink stays under a tenth of the screen
+until phase 3, where it rises old and desaturated; violet is still only the eyes of those she
+holds.
 
 | Zone | The real school | Transformed | Main colour | Her pink creeping in | Set-piece |
 | --- | --- | --- | --- | --- | --- |

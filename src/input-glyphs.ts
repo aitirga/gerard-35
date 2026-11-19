@@ -51,6 +51,8 @@ export const GLYPHS = {
   pick: { keyboard: '1–4', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
   /** The same in the development build, whose menu has a fifth command (Dual). */
   pickDev: { keyboard: '1–5', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
+  /** The artilugio's four buttons, while the real one is not plugged in: the number keys stand in (keyboard only for now). */
+  notes: { keyboard: '1 2 3 4', ...pad('—', '—', '—', '—') },
   /** The fight's summary: both sides, PV, statuses and stats up or down. */
   summary: { keyboard: 'R', ...pad('Cruceta ← →', 'Cruceta ← →', 'Cruceta ← →', 'Cruceta ← →') },
 } as const satisfies Record<string, Row>;

@@ -1,3 +1,4 @@
+import { isCastle } from './castle.ts';
 import { isOnion, type BattleEffect, type BattleState, type Element, type ElementReaction, type FoeKind, type SkillId } from './battle.ts';
 import type { SoundId } from './sfx.ts';
 
@@ -78,6 +79,17 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
   cristalino: { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'crack', volume: .7 }] },
   directo: { start: [{ id: 'gust', volume: .5 }], impact: [{ id: 'slam' }] },
   voz: { impact: [{ id: 'hit', volume: .8 }] },
+  // The castle: gum that lands heavy, a ruler, a stamp, and hers.
+  repetidor: { impact: [{ id: 'slam' }] },
+  empollon: { impact: [{ id: 'hit' }] },
+  chivata: { impact: [{ id: 'mark-set' }] },
+  gemelo: { impact: [{ id: 'hit', volume: .8 }] },
+  delegada: { impact: [{ id: 'hit' }] },
+  aurelia: { impact: [{ id: 'slam', volume: .9 }] },
+  atril: { impact: [] },
+  directiva: { impact: [{ id: 'thump' }] },
+  reina: { impact: [{ id: 'spit' }, { id: 'slam', volume: .7 }] },
+  mano: { impact: [] },
 };
 const foeOf = (effect: BattleEffect, state?: BattleState) => state?.foes.find(f => f.id === effect.actor);
 
@@ -124,6 +136,8 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   // La Voz crossing her arms (Guardia) and turning to glass (Nota clara): no blow, but each is heard.
   if (effect.kind === 'enemy' && effect.ability?.id === 'guardia') return [{ id: 'guard' }];
   if (effect.kind === 'enemy' && effect.clear) return [{ id: 'mark-set' }, { id: 'stat-up', volume: .5, delay: .1 }];
+  // The castle's moves that are a word, not a blow (Chivatazo, Dictado announced, La Pompa starting): a mark set, heard.
+  if (effect.kind === 'enemy' && !effect.amount && !effect.splash && (effect.telegraph || effect.called?.length) && isCastle(foeOf(effect, state)?.kind)) return [{ id: 'mark-set' }];
   if (effect.kind !== 'enemy' || !(effect.amount || effect.splash)) return [];
   const foe = foeOf(effect, state);
   // Whoever hit everyone: a fantasmita's «GAME OVER» and Vertitrón's (Barrido; the Rayo cracks as it sweeps).

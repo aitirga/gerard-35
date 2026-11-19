@@ -1043,7 +1043,53 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
     following.push(focus => pool.setPosition(focus.x, focus.y + 2.6, focus.z));
   }
 
-  ({ patio: dressPatio, gimnasio: dressGym, secretaria: dressSecretaria, trono: dressTrono })[t.zone]();
+  // ——— The castle's generated floors (src/castle-floor.ts) ———————————————————————————————————
+  /**
+   * A floor between two zones: walls round every room and corridor (low where they stand between the
+   * camera and a floor), a pool of light that walks with the party, a lamp where there is something
+   * to find, her gum in the rooms her pupils keep, and the school's orange on the two doors.
+   * Preliminary: each phase's own dressing is to come (docs/castle.md § The art drifts towards the boss).
+   */
+  function dressCastillo() {
+    const floor = environment.palace!.floor;
+    if (!floor) return;
+    const open = (px: number, pz: number) => environment.grid[pz]?.[px] === '.';
+    const inner = mat(P.wall, .15), HIGH = 1.4;
+    for (let pz = 1; pz < D - 1; pz++) {
+      let start = -1, height = 0;
+      const flush = (end: number) => {
+        if (start < 0) return;
+        const len = end - start, cx = x(start + (len - 1) / 2);
+        slab(root, 'Muro interior', inner, [cx, height / 2, z(pz)], [len, height, 1]);
+        slab(root, 'Remate', plinth, [cx, height + .03, z(pz)], [len + .04, .06, 1.04], false);
+        start = -1;
+      };
+      for (let px = 1; px < W - 1; px++) {
+        const touches = !open(px, pz) && [-1, 0, 1].some(dz => [-1, 0, 1].some(dx => open(px + dx, pz + dz)));
+        // In front of a floor (south or east of it), a wall is cut low so the camera sees over it.
+        const h = !touches ? 0 : open(px, pz - 1) || open(px - 1, pz) || open(px - 1, pz - 1) ? LOW : HIGH;
+        if (h !== height) { flush(px); height = h; }
+        if (h && start < 0) start = px;
+      }
+      flush(W - 1); height = 0;
+    }
+    for (const room of floor.rooms) {
+      const { cell, rect } = room;
+      if (room.kind === 'fight' || room.kind === 'elite') for (let i = 0; i < (room.kind === 'elite' ? 7 : 4); i++) smear(rect.x + 1 + jitter(room.id * 31 + i) * (rect.w - 2), rect.z + 1 + jitter(room.id * 17 + i + 5) * (rect.d - 2), room.id * 13 + i, 1.4);
+      if (room.kind === 'rest') {
+        part(root, 'Mesa de la sala de profesores', 'box', plinth, [x(cell.x), .38, z(cell.z - 1)], [2.2, .76, .9]);
+        lamp(cell.x, 2.2, cell.z, .8, 5, new pc.Color().fromString('#f2c27a'));
+      } else if (room.kind === 'find') {
+        part(root, 'Armario de material', 'box', steel, [x(cell.x), .95, z(cell.z - 1)], [1.6, 1.9, .5]);
+      } else if (room.kind === 'antechamber') lamp(cell.x, 2.6, cell.z, .9, 6);
+    }
+    lowDoor(floor.back.x, floor.back.z); lowDoor(floor.exit.x, floor.exit.z);
+    // A pool of light walks with the party: by day it only lifts the floor, further in it is most of what there is.
+    const pool = lamp(0, 2.6, 0, .9, 5.2, new pc.Color().fromString(t.glow));
+    following.push(focus => pool.setPosition(focus.x, focus.y + 2.6, focus.z));
+  }
+
+  ({ patio: dressPatio, gimnasio: dressGym, secretaria: dressSecretaria, trono: dressTrono, castillo: dressCastillo })[t.zone]();
   void loadReal();
 
   let time = 0;

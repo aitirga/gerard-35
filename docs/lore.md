@@ -70,8 +70,9 @@ friends' stories and the second round carry it.
   kids again now that they are growing up and responsibilities keep piling on: more time, play,
   fun outside obligation. Her means are cruel even if her reason is not. The game leans into her
   **human side**.
-- **The ending (decided): three endings**, by Gerard's choice at the end: **kill her, wound her,
-  or let her live**. What each one means: open (`docs/story-outline.md`).
+- **The ending (decided 2026-11-19): two endings**, by Gerard's choice at the end: **kill her, or
+  let her live, weakened** (before, three). What each one shows: `docs/castle-bosses.md` § The
+  last scene.
 
 ### Her minions (esbirros)
 

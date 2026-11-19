@@ -20,7 +20,8 @@ export const isNight = (hour: number) => hour >= NIGHT;
 /** When they wake after being beaten on the way home at night: the morning is gone. */
 export const WOKE_LATE = 11;
 /** Hours each kind of thing takes. */
-export const COSTS = { metro: 1, fight: 2, piano: 2, cafe: 1 } as const;
+/** `castle`: a fight inside the castle, or a rest in its staff room (docs/castle.md § To settle: one hour, proposed). */
+export const COSTS = { metro: 1, fight: 2, piano: 2, cafe: 1, castle: 1 } as const;
 export type Activity = keyof typeof COSTS;
 /** Days without any help before the Queen covers everything, and how many days each ánima wins back. */
 export const GRACE_DAYS = 6, DAYS_PER_ANIMA = 3;

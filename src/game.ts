@@ -61,6 +61,8 @@ import { REACH } from './chasers';
 import { createStreetShift, toCalle } from './street-shift';
 import { BROOD_ENCOUNTERS, BROOD_RINGS, FEAR_ENCOUNTERS, type BroodEncounter } from './battle';
 import type { FearEncounter } from './friends/nuria';
+import { CASTLE_FIGHTS, CASTLE_SIZES, isCastleEncounter, isCastlePlace, type CastleEncounter, type CastleKind, type RoomEncounter } from './castle';
+import { aitorTaken } from './castle-fight';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
 import { PLACES_2 } from './chapter-2';
 import { createNewsTV, type NewsTV } from './news-tv';
@@ -93,7 +95,8 @@ export interface GameCallbacks {
   onEncounter: (withPartner: boolean, foes: number, options: { possessed: boolean; encounter: Encounter }) => void;
   /** A fight closed, however it ended. */
   /** `worn`: the ánimas that took part in the fight, and `xp` what it was worth to each (src/levels.ts). */
-  onBattleEnd: (phase: BattlePhase, encounter: Encounter, worn: ClassId[], xp: number) => void;
+  /** `taken`: the Queen had Aitor when it ended (src/castle-fight.ts). */
+  onBattleEnd: (phase: BattlePhase, encounter: Encounter, worn: ClassId[], xp: number, taken: boolean) => void;
   /** The fight's picture has reached a moment that sounds (src/battle-sounds.ts), or something in the street does. */
   onSound: (id: SoundId, options?: { delay?: number; volume?: number; pan?: number }) => void;
   /** A sound that goes on while something is near (the bubble's hiss), every frame; none fades it out. */
@@ -1054,7 +1057,19 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (who !== 'party' && who !== 'everyone') release();
   }
   /** A fear as it hunts the ramp; their young go in a little pack of the ring's own fear, small. */
-  function huntingModel(encounter: FearEncounter | CampingEncounter) {
+  function huntingModel(encounter: FearEncounter | CampingEncounter | CastleEncounter) {
+    // The castle: a room's pupils walk as the group they fight as, a boss stands alone. Gum for all of them, for now.
+    if (isCastleEncounter(encounter)) {
+      const group = new pc.Entity('Alumnos');
+      const kinds: readonly CastleKind[] = encounter === 'aurelia' ? ['aurelia'] : encounter === 'direccion' ? ['directiva', 'directiva', 'directiva'] : encounter === 'reina' || encounter === 'reina-vuelta' ? ['reina'] : CASTLE_FIGHTS[encounter as RoomEncounter];
+      kinds.forEach((kind, i) => {
+        const one = minion.root.clone(); one.enabled = true;
+        const size = CASTLE_SIZES[kind] * .9; one.setLocalScale(size, size, size);
+        one.setLocalPosition((i - (kinds.length - 1) / 2) * .95, 0, i % 2 ? -.35 : .35);
+        group.addChild(one);
+      });
+      return group;
+    }
     // Càmping Eurosport's patrols walk as the group they fight as: two magos, two agentes, side by side.
     if (encounter in CAMPING_FIGHTS) {
       const group = new pc.Entity('Patrulla'), kinds = CAMPING_FIGHTS[encounter as CampingEncounter];
@@ -2245,7 +2260,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       if (battle.encounter === 'uri-vertigo' && battle.phase === 'won' && summit) summitKneel = { t: 0 };
       // A fall keeps where the fight stood and who started it, so fighting it again stages it there.
       if (battle.phase !== 'lost') { fightingHunter = undefined; fearStage = undefined; }
-      callbacks.onBattleEnd(battle.phase, battle.encounter, participants(battle).map(p => p.id), fightXp(battle));
+      callbacks.onBattleEnd(battle.phase, battle.encounter, participants(battle).map(p => p.id), fightXp(battle), aitorTaken(battle));
     }
     // Uri's fears out on the ramp step aside while a fight is on.
     hunters.forEach(h => { h.model.enabled = !next; });
@@ -2387,6 +2402,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     // Each time they come out onto the street at night is a new hunt, round where they come out.
     nightHunt = undefined;
     scenery.destroy();
+    // A floor of the castle is another every day: the story says what today's is (src/castle-floor.ts).
+    if (isCastlePlace(id)) ENVIRONMENTS[id] = story.place(id);
     environment = ENVIRONMENTS[id];
     scenery = buildScenery(app, environment);
     dressScene();
