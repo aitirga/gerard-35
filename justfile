@@ -155,6 +155,12 @@ combat-sim *args:
 fight-sim *args:
     @node --experimental-strip-types --no-warnings scripts/fight-sim.mjs "$@"
 
+# Play the whole game headless, many times: duration, difficulty curve, levels, walls (see docs/game-sim.md; the picker shows the last report)
+[group('Combat')]
+[positional-arguments]
+game-sim *args:
+    @node --experimental-strip-types --no-warnings scripts/game-sim.mjs "$@"
+
 # Check the generic engine, simulator and campaign integration
 [group('Combat')]
 combat-check:
