@@ -39,6 +39,7 @@ const LIMP: Acts = Object.fromEntries(SOBREMESA_FRIENDS.map(f => [f, { kind: 'fr
 const UNMASK_SECONDS = 2.2;
 import { createPocket, type Pocket } from './pocket';
 import { ARENA_SPREAD, BOSS_ARENAS, createBossArena, type BossArena } from './boss-arena';
+import { THRONE_SPREAD, createThroneArena, onThroneStage, type ThroneArena } from './throne-arena';
 import { createFears } from './fears';
 import { mergeParts } from './props';
 import { buildTower, type Tower } from './tower-scene';
@@ -239,7 +240,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   effects.setScene(environment, scenery);
   // Each fighter is cloned from their street model; Bernat borrows Gerard's (recoloured) as before.
   /** The pocket a fight moved to, while it goes on there (src/pocket.ts, `setBattle`). */
-  let pocket: Pocket | BossArena | undefined;
+  let pocket: Pocket | BossArena | ThroneArena | undefined;
   // In a pocket the floor is its own, flat; elsewhere the scene's.
   const battleScene = createBattleScene(app, player, id => id === 'aitor' ? mates.aitor.entity : player, (x, z) => pocket?.contains(x, z) ? pocket.floorAt() : scenery.groundHeight(x, z), effects);
   battleScene.setPulse(post.pulse);
@@ -2431,6 +2432,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const fight = next.encounter ?? encounterId;
       const wearers = next.allies.flatMap((a, i) => a.classId === 'papagato' ? [i] : []);
       const cast = { allies: next.allies.length, foes: standing(next.foes.map(f => f.kind)), cats: wearers.length ? wearers : catWalk ? [0] : [] };
+      // The Queen's last fight goes up onto her stage, built for it (src/throne-arena.ts).
+      if (onThroneStage(fight)) return diffuse(() => {
+        pocket = createThroneArena(app, { cast });
+        fightStage = { layout: 'open', pocket: true, spread: THRONE_SPREAD };
+        return applyBattle(next, effect, onImpact, pocket.centre);
+      });
       // A boss with its own arena fights there, built of the place's pieces, away from its waiting dressing (src/boss-arena.ts).
       const arena = environment.geo ? BOSS_ARENAS[fight] : undefined;
       if (arena) return diffuse(() => {
