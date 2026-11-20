@@ -1,0 +1,56 @@
+{
+  "title": "Freática · la ficha del ánima",
+  "description": "Emilie's ánima as far as it is built (docs/animas/freatica/): its look on whoever wears it (field clothes in the water's two colours, a staff gauge down the jacket, a water level meter at the hip) and its interface (a column of water read on a staff gauge). It has no rule and no skill yet: each skill's look is in freatica-fx. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22freatica%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22freatica%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "shot": "equipo",
+      "delay": 1500,
+      "caption": "Freática worn by Gerard, and the ánima's interface: the ground green above and blue below, the commands as marks of a staff gauge"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: at.x, y: at.y + .8, z: at.z }, 1.3); }"
+    },
+    {
+      "shot": "aspecto",
+      "delay": 1500,
+      "caption": "The look: a jacket the blue-green of deep water with stripes the green of the shallows, a staff gauge of white light down its left with its three marks, and the water level meter at the hip"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: at.x, y: at.y + .45, z: at.z }, .8); }"
+    },
+    {
+      "shot": "medidor",
+      "delay": 1500,
+      "caption": "The water level meter: the reel, its tape and the probe, its tip lit"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "press": "Digit3",
+      "gap": 500
+    },
+    {
+      "shot": "interfaz",
+      "delay": 500,
+      "caption": "The open command is under water: green at its surface, blue below"
+    },
+    {
+      "press": "Escape",
+      "gap": 400
+    }
+  ]
+}
