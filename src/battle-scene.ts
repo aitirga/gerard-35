@@ -160,6 +160,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     /** Called in mid-fight and not there yet (La Voz's second voice), and its coming together out of specks, or back (an Eco tied again). */
     unborn?: boolean; arriving?: Disintegration; freed?: { node: pc.Entity; from: pc.Vec3; to: pc.Vec3; at: number }; hitAt?: number; flashColor: pc.Color; flash: number; materials: pc.StandardMaterial[]; glow: pc.Color[];
     body: pc.Entity | null; head: pc.Entity | null; tail: pc.Entity | null; ears: pc.Entity[]; eyes: pc.Entity[]; eyeScale: number; seed: number;
+    /** A winged figure's wings (`just character-3d` with `wings`: `Ala izquierda`, `Ala derecha`), hinged at the body: they beat. */
+    wings?: pc.Entity[];
     /** Knees, elbows and ankles, on a sculpted fighter. */
     limbRig?: LimbRig;
     /** Foes that are not dogs (the palace minion) wobble instead of sniffing. */
@@ -1984,6 +1986,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     fighters.set(unit.id, {
       model, base, start, hp: unit.hp, party, shrink: 1, body, head, arms, legs, yaw, turn: yaw, eyes, tail: model.findByName('Cola') as pc.Entity | null, minion, rigid: unit.kind === 'vertigo', grown: party && grownUp(unit.profile),
       ears: model.find(node => node.name === 'Oreja') as pc.Entity[], eyeScale: eyes[0]?.getLocalScale().y ?? 1, seed: party ? i * 3.1 + .4 : i,
+      wings: model.find(node => node.name === 'Ala izquierda' || node.name === 'Ala derecha') as pc.Entity[],
       flash: 0, flashColor: white, ...ownMaterials(model, party),
       scale: model.getLocalScale().clone(), walk: new WalkAnimation(), plantFeet: createGroundContact(model, feet),
       limbRig: party && legs[0]?.findByName('Espinilla') ? {
@@ -2535,6 +2538,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           if (lively && down < 0) { roll += Math.sin(time * 1.15 + f.seed) * 1.3; lean += 2.5; }
         } else f.legs.forEach((leg, i) => leg.setLocalEulerAngles(stride * (i % 2 ? -1 : 1), 0, 0));
         f.tail?.setLocalEulerAngles(38 + strike * 20, lively ? Math.sin(time * (attacking ? 16 : 7) + f.seed) * 22 : 0, 0);
+        // Wings beat about the body's long axis, faster on the way in to strike; folded when it falls.
+        f.wings?.forEach(wing => wing.setLocalEulerAngles(0, (wing.name === 'Ala izquierda' ? -1 : 1) * (lively ? 18 + Math.sin(time * (attacking ? 30 : 15) + f.seed) * 34 : 55), 0));
         // Vertitrón is posed joint by joint (`robotFrame`).
         if (f.robot) { /* posed */ }
         else if (f.minion && f.head && !f.strings) f.head.setLocalEulerAngles(lively ? Math.sin(time * 2.2 + f.seed) * 6 - strike * 20 : 0, lively ? idle.look * 10 : 0, lively ? Math.sin(time * 1.7) * 5 : 0);

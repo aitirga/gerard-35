@@ -870,11 +870,14 @@ def convert(rigged: Path, name: str, display: str, scale: float, clean_shaven: b
     return glb, spec
 
 
-def convert_creature(model: Path, name: str, display: str, height: float):
+def convert_creature(model: Path, name: str, display: str, height: float, wings: float = 0):
     """
     A creature for the game from Meshy's plain model, as its GLB's bytes and its file: standing on the
     ground, `height` metres tall, with the nodes a fight moves a foe by (src/fears.ts): a base on the
-    ground and a head holding the whole figure, which wobbles as one piece.
+    ground and a head holding the whole figure, which wobbles as one piece. With `wings` (metres from
+    its middle where the body ends), what lies further out to each side is cut off as a wing of its
+    own, `Ala izquierda` (+x, the creature's left) and `Ala derecha`, hinged where it meets the body,
+    so a fight can beat them.
     """
     gltf, blob = read_glb(model.read_bytes())
     primitive = gltf["meshes"][0]["primitives"][0]
@@ -890,19 +893,36 @@ def convert_creature(model: Path, name: str, display: str, height: float):
     texture = clean_texture(texture_of(gltf, blob), uvs, triangles)
     vmap, faces, atlas_uvs, atlas = reatlas(positions, triangles, uvs, texture)
     file = GlbFile()
-    attributes = {"POSITION": file.put(positions[vmap].astype(np.float32), "VEC3", 5126, 34962, True),
-                  "NORMAL": file.put(normals[vmap].astype(np.float32), "VEC3", 5126, 34962),
-                  "TEXCOORD_0": file.put(atlas_uvs.astype(np.float32), "VEC2", 5126, 34962)}
-    indices = file.put(faces.reshape(-1, 1), "SCALAR", 5125, 34963)
-    material = {"name": display, "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}, "metallicFactor": 0, "roughnessFactor": .82}}
-    nodes = [
-        {"name": "Malla", "mesh": 0, "translation": [0, -height / 2, 0]},
-        {"name": "Cabeza de chicle", "translation": [0, height / 2, 0], "children": [0]},
+    material ={"name": display, "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}, "metallicFactor": 0, "roughnessFactor": .82}}
+    points, bent = positions[vmap], normals[vmap]
+    centre = points[faces].mean(axis=1)[:, 0]
+    parts = [("Malla", faces if not wings else faces[np.abs(centre) <= wings], np.zeros(3))]
+    if wings:
+        for side, label in ((1, "Ala izquierda"), (-1, "Ala derecha")):
+            own = faces[centre * side > wings]
+            if not len(own):
+                raise SystemExit(f"No wing past {wings} m on the {'left' if side > 0 else 'right'} of {name}: lower `wings`.")
+            # The hinge: the middle of the wing's edge against the body.
+            root = points[np.unique(own)]
+            root = root[np.abs(root[:, 0]) <= np.abs(root[:, 0]).min() + .08 * height]
+            parts.append((label, own, np.array([side * wings, root[:, 1].mean(), root[:, 2].mean()])))
+    meshes, nodes = [], []
+    for label, own, hinge in parts:
+        used, local = np.unique(own, return_inverse=True)
+        part = {"POSITION": file.put((points[used] - hinge).astype(np.float32), "VEC3", 5126, 34962, True),
+                "NORMAL": file.put(bent[used].astype(np.float32), "VEC3", 5126, 34962),
+                "TEXCOORD_0": file.put(atlas_uvs[used].astype(np.float32), "VEC2", 5126, 34962)}
+        indices = file.put(local.astype(np.uint32).reshape(-1, 1), "SCALAR", 5125, 34963)
+        meshes.append({"name": f"{name} · {label}" if wings else name, "primitives": [{"attributes": part, "indices": indices, "material": 0}]})
+        nodes.append({"name": label, "mesh": len(meshes) - 1, "translation": [float(v) for v in hinge - [0, height / 2, 0]]})
+    head = len(nodes)
+    nodes += [
+        {"name": "Cabeza de chicle", "translation": [0, height / 2, 0], "children": list(range(head))},
         {"name": "Charco pringoso", "translation": [0, .01, 0], "scale": [float(v) for v in [np.ptp(feet[:, 0]), .02, np.ptp(feet[:, 2])]]},
-        {"name": display, "children": [1, 2]},
+        {"name": display, "children": [head, head + 1]},
     ]
-    glb = file.finish(jpeg(atlas), 3, nodes, {"name": name, "primitives": [{"attributes": attributes, "indices": indices, "material": 0}]}, [material])
-    return glb, {"id": name, "name": display, "glb": f"models/creatures/{name}.glb", "height": height}
+    glb = file.finish(jpeg(atlas), head + 2, nodes, meshes[0], [material], meshes=meshes)
+    return glb, {"id": name, "name": display, "glb": f"models/creatures/{name}.glb", "height": height, **({"wings": wings} if wings else {})}
 
 
 if __name__ == "__main__":

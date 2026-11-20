@@ -10,9 +10,11 @@ Talk to the user in Spanish. Everything runs through `just character-3d` (`tools
 
 **The look is what the user fought for.** Hand-built primitives didn't tell people apart; hand
 sculpting and likeness-first models were rejected as scary and "demasiado realistas". What worked
-is a **toy figure of the game's own world**: big rounded shapes, matte plastic, flat solid colours,
-recognisable through two or three big features. The image step decides this, so it gets approved
-before anything is paid for.
+for people is a **toy figure of the game's own world**: big rounded shapes, matte plastic, flat solid
+colours, recognisable through two or three big features. **Monsters are the exception** (Aitor,
+2026-11-19: "más miedo"): same world, light and scale of detail, but a sculpted horror figure, like a
+stop-motion puppet for adults, not a toy (`MONSTER_LOOK` in `tools/character_3d.py`). The image step
+decides this, so it gets approved before anything is paid for.
 
 ## 0 · Load, quietly
 
@@ -28,10 +30,15 @@ field). The table's name is the figure's id in the game.
 | --- | --- | --- |
 | A real person: a friend, family | `person`, with `photos` | Photos → faithful front → toy → views → model → skeleton → game rig |
 | Someone invented, an NPC, a person with no photos | `person`, no `photos` | Words → toy → views → model → skeleton → game rig |
-| A monster, a foe, a creature, an object turned monster | `creature` | Words → toy → views → model → game, in one piece |
+| A monster with two arms and two legs (the castle's pupils) | `monster` | Words → image → views → model → Meshy's skeleton + walking/running clips → `public/models/monsters/`, no face |
+| A monster with no human shape (a heap, a beast), an object turned monster | `creature` | Words → image → views → model → game, in one piece |
 
-Anything that must walk, talk and blink like the cast is a `person`, also if it isn't human: Meshy
-only rigs two arms and two legs. A `creature` wobbles and lunges as one piece, like Uri's fears.
+Anything that must walk, talk and blink like the cast is a `person`, also if it isn't human. A foe
+that walks but has no face (a bubble, a mask) is a `monster`: Meshy rigs it like a person and its
+clips come along, but nothing looks for eyes or a mouth. Meshy only rigs two arms and two legs: a
+`creature` wobbles and lunges as one piece, like Uri's fears. A monster still uses Meshy's own
+skeleton (`src/monsters/<id>.json`, seen in `just model-lab` → `model-lab.html?monstruos`); putting
+it on the game's rig for foes is work still to propose.
 
 **Photos**
 
@@ -58,11 +65,35 @@ only rigs two arms and two legs. A `creature` wobbles and lunges as one piece, l
 **Rules a monster's or a person's look must pass** (say which one when you push back)
 
 - Not a children's game: never cute, no joke or food monsters, no googly eyes, no smile on a threat.
-  Toy is the material, not the tone.
+  For people toy is the material, not the tone; monsters are not toys at all.
 - Saturated pink stays La Reina Bubbaloo's; violet stays possession's and fear's
   (`docs/visual-style.md`). Use them only when that is what the figure is.
 - It reads from a high camera at 40–75 pixels a metre: a strong silhouette and nothing small.
 - Its silhouette and main colour differ from those of whoever it shares a screen with.
+
+**A family of monsters** (the castle's pupils, `tools/figures.toml` from `[chivata]` on; the design is
+in docs/castle.md § Bestiary): every `about` opens with the same family sentence and its year, then
+says what only this one has, and that trait is how it fights (memory: few coherent monsters). What
+the rounds of 2026-11-19 taught:
+
+- **What frightens**: no face where a face should be, with a face pressed into it from inside ("the
+  hollow imprint of a face, like a face pushed against a rubber sheet"). A plain smooth bubble came
+  out cute. Too thin, too still, a neck a little too long: unsettling; round and stubby: a plush.
+- **The same one, another year**: put its approved `toy.png` in `art` and say "the same figure, a
+  year older", or it comes out a different monster.
+- Say what it is made of when it hardens ("rubbery folds of hardened gum, not rock"), or it turns
+  into a rock golem.
+- **Never blocky limbs or the cast's clothes on a monster**: they read as real people swallowed.
+- Nothing hanging in front of the chest or crotch (a deflated bubble, a sack): it reads badly. Say
+  "nothing hangs from its chest" and put a collapsed thing over the head instead.
+- Compare them **to scale beside Gerard** on one sheet, smallest to biggest: that is how the
+  progression is judged, not one by one.
+- **Meshy's A-pose makes a monster symmetric.** La Chivata's one long arm came back as two normal
+  ones, and El Castigado's one wrist tag as two. Give a monster traits that survive a mirror, and do
+  a one-sided one in the game (scale that arm's bones, hang a tag on one hand).
+- **The end of the climb is loud, not grey.** Aitor turned down the rancid ash-grey third year:
+  "más chicle, más contraste, rosa chillón con zonas o pústulas negras". Rot shows as black on hot
+  pink (pustules "the size of a fist", so they read from above), not as a fade to grey.
 
 ## 2 · The image: get it approved before paying
 
@@ -85,6 +116,8 @@ just character-3d <id> --from views
 ```
 
 Three more images, then Meshy: about 30 credits for the model and 5 for the skeleton, some minutes.
+With `--to views` you can look at the three views before paying (a monster's views must keep its
+trait: the long arm, the hunch).
 Run it in the background. Say what it will cost if it is more than one figure. People also get their
 face found on the model: look at `output/characters/3d/<id>/rigged.face.png`, whose red boxes must
 sit on the eyes and the mouth. They drive the eyelids and the talking.
@@ -132,6 +165,11 @@ first, don't assume it. A foe's life bar hangs at a fixed 1.45 m (`battle-scene.
 one it crosses the body: give the new kind its height there, as the onions have.
 
 ## 5 · Check it where it lives
+
+**The bestiary** (`just bestiario`) shows every being with its model, portrait, concept art, data and
+whether its model is its own or a placeholder. Every figure made or redone here must appear there
+right (memory: keep the bestiary updated): open it, and regenerate its screenshots.
+
 
 A model that looks good alone can still be wrong in the game: this is how "vale super" became "son
 demasiado realistas". Always look at it there, with `just screenshots <scenario> --gpu`, adding a

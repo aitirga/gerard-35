@@ -76,10 +76,18 @@ class Meshy:
         """A skeleton for a model Meshy made, facing +z and `height` metres tall."""
         return self.rig(height, task_id=model_task)
 
+    def start_animations(self, rig_task: str, action_ids: list[int]) -> str:
+        """Moves from Meshy's animation library for a rigged model: one file, a clip per action (3 credits each)."""
+        return self._post("animations", {"rig_task_id": rig_task, "action_ids": action_ids})
+
+    def library(self, **query) -> list[dict]:
+        """Meshy's animation library (free): action_id, name, category… filtered by `search`, `category`, `action_ids`."""
+        return retrying(lambda: self.client.get(f"{self.api}/animations/library", params=query).raise_for_status().json())
+
     def wait(self, task_id: str, on_progress=print, timeout: float = 1200, kind: str = "image-to-3d") -> dict:
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
-            task = self.client.get(f"{self.api}/{kind}/{task_id}").raise_for_status().json()
+            task = retrying(lambda: self.client.get(f"{self.api}/{kind}/{task_id}").raise_for_status().json(), on_progress)
             if task["status"] == "SUCCEEDED":
                 return task
             if task["status"] in ("FAILED", "CANCELED"):
@@ -91,7 +99,20 @@ class Meshy:
 
     def download(self, url: str) -> bytes:
         # Result URLs are pre-signed: no Authorization header.
-        return httpx.get(url, timeout=300, follow_redirects=True).raise_for_status().content
+        return retrying(lambda: httpx.get(url, timeout=300, follow_redirects=True).raise_for_status().content)
+
+
+def retrying(call, on_progress=print, attempts: int = 6, pause: float = 5):
+    """`call` again after a dropped connection (a flaky line cut polls and downloads of paid Meshy tasks,
+    2026-11-19), waiting a little longer each time; a real HTTP error is raised at once."""
+    for attempt in range(attempts):
+        try:
+            return call()
+        except httpx.TransportError as error:
+            if attempt == attempts - 1:
+                raise
+            on_progress(f"  connection dropped ({type(error).__name__}), trying again")
+            time.sleep(pause * (attempt + 1))
 
 
 class Claude:

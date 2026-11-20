@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -37,6 +38,10 @@ class FakeMeshy:
     def start_rig(self, model_task, height):
         self.rigs.append((model_task, height))
         return "rig-task"
+
+    def start_animations(self, rig_task, action_ids):
+        self.animations = getattr(self, "animations", []) + [(rig_task, action_ids)]
+        return "anim-task"
 
     def wait(self, task_id, on_progress=print, timeout=1200, kind="image-to-3d"):
         return {"model_urls": {"glb": "model-url"}, "result": {"rigged_character_glb_url": "rig-url"}}
@@ -85,6 +90,27 @@ class CharacterThreeDTool(unittest.TestCase):
         self.assertEqual(len(self.images.calls), calls)
         self.assertEqual(len(self.meshy.views), views)
 
+    def test_a_paid_task_whose_result_never_came_is_picked_up_not_paid_again(self):
+        self.run_tool()
+        # The connection dropped after Meshy took the tasks: their ids are kept, the files never came.
+        (self.out / "model.glb").unlink()
+        (self.out / "rigged.glb").unlink()
+        self.run_tool()
+        self.assertEqual(len(self.meshy.views), 1)
+        self.assertEqual(len(self.meshy.rigs), 1)
+        self.assertTrue((self.out / "model.glb").exists())
+        self.assertTrue(any("picking up task model-task" in line for line in self.made))
+
+    def test_a_new_image_after_the_task_pays_for_a_new_model(self):
+        self.run_tool()
+        (self.out / "model.glb").unlink()
+        (self.out / "rigged.glb").unlink()
+        stamp = (self.out / "tasks.json").stat().st_mtime + 5
+        os.utime(self.out / "toy.png", (stamp, stamp))
+        self.run_tool()
+        self.assertEqual(len(self.meshy.views), 2)
+        self.assertEqual(len(self.meshy.rigs), 2, "a new model needs its own skeleton")
+
     def test_from_makes_that_step_and_the_ones_after_it_again(self):
         self.run_tool()
         calls = len(self.images.calls)
@@ -125,13 +151,46 @@ class CharacterThreeDTool(unittest.TestCase):
     def test_a_creature_gets_no_skeleton_and_its_own_files(self):
         self.add_figure("bicho", kind="creature")
         self.addCleanup(setattr, character_rig, "convert_creature", character_rig.convert_creature)
-        character_rig.convert_creature = lambda model, name, display, height: (b"glb", {"id": name, "name": display, "glb": f"models/creatures/{name}.glb", "height": height})
+        character_rig.convert_creature = lambda model, name, display, height, wings=0: (b"glb", {"id": name, "name": display, "glb": f"models/creatures/{name}.glb", "height": height})
         character_3d.run(["bicho"], root=self.root, images=self.images, meshy=self.meshy, log=self.made.append)
         self.assertEqual(self.images.calls[0], [character_3d.GAME_STYLE])
         self.assertEqual(self.meshy.rigs, [], "Meshy only rigs human shapes")
         self.assertNotIn("pose_mode", self.meshy.options)
         self.assertEqual((self.root / "public" / "models" / "creatures" / "bicho.glb").read_bytes(), b"glb")
         self.assertEqual(json.loads((self.root / "src" / "creatures" / "bicho.json").read_text())["height"], 2)
+
+    def test_a_monster_gets_meshys_skeleton_and_clips_and_no_face(self):
+        self.add_figure("alumno", kind="monster")
+        self.meshy.wait = lambda task_id, on_progress=print, timeout=1200, kind="image-to-3d": {
+            "model_urls": {"glb": "model-url"},
+            "result": {"rigged_character_glb_url": "rig-url", "basic_animations": {"walking_armature_glb_url": "walk-url", "running_glb_url": "run-url"}}}
+        character_3d.run(["alumno"], root=self.root, images=self.images, meshy=self.meshy, log=self.made.append)
+        self.assertEqual(self.images.calls[0], [character_3d.GAME_STYLE])
+        self.assertEqual(self.meshy.rigs, [("model-task", 2)])
+        self.assertEqual(self.meshy.options["pose_mode"], "a-pose")
+        self.assertEqual(self.meshy.options["texture_prompt"], character_3d.MONSTER_TEXTURE, "no toy plastic")
+        models = self.root / "public" / "models" / "monsters"
+        self.assertEqual((models / "alumno.glb").read_bytes(), b"rig-url", "Meshy's own skeleton, untouched")
+        self.assertEqual((models / "alumno-walking.glb").read_bytes(), b"walk-url", "only the skeleton's motion when there is one")
+        self.assertEqual((models / "alumno-running.glb").read_bytes(), b"run-url")
+        spec = json.loads((self.root / "src" / "monsters" / "alumno.json").read_text())
+        self.assertEqual(spec["clips"], {"walking": "models/monsters/alumno-walking.glb", "running": "models/monsters/alumno-running.glb"})
+        self.assertFalse((self.out.parent / "alumno" / "rigged.face.png").exists(), "a monster has no face to find")
+
+    def test_a_monsters_moves_come_from_meshys_library_in_one_file_beside_its_clips(self):
+        self.add_figure("jefe", kind="monster", animations=[0, 97, 8])
+        self.meshy.wait = lambda task_id, on_progress=print, timeout=1200, kind="image-to-3d": {
+            "model_urls": {"glb": "model-url"},
+            "result": {"rigged_character_glb_url": "rig-url", "animation_glb_url": "moves-url",
+                       "basic_animations": {"walking_glb_url": "walk-url", "running_glb_url": "run-url"}}}
+        character_3d.run(["jefe"], root=self.root, images=self.images, meshy=self.meshy, log=self.made.append)
+        self.assertEqual(self.meshy.animations, [("rig-task", [0, 97, 8])])
+        models = self.root / "public" / "models" / "monsters"
+        self.assertEqual((models / "jefe-actions.glb").read_bytes(), b"moves-url")
+        spec = json.loads((self.root / "src" / "monsters" / "jefe.json").read_text())
+        self.assertEqual(spec["clips"]["actions"], "models/monsters/jefe-actions.glb")
+        character_3d.run(["jefe"], root=self.root, images=self.images, meshy=self.meshy, log=self.made.append)
+        self.assertEqual(len(self.meshy.animations), 1, "made once, kept after")
 
     def test_a_dry_run_calls_nothing(self):
         self.run_tool("--dry-run")
@@ -146,6 +205,34 @@ class CharacterThreeDTool(unittest.TestCase):
 
 
 class Rig(unittest.TestCase):
+    def test_wings_are_cut_off_the_body_and_hinged_where_they_meet_it(self):
+        # A body two units wide in the middle and a wing out to each side, as Meshy would make a moth.
+        file = character_rig.GlbFile()
+        positions = np.array([[-1, 0, 0], [1, 0, 0], [0, 2, 0],          # the body
+                              [2, 1, 0], [5, 1, 0], [3, 1.5, 1],         # its left wing (+x)
+                              [-2, 1, 0], [-5, 1, 0], [-3, 1.5, 1]], dtype=np.float32)
+        attributes = {"POSITION": file.put(positions, "VEC3", 5126, 34962, True),
+                      "TEXCOORD_0": file.put(np.zeros((9, 2), dtype=np.float32), "VEC2", 5126, 34962)}
+        indices = file.put(np.arange(9, dtype=np.uint32).reshape(-1, 1), "SCALAR", 5125, 34963)
+        image = io.BytesIO()
+        Image.new("RGB", (8, 8), (90, 80, 70)).save(image, "JPEG")
+        glb = file.finish(image.getvalue(), 0, [{"mesh": 0}], {"primitives": [{"attributes": attributes, "indices": indices, "material": 0}]}, [{"name": "m"}])
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "model.glb"
+            source.write_bytes(glb)
+            made, spec = character_rig.convert_creature(source, "polilla", "La Polilla", 2, wings=.3)
+        self.assertEqual(spec["wings"], .3)
+        gltf, _ = character_rig.read_glb(made)
+        by_name = {node["name"]: node for node in gltf["nodes"]}
+        self.assertEqual(len(gltf["meshes"]), 3)
+        self.assertEqual({gltf["nodes"][i]["name"] for i in by_name["Cabeza de chicle"]["children"]}, {"Malla", "Ala izquierda", "Ala derecha"})
+        left, right = by_name["Ala izquierda"]["translation"], by_name["Ala derecha"]["translation"]
+        self.assertAlmostEqual(left[0], .3)
+        self.assertAlmostEqual(right[0], -.3)
+        wing = gltf["accessors"][gltf["meshes"][by_name["Ala izquierda"]["mesh"]]["primitives"][0]["attributes"]["POSITION"]]
+        self.assertGreaterEqual(wing["min"][0], -1e-6, "the left wing reaches out from its hinge")
+
+
     def test_a_creature_stands_on_the_ground_as_tall_as_asked_with_the_parts_a_fight_moves(self):
         # Meshy's model: centred on the origin, as tall as it likes.
         file = character_rig.GlbFile()

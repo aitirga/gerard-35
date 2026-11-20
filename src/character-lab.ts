@@ -4,27 +4,45 @@ import * as pc from 'playcanvas';
  * The character half of the model lab (`model-lab.html?personajes`): the Meshy characters
  * (`just character <id> --only model rig --modeler meshy`) side by side, each with the skeleton Meshy's
  * auto-rigging gave it and its walking and running clips (public/models/characters/<id>-<clip>.glb),
- * to see how they move before they go into the game.
+ * to see how they move before they go into the game. With `?monstruos`, the monsters of
+ * `just character-3d` (kind "monster", src/monsters/<id>.json) in the same way, smallest first.
  */
 export const CHARACTERS = [
   { id: 'anna', name: 'Anna' }, { id: 'alvaro', name: 'Álvaro' }, { id: 'miquel', name: 'Miquel' }, { id: 'sarah', name: 'Sarah' },
   { id: 'soraya', name: 'Soraya' }, { id: 'nico', name: 'Nico' }, { id: 'joan', name: 'Joan' },
 ] as const;
 const CLIPS = ['walking', 'running'] as const;
+interface MonsterSpec { id: string; name: string; glb: string; clips: Record<typeof CLIPS[number], string>; height: number }
+const MONSTERS = Object.values(import.meta.glob<MonsterSpec>('./monsters/*.json', { eager: true, import: 'default' })).sort((a, b) => a.height - b.height);
+/** Who stands in the row: the friends, or the monsters. */
+export interface Roster { title: string; about: string; people: { id: string; name: string; glb: string; clips: Record<typeof CLIPS[number], string>; height: number }[] }
+export const UNI_ROSTER: Roster = {
+  title: 'Los amigos de la uni', about: 'Modelos de Meshy con su auto-rig.',
+  people: CHARACTERS.map(({ id, name }) => ({ id, name, glb: `models/characters/${id}.glb`, clips: { walking: `models/characters/${id}-walking.glb`, running: `models/characters/${id}-running.glb` }, height: 1.75 })),
+};
+export const MONSTER_ROSTER: Roster = { title: 'Los alumnos de la Reina', about: 'Monstruos de just character-3d con el esqueleto de Meshy, de menor a mayor.', people: MONSTERS };
 type Motion = 'still' | typeof CLIPS[number];
 const MOTIONS: Record<Motion, string> = { still: 'Quieto', walking: 'Andar', running: 'Correr' };
 const GAP = 1.35;
+/** Room between two in the row, more for the big ones. */
+const gapOf = (height: number) => Math.max(GAP, height * 1.15);
 /** The whole row sits a little right of centre, clear of the panel on the left. */
 const ROW_AIM = -1.2;
 
 interface Stage { app: pc.AppBase; canvas: HTMLCanvasElement; camera: pc.Entity; floor: pc.Entity; load(url: string): Promise<pc.ContainerResource> }
 
-export async function startCharacters({ app, canvas, camera, floor, load }: Stage, panel: HTMLElement, status: HTMLElement) {
-  floor.setPosition(0, 0, 0); floor.setLocalScale(12, 1, 6);
-  const people = await Promise.all(CHARACTERS.map(async ({ id, name }, i) => {
-    const [body, ...clips] = await Promise.all([load(`models/characters/${id}.glb`), ...CLIPS.map(c => load(`models/characters/${id}-${c}.glb`))]);
+export async function startCharacters({ app, canvas, camera, floor, load }: Stage, panel: HTMLElement, status: HTMLElement, roster: Roster = UNI_ROSTER) {
+  floor.setPosition(0, 0, 0); floor.setLocalScale(Math.max(12, roster.people.length * 2.5), 1, 6);
+  // Side by side, each as far from the next as the bigger of the two needs, the row centred.
+  const steps = roster.people.map((p, i) => i ? (gapOf(roster.people[i - 1].height) + gapOf(p.height)) / 2 : 0);
+  const xs = steps.map((_, i) => steps.slice(0, i + 1).reduce((a, b) => a + b, 0));
+  const middle = xs.length ? xs[xs.length - 1] / 2 : 0;
+  // Far enough back to take in the whole row, and as high as its tallest.
+  const whole = Math.max(12.5, middle * 2.6), tallest = Math.max(...roster.people.map(p => p.height));
+  const people = await Promise.all(roster.people.map(async ({ id, name, glb, clips: files }, i) => {
+    const [body, ...clips] = await Promise.all([load(glb), ...CLIPS.map(c => load(files[c]))]);
     const entity = body.instantiateRenderEntity();
-    entity.setPosition((i - (CHARACTERS.length - 1) / 2) * GAP, 0, 0);
+    entity.setPosition(xs[i] - middle, 0, 0);
     app.root.addChild(entity);
     entity.addComponent('anim', { activate: true });
     CLIPS.forEach((clip, k) => {
@@ -33,7 +51,7 @@ export async function startCharacters({ app, canvas, camera, floor, load }: Stag
     });
     const rest = body.animations[0]?.resource as pc.AnimTrack | undefined;
     if (rest) entity.anim!.assignAnimation('still', rest);
-    return { id, name, entity };
+    return { id, name, entity, height: roster.people[i].height };
   }));
   // Meshy's characters stand on their own origin: lift each one so its feet touch the floor.
   for (const { entity } of people) {
@@ -42,8 +60,8 @@ export async function startCharacters({ app, canvas, camera, floor, load }: Stag
     if (!first) entity.translate(0, -box.getMin().y, 0);
   }
 
-  let motion: Motion = 'still', speed = 1, yaw = 0, pitch = 8, distance = 12.5, spin = false;
-  const target = new pc.Vec3(ROW_AIM, .9, 0);
+  let motion: Motion = 'still', speed = 1, yaw = 0, pitch = 8, distance = whole, spin = false;
+  const target = new pc.Vec3(ROW_AIM, tallest * .5, 0);
   const play = (m: Motion) => {
     motion = m;
     for (const { entity } of people) { entity.anim!.baseLayer?.transition(m, .25); entity.anim!.speed = speed; }
@@ -62,10 +80,10 @@ export async function startCharacters({ app, canvas, camera, floor, load }: Stag
     drag = { x: e.clientX, y: e.clientY };
   });
   canvas.addEventListener('pointerup', () => { drag = undefined; });
-  canvas.addEventListener('wheel', e => { distance = pc.math.clamp(distance * (1 + e.deltaY * .001), 1.5, 16); e.preventDefault(); }, { passive: false });
+  canvas.addEventListener('wheel', e => { distance = pc.math.clamp(distance * (1 + e.deltaY * .001), 1.5, whole * 1.3); e.preventDefault(); }, { passive: false });
 
   function render() {
-    panel.innerHTML = `<h1>Los amigos de la uni</h1><p>Modelos de Meshy con su auto-rig. Arrastra para girar, rueda para acercar.</p>
+    panel.innerHTML = `<h1>${roster.title}</h1><p>${roster.about} Arrastra para girar, rueda para acercar.</p>
       <h2>MOVIMIENTO</h2><div class="wide">${(Object.keys(MOTIONS) as Motion[]).map(m => `<button data-motion="${m}" aria-pressed="${motion === m}">${MOTIONS[m]}</button>`).join('')}</div>
       <h2>VELOCIDAD</h2><div class="wide">${[.5, 1, 1.5].map(s => `<button data-speed="${s}" aria-pressed="${speed === s}">×${s}</button>`).join('')}</div>
       <h2>MIRAR A</h2><div class="wide"><button data-look="all">Todos</button>${people.map(p => `<button data-look="${p.id}">${p.name}</button>`).join('')}</div>
@@ -73,9 +91,9 @@ export async function startCharacters({ app, canvas, camera, floor, load }: Stag
   }
   const look = (id: string) => {
     const who = people.find(p => p.id === id);
-    // Close up: head and chest; all: the whole row.
-    target.set(who ? who.entity.getPosition().x : ROW_AIM, who ? 1.3 : .9, 0);
-    distance = who ? 2.2 : 12.5;
+    // Close up: the whole figure, its middle a little high; all: the whole row.
+    target.set(who ? who.entity.getPosition().x : ROW_AIM, who ? who.height * .6 : tallest * .5, 0);
+    distance = who ? Math.max(2.2, who.height * 1.9) : whole;
     render();
   };
   panel.addEventListener('click', event => {

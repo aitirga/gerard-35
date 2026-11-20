@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import RIG from '../assets/models/sobremesa/rig.json' with { type: 'json' };
-import { startCharacters } from './character-lab';
+import { MONSTER_ROSTER, UNI_ROSTER, startCharacters } from './character-lab';
 import { ATTACK_TIME, BONES, bindSobremesa, FRIENDS, MODEL_URL, type Acts, type Friend } from './sobremesa';
 
 /**
@@ -8,7 +8,8 @@ import { ATTACK_TIME, BONES, bindSobremesa, FRIENDS, MODEL_URL, type Acts, type 
  * it is rigged. Drag to turn round it, wheel to come closer. Each friend can attack or be freed, the
  * couples can attack together, and the rig shows as bones or as the colour of the bone each vertex
  * follows (the debug copy `just rig sobremesa` writes to output/, served only by the dev server).
- * With `?personajes` it shows the Meshy characters instead, walking and running (src/character-lab.ts).
+ * With `?personajes` it shows the Meshy characters instead, walking and running (src/character-lab.ts),
+ * and with `?monstruos` the castle's monsters the same way.
  */
 const DEBUG_URL = '/output/models/sobremesa/pesos.glb';
 const colour = Object.fromEntries(RIG.bones.map(b => [b.name, (b as { colour?: string }).colour ?? '#7d7f73'])) as Record<string, string>;
@@ -53,9 +54,10 @@ async function start() {
     resolve(asset.resource as pc.ContainerResource);
   }));
   const load = async (url: string) => (await container(url)).instantiateRenderEntity();
-  if (new URLSearchParams(location.search).has('personajes')) {
-    document.title = 'Laboratorio de personajes · Gerard 35';
-    await startCharacters({ app, canvas, camera, floor, load: container }, panel, status);
+  const query = new URLSearchParams(location.search);
+  if (query.has('personajes') || query.has('monstruos')) {
+    document.title = `Laboratorio de ${query.has('monstruos') ? 'monstruos' : 'personajes'} · Gerard 35`;
+    await startCharacters({ app, canvas, camera, floor, load: container }, panel, status, query.has('monstruos') ? MONSTER_ROSTER : UNI_ROSTER);
     app.start();
     return;
   }

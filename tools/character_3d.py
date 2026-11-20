@@ -4,8 +4,12 @@
   toy    all that + a screenshot of the game    -> the figure as a toy of the game's world (OpenAI)
   views  toy                                    -> the same figure from the left, right and back (OpenAI)
   model  toy + views                            -> textured GLB (Meshy multi-image-to-3d)
-  rig    model                                  -> the same with a skeleton (Meshy rigging). Only people.
-  game   rigged or plain model                  -> public/models/<characters|creatures>/<id>.glb and src/<characters|creatures>/<id>.json
+  rig    model                                  -> the same with a skeleton (Meshy rigging). People and monsters.
+  anim   rigged model + `animations`            -> one GLB with a clip per action of Meshy's library (monsters)
+  game   rigged or plain model                  -> public/models/<characters|monsters|creatures>/<id>.glb and src/<same>/<id>.json
+
+A monster (kind "monster") is a foe with two arms and two legs: it gets Meshy's skeleton and its walking
+and running clips, and no face. A creature (kind "creature") is one piece, with no skeleton.
 
 The 3D model is for the game's world only. Portraits for conversations, menus and fight plates are low-poly
 paintings made with `just character <id> --only portrait`, never drawn from this figure or rendered from its model.
@@ -17,17 +21,20 @@ output/characters/3d/<id>/. Run `just character-3d --help` for the options.
 """
 import argparse
 import base64
+import io
 import json
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from PIL import Image, UnidentifiedImageError
 
 import character_model
 import character_rig
 import providers
 
 ROOT = Path(__file__).resolve().parent.parent
-STEPS = ("front", "toy", "views", "model", "rig", "game")
+STEPS = ("front", "toy", "views", "model", "rig", "anim", "game")
 VIEWS = ("left", "right", "back")
 SIZE = "1024x1536"
 # Few polygons and flat colour: a toy figure, like the game's cast, not a scan of someone.
@@ -36,8 +43,15 @@ MESHY_OPTIONS = {"ai_model": "latest", "should_texture": True, "enable_pbr": Fal
                  "texture_prompt": "A toy figure of matte moulded plastic in flat solid colours, exactly the colours of the images. "
                                    "No skin pores, no stubble hairs, no fabric weave, no folds, no painted shading or highlights. "
                                    "The face stays simple and painted on, with clean edges."}
-# Only a person has a pose Meshy can rig.
+# A monster is no toy: matte, but made of what it is made of.
+MONSTER_TEXTURE = ("A sculpted figure of matte material, exactly the colours and surfaces of the images: large areas of colour, "
+                   "texture only in big shapes (stretched gum, a dry crust, a crack). No fine noise, no glossy highlights, "
+                   "no painted light or shadow.")
+# Only what has two arms and two legs has a pose Meshy can rig.
 PERSON_OPTIONS = {"pose_mode": "a-pose"}
+RIGGED = ("person", "monster")
+# The clips Meshy's rigging gives a monster, beside its model: only the skeleton's motion.
+CLIPS = ("walking", "running")
 # A screenshot of the game, for the style: its world and its figures.
 GAME_STYLE = "game-style.png"
 
@@ -56,6 +70,12 @@ class Figure:
     clean_shaven: bool = False
     backpack: dict[str, str] = field(default_factory=dict)  # A school backpack's colours (bag, straps), built in the game.
     view_notes: dict[str, str] = field(default_factory=dict)
+    # A monster's moves from Meshy's animation library, by action id (GET /openapi/v1/animations/library):
+    # up to ten, 3 credits each, all in one file, a clip each, named as the library names them.
+    animations: list[int] = field(default_factory=list)
+    # A creature with wings: how far from its middle, in metres, its body ends and its wings begin. The
+    # game gets the wings as their own nodes, hinged there, to beat them (`character_rig.convert_creature`).
+    wings: float = 0
 
 
 FRONT_PROMPT = """Create a full-body character sheet front view of the person in the photos, as a stylised 3D game character: a clean, appealing render like a modern animated film or a premium collectible figure, with smooth forms and soft even lighting. Not a photo, not realistic skin, not low-poly, not childish.
@@ -90,15 +110,27 @@ WHO THEY ARE: {about}
 
 Pose: """ + A_POSE + ". " + BACKDROP
 
-TOY_CREATURE = """Draw this creature as a toy figure that belongs in the game world shown in the image, a screenshot of the game: its matte, softly lit miniature world and its chunky little figures.
+# Monsters and creatures share the game's world, its light and its scale of detail, not its friendliness:
+# Aitor asked for fear (2026-11-19), and a toy's finish made them cute.
+MONSTER_LOOK = """HOW IT LOOKS: one sculpted figure of matte material for a dark game for adults, like a puppet made for a stop-motion horror film or a boss of such a game: big simple shapes and nothing small, a strong silhouette that reads from a high camera. It must be unsettling or menacing: weight, presence, proportions that are a little wrong where it is a monster. Never cute, never a cartoon, no big eyes, no smile, no joke. No gore, no blood, no realistic skin.
+
+SURFACES: matte, a few large areas of colour. Texture only where it tells what it is made of (stretched gum, a dry crust, a crack), and in big shapes: no fine noise, no glossy highlights, no painted light or shadow."""
+
+TOY_MONSTER = """Draw this monster as a figure that belongs in the game world shown in the last image, a screenshot of the game: its matte, softly lit miniature world and its chunky figures. Any image before it is another figure of the same family, or this same one in another form: the words below say which, and what to keep of it.
 
 WHAT IT IS: {about}
 
-HOW IT LOOKS: one solid figure of moulded matte plastic, a relative of the figures in the screenshot. Big simple shapes and nothing small, with a strong silhouette that reads from a high camera. It is a real threat in a game for adults: heavy and unsettling, never cute. No big sparkling eyes, no smile, no joke.
+""" + MONSTER_LOOK + """
 
-""" + SURFACES + """
+Pose: """ + A_POSE + ", hands and arms clearly apart from the body. " + BACKDROP
 
-Pose: standing on the ground by itself, facing the camera, its parts clearly apart from each other, the whole figure in frame, nothing cropped, no base or plinth. """ + BACKDROP
+TOY_CREATURE = """Draw this creature as a figure that belongs in the game world shown in the last image, a screenshot of the game: its matte, softly lit miniature world and its chunky figures. Any image before it is another figure of the same family, or this same one in another form: the words below say which, and what to keep of it.
+
+WHAT IT IS: {about}
+
+""" + MONSTER_LOOK + """
+
+Pose: on the ground by itself, facing the camera, its parts clearly apart from each other, the whole figure in frame, nothing cropped, no base or plinth. """ + BACKDROP
 
 VIEW_PROMPT = """This image is the approved front view of a stylised 3D game figure. Draw the same figure from another camera, as one more view of the same turnaround sheet for building the 3D model.
 
@@ -127,13 +159,21 @@ def parse(argv):
 
 
 def data_uri(path: Path) -> str:
-    return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
+    """An image for Meshy as a high-quality JPEG: a sheet of four PNGs is ~8 MB of base64 and its upload
+    timed out on a slow line (2026-11-19); the same views as JPEG are about an eighth of that."""
+    try:
+        image = Image.open(path).convert("RGB")
+    except UnidentifiedImageError:  # Not an image Pillow reads: sent as it is.
+        return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
+    buffer = io.BytesIO()
+    image.save(buffer, "JPEG", quality=92)
+    return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode()
 
 
 def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Path:
     args = parse(argv)
     figure, out = FIGURES[args.id], root / "output" / "characters" / "3d" / args.id
-    person = figure.kind == "person"
+    person, rigged_kind = figure.kind == "person", figure.kind in RIGGED
     out.mkdir(parents=True, exist_ok=True)
     photos = root / "assets" / "references" / "characters"
     style = photos / GAME_STYLE
@@ -165,36 +205,75 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Pat
         if figure.photos:
             draw(TOY_FROM_PHOTOS.format(cues=figure.cues), [front, *(photos / photo for photo in figure.face_photos), style], toy)
         else:
-            draw((TOY_FROM_WORDS if person else TOY_CREATURE).format(about=figure.about), [*(root / image for image in figure.art), *(photos / photo for photo in figure.face_photos), style], toy)
+            prompt = TOY_FROM_WORDS if person else TOY_MONSTER if rigged_kind else TOY_CREATURE
+            draw(prompt.format(about=figure.about), [*(root / image for image in figure.art), *(photos / photo for photo in figure.face_photos), style], toy)
     sides = [out / f"{view}.png" for view in VIEWS]
     if pending("views", *sides):
         for view, side in zip(VIEWS, sides):
             draw(VIEW_PROMPT.format(view=VIEW_ANGLES[view], extra=figure.view_notes.get(view, "")), [toy], side)
 
     model, rigged = out / "model.glb", out / "rigged.glb"
+    # A paid Meshy task whose result never arrived (a dropped connection) is picked up again, not paid
+    # twice: unless its step is redone, or an image it was made from is newer than the task.
+    started = tasks_file.stat().st_mtime if tasks_file.exists() else 0
+    current = all(path.exists() and path.stat().st_mtime <= started for path in [toy, *sides])
+    fresh = set()
     if pending("model", model):
         client = meshy or providers.meshy()
-        log("  Meshy: toy.png, " + ", ".join(side.name for side in sides))
-        options = {**MESHY_OPTIONS, **(PERSON_OPTIONS if person else {})}
-        tasks["model"] = client.start_views([data_uri(toy), *map(data_uri, sides)], **options)
-        tasks_file.write_text(json.dumps(tasks, indent=1))
+        if tasks.get("model") and "model" not in redo and current:
+            log(f"  Meshy: picking up task {tasks['model']}")
+        else:
+            log("  Meshy: toy.png, " + ", ".join(side.name for side in sides))
+            options = {**MESHY_OPTIONS, **({} if person else {"texture_prompt": MONSTER_TEXTURE}), **(PERSON_OPTIONS if rigged_kind else {})}
+            tasks["model"] = client.start_views([data_uri(toy), *map(data_uri, sides)], **options)
+            tasks.pop("rig", None)
+            fresh.add("model")
+            tasks_file.write_text(json.dumps(tasks, indent=1))
         model.write_bytes(client.download(client.wait(tasks["model"], log, kind="multi-image-to-3d")["model_urls"]["glb"]))
-    if person and pending("rig", rigged):
+    clips = [out / f"{clip}.glb" for clip in CLIPS] if figure.kind == "monster" else []
+    if rigged_kind and pending("rig", rigged, *clips):
         client = meshy or providers.meshy()
         rigged.with_suffix(".face.json").unlink(missing_ok=True)  # A new model has its face somewhere else.
-        tasks["rig"] = client.start_rig(tasks["model"], figure.height)
-        tasks_file.write_text(json.dumps(tasks, indent=1))
-        rigged.write_bytes(client.download(client.wait(tasks["rig"], log, kind="rigging")["result"]["rigged_character_glb_url"]))
+        if tasks.get("rig") and "rig" not in redo and "model" not in fresh:
+            log(f"  Meshy: picking up rig {tasks['rig']}")
+        else:
+            tasks["rig"] = client.start_rig(tasks["model"], figure.height)
+            fresh.add("rig")
+            tasks_file.write_text(json.dumps(tasks, indent=1))
+        result = client.wait(tasks["rig"], log, kind="rigging")["result"]
+        rigged.write_bytes(client.download(result["rigged_character_glb_url"]))
+        animations = result.get("basic_animations") or {}
+        for clip, path in zip(CLIPS, clips):
+            path.write_bytes(client.download(animations.get(f"{clip}_armature_glb_url") or animations[f"{clip}_glb_url"]))
 
-    folder = "characters" if person else "creatures"
+    actions = out / "actions.glb"
+    if figure.kind == "monster" and figure.animations and pending("anim", actions):
+        client = meshy or providers.meshy()
+        if tasks.get("anim") and "anim" not in redo and not fresh and tasks.get("anim_of") == figure.animations:
+            log(f"  Meshy: picking up animations {tasks['anim']}")
+        else:
+            log(f"  Meshy: animations {figure.animations} ({3 * len(figure.animations)} credits)")
+            tasks["anim"], tasks["anim_of"] = client.start_animations(tasks["rig"], figure.animations), figure.animations
+            tasks_file.write_text(json.dumps(tasks, indent=1))
+        actions.write_bytes(client.download(client.wait(tasks["anim"], log, kind="animations")["result"]["animation_glb_url"]))
+
+    folder = "characters" if person else "monsters" if rigged_kind else "creatures"
     target = root / "public" / "models" / folder / f"{args.id}.glb"
     described = root / "src" / folder / f"{args.id}.json"
     if pending("game", target, described):
         if person:
             glb, spec = character_rig.convert(rigged, args.id, figure.name, figure.scale, figure.clean_shaven)
             if figure.backpack: spec["backpack"] = figure.backpack
+        elif rigged_kind:
+            # Meshy's own skeleton for now, and its clips beside it: the game's rig for foes is still to come.
+            moves = ([*CLIPS, "actions"] if actions.exists() and figure.animations else [*CLIPS])
+            glb, spec = rigged.read_bytes(), {"id": args.id, "name": figure.name, "glb": f"models/monsters/{args.id}.glb",
+                                              "clips": {clip: f"models/monsters/{args.id}-{clip}.glb" for clip in moves}, "height": figure.height}
+            target.parent.mkdir(parents=True, exist_ok=True)
+            for clip, path in zip(moves, [*clips, actions]):
+                (target.parent / f"{args.id}-{clip}.glb").write_bytes(path.read_bytes())
         else:
-            glb, spec = character_rig.convert_creature(model, args.id, figure.name, figure.height)
+            glb, spec = character_rig.convert_creature(model, args.id, figure.name, figure.height, figure.wings)
         target.parent.mkdir(parents=True, exist_ok=True)
         described.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(glb)

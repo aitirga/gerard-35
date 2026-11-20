@@ -1,0 +1,23 @@
+{
+  "title": "Los alumnos de la Reina · modelos Meshy con rig",
+  "description": "The model lab's monster row (just model-lab, model-lab.html?monstruos, src/character-lab.ts): the castle's pupils made with just character-3d (kind \"monster\", docs/castle.md § How they look), smallest first, on the skeleton Meshy's auto-rigging gave them, standing, walking and running, and close-ups from the front and from three quarters. Run it with --gpu.",
+  "steps": [
+    { "open": "/model-lab.html?monstruos", "ready": "document.querySelector('#status')?.textContent === 'Listo'" },
+    { "shot": "quietos", "delay": 1500, "caption": "At rest, smallest to biggest, as the rig leaves them" },
+    { "eval": "window.modelLab.set({ yaw: 30, pitch: 22 })" },
+    { "shot": "desde-arriba", "delay": 900, "caption": "From higher up, nearer the game's camera" },
+    { "eval": "window.modelLab.play('walking'); window.modelLab.set({ yaw: 0, pitch: 8 })" },
+    { "shot": "andando", "delay": 1200, "caption": "Walking: Meshy's walking clip on each one's skeleton" },
+    { "record": "andando", "seconds": 2, "caption": "Walking, in motion", "app": "window.modelLab.app", "warmup": 0.5 },
+    { "eval": "window.modelLab.play('running'); window.modelLab.set({ yaw: 35, pitch: 10 })" },
+    { "shot": "corriendo", "delay": 1200, "caption": "Running, from three quarters" },
+    { "eval": "window.modelLab.play('still'); window.modelLab.look('chivata'); window.modelLab.set({ yaw: 0, pitch: 10 })" },
+    { "shot": "chivata", "delay": 1200, "caption": "La Chivata up close" },
+    { "eval": "window.modelLab.look('repetidor'); window.modelLab.set({ yaw: 25, pitch: 14 })" },
+    { "shot": "repetidor", "delay": 900, "caption": "El Repetidor from three quarters" },
+    { "eval": "window.modelLab.look('castigado'); window.modelLab.set({ yaw: 150, pitch: 12 })" },
+    { "shot": "castigado-espalda", "delay": 900, "caption": "El Castigado from behind: the hunch-bubble is what the party sees" },
+    { "eval": "window.modelLab.set({ yaw: 0, pitch: 10 })" },
+    { "shot": "castigado", "delay": 900, "caption": "El Castigado from the front" }
+  ]
+}

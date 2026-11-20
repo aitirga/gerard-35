@@ -153,6 +153,15 @@ just character-3d aitor                       # solo lo que falte
 Con `kind = "creature"` el resultado va a `public/models/creatures/` y `src/creatures/`, sin esqueleto:
 una pieza con las partes de los miedos de Uri, para clonarla en un combate (`buildCreature`).
 
+Con `kind = "monster"` (un monstruo con dos brazos y dos piernas, como los alumnos del castillo) Meshy
+le pone su esqueleto y da sus clips de andar y correr; sin cara que buscar. Van tal cual a
+`public/models/monsters/<id>.glb` (y `<id>-walking.glb`, `<id>-running.glb`) con su ficha en
+`src/monsters/<id>.json`, y se ven moverse en `just model-lab` → `model-lab.html?monstruos`. Monstruos y
+criaturas no son juguetes: comparten el mundo del juego y su escala de detalle, pero su imagen pide
+una figura esculpida de terror (`MONSTER_LOOK`), y Meshy una textura mate de chicle, no de plástico.
+
+Todo lo que se hace aquí aparece en el bestiario (`just bestiario`, docs/dev-tools.md § The bestiary): las imágenes, los pasos hechos y el modelo, que [bestiary.py](bestiary.py) lee de `figures.toml` y de `output/characters/3d/`.
+
 - **Privacidad:** a OpenAI solo van las fotos listadas en `figures.toml`; a Meshy, solo las imágenes
   estilizadas. Una foto que no deba salir de este ordenador no se lista. Las fotos no están en git.
 - **Parecido y estilo:** se deciden en `toy`, y es barato. Aprueba esa imagen antes de pagar el modelo.
