@@ -225,7 +225,7 @@ artilugio-build:
     @[ -n "{{ arduino_cli }}" ] || { printf 'Install the Arduino IDE (or arduino-cli) first.\n'; exit 1; }
     "{{ arduino_cli }}" compile --fqbn {{ artilugio_fqbn }} firmware/artilugio
 
-# Flash the board plugged in by USB (port: /dev/cu.usbserial-0001 on a Mac, COM3 on Windows; found if only one)
+# Flash the board by USB (port: /dev/cu.usbserial-0001 on a Mac, COM3 on Windows; found if only one), or over the Wi-Fi once it has this firmware (port: its IP, its key as the password)
 [group('Artilugio')]
 artilugio-flash port="":
     #!/usr/bin/env bash
@@ -235,6 +235,14 @@ artilugio-flash port="":
       printf 'Falta firmware/artilugio/secrets.h: copia secrets.example.h y pon la Wi-Fi, la IP del servidor y la clave.\n'; exit 1
     fi
     port="{{ port }}"
+    if [[ "$port" =~ ^[0-9]+(\.[0-9]+){3}$ ]]; then
+      key=$(sed -nE 's/^#define ARTILUGIO_KEY "(.*)"/\1/p' firmware/artilugio/secrets.h)
+      build=$(mktemp -d)
+      trap 'rm -rf "$build"' EXIT
+      "{{ arduino_cli }}" compile --fqbn {{ artilugio_fqbn }} --build-path "$build" firmware/artilugio
+      "{{ arduino_cli }}" upload --fqbn {{ artilugio_fqbn }} --port "$port" --protocol network --upload-field password="$key" --input-dir "$build" firmware/artilugio
+      exit
+    fi
     if [ -z "$port" ]; then
       ports=$("{{ arduino_cli }}" board list | awk 'NR > 1 && $1 ~ /usbserial|USB|COM|ttyUSB/ { print $1 }')
       [ "$(printf '%s\n' "$ports" | grep -c .)" = 1 ] || { printf 'Choose the port: just artilugio-flash <port>\n%s\n' "$ports"; exit 1; }

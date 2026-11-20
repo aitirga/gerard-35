@@ -21,6 +21,10 @@
   Board: ESP32 Dev Module on the Keyestudio FKS0001 inventor board (`just artilugio-build`).
   Library: "LiquidCrystal_I2C" by Frank de Brabander (`just artilugio-setup`).
 
+  The first time it is flashed by USB; from then on it takes new firmware over the Wi-Fi: the
+  Arduino IDE lists it among its network ports as "artilugio" and asks for ARTILUGIO_KEY as the
+  password, or `just artilugio-flash <its IP>`.
+
   Jumper wires, each from the peripheral header to the yellow (S) pin of that IO row in the ESP32
   Pin OUT block. Only the yellow row is wired (red is VCC, black GND), and the VCC switch is on 3V3:
 
@@ -35,6 +39,7 @@
   free: they are strapping pins and a load on them can stop it booting.
 */
 
+#include <ArduinoOTA.h>
 #include <ESPmDNS.h>
 #include <HTTPClient.h>
 #include <LiquidCrystal_I2C.h>
@@ -385,7 +390,17 @@ void setup() {
   setMode(kept <= FREE ? kept : ASLEEP);
 
   connectWiFi();
-  if (MDNS.begin(HOSTNAME)) MDNS.addService("http", "tcp", 80);
+  // New firmware over the Wi-Fi, with its key as the password; it goes quiet and dark while it
+  // arrives. ArduinoOTA also starts mDNS, as artilugio.local.
+  ArduinoOTA.setHostname(HOSTNAME);
+  ArduinoOTA.setPassword(ARTILUGIO_KEY);
+  ArduinoOTA.onStart([] {
+    noTone(PIN_BUZZER);
+    for (uint8_t b = 0; b < BUTTONS; b++) digitalWrite(PIN_LED[b], LOW);
+    Serial.println("new firmware over Wi-Fi");
+  });
+  ArduinoOTA.begin();
+  MDNS.addService("http", "tcp", 80);
   server.on("/health", HTTP_GET, handleHealth);
   server.begin();
 }
@@ -396,4 +411,5 @@ void loop() {
   serviceOutputs();
   serviceNetwork();
   server.handleClient();
+  ArduinoOTA.handle();
 }

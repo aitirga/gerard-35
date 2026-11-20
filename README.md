@@ -95,7 +95,9 @@ it over the Wi-Fi.
    prints the address to put in the board's `SERVER_URL`.
 6. The board: copy `firmware/artilugio/secrets.example.h` to `secrets.h` (Wi-Fi, `SERVER_URL`,
    `ARTILUGIO_KEY`), plug it in and `just artilugio-flash` (with the Arduino IDE installed;
-   `just artilugio-setup` the first time). `just artilugio-monitor` shows what it says.
+   `just artilugio-setup` the first time). `just artilugio-monitor` shows what it says. After that
+   first time by USB it takes new firmware over the Wi-Fi: `just artilugio-flash <its IP>`, or the
+   Arduino IDE's network port *artilugio*, with `ARTILUGIO_KEY` as the password.
 7. `just perf` on that PC, to see the game keeps its frame budget there.
 
 Without the board, the number keys 1–4 (two at once for a pair) or a pad (left trigger held, the
