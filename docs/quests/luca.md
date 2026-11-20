@@ -11,7 +11,7 @@ Família**, studying Gaudí's hyperboloids, and he is turning the basilica into 
 Luca's colours have drained into the stained glass, and the brighter Fran shines, the greyer Luca
 gets. Luca waits outside, unable to go in; Gerard and Aitor cross the salon zone by zone, where
 **the light walks through colours and cancels the party's element of its colour**, and face Fran
-under the canopy of the altar. Luca's ánima is **Prismático** (its wearable form designed
+under the canopy of the altar. Luca's ánima is **Colorista** (its wearable form designed
 2026-11-20, `docs/animas/prismatico/`, not built).
 
 ## Protagonist
@@ -28,7 +28,9 @@ under the canopy of the altar. Luca's ánima is **Prismático** (its wearable fo
   the game, never the money Luca put in nor how it is doing. **Fran is the final boss** (Aitor's
   idea), under the Queen's hold.
 - As a kid: _open_ (feeds the second round).
-- Photos: none yet; `assets/references/characters/luca/` when there are.
+- Photos (2026-11-20): Luca's and Fran's, cropped to one person, in `assets/references/characters/luca/`
+  and `.../fran/` (untracked). Their figures, portraits and Fran as a boss are drawn from them
+  (`tools/figures.toml`): Fran is no longer invented.
 
 ## Place
 
@@ -179,14 +181,14 @@ one broken gives a colour back to Luca and, in the fight, back to the party's ha
 
 ## Ánima
 
-- **Prismático**: designed on 2026-11-20 in
-  [`docs/animas/prismatico/README.md`](../animas/prismatico/README.md), waiting for Aitor's yes on
-  its skill list. Aitor's direction of that day replaces the one of 2026-11-16 (barriers of
-  crystal prisms, amplifying elemental attacks on the next turn; the prism goes to Marta's ánima):
-  it is **a tank and protector that throws dry coloured powder**, as at a Holi. The powder does
-  nothing by itself and an element decides what it becomes: fire blows it up, water turns it to
-  poison, electricity leaves it as shards. Its protection is a screen of powder that halves the
-  next blow. The name is open again; the binoculars stay as what Luca hands over.
+- **Colorista** (it was Prismático; its id in the code stays `prismatico`): designed on 2026-11-20
+  in [`docs/animas/prismatico/README.md`](../animas/prismatico/README.md) and agreed by Aitor that
+  day. It replaces the direction of 2026-11-16 (barriers of crystal prisms, amplifying elemental
+  attacks on the next turn; the prism goes to Marta's ánima): it is **a tank and protector that
+  throws dry coloured powder**, as at a Holi. The powder does nothing by itself and an element
+  decides what it becomes: fire blows it up, water turns it to poison, electricity leaves it as
+  shards. Its protection is a screen of powder that halves the next blow. The binoculars stay as
+  what Luca hands over.
 - Today the mission gives `ANIMAS.luca` (light and a placeholder party bonus) and Luca's light,
   as Marta's does.
 - World key: none.
@@ -251,8 +253,8 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
 - **E · The apse as the climax.** ~~El Telescopio with a Laca instead of moths (its beam is fire: the
   lacquered take it double), or a second lens: the last zone asks two of the lessons at once.~~ Cut on
   2026-11-20: the apse is Fran's zone, with no fight.
-- **F · Prismático on trial inside.** At the door Luca gives Gerard his old binoculars (*prismáticos*)
-  and Prismático wakes on trial, as Papagato does at Nuria's door, with one skill that plays with the
+- **F · The ánima on trial inside.** At the door Luca gives Gerard his old binoculars (*prismáticos*)
+  and it wakes on trial, as Papagato does at Nuria's door, with one skill that plays with the
   light (a prism barrier, or holding an element for the next turn while the light eats it). Kept at
   the win. Needs a `/anima` round first.
 - **G · Fran shorter**, about 14 rounds: fewer PV in the lamps' phase, the lamps' Brillo capped lower.
@@ -393,7 +395,7 @@ shirts on hangers** (red, blue, gold) and the fight asks one thing: *which one, 
 ## Open
 
 - Luca's phrase, his day, what he was like as a kid (the second round).
-- Prismático's wearable design: Aitor's yes to `docs/animas/prismatico/README.md` (2026-11-20), then building it.
+- Colorista's wearable form: agreed (`docs/animas/prismatico/README.md`, 2026-11-20); being built.
 - Luca's photos and Fran's toy image.
 
 ## Implementation plan
@@ -416,4 +418,4 @@ Each step is one commit on `feat/side-mission-luca`, playable, with `just check`
 8. **Screenshots, docs, report**: `scripts/screenshots/luca.json`, `docs/combat.md`,
    `docs/progress.toml`, the report page.
 
-Not in this pass: Prismático as a wearable ánima, 3D figures and portraits, the second round.
+Not in this pass: Colorista as a wearable ánima, 3D figures and portraits, the second round.

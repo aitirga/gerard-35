@@ -220,6 +220,22 @@
       "caption": "Uri, his toy figure from Meshy with Nil in his arms: his file `carries` Nil's own figure"
     },
     {
+      "eval": "window.bestiary.select('npc:luca')"
+    },
+    {
+      "shot": "luca",
+      "delay": 1800,
+      "caption": "Luca, his toy figure from his photos (just character-3d) and his portrait"
+    },
+    {
+      "eval": "window.bestiary.select('npc:fran')"
+    },
+    {
+      "shot": "fran",
+      "delay": 1800,
+      "caption": "Fran, from his photos now instead of invented: toy figure and portrait"
+    },
+    {
       "eval": "window.bestiary.select('npc:nil')"
     },
     {
