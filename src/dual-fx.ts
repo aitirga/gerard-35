@@ -84,6 +84,8 @@ const NOTE_COLOURS = ['#ffe3a8', '#ffd27a', '#f7b85a', '#e8a04a', '#cfa24a', '#b
 /** Las cuerdas (docs/quests/marta.md): the four notes, string and glass. Never pink, never violet. */
 export const CUERDAS_COLOURS = { la: '#f2b45a', do: '#49d3c2', mi: '#eef3ff', sol: '#5b8cff', string: '#cfdde6', glass: '#8fe6da', white: '#ffffff' } as const;
 const CUERDAS_TONES = [CUERDAS_COLOURS.la, CUERDAS_COLOURS.do, CUERDAS_COLOURS.mi, CUERDAS_COLOURS.sol] as const;
+/** El Campeón's fire: the orange of the furnace in his chest and its white-hot core. */
+export const CAMPEON_COLOURS = { fire: '#ff8a2a', core: '#fff1d0' } as const;
 const UP: V3 = { x: 0, y: 1, z: 0 };
 const sub = (a: V3, b: V3): V3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const mix = (a: V3, b: V3, k: number): V3 => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k });
@@ -467,6 +469,26 @@ export function createDualFx(effects: Effects) {
       line(from, to, CUERDAS_COLOURS.white, { count: 90, life: .22, size: 1.3 });
       line(add(from, dir, -.5), add(to, dir, .5), colour, { count: 120, life: .4, size: 1.5 });
       ring(to, dir, .28, colour, { count: 60, outward: 3, life: .35, size: 1.3, light: 1.5 });
+    },
+    /** El Campeón's Rayo: a thick beam of furnace fire from his gauntlet to whom he aimed at, a burst where it lands. */
+    gauntlet(from: V3, to: V3) {
+      const c = CAMPEON_COLOURS, dir = norm(sub(to, from));
+      gpu()?.burst('flare', { at: from, count: 1, spread: .05, life: [.15, .25], colour: c.core, light: { intensity: 3, range: 4, colour: c.fire } });
+      line(from, to, c.core, { count: 110, life: .25, size: 1.6 });
+      line(add(from, dir, -.3), add(to, dir, .3), c.fire, { count: 160, life: .45, size: 2 });
+      ring(to, dir, .34, c.fire, { count: 80, outward: 3.2, life: .4, size: 1.5, light: 2 });
+    },
+    /** His Rayo total: the grate in his chest opens and fire sweeps over everyone, one beam each. */
+    furnace(from: V3, on: readonly V3[]) {
+      const c = CAMPEON_COLOURS;
+      gpu()?.burst('flare', { at: from, count: 1, spread: .08, life: [.3, .45], colour: c.core, light: { intensity: 5, range: 7, colour: c.fire } });
+      ring(from, UP, .5, c.fire, { count: 120, outward: 4, life: .5, size: 1.6 });
+      on.forEach((p, i) => after(.06 + i * .08, () => {
+        const dir = norm(sub(p, from));
+        line(from, p, c.core, { count: 90, life: .3, size: 1.7 });
+        line(from, add(p, dir, .4), c.fire, { count: 150, life: .55, size: 2.2 });
+        ring(p, dir, .4, c.fire, { count: 90, outward: 3.4, life: .45, size: 1.5, light: i ? 0 : 2.4 });
+      }));
     },
     /** En línea recta: one stroke from beyond one end of the party to beyond the other, through everyone on it. */
     through(from: V3, on: readonly V3[]) {

@@ -223,10 +223,10 @@ export const LINES_UNI = {
     aitor('Las bombillas. Todas encendidas. Y el cerrojo se ha levantado solo.'),
     gerard('El merendero. Vamos.'),
   ] } as Dialogue,
-  /** At the pool, the miniature on its plinth turns its head. */
+  /** At the pool, the villain of their superhero board game, life-size, its chest lighting up. */
   campeon: { left: 'gerard35', right: 'aitor', lines: [
-    aitor('Esa figura es de las del juego de los superhéroes. A tamaño de persona.'),
-    gerard('Se está bajando de la peana.'),
+    aitor('Es el villano del juego de los superhéroes. A tamaño de persona.'),
+    gerard('Lleva algo encendido en el pecho.'),
   ] } as Dialogue,
   /** The long table under the pines, and what is sitting at it. */
   sobremesa: group('alvaro',

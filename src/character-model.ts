@@ -219,6 +219,19 @@ export function buildCreature(spec: CreatureSpec, parent: pc.Entity) {
   return root;
 }
 
+/**
+ * A foe's figure made with Meshy (src/foe-bodies.ts) under `parent`, shown: a fight wobbles it by its
+ * `Cabeza de chicle`, and its mesh takes the name `mesh` when the fight looks for it by another.
+ */
+export function buildFoeBody(id: string, parent: pc.Entity, mesh?: string) {
+  const spec = CREATURES[`./creatures/${id}.json`];
+  if (!spec) throw new Error(`No figure for ${id} yet: just character-3d ${id}.`);
+  const body = buildCreature(spec, parent);
+  body.enabled = true;
+  if (mesh) (body.findByName('Malla') as pc.Entity).name = mesh;
+  return body;
+}
+
 /** Shows or hides the shoes: a primitive shoe is its node, a skinned one folds into its ankle. */
 export function showFeet(model: CharacterModel, shown: boolean) {
   for (const foot of model.feet) foot.enabled = shown;

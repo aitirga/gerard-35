@@ -467,8 +467,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="cara"], .summary-tags [data-status="cara"] { --status: #f2e6c8; }
 .unit-statuses i[data-status="boca-arriba"], .summary-tags [data-status="boca-arriba"] { --status: #ffe9a8; }
 .unit-statuses i[data-status="boca-abajo"], .summary-tags [data-status="boca-abajo"] { --status: #7fc4cc; }
-.unit-statuses i[data-status="heroe"], .summary-tags [data-status="heroe"] { --status: #ff8a6a; }
-.unit-statuses i[data-status="paisano"], .summary-tags [data-status="paisano"] { --status: #c8c8c0; }
+.unit-statuses i[data-status="plan"], .summary-tags [data-status="plan"], .damage-pop[data-status="plan"] { --status: #ff9a4a; }
+.unit-statuses i[data-status="etapa"], .summary-tags [data-status="etapa"], .damage-pop[data-status="etapa"] { --status: #ffd27a; }
 .unit-statuses i[data-status="bombona"], .summary-tags [data-status="bombona"] { --status: #ffb054; }
 /* Emilie's model in the summary: the value a foe is on, the boss's Error; on a plate, its turns converged. */
 .unit-statuses i[data-status="valor-agua"], .summary-tags [data-status="valor-agua"] { --status: #6cc8f2; }

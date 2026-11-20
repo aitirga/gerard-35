@@ -867,6 +867,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     if (actor?.bone) sobremesaFx(e, actor, target, view);
     if (actor?.strings) cuerdasFx(e, actor, target, view);
+    // El Campeón (docs/quests/universidad.md): his Rayo from a gauntlet at whom he aimed, his Rayo total out of the grate in his chest at everyone.
+    if (actor?.camp === 'campeon') {
+      const grate = v3(partOf(actor, 'Rejilla'));
+      if (ability === 'rayo-guantelete' && target) { dualFx.gauntlet(grate, v3(chestOf(target))); shake = Math.max(shake, .35); cue('zap'); }
+      if (ability === 'rayo-total') { dualFx.furnace(grate, [...fighters.values()].filter(f => f.party && f.hp > 0).map(f => v3(chestOf(f)))); shake = Math.max(shake, .8); pulse?.(.8, .6); zoom.x = Math.max(zoom.x, HIT.punch.size); cue('roar'); }
+    }
     // An Acorde on La Voz (two blows inside one note): two rings cross on her; and her Calderón, if she held one, breaks.
     if (e.chord && target?.strings) {
       const tone = state ? songNow(state)?.tone : undefined;
@@ -2419,7 +2425,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // Vertitrón only steps in to stomp: it sweeps and fires from where it stands.
       // Nor does a mago step in to let its Bombona go: the flare reaches everyone from where it stands.
       // Nor do Las cuerdas leave their place: what they do reaches from where they stand. Only Lo Directo goes, with its Golpe directo and its Estocada.
-      const planted = (!!actor?.robot && effect?.ability?.id !== 'pisoton') || (actor?.camp === 'mago' && effect?.ability?.id === 'bombona')
+      // El Campeón fires his rays from where he stands.
+      const planted = (!!actor?.robot && effect?.ability?.id !== 'pisoton') || (actor?.camp === 'mago' && effect?.ability?.id === 'bombona') || actor?.camp === 'campeon'
         || !!actor?.mesh
         || (!!actor?.strings && !(actor.strings === 'directo' && (effect?.ability?.id === 'golpe-directo' || effect?.ability?.id === 'estocada')));
       const motion = actor && target && !support && !catStrike && !botStrike && !casting && !dicing && !dual && !planted ? contactMotion(actor.base, target.base, t) : undefined;

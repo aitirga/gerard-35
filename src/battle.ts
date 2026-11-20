@@ -193,15 +193,15 @@ export const isCuerdas = (kind?: FoeKind): kind is CuerdasKind => !!kind && (CUE
  * camping takes half from magic and more from blows, and charges its Bombona a turn ahead (the chip
  * says so). A Dado shows its top face, the weight of its blow this round, and rolls again every round.
  * Agentes come in pairs: one face up, who takes everything, one face down, who takes half (ticks
- * ignore it); they turn over every round. El Campeón, the mini-boss, is a hero or a man in plain
- * clothes, two turns each, as its plate says.
+ * ignore it); they turn over every round. El Campeón, the mini-boss, is the villain of a superhero
+ * board game: his Plan goes up a step every turn and fires on everyone when full, every magic blow
+ * on him takes it a step down, and his Rayo goes at whom he said a turn ahead (his plate says both).
  */
 export type CampingKind = 'mago' | 'dado' | 'agente' | 'campeon';
 export const CAMPING_KINDS = ['mago', 'dado', 'agente', 'campeon'] as const satisfies readonly CampingKind[];
 export const isCamping = (kind?: FoeKind): kind is CampingKind => !!kind && (CAMPING_KINDS as readonly string[]).includes(kind);
-/** El Campeón's two forms, as its plate names them. */
-export type CampeonForm = 'heroe' | 'paisano';
-export const CAMPEON_FORMS: Record<CampeonForm, string> = { heroe: 'Héroe', paisano: 'De paisano' };
+/** How many steps El Campeón's Plan has before it fires: fewer once he is in his Etapa II. */
+export const planMost = (champion: { stage2?: boolean }) => champion.stage2 ? CAMPING.planMostII : CAMPING.planMost;
 /**
  * La Sobremesa's seven (docs/quests/universidad.md § Final boss): the university friends fused into
  * one body, each a foe of their own with their own PV and move. In this order they act each round:
@@ -257,7 +257,7 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'cambio-plato' | 'sorpresa' | 'puaj'
   | 'pisoton' | 'barrido' | 'grito' | 'carga' | 'rayo'
   | 'tirada' | 'sopeta' | 'regla-nueva' | 'carta-negra' | 'escala' | 'correccion' | 'cortafuegos' | 'duo-tirada' | 'duo-regla'
-  | 'bombona' | 'tumbarse' | 'contrasena' | 'punetazo' | 'recuperarse'
+  | 'bombona' | 'tumbarse' | 'contrasena' | 'rayo-guantelete' | 'rayo-total'
   | 'juramento' | 'lazo' | 'resonancia' | 'destello' | 'estallido' | 'prisma' | 'golpe-directo' | 'en-linea' | 'estocada'
   | 'guardia' | 'nota-clara' | 'coro' | 'aliento' | 'calderon'
   // The castle (src/castle-fight.ts): the pupils, Aurelià, Dirección and the Queen.
@@ -299,8 +299,8 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   bombona: { name: 'Bombona', card: true },
   tumbarse: { name: 'Tumbarse', card: false },
   contrasena: { name: 'Contraseña', card: false },
-  punetazo: { name: 'Puñetazo', card: false },
-  recuperarse: { name: 'Recuperarse', card: true },
+  'rayo-guantelete': { name: 'Rayo', card: true },
+  'rayo-total': { name: 'Rayo total', card: true },
   juramento: { name: 'Juramento', card: true },
   lazo: { name: 'Lazo', card: true },
   resonancia: { name: 'Resonancia', card: true },
@@ -411,14 +411,15 @@ export const SOBREMESA = {
  * entries. A Mago de camping takes `magoMagic` of a magic blow and `magoPhysical` of a physical one,
  * and its Bombona is `bombona` of magic on everyone. A Dado's Tumbarse is `dadoBase` and `dadoPip` for
  * each pip of the face it shows. An Agente face down takes `downTaken` of every blow; its Contraseña is
- * `contrasena`. El Campeón as a hero takes `heroeTaken` and punches `punetazo`; in plain clothes it
- * takes `paisanoTaken` and gets `recuperarse` of its PV back; it changes every `formTurns` own turns.
+ * `contrasena`. El Campeón's Rayo is `rayo` of magic on whom he said; his Plan fires at `planMost`
+ * steps (`planMostII` in his Etapa II, from `stageAt` of his PV down) as a Rayo total of `rayoTotal`
+ * on everyone; a magic blow on him lands at `campeonMagic` and takes his Plan a step down.
  */
 export const CAMPING = {
   magoMagic: .5, magoPhysical: 1.5, bombona: 26,
   dadoBase: 4, dadoPip: 4,
   downTaken: .5, contrasena: 18,
-  heroeTaken: .5, paisanoTaken: 2, punetazo: 56, recuperarse: .1, formTurns: 2,
+  rayo: 22, rayoTotal: 36, planMost: 3, planMostII: 2, stageAt: .5, campeonMagic: .7,
 };
 /**
  * Las cuerdas' foes and La Voz (docs/quests/marta.md), every number in one book (`marta.rules`); their
@@ -765,10 +766,10 @@ export interface Combatant {
   face?: number;
   /** An Agente: face up (it takes every blow whole) or face down (half). */
   faceUp?: boolean;
-  /** El Campeón: its form, and its own turns left in it before it changes. */
-  form?: CampeonForm; formLeft?: number;
   /** La Voz's Nota clara: until her next turn magic comes back at whoever cast it, as off Lo Cristalino. */
   clear?: boolean;
+  /** El Campeón: the steps his Plan has taken (it fires at `planMost`), whether he is in his Etapa II, and the steps magic took off it in the action under way. */
+  plan?: number; stage2?: boolean; foiled?: number;
   /** La Voz: how many times her phrase has come round (Crescendo), and whether she is silent now (kept by the fight's clock for whoever draws her). */
   crescendo?: number; silent?: boolean;
   /** La Lealtad: who struck her last (an ally's id): whom her Juramento, and her Eco's Resonancia, are for. */
@@ -1192,8 +1193,8 @@ export interface BattleEffect {
   weakSpot?: 'set' | 'spent' | 'renewed';
   /** La Sobremesa: the dice Álvaro threw (Tirada), and the friend Nico shielded (Cortafuegos) or a shield this blow spent. */
   dice?: number[]; shielded?: string; shield?: 'spent';
-  /** El Campeón changed form at the end of this turn: the one it is in now. */
-  form?: CampeonForm;
+  /** El Campeón: his Plan after this action (`foiled`: the steps magic took off it), and his Etapa II just begun. */
+  plan?: number; foiled?: number; stage2?: true;
   /** La Lealtad stepped in: the foe the blow was aimed at (`target` is her). */
   interposed?: string;
   /** Magic sent back (Lo Cristalino, La Voz's Nota clara): the PV it took off whoever cast it. */
@@ -1690,6 +1691,7 @@ function fearDamage(state: BattleState, target: Combatant, damage: number, blow:
   }
   if (target.layers) out /= 2;
   if (target.transparent && blow === 'physical') out *= FEAR_RULES.transparent;
+  foil(target, blow);
   out *= campingTaken(target, blow) * cuerdasTaken(target, blow) * castleTaken(state, target, blow) * modeloTaken(target, element) * lucaTaken(state, target);
   // Magic off glass does nothing at all (Lo Cristalino, La Voz's Nota clara).
   return out <= 0 ? 0 : Math.max(1, Math.round(out));
@@ -2702,7 +2704,7 @@ const CAMPING_MESSAGES: Record<CampingEncounter, string> = {
   'camping-agentes': 'Dos figuras de cartón se despegan de la tienda. Una os enseña la cara; la otra, la espalda.',
   'camping-tienda': 'La tienda se abre sola. Dentro no había nadie: un dado y dos agentes de cartón, esperando.',
   'camping-negra': 'Todos los farolillos se apagan a la vez. En la oscuridad se encienden dos linternas frontales, y algo rueda hacia vosotros.',
-  campeon: 'Al borde de la piscina, sobre su peana, una figura de héroe del tamaño de un hombre. La pintura, desconchada. Se baja.',
+  campeon: 'Al borde de la piscina, el villano del juego de superhéroes, del tamaño de un hombre. Se le enciende la rejilla del pecho.',
 };
 const CAMPING_WON: Record<CampingEncounter, string> = {
   'camping-magos': 'Las túnicas caen vacías sobre la tierra. Las linternas siguen encendidas un momento, y se apagan.',
@@ -2710,7 +2712,7 @@ const CAMPING_WON: Record<CampingEncounter, string> = {
   'camping-agentes': 'Los agentes se doblan por la mitad y se quedan boca abajo. Nadie ha dicho la contraseña.',
   'camping-tienda': 'La tienda se cierra sola. Dentro vuelve a no haber nadie.',
   'camping-negra': 'Los farolillos vuelven a encenderse, uno a uno. El tablero empieza otra vez.',
-  campeon: 'El Campeón vuelve a su peana y se queda quieto, con el puño en alto. Solo era una figura pintada.',
+  campeon: 'A El Campeón se le apaga la rejilla del pecho. Cae de rodillas al borde de la piscina y se queda quieto, como una ficha tumbada.',
 };
 /** Whether this is one of the campsite's fights. */
 const isCampingFight = (state: BattleState) => (CAMPING_ENCOUNTERS as readonly string[]).includes(state.encounter);
@@ -2722,12 +2724,15 @@ function createCampingBattle(party: PartySlot[], encounter: CampingEncounter, an
     const one = foe(kind === 'campeon' ? 'campeon' : `${kind}-${i}`, kinds.filter(k => k === kind).length > 1 ? `${CAMPING_NAMES[kind]} ${n}` : CAMPING_NAMES[kind], kind);
     if (kind === 'dado') one.face = 1 + Math.floor(random() * 6);
     if (kind === 'agente') one.faceUp = n % 2 === 1;
-    if (kind === 'campeon') { one.form = 'heroe'; one.formLeft = CAMPING.formTurns; }
+    if (kind === 'campeon') one.plan = 0;
     return one;
   });
-  const unlocked = animas ?? wornAnimas(party);
+  const unlocked = animas ?? wornAnimas(party), allies = lineUp(party, unlocked);
+  // El Campeón comes out aiming his first Rayo at whoever leads.
+  const champion = foes.find(f => f.kind === 'campeon'), first = allies.find(a => a.hp > 0);
+  if (champion && first) champion.intent = { ability: 'rayo-guantelete', target: first.id };
   return {
-    allies: lineUp(party, unlocked), foes,
+    allies, foes,
     active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
     animas: unlocked, awakened: unlocked.includes('matemagico'), seed: seedFrom(random),
     message: CAMPING_MESSAGES[encounter],
@@ -3425,21 +3430,22 @@ function lucaRoundEnd(state: BattleState) {
 /**
  * How much of a blow a campsite foe takes, by its rule and the kind of blow (a dual counts as every
  * kind, so it takes the better): a Mago de camping, little from magic and more from blows; an Agente
- * face down, half; El Campeón, half as a hero and double in plain clothes. Ticks and pulses never
- * come through here, so they land whole on anyone.
+ * face down, half; El Campeón, less from magic (which also takes his Plan a step down, `foil`). Ticks and
+ * pulses never come through here, so they land whole on anyone.
  */
 function campingTaken(target: Combatant, blow: Blow) {
   if (target.kind === 'mago') return blow === 'dual' ? Math.max(CAMPING.magoMagic, CAMPING.magoPhysical) : blow === 'magic' ? CAMPING.magoMagic : CAMPING.magoPhysical;
   if (target.kind === 'agente' && target.faceUp === false) return CAMPING.downTaken;
-  if (target.kind === 'campeon') return target.form === 'paisano' ? CAMPING.paisanoTaken : CAMPING.heroeTaken;
+  if (target.kind === 'campeon') return blow === 'magic' ? CAMPING.campeonMagic : 1;
   return 1;
 }
 /**
  * The campsite foes' turns (docs/quests/universidad.md § Càmping Eurosport), each one named move. A
  * Mago de camping charges its Bombona on one turn (announced: «Bombona → todos») and lets it go on the
  * next, magic on everyone; holding on takes two thirds off. A Dado falls on one with the weight of its
- * face (Tumbarse). An Agente strikes one (Contraseña). El Campeón punches as a hero and gets PV back
- * in plain clothes, and changes form after `formTurns` own turns in one.
+ * face (Tumbarse). An Agente strikes one (Contraseña). El Campeón fires his Rayo at whom he said and
+ * says the next, and his Plan goes a step up; if it was already full, the Rayo total goes on everyone
+ * instead and it starts again (`campeonTurn`).
  */
 function campingTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect, hit: Hit) {
   actor.turns = (actor.turns ?? 0) + 1;
@@ -3466,23 +3472,64 @@ function campingTurn(state: BattleState, actor: Combatant, target: Combatant, ef
   } else if (actor.kind === 'agente') {
     use('contrasena'); effect.amount = hit(target, CAMPING.contrasena);
     state.message = `${actor.name} se dobla y golpea a ${target.name} con el canto. −${effect.amount} PV.`;
+  } else campeonTurn(state, actor, target, effect);
+}
+/**
+ * El Campeón's turn: with his Plan full, the Rayo total on everyone, and it starts again; otherwise
+ * his Rayo at whom he said (the one in front if they fell), and his Plan a step up. Either way he then
+ * says whom his next Rayo is for: next round's turn order, so it goes round the party. Both are magic,
+ * and Defender takes two thirds off.
+ */
+function campeonTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect) {
+  const alive = state.allies.filter(a => a.hp > 0);
+  const beam: Hit = (who, power) => {
+    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
+  };
+  if ((actor.plan ?? 0) >= planMost(actor)) {
+    effect.ability = foeAbility('rayo-total');
+    onEveryone(state, effect, target, beam, CAMPING.rayoTotal);
+    actor.plan = 0;
+    state.message = `El plan de ${actor.name} se cumple: abre la rejilla del pecho y el rayo os barre a todos. −${effect.amount} PV a ${target.name}.`;
   } else {
-    if (actor.form === 'paisano') {
-      // Recuperarse: it hits nobody; it gets back a share of its PV.
-      use('recuperarse');
-      effect.target = actor.id; effect.healed = true;
-      effect.amount = changeHealth(actor, Math.round(actor.maxHp * CAMPING.recuperarse));
-      state.message = `${actor.name}, de paisano, se sienta en su peana y se recompone. +${effect.amount} PV.`;
-    } else {
-      use('punetazo'); effect.amount = hit(target, CAMPING.punetazo);
-      state.message = `${actor.name} descarga un puñetazo sobre ${target.name}. −${effect.amount} PV.`;
-    }
-    actor.formLeft = (actor.formLeft ?? CAMPING.formTurns) - 1;
-    if (actor.formLeft <= 0) {
-      actor.form = actor.form === 'paisano' ? 'heroe' : 'paisano'; actor.formLeft = CAMPING.formTurns; effect.form = actor.form;
-      state.message += actor.form === 'paisano' ? ' La pintura se le apaga y baja los puños: va de paisano.' : ' Se le enciende la pintura y levanta los puños: otra vez héroe.';
-    }
+    const who = alive.find(a => a.id === actor.intent?.target) ?? target;
+    effect.ability = foeAbility('rayo-guantelete');
+    effect.target = who.id; effect.amount = beam(who, CAMPING.rayo);
+    actor.plan = (actor.plan ?? 0) + 1;
+    state.message = `${actor.name} dispara el guantelete contra ${who.name}. −${effect.amount} PV${who.guarding ? ' · Protegido' : ''}. Su plan avanza: ${actor.plan}/${planMost(actor)}.`;
   }
+  effect.plan = actor.plan;
+  const next = alive.filter(a => a.hp > 0)[(state.round + 1) % Math.max(1, alive.filter(a => a.hp > 0).length)];
+  if (!next) { delete actor.intent; return; }
+  actor.intent = { ability: 'rayo-guantelete', target: next.id };
+  effect.telegraph = { id: 'rayo-guantelete', name: FOE_ABILITIES['rayo-guantelete'].name, target: next.id };
+  state.message += ` Se le cargan los guanteletes: apunta a ${next.name}.`;
+}
+/** A magic blow, or a dual, landing on El Campeón takes his Plan a step down (`checkCampeon` says so). */
+function foil(target: Combatant, blow: Blow) {
+  if (target.kind !== 'campeon' || blow === 'physical' || !target.plan) return;
+  target.plan -= 1;
+  target.foiled = (target.foiled ?? 0) + 1;
+}
+/**
+ * After anything that may have hurt El Campeón: the steps magic took off his Plan, said on the
+ * action (`effect`) or kept as news; and his Etapa II once he is down to `stageAt` of his PV, from
+ * when his Plan fires a step sooner.
+ */
+function checkCampeon(state: BattleState, effect?: BattleEffect) {
+  const champion = state.foes.find(f => f.kind === 'campeon');
+  if (!champion) return;
+  const foiled = champion.foiled ?? 0;
+  delete champion.foiled;
+  const stage = champion.hp > 0 && !champion.stage2 && champion.hp <= champion.maxHp * CAMPING.stageAt;
+  if (stage) champion.stage2 = true;
+  if (!foiled && !stage) return;
+  const said = `${foiled ? ` ¡Plan frustrado! ${champion.plan ?? 0}/${planMost(champion)}.` : ''}${stage ? ` ${champion.name} da la vuelta a su carta: Etapa II. Su plan se cumple antes.` : ''}`;
+  if (effect) {
+    if (foiled) { effect.foiled = (effect.foiled ?? 0) + foiled; effect.plan = champion.plan; }
+    if (stage) effect.stage2 = true;
+    state.message = `${state.message}${said}`.trim();
+  } else (state.news ??= []).push({ kind: 'enemy', actor: champion.id, ...foiled ? { foiled, plan: champion.plan } : {}, ...stage ? { stage2: true as const } : {} });
 }
 /** The end of a round on the campsite: every dado standing rolls a new face, and every agente turns over. */
 function campingRoundEnd(state: BattleState) {
@@ -3651,6 +3698,7 @@ export const eyeOpen = (state: BattleState) => { const eye = eyeOf(state); retur
  */
 function checkEye(state: BattleState, effect?: BattleEffect) {
   checkCuerdas(state, effect);
+  checkCampeon(state, effect);
   castleAfter(castleKit, state, effect);
   checkModelo(state, effect);
   checkLuca(state, effect);
@@ -3987,7 +4035,7 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
   return pulses;
 }
 /** Moments of a fight the picker can jump to that the fight itself stages (docs/dev-tools.md). */
-export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo' | 'plato-sorpresa' | 'sobremesa-duo-carta' | 'sobremesa-escala-alta' | 'sobremesa-ultimo' | 'magos-bombona' | 'campeon-heroe' | 'campeon-paisano'
+export type StagedMoment = 'vertigo-carga' | 'vertigo-grito' | 'vertigo-sin-ojo' | 'plato-sorpresa' | 'sobremesa-duo-carta' | 'sobremesa-escala-alta' | 'sobremesa-ultimo' | 'magos-bombona' | 'campeon-plan' | 'campeon-etapa'
   | 'lealtad-lazo' | 'cristalino-casi' | 'cristalino-rajado' | 'directo-linea' | 'directo-estocada' | 'directo-clavado'
   | 'voz-andante' | 'voz-nota-clara' | 'voz-allegro' | 'voz-coro' | 'voz-a-capela' | 'voz-calderon'
   | CastleMoment
@@ -4002,8 +4050,8 @@ export const STAGED_MOMENTS: Record<StagedMoment, { label: string; encounter: En
   'sobremesa-escala-alta': { label: 'Joan en La', encounter: 'sobremesa' },
   'sobremesa-ultimo': { label: 'Queda uno', encounter: 'sobremesa' },
   'magos-bombona': { label: 'Bombona cargada', encounter: 'camping-magos' },
-  'campeon-heroe': { label: 'Héroe', encounter: 'campeon' },
-  'campeon-paisano': { label: 'De paisano', encounter: 'campeon' },
+  'campeon-plan': { label: 'Plan a punto', encounter: 'campeon' },
+  'campeon-etapa': { label: 'Etapa II', encounter: 'campeon' },
   'lealtad-lazo': { label: 'Lazo: el Eco caído', encounter: 'cuerdas-lealtad' },
   'cristalino-casi': { label: 'A punto de rajarse', encounter: 'cuerdas-cristalino' },
   'cristalino-rajado': { label: 'Rajado', encounter: 'cuerdas-cristalino' },
@@ -4122,12 +4170,14 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
     const magos = state.foes.filter(f => f.kind === 'mago' && f.hp > 0);
     if (!magos.length) return false;
     for (const m of magos) { m.hp = m.maxHp; m.intent = { ability: 'bombona', at: 'todos' }; }
-  } else if (moment === 'campeon-heroe' || moment === 'campeon-paisano') {
-    // El Campeón at the start of a form, two turns ahead of it: whole as a hero, at half its PV in plain clothes.
+  } else if (moment === 'campeon-plan' || moment === 'campeon-etapa') {
+    // El Campeón with his Plan full (whole, the Rayo total his next turn), or just into his Etapa II
+    // (at the edge of `stageAt` of his PV, his Plan a step from firing).
     const champion = state.foes.find(f => f.kind === 'campeon' && f.hp > 0);
     if (!champion) return false;
-    champion.form = moment === 'campeon-paisano' ? 'paisano' : 'heroe'; champion.formLeft = CAMPING.formTurns;
-    champion.hp = moment === 'campeon-paisano' ? Math.ceil(champion.maxHp / 2) : champion.maxHp;
+    champion.stage2 = moment === 'campeon-etapa';
+    champion.hp = champion.stage2 ? Math.floor(champion.maxHp * CAMPING.stageAt) : champion.maxHp;
+    champion.plan = planMost(champion) - (champion.stage2 ? 1 : 0);
   } else if (moment === 'plato-sorpresa') {
     const plato = state.foes.find(f => f.kind === 'plato' && f.hp > 0);
     if (!plato) return false;

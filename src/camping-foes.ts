@@ -1,5 +1,7 @@
 import * as pc from 'playcanvas';
-import type { BattleEffect, CampingKind, Combatant } from './battle';
+import { planMost, type BattleEffect, type CampingKind, type Combatant } from './battle';
+import { buildFoeBody } from './character-model';
+import { FOE_BODIES } from './foe-bodies';
 
 /**
  * Càmping Eurosport's foes (docs/quests/universidad.md § Càmping Eurosport, Monsters), built from
@@ -7,9 +9,10 @@ import type { BattleEffect, CampingKind, Combatant } from './battle';
  * pringoso` under them, `Cabeza de chicle` for a head that sways). A Mago de camping in a robe of old
  * tent canvas with a head torch, a tent pole for a staff and a gas canister in the other hand; a Dado,
  * human-sized and worn, its pips burnt in; an Agente, a tall figure of card, a word on its front and a
- * pattern on its back; and El Campeón, a hero miniature at human scale on its plinth, with a tarpaulin
- * cape. Each shows its rule in the fight (`show`): the canister alight while a Bombona is charged, the
- * die's face on top, the card turned to its back when face down, the hero's paint on or gone.
+ * pattern on its back; and El Campeón, the villain of a superhero board game at life size, a Meshy
+ * figure with a furnace grate in his chest. Each shows its rule in the fight (`show`): the canister
+ * alight while a Bombona is charged, the die's face on top, the card turned to its back when face
+ * down, the grate burning brighter as El Campeón's Plan fills.
  * Violet is only in their eyes (the friends' hold on them); nothing here is pink.
  */
 export function createCampingFoes(app: pc.Application) {
@@ -133,55 +136,24 @@ export function createCampingFoes(app: pc.Application) {
   part(card, 'Dorso de la cabeza', 'box', back, [0, 2.12, -.04], [.32, .36, .012]);
   for (const side of [-1, 1]) part(card, 'Ojo', 'box', violet, [side * .07, 2.15, .05], [.08, .022, .006]);
 
-  // El Campeón: an invented hero miniature at human scale on a black plinth with chipped edges. Its
-  // paint (suit, gold trim, skin) is on as a hero and gone to primer grey in plain clothes (`show`);
-  // a cape of blue tarpaulin with grommets, its arms up or down with its form.
+  // El Campeón: the villain of their superhero board game at life size (a Meshy figure, tools/figures.toml
+  // `[campeon]`): charcoal armour, gauntlets glowing, a cape of blue tarpaulin with grommets. In his
+  // chest a furnace grate (`Rejilla`) whose fire burns brighter as his Plan fills, white-hot when full.
   const campeon = root('El Campeón');
-  part(campeon, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.5, .02, 1.5]);
-  const plinth = mat('#1d1b1e', .5), chip = mat('#8a8680', .2);
-  part(campeon, 'Peana', 'cylinder', plinth, [0, .15, 0], [1.2, .3, 1.2]);
-  for (let k = 0; k < 9; k++) { const a = k * 2.1; part(campeon, 'Desconchón de la peana', 'box', chip, [Math.cos(a) * .58, .27 + (k % 3) * .01, Math.sin(a) * .58], [.09, .05, .06], [0, -a * 57.3, 0]); }
-  part(campeon, 'Placa', 'box', mat('#a8893f', .7), [0, .15, .6], [.38, .09, .02]);
-  const suit = mat(PAINT.suit[0], .55), gold = mat(PAINT.gold[0], .7), skin = mat(PAINT.skin[0], .45);
-  const named = (m: pc.StandardMaterial, name: string) => { m.name = name; return m; };
-  named(suit, 'Pintura traje'); named(gold, 'Pintura dorada'); named(skin, 'Pintura piel');
-  const hero = pivot(pivot(campeon, 'Vista', [0, 0, 0]), 'Figura', [0, .3, 0]);
-  for (const side of [-1, 1]) {
-    part(hero, 'Pierna', 'box', suit, [side * .17, .42, 0], [.25, .8, .28]);
-    part(hero, 'Bota', 'box', gold, [side * .17, .1, .04], [.28, .2, .36]);
-  }
-  part(hero, 'Cinturón', 'box', gold, [0, .86, 0], [.62, .18, .34]);
-  part(hero, 'Pecho', 'box', suit, [0, 1.22, 0], [.72, .6, .4]);
-  part(hero, 'Emblema', 'box', gold, [0, 1.26, .205], [.2, .2, .02], [0, 0, 45]);
-  for (const [x, y] of [[-.2, .5], [.24, .3], [.12, 1.05], [-.26, 1.36], [.3, 1.18]]) part(hero, 'Desconchón', 'box', chip, [x, y, x > 0 ? .21 : .15], [.07, .045, .012], [0, 0, x * 80]);
-  for (const side of [-1, 1]) part(hero, 'Hombro', 'sphere', suit, [side * .42, 1.46, 0], [.3, .3, .3]);
-  part(hero, 'Cuello', 'cylinder', skin, [0, 1.58, 0], [.16, .12, .16]);
-  part(hero, 'Cabeza', 'sphere', skin, [0, 1.74, 0], [.32, .36, .32]);
-  part(hero, 'Casco', 'sphere', gold, [0, 1.83, -.01], [.36, .24, .36]);
-  part(hero, 'Cresta', 'box', suit, [0, 1.96, -.02], [.05, .16, .34]);
-  for (const side of [-1, 1]) part(hero, 'Ojo', 'sphere', violet, [side * .07, 1.74, .155], [.045, .025, .02]);
-  for (const side of [-1, 1]) {
-    const arm = pivot(hero, side < 0 ? 'Brazo izquierdo del campeón' : 'Brazo derecho del campeón', [side * .45, 1.44, 0]);
-    part(arm, 'Brazo', 'box', suit, [0, -.26, 0], [.18, .5, .2]);
-    part(arm, 'Puño', 'box', gold, [0, -.58, 0], [.21, .2, .23]);
-  }
-  const cape = pivot(hero, 'Capa', [0, 1.5, -.2]);
-  const tarp = mat('#2f63a6', .45);
-  const fold = mat('#26507f', .4);
-  part(cape, 'Lona', 'box', tarp, [0, -.34, -.03], [.86, .7, .04]);
-  part(cape, 'Pliegue', 'box', fold, [.18, -.36, -.055], [.08, .66, .02]);
-  const hem = pivot(cape, 'Bajo de la capa', [0, -.68, -.03]);
-  part(hem, 'Lona', 'box', tarp, [0, -.32, 0], [.9, .66, .04]);
-  part(hem, 'Pliegue', 'box', fold, [.18, -.32, -.025], [.08, .62, .02]);
-  for (const [x, y] of [[-.38, -.06], [.38, -.06]]) part(cape, 'Ojal', 'cylinder', chip, [x, y, -.055], [.06, .015, .06], [90, 0, 0]);
-  for (const [x, y] of [[-.4, -.3], [.4, -.3], [-.4, -.6], [.4, -.6]]) part(hem, 'Ojal', 'cylinder', chip, [x, y, -.025], [.06, .015, .06], [90, 0, 0]);
+  part(campeon, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.6, .02, 1.6]);
+  const villain = buildFoeBody(FOE_BODIES.campeon!, pivot(campeon, 'Vista', [0, 0, 0]));
+  const grate = pivot(villain.findByName('Cabeza de chicle') as pc.Entity, 'Rejilla', [0, CAMPEON.grate[1] - CAMPEON.height / 2, CAMPEON.grate[2]]);
+  const fire = mat(FIRE[0], .3, 1);
+  fire.name = 'Fuego de la rejilla';
+  part(grate, 'Marco de la rejilla', 'box', mat('#3c3d40', .5), [0, 0, -.012], [.32, .36, .03]);
+  for (const x of [-.08, 0, .08]) part(grate, 'Barra de fuego', 'box', fire, [x, 0, .006], [.045, .28, .02]);
 
   const templates = new Map<CampingKind, pc.Entity>([['mago', mago], ['dado', dado], ['agente', agente], ['campeon', campeon]]);
   /** What each fighter's model shows now, kept frame to frame. */
   interface Shown {
     face?: { now: number; from: pc.Quat; at: number };
     turn?: number;
-    paint?: number; parts?: { suit: pc.StandardMaterial; gold: pc.StandardMaterial; skin: pc.StandardMaterial; arms: pc.Entity[]; cape: pc.Entity };
+    heat?: number; fire?: pc.StandardMaterial;
   }
   const shown = new WeakMap<pc.Entity, Shown>();
   const quat = (face: number) => new pc.Quat().mul2(new pc.Quat().setFromEulerAngles(0, 24, 0), new pc.Quat().setFromEulerAngles(...FACE_UP[face]));
@@ -227,25 +199,18 @@ export function createCampingFoes(app: pc.Application) {
         cardNode.setLocalEulerAngles(0, s.turn, 0);
         cardNode.setLocalPosition(0, flipping * .25, 0);
       } else if (unit.kind === 'campeon') {
-        if (!s.parts) {
-          const find = (name: string) => (model.findByName(name) as pc.Entity).render!.meshInstances[0].material as pc.StandardMaterial;
-          s.parts = { suit: find('Pecho'), gold: find('Cinturón'), skin: find('Cabeza'), arms: ['Brazo izquierdo del campeón', 'Brazo derecho del campeón'].map(n => model.findByName(n) as pc.Entity), cape: model.findByName('Capa') as pc.Entity };
-        }
-        // A change of form shows as the turn that brings it lands.
-        const form = pending?.form ? (pending.form === 'paisano' ? 'heroe' : 'paisano') : unit.form;
-        const want = form === 'paisano' ? 0 : 1, before = s.paint;
-        s.paint = before === undefined ? want : before + (want - before) * ease(4);
-        const p = s.paint;
-        if (before === undefined || Math.abs(p - before) > .002) for (const key of ['suit', 'gold', 'skin'] as const) {
-          const m = s.parts[key], [lit, bare] = PAINT[key];
-          m.diffuse.lerp(new pc.Color().fromString(bare), new pc.Color().fromString(lit), p); m.update();
-        }
-        // A hero: both fists up, the right one out in front, the cape out behind; in plain clothes the arms hang and the cape falls.
-        const sway = animate ? Math.sin(time * 1.6) * 3 : 0;
-        s.parts.arms[1].setLocalEulerAngles(-96 * p - 6 * (1 - p) + sway, 0, 8 * p + 4 * (1 - p));
-        s.parts.arms[0].setLocalEulerAngles(-58 * p - 4 * (1 - p) - sway, 0, -10 * p - 4 * (1 - p));
-        s.parts.cape.setLocalEulerAngles(24 * p + 3 + sway * .5, 0, 0);
-        (s.parts.cape.findByName('Bajo de la capa') as pc.Entity | null)?.setLocalEulerAngles(12 * p + sway * .4, 0, 0);
+        // The grate in his chest: the fire of his Plan, a step brighter each step, flickering white-hot
+        // when it is full; it shows as the turn that moved it lands. Out when he is down.
+        s.fire ??= (model.findByName('Barra de fuego') as pc.Entity).render!.meshInstances[0].material as pc.StandardMaterial;
+        // Until his own turn lands, the Plan it moved: full before a Rayo total, a step lower before a Rayo.
+        const before = pending?.ability?.id === 'rayo-total' ? planMost(unit) : pending?.ability?.id === 'rayo-guantelete' ? Math.max(0, (unit.plan ?? 1) - 1) : undefined;
+        const want = unit.hp > 0 ? (before ?? unit.plan ?? 0) / planMost(unit) : 0;
+        s.heat = s.heat === undefined || !animate ? want : s.heat + (want - s.heat) * ease(5);
+        const full = s.heat > .97 && animate ? .5 + .5 * Math.sin(time * 23) * Math.sin(time * 7.1) : 0;
+        const hot = new pc.Color().lerp(new pc.Color().fromString(FIRE[0]), new pc.Color().fromString(FIRE[1]), s.heat * s.heat);
+        s.fire.emissive.copy(hot);
+        s.fire.emissiveIntensity = unit.hp > 0 ? .35 + 2.4 * s.heat + full : .05;
+        s.fire.update();
       }
     },
     destroy() { templates.forEach(t => t.destroy()); materials.forEach(m => m.destroy()); },
@@ -264,5 +229,7 @@ const PIPS: Record<number, [number, number][]> = {
 };
 /** The turn that brings each face to the top (x, y, z degrees): one is already there. */
 const FACE_UP: Record<number, [number, number, number]> = { 1: [0, 0, 0], 6: [180, 0, 0], 2: [-90, 0, 0], 5: [90, 0, 0], 3: [0, 0, 90], 4: [0, 0, -90] };
-/** El Campeón's paint, as a hero and gone to primer grey (plain clothes). */
-const PAINT = { suit: ['#4c2321', '#7d7c78'], gold: ['#7c6641', '#8f8e89'], skin: ['#9c7a62', '#9a9993'] } as const;
+/** El Campeón's figure (`[campeon]`, metres): how tall, and where the grate in his chest is (height, out in front). */
+const CAMPEON = { height: 2.1, grate: [0, 1.3, .39] } as const;
+/** The fire in his grate: furnace orange, and white-hot when his Plan is about to fire. */
+const FIRE = ['#ff7a1e', '#fff1d0'] as const;

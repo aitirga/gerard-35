@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMPING, CAMPING_ENCOUNTERS, CAMPING_FIGHTS, FEAR_ENCOUNTERS, SKILLS, act, cornered, createFearBattle, dadoPower, enemyAct, intentLabel, nextRound, stageMoment } from '../src/battle.ts';
+import { CAMPING, CAMPING_ENCOUNTERS, CAMPING_FIGHTS, FEAR_ENCOUNTERS, SKILLS, act, cornered, createFearBattle, dadoPower, enemyAct, intentLabel, nextRound, planMost, stageMoment } from '../src/battle.ts';
 import { fightXp } from '../src/levels.ts';
 
 const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
@@ -85,29 +85,68 @@ test('agentes: one face up, one face down, turning over every round; face down t
   assert.ok(e.amount > 0);
 });
 
-test('El Campeón: a hero punches and takes half, in plain clothes it gets PV back and takes double, two turns each', () => {
+test('El Campeón: his Rayo goes at whom he said and he says the next; his Plan fills, fires on everyone and starts again', () => {
   const s = fight('campeon');
   const champion = s.foes[0];
-  assert.equal(champion.form, 'heroe');
-  const asHero = blow(s, 'campeon', 'physical');
-  const first = turn(s, 'campeon', 'gerard');
-  assert.equal(first.ability.id, 'punetazo');
+  assert.equal(champion.plan, 0);
+  const lead = s.allies.find(a => a.hp > 0).id, other = s.allies.find(a => a.id !== lead).id;
+  assert.deepEqual(champion.intent, { ability: 'rayo-guantelete', target: lead }, 'he comes out aiming at whoever leads');
+  assert.equal(intentLabel(s, champion) !== undefined, true);
+  const open = structuredClone(s), held = structuredClone(s);
+  held.allies.forEach(a => { a.guarding = true; });
+  const guarded = turn(held, 'campeon', other);
+  const first = turn(s, 'campeon', other);
+  assert.equal(first.ability.id, 'rayo-guantelete');
+  assert.equal(first.target, lead, 'at whom he said, not at whoever the turn picked');
   assert.ok(first.amount > 0);
-  assert.equal(champion.formLeft, 1);
-  const second = turn(s, 'campeon', 'aitor');
-  assert.equal(second.form, 'paisano', 'it changes after its second turn');
-  assert.equal(champion.form, 'paisano');
-  const inPlainClothes = blow(s, 'campeon', 'physical');
-  assert.ok(Math.abs(inPlainClothes - asHero * CAMPING.paisanoTaken / CAMPING.heroeTaken) <= 2, `${inPlainClothes} vs ${asHero}`);
-  champion.hp = 100;
-  const before = s.allies.map(a => a.hp);
-  const rest = turn(s, 'campeon', 'gerard');
-  assert.equal(rest.ability.id, 'recuperarse');
-  assert.equal(rest.healed, true);
-  assert.equal(champion.hp, 100 + Math.round(champion.maxHp * CAMPING.recuperarse));
-  assert.deepEqual(s.allies.map(a => a.hp), before, 'in plain clothes it hits nobody');
-  turn(s, 'campeon', 'gerard');
-  assert.equal(champion.form, 'heroe');
+  assert.ok(guarded.amount < turn(open, 'campeon', other).amount / 2, 'Defender takes two thirds off');
+  assert.equal(champion.plan, 1);
+  assert.equal(first.plan, 1);
+  assert.equal(first.telegraph.id, 'rayo-guantelete');
+  assert.equal(champion.intent.target, first.telegraph.target);
+  champion.plan = planMost(champion);
+  const fired = turn(s, 'campeon', 'gerard');
+  assert.equal(fired.ability.id, 'rayo-total');
+  assert.equal(fired.splash.length, 1, 'it reaches both');
+  assert.equal(champion.plan, 0, 'and starts again');
+});
+
+test('a magic blow on El Campeón lands lighter and takes his Plan a step down; a physical blow does neither', () => {
+  const s = fight('campeon');
+  s.foes[0].plan = 2;
+  const strike = (how) => {
+    const look = structuredClone(s);
+    look.phase = 'player'; look.active = look.allies.findIndex(a => a.id === 'gerard');
+    const e = how === 'magic' ? act(look, 'skill', 'campeon', 'foc-binari') : act(look, 'attack', 'campeon');
+    return { e, plan: look.foes[0].plan };
+  };
+  const magic = strike('magic'), physical = strike('physical');
+  assert.equal(magic.plan, 1);
+  assert.equal(magic.e.foiled, 1);
+  assert.equal(physical.plan, 2);
+  assert.equal(physical.e.foiled, undefined);
+  const lighter = blow(s, 'campeon', 'magic');
+  const was = CAMPING.campeonMagic;
+  CAMPING.campeonMagic = 1;
+  const whole = blow(s, 'campeon', 'magic');
+  CAMPING.campeonMagic = was;
+  assert.ok(lighter < whole, `${lighter} < ${whole}`);
+  // With his Plan at nothing, magic has nothing to take down.
+  s.foes[0].plan = 0;
+  assert.equal(strike('magic').plan, 0);
+});
+
+test('El Campeón turns his card at half his PV: Etapa II, and his Plan fires a step sooner', () => {
+  const s = fight('campeon');
+  const champion = s.foes[0];
+  assert.equal(planMost(champion), CAMPING.planMost);
+  champion.hp = Math.floor(champion.maxHp * CAMPING.stageAt) + 5;
+  s.phase = 'player'; s.active = 0;
+  const e = act(s, 'attack', 'campeon');
+  assert.equal(e.stage2, true);
+  assert.equal(champion.stage2, true);
+  assert.equal(planMost(champion), CAMPING.planMostII);
+  assert.ok(CAMPING.planMostII < CAMPING.planMost);
 });
 
 test('a campsite fight is won when every foe is down, and is worth its EXP', () => {
@@ -120,17 +159,21 @@ test('a campsite fight is won when every foe is down, and is worth its EXP', () 
   assert.ok(fightXp(s) > 0);
 });
 
-test('the picker stages Bombona charged and El Campeón\'s two forms, only in their own fights', () => {
+test('the picker stages Bombona charged and El Campeón\'s Plan about to fire and his Etapa II, only in their own fights', () => {
   const magos = fight('camping-magos');
   assert.ok(stageMoment(magos, 'magos-bombona'));
   assert.ok(magos.foes.every(f => intentLabel(magos, f) === 'Bombona → todos'));
   const champion = fight('campeon');
-  assert.ok(stageMoment(champion, 'campeon-paisano'));
-  assert.equal(champion.foes[0].form, 'paisano'); assert.equal(champion.foes[0].formLeft, CAMPING.formTurns);
-  assert.ok(stageMoment(champion, 'campeon-heroe'));
-  assert.equal(champion.foes[0].form, 'heroe'); assert.equal(champion.foes[0].hp, champion.foes[0].maxHp);
+  const villain = champion.foes[0];
+  assert.ok(stageMoment(champion, 'campeon-etapa'));
+  assert.equal(villain.stage2, true); assert.equal(villain.hp, Math.floor(villain.maxHp * CAMPING.stageAt));
+  assert.equal(villain.plan, CAMPING.planMostII - 1);
+  assert.ok(stageMoment(champion, 'campeon-plan'));
+  assert.equal(villain.stage2, false); assert.equal(villain.hp, villain.maxHp);
+  assert.equal(villain.plan, CAMPING.planMost);
+  assert.equal(turn(champion, 'campeon', 'gerard').ability.id, 'rayo-total');
   assert.equal(stageMoment(fight('camping-dados'), 'magos-bombona'), false);
-  assert.equal(stageMoment(magos, 'campeon-heroe'), false);
+  assert.equal(stageMoment(magos, 'campeon-plan'), false);
 });
 
 test('no rule of the campsite asks for a skill or an ánima by name', async () => {

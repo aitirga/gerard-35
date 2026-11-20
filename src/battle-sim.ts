@@ -303,6 +303,8 @@ const EYE_WORTH = .8, EYE_BROKEN = 30;
 const isPiece = (foe: BattleState['foes'][number]) => foe.kind === 'vertigo-ojo' || castleProp(foe);
 /** Fran's canopy: a lamp broken is a Brillo he will never drink again, a light that eats nothing more and a lighter Aspersión; each Brillo off, the blows that land whole. */
 const LAMP_BROKEN = 40, BRILLO_WORTH = 30;
+/** El Campeón: a step off his Plan, about a share of what his Rayo total would do to everyone. */
+const PLAN_WORTH = 22;
 interface Threat { hp: Map<string, number>; mareo: Map<string, number> }
 /** What the foes would do to each ally if their turn came now (PV, and Mareo stacks): the real rules, on a copy. */
 function threatOn(state: BattleState): Threat {
@@ -338,6 +340,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     if (foe.hp > 0 && now.hp <= 0) value += isPiece(foe) ? EYE_BROKEN : foe.kind === 'lampara' ? LAMP_BROKEN : 20;
     // Fran's Brillo taken away (a lamp broken): every blow on him from now on lands whole again.
     if (foe.kind === 'fran') value += ((foe.brillo ?? 0) - (now.brillo ?? 0)) * BRILLO_WORTH;
+    // El Campeón's Plan set back: a step further from the Rayo total on everyone.
+    if (foe.kind === 'campeon' && now.hp > 0) value += ((foe.plan ?? 0) - (now.plan ?? 0)) * PLAN_WORTH;
     value += ((now.statuses?.sangrado ?? 0) - (foe.statuses?.sangrado ?? 0)) * 3;
     value += ((now.timed?.quemado?.level ?? 0) - (foe.timed?.quemado?.level ?? 0)) * 10;
     // A debuff's mark on a foe that will stand a while: every later hit on it lands harder, about a
@@ -817,10 +821,10 @@ export const TARGETS: readonly Target[] = [
   { id: 'negra-bien', fight: 'camping-negra', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.2, .65], why: 'La parcela negra es la pelea dura: agarrarse a la bombona, golpes a los magos y primero los seises. Pensando se pasa, con poca vida.' },
   { id: 'negra-sin-pensar', fight: 'camping-negra', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin pensar, la parcela negra gana: dos bombonas a la vez sin agarrarse y los dados cayendo.' },
   { id: 'negra-con-magia', fight: 'camping-negra', party: TECH, levels: P2M2, policy: 'smart', win: [0, .2], why: 'Con dos ánimas de magia contra los magos se pierde: la respuesta es pegarles a golpes.' },
-  { id: 'campeon-bien', fight: 'campeon', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .85], roundsWon: [6, 12], why: 'El Campeón, pensando: agarrarse mientras es héroe y gastarlo todo cuando va de paisano.' },
-  { id: 'campeon-sin-pensar', fight: 'campeon', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin pensar, el héroe gana: quien no se agarra a sus puñetazos ni espera al paisano no llega.' },
-  { id: 'campeon-a-punetazos', fight: 'campeon', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: de héroe le hace la mitad y de paisano se recupera.' },
-  { id: 'campeon-con-tecnopata', fight: 'campeon', party: TECH, levels: P2M2, policy: 'smart', win: [.85, 1], why: 'Con Aitor en su propia ánima también se gana leyendo las formas.' },  // Las cuerdas (docs/quests/marta.md). Its numbers are MARTA (book marta.rules) and each foe's PROFILES entry
+  { id: 'campeon-bien', fight: 'campeon', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .8], roundsWon: [6, 12], why: 'El Campeón, pensando: frustrarle el plan con magia antes de que se llene, Defender al que apunta y pegarle con golpes.' },
+  { id: 'campeon-sin-pensar', fight: 'campeon', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin pensar, el villano gana: su plan se cumple una y otra vez y el Rayo total os barre.' },
+  { id: 'campeon-a-punetazos', fight: 'campeon', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: nadie le frena el plan.' },
+  { id: 'campeon-con-tecnopata', fight: 'campeon', party: TECH, levels: P2M2, policy: 'smart', win: [.85, 1], why: 'Con dos de magia también se gana: frustran a la vez, aunque le pegan a la mitad.' },  // Las cuerdas (docs/quests/marta.md). Its numbers are MARTA (book marta.rules) and each foe's PROFILES entry
   // (foe.lealtad…). Each quality asks one question, answered by whoever reads its plate.
   { id: 'lealtad-bien', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .85], roundsWon: [2.5, 8], why: 'La Lealtad, pensando: callar primero a su Eco con lo que alcanza a todos, y que se agarre quien ella ha jurado golpear.' },
   { id: 'lealtad-sin-pensar', fight: 'cuerdas-lealtad', party: DUO, levels: P2M2, policy: 'casual', win: [0, .3], why: 'Sin pensar se pierde: su Juramento cae entero sobre quien no se agarra, y el Eco lo repite cada vez más fuerte.' },

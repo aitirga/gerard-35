@@ -71,7 +71,7 @@ export const PROFILES = {
   mago: base(130, 10, 12, 9, 11, 10),
   dado: base(44, 12, 8, 11, 9, 9),
   agente: base(66, 12, 10, 10, 10, 10),
-  campeon: base(380, 14, 10, 12, 11, 9),
+  campeon: base(440, 14, 10, 12, 11, 9),
   /**
    * Las cuerdas' foes (docs/quests/marta.md): their rules do the work (battle.ts MARTA). La Lealtad is
    * a wall, an Eco frail and quick, Lo Cristalino has spirit to spare (magic does nothing to it anyway),

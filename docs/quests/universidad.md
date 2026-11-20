@@ -187,15 +187,15 @@ the fights and their models; the campsite scene itself is not): their rules are 
 `src/camping-foes.ts`, their tests `tests/camping-fight.test.mjs`, and `just fight-sim` holds each
 fight to what it should be (docs/fight-sim.md § Càmping Eurosport). Each rule shows on the foe's plate:
 *Cara N* on a dado (and the same face on top of the model), *Boca arriba* / *Boca abajo* on an agente
-(face down it turns its back), *Héroe* / *De paisano · N turnos* on El Campeón (its paint goes to
-primer grey), and *Bombona → todos* on a mago that has charged (its burner alight).
+(face down it turns its back), *Plan N/3* and *Etapa II* on El Campeón (the grate in his chest glows
+with it) and his Rayo's target, and *Bombona → todos* on a mago that has charged (its burner alight).
 
 | Foe | Look | Rule | Move | The answer |
 | --- | --- | --- | --- | --- |
 | **Mago de camping** | A robe of old tent canvas, a head torch for a single light, a tent pole as a staff; in twos or threes | Takes half from magic, more from blows | *Bombona*: charges a turn (chip *Bombona → todos*), then a magic blast on both | Hit it physically; hold on when it charges |
 | **Dado** | Human-sized and worn, its pips burnt in; in packs, the small fights of the dungeon | Its top face is shown and is the strength of its blow this round; it rolls again each round | *Tumbarse*: a blow as strong as its face | Kill the sixes first. A readable reason to choose a target |
 | **Agente** | A tall figure of card, a word on its chest; in pairs | Each round one is face up and takes everything, the other face down and takes half. Ticks ignore this | *Contraseña*: a blow on one | Focus the one face up; put statuses on the one face down |
-| **El Campeón** | A hero miniature at human scale, chipped paint on the plinth, a cape of tarpaulin; **invented, no real character** | Two forms, shown on its plate. *Héroe*: hits very hard, takes half. *De paisano*: does not hit, recovers PV, takes double. It changes every two turns | *Puñetazo*, *Recuperarse* | Hold on while it is a hero, and spend everything when it is not. The mini-boss |
+| **El Campeón** | The villain of their superhero board game at life size (redone 2026-11-19, Aitor: «como si fuera un villano de los de los juegos de mesa… con sus ataques de rayos»): charcoal armour, a furnace grate glowing in his chest, glowing gauntlets, a cape of blue tarpaulin; **invented, no real character** (`tools/figures.toml` `[campeon]`) | **His Plan**, on his plate: a step up every turn; full (3), his next turn is the Rayo total on everyone and it starts again. **Every magic blow on him takes it a step down** («¡Plan frustrado!») and lands at 70 %; blows land whole. **Etapa II** at half his PV: the Plan fires at 2 | *Rayo*, said a turn ahead (*Rayo → X*), *Rayo total* | Frustrate the Plan with magic while blows do the damage, and hold on whoever he aims at. The mini-boss |
 
 **The fights** (ids the story starts; all in the fight tester's *Camping Eurosport* row, staged on the
 Barceloneta's sand until the campsite has a place of its own):
@@ -207,13 +207,13 @@ Barceloneta's sand until the campsite has a place of its own):
 | `camping-agentes` | Two agentes | Behind a wrong tent: one face up, one face down, turning every round |
 | `camping-tienda` | A dado and two agentes | A wrong pitch's tent waking |
 | `camping-negra` | Two magos and two dados | The black pitch: the hard fight, no running |
-| `campeon` | El Campeón | By the pool, the mini-boss, no running. Starts a hero, two turns each form |
+| `campeon` | El Campeón | By the pool, the mini-boss, no running. Plan 0/3, his first Rayo aimed at whoever leads |
 
 Numbers (`CAMPING`): a mago takes half from magic and ×1.5 from blows, Bombona 26 of magic on both; a
-dado's Tumbarse is 4 + 4 a pip; an agente face down takes half, Contraseña 18; El Campeón (380 PV)
-takes half as a hero and punches 44, takes double in plain clothes and gets 10 % of its PV back a turn.
-Picker moments: *Bombona cargada* (`magos-bombona`), *Héroe* (`campeon-heroe`), *De paisano*
-(`campeon-paisano`). `just screenshots camping-foes --gpu`.
+dado's Tumbarse is 4 + 4 a pip; an agente face down takes half, Contraseña 18; El Campeón (440 PV)
+fires a Rayo of 22 (magic) a turn, a Rayo total of 36 on everyone when his Plan is full (3, or 2 in
+his Etapa II from half his PV), and takes 70 % from magic. Picker moments: *Bombona cargada*
+(`magos-bombona`), *Plan a punto* (`campeon-plan`), *Etapa II* (`campeon-etapa`). `just screenshots camping-foes --gpu`.
 
 **The puzzle: Las parcelas** (decided round 6: a real word-clue game that Gerard and Aitor solve
 together, made by a generator). The dungeon's one mechanic nobody else uses:
@@ -452,8 +452,8 @@ pass stay until it does.
 - **Real games** (rule proposed): mechanics may be inspired by what they played, but names, characters
   and art are invented, as in El Nucli (`docs/places/nucli.md`: never a real game's art). So no
   Marvel characters and no real titles, on screen or in the code.
-- **Which Marvel game** was it, and how did it play? (round 5) El Campeón's two forms assume hero and
-  civilian identities, a guess until the user says.
+- **Which Marvel game** was it, and how did it play? (round 5) Answered in part (2026-11-19): El
+  Campeón is the game's villain, whose plan the heroes have to frustrate while they hit him.
 - **Bernat also owns board games** (`docs/quests/bernat.md`, El Nucli): he designs them. Proposal:
   this mission keeps the campsite table and the fight with pieces, and his stays a spy story with no
   board-game fight. His mission's spy feel is also why the Agentes here are cards, not spies.

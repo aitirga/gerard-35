@@ -266,3 +266,14 @@ Its face bubble is swollen huge and half burst, black at the torn edge, sunk bet
 height = 2.4
 [repetidor-tercero.view_notes]
 back = "Hot pink rolls of gum over its back, spotted with black pustules and black rot."
+
+# Càmping Eurosport (docs/quests/universidad.md § Monsters).
+[campeon]
+name = "El Campeón"
+kind = "creature"
+about = """An invented super-villain, no real character: no real costume, emblem, colours or name. A foe of a campsite at dusk where a superhero board game the friends used to play came true: the villain of that game, with powers of energy rays, grown to life size. Not a toy, not a figurine, no plinth and no base: a real comic-book super-villain with heroic proportions, broad shoulders, a big chest and a narrow waist, thick arms and legs, heavy and imposing.
+He must not look like any famous hero or villain: not red and gold, no round chest light, no gold helmet. His suit: sculpted heavy armour of matte charcoal black, with plates of dark gunmetal steel at the shoulders, forearms, belt and boots. Set into the middle of his chest, a tall narrow furnace grate of steel bars, like the door of an old stove, with hot orange fire glowing between the bars; from it, lines of the same orange glow run along cracks in the armour down both arms. Heavy gunmetal gauntlets whose knuckles and the backs of the hands glow orange through slots: where his rays come from. A smooth, blank full helmet of dark gunmetal, like a welder's mask made of armour, with a low ridge over the top and one single thin horizontal visor slit glowing pale violet, no mouth. A heavy cape of blue tarpaulin, the kind that covers a tent, with metal grommets along its edge, hangs from his shoulders to his calves.
+He stands planted, feet apart, arms a little away from his body, fists clenched and glowing: menacing, not friendly."""
+height = 2.1
+[campeon.view_notes]
+back = "The blue tarpaulin cape with its grommets covers his back to the calves."

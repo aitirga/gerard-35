@@ -213,7 +213,7 @@
     {
       "shot": "campeon",
       "delay": 1500,
-      "caption": "El Campeón as a hero: painted, fist up, tarpaulin cape; Héroe · 2 turnos"
+      "caption": "El Campeón, the board game's villain: the furnace grate in his chest, glowing gauntlets, the tarpaulin cape; Plan 0/3 and his Rayo aimed"
     },
     {
       "eval": "closeUp('campeon')"
@@ -221,19 +221,19 @@
     {
       "shot": "campeon-cerca",
       "delay": 900,
-      "caption": "Up close: the plinth's chipped edge, the chipped paint, the grommets on the cape"
+      "caption": "Up close: the grate in his chest, the gauntlets, the grommets on the cape"
     },
     {
-      "eval": "window.gerard.game.frame(); ui.jumpTo('campeon-paisano')"
+      "eval": "window.gerard.game.frame(); ui.jumpTo('campeon-plan')"
     },
     {
       "until": "window.ready()",
       "timeout": 60000
     },
     {
-      "shot": "campeon-paisano",
+      "shot": "campeon-plan",
       "delay": 2000,
-      "caption": "Picker moment «De paisano»: the paint gone to primer grey, arms down; De paisano · 2 turnos"
+      "caption": "Picker moment «Plan a punto»: the grate in his chest at full glow; Plan 3/3, the Rayo total next"
     },
     {
       "eval": "closeUp('campeon')"
