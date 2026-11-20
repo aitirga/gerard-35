@@ -42,7 +42,7 @@ export const FOE_XP: Record<FoeKind, number> = {
   repetidor: 22, empollon: 20, chivata: 14, gemelo: 14, delegada: 40,
   aurelia: 140, atril: 0, directiva: 60, reina: 0, mano: 0,
   // Emilie's model: the section's small fights, and El que no converge at the bottom.
-  'celda-seca': 12, oscilacion: 18, pluma: 16, 'no-converge': 100,
+  'celda-seca': 12, oscilacion: 18, atomo: 20, 'no-converge': 100,
   polilla: 6, 'estampado-rojo': 22, 'estampado-azul': 22, 'estampado-oro': 22, capellan: 16, fran: 120, lampara: 0,
 };
 export type LevelFlag = `${ClassId}-${2 | 3}`;

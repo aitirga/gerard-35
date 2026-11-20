@@ -41,8 +41,8 @@ export const PATROLS: readonly PatrolSpec[] = [
   { id: 'celdas-2', zone: 'suelo', encounter: 'modelo-celdas', from: 18, to: 33, start: 28, dir: 1 },
   { id: 'oscilacion-1', zone: 'gravas', encounter: 'modelo-oscilacion', from: 14, to: 31, start: 22, dir: -1 },
   { id: 'oscilacion-2', zone: 'gravas', encounter: 'modelo-oscilacion', from: 4, to: 18, start: 9, dir: 1 },
-  { id: 'pluma-1', zone: 'ciudad', encounter: 'modelo-pluma', from: 6, to: 20, start: 14, dir: 1 },
-  { id: 'pluma-2', zone: 'ciudad', encounter: 'modelo-pluma', from: 16, to: 33, start: 26, dir: -1 },
+  { id: 'atomo-1', zone: 'ciudad', encounter: 'modelo-atomo', from: 6, to: 20, start: 14, dir: 1 },
+  { id: 'atomo-2', zone: 'ciudad', encounter: 'modelo-atomo', from: 16, to: 33, start: 26, dir: -1 },
 ];
 export interface Patrol { x: number; dir: -1 | 1; chasing?: boolean; rest?: number }
 export interface ModeloState {

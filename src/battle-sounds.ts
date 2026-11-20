@@ -99,7 +99,7 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
   // Emilie's model: a spark off a dead cell, a value flickering, water spreading, figures falling.
   'celda-seca': { impact: [{ id: 'zap', volume: .6 }] },
   oscilacion: { start: [{ id: 'glitch', volume: .5 }], impact: [{ id: 'zap', volume: .6 }] },
-  pluma: { impact: [{ id: 'splash', volume: .8 }] },
+  atomo: { impact: [{ id: 'splash', volume: .8 }] },
   'no-converge': { start: [{ id: 'glitch', volume: .6 }], impact: [{ id: 'zap' }] },
   polilla: { impact: [{ id: 'hit', volume: .5 }] },
   'estampado-rojo': { impact: [{ id: 'hit', volume: .75 }] },

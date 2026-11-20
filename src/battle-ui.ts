@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -40,19 +40,21 @@ const commandsFor = (dev: boolean): { id: Command; name: string }[] => [
   { id: 'escape', name: 'Huir' },
 ];
 /** Uri's fears (docs/quests/nuria.md): what the fight's heading says. */
-const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN', sobremesa: 'LA SOBREMESA', 'camping-magos': 'MAGOS DE CAMPING', 'camping-dados': 'DADOS', 'camping-agentes': 'AGENTES', 'camping-tienda': 'UNA TIENDA EQUIVOCADA', 'camping-negra': 'LA PARCELA NEGRA', campeon: 'EL CAMPEÓN', 'cuerdas-lealtad': 'LA LEALTAD', 'cuerdas-cristalino': 'LO CRISTALINO', 'cuerdas-directo': 'LO DIRECTO', voz: 'LA VOZ', ...CASTLE_KICKERS, 'modelo-celdas': 'CELDAS SECAS', 'modelo-oscilacion': 'OSCILACIONES', 'modelo-pluma': 'LA PLUMA', 'no-converge': 'EL QUE NO CONVERGE', 'luca-recepcion': 'LA RECEPCIÓN', 'luca-sillones': 'LOS SILLONES', 'luca-carta': 'LA CARTA DE COLORES', 'luca-abside': 'EL ÁBSIDE', fran: 'FRAN' } as const;
-const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>', sobremesa: 'Nadie se <em>levanta.</em>', 'camping-magos': 'Huele a <em>gas.</em>', 'camping-dados': 'Cada ronda, <em>otra cara.</em>', 'camping-agentes': 'Uno da la <em>cara.</em>', 'camping-tienda': 'Esa no <em>era.</em>', 'camping-negra': 'Todo <em>apagado.</em>', campeon: 'Su plan, <em>en marcha.</em>', 'cuerdas-lealtad': 'No se <em>aparta.</em>', 'cuerdas-cristalino': 'Se ve <em>a través.</em>', 'cuerdas-directo': 'Sin <em>rodeos.</em>', voz: 'Lo que <em>falta.</em>', ...CASTLE_TITLES, 'modelo-celdas': 'Sin <em>valor.</em>', 'modelo-oscilacion': 'Ni uno <em>ni otro.</em>', 'modelo-pluma': 'Corriente <em>abajo.</em>', 'no-converge': 'Nunca se <em>queda.</em>', 'luca-recepcion': 'Van a <em>la luz.</em>', 'luca-sillones': 'Esperen <em>turno.</em>', 'luca-carta': 'Colores <em>robados.</em>', 'luca-abside': 'Mirar <em>arriba.</em>', fran: 'Les <em>toca.</em>' } as const;
+const FEAR_KICKERS = { cebollon: 'EL CEBOLLÓN', cebolla: 'LA CEBOLLA', plato: 'EL PLATO MISTERIOSO', escolta: 'LA CEBOLLA Y LOS SUYOS', 'uri-vertigo': 'VERTITRÓN', sobremesa: 'LA SOBREMESA', 'camping-magos': 'MAGOS DE CAMPING', 'camping-dados': 'DADOS', 'camping-agentes': 'AGENTES', 'camping-tienda': 'UNA TIENDA EQUIVOCADA', 'camping-negra': 'LA PARCELA NEGRA', campeon: 'EL CAMPEÓN', 'cuerdas-lealtad': 'LA LEALTAD', 'cuerdas-cristalino': 'LO CRISTALINO', 'cuerdas-directo': 'LO DIRECTO', voz: 'LA VOZ', ...CASTLE_KICKERS, 'modelo-celdas': 'CELDAS SECAS', 'modelo-oscilacion': 'OSCILACIONES', 'modelo-atomo': 'EL ÁTOMO', 'no-converge': 'EL QUE NO CONVERGE', 'luca-recepcion': 'LA RECEPCIÓN', 'luca-sillones': 'LOS SILLONES', 'luca-carta': 'LA CARTA DE COLORES', 'luca-abside': 'EL ÁBSIDE', fran: 'FRAN' } as const;
+const FEAR_TITLES = { cebollon: 'Capa sobre <em>capa.</em>', cebolla: 'Pesa, <em>y pica.</em>', plato: '¿Y esto qué <em>lleva?</em>', escolta: 'Nunca viene <em>sola.</em>', 'uri-vertigo': 'Mucho más <em>alto.</em>', 'crias-1': 'Pequeñas, <em>pero pican.</em>', 'crias-2': 'Para <em>picar.</em>', 'crias-3': 'Nivel <em>extra.</em>', sobremesa: 'Nadie se <em>levanta.</em>', 'camping-magos': 'Huele a <em>gas.</em>', 'camping-dados': 'Cada ronda, <em>otra cara.</em>', 'camping-agentes': 'Uno da la <em>cara.</em>', 'camping-tienda': 'Esa no <em>era.</em>', 'camping-negra': 'Todo <em>apagado.</em>', campeon: 'Su plan, <em>en marcha.</em>', 'cuerdas-lealtad': 'No se <em>aparta.</em>', 'cuerdas-cristalino': 'Se ve <em>a través.</em>', 'cuerdas-directo': 'Sin <em>rodeos.</em>', voz: 'Lo que <em>falta.</em>', ...CASTLE_TITLES, 'modelo-celdas': 'Sin <em>valor.</em>', 'modelo-oscilacion': 'Ni uno <em>ni otro.</em>', 'modelo-atomo': 'Todo se <em>transforma.</em>', 'no-converge': 'Nunca se <em>queda.</em>', 'luca-recepcion': 'Van a <em>la luz.</em>', 'luca-sillones': 'Esperen <em>turno.</em>', 'luca-carta': 'Colores <em>robados.</em>', 'luca-abside': 'Mirar <em>arriba.</em>', fran: 'Les <em>toca.</em>' } as const;
 /** What a blow says it did to an onion's layers. */
 const peelText = (peeled: number, onion?: { layers?: number }) => !onion?.layers ? '¡Sin capas!' : peeled > 1 ? `¡${peeled} capas menos!` : '¡Una capa menos!';
 const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'punto-debil' | 'cancion' | 'shock' | 'converge' | 'luz';
+type IconId = StatusId | TimedId | 'punto-debil' | 'cancion' | 'shock' | 'converge' | 'reaccion' | 'luz';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 const STATUS_ICONS: Record<IconId, string> = {
   // Converge: a wave that settles into a flat line.
   converge: '<path d="M1.2 8c1.3-5.6 2.6-5.6 3.6 0s2-2.6 2.8 0 1.2 0 1.6 0h5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  // El Átomo's Reacción coming: a nucleus and two crossed orbits.
+  reaccion: '<circle cx="8" cy="8" r="2.1" fill="currentColor"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(-35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/>',
   // Shock: a bolt.
   shock: '<path d="M9.6 1 3.4 9.1h3.5L5.9 15l6.7-8.7H8.9z" fill="currentColor"/>',
   // La Voz's song: a sung note, the same mark for every note (its colour says which).
@@ -328,6 +330,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño en sus silencios.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
       // El que no converge, converged: it takes every blow whole for the turns in its corner.
       ...c.converged ? [{ id: 'converge' as const, name: 'Converge: recibe el golpe entero', mark: String(c.converged), timed: false, lasts: `${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}` }] : [],
+      // El Átomo: its turns to its Reacción, in the corner; at 1 its next turn throws every electron it has at once.
+      ...reactionIn(c) ? [{ id: 'reaccion' as const, name: reactionIn(c) === 1 ? 'Reacción: en su siguiente turno, todos sus electrones a la vez' : `Reacción en ${reactionIn(c)} turnos`, mark: String(reactionIn(c)), timed: false, lasts: `${reactionIn(c)} ${reactionIn(c) === 1 ? 'turno' : 'turnos'}` }] : [],
       ...c.shock ? [{ id: 'shock' as const, name: 'Shock: pierde su siguiente turno', mark: '', timed: false, lasts: 'su siguiente turno' }] : [],
       ...weak ? [{ id: 'punto-debil' as const, name: `Punto débil: el siguiente golpe hace el triple`, mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weak) }] : [],
       ...(Object.entries(c.statuses ?? {}).filter(([, n]) => n) as [StatusId, number][]).map(([id, n]) => ({ id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) })),
@@ -1763,7 +1767,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const landed: { target: string; id: string; text: string; detail: string }[] = [];
     // After a wound opened (its own pop comes first), a little later.
     let wounded = false;
-    const stamp = () => landed.forEach(l => setTimeout(() => { if (token === generation) pop(l.target, l.text, 'status', l.detail, l.id); }, wounded ? 560 : 170));
+    // Several on the same fighter (Conducción, then Shock, then Quemado) come one after another, not on top of each other.
+    const stamp = () => {
+      const nth = new Map<string, number>();
+      landed.forEach(l => {
+        const k = nth.get(l.target) ?? 0; nth.set(l.target, k + 1);
+        setTimeout(() => { if (token === generation) pop(l.target, l.text, 'status', l.detail, l.id); }, (wounded ? 560 : 170) + k * 380);
+      });
+    };
     let say = '';
     const hurtPop = (id: string, amount: number, detail: string, dx?: number) => pop(id, `−${amount}`, 'damage', detail, undefined, dx);
     const knock = () => {
@@ -1828,7 +1839,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (champion && effect.stage2) setTimeout(() => { if (token === generation) pop(champion.id, 'Etapa II', 'status', 'Su plan se cumple antes', 'etapa'); }, 760);
       if (effect.summoned) pop(effect.summoned, effect.summoned.startsWith('polilla') ? 'Otra polilla' : 'Segunda voz', 'status', effect.summoned.startsWith('polilla') ? 'Atraída por la luz' : 'Coro', 'cristal');
       // The castle's rules turning (src/castle-fight.ts): «Se lo aprende», «Sin atril», «Tropiezo», «Suyo», «Libre»…
-      effect.called?.forEach((call, i) => setTimeout(() => { if (token === generation) pop(call.target, call.text, 'status', call.detail ?? ''); }, 420 + i * 240));
+      effect.called?.forEach((call, i) => setTimeout(() => { if (token === generation) pop(call.target, call.text, 'status', call.detail ?? '', call.status); }, 420 + i * 240));
       // Fran's salon's moves that are not a blow (docs/quests/luca.md).
       if (effect.brillo !== undefined && effect.kind === 'enemy' && !effect.lampBroken) pop(effect.actor, `Brillo ${effect.brillo}`, 'status', 'Bebe la luz', 'brillo');
       if (effect.lampBroken) setTimeout(() => {
@@ -1903,6 +1914,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // The model: water that leaves someone Mojado, a spark that ran through the wet, and what a blow did to the boss's Error.
       effect.wetted?.forEach(id => landed.push({ target: id, id: 'mojado', text: `¡${TIMED.mojado.name}!`, detail: state!.foes.some(f => f.id === id) ? 'Se enciende' : '' }));
       if (effect.conducted && effect.target) landed.push({ target: effect.target, id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' });
+      // El Átomo's fire: a burn on whoever was dry, Vapor on whoever was wet.
+      effect.burnt?.forEach(id => landed.push({ target: id, id: 'quemado', text: `¡${TIMED.quemado.name}!`, detail: '' }));
+      effect.steamed?.forEach(id => landed.push({ target: id, id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'El agua se va en vapor' }));
       effect.shocked?.forEach(id => landed.push({ target: id, id: 'shock', text: '¡Shock!', detail: 'Pierde su siguiente turno' }));
       const boss = effect.error || effect.converged || effect.diverged ? state.foes.find(f => f.kind === 'no-converge') : undefined;
       if (boss && effect.converged) setTimeout(() => { if (token === generation) pop(boss.id, '¡Converge!', 'status', 'Sólido: recibe el doble', 'converge'); }, 420);

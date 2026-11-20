@@ -116,7 +116,18 @@
     {
       "shot": "ciudad",
       "delay": 1800,
-      "caption": "Bajo la ciudad: the tunnels the model was told about, and La pluma"
+      "caption": "Bajo la ciudad: the tunnels the model was told about, and El Átomo"
+    },
+    {
+      "eval": "(() => { const p = g.modelo.run.patrols['atomo-1']; const f = g.modelo.figures.get('atomo-1'); const at = f.getPosition(); g.frame({ x: at.x, y: at.y + 1, z: at.z }, 4.2); })()"
+    },
+    {
+      "shot": "ciudad-atomo",
+      "delay": 1200,
+      "caption": "El Átomo on patrol in Bajo la ciudad: its nucleus and three electrons, as the section draws it"
+    },
+    {
+      "eval": "g.frame()"
     },
     {
       "wait": 900
@@ -140,7 +151,7 @@
       "wait": 900
     },
     {
-      "eval": "(() => { const r = g.modelo.run; delete r.patrols['pluma-1']; if (!r.beaten.includes('pluma-1')) r.beaten.push('pluma-1'); })()"
+      "eval": "(() => { const r = g.modelo.run; delete r.patrols['atomo-1']; if (!r.beaten.includes('atomo-1')) r.beaten.push('atomo-1'); })()"
     },
     {
       "eval": "at(34)"

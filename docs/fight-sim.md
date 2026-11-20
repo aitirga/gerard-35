@@ -406,8 +406,10 @@ nothing).
 | Celdas secas | duo, attack only | 0 % | – | – |
 | Oscilaciones | duo, casual | 100 % | 5.1 | 59 % |
 | Oscilaciones | duo, attack only | 100 % | 10.0 | 21 % |
-| La pluma | duo, smart | 100 % | 5.3 | 60 % |
-| La pluma | duo, attack only | 0 % | – | – |
+| El Átomo | duo, smart | 100 % | 4.3 | 68 % |
+| El Átomo | duo, casual | 97 % | 7.3 | 43 % |
+| El Átomo | duo, attack only | 0 % | – | – |
+| El Átomo | first day, smart | 100 % | 6.3 | 62 % |
 | El que no converge | duo, smart | 94 % | 11.1 | 53 % |
 | El que no converge | duo, casual | 0 % | – | – |
 | El que no converge | duo, attack only | 0 % | – | – |

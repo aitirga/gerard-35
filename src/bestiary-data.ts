@@ -165,7 +165,7 @@ export const MOTION: Record<Family, string[]> = {
   vertigo: ['Rígido: no se estira ni bambolea; se inclina pesado y tiembla al recibir', 'Poses del robot: pisotón, barrido, grito, carga del rayo, retroceso, arrodillarse al caer', 'Su ojo gira (parte con PV propios); Uri arriba con Nil en brazos'],
   camping: ['Su modelo enseña su regla (src/camping-foes.ts `show`): la cara del dado, el agente boca arriba o abajo, la bombona del mago', 'Bambolea; se deshace al caer'],
   cuerdas: ['Cuerdas, cristal y luz que se mueven con su regla (src/cuerdas-foes.ts `show`): el nudo de La Lealtad y su escudo, los anillos y las ondas del Eco en el suelo; La Voz canta', 'Se deshace al caer; un Eco vuelve a atarse'],
-  modelo: ['Celdas y curvas que enseñan su valor y su agua (src/modelo-foes.ts)', 'Se deshace al caer'],
+  modelo: ['Celdas, figuras y órbitas que enseñan su valor, su agua y los electrones que le quedan (src/modelo-foes.ts)', 'El Átomo: sus electrones giran, más deprisa antes de la Reacción; arrancados, caen apagados al agua', 'Se deshace al caer'],
   luca: ['Polillas, estampados y lámparas que se encienden con la luz de su color (src/luca-foes.ts)', 'Los capellanes con su peinado; se deshacen al caer'],
   sobremesa: ['Un solo cuerpo con siete amigos, cada uno un hueso del rig (src/sobremesa.ts)', 'Cada amigo ataca con su gesto; liberado, se separa del cuerpo'],
   dog: ['Olfatea, mira y se lanza (la cabeza pivota en el cuello); mueve la cola', 'Ojos rosa oscuro cuando la Reina los tiene'],

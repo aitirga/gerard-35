@@ -99,12 +99,12 @@ export const PROFILES = {
   mano: base(110, 12, 10, 11, 10, 8),
   /**
    * The foes of Emilie's model (docs/quests/emilie.md § Fights): their rules do the work (battle.ts
-   * MODELO). A Celda seca is a block, slow; an Oscilación quick and frail; La pluma only wets. El que
+   * MODELO). A Celda seca is a block, slow; an Oscilación quick and frail; El Átomo alone, heavy. El que
    * no converge is the boss.
    */
   'celda-seca': base(70, 10, 11, 11, 10, 8),
   oscilacion: base(110, 10, 12, 9, 10, 12),
-  pluma: base(90, 9, 11, 9, 11, 10),
+  atomo: base(440, 11, 12, 10, 11, 9),
   'no-converge': base(520, 12, 13, 11, 12, 10),
   // Fran's salon (docs/quests/luca.md § Monsters): frail moths, patches of pattern and the restyled chaplains.
   polilla: base(28, 10, 8, 8, 8, 13),

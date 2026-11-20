@@ -104,7 +104,7 @@ export const MISSIONS = {
   nuria: { name: 'Nuria y Uri', intro: true, lights: 2, friend: 'nuria', fights: ['crias-1', 'crias-2', 'crias-3', 'cebolla', 'cebollon', 'plato', 'escolta', 'uri-vertigo'], teaching: ['crias-1', 'crias-2', 'crias-3', 'cebolla'] },
   universidad: { name: 'Los amigos de la uni', intro: false, lights: 5, friend: 'universidad', fights: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon', 'sobremesa'], teaching: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda'] },
   marta: { name: 'Marta', intro: false, lights: 1, friend: 'marta', fights: ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'], teaching: [] },
-  emilie: { name: 'Emilie', intro: false, lights: 1, friend: 'emilie', fights: ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'], teaching: [] },
+  emilie: { name: 'Emilie', intro: false, lights: 1, friend: 'emilie', fights: ['modelo-celdas', 'modelo-oscilacion', 'modelo-atomo', 'no-converge'], teaching: [] },
   luca: { name: 'Luca', intro: false, lights: 1, friend: 'luca', fights: ['luca-recepcion', 'luca-sillones', 'luca-carta', 'fran'], teaching: ['luca-recepcion'] },
 } as const satisfies Record<string, { name: string; intro: boolean; lights: number; friend: AnimaId; fights: readonly string[]; teaching: readonly string[] }>;
 export type MissionId = keyof typeof MISSIONS;
@@ -296,8 +296,8 @@ function copy(state: BattleState) {
 const MARK_HITS = 3;
 /** What `smart` thinks a point of maná gathered (Defender) is worth: a little more than it costs to spend (2.5), since it is what skills wait on. */
 const MANA_WORTH = 5;
-/** What `smart` thinks of the model's set-ups: a cell wet, a mark of Error off, El que no converge converged. */
-const MODELO_WET = 14, ERROR_WORTH = 16, CONVERGED_WORTH = 30;
+/** What `smart` thinks of the model's set-ups: a cell wet, a mark of Error off, El que no converge converged, an electron off El Átomo. */
+const MODELO_WET = 14, ERROR_WORTH = 16, CONVERGED_WORTH = 30, ELECTRON_WORTH = 18;
 /** What `smart` thinks a PV off Vertitrón's eye is worth (it brings no win closer, but every Rayo it has left), and breaking it. */
 const EYE_WORTH = .8, EYE_BROKEN = 30;
 /** A thing with PV that is part of a fight's answer and never its win: Vertitrón's eye, Aurelià's lectern, the Queen's hands. */
@@ -354,6 +354,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     // converge is a step towards the turns it stands solid, and one on is a step back.
     if (isModelo(foe.kind) && now.hp > 0) {
       if (foe.kind === 'celda-seca' && now.timed?.mojado && !foe.timed?.mojado) value += MODELO_WET;
+      // El Átomo: an electron off is one thing fewer in its Reacción; one given back, one more.
+      if (foe.kind === 'atomo') value += ((foe.electrons?.length ?? 0) - (now.electrons?.length ?? 0)) * ELECTRON_WORTH;
       value += ((foe.error ?? 0) - (now.error ?? 0)) * (foe.converged || now.converged && !foe.converged && (foe.error ?? 0) > 1 ? 0 : ERROR_WORTH);
       if (now.converged && !foe.converged) value += CONVERGED_WORTH;
     }
@@ -903,8 +905,10 @@ export const TARGETS: readonly Target[] = [
   { id: 'celdas-a-punetazos', fight: 'modelo-celdas', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Secas, todo les entra a la mitad: a puñetazos no da tiempo.' },
   { id: 'oscilacion-probando', fight: 'modelo-oscilacion', party: DUO, levels: P2M2, policy: 'casual', win: [.95, 1], roundsWon: [3.5, 7], why: 'La oscilación enseña la regla del jefe en pequeño: probando elementos se encuentra, y se nota en el número.' },
   { id: 'oscilacion-a-punetazos', fight: 'modelo-oscilacion', party: DUO, levels: P2M2, policy: 'attack', roundsWon: [8, 14], hpLeftWon: [0, .35], why: 'Sin elemento también cae, pero el doble de largo y por los pelos: la diferencia se ve.' },
-  { id: 'pluma-bien', fight: 'modelo-pluma', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.4, .85], why: 'La pluma primero: sin nadie mojado, las chispas de las celdas son solo chispas.' },
-  { id: 'pluma-a-punetazos', fight: 'modelo-pluma', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Mojados y electrocutados cada ronda, y las celdas secas no caen a puñetazos.' },
+  { id: 'atomo-bien', fight: 'modelo-atomo', party: DUO, levels: P2M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.35, .8], why: 'Arrancarle el agua o el rayo antes de su Reacción, sin devolverle lo arrancado: la Reacción se queda en nada.' },
+  { id: 'atomo-probando', fight: 'modelo-atomo', party: DUO, levels: P2M2, policy: 'casual', win: [.8, 1], why: 'Probando elementos se encuentra: el primer golpe que arranca un electrón lo dice, y el que se lo devuelve también.' },
+  { id: 'atomo-primer-dia', fight: 'modelo-atomo', party: 'gerard:matemagico+aitor:-', levels: L1, improved: [], exact: true, policy: 'smart', win: [.85, 1], why: 'Sin fuego ni tarro: el modelo presta el agua y el rayo, y arrancar esos dos basta para que la Reacción solo queme.' },
+  { id: 'atomo-a-punetazos', fight: 'modelo-atomo', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Sin elemento, cada Reacción os moja y la descarga os atraviesa a todos.' },
   { id: 'no-converge-bien', fight: 'no-converge', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .7], roundsWon: [8, 15], why: 'El que no converge, leyendo la placa: el elemento en el que no está le quita Error, y convergido se le pega con todo.' },
   { id: 'no-converge-sin-pensar', fight: 'no-converge', party: DUO, levels: P2M2, policy: 'casual', win: [0, .05], roundsLost: [4, 9], why: 'El golpe acertado no quita más PV que uno cualquiera: quien solo mira el número nunca lo hace converger, y su Descarga crece.' },
   { id: 'no-converge-a-punetazos', fight: 'no-converge', party: DUO, levels: P2M2, policy: 'attack', win: [0, .02], why: 'Sin elementos no converge nunca.' },

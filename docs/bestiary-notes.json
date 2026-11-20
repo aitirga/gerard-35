@@ -60,9 +60,10 @@
       "name": "La pluma",
       "redo": [],
       "text": "Esta quitala, no me gusta, rehazla y cambia este enemigo",
-      "status": "abierta",
+      "status": "hecha",
       "created": "2026-11-20T02:22:14Z",
-      "reply": "Propuesta, sin tocar nada aún: cambiar La pluma por La cuña salina, el agua del mar que entra por debajo cuando se bombea de más. Avanza un paso cada turno (Intrusión 1/3 → 3/3) y al llegar a 3 inunda a todos (mojados y −Defensa el resto del combate). Cada golpe de agua la hace retroceder un paso («¡Agua dulce!»), mientras las Celdas secas castigan a quien está mojado. Pregunta: elemento y momento. ¿Te vale?"
+      "reply": "Quitada. En su lugar, El Átomo (la química del modelo), solo, con el núcleo de Meshy y las tres órbitas en código: lanza sus electrones (fuego, agua, rayo) y cada tercer turno los suelta todos a la vez (Reacción). Un golpe del elemento de un electrón se lo arranca (¡Ionizado!, ×1,5); uno de un elemento que ya perdió se lo devuelve (Captura, a la mitad); sin electrones, lo que va sin elemento le entra al doble. Ficha: enemigo:atomo. Capturas: just screenshots emilie-atomo --gpu.",
+      "closed": "2026-11-20T10:30:00Z"
     },
     {
       "id": "n-mwocta0j",

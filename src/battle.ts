@@ -152,13 +152,16 @@ export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | '
  * Each asks one question with water and electricity, by kind of blow and never by who wears what, and
  * shows its answer on its plate. A Celda seca takes half while dry; water wets it, and then
  * electricity is Conducción. An Oscilación shows the value it is on («Agua» or «Eléctrico», the other
- * one every round): a blow of that element is absorbed, one of the other lands hard. La pluma wets
- * one of the party every turn, and the cells that come with it shock whoever is wet. El que no
- * converge, the boss, is all of it: it wets and shocks the party by turns, and only blows of the
- * element it is not on take its Error away, until it converges.
+ * one every round): a blow of that element is absorbed, one of the other lands hard. El Átomo, the
+ * model's chemistry, carries three electrons (fire, water, electricity) and throws them at the party;
+ * every third turn they all go at once (Reacción), and what comes out depends on which are left. A
+ * blow of an electron's element tears it off (Ionizado); one of an element it has lost gives it back
+ * (Captura); with none left, what has no element lands double. El que no converge, the boss, is all
+ * of it: it wets and shocks the party by turns, and only blows of the element it is not on take its
+ * Error away, until it converges.
  */
-export type ModeloKind = 'celda-seca' | 'oscilacion' | 'pluma' | 'no-converge';
-export const MODELO_KINDS = ['celda-seca', 'oscilacion', 'pluma', 'no-converge'] as const satisfies readonly ModeloKind[];
+export type ModeloKind = 'celda-seca' | 'oscilacion' | 'atomo' | 'no-converge';
+export const MODELO_KINDS = ['celda-seca', 'oscilacion', 'atomo', 'no-converge'] as const satisfies readonly ModeloKind[];
 export const isModelo = (kind?: FoeKind): kind is ModeloKind => !!kind && (MODELO_KINDS as readonly string[]).includes(kind);
 /** The value an Oscilación or El que no converge is on, as its plate names it. */
 export type Sign = 'agua' | 'electrico';
@@ -264,7 +267,7 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'dictado' | 'pregunta' | 'castigo' | 'sprint' | 'expulsion' | 'record'
   | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo'
   | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo'
-  | 'chispa' | 'ola' | 'empapa' | 'inunda' | 'descarga-modelo' | 'converge'
+  | 'chispa' | 'ola' | 'electron' | 'reaccion' | 'choque' | 'inunda' | 'descarga-modelo' | 'converge'
   | 'aleteo' | 'estampar' | 'tijeretazo' | 'imitacion'
   | 'corte' | 'repeinar' | 'brillo' | 'tomar-hisopo' | 'aspersion';
 export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }> = {
@@ -346,7 +349,9 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   suyo: { name: 'Suyo', card: true },
   chispa: { name: 'Chispa', card: false },
   ola: { name: 'Ola', card: false },
-  empapa: { name: 'Empapa', card: false },
+  electron: { name: 'Electrón', card: false },
+  reaccion: { name: 'Reacción', card: true },
+  choque: { name: 'Choque', card: false },
   inunda: { name: 'Inunda', card: true },
   'descarga-modelo': { name: 'Descarga', card: true },
   converge: { name: 'Converge', card: true },
@@ -463,8 +468,12 @@ export const MARTA = {
  * Emilie's model (docs/quests/emilie.md § Fights), every number in one book (`modelo.rules`); PV are
  * each foe's PROFILES entry. A Celda seca takes `seca` of every blow while dry. An Oscilación takes
  * `contra` of a blow of the element it is not on, `plano` of one with no element (or fire), nothing
- * of its own. Chispa, Ola and Empapa are the small foes' blows; `conduce` is what runs through
- * everyone wet in the party when a spark finds one of them. El que no converge: while it iterates it
+ * of its own. Chispa and Ola are the small foes' blows; `conduce` is what runs through everyone wet in
+ * the party when a spark finds one of them. El Átomo takes `ioniza` of a blow that tears an electron
+ * off, `captura` of one that gives it one back, and `desnudo` of one with no element once it has none
+ * left. Its Electrón is `electron` (fire burns, water wets, a spark is a Chispa); every `reaccionEvery`
+ * turns its Reacción throws each electron left at everyone, `reaccion` each, the spark as `reaccionRayo`
+ * through whoever is wet. Bare, it rams one (`choque`). El que no converge: while it iterates it
  * takes `itera` of every blow and nothing of its own element; it starts with `error` marks (`errorDiverge`
  * from `diverge` of its PV, never more than `errorMost`); at none it is solid for `convergeTurns` of
  * its own turns and takes `converge`. Inunda takes `inunda` and wets everyone; its Descarga is
@@ -472,7 +481,9 @@ export const MARTA = {
  */
 export const MODELO = {
   seca: .5, contra: 1.5, plano: .5,
-  chispa: 16, ola: 14, empapa: 10, conduce: 22,
+  chispa: 16, ola: 14, conduce: 22,
+  ioniza: 1.5, captura: .5, desnudo: 2,
+  electron: 16, reaccionEvery: 3, reaccion: 14, reaccionRayo: 32, choque: 20,
   itera: .5, converge: 2, convergeTurns: 2,
   error: 3, errorDiverge: 4, errorMost: 6, diverge: .5,
   inunda: 10, descarga: 20, descargaStep: 7,
@@ -818,6 +829,8 @@ export interface Combatant {
   sign?: Sign;
   /** El que no converge: its marks of Error, on its plate. */
   error?: number;
+  /** El Átomo: the electrons it still has, in the order they go round (ATOM_ORDER), and the one it threw last. */
+  electrons?: Element[]; thrown?: Element;
   /** El que no converge has converged: its own turns left as a solid body (no move, every blow harder). */
   converged?: number;
   /** El que no converge is past its mark: Diverge, its second phase. */
@@ -869,15 +882,19 @@ export const CUERDAS_FIGHTS: Record<CuerdasEncounter, readonly CuerdasKind[]> = 
   voz: ['voz'],
 };
 /** The fights inside Emilie's model (docs/quests/emilie.md): one for each zone of the section, and El que no converge at the bottom. */
-export const MODELO_ENCOUNTERS = ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'] as const;
+export const MODELO_ENCOUNTERS = ['modelo-celdas', 'modelo-oscilacion', 'modelo-atomo', 'no-converge'] as const;
 export type ModeloEncounter = (typeof MODELO_ENCOUNTERS)[number];
 /** Who comes out in each of them, in the order they stand. */
 export const MODELO_FIGHTS: Record<ModeloEncounter, readonly ModeloKind[]> = {
   'modelo-celdas': ['celda-seca', 'celda-seca', 'celda-seca'],
   'modelo-oscilacion': ['oscilacion', 'oscilacion'],
-  'modelo-pluma': ['pluma', 'celda-seca', 'celda-seca'],
+  'modelo-atomo': ['atomo'],
   'no-converge': ['no-converge'],
 };
+/** El Átomo's electrons, in the order they go round it and come off it in its Electrón. */
+export const ATOM_ORDER: readonly Element[] = ['fuego', 'agua', 'electrico'];
+/** In its Reacción they land in this order: the water first, the spark through it, then the fire on whoever the spark dried. */
+const REACTION_ORDER: readonly Element[] = ['agua', 'electrico', 'fuego'];
 /** Fran's salon in the Sagrada Família (docs/quests/luca.md): a fight in each zone, the light walking through all of them. */
 export const LUCA_ENCOUNTERS = ['luca-recepcion', 'luca-sillones', 'luca-carta', 'fran'] as const;
 export type LucaEncounter = (typeof LUCA_ENCOUNTERS)[number];
@@ -1262,9 +1279,15 @@ export interface BattleEffect {
   /** Nanitos: the timed statuses a cure took off its target. */
   cleared?: TimedId[];
   /** Things a rule of the fight says by name over someone (the castle's: «Respuesta correcta», «Tropiezo», «No firma»). */
-  called?: { target: string; text: string; detail?: string }[];
-  /** Water left these Mojado: a foe's on the party (Ola, Empapa, Inunda), or anyone's on a Celda seca, which switches on. */
+  called?: { target: string; text: string; detail?: string; status?: string }[];
+  /** Water left these Mojado: a foe's on the party (Ola, an Electrón, Inunda), or anyone's on a Celda seca, which switches on. */
   wetted?: string[];
+  /** El Átomo's fire left these Quemado; on these it found water and went up as Vapor (Cegado I). */
+  burnt?: string[]; steamed?: string[];
+  /** El Átomo lost an electron to this blow (`off`, Ionizado) or took one back (`on`, Captura). */
+  electron?: { element: Element; mark: 'off' | 'on' };
+  /** El Átomo's Reacción: the electrons that went out at once, in the order they landed. */
+  reacted?: Element[];
   /** A foe's spark ran through everyone wet in the party (their PV are `amount` and `splash`), and left them dry. */
   conducted?: true;
   /** El que no converge: its marks of Error after this blow, when it changed them (`mark`: one fewer or one more). */
@@ -2558,18 +2581,18 @@ function minionAct(state: BattleState, actor: Combatant): BattleEffect | undefin
   return { actor: actor.id, kind: 'enemy', target: target.id, amount };
 }
 /** The foes of Emilie's model, by name (more than one of a kind are numbered). */
-export const MODELO_NAMES: Record<ModeloKind, string> = { 'celda-seca': 'Celda seca', oscilacion: 'Oscilación', pluma: 'La pluma', 'no-converge': 'El que no converge' };
+export const MODELO_NAMES: Record<ModeloKind, string> = { 'celda-seca': 'Celda seca', oscilacion: 'Oscilación', atomo: 'El Átomo', 'no-converge': 'El que no converge' };
 /** What each fight in the model says as it starts, and as it is won. */
 const MODELO_MESSAGES: Record<ModeloEncounter, string> = {
   'modelo-celdas': 'Tres celdas de la malla se desprenden del corte. Están apagadas: huecas, grises, secas.',
   'modelo-oscilacion': 'Dos figuras parpadean entre dos valores, sin quedarse en ninguno. Una está en el que la otra acaba de dejar.',
-  'modelo-pluma': 'Una mancha se extiende por el agua hacia vosotros. Detrás, dos celdas apagadas, esperando.',
+  'modelo-atomo': 'Sobre el agua del túnel flota algo pesado: un núcleo, y tres luces girando a su alrededor, cada una en su órbita.',
   'no-converge': 'Al fondo del modelo, columnas de cifras que caen sin parar. Tienen forma de alguien. No se quedan quietas en ningún valor.',
 };
 const MODELO_WON: Record<ModeloEncounter, string> = {
   'modelo-celdas': 'Las celdas se apagan del todo y vuelven a su sitio en la malla. Ahora tienen un valor.',
   'modelo-oscilacion': 'Las dos figuras se quedan quietas, cada una en su valor. Luego ya no están.',
-  'modelo-pluma': 'La mancha se diluye corriente abajo. El agua vuelve a no tener color.',
+  'modelo-atomo': 'El núcleo se deshace en gotas oscuras. El agua sigue corriendo, sin nada que reaccione en ella.',
   'no-converge': 'Las cifras dejan de caer. Se quedan todas quietas un instante, y son un solo número.',
 };
 const isModeloFight = (state: BattleState) => (MODELO_ENCOUNTERS as readonly string[]).includes(state.encounter);
@@ -2581,8 +2604,9 @@ function createModeloBattle(party: PartySlot[], encounter: ModeloEncounter, anim
   const kinds = MODELO_FIGHTS[encounter], seen: Partial<Record<ModeloKind, number>> = {};
   const foes = kinds.map((kind, i) => {
     const n = seen[kind] = (seen[kind] ?? 0) + 1;
-    const one = foe(kind === 'no-converge' || kind === 'pluma' ? kind : `${kind}-${i}`, kinds.filter(k => k === kind).length > 1 ? `${MODELO_NAMES[kind]} ${n}` : MODELO_NAMES[kind], kind);
+    const one = foe(kind === 'no-converge' || kind === 'atomo' ? kind : `${kind}-${i}`, kinds.filter(k => k === kind).length > 1 ? `${MODELO_NAMES[kind]} ${n}` : MODELO_NAMES[kind], kind);
     if (kind === 'oscilacion') one.sign = n % 2 === 1 ? 'agua' : 'electrico';
+    if (kind === 'atomo') one.electrons = [...ATOM_ORDER];
     if (kind === 'no-converge') { one.sign = 'agua'; one.error = MODELO.error; }
     return one;
   });
@@ -2606,21 +2630,56 @@ export function calibrate(state: BattleState, piezometers: number) {
 /**
  * How much of a blow a foe of the model takes, by the element it carries (a dual carries none): a
  * Celda seca, half while dry; an Oscilación, nothing of the element it is on and more of the other;
- * El que no converge, nothing of its own while it iterates, little of anything else, and more of
- * everything once converged. Ticks and pulses never come through here.
+ * El Átomo, more of an element whose electron it still has (it tears it off), less of one it has
+ * lost (it takes it back), and double of what has none once it has no electrons left; El que no
+ * converge, nothing of its own while it iterates, little of anything else, and more of everything
+ * once converged. Ticks and pulses never come through here.
  */
 function modeloTaken(target: Combatant, element?: Element) {
   if (target.kind === 'celda-seca') return target.timed?.mojado ? 1 : MODELO.seca;
   if (target.kind === 'oscilacion') return element === target.sign ? 0 : element && element === otherSign(target.sign ?? 'agua') ? MODELO.contra : MODELO.plano;
+  if (target.kind === 'atomo') return element ? target.electrons?.includes(element) ? MODELO.ioniza : MODELO.captura : target.electrons?.length ? 1 : MODELO.desnudo;
   if (target.kind === 'no-converge') return target.converged ? MODELO.converge : element === target.sign ? 0 : MODELO.itera;
   return 1;
 }
+/** How each of El Átomo's electrons is named when it comes off or goes back («el electrón de agua»). */
+const ELECTRON_OF: Record<Element, string> = { fuego: 'de fuego', agua: 'de agua', electrico: 'eléctrico' };
+/** The colour a word about an electron is stamped in: its element's status. */
+const ELECTRON_STATUS: Record<Element, string> = { fuego: 'quemado', agua: 'mojado', electrico: 'conduccion' };
+/**
+ * A blow with an element has landed on El Átomo: an electron of that element it still had comes off
+ * (¡Ionizado!), one it had lost goes back to its orbit (Captura). The last one off leaves the nucleus
+ * bare, and the fight says so.
+ */
+function ionize(state: BattleState, target: Combatant, element: Element | undefined, effect: BattleEffect) {
+  if (target.kind !== 'atomo' || target.hp <= 0 || !element) return;
+  const had = target.electrons ?? [];
+  const call = (text: string, detail: string) => { (effect.called ??= []).push({ target: target.id, text, detail, status: ELECTRON_STATUS[element] }); };
+  if (had.includes(element)) {
+    target.electrons = had.filter(e => e !== element);
+    effect.electron = { element, mark: 'off' };
+    call('¡Ionizado!', `Pierde el electrón ${ELECTRON_OF[element]}`);
+    state.message += ` ¡Ionizado! El electrón ${ELECTRON_OF[element]} se apaga y cae al agua.`;
+    if (!target.electrons.length) {
+      (effect.called ??= []).push({ target: target.id, text: 'Núcleo desnudo', detail: 'Sin elemento, recibe el doble' });
+      state.message += ' No le queda ninguno: el núcleo está desnudo.';
+    }
+  } else {
+    target.electrons = ATOM_ORDER.filter(e => e === element || had.includes(e));
+    effect.electron = { element, mark: 'on' };
+    call('Captura', `Recupera el electrón ${ELECTRON_OF[element]}`);
+    state.message += ` ${target.name} lo atrapa: el electrón ${ELECTRON_OF[element]} vuelve a su órbita.`;
+  }
+}
+/** El Átomo's turns until its Reacción: 1 means its next turn is the Reacción. None while it has no electrons. */
+export const reactionIn = (c: Combatant) => c.kind === 'atomo' && c.electrons?.length ? MODELO.reaccionEvery - (c.turns ?? 0) % MODELO.reaccionEvery : 0;
 /**
  * A blow has landed on El que no converge while it iterates: one of the element it is not on takes a
  * mark of Error away, one of its own adds one. At none it converges: a solid body for `convergeTurns`
  * of its own turns (in Diverge, soaked too once the blow is over, so the next bolt runs through it: `act`).
  */
 function iterate(state: BattleState, target: Combatant, element: Element | undefined, effect: BattleEffect) {
+  if (target.kind === 'atomo') return ionize(state, target, element, effect);
   if (target.kind !== 'no-converge' || target.hp <= 0 || target.converged || !target.sign || (element !== 'agua' && element !== 'electrico')) return;
   const before = target.error ?? 0;
   target.error = element === target.sign ? Math.min(MODELO.errorMost, before + 1) : Math.max(0, before - 1);
@@ -2670,8 +2729,8 @@ function conduct(state: BattleState, actor: Combatant, target: Combatant, power:
 /**
  * The model's foes' turns (docs/quests/emilie.md § Fights), each a named move. A Celda seca throws a
  * spark at one (Chispa): on someone wet it runs through everyone wet. An Oscilación on «Agua» breaks
- * over one and leaves them wet (Ola); on «Eléctrico» it is a Chispa. La pluma soaks whoever is still
- * dry (Empapa). El que no converge floods everyone on «Agua» (Inunda) and shocks everyone wet on
+ * over one and leaves them wet (Ola); on «Eléctrico» it is a Chispa. El Átomo throws its electrons
+ * (`atomTurn`). El que no converge floods everyone on «Agua» (Inunda) and shocks everyone wet on
  * «Eléctrico» (Descarga), harder for each mark of Error; converged, it does nothing at all.
  */
 function modeloTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect) {
@@ -2700,13 +2759,8 @@ function modeloTurn(state: BattleState, actor: Combatant, target: Combatant, eff
       if (target.hp > 0) { soak(target); effect.wetted = [target.id]; }
       state.message = `${actor.name} rompe sobre ${target.name}. −${effect.amount} PV.${effect.wetted ? ' ¡Mojado!' : ''}`;
     }
-  } else if (actor.kind === 'pluma') {
-    // It goes for whoever is still dry: the cells behind it need them wet.
-    const dry = alive.find(a => !a.timed?.mojado) ?? target;
-    use('empapa'); effect.target = dry.id; effect.amount = magic(dry, MODELO.empapa);
-    if (dry.hp > 0) { soak(dry); effect.wetted = [dry.id]; }
-    state.message = `${actor.name} alcanza a ${dry.name} y lo empapa. −${effect.amount} PV.${effect.wetted ? ' ¡Mojado!' : ''}`;
-  } else if (actor.converged) {
+  } else if (actor.kind === 'atomo') atomTurn(state, actor, target, effect, magic);
+  else if (actor.converged) {
     use('converge'); delete effect.target;
     // Solid, it is not waiting for its water: what dries meanwhile is not held against the party.
     actor.converged--; delete actor.drained;
@@ -2743,6 +2797,86 @@ function modeloTurn(state: BattleState, actor: Combatant, target: Combatant, eff
     effect.wetted = alive.filter(a => a.hp > 0).map(a => { soak(a); return a.id; });
     delete actor.drained;
     state.message = `${actor.name} inunda el corte. Todos mojados. −${effect.amount} PV a ${target.name}.`;
+  }
+}
+/**
+ * El Átomo's turn (docs/quests/emilie.md § El Átomo). Most turns, *Electrón*: the next electron it still
+ * has, round ATOM_ORDER, at whoever it does most to (fire and water at someone dry, the spark at someone
+ * wet, where it runs through everyone wet). Every `reaccionEvery` turns, *Reacción*: every electron it
+ * has goes at everyone at once, water first, then the spark through it, then fire on whoever the spark
+ * dried; what comes out depends on which are left (water and spark: everyone soaked and shocked; water
+ * and fire: Vapor, blinded; no water: sparks and a burn). Bare, it only rams one (*Choque*).
+ */
+function atomTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect, magic: (who: Combatant, power: number) => number) {
+  const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
+  const alive = state.allies.filter(a => a.hp > 0), lit = actor.electrons ?? [];
+  const wet = (a: Combatant) => !!a.timed?.mojado;
+  const shocked = () => (effect.shocked ?? []).map(id => ` ¡${state.allies.find(a => a.id === id)?.name} queda en shock!`).join('');
+  /** Fire on `who`: a burn if dry, Vapor if wet (the water goes, Cegado I stays). */
+  const burn = (who: Combatant, power: number) => {
+    const amount = magic(who, power);
+    if (who.hp > 0 && wet(who)) { steam(who); (effect.steamed ??= []).push(who.id); }
+    else if (who.hp > 0) { kindle(who, 'quemado', 1); (effect.burnt ??= []).push(who.id); }
+    return amount;
+  };
+  if (!lit.length) {
+    use('choque');
+    const raw = sighted(actor, physical(MODELO.choque, current(state, actor), current(state, target)));
+    effect.amount = changeHealth(target, -(target.guarding ? Math.ceil(raw / 3) : raw));
+    state.message = `El núcleo desnudo de ${actor.name} choca contra ${target.name}. −${effect.amount} PV.`;
+    return;
+  }
+  if ((actor.turns ?? 0) % MODELO.reaccionEvery === 0) {
+    use('reaccion');
+    const took = new Map<string, number>(), add = (id: string, amount: number) => took.set(id, (took.get(id) ?? 0) + amount);
+    const said: string[] = [];
+    effect.reacted = REACTION_ORDER.filter(e => lit.includes(e));
+    for (const element of effect.reacted) {
+      const standing = alive.filter(a => a.hp > 0);
+      if (!standing.length) break;
+      if (element === 'agua') {
+        // Soaked; when the spark comes right behind, the water is only what it runs through, and says nothing of its own.
+        const quiet = effect.reacted.includes('electrico');
+        for (const a of standing) { add(a.id, magic(a, MODELO.reaccion)); if (a.hp > 0) { soak(a); if (!quiet) (effect.wetted ??= []).push(a.id); } }
+        said.push('el agua os empapa a todos');
+      } else if (element === 'electrico') {
+        const dry = standing.filter(a => !wet(a));
+        if (standing.some(wet)) {
+          for (const h of conduct(state, actor, wet(target) && target.hp > 0 ? target : standing.find(wet)!, MODELO.reaccionRayo, effect)) add(h.target, h.amount);
+          said.push('la descarga corre por el agua');
+        } else said.push('las chispas saltan sobre todos');
+        for (const a of dry) add(a.id, magic(a, MODELO.reaccion));
+      } else {
+        for (const a of standing) add(a.id, burn(a, MODELO.reaccion));
+        said.push(effect.steamed?.length && !effect.burnt?.length ? 'el fuego se va en vapor' : 'el fuego os prende');
+      }
+    }
+    const main = took.has(target.id) ? target : alive.find(a => took.has(a.id)) ?? target;
+    effect.target = main.id; effect.amount = took.get(main.id) ?? 0;
+    effect.splash = [...took].filter(([id]) => id !== main.id).map(([id, amount]) => ({ target: id, amount }));
+    state.message = `${actor.name} reacciona: ${said.join(', ')}. ${[...took.values()].map(n => `−${n}`).join(', ')} PV.${shocked()}`;
+    return;
+  }
+  // Electrón: the next one round from the last it threw.
+  const from = actor.thrown ? ATOM_ORDER.indexOf(actor.thrown) + 1 : 0;
+  const element = [...ATOM_ORDER.slice(from), ...ATOM_ORDER.slice(0, from)].find(e => lit.includes(e))!;
+  actor.thrown = element;
+  use('electron'); effect.element = element;
+  const at = element === 'electrico' ? alive.find(wet) ?? target : wet(target) ? alive.find(a => !wet(a)) ?? target : target;
+  effect.target = at.id;
+  if (element === 'electrico' && wet(at)) {
+    const hits = conduct(state, actor, at, MODELO.conduce, effect);
+    state.message = `${actor.name} lanza su electrón eléctrico a ${at.name}, y corre por el agua. ${hits.map(h => `−${h.amount}`).join(', ')} PV.${shocked()}`;
+  } else if (element === 'electrico') {
+    effect.amount = magic(at, MODELO.chispa);
+    state.message = `${actor.name} lanza su electrón eléctrico a ${at.name}. −${effect.amount} PV.`;
+  } else if (element === 'agua') {
+    effect.amount = magic(at, MODELO.electron);
+    if (at.hp > 0) { soak(at); effect.wetted = [at.id]; }
+    state.message = `${actor.name} lanza su electrón de agua a ${at.name}. −${effect.amount} PV.${effect.wetted ? ' ¡Mojado!' : ''}`;
+  } else {
+    effect.amount = burn(at, MODELO.electron);
+    state.message = `${actor.name} lanza su electrón de fuego a ${at.name}. −${effect.amount} PV.${effect.burnt ? ' ¡Quemado!' : effect.steamed ? ' El agua se va en vapor.' : ''}`;
   }
 }
 /** The end of a round in the model: every Oscilación standing, and El que no converge while it iterates, goes to its other value. */

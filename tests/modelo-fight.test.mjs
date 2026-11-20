@@ -133,13 +133,54 @@ test('an Oscilación absorbs the element it is on, takes the other hard, and goe
   assert.deepEqual(s.foes.map(f => f.sign), ['electrico', 'agua']);
 });
 
-test('La pluma soaks whoever is still dry', () => {
-  const s = fight('modelo-pluma');
-  const one = turn(s, 'pluma', 'gerard');
-  assert.equal(one.ability.id, 'empapa'); assert.deepEqual(one.wetted, [one.target]);
-  const two = turn(s, 'pluma', one.target);
-  assert.notEqual(two.target, one.target, 'the dry one next');
-  assert.ok(s.allies.every(wet));
+test('El Átomo loses an electron to a blow of its element, takes back one it lost, and bare takes double of what has no element', () => {
+  const s = fight('modelo-atomo'), atom = s.foes[0];
+  assert.deepEqual(atom.electrons, ['fuego', 'agua', 'electrico']);
+  const plain = blow(s, 'atomo');
+  assert.equal(blow(s, 'atomo', 'agua'), Math.round(plain * MODELO.ioniza), 'an electron it has: harder');
+  const torn = strike(s, 'gerard', 'atomo', 'agua');
+  assert.deepEqual(torn.electron, { element: 'agua', mark: 'off' });
+  assert.equal(torn.called[0].text, '¡Ionizado!');
+  assert.deepEqual(atom.electrons, ['fuego', 'electrico']);
+  // The same element again: it catches it back, and the blow lands at half.
+  assert.equal(blow(s, 'atomo', 'agua'), Math.round(plain * MODELO.captura));
+  const caught = strike(s, 'aitor', 'atomo', 'agua');
+  assert.deepEqual(caught.electron, { element: 'agua', mark: 'on' });
+  assert.equal(caught.called[0].text, 'Captura');
+  assert.deepEqual(atom.electrons, ['fuego', 'agua', 'electrico'], 'back in its orbit, in order');
+  // With none left, what has no element lands double, and an element only gives it one back.
+  atom.electrons = ['electrico'];
+  assert.equal(strike(s, 'gerard', 'atomo', 'electrico').called.at(-1).text, 'Núcleo desnudo');
+  assert.deepEqual(atom.electrons, []);
+  assert.equal(blow(s, 'atomo'), Math.round(plain * MODELO.desnudo));
+});
+
+test('El Átomo throws its electrons round, fire and water at someone dry and the spark at someone wet, and every third turn all at once', () => {
+  const s = fight('modelo-atomo'), atom = s.foes[0];
+  const fire = turn(s, 'atomo', 'gerard');
+  assert.equal(fire.ability.id, 'electron'); assert.equal(fire.element, 'fuego'); assert.deepEqual(fire.burnt, ['gerard']);
+  assert.ok(s.allies[0].timed?.quemado);
+  const water = turn(s, 'atomo', 'gerard');
+  assert.equal(water.element, 'agua'); assert.deepEqual(water.wetted, [water.target]);
+  // The third turn: Reacción. Water on everyone, the spark through them, then fire on whoever it dried.
+  const reaction = turn(s, 'atomo', 'gerard');
+  assert.equal(reaction.ability.id, 'reaccion');
+  assert.deepEqual(reaction.reacted, ['agua', 'electrico', 'fuego']);
+  assert.ok(reaction.conducted, 'soaked and shocked'); assert.equal(reaction.wetted, undefined, 'the water says nothing of its own with the spark behind it');
+  assert.equal(reaction.burnt.length, 2, 'the spark dried them: the fire takes');
+  // The next Electrón goes on from the last it threw: the spark, at whoever is wet.
+  s.allies[1].timed = { ...s.allies[1].timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } };
+  const spark = turn(s, 'atomo', 'gerard');
+  assert.equal(spark.element, 'electrico'); assert.equal(spark.target, 'aitor'); assert.ok(spark.conducted);
+  // Without its spark, its Reacción only wets and steams: Vapor, and nobody shocked.
+  atom.electrons = ['fuego', 'agua']; atom.turns = MODELO.reaccionEvery - 1;
+  s.allies.forEach(a => { a.timed = {}; });
+  const steam = turn(s, 'atomo', 'gerard');
+  assert.deepEqual(steam.reacted, ['agua', 'fuego']);
+  assert.ok(!steam.conducted); assert.equal(steam.steamed.length, 2); assert.ok(s.allies.every(a => a.timed?.cegado && !a.timed?.mojado));
+  // Bare, it only rams.
+  atom.electrons = [];
+  assert.equal(turn(s, 'atomo', 'gerard').ability.id, 'choque');
 });
 
 test('El que no converge floods on «Agua» and shocks everyone wet on «Eléctrico», harder for each mark of Error', () => {

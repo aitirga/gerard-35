@@ -1,6 +1,6 @@
 {
   "title": "El modelo de Emilie: los monstruos",
-  "description": "docs/quests/emilie.md § Fights. Each fight of the model from the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost), at Poble Sec until the section exists: the celdas secas, the oscilaciones, La pluma and El que no converge in its three moments. Run it with --gpu.",
+  "description": "docs/quests/emilie.md § Fights. Each fight of the model from the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost), at Poble Sec until the section exists: the celdas secas, the oscilaciones, El Átomo and El que no converge in its three moments. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22modelo-celdas%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -71,7 +71,7 @@
       "eval": "window.gerard.game.frame()"
     },
     {
-      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22modelo-pluma%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22modelo-atomo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
     },
     {
       "until": "window.gerard && window.gerard.battleUI.fight",
@@ -85,17 +85,17 @@
       "timeout": 180000
     },
     {
-      "shot": "pluma",
+      "shot": "atomo",
       "delay": 1500,
-      "caption": "La pluma and the two cells that come with it"
+      "caption": "El Átomo: its nucleus over dark water and its three electrons, fire, water and electricity"
     },
     {
-      "eval": "closeUp('pluma')"
+      "eval": "closeUp('atomo', 3.2)"
     },
     {
-      "shot": "pluma-cerca",
+      "shot": "atomo-cerca",
       "delay": 900,
-      "caption": "La pluma up close: amber, never pink"
+      "caption": "El Átomo up close: no pink, no violet; amber only in its cracks"
     },
     {
       "eval": "window.gerard.game.frame()"
@@ -115,9 +115,9 @@
       "timeout": 180000
     },
     {
-      "shot": "pluma-mojados",
+      "shot": "atomo-electron",
       "delay": 600,
-      "caption": "After its turn: someone Mojado, and what the cells' sparks did"
+      "caption": "After its turn: the electron it threw (fire burns, water wets, the spark runs through the wet)"
     },
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22no-converge%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"

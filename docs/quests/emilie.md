@@ -1,6 +1,6 @@
 # Emilie · (working title)
 
-Status: playable end to end (round 11: the mission wired in) · Last updated: 2026-11-19
+Status: playable end to end (round 11: the mission wired in; El Átomo in place of La pluma) · Last updated: 2026-11-20
 
 **Decided** means the user said so. **Proposal** means it came from the design side and is waiting
 for a yes.
@@ -274,7 +274,7 @@ fight tester (*El modelo de Emilie*), the boss with a moment for each phase (*It
 | --- | --- | --- | --- |
 | `modelo-celdas` | three Celdas secas | the figure: grey edges around nothing while dry; wet, green and full of water | *Chispa*: a spark on one; on someone wet it runs through everyone wet |
 | `modelo-oscilacion` | two Oscilaciones, on different values | the figure's colour and lean (blue «Agua», yellow «Eléctrico»), the other one every round | *Ola* on «Agua» (wets one), *Chispa* on «Eléctrico» |
-| `modelo-pluma` | La pluma and two Celdas secas | – | *Empapa*: wets whoever is still dry |
+| `modelo-atomo` | El Átomo, alone (in place of La pluma since 2026-11-20, § El Átomo) | its three electrons on their orbits, each dark in the pool once torn off; the *Reacción* icon with its turns | *Electrón*, *Reacción*, *Choque* (bare) |
 | `no-converge` | El que no converge | its value in its chest, its marks of Error over its head; converged, a solid body and the *Converge* icon with its turns | *Inunda* on «Agua», *Descarga* on «Eléctrico», *Converge* (none) |
 
 No rule is written on a plate (Aitor: «no me gusta que ponga el status explícito, que gráficamente se vea es
@@ -295,12 +295,13 @@ What changed from the proposal below, and why:
 - **The dungeon's part**: `calibrate(state, n)` takes a mark off before the fight for each piezometer
   placed beyond the one each zone needs to go down, never the last mark.
 - Figures are built by hand from primitives, as the campsite's and Las cuerdas' are (lines of light,
-  not characters): first pass, to judge in the gallery. La pluma is amber, low, never pink.
+  not characters): first pass, to judge in the gallery. El Átomo is the exception: its nucleus is a Meshy figure,
+  its orbits and electrons code.
 - **Waiting the water out is learned in the model's fights and works once on the boss** (Aitor,
   2026-11-17: «que la mecánica de esperar a quitarse el efecto la aprendamos durante los combates
   pero que el jefe final nos lo deje hacer solo una vez, puede hacer un mini guiño como que "se da
   cuenta", pero sutil, no explícito»). Mojado lasts 20 s on the fight's clock. Against the celdas,
-  the oscilaciones and La pluma, letting it run off before a spark always works: that is where it
+  the oscilaciones and El Átomo, letting it run off before a spark always works: that is where it
   is found. Against El que no converge it works the first time (its Descarga lands on a dry party,
   half). It sees it, and says so only with a look: its figures stop falling for a moment and its
   second pose is gone, and the line reads «Sus cifras se detienen un instante.» No pop, nothing on
@@ -318,6 +319,39 @@ What changed from the proposal below, and why:
   twice: a cell switched on can be made to lose its spark, and a Descarga on a wet party may cost
   one of them the round. A foe's bolt now lands whole on the one it strikes and half on the others
   wet (it was whole on all). The fights still hold their targets (`just fight-sim check`).
+
+## El Átomo (2026-11-20, in place of La pluma)
+
+Aitor, in the bestiary, on La pluma: «Esta quitala, no me gusta, rehazla y cambia este enemigo». A first proposal (La
+cuña salina, the sea pushing in from below) was turned down: «Piensa otra idea, puede ser como un átomo, como una
+representación de reacciones químicas». He liked the atom's design image, and approved its rules, three electrons,
+fighting alone, and a Meshy nucleus with the orbits in code.
+
+What it is: the model's chemistry. Groundwater models with reactive transport compute what is dissolved in the water and
+how it reacts; this is one of those species gone wrong, a nucleus as big as a person floating over dark water, with an
+electron of fire, one of water and one of electricity going round it. Code: `Encounter` `modelo-atomo`, `FoeKind`
+`atomo`, `atomTurn` and `ionize` in `src/battle.ts` (numbers in `MODELO`), the figure in `src/modelo-foes.ts` on
+`public/models/creatures/atomo.glb` (`just character-3d atomo`, tools/figures.toml `[atomo]`; `toy-v1.png` is the design
+with its rings). The section's two patrols in Bajo la ciudad are `atomo-1` and `atomo-2`.
+`just screenshots emilie-atomo --gpu`.
+
+| Its move | What it does |
+| --- | --- |
+| *Electrón* | The next electron it still has, round fire, water, electricity, at whoever it does most to: fire burns someone dry (on someone wet it goes up in Vapor), water wets someone dry, the spark goes for someone wet and runs through everyone wet |
+| *Reacción* (every third turn; its icon on the plate counts the turns) | Every electron it has, at everyone at once: water first, the spark through it, then fire on whoever the spark dried. With all three: soaked, shocked and burnt. Without the spark: soaked and blinded by Vapor. Without the water: sparks and a burn |
+| *Choque* | Bare, it only rams one |
+
+| What the party does to it | |
+| --- | --- |
+| **¡Ionizado!** | A blow of an electron's element tears it off: that blow lands ×1.5, the electron goes dark and drops into the pool, its orbit dims |
+| **Captura** | A blow of an element it has already lost lands at half and gives it back: the electron rises to its orbit |
+| **Núcleo desnudo** | With no electrons, what has no element (a plain Atacar, a dual) lands double |
+
+The question is *element and order*: tear off the water or the spark before the Reacción, and never give back what was
+torn off. Without the answer, every Reacción soaks and shocks the whole party (attack only: 0 %). With it, the
+electrons go dark one by one, the Reacción comes to almost nothing, and the bare nucleus falls to big numbers. The water
+and the spark are lent by the model, so the answer is there on the first day; fire, from the jar, is only the last
+electron, the one that lets it be stripped bare. Measured in [fight-sim.md](../fight-sim.md) § Emilie's model.
 
 ## The section, as built (round 12: wells and power)
 
@@ -385,7 +419,7 @@ New here: **foes can wet and shock the party**, by the same rules.
 - Within reach of the first day's party: Atacar with agua or eléctrico is everyone's.
 - Phases, each a `FightMoment`: *Itera* (the above), *Diverge* (from half its PV: more marks, and
   it wets itself too, so Conducción on it is the big number).
-- Code: `Encounter` `no-converge`, `FoeKind` `celda-seca`, `oscilacion`, `pluma`, `no-converge`.
+- Code: `Encounter` `no-converge`, `FoeKind` `celda-seca`, `oscilacion`, `pluma` (now `atomo`), `no-converge`.
   `TARGETS`: one alternating the elements, one attacking flat.
 
 ## The mission, as built (round 11)

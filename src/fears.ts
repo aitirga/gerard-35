@@ -177,7 +177,7 @@ export function createFears(app: pc.Application) {
   const cuerdas = createCuerdasFoes(app);
   cuerdas.templates.forEach((model, kind) => templates.set(kind, model));
   // And the foes of Emilie's model (src/modelo-foes.ts).
-  const modelo = createModeloFoes(app);
+  const modelo = createModeloFoes(app, (id, parent) => buildFoeBody(id, parent));
   modelo.templates.forEach((model, kind) => templates.set(kind, model));
   // And Fran's salon's (src/luca-foes.ts): what is eating Luca's colour.
   const luca = createLucaFoes((id, parent) => buildFoeBody(id, parent));

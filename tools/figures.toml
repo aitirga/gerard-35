@@ -386,3 +386,16 @@ height = 0.9
 left = "In profile the spread wings are seen edge on, a thin line out to the side; the furred body, the legs folded under it and an antenna."
 right = "In profile the spread wings are seen edge on, a thin line out to the side; the furred body, the legs folded under it and an antenna."
 back = "From behind: the furred back and abdomen, and the four wings spread wide to the sides, their eye-spots seen through the dust."
+
+# El Átomo, in place of La pluma in Emilie's model (Aitor, 2026-11-20: «como un átomo, una representación de
+# reacciones químicas»; approved with its rules, a Meshy nucleus and the orbits in code). toy-v1.png is the design
+# with its rings and electrons; Meshy makes only the nucleus, and src/modelo-foes.ts adds the three orbits and
+# electrons (fuego, agua, eléctrico), which go dark one by one in the fight.
+[atomo]
+name = "El Átomo"
+kind = "creature"
+art = ["output/characters/3d/atomo/toy-v1.png"]
+about = """A monster of a groundwater model gone wrong, in a dark world of soil, water and numbers: the nucleus of an atom of a contaminant, as big as a person, floating. EXACTLY the nucleus of the first image, alone: a tight round cluster of a dozen big matte spheres, some dark slate grey and some deep teal, packed like grapes, heavy and slightly wet, with thin cracks of faint amber light glowing between them. From its underside hangs one thick drip of dark water, still attached. NO orbit rings, NO electrons, no small glowing balls around it, nothing floating apart from it: only the cluster and its drip. Unsettling and scientific, never cute: no face, no eyes, no smile."""
+height = 1.1
+[atomo.view_notes]
+back = "From behind the same round cluster of slate and teal spheres with amber cracks; the drip hangs from its underside."

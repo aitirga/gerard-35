@@ -238,7 +238,7 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   // Emilie's model: a terminal's phosphor green in the dark, with water's blue and a spark's yellow on top.
   'modelo-celdas': [hex('#3fe07a', .45, .8), hex('#12301c', .3, .8), hex('#6cc8f2', .5, .7), hex('#ffe45c', .45, .7)],
   'modelo-oscilacion': [hex('#3fe07a', .5, .8), hex('#6cc8f2', .55, .7), hex('#ffe45c', .55, .7), hex('#12301c', .3, .8)],
-  'modelo-pluma': [hex('#3fe07a', .45, .8), hex('#6cc8f2', .6, .75), hex('#12301c', .3, .8), hex('#c9a45a', .45, .6)],
+  'modelo-atomo': [hex('#3fe07a', .45, .8), hex('#6cc8f2', .6, .75), hex('#12301c', .3, .8), hex('#c9a45a', .45, .6)],
   'no-converge': [hex('#3fe07a', .6, .85), hex('#6cc8f2', .5, .75), hex('#ffe45c', .5, .75), hex('#0c2014', .25, .8)],
   // Fran's salon: the basilica's pale stone light and each zone's own window colour.
   'luca-recepcion': [white(5600, .6), hex('#4f9fe8', .55, .75), hex('#4fbf7a', .5, .7), hex('#e9e4d8', .5, .3)],

@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
-import type { BattleEffect, Combatant, ModeloKind } from './battle';
+import { ATOM_ORDER, reactionIn, type BattleEffect, type Combatant, type Element, type ModeloKind } from './battle';
+import { FOE_BODIES } from './foe-bodies';
 
 /**
  * The foes of Emilie's model (docs/quests/emilie.md § Fights), built from primitives like the
@@ -7,12 +8,14 @@ import type { BattleEffect, Combatant, ModeloKind } from './battle';
  * They are what goes wrong in a groundwater model, drawn as a terminal draws: phosphor green lines on
  * black, water's blue and a spark's yellow for the two values. A Celda seca is a hollow cell of the
  * mesh, grey and off until water switches it on. An Oscilación is one figure in two places, never in
- * either. La pluma is a stain spreading low over the ground. El que no converge is a tall body of
+ * either. El Átomo is a heavy nucleus (`just character-3d atomo`) floating over dark water, with its
+ * three electrons going round it on their orbits; each one torn off goes dark and drops into the
+ * water under it, and goes back up if it is caught again. El que no converge is a tall body of
  * columns of figures that never stop falling, with a second pose flickering over the first; converged,
  * the figures stop and it is one solid thing. Each shows its rule in the fight (`show`). Nothing here
  * is pink or violet: the Queen did this from far away.
  */
-export function createModeloFoes(app: pc.Application) {
+export function createModeloFoes(app: pc.Application, body: (id: string, parent: pc.Entity) => pc.Entity) {
   const materials: pc.StandardMaterial[] = [];
   const mat = (hex: string, gloss = .3, glow = 0, unlit = false, opacity = 1) => {
     const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.gloss = gloss; m.useMetalness = false;
@@ -73,21 +76,36 @@ export function createModeloFoes(app: pc.Application) {
     part(pose, 'Eje', 'box', green, [lean * .12, 1.2, -.02], [.02, 2, .02], [0, 0, 0], false);
   }
 
-  // La pluma: a contaminant plume, low and wide, thickest where it started and thinning as it spreads.
-  // Dull amber: the colour of something in the water that should not be there.
-  const pluma = root('La pluma');
-  part(pluma, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.8, .02, 1.4]);
-  const stain = mat('#8f6f34', .4, 0, false, .7), stainDark = mat('#54421f', .3, 0, false, .78), stainLine = mat('#e0c47a', .5, 1.5, true);
-  const plume = pivot(pluma, 'Mancha');
-  const BLOBS: [number, number, number, number][] = [[0, .2, 0, 1.25], [.6, .15, .1, .95], [-.55, .14, -.14, .9], [1.1, .1, -.05, .7], [-1.05, .1, .16, .62], [.25, .12, .6, .62], [-.2, .11, -.6, .58]];
-  BLOBS.forEach(([x, y, z, s], k) => part(plume, 'Gota de la pluma', 'sphere', k % 3 === 2 ? stainDark : stain, [x, y, z], [s * 1.2, s * .3, s], [0, 0, 0], false));
-  // What rises off it: thin threads, the stain climbing through the water above.
-  for (let k = 0; k < 7; k++) part(plume, 'Hilo de la pluma', 'box', k % 2 ? stainLine : stain, [Math.cos(k * 2.4) * .55, .55 + (k % 3) * .22, Math.sin(k * 2.4) * .4], [.03, .5 + (k % 3) * .18, .03], [0, 0, (k % 2 ? 1 : -1) * 7], false);
-  // Its contour lines, as the model draws a concentration: rings on the ground, wider and fainter.
-  for (const [r, m] of [[1.5, stainLine], [2.1, dim]] as const) for (let k = 0; k < 16; k++) {
-    const a = k / 16 * Math.PI * 2;
-    part(pluma, 'Isolínea', 'box', m, [Math.cos(a) * r * .6, .03, Math.sin(a) * r * .46], [.2, .015, .03], [0, -a * 180 / Math.PI + 90, 0], false);
-  }
+  // El Átomo: the nucleus Meshy made (tools/figures.toml [atomo]), floating over a pool of dark water, and
+  // round it three orbits of pale light, each with its electron in its element's colour. Off, an
+  // electron is a dull bead lying in the pool; its orbit stays, dim, with nothing on it.
+  const atomo = root('El Átomo');
+  part(atomo, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.6, .02, 1.6]);
+  part(atomo, 'Agua oscura', 'cylinder', mat('#0b1a1f', .85, 0, false, .85), [0, .02, 0], [1.3, .015, 1.3], [0, 0, 0], false);
+  const nucleus = pivot(atomo, 'Núcleo', [0, NUCLEUS_HOVER, 0]);
+  const figure = body(FOE_BODIES.atomo!, nucleus);
+  figure.setLocalScale(NUCLEUS_SCALE, NUCLEUS_SCALE, NUCLEUS_SCALE);
+  (figure.findByName('Charco pringoso') as pc.Entity | null)?.destroy();
+  const ring = mat('#efe2b0', .5, 1.6, true), ringOff = mat('#4d5452', .3, .25, true), bead = mat('#3a4442', .4, .2);
+  const orbits = pivot(atomo, 'Órbitas', [0, ORBIT_CENTRE, 0]);
+  ATOM_ORDER.forEach((element, k) => {
+    const tilt = pivot(orbits, `Órbita ${element}`);
+    tilt.setLocalEulerAngles(...ORBIT_TILTS[k]);
+    for (const [name, m] of [['Anillo encendido', ring], ['Anillo apagado', ringOff]] as const) {
+      const band = pivot(tilt, name);
+      for (let i = 0; i < RING_SEGMENTS; i++) {
+        const a = i / RING_SEGMENTS * Math.PI * 2;
+        part(band, 'Tramo de órbita', 'box', m, [Math.cos(a) * ORBIT_RADIUS, 0, Math.sin(a) * ORBIT_RADIUS], [ORBIT_RADIUS * 2 * Math.PI / RING_SEGMENTS * 1.04, .022, .022], [0, -a * 180 / Math.PI + 90, 0], false);
+      }
+      band.enabled = name === 'Anillo encendido';
+    }
+    const electron = pivot(atomo, `Electrón ${element}`);
+    // Not too bright, so fire stays orange and does not wash out to the spark's yellow.
+    part(electron, 'Electrón encendido', 'sphere', mat(ELECTRON_COLOURS[element], .7, 1.25, true), [0, 0, 0], [.2, .2, .2], [0, 0, 0], false);
+    part(electron, 'Electrón apagado', 'sphere', bead, [0, 0, 0], [.16, .16, .16]).enabled = false;
+    const at = orbitPoint(k, ORBIT_PHASES[k]);
+    electron.setLocalPosition(at.x, at.y, at.z);
+  });
 
   // El que no converge: a body made of columns of figures falling, its shape only where they fall.
   // A second pose, a little to one side, flickers over the first. In its chest, the value it is on.
@@ -121,12 +139,12 @@ export function createModeloFoes(app: pc.Application) {
   const marks = pivot(seen, 'Error', [0, 2.95, 0]);
   for (let k = 0; k < MARKS; k++) part(marks, 'Marca de error', 'box', green, [(k - (MARKS - 1) / 2) * .16, 0, 0], [.09, .26, .03], [0, 0, 0], false);
 
-  const templates = new Map<ModeloKind, pc.Entity>([['celda-seca', celda], ['oscilacion', oscilacion], ['pluma', pluma], ['no-converge', boss]]);
+  const templates = new Map<ModeloKind, pc.Entity>([['celda-seca', celda], ['oscilacion', oscilacion], ['atomo', atomo], ['no-converge', boss]]);
   /** What a model's parts are, found once. */
   interface Shown {
     cell?: { dry: pc.Entity; lit: pc.Entity; node: pc.Entity };
     poses?: Record<'agua' | 'electrico', pc.Entity>;
-    blobs?: { node: pc.Entity; at: pc.Vec3 }[];
+    atom?: { electrons: { node: pc.Entity; lit: pc.Entity; off: pc.Entity; ring: pc.Entity; ringOff: pc.Entity; down: number }[]; nucleus: pc.Entity; spin: number; flare: number };
     boss?: { digits: { node: pc.Entity; column: number; offset: number }[]; ghost: pc.Entity; rain: pc.Entity; solid: pc.Entity; core: Record<'agua' | 'electrico', pc.Entity>; marks: pc.Entity[]; fall: number; still: number; held: number };
   }
   const shown = new WeakMap<pc.Entity, Shown>();
@@ -160,9 +178,39 @@ export function createModeloFoes(app: pc.Application) {
         s.poses[other].enabled = alive && animate && Math.sin(time * 23 + model.getPosition().z * 5) * Math.sin(time * 7.3) > .55;
         const sway = animate ? Math.sin(time * 9) * .012 : 0;
         s.poses[sign].setLocalPosition(sway, 0, 0);
-      } else if (unit.kind === 'pluma') {
-        s.blobs ??= (model.find(n => n.name === 'Gota de la pluma') as pc.Entity[]).map(n => ({ node: n, at: n.getLocalPosition().clone() }));
-        if (animate) s.blobs.forEach(({ node: n, at }, k) => n.setLocalPosition(at.x + Math.sin(time * .7 + k * 1.9) * .08, at.y + Math.sin(time * 1.1 + k * 2.3) * .05, at.z + Math.cos(time * .6 + k * 1.3) * .06));
+      } else if (unit.kind === 'atomo') {
+        s.atom ??= {
+          electrons: ATOM_ORDER.map(element => {
+            const e = node(model, `Electrón ${element}`), tilt = node(model, `Órbita ${element}`);
+            return { node: e, lit: node(e, 'Electrón encendido'), off: node(e, 'Electrón apagado'), ring: node(tilt, 'Anillo encendido'), ringOff: node(tilt, 'Anillo apagado'), down: 0 };
+          }),
+          nucleus: node(model, 'Núcleo'), spin: 0, flare: 0,
+        };
+        const a = s.atom;
+        // A blow that tears an electron off or gives one back shows it as it lands, not before.
+        const has = new Set(unit.electrons ?? []);
+        if (pending?.electron) { if (pending.electron.mark === 'off') has.add(pending.electron.element); else has.delete(pending.electron.element); }
+        // Its Reacción coming: the electrons race round; going off, they flare.
+        const charging = alive && reactionIn(unit) === 1;
+        a.flare = animate ? a.flare + ((pending?.reacted ? 1 : 0) - a.flare) * (1 - Math.exp(-dt * (pending?.reacted ? 12 : 3))) : 0;
+        a.spin += dt * (charging ? 3.4 : 1.1) * (alive ? 1 : 0);
+        a.electrons.forEach((e, k) => {
+          const on = alive && has.has(ATOM_ORDER[k]);
+          e.down = animate ? Math.min(1, Math.max(0, e.down + (on ? -dt : dt) * 1.8)) : on ? 0 : 1;
+          const orbit = orbitPoint(k, ORBIT_PHASES[k] + (animate ? a.spin * (1 + k * .17) : 0));
+          // Off, it drops into the pool under it and lies there, dark; caught, it rises back to its orbit.
+          const rest = { x: Math.cos(k * 2.1 + .4) * .5, y: .08, z: Math.sin(k * 2.1 + .4) * .42 };
+          const t = e.down * e.down * (3 - 2 * e.down);
+          e.node.setLocalPosition(orbit.x + (rest.x - orbit.x) * t, orbit.y + (rest.y - orbit.y) * t, orbit.z + (rest.z - orbit.z) * t);
+          e.lit.enabled = e.down < .5; e.off.enabled = e.down >= .5;
+          const size = .2 * (1 + (charging ? .18 : 0) * (animate ? Math.sin(time * 9 + k * 2) * .5 + .5 : 1) + a.flare * .9);
+          e.lit.setLocalScale(size, size, size);
+          e.ring.enabled = on; e.ringOff.enabled = !on;
+        });
+        // The nucleus floats, a little heavier with every electron it has lost.
+        const lost = 3 - has.size;
+        a.nucleus.setLocalPosition(0, NUCLEUS_HOVER - lost * .02 + (animate && alive ? Math.sin(time * 1.3 + model.getPosition().x) * .04 : 0), 0);
+        a.nucleus.setLocalEulerAngles(0, animate ? time * (8 + lost * 6) % 360 : 0, 0);
       } else if (unit.kind === 'no-converge') {
         if (!s.boss) {
           const columns = model.find(n => n.name === 'Columna') as pc.Entity[];
@@ -203,12 +251,23 @@ export function createModeloFoes(app: pc.Application) {
   };
 }
 /** How big each foe of the model stands in the fight. */
-export const MODELO_SIZES: Record<ModeloKind, number> = { 'celda-seca': 1, oscilacion: 1.05, pluma: 1, 'no-converge': 1.3 };
+export const MODELO_SIZES: Record<ModeloKind, number> = { 'celda-seca': 1, oscilacion: 1.05, atomo: 1, 'no-converge': 1.3 };
 /** How far each one turns its front from the party towards the fight's camera (0–1): the flat ones, nearly all the way. */
-const TO_CAMERA: Record<ModeloKind, number> = { 'celda-seca': 0, oscilacion: .9, pluma: 0, 'no-converge': .9 };
+const TO_CAMERA: Record<ModeloKind, number> = { 'celda-seca': 0, oscilacion: .9, atomo: 0, 'no-converge': .9 };
 /** The model's own colours: a terminal's phosphor green, water's blue and a spark's yellow (ELEMENTS in src/battle.ts). */
 export const PHOSPHOR = '#3fe07a';
 const WATER = '#6cc8f2', SPARK = '#ffe45c';
+/** El Átomo: how high its nucleus floats, where its orbits are centred, their radius and tilts, where each electron starts on its orbit, and the segments of an orbit. */
+const NUCLEUS_HOVER = .12, NUCLEUS_SCALE = 1.35, ORBIT_CENTRE = .98, ORBIT_RADIUS = .8, RING_SEGMENTS = 40;
+const ORBIT_TILTS: readonly [number, number, number][] = [[64, 0, 0], [64, 60, 0], [64, -60, 0]];
+const ORBIT_PHASES = [.6, 2.6, 4.6];
+const ELECTRON_COLOURS: Record<Element, string> = { fuego: '#ff8f3f', agua: WATER, electrico: SPARK };
+/** Where the electron of orbit `k` is at angle `angle`, in the atom's own space. */
+function orbitPoint(k: number, angle: number) {
+  const q = new pc.Quat().setFromEulerAngles(...ORBIT_TILTS[k]);
+  const p = q.transformVector(new pc.Vec3(Math.cos(angle) * ORBIT_RADIUS, 0, Math.sin(angle) * ORBIT_RADIUS));
+  return { x: p.x, y: p.y + ORBIT_CENTRE, z: p.z };
+}
 /** A cell's edge, in model metres. */
 const CELL = .95;
 /** The most marks of Error the boss can show (MODELO.errorMost). */

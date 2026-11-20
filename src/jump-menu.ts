@@ -72,7 +72,7 @@ const CUERDAS_FIGHTS = ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-direct
 /** The castle (docs/castle.md): each room's pupils by year, La Delegada, Aurelià, the management team and the Queen. */
 const CASTLE_FIGHTS = CASTLE_ENCOUNTERS;
 /** Emilie's model (docs/quests/emilie.md): a fight in each zone of the section, and El que no converge. */
-const MODELO_FIGHTS = ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'] as const;
+const MODELO_FIGHTS = ['modelo-celdas', 'modelo-oscilacion', 'modelo-atomo', 'no-converge'] as const;
 /** Fran's salon, Luca's dungeon (docs/quests/luca.md): a fight in each zone, under the walking light. */
 const LUCA_FIGHTS = ['luca-recepcion', 'luca-sillones', 'luca-carta', 'fran'] as const;
 export type FightEncounter = 'dogs' | 'possessed' | 'palace-minion' | 'palace-guards' | 'night-guard' | (typeof TOWER_FIGHTS)[number] | (typeof UNI_FIGHTS)[number] | (typeof CAMPING_FIGHTS)[number] | (typeof CUERDAS_FIGHTS)[number] | (typeof CASTLE_FIGHTS)[number] | (typeof MODELO_FIGHTS)[number] | (typeof LUCA_FIGHTS)[number];
@@ -349,7 +349,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   const FIGHT_NAMES: Record<Encounter, string> = { dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle', 'night-guard': 'un guardián en la Meridiana', cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'cebollitas', 'crias-2': 'crías del segundo anillo', 'crias-3': 'crías del tercer anillo', sobremesa: 'La Sobremesa',
     'camping-magos': 'magos de camping', 'camping-dados': 'dados', 'camping-agentes': 'agentes', 'camping-tienda': 'una tienda equivocada', 'camping-negra': 'la parcela negra', campeon: 'El Campeón',
     'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz', ...CASTLE_FIGHT_NAMES,
-    'modelo-celdas': 'celdas secas', 'modelo-oscilacion': 'oscilaciones', 'modelo-pluma': 'La pluma', 'no-converge': 'El que no converge',
+    'modelo-celdas': 'celdas secas', 'modelo-oscilacion': 'oscilaciones', 'modelo-atomo': 'El Átomo', 'no-converge': 'El que no converge',
     'luca-recepcion': 'las polillas de la recepción', 'luca-sillones': 'los capellanes', 'luca-carta': 'las camisas de Luca', fran: 'Fran' };
   /** During a fight: the help it gets, the moments it can jump to, and the way out. */
   function livePage() {
@@ -373,7 +373,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   const TOWER_LABELS: Record<(typeof TOWER_FIGHTS)[number], string> = { cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'Crías · anillo 1', 'crias-2': 'Crías · anillo 2', 'crias-3': 'Crías · anillo 3' };
   const CAMPING_LABELS: Record<(typeof CAMPING_FIGHTS)[number], string> = { 'camping-magos': 'Magos', 'camping-dados': 'Dados', 'camping-agentes': 'Agentes', 'camping-tienda': 'Tienda equivocada', 'camping-negra': 'Parcela negra', campeon: 'El Campeón' };
   const CUERDAS_LABELS: Record<(typeof CUERDAS_FIGHTS)[number], string> = { 'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz' };
-  const MODELO_LABELS: Record<(typeof MODELO_FIGHTS)[number], string> = { 'modelo-celdas': 'Celdas secas', 'modelo-oscilacion': 'Oscilaciones', 'modelo-pluma': 'La pluma', 'no-converge': 'El que no converge' };
+  const MODELO_LABELS: Record<(typeof MODELO_FIGHTS)[number], string> = { 'modelo-celdas': 'Celdas secas', 'modelo-oscilacion': 'Oscilaciones', 'modelo-atomo': 'El Átomo', 'no-converge': 'El que no converge' };
   const LUCA_LABELS: Record<(typeof LUCA_FIGHTS)[number], string> = { 'luca-recepcion': 'Recepción', 'luca-sillones': 'Los sillones', 'luca-carta': 'La carta de colores', fran: 'Fran' };
   function fightPage() {
     if (dev!.current()) return livePage();

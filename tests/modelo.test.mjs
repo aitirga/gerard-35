@@ -28,7 +28,7 @@ test('the lift has no power until one of its zone\'s patrols is beaten; then it 
   assert.equal(descend(s), undefined, 'no power, no lift');
   assert.equal(s.zone, 'suelo');
   // A patrol of another zone puts nothing in this one's lift.
-  beat(s, 'pluma-2');
+  beat(s, 'atomo-2');
   assert.ok(!charged(s));
   beat(s, 'celdas-2');
   assert.ok(charged(s)); assert.equal(energy(s), 1);
@@ -36,7 +36,7 @@ test('the lift has no power until one of its zone\'s patrols is beaten; then it 
   assert.deepEqual(descend(s), { zone: 'gravas', x: WELLS.suelo });
   assert.ok(!charged(s), 'each lift needs its own');
   beat(s, 'oscilacion-2'); assert.deepEqual(descend(s), { zone: 'ciudad', x: WELLS.gravas });
-  beat(s, 'pluma-1'); assert.deepEqual(descend(s), { zone: 'fondo', x: WELLS.ciudad });
+  beat(s, 'atomo-1'); assert.deepEqual(descend(s), { zone: 'fondo', x: WELLS.ciudad });
   assert.equal(descend(s), undefined, 'the bottom has no lift');
   assert.ok(!atWell(s, WELLS.ciudad));
 });

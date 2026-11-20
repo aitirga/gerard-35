@@ -166,6 +166,9 @@ player, seed 35 on; before them, in brackets):
 | El ábside (cut 2026-11-20: Fran's zone, no fight) | 96 % · 51 % · 9.6 | 58 % · 47 % · 10.5 | 0 % · 36 % · 10.8 (wall) |
 | Fran | 100 % · 68 % · 6.8 | 100 % · 56 % · 10.1 | 71 % · 31 % · 7.3 |
 
+La pluma's row is from before 2026-11-20, when El Átomo took its place (`modelo-atomo`, docs/quests/emilie.md
+§ El Átomo); its own numbers are in [fight-sim.md](fight-sim.md) § Emilie's model.
+
 - **Two more ánimas end the rewinds for whoever reads the fights**: six more days of grace, and the
   first Queen takes Aitor in 36 % of the meetings (22 % before). The 7 rewinds `pensando` had in one
   game (seed 56) were 21 falls running to the first Queen before she took Aitor, days 7 to 21, until
