@@ -416,7 +416,7 @@ screenshots (`just screenshots marta --gpu`, the centre).
 | Light | `cuerdas`: cold, no sun and no sky; the void is the clear colour, one white lamp at the centre and a small one that goes with Gerard |
 | Props | A lamp post at each platform's corners, the tuning pegs, the frames left where a fallen piece will come back |
 | Air | Specks of light rising slowly, a few fireflies, no wind |
-| Sound | Her voice, far off, one note at a time (placeholder synth until Marta's recordings); nothing else |
+| Sound | Her recorded voice, far off, nearer with each quality beaten; nothing else, not even footsteps |
 | Only here | The tuning pegs beside the third maze's rows, each with its bead and its row's string |
 | Text | None: no map reaches it |
 | Reserved | No violet. One pink thing: the bubble they came in by, behind where they arrive, because the way in is the Queen's; nothing else in the place is hers |

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_AUDIO, levelGain, validAudioSettings } from '../src/audio.ts';
 import { TRACKS, cycleCount, evenStart, fadeCurve, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, nextVersion, randomStart, untilBoundary, vampLaps, vampPosition } from '../src/music.ts';
+import { SOUNDS, STEPS } from '../src/sfx.ts';
 import { readFileSync, statSync } from 'node:fs';
 import { DREAM_HAUNT, HAUNT, castleHaunt, hauntMix, swing } from '../src/haunt.ts';
 import { castleThreat } from '../src/animas.ts';
@@ -190,4 +191,9 @@ test('a vamp repeats its section for its laps, then the song goes on', () => {
     if (range) assert.ok(range[0] <= from && to <= range[1], `${id} vamps outside its loop`);
     if (track.bpm) { const bars = (to - from) * track.bpm / 60 / (track.beatsPerBar ?? 4); assert.ok(Math.abs(bars - Math.round(bars)) < .01, `${id}'s vamp is ${bars} bars`); }
   }
+});
+
+test('every footstep a place asks for is a sound', () => {
+  for (const [place, id] of Object.entries(STEPS)) assert.ok(id === null || id in SOUNDS, `${place}: ${id}`);
+  assert.ok('step' in SOUNDS, 'the plain step is the default');
 });

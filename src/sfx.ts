@@ -1,5 +1,6 @@
 import { ARTILUGIO_NOTES } from './castle.ts';
 import type { GameAudio } from './audio';
+import type { EnvironmentId } from './environments';
 
 /**
  * Sound effects (docs/audio.md). A sound is either a file under public/ (`src`) or a small synth
@@ -83,6 +84,16 @@ function pane(context: AudioContext, out: AudioNode, at: number, hz: number, bel
   tone(context, out, at + .045, { from: hz * 1.5, length: .4, gain: .028 });
   noise(context, out, at, { cutoff: 7000, to: 11000, type: 'highpass', q: .7, attack: .01, length: .18, gain: .03 });
   return .6;
+}
+/**
+ * A footstep (src/game.ts, as a foot lands): the heel's knock and the sole's scuff, quiet, so a walk
+ * is felt more than heard. `knock` is the heel (its pitch falls from `from` to `to`), `scuff` the
+ * sole on the ground (a band of noise at that many Hz).
+ */
+function step(context: AudioContext, out: AudioNode, at: number, pitch: number, { knock, scuff, q = 1.2, length, gain }: { knock?: { type?: OscillatorType; from: number; to: number; gain: number }; scuff: number; q?: number; length: number; gain: number }) {
+  if (knock) tone(context, out, at, { type: knock.type, from: knock.from * pitch, to: knock.to * pitch, length: length * .9, gain: knock.gain });
+  noise(context, out, at, { cutoff: scuff * pitch, to: scuff * .5 * pitch, type: 'bandpass', q, attack: .004, length, gain });
+  return length;
 }
 export const SOUNDS = {
   // Menus: a soft tick to move, a rising pair to confirm, a falling note to go back.
@@ -245,11 +256,31 @@ export const SOUNDS = {
     tone(c, out, at + .1, { type: 'square', from: 41 * p, to: 22 * p, attack: .4, hold: .8, length: 1.8, gain: .05 });
     return 1.95;
   }, jitter: 30, gap: 1, voices: 1 },
+  // Footsteps (`STEPS` says which, by place): hard ground outside or in a big hall (panot, asphalt,
+  // stone, marble), a floor indoors (a home's tiles or parquet, the shop's boards), sand or gravel,
+  // and the flooded flat's water.
+  step: { synth: (c, out, at, p) => step(c, out, at, p, { knock: { from: 120, to: 70, gain: .05 }, scuff: 2600, length: .06, gain: .045 }), jitter: 70, gap: .06, voices: 4 },
+  'step-floor': { synth: (c, out, at, p) => step(c, out, at, p, { knock: { type: 'triangle', from: 170, to: 105, gain: .06 }, scuff: 1100, q: 2, length: .08, gain: .03 }), jitter: 60, gap: .06, voices: 4 },
+  'step-sand': { synth: (c, out, at, p) => step(c, out, at, p, { scuff: 1900, q: .8, length: .15, gain: .17 }), jitter: 90, gap: .06, voices: 4 },
+  'step-water': { synth: (c, out, at, p) => {
+    noise(c, out, at, { cutoff: 900 * p, to: 2400 * p, type: 'bandpass', q: 2.5, attack: .015, length: .2, gain: .17 });
+    tone(c, out, at + .04, { from: 480 * p, to: 1000 * p, length: .07, gain: .035 });
+    return .22;
+  }, jitter: 80, gap: .06, voices: 4 },
   // The artilugio's eight notes (docs/story-outline.md § The device): its four buttons alone, then its four pairs.
   'artilugio-0': artilugio(0), 'artilugio-1': artilugio(1), 'artilugio-2': artilugio(2), 'artilugio-3': artilugio(3),
   'artilugio-4': artilugio(4), 'artilugio-5': artilugio(5), 'artilugio-6': artilugio(6), 'artilugio-7': artilugio(7),
 } satisfies Record<string, Sound>;
 export type SoundId = keyof typeof SOUNDS;
+
+/** Each place's footstep (`step` where it says nothing); `null` walks in silence. */
+export const STEPS: Partial<Record<EnvironmentId, SoundId | null>> = {
+  'home-entrance': 'step-floor', 'home-floor-1': 'step-floor', 'home-floor-2': 'step-floor', meridiana: 'step-floor', 'el-nucli': 'step-floor',
+  barceloneta: 'step-sand', camping: 'step-sand',
+  'piso-emilie': 'step-water',
+  // Inside a note there is only her voice (docs/visual-style.md, Las cuerdas' card).
+  cuerdas: null,
+};
 
 /** Four seconds of noise a channel, for sounds that go on: too long to hear it come round. */
 const longNoiseBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();

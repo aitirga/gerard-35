@@ -28,7 +28,7 @@ import { onTrigger, type Partner, type Story, type StoryEvent } from './story';
 import type { ItemId } from './items';
 import { Follower, pathTo } from './follower';
 import { createCat, type Cat } from './cats';
-import type { BedId, BedLevel, SoundId } from './sfx';
+import { STEPS, type BedId, type BedLevel, type SoundId } from './sfx';
 import { createWanderer, wander, type Wanderer } from './cat-wander';
 import { createGuide, updateGuide, type Guide } from './guide';
 import { POCKET, fightCamera, planPocket, stageFight, standing } from './arena';
@@ -1496,6 +1496,14 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const across = Math.hypot(right.x, right.z) || 1;
     return { near: Math.max(0, 1 - d / reach), pan: d > .01 ? (dx * right.x + dz * right.z) / across / Math.max(d, 4) * .7 : 0, d };
   }
+  /**
+   * A foot landing is heard: the place's footstep (`STEPS`, src/sfx.ts; plain `step` where it says
+   * nothing, none where it says `null`), at `volume`, from where it lands.
+   */
+  function footstep(volume: number, pan = 0) {
+    const id = STEPS[environment.id];
+    if (id !== null) callbacks.onSound(id ?? 'step', { volume, pan });
+  }
   /** Whether the bubble's hiss is on, so it is faded out once when the bubble goes. */
   let hissing = false;
   /**
@@ -2825,7 +2833,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     hiss();
     const pose = walk.update(delta, !!walking, animate, .36, running() && !!walking);
     clock += delta;
-    // Each footfall kicks up a small puff under the shoe that lands.
+    // Each footfall is heard, louder in a run…
+    if (walking && pose.landed >= 0) footstep(running() ? .8 : .5);
+    // …and kicks up a small puff under the shoe that lands.
     if (walking && animate && pose.landed >= 0) {
       const foot = rig.feet[pose.landed].getPosition();
       // In Emilie's flooded flat the foot goes into water instead: a ring on the surface and a few drops.
@@ -2869,6 +2879,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const fast = driven ? partnerRunning && story.canRun : running();
       const matePose = mate.walk.update(delta, moving && !paused, animate, .36, fast && moving);
       const p = scenery.toWorld(at.x, at.z);
+      // Whoever walks with Gerard is heard too, a little quieter and from their side.
+      if (moving && !paused && !battle && matePose.landed >= 0) { const { pan, near } = heard(p, 24); footstep((fast ? .65 : .4) * Math.max(.4, near), pan); }
       const hop = driven && free!.bouncing && animate ? Math.sin(free!.progress * Math.PI) * .18 : 0;
       mate.entity.setPosition(p.x, 0.09 + hop, p.z);
       const facingGerard = !driven && !mate.follower.walking && story.companion !== 'stalled';

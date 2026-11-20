@@ -74,7 +74,8 @@ The director, `music` in [src/main.ts](../src/main.ts):
   (`song-home`, 18 min) comes in over 4 s from a random point and plays on; leaving for a place
   without a song fades it over 2 s. A fight takes over, and the place's song comes back, from
   somewhere else, when the fight is over. Walking between two places with the same song keeps it
-  going.
+  going. `just screenshots place-sounds --chrome` checks the places below that got their song on
+  2026-11-19, and their footsteps.
 - **Childhood**: `triste` in the house the game opens in (its three floors), out in Passatge Maresme,
   on Nuria's street in Cardedeu (Jacint Verdaguer, not the street that never ends nor Uri's tower),
   and in Alegia, as in Sant Quirze. The first time Aitor plays the piano there, Marta's «Izana»
@@ -275,6 +276,7 @@ the fight's screen knows, the screen does (`sound`).
 | `unlock`, `pickup` | A new ánima or a skill learned; an item gained. Out of fights too. |
 | `level-up`, `skill-learned` | On a fight's victory screen: an ánima's level stamping in; a skill it learned taking the screen. |
 | `rise`, `sink`, `stretch` | Nuria's street turning into La calle que no acaba (src/street-shift.ts): a house born out of the ground (a rumble, stone grinding and cracking up, a thud as it settles), what stood beyond the corner going down, and the corner stretching out into the street's start. |
+| `step`, `step-floor`, `step-sand`, `step-water` | A foot landing (the walk cycle's `landed`, src/game.ts): Gerard's at half (more running), whoever walks with him quieter and from their side. Which one, by place, is `STEPS` in [src/sfx.ts](../src/sfx.ts): `step` on hard ground (streets, stone, marble) where it says nothing, `step-floor` on floors indoors (the house, the flat, El Nucli), `step-sand` on the beach and the camping's gravel, `step-water` in Emilie's flooded flat, and none in Las cuerdas. About .01 RMS, under a menu's tick. |
 | `luz-azul`, `luz-verde`, `luz-naranja`, `luz-rojo`, `luz-oro`, `luz-blanca` | Fran's salon: the windows' light turns to that colour in a fight. A pane of stained glass rings once, quiet and short; the cold lights higher than the warm, the white one plain. |
 
 A sound from somewhere in the street (the shift's houses) comes from where it stands: quieter the
@@ -302,8 +304,8 @@ The menu sounds come from `watchMenuSounds`, which listens to focus and clicks f
 Keyboard, pad and mouse all go through them, so the menus need no sound code of their own.
 Buttons in the street (talk, walk, centre the view) are left quiet.
 
-Still to do: footsteps (from the walk cycle's foot plants), ambiences per place, and real recorded
-sounds where a recipe falls short (`src` in `SOUNDS` takes a file under `public/`).
+Still to do: ambiences per place (each place card in docs/visual-style.md says its own in words), and
+real recorded sounds where a recipe falls short (`src` in `SOUNDS` takes a file under `public/`).
 
 ## MIDI, later
 

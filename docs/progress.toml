@@ -699,6 +699,11 @@ grep = "'sagrada-familia-interior': 'mazmorra-oscuro'"
 in = "src/main.ts"
 
 [[block.item]]
+title = "Pasos según el suelo"
+grep = "STEPS"
+in = "src/game.ts"
+
+[[block.item]]
 title = "Sonido en los sitios que no lo tienen"
 weight = 2
 absent = 'Sound \| Not yet'
