@@ -156,8 +156,9 @@ horror figure of matte gum in the game's world.
 | El Castigado | 2.2 | Bowed into its own chest; a hunch-bubble bigger than its torso glowing with the filling (its *Rabia*) |
 | El Montón (was El Nuevo) | 2.6 | A heap of rotten pink gum with half-made arms and sunken face-bubbles; no legs |
 
-To settle with Aitor: whether the year changes the model (a mesh per year), only its texture, or
-only its scale and tint in the game; and how the pupils get onto the game's rig for foes. The
+In the game each figure keeps Meshy's own skeleton and clips (`src/castle-models.ts`, § Built so
+far), and El Repetidor, drawn in all three years, wears the mesh of his year. To settle with Aitor:
+whether the other pupils get a mesh per year, only a texture, or only their scale and tint. The
 first year's look decides the rest.
 
 ## What each boss opens
