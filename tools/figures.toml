@@ -163,3 +163,106 @@ kind = "person"
 about = "An invented chaplain of the Sagrada Família, about fifty, ordinary build, no likeness to anyone real (docs/quests/luca.md). A plain black cassock to the ankles with a white clerical collar, black shoes. His hair has been restyled by a hairdresser into something that is not his: a tall, stiff quiff sculpted upwards, dyed a flat cold blue. A serious, slightly lost face, clean shaven."
 height = 1.74
 scale = 1.3
+
+# The castle's pupils (docs/castle.md § Bestiary), La Reina Bubbaloo's: one family, three years. Each is
+# drawn in the year it first comes out; El Repetidor in all three, to see the gum age. Every `about` opens
+# with the family and its year, then says what only this one has, which is how it fights.
+[chivata]
+name = "La Chivata"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
+FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
+THIS ONE, the informer: the smallest and thinnest of them, standing on tiptoe and leaning forward, eager. Her left arm is normal. Her right arm is stretched to twice her height, thin as a rope of pulled gum, hanging down to the floor and ending in one long white pointing finger. Her small face bubble is tilted to one side, as if listening behind a door."""
+height = 1.0
+[chivata.view_notes]
+right = "Her long, rope-thin arm hangs on this side, down to the floor."
+left = "This arm is short and normal; the long one shows behind her."
+
+[empollon]
+name = "El Empollón"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the hollow imprint of a face pressed into it from inside, like a face pushed against a rubber sheet: brow, nose and closed lips just showing, no eyes. Its feet melt into the floor in thick strings of gum.
+FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
+THIS ONE, the swot: a thin, bent little body under a face bubble far too big for it, swollen like a balloon about to burst, so heavy it hangs forward and down on a neck stretched thin as a rope. The bubble's skin is so thin that a dark folded mass shows through it, like a brain in a jar. Long thin arms. Hard grey patches of dried crust, like scabs, on its arms and shoulders: every blow it has learned to take. Nothing round or soft about the body: bony, too thin, too still."""
+height = 1.15
+
+[gemelo]
+name = "Los Gemelos"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the hollow imprint of a face pressed into it from inside, like a face pushed against a rubber sheet: brow, nose and closed lips just showing, no eyes. Its feet melt into the floor in thick strings of gum.
+FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
+THIS ONE, one of a pair of twins (the game shows it twice, mirrored): too tall and too thin for its age, with a neck a little too long, standing perfectly straight and perfectly symmetrical, arms hanging dead straight, as still as a mannequin. No hood and no hair: just the face bubble on the long neck, and the bubble is lopsided, flattened flat on its right side as if pressed for years against its twin's. From its right hand a thick band of stretched gum hangs down to the floor and trails away, torn at the end: it was joined to the other."""
+height = 1.1
+[gemelo.view_notes]
+right = "The flattened side of its face bubble, and the torn band of gum hanging from its hand, are on this side."
+
+[repetidor]
+name = "El Repetidor"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
+FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
+THIS ONE, the one held back: far too big for the class, as big as a heavy grown man, broad and hunched. A small face bubble sunk low between massive rounded shoulders. Long heavy arms hanging to its knees, ending in fists like boulders. Wrapped in thick layers of older, darker gum: rolls of crust over its shoulders, back and forearms like armour. The smock folds strained and split, too small for it."""
+height = 1.9
+[repetidor.view_notes]
+back = "Thick rolls of darker crust cover its back like armour."
+
+[delegada]
+name = "La Delegada"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
+FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
+THIS ONE, the class delegate, in charge of the others and the history teacher's favourite: taller than the rest, thin, rigid and very upright, chin high. A wide band of hardened darker gum across her chest like a sash. Around her face bubble, a wreath of laurel leaves made of dark, hardened gum, like a Roman emperor's. From each of her long fingers a long thread of gum hangs to the floor, like a puppeteer's strings."""
+height = 1.6
+[delegada.view_notes]
+back = "The laurel wreath ties at the back of her face bubble; the sash crosses her back too."
+
+[ausente]
+name = "El Ausente"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a bubble of gum: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
+SECOND YEAR, older gum: grown taller and lanky, the gum gone a deep bruised plum-maroon and set harder, split by a few big cracks through which its filling glows a cold water blue. A manila paper file tag hangs from its wrist on a string, and a round registry stamp in dark navy ink is pressed into its chest.
+THIS ONE, the absent: not there. An empty shell of a pupil, a hollow skin of gum with nothing inside, washed out and paler than the others. Its front is split open from the neck to the hem, showing a dark empty hollow inside. Its sleeves are limp and empty. Its face bubble has gone soft and hangs forward over the chest like a veil. It stands on two thin, stretched strings of gum."""
+height = 1.7
+[ausente.view_notes]
+back = "Its back is whole and smooth: the split is only in front."
+
+[castigado]
+name = "El Castigado"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a bubble of gum. Its feet melt into the floor in thick strings of gum.
+SECOND YEAR, older gum: grown huge and lanky, the gum gone a deep bruised plum-maroon and set harder, split by a few big cracks through which its filling glows a deep fire orange. A manila paper file tag hangs from its wrist on a string, and a round registry stamp in dark navy ink is pressed into its chest.
+THIS ONE, the one punished, made to stand facing the wall: taller than a grown man, bent forward, its head bowed so low that the small face bubble is pressed against its own chest. Out of its back, between the shoulders, swells an enormous bubble of stretched gum, a hunch bigger than its whole torso that rises high above its shoulders and bowed head, so that from the front it is a great taut dome behind and above it. The bubble is thin and tight, about to burst, the orange filling glowing through its skin. Long arms hanging to its knees, hands open, fingers spread, trembling."""
+height = 2.2
+[castigado.view_notes]
+back = "The enormous swollen bubble fills its whole back, thin and tight, the orange filling glowing through it."
+left = "In profile the bubble on its back is as big as the rest of it, the head bowed in front."
+right = "In profile the bubble on its back is as big as the rest of it, the head bowed in front."
+
+[monton]
+name = "El Montón"
+kind = "creature"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum that should have been moulded into the shape of a school pupil, and never was. Not a real child and not a person: everything in it is gum.
+THIRD YEAR, the Queen's own gum gone bad (Aitor, 2026-11-19: more gum, more contrast): loud, saturated hot bubble-gum pink, more gum than ever, stretchy, with the soft sheen of freshly chewed gum, bubbles swelling and half-burst all over it and long stretched strings; and at the same time rotting: big patches of black spreading through the pink like necrosis, clusters of big black pustules and blisters, each the size of a fist, black veins in the stretched parts, hard black crust at the edges of the burst bubbles. Strong contrast: hot pink against black, nothing grey.
+THIS ONE, the new one, gum with no shape yet: a slumped heap of gum as tall as a door, heavy, wider than tall, with no legs. Out of it push shapes of pupils that never finished forming, all of the same gum: two or three long arms of different sizes with fused, half-made fingers, the fold of a smock's collar, and several face bubbles half sunk in the mass, each with the hollow imprint of a face, some taut and swollen, some burst and black at the edges. No blocky shapes, no clothes, no colours but the gum's pink and black."""
+height = 2.6
+
+[repetidor-segundo]
+name = "El Repetidor (segundo)"
+kind = "monster"
+art = ["output/characters/3d/repetidor/toy.png"]
+about = """The first image is El Repetidor in his first year, one of La Reina Bubbaloo's pupils, made of chewed bubble gum moulded into a pupil's shape. Draw the same figure a year older: the same build, pose and shapes (the small face bubble sunk between massive shoulders, the long heavy arms and boulder fists, the rolls of crust like armour, the smock folds, the feet melting into the floor), a little bigger.
+SECOND YEAR, older gum: everything that was pale flesh pink has gone a deep bruised plum-maroon and set harder, and the chalk white is gone from its hands. It is still gum, not rock: the rolls of crust are thick rubbery folds of dark hardened gum, with a few thin cracks through which its filling glows an electric yellow. A manila paper file tag hangs from its wrist on a string, and a round registry stamp in dark navy ink, a plain ring with a number, is pressed into its chest. The face bubble is a dull dark pink."""
+height = 2.1
+[repetidor-segundo.view_notes]
+back = "Thick rubbery rolls of dark gum cover its back like armour, the yellow glowing in a few cracks."
+
+[repetidor-tercero]
+name = "El Repetidor (tercero)"
+kind = "monster"
+art = ["output/characters/3d/repetidor/toy.png"]
+about = """The first image is El Repetidor in his first year, one of La Reina Bubbaloo's pupils, made of chewed bubble gum moulded into a pupil's shape. Draw the same figure two years older: the same build and shapes (the massive shoulders, the long heavy arms and boulder fists, the rolls of crust, the smock folds, the feet melting into the floor), bigger, and slumped like a worn-out grown man, its back bent and its arms hanging past its knees.
+THIRD YEAR, the Queen's own gum gone bad (Aitor, 2026-11-19: more gum, more contrast): loud, saturated hot bubble-gum pink, more gum than ever, stretchy, with the soft sheen of freshly chewed gum, bubbles swelling and half-burst all over it and long stretched strings; and at the same time rotting: big patches of black spreading through the pink like necrosis, clusters of big black pustules and blisters, each the size of a fist, black veins in the stretched parts, hard black crust at the edges of the burst bubbles. Strong contrast: hot pink against black, nothing grey.
+Its face bubble is swollen huge and half burst, black at the torn edge, sunk between the shoulders. Nothing hangs from its chest."""
+height = 2.4
+[repetidor-tercero.view_notes]
+back = "Hot pink rolls of gum over its back, spotted with black pustules and black rot."

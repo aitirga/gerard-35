@@ -515,8 +515,16 @@ grep = "'ausente'"
 in = "src/castle.ts"
 
 [[block.item]]
-title = "Modelos propios de los alumnos, Aurelià y Dirección"
+# Designed 2026-11-19 (docs/castle.md § How they look): `just character-3d <alumno>`, kind "monster".
+# Done when the fights draw them with their own models instead of the minion's.
+title = "Modelos propios de los alumnos de la Reina, en sus combates"
 weight = 2
+priority = "palacio"
+grep = "models/monsters/"
+in = "src/battle-scene.ts"
+
+[[block.item]]
+title = "Modelos propios de Aurelià y Dirección"
 priority = "palacio"
 file = "public/models/characters/aurelia.glb"
 

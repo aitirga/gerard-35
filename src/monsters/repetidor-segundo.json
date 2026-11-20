@@ -1,0 +1,10 @@
+{
+  "id": "repetidor-segundo",
+  "name": "El Repetidor (segundo)",
+  "glb": "models/monsters/repetidor-segundo.glb",
+  "clips": {
+    "walking": "models/monsters/repetidor-segundo-walking.glb",
+    "running": "models/monsters/repetidor-segundo-running.glb"
+  },
+  "height": 2.1
+}

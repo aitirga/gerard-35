@@ -1,0 +1,10 @@
+{
+  "id": "castigado",
+  "name": "El Castigado",
+  "glb": "models/monsters/castigado.glb",
+  "clips": {
+    "walking": "models/monsters/castigado-walking.glb",
+    "running": "models/monsters/castigado-running.glb"
+  },
+  "height": 2.2
+}

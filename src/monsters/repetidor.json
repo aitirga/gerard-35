@@ -1,0 +1,10 @@
+{
+  "id": "repetidor",
+  "name": "El Repetidor",
+  "glb": "models/monsters/repetidor.glb",
+  "clips": {
+    "walking": "models/monsters/repetidor-walking.glb",
+    "running": "models/monsters/repetidor-running.glb"
+  },
+  "height": 1.9
+}

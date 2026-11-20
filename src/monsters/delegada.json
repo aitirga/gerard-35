@@ -1,0 +1,10 @@
+{
+  "id": "delegada",
+  "name": "La Delegada",
+  "glb": "models/monsters/delegada.glb",
+  "clips": {
+    "walking": "models/monsters/delegada-walking.glb",
+    "running": "models/monsters/delegada-running.glb"
+  },
+  "height": 1.6
+}

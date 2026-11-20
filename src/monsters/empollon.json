@@ -1,0 +1,10 @@
+{
+  "id": "empollon",
+  "name": "El Empollón",
+  "glb": "models/monsters/empollon.glb",
+  "clips": {
+    "walking": "models/monsters/empollon-walking.glb",
+    "running": "models/monsters/empollon-running.glb"
+  },
+  "height": 1.15
+}

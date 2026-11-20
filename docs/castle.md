@@ -123,6 +123,41 @@ year older, and the gum changes what the player knew.
 - Each combination keeps its pair of `TARGETS` (`src/battle-sim.ts`), and each pupil and La
   Delegada can be met from the fight tester.
 
+### How they look (proposal, 2026-11-19)
+
+Drawn with `just character-3d` (`tools/figures.toml`, from `[chivata]` on; the sheet is
+`output/characters/3d/alumnos-sheet.png`). Aitor asked for more fear, a clear climb from small to
+big, and pupils that belong to the bosses they lead to. Not a toy, unlike the cast: a sculpted
+horror figure of matte gum in the game's world.
+
+- **The family**: chewed gum in a pupil's shape, the smock only folds and a hem, feet melting into
+  strings on the floor. **No face**: a bubble where it should be, with a face pressed into it from
+  inside. The bubble is the only saturated pink on them (hers).
+- **They grow with the years.** A first-year pupil is a child's size; the second year is taller and
+  lankier; the third, rotten and as big as a worn-out grown man. Growing up and losing yourself in it
+  is the game's subject, and the castle shows it on its own pupils.
+
+| Year | Whose floor | The gum | Their mark |
+| --- | --- | --- | --- |
+| 1.º | Aurelià's (the gym) | Fresh: the pale flesh pink of chewed gum | Hands white with chalk (the blackboard's and the gym's); La Delegada wears his laurel |
+| 2.º | Mar, Montse and Pilar's (Direcció) | Bruised plum, harder, cracked; the filling glows in fire orange, water blue or electric yellow, the three elements of the management team | A manila file tag on the wrist and a registry stamp on the chest: filed |
+| 3.º | The Queen's | Hers, gone bad (Aitor: more gum, more contrast): loud saturated pink, swollen and stretched, eaten by black rot, black pustules and black veins | Bubbles half burst and black at the edges; nothing grey. Her saturated pink is allowed: they are her minions (visual-style.md) |
+
+| Pupil | Size (m, first seen) | What only it has |
+| --- | --- | --- |
+| La Chivata | 1.0 | One arm stretched to twice her height, rope-thin, ending in a pointing finger |
+| Los Gemelos | 1.1 each | Too tall and still; the bubble flattened on the side that pressed against the twin; a torn band of gum from the hand |
+| El Empollón | 1.15 | A bubble far too big, a dark brain-like mass inside, scabs of crust where it learned a blow |
+| La Delegada | 1.6 | Rigid and upright, a sash, Aurelià's laurel, threads of gum hanging from every finger |
+| El Repetidor | 1.9 → 2.1 → 2.4 | A hulk with a small bubble sunk between the shoulders, rolls of crust like armour, boulder fists |
+| El Ausente | 1.7 | An empty shell split open in front, empty sleeves, the bubble hanging like a veil |
+| El Castigado | 2.2 | Bowed into its own chest; a hunch-bubble bigger than its torso glowing with the filling (its *Rabia*) |
+| El Montón (was El Nuevo) | 2.6 | A heap of rotten pink gum with half-made arms and sunken face-bubbles; no legs |
+
+To settle with Aitor: whether the year changes the model (a mesh per year), only its texture, or
+only its scale and tint in the game; and how the pupils get onto the game's rig for foes. The
+first year's look decides the rest.
+
 ## What each boss opens
 
 The three stages of growth (animas/README.md § Growth opens with the castle), made concrete:
