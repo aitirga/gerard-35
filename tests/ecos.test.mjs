@@ -26,6 +26,7 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
     assert.ok(IMPROVEMENTS.some(i => i.anima === anima && i.kind === 'ulti' && i.veiled), anima);
   }
   assert.deepEqual(IMPROVEMENTS.filter(i => i.anima === 'papagato').map(i => i.id), ['papagato:mana-1', 'papagato:definitiva'], 'a shared ánima: its skills come by level');
+  for (const item of IMPROVEMENTS.filter(i => i.kind === 'ulti')) assert.equal(item.cost, 2, `${item.id}: a definitiva costs 2 ecos (Aitor, 2026-11-20)`);
   // Every skill marked `node` is a node of its ánima's tree, and only those; each line is a chain.
   assert.deepEqual(IMPROVEMENTS.flatMap(i => i.skill ? [i.skill] : []).sort(), SKILLS.filter(s => s.node).map(s => s.id).sort());
   // A passive is a node too, unless it comes with a level of its ánima (Olor a sangre, Papagato's).

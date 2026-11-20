@@ -49,8 +49,12 @@ const passiveNode = (anima: ClassId, line: LineId, passive: PassiveId, cost: num
   ({ id: `${anima}:${passive}`, anima, kind: 'passive', line, passive, name: PASSIVES[passive].name, cost, description, after: `${anima}:${after}` });
 const manaNode = (anima: ClassId, line?: LineId, after?: string): Improvement =>
   ({ id: `${anima}:mana-1`, anima, kind: 'mana', name: 'Maná +1', cost: 2, mana: 1, description: `Sube en 1 el maná de ${ANIMA_NAMES[anima]}.`, ...line ? { line } : {}, ...after ? { after: `${anima}:${after}` } : {} });
-/** The definitiva: a place kept, asleep, on every ánima (docs/animas/README.md § Definitivas). */
-const ulti = (anima: ClassId): Improvement => ({ id: `${anima}:definitiva`, anima, kind: 'ulti', name: 'Definitiva', cost: 3, veiled: true, description: 'Todavía duerme.' });
+/**
+ * The definitiva: a place kept on every ánima (docs/animas/README.md § Definitivas), 2 ecos each
+ * (Aitor, 2026-11-20). Asleep until its move is built: none is yet.
+ */
+const DEFINITIVA_COST = 2;
+const ulti = (anima: ClassId): Improvement => ({ id: `${anima}:definitiva`, anima, kind: 'ulti', name: 'Definitiva', cost: DEFINITIVA_COST, veiled: true, description: 'Todavía duerme.' });
 /**
  * Matemágico's tree: a line per element (the element on Atacar, the skill that lays or cashes it,
  * its passive) and the trunk, Cálculo. Each node needs the one before it on its line.
