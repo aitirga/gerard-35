@@ -17,6 +17,7 @@ import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag }
 import { createStoryUI } from './story-ui';
 import { createEndings } from './endings';
 import { LINES_CASTLE } from './castle-story';
+import { onThroneStage } from './throne-arena';
 import { CASTLE_ENCOUNTERS, castlePhase, castlePhaseAt, castlePhaseOf, nightGroup } from './castle';
 import { nightMight } from './night';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
@@ -493,6 +494,22 @@ try {
     for (const effect of effects) await play(effect);
     storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
   }
+  /**
+   * The ending as the fight tester shows it (docs/dev-tools.md): what `castleEnding` plays once Gerard
+   * has chosen (src/castle-story.ts), the last scene, his choice, what it does, the Monday's words and
+   * the credits, but nothing is raised and no morning comes: the save is the same afterwards.
+   */
+  async function previewEnding() {
+    storyPaused = true; game.setPaused(true);
+    const choice = await endings.choose(LINES_CASTLE.lastScene), lines = LINES_CASTLE[choice];
+    await play({ kind: 'dialogue', dialogue: { left: 'gerard35', right: 'aitor', lines: [lines.aitor] } });
+    await play({ kind: 'epilogue', choice, text: lines.scene });
+    // No morning comes here to lift the black (the story's wakes them at home): the Monday's words are said where they stand.
+    await storyUI.blackout(false, 1600);
+    await play({ kind: 'dialogue', dialogue: lines.epilogue });
+    await play({ kind: 'credits' });
+    storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
+  }
   /** Down into a station: pick a destination on the network map, ride, and come up its entrance. */
   async function ride(from: string) {
     exploration.close(); storyPaused = true; game.setPaused(true);
@@ -719,6 +736,8 @@ try {
       if (!testing && !leaving && (phase === 'won' || phase === 'lost' || phase === 'escaped')) dayLog.add({ kind: 'fight', encounter, outcome: phase, rounds: fightRounds, moves: fightMoves, worn });
       // Fought again or stepped back from, a fall never reaches the story; a test fight fought again stays a test.
       if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.refreshStory(); } return; }
+      // The Queen beaten in the fight tester: the ending plays on, as the story would, with the save left as it was.
+      if (testing && !leaving && phase === 'won' && onThroneStage(encounter)) { testing = undefined; game.refreshStory(); void previewEnding(); return; }
       // A test fight, or one left from the picker, leaves the story as it was, and the street as the story has it.
       if (testing || leaving) { testing = undefined; leaving = false; game.refreshStory(); return; }
       if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn, xp, taken }); keepXp(); }
