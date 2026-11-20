@@ -694,6 +694,10 @@ title = "Banda sonora completa"
 weight = 2
 
 [[block.item]]
+title = "Pantalla de inicio con el piano"
+file = "src/title.ts"
+
+[[block.item]]
 title = "Una canción en cada sitio de las misiones"
 grep = "'sagrada-familia-interior': 'mazmorra-oscuro'"
 in = "src/main.ts"

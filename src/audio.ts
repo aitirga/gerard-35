@@ -71,6 +71,21 @@ export function createAudio() {
 
   return {
     unlocked,
+    /** Whether sound plays now: the context is running (after a gesture, or because the browser lets this page play). */
+    get running() { return buses?.context.state === 'running'; },
+    /**
+     * Tries to start sound before any gesture: a browser that lets this page play (Chrome does once
+     * the game has played sound here often enough) starts it now, and `unlocked` resolves. Elsewhere it
+     * stays off until the first key, click or pad button.
+     */
+    tryStart() {
+      if (document.hidden) return;
+      const bus = setup();
+      if (!bus) return;
+      if (bus.context.state === 'running') { unlock(); return; }
+      bus.context.addEventListener('statechange', () => { if (bus.context.state === 'running') unlock(); });
+      void bus.context.resume().catch(() => {});
+    },
     get settings() { return settings; },
     /** The context and buses, created on first use; undefined in a browser without Web Audio. */
     get buses(): Buses | undefined { return setup(); },

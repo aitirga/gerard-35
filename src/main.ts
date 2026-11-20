@@ -16,6 +16,7 @@ import { MAX_LEVEL, toNextLevel } from './levels';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
 import { createStoryUI } from './story-ui';
 import { createEndings } from './endings';
+import { createTitle } from './title';
 import { LINES_CASTLE } from './castle-story';
 import { CASTLE_ENCOUNTERS, castlePhase, castlePhaseOf } from './castle';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
@@ -72,6 +73,9 @@ const homeLights = createHomeLights();
 const audio = createAudio();
 const music = createMusic(audio);
 const sfx = createSfx(audio);
+/** The welcome screen (src/title.ts): the release always opens on it, development only with ?title. */
+const title = createTitle(hud, { ready: () => !audio.buses || audio.running, wake: () => audio.tryStart() });
+let titleOpen = !import.meta.env.DEV || new URLSearchParams(location.search).has('title');
 // La Voz's song: Marta's recording, held to her fight's clock (src/voz-song.ts).
 const vozSong = createVozSong(audio);
 // Registered before the menus so Escape is heard before they take it.
@@ -97,13 +101,13 @@ let place: EnvironmentId | undefined;
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
 function scorePlace(id: EnvironmentId) {
   place = id;
-  if (battlePhase || devSong) return;
+  if (battlePhase || devSong || titleOpen) return;
   // Marta's song is only Las cuerdas' (its clock is the mazes', `onCuerdasSong`): anywhere else it fades.
   if (id !== CUERDAS_PLACE) vozSong.stop(1.5);
   const song = PLACE_SONGS[id];
   music.haunt(castleHaunt(story));
   // A streamed take can only start after the first key or click.
-  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase) void music.play(song, { from: 'random', fade: 4 }); });
+  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase && !titleOpen) void music.play(song, { from: 'random', fade: 4 }); });
   else if (music.playing && Object.values(PLACE_SONGS).includes(music.playing)) music.stop({ fade: 2 });
 }
 /**
@@ -231,6 +235,8 @@ const playing = (): Control => !waitsForPad && !control.secondPad ? { ...control
 const progress = () => JSON.stringify([story.saved, story.days]);
 let savedStory = progress();
 let startStory: (() => void) | undefined;
+/** The welcome screen before the story starts (src/title.ts); nothing in development without ?title. */
+let welcome: (continuing: Promise<boolean>) => Promise<void> = async () => {};
 /**
  * What Gerard does each day, kept on the server for a future boss (src/day-log.ts,
  * docs/day-log.md). Development jumps log too, into the local save, to check it while building.
@@ -777,7 +783,7 @@ try {
   const followMood = () => homeLights.setMood({ tone: game.lightTone, dusk: story.dusk });
   followMood();
   const moodTimer = setInterval(followMood, 1000);
-  const controllerContext = () => jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
+  const controllerContext = () => title.isOpen ? 'title' : jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
     : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   let restoreLightsOnResume = false;
@@ -805,6 +811,8 @@ try {
     // In a fight the D-pad's left and right do not walk: they open the summary.
     dpadApart: () => !jumpMenu.isOpen && battleUI.controllerContext !== 'world',
     action: (action, player) => {
+      // The welcome screen reads the pad itself (src/title.ts).
+      if (title.isOpen) return;
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (jumpMenu.isOpen) { if (action === 'cancel') jumpMenu.close(); return; }
       if (isDpad(action)) { battleUI.toggleSummary(); return; }
@@ -860,10 +868,30 @@ try {
     const { environment, cell } = (!fight && (nightJump ?? (devJump?.home ? story.home : devJump?.spot))) || story.resume;
     if (story.started && environment !== currentLocation) game.setEnvironment(environment, cell);
     storyChanged();
+    // Out of the welcome screen, the place's song comes over its piano.
+    scorePlace(currentLocation);
     storyEvent({ type: 'start' });
     if (fight) { try { startFight(validFight(JSON.parse(fight))); } catch { /* A broken link starts no fight. */ } }
     // A mission's part can play its moment on arrival: coming up from the R4, or Vertitrón beaten.
     else if (devJump?.part?.event) storyEvent(devJump.part.event);
+  };
+  /**
+   * The welcome screen, with Aitor's piano from its first note as soon as sound is on, and again after
+   * a breath if it plays out while the screen still waits. «Continuar» once a game is under way.
+   */
+  welcome = async continuing => {
+    if (!titleOpen) return;
+    storyPaused = true; game.setPaused(true);
+    audio.tryStart();
+    const piano = () => { if (titleOpen) void music.play('intro-piano', { from: 'piano', restart: true, fade: .05 }); };
+    void audio.unlocked.then(piano);
+    let quiet = 0;
+    const again = setInterval(() => { if (!audio.running || music.playing === 'intro-piano') quiet = 0; else if (++quiet >= 8) { quiet = 0; piano(); } }, 500);
+    await title.open(continuing);
+    clearInterval(again);
+    titleOpen = false; storyPaused = false;
+    game.setPaused(!!exploration.active || menuOpen());
+    canvas.focus({ preventScroll: true });
   };
   // Repeatable desktop battle checks without affecting production or saved progress.
   if (import.meta.env.DEV) {
@@ -899,12 +927,14 @@ try {
     const weather = params.get('weather'), intensity = Number(params.get('intensity') ?? 1);
     if (weather === 'rain' || weather === 'snow') game.effects.setWeather(weather, Number.isFinite(intensity) ? intensity : 1, true);
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, artilugio, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong } });
+    Object.assign(window, { gerard: { game, story, battleUI, artilugio, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong, title } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { title.destroy(); jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;
 }
 // Wait briefly for saved progress, so a returning player resumes where they left off.
-void load().then(() => startStory?.());
+// The welcome screen opens at once and its button waits for the save, which says whether to continue.
+const progressRead = load();
+void Promise.all([progressRead, welcome(progressRead.then(() => story.started))]).then(() => startStory?.());

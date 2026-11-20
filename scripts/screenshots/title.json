@@ -1,0 +1,97 @@
+{
+  "title": "The welcome screen and its piano",
+  "description": "docs/audio.md § Where music plays now: the release opens on the welcome screen (development with ?title): the game's name and one button, «Començar el joc» for a new game. Aitor's piano (intro-piano) plays under it from its first note as soon as sound is on: at once where the browser lets the page play (as the test browser does), otherwise on the first press, which then only brings the piano in; the next press starts the game, in the house, where triste comes over the piano. The scenario suspends sound to play that second case. With a game under way the button says «Continuar». The overlay is the scenario's, not the game's. It plays music, so run it with --chrome: just screenshots title --chrome.",
+  "steps": [
+    {
+      "open": "/?story=new&title"
+    },
+    {
+      "until": "window.gerard?.title?.isOpen && document.querySelector('#title[data-on=\"true\"]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.showMusic = () => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.4 monospace'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(2) ?? '—'} s · sonido ${window.gerard.audio.running ? 'activo' : 'bloqueado'}`; }"
+    },
+    {
+      "until": "window.gerard.music.playing === 'intro-piano' && window.gerard.music.position() > 3",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic()"
+    },
+    {
+      "shot": "comencar",
+      "caption": "A new game: the name and «Començar el joc», nothing else, with the piano from its first note (this browser lets the page play)"
+    },
+    {
+      "eval": "window.gerard.audio.buses.context.suspend()"
+    },
+    {
+      "until": "!window.gerard.audio.running",
+      "timeout": 5000
+    },
+    {
+      "eval": "window.showMusic()"
+    },
+    {
+      "shot": "bloqueado",
+      "caption": "Where the browser keeps sound off until a gesture (played here by suspending it)…"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "until": "window.gerard.audio.running && window.gerard.title.isOpen",
+      "timeout": 5000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "until": "window.gerard.title.isOpen && window.gerard.music.playing === 'intro-piano'",
+      "timeout": 1000
+    },
+    {
+      "eval": "window.showMusic()"
+    },
+    {
+      "shot": "piano",
+      "caption": "…the first press only turns it on: the piano plays, and the screen still waits"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "until": "!window.gerard.title.isOpen && window.gerard.music.playing === 'triste'",
+      "timeout": 30000
+    },
+    {
+      "until": "window.gerard.music.position() > 2",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic()"
+    },
+    {
+      "shot": "casa-triste",
+      "delay": 600,
+      "caption": "The next press starts the game in the house: triste comes over the piano"
+    },
+    {
+      "open": "/?story=metro&title"
+    },
+    {
+      "until": "window.gerard?.title?.isOpen && document.querySelector('#title[data-on=\"true\"]')",
+      "timeout": 90000
+    },
+    {
+      "until": "document.querySelector('#title button').textContent === 'Continuar'",
+      "timeout": 1000
+    },
+    {
+      "shot": "continuar",
+      "delay": 1200,
+      "caption": "A game under way: «Continuar»"
+    }
+  ]
+}

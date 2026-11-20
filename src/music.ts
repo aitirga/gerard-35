@@ -45,6 +45,10 @@ export const TRACKS = {
   // Marta's mission (docs/quests/marta.md § The way in): «Izana dena geroa», recorded by her, as it
   // comes out at the piano in Alegia the first time. 21 s, played once, never looped.
   izana: { src: 'music/marta-izana.m4a', marks: { start: 0 } },
+  // The welcome screen (src/title.ts): Aitor's piano, 56 s, played once and again after a pause for as
+  // long as the screen waits. It opens on a second of silence; `piano` is its first note (silence ends
+  // at 1.017 s at −50 dB), so a press that turns the sound on brings it in at once.
+  'intro-piano': { src: 'music/intro-piano.m4a', marks: { start: 0, piano: .95 } },
 } satisfies Record<string, Track>;
 export type TrackId = keyof typeof TRACKS;
 export const isTrack = (id: string): id is TrackId => Object.hasOwn(TRACKS, id);

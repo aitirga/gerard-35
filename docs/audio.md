@@ -14,6 +14,7 @@ effects                                → Efectos level ┴→ master (Silencia
 | [src/music.ts](../src/music.ts) | `TRACKS` (songs and their marks) and the director that plays, crossfades, jumps and stops them. |
 | [src/sfx.ts](../src/sfx.ts) | `SOUNDS` (effects, from a file or a synth recipe) and the menu sounds every menu shares. |
 | [src/sound-ui.ts](../src/sound-ui.ts) | The pause menu's Configuración → Sonido page. |
+| [src/title.ts](../src/title.ts) | The welcome screen the game opens on, under Aitor's piano. |
 | [tools/music_loop.py](../tools/music_loop.py) | Finds where a song loops and renders the seam to listen to. |
 
 ## Songs
@@ -70,6 +71,15 @@ The director, `music` in [src/main.ts](../src/main.ts):
 
 ### Where music plays now
 
+- **The welcome screen** ([src/title.ts](../src/title.ts)): the release opens on it (development only
+  with `?title`): the game's name and one button, «Començar el joc» for a new game and «Continuar»
+  once one is under way, nothing else. Aitor's piano (`intro-piano`, 56 s) plays under it from its
+  first note (the `piano` mark, past the file's opening second of silence) as soon as sound is on,
+  and again after a four-second breath if it plays out while the screen waits. A browser keeps sound
+  off until a key, click or pad button, unless it lets the page play (Chrome does once a site has
+  played sound often enough, `audio.tryStart()`): otherwise the press that turns sound on only brings
+  the piano in, and the next one starts the game, where the place's song comes over the piano.
+  `just screenshots title --chrome` checks both cases and «Continuar».
 - **Places**: `PLACE_SONGS` in [src/main.ts](../src/main.ts). In the Meridiana flat, `home`
   (`song-home`, 18 min) comes in over 4 s from a random point and plays on; leaving for a place
   without a song fades it over 2 s. A fight takes over, and the place's song comes back, from
@@ -172,12 +182,8 @@ game; if a browser places them differently (the AAC priming is 44 ms), check by 
 
 ### Songs waiting for their place
 
-Masters in `assets/music/`, not exported or played yet (`mazmorra-2` is exported and waits for
-a friend's mission, above):
+Every master in `assets/music/` is exported and plays somewhere.
 
-| Song | Length | Idea |
-| --- | --- | --- |
-| `intro-piano` | 0:56 | The game's welcome screen, when it exists. |
 
 ### The castle's haunt
 
