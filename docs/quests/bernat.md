@@ -43,7 +43,8 @@ of Jessica, his ánima or a boss, round 4 replaces them.
   4. the three primaries at once (red + green + blue = white).
 - **Then the performance**: every lamp goes off, one after another, while a pink, Bubbaloo light
   comes on in the room where the artilugio is hidden (Gerard and Aitor's bedroom), and the
-  artilugio, awake for the first time, beeps random notes of its scale until it is found. Flag
+  artilugio, awake for the first time, beeps random notes of its scale until it is found
+  (docs/story-outline.md § The device: someone in front of it for a few seconds, or a press). Flag
   `portal-nucli`, which brings `artilugio`.
 - **Bernat has no ánima and no fight**, and Jessica is left out (round 4).
 - **Built (2026-11-19)**: `src/friends/bernat.ts` (lines, places, the sums and their rule),

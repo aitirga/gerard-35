@@ -647,6 +647,12 @@ priority = "final"
 file = "src/artilugio.ts"
 
 [[block.item]]
+title = "Artilugio: llama desde su escondite hasta que lo encuentran, y Gerard lo saca mientras lo tienen delante"
+priority = "final"
+grep = "FOUND_AFTER_MS"
+in = "firmware/artilugio/artilugio.ino"
+
+[[block.item]]
 title = "Bernat: el portal de El Nucli manda el artilugio al piso real"
 weight = 2
 priority = "bernat"

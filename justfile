@@ -240,7 +240,7 @@ artilugio-flash port="":
       build=$(mktemp -d)
       trap 'rm -rf "$build"' EXIT
       "{{ arduino_cli }}" compile --fqbn {{ artilugio_fqbn }} --build-path "$build" firmware/artilugio
-      "{{ arduino_cli }}" upload --fqbn {{ artilugio_fqbn }} --port "$port" --protocol network --upload-field password="$key" --input-dir "$build" firmware/artilugio
+      "{{ arduino_cli }}" upload --fqbn {{ artilugio_fqbn }} --port "$port" --protocol network --discovery-timeout 10s --upload-field password="$key" --input-dir "$build" firmware/artilugio
       exit
     fi
     if [ -z "$port" ]; then
@@ -258,6 +258,11 @@ artilugio-monitor port="":
     port="{{ port }}"
     [ -n "$port" ] || port=$("{{ arduino_cli }}" board list | awk 'NR > 1 && $1 ~ /usbserial|USB|COM|ttyUSB/ { print $1; exit }')
     "{{ arduino_cli }}" monitor --port "$port" --config baudrate=115200
+
+# Watch the artilugio from any computer at home, no cable: its notes, pairs, movement, mode and whether it has been found (server: the board's, from secrets.h; board: artilugio.local or its IP)
+[group('Artilugio')]
+artilugio-watch server="" board="":
+    @uv run --locked python scripts/artilugio-watch.py "{{ server }}" "{{ board }}"
 
 # Create the production bundle in dist/
 [group('Build')]

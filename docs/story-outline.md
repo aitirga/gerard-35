@@ -301,6 +301,13 @@ colours that burst* are its four LEDs.
   learnt little by little: nothing explains it. **It is in his hands, not on screen** (Aitor,
   2026-11-19): he takes it out of his pocket and holds it like a pad, his thumbs going down on its
   buttons (`src/artilugio-held.ts`), in the street and in the fight.
+- **It calls out until it is found** (Aitor, 2026-11-20): from the moment Bernat sends it, the board
+  in its hiding place plays short bursts of random notes of its scale now and then, closer together
+  while its PIR sees someone; before that it stays mute. **Found** is someone in front of it for a
+  few seconds, or a button pressed: it falls quiet and Gerard takes it out. Until then, people
+  walking past do not make him take it out. **Once found**, he holds it out while it is pressed or
+  the PIR keeps seeing someone, and puts it away a few seconds after neither (`firmware/artilugio`).
+  Put back to sleep by the story, it is lost again.
 - **Where the game runs** (decided 2026-11-19): Gerard plays on the **Windows PC at home**, with the
   game's server on the home network. The device talks to that server over Wi-Fi; the game never
   connects to the device.

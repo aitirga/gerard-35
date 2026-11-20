@@ -97,7 +97,8 @@ it over the Wi-Fi.
    `ARTILUGIO_KEY`), plug it in and `just artilugio-flash` (with the Arduino IDE installed;
    `just artilugio-setup` the first time). `just artilugio-monitor` shows what it says. After that
    first time by USB it takes new firmware over the Wi-Fi: `just artilugio-flash <its IP>`, or the
-   Arduino IDE's network port *artilugio*, with `ARTILUGIO_KEY` as the password.
+   Arduino IDE's network port *artilugio*, with `ARTILUGIO_KEY` as the password. `just
+   artilugio-watch`, on any computer at home, shows what it plays and whether it has been found.
 7. `just perf` on that PC, to see the game keeps its frame budget there.
 
 Without the board, the number keys 1–4 (two at once for a pair) or a pad (left trigger held, the

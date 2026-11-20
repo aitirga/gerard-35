@@ -4,8 +4,12 @@
 
   Four coloured buttons play notes; two neighbours pressed together play a fifth, sixth, seventh or
   eighth (notes.h). Every note sounds on the buzzer, lights its buttons' LEDs, draws a bar on the LCD
-  and goes to the game's server, which passes it to the browser. The PIR tells the game when someone
-  moves in front of it, so Gerard takes it out in the game.
+  and goes to the game's server, which passes it to the browser.
+
+  Once the story sends it, it calls out from its hiding place until it is found: a burst of random
+  notes now and then, closer together while its PIR sees someone. Someone in front of it for a few
+  seconds, or a button pressed, and it is found. From then on, while it is pressed or the PIR keeps
+  seeing someone, Gerard holds it out in the game, wherever he is.
 
   It never takes a connection from the game. Every half second it asks the server what it is meant
   to be (artilugio.py):
@@ -15,8 +19,9 @@
     awake   the Queen's last fight: its four lights go round on their own, the LCD changes
     free    after it
 
-  The answer also says how many times the game asked it to sound (Escuchar, or the end of Bernat's
-  box), so it can be found by ear: random notes of its scale for a while. The last mode is kept in flash: switched off and on again, it is what it was.
+  The answer also says how many times the game asked it to sound (the end of Bernat's box): a few
+  seconds of random notes of its scale. The mode, and whether it has been found, are kept in flash:
+  switched off and on again, it is what it was. Put to sleep by the story, it is lost again.
 
   Board: ESP32 Dev Module on the Keyestudio FKS0001 inventor board (`just artilugio-build`).
   Library: "LiquidCrystal_I2C" by Frank de Brabander (`just artilugio-setup`).
@@ -69,7 +74,16 @@ static const unsigned long DEBOUNCE_MS = 40;
 static const unsigned long NOTE_MS = 420;
 static const unsigned long LIT_MS = 260;
 static const unsigned long ASK_EVERY_MS = 500;
-static const unsigned long MOTION_GAP_MS = 4000;
+// Until it is found: a burst of notes this often, or this often while someone is in front of it.
+static const unsigned long SEARCH_EVERY_MS = 12000, SEARCH_NEAR_MS = 3000;
+// Someone in front of it this long and it is found.
+static const unsigned long FOUND_AFTER_MS = 6000;
+// After power on the PIR settles for a while, firing on its own; a gap shorter than PIR_GAP_MS in
+// what it sees is still the same person.
+static const unsigned long PIR_WARMUP_MS = 30000, PIR_GAP_MS = 1500;
+// Once found, while someone is in front of it, the game hears of them this often (Gerard keeps it
+// out; he puts it away after src/artilugio-held.ts PUT_AWAY_AFTER without a word).
+static const unsigned long MOTION_EVERY_MS = 2000;
 static const unsigned long WIFI_WAIT_MS = 15000;
 static const uint16_t HTTP_TIMEOUT_MS = 400;
 
@@ -83,6 +97,7 @@ HTTPClient http;
 
 Mode mode = ASLEEP;
 bool online = false;
+bool found = false;  // someone has found it since the story sent it
 
 // ——— The 4-digit tube (TM1650 on Wire1): kept dark ————————————————————————————————————————
 static const uint8_t TUBE_DATA_BASE = 0x34, TUBE_CTRL_BASE = 0x24;
@@ -153,6 +168,16 @@ void light(uint8_t button, unsigned long ms = LIT_MS) {
   ledOffAt[button] = millis() + ms;
 }
 
+// A note's buttons: one alone, or the two of a pair.
+void lightNote(uint8_t note, unsigned long ms = LIT_MS) {
+  if (note < BUTTONS) {
+    light(note, ms);
+  } else {
+    light(PAIRS[note - BUTTONS][0], ms);
+    light(PAIRS[note - BUTTONS][1], ms);
+  }
+}
+
 void sound(float hz, unsigned long ms) {
   tone(PIN_BUZZER, (unsigned int)roundf(hz));
   toneOffAt = millis() + ms;
@@ -184,7 +209,6 @@ void serviceOutputs() {
 static const uint8_t QUEUE = 16;
 int8_t queued[QUEUE];
 uint8_t queueHead = 0, queueLength = 0;
-bool motionPending = false;
 
 void enqueue(int8_t item) {  // a note 0-7, or -1 for movement
   if (queueLength == QUEUE) return;
@@ -205,7 +229,8 @@ bool request(const char *method, const String &path, String *answer = nullptr) {
 }
 
 void setMode(Mode next);
-void sounding(uint8_t times);
+void beepFor(unsigned long ms);
+static const unsigned long SEARCH_MS = 6000;  // one call from the game: this long, three at most
 
 void ask() {
   String answer;
@@ -216,17 +241,23 @@ void ask() {
     if (name == MODE_NAMES[m]) setMode((Mode)m);
   }
   const int times = space > 0 ? answer.substring(space + 1).toInt() : 0;
-  if (times > 0) sounding(times);
+  if (times > 0) beepFor(SEARCH_MS * (times < 3 ? times : 3));
 }
 
 // ——— Modes ————————————————————————————————————————————————————————————————————————————
+unsigned long beepUntil = 0, nextBeepAt = 0, calledAt = 0;
+
 void setMode(Mode next) {
   if (next == mode) return;
   Serial.printf("mode %s -> %s\n", MODE_NAMES[mode], MODE_NAMES[next]);
   mode = next;
   flash.putUChar("mode", mode);
   for (uint8_t b = 0; b < BUTTONS; b++) digitalWrite(PIN_LED[b], LOW);
+  // Sent by the story, it calls out at once; put to sleep, it is lost again.
+  calledAt = millis() - 2 * SEARCH_EVERY_MS;
   if (mode == ASLEEP) {
+    beepUntil = millis();
+    if (found) flash.putBool("found", found = false);
     noTone(PIN_BUZZER);
     lcd.clear();
     lcd.noBacklight();
@@ -250,23 +281,40 @@ void setMode(Mode next) {
   }
 }
 
-// Escuchar, and the end of Bernat's box: so it can be found by ear, it beeps random notes of its
-// scale for a while (docs/quests/bernat.md, round 5), each with its LEDs. Never the melody in order.
-static const unsigned long SEARCH_MS = 6000;
+// ——— Being found ————————————————————————————————————————————————————————————————————————
+// So it can be found by ear (docs/quests/bernat.md, round 5): random notes of its scale, each with
+// its LEDs, never the melody in order, and never holding up the buttons. Sent by the story and not
+// found yet, it calls out in bursts, closer together while someone is in front of it.
+bool someoneThere = false;
+float callJitter = 0;
 
-void sounding(uint8_t times) {
+void beepFor(unsigned long ms) {
   if (mode == ASLEEP) return;
-  const unsigned long until = millis() + SEARCH_MS * (times < 3 ? times : 3);
-  while ((long)(millis() - until) < 0) {
+  const unsigned long until = millis() + ms;
+  if ((long)(until - beepUntil) > 0) beepUntil = until;
+}
+
+void setFound(const char *how) {
+  if (found) return;
+  flash.putBool("found", found = true);
+  beepUntil = millis();
+  Serial.printf("found: %s\n", how);
+}
+
+void serviceSearch() {
+  const unsigned long now = millis();
+  const unsigned long gap = someoneThere ? SEARCH_NEAR_MS : SEARCH_EVERY_MS;
+  if (mode == ALIVE && !found && now - calledAt >= gap * (1 + callJitter)) {
+    calledAt = now;
+    callJitter = random(500) / 1000.0f;
+    beepFor(700 + random(900));
+  }
+  if ((long)(beepUntil - now) > 0 && (long)(now - nextBeepAt) >= 0) {
     const uint8_t note = random(NOTES);
-    const uint8_t a = note < BUTTONS ? note : PAIRS[note - BUTTONS][0], b = note < BUTTONS ? note : PAIRS[note - BUTTONS][1];
-    digitalWrite(PIN_LED[a], HIGH); digitalWrite(PIN_LED[b], HIGH);
-    tone(PIN_BUZZER, (unsigned int)NOTE_HZ[note]);
-    delay(160 + random(220));
-    digitalWrite(PIN_LED[a], LOW); digitalWrite(PIN_LED[b], LOW);
-    noTone(PIN_BUZZER);
-    delay(60 + random(260));
-    server.handleClient();
+    const unsigned long ms = 160 + random(220);
+    sound(NOTE_HZ[note], ms);
+    lightNote(note, ms);
+    nextBeepAt = now + ms + 60 + random(260);
   }
 }
 
@@ -279,13 +327,9 @@ unsigned long pendingAt = 0;
 void play(uint8_t note) {
   Serial.printf("note %u\n", note);
   if (mode == ASLEEP) return;  // until the story sends it, it is just a dead board
+  setFound("pressed");  // and its note has Gerard take it out
   sound(NOTE_HZ[note], NOTE_MS);
-  if (note < BUTTONS) {
-    light(note);
-  } else {
-    light(PAIRS[note - BUTTONS][0]);
-    light(PAIRS[note - BUTTONS][1]);
-  }
+  lightNote(note);
   if (mode != AWAKE) drawNote(note);
   enqueue(note);
 }
@@ -312,16 +356,24 @@ void pollButtons() {
   }
 }
 
-bool pirWas = false;
-unsigned long motionAt = 0;
+// The PIR: someone in front of it. Not found yet, someone there long enough finds it; found, the
+// game hears of them every MOTION_EVERY_MS while they stay, so Gerard keeps it out.
+unsigned long seenSince = 0, seenAt = 0, motionAt = 0;
 
 void pollPir() {
-  const bool seen = digitalRead(PIN_PIR) == HIGH;
-  if (seen && !pirWas && mode != ASLEEP && millis() - motionAt > MOTION_GAP_MS) {
-    motionAt = millis();
+  const unsigned long now = millis();
+  if (now < PIR_WARMUP_MS) return;
+  if (digitalRead(PIN_PIR) == HIGH) {
+    if (!someoneThere) seenSince = now;
+    seenAt = now;
+  }
+  someoneThere = seenAt && now - seenAt <= PIR_GAP_MS;
+  if (!someoneThere || mode == ASLEEP) return;
+  if (!found && now - seenSince >= FOUND_AFTER_MS) setFound("someone in front of it");
+  if (found && now - motionAt >= MOTION_EVERY_MS) {
+    motionAt = now;
     enqueue(-1);
   }
-  pirWas = seen;
 }
 
 // ——— The network ——————————————————————————————————————————————————————————————————————
@@ -345,7 +397,8 @@ void serviceNetwork() {
 
 void handleHealth() {
   String body = String("{\"status\":\"ok\",\"node\":\"") + HOSTNAME + "\",\"ip\":\"" + WiFi.localIP().toString() +
-                "\",\"mode\":\"" + MODE_NAMES[mode] + "\",\"server\":" + (online ? "true" : "false") + "}";
+                "\",\"mode\":\"" + MODE_NAMES[mode] + "\",\"found\":" + (found ? "true" : "false") +
+                ",\"server\":" + (online ? "true" : "false") + "}";
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", body);
 }
@@ -385,6 +438,7 @@ void setup() {
   lcd.clear();
 
   flash.begin("artilugio", false);
+  found = flash.getBool("found", false);
   const Mode kept = (Mode)flash.getUChar("mode", ASLEEP);
   mode = kept == ASLEEP ? ALIVE : ASLEEP;  // so setMode does its work
   setMode(kept <= FREE ? kept : ASLEEP);
@@ -408,6 +462,7 @@ void setup() {
 void loop() {
   pollButtons();
   pollPir();
+  serviceSearch();
   serviceOutputs();
   serviceNetwork();
   server.handleClient();
