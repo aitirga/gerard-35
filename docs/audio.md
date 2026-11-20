@@ -102,7 +102,7 @@ The director, `music` in [src/main.ts](../src/main.ts):
   Logic's `song-mazmorra-4`): Uri's tower, the university friends' camping, Emilie's (Poble Sec, her
   flat and her model) and Luca's (the Sagrada Família, outside and inside, Fran's salon included).
   Marta's Las cuerdas has her own voice instead (below). The beach where the university friends'
-  mission starts has no song.
+  mission starts is Barcelona's (below).
 - **Boss rooms** (Aitor, 2026-11-19): in three of those missions, reaching the boss's room changes the
   song for `mazmorra-3`, from its top over 2 s, and the boss is fought to it, going on from where it
   was (`inBossRoom` and `BOSS_ROOM_FIGHTS` in [src/main.ts](../src/main.ts)). Any other fight there
@@ -120,8 +120,15 @@ The director, `music` in [src/main.ts](../src/main.ts):
 - **How the missions' take plays** (`mazmorra-oscuro`, 11 min), as in Uri's tower: from a different
   point every time they go in and every time a fight there ends, never jumping while it plays: at the
   end of the file it goes on from the top. `just screenshots tower-music --chrome` checks it.
-- **Streets**: `concrete` on Meridiana street, from the top over 4 s, and `triste` (above) from a
-  random point. `just screenshots street-music --chrome` checks both and the vamp.
+- **Barcelona by day and by night** (Aitor, 2026-11-19): its streets (the Avinguda Meridiana, Sants,
+  Plaça d'Espanya, the Carmel bunkers and the Barceloneta) play `concrete` by day, whole (its vamp and
+  the rest), and `mazmorra-2` by night (`story.night`, from 21 h), when the palace's monsters are out
+  and the party walks home from the station (src/night.ts). A fight there at night (a palace guard
+  catching them on the way home) goes on to `mazmorra-2`, with no battle song; nightfall changes the
+  song where they stand (`CITY` and `songHere` in [src/main.ts](../src/main.ts), looked at twice a
+  second). Not the flat (home's own song), El Nucli (inside), Rec Comtal (the castle's) or the
+  missions' places. `just screenshots city-music --chrome` checks day, night, a night fight and the
+  Barceloneta; `street-music` the vamp.
 - **La Reina Bubbaloo's castle**: `bubbaloo` (`bubbaloo-light`, 13 min) the same way, at the Rec
   Comtal school and inside the palace (chapter 1's too), haunted as below. Walking from the school
   into the palace keeps the same take going.
@@ -177,8 +184,8 @@ check of the files; `mazmorra-3` at 90.
 - `mazmorra-2` (`song-mazmorra-2`, 4:48) holds six versions of one 48 s cycle: 88 beats, Logic's
   bars 1 to 23. Each starts on its downbeat at 0, 48, 96, 144, 192 and 240 s, and the file ends on
   the sixth's seam at 288 s. Version 1 opens it, then 2–6 mix. Version 1 is also the quietest
-  (−17.9 dB against −16.6 to −17.2 for the rest). Nothing plays it since the friends' missions took
-  `mazmorra-oscuro` (2026-11-19).
+  (−17.9 dB against −16.6 to −17.2 for the rest). Barcelona's streets play it by night, and their
+  fights then (2026-11-19).
 - `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11:14) is Logic's `song-mazmorra-4`, the friends'
   missions' song: a long take, streamed, with its loudness map (−26.8 to −16.9 dB, median −20.7). A
   new bounce of `song-mazmorra-4` (2026-11-19) is the same audio (correlation .99999, the difference
@@ -200,8 +207,8 @@ check of the files; `mazmorra-3` at 90.
   bounce the old marks (58 samples before the downbeats) jumped .05 against a step of .029, so both
   now sit 2035 samples (42.4 ms) before the downbeats of bars 10 and 18, inside the fill bars 9 and
   17 share, where the two waveforms meet (a step of .007), exactly 8 bars apart. Bar 19 starts the
-  break, so the section stops before it. It is for the concrete, robot-like places: Meridiana street (`meridiana-calle`) for now; the
-  school on Rec Comtal plays the castle's song.
+  break, so the section stops before it. It is Barcelona's by day (above); the school on Rec Comtal plays the castle's
+  song.
 
 - `triste` (`song-triste`, 1:36) loops whole: 80 beats (20 bars) at 50 BPM, playing at full level
   to the last sample. The file starts already sounding, so cutting at exactly 0 → 96 s clicked (a
@@ -244,7 +251,7 @@ game; if a browser places them differently (the AAC priming is 44 ms), check by 
 
 ### Songs waiting for their place
 
-`mazmorra-2` waits for a place again (above). Each master in `assets/music/` is named after its
+Each master in `assets/music/` is named after its
 Logic project in `~/Music/Logic/G-35/` (`song-triste`'s is still called `song-sad`, and
 `song-mazmorra-4` is exported as `song-mazmorra-oscuro`). Projects not bounced yet have no master:
 `intro-final`, `intro-light`, `song-1`, `song-concrete-recovered` and `song-mazmorra-1` (`intro-piano`

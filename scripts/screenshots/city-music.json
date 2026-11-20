@@ -1,0 +1,142 @@
+{
+  "title": "Barcelona by day and by night",
+  "description": "docs/audio.md § Where music plays now: Barcelona's streets (the Avinguda Meridiana, Sants, Plaça d'Espanya, the Carmel bunkers, the Barceloneta) play concrete by day and mazmorra-2 by night, the way home included, and a fight there at night goes on to mazmorra-2. The overlay is the scenario's. Run with --chrome: just screenshots city-music --chrome.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showMusic = (note = '') => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.5 monospace;white-space:pre'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(1) ?? '—'} s · ${window.gerard.story.night ? 'noche' : 'día'}${note ? `\\n${note}` : ''}`; }; window.go = async id => { const { ENVIRONMENTS } = await import('/src/environments.ts'); window.gerard.game.setEnvironment(id, { ...ENVIRONMENTS[id].spawn }); };"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        34,
+        42
+      ]
+    },
+    {
+      "until": "window.gerard.music.playing === 'concrete' && window.gerard.music.position() > 1 && !window.gerard.story.night",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic('Avinguda Meridiana de día')"
+    },
+    {
+      "shot": "meridiana-dia",
+      "delay": 800,
+      "caption": "Barcelona by day: concrete on the Avinguda Meridiana"
+    },
+    {
+      "eval": "window.go('sants')"
+    },
+    {
+      "until": "document.title.startsWith('Sants') && window.gerard.music.playing === 'concrete'",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic('Sants de día: la misma toma sigue')"
+    },
+    {
+      "shot": "sants-dia",
+      "delay": 800,
+      "caption": "Sants by day: the same take goes on"
+    },
+    {
+      "open": "/?story=metro&night=0&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.night && document.title.startsWith('Avinguda')",
+      "timeout": 90000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showMusic = (note = '') => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.5 monospace;white-space:pre'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(1) ?? '—'} s · ${window.gerard.story.night ? 'noche' : 'día'}${note ? `\\n${note}` : ''}`; }; window.go = async id => { const { ENVIRONMENTS } = await import('/src/environments.ts'); window.gerard.game.setEnvironment(id, { ...ENVIRONMENTS[id].spawn }); };"
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-2' && window.gerard.music.position() > 2",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic('la vuelta a casa, de noche, desde Fabra i Puig')"
+    },
+    {
+      "shot": "meridiana-noche",
+      "delay": 800,
+      "caption": "Barcelona by night, the way home from Fabra i Puig: mazmorra-2"
+    },
+    {
+      "eval": "window.before = window.gerard.music.position(); window.gerard.game.startPalaceFight('night-guard')"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 90000
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-2' && window.gerard.music.position() > window.before",
+      "timeout": 5000
+    },
+    {
+      "eval": "window.showMusic(`un guardián del palacio les pilla: la misma canción sigue (antes ${window.before.toFixed(1)} s)`)"
+    },
+    {
+      "shot": "combate-noche",
+      "delay": 600,
+      "caption": "Caught by one of the palace's guards at night: the fight goes on to mazmorra-2, no battle song"
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'won'",
+      "timeout": 30000
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-2'",
+      "timeout": 3000
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-2'",
+      "timeout": 10000
+    },
+    {
+      "eval": "window.go('barceloneta')"
+    },
+    {
+      "until": "document.title.includes('Barceloneta') && window.gerard.music.playing === 'mazmorra-2'",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic('la Barceloneta de noche')"
+    },
+    {
+      "shot": "barceloneta-noche",
+      "delay": 800,
+      "caption": "The Barceloneta by night: mazmorra-2 too"
+    }
+  ]
+}
