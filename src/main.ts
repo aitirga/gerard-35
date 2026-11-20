@@ -107,6 +107,8 @@ function scorePlace(id: EnvironmentId) {
  * escape or leaving. La Voz sings her own (src/voz-song.ts), with nothing under it.
  */
 let battlePhase: BattleState['phase'] | undefined;
+/** The artilugio played in the Queen's last fight: her music fades out and stays gone (Aitor, 2026-11-19). */
+let silenced = false;
 /** The fight going on, for the day log: the party's moves (skill or action → times) and its round. */
 let fightMoves: Record<string, number> = {}, fightRounds = 0;
 function scoreBattle(state: BattleState | undefined) {
@@ -117,9 +119,9 @@ function scoreBattle(state: BattleState | undefined) {
   // A fight that is not hers takes over from her song far off; it comes back where it left off after.
   if (state && was === undefined && !sung) vozSong.stop(.8);
   if (!state || battlePhase === 'won' || battlePhase === 'lost' || battlePhase === 'escaped') vozSong.stop(battlePhase === 'won' ? 2 : 1);
-  if (!state) { if (music.playing === 'battle') music.stop({ fade: 1.5 }); if (place) scorePlace(place); }
+  if (!state) { silenced = false; if (music.playing === 'battle') music.stop({ fade: 1.5 }); if (place) scorePlace(place); }
   else if (was === undefined) { if (sung) music.stop({ fade: .4 }); else void music.play('battle', { restart: true, fade: .4 }); }
-  if (battlePhase === 'won' && !sung) void music.jump('ending', { at: 'bar', loop: false });
+  if (battlePhase === 'won' && !sung && !silenced) void music.jump('ending', { at: 'bar', loop: false });
   else if (battlePhase === 'lost') music.stop({ fade: 2.5 });
   else if (battlePhase === 'escaped') music.stop({ fade: 1 });
 }
@@ -334,6 +336,8 @@ try {
     if (!carried()) return;
     sfx.play(`artilugio-${note}` as SoundId);
     heldNow().play(note);
+    // Holding Aitor her music does not change; the artilugio, once played at her, fades it out for good.
+    if (battleUI.artilugioLive && !silenced) { silenced = true; music.stop({ fade: 2.5 }); }
     battleUI.note(note);
     syncArtilugio();
   });

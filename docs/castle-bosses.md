@@ -104,7 +104,8 @@ order).
 
 - His eyes go violet, as Uri's did. **His dock crosses to the enemy side**, and **player 2 keeps
   driving him, against Gerard**, with all of his kit.
-- The music strips down to the six-note motif.
+- **The music does not change** when she takes him (Aitor, 2026-11-19, replacing the motif-only
+  idea): it only fades out, for good, when the artilugio is played at her (`silenced` in `src/main.ts`).
 - **By default there is no way out.** Without the artilugio they kill Gerard. It happens once, and
   it has to happen. It comes **only when she is about to fall** (Aitor's call, 2026-11-19): the
   possession is what nearly beating her brings. Lost to her before her tenth, it is an ordinary
@@ -116,8 +117,8 @@ order).
   can pay for, or Defender, and what he picks runs as his own action against Gerard (`heldAct` in
   `src/battle.ts`), growing as hers did; picked something that does not hurt Gerard, the thread of
   gum pulls his arm anyway, so the first time there is still no way out. His eyes go violet in the
-  fight. Without a choice (the simulators) she moves him herself, as before. Still to come: the
-  motif in the music, and his card crossing too. Then Bernat calls, the salón de juegos is played, and they come back with it.
+  fight. Without a choice (the simulators) she moves him herself, as before. Still to come: his card
+  crossing too. Then Bernat calls, the salón de juegos is played, and they come back with it.
 - **The artilugio survives a rewind** (decided 2026-11-19): her castle covering everything takes the
   day back, but not the artilugio once Bernat has brought it, nor the night she took Aitor
   (`rewind` in `src/story.ts`). Otherwise a fall to her on the last day sends the party to a doomed
