@@ -20,3 +20,6 @@
 !vendor/geraitor_domotic_house/geraitor_domotic_house/
 !vendor/geraitor_domotic_house/geraitor_domotic_house/**
 .env
+
+# Personal photos (the credits' album): local only.
+public/private/
