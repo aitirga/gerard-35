@@ -218,6 +218,8 @@ void enqueue(int8_t item) {  // a note 0-7, or -1 for movement
 bool request(const char *method, const String &path, String *answer = nullptr) {
   if (WiFi.status() != WL_CONNECTED) return false;
   http.begin(String(SERVER_URL) + path);
+  // Connecting too, or a slow server would freeze the buttons for the library's five seconds.
+  http.setConnectTimeout(HTTP_TIMEOUT_MS);
   http.setTimeout(HTTP_TIMEOUT_MS);
   http.setReuse(true);
   http.addHeader("x-artilugio-key", ARTILUGIO_KEY);
@@ -395,10 +397,27 @@ void serviceNetwork() {
   }
 }
 
+// Why it last started: switched on, restarted by an update, or something wrong (the power dipping,
+// a crash, the watchdog), so a board that goes quiet for a moment can be told apart from one that
+// restarted.
+const char *startedBy() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON: return "power";
+    case ESP_RST_SW: return "restart";
+    case ESP_RST_BROWNOUT: return "brownout";
+    case ESP_RST_PANIC: return "crash";
+    case ESP_RST_INT_WDT:
+    case ESP_RST_TASK_WDT:
+    case ESP_RST_WDT: return "watchdog";
+    default: return "other";
+  }
+}
+
 void handleHealth() {
   String body = String("{\"status\":\"ok\",\"node\":\"") + HOSTNAME + "\",\"ip\":\"" + WiFi.localIP().toString() +
                 "\",\"mode\":\"" + MODE_NAMES[mode] + "\",\"found\":" + (found ? "true" : "false") +
-                ",\"server\":" + (online ? "true" : "false") + "}";
+                ",\"server\":" + (online ? "true" : "false") + ",\"up\":" + String(millis() / 1000) +
+                ",\"started\":\"" + startedBy() + "\"}";
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", body);
 }

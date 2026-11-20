@@ -83,15 +83,26 @@ def events(server: str):
         time.sleep(3)
 
 
+STARTED = {"power": "al enchufarla", "restart": "tras una actualización", "brownout": "por una bajada de corriente",
+           "crash": "por un fallo", "watchdog": "por quedarse colgada"}
+
+
 def health(board: str):
-    """The board's own word every two seconds: found or not, and whether it answers at all."""
+    """The board's own word every two seconds: found or not, restarts and why, and whether it answers at all."""
     last: dict | None = None
+    up = None
     while True:
         try:
             host = socket.getaddrinfo(board, 80, socket.AF_INET)[0][4][0]
             with urllib.request.urlopen(f"http://{host}/health", timeout=3) as response:
                 now = json.load(response)
-            if last is None or now.get("found") != last.get("found"):
+            why = STARTED.get(now.get("started"), "por otra causa")
+            if up is None and "up" in now:
+                say(f"placa {now.get('ip')}: encendida hace {now['up'] // 60} min {now['up'] % 60} s, {why}")
+            elif up is not None and now.get("up", 0) < up:
+                say(f"placa {now.get('ip')}: se ha reiniciado, {why}", "1")
+            up = now.get("up", up)
+            if not last or now.get("found") != last.get("found"):
                 say(f"placa {now.get('ip')}: {'encontrada' if now.get('found') else 'sin encontrar'}", "1")
             last = now
         except Exception:
