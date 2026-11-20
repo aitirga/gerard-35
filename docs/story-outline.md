@@ -381,9 +381,12 @@ only hints in the game are generic, that the Queen is very sensitive to music (d
 
 - **The music teaches.** Every track carries the 6-note motif, so a player has heard it for hours
   before the end without knowing it.
-- **When the Queen takes Aitor, the music strips down to the motif**: the battle song falls away
-  and the 6 notes repeat alone, exposed, while the device wakes in Gerard's hands. Nothing is
-  said; the coincidence (the only music left, the only object glowing) is the clue.
+- ~~**When the Queen takes Aitor, the music strips down to the motif**: the battle song falls away
+  and the 6 notes repeat alone, exposed, while the device wakes in Gerard's hands.~~ Replaced
+  (Aitor, 2026-11-19): the battle song plays on, and **each press of the artilugio makes it step
+  aside** so the device is heard, from its own speaker; the six notes bring in the last boss's song
+  whole (docs/audio.md § The last fight). Nothing is said; the device glowing in his hands and the
+  music giving way to it are the clue.
 - **The pairs are heard, not told**: the motif's pair notes sound fuller (two voices), so trying
   two buttons at once is the natural answer to *"that note isn't on any button"*.
 - **Losing is learning**: the possession always wins until the melody is played, so each fall

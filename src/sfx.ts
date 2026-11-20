@@ -1,5 +1,6 @@
 import { ARTILUGIO_NOTES } from './castle.ts';
 import type { GameAudio } from './audio';
+import type { EnvironmentId } from './environments';
 
 /**
  * Sound effects (docs/audio.md). A sound is either a file under public/ (`src`) or a small synth
@@ -83,6 +84,16 @@ function pane(context: AudioContext, out: AudioNode, at: number, hz: number, bel
   tone(context, out, at + .045, { from: hz * 1.5, length: .4, gain: .028 });
   noise(context, out, at, { cutoff: 7000, to: 11000, type: 'highpass', q: .7, attack: .01, length: .18, gain: .03 });
   return .6;
+}
+/**
+ * A footstep (src/game.ts, as a foot lands): the heel's knock and the sole's scuff, quiet, so a walk
+ * is felt more than heard. `knock` is the heel (its pitch falls from `from` to `to`), `scuff` the
+ * sole on the ground (a band of noise at that many Hz).
+ */
+function step(context: AudioContext, out: AudioNode, at: number, pitch: number, { knock, scuff, q = 1.2, length, gain }: { knock?: { type?: OscillatorType; from: number; to: number; gain: number }; scuff: number; q?: number; length: number; gain: number }) {
+  if (knock) tone(context, out, at, { type: knock.type, from: knock.from * pitch, to: knock.to * pitch, length: length * .9, gain: knock.gain });
+  noise(context, out, at, { cutoff: scuff * pitch, to: scuff * .5 * pitch, type: 'bandpass', q, attack: .004, length, gain });
+  return length;
 }
 export const SOUNDS = {
   // Menus: a soft tick to move, a rising pair to confirm, a falling note to go back.
@@ -248,11 +259,31 @@ export const SOUNDS = {
     tone(c, out, at + .1, { type: 'square', from: 41 * p, to: 22 * p, attack: .4, hold: .8, length: 1.8, gain: .05 });
     return 1.95;
   }, jitter: 30, gap: 1, voices: 1 },
+  // Footsteps (`STEPS` says which, by place): hard ground outside or in a big hall (panot, asphalt,
+  // stone, marble), a floor indoors (a home's tiles or parquet, the shop's boards), sand or gravel,
+  // and the flooded flat's water.
+  step: { synth: (c, out, at, p) => step(c, out, at, p, { knock: { from: 120, to: 70, gain: .05 }, scuff: 2600, length: .06, gain: .045 }), jitter: 70, gap: .06, voices: 4 },
+  'step-floor': { synth: (c, out, at, p) => step(c, out, at, p, { knock: { type: 'triangle', from: 170, to: 105, gain: .06 }, scuff: 1100, q: 2, length: .08, gain: .03 }), jitter: 60, gap: .06, voices: 4 },
+  'step-sand': { synth: (c, out, at, p) => step(c, out, at, p, { scuff: 1900, q: .8, length: .15, gain: .17 }), jitter: 90, gap: .06, voices: 4 },
+  'step-water': { synth: (c, out, at, p) => {
+    noise(c, out, at, { cutoff: 900 * p, to: 2400 * p, type: 'bandpass', q: 2.5, attack: .015, length: .2, gain: .17 });
+    tone(c, out, at + .04, { from: 480 * p, to: 1000 * p, length: .07, gain: .035 });
+    return .22;
+  }, jitter: 80, gap: .06, voices: 4 },
   // The artilugio's eight notes (docs/story-outline.md § The device): its four buttons alone, then its four pairs.
   'artilugio-0': artilugio(0), 'artilugio-1': artilugio(1), 'artilugio-2': artilugio(2), 'artilugio-3': artilugio(3),
   'artilugio-4': artilugio(4), 'artilugio-5': artilugio(5), 'artilugio-6': artilugio(6), 'artilugio-7': artilugio(7),
 } satisfies Record<string, Sound>;
 export type SoundId = keyof typeof SOUNDS;
+
+/** Each place's footstep (`step` where it says nothing); `null` walks in silence. */
+export const STEPS: Partial<Record<EnvironmentId, SoundId | null>> = {
+  'home-entrance': 'step-floor', 'home-floor-1': 'step-floor', 'home-floor-2': 'step-floor', meridiana: 'step-floor', 'el-nucli': 'step-floor',
+  barceloneta: 'step-sand', camping: 'step-sand',
+  'piso-emilie': 'step-water',
+  // Inside a note there is only her voice (docs/visual-style.md, Las cuerdas' card).
+  cuerdas: null,
+};
 
 /** Four seconds of noise a channel, for sounds that go on: too long to hear it come round. */
 const longNoiseBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();
@@ -278,6 +309,11 @@ type Bed = (context: BaseAudioContext, out: AudioNode, at: number) => { drive(k:
  * A change is heard the next time the hiss starts (going back into La calle).
  */
 export const HISS = { hiss: [.035, .05], whirl: [.06, .25], draught: [.45, .5] };
+/**
+ * The wind's knobs (`BEDS.wind`): the gusts' level and how much they swell, the whistle through the
+ * balcony's gap, and the city's far hum under it.
+ */
+export const WIND = { gust: .22, swell: .35, whistle: .025, hum: .15 };
 
 export const BEDS = {
   // The bubble at the end of La calle que no acaba (src/fear-portal.ts): a sharp hiss breathing on
@@ -324,6 +360,39 @@ export const BEDS = {
       stop(t) { for (const s of sources) s.stop(t); },
     };
   },
+  // The last choice (src/endings.ts): no music, only the wind through the throne room's open balcony,
+  // gusting on swells that never line up and wandering from side to side, a thin whistle now and
+  // then, and the city far below. `drive` makes the gusts stronger.
+  wind: (c, out, at) => {
+    const source = c.createBufferSource();
+    source.buffer = longNoise(c); source.loop = true;
+    const sources: AudioScheduledSourceNode[] = [source];
+    const lfo = (rate: number, depth: number, param: AudioParam) => {
+      const osc = c.createOscillator(), amount = c.createGain();
+      osc.frequency.value = rate; amount.gain.value = depth;
+      osc.connect(amount).connect(param); osc.start(at); sources.push(osc);
+    };
+    const filter = (type: BiquadFilterType, frequency: number, q: number) => {
+      const f = c.createBiquadFilter();
+      f.type = type; f.frequency.value = frequency; f.Q.value = q;
+      return f;
+    };
+    const level = (value: number) => { const g = c.createGain(); g.gain.value = value; return g; };
+    const band = filter('bandpass', 520, .7), gust = level(WIND.gust), side = c.createStereoPanner();
+    lfo(.07, 260, band.frequency); lfo(.05, WIND.gust * WIND.swell, gust.gain); lfo(.13, WIND.gust * WIND.swell * .6, gust.gain); lfo(.031, .55, side.pan);
+    source.connect(band).connect(gust).connect(side).connect(out);
+    const whistle = level(WIND.whistle);
+    lfo(.09, WIND.whistle * .9, whistle.gain);
+    const narrow = filter('bandpass', 1750, 9);
+    lfo(.04, 120, narrow.frequency);
+    source.connect(narrow).connect(whistle).connect(out);
+    source.connect(filter('lowpass', 110, .7)).connect(level(WIND.hum)).connect(out);
+    source.start(at);
+    return {
+      drive(k, t) { gust.gain.setTargetAtTime(WIND.gust * (1 + k * .6), t, .8); },
+      stop(t) { for (const s of sources) s.stop(t); },
+    };
+  },
 } satisfies Record<string, Bed>;
 export type BedId = keyof typeof BEDS;
 /** How loud a bed plays (0 silent, 1 as designed), where it sits from left to right, and its `drive`. */
@@ -338,18 +407,19 @@ export function createSfx(audio: GameAudio) {
   return {
     /**
      * Keeps a sound that goes on (`BEDS`) playing at `level`, or fades it out with none. Whatever
-     * makes it calls this every frame; the sound eases to each new level and only moves when it does.
+     * makes it calls this every frame (or once, for a moment that holds); the sound eases to each new
+     * level, `ease` being how quickly (a time constant, in seconds), and only moves when it does.
      */
-    bed(id: BedId, level?: BedLevel) {
+    bed(id: BedId, level?: BedLevel, ease = .15) {
       const bus = audio.buses;
       let running = beds.get(id);
       if (!level || !bus) {
         if (!running) return;
         beds.delete(id);
         const { gain, panner, bed } = running, t = gain.context.currentTime;
-        gain.gain.cancelScheduledValues(t); gain.gain.setTargetAtTime(0, t, .15);
-        bed.stop(t + 1);
-        setTimeout(() => { gain.disconnect(); panner.disconnect(); }, 1100);
+        gain.gain.cancelScheduledValues(t); gain.gain.setTargetAtTime(0, t, ease);
+        bed.stop(t + ease * 7);
+        setTimeout(() => { gain.disconnect(); panner.disconnect(); }, ease * 7000 + 100);
         return;
       }
       const t = bus.context.currentTime;
@@ -361,7 +431,7 @@ export function createSfx(audio: GameAudio) {
         beds.set(id, running);
       }
       const { volume, pan = 0, drive = 0 } = level, was = running.level;
-      if (Math.abs(volume - was.volume) > .003) { running.gain.gain.setTargetAtTime(volume, t, .15); was.volume = volume; }
+      if (Math.abs(volume - was.volume) > .003) { running.gain.gain.setTargetAtTime(volume, t, ease); was.volume = volume; }
       if (Math.abs(pan - was.pan) > .01) { running.panner.pan.setTargetAtTime(Math.max(-1, Math.min(1, pan)), t, .1); was.pan = pan; }
       if (!(Math.abs(drive - was.drive) <= .01)) { running.bed.drive(drive, t); was.drive = drive; }
     },

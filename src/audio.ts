@@ -2,8 +2,8 @@
  * The sound engine (docs/audio.md): one AudioContext, a music bus and an effects bus, the player's
  * levels and the decoded files. Music and effects build on it (src/music.ts, src/sfx.ts).
  *
- *   music voices → duck (gain) → muffle (lowpass) → music level ┐
- *   effects                                       → sfx level   ┴→ master → speakers
+ *   music voices → duck (gain) → hush (gain) → muffle (lowpass) → music level ┐
+ *   effects                                                    → sfx level   ┴→ master → speakers
  */
 export interface AudioSettings { music: number; sfx: number; muted: boolean }
 export const DEFAULT_AUDIO: AudioSettings = { music: .7, sfx: .8, muted: false };
@@ -24,10 +24,11 @@ export type GameAudio = ReturnType<typeof createAudio>;
 export function createAudio() {
   let settings = DEFAULT_AUDIO;
   try { settings = validAudioSettings(JSON.parse(localStorage.getItem(storageKey) ?? '{}')); } catch { /* Storage is optional. */ }
-  let buses: (Buses & { master: GainNode; musicLevel: GainNode; sfxLevel: GainNode; duck: GainNode; muffle: BiquadFilterNode }) | undefined;
+  let buses: (Buses & { master: GainNode; musicLevel: GainNode; sfxLevel: GainNode; duck: GainNode; hush: GainNode; muffle: BiquadFilterNode }) | undefined;
   const buffers = new Map<string, Promise<AudioBuffer>>();
   const listeners = new Set<() => void>();
   let unlock: () => void = () => {};
+  let hushed = false;
   /** Resolves on the first key, click or pad button: browsers keep sound off until then. */
   const unlocked = new Promise<void>(resolve => { unlock = resolve; });
 
@@ -36,12 +37,12 @@ export function createAudio() {
     const Context = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Context) return undefined;
     const context = new Context({ latencyHint: 'interactive' });
-    const master = context.createGain(), musicLevel = context.createGain(), sfxLevel = context.createGain(), duck = context.createGain();
+    const master = context.createGain(), musicLevel = context.createGain(), sfxLevel = context.createGain(), duck = context.createGain(), hush = context.createGain();
     const muffle = context.createBiquadFilter(); muffle.type = 'lowpass'; muffle.frequency.value = 20000; muffle.Q.value = .5;
-    duck.connect(muffle).connect(musicLevel).connect(master);
+    duck.connect(hush).connect(muffle).connect(musicLevel).connect(master);
     sfxLevel.connect(master);
     master.connect(context.destination);
-    buses = { context, music: duck, sfx: sfxLevel, master, musicLevel, sfxLevel, duck, muffle };
+    buses = { context, music: duck, sfx: sfxLevel, master, musicLevel, sfxLevel, duck, hush, muffle };
     apply(0);
     return buses;
   }
@@ -71,6 +72,21 @@ export function createAudio() {
 
   return {
     unlocked,
+    /** Whether sound plays now: the context is running (after a gesture, or because the browser lets this page play). */
+    get running() { return buses?.context.state === 'running'; },
+    /**
+     * Tries to start sound before any gesture: a browser that lets this page play (Chrome does once
+     * the game has played sound here often enough) starts it now, and `unlocked` resolves. Elsewhere it
+     * stays off until the first key, click or pad button.
+     */
+    tryStart() {
+      if (document.hidden) return;
+      const bus = setup();
+      if (!bus) return;
+      if (bus.context.state === 'running') { unlock(); return; }
+      bus.context.addEventListener('statechange', () => { if (bus.context.state === 'running') unlock(); });
+      void bus.context.resume().catch(() => {});
+    },
     get settings() { return settings; },
     /** The context and buses, created on first use; undefined in a browser without Web Audio. */
     get buses(): Buses | undefined { return setup(); },
@@ -88,6 +104,14 @@ export function createAudio() {
       buses.duck.gain.setTargetAtTime(on ? .45 : 1, at, time / 3);
       buses.muffle.frequency.setTargetAtTime(on ? 900 : 20000, at, time / 3);
     },
+    /** Takes the music out altogether, or brings it back where it is now: the songs go on playing underneath. */
+    hush(on: boolean, time = .4) {
+      hushed = on;
+      if (!buses) return;
+      buses.hush.gain.setTargetAtTime(on ? 0 : 1, buses.context.currentTime, time / 3);
+    },
+    /** Whether the music is hushed now. */
+    get hushed() { return hushed; },
     /** Fetches and decodes a file under public/ once (e.g. `music/battle.m4a`). */
     load(src: string): Promise<AudioBuffer> {
       const bus = setup();

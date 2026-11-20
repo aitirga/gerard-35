@@ -857,6 +857,25 @@ weight = 2
 priority = "final"
 file = "src/endings.ts"
 
+# The last fight's music (docs/audio.md § The last fight).
+[[block.item]]
+title = "Música del último combate: el artilugio aparta la canción"
+priority = "final"
+grep = "function scoreNote"
+in = "src/main.ts"
+
+[[block.item]]
+title = "Canción de La Reina: intro y tres versiones de su A (la compone Aitor)"
+weight = 2
+priority = "final"
+file = "public/music/battle-final.m4a"
+
+[[block.item]]
+title = "La decisión: el viento, y el piano del inicio más triste"
+priority = "final"
+grep = "'intro-triste'"
+in = "src/main.ts"
+
 [[block.item]]
 title = "Créditos"
 priority = "final"
@@ -909,6 +928,25 @@ title = "Banda sonora completa"
 weight = 2
 
 # Each place's card says what it sounds like, or that it is not built (docs/places/*.md).
+[[block.item]]
+title = "Pantalla de inicio con el piano"
+file = "src/title.ts"
+
+[[block.item]]
+title = "Una canción en cada sitio de las misiones"
+grep = "'sagrada-familia-interior': 'mazmorra-oscuro'"
+in = "src/main.ts"
+
+[[block.item]]
+title = "Pasos según el suelo"
+grep = "STEPS"
+in = "src/game.ts"
+
+[[block.item]]
+title = "Salas del jefe: mazmorra-3 en la sala y el combate de tres misiones"
+grep = "BOSS_ROOM_FIGHTS"
+in = "src/main.ts"
+
 [[block.item]]
 title = "Sonido en los sitios que no lo tienen"
 weight = 2

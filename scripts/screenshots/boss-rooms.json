@@ -1,0 +1,162 @@
+{
+  "title": "The boss rooms' song",
+  "description": "docs/audio.md § Boss rooms: in three friends' missions the boss's room changes the dark mazmorra song for mazmorra-3, from its top, and the boss is fought to it, going on from where it was: Vertitrón's summit once the tower's third ring is behind them, the merendero once Las parcelas has opened its steel door, and the bottom of Emilie's model. An ordinary fight in a boss room keeps the battle song (the tower's young onions catch them just past the third ring), and the room's song comes back after it. The overlay is the scenario's. Run with --chrome: just screenshots boss-rooms --chrome.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=summit"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showMusic = (note = '') => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.5 monospace;white-space:pre'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(1) ?? '—'} s${note ? `\\n${note}` : ''}`; };"
+    },
+    {
+      "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && document.querySelector('#environment .place-name')?.textContent === 'La torre de Uri'",
+      "timeout": 90000
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 60000
+    },
+    {
+      "until": "window.gerard.music.playing === 'battle' && window.gerard.battleUI.live?.encounter === 'crias-3'",
+      "timeout": 10000
+    },
+    {
+      "eval": "window.showMusic('un combate cualquiera en la sala (las crías del tercer anillo): la de batalla')"
+    },
+    {
+      "shot": "crias-batalla",
+      "delay": 600,
+      "caption": "Just past the third ring the young onions still catch them: an ordinary fight, to the battle song"
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "until": "window.gerard.battleUI.fight?.phase === 'won'",
+      "timeout": 30000
+    },
+    {
+      "press": "Enter",
+      "gap": 600
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-3' && window.gerard.music.position() > 3",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic('la torre, pasado el tercer anillo: la sala de Vertitrón')"
+    },
+    {
+      "shot": "torre-cima",
+      "delay": 800,
+      "caption": "Uri's tower past its third ring, under the summit: mazmorra-3 from its top"
+    },
+    {
+      "eval": "window.before = window.gerard.music.position(); window.gerard.game.startPalaceFight('uri-vertigo')"
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy",
+      "timeout": 90000
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-3' && window.gerard.music.position() > window.before",
+      "timeout": 5000
+    },
+    {
+      "eval": "window.showMusic(`Vertitrón: la misma canción sigue (antes ${window.before.toFixed(1)} s), sin la de batalla`)"
+    },
+    {
+      "shot": "vertitron",
+      "delay": 600,
+      "caption": "Vertitrón's fight: the same song goes on from where it was, no battle song"
+    },
+    {
+      "open": "/?mission=universidad&part=sobremesa"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showMusic = (note = '') => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.5 monospace;white-space:pre'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(1) ?? '—'} s${note ? `\\n${note}` : ''}`; };"
+    },
+    {
+      "until": "window.gerard && document.title.includes('Càmping')",
+      "timeout": 90000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-3' && window.gerard.music.position() > 2",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic('el merendero, con la puerta de acero abierta: la sala de La Sobremesa')"
+    },
+    {
+      "shot": "merendero",
+      "delay": 800,
+      "caption": "The merendero once Las parcelas has opened its steel door: mazmorra-3"
+    },
+    {
+      "teleport": "camping",
+      "cell": [
+        5,
+        25
+      ]
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-oscuro'",
+      "timeout": 15000
+    },
+    {
+      "eval": "window.showMusic('fuera del merendero, junto a la piscina: vuelve la oscura')"
+    },
+    {
+      "shot": "piscina",
+      "delay": 800,
+      "caption": "Out by the pool again: back to mazmorra-oscuro"
+    },
+    {
+      "open": "/?mission=emilie&part=fondo"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showMusic = (note = '') => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.5 monospace;white-space:pre'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(1) ?? '—'} s${note ? `\\n${note}` : ''}`; };"
+    },
+    {
+      "until": "window.gerard && document.title.includes('modelo')",
+      "timeout": 90000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "until": "window.gerard.music.playing === 'mazmorra-3' && window.gerard.music.position() > 2",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic('el fondo del modelo: la sala de El que no converge')"
+    },
+    {
+      "shot": "modelo-fondo",
+      "delay": 800,
+      "caption": "The bottom of Emilie's model, where El que no converge waits: mazmorra-3"
+    }
+  ]
+}

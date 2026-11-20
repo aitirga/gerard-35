@@ -1,5 +1,8 @@
 # Development tools in the game
 
+The release opens on the welcome screen (src/title.ts, docs/audio.md); development skips it unless
+the URL has `?title` (e.g. `/?story=new&title`).
+
 The place panel (top left) names where Gerard is. Clicking the place's name opens its picker
 ([src/jump-menu.ts](../src/jump-menu.ts)), a list under the panel with the street still in view.
 Arrows walk it, Enter picks, Escape or a click outside closes it, and the game waits while it is open.
