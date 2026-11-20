@@ -63,7 +63,9 @@ section('combates', 'Combates y su pareja de objetivos', 'pending', 'cada combat
 
 // ——— Places: a song of its own (docs/audio.md) ———
 const songs = /PLACE_SONGS[^=]*= \{([^}]*)\}/.exec(main)?.[1] ?? '';
-const sung = [...songs.matchAll(/'?([\w-]+)'?: '/g)].map(m => m[1]);
+// Barcelona's streets play the city's song by the hour (`CITY`), and Las cuerdas Marta's voice (`CUERDAS_PLACE`, src/voz-song.ts).
+const city = /const CITY[^=]*= \[([^\]]*)\]/.exec(main)?.[1] ?? '';
+const sung = [...songs.matchAll(/'?([\w-]+)'?: '/g), ...city.matchAll(/'([\w-]+)'/g)].map(m => m[1]).concat(main.includes('CUERDAS_PLACE') ? ['cuerdas'] : []);
 section('lugares', 'Lugares y su canción', 'pending', 'cada lugar suena a algo (PLACE_SONGS, src/main.ts)',
   places.filter(id => id !== 'patio' && !sung.includes(id)).map(id => `${id}: sin canción`));
 
