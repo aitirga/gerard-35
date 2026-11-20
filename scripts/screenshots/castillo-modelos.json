@@ -1,6 +1,6 @@
 {
   "title": "El castillo: los alumnos con sus modelos",
-  "description": "docs/castle.md § Bestiary. The castle's pupils drawn from their own figures (just character-3d, Meshy) where they have one, the palace minion where not yet: La Chivata and El Repetidor of the first year, El Castigado of the second and its run at the party, and a room's pupils patrolling the first floor. Run it with --gpu.",
+  "description": "docs/castle.md § Bestiary. The castle's pupils drawn from their own figures (just character-3d, Meshy) where they have one, the palace minion where not yet: La Chivata, El Repetidor, El Empollón, La Delegada and Los Gemelos of the first year, El Castigado of the second and its run at the party, and a room's pupils patrolling the first floor. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-1a%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -36,6 +36,74 @@
       "shot": "chivata-cerca",
       "delay": 1200,
       "caption": "La Chivata up close: the rope-thin arm down to the floor"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-1b%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "empollon",
+      "delay": 1500,
+      "caption": "El Empollón and La Chivata: the swot's swollen head bubble on its rope of a neck"
+    },
+    {
+      "eval": "closeUp(foe('empollon').id, 2.8)"
+    },
+    {
+      "shot": "empollon-cerca",
+      "delay": 1200,
+      "caption": "El Empollón up close: the dark mass showing through the bubble, the grey scabs of what it learned"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22delegada-1%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "delegada",
+      "delay": 1500,
+      "caption": "La Delegada and Los Gemelos, all three in their own figures"
+    },
+    {
+      "eval": "closeUp(foe('delegada').id, 3.2)"
+    },
+    {
+      "shot": "delegada-cerca",
+      "delay": 1200,
+      "caption": "La Delegada up close: the laurel of hardened gum, the sash, the threads from her fingers"
+    },
+    {
+      "eval": "closeUp(ui.live.foes.find(f => f.kind === 'gemelo').id, 2.8)"
+    },
+    {
+      "shot": "gemelo-cerca",
+      "delay": 1200,
+      "caption": "One of Los Gemelos: the face bubble flattened on one side, the torn band of gum"
     },
     {
       "eval": "window.gerard.game.frame()"
