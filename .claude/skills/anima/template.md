@@ -1,36 +1,75 @@
 # <Name>
 
-Status: designing · Comes from: <friend's mission `docs/quests/<friend>.md`, or a story moment>
+Status: <designing | playable up to level N; what is designed and not built> · Comes from:
+<friend's mission `docs/quests/<friend>.md`, or a story moment>
+
+What is **decided** says so and by whom. Everything else is a proposal with its numbers as first
+guesses (`../README.md` § Order of work).
 
 ## Identity
 
 - What it is, in one or two sentences:
+- What it feels like to wear:
 - Unlocked: <when and how>
 - Motto:
 - Colour: <grey in the first round → colour in the second, if it is a friend's>
-- Look and interface:
+
+## Role
+
+| | <This one> | <the others…> |
+| --- | --- | --- |
+| Hurts with | | |
+| Its resource on the foe | | |
+| Pays off as | | |
+
+- Good at:
+- Bad at:
+- How it changes a fight (the decision it adds to every turn):
 
 ## Stats
 
-## Signature
+<`CLASS_STATS`: built, and the proposal. The friend's light's party bonus, apart.>
 
-<Its own rule, or a shared mechanic from `../README.md` used its own way.>
+## Signature: <its mechanic>
 
-Passives (one or two, always on while worn, defining how it is played):
+<The loop in two or three numbered steps, from shared rules in `../README.md` § Shared mechanics
+where it can. A new shared rule is defined there (the rule, and how it shows), not here.>
 
-- 
+### Passives
+
+| Passive | When | What it does |
+| --- | --- | --- |
 
 ## Skills per level
 
-| Level | Skill | Cost | Base | Description |
-| --- | --- | --- | --- | --- |
+| Level | What it gives | Who | Cost | Base | Description | State |
+| --- | --- | --- | --- | --- | --- | --- |
 
-What raises each level: fights won wearing it / a story event.
+<Every row has its description as the player reads it, in Spanish, in the `AGENTS.md` shape
+(`Daño físico medio a un enemigo. Añade sangrado.`), its intensity worked out from the base in the
+same row; passives, commands and the definitiva too. Only Maná +1 has `—`.>
 
-## Combined skills
+<A line on what each skill is for in the loop.>
 
-| With | Idea |
+## Definitiva: <its name>
+
+| | |
 | --- | --- |
+| **Wakes in a fight when** | |
+| **Then** | Once in that fight, for the turn and no maná |
+| **In the game** | `<its description>` |
+
+## What a round looks like
+
+| Turn | Does | On the foe |
+| --- | --- | --- |
+
+## What it offers a dual
+
+<The hooks it brings to a pair. The duals already built, in a table. New ones are designed after
+every ánima is.>
+
+## Look and interface
 
 ## In the world
 
@@ -38,8 +77,12 @@ What raises each level: fights won wearing it / a story event.
 
 ## Implementation
 
-<What is built and where; what is blocked and by what; the plan, step by step, following
-`../README.md` § How an ánima is built.>
+<**Built**: what and where. **To build**: the steps in order, following `../README.md` § How an
+ánima is built.>
+
+## For the balance, later
+
+<What `just fight-sim` says of it today, and the numbers to watch.>
 
 ## Open
 

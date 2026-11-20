@@ -1,0 +1,66 @@
+{
+  "title": "Hoja de ánimas · notas",
+  "description": "The ánimas' sheet as just animas serves it (output/reports/animas/, written again on each load by animasSheet in vite.config.ts): an ánima's design beside what the game has, with its notes in the rail on the right, written, edited and closed there; the Notas page gathers them all. It writes to output/reports/animas/notes-scratch.json (?notas=scratch), never to docs/anima-notes.json, and empties it at the end.",
+  "steps": [
+    {
+      "open": "/__animas/notas?archivo=scratch",
+      "ready": "true"
+    },
+    {
+      "eval": "fetch('/__animas/notas?archivo=scratch', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes: [{ id: 'n-a1', entry: 'papagato', name: 'Papagato', text: 'La tabla de habilidades no dice cuántas heridas hacen falta para el golpe crítico. Ponlo en el diseño.', status: 'hecha', created: '2026-11-20T09:10:00Z', closed: '2026-11-20T09:40:00Z', reply: 'Añadido en § Signature: el golpe crítico salta con 3 heridas abiertas, con el ejemplo de una ronda.' }, { id: 'n-a2', entry: 'duos', name: 'Dúos', text: 'Falta una pareja para Dadaísta que no sea con Matemágico.', status: 'abierta', created: '2026-11-20T09:20:00Z' }] }) })"
+    },
+    {
+      "open": "/output/reports/animas/?notas=scratch#papagato",
+      "ready": "window.animaNotes?.ready() && window.animaNotes.notes().length === 2"
+    },
+    {
+      "eval": "(() => { const t = document.querySelector('#notes [data-draft]'); t.focus(); t.value = 'Ronroneo cura poco para lo que cuesta: compáralo con la cura de Matemágico.'; t.dispatchEvent(new Event('input', { bubbles: true })); })()"
+    },
+    {
+      "press": "Control+Enter"
+    },
+    {
+      "until": "window.animaNotes.notes().length === 3",
+      "timeout": 10000
+    },
+    {
+      "shot": "papagato",
+      "delay": 500,
+      "caption": "Papagato with its notes on the right: the one just written (Ctrl/⌘ + Enter), open, and an older one closed with the anima skill's reply; ✎ 1 beside Papagato and Dúos in the list"
+    },
+    {
+      "eval": "(() => { document.querySelector('#notes .note.abierta [data-act=\"editar\"]').click(); const t = document.querySelector('#notes [data-edit]'); t.value = 'Ronroneo cura poco para lo que cuesta (2 de maná): compáralo con la cura de Matemágico y con Atacar.'; t.dispatchEvent(new Event('input', { bubbles: true })); })()"
+    },
+    {
+      "shot": "editando",
+      "delay": 300,
+      "caption": "Editing a note in place: Guardar (Ctrl/⌘ + Enter) or Cancelar (Esc)"
+    },
+    {
+      "press": "Control+Enter"
+    },
+    {
+      "until": "window.animaNotes.notes().some(n => n.edited)",
+      "timeout": 10000
+    },
+    {
+      "eval": "document.querySelector('#notes .note.abierta [data-act=\"borrar\"]').click()"
+    },
+    {
+      "shot": "editada",
+      "delay": 300,
+      "caption": "The note saved with its new text and the time it was edited; Borrar asks once more before deleting"
+    },
+    {
+      "eval": "location.hash = 'notas'"
+    },
+    {
+      "shot": "todas",
+      "delay": 400,
+      "caption": "Notas: every open note on the sheet, by ánima and page, each linking to its page (Todas also shows the closed ones)"
+    },
+    {
+      "eval": "fetch('/__animas/notas?archivo=scratch', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes: [] }) })"
+    }
+  ]
+}

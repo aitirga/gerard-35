@@ -4,6 +4,8 @@
 Usage:
   scripts/herdr-progress [--dir PATH]            the panel at the top of herdr's column; q quits, r rereads
   scripts/herdr-progress --once [--all] [--dir PATH]   print it once (just progress)
+  scripts/herdr-progress --audit [--dir PATH]    what the bar rests on, checks that cannot tick, and
+                                                 whether the game is wired together (just progress --audit)
 
 herdr-layout runs this in any project that has it. The checks read a few named files, so it
 looks again every few seconds and draws only when something changed. See docs/dev-tools.md.
@@ -24,7 +26,9 @@ import tty
 from pathlib import Path
 
 REFRESH = 5
-CHECK_KEYS = {"done", "file", "grep", "absent", "in"}
+CHECK_KEYS = {"done", "file", "grep", "absent", "in", "used"}
+# Where the game's code lives: a `used` name is looked for here, and a `file` in here must be imported.
+SOURCES = "src/**/*.ts"
 ITEM_KEYS = CHECK_KEYS | {"title", "weight", "priority"}
 EIGHTHS = " ▏▎▍▌▋▊▉"
 # Her pink at the start, then Papagato's orange, Matemágico's gold and a calm sage at the end.
@@ -44,24 +48,87 @@ def load(path):
                 raise ValueError(f"{name}: no conozco {', '.join(sorted(unknown))}")
             if ("grep" in item or "absent" in item) and "in" not in item:
                 raise ValueError(f"{name}: grep y absent necesitan in")
+            if "in" in item and "grep" not in item and "absent" not in item:
+                raise ValueError(f"{name}: in sin grep ni absent")
             if "priority" in item and item["priority"] not in known:
                 raise ValueError(f"{name}: no hay prioridad {item['priority']}")
     return manifest
 
 
-def is_done(item, root, read):
+def names(value):
+    return [value] if isinstance(value, str) else list(value)
+
+
+IMPORT = re.compile(r"""['"]\.{1,2}/((?:[\w.-]+/)*)([\w.-]+?|\*)(?:\.ts)?['"]""")
+
+
+def checks_of(item, root, read, game):
+    """Each check the item has and whether it holds: (kind, holds). `game` knows what the code imports and uses."""
+    checks = []
+    if "file" in item:
+        found = glob.glob(item["file"], root_dir=root, recursive=True)
+        # A module that exists and nothing imports is written, not in the game.
+        code = [path for path in found if path.startswith("src/") and path.endswith(".ts")]
+        checks.append(("file", bool(found) and (not code or any(game.imported(path) for path in code))))
+    if "grep" in item:
+        checks.append(("grep", any(re.search(item["grep"], text, re.MULTILINE) for text in read(item["in"]))))
+    if "absent" in item:
+        texts = read(item["in"])
+        checks.append(("absent", bool(texts) and not any(re.search(item["absent"], text, re.MULTILINE) for text in texts)))
+    if "used" in item:
+        # Defined in one module and used in another: in the game, not only written.
+        checks.append(("used", all(game.modules(name) >= 2 for name in names(item["used"]))))
+    return checks
+
+
+def is_done(item, checks):
     """A manual `done` wins; otherwise every check it has must hold, and one with none is pending."""
     if "done" in item:
         return bool(item["done"])
-    checks = []
-    if "file" in item:
-        checks.append(bool(glob.glob(item["file"], root_dir=root, recursive=True)))
-    if "grep" in item:
-        checks.append(any(re.search(item["grep"], text, re.MULTILINE) for text in read(item["in"])))
-    if "absent" in item:
-        texts = read(item["in"])
-        checks.append(bool(texts) and not any(re.search(item["absent"], text, re.MULTILINE) for text in texts))
-    return bool(checks) and all(checks)
+    return bool(checks) and all(holds for _, holds in checks)
+
+
+class Game:
+    """The game's code, read only if a check asks: who imports what, which names are where."""
+
+    def __init__(self, root, read):
+        self.root, self.read, self.sources, self.counts, self.links = root, read, None, {}, None
+
+    def texts(self):
+        if self.sources is None:
+            paths = sorted(glob.glob(SOURCES, root_dir=self.root, recursive=True))
+            self.sources = {path: text for path in paths for text in self.read(path)}
+        return self.sources
+
+    def modules(self, name):
+        """In how many modules the name is, as a whole word."""
+        if name not in self.counts:
+            word = re.compile(rf"(?<![\w$]){re.escape(name)}(?![\w$])")
+            self.counts[name] = sum(name in text and bool(word.search(text)) for text in self.texts().values())
+        return self.counts[name]
+
+    def imported(self, path):
+        """Whether something brings this module in: another by name or its whole folder at once, or a page of its own."""
+        if self.links is None:
+            # Every relative import of every module: (the module it is in, the folder it names, the name).
+            self.links = [(source, folders.rstrip("/").rsplit("/", 1)[-1], stem)
+                          for source, text in self.texts().items() for folders, stem in IMPORT.findall(text)]
+            self.pages = self.read("*.html")
+        stem, folder = Path(path).stem, Path(path).parent.name
+        return any(path in page for page in self.pages) or any(
+            source != path and (name == stem or (name == "*" and inside == folder)) for source, inside, name in self.links)
+
+
+# The panel measures every few seconds: the code is read again only when one of its files changed.
+_games = {}
+
+
+def game_of(root, read):
+    stamp = tuple((path, stat.st_mtime_ns, stat.st_size) for path in sorted(glob.glob(SOURCES, root_dir=root, recursive=True) + glob.glob("*.html", root_dir=root))
+                  for stat in [os.stat(os.path.join(root, path))])
+    if _games.get(root, (None,))[0] != stamp:
+        _games[root] = (stamp, Game(root, read))
+    return _games[root][1]
 
 
 def share(items):
@@ -93,9 +160,15 @@ def measure(manifest, root):
                 texts.append(cache[path])
         return texts
 
+    game = game_of(root, read)
     blocks = []
     for block in manifest.get("block", []):
-        items = [{**item, "ok": is_done(item, root, read)} for item in block.get("item", [])]
+        items = []
+        for item in block.get("item", []):
+            checks = checks_of(item, root, read, game)
+            items.append({**item, "ok": is_done(item, checks), "checks": checks,
+                          "found": {key: bool(read(item[key]) if key == "in" else glob.glob(item[key], root_dir=root, recursive=True)) for key in ("in", "file") if key in item},
+                          "defined": {name: game.modules(name) for name in names(item.get("used", []))}})
         blocks.append({**block, "item": items, "share": share(items)})
     every = [item for block in blocks for item in block["item"]]
     priorities = []
@@ -185,6 +258,76 @@ def render(data, heading, rows, cols, colour, error=None):
     return lines[: max(rows, 1)]
 
 
+EVIDENCE = (("used", "conectado: definido en un módulo y usado en otro"), ("text", "un texto en un archivo"),
+            ("file", "existe un archivo (y el juego lo importa, si es código)"), ("hand", "marcado a mano"))
+
+
+def evidence(item):
+    """What a ticked item rests on, the strongest of its checks."""
+    kinds = {kind for kind, _ in item["checks"]}
+    return "hand" if "done" in item else "used" if "used" in kinds else "text" if kinds & {"grep", "absent"} else "file"
+
+
+def audit(data):
+    """The list's own health: what cannot tick as written (`broken`), and what the bar rests on."""
+    broken, seen = [], set()
+    total = sum(block.get("weight", 0) for block in data["blocks"]) or 1
+    rests = {kind: [0.0, 0] for kind, _ in EVIDENCE}
+    waiting = []
+    for block in data["blocks"]:
+        inside = sum(item.get("weight", 1) for item in block["item"]) or 1
+        for item in block["item"]:
+            title = item["title"]
+            if title in seen:
+                broken.append(f"«{title}»: está dos veces")
+            seen.add(title)
+            if "in" in item and not item["found"]["in"]:
+                broken.append(f"«{title}»: `in` no encuentra ningún archivo ({item['in']})")
+            for name, files in item["defined"].items():
+                if not files:
+                    broken.append(f"«{title}»: `used` busca {name}, que no está en {SOURCES}")
+            failing = [kind for kind, holds in item["checks"] if not holds]
+            if item.get("done") and failing:
+                broken.append(f"«{title}»: marcado a mano, pero su comprobación ({', '.join(failing)}) no se cumple")
+            if item["ok"]:
+                rest = rests[evidence(item)]
+                rest[0] += block.get("weight", 0) / total * item.get("weight", 1) / inside
+                rest[1] += 1
+            elif not item["checks"]:
+                waiting.append(title)
+    return {"broken": broken, "rests": rests, "waiting": waiting}
+
+
+def print_audit(data, colour):
+    bold, dim, reset = ("\033[1m", "\033[2m", "\033[0m") if colour else ("", "", "")
+    report = audit(data)
+    print(f" {bold}AUDITORÍA DEL PROGRESO{reset} {dim}(docs/progress.toml){reset}")
+    if report["broken"]:
+        print(f"\n ✗ Comprobaciones rotas: {len(report['broken'])} por arreglar")
+        for line in report["broken"]:
+            print(f"     ✗ {line}")
+    else:
+        print("\n ✓ Comprobaciones: todas pueden cumplirse y ninguna se contradice")
+    print(f"\n {bold}En qué se apoya el {percent(data['total'])} %{reset}")
+    for kind, label in EVIDENCE:
+        points, count = report["rests"][kind]
+        print(f"   {points * 100:5.1f} puntos · {count:3} elementos · {label}")
+    print(f"\n · Pendientes que solo se marcan a mano: {len(report['waiting'])}")
+    for title in report["waiting"]:
+        print(f"     · {title}")
+    return not report["broken"]
+
+
+def integration(root):
+    """The game's own registries against each other (scripts/integration.mjs); False if something is broken."""
+    script = Path(root, "scripts/integration.mjs")
+    if not script.exists() or not shutil.which("node"):
+        print("\n · Integración: hace falta node y scripts/integration.mjs")
+        return True
+    print(flush=True)
+    return subprocess.run(["node", "--experimental-strip-types", "--no-warnings", str(script)], cwd=root, check=False).returncode == 0
+
+
 def manifest_path(root):
     """This checkout's list, or for a worktree from before it had one, the list beside this script."""
     own = Path(root, "docs/progress.toml")
@@ -263,9 +406,14 @@ def main():
     parser.add_argument("--dir", default=".", help="the checkout to measure")
     parser.add_argument("--once", action="store_true", help="print it once and leave")
     parser.add_argument("--all", action="store_true", help="with --once, every item")
+    parser.add_argument("--audit", action="store_true", help="the list's health and the game's integration; fails if something is broken")
     args = parser.parse_args()
     root = os.path.abspath(args.dir)
     colour = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+    if args.audit:
+        healthy = print_audit(measure(load(manifest_path(root)), root), colour)
+        wired = integration(root)
+        raise SystemExit(0 if healthy and wired else 1)
     if args.once or not sys.stdin.isatty():
         once(root, args.all, colour)
     else:

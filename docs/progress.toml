@@ -6,12 +6,21 @@
 # makes the bar shrink, finishing or dropping one makes it grow: cut a mission by deleting its items.
 #
 # An item is done when all of its checks hold, paths relative to the checkout:
-#   file = "glob"                 something matches
+#   file = "glob"                 something matches; a module of src/ also needs something to import
+#                                 it (another module, or a page of its own): written is not in the game
+#   used = "name"                 the name is in two modules of src/ or more: defined in one and used
+#                                 in another (a list asks it of each name). The check for anything
+#                                 that can exist without being wired in: a gate, a rule, a hook
 #   grep = "regex", in = "glob"   the text is in one of those files (`in` can be a list)
 #   absent = "regex", in = "glob" the files exist and the text is in none of them
 #   done = true                   by hand, for what code cannot tell; it wins over any check
 # An item with no check is pending until it gets `done = true`.
 # Name what you build as a check expects, or change the check when you build it.
+#
+# `just progress --audit` says what the bar rests on, which checks can never tick as written, and
+# whether the game itself is wired together (scripts/integration.mjs): every flag, place and fight
+# in the picker, each fight's pair of targets, each place's song, each ánima's growth, portraits,
+# models and what is exported and never used. Run it before calling something done.
 
 # In the order they should be done. `priority` on an item says which one it counts towards.
 [[priority]]
@@ -60,13 +69,26 @@ priority = "guion"
 absent = 'does not\s+fight'
 in = "docs/chapter-2.md"
 
+# Decided 2026-11-07: serious, an adult game; childhood is the theme, never the register
+# (AGENTS.md § Game philosophy).
 [[block.item]]
 title = "Decidir el tono: serio o como la misión de Nuria"
 priority = "guion"
+grep = "this is not a children's game"
+in = "AGENTS.md"
 
+# Decided 2026-11-19 (docs/quests/bernat.md, rounds 4 and 5): it is the game he made up as a kid,
+# he says so looking at the camera, and what beats her comes from the real flat.
 [[block.item]]
 title = "Decidir qué descubre Bernat"
 priority = "guion"
+grep = "the game knows it is a game"
+in = "docs/quests/bernat.md"
+
+# src/credits.ts is a first draft (2026-11-19).
+[[block.item]]
+title = "Repasar el texto de los créditos"
+priority = "final"
 
 [[block.item]]
 title = "Decidir qué muestra cada uno de los dos finales"
@@ -82,15 +104,21 @@ title = "Lista final de misiones"
 priority = "alcance"
 done = true
 
+# Decided 2026-11-19: the five friends' ánimas of the base (docs/story-outline.md § The base); each
+# ánima and each castle boss wins three days back (docs/chapter-2.md § The Queen's advance).
 [[block.item]]
 title = "Número de ánimas y reajuste del avance de la Reina"
 priority = "alcance"
+grep = 'each boss of her\s+castle beaten'
+in = "docs/chapter-2.md"
 
-# Idea (docs/animas/README.md § Growth opens with the castle): constellations and level caps open in
-# three stages: Aurelià gives the third ánima slot (three at most), el Equipo de dirección the definitivas. Not built.
+# docs/castle.md § What each boss opens. Built: the third ánima slot after Aurelià (extraSlots).
+# Not yet: the constellations' outer ring after Aurelià, levelCap applied (defined in castle.ts,
+# used nowhere: the check waits for that) and the definitivas after Dirección (their own item).
 [[block.item]]
 title = "El crecimiento de las ánimas se abre con el castillo (tres etapas)"
 priority = "palacio"
+used = "levelCap"
 
 # ——— Motor ———
 [[block]]
@@ -130,17 +158,21 @@ file = "src/jump-menu.ts"
 [[block.item]]
 title = "Simulador del juego entero: partidas sin pantalla, estadísticas y pestaña Partida"
 weight = 2
-grep = "simPage"
-in = "src/jump-menu.ts"
+used = "simPage"
 
 [[block.item]]
 title = "El simulador juega todas las misiones: Emilie y Luca, billetes y el viaje a Alegia"
 grep = "'luca'"
 in = "src/game-sim.ts"
 
-# Gerard plays on the Windows PC at home with the local server (decided 2026-11-19).
+# Gerard plays on the Windows PC at home with the local server (decided 2026-11-19). The steps are
+# in the README; done once it has been played there.
 [[block.item]]
 title = "El juego en el Windows de casa, con el servidor en la red local"
+
+[[block.item]]
+title = "Bestiario: cada personaje, monstruo y jefe con su modelo, retrato y movimientos (just bestiario)"
+file = "src/bestiary.ts"
 
 [[block.item]]
 title = "Versión final publicada y a 120 Hz"
@@ -289,6 +321,17 @@ weight = 3
 file = "src/friends/nuria.ts"
 
 [[block.item]]
+title = "Nuria, Uri y Nil en 3D (figuras de juguete, just character-3d; Nil en brazos de Uri)"
+grep = "\"carries\": \"nil\""
+in = ["src/characters/uri.json"]
+file = "public/models/held/nil.glb"
+
+[[block.item]]
+title = "Haru y Yuki en 3D (figuras de juguete en el esqueleto de gato del juego)"
+grep = "models/animals/haru.glb"
+in = ["src/animals/haru.json"]
+
+[[block.item]]
 title = "Bernat: diseño"
 priority = "bernat"
 file = "docs/quests/bernat.md"
@@ -299,6 +342,34 @@ weight = 3
 priority = "bernat"
 file = "src/friends/bernat.ts"
 
+# Being built on feat/bernat-maqueta: the light puzzle as icons, played from above on the real
+# flat's 3D model that Bernat has on his table.
+[[block.item]]
+title = "Bernat: el acertijo de las luces en la maqueta de la casa, sin palabras"
+priority = "bernat"
+grep = "MAQUETA_SCALE"
+in = "src/friends/bernat.ts"
+
+# Decided (docs/quests/bernat.md § Round 5), not seeded yet: places and fights where a song makes
+# her minions falter, so Bernat only puts into words what the player has already seen. Generic hints
+# only: the Queen and music, never the melody or the device (docs/story-outline.md § The device).
+[[block.item]]
+title = "Que se note antes de Bernat que la Reina es sensible a la música"
+priority = "bernat"
+
+[[block.item]]
+title = "Bernat a los 35: su figura y su retrato (hoy usa la de Joan)"
+priority = "bernat"
+absent = "BERNAT_STANDIN"
+in = "src/friends/bernat.ts"
+file = "public/portraits/bernat-adult.png"
+
+# Being built on main (docs/quests/coro.md): why the people helped turn up at the choir every morning.
+[[block.item]]
+title = "Al acabar cada misión, Gerard y Aitor mandan a los suyos al coro de A cop de diapasó"
+grep = 'LINES_UNI\.coro'
+in = "src/story.ts"
+
 [[block.item]]
 title = "Emilie: diseño"
 file = "docs/quests/emilie.md"
@@ -307,6 +378,7 @@ file = "docs/quests/emilie.md"
 title = "Emilie: combates del modelo"
 grep = "MODELO_ENCOUNTERS"
 in = "src/battle.ts"
+used = "isModelo"
 
 [[block.item]]
 # Aitor, 2026-11-20: La pluma out, «como un átomo, una representación de reacciones químicas» (docs/quests/emilie.md § El Átomo).
@@ -325,8 +397,7 @@ file = "src/friends/emilie.ts"
 
 [[block.item]]
 title = "Emilie: su piso"
-grep = "furnishEmilie"
-in = "src/emilie-flat-scenery.ts"
+used = "furnishEmilie"
 
 [[block.item]]
 title = "Emilie: su figura y su retrato (fotos, just character)"
@@ -368,6 +439,12 @@ grep = "music/marta-voz.m4a"
 in = "src/song.ts"
 
 [[block.item]]
+title = "Marta: La Voz ataca con su canción (cada nota una habilidad, solo herible en sus silencios)"
+# docs/quests/marta.md § Final boss: each of the six notes is a beam with its element; holding on lasts until acting again.
+grep = "VOZ_NOTES"
+in = "src/battle.ts"
+
+[[block.item]]
 title = "Luca: diseño"
 file = "docs/quests/luca.md"
 
@@ -375,6 +452,10 @@ file = "docs/quests/luca.md"
 title = "Luca: jugable"
 weight = 3
 file = "src/friends/luca.ts"
+
+[[block.item]]
+title = "Luca: su retrato (just character)"
+file = "public/portraits/luca.png"
 
 [[block.item]]
 title = "Amigos de la universidad: diseño"
@@ -402,8 +483,7 @@ in = ["src/story.ts"]
 [[block.item]]
 title = "Amigos de la universidad: arenas propias de El Campeón y La Sobremesa"
 # Each boss fights in a stage built of the campsite's own pieces (src/boss-arena.ts), away from its waiting figure.
-grep = "BOSS_ARENAS"
-in = ["src/game.ts"]
+used = "BOSS_ARENAS"
 
 [[block.item]]
 title = "Amigos de la universidad: efectos de los movimientos de La Sobremesa"
@@ -417,27 +497,39 @@ grep = "models/characters/joan.glb"
 in = ["src/characters/joan.json"]
 
 [[block.item]]
-title = "Amigos de la universidad: su ánima, Dadaísta (dados como maná, nivel 1)"
-# docs/animas/dadaista/README.md: its dice, Golpe de dados and Doble o nada, its look and its throw.
+title = "Amigos de la universidad: su ánima, Dadista (dados como maná)"
+# docs/animas/dadaista/README.md: its dice as maná, Tirar dado, its look and its throw.
 grep = "dadaista"
 in = "src/classes.ts"
 
 [[block.item]]
-title = "Dadaísta: caras con iconos (Mano, Tijeras, Ojo, Corchete, En blanco) en vez de números"
-# docs/animas/dadaista/README.md § Round 5: each face is a move; Doble o nada removed.
+title = "Dadista: caras con iconos (Mano, Tijeras, Ojo, Corchete, En blanco) en vez de números"
+# docs/animas/dadaista/README.md § The faces: each face is a move; Doble o nada removed.
 grep = "cara-corchete"
 in = "src/battle.ts"
+
 [[block.item]]
-title = "Marta: La Voz ataca con su canción (cada nota una habilidad, solo herible en sus silencios)"
-# docs/quests/marta.md § Final boss: each of the six notes is a beam with its element; holding on lasts until acting again.
-grep = "VOZ_NOTES"
+title = "Dadista: Agitar (nivel 2) y su nodo en el bote"
+# docs/animas/dadaista/README.md § Agitar: a free reroll of the hand, once a fight; the Comodín with Racha 3.
+grep = "agitar"
 in = "src/battle.ts"
 
+[[block.item]]
+title = "Dadista: la Racha con su contador y Estrella fugaz (niveles 1 y 3)"
+# docs/animas/dadaista/README.md § Racha: every die spent is Crítico; Estrella fugaz spends it for dice.
+grep = "estrella-fugaz"
+in = "src/battle.ts"
 
 [[block.item]]
-title = "Dadaísta: Agitar, niveles 2 a 7 y su línea en el bote"
-# Designed, not built (docs/animas/dadaista/README.md § Skills per level): Agitar is a fixed command.
-grep = "agitar"
+title = "Dadista: Dados astrales y Ases en dúo (niveles 4 y 5)"
+# Aitor 2026-11-20, built the same day with Maná +1 at level 4 (docs/animas/dadaista/README.md § Skills per level).
+grep = "dados-astrales"
+in = "src/battle.ts"
+
+[[block.item]]
+title = "Dadista: Meteorito, Meteoro y Asteroide (nivel 7)"
+# Aitor 2026-11-20, built the same day: one row that grows turn after turn (docs/animas/dadaista/README.md § The three meteors).
+grep = "meteorito"
 in = "src/battle.ts"
 
 # ——— Ánimas ———
@@ -455,6 +547,24 @@ title = "Papagato"
 grep = "papagato"
 in = "src/classes.ts"
 
+# Redesigned whole 2026-11-20 (docs/animas/papagato/README.md): the golpe crítico is a shared rule
+# (docs/animas/README.md § Golpe crítico), built with cuts that pile up and liquid blood.
+[[block.item]]
+title = "Papagato: golpe crítico, sangrado que se acumula y sangre líquida"
+grep = "CRIT_RULES"
+in = "src/battle.ts"
+
+# Designed, not built: seven levels put the passive Olor a sangre (level 5, written) in reach.
+[[block.item]]
+title = "Papagato: niveles 4 a 7 (Maná +1, Olor a sangre, Acecho, Cacería)"
+grep = "id: 'acecho'"
+in = "src/battle.ts"
+
+[[block.item]]
+title = "Papagato: la definitiva Siete vidas"
+grep = "siete-vidas"
+in = "src/battle.ts"
+
 [[block.item]]
 title = "Tecnópata, la de Aitor"
 priority = "aitor"
@@ -463,13 +573,35 @@ in = "src/classes.ts"
 
 [[block.item]]
 title = "El bote: árboles de Matemágico y Tecnópata"
-grep = "TREE_ANIMAS"
-in = "src/ecos.ts"
+used = "TREE_ANIMAS"
 
 [[block.item]]
 title = "Sincopante, la de Marta"
 grep = "sincopante"
 in = "src/classes.ts"
+
+# The ecos' look, built in the effects lab ahead of the ánima (src/eco-fx.ts; just screenshots sincopante-fx --gpu).
+[[block.item]]
+title = "Sincopante: el aspecto de los ecos, en el laboratorio de efectos"
+grep = "createEcoFx"
+in = "src/eco-lab.ts"
+
+# Designed whole 2026-11-20, waiting for Aitor's yes (docs/animas/sincopante/README.md): ecos on the
+# party's side that sound on their own beat (the compás), raised by Crescendo.
+[[block.item]]
+title = "Sincopante: los ecos y el compás (Ostinato, Bordón, Crescendo, A contratiempo)"
+grep = "id: 'ostinato'"
+in = "src/battle.ts"
+
+[[block.item]]
+title = "Sincopante: niveles 4 a 7 (Maná +1, Acompañamiento, Pedal, Tutti)"
+grep = "id: 'tutti'"
+in = "src/battle.ts"
+
+[[block.item]]
+title = "Sincopante: la definitiva Da capo (los dúos otra vez)"
+grep = "da-capo"
+in = "src/battle.ts"
 
 # The friends' wearable ánimas (src/classes.ts), each designed first with /anima. Emilie's has no
 # name yet: give it its check when it is built.
@@ -520,10 +652,12 @@ priority = "palacio"
 grep = "'empollon'"
 in = "src/castle.ts"
 
+# Aitor, 2026-11-19: all three go in; El Nuevo is renamed El Montón («uno del montón»), after its
+# shape. Being built on feat/castle-pupils.
 [[block.item]]
-title = "El Ausente, el Castigado y el Nuevo"
+title = "El Ausente, el Castigado y el Montón"
 priority = "palacio"
-grep = "'ausente'"
+grep = "(?s)(?=.*'ausente')(?=.*'castigado')(?=.*'monton')"
 in = "src/castle.ts"
 
 [[block.item]]
@@ -539,6 +673,13 @@ in = "src/battle-scene.ts"
 title = "Modelos propios de Aurelià y Dirección"
 priority = "palacio"
 file = "public/models/characters/aurelia.glb"
+
+# All four in SPEAKERS (src/dialogue.ts), which today talk without one.
+[[block.item]]
+title = "Retratos de Aurelià, Mar, Montse y Pilar (just character)"
+priority = "palacio"
+grep = "(?s)(?=.*portrait: 'aurelia')(?=.*portrait: 'mar')(?=.*portrait: 'montse')(?=.*portrait: 'pilar')"
+in = "src/dialogue.ts"
 
 [[block.item]]
 title = "Aurelià: combate y sala"
@@ -557,12 +698,14 @@ in = ["src/battle.ts", "src/story.ts"]
 [[block.item]]
 title = "Tercer hueco de ánima tras Aurelià"
 priority = "palacio"
-grep = "EXTRA_SLOTS = 2|extraSlots"
-in = "src/story.ts"
+used = "extraSlots"
 
+# The gate is there (castle.ts definitivasOpen, unused) and each ánima's definitiva sleeps in the jar
+# ("Todavía duerme"); done when the jar opens them after Dirección. Each one's move is ánima work.
 [[block.item]]
 title = "Definitivas en el bote tras Dirección"
 priority = "palacio"
+used = "definitivasOpen"
 
 [[block.item]]
 title = "La secretaría usa los días de Gerard (docs/day-log.md)"
@@ -617,8 +760,7 @@ in = ["src/battle.ts", "src/story.ts"]
 [[block.item]]
 title = "El jugador 2 maneja a Aitor poseído, contra Gerard"
 priority = "final"
-grep = "export function heldAct"
-in = "src/battle.ts"
+used = "heldAct"
 
 # The artilugio is an ESP32 board (Keyestudio FKS0001): 4 buttons, 4 pairs, a PIR
 # (docs/story-outline.md § The device).
@@ -627,6 +769,11 @@ title = "Artilugio físico: ESP32 y firmware"
 weight = 4
 priority = "final"
 file = "firmware/**/*.ino"
+
+# The firmware compiles but has not been on the board yet (README § the artilugio).
+[[block.item]]
+title = "Artilugio: flasheado y probado con la placa (PIR en el IO34, secrets.h)"
+priority = "final"
 
 [[block.item]]
 title = "Artilugio: el servidor y su canal hacia el juego"
@@ -659,17 +806,21 @@ priority = "bernat"
 grep = "'portal-nucli'"
 in = "src/story-points.ts"
 
+# Bernat's box (src/portal-ui.ts): every lamp of the real flat goes off, one after another, the
+# bedroom stays pink and the artilugio beeps until it is found.
 [[block.item]]
 title = "Encontrarlo en casa con las luces"
 weight = 2
 priority = "final"
-grep = "artilugio"
-in = "src/home-lights.ts"
+used = "HIDING_LAMP"
 
+# Aitor, 2026-11-19: it already repeats in every song, and that is the only clue: Gerard has to
+# notice it himself (docs/story-outline.md § The device).
 [[block.item]]
 title = "Melodía de 6 notas en todas las canciones"
 weight = 2
 priority = "final"
+done = true
 
 [[block.item]]
 title = "Escena final y los dos finales"
@@ -717,15 +868,34 @@ title = "Luces de casa"
 weight = 2
 file = "src/home-lights.ts"
 
+# `just progress --audit` § Lugares y su canción lists the places with no song yet (15 on 2026-11-19).
 [[block.item]]
 title = "Banda sonora completa"
 weight = 2
 
+# Each place's card says what it sounds like, or that it is not built (docs/places/*.md).
 [[block.item]]
 title = "Sonido en los sitios que no lo tienen"
 weight = 2
-absent = 'Sound \| Not yet'
-in = "docs/places/espanya.md"
+absent = 'Sound \| Not (yet|built)'
+in = "docs/places/*.md"
+
+# A door, a stair or the story taking the party elsewhere: dark, the place changes, clear (game.ts travel).
+[[block.item]]
+title = "Fundido al cambiar de lugar"
+used = "onVeil"
+
+# just game-sim (2026-11-19): a wall at Los sillones de Luca when it comes before Nuria's mission,
+# and the «Sin pensar» player finishes only 33 % of games.
+[[block.item]]
+title = "Equilibrio del juego entero con el simulador: sin muros"
+weight = 2
+
+# AGENTS.md § Game philosophy: each fight keeps a pair of TARGETS (src/battle-sim.ts), one playing its
+# answer and one without it. `just progress --audit` § Combates lists the fights with none or only
+# one (22 on 2026-11-19: chapter 1's dogs, the palace guards, most of the castle's rooms).
+[[block.item]]
+title = "Cada combate con su pareja de objetivos en el simulador"
 
 [[block.item]]
 title = "Pasada final de pulido"

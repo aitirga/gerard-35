@@ -17,7 +17,7 @@ default:
     @just --list --color never
     @printf '\nLive development: just dev (the game and its API together).\n'
 
-# Show how far the game is, from docs/progress.toml (the bar at the top of herdr's column): just progress --all lists every item
+# Show how far the game is, from docs/progress.toml (the bar at the top of herdr's column): just progress --all lists every item, just progress --audit checks the list and that the game is wired together
 [group('Help')]
 progress *args:
     @scripts/herdr-progress --once {{ args }}
@@ -80,7 +80,7 @@ dev-fx:
 # Jump in after a story beat: just dev-chapter got-backpack, or metro for chapter 2's open city (new = from the start)
 [group('Development')]
 dev-chapter beat="new":
-    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|matemagico|wrapper-room|caught|got-wrapper|got-bola|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|papagato|papagato-2|papagato-3|matemagico-2|matemagico-3|dadaista-2|dadaista-3|cardedeu|nuria-uri|luz-nuria|luz-uri|clue-uni|barceloneta-uni|camping|candado|parcelas|sobremesa|anima-universidad|luz-anna-alvaro|luz-miquel-sarah|luz-soraya|luz-nico|luz-joan|alegia-marta|cuerdas|voz|anima-marta|luz-marta|clue-emilie|poble-sec-emilie|modelo|converge|anima-emilie|luz-emilie|clue-luca-foto|clue-sagrada|clue-sagrada-cartel|sagrada-luca|peluqueria|fran|anima-luca|luz-luca|ticket-cardedeu|ticket-barceloneta|ticket-sagrada-familia|ticket-placa-de-sants|ticket-poble-sec|ticket-el-carmel|ticket-alegia|ticket-espanya|bernat-nucli|aurelia|luz-aurelia|direccion|luz-mar|luz-montse|luz-pilar|aitor-poseido|bernat-llama|bernat-juego|portal-nucli|artilugio|reina|final-acabar|final-bajar)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
+    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|matemagico|wrapper-room|caught|got-wrapper|got-bola|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|papagato|papagato-2|papagato-3|matemagico-2|matemagico-3|dadaista-2|dadaista-3|dadaista-4|dadaista-5|dadaista-6|dadaista-7|cardedeu|nuria-uri|luz-nuria|luz-uri|clue-uni|barceloneta-uni|camping|candado|parcelas|sobremesa|anima-universidad|luz-anna-alvaro|luz-miquel-sarah|luz-soraya|luz-nico|luz-joan|alegia-marta|cuerdas|voz|anima-marta|luz-marta|clue-emilie|poble-sec-emilie|modelo|converge|anima-emilie|luz-emilie|clue-luca-foto|clue-sagrada|clue-sagrada-cartel|sagrada-luca|peluqueria|fran|anima-luca|luz-luca|ticket-cardedeu|ticket-barceloneta|ticket-sagrada-familia|ticket-placa-de-sants|ticket-poble-sec|ticket-el-carmel|ticket-alegia|ticket-espanya|bernat-nucli|aurelia|luz-aurelia|direccion|luz-mar|luz-montse|luz-pilar|aitor-poseido|bernat-llama|bernat-juego|portal-nucli|artilugio|reina|final-acabar|final-bajar)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
 
 # Start an ánima mission partway: just dev-mission nuria ring-2 (parts in missionParts, src/story-points.ts; start = its beginning)
@@ -156,6 +156,23 @@ model-lab:
 bestiario:
     uv run --locked python tools/bestiary.py
     npm run dev -- --open /bestiario.html
+
+# Open the ánimas' sheet to read and comment: each ánima's design beside what the game has of it, the duals and the shared mechanics, with notes to write, edit and close kept in docs/anima-notes.json (development; every reload writes it again)
+[group('Combat')]
+animas:
+    npm run dev -- --open /output/reports/animas/
+
+# Write the ánimas' sheet without serving it, in output/reports/animas/index.html, its notes read-only (herdr's assets sidebar; elsewhere it opens, GERARD_OPEN=0 to not open it)
+[group('Combat')]
+animas-report:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    node --experimental-strip-types --no-warnings scripts/animas.mjs
+    if [ "${HERDR_ENV:-}" = 1 ] && command -v herdr-assets >/dev/null; then
+        herdr-assets add output/reports/animas/index.html --group Reports --title "Ánimas" --note "Cada ánima: su diseño junto a lo que el juego tiene hoy, los dúos y las mecánicas compartidas"
+    elif [ "${GERARD_OPEN:-1}" != 0 ]; then
+        open output/reports/animas/index.html
+    fi
 
 # Run reproducible difficulty batches (use --help for seeds, policies and tuning)
 [group('Combat')]
