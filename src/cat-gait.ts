@@ -22,8 +22,21 @@ export const CAT_LEGS = ['lf', 'rf', 'lh', 'rh'] as const;
 export type CatLeg = typeof CAT_LEGS[number];
 export type CatGaitId = 'walk' | 'trot' | 'gallop';
 
-/** The skeleton src/cats.ts builds: body pivot height, where each leg hangs from it, bone lengths. */
-export const CAT_RIG = {
+/**
+ * A cat's skeleton: body pivot height, where each leg hangs from it, bone lengths, which way each
+ * leg's middle joint points, and its tail. A cat from a model measures its own (tools/animal_rig.py,
+ * src/animals/*.json); the cats of primitives use `CAT_RIG`.
+ */
+export interface CatRig {
+  bodyY: number;
+  joints: Record<CatLeg, { x: number; y: number; z: number }>;
+  bones: Record<CatLeg, readonly [number, number]>;
+  bend: Record<CatLeg, number>;
+  tailSegments: number;
+  tailSegment: number;
+}
+/** The skeleton src/cats.ts builds of primitives. */
+export const CAT_RIG: CatRig = {
   /** The body pivot's height when standing. */
   bodyY: .2,
   /** Shoulder and hip, from the body pivot. */
@@ -44,7 +57,7 @@ export const CAT_RIG = {
   bend: { lf: 1, rf: 1, lh: -1, rh: -1 },
   tailSegments: 4,
   tailSegment: .07,
-} as const;
+};
 
 interface GaitSpec { duty: (v: number) => number; offsets: Record<CatLeg, number>; stride: number; maxStride: number; minPeriod: number; lift: number; bob: number; drop: number }
 /**
@@ -57,6 +70,8 @@ export const GAITS: Record<CatGaitId, GaitSpec> = {
   // A gallop shortens each paw's stance as it speeds up: longer flights, the same reach.
   gallop: { duty: v => Math.min(.4, Math.max(.2, .42 - .04 * v)), offsets: { lh: 0, rh: .08, lf: .45, rf: .55 }, stride: .2, maxStride: .24, minPeriod: .2, lift: .034, bob: .012, drop: .03 },
 };
+/** How far sitting and crouching lower the body, in parts of its standing height. */
+const SIT_DROP = .35, CROUCH_DROP = .375;
 /** The slowest the legs cycle: below it, strides shorten instead. */
 export const MAX_PERIOD = .9;
 /** Gait changes (cat units per second), each with its way back a little lower. */
@@ -124,12 +139,12 @@ export function solveLeg(z: number, y: number, bend: 1 | -1, a: number, b: numbe
   return { hip, knee: -bend * (Math.PI - atKnee) };
 }
 /** Where a leg's paw ends up in the cat's frame for a pose: forward kinematics, for tests. */
-export function pawOf(pose: CatPose, leg: CatLeg) {
-  const j = CAT_RIG.joints[leg], pitch = pose.body.pitch / DEG;
+export function pawOf(pose: CatPose, leg: CatLeg, rig: CatRig = CAT_RIG) {
+  const j = rig.joints[leg], pitch = pose.body.pitch / DEG;
   const joint = pitched(j.y, j.z, pitch);
   const hip = pose.legs[leg].hip / DEG, knee = hip + pose.legs[leg].knee / DEG;
   // Bone directions in the body's frame (down is −y, forward +z), then turned with the body.
-  const [a, b] = CAT_RIG.bones[leg];
+  const [a, b] = rig.bones[leg];
   const local = { z: Math.sin(hip) * a + Math.sin(knee) * b, y: -Math.cos(hip) * a - Math.cos(knee) * b };
   const turned = pitched(local.y, local.z, pitch);
   return { z: pose.body.z + joint.z + turned.z, y: pose.body.y + joint.y + turned.y };
@@ -140,7 +155,7 @@ const approach = (from: number, to: number, dt: number, tau: number) => from + (
 /** A repeatable 0–1 noise for a whole number and a seed (ear flicks, glances). */
 const hash = (n: number, seed: number) => { const v = Math.sin(n * 127.1 + seed * 311.7) * 43758.5453; return v - Math.floor(v); };
 
-/** One cat's gait over time. `seed` keeps two cats out of step. */
+/** One cat's gait over time, on its skeleton. `seed` keeps two cats out of step. */
 export class CatGait {
   private phase: number;
   private time: number;
@@ -152,7 +167,8 @@ export class CatGait {
   private last?: { x: number; z: number; facing: number };
   private held = { sit: 0, crouch: 0, fear: 0, alert: 0 };
   private seed: number;
-  constructor(seed = 0) { this.seed = seed; this.phase = hash(1, seed); this.time = seed * 3.1; }
+  private readonly rig: CatRig;
+  constructor(seed = 0, rig: CatRig = CAT_RIG) { this.seed = seed; this.rig = rig; this.phase = hash(1, seed); this.time = seed * 3.1; }
 
   update(dt: number, input: CatInput): CatPose {
     const delta = Math.min(Math.max(dt, 0), .1);
@@ -184,7 +200,9 @@ export class CatGait {
 
     // The body: standing, sitting (rear on the floor), crouching low; then the gait's bob and sway, and breath.
     const crouched = Math.max(crouch, fear);
-    let y = CAT_RIG.bodyY + (.13 - CAT_RIG.bodyY) * sit + (.125 - CAT_RIG.bodyY) * crouched * (1 - sit) - .012 * alert * (1 - sit);
+    const rig = this.rig, stand = rig.bodyY;
+    // Sitting and crouching lower the body to a share of its standing height (CAT_RIG's .13 and .125 of .2).
+    let y = stand - stand * SIT_DROP * sit - stand * CROUCH_DROP * crouched * (1 - sit) - .012 * alert * (1 - sit);
     const posture = 32 * sit - 4 * crouched * (1 - sit) - 3 * alert;
     let pitch = posture;
     const z = -.02 * sit;
@@ -205,7 +223,7 @@ export class CatGait {
 
     const legs = {} as Record<CatLeg, LegPose>, targets = {} as CatPose['targets'];
     for (const leg of CAT_LEGS) {
-      const j = CAT_RIG.joints[leg], hind = leg[1] === 'h';
+      const j = rig.joints[leg], hind = leg[1] === 'h';
       const joint = pitched(j.y, j.z, bodyPitch);
       const jointZ = z + joint.z, jointY = y + joint.y;
       // The paw's resting place: under its joint as the posture holds it (not as the gait rocks it,
@@ -236,7 +254,7 @@ export class CatGait {
       targets[leg] = { z: target.z, y: target.y, stance };
       // Into the body's frame, and solved.
       const local = pitched(target.y - jointY, target.z - jointZ, -bodyPitch);
-      const solved = solveLeg(local.z, local.y, CAT_RIG.bend[leg], CAT_RIG.bones[leg][0], CAT_RIG.bones[leg][1]);
+      const solved = solveLeg(local.z, local.y, rig.bend[leg] as 1 | -1, rig.bones[leg][0], rig.bones[leg][1]);
       let hip = solved.hip * DEG, knee = solved.knee * DEG;
       if (air) {
         // In the air the forelegs reach for the landing and the hind legs push back.
@@ -272,12 +290,12 @@ export class CatGait {
     const curl = (i: number) => (1 - sit) * (1 - fear) * ((1 - m) * [0, 10, 12, 14][i] + m * (w.walk * [0, 15, 25, 30][i] + w.trot * [0, 10, 18, 22][i] + w.gallop * [0, 4, 6, 8][i])) + sit * [0, -25, 0, 0][i];
     const sway = (1 - fear) * (1 - sit * .8) * ((1 - m) * 10 + m * 8);
     const rate = m ? TAU / period : TAU * .55;
-    const tail = Array.from({ length: CAT_RIG.tailSegments }, (_, i) => ({
+    const tail = Array.from({ length: rig.tailSegments }, (_, i) => ({
       pitch: i === 0 ? tailBase : curl(i),
       side: sway * (.4 + i * .3) * Math.sin((m ? phase * TAU : this.time * rate) - i * .7)
         + sit * (1 - fear) * [0, 30, 38, 40][i]
         // Watching, only the tip twitches, fast.
-        + (i === CAT_RIG.tailSegments - 1 ? alert * 22 * Math.sin(this.time * 9 + this.seed) : 0),
+        + (i === rig.tailSegments - 1 ? alert * 22 * Math.sin(this.time * 9 + this.seed) : 0),
     }));
     return {
       body: { y, z, pitch, roll, yaw: wiggle },
@@ -307,17 +325,17 @@ export class CatGait {
   }
   /** Standing still on all four, no breath: reduced motion and frozen frames. */
   private rest(): CatPose {
-    const legs = {} as Record<CatLeg, LegPose>, targets = {} as CatPose['targets'];
+    const legs = {} as Record<CatLeg, LegPose>, targets = {} as CatPose['targets'], rig = this.rig;
     for (const leg of CAT_LEGS) {
-      const j = CAT_RIG.joints[leg];
-      const solved = solveLeg(0, -(CAT_RIG.bodyY + j.y), CAT_RIG.bend[leg], CAT_RIG.bones[leg][0], CAT_RIG.bones[leg][1]);
+      const j = rig.joints[leg];
+      const solved = solveLeg(0, -(rig.bodyY + j.y), rig.bend[leg] as 1 | -1, rig.bones[leg][0], rig.bones[leg][1]);
       legs[leg] = { hip: solved.hip * DEG, knee: solved.knee * DEG };
       targets[leg] = { z: j.z, y: 0, stance: true };
     }
     return {
-      body: { y: CAT_RIG.bodyY, z: 0, pitch: 0, roll: 0, yaw: 0 }, legs,
+      body: { y: rig.bodyY, z: 0, pitch: 0, roll: 0, yaw: 0 }, legs,
       head: { pitch: 0, yaw: 0, roll: 0 }, ears: [0, 0],
-      tail: Array.from({ length: CAT_RIG.tailSegments }, (_, i) => ({ pitch: i === 0 ? -110 : [0, 10, 12, 14][i], side: 0 })),
+      tail: Array.from({ length: rig.tailSegments }, (_, i) => ({ pitch: i === 0 ? -110 : [0, 10, 12, 14][i], side: 0 })),
       blink: 1, gait: 'walk', speed: 0, period: MAX_PERIOD, moving: 0, targets,
     };
   }

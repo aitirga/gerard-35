@@ -1,27 +1,77 @@
 import * as pc from 'playcanvas';
-import { CAT_LEGS, CAT_RIG, CatGait, type CatInput, type CatLeg, type CatPose } from './cat-gait';
+import { CAT_LEGS, CAT_RIG, CatGait, type CatInput, type CatLeg, type CatPose, type CatRig } from './cat-gait';
+import { ANIMALS, hasModel, instantiateModel, type AnimalSpec } from './character-model';
 
 /**
  * Haru and Yuki (docs/animas/papagato/README.md), built from primitives like the street dogs.
  * Haru is a slim short-haired dilute calico (grey and cream patches, an orange-cream blaze, white
- * chest and paws, green eyes) and the bold one; Yuki a plump, long-haired white cat with grey at
- * the base of her tail and sleepy eyes, and the fearful one.
+ * chest and paws, green eyes) and the bold one; Yuki a white semi-longhair of ordinary build with
+ * big pointed ears, sleepy eyes and a plumed tail dark brown-black past its root, and the fearful one.
  *
  * Each one is rigged so src/cat-gait.ts can move it: a body pivot (`Cuerpo de gato`) that rises,
  * sits and tilts; four legs (`Pata`) of two bones each, the shoulder or hip and the wrist or hock
  * (`Rodilla`), ending in a paw on the ground; the head on its neck (`Cabeza de gato`) with ears that
  * turn (`Oreja`) and eyelids that blink (`Ojo`); and a tail (`Cola`) of four segments that curls
  * and waves. `cat.animate(dt, …)` after placing the cat reads where it is and poses it.
+ *
+ * Once its model is loaded (`just character-3d haru`, src/animals/), a cat is that toy figure on the
+ * same skeleton, measured on it (tools/animal_rig.py): the gait moves its bones by the same names,
+ * and its painted eyes blink under lids of the fur round them.
  */
 export type CatId = 'haru' | 'yuki';
 const COATS = {
   haru: { coat: '#7d7f86', patch: '#e4b88a', white: '#f4efe6', leg: '#7d7f86', eye: '#7fbf7a', nose: '#e7a3a0', inner: '#d99a98', fluff: 1, tail: '#7d7f86' },
-  yuki: { coat: '#f6f3ee', patch: '#f6f3ee', white: '#ffffff', leg: '#f6f3ee', eye: '#a9c7e6', nose: '#f2b7c2', inner: '#efb4bd', fluff: 1.18, tail: '#9a9da4' },
+  yuki: { coat: '#f6f3ee', patch: '#f6f3ee', white: '#ffffff', leg: '#f6f3ee', eye: '#a9c7e6', nose: '#f2b7c2', inner: '#efb4bd', fluff: 1.1, tail: '#3d322c' },
 } as const;
 /** What a caller decides each frame; position, facing and scale come from the cat itself. */
 export type CatAction = Omit<CatInput, 'x' | 'z' | 'facing' | 'scale'>;
 
+/** The nodes a gait poses, whichever way the cat was built, and what only this cat owns. */
+interface CatBody {
+  cat: pc.Entity; body: pc.Entity; head: pc.Entity; ears: pc.Entity[]; tail: pc.Entity[];
+  legs: Record<CatLeg, { hip: pc.Entity; knee: pc.Entity }>;
+  /** Shows the eyes `open` (1) to shut (0). */
+  blink(open: number): void;
+  materials: pc.StandardMaterial[];
+  rig: CatRig;
+}
+
 export function createCat(app: pc.Application, id: CatId) {
+  const spec = ANIMALS[`./animals/${id}.json`];
+  const built = spec && hasModel(id) ? fromModel(spec) : fromPrimitives(id);
+  app.root.addChild(built.cat);
+  return animated(built, id);
+}
+
+/** A cat from its model: the toy figure on its own measured skeleton (tools/animal_rig.py). */
+function fromModel(spec: AnimalSpec): CatBody {
+  const cat = new pc.Entity(spec.name);
+  const model = instantiateModel(spec.id, cat);
+  const find = (name: string) => {
+    const node = model.findByName(name) as pc.Entity | null;
+    if (!node) throw new Error(`${spec.id}'s model has no ${name}: just character-3d ${spec.id} --from game.`);
+    return node;
+  };
+  const legs = Object.fromEntries(CAT_LEGS.map(leg => [leg, { hip: find(`Pata ${leg}`), knee: find(`Rodilla ${leg}`) }])) as CatBody['legs'];
+  // An eyelid of the fur round each painted eye, shown while the eye is shut.
+  const lid = new pc.StandardMaterial(); lid.name = `Párpado de ${spec.name}`; lid.diffuse.fromString(spec.lids.color); lid.gloss = .18; lid.useMetalness = false; lid.update();
+  const lids = ['Ojo izquierdo', 'Ojo derecho'].map(name => {
+    const node = new pc.Entity('Párpado');
+    node.addComponent('render', { type: 'sphere', material: lid, castShadows: false, receiveShadows: true });
+    node.setLocalScale(...spec.lids.size); node.enabled = false;
+    find(name).addChild(node);
+    return node;
+  });
+  return {
+    cat, legs, body: find('Cuerpo de gato'), head: find('Cabeza de gato'), ears: [find('Oreja izquierda'), find('Oreja derecha')],
+    tail: Array.from({ length: spec.rig.tailSegments }, (_, i) => find(`Cola ${i + 1}`)),
+    blink(open) { for (const node of lids) node.enabled = open < .5; },
+    materials: [lid], rig: spec.rig,
+  };
+}
+
+/** A cat of primitives, as it was before its model. */
+function fromPrimitives(id: CatId): CatBody {
   const look = COATS[id];
   const mats = new Map<string, pc.StandardMaterial>();
   const mat = (hex: string, gloss = .25) => {
@@ -82,14 +132,20 @@ export function createCat(app: pc.Application, id: CatId) {
   for (let i = 0; i < CAT_RIG.tailSegments; i++) {
     if (i) holder = pivot(holder, 'Cola', [0, CAT_RIG.tailSegment, 0]);
     const r = (.05 - i * .006) * f;
-    const colour = id === 'yuki' && i === 0 ? look.tail : look.coat;
+    const colour = id === 'yuki' && i > 0 ? look.tail : look.coat;
     part(holder, i ? 'Punta de la cola' : 'Base de la cola', 'cylinder', colour, [0, CAT_RIG.tailSegment / 2, 0], [r, CAT_RIG.tailSegment + .012, r]);
     part(holder, 'Nudo de la cola', 'sphere', colour, [0, 0, 0], [r, r, r]);
     tail.push(holder);
   }
-  app.root.addChild(cat);
+  return {
+    cat, body, head, ears, tail, legs, rig: CAT_RIG, materials: [...mats.values()],
+    blink(open) { eyes.forEach(({ eye, open: wide }) => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, wide * open, s.z); }); },
+  };
+}
 
-  const gait = new CatGait(id === 'haru' ? 0 : 2.3);
+/** A cat that moves: its gait poses its skeleton from where it is each frame. */
+function animated({ cat, body, head, ears, tail, legs, blink, materials, rig }: CatBody, id: CatId) {
+  const gait = new CatGait(id === 'haru' ? 0 : 2.3, rig);
   const at = new pc.Vec3(), ahead = new pc.Vec3();
   /** Puts a pose on the rig (src/cat-gait.ts angles: legs forward positive, body and head nose up). */
   function apply(pose: CatPose) {
@@ -101,10 +157,10 @@ export function createCat(app: pc.Application, id: CatId) {
     }
     head.setLocalEulerAngles(-pose.head.pitch, pose.head.yaw, pose.head.roll);
     ears.forEach((ear, i) => ear.setLocalEulerAngles(-pose.ears[i], 0, 0));
-    eyes.forEach(({ eye, open }) => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, open * pose.blink, s.z); });
+    blink(pose.blink);
     tail.forEach((segment, i) => segment.setLocalEulerAngles(pose.tail[i].pitch, 0, pose.tail[i].side));
   }
-  apply(new CatGait().update(0, { x: 0, z: 0, facing: 0, scale: 1, animate: false }));
+  apply(new CatGait(0, rig).update(0, { x: 0, z: 0, facing: 0, scale: 1, animate: false }));
   return {
     entity: cat, body, head, tail: tail[0],
     /**
@@ -118,7 +174,8 @@ export function createCat(app: pc.Application, id: CatId) {
       apply(pose);
       return pose;
     },
-    destroy() { cat.destroy(); mats.forEach(m => m.destroy()); },
+    // The model's own materials stay with its file: only what this cat made goes.
+    destroy() { cat.destroy(); materials.forEach(m => m.destroy()); },
   };
 }
 export type Cat = ReturnType<typeof createCat>;

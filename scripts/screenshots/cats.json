@@ -1,6 +1,6 @@
 {
   "title": "Haru y Yuki · animación",
-  "description": "Haru and Yuki's rig and gait (src/cats.ts, src/cat-gait.ts): two-bone legs placed by inverse kinematics, paws planted while they bear weight, a walk, a trot and a gallop chosen by their own speed, sitting, crouching, leaping and hiding, with breathing, blinks, ear flicks, glances and a four-segment tail. On Nuria's street following the party, then in a fight with Papagato.",
+  "description": "Haru and Yuki's rig and gait (src/cats.ts, src/cat-gait.ts): two-bone legs placed by inverse kinematics, paws planted while they bear weight, a walk, a trot and a gallop chosen by their own speed, sitting, crouching, leaping and trotting over to whoever Yuki purrs on, with breathing, blinks, ear flicks, glances and a four-segment tail. On Nuria's street following the party, then in a fight with Papagato.",
   "steps": [
     {
       "open": "/?mission=nuria&part=lent&solo=1"
@@ -127,20 +127,29 @@
       "timeout": 60000
     },
     {
+      "eval": "window.gerard.battleUI.setAnimas(['papagato'], { papagato: 2 }); window.gerard.battleUI.tweak(s => { const hurt = s.allies.find(a => a.id !== 'gerard'); hurt.hp = Math.round(hurt.maxHp * .4); })"
+    },
+    {
       "press": "Digit2"
     },
     {
       "wait": 600
     },
     {
-      "eval": "{ const y = window.gerard.game.app.root.findByName('Yuki').getPosition(); window.gerard.game.frame({ x: y.x + .1, y: y.y + .3, z: y.z - .2 }, 1.5); }"
+      "eval": "document.querySelector('[data-skill=\"ronroneo\"]').click()"
     },
     {
-      "record": "escondite",
-      "seconds": 1.6,
+      "wait": 500
+    },
+    {
+      "eval": "{ const y = window.gerard.game.app.root.findByName('Yuki').getPosition(), b = window.gerard.game.fighterAt('bernat'); window.gerard.game.frame({ x: (y.x + b.x) / 2, y: .4, z: (y.z + b.z) / 2 }, 2.2); }"
+    },
+    {
+      "record": "ronroneo",
+      "seconds": 2.2,
       "fps": 30,
-      "each": "window.frame === 2 && document.querySelector('[data-skill=\"escondite\"]')?.click()",
-      "caption": "Yuki se esconde: she gets up, slinks behind Gerard pressed to the floor, ears flat and tail tucked, and goes back to sit"
+      "each": "window.frame === 2 && document.querySelector('.battle-target[data-side=\"allies\"]:not(:disabled)')?.click()",
+      "caption": "Ronroneo (level 2) on Bernat, hurt: Yuki gets up, trots to the feet of whoever is cured, sits against them, and goes back to sit behind Gerard"
     },
     {
       "eval": "window.gerard.game.frame()"
