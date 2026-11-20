@@ -23,7 +23,7 @@ import { createSilhouettes, occlusion } from './occlusion';
 import { cameraOffset, createCameraOrbit, towardCamera } from './camera-orbit';
 import { lighting } from './lighting';
 import { createGroundContact } from './ground-contact';
-import { CREATURES, buildCharacter, loadCharacterModels, showFeet, type CharacterModel, type CharacterSpec } from './character-model';
+import { COMPANIONS, CREATURES, buildCharacter, loadCharacterModels, showFeet, type CharacterModel, type CharacterSpec } from './character-model';
 import { onTrigger, type Partner, type Story, type StoryEvent } from './story';
 import type { ItemId } from './items';
 import { Follower, pathTo } from './follower';
@@ -129,6 +129,8 @@ export interface GameCallbacks {
   /** The nearby action's world anchor projected into CSS pixels; absent while unavailable. */
   onInteractionScreen: (at: { x: number; y: number } | undefined) => void;
   onDialogue: (dialogue: Dialogue) => void;
+  /** Going from one place to another: the screen darkens (`on`) or clears; resolves once it has. */
+  onVeil: (on: boolean) => Promise<void>;
   /** Something the story should react to: a story interaction, the south of the street, the leash. */
   onStory: (event: StoryEvent) => void;
 }
@@ -224,7 +226,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   const toCamera = (at: pc.Vec3) => { const eye = camera.getPosition(); return facingToward(eye.x - at.x, eye.z - at.z); };
   app.root.addChild(player);
   // Gerard's model: the boy in chapter 1, the man at 35 once he wakes up (`dress`).
-  await loadCharacterModels(app, [...Object.values(CHARACTERS), ...Object.values(CREATURES)]);
+  await loadCharacterModels(app, [...Object.values(CHARACTERS), ...Object.values(CREATURES), ...COMPANIONS]);
   let rig = buildCharacter(playerCharacter(), player), grownUp = false;
   /** The artilugio on Gerard's figure (src/artilugio-held.ts): built hidden on him, so a fight's copy of him carries it too. */
   const fitHeld = () => { fitArtilugio(rig.body, playerCharacter(grownUp).lids?.color ?? '#f2b98a'); return new HeldArtilugio(rig.body); };
@@ -257,7 +259,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /** Seconds until a possessed dog gives off its next mote. */
   let spores = 0, sporeDog = 0;
   const dayClear = new pc.Color(0.2, 0.26, 0.24), clear = new pc.Color();
-  const stopped = () => paused || cutscene;
+  /** Between two places (`travel`): the screen is dark and nobody walks. */
+  let crossing = false;
+  const stopped = () => paused || cutscene || crossing;
   // La Reina Bubbaloo's palace past the north end of the street, and the street's own changes.
   const palace = createPalace(app, effects);
   let approach: PalaceApproach | undefined;
@@ -324,11 +328,40 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * The Queen holds them: violet eyes (docs/lore.md). A figure of primitives wears them on its own
    * eyes; a figure from a file (its eyes painted on) gets a glowing bead over each, under its lids.
    */
-  /** Takes `k` (0–1) of the colour out of a figure's materials, towards their own grey. */
+  /**
+   * Gives a figure its own copies of its materials, so changing them leaves everyone else alone: a figure
+   * from a file shares its file's. Returns the copies, for whoever rebuilds the figure to destroy.
+   */
+  function ownMaterials(body: pc.Entity) {
+    const copies = new Map<pc.Material, pc.StandardMaterial>();
+    body.findComponents('render').forEach(component => (component as pc.RenderComponent).meshInstances.forEach(mesh => {
+      const source = mesh.material as pc.StandardMaterial;
+      let copy = copies.get(source);
+      if (!copy) { copy = source.clone(); copies.set(source, copy); }
+      mesh.material = copy;
+    }));
+    return [...copies.values()];
+  }
+  /** A painted texture with `k` (0–1) of its colour taken out, made once per texture and amount. */
+  const greyTextures = new Map<pc.Texture, Map<number, pc.Texture>>();
+  function greyTexture(texture: pc.Texture, k: number) {
+    const made = greyTextures.get(texture) ?? new Map<number, pc.Texture>(); greyTextures.set(texture, made);
+    let grey = made.get(k);
+    if (grey) return grey;
+    const source = texture.getSource() as CanvasImageSource & { width: number; height: number } | undefined;
+    if (!source?.width) return texture;
+    const canvas = document.createElement('canvas'); canvas.width = source.width; canvas.height = source.height;
+    const ctx = canvas.getContext('2d')!; ctx.filter = `grayscale(${k})`; ctx.drawImage(source, 0, 0);
+    grey = new pc.Texture(app.graphicsDevice, { name: `${texture.name} gris`, mipmaps: true, addressU: texture.addressU, addressV: texture.addressV, flipY: texture.flipY });
+    grey.setSource(canvas); made.set(k, grey);
+    return grey;
+  }
+  /** Takes `k` (0–1) of the colour out of a figure's materials, towards their own grey; painted ones lose it from their texture. */
   function fade(materials: pc.StandardMaterial[], k: number) {
     for (const m of materials) {
       const c = m.diffuse, y = .3 * c.r + .59 * c.g + .11 * c.b;
       m.diffuse.set(c.r + (y - c.r) * k, c.g + (y - c.g) * k, c.b + (y - c.b) * k);
+      if (m.diffuseMap) m.diffuseMap = greyTexture(m.diffuseMap, k);
       m.update();
     }
   }
@@ -1719,10 +1752,14 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       placeOnGround(entity, npc.cell, .06 - (npc.wade ?? 0) + (npc.lift ?? 0));
       if (npc.facing !== undefined) rig.body.setLocalEulerAngles(0, npc.facing, 0);
       // Luca (docs/quests/luca.md): as grey as the colours he has lost; his reflection in the pond keeps them all.
-      if (npc.faded) fade(rig.materials, npc.faded);
+      if (npc.faded) {
+        if (spec.glb) rig.materials.push(...ownMaterials(rig.body));
+        fade(rig.materials, npc.faded);
+      }
       if (npc.reflection) {
         const mirror = new pc.Entity(`${npc.id}: reflejo`); entity.addChild(mirror);
         const copy = buildCharacter(spec, mirror);
+        if (spec.glb) copy.materials.push(...ownMaterials(copy.body));
         for (const m of copy.materials) { m.opacity = .62; m.blendType = pc.BLEND_NORMAL; m.depthWrite = false; m.update(); }
         rig.materials.push(...copy.materials);
         // Lying on the water from his feet out, as the pond paints the facade: soft, in colour, never a mark to walk to.
@@ -2681,6 +2718,24 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     cameraTarget.copy(scenery.toWorld(movement.cell.x, movement.cell.z));
     positionPlayer(); updatePrompt();
   }
+  /**
+   * Through a door, up a stair or wherever the story takes them: the screen goes dark, the place
+   * changes under it and it clears again. The street that carries on (`exact`) has no cut to hide.
+   */
+  async function travel(id: EnvironmentId, destination?: Cell) {
+    if (battle || crossing) return;
+    crossing = true; clearInput(); movement.walking = false; callbacks.onInteraction(undefined);
+    try {
+      await callbacks.onVeil(true);
+      setEnvironment(id, destination);
+      // The new place draws under the dark before it shows.
+      await new Promise<void>(drawn => requestAnimationFrame(() => requestAnimationFrame(() => drawn())));
+    } finally {
+      // They can walk on as it clears.
+      crossing = false; lastPrompt = ''; updatePrompt();
+    }
+    await callbacks.onVeil(false);
+  }
   /** Gerard (or player 2's Aitor, `byPartner`) uses whatever is within reach. */
   function interact(byPartner = false) {
     if (stopped() || battle || movement.bouncing) return;
@@ -2706,7 +2761,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const gate = story.gate(target.id);
     const to = story.redirect(target.id) ?? target.to;
     if (gate) callbacks.onDialogue(gate);
-    else if (to) setEnvironment(to.environment, to.cell);
+    else if (to) void travel(to.environment, to.cell);
     else if (target.lines) {
       // Places say their lines in Gerard's voice: the boy's in chapter 1, the man's at 35.
       const voice = story.adult ? 'gerard35' as const : 'gerard' as const;
@@ -2787,7 +2842,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const stairs = environment.interactions.find(({ step: r }) => r && here.x >= r.x && here.x < r.x + r.w && here.z >= r.z && here.z < r.z + r.d);
       if (stairs?.to && stairsArmed && input) {
         const gate = story.gate(stairs.id);
-        if (gate) { clearInput(); callbacks.onDialogue(gate); } else setEnvironment(stairs.to.environment, stairs.to.cell);
+        if (gate) { clearInput(); callbacks.onDialogue(gate); } else void travel(stairs.to.environment, stairs.to.cell);
       } else if (stairs && !stairs.to && input && stairs.id !== inStep) { movement.walking = false; use(stairs); }
       inStep = stairs?.id ?? '';
       // Nobody walks through anybody (src/crowd.ts): last frame's overlaps eased apart before anyone moves on.
@@ -3143,7 +3198,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   nightShown = story.night && scenery.outdoor ? 1 : 0; scenery.setNight(nightShown);
   app.start();
   return {
-    app, effects, post, setEnvironment,
+    app, effects, post, setEnvironment, travel,
     /** How Gerard shows through what hides him (src/occlusion.ts): `style`, `silhouettes` and `camera`, live. */
     occlusion,
     /** The street camera's angle now and where it is heading (src/camera-orbit.ts). */
@@ -3238,6 +3293,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     get wakePhase() { return waking === undefined ? undefined : wakePhase(waking); },
     selectTarget: aimAt,
     aimDie: (unit?: string, index?: number) => battleScene.aimDie(unit, index),
+    shakeDice: (unit: string) => battleScene.shakeDice(unit),
     /** A lamp in the Meridiana flat turned on, off or another colour; its prompt says what is next. */
     setLamp(id: LightId, lamp: Lamp) { lamps[id] = lamp; scenery.setLamp(id, lamp); lastPrompt = ''; updatePrompt(); },
     setLampLabels(label: (id: string) => string | undefined) { lampLabel = label; lastPrompt = ''; updatePrompt(); },

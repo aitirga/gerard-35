@@ -48,7 +48,8 @@ los estados sigue corriendo en las dos fases.
 aliado lo deciden los jugadores; el de la fase enemiga lo fija cada encuentro (su definición o su
 IA). Pendiente en el código: hoy `src/stats.ts`, `src/battle.ts`, el laboratorio
 (`src/combat-lab.ts`, la regla de atributo de velocidad) y sus pruebas aún ordenan por ella; la
-sección *Orden de resolución y duración* describe ese motor actual.
+sección *Orden de resolución y duración* describe ese motor actual. Ninguna ánima
+que se lleve puesta la da ya: Papagato la cambió por Crítico (2026-11-20).
 
 **Barreras** (idea por explorar, 2026-10-31): hechizos de protección que levantan una **barrera
 física y direccional** delante de alguien (encaja con las posiciones: cubre un lado o el frente).
@@ -82,7 +83,7 @@ efecto se vuelve **espejo** y devuelve los ataques. Solo como idea; se irá expl
 
 **Cada ataque tiene un elemento** (decidido): habilidades y ataques de enemigos llevan su
 elemento asociado (o ninguno), que es lo que dispara las reacciones de arriba. Las descripciones
-ya lo prevén: `Daño alto mágico de tipo <X> a un enemigo.` (`AGENTS.md`).
+ya lo prevén: `Daño mágico de <X> alto a un enemigo.` (`AGENTS.md`).
 
 **Tipos en los monstruos** (duda abierta): un mini sistema de tipos, **secundario**, que no defina
 la estrategia: un monstruo resiste o sufre un poco más ciertos elementos (`Afinidad` ya lo
@@ -384,6 +385,20 @@ de cada ronda, cada ánima que no se ha llevado **en ningún momento** de esa ro
 Cambiar sigue siendo gratis y no gasta el turno. Sin ánima no hay maná; Bernat no tiene. El
 diseño completo, con las ideas aún por probar, está en `docs/action-points.md`.
 
+### Sangrado y golpe crítico
+
+**Sangrado** se acumula (2026-11-20): un golpe físico que lo añade (`bleed` en `SKILLS`) nunca gasta
+la herida, solo suma cargas; un golpe físico que no añade ninguna la gasta entera y pega un 20 % más
+por carga (`BLEED_BONUS`; *Zarpa en la llaga*, el doble). Al final de la ronda la herida pierde una
+carga solo si nadie la cortó en esa ronda (`cutRound`).
+
+**Golpe crítico** (2026-11-20, `CRIT_RULES` en `src/battle.ts`): un golpe del grupo que pega un 50 %
+más, sumado al de la herida y nunca multiplicado por él. Cada golpe de una ráfaga tira el suyo, con
+el **Crítico** de quien lo da (`Stats.critico`: 5 % todo el grupo, +15 % con Papagato); los enemigos
+no tienen. El combate se para un instante, la imagen pierde el color menos en los dos que se
+enfrentan y el número sale grande con «¡Crítico!». La regla entera y cómo se ve, en
+`docs/animas/README.md` § Golpe crítico; el efecto, en `docs/graphics.md` § Hit feel.
+
 ## Estados en tiempo real
 
 En la campaña algunos estados no duran rondas sino **segundos** (`TIMED` en `src/battle.ts`).
@@ -485,8 +500,8 @@ enemigos vuelven a actuar. `just screenshots tecnopata-skills --gpu` lo muestra 
 ## Atributos arriba o abajo, y el resumen
 
 Lo que sube o baja los atributos de alguien **ahora mismo** lo dice `statShifts` (`src/battle.ts`),
-atributo por atributo y sumando sus causas: una mejora del grupo mientras dura (*Yuki se esconde*,
-*Análisis Parálisis*), un estado que debilita por sus cargas (*Mareo*, *Llorera*), la marca de
+atributo por atributo y sumando sus causas: una mejora del grupo mientras dura (*Análisis
+Parálisis*), un estado que debilita por sus cargas (*Mareo*, *Llorera*), la marca de
 *Ángulo exacto* en un enemigo (*▼ DEF ESP*), *Punto débil* (una bajada de Defensa sin número) y una
 cebolla sin capas (su defensa rota, sin número). Cada uno lleva cuánto le queda (la más larga de sus
 causas) y de dónde viene. Quien cae no muestra nada.
@@ -610,7 +625,8 @@ objetivo.*). Al pasar el turno a los enemigos, o al acabar el combate, no queda 
 
 **Qué hace.** Gasta los dos turnos y la mitad de maná de cada uno; las dos ánimas cuentan como que
 han luchado. Su golpe usa los atributos de quien trae la mitad de su tipo (los dos de hoy son
-físicos: la Fuerza de quien lleva Papagato) y desgasta el Sangrado como cualquier golpe físico.
+físicos: la Fuerza de quien lleva Papagato) y gasta el Sangrado como cualquier golpe físico que no
+lo añade.
 Contra las reglas de un enemigo cuenta como **todos los tipos** (`fearDamage` con `'dual'`): el
 mejor lado de un plato, entero a través de *Transparente* y en el plato sorpresa. El fuego de *Zarpazos de fuego* se decide golpe a golpe con los
 dados del combate (`roll`, mulberry32 sobre `state.seed`, sembrado con el `random` con que se creó),

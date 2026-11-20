@@ -42,7 +42,7 @@ test('Papagato\'s skills miaow as they go and claw as they land', () => {
   assert.deepEqual(ids(startSounds(zarpazo, s)), ['meow']);
   assert.ok(ids(impactSounds(zarpazo, s)).includes('claw'));
   assert.deepEqual(ids(SKILL_SOUNDS.llaga.impact), ['claw-deep']);
-  assert.deepEqual(ids(SKILL_SOUNDS.escondite.start), ['meow-soft']);
+  assert.deepEqual(ids(SKILL_SOUNDS.ronroneo.start), ['meow-soft']);
   assert.equal(ids(SKILL_SOUNDS.zarpazos.impact).length, 1, 'the first claw: the scene cues the others as they land');
 });
 
@@ -115,4 +115,14 @@ test('a dual starts like both its halves, and one rolled claw by claw sounds eac
   const dual = actDual(s, 'zarpazos-de-fuego', 'dog-0');
   assert.ok(startSounds(dual, s).length);
   assert.deepEqual(impactSounds(dual, s), [], 'rolled claw by claw, the first blow says nothing of the fire: each claw sounds as it lands');
+});
+
+test('a golpe crítico is heard as the blow lands, once for a flurry (the scene cues its later claws)', () => {
+  const crit = { kind: 'skill', actor: 'gerard', skill: 'llaga', target: 'f1', amount: 60, crit: true, bled: 3 };
+  assert.deepEqual(impactSounds(crit).map(c => c.id), ['claw-deep', 'crit', 'bleed']);
+  // Atacar too, and a blow that is not one says nothing of it.
+  assert.ok(impactSounds({ kind: 'attack', actor: 'gerard', target: 'f1', amount: 20, crit: true }).some(c => c.id === 'crit'));
+  assert.ok(!impactSounds({ kind: 'attack', actor: 'gerard', target: 'f1', amount: 20 }).some(c => c.id === 'crit'));
+  // A flurry whose first claw was not the critical one leaves it to the claw that is.
+  assert.ok(!impactSounds({ kind: 'skill', actor: 'gerard', skill: 'zarpazos', target: 'f1', amount: 30, crit: true, crits: [false, true, false, false] }).some(c => c.id === 'crit'));
 });

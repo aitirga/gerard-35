@@ -41,9 +41,9 @@ test('La Lealtad takes the blow aimed at the Eco while she stands; one that reac
   // Aimed at her, nothing steps in.
   as(s, 'gerard');
   assert.equal(act(s, 'attack', 'lealtad').interposed, undefined);
-  // Las dos a la vez reaches both.
-  s.levels = { papagato: 3 }; as(s, 'aitor');
-  const both = act(s, 'skill', undefined, 'a-la-vez');
+  // Factor común reaches both.
+  s.improved = { skills: ['factor-comun'] }; as(s, 'gerard');
+  const both = act(s, 'skill', undefined, 'factor-comun');
   assert.deepEqual(both.hits.map(h => h.target).sort(), ['eco', 'lealtad']);
   assert.ok(both.hits.every(h => h.amount > 0));
   // With her down the Eco is on its own.
@@ -246,8 +246,8 @@ test('La Voz is only hurt in her silences: while a note sounds a blow goes throu
   assert.equal(miss.amount, 0); assert.equal(miss.sung, true); assert.equal(miss.burn, undefined);
   assert.equal(voz.hp, hp); assert.equal(ally(s, 'gerard').secondary, mana - 1);
   // A blow that reaches every foe finds nobody either.
-  s.levels = { papagato: 3 }; as(s, 'aitor');
-  assert.equal(act(s, 'skill', undefined, 'a-la-vez').hits[0].amount, 0);
+  s.improved = { skills: ['factor-comun'] }; as(s, 'gerard');
+  assert.equal(act(s, 'skill', undefined, 'factor-comun').hits[0].amount, 0);
   assert.equal(voz.hp, hp);
   // In the silence after it, she is there.
   sing(s, beat.sing + .1);

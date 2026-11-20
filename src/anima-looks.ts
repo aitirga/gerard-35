@@ -8,7 +8,7 @@ import type { ClassId } from './battle';
  * one Yuki's white), a tail that sways and a collar with a bell. Matemágico: ones and zeros of gold
  * light circling the wearer, turning to whoever looks. Tecnópata: a thin HUD visor (a cyan film on
  * a graphite frame), an earpiece with a short antenna whose tip blinks, and two thin cyan circuit
- * lines down the shirt. Dadaísta: a red bow tie at the throat and a monocle on a cord. Built from primitives on the rig and the body's fit (`bodyFit`), so it fits
+ * lines down the shirt. Dadista: a red bow tie at the throat and a monocle on a cord. Built from primitives on the rig and the body's fit (`bodyFit`), so it fits
  * every character and follows every pose; with reduced motion it holds still.
  */
 const NAME = 'Atuendo de ánima';
@@ -167,7 +167,7 @@ function tecnopata(body: pc.Entity, head: pc.Entity | null): Look {
 }
 
 /**
- * Dadaísta: a red bow tie at the throat (two wings and a knot), and a brass monocle over the right
+ * Dadista: a red bow tie at the throat (two wings and a knot), and a brass monocle over the right
  * eye, its lens a faint ivory glint, on a thin cord down to the collar. A dada soirée, or a croupier.
  */
 function dadaista(body: pc.Entity, head: pc.Entity | null): Look {

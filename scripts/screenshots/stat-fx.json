@@ -1,6 +1,6 @@
 {
   "title": "Suben y bajan las características",
-  "description": "The one animation for a stat changing (src/stat-fx.ts, docs/graphics.md): three outlined chevrons pass in front of the fighter one after another, up in blue or down in red, over a quick circle at the feet and bars of light running past them, with the stat's name rising or dropping and its sound in step. Here on its own in the effects lab, then in a real fight: the last layer off El Cebollón breaks its defence, Yuki se esconde raises the party's Defensa.",
+  "description": "The one animation for a stat changing (src/stat-fx.ts, docs/graphics.md): three outlined chevrons pass in front of the fighter one after another, up in blue or down in red, over a quick circle at the feet and bars of light running past them, with the stat's name rising or dropping and its sound in step. Here on its own in the effects lab, then in a real fight: the last layer off El Cebollón breaks its defence, Análisis Parálisis raises the party's Fuerza and Magia.",
   "steps": [
     {
       "open": "/?story=matemagico&fxlab"
@@ -93,17 +93,26 @@
       "timeout": 60000
     },
     {
+      "eval": "window.fightState.improved = { ...window.fightState.improved, skills: ['angulo', 'analisis'] }; window.gerard.battleUI.refresh()"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
       "press": "Digit2"
     },
     {
       "wait": 600
     },
     {
-      "record": "sube-la-defensa",
+      "record": "suben-fuerza-y-magia",
       "seconds": 1.6,
       "fps": 30,
-      "each": "window.frame === 2 && document.querySelector('[data-skill=\"escondite\"]')?.click()",
-      "caption": "Yuki se esconde: Defensa up for the whole party, with the same animation in blue"
+      "each": "window.frame === 2 && document.querySelector('[data-skill=\"analisis\"]')?.click()",
+      "caption": "Análisis Parálisis (Gerard on Matemágico, the node bought): Fuerza and Magia up for the whole party, with the same animation in blue"
     }
   ]
 }

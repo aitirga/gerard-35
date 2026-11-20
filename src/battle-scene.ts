@@ -1,11 +1,12 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
+import { DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { castleFigure, castleModel, figureClips, type FigureClips } from './castle-models';
 import { DIE, createDie, dressDie, faceUp } from './dice';
-import { createDiceFx } from './dice-fx';
+import { createDiceFx, type FaceSpot, DICE_COLOURS } from './dice-fx';
+import { createStamps } from './dice-stamp';
 import { CUERDAS_SIZES } from './cuerdas-foes';
 import { MODELO_SIZES, PHOSPHOR } from './modelo-foes';
 import { LUCA_SIZES, styleChaplain, lightShirt } from './luca-foes';
@@ -18,7 +19,7 @@ import { createGroundContact, type GroundHeight } from './ground-contact';
 import { DOG_PROFILES } from './encounters';
 import { CLAW_COLOURS, tint, type Effects, type FireLevel } from './effects';
 import type { ParticleBody } from './particles';
-import { FightClock, HIT, landing, spring, wobble, type Blow } from './hit-feel';
+import { CRIT, FightClock, HIT, landing, spring, wobble, type Blow } from './hit-feel';
 import { createCat, type Cat, type CatAction } from './cats';
 import { BIP, createBip, type Bip } from './bip';
 import { createOnionPeels, skinOf, tintSkin } from './onion-peels';
@@ -46,14 +47,25 @@ const CAT_RUN = 7, CAT_LANDS = 14;
 /** How long after the first the next of a flurry's little claws lands (Zarpazos). */
 const CLAW_SECONDS = .12;
 /**
- * Dadaísta's throw, in fight seconds (docs/animas/dadaista/): the die leaves the hand at `launch`,
+ * Dadista's throw, in fight seconds (docs/animas/dadaista/): the die leaves the hand at `launch`,
  * lands on whom its face reaches at `contact`, and bounces off to the floor over `tail`.
  */
-const DICE = { launch: .2, contact: .56, tail: .6 } as const;
+const DICE = { launch: .22, contact: .46, tail: .85 } as const;
+/**
+ * Dadista's skills that come from the sky (docs/animas/dadaista/ § Look and interface): the die that
+ * pays for them goes up out of the frame instead of at anyone. `contact`: when what comes down lands
+ * (the rain's first die); `fall`: how long before that it starts to fall; `tail`: what is left after.
+ */
+const SKY: Partial<Record<SkillId, { contact: number; tail: number; fall: number }>> = {
+  'dados-astrales': { contact: .8, tail: .7, fall: .42 }, 'ases-en-duo': { contact: .78, tail: .9, fall: .52 },
+  meteorito: { contact: .64, tail: .8, fall: .4 }, meteoro: { contact: .78, tail: .9, fall: .5 }, asteroide: { contact: 1.1, tail: 1.3, fall: .62 },
+};
+/** Seconds between two dice of the rain: quicker with many, never over two seconds in all. */
+const rainGap = (drops: number) => Math.min(.25, 2 / Math.max(1, drops));
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
-const SUPPORT = new Set(['escondite', 'analisis', 'cardioide']);
+const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo']);
 /** Matemágico's circle on a boy (chapter 1): to his size. */
 const CHILD_CIRCLE = .76;
 /** Seconds a fallen fighter of the party takes to go down, and to get back up if something brings them round. */
@@ -284,6 +296,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let cue: (id: SoundId, options?: { delay?: number }) => void = () => {};
   /** How many of this action's little claws have landed. */
   let clawed = 0;
+  /** Dadista's sky skills: what of the action in play has started to fall and has landed. */
+  let sky: { effect: BattleEffect; fell: number; landed: number } | undefined;
+  /** The rock of light that stays over whoever has a meteor grown, by fighter. */
+  const rocks = new Map<string, { kept: ReturnType<typeof stamps.keep>; size: number; turn: number }>();
   /** Models for foes that are not dogs, cloned when a fight starts (the game passes the minion). */
   let minionTemplate: pc.Entity | undefined;
   /** Uri's fears (src/fears.ts), by kind, and how Vertitrón is posed. */
@@ -296,9 +312,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   /** The effect whose streams have already left the hand. */
   let cast: BattleEffect | undefined;
-  /** Dadaísta's dice beside whoever wears it: the hand in view, and the one in the air. */
+  /** Dadista's dice beside whoever wears it: the hand in view, and the one in the air. */
   interface HandDie { entity: pc.Entity; face: DieFace; at: pc.Vec3; turn: pc.Quat; size: number; age: number; tumble: pc.Vec3; /** Its own idle sway: where in it this die starts, and how fast it goes (× the common pace). */ sway: number; pace: number }
-  const dice = new Map<string, { hand: HandDie[]; shown: number; thrown?: { die: HandDie; action: BattleEffect; from: pc.Vec3 }; seen?: BattleEffect }>();
+  const dice = new Map<string, { hand: HandDie[]; shown: number; thrown?: { die: HandDie; action: BattleEffect; from: pc.Vec3; shed?: number; last?: pc.Vec3 }; seen?: BattleEffect }>();
   /** The die the fight screen's cursor is on while one is being picked: it comes forward. */
   let aimedDie: { unit: string; index: number } | undefined;
   let state: BattleState | undefined;
@@ -313,11 +329,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const clock = new FightClock();
   const sway = [0, 1, 2].map(() => ({ x: 0, v: 0 })), zoom = { x: 0, v: 0 };
   let real = 0, animating = true;
-  let pulse: ((fringe: number, bloom: number) => void) | undefined;
+  let pulse: ((fringe: number, bloom: number, flash?: number) => void) | undefined;
   /** What duals and the tower's fears draw (src/dual-fx.ts), on the fight's clock. */
   const dualFx = createDualFx(effects);
-  /** What Dadaísta's faces draw where their die lands (src/dice-fx.ts). */
-  const diceFx = createDiceFx(effects, dualFx);
+  /** What Dadista's faces draw where their die lands (src/dice-fx.ts). */
+  /** The faces slapped on whoever a die hits, and the astral's stars of light (src/dice-stamp.ts). */
+  const stamps = createStamps(app, battleRoot);
+  const diceFx = createDiceFx(effects, dualFx, stamps);
   const mathCast = createMathCast(app, battleRoot, effects);
   /** The thrown Atacar already started (src/math-cast.ts). */
   let spelled: BattleEffect | undefined;
@@ -373,8 +391,35 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const l = landing(blow);
     [x, y, z].forEach((d, i) => { sway[i].x = -d * l.kick; sway[i].v = 0; });
     zoom.x = Math.max(zoom.x, l.punch);
-    pulse?.(l.fringe, l.bloom);
+    pulse?.(l.fringe, l.bloom, blow.crit ? blow.crit === 'full' ? CRIT.flash : CRIT.flashLater : 0);
     return l;
+  }
+  /**
+   * The golpe crítico (docs/animas/README.md § Golpe crítico). `critOf`: the action whose full one has
+   * played, so a flurry's later ones are short. `critGrey`: how much of the picture's colour it has
+   * drained (1 on the blow, held `critHeld` real seconds, the full hold, then back over CRIT.greyFade), all but
+   * round `critKeep`: whoever it struck and whoever struck.
+   */
+  let critOf: BattleEffect | undefined, critGrey = 0, critHeld = 0, critKeep: Fighter[] = [];
+  /**
+   * A golpe crítico lands on `struck`: time stops on it. The first of an action holds the fight
+   * CRIT.stop, punches the frame in, flashes it white and drains its colour round the two of them,
+   * with a cut of white light across the one struck; a later one of the same flurry only its cut and
+   * a short hold. Returns which it was, for the blow's own landing (hit-feel.ts `landing`).
+   */
+  function critBeat(action: BattleEffect, struck: Fighter[], actor: Fighter | undefined, dir: { x: number; z: number }): 'full' | 'later' {
+    const kind = critOf === action ? 'later' : 'full', full = kind === 'full';
+    critOf = action;
+    for (const f of struck) {
+      const body = extent(f), at = f.part ? chestOf(f) : new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + body.height * .55, f.base.z);
+      hit(f, white, (full ? 2.6 : 1.5) * (f.rigid ? .4 : 1));
+      dualFx.critical(v3(at), viewDir(), { x: dir.x, y: 0, z: dir.z }, Math.min(2.6, Math.max(1.1, body.height * .8)), full);
+    }
+    pulse?.(full ? 1 : .5, full ? 1 : .5, full ? CRIT.flash : CRIT.flashLater);
+    clock.hold = Math.max(clock.hold, full ? CRIT.stop : CRIT.later);
+    zoom.x = Math.max(zoom.x, full ? CRIT.punch : CRIT.punch * .4);
+    if (full) { critGrey = 1; critHeld = CRIT.stop; critKeep = [...struck, ...actor ? [actor] : []]; }
+    return kind;
   }
   const anchor = new pc.Vec3();
   /** How the fight lines up round `anchor`, and whether it is in a pocket (`set`). */
@@ -403,6 +448,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let celebrated = false;
   const face = (from: pc.Vec3, to: pc.Vec3) => Math.atan2(to.x - from.x, to.z - from.z) * 180 / Math.PI;
   const ELEMENT_FLASH = { agua: new pc.Color(.45, .8, 1), fuego: new pc.Color(1, .55, .18), electrico: new pc.Color(1, .92, .4) };
+  const astral = new pc.Color(.75, .88, 1);
   const white = new pc.Color(1, .96, .86), gold = new pc.Color(1, .82, .4), flame = new pc.Color(1, .55, .18), green = new pc.Color(.5, 1, .45);
   const statDown = new pc.Color(1, .16, .12), statUp = new pc.Color(.3, .72, 1);
   /** Bip's rays on whoever they reach: Tecnópata's cyan. */
@@ -564,9 +610,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     solarPlans.set(e, plan);
     return plan;
   }
-  /** When Dadaísta's die lands, and when its throw is over. */
-  const diceContact = (_e: BattleEffect) => DICE.contact;
-  const diceEnd = (_e: BattleEffect) => DICE.contact + DICE.tail;
+  /** When Dadista's die lands, and when its throw is over. */
+  const skyOf = (e: BattleEffect) => e.skill ? SKY[e.skill] : undefined;
+  /** Which of the three meteors an action is (0 Meteorito, 1 Meteoro, 2 Asteroide), if it is one. */
+  const stageOf = (e: BattleEffect): number | undefined => { const spec = SKILLS.find(x => x.id === e.skill); return spec && 'meteor' in spec ? spec.meteor : undefined; };
+  const diceContact = (e: BattleEffect) => skyOf(e)?.contact ?? DICE.contact;
+  const diceEnd = (e: BattleEffect) => { const sky = skyOf(e); return sky ? sky.contact + sky.tail + (e.rain ? (e.rain.length - 1) * rainGap(e.rain.length) : 0) : DICE.contact + DICE.tail; };
   /** When Bip's skill lands, in fight seconds from its start (CONTACT_SECONDS for the rest of its moves). */
   function bipContact(e: BattleEffect) {
     if (e.release) return solarPlan(e).contact;
@@ -770,13 +819,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const unit = state && [...state.allies, ...state.foes].find(u => u.id === e.target);
     const coin = e.coins?.[k] ?? 0, zf = e.dual!.id === 'zarpazos-de-fuego';
     cue(zf ? (coin ? 'fire-hit' : 'claw') : 'claw-deep');
+    if (e.crits ? e.crits[k] : e.crit && !k) cue('crit');
     if (!animate) return;
     const share = unit ? (e.strikes?.[k] ?? e.amount ?? 0) / unit.maxHp : 0;
     // A flash on a giant lights a lot of it: it flares less.
     const glare = target.rigid ? .4 : 1;
     const from = zf ? new pc.Vec3(plan.feet.x + Math.cos(plan.angles[k % 8]) * plan.radius, plan.feet.y, plan.feet.z + Math.sin(plan.angles[k % 8]) * plan.radius) : plan.rest;
     const dx = target.base.x - from.x, dz = target.base.z - from.z, d = Math.hypot(dx, dz) || 1;
-    const landed = land({ share: last ? Math.max(share, .5) : share, skill: true, ko: last && target.hp <= 0 }, dx / d, 0, dz / d);
+    // A claw of it that is a golpe crítico stops the fight too; a wound it spent bursts with its first blow.
+    const crit = (e.crits ? e.crits[k] : e.crit && !k) ? critBeat(e, [target], fighters.get(dualRoles(e).claws), { x: dx / d, z: dz / d }) : undefined;
+    if (!k && e.bled && e.target) statusFx.spill(e.target, v3(plan.chest), { x: dx / d, z: dz / d }, e.bled);
+    const landed = land({ share: last ? Math.max(share, .5) : share, skill: true, ko: last && target.hp <= 0, crit }, dx / d, 0, dz / d);
     if (zf) {
       dualFx.clawCoin({ x: from.x, y: plan.chest.y - .2, z: from.z }, v3(plan.chest), coin as 0 | 1, plan.facing, last ? 1.6 : 1);
       hit(target, coin ? flame : gold, (last ? 1 : .5) * glare);
@@ -785,7 +838,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       hit(target, white, 1.5 * glare);
     }
     if (markSpent(e)) { dualFx.markBurst(v3(weakPoint(target)), plan.facing); if (last) cue('mark-spent'); }
-    const stop = last ? Math.max(DUAL.finalStop, landed.stop) : Math.min(landed.stop, .05);
+    const stop = last ? Math.max(DUAL.finalStop, landed.stop) : crit ? landed.stop : Math.min(landed.stop, .05);
     effectTime -= clock.stop(stop, late);
     if (last) {
       pulse?.(1, 1); zoom.x = Math.max(zoom.x, HIT.punch.size * 1.6); shake = Math.max(shake, .35);
@@ -1178,23 +1231,41 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (actor.robot && !target) return;
     // Rayo solar charging up: Gerard's fire streams into Bip.
     if (action.charging) { chargeUp(action); return; }
+    // A golpe crítico, on whoever it struck (a flurry's first claw here; the others as they land).
+    const struck = action.hits ? action.hits.flatMap(h => { const f = h.crit ? fighters.get(h.target) : undefined; return f ? [f] : []; }) : target ? [target] : [];
+    const towards = struck[0] ?? target, cx = towards ? towards.base.x - actor.base.x : 0, cz = towards ? towards.base.z - actor.base.z : 0, cd = Math.hypot(cx, cz) || 1;
+    const crit = action.crit && action.crits?.[0] !== false && struck.length ? critBeat(action, struck, actor, { x: cx / cd, z: cz / cd }) : undefined;
+    // Dadista's skills from the sky land their own way (`skyStep` brings them down).
+    if (skyOf(action)) return skyBurst(action, actor, target);
     if (!target) { hit(actor, gold, .55); effects.emit('star', new pc.Vec3(actor.base.x, 1.3, actor.base.z), 8, .35); return; }
     // Análisis Parálisis: Gerard works it out in a flash of gold; the stats rising are the rest (effect.stats).
     if (action.skill === 'analisis') { pulse?.(.1, .3); hit(actor, gold, 1.1); effects.insight(new pc.Vec3(actor.base.x, groundHeight(actor.base.x, actor.base.z) + 2.1 * actor.scale.y, actor.base.z)); return; }
     // Cardioide: a heart-shaped curve of green light under whoever it cures, and the cure rising up them.
     if (action.skill === 'cardioide') { pulse?.(0, .3); hit(target, green, 1); effects.cardioid(target.model); return; }
-    // Yuki se esconde: a soft white shimmer over everyone she shelters.
-    if (action.skill === 'escondite') { pulse?.(0, .25); for (const f of fighters.values()) if (f.party && f.hp > 0) { hit(f, white, .5); effects.emit('poof', new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + .3, f.base.z), 5, .3); } return; }
-    // Dadaísta: the face of the die draws itself where it lands (src/dice-fx.ts).
-    if (action.die) return dieBurst(action, actor, target);
+    // Dadista: the face of the die draws itself where it lands (src/dice-fx.ts).
+    if (action.die?.as) {
+      // Tijeras cut: the blood goes the way the die came.
+      if (action.status?.id === 'sangrado' && action.target) statusFx.cut(action.target, v3(chestOf(target)), { x: cx / cd, z: cz / cd }, 2);
+      return dieBurst(action, actor, target);
+    }
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
     const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
-    const felt: Blow = { share: unit ? (action.amount ?? 0) / unit.maxHp : 0, skill: !!action.skill, guarded, ko: target.hp <= 0, swallowed: action.swallowed, beat: state?.phase === 'beat' };
+    const felt: Blow = { share: unit ? (action.amount ?? 0) / unit.maxHp : 0, skill: !!action.skill, guarded, ko: target.hp <= 0, swallowed: action.swallowed, beat: state?.phase === 'beat', crit };
     // Bip's ram comes from where Bip is, not from its wearer.
     const from = botAt(action) ?? actor.base;
     const dx = target.base.x - from.x, dz = target.base.z - from.z, d = Math.hypot(dx, dz) || 1;
     // Tecnópata's skills: Bip's rays, its blast, Rayo solar's sweep.
     if (botStrikes(action) && action.kind === 'skill') return bipBurst(action, target, from, felt, dx / d, dz / d);
+    // Estrella fugaz: the die it was paid with goes out on them as a star (src/dice-fx.ts), and the dice
+    // it deals leave the foe as stars for the hand. The astral: bluish white, no element's colour.
+    if (action.skill === 'estrella-fugaz') {
+      const { right, up, facing } = screenAxes(viewDir()), body = extent(target), mid = chestOf(target), front = body.radius * .6 + .2;
+      const hand = new pc.Vec3(actor.base.x, groundHeight(actor.base.x, actor.base.z) + 1.5 * actor.scale.y, actor.base.z);
+      diceFx.star({ centre: { x: mid.x + facing.x * front, y: mid.y + facing.y * front, z: mid.z + facing.z * front }, feet: floorUnder(target), right, up, size: Math.min(1.6, Math.max(1, body.height * .7)), side: 1, radius: body.radius }, action.dealt?.length ?? 0, hand);
+      pulse?.(.12, .5);
+      hit(target, astral, 1.3);
+      return land(felt, dx / d, 0, dz / d);
+    }
     // Foc Binari: the streams make their own burst where they land (effects.binaryFire); the target
     // flares with the heat, hotter when it catches, and the picture lurches away from the caster.
     // Split in two, this is the zero landing: gold, and only its own share of the blow (the one is `secondStream`).
@@ -1224,12 +1295,119 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     // Atacar with an element: a little burst of it where it lands, and the flash takes its colour.
     if (action.element) statusFx.touch(action.element, action.target!);
-    // A blow that opened a wound (it spent Sangrado) flares brighter; never red, nothing here reads as blood.
+    // Blood (src/status-fx.ts): a cut flings it along the blow; a blow that spends the wound bursts it,
+    // as much as there was. It falls behind them, on the floor and on whoever stands there.
+    if (action.target && action.bled) statusFx.spill(action.target, v3(blow), { x: dx / d, z: dz / d }, action.bled);
+    else if (action.target && action.status?.id === 'sangrado') statusFx.cut(action.target, v3(blow), { x: dx / d, z: dz / d }, 2);
     hit(target, action.element ? ELEMENT_FLASH[action.element] : action.spell ? gold : claw ? clawFlash : white, action.bled ? 1.4 : guarded ? .4 : claw ? .7 : 1);
     return land(felt, dx / d, 0, dz / d);
   }
+  /** Where something of Dadista's lands on `f`: just in front of them, facing the camera, as big as they stand. */
+  function spotOf(f: Fighter, side = 1): FaceSpot {
+    const { right, up, facing } = screenAxes(viewDir()), body = extent(f);
+    const mid = f.part ? chestOf(f) : new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + body.height * .55, f.base.z), front = body.radius * .6 + .2;
+    return { centre: { x: mid.x + facing.x * front, y: mid.y + facing.y * front, z: mid.z + facing.z * front }, feet: floorUnder(f), right, up, size: Math.min(1.6, Math.max(1, body.height * .7)), side, radius: body.radius };
+  }
+  /** Whom a sky skill comes down on, in order: each die of the rain, every foe of the Asteroide, the party for Ases en dúo, or its one target. */
+  function skyTargets(action: BattleEffect, target?: Fighter): Fighter[] {
+    const ids = action.rain?.map(drop => drop.target) ?? action.boosted ?? action.hits?.map(h => h.target);
+    return ids ? ids.flatMap(id => { const f = fighters.get(id); return f ? [f] : []; }) : target ? [target] : [];
+  }
+  /** Over the heads of the party's fighters named: where Ases en dúo's two dice circle. */
+  function over(list: Fighter[]) {
+    const at = new pc.Vec3();
+    for (const f of list) at.add(new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + 2.5 * f.scale.y, f.base.z));
+    return at.mulScalar(1 / Math.max(1, list.length));
+  }
   /**
-   * Dadaísta's die landing: its face drawn in the air in front of whom it lands on (src/dice-fx.ts),
+   * A sky skill before and after it lands: what falls starts `fall` before its contact, and the rain's
+   * other dice land one after another, each telling the fight screen (its own number and PV).
+   */
+  function skyStep(action: BattleEffect, actor: Fighter, target: Fighter | undefined, t: number, animate: boolean) {
+    const spec = skyOf(action);
+    if (!spec) return;
+    if (sky?.effect !== action) sky = { effect: action, fell: 0, landed: 0 };
+    const list = skyTargets(action, target), stage = stageOf(action);
+    if (action.rain) {
+      const gap = rainGap(action.rain.length);
+      for (; sky.fell < list.length && t >= spec.contact + sky.fell * gap - spec.fall; sky.fell++) if (animate) diceFx.skyFall(spotOf(list[sky.fell]), spec.fall);
+      // The first lands with the action's contact (`skyBurst`); the rest here.
+      for (sky.landed = Math.max(1, sky.landed); sky.landed < list.length && (!animate || t >= spec.contact + sky.landed * gap) && impacted; sky.landed++) {
+        impact?.(sky.landed);
+        if (!animate) continue;
+        const f = list[sky.landed];
+        diceFx.skyLand(spotOf(f)); hit(f, astral, .9); cue('mana');
+        shake = Math.max(shake, .08);
+      }
+      return;
+    }
+    if (sky.fell || !animate || t < spec.contact - spec.fall) return;
+    sky.fell = 1;
+    if (action.skill === 'ases-en-duo') { const { right, up } = screenAxes(viewDir()); diceFx.aces(v3(over(list.length ? list : [actor])), right, up, spec.fall); return; }
+    // The Asteroide is one rock for all of them: it comes down in their middle, and its shadow is there before it.
+    if (stage === 2) {
+      const mid = new pc.Vec3(); list.forEach(f => mid.add(f.base)); mid.mulScalar(1 / Math.max(1, list.length));
+      const first = spotOf(list[0] ?? actor), feet = { x: mid.x, y: groundHeight(mid.x, mid.z), z: mid.z };
+      diceFx.skyFall({ ...first, centre: { ...feet, y: feet.y + .9 }, feet, size: 1.6 }, spec.fall, 'meteor', 3.2);
+      return;
+    }
+    if (target) diceFx.skyFall(spotOf(target), spec.fall, 'meteor', stage ? 1.5 : .8);
+  }
+  /** A sky skill landing: the rain's first die, the shower of Ases en dúo on each of the party, a rock of light on whom it reaches. */
+  function skyBurst(action: BattleEffect, actor: Fighter, target?: Fighter) {
+    const list = skyTargets(action, target), stage = stageOf(action);
+    if (action.rain) {
+      const f = list[0];
+      if (f) { diceFx.skyLand(spotOf(f)); hit(f, astral, 1); }
+      pulse?.(.06, .35); shake = Math.max(shake, .1);
+      return;
+    }
+    if (action.skill === 'ases-en-duo') {
+      const top = v3(over(list.length ? list : [actor]));
+      for (const f of list) { diceFx.shower(spotOf(f), top); dualFx.after(.3, () => hit(f, astral, .9)); }
+      pulse?.(0, .4);
+      return;
+    }
+    if (stage === undefined || !list.length) return;
+    list.forEach(f => { diceFx.meteorLand(spotOf(f), stage); hit(f, astral, 1.2 + stage * .3); });
+    pulse?.(.1 + stage * .12, .5 + stage * .25, stage === 2 ? .3 : 0);
+    shake = Math.max(shake, .18 + stage * .2); zoom.x = Math.max(zoom.x, HIT.punch.size * (1 + stage * .5));
+    const first = list[0], firstId = action.hits?.[0]?.target ?? action.target, unit = state && [...state.allies, ...state.foes].find(u => u.id === firstId);
+    const total = action.hits ? Math.max(...action.hits.map(h => h.amount)) : action.amount ?? 0;
+    const felt: Blow = { share: unit ? total / unit.maxHp : 0, skill: true, guarded: false, ko: first.hp <= 0, beat: state?.phase === 'beat' };
+    const dx = first.base.x - actor.base.x, dz = first.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
+    const landed = land(felt, dx / d, -.4, dz / d);
+    // The fight stops a quarter of a second under the Asteroide.
+    return stage === 2 ? { ...landed, stop: Math.max(landed.stop, .25) } : landed;
+  }
+  /**
+   * The meteor that has grown stays up there: a rock of light turning slowly over its wearer's head,
+   * twice a die for Meteoro and larger for Asteroide. It is the one that comes down when the skill
+   * is used again, and it comes apart into stars when the turn goes on anything else.
+   */
+  function updateRocks(dt: number, animate: boolean) {
+    if (!state) return;
+    for (const [id, f] of fighters) {
+      if (!f.party) continue;
+      const unit = state.allies.find(a => a.id === id);
+      let rock = rocks.get(id), stage = unit && f.hp > 0 ? meteorOf(unit) : 0;
+      // While its own throw is in the air the state is already ahead: the rock overhead is the one falling, and the next comes after it lands.
+      const spec = effect?.actor === id ? skyOf(effect) : undefined, mine = spec && stageOf(effect!);
+      if (spec && mine !== undefined) stage = effectTime >= spec.contact + .25 ? stage : effectTime < spec.contact - spec.fall ? mine : 0;
+      if (!rock && !stage) continue;
+      if (!rock) { rock = { kept: stamps.keep('meteor'), size: 0, turn: Math.random() * 360 }; rocks.set(id, rock); }
+      const want = stage ? DIE.size * f.scale.y * (stage === 1 ? 2.4 : 3.6) : 0, at = new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + (2.2 + stage * .22) * f.scale.y + Math.sin(time * 1.3) * .05, f.base.z);
+      // Gone without being thrown: it comes apart into stars and drifts off.
+      if (!want && rock.size > .05 && animate && !(spec && mine !== undefined)) effects.emit('astral', at, 14, rock.size * .6);
+      rock.size = !animate || (!want && !(spec && mine !== undefined)) ? want : rock.size + (want - rock.size) * (1 - Math.exp(-dt * 7));
+      rock.turn += dt * 26;
+      rock.kept.set(at, rock.size, rock.turn, .7);
+      if (animate && rock.size > .1 && Math.random() < dt * 5) effects.emit('astral', at, 1, rock.size * .5);
+      if (!want && rock.size < .01) { rock.kept.drop(); rocks.delete(id); }
+    }
+  }
+  /**
+   * Dadista's die landing: its face drawn in the air in front of whom it lands on (src/dice-fx.ts),
    * as big as they stand, the hand pointing away from the side it came from. Corchete only shelters
    * (a soft ivory glow, no blow); the rest land as blows, a hand the hardest.
    */
@@ -1238,12 +1416,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const mid = target.part ? chestOf(target) : new pc.Vec3(target.base.x, groundHeight(target.base.x, target.base.z) + body.height * .55, target.base.z);
     const front = body.radius * .6 + .2, centre = { x: mid.x + facing.x * front, y: mid.y + facing.y * front, z: mid.z + facing.z * front };
     const side = Math.sign((actor.base.x - target.base.x) * right.x + (actor.base.z - target.base.z) * right.z) || -1;
-    const delay = diceFx.land({ centre, feet: floorUnder(target), right, up, size: Math.min(1.6, Math.max(1, body.height * .7)), side, radius: body.radius }, die.face, die.as);
+    const delay = diceFx.land({ centre, feet: floorUnder(target), right, up, size: Math.min(1.6, Math.max(1, body.height * .7)), side, radius: body.radius }, die.face, die.as!);
     if (die.as === 'corchete') { pulse?.(0, .25); hit(target, white, .7); return; }
     // The Comodín: its star and a hand on every other foe it reached too, one after another so each reads.
     if (die.as === 'comodin') reachedBy(action).filter(({ f }) => f !== target).forEach(({ f }, i) => dualFx.after(.07 * (i + 1), () => {
       const b = extent(f), at = f.part ? chestOf(f) : new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + b.height * .55, f.base.z), ahead = b.radius * .6 + .2;
-      const lag = diceFx.land({ centre: { x: at.x + facing.x * ahead, y: at.y + facing.y * ahead, z: at.z + facing.z * ahead }, feet: floorUnder(f), right, up, size: Math.min(1.6, Math.max(1, b.height * .7)), side, radius: b.radius }, die.face, die.as);
+      const lag = diceFx.land({ centre: { x: at.x + facing.x * ahead, y: at.y + facing.y * ahead, z: at.z + facing.z * ahead }, feet: floorUnder(f), right, up, size: Math.min(1.6, Math.max(1, b.height * .7)), side, radius: b.radius }, die.face, die.as!);
       dualFx.after(lag, () => hit(f, white, .9));
     }));
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
@@ -1576,8 +1754,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   /**
    * Haru stands a step ahead of Papagato's wearer, towards the foes, watching them (src/cat-gait.ts
    * does her legs, ears and tail); Yuki sits a step behind. Zarpazo sangriento: she leaps on the
-   * target, lands low to swat, and hops back. Yuki se esconde: she gets up, slinks behind the
-   * wearer pressed to the floor, ears flat, and goes back to sit. Off Papagato they go: in a puff
+   * target, lands low to swat, and hops back. Ronroneo: Yuki trots to the feet of whoever she
+   * cures, settles against them, and goes back to sit. Off Papagato they go: in a puff
    * of smoke when it is the ánima that brings them, or, lent by Nuria (Uri's tower), stepping aside
    * behind the party to sit it out until someone wears it again.
    */
@@ -1674,15 +1852,16 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         crouch = out <= 0 || (out >= 1 && back <= 0) ? 1 : 0;
       }
       placeCat(pair.haru, dt, at, lift, look, animate, wearing ? { alert: 1, crouch, leap } : { sit: 1 }, walks);
-      // Yuki: sitting behind, or slinking off to hide behind the wearer.
+      // Yuki: sitting behind, or over to whoever she purrs on (Ronroneo): she trots to their feet, settles against them and comes back.
       const shelter = aside ? behind(-1.6, .5) : new pc.Vec3(spots.yuki.x, 0, spots.yuki.z);
-      const hide = mine && effect?.skill === 'escondite' ? (animate ? Math.sin(clamp01(t / .85) * Math.PI) : 0) : 0;
-      const spot = new pc.Vec3().lerp(shelter, new pc.Vec3(spots.hidden.x, 0, spots.hidden.z), hide);
-      placeCat(pair.yuki, dt, spot, 0, center, animate, { sit: hide > .02 ? 0 : 1, fear: Math.min(1, hide * 2) }, walks);
+      const purr = mine && effect?.skill === 'ronroneo' && target ? (animate ? clamp01(Math.sin(clamp01(t / 1.1) * Math.PI) * 1.7) : 0) : 0;
+      const feet = target ? new pc.Vec3(target.base.x + side.x * .4 - ahead.x * .12, 0, target.base.z + side.z * .4 - ahead.z * .12) : shelter;
+      const spot = new pc.Vec3().lerp(shelter, feet, purr);
+      placeCat(pair.yuki, dt, spot, 0, purr > .5 && target ? new pc.Vec3(target.base.x, 0, target.base.z) : center, animate, { sit: purr > .02 && purr < .98 ? 0 : 1 }, walks);
     }
   }
   /**
-   * Dadaísta's dice (src/dice.ts): its maná, floating in a column beside whoever wears it, on the side
+   * Dadista's dice (src/dice.ts): its maná, floating in a column beside whoever wears it, on the side
    * away from the others, each with its face turned to the camera, never quite still: each drifts,
    * bobs and turns a little on a pace of its own. New ones (Defender, a round's rest, the fight
    * starting) drop in tumbling. The one Tirar dado spends leaves the hand, flies at whom its face
@@ -1755,32 +1934,56 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const thrown = d.thrown;
       if (!thrown) continue;
       const { die, action } = thrown;
-      dressDie(app, die.entity, die.face);
+      // A die that pays for Estrella fugaz turns to glass and light as it leaves the hand.
+      dressDie(app, die.entity, die.face, !action.die?.as);
       // Where it is held before it goes: over the wearer's raised hand.
       const held = new pc.Vec3(f.base.x + across.x * .3 * out + toCamera.x * .2, floor + 1.72 * f.scale.y, f.base.z + across.z * .3 * out + toCamera.z * .2);
       const chest = target ? chestOf(target) : held;
-      const launch = DICE.launch, contact = diceContact(action);
+      const launch = DICE.launch, contact = diceContact(action), astralDie = !action.die?.as;
       let grow = 1;
       if (t < launch) {
-        // Drawn back over the hand, face to the camera.
+        // Drawn back over the hand, face to the camera, swelling: the wind-up.
         const lift = smooth(t / launch);
         die.at.lerp(thrown.from, held, lift); die.turn.slerp(die.turn, settle(die.face, 0), 1 - Math.exp(-dt * 14));
-        grow = 1 + lift * .25;
-      } else {
-        // Thrown: a low arc to the chest of whom its face reaches, tumbling; it lands and jumps back off it.
-        const away = new pc.Vec3(held.x - chest.x, 0, held.z - chest.z).normalize();
-        if (t < contact) {
-          const u = clamp01((t - launch) / (contact - launch));
-          die.at.lerp(held, chest, u * u * .35 + u * .65); die.at.y += Math.sin(u * Math.PI) * .32;
-          grow = 1.25;
-        } else {
-          // Off it for good: a hop away and down to the floor, gone as it comes to rest.
-          const u = clamp01((t - contact) / (DICE.tail - .08)), ground = groundHeight(chest.x, chest.z) + size * .5;
-          die.at.copy(chest).add(place.copy(away).mulScalar(u * .95));
-          die.at.y = chest.y + (ground - chest.y) * u * u + Math.sin(Math.min(1, u * 1.6) * Math.PI) * .42;
-          grow = 1.15 * (1 - smooth((u - .6) / .4));
+        // A step back along the throw just before it goes.
+        if (target) die.at.add(place.set(held.x - chest.x, 0, held.z - chest.z).normalize().mulScalar(.22 * lift * lift));
+        grow = 1 + lift * .5;
+        if (astralDie && animate) { thrown.shed = (thrown.shed ?? 0) + dt * 60 * lift; for (; thrown.shed >= 1; thrown.shed--) effects.emit('astral', die.at, 1, .16); }
+      } else if (skyOf(action)) {
+        // A skill from the sky: the die turns to light and goes up out of the frame, its stars after it.
+        const u = clamp01((t - launch) / .38);
+        die.at.copy(held); die.at.y += u * u * 7;
+        grow = u >= 1 ? 0 : 1.5 - u * .7;
+        die.turn.copy(spin.setFromAxisAngle(die.tumble, (t - launch) * 1500)).mul(faceUp(die.face));
+        if (animate && u < 1) { thrown.shed = (thrown.shed ?? 0) + dt * 150; for (; thrown.shed >= 1; thrown.shed--) effects.emit('astral', die.at, 1, .12); }
+      } else if (t < contact) {
+        // Thrown hard: nearly straight at the chest of whom it reaches, faster all the way, growing as it comes,
+        // and what it leaves behind is a streak (paper for a face, stars for the astral).
+        const u = clamp01((t - launch) / (contact - launch)), before = thrown.last ?? held.clone();
+        die.at.lerp(held, chest, u * u * .7 + u * .3); die.at.y += Math.sin(u * Math.PI) * (astralDie ? .06 : .16);
+        grow = 1.5 + u * .7;
+        die.turn.copy(spin.setFromAxisAngle(die.tumble, (t - launch) * 2200)).mul(faceUp(die.face));
+        if (animate) {
+          dualFx.line(v3(before), v3(die.at), astralDie ? '#bfe0ff' : DICE_COLOURS.paper, { count: 14, life: astralDie ? .3 : .13, size: astralDie ? 2.6 : 2.1 });
+          if (astralDie) { thrown.shed = (thrown.shed ?? 0) + dt * 190; for (; thrown.shed >= 1; thrown.shed--) effects.emit('astral', die.at, 1, .1); }
         }
-        die.turn.copy(spin.setFromAxisAngle(die.tumble, (t - launch) * 1400)).mul(faceUp(die.face));
+        thrown.last = die.at.clone();
+      } else if (astralDie) {
+        // It went out on them as the star: nothing is left of the die.
+        grow = 0;
+      } else {
+        // It hits and stays a beat, big against them, while the stamp comes down; then it is knocked
+        // back off them, high and spinning, lands, hops once and is gone.
+        const since = t - contact, stuck = .07, u = clamp01((since - stuck) / (DICE.tail - stuck - .08)), ground = groundHeight(chest.x, chest.z) + size * .5;
+        const away = place.set(held.x - chest.x, 0, held.z - chest.z).normalize();
+        if (since < stuck) { die.at.copy(chest); grow = 2.3 - since / stuck * .5; }
+        else {
+          const first = Math.min(1, u / .68), hop = Math.max(0, (u - .68) / .32);
+          die.at.copy(chest).add(away.mulScalar(first * 1.25 + hop * .3));
+          die.at.y = hop > 0 ? ground + Math.sin(hop * Math.PI) * .22 : chest.y + (ground - chest.y) * first * first + Math.sin(Math.min(1, first * 1.25) * Math.PI) * .85;
+          grow = 1.5 * (1 - smooth((u - .8) / .2));
+          die.turn.copy(spin.setFromAxisAngle(die.tumble, since * 1700)).mul(faceUp(die.face));
+        }
       }
       die.size = size * grow;
       die.entity.enabled = die.size > .001;
@@ -2112,7 +2315,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       return true;
     },
     /** Where big moments send their chromatic fringe and bloom swell (post.pulse). */
-    setPulse(next: (fringe: number, bloom: number) => void) { pulse = next; },
+    setPulse(next: (fringe: number, bloom: number, flash?: number) => void) { pulse = next; },
     /** Where the moments only the picture knows go to sound (a claw landing, a layer off, a fall). */
     setCue(next: typeof cue) { cue = next; },
     /** Haru and Yuki already with the party, if any: this fight uses them instead of bringing its own. It gives them back when it ends. */
@@ -2162,8 +2365,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
     },
     selectTarget(id?: string) { selectedTarget = id; },
-    /** Dadaísta: the die of `unit`'s hand the cursor is on while one is being picked (none: back in line). */
+    /** Dadista: the die of `unit`'s hand the cursor is on while one is being picked (none: back in line). */
     aimDie(unit?: string, index?: number) { aimedDie = unit !== undefined && index !== undefined ? { unit, index } : undefined; },
+    /** Agitar: `unit`'s dice are thrown again, so each drops in tumbling once more, one after another, with a few stars off the hand. */
+    shakeDice(unit: string) {
+      const d = dice.get(unit), f = fighters.get(unit);
+      d?.hand.forEach((die, i) => { die.age = -.07 * i; die.tumble.set(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize(); });
+      if (d?.hand.length) effects.emit('astral', d.hand[0].at, 10, .35);
+      else if (f) effects.emit('astral', new pc.Vec3(f.base.x, 1.3, f.base.z), 6, .3);
+    },
     /**
      * Sets a fighter alight at `level` (or changes how hard they burn), or lets the fire die down
      * with no level. The fire is sized to their model and wraps it: their body burns, flames rise
@@ -2304,10 +2514,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (!next) {
         dualFx.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
         for (const f of fighters.values()) if (f.robot?.swirl) { f.robot.swirl.stream.remove(); f.robot.swirl.field.remove(); f.robot.swirl.glass.remove(); f.robot.swirl = undefined; }
-        dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; spot?.(0, []);
+        dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
+      if (!next) { stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -2339,6 +2549,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // La carta de colores (docs/quests/luca.md): a shirt of Luca's keeps its colour only in the light of that colour.
       if (state?.light) for (const foe of state.foes) if (foe.kind?.startsWith('estampado')) { const f = fighters.get(foe.id); if (f) lightShirt(f.model, shirtLit(state, foe)); }
       dualFx.update(dt);
+      { const axes = screenAxes(viewDir()); stamps.update(dt, axes.right, axes.up, axes.facing); }
       if (mathCast.update(dt)) spellLaunch(effect?.element).forEach(sound => cue(sound.id, sound));
       entryTime = animate ? Math.min(ENTRY_SECONDS, entryTime + dt) : ENTRY_SECONDS;
       cameraKick.set(0, 0, 0); focus.set(0, 0, 0);
@@ -2361,7 +2572,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // His skills of the elements too: Factor común, Vasos comunicantes, Descarga.
       const elemental = !!effect?.skill && ELEMENTAL.has(effect.skill) && !!target;
       const casting = focBinari || spelling || curing || elemental;
-      // Dadaísta throws its die from where it stands.
+      // Dadista throws its die from where it stands.
       const dicing = !!effect?.die && !!target;
       const castLaunch = spelling ? SPELL_LAUNCH : CAST_LAUNCH, castContact = spelling ? SPELL_CONTACT : curing ? CURE_CONTACT : CAST_CONTACT;
       // A dual attack: both its fighters stay where they are; Gerard draws and Haru strikes (`DUAL`).
@@ -2436,7 +2647,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (clawed && casting) secondStream(effect, actor, target, animate, contact + spacing);
         else {
           if (clawed) cue('claw');
-          if (animate && clawed) { hit(target, white, .75); effects.emit('spark', target.part ? chestOf(target) : new pc.Vec3(target.base.x, groundHeight(target.base.x, target.base.z) + .7 * target.scale.y, target.base.z), 7, .35 * target.scale.x); }
+          if (clawed) for (let blow = clawed; blow < blows; blow++) if (effect.crits?.[blow]) cue('crit');
+          if (animate && clawed) {
+            const at = target.part ? chestOf(target) : new pc.Vec3(target.base.x, groundHeight(target.base.x, target.base.z) + .7 * target.scale.y, target.base.z);
+            const ax = target.base.x - (actor?.base.x ?? target.base.x), az = target.base.z - (actor?.base.z ?? target.base.z), ad = Math.hypot(ax, az) || 1;
+            hit(target, white, .75); effects.emit('spark', at, 7, .35 * target.scale.x);
+            // Each claw that cuts flings a little more; each one that is a golpe crítico stops the fight (the first for longest).
+            if (effect.status?.id === 'sangrado' && effect.target) statusFx.cut(effect.target, v3(at), { x: ax / ad, z: az / ad }, 1);
+            for (let blow = clawed; blow < blows; blow++) if (effect.crits?.[blow]) critBeat(effect, [target], actor, { x: ax / ad, z: az / ad });
+          }
         }
         clawed = blows;
       }
@@ -2719,6 +2938,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       updateCats(dt, t, animate, target);
       updateBips(dt, t, animate, target);
       updateDice(dt, t, animate, target);
+      if (effect && actor && skyOf(effect)) skyStep(effect, actor, target, t, animate);
+      updateRocks(dt, animate);
       // Foc Binari: once the hand is up, the two streams leave it for the target's chest.
       if (casting && animate && actor && target && spelled !== effect) {
         spelled = effect;
@@ -2791,6 +3012,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       spotAmount += (spotWant - spotAmount) * (animate ? 1 - Math.exp(-elapsed * (spotWant ? 10 : 4)) : 1);
       if (spotAmount < .002) spotAmount = 0;
       if (spot && was && !spotAmount) spot(0, []);
+      // A golpe crítico drains the picture for as long as it holds the fight, then gives the colour back
+      // (real time). A dual's own spotlight, when it is on, already has the picture.
+      if (critGrey > 0) {
+        if (!animate) critGrey = 0;
+        else if ((critHeld -= elapsed) <= 0) critGrey = Math.max(0, critGrey - elapsed / CRIT.greyFade);
+        if (spot && !spotAmount) spot(critGrey * CRIT.grey, critGrey ? critKeep.filter(f => f.model.enabled).slice(0, 4).map(f => ({ ...v3(chestOf(f)), radius: 1.15 * f.scale.y })) : []);
+      }
       focus.add(new pc.Vec3(lens.x, lens.y, lens.z));
       // On someone's turn the camera leans in on them, so their face reads.
       const onTurn = !effect && state?.phase === 'player' && entryTime >= ENTRY_SECONDS ? fighters.get(state.allies[state.active]?.id ?? '') : undefined;

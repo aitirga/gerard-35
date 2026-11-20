@@ -12,8 +12,8 @@ shared pool called Ánima, were tried before):
   (`MANA_POINTS` in `src/battle.ts`). The worn ánima's pool is `Combatant.secondary`; the others
   wait in `Combatant.mana` until worn again. Bernat wears none and has none; nobody has maná
   without an ánima on.
-- A skill spends its cost: *Foc Binari* 1, *Zarpazo sangriento* 1, *Yuki se esconde* 1,
-  *Zarpa en la llaga* 2, *Las dos a la vez* 2.
+- A skill spends its cost: *Foc Binari* 1, *Zarpazo sangriento* 1, *Zarpazos* 2, *Ronroneo* 2,
+  *Zarpa en la llaga* 2.
 - **Resting ánimas recover**: at the end of each round every ánima not worn at any moment of it
   gets 1 back (`REST_CHARGE`; `Combatant.worn` keeps which were worn).
 - **Defender** gives the worn ánima 2 back (`DEFEND_CHARGE`, only that one; 2026-11-05), besides guarding.
@@ -74,7 +74,7 @@ Not part of the base proposal; test once the base works.
 - **Fresh entry:** the first skill used after switching into a *full* ánima gets a small bonus
   (or costs one point less). It rewards rotating instead of draining one ánima to zero.
 - **Echo:** the ánima you just left keeps a weak passive for one round (Papagato's Espíritu −1
-  lingers, Yuki's Defensa boost lasts one more round). Changing leaves a trace.
+  lingers, Análisis Parálisis's boost lasts one more round). Changing leaves a trace.
 - **Combined skills** (`docs/animas/README.md` § Combined skills) spend points from both
   ánimas, one from each wearer: it makes wearing complementary ánimas a plan between players.
 

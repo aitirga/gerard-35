@@ -125,7 +125,7 @@ It is not saved and sets no flag (`story.debugAnimas`), and no ánima earns EXP 
 is set; a jump starts again with what the story gives at that point.
 
 At the top of the column, **Subir de nivel**: each shared ánima that levels (`LEVELLED` in
-`src/levels.ts`: Papagato and Dadaísta), with its level and EXP and two buttons that make it grow
+`src/levels.ts`: Papagato and Dadista), with its level and EXP and two buttons that make it grow
 **for real**, as a won fight would (`story.giveXp`): *Subir a Nv N* (exactly the EXP its next level
 needs, the gold one), and *+25 EXP*. Both need the ánima unlocked in the story (a jump to after its
 mission gives it); Matemágico and Tecnópata are not there, they grow at the jar. The EXP is kept, a level reached sets its flag and shows its note (*ÁNIMA · NIVEL 2 · Aprende
@@ -162,16 +162,18 @@ The fight tester. Choose:
   Delegada, Aurelià, El Equipo de dirección, La Reina Bubbaloo (the first meeting, which cannot be
   won) and La Reina with the artilugio; rooms on their floor, bosses in their own room.
   Dogs come 1 to 4; the guards are as many and as strong as the friends' ánimas leave them.
-- To try **Ángulo exacto**, **Ronroneo de Yuki** and the **duals**, the Ánimas column sets the
+- To try **Ángulo exacto**, **Ronroneo** and the **duals**, the Ánimas column sets the
   levels (Matemágico and Papagato at *Nv 2* reach all of them) and *Equipo* + *Ánimas* put
   Matemágico on Gerard and Papagato on Aitor.
 - **Ecos de luz** (chapter 2): the improvements of the ánimas in the fight, whatever they would cost
   (Matemágico's elements, each ánima's maná). Asleep ones (Pasiva, Definitiva) do not show.
 - **Ayudas**: *Inmunidad* (no blow takes the party's PV), *PM infinitos* (skills cost no
-  Ánima) and *Sin límites*: every ánima unlocked at its top level for whoever can wear it (each
+  Ánima), *Sin límites*: every ánima unlocked at its top level for whoever can wear it (each
   can switch to all of theirs), maná always full in every one, and skills with no limit of use (a
   cure on anyone standing, a boost or a mark again while it runs, every dual as often as wanted;
-  `BattleState.unbound`, `unboundAnimas` and `applyHelp` in `src/main.ts`).
+  `BattleState.unbound`, `unboundAnimas` and `applyHelp` in `src/main.ts`), and *Crítico seguro*:
+  every blow of the party is a golpe crítico, to see it and what it does to the numbers
+  (`FightSetup.crit`, `BattleState.sureCrits`; docs/animas/README.md § Golpe crítico).
 
 To balance fights rather than play them, `just fight-sim` plays thousands without a screen
 ([fight-sim.md](fight-sim.md)).
@@ -192,7 +194,7 @@ planta un combate), and `&pocket` sends any fight to one, wherever it starts (e.
 
 In any fight, the story's too, the Combate tab becomes the fight's own page:
 
-- **Ayudas**: *Inmunidad*, *PM infinitos* and *Sin límites*, on or off at once (a test fight starts
+- **Ayudas**: *Inmunidad*, *PM infinitos*, *Sin límites* and *Crítico seguro*, on or off at once (a test fight starts
   with its setup's; *Sin límites* off gives back the fight's own ánimas, levels and kits).
 - **Saltar a**: *Victoria* or *Derrota* (its result screen, as if it had happened), *Enemigos a
   1 PV* or *Equipo a 1 PV* (the next blow decides), and against the palace minion *Despierta
@@ -259,9 +261,29 @@ Everything new in the story has to be reachable from here (AGENTS.md):
 ## The progress panel
 
 `docs/progress.toml` lists what the whole game needs, with a weight per block and per item. An item
-is done when its checks hold against the checkout (a file exists, a text is or is not in a file) or
-when it says `done = true`, for what code cannot tell. Adding an item makes the bar shrink; finishing
-or deleting one makes it grow. The file's header explains the checks.
+is done when its checks hold against the checkout (a file exists, a text is or is not in a file, a
+name is used) or when it says `done = true`, for what code cannot tell. Adding an item makes the bar
+shrink; finishing or deleting one makes it grow. The file's header explains the checks.
+
+The checks ask for what is in the game, not only written: a module of `src/` counts once something
+imports it (another module, a folder loaded whole, or a page of its own such as `bestiario.html`),
+and `used = "levelCap"` holds once the name is in a second module, so a gate defined and never
+applied stays pending.
+
+`just progress --audit` is for checking that everything is wired together, before calling a piece
+of work done. It prints two things and fails if either finds something broken:
+
+- **The list's own health**: checks that can never tick as written (an `in` that finds no file, a
+  `used` name nobody defines, a title twice, a hand tick whose check fails), how many points of the
+  bar rest on each kind of evidence, and what waits for a tick by hand.
+- **The game's integration** ([scripts/integration.mjs](../scripts/integration.mjs)), read from the
+  game's own registries and never from a list: every story flag in the `dev-chapter` list, every
+  place in the picker and every fight in the tester (*broken* if not); and, as work left, the fights
+  without their pair of `TARGETS`, the places with no song, the missions whose ánima cannot be worn
+  and the ánimas that do not grow, who talks without a portrait or fights on the minion's model, and
+  what `src/` exports and nobody uses. `tests/integration.test.mjs` holds the broken ones to none.
+
+A gap the audit lists is either an item of the list already or should become one.
 
 `scripts/herdr-progress` draws the total, the story a player can walk through, the priorities and
 the blocks. herdr opens it at the top of every tab's column in this project, because having the script is what
@@ -351,6 +373,64 @@ any of the five (none: just a comment), `status` `abierta`, `hecha` or `descarta
 skill reads the open ones, does what they ask and writes its `reply` under each, which the page shows.
 The screenshots use `?notas=scratch` (output/bestiary/notes-scratch.json), so they never leave a real note.
 
+## The ánimas' sheet
+
+`just animas` opens the ánimas' sheet on the dev server, where it can be commented;
+`just animas-report` only writes it, to read without notes to write. Both come from
+[scripts/animas.mjs](../scripts/animas.mjs), which writes `output/reports/animas/index.html`:
+one page to read and check every ánima's design. For each ánima, its design (its own doc,
+`docs/animas/<id>/README.md`, section by section) beside **what the game has of it today**, read from
+the code: who it belongs to and how it grows, its attributes, every skill by level or node with its
+cost, what it is and its description in the game, its passives, the duals it is half of and what the
+jar sells it. An ánima that is only a design shows as such. Then *Dúos* (every dual in the game, and
+the pairs and ideas designed), *Mecánicas compartidas* and *Cómo crecen*, from
+`docs/animas/README.md`.
+
+Nothing in it is written by hand: change a doc or the game and reload it (served, the page is
+written again each time it is asked for: `animasSheet` in vite.config.ts, so any dev server, `just
+dev`'s too, serves it fresh at `/output/reports/animas/`), or run `just animas-report` again. A new
+ánima shows up when its folder has a `README.md`; it links each ánima's screenshot gallery (`just
+screenshots <id>`) when there is one. `just animas-report` puts it in herdr's assets sidebar;
+elsewhere it opens (`GERARD_OPEN=0` to not open it). The page a design is checked on while ánimas
+are designed one by one (`/anima`, `docs/animas/README.md` § Order of work).
+
+**Notes.** Every page of the sheet (each ánima, *Catálogo*, *Dúos*, *Mecánicas compartidas*, *Cómo
+crecen*) has its notes in a column on the right: write one and *Guardar nota* (or Ctrl/⌘ + Enter),
+then on each *Editar* (Ctrl/⌘ + Enter saves, Esc leaves it as it was), *Hecha*, *Descartar*,
+*Reabrir* and *Borrar* (pressed twice). The list on the left shows ✎ and how many are open beside
+each page, and *Notas* gathers them all, open or every one. They live in `docs/anima-notes.json`,
+tracked so they travel between machines, created with the first note, and are written through the
+dev server (`GET`/`PUT /__animas/notas`, the same `notesEndpoint` as the bestiary's: checked against
+the format, written through a temp file). Each change is made on the file as it is at that moment,
+so a reply the `anima` skill wrote meanwhile is kept, and coming back to the page reads them again.
+Opened as a file (`just animas-report`, the sidebar), the sheet shows the notes as they were when it
+was written and cannot change them. The format (`src/anima-notes.ts`, checked by
+`animaNotesProblem`), two spaces, notes in the order they were made:
+
+```json
+{
+  "notes": [
+    {
+      "id": "n-<Date.now() in base 36>",
+      "entry": "papagato",
+      "name": "Papagato",
+      "text": "the comment",
+      "status": "abierta",
+      "created": "2026-11-20T09:10:00Z",
+      "edited": "when its text last changed (optional)",
+      "reply": "what was done (optional)",
+      "closed": "2026-11-20T10:00:00Z"
+    }
+  ]
+}
+```
+
+`entry` is the ánima's folder in docs/animas/ (its `ClassId`) or one of the sheet's pages
+(`catalogo`, `duos`, `mecanicas`, `reglas`), `status` `abierta`, `hecha` or `descartada`. The `anima`
+skill reads the open ones on what it works on and writes its `reply` under each, which the page
+shows. `just screenshots animas-hoja` uses `?notas=scratch`
+(output/reports/animas/notes-scratch.json), so it never leaves a real note.
+
 ## Effects lab
 
 *Atacar de Matemágico* plays his thrown Atacar (`src/math-cast.ts`), with no element or with each one,
@@ -367,3 +447,21 @@ veils) land on the first ally when a dog is picked. It can hide the fight's menu
 close, keep effects stacking, repeat the last one or clean everything. It never touches the fight's
 numbers or the story. Matemágico's *Foc Binari* has its own entry (the streams, then the burst or
 the fizzle). `just screenshots fx-lab --gpu` clicks through it.
+
+**Sincopante · ecos** is a section at the top of the panel ([src/eco-lab.ts](../src/eco-lab.ts),
+[src/eco-fx.ts](../src/eco-fx.ts)). It shows how Sincopante's ecos will look before the ánima is in
+the game:
+- *Ostinato* and *Bordón* call an eco over the party;
+- *Crescendo* raises them all a grade (*p*, *mf*, *f*);
+- *A contratiempo* waits for the off-beat and accents them;
+- *Da capo* needs three ecos;
+- *Tutti* sends them down on the foes;
+- *Apagados* mutes them as if their wearer had switched ánima;
+- *Secuencia* plays everything in order.
+
+A line under the buttons shows the compás. `window.ecoLab.act('crescendo')` drives it from the
+console. It also works over Las cuerdas with Gerard and Aitor, using the fight tester's link plus
+`&fxlab&battle=0`.
+
+`just screenshots sincopante-fx --gpu` catches each moment as it happens. Like the rest of the lab,
+it never touches the fight's numbers.

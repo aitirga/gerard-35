@@ -82,11 +82,26 @@ export const STATUS_KINDS: Record<string, GpuKind> = {
     drag: 2, gravity: -.15, curl: .7, response: .8, size: [.05, .13], sizeJitter: .6, shape: 'glow',
     colours: ['#c6ff7a', '#7cc832', '#3a6a14'], intensity: [1.4, 1, .6], middle: .4, fadeIn: .3, fadeOut: .5, additive: .45, opacity: .3,
   },
-  // A wound: short scratches of light that open on their body with each beat and fade where they
-  // are. Nothing drips or stays on the floor: fights show no blood.
+  // A wound, as the cut opens it: a short scratch of light on their body, gone at once.
   gash: {
     drag: 4, gravity: 0, curl: 0, response: 0, size: [.032, .014], sizeJitter: .5, stretch: .03, aspect: .14, shape: 'line',
-    colours: ['#ffffff', '#ffe2d8', '#ffb4a4'], intensity: [3.2, 2.2, 1.2], middle: .3, fadeIn: 0, fadeOut: .6, additive: 1,
+    colours: ['#ffffff', '#ffd2c8', '#ff8a7a'], intensity: [3.2, 2.2, 1.2], middle: .3, fadeIn: 0, fadeOut: .6, additive: 1,
+  },
+  // Blood (Aitor, 2026-11-20: liquid, and it meets what is around it). It wells up dark on their parts,
+  // runs down them and falls; a cut flings it along the blow (`bloodspray`) and it lands on whoever
+  // and whatever is in its way. Where a drop meets the floor it lies there (`bloodstain`), spreads a
+  // little and dries dark before it goes. Dark and wet, never bright: it covers what is behind it.
+  blood: {
+    drag: 1.1, gravity: 5, curl: .03, response: .15, collide: true, bounce: 0, friction: .97, stick: .45, stickTime: 1.1, size: [.022, .017], sizeJitter: .5, shape: 'dot', glass: .35, core: 0,
+    colours: ['#f02a38', '#b3131f', '#6a0a11'], intensity: [1.35, 1.1, .9], middle: .5, fadeIn: .12, fadeOut: .12, additive: .06, onLand: 'bloodstain',
+  },
+  bloodspray: {
+    drag: .5, gravity: 9, curl: 0, response: .08, collide: true, bounce: 0, friction: .9, stick: .2, stickTime: .7, size: [.036, .02], sizeJitter: .6, stretch: .04, shape: 'streak', core: 0,
+    colours: ['#ff3545', '#c01522', '#6a0a11'], intensity: [1.9, 1.3, .9], middle: .4, fadeOut: .15, additive: .08, onLand: 'bloodstain',
+  },
+  bloodstain: {
+    drag: 8, gravity: 30, collide: true, bounce: 0, friction: 1, settle: true, flat: true, size: [.045, .105], sizeJitter: .7, shape: 'dot', glass: .28, core: 0,
+    colours: ['#e01a28', '#8a0d16', '#3a0709'], intensity: [1.45, 1, .7], middle: .25, fadeOut: .3, additive: .02, opacity: .92, life: [8, 13],
   },
   // Smoke that blinds: dark haze that clings round their head, turning.
   smog: {
@@ -133,10 +148,13 @@ export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
   },
   sangrado: {
     name: 'Sangrado', family: 'físico', seconds: 20,
-    shows: 'Con cada latido se le abren arañazos de luz en el cuerpo que destellan y se apagan donde están; entre latido y latido, alguno suelto. Nada gotea ni queda en el suelo.',
-    streams: [{ kind: 'gash', rate: [1, 2, 4], from: 'body', above: .25, outward: .03, speed: .02, life: [.3, .5] }],
-    pulse: { every: 1.1, streams: [{ kind: 'gash', count: [4, 8, 13], rate: [0, 0, 0], from: 'body', above: .3, outward: .04, speed: .03, life: [.35, .6] }] },
-    tint: [.03, .01, .01],
+    shows: 'Sangre oscura que le brota en el cuerpo, le resbala por las piezas y gotea; donde cae deja manchas en el suelo que se extienden y se secan. Con cada latido brota más, y cuantas más cargas, más sangra. Un corte la salpica en la dirección del golpe; gastar la herida la revienta.',
+    streams: [{ kind: 'blood', rate: [4, 9, 16], from: 'body', above: .3, outward: .05, speed: .04, life: [2.2, 3.4] }],
+    pulse: { every: 1.1, streams: [
+      { kind: 'blood', count: [5, 10, 16], rate: [0, 0, 0], from: 'body', above: .35, outward: .3, up: .15, speed: .12, life: [2, 3.2] },
+      { kind: 'gash', count: [1, 2, 3], rate: [0, 0, 0], from: 'body', above: .3, outward: .04, speed: .03, life: [.3, .5] },
+    ] },
+    tint: [.035, .004, .004],
   },
   cegado: {
     name: 'Cegado', family: 'físico', seconds: 10,
@@ -310,6 +328,30 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
     motion(id: string): StatusMotion | undefined {
       const looks = (on.get(id) ?? []).filter(s => !s.ending).map(s => STATUS_LOOKS[s.look].motion);
       return looks.includes('freeze') ? 'freeze' : looks.includes('twitch') ? 'twitch' : looks.includes('sway') ? 'sway' : undefined;
+    },
+    /**
+     * A cut opens on `id` (a blow that adds Sangrado): blood flung along the blow from where it landed,
+     * more the more stacks it added; it falls on the floor behind them and on whoever stands there.
+     */
+    cut(id: string, at: { x: number; y: number; z: number }, dir: { x: number; z: number }, stacks = 1) {
+      const f = find(id), g = gpu();
+      if (!f || !g) return;
+      ensureKinds();
+      const n = Math.max(1, Math.min(4, stacks));
+      g.burst('bloodspray', { at, count: 14 + n * 10, spread: .08, velocity: { x: dir.x * 3.4, y: 2, z: dir.z * 3.4 }, cone: .6, speed: 1.5, life: [.7, 1.2] });
+      g.burst('gash', { at, count: 2 + n, shape: 'surface', fighter: f.index, above: .3, outward: .04, speed: .03, life: [.3, .5] });
+    },
+    /**
+     * A wound of `bled` stacks is spent on `id`: all of it at once, off their whole body and out along
+     * the blow, so the floor round them says how big the wound was.
+     */
+    spill(id: string, at: { x: number; y: number; z: number }, dir: { x: number; z: number }, bled: number) {
+      const f = find(id), g = gpu();
+      if (!f || !g || bled <= 0) return;
+      ensureKinds();
+      const n = Math.min(10, bled);
+      g.burst('bloodspray', { at, count: 24 + n * 12, spread: .1, velocity: { x: dir.x * 3.8, y: 2.3, z: dir.z * 3.8 }, cone: .85, speed: 2, life: [.7, 1.3], size: 1.2 });
+      g.burst('blood', { at, count: 10 + n * 6, shape: 'surface', fighter: f.index, above: .25, outward: 1.6, up: .9, speed: .9, life: [1.2, 2.2] });
     },
     /** An Atacar with an element lands on `id`: a little burst of it, no status (docs/combat.md § Reacciones entre elementos). */
     touch(element: 'agua' | 'fuego' | 'electrico', id: string) {

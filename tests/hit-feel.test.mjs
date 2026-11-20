@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ACTION_SECONDS, CONTACT_SECONDS } from '../src/battle-motion.ts';
-import { FightClock, HIT, landing, spring } from '../src/hit-feel.ts';
+import { CRIT, FightClock, HIT, landing, spring } from '../src/hit-feel.ts';
 
 /** Plays one action the way battle-scene.ts does: real frames in, the fight's own clock out. */
 function play(stop, frame) {
@@ -94,4 +94,22 @@ test('slow motion stretches the fight by its scale, eases back to full speed and
   // Clearing a fight's hit-stop keeps the slow motion; clearing it at its end does not.
   clock.clear(); assert.ok(clock.scale < 1);
   clock.clear(true); assert.equal(clock.scale, 1);
+});
+
+test('a golpe crítico stops the fight longer than any blow, and only the first of a flurry for that long', () => {
+  const plain = landing({ share: .1 }), full = landing({ share: .1, crit: 'full' }), later = landing({ share: .1, crit: 'later' });
+  // Time stops on it: past the longest hold a blow that is not one can have.
+  assert.equal(full.stop, CRIT.stop);
+  assert.ok(full.stop > HIT.stop.max && full.stop > plain.stop);
+  // It reads as the heaviest thing there is, whatever it took: full fringe, bloom, lurch and punch-in.
+  assert.deepEqual([full.weight, full.fringe, full.bloom], [1, 1, 1]);
+  // (and a later one's pulse is half of it: the picture does not go white four times over)
+  assert.ok(later.fringe < full.fringe && later.bloom < full.bloom && CRIT.flashLater < CRIT.flash / 4);
+  assert.equal(full.punch, CRIT.punch);
+  assert.ok(full.punch > landing({ share: 1, skill: true, ko: true }).punch);
+  // The later claws of the same flurry hold a short moment each, so four of them never stop the fight four times.
+  assert.equal(later.stop, CRIT.later);
+  assert.ok(later.stop < full.stop / 2 && later.punch < full.punch);
+  // A whole flurry of four critical claws holds the fight under half a second in all.
+  assert.ok(full.stop + 3 * later.stop < .5);
 });

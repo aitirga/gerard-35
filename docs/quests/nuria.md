@@ -21,8 +21,8 @@ conflicts, as a starting list for it:
   of magenta glass cubes coming apart. What they are (food, a game) is still to rethink. Vertitrón's
   new figure (`[vertigo]`, Meshy's skeleton) is made but not yet in the fight, which still poses the
   robot built from primitives.
-- **Velocidad is gone as a stat** (2026-10-31, `docs/combat.md`): Mareo (lowers Velocidad) and
-  Papagato's Velocidad +2 need another form.
+- **Velocidad is gone as a stat** (2026-10-31, `docs/combat.md`): Mareo (lowers Velocidad) needs
+  another form. Papagato's Velocidad +2 has one since 2026-11-20: Fuerza +2, Crítico +15 %.
 - **The pushchair raced like a go-kart** (proposal, § Unusual things).
 - **Papagato**: the cats fighting beside the party can stay, but its name, motto and skills should
   be checked for the same register (`docs/animas/papagato/`).
@@ -442,8 +442,9 @@ Descriptions drafted from the photos (proposals, ready to paste):
 - **Haru** (procedural): slim short-haired dilute calico: grey and soft orange-cream patches on the
   back and head, an orange-cream blaze on the forehead, white chest, belly, paws and muzzle,
   green eyes.
-- **Yuki** (procedural): plump long-haired fluffy white cat, pale grey at the base of the tail,
-  pink ears, sleepy half-closed eyes.
+- **Yuki** (procedural): a white semi-longhair of ordinary build, not a ball of fluff: big pointed
+  ears pink inside, a wedge face, pale blue-grey sleepy half-closed eyes, a pink nose, a plumed
+  tail white at the root and dark brown-black to the tip.
 
 | Who / what | How | Photos | Description | Portrait | Expressions | 3D | SPEAKERS |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -521,6 +522,7 @@ dependencies; steps marked **blocked** need something from the user first.
   goes) and gives **three lights** (Nuria, Uri, Nil), spendable at home for one day each.
 - Papagato's wearer stats and colour: decided provisionally (the user left it to the plan):
   Velocidad +2, Fuerza +1, Espíritu −1; warm orange `#f0954a`. Tune with `just fight-sim`.
+  (Since changed, 2026-11-20: Fuerza +2, Crítico +15 %, Espíritu −1.)
 
 1. **Statuses in story fights.** Stacking statuses on `Combatant` in `src/battle.ts` (stacks,
    duration, end-of-round tick), shown on the fighters in `src/battle-ui.ts`. First three:
@@ -529,14 +531,16 @@ dependencies; steps marked **blocked** need something from the user first.
    (`docs/combat.md`), with a parity case in `tests/combat-integration.test.mjs`; unit tests in
    `tests/battle.test.mjs`. Docs: `docs/animas/README.md` § Shared mechanics.
 2. **Papagato, level 1.** `papagato` in `ClassId`, `ANIMA_NAMES`, `CLASS_STATS`; *Zarpazo de
-   Haru* and *Yuki se esconde* in `SKILLS`; `CLASSES` look; `#hud[data-class="papagato"]` theme in
+   Haru* and *Yuki se esconde* in `SKILLS` (since changed: *Zarpazo sangriento* alone at level 1,
+   *Yuki se esconde* cut 2026-11-20); `CLASSES` look; `#hud[data-class="papagato"]` theme in
    `src/style.css`; `ANIMAS.nuria` renamed and coloured. **Haru and Yuki** as procedural cats
    (`src/cats.ts`, from the photo notes) sitting beside the wearer in fights and jumping on each
    skill (`src/battle-scene.ts`). Screenshot scenario `papagato` (fight with the ánima worn, via a
    debug story flag). Docs: `docs/animas/papagato/`, `docs/party.md`.
 3. **Ánima levels.** Wins per ánima (both wearers count) and story-given levels, a level table per
    ánima, a note when a skill is learned, the level on the Ánimas page. Papagato level 2 *Zarpa en
-   la llaga* and level 3 *Las dos a la vez*. Where it is kept: with the loadout in the browser, or
+   la llaga* and level 3 *Las dos a la vez* (since changed: level 2 *Zarpazos* and *Ronroneo*, level
+   3 *Zarpa en la llaga*; *Las dos a la vez* cut 2026-11-20). Where it is kept: with the loadout in the browser, or
    in the story save [the story save, so it follows the player]. Tests. Can come after step 10
    if the mission should be playable first.
 4. **Nuria and Uri** (**blocked**: running `just character` with credits, see *Assets*).
@@ -628,7 +632,11 @@ Steps 1–13 are built and tested (`tests/nuria.test.mjs`, `tests/story.test.mjs
   found the chip *Nil · 3* and the pips unreadable. Its moments are `FightMoment`s in the picker
   (`STAGED_MOMENTS`, `stageMoment` in `src/battle.ts`).
 - **Combined skills, 2026-11-05**: the Matemágico + Papagato duals (§ Dual attacks), and the new
-  level-2 skills *Ángulo exacto* (Matemágico) and *Ronroneo de Yuki* (Papagato).
+  level-2 skills *Ángulo exacto* (Matemágico) and *Ronroneo de Yuki* (Papagato; since 2026-11-20
+  just *Ronroneo*, on one ally).
+- **Papagato redesigned, 2026-11-20** (`docs/animas/papagato/README.md`): Sangrado piles up and is
+  shown as blood, the golpe crítico and the Crítico attribute, Zarpazos cuts, Ronroneo cures one
+  ally; *Yuki se esconde* and *Las dos a la vez* are out.
 
 Later, outside this plan: the second round (block 5, one dialogue and Papagato's colour), and more
 duals (*Cortina de fuego*, the burning shield, is parked; Noísta + Papagato is on hold with Noísta).

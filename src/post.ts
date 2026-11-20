@@ -54,7 +54,7 @@ export const LOOK = {
    * scene for red and blue while green comes through the tilt-shift's blur, so even a weak fringe
    * splits every edge green and magenta. Its shader is compiled once at start instead (`warmFringe`).
    */
-  hit: { fringe: 70, bloom: .07, fringeFade: .09, bloomFade: .2 },
+  hit: { fringe: 70, bloom: .07, fringeFade: .09, bloomFade: .2, flashFade: .05 },
 } as const;
 
 /**
@@ -158,6 +158,7 @@ const DIFFUSION = `
 const SPOTS = 4;
 const SPOT_DECLARATIONS = `
 uniform uSpotOn: f32;
+uniform uFlash: f32;
 uniform uSpotAspect: f32;
 ${Array.from({ length: SPOTS }, (_, i) => `uniform uSpot${i}: vec4f;`).join('\n')}
 fn spotKeep(uv: vec2f, spot: vec4f) -> f32 {
@@ -166,6 +167,8 @@ fn spotKeep(uv: vec2f, spot: vec4f) -> f32 {
   return 1.0 - smoothstep(spot.z * 0.7, spot.z * 1.3, d);
 }`;
 const SPOT = `
+    // A golpe crítico's flash: the whole picture towards white for an instant.
+    if (uniform.uFlash > 0.001) { result = mix(result, vec3f(1.0), uniform.uFlash); }
     if (uniform.uSpotOn > 0.001) {
       let spotOn = uniform.uSpotOn;
       let keep = max(max(spotKeep(uv, uniform.uSpot0), spotKeep(uv, uniform.uSpot1)), max(spotKeep(uv, uniform.uSpot2), spotKeep(uv, uniform.uSpot3)));
@@ -235,7 +238,8 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   const linear = new pc.Color();
   // --- Hit feel: a pulse of fringing and bloom that fades on real time (docs/graphics.md) ---
   // The bloom is only touched while it swells (from the intensity it had), so other code may set it.
-  const hit = { fringe: 0, bloom: 0, bloomBase: 0 };
+  const hit = { fringe: 0, bloom: 0, bloomBase: 0, flash: 0 };
+  const flashId = scope.resolve('uFlash'); flashId.setValue(0);
   function showHit() {
     frame.fringing.intensity = LOOK.hit.fringe * hit.fringe;
     if (hit.bloom || hit.bloomBase) frame.bloom.intensity = hit.bloomBase + LOOK.hit.bloom * hit.bloom;
@@ -243,6 +247,8 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
     frame.update();
   }
   function fadeHit(dt: number) {
+    // The flash is gone in a few frames whatever the frame rate.
+    if (hit.flash) { hit.flash *= Math.exp(-dt / LOOK.hit.flashFade); if (hit.flash < .01) hit.flash = 0; flashId.setValue(hit.flash); }
     if (!hit.fringe && !hit.bloom) return;
     hit.fringe *= Math.exp(-dt / LOOK.hit.fringeFade); hit.bloom *= Math.exp(-dt / LOOK.hit.bloomFade);
     if (hit.fringe < .01) hit.fringe = 0;
@@ -252,10 +258,12 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   app.on('update', fadeHit);
   /**
    * A blow, a stamp or an ánima lands: `fringe` and `bloom` (0–1) jump to at least that much and
-   * fade within a few tenths of a second. Does nothing while the pass is off.
+   * fade within a few tenths of a second; `flash` (0–1) whitens the whole picture for an instant (a
+   * golpe crítico). Does nothing while the pass is off.
    */
-  function pulse(fringe: number, bloom = 0) {
-    if (!frame.enabled || (fringe <= 0 && bloom <= 0)) return;
+  function pulse(fringe: number, bloom = 0, flash = 0) {
+    if (!frame.enabled || (fringe <= 0 && bloom <= 0 && flash <= 0)) return;
+    if (flash > 0) { hit.flash = Math.max(hit.flash, Math.min(1, flash)); flashId.setValue(hit.flash); }
     if (bloom > 0 && !hit.bloom) hit.bloomBase = frame.bloom.intensity;
     hit.fringe = Math.max(hit.fringe, Math.min(1, fringe)); hit.bloom = Math.max(hit.bloom, Math.min(1, bloom));
     showHit();

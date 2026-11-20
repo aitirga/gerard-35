@@ -1,0 +1,24 @@
+{
+  "title": "Transiciones entre lugares",
+  "description": "The game opens out of the dark, and going through a door or up a stair, and wherever the story takes the party, the screen goes dark, the place changes under it and it clears (game.ts `travel`, story-ui.ts `veil` and `open`). Each door here is used with the key, as a player does; the shots catch the picture darkening, the dark, and the new place coming in. Run it with --gpu so the timings hold.",
+  "steps": [
+    { "open": "/?story=metro&at=home&solo=1", "ready": "!!window.gerard" },
+    { "shot": "arranque", "caption": "The game opens in the dark while the saved place is put up (story-ui.ts `open`)" },
+    { "until": "window.gerard.started", "timeout": 30000 },
+    { "shot": "arranque-claro", "caption": "…and comes out of it where the save left Gerard: no jump from the default place" },
+    { "teleport": "meridiana", "cell": [6, 2] },
+    { "shot": "piso", "delay": 600, "caption": "The flat on the Meridiana, at its door" },
+    { "press": "KeyE" },
+    { "shot": "piso-oscurece", "delay": 90, "caption": "The key pressed: the flat darkens" },
+    { "until": "document.title.startsWith('Avinguda Meridiana') || window.gerard.story.inside === 'meridiana-calle'", "timeout": 20000 },
+    { "shot": "calle-aclara", "delay": 120, "caption": "The street is already there under the dark, and comes in" },
+    { "shot": "calle", "delay": 900, "caption": "Avinguda Meridiana, clear" },
+    { "open": "/?story=bernat-joined" },
+    { "teleport": "home-entrance", "cell": [17, 2] },
+    { "shot": "entrada", "delay": 800, "caption": "Chapter 1: the entrance of the house, by the door to the hall" },
+    { "press": "KeyE" },
+    { "shot": "entrada-oscurece", "delay": 90, "caption": "Into the house: the same dark between rooms" },
+    { "until": "window.gerard.story.inside === 'home-floor-1'", "timeout": 20000 },
+    { "shot": "planta-1", "delay": 900, "caption": "The first floor, clear" }
+  ]
+}

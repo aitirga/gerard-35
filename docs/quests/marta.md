@@ -273,7 +273,11 @@ slows and catches up with it), and `VOZ_SONG` in `src/song.ts` has every note.
 - Skills: _open_
 - World key it opens: _open_
 - Design of the wearable ánima: **Sincopante** (name decided 2026-11-14),
-  [`docs/animas/sincopante/README.md`](../animas/sincopante/README.md): an eco that plays behind the fight.
+  [`docs/animas/sincopante/README.md`](../animas/sincopante/README.md): ecos of light floating over
+  the party that strike or cure on their own beat, raised by *Crescendo*, with *Da capo* bringing
+  the duals back (designed whole 2026-11-20 round Aitor's direction, waiting for his yes). Proposal:
+  the ecos sing her notes Fa, La and Do from her recording, from the second round on, and the ánima
+  leaves her as three rings of light over the piano.
 
 ## Second round
 

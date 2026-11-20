@@ -40,8 +40,8 @@ export const SPEAKERS = {
   marta: { name: 'Marta', portrait: 'marta', skin: '#ecbf98', hair: '#d9b46a', top: '#3d3c40', accent: '#49d3c2' },
   /** Emilie (docs/quests/emilie.md); no portrait yet: her figure and photos are still to come. */
   emilie: { name: 'Emilie', skin: '#ecc4a2', hair: '#7a5536', top: '#2c3d57', accent: '#3fe07a' },
-  /** Luca (docs/quests/luca.md): his loud colours, which the Queen's hold takes out of him; no portrait yet. */
-  luca: { name: 'Luca', skin: '#e4b18c', hair: '#3a2c24', top: '#f08a2c', accent: '#2f8f7a' },
+  /** Luca (docs/quests/luca.md), portrait from `just character`: his loud colours, which the Queen's hold takes out of him. */
+  luca: { name: 'Luca', portrait: 'luca', skin: '#e4b18c', hair: '#3a2c24', top: '#f08a2c', accent: '#2f8f7a' },
   /** Fran, Luca's partner, under the Queen's hold: black and white, cold. */
   fran: { name: 'Fran', portrait: 'fran', skin: '#e2b896', hair: '#1d1a1a', top: '#1c1c20', accent: '#d9dde4' },
   /** The chaplains Fran has restyled in the Sagrada Família. */

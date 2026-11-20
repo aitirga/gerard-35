@@ -80,7 +80,9 @@ const TECNOPATA: Improvement[] = [
   passiveNode('tecnopata', 'taller', 'nanitos', 2, 'rayo-encogedor', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
   manaNode('tecnopata'),
 ];
-const TREES: Partial<Record<ClassId, Improvement[]>> = { matemagico: MATEMAGICO, tecnopata: TECNOPATA };
+/** Dadista grows by level, and keeps one node of its own beside its maná: Agitar a second time in a fight (Aitor 2026-11-20). */
+const DADAISTA: Improvement[] = [manaNode('dadaista'), { id: 'dadaista:otra-vez', anima: 'dadaista', kind: 'passive', passive: 'otra-vez', name: PASSIVES['otra-vez'].name, cost: 1, description: 'Pasiva. Agitar se puede usar dos veces por combate.' }];
+const TREES: Partial<Record<ClassId, Improvement[]>> = { matemagico: MATEMAGICO, tecnopata: TECNOPATA, dadaista: DADAISTA };
 /** What the jar offers each ánima: its tree if it has one, or one more maná; and the definitiva, asleep. */
 export const IMPROVEMENTS: readonly Improvement[] = (Object.keys(ANIMA_NAMES) as ClassId[]).flatMap(anima => [...TREES[anima] ?? [manaNode(anima)], ulti(anima)]);
 export const improvementOf = (id: string) => IMPROVEMENTS.find(item => item.id === id);

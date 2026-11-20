@@ -44,6 +44,25 @@ export function createStoryUI(hud: HTMLElement) {
   // A full-screen black for the end of a dream: everything fades out, then back in elsewhere.
   const black = document.createElement('div');
   black.id = 'blackout'; black.setAttribute('aria-hidden', 'true');
+  /**
+   * Who is holding it dark: the story (a dream's end, a fall), a change of place, or the game
+   * opening (it starts black, until the story has stood Gerard where the save left him). It is black
+   * while any does, so one clearing never shows the picture under another, and asking for a dark
+   * that is already there waits for nothing new.
+   */
+  const dark = { story: false, travel: false, boot: true };
+  black.dataset.on = 'true';
+  let settling = Promise.resolve();
+  function darken(who: keyof typeof dark, on: boolean, ms: number) {
+    const was = dark.story || dark.travel || dark.boot;
+    dark[who] = on;
+    const now = dark.story || dark.travel || dark.boot;
+    if (now === was) return settling;
+    const wait = reducedMotion.matches ? 0 : ms;
+    black.style.transitionDuration = `${wait}ms`;
+    black.dataset.on = String(now);
+    return settling = new Promise<void>(resolve => setTimeout(resolve, wait));
+  }
   // The snow globe shaken (docs/chapter-2.md § The snow globe): the picture goes white with snow, and clears somewhere else.
   const white = document.createElement('div');
   white.id = 'snowfall'; white.setAttribute('aria-hidden', 'true');
@@ -219,11 +238,13 @@ export function createStoryUI(hud: HTMLElement) {
       white.dataset.on = String(on);
       return new Promise<void>(resolve => setTimeout(resolve, reducedMotion.matches ? 0 : ms));
     },
-    blackout(on: boolean, ms = 900) {
-      black.style.transitionDuration = `${reducedMotion.matches ? 0 : ms}ms`;
-      black.dataset.on = String(on);
-      return new Promise<void>(resolve => setTimeout(resolve, reducedMotion.matches ? 0 : ms));
-    },
+    blackout: (on: boolean, ms = 900) => darken('story', on, ms),
+    /** The dark between two places: quick out, a little slower back in. */
+    veil: (on: boolean) => darken('travel', on, on ? 220 : 340),
+    /** The game opens: out of the black it started in, once the place to show is drawn. */
+    open: () => darken('boot', false, 600),
+    /** Whether the picture is already hidden (black, or white with snow): a place can change under it with no fade of its own. */
+    get covered() { return dark.story || dark.travel || dark.boot || white.dataset.on === 'true'; },
     /** A full-screen title, e.g. the chapter opening; resolves once it has faded. */
     card(id: keyof typeof STORY_CARDS) {
       const c = STORY_CARDS[id];

@@ -24,7 +24,17 @@ export const HIT = {
   fringe: { from: .38, full: .92 },
 } as const;
 
+/**
+ * A golpe crítico (docs/animas/README.md § Golpe crítico): the first of an action holds the fight
+ * `stop` seconds, punches the frame in by `punch` and drains the picture's colour (`grey` of it, back
+ * over `greyFade` seconds once the hold ends) under a white `flash`; the later ones of a flurry only
+ * hold `later` and flash `flashLater`, so four claws never stop the fight four times.
+ */
+export const CRIT = { stop: .22, later: .08, punch: .08, grey: .85, greyFade: .22, flash: .55, flashLater: .07 } as const;
+
 export interface Blow {
+  /** A golpe crítico: the action's first (`full`) or a later one of its flurry. */
+  crit?: 'full' | 'later';
   /** The share of the target's maximum PV the blow took (0–1). */
   share: number;
   skill?: boolean; guarded?: boolean; ko?: boolean;
@@ -58,6 +68,11 @@ export function landing(blow: Blow): Landing {
   if (blow.beat) { weight = Math.max(weight, .95); stop = Math.max(stop, HIT.stop.beat); }
   if (blow.guarded) { weight *= .45; stop *= HIT.stop.guarded; }
   weight = clamp01(weight);
+  // A golpe crítico is the heaviest thing a blow can be, whatever it took: time stops on it.
+  if (blow.crit) {
+    const full = blow.crit === 'full';
+    return { stop: full ? CRIT.stop : Math.max(Math.min(HIT.stop.max, stop), CRIT.later), weight: 1, fringe: full ? 1 : .5, bloom: full ? 1 : .5, kick: HIT.kick.base + HIT.kick.weight, punch: full ? CRIT.punch : CRIT.punch * .4 };
+  }
   return {
     stop: Math.min(HIT.stop.max, stop), weight,
     fringe: smooth((weight - HIT.fringe.from) / (HIT.fringe.full - HIT.fringe.from)),

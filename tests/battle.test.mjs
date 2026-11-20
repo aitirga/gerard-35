@@ -250,8 +250,9 @@ test('L and R swap the active fighter\'s ánima for free among their own (their 
   const [gerard, bernat] = s.allies;
   assert.equal(gerard.stats.magia, 11);
   assert.equal(switchAnima(s, 1), 'papagato');
-  assert.equal(gerard.classId, 'papagato'); assert.equal(gerard.stats.magia, 10); assert.equal(gerard.stats.velocidad, 12);
-  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'escondite']);
+  assert.equal(gerard.classId, 'papagato'); assert.equal(gerard.stats.magia, 10); assert.equal(gerard.stats.fuerza, 12); assert.equal(gerard.stats.critico, 20);
+  assert.equal(gerard.stats.velocidad, 10, 'Papagato hits harder, it is no quicker');
+  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo']);
   assert.equal(s.active, 0, 'the turn is still his');
   assert.equal(switchAnima(s, 1), 'matemagico', 'round the list');
   assert.equal(switchAnima(s, -1), 'papagato');
@@ -313,6 +314,12 @@ test('the palace minion swallows every hit, and whatever the party does the beat
   }
 });
 
+// A damage description names its kind, then its element, then how strong (AGENTS.md): `Daño mágico de fuego medio`.
+// Magic always says its element, or `no elemental`; a physical blow says one only if it has it.
+const ELEMENT_WORDS = { fuego: 'de fuego', agua: 'de agua', electrico: 'eléctrico' };
+const damageKind = ({ kind, element }) => kind === 'physical' ? `físico( (${Object.values(ELEMENT_WORDS).join('|')}))?`
+  : `mágico ${element ? ELEMENT_WORDS[element] : `(${Object.values(ELEMENT_WORDS).join('|')}|no elemental)`}`;
+
 test('skill descriptions follow the plain shape in AGENTS.md, with the intensity their power gives', () => {
   const intensity = power => power <= 20 ? 'leve' : power <= 34 ? 'medi[oa]' : power <= 49 ? 'alt[oa]' : 'muy alt[oa]';
   const targets = { foes: 'a un enemigo', 'all-foes': 'a todos los enemigos', allies: 'a un aliado herido', party: 'a todo el equipo' };
@@ -321,7 +328,7 @@ test('skill descriptions follow the plain shape in AGENTS.md, with the intensity
     const shape = skill.kind === 'boost' || skill.kind === 'debuff' ? `^(Sube|Baja) [^.]+ de ${targets[skill.side].slice(2)} durante ${BOOST_ROUNDS} rondas\\.${extra}$`
       : skill.kind === 'heal' ? `^Cura ${intensity(skill.power)} ${targets[skill.side]}\\.${extra}$`
       : skill.kind === 'guard' ? `^Protege a un aliado hasta el final de la ronda\\.${extra}$`
-      : `^Daño ${intensity(skill.power)} ${skill.kind === 'magic' ? 'mágico' : 'físico'}( de tipo [^ ]+)? ${targets[skill.side]}\\.${extra}$`;
+      : `^Daño ${damageKind(skill)} ${intensity(skill.power)} ${'rain' in skill ? 'a enemigos al azar' : targets[skill.side]}\\.${extra}$`;
     assert.match(skill.description, new RegExp(shape), skill.name);
   }
 });
@@ -386,23 +393,24 @@ test('Mareo and Llorera weaken the stats they name, per stack', () => {
   act(s, 'defend'); s.allies[0].guarding = false; enemyAct(s, 'dog-0');
   assert.equal(before - s.allies[0].hp, 9 + 2, 'Mareo takes Defensa away');
 });
-test('Papagato: Haru\'s claw adds Sangrado and Yuki raises Defensa', async () => {
+test('Papagato: Haru\'s claw adds Sangrado; a party boost (Análisis Parálisis) cannot be stacked while it runs', async () => {
   const { boostRounds, createGuardBattle, palaceGuards } = await import('../src/battle.ts');
   const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'matemagico' }];
   const s = createGuardBattle(party, palaceGuards(6));
   const gerard = s.allies.find(a => a.id === 'gerard'), aitor = s.allies.find(a => a.id === 'aitor');
-  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'escondite']);
+  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo']);
   s.active = s.allies.indexOf(gerard);
   const claw = act(s, 'skill', 'guard-0', 'zarpazo');
   assert.deepEqual(claw.status, { id: 'sangrado', stacks: 2 });
   assert.equal(stacks(s.foes[0], 'sangrado'), 2);
   s.phase = 'player'; s.active = s.allies.indexOf(aitor);
   assert.deepEqual(skillsFor(s, aitor).map(k => k.id), ['foc-binari']);
-  s.phase = 'player'; s.active = s.allies.indexOf(gerard);
-  act(s, 'skill', undefined, 'escondite');
-  assert.equal(boostRounds(s, 'escondite'), BOOST_ROUNDS);
+  improve(s, { skills: ['analisis'] });
+  assert.deepEqual(skillsFor(s, aitor).map(k => k.id), ['foc-binari', 'analisis'], 'a node of the jar, once bought');
+  act(s, 'skill', undefined, 'analisis');
+  assert.equal(boostRounds(s, 'analisis'), BOOST_ROUNDS);
   s.phase = 'player';
-  assert.deepEqual(validTargets(s, 'skill', 'escondite'), [], 'cannot be stacked while it runs');
+  assert.deepEqual(validTargets(s, 'skill', 'analisis'), [], 'cannot be stacked while it runs');
 });
 test('Papagato is the party\'s once the mission is won', async () => {
   const { Story } = await import('../src/story.ts');
@@ -411,18 +419,20 @@ test('Papagato is the party\'s once the mission is won', async () => {
   assert.deepEqual(new Story(['matemagico', 'papagato']).classes, ['matemagico', 'papagato']);
   assert.deepEqual(new Story(['noista']).classes, ['matemagico'], 'an old save\'s Noísta flag is Matemágico now');
 });
-test('Papagato grows: Zarpa en la llaga cashes in Sangrado, Las dos a la vez reaches every foe', () => {
+test('Papagato grows: Zarpazos and Ronroneo at level 2, and Zarpa en la llaga, which cashes in Sangrado, at 3', () => {
   const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }];
   const s = createBattle(party, 3, false, undefined, ['papagato']);
   const gerard = s.allies[0];
-  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'escondite'], 'level 1');
+  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo'], 'level 1');
   s.levels = { papagato: 2 };
-  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'escondite', 'zarpazos', 'ronroneo'], 'level 2');
+  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'zarpazos', 'ronroneo'], 'level 2');
   s.levels = { papagato: 3 };
-  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'escondite', 'zarpazos', 'ronroneo', 'llaga', 'a-la-vez']);
-  const all = act(s, 'skill', undefined, 'a-la-vez');
-  assert.equal(all.hits.length, 3);
-  assert.ok(s.foes.every(f => stacks(f, 'sangrado') === 1));
+  assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'zarpazos', 'ronroneo', 'llaga']);
+  s.foes[0].hp = s.foes[0].maxHp = 999;
+  const flurry = act(s, 'skill', 'dog-0', 'zarpazos');
+  assert.equal(flurry.strikes.length, 4);
+  assert.deepEqual(flurry.status, { id: 'sangrado', stacks: 1 }, 'a wide cut: one stack for the whole flurry');
+  assert.match(SKILLS.find(k => k.id === 'zarpazos').description, /Añade sangrado\.$/);
   const plain = createBattle(party, 1, false, undefined, ['papagato']); plain.levels = { papagato: 3 };
   const bled = createBattle(party, 1, false, undefined, ['papagato']); bled.levels = { papagato: 3 };
   addStatus(bled.foes[0], 'sangrado', 5);
@@ -431,7 +441,7 @@ test('Papagato grows: Zarpa en la llaga cashes in Sangrado, Las dos a la vez rea
   assert.equal(b, a * 3, 'each stack opens the wound twice as far: +40% each, five of them ×3');
   assert.equal(stacks(bled.foes[0], 'sangrado'), 0, 'and it spends them');
 });
-test('Sangrado is an open wound: the next physical blow spends it all, +20% for each stack', async () => {
+test('Sangrado is an open wound: the next physical blow that adds none spends it all, +20% for each stack', async () => {
   const { BLEED_BONUS, woundScale } = await import('../src/battle.ts');
   assert.equal(BLEED_BONUS, .2);
   const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }];
@@ -444,29 +454,32 @@ test('Sangrado is an open wound: the next physical blow spends it all, +20% for 
   assert.equal(stacks(bled.foes[0], 'sangrado'), 0, 'spent all at once');
   assert.match(bled.message, /La herida se abre: \+60 %/);
   assert.equal(woundScale(3), 1.6); assert.equal(woundScale(3, 'llaga'), 2.2); assert.equal(woundScale(0), 1);
-  // Haru's claw on a bleeding foe spends the old wound first, then opens a new one.
-  const claw = createBattle(party, 1, false, undefined, ['papagato']);
+  // Haru's claw on a bleeding foe spends nothing: a cut only adds its own on top, and lands as on a foe with no wound.
+  const claw = createBattle(party, 1, false, undefined, ['papagato']), clean = createBattle(party, 1, false, undefined, ['papagato']);
   addStatus(claw.foes[0], 'sangrado', 2);
   const swipe = act(claw, 'skill', 'dog-0', 'zarpazo');
-  assert.equal(swipe.bled, 2);
-  assert.deepEqual(swipe.status, { id: 'sangrado', stacks: 2 }, 'and adds its own again');
+  assert.equal(swipe.bled, undefined);
+  assert.equal(swipe.amount, act(clean, 'skill', 'dog-0', 'zarpazo').amount, 'no harder for the wound it leaves alone');
+  assert.deepEqual(swipe.status, { id: 'sangrado', stacks: 4 }, 'the old two and its own two');
+  assert.doesNotMatch(claw.message, /La herida se abre/);
   // Every claw of a flurry lands harder; a magic blow leaves the wound alone.
   const fire = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }], 1, false, undefined, ['matemagico']);
   addStatus(fire.foes[0], 'sangrado', 4);
   assert.equal(act(fire, 'skill', 'dog-0', 'foc-binari').bled, undefined);
   assert.equal(stacks(fire.foes[0], 'sangrado'), 4, 'fire does not open it');
-  // Las dos a la vez spends each foe's own.
-  const all = createBattle(party, 2, false, undefined, ['papagato']); all.levels = { papagato: 3 };
+  // Nor does a magic blow on every foe (Factor común): each keeps its own.
+  const all = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }], 2, false, undefined, ['matemagico']);
+  improve(all, { skills: ['factor-comun'] });
   for (const dog of all.foes) dog.hp = dog.maxHp = 999;
   addStatus(all.foes[1], 'sangrado', 2);
-  const both = act(all, 'skill', undefined, 'a-la-vez');
-  assert.deepEqual(both.hits.map(h => h.bled), [undefined, 2]);
-  assert.ok(all.foes.every(f => stacks(f, 'sangrado') === 1), 'each left with the one it adds');
+  const both = act(all, 'skill', undefined, 'factor-comun');
+  assert.deepEqual(both.hits.map(h => h.bled), [undefined, undefined]);
+  assert.deepEqual(all.foes.map(f => stacks(f, 'sangrado')), [0, 2]);
 });
 
-// Ángulo exacto, Ronroneo de Yuki and the dual attacks (docs/animas/README.md § Combined skills).
+// Ángulo exacto, Ronroneo and the dual attacks (docs/animas/README.md § Combined skills).
 const DUO = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
-/** Gerard on Matemágico and Aitor on Papagato against `dogs` sturdy dogs: Aitor (quicker) acts first. */
+/** Gerard on Matemágico and Aitor on Papagato against `dogs` sturdy dogs: Gerard (quicker, Velocidad 11 to 10) acts first. */
 /** Matemágico grows by its tree, not by level: "matemagico 2" here is its trunk's first nodes, 3 its cure too. */
 const trunk = (levels = {}) => ({ skills: (levels.matemagico ?? 1) >= 3 ? ['angulo', 'analisis', 'cardioide'] : (levels.matemagico ?? 1) >= 2 ? ['angulo', 'analisis'] : [] });
 const duoFight = (levels = { papagato: 2, matemagico: 2 }, dogs = 2) => {
@@ -497,30 +510,42 @@ test('Ángulo exacto marks a foe: Defensa and Espíritu down for three rounds, e
   assert.deepEqual(statShifts(s, s.foes[0]), []);
 });
 
-test('Ronroneo de Yuki cures everyone standing a little and takes away every status of the mind, whichever it is', async () => {
-  const { MENTAL_STATUSES } = await import('../src/battle.ts');
+test('Ronroneo is for one ally: a cure at once, Sanación running on them, and their statuses of the mind gone, whichever they are', async () => {
+  const { MENTAL_STATUSES, takeTurn } = await import('../src/battle.ts');
   const { healing } = await import('../src/stats.ts');
   assert.deepEqual(MENTAL_STATUSES, ['mareo', 'llorera']);
   assert.ok(!STATUSES.sangrado.mental, 'a wound is not of the mind');
+  const purring = SKILLS.find(k => k.id === 'ronroneo');
+  assert.equal(purring.name, 'Ronroneo'); assert.equal(purring.side, 'allies');
   const s = duoFight();
   const aitor = byId(s, 'aitor'), gerard = byId(s, 'gerard');
+  assert.ok(takeTurn(s, 'aitor'), 'the one wearing Papagato');
   assert.deepEqual(validTargets(s, 'skill', 'ronroneo'), [], 'nothing to do with everyone well');
-  assert.equal(act(s, 'skill', undefined, 'ronroneo'), undefined);
+  assert.equal(act(s, 'skill', 'gerard', 'ronroneo'), undefined);
   addStatus(aitor, 'mareo', 2);
   assert.deepEqual(validTargets(s, 'skill', 'ronroneo').map(a => a.id), ['aitor'], 'a status of the mind is worth calming');
   gerard.hp -= 30; addStatus(gerard, 'llorera', 1); addStatus(gerard, 'sangrado', 3);
-  const purr = act(s, 'skill', undefined, 'ronroneo');
-  const each = healing(14, aitor.stats);
-  assert.equal(each, 14 - 10 + aitor.stats.magia);
-  assert.deepEqual(purr.healedAll, [{ target: 'aitor', amount: 0 }, { target: 'gerard', amount: each }]);
-  assert.equal(gerard.hp, gerard.maxHp - 30 + each);
-  assert.deepEqual(purr.cleansed, [{ target: 'aitor', statuses: ['mareo'] }, { target: 'gerard', statuses: ['llorera'] }]);
-  assert.equal(stacks(aitor, 'mareo'), 0); assert.equal(stacks(gerard, 'llorera'), 0);
+  assert.deepEqual(validTargets(s, 'skill', 'ronroneo').map(a => a.id), ['gerard', 'aitor'], 'and so is someone hurt');
+  assert.equal(act(s, 'skill', undefined, 'ronroneo'), undefined, 'it needs someone picked');
+  const purr = act(s, 'skill', 'gerard', 'ronroneo');
+  const each = healing(16, aitor.stats);
+  assert.equal(each, 16 - 10 + aitor.stats.magia);
+  assert.equal(purr.target, 'gerard'); assert.equal(purr.healed, true); assert.equal(purr.amount, each);
+  assert.equal(purr.healedAll, undefined, 'one ally, not the party');
+  assert.equal(gerard.hp, gerard.maxHp - 30 + each, 'part of the cure at once');
+  assert.deepEqual(purr.regen, { id: 'sanacion', level: 1 });
+  assert.equal(gerard.timed.sanacion.left, TIMED.sanacion.seconds, 'and the rest on the clock');
+  assert.equal(aitor.timed?.sanacion, undefined);
+  assert.deepEqual(purr.cleansed, [{ target: 'gerard', statuses: ['llorera'] }]);
+  assert.equal(stacks(gerard, 'llorera'), 0);
   assert.equal(stacks(gerard, 'sangrado'), 3, 'bleeding stays');
-  assert.deepEqual(purr.stats.map(c => [c.target, c.way]), [['aitor', 'up'], ['gerard', 'up']]);
-  assert.match(s.message, /Se les pasan los efectos de estado mentales\./);
+  assert.equal(stacks(aitor, 'mareo'), 2, 'only whoever Yuki settles on');
+  assert.deepEqual(purr.stats, [{ target: 'gerard', way: 'up', stats: ['fuerza', 'magia'] }]);
+  assert.match(s.message, /Se le pasan los efectos de estado mentales\./);
   assert.doesNotMatch(s.message, /mareo|llorera/i, 'never names the statuses it takes away');
   assert.equal(aitor.secondary, MANA_POINTS - 2);
+  const pulses = runClock(s, TIMED.sanacion.every);
+  assert.ok(pulses.length === 1 && pulses[0].heal && pulses[0].target === 'gerard' && pulses[0].amount > 0, 'Sanación gives PV back as the fight goes on');
 });
 
 test('dual descriptions follow the plain shape too, and each dual pairs a skill of each of two ánimas, in either order', async () => {
@@ -533,7 +558,7 @@ test('dual descriptions follow the plain shape too, and each dual pairs a skill 
     assert.equal(dualOf(a.id, b.id), d); assert.equal(dualOf(b.id, a.id), d);
     assert.deepEqual(dualCost(d), { [a.id]: a.cost, [b.id]: b.cost });
     if (d.abstract) continue;
-    assert.match(d.description, new RegExp(`^Daño ${intensity(d.power)} ${d.kind === 'physical' ? 'físico' : 'mágico'}( de tipo [^ ]+)? ${d.side === 'all-foes' ? 'a todos los enemigos' : 'a un enemigo'}\\.( [A-ZÁÉÍÓÚ][^.]*\\.)*$`), d.name);
+    assert.match(d.description, new RegExp(`^Daño ${damageKind(d)} ${intensity(d.power)} ${d.side === 'all-foes' ? 'a todos los enemigos' : 'a un enemigo'}\\.( [A-ZÁÉÍÓÚ][^.]*\\.)*$`), d.name);
   }
   assert.equal(dualOf('foc-binari', 'zarpazo'), undefined);
 });
@@ -541,9 +566,9 @@ test('dual descriptions follow the plain shape too, and each dual pairs a skill 
 test('Zarpazos de fuego: both turns go into it, each wearer pays their own half, both ánimas take part, eight claws on Aitor\'s Fuerza', async () => {
   const s = duoFight();
   const aitor = byId(s, 'aitor'), gerard = byId(s, 'gerard');
-  assert.equal(s.allies[s.active], aitor, 'the quicker one first');
+  assert.equal(s.allies[s.active], gerard, 'the quicker one first');
   const claws = actDual(s, 'zarpazos-de-fuego', 'dog-1');
-  assert.deepEqual(claws.dual, { id: 'zarpazos-de-fuego', name: 'Zarpazos de fuego', parts: ['zarpazos', 'foc-binari'], actors: ['aitor', 'gerard'], spent: { aitor: 2, gerard: 1 } });
+  assert.deepEqual(claws.dual, { id: 'zarpazos-de-fuego', name: 'Zarpazos de fuego', parts: ['foc-binari', 'zarpazos'], actors: ['gerard', 'aitor'], spent: { gerard: 1, aitor: 2 } });
   assert.equal(claws.kind, 'skill'); assert.equal(claws.target, 'dog-1');
   assert.equal(aitor.secondary, MANA_POINTS - 2); assert.equal(gerard.secondary, MANA_POINTS - 1);
   assert.equal(s.phase, 'enemy', 'both turns used');
@@ -574,10 +599,10 @@ test('Zarpazos de fuego\'s coins come from the fight\'s own dice: the same seed 
 });
 
 test('Punto débil: a light blow that leaves the next damaging action on that foe three times as hard, every strike of it, once; ticks neither use nor spend it', async () => {
-  const { statShifts, weakSpotRounds, WEAK_SPOT } = await import('../src/battle.ts');
+  const { statShifts, weakSpotRounds, takeTurn, WEAK_SPOT } = await import('../src/battle.ts');
   const s = duoFight(), dog = s.foes[0], aitor = byId(s, 'aitor');
   const spot = actDual(s, 'punto-debil', 'dog-0');
-  assert.deepEqual(spot.dual.parts, ['zarpazo', 'angulo']); assert.deepEqual(spot.dual.spent, { aitor: 1, gerard: 1 });
+  assert.deepEqual(spot.dual.parts, ['angulo', 'zarpazo'], 'Gerard\'s half first: he is the one who goes'); assert.deepEqual(spot.dual.spent, { aitor: 1, gerard: 1 });
   assert.equal(spot.amount, 20 + aitor.stats.fuerza - 10); assert.equal(spot.strikes, undefined, 'one blow');
   assert.equal(spot.weakSpot, 'set'); assert.equal(weakSpotRounds(s, dog), 2, 'this round and the next');
   assert.equal(stacks(dog, 'sangrado'), 0, 'it leaves no wound');
@@ -590,6 +615,7 @@ test('Punto débil: a light blow that leaves the next damaging action on that fo
   assert.equal(ticks.find(t => t.target === 'dog-0').amount, STATUSES.sangrado.tick);
   assert.equal(weakSpotRounds(s, dog), 1, 'still there next round');
   delete dog.timed;
+  takeTurn(s, 'aitor');
   const bare = structuredClone(s); delete bare.foes[0].weakSpot;
   const without = act(bare, 'skill', 'dog-0', 'zarpazos');
   const hit = act(s, 'skill', 'dog-0', 'zarpazos');
@@ -619,44 +645,44 @@ test('Punto débil: a light blow that leaves the next damaging action on that fo
 test('a skill the later fighter queued turns the earlier one\'s matching skill into their dual, by surprise; otherwise each plays their own', async () => {
   const { queue, queuedDual, commit, takeQueued } = await import('../src/battle.ts');
   const s = duoFight();
-  assert.equal(queue(s, 'aitor', { action: 'defend' }), false, 'not the one choosing now');
-  assert.equal(queue(s, 'gerard', { action: 'skill', skill: 'zarpazos', target: 'dog-0' }), false, 'only what they have on');
-  assert.ok(queue(s, 'gerard', { action: 'skill', skill: 'foc-binari', target: 'dog-0' }));
-  assert.equal(queuedDual(s, 'zarpazo'), undefined, 'Zarpazo and Foc Binari make nothing');
-  assert.equal(queuedDual(s, 'zarpazos').id, 'zarpazos-de-fuego');
-  const dual = commit(s, 'skill', 'dog-1', 'zarpazos');
+  assert.equal(queue(s, 'gerard', { action: 'defend' }), false, 'not the one choosing now');
+  assert.equal(queue(s, 'aitor', { action: 'skill', skill: 'foc-binari', target: 'dog-0' }), false, 'only what they have on');
+  assert.ok(queue(s, 'aitor', { action: 'skill', skill: 'zarpazos', target: 'dog-0' }));
+  assert.equal(queuedDual(s, 'angulo'), undefined, 'Ángulo exacto and Zarpazos make nothing');
+  assert.equal(queuedDual(s, 'foc-binari').id, 'zarpazos-de-fuego');
+  const dual = commit(s, 'skill', 'dog-1', 'foc-binari');
   assert.equal(dual.dual.id, 'zarpazos-de-fuego');
   assert.equal(dual.target, 'dog-1', 'where the one confirming aims it');
   assert.equal(s.queued, undefined, 'nothing left queued');
   assert.equal(s.phase, 'enemy');
-  // Not a pair: Aitor's own action, then Gerard's queued one when his turn comes.
+  // Not a pair: Gerard's own action, then Aitor's queued one when his turn comes.
   const t = duoFight();
-  queue(t, 'gerard', { action: 'skill', skill: 'foc-binari', target: 'dog-0' });
+  queue(t, 'aitor', { action: 'skill', skill: 'zarpazos', target: 'dog-0' });
   const own = commit(t, 'attack', 'dog-0');
   assert.equal(own.dual, undefined); assert.equal(own.kind, 'attack');
-  assert.equal(t.allies[t.active].id, 'gerard');
-  assert.equal(queue(t, 'aitor', { action: 'defend' }), false, 'nobody queues behind the last one: an earlier fighter has had their turn');
-  assert.deepEqual(takeQueued(t), { action: 'skill', skill: 'foc-binari', target: 'dog-0' });
-  assert.equal(t.queued.gerard, undefined, 'taken');
-  assert.equal(act(t, 'skill', 'dog-0', 'foc-binari').skill, 'foc-binari');
+  assert.equal(t.allies[t.active].id, 'aitor');
+  assert.equal(queue(t, 'gerard', { action: 'defend' }), false, 'nobody queues behind the last one: an earlier fighter has had their turn');
+  assert.deepEqual(takeQueued(t), { action: 'skill', skill: 'zarpazos', target: 'dog-0' });
+  assert.equal(t.queued.aitor, undefined, 'taken');
+  assert.equal(act(t, 'skill', 'dog-0', 'zarpazos').skill, 'zarpazos');
   // Queued, then no longer possible: cleared, and they choose again.
   const u = duoFight();
-  queue(u, 'gerard', { action: 'attack', target: 'dog-0' });
+  queue(u, 'aitor', { action: 'attack', target: 'dog-0' });
   u.foes[0].hp = 1; act(u, 'attack', 'dog-0');
   assert.equal(takeQueued(u), undefined, 'its target fell');
-  assert.equal(u.queued.gerard, undefined);
+  assert.equal(u.queued.aitor, undefined);
   const v = duoFight();
-  byId(v, 'gerard').secondary = 0;
-  assert.equal(queue(v, 'gerard', { action: 'skill', skill: 'foc-binari', target: 'dog-0' }), false, 'no maná for it');
+  byId(v, 'aitor').secondary = 0;
+  assert.equal(queue(v, 'aitor', { action: 'skill', skill: 'zarpazos', target: 'dog-0' }), false, 'no maná for it');
   // A queue never outlives the round, nor a fight left.
   const w = duoFight();
-  queue(w, 'gerard', { action: 'defend' }); act(w, 'escape');
+  queue(w, 'aitor', { action: 'defend' }); act(w, 'escape');
   assert.equal(w.queued, undefined);
   const x = duoFight();
-  queue(x, 'gerard', { action: 'skill', skill: 'foc-binari', target: 'dog-0' });
-  byId(x, 'gerard').secondary = 0;
-  assert.equal(queuedDual(x, 'zarpazos'), undefined, 'a half it can no longer pay: no dual');
-  assert.equal(commit(x, 'skill', 'dog-0', 'zarpazos').dual, undefined, 'Aitor\'s Zarpazos on its own');
+  queue(x, 'aitor', { action: 'skill', skill: 'zarpazos', target: 'dog-0' });
+  byId(x, 'aitor').secondary = 0;
+  assert.equal(queuedDual(x, 'foc-binari'), undefined, 'a half it can no longer pay: no dual');
+  assert.equal(commit(x, 'skill', 'dog-0', 'foc-binari').dual, undefined, 'Gerard\'s Foc Binari on its own');
 });
 
 test('each dual goes off once a fight: after it, its two skills are each one\'s own again, and the other dual still can', async () => {
@@ -664,17 +690,17 @@ test('each dual goes off once a fight: after it, its two skills are each one\'s 
   // Matemágico and Papagato's duals (Rayo solar is Tecnópata's).
   const reasons = s => Object.fromEntries(dualOptions(s).filter(o => o.dual.id !== 'rayo-solar').map(o => [o.dual.id, o.reason ?? 'ok']));
   const s = duoFight();
-  queue(s, 'gerard', { action: 'skill', skill: 'foc-binari', target: 'dog-0' });
-  assert.equal(commit(s, 'skill', 'dog-0', 'zarpazos').dual.id, 'zarpazos-de-fuego');
+  queue(s, 'aitor', { action: 'skill', skill: 'zarpazos', target: 'dog-0' });
+  assert.equal(commit(s, 'skill', 'dog-0', 'foc-binari').dual.id, 'zarpazos-de-fuego');
   assert.deepEqual(s.usedDuals, ['zarpazos-de-fuego']);
   endRound(s); s.allies.forEach(a => { a.secondary = MANA_POINTS; });
   assert.deepEqual(reasons(s), { 'zarpazos-de-fuego': 'used', 'punto-debil': 'ok' });
   assert.equal(actDual(s, 'zarpazos-de-fuego', 'dog-0'), undefined, 'not twice');
-  queue(s, 'gerard', { action: 'skill', skill: 'foc-binari', target: 'dog-0' });
-  assert.equal(queuedDual(s, 'zarpazos'), undefined, 'nothing to show while aiming it');
-  const own = commit(s, 'skill', 'dog-0', 'zarpazos');
-  assert.equal(own.dual, undefined); assert.equal(own.skill, 'zarpazos', 'Aitor\'s Zarpazos on its own');
-  assert.equal(s.queued.gerard.skill, 'foc-binari', 'and Gerard\'s Foc Binari still to come');
+  queue(s, 'aitor', { action: 'skill', skill: 'zarpazos', target: 'dog-0' });
+  assert.equal(queuedDual(s, 'foc-binari'), undefined, 'nothing to show while aiming it');
+  const own = commit(s, 'skill', 'dog-0', 'foc-binari');
+  assert.equal(own.dual, undefined); assert.equal(own.skill, 'foc-binari', 'Gerard\'s Foc Binari on its own');
+  assert.equal(s.queued.aitor.skill, 'zarpazos', 'and Aitor\'s Zarpazos still to come');
   // The other one, once too.
   const t = duoFight();
   actDual(t, 'zarpazos-de-fuego', 'dog-0'); endRound(t);
@@ -694,7 +720,7 @@ test('the development Dual list says why each dual cannot happen now, and may pu
   assert.deepEqual(reasons(duoFight()), { 'zarpazos-de-fuego': 'ok', 'punto-debil': 'ok' });
   const poor = duoFight(); byId(poor, 'aitor').secondary = 1;
   assert.deepEqual(reasons(poor), { 'zarpazos-de-fuego': 'mana', 'punto-debil': 'ok' });
-  const down = duoFight(); byId(down, 'gerard').hp = 0;
+  const down = duoFight(); byId(down, 'aitor').hp = 0;
   assert.deepEqual(reasons(down), { 'zarpazos-de-fuego': 'down', 'punto-debil': 'down' });
   const late = duoFight(); act(late, 'defend');
   assert.deepEqual(reasons(late), { 'zarpazos-de-fuego': 'acted', 'punto-debil': 'acted' }, 'from the later fighter: the earlier one is through');
@@ -711,17 +737,146 @@ test('Sin límites (development): cures on anyone standing, boosts and marks aga
   const { dualOptions } = await import('../src/battle.ts');
   const reasons = s => Object.fromEntries(dualOptions(s).map(o => [o.dual.id, o.reason ?? 'ok']));
   const s = duoFight();
-  s.boosts = { escondite: { amount: 4, until: s.round + 2 } };
-  assert.equal(validTargets(s, 'skill', 'escondite').length, 0, 'a boost running has nothing to add');
+  s.boosts = { analisis: { amount: 3, until: s.round + 2 } };
+  assert.equal(validTargets(s, 'skill', 'analisis').length, 0, 'a boost running has nothing to add');
   assert.equal(validTargets(s, 'skill', 'ronroneo').length, 0, 'nobody hurt: the cure has no one');
   actDual(s, 'zarpazos-de-fuego', 'dog-0'); endRound(s);
   assert.equal(reasons(s)['zarpazos-de-fuego'], 'used');
   s.unbound = true;
   s.allies.forEach(a => { a.secondary = MANA_POINTS; });
-  assert.deepEqual(validTargets(s, 'skill', 'escondite').map(a => a.id), s.allies.filter(a => a.hp > 0).map(a => a.id), 'the boost again');
+  assert.deepEqual(validTargets(s, 'skill', 'analisis').map(a => a.id), s.allies.filter(a => a.hp > 0).map(a => a.id), 'the boost again');
   assert.equal(validTargets(s, 'skill', 'ronroneo').length, s.allies.filter(a => a.hp > 0).length, 'the cure on anyone standing');
   assert.equal(reasons(s)['zarpazos-de-fuego'], 'ok', 'the dual again');
   assert.equal(actDual(s, 'zarpazos-de-fuego', 'dog-0').dual.id, 'zarpazos-de-fuego');
+});
+
+// Sangrado that piles up and the golpe crítico (docs/animas/README.md § Sangrado, § Golpe crítico).
+/** The same fighter goes again, maná full: for a test that plays several of one fighter's turns in a row. */
+const again = (s, id) => { s.phase = 'player'; delete s.spent; s.active = s.allies.indexOf(byId(s, id)); byId(s, id).secondary = byId(s, id).maxSecondary; };
+
+test('cuts pile up: a blow that adds Sangrado spends none of it, and the next one that adds none spends it all', () => {
+  const s = duoFight(), dog = s.foes[0], plain = duoFight();
+  again(s, 'aitor');
+  const first = act(s, 'skill', 'dog-0', 'zarpazo');
+  again(s, 'aitor');
+  const second = act(s, 'skill', 'dog-0', 'zarpazo');
+  assert.equal(first.bled, undefined); assert.equal(second.bled, undefined);
+  assert.equal(second.amount, first.amount, 'the second cut lands no harder for the first');
+  assert.deepEqual(second.status, { id: 'sangrado', stacks: 4 });
+  assert.equal(stacks(dog, 'sangrado'), 4, 'two and two');
+  again(s, 'aitor'); again(plain, 'aitor');
+  const open = act(s, 'attack', 'dog-0');
+  assert.equal(open.bled, 4);
+  assert.equal(open.amount, Math.round(act(plain, 'attack', 'dog-0').amount * 1.8), 'Atacar opens the four of them: +80 %');
+  assert.match(s.message, /La herida se abre: \+80 %/);
+  assert.equal(stacks(dog, 'sangrado'), 0, 'spent all at once');
+  // Zarpazos is a cut too: one more on top.
+  addStatus(dog, 'sangrado', 3); again(s, 'aitor');
+  const flurry = act(s, 'skill', 'dog-0', 'zarpazos');
+  assert.equal(flurry.bled, undefined); assert.deepEqual(flurry.status, { id: 'sangrado', stacks: 4 });
+});
+
+test('Sangrado fades slowly: a wound cut this round keeps every stack at its end; left alone, it loses one a round', () => {
+  const s = duoFight(), dog = s.foes[0], tick = STATUSES.sangrado.tick;
+  again(s, 'aitor');
+  act(s, 'skill', 'dog-0', 'zarpazo');
+  assert.equal(dog.cutRound, s.round);
+  assert.deepEqual(endRound(s), [{ target: 'dog-0', status: 'sangrado', amount: 2 * tick, stacks: 2 }], 'it bleeds 2 PV a stack all the same');
+  assert.equal(stacks(dog, 'sangrado'), 2, 'cut this round: nothing closes');
+  assert.deepEqual(endRound(s), [{ target: 'dog-0', status: 'sangrado', amount: 2 * tick, stacks: 1 }]);
+  assert.equal(stacks(dog, 'sangrado'), 1, 'a round with no cut: one stack less');
+  // Cut again, it holds; then it goes on closing.
+  again(s, 'aitor');
+  act(s, 'skill', 'dog-0', 'zarpazo');
+  endRound(s); assert.equal(stacks(dog, 'sangrado'), 3);
+  endRound(s); assert.equal(stacks(dog, 'sangrado'), 2);
+  // A wound that was not cut by a blow (no `cutRound`) fades from its first round.
+  const other = duoFight();
+  addStatus(other.foes[1], 'sangrado', 3);
+  endRound(other); assert.equal(stacks(other.foes[1], 'sangrado'), 2);
+});
+
+test('the golpe crítico: by the Crítico of whoever lands it, half as hard again, and added to the wound\'s bonus, not multiplied', async () => {
+  const { CRIT_RULES, critChance, woundScale } = await import('../src/battle.ts');
+  assert.equal(CRIT_RULES.chance, 0, 'by chance, off in the tests (tests/setup.mjs)');
+  assert.equal(CRIT_RULES.bonus, .5);
+  const base = duoFight();
+  assert.equal(byId(base, 'gerard').stats.critico, 5); assert.equal(byId(base, 'aitor').stats.critico, 20, 'Papagato finds the soft spot');
+  assert.equal(critChance(base, byId(base, 'aitor'), base.foes[0]), 20);
+  assert.equal(base.foes[0].stats.critico, 0); assert.equal(critChance(base, base.foes[0], byId(base, 'gerard')), 0, 'foes have none');
+  /** Gerard's Atacar on the first dog, with `critico` Crítico and `bleeding` stacks on it. */
+  const blow = (critico, bleeding = 0) => {
+    const s = duoFight(), gerard = byId(s, 'gerard');
+    gerard.stats = { ...gerard.stats, critico };
+    if (bleeding) addStatus(s.foes[0], 'sangrado', bleeding);
+    return [act(s, 'attack', 'dog-0'), s];
+  };
+  CRIT_RULES.chance = 1;
+  try {
+    const [plain] = blow(0), [crit, fight] = blow(100);
+    assert.equal(plain.crit, undefined);
+    assert.equal(crit.crit, true); assert.equal(crit.crits, undefined, 'one blow: no list of strikes');
+    assert.equal(crit.amount, Math.round(plain.amount * 1.5), '50 % harder');
+    assert.match(fight.message, /¡Golpe crítico!/);
+    const [both] = blow(100, 3);
+    assert.equal(both.bled, 3); assert.equal(both.crit, true);
+    assert.equal(both.amount, Math.round(plain.amount * (woundScale(3) + CRIT_RULES.bonus)), 'three stacks and a crítico: ×(1 + .6 + .5)');
+    assert.notEqual(both.amount, Math.round(plain.amount * woundScale(3) * 1.5), 'never one times the other');
+    // Each claw of a flurry rolls its own.
+    const s = duoFight(), aitor = byId(s, 'aitor'), tame = duoFight();
+    again(s, 'aitor'); again(tame, 'aitor');
+    aitor.stats = { ...aitor.stats, critico: 100 }; byId(tame, 'aitor').stats = { ...aitor.stats, critico: 0 };
+    const claws = act(s, 'skill', 'dog-0', 'zarpazos');
+    assert.deepEqual(claws.crits, [true, true, true, true]);
+    assert.deepEqual(claws.strikes, act(tame, 'skill', 'dog-0', 'zarpazos').strikes.map(n => Math.round(n * 1.5)));
+  } finally { CRIT_RULES.chance = 0; }
+  assert.equal(blow(100)[0].crit, undefined, 'off again');
+});
+
+test('Olor a sangre (Papagato at 5): 20 more Crítico on a foe that bleeds, and spending a wound of five or more is always a golpe crítico, for the whole party', async () => {
+  const { SCENT, PASSIVES, CRIT_RULES, scentOf, critChance, woundScale } = await import('../src/battle.ts');
+  assert.deepEqual(SCENT, { level: 5, crit: 20, sure: 5 });
+  assert.equal(PASSIVES['olor-a-sangre'].anima, 'papagato'); assert.equal(PASSIVES['olor-a-sangre'].level, SCENT.level);
+  /** Papagato at `level`, the first dog with `bleeding` stacks, `who` to go. */
+  const fight = (level, bleeding, who = 'gerard') => {
+    const s = duoFight({ papagato: level, matemagico: 2 });
+    if (bleeding) addStatus(s.foes[0], 'sangrado', bleeding);
+    again(s, who);
+    return s;
+  };
+  const named = [{ id: 'olor-a-sangre', name: 'Olor a sangre', who: 'aitor' }];
+  const s = fight(5, 5), gerard = byId(s, 'gerard'), aitor = byId(s, 'aitor'), [bleeding, clean] = s.foes;
+  assert.equal(scentOf(s), aitor, 'whoever wears Papagato, standing');
+  assert.equal(critChance(s, gerard, clean), 5); assert.equal(critChance(s, gerard, bleeding), 5 + SCENT.crit, 'the partner smells it too');
+  assert.equal(critChance(s, aitor, clean), 20); assert.equal(critChance(s, aitor, bleeding), 20 + SCENT.crit);
+  assert.equal(critChance(s, bleeding, gerard), 0);
+  // The partner who does not wear Papagato spends the wound: a crítico for sure, and it is added to the wound.
+  const plain = act(fight(5, 0), 'attack', 'dog-0');
+  assert.equal(plain.crit, undefined); assert.equal(plain.passives, undefined);
+  const open = act(s, 'attack', 'dog-0');
+  assert.equal(open.actor, 'gerard'); assert.equal(open.bled, 5); assert.equal(open.crit, true);
+  assert.deepEqual(open.passives, named, 'shown over whoever wears it');
+  assert.equal(open.amount, Math.round(plain.amount * (woundScale(5) + CRIT_RULES.bonus)));
+  // And so does the wearer: Zarpa en la llaga on more than five.
+  const deep = fight(5, 6, 'aitor'), bare = fight(5, 0, 'aitor');
+  const llaga = act(deep, 'skill', 'dog-0', 'llaga');
+  assert.equal(llaga.crit, true); assert.deepEqual(llaga.passives, named);
+  assert.equal(llaga.amount, Math.round(act(bare, 'skill', 'dog-0', 'llaga').amount * (woundScale(6, 'llaga') + CRIT_RULES.bonus)));
+  // A cut spends nothing, so it is no sure crítico however deep the wound.
+  const cut = act(fight(5, 6, 'aitor'), 'skill', 'dog-0', 'zarpazo');
+  assert.equal(cut.crit, undefined); assert.equal(cut.passives, undefined);
+  // Four stacks are not enough: only the chance is left, and the tests have it off.
+  const four = act(fight(5, 4), 'attack', 'dog-0');
+  assert.equal(four.bled, 4); assert.equal(four.crit, undefined); assert.equal(four.passives, undefined);
+  assert.equal(four.amount, Math.round(plain.amount * woundScale(4)));
+  // Nor a Papagato not grown enough, nor one whose wearer has fallen.
+  const young = fight(3, 5);
+  assert.equal(scentOf(young), undefined); assert.equal(critChance(young, byId(young, 'gerard'), young.foes[0]), 5);
+  const early = act(young, 'attack', 'dog-0');
+  assert.equal(early.bled, 5); assert.equal(early.crit, undefined); assert.equal(early.passives, undefined);
+  const alone = fight(5, 5); byId(alone, 'aitor').hp = 0;
+  assert.equal(scentOf(alone), undefined);
+  assert.equal(act(alone, 'attack', 'dog-0').crit, undefined);
 });
 
 // Tecnópata's skills (docs/animas/tecnopata/): Bip's.

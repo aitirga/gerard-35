@@ -71,6 +71,8 @@ export interface GpuKind {
   glass?: number;
   /** How white-hot its middle is (0–1, 1 by default): 0 keeps it its own colour all through, for specks too small to have a core. */
   core?: number;
+  /** Lies on the floor instead of facing the camera (a stain, a pool): for kinds that land and stay. */
+  flat?: boolean;
   /** Becomes this kind when it first lands on the floor, or when it dies; its own life when it becomes one. */
   onLand?: string; onDeath?: string; life?: readonly [number, number];
 }
@@ -836,7 +838,13 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
     let spark = shape > 9.5;
     if (spark) { if (tail < 0.0005) { onScreen = vec2f(0.0, 0.001); } tail = max(tail, size * 3.0); }
     let stretched = (shape > 0.5 && shape < 1.5) || (shape > 3.5 && shape < 5.5) || spark;
-    if (stretched && tail > 0.0005) {
+    // A stain lies on the floor: its quad is spread over the ground, a hair above it, turned its own way.
+    if (kin(k, 9).z > 0.5) {
+      let angle = seed * 6.2831853;
+      let c = cos(angle); let sn = sin(angle);
+      let q = vec2f(c * corner.x - sn * corner.y, sn * corner.x + c * corner.y) * size * vec2f(1.0, 0.72 + 0.28 * fract(seed * 3.7));
+      world = A.xyz + vec3f(q.x, 0.012, q.y);
+    } else if (stretched && tail > 0.0005) {
       let dir = onScreen / length(onScreen);
       let along = right * dir.x + up * dir.y;
       let across = up * dir.x - right * dir.y;
@@ -1045,7 +1053,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     row(6, [d.fadeIn ?? 0, d.fadeOut ?? .3, d.additive ?? 1, d.flicker ?? 0]);
     row(7, [d.stickTime ?? .5, d.settle ? 1 : 0, Math.min(1, Math.max(0, d.glass ?? 0)), (d.spin ?? 0) * Math.PI / 180]);
     row(8, [d.separation ?? 0, d.cohesion ?? 0, d.alignment ?? 0, d.radius ?? .3]);
-    row(9, [ref(d.onLand), ref(d.onDeath), 0, d.follow ?? 12]);
+    row(9, [ref(d.onLand), ref(d.onDeath), d.flat ? 1 : 0, d.follow ?? 12]);
     const blur = typeof d.blur === 'number' ? [d.blur, d.blur] : d.blur ?? [0, 0];
     row(10, [d.sizeJitter ?? 0, d.aspect ?? .25, Math.max(0, blur[0]), Math.max(0, blur[1])]);
     row(11, [d.life?.[0] ?? .5, d.life?.[1] ?? d.life?.[0] ?? .5, Math.min(1, Math.max(0, d.core ?? 1)), 0]);

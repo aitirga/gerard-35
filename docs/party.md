@@ -64,19 +64,20 @@ own; ánimas (with their levels and passives) and equipment are what change them
 | **Magia** | Adds to magic hits (Foc Binari) and to healing. |
 | **Defensa** | Takes away from physical hits. |
 | **Espíritu** | Takes away from magic hits. |
-| **Velocidad** | Who acts first in the party's half of the round. **Being removed** (decided 2026-10-31): the players set the party's order (`docs/combat.md`); still in the code for now. |
+| **Velocidad** | Who acts first in the party's half of the round. **Being removed** (decided 2026-10-31): the players set the party's order (`docs/combat.md`); still in the code for now. No wearable ánima gives it any more (Papagato did until 2026-11-20). |
+| **Crítico** | The chance, in percent, that a blow is a **golpe crítico**: 50 % harder, added to a wound's bonus (`Stats.critico`, `CRIT_RULES` in `src/battle.ts`; `docs/animas/README.md` § Golpe crítico). 5 % for everyone in the party (`PARTY_CRIT`); foes have none. |
 
 **10 is average.** Every amount has a base at average stats, and each point a stat is above or
 below 10 moves it by one: a physical hit is `base + Fuerza − Defensa`, a magic hit is
 `base + Magia − Espíritu`, healing is `base + Magia − 10`, never below 1. So chapter 1's boys and
 dogs (all 10s) fight exactly as before the stats existed.
 
-| Who | PV | Fue | Mag | Def | Esp | Vel |
-| --- | --- | --- | --- | --- | --- | --- |
-| Gerard (boy) | 100 | 10 | 10 | 10 | 10 | 10 |
-| Bernat | 85 | 10 | 10 | 10 | 10 | 10 |
-| Gerard (35) | 120 | 11 | 13 | 10 | 12 | 11 |
-| Aitor | 135 | 13 | 10 | 12 | 11 | 10 |
+| Who | PV | Fue | Mag | Def | Esp | Vel | Crí |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Gerard (boy) | 100 | 10 | 10 | 10 | 10 | 10 | 5 % |
+| Bernat | 85 | 10 | 10 | 10 | 10 | 10 | 5 % |
+| Gerard (35) | 120 | 11 | 13 | 10 | 12 | 11 | 5 % |
+| Aitor | 135 | 13 | 10 | 12 | 11 | 10 | 5 % |
 
 Gerard at 35 thinks and talks his way through (Magia, Espíritu); Aitor is the solid one (PV,
 Fuerza, Defensa).
@@ -98,11 +99,9 @@ cannot pay says *Sin ánima*.
 | Foc Binari | Whoever wears **Matemágico** | 1 | 16 magic, fire | Sets the foe on fire (Quemado, timed; again while it burns raises its level); fire melts the Queen's gum (pringue) |
 | Ángulo exacto | **Matemágico**, a node bought at the jar | 1 | −3 | Defensa and Espíritu −3 on one foe for 3 rounds (a mark; not again while it lasts) |
 | Zarpazo sangriento | Whoever wears **Papagato** | 1 | 16 physical | Adds two Sangrado stacks |
-| Yuki se esconde | Whoever wears **Papagato** | 1 | +4 | Defensa +4 for the whole party for 3 rounds (the one it is used in included); cannot be stacked while it runs |
-| Zarpazos | **Papagato**, level 2 | 2 | 7 physical, four times | Each claw takes a layer off an onion |
-| Ronroneo de Yuki | **Papagato**, level 2 | 2 | 14 heal | Everyone standing; takes away every mental status (Mareo, Llorera) |
-| Zarpa en la llaga | **Papagato**, level 3 | 2 | 26 physical | +4 per Sangrado stack on the target, and spends them |
-| Las dos a la vez | **Papagato**, level 3 | 2 | 24 physical | Every foe, one Sangrado stack each |
+| Zarpazos | **Papagato**, level 2 | 2 | 7 physical, four times | Each claw takes a layer off an onion and rolls its own Crítico; adds one Sangrado stack |
+| Ronroneo | **Papagato**, level 2 | 2 | 16 heal | One hurt ally: cures at once, leaves Sanación for 15 s, and takes away their mental statuses (Mareo, Llorera) |
+| Zarpa en la llaga | **Papagato**, level 3 | 2 | 26 physical | Spends the target's Sangrado, each stack counting double (+40 %) |
 
 Costs are in circles of Ánima.
 
@@ -112,7 +111,8 @@ débil* (Ángulo exacto + Zarpazo sangriento). They are never listed: they happe
 
 **Statuses** (story fights, `STATUSES` in `src/battle.ts`; `docs/animas/README.md` § Shared
 mechanics): they stack, show under the fighter's nameplate, and lose a stack at the end of each
-round. **Sangrado** (up to 10) hurts at the end of every round; **Mareo** (up to 5; no foe brings it since Vertitrón replaced El Vértigo)
+round (Sangrado only if nobody cut it that round). **Sangrado** (up to 10) hurts at the end of every round, piles up under
+blows that add it, and is spent whole by a physical blow that adds none (+20 % a stack); **Mareo** (up to 5; no foe brings it since Vertitrón replaced El Vértigo)
 lowers Velocidad, Defensa and Espíritu; **Llorera** (up to 5, El Cebollón) lowers Fuerza and Magia.
 **Quemado** (Foc Binari) runs on the fight's clock instead: it burns every 2 s for 10 s, and fire
 again before it goes out raises it to II and III (`docs/animas/README.md` § Quemado).
@@ -130,12 +130,13 @@ Impulso and Abrazo are out for now.
   Matemágico at every age; at 35, in fights whoever wears it thinks out loud: two
   ghostly little birds glide round the head while light bulbs and question marks of soft light
   drift up out of it and fade (`src/thoughts.ts`). Exploring, it does not show. **Papagato**
-  comes from Nuria's mission. **Tecnópata** is Aitor's own, his from chapter 2's first morning: a
+  comes from Nuria's mission (Fuerza +2, Crítico +15 %, Espíritu −1). **Tecnópata** is Aitor's own, his from chapter 2's first morning: a
   placeholder still to design (no stats, no skills, sage `#8cc6a8`). Some ánimas are one
   person's (`ANIMA_OWNERS`, `canWear` in `src/battle.ts`): Matemágico only Gerard, Tecnópata only
-  Aitor; Papagato anyone but Bernat. **Dadaísta**, the university friends', is the one whose
-  maná is dice: each point a die with its face in view, and the die a skill spends says how hard
-  it lands (`docs/animas/dadaista/README.md`; level 1 built).
+  Aitor; Papagato anyone but Bernat. **Dadista**, the university friends', is the one whose
+  maná is dice: each point a die with its face in view, and the die spent does what its face shows
+  (`docs/animas/dadaista/README.md`; built to level 7; its definitiva is still a design). Every die it spends adds to its *Racha*,
+  Crítico for its wearer while they keep it on, with its count on their plate.
 - **Own ánima and extras** (decided 2026-11-05): each has their **own** ánima, fixed, always
   theirs and never taken off (Matemágico Gerard's once it wakes, Tecnópata Aitor's), and **one extra
   slot** for now (`EXTRA_SLOTS` in `src/story.ts`; a second one comes with the castle's first boss, three ánimas at most, docs/animas/README.md § Growth opens with the castle) where they equip one of the shared
@@ -177,7 +178,7 @@ Impulso and Abrazo are out for now.
 - `src/stats.ts`: stats, profiles and the three formulas. Pure.
 - `src/battle.ts`: fighters carry stats, a profile and a class; `createBattle` takes the party
   (`story.battleParty`) and lines it up by Velocidad; `CLASS_STATS` and `SKILLS` (with `class`
-  skills, Ánima points, statuses, and party boosts like Yuki se esconde, `state.boosts`).
+  skills, Ánima points, statuses, and party boosts like Análisis Parálisis, `state.boosts`).
 - `src/party.ts`: who drives whom (`partnerDriven`, `battleDriver`, `waitingForPlayer2`). Pure.
 - `src/story.ts`: `partner` (Bernat or Aitor), `party` with profiles and classes, `classes`,
   `wear` and `loadout`.

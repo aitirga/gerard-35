@@ -18,23 +18,31 @@ export interface Stats {
   espiritu: number;
   /** Who acts first in the party's half of the round. */
   velocidad: number;
+  /**
+   * The chance, in percent, that a blow is a golpe crítico (docs/animas/README.md § Golpe crítico):
+   * 5 for the party, more from an ánima (Papagato). Foes have none: a foe's blow is one only if a
+   * named move of its own says so.
+   */
+  critico: number;
 }
 export const STAT_LABELS: Record<keyof Stats, string> = {
-  pv: 'PV', fuerza: 'Fuerza', magia: 'Magia', defensa: 'Defensa', espiritu: 'Espíritu', velocidad: 'Velocidad',
+  pv: 'PV', fuerza: 'Fuerza', magia: 'Magia', defensa: 'Defensa', espiritu: 'Espíritu', velocidad: 'Velocidad', critico: 'Crítico',
 };
 export const AVERAGE = 10;
-const base = (pv: number, fuerza = AVERAGE, magia = AVERAGE, defensa = AVERAGE, espiritu = AVERAGE, velocidad = AVERAGE): Stats =>
-  ({ pv, fuerza, magia, defensa, espiritu, velocidad });
+/** The Crítico everyone in the party has before any ánima adds to it. */
+export const PARTY_CRIT = 5;
+const base = (pv: number, fuerza = AVERAGE, magia = AVERAGE, defensa = AVERAGE, espiritu = AVERAGE, velocidad = AVERAGE, critico = 0): Stats =>
+  ({ pv, fuerza, magia, defensa, espiritu, velocidad, critico });
 
 /**
  * Who a fighter is underneath any class. Gerard has two: the boy of chapter 1 and the man of 35.
  * `gerard35` thinks and talks his way through (Magia, Espíritu); Aitor is the solid one (PV, Fuerza, Defensa).
  */
 export const PROFILES = {
-  gerard: base(100),
-  bernat: base(85),
-  gerard35: base(120, 11, 13, 10, 12, 11),
-  aitor: base(135, 13, 10, 12, 11, 10),
+  gerard: base(100, AVERAGE, AVERAGE, AVERAGE, AVERAGE, AVERAGE, PARTY_CRIT),
+  bernat: base(85, AVERAGE, AVERAGE, AVERAGE, AVERAGE, AVERAGE, PARTY_CRIT),
+  gerard35: base(120, 11, 13, 10, 12, 11, PARTY_CRIT),
+  aitor: base(135, 13, 10, 12, 11, 10, PARTY_CRIT),
   dog: base(54),
   minion: base(40),
   /** The palace guards of chapter 2: the stats of a wall. Their PV and hit depend on the party's ánimas (battle.ts). */
@@ -127,7 +135,8 @@ export type ProfileId = keyof typeof PROFILES;
 export type StatBonus = Partial<Stats>;
 export function withBonus(stats: Stats, bonus: StatBonus = {}): Stats {
   const out = { ...stats };
-  for (const key of Object.keys(bonus) as (keyof Stats)[]) out[key] = Math.max(1, out[key] + (bonus[key] ?? 0));
+  // Crítico is a chance: it can be none at all, where every other stat never goes under 1.
+  for (const key of Object.keys(bonus) as (keyof Stats)[]) out[key] = Math.max(key === 'critico' ? 0 : 1, out[key] + (bonus[key] ?? 0));
   return out;
 }
 

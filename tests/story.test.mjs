@@ -405,7 +405,7 @@ test('ánimas grow with the EXP of fights won, every ánima in the fight earns i
   assert.equal(story.xp.papagato, LEVEL_XP[0], 'a lost fight teaches nothing');
   // A big win can go up two levels at once, each with its note.
   const both = new Story(['matemagico', 'papagato']).handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['papagato'], xp: 9999 });
-  assert.deepEqual(both.filter(e => e.kind === 'learn').map(e => [e.level, e.skills]), [[2, ['zarpazos', 'ronroneo']], [3, ['llaga', 'a-la-vez']]]);
+  assert.deepEqual(both.filter(e => e.kind === 'learn').map(e => [e.level, e.skills]), [[2, ['zarpazos', 'ronroneo']], [3, ['llaga']]]);
   const own = story.handle({ type: 'battle', won: true, encounter: 'dogs', worn: ['matemagico'], xp: 500 });
   assert.equal(own.some(e => e.kind === 'learn'), false); assert.equal(story.levels.matemagico, 1, 'no level from fights');
 });

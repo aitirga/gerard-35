@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -11,8 +11,8 @@ import { costPips, flashAnima, setVitals, vitalsPlate } from './vitals';
 import { FACE_LINES, FACE_NAMES, faceSvg } from './die-faces';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
-import { award, fightXp, levelForXp, levelProgress, MAX_LEVEL, participants, toNextLevel, type Growth } from './levels';
 import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_REVEAL, DUAL_SLOW, holdAfter } from './battle-motion';
+import { award, fightXp, levelForXp, levelProgress, participants, toNextLevel, topOf, type Growth } from './levels';
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
 import type { SoundId } from './sfx';
@@ -48,9 +48,13 @@ const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'punto-debil' | 'cancion' | 'shock' | 'converge' | 'reaccion' | 'luz';
+type IconId = StatusId | TimedId | 'punto-debil' | 'cancion' | 'shock' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 const STATUS_ICONS: Record<IconId, string> = {
+  // Dadista's Racha: a four-point star, the astral's own, with the dice spent in its corner.
+  racha: '<path d="M8 .8 9.6 6.4 15.2 8 9.6 9.6 8 15.2 6.4 9.6 .8 8 6.4 6.4z"/>',
+  // A rock coming down with its trail.
+  meteoro: '<path d="M10.6 15a4.4 4.4 0 1 1 0-8.8 4.4 4.4 0 0 1 0 8.8zM1 1l5.2 4.4-1.3 1.4zM5.6 1l3 3.6-1 .7z"/>',
   // Converge: a wave that settles into a flat line.
   converge: '<path d="M1.2 8c1.3-5.6 2.6-5.6 3.6 0s2-2.6 2.8 0 1.2 0 1.6 0h5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
   // El Átomo's Reacción coming: a nucleus and two crossed orbits.
@@ -119,8 +123,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** `onImpact` runs as each blow lands: 0 at contact, then a flurry's others (`BattleEffect.strikes`). */
   change: (state: BattleState | undefined, effect?: BattleEffect, onImpact?: (blow: number) => void) => Promise<void>;
   target: (id?: string) => void;
-  /** Dadaísta: the die of `unit`'s hand the cursor is on while one is being picked (none: nobody is picking). */
+  /** Dadista: the die of `unit`'s hand the cursor is on while one is being picked (none: nobody is picking). */
   aimDie?: (unit?: string, index?: number) => void;
+  /** Dadista shook the hand (Agitar): `unit`'s dice tumble again in the fight. */
+  shakeDice?: (unit: string) => void;
   /** A moment only this screen knows of that makes a sound (a burn's pulse, a bleed, changing ánima). */
   sound: (id: SoundId) => void;
   /** An ánima woke up in Gerard mid-fight (the palace minion's beat). */
@@ -234,7 +240,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   let state: BattleState | undefined;
   let selected: Command | undefined;
   let selectedSkill: SkillId | undefined;
-  /** Dadaísta: the skill whose die is being picked on the sheet, and the die picked (its place in the hand). */
+  /** Dadista: the skill whose die is being picked on the sheet, and the die picked (its place in the hand). */
   let pickingDie: SkillId | undefined;
   let selectedDie: number | undefined;
   /** Development: the dual the Dual command is aiming. */
@@ -307,7 +313,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Each fighter's plate over the fight and where `positionTargets` last put it. */
   const plates = new Map<string, HTMLElement>(), plateAt = new WeakMap<HTMLElement, string>();
   /** A number or a word flying off a fighter. A `status` one (its id in `status`) is stamped on in its colour, above where the blow's numbers rise. */
-  function pop(id: string, text: string, kind: 'damage' | 'heal' | 'guard' | 'stat-up' | 'stat-down' | 'status' | 'passive', detail = '', status?: string, dx = 0) {
+  function pop(id: string, text: string, kind: 'damage' | 'crit' | 'heal' | 'guard' | 'stat-up' | 'stat-down' | 'status' | 'passive', detail = '', status?: string, dx = 0) {
     const at = positions.get(id);
     if (!at) return;
     const el = document.createElement('span');
@@ -317,9 +323,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     el.querySelector('strong')!.textContent = text;
     if (detail) el.querySelector('small')!.textContent = detail;
     // A passive's plate sits higher still, and stays a little longer: it is the ánima speaking, not the blow.
-    el.style.transform = `translate(${at.x + dx + (kind === 'passive' ? 0 : (Math.random() - .5) * (kind === 'status' ? 8 : 26))}px, ${at.y - (kind === 'passive' ? 150 : kind === 'status' ? 96 : 18)}px) translate(-50%, -100%)`;
+    el.style.transform = `translate(${at.x + dx + (kind === 'passive' ? 0 : (Math.random() - .5) * (kind === 'status' || kind === 'crit' ? 8 : 26))}px, ${at.y - (kind === 'passive' ? 150 : kind === 'status' ? 96 : 18)}px) translate(-50%, -100%)`;
     get('.battle-pops').append(el);
-    setTimeout(() => el.remove(), kind === 'passive' ? 1900 : kind === 'status' ? 1350 : 1100);
+    setTimeout(() => el.remove(), kind === 'passive' ? 1900 : kind === 'crit' ? 1600 : kind === 'status' ? 1350 : 1100);
     return el;
   }
   const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -338,6 +344,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // El Átomo: its turns to its Reacción, in the corner; at 1 its next turn throws every electron it has at once.
       ...reactionIn(c) ? [{ id: 'reaccion' as const, name: reactionIn(c) === 1 ? 'Reacción: en su siguiente turno, todos sus electrones a la vez' : `Reacción en ${reactionIn(c)} turnos`, mark: String(reactionIn(c)), timed: false, lasts: `${reactionIn(c)} ${reactionIn(c) === 1 ? 'turno' : 'turnos'}` }] : [],
       ...c.shock ? [{ id: 'shock' as const, name: 'Shock: pierde su siguiente turno', mark: '', timed: false, lasts: 'su siguiente turno' }] : [],
+      // Dadista's Racha: the dice spent since it was put on, and what they are worth now.
+      ...state && rachaOf(c) ? [{ id: 'racha' as const, name: `Racha ${rachaOf(c)}: Crítico +${rachaOf(c) * RACHA.crit} %`, mark: String(rachaOf(c)), timed: false, lasts: 'hasta cambiar de ánima o caer' }] : [],
+      ...state && meteorOf(c) ? [{ id: 'meteoro' as const, name: `${meteorOf(c) === 1 ? 'Meteoro' : 'Asteroide'}: el meteoro ha crecido`, mark: '', timed: false, lasts: 'solo si lo usa en su siguiente turno' }] : [],
       ...weak ? [{ id: 'punto-debil' as const, name: `Punto débil: el siguiente golpe hace el triple`, mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weak) }] : [],
       ...(Object.entries(c.statuses ?? {}).filter(([, n]) => n) as [StatusId, number][]).map(([id, n]) => ({ id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) })),
       ...(Object.entries(shownTimed(c)).filter(([, on]) => on) as [TimedId, Timed][]).map(([id, on]) => ({ id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` })),
@@ -417,6 +426,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       list.toggleAttribute('data-many', icons.length + chips.length > 2);
       list.replaceChildren(...icons.map(icon => {
         const el = document.createElement('i'); el.className = 'status-icon'; el.dataset.status = icon.id; el.title = icon.name;
+        // Olor a sangre: a wound of five or more is a sure golpe crítico for whoever spends it, and its chip says so by burning brighter.
+        el.toggleAttribute('data-ripe', icon.id === 'sangrado' && Number(icon.mark) >= SCENT.sure && !!state && !!scentOf(state));
         el.toggleAttribute('data-timed', icon.timed);
         el.innerHTML = `${statusSvg(icon.id)}<b></b>`;
         el.querySelector('b')!.textContent = icon.mark;
@@ -739,7 +750,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * and get some back while they rest (`REST_CHARGE`). Three to a row, so six fit in two.
    */
   function chipMana(button: HTMLButtonElement, owner: Combatant, id: ClassId) {
-    const most = manaMax(state?.improved, id), left = id === owner.classId ? owner.secondary : owner.mana?.[id] ?? most;
+    const most = manaMax(state?.improved, id, state?.levels), left = id === owner.classId ? owner.secondary : owner.mana?.[id] ?? most;
     const box = button.querySelector<HTMLElement>('.chip-mana');
     if (!box) return;
     box.hidden = !most;
@@ -1026,9 +1037,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const names = (ids: string[]) => ids.map(id => state!.allies.find(a => a.id === id)?.name ?? id).join(' · ');
     list.innerHTML = growth.map((g, i) => {
       const wearers = who.find(p => p.id === g.id)!.wearers, grown = wearers.some(id => grownUp(state!.allies.find(a => a.id === id)!.profile));
-      return `<li class="xp-card" data-anima="${g.id}" style="--chip:${CLASSES[g.id].colour};--i:${i};--fill:${levelProgress(g.xpBefore)}">
+      return `<li class="xp-card" data-anima="${g.id}" style="--chip:${CLASSES[g.id].colour};--i:${i};--fill:${levelProgress(g.xpBefore, topOf(g.id))}">
         <div class="xp-head"><strong>${animaOf(g.id, grown).name}</strong><small>${names(wearers)}</small></div>
-        <div class="xp-row"><span class="xp-level">NIVEL <b>${g.levelBefore}</b></span><span class="xp-count">${g.levelBefore >= MAX_LEVEL ? 'MÁXIMO' : `+${g.xpAfter - g.xpBefore} EXP`}</span></div>
+        <div class="xp-row"><span class="xp-level">NIVEL <b>${g.levelBefore}</b></span><span class="xp-count">${g.levelBefore >= topOf(g.id) ? 'MÁXIMO' : `+${g.xpAfter - g.xpBefore} EXP`}</span></div>
         <div class="xp-bar" aria-hidden="true"><i></i></div>
         <span class="xp-stamp" aria-hidden="true" hidden></span>
         <p class="xp-learn" hidden></p></li>`;
@@ -1046,8 +1057,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         const t = still ? 1 : Math.max(0, Math.min(1, (now - start - 700 - i * 160) / 1300));
         if (t < 1) running = true;
         const eased = 1 - (1 - t) ** 3, xp = g.xpBefore + (g.xpAfter - g.xpBefore) * eased;
-        const level = Math.max(g.levelBefore, Math.min(g.levelAfter, levelForXp(xp)));
-        cards[i].style.setProperty('--fill', String(level >= MAX_LEVEL ? 1 : levelProgress(xp)));
+        const level = Math.max(g.levelBefore, Math.min(g.levelAfter, levelForXp(xp, topOf(g.id))));
+        cards[i].style.setProperty('--fill', String(levelProgress(xp, topOf(g.id))));
         if (level > shown[i]) { shown[i] = level; levelUp(cards[i], g, level, token); }
       });
       if (running) rewardFrame = requestAnimationFrame(step);
@@ -1118,7 +1129,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     stamp.textContent = `¡NIVEL ${level}!`; stamp.hidden = false;
     card.removeAttribute('data-up'); void card.offsetWidth; card.setAttribute('data-up', '');
     flashAnima(card, CLASSES[g.id].colour);
-    if (level >= MAX_LEVEL) card.querySelector('.xp-count')!.textContent = 'MÁXIMO';
+    if (level >= topOf(g.id)) card.querySelector('.xp-count')!.textContent = 'MÁXIMO';
     const learned = SKILLS.filter(skill => g.learned.includes(skill.id) && 'level' in skill && skill.level <= level);
     if (!learned.length) return;
     const line = card.querySelector<HTMLElement>('.xp-learn')!;
@@ -1180,7 +1191,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function queueItems(owner: Combatant): { id: string; label: string; detail?: string; off?: boolean }[] {
     const s = state!, m = queueMenu!;
     if (m.level === 'root') return [{ id: 'attack', label: attackName(owner) }, { id: 'skill', label: 'Habilidad', off: !skillsFor(s, owner).length }, { id: 'defend', label: 'Defender' }];
-    if (m.level === 'skill') return skillsFor(s, owner).map(skill => {
+    if (m.level === 'skill') return skillsFor(s, owner).filter(skill => !('free' in skill)).map(skill => {
       const affordable = owner.secondary >= skill.cost, available = validTargets(s, 'skill', skill.id).length > 0;
       return { id: skill.id, label: skill.name, detail: !affordable ? 'Sin maná' : available ? costPips(skill.cost) : skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo', off: !affordable || !available };
     });
@@ -1266,7 +1277,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   /** Who would bring the half of ánima `id` (the one choosing, after putting it on if they would). */
   const wearerOf = (option: ReturnType<typeof dualOptions>[number], id: ClassId) => option.partner?.classId === id ? option.partner : (option.wear ?? option.holder.classId) === id ? option.holder : undefined;
-  const manaIn = (c: Combatant, option: ReturnType<typeof dualOptions>[number]) => c === option.holder && option.wear ? c.mana?.[option.wear] ?? manaMax(state?.improved, option.wear) : c.secondary;
+  const manaIn = (c: Combatant, option: ReturnType<typeof dualOptions>[number]) => c === option.holder && option.wear ? c.mana?.[option.wear] ?? manaMax(state?.improved, option.wear, state?.levels) : c.secondary;
   /** A dual's halves, Matemágico's first (the banner's left, its navy half). */
   const halves = (dual: DualSpec) => [...dual.parts].map(id => SKILLS.find(x => x.id === id)!).sort((x, y) => Number(y.class === 'matemagico') - Number(x.class === 'matemagico'));
   /** The combined cost: one group of circles per half, each in its ánima's colour, under whoever pays it. */
@@ -1351,9 +1362,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const brought = (id: ClassId) => { const i = d.parts.findIndex(part => SKILLS.find(x => x.id === part)?.class === id); return s.allies.find(a => a.id === d.actors[i]); };
     let banner = get('.dual-banner');
     const armed = !banner.hidden && !banner.dataset.leaving && banner.dataset.armed === d.id;
-    if (armed) { clearTimeout(bannerTimer); clearTimeout(compactTimer); delete banner.dataset.armed; } else banner = fillDualBanner(spec, brought);
+    if (armed) { clearTimeout(bannerTimer); clearTimeout(compactTimer); delete banner.dataset.armed; delete banner.dataset.reveal; } else banner = fillDualBanner(spec, brought);
     banner.dataset.fire = 'true';
-    const bars = get('.dual-cinema'); delete bars.dataset.leaving; bars.hidden = true; void bars.offsetWidth; bars.hidden = false;
+    const bars = get('.dual-cinema'); delete bars.dataset.leaving;
+    // Just unlocked, the bars are already closed: only the flare and the rays come again.
+    if (bars.dataset.reveal) { delete bars.dataset.reveal; for (const el of bars.querySelectorAll<HTMLElement>('i, b')) { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; } }
+    else { bars.hidden = true; void bars.offsetWidth; bars.hidden = false; }
     // Then only its name stays, so the rest of the move (and whoever is on top of a tall foe) shows. Read while it was aimed, sooner.
     compactTimer = setTimeout(() => { banner.dataset.compact = 'true'; }, (seen || armed ? seconds : seconds + .6) * 1000);
     slowDown(seconds);
@@ -1580,14 +1594,17 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // Unaffordable skills stay focusable so their details can still be read.
     get('.skill-list').innerHTML = skillsFor(state, actor).map((skill, i) => {
       const affordable = actor.secondary >= skill.cost;
-      const available = validTargets(state!, 'skill', skill.id).length > 0;
-      const reason = !affordable ? 'Sin maná' : available ? costPips(skill.cost) : skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo';
-      return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
+      // Agitar is not an action: it costs nothing and reaches nobody, and what it has is uses.
+      const free = 'free' in skill, uses = free ? shakesLeft(state!, actor) : 0;
+      const available = free ? uses > 0 && diceOf(state!, actor).length > 0 : validTargets(state!, 'skill', skill.id).length > 0;
+      const reason = free ? !uses ? 'Usado' : available ? uses === 1 ? '1 vez' : `${uses} veces` : 'Sin dados'
+        : !affordable ? 'Sin maná' : available ? costPips(skill.cost) : skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo';
+      return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${free ? 'Tu mano' : 'rain' in skill ? 'Enemigos al azar' : TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
     }).join('') || '<p class="skill-empty">Sin habilidades con esta ánima.</p>';
     fitSkills();
   }
   /**
-   * Dadaísta: the sheet turns into its hand, one row a die, each showing its face and what it does,
+   * Dadista: the sheet turns into its hand, one row a die, each showing its face and what it does,
    * to pick which one Tirar dado spends (docs/animas/dadaista/). A die that can do nothing now (a
    * blank with nothing to repeat, brackets with nobody left to protect) is greyed out. The cursor
    * starts on the one that would go if nobody chose.
@@ -1598,18 +1615,20 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     pickingDie = skill;
     const list = get('.skill-list');
     list.dataset.dice = 'face';
-    get('.skill-flyout .battle-kicker').textContent = `${spec.name.toUpperCase()} · ELIGE UN DADO`;
+    // Estrella fugaz is only paid with the die: any will do, and the row says what is given up.
+    const paying = !faceUse(skill);
+    get('.skill-flyout .battle-kicker').textContent = `${spec.name.toUpperCase()} · ${!paying ? 'ELIGE UN DADO' : spec.cost > 1 ? `GASTA ${spec.cost} DADOS · ELIGE EL PRIMERO` : 'ELIGE EL DADO QUE GASTA'}`;
     list.innerHTML = hand.map((face, i) => {
-      const move = dieSkill(s, i), usable = !!move && validTargets(s, 'skill', skill, i).length > 0, as = faceAs(actor, face);
+      const move = dieSkill(s, i), usable = paying || (!!move && validTargets(s, 'skill', skill, i).length > 0), as = faceAs(actor, face);
       const line = face === 'blanco' ? as ? `Repite ${FACE_NAMES[as]}: ${FACE_LINES[as]}` : 'Nada que repetir todavía' : FACE_LINES[face];
       return `<button type="button" data-die="${i}" data-class="${spec.class}" ${usable ? '' : 'aria-disabled="true"'} style="--i:${i}" aria-label="Dado ${i + 1}: ${FACE_NAMES[face]}. ${line}"><span class="skill-key">${i + 1}</span><i class="die-face" data-face="${face}" aria-hidden="true">${faceSvg(face)}</i><span class="skill-name"><strong>${FACE_NAMES[face]}</strong><small>${line}</small></span></button>`;
     }).join('');
     fitSkills();
-    focusOn(list.querySelector<HTMLButtonElement>(`[data-die="${at ?? bestDie(s)}"]`) ?? skillButtons()[0]);
+    focusOn(list.querySelector<HTMLButtonElement>(`[data-die="${at ?? (paying ? spareDie(s) : bestDie(s))}"]`) ?? skillButtons()[0]);
   }
   /** The move being aimed: for Tirar dado once its die is picked, that die's face (`dieSkill`). */
   function aimSkill(): SkillId | undefined {
-    return state && selectedSkill && dieUse(selectedSkill) && selectedDie !== undefined ? dieSkill(state, selectedDie) ?? selectedSkill : selectedSkill;
+    return state && selectedSkill && faceUse(selectedSkill) && selectedDie !== undefined ? dieSkill(state, selectedDie) ?? selectedSkill : selectedSkill;
   }
   /**
    * The sheet shows a few skills at a time (`SKILL_ROWS`, fewer if the screen has no room above the
@@ -1758,14 +1777,30 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.target-picker p').textContent = duo ? mine && theirs && mine !== theirs ? 'Elegid el mismo objetivo.' : mine ? 'Esperando al otro…' : 'Los dos, al mismo objetivo.'
       : guard ? 'Elige a quién proteger.' : cure ? 'Elige a quién curar.' : FEAR_KICKERS[s.encounter as keyof typeof FEAR_KICKERS] ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-minion' ? 'Elige al esbirro.' : s.encounter === 'night-guard' && s.foes.some(f => isCastle(f.kind)) ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-guards' || s.encounter === 'night-guard' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
   }
+  /**
+   * Agitar: the hand is thrown again there and then, and the turn goes on with the list still open
+   * (docs/animas/dadaista/ § Agitar). The dice tumble in the fight, and a pop over the wearer says
+   * what came of it: another hand, or the Comodín the Racha brought.
+   */
+  function shakeHand() {
+    if (!state) return;
+    const actor = state.allies[state.active], got = shake(state);
+    if (!got) { callbacks.sound('ui-back'); return; }
+    callbacks.sound('clink'); callbacks.shakeDice?.(actor.id);
+    pop(actor.id, 'Agitar', 'status', got.comodin !== undefined ? '¡Comodín!' : 'Otra mano', 'racha');
+    render(); fillSkills();
+    focusOn(scope().querySelector<HTMLButtonElement>('[data-skill="agitar"]') ?? skillButtons()[0]);
+  }
   function beginTargeting(skill?: SkillId) {
     if (!state || locked() || !selected) return;
+    if (skill && 'free' in SKILLS.find(s => s.id === skill)!) { shakeHand(); return; }
     if (skill && (state.allies[state.active].secondary < SKILLS.find(s => s.id === skill)!.cost || !validTargets(state, 'skill', skill, dieUse(skill) ? selectedDie : undefined).length)) return;
     if (skill && joinDual(skill)) return;
     showDetails(false);
-    // Dadaísta: first the die it spends, then whom. A hand of one has nothing to pick.
+    // Dadista: first the die it spends, then whom. A hand of one has nothing to pick.
     if (skill && dieUse(skill) && selectedDie === undefined) {
-      if (diceOf(state, state.allies[state.active]).length > 1) { callbacks.sound('ui-confirm'); fillDice(skill); return; }
+      // …nor one that all goes (Asteroide's three out of three).
+      if (diceOf(state, state.allies[state.active]).length > Math.max(1, faceUse(skill) ? 1 : SKILLS.find(s => s.id === skill)!.cost)) { callbacks.sound('ui-confirm'); fillDice(skill); return; }
       selectedDie = 0;
     }
     pickingDie = undefined;
@@ -1813,6 +1848,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // as the beam crosses them, blow 1 + its place in `hits` (the scene's `solarCross`).
     const sweep = effect.release && effect.hits?.length ? effect.hits : undefined;
     const sweepOwed = new Map(sweep?.map(h => [h.target, owed.get(h.target) ?? 0] as const));
+    // Dados astrales: each die of light takes its own PV off and shows its own number as it lands (blow = its place in `rain`).
+    const rain = effect.rain?.length ? effect.rain : undefined;
+    const scatter = (i: number) => ((i * 7) % 5 / 4 - .5) * 64;
     // Statuses that landed show a beat after the last blow.
     const landed: { target: string; id: string; text: string; detail: string }[] = [];
     // After a wound opened (its own pop comes first), a little later.
@@ -1826,7 +1864,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       });
     };
     let say = '';
-    const hurtPop = (id: string, amount: number, detail: string, dx?: number) => pop(id, `−${amount}`, 'damage', detail, undefined, dx);
+    // A golpe crítico's number (docs/animas/README.md § Golpe crítico): much bigger, slammed on while the
+    // fight holds still, and it says so; with a wound spent under it, how much the wound added as well.
+    const woundOf = (id: string) => id === effect.target ? effect.bled ?? 0 : effect.hits?.find(h => h.target === id)?.bled ?? 0;
+    const critPop = (id: string, amount: number, first: boolean, dx?: number) => {
+      const bled = first ? woundOf(id) : 0;
+      return pop(id, `−${amount}`, 'crit', bled ? `¡Crítico! · Sangrado +${Math.round((woundScale(bled, effect.skill) - 1) * 100)}%` : '¡Crítico!', bled ? 'sangrado' : undefined, dx);
+    };
+    /** Whether the blow's first number on `id` is a golpe crítico's. */
+    const critOn = (id: string) => id === effect.target && !effect.hits ? !!effect.crit && effect.crits?.[0] !== false : !!effect.hits?.find(h => h.target === id)?.crit;
+    const hurtPop = (id: string, amount: number, detail: string, dx?: number, crit = false) => crit ? critPop(id, amount, dx === undefined || !strikes || dx === spread(0), dx) : pop(id, `−${amount}`, 'damage', detail, undefined, dx);
     const knock = () => {
       const card = root.querySelector<HTMLElement>(`[data-unit="${effect.target ?? effect.actor}"]`);
       card?.classList.remove('contact-hit');
@@ -1848,6 +1895,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     };
     await callbacks.change(state, effect, blow => {
       if (token !== generation || !state) return;
+      if (blow && rain) {
+        const drop = rain[blow];
+        if (!drop) return;
+        owed.set(drop.target, Math.max(0, (owed.get(drop.target) ?? 0) - drop.amount));
+        render(); knock();
+        hurtPop(drop.target, drop.amount, '', scatter(blow));
+        return;
+      }
       if (blow && sweep) {
         const h = sweep[blow - 1];
         if (!h) return;
@@ -1864,7 +1919,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         landFire(blow);
         render(); knock();
         const last = blow === strikes.length - 1;
-        hurtPop(effect.target!, strikes[blow], last && say !== label ? say : '', spread(blow));
+        if (effect.crits?.[blow]) critPop(effect.target!, strikes[blow], false, spread(blow));
+        else hurtPop(effect.target!, strikes[blow], last && say !== label ? say : '', spread(blow));
         if (last) stamp();
         return;
       }
@@ -1874,6 +1930,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Rayo solar: the foes its beam has yet to cross keep their PV and fire on screen until it does.
       sweepOwed.forEach((amount, id) => { if (amount) owed.set(id, amount); });
       if (strikes) owed.set(effect.target!, strikes.slice(1).reduce((sum, amount) => sum + amount, 0));
+      rain?.slice(1).forEach(drop => owed.set(drop.target, (owed.get(drop.target) ?? 0) + drop.amount));
       if (!sweep) landFire(0);
       render(); knock();
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
@@ -1912,8 +1969,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.kind === 'enemy' && effect.shielded && isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind)) pop(effect.actor, 'Guardia', 'guard');
       if (effect.kind === 'enemy' && effect.telegraph?.id === 'calderon') pop(effect.actor, 'Toma aire', 'status', 'Calderón en su próximo turno', 'crescendo');
       if (effect.cancelled === 'calderon') pop(effect.kind === 'enemy' ? effect.actor : effect.target ?? effect.actor, effect.kind === 'enemy' ? 'Sin aire' : '¡Calderón roto!', 'status', effect.kind === 'enemy' ? 'Pierde el turno' : 'Acorde', 'sin-aire');
+      // Estrella fugaz spent the Racha for dice: said over whoever threw it, a beat after the blow.
+      if (effect.starred) setTimeout(() => { if (token === generation) pop(effect.actor, `Racha −${effect.starred}`, 'status', effect.rain ? `${effect.rain.length} dados de luz` : effect.dealt?.length ? effect.dealt.length === 1 ? '+1 dado' : `+${effect.dealt.length} dados` : '', 'racha'); }, 420);
+      // The meteor grew: said over whoever threw it, so the list's new row is no surprise.
+      if (effect.meteor) { const next = SKILLS.find(s => 'meteor' in s && s.meteor === effect.meteor)!; setTimeout(() => { if (token === generation) pop(effect.actor, next.name, 'status', 'En tu siguiente turno', 'racha'); }, effect.starred ? 900 : 420); }
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard', effect.charged ? `Maná +${effect.charged}` : '');
-      else if (effect.boosted && effect.skill) { const skill = effect.skill; effect.boosted.forEach(id => pop(id, SKILLS.find(s => s.id === skill)!.name.split(' ')[0], 'guard', `${boostedStats(skill)} +${state!.boosts?.[skill]?.amount ?? 0}`)); }
+      else if (effect.boosted && effect.skill) { const skill = effect.skill; const spec = SKILLS.find(s => s.id === skill)!; effect.boosted.forEach(id => 'double' in spec ? pop(id, spec.name, 'status', 'Crítico ×2', 'racha') : pop(id, spec.name.split(' ')[0], 'guard', `${boostedStats(skill)} +${state!.boosts?.[skill]?.amount ?? 0}`)); }
       else if (effect.annulled) {
         // Fran's salon: the light ate the blow. Said over whoever it was aimed at, in the light's colour.
         const light = effect.annulled;
@@ -1925,7 +1986,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // A skill that only leaves a status (Rayo de sanación, Confusión, Rayo encogedor) says so below, with no number.
       else if (effect.regen || effect.afflicted) { /* its status pops below */ }
       else if (sweep) { /* each foe's number comes as the beam crosses them (above) */ }
-      else if (effect.hits) effect.hits.forEach(h => pop(h.target, `−${h.amount}`, 'damage', h.peeled ? peelText(h.peeled, state!.foes.find(f => f.id === h.target)) : label));
+      else if (rain) hurtPop(rain[0].target, rain[0].amount, label, scatter(0));
+      else if (effect.hits) effect.hits.forEach(h => h.crit ? critPop(h.target, h.amount, true) : pop(h.target, `−${h.amount}`, 'damage', h.peeled ? peelText(h.peeled, state!.foes.find(f => f.id === h.target)) : label));
       else if (effect.target && target) {
         // A big onion's weight falls on the others as well.
         effect.splash?.forEach(other => pop(other.target, `−${other.amount}`, 'damage', isOnion(state!.foes.find(f => f.id === effect.actor)?.kind) ? '¡Qué peso!' : ''));
@@ -1933,15 +1995,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         // A flurry's first blow carries the skill's name; the others follow as they land (above).
         // Corchete: no number, the ally between brackets says so.
         if (effect.guarded) pop(effect.target, 'Protegido', 'guard', label);
-        else if (strikes) hurtPop(effect.target, strikes[0], label, spread(0));
-        else if (!effect.controlled) hurtPop(effect.target, effect.amount ?? 0, say);
+        else if (strikes) hurtPop(effect.target, strikes[0], label, spread(0), critOn(effect.target));
+        else if (!effect.controlled) hurtPop(effect.target, effect.amount ?? 0, say, undefined, critOn(effect.target));
       }
       // Anna's Sopeta also feeds the whole table: each friend's PV back, a beat after her blow.
       effect.soothed?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `+${h.amount}`, 'heal', i ? '' : 'Sopeta'); }, 420 + i * 70));
       // A physical blow on someone bleeding spent it: how much harder it landed, in Sangrado's red.
       const wounds = [...effect.bled && effect.target ? [{ target: effect.target, bled: effect.bled }] : [], ...(effect.hits ?? []).flatMap(h => h.bled ? [{ target: h.target, bled: h.bled }] : [])];
       wounded = wounds.length > 0;
-      wounds.forEach(w => setTimeout(() => { if (token === generation) pop(w.target, `+${Math.round((woundScale(w.bled, effect.skill) - 1) * 100)}%`, 'status', 'Sangrado', 'sangrado'); }, 60));
+      // (A golpe crítico's own number already says what the wound added.)
+      wounds.filter(w => !critOn(w.target)).forEach(w => setTimeout(() => { if (token === generation) pop(w.target, `+${Math.round((woundScale(w.bled, effect.skill) - 1) * 100)}%`, 'status', 'Sangrado', 'sangrado'); }, 60));
       // Whatever status landed says so on its own, in its colour, a beat after the number: ¡Quemado!, ¡Sangrado!…
       if (effect.burn && effect.target && !effect.burns) landed.push({ target: effect.target, id: effect.burn.id, text: `¡${TIMED[effect.burn.id].name}${effect.burn.level > 1 ? ` ${roman(effect.burn.level)}` : ''}!`, detail: effect.burn.level > 1 ? 'El fuego sube' : '' });
       if (effect.status && effect.target) landed.push({ target: effect.target, id: effect.status.id, text: `¡${STATUSES[effect.status.id].name}!`, detail: `× ${effect.status.stacks}` });
@@ -2168,7 +2231,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   root.addEventListener('focusin', event => {
     if (event.target instanceof HTMLElement && event.target.parentElement?.classList.contains('skill-list')) keepInView(event.target);
-    // Dadaísta: the die under the cursor comes forward beside its wearer.
+    // Dadista: the die under the cursor comes forward beside its wearer.
     if (event.target instanceof HTMLElement && event.target.dataset.die !== undefined && state) callbacks.aimDie?.(state.allies[state.active].id, Number(event.target.dataset.die));
     if (details) placeDetails();
   });
@@ -2334,7 +2397,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (moment === 'won' || moment === 'won-level' || moment === 'lost') {
       for (const unit of moment === 'lost' ? state.allies : state.foes) unit.hp = 0;
       // Enough EXP for the ánima furthest from its next level: every one in the fight goes up.
-      if (moment === 'won-level') state.extraXp = Math.max(0, Math.max(0, ...participants(state).map(p => toNextLevel(xpBefore[p.id] ?? 0, state!.levels?.[p.id] ?? 1))) - fightXp({ foes: state.foes }));
+      if (moment === 'won-level') state.extraXp = Math.max(0, Math.max(0, ...participants(state).map(p => toNextLevel(xpBefore[p.id] ?? 0, state!.levels?.[p.id] ?? 1, topOf(p.id)))) - fightXp({ foes: state.foes }));
       state.phase = moment === 'lost' ? 'lost' : 'won';
       state.message = moment === 'lost' ? 'Depuración: combate perdido.' : moment === 'won-level' ? 'Depuración: combate ganado, con experiencia para subir de nivel.' : 'Depuración: combate ganado.';
     } else if (moment === 'foes-low' || moment === 'party-low') {
@@ -2447,7 +2510,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const slots = typeof party === 'number' ? childParty(party, options.animas?.at(-1)) : party;
       state = createEncounter(slots, encounter, { foeCount, possessed, animas: options.animas, guards: options.guards, night: options.night }); busy = true;
       state.levels = options.levels;
-      if (options.improved) improve(state, options.improved);
+      improve(state, options.improved);
       xpBefore = { ...options.xp }; rewarded = false; resetRewards();
       foeCount = state.foes.length;
       root.toggleAttribute('data-possessed', possessed);

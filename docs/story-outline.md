@@ -369,7 +369,10 @@ Safety nets, so the birthday never stalls:
 
 How a player who was never told can still get there (decided round 11: **clues built into the
 game, but Gerard has to realise it himself at the end**; the real Aitor plays beside him and
-helps in person if needed, which is the last safety net):
+helps in person if needed, which is the last safety net). **No clue beyond the songs** (Aitor,
+2026-11-19): the motif already repeats in every song and Gerard has to notice it by himself. The
+only hints in the game are generic, that the Queen is very sensitive to music (docs/quests/bernat.md
+§ Round 5), never about the melody or the device; Aitor, beside him, decides whether to help:
 
 - **The music teaches.** Every track carries the 6-note motif, so a player has heard it for hours
   before the end without knowing it.

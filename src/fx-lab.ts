@@ -6,6 +6,7 @@ import type { StatWay } from './stat-fx';
 import { SOUNDS, type Sfx, type SoundId } from './sfx';
 import { DUALS, FOE_ABILITIES, type BattleEffect, type DualId, type Element as AttackElement, type FoeAbilityId } from './battle';
 import { DUAL_BANNER, DUAL_SLOW } from './battle-motion';
+import { mountEcoLab } from './eco-lab';
 
 type Game = Awaited<ReturnType<typeof createGame>>;
 
@@ -98,6 +99,8 @@ export function mountFxLab(game: Game, sfx: Sfx) {
       <div class="fx-lab-grid">${(Object.keys(REACTIONS) as ReactionId[]).map(r => `<button type="button" data-reaction="${r}" title="${REACTIONS[r].status} + ${REACTIONS[r].element}: ${REACTIONS[r].shows}">${REACTIONS[r].name}</button>`).join('')}</div>
     </div>`;
   document.body.append(panel);
+  // Sincopante's ecos (src/eco-lab.ts), at the top of the panel.
+  const ecoLab = mountEcoLab(game, panel.querySelector<HTMLElement>('.fx-lab-body')!);
   // Clicks here stay here: the fight's own menu never hears them.
   for (const type of ['keydown', 'pointerdown', 'click'] as const) panel.addEventListener(type, event => event.stopPropagation());
 
@@ -248,6 +251,6 @@ export function mountFxLab(game: Game, sfx: Sfx) {
 
   refresh(); applyHud();
   return {
-    destroy() { clearInterval(timer); panel.remove(); game.frame(); const battle = document.querySelector<HTMLElement>('#battle'); if (battle) battle.style.visibility = ''; },
+    destroy() { clearInterval(timer); ecoLab.destroy(); panel.remove(); game.frame(); const battle = document.querySelector<HTMLElement>('#battle'); if (battle) battle.style.visibility = ''; },
   };
 }

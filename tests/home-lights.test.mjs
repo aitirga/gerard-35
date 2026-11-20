@@ -89,7 +89,7 @@ test('hits flash in front of the player, timed to the contact', () => {
   assert.ok(hitFlash(fire, state).cycles > hitFlash({ ...fire, burn: undefined }, state).cycles, 'a fire that catches flickers longer');
   assert.ok(hitFlash({ ...fire, burn: { id: 'quemado', level: 3 } }, state).cycles > hitFlash(fire, state).cycles, 'and longer the higher it burns');
   assert.equal(hitFlash(fire, state, 'suave').kind, 'breathe', 'no strobe when the lights are soft');
-  assert.equal(impactSeconds({ kind: 'skill', actor: 'gerard', target: 'gerard', skill: 'escondite', boosted: ['gerard'] }), .2);
+  assert.equal(impactSeconds({ kind: 'skill', actor: 'gerard', target: 'gerard', skill: 'analisis', boosted: ['gerard'] }), .2);
 });
 
 test('a dual flickers the whole room gold and orange as its banner settles', () => {

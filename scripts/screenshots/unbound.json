@@ -1,6 +1,6 @@
 {
   "title": "Ayuda «Sin límites»",
-  "description": "The picker's Combate page during a fight (docs/dev-tools.md): *Sin límites* puts every ánima at its top level in the kit of whoever can wear it, keeps the maná of all of them full, and lifts the skills' limits of use (a cure on anyone standing, a boost or a mark again while it runs, every dual as often as wanted; `BattleState.unbound`). The fight starts with Matemágico at level 1 and Papagato locked; with the help on, Gerard can switch to Papagato and sees all six of its skills, none blocked, and taking it off gives the fight's own ánimas back.",
+  "description": "The picker's Combate page during a fight (docs/dev-tools.md): *Sin límites* puts every ánima at its top level in the kit of whoever can wear it, keeps the maná of all of them full, and lifts the skills' limits of use (a cure on anyone standing, a boost or a mark again while it runs, every dual as often as wanted; `BattleState.unbound`). The fight starts with Matemágico at level 1 and Papagato locked; with the help on, Gerard can switch to Papagato and sees all four of its skills, none blocked, and taking it off gives the fight's own ánimas back.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Afalse%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%7D"
@@ -57,7 +57,7 @@
     {
       "shot": "papagato",
       "delay": 900,
-      "caption": "Papagato, locked in this fight's setup, now in Gerard's kit at level 3: six skills, Ronroneo de Yuki usable with nobody hurt"
+      "caption": "Papagato, locked in this fight's setup, now in Gerard's kit at level 3: four skills, Ronroneo usable with nobody hurt"
     },
     {
       "eval": "document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))"

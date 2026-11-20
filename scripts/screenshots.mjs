@@ -77,7 +77,8 @@ const steps = {
     await page.emulateMedia({ reducedMotion: step.reducedMotion ?? 'no-preference' });
     const url = new URL(step.open, base);
     await page.goto(url.href, { waitUntil: 'domcontentloaded' });
-    await until(step.ready ?? '!!window.gerard', 30000);
+    // The game is ready once the story has stood Gerard where it starts (main.ts `startStory`): before that a teleport is undone.
+    await until(step.ready ?? '!!window.gerard?.started', 30000);
   },
   async teleport(step) {
     const [x, z] = step.cell;

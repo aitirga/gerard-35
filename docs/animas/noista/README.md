@@ -33,7 +33,7 @@ No-ta is the only thing that breaks the Queen's gum shell (pringue).
 
 | Level | Skill | Cost | Base | Description |
 | --- | --- | --- | --- | --- |
-| 1 | No-ta | 10 | 40 magic | `Daño alto mágico a un enemigo. Rompe el pringue.` |
+| 1 | No-ta | 10 | 40 magic | `Daño mágico no elemental alto a un enemigo. Rompe el pringue.` |
 | 2+ | _open_ | | | |
 
 ## Combined skills

@@ -252,11 +252,12 @@ the fight's screen knows, the screen does (`sound`).
 | `fire-cast`, `fire-hit`, `fizzle`, `melt` | Foc Binari: gathering; landing and lighting; going out on wet layers; melting the gum. |
 | `burn` | Quemado pulses. |
 | `think` | *Análisis Parálisis*, *Ángulo exacto*. |
-| `cast-soft`, `heal` | *Cardioide*: gathering and curing; `heal` also *Ronroneo de Yuki*. |
+| `cast-soft`, `heal` | *Cardioide*: gathering and curing; `heal` also *Ronroneo*. |
 | `meow`, `meow-soft` | Haru or Yuki going: every Papagato skill (`meow-soft`, Yuki's purr). |
-| `claw` | *Zarpazo sangriento*, each of *Zarpazos*' claws, *Las dos a la vez*. |
+| `claw` | *Zarpazo sangriento*, each of *Zarpazos*' claws. |
 | `claw-deep` | *Zarpa en la llaga*. |
-| `bleed` | Sangrado at the end of a round. |
+| `bleed` | A wound spent as the blow lands, and Sangrado at the end of a round: wet, a splash more than a note. |
+| `crit` | A golpe crítico, on the frame the fight stops, before anything else of the blow: a dry crack, its weight below and a thin ring left over the hold. A flurry's later ones as each claw lands. |
 | `peel` | A layer comes off an onion. |
 | `slam` | A big onion or a palace guard coming down (an Aplastón too); Vertitrón's blows on both (Barrido, and with `crack` its Rayo terrorífico). |
 | `bark`, `spit`, `splash`, `glitch`, `gust` | A dog; the minion; the dishes; the arcade ghosts; Vertitrón. |

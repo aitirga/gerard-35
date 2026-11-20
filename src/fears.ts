@@ -15,6 +15,9 @@ import { createLucaFoes } from './luca-foes';
  * (`Cabeza de chicle`, `Charco pringoso`) so the fight animates them the same way: a wobbling head, a
  * base on the ground.
  */
+/** The glowing violet eye over each of Uri's painted ones while he is held (`uriEyes`). */
+const POSSESSED_EYE = 'Ojo poseído';
+
 export function createFears(app: pc.Application) {
   const materials: pc.StandardMaterial[] = [];
   const mat = (hex: string, gloss = .4, glow = 0, opacity = 1) => {
@@ -146,25 +149,26 @@ export function createFears(app: pc.Application) {
   part(head, 'Chimenea', 'box', lime, [-.42, .86, -.3], [.22, .4, .22]);
   part(head, 'Sombrero de la chimenea', 'box', tileDark, [-.42, 1.08, -.3], [.3, .06, .3]);
   part(head, 'Azotea', 'box', tileDark, [0, .7, 0], [1.4, .06, 1.1]);
-  // Uri up there, Nil in his arms, his eyes violet like the possessed dogs' (`uriEyes`).
+  // Uri up there, Nil in his arms (his file `carries` him), his eyes violet like the possessed dogs' (`uriEyes`).
   const uri = pivot(head, 'Uri arriba', [0, .73, .12]);
   const uriSpec = Object.values(import.meta.glob<CharacterSpec>('./characters/uri.json', { eager: true, import: 'default' }))[0];
   const uriRig = buildCharacter(uriSpec, uri);
   materials.push(...uriRig.materials);
-  uri.setLocalScale(1.12, 1.12, 1.12);
-  // Arms forward and in round Nil.
-  [uriRig.limbs[1], uriRig.limbs[3]].forEach((arm, i) => arm.setLocalEulerAngles(-62, 0, i ? -22 : 22));
-  const uriEyeScale = uriRig.eyes[0]?.getLocalScale().clone() ?? new pc.Vec3(1, 1, 1);
+  uri.setLocalScale(1.3, 1.3, 1.3);
   const violetEyes = mat('#5a2a8a', .8, 2.4);
   violetEyes.emissive.fromString('#b07aff'); violetEyes.update();
-  const brownEyes = uriRig.eyes[0]?.render?.meshInstances[0].material as pc.StandardMaterial;
+  // His eyes are painted on: a glowing violet one over each, a little wider, while the Queen holds him.
+  const [w, h, d] = uriSpec.lids?.size ?? [.05, .07, .02];
+  for (const eye of uriRig.eyes) {
+    const glow = new pc.Entity(POSSESSED_EYE);
+    glow.addComponent('render', { type: 'sphere', material: violetEyes, castShadows: false, receiveShadows: false });
+    glow.setLocalPosition(0, 0, d * .2); glow.setLocalScale(w * .9, h * .8, d * .6);
+    eye.addChild(glow);
+  }
   /** Uri's eyes: violet, wider and glowing, while he is in the Queen's hold; his own once he is free. */
   function uriEyes(model: pc.Entity, free: boolean) {
     const up = model.findByName('Uri arriba') ?? model;
-    for (const node of up.find(n => n.name === 'Ojo') as pc.Entity[]) {
-      node.render?.meshInstances.forEach(m => { m.material = free ? brownEyes : violetEyes; });
-      node.setLocalScale(uriEyeScale.x * (free ? 1 : 2), uriEyeScale.y * (free ? 1 : 2.1), uriEyeScale.z * (free ? 1 : 1.6));
-    }
+    for (const node of up.find(n => n.name === POSSESSED_EYE) as pc.Entity[]) node.enabled = !free;
   }
   uriEyes(vertigo, false);
 

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { act, createBattle, createFearBattle, validTargets, SKILLS, improve } from '../src/battle.ts';
-import { FOE_XP, LEVEL_XP, LEVELLED, MAX_LEVEL, award, fightXp, levelForXp, levelProgress, participants, skillsAt, toNextLevel, xpFloor } from '../src/levels.ts';
+import { EMPTY_LEVELS, FOE_XP, LEVEL_XP, LEVELLED, MANA_LEVEL, MAX_LEVEL, award, topOf, levelOf, fightXp, levelForXp, levelProgress, participants, skillsAt, toNextLevel, xpFloor } from '../src/levels.ts';
 
 const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
 
@@ -9,16 +9,23 @@ test('EXP reaches each level at its threshold, and the bar runs from one to the 
   assert.equal(levelForXp(0), 1);
   assert.equal(levelForXp(LEVEL_XP[0] - 1), 1);
   assert.equal(levelForXp(LEVEL_XP[0]), 2);
-  assert.equal(levelForXp(LEVEL_XP[1]), MAX_LEVEL);
+  assert.equal(levelForXp(LEVEL_XP[1]), 3);
+  assert.equal(levelForXp(LEVEL_XP.at(-1)), MAX_LEVEL);
+  assert.equal(levelForXp(LEVEL_XP.at(-1), 3), 3, 'never past the ánima\'s own top');
   assert.equal(xpFloor(1), 0); assert.equal(xpFloor(2), LEVEL_XP[0]);
   assert.equal(levelProgress(LEVEL_XP[0] / 2), .5);
   assert.equal(levelProgress(LEVEL_XP[0]), 0);
-  assert.equal(levelProgress(LEVEL_XP[1] + 999), 1, 'full at the top');
+  assert.equal(levelProgress(LEVEL_XP[1] + 999, 3), 1, 'full at the ánima\'s top');
+  assert.equal(levelProgress(LEVEL_XP.at(-1) + 999), 1, 'full at the top');
+  assert.ok(LEVEL_XP.every((xp, i) => i === 0 || xp > LEVEL_XP[i - 1]), 'each level asks for more');
 });
 
 test('every ánima has its level table: one skill or more at each level past the first', () => {
-  // Dadaísta levels, but its level table is designed and not built yet (docs/animas/dadaista/).
-  for (const id of LEVELLED.filter(id => id !== 'dadaista')) for (let level = 2; level <= MAX_LEVEL; level++) assert.ok(skillsAt(id, level).length, `${id} ${level}`);
+  // Level 4 is a point of maná, and a level left empty on purpose is named (`EMPTY_LEVELS`).
+  for (const id of LEVELLED) for (let level = 2; level <= topOf(id); level++) assert.ok(skillsAt(id, level).length || level === MANA_LEVEL || EMPTY_LEVELS[id]?.includes(level), `${id} ${level}`);
+  assert.equal(topOf('papagato'), 3); assert.equal(topOf('dadaista'), 7); assert.equal(topOf('matemagico'), 1);
+  assert.equal(levelOf('dadaista', flag => flag === 'dadaista-5'), 5, 'the highest flag held is the level');
+  assert.deepEqual(skillsAt('dadaista', 7), ['meteorito', 'meteoro', 'asteroide']);
   assert.deepEqual(LEVELLED, ['papagato', 'dadaista'], 'the shared ánimas level; the own ánimas grow by their tree at the jar');
   assert.deepEqual(skillsAt('papagato', 2), ['zarpazos', 'ronroneo']);
   assert.deepEqual(skillsAt('matemagico', 2), []);
@@ -56,10 +63,12 @@ test('award: EXP whole to each, levels crossed and what they teach; the top leve
   assert.equal(m.xpBefore, xpFloor(3), 'from the floor of a level the story gave');
   assert.equal(m.xpAfter, m.xpBefore); assert.equal(m.levelAfter, 3); assert.deepEqual(m.learned, []);
   const jump = award(['papagato'], 9999, {}, {})[0];
-  assert.equal(jump.levelAfter, MAX_LEVEL); assert.deepEqual(jump.learned, ['zarpazos', 'ronroneo', 'llaga', 'a-la-vez']);
+  assert.equal(jump.levelAfter, 3); assert.deepEqual(jump.learned, ['zarpazos', 'ronroneo', 'llaga']);
   assert.equal(toNextLevel(10, 1), LEVEL_XP[0] - 10);
   assert.equal(toNextLevel(0, 2), LEVEL_XP[1] - LEVEL_XP[0]);
   assert.equal(toNextLevel(0, MAX_LEVEL), 0);
+  assert.equal(toNextLevel(0, 3, 3), 0, 'nothing past the ánima\'s top');
+  assert.equal(award(['dadaista'], LEVEL_XP.at(-1), {}, {})[0].levelAfter, 7);
 });
 
 test('Cardioide cures someone hurt and standing, never the fallen; Análisis Parálisis raises the party', () => {

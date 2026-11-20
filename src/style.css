@@ -478,6 +478,9 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="reaccion"], .summary-tags [data-status="reaccion"] { --status: #efe2b0; }
 .unit-statuses i[data-status="bombona"] { animation: chip-warn 1s ease-in-out infinite; }
 .unit-statuses i[data-status="punto-debil"], .summary-tags [data-status="punto-debil"] { --status: #fff1b8; }
+/* Dadista's Racha: the astral's bluish white (docs/animas/dadaista/ § The astral look), never an element's colour. */
+.unit-statuses i[data-status="racha"], .summary-tags [data-status="racha"], .damage-pop[data-status="racha"] { --status: #bfe0ff; }
+.unit-statuses i[data-status="meteoro"], .summary-tags [data-status="meteoro"], .damage-pop[data-status="meteoro"] { --status: #f4f9ff; }
 .unit-statuses i[data-status="shock"], .summary-tags [data-status="shock"], .damage-pop[data-kind="status"][data-status="shock"] { --status: #ffe45c; }
 .unit-statuses .status-icon[data-status="punto-debil"] { animation: status-pulse 1.2s ease-out infinite; }
 @keyframes chip-warn { 50% { box-shadow: 0 0 0 1px var(--status), 0 0 10px color-mix(in srgb, var(--status) 60%, transparent); } }
@@ -594,6 +597,24 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
   78% { opacity: 1; translate: 0 -10px; }
   100% { opacity: 0; translate: 0 -30px; }
 }
+/* A golpe crítico (docs/animas/README.md § Golpe crítico): the number is 1.8 times a blow's, white,
+   slammed on at a slant in the tenth of a second the fight takes to stop, held, then let go. */
+.damage-pop[data-kind="crit"] strong { font-size: 54px; color: #fff; -webkit-text-stroke-width: 7px; text-shadow: 4px 4px 0 #162823cc, 0 0 26px #ffffffb0; }
+.damage-pop[data-kind="crit"] small { font-size: 12px; font-weight: 900; letter-spacing: .24em; color: #fff; text-shadow: 0 1px 2px #102019, 0 0 8px #102019, 0 0 14px #ffffff80; animation-delay: .04s; }
+.damage-pop[data-kind="crit"][data-status="sangrado"] small { color: #ff8f8f; }
+.damage-pop[data-kind="crit"] > * { animation: pop-crit 1.5s cubic-bezier(.2,.9,.3,1) both; }
+@keyframes pop-crit {
+  0% { opacity: 0; translate: 0 0; scale: 2.7; rotate: -9deg; }
+  6% { opacity: 1; scale: .9; rotate: -4deg; }
+  11% { scale: 1.07; }
+  16% { scale: 1; rotate: -4deg; }
+  72% { opacity: 1; translate: 0 -8px; scale: 1; rotate: -4deg; }
+  100% { opacity: 0; translate: 0 -44px; scale: .96; rotate: -4deg; }
+}
+/* A wound of five or more with Olor a sangre worn: whoever spends it lands a golpe crítico. */
+.unit-statuses i[data-status="sangrado"][data-ripe] { --status: #ff3b3b; animation: ripe-wound 1.1s ease-in-out infinite; }
+@keyframes ripe-wound { 0%, 100% { filter: drop-shadow(0 0 2px #ff3b3b); } 50% { filter: drop-shadow(0 0 7px #ff6b6b) brightness(1.35); } }
+@media (prefers-reduced-motion: reduce) { .unit-statuses i[data-status="sangrado"][data-ripe] { animation: none; filter: drop-shadow(0 0 5px #ff5b5b); } }
 .damage-pop[data-kind="stat-up"] strong { color: #9fe0ff; }
 /* A stat falling drops its name the way it went, like its chevrons (src/stat-arrows.ts). */
 .damage-pop[data-kind="stat-down"] > * { animation-name: pop-drop; }
@@ -2161,7 +2182,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 #battle[data-split] .anima-chips button::before { left: 6px; width: 7px; height: 7px; margin-top: -3.5px; }
 #battle[data-split] .skill-list button { padding: 6px 12px; }
 
-/* ── Dadaísta (docs/animas/dadaista/): its maná is dice. Ink, ivory and one vermilion, cut paper pasted a little askew. ── */
+/* ── Dadista (docs/animas/dadaista/): its maná is dice. Ink, ivory and one vermilion, cut paper pasted a little askew. ── */
 /* A die's face, at any size: ivory, its printer's ornament inked on it (src/die-faces.ts), the blank's frame in red. */
 .die-face, .vitals-pips i[data-face] {
   display: inline-grid; place-items: center; background-color: #efe6cf; border-radius: 22%;

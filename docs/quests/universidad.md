@@ -383,7 +383,7 @@ has four directions grown from the proposals below, waiting for a choice.
 | --- | --- | --- | --- |
 | Idea | The table where everyone finally sits: a support ánima that plays with turns and dice, the friends' own game | The melon photo: everyone in the frame at once | The plan that never happens until it does |
 | Fantasy | Gerard deals the round: who goes next, what the dice say | One moment where the whole party is together | Something promised that comes when it is most needed |
-| Skills (AGENTS.md shape) | *Tirada* · `Daño medio físico a un enemigo. La fuerza depende de dos dados.` · *Otra ronda* · `Sube Velocidad de todo el equipo durante 2 rondas.` | *Foto de grupo* · `Sube Fuerza, Magia y Defensa de todo el equipo durante 2 rondas.` (once a fight) | *A ver si quedamos* (abstract) · *«Algún día.»*: a few rounds later, it comes back as a heal and a guard on the whole party |
+| Skills (AGENTS.md shape) | *Tirada* · `Daño físico medio a un enemigo. La fuerza depende de dos dados.` · *Otra ronda* · `Sube Velocidad de todo el equipo durante 2 rondas.` | *Foto de grupo* · `Sube Fuerza, Magia y Defensa de todo el equipo durante 2 rondas.` (once a fight) | *A ver si quedamos* (abstract) · *«Algún día.»*: a few rounds later, it comes back as a heal and a guard on the whole party |
 | Shared mechanic | Dice shown on screen (readable, as Álvaro's Tirada) | Once per fight, like the duals | A delayed effect with a visible countdown chip |
 | Look | A tablecloth cape, cards in a belt, a die on a cord | A camera on a strap | — |
 | World key | A board-game shop's door in the city that only opens to a player | — | — |
@@ -494,7 +494,7 @@ then the rest. Each step is one or more commits, each playable from the picker.
 3. **Balance** (`TARGETS` `sobremesa-*`, `just fight-sim check`): with the duo party at Papagato 2 and
    Matemágico 2, thinking it through wins always with two thirds of the PV left in about 10 rounds;
    without thinking about half; only Atacar never. Like Vertitrón, longer. Area attacks matter here
-   (Papagato 3's *Las dos a la vez* makes it easy).
+   (Papagato 3's *Las dos a la vez* made it easy; cut 2026-11-20, so Papagato has no area attack now).
 4. **On screen** (`src/glb.ts`, `src/battle-scene.ts`): the GLB fetched when its fight first comes, one
    body standing as a giant, each friend a part on their bone (plates, blows, fire there), their moves
    shouted over them, a freed friend limp, the whole body flashing for a blow on any of them. Fight

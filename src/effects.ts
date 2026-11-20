@@ -35,6 +35,8 @@ const KINDS = {
   shock: { shape: 'ring', orient: 'ground', colour: ['#fff1c8', '#ffc861'], additive: 1, glow: 1, intensity: 2, life: [.38, .46], size: [.3, .34], sizeEnd: 5, fadeOut: .8 },
   ward: { shape: 'ring', colour: ['#e4f5ff', '#8fc8ff'], additive: 1, glow: 1, intensity: 2, life: [.32, .4], size: [.75, .8], sizeEnd: 1.25, fadeOut: .7, front: .9 },
   star: { shape: 'star', colour: ['#fff6cf', '#ffd76a'], additive: 1, glow: 1, intensity: 2.5, life: [.5, .9], size: [.1, .17], growIn: .1, fadeOut: .5, speed: [.4, 1.2], rise: [.6, 1.4], gravity: 1.5, drag: 2, spin: [60, 180], flicker: .4, flickerRate: 6, front: .6 },
+  // The astral (Dadista, docs/animas/dadaista/ § The astral look): four-point stars of bluish white that twinkle, hang a moment and fall slowly.
+  astral: { shape: 'star', colour: ['#f4f9ff', '#bfe0ff', '#7fb4ff'], additive: 1, glow: 1, intensity: 3.2, life: [.55, 1.15], size: [.07, .17], growIn: .08, fadeOut: .55, speed: [.3, 1.5], rise: [.1, 1.1], gravity: 1.3, drag: 2.2, spin: [40, 170], flicker: .55, flickerRate: 9, front: .6 },
   ember: { shape: 'glow', colour: ['#fff2c4', '#ffb84a'], additive: 1, glow: 1, intensity: 2.5, life: [.8, 1.4], size: [.055, .1], fadeOut: .5, speed: [.6, 1.2], rise: [1, 2.2], gravity: -.4, drag: 1.4, wander: .25, flow: .3, flicker: .2, flickerRate: 5, front: .5 },
   ink: { shape: 'puff', colour: '#c8323c', glow: .1, life: 2, size: [.035, .07], speed: [1.5, 3], rise: [1.5, 3], gravity: 9, drag: .4, collide: true, pop: true, onLand: { kind: 'splat', count: 1, inherit: true }, front: .5 },
   confetti: { shape: 'confetti', colour: '#f3cf78', glow: .2, life: [3.5, 5], size: [.05, .07], fadeOut: .2, speed: [1.5, 3.2], rise: [3.5, 5.5], gravity: 4, drag: 1.7, wander: .5, wanderRate: 2.5, flow: .3, spin: [90, 300], tumble: 1.6, collide: true, stick: true, bodies: .3 },
@@ -854,7 +856,7 @@ export function createEffects(app: pc.Application) {
     /**
      * Zarpazo sangriento (Papagato): Haru's claws tear three lines of light across whoever it hits
      * (`clawLines`), one a breath after another, round `at` (in front of their body), white to coral
-     * as Sangrado's scratches (fights show no blood). `right` and
+     * (the blood itself is src/status-fx.ts `cut`). `right` and
      * `up` are the screen's there.
      */
     claw(at: Vec, axes: { right: Vec; up: Vec }, size = 1) {
@@ -1722,7 +1724,7 @@ export function tint(hex: string, k: number) {
 }
 export type Effects = ReturnType<typeof createEffects>;
 
-/** Zarpazo sangriento's lines: white at the claw, coral behind it, as Sangrado's scratches of light (no blood). */
+/** Zarpazo sangriento's lines: white at the claw, coral behind it, the cut's own light; the blood it flings is src/status-fx.ts `cut`. */
 export const CLAW_COLOURS = ['#fff0ea', '#ff8a72'] as const;
 /**
  * Zarpazo sangriento's three claw lines (`effects.claw`) on the plane facing the camera round where

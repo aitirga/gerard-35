@@ -71,9 +71,9 @@ Bip fires (`BIP_SKILLS` in `src/battle-scene.ts`).
 
 | From | Skill | Cost | Base | Description |
 | --- | --- | --- | --- | --- |
-| Root | Rayo de energía | 2 | 18 magic | `Daño leve mágico a un enemigo. Sus estados con reloj duran 5 segundos más.` |
+| Root | Rayo de energía | 2 | 18 magic | `Daño mágico no elemental leve a un enemigo. Sus estados con reloj duran 5 segundos más.` |
 | Root | Rayo de sanación | 1 | 20 over 15 s | `Cura leve a un aliado herido. La cura llega poco a poco durante 15 segundos.` |
-| Bip | Explosión | 2 | 32 magic, all | `Daño medio mágico de tipo fuego a todos los enemigos. Los ciega durante 1 ronda. Pierdes tu siguiente turno.` |
+| Bip | Explosión | 2 | 32 magic, all | `Daño mágico de fuego medio a todos los enemigos. Los ciega durante 1 ronda. Pierdes tu siguiente turno.` |
 | Mente | Confusión | 2 | — | *Abstract*: `Ondas mentales confunden a un enemigo durante 30 segundos: golpea a los suyos.` |
 | Taller | Rayo encogedor | 1 | Defensa −25 % | *Abstract*: `Encoge a un enemigo durante 15 segundos: su Defensa baja un 25 %.` |
 | Mente | Control remoto | 2 | 34 physical, the foe's own | *Abstract*: `Bip toma el mando de un enemigo: golpea con fuerza a uno de los suyos y olvida lo que iba a hacer.` |
@@ -103,7 +103,7 @@ Bip fires (`BIP_SKILLS` in `src/battle-scene.ts`).
 
 | With | Dual | Halves | What it does |
 | --- | --- | --- | --- |
-| Matemágico | **Rayo solar** | Rayo de energía + Foc Binari | Its turn Gerard's fire streams into Bip, which turns sun yellow; as the next round starts, before anyone chooses, Bip sweeps every foe with a sun-yellow ray: high magic damage and Quemado II on each. `Daño alto mágico de tipo fuego a todos los enemigos. Se carga un turno y sale al empezar el siguiente. Los quema con fuego de nivel II.` |
+| Matemágico | **Rayo solar** | Rayo de energía + Foc Binari | Its turn Gerard's fire streams into Bip, which turns sun yellow; as the next round starts, before anyone chooses, Bip sweeps every foe with a sun-yellow ray: high magic damage and Quemado II on each. `Daño mágico de fuego alto a todos los enemigos. Se carga un turno y sale al empezar el siguiente. Los quema con fuego de nivel II.` |
 
 ## In the world
 

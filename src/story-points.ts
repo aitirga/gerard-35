@@ -11,7 +11,7 @@ import { castleEntry } from './castle.ts';
 import { PLACES } from './chapter-1.ts';
 import { ENVIRONMENTS, type EnvironmentId } from './environments.ts';
 import { FEARS, PLACES_NURIA, STREET } from './friends/nuria.ts';
-import { LEVELLED, MAX_LEVEL } from './levels.ts';
+import { topOf } from './levels.ts';
 import type { Cell } from './movement.ts';
 import { STORY_FLAGS, type EmilieRun, type LucaRun, type MartaRun, type NuriaRun, type StoryEvent, type StoryFlag, type UniRun } from './story.ts';
 import { BEACH, CAMP, CAMP_HUNTERS, PLACES_CAMP, PLACES_UNI } from './friends/universidad.ts';
@@ -138,8 +138,10 @@ export const STORY_ARCS = [
   { id: 'papagato', chapter: 2, title: 'Papagato crece', detail: 'Experiencia de combate', after: 'papagato', steps: [
     { flags: ['papagato-2'], label: 'Papagato, nivel 2' }, { flags: ['papagato-3'], label: 'Papagato, nivel 3' },
   ] },
-  { id: 'dadaista', chapter: 2, title: 'Dadaísta crece', detail: 'Experiencia de combate', after: 'anima-universidad', steps: [
-    { flags: ['dadaista-2'], label: 'Dadaísta, nivel 2' }, { flags: ['dadaista-3'], label: 'Dadaísta, nivel 3' },
+  { id: 'dadaista', chapter: 2, title: 'Dadista crece', detail: 'Experiencia de combate', after: 'anima-universidad', steps: [
+    { flags: ['dadaista-2'], label: 'Dadista, nivel 2' }, { flags: ['dadaista-3'], label: 'Dadista, nivel 3' },
+    { flags: ['dadaista-4'], label: 'Dadista, nivel 4' }, { flags: ['dadaista-5'], label: 'Dadista, nivel 5' },
+    { flags: ['dadaista-6'], label: 'Dadista, nivel 6' }, { flags: ['dadaista-7'], label: 'Dadista, nivel 7' },
   ] },
 ] as const satisfies readonly Arc[];
 
@@ -345,7 +347,7 @@ export function missionJump(anima: AnimaId, partId: string, withAnimas: readonly
 }
 
 /** The highest level an ánima can reach (those without a level table stay at 1). */
-export const topLevel = (id: ClassId) => LEVELLED.includes(id) ? MAX_LEVEL : 1;
+export const topLevel = (id: ClassId) => topOf(id);
 /**
  * Where a mission is now, as the part a jump to it would start at: the last one the flags and the
  * run have reached (`undefined` before the mission can start).

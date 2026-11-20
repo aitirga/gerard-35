@@ -1,19 +1,243 @@
 {
-  "title": "Papagato · Haru and Yuki in a fight",
-  "description": "Nuria's ánima (docs/animas/papagato/): Gerard wears Papagato and the cats sit beside him, Haru ahead and Yuki behind. Zarpazo sangriento sends Haru at a foe and leaves Sangrado stacks under its nameplate; the cushion-soft orange interface. At level 3 (papagato-3), the four skills; Las dos a la vez reaches both dogs.",
+  "title": "Papagato · la ficha del ánima",
+  "description": "El ánima de Nuria tal como está construida (docs/animas/papagato/): el aspecto, Haru y Yuki, la interfaz, sus cuatro habilidades a nivel 3 una a una, el Sangrado líquido, el golpe crítico y su fila en la página de Ánimas. La plantilla de ficha que sigue cada ánima (/anima § Ficha).",
   "steps": [
+    {
+      "open": "/?story=papagato-3&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.aim = () => document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click(); ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 400; }); });"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "equipo",
+      "delay": 1500,
+      "caption": "Papagato puesto: Haru un paso por delante, Yuki detrás, y la interfaz del ánima (papel crema, tarjetas redondeadas)"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: at.x, y: at.y + .9, z: at.z }, 1.25); }"
+    },
+    {
+      "shot": "aspecto",
+      "delay": 1500,
+      "caption": "El aspecto: naranja de Haru, blanco de Yuki, una oreja de cada una, cola anillada y collar con cascabel"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: at.x, y: at.y + .35, z: at.z }, 2.6); }"
+    },
+    {
+      "shot": "gatas",
+      "delay": 1500,
+      "caption": "Haru y Yuki junto a quien lo lleva"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 400,
+      "caption": "Las cuatro habilidades a nivel 3, con su coste en maná"
+    },
+    {
+      "eval": "window.aimAlly = () => document.querySelector('.battle-target[data-side=\"allies\"]:not(:disabled)')?.click(); ui.tweak(s => { window.foe = s.foes[0].id; });"
+    },
+    {
+      "eval": "window.skill('zarpazo')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "zarpazo-sangriento",
+      "seconds": 2.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim()",
+      "caption": "Nv 1 · Zarpazo sangriento: el corte abre la herida (Sangrado +2) y la sangre sale despedida en la dirección del golpe"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 400; }); });"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('zarpazos')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "zarpazos",
+      "seconds": 2.8,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim()",
+      "caption": "Nv 2 · Zarpazos: cuatro garras, y ahora corta (Sangrado +1): la herida se acumula, no se gasta"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 400; }); }); ui.tweak(s => { s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 6 }; s.foes[0].cutRound = s.round; });"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "sangrado",
+      "delay": 300,
+      "caption": "Sangrado 6 bajo la placa: la sangre brota, resbala por el cuerpo y gotea"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt(window.foe); if (at) window.gerard.game.frame({ x: at.x, y: at.y + .5, z: at.z }, 2.2); }"
+    },
+    {
+      "shot": "sangre-de-cerca",
+      "delay": 2600,
+      "caption": "De cerca: gotas oscuras que bajan por sus piezas y manchas en el suelo que se extienden y se secan"
+    },
+    {
+      "eval": "window.gerard.game.frame(); ui.tweak(s => { s.sureCrits = true; });"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "window.skill('llaga')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "golpe-critico",
+      "seconds": 2.8,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim()",
+      "caption": "Golpe crítico gastando la herida (Zarpa en la llaga): el combate se para 0,22 s, la imagen pierde el color menos ellos dos, el corte de luz, el número grande con «¡Crítico! · Sangrado +N%» y la herida revienta"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 400; }); }); ui.tweak(s => { s.sureCrits = true; });"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('zarpazos')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "zarpazos-criticos",
+      "seconds": 3,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim()",
+      "caption": "Una ráfaga de críticos: solo el primero para el combate entero; los siguientes, una pausa corta"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 400; }); }); ui.tweak(s => { s.sureCrits = undefined; s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .4); }); });"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('ronroneo')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "ronroneo",
+      "seconds": 2.8,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aimAlly()",
+      "caption": "Nv 2 · Ronroneo: Yuki va hasta los pies de quien se cura; cura de golpe y deja Sanación 15 s"
+    },
     {
       "open": "/?story=papagato-3&solo=1"
     },
     {
       "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
-      "timeout": 60000
+      "timeout": 90000
     },
     {
-      "eval": "localStorage.removeItem('gerard35.loadout.v1')"
+      "eval": "window.gerard.story.wear('gerard', 'papagato')"
     },
     {
-      "wait": 1000
+      "wait": 800
     },
     {
       "press": "KeyC"
@@ -23,89 +247,12 @@
       "gap": 600
     },
     {
-      "eval": "document.querySelector('[data-wear=\"aitor\"][data-class-id=\"matemagico\"]').click(); document.querySelector('[data-wear=\"gerard\"][data-class-id=\"papagato\"]').click();"
+      "eval": "document.querySelector('[data-pick=\"gerard\"][data-class-id=\"papagato\"]')?.focus()"
     },
     {
-      "shot": "status-papagato",
+      "shot": "estado",
       "delay": 1200,
-      "caption": "The Ánimas page: Gerard wears Papagato, level 3, with its five skills"
-    },
-    {
-      "press": "Escape"
-    },
-    {
-      "eval": "window.gerard.battleUI.open(window.gerard.story.battleParty(true), 2, { animas: window.gerard.story.classes, levels: window.gerard.story.levels })"
-    },
-    {
-      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
-      "timeout": 60000
-    },
-    {
-      "shot": "battle-cats",
-      "delay": 1500,
-      "caption": "Haru a step ahead of Gerard, Yuki a step behind, and the Papagato interface"
-    },
-    {
-      "until": "document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === 'gerard'",
-      "timeout": 20000
-    },
-    {
-      "press": "Digit2"
-    },
-    {
-      "shot": "battle-papagato-skills",
-      "delay": 1200,
-      "caption": "Papagato's skills: Zarpazo sangriento and Yuki se esconde"
-    },
-    {
-      "press": "Digit1",
-      "gap": 400
-    },
-    {
-      "press": "Enter",
-      "gap": 300
-    },
-    {
-      "shot": "battle-zarpazo",
-      "delay": 450,
-      "caption": "Zarpazo sangriento: Haru pounces on the dog"
-    },
-    {
-      "shot": "battle-sangrado",
-      "delay": 1800,
-      "caption": "Sangrado 2 under the dog's nameplate"
-    },
-    {
-      "until": "document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === 'aitor' && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
-      "timeout": 60000
-    },
-    {
-      "press": "Digit4"
-    },
-    {
-      "press": "Enter",
-      "gap": 300
-    },
-    {
-      "until": "document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === 'gerard' && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
-      "timeout": 60000
-    },
-    {
-      "press": "Digit2"
-    },
-    {
-      "press": "Digit5",
-      "gap": 400
-    },
-    {
-      "shot": "battle-a-la-vez",
-      "delay": 500,
-      "caption": "Las dos a la vez: Haru and Yuki go for both dogs"
-    },
-    {
-      "shot": "battle-a-la-vez-after",
-      "delay": 1500,
-      "caption": "Both dogs bleed"
+      "caption": "La página de Ánimas: Papagato en el hueco extra de Gerard, su nivel y lo que sabe"
     }
   ]
 }

@@ -13,7 +13,7 @@ import type { ItemId } from './items';
 import type { CampingEncounter, CuerdasEncounter, ModeloEncounter, LucaEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
 import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
-import { award, levelFlag, levelOf } from './levels.ts';
+import { award, levelFlag, levelOf, type Level } from './levels.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
@@ -29,7 +29,7 @@ import { CASTLE_BOSSES, castleEntry, castlePhaseAt, extraSlots, isCastlePlace, n
 import { nightMight } from './night.ts';
 import { castleEnvironmentFor } from './castle-floor.ts';
 import { castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
-import { CALLE, FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
+import { CALLE, FEARS, LINES_NURIA, MAZE, NURIA_SCALE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
 import { COSTS, DAY_END, DAY_START, EVENING, LATE, NIGHT, WOKE_LATE, dusk, freshDays, isNight, readDays, spread, stage, type Activity, type Days } from './days.ts';
 import { CAMPING_DOOR, CAMPING_GATE, ENVIRONMENTS, type Environment } from './environments.ts';
@@ -46,7 +46,7 @@ export const STORY_FLAGS = [
   // Nuria's mission (docs/quests/nuria.md): Papagato is the party's for good.
   'papagato',
   // Ánima levels reached (src/levels.ts).
-  'papagato-2', 'papagato-3', 'matemagico-2', 'matemagico-3', 'dadaista-2', 'dadaista-3',
+  'papagato-2', 'papagato-3', 'matemagico-2', 'matemagico-3', 'dadaista-2', 'dadaista-3', 'dadaista-4', 'dadaista-5', 'dadaista-6', 'dadaista-7',
   // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the two lights
   // that went with Gerard and Aitor (docs/quests/nuria.md).
   'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri',
@@ -487,7 +487,7 @@ export class Story {
   /** What the ecos add up to in a fight. */
   get improved(): Improved { return improvedBy(this.improvements); }
   /** How much maná an ánima holds with what the ecos added. */
-  manaOf(id?: ClassId) { return manaMax(this.improved, id); }
+  manaOf(id?: ClassId) { return manaMax(this.improved, id, this.levels); }
   /** Puts ecos into `id`: only one awake, with what it needs first, and ecos enough. Returns whether it took. */
   improve(id: string) {
     const item = improvementOf(id), now = this.improvements;
@@ -546,7 +546,7 @@ export class Story {
     for (const growth of award(worn.filter(id => this.storyClasses.includes(id)), xp, this.xp, this.storyLevels)) {
       this.xp[growth.id] = growth.xpAfter;
       for (let level = growth.levelBefore + 1; level <= growth.levelAfter; level++) {
-        this.set(levelFlag(growth.id, level as 2 | 3) as StoryFlag);
+        this.set(levelFlag(growth.id, level as Level) as StoryFlag);
         effects.push({ kind: 'learn', classId: growth.id, level, skills: SKILLS.filter(skill => skill.class === growth.id && 'level' in skill && skill.level === level).map(skill => skill.id), ...quiet ? { quiet } : {} });
       }
     }
@@ -1421,8 +1421,8 @@ export class Story {
   private nuriaNpcs(): StoryNpc[] {
     const { nuria, haru } = PLACES_NURIA, run = this.nuria, won = this.has('nuria-uri');
     const at = (c: Cell, dx: number, dz: number) => ({ x: c.x + dx, z: c.z + dz });
-    const list: StoryNpc[] = [{ id: 'nuria', character: 'nuria', environment: STREET, cell: { ...nuria.cell }, scale: 1.12 }];
-    if (won) list.push({ id: 'uri', character: 'uri', environment: STREET, cell: at(nuria.cell, -2, 0), scale: 1.12 });
+    const list: StoryNpc[] = [{ id: 'nuria', character: 'nuria', environment: STREET, cell: { ...nuria.cell }, scale: NURIA_SCALE }];
+    if (won) list.push({ id: 'uri', character: 'uri', environment: STREET, cell: at(nuria.cell, -2, 0), scale: NURIA_SCALE });
     if (!won && !run.lent) {
       list.push({ id: 'yuki', character: '', cat: 'yuki', environment: STREET, cell: at(nuria.cell, 1, 1), scale: 1.35 });
       // Haru waits at the station, then leads the way (`guide`, drawn by the game), then sits by the door.

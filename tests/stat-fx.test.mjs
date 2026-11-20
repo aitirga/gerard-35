@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VERTIGO_TURNS, addStatus, act, createBattle, createBroodBattle, createFearBattle, enemyAct, nextRound, statNames, statShifts } from '../src/battle.ts';
+import { VERTIGO_TURNS, addStatus, act, improve, createBattle, createBroodBattle, createFearBattle, enemyAct, nextRound, statNames, statShifts } from '../src/battle.ts';
 import { CHEVRONS, STAT_MOTES, STAT_MOTE_KINDS, chevronPose, playStatChange, statChangeShape } from '../src/stat-fx.ts';
 
 const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'matemagico' }];
@@ -86,19 +86,20 @@ test('Zarpazos taking the last layer breaks it too, however many claws it took; 
   assert.equal(act(fallen, 'attack', 'cebollon').stats, undefined);
 });
 
-test('Las dos a la vez breaks the defence of each onion it peels bare', () => {
+test('a blow on every foe (Factor común) breaks the defence of each onion it peels bare', () => {
   const s = createBroodBattle(party, 'crias-1', undefined, () => .1);
-  s.levels = { papagato: 3 };
+  improve(s, { skills: ['factor-comun'] }); s.active = s.allies.findIndex(a => a.id === 'aitor');
   s.foes.forEach(f => { f.layers = 1; f.hp = f.maxHp; });
-  const all = act(s, 'skill', undefined, 'a-la-vez');
+  const all = act(s, 'skill', undefined, 'factor-comun');
   assert.deepEqual(all.stats.map(c => c.target).sort(), s.foes.map(f => f.id).sort());
   assert.ok(all.stats.every(c => c.way === 'down'));
 });
 
 test('a boost says who it raises and which stats', () => {
   const s = createBattle(party, 1, false, undefined, ['papagato', 'matemagico']);
-  const yuki = act(s, 'skill', undefined, 'escondite');
-  assert.deepEqual(yuki.stats, [{ target: 'gerard', way: 'up', stats: ['defensa'] }, { target: 'aitor', way: 'up', stats: ['defensa'] }]);
+  improve(s, { skills: ['analisis'] }); s.active = s.allies.findIndex(a => a.id === 'aitor');
+  const boost = act(s, 'skill', undefined, 'analisis');
+  assert.deepEqual(boost.stats, [{ target: 'gerard', way: 'up', stats: ['fuerza', 'magia'] }, { target: 'aitor', way: 'up', stats: ['fuerza', 'magia'] }]);
 });
 
 test('Llorera landing and Grito liberador say what they lower and raise; a blow with neither says nothing', () => {
@@ -148,28 +149,30 @@ test('what is up or down now: a boost while it runs, Llorera and Mareo by their 
   const s = createBattle(party, 1, false, undefined, ['papagato', 'matemagico']);
   const [gerard, aitor] = s.allies;
   assert.deepEqual(statShifts(s, gerard), [], 'nothing at the start');
-  act(s, 'skill', undefined, 'escondite');
-  assert.deepEqual(statShifts(s, aitor), [{ stat: 'defensa', way: 'up', amount: 4, rounds: 3, from: ['Yuki se esconde'] }]);
+  improve(s, { skills: ['analisis'] }); s.active = s.allies.indexOf(aitor);
+  act(s, 'skill', undefined, 'analisis');
+  assert.deepEqual(statShifts(s, aitor), [{ stat: 'fuerza', way: 'up', amount: 3, rounds: 3, from: ['Análisis Parálisis'] }, { stat: 'magia', way: 'up', amount: 3, rounds: 3, from: ['Análisis Parálisis'] }]);
   assert.deepEqual(statShifts(s, s.foes[0]), [], 'a party boost is only the party\'s');
-  addStatus(aitor, 'llorera', 2);
-  assert.deepEqual(statShifts(s, aitor).map(shift => [shift.stat, shift.way, shift.amount]), [['fuerza', 'down', 4], ['magia', 'down', 4], ['defensa', 'up', 4]], 'in the fight\'s order');
-  // Mareo takes one Defensa a stack: with Yuki's four, it is still up, by less, for both reasons.
-  addStatus(gerard, 'mareo', 1);
-  const defence = statShifts(s, gerard).find(shift => shift.stat === 'defensa');
-  assert.deepEqual(defence, { stat: 'defensa', way: 'up', amount: 3, rounds: 3, from: ['Yuki se esconde', 'Mareo 1'] });
+  addStatus(aitor, 'mareo', 2);
+  assert.deepEqual(statShifts(s, aitor).map(shift => [shift.stat, shift.way, shift.amount]), [['fuerza', 'up', 3], ['magia', 'up', 3], ['defensa', 'down', 2], ['espiritu', 'down', 2], ['velocidad', 'down', 4]], 'in the fight\'s order');
+  // Llorera takes two Fuerza a stack: with the boost's three, it is still up, by less, for both reasons.
+  addStatus(gerard, 'llorera', 1);
+  const strength = statShifts(s, gerard).find(shift => shift.stat === 'fuerza');
+  assert.deepEqual(strength, { stat: 'fuerza', way: 'up', amount: 1, rounds: 3, from: ['Análisis Parálisis', 'Llorera 1'] });
   gerard.hp = 0;
   assert.deepEqual(statShifts(s, gerard), [], 'nothing on someone fallen');
 });
 
 test('a boost wears off after its rounds, and a status as its stacks fade', () => {
   const s = createBattle(party, 1, false, undefined, ['papagato', 'matemagico']);
-  act(s, 'skill', undefined, 'escondite');
+  improve(s, { skills: ['analisis'] }); s.active = s.allies.findIndex(a => a.id === 'aitor');
+  act(s, 'skill', undefined, 'analisis');
   addStatus(s.allies[1], 'llorera', 1);
   for (let round = 0; round < 3; round++) {
     assert.ok(statShifts(s, s.allies[0]).length, `round ${round + 1}: still up`);
     s.phase = 'enemy'; s.enemyActions = s.foes.map(f => f.id); s.allies.forEach(a => { a.hp = a.maxHp; });
     nextRound(s);
-    if (round === 0) assert.deepEqual(statShifts(s, s.allies[1]).map(shift => shift.way), ['up'], 'one stack of Llorera lasts one round');
+    if (round === 0) assert.deepEqual(statShifts(s, s.allies[1]).map(shift => shift.way), ['up', 'up'], 'one stack of Llorera lasts one round');
   }
   assert.deepEqual(statShifts(s, s.allies[0]), [], 'three rounds, then it is gone');
 });

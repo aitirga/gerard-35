@@ -12,7 +12,7 @@ import { createJarUI } from './jar-ui';
 import { createParcelasUI } from './parcelas-ui';
 import { createCandadoUI } from './candado-ui';
 import { CAMP_HUNTERS } from './friends/universidad';
-import { MAX_LEVEL, toNextLevel } from './levels';
+import { MAX_LEVEL, toNextLevel, topOf } from './levels';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
 import { createStoryUI } from './story-ui';
 import { createEndings } from './endings';
@@ -88,10 +88,12 @@ const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.p
  * a place without one fades to silence.
  * The castle's song is haunted as much as the castle is threatening right now (src/haunt.ts).
  */
-const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-2', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo' };
+const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', alegia: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-2', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo' };
 let place: EnvironmentId | undefined;
 /** The song a place plays now: the Meridiana's street turns to its dark section at night (the way home, hunted). */
 const songFor = (id: EnvironmentId): TrackId | undefined => id === 'meridiana-calle' && story.night ? 'concrete-noche' : PLACE_SONGS[id];
+/** Whether a track is some place's own (so a story song, such as Marta's Izana at the piano, is never cut for one). */
+const placeSong = (track: TrackId | undefined) => !!track && (Object.values(PLACE_SONGS).includes(track) || track === 'concrete-noche');
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
 function scorePlace(id: EnvironmentId) {
@@ -103,7 +105,7 @@ function scorePlace(id: EnvironmentId) {
   music.haunt(castleHaunt(story));
   // A streamed take can only start after the first key or click.
   if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase) void music.play(song, { from: 'random', fade: 4 }); });
-  else if (music.playing && (Object.values(PLACE_SONGS).includes(music.playing) || music.playing === 'concrete-noche')) music.stop({ fade: 2 });
+  else if (placeSong(music.playing)) music.stop({ fade: 2 });
 }
 /**
  * The fight's song: it comes in with the fight, plays its ending on a win and fades on a fall, an
@@ -302,6 +304,7 @@ try {
     },
     target: id => game.selectTarget(id),
     aimDie: (unit, index) => game.aimDie(unit, index),
+    shakeDice: unit => game.shakeDice(unit),
     sound: id => sfx.play(id),
     awaken: id => { sfx.play('awaken'); game.awaken(id); if (!testing) storyEvent({ type: 'class', id: id as Exclude<ClassId, 'tecnopata' | 'dadaista'> }); },
     driver: id => battleDriver(playing(), id),
@@ -392,8 +395,14 @@ try {
     else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(effect.encounter, effect.night); }
     else if (effect.kind === 'palace') { await game.raisePalace(); storyEvent({ type: 'palace' }); }
     else if (effect.kind === 'gate') await game.popGate();
-    else if (effect.kind === 'travel') game.setEnvironment(effect.environment, effect.cell);
-    else if (effect.kind === 'song') void audio.unlocked.then(() => music.play(effect.track, { restart: true, fade: 0 }));
+    // The story takes them somewhere else: under its own dark or snow if there is one, through a fade if not.
+    else if (effect.kind === 'travel') { if (storyUI.covered) game.setEnvironment(effect.environment, effect.cell); else await game.travel(effect.environment, effect.cell); }
+    else if (effect.kind === 'song') void audio.unlocked.then(async () => {
+      await music.play(effect.track, { restart: true, fade: 0 });
+      // Once it has played (Marta's Izana at the piano), the place's own song comes back.
+      const back = () => { if (music.playing === effect.track) setTimeout(back, 500); else if (place && !battlePhase && !music.playing) scorePlace(place); };
+      setTimeout(back, 500);
+    });
     else if (effect.kind === 'snow') { if (effect.on) sfx.play('pickup'); await storyUI.snow(effect.on); }
     else if (effect.kind === 'drain') await game.riseFromDrain();
     else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }
@@ -520,7 +529,7 @@ try {
     game.refreshStory();
     syncArtilugio();
     // Night falling where they stand changes its song (the Meridiana's dark section).
-    if (place && !battlePhase && !devSong && songFor(place) && music.playing !== songFor(place)) scorePlace(place);
+    if (place && !battlePhase && !devSong && songFor(place) && (!music.playing || placeSong(music.playing)) && music.playing !== songFor(place)) scorePlace(place);
     showAnimas();
     // An ánima gained takes some of the castle's power, and of its song's haunt.
     if (!devSong) music.haunt(castleHaunt(story));
@@ -571,7 +580,7 @@ try {
       animas: () => ({ now: story.levels, story: story.storyLevels, xp: story.xp, changed: !!story.debugAnimas, adult: story.adult }),
       giveXp: (id, amount) => {
         const levels = story.storyLevels;
-        const effects = story.giveXp(id, amount === 'level' ? toNextLevel(story.xp[id] ?? 0, levels[id] ?? 1) : amount);
+        const effects = story.giveXp(id, amount === 'level' ? toNextLevel(story.xp[id] ?? 0, levels[id] ?? 1, topOf(id)) : amount);
         keepXp(); storyChanged();
         battleUI.setAnimas(story.classes, story.levels, { gerard: story.kitOf('gerard'), aitor: story.kitOf('aitor') });
         void (async () => { for (const effect of effects) await play(effect); })();
@@ -611,7 +620,7 @@ try {
   setWallFolding(folding);
   setLucaColour(story.has('fran'));
   /** Development: the help every fight gets (the picker's Combate page, or the tester's setup). */
-  let help: FightHelp = { free: false, immune: false, unbound: false };
+  let help: FightHelp = { free: false, immune: false, unbound: false, crit: false };
   /** A fight left from the picker: no result reaches the story. */
   let leaving = false;
   /** The players chose to fight a fall again or go back to before it (battle-ui `fallen`): that end costs nothing. */
@@ -647,14 +656,14 @@ try {
     const possessed = setup.encounter === 'possessed';
     // A frame for the new place to settle before the fight takes its stage.
     requestAnimationFrame(() => {
-      testing = setup; help = { free: setup.free, immune: setup.immune, unbound: setup.unbound };
+      testing = setup; help = { free: setup.free, immune: setup.immune, unbound: setup.unbound, crit: setup.crit };
       game.possess(possessed);
       // The maze's patrols shout their word as they fall here too (the first group of each kind's).
       const lastWord = CAMP_HUNTERS.find(h => h.encounter === setup.encounter)?.word;
       battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0),
         // At night on the Meridiana: the first of the night's groups of the castle's floor the save is on, as strong as the friends chosen and the levels leave it.
         ...setup.encounter === 'night-guard' ? { night: { room: nightGroup(1, castlePhaseAt(story)), might: nightMight(setup.adult ? setup.friends.length : 0, story.levels) } } : {} });
-      if (help.unbound) { unboundAnimas(); battleUI.tweak(applyHelp); }
+      if (help.unbound || help.crit) { if (help.unbound) unboundAnimas(); battleUI.tweak(applyHelp); }
     });
   }
   /**
@@ -662,10 +671,10 @@ try {
    * Sin límites also keeps every ánima's maná full and lifts the skills' limits of use (`unbound`).
    */
   function applyHelp(state: BattleState) {
-    state.unbound = help.unbound || undefined;
+    state.unbound = help.unbound || undefined; state.sureCrits = help.crit || undefined;
     for (const ally of state.allies) {
       if (help.free || help.unbound) ally.secondary = ally.maxSecondary;
-      if (help.unbound) for (const id of Object.keys(ally.mana ?? {}) as ClassId[]) ally.mana![id] = manaMax(state.improved, id);
+      if (help.unbound) for (const id of Object.keys(ally.mana ?? {}) as ClassId[]) ally.mana![id] = manaMax(state.improved, id, state.levels);
       if (help.immune && ally.hp > 0) ally.hp = ally.maxHp;
     }
   }
@@ -749,6 +758,7 @@ try {
     onInteraction: interactionPrompt.show,
     onInteractionScreen: interactionPrompt.position,
     onDialogue: dialogue.show,
+    onVeil: on => storyUI.veil(on),
     // A lamp in the Meridiana flat opens its dial: colour and brightness, in the game and at home.
     onStory: event => {
       const lamp = event.type === 'interact' ? lampInteraction(event.id) : undefined;
@@ -881,6 +891,11 @@ try {
     if (fight) { try { startFight(validFight(JSON.parse(fight))); } catch { /* A broken link starts no fight. */ } }
     // A mission's part can play its moment on arrival: coming up from the R4, or Vertitrón beaten.
     else if (devJump?.part?.event) storyEvent(devJump.part.event);
+    // The picture comes out of the black it opened in, two frames after the place to show is there.
+    requestAnimationFrame(() => requestAnimationFrame(() => void storyUI.open().then(() => {
+      // Scripted checks wait for this: Gerard stands where the story starts (moving him is not undone) and the picture is clear.
+      if (import.meta.env.DEV) (window as unknown as { gerard?: { started?: boolean } }).gerard!.started = true;
+    })));
   };
   // Repeatable desktop battle checks without affecting production or saved progress.
   if (import.meta.env.DEV) {
@@ -922,6 +937,8 @@ try {
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;
+  // Nothing to open onto: the dark the game starts in goes, so it cannot sit over the message.
+  void storyUI.open();
 }
 // Wait briefly for saved progress, so a returning player resumes where they left off.
 void load().then(() => startStory?.());

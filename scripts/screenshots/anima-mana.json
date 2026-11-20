@@ -33,7 +33,13 @@
       "wait": 500
     },
     {
-      "eval": "document.querySelector('[data-skill=\"escondite\"]').click()"
+      "eval": "document.querySelector('[data-skill=\"zarpazo\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
     },
     {
       "until": "window.turnOf('aitor')",
@@ -49,7 +55,7 @@
     {
       "shot": "gastado",
       "delay": 600,
-      "caption": "Yuki se esconde spent one of Papagato's; Matemágico, resting, keeps its three"
+      "caption": "Zarpazo sangriento spent one of Papagato's; Matemágico, resting, keeps its three"
     },
     {
       "eval": "{ const g = window.fightState.allies.find(a => a.id === 'gerard'); window.fightState.allies.forEach(a => { a.maxSecondary = 6; }); g.secondary = 4; g.mana = { matemagico: 5 }; window.gerard.battleUI.refresh(); }"

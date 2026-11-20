@@ -4,6 +4,23 @@ What an ánima is, which ones exist, how they grow and the mechanics they share.
 and the stats are in `docs/party.md`; the story side (grey ánimas, the second round) in
 `docs/lore.md` and `docs/chapter-2.md`. Each ánima is designed with the `/anima` skill.
 
+## Order of work (decided by Aitor, 2026-11-20)
+
+1. **Each ánima, one by one**, designed whole with `/anima`: identity, role, stats, its mechanic
+   and passives, every level, its definitiva, its look. Papagato first.
+2. **The duals**, once every ánima is designed: each ánima's folder says what it offers a pair
+   (*What it offers a dual*), and the pairs are chosen from those.
+3. **The balance**, last, with everything in: `just fight-sim` and each fight's `TARGETS`.
+
+Until step 3 every number is a first guess, and a design is not held back by one.
+
+**To read and check it all**: `just animas` opens one page (`output/reports/animas/index.html`)
+with every ánima's design beside what the game has of it today, read from the code (stats, skills
+by level or node, passives, duals, the jar), plus every dual, the shared mechanics and how ánimas
+grow, and beside each page its notes, written there and kept in `docs/anima-notes.json`. Nothing to
+keep in step by hand: reload it after changing a doc or the code (`just animas-report` only writes
+it). docs/dev-tools.md § The ánimas' sheet.
+
 ## This folder
 
 ```
@@ -44,10 +61,10 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 | --- | --- | --- | --- | --- | --- |
 | [**Matemágico**](matemagico/README.md) | Chapter 1's palace: Bernat begs Gerard to think | `#f3cf78` gold | Magia +1, Espíritu +1 | Foc Binari; Análisis Parálisis, Ángulo exacto (2); Cardioide (3) | Playable |
 | [**Noísta**](noista/README.md) | Was chapter 1's palace: Gerard shouts "¡NO!" | `#e2483d` red | Magia +2, Espíritu +2, Defensa −1 | No-ta | Hidden: retired (2026-11-01), replaced by Matemágico |
-| [**Papagato**](papagato/README.md) | Nuria's mission (Cardedeu), `docs/quests/nuria.md` | `#f0954a` orange | Velocidad +2, Fuerza +1, Espíritu −1 | Haru and Yuki | Playable |
+| [**Papagato**](papagato/README.md) | Nuria's mission (Cardedeu), `docs/quests/nuria.md` | `#f0954a` orange | Fuerza +2, Crítico +15 %, Espíritu −1 (built 2026-11-20, a first guess) | Haru and Yuki: physical blows, Sangrado and golpes críticos | Playable to level 3, redesigned 2026-11-20. Built: the golpe crítico, cuts that pile up, liquid blood, Ronroneo on one ally; Yuki se esconde and Las dos a la vez are out. Designed, not built: levels 4 to 7 (with the passive *Olor a sangre* at level 5: Crítico +20 % on whoever bleeds, sure on a wound of five) and Siete vidas |
 | [**Tecnópata**](tecnopata/README.md) | Aitor's own, from chapter 2's first morning (was the placeholder Físico) | `#4fe0ff` cyan | — | — | Designing (2026-11-05): look, drone-HUD interface and Bip, his robot, first |
-| [**Sincopante**](sincopante/README.md) | Marta's mission (Alegia, Las cuerdas), `docs/quests/marta.md` | _open_ | Proposal: Magia +2, Espíritu +2, Defensa +1, Fuerza −1 | Eco de guerra, Eco curativo; proposal up to level 7 | Designing (2026-11-14): an eco on the field that acts on the clock and repeats what it is fed |
-| [**Dadaísta**](dadaista/README.md) | The university friends' mission (Barceloneta, Càmping Eurosport), `docs/quests/universidad.md` | _open_ | Proposal: Fuerza +3, Defensa +2, Magia −1 | Tirar dado: each die's face is a move (Mano, Tijeras, Ojo, Corchete, a blank that repeats); proposal up to level 7 | Level 1 built (2026-11-15: its dice as maná, look, throw and interface; 2026-11-19: faces with icons instead of numbers, Doble o nada removed); the rest designing. Physical damage with dice. Decided: its maná is dice with their faces in view, and *Agitar*, a fixed command that does not spend the turn, spends one to roll the others again and is improved at the jar |
+| [**Sincopante**](sincopante/README.md) | Marta's mission (Alegia, Las cuerdas), `docs/quests/marta.md` | Proposal: nácar, seafoam `#8fe3c4` | Proposal: Magia +2, Espíritu +2, Defensa +1, Fuerza −1 | Ecos floating over the party that strike or cure on their own beat (Ostinato, Bordón), raised by *Crescendo*; the astral | Designed whole 2026-11-20 round Aitor's direction (floating ecos that work for the party, support too; *Crescendo*; the astral; *Da capo* bringing the duals back), waiting for his yes. Nothing built: a field entity on the clock is missing |
+| [**Dadista**](dadaista/README.md) | The university friends' mission (Barceloneta, Càmping Eurosport), `docs/quests/universidad.md` | `#efe6cf` ivory (built, to confirm); the astral, bluish white `#bfe0ff` | Fuerza +2, Magia +2, Crítico +10 %, Defensa −1 (Aitor 2026-11-20, built) | Tirar dado: each die's face is a move (Mano, Tijeras, Ojo, Corchete, a blank that repeats, the Comodín). *Racha*: every die spent is Crítico +10 % | Playable to level 3: its dice as maná, the faces, the *Racha* with its count on the plate (the ánima's rule from level 1), *Agitar* at 2 (the hand rolled again for nothing, once a fight, twice with one eco; the Comodín with Racha 3) and *Estrella fugaz* at 3 (astral; 3 of Racha for two dice). Dice, luck and the astral (Aitor 2026-11-20). Designed, waiting for the seven levels: *Dados astrales* at level 4 with Maná +1 (Aitor's), *Ases en dúo* (Aitor's), *Meteorito → Meteoro → Asteroide* at level 7 (Aitor's) and the definitiva *Un golpe de dados*. Renamed from Dadaísta |
 | _Pedro's_ | Pedro's mission (`docs/quests/pedro.md`, to write) | _open_ | _open_ | _open_ | Idea (2026-11-05): a shared ánima from Pedro, a gay friend of Gerard and Aitor they see a lot |
 
 **Who has what** (2026-11-05): Matemágico is Gerard's own and Tecnópata Aitor's (`ANIMA_OWNERS`),
@@ -114,9 +131,10 @@ Sketch: `output/mockups/bote/index.html`.
   either can turn anything on or off. `cursors`, `place`, `tipSide`.
 - **A shared ánima's constellation** has two nodes: **Maná +1** (2 ecos) and **the Definitiva**
   (3). What it has learned fighting (its levels reached, never the ones to come) is in its
-  core's note. **Dadaísta** (decided 2026-11-15) also has there a short line
-  for its fixed command, *Agitar* ([its folder](dadaista/README.md) § Agitar; proposal: three
-  nodes, 4 ecos): the first shared ánima with a line of its own. Its skills still come by level.
+  core's note. **Dadista** also has there a node for *Agitar*, *Otra vez*
+  ([its folder](dadaista/README.md) § Agitar; decided by Aitor 2026-11-20, built: 1 eco, a
+  second use a fight): the first shared ánima with a node of its own. Its skills still come by
+  level.
 - **Maná**: 3 from the start; a shared ánima gets +1 at level 4 and +1 at the jar; an own ánima
   +1 in its tree. Five is the top, and only for a shared one. Today's Maná +2 goes.
 - **The definitiva sleeps** on every page (*Todavía duerme*, as today) until the castle's first
@@ -143,9 +161,9 @@ If that feels too tight in play, lower the passives from 2 to 1 before adding li
 
 | Line | 1 eco | 1 eco | 2 ecos |
 | --- | --- | --- | --- |
-| **Fuego**, which piles up | Atacar · Fuego (built) | *Factor común*: `Daño medio mágico de tipo fuego a todos los enemigos. El fuego de todos sube al más alto.` | Passive · *Rescoldo*: his fires last 15 s, not 10 |
-| **Agua**, which sets up | Atacar · Agua (built) | *Vasos comunicantes*: `Daño leve mágico de tipo agua a todos los enemigos. Los moja.` | Passive · *Capilaridad*: Atacar with water leaves the foe Mojado |
-| **Eléctrico**, which cashes in | Atacar · Eléctrico (built) | *Descarga*: `Daño medio mágico de tipo eléctrico a un enemigo. Salta a todos los mojados.` | Passive · *Toma de tierra*: a reaction he sets off gives him 1 maná back, once a round |
+| **Fuego**, which piles up | Atacar · Fuego (built) | *Factor común*: `Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.` | Passive · *Rescoldo*: his fires last 15 s, not 10 |
+| **Agua**, which sets up | Atacar · Agua (built) | *Vasos comunicantes*: `Daño mágico de agua leve a todos los enemigos. Los moja.` | Passive · *Capilaridad*: Atacar with water leaves the foe Mojado |
+| **Eléctrico**, which cashes in | Atacar · Eléctrico (built) | *Descarga*: `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` | Passive · *Toma de tierra*: a reaction he sets off gives him 1 maná back, once a round |
 | **Cálculo** | Ángulo exacto | Análisis Parálisis, then Cardioide (1 each) | Maná +1 |
 
 - **Mojado** (20 s, § Shared mechanics): it hurts nobody; electricity on it reaches every wet
@@ -204,9 +222,11 @@ one stronger.
   get the next one, per the HUD rule in `AGENTS.md`); a note when a skill is learned.
 - Every ánima has its level table in its own folder.
 
-Built today: three levels, for Papagato and Dadaísta (`LEVELLED` in `src/levels.ts`; Dadaísta's
-levels teach nothing yet, its table is designed and not built); Matemágico and
-Tecnópata grow at the jar.
+Built today (2026-11-20): levels go to seven (`MAX_LEVEL`, `LEVEL_XP` in `src/levels.ts`; the EXP of 4 to 7
+a first guess), and each shared ánima grows as far as it has been designed (`topOf`): Papagato to 3,
+Dadista to 7. Level 4 is Maná +1 (`MANA_LEVEL`, in `manaMax`). A level left empty on purpose is
+named in `EMPTY_LEVELS`. The castle's caps (`levelCap` in `src/castle.ts`) are not wired in yet.
+Matemágico and Tecnópata grow at the jar.
 
 **Proposal: seven levels, for shared ánimas only** (2026-11-14, Aitor's direction; not built;
 Matemágico and Tecnópata do not level, § Two ways to grow). A level gives one of three
@@ -229,17 +249,60 @@ things: skills, a **passive**, or **Maná +1**. Each level costs more than the o
   Definitiva asleep. Decided 2026-11-14: for a shared ánima the jar adds only **the Definitiva**
   (never learned by level); its Maná and its sleeping Pasiva there go, levels give them. The
   own ánimas' trees keep the rest. § Definitivas, § Two ways to grow.
-- Proposed tables: [Sincopante](sincopante/README.md) § Skills per level; Papagato below.
+- Proposed tables: Papagato, Dadista and Sincopante below.
 
 | Level | Papagato |
 | --- | --- |
-| 1 | Zarpazo sangriento, Yuki se esconde |
-| 2 | Zarpazos, Ronroneo de Yuki |
-| 3 | Zarpa en la llaga, Las dos a la vez |
+| 1 | Zarpazo sangriento |
+| 2 | Zarpazos, Ronroneo (one ally: a cure at once and over time) |
+| 3 | Zarpa en la llaga |
 | 4 | Maná +1 |
-| 5 | Passive · *Olor a sangre*: Sangrado no longer loses a stack each round |
-| 6 | New · *Acecho*: Haru crouches; a high physical blow as the next round starts |
-| 7 | New · *Cacería*: one claw for each Sangrado stack on the field |
+| 5 | Passive · *Olor a sangre*: Crítico +20 % on whoever bleeds, and spending a wound of five or more is always a golpe crítico |
+| 6 | New · *Acecho*: Haru crouches; a high physical blow as the next round starts, always a golpe crítico |
+| 7 | New · *Cacería*: one claw for each Sangrado stack on the field, each a golpe crítico |
+
+Yuki se esconde and Las dos a la vez are cut (Aitor 2026-11-20; still in the game until the
+redesign is built). Its whole table, with costs and
+descriptions: [papagato/README.md](papagato/README.md) § Skills per level.
+
+| Level | Dadista (2026-11-20; all built but the empty level 6) |
+| --- | --- |
+| 1 | Tirar dado: the die spent does what its face shows. Its rule, *Racha*: every die spent is Crítico +10 % for the wearer while Dadista stays on, counted on their plate |
+| 2 | *Agitar*: rolls the whole hand again, for nothing; once a fight. With Racha 3 or more, one die is the Comodín |
+| 3 | *Estrella fugaz*: a light astral blow paid with any die; it spends 3 of Racha to deal two dice |
+| 4 | Maná +1, and *Dados astrales* (Aitor's): a rain of dice of light on foes at random, a die for each 15 % of Crítico; it spends the Racha |
+| 5 | *Ases en dúo* (Aitor's): two dice; the whole party's Crítico doubled for three rounds |
+| 6 | Nothing yet |
+| 7 | *Meteorito*, then *Meteoro*, then *Asteroide* (Aitor's): played turn after turn for 1, 2 and 3 dice, the last on every foe |
+
+Its whole table: [dadaista/README.md](dadaista/README.md) § Skills per level.
+
+| Level | Sincopante (proposal 2026-11-20; nothing built) |
+| --- | --- |
+| 1 | *Ostinato*: a light astral blow that stays as an eco, striking again every 5 s for 20 s; *Bordón*: the same with a cure |
+| 2 | *Crescendo* (Aitor's): the ecos sound stronger, then reach everyone; their clocks start over |
+| 3 | Passive · *A contratiempo*: an action pressed in the off-beat makes every eco sound once more |
+| 4 | Maná +1 |
+| 5 | New · *Acompañamiento*: an eco at an ally's side repeats each of their blows |
+| 6 | Passive · *Pedal*: while the wearer holds on, the ecos' clocks stop |
+| 7 | New · *Tutti*: a high astral blow on every foe; every eco sounds a last time, twice as strong, and goes out |
+
+Its whole table: [sincopante/README.md](sincopante/README.md) § Skills per level.
+
+### Passives
+
+A passive is always on while its ánima is worn: no cost, no button. **Few and influential**: one
+or two an ánima, each changing how it is played, never a small number added. **An ánima does not
+need one from the start** (Aitor 2026-11-20): a passive is something it grows into.
+
+| Where it comes from | Ánimas | Example |
+| --- | --- | --- |
+| **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo* |
+| **A node at the jar** (2 ecos) | Own ones | Matemágico's *Rescoldo*, Tecnópata's *Nanitos* |
+
+A passive can reach the whole party (*Olor a sangre*: anyone's blow on a foe that bleeds), and then it
+holds only while the ánima is being worn by someone standing: switching away turns it off. When
+one does something the fight says so (§ The jar, *A passive that does something says so*).
 
 ## Ecos de luz
 
@@ -323,9 +386,10 @@ and each ánima has **a condition that, met in a fight, unlocks it** there. The 
 | Ánima | Condition | Definitiva |
 | --- | --- | --- |
 | Matemágico | Three different reactions between elements in one fight | *Q.E.D.*: very high magic on every foe, of every element he has: each lays its status |
-| Papagato | A wound of five stacks or more is opened in one blow | *Siete vidas* (Yuki): the fallen get up and the whole party is cured |
+| Papagato | A wound of five Sangrado stacks or more is spent (always a golpe crítico, by its passive) | *Siete vidas*: Haru hurts every foe and leaves them bleeding; Yuki walks among the party, and the next blow that would kill someone cures them instead what it was going to take |
 | Tecnópata | Three different clock statuses running on the field at once | *Enjambre*: Bip comes apart over the foes: high magic on all, and every clock on the field starts over |
-| Sincopante | The eco stays alive 60 s without fading | *Da capo*: every ánima's maná back to full and the party's clocks start over |
+| Sincopante | Three ecos sound at once: a chord (proposal 2026-11-20) | *Da capo* (Aitor's, 2026-11-20: the duals again): every dual already used in the fight can go off once more, and every ánima of both fighters is full of maná again to pay for them |
+| Dadista | The wearer's Crítico reaches 100 % (proposal 2026-11-20) | *Un golpe de dados*: a great die of light on every foe, high magic of no element and a sure golpe crítico; the hand is filled to six dice |
 
 ## Combined skills
 
@@ -370,8 +434,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Matemágico + Papagato | **Zarpazos de fuego** | Foc Binari + Zarpazos | 1 · 2 | Built |
 | Matemágico + Papagato | **Punto débil** | Ángulo exacto + Zarpazo sangriento | 2 · 1 | Built |
 | Matemágico + Tecnópata | **Rayo solar** | Foc Binari + Rayo de energía | 1 · 1 | Built (2026-11-06): charges a turn, sweeps every foe with Quemado II as the next round starts |
-| Tecnópata + Sincopante | *Bombardeo orbital* | Explosión + Redoble | 2 · 2 | Proposal (2026-11-14): the eco takes Bip up; three volleys on every foe as the next round starts, Cegado II for 20 s |
-| Matemágico + Papagato | *Cortina de fuego*, a burning shield | Foc Binari + Yuki se esconde | 1 · 1 | Idea, parked for later |
+| Tecnópata + Sincopante | *Bombardeo orbital* | Explosión + _open_ | node · _open_ | Idea (2026-11-14), to take up at the duals step: the eco takes Bip up; three volleys on every foe as the next round starts, Cegado II for 20 s. Its half Redoble was cut on 2026-11-20 |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
 The pair table lives here; each ánima's folder lists the duals it is part of and links back.
@@ -401,10 +464,91 @@ second ánima.
   flares red and tears (`bleed`), and the next actor waits to let it be read.
 - Open to other ánimas: anything sharp, cutting or nagging can add stacks; anything else can
   feed off them.
-- Built in the story's fights: `STATUSES`, `addStatus` and the end-of-round tick in `nextRound`
-  (`src/battle.ts`); 2 PV per stack, up to 10 stacks. The fight shows the stacks as chips under
-  each nameplate and the tick as a hit at the round's end.
-- Description in skills: one short sentence, e.g. `Añade sangrado.`
+- **Cuts pile up** (decided by Aitor 2026-11-20, built; it replaces *A skill that adds Sangrado
+  spends the old stacks first*, above): a physical blow that adds Sangrado no longer spends the old
+  stacks, it piles its own on top. A physical blow that adds none spends them all, as before. So a
+  wound is built on purpose, up to its ten stacks, and spent by choice.
+- **It goes little by little, and lasts** (Aitor 2026-11-20, to tune playing; built). First
+  guess: a wound loses one stack at the end of a round in which nobody added to it, none while it
+  is being cut (`cutRound`, `nextRound`).
+- **While a Papagato of level 5 is in the fight** (its passive *Olor a sangre*, Aitor 2026-11-20): every blow
+  on whoever bleeds has Crítico +20 %, and the blow that spends a wound of five stacks or more is
+  always a golpe crítico (§ Golpe crítico).
+
+### Golpe crítico (2026-11-20, built)
+
+Aitor's direction: a blow that lands much harder than the others, **shown with a larger number and
+with the fight frozen for an instant**. Defined here for every ánima; Papagato is the first built
+round it. Numbers are first guesses.
+
+**The rule**
+
+- A **golpe crítico** is a blow that lands **50 % harder** (`CRIT_RULES.bonus`).
+- **It adds to the other bonuses, it does not multiply them**: a wound of three stacks (+60 %)
+  spent by a crítico (+50 %) lands at +110 %. Punto débil's triple and a weakness to an element
+  multiply afterwards, as today. To settle in the balance.
+- **Each strike on its own**: every claw of a flurry can be one.
+- **Only blows**: never a status's tick or pulse (Sangrado, Quemado, an eco's beat: Sincopante), a reaction's damage, or a cure.
+- **Two ways to be one:**
+  - **Guaranteed by a rule**, never luck: spending a wound of five Sangrado stacks or more while
+    a Papagato with *Olor a sangre* (level 5) is worn, a skill that says `Golpe crítico seguro.`
+    (Acecho). This is the one that carries decisions.
+  - **By chance: Crítico is an attribute** (decided by Aitor 2026-11-20), in the place Velocidad
+    leaves on the sheet. Proposal for its numbers: 5 % for everyone, more from an ánima (Papagato
+    +15 %) or equipment; rolled a strike on its own seeded stream of luck (`state.luck`, apart from the fight's
+    `roll`, so a crítico never shifts what else the dice decide), and `just fight-sim` plays it. A status can raise it against whoever carries it (Papagato's *Olor a sangre*:
+    +20 % on a foe that bleeds).
+- **Foes** have no Crítico: a foe's blow is a crítico only if one of its named moves says so, and
+  then its plate announces it like any other (`docs/combat.md` § El nombre de lo que hace el
+  enemigo). No party member falls to luck nobody could read.
+- **In descriptions**: `Golpe crítico seguro.` as an extra sentence; a boost reads `Sube Crítico de
+  todo el equipo durante 3 rondas.` like any other attribute.
+
+**How it shows** (the effect, the same for every ánima, tinted by whoever lands it)
+
+| Beat | What happens |
+| --- | --- |
+| **The freeze** | On contact the fight **stops for 0.22 s**: fighters, particles and the fight's clock (no status runs out or pulses meanwhile, as under a dual's banner). The hit-stop every heavy blow already has, held four times as long. |
+| **The picture** | During the freeze the camera pushes in about 8 % on the target, the scene dims and loses colour except for the blow and the two fighters, and the target flashes white for two frames. On release, a lurch and shake harder than a heavy blow's. |
+| **The number** | Almost twice the size of a normal one (×1.8), in the ánima's colour with a dark edge, tilted a little; it slams in from larger, overshoots and settles, and stays a third of a second longer. Over it, the named pop ***¡CRÍTICO!***, with the wound's bonus when it spent one: *¡CRÍTICO! · Sangrado +120 %*. |
+| **The sound** | Everything ducks to near silence for the freeze, music included, then one dry, sharp hit as time comes back. |
+| **The foe** | Its reaction to a blow, larger: thrown back half as far again. Its bar drops in one piece, a white ghost of what it lost fading after. |
+| **After** | The next to act waits for it to be read, as with a spent wound today. |
+
+- **A flurry** (Zarpazos, a dual's eight claws): only the first crítico of an action gets the whole
+  freeze; later ones in the same action get 0.08 s and the number, so the action never stalls.
+- **Not on every blow**: the freeze is what makes it worth setting up. If a party ends up landing
+  one every turn, the answer is fewer críticos, not a shorter freeze.
+- *Movimiento reducido* keeps the freeze and the number and drops the camera push, the flash and
+  the shake.
+- **Built** (2026-11-20): the freeze and the flurry's short one (`CRIT`, `landing` in
+  `src/hit-feel.ts`; `critBeat` in `src/battle-scene.ts`), the push-in, the colour drained all but
+  round the two fighters (the dual's spotlight in `src/post.ts`) under a white flash (`uFlash`), a
+  cut of white light across whoever is struck (`dualFx.critical`), the number (`crit` pops,
+  `pop-crit` in `src/style.css`: white, not yet the ánima's colour) and the dry hit (`crit` in
+  `src/sfx.ts`). To see it at will: the fight tester's *Crítico seguro*.
+- **Not built yet**: the music ducking under the freeze, the foe thrown back further and the white
+  ghost on its bar, and a *Movimiento reducido* of its own (today reduced motion skips the whole
+  beat and keeps the number).
+
+### The astral (magic of no element)
+
+Aitor 2026-11-20, for Dadista and then for Sincopante. **The astral is magic damage of no element.**
+It is not a new kind of damage: it is what *Rayo de energía* already does, now with a name and a
+look.
+
+- **The rule**: magic, Magia against Espíritu. With no element it sets off no reaction and meets no
+  weakness or resistance to an element. A foe's rule about magic applies to it in full (Lo
+  Cristalino sends it back).
+- **In descriptions**: `Daño mágico no elemental <intensidad> a <objetivo>.` (`AGENTS.md`). The word
+  *astral* is never shown to the player.
+- **How it shows**: each ánima draws it its own way, and the two must never be mistaken for each
+  other.
+  - **Dadista**: bluish white `#bfe0ff`, four-point stars that twinkle and fall
+    ([dadaista/README.md](dadaista/README.md) § The astral look).
+  - **Sincopante** (proposal): nácar `#8fe3c4`, thin rings that close on the foe like a halo, and
+    soft round motes that rise ([sincopante/README.md](sincopante/README.md) § Look and interface).
+  - What they share: a cold light, and no elemental pop over the number.
 
 ### Mental statuses
 
@@ -414,7 +558,7 @@ second ánima.
   never a list of names: a new mental status is cleansed by it without touching the skill. Its
   description says so in general (`Quita los efectos de estado mentales.`), and so does the fight
   (*«Se les pasan los efectos de estado mentales.»*).
-- First used by Papagato's *Ronroneo de Yuki*.
+- First used by Papagato's *Ronroneo*.
 
 ### Mareo (dizziness, mental)
 
@@ -431,7 +575,8 @@ second ánima.
 
 ### Punto débil (a mark on a foe)
 
-- Not a stacking status but a mark (`Combatant.weakSpot`), left by the dual *Punto débil*: the next
+- Not a stacking status but a mark (`Combatant.weakSpot`), left by the dual *Punto débil* and by
+  Dadista's *Ojo*: the next
   action that hurts that foe, from anyone and of any kind, lands three times as hard on every strike
   (`WEAK_SPOT`), then it is spent. Unused, it fades at the end of the next round. Sangrado ticks and
   Quemado pulses neither use it nor spend it. It shows with the foe's stats (a Defensa drop with no
@@ -492,13 +637,16 @@ Sanación (15 s, a cure in five pulses) stays: it pulses, it does not wait for a
 
 | Mechanic | Applied by | Exploited by |
 | --- | --- | --- |
-| Sangrado | Papagato (Haru) | Papagato (*Zarpa en la llaga*) |
-| Mareo (mental) | None now (it was El Vértigo's) | Papagato (*Ronroneo de Yuki* cleanses it) |
-| Llorera (mental) | The onions (foe) | Papagato (*Ronroneo de Yuki* cleanses it) |
+| Sangrado | Papagato (Haru), Dadista (*Tijeras*) | Any physical blow that adds none; Papagato (*Zarpa en la llaga*, twice over; *Cacería*) |
+| Golpe crítico | A rule: a wound of five spent under Papagato's *Olor a sangre*, *Acecho*. By chance: the Crítico attribute, +20 % on whoever bleeds (*Olor a sangre*), +10 % a die spent (Dadista's *Racha*, built) and the party's doubled (*Ases en dúo*, a proposal) | Whoever lands the blow |
+| Mareo (mental) | None now (it was El Vértigo's) | Papagato (*Ronroneo* cleanses it) |
+| Llorera (mental) | The onions (foe) | Papagato (*Ronroneo* cleanses it) |
 | Quemado | Matemágico (*Foc Binari*; the dual *Zarpazos de fuego*, on a coin) | Atacar · Agua (Humo) |
 | Sangrado (reaction) | Papagato (Haru) | Atacar · Fuego (Cauterizado) |
 | Cegado | Atacar · Agua on Quemado | Atacar · Eléctrico (Tormenta) |
-| Punto débil | The dual *Punto débil* | Any blow, the next one |
+| Punto débil | The dual *Punto débil*; Dadista (*Ojo*) | Any blow, the next one |
+| Crítico past 100 % | Dadista (*Racha*, *Ases en dúo*; proposal) | Dadista (*Dados astrales*: a die of light for each 15 %) |
+| The astral | Tecnópata (*Rayo de energía*), Dadista (its astral skills), Sincopante (every blow and eco; proposals) | Nothing on purpose: it is the damage nothing resists |
 
 ## How an ánima is built
 

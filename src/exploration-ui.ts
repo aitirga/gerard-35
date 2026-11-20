@@ -6,10 +6,10 @@ import { renderExplorationWorldMap } from './exploration-world-map';
 import { ANIMAS, animaBonus } from './animas';
 import { ITEMS, ITEM_KIND_LABELS, sortItems, type ItemId } from './items';
 import { type MemberId, type PartyMember, type Story } from './story';
-import { ANIMA_OWNERS, CLASS_STATS, SKILLS, canWear, skillKnown, type ClassId } from './battle';
+import { ANIMA_OWNERS, ANIMA_RULES, CLASS_STATS, SKILLS, canWear, skillKnown, type ClassId } from './battle';
 import { improvementOf } from './ecos';
 import { nearestButton } from './menu-nav';
-import { LEVELLED, levelProgress, MAX_LEVEL, xpFloor } from './levels';
+import { LEVELLED, levelProgress, topOf, xpFloor } from './levels';
 import { animaOf, CLASSES } from './classes';
 import { PROFILES, STAT_LABELS, withBonus, type Stats } from './stats';
 import { currentThought, diary, storyClock } from './journal';
@@ -123,13 +123,16 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   const levelOf = (id: ClassId) => {
     const level = story.levels[id] ?? 1, xp = Math.max(story.xp[id] ?? 0, xpFloor(level));
     // One without its level table yet (Tecnópata) shows its level and nothing more.
-    const grows = LEVELLED.includes(id), top = grows && level >= MAX_LEVEL;
-    return { level, xp, fill: !grows ? 0 : top ? 1 : levelProgress(xp), top };
+    const grows = LEVELLED.includes(id), top = grows && level >= topOf(id);
+    return { level, xp, fill: !grows ? 0 : top ? 1 : levelProgress(xp, topOf(id)), top };
   };
   const bonusChips = (classId: ClassId) => (Object.entries(CLASS_STATS[classId]) as [keyof Stats, number][])
     .map(([key, value]) => `<li data-sign="${value > 0 ? 'up' : 'down'}">${STAT_LABELS[key]} ${value > 0 ? '+' : '−'}${Math.abs(value)}</li>`).join('');
   /** What an ánima knows so far: skills it has not learned yet are never shown (AGENTS.md: only what the party has). */
-  const skillsOf = (classId: ClassId) => SKILLS.filter(s => s.class === classId && skillKnown(s.id, story.levels, story.improved));
+  const skillsOf = (classId: ClassId) => SKILLS.filter(s => s.class === classId && !('face' in s) && skillKnown(s.id, story.levels, story.improved));
+  /** Dadista's die, face by face: what each does when spent. The Comodín is not said (it is found), and the blank has no move of its own. */
+  const facesOf = (classId: ClassId) => [...SKILLS.filter(s => s.class === classId && 'face' in s && s.face !== 'comodin').map(s => ({ name: s.name, description: s.description })),
+    ...SKILLS.some(s => s.class === classId && 'face' in s) ? [{ name: 'En blanco', description: 'Repite la última cara gastada.' }] : []];
   function statRows(member: PartyMember) {
     const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
     return `<dl class="status-bars">${STAT_ORDER.map(key => {
@@ -244,7 +247,9 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
         <dl class="anima-facts"><div><dt>La pueden llevar</dt><dd>${who}</dd></div><div><dt>Ahora</dt><dd>${wearer ? `La lleva ${escape(wearer.name)}` : 'Nadie la lleva'}</dd></div></dl>
         <section><span class="battle-kicker">CAMBIA</span><ul class="anima-bonus">${bonusChips(id) || '<li data-sign="none">Nada todavía</li>'}</ul></section>
         ${boughtFor(id)}
+        ${ANIMA_RULES[id] ? `<section><span class="battle-kicker">SIEMPRE</span><ul class="anima-skills"><li><strong>${ANIMA_RULES[id]!.name}</strong><span>${ANIMA_RULES[id]!.description}</span></li></ul></section>` : ''}
         <section><span class="battle-kicker">HABILIDADES</span><ul class="anima-skills">${skillsOf(id).map(s => `<li><strong>${s.name}</strong><small>${costPips(s.cost)}</small><span>${s.description}</span></li>`).join('') || '<li class="empty"><span>Ninguna todavía.</span></li>'}</ul></section>
+        ${facesOf(id).length ? `<section><span class="battle-kicker">CARAS DEL DADO</span><ul class="anima-skills">${facesOf(id).map(f => `<li><strong>${f.name}</strong><span>${f.description}</span></li>`).join('')}</ul></section>` : ''}
       </article>`;
   }
   /** The object the cursor is on: what it is, who has it on, and what it does when used from here. */

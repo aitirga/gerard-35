@@ -56,7 +56,7 @@
     {
       "shot": "papagato-aprende",
       "delay": 1300,
-      "caption": "Papagato's band, in its own colour and type: Zarpazos and Ronroneo de Yuki"
+      "caption": "Papagato's band, in its own colour and type: Zarpazos and Ronroneo"
     },
     {
       "until": "!document.querySelector('.battle-result').hidden && document.querySelector('.battle-result[data-holding]')",

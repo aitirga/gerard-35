@@ -15,7 +15,7 @@ src/game.ts ── camera ──► src/post.ts       CameraFrame: HDR + 4× MSA
                                ├──────────► src/flames.ts      fire drawn whole by a noise shader: one draw
                                └──────────► src/trails.ts      ribbons: one strip, one draw
 src/battle-scene.ts ─────► effects.impact / binaryFire / anima / element / comet / trails …
-            └─ hit feel ► src/hit-feel.ts   hit-stop, camera lurch and punch-in; post.pulse for fringe + bloom
+            └─ hit feel ► src/hit-feel.ts   hit-stop, camera lurch and punch-in; post.pulse for fringe + bloom + flash
                                │                               weather and ground marks
 src/scenery.ts ── sun, sky ─► src/lighting.ts   shadows fitted to the view (PCF 5×5), sky reflections
 ```
@@ -229,8 +229,11 @@ keep him in sight, all set in `occlusion` (`?cut=`, `?silueta=0` and `?camara=fi
   tried along the camera ray unless it lies under the building itself), it **comes down to its
   foundations** (`SINK` and `foundationCap` in src/geo-scenery.ts). A plane
   descends from its top to 0.8 m above the ground and nothing of it above the plane is drawn, in
-  every pass, so its shadow goes too; a cap carried down with the plane shows the stumps of its outer
-  walls, 0.45 m thick in its plinth's stone, round a floor of packed earth 0.45 m lower, so it never
+  every pass, so its shadow goes too; a cap carried down with the plane shows it like a plan cut
+  through it: the stumps of its outer walls, 0.55 m thick in its plinth's stone, round a floor of flags
+  in the same stone 0.45 m lower, and on that floor the stumps of inner walls that divide it into rooms
+  about 5.4 m across, each with its doorway (`rooms`: a spine along its longest wall and walls across
+  it, drawn from the footprint, not from any real plan). The stumps cast their shadow, and it never
   shows hollow. Loose pieces on top of it (a landmark's bell and weathervane) go with the top. It
   sinks in about a second and rises again once he has been clear of it for 1.4 s, so walking along its
   edge never bobs it; the camera never tilts for it. It is for the few buildings standing right in
@@ -244,6 +247,11 @@ keep him in sight, all set in `occlusion` (`?cut=`, `?silueta=0` and `?camara=fi
   so an arm behind his own body never shows and overlapping parts never darken twice. The post
   pass keeps a stencil buffer for it (`frame.rendering.stencil`). The tilt-shift blurs a silhouette
   with the wall in front of it.
+
+Leaves overhead that a landmark draws (the pergola's wisteria, `cut: 'canopy'` in `kit.add`) open
+the same round window right through, their underside too (`geoCutLean`): a wall keeps the faces he
+is not behind, which on foliage were left hanging as loose strips. The pergola's joists open with
+its leaves; its posts and beams stay, and only his silhouette shows behind them.
 
 Trees fade their crowns (src/props.ts) and house interiors fold their walls (src/home-scenery.ts)
 as before. `just screenshots camera-orbit` shoots the fixed and the turning camera from two hidden
@@ -431,7 +439,8 @@ everywhere else, in reduced motion and in the headless tests, effects stay on th
   shows, size at birth and death and how much each particle's size varies, streak length, how thin a
   line is, spin, fades, additive, opacity, twinkle), how it sees others (separation, cohesion,
   alignment, radius), chains (`follow`) and what it becomes (`onLand`, `onDeath`, with its own `life`).
-  Redefining a kind changes the particles of it already in flight.
+  A kind with `flat: true` lies on the floor instead of facing the camera (a stain, a pool: for kinds
+  that land and stay). Redefining a kind changes the particles of it already in flight.
 - **Shapes**: `glow`, `streak`, `flame`, `smoke`, `line` (crisp thin lines along their motion),
   `shard` (a sharp diamond), `ring`, `star`, `dot` (hard-edged) and `strand` (a ribbon from a chain
   link to the link ahead, so a chain draws as one line).
@@ -460,7 +469,7 @@ everywhere else, in reduced motion and in the headless tests, effects stay on th
   box (world and inverse matrices and its mesh's bounds in a data texture), so particles bounce off
   their real shape, slide along it and may **cling** (stored in the part's local space, riding it
   wherever it goes) before letting go. A heightmap of the fight's floor catches the rest; there a kind
-  may settle, or become its `onLand` kind (shards into frost, gum into splats).
+  may settle, or become its `onLand` kind (shards into frost, gum into splats, blood into stains).
 - **Drawing**: one instanced draw of a quad per slot, reading the state in the vertex shader (dead
   slots collapse to nothing), white-hot to mid to end over their lives, tinted, in the scene's fog
   and tonemapping.
@@ -680,8 +689,8 @@ dimmer than its kind, so a burst never looks flat.
 | Call | What it shows |
 | --- | --- |
 | `emit(kind, at, count, spread)` | A plain burst of one kind (footfall dust, gum, spores). |
-| `impact(target, from, strength, { guarded, gum, feet })` | A blow: flash, sparks flying on through (white-hot to gold, never clinging) and a little dust at the feet, no ring; on Gerard or Aitor it lands mid-body; a guarded blow glints blue; gum foes spit drops that splat. Nothing in a fight reads as blood. |
-| `claw(at, { right, up }, size)` | Zarpazo sangriento: three claw lines (`clawLines`) torn across the foe's body from top right to bottom left, one a breath after another, in front of it; white to coral, as Sangrado's scratches of light (no blood). The blow under them stays small and throws coral sparks (`impact` with the claws' colour), and the foe flashes a soft coral. |
+| `impact(target, from, strength, { guarded, gum, feet })` | A blow: flash, sparks flying on through (white-hot to gold, never clinging) and a little dust at the feet, no ring; on Gerard or Aitor it lands mid-body; a guarded blow glints blue; gum foes spit drops that splat. Blood is never the blow's own: it is Sangrado's, flung by a cut or a spent wound (§ Statuses on fighters). |
+| `claw(at, { right, up }, size)` | Zarpazo sangriento: three claw lines (`clawLines`) torn across the foe's body from top right to bottom left, one a breath after another, in front of it; white to coral. The blow under them stays small and throws coral sparks (`impact` with the claws' colour), and the foe flashes a soft coral. The cut it opens flings blood along the blow (`statusFx.cut`, § Statuses on fighters). |
 | `binaryFire(from, to, { seconds, burn, feet, onArrive })` | Foc Binari: two braided streams of fire (orange to red, gold to orange) from the hand to one foe, shedding embers; with `burn` (a 1) they burst into fire, without it (a 0) they fizzle into smoke. |
 | `heal(feet, height)` | Light rising from a cardioid round the feet, spiralling up (no skill uses it now). |
 | `insight(head)` | Ideas circling over a head (no skill uses it now). |
@@ -772,13 +781,21 @@ llorera), cauterizado, and the ten reactions between elements. Each look (`STATU
 
 - **streams** of GPU particles (above) off the fighter's own parts, their head or their feet, at a
   rate for each level (I–III); as particles meet their parts, drops run down them, frost clings to
-  them, a wound's scratches of light flash on them (no blood: Sangrado drips nothing);
+  them, blood runs down them and drips;
 - a **field** that follows them (the smoke that turns round a blinded head, the lights over a dizzy
   one) and a **pulse** (a heartbeat, a jolt, bubbles);
 - the **body** responds: a tint of light on its materials (with the hit flash and the fire's heat in
   battle-scene) and a way of moving: frozen stands still, poisoned or dizzy sways, paralysed twitches.
 
-Only sparks, drops, crystals and haze: haze is many faint soft glows overlapping, never a puff
+**Sangrado is liquid: fights show blood** (Aitor's decision 2026-11-20, replacing the rule of
+scratches of light only). Three kinds: `blood` wells up dark on the body, runs down the parts and
+drips, more with each heartbeat and each stack; `bloodspray` is flung along the blow when a cut
+opens (`cut`: a blow that adds Sangrado) and bursts off the whole body when a wound is spent
+(`spill`, bigger the more stacks it had); where either meets the floor it becomes a `bloodstain`,
+a `flat` particle that spreads a little and dries dark before it goes. A short scratch of light
+(`gash`) still flashes where the cut lands. Dark and wet, never bright.
+
+Otherwise only sparks, drops, crystals and haze: haze is many faint soft glows overlapping, never a puff
 sprite. Applying a status again while it is on raises its level and restarts its clock (the
 design's `escalate`); Quemado burns through `ignite` at the fire's level. The campaign's statuses
 follow the fight's stacks (counted in rounds). `REACTIONS` turn one
@@ -866,7 +883,7 @@ which they give off.
 
 To use it, say so in the rules: an action that changes stats fills in `BattleEffect.stats`
 (`src/battle.ts`) with who and which, and the fight plays it as the blow lands. Today: an onion's last
-layer breaking its defence, *Yuki se esconde*, *Análisis Parálisis*, and *Llorera* and *Mareo* landing. `just dev-fx` has it
+layer breaking its defence, *Análisis Parálisis*, and *Llorera* and *Mareo* landing. `just dev-fx` has it
 under *Características*, and `just screenshots stat-fx` shows it; `just screenshots stat-motes --gpu` shows the motes and the fight's summary.
 
 ## Trails (`src/trails.ts`)
@@ -925,7 +942,8 @@ from the share of the target's PV the blow took, skill or plain, guarded, knocko
 | A skill hit (Foc Binari, Zarpazo…) | 100–135 ms | Lurch along the blow, punch-in | Strong fringe, bloom swell |
 | Knockout | +50 ms (up to 180) | Punch-in | Full fringe, bloom swell |
 | The beat (the minion's blow that drops Bernat) | 160 ms or more | Punch-in | Full fringe and bloom |
-| A party boost (Yuki se esconde) | None | — | A soft bloom swell |
+| A golpe crítico | 220 ms (`CRIT.stop`), whatever it took; a flurry's later ones 80 ms | Punch-in of 8 % (`CRIT.punch`), full lurch | Full fringe and bloom, a white flash, and the colour drained all but round the two fighters |
+| A party boost or a cure (Análisis Parálisis, Ronroneo) | None | — | A soft bloom swell |
 | An ánima wakes | None | Punch-in, shake | Full fringe and bloom |
 | Ánima swap (L / R) | None | — | A touch of fringe, bloom swell |
 
@@ -939,16 +957,26 @@ from the share of the target's PV the blow took, skill or plain, guarded, knocko
   blows (`HIT.punch`, critically damped), and a decaying shake for an ánima waking. The
   kick is a sideways move added after `lookAt` in `src/game.ts`, so the picture shifts without
   swimming.
-- **`post.pulse(fringe, bloom)`** jumps `CameraFrame.fringing` and the bloom intensity up and lets
-  them fade on real time (`LOOK.hit` in `src/post.ts`). Fringing grows with the square of the
+- **`post.pulse(fringe, bloom, flash)`** jumps `CameraFrame.fringing` and the bloom intensity up and lets
+  them fade on real time (`LOOK.hit` in `src/post.ts`); `flash` (0–1, `uFlash`) whitens the whole
+  picture for a few frames, for a golpe crítico. Fringing grows with the square of the
   distance from the centre, so the fighters stay readable and the edges split. It is off at rest
   (the engine's fringe would split every edge green and magenta through the tilt-shift's blur) and
   its shader is built in the first frame, so the first big hit does not wait for it; with the pass off a
   pulse does nothing.
+- **A golpe crítico** (`critBeat` in `src/battle-scene.ts`, `CRIT` in `src/hit-feel.ts`;
+  docs/animas/README.md § Golpe crítico) is the heaviest thing a blow can be: the fight stops
+  0.22 s, the picture loses 85 % of its colour except round whoever struck and whoever was struck
+  (the post pass's `spotlight`, back over 0.22 s once the hold ends) under a white flash, a slanted
+  cut of white light crosses the one struck with a ring and sparks on through (`dualFx.critical` in
+  `src/dual-fx.ts`), and the number comes out large and slanted with «¡Crítico!» (pop kind `crit`
+  in `src/battle-ui.ts`) to the sound `crit`. A flurry's later críticos are only the cut, a hold of
+  0.08 s and a fainter flash, so four claws never stop the fight four times.
 - prefers-reduced-motion (`animate` false) skips all of it: no hold, no lurch, no pulse.
 
 Tunables: `HIT` in `src/hit-feel.ts` (stop lengths, particle pace, lurch, spring, punch, where
-fringing starts) and `LOOK.hit` in `src/post.ts` (fringe and bloom at a full pulse, fade times).
+fringing starts), `CRIT` beside it (the crítico's stops, punch, grey and flash) and `LOOK.hit` in
+`src/post.ts` (fringe and bloom at a full pulse, fade times).
 `tests/hit-feel.test.mjs` checks the timing; `just screenshots hit-feel` steps a fight 1/60 s at a
 time through an attack, a dog's bite, a guarded bite, an ánima swap, a Foc Binari knockout (in
 flight, contact, held, after) and an ánima waking, and logs each contact, hold and resolution on

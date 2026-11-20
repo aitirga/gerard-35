@@ -29,7 +29,7 @@ import { BEAM, DOOR as LUCA_DOOR, INTERIOR, MIRRORS, MIRRORS_SEEN, PLACES_LUCA, 
 import { trace as beamThrough, turned, type Facing } from './espejos.ts';
 import { GALLERY, SECTION, WELLS, beat, calibration, charged, descend, measure, roaming, shake, stakeAt, tick, type ModeloState, type PatrolSpec } from './modelo.ts';
 import { isTicketStation, ticketFlag, type TicketStation } from './tickets.ts';
-import { LEVELLED, MAX_LEVEL, fightXp, participants } from './levels.ts';
+import { LEVELLED, fightXp, participants, topOf } from './levels.ts';
 import { canWalk, WALK_SPEED, type Cell } from './movement.ts';
 import { FIRST_CLEAR, HIDING_KINDS, hiddenAt, hunterSpec, huntersGrid, isLit, litLamps, nightTier, risingAt, sightOf, type NightTier } from './night.ts';
 import { createBoard } from './parcelas.ts';
@@ -581,7 +581,7 @@ export class Playing {
     const run = playOut(state, { fight: encounter, party: '', policy: learnt ? 'smart' : this.player.policy, think: this.player.think, maxRounds: 80 }, this.random);
     const won = run.outcome === 'won', worn = participants(state).map(p => p.id), xp = fightXp(state);
     if (won && encounter === 'palace-guards') this.guardsBeaten = true;
-    const wasted = won ? worn.filter(id => LEVELLED.includes(id) && (before[id] ?? 1) >= MAX_LEVEL).length * xp : 0;
+    const wasted = won ? worn.filter(id => LEVELLED.includes(id) && (before[id] ?? 1) >= topOf(id)).length * xp : 0;
     const clock = story.clock;
     this.out.fights.push({
       n: this.out.fights.length + 1, t: Math.round(this.out.seconds), day: story.adult ? clock.day : 0, hour: story.adult ? clock.hour : 0,
@@ -820,7 +820,7 @@ export class Playing {
       // The young first, up to the level the player wants before the fears (they come back, so there is always one).
       const young = () => this.hunters.filter(h => h.respawn && h.away <= 0 && this.encounterOf(h.id)?.startsWith('crias') && reach(h) < 250).sort((a, b) => reach(a) - reach(b))[0];
       const shared = () => Math.max(1, ...this.story.classes.filter(id => LEVELLED.includes(id)).map(id => this.story.storyLevels[id] ?? 1));
-      const wanted = Math.min(MAX_LEVEL, this.player.seekLevel + Math.floor((this.tries.nuria ?? 0) / 2));
+      const wanted = Math.min(topOf('papagato'), this.player.seekLevel + Math.floor((this.tries.nuria ?? 0) / 2));
       for (let i = 0; i < 16 && shared() < wanted; i++) { const h = young(); if (!h) break; this.seek(h); if (this.at.environment !== MAZE) return; }
       for (let i = 0; i < this.player.grind; i++) { const h = young(); if (!h) break; this.seek(h); if (this.at.environment !== MAZE) return; }
       const near = this.hunters.filter(h => !h.respawn && h.away <= 0 && reach(h) < 40);
@@ -1195,7 +1195,7 @@ export function summarise(plays: readonly Playthrough[], seed = 35): GameSummary
       return { at: i / CURVE_STEPS, fights: fights.length, difficulty: r2(avg(fights.map(difficultyOf))), lossRate: r2(avg(fights.map(f => f.won ? 0 : 1))), trivial: r2(avg(fights.map(f => trivialOf(f) ? 1 : 0))) };
     });
     const saturated = curve.findIndex((_, i) => curve.slice(i).every(c => !c.fights || ((c.trivial ?? 0) >= .6 && (c.lossRate ?? 0) <= .05)) && curve.slice(i).some(c => c.fights));
-    const levels = LEVELLED.flatMap(anima => [2, 3].map(level => {
+    const levels = LEVELLED.flatMap(anima => Array.from({ length: topOf(anima) - 1 }, (_, i) => i + 2).map(level => {
       const hits = games.map(g => ({ g, m: g.moments.find(m => m.kind === 'level' && m.anima === anima && m.level === level) })).filter(h => h.m);
       return {
         anima, level, reached: r2(hits.length / games.length)!,

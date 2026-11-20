@@ -1,4 +1,4 @@
-import { SKILLS, type BattleState, type ClassId, type FoeKind, type SkillId } from './battle.ts';
+import { MANA_LEVEL, SKILLS, type BattleState, type ClassId, type FoeKind, type SkillId } from './battle.ts';
 
 /**
  * Ánima levels (docs/animas/README.md § Levels): ánimas learn by fighting. Every foe beaten is worth
@@ -11,16 +11,25 @@ import { SKILLS, type BattleState, type ClassId, type FoeKind, type SkillId } fr
  * `<ánima>-3`), so it is saved and follows the player, and a story event can grant a level by
  * setting its flag (the EXP then starts from that level's floor). Pure.
  */
-export const MAX_LEVEL = 3;
-/** EXP to reach level 2 and level 3, counted from zero: three times the first tuning (2026-11-05), so an ánima grows slowly. */
-export const LEVEL_XP = [180, 660] as const;
+/** The game's top level; an ánima's own top is `topOf` (the highest level its skills name). */
+export const MAX_LEVEL = 7;
+/**
+ * EXP to reach levels 2 to 7, counted from zero. The first two are three times the first tuning
+ * (2026-11-05), so an ánima grows slowly; 4 to 7 are a first guess (2026-11-20), each step some 150
+ * EXP longer than the one before, left to the balance.
+ */
+export const LEVEL_XP = [180, 660, 1290, 2070, 3000, 4080] as const;
 /**
  * Ánimas that grow by level: the shared ones. Matemágico and Tecnópata are someone's own and grow by
- * their tree at the jar instead (src/ecos.ts; docs/animas/README.md § Two ways to grow). Dadaísta
- * earns EXP and levels like Papagato, but its level-2 and level-3 skills (Agitar, Collage, Racha:
- * docs/animas/dadaista/README.md § Skills per level) are not built yet, so a level teaches it nothing.
+ * their tree at the jar instead (src/ecos.ts; docs/animas/README.md § Two ways to grow). Each grows
+ * as far as it has been designed: Papagato to 3, Dadista to 7 (`topOf`).
  */
 export const LEVELLED: readonly ClassId[] = ['papagato', 'dadaista'];
+/**
+ * Levels that teach nothing yet, on purpose: Dadista's 6 is empty since Estrella fugaz moved to 3,
+ * and is not filled out of habit (docs/animas/dadaista/README.md § Skills per level).
+ */
+export const EMPTY_LEVELS: Partial<Record<ClassId, readonly number[]>> = { dadaista: [6] };
 /**
  * What each foe is worth when it is beaten. Roughly how long it takes to bring down: some seven packs
  * of cebollitas (20 to 30 EXP each), or El Cebollón and five packs, teach Papagato Zarpazos.
@@ -45,22 +54,28 @@ export const FOE_XP: Record<FoeKind, number> = {
   'celda-seca': 12, oscilacion: 18, atomo: 20, 'no-converge': 100,
   polilla: 6, 'estampado-rojo': 22, 'estampado-azul': 22, 'estampado-oro': 22, capellan: 16, fran: 120, lampara: 0,
 };
-export type LevelFlag = `${ClassId}-${2 | 3}`;
-export const levelFlag = (id: ClassId, level: 2 | 3): LevelFlag => `${id}-${level}`;
-/** The level `id` has reached, from the flags it holds. */
+export type Level = 2 | 3 | 4 | 5 | 6 | 7;
+export type LevelFlag = `${ClassId}-${Level}`;
+export const levelFlag = (id: ClassId, level: Level): LevelFlag => `${id}-${level}`;
+export { MANA_LEVEL };
+/** The top level of `id`: the highest its skills name (1 for an ánima that grows by its tree). */
+export const topOf = (id: ClassId) => !LEVELLED.includes(id) ? 1
+  : Math.min(MAX_LEVEL, Math.max(1, ...SKILLS.map(skill => skill.class === id && 'level' in skill && skill.level ? skill.level : 1)));
+/** The level `id` has reached, from the flags it holds: the highest one, so a story event can grant any. */
 export function levelOf(id: ClassId, has: (flag: LevelFlag) => boolean) {
-  return has(levelFlag(id, 3)) ? 3 : has(levelFlag(id, 2)) ? 2 : 1;
+  for (let level = MAX_LEVEL; level > 1; level--) if (has(levelFlag(id, level as Level))) return level;
+  return 1;
 }
 /** The EXP a level starts at (0 for level 1). */
 export const xpFloor = (level: number) => level <= 1 ? 0 : LEVEL_XP[Math.min(level, MAX_LEVEL) - 2];
-/** The level `xp` EXP reach. */
-export function levelForXp(xp: number) {
-  return 1 + LEVEL_XP.filter(needed => xp >= needed).length;
+/** The level `xp` EXP reach, never past `top`. */
+export function levelForXp(xp: number, top: number = MAX_LEVEL) {
+  return Math.min(top, 1 + LEVEL_XP.filter(needed => xp >= needed).length);
 }
-/** How far through its level `xp` is (0–1); 1 at the top level. */
-export function levelProgress(xp: number) {
-  const level = levelForXp(xp);
-  if (level >= MAX_LEVEL) return 1;
+/** How far through its level `xp` is (0–1); 1 at the top level (`top`: the ánima's own). */
+export function levelProgress(xp: number, top: number = MAX_LEVEL) {
+  const level = levelForXp(xp, top);
+  if (level >= top) return 1;
   const from = xpFloor(level), to = xpFloor(level + 1);
   return Math.max(0, Math.min(1, (xp - from) / (to - from)));
 }
@@ -92,17 +107,17 @@ export interface Growth { id: ClassId; xpBefore: number; xpAfter: number; levelB
  */
 export function award(ids: readonly ClassId[], gained: number, xp: Partial<Record<ClassId, number>>, levels: Partial<Record<ClassId, number>>): Growth[] {
   return [...new Set(ids)].filter(id => LEVELLED.includes(id)).map(id => {
-    const levelBefore = Math.max(1, Math.min(MAX_LEVEL, levels[id] ?? 1));
+    const top = topOf(id), levelBefore = Math.max(1, Math.min(top, levels[id] ?? 1));
     const xpBefore = Math.max(xp[id] ?? 0, xpFloor(levelBefore));
-    const xpAfter = levelBefore >= MAX_LEVEL ? xpBefore : Math.max(xpBefore, xpBefore + Math.max(0, gained));
-    const levelAfter = Math.max(levelBefore, Math.min(MAX_LEVEL, levelForXp(xpAfter)));
+    const xpAfter = levelBefore >= top ? xpBefore : Math.max(xpBefore, xpBefore + Math.max(0, gained));
+    const levelAfter = Math.max(levelBefore, levelForXp(xpAfter, top));
     const learned: SkillId[] = [];
     for (let level = levelBefore + 1; level <= levelAfter; level++) learned.push(...skillsAt(id, level));
     return { id, xpBefore, xpAfter, levelBefore, levelAfter, learned };
   });
 }
 /** Development: the EXP that takes `id` from where it is to its next level (0 at the top). */
-export function toNextLevel(xp: number, level: number) {
+export function toNextLevel(xp: number, level: number, top: number = MAX_LEVEL) {
   const from = Math.max(xp, xpFloor(level));
-  return level >= MAX_LEVEL ? 0 : Math.max(0, xpFloor(level + 1) - from);
+  return level >= top ? 0 : Math.max(0, xpFloor(level + 1) - from);
 }

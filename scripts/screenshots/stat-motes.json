@@ -1,6 +1,6 @@
 {
   "title": "Atributos que siguen arriba o abajo, y el resumen del combate",
-  "description": "While a stat stays up or down (src/battle.ts `statShifts`) tiny bright motes of energy leave the fighter's head on the GPU (src/stat-motes.ts): blue ones drifting up when up, red ones falling past their shoulders when down. Over their heads the statuses stay first, as icons that shrink to fit when there are several, and the stats up or down sit apart under the bars, quieter («▲ DEF», «▼ FUE MAG»). The D-pad's left or right (R on the keyboard) opens the fight's summary: both sides, PV, maná, statuses and the stats up or down with why and for how long. Its up and down walk the menus, like the stick.",
+  "description": "While a stat stays up or down (src/battle.ts `statShifts`) tiny bright motes of energy leave the fighter's head on the GPU (src/stat-motes.ts): blue ones drifting up when up, red ones falling past their shoulders when down. Over their heads the statuses stay first, as icons that shrink to fit when there are several, and the stats up or down sit apart under the bars, quieter («▲ FUE MAG», «▼ DEF ESP VEL»). The D-pad's left or right (R on the keyboard) opens the fight's summary: both sides, PV, maná, statuses and the stats up or down with why and for how long. Its up and down walk the menus, like the stick.",
   "steps": [
     {
       "open": "/?mission=nuria&part=ring-1"
@@ -28,6 +28,15 @@
       "caption": "The fight opens: the summary's key waits under the round until it is used once"
     },
     {
+      "eval": "window.fightState.improved = { ...window.fightState.improved, skills: ['angulo', 'analisis'] }; window.gerard.battleUI.refresh()"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 700
+    },
+    {
       "press": "Digit2"
     },
     {
@@ -37,8 +46,8 @@
       "record": "motas-suben",
       "seconds": 2.6,
       "fps": 30,
-      "each": "window.frame === 2 && document.querySelector('[data-skill=\"escondite\"]')?.click()",
-      "caption": "Yuki se esconde: the chevrons rise, then tiny blue motes start rising off each one's head and keep coming while it lasts"
+      "each": "window.frame === 2 && document.querySelector('[data-skill=\"analisis\"]')?.click()",
+      "caption": "Análisis Parálisis (Gerard on Matemágico, the node bought): the chevrons rise, then tiny blue motes start rising off each one's head and keep coming while it lasts"
     },
     {
       "until": "window.turnOf('aitor')",
@@ -54,10 +63,10 @@
     {
       "shot": "motas-arriba",
       "delay": 1500,
-      "caption": "Up: tiny blue motes rising off the head; «▲ DEF» under the bars"
+      "caption": "Up: tiny blue motes rising off the head; «▲ FUE MAG» under the bars"
     },
     {
-      "eval": "window.fightState.allies[1].statuses = { llorera: 2 }; window.fightState.allies[0].statuses = { mareo: 1 }; window.gerard.battleUI.refresh()"
+      "eval": "window.fightState.allies[1].statuses = { mareo: 2 }; window.fightState.allies[0].statuses = { mareo: 1 }; window.gerard.battleUI.refresh()"
     },
     {
       "until": "window.gerard.game.statMotesOf('aitor').join() === 'up,down' && window.gerard.game.statMotesOf('gerard').join() === 'up,down'",
@@ -67,12 +76,12 @@
       "record": "motas-mixtas",
       "seconds": 3,
       "fps": 30,
-      "caption": "Both at once: Yuki's Defensa up and Llorera or Mareo bringing others down, blue motes rising and red ones falling off the same head"
+      "caption": "Both at once: Análisis Parálisis's Fuerza and Magia up and Mareo bringing others down, blue motes rising and red ones falling off the same head"
     },
     {
       "shot": "motas-mixtas",
       "delay": 300,
-      "caption": "Up and down on the same fighter: «▲ DEF» and «▼ FUE MAG» apart from the status icons"
+      "caption": "Up and down on the same fighter: «▲ FUE MAG» and «▼ DEF ESP VEL» apart from the status icons"
     },
     {
       "eval": "window.gerard.game.frame(); { const foe = window.fightState.foes[0]; foe.layers = 0; foe.statuses = { sangrado: 3, mareo: 2, llorera: 1 }; foe.timed = { quemado: { level: 2, left: 9, next: 2 } }; } window.gerard.battleUI.refresh()"

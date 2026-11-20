@@ -21,8 +21,6 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   zarpazo: { start: [{ id: 'meow' }], impact: [{ id: 'claw' }, { id: 'hit', volume: .45 }] },
   zarpazos: { start: [{ id: 'meow' }], impact: [{ id: 'claw' }] },
   llaga: { start: [{ id: 'meow' }], impact: [{ id: 'claw-deep' }] },
-  escondite: { start: [{ id: 'meow-soft' }], impact: [] },
-  'a-la-vez': { start: [{ id: 'meow' }, { id: 'meow-soft', delay: .12 }], impact: [{ id: 'claw' }, { id: 'claw', delay: .07 }, { id: 'hit' }] },
   angulo: { start: [{ id: 'think' }], impact: [] },
   ronroneo: { start: [{ id: 'meow-soft' }], impact: [{ id: 'heal' }] },
   // Tecnópata's are Bip's: it charges up and fires, blows up, or hums its waves.
@@ -37,7 +35,7 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   descarga: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'zap' }, { id: 'crack', volume: .6 }, { id: 'hit', volume: .4, delay: .03 }] },
   // Bip's signal takes; the foe's own blow lands from the scene.
   'control-remoto': { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }, { id: 'zap', volume: .4, delay: .1 }] },
-  // Dadaísta's faces are dice thrown: they click as they leave the hand and land with their weight
+  // Dadista's faces are dice thrown: they click as they leave the hand and land with their weight
   // (the brackets more softly: they land on a friend).
   // Tirar dado itself never lands: its die's face does (`effect.skill` is the face's move).
   'tirar-dado': { start: [], impact: [] },
@@ -47,6 +45,16 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   'cara-tijeras': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit' }, { id: 'thump', volume: .4 }] },
   'cara-ojo': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'hit', volume: .7 }] },
   'cara-corchete': { start: [{ id: 'clink', volume: .6 }], impact: [{ id: 'guard' }] },
+  // Agitar never lands (it is not an action: the fight's interface clicks the dice itself).
+  agitar: { start: [], impact: [] },
+  // Estrella fugaz: the die leaves with its click and lands as light, high and soft.
+  'estrella-fugaz': { start: [{ id: 'clink', volume: .7 }, { id: 'cast-soft', volume: .6 }], impact: [{ id: 'mana' }, { id: 'hit', volume: .5 }] },
+  // The rain's own dice sound as they land (the scene plays each one); these are the call and the first.
+  'dados-astrales': { start: [{ id: 'clink', volume: .7 }, { id: 'rise', volume: .5 }], impact: [{ id: 'mana' }, { id: 'hit', volume: .45 }] },
+  'ases-en-duo': { start: [{ id: 'clink', volume: .7 }, { id: 'clink', volume: .7, delay: .12 }], impact: [{ id: 'glass-tick' }, { id: 'stat-up', delay: .1 }] },
+  meteorito: { start: [{ id: 'cast-soft', volume: .6 }], impact: [{ id: 'thump' }, { id: 'mana', volume: .7 }] },
+  meteoro: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'slam' }, { id: 'thump', delay: .04 }, { id: 'mana', volume: .7 }] },
+  asteroide: { start: [{ id: 'charge', volume: .8 }, { id: 'roar', volume: .3, delay: .2 }], impact: [{ id: 'slam' }, { id: 'crack', delay: .05 }, { id: 'thump', delay: .1 }, { id: 'mana', delay: .2 }] },
 };
 const ELEMENT_SOUNDS: Record<Element, Cue> = { agua: { id: 'splash', volume: .5 }, fuego: { id: 'fire-hit', volume: .45 }, electrico: { id: 'zap', volume: .6 } };
 const REACTION_SOUNDS: Record<ElementReaction, Cue[]> = { humo: [{ id: 'fizzle', delay: .04 }], cauterizado: [{ id: 'burn', delay: .04 }], tormenta: [{ id: 'zap', delay: .05 }, { id: 'zap', delay: .13 }], vapor: [{ id: 'fizzle', delay: .04 }], conduccion: [{ id: 'zap', delay: .05 }, { id: 'zap', volume: .7, delay: .14 }] };
@@ -138,7 +146,8 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   // Fran's salon: a blow the light ate fizzles out (docs/quests/luca.md).
   if (effect.annulled) return [{ id: 'fizzle' }];
   // A blow that opens a wound (it spent Sangrado) tears as it lands.
-  const torn: Cue[] = effect.bled || effect.hits?.some(h => h.bled) ? [{ id: 'bleed', delay: .04 }] : [];
+  // And a golpe crítico is heard before anything else of the blow (a flurry's later ones, as each claw lands: battle-scene).
+  const torn: Cue[] = [...effect.crit && effect.crits?.[0] !== false && !effect.dual ? [{ id: 'crit' as const }] : [], ...effect.bled || effect.hits?.some(h => h.bled) ? [{ id: 'bleed' as const, delay: .04 }] : []];
   // Atacar with an element sounds of it, and what it turned on top.
   if (effect.kind === 'attack') return effect.amount ? [{ id: 'hit' }, ...effect.element ? [ELEMENT_SOUNDS[effect.element]] : [], ...effect.reaction ? REACTION_SOUNDS[effect.reaction.id] : [], ...torn] : [];
   // A dual that rolls claw by claw sounds each claw as it lands, fire or not (battle-scene `dualStrike`): the first says nothing of the rest.
@@ -148,7 +157,7 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   if (effect.kind === 'skill' && effect.dual) return [...effect.coins ? [] : dualSounds(effect.dual.parts).impact, ...torn];
   if (effect.kind === 'skill' && effect.skill) {
     // Fire that does not catch (an onion's wet layers) fizzles; on the palace minion's gum it melts it too.
-    if (effect.skill === 'foc-binari') return [...effect.melted ? [{ id: 'melt' as const }] : [], { id: effect.burn || effect.melted ? 'fire-hit' as const : 'fizzle' as const }];
+    if (effect.skill === 'foc-binari') return [...effect.melted ? [{ id: 'melt' as const }] : [], { id: effect.burn || effect.melted ? 'fire-hit' as const : 'fizzle' as const }, ...torn];
     return [...SKILL_SOUNDS[effect.skill].impact, ...torn];
   }
   // A mago charging its Bombona: the gas hisses out. El Campeón in plain clothes pulling itself together.

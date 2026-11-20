@@ -48,10 +48,10 @@ Foc Binari is his from the start; every other skill is a node of his tree, bough
 
 | Line | Skill | Cost | Base | Description |
 | --- | --- | --- | --- | --- |
-| Root | Foc Binari | 1 | 16 magic, fire, two streams | `Daño leve mágico de tipo fuego a un enemigo. Golpea dos veces. Lo quema durante unos segundos. Si ya arde, el fuego sube de nivel. Derrite el pringue.` |
-| Fuego | Factor común | 2 | 24 magic, fire, all | `Daño medio mágico de tipo fuego a todos los enemigos. El fuego de todos sube al más alto.` |
-| Agua | Vasos comunicantes | 2 | 16 magic, water, all | `Daño leve mágico de tipo agua a todos los enemigos. Los moja.` |
-| Eléctrico | Descarga | 2 | 26 magic, electric | `Daño medio mágico de tipo eléctrico a un enemigo. Salta a todos los mojados.` |
+| Root | Foc Binari | 1 | 16 magic, fire, two streams | `Daño mágico de fuego leve a un enemigo. Golpea dos veces. Lo quema durante unos segundos. Si ya arde, el fuego sube de nivel. Derrite el pringue.` |
+| Fuego | Factor común | 2 | 24 magic, fire, all | `Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.` |
+| Agua | Vasos comunicantes | 2 | 16 magic, water, all | `Daño mágico de agua leve a todos los enemigos. Los moja.` |
+| Eléctrico | Descarga | 2 | 26 magic, electric | `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` |
 | Cálculo | Ángulo exacto | 1 | −3 Defensa and Espíritu, one foe, 3 rounds | `Baja Defensa y Espíritu de un enemigo durante 3 rondas.` |
 | Cálculo | Análisis Parálisis | 2 | +3 Fuerza and Magia, party, 3 rounds | `Sube Fuerza y Magia de todo el equipo durante 3 rondas.` |
 | Cálculo | Cardioide | 2 | 30 heal | `Cura media a un aliado herido.` |
@@ -156,8 +156,8 @@ Combined skills):
 
 | Dual | Matemágico + Papagato | Levels | Maná | Description |
 | --- | --- | --- | --- | --- |
-| **Zarpazos de fuego** | **Foc Binari** + Zarpazos | 1 · 2 | 1 + 2 | `Daño leve físico de tipo fuego a un enemigo. Golpea ocho veces. Cada golpe puede quemarlo o subir su fuego.` |
-| **Punto débil** | **Ángulo exacto** + Zarpazo sangriento | 2 · 1 | 1 + 1 | `Daño leve físico a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
+| **Zarpazos de fuego** | **Foc Binari** + Zarpazos | 1 · 2 | 1 + 2 | `Daño físico de fuego leve a un enemigo. Golpea ocho veces. Cada golpe puede quemarlo o subir su fuego.` |
+| **Punto débil** | **Ángulo exacto** + Zarpazo sangriento | 2 · 1 | 1 + 1 | `Daño físico leve a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
 
 Gerard draws the figure and Haru strikes it: eight claws round a circle of digits from `000` to
 `111`, each one that lands on a foe without layers flipping a coin for fire; or a protractor and a

@@ -12,7 +12,7 @@ import { animaBonus, type AnimaId } from './animas.ts';
 import {
   ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
-  takeQueued, validTargets, wearAnima, aimed, markSpent,
+  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
 } from './battle.ts';
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
@@ -485,6 +485,8 @@ function best(options: Choice[], score: (choice: Choice) => number): [Choice, nu
  */
 export function decide(state: BattleState, setup: Setup, random: () => number): Choice {
   const policy = setup.policy;
+  // Agitar is free and no choice of the turn: a bot that has it shakes the hand once the Racha makes it give the Comodín.
+  if (policy !== 'attack' && !setup.ban?.includes('agitar') && rachaOf(state.allies[state.active]) >= RACHA.comodin) shake(state);
   const options = legalChoices(state, setup, policy === 'smart' || policy === 'random', policy === 'smart' || policy === 'random');
   if (policy === 'attack') return options.find(o => o.action === 'attack') ?? options[0];
   if (policy === 'random' || random() < (setup.error ?? ERRORS[policy])) return options[Math.floor(random() * options.length)];

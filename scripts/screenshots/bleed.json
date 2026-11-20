@@ -47,7 +47,7 @@
       "wait": 400
     },
     {
-      "eval": "window.__woundSeen = false; new MutationObserver(() => { if (document.querySelector('.damage-pop[data-kind=\"status\"][data-status=\"sangrado\"]')) window.__woundSeen = true; }).observe(document.querySelector('.battle-pops'), { childList: true }); document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
+      "eval": "window.__woundSeen = false; new MutationObserver(() => { if (document.querySelector('.damage-pop[data-status=\"sangrado\"]')) window.__woundSeen = true; }).observe(document.querySelector('.battle-pops'), { childList: true }); document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)').click()"
     },
     {
       "until": "window.__woundSeen",
@@ -56,7 +56,7 @@
     {
       "shot": "wound",
       "delay": 250,
-      "caption": "Atacar lo gasta: +20 % en rojo (le quedaba un sangrado tras el final de la ronda) y el sangrado desaparece"
+      "caption": "Atacar lo gasta: +40 % en rojo (los dos sangrados siguen ahí: una herida cortada en esa ronda no se cierra) y el sangrado desaparece; si además es golpe crítico, «¡Crítico! · Sangrado +40%»"
     }
   ]
 }

@@ -258,6 +258,25 @@ export function createDualFx(effects: Effects) {
       g.burst('spark', { at, count: 120, spread: .05, velocity: { x: along.x / d * 6, y: 1.2, z: along.z / d * 6 }, speed: 2.6, cone: .7, life: [.3, .8], colour: c.gold });
       g.burst('needle', { at, count: 50, spread: .05, speed: 3.4, life: [.3, .6], colour: c.cream });
     },
+    /**
+     * A golpe crítico lands (docs/animas/README.md § Golpe crítico): one long cut of white light across
+     * whoever it struck, slanted, `size` long, a ring of it thrown out flat to the camera and sparks
+     * on through along the blow. They bloom while the fight holds still (particles keep a slow pace
+     * through a hit-stop). A flurry's later ones (`full` false) are only the cut, shorter.
+     */
+    critical(point: V3, facing: V3, along: V3, size: number, full = true) {
+      const g = gpu(), c = DUAL_COLOURS, { right, up, facing: f } = screenAxes(facing), at = add(point, f, .3), s = size * (full ? .62 : .4);
+      const a = add(add(at, right, -s), up, s * .42), b = add(add(at, right, s), up, -s * .42);
+      line(a, b, c.white, { count: Math.round(s * 150), life: full ? .5 : .3, size: full ? 2.4 : 1.6 });
+      if (!g) return;
+      g.burst('flare', { at, count: full ? 3 : 1, spread: .05, life: [.16, .26], colour: c.white, light: { intensity: full ? 6 : 3, range: 4, colour: c.white } });
+      if (!full) return;
+      line(add(a, up, .05), add(b, up, .05), c.cream, { count: Math.round(s * 60), life: .7, size: 1.2 });
+      ring(at, f, size * .16, c.white, { count: 70, outward: 6, life: .4, size: 1.3, kind: 'spark' });
+      const d = Math.hypot(along.x, along.z) || 1;
+      g.burst('spark', { at, count: 90, spread: .05, velocity: { x: along.x / d * 7, y: 1, z: along.z / d * 7 }, speed: 2.4, cone: .5, life: [.25, .7], colour: c.white });
+      g.burst('needle', { at, count: 36, spread: .05, speed: 4, life: [.25, .5], colour: c.cream });
+    },
     /** The mark of Punto débil spent by the blow that lands three times as hard: it bursts. */
     markBurst(point: V3, facing: V3) {
       const g = gpu(), c = DUAL_COLOURS, { facing: f } = screenAxes(facing);
