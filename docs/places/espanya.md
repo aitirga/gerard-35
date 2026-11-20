@@ -101,7 +101,7 @@ lifted a little for sunlight.
 | Light | Look `placa-espanya` (`src/grading.ts`): a golden late afternoon, warm highlights and slightly cool shade, the towers' long shadows across the forecourt; `day` sky |
 | Props | Lamp masts crowned with four LED heads (`lamp` `mast`), traffic lights at the five entries, the works' yellow jersey barriers round the island, a Bicing dock by the metro, the red and white tourist information kiosk, cypresses by the towers, plane trees on Gran Via and Tarragona; taxis and TMB buses in the traffic |
 | Air | Pollen (the default) |
-| Sound | Not yet: the roundabout's roar, buses, water up the avenue (see below) |
+| Sound | Barcelona's music (Aitor, 2026-11-20): `concrete` by day, `mazmorra-2` by night (`CITY` in `src/main.ts`). Its own ambience is still to make: the roundabout's roar, buses, water up the avenue (see below) |
 | Only here | Las Arenas' brick bullring floating on red steel V struts, its striped arches above a band of concrete |
 | Text | Catalan: *PLAÇA D'ESPANYA* on the ring, *Espanya* on the metro totem, *TURISME* on the kiosk, *ARENAS DE BARCELONA* in the gate's photo |
 
