@@ -84,7 +84,11 @@ export function createStoryUI(hud: HTMLElement) {
   const photo = document.createElement('figure');
   photo.id = 'story-photo'; photo.hidden = true; photo.setAttribute('role', 'status');
   photo.innerHTML = `<i class="story-photo-flash" aria-hidden="true"></i><figcaption></figcaption>`;
-  hud.append(notes, hint, bubble, shout, card, banner, black, white, doom, photo);
+  // A boss of her castle beaten (docs/castle.md § Structure): her scream over the whole picture, which goes white.
+  const scream = document.createElement('div');
+  scream.id = 'queen-scream'; scream.setAttribute('role', 'status'); scream.dataset.on = 'false';
+  scream.innerHTML = '<p></p>';
+  hud.append(notes, hint, bubble, shout, card, banner, black, white, scream, doom, photo);
   let endDoom: (() => void) | undefined;
   doom.querySelector('button')!.addEventListener('click', () => endDoom?.());
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -103,6 +107,29 @@ export function createStoryUI(hud: HTMLElement) {
       notes.append(el);
       setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS);
     },
+    /** What an afternoon left the party (src/days.ts `EVENINGS`): a note with its name and what it does, as it will read in a fight. */
+    boost(name: string, effect: string) {
+      const el = document.createElement('article');
+      el.className = 'story-note'; el.style.setProperty('--note-accent', '#e9ad48');
+      el.innerHTML = `<span class="battle-kicker">HASTA MAÑANA POR LA NOCHE</span><strong></strong><p></p>`;
+      el.querySelector('strong')!.textContent = name;
+      el.querySelector('p')!.textContent = effect;
+      notes.append(el);
+      setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS * 1.5);
+    },
+    /**
+     * La Reina Bubbaloo screams (a boss of her castle beaten): her words shake over the whole picture
+     * while it goes white, longer and harder the more afraid she is (`fear` 1, 2). Resolves once it is
+     * white; `unflash` clears it (as they wake).
+     */
+    scream(text: string, fear: number) {
+      const ms = reducedMotion.matches ? 900 : 2300 + fear * 500;
+      scream.querySelector('p')!.textContent = text;
+      scream.style.setProperty('--scream', `${ms}ms`);
+      scream.dataset.fear = String(fear); scream.dataset.on = 'true';
+      return new Promise<void>(resolve => setTimeout(resolve, ms));
+    },
+    unflash() { scream.dataset.on = 'false'; },
     /** An ánima woke up outside a fight (Nuria lends the cats): a note, ÁNIMA DESBLOQUEADA. */
     unlocked(classId: ClassId) {
       const el = document.createElement('article');
@@ -244,7 +271,7 @@ export function createStoryUI(hud: HTMLElement) {
     /** The game opens: out of the black it started in, once the place to show is drawn. */
     open: () => darken('boot', false, 600),
     /** Whether the picture is already hidden (black, or white with snow): a place can change under it with no fade of its own. */
-    get covered() { return dark.story || dark.travel || dark.boot || white.dataset.on === 'true'; },
+    get covered() { return dark.story || dark.travel || dark.boot || white.dataset.on === 'true' || scream.dataset.on === 'true'; },
     /** A full-screen title, e.g. the chapter opening; resolves once it has faded. */
     card(id: keyof typeof STORY_CARDS) {
       const c = STORY_CARDS[id];

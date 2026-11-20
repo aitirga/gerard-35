@@ -17,6 +17,29 @@ export const EVENING = 18, LATE = 20;
  */
 export const NIGHT = 21;
 export const isNight = (hour: number) => hour >= NIGHT;
+/**
+ * An afternoon spent (docs/chapter-2.md § Spending the afternoon; decided with Aitor 2026-11-20): on
+ * the bed, on the sofa, cooking, at the gym or rehearsing with the choir. Each brings the night at
+ * once, so the Meridiana can be played after dark; and each but the bed leaves the party a little
+ * something (`name`, `stats`; `effect` says it as a skill's description would) for that night and
+ * the day after, one at a time: the last one spent. `label` is what the prompt offers, `place` where.
+ */
+export const EVENINGS = {
+  cama: { label: 'Echarse un rato', place: 'home' },
+  sofa: { label: 'Sentarse en el sofá', place: 'home', name: 'Tranquilos', stats: { espiritu: 2 }, effect: 'Sube un poco Espíritu de todo el equipo.' },
+  cocina: { label: 'Cocinar', place: 'home', name: 'Bien cenados', stats: { critico: 10 }, effect: 'Sube un poco Crítico de todo el equipo.' },
+  gimnasio: { label: 'Entrenar', place: 'street', name: 'En forma', stats: { fuerza: 2 }, effect: 'Sube un poco Fuerza de todo el equipo.' },
+  coro: { label: 'Ensayar', place: 'street', name: 'Afinados', stats: { magia: 2 }, effect: 'Sube un poco Magia de todo el equipo.' },
+} as const satisfies Record<string, { label: string; place: 'home' | 'street'; name?: string; stats?: Partial<Record<Stat, number>>; effect?: string }>;
+type Stat = 'fuerza' | 'magia' | 'defensa' | 'espiritu' | 'velocidad' | 'critico';
+export type EveningId = keyof typeof EVENINGS;
+/** The afternoons that leave something. */
+export type BoostId = { [K in EveningId]: (typeof EVENINGS)[K] extends { name: string } ? K : never }[EveningId];
+export const isBoost = (id: unknown): id is BoostId => typeof id === 'string' && id in EVENINGS && 'name' in EVENINGS[id as EveningId];
+/** What an afternoon left, and the last day it lasts (the day after it was spent). */
+export interface Boost { id: BoostId; until: number }
+/** What an afternoon leaves as it reads in a fight: its name and its points (`En forma`, Fuerza +2). */
+export const boostOf = (id: BoostId): { name: string; stats: Partial<Record<Stat, number>>; effect: string } => EVENINGS[id];
 /** When they wake after being beaten on the way home at night: the morning is gone. */
 export const WOKE_LATE = 11;
 /** Hours each kind of thing takes. */
@@ -34,9 +57,10 @@ export interface Clock { day: number; hour: number }
 export interface Morning { day: number; story: string[] }
 /**
  * Saved with the story. `epoch` grows with each rewind, so the server knows a rewind may take
- * flags away (any other save only adds them). `mornings` keeps the last two mornings.
+ * flags away (any other save only adds them). `mornings` keeps the last two mornings. `boost`: what
+ * the last afternoon spent left (`EVENINGS`).
  */
-export interface Days { epoch: number; clock: Clock; mornings: Morning[] }
+export interface Days { epoch: number; clock: Clock; mornings: Morning[]; boost?: Boost }
 export const freshDays = (): Days => ({ epoch: 0, clock: { day: 1, hour: DAY_START }, mornings: [] });
 
 /**
@@ -66,5 +90,6 @@ export function readDays(value: unknown): Days | undefined {
   const int = (n: unknown, min: number, max: number) => Number.isInteger(n) && (n as number) >= min && (n as number) <= max;
   if (!d || typeof d !== 'object' || !int(d.epoch, 0, 1e6) || !d.clock || !int(d.clock.day, 1, 999) || !int(d.clock.hour, 0, 24) || !Array.isArray(d.mornings)) return undefined;
   const mornings = d.mornings.filter(m => m && int(m.day, 1, 999) && Array.isArray(m.story) && m.story.every(f => typeof f === 'string')).slice(-2);
-  return { epoch: d.epoch, clock: { day: d.clock.day, hour: d.clock.hour }, mornings: mornings.map(m => ({ day: m.day, story: [...m.story] })) };
+  const boost = d.boost && isBoost(d.boost.id) && int(d.boost.until, 1, 999) ? { boost: { id: d.boost.id, until: d.boost.until } } : {};
+  return { epoch: d.epoch, clock: { day: d.clock.day, hour: d.clock.hour }, mornings: mornings.map(m => ({ day: m.day, story: [...m.story] })), ...boost };
 }

@@ -1,0 +1,287 @@
+{
+  "title": "Pasar la tarde · y el grito de la Reina",
+  "description": "How night comes now (docs/chapter-2.md § Spending the afternoon, src/days.ts `EVENINGS`): an afternoon spent in bed, on the sofa, cooking, at the gym next door or with the choir brings the night at once, and all but the bed leave one state for that night and the next day (Tranquilos, Bien cenados, En forma, Afinados), shown as any buff in a fight. And what a castle boss beaten brings instead of a night (docs/castle.md): the Queen's scream, more afraid each time, white, and bed.",
+  "steps": [
+    {
+      "open": "/?story=metro&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        17,
+        3
+      ]
+    },
+    {
+      "shot": "sofa",
+      "delay": 1500,
+      "caption": "Home by day, at the sofa: «Sentarse en el sofá» is offered like any other thing within reach. Nothing says what it gives"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "sofa-rascar",
+      "delay": 900,
+      "caption": "Aitor: «Ven aquí. Date la vuelta, que te rasco la espalda.» The afternoon is spent there"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.story.night",
+      "timeout": 20000
+    },
+    {
+      "shot": "tranquilos",
+      "delay": 900,
+      "caption": "The dark, and it is night at home: the note says what the afternoon left, as an item gained does. Tranquilos: Espíritu up a little for the whole party, until tomorrow night"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "casa-de-noche",
+      "delay": 1500,
+      "caption": "Night at home. The bed now says «Dormir»; the street is out there for whoever wants to see how strong they are before the castle, where a fall ends the day"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        60,
+        44
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'near', id: 'night-1' })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-battle], .battle-menu, #battle-menu') || window.gerard.game.inBattle === true || !!window.gerard.battleUI",
+      "timeout": 20000
+    },
+    {
+      "wait": 4500
+    },
+    {
+      "press": "KeyR"
+    },
+    {
+      "shot": "combate-tranquilos",
+      "delay": 900,
+      "caption": "Caught in the street that night: the fight's summary lists what the afternoon left, with the stat arrows any buff has"
+    },
+    {
+      "open": "/?story=metro&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        10,
+        2
+      ]
+    },
+    {
+      "shot": "cocina",
+      "delay": 1500,
+      "caption": "The kitchen's worktop: «Cocinar»"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "cocinar",
+      "delay": 900,
+      "caption": "Gerard cooks: «Queda arroz, y medio calabacín que hay que gastar.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.story.night",
+      "timeout": 20000
+    },
+    {
+      "shot": "bien-cenados",
+      "delay": 900,
+      "caption": "Bien cenados: Crítico up a little for the whole party. One state at a time: the last afternoon is the one that counts"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "open": "/?story=metro&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        23,
+        40
+      ]
+    },
+    {
+      "shot": "gimnasio",
+      "delay": 2500,
+      "caption": "VivaGym, next door to home: «Entrenar en VivaGym» spends the afternoon and leaves En forma (Fuerza up a little)"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.story.night",
+      "timeout": 20000
+    },
+    {
+      "shot": "en-forma",
+      "delay": 900,
+      "caption": "Out of the gym it is night, on the street: the way home is ten steps, and the pupils are already coming up"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "open": "/?story=metro&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        104,
+        42
+      ]
+    },
+    {
+      "shot": "coro",
+      "delay": 2500,
+      "caption": "The choir's rehearsal room on the avenue: «Ensayar con el coro» leaves Afinados (Magia up a little), and it is where they learn Emilie is missing. From here the way home at night is a real walk"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.story.night",
+      "timeout": 20000
+    },
+    {
+      "shot": "afinados",
+      "delay": 900,
+      "caption": "After the rehearsal: night, Afinados, and eighty cells of avenue between them and the portal"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "open": "/?story=castle&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.game.setEnvironment('castillo-1')"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "aurelia-antes",
+      "delay": 2500,
+      "caption": "Her castle's first floor, the way in (Aurelià's fight itself is in the castle's own screenshots)"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'aurelia' })"
+    },
+    {
+      "eval": "window.adv = setInterval(() => { if (document.querySelector('#queen-scream')?.dataset.on === 'true') return clearInterval(window.adv); if (document.querySelector('#hud[data-dialogue]')) for (const type of ['keydown', 'keyup']) window.dispatchEvent(new KeyboardEvent(type, { code: 'KeyE', key: 'e', bubbles: true })); }, 350)"
+    },
+    {
+      "until": "document.querySelector('#queen-scream')?.dataset.on === 'true'",
+      "timeout": 30000
+    },
+    {
+      "shot": "grito-1",
+      "delay": 500,
+      "caption": "Aurelià beaten: the Queen screams through the whole building («No. ¡NO! ¡Devolvédmelo! ¡Era mío!») and the picture goes to white. No night follows a castle boss"
+    },
+    {
+      "until": "window.gerard.story.clock.day === 2 && window.gerard.game.environmentId === 'meridiana'",
+      "timeout": 30000
+    },
+    {
+      "shot": "cama-otra-vez",
+      "delay": 3500,
+      "caption": "Out of the white they are in bed, in the morning: the same day again"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'direccion' })"
+    },
+    {
+      "eval": "window.adv = setInterval(() => { if (document.querySelector('#queen-scream')?.dataset.on === 'true') return clearInterval(window.adv); if (document.querySelector('#hud[data-dialogue]')) for (const type of ['keydown', 'keyup']) window.dispatchEvent(new KeyboardEvent(type, { code: 'KeyE', key: 'e', bubbles: true })); }, 350)"
+    },
+    {
+      "until": "document.querySelector('#queen-scream')?.dataset.on === 'true'",
+      "timeout": 30000
+    },
+    {
+      "shot": "grito-2",
+      "delay": 500,
+      "caption": "Dirección beaten: she is more afraid, the words bigger («¡Otra vez no! ¡No os vayáis! ¡NO ME DEJÉIS AQUÍ SOLA!»)"
+    },
+    {
+      "until": "window.gerard.story.clock.day === 3",
+      "timeout": 30000
+    },
+    {
+      "shot": "cama-tercera",
+      "delay": 3500,
+      "caption": "And bed again"
+    }
+  ]
+}

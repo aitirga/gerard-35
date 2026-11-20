@@ -5,6 +5,7 @@ import { aitorTaken, artilugioLive, castleAfter, castleChips, castleIdle, castle
 import { castleEnvironment } from '../src/castle-floor.ts';
 import { createFearBattle } from '../src/battle.ts';
 import { Story } from '../src/story.ts';
+import { LINES_CASTLE } from '../src/castle-story.ts';
 import { flagsAt } from '../src/story-points.ts';
 import { canWalk } from '../src/movement.ts';
 
@@ -104,12 +105,22 @@ test('the castle in the story: the gym leads into the floor, each boss moves the
   const story = new Story(flagsAt('castle'));
   assert.equal(story.redirect('patio-gimnasio').environment, 'castillo-1');
   assert.equal(story.extraSlots, 1);
-  story.handle({ type: 'battle', won: true, encounter: 'aurelia' });
+  // A boss beaten: the Queen screams through the building, the picture goes white, and they are in bed. No night to walk home through.
+  const first = story.handle({ type: 'battle', won: true, encounter: 'aurelia' });
+  const scream = first.find(e => e.kind === 'scream');
+  assert.ok(scream && scream.fear === 1 && scream.text === LINES_CASTLE.screams.aurelia);
+  assert.ok(!first.some(e => e.kind === 'fall'), 'nobody falls: it is a flash');
+  assert.deepEqual(first.slice(first.indexOf(scream) + 1).map(e => e.kind).slice(0, 2), ['travel', 'wake']);
+  assert.equal(first.find(e => e.kind === 'travel').environment, 'meridiana');
+  assert.deepEqual(story.clock, { day: 2, hour: 8 }, 'the same morning again');
+  assert.equal(story.night, false);
   assert.ok(story.has('aurelia') && story.has('luz-aurelia'));
   assert.equal(story.extraSlots, 2, 'Aurelià opens a third ánima each');
   assert.equal(story.redirect('gimnasio-vestuarios').environment, 'castillo-2');
   assert.deepEqual(castleEntry(new Set(['aurelia'])).environment, 'palacio-gimnasio');
-  story.handle({ type: 'battle', won: true, encounter: 'direccion' });
+  const second = story.handle({ type: 'battle', won: true, encounter: 'direccion' }).find(e => e.kind === 'scream');
+  assert.ok(second.fear === 2 && second.text === LINES_CASTLE.screams.direccion, 'she is more afraid each time');
+  assert.equal(story.clock.day, 3);
   assert.ok(['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'].every(f => story.has(f)));
   assert.equal(story.redirect('secretaria-direccio').environment, 'castillo-3');
   // Lost with Aitor hers: the once it happens. The morning after, Bernat calls them to El Nucli.

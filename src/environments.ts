@@ -439,7 +439,7 @@ export const MERIDIANA = house({
     { id: 'meridiana-door', cell: { x: 6, z: 1 }, label: 'Salir a la Meridiana', to: { environment: 'meridiana-calle', cell: { x: 28, z: 42 } } },
     // The piano and the balcony take time in chapter 2 (the story answers them, src/days.ts).
     { id: 'meridiana-piano', cell: { x: 2, z: 5 }, label: 'Tocar el piano', hint: 'Tocar el piano' },
-    { id: 'meridiana-kitchen', cell: { x: 10, z: 2 }, label: 'Mirar la cocina', lines: ['Encimera de madera, azulejos blancos… y alguien tiene que fregar.'] },
+    // The kitchen and the sofa are the story's (src/story.ts): an afternoon spent there brings the night.
     // The story turns the TV on (chapter 2's news); before that it is just the TV.
     { id: 'meridiana-tv', cell: { x: 16, z: 2 }, label: 'Mirar la tele', anchor: { x: 16.75, z: 1.8, y: 1.65 } },
     { id: 'meridiana-painting', cell: { x: 19, z: 11 }, label: 'Mirar el cuadro', lines: ['Barcelona de noche, con la torre encendida. Nuestra ciudad, en la pared.'] },

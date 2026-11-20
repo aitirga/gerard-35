@@ -94,11 +94,18 @@ class Morning(BaseModel):
     story: list[Literal[STORY_FLAGS]] = Field(max_length=len(STORY_FLAGS))
 
 
+class Boost(BaseModel):
+    """What the last afternoon spent left the party (src/days.ts `EVENINGS`), and the last day it lasts."""
+    id: Literal["sofa", "cocina", "gimnasio", "coro"]
+    until: int = Field(strict=True, ge=1, le=999)
+
+
 class Days(BaseModel):
     """Chapter 2's countdown (src/days.ts). `epoch` grows when the player goes back a day."""
     epoch: int = Field(strict=True, ge=0, le=1000000)
     clock: Clock
     mornings: list[Morning] = Field(default_factory=list, max_length=2)
+    boost: Boost | None = None
 
 
 class State(BaseModel):
@@ -127,7 +134,7 @@ def save_state(state: State, request: Request, response: Response):
 def merge_progress(saved: list, saved_days: dict | None, state: State):
     """Flags only accumulate, except when the player went back a day (a newer `epoch`): then the
     flags and days they send replace the saved ones. A tab still on an older epoch changes nothing."""
-    incoming = state.days.model_dump() if state.days else None
+    incoming = state.days.model_dump(exclude_none=True) if state.days else None
     epoch = saved_days["epoch"] if saved_days else 0
     if incoming and incoming["epoch"] > epoch:
         return known_flags(state.story), incoming

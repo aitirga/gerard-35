@@ -408,6 +408,8 @@ export function createTraffic(root: pc.Entity, kit: PropKit, scene: GeoScene, x:
   return {
     /** Moves the traffic on; `walkers` (grid cells) are the people cars stop for. */
     update(dt: number, walkers: Cell[]) { step(dt, walkers); draw(dt); ride(dt, walkers); },
+    /** The cars, buses and motorbikes on the move right now, in the plan's own cells (the night's pupils get run over, src/night-pupils.ts). */
+    vehicles(): readonly { x: number; z: number; hx: number; hz: number; length: number; width: number; v: number }[] { return vehicles; },
     destroy() { vehicles.forEach(v => v.entity.destroy()); vehicles.length = 0; riders.destroy(); cyclists.length = 0; },
   };
 }

@@ -31,7 +31,8 @@ import { GALLERY, SECTION, WELLS, beat, calibration, charged, descend, measure, 
 import { isTicketStation, ticketFlag, type TicketStation } from './tickets.ts';
 import { LEVELLED, fightXp, participants, topOf } from './levels.ts';
 import { canWalk, WALK_SPEED, type Cell } from './movement.ts';
-import { FIRST_CLEAR, HIDING_KINDS, hiddenAt, hunterSpec, huntersGrid, isLit, litLamps, nightTier, risingAt, sightOf, type NightTier } from './night.ts';
+import { FIRST_CLEAR, HIDING_KINDS, huntersGrid, litLamps, nightTier, risingAt } from './night.ts';
+import { carriageway, createStreet, removeGroup, riseGroup, stepStreet, type HidingKind, type Street } from './night-pupils.ts';
 import { createBoard } from './parcelas.ts';
 import { CASTLE_FIGHTS, CASTLE_PHASES, castlePhaseAt, type NightFight } from './castle.ts';
 import { aitorTaken } from './castle-fight.ts';
@@ -164,8 +165,13 @@ export interface Playthrough {
 }
 
 interface Spot { environment: EnvironmentId; cell: Cell }
-interface Hunter { id: string; chaser: Chaser; respawn?: boolean; away: number; night?: boolean; stare: number }
-interface NightHunt { tier: NightTier; lamps: Cell[]; hides: Cell[]; portal: Cell; grid: string[]; grates: Cell[]; next: number; train: number }
+interface Hunter { id: string; chaser: Chaser; respawn?: boolean; away: number; stare: number }
+/** The night's street (src/night-pupils.ts) with its grates and the seconds to the next train. */
+interface NightHunt { street: Street; grates: Cell[]; train: number }
+/** A group of the night's pupils that reached the party: its fight is `night-<group>`. */
+interface Caught { id: string; group: number }
+/** Whoever is to be kept away from on a walk: a chaser, or one of the night's pupils. */
+interface Threat { id: string; position: Cell; chasing: boolean }
 type Goal = { cell: Cell; radius: number };
 
 const key = (c: Cell) => `${c.x},${c.z}`;
@@ -284,6 +290,8 @@ export class Playing {
         case 'travel': this.moveTo({ environment: effect.environment, cell: effect.cell }); this.spend('scene', BEAT.travel!); break;
         case 'battle': this.fight(effect.encounter, effect.night); break;
         case 'minion': this.spend('scene', BEAT.minion!); this.send({ type: 'minion' }); break;
+        // An afternoon spent in bed, on the sofa, cooking, at the gym or with the choir: under the dark, it goes by.
+        case 'evening': this.spend('scene', 3); this.send({ type: 'evening', what: effect.what }); break;
         case 'palace': this.spend('scene', BEAT.palace!); this.send({ type: 'palace' }); break;
         case 'ambush': this.spend('scene', BEAT.ambush!); this.send({ type: 'caught' }); break;
         case 'metro': this.ride(effect.station); break;
@@ -407,7 +415,7 @@ export class Playing {
   walk(goal: Goal, avoid?: ReadonlySet<string>): boolean {
     this.refreshHunters();
     const speed = this.story.canRun ? RUN_SPEED : WALK_SPEED;
-    if (!this.hunters.length) {
+    if (!this.hunters.length && !this.hunt) {
       const path = APPROXIMATE.has(this.at.environment) ? undefined : pathOn(this.grid, this.at.cell, goal, this.blocked(), avoid);
       const cells = path ? path.length - 1 : dist(this.at.cell, goal.cell) * 1.3;
       if (!path && !APPROXIMATE.has(this.at.environment)) this.gap(`Sin camino en ${ENVIRONMENTS[this.at.environment].name}: se estima en línea recta`);
@@ -418,9 +426,18 @@ export class Playing {
     return this.huntedWalk(goal, speed);
   }
   /** How wide a berth a hunter is given: wide once it has beaten the party, a little by whoever runs past everything. */
-  private dodgeOf(hunter: Hunter) {
-    const encounter = this.encounterOf(hunter.id);
+  private dodgeOf(id: string) {
+    const encounter = this.encounterOf(id);
     return encounter && this.feared.has(encounter) ? 6 : this.player.engage === 'avoid' ? 3.5 : 2;
+  }
+  /** Everyone to keep away from right now: the chasers about, and at night the pupils standing in the street. */
+  private threats(): Threat[] {
+    const out: Threat[] = this.hunters.filter(h => h.away <= 0).map(h => ({ id: h.id, position: h.chaser.position, chasing: h.chaser.mode === 'chase' }));
+    for (const p of this.hunt?.street.pupils ?? []) {
+      if (p.mode === 'rising' || p.mode === 'flat' || p.mode === 'resting' || p.mode === 'stunned') continue;
+      out.push({ id: `night-${p.group}`, position: p.position, chasing: p.mode === 'chase' || p.mode === 'charge' || p.mode === 'windup' });
+    }
+    return out;
   }
   private encounterOf(id: string) {
     return this.story.fears(this.at.environment).find(f => f.id === id)?.encounter ?? (id.startsWith('night-') ? 'night-guard' : undefined);
@@ -446,7 +463,8 @@ export class Playing {
       if (here === 0 && !target) { this.at.cell = at; return true; }
       if (here < best) { best = here; since = 0; } else since += dt;
       // Stuck behind someone for a while: they matter less and less, so the walk goes on. One only walking its round is waited out longer.
-      const chased = this.hunters.some(h => h.away <= 0 && h !== target && h.chaser.mode === 'chase' && dist(h.chaser.position, at) < 12);
+      const threats = this.threats().filter(t => t.id !== target?.id);
+      const chased = threats.some(t => t.chasing && dist(t.position, at) < 12);
       const nerve = Math.max(0, 1 - since / (chased ? 10 : 45));
       let pick = at, score = Infinity;
       for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -455,26 +473,28 @@ export class Playing {
         const left = field.get(key(next));
         if (left === undefined) continue;
         let danger = 0;
-        for (const h of this.hunters) {
-          if (h === target || h.away > 0) continue;
-          const d = dist(h.chaser.position, next), reach = this.dodgeOf(h) * (h.chaser.mode === 'chase' ? 1.5 : 1);
+        for (const t of threats) {
+          const d = dist(t.position, next), reach = this.dodgeOf(t.id) * (t.chasing ? 1.5 : 1);
           if (d < reach * 2.5) danger += (reach / Math.max(d - .4, .25)) ** 2;
         }
         const value = left + (dx || dz ? 0 : .5) + danger * nerve * .8;
         if (value < score) { score = value; pick = next; }
       }
+      const heading = { x: pick.x - at.x, z: pick.z - at.z };
       at = pick;
       walked += dt;
       this.spend('walk', dt * this.player.pace);
       // Walking into the one gone after is meeting it, whatever it was doing.
-      const caught = this.stepHunters(at, dt) ?? (target && target.away <= 0 && dist(target.chaser.position, at) <= 1 ? target : undefined);
+      const caught = this.stepHunters(at, dt, heading, speed > WALK_SPEED) ?? (target && target.away <= 0 && dist(target.chaser.position, at) <= 1 ? target : undefined);
       if (caught) {
         const environment = this.at.environment;
         this.at.cell = at;
         this.send({ type: 'near', id: caught.id });
         // A fight lost, a catch in the game of tag: the story has put them somewhere else.
         if (this.at.environment !== environment || key(this.at.cell) !== key(at)) return false;
-        if (caught.respawn) { caught.away = RESPAWN; caught.chaser = createChaser(caught.chaser.spec); }
+        // A group of the night beaten is off the street; the others hunt on.
+        if ('group' in caught) { if (this.hunt) removeGroup(this.hunt.street, caught.group); }
+        else if (caught.respawn) { caught.away = RESPAWN; caught.chaser = createChaser(caught.chaser.spec); }
         else this.gone.add(caught.id);
         this.refreshHunters();
         if (caught === target) return true;
@@ -507,53 +527,55 @@ export class Playing {
     }
     return out;
   }
-  /** Moves every hunter a step; the one that reaches the party, if any. */
-  private stepHunters(pos: { x: number; z: number }, dt: number): Hunter | undefined {
-    const night = this.hunt;
-    if (night) {
-      night.train -= dt;
-      if (night.train <= 0) { night.train = night.tier.trainEvery; this.rise(night, night.tier.perTrain, pos); }
-    }
-    const lit = !!night && isLit(pos, night.lamps);
+  /**
+   * Moves every hunter a step; the one that reaches the party, if any. At night the street's pupils
+   * hunt by their own rules (src/night-pupils.ts): `heading` and `running` are how the party moves,
+   * which they hear and head off. The simulated player never stops to hide.
+   */
+  private stepHunters(pos: { x: number; z: number }, dt: number, heading: Cell = { x: 0, z: 0 }, running = false): Hunter | Caught | undefined {
     for (const h of this.hunters) {
       if (h.away > 0) { h.away -= dt; continue; }
       if (h.stare > 0) { h.stare -= dt; continue; }
-      const hidden = !!night && h.night === true && hiddenAt(pos, false, lit, night.hides, night.portal);
-      const grid = night && h.night ? night.grid : this.grid;
-      const event = updateChaser(h.chaser, dt, pos, grid, hidden, night && h.night ? sightOf(night.tier, lit, h.chaser.mode === 'chase') : undefined);
+      const event = updateChaser(h.chaser, dt, pos, this.grid);
       if (event === 'caught' || dist(h.chaser.position, pos) <= TAG.reach && h.chaser.spec.relentless) { rest(h.chaser); return h; }
     }
-    return undefined;
+    const night = this.hunt;
+    if (!night) return undefined;
+    night.train -= dt;
+    if (night.train <= 0) { night.train = night.street.tier.trainEvery; this.rise(night, night.street.tier.perTrain, pos); }
+    const moving = heading.x !== 0 || heading.z !== 0;
+    const events = stepStreet(night.street, dt, { position: pos, pace: !moving ? 'still' : running ? 'run' : 'walk', heading, still: 0 });
+    const caught = events.find(e => e.type === 'caught');
+    return caught && { id: `night-${caught.pupil.group}`, group: caught.pupil.group };
   }
-  /** Who is hunting this place now, by the story: the tower's fears, the campsite's rounds, the friends playing tag, the guards at night. */
+  /** Who is hunting this place now, by the story: the tower's fears, the campsite's rounds, the friends playing tag, the castle's pupils at night. */
   private refreshHunters() {
     const env = this.at.environment, wanted = new Map<string, ChaserSpec & { respawn?: boolean; stare?: number }>();
     for (const fear of this.story.fears(env)) wanted.set(fear.id, { id: fear.id, patrol: fear.patrol, sight: fear.sight, walk: fear.walk, run: fear.run, respawn: fear.respawn });
     for (const friend of this.story.uniChasers(env)) if (!friend.frozen) wanted.set(friend.id, { id: friend.id, patrol: friend.patrol, sight: friend.sight, walk: friend.walk, run: friend.run, relentless: true, stare: TAG.stare });
-    this.hunters = this.hunters.filter(h => h.night || (wanted.has(h.id) && !this.gone.has(h.id)));
+    this.hunters = this.hunters.filter(h => wanted.has(h.id) && !this.gone.has(h.id));
     for (const [id, spec] of wanted) if (!this.gone.has(id) && !this.hunters.some(h => h.id === id)) this.hunters.push({ id, chaser: createChaser(spec), respawn: spec.respawn, away: 0, stare: spec.stare ?? 0 });
-    // At night on the Meridiana her guards climb out of the grates (src/game.ts `huntAtNight`).
+    // At night on the Meridiana the castle's pupils climb out of the grates (src/game.ts `huntAtNight`).
     if (env === 'meridiana-calle' && this.story.night && !this.hunt) {
       const environment = ENVIRONMENTS[env], tier = nightTier(stage(this.story.spread));
       const cellOf = (p: { x: number; z: number }) => ({ x: p.x, z: p.z });
       const portal = environment.interactions.find(i => i.id === 'meridiana-portal')?.cell ?? environment.spawn;
       this.hunt = {
-        tier, portal, next: 1, train: tier.trainEvery,
+        train: tier.trainEvery,
         grates: environment.props.filter(p => p.kind === 'grate').map(cellOf),
-        lamps: litLamps(environment.props.filter(p => p.kind === 'lamp').map(cellOf), tier),
-        hides: environment.props.filter(p => (HIDING_KINDS as readonly string[]).includes(p.kind)).map(cellOf),
-        grid: huntersGrid(environment.grid, portal),
+        street: createStreet({
+          tier, phase: castlePhaseAt(this.story), portal, grid: huntersGrid(environment.grid, portal),
+          lamps: litLamps(environment.props.filter(p => p.kind === 'lamp').map(cellOf), tier),
+          covers: environment.props.filter(p => (HIDING_KINDS as readonly string[]).includes(p.kind)).map(p => ({ x: p.x, z: p.z, kind: p.kind as HidingKind })),
+          road: carriageway(environment.geo?.roads ?? []),
+        }),
       };
       this.rise(this.hunt, tier.hunters, this.at.cell, FIRST_CLEAR);
     }
-    if (!this.story.night) { this.hunt = undefined; this.hunters = this.hunters.filter(h => !h.night); }
+    if (!this.story.night) this.hunt = undefined;
   }
   private rise(night: NightHunt, count: number, from: { x: number; z: number }, clear?: number) {
-    for (const cell of risingAt(night.grates, round(from), count, clear)) {
-      if (this.hunters.filter(h => h.night).length >= night.tier.hunters * 2) return;
-      const spec = hunterSpec(night.next++, cell, night.grid, night.tier);
-      this.hunters.push({ id: spec.id, chaser: createChaser(spec), away: 2.5, night: true, stare: 0 });
-    }
+    for (const cell of risingAt(night.grates, round(from), count, clear)) if (!riseGroup(night.street, cell).length) return;
   }
   /** Goes after a hunter on purpose (EXP): walks at it until it is met. */
   private seek(hunter: Hunter) {
@@ -777,8 +799,12 @@ export class Playing {
     this.interact('challenge-guards');
   }
   private sleep() {
+    const day = this.story.clock.day;
     this.goHome();
-    if (this.at.environment === 'meridiana' && !this.story.night) this.interact('meridiana-bed');
+    // Home by day, they lie down a while (which brings the night) and then sleep; home at night the day is already over.
+    if (this.story.clock.day !== day || this.at.environment !== 'meridiana') return;
+    if (!this.story.night) this.interact('meridiana-bed');
+    if (this.story.clock.day === day && this.story.night) this.interact('meridiana-bed');
   }
   /** One go at a friend's mission, from wherever the story has it. */
   private mission(id: MissionId) {

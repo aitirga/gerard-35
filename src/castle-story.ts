@@ -93,6 +93,14 @@ export const LINES_CASTLE = {
     aitor('…Gerard. Ayer. Yo te…'),
     gerard('No eras tú. Coge la chaqueta.'),
   ),
+  /**
+   * A boss beaten (decided with Aitor 2026-11-20): her voice through the whole building, more afraid
+   * each time; then the picture goes white and they are in bed, the same morning again.
+   */
+  screams: {
+    aurelia: 'No. ¡NO! ¡Devolvédmelo! ¡Era mío!',
+    direccion: '¡Otra vez no! ¡No os vayáis! ¡NO ME DEJÉIS AQUÍ SOLA!',
+  },
   /** The school's door once it is over. */
   schoolAgain: both(gerard('Es la escuela. Solo la escuela.'), aitor('El lunes abren.')),
   /** The last scene (docs/castle-bosses.md § The last scene): what is seen before Gerard chooses. */
@@ -138,8 +146,12 @@ export interface CastleHost {
   /** The save's own number and the day: what a floor is generated from. */
   readonly seed: number; readonly day: number;
   castle: CastleRun;
-  /** An hour goes by (a fight inside); night falls at once (a boss beaten); the party falls and wakes at home the next morning. */
-  hour(): StoryEffect[]; nightfall(): StoryEffect[]; fall(): StoryEffect[];
+  /**
+   * An hour goes by (a fight inside); a boss beaten makes her scream, the picture goes white and
+   * they are in bed, the day over (never a night to walk home through); the party falls and wakes at
+   * home the next morning.
+   */
+  hour(): StoryEffect[]; scream(boss: 'aurelia' | 'direccion'): StoryEffect[]; fall(): StoryEffect[];
   /** The next morning at home, with nothing said: black, home, awake. */
   morning(): StoryEffect[];
 }
@@ -235,7 +247,7 @@ export function castleBattle(host: CastleHost, event: { won: boolean; encounter?
     if (!host.raise(encounter)) return [];
     for (const who of CASTLE_LIGHTS[encounter]) host.raise(`luz-${who}`);
     const lines = encounter === 'aurelia' ? [LINES_CASTLE.aureliaWon, LINES_CASTLE.aureliaAfter] : [LINES_CASTLE.direccionWon, LINES_CASTLE.direccionAfter];
-    return [say(lines[0]), { kind: 'lights', people: [...CASTLE_LIGHTS[encounter]] }, say(lines[1]), ...host.hour(), ...host.nightfall()];
+    return [say(lines[0]), { kind: 'lights', people: [...CASTLE_LIGHTS[encounter]] }, say(lines[1]), ...host.scream(encounter)];
   }
   // A room cleared stays cleared today; an hour of the day went into it.
   if (fighting && !today.beaten[fighting.phase]?.includes(fighting.room)) (today.beaten[fighting.phase] ??= []).push(fighting.room);

@@ -26,6 +26,12 @@ export const PLACES_2 = {
   jar: { environment: 'meridiana' as EnvironmentId, cell: { x: 21, z: 9 }, anchor: { x: 19.77, z: 9.78, y: 1.5 } },
   /** The snow globe on the TV unit, between the controller and the east speaker (§ The snow globe), and where shaking it sets the party down: inside the front door. */
   bola: { environment: 'meridiana' as EnvironmentId, cell: { x: 17, z: 2 }, spot: { x: 17.45, z: .43, y: .75 }, land: { x: 6, z: 2 } },
+  /** Where an afternoon is spent at home (src/days.ts `EVENINGS`): the sofa facing the TV, and the kitchen's worktop. */
+  sofa: { environment: 'meridiana' as EnvironmentId, cell: { x: 17, z: 3 }, anchor: { x: 16.5, z: 4.3, y: .7 } },
+  kitchen: { environment: 'meridiana' as EnvironmentId, cell: { x: 10, z: 2 } },
+  /** And on the avenue: VivaGym's window next to home's portal, and the choir's room on the way from the metro (docs/quests/coro.md § The choir room). */
+  gym: { environment: 'meridiana-calle' as EnvironmentId, cell: { x: 23, z: 40 } },
+  choir: { environment: 'meridiana-calle' as EnvironmentId, cell: { x: 104, z: 42 } },
 } as const;
 
 /** The broadcast (src/news-ui.ts). The ticker hides the chapter's first clue among ordinary news. */
@@ -164,6 +170,46 @@ export const LINES_2 = {
   wokeLate: both(gerard('¡NO!'), aitor('Las once… Nos han dejado KO en la Meridiana y no sé ni cómo llegamos a la cama.')),
   /** One of the palace's monsters has caught them in the street. */
   nightCaught: both(aitor('¡Gerard! ¡Lo tenemos encima!')),
+  /** In bed after her scream and the white (a boss of her castle beaten): the same morning again. */
+  wokeFlash: both(
+    gerard('¡NO!'),
+    aitor('Gerard. Estás en la cama. Estamos en la cama.'),
+    gerard('Estábamos dentro. Ha gritado, y todo se ha puesto blanco.'),
+    aitor('El móvil dice veintidós de noviembre. Otra vez.'),
+  ),
+  /** The kitchen before the news, and once the afternoon is gone. */
+  kitchen: both(gerard('Encimera de madera, azulejos blancos… y alguien tiene que fregar.')),
+  /**
+   * An afternoon spent (src/days.ts `EVENINGS`): `going`, what is said before the dark; `done`,
+   * coming out of it at night; `night`, the same place once it is already night.
+   */
+  afternoon: {
+    cama: {
+      going: both(gerard('Me echo un rato. Solo un rato.'), aitor('Te despierto cuando oscurezca.')),
+      done: both(aitor('Gerard. Ya es de noche.'), gerard('¿Cuánto he dormido?'), aitor('Lo que te hacía falta.')),
+      night: both(aitor('Ahora ya no es un rato. Ahora es dormir.')),
+    },
+    sofa: {
+      going: both(aitor('Ven aquí. Date la vuelta, que te rasco la espalda.'), gerard('Un poco más arriba. Ahí. No pares.')),
+      done: both(gerard('Se ha hecho de noche y no me he enterado.'), aitor('De eso se trataba.')),
+      night: both(aitor('Si me siento ahora no me levanto. A la cama.')),
+    },
+    cocina: {
+      going: both(gerard('Cocino yo. Queda arroz, y medio calabacín que hay que gastar.'), aitor('Pongo la mesa. Y abro el vino.')),
+      done: both(aitor('Estaba bueno. Repetiría.'), gerard('Ha anochecido mientras cenábamos.')),
+      night: both(gerard('Ya hemos cenado. Y alguien tiene que fregar.')),
+    },
+    gimnasio: {
+      going: both(aitor('Una hora de pesas. Lo que venga, que nos pille fuertes.'), gerard('Hace un mes que pago la cuota y no piso esto.')),
+      done: both(gerard('Me tiemblan las piernas.'), aitor('Mañana lo agradecerás. Mira, ya es de noche. Derechos a casa.')),
+      night: both(aitor('A estas horas no. Vámonos a casa.')),
+    },
+    coro: {
+      going: both(aitor('Ensayo. Hoy repasamos los bajos, que se nos caen.'), gerard('Y yo que venía a cantar.')),
+      done: both(aitor('Ha sonado mejor que la semana pasada.'), gerard('Es de noche. A casa, y sin correr.')),
+      night: both(gerard('La persiana está echada. Hoy ya no hay ensayo.')),
+    },
+  },
   /** Going to bed early. */
   sleep: both(gerard('Me voy a dormir. A ver si mañana…'), aitor('Mañana. Descansa.')),
   sleepNotYet: both(aitor('¿A dormir? Si acabamos de levantarnos. Primero, la tele: no para de pitar.')),

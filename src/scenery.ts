@@ -509,6 +509,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     setDark(k: number) {
       dark = k; home?.setLamps(1 - k); this.setTone(tone);
     },
+    /** The vehicles driving the street right now, in cells (none where no traffic runs). */
+    cars() { return traffic?.vehicles() ?? []; },
     /** `focus` is what must stay visible (the player); crowns in front of it turn see-through. `walkers` (cells) are who traffic stops for; without them it holds still. */
     update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3, walkers?: Cell[]) {
       props.update(dt, animate, focus, toCamera);

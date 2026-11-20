@@ -1,15 +1,15 @@
 /**
  * Night in Barcelona and the way home (docs/chapter-2.md § Night and the way home). After a friend's
- * mission is won or a milestone in her palace is reached, night falls outside. Coming back to the
- * Meridiana at night, the palace's own monsters climb out of the vent grates over the trains and
- * hunt the party from the Fabra i Puig station to home's door: the dark between lamps hides, a
- * lamp's light gives them away, stock-still behind the containers or the bus shelter is out of
- * sight, and the warm light of home's portal is where they never step. If one catches the party,
- * it is a fight with the palace's guard at the strength the palace has now: the walk home says, in
- * passing, how ready the party is for her. Pure: no DOM, no engine.
+ * mission is won, or an afternoon spent at home, at the gym or at the choir, night falls outside
+ * (never after her castle: a boss beaten is a flash back to bed). On the Meridiana at night the
+ * castle's pupils climb out of the vent grates over the trains and hunt the party: the dark between
+ * lamps hides, a lamp's light gives them away, stock-still behind the containers or the bus shelter
+ * is out of sight, and the warm light of home's portal is where they never step. If one catches the
+ * party, it is a fight with its group at the strength the castle has now: the street says how ready
+ * the party is for her, where a fall costs a morning and not the day. How each pupil hunts is
+ * src/night-pupils.ts. Pure: no DOM, no engine.
  */
 import type { Cell } from './movement.ts';
-import type { ChaserSpec } from './chasers.ts';
 
 /**
  * How hard the way home is, from how far her power has spread (`stage` in src/days.ts): more of
@@ -18,7 +18,7 @@ import type { ChaserSpec } from './chasers.ts';
  */
 export interface NightTier {
   id: string;
-  /** Monsters waiting when the party comes out onto the avenue, and more with each train that runs under it. */
+  /** Groups of pupils waiting when the party comes out onto the avenue (a room's group each, a body a pupil), and more with each train that runs under it. */
   hunters: number; perTrain: number;
   /** Walking their round and running at Gerard. */
   walk: number; run: number;
@@ -79,9 +79,9 @@ export function huntersGrid(grid: readonly string[], portal: Cell): string[] {
   return grid.map((row, z) => [...row].map((c, x) => dist({ x, z }, portal) <= PORTAL_SAFE ? '#' : c).join(''));
 }
 
-/** A hunter's round: a small loop round where it came up, kept on walkable cells. */
-export function roundAbout(at: Cell, grid: readonly string[], radius = 4): Cell[] {
-  const free = (c: Cell) => grid[c.z]?.[c.x] !== undefined && grid[c.z][c.x] !== '#';
+/** A hunter's round: a small loop round where it came up, kept on walkable cells (and, with `keep`, on those it allows: off the carriageways). */
+export function roundAbout(at: Cell, grid: readonly string[], radius = 4, keep: (cell: Cell) => boolean = () => true): Cell[] {
+  const free = (c: Cell) => grid[c.z]?.[c.x] !== undefined && grid[c.z][c.x] !== '#' && keep(c);
   const loop = [[radius, 0], [0, radius * .6], [-radius, 0], [0, -radius * .6]]
     .map(([dx, dz]) => ({ x: Math.round(at.x + dx), z: Math.round(at.z + dz) }))
     .filter(free);
@@ -96,10 +96,6 @@ export function risingAt(grates: readonly Cell[], from: Cell, count: number, cle
   const away = grates.filter(g => dist(g, from) >= clear);
   const pool = (away.length ? away : [...grates]).sort((a, b) => dist(a, from) - dist(b, from));
   return Array.from({ length: count }, (_, i) => pool[i % pool.length]).filter(Boolean);
-}
-/** A hunter's spec, its id numbered (`night-1`, `night-2`…). */
-export function hunterSpec(n: number, at: Cell, grid: readonly string[], tier: NightTier): ChaserSpec {
-  return { id: `night-${n}`, patrol: roundAbout(at, grid), sight: tier.sightDark, walk: tier.walk, run: tier.run };
 }
 
 /**

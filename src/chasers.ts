@@ -57,8 +57,8 @@ export function clearLine(grid: readonly string[], a: Cell, b: Cell) {
 export function sees(chaser: Chaser, player: Cell, grid: readonly string[], hidden: boolean, sight = chaser.spec.sight) {
   return !hidden && dist(chaser.position, player) <= sight && clearLine(grid, chaser.position, player);
 }
-/** One step towards `target`, sliding along walls rather than stopping dead. */
-function step(chaser: Chaser, target: Cell, speed: number, dt: number, grid: readonly string[]) {
+/** One step towards `target`, sliding along walls rather than stopping dead. Anything with a place and a facing walks so (src/night-pupils.ts). */
+export function step(chaser: { position: Cell; facing: number }, target: Cell, speed: number, dt: number, grid: readonly string[]) {
   const d = dist(chaser.position, target);
   if (d < 1e-3) return;
   const move = Math.min(d, speed * dt), ux = (target.x - chaser.position.x) / d, uz = (target.z - chaser.position.z) / d;

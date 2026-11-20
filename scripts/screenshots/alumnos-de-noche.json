@@ -1,0 +1,251 @@
+{
+  "title": "De noche en la Meridiana · cómo caza cada alumno",
+  "description": "The way home at night (docs/chapter-2.md § Night and the way home, src/night-pupils.ts): the castle's pupils walk the Meridiana one by one, and each hunts the street the way it fights. Each moment here is staged through the game's own street (window.gerard.game.nightStreet) and then played by the real rules, frozen at the frame that shows it. First year: El Repetidor's charge, La Chivata pointing, hiding and being looked for, El Empollón learning a cover, Los Gemelos cutting ahead, La Delegada marching, a car flattening one. Second year (/?night=2&year=2): El Ausente in and out of the light, El Castigado's Rabia. Third (&year=3): El Montón taking Gerard's pace.",
+  "steps": [
+    {
+      "open": "/?story=metro&night=2&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.game.nightHunters.length >= 4",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.night = { g: () => window.gerard.game, s: () => window.gerard.game.nightStreet, n: 50, frozen: false, clear() { const s = this.s(); s.pupils.splice(0); s.pointed = false; s.marching = false; delete s.learned; delete s.fresh; }, make(kind, dx, dz, more = {}) { const me = this.g().position, at = { x: me.x + dx, z: me.z + dz }; const p = { id: 'night-' + (++this.n) + '-1', group: 1, kind, position: at, facing: 0, mode: 'patrol', patrol: [{ x: Math.round(at.x), z: Math.round(at.z) }], next: 0, timer: 0, known: { x: me.x, z: me.z }, look: 0, seeing: false, stuck: 0, ...more }; this.s().pupils.push(p); return p; }, far(p) { const me = this.g().position; return Math.hypot(p.position.x - me.x, p.position.z - me.z); }, freezeWhen(test) { this.frozen = false; const tick = () => { let ok = false; try { ok = test(this.s()); } catch {} if (ok) { this.g().setPaused(true); this.frozen = true; } else requestAnimationFrame(tick); }; requestAnimationFrame(tick); }, stage(x, z) { this.frozen = false; this.g().setPaused(false); this.s().tier = { ...this.s().tier, perTrain: 0 }; this.clear(); this.g().standAt({ x, z }); } }"
+    },
+    {
+      "eval": "night.stage(112, 44); night.make('chivata', 6, 1, { mode: 'rising', timer: 1.6 }); night.make('repetidor', 7.4, 1, { mode: 'rising', timer: 2 }); night.freezeWhen(s => s.pupils[0].timer < .9)"
+    },
+    {
+      "until": "night.frozen",
+      "timeout": 30000
+    },
+    {
+      "shot": "salen",
+      "delay": 250,
+      "caption": "Each pupil is a body of its own now, not a pack: La Chivata and El Repetidor of the same room climbing up out of the ground one after the other (staged on the pavement by home, away from a grate, to see them close)"
+    },
+    {
+      "eval": "night.stage(112, 44); const r = night.make('repetidor', 8, 0, { mode: 'chase', seeing: true }); night.freezeWhen(s => r.mode === 'windup' && r.timer < .45)"
+    },
+    {
+      "until": "night.frozen",
+      "timeout": 30000
+    },
+    {
+      "shot": "repetidor-carrerilla",
+      "delay": 250,
+      "caption": "El Repetidor has seen Gerard: it stops, leans back and paws the ground, dust at its feet. For the last third of a second it no longer turns: that is the moment to step aside"
+    },
+    {
+      "eval": "document.title = 'hunted:' + document.getElementById('hud').hasAttribute('data-hunted')"
+    },
+    {
+      "eval": "night.stage(112, 44); const r = night.make('repetidor', 9, 2, { mode: 'charge', dir: { x: -1, z: 0 }, ran: 0 }); night.freezeWhen(s => r.ran > 5)"
+    },
+    {
+      "until": "night.frozen",
+      "timeout": 30000
+    },
+    {
+      "shot": "repetidor-embiste",
+      "delay": 250,
+      "caption": "The charge: head down, in a straight line it cannot leave, almost twice as fast as Gerard runs, a trail of dust behind it. Gerard stepped out of its line"
+    },
+    {
+      "eval": "night.stage(112, 44); const r = night.make('repetidor', 3, 4, { mode: 'charge', dir: { x: 0, z: -1 }, ran: 0 }); night.freezeWhen(s => r.mode === 'stunned' && r.timer < 3.6)"
+    },
+    {
+      "until": "night.frozen",
+      "timeout": 30000
+    },
+    {
+      "shot": "repetidor-estampado",
+      "delay": 250,
+      "caption": "It runs into the wall and stays there four seconds, dazed: time to get away, and Aitor says what he saw («Se ha estampado. No sabe girar.»)"
+    },
+    {
+      "eval": "night.stage(114, 46); const c = night.make('chivata', 8, -1); const e = night.make('empollon', -13, -1); window.e = e; night.freezeWhen(s => s.pointed && e.mode === 'chase' && night.far(e) < 6.5)"
+    },
+    {
+      "until": "night.frozen",
+      "timeout": 30000
+    },
+    {
+      "shot": "chivata-senala",
+      "delay": 250,
+      "caption": "La Chivata never runs at him: from far off (she sees half as far again) she stops and points, a glint over her and over Gerard, and everyone on the street knows where he is. El Empollón, which had not seen him, comes running from the other side"
+    },
+    {
+      "eval": "night.stage(112, 44); const s = night.s(), c = s.covers.find(c => c.kind === 'containers' && Math.abs(c.x - 138) < 2); let spot; for (let dx = -2; dx <= 2 && !spot; dx++) for (let dz = -2; dz <= 2 && !spot; dz++) { const x = c.x + dx, z = c.z + dz; if (Math.hypot(dx, dz) <= 1.5 && s.grid[z][x] !== '#' && !s.lamps.some(l => Math.hypot(l.x - x, l.z - z) <= 4)) spot = { x, z }; } if (!spot) throw new Error('no spot behind the containers'); window.spot = spot; night.stage(spot.x, spot.z); const g1 = night.make('gemelo', -7, 0, { mode: 'search', look: 3.2, known: { x: spot.x - 3, z: spot.z + 1 } }), g2 = night.make('gemelo', -9, 2, { mode: 'search', look: 3.2, known: { x: spot.x - 3, z: spot.z + 2 } }); g1.twin = g2.id; g2.twin = g1.id;"
+    },
+    {
+      "shot": "escondidos",
+      "delay": 2600,
+      "caption": "Standing still behind the containers, out of the lamps' light: Los Gemelos go to where they last had Gerard and look round, three cells from him, and do not see him"
+    },
+    {
+      "eval": "night.stage(window.spot.x, window.spot.z); const e = night.make('empollon', -8, 1, { mode: 'chase', timer: 0, known: { x: window.spot.x - 2, z: window.spot.z } }); night.freezeWhen(s => !!s.learned)"
+    },
+    {
+      "until": "night.frozen",
+      "timeout": 30000
+    },
+    {
+      "shot": "empollon-aprende",
+      "delay": 500,
+      "caption": "El Empollón loses him behind the containers and stays looking at where he was: it has learned that kind of cover, and the next time it loses him it goes straight to the nearest one. The one he is behind now still hides him until he leaves it"
+    },
+    {
+      "eval": "night.stage(112, 44); const g1 = night.make('gemelo', 8, 0, { mode: 'chase', seeing: true }), g2 = night.make('gemelo', -15, 2, { mode: 'chase', seeing: true }); g1.twin = g2.id; g2.twin = g1.id; window.g2 = g2; night.freezeWhen(s => g2.flanking && night.far(g2) < 11.5)"
+    },
+    {
+      "hold": [
+        "ShiftLeft",
+        "KeyW",
+        "KeyA"
+      ],
+      "until": "night.frozen",
+      "timeout": 20000
+    },
+    {
+      "shot": "gemelos-flanquean",
+      "delay": 250,
+      "caption": "Los Gemelos hunt as two and share what they see: one runs behind Gerard, the other does not follow him but cuts round to where he is running to. Running straight away from one runs into the other"
+    },
+    {
+      "eval": "night.stage(112, 44); const d = night.make('delegada', 11, 1, { mode: 'chase', seeing: true }); night.make('empollon', -9, 1); night.make('repetidor', -11, -1); night.freezeWhen(s => s.marching && night.far(d) < 6)"
+    },
+    {
+      "until": "night.frozen",
+      "timeout": 30000
+    },
+    {
+      "shot": "delegada-marcha",
+      "delay": 250,
+      "caption": "La Delegada never runs and never stops: she walks at Gerard wherever he is, cover or dark make no difference to her, and while she is out the others doubt less before running and do not give up"
+    },
+    {
+      "eval": "night.stage(112, 44); window.hit = undefined; const wait = () => { const car = night.g().traffic.find(c => c.v > 4 && c.x > 70 && c.x < 290 && Math.abs(c.hz) < .2); if (!car) return void setTimeout(wait, 200); const at = { x: Math.round(car.x + car.hx * 9), z: Math.round(car.z) }; night.g().standAt({ x: Math.max(60, Math.min(300, at.x)), z: 46 }); const me = night.g().position; window.hit = night.make('empollon', car.x + car.hx * 9 - me.x, car.z - me.z, { mode: 'patrol' }); window.hit.patrol = [{ ...window.hit.position }]; const w = night.g().world(window.hit.position.x, window.hit.position.z); night.g().frame({ x: w.x, y: 1, z: w.z }, 9); night.freezeWhen(s => window.hit.mode === 'flat' && window.hit.timer < 5.9); }; wait();"
+    },
+    {
+      "until": "night.frozen",
+      "timeout": 120000
+    },
+    {
+      "shot": "coche-chafa",
+      "delay": 200,
+      "caption": "Traffic does not stop for them: El Empollón, standing on the carriageway, caught by a moving car and flattened for six seconds before it peels itself up (the camera is brought close to it for the shot). Crossing between cars with them behind is a way to lose them"
+    },
+    {
+      "eval": "night.g().frame()"
+    },
+    {
+      "open": "/?story=metro&night=2&solo=1&year=2"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.game.nightHunters.length >= 4",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.night = { g: () => window.gerard.game, s: () => window.gerard.game.nightStreet, n: 50, frozen: false, clear() { const s = this.s(); s.pupils.splice(0); s.pointed = false; s.marching = false; delete s.learned; delete s.fresh; }, make(kind, dx, dz, more = {}) { const me = this.g().position, at = { x: me.x + dx, z: me.z + dz }; const p = { id: 'night-' + (++this.n) + '-1', group: 1, kind, position: at, facing: 0, mode: 'patrol', patrol: [{ x: Math.round(at.x), z: Math.round(at.z) }], next: 0, timer: 0, known: { x: me.x, z: me.z }, look: 0, seeing: false, stuck: 0, ...more }; this.s().pupils.push(p); return p; }, far(p) { const me = this.g().position; return Math.hypot(p.position.x - me.x, p.position.z - me.z); }, freezeWhen(test) { this.frozen = false; const tick = () => { let ok = false; try { ok = test(this.s()); } catch {} if (ok) { this.g().setPaused(true); this.frozen = true; } else requestAnimationFrame(tick); }; requestAnimationFrame(tick); }, stage(x, z) { this.frozen = false; this.g().setPaused(false); this.s().tier = { ...this.s().tier, perTrain: 0 }; this.clear(); this.g().standAt({ x, z }); } }"
+    },
+    {
+      "eval": "night.stage(124, 44); night.make('ausente', -7.5, 2); night.make('ausente', 7, 0)"
+    },
+    {
+      "shot": "ausente-farola",
+      "delay": 2500,
+      "caption": "Second year. El Ausente is only seen in a lamp's light: one stands under the lamp on the left; another is in the dark on the right, as near, and cannot be seen until it runs at him. The lit stretches are where Gerard is seen, and where it is"
+    },
+    {
+      "eval": "night.stage(112, 44); const c = night.make('castigado', -4, -1.5, { mode: 'wall', rage: 1, heard: .5 }); window.c = c; night.freezeWhen(s => c.rage >= 2)"
+    },
+    {
+      "hold": [
+        "ShiftLeft",
+        "KeyW",
+        "KeyA"
+      ],
+      "until": "night.frozen",
+      "timeout": 20000
+    },
+    {
+      "shot": "castigado-rabia",
+      "delay": 250,
+      "caption": "El Castigado stands facing the wall and does not hunt. Running near it is a point of Rabia each time (it swells, cracks); walking past it is nothing"
+    },
+    {
+      "eval": "night.frozen = false; night.g().setPaused(false); night.g().standAt({ x: 112, z: 44 }); window.c.rage = 2; window.c.heard = .6; night.freezeWhen(s => window.c.burst && window.c.mode === 'chase' && night.far(window.c) < 6)"
+    },
+    {
+      "hold": [
+        "ShiftLeft",
+        "KeyW",
+        "KeyA"
+      ],
+      "until": "night.frozen",
+      "timeout": 20000
+    },
+    {
+      "shot": "castigado-revienta",
+      "delay": 250,
+      "caption": "At three it bursts: everyone within thirty cells hears it and comes, and it runs after Gerard faster than anyone, without doubting or giving up"
+    },
+    {
+      "open": "/?story=metro&night=2&solo=1&year=3"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.game.nightHunters.length >= 4",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.night = { g: () => window.gerard.game, s: () => window.gerard.game.nightStreet, n: 50, frozen: false, clear() { const s = this.s(); s.pupils.splice(0); s.pointed = false; s.marching = false; delete s.learned; delete s.fresh; }, make(kind, dx, dz, more = {}) { const me = this.g().position, at = { x: me.x + dx, z: me.z + dz }; const p = { id: 'night-' + (++this.n) + '-1', group: 1, kind, position: at, facing: 0, mode: 'patrol', patrol: [{ x: Math.round(at.x), z: Math.round(at.z) }], next: 0, timer: 0, known: { x: me.x, z: me.z }, look: 0, seeing: false, stuck: 0, ...more }; this.s().pupils.push(p); return p; }, far(p) { const me = this.g().position; return Math.hypot(p.position.x - me.x, p.position.z - me.z); }, freezeWhen(test) { this.frozen = false; const tick = () => { let ok = false; try { ok = test(this.s()); } catch {} if (ok) { this.g().setPaused(true); this.frozen = true; } else requestAnimationFrame(tick); }; requestAnimationFrame(tick); }, stage(x, z) { this.frozen = false; this.g().setPaused(false); this.s().tier = { ...this.s().tier, perTrain: 0 }; this.clear(); this.g().standAt({ x, z }); } }"
+    },
+    {
+      "eval": "night.stage(112, 44); const m = night.make('monton', 9, 0, { mode: 'chase', seeing: true }); window.m = m;"
+    },
+    {
+      "shot": "monton-quieto",
+      "delay": 2600,
+      "caption": "Third year. El Montón does what Gerard does: while he stands still it stands still, however near"
+    },
+    {
+      "eval": "night.freezeWhen(s => window.m.pace === 'run' && night.g().position.x < 105)"
+    },
+    {
+      "hold": [
+        "ShiftLeft",
+        "KeyW",
+        "KeyA"
+      ],
+      "until": "night.frozen",
+      "timeout": 20000
+    },
+    {
+      "shot": "monton-corre",
+      "delay": 250,
+      "caption": "When he runs it runs, nearly as fast as he does; when he walks it walks. Losing it is walking away, not running"
+    }
+  ]
+}
