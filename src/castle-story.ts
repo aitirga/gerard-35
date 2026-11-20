@@ -247,7 +247,7 @@ export function castleEnding(host: CastleHost, choice: EndingChoice): StoryEffec
   if (host.has('reina')) return [];
   host.raise('reina'); host.raise(choice === 'acabar' ? 'final-acabar' : 'final-bajar');
   const lines = LINES_CASTLE[choice];
-  return [say({ left: 'gerard35', right: 'aitor', lines: [lines.aitor] }), { kind: 'epilogue', choice, text: lines.scene }, { kind: 'look' }, ...host.morning(), say(lines.epilogue)];
+  return [say({ left: 'gerard35', right: 'aitor', lines: [lines.aitor] }), { kind: 'epilogue', choice, text: lines.scene }, { kind: 'look' }, ...host.morning(), say(lines.epilogue), { kind: 'credits' }];
 }
 
 /** Where a door of the school leads instead, while the castle stands between its rooms. */

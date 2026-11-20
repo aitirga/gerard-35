@@ -204,7 +204,9 @@ export type StoryEffect =
   /** The last scene (docs/castle-bosses.md): she is on the floor, and Gerard's dock has two commands (src/endings.ts). Answered with an `ending` event. */
   | { kind: 'ending' }
   /** What the choice does, told over black before the Monday after. */
-  | { kind: 'epilogue'; choice: EndingChoice; text: string };
+  | { kind: 'epilogue'; choice: EndingChoice; text: string }
+  /** After the Monday of either ending: who made it and who is in it, and the false lead closed (src/credits.ts). */
+  | { kind: 'credits' };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'sobremesa' | FearEncounter

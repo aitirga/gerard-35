@@ -1,0 +1,17 @@
+{
+  "title": "The end · Credits",
+  "description": "After either ending's Monday, over black: who made the game and who is in it, rolling up; then, alone, the last card: Nuria Mendoza was on holiday the whole time. A key hurries the roll; at the last card it closes them and the game goes on at home. The words are a draft.",
+  "steps": [
+    { "open": "/?story=reina&at=home&solo=1" },
+    { "until": "!!window.gerard && document.title.startsWith('Meridiana')", "timeout": 90000 },
+    { "skipDialogue": true },
+    { "eval": "window.creditsDone = false; void window.gerard.credits.play().then(() => { window.creditsDone = true; }); undefined" },
+    { "shot": "roll-start", "delay": 9000, "caption": "Over black, the roll begins: a game by Aitor for Gerard" },
+    { "shot": "roll-friends", "delay": 14000, "caption": "The friends, as themselves" },
+    { "hold": ["Enter"], "until": "document.querySelector('#credits .credits-last')?.dataset.on === 'true'", "timeout": 120000 },
+    { "shot": "last-card", "delay": 3500, "caption": "The last card, alone: the false lead closed" },
+    { "press": "Enter" },
+    { "until": "window.creditsDone", "timeout": 20000 },
+    { "shot": "home", "delay": 1200, "caption": "And the game goes on at home" }
+  ]
+}

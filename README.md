@@ -75,6 +75,32 @@ the game. At home `just backend` finds the bulbs on the LAN and changes them in 
 library is a git submodule in `vendor/geraitor_domotic_house` (`just setup` checks it out). Design,
 bulbs and limits: [docs/home-lights.md](docs/home-lights.md).
 
+## Playing at home on Windows, with the artilugio
+
+Gerard plays on the Windows PC at home, with the game's own server on the home network, so the
+artilugio (the Bomba-G board, `firmware/artilugio/`, docs/story-outline.md § The device) can reach
+it over the Wi-Fi.
+
+1. Install [Git for Windows](https://git-scm.com/download/win) (its Git Bash runs the justfile,
+   which uses bash), [uv](https://docs.astral.sh/uv/), Node 22 and `just`
+   (`winget install Casey.Just`). Chrome or Edge with WebGPU (on by default on Windows).
+2. In Git Bash: clone the repository and run `just setup`.
+3. `.env` (from `.env.example`): `ARTILUGIO_KEY` (any long word, the same as the board's), the
+   lights at home (`LIFX_TOKEN`, or nothing to find the bulbs on the LAN), and `ANTHROPIC_API_KEY`
+   for the station tablet's memories (without it, names judge them).
+4. Let the board in, once, from PowerShell as administrator:
+   `New-NetFirewallRule -DisplayName "Gerard 35" -Direction Inbound -Protocol TCP -LocalPort 8035 -Action Allow -Profile Private`.
+   Give the PC a fixed address in the router, so the board always finds it.
+5. `GERARD_HOST=0.0.0.0 just run` builds and serves the game at `http://localhost:8035`, and
+   prints the address to put in the board's `SERVER_URL`.
+6. The board: copy `firmware/artilugio/secrets.example.h` to `secrets.h` (Wi-Fi, `SERVER_URL`,
+   `ARTILUGIO_KEY`), plug it in and `just artilugio-flash` (with the Arduino IDE installed;
+   `just artilugio-setup` the first time). `just artilugio-monitor` shows what it says.
+7. `just perf` on that PC, to see the game keeps its frame budget there.
+
+Without the board, the number keys 1–4 (two at once for a pair) or a pad (left trigger held, the
+face buttons) play the same notes.
+
 ## Music and sound
 
 Songs loop exactly between named marks, crossfade, and jump to their ending on the next bar; fights

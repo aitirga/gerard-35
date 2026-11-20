@@ -121,6 +121,7 @@ test('the castle in the story: the gym leads into the floor, each boss moves the
   const end = story.handle({ type: 'ending', choice: 'bajar' });
   assert.ok(story.has('reina') && story.has('final-bajar') && !story.has('final-acabar'));
   assert.ok(end.some(e => e.kind === 'epilogue' && e.choice === 'bajar'));
+  assert.equal(end.at(-1).kind, 'credits', 'the Monday after, then the credits');
   assert.deepEqual(story.handle({ type: 'ending', choice: 'acabar' }), [], 'only once');
   assert.equal(story.redirect('patio-gimnasio'), undefined, 'after her, the school is a school');
   assert.equal(extraSlots(new Set()), 1);

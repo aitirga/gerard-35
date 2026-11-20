@@ -42,6 +42,7 @@ import { CUERDAS_PLACE, QUALITIES } from './friends/marta';
 import { castleHaunt } from './haunt';
 import { createSfx, watchMenuSounds, type SoundId } from './sfx';
 import { createArtilugio, type ArtilugioMode } from './artilugio';
+import { createCredits } from './credits';
 import { impactSounds, startSounds, type Cue } from './battle-sounds';
 import { mountSoundPage } from './sound-ui';
 
@@ -64,6 +65,8 @@ const travelUI = createTravelUI(document.querySelector<HTMLElement>('#hud')!);
 const hud = document.querySelector<HTMLElement>('#hud')!;
 /** The last scene's two commands, and what each does told over black (src/endings.ts). */
 const endings = createEndings(hud);
+/** The credits after either ending's Monday (src/credits.ts). */
+const credits = createCredits(hud);
 // Every key shown in the HUD follows the device in use: keyboard and mouse, or the last pad touched.
 const stopGlyphs = watchGlyphs();
 // The bulbs at home (docs/home-lights.md): they follow the place and the fights once connected in the menu.
@@ -411,6 +414,7 @@ try {
       storyEvent({ type: 'ending', choice });
     }
     else if (effect.kind === 'epilogue') { await storyUI.blackout(true, 1600); await endings.tell(effect.text); }
+    else if (effect.kind === 'credits') { music.duck(true); await credits.play(); music.duck(false); }
     // A level reached in a fight was shown on its victory screen.
     else if (effect.kind === 'learn') { if (!effect.quiet) { sfx.play('unlock'); storyUI.learn(effect.classId, effect.level, effect.skills); } }
     else if (effect.kind === 'anima' && effect.kept) { sfx.play('unlock'); await storyUI.kept(effect.classId); }
@@ -798,6 +802,7 @@ try {
     action: (action, player) => {
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (jumpMenu.isOpen) { if (action === 'cancel') jumpMenu.close(); return; }
+      if (credits.open) { if (action === 'confirm') credits.confirm(); return; }
       if (isDpad(action)) { battleUI.toggleSummary(); return; }
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
       if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
@@ -890,7 +895,7 @@ try {
     const weather = params.get('weather'), intensity = Number(params.get('intensity') ?? 1);
     if (weather === 'rain' || weather === 'snow') game.effects.setWeather(weather, Number.isFinite(intensity) ? intensity : 1, true);
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, artilugio, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong } });
+    Object.assign(window, { gerard: { game, story, battleUI, artilugio, credits, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong } });
   }
   if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
