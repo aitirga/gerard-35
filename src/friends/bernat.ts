@@ -8,14 +8,15 @@
  * The riddle (Aitor): a sheet with no words, each lamp drawn as its name (the moon as a moon, the
  * table as a table: the bulbs are called so at home), joined by + − =; Gerard has to see that the
  * shape is the bulb and that the moon is the other two mixed. Their colours he sees on the model on
- * the table and on the real bulbs, which follow it. The answer is the moon (the `luna` lamp, real
- * and in the game) set to the colour of light that results, held 5 s. Four levels: a sum, a
- * subtraction, a harder sum with a subtraction, the three primaries at once.
+ * the table and on the real bulbs, which follow it. The model only shows (Aitor, 2026-11-20): the
+ * answer is the moon (the `luna` lamp, real and in the game) set **at home** to the colour of light
+ * that results (Siri, the LIFX app, the lamp in the game's flat), held 5 s while he leans over the
+ * model. Four levels: a sum, a subtraction, a harder sum with a subtraction, the three primaries.
  */
 import type { Dialogue, DialogueLine, SpeakerId } from '../dialogue';
 import type { EnvironmentId } from '../environments';
 import { NUCLI_BERNAT_SEAT } from '../environments.ts';
-import { OFF, hex, white, type Lamp, type LightId } from '../home-lights.ts';
+import { hex, white, type Lamp, type LightId } from '../home-lights.ts';
 import type { Cell } from '../movement';
 
 export const NUCLI: EnvironmentId = 'el-nucli';
@@ -51,8 +52,6 @@ export const LAMPS: Record<LightColour, Lamp> = {
 };
 /** Where each colour sits on the lamps' wheel (degrees), to read what the moon shows. */
 const HUES: [LightColour, number][] = [['rojo', 0], ['amarillo', 55], ['verde', 125], ['cian', 180], ['azul', 230], ['magenta', 300]];
-/** What a lamp of the model goes through, press after press: off, round the wheel, then white. */
-export const CYCLE: readonly (LightColour | undefined)[] = [undefined, 'rojo', 'amarillo', 'verde', 'cian', 'azul', 'magenta', 'blanco'];
 export interface PortalTerm { lamp: LightId; colour: LightColour; sign: 1 | -1 }
 export interface PortalLevel { kind: string; terms: PortalTerm[]; answer: LightColour }
 /** The four levels, in order (decided by Aitor; the colours are a proposal). */
@@ -100,11 +99,6 @@ export function lampColour(lamp: Lamp): LightColour | undefined {
   const away = (h: number) => Math.abs(((lamp.hue - h + 540) % 360) - 180);
   return HUES.reduce((best, h) => away(h[1]) < away(best[1]) ? h : best)[0];
 }
-/** A lamp `by` presses on along the cycle from the colour it shows (off keeps its colour for the next time). */
-export function stepColour(lamp: Lamp, by: number): Lamp {
-  const at = CYCLE.indexOf(lampColour(lamp)), next = CYCLE[(at + by + CYCLE.length * 4) % CYCLE.length];
-  return next ? { ...LAMPS[next] } : { ...(lamp.on ? lamp : OFF), on: false };
-}
 
 // ——— Lines ——————————————————————————————————————————————————————————————————————————————
 const gerard = (text: string): DialogueLine => ({ speaker: 'gerard35', text });
@@ -143,11 +137,11 @@ export const LINES_BERNAT = {
   /** He shows them the model on his table, and the sheet that came with it. */
   box: group('bernat35',
     bernat('Esto apareció anoche en mi mesa. Es vuestro piso, Gerard. Entero, hasta el último cajón.'),
-    bernat('Las luces se encienden si las tocas. Las de aquí y, creo, las de allí.'),
+    bernat('Las luces son las vuestras. Si allí cambia una, aquí cambia también. Y al revés no: desde aquí no se tocan, lo he intentado.'),
     bernat('Debajo había una hoja. Ni una palabra, solo dibujos. Es un acertijo, de los que hacía yo de crío. Pero no lo he hecho yo.'),
   ),
   /** Before the riddle is solved, at his table. */
-  waiting: group('bernat35', bernat('La maqueta sigue en la mesa. La hoja, con ella.')),
+  waiting: group('bernat35', bernat('La maqueta sigue en la mesa. La hoja, con ella. Lo que cambiéis en vuestra casa, ella lo enseña.')),
   /** The portal solved: the performance has run, the artilugio is there. */
   solved: group('bernat35',
     bernat('Ya está. Ha cruzado.'),

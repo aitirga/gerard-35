@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ANSWER_LAMP, CYCLE, LAMPS, PORTAL_LEVELS, RGB, SHEET_ICONS, colourOf, lampColour, mix, stepColour } from '../src/friends/bernat.ts';
+import { ANSWER_LAMP, LAMPS, PORTAL_LEVELS, RGB, SHEET_ICONS, colourOf, lampColour, mix } from '../src/friends/bernat.ts';
 import { HOUSE_LIGHTS } from '../src/home-lights.ts';
 import { Story } from '../src/story.ts';
 import { flagsAt } from '../src/story-points.ts';
@@ -33,16 +33,14 @@ test('Bernat the first time is the confidant at El Nucli, with his table and not
   assert.deepEqual(story.handle({ type: 'portal' }), [], 'no portal before his call');
 });
 
-test('a lamp of the model goes round off, the six colours and white, and back, so a key or a click can reach every answer', () => {
-  let lamp = { ...LAMPS.rojo, on: false };
-  const seen = [];
-  for (let i = 0; i < CYCLE.length; i++) { lamp = stepColour(lamp, 1); seen.push(lampColour(lamp)); }
-  assert.deepEqual(seen, [...CYCLE.slice(1), undefined], 'one press each, off at the end');
-  for (const level of PORTAL_LEVELS) assert.ok(CYCLE.includes(level.answer), level.answer);
-  assert.equal(lampColour(stepColour(LAMPS.amarillo, -1)), 'rojo', 'back one');
-  assert.equal(lampColour(stepColour({ ...LAMPS.rojo, on: false }, -1)), 'blanco', 'back from off');
-  // A lamp the house turned to any colour at home steps on from the colour it reads as.
-  assert.equal(lampColour(stepColour({ on: true, hue: 200, saturation: .8, brightness: .6, kelvin: 3500 }, 1)), 'azul');
+test('the moon is read as the house sets it: the game\'s own colours, and whatever Siri or the LIFX app make of a colour\'s name', () => {
+  for (const colour of Object.keys(LAMPS)) assert.equal(lampColour(LAMPS[colour]), colour, colour);
+  // Siri asked for each answer by name (HomeKit's hue and saturation for it), at any brightness.
+  const asked = { cian: 180, amarillo: 60, magenta: 300 };
+  for (const [colour, hue] of Object.entries(asked)) assert.equal(lampColour({ on: true, hue, saturation: 1, brightness: .5, kelvin: 3500 }), colour, colour);
+  assert.equal(lampColour({ on: true, hue: 0, saturation: 0, brightness: 1, kelvin: 4000 }), 'blanco', 'any white is white');
+  assert.equal(lampColour({ ...LAMPS.cian, on: false }), undefined, 'off is no answer');
+  for (const level of PORTAL_LEVELS) assert.equal(colourOf(mix(level.terms)), level.answer, level.kind);
 });
 
 test('the sheet draws every lamp of the sums, and the moon, as its name: shapes only, no word', () => {

@@ -79,7 +79,7 @@
     {
       "shot": "sum-1",
       "delay": 3000,
-      "caption": "Over the model, from above: his sheet, with no words. Each lamp drawn as its name: the moon (?) = the table + the kitchen (a pot). Only the model (and the real bulbs) say what colour each is: the table green, the kitchen blue"
+      "caption": "Over the model, from above: his sheet, with no words. Each lamp drawn as its name: the moon (?) = the table + the kitchen (a pot). Only the model (and the real bulbs) say what colour each is: the table green, the kitchen blue, every other lamp off; the moon as the house has it"
     },
     {
       "eval": "window.lamp('mesa')"
@@ -87,15 +87,23 @@
     {
       "shot": "sum-1-locked",
       "delay": 300,
-      "caption": "A lamp of the sum pressed on the model (the table): its drawing on the sheet stirs; it is not his to change"
+      "caption": "A lamp pressed on the model (the table): only its drawing on the sheet stirs. Nothing on the model can be changed"
     },
     {
-      "eval": "window.lamp('luna', 'pointermove'); window.lamp('luna')"
+      "eval": "window.lamp('luna')"
+    },
+    {
+      "shot": "sum-1-moon-locked",
+      "delay": 400,
+      "caption": "The moon pressed: the same. Its colour is set at home, not here"
+    },
+    {
+      "eval": "window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.rojo })"
     },
     {
       "shot": "sum-1-wrong-try",
       "delay": 900,
-      "caption": "The pointer over the moon takes it (the ring); one click: red"
+      "caption": "At home, «Oye Siri, pon Luna en rojo»: the real moon turns red and the model shows it (the moon set at home, as Siri or the LIFX app would (the house's reading reaches the flat))"
     },
     {
       "eval": "new Promise(done => { const box = document.querySelector('#portal-box'); const check = () => box.dataset.answer === 'wrong' ? setTimeout(done, 80) : requestAnimationFrame(check); check(); })"
@@ -109,12 +117,25 @@
       "wait": 1600
     },
     {
-      "eval": "window.lamp('luna'); setTimeout(() => window.lamp('luna'), 250); setTimeout(() => window.lamp('luna'), 500)"
+      "eval": "window.gerard.homeLights.setLamp('mesa', { ...window.bernatLamps.rojo })"
+    },
+    {
+      "shot": "sum-1-term-changed",
+      "delay": 500,
+      "caption": "Someone at home changes the table, part of the sum: for a moment the model shows it red…"
+    },
+    {
+      "shot": "sum-1-term-back",
+      "delay": 1600,
+      "caption": "…and it goes back to its green on its own, its drawing stirring: the sum's lamps are not his"
+    },
+    {
+      "eval": "window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.cian })"
     },
     {
       "shot": "sum-1-held",
       "delay": 1500,
-      "caption": "Three clicks more round the colours: cyan, held"
+      "caption": "«Pon Luna en cian»: the model's moon turns cyan, held"
     },
     {
       "eval": "new Promise(done => { const box = document.querySelector('#portal-box'); const check = () => box.dataset.answer === 'right' ? setTimeout(done, 80) : requestAnimationFrame(check); check(); })"
@@ -135,14 +156,6 @@
       "shot": "sum-2",
       "delay": 400,
       "caption": "The second sheet: a subtraction (the moon = the sofa − the table); the model shows the sofa white and the table blue"
-    },
-    {
-      "press": "ArrowUp"
-    },
-    {
-      "shot": "sum-2-keys",
-      "delay": 600,
-      "caption": "On the keys: the arrows take the lamps of the model one by one (the ring)"
     },
     {
       "eval": "window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.amarillo })"

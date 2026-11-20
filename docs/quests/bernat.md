@@ -1,6 +1,6 @@
 # Bernat · (working title)
 
-Status: designed (round 6), built · Last updated: 2026-11-19
+Status: designed (round 7), built · Last updated: 2026-11-20
 
 ## Summary
 
@@ -96,6 +96,29 @@ five-second hold, the blink and the performance stay).
   hold, the performance), `SHEET_ICONS`/`CYCLE`/`stepColour`/`MAQUETA_SCALE` and the lines in
   `src/friends/bernat.ts`. The blue lamp became lighter (`#2f7bff`): the deeper one read violet on
   the flat's warm floors. Screenshots: `just screenshots bernat-nucli --gpu`.
+
+## Round 7 (Aitor, 2026-11-20): the model only shows, the lights are changed at home
+
+**Decided** (replaces round 6's lamps changed on the model; the sheet, the four sums, the hold, the
+blink and the performance stay).
+
+- **Exercises that read the lights**: the model is the flat's lamps as they are, and nothing on it
+  can be changed. Pressing a lamp only stirs its drawing on the sheet; there is no ring, no colour
+  cycle and no key to change one (only Volver).
+- **The moon is set at home, explicitly**: with Siri («Oye Siri, pon Luna en cian»), the LIFX app, a
+  switch, or the lamp in the game's flat. While he leans over the model the game reads the house's
+  bulbs (every 250 ms on the LAN, `portal` in `src/home-lights.ts`), so the model's moon turns as the
+  real one does. Without the lights connected it is the game's flat: the moon set there with its dial
+  is the one the model shows when he comes back.
+- **The sum's lamps are the riddle's**: the game lights them in their colours at each sum; one
+  changed at home goes back to its colour after a moment and its drawing stirs. Every other lamp is
+  left as the house has it. Once a sum is solved the moon goes off for the next one.
+- **Bernat says so**: *«Las luces son las vuestras. Si allí cambia una, aquí cambia también. Y al revés
+  no: desde aquí no se tocan, lo he intentado.»*, and at his table, *«Lo que cambiéis en vuestra casa,
+  ella lo enseña.»*
+- **Built (2026-11-20)**: `src/portal-ui.ts` (read-only model, `keep` for the sum's lamps, the moon
+  watched from the flat), the lines in `src/friends/bernat.ts`. Screenshots: `just screenshots
+  bernat-nucli --gpu`.
 
 ## Protagonist
 

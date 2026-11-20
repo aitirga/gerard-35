@@ -3482,7 +3482,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     aimDie: (unit?: string, index?: number) => battleScene.aimDie(unit, index),
     shakeDice: (unit: string) => battleScene.shakeDice(unit),
     /** A lamp in the Meridiana flat turned on, off or another colour; its prompt says what is next. */
-    setLamp(id: LightId, lamp: Lamp) { lamps[id] = lamp; scenery.setLamp(id, lamp); lastPrompt = ''; updatePrompt(); },
+    setLamp(id: LightId, lamp: Lamp) { lamps[id] = lamp; scenery.setLamp(id, lamp); maqueta?.setLamp(id, lamp); lastPrompt = ''; updatePrompt(); },
     setLampLabels(label: (id: string) => string | undefined) { lampLabel = label; lastPrompt = ''; updatePrompt(); },
     /** How much of La Reina Bubbaloo's light the scene is heading for (0–1), for the lights at home. */
     get lightTone() { return toneTarget; },
