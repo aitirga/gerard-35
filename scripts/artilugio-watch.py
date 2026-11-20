@@ -85,6 +85,9 @@ def events(server: str):
 
 STARTED = {"power": "al enchufarla", "restart": "tras una actualización", "brownout": "por una bajada de corriente",
            "crash": "por un fallo", "watchdog": "por quedarse colgada"}
+# The ESP32's reasons for losing the Wi-Fi (wifi_err_reason_t), the usual ones.
+DROPPED = {2: "caducó la autenticación", 4: "caducó la conexión", 8: "se desconectó ella", 15: "el router no completó el saludo",
+           200: "dejó de oír al router", 201: "no encuentra la red", 202: "contraseña rechazada"}
 
 
 def health(board: str):
@@ -98,10 +101,17 @@ def health(board: str):
                 now = json.load(response)
             why = STARTED.get(now.get("started"), "por otra causa")
             if up is None and "up" in now:
-                say(f"placa {now.get('ip')}: encendida hace {now['up'] // 60} min {now['up'] % 60} s, {why}")
+                say(f"placa {now.get('ip')}: encendida hace {now['up'] // 60} min {now['up'] % 60} s, {why} · Wi-Fi {now.get('rssi')} dBm")
             elif up is not None and now.get("up", 0) < up:
                 say(f"placa {now.get('ip')}: se ha reiniciado, {why}", "1")
+                last = None
             up = now.get("up", up)
+            if last and now.get("drops", 0) > last.get("drops", 0):
+                say(f"placa: perdió el Wi-Fi ({DROPPED.get(now.get('lastDrop'), 'motivo ' + str(now.get('lastDrop')))}) · señal {now.get('rssi')} dBm", "1")
+            if now.get("slowest", 0) > 1000:
+                say(f"placa: se quedó parada {now['slowest'] / 1000:.1f} s", "1")
+            if "pir" in now and (not last or now["pir"] != last.get("pir")):
+                say(f"sensor: {'ve a alguien' if now['pir'] else 'no ve a nadie'}", "2")
             if not last or now.get("found") != last.get("found"):
                 say(f"placa {now.get('ip')}: {'encontrada' if now.get('found') else 'sin encontrar'}", "1")
             last = now

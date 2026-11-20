@@ -383,6 +383,7 @@ unsigned long askedAt = 0;
 
 void serviceNetwork() {
   if (pending >= 0) return;  // a chord still open: its second button must not wait on the network
+  if (WiFi.status() != WL_CONNECTED) return;  // what was played waits for the network to come back
   if (queueLength) {
     const int8_t item = queued[queueHead];
     queueHead = (queueHead + 1) % QUEUE;
@@ -396,6 +397,13 @@ void serviceNetwork() {
     ask();
   }
 }
+
+// ——— What it says about itself (/health) ————————————————————————————————————————————————
+// How often it lost the Wi-Fi since it started and the Wi-Fi's reason the last time; the longest the
+// loop took since /health last asked (a frozen board misses its buttons); what the PIR sees now.
+uint16_t drops = 0;
+uint8_t lastDrop = 0;
+unsigned long loopAt = 0, slowest = 0;
 
 // Why it last started: switched on, restarted by an update, or something wrong (the power dipping,
 // a crash, the watchdog), so a board that goes quiet for a moment can be told apart from one that
@@ -417,7 +425,10 @@ void handleHealth() {
   String body = String("{\"status\":\"ok\",\"node\":\"") + HOSTNAME + "\",\"ip\":\"" + WiFi.localIP().toString() +
                 "\",\"mode\":\"" + MODE_NAMES[mode] + "\",\"found\":" + (found ? "true" : "false") +
                 ",\"server\":" + (online ? "true" : "false") + ",\"up\":" + String(millis() / 1000) +
-                ",\"started\":\"" + startedBy() + "\"}";
+                ",\"started\":\"" + startedBy() + "\",\"rssi\":" + String(WiFi.RSSI()) + ",\"drops\":" + String(drops) +
+                ",\"lastDrop\":" + String(lastDrop) + ",\"slowest\":" + String(slowest) +
+                ",\"pir\":" + String(digitalRead(PIN_PIR)) + "}";
+  slowest = 0;
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", body);
 }
@@ -426,6 +437,12 @@ void connectWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.setHostname(HOSTNAME);
   WiFi.setAutoReconnect(true);
+  // Never dozing between the router's beacons: the usual cause of an ESP32 dropping off for seconds.
+  WiFi.setSleep(false);
+  WiFi.onEvent([](WiFiEvent_t, WiFiEventInfo_t info) {
+    drops++;
+    lastDrop = info.wifi_sta_disconnected.reason;
+  }, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.printf("connecting to %s", WIFI_SSID);
   const unsigned long start = millis();
@@ -479,6 +496,9 @@ void setup() {
 }
 
 void loop() {
+  const unsigned long now = millis();
+  if (loopAt && now - loopAt > slowest) slowest = now - loopAt;
+  loopAt = now;
   pollButtons();
   pollPir();
   serviceSearch();
