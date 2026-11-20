@@ -151,7 +151,8 @@ export function createDialogueBanner(hud: HTMLElement) {
     const line = current.lines[index];
     // Gerard's side is the party's; anyone else talks from the other side (a group: one after another).
     const side = line.speaker === current.left ? 'left' : line.speaker === current.right || !PARTY.has(line.speaker) ? 'right' : 'left';
-    if (onSide[side] !== line.speaker && (side === 'right' || line.speaker !== current.left)) renderSide(side, line.speaker);
+    // Whoever speaks owns their side's name and face, Gerard too when he speaks again after Aitor.
+    if (onSide[side] !== line.speaker) renderSide(side, line.speaker);
     root.dataset.speaking = side;
     // The speaker's face follows each line; the listener keeps the last one.
     const face = sides[side].querySelector('img');
