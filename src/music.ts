@@ -55,6 +55,11 @@ export const TRACKS = {
   // The same piano once Gerard has made the last choice (src/endings.ts), sadder: slower, so a little
   // lower, and darker. Both are knobs to tune by ear.
   'intro-triste': { src: 'music/intro-piano.m4a', marks: { start: 0 }, rate: .9, tone: 2200 },
+  // The last boss's song (Logic's battle-final, 90 BPM): the Queen's last fight, from the sixth note
+  // (src/main.ts `BOSS_SONG`). Two bars of intro, then three versions of its 16-bar A, 42.667 s each,
+  // back to back: once in order, then any of them. Measured on the bounce: bars 1–2 match nothing 16
+  // bars on, every bar from the 3rd matches its own 16 bars later; the file ends 64 ms past 50 bars.
+  reina: { src: 'music/battle-final.m4a', marks: { start: 0, a: 5.333333, end: 133.333333 }, cycle: 42.666667, intro: 'a', bpm: 90, beatsPerBar: 4, downbeat: 'start' },
 } satisfies Record<string, Track>;
 export type TrackId = keyof typeof TRACKS;
 export const isTrack = (id: string): id is TrackId => Object.hasOwn(TRACKS, id);

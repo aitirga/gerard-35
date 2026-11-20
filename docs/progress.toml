@@ -660,7 +660,7 @@ in = "src/main.ts"
 title = "Canción de La Reina: intro y tres versiones de su A (la compone Aitor)"
 weight = 2
 priority = "final"
-file = "public/music/song-reina.m4a"
+file = "public/music/battle-final.m4a"
 
 [[block.item]]
 title = "La decisión: el viento, y el piano del inicio más triste"

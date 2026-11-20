@@ -138,10 +138,11 @@ in `scoreNote`, `scoreFreed` and `scoreBattle` in [src/main.ts](../src/main.ts) 
    keys and the pad standing in for it (anywhere in the game, not only here). Six seconds after the
    last note, when Gerard puts the artilugio away (`PUT_AWAY_AFTER`, src/artilugio-held.ts), the song
    comes back over 2 s where it would be: it went on playing underneath.
-3. **The sixth note** frees Aitor and brings in **the last boss's song**, whole, from its intro: an
-   intro and three versions of its A, played once in order, then any earlier one until the fight
-   ends (`intro` above). Its file does not exist yet (§ Songs waiting); until it is in `TRACKS` as
-   `reina`, the battle song comes back instead.
+3. **The sixth note** frees Aitor and brings in **the last boss's song** (`reina`, Logic's
+   `battle-final`, 90 BPM), whole, from its intro: two bars of intro and three versions of its 16-bar A
+   (42.667 s each, from 5.333 s), played once in order, then any of them until the fight ends (`intro`
+   above). Its marks were measured on the bounce: bars 1–2 match nothing 16 bars on, and every bar from
+   the 3rd matches its own 16 bars later.
 4. **Her fall** fades it over 4 s into silence, and no place's song comes in from then until the end
    has played (`finale`).
 5. **The last choice** (src/endings.ts): no music, only the wind through the throne room's open
@@ -150,8 +151,8 @@ in `scoreNote`, `scoreFreed` and `scoreBattle` in [src/main.ts](../src/main.ts) 
    lowpass at 2.2 kHz). It plays out over Aitor's line, the epilogue and the morning after, and only
    then does the place's song come in.
 
-`just screenshots reina-music --chrome` plays all of it, with a stand-in for the boss song (the
-battle file read as an intro and three 44 s versions) so the real director plays it.
+`just screenshots reina-music --chrome` plays all of it. `just dev-music reina 128` plays the end of
+the third A going back to an earlier one.
 
 ### The mazmorra, concrete and triste songs
 
@@ -217,16 +218,12 @@ game; if a browser places them differently (the AAC priming is 44 ms), check by 
 
 ### Songs waiting for their place
 
-| Song | Length | For |
-| --- | --- | --- |
-| `reina` (to compose) | — | The last boss's song (§ The last fight): an intro, then three versions of its A. |
-
-For `reina`, Aitor's master goes in `assets/music/song-reina.<ext>`: the intro, then the three A
-versions back to back, each the same length and starting on its downbeat (like `mazmorra-2`'s), so
-any can follow any. Then `just music-export song-reina`, measure where the first A starts and how long
-an A lasts (`just music-loop public/music/song-reina.m4a`), and add it to `TRACKS` as
-`reina: { src: 'music/song-reina.m4a', marks: { start: 0, a: <first A> }, intro: 'a', cycle: <A length>, bpm, beatsPerBar: 4, downbeat: 'a' }`.
-The fight finds it by that name (`BOSS_SONG` in src/main.ts) and plays it from then on.
+Every master in `assets/music/` is exported and plays somewhere. Each master is named after its
+Logic project in `~/Music/Logic/G-35/` (`song-triste`'s master is still called `song-sad`), and
+projects not bounced yet have no master: `intro-final`, `intro-light`, `song-1`,
+`song-concrete-recovered`, `song-mazmorra-1`, `song-mazmorra-3` and `song-mazmorra-4` (one of the last
+three is `song-mazmorra-oscuro`, exported under that name). Bounce into `assets/music/`, not `dist/`:
+`just build` empties `dist/`.
 
 ### The castle's haunt
 

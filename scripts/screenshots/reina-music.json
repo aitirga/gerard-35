@@ -1,6 +1,6 @@
 {
   "title": "The Queen's last fight and the end: the music",
-  "description": "docs/audio.md § The last fight: the battle song plays until the artilugio sounds; each note takes it out (the real board sounds on its own speaker; here the keys stand in, so the game plays the notes) and it comes back where it would be once the artilugio is put away, six seconds later. The sixth note brings in the last boss's song from its intro: its versions once in order, then any earlier one. Aitor's song has no file yet, so this scenario adds a stand-in (the battle file read as an intro and three 44 s versions) to play the real director; without one, the battle song comes back. Her fall fades it into the last choice: no music, only the wind, then the welcome screen's piano, sadder, which keeps any place's song out until it has played. The overlay is the scenario's. Run with --chrome: just screenshots reina-music --chrome.",
+  "description": "docs/audio.md § The last fight: the battle song plays until the artilugio sounds; each note takes it out (the real board sounds on its own speaker; here the keys stand in, so the game plays the notes) and it comes back where it would be once the artilugio is put away, six seconds later. The sixth note brings in the last boss's song from its intro: its versions once in order, then any earlier one. The boss song is battle-final: two bars of intro, then three 16-bar A's. Her fall fades it into the last choice: no music, only the wind, then the welcome screen's piano, sadder, which keeps any place's song out until it has played. The overlay is the scenario's. Run with --chrome: just screenshots reina-music --chrome.",
   "steps": [
     {
       "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina-vuelta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -10,10 +10,10 @@
       "timeout": 180000
     },
     {
-      "eval": "navigator.getGamepads = () => []; window.showMusic = (note = '') => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.5 monospace;white-space:pre'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(2) ?? '—'} s${m.hushed ? ' · apartada' : ''}\\nnotas que suenan en el juego: ${window.notes.join(' ') || '—'}${note ? `\\n${note}` : ''}`; }; window.notes = []; { const play = window.gerard.sfx.play; window.gerard.sfx.play = (id, options) => { if (String(id).startsWith('artilugio')) window.notes.push(id.slice(10)); return play(id, options); }; } window.key = (...keys) => keys.forEach(key => window.dispatchEvent(new KeyboardEvent('keydown', { key }))); (async () => { const { TRACKS } = await import('/src/music.ts'); TRACKS.reina = { src: 'music/battle.m4a', marks: { start: 0, a: 2.398 }, intro: 'a', cycle: 44, bpm: 100, beatsPerBar: 4, downbeat: 'a' }; window.standIn = true; })()"
+      "eval": "navigator.getGamepads = () => []; window.showMusic = (note = '') => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.5 monospace;white-space:pre'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(2) ?? '—'} s${m.hushed ? ' · apartada' : ''}\\nnotas que suenan en el juego: ${window.notes.join(' ') || '—'}${note ? `\\n${note}` : ''}`; }; window.notes = []; { const play = window.gerard.sfx.play; window.gerard.sfx.play = (id, options) => { if (String(id).startsWith('artilugio')) window.notes.push(id.slice(10)); return play(id, options); }; } window.key = (...keys) => keys.forEach(key => window.dispatchEvent(new KeyboardEvent('keydown', { key })));"
     },
     {
-      "until": "window.standIn && window.gerard.music.playing === 'battle' && window.gerard.music.position() > 3",
+      "until": "window.gerard.music.playing === 'battle' && window.gerard.music.position() > 3",
       "timeout": 30000
     },
     {
@@ -68,15 +68,15 @@
       "timeout": 15000
     },
     {
-      "until": "window.gerard.music.position() > 4",
+      "until": "window.gerard.music.position() > 6",
       "timeout": 15000
     },
     {
-      "eval": "window.showMusic('las seis: entra la canción del jefe (sustituta) desde su intro, y sigue sin corte a la primera versión')"
+      "eval": "window.showMusic('las seis: entra la canción del jefe (battle-final) desde su intro, y sigue sin corte a su primera A')"
     },
     {
       "shot": "cancion-entera",
-      "caption": "All six (La♭, Do, Sol up, Fa and Re after Sol): Aitor is free and the boss song comes in from its intro, playing on into its first version (a stand-in until Aitor's file)"
+      "caption": "All six (La♭, Do, Sol up, Fa and Re after Sol): Aitor is free and the last boss's song (battle-final) comes in from its two-bar intro, playing on into its first A"
     },
     {
       "eval": "window.gerard.music.jump(128, { at: 'now' }); setTimeout(() => window.showMusic('en la última versión…'), 300)"
@@ -86,11 +86,11 @@
       "timeout": 5000
     },
     {
-      "until": "window.gerard.music.position() < 60",
+      "until": "window.gerard.music.position() < 91",
       "timeout": 15000
     },
     {
-      "eval": "window.showMusic('…y al acabarla vuelve a una anterior (la 1 o la 2), nunca la misma')"
+      "eval": "window.showMusic('…y al acabarla vuelve a una anterior (la primera A o la segunda), nunca la misma')"
     },
     {
       "shot": "vuelve-a-una-anterior",

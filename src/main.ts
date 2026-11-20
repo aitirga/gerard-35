@@ -124,9 +124,9 @@ function scorePlace(id: EnvironmentId) {
 let battlePhase: BattleState['phase'] | undefined;
 /**
  * The Queen's last fight (docs/castle-bosses.md § With the artilugio) and its song: the battle song
- * until the artilugio sounds, then the last boss's own, whole, once its six notes free Aitor. That
- * song (an intro and three versions of its A) waits for its file (docs/audio.md § Songs waiting);
- * until it is in `TRACKS`, the battle song comes back instead.
+ * until the artilugio sounds, then the last boss's own, whole, once its six notes free Aitor (`reina`
+ * in src/music.ts: an intro and three versions of its A). Without it in `TRACKS`, the battle song
+ * would come back instead.
  */
 const LAST_FIGHT = 'reina-vuelta', BOSS_SONG = 'reina';
 const isQueen = (encounter?: string) => encounter === 'reina' || encounter === 'reina-vuelta';
