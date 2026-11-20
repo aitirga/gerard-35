@@ -105,7 +105,7 @@ export const MISSIONS = {
   universidad: { name: 'Los amigos de la uni', intro: false, lights: 5, friend: 'universidad', fights: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon', 'sobremesa'], teaching: ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda'] },
   marta: { name: 'Marta', intro: false, lights: 1, friend: 'marta', fights: ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'], teaching: [] },
   emilie: { name: 'Emilie', intro: false, lights: 1, friend: 'emilie', fights: ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge'], teaching: [] },
-  luca: { name: 'Luca', intro: false, lights: 1, friend: 'luca', fights: ['luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside', 'fran'], teaching: ['luca-recepcion'] },
+  luca: { name: 'Luca', intro: false, lights: 1, friend: 'luca', fights: ['luca-recepcion', 'luca-sillones', 'luca-carta', 'fran'], teaching: ['luca-recepcion'] },
 } as const satisfies Record<string, { name: string; intro: boolean; lights: number; friend: AnimaId; fights: readonly string[]; teaching: readonly string[] }>;
 export type MissionId = keyof typeof MISSIONS;
 export const MISSION_IDS = Object.keys(MISSIONS) as MissionId[];
@@ -370,11 +370,10 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
-  // Fran's salon (docs/quests/luca.md): the freshly styled chaplain down leaves the others still, a
-  // cracked lens calls its beam off; what the foes would no longer do, the real rules on a copy.
+  // Fran's salon (docs/quests/luca.md): the freshly styled chaplain down leaves the others still;
+  // what the foes would no longer do, the real rules on a copy.
   const stilled = after.foes.some((foe, i) => foe.still === after.round && before.foes[i]?.still !== before.round);
-  const cracked = before.foes.some((foe, i) => foe.intent?.ability === 'rayo-lente' && !after.foes[i].intent && after.foes[i].hp > 0);
-  if (stilled || cracked) {
+  if (stilled) {
     const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
@@ -914,14 +913,12 @@ export const TARGETS: readonly Target[] = [
   // Fran's salon (docs/quests/luca.md). Its numbers are LUCA (book luca.rules) and each foe's PROFILES entry
   // (foe.polilla…). The light walks through every fight: the party's blows of its element do nothing.
   { id: 'recepcion-ensena', fight: 'luca-recepcion', party: DUO, levels: P2M2, policy: 'casual', win: [.85, 1], why: 'La recepción enseña la luz: el fuego deja de servir a mitad de combate. Se pasa igual, pero se nota.' },
-  { id: 'sillones-bien', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'smart', win: [.88, 1], hpLeftWon: [.25, .6], why: 'Los capellanes, pensando: primero el recién peinado, y los demás se quedan a medio gesto; La Laca, con fuego cuando la luz lo deja.' },
+  { id: 'sillones-bien', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'smart', win: [.88, 1], hpLeftWon: [.25, .6], why: 'Los capellanes, pensando: primero el recién peinado, y los demás se quedan a medio gesto.' },
   { id: 'sillones-deslumbrados', fight: 'luca-sillones', dazzled: true, party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .75], why: 'Con los espejos de la nave resueltos los capellanes empiezan deslumbrados: el mismo combate, con más vida al acabar.' },
-  { id: 'sillones-sin-pensar', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin mirar quién lleva el peinado nuevo, cada gesto se repite y el fijador dobla las chispas.' },
+  { id: 'sillones-sin-pensar', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin mirar quién lleva el peinado nuevo, cada gesto se repite.' },
   { id: 'sillones-a-punetazos', fight: 'luca-sillones', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
   { id: 'carta-bien', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'smart', win: [.88, 1], hpLeftWon: [.15, .55], why: 'Las camisas de Luca, pensando: pegar solo a la que está en su luz, y con otra cosa que el elemento que esa luz se come.' },
   { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, levels: P2M2, policy: 'casual', win: [0, .35], why: 'Repartiendo golpes sin mirar la luz, la mayoría caen sobre una camisa apagada y no hacen nada.' },
-  { id: 'abside-bien', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.25, .6], why: 'El ábside, la zona más dura antes de Fran: pegarle al Telescopio mientras enfoca, que se le raja la lente, y rematar a La Laca con fuego cuando la luz lo deja, que estalla sobre él.' },
-  { id: 'abside-sin-pensar', fight: 'luca-abside', party: DUO, levels: P2M2, policy: 'casual', win: [0, .15], why: 'Sin leer el enfoque ni la luz, el rayo cae entero, doble sobre los lacados, y la nube no estalla.' },
   { id: 'fran-bien', fight: 'fran', party: DUO, levels: P3M3, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .7], roundsWon: [10, 16], why: 'Fran, pensando: romper cada lámpara en su propia luz, con otro elemento: se le apaga el brillo, esa luz ya no se come nada y la Aspersión cae casi limpia.' },
   { id: 'fran-sin-pensar', fight: 'fran', party: DUO, levels: P3M3, policy: 'casual', win: [0, .25], why: 'Sin mirar a las lámparas, cada luz le da más brillo, sigue comiéndose los elementos y la Aspersión llega teñida de todas.' },
   { id: 'fran-a-punetazos', fight: 'fran', party: DUO, levels: P3M3, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },

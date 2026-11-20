@@ -362,7 +362,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (c.kind === 'lampara' && state) chips.push(lampLit(state, c) ? ['en-su-luz', 'En su luz'] : ['apagada', 'Fuera de su luz']);
     // La carta de colores: a shirt of Luca's, in the light of its own colour or out of it (only then can it be hurt).
     if (c.kind?.startsWith('estampado') && c.hp > 0 && state?.light) chips.push(shirtLit(state, c) ? ['en-su-luz', 'En su luz'] : ['apagada', 'Fuera de su luz']);
-    if (state && (c.lacado ?? -1) >= state.round) chips.push(['lacado', 'Lacado']);
     if (c.kind === 'voz' && state?.song) {
       // Whom her notes go to: whoever touched her last.
       const sung = state.allies.find(a => a.id === c.facing && a.hp > 0);
@@ -1848,10 +1847,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         const light = effect.lightOut!, back = cancels(light);
         if (back && back !== 'fisico') for (const ally of state.allies.filter(a => a.hp > 0)) pop(ally.id, `Vuelve ${ELEMENTS[back].name.toLowerCase()}`, 'status', `La luz ${LIGHTS[light].name.toLowerCase()} se apaga`, 'luz')?.style.setProperty('--status', LIGHTS[light].colour);
       }, 420);
-      if (effect.lacquered) effect.lacquered.forEach(id => pop(id, 'Lacado', 'status', 'El fuego hace el doble', 'lacado'));
-      if (effect.lens) setTimeout(() => { if (token === generation) pop(effect.lens!, '¡Lente rajada!', 'status', 'El rayo no sale', 'rajado'); }, 420);
       if (effect.stopped) setTimeout(() => { if (token === generation) effect.stopped!.forEach(id => pop(id, 'Quieto', 'status', 'Sin nadie a quien copiar', 'clavado')); }, 420);
-      if (effect.burst) setTimeout(() => { if (token !== generation) return; pop(effect.burst!.actor, '¡Estalla!', 'status', 'Fuego en la laca', 'quemado'); effect.burst!.hits.forEach(h => pop(h.target, `−${h.amount}`, 'damage', 'Estallido')); }, 420);
       if (effect.kind === 'enemy' && effect.shielded && isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind)) pop(effect.actor, 'Guardia', 'guard');
       if (effect.kind === 'enemy' && effect.telegraph?.id === 'calderon') pop(effect.actor, 'Toma aire', 'status', 'Calderón en su próximo turno', 'crescendo');
       if (effect.cancelled === 'calderon') pop(effect.kind === 'enemy' ? effect.actor : effect.target ?? effect.actor, effect.kind === 'enemy' ? 'Sin aire' : '¡Calderón roto!', 'status', effect.kind === 'enemy' ? 'Pierde el turno' : 'Acorde', 'sin-aire');

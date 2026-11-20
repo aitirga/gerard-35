@@ -41,10 +41,11 @@ export const PLACES_LUCA = {
 } as const;
 
 /**
- * The salon's zones (docs/quests/luca.md § La Sagrada peluquería), in the order the way goes round
- * the crossing: the Nativity arm by the door, the nave, the Passion arm, the apse; then the crossing.
+ * The salon's zones (docs/quests/luca.md § La Sagrada peluquería), each with its fight, in the order the
+ * way goes round the crossing: the Nativity arm by the door, the nave, the Passion arm. Then the apse
+ * and the crossing are Fran's (APSE).
  */
-export type ZoneId = 'recepcion' | 'sillones' | 'carta' | 'abside';
+export type ZoneId = 'recepcion' | 'sillones' | 'carta';
 export interface Zone {
   id: ZoneId; name: string;
   /** Its fight, where its foes stand waiting, and how near walking up to them starts it (`trip`: crossing that rect starts it). */
@@ -59,10 +60,15 @@ export const ZONES: readonly Zone[] = [
   { id: 'recepcion', name: 'La recepción', encounter: 'luca-recepcion', cell: { x: 36, z: 32 }, radius: 3, trip: { x: 27, z: 33, w: 19, d: 2 }, area: { x: 27, z: 29, w: 19, d: 11 }, walk: 'nacimiento', colour: '#3f8fe0' },
   { id: 'sillones', name: 'Los sillones', encounter: 'luca-sillones', cell: { x: 12, z: 20 }, radius: 3.5, area: { x: 1, z: 6, w: 22, d: 29 }, walk: 'nave', colour: '#e0503a' },
   { id: 'carta', name: 'La carta de colores', encounter: 'luca-carta', cell: { x: 36, z: 4 }, radius: 3, area: { x: 27, z: 1, w: 19, d: 4 }, walk: 'pasion', colour: '#f08a2c' },
-  { id: 'abside', name: 'El ábside', encounter: 'luca-abside', cell: { x: 56, z: 20 }, radius: 3.5, area: { x: 51, z: 6, w: 10, d: 29 }, walk: 'abside', colour: '#f2c94c' },
 ];
-/** The zone whose windows light `cell`, if any (the crossing and the hall are the nave's light). */
-export const zoneAt = (cell: Cell) => ZONES.find(z => cell.x >= z.area.x && cell.x < z.area.x + z.area.w && cell.z >= z.area.z && cell.z < z.area.z + z.area.d);
+/**
+ * The apse: Fran's zone, with no fight of its own (El Telescopio and La Laca were cut, Aitor 2026-11-20).
+ * Its queue moves on once La carta is won; Luca's lenses and star charts stand there, lit by its own
+ * windows, and the first time it is walked into Gerard and Aitor say whose they are.
+ */
+export const APSE = { name: 'El ábside', cell: { x: 56, z: 20 }, area: { x: 51, z: 6, w: 10, d: 29 }, walk: 'abside' as WalkId };
+/** The side whose windows light `cell`, if any (the crossing and the hall are the nave's light). */
+export const zoneAt = (cell: Cell) => [...ZONES, APSE].find(z => cell.x >= z.area.x && cell.x < z.area.x + z.area.w && cell.z >= z.area.z && cell.z < z.area.z + z.area.d);
 const column = (x: number, zs: number[]) => zs.map(z => ({ x, z }));
 const row = (z: number, xs: number[]) => xs.map(x => ({ x, z }));
 const span = (a: number, b: number, skip: number[] = []) => Array.from({ length: b - a + 1 }, (_, i) => a + i).filter(n => !skip.includes(n));
@@ -228,8 +234,9 @@ export const LINES_LUCA = {
       aitor('Ese cura lleva el pelo azul. Y ese otro, de punta.'),
     ),
     carta: group('aitor', gerard('Esas camisas son de Luca.'), aitor('Sin nadie dentro. Y solo una tiene color: la de la luz que hay ahora.')),
-    abside: group('aitor', gerard('Lentes. Cartas de estrellas. Esto es de Luca.'), aitor('Y lo están usando contra él.')),
   } satisfies Record<ZoneId, Dialogue>,
+  /** The apse walked into the first time, once the way to Fran is open: Luca's things, there to look at. */
+  apse: group('aitor', gerard('Lentes. Cartas de estrellas. Esto es de Luca.'), aitor('Y lo están usando contra él.')),
   /**
    * A zone won: its colour has just gone out of the door, seen (COLOUR_OUT), and the queue in front
    * moves on a step; by how many are won.
@@ -237,8 +244,7 @@ export const LINES_LUCA = {
   zoneWon: [
     group('aitor', aitor('Azul. Ha salido por la puerta, hacia Luca.'), gerard('Y la cola de la nave se ha movido. Ha pasado uno.')),
     group('aitor', aitor('Otro color para Luca.'), aitor('La cola de la Pasión avanza. Nos toca.')),
-    group('aitor', gerard('Ya van tres.'), aitor('La del ábside también se mueve. Es la última.')),
-    group('aitor', aitor('El último. El capellán que guarda a Fran ya no está tan tranquilo.')),
+    group('aitor', gerard('Ya van tres.'), aitor('La cola del ábside se mueve. Y el capellán que guarda a Fran ya no está tan tranquilo.')),
   ] as Dialogue[],
   /** A queue looked at while it still keeps the way. */
   queue: group('aitor',
@@ -261,11 +267,10 @@ export const LINES_LUCA = {
     aitor('Ahí. La luz les cae en la cara, en los sillones.'),
     gerard('Se tapan los ojos. Ahora no nos van a ver venir.'),
   ),
-  /** The chaplain before the presbytery, by how many zones are won; and once all four are. */
+  /** The chaplain before the presbytery, by how many zones are won; and once all three are. */
   capellan: [
     group('capellan', capellan('El señor está atendiendo. Hay que esperar turno.')),
     group('capellan', capellan('Hay que esperar turno. El señor está muy ocupado.')),
-    group('capellan', capellan('Esperen. Esperen, por favor. No toquen nada.')),
     group('capellan', capellan('Ya casi. Ya casi les toca. Siéntense.')),
   ] as Dialogue[],
   ready: group('capellan', capellan('Ya les toca. Pasen.'), capellan('El señor no levanta la vista. No se ofendan.')),

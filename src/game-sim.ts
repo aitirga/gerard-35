@@ -1125,7 +1125,7 @@ export const ENCOUNTER_NAMES: Record<string, string> = {
   'camping-magos': 'Magos', 'camping-dados': 'Dados', 'camping-agentes': 'Agentes', 'camping-tienda': 'Tienda equivocada', 'camping-negra': 'Parcela negra',
   campeon: 'El Campeón', sobremesa: 'La Sobremesa', 'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz',
   'modelo-celdas': 'Celdas secas', 'modelo-oscilacion': 'Oscilaciones', 'modelo-pluma': 'La pluma', 'no-converge': 'El que no converge',
-  'luca-recepcion': 'La recepción', 'luca-sillones': 'Los sillones', 'luca-carta': 'La carta de colores', 'luca-abside': 'El ábside', fran: 'Fran',
+  'luca-recepcion': 'La recepción', 'luca-sillones': 'Los sillones', 'luca-carta': 'La carta de colores', fran: 'Fran',
   // The castle (docs/castle.md): a room of pupils per letter, La Delegada, and its three bosses.
   ...Object.fromEntries([1, 2, 3].flatMap(year => [...['a', 'b', 'c'].map(room => [`alumnos-${year}${room}`, `Alumnos · ${year}.º ${room.toUpperCase()}`]), [`delegada-${year}`, `La Delegada · ${year}.º curso`]])),
   aurelia: 'Aurelià', direccion: 'Mar, Montse y Pilar', reina: 'La Reina Bubbaloo', 'reina-vuelta': 'La Reina, con el artilugio',

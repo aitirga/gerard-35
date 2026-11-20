@@ -198,7 +198,7 @@
     {
       "shot": "nave",
       "delay": 900,
-      "caption": "Los sillones: where the church's wooden chairs were, rows of salon chairs back to back with their mirrors; the chaplains, each with his hair done his own way, and La Laca"
+      "caption": "Los sillones: where the church's wooden chairs were, rows of salon chairs back to back with their mirrors; the chaplains, each with his hair done his own way"
     },
     {
       "eval": "window.gerard.game.frame()"
@@ -334,12 +334,27 @@
       "settle": 900
     },
     {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "abside-nombrado",
+      "delay": 1500,
+      "caption": "Walked into the first time: «Lentes. Cartas de estrellas. Esto es de Luca.» / «Y lo están usando contra él.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1200
+    },
+    {
       "eval": "window.gerard.game.frame({ x: 24.5, y: 0.6, z: 2 }, 9)"
     },
     {
       "shot": "abside",
       "delay": 900,
-      "caption": "El ábside: Luca's lenses in brass rings, turned on the columns, and his star charts; El Telescopio and La Laca waiting"
+      "caption": "El ábside, Fran's zone: Luca's lenses in brass rings, turned on the columns, and his star charts; no fight here any more"
     },
     {
       "eval": "window.gerard.game.frame()"
@@ -357,21 +372,6 @@
     },
     {
       "wait": 1600
-    },
-    {
-      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'luca-abside' })"
-    },
-    {
-      "until": "!!document.querySelector('#hud[data-dialogue]')",
-      "timeout": 20000
-    },
-    {
-      "shot": "capellan",
-      "delay": 1800,
-      "caption": "The apse won: the camera turns to the chaplain who keeps the presbytery"
-    },
-    {
-      "skipDialogue": true
     },
     {
       "wait": 1600

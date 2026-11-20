@@ -81,9 +81,10 @@
       "name": "La Laca",
       "redo": [],
       "text": "Este quitalo, no tiene sentido, quita este enemigo",
-      "status": "abierta",
+      "status": "hecha",
       "created": "2026-11-20T02:23:04Z",
-      "reply": "Propuesta: quitarla. Los sillones se quedan solo con los capellanes (su pregunta, el orden, está completa). Junto con El Telescopio, el ábside se queda sin combate propio: antesala de Fran con las lentes y cartas celestes de decorado; o, si prefieres que haya pelea, un enjambre grande de Polillas. Se pierde la lección del fuego con riesgo (Lacado). ¿Quito las dos y cuál de las dos opciones para el ábside?"
+      "reply": "Quitada: La Laca ya no está en el juego. Los sillones son solo los tres capellanes, un poco más duros para seguir siendo el mismo combate, y el ábside ya no tiene combate: es la zona de Fran.",
+      "closed": "2026-11-20T07:57:07Z"
     },
     {
       "id": "n-mwocu1zr",
@@ -91,9 +92,10 @@
       "name": "El Telescopio",
       "redo": [],
       "text": "Este tambien quitalo",
-      "status": "abierta",
+      "status": "hecha",
       "created": "2026-11-20T02:23:10Z",
-      "reply": "Propuesta: quitarlo junto con La Laca (ver su nota): el ábside sin combate, como antesala de Fran, o con un enjambre grande de Polillas. Se pierde la pregunta de «momento» (golpear mientras enfoca). Espero tu OK."
+      "reply": "Quitado: El Telescopio ya no está en el juego, y el ábside con él como combate. Ahora es la zona de Fran: se abre al ganar La carta, con las lentes y las cartas de Luca, que Gerard y Aitor nombran al entrar.",
+      "closed": "2026-11-20T07:57:07Z"
     },
     {
       "id": "n-mwocurqs",

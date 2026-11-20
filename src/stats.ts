@@ -106,15 +106,12 @@ export const PROFILES = {
   oscilacion: base(110, 10, 12, 9, 10, 12),
   pluma: base(90, 9, 11, 9, 11, 10),
   'no-converge': base(520, 12, 13, 11, 12, 10),
-  // Fran's salon (docs/quests/luca.md § Monsters): frail moths, patches of pattern, a brass telescope,
-  // a cloud of hairspray and the restyled chaplains.
+  // Fran's salon (docs/quests/luca.md § Monsters): frail moths, patches of pattern and the restyled chaplains.
   polilla: base(28, 10, 8, 8, 8, 13),
   'estampado-rojo': base(75, 12, 10, 11, 11, 9),
   'estampado-azul': base(75, 12, 10, 11, 11, 9),
   'estampado-oro': base(75, 12, 10, 11, 11, 9),
-  telescopio: base(300, 10, 13, 12, 12, 8),
-  laca: base(120, 8, 12, 8, 10, 9),
-  capellan: base(92, 12, 9, 10, 10, 10),
+  capellan: base(116, 12, 9, 10, 10, 10),
   // Fran, under the Queen's hold, and the three lamps of the canopy he has made his chair's.
   fran: base(150, 13, 13, 12, 12, 10),
   lampara: base(40, 8, 8, 8, 8, 1),

@@ -163,7 +163,7 @@ player, seed 35 on; before them, in brackets):
 | La recepción | 100 % · 100 % · 1 | 100 % · 87 % · 3.2 | 88 % · 73 % · 4.2 |
 | Los sillones | 100 % · 57 % · 3.1 | 4 % · 46 % · 5 (wall) | 0 % · 56 % · 4.8 (wall) |
 | La carta de colores | 100 % · 51 % · 5.1 | 100 % · 44 % · 6.7 | 17 % · 56 % · 7 (wall) |
-| El ábside | 96 % · 51 % · 9.6 | 58 % · 47 % · 10.5 | 0 % · 36 % · 10.8 (wall) |
+| El ábside (cut 2026-11-20: Fran's zone, no fight) | 96 % · 51 % · 9.6 | 58 % · 47 % · 10.5 | 0 % · 36 % · 10.8 (wall) |
 | Fran | 100 % · 68 % · 6.8 | 100 % · 56 % · 10.1 | 71 % · 31 % · 7.3 |
 
 - **Two more ánimas end the rewinds for whoever reads the fights**: six more days of grace, and the

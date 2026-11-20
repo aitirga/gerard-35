@@ -98,9 +98,9 @@ church near the door and more and more salon deeper in. After the win it is the 
   | Zone | In the basilica | Becomes | Foes |
   | --- | --- | --- | --- |
   | **La recepción** | The Nativity arm, by the door | Still the church; a salon desk with Fran's appointment book; grey visitors queue. The light is taught here | Las Polillas |
-  | **Los sillones** | The nave and its rows of chairs | Salon chairs and mirrors in rows | Los capellanes, La Laca |
+  | **Los sillones** | The nave and its rows of chairs | Salon chairs and mirrors in rows | Los capellanes |
   | **La carta de colores** | The Passion arm | The dye bar: the windows as a colour chart | Las camisas de Luca |
-  | **El ábside** | The apse and its ambulatory | Where Luca used to look up: lenses, star charts | El Telescopio, Polillas |
+  | **El ábside** | The apse and its ambulatory | Where Luca used to look up: lenses, star charts. Fran's zone, no fight of its own (2026-11-20) | — |
   | **El crucero** | Under the Tower of Jesus, the presbytery steps | The canopy over the altar as the canopy of Fran's chair | **Fran** |
 
 - Palette: no saturated pink (the Queen's) nor violet (possession) but for possessed eyes.
@@ -114,11 +114,9 @@ steal light; not Luca's own traits (that is Marta's). Each asks one question.
 | --- | --- | --- | --- | --- |
 | **Las Polillas** | Grey moths, many and frail, drawn to light: they swarm whoever struck with an element and leave them Cegado | Lo que alcanza a todos | An all-target blow clears the swarm | Fuego / – |
 | **Las camisas de Luca** (roja, azul, dorada; `estampado-*` in code) | Three of his loud shirts on wire hangers, nobody in them | A cuál, by the light | **Only the shirt in the light of its own colour can be hurt** (it is in colour, the others grey; *En su luz* / *Fuera de su luz* on the plate, *Nada* on a wasted blow). That light eats the party's element of that colour, so it is hit with anything else. Fallen, **its light goes out with it** and that element comes back | – / – |
-| **El Telescopio** | Luca's looking at the sky turned on them: *Enfocar* a turn (the plate says at whom), then a burning beam, then its brass | Momento | Hit it while it focuses: **the lens cracks** (*¡Lente rajada!*) and the beam is lost. (A blow there does not land harder: that would make anyone greedy find the answer by chance.) | – / Fuego |
-| **La Laca** | A cloud of hairspray that lacquers the party (*Lacado*: fire hurts them double) | Elemento, with a risk | Brought down by fire, it **bursts** over every other foe | Fuego / – |
 | **Los capellanes** | The basilica's chaplains, restyled by Fran, each with hair of another shape and colour. People under the Queen, unsettling, not a joke | Orden | The freshly styled one (*Recién peinado*) repeats the last gesture next round; down it first and the copy stops | – |
 
-Not used: El Secador (Aitor: no hairdryer monster), El Decolorante.
+Not used: El Secador (Aitor: no hairdryer monster), El Decolorante. **Cut on 2026-11-20** (Aitor, bestiary notes: «no tiene sentido», «quítalo»): El Telescopio and La Laca, with the apse's fight; the apse is now Fran's zone (§ What was built from the review).
 
 Las Polillas are a figure of `just character-3d polilla` (2026-11-20, Aitor's bestiary note: flight): one piece with its wings cut off as their own nodes, laid flat at chest height in the fight (`src/luca-foes.ts`), the wings beating (`battle-scene.ts`). Fran as a boss (`fran-jefe`, with six moves from Meshy's library) and the removal of La Laca and El Telescopio are waiting for Aitor (docs/bestiary-notes.json).
 
@@ -245,8 +243,9 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
   reflection in the pond shows the orange shirt and the teal trousers (orange = red + gold). Mixed
   right, the Estampados come off the chart to fight, and that colour goes back to Luca. It ties the
   pond's reflection to the inside.
-- **E · The apse as the climax.** El Telescopio with a Laca instead of moths (its beam is fire: the
-  lacquered take it double), or a second lens: the last zone asks two of the lessons at once.
+- **E · The apse as the climax.** ~~El Telescopio with a Laca instead of moths (its beam is fire: the
+  lacquered take it double), or a second lens: the last zone asks two of the lessons at once.~~ Cut on
+  2026-11-20: the apse is Fran's zone, with no fight.
 - **F · Prismático on trial inside.** At the door Luca gives Gerard his old binoculars (*prismáticos*)
   and Prismático wakes on trial, as Papagato does at Nuria's door, with one skill that plays with the
   light (a prism barrier, or holding an element for the next turn while the light eats it). Kept at
@@ -255,8 +254,8 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
 
 ### What was built from the review (2026-11-16)
 
-- **The way (A)**: zones in a fixed order round the crossing (recepción → sillones → carta → ábside →
-  Fran). Only the next zone's fight starts; the others' foes wait where they stand. Three queues of
+- **The way (A)**: zones in a fixed order round the crossing (recepción → sillones → carta → Fran; the
+  ábside, once a fourth zone, is Fran's since 2026-11-20). Only the next zone's fight starts; the others' foes wait where they stand. Three queues of
   grey visitors behind black belts block the nave (x 23), the Passion arm (row 5) and the apse (x 50),
   each moving on when the zone before is won (`QUEUES` in `src/friends/luca.ts`, `story.blocked`).
   The recepción's fight is across the Nativity arm's mouth: nobody gets in without it. *Mirar la
@@ -270,8 +269,11 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
   12, down x 20 and along row 20 to the chaplains' chairs, two turns from how they start (three
   until the walk through it, below). Aitor notices the light coming into the nave. Solved, the chaplains start their fight Cegado II
   (`dazzle`): the same fight with more PV left. Optional, and rewarded.
-- **The apse as the climax (E)**: El Telescopio and a thicker La Laca (`lacaAbside`), which now bursts
-  over the others **when fire brings it down** (no longer at the first touch of fire).
+- **The apse as Fran's zone (E, 2026-11-20, Aitor)**: El Telescopio and La Laca are gone, and the
+  apse with them as a fight. Its queue moves on once La carta is won; it keeps its own windows' light
+  (`APSE` in `src/friends/luca.ts`, gold and orange) and Luca's lenses and star charts, and the first
+  time it is walked into Gerard and Aitor name them (`LINES_LUCA.apse`). Los sillones is the three
+  chaplains alone, a little tougher to stay what it was (capellanes 116 PV, Tijeretazo 29; `just fight-sim check`: with the answer 90 % · 37 % PV, without 19 %).
 - **Fran shorter (G)**: about 14 rounds playing well (was 19).
 - **The curve** (`just fight-sim check`, P2M2, Fran P3M3), smart wins with PV left · casual wins:
 
@@ -280,7 +282,6 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
   | Recepción (teaches) | 97 % · 53 % PV | 97 % |
   | Sillones | 94 % · 38 % (dazzled 97 % · 50 %) | 10 % |
   | Carta | 92 % · 30 % | 33 % |
-  | Ábside | 95 % · 42 % | 5 % |
   | Fran | 100 % · 50 %, 14 rounds (2026-11-19: 95 % · 52 %, 16 rounds) | 14 % (2026-11-19: 19 %) |
 
   New numbers: Estampados 75 PV, Estampar 9, Recolor 80 %; capellanes 92 PV; Tubo 54; Chispa 22;
@@ -371,7 +372,7 @@ shirts on hangers** (red, blue, gold) and the fight asks one thing: *which one, 
 - **Foes and Fran**: the `LucaKind` group and the `LUCA` book in `src/battle.ts`, procedural models in
   `src/luca-foes.ts`, fight tester row *La peluquería*, `STAGED_MOMENTS` `fran-acolitos`,
   `fran-baldaquino`, `fran-aspersion`, `TARGETS` for every fight (all hold, `just fight-sim check`).
-  Zone numbers: Polillas 28 PV, Estampados 100, Telescopio 300, La Laca 120, capellanes 100; Fran 150,
+  Zone numbers: Polillas 28 PV, Estampados 100, capellanes 116 (2026-11-20, without La Laca); Fran 150,
   his acolytes 55, his lamps 40 (2026-11-19).
 - **The place**: Luca by the pond (grey by the colours still missing, his reflection in colour lying
   on the water), the door gated until he is met, the salon dressed zone by zone

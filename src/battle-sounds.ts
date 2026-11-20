@@ -105,8 +105,6 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
   'estampado-rojo': { impact: [{ id: 'hit', volume: .75 }] },
   'estampado-azul': { impact: [{ id: 'hit', volume: .75 }] },
   'estampado-oro': { impact: [{ id: 'hit', volume: .75 }] },
-  telescopio: { impact: [{ id: 'slam', volume: .8 }] },
-  laca: { impact: [{ id: 'hit', volume: .6 }] },
   capellan: { impact: [{ id: 'hit', volume: .8 }] },
   fran: { impact: [{ id: 'slam', volume: .85 }] },
   lampara: { impact: [{ id: 'hit', volume: .5 }] },
@@ -153,9 +151,7 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   // A mago charging its Bombona: the gas hisses out. El Campeón in plain clothes pulling itself together.
   if (effect.kind === 'enemy' && effect.telegraph?.id === 'bombona') return [{ id: 'fizzle' }];
   if (effect.kind === 'enemy' && effect.healed) return [{ id: 'heal', volume: .6 }];
-  // Fran's salon: El Telescopio focusing, La Laca's fixer hissing, a chaplain left mid-gesture.
-  if (effect.kind === 'enemy' && effect.telegraph?.id === 'rayo-lente') return [{ id: 'mark-set' }];
-  if (effect.kind === 'enemy' && effect.lacquered) return [{ id: 'fizzle' }];
+  // Fran's salon: a chaplain left mid-gesture.
   if (effect.kind === 'enemy' && effect.cancelled && !effect.amount) return [{ id: 'sink', volume: .6 }];
   // The castle's moves that are a word, not a blow (Chivatazo, Dictado announced, La Pompa starting): a mark set, heard.
   if (effect.kind === 'enemy' && !effect.amount && !effect.splash && (effect.telegraph || effect.called?.length) && isCastle(foeOf(effect, state)?.kind)) return [{ id: 'mark-set' }];

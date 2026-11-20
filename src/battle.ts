@@ -177,13 +177,12 @@ export type CuerdasKind = 'lealtad' | 'cristalino' | 'directo' | 'eco' | 'voz';
 /**
  * Fran's salon's foes (docs/quests/luca.md § Monsters): what is eating Luca's colour, each asking one
  * question and showing its answer on its plate. Polillas come in more while two of them stand (a blow
- * on everyone, fire best); a shirt of Luca's (`estampado-*`) is only hurt in the light of its own colour; El Telescopio says
- * a turn ahead that it is focusing, and a blow then cracks its lens; La Laca lacquers the party (fire
- * hurts them double) and bursts over every foe at the touch of fire; the chaplains copy what was done
- * last, the freshly styled one (*Recién peinado*) leading, and stop mid-gesture when it falls.
+ * on everyone, fire best); a shirt of Luca's (`estampado-*`) is only hurt in the light of its own colour;
+ * the chaplains copy what was done last, the freshly styled one (*Recién peinado*) leading, and stop
+ * mid-gesture when it falls. (El Telescopio and La Laca were cut on 2026-11-20, Aitor: the apse is Fran's zone.)
  */
-export type LucaKind = 'polilla' | 'estampado-rojo' | 'estampado-azul' | 'estampado-oro' | 'telescopio' | 'laca' | 'capellan' | 'fran' | 'lampara';
-export const LUCA_KINDS = ['polilla', 'estampado-rojo', 'estampado-azul', 'estampado-oro', 'telescopio', 'laca', 'capellan', 'fran', 'lampara'] as const satisfies readonly LucaKind[];
+export type LucaKind = 'polilla' | 'estampado-rojo' | 'estampado-azul' | 'estampado-oro' | 'capellan' | 'fran' | 'lampara';
+export const LUCA_KINDS = ['polilla', 'estampado-rojo', 'estampado-azul', 'estampado-oro', 'capellan', 'fran', 'lampara'] as const satisfies readonly LucaKind[];
 export const isLuca = (kind?: FoeKind): kind is LucaKind => !!kind && (LUCA_KINDS as readonly string[]).includes(kind);
 export const CUERDAS_KINDS = ['lealtad', 'cristalino', 'directo', 'eco', 'voz'] as const satisfies readonly CuerdasKind[];
 export const isCuerdas = (kind?: FoeKind): kind is CuerdasKind => !!kind && (CUERDAS_KINDS as readonly string[]).includes(kind);
@@ -266,7 +265,7 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo'
   | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo'
   | 'chispa' | 'ola' | 'empapa' | 'inunda' | 'descarga-modelo' | 'converge'
-  | 'aleteo' | 'estampar' | 'enfocar' | 'rayo-lente' | 'tubo' | 'lacar' | 'chispa-laca' | 'tijeretazo' | 'imitacion'
+  | 'aleteo' | 'estampar' | 'tijeretazo' | 'imitacion'
   | 'corte' | 'repeinar' | 'brillo' | 'tomar-hisopo' | 'aspersion';
 export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }> = {
   lagrimilla: { name: 'Lagrimilla', card: false },
@@ -353,11 +352,6 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   converge: { name: 'Converge', card: true },
   aleteo: { name: 'Aleteo', card: false },
   estampar: { name: 'Estampar', card: false },
-  enfocar: { name: 'Enfocar', card: true },
-  'rayo-lente': { name: 'Rayo de lente', card: true },
-  tubo: { name: 'Golpe de tubo', card: false },
-  lacar: { name: 'Fijador', card: true },
-  'chispa-laca': { name: 'Chispa', card: true },
   tijeretazo: { name: 'Tijeretazo', card: false },
   imitacion: { name: 'Imitación', card: true },
   corte: { name: 'Corte a medida', card: false },
@@ -668,10 +662,9 @@ export const AFFINITIES: Partial<Record<FoeKind, Partial<Record<Element, Affinit
   mago: { agua: 'weak', fuego: 'resist' },
   // Lo Directo is a lance, a rod in a storm; an Eco is air, and fire eats it.
   directo: { electrico: 'weak' }, eco: { fuego: 'weak' },
-  // Fran's salon (docs/quests/luca.md): a moth to the flame, a cloud of hairspray; a brass lens is used to heat.
+  // Fran's salon (docs/quests/luca.md): a moth to the flame.
   // (Luca's shirts keep nothing off: the light of their colour already eats that element while they can be hurt.)
-  polilla: { fuego: 'weak' }, laca: { fuego: 'weak' },
-  telescopio: { fuego: 'resist' },
+  polilla: { fuego: 'weak' },
 };
 /** What `element` finds in `c`: a weakness, a resistance or nothing. */
 export const affinityOf = (c: Pick<Combatant, 'kind' | 'affinities'>, element?: Element): Affinity | undefined => element && c.kind ? (c.affinities ? c.affinities[element] : AFFINITIES[c.kind]?.[element]) : undefined;
@@ -837,8 +830,6 @@ export interface Combatant {
   peinado?: boolean;
   /** A chaplain left mid-gesture by the fall of the freshly styled one: it loses its turn this round. */
   still?: number;
-  /** One of the party lacquered by La Laca (*Lacado*) until the end of this round: fire hurts them double. */
-  lacado?: number;
   /** Fran: the phase he is in (1 acolytes, 2 the canopy, 3 the aspergillum), and his Brillo, a shield that grows with every light. */
   stage?: 1 | 2 | 3; brillo?: number;
   /** One of the canopy's lamps (a part of Fran's fight): the lights it drinks. */
@@ -888,14 +879,13 @@ export const MODELO_FIGHTS: Record<ModeloEncounter, readonly ModeloKind[]> = {
   'no-converge': ['no-converge'],
 };
 /** Fran's salon in the Sagrada Família (docs/quests/luca.md): a fight in each zone, the light walking through all of them. */
-export const LUCA_ENCOUNTERS = ['luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside', 'fran'] as const;
+export const LUCA_ENCOUNTERS = ['luca-recepcion', 'luca-sillones', 'luca-carta', 'fran'] as const;
 export type LucaEncounter = (typeof LUCA_ENCOUNTERS)[number];
 /** Who comes out in each of them, in the order they stand. */
 export const LUCA_FIGHTS: Record<LucaEncounter, readonly LucaKind[]> = {
   'luca-recepcion': ['polilla', 'polilla', 'polilla'],
-  'luca-sillones': ['capellan', 'capellan', 'capellan', 'laca'],
+  'luca-sillones': ['capellan', 'capellan', 'capellan'],
   'luca-carta': ['estampado-rojo', 'estampado-azul', 'estampado-oro'],
-  'luca-abside': ['telescopio', 'laca'],
   // Fran under the canopy with two acolytes; the canopy's three lamps (parts) are added by createLucaBattle.
   fran: ['fran', 'capellan', 'capellan'],
 };
@@ -969,7 +959,7 @@ export interface BattleState {
   /** The lights that came on since it was last asked (`takeLightNews`). */
   lightNews?: LightId[];
   /** Fran's salon: the last gesture a foe made, for the freshly styled chaplain to copy. */
-  copied?: { ability: FoeAbilityId; power: number; all: boolean; magic: boolean; fire: boolean; by: string };
+  copied?: { ability: FoeAbilityId; power: number; all: boolean; magic: boolean; by: string };
   /** Fran's salon: who of the party last struck with an element; the moths go for that flash. */
   flash?: string;
 }
@@ -1249,12 +1239,6 @@ export interface BattleEffect {
   annulled?: LightId;
   /** Fran's salon: the chaplains the freshly styled one's fall left mid-gesture. */
   stopped?: string[];
-  /** Fran's salon: La Laca burst at the touch of fire, and what it took off every other foe. */
-  burst?: { actor: string; hits: { target: string; amount: number }[] };
-  /** Fran's salon: El Telescopio's lens cracked under a blow while it focused. */
-  lens?: string;
-  /** Fran's salon: the party lacquered by La Laca. */
-  lacquered?: string[];
   /** Fran's salon: shirts of Luca's a blow found out of their light (nothing done to them), and the light of one that fell, gone for good. */
   unlit?: string[]; lightOut?: LightId;
   /** Fran: his Brillo now (it grew with a light, or a lamp breaking took it away), his new phase, a lamp broken. */
@@ -3161,12 +3145,8 @@ export function songLabel(state: BattleState) {
 /**
  * Fran's salon (docs/quests/luca.md § Monsters), every number in one book (`luca.rules`). Polillas
  * flutter at whoever struck with an element last (`aleteo`); at the end of a round, while two of them
- * stand, one more comes in, up to `polillasMost`. Estampados stamp (`estampar`). El Telescopio goes
- * round TELESCOPIO_TURNS: it focuses on someone (said a turn ahead), fires its lens at them
- * (`rayoLente`, fire) and swings its brass (`tubo`); a blow while it focuses lands `lente` times as
- * hard and cracks the lens, calling the beam off. La Laca lacquers the party (*Lacado*, fire on them
- * lands `lacado` times as hard) and then sparks over everyone (`chispa`, fire); brought down by fire,
- * La Laca bursts over every other foe (`estallido`). A chaplain cuts (`tijeretazo`); the freshly styled one
+ * stand, one more comes in, up to `polillasMost`. Estampados stamp (`estampar`). A chaplain cuts
+ * (`tijeretazo`); the freshly styled one
  * repeats the last gesture made, whole, and its fall leaves the others still for the round. A
  * shirt of Luca's is only hurt in the light of its own colour (`shirtLit`); fallen, its light is gone.
  * Fran (§ Final boss): a Corte a medida (`corte`) on one, his acolytes copying it. From `standAt` of
@@ -3181,10 +3161,8 @@ export function songLabel(state: BattleState) {
 export const LUCA = {
   aleteo: 12, polillasMost: 5,
   estampar: 18,
-  rayoLente: 66, tubo: 54, lente: 1,
-  chispa: 22, lacado: 2, estallido: 40,
-  tijeretazo: 23,
-  deslumbre: 14, lacaAbside: 260,
+  tijeretazo: 29,
+  deslumbre: 14,
   corte: 22, acolito: 55, acolitoCorte: 16, aspersion: 16, aspersionLamp: 12, aspersionDown: 1, brilloStep: .5, brilloMost: 3, standAt: .75, hisopoAt: .33,
 };
 /** The canopy's three lamps (Fran's fight): each drinks the lights of one side of the day. */
@@ -3198,31 +3176,25 @@ export const LAMPS: Record<LampId, { name: string; lights: readonly LightId[] }>
 export const lampOf = (light: LightId) => (Object.keys(LAMPS) as LampId[]).find(id => LAMPS[id].lights.includes(light))!;
 /** Fran's turns in each phase, in order, round and round. */
 export const FRAN_TURNS = { 1: ['corte', 'repeinar'], 2: ['corte', 'corte', 'repeinar'], 3: ['tomar-hisopo', 'aspersion', 'corte'] } as const satisfies Record<1 | 2 | 3, readonly FoeAbilityId[]>;
-/** El Telescopio's turns, in order, round and round; its beam is said a turn ahead. */
-export const TELESCOPIO_TURNS = ['enfocar', 'rayo-lente', 'tubo'] as const;
-/** La Laca's turns, in order, round and round. */
-export const LACA_TURNS = ['lacar', 'chispa-laca'] as const;
 /** Fran's salon's foes, by name. */
 export const LUCA_NAMES: Record<LucaKind, string> = {
   polilla: 'Polilla', 'estampado-rojo': 'Camisa roja', 'estampado-azul': 'Camisa azul', 'estampado-oro': 'Camisa dorada',
-  telescopio: 'El Telescopio', laca: 'La Laca', capellan: 'Capellán', fran: 'Fran', lampara: 'Lámpara',
+  capellan: 'Capellán', fran: 'Fran', lampara: 'Lámpara',
 };
 const LUCA_MESSAGES: Record<LucaEncounter, string> = {
   'luca-recepcion': 'Polillas grises salen de detrás del mostrador. Van hacia la luz, y la luz sois vosotros.',
-  'luca-sillones': 'Los capellanes se levantan de los sillones a la vez, cada uno con un peinado que no es suyo. Detrás, una nube de laca.',
+  'luca-sillones': 'Los capellanes se levantan de los sillones a la vez, cada uno con un peinado que no es suyo.',
   'luca-carta': 'Tres camisas de Luca cuelgan de sus perchas delante de la carta de colores: roja, azul, dorada. Sin nadie dentro.',
-  'luca-abside': 'Un telescopio de latón gira sobre su trípode y os busca. Las polillas ya están aquí.',
   fran: 'Fran no levanta la vista de sus papeles. A cada lado, un capellán con el peinado recién hecho. La luz cambia de color sobre los tres.',
 };
 const LUCA_WON: Record<LucaEncounter, string> = {
   'luca-recepcion': 'La última polilla se deshace en polvo gris. Por la puerta sale un poco de azul.',
   'luca-sillones': 'Los capellanes se sientan, despeinados, y se miran como si se acabaran de despertar. Un rojo se va hacia la puerta.',
   'luca-carta': 'La última camisa cae de su percha, vacía. Un naranja se va hacia la puerta.',
-  'luca-abside': 'La lente se apaga. Las cartas de estrellas vuelven a ser solo papel. Un dorado se escapa hacia la puerta.',
   fran: 'Fran se queda quieto bajo el baldaquino. La luz deja de correr y se queda blanca, de mediodía.',
 };
 /** Which windows light each of the salon's fights (src/vidrieras.ts WALKS): the side of the basilica it is fought in. */
-export const LUCA_WALKS: Record<LucaEncounter, WalkId> = { 'luca-recepcion': 'nacimiento', 'luca-sillones': 'nave', 'luca-carta': 'pasion', 'luca-abside': 'abside', fran: 'nave' };
+export const LUCA_WALKS: Record<LucaEncounter, WalkId> = { 'luca-recepcion': 'nacimiento', 'luca-sillones': 'nave', 'luca-carta': 'pasion', fran: 'nave' };
 const isLucaFight = (state: BattleState) => (LUCA_ENCOUNTERS as readonly string[]).includes(state.encounter);
 /** One of the salon's fights: who comes out (LUCA_FIGHTS), the first chaplain freshly styled, and the light walking from the cold morning. */
 function createLucaBattle(party: PartySlot[], encounter: LucaEncounter, animas?: ClassId[], random: () => number = Math.random): BattleState {
@@ -3233,8 +3205,6 @@ function createLucaBattle(party: PartySlot[], encounter: LucaEncounter, animas?:
     if (kind === 'capellan' && n === 1) one.peinado = true;
     // Fran's acolytes: chaplains by another name, so the zone's are not taken for them.
     if (encounter === 'fran' && kind === 'capellan') { one.name = `Acólito ${n}`; one.hp = one.maxHp = one.stats.pv = LUCA.acolito; }
-    // The apse's Laca is the thick cloud by the telescope: it takes more wearing down before fire brings it down.
-    if (encounter === 'luca-abside' && kind === 'laca') one.hp = one.maxHp = one.stats.pv = LUCA.lacaAbside;
     if (kind === 'fran') { one.stage = 1; one.brillo = 0; }
     return one;
   });
@@ -3257,10 +3227,9 @@ export function dazzle(state: BattleState) {
   for (const f of blind) f.timed = { ...f.timed, cegado: { level: 2, left: LUCA.deslumbre, next: TIMED.cegado.every } };
   if (blind.length) state.message = `${state.message} La luz de los espejos les da en la cara: casi no ven.`;
 }
-/** How much of a blow one of the salon's foes takes: El Telescopio while it focuses, its lens bare; Fran through his Brillo; a lamp and a shirt of Luca's only in their own light. */
+/** How much of a blow one of the salon's foes takes: Fran through his Brillo; a lamp and a shirt of Luca's only in their own light. */
 function lucaTaken(state: BattleState, target: Combatant) {
   if (shirtLight(target)) return shirtLit(state, target) ? 1 : 0;
-  if (target.kind === 'telescopio' && target.intent?.ability === 'rayo-lente') return LUCA.lente;
   if (target.kind === 'fran') return 1 / (1 + LUCA.brilloStep * (target.brillo ?? 0));
   if (target.kind === 'lampara') return lampLit(state, target) ? 1 : 0;
   return 1;
@@ -3279,8 +3248,7 @@ function landingOf(effect: BattleEffect): Element | undefined {
 }
 /**
  * After anything that may have hurt one of the salon's foes. A party's blow with an element calls
- * the moths to whoever struck it. Fire landing on La Laca bursts it over every other foe. A blow on
- * El Telescopio while it focuses cracks its lens and calls its beam off. The freshly styled chaplain
+ * the moths to whoever struck it. The freshly styled chaplain
  * fallen: the others stop mid-gesture for the round.
  */
 function checkLuca(state: BattleState, effect?: BattleEffect) {
@@ -3301,21 +3269,6 @@ function checkLuca(state: BattleState, effect?: BattleEffect) {
     if (effect) effect.lightOut = light;
     if (left) state.message += ` La luz ${LIGHTS[light].name.toLowerCase()} se apaga con ella.`;
     passFallenLights(state);
-  }
-  // La Laca brought down by fire: it goes up, and takes something off every other foe standing.
-  const laca = state.foes.find(f => f.kind === 'laca');
-  if (laca && laca.hp <= 0 && !laca.told && ally && landing === 'fuego' && struck(laca.id) && !effect!.burst) {
-    laca.told = true;
-    const hits = state.foes.filter(f => f !== laca && f.hp > 0 && !f.part).map(f => ({ target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(LUCA.estallido, current(state, laca), current(state, f)), 'magic')) }));
-    effect!.burst = { actor: laca.id, hits };
-    state.message += ` ¡La Laca prende y estalla! ${hits.length ? `Alcanza a todos: ${hits.map(h => `−${h.amount}`).join(', ')} PV.` : ''}`.trimEnd();
-  }
-  // El Telescopio hit while it focuses: the lens cracks and the beam is called off.
-  const scope = state.foes.find(f => f.kind === 'telescopio' && f.intent?.ability === 'rayo-lente');
-  if (scope && ally && struck(scope.id)) {
-    delete scope.intent;
-    if (effect) { effect.lens = scope.id; effect.cancelled = 'rayo-lente'; }
-    state.message += ' ¡Se le raja la lente! El rayo no sale.';
   }
   // The freshly styled chaplain down: the others stop mid-gesture, with nothing to copy.
   const styled = state.foes.find(f => f.kind === 'capellan' && f.peinado);
@@ -3367,8 +3320,7 @@ function checkFran(state: BattleState, effect?: BattleEffect) {
 }
 /**
  * The salon's foes' turns (docs/quests/luca.md § Monsters), each a named move. A moth flutters at the
- * flash. An Estampado stamps. El Telescopio goes round TELESCOPIO_TURNS. La Laca goes round
- * LACA_TURNS. A chaplain left mid-gesture loses its turn; the freshly styled one repeats the last
+ * flash. An Estampado stamps. A chaplain left mid-gesture loses its turn; the freshly styled one repeats the last
  * gesture made by a foe, whole; the others cut.
  */
 function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect, hit: Hit) {
@@ -3376,15 +3328,11 @@ function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effec
   actor.turns = turn + 1;
   const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
   const alive = state.allies.filter(a => a.hp > 0);
-  const fire: Hit = (who, power) => {
-    const raw = sighted(actor, magical(power, current(state, actor), current(state, who))) * ((who.lacado ?? -1) >= state.round ? LUCA.lacado : 1);
-    return changeHealth(who, -Math.round(who.guarding ? Math.ceil(raw / 3) : raw));
-  };
   const zap: Hit = (who, power) => {
     const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
     return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
-  const remember = (ability: FoeAbilityId, power: number, all: boolean, magic: boolean, burn: boolean) => { state.copied = { ability, power, all, magic, fire: burn, by: actor.name }; };
+  const remember = (ability: FoeAbilityId, power: number, all: boolean, magic: boolean) => { state.copied = { ability, power, all, magic, by: actor.name }; };
   if (actor.kind === 'fran') {
     const cycle: readonly FoeAbilityId[] = FRAN_TURNS[actor.stage ?? 1];
     const move = cycle[turn % cycle.length];
@@ -3399,7 +3347,7 @@ function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effec
         state.message = `${actor.name} chasquea las tijeras sin mirar. ${next.name} se toca el pelo: es otro.`;
       } else {
         effect.amount = undefined; use('corte'); effect.target = target.id; effect.amount = hit(target, LUCA.corte);
-        remember('corte', LUCA.corte, false, false, false);
+        remember('corte', LUCA.corte, false, false);
         state.message = `${actor.name} se gira hacia ${target.name}, sin prisa, y corta. −${effect.amount} PV.`;
       }
     } else if (move === 'tomar-hisopo') {
@@ -3428,7 +3376,7 @@ function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effec
         : `${actor.name} sacude el hisopo sobre vosotros. Moja, y nada más: no os quita el color. −${effect.amount} PV a ${target.name}.`;
     } else {
       use('corte'); effect.target = target.id; effect.amount = hit(target, LUCA.corte);
-      remember('corte', LUCA.corte, false, false, false);
+      remember('corte', LUCA.corte, false, false);
       state.message = `${actor.name} os mira por fin a uno: a ${target.name}. Y corta. −${effect.amount} PV.`;
     }
   } else if (actor.kind === 'lampara') {
@@ -3439,47 +3387,8 @@ function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effec
     state.message = `${actor.name} va a por ${who.name}${who.id === state.flash ? ', atraída por el destello' : ''}. −${effect.amount} PV.`;
   } else if (actor.kind?.startsWith('estampado')) {
     use('estampar'); effect.target = target.id; effect.amount = hit(target, LUCA.estampar);
-    remember('estampar', LUCA.estampar, false, false, false);
+    remember('estampar', LUCA.estampar, false, false);
     state.message = `${actor.name} se le pega a ${target.name} y aprieta. −${effect.amount} PV.`;
-  } else if (actor.kind === 'telescopio') {
-    const move = TELESCOPIO_TURNS[turn % TELESCOPIO_TURNS.length];
-    if (move === 'enfocar') {
-      // It focuses on someone: the beam comes on its next turn, unless a blow cracks the lens first.
-      const who = alive[(state.round + turn) % alive.length] ?? target;
-      use('enfocar'); delete effect.target;
-      actor.intent = { ability: 'rayo-lente', target: who.id };
-      effect.telegraph = { id: 'rayo-lente', name: FOE_ABILITIES['rayo-lente'].name, target: who.id };
-      state.message = `${actor.name} gira despacio y enfoca a ${who.name}. Toda la luz de la sala se junta en su lente.`;
-    } else if (move === 'rayo-lente') {
-      const who = alive.find(a => a.id === actor.intent?.target);
-      if (actor.intent?.ability === 'rayo-lente' && who) {
-        use('rayo-lente'); effect.target = who.id; effect.amount = fire(who, LUCA.rayoLente);
-        remember('rayo-lente', LUCA.rayoLente, false, true, true);
-        state.message = `${actor.name} suelta la luz que tenía juntada sobre ${who.name}. Quema. −${effect.amount} PV${who.guarding ? ' · Protegido' : ''}.`;
-      } else {
-        // Its lens cracked: nothing to fire.
-        use('rayo-lente'); delete effect.target; effect.cancelled = 'rayo-lente';
-        state.message = `${actor.name} intenta enfocar con la lente rajada. La luz se le escapa por la grieta.`;
-      }
-      delete actor.intent;
-    } else {
-      use('tubo'); effect.target = target.id; effect.amount = hit(target, LUCA.tubo);
-      remember('tubo', LUCA.tubo, false, false, false);
-      state.message = `${actor.name} gira el tubo de latón contra ${target.name}. −${effect.amount} PV.`;
-    }
-  } else if (actor.kind === 'laca') {
-    const move = LACA_TURNS[turn % LACA_TURNS.length];
-    if (move === 'lacar') {
-      use('lacar'); delete effect.target;
-      for (const a of alive) a.lacado = state.round + 1;
-      effect.lacquered = alive.map(a => a.id);
-      remember('lacar', 0, true, false, false);
-      state.message = `${actor.name} os envuelve en una nube de fijador. Se os pega a la ropa, al pelo. Huele a quemado antes de tiempo.`;
-    } else {
-      use('chispa-laca'); onEveryone(state, effect, target, fire, LUCA.chispa);
-      remember('chispa-laca', LUCA.chispa, true, true, true);
-      state.message = `Salta una chispa dentro de ${actor.name}. −${effect.amount} PV a ${target.name}.`;
-    }
   } else if (actor.still === state.round) {
     // Left mid-gesture by the fall of the freshly styled one: nothing to copy, nothing to do.
     use('tijeretazo'); delete effect.target; effect.cancelled = 'tijeretazo';
@@ -3488,21 +3397,14 @@ function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effec
     // Recién peinado: it does again what was just done, whole.
     const copy = state.copied;
     use('imitacion');
-    if (copy.ability === 'lacar') {
-      delete effect.target;
-      for (const a of alive) a.lacado = state.round + 1;
-      effect.lacquered = alive.map(a => a.id);
-      state.message = `${actor.name}, recién peinado, repite el gesto: otra nube de fijador.`;
-    } else {
-      const blow: Hit = copy.fire ? fire : copy.magic ? zap : hit;
-      if (copy.all) onEveryone(state, effect, target, blow, copy.power);
-      else { effect.target = target.id; effect.amount = blow(target, copy.power); }
-      state.message = `${actor.name}, recién peinado, repite lo que hizo ${copy.by}. −${effect.amount} PV a ${target.name}.`;
-    }
+    const blow: Hit = copy.magic ? zap : hit;
+    if (copy.all) onEveryone(state, effect, target, blow, copy.power);
+    else { effect.target = target.id; effect.amount = blow(target, copy.power); }
+    state.message = `${actor.name}, recién peinado, repite lo que hizo ${copy.by}. −${effect.amount} PV a ${target.name}.`;
   } else {
     const cut = state.encounter === 'fran' ? LUCA.acolitoCorte : LUCA.tijeretazo;
     use('tijeretazo'); effect.target = target.id; effect.amount = hit(target, cut);
-    remember('tijeretazo', cut, false, false, false);
+    remember('tijeretazo', cut, false, false);
     state.message = `${actor.name} corta el aire delante de ${target.name}, muy cerca. −${effect.amount} PV.`;
   }
 }
@@ -3526,7 +3428,6 @@ function lucaRoundEnd(state: BattleState) {
     const next = chaplains.slice(at + 1).find(f => f.hp > 0) ?? standing[0];
     next.peinado = true;
   }
-  for (const a of state.allies) if (a.lacado !== undefined && a.lacado < state.round + 1) delete a.lacado;
 }
 /**
  * How much of a blow a campsite foe takes, by its rule and the kind of blow (a dual counts as every

@@ -67,64 +67,14 @@ test('a shirt of Luca\'s is only hurt in the light of its own colour, and its li
   for (let i = 0; i < 60; i++) { runClock(s, 1); assert.notEqual(lightNow(s), 'rojo'); }
 });
 
-test('El Telescopio says whom it focuses on; a blow then cracks its lens and calls its beam off', () => {
-  const s = fight('luca-abside');
-  const scope = s.foes.find(f => f.kind === 'telescopio');
-  turn(s, scope.id, 'gerard');
-  assert.equal(scope.intent.ability, 'rayo-lente');
-  assert.match(intentLabel(s, scope), /Rayo de lente →/);
-  as(s, 'aitor');
-  const blow = act(s, 'attack', scope.id);
-  assert.equal(blow.lens, scope.id);
-  assert.equal(scope.intent, undefined);
-  const beam = turn(s, scope.id, 'gerard');
-  assert.equal(beam.cancelled, 'rayo-lente');
-  assert.equal(beam.amount, undefined);
-});
-
-test('the beam lands whole when nobody cracks the lens, and La Laca\'s fixer makes fire hurt double', () => {
-  const s = fight('luca-abside');
-  const scope = s.foes.find(f => f.kind === 'telescopio');
-  turn(s, scope.id, 'gerard');
-  const beam = turn(s, scope.id, 'gerard');
-  assert.ok(beam.amount > 0);
-  const t = fight('luca-abside');
-  const lens = t.foes.find(f => f.kind === 'telescopio');
-  turn(t, lens.id, 'gerard');
-  t.allies.find(a => a.id === 'gerard').lacado = t.round + 1;
-  const doubled = turn(t, lens.id, 'gerard');
-  assert.ok(doubled.amount >= beam.amount * LUCA.lacado - 2, `${doubled.amount} against ${beam.amount}`);
-});
-
-test('La Laca brought down by fire bursts over every other foe; not by another blow, nor when the light eats the fire', () => {
-  const s = fight('luca-sillones');
-  const laca = s.foes.find(f => f.kind === 'laca');
-  as(s, 'gerard');
-  assert.equal(act(s, 'skill', laca.id, 'foc-binari').burst, undefined, 'standing, it only burns');
-  laca.hp = 1;
-  as(s, 'gerard');
-  const fire = act(s, 'skill', laca.id, 'foc-binari');
-  assert.equal(laca.hp, 0);
-  assert.equal(fire.burst.actor, laca.id);
-  assert.ok(fire.burst.hits.length >= 3 && fire.burst.hits.every(h => h.amount > 0));
-  const t = fight('luca-sillones');
-  t.light.t = 15;
-  t.foes.find(f => f.kind === 'laca').hp = 1;
-  as(t, 'gerard');
-  const eaten = act(t, 'skill', t.foes.find(f => f.kind === 'laca').id, 'foc-binari');
-  assert.equal(eaten.annulled, 'naranja');
-  assert.equal(eaten.burst, undefined);
-});
-
 test('the freshly styled chaplain repeats the last gesture; down, the others stop mid-gesture', () => {
   const s = fight('luca-sillones');
   const [styled, other] = s.foes.filter(f => f.kind === 'capellan');
   assert.equal(styled.peinado, true);
-  const laca = s.foes.find(f => f.kind === 'laca');
-  turn(s, laca.id, 'gerard');
+  const cut = turn(s, other.id, 'gerard');
   const copy = turn(s, styled.id, 'gerard');
   assert.equal(copy.ability.id, 'imitacion');
-  assert.ok(copy.lacquered?.length, 'it lacquers again');
+  assert.ok(copy.amount > 0 && cut.amount > 0, 'it cuts again, as the other just did');
   styled.hp = 1;
   as(s, 'aitor');
   const down = act(s, 'attack', styled.id);
@@ -196,14 +146,11 @@ test('the chaplains dazzled by the nave\'s mirrors start the fight Cegado II', (
   assert.match(s.message, /espejos/);
 });
 
-test('each side of the basilica fights under its own windows: the apse\'s Laca is the thicker cloud', () => {
-  assert.deepEqual(LUCA_FIGHTS['luca-abside'], ['telescopio', 'laca']);
-  const apse = fight('luca-abside');
-  assert.equal(apse.light.walk, 'abside');
-  const fresh = createFearBattle(party, 'luca-abside');
-  assert.equal(fresh.foes.find(f => f.kind === 'laca').maxHp, LUCA.lacaAbside);
+test('each side of the basilica fights under its own windows; the apse has no fight: it is Fran\'s zone', () => {
+  assert.deepEqual(LUCA_ENCOUNTERS, ['luca-recepcion', 'luca-sillones', 'luca-carta', 'fran']);
+  assert.deepEqual(LUCA_FIGHTS['luca-sillones'], ['capellan', 'capellan', 'capellan'], 'the chaplains alone');
+  assert.equal(fight('luca-carta').light.walk, 'pasion');
 });
-
 test('a lamp broken rains its colour back: its light eats nothing of the party\'s for the rest of the fight', async () => {
   const { lightFreed } = await import('../src/battle.ts');
   const s = fight('fran');

@@ -7,8 +7,7 @@ import { FOE_BODIES } from './foe-bodies.ts';
  * looks for a part (`Charco pringoso` under them, `Vista` to turn to the camera, `Cabeza de chicle`
  * for a head). They are what is eating Luca's colour, so the moths are grey and the rest carry his
  * colours or the salon's. A Polilla, grey wings round a dusty body, hovering. An Estampado, a stiff
- * patch of loud pattern standing on its edge, in its own colour. El Telescopio, a brass tube on a
- * tripod with a glass lens. La Laca, a pale cloud round a gold spray can. A Capellán, a chaplain in
+ * patch of loud pattern standing on its edge, in its own colour. A Capellán, a chaplain in
  * black with a white collar, his hair sculpted into a shape and colour that are not his. No pink and
  * no violet anywhere (docs/visual-style.md).
  */
@@ -82,37 +81,6 @@ export function createLucaFoes(body: (id: string, parent: pc.Entity) => pc.Entit
   };
   const red = shirt('Camisa roja', '#e8503a', '#ffd84f'), blue = shirt('Camisa azul', '#4f9fe8', '#f1ece2'), gold = shirt('Camisa dorada', '#ffd84f', '#2f8f7a');
 
-  // El Telescopio: a brass tube on a tripod, its lens a disc of glass that lights up when it focuses.
-  const scope = root('El Telescopio');
-  pool(scope, '#ffd84f', 1.4);
-  const brass = mat('Latón', '#c89a3a', .85), darkBrass = mat('Latón viejo', '#7d6128', .7), lens = mat('Lente', '#e9f3ff', .95, .6, .85);
-  for (let k = 0; k < 3; k++) {
-    const a = k * 120;
-    part(scope, 'Pata', 'cylinder', darkBrass, [Math.sin(a * Math.PI / 180) * .32, .55, Math.cos(a * Math.PI / 180) * .32], [.05, 1.15, .05], [Math.cos(a * Math.PI / 180) * 16, 0, -Math.sin(a * Math.PI / 180) * 16]);
-  }
-  const tube = pivot(scope, 'Vista', [0, 1.2, 0]);
-  part(tube, 'Rótula', 'sphere', darkBrass, [0, 0, 0], [.2, .2, .2]);
-  const barrel = pivot(tube, 'Cabeza de chicle', [0, .12, 0]);
-  barrel.setLocalEulerAngles(-24, 0, 0);
-  part(barrel, 'Tubo', 'cylinder', brass, [0, 0, .3], [.26, 1.3, .26], [90, 0, 0]);
-  part(barrel, 'Tubo ancho', 'cylinder', brass, [0, 0, .9], [.36, .3, .36], [90, 0, 0]);
-  part(barrel, 'Ocular', 'cylinder', darkBrass, [0, 0, -.42], [.12, .2, .12], [90, 0, 0]);
-  part(barrel, 'Lente', 'cylinder', lens, [0, 0, 1.06], [.3, .02, .3], [90, 0, 0], false);
-
-  // La Laca: a gold spray can inside a pale, drifting cloud.
-  const laca = root('La Laca');
-  pool(laca, '#f2e2a8', 1.3);
-  const can = pivot(laca, 'Vista', [0, 0, 0]);
-  const tin = mat('Bote dorado', '#d9b24a', .85), cap = mat('Tapón', '#f1ece2', .5), cloud = mat('Nube de fijador', '#f6f0dc', .1, .15, .5);
-  part(can, 'Bote', 'cylinder', tin, [0, .55, 0], [.4, 1.0, .4]);
-  part(can, 'Hombro', 'sphere', tin, [0, 1.05, 0], [.4, .18, .4]);
-  part(can, 'Tapón', 'cylinder', cap, [0, 1.2, 0], [.2, .16, .2]);
-  pivot(can, 'Cabeza de chicle', [0, 1.25, 0]);
-  for (let k = 0; k < 7; k++) {
-    const a = k / 7 * Math.PI * 2;
-    part(can, 'Nube', 'sphere', cloud, [Math.sin(a) * .5, .9 + (k % 3) * .25, Math.cos(a) * .4], [.55, .45, .55], [0, 0, 0], false);
-  }
-
   // A Capellán: a chaplain in black with a white collar; his hair restyled by Fran, each one's in a
   // shape and a colour of Luca's that are not his (`styleChaplain` shows one of them): a tall quiff
   // swept up and forward in blue, a row of lacquered spikes in orange, a hard side parting in teal.
@@ -175,7 +143,7 @@ export function createLucaFoes(body: (id: string, parent: pc.Entity) => pc.Entit
   const templates = new Map<LucaKind, pc.Entity>([
     ['fran', fran], ['lampara', lamp],
     ['polilla', moth], ['estampado-rojo', red], ['estampado-azul', blue], ['estampado-oro', gold],
-    ['telescopio', scope], ['laca', laca], ['capellan', chaplain],
+    ['capellan', chaplain],
   ]);
   return {
     templates,
@@ -198,5 +166,5 @@ export function lightShirt(model: pc.Entity, on: boolean) {
 }
 /** How big each one stands in the fight. */
 export const LUCA_SIZES: Record<LucaKind, number> = {
-  polilla: .9, 'estampado-rojo': 1, 'estampado-azul': 1, 'estampado-oro': 1, telescopio: 1.1, laca: 1, capellan: 1.05, fran: 1.2, lampara: .8,
+  polilla: .9, 'estampado-rojo': 1, 'estampado-azul': 1, 'estampado-oro': 1, capellan: 1.05, fran: 1.2, lampara: .8,
 };

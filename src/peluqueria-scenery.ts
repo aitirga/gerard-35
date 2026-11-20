@@ -12,7 +12,7 @@ export interface SalonState {
 
 /** The nave's blocks of chairs on the plan (BASILICA_PLAN's `h`): five cells along x from each, four along z from each row. */
 const BLOCKS = { xs: [3, 9, 15], zs: [16, 21] } as const;
-/** The block the chaplains and La Laca stand in, waiting: left clear of chairs. */
+/** The block the chaplains stand in, waiting: left clear of chairs. */
 const CLEARING = { x: 9, z: 16 } as const;
 /** The presbytery's floor, two steps up (src/basilica-scenery.ts), in cells. */
 const DAIS = .4;

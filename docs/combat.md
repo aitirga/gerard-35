@@ -778,8 +778,7 @@ fuego, Rayo solar) o una reacción eléctrica (Tormenta, Conducción). Nunca dep
 | Mago de camping | Agua | Fuego |
 | Lo Directo | Eléctrico | – |
 | Eco | Fuego | – |
-| Polilla, La Laca | Fuego | – |
-| El Telescopio | – | Fuego |
+| Polilla | Fuego | – |
 
 Nada lo dice de antemano. El primer golpe que lo encuentra suelta «¡Débil!» o «Resiste» con su
 multiplicador, y desde entonces la placa de ese tipo de enemigo lleva el chip («Débil: Fuego»)

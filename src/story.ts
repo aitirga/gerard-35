@@ -21,7 +21,7 @@ import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
 import { lockedStations, ticketFlag, type TicketStation } from './tickets.ts';
 import { ALEGIA, CUERDAS_PLACE, LINES_MARTA, MARTA_SCALE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
-import { BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE, MIRRORS, MIRRORS_SEEN, MIRRORS_START, PLACES_LUCA, QUEUES, SAGRADA, SALON_SOLID, SALON_VIEWS, ZONES, ZONE_VIEW, COLOUR_OUT, queueCells, type LookId } from './friends/luca.ts';
+import { APSE, BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE, MIRRORS, MIRRORS_SEEN, MIRRORS_START, PLACES_LUCA, QUEUES, SAGRADA, SALON_SOLID, SALON_VIEWS, ZONES, ZONE_VIEW, COLOUR_OUT, queueCells, type LookId } from './friends/luca.ts';
 import { trace, turned, type Facing } from './espejos.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
@@ -893,7 +893,7 @@ export class Story {
   /** What stands waiting in each zone of the salon, for the game to put there (src/luca-foes.ts models). */
   lucaFoes(environment: EnvironmentId): { id: string; encounter: string; kind: string; cell: Cell }[] {
     if (environment !== INTERIOR || !this.salon) return [];
-    const first = { 'luca-recepcion': 'polilla', 'luca-sillones': 'capellan', 'luca-carta': 'estampado-rojo', 'luca-abside': 'telescopio' } as const;
+    const first = { 'luca-recepcion': 'polilla', 'luca-sillones': 'capellan', 'luca-carta': 'estampado-rojo' } as const;
     return ZONES.filter(z => !this.luca.beaten.includes(z.id)).map(z => ({ id: z.id, encounter: z.encounter, kind: first[z.encounter], cell: { ...z.cell } }));
   }
   /** The next zone of the salon on the way round the crossing, if any is left. */
@@ -930,6 +930,12 @@ export class Story {
       // The camera follows the window's light from mirror to mirror, to where it ends.
       const beam = this.beam, turn = beam.turns.at(-1) ?? beam.end;
       return [{ kind: 'look', cell: { x: Math.round((turn.x + beam.end.x) / 2), z: Math.round((turn.z + beam.end.z) / 2) + 2 }, height: 9 }, say(LINES_LUCA.mirrors), { kind: 'look' }];
+    }
+    // The apse, Fran's zone, walked into once the way is open: Luca's lenses and charts, named.
+    if (id === 'luca-abside') {
+      if (run.told.includes('abside') || this.lucaNext) return [];
+      run.told.push('abside');
+      return [{ kind: 'look', cell: { ...APSE.cell }, height: ZONE_VIEW }, say(LINES_LUCA.apse), { kind: 'look' }];
     }
     const zone = ZONES.find(z => id === `luca-${z.id}`);
     // Only the next one on the way: the queues keep the rest.
@@ -1274,6 +1280,8 @@ export class Story {
         ...next ? [{ id: `luca-${next.id}`, cell: { ...next.cell }, radius: next.radius, ...next.trip ? { area: { ...next.trip } } : {} }] : [],
         // The nave's mirrors, as the nave is come into while the chaplains still wait: its whole mouth, from wall to wall.
         ...next?.id === 'sillones' && !run.told.includes('espejos') ? [{ id: 'luca-espejos', cell: { ...MIRRORS_SEEN }, radius: 2, area: { x: 20, z: 6, w: 3, d: 29 } }] : [],
+        // The apse, Fran's zone, once its queue has moved on: its whole floor.
+        ...!next && !run.told.includes('abside') ? [{ id: 'luca-abside', cell: { ...APSE.cell }, radius: 2, area: { ...APSE.area } }] : [],
       ];
     }
     if (environment === CAMP) return this.campTriggers();

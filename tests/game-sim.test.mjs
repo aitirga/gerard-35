@@ -21,7 +21,7 @@ test('the thinking player walks the story through the friends\' missions into th
   assert.ok(game.fights.every(f => f.rounds > 0));
   assert.ok(game.seconds > 0 && Object.values(game.time).every(t => t >= 0));
   assert.ok(game.moments.some(m => m.kind === 'level' && m.anima === 'papagato'), 'Papagato grows with the EXP of its fights');
-  for (const fight of ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge', 'luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside', 'fran']) assert.ok(game.fights.some(f => f.encounter === fight && f.won), `${fight} is won`);
+  for (const fight of ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge', 'luca-recepcion', 'luca-sillones', 'luca-carta', 'fran']) assert.ok(game.fights.some(f => f.encounter === fight && f.won), `${fight} is won`);
   assert.ok(game.fights.some(f => f.encounter.startsWith('alumnos-')), 'after the friends it goes into the castle, through a generated floor');
   assert.deepEqual(game.gaps, [], 'nothing is bridged');
   const again = playTo(55);

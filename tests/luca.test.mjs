@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Story } from '../src/story.ts';
 import { flagsAt, missionJump, missionNow, missionParts } from '../src/story-points.ts';
-import { DOOR, FURNITURE, INTERIOR, LINES_LUCA, LOOKS, MIRRORS, PLACES_LUCA, QUEUES, QUEUE_LEFT, SAGRADA, COLOUR_OUT, SALON_SOLID, SALON_VIEWS, ZONES, ZONE_VIEW, queueCells, zoneAt } from '../src/friends/luca.ts';
+import { APSE, DOOR, FURNITURE, INTERIOR, LINES_LUCA, LOOKS, MIRRORS, PLACES_LUCA, QUEUES, QUEUE_LEFT, SAGRADA, COLOUR_OUT, SALON_SOLID, SALON_VIEWS, ZONES, ZONE_VIEW, queueCells, zoneAt } from '../src/friends/luca.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { NEWS } from '../src/chapter-2.ts';
 import { canWalk } from '../src/movement.ts';
@@ -65,7 +65,7 @@ test('the door waits for Luca; once he has been spoken to, inside is Fran\'s sal
 
 test('the way goes round the crossing: each zone is its fight once, in order, and the queue ahead moves on as each is won', () => {
   const story = inSalon();
-  assert.equal(story.lucaFoes(INTERIOR).length, 4, 'all four wait where they stand');
+  assert.equal(story.lucaFoes(INTERIOR).length, 3, 'all three wait where they stand');
   const ids = () => story.triggers(INTERIOR).map(t => t.id).filter(id => ZONES.some(z => id === `luca-${z.id}`));
   assert.deepEqual(ids(), ['luca-recepcion'], 'only the next one starts');
   assert.deepEqual(story.handle({ type: 'near', id: 'luca-carta' }), [], 'one further on does nothing');
@@ -97,15 +97,22 @@ test('the way goes round the crossing: each zone is its fight once, in order, an
     }
   }
   assert.deepEqual(blocked(), [...QUEUES.flatMap(q => queueCells(q, true)), ...MIRRORS, ...SALON_SOLID].map(m => `${m.x},${m.z}`), 'only the queues\' ends, the mirrors and the salon\'s furniture stand in the way now');
-  assert.equal(story.npcs(SAGRADA).find(n => n.id === 'luca').faded, 1 - 4 / 5, 'a colour back for each zone');
+  assert.equal(story.npcs(SAGRADA).find(n => n.id === 'luca').faded, 1 - 3 / 4, 'a colour back for each zone');
+  // The apse, Fran's zone, once its queue has moved on: Luca's lenses and charts named, once.
+  assert.ok(story.triggers(INTERIOR).some(t => t.id === 'luca-abside'));
+  const apse = story.handle({ type: 'near', id: 'luca-abside' });
+  assert.deepEqual(say(apse), [LINES_LUCA.apse]);
+  assert.deepEqual(apse[0], { kind: 'look', cell: { ...APSE.cell }, height: ZONE_VIEW });
+  assert.deepEqual(story.handle({ type: 'near', id: 'luca-abside' }), [], 'its line only once');
   const boss = story.handle({ type: 'interact', id: 'talk-capellan' });
   assert.deepEqual(say(boss), [LINES_LUCA.ready, LINES_LUCA.fran]);
   assert.equal(boss.at(-1).encounter, 'fran');
 });
 
 test('each zone is lit by its own windows, and the queues keep the way whole', () => {
-  assert.deepEqual(ZONES.map(z => z.walk), ['nacimiento', 'nave', 'pasion', 'abside']);
-  for (const z of ZONES) assert.equal(zoneAt(z.cell)?.id, z.id, z.id);
+  assert.deepEqual(ZONES.map(z => z.walk), ['nacimiento', 'nave', 'pasion']);
+  for (const z of ZONES) assert.equal(zoneAt(z.cell)?.walk, z.walk, z.id);
+  assert.equal(zoneAt(APSE.cell)?.walk, 'abside', 'the apse, Fran\'s zone, keeps its own windows\' light');
   assert.equal(zoneAt(PLACES_LUCA.capellan), undefined, 'the crossing has the nave\'s light');
   const grid = ENVIRONMENTS[INTERIOR].grid;
   for (const q of QUEUES) {

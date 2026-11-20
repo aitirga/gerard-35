@@ -315,13 +315,13 @@ const LUCA_PARTS: readonly MissionPart[] = [
   { id: 'luca', label: 'Luca junto al estanque', detail: 'Gris, frente a la fachada del Nacimiento; aún no han hablado', at: 'metro', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
   { id: 'door', label: 'La puerta del Nacimiento', detail: 'Ya han hablado con Luca; entrar lleva a la peluquería', at: 'sagrada-luca', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.outside } } },
   { id: 'recepcion', label: 'La recepción', detail: 'Recién entrados; las polillas delante', at: 'peluqueria', spot: salon(36, 36), luca: { entered: true, told: ['dentro'] } },
-  { id: 'sillones', label: 'Los sillones', detail: 'La recepción ganada; la cola de la nave ha avanzado: los capellanes y La Laca', at: 'peluqueria', spot: salon(21, 20), luca: { entered: true, beaten: zones(1), told: ['dentro'] } },
+  { id: 'sillones', label: 'Los sillones', detail: 'La recepción ganada; la cola de la nave ha avanzado: los capellanes', at: 'peluqueria', spot: salon(21, 20), luca: { entered: true, beaten: zones(1), told: ['dentro'] } },
   { id: 'espejos', label: 'Los espejos de la nave', detail: 'La recepción ganada; entran en la nave y la luz de la vidriera acaba en la pared: dos espejos por girar', at: 'peluqueria', spot: salon(22, 14), luca: { entered: true, beaten: zones(1), told: ['dentro'] } },
   { id: 'carta', label: 'La carta de colores', detail: 'La nave ganada; la cola de la Pasión ha avanzado y esperan los Estampados', at: 'peluqueria', spot: salon(36, 9), luca: { entered: true, beaten: zones(2), told: ['dentro'] } },
-  { id: 'abside', label: 'El ábside', detail: 'Tres zonas ganadas; el Telescopio y La Laca entre las lentes', at: 'peluqueria', spot: salon(50, 21), luca: { entered: true, beaten: zones(3), told: ['dentro'] } },
-  { id: 'crucero', label: 'El crucero', detail: 'Las cuatro ganadas; el capellán deja pasar a Fran', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(4), told: ['dentro'] } },
-  { id: 'fran', label: 'Fran', detail: 'El capellán deja pasar: el combate empieza en cuanto llegan', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(4), told: ['dentro'] }, event: { type: 'interact', id: 'talk-capellan' } },
-  { id: 'won', label: 'Luca, a todo color', detail: 'El final: Fran se va, y fuera la luz de Luca va con Gerard y Aitor', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(4), told: ['dentro'] }, event: { type: 'battle', won: true, encounter: 'fran' } },
+  { id: 'abside', label: 'El ábside, zona de Fran', detail: 'Las tres zonas ganadas; la cola del ábside ha avanzado: las lentes y las cartas de Luca, delante de Fran', at: 'peluqueria', spot: salon(50, 21), luca: { entered: true, beaten: zones(3), told: ['dentro'] } },
+  { id: 'crucero', label: 'El crucero', detail: 'Las tres ganadas; el capellán deja pasar a Fran', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(3), told: ['dentro', 'abside'] } },
+  { id: 'fran', label: 'Fran', detail: 'El capellán deja pasar: el combate empieza en cuanto llegan', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(3), told: ['dentro', 'abside'] }, event: { type: 'interact', id: 'talk-capellan' } },
+  { id: 'won', label: 'Luca, a todo color', detail: 'El final: Fran se va, y fuera la luz de Luca va con Gerard y Aitor', at: 'peluqueria', spot: salon(38, 21), luca: { entered: true, beaten: zones(3), told: ['dentro', 'abside'] }, event: { type: 'battle', won: true, encounter: 'fran' } },
   { id: 'done', label: 'Misión hecha', detail: 'Luca, a todo color, junto al estanque', at: 'luz-luca', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
 ];
 /** The parts each mission can start at; one without its own list starts at its beginning or at each step. */
@@ -373,7 +373,7 @@ export function missionNow(anima: AnimaId, flags: readonly StoryFlag[], nuria?: 
   }
   if (anima === 'luca') {
     if (flags.includes('fran')) return 'done';
-    if (luca?.entered || flags.includes('peluqueria')) return ['recepcion', 'espejos', 'carta', 'abside', 'crucero'][Math.min(4, luca?.beaten.length ?? 0)];
+    if (luca?.entered || flags.includes('peluqueria')) return ['recepcion', 'espejos', 'carta', 'abside'][Math.min(3, luca?.beaten.length ?? 0)];
     return flags.includes('sagrada-luca') ? 'door' : 'luca';
   }
   return [...parts].reverse().find(p => p.id !== 'start' && flags.includes(p.at))?.id ?? 'start';

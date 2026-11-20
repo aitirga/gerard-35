@@ -126,7 +126,7 @@
     {
       "shot": "sillones",
       "delay": 900,
-      "caption": "Los sillones: salon chairs and mirrors where the nave's wooden chairs were, the chaplains and La Laca"
+      "caption": "Los sillones: salon chairs and mirrors where the nave's wooden chairs were, the chaplains"
     },
     {
       "open": "/?mission=luca&part=espejos"
@@ -209,7 +209,7 @@
     {
       "shot": "abside",
       "delay": 900,
-      "caption": "El ábside: Luca's lenses and star charts, El Telescopio"
+      "caption": "El ábside, Fran's zone (no fight since 2026-11-20): Luca's lenses and star charts, named the first time it is walked into"
     },
     {
       "open": "/?mission=luca&part=crucero"
@@ -271,7 +271,7 @@
     {
       "shot": "combate-sillones",
       "delay": 600,
-      "caption": "The chaplains and La Laca: one freshly styled"
+      "caption": "The chaplains: one freshly styled"
     },
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22luca-carta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -290,24 +290,6 @@
       "shot": "combate-carta",
       "delay": 600,
       "caption": "Luca's three shirts on their hangers: only the one in its light keeps its colour"
-    },
-    {
-      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22luca-abside%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
-    },
-    {
-      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]');"
-    },
-    {
-      "until": "window.ready()",
-      "timeout": 120000
-    },
-    {
-      "wait": 600
-    },
-    {
-      "shot": "combate-abside",
-      "delay": 600,
-      "caption": "El Telescopio and its moths"
     },
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%5D%2C%22encounter%22%3A%22fran%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
