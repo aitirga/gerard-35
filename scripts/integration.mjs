@@ -42,17 +42,19 @@ const pickerPlaces = [...picker.matchAll(/^\s*\{ id: '([^']+)', name:/gm)].map(m
 const places = Object.keys(ENVIRONMENTS);
 const fightIds = [...new Set(FIGHTS.map(fight => fight.split(':')[0]))];
 const castleFights = (await game('castle.ts')).CASTLE_ENCOUNTERS;
+/** The fight a target measures: one of FIGHTS, or one that takes a parameter (`night-guard:<room>`, src/battle-sim.ts createFight). */
+const fightOf = target => FIGHTS.includes(target.fight) ? target.fight : FIGHTS.find(fight => target.fight.startsWith(`${fight}:`));
 section('selector', 'Selector de desarrollo', 'broken', 'cada flag, lugar y combate se alcanza desde el selector y el justfile', [
   ...STORY_FLAGS.filter(flag => !beats.includes(flag)).map(flag => `flag «${flag}» falta en la lista de dev-chapter del justfile`),
   ...beats.filter(beat => beat !== 'new' && !STORY_FLAGS.includes(beat)).map(beat => `dev-chapter acepta «${beat}», que no es un flag`),
   ...places.filter(id => !pickerPlaces.includes(id)).map(id => `lugar «${id}» falta en PLACES (src/jump-menu.ts)`),
   ...pickerPlaces.filter(id => !places.includes(id)).map(id => `PLACES ofrece «${id}», que no es un lugar`),
   ...fightIds.filter(id => !castleFights.includes(id) && !picker.includes(`'${id}'`)).map(id => `combate «${id}» falta en el probador (src/jump-menu.ts)`),
-  ...TARGETS.filter(target => !FIGHTS.includes(target.fight)).map(target => `el objetivo «${target.id}» mide «${target.fight}», que no es un combate`),
+  ...TARGETS.filter(target => !fightOf(target)).map(target => `el objetivo «${target.id}» mide «${target.fight}», que no es un combate`),
 ]);
 
 // ——— Fights: each keeps its pair of targets, with the answer and without it (docs/combat.md) ———
-const measured = fight => TARGETS.filter(target => target.fight === fight);
+const measured = fight => TARGETS.filter(target => fightOf(target) === fight);
 section('combates', 'Combates y su pareja de objetivos', 'pending', 'cada combate tiene dos TARGETS: jugando su respuesta y sin ella', FIGHTS.flatMap(fight => {
   const own = measured(fight), policies = new Set(own.map(target => target.policy));
   if (!own.length) return [`${fight}: sin objetivos`];
