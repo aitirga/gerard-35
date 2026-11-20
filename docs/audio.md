@@ -189,15 +189,18 @@ check of the files; `mazmorra-3` at 90.
   step of .10 against .02 between neighbouring samples there); the loop runs from 104 samples in (at
   48 kHz) to 59 before 200 s, where the two waveforms meet (a step of .0014), 2 ms short of 75 bars.
 - `concrete` (`song-concrete`, 1:40) is 46 bars from its first downbeat at 0 s to 100.364 s.
-  Bars 1 to 9 open; bars 10 to 17 (19.635 → 37.090 s, Logic's locators 10 to 18) vamp three to
+  Bars 1 to 9 open; bars 10 to 17 (19.594 → 37.049 s, Logic's locators 10 to 18) vamp three to
   seven times; then bar 18, the break at bars 19 and 20 (40–43.6 s) and the rest play, and at
   100.364 s it starts over from bar 1. The song runs in 8-bar phrases (bars 2–9 and 10–17), each
   ending on the same drum fill, so bar 10 starts with the tail of bar 9's fill just as bar 18 does
   with bar 17's. Going back to bar 2 instead cut that tail off: bar 2 follows the quiet bar 1, so
   the cymbals stopped dead, with a click (a jump of .25 at the cut, against at most .055 between
-  neighbouring samples there). Both marks sit 58 samples (1.2 ms) before the downbeat, where the
-  two waveforms meet within a natural step. Bar 19 starts the break, so the section stops before
-  it. It is for the concrete, robot-like places: Meridiana street (`meridiana-calle`) for now; the
+  neighbouring samples there). It was bounced again on 2026-11-19: bars 1–17 are as before, bars
+  18–20 (bar 18 now opens like bar 10, .99 alike against .94) and 34–36 were rewritten. On the new
+  bounce the old marks (58 samples before the downbeats) jumped .05 against a step of .029, so both
+  now sit 2035 samples (42.4 ms) before the downbeats of bars 10 and 18, inside the fill bars 9 and
+  17 share, where the two waveforms meet (a step of .007), exactly 8 bars apart. Bar 19 starts the
+  break, so the section stops before it. It is for the concrete, robot-like places: Meridiana street (`meridiana-calle`) for now; the
   school on Rec Comtal plays the castle's song.
 
 - `triste` (`song-triste`, 1:36) loops whole: 80 beats (20 bars) at 50 BPM, playing at full level
