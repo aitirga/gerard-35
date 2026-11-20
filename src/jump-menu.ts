@@ -1,7 +1,7 @@
 import { ANIMAS, ANIMA_IDS, type AnimaId } from './animas';
-import { canWear, STAGED_MOMENTS, type ClassId, type Encounter, type StagedMoment } from './battle';
+import { canWear, DUALS, STAGED_MOMENTS, type ClassId, type Encounter, type StagedMoment } from './battle';
 import type { FightMoment } from './battle-ui';
-import { CASTLE_ENCOUNTERS, CASTLE_FIGHT_NAMES } from './castle.ts';
+import { CASTLE_ENCOUNTERS, CASTLE_FIGHTS as CASTLE_ROOMS, CASTLE_FIGHT_NAMES, CASTLE_NAMES, castlePhase, type CastlePhaseId } from './castle.ts';
 import { CLASSES } from './classes';
 import { IMPROVEMENTS, TREE_ANIMAS, improvementOf } from './ecos';
 import { xpFloor, LEVELLED } from './levels';
@@ -96,14 +96,27 @@ export interface FightSetup {
   crit: boolean;
   /** What the Ecos de luz are in for this fight (src/ecos.ts): awake improvements, whatever they would cost. */
   improved: string[];
+  trial?: keyof typeof DUAL_TRIALS;
 }
 /** The help any fight gets in development, the story's too. */
 export type FightHelp = Pick<FightSetup, 'free' | 'immune' | 'unbound' | 'crit'>;
 const CLASS_IDS = Object.keys(CLASSES) as ClassId[];
 export const DEFAULT_FIGHT: FightSetup = { adult: false, partner: true, wear: { gerard: 'matemagico' }, animas: [...CLASS_IDS], friends: [], encounter: 'dogs', foes: 3, free: true, immune: false, unbound: false, crit: false, improved: [] };
+const DUAL_TRIALS = {
+  'sutura-de-luz': { gerard: 'matemagico', aitor: 'tecnopata', encounter: 'cuerdas-lealtad', improved: ['matemagico:cardioide'] },
+  'relevo-de-sangre': { gerard: 'papagato', aitor: 'dadaista', encounter: 'crias-2', improved: [] },
+  'bombardeo-orbital': { gerard: 'sincopante', aitor: 'tecnopata', encounter: 'camping-dados', improved: ['tecnopata:explosion'] },
+  'reserva-de-color': { gerard: 'matemagico', aitor: 'prismatico', encounter: 'luca-recepcion', improved: [] },
+} as const;
+const isDualTrial = (id: unknown): id is keyof typeof DUAL_TRIALS => typeof id === 'string' && Object.hasOwn(DUAL_TRIALS, id);
 /** Whatever was stored or passed in a URL, as a setup the tester can start. */
 export function validFight(value: unknown): FightSetup {
   const v: Partial<FightSetup> = value && typeof value === 'object' ? value as Partial<FightSetup> : DEFAULT_FIGHT;
+  if (isDualTrial(v.trial)) {
+    const { gerard, aitor, encounter, improved } = DUAL_TRIALS[v.trial];
+    return { ...DEFAULT_FIGHT, adult: true, wear: { gerard, aitor }, animas: [gerard, aitor],
+      encounter, improved: [...improved], free: false, trial: v.trial };
+  }
   const isClass = (id: unknown): id is ClassId => typeof id === 'string' && (CLASS_IDS as string[]).includes(id);
   const animas = Array.isArray(v.animas) ? CLASS_IDS.filter(id => v.animas!.includes(id)) : DEFAULT_FIGHT.animas;
   // Each wears only what is theirs to wear (Matemágico Gerard, Tecnópata Aitor), and never the same one.
@@ -141,9 +154,10 @@ export interface JumpMenuDev {
   story: (at: StoryFlag | 'new', day?: number, missions?: AnimaId[], hour?: number, home?: boolean) => void;
   /**
    * Starts the way home at night (src/night.ts) on the Meridiana from Fabra i Puig, with her castle
-   * at that stage (0–4): the day follows from it and the ánima missions done.
+   * at that stage (0–4): the day follows from it and the ánima missions done. `year`: whose pupils
+   * are out (1–3: the castle's floor the party is on, i.e. its bosses beaten up to that year).
    */
-  night: (castle: number, missions?: AnimaId[]) => void;
+  night: (castle: number, missions?: AnimaId[], year?: number) => void;
   /** Her castle's stage now, if it is night in chapter 2. */
   nightNow: () => number | undefined;
   /** Starts over at a part of an ánima mission (`missionParts`), on a day and with those other missions done. */
@@ -191,6 +205,8 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   let hour = 8;
   /** The way home at night's castle stage (days.ts `stage`); until chosen, tonight's, or the middle one. */
   let castle: number | undefined;
+  /** Whose pupils walk the night (1–3: the castle's year the party is on, src/night-pupils.ts). */
+  let year = 1;
   /** Ánima missions a chapter 2 jump starts with done; until chosen, the ones the story has. */
   let missions: AnimaId[] | undefined;
   /** The mission whose parts Misiones shows; until chosen, the first one. */
@@ -270,11 +286,14 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     const done = missions ??= missionsDone(dev!.flags());
     const on = dev!.nightNow(), stage = castle ??= on ?? 2;
     const tier = nightTier(stage), might = nightMight(done.length);
+    const phase = castlePhase(year as CastlePhaseId);
+    const out = [...new Set([...phase.fights, phase.elite].flatMap(room => CASTLE_ROOMS[room]))].map(kind => CASTLE_NAMES[kind]);
     return `<div class="jump-arc" role="group" aria-label="De noche">
       <h4><span>De noche</span><small>La vuelta a casa desde Fabra i Puig</small></h4>
       <div class="jump-row jump-castle" role="group" aria-label="Estado del castillo"><span>El castillo</span>${CASTLE_STAGES.map((label, i) => `<button type="button" data-castle="${i}" aria-pressed="${i === stage}">${i} · ${escape(label)}</button>`).join('')}</div>
-      <button type="button" class="jump-item jump-beat" data-night="${stage}" ${on === stage ? 'aria-current="true"' : ''}><span class="jump-step">☾</span><strong>La vuelta a casa</strong><code>día ${dayForStage(stage, done.length)} · ${TIER_NAMES[tier.id] ?? tier.id}</code></button>
-      <p class="jump-note">Noche ${TIER_NAMES[tier.id] ?? tier.id}: ${tier.hunters} guardianes al salir${tier.perTrain ? `, ${tier.perTrain} más con cada tren (cada ${tier.trainEvery} s)` : ''}${tier.lampsOut ? `, una farola de cada ${tier.lampsOut} apagada` : ''}. Salen los alumnos de la planta del castillo en la que estáis, un grupo cada uno; si os pillan, ese grupo, ×${might.toFixed(2)} de PV y de golpe por las ánimas de «Con ánimas» (menos con niveles).</p>
+      <div class="jump-row" role="group" aria-label="Curso de los alumnos que salen"><span>Alumnos</span>${[1, 2, 3].map(y => `<button type="button" data-year="${y}" aria-pressed="${y === year}">${y}.º curso</button>`).join('')}</div>
+      <button type="button" class="jump-item jump-beat" data-night="${stage}" ${on === stage ? 'aria-current="true"' : ''}><span class="jump-step">☾</span><strong>La vuelta a casa</strong><code>día ${dayForStage(stage, done.length + (year - 1))} · ${TIER_NAMES[tier.id] ?? tier.id}</code></button>
+      <p class="jump-note">Noche ${TIER_NAMES[tier.id] ?? tier.id}: ${tier.hunters} grupos al salir${tier.perTrain ? `, ${tier.perTrain} más con cada tren (cada ${tier.trainEvery} s)` : ''}${tier.lampsOut ? `, una farola de cada ${tier.lampsOut} apagada` : ''}. Salen los alumnos de ${year}.º, cada uno suelto y cazando a su manera (${escape(out.join(', '))}); si uno os toca, el combate es con su grupo, ×${might.toFixed(2)} de PV y de golpe por las ánimas reunidas.</p>
     </div>`;
   }
   /** The chapter 2 jump's day and the other missions it starts with done, shared by Historia and Misiones. */
@@ -385,6 +404,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       ${chip(`wear-${member}`, '', 'Sin ánima', !f.wear[member])}${f.animas.filter(id => canWear(member, id)).map(id => chip(`wear-${member}`, id, f.adult || member === 'aitor' ? CLASSES[id].name : CLASSES[id].child?.name ?? CLASSES[id].name, f.wear[member] === id, f.wear[member === 'gerard' ? 'aitor' : 'gerard'] === id)).join('')}</div></div>`;
     const guards = f.encounter === 'palace-guards' || f.encounter === 'night-guard', dogs = f.encounter === 'dogs' || f.encounter === 'possessed';
     return `
+      <div class="fight-row"><span>Probar un dúo</span><div class="fight-chips">${DUALS.filter(d => isDualTrial(d.id)).map(d => `<button type="button" data-dual-trial="${d.id}">${escape(d.name)}</button>`).join('')}</div></div>
       <div class="fight-row"><span>Época</span><div class="fight-chips">${chip('adult', '0', 'Capítulo 1 · niños', !f.adult)}${chip('adult', '1', 'Capítulo 2 · a los 35', f.adult)}</div></div>
       <div class="fight-row"><span>Equipo</span><div class="fight-chips">${chip('partner', '0', 'Gerard solo', !f.partner, f.encounter === 'palace-minion')}${chip('partner', '1', f.adult ? 'Gerard y Aitor' : 'Gerard y Bernat', f.partner)}</div></div>
       <div class="fight-row"><span>Ánimas</span><div class="fight-chips">${CLASS_IDS.map(id => chip('anima', id, CLASSES[id].name, f.animas.includes(id))).join('')}</div></div>
@@ -476,8 +496,9 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       return;
     }
     if (data.part) { close(); dev!.mission(mission, data.part, day, missions); return; }
-    if (data.night) { close(); dev!.night(Number(data.night), missions); return; }
+    if (data.night) { close(); dev!.night(Number(data.night), missions, year); return; }
     if (data.castle) { castle = Number(data.castle); render(`[data-castle="${castle}"]`); return; }
+    if (data.year) { year = Number(data.year); render(`[data-year="${year}"]`); return; }
     if (data.openMission) { mission = data.openMission as AnimaId; render(`[data-open-mission="${mission}"]`); return; }
     if (data.setAnima) {
       const id = data.setAnima as ClassId, level = Number(data.level), next = { ...dev!.animas().now };
@@ -497,6 +518,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     if (data.day) { day = Number(data.day); render(`[data-day="${day}"]`); return; }
     if (data.hour) { hour = Number(data.hour); render(`[data-hour="${hour}"]`); return; }
     if (data.mission) { const id = data.mission as AnimaId; missions = missions?.includes(id) ? missions.filter(m => m !== id) : [...missions ?? [], id]; render(`[data-mission="${id}"]`); return; }
+    if (isDualTrial(data.dualTrial)) { close(); dev!.fight(validFight({ trial: data.dualTrial })); return; }
     if (data.start !== undefined) { close(); dev!.fight(fight); return; }
     if (data.leave !== undefined) { close(); dev!.leave(); return; }
     if (data.moment) { close(); dev!.jumpTo(data.moment as FightMoment); return; }

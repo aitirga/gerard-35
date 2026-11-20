@@ -751,6 +751,11 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .lights-lead .battle-kicker { margin-right: auto; }
 .lights-lead button[data-lead] { width: 38px; text-align: center; font-size: 16px; padding: 7px 0; }
 .lights-lead output { min-width: 70px; text-align: center; font: 600 14px/1 monospace; }
+.lights-calibrate { margin: -6px 0 18px; padding: 14px 16px; border: 1px solid #c6d6ad25; border-radius: 10px; background: #07171155; text-align: center; }
+.lights-calibrate button { padding: 18px 28px; border: 1px solid var(--ui-gold); border-radius: 10px; background: #ffffff08; color: var(--ui-paper); font-size: 14px; }
+.lights-calibrate button:focus-visible { outline: 2px solid var(--ui-gold); outline-offset: 3px; }
+.lights-calibrate [data-lights-tap-count] { min-height: 1.4em; letter-spacing: .3em; }
+.lights-lead button:disabled { opacity: .45; pointer-events: none; }
 .lights-flash { position: fixed; inset: 0; z-index: 10; pointer-events: none; background: #fffdf4; opacity: 0; }
 .lights-flash.is-on { animation: lights-flash .5s ease-out; }
 @keyframes lights-flash { 0% { opacity: .95; } 100% { opacity: 0; } }
@@ -985,6 +990,16 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 #blackout { position: absolute; inset: 0; z-index: 50; background: #000; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
 #blackout[data-on="true"] { opacity: 1; pointer-events: auto; }
 /* The snow globe shaken: white comes over the picture with snow falling through it. */
+/* A boss of her castle beaten: La Reina Bubbaloo's scream over the whole picture, which goes white (src/story-ui.ts `scream`). Her pink, saturated: it is her. */
+#queen-scream { position: absolute; inset: 0; z-index: 51; display: grid; place-items: center; opacity: 0; pointer-events: none; background: #fff; transition: opacity 1.6s ease; }
+#queen-scream[data-on="true"] { pointer-events: auto; transition: none; animation: scream-white var(--scream, 2.8s) cubic-bezier(.5,0,.9,.4) both; }
+#queen-scream p { margin: 0; max-width: min(84vw, 1100px); color: #7c0f47; font: italic 900 clamp(34px, 6.4vw, 96px)/1 'Manrope', sans-serif; letter-spacing: -.045em; text-align: center; text-wrap: balance; text-shadow: 0 0 34px #ff6faecc; opacity: 0; }
+#queen-scream[data-on="true"] p { animation: scream-words var(--scream, 2.8s) ease-out both, scream-shake .07s steps(2) infinite; }
+#queen-scream[data-fear="2"] p { font-size: clamp(40px, 7.6vw, 118px); }
+@keyframes scream-white { 0% { opacity: 0; background: #ff6fae; } 12% { opacity: .5; background: #ff6fae; } 62% { opacity: .82; background: #ffc4de; } 100% { opacity: 1; background: #fff; } }
+@keyframes scream-words { 0% { opacity: 0; scale: .82; } 8% { opacity: 1; scale: 1; } 70% { opacity: 1; scale: 1.08; } 100% { opacity: 0; scale: 1.22; } }
+@keyframes scream-shake { 0% { translate: -5px 3px; } 50% { translate: 6px -4px; } 100% { translate: -3px -2px; } }
+@media (prefers-reduced-motion: reduce) { #queen-scream[data-on="true"] p { animation: scream-words var(--scream, .9s) ease-out both; } }
 #snowfall { position: absolute; inset: 0; z-index: 50; overflow: hidden; opacity: 0; pointer-events: none; transition: opacity .7s ease; background: radial-gradient(ellipse at 50% 40%, #e3eef2, #b4cbd6); }
 #snowfall[data-on="true"] { opacity: 1; pointer-events: auto; }
 #snowfall i { position: absolute; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff; animation: snowfall linear infinite; }
@@ -1723,6 +1738,11 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 #hud[data-tower][data-chased]::before { animation: heartbeat .9s ease-in-out infinite; background: radial-gradient(ellipse at 50% 55%, transparent 30%, #3a0a2acc 68%, #12020cf5 100%); }
 @keyframes heartbeat { 0%, 100% { opacity: .75; } 12% { opacity: 1; } 24% { opacity: .8; } 36% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { #hud[data-tower][data-chased]::before { animation: none; } }
+
+/* The way home at night (src/night-pupils.ts): while one of them runs at Gerard the street's edges
+   close in, cold and dark, and beat. */
+#hud[data-hunted]:not([data-panel])::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: -1; background: radial-gradient(ellipse at 50% 52%, transparent 42%, #06101f99 76%, #02060df2 100%); animation: heartbeat .8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { #hud[data-hunted]:not([data-panel])::before { animation: none; } }
 
 /* La calle que no acaba (docs/quests/nuria.md): the further up the street (--unease, 0 to 1), the
    more the edges close in, grey first and violet at the bubble; near the end they start to beat,

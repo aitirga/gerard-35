@@ -190,6 +190,11 @@ test('a reload between the déjà-vu and the minion plays its entrance again', (
 });
 
 const upTo = flag => STORY_FLAGS.slice(0, STORY_FLAGS.indexOf(flag) + 1);
+/** A whole day gone at home: lying down a while brings the night, and at night the bed is sleeping. What sleeping plays. */
+const toBed = story => {
+  if (!story.night) { story.handle({ type: 'interact', id: 'meridiana-bed' }); story.handle({ type: 'evening', what: 'cama' }); }
+  return story.handle({ type: 'interact', id: 'meridiana-bed' });
+};
 const beats = effects => effects.map(e => e.kind === 'battle' ? `battle:${e.encounter}` : e.kind === 'metro' ? `metro:${e.station}` : e.kind);
 
 test('chapter 2 morning: the TV turns on as Gerard walks up, and Aitor waits for it at the door', () => {
@@ -312,32 +317,87 @@ test('night: a guard in the street catches them; beaten, they wake late; winning
   assert.deepEqual(story.clock, { day: 2, hour: 11 }, 'they sleep the morning away');
 });
 
-test('night falls after a milestone in her palace: the guards beaten', () => {
+test('the guards before the curtain bring no night: only time, and an afternoon spent, do', () => {
   const story = new Story([...upTo('castle'), 'anima-nuria']);
   assert.equal(story.night, false);
   const won = story.handle({ type: 'battle', won: true, encounter: 'palace-guards' });
-  assert.equal(story.night, true);
-  assert.equal(won.at(-1).dialogue, LINES_2.night, 'Aitor says so');
-  const later = new Story([...upTo('castle'), 'anima-nuria']);
-  later.days.clock.hour = 21;
-  assert.ok(!later.handle({ type: 'battle', won: true, encounter: 'palace-guards' }).some(e => e.dialogue === LINES_2.night), 'not twice');
+  assert.equal(story.night, false);
+  assert.ok(!won.some(e => e.dialogue === LINES_2.night));
 });
 
-test('days: going to bed ends the day, and Aitor will not sleep before the news', () => {
+test('days: by day the bed is lying down a while, which brings the night; at night it is sleeping, and Aitor will not sleep before the news', () => {
   const early = new Story(upTo('got-wrapper'));
   assert.deepEqual(beats(early.handle({ type: 'interact', id: 'meridiana-bed' })), ['dialogue']);
   assert.equal(early.clock.day, 1);
   const story = new Story(upTo('tv-news'));
-  assert.ok(story.interactions('meridiana').some(i => i.id === 'meridiana-bed'));
-  assert.ok(canWalk(story.interactions('meridiana').find(i => i.id === 'meridiana-bed').cell, ENVIRONMENTS.meridiana.grid));
+  const bed = () => story.interactions('meridiana').find(i => i.id === 'meridiana-bed');
+  assert.equal(bed().label, 'Echarse un rato');
+  assert.ok(canWalk(bed().cell, ENVIRONMENTS.meridiana.grid));
+  const nap = story.handle({ type: 'interact', id: 'meridiana-bed' });
+  assert.deepEqual(nap.map(e => e.kind === 'evening' ? `evening:${e.what}` : e.kind), ['dialogue', 'evening:cama']);
+  assert.equal(story.night, false, 'not yet: the afternoon goes by under the dark');
+  assert.deepEqual(beats(story.handle({ type: 'evening', what: 'cama' })), ['recover', 'dialogue'], 'the bed gives nothing but the hours');
+  assert.deepEqual(story.clock, { day: 1, hour: 21 });
+  assert.equal(story.night, true);
+  assert.equal(story.boost, undefined);
+  assert.equal(bed().label, 'Dormir');
   assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-bed' })), ['dialogue', 'fall', 'travel', 'wake', 'dialogue', 'rise']);
   assert.equal(story.clock.day, 2);
   assert.deepEqual(new Story(upTo('wrapper-room')).interactions('meridiana').filter(i => i.id === 'meridiana-bed'), [], 'not in chapter 1');
 });
 
+test('an afternoon on the sofa, cooking, at the gym or with the choir brings the night and leaves one state, which lasts that night and the next day', () => {
+  for (const [what, id, place, stat, by] of [
+    ['sofa', 'meridiana-sofa', 'meridiana', 'espiritu', 2], ['cocina', 'meridiana-kitchen', 'meridiana', 'critico', 10],
+    ['gimnasio', 'meridiana-gimnasio', 'meridiana-calle', 'fuerza', 2], ['coro', 'meridiana-coro', 'meridiana-calle', 'magia', 2],
+  ]) {
+    const story = new Story(upTo('tv-news'));
+    const here = story.interactions(place).find(i => i.id === id);
+    assert.ok(here && canWalk(here.cell, ENVIRONMENTS[place].grid), `${what} is there to walk up to`);
+    const going = story.handle({ type: 'interact', id });
+    assert.deepEqual(going.map(e => e.kind), ['dialogue', 'evening'], what);
+    assert.equal(going[1].what, what);
+    const gone = story.handle({ type: 'evening', what });
+    assert.deepEqual(gone.slice(0, 2).map(e => e.kind), ['recover', 'boost'], what);
+    assert.equal(gone[1].id, what);
+    assert.equal(story.night, true);
+    assert.equal(story.boost, what);
+    for (const member of story.battleParty(true)) assert.deepEqual(member.evening?.shifts, { [stat]: by }, `${what}: the whole party carries it into a fight`);
+    // Spent already: at night there is no afternoon left, anywhere.
+    assert.deepEqual(story.handle({ type: 'interact', id }).map(e => e.kind), ['dialogue']);
+    assert.equal(story.boost, what);
+    // It is theirs the day after, and gone the morning after that.
+    if (place === 'meridiana') toBed(story); else story.handle({ type: 'home' });
+    assert.equal(story.clock.day, 2);
+    assert.equal(story.boost, what, 'the next day it still holds');
+    toBed(story);
+    assert.equal(story.clock.day, 3);
+    assert.equal(story.boost, undefined, 'and then it is gone');
+    assert.ok(story.battleParty(true).every(member => !member.evening));
+  }
+  // One at a time: the last afternoon is the one that counts.
+  const story = new Story(upTo('tv-news'));
+  story.handle({ type: 'evening', what: 'sofa' });
+  toBed(story);
+  story.handle({ type: 'evening', what: 'cocina' });
+  assert.equal(story.boost, 'cocina');
+});
+
+test('the choir on an afternoon is where they learn Emilie is missing, once', () => {
+  const story = new Story(upTo('tv-news'));
+  assert.equal(story.has('clue-emilie'), false);
+  const gone = story.handle({ type: 'evening', what: 'coro' });
+  assert.equal(story.has('clue-emilie'), true);
+  const first = gone.at(-1).dialogue.lines.length;
+  toBed(new Story(upTo('tv-news')));
+  story.handle({ type: 'home' });
+  const again = story.handle({ type: 'evening', what: 'coro' });
+  assert.ok(again.at(-1).dialogue.lines.length < first, 'the second rehearsal is only a rehearsal');
+});
+
 test("the Queen's advance: without help she covers everything on the seventh morning, and the way out is back a day", () => {
   const story = new Story(upTo('castle'));
-  const sleep = () => story.handle({ type: 'interact', id: 'meridiana-bed' });
+  const sleep = () => toBed(story);
   const spreads = [];
   for (let day = 1; day < 6; day++) { spreads.push(story.spread); sleep(); }
   assert.ok(spreads.every((s, i) => i === 0 || s > spreads[i - 1]), 'it spreads every morning');
@@ -366,7 +426,7 @@ test("the Queen's advance: without help she covers everything on the seventh mor
 
 test('going back a day keeps the artilugio once Bernat has brought it, and the night the Queen took Aitor', () => {
   const story = new Story(upTo('castle'));
-  const sleep = () => story.handle({ type: 'interact', id: 'meridiana-bed' });
+  const sleep = () => toBed(story);
   for (let day = 1; day < 6; day++) sleep();
   // The last day: she takes Aitor, Gerard falls, and the morning after (hers) Bernat's artilugio is in his hands.
   sleep();
@@ -504,7 +564,7 @@ test('the snow globe: taken in the hall, shaking it keeps the missions and bring
 
   // More done and not kept: going to bed puts the missions back to what the globe keeps.
   story.marta.beaten.push('cristalino');
-  story.handle({ type: 'interact', id: 'meridiana-bed' });
+  toBed(story);
   assert.deepEqual(story.marta.beaten, ['lealtad'], 'back to the last shake');
   assert.equal(story.nuria.stage, 2);
   // Nuria lends the cats again, and the tower is as far as they got.
@@ -525,4 +585,12 @@ test('the snow globe: taken in the hall, shaking it keeps the missions and bring
   story.inside = 'alegia';
   story.days.clock = { ...story.days.clock, hour: 21 };
   assert.deepEqual(kinds(story.handle({ type: 'use', item: 'bola' })), ['dialogue'], 'the way home at night is the street');
+});
+
+test('Marta and Luca lend their wearable ánimas after their own mission flags', () => {
+  const marta = new Story(['anima-marta']), luca = new Story(['anima-luca']);
+  assert.ok(marta.storyClasses.includes('sincopante'));
+  assert.ok(!marta.storyClasses.includes('prismatico'));
+  assert.ok(luca.storyClasses.includes('prismatico'));
+  assert.ok(!luca.storyClasses.includes('sincopante'));
 });

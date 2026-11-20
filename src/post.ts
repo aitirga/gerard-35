@@ -159,6 +159,7 @@ const SPOTS = 4;
 const SPOT_DECLARATIONS = `
 uniform uSpotOn: f32;
 uniform uFlash: f32;
+uniform uNight: vec2f;
 uniform uSpotAspect: f32;
 ${Array.from({ length: SPOTS }, (_, i) => `uniform uSpot${i}: vec4f;`).join('\n')}
 fn spotKeep(uv: vec2f, spot: vec4f) -> f32 {
@@ -167,6 +168,13 @@ fn spotKeep(uv: vec2f, spot: vec4f) -> f32 {
   return 1.0 - smoothstep(spot.z * 0.7, spot.z * 1.3, d);
 }`;
 const SPOT = `
+    // The astral's night: the picture goes dark and blue, and only what shines keeps its light.
+    if (uniform.uNight.x > 0.001) {
+      let nightLum = dot(result, vec3f(0.2126, 0.7152, 0.0722));
+      let nightDark = (mix(vec3f(nightLum), result, 0.22) * vec3f(0.15, 0.3, 0.72) + vec3f(0.004, 0.012, 0.05)) * (1.0 + uniform.uNight.y * 2.2);
+      let nightKeep = smoothstep(0.6, 0.92, nightLum);
+      result = mix(result, mix(nightDark, result * vec3f(0.9, 0.97, 1.08), nightKeep), uniform.uNight.x);
+    }
     // A golpe crítico's flash: the whole picture towards white for an instant.
     if (uniform.uFlash > 0.001) { result = mix(result, vec3f(1.0), uniform.uFlash); }
     if (uniform.uSpotOn > 0.001) {
@@ -240,6 +248,7 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   // The bloom is only touched while it swells (from the intensity it had), so other code may set it.
   const hit = { fringe: 0, bloom: 0, bloomBase: 0, flash: 0 };
   const flashId = scope.resolve('uFlash'); flashId.setValue(0);
+  const nightId = scope.resolve('uNight'), nightValue = new Float32Array(2); nightId.setValue(nightValue);
   function showHit() {
     frame.fringing.intensity = LOOK.hit.fringe * hit.fringe;
     if (hit.bloom || hit.bloomBase) frame.bloom.intensity = hit.bloomBase + LOOK.hit.bloom * hit.bloom;
@@ -271,6 +280,12 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   // --- end hit feel ---
   return {
     frame, pulse,
+    /**
+     * The astral's night (Dadista's skills from the sky): `amount` (0–1) of the picture goes dark and
+     * blue, what shines keeping its light; `lift` (0–1) lights that dark up for a moment, as when a
+     * die of light lands. 0 turns it off.
+     */
+    night(amount: number, lift = 0) { nightValue[0] = frame.enabled ? Math.max(0, Math.min(1, amount)) : 0; nightValue[1] = Math.max(0, Math.min(1, lift)); nightId.setValue(nightValue); },
     /**
      * A dual attack's spotlight: `amount` (0–1) of the picture loses its colour and darkens towards
      * its edges, except round `points` (world positions, `radius` metres; up to four), which keep it.

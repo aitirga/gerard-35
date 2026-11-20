@@ -28,10 +28,10 @@ import type { Board } from './parcelas.ts';
 import { CASTLE_BOSSES, castleEntry, castlePhaseAt, extraSlots, isCastlePlace, nightGroup, type CastleEncounter, type NightFight } from './castle.ts';
 import { nightMight } from './night.ts';
 import { castleEnvironmentFor } from './castle-floor.ts';
-import { castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
+import { LINES_CASTLE, castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, NURIA_SCALE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
-import { COSTS, DAY_END, DAY_START, EVENING, LATE, NIGHT, WOKE_LATE, dusk, freshDays, isNight, readDays, spread, stage, type Activity, type Days } from './days.ts';
+import { COSTS, DAY_END, DAY_START, EVENING, EVENINGS, LATE, NIGHT, WOKE_LATE, boostOf, dusk, freshDays, isBoost, isNight, readDays, spread, stage, type Activity, type BoostId, type Days, type EveningId } from './days.ts';
 import { CAMPING_DOOR, CAMPING_GATE, ENVIRONMENTS, type Environment } from './environments.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
@@ -124,6 +124,8 @@ export type StoryEvent =
   | { type: 'portal' }
   /** The party walked in through home's portal from the street (src/night.ts: at night, the day is over). */
   | { type: 'home' }
+  /** The afternoon went by under the dark of an `evening` effect (src/days.ts `EVENINGS`): it is night now. */
+  | { type: 'evening'; what: EveningId }
   /** Something used from the Objetos panel (src/items.ts `use`). */
   | { type: 'use'; item: ItemId }
   /** The last scene: Gerard chose what to do with her (src/endings.ts). */
@@ -161,6 +163,18 @@ export type StoryEffect =
   | { kind: 'fall' }
   /** Out of the black again where they now stand (caught in the friends' game of tag: back up the sand). */
   | { kind: 'recover' }
+  /**
+   * An afternoon spent (src/days.ts `EVENINGS`): the picture goes dark, and under it the story hears
+   * that the afternoon is gone (an `evening` event), which brings the night.
+   */
+  | { kind: 'evening'; what: EveningId }
+  /** What an afternoon left the party, as a note: its name and what it raises a little, for tonight and tomorrow. */
+  | { kind: 'boost'; id: BoostId }
+  /**
+   * A boss of her castle beaten: La Reina Bubbaloo screams through the whole building (`fear` 1,
+   * then 2: more afraid each time) and the picture goes white. They wake in bed (docs/castle.md § Structure).
+   */
+  | { kind: 'scream'; text: string; fear: number }
   /** The reception's blackboard opens as Las parcelas' board, where it was left (src/parcelas-ui.ts). */
   | { kind: 'parcelas'; board?: Board }
   /** The pool gate's padlock opens on screen: three wheels of numbers (src/candado-ui.ts). */
@@ -838,7 +852,7 @@ export class Story {
       has: flag => story.flags.has(flag as StoryFlag), raise: flag => story.set(flag as StoryFlag),
       adult: story.adult, seed: story.days.epoch, day: story.days.clock.day,
       get castle() { return story.castle; }, set castle(run: CastleRun) { story.castle = run; },
-      hour: () => story.spend('castle'), nightfall: () => story.nightfall(), fall: () => story.endDay('fall'), morning: () => story.newMorning(),
+      hour: () => story.spend('castle'), scream: boss => story.screamed(boss), fall: () => story.endDay('fall'), morning: () => story.newMorning(),
     };
   }
   /** How many extra ánimas each can equip besides their own: one, and one more once Aurelià has fallen (docs/castle.md § What each boss opens). */
@@ -1013,8 +1027,8 @@ export class Story {
     }
     // One of them beaten in the street: it melts where it stood (the game), the hunt goes on.
     if (event.encounter === 'night-guard') return [];
-    // Through the guards is a milestone in her palace: night falls outside.
-    if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten), ...this.spend('fight'), ...this.nightfall()];
+    // Through the guards: hours gone, and no more (her castle never brings the night: docs/chapter-2.md § Night and the way home).
+    if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten), ...this.spend('fight')];
     if (event.encounter === 'palace-minion') {
       if (!this.set('wrapper-room')) return [];
       return [say(LINES.afterMatemagico), { kind: 'ambush' }];
@@ -1036,6 +1050,8 @@ export class Story {
       ...this.adult ? ['tecnopata' as const] : [],
       // The university friends', once the photo with the melon is taken (docs/animas/dadaista/).
       ...this.has('anima-universidad') ? ['dadaista' as const] : [],
+      ...this.has('anima-marta') ? ['sincopante' as const] : [],
+      ...this.has('anima-luca') ? ['prismatico' as const] : [],
     ];
   }
   /**
@@ -1207,11 +1223,48 @@ export class Story {
     const gerard: PartyMember = { id: 'gerard', name: 'Gerard', profile: 'gerard', classId, equipment: this.items.filter(i => i !== 'pocion' && i !== 'chicle'), note };
     return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', profile: 'bernat', equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
   }
-  /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). Ánimas strengthen everyone. */
+  /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). Ánimas strengthen everyone, and so does what their last afternoon left them. */
   battleParty(withPartner: boolean): PartySlot[] {
     const bonus = this.animas.length ? animaBonus(this.animas) : undefined;
+    const left = this.boost && boostOf(this.boost), evening = left && { shifts: { ...left.stats }, from: left.name };
     return this.party.filter(m => m.id === 'gerard' || withPartner)
-      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, kit: id === 'bernat' ? [] : this.kitOf(id), ...(bonus ? { bonus } : {}) }));
+      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, kit: id === 'bernat' ? [] : this.kitOf(id), ...(bonus ? { bonus } : {}), ...(evening ? { evening } : {}) }));
+  }
+  /** What the last afternoon spent left the party, while it lasts: that night and the day after (src/days.ts `EVENINGS`). */
+  get boost(): BoostId | undefined {
+    const left = this.adult ? this.days.boost : undefined;
+    return left && left.until >= this.days.clock.day ? left.id : undefined;
+  }
+  /**
+   * An afternoon spent somewhere (`EVENINGS`): what is said going in, then the dark, under which the
+   * afternoon goes by (`afternoonGone`). At night there is no afternoon left to spend.
+   */
+  private spendAfternoon(what: EveningId): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (this.night) return [say(LINES_2.afternoon[what].night)];
+    return [say(LINES_2.afternoon[what].going), { kind: 'evening', what }];
+  }
+  /** Under the dark: it is night, what the afternoon leaves is the party's until the day after tomorrow's morning, and they say so coming out. */
+  private afternoonGone(what: EveningId): StoryEffect[] {
+    if (!this.adult || this.night) return [{ kind: 'recover' }];
+    this.remember();
+    this.days.clock = { ...this.days.clock, hour: NIGHT };
+    const lines = [...LINES_2.afternoon[what].done.lines];
+    // The choir is where they find out Emilie is missing (docs/quests/coro.md § The choir room).
+    if (what === 'coro' && !this.has('poble-sec-emilie') && this.set('clue-emilie')) lines.push(...LINES_EMILIE.missed.lines);
+    const done: StoryEffect = { kind: 'dialogue', dialogue: { ...LINES_2.afternoon[what].done, lines } };
+    if (!isBoost(what)) return [{ kind: 'recover' }, done];
+    this.days.boost = { id: what, until: this.days.clock.day + 1 };
+    return [{ kind: 'recover' }, { kind: 'boost', id: what }, done];
+  }
+  /**
+   * A boss of her castle has fallen (docs/castle.md § Structure; decided with Aitor 2026-11-20): she
+   * screams through the whole building, more afraid with each one, the picture goes white, and they
+   * are in bed: the same morning again. No night to walk home through: the day ends there.
+   */
+  private screamed(boss: 'aurelia' | 'direccion'): StoryEffect[] {
+    const fear = CASTLE_BOSSES.filter(b => this.has(b)).length;
+    return [{ kind: 'scream', text: LINES_CASTLE.screams[boss], fear }, ...this.endDay('flash')];
   }
   /** The morning of the current day, kept to come back to (taken the first time anything happens that day). */
   private remember() {
@@ -1236,15 +1289,15 @@ export class Story {
    * they wake up in is hers and the game is over.
    */
   /**
-   * Night falls at once, wherever they are: a friend's mission won, a milestone in her palace
-   * reached (docs/chapter-2.md § Night and the way home). Aitor says so, unless it already was.
+   * Night falls at once, wherever they are: a friend's mission won (docs/chapter-2.md § Night and
+   * the way home; never her castle's doing). Aitor says so, unless it already was.
    */
   private nightfall(): StoryEffect[] {
     if (!this.adult || isNight(this.days.clock.hour)) return [];
     this.days.clock = { ...this.days.clock, hour: NIGHT };
     return [{ kind: 'dialogue', dialogue: LINES_2.night }];
   }
-  private endDay(why: 'home' | 'sleep' | 'fall' | 'night-fall'): StoryEffect[] {
+  private endDay(why: 'home' | 'sleep' | 'fall' | 'night-fall' | 'flash'): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     // Whatever the missions had reached is undone (the cats went back to Nuria; the friends are on the sand again), back to what the snow globe keeps.
     this.recall();
@@ -1254,9 +1307,11 @@ export class Story {
     this.remember();
     const home: StoryEffect = { kind: 'travel', environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } };
     const before: StoryEffect[] = why === 'home' ? [say(LINES_2.homeSafe)] : why === 'sleep' ? [say(LINES_2.sleep)] : [];
-    if (this.doomed) return [...before, { kind: 'fall' }, home, { kind: 'wake' }, say(LINES_2.doom), { kind: 'rise' }, { kind: 'doom' }];
-    const morning = firstFall ? LINES_2.wakeFirst : why === 'night-fall' ? LINES_2.wokeLate : LINES_2.morning[stage(this.spread)];
-    return [...before, { kind: 'fall' }, home, { kind: 'wake' }, say(this.withClue(morning)), { kind: 'rise' }];
+    // After her scream the picture is already white: no fall into the dark.
+    const dark: StoryEffect[] = why === 'flash' ? [] : [{ kind: 'fall' }];
+    if (this.doomed) return [...before, ...dark, home, { kind: 'wake' }, say(LINES_2.doom), { kind: 'rise' }, { kind: 'doom' }];
+    const morning = firstFall ? LINES_2.wakeFirst : why === 'night-fall' ? LINES_2.wokeLate : why === 'flash' ? LINES_2.wokeFlash : LINES_2.morning[stage(this.spread)];
+    return [...before, ...dark, home, { kind: 'wake' }, say(this.withClue(morning)), { kind: 'rise' }];
   }
   /** Back to the morning before the end: that day's progress is lost, everything before it kept. */
   rewind(): StoryEffect[] {
@@ -1479,6 +1534,8 @@ export class Story {
       if (id === 'take-envoltorio' && (this.has('got-wrapper') || !this.adult)) continue;
       if (id === 'take-bola' && (this.has('got-bola') || !this.adult)) continue;
       if (id === 'meridiana-bed' && !this.adult) continue;
+      // By day the bed is for lying down a while (it brings the night); at night, for sleeping (the day is over).
+      if (id === 'meridiana-bed' && !this.night) { list.push({ id, ...prompt, label: EVENINGS.cama.label, hint: EVENINGS.cama.label, cell: { ...place.cell } }); continue; }
       list.push({ id, label, ...prompt, cell: { ...place.cell } });
     }
     if (this.adult && environment === STREET) {
@@ -1513,6 +1570,16 @@ export class Story {
       for (const q of QUEUES) if (!this.luca.beaten.includes(q.after)) list.push({ id: `luca-cola-${q.id}`, label: 'Mirar la cola', cell: { ...q.look } });
       if (!this.luca.beaten.includes('sillones')) MIRRORS.forEach((m, i) => list.push({ id: `luca-espejo-${i}`, label: 'Girar el espejo', hint: 'Girar', cell: { ...m } }));
       for (const look of LOOKS) list.push({ id: look.id, label: look.label, cell: { ...look.cell } });
+    }
+    // An afternoon spent brings the night (src/days.ts `EVENINGS`): the sofa and the kitchen at home, the gym and the choir on the avenue.
+    if (this.adult && environment === PLACES_2.sofa.environment) {
+      const spent = this.night || !this.has('tv-news');
+      if (this.has('tv-news')) list.push({ id: 'meridiana-sofa', label: EVENINGS.sofa.label, hint: this.night ? 'Sentarse' : EVENINGS.sofa.label, cell: { ...PLACES_2.sofa.cell }, anchor: { ...PLACES_2.sofa.anchor } });
+      list.push({ id: 'meridiana-kitchen', label: spent ? 'Mirar la cocina' : EVENINGS.cocina.label, ...spent ? {} : { hint: EVENINGS.cocina.label }, cell: { ...PLACES_2.kitchen.cell } });
+    }
+    if (this.adult && environment === PLACES_2.gym.environment) {
+      list.push({ id: 'meridiana-gimnasio', label: 'Entrenar en VivaGym', hint: EVENINGS.gimnasio.label, cell: { ...PLACES_2.gym.cell } });
+      list.push({ id: 'meridiana-coro', label: 'Ensayar con el coro', hint: EVENINGS.coro.label, cell: { ...PLACES_2.choir.cell } });
     }
     if (this.adult && environment === JAR.environment && this.jar.length) {
       list.push({ id: 'meridiana-luces', label: 'Abrir el bote', hint: 'Abrir el bote', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });
@@ -1598,6 +1665,8 @@ export class Story {
       case 'home':
         // In from the street at night: they made it, and the day is over.
         return this.night ? this.endDay('home') : [];
+      case 'evening':
+        return this.afternoonGone(event.what);
       case 'near':
         if (event.id.startsWith('uni-')) return this.nearUni(event.id);
         if (event.id.startsWith('camp-')) return this.nearCamp(event.id);
@@ -1785,7 +1854,17 @@ export class Story {
       case 'meridiana-bed':
         if (!this.adult) return [];
         if (!this.has('tv-news')) return [say(LINES_2.sleepNotYet)];
-        return this.endDay('sleep');
+        // By day it is lying down a while, which brings the night; at night it is sleeping, and the day is over.
+        return this.night ? this.endDay('sleep') : this.spendAfternoon('cama');
+      case 'meridiana-sofa':
+        return this.adult && this.has('tv-news') ? this.spendAfternoon('sofa') : [];
+      case 'meridiana-kitchen':
+        if (!this.adult) return [];
+        return this.has('tv-news') ? this.spendAfternoon('cocina') : [say(LINES_2.kitchen)];
+      case 'meridiana-gimnasio':
+        return this.adult ? this.spendAfternoon('gimnasio') : [];
+      case 'meridiana-coro':
+        return this.adult ? this.spendAfternoon('coro') : [];
       case 'meridiana-piano':
         if (!this.adult) return [];
         return [say(LINES_2.piano), ...this.spend('piano')];

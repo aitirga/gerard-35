@@ -273,7 +273,7 @@ that hurts nobody. At level 3, as built, it is the same without turns 3's doubli
 
 ## What it offers a dual
 
-No dual of its own exists. What it brings to a pair, for when they are designed:
+Relevo de sangre pairs Estrella fugaz with Papagato’s Zarpa en la llaga. Other pairings to explore:
 
 - **Luck for two** (Ases en dúo) and **a Racha** to spend on a partner's blow.
 - **A mark** (Ojo) for a partner's single blow, and **a cut** (Tijeras) for a physical one.
@@ -310,9 +310,15 @@ Built (2026-11-15 and 2026-11-19), to be judged in play: `just screenshots dadai
 *Bluish white, with trails of small star-shaped particles that shine, fly and fall.* Style
 frames and a moving sketch: `output/mockups/dados-astrales/index.html`.
 
-- **Two materials, one die.** The hand is paper and ink: ivory, matt, printed. The astral is the
-  same die made of light: bluish-white glass lit from within, its ornament kept in dark blue.
-  Luck is what turns one into the other.
+- **Two materials, one die.** The hand is paper and ink: ivory, matt, printed. The astral is a
+  **die that is a star** (Aitor 2026-11-20: *dados de cristal, sin figuras, dados como estrellas*;
+  **built**, `createStarDie` in `src/dice.ts`): a cube of glass with nothing printed on it, its
+  edges white-hot, its faces a thin blue you see through, a smaller cube turned inside it as its
+  heart, all of it light added to the scene, tumbling inside a four-point star that flickers. From
+  far it is a point of light; near, a die. Luck is what turns one into the other.
+- **The night** (**built**, `post.night`): while a skill from the sky runs the whole picture goes
+  dark and blue (nine tenths; a little over half for Estrella fugaz), only what shines keeping its
+  light, and each landing lights the dark up for a fifth of a second.
 - **Palette**: core `#f4f9ff`, ice `#bfe0ff`, halo `#7fb4ff`, and a night veil `#0b1430` over the
   scene while it rains. Whiter than Agua (`#6cc8f2`) and than Tecnópata's cyan (`#4fe0ff`): what
   tells it apart is the star, not the hue. No violet, no pink.
@@ -332,7 +338,7 @@ frames and a moving sketch: `output/mockups/dados-astrales/index.html`.
 | --- | --- | --- |
 | **The call** | 0.35 s | The wearer raises a hand to the sky. The scene dims to the night veil, about a third; the fighters keep their colour |
 | **The gathering** | 0.4 s | The die spent goes up out of the frame, and the stars round the hand go after it in a thin line |
-| **The rain** | A die every 0.25 s, quicker with many: never over 2.5 s in all | Each die of light falls on a foe at random, steeply and from one side, tumbling, with a trail of forty to sixty stars as long as three dice, brightest at the die. Each takes 0.45 s to fall |
+| **The rain** | A die every 0.25 s, quicker with many: never over 2.5 s in all | Each die of light falls on a foe at random, down a long curve from one side, tumbling, with a wide blue wake that stays half a second and stars shed all the way. Each takes 0.7 s to fall, so three or four are in the air at once |
 | **Each landing** | 0.3 s | A white flash of two frames, a flat ring of twenty-four stars flying out low over the ground to about 0.6 m, cold light on the stones and on the foe. The die bounces once and comes apart into stars, which float up. The number in ice blue |
 | **After** | 0.5 s | The veil lifts, the last stars go up and out, and the star on the plate is back to its lowest |
 
@@ -346,8 +352,8 @@ frames and a moving sketch: `output/mockups/dados-astrales/index.html`.
   Racha spent, *Racha −3 · +2 dados* over the wearer and two dice drop into the hand. Still to
   do: the die itself turning to glass and light as it leaves (the astral die's material), and
   the two dice coming back from the foe as halves of the star instead of dropping in.
-- **Meteorito, Meteoro, Asteroide**: a rock of light, not a die: bluish-white stone with a hot
-  white edge and a trail of stars. Meteorito is the size of a die and falls in 0.4 s. After it,
+- **Meteorito, Meteoro, Asteroide**: the same die that is a star, larger each time (**built**; a
+  rock of light in the first design), with its wake of stars. Meteorito is the size of a die and falls in 0.4 s. After it,
   a second rock stays turning slowly over the wearer's head, twice the size: the skill is still
   up there, and that is how the player sees it has grown. Meteoro is that one coming down
   (0.5 s, a ring of stars a metre wide), and a third stays, larger again. Asteroide: the veil
@@ -414,12 +420,11 @@ astral, its bluish white, is what the second round brings.
 - `just fight-sim` cannot ban a face (`--ban cara-ojo` changes nothing: a face is reached only
   through Tirar dado), so it cannot say what each face decides.
 - Agitar as a fixed command with its own button and glyph (today a row of the skill list).
-- The astral die's material, and the hand gathering stars with the Racha (§ The astral look).
+- The hand gathering stars with the Racha (§ The astral look).
 - No banner when the mission gives it, no `TARGETS` pair.
 
 **Built 2026-11-20**: Maná +1 and Dados astrales (level 4), Ases en dúo (5), Meteorito and its two
-stages (7). Differences from the design, to look at: the night veil of the rain and of the
-Asteroide is not there (a flash instead); Ases en dúo shows as Crítico ▲ with its rounds, not a
+stages (7). Differences from the design, to look at: Ases en dúo shows as Crítico ▲ with its rounds, not a
 star of its own; with two or three dice only the first is picked; the simulator's bot never uses
 Ases en dúo or reaches the Asteroide, so it cannot value them.
 

@@ -551,13 +551,14 @@ test('Ronroneo is for one ally: a cure at once, Sanación running on them, and t
 test('dual descriptions follow the plain shape too, and each dual pairs a skill of each of two ánimas, in either order', async () => {
   const { DUALS, dualOf, dualCost } = await import('../src/battle.ts');
   const intensity = power => power <= 20 ? 'leve' : power <= 34 ? 'medi[oa]' : power <= 49 ? 'alt[oa]' : 'muy alt[oa]';
-  assert.deepEqual(DUALS.map(d => d.id), ['zarpazos-de-fuego', 'punto-debil', 'rayo-solar']);
+  assert.deepEqual(DUALS.map(d => d.id), ['zarpazos-de-fuego', 'punto-debil', 'rayo-solar', 'sutura-de-luz', 'relevo-de-sangre', 'bombardeo-orbital', 'reserva-de-color']);
   for (const d of DUALS) {
     const [a, b] = d.parts.map(id => SKILLS.find(s => s.id === id));
     assert.notEqual(a.class, b.class, `${d.name}: two ánimas`);
     assert.equal(dualOf(a.id, b.id), d); assert.equal(dualOf(b.id, a.id), d);
     assert.deepEqual(dualCost(d), { [a.id]: a.cost, [b.id]: b.cost });
     if (d.abstract) continue;
+    if (d.kind === 'heal') { assert.match(d.description, new RegExp(`^Cura ${intensity(d.power)} a un aliado herido\\.`)); continue; }
     assert.match(d.description, new RegExp(`^Daño ${damageKind(d)} ${intensity(d.power)} ${d.side === 'all-foes' ? 'a todos los enemigos' : 'a un enemigo'}\\.( [A-ZÁÉÍÓÚ][^.]*\\.)*$`), d.name);
   }
   assert.equal(dualOf('foc-binari', 'zarpazo'), undefined);
@@ -688,7 +689,7 @@ test('a skill the later fighter queued turns the earlier one\'s matching skill i
 test('each dual goes off once a fight: after it, its two skills are each one\'s own again, and the other dual still can', async () => {
   const { queue, queuedDual, commit, dualOptions } = await import('../src/battle.ts');
   // Matemágico and Papagato's duals (Rayo solar is Tecnópata's).
-  const reasons = s => Object.fromEntries(dualOptions(s).filter(o => o.dual.id !== 'rayo-solar').map(o => [o.dual.id, o.reason ?? 'ok']));
+  const reasons = s => Object.fromEntries(dualOptions(s).filter(o => ['zarpazos-de-fuego', 'punto-debil'].includes(o.dual.id)).map(o => [o.dual.id, o.reason ?? 'ok']));
   const s = duoFight();
   queue(s, 'aitor', { action: 'skill', skill: 'zarpazos', target: 'dog-0' });
   assert.equal(commit(s, 'skill', 'dog-0', 'foc-binari').dual.id, 'zarpazos-de-fuego');
@@ -714,7 +715,7 @@ test('each dual goes off once a fight: after it, its two skills are each one\'s 
 test('the development Dual list says why each dual cannot happen now, and may put the active fighter\'s ánima on', async () => {
   const { dualOptions } = await import('../src/battle.ts');
   // Matemágico and Papagato's duals (Rayo solar is Tecnópata's).
-  const reasons = s => Object.fromEntries(dualOptions(s).filter(o => o.dual.id !== 'rayo-solar').map(o => [o.dual.id, o.reason ?? 'ok']));
+  const reasons = s => Object.fromEntries(dualOptions(s).filter(o => ['zarpazos-de-fuego', 'punto-debil'].includes(o.dual.id)).map(o => [o.dual.id, o.reason ?? 'ok']));
   assert.deepEqual(reasons(duoFight({})), { 'zarpazos-de-fuego': 'level', 'punto-debil': 'level' }, 'none at level 1');
   assert.deepEqual(reasons(duoFight({ papagato: 2 })), { 'zarpazos-de-fuego': 'ok', 'punto-debil': 'level' });
   assert.deepEqual(reasons(duoFight()), { 'zarpazos-de-fuego': 'ok', 'punto-debil': 'ok' });
@@ -1013,4 +1014,108 @@ test('Rayo encogedor shrinks a foe for 15 seconds: a quarter of its Defensa gone
   runClock(s, 20);
   assert.equal(s.foes[0].timed?.encogido, undefined);
   assert.deepEqual(statShifts(s, s.foes[0]), []);
+});
+
+function pairBattle(gerard, aitor) {
+  const party = DUO.map((slot, i) => ({ ...slot, classId: i ? aitor : gerard }));
+  const s = createBattle(party, 3, false, undefined, [gerard, aitor]);
+  s.levels = { papagato: 3, dadaista: 3 };
+  improve(s, { skills: ['cardioide', 'explosion'] });
+  s.foes.forEach(f => { f.hp = f.maxHp = 200; });
+  return s;
+}
+
+test('Sutura de luz discovers on the chosen ally, cushions one hit and expires with the round', async () => {
+  const { queue, commit, dualTargets, DUALS } = await import('../src/battle.ts');
+  const s = pairBattle('matemagico', 'tecnopata'), ally = byId(s, 'aitor');
+  assert.deepEqual(dualTargets(s, DUALS.find(d => d.id === 'sutura-de-luz')), []);
+  ally.hp = 9;
+  const [first, second] = s.allies;
+  const part = a => a.classId === 'tecnopata' ? 'rayo-sanacion' : 'cardioide';
+  assert.ok(queue(s, second.id, { action: 'skill', skill: part(second), target: ally.id }));
+  const cure = commit(s, 'skill', ally.id, part(first));
+  assert.equal(cure.dual.id, 'sutura-de-luz');
+  assert.equal(cure.target, ally.id);
+  assert.equal(ally.hp, 9 + cure.amount);
+  const plain = structuredClone(s);
+  delete byId(plain, ally.id).suture;
+  assert.equal(enemyAct(s, 'dog-0', ally.id).amount, Math.ceil(enemyAct(plain, 'dog-0', ally.id).amount / 2));
+  assert.equal(ally.suture, undefined);
+  assert.equal(enemyAct(s, 'dog-1', ally.id).amount, enemyAct(plain, 'dog-1', ally.id).amount);
+  byId(s, 'gerard').suture = true;
+  enemyAct(s, 'dog-2', ally.id); nextRound(s);
+  assert.equal(byId(s, 'gerard').suture, undefined);
+});
+
+test('Relevo de sangre relays only a killing wound and spends the chosen die', () => {
+  const s = pairBattle('papagato', 'dadaista'), roller = byId(s, 'aitor');
+  roller.dice = ['ojo', 'tijeras', 'mano'];
+  s.foes[0].hp = 1; s.foes[1].hp = 90; addStatus(s.foes[0], 'sangrado', 3);
+  const survives = structuredClone(s); survives.foes[0].hp = 200;
+  assert.equal(actDual(survives, 'relevo-de-sangre', 'dog-0', 1).relay, undefined);
+  const blow = actDual(s, 'relevo-de-sangre', 'dog-0', 1);
+  assert.deepEqual(roller.dice, ['ojo', 'mano']);
+  assert.equal(roller.racha, 1);
+  assert.equal(s.foes[0].hp, 0);
+  assert.deepEqual(blow.relay, { target: 'dog-2', stacks: 3 });
+  assert.equal(stacks(s.foes[2], 'sangrado'), 3);
+});
+
+test('Bombardeo orbital waits for the round and the holder, strips three layers and leaves Cegado II', () => {
+  const s = pairBattle('sincopante', 'tecnopata');
+  s.foes[1].layers = 5;
+  const charge = actDual(s, 'bombardeo-orbital');
+  assert.equal(charge.charging, 'aitor');
+  assert.ok(s.foes.every(f => f.hp === 200));
+  const interrupted = structuredClone(s); byId(interrupted, 'aitor').hp = 0;
+  endRound(interrupted);
+  assert.ok(!interrupted.news?.some(e => e.detonation));
+  endRound(s);
+  assert.equal(s.foes[1].layers, 2);
+  assert.equal(s.news.find(e => e.detonation).hits.length, 3);
+  assert.ok(s.foes.every(f => f.hp < 200 && f.timed.cegado.level === 2 && f.timed.cegado.left === 20));
+});
+
+test('Reserva de color detonates exactly once after the marked turn or an early knockout', () => {
+  const s = pairBattle('matemagico', 'prismatico');
+  actDual(s, 'reserva-de-color', 'dog-1');
+  const early = structuredClone(s);
+  enemyAct(s, 'dog-0');
+  assert.ok(s.foes.every(f => f.hp === 200));
+  enemyAct(s, 'dog-1');
+  assert.equal(s.news.filter(e => e.detonation).length, 1);
+  assert.ok(s.foes.every(f => f.hp < 200));
+  assert.equal(s.foes[1].fuse, undefined);
+  early.foes[1].hp = 1;
+  early.foes[1].timed.quemado = { level: 1, next: 1, left: 5 };
+  runClock(early, 1);
+  assert.equal(early.foes[1].hp, 0);
+  assert.equal(early.news.filter(e => e.detonation).length, 1);
+  assert.equal(early.news[0].hits.length, 2);
+});
+
+test('each new pair combines from the two individual skill choices in either turn order', async () => {
+  const { DUALS, aimed, commit, queue, takeTurn } = await import('../src/battle.ts');
+  for (const [id, g, a] of [
+    ['sutura-de-luz', 'matemagico', 'tecnopata'],
+    ['relevo-de-sangre', 'papagato', 'dadaista'],
+    ['bombardeo-orbital', 'sincopante', 'tecnopata'],
+    ['reserva-de-color', 'matemagico', 'prismatico'],
+  ]) {
+    for (const who of ['gerard', 'aitor']) {
+      const s = pairBattle(g, a);
+      const target = id === 'sutura-de-luz' ? 'aitor' : 'dog-1';
+      byId(s, 'aitor').hp -= 8;
+      assert.ok(takeTurn(s, who));
+      const first = s.allies[s.active], other = s.allies.find(c => c !== first);
+      const parts = DUALS.find(d => d.id === id).parts.map(part => SKILLS.find(skill => skill.id === part));
+      const skillOf = c => parts.find(skill => skill.class === c.classId).id;
+      const waiting = skillOf(other), active = skillOf(first);
+      assert.ok(queue(s, other.id, { action: 'skill', skill: waiting, target: aimed(waiting) ? target : undefined }));
+      const combined = commit(s, 'skill', aimed(active) ? target : undefined, active);
+      assert.equal(combined.dual.id, id);
+      if (!combined.charging) assert.equal(combined.target, target);
+      assert.deepEqual(s.usedDuals, [id]);
+    }
+  }
 });

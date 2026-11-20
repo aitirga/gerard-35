@@ -45,6 +45,8 @@ export const CLASSES: Record<ClassId, { name: string; motto: string; look: Recor
   // The university friends' ánima: it fights with dice, its maná (src/dice.ts). A black waistcoat over
   // ivory shirtsleeves, a red bow tie and a monocle (anima-looks.ts): a dada soirée, or a croupier
   // (docs/animas/dadaista/).
+  sincopante: { name: ANIMA_NAMES.sincopante, motto: 'La nota sigue cuando calla.', colour: '#8fe3c4', look: { jacket: '#406f73', cream: '#e9eee2', trousers: '#293d46' } },
+  prismatico: { name: ANIMA_NAMES.prismatico, motto: 'El color se queda en las manos.', colour: '#617ce2', look: { jacket: '#404f87', cream: '#ddd5bc', trousers: '#343744' } },
   // Emilie's, a hydrogeologist's: water held on the foes' side that she raises mark by mark
   // (docs/animas/freatica/). Field clothes in the water's own two colours, the blue of the deep
   // and the green of the shallows, a staff gauge down the front and a water level meter at the hip

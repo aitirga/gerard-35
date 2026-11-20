@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import type { DieFace } from './battle';
 import { FACE_ICONS, FACE_INK } from './die-faces.ts';
+import { createStarDie } from './dice.ts';
 
 /**
  * What a die of Dadista's leaves where it lands (docs/animas/dadaista/ § Look and interface): its
@@ -8,12 +9,13 @@ import { FACE_ICONS, FACE_INK } from './die-faces.ts';
  * the same ornament a little off in vermilion (a print out of register), as big as their chest and
  * never quite straight; it is slammed on, holds a moment and is torn away. The Comodín's is black
  * lacquer with its red star. The astral's are no paper: a four-point star of bluish-white light
- * (`astral`), its soft halo (`halo`) and a rock of light (`meteor`).
+ * (`astral`) and its soft halo (`halo`); and the dice that are stars (`crystal`, `keepCrystal`): a
+ * cube of glass (src/dice.ts) turning inside that star.
  *
  * Each is one quad facing the camera with its picture: solid and readable where a drawing in dots
  * was thin. The caller says which, where and how big; `update` slams it in, holds it and lets it go.
  */
-export type StampId = DieFace | 'astral' | 'halo' | 'meteor';
+export type StampId = DieFace | 'astral' | 'halo';
 export interface StampOptions {
   /** Degrees it sits turned, clockwise from the camera; `spin` more every second as it goes. */
   roll?: number; spin?: number;
@@ -54,7 +56,7 @@ function picture(id: StampId) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = CELL;
   const ctx = canvas.getContext('2d')!;
-  if (id === 'astral' || id === 'halo' || id === 'meteor') {
+  if (id === 'astral' || id === 'halo') {
     const c = CELL / 2, glow = ctx.createRadialGradient(c, c, 0, c, c, c);
     if (id === 'halo') {
       // A ring of cold light, empty in the middle.
@@ -62,22 +64,8 @@ function picture(id: StampId) {
       ctx.fillStyle = glow; ctx.fillRect(0, 0, CELL, CELL);
       return canvas;
     }
-    glow.addColorStop(0, 'rgba(244,249,255,1)'); glow.addColorStop(id === 'meteor' ? .2 : .12, id === 'meteor' ? 'rgba(191,224,255,.5)' : 'rgba(191,224,255,.85)'); glow.addColorStop(id === 'meteor' ? .42 : .34, id === 'meteor' ? 'rgba(127,180,255,.16)' : 'rgba(127,180,255,.28)'); glow.addColorStop(1, 'rgba(127,180,255,0)');
+    glow.addColorStop(0, 'rgba(244,249,255,1)'); glow.addColorStop(.12, 'rgba(191,224,255,.85)'); glow.addColorStop(.34, 'rgba(127,180,255,.28)'); glow.addColorStop(1, 'rgba(127,180,255,0)');
     ctx.fillStyle = glow; ctx.fillRect(0, 0, CELL, CELL);
-    if (id === 'meteor') {
-      // A rock of light: a rough stone, white-hot at its edge.
-      ctx.beginPath();
-      for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2, r = c * (.34 + ((i * 37) % 11) / 11 * .12); ctx.lineTo(c + Math.cos(a) * r, c + Math.sin(a) * r); }
-      ctx.closePath();
-      const stone = ctx.createRadialGradient(c - 14, c - 16, 4, c, c, c * .5);
-      // Dark inside (the light is added to the scene, so dark is the night showing through), bright where the light catches it.
-      stone.addColorStop(0, '#dcebff'); stone.addColorStop(.35, '#5d86d6'); stone.addColorStop(1, '#1d3470');
-      ctx.fillStyle = stone; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = '#ffffff'; ctx.stroke();
-      // Its facets: a few cracks of light across it.
-      ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(191,224,255,.75)';
-      ctx.beginPath(); ctx.moveTo(c - 30, c - 44); ctx.lineTo(c + 6, c - 4); ctx.lineTo(c + 44, c - 14); ctx.moveTo(c + 6, c - 4); ctx.lineTo(c - 8, c + 46); ctx.stroke();
-      return canvas;
-    }
     // Four long thin points and four short ones between them, white at the heart.
     const star = (long: number, thin: number, turn: number) => {
       ctx.beginPath();
@@ -111,7 +99,9 @@ function picture(id: StampId) {
 }
 
 interface Stamp extends Required<Omit<StampOptions, 'from'>> { entity: pc.Entity; instance: pc.MeshInstance; at: pc.Vec3; from: pc.Vec3; size: number; age: number; delay: number }
-const LIGHT: ReadonlySet<StampId> = new Set<StampId>(['astral', 'halo', 'meteor']);
+const LIGHT: ReadonlySet<StampId> = new Set<StampId>(['astral', 'halo']);
+type P3 = { x: number; y: number; z: number };
+interface Crystal { cube: pc.Entity; flare: pc.Entity; instance: pc.MeshInstance; size: number; age: number; fall: number; path: (u: number) => P3; axis: pc.Vec3; speed: number; roll: number }
 
 export function createStamps(app: pc.AppBase, root: pc.Entity) {
   const device = app.graphicsDevice, materials = new Map<StampId, pc.StandardMaterial>(), live: Stamp[] = [];
@@ -139,7 +129,14 @@ export function createStamps(app: pc.AppBase, root: pc.Entity) {
   }
   const basis = new pc.Mat4(), facingTurn = new pc.Quat(), rollTurn = new pc.Quat(), place = new pc.Vec3();
   const easeOut = (k: number) => 1 - (1 - k) ** 3;
-  const held = new Set<{ drop(): void }>();
+  const held = new Set<{ drop(): void }>(), crystals: Crystal[] = [], turn = new pc.Quat();
+  /** A die that is a star: the cube of glass and, over it, the four-point star it shines with. */
+  function starDie() {
+    const cube = createStarDie(app), instance = new pc.MeshInstance(mesh, materialOf('astral')), flare = new pc.Entity('Estrella del dado');
+    flare.addComponent('render', { meshInstances: [instance], castShadows: false, receiveShadows: false });
+    cube.enabled = flare.enabled = false; root.addChild(cube); root.addChild(flare);
+    return { cube, flare, instance };
+  }
   return {
     /** Stamps `id` at `at`, `size` metres across, `delay` seconds from now. */
     stamp(id: StampId, at: { x: number; y: number; z: number }, size: number, o: StampOptions & { delay?: number } = {}) {
@@ -155,6 +152,19 @@ export function createStamps(app: pc.AppBase, root: pc.Entity) {
     update(dt: number, right: { x: number; y: number; z: number }, up: { x: number; y: number; z: number }, facing: { x: number; y: number; z: number }) {
       basis.set([right.x, right.y, right.z, 0, up.x, up.y, up.z, 0, facing.x, facing.y, facing.z, 0, 0, 0, 0, 1]);
       facingTurn.setFromMat4(basis);
+      for (let i = crystals.length - 1; i >= 0; i--) {
+        const c = crystals[i];
+        c.age += dt;
+        if (c.age >= c.fall) { c.cube.destroy(); c.flare.destroy(); crystals.splice(i, 1); continue; }
+        const u = c.age / c.fall, p = c.path(u), size = c.size * Math.min(1, u * 8);
+        // It tumbles all the way down; its star turns slowly and flickers.
+        c.cube.setPosition(p.x, p.y, p.z); c.cube.setRotation(turn.setFromAxisAngle(c.axis, c.age * c.speed)); c.cube.setLocalScale(size, size, size);
+        const shine = size * (3.4 + Math.sin(c.age * 31 + c.roll) * .5);
+        rollTurn.setFromEulerAngles(0, 0, -(c.roll + c.age * 90));
+        c.flare.setPosition(p.x, p.y, p.z); c.flare.setRotation(rollTurn.mul2(facingTurn, rollTurn)); c.flare.setLocalScale(shine, shine, 1);
+        c.instance.setParameter('material_opacity', .8);
+        c.cube.enabled = c.flare.enabled = true;
+      }
       if (!live.length) return;
       for (let i = live.length - 1; i >= 0; i--) {
         const s = live[i];
@@ -175,26 +185,35 @@ export function createStamps(app: pc.AppBase, root: pc.Entity) {
       }
     },
     /**
-     * A picture that stays (the rock over whoever has thrown a meteor): `set` puts it where it is
-     * now, `size` metres across and turned `roll` degrees; `drop` takes it away.
+     * A die that is a star on its way: a cube of glass `size` metres to its edge, tumbling, that is
+     * at `path(u)` (u from 0 to 1) over `seconds` and then gone (what it does where it arrives is the
+     * caller's).
      */
-    keep(id: StampId) {
-      const instance = new pc.MeshInstance(mesh, materialOf(id)), entity = new pc.Entity(`Sello ${id}`);
-      entity.addComponent('render', { meshInstances: [instance], castShadows: false, receiveShadows: false });
-      entity.enabled = false; root.addChild(entity);
+    crystal(size: number, seconds: number, path: (u: number) => P3) {
+      const axis = new pc.Vec3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize();
+      crystals.push({ ...starDie(), size, age: 0, fall: seconds, path, axis, speed: 420 + Math.random() * 360, roll: Math.random() * 360 });
+    },
+    /**
+     * A die that is a star and stays (the one over whoever has thrown a meteor): `set` puts it where
+     * it is now, `size` metres to its edge and turned `roll` degrees; `drop` takes it away.
+     */
+    keepCrystal() {
+      const { cube, flare, instance } = starDie();
       const kept = {
-        set(at: { x: number; y: number; z: number }, size: number, roll = 0, opacity = 1) {
-          rollTurn.setFromEulerAngles(0, 0, -roll);
-          entity.setPosition(at.x, at.y, at.z); entity.setRotation(rollTurn.mul2(facingTurn, rollTurn)); entity.setLocalScale(size, size, 1);
+        set(at: P3, size: number, roll = 0, opacity = 1) {
+          cube.setPosition(at.x, at.y, at.z); cube.setLocalEulerAngles(roll * .6, roll, roll * .35); cube.setLocalScale(size, size, size);
+          const shine = size * (3 + Math.sin(roll * .21) * .3);
+          rollTurn.setFromEulerAngles(0, 0, -roll * .5);
+          flare.setPosition(at.x, at.y, at.z); flare.setRotation(rollTurn.mul2(facingTurn, rollTurn)); flare.setLocalScale(shine, shine, 1);
           instance.setParameter('material_opacity', opacity);
-          entity.enabled = size > .001;
+          cube.enabled = flare.enabled = size > .001;
         },
-        drop() { held.delete(kept); entity.destroy(); },
+        drop() { held.delete(kept); cube.destroy(); flare.destroy(); },
       };
       held.add(kept);
       return kept;
     },
-    clear() { for (const s of live) s.entity.destroy(); live.length = 0; for (const k of [...held]) k.drop(); },
+    clear() { for (const s of live) s.entity.destroy(); live.length = 0; for (const c of crystals) { c.cube.destroy(); c.flare.destroy(); } crystals.length = 0; for (const k of [...held]) k.drop(); },
   };
 }
 export type Stamps = ReturnType<typeof createStamps>;

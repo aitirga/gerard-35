@@ -4,7 +4,7 @@ import { createExplorationUI } from './exploration-ui';
 import { createGame } from './game';
 import { type Direction } from './movement';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
-import { DAY_END, DAY_START, NIGHT, dayForStage, stage } from './days';
+import { DAY_END, DAY_START, NIGHT, boostOf, dayForStage, stage } from './days';
 import { createDialogueBanner } from './dialogue';
 import { createBattleUI } from './battle-ui';
 import { improvedBy } from './ecos';
@@ -33,6 +33,7 @@ import { flagsAt, missionJump, missionNow, spotAt, type MissionPart, type Spot }
 import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './jump-menu';
 import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById } from './home-lights';
 import { mountHomeLightsPage } from './home-lights-ui';
+import { CLASSES } from './classes';
 import { createLampPicker } from './lamp-picker';
 import { setLucaColour, setWallFolding } from './home-scenery';
 import { createInteractionPrompt } from './interaction-prompt';
@@ -162,13 +163,16 @@ const story = new Story(devStory ?? []);
 // Development: ?day=<n> starts chapter 2 on that day, to see the Queen's spread (just dev-day);
 // ?hour=<h> at that hour: 21 is night, and on the Meridiana the way home starts at the station.
 // ?night=<0–4>: the way home at night with her castle at that stage (`stage` in days.ts), the day
-// following from it and the ánimas gathered (just dev-night, the picker's «La vuelta a casa»).
+// following from it and the ánimas gathered (just dev-night, the picker's «La vuelta a casa»);
+// &year=<2|3>: with the castle's bosses beaten up to that year, so its pupils are the ones out.
 let nightJump: Spot | undefined;
 if (import.meta.env.DEV) {
   const query = new URLSearchParams(location.search), day = Number(query.get('day')), hour = Number(query.get('hour'));
   const castle = query.get('night') === null ? NaN : Number(query.get('night'));
   if (Number.isInteger(day) && day > 1) story.days.clock.day = day;
   if (Number.isInteger(hour) && hour >= DAY_START && hour <= DAY_END) story.days.clock.hour = hour;
+  const year = Number(query.get('year'));
+  if (story.adult && Number.isInteger(castle) && year >= 2) for (const flag of ['aurelia', 'luz-aurelia', ...year >= 3 ? ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'] as const : []] as const) story.flags.add(flag);
   if (story.adult && Number.isInteger(castle) && castle >= 0 && castle <= 4) story.days.clock = { day: dayForStage(castle, story.heldBack), hour: NIGHT };
   const station = ENVIRONMENTS['meridiana-calle'].interactions.find(i => i.id === 'station-fabra-i-puig')!.cell;
   if (story.night && (devJump?.spot?.environment === 'meridiana-calle' || Number.isInteger(castle))) nightJump = { environment: 'meridiana-calle', cell: { x: station.x + 1, z: station.z + 1 } };
@@ -393,7 +397,7 @@ try {
     else if (effect.kind === 'hint') storyUI.hint(effect.id, learned[effect.id]);
     else if (effect.kind === 'minion') { await game.summonMinion(); storyEvent({ type: 'minion' }); }
     else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(effect.encounter, effect.night); }
-    else if (effect.kind === 'palace') { await game.raisePalace(); storyEvent({ type: 'palace' }); }
+    else if (effect.kind === 'palace') { homeLights.moment('palace'); await game.raisePalace(); storyEvent({ type: 'palace' }); }
     else if (effect.kind === 'gate') await game.popGate();
     // The story takes them somewhere else: under its own dark or snow if there is one, through a fade if not.
     else if (effect.kind === 'travel') { if (storyUI.covered) game.setEnvironment(effect.environment, effect.cell); else await game.travel(effect.environment, effect.cell); }
@@ -405,11 +409,18 @@ try {
     });
     else if (effect.kind === 'snow') { if (effect.on) sfx.play('pickup'); await storyUI.snow(effect.on); }
     else if (effect.kind === 'drain') await game.riseFromDrain();
-    else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }
-    else if (effect.kind === 'wake') await game.wake(() => storyUI.blackout(false, 2000));
+    // The room goes out with the screen, and comes back as they wake.
+    else if (effect.kind === 'ambush') { await game.ambush(() => { homeLights.moment('ambush'); return storyUI.blackout(true, 1400); }); storyEvent({ type: 'caught' }); }
+    // Out of the dark, or out of the white her scream left (a boss of her castle beaten).
+    else if (effect.kind === 'wake') await game.wake(() => { homeLights.moment('wake'); storyUI.unflash(); return storyUI.blackout(false, 2000); });
     else if (effect.kind === 'rise') await game.rise();
     else if (effect.kind === 'fall') { homeLights.moment('fall'); await storyUI.blackout(true, 1600); }
     else if (effect.kind === 'recover') await storyUI.blackout(false, 900);
+    // An afternoon spent: the dark, and under it the story hears the afternoon is gone, which brings the night and the light back.
+    else if (effect.kind === 'evening') { await storyUI.blackout(true, 1100); await new Promise(resolve => setTimeout(resolve, 500)); storyEvent({ type: 'evening', what: effect.what }); }
+    else if (effect.kind === 'boost') { sfx.play('heal'); const left = boostOf(effect.id); storyUI.boost(left.name, left.effect); }
+    // A boss of her castle beaten: her scream through the building, and white.
+    else if (effect.kind === 'scream') { sfx.play('roar', { volume: .7 + effect.fear * .15 }); homeLights.moment('fall'); await storyUI.scream(effect.text, effect.fear); }
     // The blackboard's board: the beat lasts while it is open; a woken tent closes it for its fight.
     else if (effect.kind === 'parcelas') await parcelasUI.open(effect.board ? { board: effect.board } : undefined);
     // The pool gate's padlock: the beat lasts while it is open.
@@ -420,10 +431,10 @@ try {
     else if (effect.kind === 'look') await game.look(effect.anchor, effect.cell, effect.height);
     else if (effect.kind === 'colour') { sfx.play('luz-azul'); await game.flyColour(effect.from, effect.to, effect.colour); }
     // Into a portal: who goes comes apart into it; a person stays gone (Anna, into the spiral).
-    else if (effect.kind === 'portal') { await game.intoPortal(effect.who, effect.open, effect.queen ? 'queen' : undefined); if (effect.who !== 'party' && effect.who !== 'everyone') { story.sank(effect.who); storyChanged(); } }
+    else if (effect.kind === 'portal') { homeLights.moment('portal'); await game.intoPortal(effect.who, effect.open, effect.queen ? 'queen' : undefined); if (effect.who !== 'party' && effect.who !== 'everyone') { story.sank(effect.who); storyChanged(); } }
     // La Sobremesa comes apart at the long table, and out of a spiral on the other side.
-    else if (effect.kind === 'unmask') await game.unmaskSobremesa();
-    else if (effect.kind === 'emerge') await game.emerge(effect.cell);
+    else if (effect.kind === 'unmask') { homeLights.moment('unmask'); await game.unmaskSobremesa(); }
+    else if (effect.kind === 'emerge') { homeLights.moment('emerge'); await game.emerge(effect.cell); }
     else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
     // The last scene: the game holds still until Gerard chooses, and the story hears which.
     else if (effect.kind === 'ending') {
@@ -437,11 +448,11 @@ try {
     // A level reached in a fight was shown on its victory screen.
     else if (effect.kind === 'learn') { if (!effect.quiet) { sfx.play('unlock'); storyUI.learn(effect.classId, effect.level, effect.skills); } }
     else if (effect.kind === 'anima' && effect.kept) { sfx.play('unlock'); await storyUI.kept(effect.classId); }
-    else if (effect.kind === 'anima') { sfx.play('unlock'); storyUI.unlocked(effect.classId); keepLoadout(); storyChanged(); }
+    else if (effect.kind === 'anima') { sfx.play('unlock'); homeLights.moment('anima', CLASSES[effect.classId].colour); storyUI.unlocked(effect.classId); keepLoadout(); storyChanged(); }
     else if (effect.kind === 'lights') {
       // The counter goes up as each light goes into Gerard or Aitor, not when the fight is won.
       let flying = effect.people.length;
-      const entered = () => { flying--; lightsFlying--; showAnimas(true); };
+      const entered = () => { flying--; lightsFlying--; showAnimas(true); homeLights.moment('light-in'); };
       try { await game.releaseLights(effect.people, entered); } finally { lightsFlying -= flying; showAnimas(); }
     }
     else if (effect.kind === 'jar') await jarUI.open();
@@ -570,7 +581,7 @@ try {
       flags: () => story.saved,
       day: () => story.days.clock.day,
       story: (at, day, missions, hour, home) => { location.search = `?${new URLSearchParams({ story: at, ...(home ? { at: 'home' } : {}), ...(missions?.length ? { with: missions.join(',') } : {}), ...(day && day > 1 ? { day: String(day) } : {}), ...(hour && hour !== DAY_START ? { hour: String(hour) } : {}) })}`; },
-      night: (castle, missions) => { location.search = `?${new URLSearchParams({ story: 'metro', night: String(castle), ...(missions?.length ? { with: missions.join(',') } : {}) })}`; },
+      night: (castle, missions, year) => { location.search = `?${new URLSearchParams({ story: 'metro', night: String(castle), ...(missions?.length ? { with: missions.join(',') } : {}), ...(year && year > 1 ? { year: String(year) } : {}) })}`; },
       nightNow: () => story.night ? stage(story.spread) : undefined,
       mission: (anima, part, day, missions) => {
         const others = missions?.filter(id => id !== anima) ?? [];
@@ -660,9 +671,18 @@ try {
       game.possess(possessed);
       // The maze's patrols shout their word as they fall here too (the first group of each kind's).
       const lastWord = CAMP_HUNTERS.find(h => h.encounter === setup.encounter)?.word;
-      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0),
+      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: setup.trial === 'relevo-de-sangre' ? { ...story.levels, papagato: 3, dadaista: 3 } : story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0),
         // At night on the Meridiana: the first of the night's groups of the castle's floor the save is on, as strong as the friends chosen and the levels leave it.
         ...setup.encounter === 'night-guard' ? { night: { room: nightGroup(1, castlePhaseAt(story)), might: nightMight(setup.adult ? setup.friends.length : 0, story.levels) } } : {} });
+      if (setup.trial) battleUI.tweak(s => {
+        // An injured ally to stitch, a wound to relay, or enough time to watch the delayed impact.
+        for (const foe of s.foes) foe.hp = foe.maxHp = 260;
+        if (setup.trial === 'sutura-de-luz') s.allies.find(a => a.id === 'gerard')!.hp = 15;
+        if (setup.trial === 'relevo-de-sangre') {
+          s.foes[0].hp = 7;
+          s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 3 };
+        }
+      });
       if (help.unbound || help.crit) { if (help.unbound) unboundAnimas(); battleUI.tweak(applyHelp); }
     });
   }

@@ -142,6 +142,8 @@ level-up.
 
 ## Combate
 
+El selector **Combate → Probar un dúo** abre Sutura de luz, Relevo de sangre, Bombardeo orbital o Reserva de color con sus dos ánimas equipadas y sus habilidades aprendidas. En el menú del combate, elige **Dual** y el objetivo. Sutura empieza con Gerard herido y Relevo con un enemigo que sangra y está a punto de caer. Cada ensayo se puede abrir con `?story=got-wrapper&solo=1&fight={"trial":"sutura-de-luz"}`, sustituyendo el identificador. La galería se genera con `just screenshots duos-en-combate --gpu`.
+
 The fight tester. Choose:
 
 - **Época**: chapter 1 (Gerard as a boy) or chapter 2 (at 35). The fighters are cloned from the
@@ -449,7 +451,7 @@ numbers or the story. Matemágico's *Foc Binari* has its own entry (the streams,
 the fizzle). `just screenshots fx-lab --gpu` clicks through it.
 
 **Sincopante · ecos** is a section at the top of the panel ([src/eco-lab.ts](../src/eco-lab.ts),
-[src/eco-fx.ts](../src/eco-fx.ts)). It shows how Sincopante's ecos will look before the ánima is in
+[src/eco-fx.ts](../src/eco-fx.ts), and its shaders in [src/eco-shaders.ts](../src/eco-shaders.ts)). It shows how Sincopante's ecos will look before the ánima is in
 the game:
 - *Ostinato* and *Bordón* call an eco over the party;
 - *Crescendo* raises them all a grade (*p*, *mf*, *f*);

@@ -1,0 +1,238 @@
+{
+  "title": "Cuatro dúos en combate",
+  "description": "Gerard y Aitor prueban cuatro combinaciones. Cada dúo mezcla el aspecto de sus dos ánimas, y cada clip empieza cuando el dúo arranca, justo después de su cartel.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22sutura-de-luz%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('sutura-de-luz'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"sutura-de-luz\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"sutura-de-luz\"]').click()"
+    },
+    {
+      "shot": "sutura-de-luz-pareja",
+      "caption": "La pareja elige el dúo en el menú del combate.",
+      "delay": 300
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "sutura-de-luz",
+      "caption": "Gerard mide la herida en oro: su círculo de marcas y la cardioide en el suelo. Bip la escanea en cian. Los dos la cosen con seis puntadas cruzadas y la costura se cierra en un destello. Quedan tres anillos de guarda.",
+      "seconds": 3.2,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22relevo-de-sangre%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('relevo-de-sangre'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"relevo-de-sangre\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"relevo-de-sangre\"]').click()"
+    },
+    {
+      "shot": "relevo-de-sangre-pareja",
+      "caption": "La pareja elige el dúo en el menú del combate.",
+      "delay": 300
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "relevo-de-sangre",
+      "caption": "El dado sube como una estrella y cae con el zarpazo de Haru. Una tachadura de tinta bermellón cruza el corte. Al caer el enemigo, su sangre forma una estrella roja que vuela al siguiente y le deja la herida.",
+      "seconds": 3.2,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22bombardeo-orbital%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('bombardeo-orbital'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"bombardeo-orbital\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"bombardeo-orbital\"]').click()"
+    },
+    {
+      "shot": "bombardeo-orbital-pareja",
+      "caption": "La pareja elige el dúo en el menú del combate.",
+      "delay": 300
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "bombardeo-orbital",
+      "caption": "Bip sube sobre los enemigos. A su alrededor se abren los ecos de nácar al ritmo del ostinato, y una figura cimática marca el suelo de cada enemigo.",
+      "seconds": 3.2,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22bombardeo-orbital%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('bombardeo-orbital'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"bombardeo-orbital\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"bombardeo-orbital\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began('detonation')",
+      "timeout": 90000
+    },
+    {
+      "record": "bombardeo-orbital-estallido",
+      "caption": "Al empezar la ronda caen tres salvas al compás: un disparo cian, una columna de nácar y una figura nueva en el suelo cada vez. La tercera ciega.",
+      "seconds": 2.2,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 360,
+      "each": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "eval": "preview.impact('detonation')"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22reserva-de-color%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('reserva-de-color'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"reserva-de-color\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"reserva-de-color\"]').click()"
+    },
+    {
+      "shot": "reserva-de-color-pareja",
+      "caption": "La pareja elige el dúo en el menú del combate.",
+      "delay": 300
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "reserva-de-color",
+      "caption": "El brochazo deja una franja mate de ultramar. Gerard escribe sus unos y ceros encima y lanza Foc Binari a los dos extremos. El fuego avanza hacia el centro y prende la mecha.",
+      "seconds": 3.2,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22reserva-de-color%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('reserva-de-color'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"reserva-de-color\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"reserva-de-color\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began('detonation')",
+      "timeout": 90000
+    },
+    {
+      "record": "reserva-de-color-estallido",
+      "caption": "La pintura estalla: una nube de ultramar que se vuelve roja con el fuego, llamas y dígitos de oro sobre todos los enemigos.",
+      "seconds": 2.2,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 360,
+      "each": "window.gerard.game.app.timeScale = 1"
+    },
+    {
+      "eval": "preview.impact('detonation')"
+    }
+  ]
+}

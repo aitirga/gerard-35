@@ -57,11 +57,11 @@ const DICE = { launch: .22, contact: .46, tail: .85 } as const;
  * (the rain's first die); `fall`: how long before that it starts to fall; `tail`: what is left after.
  */
 const SKY: Partial<Record<SkillId, { contact: number; tail: number; fall: number }>> = {
-  'dados-astrales': { contact: .8, tail: .7, fall: .42 }, 'ases-en-duo': { contact: .78, tail: .9, fall: .52 },
-  meteorito: { contact: .64, tail: .8, fall: .4 }, meteoro: { contact: .78, tail: .9, fall: .5 }, asteroide: { contact: 1.1, tail: 1.3, fall: .62 },
+  'dados-astrales': { contact: 1.15, tail: .9, fall: .72 }, 'ases-en-duo': { contact: .9, tail: 1, fall: .6 },
+  meteorito: { contact: 1, tail: .9, fall: .62 }, meteoro: { contact: 1.1, tail: 1, fall: .7 }, asteroide: { contact: 1.4, tail: 1.4, fall: .85 },
 };
 /** Seconds between two dice of the rain: quicker with many, never over two seconds in all. */
-const rainGap = (drops: number) => Math.min(.25, 2 / Math.max(1, drops));
+const rainGap = (drops: number) => Math.min(.22, 2 / Math.max(1, drops));
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
@@ -87,6 +87,24 @@ const DUAL = {
   /** A dual already seen this session: a shorter setup, Punto débil's aim and tail (the fight stays agile). */
   seen: { setup: .34, tail: .38, aimSeconds: .45 },
 } as const;
+/**
+ * The duals of other ánimas (docs/graphics.md § Ataques duales), in fight seconds from their start:
+ * when their blow lands (`contact`: the number, the cure, the fuse lit) and when they are over.
+ * Relevo de sangre lands with Haru's pounce.
+ */
+const DUO = {
+  'sutura-de-luz': { contact: .95, end: 1.85 },
+  'relevo-de-sangre': { contact: CONTACT_SECONDS, end: 1.35, relayed: 1.85 },
+  'bombardeo-orbital': { contact: .7, end: 1.65 },
+  'reserva-de-color': { contact: 1.15, end: 1.85 },
+} as const;
+/** The blasts they leave: Bombardeo orbital's three salvos (the number with the last), the paint going up. */
+const BLAST = {
+  'bombardeo-orbital': { salvos: [.18, .42, .68], contact: .78, end: 1.6 },
+  'reserva-de-color': { contact: .32, end: 1.5 },
+} as const;
+const duoOf = (e?: BattleEffect) => e?.dual && e.dual.id in DUO ? DUO[e.dual.id as keyof typeof DUO] : undefined;
+const duoEnd = (e: BattleEffect) => e.dual?.id === 'relevo-de-sangre' && e.relay ? DUO['relevo-de-sangre'].relayed : duoOf(e)?.end ?? (e.detonation ? BLAST[e.detonation].end : 0);
 /** Duals already seen this session (as the fight screen's banner counts them). */
 const seenDuals = new Set<string>();
 /** How the dish under a platito or El Plato's cloche looks (`Plato`), by what it is. */
@@ -299,7 +317,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   /** Dadista's sky skills: what of the action in play has started to fall and has landed. */
   let sky: { effect: BattleEffect; fell: number; landed: number } | undefined;
   /** The rock of light that stays over whoever has a meteor grown, by fighter. */
-  const rocks = new Map<string, { kept: ReturnType<typeof stamps.keep>; size: number; turn: number }>();
+  const rocks = new Map<string, { kept: ReturnType<typeof stamps.keepCrystal>; size: number; turn: number }>();
   /** Models for foes that are not dogs, cloned when a fight starts (the game passes the minion). */
   let minionTemplate: pc.Entity | undefined;
   /** Uri's fears (src/fears.ts), by kind, and how Vertitrón is posed. */
@@ -330,6 +348,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const sway = [0, 1, 2].map(() => ({ x: 0, v: 0 })), zoom = { x: 0, v: 0 };
   let real = 0, animating = true;
   let pulse: ((fringe: number, bloom: number, flash?: number) => void) | undefined;
+  let setNight: ((amount: number, lift?: number) => void) | undefined, night = 0, nightLift = 0, shownNight = 0;
   /** What duals and the tower's fears draw (src/dual-fx.ts), on the fight's clock. */
   const dualFx = createDualFx(effects);
   /** What Dadista's faces draw where their die lands (src/dice-fx.ts). */
@@ -505,7 +524,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (n <= 0) statusFx.remove(id, look);
       else statusFx.apply(id, look, { level: Math.ceil(n / most * 3), seconds: most, left: n, held: true });
     }
-    for (const look of ['quemado', 'cegado', 'sanacion', 'confusion', 'encogido', 'mojado'] as const) {
+    for (const look of ['quemado', 'cegado', 'sanacion', 'confusion', 'encogido', 'mojado', 'envenenado'] as const) {
       const on = timed?.[look], level = on?.level ?? 0, key = `${id}:${look}`;
       if ((shownStacks.get(key) ?? 0) !== level) {
         shownStacks.set(key, level);
@@ -807,6 +826,125 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (hand) dualFx.stroke(v3(hand), v3(plan.point), DUAL_COLOURS.gold, .2, { width: .08, arc: .4 });
       dualFx.after(.12, () => dualFx.blueprint(v3(plan.point), { x: plan.rest.x, y: groundHeight(plan.rest.x, plan.rest.z) + .35, z: plan.rest.z }, plan.facing, Math.max(1.1, Math.min(2, extent(target).height * .35)), 1.1));
       cue('mark-set', { delay: .25 });
+    }
+  }
+  /** The duals of other ánimas whose choreography has started (`startDuo`). */
+  const duoPlayed = new WeakSet<BattleEffect>();
+  /** Where Bip hangs over the foes while Bombardeo orbital is held, and their floors and chests. */
+  function orbitPlan() {
+    const foes = [...fighters.values()].filter(f => !f.party && f.hp > 0 && !f.part);
+    const centre = foes.length ? foes.reduce((sum, f) => sum.add(f.base), new pc.Vec3()).mulScalar(1 / foes.length) : anchor.clone();
+    return { bip: { x: centre.x, y: groundHeight(centre.x, centre.z) + 3.5, z: centre.z }, foes: foes.map(f => ({ at: v3(chestOf(f)), feet: v3(floorUnder(f)), radius: extent(f).radius })) };
+  }
+  /**
+   * A dual of two ánimas other than Matemágico and Papagato's (`DUO`), or the blast one of them leaves
+   * (`BLAST`), starts: its stinger and freeze, and everything it draws, set going on the fight's clock
+   * (src/dual-fx.ts). How it lands is `contactBurst`.
+   */
+  function startDuo(e: BattleEffect, target: Fighter | undefined, animate: boolean) {
+    duoPlayed.add(e);
+    const id = e.dual?.id ?? e.detonation;
+    if (e.dual) { cue('dual'); if (animate) clock.hold = Math.max(clock.hold, DUAL_FREEZE); }
+    if (!animate || !dualFx.on) return;
+    const view = viewDir(), wearerId = (anima: ClassId) => e.dual?.actors.find(a => classOf(a) === anima), wearer = (anima: ClassId) => { const id = wearerId(anima); return id ? fighters.get(id) : undefined; };
+    const handOf = (f?: Fighter) => f && v3((f.arms[0]?.findByName('Mano') as pc.Entity | null ?? f.model).getPosition());
+    if (id === 'sutura-de-luz' && target) {
+      const techId = wearerId('tecnopata'), tech = wearer('tecnopata'), math = wearer('matemagico'), body = extent(target), b = techId ? bips.get(techId) : undefined;
+      const bip = b?.shown ? v3(b.bip.entity.getPosition()) : tech && v3(chestOf(tech));
+      dualFx.suture({ chest: v3(chestOf(target)), feet: v3(floorUnder(target)), height: body.height, radius: body.radius, hand: handOf(math), bip, view, close: DUO['sutura-de-luz'].contact });
+      cue('zap', { delay: .3 }); cue('mark-set', { delay: .5 });
+    }
+    if (id === 'relevo-de-sangre' && target) {
+      const dice = wearer('dadaista'), next = e.relay ? fighters.get(e.relay.target) : undefined, spot = spotOf(target);
+      dualFx.relay({ at: v3(chestOf(target)), feet: spot.feet, size: spot.size, star: handOf(dice), next: next && { at: v3(chestOf(next)), feet: v3(floorUnder(next)), size: spotOf(next).size }, stacks: e.relay?.stacks ?? 0, view, strike: DUO['relevo-de-sangre'].contact });
+      if (next) {
+        const lands = DUO['relevo-de-sangre'].contact + .64;
+        dualFx.after(lands, () => { hit(next, clawFlash, 1.4 * (next.rigid ? .4 : 1)); shake = Math.max(shake, .25); pulse?.(.6, .7); cue('bleed'); });
+        cue('rise', { delay: .3 });
+      }
+    }
+    if (id === 'bombardeo-orbital' && e.dual) {
+      const plan = orbitPlan();
+      dualFx.orbitCharge(plan.bip, plan.foes, view);
+      cue('charge'); [.1, .3, .5].forEach(at => cue('clink', { delay: at }));
+    }
+    if (id === 'bombardeo-orbital' && e.detonation) {
+      const plan = orbitPlan(), salvos = BLAST['bombardeo-orbital'].salvos;
+      salvos.forEach((at, k) => dualFx.after(at, () => {
+        dualFx.orbitSalvo(k, plan.bip, plan.foes);
+        cue('zap');
+        if (k < salvos.length - 1) { shake = Math.max(shake, .25); pulse?.(.4, .6); for (const f of fighters.values()) if (!f.party && f.hp > 0) hit(f, cyanFlash, .9); }
+      }));
+    }
+    if (id === 'reserva-de-color' && e.detonation && target) {
+      const v = viewDir();
+      dualFx.fuseFlare(v3(chestOf(target).add(new pc.Vec3(v.x, v.y, v.z).mulScalar(.4))), view, BLAST['reserva-de-color'].contact);
+      cue('burn'); hit(target, flame, .8);
+    }
+    if (id === 'reserva-de-color' && e.dual && target) {
+      const painter = wearer('prismatico'), math = wearer('matemagico');
+      dualFx.paintFuse({ at: v3(chestOf(target)), size: spotOf(target).size, hand: handOf(math), painter: painter && v3(chestOf(painter)), view, lit: DUO['reserva-de-color'].contact });
+      cue('splash', { delay: .1 }); cue('fire-cast', { delay: .55 }); cue('burn', { delay: .85 });
+    }
+  }
+  /**
+   * The camera and spotlight of a dual of two ánimas (`DUO`) or its blast: first the two who make it
+   * and whoever it is for, the rest of the picture gone grey, then in on where it lands; Relevo de
+   * sangre follows the wound to the next foe, Bombardeo orbital looks up at Bip and then over the foes.
+   */
+  function duoLens(e: BattleEffect, target: Fighter | undefined, t: number) {
+    const look = (p: pc.Vec3, k = .75) => ({ x: (p.x - frame.x) * k, z: (p.z - frame.z) * k });
+    const pair = (e.dual?.actors ?? [e.actor]).map(id => fighters.get(id)).filter((f): f is Fighter => !!f);
+    const mid = (list: Fighter[]) => list.reduce((sum, f) => sum.add(f.base), new pc.Vec3()).mulScalar(1 / Math.max(1, list.length));
+    const foes = [...fighters.values()].filter(f => !f.party && f.hp > 0 && !f.part);
+    const points: { x: number; y: number; z: number; radius: number }[] = [];
+    const keep = (f: Fighter | undefined, k = 1.15) => { if (f && points.length < 4) points.push({ ...v3(chestOf(f)), radius: k * f.scale.y }); };
+    const id = e.dual?.id ?? e.detonation, contact = duoOf(e)?.contact ?? 0;
+    if (id === 'bombardeo-orbital') {
+      const centre = foes.length ? mid(foes) : anchor;
+      if (e.dual) {
+        Object.assign(lensWant, { yaw: 0, pitch: -2, zoom: .12, ...look(centre, .55), y: 1.1 });
+        const plan = orbitPlan(); points.push({ ...plan.bip, radius: 1.6 }); foes.slice(0, 3).forEach(f => keep(f));
+        spotWant = .8;
+      } else {
+        Object.assign(lensWant, { yaw: 0, pitch: -6, zoom: .14 + .05 * Math.min(1, t / .7), ...look(centre, .7), y: .3 });
+        spotWant = 0;
+      }
+    } else if (id === 'reserva-de-color' && e.detonation) {
+      const host = target ?? foes[0];
+      if (host) Object.assign(lensWant, { yaw: 0, pitch: -5, zoom: .1, ...look(mid(foes.length ? foes : [host]), .6), y: 0 });
+      spotWant = 0;
+    } else if (target) {
+      const next = e.relay ? fighters.get(e.relay.target) : undefined;
+      if (t < contact * .55) {
+        Object.assign(lensWant, { yaw: 0, pitch: -9, zoom: .2, ...look(mid([...pair, target]), .75), y: 0 });
+      } else if (next && t > contact + .2) {
+        Object.assign(lensWant, { yaw: 0, pitch: -5, zoom: .14, ...look(mid([target, next]), .7), y: 0 });
+      } else {
+        Object.assign(lensWant, { yaw: id === 'sutura-de-luz' ? 0 : -10 * smooth(t / contact), pitch: -6, zoom: id === 'sutura-de-luz' ? .3 : target.rigid ? .06 : .26, ...look(target.base, .7), y: 0 });
+      }
+      keep(target, 1.4); if (next) keep(next, 1.3); pair.forEach(f => keep(f));
+      spotWant = t < contact + .35 || next ? 1 : 0;
+    }
+    if (spot && spotAmount > .002) spot(spotAmount, points);
+  }
+  /** Fight seconds the next glint of a lasting dual is due in: Sutura's stitches, a lit fuse, Bombardeo's beat. */
+  const holds = { suture: 0, fuse: 0, orbit: 0, fleck: 0 };
+  /** The duals that last show while they do (`sutureHold`, `fuseHold`, `orbitHold`), unless their own dual is still drawing them. */
+  function holdTells(dt: number, t: number) {
+    if (!state || !dualFx.on) return;
+    const own = (id: string, until: number) => effect?.dual?.id === id && t < until;
+    if ((holds.suture -= dt) <= 0) {
+      holds.suture = .75;
+      if (!own('sutura-de-luz', DUO['sutura-de-luz'].end)) for (const a of state.allies) if (a.suture && a.hp > 0) { const f = fighters.get(a.id); if (f) dualFx.sutureHold(v3(chestOf(f).add(new pc.Vec3(...Object.values(viewDir())).mulScalar(.35))), viewDir()); }
+    }
+    if ((holds.fuse -= dt) <= 0) {
+      holds.fuse = .09; const flecks = (holds.fleck = (holds.fleck + 1) % 5) === 0;
+      if (!own('reserva-de-color', DUO['reserva-de-color'].contact)) for (const foe of state.foes) if (foe.fuse && foe.hp > 0) { const f = fighters.get(foe.id); if (f) { const v = viewDir(); dualFx.fuseHold(v3(chestOf(f).add(new pc.Vec3(v.x, v.y, v.z).mulScalar(.4))), flecks); } }
+    }
+    if ((holds.orbit -= dt) <= 0) {
+      holds.orbit = 1;
+      if (!own('bombardeo-orbital', 1.3) && state.allies.some(a => a.charge?.dual === 'bombardeo-orbital' && a.hp > 0)) { const plan = orbitPlan(); dualFx.orbitHold(plan.bip, plan.foes, viewDir()); cue('clink'); }
     }
   }
   /**
@@ -1230,6 +1368,51 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     // Vertitrón's shout, its charge, and news of its eye breaking draw their own picture (`worldFx`).
     if (actor.robot && !target) return;
     // Rayo solar charging up: Gerard's fire streams into Bip.
+    const dual = action.dual;
+    // The duals of other ánimas and their blasts: what they draw was set going as they started
+    // (`startDuo`); here, how they land.
+    if (action.detonation) {
+      const orbital = action.detonation === 'bombardeo-orbital';
+      for (const h of action.hits ?? []) {
+        const f = fighters.get(h.target);
+        if (!f) continue;
+        hit(f, orbital ? white : flame, (orbital ? 1.8 : 1.5) * (f.rigid ? .4 : 1));
+        if (!orbital) {
+          dualFx.paintBlast(v3(chestOf(f)), v3(floorUnder(f)), viewDir(), h.target === action.target);
+          effects.element('fire', v3(chestOf(f)), { strength: h.target === action.target ? 1.4 : 1 });
+        }
+      }
+      pulse?.(1, 1, orbital ? .6 : .25); zoom.x = Math.max(zoom.x, HIT.punch.size * 1.8); shake = Math.max(shake, orbital ? .55 : .45);
+      cue(orbital ? 'crack' : 'fire-hit');
+      return;
+    }
+    if (dual?.id === 'bombardeo-orbital') { pulse?.(.2, .5); return; }
+    if (target && dual?.id === 'sutura-de-luz') {
+      hit(target, gold, .9); pulse?.(.3, .6); zoom.x = Math.max(zoom.x, HIT.punch.size * .8);
+      effects.heal(floorUnder(target)); cue('heal'); return;
+    }
+    if (target && dual?.id === 'relevo-de-sangre') {
+      const from = catsOf(dualRoles(action).claws)?.haru.entity.getPosition() ?? actor.base;
+      const dx = target.base.x - from.x, dz = target.base.z - from.z, d = Math.hypot(dx, dz) || 1;
+      const crit = action.crit ? critBeat(action, [target], actor, { x: dx / d, z: dz / d }) : undefined;
+      if (action.bled && action.target) statusFx.spill(action.target, v3(chestOf(target)), { x: dx / d, z: dz / d }, action.bled);
+      hit(target, clawFlash, 1.1 * (target.rigid ? .4 : 1));
+      const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
+      const landed = land({ share: Math.max(.5, unit ? (action.amount ?? 0) / unit.maxHp : 0), skill: true, ko: target.hp <= 0, crit }, dx / d, 0, dz / d);
+      pulse?.(1, 1); shake = Math.max(shake, .35);
+      cue('claw-deep'); if (crit) cue('crit');
+      return landed;
+    }
+    if (target && dual?.id === 'reserva-de-color') { hit(target, flame, 1.2); pulse?.(.4, .8); shake = Math.max(shake, .2); cue('fire-hit'); return; }
+    if (target && action.skill === 'punado') {
+      dualFx.paintFuse({ at: v3(chestOf(target)), size: spotOf(target).size, painter: v3(chestOf(actor)), view: viewDir(), lit: 1.6, fire: false });
+      cue('hit'); return;
+    }
+    if (target && action.skill === 'ostinato') {
+      const at = v3(chestOf(target));
+      for (let i = 0; i < 2; i++) dualFx.ring({ ...at, x: at.x + .2*i }, viewDir(), .62, '#9ce4cd', { life: 1.2, size: 2 });
+      return;
+    }
     if (action.charging) { chargeUp(action); return; }
     // A golpe crítico, on whoever it struck (a flurry's first claw here; the others as they land).
     const struck = action.hits ? action.hits.flatMap(h => { const f = h.crit ? fighters.get(h.target) : undefined; return f ? [f] : []; }) : target ? [target] : [];
@@ -1330,14 +1513,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const list = skyTargets(action, target), stage = stageOf(action);
     if (action.rain) {
       const gap = rainGap(action.rain.length);
-      for (; sky.fell < list.length && t >= spec.contact + sky.fell * gap - spec.fall; sky.fell++) if (animate) diceFx.skyFall(spotOf(list[sky.fell]), spec.fall);
+      for (; sky.fell < list.length && t >= spec.contact + sky.fell * gap - spec.fall; sky.fell++) if (animate) diceFx.skyFall(spotOf(list[sky.fell]), spec.fall, .8);
       // The first lands with the action's contact (`skyBurst`); the rest here.
       for (sky.landed = Math.max(1, sky.landed); sky.landed < list.length && (!animate || t >= spec.contact + sky.landed * gap) && impacted; sky.landed++) {
         impact?.(sky.landed);
         if (!animate) continue;
         const f = list[sky.landed];
         diceFx.skyLand(spotOf(f)); hit(f, astral, .9); cue('mana');
-        shake = Math.max(shake, .08);
+        shake = Math.max(shake, .08); nightLift = Math.max(nightLift, .5);
       }
       return;
     }
@@ -1348,10 +1531,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (stage === 2) {
       const mid = new pc.Vec3(); list.forEach(f => mid.add(f.base)); mid.mulScalar(1 / Math.max(1, list.length));
       const first = spotOf(list[0] ?? actor), feet = { x: mid.x, y: groundHeight(mid.x, mid.z), z: mid.z };
-      diceFx.skyFall({ ...first, centre: { ...feet, y: feet.y + .9 }, feet, size: 1.6 }, spec.fall, 'meteor', 3.2);
+      diceFx.skyFall({ ...first, centre: { ...feet, y: feet.y + .9 }, feet, size: 1.6 }, spec.fall, 2.2);
       return;
     }
-    if (target) diceFx.skyFall(spotOf(target), spec.fall, 'meteor', stage ? 1.5 : .8);
+    if (target) diceFx.skyFall(spotOf(target), spec.fall, stage ? 1.5 : .9);
   }
   /** A sky skill landing: the rain's first die, the shower of Ases en dúo on each of the party, a rock of light on whom it reaches. */
   function skyBurst(action: BattleEffect, actor: Fighter, target?: Fighter) {
@@ -1359,7 +1542,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (action.rain) {
       const f = list[0];
       if (f) { diceFx.skyLand(spotOf(f)); hit(f, astral, 1); }
-      pulse?.(.06, .35); shake = Math.max(shake, .1);
+      nightLift = Math.max(nightLift, .5); pulse?.(.06, .35); shake = Math.max(shake, .1);
       return;
     }
     if (action.skill === 'ases-en-duo') {
@@ -1370,6 +1553,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     if (stage === undefined || !list.length) return;
     list.forEach(f => { diceFx.meteorLand(spotOf(f), stage); hit(f, astral, 1.2 + stage * .3); });
+    nightLift = Math.max(nightLift, .7 + stage * .15);
     pulse?.(.1 + stage * .12, .5 + stage * .25, stage === 2 ? .3 : 0);
     shake = Math.max(shake, .18 + stage * .2); zoom.x = Math.max(zoom.x, HIT.punch.size * (1 + stage * .5));
     const first = list[0], firstId = action.hits?.[0]?.target ?? action.target, unit = state && [...state.allies, ...state.foes].find(u => u.id === firstId);
@@ -1395,13 +1579,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const spec = effect?.actor === id ? skyOf(effect) : undefined, mine = spec && stageOf(effect!);
       if (spec && mine !== undefined) stage = effectTime >= spec.contact + .25 ? stage : effectTime < spec.contact - spec.fall ? mine : 0;
       if (!rock && !stage) continue;
-      if (!rock) { rock = { kept: stamps.keep('meteor'), size: 0, turn: Math.random() * 360 }; rocks.set(id, rock); }
-      const want = stage ? DIE.size * f.scale.y * (stage === 1 ? 2.4 : 3.6) : 0, at = new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + (2.2 + stage * .22) * f.scale.y + Math.sin(time * 1.3) * .05, f.base.z);
+      if (!rock) { rock = { kept: stamps.keepCrystal(), size: 0, turn: Math.random() * 360 }; rocks.set(id, rock); }
+      const want = stage ? DIE.size * f.scale.y * (stage === 1 ? 1.5 : 2.3) : 0, at = new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z) + (2.2 + stage * .22) * f.scale.y + Math.sin(time * 1.3) * .05, f.base.z);
       // Gone without being thrown: it comes apart into stars and drifts off.
       if (!want && rock.size > .05 && animate && !(spec && mine !== undefined)) effects.emit('astral', at, 14, rock.size * .6);
       rock.size = !animate || (!want && !(spec && mine !== undefined)) ? want : rock.size + (want - rock.size) * (1 - Math.exp(-dt * 7));
-      rock.turn += dt * 26;
-      rock.kept.set(at, rock.size, rock.turn, .7);
+      rock.turn += dt * 40;
+      rock.kept.set(at, rock.size, rock.turn, .55);
       if (animate && rock.size > .1 && Math.random() < dt * 5) effects.emit('astral', at, 1, rock.size * .5);
       if (!want && rock.size < .01) { rock.kept.drop(); rocks.delete(id); }
     }
@@ -1540,6 +1724,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }));
       return;
     }
+    // Powder's own (Estallido, the poison, the shards): shown by what they leave, for now.
+    if (reaction.id === 'estallido' || reaction.id === 'veneno' || reaction.id === 'cristal') return;
     if (e.target) statusFx.react(reaction.id, e.target);
   }
   /**
@@ -1797,7 +1983,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const center = foes.length ? foes.reduce((sum, o) => sum.add(o.base), new pc.Vec3()).mulScalar(1 / foes.length) : new pc.Vec3(f.base.x + ahead.x * 3, 0, f.base.z + ahead.z * 3);
       // A dual whose claws are Papagato's: these two are in it, whoever of the pair confirmed it.
       const dualHere = !!effect?.dual && !!dualPlan && dualStarted === effect && (borrowed ? effect.dual.actors.some(wears) : effect.dual.actors.includes(id) && wearing);
-      const mine = dualHere || (borrowed ? !!effect && wears(effect.actor) : effect?.actor === id);
+      const relay = effect?.dual?.id === 'relevo-de-sangre' && (borrowed ? effect.dual.actors.some(wears) : effect.dual.actors.includes(id) && wearing);
+      const mine = relay || dualHere || (borrowed ? !!effect && wears(effect.actor) : effect?.actor === id);
       // Borrowed and not busy, they get to their places on their own legs.
       const walks = !!borrowed && !mine;
       // Haru: on guard, or the pounce out, the swat and the hop back.
@@ -1836,9 +2023,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           }
         }
         at.y = 0;
-      } else if (mine && (effect?.skill === 'zarpazo' || effect?.skill === 'zarpazos') && target) {
+      } else if (mine && (relay || effect?.skill === 'zarpazo' || effect?.skill === 'zarpazos') && target) {
         // Zarpazos: she stays on the target until the last little claw has landed, and hops back quicker.
-        const flurry = effect.skill === 'zarpazos' ? (effect.strikes?.length ?? 1) - 1 : 0, stay = flurry * CLAW_SECONDS;
+        const flurry = effect?.skill === 'zarpazos' ? (effect.strikes?.length ?? 1) - 1 : 0, stay = flurry * CLAW_SECONDS;
         const out = smooth((t - .05) / (CONTACT_SECONDS - .05)), back = smooth((t - CONTACT_SECONDS - .15 - stay) / (.45 - stay * .4));
         // A big onion stands wider: she lands at its skin, not inside it.
         const landing = spots.strike(target.base), wide = Math.max(0, target.scale.x - 1) * .6, strike = new pc.Vec3(landing.x - ahead.x * wide, 0, landing.z - ahead.z * wide);
@@ -2041,7 +2228,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const center = foes.length ? foes.reduce((sum, o) => sum.add(o.base), new pc.Vec3()).mulScalar(1 / foes.length) : new pc.Vec3(f.base.x + ahead.x * 3, 0, f.base.z + ahead.z * 3);
       let look = new pc.Vec3(center.x, floor + .7, center.z), lean = 0;
       const acting = b.shown && animate && !!target && effect?.actor === id && botStrikes(effect);
-      if (acting && effect!.exploded) {
+      // Sutura de luz: Bip goes to whoever is cured, beside their head, scans them and sews; then home.
+      const sewing = animate && !!target && effect?.dual?.id === 'sutura-de-luz' && effect.dual.actors.includes(id) && t < DUO['sutura-de-luz'].end - .35;
+      // Bombardeo orbital: up over the foes as it is charged, held, and while its salvos go.
+      const orbiting = unit?.charge?.dual === 'bombardeo-orbital' || (animate && effect?.detonation === 'bombardeo-orbital' && t < BLAST['bombardeo-orbital'].end - .5);
+      if (sewing) {
+        const chest = chestOf(target!), v = viewDir(), side = screenAxes(v).right;
+        const beside = new pc.Vec3(chest.x - side.x * .75 + v.x * .5, chest.y + .55 * target!.scale.y, chest.z - side.z * .75 + v.z * .5);
+        b.at.lerp(b.at, beside, 1 - Math.exp(-dt * 8)); look = chest; lean = .3;
+      } else if (orbiting) {
+        b.at.lerp(b.at, new pc.Vec3(center.x, floor + 3.5, center.z), 1 - Math.exp(-dt * 4)); lean = .7;
+      } else if (acting && effect!.exploded) {
         // Explosión: up and into the middle of the foes, faster and faster; it blows up there (`bipBurst`).
         const over = new pc.Vec3(center.x, floor + 1.1, center.z), u = clamp01(t / CONTACT_SECONDS);
         b.at.lerp(rest, over, u * u); lean = 1; look = over;
@@ -2087,7 +2284,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       entity.setLocalScale(size, size, size);
       // Charged with Gerard's fire (Rayo solar) it glows sun yellow from when the fire reaches it until it lets go.
       const releasing = !!effect?.release && effect.actor === id && t < SOLAR.ignite + SOLAR.span + .3;
-      const solar = releasing || (!!unit?.charge && !(effect?.charging === id && t < .5)) ? 1 : 0;
+      const solar = releasing || (unit?.charge?.dual === 'rayo-solar' && !(effect?.charging === id && t < .5)) ? 1 : 0;
       b.solar = animate ? b.solar + (solar - b.solar) * (1 - Math.exp(-dt * 6)) : solar;
       b.bip.animate(dt, { look, lean, power: b.power, animate, solar: b.solar });
     }
@@ -2316,6 +2513,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     },
     /** Where big moments send their chromatic fringe and bloom swell (post.pulse). */
     setPulse(next: (fringe: number, bloom: number, flash?: number) => void) { pulse = next; },
+    /** Where the astral's night goes (post.night): how dark and blue the picture is, and how lit up for a moment. */
+    setNight(next: (amount: number, lift?: number) => void) { setNight = next; },
     /** Where the moments only the picture knows go to sound (a claw landing, a layer off, a fall). */
     setCue(next: typeof cue) { cue = next; },
     /** Haru and Yuki already with the party, if any: this fight uses them instead of bringing its own. It gives them back when it ends. */
@@ -2517,7 +2716,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
+      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -2561,7 +2760,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const target = effect?.target ? fighters.get(effect.target) : undefined;
       // Heals and boosts stay put: no run-up to anyone. Papagato's wearer stays put too: Haru goes.
       // El Campeón getting its PV back is aimed at itself: it stays where it is, like a cure.
-      const support = (!!effect?.skill && SUPPORT.has(effect.skill)) || (effect?.kind === 'enemy' && !!effect.healed);
+      const support = !!effect?.dual || !!effect?.detonation || (!!effect?.skill && SUPPORT.has(effect.skill)) || (effect?.kind === 'enemy' && !!effect.healed);
       const catStrike = effect?.skill === 'zarpazo' || effect?.skill === 'zarpazos';
       // Tecnópata's wearer stays put too: Bip goes.
       const botStrike = botStrikes(effect);
@@ -2576,13 +2775,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const dicing = !!effect?.die && !!target;
       const castLaunch = spelling ? SPELL_LAUNCH : CAST_LAUNCH, castContact = spelling ? SPELL_CONTACT : curing ? CURE_CONTACT : CAST_CONTACT;
       // A dual attack: both its fighters stay where they are; Gerard draws and Haru strikes (`DUAL`).
-      const dual = effect?.dual && target ? effect.dual : undefined;
+      const dual = target && (effect?.dual?.id === 'punto-debil' || effect?.dual?.id === 'zarpazos-de-fuego') ? effect.dual : undefined;
       const roles = dual ? dualRoles(effect!) : undefined;
       const times = dual ? dualTimes(effect!) : undefined;
       if (dual && dualStarted !== effect) startDual(effect!, target!, animate);
+      const duo = duoOf(effect), blastOf = effect?.detonation ? BLAST[effect.detonation] : undefined;
+      if (effect && (duo || blastOf) && !duoPlayed.has(effect)) startDuo(effect, target, animate);
       // Bip's skills land when its ray does (`bipContact`).
       const bipSkill = botStrike && effect!.kind === 'skill';
-      const contact = times ? times[0] : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.target && !support ? CONTACT_SECONDS : .2;
+      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.target && !support ? CONTACT_SECONDS : .2;
       if (effect && !dual && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.(0);
         // Without motion Rayo solar reaches everyone at once.
@@ -2938,7 +3139,21 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       updateCats(dt, t, animate, target);
       updateBips(dt, t, animate, target);
       updateDice(dt, t, animate, target);
+      if (animate) holdTells(dt, t);
       if (effect && actor && skyOf(effect)) skyStep(effect, actor, target, t, animate);
+      // The astral's night: the place goes dark and blue while a skill from the sky runs (less for
+      // Estrella fugaz, which is one star), and each landing lights it up for a moment.
+      {
+        const fromSky = effect && animate ? skyOf(effect) : undefined, oneStar = !!effect && animate && effect.skill === 'estrella-fugaz';
+        // Relevo de sangre's star comes down in the astral's night too, and Bombardeo orbital's ecos and salvos glow in a dimmer one.
+        const relayNight = !!effect && animate && effect.dual?.id === 'relevo-de-sangre' && t > .05 && t < duoEnd(effect) - .3 ? .5 : 0;
+        const orbitNight = !!effect && animate && (effect.dual?.id === 'bombardeo-orbital' || effect.detonation === 'bombardeo-orbital') && t > .05 && t < duoEnd(effect) - .35 ? .45 : 0;
+        const want = fromSky ? (t > .1 && t < diceEnd(effect!) - .35 ? .9 : 0) : oneStar ? (t > .1 && t < diceContact(effect!) + .3 ? .55 : 0) : Math.max(relayNight, orbitNight);
+        night += (want - night) * (1 - Math.exp(-dt * (want > night ? 8 : 4.5)));
+        nightLift *= Math.exp(-dt / .2);
+        if (night < .004 && !want) night = 0;
+        if (night || shownNight) { setNight?.(night, nightLift); shownNight = night; }
+      }
       updateRocks(dt, animate);
       // Foc Binari: once the hand is up, the two streams leave it for the target's chest.
       if (casting && animate && actor && target && spelled !== effect) {
@@ -3005,7 +3220,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           if (pairCats) for (const cat of [pairCats.haru, pairCats.yuki]) if (cat.entity.enabled) points.push({ ...v3(cat.entity.getPosition()), radius: .7 });
           spot(spotAmount, points);
         }
-      } else if (!lensHold) rest();
+      } else if (effect && animate && (duoOf(effect) || effect.detonation) && t < duoEnd(effect) - .25) duoLens(effect, target, t);
+      else if (!lensHold) rest();
       const ease = animate ? 1 - Math.exp(-elapsed * 5) : 1;
       for (const key of ['yaw', 'pitch', 'zoom', 'x', 'y', 'z'] as const) lens[key] += (lensWant[key] - lens[key]) * ease;
       const was = spotAmount;
@@ -3026,7 +3242,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : casting ? castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);

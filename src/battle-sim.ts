@@ -10,7 +10,7 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
@@ -185,6 +185,7 @@ const BOOKS = {
   luca: { rules: LUCA },
   reaction: { rules: REACTION_RULES },
   element: { rules: ELEMENT_RULES },
+  powder: { rules: POWDER_RULES },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
 } as unknown as Record<string, Record<string, Record<string, unknown>>>;
@@ -279,7 +280,7 @@ export function legalChoices(state: BattleState, setup: Pick<Setup, 'ban'>, swap
   if (duals) for (const option of dualOptions(state, swaps)) {
     if (!option.ok || dualBanned(option.dual, setup.ban)) continue;
     const wearing = option.wear ? { wear: option.wear } : {};
-    for (const target of validTargets(state, 'attack')) out.push({ ...wearing, action: 'dual', dual: option.dual.id, target: target.id });
+    for (const target of dualTargets(state, option.dual)) out.push({ ...wearing, action: 'dual', dual: option.dual.id, target: target.id });
   }
   return out;
 }

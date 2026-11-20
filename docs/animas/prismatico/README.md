@@ -1,11 +1,9 @@
-# Prismático
+# Colorista
 
-Status: designed again 2026-11-20, in Aitor's fifth round of that day: **no paint any more, only
-the puff** (dry coloured powder, as at a Holi). Its mechanics are his; the skill list, the names
-and every number are proposals waiting for his yes. In the game today, under their paint names:
-the wearable ánima, *Brochazo*, *Pintado* (with no reactions) and the dual *Reserva de color*. The
-powder's look is built in the effects lab · Comes from: Luca's mission,
-[`docs/quests/luca.md`](../../quests/luca.md)
+Status: designed 2026-11-20 round the puff (dry coloured powder, as at a Holi) and **agreed by
+Aitor that day**: the mechanics are his, and he said yes to the skill list and its names. Numbers
+are first guesses. Its id in the code and this folder stay `prismatico`. Being built: § Implementation
+· Comes from: Luca's mission, [`docs/quests/luca.md`](../../quests/luca.md)
 
 What is **decided** says so and by whom. Everything else is a proposal, and its numbers are first
 guesses ([`../README.md`](../README.md) § Order of work).
@@ -14,7 +12,7 @@ guesses ([`../README.md`](../README.md) § Order of work).
 
 | When | What |
 | --- | --- |
-| 2026-11-16 | The name is **Prismático** (the prism idea has since gone to Marta's ánima: § Open) |
+| 2026-11-16 | The name was Prismático (the prism idea has since gone to Marta's ánima) |
 | 2026-11-20 | It is **more of a tank, a protector**. The dynamic and the idea: **protection and changes of state** |
 | 2026-11-20 | **No paint: the puff.** Dry powder thrown by the handful, as at a Holi. Everything is named after it |
 | 2026-11-20 | The powder on a foe **does nothing by itself; it waits for an element** |
@@ -23,6 +21,9 @@ guesses ([`../README.md`](../README.md) § Order of work).
 | 2026-11-20 | **Electricity** leaves the powder **crystalline**: a new status that lasts a time, in which **every attack it receives does a certain amount more**, because the shards dig in |
 | 2026-11-20 | **Protective spells**: they **raise everyone's Defensa** and stand **a shield of particles in front** that **halves the next attack**. The first protects one, the second both. *Lienzo* and *Barniz* are out |
 | 2026-11-20 | The puffs come in **different colours, which do nothing**: not saturated, **mixed and matte** |
+| 2026-11-20 | **Yes to the design as it stands**: the skill list and its names (*Cortina* and *Telón* above all), *Rebufo*, its own water, the name *Cristalizado* |
+| 2026-11-20 | **Cristalizado grows**: each blow more does more damage than the one before |
+| 2026-11-20 | The name could be **Colorista** (his word: *podría ser*). Taken as its name until he says otherwise |
 
 What his earlier rounds of the same day lose: paint that shines on the floor, electricity that
 sets the foe hard and takes its turn (*Endurecido*, *Añicos*), and the blows brought to the wearer
@@ -48,15 +49,15 @@ sets the foe hard and takes its turn (*Endurecido*, *Añicos*), and the blows br
 **The party's screen: it halves the blow that matters, and whoever breaks through it comes away
 covered in powder for an element to finish.**
 
-| | Prismático | Papagato | Matemágico | Tecnópata | Dadista | Sincopante |
+| | Colorista | Papagato | Matemágico | Tecnópata | Dadista | Sincopante |
 | --- | --- | --- | --- | --- | --- | --- |
 | Hurts with | Light physical blows; the damage is in what the powder becomes | Physical blows | Magic, with elements | Magic, clocks | Physical faces; the astral, by luck | The astral, through ecos |
 | Its resource | **Empolvado on the foe**, part of it laid by being hit | Sangrado on the foe | Elements and their statuses | Clock statuses | Crítico (the Racha) | Ecos on its own side |
 | Pays off as | An element on the powder: **Estallido** (fire), **Envenenado** (water), **Cristalizado** (electricity) | A golpe crítico on the wound | A reaction between elements | Longer clocks, control | Críticos, Dados astrales | Ecos raised, Tutti |
 
 - **Good at**: the big announced blow (a screen is half of it, for one maná); making the party's
-  own blows count for more (a poisoned foe takes a quarter more, a crystallised one a fixed amount
-  more on every hit); fights with several foes (one fire sets off every powdered one).
+  own blows count for more (a poisoned foe takes a quarter more, a crystallised one more with
+  every hit); fights with several foes (one fire sets off every powdered one).
 - **Bad at**: damage of its own (Fuerza −1, light blows at every level). Alone it only has the
   poison: the explosion and the crystal need fire and electricity from someone else
   (Matemágico's Atacar, Foc Binari, Tecnópata's Explosión, a dual). A screen is one blow: a foe
@@ -91,7 +92,7 @@ The loop:
    | --- | --- | --- |
    | Fire | **Estallido** | The powder explodes: magic fire damage on that foe (22) and half on every other; the blast sets off the powder on the others. Then **every foe is Quemado one level higher** |
    | Water | **Envenenado** | 20 s of poison that pulses, and **every blow on that foe, physical or magic, lands 25 % harder** while it lasts |
-   | Electricity | **Cristalizado** | 20 s in which **every blow that foe receives does 8 more**: the shards dig in |
+   | Electricity | **Cristalizado** | 20 s in which **every blow that foe receives does more than the one before**: 4 more the first, 8 the second, up to 20. The shards dig in |
 
 3. **The change raises the screen again** (level 5, *Remolino*): each time a foe's powder turns
    into something, a cortina stands in front of the wearer. So the screen, the powder and the
@@ -180,8 +181,8 @@ What each one is for in the loop:
 - **Telón** is the answer to the blow on everyone a boss announces (*Preparando → todos*): today
   both players spend that turn on Defender; with it one maná more halves it for both, and the
   other player keeps acting.
-- **Traca** spends and builds at once: five light blows, each of them 8 stronger on a crystallised
-  foe and a quarter stronger on a poisoned one, and every foe it touches is powdered again. Its
+- **Traca** spends and builds at once: five light blows, each of them stronger than the last on a
+  crystallised foe and a quarter stronger on a poisoned one, and every foe it touches is powdered again. Its
   one way of hurting, and it only hurts on what the party has prepared.
 
 ## Definitiva: Fin de fiesta
@@ -214,7 +215,7 @@ Level 5. Aitor wears it (maná 4); Gerard wears Matemágico with Atacar · Fuego
 | 2 · Aitor | *Puñado* on B (1 maná) | 18. B Empolvado |
 | 2 · Foes | A and C strike Aitor, B strikes Gerard | Aitor −8 (halved; A Empolvado again) and −16. Gerard −21 |
 | 3 · Gerard | Atacar · Eléctrico on B | B **Cristalizado**, 20 s. *Remolino*: a cortina in front of Aitor |
-| 3 · Aitor | *Rociada* (2 maná) | 14 on A and C, **22 on B** (the shards). A **Envenenado I**: from now on every blow on A lands 25 % harder |
+| 3 · Aitor | *Rociada* (2 maná) | 14 on A and C, **18 on B** (the first shard; the next blow on B will do 8 more). A **Envenenado I**: from now on every blow on A lands 25 % harder |
 | 3 · Foes | A, B and C strike | Whoever hits Aitor first does 8 and is Empolvado |
 
 Three rounds and the three exits. Aitor has lost about 64 PV of 135 and Gerard 32, against 72
@@ -337,12 +338,12 @@ Nothing to measure yet. What to watch once it plays:
   on every wet foe, after a 2-maná skill). The first number to lower is the half the others take.
 - **Envenenado's quarter** on a boss, kept up all fight: with its own water the ánima needs nobody
   for it. Against *Ángulo exacto* (Defensa and Espíritu −3 for three rounds, about 3 a blow).
-- **Cristalizado under a flurry**: 8 on every hit. Bombardeo orbital's three volleys, the ecos,
-  Dadista's dice, *Traca* itself (five hits: 40 more). If it runs away, a cap on the hits it
-  counts, or shards that are spent.
+- **Cristalizado under a flurry**: 4, 8, 12, 16 and then 20 on every hit. Bombardeo orbital's
+  three volleys (24 more), the ecos, Dadista's dice, *Traca* itself (five hits on one foe: 60
+  more). The cap of 20 is the brake; the step of 4 is the first number to lower.
 - **The largest single blow**: the powder adds no multiplier of its own. On a foe poisoned and
-  crystallised, a blow of 50 with a golpe crítico is 50 × (1 + 0.25 + 0.5) + 8 = 96; Punto débil
-  triples it before the shards, as on any blow (271).
+  crystallised at its cap, a blow of 50 with a golpe crítico is 50 × 1.5 × 1.25 + 20 = 114; Punto
+  débil triples it before the shards, as on any blow (301).
 - **The cortina for one maná**: half of an announced blow and Defensa +3 for three rounds, at
   level 1. Against *Corchete* (a third of every blow of the round on one ally, 1 die).
 - **Remolino**: with one element a round, the wearer has a cortina every round for nothing.
@@ -350,23 +351,12 @@ Nothing to measure yet. What to watch once it plays:
 
 ## Open
 
-1. **The name.** Prismático was for prisms and binoculars; the prism has gone to Marta's ánima
-   and this one is powder. Recommendation: **Polvorista** (who makes powder and fireworks; it
-   sits with Dadista and Sincopante). Others: *Polvorín*, or keeping Prismático for the
-   binoculars Luca hands over. The id `prismatico` and the docs keep the old name until he says.
-2. **The crystal: a fixed amount on every blow, or one that grows?** Read here as fixed (+8 on
-   every blow received while it lasts), which is what makes it different from the poison: the
-   poison is for whoever hits hard, the crystal for whoever hits often. The other reading: each
-   blow received adds to the next (+4, +8, +12…). Recommendation: fixed; it is read at a glance
-   and has no count to follow.
-3. **How much the poison amplifies**: 25 % at any level, with the pulses climbing by level as
-   Quemado's. Recommendation: that, until the balance.
-4. **The other dynamic of the cortina**: *Rebufo* (whoever breaks it is Empolvado).
-   Recommendation: yes; it is what makes the protection part of the powder and not a second
-   ánima beside it. The alternative, a cortina that an element turns into something else, is
-   kept for the duals.
-5. **Its own water** (*Rociada*): the ánima can poison alone, and needs someone else for fire and
-   electricity. Recommendation: yes; with none of its own, a party without elements would throw
-   powder for nothing.
-6. **Grey in the first round?** The muted mix is already half-way to grey. Recommendation: grey
-   in the first round all the same, so the colours are what the second round gives back.
+Answered by Aitor on 2026-11-20: the name (Colorista), the crystal (it grows), *Rebufo* and its own
+water (yes). What is left:
+
+1. **How much the poison amplifies**: 25 % at any level, with the pulses climbing by level as
+   Quemado's. For the balance.
+2. **Grey in the first round?** He did not say; taken as the recommendation: grey in the first
+   round, so the colours are what the second round gives back.
+3. **The id**: `prismatico` in the code and this folder, as Dadista's is `dadaista`. Renaming it
+   is a change across the whole game for no gain; left unless he asks.

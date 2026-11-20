@@ -35,6 +35,11 @@ lights-update:
     git submodule update --init --remote vendor/geraitor_domotic_house
     git -C vendor/geraitor_domotic_house log --oneline -1
 
+# How long each bulb at home takes to get a message on the LAN (read-only: it only asks them how they are)
+[group('Setup')]
+lights-latency rounds="20":
+    uv run --locked python lifx_lan.py {{rounds}}
+
 # Play in development: the API (saves, battle AI) and the game together on the first free ports, and open the game (GERARD_OPEN=0 to not open it; no live reload)
 [group('Development')]
 dev:
@@ -95,12 +100,13 @@ dev-day day="4":
     @[[ "{{ day }}" =~ ^[0-9]+$ && "{{ day }}" -ge 2 ]] || { printf 'Use a day from 2 on (7 is the end without ánimas).\n'; exit 1; }
     npm run dev -- --open '/?story=castle&day={{ day }}'
 
-# Come back to the Meridiana at night from Fabra i Puig, her castle at a stage 0-4 (harder each stage): just dev-night 4 nuria
+# Come back to the Meridiana at night from Fabra i Puig, her castle at a stage 0-4 (harder each stage), with the pupils of a castle year 1-3 out: just dev-night 4 nuria 2
 [group('Development')]
-dev-night castle="2" with="":
+dev-night castle="2" with="" year="1":
     @[[ "{{ castle }}" =~ ^[0-4]$ ]] || { printf 'Use a castle stage from 0 (just appeared) to 4 (on the Meridiana).\n'; exit 1; }
-    @[[ "{{ with }}" =~ ^[a-z,]*$ ]] || { printf 'Use ánima missions done as a list, e.g. nuria.\n'; exit 1; }
-    npm run dev -- --open '/?story=metro&night={{ castle }}{{ if with != "" { "&with=" + with } else { "" } }}'
+    @[[ "{{ with }}" =~ ^[a-z,]*$ ]] || { printf 'Use ánima missions done as a list, e.g. nuria (or "" for none).\n'; exit 1; }
+    @[[ "{{ year }}" =~ ^[1-3]$ ]] || { printf 'Use a castle year from 1 to 3 (whose pupils are out).\n'; exit 1; }
+    npm run dev -- --open '/?story=metro&night={{ castle }}{{ if with != "" { "&with=" + with } else { "" } }}{{ if year != "1" { "&year=" + year } else { "" } }}'
 
 # Debug chapter 2 with one player: Gerard's controls also drive Aitor in battle (just dev-solo off to undo)
 [group('Development')]

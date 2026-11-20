@@ -221,33 +221,38 @@ export function createDiceFx(effects: Effects, dualFx: DualFx, stamps?: Stamps) 
       }
     },
     /**
-     * A die of light on its way down to `spot` (Dados astrales): it lands `fall` seconds from now,
-     * steeply and from one side, with its stars behind it. `size`: how big it is (× a die).
+     * A die that is a star on its way down to `spot` (Dados astrales, the meteors): a cube of glass
+     * tumbling inside its own light, down a long curve from one side of the sky, landing `fall`
+     * seconds from now. Behind it a wide blue wake that stays a while, a white thread inside it, and
+     * stars shed all the way. `size`: how big it is (× a die).
      */
-    skyFall(spot: FaceSpot, fall = .42, id: 'astral' | 'meteor' = 'astral', size = .5) {
+    skyFall(spot: FaceSpot, fall = .7, size = .5) {
       if (!dualFx.on) return;
-      const c = ASTRAL_COLOURS, lean = (Math.random() < .5 ? -1 : 1) * (2.2 + Math.random() * 1.4), high = 7.5;
-      const from = { x: spot.right.x * lean + spot.up.x * high, y: spot.right.y * lean + spot.up.y * high, z: spot.right.z * lean + spot.up.z * high };
-      stamps?.stamp(id, spot.centre, spot.size * size, { from, start: 1, slam: fall, hold: .02, out: .06, grow: .6, fall: 0, roll: Math.random() * 360, spin: 0 });
-      // Its trail: stars left along the way, brightest at the die, and a thin line of light that goes with it.
-      const steps = Math.max(8, Math.round(fall * 30));
+      const c = ASTRAL_COLOURS, side = Math.random() < .5 ? -1 : 1, lean = side * (1.4 + Math.random() * 1.8), high = 8.5, bow = -side * (1.3 + Math.random() * 1.3);
+      // Faster all the way down, bowed to one side: it comes round, not straight.
+      const path = (u: number): V3 => { const k = 1 - u ** 1.6, bend = Math.sin(Math.min(1, u) * Math.PI) * bow; return add(add(spot.centre, spot.right, lean * k + bend), spot.up, high * k); };
+      stamps?.crystal(spot.size * size * .5, fall, path);
+      const steps = Math.max(14, Math.round(fall * 40));
       for (let i = 1; i <= steps; i++) after(fall * i / steps, () => {
-        // The stamp eases in: the same curve, so the stars are where the die is.
-        const k = 1 - (1 - i / steps) ** 3, was = 1 - (1 - (i - 1) / steps) ** 3;
-        const at = add(spot.centre, from, 1 - k), before = add(spot.centre, from, 1 - was);
-        dualFx.line(before, at, id === 'meteor' ? c.core : c.ice, { count: Math.round(10 + size * 14), life: .22 + size * .12, size: 1.6 + size * 1.6 });
-        effects.emit('astral', at, Math.round(2 + size * 5), .05 + size * .1);
+        const at = path(i / steps), before = path((i - 1) / steps);
+        dualFx.line(before, at, c.halo, { count: Math.round(9 + size * 12), life: .55 + size * .2, size: 2.2 + size * 2 });
+        dualFx.line(before, at, c.core, { count: Math.round(5 + size * 6), life: .22 + size * .08, size: 1.3 + size });
+        effects.emit('astral', at, Math.round(1 + size * 4), .07 + size * .14);
       });
     },
-    /** That die landing: two frames of white, a flat ring of stars low over the floor, cold light, and it comes apart into stars that float up. */
+    /** That die landing: it bursts into its star, a halo, spokes of light and a ring of stars along the floor, cold light on whoever is near, and stars that float up. */
     skyLand(spot: FaceSpot, weight = 1) {
       if (!dualFx.on) return;
-      const c = ASTRAL_COLOURS;
-      stamps?.stamp('astral', spot.centre, spot.size * 1.5 * weight, { start: .2, slam: .05, hold: .03, out: .22, grow: .35, fall: 0, roll: Math.random() * 90, spin: 70 });
-      stamps?.stamp('halo', spot.centre, spot.size * 1.3 * weight, { start: .25, slam: .16, hold: 0, out: .16, grow: .5, fall: 0, opacity: .7 });
-      burst('flare', { at: spot.centre, count: 1, spread: .03, life: [.1, .16], colour: c.core, light: { intensity: 2.2 * weight, range: 2.4 * weight, colour: c.ice } });
-      dualFx.ring({ ...spot.feet, y: spot.feet.y + .06 }, { x: 0, y: 1, z: 0 }, spot.radius * .6, c.core, { count: Math.round(24 * weight), outward: 3.2 * weight, life: .34, size: 1.5, kind: 'twinkle' });
-      effects.emit('astral', spot.centre, Math.round(14 * weight), spot.size * .3 * weight);
+      const c = ASTRAL_COLOURS, floor = { ...spot.feet, y: spot.feet.y + .06 };
+      stamps?.stamp('astral', spot.centre, spot.size * 1.9 * weight, { start: .2, slam: .05, hold: .04, out: .26, grow: .35, fall: 0, roll: Math.random() * 90, spin: 70 });
+      stamps?.stamp('halo', spot.centre, spot.size * 1.5 * weight, { start: .25, slam: .16, hold: 0, out: .2, grow: .6, fall: 0, opacity: .75 });
+      burst('flare', { at: spot.centre, count: 1, spread: .03, life: [.12, .2], colour: c.core, light: { intensity: 3.2 * weight, range: 3.4 * weight, colour: c.halo } });
+      dualFx.ring(floor, { x: 0, y: 1, z: 0 }, spot.radius * .5, c.core, { count: Math.round(36 * weight), outward: 3.6 * weight, life: .4, size: 1.6, kind: 'twinkle' });
+      dualFx.ring(floor, { x: 0, y: 1, z: 0 }, spot.radius * .8, c.halo, { count: Math.round(40 * weight), outward: 1.5 * weight, life: .7, size: 1.3, kind: 'mote' });
+      // Spokes along the floor, as a star laid flat.
+      const turn = Math.random() * Math.PI;
+      for (let i = 0; i < 6; i++) { const a = turn + i * Math.PI / 3, reach = (.7 + (i % 2) * .5) * weight; dualFx.line(floor, { x: floor.x + Math.cos(a) * reach, y: floor.y, z: floor.z + Math.sin(a) * reach }, c.ice, { count: 10, life: .3, size: 1.5 }); }
+      effects.emit('astral', spot.centre, Math.round(18 * weight), spot.size * .32 * weight);
     },
     /**
      * A rock of light landing (Meteorito, Meteoro, Asteroide: `stage` 0 to 2): the white of it, a halo
@@ -267,14 +272,14 @@ export function createDiceFx(effects: Effects, dualFx: DualFx, stamps?: Stamps) 
       for (let i = 1; i <= 2 + stage * 2; i++) after(.12 * i, () => effects.emit('astral', add(spot.centre, spot.up, spot.size * (.5 + i * .22)), Math.round(8 * w), spot.size * (.5 + i * .15) * w));
     },
     /**
-     * Ases en dúo: two dice turned to glass and light circle each other once over `top`, joined by a
+     * Ases en dúo: two dice that are stars circle each other once over `top`, joined by a
      * thin line of stars, for `seconds`.
      */
     aces(top: V3, right: V3, up: V3, seconds = .5) {
       if (!dualFx.on) return;
       const c = ASTRAL_COLOURS, steps = 16, wide = .55;
       const at = (k: number, side: number): V3 => { const a = k * Math.PI * 2; return add(add(top, right, Math.cos(a) * wide * side), up, Math.sin(a) * wide * .45 * side); };
-      for (const side of [-1, 1]) stamps?.stamp('astral', at(0, side), .5, { start: .2, slam: .1, hold: seconds - .1, out: .12, grow: .4, fall: 0, spin: 240 * side, from: { x: 0, y: -.5, z: 0 } });
+      for (const side of [-1, 1]) stamps?.crystal(.3, seconds, u => at(u, side));
       for (let i = 0; i <= steps; i++) after(seconds * i / steps, () => {
         const a = at(i / steps, 1), b = at(i / steps, -1);
         effects.emit('astral', a, 3, .05); effects.emit('astral', b, 3, .05);

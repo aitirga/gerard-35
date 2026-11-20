@@ -3,8 +3,7 @@
 Status: designed whole 2026-11-20 around Aitor's direction of that day (floating ecos that work
 for the party, support too; *Crescendo*; the astral; *Da capo* bringing the duals back), and
 reworked the same evening with his answers (no feeding; muffled ecos when switching; Marta's voice
-in them). It is waiting for his yes to the whole. Nothing is built: the game only has Marta's light,
-a placeholder · Comes from:
+in them). It is waiting for his yes to the whole. Ostinato and Bombardeo orbital are playable after Marta’s mission · Comes from:
 Marta's mission, [`docs/quests/marta.md`](../../quests/marta.md)
 
 What is **decided** says so and by whom. Everything else is a proposal, and its numbers are first
@@ -24,6 +23,7 @@ guesses ([`../README.md`](../README.md) § Order of work).
 | 2026-11-20 | **No feeding the eco**: the 2026-11-14 idea is cut |
 | 2026-11-20 | **The ecos keep sounding when their wearer switches ánima, but muffled** |
 | 2026-11-20 | **Marta's voice is the ecos' voice**, worked into them **without getting in the way of the fight's song** |
+| 2026-11-20 | The ecos' mark is **Interferencia** (a voice and its echo), with **cimática and cáustica for the effects** (from the identity study, `output/mockups/sincopante-identidad/index.html`) |
 
 **What the 2026-11-14 proposal loses** (all of it was a proposal, never decided):
 
@@ -308,13 +308,11 @@ Sincopante brings to a pair:
 - **Cures that keep coming** (Bordón), for a dual that shields or heals.
 - **Da capo**: the duals themselves, again. It is the ánima for a party that plays its duals.
 
-None is built. Ideas to take up at the duals step, not designed:
+**Bombardeo orbital** is playable with Tecnópata. Explosión and Ostinato lift Bip above the foes;
+the next round opens with three astral strikes per foe and Cegado II for 20 seconds.
 
-- **Bombardeo orbital** (Tecnópata, proposal 2026-11-14): the eco took Bip up out of sight and three
-  astral volleys fell on every foe as the next round started (`Daño mágico no elemental leve a todos
-  los enemigos. Golpea tres veces. Se carga un turno y sale al empezar el siguiente. Los ciega
-  durante 20 segundos.`). Its halves have gone stale: *Redoble* is cut, and Explosión is now a node
-  of Tecnópata's tree, not a level. Ostinato or Crescendo would be the eco's half.
+Other ideas:
+
 - With Papagato: the eco carrying the purr (*Ronroneo* + Bordón).
 
 ## Look and interface
@@ -322,21 +320,36 @@ None is built. Ideas to take up at the duals step, not designed:
 Aitor's direction (2026-11-20): **the ecos' geometry, with an ethereal, magical, angelic air**. The
 detail is a proposal.
 
+**Three figures, one for each thing an eco is** (Aitor chose them on 2026-11-20 from the identity
+study, `output/mockups/sincopante-identidad/index.html`):
+
+| Figure | What it is | Where it shows |
+| --- | --- | --- |
+| **Interferencia** | A voice and its echo: every ring is doubled by a copy a little apart, fine ripples run out from both, and a pale gold lights up where the two agree | **The eco itself**, and the ánima's mark everywhere else: the ring an eco lets go, the ripples on the floor (from two points, crossing), its wings, *Compás* (two circles a little apart), the dock |
+| **Cimática** | What a note does to what it touches: the figure sand draws on a sounding plate, grains gathered on its still lines. Each grade has its own figure, and the grains jump when it is struck | **The effects that strike**: inside an eco on each beat and in Crescendo, on a foe where a blow lands, the great plate of Tutti (changing figure as it comes down), and the plate under the party in Da capo (its figures played backwards) |
+| **Cáustica** | The light an eco gives: the bright net light makes through moving water | **The effects that give light**: the veil hanging from each eco to a pool on the floor, the veil that wraps an ally Bordón cures, Tutti's column and the pool it leaves |
+
 **In the engine** (built 2026-11-20, the look only; Aitor: «una integración gráfica potente,
-mezclando partículas, VFX bonito, mágico, cambios de luz»). [src/eco-fx.ts](../../../src/eco-fx.ts)
-draws the ecos with the game's own means:
-- **Meshes**: rings of light, a bead and the wings' arcs, all additive, all blooming.
-- **Halo and shaft**: a soft halo facing the camera, and a shaft of light to the floor.
+mezclando partículas, VFX bonito, mágico, cambios de luz», then «me gusta la cimática y la cáustica
+para los efectos»). [src/eco-fx.ts](../../../src/eco-fx.ts) places and times the ecos, and
+[src/eco-shaders.ts](../../../src/eco-shaders.ts) draws them:
+- **Four sheets of light**, each a flat square whose picture is worked out in a WGSL shader and
+  added on top of the fight: *the eco* (Interferencia: bead, doubled rings, ripples, wings, and its
+  note's figure when struck), *the plate* (Cimática), *the water* (Cáustica, as a veil or a pool)
+  and *the wave* (a doubled ring, or ripples from two points). All ecos share the four materials;
+  each sheet takes its numbers per instance, so nothing is compiled while a fight runs.
 - **Light**: one real light shared by all the ecos, which falls on the party under them.
-- **GPU particles**: motes, specks, sparks, rings of dots on the floor.
+- **GPU particles**: motes, specks, sparks, lines of dots between the ecos for the chord.
 - **Beams**: from the trails, a fine core with two strands twisting round it.
 - **The picture**: a pulse of bloom when they sound, and the spotlight that dims and greys the
   fight round them for Crescendo, Da capo and Tutti.
 
 It is played from the effects lab, section *Sincopante · ecos* (`just dev-fx`; docs/dev-tools.md §
 Effects lab). The frames are from `just screenshots sincopante-fx --gpu`, over Las cuerdas with
-Gerard and Aitor. Not yet: the rings on the wearer's nape, and the *Compás* icon on the plate (both
-wait for the ánima itself).
+Gerard and Aitor. Not yet: the rings on the wearer's nape, the *Compás* icon on the plate and the
+dock's theme with the mark (all wait for the ánima itself), and its cost in a real fight
+(`just perf`: the sheets are a few squares, but three ecos at *f* cover a good part of the party's
+side).
 
 A moving sketch, playable from a mock dock in the proposed theme:
 `output/mockups/sincopante-ecos/index.html`, with frames in `frames/`. It shows the compás, the
@@ -349,9 +362,11 @@ They take their geometry from the Eco of Las cuerdas (`src/cuerdas-foes.ts`: a b
 rings, ripples running over the floor), without its body of glass. On the party's side an eco is
 only what a voice leaves in the air.
 
-- **Body**: a bead of light (6 cm, a white core) inside thin rings (6 mm thick), each ring turning
-  slowly on its own axis. A soft halo surrounds it, and a faint shaft of light falls from it towards
-  the floor. On the floor under it, a ripple on each beat: the Eco's ripples, slower and paler.
+- **Body**: a bead of light inside fine rings, **each ring doubled by its echo** a little apart
+  (Interferencia). Fine ripples run out from the bead and from its echo, and where they agree a
+  pale gold lights up; a glint of gold runs round each ring. **A veil of light through water**
+  (Cáustica) hangs from it to a pool of the same light on the floor. On each beat its inside shows
+  its note's figure for a moment (Cimática), and ripples from two points cross on the floor.
 - **Material**: light, not glass. Additive, casting no shadow, partly see-through. **Nácar**: a
   white core, rings going from white to seafoam at their edge, and a pale gold shimmer as they turn.
   The iridescence stays between mint and gold: the pink and violet that real mother-of-pearl shows
@@ -361,20 +376,21 @@ only what a voice leaves in the air.
   centimetres over the 5 s of the compás. Acompañamiento's eco sits at its ally's shoulder and
   follows them.
 - **Each kind is told by its shape, never by its colour**:
-  - **Ostinato** (strikes): rings tilted towards the foes and nested like a bell's mouth, with the
-    bead drawn out into a short spindle pointing at its foe.
-  - **Bordón** (cures): rings lying flat, wide and slow, a halo over the ally it last cured. Its
-    shaft of light is warmer, a pale gold.
+  - **Ostinato** (strikes): its rings stand upright, narrow, like a bell's mouth leaning towards
+    the foes.
+  - **Bordón** (cures): its rings lie wide and flat, a halo swaying slowly. Its veil and pool are
+    warmer, a pale gold.
   - **Acompañamiento**: two thirds the size, its rings upright and facing the foes.
 - **Its grade, by size and rings** (Crescendo):
 
   | Grade | Size | Rings | Light |
   | --- | --- | --- | --- |
-  | *p* | 0.25 m | One | Dim; the shaft barely there |
-  | *mf* | 0.32 m | Two | Brighter; soft motes rise off it |
-  | *f* | 0.40 m | Three, and **two arcs that open at its sides like wings**, each a fan of three thin ripples | A shaft of light falls on it from above; its floor ripple crosses the party's whole side |
+  | *p* | 0.2 m | One, and its echo | Dim; a thin veil and a small pool |
+  | *mf* | 0.4 m | Two; the echo stands further off, so the ripples cross in gold | Brighter; soft motes rise off it |
+  | *f* | 0.6 m | Three and a second echo, and **two wings at its sides**, each a fan of four fine doubled arcs curling up | Specks orbit it; its pool joins the others' under the party; its floor ripple crosses the party's whole side |
 
-  The wings are the one angelic figure, and they are drawn with rings, never with feathers. The
+  The size is its outer ring's radius. Its figure when struck changes with the grade: each note has
+  its own. The wings are the one angelic figure, and they are drawn with arcs, never with feathers. The
   tone stays serious: no cherubs, no hearts, no sparkles.
 - **Particles**: soft round motes that rise slowly and fade, like dust in a shaft of light. Never
   stars, which are Dadista's astral: Sincopante's astral is rings and rising light, and Dadista's
@@ -385,15 +401,15 @@ only what a voice leaves in the air.
 
 | Moment | Lasts | What happens |
 | --- | --- | --- |
-| **Ostinato** | 1.2 s | The wearer opens a hand towards the foe (0.25 s). A flat ring of light leaves it and flies to the foe (0.3 s), then closes round it like a halo pulled tight: that is the blow (0.15 s), with the number in nácar. A fainter copy of the ring rises off the foe, floats back over the party and settles at its height, turning into the eco (0.5 s) |
-| **Bordón** | 1 s | The wearer lifts a hand over the ally. A flat ring comes down over them like a halo and rises back through them (0.5 s), with the number of the cure. A copy stays above them and rises to its place |
-| **A pulse** (every 5 s, all at once) | 0.4 s | Each eco draws in (10 % smaller, 0.15 s) and lets out its outer ring. An Ostinato's ring flies flat to its foe (0.25 s) and closes on it with a soft flash, and motes rise off the foe. A Bordón's ring falls like a halo on its ally and rises through them. At *f* the ring grows as it leaves and becomes a wave that crosses every foe (or the whole party) at once. The floor ripples under the eco |
-| **Crescendo** | 0.8 s | The wearer raises both hands, palms up (0.3 s). Every eco draws in, then swells to its new grade (0.5 s): a new ring opens from the bead outwards, and at *f* the arcs unfold. The ecos' notes swell. *Crescendo* rises over each eco with its new grade (*mf*, *f*), and their arcs on *Compás* fill again |
+| **Ostinato** | 1.2 s | The wearer opens a hand towards the foe (0.25 s). A beam of light, two strands twisting round it, flies to the foe (0.3 s); a ring and its echo close round it like a halo pulled tight, two fainter copies behind them, and the note's figure flashes on the foe as on a struck plate: that is the blow (0.2 s), with the number in nácar. A fainter copy of the ring rises off the foe, floats back over the party and settles at its height, turning into the eco (0.5 s) |
+| **Bordón** | 1 s | The wearer lifts a hand over the ally. A veil of warm light through water wraps them, a ring and its echo come down over them like a halo and rise back through them (0.6 s), and a pool of light lies at their feet, with the number of the cure. A copy stays above them and rises to its place |
+| **A pulse** (every 5 s, all at once) | 0.4 s | Each eco draws in (10 % smaller, 0.15 s), shows its note's figure inside it, and lets out its outer ring. An Ostinato's ring flies flat to its foe (0.25 s) and closes on it with a soft flash, and motes rise off the foe. A Bordón's ring falls like a halo on its ally and rises through them. At *f* the ring grows as it leaves and becomes a wave that crosses every foe (or the whole party) at once. On the floor under the eco, ripples from two points run out and cross |
+| **Crescendo** | 0.8 s | The wearer raises both hands, palms up (0.3 s). Every eco draws in, then swells to its new grade (0.5 s): a new ring opens from the bead outwards, its inside shows the figure of its new note (the grains jump to it), a wave of rings runs out from it, and at *f* the wings unfold. The fight dims and greys round the ecos for a moment. The ecos' notes swell. *Crescendo* rises over each eco with its new grade (*mf*, *f*), and their arcs on *Compás* fill again |
 | **A contratiempo** | 0.3 s | On the press, a bright tick at the bottom notch of *Compás*. Every eco flashes and lets out an extra pulse at once, a short accented chord off the beat. *PASIVA · A contratiempo* |
 | **Pedal** | While it lasts | As the wearer holds on, a thin level line of light runs under the ecos, like the pedal line under a piano stave. Their arcs on *Compás* stop and glow steady, and their notes ring longer. *PASIVA · Pedal*. When the wearer acts again, the line fades |
-| **The chord** (three ecos) | One beat | Three thin lines of light join the three ecos into a triangle for a beat, and the three notes sound together. If Da capo is bought, its command appears in the dock. Nothing else says so |
-| **Tutti** | 1.6 s | The ecos fly together over the foes (0.4 s) and stack into one great halo of all their rings. The scene dims by a third and a warm white light falls from above (0.3 s). The halo comes down on every foe at once as rings closing on them, with the fight frozen for 0.25 s as for a golpe crítico, and every note sounds together. Motes rise off the foes for a second, and the ecos are gone |
-| **Da capo** | 2.4 s | The three ecos rise into a column (0.4 s). Every ring on the field turns backwards, and the hand of *Compás* spins a whole turn back (0.6 s), while the ecos sing the start of Marta's phrase, *Do Sol Fa Re*. A wave of nácar light crosses the party's side, and every maná pip fills again, one by one, each with a note (0.6 s). The names of the duals already used appear faintly over the party, written on five thin lines, and light up (0.6 s). *¡DA CAPO!* |
+| **The chord** (three ecos) | One beat | Three thin lines of light join the three ecos into a triangle for a beat, each shows its figure, and the three notes sound together. If Da capo is bought, its command appears in the dock. Nothing else says so |
+| **Tutti** | 1.6 s | The ecos fly together over the foes (0.4 s) and become one great sounding plate, its figure changing note by note as it grows. The scene dims and a column of warm light through water stands over the foes (0.5 s). The plate comes down on every foe at once and is struck: its grains jump, a ring closes on each foe, a pool of warm light spreads under them, with the fight frozen for 0.25 s as for a golpe crítico, and every note sounds together. Motes rise off the foes for a second, and the ecos are gone |
+| **Da capo** | 2.4 s | The three ecos rise into a column (0.4 s). Every ring on the field turns backwards, a great plate under the party plays its figures from the last to the first while rings close in on it, and the hand of *Compás* spins a whole turn back (0.6 s), while the ecos sing the start of Marta's phrase, *Do Sol Fa Re*. A wave of nácar light crosses the party's side, and every maná pip fills again, one by one, each with a note (0.6 s). The names of the duals already used appear faintly over the party, written on five thin lines, and light up (0.6 s). *¡DA CAPO!* |
 | **An eco going out** | 0.6 s | Its rings open and drift apart, the motes rise, and its note fades. If the wearer falls, every eco goes out at once |
 
 *Movimiento reducido* keeps the ecos, the pulses and the numbers, and drops the dimming, the freeze
@@ -496,10 +512,9 @@ takes its colour, nácar. **Her voice is in the ecos from the start**: the ánim
 ## Implementation
 
 **Built**:
-- **The ecos' look in the effects lab** (`src/eco-fx.ts`, `src/eco-lab.ts`; § Look and interface).
+- **The ecos' look in the effects lab** (`src/eco-fx.ts`, `src/eco-shaders.ts`, `src/eco-lab.ts`; § Look and interface).
   It touches no fight, so it is ready for step 3 below.
-- **Nothing of the ánima itself**. `progress.toml`'s *Sincopante, la de Marta* is unticked, and
-  Marta's light in `ANIMAS` is the placeholder.
+- **First playable skill and dual**. Ostinato marks a target for four timed beats. The independent field ecos and the remaining progression are still pending.
 
 **To build**, once Aitor says yes ([`../README.md`](../README.md) § How an ánima is built):
 

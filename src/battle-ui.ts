@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, POWDER_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -66,6 +66,11 @@ const STATUS_ICONS: Record<IconId, string> = {
   // The light through the salon's windows (docs/quests/luca.md): a pointed window, its colour the light on now.
   luz: '<path d="M8 1.6C5.5 1.6 3.6 3.8 3.6 6.6v7.8h8.8V6.6c0-2.8-1.9-5-4.4-5z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2.2v12.2M3.8 8.6h8.4" stroke="currentColor" stroke-width="1.1"/>',
   'punto-debil': '<path d="M8 1.5v3.2M8 11.3v3.2M1.5 8h3.2M11.3 8h3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="1.5"/>',
+  // Empolvado: a puff and the grains under it. Envenenado: bubbles. Cristalizado: shards.
+  empolvado: '<circle cx="5.2" cy="7.6" r="3.2"/><circle cx="9.8" cy="5.6" r="3.8"/><circle cx="11.8" cy="9" r="2.4"/><circle cx="3.4" cy="13.6" r=".9"/><circle cx="7.6" cy="14.4" r=".9"/><circle cx="12" cy="13.6" r=".9"/>',
+  envenenado: '<circle cx="6" cy="10" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="11.3" cy="5.6" r="2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.6" cy="3.2" r="1.1"/>',
+  cristalizado: '<path d="M8 1 10.4 6.4 8 15 5.6 6.4z"/><path d="M2.4 6.2 5 8.6 3.6 12.4z"/><path d="M13.6 6.2 11 8.6 12.4 12.4z"/>',
+  ostinato: '<circle cx="7" cy="8" r="5" fill="none" stroke="currentColor"/><circle cx="10" cy="8" r="4" fill="none" stroke="currentColor"/>',
   quemado: '<path d="M8 1.2c.6 2.6 3.8 4 3.8 7.9a3.8 3.8 0 0 1-7.6 0c0-2 1-3.3 2-4.2-.1 1.6.5 2.6 1.3 2.9C7 6 7 3.4 8 1.2z"/>',
   cegado: '<path d="M1.5 8S4 3.8 8 3.8 14.5 8 14.5 8 12 12.2 8 12.2 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="1.9"/><path d="M2.6 13.4 13.4 2.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
   sangrado: '<path d="M8 1.5C6.2 4.6 4.2 7 4.2 9.8a3.8 3.8 0 0 0 7.6 0C11.8 7 9.8 4.6 8 1.5z"/>',
@@ -347,6 +352,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Dadista's Racha: the dice spent since it was put on, and what they are worth now.
       ...state && rachaOf(c) ? [{ id: 'racha' as const, name: `Racha ${rachaOf(c)}: Crítico +${rachaOf(c) * RACHA.crit} %`, mark: String(rachaOf(c)), timed: false, lasts: 'hasta cambiar de ánima o caer' }] : [],
       ...state && meteorOf(c) ? [{ id: 'meteoro' as const, name: `${meteorOf(c) === 1 ? 'Meteoro' : 'Asteroide'}: el meteoro ha crecido`, mark: '', timed: false, lasts: 'solo si lo usa en su siguiente turno' }] : [],
+      ...c.suture ? [{ id: 'sanacion' as const, name: 'Sutura de luz', mark: '½', timed: false, lasts: 'el siguiente daño esta ronda' }] : [],
+      ...c.fuse ? [{ id: 'quemado' as const, name: 'Mecha encendida', mark: '!', timed: false, lasts: 'hasta actuar o caer' }] : [],
       ...weak ? [{ id: 'punto-debil' as const, name: `Punto débil: el siguiente golpe hace el triple`, mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weak) }] : [],
       ...(Object.entries(c.statuses ?? {}).filter(([, n]) => n) as [StatusId, number][]).map(([id, n]) => ({ id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) })),
       ...(Object.entries(shownTimed(c)).filter(([, on]) => on) as [TimedId, Timed][]).map(([id, on]) => ({ id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` })),
@@ -782,7 +789,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     button!.setAttribute('aria-describedby', 'skill-info');
     box.querySelector('h3')!.textContent = skill?.name ?? dual!.name;
     box.querySelector('p')!.textContent = skill?.description ?? dual!.description;
-    box.querySelector('.skill-info-cost')!.innerHTML = skill ? `MANÁ ${costPips(skill.cost)}` : `MANÁ ${dualTotal(dual!).replace(' maná', '')} ${dualPips(dual!, id => option ? wearerOf(option, id)?.name ?? '' : '')}`;
+    box.querySelector('.skill-info-cost')!.innerHTML = skill ? `MANÁ ${costPips(skill.cost)}` : `${dualTotal(dual!)} ${dualPips(dual!, id => option ? wearerOf(option, id)?.name ?? '' : '')}`;
     // Beside the skill, out past the flyout, vertically centred on it (to its left in Aitor's mirrored dock).
     const base = root.getBoundingClientRect(), at = button!.getBoundingClientRect(), sheet = get('.skill-flyout').getBoundingClientRect();
     box.dataset.side = mirrored() ? 'left' : 'right';
@@ -893,8 +900,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     articles().forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = blocked(article.dataset.command as Command); });
     showElements();
     const aiming = targeting && !locked() && s.phase === 'player';
-    const eligible = aiming ? validTargets(s, selected === 'dual' ? 'attack' : selected!, aimSkill()).map(c => c.id) : [];
-    const cure = aiming && selected === 'skill' && !!aimSkill() && SKILLS.find(x => x.id === aimSkill())!.side === 'allies';
+    const dual = aimedDual();
+    const eligible = aiming ? (dual ? dualTargets(s, dual) : validTargets(s, selected === 'dual' ? 'attack' : selected!, aimSkill())).map(c => c.id) : [];
+    const cure = dual?.side === 'allies' || aiming && selected === 'skill' && !!aimSkill() && SKILLS.find(x => x.id === aimSkill())!.side === 'allies';
     get('.command-deck').hidden = targeting;
     get('.target-picker').hidden = !targeting;
     if (targeting) pickerText();
@@ -1285,7 +1293,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const cost = dualCost(dual);
     return `<span class="dual-pips">${halves(dual).map(x => `<span class="dual-pip-group" style="--chip:${CLASSES[x.class].colour}"><small>${escapeHtml(who(x.class))}</small><span>${'<i></i>'.repeat(cost[x.id] ?? 0)}</span></span>`).join('<b>+</b>')}</span>`;
   }
-  const dualTotal = (dual: DualSpec) => `${halves(dual).map(x => dualCost(dual)[x.id] ?? 0).join(' + ')} maná`;
+  const dualTotal = (dual: DualSpec) => {
+    const pair = halves(dual);
+    return pair.some(skill => skill.class === DICED)
+      ? pair.map(skill => `${skill.cost} ${skill.class === DICED ? (skill.cost === 1 ? 'dado' : 'dados') : 'maná'}`).join(' + ')
+      : `${pair.map(skill => skill.cost).join(' + ')} maná`;
+  };
   /** Development: the Dual command's sheet, every dual with what it costs, or why it cannot be now. */
   function fillDuals() {
     if (!state) return;
@@ -1721,7 +1734,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * out (each goes back to what they had); it goes off once both have picked the same foe. Only a
    * dual already found: one not found yet happens by chance instead (`chanceDual`).
    */
-  let duo: { id: DualId; skills: Record<PlayerId, SkillId>; aims: Partial<Record<PlayerId, string>> } | undefined;
+  let duo: { id: DualId; die?: number; skills: Record<PlayerId, SkillId>; aims: Partial<Record<PlayerId, string>> } | undefined;
   const other = (p: PlayerId): PlayerId => p === 1 ? 2 : 1;
   /** Whether picking `skill` now completes the other player's aimed one into a dual; it starts it if so. */
   function joinDual(skill: SkillId) {
@@ -1729,7 +1742,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!split() || duo || !partner || !me || !canAct(partner) || !them.targeting || them.selected !== 'skill' || !them.selectedSkill) return false;
     const d = dualOf(skill, them.selectedSkill);
     if (!d || !knownDual(d.id) || !dualReady(s, d, me, partner)) return false;
-    duo = { id: d.id, skills: { [ctx]: skill, [other(ctx)]: them.selectedSkill } as Record<PlayerId, SkillId>, aims: {} };
+    duo = { id: d.id, die: selectedDie ?? them.selectedDie, skills: { [ctx]: skill, [other(ctx)]: them.selectedSkill } as Record<PlayerId, SkillId>, aims: {} };
     for (const p of [1, 2] as PlayerId[]) menus[p] = { selected: 'dual', selectedDual: d.id, targeting: true };
     loadMenu(ctx);
     showDetails(false);
@@ -1763,14 +1776,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!d || knownDual(d.id) || !dualReady(s, d, me, partner)) return;
     if (waiting) pending.splice(pending.indexOf(waiting), 1);
     else withPlayer(other(ctx), () => collapse());
-    const foes = validTargets(s, 'attack').map(f => f.id), aim = [aimed(skill) ? target : undefined, waiting?.target].find(t => t && foes.includes(t));
-    return { player: ctx, ally: me.id, command: 'dual', dual: d.id, target: aim, text: `${d.name} → ${[...s.foes].find(f => f.id === aim)?.name ?? ''}` };
+    const foes = dualTargets(s, d).map(f => f.id), aim = [aimed(skill) ? target : undefined, waiting?.target].find(t => t && foes.includes(t));
+    return { player: ctx, ally: me.id, command: 'dual', dual: d.id, die: selectedDie ?? waiting?.die ?? them.selectedDie, target: aim, text: `${d.name} → ${[...s.foes, ...s.allies].find(f => f.id === aim)?.name ?? ''}` };
   }
   /** The target picker's title and line for what the menu being worked on is aiming. */
   function pickerText() {
     const s = state!, skill = aimSkill();
-    const cure = selected === 'skill' && !!skill && SKILLS.find(x => x.id === skill)!.side === 'allies';
-    const guard = cure && SKILLS.find(x => x.id === skill)!.kind === 'guard';
+    const cure = aimedDual()?.side === 'allies' || selected === 'skill' && !!skill && SKILLS.find(x => x.id === skill)!.side === 'allies';
+    const guard = cure && SKILLS.find(x => x.id === skill)?.kind === 'guard';
     get('.target-picker h2').textContent = selected === 'skill' && skill ? SKILLS.find(x => x.id === skill)!.name : selected === 'dual' ? DUALS.find(d => d.id === selectedDual)?.name ?? 'Dual' : attackName(s.allies[s.active]);
     const standing = s.foes.filter(f => f.hp > 0);
     const mine = duo?.aims[ctx], theirs = duo?.aims[other(ctx)];
@@ -1795,7 +1808,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!state || locked() || !selected) return;
     if (skill && 'free' in SKILLS.find(s => s.id === skill)!) { shakeHand(); return; }
     if (skill && (state.allies[state.active].secondary < SKILLS.find(s => s.id === skill)!.cost || !validTargets(state, 'skill', skill, dieUse(skill) ? selectedDie : undefined).length)) return;
-    if (skill && joinDual(skill)) return;
     showDetails(false);
     // Dadista: first the die it spends, then whom. A hand of one has nothing to pick.
     if (skill && dieUse(skill) && selectedDie === undefined) {
@@ -1803,6 +1815,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (diceOf(state, state.allies[state.active]).length > Math.max(1, faceUse(skill) ? 1 : SKILLS.find(s => s.id === skill)!.cost)) { callbacks.sound('ui-confirm'); fillDice(skill); return; }
       selectedDie = 0;
     }
+    if (skill && joinDual(skill)) return;
     pickingDie = undefined;
     // A skill that reaches the whole party has nobody to pick: it happens at once.
     if (skill && !aimed(skill)) { selectedSkill = skill; void execute(); return; }
@@ -1842,7 +1855,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // that lit it; whatever else it says comes with the last one.
     const strikes = effect.target && !effect.hits && (effect.strikes?.length ?? 1) > 1 ? effect.strikes! : undefined;
     // What the action is called on its numbers: the party's skill or dual. A foe's is named up top (`showCallout`) instead.
-    const label = effect.kind === 'enemy' ? (isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind) && !effect.cancelled ? effect.ability?.name ?? '' : '') : effect.release?.name ?? effect.dual?.name ?? SKILLS.find(s => s.id === effect.skill)?.name ?? (effect.element ? ELEMENTS[effect.element].name : '');
+    const label = effect.kind === 'enemy' ? (isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind) && !effect.cancelled ? effect.ability?.name ?? '' : '') : DUALS.find(d => d.id === effect.detonation)?.name ?? effect.release?.name ?? effect.dual?.name ?? SKILLS.find(s => s.id === effect.skill)?.name ?? (effect.element ? ELEMENTS[effect.element].name : '');
     const spread = (blow: number) => strikes ? (blow / (strikes.length - 1) - .5) * 48 : 0;
     // Rayo solar's beam sweeps along the foes: each one's blow (its number, its PV, its fire) lands
     // as the beam crosses them, blow 1 + its place in `hits` (the scene's `solarCross`).
@@ -1981,10 +1994,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         for (const id of effect.hits?.map(h => h.target) ?? (effect.target ? [effect.target] : [])) pop(id, 'Anulado', 'status', `Luz ${LIGHTS[light].name.toLowerCase()}`, 'anulado')?.style.setProperty('--status', LIGHTS[light].colour);
       }
       else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
+      else if (effect.dual?.id === 'reserva-de-color' && effect.target) pop(effect.target, 'Mecha encendida', 'status', 'Estalla al actuar o caer', 'empolvado');
       else if (effect.healedAll) effect.healedAll.forEach(h => pop(h.target, `+${h.amount}`, 'heal', label));
       else if (effect.healed && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', label);
       // A skill that only leaves a status (Rayo de sanación, Confusión, Rayo encogedor) says so below, with no number.
-      else if (effect.regen || effect.afflicted) { /* its status pops below */ }
+      else if (effect.regen || (effect.afflicted && !effect.amount)) { /* its status pops below */ }
       else if (sweep) { /* each foe's number comes as the beam crosses them (above) */ }
       else if (rain) hurtPop(rain[0].target, rain[0].amount, label, scatter(0));
       else if (effect.hits) effect.hits.forEach(h => h.crit ? critPop(h.target, h.amount, true) : pop(h.target, `−${h.amount}`, 'damage', h.peeled ? peelText(h.peeled, state!.foes.find(f => f.id === h.target)) : label));
@@ -1998,6 +2012,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         else if (strikes) hurtPop(effect.target, strikes[0], label, spread(0), critOn(effect.target));
         else if (!effect.controlled) hurtPop(effect.target, effect.amount ?? 0, say, undefined, critOn(effect.target));
       }
+      if (effect.sutureSpent) landed.push({ target: effect.sutureSpent, id: 'sanacion', text: 'La sutura aguanta', detail: 'Daño a la mitad' });
+      if (effect.detonation === 'bombardeo-orbital') {
+        for (const h of effect.hits ?? []) if (h.amount && state!.foes.find(f => f.id === h.target)?.timed?.cegado) {
+          landed.push({ target: h.target, id: 'cegado', text: '¡Cegado II!', detail: '20 s' });
+        }
+      }
+      if (effect.relay) landed.push({ target: effect.relay.target, id: 'sangrado', text: '¡Relevo!', detail: `Sangrado ×${effect.relay.stacks}` });
       // Anna's Sopeta also feeds the whole table: each friend's PV back, a beat after her blow.
       effect.soothed?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `+${h.amount}`, 'heal', i ? '' : 'Sopeta'); }, 420 + i * 70));
       // A physical blow on someone bleeding spent it: how much harder it landed, in Sangrado's red.
@@ -2020,9 +2041,15 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const reaction = effect.reaction;
       // A skill on everyone says each foe's own (above): only a reaction on one target says it here.
       if (reaction && effect.target && !effect.hits?.some(h => h.smoked)) {
-        const says = { humo: { id: 'cegado', text: `¡${TIMED.cegado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'Se apaga el fuego' }, cauterizado: { id: 'cauterizado', text: '¡Cauterizado!', detail: `Sangrado × ${reaction.stacks ?? 0}` }, tormenta: { id: 'tormenta', text: '¡Tormenta!', detail: 'Salta por el humo' }, vapor: { id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'El agua se va en vapor' }, conduccion: { id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' } }[reaction.id];
+        const says = { humo: { id: 'cegado', text: `¡${TIMED.cegado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'Se apaga el fuego' }, cauterizado: { id: 'cauterizado', text: '¡Cauterizado!', detail: `Sangrado × ${reaction.stacks ?? 0}` }, tormenta: { id: 'tormenta', text: '¡Tormenta!', detail: 'Salta por el humo' }, vapor: { id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'El agua se va en vapor' }, conduccion: { id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' }, estallido: { id: 'quemado', text: '¡Estallido!', detail: 'El polvo arde de golpe' }, veneno: { id: 'envenenado', text: `¡${TIMED.envenenado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'El agua corre el polvo' }, cristal: { id: 'cristalizado', text: `¡${TIMED.cristalizado.name}!`, detail: 'El polvo se hace esquirlas' } }[reaction.id];
         landed.push({ target: effect.target, ...says });
         reaction.hits?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', says.text.replace(/[¡!]/g, ''), undefined, 58); }, 140 + i * 90));
+      }
+      // A blow on someone poisoned or full of shards: what it added, once for each of them.
+      for (const id of new Set(effect.amplified?.map(a => a.target))) {
+        const on = effect.amplified!.filter(a => a.target === id), shards = on.reduce((sum, a) => sum + (a.shards ?? 0), 0);
+        if (on.some(a => a.venom)) landed.push({ target: id, id: 'envenenado', text: `Veneno +${Math.round((POWDER_RULES.poison - 1) * 100)} %`, detail: '' });
+        if (shards) landed.push({ target: id, id: 'cristalizado', text: `Esquirlas +${shards}`, detail: 'Cada golpe se clava más' });
       }
       // The model: water that leaves someone Mojado, a spark that ran through the wet, and what a blow did to the boss's Error.
       effect.wetted?.forEach(id => landed.push({ target: id, id: 'mojado', text: `¡${TIMED.mojado.name}!`, detail: state!.foes.some(f => f.id === id) ? 'Se enciende' : '' }));
@@ -2085,7 +2112,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       callbacks.sound('ui-confirm');
       if (!mine || mine !== theirs) { render(); return; }
       const spec = DUALS.find(d => d.id === duo!.id)!;
-      job = { player: ctx, ally: me.id, command: 'dual', dual: spec.id, target, text: `${spec.name} → ${named(target) ?? ''}` };
+      job = { player: ctx, ally: me.id, command: 'dual', dual: spec.id, die: duo.die, target, text: `${spec.name} → ${named(target) ?? ''}` };
       duo = undefined;
       withPlayer(other(ctx), () => collapse());
     } else if (selected === 'dual') {
@@ -2117,7 +2144,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const job = pending.shift()!;
       if (state.song && job.at !== undefined) state.song.aim = job.at;
       const effect = holdBack(() => !takeTurn(state!, job.ally) ? undefined
-        : job.command === 'dual' ? actDual(state!, job.dual!, job.target)
+        : job.command === 'dual' ? actDual(state!, job.dual!, job.target, job.die)
         : split() ? act(state!, job.command as BattleAction, job.target, job.skill, job.die) : commit(state!, job.command as BattleAction, job.target, job.skill, job.die));
       if (state.song) delete state.song.aim;
       // It could no longer be (its target fell, no maná): that player chooses again.
@@ -2161,7 +2188,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (token !== generation || !state) return;
       const before = snapshot(), ticks = nextRound(state);
       // A charged dual went off as the round started (Rayo solar): what it did waits for its news to play it.
-      const release = state.news?.find(news => news.release);
+      const release = state.news?.find(news => news.release || news.detonation);
       if (release) holdFrom(before, release); else void callbacks.change(state);
       queueMenu = undefined; stale = undefined;
       if (ticks.length) {

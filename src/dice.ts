@@ -60,22 +60,39 @@ function picture() {
 }
 
 /**
- * The astral die (docs/animas/dadaista/ § The astral look): the same die made of light, bluish-white
- * glass lit from within, its ornaments kept in deep blue.
+ * The astral die (docs/animas/dadaista/ § The astral look): a die that is a star. A cube of glass
+ * with nothing printed on it: its edges white-hot, its faces a thin blue you see through, a glint
+ * across one corner. It is drawn as light added to the scene (both sides of every face), so what
+ * shows is its edges crossing as it turns.
  */
 function astralPicture() {
   const cell = 128, canvas = document.createElement('canvas');
   canvas.width = cell * 6; canvas.height = cell;
   const ctx = canvas.getContext('2d')!;
-  DIE_FACES.forEach((face, i) => {
-    const x = i * cell, light = ctx.createRadialGradient(x + cell / 2, cell / 2, cell * .1, x + cell / 2, cell / 2, cell * .74);
-    light.addColorStop(0, '#ffffff'); light.addColorStop(.6, '#d6e9ff'); light.addColorStop(1, '#7fb4ff');
-    ctx.fillStyle = light; ctx.fillRect(x, 0, cell, cell);
-    const inset = cell * .14, k = (cell - inset * 2) / 100;
-    ctx.save(); ctx.translate(x + inset, inset); ctx.scale(k, k);
-    ctx.fillStyle = '#1c2f5c'; ctx.fill(new Path2D(FACE_ICONS[face]));
+  for (let n = 0; n < 6; n++) {
+    const x = n * cell, c = cell / 2;
+    ctx.save(); ctx.beginPath(); ctx.rect(x, 0, cell, cell); ctx.clip();
+    // The glass: nearly nothing in the middle, bluer and brighter towards its edges.
+    const body = ctx.createRadialGradient(x + c, c, cell * .08, x + c, c, cell * .74);
+    body.addColorStop(0, 'rgba(127,180,255,.07)'); body.addColorStop(.62, 'rgba(127,180,255,.22)'); body.addColorStop(1, 'rgba(191,224,255,.8)');
+    ctx.fillStyle = body; ctx.fillRect(x, 0, cell, cell);
+    // A glint across one corner, and a thinner one beside it.
+    ctx.save(); ctx.translate(x + c, c); ctx.rotate(-Math.PI / 4);
+    ctx.fillStyle = 'rgba(244,249,255,.42)'; ctx.fillRect(-cell, -cell * .34, cell * 2, cell * .1);
+    ctx.fillStyle = 'rgba(244,249,255,.25)'; ctx.fillRect(-cell, -cell * .2, cell * 2, cell * .03);
     ctx.restore();
-  });
+    // Its edges: white-hot, a soft blue line inside them (the bevel).
+    ctx.strokeStyle = 'rgba(127,180,255,.55)'; ctx.lineWidth = 16; ctx.strokeRect(x + 8, 8, cell - 16, cell - 16);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ctx.strokeRect(x + 4, 4, cell - 8, cell - 8);
+    ctx.strokeStyle = 'rgba(191,224,255,.4)'; ctx.lineWidth = 2; ctx.strokeRect(x + 21, 21, cell - 42, cell - 42);
+    // Its corners catch the light.
+    for (const [px, py] of [[10, 10], [cell - 10, 10], [10, cell - 10], [cell - 10, cell - 10]]) {
+      const spark = ctx.createRadialGradient(x + px, py, 0, x + px, py, 16);
+      spark.addColorStop(0, 'rgba(255,255,255,1)'); spark.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = spark; ctx.fillRect(x + px - 16, py - 16, 32, 32);
+    }
+    ctx.restore();
+  }
   return canvas;
 }
 
@@ -132,7 +149,13 @@ function kitFor(device: pc.GraphicsDevice): Kit {
     return material;
   };
   // The Comodín's star glows a little more than an ornament: it is the one die to spot at a glance.
-  kit = { mesh, material: paint('Dado', picture(), [.2, .19, .17]), comodin: paint('Dado Comodín', comodinPicture(), [.55, .5, .45]), astral: paint('Dado astral', astralPicture(), [1.5, 1.7, 2.1]) };
+  // The astral's is no painted cube: light added to the scene, seen through, lit by nothing.
+  const glass = paint('Dado astral', astralPicture(), [1, 1, 1]);
+  glass.useLighting = false; glass.diffuseMap = null; glass.diffuse.set(0, 0, 0); glass.emissiveIntensity = 2.6;
+  glass.opacityMap = glass.emissiveMap; glass.opacityMapChannel = 'a';
+  glass.blendType = pc.BLEND_ADDITIVEALPHA; glass.depthWrite = false; glass.cull = pc.CULLFACE_NONE;
+  glass.update();
+  kit = { mesh, material: paint('Dado', picture(), [.2, .19, .17]), comodin: paint('Dado Comodín', comodinPicture(), [.55, .5, .45]), astral: glass };
   kits.set(device, kit);
   return kit;
 }
@@ -142,6 +165,19 @@ export function createDie(app: pc.AppBase) {
   const { mesh, material } = kitFor(app.graphicsDevice);
   const entity = new pc.Entity('Dado de Dadista');
   entity.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, material)], castShadows: true, receiveShadows: false });
+  return entity;
+}
+/**
+ * A die that is a star (Dados astrales, the meteors): the astral die on its own, with a second,
+ * smaller one turned inside it, its heart. One unit to its edge; the caller scales, places and turns it.
+ */
+export function createStarDie(app: pc.AppBase) {
+  const { mesh, astral } = kitFor(app.graphicsDevice);
+  const entity = new pc.Entity('Dado estrella'), heart = new pc.Entity('Corazón');
+  entity.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, astral)], castShadows: false, receiveShadows: false });
+  heart.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, astral)], castShadows: false, receiveShadows: false });
+  heart.setLocalScale(.46, .46, .46); heart.setLocalEulerAngles(45, 35.26, 0);
+  entity.addChild(heart);
   return entity;
 }
 /** Dresses a die for the face it shows: the Comodín's black lacquer, or ivory for any other; `astral`, glass and light whatever its face. */

@@ -592,16 +592,24 @@ el golpe bajo él y el turno del grupo ya sin él.
 
 ## Ataques duales
 
-Dos habilidades de dos ánimas, cada una elegida por quien la lleva, se hacen una sola acción
-(`DUALS`, `actDual`; el diseño en `docs/animas/README.md` § Combined skills). Hoy dos, de Matemágico
-y Papagato: *Zarpazos de fuego* (Foc Binari + Zarpazos) y *Punto débil* (Ángulo exacto + Zarpazo de
-Haru).
+Cada jugador elige una habilidad del ánima que lleva. Algunas parejas se convierten en una sola
+acción que consume los dos turnos. El catálogo de `DUALS` incluye siete dúos.
+
+| Dúo | Habilidades | Momento que lo decide |
+| --- | --- | --- |
+| Zarpazos de fuego | Foc Binari + Zarpazos | Ocho golpes para pelar o avivar el fuego. |
+| Punto débil | Ángulo exacto + Zarpazo sangriento | La siguiente acción de daño sobre la marca pega el triple. |
+| Rayo solar | Foc Binari + Rayo de energía | Bip debe seguir en pie al empezar la siguiente ronda para barrer con fuego a todos. |
+| Sutura de luz | Cardioide + Rayo de sanación | Cura a un aliado herido y amortigua el siguiente daño que reciba esa ronda. |
+| Relevo de sangre | Zarpa en la llaga + Estrella fugaz | Un remate traslada el Sangrado al rival con más PV. Dadista paga con un dado. |
+| Bombardeo orbital | Explosión + Ostinato | La siguiente ronda abre con tres salvas sobre todos y Cegado II durante 20 segundos. |
+| Reserva de color | Foc Binari + Puñado | El blanco lleva la mecha. Estalla sobre todos cuando acaba su turno o cuando cae. |
 
 **Cuándo puede ocurrir** (`dualBlock`, por orden): las dos mitades aprendidas (`level`), ese dual
 sin usar aún en este combate (`used`: cada uno sale **una vez por combate**, `usedDuals`), cada uno
 con el ánima de su mitad puesta (`wear`), el compañero en pie (`down`), después en el orden de
 esta ronda y sin haber actuado (`acted`), maná de cada mitad en el ánima de quien la paga (`mana`)
-y un enemigo al que apuntar (`target`). Solo quien actúa **antes** completa un dual.
+y un objetivo válido (`target`), un aliado herido para Sutura de luz. Solo quien actúa **antes** completa un dual.
 
 **El turno: es una sorpresa.** En la lista de habilidades no brilla nada, no hay marcas de pareja
 ni una pose de carga. Con dos jugadores cada uno elige a la vez en su mitad de la pantalla (`withPlayer`).
@@ -670,6 +678,20 @@ Al empezar la ronda siguiente, antes de que nadie elija, sale solo (`nextRound` 
 noticia que la pantalla muestra en cuanto cierra la ronda): barre a todos los enemigos con el daño
 de quien trae la mitad de su tipo y les deja Quemado II como mínimo. Si quien lo guarda cae antes,
 se pierde.
+
+**Cómo se ven los dúos de otras ánimas** (`DUO`, `BLAST`, `startDuo` en `src/battle-scene.ts`; sus
+dibujos en `src/dual-fx.ts`). Cada uno mezcla el aspecto de sus dos ánimas, y no solo el dorado de
+Matemágico: los colores son los suyos (`SUTURE`, `RELAY`, `ORBIT`, `PAINT`), nunca el rosa de la Reina
+ni el violeta del miedo. Todo arranca con el cartel, así que su preparación se ve a cámara lenta.
+Después la cámara enseña a la pareja y a quien recibe el dúo, con el resto en gris, y entra donde cae.
+Los que duran dejan una señal mientras siguen activos (`holdTells`).
+
+| Dúo | Lo que se ve | Mientras dura |
+| --- | --- | --- |
+| Sutura de luz | Gerard dibuja en oro su círculo de marcas y la cardioide bajo el herido. Bip vuela a su lado y lo escanea en cian, con esquinas de HUD y una línea que baja. Seis puntadas cruzan la costura blanca, un hilo de oro contra uno cian. Al cerrarse (0,95 s) hay un destello y tres anillos de guarda | Un punto de oro y cian que brilla en su pecho |
+| Relevo de sangre | En la noche astral, el dado sube como estrella y cae con el zarpazo de Haru (0,46 s). Encima queda una tachadura de tinta bermellón y salen papel y estrellas. Si lo derrota, su sangre forma una estrella roja que vuela al enemigo con más PV, le deja las marcas de la zarpa y sus cargas caen en él como estrellitas | — |
+| Bombardeo orbital | Bip sube sobre los enemigos. A su alrededor se abren tres anillos dobles de nácar al ritmo del ostinato, con cuentas de oro. Un hilo cian baja hasta cada enemigo y marca su suelo con una figura cimática. Las tres salvas (0,18, 0,42 y 0,68 s) traen cada una un disparo cian, una columna de nácar y una figura nueva. La tercera ciega | Bip suelta un anillo de nácar en cada compás y las figuras laten |
+| Reserva de color | Un puñado de ultramar vuela y queda como franja mate sobre el blanco. Gerard escribe encima unos y ceros de oro y lanza Foc Binari a sus dos puntas. El fuego corre hacia el centro, vuelve naranjas los dígitos y rojo el azul, y prende la mecha (1,15 s). Al estallar, la mecha arde un instante (0,32 s) y luego hay una nube de ultramar que se vuelve roja, llamas y dígitos sobre cada enemigo | La mecha chisporrotea y suelta motas azules |
 
 **Desarrollo.** Con `import.meta.env.DEV` el menú es Atacar · Habilidad · Dual · Defender · Huir:
 *Dual* abre la lista de todos (`dualOptions`), con sus mitades, su maná y su descripción, y los que

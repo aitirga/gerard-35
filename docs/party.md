@@ -105,9 +105,8 @@ cannot pay says *Sin ánima*.
 
 Costs are in circles of Ánima.
 
-**Duals** (`docs/animas/README.md` § Combined skills): a Matemágico skill and a Papagato skill, one
-from each fighter, can become one action, *Zarpazos de fuego* (Foc Binari + Zarpazos) and *Punto
-débil* (Ángulo exacto + Zarpazo sangriento). They are never listed: they happen.
+**Duals**: two compatible skills from different ánimas become one action for both players.
+The seven combinations, their costs and their effects are listed in [Combined skills](animas/README.md#combined-skills).
 
 **Statuses** (story fights, `STATUSES` in `src/battle.ts`; `docs/animas/README.md` § Shared
 mechanics): they stack, show under the fighter's nameplate, and lose a stack at the end of each
