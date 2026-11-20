@@ -808,6 +808,7 @@ try {
     panel: id => id ? exploration.show(id) : exploration.close(),
     lights: section => mountHomeLightsPage(section, homeLights),
     sound: section => mountSoundPage(section, audio),
+    board: listener => { listener(artilugio.board.connected); return artilugio.onBoard(status => listener(status.connected)); },
     exit: () => {
       clearTimeout(saveTimer); void save();
       music.stop({ fade: .5 });

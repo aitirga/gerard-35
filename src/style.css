@@ -647,6 +647,10 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .pause-options button:enabled:hover, .pause-options button:focus { background: #f3cf7810; border-color: #f3cf7877; outline: none; }
 .pause-options button:focus .menu-option-icon { background: var(--ui-gold); color: var(--ui-ink); border-color: var(--ui-gold); }
 .pause-options [data-exit] .menu-option-icon { color: #c1b6a7; }
+[data-page="settings"] { position: relative; }
+/* The artilugio's board reaching the server: a quiet dot, no label (src/controller-ui.ts). */
+.artilugio-dot { position: absolute; top: 2px; right: 2px; width: 7px; height: 7px; border-radius: 50%; background: #5fd47a; box-shadow: 0 0 6px #5fd47a99; }
+.artilugio-dot[hidden] { display: none; }
 .settings-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .settings-options button { display: flex; flex-direction: column; align-items: start; gap: 10px; padding: 22px; border: 1px solid #c6d6ad30; border-radius: 14px; background: #ffffff03; color: var(--ui-paper); text-align: left; transition: background .18s, border-color .18s; }
 .settings-options .menu-option-icon { margin-bottom: 10px; width: 48px; height: 48px; }

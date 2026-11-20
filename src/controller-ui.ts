@@ -55,6 +55,8 @@ export function createControllerUI(callbacks: {
   lights: (section: HTMLElement) => void;
   /** Fills the "Sonido" page (src/sound-ui.ts). */
   sound: (section: HTMLElement) => void;
+  /** Whether the artilugio's real board is reaching the server now (src/artilugio.ts): a quiet dot on the Configuración page. */
+  board?: (listener: (connected: boolean) => void) => () => void;
 }) {
   const profiles: Record<string, ControllerProfile> = Object.create(null);
   try { const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '{}'); if (saved && typeof saved === 'object') for (const [id, profile] of Object.entries(saved)) if (validProfile(profile)) profiles[id] = profile; } catch { /* Storage is optional. */ }
@@ -75,6 +77,7 @@ export function createControllerUI(callbacks: {
       </nav>
     </section>
     <section data-page="settings" hidden>
+      <span class="artilugio-dot" data-artilugio-dot hidden aria-hidden="true"></span>
       <p class="menu-intro">Haz que el juego se sienta como en casa.</p>
       <nav class="settings-options" aria-label="Configuración">
         <button data-open="controller"><span class="menu-option-icon">${padIcon}</span><strong>Mando</strong><small>Conectar, probar y asignar controles</small><span class="setting-tag" data-pad-summary>Sin conectar</span></button>
@@ -116,6 +119,8 @@ export function createControllerUI(callbacks: {
   let page: 'home' | 'settings' | 'controller' | 'sound' | 'lights' | 'exited' = 'home';
   callbacks.lights(root.querySelector<HTMLElement>('[data-page="lights"]')!);
   callbacks.sound(root.querySelector<HTMLElement>('[data-page="sound"]')!);
+  const boardDot = get('[data-artilugio-dot]');
+  const stopBoard = callbacks.board?.(connected => { boardDot.hidden = !connected; });
   const edges = new ControllerEdges();
   // Player 2: whichever other connected controller the game can read.
   const edges2 = new ControllerEdges();
@@ -274,6 +279,6 @@ export function createControllerUI(callbacks: {
     frame = requestAnimationFrame(poll);
   }
   frame = requestAnimationFrame(poll);
-  return { open, destroy() { cancelAnimationFrame(frame); close(); window.removeEventListener('keydown', keydown, { capture: true }); root.remove(); } };
+  return { open, destroy() { stopBoard?.(); cancelAnimationFrame(frame); close(); window.removeEventListener('keydown', keydown, { capture: true }); root.remove(); } };
 }
 function bindingLabel(binding: Binding) { return 'button' in binding ? `Botón ${binding.button}` : `Eje ${binding.axis} ${binding.sign > 0 ? '+' : '−'}`; }
