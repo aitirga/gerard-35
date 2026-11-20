@@ -13,7 +13,7 @@ import {
   ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, songNow, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PartySlot, type SkillId, skillKnown,
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
 } from './battle.ts';
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
@@ -484,6 +484,8 @@ export interface Run {
    * the action that spent a Punto débil (×3).
    */
   events: Record<string, number>;
+  /** The foes' moves by who made them: foe kind → ability id → times (the bestiary lists them, src/bestiary.ts). */
+  moves: Partial<Record<FoeKind, Record<string, number>>>;
   /** The most PV one action of the party took off (a dual's eight claws are one): how close anything comes to a one-shot. */
   biggest: number;
 }
@@ -524,7 +526,7 @@ export function playFight(setup: Setup, seed: number): Run {
  */
 export function playOut(state: BattleState, setup: Setup, random: () => number): Run {
   const think = setup.think ?? 3, maxRounds = setup.maxRounds ?? 60;
-  const run: Run = { outcome: 'draw', rounds: 0, hpLeft: 0, kos: 0, used: {}, damage: {}, duals: 0, events: {}, biggest: 0, seconds: 0 };
+  const run: Run = { outcome: 'draw', rounds: 0, hpLeft: 0, kos: 0, used: {}, damage: {}, duals: 0, events: {}, moves: {}, biggest: 0, seconds: 0 };
   // The fight's own clock, counted: how long it lasts at the table (thinking, blows, foes' turns).
   const tick = (seconds: number) => { run.seconds += seconds; runClock(state, seconds); };
   const over = () => state.phase === 'won' || state.phase === 'lost';
@@ -532,7 +534,11 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
   const count = (key: string) => { run.events[key] = (run.events[key] ?? 0) + 1; };
   const note = (effect?: BattleEffect) => {
     if (!effect) return;
-    if (effect.kind === 'enemy' && effect.ability) count(effect.ability.id);
+    if (effect.kind === 'enemy' && effect.ability) {
+      count(effect.ability.id);
+      const kind = state.foes.find(f => f.id === effect.actor)?.kind;
+      if (kind) { const moves = run.moves[kind] ??= {}; moves[effect.ability.id] = (moves[effect.ability.id] ?? 0) + 1; }
+    }
     if (effect.eye) count('ojo-roto');
     // Fran's salon: a lamp of the canopy broken, and a blow the light ate.
     if (effect.lampBroken) count('lampara-rota');

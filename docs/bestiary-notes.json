@@ -1,0 +1,102 @@
+{
+  "notes": [
+    {
+      "id": "n-mwocmuau",
+      "entry": "enemigo:campeon",
+      "name": "El Campeón",
+      "redo": [],
+      "text": "Quiero que esto lo hagas mejor, usa meshy y actualiza el modelo. No lo hagas como una figura, que sea como un heroe de marvel",
+      "status": "hecha",
+      "created": "2026-11-20T02:17:34Z",
+      "reply": "Rehecho con OpenAI + Meshy como el villano del juego de mesa de superhéroes, sin peana: armadura gris carbón, rejilla de horno en el pecho, guanteletes encendidos y capa de lona (output/characters/3d/campeon/toy.png; toy-v1 y toy-v2 se parecían a Iron Man y Doctor Fate). Ya está en el combate con su estrategia nueva: el Plan se cumple a 3 (Rayo total), la magia lo frustra, Rayo anunciado y Etapa II.",
+      "closed": "2026-11-20T03:15:20Z"
+    },
+    {
+      "id": "n-mwocnj9b",
+      "entry": "enemigo:lealtad",
+      "name": "La Lealtad",
+      "redo": [],
+      "text": "Mejora esto tambien con meshy y rehaz, como un mini toque del modelo de Marta",
+      "status": "hecha",
+      "created": "2026-11-20T02:18:06Z",
+      "reply": "Rehecha con OpenAI + Meshy: una mujer sin cara de vidrio petróleo con el toque de Marta (el pelo castaño que pasa a dorado y los aros) y el escudo de arpa con su nudo de ámbar (output/characters/3d/lealtad/toy.png). Ya está en el combate; el nudo y el empujón del Juramento siguen en código encima.",
+      "closed": "2026-11-20T03:15:20Z"
+    },
+    {
+      "id": "n-mwocpgj1",
+      "entry": "enemigo:eco",
+      "name": "Eco",
+      "redo": [],
+      "text": "Mejora este, no me gusta tanto, mas complejo, algo mas aereo, con mas efectos como de ola",
+      "status": "hecha",
+      "created": "2026-11-20T02:19:36Z",
+      "reply": "Rehecho con OpenAI + Meshy: una ola de vidrio pálido rompiendo, flotando y con brillo propio, con la cuenta y sus anillos en el hueco (output/characters/3d/eco/toy.png). Debajo, ondas que salen por el suelo como en el agua, más rápidas cada turno y en oleada con la Resonancia.",
+      "closed": "2026-11-20T03:15:20Z"
+    },
+    {
+      "id": "n-mwocq1r5",
+      "entry": "enemigo:directo",
+      "name": "Lo Directo",
+      "redo": [],
+      "text": "Esto generalo en meshy con openai tambien, mas elaborado",
+      "status": "hecha",
+      "created": "2026-11-20T02:20:03Z",
+      "reply": "Generado con OpenAI + Meshy y más elaborado: un caballero hecho de cuchillas con los filos de luz azul (output/characters/3d/directo/toy.png; la primera versión, más simple, es toy-v1.png). Ya está en el combate con su lanza de luz y la barra de En línea recta en código.",
+      "closed": "2026-11-20T03:15:20Z"
+    },
+    {
+      "id": "n-mwocrks6",
+      "entry": "enemigo:voz",
+      "name": "La Voz",
+      "redo": [],
+      "text": "Esta tambien, elaborala mejor en meshy, eterea siguiente el estilo pero con algun punto mas de Marta",
+      "status": "abierta",
+      "created": "2026-11-20T02:21:15Z"
+    },
+    {
+      "id": "n-mwocsugm",
+      "entry": "enemigo:pluma",
+      "name": "La pluma",
+      "redo": [],
+      "text": "Esta quitala, no me gusta, rehazla y cambia este enemigo",
+      "status": "abierta",
+      "created": "2026-11-20T02:22:14Z"
+    },
+    {
+      "id": "n-mwocta0j",
+      "entry": "enemigo:polilla",
+      "name": "Polilla",
+      "redo": [],
+      "text": "Esto rehazlo con meshy, aplica elementos como de vuelo, animaciones mejores",
+      "status": "abierta",
+      "created": "2026-11-20T02:22:34Z"
+    },
+    {
+      "id": "n-mwoctx0o",
+      "entry": "enemigo:laca",
+      "name": "La Laca",
+      "redo": [],
+      "text": "Este quitalo, no tiene sentido, quita este enemigo",
+      "status": "abierta",
+      "created": "2026-11-20T02:23:04Z"
+    },
+    {
+      "id": "n-mwocu1zr",
+      "entry": "enemigo:telescopio",
+      "name": "El Telescopio",
+      "redo": [],
+      "text": "Este tambien quitalo",
+      "status": "abierta",
+      "created": "2026-11-20T02:23:10Z"
+    },
+    {
+      "id": "n-mwocurqs",
+      "entry": "enemigo:fran",
+      "name": "Fran",
+      "redo": [],
+      "text": "Este generalo con meshy basandote en el retrato, no esta mal pero mas duro, mas realista de boss, ,genera animacione y mejoras",
+      "status": "abierta",
+      "created": "2026-11-20T02:23:44Z"
+    }
+  ]
+}

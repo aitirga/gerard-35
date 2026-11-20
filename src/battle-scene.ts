@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
+import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { DIE, createDie, dressDie, faceUp } from './dice';
@@ -80,26 +80,17 @@ const seenDuals = new Set<string>();
 const DISH_TINT: Record<DishId, string> = { alcachofa: '#a9cf72', coliflor: '#f4ecd6', sorpresa: '#9c9a92' };
 
 /**
- * Replace these stand-ins with imported models without changing combat or UI. `partyModel` gives
- * the street model each party fighter is cloned from (Gerard's own for himself and Bernat, Aitor's
- * for Aitor); `player` is Gerard's, hidden while the fight is on.
+ * The street dogs of chapter 1, each in its coat and collar (DOG_PROFILES), hidden: the fight clones
+ * them, and the bestiary (src/bestiary.ts) shows them. Boxes on `root`; `mat` makes a material (the
+ * caller keeps it), and `eyeDark` is the eyes' own, so the minion can turn them pink.
  */
-export function createBattleScene(app: pc.Application, player: pc.Entity, partyModel: (id: string) => pc.Entity, groundHeight: GroundHeight, effects: Effects) {
-  const materials: pc.StandardMaterial[] = [];
-  function mat(hex: string) {
-    const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.update(); materials.push(m); return m;
-  }
+export function buildStreetDogs(root: pc.Entity, mat: (hex: string) => pc.StandardMaterial, eyeDark: pc.StandardMaterial) {
   const fur = mat('#c49464'), cream = mat('#f1dfb8'), dark = mat('#3c302a'), collar = mat('#a64d43');
-  // Eyes have their own materials so La Reina Bubbaloo's minion can turn them dark pink and glowing.
-  const eyeDark = mat('#3c302a'), eyePink = mat('#7a1240');
-  // Someone the Queen holds looks out of violet eyes (docs/lore.md), as in the street.
-  const possessedEyes = mat('#5a2a8a'); possessedEyes.emissive.fromString('#b07aff'); possessedEyes.emissiveIntensity = 1.4; possessedEyes.update();
-  eyePink.emissive.fromString('#ff2d86'); eyePink.emissiveIntensity = 1.6; eyePink.gloss = .8; eyePink.update();
   function part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], material: pc.StandardMaterial, p: number[], s: number[]) {
     const e = new pc.Entity(name); e.addComponent('render', { type, material, castShadows: true });
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); parent.addChild(e); return e;
   }
-  const dog = new pc.Entity('Perro callejero'); app.root.addChild(dog);
+  const dog = new pc.Entity('Perro callejero'); root.addChild(dog);
   part(dog, 'Lomo', 'box', fur, [0, .48, 0], [.42, .4, .8]);
   part(dog, 'Pecho', 'box', cream, [0, .49, .28], [.35, .39, .2]);
   // The head pivots at the neck so dogs can sniff, glance and lunge.
@@ -115,9 +106,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     for (const z of [-.27, .27]) part(dog, 'Pata', 'box', cream, [side * .15, .18, z], [.12, .36, .15]);
   }
   const tail = part(dog, 'Cola', 'box', fur, [0, .66, -.5], [.1, .12, .47]); tail.setLocalEulerAngles(38, 0, 0);
-  const dogs = [dog, dog.clone(), dog.clone(), dog.clone()].map((model, i) => {
+  return [dog, dog.clone(), dog.clone(), dog.clone()].map((model, i) => {
     const profile = DOG_PROFILES[i];
-    if (i > 0) app.root.addChild(model);
+    if (i > 0) root.addChild(model);
     model.name = profile.name;
     const coat = mat(profile.fur), band = mat(profile.collar);
     model.findComponents('render').forEach(component => {
@@ -129,6 +120,39 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     model.enabled = false;
     return model;
   });
+}
+
+/**
+ * How big a foe drawn from the palace minion or a fear's template stands: its model's scale in a
+ * fight (`fear`: it has a template of its own, src/fears.ts). The bestiary (src/bestiary.ts) shows
+ * each foe at this size too.
+ */
+export function foeScale(kind: FoeKind | undefined, layers: number, fear: boolean) {
+  // Uri's fears fight in the tower's narrow corridors, so they stay nearer the party's size.
+  const young = kind === 'cebollita' || kind === 'platito' || kind === 'fantasmita';
+  return isCastle(kind) ? CASTLE_SIZES[kind] : isOnion(kind) ? onionSize(kind, layers) : isCamping(kind) ? CAMPING_SIZES[kind] : isCuerdas(kind) ? CUERDAS_SIZES[kind]
+    : isModelo(kind) ? MODELO_SIZES[kind] : isLuca(kind) ? LUCA_SIZES[kind] : kind === 'guardian' ? 2.3 : young ? .62 : kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5;
+}
+/**
+ * Replace these stand-ins with imported models without changing combat or UI. `partyModel` gives
+ * the street model each party fighter is cloned from (Gerard's own for himself and Bernat, Aitor's
+ * for Aitor); `player` is Gerard's, hidden while the fight is on.
+ */
+export function createBattleScene(app: pc.Application, player: pc.Entity, partyModel: (id: string) => pc.Entity, groundHeight: GroundHeight, effects: Effects) {
+  const materials: pc.StandardMaterial[] = [];
+  function mat(hex: string) {
+    const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.update(); materials.push(m); return m;
+  }
+  // Eyes have their own materials so La Reina Bubbaloo's minion can turn them dark pink and glowing.
+  const eyeDark = mat('#3c302a'), eyePink = mat('#7a1240');
+  // Someone the Queen holds looks out of violet eyes (docs/lore.md), as in the street.
+  const possessedEyes = mat('#5a2a8a'); possessedEyes.emissive.fromString('#b07aff'); possessedEyes.emissiveIntensity = 1.4; possessedEyes.update();
+  eyePink.emissive.fromString('#ff2d86'); eyePink.emissiveIntensity = 1.6; eyePink.gloss = .8; eyePink.update();
+  function part(parent: pc.Entity, name: string, type: pc.RenderComponent['type'], material: pc.StandardMaterial, p: number[], s: number[]) {
+    const e = new pc.Entity(name); e.addComponent('render', { type, material, castShadows: true });
+    e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); parent.addChild(e); return e;
+  }
+  const dogs = buildStreetDogs(app.root, mat, eyeDark);
   const dogLegs = dogs.map(model => model.children.filter(c => c.name === 'Pata') as pc.Entity[]);
   const dogHeads = dogs.map(model => model.findByName('Cabeza de perro') as pc.Entity);
   const dogEars = dogs.map(model => model.find(node => node.name === 'Oreja') as pc.Entity[]);
@@ -1972,9 +1996,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     battleRoot.addChild(model); model.setPosition(start);
     const body = party ? model.findByName('Cuerpo') as pc.Entity : null;
     const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
-    // Uri's fears fight in the tower's narrow corridors, so they stay nearer the party's size.
-    const young = unit.kind === 'cebollita' || unit.kind === 'platito' || unit.kind === 'fantasmita';
-    if (minion) { const size = isCastle(unit.kind) ? CASTLE_SIZES[unit.kind] : isOnion(unit.kind) ? onionSize(unit.kind, unit.layers ?? 0) : isCamping(unit.kind) ? CAMPING_SIZES[unit.kind] : isCuerdas(unit.kind) ? CUERDAS_SIZES[unit.kind] : isModelo(unit.kind) ? MODELO_SIZES[unit.kind] : isLuca(unit.kind) ? LUCA_SIZES[unit.kind] : unit.kind === 'guardian' ? 2.3 : young ? .62 : unit.kind === 'vertigo' ? 1 : fear ? 1.05 : 1.5; model.setLocalScale(size, size, size); }
+    if (minion) { const size = foeScale(unit.kind, unit.layers ?? 0, !!fear); model.setLocalScale(size, size, size); }
     const legs = (body?.children.filter(c => c.name === 'Pierna') ?? (minion ? [] : model.children.filter(c => c.name === 'Pata'))) as pc.Entity[];
     const yaw = party ? (source.findByName('Cuerpo') as pc.Entity).getLocalEulerAngles().y : source.getEulerAngles().y;
     if (body) body.setLocalEulerAngles(0, 0, 0);

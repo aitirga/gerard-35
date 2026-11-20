@@ -278,6 +278,77 @@ as Historia does, on the day the simulated player was on and with the missions i
 `output/reports/game/data.json` each time the tab opens, and links to the whole page. Without a
 report it says to run `just game-sim`. `just screenshots game-sim` shows it.
 
+## The bestiary
+
+`just bestiario` (`bestiario.html`, [src/bestiary.ts](../src/bestiary.ts)) lists everyone in the
+game to see what is still to improve: the party and its ánimas, every foe by where it is met, the
+monsters being designed and the people. Each entry shows its 3D model as the game draws it (drag
+to turn, wheel to come closer; a rigged monster plays its Meshy clips), its portrait and
+expressions, the `just character-3d` images (design, views, earlier tries), and for a foe its PV
+and weaknesses in every fight it is in, the moves it makes, the fight's question and its answer,
+and how its model moves. A badge says how its model stands: its own, procedural, a part of
+another, or **provisional** (drawn with someone else's, as the castle's pupils still use the palace
+minion); the *Por mejorar* filter keeps only those and whoever has none.
+
+Every model starts **front-on** and still: chosen (or switched with the buttons over it), the camera
+looks at its face (yaw 0, every family faces +z), framed to its height, the turntable off until
+*Girar*, and its motion from the start. A **person** stands posed as the game poses people
+(walk-animation.ts: *Quieto* breathing, *Andar*, *Correr* on the spot). An **ánima** is shown worn:
+whoever the game lets wear it (`ANIMA_OWNERS`: someone's own only by them, the rest by anyone but
+Bernat, and the boy only his own), its owner first, dressed by the game's own `wearClass` (its
+dyed clothes and anima-looks.ts' pieces; a grown Matemágico's thoughts), with what goes with it built
+by its own module (Papagato's Haru and Yuki, `createCat`; Tecnópata's Bip, `createBip`), and *Sin
+ánima* to compare. Its page lists its colours, what it adds (`CLASS_STATS`), maná, how it grows
+(`LEVELLED` or the jar), its skills by level, the jar's tree by line (`IMPROVEMENTS`), passives and
+duals. The party's own entries switch between their clothes and each ánima they can wear; a
+friend's ánima shows the friend. The street dogs are built by the fight's `buildStreetDogs`, and
+Vertitrón's eye is shown on Vertitrón.
+
+It reads the game, not a list: foes come from building every fight as the game does
+([src/bestiary-data.ts](../src/bestiary-data.ts), `createFight`, a few seeds for rooms drawn at
+random), their moves from playing each fight a few times with the simulator's bot (`playOut`,
+which counts each foe kind's abilities in `Run.moves`), their questions from `TARGETS` and, for the
+castle, `CASTLE_ANSWERS` (copied from docs/castle.md, docs/castle-bosses.md). Models come from
+`src/characters/`, `src/monsters/`, `src/creatures/`, the fears' templates (src/fears.ts) and the
+minion; sizes from `foeScale` (src/battle-scene.ts). What lives outside `src/` (tools/figures.toml
+and the files `just character-3d` leaves in output/) is written first by `tools/bestiary.py` to
+`output/bestiary/figures.json`, which `just bestiario` runs. So a new figure, monster, foe or fight
+shows up by itself; `tests/bestiary.test.mjs` fails if a new fight's foe has no place in it.
+`just screenshots bestiario --gpu` (after `uv run python tools/bestiary.py`).
+
+**Notes and marks to redo.** Each entry has a *Notas* section: chips to mark what to redo (*modelo*,
+*retrato*, *diseño*, *animaciones*, *combate*), a comment, *Guardar nota* (or Ctrl/⌘ + Enter), and
+each note's *Hecha*, *Descartar*, *Reabrir* and *Borrar*. In the list an entry with open notes shows
+✎ and how many (red when one asks to redo something), *Con notas* keeps only those, and the header
+counts the open ones. They live in `docs/bestiary-notes.json`, tracked so they travel between
+machines, created with the first note. The dev server writes it (`bestiaryNotes` in vite.config.ts:
+`GET`/`PUT /__bestiario/notas`, checked against the format and written through a temp file); a build
+has no server, so there the notes are read-only. The format (`src/bestiary-notes.ts`, checked by
+`notesProblem`), two spaces, notes in the order they were made:
+
+```json
+{
+  "notes": [
+    {
+      "id": "n-<Date.now() in base 36>",
+      "entry": "enemigo:repetidor",
+      "name": "El Repetidor",
+      "redo": ["modelo"],
+      "text": "the comment",
+      "status": "abierta",
+      "created": "2026-11-19T22:50:00Z",
+      "reply": "what was done (optional)",
+      "closed": "2026-11-20T10:00:00Z"
+    }
+  ]
+}
+```
+
+`entry` is the entry's key (`aliado:`, `anima:`, `enemigo:`, `diseno:`, `npc:` and its id), `redo`
+any of the five (none: just a comment), `status` `abierta`, `hecha` or `descartada`. The `bestiario`
+skill reads the open ones, does what they ask and writes its `reply` under each, which the page shows.
+The screenshots use `?notas=scratch` (output/bestiary/notes-scratch.json), so they never leave a real note.
+
 ## Effects lab
 
 *Atacar de Matemágico* plays his thrown Atacar (`src/math-cast.ts`), with no element or with each one,

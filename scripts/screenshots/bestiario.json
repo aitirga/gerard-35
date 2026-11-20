@@ -1,0 +1,253 @@
+{
+  "title": "Bestiario · todos los del juego",
+  "description": "The bestiary (just bestiario, bestiario.html, src/bestiary.ts): everyone in the game from its own data, with the 3D model the game draws, portraits and concept art, traits, simulated moves, the fight's question and the model's animations. Run uv run python tools/bestiary.py first (just bestiario does) so the concept art shows, and run it with --gpu. Its last shots write notes to output/bestiary/notes-scratch.json (?notas=scratch), never to docs/bestiary-notes.json, and empty it at the end.",
+  "steps": [
+    {
+      "open": "/bestiario.html?ver=enemigo:repetidor",
+      "ready": "document.querySelector('#status')?.textContent.startsWith('Listo') && window.bestiary?.ready()"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "repetidor",
+      "delay": 1500,
+      "caption": "A castle pupil: El Repetidor, still drawn with the palace minion (placeholder badge), its new designs in the strip, its PV by year, the moves the bot saw it make and its question"
+    },
+    {
+      "eval": "window.bestiary.filter('mejorar')"
+    },
+    {
+      "shot": "por-mejorar",
+      "delay": 600,
+      "caption": "The list filtered to what needs a model of its own (placeholders and beings with none)"
+    },
+    {
+      "eval": "window.bestiary.filter('todos'); window.bestiary.select('aliado:gerard35')"
+    },
+    {
+      "shot": "gerard",
+      "delay": 2000,
+      "caption": "An ally: Gerard at 35, his game model, portrait and the just character-3d images"
+    },
+    {
+      "eval": "window.bestiary.select('anima:matemagico')"
+    },
+    {
+      "shot": "matemagico",
+      "delay": 1800,
+      "caption": "An ánima: Matemágico worn by Gerard at 35, dressed by the game's own wearClass (blueprint blue ruled in gold, the digits), with its colour, what it adds, how it grows, its skills, the jar's tree, passives and duals"
+    },
+    {
+      "eval": "window.bestiary.select('anima:matemagico', 1)"
+    },
+    {
+      "shot": "matemagico-nino",
+      "delay": 1500,
+      "caption": "Matemágico on Gerard as a boy: the only ánima he has in chapter 1"
+    },
+    {
+      "eval": "window.bestiary.select('anima:papagato')"
+    },
+    {
+      "shot": "papagato-gerard",
+      "delay": 1800,
+      "caption": "Papagato on Gerard (35), front-on: Haru's orange and Yuki's white, the ears, tail and bell, and the two cats at his feet (createCat)"
+    },
+    {
+      "eval": "window.bestiary.select('anima:papagato', 1)"
+    },
+    {
+      "shot": "papagato-aitor",
+      "delay": 1800,
+      "caption": "The same ánima on Aitor: Papagato is shared, so the switch offers him"
+    },
+    {
+      "eval": "window.bestiary.select('anima:papagato', 2)"
+    },
+    {
+      "shot": "sin-anima",
+      "delay": 1800,
+      "caption": "Sin ánima: Gerard in his own clothes, to compare"
+    },
+    {
+      "eval": "window.bestiary.select('anima:tecnopata')"
+    },
+    {
+      "shot": "tecnopata",
+      "delay": 1800,
+      "caption": "Tecnópata, Aitor's own: graphite and cyan, his glasses a HUD, and Bip floating beside him (createBip)"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:repetidor', 1)"
+    },
+    {
+      "shot": "repetidor-nuevo",
+      "delay": 900,
+      "caption": "A pupil just selected: El Repetidor's new model front-on, its walk restarted from the first frame, no spin"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:dog')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "perros",
+      "delay": 1200,
+      "caption": "The street dogs, built by the fight's own buildStreetDogs, each in its coat and collar"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:vertigo')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "vertitron",
+      "delay": 1800,
+      "caption": "A foe with a procedural model of its own: Vertitrón, its moves and its targets"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:campeon')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "campeon",
+      "delay": 1500,
+      "caption": "El Campeón, Càmping Eurosport's mini-boss, redone: the board game's villain as a Meshy figure, the furnace grate in his chest, his Plan and his Rayo"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:lealtad')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "lealtad",
+      "delay": 1500,
+      "caption": "La Lealtad, a Meshy figure with a touch of Marta: her two-tone hair and hoops, the shield strung like a harp, the amber knot in code on top"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:eco')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "eco",
+      "delay": 1500,
+      "caption": "An Eco, a breaking wave of pale glass floating over the floor, lit from inside, its rings round the bead"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:directo')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "directo",
+      "delay": 1500,
+      "caption": "Lo Directo, a knight built of sword blades edged in light, its lance of light beside it"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:cebollon')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "cebollon",
+      "delay": 1500,
+      "caption": "El Cebollón, Uri's fear made realistic: a man-sized onion with torn dry skins and roots like legs"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:plato')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "plato",
+      "delay": 1500,
+      "caption": "El Plato Misterioso: a tarnished cloche lifted on something pale and wet, on a café table"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:fantasmita')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "fantasmita",
+      "delay": 1500,
+      "caption": "A fantasmita: an arcade ghost of magenta glass cubes coming apart at its edges"
+    },
+    {
+      "eval": "window.bestiary.select('diseno:castigado')"
+    },
+    {
+      "shot": "castigado",
+      "delay": 900,
+      "caption": "A monster being designed: El Castigado, its design image, its views and its pipeline steps"
+    },
+    {
+      "eval": "window.bestiary.select('npc:nuria')"
+    },
+    {
+      "shot": "nuria",
+      "delay": 1500,
+      "caption": "A person: Nuria, her model, portrait and expressions"
+    },
+    {
+      "open": "/bestiario.html?ver=enemigo:repetidor&notas=scratch",
+      "ready": "document.querySelector('#status')?.textContent.startsWith('Listo') && window.bestiary?.ready()"
+    },
+    {
+      "eval": "fetch('/__bestiario/notas?archivo=scratch', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({\"notes\": [{\"id\": \"n-mi5ab1c0\", \"entry\": \"enemigo:repetidor\", \"name\": \"El Repetidor\", \"redo\": [\"retrato\"], \"text\": \"Le falta un retrato para la placa del combate.\", \"status\": \"hecha\", \"created\": \"2026-11-19T21:00:00Z\", \"closed\": \"2026-11-19T21:40:00Z\", \"reply\": \"Ejemplo de respuesta de la skill bestiario: retrato low-poly hecho con just character repetidor.\"}, {\"id\": \"n-mi5ab1c1\", \"entry\": \"enemigo:aurelia\", \"name\": \"Aurelià\", \"redo\": [], \"text\": \"¿Más alto que los alumnos? Que se note que es el profe.\", \"status\": \"abierta\", \"created\": \"2026-11-19T21:05:00Z\"}, {\"id\": \"n-mi5ab1c2\", \"entry\": \"diseno:gemelo\", \"name\": \"Los Gemelos\", \"redo\": [\"diseño\", \"modelo\"], \"text\": \"Siguen siendo monos: más altos, más quietos.\", \"status\": \"abierta\", \"created\": \"2026-11-19T21:10:00Z\"}]}) })"
+    },
+    {
+      "open": "/bestiario.html?ver=enemigo:repetidor&notas=scratch",
+      "ready": "document.querySelector('#status')?.textContent.startsWith('Listo') && window.bestiary?.ready()"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "eval": "(() => { const d = document.querySelector('#detail'); d.querySelector('[data-redo=\"modelo\"]').click(); d.querySelector('[data-redo=\"animaciones\"]').click(); const t = d.querySelector('#note-text'); t.value = 'La forma vale, pero que no parezca un gólem: más chicle, menos roca. Que ande arrastrando los puños.'; t.dispatchEvent(new Event('input', { bubbles: true })); d.querySelector('[data-save]').click(); d.scrollTop = 0; })()"
+    },
+    {
+      "until": "window.bestiary.notes().length === 4",
+      "timeout": 10000
+    },
+    {
+      "shot": "notas",
+      "delay": 1200,
+      "caption": "Notes on an entry (a scratch file, ?notas=scratch): the one just written with Ctrl/⌘+Enter, marked to redo model and animations; a done one with the bestiario skill's reply; the form with the redo chips"
+    },
+    {
+      "eval": "window.bestiary.filter('notas')"
+    },
+    {
+      "shot": "con-notas",
+      "delay": 600,
+      "caption": "The list filtered to entries with open notes: ✎ and how many, red when one asks to redo something; the open count in the header"
+    },
+    {
+      "eval": "fetch('/__bestiario/notas?archivo=scratch', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({\"notes\": []}) })"
+    }
+  ]
+}

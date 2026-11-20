@@ -151,6 +151,12 @@ combat-lab:
 model-lab:
     npm run dev -- --open /model-lab.html
 
+# Open the bestiary: everyone in the game with their 3D model, portrait, concept art, traits, moves and animations (development)
+[group('Combat')]
+bestiario:
+    uv run --locked python tools/bestiary.py
+    npm run dev -- --open /bestiario.html
+
 # Run reproducible difficulty batches (use --help for seeds, policies and tuning)
 [group('Combat')]
 [positional-arguments]
