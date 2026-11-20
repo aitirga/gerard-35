@@ -27,8 +27,8 @@ import { HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, MAX_LATTI
  * the tail), coloured white-hot → mid → end over their lives.
  */
 
-export type GpuShape = 'glow' | 'streak' | 'flame' | 'smoke' | 'line' | 'shard' | 'ring' | 'star' | 'dot' | 'strand' | 'spark';
-const SHAPES: Record<GpuShape, number> = { glow: 0, streak: 1, flame: 2, smoke: 3, line: 4, shard: 5, ring: 6, star: 7, dot: 8, strand: 9, spark: 10 };
+export type GpuShape = 'glow' | 'streak' | 'flame' | 'smoke' | 'line' | 'shard' | 'ring' | 'star' | 'dot' | 'strand' | 'spark' | 'powder' | 'pool';
+const SHAPES: Record<GpuShape, number> = { glow: 0, streak: 1, flame: 2, smoke: 3, line: 4, shard: 5, ring: 6, star: 7, dot: 8, strand: 9, spark: 10, powder: 11, pool: 12 };
 
 /** How a kind of particle moves and looks; everything but `colours` and `shape` has a default. Colours are sRGB hex, × `intensity`. */
 export interface GpuKind {
@@ -220,7 +220,7 @@ export interface GpuEmitter extends Omit<GpuBurst, 'count' | 'light'> { rate: nu
 
 const W = 256, H = 128, N = W * H, BANDS = 5;
 // Every kind registered at once: the fight's own, the duals', the statuses' and the motes' (one name each).
-export const MAX_KINDS = 64;
+export const MAX_KINDS = 96;
 const KIND_COLS = 12, MAX_BATCHES = 64, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
 const SPAWN_SHAPES = { ball: 0, ring: 1, surface: 2, line: 3 } as const;
 /** Frames a fighter's real surface may be old before it is written again (src/surface-samples.ts). */
@@ -766,6 +766,8 @@ varying vColour: vec4f;
 varying vLook: vec4f;
 varying vGlass: f32;
 varying vCore: f32;
+varying vFloor: vec4f;
+varying vAge: vec3f;
 fn st(band: i32, index: i32) -> vec4f { return textureLoad(uState, vec2i(index % ${W}, index / ${W} + band * ${H}), 0); }
 fn kin(k: i32, c: i32) -> vec4f { return textureLoad(uKinds, vec2i(c, k), 0); }
 @vertex
@@ -774,7 +776,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   let i = i32(aIndex.x);
   let A = st(0, i); let B = st(1, i); let C = st(2, i); let D = st(3, i); let E = st(4, i);
   if (!(B.w > 0.0 && A.w < B.w)) {
-    output.position = vec4f(2.0, 2.0, 2.0, 1.0); output.vUv = vec2f(0.0); output.vColour = vec4f(0.0); output.vLook = vec4f(0.0); output.vGlass = 0.0; output.vCore = 0.0;
+    output.position = vec4f(2.0, 2.0, 2.0, 1.0); output.vUv = vec2f(0.0); output.vColour = vec4f(0.0); output.vLook = vec4f(0.0); output.vGlass = 0.0; output.vCore = 0.0; output.vFloor = vec4f(0.0); output.vAge = vec3f(0.0);
     return output;
   }
   let k = i32(C.x);
@@ -790,7 +792,9 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   alpha *= 1.0 - f.w * (0.5 + 0.5 * sin(uniform.uTime * (6.0 + seed * 9.0) + seed * 40.0));
   // Blurred, its quad grows so the soft halo is never cut; the shape keeps its own size.
   let blur = mix(k10.z, k10.w, t); let expand = 1.0 + blur * 0.8;
-  let size = mix(s.x, s.y, t) * C.w * expand;
+  // A pool of paint spreads as it lands, in a third of a second, and then stays as it is.
+  let grown = select(t, 1.0 - exp(-A.w * 9.0), s.w > 11.5);
+  let size = mix(s.x, s.y, grown) * C.w * expand;
   // Each particle a touch brighter or dimmer than its kind, so a burst never looks flat.
   colour *= 0.86 + 0.28 * fract(seed * 7.13);
   let shape = s.w;
@@ -835,7 +839,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
     var onScreen = vec2f(dot(vel, right), dot(vel, up)) * s.z;
     var tail = min(length(onScreen), 0.8);
     // A spark is never round: a few times longer than it is wide, pointing the way it flies (up when still).
-    let spark = shape > 9.5;
+    let spark = shape > 9.5 && shape < 10.5;
     if (spark) { if (tail < 0.0005) { onScreen = vec2f(0.0, 0.001); } tail = max(tail, size * 3.0); }
     let stretched = (shape > 0.5 && shape < 1.5) || (shape > 3.5 && shape < 5.5) || spark;
     // A stain lies on the floor: its quad is spread over the ground, a hair above it, turned its own way.
@@ -855,7 +859,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
       var angle = seed * 6.2831853 + k7.w * (seed * 2.0 - 1.0) * A.w;
       if (shape > 1.5 && shape < 2.5) { angle = 1.5707963; }
       // Beads are lit from one side: they never turn, or their glint would spin with them.
-      if (shape > 7.5 && shape < 8.5) { angle = 0.0; }
+      if ((shape > 7.5 && shape < 8.5) || (shape > 10.5 && shape < 11.5)) { angle = 0.0; }
       let c = cos(angle); let sn = sin(angle);
       var q = vec2f(c * corner.x - sn * corner.y, sn * corner.x + c * corner.y) * size;
       if (shape > 3.5 && shape < 4.5) { q.y *= k10.y; }
@@ -868,6 +872,17 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   output.vLook = vec4f(shape, seed, f.z, blur);
   output.vGlass = k7.z;
   output.vCore = kin(k, 11).z;
+  // For a pool of paint: where this corner is in the plane it lies in, and which way in that plane
+  // the light comes from (the screen's upper left, as beads are lit), so every pool shines the same
+  // way and pools that touch read as one. On the floor that plane is the floor (and its quad is
+  // squashed); clinging to someone it is the screen.
+  let lit = right * -0.55 + up * 0.6;
+  let onFloor = vec2f(lit.x, lit.z);
+  var plane = vec4f(world.x, world.z, onFloor / max(length(onFloor), 0.0001));
+  var squash = 0.72 + 0.28 * fract(seed * 3.7);
+  if (kin(k, 9).z < 0.5) { plane = vec4f(dot(world, right), dot(world, up), -0.6757, 0.7372); squash = 1.0; }
+  output.vFloor = plane;
+  output.vAge = vec3f(A.w, t, squash);
   output.position = uniform.matrix_viewProjection * vec4f(world, 1.0);
   return output;
 }`;
@@ -882,14 +897,16 @@ varying vColour: vec4f;
 varying vLook: vec4f;
 varying vGlass: f32;
 varying vCore: f32;
+varying vFloor: vec4f;
+varying vAge: vec3f;
 fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
 fn noise(p: vec2f) -> f32 { let i = floor(p); var f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2f(1.0, 0.0)), f.x), mix(hash(i + vec2f(0.0, 1.0)), hash(i + vec2f(1.0, 1.0)), f.x), f.y); }
 // Each shape: how covered (a), how white-hot (white) and how its colour is tinted at uv.
-struct Shape { a: f32, white: f32, tint: vec3f };
+struct Shape { a: f32, white: f32, tint: vec3f, shine: f32 };
 // A tapering ray along x, w sharp across, reaching len.
 fn ray(p: vec2f, w: f32, len: f32) -> f32 { return exp(-abs(p.y) * w) * smoothstep(len, 0.0, abs(p.x)); }
 fn shapeAt(uv: vec2f, shape: f32, seed: f32, aa: f32, light: f32) -> Shape {
-  var sh: Shape; sh.a = 0.0; sh.white = 0.0; sh.tint = vec3f(1.0);
+  var sh: Shape; sh.a = 0.0; sh.white = 0.0; sh.tint = vec3f(1.0); sh.shine = 0.0;
   let r = length(uv);
   if (shape < 0.5) {
     // Light: a white-hot pinpoint, a body of its colour and a faint halo, fading to nothing at the edge.
@@ -954,6 +971,18 @@ fn shapeAt(uv: vec2f, shape: f32, seed: f32, aa: f32, light: f32) -> Shape {
     // A strand: a soft-edged ribbon with a hot core.
     sh.a = smoothstep(1.0, 0.25, abs(uv.y));
     sh.white = smoothstep(0.5, 0.0, abs(uv.y)) * 0.55;
+  } else if (shape > 10.5) {
+    // Pigment: a lump of dry powder, or a grain of it. Matte: it takes the scene's light and has none
+    // of its own. Dense in its middle and thinning out to a fringe that breaks into grains, shaded
+    // as a soft ball from the upper left, so many of them overlapping read as one billowing cloud.
+    // (A pool, 12, is drawn by poolAt.)
+    let n = noise(uv * 2.4 + seed * 37.0) * 0.6 + noise(uv * 5.5 - seed * 11.0) * 0.4;
+    let cloud = smoothstep(1.0, 0.1, r + (n - 0.5) * 0.75);
+    let grit = noise(uv * 24.0 + seed * 91.0);
+    sh.a = smoothstep(0.0, 0.3, cloud + (grit - 0.5) * 0.35) * (0.35 + 0.65 * cloud);
+    let nz = sqrt(max(0.0, 1.0 - min(r * r, 1.0)));
+    let diffuse = 0.62 + 0.5 * max(0.0, dot(vec3f(uv * 0.9, nz), vec3f(-0.4, 0.55, 0.73)));
+    sh.tint *= uniform.uLight * diffuse * (0.86 + 0.28 * n);
   } else {
     // A spark: a thin streak, white-hot at its head, its own colour behind it, cooling to deep red
     // down a tail that tapers and fades.
@@ -965,6 +994,35 @@ fn shapeAt(uv: vec2f, shape: f32, seed: f32, aa: f32, light: f32) -> Shape {
   }
   return sh;
 }
+// A pool of wet paint lying on the floor: a lobed blot, thicker in the middle, with a bright line
+// along the edge that faces the light and a shadow along the other, and patches of the sky's light
+// lying on it. The patches are placed on the floor, not on the particle, so pools that overlap
+// shine as one. It dries: the shine goes over the last part of its life and leaves it matte.
+fn poolAt(uv: vec2f, seed: f32, aa: f32) -> Shape {
+  var sh: Shape; sh.white = 0.0; sh.shine = 0.0;
+  let r = length(uv);
+  let dir = uv / max(r, 0.0001);
+  let reach = 0.56 + 0.36 * noise(dir * 1.7 + seed * 31.0) + 0.07 * noise(dir * 5.0 + seed * 7.0);
+  let d = r / reach;
+  sh.a = 1.0 - smoothstep(1.0 - aa * 2.0 - 0.03, 1.0, d);
+  // The way out of the pool at this point, on the floor (its quad is turned by its seed and squashed).
+  let angle = seed * 6.2831853; let c = cos(angle); let sn = sin(angle);
+  let squashed = dir * vec2f(1.0, vAge.z);
+  let outward = normalize(vec2f(c * squashed.x - sn * squashed.y, sn * squashed.x + c * squashed.y) + vec2f(0.00001, 0.0));
+  let toLight = dot(outward, vFloor.zw);
+  let wet = 1.0 - smoothstep(0.55, 0.95, vAge.y);
+  let dome = clamp(1.0 - d * d, 0.0, 1.0);
+  let lip = smoothstep(0.62, 0.9, d) * (1.0 - smoothstep(0.93, 1.0, d));
+  // The sky lying on it: soft patches stretched across the light's way, steadier in the thick middle.
+  let w = vFloor.xy;
+  let across = vec2f(dot(w, vFloor.zw) * 2.2, dot(w, vec2f(-vFloor.w, vFloor.z)) * 6.5);
+  let sky = smoothstep(0.56, 0.74, noise(across + 3.7) * 0.75 + noise(across * 2.3 - 9.1) * 0.25) * (0.35 + 0.65 * dome);
+  let glint = lip * pow(max(0.0, toLight), 1.5);
+  let shade = 1.0 - 0.3 * lip * max(0.0, -toLight) - 0.12 * (1.0 - dome);
+  sh.tint = uniform.uLight * shade * mix(1.0, 0.84, wet);
+  sh.shine = (sky * 1.0 + glint * 2.2) * wet * sh.a;
+  return sh;
+}
 @fragment
 fn fragmentMain(input: FragmentInput) -> FragmentOutput {
   var output: FragmentOutput;
@@ -972,6 +1030,7 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
   // How much uv a pixel spans, for smooth edges (taken here, in uniform control flow, as WGSL requires).
   let aa = max(fwidth(length(vUv)), 0.002) * 1.2;
   var sh = shapeAt(vUv, shape, vLook.y, aa, vLook.z);
+  if (shape > 11.5) { sh = poolAt(vUv, vLook.y, aa); }
   // Blurred: the shape averaged over five points, as if out of focus.
   if (blur > 0.001) {
     let o = blur * 0.55;
@@ -1001,6 +1060,8 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
   let additive = vLook.z;
   let peak = max(1.0, max(colour.r, max(colour.g, colour.b)));
   colour = mix(colour, vec3f(peak), clamp(white, 0.0, 1.0));
+  // Wet paint's shine is light on top of its colour, bright enough to bloom.
+  colour += uniform.uLight * sh.shine;
   #if (FOG != NONE)
     let fogged = getFogFactor();
     colour = mix(mix(uniform.fog_color, colour, fogged), colour * fogged, additive);

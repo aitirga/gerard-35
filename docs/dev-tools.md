@@ -465,3 +465,17 @@ console. It also works over Las cuerdas with Gerard and Aitor, using the fight t
 
 `just screenshots sincopante-fx --gpu` catches each moment as it happens. Like the rest of the lab,
 it never touches the fight's numbers.
+
+**Polvo de colores · el ánima de Luca** is a section too ([src/powder-lab.ts](../src/powder-lab.ts),
+[src/powder-fx.ts](../src/powder-fx.ts)). It shows the dry coloured powder of Luca's ánima before
+its rules are in the game:
+- *Puff* is the puff alone, *Puñado* a handful thrown at the foe picked and *A todos* one for each;
+- *Cubierto* leaves the powder on the foe picked, as the status;
+- *Fuego* blows up whoever is covered and leaves every foe burning, *Agua* runs it green and
+  poisons them;
+- *Cortina* stands a screen of powder in front of an ally, *Telón* one in front of each, and
+  *Romper* is the picked foe's blow going through one: it bursts over them and leaves them covered;
+- *Color* switches between grey (first round) and the muted mixes, and *Quitar polvo* clears it.
+
+`window.powderLab.act('lanzar')` drives it from the console, and `just screenshots polvo-fx --gpu`
+catches each moment. It never touches the fight's numbers.

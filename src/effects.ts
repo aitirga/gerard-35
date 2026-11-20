@@ -1279,6 +1279,8 @@ export function createEffects(app: pc.Application) {
     onGlass(listener: (on: boolean) => void) { onGlass = listener; },
     /** Who is fighting, every frame of a fight: fight particles meet their parts (src/fight-particles.ts). */
     setFighters(models: readonly pc.Entity[]) { fightersNow = [...models]; gpu?.setFighters(models); },
+    /** Where `model` is in the fight particles' order, for a burst born on its surface (−1 if it is not fighting). */
+    fighterIndex(model?: pc.Entity) { return fighterIndex(model); },
     /**
      * A fight effect on `model` (a fighter), thrown from `from` (`FIGHT_FX`): built on the GPU
      * engine's kinds, fields, chains and neighbours. Returns false where it cannot play (no GPU

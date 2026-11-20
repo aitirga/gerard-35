@@ -7,6 +7,8 @@ import { SOUNDS, type Sfx, type SoundId } from './sfx';
 import { DUALS, FOE_ABILITIES, type BattleEffect, type DualId, type Element as AttackElement, type FoeAbilityId } from './battle';
 import { DUAL_BANNER, DUAL_SLOW } from './battle-motion';
 import { mountEcoLab } from './eco-lab';
+import { mountPowderLab } from './powder-lab';
+import { mountFreaticaLab } from './freatica-lab';
 
 type Game = Awaited<ReturnType<typeof createGame>>;
 
@@ -101,6 +103,9 @@ export function mountFxLab(game: Game, sfx: Sfx) {
   document.body.append(panel);
   // Sincopante's ecos (src/eco-lab.ts), at the top of the panel.
   const ecoLab = mountEcoLab(game, panel.querySelector<HTMLElement>('.fx-lab-body')!);
+  const powderLab = mountPowderLab(game, panel.querySelector<HTMLElement>('.fx-lab-body')!);
+  // Freática's contained water (src/freatica-lab.ts).
+  const freaticaLab = mountFreaticaLab(game, panel.querySelector<HTMLElement>('.fx-lab-body')!);
   // Clicks here stay here: the fight's own menu never hears them.
   for (const type of ['keydown', 'pointerdown', 'click'] as const) panel.addEventListener(type, event => event.stopPropagation());
 
@@ -251,6 +256,6 @@ export function mountFxLab(game: Game, sfx: Sfx) {
 
   refresh(); applyHud();
   return {
-    destroy() { clearInterval(timer); ecoLab.destroy(); panel.remove(); game.frame(); const battle = document.querySelector<HTMLElement>('#battle'); if (battle) battle.style.visibility = ''; },
+    destroy() { clearInterval(timer); ecoLab.destroy(); powderLab.destroy(); freaticaLab.destroy(); panel.remove(); game.frame(); const battle = document.querySelector<HTMLElement>('#battle'); if (battle) battle.style.visibility = ''; },
   };
 }

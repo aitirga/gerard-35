@@ -433,7 +433,7 @@ everywhere else, in reduced motion and in the headless tests, effects stay on th
   seed, the part it clings to, size; D when it lets go + its colour tint; E the particle it follows,
   where it sits in its chain, its batch), ping-ponged by **one full-screen pass a frame**
   (`pc.drawQuadWithShader`): each band's texel recomputes the same step and writes its own share.
-- **Kinds are data, defined at runtime** (`define(name, kind)`, 16 slots, `GpuKind`): physics
+- **Kinds are data, defined at runtime** (`define(name, kind)`, `MAX_KINDS` slots, `GpuKind`): physics
   (drag, gravity or buoyancy, turbulence, how much fields move it, collide, bounce, friction, cling
   and for how long, settle), look (shape, three colour stops with brightness and when the middle one
   shows, size at birth and death and how much each particle's size varies, streak length, how thin a
@@ -443,7 +443,11 @@ everywhere else, in reduced motion and in the headless tests, effects stay on th
   that land and stay). Redefining a kind changes the particles of it already in flight.
 - **Shapes**: `glow`, `streak`, `flame`, `smoke`, `line` (crisp thin lines along their motion),
   `shard` (a sharp diamond), `ring`, `star`, `dot` (hard-edged) and `strand` (a ribbon from a chain
-  link to the link ahead, so a chain draws as one line).
+  link to the link ahead, so a chain draws as one line). Two are **matter, not light**: `powder` (dry
+  pigment: a lump with an eaten, grainy edge, never turned, lit by the place's light `uLight` and
+  shaded as a small ball, with nothing of its own to glow) and `pool` (a wet blot with lobes that
+  spreads as it lands, flat on the floor or clinging to a body, with a lip highlight and patches of
+  sky in it while it is wet). Both are the coloured powder's (`src/powder-fx.ts`).
 - **Spawning** happens on the GPU: the CPU keeps a ring of slots and sends batches (`burst`,
   `emitter`, up to 64 a frame): in a ball, on a ring round any axis (spinning with `around`), along a
   line (`to`), or on the **surface of a fighter**: a point on its real geometry above a fraction of

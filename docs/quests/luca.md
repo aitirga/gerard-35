@@ -11,7 +11,8 @@ Família**, studying Gaudí's hyperboloids, and he is turning the basilica into 
 Luca's colours have drained into the stained glass, and the brighter Fran shines, the greyer Luca
 gets. Luca waits outside, unable to go in; Gerard and Aitor cross the salon zone by zone, where
 **the light walks through colours and cancels the party's element of its colour**, and face Fran
-under the canopy of the altar. Luca's ánima is **Prismático** (its wearable form still to design).
+under the canopy of the altar. Luca's ánima is **Prismático** (its wearable form designed
+2026-11-20, `docs/animas/prismatico/`, not built).
 
 ## Protagonist
 
@@ -178,10 +179,14 @@ one broken gives a colour back to Luca and, in the fight, back to the party's ha
 
 ## Ánima
 
-- **Prismático**: a prism splits light into its colours; *prismáticos* are also the binoculars you
-  look at the sky with. It plays with **barriers of crystal prisms** and with **amplifying
-  elemental attacks on the next turn** (Aitor, 2026-11-16). Its wearable form is designed with
-  `/anima` in `docs/animas/prismatico/README.md` (to create).
+- **Prismático**: designed on 2026-11-20 in
+  [`docs/animas/prismatico/README.md`](../animas/prismatico/README.md), waiting for Aitor's yes on
+  its skill list. Aitor's direction of that day replaces the one of 2026-11-16 (barriers of
+  crystal prisms, amplifying elemental attacks on the next turn; the prism goes to Marta's ánima):
+  it is **a tank and protector that throws dry coloured powder**, as at a Holi. The powder does
+  nothing by itself and an element decides what it becomes: fire blows it up, water turns it to
+  poison, electricity leaves it as shards. Its protection is a screen of powder that halves the
+  next blow. The name is open again; the binoculars stay as what Luca hands over.
 - Today the mission gives `ANIMAS.luca` (light and a placeholder party bonus) and Luca's light,
   as Marta's does.
 - World key: none.
@@ -388,7 +393,7 @@ shirts on hangers** (red, blue, gold) and the fight asks one thing: *which one, 
 ## Open
 
 - Luca's phrase, his day, what he was like as a kid (the second round).
-- Prismático's wearable design (`/anima`).
+- Prismático's wearable design: Aitor's yes to `docs/animas/prismatico/README.md` (2026-11-20), then building it.
 - Luca's photos and Fran's toy image.
 
 ## Implementation plan

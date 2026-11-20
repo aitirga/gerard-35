@@ -1,0 +1,231 @@
+{
+  "title": "Polvo de colores · el ánima de Luca en el motor",
+  "description": "The coloured powder of Luca's ánima, the powder thrown at a Holi, in the effects lab over the fight with the chaplains in Fran's salon (?fxlab, src/powder-fx.ts, src/powder-lab.ts; docs/animas/prismatico/README.md § Look and interface). Dry pigment, matte (the `powder` shape, src/fight-particles.ts), in muted colours that every puff mixes; it bursts, hangs and gets on everything. Fire on it explodes and burns everyone, water on it runs green (the `pool` shape) and poisons, and a screen of it stands in front of an ally until a blow breaks it. Only the look, never a fight's numbers. Run it with --gpu --scale 2.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fxlab&battle=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22luca-sillones%22%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && !!window.powderLab && !!document.querySelector('.fx-lab [data-field=target] option')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('.fx-lab [data-act=fold]').click()"
+    },
+    {
+      "record": "puff",
+      "seconds": 3.4,
+      "each": "if (frame === 4) window.powderLab.act('puff')",
+      "caption": "The puff alone: the powder bursts, stops in the air within half a metre and hangs; jets stretch into plumes, grains fly on, drift down and stay on the floor. Matte: it takes the scene's light and has none of its own",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "eval": "window.powderLab.act('puff')"
+    },
+    {
+      "shot": "puff",
+      "delay": 170,
+      "caption": "A sixth of a second in: the core has already stopped, the jets and the grains are still flying",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "shot": "puff-queda",
+      "delay": 1500,
+      "caption": "A second and a half later: a thin cloud still hanging, and powder on the floor",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "eval": "window.powderLab.act('quitar')"
+    },
+    {
+      "record": "punado",
+      "seconds": 3.6,
+      "each": "if (frame === 4) window.powderLab.act('lanzar')",
+      "caption": "A handful thrown: it crosses in a third of a second leaving a streak in the air, bursts on the foe and leaves it covered in powder",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "shot": "cubierto",
+      "delay": 1200,
+      "caption": "Covered in powder: it clings to the foe's parts and sheds grains, with a little of the cloud still round it",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "record": "a-todos",
+      "seconds": 4,
+      "each": "if (frame === 4) window.powderLab.act('nube')",
+      "caption": "One handful for every foe, a breath apart, each its own mix of the palette",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "shot": "todos",
+      "delay": 1200,
+      "caption": "All three covered, the clouds mixing, the floor dusted",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "record": "fuego",
+      "seconds": 3.6,
+      "each": "if (frame === 4) window.powderLab.act('fuego')",
+      "caption": "Fire on the powder: it explodes. A flash and a ball of flame off each covered foe, the powder blown out charred, a ring along the floor, embers thrown at whoever stands near, and all of them left burning a little",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "shot": "quemados",
+      "delay": 1500,
+      "caption": "After it: scorched floor, smoke, and every foe burning at level I",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "eval": "window.powderLab.act('quitar'); window.powderLab.act('nube')"
+    },
+    {
+      "record": "agua",
+      "warmup": 2.2,
+      "seconds": 4,
+      "each": "if (frame === 4) window.powderLab.act('agua')",
+      "caption": "Water on the powder: it darkens and runs, turning green as it goes; it drips, pools at their feet, and poisons them",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "shot": "envenenados",
+      "delay": 1800,
+      "caption": "After it: the powder run wet on them and on the floor, and every foe poisoned",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    },
+    {
+      "eval": "window.powderLab.act('quitar')"
+    },
+    {
+      "record": "cortina",
+      "seconds": 3.6,
+      "each": "if (frame === 4) window.powderLab.act('cortina')",
+      "caption": "The cortina, the protective spell: a handful thrown upwards hangs in front of an ally as a standing screen, grains falling from it",
+      "clip": [
+        150,
+        110,
+        1290,
+        560
+      ]
+    },
+    {
+      "shot": "cortina",
+      "delay": 1200,
+      "caption": "Standing: a body wide and a little taller, between the ally and the foes, until a blow breaks it",
+      "clip": [
+        150,
+        110,
+        1290,
+        560
+      ]
+    },
+    {
+      "record": "romper",
+      "seconds": 3.6,
+      "each": "if (frame === 4) window.powderLab.act('romper')",
+      "caption": "The blow that breaks it: the whole screen is thrown forward over whoever dealt it, who is left covered in powder (Rebufo)",
+      "clip": [
+        150,
+        110,
+        1290,
+        560
+      ]
+    },
+    {
+      "eval": "window.powderLab.act('quitar')"
+    },
+    {
+      "record": "telon",
+      "seconds": 3.6,
+      "each": "if (frame === 4) window.powderLab.act('telon')",
+      "caption": "Telón: a cortina in front of each ally",
+      "clip": [
+        150,
+        110,
+        1290,
+        560
+      ]
+    },
+    {
+      "shot": "telon",
+      "delay": 1200,
+      "caption": "Both standing",
+      "clip": [
+        150,
+        110,
+        1290,
+        560
+      ]
+    },
+    {
+      "eval": "window.powderLab.act('quitar'); window.powderLab.setGrey(true)"
+    },
+    {
+      "record": "gris",
+      "seconds": 3.6,
+      "each": "if (frame === 4) window.powderLab.act('lanzar')",
+      "caption": "The first round: the same handful in grey",
+      "clip": [
+        760,
+        110,
+        680,
+        560
+      ]
+    }
+  ]
+}

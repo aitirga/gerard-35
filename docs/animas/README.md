@@ -65,6 +65,7 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 | [**Tecnópata**](tecnopata/README.md) | Aitor's own, from chapter 2's first morning (was the placeholder Físico) | `#4fe0ff` cyan | — | — | Designing (2026-11-05): look, drone-HUD interface and Bip, his robot, first |
 | [**Sincopante**](sincopante/README.md) | Marta's mission (Alegia, Las cuerdas), `docs/quests/marta.md` | Proposal: nácar, seafoam `#8fe3c4` | Proposal: Magia +2, Espíritu +2, Defensa +1, Fuerza −1 | Ecos floating over the party that strike or cure on their own beat (Ostinato, Bordón), raised by *Crescendo*; the astral | Designed whole 2026-11-20 round Aitor's direction (floating ecos that work for the party, support too; *Crescendo*; the astral; *Da capo* bringing the duals back), waiting for his yes. Nothing built: a field entity on the clock is missing |
 | [**Dadista**](dadaista/README.md) | The university friends' mission (Barceloneta, Càmping Eurosport), `docs/quests/universidad.md` | `#efe6cf` ivory (built, to confirm); the astral, bluish white `#bfe0ff` | Fuerza +2, Magia +2, Crítico +10 %, Defensa −1 (Aitor 2026-11-20, built) | Tirar dado: each die's face is a move (Mano, Tijeras, Ojo, Corchete, a blank that repeats, the Comodín). *Racha*: every die spent is Crítico +10 % | Playable to level 3: its dice as maná, the faces, the *Racha* with its count on the plate (the ánima's rule from level 1), *Agitar* at 2 (the hand rolled again for nothing, once a fight, twice with one eco; the Comodín with Racha 3) and *Estrella fugaz* at 3 (astral; 3 of Racha for two dice). Dice, luck and the astral (Aitor 2026-11-20). Designed, waiting for the seven levels: *Dados astrales* at level 4 with Maná +1 (Aitor's), *Ases en dúo* (Aitor's), *Meteorito → Meteoro → Asteroide* at level 7 (Aitor's) and the definitiva *Un golpe de dados*. Renamed from Dadaísta |
+| [**Prismático**](prismatico/README.md) | Luca's mission (the Sagrada Família), `docs/quests/luca.md` | `#617ce2` dusty blue (built, to confirm) | Defensa +3, Espíritu +2, Fuerza −1 (built, a first guess) | Dry coloured powder, by the handful. Empolvado does nothing and waits for an element: fire blows it up (and every foe burns a level more), water poisons (blows on it land harder), electricity leaves shards (every blow does a fixed amount more). *Cortina* and *Telón* raise the party's Defensa and stand a screen of powder that halves the next blow; whoever breaks it is powdered | Redesigned 2026-11-20 (Aitor's fifth round: no paint, the puff), waiting for his yes on the skill list. Playable under their paint names: Brochazo, Pintado with no reactions, and the dual Reserva de color. The powder's look is built in the effects lab. The name is open again |
 | _Pedro's_ | Pedro's mission (`docs/quests/pedro.md`, to write) | _open_ | _open_ | _open_ | Idea (2026-11-05): a shared ánima from Pedro, a gay friend of Gerard and Aitor they see a lot |
 
 **Who has what** (2026-11-05): Matemágico is Gerard's own and Tecnópata Aitor's (`ANIMA_OWNERS`),
@@ -289,6 +290,18 @@ Its whole table: [dadaista/README.md](dadaista/README.md) § Skills per level.
 
 Its whole table: [sincopante/README.md](sincopante/README.md) § Skills per level.
 
+| Level | Prismático (proposal 2026-11-20; *Puñado* is playable as *Brochazo*) |
+| --- | --- |
+| 1 | Its rule, *Rebufo*: whoever breaks a cortina is powdered. *Puñado*: a light physical blow that powders; *Cortina*: Defensa up for the party and a screen that halves the next blow on one ally |
+| 2 | *Rociada*: light water on every foe (the powdered ones are poisoned, as by any water) |
+| 3 | *Polvareda*: a light physical blow on every foe that powders them all |
+| 4 | Maná +1 |
+| 5 | Passive · *Remolino*: when a foe's powder reacts, a cortina stands in front of the wearer |
+| 6 | *Telón*: Defensa up for the party and a cortina in front of each ally |
+| 7 | *Traca*: five light physical blows on foes at random, each powdering |
+
+Its whole table: [prismatico/README.md](prismatico/README.md) § Skills per level.
+
 ### Passives
 
 A passive is always on while its ánima is worn: no cost, no button. **Few and influential**: one
@@ -297,7 +310,7 @@ need one from the start** (Aitor 2026-11-20): a passive is something it grows in
 
 | Where it comes from | Ánimas | Example |
 | --- | --- | --- |
-| **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo* |
+| **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo*, Prismático's *Remolino* |
 | **A node at the jar** (2 ecos) | Own ones | Matemágico's *Rescoldo*, Tecnópata's *Nanitos* |
 
 A passive can reach the whole party (*Olor a sangre*: anyone's blow on a foe that bleeds), and then it
@@ -389,6 +402,7 @@ and each ánima has **a condition that, met in a fight, unlocks it** there. The 
 | Papagato | A wound of five Sangrado stacks or more is spent (always a golpe crítico, by its passive) | *Siete vidas*: Haru hurts every foe and leaves them bleeding; Yuki walks among the party, and the next blow that would kill someone cures them instead what it was going to take |
 | Tecnópata | Three different clock statuses running on the field at once | *Enjambre*: Bip comes apart over the foes: high magic on all, and every clock on the field starts over |
 | Sincopante | Three ecos sound at once: a chord (proposal 2026-11-20) | *Da capo* (Aitor's, 2026-11-20: the duals again): every dual already used in the fight can go off once more, and every ánima of both fighters is full of maná again to pay for them |
+| Prismático | The powder has been all three things in the fight: an Estallido, an Envenenado and a Cristalizado (proposal 2026-11-20) | *Fin de fiesta*: every foe is powdered and its powder blows up, poisons and crystallises at once |
 | Dadista | The wearer's Crítico reaches 100 % (proposal 2026-11-20) | *Un golpe de dados*: a great die of light on every foe, high magic of no element and a sure golpe crítico; the hand is filled to six dice |
 
 ## Combined skills
@@ -621,6 +635,115 @@ Atacar with water once Capilaridad is bought.
 Water on a burning foe is still Humo (it puts the fire out, it does not wet). By kind of blow,
 never by who wears what: any fire and any electricity do it.
 
+### Empolvado (powdered, timed)
+
+Aitor's, 2026-11-20 (fifth round), for Prismático: dry coloured powder, as at a Holi, that **does
+nothing by itself and waits for an element**. The three reactions are his; the numbers are first
+guesses. Built today: the status alone, under its paint name (*Pintado*, laid by *Brochazo*),
+with no reactions. It replaces that day's paint proposal (Pintado, Endurecido, Añicos, the cover).
+
+**The rule**
+
+- A **timed** status, as Mojado: 20 s on the clock, no levels, no pulses. Powder on a powdered foe
+  starts its 20 s over.
+- Laid by a blow that powders (Prismático's *Puñado*, *Polvareda*, *Traca*) and by breaking a
+  cortina while Prismático is worn (§ Cortina de polvo, *Rebufo*).
+
+| On Empolvado | Reaction | What happens |
+| --- | --- | --- |
+| Fire | **Estallido** | The powder explodes: magic fire damage on that foe (22) and half (11) on every other foe. The blast is fire: it sets off the powder on any other powdered foe, each once. When the chain is over, **every foe standing is Quemado one level higher**, once however many went up |
+| Water | **Envenenado** | The powder takes the water and leaves Envenenado I (§ Envenenado); on one already poisoned, a level more and its clock starts over. It leaves no Mojado |
+| Electricity | **Cristalizado** | The powder on the one struck fuses into shards (§ Cristalizado). Only the one struck, as Shock |
+
+- **Only a blow of an element sets it off**, after the powder is there: powder that lands on a
+  foe already burning or wet does nothing to it. Otherwise a handful on a burning field would
+  blow it up every turn, with no element spent.
+- **By kind of blow, never by who wears what**: any fire, any water and any electricity do it
+  (Atacar with an element, a skill, a dual, a foe's move), whoever threw the powder. It holds on
+  both sides; today no foe throws any.
+- A part of a boss can be powdered, blown up, poisoned and crystallised.
+- The powder is spent by its reaction: the next one needs powder again. A foe can be Envenenado,
+  Cristalizado and Quemado at once, from three handfuls.
+
+**How it shows.** Matte is the look: dry, opaque, lit only by the place's light, no bloom and no
+shine, the one effect in a fight that does not glow. On the GPU particle engine
+(`src/powder-fx.ts`; the effects lab's *Polvo de colores*, `just screenshots polvo-fx`). Colours
+do nothing: an earth palette (terracotta, mustard, sage, dusty teal, slate blue, brick), two or
+three mixed in every puff; never saturated pink or violet.
+
+| Beat | What happens |
+| --- | --- |
+| **It lands** (0.5 s) | A puff the size of the foe's body: a dense core that opens in a tenth of a second, eight or nine jets thrown outwards, a haze that hangs for two seconds, and thousands of grains that fall. Over the number, *¡Empolvado!* |
+| **While it lasts** | The powder stays on its body, all over the side it came from, and on the floor round it; a few grains shed every second and a thin haze stays at its feet. Its plate has the icon, a small cloud, with the 20 s ring |
+| **Estallido** (0.6 s) | A white flash on the body, then a fireball that swallows it and a ring along the floor; the powder leaves as black char. Embers fly to every other foe; a powdered one goes up 0.15 s after the one before. Scorch on the floor, smoke, and every foe left with Quemado's flames. *Estallido* in fire's colour, with its PV beside it |
+| **Envenenado** (0.6 s) | The water darkens the powder; it runs down the body in thick streaks turning green and pools at its feet. From there on it is Envenenado's look (bubbles, ooze, the haze at its feet). *Envenenado* in its green |
+| **Cristalizado** (0.5 s) | A spark runs over the powder; it draws together into small hard shards that stand out of the body, the only thing of the powder that catches the light. *Cristalizado* in electricity's colour |
+
+- *Movimiento reducido*: no jets and no flying char; the powder appears, changes colour and goes.
+
+### Envenenado (poisoned, timed)
+
+Aitor's, 2026-11-20: left by water on Empolvado; **the foe takes damage and the physical and magic
+damage it receives is amplified while it lasts**. Its look is built (`STATUS_LOOKS.envenenado`);
+no rule yet. Numbers are first guesses.
+
+- A **timed** status that pulses: every **4 s** for **20 s**, about two rounds, so it does not
+  need feeding every round as Quemado does.
+- **While it lasts, every blow on whoever is poisoned, physical or magic, lands 25 % harder**, at
+  any level. The bonus is added to a wound's and a golpe crítico's, never multiplied by them.
+  Pulses and a reaction's own damage are not blows. Over the number, *Veneno +25 %*.
+- **Escalates** as Quemado: poisoned again while it lasts, a level more (I → II → III) and its
+  20 s start over. Each level costs powder and water again; the level only raises the pulse.
+- First guess for the pulse: twice Quemado's base (2 PV plus 2 % of the carrier's PV counted up to
+  100), at ×1, ×3 and ×5: on a foe of 260 PV, 4 / 12 / 20 a pulse, 20 / 60 / 100 in its 20 s.
+- Like Sangrado and Quemado, its pulses pass over the foes' own rules, and are never a golpe
+  crítico.
+- The reactions the combat direction gave it (fire on it, *Veneno ardiente*; water on it,
+  *Contagio*) stay for later.
+
+### Cristalizado (full of shards, timed)
+
+Aitor's, 2026-11-20: left by electricity on Empolvado; **every attack it receives does a certain
+amount more, because the shards dig in**. Nothing built. (Not *Cristalino*: that is a foe of Las
+cuerdas.)
+
+- A **timed** status: 20 s on the clock, no levels, no pulses. Crystallised again, its 20 s start
+  over.
+- **Every blow that lands on it does 8 more** (a first guess), added at the end, after Defensa
+  and after anything that multiplies. Every hit of a flurry counts, and an eco's; pulses do not.
+  So the poison is for whoever hits hard and the crystal for whoever hits often.
+- Open, Aitor's to say: the same amount on every blow (as here), or one that grows with each
+  blow received.
+- **How it shows**: small hard shards stand out of the body where the powder was, in the powder's
+  colours gone pale; they glint when the foe moves. Each blow drives them in: a short glassy
+  crack, three or four splinters thrown out, and *Esquirlas +8* beside the number. Its icon on
+  the plate, a splinter, with the 20 s ring.
+
+### Cortina de polvo (the powder screen)
+
+Aitor's, 2026-11-20: a protective spell that raises everyone's Defensa and stands **a physical
+shield of particles in front** of an ally that **halves the next attack**; Prismático's first
+protects one (*Cortina*), its second both (*Telón*). Nothing built in the rules; its look is in
+the effects lab. *Sutura de luz* already halves the next damage of a round: this is that rule
+with a body.
+
+- **The next damage a blow does to whoever stands behind it is halved, and the cortina breaks.**
+  One blow: of a flurry it stops the first hit. Pulses pass through and do not break it. Halved
+  first; Defender's or a protection's third comes after.
+- It stands until a blow breaks it or **three rounds** pass (proposal). One on each fighter;
+  raised again, it starts over. A blow on everyone breaks each one it meets.
+- ***Rebufo*** (proposal, Prismático's rule while it is worn): whoever breaks a cortina is left
+  **Empolvado**: the screen bursts over them.
+- In descriptions: `Una cortina de polvo reduce a la mitad el siguiente daño que reciba un
+  aliado.` (`cada aliado` for both).
+
+**How it shows**: a handful thrown upwards hangs in front of the ally as a standing screen, a
+body wide and a little taller, between them and the foes: dense in the middle, thin at the edges,
+churning slowly, grains falling from its foot onto the floor. Its icon on the ally's plate, a
+small curtain. A blow goes through it: the screen is torn open where the blow passes and the
+whole of it is thrown forward over whoever dealt it (a puff, as a handful's), and the number
+comes out with *Cortina −50 %*.
+
 ### How long a clock status lasts (proposal, 2026-11-14)
 
 A turn's animation is 1.16 s (`ACTION_SECONDS`) and a player thinks 3 to 8 s, so a round with two
@@ -646,6 +769,10 @@ Sanación (15 s, a cure in five pulses) stays: it pulses, it does not wait for a
 | Cegado | Atacar · Agua on Quemado | Atacar · Eléctrico (Tormenta) |
 | Punto débil | The dual *Punto débil*; Dadista (*Ojo*) | Any blow, the next one |
 | Crítico past 100 % | Dadista (*Racha*, *Ases en dúo*; proposal) | Dadista (*Dados astrales*: a die of light for each 15 %) |
+| Empolvado (built as Pintado; its reactions are a proposal) | Prismático (*Puñado*, *Polvareda*, *Traca*; whoever breaks a cortina, by *Rebufo*) | Any fire (Estallido), any water (Envenenado), any electricity (Cristalizado) |
+| Cristalizado (proposal) | Electricity on Empolvado | Whoever hits often: every blow does a fixed amount more (flurries, ecos, *Traca*) |
+| Envenenado (proposal) | Water on Empolvado; Prismático (*Rociada*) | Whoever hits hard: every blow lands 25 % harder. Whatever stretches a clock (Tecnópata's *Rayo de energía*, *Telemetría*) |
+| Cortina de polvo (proposal) | Prismático (*Cortina*, *Telón*, *Remolino*) | Whoever stands behind it: the next blow at half |
 | The astral | Tecnópata (*Rayo de energía*), Dadista (its astral skills), Sincopante (every blow and eco; proposals) | Nothing on purpose: it is the damage nothing resists |
 
 ## How an ánima is built
