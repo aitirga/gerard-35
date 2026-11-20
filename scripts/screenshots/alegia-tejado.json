@@ -1,0 +1,20 @@
+{
+  "title": "Alegia · El tejado del 61 ya no tapa la plaza",
+  "description": "docs/graphics.md § Seeing Gerard behind things, src/geo-scenery.ts `SINK`, src/building-occlusion.ts `buildingHidesGround`. By Marta's piano the house at number 61 hid half the square under its roof without hiding Gerard himself, so it stood whole. A building marked `cut: \"foundations\"` now comes down while it hides him or the ground a few steps round him; out in front on San Juan kalea both it and the town hall still stand whole. Run it with --gpu.",
+  "steps": [
+    { "open": "/?mission=marta&part=piano" },
+    { "eval": "navigator.getGamepads = () => []" },
+    { "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'Alegia · San Juan kalea'", "timeout": 120000 },
+    { "eval": "window.downs = () => ['61', '63'].map(n => window.gerard.game.app.root.findByName('Edificio ' + n).findByName('Cimientos')?.enabled ?? false)" },
+    { "wait": 4000 },
+    { "eval": "if (!window.downs()[0]) throw new Error('By the piano, number 61 must be down: its roof hides the square')" },
+    { "shot": "piano", "delay": 300, "caption": "Junto al piano: la casa del 61, delante de la plaza, baja a sus cimientos" },
+    { "eval": "window.gerard.game.standAt({ x: 84, z: 57 })" },
+    { "wait": 4000 },
+    { "shot": "plaza", "delay": 300, "caption": "En medio de la plaza: el 61 y el ayuntamiento abajo, la plaza entera a la vista" },
+    { "eval": "window.gerard.game.standAt({ x: 100, z: 67 })" },
+    { "wait": 2000 },
+    { "until": "window.downs().every(down => !down)", "timeout": 10000 },
+    { "shot": "delante", "delay": 300, "caption": "Delante, en San Juan kalea: el ayuntamiento y el 61 enteros" }
+  ]
+}

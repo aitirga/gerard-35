@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BUILDING_CUT_LEAN, BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder } from '../src/building-occlusion.ts';
+import { BUILDING_CUT_LEAN, BUILDING_CUT_NEAR, buildingHidesGround, buildingHidesPlayer, createBuildingOccluder } from '../src/building-occlusion.ts';
 import meridiana from '../src/geo/meridiana-calle.json' with { type: 'json' };
 
 const focus = { x: 0, y: 0.7, z: 0 };
@@ -61,6 +61,30 @@ test('separate buildings retain independent visibility and empty geometry stays 
   assert.equal(hides([]), false);
   assert.equal(hides([0, 0, 1, 0, 0, 1, 0, 0, 1]), false);
   assert.equal(buildingHidesPlayer(obscuring, focus, { x: 0, y: 0, z: 0 }), false);
+});
+
+// A closed block: four walls and a flat roof.
+const block = (x0, x1, z0, z1, height) => createBuildingOccluder([
+  ...wall(x0, x1, z0, height), ...wall(x0, x1, z1, height),
+  ...quad([x0, 0, z0], [x0, 0, z1], [x0, height, z1], [x0, height, z0]), ...quad([x1, 0, z0], [x1, 0, z1], [x1, height, z1], [x1, height, z0]),
+  ...quad([x0, height, z0], [x1, height, z0], [x1, height, z1], [x0, height, z1]),
+]);
+
+test('a building in front of the ground round the player hides it even when he stays in sight', () => {
+  // Low and a few steps ahead: rays from his body pass over it, but it covers the ground before it.
+  const ahead = block(-3, 3, 2.5, 6, 2);
+  assert.equal(buildingHidesPlayer(ahead, focus, toCamera), false);
+  assert.equal(buildingHidesGround(ahead, focus, toCamera), true);
+  // Far enough ahead, the ground round him shows over it.
+  assert.equal(buildingHidesGround(block(-3, 3, 8, 12, 2), focus, toCamera), false);
+});
+
+test('from the street in front of a building, the floor behind its facade never counts', () => {
+  const behind = block(-4, 4, -6, -0.5, 8);
+  assert.equal(buildingHidesPlayer(behind, focus, toCamera), false);
+  assert.equal(buildingHidesGround(behind, focus, toCamera), false);
+  assert.equal(buildingHidesGround(createBuildingOccluder([]), focus, toCamera), false);
+  assert.equal(buildingHidesGround(block(-3, 3, 2.5, 6, 2), focus, { x: 0, y: 0, z: 0 }), false);
 });
 
 const occluderOf = id => {

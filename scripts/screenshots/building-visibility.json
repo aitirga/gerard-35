@@ -10,7 +10,7 @@
     { "shot": "visible-corner", "caption": "Beside the inaccessible corner: both characters are visible and the facade stays whole" },
     { "eval": "window.gerard.game.standAt({x: 44, z: 41})" },
     { "wait": 2000 },
-    { "eval": "if (window.buildingCutRadii().some(r => r > 0)) throw new Error('Walking along home's block must not open its facade');" },
+    { "eval": "if (window.buildingCutRadii().some(r => r > 0)) throw new Error('Walking along the block of home must not open its facade');" },
     { "shot": "along-facade", "caption": "Along home's block at Meridiana 335: being close to a facade does not activate the cut" },
     { "eval": "window.gerard.game.standAt({x: 148, z: 19})" },
     { "wait": 2500 },

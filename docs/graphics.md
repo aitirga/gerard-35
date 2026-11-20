@@ -225,7 +225,9 @@ keep him in sight, all set in `occlusion` (`?cut=`, `?silueta=0` and `?camara=fi
     `cut: false` always draws this way, whatever the style (the Sagrada Família).
 
   A building whose zone marks it `"cut": "foundations"` opens no window in any style: while it hides
-  him it **comes down to its foundations** (`SINK` and `foundationCap` in src/geo-scenery.ts). A plane
+  him, or the ground 3 cells round him (3.75 m in Alegia; `buildingHidesGround`: eight points at his feet, each
+  tried along the camera ray unless it lies under the building itself), it **comes down to its
+  foundations** (`SINK` and `foundationCap` in src/geo-scenery.ts). A plane
   descends from its top to 0.8 m above the ground and nothing of it above the plane is drawn, in
   every pass, so its shadow goes too; a cap carried down with the plane shows the stumps of its outer
   walls, 0.45 m thick in its plinth's stone, round a floor of packed earth 0.45 m lower, so it never

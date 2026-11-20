@@ -82,12 +82,17 @@ function leansOn({ a, normal }: Triangle, focus: Point3) {
   return Math.abs((a.x - focus.x) * normal.x + (a.y - focus.y) * normal.y + (a.z - focus.z) * normal.z) < BUILDING_CUT_LEAN;
 }
 
+/** The unit direction towards the camera, or nothing for a degenerate one. */
+function unit(toCamera: Point3): Point3 | undefined {
+  const length = Math.hypot(toCamera.x, toCamera.y, toCamera.z);
+  return length < EPSILON ? undefined : { x: toCamera.x / length, y: toCamera.y / length, z: toCamera.z / length };
+}
+
 /** A building opens only when its visible geometry overlaps the player's narrow silhouette. */
 export function buildingHidesPlayer(shape: BuildingOccluder, focus: Point3, toCamera: Point3): boolean {
   if (!shape.triangles.length) return false;
-  const length = Math.hypot(toCamera.x, toCamera.y, toCamera.z);
-  if (length < EPSILON) return false;
-  const direction = { x: toCamera.x / length, y: toCamera.y / length, z: toCamera.z / length };
+  const direction = unit(toCamera);
+  if (!direction) return false;
   const horizontal = Math.hypot(direction.x, direction.z);
   const right = horizontal > EPSILON ? { x: -direction.z / horizontal, z: direction.x / horizontal } : { x: 1, z: 0 };
   for (const lift of [-0.35, 0.1, 0.6]) {
@@ -95,6 +100,31 @@ export function buildingHidesPlayer(shape: BuildingOccluder, focus: Point3, toCa
       const origin = { x: focus.x + right.x * side, y: focus.y + lift, z: focus.z + right.z * side };
       if (hitsBounds(shape, origin, direction) && shape.triangles.some(triangle => !leansOn(triangle, focus) && hitsTriangle(triangle, origin, direction))) return true;
     }
+  }
+  return false;
+}
+
+/**
+ * The ground round the player that a building coming down to its foundations keeps in sight: points
+ * `reach` world units from his focus in eight directions, `drop` below it (just above his feet).
+ */
+export const GROUND_SIGHT = { reach: 3, drop: 0.6 };
+const UP: Point3 = { x: 0, y: 1, z: 0 };
+
+/**
+ * Whether a building hides the ground a few steps round the player, as a roof in front of the square
+ * he stands in does while it covers half the screen and not him. Ground under the building itself
+ * does not count, so from the street in front of it the floor behind its facade never brings it down.
+ */
+export function buildingHidesGround(shape: BuildingOccluder, focus: Point3, toCamera: Point3): boolean {
+  if (!shape.triangles.length) return false;
+  const direction = unit(toCamera);
+  if (!direction) return false;
+  const hits = (origin: Point3, towards: Point3) => hitsBounds(shape, origin, towards) && shape.triangles.some(triangle => hitsTriangle(triangle, origin, towards));
+  for (let k = 0; k < 8; k++) {
+    const angle = k * Math.PI / 4;
+    const origin = { x: focus.x + Math.cos(angle) * GROUND_SIGHT.reach, y: focus.y - GROUND_SIGHT.drop, z: focus.z + Math.sin(angle) * GROUND_SIGHT.reach };
+    if (hits(origin, direction) && !hits(origin, UP)) return true;
   }
   return false;
 }

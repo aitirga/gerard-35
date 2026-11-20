@@ -166,7 +166,9 @@ pelota wall, Bulebarra and the toka.
 - The `drizzle` and `mist` particles and Alegia's air (`src/effects.ts`).
 - `cut: "foundations"` on a building (`src/geo-scenery.ts`, docs/graphics.md): the town hall (63)
   and its neighbour at 61 (`way/48893677`, it hides the cowbell) come down to their foundations
-  while they hide Gerard.
+  while they hide Gerard or the ground a few steps round him. By the piano 61's roof filled half the
+  screen without covering him, so it stood whole (2026-11-20, the user: «el tejado tapa»);
+  `just screenshots alegia-tejado --gpu`.
   Txintxarri plaza, where Marta waits at the piano (docs/quests/marta.md), lies right behind them
   from the camera, and the round window only showed a hole in a roof there (2026-11-19, the user:
   «los edificios tapan gran parte de la escena… hacer que se vean solo los cimientos»). From the

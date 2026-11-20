@@ -1,7 +1,7 @@
 import * as pc from 'playcanvas';
 import { flankRun, type GeoBuilding, type GeoPoint, type GeoRoad, type GeoScene, type GeoShop } from './geo';
 import { shine } from './lighting';
-import { BUILDING_CUT_LEAN, BUILDING_CUT_NEAR, buildingHidesPlayer, createBuildingOccluder, type Point3 } from './building-occlusion';
+import { BUILDING_CUT_LEAN, BUILDING_CUT_NEAR, buildingHidesGround, buildingHidesPlayer, createBuildingOccluder, type Point3 } from './building-occlusion';
 import { HOME_POSE } from './camera-orbit';
 import { occlusion, type OcclusionStyle } from './occlusion';
 import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
@@ -57,8 +57,9 @@ const CUT_STUB = -0.25;
 const CUT_RATE = 8;
 /**
  * A building marked `cut: "foundations"` in its zone (docs/environment-styling.md § Buildings) opens
- * no window: while it hides Gerard it comes down to its foundations, `floor` metres of it left and
- * capped in its stone, its shadow with it. It sinks at `rate` and rises again only once he has been
+ * no window: while it hides Gerard or the ground a few steps round him (`buildingHidesGround`: a roof
+ * filling half the screen in front of the square he is in) it comes down to its foundations, `floor`
+ * metres of it left and capped in its stone, its shadow with it. It sinks at `rate` and rises again only once he has been
  * clear of it for `hold` seconds, so walking along its edge never bobs it up and down. For the few that
  * stand right in front of a place the story uses (Alegia's town hall, before Marta's piano).
  */
@@ -2330,9 +2331,10 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
         const hides = pivot.enabled && !!focus && !!toCamera && buildingHidesPlayer(shape, focus, toCamera);
         const down = cut.foundations;
         if (down) {
-          // Down while it hides him, and a moment after; it comes back up once he has been clear of it a while.
-          down.clear = hides ? 0 : down.clear + dt;
-          const want = hides || (down.sink > 0 && down.clear < SINK.hold) ? 1 : 0;
+          // Down while it hides him or the ground round him, and a moment after; it comes back up once he has been clear of it a while.
+          const inTheWay = hides || (pivot.enabled && !!focus && !!toCamera && buildingHidesGround(shape, focus, toCamera));
+          down.clear = inTheWay ? 0 : down.clear + dt;
+          const want = inTheWay || (down.sink > 0 && down.clear < SINK.hold) ? 1 : 0;
           const eased = animate ? down.sink + (want - down.sink) * (1 - Math.exp(-dt * SINK.rate)) : want;
           const sink = Math.abs(eased - want) < 0.003 ? want : eased;
           if (sink !== down.sink) sinkTo(cut, down, shape.max.y + 0.1, sink);
