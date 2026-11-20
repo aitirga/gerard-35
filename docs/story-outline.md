@@ -181,10 +181,15 @@ Still to design (proposals wait for a yes):
 - **Who Nuria Mendoza is** (decided): a real person, **a good friend of Gerard's today**. As kids
   they **called her "la Reina Bubbaloo"**, and **she has never known**. That is why the suspicion
   makes sense to the characters.
-- **She never appears in the game.** At the end it is clear the Queen is nobody: she is *ser
-  niño*, imagined into being, with the old nickname.
-- **The credits reveal** that Nuria Mendoza was **on holiday the whole time** and never found out
-  about any of it (decided).
+- **She never appears in the game as herself.** The Queen **wears her face** (Aitor, 2026-11-20):
+  the figure and the portrait are drawn from Nuria Mendoza's photos, made cruel, so in the throne
+  room the false lead looks true (Gerard: «…¿Nuria?»; she: she put on the face they were looking
+  for, she never had one of her own). At the end it is clear the Queen is nobody: she is *ser
+  niño*, imagined into being, with the old nickname and a borrowed face.
+- **The credits reveal** that Nuria Mendoza was **on holiday the whole time**, posing for photos,
+  and never found out about any of it (decided): the last card is surrounded by her holiday
+  photos dropping in one by one (`ALBUM` in `src/credits.ts`; the photos stay on this machine,
+  `public/private/`, since the repository is public).
 - Open: who called her that as kids (Gerard and Bernat? the whole street?), and how the nickname
   surfaces in the game (Bernat remembering it is the natural place).
 - Proposal: Gerard can phone her too (the same phone as Bernat's call) and always gets her

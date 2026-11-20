@@ -64,7 +64,7 @@ const WON: Partial<Record<CastleEncounter, string>> = {
 const MESSAGES: Partial<Record<CastleEncounter, string>> = {
   aurelia: 'Aurelià está en la tarima, detrás del atril, con los ojos violeta. No levanta la voz. Nunca le ha hecho falta.',
   direccion: 'Mar, Montse y Pilar levantan la vista del acta a la vez. Las tres tienen los ojos violeta.',
-  reina: 'Baja del trono sin prisa. No tiene cara. No tiene nombre. Es todo lo que quedó de cuando erais niños.',
+  reina: 'Baja del trono sin prisa. Lleva la cara de Nuria Mendoza, y no es ella. No tiene nombre: es todo lo que quedó de cuando erais niños.',
   'reina-vuelta': 'Os está esperando donde la dejasteis. Lleva vuestros golpes encima. Gerard aprieta el artilugio en el bolsillo.',
 };
 export const castleWinMessage = (state: BattleState) => WON[state.encounter as CastleEncounter] ?? 'El chicle pierde la forma y se queda en el suelo, quieto. Solo era chicle.';
