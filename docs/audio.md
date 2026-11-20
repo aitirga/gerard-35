@@ -98,13 +98,28 @@ The director, `music` in [src/main.ts](../src/main.ts):
   on Nuria's street in Cardedeu (Jacint Verdaguer, not the street that never ends nor Uri's tower),
   and in Alegia, as in Sant Quirze. The first time Aitor plays the piano there, Marta's «Izana»
   starts at once and `triste` fades out under it over 1.5 s.
-- **The friends' missions**, each with a mazmorra song: `mazmorra-oscuro` in Uri's tower and in Luca's
-  (the Sagrada Família, outside and inside, Fran's salon included); `mazmorra-2` in the university
-  friends' camping and in Emilie's (Poble Sec, her flat and her model). Marta's Las cuerdas has her own
-  voice instead (below). The beach where the university friends' mission starts has no song.
-- **Uri's tower**: `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11 min) the same way, from a different
-  point every time they go in and every time a fight there ends, and never at any other moment: at
-  the end of the file it goes on from the top. `just screenshots tower-music --chrome` checks it.
+- **The friends' missions** start on the dark mazmorra song, sad and plain (`mazmorra-oscuro`,
+  Logic's `song-mazmorra-4`): Uri's tower, the university friends' camping, Emilie's (Poble Sec, her
+  flat and her model) and Luca's (the Sagrada Família, outside and inside, Fran's salon included).
+  Marta's Las cuerdas has her own voice instead (below). The beach where the university friends'
+  mission starts has no song.
+- **Boss rooms** (Aitor, 2026-11-19): in three of those missions, reaching the boss's room changes the
+  song for `mazmorra-3`, from its top over 2 s, and the boss is fought to it, going on from where it
+  was (`inBossRoom` and `BOSS_ROOM_FIGHTS` in [src/main.ts](../src/main.ts)). Any other fight there
+  still has the battle song, and the room's song comes back after it. Each room counts until its boss
+  falls; then the place's song comes back:
+  - Vertitrón (Nuria's mission, Papagato's): Uri's tower once its third ring is behind them, the last
+    climb to the summit.
+  - La Sobremesa (the university friends'): the walled merendero north of the steel door (the
+    camping's rows 3–19, columns 2–17), once Las parcelas has opened it.
+  - El que no converge (Emilie's): the bottom of her model (`fondo`).
+
+  Luca's Fran, Marta's La Voz and the castle's bosses keep their own music (the battle song; La Voz
+  her recording; the Queen's last fight § The last fight). Looked at twice a second, so walking in or
+  out changes it. `just screenshots boss-rooms --chrome` checks all three.
+- **How the missions' take plays** (`mazmorra-oscuro`, 11 min), as in Uri's tower: from a different
+  point every time they go in and every time a fight there ends, never jumping while it plays: at the
+  end of the file it goes on from the top. `just screenshots tower-music --chrome` checks it.
 - **Streets**: `concrete` on Meridiana street, from the top over 4 s, and `triste` (above) from a
   random point. `just screenshots street-music --chrome` checks both and the vamp.
 - **La Reina Bubbaloo's castle**: `bubbaloo` (`bubbaloo-light`, 13 min) the same way, at the Rec
@@ -156,15 +171,23 @@ the third A going back to an earlier one.
 
 ### The mazmorra, concrete and triste songs
 
-The first two are at 110 BPM, measured with `just music-loop` and a self-similarity check of the files.
+`mazmorra-2` and `concrete` are at 110 BPM, measured with `just music-loop` and a self-similarity
+check of the files; `mazmorra-3` at 90.
 
 - `mazmorra-2` (`song-mazmorra-2`, 4:48) holds six versions of one 48 s cycle: 88 beats, Logic's
   bars 1 to 23. Each starts on its downbeat at 0, 48, 96, 144, 192 and 240 s, and the file ends on
   the sixth's seam at 288 s. Version 1 opens it, then 2–6 mix. Version 1 is also the quietest
-  (−17.9 dB against −16.6 to −17.2 for the rest). It is for friends' missions, picked among the
-  mazmorra songs: the camping and Emilie's places play it.
-- `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11:14) is Uri's tower's: a long take, streamed, with its
-  loudness map (−26.8 to −16.9 dB, median −20.7).
+  (−17.9 dB against −16.6 to −17.2 for the rest). Nothing plays it since the friends' missions took
+  `mazmorra-oscuro` (2026-11-19).
+- `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11:14) is Logic's `song-mazmorra-4`, the friends'
+  missions' song: a long take, streamed, with its loudness map (−26.8 to −16.9 dB, median −20.7). A
+  new bounce of `song-mazmorra-4` (2026-11-19) is the same audio (correlation .99999, the difference
+  −47 dB of encoding), so the game keeps its file.
+- `mazmorra-3` (`song-mazmorra-3`, 3:20) is the boss rooms': 75 bars at 90 BPM, played as three
+  versions of a 25-bar part (bars 1, 26 and 51 match within .94–1.00), and its end runs back into its
+  top, so it loops whole. The file starts already sounding, so cutting at exactly 0 → 200 s clicked (a
+  step of .10 against .02 between neighbouring samples there); the loop runs from 104 samples in (at
+  48 kHz) to 59 before 200 s, where the two waveforms meet (a step of .0014), 2 ms short of 75 bars.
 - `concrete` (`song-concrete`, 1:40) is 46 bars from its first downbeat at 0 s to 100.364 s.
   Bars 1 to 9 open; bars 10 to 17 (19.635 → 37.090 s, Logic's locators 10 to 18) vamp three to
   seven times; then bar 18, the break at bars 19 and 20 (40–43.6 s) and the rest play, and at
@@ -218,12 +241,12 @@ game; if a browser places them differently (the AAC priming is 44 ms), check by 
 
 ### Songs waiting for their place
 
-Every master in `assets/music/` is exported and plays somewhere. Each master is named after its
-Logic project in `~/Music/Logic/G-35/` (`song-triste`'s master is still called `song-sad`), and
-projects not bounced yet have no master: `intro-final`, `intro-light`, `song-1`,
-`song-concrete-recovered`, `song-mazmorra-1`, `song-mazmorra-3` and `song-mazmorra-4` (one of the last
-three is `song-mazmorra-oscuro`, exported under that name). Bounce into `assets/music/`, not `dist/`:
-`just build` empties `dist/`.
+`mazmorra-2` waits for a place again (above). Each master in `assets/music/` is named after its
+Logic project in `~/Music/Logic/G-35/` (`song-triste`'s is still called `song-sad`, and
+`song-mazmorra-4` is exported as `song-mazmorra-oscuro`). Projects not bounced yet have no master:
+`intro-final`, `intro-light`, `song-1`, `song-concrete-recovered` and `song-mazmorra-1` (`intro-piano`
+came from one of the two intros). Bounce into `assets/music/`, not `dist/`: `just build` empties
+`dist/`.
 
 ### The castle's haunt
 

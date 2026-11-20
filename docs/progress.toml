@@ -727,6 +727,11 @@ grep = "STEPS"
 in = "src/game.ts"
 
 [[block.item]]
+title = "Salas del jefe: mazmorra-3 en la sala y el combate de tres misiones"
+grep = "BOSS_ROOM_FIGHTS"
+in = "src/main.ts"
+
+[[block.item]]
 title = "Sonido en los sitios que no lo tienen"
 weight = 2
 absent = 'Sound \| Not yet'

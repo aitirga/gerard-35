@@ -39,12 +39,18 @@ export const TRACKS = {
   // The file starts already sounding, so a cut at exactly 0 → 96 s clicked; the loop runs 43
   // samples (at 48 kHz) after the start to 61 before 96 s, where the waveforms meet, 2 ms short.
   triste: { src: 'music/song-triste.m4a', marks: { start: 0, loop: 0.000896, end: 95.998729 }, loop: ['loop', 'end'], bpm: 50, beatsPerBar: 4, downbeat: 'start' },
-  // Uri's tower, 11 minutes, dark: a long take, streamed, that comes in anywhere each time they go in
-  // or a fight ends, and never jumps while it plays. It fades in and out by itself, so its end meets its top.
+  // The friends' missions (Logic's song-mazmorra-4; Uri's tower first), 11 minutes, dark: a long take,
+  // streamed, that comes in anywhere each time they go in or a fight ends, and never jumps while it
+  // plays. It fades in and out by itself, so its end meets its top.
   'mazmorra-oscuro': { src: 'music/song-mazmorra-oscuro.m4a', marks: { start: 0 }, stream: true, loudness: 'music/song-mazmorra-oscuro.loudness.json', wraps: true },
-  // A friend's mission: six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23),
-  // each starting on its downbeat, so any can follow any.
+  // Six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23), each starting on its
+  // downbeat, so any can follow any. Waiting for a place again since the missions took mazmorra-4.
   'mazmorra-2': { src: 'music/song-mazmorra-2.m4a', marks: { start: 0 }, cycle: 48, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
+  // A boss room of the friends' missions and its fight (src/main.ts `BOSS_ROOM_FIGHTS`): 75 bars at 90 BPM
+  // that loop whole, the end running into the top. The file starts already sounding, so the loop runs
+  // from 104 samples in (at 48 kHz) to 59 before 200 s, where the two waveforms meet (a step of .0014
+  // against .02 between neighbouring samples there), 2 ms short of the 75 bars.
+  'mazmorra-3': { src: 'music/song-mazmorra-3.m4a', marks: { start: 0, loop: 0.002167, end: 199.998771 }, loop: ['loop', 'end'], bpm: 90, beatsPerBar: 4, downbeat: 'start' },
   // Marta's mission (docs/quests/marta.md § The way in): «Izana dena geroa», recorded by her, as it
   // comes out at the piano in Alegia the first time. 21 s, played once, never looped.
   izana: { src: 'music/marta-izana.m4a', marks: { start: 0 } },

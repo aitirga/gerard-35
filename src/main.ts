@@ -40,6 +40,7 @@ import { createAudio } from './audio';
 import { createMusic, isTrack, type TrackId } from './music';
 import { createVozSong } from './voz-song';
 import { CUERDAS_PLACE, QUALITIES } from './friends/marta';
+import { PLACES_NURIA } from './friends/nuria';
 import { castleHaunt } from './haunt';
 import { createSfx, watchMenuSounds, type SoundId } from './sfx';
 import { createArtilugio, type ArtilugioMode } from './artilugio';
@@ -92,9 +93,10 @@ const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = {
   // Childhood: the house and its street (the game opens in the house), and Alegia like Sant Quirze.
   'home-floor-2': 'triste', 'home-floor-1': 'triste', 'home-entrance': 'triste', maresme: 'triste', cardedeu: 'triste', alegia: 'triste',
   meridiana: 'home', 'meridiana-calle': 'concrete',
-  // The friends' missions, each with a mazmorra song: Nuria's and Luca's the dark one, the university's and Emilie's the cycled one.
-  'cardedeu-laberinto': 'mazmorra-oscuro', 'sagrada-familia': 'mazmorra-oscuro', 'sagrada-familia-interior': 'mazmorra-oscuro',
-  camping: 'mazmorra-2', 'poble-sec': 'mazmorra-2', 'piso-emilie': 'mazmorra-2', modelo: 'mazmorra-2',
+  // The friends' missions start on the dark mazmorra song (Logic's song-mazmorra-4), sad and plain;
+  // three of their boss rooms change it for mazmorra-3 (`inBossRoom`). Marta's has her own voice.
+  'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-oscuro', 'poble-sec': 'mazmorra-oscuro', 'piso-emilie': 'mazmorra-oscuro', modelo: 'mazmorra-oscuro',
+  'sagrada-familia': 'mazmorra-oscuro', 'sagrada-familia-interior': 'mazmorra-oscuro',
   palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo',
 };
 let place: EnvironmentId | undefined;
@@ -104,6 +106,14 @@ let place: EnvironmentId | undefined;
  * while the wind blows, `piano` once Gerard has chosen.
  */
 let finale: 'won' | 'choosing' | 'piano' | undefined;
+/**
+ * The boss rooms of three friends' missions (Vertitrón's summit, La Sobremesa's merendero, El que no
+ * converge's bottom of the model; Aitor, 2026-11-19): there the place's song gives way to mazmorra-3,
+ * which goes on into the boss's fight (`BOSS_ROOM_FIGHTS`). Set once the game is there.
+ */
+let inBossRoom: () => boolean = () => false;
+const BOSS_ROOM_SONG: TrackId = 'mazmorra-3';
+const BOSS_ROOM_FIGHTS: readonly string[] = ['uri-vertigo', 'sobremesa', 'no-converge'];
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
 function scorePlace(id: EnvironmentId) {
@@ -111,11 +121,12 @@ function scorePlace(id: EnvironmentId) {
   if (battlePhase || devSong || titleOpen || finale) return;
   // Marta's song is only Las cuerdas' (its clock is the mazes', `onCuerdasSong`): anywhere else it fades.
   if (id !== CUERDAS_PLACE) vozSong.stop(1.5);
-  const song = PLACE_SONGS[id];
+  // A boss room's song comes in from its top, quicker than a place's.
+  const room = inBossRoom(), song = room ? BOSS_ROOM_SONG : PLACE_SONGS[id];
   music.haunt(castleHaunt(story));
   // A streamed take can only start after the first key or click.
-  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase && !titleOpen && !finale) void music.play(song, { from: 'random', fade: 4 }); });
-  else if (music.playing && Object.values(PLACE_SONGS).includes(music.playing)) music.stop({ fade: 2 });
+  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase && !titleOpen && !finale) void music.play(song, room ? { from: 'start', fade: 2 } : { from: 'random', fade: 4 }); });
+  else if (music.playing && [...Object.values(PLACE_SONGS), BOSS_ROOM_SONG].includes(music.playing)) music.stop({ fade: 2 });
 }
 /**
  * The fight's song: it comes in with the fight, plays its ending on a win and fades on a fall, an
@@ -165,16 +176,18 @@ function scoreBattle(state: BattleState | undefined) {
   else scoreFreed(state);
   if (battlePhase === was) return;
   const sung = !!state?.song, over = !state || battlePhase === 'won' || battlePhase === 'lost' || battlePhase === 'escaped';
+  // A boss of a boss room is fought to the room's own song, which goes on from where it was.
+  const roomFight = !!state && BOSS_ROOM_FIGHTS.includes(state.encounter);
   // A fight that is not hers takes over from her song far off; it comes back where it left off after.
   if (state && was === undefined && !sung) vozSong.stop(.8);
   if (over) vozSong.stop(battlePhase === 'won' ? 2 : 1);
   // A song the artilugio hushed is not heard: it goes now, and the hush with it.
   if (over && hushed) { music.stop({ fade: .05 }); hush(false, .1); }
   if (!state) { if (music.playing === 'battle') music.stop({ fade: 1.5 }); if (place) scorePlace(place); }
-  else if (was === undefined) { if (sung) music.stop({ fade: .4 }); else void music.play('battle', { restart: true, fade: .4 }); }
+  else if (was === undefined) { if (sung) music.stop({ fade: .4 }); else if (roomFight) void music.play(BOSS_ROOM_SONG, { fade: .4 }); else void music.play('battle', { restart: true, fade: .4 }); }
   // Her fall ends the game: its song fades into the silence of the last choice.
   if (battlePhase === 'won' && isQueen(state?.encounter)) { finale = 'won'; music.stop({ fade: 4 }); }
-  else if (battlePhase === 'won' && !sung) void music.jump('ending', { at: 'bar', loop: false });
+  else if (battlePhase === 'won' && !sung && !roomFight) void music.jump('ending', { at: 'bar', loop: false });
   else if (battlePhase === 'lost') music.stop({ fade: 2.5 });
   else if (battlePhase === 'escaped') music.stop({ fade: 1 });
 }
@@ -424,6 +437,8 @@ try {
     solo: () => playing().mode === 'solo',
   });
   let currentLocation: EnvironmentId = story.resume.environment;
+  /** The cell Gerard stands on, for the boss rooms (`inBossRoom`). */
+  let here: { x: number; z: number } | undefined;
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
   let beats = Promise.resolve();
   /** Lights won but still on their way into Gerard and Aitor: not counted yet. */
@@ -774,6 +789,7 @@ try {
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onShout: shout => storyUI.shout(dialogue.open || exploration.active ? undefined : shout),
     onStep: (steps, cell) => {
+      here = cell;
       sessionSteps = steps;
       exploration.update(currentLocation, cell);
       dirty = true;
@@ -781,6 +797,7 @@ try {
       saveTimer = setTimeout(() => { void save(); }, 700);
     },
     onLocation: (id, cell) => {
+      here = cell;
       currentLocation = id;
       dayLog.enter(id);
       homeLights.setPlace(id);
@@ -846,6 +863,21 @@ try {
   const followMood = () => homeLights.setMood({ tone: game.lightTone, dusk: story.dusk });
   followMood();
   const moodTimer = setInterval(followMood, 1000);
+  /**
+   * The boss rooms (`inBossRoom`): Vertitrón's summit once the third ring is behind them, the walled
+   * merendero north of the steel door (the camping's rows 3–19, columns 2–17) once Las parcelas has
+   * opened it, and the bottom of Emilie's model; each until its boss has fallen. Looked at twice a
+   * second, so walking in or out changes the song.
+   */
+  inBossRoom = () => {
+    if (!story.adult) return false;
+    if (currentLocation === 'cardedeu-laberinto') return story.nuria.lent && story.nuria.stage >= PLACES_NURIA.uri.length && !story.has('nuria-uri');
+    if (currentLocation === 'camping') return story.has('parcelas') && !story.has('sobremesa') && !!here && here.x >= 2 && here.x <= 17 && here.z >= 3 && here.z <= 19;
+    if (currentLocation === 'modelo') return game.modelo.run.zone === 'fondo' && !story.has('converge');
+    return false;
+  };
+  let roomNow = false;
+  const roomTimer = setInterval(() => { const room = inBossRoom(); if (room === roomNow) return; roomNow = room; if (place) scorePlace(place); }, 500);
   const controllerContext = () => title.isOpen ? 'title' : jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
     : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
@@ -992,7 +1024,7 @@ try {
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
     Object.assign(window, { gerard: { game, story, battleUI, artilugio, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong, title } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { title.destroy(); jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { title.destroy(); jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); clearInterval(roomTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

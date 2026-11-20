@@ -1,6 +1,6 @@
 {
   "title": "Songs and footsteps by place",
-  "description": "docs/audio.md § Where music plays now and § Footsteps: the places that got a song (the house the game opens in and Alegia with triste, Emilie's places with mazmorra-2, Luca's with mazmorra-oscuro) next to some that had one (the camping, the Meridiana), and the footstep each place asks for (STEPS in src/sfx.ts) as Gerard walks a few steps. The overlay is the scenario's: the song and its position, and the footsteps the game asked for since arriving. It plays music, so run it with --chrome: just screenshots place-sounds --chrome.",
+  "description": "docs/audio.md § Where music plays now and § Footsteps: the places that got a song (the house the game opens in and Alegia with triste, every friend's mission but Marta's on mazmorra-oscuro, the camping and Emilie's moved from mazmorra-2) next to one that had its song (the Meridiana), and the footstep each place asks for (STEPS in src/sfx.ts) as Gerard walks a few steps. The overlay is the scenario's: the song and its position, and the footsteps the game asked for since arriving. It plays music, so run it with --chrome: just screenshots place-sounds --chrome.",
   "steps": [
     {
       "open": "/?story=metro&solo=1"
@@ -129,7 +129,7 @@
       "eval": "window.go('poble-sec')"
     },
     {
-      "until": "window.gerard.game && document.title.includes('·') && window.gerard.music.playing === 'mazmorra-2' && window.gerard.music.position() > 1",
+      "until": "window.gerard.game && document.title.includes('·') && window.gerard.music.playing === 'mazmorra-oscuro' && window.gerard.music.position() > 1",
       "timeout": 60000
     },
     {
@@ -141,13 +141,13 @@
     {
       "shot": "poble-sec",
       "delay": 300,
-      "caption": "Emilie's mission, Poble Sec: mazmorra-2, the cycled one"
+      "caption": "Emilie's mission, Poble Sec: mazmorra-oscuro (Logic's song-mazmorra-4), as every friend's mission starts"
     },
     {
       "eval": "window.go('piso-emilie')"
     },
     {
-      "until": "window.gerard.game && document.title.includes('·') && window.gerard.music.playing === 'mazmorra-2' && window.gerard.music.position() > 1",
+      "until": "window.gerard.game && document.title.includes('·') && window.gerard.music.playing === 'mazmorra-oscuro' && window.gerard.music.position() > 1",
       "timeout": 60000
     },
     {
@@ -187,13 +187,13 @@
     {
       "shot": "piso-emilie",
       "delay": 300,
-      "caption": "Her flooded flat: the same song goes on, and the steps go into water"
+      "caption": "Her flooded flat: the same take goes on, and the steps go into water"
     },
     {
       "eval": "window.go('modelo')"
     },
     {
-      "until": "window.gerard.game && document.title.includes('·') && window.gerard.music.playing === 'mazmorra-2' && window.gerard.music.position() > 1",
+      "until": "window.gerard.game && document.title.includes('·') && window.gerard.music.playing === 'mazmorra-oscuro' && window.gerard.music.position() > 1",
       "timeout": 60000
     },
     {
@@ -205,7 +205,7 @@
     {
       "shot": "modelo",
       "delay": 300,
-      "caption": "Her model, under Poble Sec: still mazmorra-2"
+      "caption": "Her model, under Poble Sec: still the dark take (until its bottom, the boss room)"
     },
     {
       "eval": "window.go('sagrada-familia')"
@@ -223,7 +223,7 @@
     {
       "shot": "sagrada-familia",
       "delay": 300,
-      "caption": "Luca's mission, the Sagrada Família: mazmorra-oscuro, the dark one"
+      "caption": "Luca's mission, the Sagrada Família: mazmorra-oscuro too"
     },
     {
       "eval": "window.go('sagrada-familia-interior')"
@@ -247,7 +247,7 @@
       "eval": "window.go('camping')"
     },
     {
-      "until": "window.gerard.game && document.title.includes('·') && window.gerard.music.playing === 'mazmorra-2' && window.gerard.music.position() > 1",
+      "until": "window.gerard.game && document.title.includes('·') && window.gerard.music.playing === 'mazmorra-oscuro' && window.gerard.music.position() > 1",
       "timeout": 60000
     },
     {
@@ -287,7 +287,7 @@
     {
       "shot": "camping",
       "delay": 300,
-      "caption": "The camping: mazmorra-2, and steps on its gravel"
+      "caption": "The camping: mazmorra-oscuro (mazmorra-2 before), and steps on its gravel"
     },
     {
       "eval": "window.go('meridiana-calle')"

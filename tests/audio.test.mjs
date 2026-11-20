@@ -230,3 +230,11 @@ test('every footstep a place asks for is a sound', () => {
   for (const [place, id] of Object.entries(STEPS)) assert.ok(id === null || id in SOUNDS, `${place}: ${id}`);
   assert.ok('step' in SOUNDS, 'the plain step is the default');
 });
+
+test('the boss rooms\' song ships and loops whole, 2 ms short of its 75 bars at 90 BPM', () => {
+  const track = TRACKS['mazmorra-3'];
+  assert.ok(statSync(`public/${track.src}`).size > 1e6, 'its file is served');
+  const [from, to] = loopRange(track), bars = 75 * 4 * 60 / track.bpm;
+  assert.ok(from < .01, 'the loop starts at the top, past a few samples');
+  assert.ok(to - from < bars && bars - (to - from) < .005, `${to - from} s against ${bars} s`);
+});
