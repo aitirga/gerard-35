@@ -3,7 +3,7 @@ import { DIE_FACES, type DieFace } from './battle';
 import { FACE_ICONS, FACE_INK, faceInk } from './die-faces';
 
 /**
- * Dadaísta's dice (docs/animas/dadaista/): its maná, as things. A clean ivory cube printed with its
+ * Dadista's dice (docs/animas/dadaista/): its maná, as things. A clean ivory cube printed with its
  * six faces (`DIE_FACES`: two hands, scissors, an eye, brackets and a red blank, `src/die-faces.ts`),
  * a touch bigger than life so its face reads from the fight's camera. One mesh and
  * one material for every die (its six faces are cells of one small picture), so a hand of five is
@@ -59,6 +59,26 @@ function picture() {
   return canvas;
 }
 
+/**
+ * The astral die (docs/animas/dadaista/ § The astral look): the same die made of light, bluish-white
+ * glass lit from within, its ornaments kept in deep blue.
+ */
+function astralPicture() {
+  const cell = 128, canvas = document.createElement('canvas');
+  canvas.width = cell * 6; canvas.height = cell;
+  const ctx = canvas.getContext('2d')!;
+  DIE_FACES.forEach((face, i) => {
+    const x = i * cell, light = ctx.createRadialGradient(x + cell / 2, cell / 2, cell * .1, x + cell / 2, cell / 2, cell * .74);
+    light.addColorStop(0, '#ffffff'); light.addColorStop(.6, '#d6e9ff'); light.addColorStop(1, '#7fb4ff');
+    ctx.fillStyle = light; ctx.fillRect(x, 0, cell, cell);
+    const inset = cell * .14, k = (cell - inset * 2) / 100;
+    ctx.save(); ctx.translate(x + inset, inset); ctx.scale(k, k);
+    ctx.fillStyle = '#1c2f5c'; ctx.fill(new Path2D(FACE_ICONS[face]));
+    ctx.restore();
+  });
+  return canvas;
+}
+
 /** The Comodín's six faces, all the same: black lacquer, a lighter rim, its red star with a glint. */
 function comodinPicture() {
   const cell = 128, canvas = document.createElement('canvas');
@@ -79,7 +99,7 @@ function comodinPicture() {
   return canvas;
 }
 
-interface Kit { mesh: pc.Mesh; material: pc.StandardMaterial; comodin: pc.StandardMaterial }
+interface Kit { mesh: pc.Mesh; material: pc.StandardMaterial; comodin: pc.StandardMaterial; astral: pc.StandardMaterial }
 const kits = new WeakMap<pc.GraphicsDevice, Kit>();
 function kitFor(device: pc.GraphicsDevice): Kit {
   let kit = kits.get(device);
@@ -112,7 +132,7 @@ function kitFor(device: pc.GraphicsDevice): Kit {
     return material;
   };
   // The Comodín's star glows a little more than an ornament: it is the one die to spot at a glance.
-  kit = { mesh, material: paint('Dado', picture(), [.2, .19, .17]), comodin: paint('Dado Comodín', comodinPicture(), [.55, .5, .45]) };
+  kit = { mesh, material: paint('Dado', picture(), [.2, .19, .17]), comodin: paint('Dado Comodín', comodinPicture(), [.55, .5, .45]), astral: paint('Dado astral', astralPicture(), [1.5, 1.7, 2.1]) };
   kits.set(device, kit);
   return kit;
 }
@@ -120,12 +140,12 @@ function kitFor(device: pc.GraphicsDevice): Kit {
 /** A die, one unit to its edge: the caller scales it (`DIE.size`), places it and turns it. */
 export function createDie(app: pc.AppBase) {
   const { mesh, material } = kitFor(app.graphicsDevice);
-  const entity = new pc.Entity('Dado de Dadaísta');
+  const entity = new pc.Entity('Dado de Dadista');
   entity.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, material)], castShadows: true, receiveShadows: false });
   return entity;
 }
-/** Dresses a die for the face it shows: the Comodín's black lacquer, or ivory for any other. */
-export function dressDie(app: pc.AppBase, entity: pc.Entity, face: DieFace) {
-  const kit = kitFor(app.graphicsDevice), want = face === 'comodin' ? kit.comodin : kit.material, instance = entity.render!.meshInstances[0];
+/** Dresses a die for the face it shows: the Comodín's black lacquer, or ivory for any other; `astral`, glass and light whatever its face. */
+export function dressDie(app: pc.AppBase, entity: pc.Entity, face: DieFace, astral = false) {
+  const kit = kitFor(app.graphicsDevice), want = astral ? kit.astral : face === 'comodin' ? kit.comodin : kit.material, instance = entity.render!.meshInstances[0];
   if (instance.material !== want) instance.material = want;
 }

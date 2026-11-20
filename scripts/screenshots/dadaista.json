@@ -1,9 +1,9 @@
 {
-  "title": "Dadaísta · los dados",
-  "description": "Dadaísta (docs/animas/dadaista/), the university friends' ánima: its maná is dice, floating beside whoever wears it and shown on the plate, each face a move (a hand, scissors, an eye, brackets, a red blank), and now and then the Comodín, a black die with a red star that lands a hand on every foe. Tirar dado spends the die chosen and does what its face says. Gerard wears it in the fight tester beside Aitor's Matemágico, against two sturdy dogs. Run it with --gpu.",
+  "title": "Dadista · los dados",
+  "description": "Dadista's sheet (docs/animas/dadaista/), the university friends' ánima, as built at level 3: the party with it worn, the look up close, its dice, the skill list, each face as a clip (a hand, scissors, an eye, brackets, a red blank, the Comodín), what the eye and the scissors leave on a foe, Defender dealing new dice, the Racha counter on the plate, Agitar and Estrella fugaz as clips, and its row on the status screen's Ánimas page. Its maná is dice, each face a move; every die spent adds to the Racha. Gerard wears it in the fight tester beside Aitor's Matemágico, against two sturdy dogs. Run it with --gpu.",
   "steps": [
     {
-      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22dadaista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22dadaista%22%2C%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Afalse%2C%22immune%22%3Afalse%7D"
+      "open": "/?story=dadaista-3&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22dadaista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22dadaista%22%2C%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Afalse%2C%22immune%22%3Afalse%7D"
     },
     {
       "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
@@ -25,7 +25,29 @@
     {
       "shot": "mano",
       "delay": 300,
-      "caption": "Dadaísta: its maná is dice, and each face is a move. Three dice beside Gerard (a hand, an eye, brackets), the same faces on his plate"
+      "caption": "Dadista worn: its maná is dice, and each face is a move. Three dice beside Gerard (a hand, an eye, brackets), the same faces on his plate, and the ánima's interface (ivory paper on ink)"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: at.x, y: at.y + .9, z: at.z }, 1.25); }"
+    },
+    {
+      "shot": "aspecto",
+      "delay": 1500,
+      "caption": "The look: black jacket, cream shirt, a red bow tie and a brass monocle on its cord"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('gerard'); window.gerard.game.frame({ x: at.x + .5, y: at.y + .8, z: at.z }, 1.6); }"
+    },
+    {
+      "shot": "dados",
+      "delay": 1500,
+      "caption": "The dice: ivory cubes printed with their ornaments, floating in a column beside whoever wears it"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "wait": 1200
     },
     {
       "press": "Digit2",
@@ -34,7 +56,7 @@
     {
       "shot": "habilidades",
       "delay": 300,
-      "caption": "One skill at level 1, Tirar dado: what it does is the face of the die it spends"
+      "caption": "The skill list at level 3: Tirar dado (what it does is the face of the die it spends), Agitar (once a fight) and Estrella fugaz"
     },
     {
       "eval": "document.querySelector('.skill-list [data-skill=\"tirar-dado\"]').click()"
@@ -72,6 +94,11 @@
     {
       "until": "window.turn && window.turn('aitor')",
       "timeout": 60000
+    },
+    {
+      "shot": "punto-debil",
+      "delay": 400,
+      "caption": "What the eye leaves on the foe: Punto débil, under its plate"
     },
     {
       "press": "Digit4",
@@ -243,6 +270,11 @@
       "timeout": 60000
     },
     {
+      "shot": "sangrado",
+      "delay": 400,
+      "caption": "What the scissors leave: Sangrado on the dog, the same wound as Papagato's"
+    },
+    {
       "press": "Digit4",
       "gap": 300
     },
@@ -321,6 +353,118 @@
       "fps": 30,
       "tiles": 8,
       "caption": "Defender: two points of maná back, two new dice dropping into the hand with their faces"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 400; }); const g = s.allies.find(a => a.id === 'gerard'); g.dice = ['blanco', 'corchete']; g.secondary = 2; g.racha = 3; delete g.lastFace; });"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "racha",
+      "delay": 300,
+      "caption": "Racha: the dice spent since Dadista was put on, a star with its count on Gerard's plate; each one is Crítico +10 % (▲ CRÍ under his bars)"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "agitar-lista",
+      "delay": 300,
+      "caption": "A poor hand (a blank with nothing to repeat, brackets) and Racha 3: Agitar is there, «1 vez»"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"agitar\"]').click()"
+    },
+    {
+      "record": "agitar",
+      "seconds": 1.4,
+      "fps": 30,
+      "tiles": 8,
+      "caption": "Agitar: the whole hand thrown again without spending the turn; with Racha 3 or more one die comes out the Comodín"
+    },
+    {
+      "shot": "agitar-usado",
+      "delay": 300,
+      "caption": "The turn is still Gerard's, the list still open: Agitar now reads «Usado»"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"estrella-fugaz\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "elige-pago",
+      "delay": 300,
+      "caption": "Estrella fugaz is paid with a die of any face: the hand, to pick the one given up (the cursor starts on the one worth least)"
+    },
+    {
+      "eval": "[...document.querySelectorAll('.skill-list [data-die]')].find(b => !b.querySelector('[data-face=\"comodin\"]')).click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "estrella-fugaz",
+      "seconds": 1.9,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Estrella fugaz: the die flies shedding bluish-white stars and breaks into them on the dog (magic of no element); with Racha 3 it spends it and two new dice drop into the hand"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "shot": "racha-gastada",
+      "delay": 300,
+      "caption": "After it: «Racha −3, +2 dados». The counter is back at 1 and the hand is full again"
+    },
+    {
+      "open": "/?story=dadaista-3&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.gerard.story.equip('gerard', 'dadaista')"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "press": "KeyE",
+      "gap": 600
+    },
+    {
+      "eval": "document.querySelector('[data-pick=\"gerard\"][data-class-id=\"dadaista\"]')?.focus()"
+    },
+    {
+      "shot": "estado",
+      "delay": 1200,
+      "caption": "The Ánimas page: Dadista in Gerard's extra slot, at level 3, and what it knows"
     }
   ]
 }

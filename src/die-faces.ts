@@ -1,7 +1,7 @@
 import type { DieFace } from './battle';
 
 /**
- * Dadaísta's faces as printer's ornaments (docs/animas/dadaista/ § Faces with icons): ink on ivory,
+ * Dadista's faces as printer's ornaments (docs/animas/dadaista/ § Faces with icons): ink on ivory,
  * the blank in the die's red. One path each, on a 100 × 100 face, filled nonzero (holes run the other
  * way round), so the same drawing goes on the 3D die's texture (`Path2D`) and in the interface (SVG).
  */

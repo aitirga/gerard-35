@@ -1,350 +1,532 @@
-# Dadaísta
+# Dadista
 
-Status: designing (round 5, 2026-11-19: faces with icons, built) · Comes from: the university friends' mission,
-[`docs/quests/universidad.md`](../../quests/universidad.md)
+Status: playable to level 7 (its dice as maná, Tirar dado and its five faces, the Comodín, the
+*Racha* and its counter, Agitar and its node at the jar, Estrella fugaz, Maná +1, Dados astrales,
+Ases en dúo, Meteorito → Meteoro → Asteroide, its look and interface). Designed whole 2026-11-20
+round Aitor's direction of that day (dice, luck and the astral) and built the same day. Still a
+design: the definitiva *Un golpe de dados*, a partner giving maná, the hand past its top, level 6 · Comes from: the
+university friends' mission, [`docs/quests/universidad.md`](../../quests/universidad.md)
 
-**Decided** (Aitor, 2026-11-15): this direction, the working name *Dadaísta*, that it deals
-**physical damage with a random part**, that **its maná is dice** (*La mano*: the player sees
-what the maná has rolled and decides from that), and that it has **a skill that spends a die and
-rolls the others again**, called **Agitar**: it **does not spend the turn**, it is a **fixed
-command** once unlocked, with **×1**, and it **is improved at home**, at the jar (§ Agitar).
-Also decided (Aitor, 2026-11-15, after playing level 1): **a skill always spends its die**, as any
-maná (a bet lost in *Doble o nada* loses the die too; more dice come from Defender, as for
-everyone), and there is a **Joker** die (§ The Joker, the **Comodín** in the game since the faces
-of round 5). Everything else here is a proposal.
+What is **decided** says so and by whom. Everything else is a proposal with its numbers as first
+guesses ([`../README.md`](../README.md) § Order of work). The folder and the code keep the id
+`dadaista` (`ClassId`, the `dadaista-2` flags, saves).
+
+**Decided by Aitor**
+
+| When | What |
+| --- | --- |
+| 2026-11-15 | It deals **physical damage with a random part**. **Its maná is dice** (*La mano*): the player sees what the maná has rolled and decides from that |
+| 2026-11-15 | **A skill always spends its die**, as any maná. More dice come from Defender and a round's rest, as for everyone |
+| 2026-11-15 | **Agitar** is a **fixed command** once unlocked, **it does not spend the turn**, and it **is improved at home**, at the jar |
+| 2026-11-15 | **The Comodín**: 2 % of the dice dealt, 20 % for the first die dealt after a dual attack. Nothing announces it |
+| 2026-11-19 | **Faces are icons that do things**, not numbers (option A: each face is an action). **Doble o nada is gone** |
+| 2026-11-19 | The Comodín is a hand on every foe standing |
+| 2026-11-20 | The name is **Dadista** (was *Dadaísta*: easier to say) |
+| 2026-11-20 | **Skills apart from the dice, that play with luck.** *Ases en dúo*: raises luck (the chance of a golpe crítico and other modifiers, by 100 %), 2 maná. *Dados astrales*: a rain of dice on foes at random; the chance of a golpe crítico scales how many fall, and it can go past 100 % |
+| 2026-11-20 | The ánima is **dice, luck and the astral**. **Astral is magic damage of no element.** It looks **bluish white, with trails of small star-shaped particles that shine, fly and fall** |
+| 2026-11-20 | **Agitar spends no die: it is a reroll and nothing else. Once a fight** to begin with, and **one eco** at the jar improves it (this replaces the die it cost and its ×1 a round) |
+| 2026-11-20 | **Level 4 gives Maná +1 and a skill, an astral one: Dados astrales**, there for now |
+| 2026-11-20 | **Level 7 is Meteorito, which becomes Meteoro and then Asteroide if it is played turn after turn** (1, 2 and 3 maná). Its maná has to be earned: the partner gives it with some skill, or a lot of it has been gathered |
+| 2026-11-20 | Damage descriptions say **the kind, then the element, then how strong** (`AGENTS.md`) |
+| 2026-11-20 | **The Racha is there from level 1 and is a rule of the whole ánima**, not a passive learned later, and **its count shows**. **Agitar uses it too**, and **Estrella fugaz is a skill and works with it**. How each does is a proposal, built (§ Racha) |
+| 2026-11-20 | **The stats**: Fuerza +2, Magia +2, Crítico +10 %, Defensa −1. And: start building |
 
 ## Identity
 
-- **Dadaísta** (*dado* + the dadaists, who made art out of chance): whoever wears it fights with
-  dice. It throws them, reads them, and bets them. It is the campsite's Dado, on the party's
-  side: a face in view that says how hard the blow will be.
-- Unlocked: when the photo with the melon is taken and the friends' lights leave them
-  (`winUni`). Shared: Gerard or Aitor equips it in an extra slot. Seven levels by EXP
-  ([`../README.md`](../README.md) § Levels).
-- Motto (proposal): *"Primero se tira. Luego se piensa."*
-- Colour, look, interface: _open_ (round 7). Candidate: the campsite's warm bulbs, `#e8b04a`, to
-  check against Matemágico's gold `#f3cf78` and Papagato's orange.
+- **What it is**: whoever wears it fights with dice and with luck. Their maná is a hand of dice
+  with the faces in view; every die spent makes them luckier; and luck, piled high enough, comes
+  down from the sky as dice of light. *Dado* + *-ista*; the nod to the dadaists, who made art
+  out of chance, stays in its look (cut paper, printer's ornaments) and in Agitar.
+- **What wearing it feels like**: a hot hand. The luck is in view, it grows with every throw, and
+  the question is when to cash it.
+- **Unlocked**: when the photo with the melon is taken and the friends' lights leave them
+  (`anima-universidad`). Shared: Gerard or Aitor equips it in an extra slot. Seven levels by EXP.
+- **Motto** (built): *"Primero se tira. Luego se piensa."*
+- **Colour** (built, to confirm): ivory `#efe6cf`, with ink `#161413` and one vermilion `#d9422b`.
+  The astral adds a bluish white (§ The astral look).
 
 ## Role
 
-**Physical damage with the highest ceiling and the lowest floor in the party.** No statuses of
-its own, no cure, no guard: it brings blows, and what a blow is worth is on the dice.
+**The party's luck: a hand of everything by chance, a Racha that makes every blow likelier a golpe
+crítico, and a rain that cashes it.** Next to the others:
 
-- Next to Papagato (the other physical ánima): Papagato prepares a wound and cashes it, and it
-  is dependable. Dadaísta prepares nothing; it turns up with a 6 and lands it in the wound Haru
-  opened, or with a 1 and has to make something of it.
-- Good at: one huge blow when the dice allow it, many small blows when they do not. Bad at:
-  being counted on for one exact thing on one exact turn; keeping anybody alive.
+| | Dadista | Papagato | Matemágico | Tecnópata |
+| --- | --- | --- | --- | --- |
+| Hurts with | Physical, by the face of the die; magic of no element, by its luck (the astral) | Physical blows | Magic, elements | Magic, clocks |
+| Its resource | **The hand** (dice with their faces) and **its luck** (its Crítico, growing), both on its own plate. On the foe it leaves what others own: Sangrado (Tijeras), Punto débil (Ojo) | Sangrado on the foe | Quemado, Mojado | Clock statuses |
+| Pays off as | Golpes críticos by chance, more and more of them; then Dados astrales, which turns the luck into a rain | A golpe crítico on the wound, set up and sure | A reaction between elements | Longer clocks, control |
+
+- **Good at**: long fights (its luck only grows); one very large blow when the hand allows it
+  (the eye, then the hand) and one that has to be earned (the three meteors); doing a little of
+  what other ánimas do without changing ánima (a cut, a mark, a guard); making the whole party
+  luckier for a while (Ases en dúo, best beside Papagato's Crítico); many foes at once, at random
+  (Dados astrales, the Comodín); both kinds of damage.
+- **Bad at** (its weaknesses, on purpose):
+  - **Being counted on.** The face a fight asks for may not be in the hand, a golpe crítico is a
+    chance until luck passes 100 %, and the rain falls where it likes.
+  - **Starting.** Its luck is nothing at the first turn; a short fight ends before it pays.
+  - **Being taken off.** Changing ánima loses the Racha, so it cannot dip in and out.
+  - **Lasting on maná.** Three dice are three turns; then a turn goes on Defender. Its strongest
+    blow costs more dice than a hand holds: alone, it takes luck or a partner who gives maná.
+  - **Elements.** Its magic has none: no reaction, nothing for a weakness.
+  - **Keeping anyone alive.** No cure. Its only cover is one face in six.
+- **How it changes a fight**: every other ánima asks *what do I want to do?* and pays for it.
+  This one asks **what can I do with this hand?** and, every turn, **one more throw on the Racha,
+  or let it rain now?**
 
 ## Stats
 
-Proposal: Fuerza +3, Defensa +2, Magia −1. The friends' light (`ANIMAS.universidad`, the party
-bonus) stays as it is: Fuerza +1, Espíritu +1, PV +10.
+- **Decided by Aitor 2026-11-20, built** (`CLASS_STATS`): **Fuerza +2, Magia +2, Crítico +10 %,
+  Defensa −1**: both its kinds of damage, luck from the first turn, and no armour to fall back
+  on. With everyone's 5 % its wearer starts a fight at Crítico 15 %. (It was Fuerza +3, Defensa
+  +2, Magia −1, chosen when it was physical and nothing else.)
+- The friends' light (`ANIMAS.universidad`, the party bonus) stays: Fuerza +1, Espíritu +1, PV +10.
 
-## Signature: where chance comes in
+## Signature: the hand, luck and the astral
 
-**A, La mano, is decided** (2026-11-15). B and C stay in the table as what was weighed.
+**Luck is the wearer's Crítico**, the attribute every fighter has
+([`../README.md`](../README.md) § Golpe crítico): no new number, the one already on the sheet,
+shown on Dadista's plate because here it moves.
 
-| | How | For | Against |
+1. **The hand.** Three dice as the fight starts, each rolled in view; two more on Defender, one
+   on a round's rest. On their turn the wearer spends a die and it does what its face shows
+   (physical), or spends dice of any face on an astral skill.
+2. **Luck.** Every die spent, on anything, adds one to the wearer's *Racha*, and each point of it
+   is Crítico for as long as Dadista stays on. *Ases en dúo* doubles the whole party's for three
+   rounds. So blows are golpes críticos more and more often, and a good Racha passes 100 %.
+3. **The Racha is also what the rest is paid in.** *Agitar* gives the Comodín when there is
+   enough of it; *Estrella fugaz* spends some of it for more dice; *Dados astrales* spends it
+   whole as a rain. Luck comes down as magic of no element (the astral), and the three meteors
+   are what all those dice are for.
+
+### The faces (built)
+
+A die has six faces (`DIE_FACES`): two hands and one each of the others. All cost the die.
+
+| Face | Share | What it does when spent | In the game |
 | --- | --- | --- | --- |
-| **A · La mano** | Its maná is dice: each point is a die with its face in view (three rolled as the fight starts). A skill spends a die the player chooses, and the face says what it does. Chance comes **before** the choice; only a bet (*Doble o nada*) rolls again | The most to decide; nothing ever just fails; luck is a hand to play | The maná circles become dice; a die picker in the skill sheet |
-| **B · La tirada en el golpe** | Plain maná. Every skill throws its dice as it lands, in view, as Álvaro's *Tirada* did | The most exciting to watch; the least to build | The least to decide: a bad roll is a bad turn and nothing can be done about it |
-| **C · El dado de la ronda** | Plain maná. One die on the wearer's plate, rolled as each round starts, exactly as the Dado foe's; every skill reads it | The easiest to read (one number); the Dado's own rule, handed over | A low die tends to mean "not this round" |
+| **Mano** ☞ | 2 in 6 | Base 38 | `Daño físico alto a un enemigo.` |
+| **Tijeras** | 1 in 6 | Base 16, Sangrado 2 | `Daño físico leve a un enemigo. Añade sangrado.` |
+| **Ojo** | 1 in 6 | Base 10, leaves Punto débil | `Daño físico leve a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
+| **Corchete** | 1 in 6 | Protegido on an ally | `Protege a un aliado hasta el final de la ronda.` |
+| **En blanco** (red) | 1 in 6 | Repeats the last face this wearer spent in the fight; with none yet, it can do nothing | *Abstract*, proposal (today the picker only says what it would repeat): `Repite la última cara gastada.` |
+| **Comodín** (black, a red star) | 2 % of dice dealt; 20 % for the first die after a dual | A hand on every foe standing | `Daño físico alto a todos los enemigos.` |
 
-**The rule that keeps it from being luck and nothing else: every face has a use.**
+- Shared rules it uses: Sangrado and Punto débil ([`../README.md`](../README.md) § Shared
+  mechanics), Protegido (as Defender). Tijeras follows *cuts pile up* once that is built.
+- The Comodín is never announced: it is in the hand or it is not. A blank after it repeats a
+  plain hand on one foe.
 
-| The die | Its use |
+### The hand's size
+
+- **Its top** is the ánima's maná: 3, 4 from level 4, 5 with the jar's Maná +1. Defender and a
+  round's rest never fill it past that.
+- **Six is the most it ever holds** (proposal, not built): dice that luck deals (Estrella fugaz,
+  the definitiva) and maná a partner gives go past the top, up to six. Six is what the three
+  meteors cost, and no hand gets there by waiting. **Built today: nothing passes the top**, so
+  Estrella fugaz's two dice are only as many as fit (§ Open).
+
+### Racha (the ánima's rule, from level 1; built)
+
+Not a passive: it comes with the ánima as the dice do, and everything else hangs from it
+(Aitor 2026-11-20). `RACHA` in `src/battle.ts`.
+
+| | |
 | --- | --- |
-| High | One strong blow |
-| Low | A safe bet, or many small blows |
-| Even or odd | Which side effect a blow leaves |
-| Equal to another | The skill happens twice (a passive) |
-| The one least wanted | Paid to roll the others again |
-| Three in a row | The definitiva's condition |
+| **What it counts** | The dice the wearer has spent since they put Dadista on in this fight, on anything: a face thrown, a die that pays for Estrella fugaz; later two for Ases en dúo or Meteoro, three for Asteroide |
+| **What it gives** | **Crítico +10 % for each point**, on every blow of theirs while they wear it. It has no top |
+| **When a die counts** | At once: the blow of the die that was just spent already lands with it |
+| **Leaves it as it is** | Atacar, Defender, Agitar, being hit, rounds going by, dice being dealt |
+| **Spends it** | *Estrella fugaz*, 3 for two dice. *Dados astrales*, all of it (designed) |
+| **Ends it** | Taking Dadista off (changing ánima). Falling |
+| **What else reads it** | *Agitar*: with Racha 3 or more, one die of the new hand is the Comodín |
+| **Where it shows** (built) | In the fight, a four-point star in bluish white over the wearer, as a status, with the count in its corner; its line reads *Racha 3: Crítico +30 %* and lasts *hasta cambiar de ánima o caer*. Under their bars, *▲ CRÍ* as for any stat raised. It appears with the first die spent and goes when the Racha does. On the status screen's Ánimas page, under *SIEMPRE*: `Cada dado gastado suma 1 de racha: Crítico +10 % por cada uno. Se pierde al cambiar de ánima o al caer.` |
 
-The maná rules stay as they are, read in dice: Defender rolls two new ones, a round's rest one,
-Maná +1 is a fourth die.
+- **By example.** The wearer starts at Crítico 15 % (everyone's 5 % and the ánima's 10 %). After
+  three dice: Racha 3, 45 %. After six: 75 %. After nine: 105 %, every blow a golpe crítico, and
+  what is over 100 % is for the rain. Three dice and a Defender are four turns, so a fight of
+  ten rounds gets to about 85 % by itself if none of it is spent.
+- **The decision it adds.** Racha 3 is a line: above it Agitar gives the Comodín, and Estrella
+  fugaz takes exactly that much. Spending three for dice means throwing them to get back there.
+- **Why it is not a streak of turns.** If a turn without a die ended it, Defender would end it
+  every hand, luck would never pass 55 %, and the rain would always go on the last die: no
+  decision. As it is, luck is something gathered over the fight, lost in two ways the player
+  sees coming and spent in others they choose.
+- It is the random part of the damage (decided 2026-11-15) now that the faces are not numbers.
 
-**How a turn goes** (confirmed by Aitor, 2026-11-15): the dice are on the table from the start of
-the fight, faces up. On their turn the player (1) looks at them, (2) chooses a skill, (3) chooses
-which die to spend on it, and (4) the action happens, by that die's face. Nothing is rolled in
-between, except *Doble o nada* (which rolls the die bet) and *Agitar* (which rolls the ones left).
-New dice are rolled only when maná comes back: Defender, a round's rest. Every skill spends the
-die it took, whatever comes of it, so the hand only gets shorter until the wearer holds on.
+### Agitar (level 2; built)
 
-### The Joker (Comodín)
+Decided by Aitor: a reroll and nothing else, no die and no turn spent, once a fight, one eco at
+the jar for a second time (2026-11-20); it uses the Racha (2026-11-20, how is a proposal).
 
-Built (`COMODIN_CHANCE`, `COMODIN_AFTER_DUAL`, `dealDie` in `src/battle.ts`). Now and then a die
-dealt to the hand is not a face but the **Comodín**: black lacquer with a vermilion star.
-
-**On the faces** (Aitor, 2026-11-19, when the numbers went): it is a hand on everyone. Spent, it
-does **Mano** (`cara-comodin`: `Daño alto físico a todos los enemigos.`, power 38, the hand's) **on
-every foe standing**, each measured on its own; it goes first when nobody chose; a blank after it
-repeats a plain hand on one foe (the star is not repeated). Its landing stamps its red star big on
-each foe it reached, one after another, and a hand lands there as Mano's does. What follows below
-is how it was decided over the numbers (2026-11-15), kept for its chances and its spirit.
-
-- **How often** (Aitor, 2026-11-15): 2 % of the dice dealt. **A dual attack calls it**: the next
-  die dealt to whoever took part in one (Defender, a round's rest) is the Joker 20 % of the
-  times; only that one die. Dadaísta has no dual of its own yet, so today that means changing
-  ánima for the dual and coming back to the dice. Nothing on screen says the die is called.
-
-- It **always meets the good condition of the skill it is spent on**: a six for a blow by its
-  face (*Golpe de dados*), a bet that cannot be lost (*Doble o nada*, never rolled). On the faces,
-  that is the hand, the strongest blow.
-- Its blow **falls on every foe standing**, each one measured on its own.
-- Nothing announces it: it is in the hand or it is not. The die picker names it and says what it
-  does; the skills' descriptions do not mention it.
-- For the skills not built yet, the same rule: the best case of each (the most strikes for
-  *Collage*, both effects for *Pares o nones*), on everyone.
+- **It rolls the whole hand again, in view**: no die spent, no turn spent. It needs one die or
+  more. The Comodín is rolled again with the rest.
+- **With Racha 3 or more, one die of the new hand comes out the Comodín** (picked on the fight's
+  dice; none added if one already came out). It does not spend the Racha. So: shake early to fix
+  a bad hand, or hold it until the Racha makes it worth a hand's blow on every foe.
+- **Once a fight.** One eco at the jar, *Otra vez* (`dadaista:otra-vez`, the only node of its
+  own beside Maná +1 and the Definitiva), makes it **twice**.
+- It is not a throw: it neither adds to the Racha nor ends it.
+- **Where it is, today**: a row of the skill list, under Tirar dado, with what is left of it in
+  place of a cost (*1 vez*, *Usado*, *Sin dados*). Choosing it shakes there and then and leaves
+  the list open. Aitor's 2026-11-15 decision was a fixed command with its own button (the pad's
+  top one, which changes Matemágico's element on Atacar): still to do (§ Open).
+- In the fight the dice of the hand drop in tumbling again with a few stars off them, and a pop
+  over the wearer says *Agitar · Otra mano* or *Agitar · ¡Comodín!*.
+- Its name is from Tzara's recipe for a poem: cut the words out, put them in a bag, *agite
+  suavemente*.
 
 ## Skills per level
 
-Numbers are first guesses for `just fight-sim`. Atacar is 18; a blow adds the wearer's Fuerza
-and takes the foe's Defensa, once per strike.
+Cost is in dice. A skill that is not Tirar dado takes dice of any face: the player picks which.
 
-| Level | What it gives | Cost | Base | Description |
-| --- | --- | --- | --- | --- |
-| 1 | **Golpe de dados** | 1 die | 6 + 5 a pip (11 to 36) | `Daño variable físico a un enemigo. Más fuerte cuanto más alta la cara del dado.` |
-| 1 | **Doble o nada** | 1 die, bet | twice Golpe de dados (22 to 72), or nothing | `Daño variable físico a un enemigo. Vuelve a tirar el dado: si sale igual o más alto, golpe doble. Si sale más bajo, no hay golpe y el dado se pierde.` |
-| 2 | Command · **Agitar** | 1 die, ×1 | — | *Abstract*: `Gasta un dado y vuelve a tirar los demás. No gasta el turno.` |
-| 2 | **Collage** | 1 die | 4 a strike, 7 minus the face strikes (six with a 1, one with a 6) | `Daño leve físico a enemigos al azar. Golpea más veces cuanto más baja la cara del dado.` |
-| 3 | Passive · **Racha** | — | — | A 6 that is spent comes back to the hand, rolled again |
-| 4 | **Maná +1** | — | — | A fourth die |
-| 5 | **Pares o nones** | 1 die | 16, and −3 for 2 rounds | `Daño leve físico a un enemigo. Con dado par, baja su Defensa durante 2 rondas. Con dado impar, baja su Fuerza durante 2 rondas.` |
-| 6 | Passive · **Dobles** | — | — | Spending a die while an equal one is still in the hand makes the skill happen twice |
-| 7 | **Cubilete** | every die held | 6 + 4 a pip, a strike a die | `Daño variable físico a un enemigo. Gasta todos los dados y golpea una vez por cada uno.` |
+| Level | What it gives | Cost | Base | Description | State |
+| --- | --- | --- | --- | --- | --- |
+| 1 | **Tirar dado** | 1 die | By its face (§ The faces) | *Abstract*: `Gasta un dado y hace lo que marca su cara.` | Built |
+| 1 | Rule · **Racha** | — | Crítico +10 % a point, no top | `Cada dado gastado suma 1 de racha: Crítico +10 % por cada uno. Se pierde al cambiar de ánima o al caer.` | Built |
+| 2 | **Agitar** | Nothing, no turn; once a fight | — | *Abstract*: `Vuelve a tirar los dados de la mano sin gastar el turno, una vez por combate. Con racha 3 o más, uno sale Comodín.` | Built |
+| 3 | **Estrella fugaz** | 1 die, and 3 of Racha if there is | 16 | `Daño mágico no elemental leve a un enemigo. Gasta 3 de racha y reparte dos dados.` | Built |
+| 4 | **Maná +1** | — | 3 → 4 dice | — | Decided (Aitor 2026-11-20) |
+| 4 | **Dados astrales** | 1 die, and the Racha | 16 a die of light; one for each 15 % of Crítico, two at least | `Daño mágico no elemental leve a enemigos al azar. Caen más dados cuanto más Crítico. Gasta la racha.` | Aitor's (2026-11-20), at this level for now; the numbers a proposal |
+| 5 | **Ases en dúo** | 2 dice | Crítico ×2, three rounds | `Sube Crítico de todo el equipo durante 3 rondas.` | Aitor's (2026-11-20); the numbers a proposal |
+| 6 | _Nothing yet_ | | | | Estrella fugaz moved to 3; not filled out of habit |
+| 7 | **Meteorito** | 1 die | 30 | `Daño mágico no elemental medio a un enemigo. Usado otra vez en el turno siguiente, es Meteoro.` | Aitor's (2026-11-20); the numbers a proposal |
+| 7 | · then **Meteoro** | 2 dice | 48 | `Daño mágico no elemental alto a un enemigo. Usado otra vez en el turno siguiente, es Asteroide.` | Aitor's; the numbers a proposal |
+| 7 | · then **Asteroide** | 3 dice | 80 | `Daño mágico no elemental muy alto a todos los enemigos.` | Aitor's; the numbers a proposal |
 
-- **Golpe de dados** (the name is Mallarmé's *Un golpe de dados jamás abolirá el azar*): the
-  honest one. A 1 or a 2 here is worse than Atacar, so those dice go elsewhere.
-- **Doble o nada**: the random part of the damage, and always a choice. The lower the die bet,
-  the surer: a 1 always wins (22), a 3 wins two times in three (42), a 6 one in six (72). On
-  average it beats Golpe de dados with a 1, 2 or 3, ties with a 4 and loses with a 5 or 6. A
-  lost bet costs the turn and the die: the hand is maná, and a skill spends it.
-- **Collage**: the same die as a different shape of damage. Many small strikes peel layers and
-  spread over a group; against one foe with high Defensa they are worth little. Where they land
-  is not chosen.
-- **Racha**: sixes are spent first, and a good hand lasts.
-- **Agitar**: § Agitar, below.
-- **Pares o nones** (back in the table now that Agitar is a command and not a skill in the
-  list): the only thing it does besides hitting, and the die decides which. Proposal; the slot
-  can take another of the options.
-- **Dobles**: the reason to keep a die, or to Defender for one more: a pair is two actions for
-  one die. With four or five dice there is a pair most of the time (to tune: the repeat at half).
-- **Cubilete**: the whole hand at once, 40 to 120 with four dice. The round after there is
-  nothing left.
-- **Definitiva** (bought at the jar, [`../README.md`](../README.md) § Definitivas): proposal,
-  *Órdago*, unlocked in a fight when the hand holds three dice in a row. What it does: _open_.
+- **Tirar dado** is the hand: the only skill a face matters to. It spends the resource and
+  builds the Racha.
+- **Agitar** is a second deal when the hand is the wrong one for this fight, and the Comodín for
+  whoever waits until Racha 3.
+- **Estrella fugaz** (a skill, Aitor 2026-11-20; built) is luck turned back into dice. It is paid
+  with a die of any face, the one the player picks (the list opens on the one worth least: a
+  blank with nothing to repeat, brackets, the eye…), and that face does nothing. Its own die
+  counts: at Racha 2 the die makes 3, it spends them and two dice drop into the hand, as far as
+  the hand has room. Below that it is only its blow, about Atacar's. One die in, two out, the
+  Racha back near nothing: it trades luck for a longer hand, which is what the meteors will ask.
+- **Dados astrales** (Aitor's) cashes the luck. At 15 % two dice of light fall, about 40; at
+  45 %, three; at 75 %, five, about 100; at 105 %, seven, about 140; at 165 %, eleven, about 220.
+  None of them rolls for a golpe crítico: the luck is already in how many there are. Then the
+  Racha starts again from nothing. It is the one thing Crítico past 100 % is for.
+- **Ases en dúo** (Aitor's: luck up by 100 %, 2 maná): **it doubles the Crítico of both** for
+  three rounds, whatever it is when each blow lands. Read here as the two of them, *en dúo*: the
+  wearer and their partner. Both its dice count for the Racha. On a bare 15 % it gives 30 %; on
+  a Racha of 45 %, 90 %; and it turns Papagato's 20 % into 40 %.
+- **Meteorito, Meteoro, Asteroide** (Aitor's) are one skill in the list. It reads *Meteorito*;
+  the turn after it was used it reads *Meteoro*, with its cost; the turn after that, *Asteroide*.
+  Any other action, or the Asteroide landing, puts it back to Meteorito. The three cost six dice
+  over three turns in a row, with no Defender between them, and a hand tops at five: **the third
+  is never there by waiting.** § The three meteors.
+- **Atacar** stays plain, as with every ánima. It keeps the Racha and adds nothing to it; it
+  breaks a meteor.
+- `AGENTS.md`'s targets have no `a enemigos al azar`: to add when Dados astrales is built.
+- To watch: most of its skills take a die of any face, so the faces could end up as plain maná.
+  Tirar dado has to stay the best use of a good face (a hand is 38 for one die).
 
-### Agitar
+### The three meteors
 
-Decided by Aitor (2026-11-15): it spends a die and rolls the others again, **it does not spend
-the turn**, it is **a fixed command** once unlocked, with **×1**, and it **is improved at the
-jar**. The rest is a proposal.
+Six dice in three turns. Where the sixth comes from (Aitor: *the partner gives maná with some
+skill, or a lot of it has been gathered*):
 
-- **What it does**: the player chooses the die to give up, and every other die in the hand is
-  rolled again, in view. The turn is still theirs: look, shake, look again, then act. The face
-  given up does not matter, so it is where the die nobody wants goes.
-- **A fixed command, not a skill in the list**: it sits in the wearer's dock by the dice, with
-  its count on it (*Agitar ×1*). Proposal for the button: the pad's top button (X), the one
-  that changes Matemágico's element on Atacar. So that button is, for each ánima, its own
-  gesture. Through `data-glyph`, as every key.
-- **×1** (_to confirm what it counts_): proposal, **once a round** (it comes back as each round
-  starts). The other reading is once a fight. It costs a die either way, so the hand itself
-  also limits it.
-- **When**: level 2 (proposal, moved from 5): it is the ánima's own gesture, so it comes early,
-  right after the first fights have taught the dice.
-- **What it is for**: the faces are worth about the same on purpose, so rolling again pays for
-  what a hand can *be*: a six for Racha, a pair for Dobles, three in a row for the definitiva.
-- **Edges**: it needs two dice or more. A 6 given up comes back (Racha), so the whole hand is
-  rolled again for nothing. Dobles does not repeat it (it is not a skill).
-- Its name is from Tzara's recipe for a dadaist poem: cut the words out, put them in a bag,
-  *agite suavemente*.
-
-**Improved at the jar** (proposal: one short line on Dadaísta's page, beside Maná +1 and the
-Definitiva; each node needs the one before it):
-
-| Node | Ecos | What it does |
+| Way | How it goes | Dice in the hand |
 | --- | --- | --- |
-| **Agitar ×2** | 1 | One more use |
-| **Plantarse** | 1 | Before shaking, one die is chosen to stay as it is |
-| **Dado cargado** | 2 | The dice rolled again cannot come out lower than the die given up: a 1 is a plain roll, a 5 leaves fives and sixes |
+| **A partner gives maná** | Full hand of five. Meteorito, Meteoro; before the third turn the partner gives one maná | 5 → 4 → 2 → 3 → 0 |
+| **Luck** | Racha 2 or more and a full hand of five: Estrella fugaz gives two dice for one, past the top (not built: § The hand's size). Then the three | 5 → 6 → 5 → 3 → 0 |
+| **The definitiva** | *Un golpe de dados* fills the hand to six | 6 → 5 → 3 → 0 |
 
-- Four ecos in all; with Maná +1 (2) and the Definitiva (3), Dadaísta's page holds nine.
-- **This is new for a shared ánima**: until now the jar gave a shared one only maná and the
-  definitiva ([`../README.md`](../README.md) § Two ways to grow). Dadaísta would be the first
-  with a line of its own, and only for its command; its skills still come by level.
-- Other nodes weighed: the first Agitar of a fight costs no die; Agitar ×3.
+With a top of four (no Maná +1 from the jar) it takes two of those: two dice from the partner,
+or Estrella fugaz twice.
 
-### Options for the slots
+**No skill in the game gives maná to an ally today.** That half of Aitor's rule needs one in the
+partner's ánima, and whoever wears Dadista always has a partner with their own: Tecnópata (Aitor)
+or Matemágico (Gerard). To design in their folders, not here (§ Open).
 
-| Instead of | Option | What it is |
-| --- | --- | --- |
-| Collage (2) | **Collage on one foe** | The same strikes, all on the foe chosen: surer, and closer to Papagato's Zarpazos |
-| Pares o nones (5) | **Invito yo** | No blow: a die handed to an ally's ánima as maná (one point; two if the die is a 4 or more). The only ánima that feeds the others |
-| Pares o nones (5) | **Dobles**, as a skill | Two dice: a blow as strong as their sum; if they are equal it lands on every foe |
-| Racha (3) | **La otra cara** | Defender, besides giving two dice, turns over the ones held (1↔6, 2↔5, 3↔4): low dice kept are high dice later |
-| Racha (3) | **Mano caliente** | Atacar, free, throws a loose die: 13 to 23 instead of 18, and on a 6 that die goes to the hand |
-| Dobles (6) | **Pifia** | A 1 that is spent leaves the foe open: the next blow on it lands harder |
+## Definitiva: Un golpe de dados
 
-**Atacar** (to decide): plain, as with every ánima, or itself a throw with a small spread (the
-*Mano caliente* row). Proposal: plain. The free action stays the sure one.
+Bought at the jar (3 ecos). The name is Mallarmé's: *Un golpe de dados jamás abolirá el azar*.
 
-## Round 5 · Faces with icons instead of numbers (decided and built, 2026-11-19)
+| | |
+| --- | --- |
+| **Wakes in a fight when** | The wearer's Crítico reaches **100 %**: on the plate, the star's number |
+| **Then** | Once in that fight, for the turn and no maná. It does not spend the Racha |
+| **In the game** | `Daño mágico no elemental alto a todos los enemigos. Golpe crítico seguro. Llena la mano hasta seis dados.` |
 
-**Decided by Aitor (2026-11-19): A, and Doble o nada is gone.** The dice show **small icons that
-do things** instead of 1–6. La mano stays (dice as maná, faces in view, the player picks the die);
-what changes is what a face *means*. Everything above that reads faces as numbers (high and low,
-even and odd, three in a row, Racha's six, Collage and Cubilete by pips, Dado cargado) is from
-before this round and is to be redone in icons.
+The sky throws for once: one great die of light on each foe, and a hand of six, which is the
+three meteors paid for. To look at again now that Asteroide exists: both fall on every foe.
 
-| | How | For | Against |
+## What a round looks like
+
+Level 5 or more, Gerard wearing it with four dice, one boss with Defensa and Espíritu 10, Aitor
+beside him. Hand dealt: Ojo, Mano, Corchete, En blanco. Crítico 15 %.
+
+| Turn | Does | On the foe | Racha · Crítico after |
 | --- | --- | --- | --- |
-| **A · Each face is an action** | Spending a die does what its face shows, on the target chosen. Six faces, each tied to a system the game already has | The most to decide (which die, on whom, now or later); combines with the other ánimas; levels can carve faces | Damage is no longer a sliding number: a balance pass, and the bet needs a new rule |
-| **B · Numbers with marks** | Faces keep 1–6 for strength; the 1 and the 6 also carry an icon (an extra effect) | Smallest change; today's balance holds | Barely changes how it plays |
-| **C · Icons that make phrases** | Icons combine in the hand (two of a kind, an eye and a fist…) into stronger moves | The most dadaist (a cut-up poem) | Rules the player must memorise; against readable systems |
+| 1 | **Ojo**: the mark, for Aitor's blow | 14, then Aitor's three times over | 1 · 25 % |
+| 2 | **Mano** | 42 | 2 · 35 % |
+| 3 | **Ases en dúo** with the bracket and the blank, of no use now | — | 4 · 55 %, doubled: 110 %, both of them, three rounds |
+| 4 | The hand is empty: **Defender**. Two dice: En blanco, Corchete. The Racha stays | — | 4 · 110 % |
+| 5 | A poor hand and Racha 4: **Agitar**. Tijeras and the Comodín. Then **Tijeras**, a sure golpe crítico | 30, Sangrado 2 | 5 · 65 %, doubled: 130 % |
+| 6 | One die left, the Comodín. **Throw it**: a hand on every foe, a sure golpe crítico, and the Racha goes on. Or pay **Estrella fugaz** with it: 16 and two dice back. Or **Dados astrales**: eight dice of light, about 160, and the Racha starts again | 80, or 16 and a hand of two, or 160 | 6 · 150 %, or 3 · 90 %, or 0 · 30 % |
 
-Recommended: **A**. A first face set, drawn as old printer's ornaments in ink on ivory (not
-cartoon icons), the red one being the die's red face:
+Turn 6 is the ánima: cash now, buy a longer hand, or one more throw. Turn 4 is its price: a turn
+that hurts nobody. At level 3, as built, it is the same without turns 3's doubling and the rain.
 
-| Face | Icon | What it does when spent |
-| --- | --- | --- |
-| ×2 | **Manicule** ☞ | A strong physical blow to a foe |
-| ×1 | **Scissors** | A light physical blow and Sangrado (Papagato's wound, cashed by Zarpa en la llaga) |
-| ×1 | **Eye** | Leaves Punto débil on a foe |
-| ×1 | **Bracket** | Protects an ally (Protegido) |
-| ×1 | **Blank** (red) | Repeats the last face this wearer spent in the fight; with none yet, it can do nothing |
+## What it offers a dual
 
-- **Levels** get content for free: each level **carves a face** (level 2: the blank becomes a
-  wildcard that copies without spending its twin; level 3: a manicule becomes a double one).
-- **Agitar, Dobles** keep working (a pair is two equal icons). **Racha** becomes "a manicule
-  spent comes back rolled"; the definitiva's "three in a row" becomes **three different faces**.
-- **Doble o nada**: removed (Aitor, 2026-11-19).
-- **The blank** changed while building: it repeats the last face spent rather than copying one
-  held, so it needs no second pick and asks when to spend it (after a good face).
-- **Code**: the hand already holds one face per die (`Combatant.dice`, `diceOf`, `castDie` in
-  `src/battle.ts`); faces become ids instead of numbers, `src/dice.ts` draws ornaments instead of
-  pips, the hand sheet names faces, `bestDie` and the simulator learn them. Nothing new in the
-  status engine: every face uses one that exists.
+No dual of its own exists. What it brings to a pair, for when they are designed:
 
-_Open_: whether the faces differ by level (the carving above), and how Agitar, Racha, Dobles,
-Collage and the definitiva read in icons.
+- **Luck for two** (Ases en dúo) and **a Racha** to spend on a partner's blow.
+- **A mark** (Ojo) for a partner's single blow, and **a cut** (Tijeras) for a physical one.
+- **A rain** (Dados astrales) for anything that wants many small blows, and magic of no element.
+- **A meteor that wants one more die**: the natural second half of a pair is whatever gives it.
+- **A guard** (Corchete) round whoever is charging something.
+- A dual calls the Comodín (built): the next die dealt to whoever took part is the Comodín 20 %
+  of the times.
 
-## Check, so far
-
-- **Against Papagato**: a die spent well is worth about 26 on average for one maná and brings
-  nothing with it; Zarpazo sangriento is 16 and two stacks. Collage with a 1 is six strikes for
-  one maná against Zarpazos' four for two: one die in six, and scattered, but to watch in the
-  sim.
-- **Jackpots**: a 6 bet and won into a *Punto débil* is 72 three times over. Rare by design; a
-  cap if the sim says so.
-- **The description shape** (`AGENTS.md`) has no word for a strength that changes. Proposal: add
-  `variable` to the intensities (and to `tests/battle.test.mjs`) rather than marking four skills
-  `abstract`.
-- **Needs, none of it built**: maná points with a value and their look in the ánima bar, a die
-  picker when a skill is chosen, the bet's roll in view, random targets, the dice in
-  `just fight-sim` (`roll` exists), and a level giving maná or a passive (shared with
-  Sincopante). For Agitar: a command that does not end the turn (changing ánima already works
-  so), its count, its glyph in `GLYPHS`, the hand rolled again in view, and a line at the jar
-  for a shared ánima (`TREES` in `src/ecos.ts` is for the own ones today).
-
-## Combined skills
-
-_Open_ (round 6). A name kept for it: *Cadáver exquisito*, the game where each one adds a part
-without seeing the other's.
+A name kept for one: *Cadáver exquisito*, the game where each adds a part without seeing the other's.
 
 ## Look and interface
 
-Built in a first version (2026-11-15), to be judged in play; screenshots with
-`just screenshots dadaista --gpu`.
+Built (2026-11-15 and 2026-11-19), to be judged in play: `just screenshots dadaista --gpu`.
 
-- **Colour**: ivory `#efe6cf`, with ink `#161413` and one vermilion `#d9422b` (a die's red one).
-  Not confirmed: the mission's doc had `#e8b04a`, too close to Matemágico's gold and Papagato's
-  orange. No pink, no violet.
-- **Worn** (`CLASSES.dadaista`, `src/anima-looks.ts`): a black jacket, cream shirt, a red bow tie
-  and a brass monocle on its cord. Nothing moves on it: the dice are what moves.
-- **The dice** (`src/dice.ts`): ivory cubes with black pips, the one in red, a touch bigger than
-  life. They float in a column beside whoever wears it, on the side away from the others, each
-  with its face turned to the camera, the first of the hand lowest. A new one (Defender, a round's
-  rest, the fight starting) drops in tumbling. At rest they are never still: each drifts, bobs
-  and turns a little at a pace of its own (`HandDie.sway`, `pace`), and the ones on the plate rock
-  with them. The Comodín is the same cube in black lacquer with a vermilion star on every face
-  (`dressDie`), on the plate and in the hand too.
-- **The throw** (`updateDice`, `DICE` in `src/battle-scene.ts`): the wearer stays put and raises a
-  hand; the die leaves the column, flies at the target tumbling, lands and bounces off to the
-  floor. A bet goes straight up first and comes down large over the wearer's head showing what it
-  rolled: won, it is thrown and comes down on the target twice (*¡Doble!*); lost, it says *Nada*
-  and goes back to its place in the column with the face it rolled.
-- **Interface**: on the plate each point of maná is a die showing its face (a spent one, the empty
-  place it left); small squares instead of circles on its pill and over its head. Choosing a skill
-  that spends a die turns the sheet into the hand, one row a die (*Seis · Golpea por lo que marca*,
-  *Tres · Sale con 3 o más*), the cursor starting on the one that would go by default, and the die
-  under the cursor comes forward in the scene; then the target. A hand of one skips the step.
-- **Each face's landing** (`src/dice-fx.ts`, built 2026-11-19): the face draws its own ornament in
-  the air where the die lands, dot by dot as a pen would (`FACE_STROKES` in `src/die-faces.ts`, the
-  die's own drawing), in ivory with the die's red, on the GPU engine. **Mano**: two jabs of the
-  manicule from the side it came from, the blow shaking the floor, and the hand left pointing at
-  the foe over it. **Tijeras**: two cuts crossing in an X, the scissors snapping shut in red where
-  they meet, strips of cut paper falling (`scrap`, `DICE_KINDS`). **Ojo**: the lids open from both
-  corners, the pupil narrows in red to a small cross where the next blow goes. **Corchete**: two
-  brackets close in round the ally in steps and hold, a ring of light at their feet. **En blanco**:
-  its red empty frame is stamped first, and the face it repeats is drawn inside it. The clips are in
-  `just screenshots dadaista --gpu`.
-- **Theme** (`.battle-dock[data-anima="dadaista"]`): strips of ivory paper pasted on ink, none of
-  them quite straight, one red rule, a high-contrast serif for names and typewriter for the small
-  print.
+- **Worn** (`CLASSES.dadaista`, `src/anima-looks.ts`): black jacket, cream shirt, a red bow tie
+  and a brass monocle on its cord. To look at again: on Gerard the monocle sits over his own
+  glasses and the bow tie hangs clear of the body.
+- **The dice** (`src/dice.ts`): ivory cubes printed with their ornaments in ink, the blank's
+  frame in red, floating in a column beside whoever wears it, never still. A new one drops in
+  tumbling. The Comodín is the same cube in black lacquer with a vermilion star.
+- **The throw** (`DICE` in `src/battle-scene.ts`): the wearer raises a hand; the die leaves the
+  column, flies at the target tumbling, lands and bounces off.
+- **Each face's landing** (`src/dice-fx.ts`): the face draws its own ornament in the air where
+  the die lands, dot by dot as a pen would, on the GPU engine.
+- **Interface**: on the plate each point of maná is a die showing its face. Tirar dado turns the
+  sheet into the hand, one row a die with what it does, greyed if it can do nothing now; then the
+  target. A hand of one skips the step.
+- **Theme** (`.battle-dock[data-anima="dadaista"]`): strips of ivory paper pasted on ink, none
+  quite straight, one red rule, a high-contrast serif and typewriter for the small print.
 
-## In the world · Second round
+### The astral look (Aitor's direction 2026-11-20; the detail a proposal)
 
-_Open_.
+*Bluish white, with trails of small star-shaped particles that shine, fly and fall.* Style
+frames and a moving sketch: `output/mockups/dados-astrales/index.html`.
+
+- **Two materials, one die.** The hand is paper and ink: ivory, matt, printed. The astral is the
+  same die made of light: bluish-white glass lit from within, its ornament kept in dark blue.
+  Luck is what turns one into the other.
+- **Palette**: core `#f4f9ff`, ice `#bfe0ff`, halo `#7fb4ff`, and a night veil `#0b1430` over the
+  scene while it rains. Whiter than Agua (`#6cc8f2`) and than Tecnópata's cyan (`#4fe0ff`): what
+  tells it apart is the star, not the hue. No violet, no pink.
+- **The particle**: a four-point star, a thin cross with a bright centre, crisp and countable,
+  never smoke. It twinkles (its light flickers 8 to 12 times a second), and it is never still:
+  along a trail it thins out and falls behind, and one in six peels off and floats up.
+  All on the GPU engine: the kind `astral` (`src/effects.ts`, **built**: the engine already had
+  the star shape).
+- **The Racha, on the wearer**: a four-point star with its count on the plate, as a continuous
+  status (**built**). Still to do: in the scene, the dice of the hand gather star dust as it
+  climbs (a star or two round each from Racha 3, a short trail as they drift from 6, and at
+  Crítico 100 % they are glass and light). Nothing says *ready*: the hand has changed.
+
+**Dados astrales**, beat by beat:
+
+| Beat | Lasts | What happens |
+| --- | --- | --- |
+| **The call** | 0.35 s | The wearer raises a hand to the sky. The scene dims to the night veil, about a third; the fighters keep their colour |
+| **The gathering** | 0.4 s | The die spent goes up out of the frame, and the stars round the hand go after it in a thin line |
+| **The rain** | A die every 0.25 s, quicker with many: never over 2.5 s in all | Each die of light falls on a foe at random, steeply and from one side, tumbling, with a trail of forty to sixty stars as long as three dice, brightest at the die. Each takes 0.45 s to fall |
+| **Each landing** | 0.3 s | A white flash of two frames, a flat ring of twenty-four stars flying out low over the ground to about 0.6 m, cold light on the stones and on the foe. The die bounces once and comes apart into stars, which float up. The number in ice blue |
+| **After** | 0.5 s | The veil lifts, the last stars go up and out, and the star on the plate is back to its lowest |
+
+- **Ases en dúo**: the two dice chosen leave the hand, rise over the two of them, turn to glass
+  and light, and circle each other once (0.5 s), joined by a thin line of stars, a constellation
+  of two. Then they come apart into a shower that falls on both (0.5 s). While it lasts, a star
+  on each plate with the rounds left, and three or four stars turning slowly round each of them.
+- **Estrella fugaz** (**built**, a first pass): the die that pays for it is thrown as any die,
+  shedding astral stars all along its flight; on the foe it breaks into thirty of them at the
+  chest and a low ring of fourteen at the feet, with a white flash and the foe lit ice blue. With
+  Racha spent, *Racha −3 · +2 dados* over the wearer and two dice drop into the hand. Still to
+  do: the die itself turning to glass and light as it leaves (the astral die's material), and
+  the two dice coming back from the foe as halves of the star instead of dropping in.
+- **Meteorito, Meteoro, Asteroide**: a rock of light, not a die: bluish-white stone with a hot
+  white edge and a trail of stars. Meteorito is the size of a die and falls in 0.4 s. After it,
+  a second rock stays turning slowly over the wearer's head, twice the size: the skill is still
+  up there, and that is how the player sees it has grown. Meteoro is that one coming down
+  (0.5 s, a ring of stars a metre wide), and a third stays, larger again. Asteroide: the veil
+  goes fully to night (0.3 s), its shadow covers the foes before it does, it lands on all of them
+  at once with the fight stopped for 0.25 s, and the stars it throws up fall back for a second.
+  If the turn goes on anything else, the rock overhead comes apart into stars and drifts off.
+- **A golpe crítico by luck** is the shared one, tinted ivory for a face and ice blue for the astral.
+- **Un golpe de dados**: the same rain as one die for each foe, three times the size, falling
+  together; then six dice drop into the hand.
+- *Movimiento reducido* keeps the dice and the numbers and drops the veil, the flashes and the
+  stars that fly out.
+
+## In the world
+
+_Open._ The mission's first idea: a board-game shop's door in the city that only opens to a player.
+
+## Second round
+
+_Open._ Its ivory and ink are already close to the grey of a first round: a candidate is that the
+astral, its bluish white, is what the second round brings.
 
 ## Implementation
 
-Built (2026-11-15), level 1 only:
+**Built** (levels 1 to 3):
 
-- `ClassId` `dadaista`, `ANIMA_NAMES`, `CLASS_STATS` (Fuerza +3, Defensa +2, Magia −1), `CLASSES`.
+- `ClassId` `dadaista`, `ANIMA_NAMES` (*Dadista*), `CLASS_STATS`, `CLASSES`, the theme, the look.
 - **Dice as maná** (`src/battle.ts`): `Combatant.dice` holds the face of each point; `diceOf`
-  keeps it in step with the maná (new points are rolled with the fight's seeded `roll`), so
-  Defender and a round's rest deal dice with no code of their own. `act(…, die)` and `commit(…,
-  die)` take the die's place in the hand; with none, `bestDie` picks (the highest for a blow, the
-  highest sure one for a bet), which is what the simulator and a move left ready use.
-- **Faces** (round 5, 2026-11-19): a die is a `DieFace` (`DIE_FACES`: mano, mano, tijeras, ojo,
-  corchete, blanco), rolled with `rollFace`. **Tirar dado** (`tirar-dado`, `abstract: true`) is the
-  only skill in the list: `act` swaps it for the move of the face spent (`FACE_SKILLS`: `cara-mano`
-  38 physical, `cara-tijeras` 16 and Sangrado 2, `cara-ojo` 10 and Punto débil, `cara-corchete`
-  Protegido on an ally until the round ends, a new `guard` kind), and a blank does the
-  wearer's `lastFace`. Targets follow the die (`validTargets(…, die)`, `dieSkill`); `bestDie` picks
-  hand, scissors, eye, brackets, skipping what can do nothing. `BattleEffect.die` says the face, its
-  place and what it did (`as`); `BattleEffect.dealt` the dice Defender brought.
-- **Comodín** (2026-11-19): `dealDie` deals it instead of a face `COMODIN_CHANCE` of the times, or
-  `COMODIN_AFTER_DUAL` for the first die after a dual (`Combatant.comodinDue`, set in `actDual`);
-  its move is `cara-comodin`, on every foe (the `all-foes` path), first in `bestDie`.
-- **Look**: the ornaments are one SVG path each (`src/die-faces.ts`), printed on the 3D die's
-  texture (`src/dice.ts`) and drawn in the hand, on the plate and in the picker, where each row
-  says what the die does and greys out if it can do nothing now.
-- Tests in `tests/dice.test.mjs`; the scenario `scripts/screenshots/dadaista.json`.
-- **Reached from** the fight tester (wear Dadaísta on Gerard or Aitor). In the story it is worn
-  once `anima-universidad` is set (`storyClasses`), with no flag of its own.
+  keeps it in step with the maná, so Defender and a round's rest deal dice with no code of their
+  own. `act(…, die)` takes the die's place in the hand; with none, `bestDie` picks.
+- **Faces**: `DieFace`, `DIE_FACES`, `rollFace`. *Tirar dado* (`tirar-dado`, `abstract`) swaps
+  itself in `act` for the move of the face spent (`FACE_SKILLS`: `cara-mano`, `cara-tijeras`,
+  `cara-ojo`, `cara-corchete`, `cara-comodin`); a blank does the wearer's `lastFace`.
+  `BattleEffect.die` and `.dealt` tell the screen.
+- **Comodín**: `dealDie`, `COMODIN_CHANCE`, `COMODIN_AFTER_DUAL`, `Combatant.comodinDue`.
+- **Racha** (2026-11-20): `RACHA`, `Combatant.racha`, `rachaOf`; `spendDie` adds to it,
+  `critChance` and `statShifts` read it, `wearAnima`, `changeAnima` and `changeHealth` (falling)
+  drop it; `BattleEffect.racha`. Its status icon on the plate (`racha` in `STATUS_ICONS`).
+- **Agitar** (2026-11-20): the skill `agitar` (`free`: never through `act`), `shake`,
+  `shakesLeft`, `SHAKES`, `Combatant.shaken`; the passive `otra-vez` and its node
+  `dadaista:otra-vez` (`src/ecos.ts`); `shakeHand` in the fight's interface and `shakeDice` in
+  the scene. The simulator's bots shake once the Racha gives the Comodín (`decide`).
+- **Estrella fugaz** (2026-11-20): the skill `estrella-fugaz` (`die: 'paid'`, `star`); `dieUse`
+  is now *spends a chosen die* and `faceUse` *the die decides the move*; `spareDie` picks the die
+  to give up; `BattleEffect.starred`. The particle kind `astral` (`src/effects.ts`).
+- EXP and levels (`LEVELLED`): it reaches level 3; level 2 teaches Agitar, level 3 Estrella fugaz.
+- **The status screen's Ánimas page** (`src/exploration-ui.ts`): the rule under *SIEMPRE*
+  (`ANIMA_RULES`), its skills, and the die face by face under *CARAS DEL DADO* (the blank with
+  its line, the Comodín left to be found).
+- Tests in `tests/dice.test.mjs`; its sheet, `scripts/screenshots/dadaista.json`.
+- Levels 4 to 7 (2026-11-20): `MAX_LEVEL` 7 with a top for each ánima (`topOf`, `src/levels.ts`),
+  Maná +1 from `MANA_LEVEL` in `manaMax`; `RAIN`, `rainCount`, `meteorOf` and the `rain`, `double`
+  and `meteor` skills in `src/battle.ts`. A skill of two or three dice is paid with the die picked
+  and then the ones worth least (`effect.paid`). In the scene: `SKY`, `skyStep`, `skyBurst` and
+  the rock that stays overhead (`updateRocks`, `src/battle-scene.ts`); `skyFall`, `skyLand`,
+  `meteorLand`, `aces`, `shower` in `src/dice-fx.ts`. Its sheet: `scripts/screenshots/dadaista-astral.json`.
+- **The impact, redone (Aitor 2026-11-20: he did not like the first one)**: each face lands as a
+  stamp of torn paper slammed on the foe (`src/dice-stamp.ts`), the die is thrown hard, sticks a
+  beat and ricochets, and the astral lands as a four-point flare.
+- Reached from the fight tester and the picker (`dadaista-2` to `dadaista-7`). In the story it is
+  worn once `anima-universidad` is set.
 
-Its EXP and levels are built (`LEVELLED`, 2026-11-19), but levels 2 and 3 teach nothing yet.
+**To put right in what is built**:
 
-Not built: Agitar, what levels 2 to 7 give (the faces carved, the passives), its line at the jar,
-combined skills, a `TARGETS` pair in the simulator, sounds of its own (it borrows the clink, the
-hit and the guard), and the banner when the mission gives it.
+- `just fight-sim` cannot ban a face (`--ban cara-ojo` changes nothing: a face is reached only
+  through Tirar dado), so it cannot say what each face decides.
+- Agitar as a fixed command with its own button and glyph (today a row of the skill list).
+- The astral die's material, and the hand gathering stars with the Racha (§ The astral look).
+- No banner when the mission gives it, no `TARGETS` pair.
+
+**Built 2026-11-20**: Maná +1 and Dados astrales (level 4), Ases en dúo (5), Meteorito and its two
+stages (7). Differences from the design, to look at: the night veil of the rain and of the
+Asteroide is not there (a flash instead); Ases en dúo shows as Crítico ▲ with its rounds, not a
+star of its own; with two or three dice only the first is picked; the simulator's bot never uses
+Ases en dúo or reaches the Asteroide, so it cannot value them.
+
+**To build**:
+
+1. The hand past its top, to six (today nothing passes the top, so the Asteroide needs dice
+   dealt on the way: Estrella fugaz, or a hand refilled by Defender before starting).
+5. The definitiva, when definitivas are built; a partner's skill that gives maná.
+6. The simulator: faces as things to ban, `worth` for the bracket, the eye and the Racha.
+
+## For the balance, later
+
+`just fight-sim` on 2026-11-20, once levels 2 and 3 were built (`smart`, Gerard Dadista 3 + Aitor
+Matemágico 2, 120 fights each):
+
+| Fight | Nothing banned | Without Agitar | Without Estrella fugaz | Without Tirar dado |
+| --- | --- | --- | --- | --- |
+| Dogs | 100 %, 1.1 rounds | 100 % | 100 % | 100 %, 2 rounds |
+| El Vértigo (Uri) | 98 %, 10.7 rounds | 94 %, 12.1 rounds | 96 % | 28 % |
+
+- **Agitar decides something**: the Comodín it gives at Racha 3 is worth a round and a half of
+  El Vértigo. **Estrella fugaz barely moves it**: the bot throws it a third of a time a fight
+  (it has no value for dice dealt or for a Racha kept). Read as: not measured yet.
+- Short fights never get to Racha 3: the ánima's weakness, as meant.
+
+The same day, before (`smart`, Papagato 3, Dadista level 1, its old stats):
+
+| Fight | Gerard Dadista + Aitor Tecnópata | Without Tirar dado |
+| --- | --- | --- |
+| La Lealtad | 99 % | 99 % |
+| La Voz | 74 % | 54 % |
+| La Delegada (1.º) | 99 % | 99 % |
+| Aurelià | 20 % | 15 % |
+
+- **The bot barely throws**: 0.1 to 2 dice a fight. It prefers its own ánima and the duals, and
+  has no value for a bracket or a die kept. Only La Voz moves with it. Read as: not measured yet.
+- **The largest blow is the eye's.** With Dadista in the party the most one action takes off
+  goes from 118 to 249 (La Voz) and from 160 to 287 (Aurelià): the eye, then a dual. Punto débil
+  was a dual's prize once a fight; here it is one die in six from level 1, and a blank repeats
+  it.
+- **The rain must not multiply by the eye.** Punto débil triples every strike of the next
+  action. Eleven dice of light on one marked boss would be about 660, and a Racha has no top.
+  First guesses to hold it: the mark is spent by the first die of light alone, and the rain
+  stops at twelve dice. Without the eye its most is about 240.
+- **Luck with no top** is for the long fights. If it runs away: Racha at 5 % a die, or a top
+  at 150 %.
+- **Estrella fugaz** is a die more every three dice spent: with a hand of three it comes round
+  about once a Defender. If the hand ever goes to six and it proves too much: Racha 4 for it, or
+  one die back.
+- **Agitar's Comodín** is a hand on every foe once a fight (twice with the node), where it was
+  2 % of dice. If it is too sure: Racha 4 or 5 for it.
+- **The three meteors** are about 34, 52 and 84 on a foe with Espíritu 10, half as much again as
+  golpes críticos, the last on every foe: about 170 on one foe for six dice, where six dice
+  thrown are about 150. The eye before the Asteroide triples it on the foe marked: about 250,
+  380 as a golpe crítico. Their price is the six dice in a row, not the numbers.
+- **Ases en dúo beside Papagato**: its sure golpes críticos need no luck, and its chance ones
+  double (20 % to 40 %, 40 % to 80 % on a foe that bleeds). To watch as a pair.
+- On a foe with Defensa 10 a die is worth about 25 before the mark and the wound count, against
+  Atacar's 22 and Zarpazo sangriento's 20 and two stacks.
 
 ## Open
 
-- Agitar's ×1: once a round (the proposal) or once a fight. Its level (2), its button, and its
-  three nodes at the jar.
-- The level-1 pair, and which options take which slots (Pares o nones at 5).
-- Whether Atacar is a throw.
-- `variable` as an intensity.
-- *Órdago* is a word from mus: traditional, not a product, but to confirm against the mission's
-  rule of no real games.
+1. **How Agitar and Estrella fugaz use the Racha** (Aitor asked for both to; these are the
+   readings built). Agitar: with Racha 3 or more one die comes out the Comodín, and it spends
+   nothing. Estrella fugaz: it spends 3 of Racha for two dice. Other readings weighed: Agitar
+   coming back every five of Racha (more shakes, no Comodín); Estrella fugaz hitting harder for
+   each point (a finisher, which Dados astrales already is). Recommended: as built.
+2. **Agitar's place.** Built as a row of the skill list. The 2026-11-15 decision was a fixed
+   command with its own button. Recommended: its own button once it is clear the row is too
+   hidden; the rule is the same either way.
+3. **The hand to six** past its top, for dice from luck or from a partner. Not built: today
+   Estrella fugaz deals only what fits. Recommended: build it with Maná +1 and the meteors, which
+   are what need it.
+4. **Who gives maná to whom.** No skill does today. Recommended: one in each own ánima, since
+   the partner always has theirs: a node in Tecnópata's Taller line (Bip passes charge to an
+   ally) and one in Matemágico's Cálculo line, each designed in its folder. Until then the
+   meteors are reached by Estrella fugaz or the definitiva.
+5. **Ases en dúo reaches both of them** (read from *en dúo*), three rounds, any two dice. Its
+   *other modifiers* are left out for now; the natural one is the Comodín's odds.
+6. **Level 6** is empty since Estrella fugaz went to 3. Recommended: leave it until the meteors
+   are played; a level may give nothing new.
 
-## Not chosen (round 1)
+## How it got here
 
-Kept for Pedro's ánima or later: **Agendario** (nothing happens now: each skill is a plan that
-arrives rounds later, and plans that arrive together are stronger), **Casamentero** (ties two
-fighters: what lands on one lands on the other at half) and **Leguleyo** (changes one rule of
-the fight for both sides).
+- **Round 1** (2026-11-14): four directions; Dadista chosen. Kept for Pedro's ánima or later:
+  *Agendario* (every skill is a plan that arrives rounds later), *Casamentero* (ties two
+  fighters: what lands on one lands on the other at half), *Leguleyo* (changes one rule of the
+  fight for both sides).
+- **Rounds 2 to 4** (2026-11-15): *La mano* chosen over a roll as the blow lands and over one
+  die a round. Faces were numbers: Golpe de dados (stronger by the face), Doble o nada (a bet),
+  and a table up to level 7 read in pips (Collage by low faces, Pares o nones, Cubilete, Racha on
+  a six, Dado cargado, three in a row for the definitiva). All of it replaced in round 5.
+- **Round 5** (2026-11-19): faces as icons, over numbers with marks and over icons that combine
+  into phrases (rules to memorise). Doble o nada removed. The blank repeats the last face spent
+  rather than copying one held, so it needs no second pick.
+- **2026-11-20, last**: Aitor made the Racha the ánima's rule from level 1 (it was a passive at
+  3) with its count in view, asked for Agitar and Estrella fugaz to use it, took the stats, and
+  said to build. Levels 1 to 3 were built that day: Estrella fugaz came down from 6 to 3 (it was
+  *a golpe crítico deals two dice*, a chance; now it spends a counted Racha), and a die counts
+  for the Racha at once (it was from the action after).
+- **2026-11-20, later**: Agitar stopped costing a die (it gave one up to roll the others, once a
+  round, with *Plantarse* at the jar: Aitor did not like it); Dados astrales moved from level 7
+  to 4, and the meteors took 7. Left out to keep the set small: the passive *Buena estrella*
+  (dice dealt come out the Comodín as often as a fifth of the Crítico).
+- **2026-11-20**: renamed Dadista. A first whole design in icons played the hand in pairs
+  (*Dobles*: a pair does the move twice; *Collage*: a strike for each different face; *Cubilete*:
+  the whole hand at once; a definitiva on three equal faces). The same day Aitor gave the
+  direction of dice, luck and the astral, with Ases en dúo and Dados astrales: those three went,
+  and this page is built round luck. *Órdago* dropped as the definitiva's name (a word from mus,
+  against the mission's rule of no real games).

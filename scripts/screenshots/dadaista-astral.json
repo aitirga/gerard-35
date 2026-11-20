@@ -1,0 +1,270 @@
+{
+  "title": "Dadista · lo astral",
+  "description": "Dadista's levels 4 to 7 (docs/animas/dadaista/): Maná +1 and a hand of four, Dados astrales (a rain of dice of light on foes at random, as many as the Crítico gives), Ases en dúo (everyone's Crítico twice for three rounds) and the meteor in its three sizes, Meteorito, Meteoro and Asteroide, each used on the turn after the one before. Gerard wears it at level 7 in the fight tester beside Aitor's Matemágico, against three sturdy dogs. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=dadaista-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22dadaista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22dadaista%22%2C%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Afalse%2C%22immune%22%3Afalse%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => s.foes.forEach(f => { f.hp = f.maxHp = 900; }));"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.allies.forEach(a => { a.hp = a.maxHp; }); const g = s.allies.find(a => a.id === 'gerard'); g.dice = [\"mano\", \"ojo\", \"tijeras\", \"corchete\"]; g.secondary = 4; g.racha = 5;  });"
+    },
+    {
+      "wait": 1400
+    },
+    {
+      "shot": "mano-de-cuatro",
+      "delay": 300,
+      "caption": "Level 4 gives Maná +1: a hand of four dice. Racha 5 on the plate"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 300,
+      "caption": "The skill list at level 7: Tirar dado, Agitar, Estrella fugaz, Dados astrales, Ases en dúo and Meteorito"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"dados-astrales\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "lluvia-pago",
+      "delay": 300,
+      "caption": "Dados astrales is paid with one die, the one picked"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "dados-astrales",
+      "seconds": 3.4,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Dados astrales: the die goes up as light and a rain of dice of light comes down on foes at random, one for each 15 % of Crítico, each with its own number; the Racha starts again"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "shot": "lluvia-despues",
+      "delay": 300,
+      "caption": "After the rain: the Racha is gone from the plate"
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.allies.forEach(a => { a.hp = a.maxHp; }); const g = s.allies.find(a => a.id === 'gerard'); g.dice = [\"mano\", \"blanco\", \"corchete\", \"ojo\"]; g.secondary = 4; g.racha = 2;  });"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"ases-en-duo\"]').click()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "ases-pago",
+      "delay": 300,
+      "caption": "Ases en dúo costs two dice: the first is picked, the other is the one worth least"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "ases-en-duo",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Ases en dúo: two dice turn to light, circle each other over the party and fall on both as a shower; everyone's Crítico counts twice for three rounds"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "shot": "ases-estado",
+      "delay": 300,
+      "caption": "While it lasts: Crítico up on both plates, with its rounds"
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.allies.forEach(a => { a.hp = a.maxHp; }); const g = s.allies.find(a => a.id === 'gerard'); g.dice = [\"mano\", \"ojo\", \"tijeras\", \"corchete\"]; g.secondary = 4; g.racha = 0; });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"meteorito\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Enter",
+      "gap": 400
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "meteorito",
+      "seconds": 2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Meteorito: the die goes up and a rock of light the size of a die comes down on one foe"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "shot": "meteoro-crecido",
+      "delay": 500,
+      "caption": "After it a larger rock stays turning over Gerard's head: used again on his next turn, it is Meteoro"
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.allies.forEach(a => { a.hp = a.maxHp; }); const g = s.allies.find(a => a.id === 'gerard'); g.dice = [\"mano\", \"ojo\", \"tijeras\", \"corchete\"]; g.secondary = 4; g.racha = 2; });"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "lista-meteoro",
+      "delay": 300,
+      "caption": "The same row now reads Meteoro, with its two dice"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"meteoro\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Enter",
+      "gap": 400
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "meteoro",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Meteoro: the rock overhead is the one that comes down, harder"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "shot": "asteroide-crecido",
+      "delay": 500,
+      "caption": "A third rock, larger again, waits for the next turn"
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.allies.forEach(a => { a.hp = a.maxHp; }); const g = s.allies.find(a => a.id === 'gerard'); g.dice = [\"mano\", \"ojo\", \"tijeras\", \"corchete\"]; g.secondary = 4; g.racha = 2; });"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "lista-asteroide",
+      "delay": 300,
+      "caption": "Asteroide: three dice, on every foe"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"asteroide\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "asteroide",
+      "seconds": 3,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Asteroide: one rock for all of them, the fight stopped a quarter of a second as it lands"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "shot": "despues",
+      "delay": 400,
+      "caption": "After the Asteroide the skill is Meteorito again"
+    }
+  ]
+}
