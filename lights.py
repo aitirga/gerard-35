@@ -6,7 +6,14 @@ house's own library, vendor/geraitor_domotic_house (a git submodule), without go
 requests a minute. Colour changes are merged while one is on its way, so only the latest state of
 each bulb is ever sent; flashes skip that queue because they are timed to a hit. Giving the house
 its lights back when the game lets go is the browser's job: it knows the flat (src/home-lights.ts).
+
+Timing runs here, beside the game and not inside it: the browser says *when* a flash must be seen
+(`at`, on this server's clock, which it reads at /api/lights/clock), as soon as it knows, and the
+timeline thread sends each bulb its message that bulb's own latency early. The game's frames, its
+timers and the HTTP request in between no longer move the flash.
 """
+import heapq
+import itertools
 import logging
 import os
 import secrets
@@ -61,6 +68,21 @@ class Budget:
             return max(0.0, (1 - self.tokens) / self.rate)
 
 
+#: Until a bulb has answered a few times: a typical bulb at home on the LAN, and the cloud.
+GUESS_SECONDS = {"lan": 0.06, "cloud": 0.5}
+#: A swell reads as a flash this soon, whatever its peak; a short flash at its peak.
+SEEN_SECONDS = 0.12
+
+
+def rise(effect: dict) -> float:
+    """Seconds from the start of a flash to the moment it is seen: a pulse at once, a breathe at its
+    peak or after `SEEN_SECONDS`, whichever comes first (src/home-lights.ts `riseOf` agrees)."""
+    if effect.get("kind") != "breathe":
+        return 0.0
+    peak = 0.5 if effect.get("peak") is None else effect["peak"]
+    return min(effect.get("period", 1.0) * peak, SEEN_SECONDS)
+
+
 def lifx_color(shade: dict | None, brightness: float | None = None) -> str | None:
     if shade is None and brightness is None:
         return None
@@ -78,6 +100,10 @@ class HomeLights:
     READ_SECONDS = {"lan": 0.15, "cloud": 1.5}
     #: Looking for bulbs that stopped answering on the LAN, at most this often.
     DISCOVER_SECONDS = 30
+    #: While the game drives the lights, a bulb nobody wrote to in this long is asked how it is,
+    #: so its latency stays current; the game counts as driving for `DRIVING_SECONDS` after a request.
+    PROBE_SECONDS = 2.0
+    DRIVING_SECONDS = 60
 
     def __init__(self, api=None, lan=None, budget: Budget | None = None, clock=time.monotonic, worker: bool = True):
         self.api, self.lan, self.clock = api, lan, clock
@@ -85,13 +111,21 @@ class HomeLights:
         self.wake = threading.Condition()
         self.pending: dict[str, dict] = {}
         self.effects: list[dict] = []
+        #: Timed sends (when, order, job): the timeline thread runs each at its moment.
+        self.timeline: list[tuple[float, int, object]] = []
+        self.tick = threading.Condition()
+        self.order = itertools.count()
+        self.driven_at = -float("inf")
         self.inventory: list[dict] = []
         self.read_at = -float("inf")
         self.discovered_at = clock() if lan else -float("inf")
-        #: Seconds a change takes to reach the bulbs, smoothed: the game times the flashes with it.
+        #: Seconds a cloud request takes, smoothed (on the LAN each bulb is timed by itself: `seconds_to`).
         self.latency: float | None = None
         if worker:
             threading.Thread(target=self._run, name="home-lights", daemon=True).start()
+            threading.Thread(target=self._timeline, name="home-lights-timeline", daemon=True).start()
+            if lan:
+                self.at(clock() + self.PROBE_SECONDS, self._probe)
 
     @property
     def transport(self) -> str:
@@ -124,6 +158,7 @@ class HomeLights:
             if isinstance(raw, list):
                 self.inventory, self.read_at = raw, self.clock()
         return [{
+            "latency": self.bulb_latency(light.get("id")),
             "label": light["label"],
             "group": light.get("group", {}).get("name"),
             "connected": light.get("connected", False),
@@ -133,6 +168,17 @@ class HomeLights:
             "kelvin": light["color"]["kelvin"],
             "brightness": light["brightness"],
         } for light in self.inventory]
+
+    def seconds_to(self, serial: str | None) -> float:
+        """How long a message takes to reach this bulb now: measured on the LAN, the cloud's otherwise."""
+        if serial and self.lan and serial in self.lan.answered:
+            measured = self.lan.latency(serial)
+            return GUESS_SECONDS["lan"] if measured is None else measured
+        return GUESS_SECONDS["cloud"] if self.latency is None else self.latency
+
+    def bulb_latency(self, serial: str | None) -> int:
+        """`seconds_to` in whole milliseconds, for the game."""
+        return round(self.seconds_to(serial) * 1000)
 
     def ids(self, labels: list[str]) -> dict[str, str]:
         """Bulb ids (their serials) by label, reading again for a label nobody knows."""
@@ -156,18 +202,91 @@ class HomeLights:
         return serials if all(serial in self.lan.answered for serial in serials) else None
 
     # ------------------------------------------------------------------ writing
-    def set(self, states: list[dict], duration: float):
-        """Queues states; a bulb already waiting keeps only the newest."""
+    def set(self, states: list[dict], duration: float, at: float | None = None):
+        """Queues states; a bulb already waiting keeps only the newest. With `at` (seconds on this
+        server's clock) each bulb is told its own latency early, so they all change then."""
+        self.driven_at = self.clock()
+        if at is not None:
+            self._arrive([state["light"] for state in states], at,
+                        lambda labels: self._now_or_queue("states", {s["light"]: {**s, "duration": duration} for s in states if s["light"] in labels}))
+            return
         with self.wake:
             for state in states:
                 self.pending[state["light"]] = {**state, "duration": duration}
             self.wake.notify()
 
     def flash(self, effect: dict):
-        """Queues an effect ahead of the states. Late flashes are worthless, so only a few wait."""
+        """Queues an effect ahead of the states. Late flashes are worthless, so only a few wait. With
+        `at` the flash is *seen* then: each bulb gets it its latency and the flash's rise early."""
+        self.driven_at = self.clock()
+        at = effect.get("at")
+        if at is not None:
+            self._arrive(effect["lights"], at - rise(effect), lambda labels: self._now_or_queue("effect", {**effect, "lights": labels, "at": None}))
+            return
         with self.wake:
             self.effects = [*self.effects[-2:], effect]
             self.wake.notify()
+
+    def _arrive(self, labels: list[str], at: float, send):
+        """`send(labels)` early enough for them to arrive at `at`: on the LAN each bulb by its own
+        latency, through the cloud all together by the cloud's."""
+        ids = self.ids(labels)
+        lan = [label for label in labels if self.on_lan([label]) is not None]
+        for label in lan:
+            self.at(at - self.seconds_to(ids[label]), lambda one=label: send([one]))
+        rest = [label for label in labels if label not in lan]
+        if rest:
+            self.at(at - self.seconds_to(None), lambda: send(rest))
+
+    def _now_or_queue(self, kind: str, payload):
+        """On the LAN nothing waits, so the timeline sends it itself; the cloud's go to the worker."""
+        labels = payload["lights"] if kind == "effect" else list(payload)
+        if self.on_lan(labels) is not None:
+            self._send(kind, payload)
+            return
+        with self.wake:
+            if kind == "effect":
+                self.effects = [*self.effects[-2:], payload]
+            else:
+                self.pending.update(payload)
+            self.wake.notify()
+
+    # ------------------------------------------------------------------ the timeline
+    def at(self, when: float, job):
+        with self.tick:
+            heapq.heappush(self.timeline, (when, next(self.order), job))
+            self.tick.notify()
+
+    def due(self) -> float | None:
+        """Runs every job whose moment has come; returns the seconds until the next one."""
+        while True:
+            with self.tick:
+                if not self.timeline:
+                    return None
+                wait = self.timeline[0][0] - self.clock()
+                if wait > 0:
+                    return wait
+                _, _, job = heapq.heappop(self.timeline)
+            try:
+                job()
+            except Exception:  # A bad job must never stop the timeline.
+                logger.exception("Home lights timed job failed")
+
+    def _timeline(self):
+        while True:
+            self.due()
+            with self.tick:
+                wait = self.timeline[0][0] - self.clock() if self.timeline else None
+                if wait is None or wait > 0:
+                    self.tick.wait(wait)
+
+    def _probe(self):
+        """Keeps every bulb's latency current while the game drives them: a quiet bulb is asked how it is."""
+        self.at(self.clock() + self.PROBE_SECONDS, self._probe)
+        if self.clock() - self.driven_at > self.DRIVING_SECONDS:
+            return
+        for serial in self.lan.answered:
+            self.lan.probe(serial)
 
     def _send(self, kind: str, payload):
         if kind == "effect":
@@ -187,7 +306,12 @@ class HomeLights:
                 continue
             state, brightness = payload[labels[0]], payload[labels[0]].get("brightness")
             color = None if look is None else {**(state.get("color") or {}), "brightness": 1 if brightness is None else brightness}
-            self._measure(self.lan.set, serials, color, power, duration)
+            sent = self.lan.set(serials, color, power, duration)
+            if not state.get("retried"):
+                # A state must arrive, late or not: one that no bulb acknowledged goes once more.
+                again = {label: {**payload[label], "retried": True} for label in labels}
+                wait = max(0.25, 3 * max(self.seconds_to(serial) for serial in serials))
+                self.at(self.clock() + wait, lambda sent=sent, again=again: self._unless_heard(sent, again))
         if cloud:
             self._send_cloud(cloud)
 
@@ -196,7 +320,7 @@ class HomeLights:
         if serials is not None and payload["kind"] != "off":
             brightness = payload.get("brightness")
             color = {**(payload.get("color") or {}), "brightness": 1 if brightness is None else brightness}
-            self._measure(self.lan.waveform, serials, payload["kind"], color, payload["period"], payload["cycles"], payload.get("peak"))
+            self.lan.waveform(serials, payload["kind"], color, payload["period"], payload["cycles"], payload.get("peak"))
             return
         if not self.api:
             return
@@ -210,6 +334,13 @@ class HomeLights:
             body["from_color"] = lifx_color(payload.get("from_color"), payload.get("from_brightness"))
         body["power_on"] = True
         self._timed("POST", f"lights/{target}/effects/{payload['kind']}", json=body)
+
+    def _unless_heard(self, sent: list, again: dict):
+        if all(self.lan.acknowledged(one) for one in sent):
+            return
+        with self.wake:
+            self.pending = {**again, **self.pending}
+            self.wake.notify()
 
     def _send_cloud(self, payload: dict):
         if not self.api:
@@ -337,9 +468,14 @@ class LightState(BaseModel):
     brightness: float | None = Field(None, ge=0, le=1)
 
 
+#: `at`: when it should be seen, in milliseconds on this server's clock (/api/lights/clock).
+At = Field(None, ge=0)
+
+
 class LightsUpdate(BaseModel):
     states: list[LightState] = Field(min_length=1, max_length=16)
     duration: float = Field(0.5, ge=0, le=60)
+    at: float | None = At
 
 
 class LightsEffect(BaseModel):
@@ -353,9 +489,25 @@ class LightsEffect(BaseModel):
     cycles: float = Field(1, ge=0.5, le=1000)
     peak: float | None = Field(None, ge=0, le=1)
     persist: bool = False
+    at: float | None = At
 
 
 router = APIRouter()
+
+
+def server_seconds(ms: float | None) -> float | None:
+    """A moment the game gave in this server's milliseconds, on the clock the bridge runs on."""
+    if ms is None:
+        return None
+    # Never further ahead than the calibration's last beat: a game with a stale clock must not park a flash.
+    return min(ms / 1000, time.monotonic() + 15)
+
+
+@router.get("/api/lights/clock")
+def clock(response: Response):
+    """This server's clock, for the game to give the bridge moments on it. Nothing else: no key needed."""
+    response.headers["Cache-Control"] = "no-store"
+    return {"now": time.monotonic() * 1000}
 
 
 @router.get("/api/lights")
@@ -365,15 +517,16 @@ def read_lights(request: Request, response: Response):
     if reason:
         return {"available": False, "reason": reason, "lights": []}
     lights = house()
-    return {"available": True, "transport": lights.transport, "lights": lights.lights(),
-            "latency": round(lights.latency * 1000) if lights.latency is not None else None}
+    bulbs = lights.lights()
+    return {"available": True, "transport": lights.transport, "lights": bulbs,
+            "latency": max((bulb["latency"] for bulb in bulbs if bulb["connected"]), default=None)}
 
 
 @router.put("/api/lights", status_code=204)
 def set_lights(update: LightsUpdate, request: Request):
-    driving(request).set([state.model_dump() for state in update.states], update.duration)
+    driving(request).set([state.model_dump() for state in update.states], update.duration, server_seconds(update.at))
 
 
 @router.post("/api/lights/effect", status_code=204)
 def flash_lights(effect: LightsEffect, request: Request):
-    driving(request).flash(effect.model_dump())
+    driving(request).flash({**effect.model_dump(), "at": server_seconds(effect.at)})

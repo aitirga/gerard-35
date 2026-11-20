@@ -26,6 +26,8 @@
     { "press": "Escape" },
     { "eval": "document.querySelector('[data-open=settings]').click()" },
     { "eval": "document.querySelector('[data-open=lights]').click()" },
-    { "shot": "menu-lights", "delay": 1500, "caption": "Pause · Configuración · Luces de casa: connect the bulbs (LAN or cloud), living room or whole house, intensity, and the lead (Auto) with its test flash" }
+    { "shot": "menu-lights", "delay": 1500, "caption": "Pause · Configuración · Luces de casa: connect the bulbs (LAN or cloud), living room or whole house, intensity, and Sincronía: the calibrated offset, Calibrar and Probar; connected, it lists what each bulb takes" },
+    { "eval": "const t = document.querySelector('[data-lights-tapping]'); t.hidden = false; document.querySelector('[data-lights-tap-prompt]').textContent = 'Sigue el ritmo de la pantalla.'; document.querySelector('[data-lights-tap-count]').textContent = '•••••'; document.querySelector('[data-lights-tap]').focus()" },
+    { "shot": "menu-lights-calibrate", "delay": 800, "caption": "Calibrar (shown here without bulbs): tap along with the screen's flashes, then with the bulbs'; the difference is how late the bulbs are, and the game corrects it" }
   ]
 }

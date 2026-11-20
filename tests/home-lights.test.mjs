@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HOUSE_LIGHTS, OFF, SWATCHES, autoLead, battleLook, heartbeat, hex, hitFlash, impactSeconds, lampInteraction, lampRgb, mix, placeLook, sameLamp, stepSwatch, switchedOn, tension, white } from '../src/home-lights.ts';
+import { CAPS, HOUSE_LIGHTS, OFF, SCREEN_MS, SWATCHES, VICTORY, ambience, autoLead, battleLook, bracing, clockOffset, heartbeat, hex, hitFlash, holdFor, impactSeconds, isBoss, lampInteraction, lampRgb, lateness, mix, peakOf, placeLook, registerOf, riseOf, sameLamp, slam, stepSwatch, sweep, switchedOn, tapOffsets, tension, white } from '../src/home-lights.ts';
 import { CONTACT_SECONDS } from '../src/battle-motion.ts';
 import { createBattle, createGuardBattle, palaceGuards } from '../src/battle.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
@@ -57,9 +57,105 @@ test('the dial steps through whites and colours, keeping the brightness', () => 
   assert.deepEqual(switchedOn({ ...hex('#4a6cff', .6), on: false }).on, true);
 });
 
-test('the lead follows the bulbs: milliseconds on the LAN, half a second through the cloud', () => {
-  assert.equal(autoLead('lan'), 40);
+test('until the bridge has measured them, a bulb takes tens of milliseconds on the LAN and half a second through the cloud', () => {
+  assert.equal(autoLead('lan'), 60);
   assert.equal(autoLead('cloud'), 500);
+});
+
+test('places keep to pastels; dungeons drop to a dark with one accent breathing; her palace keeps its pink', () => {
+  for (const id of Object.keys(ENVIRONMENTS)) {
+    if (id === 'meridiana') continue;
+    const look = placeLook(id, calm, 'casa', 'intensa');
+    for (const [bulb, lamp] of Object.entries(look)) {
+      const cap = registerOf(id) === 'claro' ? CAPS.place : CAPS.accent;
+      assert.ok(lamp.saturation <= cap + 1e-9, `${id} ${bulb}: saturation ${lamp.saturation}`);
+    }
+  }
+  const dungeon = placeLook('cuerdas', calm, 'salon');
+  assert.equal(registerOf('cuerdas'), 'penumbra');
+  assert.ok(dungeon.cocina.brightness < dungeon.luna.brightness, 'the accent stays lit');
+  assert.equal(ambience('cuerdas', dungeon).lights[0], 'luna', 'and it breathes');
+  assert.ok(ambience('cuerdas', dungeon).period >= 6, 'slower than breathing');
+  assert.equal(ambience('maresme', placeLook('maresme', calm, 'salon')), undefined, 'a street does not');
+  assert.equal(ambience('palacio', placeLook('palacio', calm, 'salon')).lights[0], 'mesa', 'her fountain still beats');
+});
+
+test('a fight is pastel; a boss carries more colour; the alarm stays raw', () => {
+  const guards = createBattle(1, 2);
+  assert.ok(!isBoss(guards));
+  for (const lamp of Object.values(battleLook(guards, 'salon'))) assert.ok(lamp.saturation <= CAPS.fight + 1e-9);
+  guards.allies[0].hp = 1;
+  assert.ok(battleLook(guards, 'salon').mesa.saturation > CAPS.fight, 'someone about to fall turns the room red');
+  const boss = { ...guards, encounter: 'voz', allies: guards.allies.map(a => ({ ...a, hp: a.maxHp })) };
+  assert.ok(isBoss(boss));
+  assert.ok(Math.max(...Object.values(battleLook(boss, 'salon')).map(l => l.saturation)) > CAPS.fight);
+});
+
+test('a blow at everyone announced makes the room hold its breath', () => {
+  const state = createBattle(1, 2);
+  const calmLook = battleLook(state, 'salon');
+  assert.ok(!bracing(state));
+  state.foes[0].intent = { ability: 'bombona', at: 'todos' };
+  assert.ok(bracing(state));
+  assert.ok(battleLook(state, 'salon').sofa.brightness < calmLook.sofa.brightness);
+});
+
+test('raw light is kept for the peaks: a boss turning, a part broken, a blow at everyone, the last blow on a boss', () => {
+  const state = createGuardBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard-adult' }], palaceGuards(0));
+  const foe = state.foes[0].id;
+  assert.equal(peakOf({ kind: 'attack', actor: 'gerard', target: foe, amount: 10 }, state), undefined, 'a plain blow is not one');
+  assert.equal(peakOf({ kind: 'attack', actor: 'gerard', target: foe, amount: 10, crit: true }, state), undefined, 'nor a critical one');
+  assert.ok(peakOf({ kind: 'enemy', actor: foe, target: 'gerard', stage2: true }, state).saturation > .85, 'a boss turning: full red');
+  assert.ok(peakOf({ kind: 'attack', actor: 'gerard', target: foe, eye: 'broken' }, state));
+  assert.ok(peakOf({ kind: 'enemy', actor: foe, target: 'gerard', ability: { id: 'bombona', name: 'Bombona', card: true }, hits: [{ target: 'gerard', amount: 5 }, { target: 'aitor', amount: 5 }] }, state));
+  assert.ok(peakOf({ kind: 'attack', actor: 'gerard', target: foe }, { ...state, encounter: 'fran', phase: 'won' }), 'the last blow on a boss');
+  assert.equal(peakOf({ kind: 'attack', actor: 'gerard', target: foe }, { ...state, phase: 'won' }), undefined, 'not on a guard');
+  const cue = slam(hex('#ff3a1a', 1, 1));
+  assert.ok(cue.steps[0].at < 0 && Object.values(cue.steps[0].look)[0].brightness < .05, 'it drops to dark just before');
+  assert.equal(cue.steps.at(-1).at, 0);
+  assert.deepEqual(sweep(white(4000, 1)).steps.map(step => Object.keys(step.look)[0]), ['cocina', 'sofa', 'luna', 'mesa']);
+});
+
+test('the answer found lands warmer than a plain blow', () => {
+  const state = createGuardBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard-adult' }], palaceGuards(0));
+  const foe = state.foes[0].id;
+  const plain = hitFlash({ kind: 'attack', actor: 'gerard', target: foe, amount: 10 }, state);
+  const weak = hitFlash({ kind: 'attack', actor: 'gerard', target: foe, amount: 20, affinity: 'weak' }, state);
+  assert.ok(weak.period > plain.period && weak.color.saturation > plain.color.saturation);
+});
+
+test('victory is bright but never her pink', () => {
+  for (const lamp of Object.values(VICTORY)) assert.ok(lamp.saturation <= .6 && !(lamp.hue >= 315 && lamp.hue <= 350), `${lamp.hue}`);
+});
+
+test('timing: the hit waits only when the bulbs need longer than its wind-up', () => {
+  assert.equal(riseOf({ kind: 'pulse', period: .2 }), 0);
+  assert.equal(riseOf({ kind: 'breathe', period: .45, peak: .1 }), 45);
+  assert.equal(riseOf({ kind: 'breathe', period: 1.3, peak: .4 }), 120, 'a slow swell is seen before its peak');
+  const contact = CONTACT_SECONDS * 1000;
+  assert.equal(holdFor(80, 0, 45, contact), 0, 'a measured LAN bulb is told in time');
+  assert.ok(holdFor(500, 0, 0, contact) > 0, 'the cloud holds the hit back a little');
+  assert.equal(holdFor(500, 0, 0, contact), Math.round(25 + 500 - contact - SCREEN_MS));
+  assert.ok(holdFor(80, 200, 45, 200) > holdFor(80, 0, 45, 200), 'bulbs found late are told earlier');
+});
+
+test('the bridge\'s clock is read from the quickest round trip', () => {
+  const offset = clockOffset([
+    { sent: 0, server: 1000 + 40, back: 80 },
+    { sent: 100, server: 1000 + 102, back: 104 },
+    { sent: 200, server: 1000 + 230, back: 260 },
+  ]);
+  assert.equal(offset, 1000);
+});
+
+test('the tap calibration measures the bulbs against the screen, whatever the hand adds', () => {
+  const beats = [0, 700, 1400, 2100, 2800, 3500];
+  // The player taps 30 ms early on the screen and 50 ms late on the bulbs: they arrive 80 ms late.
+  const screen = tapOffsets(beats, beats.map(b => b - 30));
+  const bulbs = tapOffsets(beats, [...beats.map(b => b + 50), 5000]);
+  assert.equal(bulbs.length, beats.length, 'a stray tap belongs to no beat');
+  assert.equal(lateness(screen, bulbs), 80);
+  assert.equal(lateness(screen.slice(0, 2), bulbs), undefined, 'too few taps to trust');
 });
 
 test('the room turns red and a heartbeat starts as the party runs out of health', () => {

@@ -3,10 +3,14 @@
  * main colours, fights play on the bulbs (hits flash, low health turns them red and sets a
  * heartbeat going) and the Meridiana flat is the real one: its lamps and the bulbs at home mirror
  * each other both ways. The browser decides; `lights.py` sends it to the bulbs (on the LAN at home).
+ * The room keeps to pastels (`pastel`), drops to a breathing dark in the dungeons (`penumbra`) and
+ * breaks into raw colour only at the few peaks (`peakOf`, the story's `moment`s). Timing runs beside
+ * the game: each flash is given the moment it must be seen, on the bridge's clock, and the bridge
+ * sends every bulb its message that bulb's own latency early (docs/home-lights.md § Timing).
  * Everything above `createHomeLights` is pure, for the tests.
  */
 import type { EnvironmentId } from './environments.ts';
-import type { BattleEffect, BattleState } from './battle.ts';
+import { FOE_ABILITIES, type BattleEffect, type BattleState, type Encounter } from './battle.ts';
 import { CASTLE_ENCOUNTERS, castlePhaseOf, type CastleEncounter } from './castle.ts';
 import { CAST_CONTACT, CONTACT_SECONDS, CURE_CONTACT, DUAL_BANNER_SEEN, DUAL_FREEZE, SPELL_CONTACT } from './battle-motion.ts';
 
@@ -149,21 +153,49 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
 const BUBBALOO = [hex('#db6ba8', .5, .55), hex('#9a5bc4', .4, .5), hex('#ff7fb3', .45, .5), hex('#c04a8a', .45, .6)];
 const INTENSITY: Record<Intensity, number> = { suave: .7, normal: .9, intensa: 1 };
 
+// ——— Registers: how loud the room may be ———
+/**
+ * The room keeps to pastels: every colour under a cap, so a place or a fight tints the living room
+ * instead of flooding it. `penumbra` is a dungeon's: the room drops to a dark and one lamp (the moon,
+ * by the desk) keeps the place's accent, breathing slowly. `suya` is her palace, where her pink may
+ * stay as pink as it is. Full colour is kept for the peaks (`peakOf`, the story's moments).
+ */
+export type Register = 'claro' | 'penumbra' | 'suya';
+const PENUMBRA: ReadonlySet<EnvironmentId> = new Set(['cuerdas', 'modelo', 'cardedeu-laberinto', 'cardedeu-calle', 'palacio-trono', 'castillo-3']);
+export const registerOf = (place: EnvironmentId): Register => place === 'palacio' ? 'suya' : PENUMBRA.has(place) ? 'penumbra' : 'claro';
+/** How much colour each layer may carry: a place, a dungeon's accent or her palace, a fight, a boss. */
+export const CAPS = { place: .45, accent: .7, fight: .5, boss: .75 } as const;
+export function pastel(lamp: Lamp, cap: number): Lamp {
+  return lamp.on && lamp.saturation > cap ? { ...lamp, saturation: cap } : lamp;
+}
+/** The dungeons' dark: the bulbs that are not the accent at this share of their brightness. */
+const DARK = .5;
+
 export interface Mood { tone: number; dusk: number }
 /** The look of a place; `tone` is La Reina Bubbaloo's light (0–1), `dusk` chapter 2's evening. */
 export function placeLook(place: EnvironmentId, mood: Mood, scope: Scope, intensity: Intensity = 'normal'): Look | undefined {
   if (place === 'meridiana') return undefined;
   const { salon, rest } = PLACE_LOOKS[place];
+  const register = registerOf(place);
   // Her light takes over at most half the colour: the room stays the room.
   const tint = Math.min(1, Math.max(0, mood.tone)) * .5, evening = Math.min(1, Math.max(0, mood.dusk));
-  const shade = (lamp: Lamp, i: number) => {
-    const tinted = mix(lamp, BUBBALOO[i % 4], tint);
-    return scale({ ...tinted, kelvin: Math.round(tinted.kelvin - evening * 500) }, (1 - .3 * evening) * INTENSITY[intensity]);
+  const shade = (lamp: Lamp, i: number, accent: boolean) => {
+    const tinted = mix(pastel(lamp, accent || register === 'suya' ? CAPS.accent : CAPS.place), BUBBALOO[i % 4], tint);
+    const dark = register === 'penumbra' && !accent ? DARK : 1;
+    return scale({ ...tinted, kelvin: Math.round(tinted.kelvin - evening * 500) }, (1 - .3 * evening) * dark * INTENSITY[intensity]);
   };
   const look: Look = {};
-  SALON.forEach((id, i) => { look[id] = shade(salon[i], i); });
-  if (scope === 'casa') ELSEWHERE.forEach((id, i) => { look[id] = shade(rest, i); });
+  SALON.forEach((id, i) => { look[id] = shade(salon[i], i, register === 'penumbra' && id === 'luna'); });
+  if (scope === 'casa') ELSEWHERE.forEach((id, i) => { look[id] = shade(rest, i, false); });
   return look;
+}
+/** A place's own slow motion on one bulb: her palace's fountain beats, a dungeon's dark breathes. */
+export function ambience(place: EnvironmentId, look: Look): Flash | undefined {
+  // The palace's fountain, the Corazón Líquido, beats slowly on the table lamp.
+  if (place === 'palacio' && look.mesa?.on) return { lights: ['mesa'], kind: 'breathe', color: hex('#ff5fae', look.mesa.brightness + .15, .7), period: 5, cycles: 120, peak: .5 };
+  // A dungeon's accent sinks and comes back, slower than breathing.
+  if (registerOf(place) === 'penumbra' && look.luna?.on) return { lights: ['luna'], kind: 'breathe', color: scale(look.luna, .3), period: 7, cycles: 120, peak: .5 };
+  return undefined;
 }
 /** The flat before the house has said anything: evening lamps in the living room, the rest off. */
 export const DEFAULT_FLAT: Record<LightId, Lamp> = {
@@ -248,19 +280,31 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   fran: [white(6200, .6), hex('#4f9fe8', .55, .75), hex('#e8503a', .55, .75), hex('#ffd84f', .55, .7)],
 };
 const ALARM = hex('#ff2a1a', .75, 1);
+/** The fights that close a chapter or a mission, or a floor of the castle: their palette may carry more colour, and their turns break into raw light. */
+const BOSSES: ReadonlySet<Encounter> = new Set<Encounter>(['palace-minion', 'cebollon', 'uri-vertigo', 'sobremesa', 'campeon', 'voz', 'no-converge', 'fran', 'delegada-1', 'delegada-2', 'delegada-3', 'aurelia', 'direccion', 'reina', 'reina-vuelta']);
+export const isBoss = (state: BattleState) => BOSSES.has(state.encounter);
+/** A blow at everyone announced a turn ahead (a card aimed at `todos`): the room holds its breath until it lands. */
+export function bracing(state: BattleState) {
+  return state.foes.some(foe => foe.hp > 0 && foe.intent?.at === 'todos' && FOE_ABILITIES[foe.intent.ability]?.card);
+}
 /** 0 with everyone healthy, 1 when someone still standing is about to fall. */
 export function tension(state: BattleState) {
   const standing = state.allies.filter(a => a.hp > 0);
   if (!standing.length) return 1;
   return 1 - Math.min(...standing.map(a => a.hp / a.maxHp));
 }
-/** The fight's look: its own palette, turning red and darker as the party's health runs out. */
+/**
+ * The fight's look: its own palette in pastel (a boss's carries more colour), turning red and darker
+ * as the party's health runs out (the alarm is raw: someone is about to fall), and dimmed while a
+ * blow at everyone is announced.
+ */
 export function battleLook(state: BattleState, scope: Scope, intensity: Intensity = 'normal'): Look {
-  const palette = PALETTES[state.possessed ? 'possessed' : state.encounter];
+  const palette = PALETTES[state.possessed ? 'possessed' : state.encounter].map(lamp => pastel(lamp, isBoss(state) ? CAPS.boss : CAPS.fight));
   const danger = Math.max(0, (tension(state) - .45) / .55);
+  const held = bracing(state) ? .55 : 1;
   const look: Look = {};
-  SALON.forEach((id, i) => { look[id] = scale(mix(palette[i], ALARM, danger * (i === 3 ? .9 : .6)), (1 - danger * (i === 3 ? 0 : .35)) * INTENSITY[intensity]); });
-  if (scope === 'casa') ELSEWHERE.forEach((id, i) => { look[id] = scale(mix(palette[i % 4], ALARM, danger * .5), .3 * INTENSITY[intensity]); });
+  SALON.forEach((id, i) => { look[id] = scale(mix(palette[i], ALARM, danger * (i === 3 ? .9 : .6)), (1 - danger * (i === 3 ? 0 : .35)) * held * INTENSITY[intensity]); });
+  if (scope === 'casa') ELSEWHERE.forEach((id, i) => { look[id] = scale(mix(palette[i % 4], ALARM, danger * .5), .3 * held * INTENSITY[intensity]); });
   return look;
 }
 /** A one-shot effect on some bulbs: LIFX's breathe (a smooth swell) or pulse (a hard strobe). */
@@ -303,33 +347,104 @@ export function hitFlash(effect: BattleEffect, state: BattleState, intensity: In
       : { lights: front, kind: 'pulse', color: hex('#ff7a1a', 1, .9), period: .18, cycles: effect.burn ? 2 + 2 * effect.burn.level : 2 };
   }
   if (!byParty) return { lights: front, kind: 'breathe', color: hex('#ff2a1a', strong, 1), period: knockedOut ? .9 : .5, cycles: knockedOut ? 2 : 1, peak: .08 };
-  const color = white(5500, strong);
-  return { lights: knockedOut ? [...front, 'mesa'] : front, kind: 'breathe', color: knockedOut ? hex('#ffd24a', 1, .7) : color, period: knockedOut ? .9 : .45, cycles: 1, peak: .1 };
+  if (knockedOut) return { lights: [...front, 'mesa'], kind: 'breathe', color: hex('#ffd24a', 1, .7), period: .9, cycles: 1, peak: .1 };
+  // The answer found (a golpe crítico, a weakness, a Punto débil spent) lands warmer and longer than a plain blow.
+  const struck = [effect, ...(effect.hits ?? [])];
+  if (struck.some(hit => hit.crit || hit.affinity === 'weak') || effect.weakSpot === 'spent') return { lights: front, kind: 'breathe', color: hex('#ffe2a0', strong, .45), period: .7, cycles: 1, peak: .1 };
+  return { lights: front, kind: 'breathe', color: white(5500, .8 * strong), period: .45, cycles: 1, peak: .1 };
 }
-/** The fight is won: each living-room bulb a different bright colour for a moment. */
-export const VICTORY: Look = { cocina: hex('#ffd24a', 1, .8), sofa: hex('#48d07a', .9, .8), luna: hex('#4ac8ff', .9, .8), mesa: hex('#ff6fae', .9, .7) };
+/**
+ * The few blows that break the pastel rule, in raw colour: a boss turning (a new phase, a part of
+ * it broken), a charged dual let go, a blow at everyone landing, the last blow on a boss.
+ */
+export function peakOf(effect: BattleEffect, state: BattleState): Lamp | undefined {
+  const byParty = state.allies.some(a => a.id === effect.actor);
+  if (state.phase === 'won' && isBoss(state)) return white(6500, 1);
+  // A boss getting stronger: red; one losing a part of itself: a hard white-gold.
+  if (effect.stage2 || effect.stage) return hex('#ff3a1a', 1, 1);
+  if (effect.eye === 'broken' || effect.cracked || effect.lampBroken || effect.release) return hex('#fff0c0', 1, .5);
+  const many = (effect.hits?.length ?? 0) > 1 || (effect.splash?.length ?? 0) > 0;
+  if (!byParty && effect.ability?.card && many) return hex('#ff2a1a', 1, 1);
+  return undefined;
+}
+/** A raw peak: the room drops almost to black a moment before, then the colour lands at once. */
+export function slam(color: Lamp, lights: LightId[] = SALON): Cue {
+  const dark = Object.fromEntries(lights.map(id => [id, { ...color, brightness: .02 }]));
+  return { steps: [{ at: -160, look: dark, duration: .08 }, { at: 0, look: Object.fromEntries(lights.map(id => [id, color])), duration: 0 }] };
+}
+/** Colour walking across the living room, bulb by bulb (a portal opening, a light flying past). */
+export function sweep(color: Lamp, reverse = false, step = 180): Cue {
+  const order = reverse ? [...SALON].reverse() : SALON;
+  return { steps: order.map((id, i) => ({ at: i * step, look: { [id]: color }, duration: .15 })) };
+}
+/** A timed change of look: each step `at` ms from the moment the cue is seen. */
+export interface Cue { steps: { at: number; look: Look; duration: number }[] }
+/** The fight is won: each living-room bulb a different bright colour for a moment (bright, but pastel: her pink is not ours to use). */
+export const VICTORY: Look = { cocina: hex('#ffd24a', 1, .6), sofa: hex('#48d07a', .9, .55), luna: hex('#4ac8ff', .9, .55), mesa: hex('#ffb070', .9, .55) };
 /** The party has fallen: the room sinks to a dark red before the pink-and-black of waking up. */
 export const DEFEAT: Look = { cocina: hex('#ff2a1a', .12, 1), sofa: hex('#ff2a1a', .08, 1), luna: OFF, mesa: hex('#c0306e', .1, .9) };
 
+// ——— Timing ———
+/** A swell reads as a flash this soon, whatever its peak (lights.py `SEEN_SECONDS`). */
+const SEEN_MS = 120;
+/** Ms from the start of a flash to the moment it is seen: a pulse at once, a breathe at its peak or `SEEN_MS` in (lights.py `rise`). */
+export function riseOf(flash: Flash) {
+  return flash.kind === 'breathe' ? Math.round(Math.min(flash.period * (flash.peak ?? .5) * 1000, SEEN_MS)) : 0;
+}
+/** The screen shows a frame about this long after the game draws it: a frame at 120 Hz and the panel. */
+export const SCREEN_MS = 15;
+/** Room for the request to reach the bridge and the bridge to plan it. */
+const MARGIN_MS = 25;
+/**
+ * How long the game should hold a hit so the bulbs can be told in time (ms): they need `latency` to
+ * get the message, `late` more (the calibration: what the measure cannot see, the bulb's own start)
+ * and `rise` to show it; the hit lands `impact` after it starts and the screen shows it `SCREEN_MS` later.
+ */
+export function holdFor(latency: number, late: number, rise: number, impact: number) {
+  return Math.max(0, Math.round(MARGIN_MS + latency + late + rise - impact - SCREEN_MS));
+}
+/** The bridge's clock less this page's (ms), from the quickest of a few round trips: half of it each way. */
+export function clockOffset(samples: { sent: number; server: number; back: number }[]) {
+  const best = samples.reduce((a, b) => (b.back - b.sent < a.back - a.sent ? b : a));
+  return best.server - (best.sent + best.back) / 2;
+}
+const median = (values: number[]) => {
+  const sorted = [...values].sort((a, b) => a - b), mid = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+};
+/** How far each tap fell from the nearest beat (ms), leaving out taps that belong to no beat. */
+export function tapOffsets(beats: number[], taps: number[], within = 300) {
+  return taps.map(tap => beats.reduce((best, beat) => Math.abs(tap - beat) < Math.abs(best) ? tap - beat : best, Infinity)).filter(d => Math.abs(d) <= within);
+}
+/**
+ * The calibration: the player taps along with the screen, then with the bulbs. Whatever their hand
+ * adds is in both, so the difference is how much later the bulbs are seen than planned. Undefined
+ * with too few taps to trust.
+ */
+export function lateness(screen: number[], bulbs: number[]) {
+  return screen.length >= 4 && bulbs.length >= 4 ? Math.round(median(bulbs) - median(screen)) : undefined;
+}
+
 // ——— The director: settings, the bridge and the timing ———
-/** `lead` in ms, or null to follow how long the bulbs take (`autoLead`). */
-export interface LightsSettings { enabled: boolean; scope: Scope; intensity: Intensity; lead: number | null }
+/** `late`: how much later than planned the bulbs are seen (ms), from the calibration; 0 trusts the bridge's measure. */
+export interface LightsSettings { enabled: boolean; scope: Scope; intensity: Intensity; late: number }
 /** `lan`: the bulbs answer on the home network in milliseconds; `cloud`: through LIFX, up to a second. */
 export type Transport = 'lan' | 'cloud';
 export type LightsStatus =
   | { state: 'off' } | { state: 'connecting' }
-  | { state: 'on'; lights: number; latency?: number; transport: Transport }
+  | { state: 'on'; lights: number; latency?: number; transport: Transport; bulbs: Record<string, number> }
   | { state: 'unavailable'; reason: string };
 /**
- * The lead that lands a flash with the hit. On the LAN a bulb starts within a few milliseconds of
- * the message (the measured latency waits for the slowest bulb's answer, so it is not used); through
- * the cloud it is about half a second.
+ * How long a message takes to reach a bulb until the bridge has measured it (ms): a typical bulb at
+ * home on the LAN (lights.py `GUESS_SECONDS`), and the cloud's half a second.
  */
 export function autoLead(transport: Transport) {
-  return transport === 'lan' ? 40 : 500;
+  return transport === 'lan' ? 60 : 500;
 }
-interface HouseBulb { label: string; connected: boolean; power: boolean; hue: number; saturation: number; kelvin: number; brightness: number }
-const SETTINGS_KEY = 'gerard35.lights.v2';
+/** The calibration's reach either way (ms). */
+export const LATE_MAX = 400;
+interface HouseBulb { label: string; connected: boolean; power: boolean; hue: number; saturation: number; kelvin: number; brightness: number; latency?: number }
+const SETTINGS_KEY = 'gerard35.lights.v3';
 const KEY_KEY = 'gerard35.lights.key';
 /** The flat as the game last gave it back, so a reload does not read bulbs still on their way home. */
 const RETURNED_KEY = 'gerard35.lights.returned';
@@ -338,7 +453,10 @@ const RETURN_MS = 60000;
 const ECHO_MS: Record<Transport, number> = { lan: 1200, cloud: 4500 };
 /** How often the flat reads the house while Gerard is in it. */
 const POLL_MS: Record<Transport, number> = { lan: 250, cloud: 3000 };
-export const DEFAULT_SETTINGS: LightsSettings = { enabled: false, scope: 'salon', intensity: 'normal', lead: null };
+/** How often the bridge's clock is read again, and how often the bulbs' latencies (outside the flat, which reads them anyway). */
+const CLOCK_MS = 60000, MEASURE_MS = 5000;
+export const DEFAULT_SETTINGS: LightsSettings = { enabled: false, scope: 'salon', intensity: 'normal', late: 0 };
+export type Moment = 'fall' | 'tv' | 'tv-off' | 'doom' | 'right' | 'wrong' | 'ambush' | 'wake' | 'portal' | 'emerge' | 'unmask' | 'anima' | 'light-in' | 'palace';
 
 export function createHomeLights() {
   let settings: LightsSettings = { ...DEFAULT_SETTINGS };
@@ -366,22 +484,33 @@ export function createHomeLights() {
   let mood: Mood = { tone: 0, dusk: 0 };
   let fight: BattleState | undefined;
   let beat: string | undefined;
-  /** A look that holds for a moment (victory, defeat, a fall) before the place comes back. */
+  /** A look that holds for a moment (victory, defeat, a fall, a story moment) before the place comes back. */
   let holding = 0;
   /** The party fell: the room stays dark red until the fight closes. */
   let fallen = false;
+  /** What lets the room go after being caught, once they wake. */
+  let caught: (() => void) | undefined;
   /** The fight whose ending is already playing: the battle screen reports it more than once. */
   let finished: BattleState | undefined;
   let poll: ReturnType<typeof setInterval> | undefined;
+  /** The bridge's clock less this page's (ms): known once read, and flashes then carry the moment they must be seen. */
+  let offset: number | undefined;
+  let clockTimer: ReturnType<typeof setInterval> | undefined;
+  let measureTimer: ReturnType<typeof setInterval> | undefined;
   const timers = new Set<ReturnType<typeof setTimeout>>();
   const active = () => status.state === 'on';
   const transport = (): Transport => status.state === 'on' ? status.transport : 'cloud';
-  const lead = () => settings.lead ?? autoLead(transport());
+  /** How long the slowest of these bulbs that answer takes to get a message now (ms). */
+  const latencyOf = (ids: LightId[]) => {
+    const measured = status.state === 'on' ? status.bulbs : {};
+    const here = ids.filter(id => present.has(id));
+    return Math.max(0, ...(here.length ? here : ids).flatMap(id => lightById(id).labels).map(label => measured[label] ?? autoLead(transport())));
+  };
   const labelsOf = (ids: LightId[]) => ids.flatMap(id => lightById(id).labels);
   const bulbStates = (id: LightId, lamp: Lamp) => lightById(id).labels.map(light => ({ light, ...toBulb(lamp) }));
   const changed = () => listeners.forEach(listener => listener());
   const save = () => { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* Storage is optional. */ } };
-  const later = (ms: number, run: () => void) => { const t = setTimeout(() => { timers.delete(t); run(); }, ms); timers.add(t); };
+  const later = (ms: number, run: () => void) => { const t = setTimeout(() => { timers.delete(t); run(); }, Math.max(0, ms)); timers.add(t); };
   const headers = () => ({ 'Content-Type': 'application/json', ...(key ? { 'X-Lights-Key': key } : {}) });
   let retry: ReturnType<typeof setTimeout> | undefined;
   let misses = 0;
@@ -412,23 +541,62 @@ export function createHomeLights() {
       return undefined;
     }
   }
+  /** Reads the bridge's clock a few times and keeps the quickest answer's reading. */
+  async function syncClock() {
+    const samples: { sent: number; server: number; back: number }[] = [];
+    for (let i = 0; i < 5; i++) {
+      try {
+        const sentAt = performance.now();
+        const response = await fetch('/api/lights/clock', { cache: 'no-store', signal: AbortSignal.timeout(2000) });
+        const reply = await response.json() as { now?: number };
+        if (typeof reply.now === 'number') samples.push({ sent: sentAt, server: reply.now, back: performance.now() });
+      } catch { /* A server without the clock: flashes are timed here instead. */ }
+    }
+    if (samples.length) offset = clockOffset(samples);
+  }
+  /** A moment on this page's clock (`performance.now`) on the bridge's, if it has been read. */
+  const onBridge = (local?: number) => local === undefined || offset === undefined ? undefined : local + offset;
   // A bulb switched off keeps its colour for the next time a switch turns it on, so an off lamp read
   // from the house carries it, and giving the house back restores it too. OFF itself has none.
   const toBulb = (lamp: Lamp) => ({ power: lamp.on, ...(lamp.on || lamp.brightness > 0 ? { color: { hue: lamp.hue, saturation: lamp.saturation, kelvin: lamp.kelvin }, brightness: lamp.brightness } : {}) });
   const fromBulb = (bulb: HouseBulb): Lamp => ({ on: bulb.power, hue: bulb.hue, saturation: bulb.saturation, brightness: bulb.brightness, kelvin: bulb.kelvin });
-  /** Sends what differs from what the bulbs were last told (`force` resends it anyway); returns the bulbs told. */
-  function show(look: Look, duration: number, force = false) {
+  /**
+   * Sends what differs from what the bulbs were last told (`force` resends it anyway); returns the
+   * bulbs told. `seen` (performance.now ms) is when it should show: the bridge times it, or, before
+   * its clock is read, a timer here does.
+   */
+  function show(look: Look, duration: number, force = false, seen?: number) {
     if (!active()) return [];
     const changes = (Object.entries(look) as [LightId, Lamp][]).filter(([id, lamp]) => present.has(id) && (force || !sameLamp(sent[id], lamp)));
     const states = changes.flatMap(([id, lamp]) => { sent[id] = lamp; told[id] = Date.now(); return bulbStates(id, lamp); });
-    if (states.length) void call('PUT', '', { states, duration });
+    if (states.length) {
+      const at = onBridge(seen);
+      if (seen === undefined || at !== undefined) void call('PUT', '', { states, duration, ...(at === undefined ? {} : { at }) });
+      else later(seen - performance.now() - latencyOf(changes.map(([id]) => id)), () => void call('PUT', '', { states, duration }));
+    }
     return changes.map(([id]) => id);
   }
-  function flash(effect: Flash) {
-    const lights = labelsOf(effect.lights.filter(id => present.has(id) && sent[id]?.on !== false));
-    if (!active() || !lights.length) return;
-    effect.lights.forEach(id => { told[id] = Date.now(); });
-    void call('POST', '/effect', { lights, kind: effect.kind, color: toBulb(effect.color).color, brightness: effect.color.brightness, period: effect.period, cycles: effect.cycles, peak: effect.peak });
+  /** A flash, now or to be seen at `seen` (performance.now ms). */
+  function flash(effect: Flash, seen?: number) {
+    const ids = effect.lights.filter(id => present.has(id) && sent[id]?.on !== false);
+    if (!active() || !ids.length) return;
+    ids.forEach(id => { told[id] = Date.now(); });
+    const body = { lights: labelsOf(ids), kind: effect.kind, color: toBulb(effect.color).color, brightness: effect.color.brightness, period: effect.period, cycles: effect.cycles, peak: effect.peak };
+    const at = onBridge(seen);
+    if (seen === undefined || at !== undefined) void call('POST', '/effect', { ...body, ...(at === undefined ? {} : { at }) });
+    else later(seen - performance.now() - latencyOf(ids) - riseOf(effect), () => void call('POST', '/effect', body));
+  }
+  /** A cue's steps, each at its moment from `seen`. */
+  function play(cue: Cue, seen: number) {
+    for (const step of cue.steps) show(step.look, step.duration, true, seen + step.at);
+  }
+  /** Holds the room on a moment for at most `ms`; returns what lets it go sooner. */
+  function hold(ms: number, back = 2) {
+    holding++;
+    let held = true;
+    const release = () => { if (!held) return; held = false; holding--; settle(back, true); };
+    later(ms, release);
+    return release;
   }
   /** Bernat's box open (src/portal-ui.ts): the real flat follows the game's from El Nucli, as if Gerard were home. */
   let portal = false;
@@ -439,10 +607,11 @@ export function createHomeLights() {
     if (fight) { show(battleLook(fight, settings.scope, settings.intensity), duration, force); return; }
     const look = portal ? undefined : place ? placeLook(place, mood, settings.scope, settings.intensity) : undefined;
     const touched = show(look ?? (place === 'meridiana' || portal ? flat : {}), duration, force);
-    // The palace's fountain, the Corazón Líquido, beats slowly on the table lamp (a new colour stops it).
-    if (place === 'palacio' && look?.mesa && touched.includes('mesa')) flash({ lights: ['mesa'], kind: 'breathe', color: hex('#ff5fae', look.mesa.brightness + .15, .7), period: 5, cycles: 120, peak: .5 });
+    // A new colour on a bulb stops its slow motion, so it starts again whenever its bulb is told.
+    const slow = place && look ? ambience(place, look) : undefined;
+    if (slow && touched.includes(slow.lights[0])) flash(slow);
   }
-  /** While Gerard is in the flat, a lamp switched at home turns on or off in the game too. */
+  /** Reads every bulb: their latencies always, and while Gerard is in the flat a lamp switched at home turns on or off in the game too. */
   async function read(initial = false) {
     const response = await call('GET', '');
     if (!response) return;
@@ -468,11 +637,12 @@ export function createHomeLights() {
         if (!sameLamp(lamp, flat[light.id])) { flat[light.id] = lamp; flatListeners.forEach(listener => listener(light.id, lamp)); }
       }
     }
+    const bulbs = Object.fromEntries(reply.lights.filter(b => b.connected && typeof b.latency === 'number').map(b => [b.label, b.latency!]));
     const now = status as LightsStatus;
     // Switched off while the read was on its way: it stays off.
     if (now.state !== 'off') {
       const moved = now.state === 'on' && now.transport !== reply.transport;
-      status = { state: 'on', lights: present.size, latency: reply.latency, transport: reply.transport ?? 'cloud' };
+      status = { state: 'on', lights: present.size, latency: reply.latency, transport: reply.transport ?? 'cloud', bulbs };
       if (moved) startPolling();
       changed();
     }
@@ -484,8 +654,17 @@ export function createHomeLights() {
       if (!mirroring() || document.hidden || reading) return;
       reading = true; void read().finally(() => { reading = false; });
     }, POLL_MS[transport()]);
+    // Away from the flat nothing reads the bulbs, but their latencies still move with the Wi-Fi.
+    measureTimer = setInterval(() => {
+      if (mirroring() || document.hidden || reading) return;
+      reading = true; void read().finally(() => { reading = false; });
+    }, MEASURE_MS);
+    clockTimer = setInterval(() => { if (!document.hidden) void syncClock(); }, CLOCK_MS);
   }
-  function stopPolling() { if (poll) clearInterval(poll); poll = undefined; }
+  function stopPolling() {
+    for (const timer of [poll, measureTimer, clockTimer]) if (timer) clearInterval(timer);
+    poll = measureTimer = clockTimer = undefined;
+  }
   let connecting: Promise<void> | undefined;
   /** Takes the lights; a retry keeps saying why they were not there until they are. */
   function connect() {
@@ -493,7 +672,7 @@ export function createHomeLights() {
     connecting ??= (async () => {
       if (status.state === 'off' || status.state === 'on') { status = { state: 'connecting' }; changed(); }
       // The flat starts as the house is right now.
-      await read(true);
+      await Promise.all([read(true), syncClock()]);
       if ((status as LightsStatus).state !== 'on') return;
       startPolling();
       settle(1.5, true);
@@ -518,15 +697,18 @@ export function createHomeLights() {
   const again = () => { if (settings.enabled && status.state === 'unavailable' && status.reason !== 'key') { misses = 0; void connect(); } };
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
-    if (active() && mirroring()) void read(); else again();
+    if (active()) { void syncClock(); if (mirroring()) void read(); } else again();
   });
   window.addEventListener('online', again);
+  /** Whether the bridge times the flashes (its clock is read), rather than a timer on this page. */
+  const timed = () => offset !== undefined;
 
   return {
     get settings() { return settings; },
     get status() { return status; },
-    /** The lead in use: the setting, or the automatic one. */
-    get lead() { return lead(); },
+    /** How far ahead the living room's bulbs must be told now (ms): their measured latency and the calibration. */
+    get lead() { return latencyOf(SALON) + settings.late; },
+    get timed() { return timed(); },
     get active() { return active(); },
     get flat() { return flat as Readonly<Record<LightId, Lamp>>; },
     onChange(listener: () => void) { listeners.add(listener); return () => listeners.delete(listener); },
@@ -538,7 +720,10 @@ export function createHomeLights() {
       settings = { ...settings, enabled: on }; if (remember) save();
       if (on) await connect(); else { release(); status = { state: 'off' }; changed(); }
     },
-    update(next: Partial<Omit<LightsSettings, 'enabled'>>) { settings = { ...settings, ...next }; save(); changed(); settle(.8); },
+    update(next: Partial<Omit<LightsSettings, 'enabled'>>) {
+      settings = { ...settings, ...next, late: Math.max(-LATE_MAX, Math.min(LATE_MAX, next.late ?? settings.late)) };
+      save(); changed(); settle(.8);
+    },
     /** Gerard walked somewhere else. */
     setPlace(id: EnvironmentId) {
       if (id === place) return;
@@ -560,7 +745,8 @@ export function createHomeLights() {
     },
     /**
      * A fight changed. Returns how long the game should hold before playing `effect`, so that its
-     * hit lands as the bulbs flash: the lights are sent `lead` ms ahead of the contact.
+     * hit lands as the bulbs flash. The flash is sent at once with the moment it must be seen (the
+     * contact on screen); the bridge tells each bulb its own latency early.
      */
     battle(state: BattleState | undefined, effect?: BattleEffect): number {
       const starting = !!state && !fight;
@@ -573,14 +759,23 @@ export function createHomeLights() {
         if (fallen) { fallen = false; holding--; later(1500, () => settle(2, true)); } else settle(1.5, true);
         return 0;
       }
-      const ahead = lead();
       const impact = effect ? impactSeconds(effect) * 1000 : 0;
       const hit = effect && hitFlash(effect, state, settings.intensity);
-      // The game holds the hit back when the bulbs need longer than its wind-up.
-      const hold = effect ? Math.max(0, ahead - impact) : 0;
-      if (hit) { if (ahead >= impact) flash(hit); else later(impact - ahead, () => flash(hit)); }
-      /** When the flash has had its moment and the room can move on. */
-      const after = effect ? hold + impact + 700 : 0;
+      // A peak breaks the pastel: raw, unless the lights are set soft, where it only swells.
+      const peak = effect && peakOf(effect, state);
+      const raw = !!peak && settings.intensity !== 'suave';
+      const swell: Flash | undefined = peak && !raw ? { lights: [...SALON], kind: 'breathe', color: pastel(peak, CAPS.boss), period: 1.4, cycles: 1, peak: .3 } : undefined;
+      const accent = swell ?? hit;
+      const lights = raw ? [...SALON] : accent?.lights ?? [];
+      // The slam's dark comes before its colour, so a raw peak needs that much more time.
+      const ahead = raw ? -Math.min(...slam(peak!).steps.map(step => step.at)) : accent ? riseOf(accent) : 0;
+      const holdMs = effect && (raw || accent) ? holdFor(latencyOf(lights), settings.late, ahead, impact) : 0;
+      // When the contact shows on screen, less what the calibration found the bulbs add.
+      const seen = performance.now() + holdMs + impact + SCREEN_MS - settings.late;
+      if (raw) play(slam(peak!), seen);
+      else if (accent) flash(accent, seen);
+      /** When the flash has had its moment and the room can move on (a raw peak lingers). */
+      const after = effect ? holdMs + impact + (raw ? 1100 : 700) : 0;
       if (state.phase === 'won' || state.phase === 'lost') {
         if (finished === state) return 0;
         finished = state;
@@ -588,9 +783,9 @@ export function createHomeLights() {
         holding++; beat = undefined; fallen = !won;
         later(after, () => show(won ? VICTORY : DEFEAT, won ? .25 : 2, true));
         if (won) later(after + 2600, () => { holding--; settle(2, true); });
-        return hold;
+        return holdMs;
       }
-      if (state.phase === 'escaped') { later(after, () => settle(1.2, true)); return hold; }
+      if (state.phase === 'escaped') { later(after, () => settle(1.2, true)); return holdMs; }
       const look = () => {
         if (fight !== state) return;
         const colours = battleLook(state, settings.scope, settings.intensity);
@@ -598,39 +793,68 @@ export function createHomeLights() {
         const key = pulse ? `${pulse.period}` : undefined;
         // A new colour on a bulb stops its effect, so the lamp with the heartbeat is left to it.
         if (pulse) delete colours.mesa;
-        show(colours, starting ? .25 : .6, starting);
-        if (key !== beat) { beat = key; if (pulse) flash(pulse); else show({ mesa: battleLook(state, settings.scope, settings.intensity).mesa }, .4, true); }
+        show(colours, starting ? .25 : raw ? 1.8 : .6, starting || raw);
+        if (key !== beat || raw) { beat = key; if (pulse) flash(pulse); else show({ mesa: battleLook(state, settings.scope, settings.intensity).mesa }, raw ? 1.8 : .4, true); }
       };
       if (effect) later(after, look);
       else {
         look();
         if (starting) flash({ lights: [...SALON], kind: 'breathe', color: white(6000, 1), period: .6, cycles: 1, peak: .1 });
       }
-      return hold;
+      return holdMs;
     },
     /** Bernat's box opened or closed: while open, the real flat is the game's (the portal's puzzle is played on its lamps). */
     portal(open: boolean) { if (open === portal) return; portal = open; settle(.6, true); },
-    /** Story moments the room takes part in; `right` and `wrong` blink the whole house green or red (the portal's answer). */
-    moment(kind: 'fall' | 'tv' | 'tv-off' | 'doom' | 'right' | 'wrong') {
+    /**
+     * Story moments the room takes part in. Most stay pastel; the raw ones are hers and the falls:
+     * being caught, the people she holds unmasked, her palace rising, the end. `colour` is an ánima's.
+     */
+    moment(kind: Moment, colour?: string) {
       if (!active()) return;
+      const now = performance.now() + SCREEN_MS - settings.late;
+      const all = (lamp: Lamp) => Object.fromEntries(SALON.map(id => [id, lamp]));
       if (kind === 'right' || kind === 'wrong') {
         flash({ lights: [...SALON, ...ELSEWHERE], kind: 'pulse', color: kind === 'right' ? hex('#2bff6a', 1) : hex('#ff2a1f', 1), period: .45, cycles: 3 });
-        return;
-      }
-      if (kind === 'fall') {
+      } else if (kind === 'fall') {
         holding++;
-        show(Object.fromEntries(SALON.map(id => [id, hex('#ff3f9a', .35, .8)])), .4, true);
-        later(900, () => show(Object.fromEntries(SALON.map(id => [id, OFF])), 1.2, true));
+        show(all(hex('#ff3f9a', .35, .8)), .4, true);
+        later(900, () => show(all(OFF), 1.2, true));
         later(3200, () => { holding--; settle(2, true); });
       } else if (kind === 'tv') flash({ lights: ['sofa'], kind: 'breathe', color: hex('#6fa8ff', .55, .6), period: 2.3, cycles: 200, peak: .5 });
       else if (kind === 'tv-off') show({ sofa: place === 'meridiana' ? flat.sofa : sent.sofa ?? OFF }, .5, true);
-      else show(Object.fromEntries(SALON.map((id, i) => [id, BUBBALOO[i]])), 4, true);
+      else if (kind === 'doom') show(all(BUBBALOO[0]), 4, true);
+      // Caught: the room goes out with the screen, in her violet, until they wake.
+      else if (kind === 'ambush') { caught?.(); caught = hold(8000); show(all(hex('#6a3ab0', .03, .9)), 1.4, true); }
+      // Waking: a pale morning first, then wherever they are.
+      else if (kind === 'wake') {
+        const release = caught ?? hold(400); caught = undefined;
+        show(all(white(4200, .3)), .2, true); later(400, release);
+      }
+      // Into the spiral and out of it: her pink walks across the room, and back as someone comes out.
+      else if (kind === 'portal' || kind === 'emerge') play(sweep(kind === 'portal' ? hex('#ff6fae', .85, .6) : white(3800, .85), kind === 'emerge'), now);
+      // The people she held come apart: raw violet, then their own light back.
+      else if (kind === 'unmask') {
+        const release = hold(3500);
+        if (settings.intensity === 'suave') show(all(hex('#9a5bff', .7, .6)), .8, true); else play(slam(hex('#9a5bff', 1, .9)), now + 200);
+        later(1600, () => show(all(white(4000, .85)), 1.2, true)); later(3000, release);
+      }
+      // An ánima wakes: the room swells into its colour, bright but still pastel.
+      else if (kind === 'anima' && colour) { const release = hold(3200); show(all(hex(colour, 1, .55)), .4, true); later(2400, release); }
+      // A person's light reaches Gerard or Aitor: the amber of the jar, on the lamps by the table.
+      else if (kind === 'light-in') flash({ lights: ['luna', 'mesa'], kind: 'breathe', color: hex('#ffb347', 1, .75), period: 1.2, cycles: 1, peak: .3 });
+      // Her palace rises: her pink climbs through the room, slowly and all the way.
+      else if (kind === 'palace') { const release = hold(6000, 3); show(Object.fromEntries(SALON.map((id, i) => [id, { ...BUBBALOO[i], saturation: .85, brightness: .8 }])), 4, true); later(5500, release); }
     },
-    /** Calibrates the lead: the bulbs are told now, the screen flashes `lead` ms later. */
+    /** Calibrates by eye: the bulbs flash and the screen does as they should be seen, 0.4 s from now. */
     test(onScreen: () => void) {
       if (!active()) { onScreen(); return; }
-      flash({ lights: [...SALON], kind: 'breathe', color: white(6500, 1), period: .5, cycles: 1, peak: .05 });
-      later(lead(), onScreen);
+      const seen = performance.now() + Math.max(400, latencyOf(SALON) + 150);
+      flash({ lights: [...SALON], kind: 'pulse', color: white(6500, 1), period: .25, cycles: 1, peak: .5 }, seen - settings.late);
+      later(seen - SCREEN_MS - performance.now(), onScreen);
+    },
+    /** One beat of the tap calibration on the bulbs, to be seen at `seen` (performance.now ms) with the calibration as it is. */
+    beat(seen: number) {
+      flash({ lights: [...SALON], kind: 'pulse', color: white(6500, 1), period: .2, cycles: 1, peak: .5 }, seen - settings.late);
     },
     release,
   };

@@ -113,18 +113,29 @@ class HomeLightsTests(unittest.TestCase):
         house.lights()
         house.lights()
         clock.now = 2.0
-        self.assertEqual(house.lights()[1], {"label": "Luna", "group": "Salón", "connected": True, "power": False,
+        self.assertEqual(house.lights()[1], {"latency": 500, "label": "Luna", "group": "Salón", "connected": True, "power": False,
                                              "hue": 300, "saturation": 0.6, "kelvin": 3500, "brightness": 1})
         self.assertEqual(sum(1 for call in api.calls if call[1] == "lights/all"), 2)
 
 
 class FakeLan:
-    """Bulbs on the LAN: reads answer with BULBS, writes are recorded."""
+    """Bulbs on the LAN: reads answer with BULBS, writes are recorded (and acknowledged unless `deaf`)."""
 
-    def __init__(self, serials=("d073d5000001", "d073d5000002")):
+    def __init__(self, serials=("d073d5000001", "d073d5000002"), latencies=None):
         self.addresses = {serial: "192.168.1.2" for serial in serials}
         self.answered = set(serials)
+        self.latencies = latencies or {}
+        self.deaf = False
         self.calls = []
+
+    def latency(self, serial):
+        return self.latencies.get(serial)
+
+    def acknowledged(self, sent):
+        return not self.deaf
+
+    def probe(self, serial):
+        self.calls.append(("probe", serial))
 
     def read(self):
         return [dict(bulb) for bulb in BULBS if bulb["id"] in self.addresses]
@@ -134,9 +145,11 @@ class FakeLan:
 
     def set(self, serials, color, power, duration):
         self.calls.append(("set", serials, color, power, duration))
+        return [(serial, len(self.calls)) for serial in serials]
 
     def waveform(self, serials, kind, color, period, cycles, peak):
         self.calls.append(("waveform", serials, kind, color, period, cycles, peak))
+        return [(serial, len(self.calls)) for serial in serials]
 
 
 class LanTests(unittest.TestCase):
@@ -172,6 +185,52 @@ class LanTests(unittest.TestCase):
         house._send(*house.next_request())
         self.assertEqual(lan.calls, [])
         self.assertEqual(api.calls[-1][:2], ("PUT", "lights/id:d073d5000002/state"))
+
+    def test_a_timed_flash_reaches_each_bulb_by_its_own_latency(self):
+        clock = Clock()
+        lan = FakeLan(latencies={"d073d5000001": 0.03, "d073d5000002": 0.15})
+        house = HomeLights(FakeApi(), lan, clock=clock, worker=False)
+        # Seen at 1 s: a breathe peaking 0.05 s in, so the slow bulb goes 0.2 s early, the quick one 0.08 s.
+        house.flash({"lights": ["Sofá", "Luna"], "kind": "breathe", "color": SHADE, "brightness": 1, "period": 0.5, "cycles": 1, "peak": 0.1, "at": 1.0})
+        sent = lambda: [call[1] for call in lan.calls if call[0] == "waveform"]
+        clock.now = 0.79
+        house.due()
+        self.assertEqual(sent(), [])
+        clock.now = 0.80
+        house.due()
+        self.assertEqual(sent(), [["d073d5000002"]], "the slow bulb first")
+        clock.now = 0.92
+        house.due()
+        self.assertEqual(sent(), [["d073d5000002"], ["d073d5000001"]])
+
+    def test_a_timed_state_lands_together_and_goes_again_if_nobody_heard_it(self):
+        clock = Clock()
+        lan = FakeLan(latencies={"d073d5000001": 0.02, "d073d5000002": 0.1})
+        house = HomeLights(FakeApi(), lan, clock=clock, worker=False)
+        house.set([{"light": "Sofá", "power": True, "color": SHADE, "brightness": 0.1},
+                   {"light": "Luna", "power": True, "color": SHADE, "brightness": 0.1}], 0, at=0.5)
+        clock.now = 0.5
+        lan.deaf = True
+        house.due()
+        self.assertEqual(sorted(call[1][0] for call in lan.calls if call[0] == "set"), ["d073d5000001", "d073d5000002"])
+        clock.now = 1.0
+        house.due()
+        self.assertEqual(set(house.pending), {"Sofá", "Luna"}, "unheard states go again")
+        self.assertTrue(all(state["retried"] for state in house.pending.values()), "but only once")
+
+    def test_latency_is_the_typical_trip_less_the_way_back(self):
+        self.assertIsNone(lifx_lan.one_way([0.05, 0.06]))
+        # The quickest trip (20 ms) waited for nothing: 10 ms of it is the answer coming back.
+        self.assertAlmostEqual(lifx_lan.one_way([0.02, 0.12, 0.08, 0.2, 0.1]), 0.09)
+        lan = lifx_lan.LanBulbs(targets=["192.168.1.255"])
+        for took in (0.02, 0.1, 0.1):
+            lan._trip("d073d5000001", took)
+        self.assertAlmostEqual(lan.latency("d073d5000001"), 0.09)
+
+    def test_a_flash_is_seen_at_its_peak_or_soon_after_it_starts(self):
+        self.assertEqual(lights.rise({"kind": "pulse", "period": 0.2}), 0)
+        self.assertAlmostEqual(lights.rise({"kind": "breathe", "period": 0.5, "peak": 0.1}), 0.05)
+        self.assertEqual(lights.rise({"kind": "breathe", "period": 1.3, "peak": 0.4}), lights.SEEN_SECONDS)
 
     def test_when_a_single_address_is_refused_messages_are_broadcast_to_their_bulb(self):
         class Socket:
@@ -217,6 +276,11 @@ class LightsApiTests(unittest.TestCase):
         response = self.client.put("/api/lights", json={"states": [{"light": "Luna", "power": True, "color": SHADE, "brightness": 0.4}], "duration": 0.6})
         self.assertEqual(response.status_code, 204)
         self.assertEqual(self.house.pending["Luna"]["duration"], 0.6)
+
+    def test_the_clock_answers_without_the_key(self):
+        os.environ["HOME_LIGHTS_KEY"] = "secret"
+        self.addCleanup(os.environ.pop, "HOME_LIGHTS_KEY", None)
+        self.assertGreater(self.client.get("/api/lights/clock").json()["now"], 0)
 
     def test_rejects_out_of_range_looks(self):
         response = self.client.put("/api/lights", json={"states": [{"light": "Luna", "power": True, "brightness": 2}]})
