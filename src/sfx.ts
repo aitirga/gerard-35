@@ -306,6 +306,11 @@ type Bed = (context: BaseAudioContext, out: AudioNode, at: number) => { drive(k:
  * A change is heard the next time the hiss starts (going back into La calle).
  */
 export const HISS = { hiss: [.035, .05], whirl: [.06, .25], draught: [.45, .5] };
+/**
+ * The wind's knobs (`BEDS.wind`): the gusts' level and how much they swell, the whistle through the
+ * balcony's gap, and the city's far hum under it.
+ */
+export const WIND = { gust: .22, swell: .35, whistle: .025, hum: .15 };
 
 export const BEDS = {
   // The bubble at the end of La calle que no acaba (src/fear-portal.ts): a sharp hiss breathing on
@@ -352,6 +357,39 @@ export const BEDS = {
       stop(t) { for (const s of sources) s.stop(t); },
     };
   },
+  // The last choice (src/endings.ts): no music, only the wind through the throne room's open balcony,
+  // gusting on swells that never line up and wandering from side to side, a thin whistle now and
+  // then, and the city far below. `drive` makes the gusts stronger.
+  wind: (c, out, at) => {
+    const source = c.createBufferSource();
+    source.buffer = longNoise(c); source.loop = true;
+    const sources: AudioScheduledSourceNode[] = [source];
+    const lfo = (rate: number, depth: number, param: AudioParam) => {
+      const osc = c.createOscillator(), amount = c.createGain();
+      osc.frequency.value = rate; amount.gain.value = depth;
+      osc.connect(amount).connect(param); osc.start(at); sources.push(osc);
+    };
+    const filter = (type: BiquadFilterType, frequency: number, q: number) => {
+      const f = c.createBiquadFilter();
+      f.type = type; f.frequency.value = frequency; f.Q.value = q;
+      return f;
+    };
+    const level = (value: number) => { const g = c.createGain(); g.gain.value = value; return g; };
+    const band = filter('bandpass', 520, .7), gust = level(WIND.gust), side = c.createStereoPanner();
+    lfo(.07, 260, band.frequency); lfo(.05, WIND.gust * WIND.swell, gust.gain); lfo(.13, WIND.gust * WIND.swell * .6, gust.gain); lfo(.031, .55, side.pan);
+    source.connect(band).connect(gust).connect(side).connect(out);
+    const whistle = level(WIND.whistle);
+    lfo(.09, WIND.whistle * .9, whistle.gain);
+    const narrow = filter('bandpass', 1750, 9);
+    lfo(.04, 120, narrow.frequency);
+    source.connect(narrow).connect(whistle).connect(out);
+    source.connect(filter('lowpass', 110, .7)).connect(level(WIND.hum)).connect(out);
+    source.start(at);
+    return {
+      drive(k, t) { gust.gain.setTargetAtTime(WIND.gust * (1 + k * .6), t, .8); },
+      stop(t) { for (const s of sources) s.stop(t); },
+    };
+  },
 } satisfies Record<string, Bed>;
 export type BedId = keyof typeof BEDS;
 /** How loud a bed plays (0 silent, 1 as designed), where it sits from left to right, and its `drive`. */
@@ -366,18 +404,19 @@ export function createSfx(audio: GameAudio) {
   return {
     /**
      * Keeps a sound that goes on (`BEDS`) playing at `level`, or fades it out with none. Whatever
-     * makes it calls this every frame; the sound eases to each new level and only moves when it does.
+     * makes it calls this every frame (or once, for a moment that holds); the sound eases to each new
+     * level, `ease` being how quickly (a time constant, in seconds), and only moves when it does.
      */
-    bed(id: BedId, level?: BedLevel) {
+    bed(id: BedId, level?: BedLevel, ease = .15) {
       const bus = audio.buses;
       let running = beds.get(id);
       if (!level || !bus) {
         if (!running) return;
         beds.delete(id);
         const { gain, panner, bed } = running, t = gain.context.currentTime;
-        gain.gain.cancelScheduledValues(t); gain.gain.setTargetAtTime(0, t, .15);
-        bed.stop(t + 1);
-        setTimeout(() => { gain.disconnect(); panner.disconnect(); }, 1100);
+        gain.gain.cancelScheduledValues(t); gain.gain.setTargetAtTime(0, t, ease);
+        bed.stop(t + ease * 7);
+        setTimeout(() => { gain.disconnect(); panner.disconnect(); }, ease * 7000 + 100);
         return;
       }
       const t = bus.context.currentTime;
@@ -389,7 +428,7 @@ export function createSfx(audio: GameAudio) {
         beds.set(id, running);
       }
       const { volume, pan = 0, drive = 0 } = level, was = running.level;
-      if (Math.abs(volume - was.volume) > .003) { running.gain.gain.setTargetAtTime(volume, t, .15); was.volume = volume; }
+      if (Math.abs(volume - was.volume) > .003) { running.gain.gain.setTargetAtTime(volume, t, ease); was.volume = volume; }
       if (Math.abs(pan - was.pan) > .01) { running.panner.pan.setTargetAtTime(Math.max(-1, Math.min(1, pan)), t, .1); was.pan = pan; }
       if (!(Math.abs(drive - was.drive) <= .01)) { running.bed.drive(drive, t); was.drive = drive; }
     },

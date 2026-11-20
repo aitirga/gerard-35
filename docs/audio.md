@@ -4,8 +4,8 @@ The game plays music and effects with the Web Audio API and no library. Everythi
 the first key, click or pad button, because browsers keep sound off until then.
 
 ```
-music voices → duck → muffle (lowpass) → Música level ┐
-effects                                → Efectos level ┴→ master (Silenciar) → speakers
+music voices → duck → hush → muffle (lowpass) → Música level ┐
+effects                                       → Efectos level ┴→ master (Silenciar) → speakers
 ```
 
 | File | What it holds |
@@ -57,6 +57,13 @@ battle: { src: 'music/battle.m4a', marks: { start: 0, loop: 2.398, ending: 131.9
   the one before it in the file, so going back to it would cut that tail and drop the sound. The next
   version is queued 2 s before the seam and starts sample-exact on it, with a 20 ms crossfade. The
   number of versions comes from the file's length. `from: 'random'` opens it from the first version.
+- `intro: '<mark>'` with a `cycle` puts the versions after an **intro**: the file is the intro, then
+  the versions back to back from that mark. The song plays the intro once and the versions once in
+  order, straight from the file (no seam), then any of them, never the same twice in a row, the first
+  included (it follows the intro, so it carries the intro's tail, not silence). The last boss's song
+  is made this way (§ The last fight).
+- `rate` plays a song straight through slower (and so lower) or faster, and `tone` darkens it through
+  a lowpass at that many Hz. Only for a song played straight: no loop, cycle or vamp.
 
 The director, `music` in [src/main.ts](../src/main.ts):
 
@@ -67,6 +74,7 @@ The director, `music` in [src/main.ts](../src/main.ts):
 | `music.stop({ fade: 1 })` | Fades the song out. |
 | `music.moveOn()` | Ends a vamp: the song finishes the lap it is in and goes on. |
 | `music.duck(true)` | Lowers and muffles the music, as the menus do. |
+| `music.hush(true, { fade: .4 })` | Takes the music out altogether; the song goes on underneath, so `hush(false)` brings it back where it would be. |
 | `music.position()`, `music.playing` | Where the song is (following its loop), and which song it is. |
 
 ### Where music plays now
@@ -102,9 +110,10 @@ The director, `music` in [src/main.ts](../src/main.ts):
 - **La Reina Bubbaloo's castle**: `bubbaloo` (`bubbaloo-light`, 13 min) the same way, at the Rec
   Comtal school and inside the palace (chapter 1's too), haunted as below. Walking from the school
   into the palace keeps the same take going.
-- **Fights**: the battle song comes in with the fight from its intro. On a win it jumps to its
-  ending on the next bar and plays it out; on a fall it fades over 2.5 s; on an escape over 1 s;
-  leaving the result screen fades whatever is left.
+- **Fights**: the battle song comes in with the fight from its intro, in every fight but La Voz's
+  and, once its six notes are played, the Queen's last. On a win it jumps to its ending on the next
+  bar and plays it out; on a fall it fades over 2.5 s; on an escape over 1 s; leaving the result
+  screen fades whatever is left.
 - **Las cuerdas and La Voz** (docs/quests/marta.md § Final boss): Marta's own recording
   (`public/music/marta-voz.m4a`, 87 s, her eight-note phrase sung eight times). In Las cuerdas it
   loops far off, from a random point: quiet, low-passed at 650 Hz and mostly a 3 s room echo with no
@@ -117,6 +126,32 @@ The director, `music` in [src/main.ts](../src/main.ts):
 - **Marta at the piano**: `izana` (`marta-izana`, 21 s, her «Izana dena geroa») plays once the first
   time Aitor plays the piano in Alegia, under the dialogue, and plays out into Las cuerdas.
 - **Menus**: the pause menu, the user menu and the lamp dial duck the music while open.
+
+### The last fight
+
+The Queen's last fight (`reina-vuelta`, docs/castle-bosses.md § With the artilugio) and the end,
+in `scoreNote`, `scoreFreed` and `scoreBattle` in [src/main.ts](../src/main.ts) (Aitor, 2026-11-19):
+
+1. **The battle song**, as in any fight.
+2. **Each note of the artilugio hushes it** over 0.4 s, so the artilugio is heard. The real board
+   sounds on its own speaker, in the room and with no delay; the game only sounds the notes of the
+   keys and the pad standing in for it (anywhere in the game, not only here). Six seconds after the
+   last note, when Gerard puts the artilugio away (`PUT_AWAY_AFTER`, src/artilugio-held.ts), the song
+   comes back over 2 s where it would be: it went on playing underneath.
+3. **The sixth note** frees Aitor and brings in **the last boss's song**, whole, from its intro: an
+   intro and three versions of its A, played once in order, then any earlier one until the fight
+   ends (`intro` above). Its file does not exist yet (§ Songs waiting); until it is in `TRACKS` as
+   `reina`, the battle song comes back instead.
+4. **Her fall** fades it over 4 s into silence, and no place's song comes in from then until the end
+   has played (`finale`).
+5. **The last choice** (src/endings.ts): no music, only the wind through the throne room's open
+   balcony (`BEDS.wind`). Once Gerard chooses, the wind goes and the welcome screen's piano comes back,
+   sadder (`intro-triste`: the same file at 0.9 of its speed, so slower and a little lower, through a
+   lowpass at 2.2 kHz). It plays out over Aitor's line, the epilogue and the morning after, and only
+   then does the place's song come in.
+
+`just screenshots reina-music --chrome` plays all of it, with a stand-in for the boss song (the
+battle file read as an intro and three 44 s versions) so the real director plays it.
 
 ### The mazmorra, concrete and triste songs
 
@@ -182,8 +217,16 @@ game; if a browser places them differently (the AAC priming is 44 ms), check by 
 
 ### Songs waiting for their place
 
-Every master in `assets/music/` is exported and plays somewhere.
+| Song | Length | For |
+| --- | --- | --- |
+| `reina` (to compose) | — | The last boss's song (§ The last fight): an intro, then three versions of its A. |
 
+For `reina`, Aitor's master goes in `assets/music/song-reina.<ext>`: the intro, then the three A
+versions back to back, each the same length and starting on its downbeat (like `mazmorra-2`'s), so
+any can follow any. Then `just music-export song-reina`, measure where the first A starts and how long
+an A lasts (`just music-loop public/music/song-reina.m4a`), and add it to `TRACKS` as
+`reina: { src: 'music/song-reina.m4a', marks: { start: 0, a: <first A> }, intro: 'a', cycle: <A length>, bpm, beatsPerBar: 4, downbeat: 'a' }`.
+The fight finds it by that name (`BOSS_SONG` in src/main.ts) and plays it from then on.
 
 ### The castle's haunt
 
@@ -237,7 +280,8 @@ that draws it with oscillators and noise. Each has a `gap` (no replay sooner tha
 `voices` cap (no more at once) and `jitter` (random detune in cents, so repeats don't sound
 mechanical). `sfx.play(id, { volume, pan })` plays one.
 
-There are no sound files yet: every effect is a synth recipe. `just dev-fx` has a button for each
+There are no sound files yet: every effect is a synth recipe, and the artilugio's notes from the
+real board are not played here at all (its own speaker plays them; § The last fight). `just dev-fx` has a button for each
 under *Sonidos*, to hear them, and `just screenshots sfx` measures them all (and the beds) and
 checks a fight's. `just screenshots calle-sounds` logs what Nuria's street asks for as it turns into
 La calle, and the bubble's hiss at each distance.
@@ -299,6 +343,11 @@ bus, so the Efectos slider applies.
 | Bed | When |
 | --- | --- |
 | `hiss` | The bubble at the end of La calle que no acaba (src/fear-portal.ts). A sharp hiss breathing on two slow swells, a narrower whirl of air going up and down and round from side to side at the bubble's own pace, and a low draught pulling into its well. Silent down the street, it comes up from about 32 m away to its full at the bubble (`hiss` in src/game.ts); `drive` is how close the party is, so the whirl turns faster and louder as the bubble does. Quiet in a menu or a fight, it fades out through the bubble into the tower. |
+
+| `wind` | The last choice (src/endings.ts, § The last fight): gusts of air through the throne room's open balcony on two swells that never line up, wandering from side to side, a thin whistle now and then, and the city's far hum under it. About .033 RMS, by the hiss's level; its knobs are `WIND` in src/sfx.ts. |
+
+`sfx.bed(id, level, ease)` eases to each level over `ease` seconds (a time constant, .15 by default):
+the wind comes in over 1.5 and goes over 1.2.
 
 Its layers' levels, far (`drive` 0) and at the bubble (1), are knobs in `HISS` in
 [src/sfx.ts](../src/sfx.ts), heard the next time the hiss starts:

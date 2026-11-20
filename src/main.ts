@@ -43,6 +43,7 @@ import { CUERDAS_PLACE, QUALITIES } from './friends/marta';
 import { castleHaunt } from './haunt';
 import { createSfx, watchMenuSounds, type SoundId } from './sfx';
 import { createArtilugio, type ArtilugioMode } from './artilugio';
+import { PUT_AWAY_AFTER } from './artilugio-held';
 import { impactSounds, startSounds, type Cue } from './battle-sounds';
 import { mountSoundPage } from './sound-ui';
 
@@ -97,17 +98,23 @@ const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = {
   palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo',
 };
 let place: EnvironmentId | undefined;
+/**
+ * The end of the game (docs/audio.md § The last fight): from the Queen's fall until the sad piano
+ * after the last choice has played out, no place's song comes in. `won` as she falls, `choosing`
+ * while the wind blows, `piano` once Gerard has chosen.
+ */
+let finale: 'won' | 'choosing' | 'piano' | undefined;
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
 function scorePlace(id: EnvironmentId) {
   place = id;
-  if (battlePhase || devSong || titleOpen) return;
+  if (battlePhase || devSong || titleOpen || finale) return;
   // Marta's song is only Las cuerdas' (its clock is the mazes', `onCuerdasSong`): anywhere else it fades.
   if (id !== CUERDAS_PLACE) vozSong.stop(1.5);
   const song = PLACE_SONGS[id];
   music.haunt(castleHaunt(story));
   // A streamed take can only start after the first key or click.
-  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase && !titleOpen) void music.play(song, { from: 'random', fade: 4 }); });
+  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase && !titleOpen && !finale) void music.play(song, { from: 'random', fade: 4 }); });
   else if (music.playing && Object.values(PLACE_SONGS).includes(music.playing)) music.stop({ fade: 2 });
 }
 /**
@@ -115,19 +122,59 @@ function scorePlace(id: EnvironmentId) {
  * escape or leaving. La Voz sings her own (src/voz-song.ts), with nothing under it.
  */
 let battlePhase: BattleState['phase'] | undefined;
+/**
+ * The Queen's last fight (docs/castle-bosses.md § With the artilugio) and its song: the battle song
+ * until the artilugio sounds, then the last boss's own, whole, once its six notes free Aitor. That
+ * song (an intro and three versions of its A) waits for its file (docs/audio.md § Songs waiting);
+ * until it is in `TRACKS`, the battle song comes back instead.
+ */
+const LAST_FIGHT = 'reina-vuelta', BOSS_SONG = 'reina';
+const isQueen = (encounter?: string) => encounter === 'reina' || encounter === 'reina-vuelta';
+let bossSong = false, hushed = false, unhushAt: ReturnType<typeof setTimeout> | undefined;
+function hush(on: boolean, fade: number) {
+  clearTimeout(unhushAt);
+  if (on === hushed) return;
+  hushed = on;
+  music.hush(on, { fade });
+}
+/**
+ * A note of the artilugio in the last fight takes the song out, so the board is heard (it sounds on
+ * its own speaker, in the room); the song comes back where it would be once the board is put away.
+ */
+function scoreNote(state: BattleState | undefined) {
+  if (state?.encounter !== LAST_FIGHT || (state.phase !== 'player' && state.phase !== 'enemy')) return;
+  if (scoreFreed(state)) return;
+  hush(true, .4);
+  unhushAt = setTimeout(() => hush(false, 2), PUT_AWAY_AFTER * 1000);
+}
+/** The sixth note: the last boss's song comes in from its intro, over whatever the artilugio hushed. */
+function scoreFreed(state: BattleState | undefined) {
+  if (state?.encounter !== LAST_FIGHT || !state.castle?.freed) return false;
+  if (bossSong) return true;
+  bossSong = true;
+  hush(false, .3);
+  if (isTrack(BOSS_SONG)) void music.play(BOSS_SONG, { from: 'start', restart: true, fade: .3 });
+  return true;
+}
 /** The fight going on, for the day log: the party's moves (skill or action → times) and its round. */
 let fightMoves: Record<string, number> = {}, fightRounds = 0;
 function scoreBattle(state: BattleState | undefined) {
   const was = battlePhase;
   battlePhase = state?.phase;
+  if (state && was === undefined) bossSong = false;
+  else scoreFreed(state);
   if (battlePhase === was) return;
-  const sung = !!state?.song;
+  const sung = !!state?.song, over = !state || battlePhase === 'won' || battlePhase === 'lost' || battlePhase === 'escaped';
   // A fight that is not hers takes over from her song far off; it comes back where it left off after.
   if (state && was === undefined && !sung) vozSong.stop(.8);
-  if (!state || battlePhase === 'won' || battlePhase === 'lost' || battlePhase === 'escaped') vozSong.stop(battlePhase === 'won' ? 2 : 1);
+  if (over) vozSong.stop(battlePhase === 'won' ? 2 : 1);
+  // A song the artilugio hushed is not heard: it goes now, and the hush with it.
+  if (over && hushed) { music.stop({ fade: .05 }); hush(false, .1); }
   if (!state) { if (music.playing === 'battle') music.stop({ fade: 1.5 }); if (place) scorePlace(place); }
   else if (was === undefined) { if (sung) music.stop({ fade: .4 }); else void music.play('battle', { restart: true, fade: .4 }); }
-  if (battlePhase === 'won' && !sung) void music.jump('ending', { at: 'bar', loop: false });
+  // Her fall ends the game: its song fades into the silence of the last choice.
+  if (battlePhase === 'won' && isQueen(state?.encounter)) { finale = 'won'; music.stop({ fade: 4 }); }
+  else if (battlePhase === 'won' && !sung) void music.jump('ending', { at: 'bar', loop: false });
   else if (battlePhase === 'lost') music.stop({ fade: 2.5 });
   else if (battlePhase === 'escaped') music.stop({ fade: 1 });
 }
@@ -340,11 +387,14 @@ try {
   const carried = () => story.has('artilugio') || battleUI.artilugioLive;
   /** Gerard holding it (src/artilugio-held.ts): his copy in a fight, his figure anywhere else. */
   const heldNow = () => game.battleArtilugio ?? game.artilugio;
-  artilugio.onNote(({ note }) => {
+  artilugio.onNote(({ note, source }) => {
     if (!carried()) return;
-    sfx.play(`artilugio-${note}` as SoundId);
+    // The real board sounds on its own speaker, in the room and on time; the game sounds only the
+    // keys and the pad standing in for it.
+    if (source !== 'board') sfx.play(`artilugio-${note}` as SoundId);
     heldNow().play(note);
     battleUI.note(note);
+    scoreNote(battleUI.live);
     syncArtilugio();
   });
   artilugio.onMotion(() => { if (carried()) heldNow().takeOut(); });
@@ -421,7 +471,15 @@ try {
     // The last scene: the game holds still until Gerard chooses, and the story hears which.
     else if (effect.kind === 'ending') {
       exploration.close(); storyPaused = true; game.setPaused(true);
+      // The choice is made in silence, with only the wind through the balcony; once it is made, the
+      // welcome screen's piano comes back, sadder, and plays out before any place's song comes in.
+      finale = 'choosing'; music.stop({ fade: 2 }); sfx.bed('wind', { volume: 1 }, 1.5);
       const choice = await endings.choose(LINES_CASTLE.lastScene);
+      sfx.bed('wind', undefined, 1.2);
+      finale = 'piano';
+      void audio.unlocked.then(() => music.play('intro-triste', { from: 'start', restart: true, fade: 3 })).then(() => {
+        const out = setInterval(() => { if (music.playing === 'intro-triste') return; clearInterval(out); finale = undefined; if (place) scorePlace(place); }, 1000);
+      });
       storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
       storyEvent({ type: 'ending', choice });
     }
@@ -704,7 +762,12 @@ try {
       // Fought again or stepped back from, a fall never reaches the story; a test fight fought again stays a test.
       if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.refreshStory(); } return; }
       // A test fight, or one left from the picker, leaves the story as it was, and the street as the story has it.
-      if (testing || leaving) { testing = undefined; leaving = false; game.refreshStory(); return; }
+      if (testing || leaving) {
+        testing = undefined; leaving = false; game.refreshStory();
+        // A test win over the Queen ends nothing: the place's song comes back.
+        if (finale === 'won') { finale = undefined; if (place) scorePlace(place); }
+        return;
+      }
       if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn, xp, taken }); keepXp(); }
     },
     onBattleTargets: targets => battleUI.positionTargets(targets),

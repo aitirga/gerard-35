@@ -124,12 +124,15 @@ The real one, in Gerard's hands: the Bomba-G board, four buttons and four pairs,
 (story-outline.md § The device). Nobody says what it is for. It wakes as she takes Aitor: its four
 lights go round on their own, on the real board and on the one in Gerard's hands on screen.
 
-- **Every button sounds in the game.** At the first note she starts: her intent clears. That is
-  how Gerard learns it does something.
+- **Every button sounds.** The real board on its own speaker, in the room (the game only plays the
+  keys' and the pad's notes, when they stand in), and the battle song steps aside while it does,
+  coming back once the artilugio is put away (docs/audio.md § The last fight). At the first note she
+  starts: her intent clears. That is how Gerard learns it does something.
 - **Notes in the right order** light six marks on Aitor's plate, from violet to his cyan. A wrong
   one puts them out (the melody's first starts it again). Aitor keeps attacking all the while.
-- **All six**: the final boss's song comes in whole, Aitor is free, his dock comes back, every
-  ánima's maná is full. What is left is to finish her.
+- **All six**: the final boss's song comes in whole (an intro and three versions of its A, in order
+  and then any of them; Aitor composes it), Aitor is free, his dock comes back, every ánima's maná is
+  full. What is left is to finish her.
 - It does **not calm her**. It takes Aitor from her. (Rejected already: a melody that soothes a
   tantrum.)
 - How a press reaches the game (built 2026-11-19): the board sends each note over Wi-Fi to the
@@ -144,9 +147,10 @@ today); `aitor-poseido` in `src/battle.ts` and `src/story.ts`, as docs/progress.
 
 At 0 PV she does not die.
 
-- The fight's clock slows (`FightClock.slow`, as a dual does), the music holds one chord, and the
-  camera closes on Gerard: the Foc Binari forming in his hand, the numbers turning round it. She
-  is on the floor, small.
+- The fight's clock slows (`FightClock.slow`, as a dual does), the music goes silent (decided
+  2026-11-19, replacing a held chord: only the wind through the open balcony), and the camera closes
+  on Gerard: the Foc Binari forming in his hand, the numbers turning round it. She is on the floor,
+  small. Once he chooses, the welcome screen's piano comes back, sadder (docs/audio.md § The last fight).
 - In Gerard's dock, two commands and no clock. **Only Gerard chooses**; Aitor answers with one
   line.
 

@@ -649,6 +649,25 @@ weight = 2
 priority = "final"
 file = "src/endings.ts"
 
+# The last fight's music (docs/audio.md § The last fight).
+[[block.item]]
+title = "Música del último combate: el artilugio aparta la canción"
+priority = "final"
+grep = "function scoreNote"
+in = "src/main.ts"
+
+[[block.item]]
+title = "Canción de La Reina: intro y tres versiones de su A (la compone Aitor)"
+weight = 2
+priority = "final"
+file = "public/music/song-reina.m4a"
+
+[[block.item]]
+title = "La decisión: el viento, y el piano del inicio más triste"
+priority = "final"
+grep = "'intro-triste'"
+in = "src/main.ts"
+
 [[block.item]]
 title = "Créditos"
 priority = "final"
