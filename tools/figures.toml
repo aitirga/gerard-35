@@ -173,6 +173,8 @@ kind = "monster"
 about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
 FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
 THIS ONE, the informer: the smallest and thinnest of them, standing on tiptoe and leaning forward, eager. Her left arm is normal. Her right arm is stretched to twice her height, thin as a rope of pulled gum, hanging down to the floor and ending in one long white pointing finger. Her small face bubble is tilted to one side, as if listening behind a door."""
+# Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
+animations = [524]
 height = 1.0
 [chivata.view_notes]
 right = "Her long, rope-thin arm hangs on this side, down to the floor."
@@ -184,6 +186,8 @@ kind = "monster"
 about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the hollow imprint of a face pressed into it from inside, like a face pushed against a rubber sheet: brow, nose and closed lips just showing, no eyes. Its feet melt into the floor in thick strings of gum.
 FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
 THIS ONE, the swot: a thin, bent little body under a face bubble far too big for it, swollen like a balloon about to burst, so heavy it hangs forward and down on a neck stretched thin as a rope. The bubble's skin is so thin that a dark folded mass shows through it, like a brain in a jar. Long thin arms. Hard grey patches of dried crust, like scabs, on its arms and shoulders: every blow it has learned to take. Nothing round or soft about the body: bony, too thin, too still."""
+# Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
+animations = [341]
 height = 1.15
 
 [gemelo]
@@ -192,6 +196,8 @@ kind = "monster"
 about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the hollow imprint of a face pressed into it from inside, like a face pushed against a rubber sheet: brow, nose and closed lips just showing, no eyes. Its feet melt into the floor in thick strings of gum.
 FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
 THIS ONE, one of a pair of twins (the game shows it twice, mirrored): too tall and too thin for its age, with a neck a little too long, standing perfectly straight and perfectly symmetrical, arms hanging dead straight, as still as a mannequin. No hood and no hair: just the face bubble on the long neck, and the bubble is lopsided, flattened flat on its right side as if pressed for years against its twin's. From its right hand a thick band of stretched gum hangs down to the floor and trails away, torn at the end: it was joined to the other."""
+# Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
+animations = [112]
 height = 1.1
 [gemelo.view_notes]
 right = "The flattened side of its face bubble, and the torn band of gum hanging from its hand, are on this side."
@@ -202,6 +208,8 @@ kind = "monster"
 about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
 FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
 THIS ONE, the one held back: far too big for the class, as big as a heavy grown man, broad and hunched. A small face bubble sunk low between massive rounded shoulders. Long heavy arms hanging to its knees, ending in fists like boulders. Wrapped in thick layers of older, darker gum: rolls of crust over its shoulders, back and forearms like armour. The smock folds strained and split, too small for it."""
+# Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
+animations = [113]
 height = 1.9
 [repetidor.view_notes]
 back = "Thick rolls of darker crust cover its back like armour."
@@ -212,6 +220,8 @@ kind = "monster"
 about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
 FIRST YEAR, fresh gum: soft, freshly chewed, the pale greyish flesh pink of real chewed gum. The face bubble is the only bright saturated gum pink on it. Its hands are chalk white, as if dipped in a gymnast's chalk, the white smeared up the forearms.
 THIS ONE, the class delegate, in charge of the others and the history teacher's favourite: taller than the rest, thin, rigid and very upright, chin high. A wide band of hardened darker gum across her chest like a sash. Around her face bubble, a wreath of laurel leaves made of dark, hardened gum, like a Roman emperor's. From each of her long fingers a long thread of gum hangs to the floor, like a puppeteer's strings."""
+# Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
+animations = [117]
 height = 1.6
 [delegada.view_notes]
 back = "The laurel wreath ties at the back of her face bubble; the sash crosses her back too."
@@ -222,6 +232,8 @@ kind = "monster"
 about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a bubble of gum: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
 SECOND YEAR, older gum: grown taller and lanky, the gum gone a deep bruised plum-maroon and set harder, split by a few big cracks through which its filling glows a cold water blue. A manila paper file tag hangs from its wrist on a string, and a round registry stamp in dark navy ink is pressed into its chest.
 THIS ONE, the absent: not there. An empty shell of a pupil, a hollow skin of gum with nothing inside, washed out and paler than the others. Its front is split open from the neck to the hem, showing a dark empty hollow inside. Its sleeves are limp and empty. Its face bubble has gone soft and hangs forward over the chest like a veil. It stands on two thin, stretched strings of gum."""
+# Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
+animations = [111]
 height = 1.7
 [ausente.view_notes]
 back = "Its back is whole and smooth: the split is only in front."
@@ -232,6 +244,8 @@ kind = "monster"
 about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a bubble of gum. Its feet melt into the floor in thick strings of gum.
 SECOND YEAR, older gum: grown huge and lanky, the gum gone a deep bruised plum-maroon and set harder, split by a few big cracks through which its filling glows a deep fire orange. A manila paper file tag hangs from its wrist on a string, and a round registry stamp in dark navy ink is pressed into its chest.
 THIS ONE, the one punished, made to stand facing the wall: taller than a grown man, bent forward, its head bowed so low that the small face bubble is pressed against its own chest. Out of its back, between the shoulders, swells an enormous bubble of stretched gum, a hunch bigger than its whole torso that rises high above its shoulders and bowed head, so that from the front it is a great taut dome behind and above it. The bubble is thin and tight, about to burst, the orange filling glowing through its skin. Long arms hanging to its knees, hands open, fingers spread, trembling."""
+# Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
+animations = [553]
 height = 2.2
 [castigado.view_notes]
 back = "The enormous swollen bubble fills its whole back, thin and tight, the orange filling glowing through it."
@@ -252,6 +266,8 @@ kind = "monster"
 art = ["output/characters/3d/repetidor/toy.png"]
 about = """The first image is El Repetidor in his first year, one of La Reina Bubbaloo's pupils, made of chewed bubble gum moulded into a pupil's shape. Draw the same figure a year older: the same build, pose and shapes (the small face bubble sunk between massive shoulders, the long heavy arms and boulder fists, the rolls of crust like armour, the smock folds, the feet melting into the floor), a little bigger.
 SECOND YEAR, older gum: everything that was pale flesh pink has gone a deep bruised plum-maroon and set harder, and the chalk white is gone from its hands. It is still gum, not rock: the rolls of crust are thick rubbery folds of dark hardened gum, with a few thin cracks through which its filling glows an electric yellow. A manila paper file tag hangs from its wrist on a string, and a round registry stamp in dark navy ink, a plain ring with a number, is pressed into its chest. The face bubble is a dull dark pink."""
+# Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
+animations = [113]
 height = 2.1
 [repetidor-segundo.view_notes]
 back = "Thick rubbery rolls of dark gum cover its back like armour, the yellow glowing in a few cracks."
@@ -263,6 +279,8 @@ art = ["output/characters/3d/repetidor/toy.png"]
 about = """The first image is El Repetidor in his first year, one of La Reina Bubbaloo's pupils, made of chewed bubble gum moulded into a pupil's shape. Draw the same figure two years older: the same build and shapes (the massive shoulders, the long heavy arms and boulder fists, the rolls of crust, the smock folds, the feet melting into the floor), bigger, and slumped like a worn-out grown man, its back bent and its arms hanging past its knees.
 THIRD YEAR, the Queen's own gum gone bad (Aitor, 2026-11-19: more gum, more contrast): loud, saturated hot bubble-gum pink, more gum than ever, stretchy, with the soft sheen of freshly chewed gum, bubbles swelling and half-burst all over it and long stretched strings; and at the same time rotting: big patches of black spreading through the pink like necrosis, clusters of big black pustules and blisters, each the size of a fist, black veins in the stretched parts, hard black crust at the edges of the burst bubbles. Strong contrast: hot pink against black, nothing grey.
 Its face bubble is swollen huge and half burst, black at the torn edge, sunk between the shoulders. Nothing hangs from its chest."""
+# Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
+animations = [113]
 height = 2.4
 [repetidor-tercero.view_notes]
 back = "Hot pink rolls of gum over its back, spotted with black pustules and black rot."
@@ -336,3 +354,35 @@ THIS ONE, Vertitrón, his fear of heights, the boss at the top of the tower: a h
 height = 3.4
 [vertigo.view_notes]
 back = "Rows of curved terracotta roof tiles cover its whole back like a roof."
+
+# Luca's and Marta's foes remade with Meshy from Aitor's bestiary notes (2026-11-20).
+[fran-jefe]
+name = "Fran (jefe)"
+kind = "monster"
+art = ["public/portraits/fran.png"]
+about = """The first image is a portrait of Fran, the boss of a mission in the game: keep his face and his look as big shapes, his long narrow face, sharp jaw and cheekbones, dark rectangular glasses, his very high sculpted dark quiff with the sides shaved short, his black shirt buttoned to the collar and the white hairdresser's cutting cape. Make him the boss, harder and more real than the portrait: a gaunt, very tall man of about forty with a long neck and long hands, cold and arrogant, his jaw set, his eyes behind the glasses a faint glowing violet (he is held by La Reina Bubbaloo). The white cutting cape hangs from his shoulders to his knees like a priest's chasuble, with grey chalk curves drawn on it like cutting lines. Black fitted shirt and slim black trousers, pointed black boots. A long pair of silver tailor's shears in each hand, blades down, as long as his forearms. A heavy silver aspergillum, a holy-water sprinkler like a mace, hangs at his belt."""
+height = 2.0
+animations = [0, 97, 92, 125, 178, 8]
+[fran-jefe.view_notes]
+back = "The white cape covers his back to the knees, the chalk curves on it too; the back of the quiff and the shaved nape."
+
+[voz]
+name = "La Voz"
+kind = "creature"
+art = ["public/portraits/marta.png"]
+about = """The first image is a portrait of Marta, a singer: La Voz is her singing voice made a being, the boss of a dark void crossed by strings of silver light. Take from Marta only a few big shapes: long wavy hair dark at the roots and pale gold from the ears down, big thin gold hoop earrings, a black beaded choker, her rounded face. La Voz is ethereal and not a person: a tall woman's figure, taller than a grown man, made of taut strings of silver light and thin pale glass, her face a smooth pale mask like porcelain with her eyes closed and her mouth open, singing, her head tilted back. Her long hair falls to her waist as many strings, dark at the roots and pale gold below. Her arms are open a little, hands open, fingers long. A soft pale-gold light glows inside her chest and throat, where the voice is. From the waist down she has no legs: her body unravels into a bundle of taut silver strings, like the strings of a harp, that run straight down and fan out to the floor. Colours: silver, pearl white, pale gold, the black choker; no pink and no violet. Unsettling and beautiful, never cute."""
+height = 2.4
+[voz.view_notes]
+back = "Her hair falls down her back as many strings, dark at the roots, pale gold below; the strings of her lower body fan out behind her to the floor."
+
+[polilla]
+name = "Las Polillas"
+kind = "creature"
+about = """A moth as big as a large dog, one of the things eating a friend's colour in the game (a basilica turned into a hair salon): grey, drawn to light, unsettling, never cute. A heavy, furred body of dusty ash grey, thick at the chest, its abdomen ringed and tapering. A furred head with two big round dark compound eyes, matte, and two long feathered antennae curving up and out. Six thin jointed legs folded under the body. Four big wings spread wide open and flat to its left and right, like a moth pinned to a board, much wider than the body is long: dusty grey with darker eye-spots that look like eyes, their edges ragged and torn. Caught in the dust of the wings, flecks of stolen colour, red, blue and gold, as if it had rubbed against a painted window. It hovers facing the camera, seen from the front a little from above, the wings spread to the sides."""
+# Where the furred body ends and the wings begin (measured on its model): the fight beats them.
+wings = 0.22
+height = 0.9
+[polilla.view_notes]
+left = "In profile the spread wings are seen edge on, a thin line out to the side; the furred body, the legs folded under it and an antenna."
+right = "In profile the spread wings are seen edge on, a thin line out to the side; the furred body, the legs folded under it and an antenna."
+back = "From behind: the furred back and abdomen, and the four wings spread wide to the sides, their eye-spots seen through the dust."

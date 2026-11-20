@@ -4,7 +4,8 @@
   "glb": "models/monsters/repetidor.glb",
   "clips": {
     "walking": "models/monsters/repetidor-walking.glb",
-    "running": "models/monsters/repetidor-running.glb"
+    "running": "models/monsters/repetidor-running.glb",
+    "actions": "models/monsters/repetidor-actions.glb"
   },
   "height": 1.9
 }

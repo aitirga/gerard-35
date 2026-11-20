@@ -180,7 +180,7 @@ export function createFears(app: pc.Application) {
   const modelo = createModeloFoes(app);
   modelo.templates.forEach((model, kind) => templates.set(kind, model));
   // And Fran's salon's (src/luca-foes.ts): what is eating Luca's colour.
-  const luca = createLucaFoes();
+  const luca = createLucaFoes((id, parent) => buildFoeBody(id, parent));
   luca.attach(app.root);
   luca.templates.forEach((model, kind) => templates.set(kind, model));
   /** Vertitrón's joints, found once per model. */

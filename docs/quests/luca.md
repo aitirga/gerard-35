@@ -120,6 +120,8 @@ steal light; not Luca's own traits (that is Marta's). Each asks one question.
 
 Not used: El Secador (Aitor: no hairdryer monster), El Decolorante.
 
+Las Polillas are a figure of `just character-3d polilla` (2026-11-20, Aitor's bestiary note: flight): one piece with its wings cut off as their own nodes, laid flat at chest height in the fight (`src/luca-foes.ts`), the wings beating (`battle-scene.ts`). Fran as a boss (`fran-jefe`, with six moves from Meshy's library) and the removal of La Laca and El Telescopio are waiting for Aitor (docs/bestiary-notes.json).
+
 ## Beats
 
 1. **Arrival** (outside): Luca by the pond, grey, saying little and half of it. He tried to go in

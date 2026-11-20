@@ -4,7 +4,8 @@
   "glb": "models/monsters/chivata.glb",
   "clips": {
     "walking": "models/monsters/chivata-walking.glb",
-    "running": "models/monsters/chivata-running.glb"
+    "running": "models/monsters/chivata-running.glb",
+    "actions": "models/monsters/chivata-actions.glb"
   },
   "height": 1.0
 }

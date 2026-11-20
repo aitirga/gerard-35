@@ -1,0 +1,11 @@
+{
+  "id": "fran-jefe",
+  "name": "Fran (jefe)",
+  "glb": "models/monsters/fran-jefe.glb",
+  "clips": {
+    "walking": "models/monsters/fran-jefe-walking.glb",
+    "running": "models/monsters/fran-jefe-running.glb",
+    "actions": "models/monsters/fran-jefe-actions.glb"
+  },
+  "height": 2.0
+}

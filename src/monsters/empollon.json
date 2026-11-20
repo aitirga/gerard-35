@@ -4,7 +4,8 @@
   "glb": "models/monsters/empollon.glb",
   "clips": {
     "walking": "models/monsters/empollon-walking.glb",
-    "running": "models/monsters/empollon-running.glb"
+    "running": "models/monsters/empollon-running.glb",
+    "actions": "models/monsters/empollon-actions.glb"
   },
   "height": 1.15
 }

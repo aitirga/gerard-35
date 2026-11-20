@@ -51,7 +51,8 @@
       "redo": [],
       "text": "Esta tambien, elaborala mejor en meshy, eterea siguiente el estilo pero con algun punto mas de Marta",
       "status": "abierta",
-      "created": "2026-11-20T02:21:15Z"
+      "created": "2026-11-20T02:21:15Z",
+      "reply": "Hecha con Meshy (just character-3d voz): figura de cuerdas de luz y porcelana con el pelo de Marta (oscuro arriba, rubio abajo), los aros dorados y la gargantilla, cantando, y de cintura abajo cuerdas de arpa. Falta tu OK y meterla en su combate: espero a que acabe el rehecho de La Voz que hace otra sesión en cuerdas-foes.ts."
     },
     {
       "id": "n-mwocsugm",
@@ -60,7 +61,8 @@
       "redo": [],
       "text": "Esta quitala, no me gusta, rehazla y cambia este enemigo",
       "status": "abierta",
-      "created": "2026-11-20T02:22:14Z"
+      "created": "2026-11-20T02:22:14Z",
+      "reply": "Propuesta, sin tocar nada aún: cambiar La pluma por La cuña salina, el agua del mar que entra por debajo cuando se bombea de más. Avanza un paso cada turno (Intrusión 1/3 → 3/3) y al llegar a 3 inunda a todos (mojados y −Defensa el resto del combate). Cada golpe de agua la hace retroceder un paso («¡Agua dulce!»), mientras las Celdas secas castigan a quien está mojado. Pregunta: elemento y momento. ¿Te vale?"
     },
     {
       "id": "n-mwocta0j",
@@ -68,8 +70,10 @@
       "name": "Polilla",
       "redo": [],
       "text": "Esto rehazlo con meshy, aplica elementos como de vuelo, animaciones mejores",
-      "status": "abierta",
-      "created": "2026-11-20T02:22:34Z"
+      "status": "hecha",
+      "created": "2026-11-20T02:22:34Z",
+      "reply": "Rehecha con Meshy (just character-3d polilla): cuerpo peludo gris, alas grandes con ocelos y motas del color robado. Sus alas son nodos propios y baten en el combate; vuela tumbada, alas abiertas hacia la cámara, más grande. Ya está en La recepción (luca-foes.ts). Capturas: output/screenshots/polillas/.",
+      "closed": "2026-11-20T03:22:49Z"
     },
     {
       "id": "n-mwoctx0o",
@@ -78,7 +82,8 @@
       "redo": [],
       "text": "Este quitalo, no tiene sentido, quita este enemigo",
       "status": "abierta",
-      "created": "2026-11-20T02:23:04Z"
+      "created": "2026-11-20T02:23:04Z",
+      "reply": "Propuesta: quitarla. Los sillones se quedan solo con los capellanes (su pregunta, el orden, está completa). Junto con El Telescopio, el ábside se queda sin combate propio: antesala de Fran con las lentes y cartas celestes de decorado; o, si prefieres que haya pelea, un enjambre grande de Polillas. Se pierde la lección del fuego con riesgo (Lacado). ¿Quito las dos y cuál de las dos opciones para el ábside?"
     },
     {
       "id": "n-mwocu1zr",
@@ -87,7 +92,8 @@
       "redo": [],
       "text": "Este tambien quitalo",
       "status": "abierta",
-      "created": "2026-11-20T02:23:10Z"
+      "created": "2026-11-20T02:23:10Z",
+      "reply": "Propuesta: quitarlo junto con La Laca (ver su nota): el ábside sin combate, como antesala de Fran, o con un enjambre grande de Polillas. Se pierde la pregunta de «momento» (golpear mientras enfoca). Espero tu OK."
     },
     {
       "id": "n-mwocurqs",
@@ -96,7 +102,8 @@
       "redo": [],
       "text": "Este generalo con meshy basandote en el retrato, no esta mal pero mas duro, mas realista de boss, ,genera animacione y mejoras",
       "status": "abierta",
-      "created": "2026-11-20T02:23:44Z"
+      "created": "2026-11-20T02:23:44Z",
+      "reply": "Hecho con Meshy desde su retrato (just character-3d fran-jefe): más alto y duro, ojos violeta, unas tijeras largas en cada mano, el hisopo al cinto. Tiene esqueleto y 6 animaciones de la biblioteca de Meshy (Idle, Left Slash, Double Combo Attack, Charged Spell Cast, Hit Reaction, Dead): míralas en su ficha de diseño. Falta tu OK al aspecto y meterlo en su combate, que necesita los monstruos con esqueleto en combate (llegan con feat/castle-pupils)."
     }
   ]
 }

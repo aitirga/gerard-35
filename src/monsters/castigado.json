@@ -4,7 +4,8 @@
   "glb": "models/monsters/castigado.glb",
   "clips": {
     "walking": "models/monsters/castigado-walking.glb",
-    "running": "models/monsters/castigado-running.glb"
+    "running": "models/monsters/castigado-running.glb",
+    "actions": "models/monsters/castigado-actions.glb"
   },
   "height": 2.2
 }

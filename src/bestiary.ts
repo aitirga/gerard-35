@@ -249,14 +249,23 @@ async function start() {
           const rest = file.animations[0]?.resource as pc.AnimTrack | undefined;
           if (rest) model.anim!.assignAnimation('Quieto', rest);
           const names = Object.keys(view.spec.clips);
-          const tracks = await Promise.all(names.map(name => container(view.spec.clips[name]).then(c => c.animations[0]?.resource as pc.AnimTrack | undefined).catch(() => undefined)));
+          const files = await Promise.all(names.map(name => container(view.spec.clips[name]).catch(() => undefined)));
           if (mine !== token) return;
-          names.forEach((name, i) => { if (tracks[i]) { model.anim!.assignAnimation(name, tracks[i]!); clips.push(`${name} (clip de Meshy)`); } });
+          // A file of moves from Meshy's library (`actions`) holds one clip per move, each named as the library names it.
+          const tracks: [string, pc.AnimTrack][] = [];
+          names.forEach((name, i) => {
+            const anims = (files[i]?.animations ?? []).map(a => a.resource as pc.AnimTrack | undefined).filter((t): t is pc.AnimTrack => !!t);
+            // Meshy names a library move `Armature|Monster_Walk|baselayer`: the button says «Monster Walk».
+            const moveName = (t: pc.AnimTrack, k: number) => (t.name || `${name} ${k + 1}`).replace(/^Armature\|/, '').replace(/\|baselayer$/, '').replace(/_/g, ' ');
+            if (anims.length > 1 || (name === 'actions' && anims[0])) anims.forEach((t, k) => tracks.push([moveName(t, k), t]));
+            else if (anims[0]) tracks.push([name, anims[0]]);
+          });
+          tracks.forEach(([name, track]) => { model.anim!.assignAnimation(name, track); clips.push(`${name} (clip de Meshy)`); });
           // Each clip from its first frame (no blend), so a chosen monster starts its motion from the start.
           const play = (state: string) => { model.anim!.baseLayer?.transition(state, 0, 0); controls.querySelectorAll<HTMLButtonElement>('[data-clip]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.clip === state))); };
-          controls.innerHTML = [...(rest ? ['Quieto'] : []), ...names.filter((_, i) => tracks[i])].map(n => `<button data-clip="${n}">${n === 'walking' ? 'Andar' : n === 'running' ? 'Correr' : n}</button>`).join('');
+          controls.innerHTML = [...(rest ? ['Quieto'] : []), ...tracks.map(([n]) => n)].map(n => `<button data-clip="${html(n)}">${n === 'walking' ? 'Andar' : n === 'running' ? 'Correr' : html(n)}</button>`).join('');
           controls.querySelectorAll<HTMLButtonElement>('[data-clip]').forEach(b => b.addEventListener('click', () => play(b.dataset.clip!)));
-          if (names.length && tracks[0]) play(names[0]);
+          if (tracks.length) play(tracks[0][0]);
         }
       }
       if (mine !== token) return;

@@ -1,0 +1,42 @@
+{
+  "title": "Las Polillas de Meshy, aleteando",
+  "description": "docs/quests/luca.md § Monsters, Aitor's bestiary note (2026-11-20: Meshy, flight, better animation). The moths of La recepción as the figure of `just character-3d polilla`, its wings cut off as their own nodes (`wings` in tools/figures.toml) and beaten by the fight (battle-scene.ts), in their real fight from the fight tester. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22luca-recepcion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 120000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "combate",
+      "delay": 600,
+      "caption": "La recepción: the moths hovering face on, wings spread, at chest height"
+    },
+    {
+      "record": "aleteo",
+      "seconds": 1.5,
+      "fps": 30,
+      "warmup": 0.3,
+      "caption": "The wings beating"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "shot": "ataque",
+      "delay": 700,
+      "caption": "A blow on one of them"
+    }
+  ]
+}

@@ -4,7 +4,8 @@
   "glb": "models/monsters/gemelo.glb",
   "clips": {
     "walking": "models/monsters/gemelo-walking.glb",
-    "running": "models/monsters/gemelo-running.glb"
+    "running": "models/monsters/gemelo-running.glb",
+    "actions": "models/monsters/gemelo-actions.glb"
   },
   "height": 1.1
 }

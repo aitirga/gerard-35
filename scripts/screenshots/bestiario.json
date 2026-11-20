@@ -212,6 +212,53 @@
       "caption": "A person: Nuria, her model, portrait and expressions"
     },
     {
+      "eval": "window.bestiary.filter('todos'); window.bestiary.select('diseno:gemelo')"
+    },
+    {
+      "eval": "setTimeout(() => document.querySelector('[data-clip*=\"Monster\"]')?.click(), 1500)"
+    },
+    {
+      "shot": "gemelo-andar",
+      "delay": 2600,
+      "caption": "Los Gemelos with their own walk from Meshy's library (Monster Walk, stiff), the one they chase the party with"
+    },
+    {
+      "eval": "window.bestiary.filter('todos'); window.bestiary.select('diseno:fran-jefe')"
+    },
+    {
+      "shot": "fran-jefe",
+      "delay": 2500,
+      "caption": "Fran as a boss (Aitor's note): Meshy from his portrait, with skeleton and six moves of Meshy's library as buttons (Idle, Left Slash, Double Combo Attack, Charged Spell Cast, Hit Reaction, Dead)"
+    },
+    {
+      "eval": "document.querySelector('[data-clip=\"Left Slash\"]')?.click()"
+    },
+    {
+      "shot": "fran-tijeretazo",
+      "delay": 900,
+      "caption": "Fran playing Left Slash, his shears' blow"
+    },
+    {
+      "eval": "window.bestiary.select('diseno:voz')"
+    },
+    {
+      "shot": "voz",
+      "delay": 2000,
+      "caption": "La Voz (Aitor's note): strings of light with Marta's hair, hoops and choker, singing; one piece, not yet in her fight"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:polilla')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "polilla",
+      "delay": 1500,
+      "caption": "Las Polillas: own Meshy model now (FOE_BODIES), wings cut off to beat in the fight; Aitor's note answered"
+    },
+    {
       "open": "/bestiario.html?ver=enemigo:repetidor&notas=scratch",
       "ready": "document.querySelector('#status')?.textContent.startsWith('Listo') && window.bestiary?.ready()"
     },

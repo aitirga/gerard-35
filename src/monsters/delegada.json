@@ -4,7 +4,8 @@
   "glb": "models/monsters/delegada.glb",
   "clips": {
     "walking": "models/monsters/delegada-walking.glb",
-    "running": "models/monsters/delegada-running.glb"
+    "running": "models/monsters/delegada-running.glb",
+    "actions": "models/monsters/delegada-actions.glb"
   },
   "height": 1.6
 }

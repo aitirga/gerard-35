@@ -1,0 +1,7 @@
+{
+  "id": "polilla",
+  "name": "Las Polillas",
+  "glb": "models/creatures/polilla.glb",
+  "height": 0.9,
+  "wings": 0.22
+}

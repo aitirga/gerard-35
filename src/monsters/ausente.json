@@ -4,7 +4,8 @@
   "glb": "models/monsters/ausente.glb",
   "clips": {
     "walking": "models/monsters/ausente-walking.glb",
-    "running": "models/monsters/ausente-running.glb"
+    "running": "models/monsters/ausente-running.glb",
+    "actions": "models/monsters/ausente-actions.glb"
   },
   "height": 1.7
 }

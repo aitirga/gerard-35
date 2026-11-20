@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
 import type { LucaKind } from './battle';
+import { FOE_BODIES } from './foe-bodies.ts';
 
 /**
  * Fran's salon's foes (docs/quests/luca.md § Monsters), built from primitives and named as the fight
@@ -11,7 +12,11 @@ import type { LucaKind } from './battle';
  * black with a white collar, his hair sculpted into a shape and colour that are not his. No pink and
  * no violet anywhere (docs/visual-style.md).
  */
-export function createLucaFoes() {
+/**
+ * `body` builds a Meshy figure into a template (`buildFoeBody`, src/character-model.ts), passed in by src/fears.ts
+ * so this file stays loadable outside the browser (the tests read LUCA_SIZES).
+ */
+export function createLucaFoes(body: (id: string, parent: pc.Entity) => pc.Entity) {
   const materials: pc.StandardMaterial[] = [];
   const mat = (name: string, hex: string, gloss = .4, glow = 0, opacity = 1) => {
     const m = new pc.StandardMaterial(); m.name = name; m.diffuse.fromString(hex); m.gloss = gloss; m.useMetalness = false;
@@ -30,20 +35,19 @@ export function createLucaFoes() {
   /** Where each stands: a pale disc of the window's light in place of a shadow. */
   const pool = (parent: pc.Entity, hex: string, size: number) => part(parent, 'Charco pringoso', 'cylinder', mat('Luz del suelo', hex, .2, .3, .16), [0, .012, 0], [size, .01, size], [0, 0, 0], false);
 
-  // A Polilla: a grey, furred body and four wings of dusty grey, hovering at chest height.
+  // A Polilla (`just character-3d polilla`, Aitor's note: flight): a furred grey body and wings spread wide,
+  // flecked with the colour it ate, flying at chest height. Its figure stands upright, face on; here it is
+  // laid down, back to the sky and head to the party, so the high camera sees the wings open, and they
+  // beat up and down round the body (their own nodes, `wings` in tools/figures.toml; battle-scene.ts).
   const moth = root('Polilla');
   pool(moth, '#d6dae0', .9);
   const mothBody = pivot(moth, 'Vista', [0, 1.1, 0]);
-  const dust = mat('Polvo de polilla', '#9a9890', .1), wingMat = mat('Ala de polilla', '#b8b4aa', .1, 0, .92), vein = mat('Vena del ala', '#6f6c66', .1);
-  part(mothBody, 'Cuerpo', 'capsule', dust, [0, 0, 0], [.16, .42, .16], [90, 0, 0]);
-  const mothHead = pivot(mothBody, 'Cabeza de chicle', [0, .02, .22]);
-  part(mothHead, 'Cabeza', 'sphere', dust, [0, 0, 0], [.15, .14, .14]);
-  for (const side of [-1, 1]) {
-    part(mothHead, 'Antena', 'cylinder', vein, [side * .05, .1, .04], [.012, .18, .012], [30, 0, side * -25], false);
-    part(mothBody, 'Ala', 'box', wingMat, [side * .3, .04, .05], [.5, .02, .34], [0, side * -12, side * 18], false);
-    part(mothBody, 'Ala baja', 'box', wingMat, [side * .24, .0, -.14], [.36, .02, .24], [0, side * 20, side * 12], false);
-    part(mothBody, 'Mancha', 'cylinder', vein, [side * .34, .06, .06], [.1, .01, .1], [0, 0, side * 18], false);
-  }
+  mothBody.setLocalEulerAngles(0, 180, 0);
+  const flight = pivot(mothBody, 'Vuelo');
+  flight.setLocalEulerAngles(-68, 0, 0);
+  flight.setLocalScale(1.35, 1.35, 1.35);
+  const mothFigure = body(FOE_BODIES.polilla!, pivot(flight, 'Centro', [0, -.45, 0]));
+  (mothFigure.findByName('Charco pringoso') as pc.Entity).enabled = false;
 
   // A shirt of Luca's (`estampado-*`): one of his loud shirts on a wire hanger, nobody in it, hanging in the
   // air. It is dressed twice over the same hanger: in its own colour and print (`Encendida`), as it is
